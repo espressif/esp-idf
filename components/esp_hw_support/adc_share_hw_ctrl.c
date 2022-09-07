@@ -97,7 +97,7 @@ void adc_power_release(void)
 
 static inline uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten)
 {
-    int tag = esp_efuse_rtc_table_get_tag(version, adc_unit + 1, atten, RTCCALIB_V2_PARAM_VINIT);
+    int tag = esp_efuse_rtc_table_get_tag(version, adc_unit, atten, RTCCALIB_V2_PARAM_VINIT);
     return esp_efuse_rtc_table_get_parsed_efuse_value(tag, false);
 }
 #endif

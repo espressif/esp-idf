@@ -97,6 +97,7 @@ int esp_efuse_rtc_table_read_calib_version(void)
 
 int esp_efuse_rtc_table_get_tag(int version, int adc_num, int atten, int extra_params)
 {
+    assert(adc_num <= ADC_UNIT_2);
     int index = (adc_num == ADC_UNIT_1) ? 0 : 1;
     int param_offset; // used to index which (adc_num, atten) array to use.
     if (version == 1 && extra_params == RTCCALIB_V1_PARAM_VLOW) { // Volage LOW, Version 1
