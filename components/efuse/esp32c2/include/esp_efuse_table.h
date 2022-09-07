@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table 5bc3d3149d5d4c75461337fa415d6533
+// md5_digest_table ce4e849361b72f5095735d37756740aa
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -56,7 +56,6 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[];
-extern const esp_efuse_desc_t* ESP_EFUSE_PVT_LOW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0_FE_256BIT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0_FE_128BIT[];

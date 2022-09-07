@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 5bc3d3149d5d4c75461337fa415d6533
+// md5_digest_table ce4e849361b72f5095735d37756740aa
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -174,10 +174,6 @@ static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
 
 static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
     {EFUSE_BLK2, 60, 2}, 	 // BLK_VERSION_MAJOR,
-};
-
-static const esp_efuse_desc_t PVT_LOW[] = {
-    {EFUSE_BLK2, 91, 5}, 	 // EFUSE_PVT_LOW,
 };
 
 static const esp_efuse_desc_t KEY0[] = {
@@ -441,11 +437,6 @@ const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[] = {
     &BLK_VERSION_MAJOR[0],    		// BLK_VERSION_MAJOR
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_PVT_LOW[] = {
-    &PVT_LOW[0],    		// EFUSE_PVT_LOW
     NULL
 };
 
