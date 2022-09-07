@@ -192,6 +192,8 @@ esp_err_t protocomm_req_handle(protocomm_t *pc, const char *ep_name, uint32_t se
  *                          For protocomm security version 1 and 2
  *                          sec_params should contain pointer to struct of type
  *                          protocomm_security1_params_t and protocmm_security2_params_t respectively.
+ *                          The contents of this pointer must be valid till the security session
+ *                          has been running and is not closed.
  * @return
  *  - ESP_OK : Success
  *  - ESP_FAIL : Error adding endpoint / Endpoint with this name already exists

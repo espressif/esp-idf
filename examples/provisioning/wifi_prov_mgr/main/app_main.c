@@ -336,6 +336,9 @@ void app_main(void)
          *      - NULL if not used
          */
         const char *pop = "abcd1234";
+        /* If the pop is allocated dynamically, then it should be valid till the provisioning process is running.
+         * it can be only freed when the WIFI_PROV_END event is triggered */
+
         /* This is the structure for passing security parameters
          * for the protocomm security 1.
          * This does not need not be static i.e. could be dynamically allocated
