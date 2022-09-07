@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table ce4e849361b72f5095735d37756740aa
+// md5_digest_table ceedae45d1a885ced865a05eeca7d7ee
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -194,6 +194,26 @@ static const esp_efuse_desc_t KEY0_SB_128BIT[] = {
 
 static const esp_efuse_desc_t OCODE[] = {
     {EFUSE_BLK2, 62, 7}, 	 // OCode,
+};
+
+static const esp_efuse_desc_t TEMP_CALIB[] = {
+    {EFUSE_BLK2, 69, 9}, 	 // Temperature calibration data,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN0[] = {
+    {EFUSE_BLK2, 78, 8}, 	 // ADC1 init code at atten0,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN3[] = {
+    {EFUSE_BLK2, 86, 5}, 	 // ADC1 init code at atten3,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN0[] = {
+    {EFUSE_BLK2, 91, 8}, 	 // ADC1 calibration voltage at atten0,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN3[] = {
+    {EFUSE_BLK2, 99, 6}, 	 // ADC1 calibration voltage at atten3,
 };
 
 static const esp_efuse_desc_t DIG_DBIAS_HVT[] = {
@@ -462,6 +482,31 @@ const esp_efuse_desc_t* ESP_EFUSE_KEY0_SB_128BIT[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_OCODE[] = {
     &OCODE[0],    		// OCode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALIB[] = {
+    &TEMP_CALIB[0],    		// Temperature calibration data
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0[] = {
+    &ADC1_INIT_CODE_ATTEN0[0],    		// ADC1 init code at atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN3[] = {
+    &ADC1_INIT_CODE_ATTEN3[0],    		// ADC1 init code at atten3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN0[] = {
+    &ADC1_CAL_VOL_ATTEN0[0],    		// ADC1 calibration voltage at atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN3[] = {
+    &ADC1_CAL_VOL_ATTEN3[0],    		// ADC1 calibration voltage at atten3
     NULL
 };
 
