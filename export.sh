@@ -134,9 +134,8 @@ __main() {
     eval "${idf_exports}"
     export PATH="${IDF_ADD_PATHS_EXTRAS}:${PATH}"
 
-    __verbose "Using Python interpreter in $(which python)"
     __verbose "Checking if Python packages are up to date..."
-    python "${IDF_PATH}/tools/idf_tools.py" check-python-dependencies || return 1
+    "$ESP_PYTHON" "${IDF_PATH}/tools/idf_tools.py" check-python-dependencies || return 1
 
     if [ -n "$BASH" ]
     then
