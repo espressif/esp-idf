@@ -24,7 +24,7 @@ except ImportError:
     # Only used for type annotations
     pass
 
-NO_BANDWIDTH_LIMIT = -1  # iperf send bandwith is not limited
+NO_BANDWIDTH_LIMIT = -1  # iperf send bandwidth is not limited
 
 
 class IperfTestUtilityEth(IperfUtility.IperfTestUtility):
@@ -48,7 +48,7 @@ class IperfTestUtilityEth(IperfUtility.IperfTestUtility):
         self.dut.write('ethernet start')
         time.sleep(10)
         self.dut.write('ethernet info')
-        dut_ip = self.dut.expect(re.compile(r'ETHIP: (\d+[.]\d+[.]\d+[.]\d+)'))[0]
+        dut_ip = self.dut.expect(re.compile(r'ETHIP: (\d+[.]\d+[.]\d+[.]\d+)\r'))[0]
         rssi = 0
         return dut_ip, rssi
 
