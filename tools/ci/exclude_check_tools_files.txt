@@ -11,6 +11,7 @@ tools/check_term.py
 tools/check_python_dependencies.py
 tools/python_version_checker.py
 tools/generate_debug_prefix_map.py
+tools/ci/astyle-rules.yml
 tools/ci/checkout_project_ref.py
 tools/ci/ci_fetch_submodule.py
 tools/ci/ci_get_mr_info.py
@@ -31,7 +32,6 @@ tools/ci/push_to_github.sh
 tools/ci/python_packages/wifi_tools.py
 tools/ci/utils.sh
 tools/eclipse-code-style.xml
-tools/format-minimal.sh
 tools/format.sh
 tools/mocks/**/*
 tools/set-submodules-to-github.sh

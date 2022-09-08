@@ -202,3 +202,9 @@ repos:
     hooks:
       - id: conventional-precommit-linter
         stages: [commit-msg]
+  - repo: https://github.com/espressif/astyle_py.git
+    rev: v1.0.2
+    hooks:
+      - id: astyle_py
+        # If you are modifying astyle version, update tools/format.sh as well
+        args: ['--astyle-version=3.4.7', '--rules=tools/ci/astyle_rules.yml']
