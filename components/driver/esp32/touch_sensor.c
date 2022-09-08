@@ -427,7 +427,7 @@ esp_err_t touch_pad_set_filter_period(uint32_t new_period_ms)
     esp_err_t ret = ESP_OK;
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     ESP_GOTO_ON_ERROR(esp_timer_stop(s_touch_pad_filter->timer), err, TOUCH_TAG, "failed to stop the timer");
-    ESP_GOTO_ON_ERROR(esp_timer_start_periodic(s_touch_pad_filter->timer, new_period_ms), err, TOUCH_TAG, "failed to start the timer");
+    ESP_GOTO_ON_ERROR(esp_timer_start_periodic(s_touch_pad_filter->timer, new_period_ms * 1000), err, TOUCH_TAG, "failed to start the timer");
     s_touch_pad_filter->period = new_period_ms;
 err:
     xSemaphoreGive(rtc_touch_mux);
@@ -479,7 +479,8 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms)
             goto err_no_mem;
         }
         s_touch_pad_filter->period = filter_period_ms;
-        esp_timer_start_periodic(s_touch_pad_filter->timer, filter_period_ms);
+        touch_pad_filter_cb(NULL); // Trigger once immediately to get the initial raw value
+        esp_timer_start_periodic(s_touch_pad_filter->timer, filter_period_ms * 1000);
     }
     xSemaphoreGive(rtc_touch_mux);
 
