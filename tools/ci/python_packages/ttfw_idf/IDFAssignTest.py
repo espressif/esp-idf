@@ -85,7 +85,7 @@ class IDFAssignTest(CIAssignTest.AssignTest):
 
     def search_cases(self, case_filter=None):
         _filter = deepcopy(case_filter) if case_filter else {}
-        if 'NIGHTLY_RUN' in os.environ:
+        if 'NIGHTLY_RUN' in os.environ or 'BOT_LABEL_NIGHTLY_RUN' in os.environ:
             _filter.update({'nightly_run': True})
         return super().search_cases(_filter)
 
