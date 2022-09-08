@@ -1990,7 +1990,7 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
         }
 #if (BLE_PRIVACY_SPT == TRUE )
         peer_addr_type = bda_type;
-        match = btm_identity_addr_to_random_pseudo (bda, &bda_type, TRUE);
+        match = btm_identity_addr_to_random_pseudo (bda, &bda_type, FALSE);
 
         /* possiblly receive connection complete with resolvable random on
            slave role while the device has been paired */
