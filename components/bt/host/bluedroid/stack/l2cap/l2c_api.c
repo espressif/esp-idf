@@ -2342,7 +2342,15 @@ void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param)
             xSemaphoreGive(buff_semaphore);
             break;
         }
-        fixed_queue_t * queue = p_lcb->p_fixed_ccbs[L2CAP_ATT_CID - L2CAP_FIRST_FIXED_CHNL]->xmit_hold_q;
+
+        tL2C_CCB *p_ccb = p_lcb->p_fixed_ccbs[L2CAP_ATT_CID - L2CAP_FIRST_FIXED_CHNL];
+        if(p_ccb == NULL) {
+            L2CAP_TRACE_ERROR("%s not found p_ccb", __func__);
+            xSemaphoreGive(buff_semaphore);
+            break;
+        }
+
+        fixed_queue_t * queue = p_ccb->xmit_hold_q;
         att_max_num = MIN(p_lcb->link_xmit_quota, L2CAP_CACHE_ATT_ACL_NUM);
         if (queue == NULL){
             L2CAP_TRACE_ERROR("%s not found queue", __func__);
