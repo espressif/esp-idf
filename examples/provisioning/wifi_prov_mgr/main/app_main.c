@@ -415,8 +415,13 @@ void app_main(void)
          * This call must be made before starting the provisioning.
          */
         wifi_prov_mgr_endpoint_create("custom-data");
-        /* Start provisioning service */
 
+        /* Do not stop and de-init provisioning even after success,
+         * so that we can restart it later. */
+#ifdef CONFIG_EXAMPLE_REPROVISIONING
+        wifi_prov_mgr_disable_auto_stop(1000);
+#endif
+        /* Start provisioning service */
         ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, (const void *) sec_params, service_name, service_key));
 
         /* The handler for the optional endpoint created above.
@@ -448,11 +453,27 @@ void app_main(void)
     }
 
     /* Wait for Wi-Fi connection */
-    xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_EVENT, false, true, portMAX_DELAY);
+    xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_EVENT, true, true, portMAX_DELAY);
 
     /* Start main application now */
+#if CONFIG_EXAMPLE_REPROVISIONING
     while (1) {
-        ESP_LOGI(TAG, "Hello World!");
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        for (int i = 0; i < 10; i++) {
+            ESP_LOGI(TAG, "Hello World!");
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        }
+
+        /* Resetting provisioning state machine to enable re-provisioning */
+        wifi_prov_mgr_reset_sm_state_for_reprovision();
+
+        /* Wait for Wi-Fi connection */
+        xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_EVENT, true, true, portMAX_DELAY);
     }
+#else
+     while (1) {
+         ESP_LOGI(TAG, "Hello World!");
+         vTaskDelay(1000 / portTICK_PERIOD_MS);
+     }
+#endif
+
 }
