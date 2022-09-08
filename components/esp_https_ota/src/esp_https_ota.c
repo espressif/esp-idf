@@ -163,7 +163,7 @@ static esp_err_t _ota_write(esp_https_ota_t *https_ota_handle, const void *buffe
 static bool is_server_verification_enabled(esp_https_ota_config_t *ota_config) {
     return  (ota_config->http_config->cert_pem
             || ota_config->http_config->use_global_ca_store
-            || !(ota_config->http_config->crt_bundle_attach == NULL));
+            || ota_config->http_config->crt_bundle_attach != NULL);
 }
 
 esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle)
@@ -178,13 +178,15 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
         return ESP_ERR_INVALID_ARG;
     }
 
-#if !CONFIG_OTA_ALLOW_HTTP
     if (!is_server_verification_enabled(ota_config)) {
+#if CONFIG_OTA_ALLOW_HTTP
+        ESP_LOGW(TAG, "Continuing with insecure option because CONFIG_OTA_ALLOW_HTTP is set.");
+#else
         ESP_LOGE(TAG, "No option for server verification is enabled in esp_http_client config.");
         *handle = NULL;
         return ESP_ERR_INVALID_ARG;
-    }
 #endif
+    }
 
     esp_https_ota_t *https_ota_handle = calloc(1, sizeof(esp_https_ota_t));
     if (!https_ota_handle) {
