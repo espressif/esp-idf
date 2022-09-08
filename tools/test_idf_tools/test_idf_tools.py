@@ -5,6 +5,7 @@
 
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -111,13 +112,13 @@ class TestUsage(unittest.TestCase):
         if tool_archive_name is None:
             tool_archive_name = tool
         self.assertIn('Installing %s@' % tool + tool_version, output)
-        self.assertIn('Downloading %s' % tool_archive_name, output)
+        self.assertRegex(output, re.compile(rf'Downloading \S+/{tool_archive_name}'))
 
     def assert_tool_not_installed(self, output, tool, tool_version, tool_archive_name=None):
         if tool_archive_name is None:
             tool_archive_name = tool
         self.assertNotIn('Installing %s@' % tool + tool_version, output)
-        self.assertNotIn('Downloading %s' % tool_archive_name, output)
+        self.assertNotRegex(output, re.compile(rf'Downloading \S+/{tool_archive_name}'))
 
     def run_idf_tools_with_action(self, action):
         output_stream = StringIO()
@@ -152,7 +153,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_installed(output, XTENSA_ESP32S3_ELF, XTENSA_ESP32S3_ELF_VERSION)
         self.assert_tool_installed(output, ESP32ULP, ESP32ULP_VERSION, ESP32ULP_ARCHIVE)
         self.assert_tool_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -190,7 +191,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_not_installed(output, XTENSA_ESP32S2_ELF, XTENSA_ESP32S2_ELF_VERSION)
         self.assert_tool_not_installed(output, XTENSA_ESP32S3_ELF, XTENSA_ESP32S3_ELF_VERSION)
         self.assert_tool_not_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -224,7 +225,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_not_installed(output, XTENSA_ESP32S3_ELF, XTENSA_ESP32S3_ELF_VERSION)
         self.assert_tool_not_installed(output, ESP32ULP, ESP32ULP_VERSION, ESP32ULP_ARCHIVE)
         self.assert_tool_not_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -257,7 +258,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_not_installed(output, XTENSA_ESP32S3_ELF, XTENSA_ESP32S3_ELF_VERSION)
         self.assert_tool_not_installed(output, ESP32ULP, ESP32ULP_VERSION, ESP32ULP_ARCHIVE)
         self.assert_tool_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -291,7 +292,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_not_installed(output, XTENSA_ESP32S2_ELF, XTENSA_ESP32S2_ELF_VERSION)
         self.assert_tool_not_installed(output, ESP32ULP, ESP32ULP_VERSION, ESP32ULP_ARCHIVE)
         self.assert_tool_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -317,6 +318,13 @@ class TestUsage(unittest.TestCase):
 
 class TestMaintainer(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        idf_path = os.getenv('IDF_PATH')
+        cls.tools_old = os.path.join(idf_path, 'tools/tools.json')
+        cls.tools_new = os.path.join(idf_path, 'tools/tools.new.json')
+        cls.test_tool_name = 'xtensa-esp32-elf'
+
     def test_validation(self):
         idf_tools.main(['validate'])
 
@@ -325,11 +333,87 @@ class TestMaintainer(unittest.TestCase):
         idf_path = os.getenv('IDF_PATH')
         if not idf_path:
             self.fail('IDF_PATH needs to be set to run this test')
-        with open(os.path.join(idf_path, 'tools/tools.json'), 'r') as f:
+        with open(self.tools_old, 'r') as f:
             json_old = f.read()
-        with open(os.path.join(idf_path, 'tools/tools.new.json'), 'r') as f:
+        with open(self.tools_new, 'r') as f:
             json_new = f.read()
         self.assertEqual(json_old, json_new, "Please check 'tools/tools.new.json' to find a cause!")
+
+    def add_version_get_expected_json(self, addition_file, replace=False):
+        with open(self.tools_old, 'r') as f:
+            expected_json = json.load(f)
+        with open(addition_file, 'r') as f:
+            addition_json = json.load(f)
+        for tool in expected_json['tools']:
+            if tool['name'] == self.test_tool_name:
+                if replace:
+                    tool['versions'] = [addition_json]
+                else:
+                    tool['versions'].append(addition_json)
+                return expected_json
+        return None
+
+    def test_add_version_artifact_addition(self):
+        filenames = []
+        with open('add_version/artifact_input.json', 'r') as f:
+            add_tools_info = json.load(f)
+        for tool in add_tools_info:
+            filenames.append(tool['filename'])
+            with open(tool['filename'], 'w') as f:
+                self.addCleanup(os.remove, f.name)
+                f.write('1' * tool['size'])
+        idf_tools.main(
+            [
+                'add-version',
+                '--tool',
+                self.test_tool_name,
+                '--url-prefix',
+                'http://test.com',
+                '--version',
+                'test',
+                '--artifact-file'
+            ] + filenames
+        )
+        expected_json = self.add_version_get_expected_json('add_version/artifact_expected_addition.json')
+        with open(self.tools_new, 'r') as f1:
+            self.assertEqual(json.load(f1), expected_json, "Please check 'tools/tools.new.json' to find a cause!")
+
+    def test_add_version_checksum_addition(self):
+        idf_tools.main(
+            [
+                'add-version',
+                '--tool',
+                self.test_tool_name,
+                '--url-prefix',
+                'http://test.com',
+                '--version',
+                'test',
+                '--checksum-file',
+                'add_version/checksum.sha256',
+            ]
+        )
+        expected_json = self.add_version_get_expected_json('add_version/checksum_expected_addition.json')
+        with open(self.tools_new, 'r') as f1:
+            self.assertEqual(json.load(f1), expected_json, "Please check 'tools/tools.new.json' to find a cause!")
+
+    def test_add_version_checksum_with_override(self):
+        idf_tools.main(
+            [
+                'add-version',
+                '--tool',
+                self.test_tool_name,
+                '--url-prefix',
+                'http://test.com',
+                '--version',
+                'test',
+                '--override',
+                '--checksum-file',
+                'add_version/checksum.sha256'
+            ]
+        )
+        expected_json = self.add_version_get_expected_json('add_version/checksum_expected_override.json', True)
+        with open(self.tools_new, 'r') as f1:
+            self.assertEqual(json.load(f1), expected_json, "Please check 'tools/tools.new.json' to find a cause!")
 
 
 if __name__ == '__main__':

@@ -60,8 +60,9 @@ except RuntimeError as e:
     print(e)
     raise SystemExit(1)
 
-from typing import IO, Any, Callable, Optional, Tuple, Union  # noqa: F401
+from typing import IO, Any, Callable, Iterator, Optional, Tuple, Union  # noqa: F401
 from urllib.error import ContentTooShortError
+from urllib.parse import urljoin, urlparse
 from urllib.request import urlopen
 # the following is only for typing annotation
 from urllib.response import addinfourl  # noqa: F401
@@ -104,46 +105,87 @@ PLATFORM_LINUX_ARMHF = 'linux-armhf'
 PLATFORM_LINUX_ARM64 = 'linux-arm64'
 
 
-# Mappings from various other names these platforms are known as, to the identifiers above.
-# This includes strings produced from "platform.system() + '-' + platform.machine()", see PYTHON_PLATFORM
-# definition above.
-# This list also includes various strings used in release archives of xtensa-esp32-elf-gcc, OpenOCD, etc.
-PLATFORM_FROM_NAME = {
-    # Windows
-    PLATFORM_WIN32: PLATFORM_WIN32,
-    'Windows-i686': PLATFORM_WIN32,
-    'Windows-x86': PLATFORM_WIN32,
-    PLATFORM_WIN64: PLATFORM_WIN64,
-    'Windows-x86_64': PLATFORM_WIN64,
-    'Windows-AMD64': PLATFORM_WIN64,
-    # macOS
-    PLATFORM_MACOS: PLATFORM_MACOS,
-    'osx': PLATFORM_MACOS,
-    'darwin': PLATFORM_MACOS,
-    'Darwin-x86_64': PLATFORM_MACOS,
-    PLATFORM_MACOS_ARM64: PLATFORM_MACOS_ARM64,
-    'Darwin-arm64': PLATFORM_MACOS_ARM64,
-    # Linux
-    PLATFORM_LINUX64: PLATFORM_LINUX64,
-    'linux64': PLATFORM_LINUX64,
-    'Linux-x86_64': PLATFORM_LINUX64,
-    'FreeBSD-amd64': PLATFORM_LINUX64,
-    PLATFORM_LINUX32: PLATFORM_LINUX32,
-    'linux32': PLATFORM_LINUX32,
-    'Linux-i686': PLATFORM_LINUX32,
-    'FreeBSD-i386': PLATFORM_LINUX32,
-    PLATFORM_LINUX_ARM32: PLATFORM_LINUX_ARM32,
-    'Linux-arm': PLATFORM_LINUX_ARM32,
-    'Linux-armv7l': PLATFORM_LINUX_ARM32,
-    PLATFORM_LINUX_ARMHF: PLATFORM_LINUX_ARMHF,
-    PLATFORM_LINUX_ARM64: PLATFORM_LINUX_ARM64,
-    'Linux-arm64': PLATFORM_LINUX_ARM64,
-    'Linux-aarch64': PLATFORM_LINUX_ARM64,
-    'Linux-armv8l': PLATFORM_LINUX_ARM64,
-}
+class Platforms:
+    # Mappings from various other names these platforms are known as, to the identifiers above.
+    # This includes strings produced from "platform.system() + '-' + platform.machine()", see PYTHON_PLATFORM
+    # definition above.
+    # This list also includes various strings used in release archives of xtensa-esp32-elf-gcc, OpenOCD, etc.
+    PLATFORM_FROM_NAME = {
+        # Windows
+        PLATFORM_WIN32: PLATFORM_WIN32,
+        'Windows-i686': PLATFORM_WIN32,
+        'Windows-x86': PLATFORM_WIN32,
+        'i686-w64-mingw32': PLATFORM_WIN32,
+        PLATFORM_WIN64: PLATFORM_WIN64,
+        'Windows-x86_64': PLATFORM_WIN64,
+        'Windows-AMD64': PLATFORM_WIN64,
+        'x86_64-w64-mingw32': PLATFORM_WIN64,
+        # macOS
+        PLATFORM_MACOS: PLATFORM_MACOS,
+        'osx': PLATFORM_MACOS,
+        'darwin': PLATFORM_MACOS,
+        'Darwin-x86_64': PLATFORM_MACOS,
+        'x86_64-apple-darwin': PLATFORM_MACOS,
+        PLATFORM_MACOS_ARM64: PLATFORM_MACOS_ARM64,
+        'Darwin-arm64': PLATFORM_MACOS_ARM64,
+        'aarch64-apple-darwin': PLATFORM_MACOS_ARM64,
+        'arm64-apple-darwin': PLATFORM_MACOS_ARM64,
+        # Linux
+        PLATFORM_LINUX64: PLATFORM_LINUX64,
+        'linux64': PLATFORM_LINUX64,
+        'Linux-x86_64': PLATFORM_LINUX64,
+        'FreeBSD-amd64': PLATFORM_LINUX64,
+        'x86_64-linux-gnu': PLATFORM_LINUX64,
+        PLATFORM_LINUX32: PLATFORM_LINUX32,
+        'linux32': PLATFORM_LINUX32,
+        'Linux-i686': PLATFORM_LINUX32,
+        'FreeBSD-i386': PLATFORM_LINUX32,
+        'i586-linux-gnu': PLATFORM_LINUX32,
+        PLATFORM_LINUX_ARM64: PLATFORM_LINUX_ARM64,
+        'Linux-arm64': PLATFORM_LINUX_ARM64,
+        'Linux-aarch64': PLATFORM_LINUX_ARM64,
+        'Linux-armv8l': PLATFORM_LINUX_ARM64,
+        'aarch64': PLATFORM_LINUX_ARM64,
+        PLATFORM_LINUX_ARMHF: PLATFORM_LINUX_ARMHF,
+        'arm-linux-gnueabihf': PLATFORM_LINUX_ARMHF,
+        PLATFORM_LINUX_ARM32: PLATFORM_LINUX_ARM32,
+        'arm-linux-gnueabi': PLATFORM_LINUX_ARM32,
+        'Linux-armv7l': PLATFORM_LINUX_ARM32,
+        'Linux-arm': PLATFORM_LINUX_ARM32,
+    }
 
-UNKNOWN_PLATFORM = 'unknown'
-CURRENT_PLATFORM = PLATFORM_FROM_NAME.get(PYTHON_PLATFORM, UNKNOWN_PLATFORM)
+    @staticmethod
+    def get(platform_alias):  # type: (Optional[str]) -> Optional[str]
+        if platform_alias is None:
+            return None
+
+        platform_name = Platforms.PLATFORM_FROM_NAME.get(platform_alias, None)
+
+        # ARM platform may run on armhf hardware but having armel installed packages.
+        # To avoid possible armel/armhf libraries mixing need to define user's
+        # packages architecture to use the same
+        # See note section in https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html#index-mfloat-abi
+        if platform_name in (PLATFORM_LINUX_ARM32, PLATFORM_LINUX_ARMHF) and 'arm' in platform.machine():
+            # suppose that installed python was built with a right ABI
+            with open(sys.executable, 'rb') as f:
+                if int.from_bytes(f.read(4), sys.byteorder) != int.from_bytes(b'\x7fELF', sys.byteorder):
+                    return platform_name  # ELF magic not found. Use default platform name from PLATFORM_FROM_NAME
+                f.seek(36)  # seek to e_flags (https://man7.org/linux/man-pages/man5/elf.5.html)
+                e_flags = int.from_bytes(f.read(4), sys.byteorder)
+                platform_name = PLATFORM_LINUX_ARMHF if e_flags & 0x400 else PLATFORM_LINUX_ARM32
+        return platform_name
+
+    @staticmethod
+    def get_by_filename(file_name):  # type: (str) -> Optional[str]
+        found_alias = ''
+        for platform_alias in Platforms.PLATFORM_FROM_NAME:
+            # Find the longest alias which matches with file name to avoid mismatching
+            if platform_alias in file_name and len(found_alias) < len(platform_alias):
+                found_alias = platform_alias
+        return Platforms.get(found_alias)
+
+
+CURRENT_PLATFORM = Platforms.get(PYTHON_PLATFORM)
 
 EXPORT_SHELL = 'shell'
 EXPORT_KEY_VALUE = 'key-value'
@@ -368,6 +410,32 @@ def urlretrieve_ctx(url, filename, reporthook=None, data=None, context=None):
     return result
 
 
+def download(url, destination):  # type: (str, str) -> None
+    info(f'Downloading {url}')
+    info(f'Destination: {destination}')
+    try:
+        ctx = None
+        # For dl.espressif.com, add the ISRG x1 root certificate.
+        # This works around the issue with outdated certificate stores in some installations.
+        if 'dl.espressif.com' in url:
+            try:
+                ctx = ssl.create_default_context()
+                ctx.load_verify_locations(cadata=ISRG_X1_ROOT_CERT)
+            except AttributeError:
+                # no ssl.create_default_context or load_verify_locations cadata argument
+                # in Python <=2.7.8
+                pass
+
+        urlretrieve_ctx(url, destination, report_progress if not global_non_interactive else None, context=ctx)
+        sys.stdout.write('\rDone\n')
+    except Exception as e:
+        # urlretrieve could throw different exceptions, e.g. IOError when the server is down
+        # Errors are ignored because the downloaded file is checked a couple of lines later.
+        warn('Download failure {}'.format(e))
+    finally:
+        sys.stdout.flush()
+
+
 # Sometimes renaming a directory on Windows (randomly?) causes a PermissionError.
 # This is confirmed to be a workaround:
 # https://github.com/espressif/esp-idf/issues/3819#issuecomment-515167118
@@ -466,17 +534,16 @@ class IDFToolVersion(object):
     def add_download(self, platform_name, url, size, sha256):  # type: (str, str, int, str) -> None
         self.downloads[platform_name] = IDFToolDownload(platform_name, url, size, sha256)
 
-    def get_download_for_platform(self, platform_name):  # type: (str) -> Optional[IDFToolDownload]
-        if platform_name in PLATFORM_FROM_NAME.keys():
-            platform_name = PLATFORM_FROM_NAME[platform_name]
-        if platform_name in self.downloads.keys():
+    def get_download_for_platform(self, platform_name):  # type: (Optional[str]) -> Optional[IDFToolDownload]
+        platform_name = Platforms.get(platform_name)
+        if platform_name and platform_name in self.downloads.keys():
             return self.downloads[platform_name]
         if 'any' in self.downloads.keys():
             return self.downloads['any']
         return None
 
     def compatible_with_platform(self, platform_name=PYTHON_PLATFORM):
-        # type: (str) -> bool
+        # type: (Optional[str]) -> bool
         return self.get_download_for_platform(platform_name) is not None
 
     def get_supported_platforms(self):  # type: () -> set[str]
@@ -508,7 +575,7 @@ class IDFTool(object):
         # type: (str, str, str, str, str, list[str], str, list[str], Optional[str], int) -> None
         self.name = name
         self.description = description
-        self.versions = OrderedDict()  # type: dict[str, IDFToolVersion]
+        self.drop_versions()
         self.version_in_path = None  # type: Optional[str]
         self.versions_installed = []  # type: list[str]
         if version_regex_replace is None:
@@ -528,11 +595,14 @@ class IDFTool(object):
     def _update_current_options(self):  # type: () -> None
         self._current_options = IDFToolOptions(*self.options)
         for override in self.platform_overrides:
-            if self._platform not in override['platforms']:
+            if self._platform and self._platform not in override['platforms']:
                 continue
             override_dict = override.copy()
             del override_dict['platforms']
             self._current_options = self._current_options._replace(**override_dict)  # type: ignore
+
+    def drop_versions(self):  # type: () -> None
+        self.versions = OrderedDict()  # type: dict[str, IDFToolVersion]
 
     def add_version(self, version):  # type: (IDFToolVersion) -> None
         assert type(version) is IDFToolVersion
@@ -688,29 +758,9 @@ class IDFTool(object):
                 return
 
         downloaded = False
+        local_temp_path = local_path + '.tmp'
         for retry in range(DOWNLOAD_RETRY_COUNT):
-            local_temp_path = local_path + '.tmp'
-            info('Downloading {} to {}'.format(archive_name, local_temp_path))
-            try:
-                ctx = None
-                # For dl.espressif.com, add the ISRG x1 root certificate.
-                # This works around the issue with outdated certificate stores in some installations.
-                if 'dl.espressif.com' in url:
-                    try:
-                        ctx = ssl.create_default_context()
-                        ctx.load_verify_locations(cadata=ISRG_X1_ROOT_CERT)
-                    except AttributeError:
-                        # no ssl.create_default_context or load_verify_locations cadata argument
-                        # in Python <=2.7.8
-                        pass
-
-                urlretrieve_ctx(url, local_temp_path, report_progress if not global_non_interactive else None, context=ctx)
-                sys.stdout.write('\rDone\n')
-            except Exception as e:
-                # urlretrieve could throw different exceptions, e.g. IOError when the server is down
-                # Errors are ignored because the downloaded file is checked a couple of lines later.
-                warn('Download failure {}'.format(e))
-            sys.stdout.flush()
+            download(url, local_temp_path)
             if not os.path.isfile(local_temp_path) or not self.check_download_file(download_obj, local_temp_path):
                 warn('Failed to download {} to {}'.format(url, local_temp_path))
                 continue
@@ -873,7 +923,7 @@ class IDFTool(object):
             for platform_id, platform_dict in version_dict.items():  # type: ignore
                 if platform_id in ['name', 'status']:
                     continue
-                if platform_id not in PLATFORM_FROM_NAME.keys():
+                if Platforms.get(platform_id) is None:
                     raise RuntimeError('invalid platform %s for tool %s version %s' %
                                        (platform_id, tool_name, version))
 
@@ -1361,10 +1411,10 @@ def action_download(args):  # type: ignore
     if 'required' in tools_spec:
         targets = clean_targets(args.targets)
 
-    if args.platform not in PLATFORM_FROM_NAME:
+    platform = Platforms.get(args.platform)
+    if platform is None:
         fatal('unknown platform: {}' % args.platform)
         raise SystemExit(1)
-    platform = PLATFORM_FROM_NAME[args.platform]
 
     tools_info_for_platform = OrderedDict()
     for name, tool_obj in tools_info.items():
@@ -1403,12 +1453,12 @@ def action_download(args):  # type: ignore
         if tool_version is None:
             tool_version = tool_obj.get_recommended_version()
         if tool_version is None:
-            fatal('tool {} not found for {} platform'.format(tool_name, platform))
+            fatal('tool {} not found for {} platform'.format(tool_name, args.platform))
             raise SystemExit(1)
         tool_spec = '{}@{}'.format(tool_name, tool_version)
 
         info('Downloading {}'.format(tool_spec))
-        apply_url_mirrors(args, tool_obj.versions[tool_version].get_download_for_platform(platform))
+        apply_url_mirrors(args, tool_obj.versions[tool_version].get_download_for_platform(args.platform))
 
         tool_obj.download(tool_version)
 
@@ -1577,6 +1627,76 @@ def action_install_python_env(args):  # type: ignore
     subprocess.check_call(run_args, stdout=sys.stdout, stderr=sys.stderr, env=env_copy)
 
 
+class ChecksumCalculator():
+    """
+    A class used to get size/checksum/basename of local artifact files.
+    """
+    def __init__(self, files):  # type: (list[str]) -> None
+        self.files = files
+
+    def __iter__(self):  # type: () -> Iterator[Tuple[int, str, str]]
+        for f in self.files:
+            yield (*get_file_size_sha256(f), os.path.basename(f))
+
+
+class ChecksumParsingError(RuntimeError):
+    pass
+
+
+class ChecksumFileParser():
+    """
+    A class used to get size/sha256/filename of artifact using checksum-file with format:
+        # <artifact-filename>: <size> bytes
+        <sha256sum-string> *<artifact-filename>
+        ... (2 lines for every artifact) ...
+    """
+    def __init__(self, tool_name, url):  # type: (str, str) -> None
+        self.tool_name = tool_name
+
+        sha256_file_tmp = os.path.join(global_idf_tools_path or '', 'tools', 'add-version.sha256.tmp')
+        sha256_file = os.path.abspath(url)
+
+        # download sha256 file if URL presented
+        if urlparse(url).scheme:
+            sha256_file = sha256_file_tmp
+            download(url, sha256_file)
+
+        with open(sha256_file, 'r') as f:
+            self.checksum = f.read().splitlines()
+
+        # remove temp file
+        if os.path.isfile(sha256_file_tmp):
+            os.remove(sha256_file_tmp)
+
+    def parseLine(self, regex, line):  # type: (str, str) -> str
+        match = re.search(regex, line)
+        if not match:
+            raise ChecksumParsingError(f'Can not parse line "{line}" with regex "{regex}"')
+        return match.group(1)
+
+    # parse checksum file with formatting used by crosstool-ng, gdb, ... releases
+    # e.g. https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/crosstool-NG-esp-2021r2-checksum.sha256
+    def __iter__(self):  # type: () -> Iterator[Tuple[int, str, str]]
+        try:
+            for bytes_str, hash_str in zip(self.checksum[0::2], self.checksum[1::2]):
+                bytes_filename = self.parseLine(r'^# (\S*):', bytes_str)
+                hash_filename = self.parseLine(r'^\S* \*(\S*)', hash_str)
+                if hash_filename != bytes_filename:
+                    fatal('filename in hash-line and in bytes-line are not the same')
+                    raise SystemExit(1)
+                # crosstool-ng checksum file contains info about few tools
+                # e.g.: "xtensa-esp32-elf", "xtensa-esp32s2-elf"
+                # filter records for file by tool_name to avoid mismatch
+                if not hash_filename.startswith(self.tool_name):
+                    continue
+                size = self.parseLine(r'^# \S*: (\d*) bytes', bytes_str)
+                sha256 = self.parseLine(r'^(\S*) ', hash_str)
+                yield int(size), sha256, hash_filename
+        except (TypeError, AttributeError) as err:
+            fatal(f'Error while parsing, check checksum file ({err})')
+            raise SystemExit(1)
+
+
 def action_add_version(args):  # type: ignore
     tools_info = load_tools_info()
     tool_name = args.tool
@@ -1587,26 +1707,24 @@ def action_add_version(args):  # type: ignore
                            TODO_MESSAGE, TODO_MESSAGE, [TODO_MESSAGE], TODO_MESSAGE)
         tools_info[tool_name] = tool_obj
     version = args.version
+    version_status = IDFToolVersion.STATUS_SUPPORTED
+    if args.override and len(tool_obj.versions):
+        tool_obj.drop_versions()
+        version_status = IDFToolVersion.STATUS_RECOMMENDED
     version_obj = tool_obj.versions.get(version)
-    if version not in tool_obj.versions:
+    if not version_obj:
         info('Creating new version {}'.format(version))
-        version_obj = IDFToolVersion(version, IDFToolVersion.STATUS_SUPPORTED)
+        version_obj = IDFToolVersion(version, version_status)
         tool_obj.versions[version] = version_obj
     url_prefix = args.url_prefix or 'https://%s/' % TODO_MESSAGE
-    for file_path in args.files:
-        file_name = os.path.basename(file_path)
+    checksum_info = ChecksumFileParser(tool_name, args.checksum_file) if args.checksum_file else ChecksumCalculator(args.artifact_file)
+    for file_size, file_sha256, file_name in checksum_info:
         # Guess which platform this file is for
-        found_platform = None
-        for platform_alias, platform_id in PLATFORM_FROM_NAME.items():
-            if platform_alias in file_name:
-                found_platform = platform_id
-                break
+        found_platform = Platforms.get_by_filename(file_name)
         if found_platform is None:
             info('Could not guess platform for file {}'.format(file_name))
             found_platform = TODO_MESSAGE
-        # Get file size and calculate the SHA256
-        file_size, file_sha256 = get_file_size_sha256(file_path)
-        url = url_prefix + file_name
+        url = urljoin(url_prefix, file_name)
         info('Adding download for platform {}'.format(found_platform))
         info('    size:   {}'.format(file_size))
         info('    SHA256: {}'.format(file_sha256))
@@ -1789,7 +1907,10 @@ def main(argv):  # type: (list[str]) -> None
         add_version.add_argument('--tool', help='Tool name to set add a version for', required=True)
         add_version.add_argument('--version', help='Version identifier', required=True)
         add_version.add_argument('--url-prefix', help='String to prepend to file names to obtain download URLs')
-        add_version.add_argument('files', help='File names of the download artifacts', nargs='*')
+        add_version.add_argument('--override', action='store_true', help='Override tool versions with new data')
+        add_version_files_group = add_version.add_mutually_exclusive_group(required=True)
+        add_version_files_group.add_argument('--checksum-file', help='URL or path to local file with checksum/size for artifacts')
+        add_version_files_group.add_argument('--artifact-file', help='File names of the download artifacts', nargs='*')
 
         rewrite = subparsers.add_parser('rewrite', help='Load tools.json, validate, and save the result back into JSON')
         rewrite.add_argument('--output', help='Save new tools.json into this file')
@@ -1840,7 +1961,7 @@ def main(argv):  # type: (list[str]) -> None
                   'Please set IDF_TOOLS_PATH to a directory with an ASCII name, or switch to Python 3.')
             raise SystemExit(1)
 
-    if CURRENT_PLATFORM == UNKNOWN_PLATFORM:
+    if CURRENT_PLATFORM is None:
         fatal('Platform {} appears to be unsupported'.format(PYTHON_PLATFORM))
         raise SystemExit(1)
 

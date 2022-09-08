@@ -391,6 +391,11 @@
             "size": 8033639,
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
           },
+          "linux-armhf": {
+            "sha256": "88967c086a6e71834282d9ae05841ee74dae1815f27807b25cdd3f7775a47101",
+            "size": 8033639,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
+          },
           "macos": {
             "sha256": "a35d9e7a0445247c7fc9dccd3fbc35682f0fafc28beeb10c94b59466317190c4",
             "size": 8872874,
@@ -455,6 +460,11 @@
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-linux-amd64-2.28.51-esp-20191205.tar.gz"
           },
           "linux-armel": {
+            "sha256": "893b213c8f716d455a6efb2b08b6cf1bc34d08b78ee19c31e82ac44b1b45417e",
+            "size": 8034624,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
+          },
+          "linux-armhf": {
             "sha256": "893b213c8f716d455a6efb2b08b6cf1bc34d08b78ee19c31e82ac44b1b45417e",
             "size": 8034624,
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
@@ -540,6 +550,11 @@
             "url": "https://github.com/Kitware/CMake/releases/download/v3.23.1/cmake-3.23.1-linux-aarch64.tar.gz"
           },
           "linux-armel": {
+            "sha256": "aa6079237e16cc3b389479b2f7279d07e57f6aedad520e2b3014ef97fb906466",
+            "size": 19330381,
+            "url": "https://dl.espressif.com/dl/cmake/cmake-3.23.1-Linux-armv7l.tar.gz"
+          },
+          "linux-armhf": {
             "sha256": "aa6079237e16cc3b389479b2f7279d07e57f6aedad520e2b3014ef97fb906466",
             "size": 19330381,
             "url": "https://dl.espressif.com/dl/cmake/cmake-3.23.1-Linux-armv7l.tar.gz"
