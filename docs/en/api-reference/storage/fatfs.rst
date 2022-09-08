@@ -144,4 +144,4 @@ It is a reverse tool of (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`), i.e.
 
 Usage::
 
-    ./fatfsparse.py [-h] [--long-name-support] [--wear-leveling] fatfs_image.img
+    ./fatfsparse.py [-h] [--wear-leveling] fatfs_image.img

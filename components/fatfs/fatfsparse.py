@@ -55,9 +55,8 @@ def traverse_folder_tree(directory_bytes_: bytes,
         try:
             obj_: dict = Entry.ENTRY_FORMAT_SHORT_NAME.parse(
                 directory_bytes_[obj_address_: obj_address_ + FATDefaults.ENTRY_SIZE])
-        except (construct.core.ConstError, UnicodeDecodeError) as e:
-            if not args.long_name_support:
-                raise e
+        except (construct.core.ConstError, UnicodeDecodeError):
+            args.long_name_support = True
             continue
 
         if obj_['DIR_Attr'] == 0:  # empty entry
@@ -90,7 +89,7 @@ if __name__ == '__main__':
                                  help='Path to the image that will be parsed and extracted.')
     argument_parser.add_argument('--long-name-support',
                                  action='store_true',
-                                 help='Set flag to enable long names support.')
+                                 help=argparse.SUPPRESS)
 
     argument_parser.add_argument('--wear-leveling',
                                  action='store_true',
