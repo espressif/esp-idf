@@ -23,7 +23,3 @@ idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS ${priv_include}
                        PRIV_REQUIRES ${priv_require}
                        )
-
-if(CONFIG_USB_OTG_SUPPORTED)
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
-endif()

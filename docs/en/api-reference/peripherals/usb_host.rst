@@ -1,9 +1,6 @@
 USB Host
 ========
 
-.. warning::
-    The USB Host Library API is a beta version thus is subject to change.
-
 The document provides information regarding the USB Host Library. This document is split into the following sections:
 
 .. contents:: Sections
@@ -365,14 +362,15 @@ The USB Host Stack provides a number examples that implement host class drivers 
 CDC-ACM
 """""""
 
-* A host class driver for the Communication Device Class (Abstract Control Model) is currently implemented as an example component (found via :example:`peripherals/usb/host/cdc/common/cdc_acm_host`).
+* A host class driver for the Communication Device Class (Abstract Control Model) is deployed to `IDF component registry <https://components.espressif.com/component/espressif/usb_host_cdc_acm>`__.
 * The :example:`peripherals/usb/host/cdc/cdc_acm_host` example uses the CDC-ACM host driver component to communicate with CDC-ACM devices
 * The :example:`peripherals/usb/host/cdc/cdc_acm_bg96` example uses the CDC-ACM host driver component to communicate with non-compliant CDC-ACM devices (i.e., vendor-specific classes that support a subset of CDC-ACM features) such as the Quectel BG96 modem.
+* The :example:`peripherals/usb/host/cdc/cdc_acm_vcp` example shows how can you extend the CDC-ACM host driver to interface Virtual COM Port devices.
 
 MSC
 """
 
-* A host class driver for the Mass Storage Class (Bulk-Only Transport) is current implemented as an example found via :example:`peripherals/usb/host/msc`.
+* A host class driver for the Mass Storage Class (Bulk-Only Transport) is deployed to `IDF component registry <https://components.espressif.com/component/espressif/usb_host_msc>`__. You can find its example in :example:`peripherals/usb/host/msc`.
 
 
 .. -------------------------------------------------- API Reference ----------------------------------------------------
