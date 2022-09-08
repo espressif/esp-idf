@@ -298,7 +298,7 @@ static void btc_ble_mesh_config_client_callback(esp_ble_mesh_cfg_client_cb_param
     msg.pid = BTC_PID_CONFIG_CLIENT;
     msg.act = act;
 
-    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_cfg_client_cb_param_t),
+    btc_transfer_context(&msg, cb_params, cb_params == NULL ? 0 : sizeof(esp_ble_mesh_cfg_client_cb_param_t),
                          btc_ble_mesh_config_client_copy_req_data);
 }
 
@@ -702,7 +702,7 @@ static void btc_ble_mesh_config_server_callback(esp_ble_mesh_cfg_server_cb_param
     msg.pid = BTC_PID_CONFIG_SERVER;
     msg.act = act;
 
-    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_cfg_server_cb_param_t), NULL);
+    btc_transfer_context(&msg, cb_params, cb_params == NULL ? 0 : sizeof(esp_ble_mesh_cfg_server_cb_param_t), NULL);
 }
 
 void bt_mesh_config_server_cb_evt_to_btc(uint8_t evt_type, struct bt_mesh_model *model,

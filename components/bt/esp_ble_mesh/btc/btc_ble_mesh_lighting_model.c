@@ -212,7 +212,7 @@ static void btc_ble_mesh_lighting_client_callback(esp_ble_mesh_light_client_cb_p
     msg.pid = BTC_PID_LIGHTING_CLIENT;
     msg.act = act;
 
-    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_light_client_cb_param_t),
+    btc_transfer_context(&msg, cb_params, cb_params == NULL ? 0 : sizeof(esp_ble_mesh_light_client_cb_param_t),
                          btc_ble_mesh_lighting_client_copy_req_data);
 }
 
@@ -497,7 +497,7 @@ static void btc_ble_mesh_lighting_server_callback(esp_ble_mesh_lighting_server_c
     msg.pid = BTC_PID_LIGHTING_SERVER;
     msg.act = act;
 
-    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_lighting_server_cb_param_t),
+    btc_transfer_context(&msg, cb_params, cb_params == NULL ? 0 : sizeof(esp_ble_mesh_lighting_server_cb_param_t),
                          btc_ble_mesh_lighting_server_copy_req_data);
 }
 
