@@ -9,6 +9,7 @@
 #include "esp_log.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
+#include "esp_efuse_rtc_calib.h"
 #include "hal/adc_types.h"
 
 int esp_efuse_rtc_calib_get_ver(void)
@@ -16,17 +17,17 @@ int esp_efuse_rtc_calib_get_ver(void)
     uint32_t blk_ver_major = 0;
     ESP_ERROR_CHECK(esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MAJOR, &blk_ver_major, ESP_EFUSE_BLK_VERSION_MAJOR[0]->bit_count)); // IDF-5366
 
-    uint32_t cali_version_v1 = (blk_ver_major == 1) ? 1 : 0;
-    if (!cali_version_v1) {
-        ESP_LOGW("eFuse", "calibration efuse version does not match, set default version: %d", 0);
+    uint32_t cali_version = (blk_ver_major == 1) ? ESP_EFUSE_ADC_CALIB_VER : 0;
+    if (!cali_version) {
+        ESP_LOGW("eFuse", "calibration efuse version does not match, set default version to 0");
     }
 
-    return cali_version_v1;
+    return cali_version;
 }
 
 uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten)
 {
-    assert(version == 1);
+    assert(version == ESP_EFUSE_ADC_CALIB_VER);
     assert(atten < 4);
     assert(adc_unit <= ADC_UNIT_2);
 
@@ -61,7 +62,7 @@ uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int a
 
 esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, int atten, uint32_t *out_digi, uint32_t *out_vol_mv)
 {
-    assert(version == 1);
+    assert(version == ESP_EFUSE_ADC_CALIB_VER);
     assert(atten < 4);
     assert(adc_unit <= ADC_UNIT_2);
 
