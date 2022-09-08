@@ -133,7 +133,6 @@ static inline void adc_ll_digi_output_invert(adc_unit_t adc_n, bool inv_en)
  */
 static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div_b, uint32_t div_a)
 {
-    abort();  //TODO IDF-3908
     HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_apb_adc_clkm_conf, saradc_reg_clkm_div_num, div_num);
     APB_SARADC.saradc_apb_adc_clkm_conf.saradc_reg_clkm_div_b = div_b;
     APB_SARADC.saradc_apb_adc_clkm_conf.saradc_reg_clkm_div_a = div_a;
@@ -316,12 +315,8 @@ static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t c
 __attribute__((always_inline))
 static inline void adc_ll_calibration_init(adc_unit_t adc_n)
 {
-    abort();  //TODO IDF-3908
-    // if (adc_n == ADC_UNIT_1) {
-    //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 1);
-    // } else {
-    //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_DREF_ADDR, 1);
-    // }
+    (void)adc_n;
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 1);
 }
 
 /**
@@ -330,27 +325,18 @@ static inline void adc_ll_calibration_init(adc_unit_t adc_n)
  * @note  Different ADC units and different attenuation options use different calibration data (initial data).
  *
  * @param adc_n ADC index number.
- * @param channel adc channel number.
  * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
  *                     false: Use IO external voltage as calibration voltage.
  */
-static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, adc_channel_t channel, bool internal_gnd)
+static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, bool internal_gnd)
 {
-    abort();  //TODO IDF-3908
-    // /* Enable/disable internal connect GND (for calibration). */
-    // if (adc_n == ADC_UNIT_1) {
-    //     if (internal_gnd) {
-    //         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
-    //     } else {
-    //         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
-    //     }
-    // } else {
-    //     if (internal_gnd) {
-    //         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 1);
-    //     } else {
-    //         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
-    //     }
-    // }
+    (void)adc_n;
+    /* Enable/disable internal connect GND (for calibration). */
+    if (internal_gnd) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+    }
 }
 
 /**
@@ -360,12 +346,8 @@ static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, adc_channel_t ch
  */
 static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
 {
-    abort();  //TODO IDF-3908
-    // if (adc_n == ADC_UNIT_1) {
-    //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
-    // } else {
-    //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
-    // }
+    (void)adc_n;
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
 }
 
 /**
@@ -378,16 +360,11 @@ static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
 __attribute__((always_inline))
 static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param)
 {
-    abort();  //TODO IDF-3908
-    // uint8_t msb = param >> 8;
-    // uint8_t lsb = param & 0xFF;
-    // if (adc_n == ADC_UNIT_1) {
-    //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
-    //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
-    // } else {
-    //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
-    //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
-    // }
+    (void)adc_n;
+    uint8_t msb = param >> 8;
+    uint8_t lsb = param & 0xFF;
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
 }
 
 /*---------------------------------------------------------------
