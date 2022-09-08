@@ -37,6 +37,8 @@ const static char *TAG = "EXAMPLE";
 #endif
 #endif
 
+#define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_11
+
 static int adc_raw[2][10];
 static int voltage[2][10];
 static bool example_adc_calibration_init(adc_unit_t unit, adc_atten_t atten, adc_cali_handle_t *out_handle);
@@ -55,14 +57,14 @@ void app_main(void)
     //-------------ADC1 Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_11,
+        .atten = EXAMPLE_ADC_ATTEN,
     };
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN0, &config));
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN1, &config));
 
     //-------------ADC1 Calibration Init---------------//
     adc_cali_handle_t adc1_cali_handle = NULL;
-    bool do_calibration1 = example_adc_calibration_init(ADC_UNIT_1, ADC_ATTEN_DB_11, &adc1_cali_handle);
+    bool do_calibration1 = example_adc_calibration_init(ADC_UNIT_1, EXAMPLE_ADC_ATTEN, &adc1_cali_handle);
 
 
 #if (SOC_ADC_PERIPH_NUM >= 2)
@@ -76,7 +78,7 @@ void app_main(void)
 
     //-------------ADC2 Calibration Init---------------//
     adc_cali_handle_t adc2_cali_handle = NULL;
-    bool do_calibration2 = example_adc_calibration_init(ADC_UNIT_2, ADC_ATTEN_DB_11, &adc2_cali_handle);
+    bool do_calibration2 = example_adc_calibration_init(ADC_UNIT_2, EXAMPLE_ADC_ATTEN, &adc2_cali_handle);
 
     //-------------ADC2 Config---------------//
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc2_handle, EXAMPLE_ADC2_CHAN0, &config));
