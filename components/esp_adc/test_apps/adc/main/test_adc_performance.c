@@ -125,7 +125,6 @@ static void s_print_summary(bool figure)
 
 TEST_CASE("ADC1 oneshot raw average / std_deviation", "[adc_oneshot][ignore][manual]")
 {
-    adc_atten_t atten[SOC_ADC_ATTEN_NUM] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_6, ADC_ATTEN_DB_11};
     adc_channel_t channel = TEST_STD_ADC1_CHANNEL0;
     int raw = 0;
     bool print_figure = false;
@@ -145,20 +144,20 @@ TEST_CASE("ADC1 oneshot raw average / std_deviation", "[adc_oneshot][ignore][man
 
     //-------------ADC Calibration Init---------------//
     bool do_calibration = false;
-    adc_cali_handle_t cali_handle[SOC_ADC_ATTEN_NUM] = {};
-    for (int i = 0; i < SOC_ADC_ATTEN_NUM; i++) {
-        do_calibration = test_adc_calibration_init(ADC_UNIT_1, i, ADC_BITWIDTH_DEFAULT, &cali_handle[i]);
+    adc_cali_handle_t cali_handle[TEST_ATTEN_NUMS] = {};
+    for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
+        do_calibration = test_adc_calibration_init(ADC_UNIT_1, g_test_atten[i], ADC_BITWIDTH_DEFAULT, &cali_handle[i]);
     }
     if (!do_calibration) {
         ESP_LOGW(TAG, "calibration fail, jump calibration\n");
     }
 
-    for (int i = 0; i < SOC_ADC_ATTEN_NUM; i++) {
+    for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
 
         //-------------ADC1 Channel Config---------------//
-        config.atten = atten[i];
+        config.atten = g_test_atten[i];
         TEST_ESP_OK(adc_oneshot_config_channel(adc1_handle, channel, &config));
-        ESP_LOGI("TEST_ADC", "Test with atten: %d", atten[i]);
+        ESP_LOGI("TEST_ADC", "Test with atten: %d", g_test_atten[i]);
 
         while (1) {
 
@@ -181,7 +180,7 @@ TEST_CASE("ADC1 oneshot raw average / std_deviation", "[adc_oneshot][ignore][man
     }
 
     TEST_ESP_OK(adc_oneshot_del_unit(adc1_handle));
-    for (int i = 0; i < SOC_ADC_ATTEN_NUM; i++) {
+    for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
         if (cali_handle[i]) {
             test_adc_calibration_deinit(cali_handle[i]);
         }
@@ -192,15 +191,7 @@ TEST_CASE("ADC1 oneshot raw average / std_deviation", "[adc_oneshot][ignore][man
 /*---------------------------------------------------------------
         ADC Calibration Speed
 ---------------------------------------------------------------*/
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define CPU_FREQ_MHZ                    CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define CPU_FREQ_MHZ                    CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define CPU_FREQ_MHZ                    CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define CPU_FREQ_MHZ                    CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
-#endif
+#define CPU_FREQ_MHZ                    CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ
 
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
 #define RECORD_TIME_START()             do {__t1 = esp_cpu_get_cycle_count();}while(0)
@@ -236,9 +227,9 @@ static void s_adc_cali_speed(adc_unit_t unit_id, adc_channel_t channel)
 {
     //-------------ADC Calibration Init---------------//
     bool do_calibration = false;
-    adc_cali_handle_t cali_handle[SOC_ADC_ATTEN_NUM] = {};
-    for (int i = 0; i < SOC_ADC_ATTEN_NUM; i++) {
-        do_calibration = test_adc_calibration_init(unit_id, i, SOC_ADC_RTC_MAX_BITWIDTH, &cali_handle[i]);
+    adc_cali_handle_t cali_handle[TEST_ATTEN_NUMS] = {};
+    for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
+        do_calibration = test_adc_calibration_init(unit_id, g_test_atten[i], SOC_ADC_RTC_MAX_BITWIDTH, &cali_handle[i]);
     }
 
     if (!do_calibration) {
@@ -246,7 +237,6 @@ static void s_adc_cali_speed(adc_unit_t unit_id, adc_channel_t channel)
     } else {
 
         ESP_LOGI(TAG, "CPU FREQ is %dMHz", CPU_FREQ_MHZ);
-        adc_atten_t atten[SOC_ADC_ATTEN_NUM] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_6, ADC_ATTEN_DB_11};
         uint32_t adc_time_record[4][TIMES_PER_ATTEN] = {};
         int adc_raw = 0;
 
@@ -264,12 +254,12 @@ static void s_adc_cali_speed(adc_unit_t unit_id, adc_channel_t channel)
         };
 
         //atten0 ~ atten3
-        for (int i = 0; i < SOC_ADC_ATTEN_NUM; i++) {
+        for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
 
             //-------------ADC Channel Config---------------//
-            config.atten = atten[i];
+            config.atten = g_test_atten[i];
             TEST_ESP_OK(adc_oneshot_config_channel(adc_handle, channel, &config));
-            ESP_LOGI("TEST_ADC", "Test with atten: %d", atten[i]);
+            ESP_LOGI("TEST_ADC", "Test with atten: %d", g_test_atten[i]);
 
             for (int j = 0; j < TIMES_PER_ATTEN; j++) {
                 TEST_ESP_OK(adc_oneshot_read(adc_handle, channel, &adc_raw));
@@ -279,7 +269,7 @@ static void s_adc_cali_speed(adc_unit_t unit_id, adc_channel_t channel)
         }
 
         TEST_ESP_OK(adc_oneshot_del_unit(adc_handle));
-        for (int i = 0; i < SOC_ADC_ATTEN_NUM; i++) {
+        for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
             if (cali_handle[i]) {
                 test_adc_calibration_deinit(cali_handle[i]);
             }
@@ -292,8 +282,11 @@ TEST_CASE("ADC1 Calibration Speed", "[adc][ignore][manual]")
     s_adc_cali_speed(ADC_UNIT_1, ADC1_CALI_SPEED_TEST_CHAN0);
 }
 
+#if (SOC_ADC_PERIPH_NUM >= 2)
 TEST_CASE("ADC2 Calibration Speed", "[adc][ignore][manual]")
 {
     s_adc_cali_speed(ADC_UNIT_2, ADC2_CALI_SPEED_TEST_CHAN0);
 }
+#endif  //#if (SOC_ADC_PERIPH_NUM >= 2)
+
 #endif  //#if CONFIG_IDF_TARGET_ESP32 ||  SOC_ADC_CALIBRATION_V1_SUPPORTED

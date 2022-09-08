@@ -15,6 +15,16 @@
 __attribute__((unused)) static const char *TAG = "TEST_ADC";
 
 /*---------------------------------------------------------------
+        ADC Attenuation
+---------------------------------------------------------------*/
+#if CONFIG_IDF_TARGET_ESP32C2
+adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_11};
+#else
+adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_6, ADC_ATTEN_DB_11};
+#endif
+
+
+/*---------------------------------------------------------------
         ADC Calibration
 ---------------------------------------------------------------*/
 bool test_adc_calibration_init(adc_unit_t unit, adc_atten_t atten, adc_bitwidth_t bitwidth, adc_cali_handle_t *out_handle)
