@@ -47,7 +47,7 @@ function __main
     set -x PATH "$IDF_ADD_PATHS_EXTRAS":"$PATH"
 
     echo "Checking if Python packages are up to date..."
-    python "$IDF_PATH"/tools/idf_tools.py check-python-dependencies || return 1
+    "$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py check-python-dependencies || return 1
 
     set added_path_variables
     for entry in $PATH;
