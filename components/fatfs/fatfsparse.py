@@ -83,6 +83,25 @@ def traverse_folder_tree(directory_bytes_: bytes,
                                  binary_array_=binary_array_)
 
 
+def remove_wear_levelling_if_exists(fs_: bytes) -> bytes:
+    """
+    Detection of the wear levelling layer is performed in two steps:
+    1) check if the first sector is a valid boot sector
+    2) check if the size defined in the boot sector is the same as the partition size:
+        - if it is, there is no wear levelling layer
+        - otherwise, we need to remove wl for further processing
+    """
+    try:
+        boot_sector__ = BootSector()
+        boot_sector__.parse_boot_sector(fs_)
+        if boot_sector__.boot_sector_state.size == len(fs_):
+            return fs_
+    except construct.core.ConstError:
+        pass
+    plain_fs: bytes = remove_wl(fs_)
+    return plain_fs
+
+
 if __name__ == '__main__':
     desc = 'Tool for parsing fatfs image and extracting directory structure on host.'
     argument_parser: argparse.ArgumentParser = argparse.ArgumentParser(description=desc)
@@ -92,11 +111,28 @@ if __name__ == '__main__':
                                  action='store_true',
                                  help=argparse.SUPPRESS)
 
+    # ensures backward compatibility
     argument_parser.add_argument('--wear-leveling',
                                  action='store_true',
-                                 help='Set flag to parse an image encoded using wear levelling.')
+                                 help=argparse.SUPPRESS)
+    argument_parser.add_argument('--wl-layer',
+                                 choices=['detect', 'enabled', 'disabled'],
+                                 default=None,
+                                 help="If detection doesn't work correctly, "
+                                      'you can force analyzer to or not to assume WL.')
 
     args = argument_parser.parse_args()
+
+    # if wear levelling is detected or user explicitly sets the parameter `--wl_layer enabled`
+    # the partition with wear levelling is transformed to partition without WL for convenient parsing
+    # in some cases the partitions with and without wear levelling can be 100% equivalent
+    # and only user can break this tie by explicitly setting
+    # the parameter --wl-layer to enabled, respectively disabled
+    if args.wear_leveling and args.wl_layer:
+        raise NotImplementedError('Argument --wear-leveling cannot be combined with --wl-layer!')
+    if args.wear_leveling:
+        args.wl_layer = 'enabled'
+    args.wl_layer = args.wl_layer or 'detect'
 
     fs = read_filesystem(args.input_image)
 
@@ -109,8 +145,12 @@ if __name__ == '__main__':
     # 2. remove state sectors (trivial)
     # 3. remove cfg sector (trivial)
     # 4. valid fs is then old_fs[-mc:] + old_fs[:-mc]
-    if args.wear_leveling:
+    if args.wl_layer == 'enabled':
         fs = remove_wl(fs)
+    elif args.wl_layer != 'disabled':
+        # wear levelling is removed to enable parsing using common algorithm
+        fs = remove_wear_levelling_if_exists(fs)
+
     boot_sector_ = BootSector()
     boot_sector_.parse_boot_sector(fs)
     fat = FAT(boot_sector_.boot_sector_state, init_=False)
