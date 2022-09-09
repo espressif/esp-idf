@@ -281,8 +281,11 @@ TEST_CASE("pcnt_quadrature_decode_event", "[pcnt]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, pcnt_unit_add_watch_point(unit, 50));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, pcnt_unit_add_watch_point(unit, 100));
 
-    // Clear internal counter, and make the watch points take effect
+#if !SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE
+    // the above added watch point won't take effect at once, unless we clear the internal counter manually
     TEST_ESP_OK(pcnt_unit_clear_count(unit));
+#endif
+
     // start unit should fail if it's not enabled yet
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, pcnt_unit_start(unit));
     TEST_ESP_OK(pcnt_unit_enable(unit));

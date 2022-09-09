@@ -7,6 +7,7 @@ set(srcs
     "interrupts.c"
     "spi_periph.c"
     "ledc_periph.c"
+    "pcnt_periph.c"
     "rmt_periph.c"
     "i2s_periph.c"
     "i2c_periph.c"

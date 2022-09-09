@@ -500,8 +500,8 @@ config SOC_MCPWM_SWSYNC_CAN_PROPAGATE
     default y
 
 config SOC_PCNT_GROUPS
-    bool
-    default y
+    int
+    default 1
 
 config SOC_PCNT_UNITS_PER_GROUP
     int

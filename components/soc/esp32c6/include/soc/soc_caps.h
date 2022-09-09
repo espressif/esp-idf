@@ -28,6 +28,7 @@
 // #define SOC_ADC_SUPPORTED               1 // TODO: IDF-5310
 // #define SOC_DEDICATED_GPIO_SUPPORTED    1 // TODO: IDF-5331
 #define SOC_GDMA_SUPPORTED              1
+#define SOC_PCNT_SUPPORTED              1
 // #define SOC_TWAI_SUPPORTED              1 // TODO: IDF-5313
 #define SOC_BT_SUPPORTED                1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
@@ -205,6 +206,13 @@
 #define SOC_MPU_REGIONS_MAX_NUM                   8
 #define SOC_MPU_REGION_RO_SUPPORTED               0
 #define SOC_MPU_REGION_WO_SUPPORTED               0
+
+/*-------------------------- PCNT CAPS ---------------------------------------*/
+#define SOC_PCNT_GROUPS                       1U
+#define SOC_PCNT_UNITS_PER_GROUP              4
+#define SOC_PCNT_CHANNELS_PER_UNIT            2
+#define SOC_PCNT_THRES_POINT_PER_UNIT         2
+#define SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE 1
 
 // TODO: IDF-5320 (Copy from esp32c3, need check)
 /*--------------------------- RMT CAPS ---------------------------------------*/
