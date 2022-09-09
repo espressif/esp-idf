@@ -31,7 +31,13 @@ ADC
 GPIO
 ----
 
-The previous Kconfig option `RTCIO_SUPPORT_RTC_GPIO_DESC` has been removed, thus the ``rtc_gpio_desc`` array is unavailable. Please use ``rtc_io_desc`` array instead.
+- The previous Kconfig option `RTCIO_SUPPORT_RTC_GPIO_DESC` has been removed, thus the ``rtc_gpio_desc`` array is unavailable. Please use ``rtc_io_desc`` array instead.
+
+- GPIO interrupt users callbacks should no longer read the GPIO interrupt status register to get the triggered GPIO's pin number. Users should use the callback argument to determine the GPIO's pin number instead.
+
+    - Previously, when a GPIO interrupt occurs, the GPIO's interrupt status register is cleared after calling the user callbacks. Thus, it was possible for users to read the GPIO's interrupt status register inside the callback to determine which GPIO was triggered.
+    - However, clearing the interrupt status after the user callbacks can potentially cause edge-triggered interrupts to be lost. For example, if an edge-triggered interrupt (re)triggers while the user callbacks are being called, that interrupt will be cleared without its registered user callback being handled.
+    - Now, the GPIO's interrupt status register is cleared **before** invoking the user callbacks. Thus, users can no longer read the GPIO interrupt status register to determine which pin has triggered the interrupt. Instead, users should use the callback argument to pass the pin number.
 
 .. only:: SOC_SDM_SUPPORTED
 

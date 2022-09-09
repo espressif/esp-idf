@@ -386,17 +386,6 @@ typedef enum {
     GPIO_PULLDOWN_ENABLE = 0x1,    /*!< Enable GPIO pull-down resistor  */
 } gpio_pulldown_t;
 
-/**
- * @brief Configuration parameters of GPIO pad for gpio_config function
- */
-typedef struct {
-    uint64_t pin_bit_mask;          /*!< GPIO pin: set with bit mask, each bit maps to a GPIO */
-    gpio_mode_t mode;               /*!< GPIO mode: set input/output mode                     */
-    gpio_pullup_t pull_up_en;       /*!< GPIO pull-up                                         */
-    gpio_pulldown_t pull_down_en;   /*!< GPIO pull-down                                       */
-    gpio_int_type_t intr_type;      /*!< GPIO interrupt type                                  */
-} gpio_config_t;
-
 typedef enum {
     GPIO_PULLUP_ONLY,               /*!< Pad pull up            */
     GPIO_PULLDOWN_ONLY,             /*!< Pad pull down          */
@@ -412,8 +401,6 @@ typedef enum {
     GPIO_DRIVE_CAP_3       = 3,    /*!< Pad drive capability: strongest     */
     GPIO_DRIVE_CAP_MAX,
 } gpio_drive_cap_t;
-
-typedef void (*gpio_isr_t)(void *);
 
 #ifdef __cplusplus
 }
