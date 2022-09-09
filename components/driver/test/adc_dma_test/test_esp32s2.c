@@ -452,7 +452,7 @@ int test_adc_dig_dma_single_unit(adc_unit_t adc)
     return 0;
 }
 
-TEST_CASE("ADC DMA single read", "[ADC]")
+TEST_CASE("ADC DMA single read", "[ADC][ignore]")
 {
     test_adc_dig_dma_single_unit(ADC_UNIT_BOTH);
 
