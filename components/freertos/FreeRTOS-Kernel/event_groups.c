@@ -214,9 +214,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
 {
     EventBits_t uxOriginalBitValue, uxReturn;
     EventGroup_t * pxEventBits = xEventGroup;
-#ifndef ESP_PLATFORM
     BaseType_t xAlreadyYielded;
-#endif // ESP_PLATFORM
     BaseType_t xTimeoutOccurred = pdFALSE;
 
     configASSERT( ( uxBitsToWaitFor & eventEVENT_BITS_CONTROL_BYTES ) == 0 );
@@ -276,15 +274,13 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
     }
 #ifdef ESP_PLATFORM // IDF-3755
     taskEXIT_CRITICAL( &( pxEventBits->xEventGroupLock ) );
+    xAlreadyYielded = pdFALSE;
 #else
     xAlreadyYielded = xTaskResumeAll();
 #endif // ESP_PLATFORM
 
     if( xTicksToWait != ( TickType_t ) 0 )
     {
-#ifdef ESP_PLATFORM
-        portYIELD_WITHIN_API();
-#else
         if( xAlreadyYielded == pdFALSE )
         {
             portYIELD_WITHIN_API();
@@ -293,7 +289,6 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
         {
             mtCOVERAGE_TEST_MARKER();
         }
-#endif // ESP_PLATFORM
 
         /* The task blocked to wait for its required bits to be set - at this
          * point either the required bits were set or the block time expired.  If
@@ -352,11 +347,7 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
 {
     EventGroup_t * pxEventBits = xEventGroup;
     EventBits_t uxReturn, uxControlBits = 0;
-#ifdef ESP_PLATFORM
-    BaseType_t xWaitConditionMet;
-#else
     BaseType_t xWaitConditionMet, xAlreadyYielded;
-#endif // ESP_PLATFORM
     BaseType_t xTimeoutOccurred = pdFALSE;
 
     /* Check the user is not attempting to wait on the bits used by the kernel
@@ -444,15 +435,13 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
     }
 #ifdef ESP_PLATFORM // IDF-3755
     taskEXIT_CRITICAL( &( pxEventBits->xEventGroupLock ) );
+    xAlreadyYielded = pdFALSE;
 #else
     xAlreadyYielded = xTaskResumeAll();
 #endif // ESP_PLATFORM
 
     if( xTicksToWait != ( TickType_t ) 0 )
     {
-#ifdef ESP_PLATFORM
-        portYIELD_WITHIN_API();
-#else
         if( xAlreadyYielded == pdFALSE )
         {
             portYIELD_WITHIN_API();
@@ -461,7 +450,6 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
         {
             mtCOVERAGE_TEST_MARKER();
         }
-#endif // ESP_PLATFORM
 
         /* The task blocked to wait for its required bits to be set - at this
          * point either the required bits were set or the block time expired.  If

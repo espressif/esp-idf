@@ -108,6 +108,7 @@ typedef uint32_t TickType_t;
 #define portSTACK_GROWTH                (-1)
 #define portTICK_PERIOD_MS              ((TickType_t) (1000 / configTICK_RATE_HZ))
 #define portBYTE_ALIGNMENT              16
+#define portTICK_TYPE_IS_ATOMIC         1
 #define portNOP() __asm volatile        (" nop ")
 
 
