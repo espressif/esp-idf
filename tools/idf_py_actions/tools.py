@@ -16,6 +16,16 @@ import yaml
 from .constants import GENERATORS
 from .errors import FatalError
 
+# Name of the program, normally 'idf.py'.
+# Can be overridden from idf.bat using IDF_PY_PROGRAM_NAME
+PROG = os.getenv('IDF_PY_PROGRAM_NAME', 'idf.py')
+
+# environment variable used during click shell completion run
+SHELL_COMPLETE_VAR = '_IDF.PY_COMPLETE'
+
+# was shell completion invoked?
+SHELL_COMPLETE_RUN = SHELL_COMPLETE_VAR in os.environ
+
 
 def executable_exists(args: List) -> bool:
     try:
@@ -78,6 +88,13 @@ def idf_version() -> Optional[str]:
     return version
 
 
+# function prints warning when autocompletion is not being performed
+# set argument stream to sys.stderr for errors and exceptions
+def print_warning(message: str, stream: TextIO=None) -> None:
+    if not SHELL_COMPLETE_RUN:
+        print(message, file=stream or sys.stderr)
+
+
 def color_print(message: str, color: str, newline: Optional[str]='\n') -> None:
     """ Print a message to stderr with colored highlighting """
     ansi_normal = '\033[0m'
@@ -93,6 +110,10 @@ def yellow_print(message: str, newline: Optional[str]='\n') -> None:
 def red_print(message: str, newline: Optional[str]='\n') -> None:
     ansi_red = '\033[1;31m'
     color_print(message, ansi_red, newline)
+
+
+def debug_print_idf_version() -> None:
+    print_warning(f'ESP-IDF {idf_version() or "version unknown"}')
 
 
 def generate_hints(*filenames: str) -> Generator:
@@ -383,6 +404,11 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
     the build directory, an error is raised. If the parameter is None, this function will set it to
     an auto-detected default generator or to the value already configured in the build directory.
     """
+
+    if not executable_exists(['cmake', '--version']):
+        debug_print_idf_version()
+        raise FatalError(f'"cmake" must be available on the PATH to use {PROG}')
+
     project_dir = args.project_dir
     # Verify the project directory
     if not os.path.isdir(project_dir):
