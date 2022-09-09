@@ -1173,7 +1173,7 @@ static inline uint16_t spi_ll_get_slave_hd_command(spi_command_t cmd_t, spi_line
  */
 static inline int spi_ll_get_slave_hd_dummy_bits(spi_line_mode_t line_mode)
 {
-    return 4;
+    return 8;
 }
 
 #ifdef __cplusplus
