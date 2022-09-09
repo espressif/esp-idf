@@ -189,7 +189,6 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
 
     可运行您电脑 Python 文件夹中的 ``Install Certificates.command`` 安装证书。了解更多信息，请参考 `安装 ESP-IDF 工具时出现的下载错误 <https://github.com/espressif/esp-idf/issues/4775>`_。
 
-
 下载工具备选方案
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

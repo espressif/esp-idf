@@ -9,7 +9,7 @@
 
 .. only:: esp32 or esp32s2 or esp32c3 or esp32s3
 
-    - 支持 4 个虚拟接口，即STA、AP、Sniffer 和 reserved。
+    - 支持 4 个虚拟接口，即 STA、AP、Sniffer 和 reserved。
     - 支持仅 station 模式、仅 AP 模式、station/AP 共存模式
     - 支持使用 IEEE 802.11b、IEEE 802.11g、IEEE 802.11n 和 API 配置协议模式
     - 支持 WPA/WPA2/WPA3/WPA2-企业版/WPA3-企业版/WAPI/WPS 和 DPP
@@ -1395,6 +1395,7 @@ Wi-Fi 国家/地区代码
      - 该 station 与 station 模式、WIFI_COUNTRY_POLICY_MANUAL 策略下使用的国家/地区信息相同。
        该 AP 与 AP 模式、WIFI_COUNTRY_POLICY_MANUAL 策略下使用的国家/地区信息相同。
 
+
 主信道
 *************************
 
@@ -1542,7 +1543,7 @@ AP 睡眠
          - iperf example
          - 15575346
 
-    使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:` 示例/wifi/iperf/sdkconfig.defaults.esp32`。
+    使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32`。
 
 .. only:: esp32s2
 
@@ -1586,7 +1587,7 @@ AP 睡眠
           - iperf example
           - 15575346
 
-    使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:` 示例/wifi/iperf/sdkconfig.defaults.esp32s2`。
+    使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32s2`。
 
 .. only:: esp32c3
 
@@ -1630,7 +1631,7 @@ AP 睡眠
           - iperf example
           - 15575346
 
-    使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:` 示例/wifi/iperf/sdkconfig.defaults.esp32c3`。
+    使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c3`。
 
 .. only:: esp32s3
 
@@ -1674,7 +1675,7 @@ AP 睡眠
           - iperf example
           - 15575346
 
-    使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:` 示例/wifi/iperf/sdkconfig.defaults.esp32s3`。
+    使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32s3`。
 
 Wi-Fi 80211 数据包发送
 ---------------------------
