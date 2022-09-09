@@ -457,12 +457,11 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms)
     ESP_RETURN_ON_FALSE(filter_period_ms >= portTICK_PERIOD_MS, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch pad filter period error");
     ESP_RETURN_ON_FALSE(rtc_touch_mux, ESP_ERR_INVALID_STATE, TOUCH_TAG,  "Touch pad not initialized");
 
+    esp_err_t ret = ESP_OK;
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     if (s_touch_pad_filter == NULL) {
         s_touch_pad_filter = (touch_pad_filter_t *) calloc(1, sizeof(touch_pad_filter_t));
-        if (s_touch_pad_filter == NULL) {
-            goto err_no_mem;
-        }
+        ESP_GOTO_ON_FALSE(s_touch_pad_filter, ESP_ERR_NO_MEM, err_no_mem, TOUCH_TAG, "no memory for filter");
     }
     if (s_touch_pad_filter->timer == NULL) {
         esp_timer_create_args_t timer_cfg = {
@@ -472,23 +471,25 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms)
             .name = "touch filter timer",
             .skip_unhandled_events = true,
         };
-        esp_timer_create(&timer_cfg, &(s_touch_pad_filter->timer));
-        if (s_touch_pad_filter->timer == NULL) {
-            free(s_touch_pad_filter);
-            s_touch_pad_filter = NULL;
-            goto err_no_mem;
-        }
+        ESP_GOTO_ON_ERROR(esp_timer_create(&timer_cfg, &(s_touch_pad_filter->timer)),
+                          err_timer_create, TOUCH_TAG, "failed to create the filter timer");
         s_touch_pad_filter->period = filter_period_ms;
         touch_pad_filter_cb(NULL); // Trigger once immediately to get the initial raw value
-        esp_timer_start_periodic(s_touch_pad_filter->timer, filter_period_ms * 1000);
+        ESP_GOTO_ON_ERROR(esp_timer_start_periodic(s_touch_pad_filter->timer, filter_period_ms * 1000),
+                          err_timer_start, TOUCH_TAG, "failed to start the filter timer");
     }
+
     xSemaphoreGive(rtc_touch_mux);
+    return ret;
 
-    return ESP_OK;
-
+err_timer_start:
+    esp_timer_delete(s_touch_pad_filter->timer);
+err_timer_create:
+    free(s_touch_pad_filter);
+    s_touch_pad_filter = NULL;
 err_no_mem:
     xSemaphoreGive(rtc_touch_mux);
-    return ESP_ERR_NO_MEM;
+    return ret;
 }
 
 esp_err_t touch_pad_filter_stop(void)
