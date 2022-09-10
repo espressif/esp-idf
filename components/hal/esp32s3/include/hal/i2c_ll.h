@@ -109,11 +109,12 @@ static inline void i2c_ll_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2
     clk_cal->clkm_div = clkm_div;
     clk_cal->scl_low = half_cycle;
     // default, scl_wait_high < scl_high
-    clk_cal->scl_high = (bus_freq <= 50000) ?  half_cycle : (half_cycle / 5 * 4 + 4);
-    clk_cal->scl_wait_high = half_cycle - clk_cal->scl_high;
-    clk_cal->sda_hold = half_cycle / 2;
-    // scl_wait_high < sda_sample <= scl_high
-    clk_cal->sda_sample = half_cycle / 2;
+    // Make 80KHz as a boundary here, because when working at lower frequency, too much scl_wait_high will faster the frequency
+    // according to some hardware behaviors.
+    clk_cal->scl_wait_high = (bus_freq >= 80*1000) ? (half_cycle / 2 - 2) : (half_cycle / 4);
+    clk_cal->scl_high = half_cycle - clk_cal->scl_wait_high;
+    clk_cal->sda_hold = half_cycle / 4;
+    clk_cal->sda_sample = half_cycle / 2 + clk_cal->scl_wait_high;
     clk_cal->setup = half_cycle;
     clk_cal->hold = half_cycle;
     //default we set the timeout value to about 10 bus cycles
@@ -145,10 +146,13 @@ static inline void i2c_ll_set_bus_timing(i2c_dev_t *hw, i2c_clk_cal_t *bus_cfg)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, bus_cfg->clkm_div - 1);
     /* According to the Technical Reference Manual, the following timings must be subtracted by 1.
-     * Moreover, the frequency calculation also shows that we must subtract 3 to the total SCL */
-    //scl period
-    hw->scl_low_period.scl_low_period = bus_cfg->scl_low - 1 - 2;
-    hw->scl_high_period.scl_high_period = bus_cfg->scl_high - 1 - 1;
+     * However, according to the practical measurement and some hardware behaviour, if wait_high_period and scl_high minus one.
+     * The SCL frequency would be a little higher than expected. Therefore, the solution
+     * here is not to minus scl_high as well as scl_wait high, and the frequency will be absolutely accurate to all frequency
+     * to some extent. */
+    hw->scl_low_period.scl_low_period = bus_cfg->scl_low - 1;
+    hw->scl_high_period.scl_high_period = bus_cfg->scl_high;
+    hw->scl_high_period.scl_wait_high_period = bus_cfg->scl_wait_high;
     //sda sample
     hw->sda_hold.sda_hold_time = bus_cfg->sda_hold - 1;
     hw->sda_sample.sda_sample_time = bus_cfg->sda_sample - 1;
@@ -203,6 +207,23 @@ static inline void i2c_ll_set_scl_timing(i2c_dev_t *hw, int high_period, int low
     hw->scl_low_period.scl_low_period = low_period - 1;
     hw->scl_high_period.scl_high_period = high_period_output;
     hw->scl_high_period.scl_wait_high_period = high_period - high_period_output;
+}
+
+/**
+ * @brief  Configure I2C SCL timing
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  high_period The I2C SCL hight period (in core clock cycle, hight_period > 2)
+ * @param  low_period The I2C SCL low period (in core clock cycle, low_period > 1)
+ * @param  wait_high_period The I2C SCL wait rising edge period.
+ *
+ * @return None.
+ */
+static inline void i2c_ll_set_scl_clk_timing(i2c_dev_t *hw, int high_period, int low_period, int wait_high_period)
+{
+    hw->scl_low_period.scl_low_period = low_period;
+    hw->scl_high_period.scl_high_period = high_period;
+    hw->scl_high_period.scl_wait_high_period = wait_high_period;
 }
 
 /**
@@ -557,6 +578,22 @@ static inline void i2c_ll_get_scl_timing(i2c_dev_t *hw, int *high_period, int *l
 {
     *high_period = hw->scl_high_period.scl_high_period + hw->scl_high_period.scl_wait_high_period;
     *low_period = hw->scl_low_period.scl_low_period + 1;
+}
+
+/**
+ * @brief  Get I2C SCL timing configuration
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  high_period Pointer to accept the SCL high period
+ * @param  low_period Pointer to accept the SCL low period
+ *
+ * @return None
+ */
+static inline void i2c_ll_get_scl_clk_timing(i2c_dev_t *hw, int *high_period, int *low_period, int *wait_high_period)
+{
+    *high_period = hw->scl_high_period.scl_high_period;
+    *wait_high_period = hw->scl_high_period.scl_wait_high_period;
+    *low_period = hw->scl_low_period.scl_low_period;
 }
 
 /**
