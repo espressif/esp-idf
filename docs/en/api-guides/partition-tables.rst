@@ -66,12 +66,12 @@ The CSV format is the same format as printed in the summaries shown above. Howev
 * Each non-comment line in the CSV file is a partition definition.
 * The "Offset" field for each partition is empty. The gen_esp32part.py tool fills in each blank offset, starting after the partition table and making sure each partition is aligned correctly.
 
-Name field
+Name Field
 ~~~~~~~~~~
 
 Name field can be any meaningful name. It is not significant to the {IDF_TARGET_NAME}. The maximum length of names is 16 bytes, including one null terminator. Names longer than the maximum length will be truncated.
 
-Type field
+Type Field
 ~~~~~~~~~~
 
 Partition type field can be specified as ``app`` (0x00) or ``data`` (0x01). Or it can be a number 0-254 (or as hex 0x00-0xFE). Types 0x00-0x3F are reserved for ESP-IDF core functions.
@@ -134,7 +134,7 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
 Extra Partition SubTypes
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-A component can define a new partition subtype by setting the ``EXTRA_PARTITION_SUBTYPES`` property. This property is a CMake list, each entry of which is a comma separated string with ``<type>, <subtype>, <value>`` format. The build system uses this property to add extra subtypes and creates fields named ``ESP_PARTITION_SUBTYPE_<type>_<subtype>`` in :cpp:type:`esp_partition_type_t`. The project can use this subtype to define partitions in the partitions table CSV file and use the new fields in :cpp:type:`esp_partition_type_t`.
+A component can define a new partition subtype by setting the ``EXTRA_PARTITION_SUBTYPES`` property. This property is a CMake list, each entry of which is a comma separated string with ``<type>, <subtype>, <value>`` format. The build system uses this property to add extra subtypes and creates fields named ``ESP_PARTITION_SUBTYPE_<type>_<subtype>`` in :cpp:type:`esp_partition_subtype_t`. The project can use this subtype to define partitions in the partitions table CSV file and use the new fields in :cpp:type:`esp_partition_subtype_t`.
 
 Offset & Size
 ~~~~~~~~~~~~~
@@ -189,7 +189,7 @@ Currently these checks are performed for the following binaries:
 
    Although the build process will fail if the size check returns an error, the binary files are still generated and can be flashed (although they may not work if they are too large for the available space.)
 
-MD5 checksum
+MD5 Checksum
 ~~~~~~~~~~~~
 
 The binary format of the partition table contains an MD5 checksum computed based on the partition table. This checksum is used for checking the integrity of the partition table during the boot.
@@ -203,7 +203,7 @@ The binary format of the partition table contains an MD5 checksum computed based
     The MD5 checksum generation can be disabled by the ``--disable-md5sum`` option of ``gen_esp32part.py`` or by the :ref:`CONFIG_PARTITION_TABLE_MD5` option.
 
 
-Flashing the partition table
+Flashing the Partition Table
 ----------------------------
 
 * ``idf.py partition-table-flash``: will flash the partition table with esptool.py.
