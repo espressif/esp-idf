@@ -14,7 +14,6 @@ extern "C" {
 #endif
 
 #define portBYTE_ALIGNMENT			16
-#define portTICK_TYPE_IS_ATOMIC		1
 
 /* Type definitions. */
 #define portCHAR		uint8_t

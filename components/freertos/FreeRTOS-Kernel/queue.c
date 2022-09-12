@@ -220,7 +220,7 @@ static void prvCopyDataFromQueue( Queue_t * const pxQueue,
  * Checks to see if a queue is a member of a queue set, and if so, notifies
  * the queue set that the queue contains data.
  */
-    static BaseType_t prvNotifyQueueSetContainer( const Queue_t * const pxQueue ) PRIVILEGED_FUNCTION;
+    static BaseType_t prvNotifyQueueSetContainer( const Queue_t * const pxQueue, const BaseType_t xCopyPosition ) PRIVILEGED_FUNCTION;
 #endif
 
 /*
@@ -362,8 +362,10 @@ BaseType_t xQueueGenericReset( QueueHandle_t xQueue,
                  * variable of type StaticQueue_t or StaticSemaphore_t equals the size of
                  * the real queue and semaphore structures. */
                 volatile size_t xSize = sizeof( StaticQueue_t );
-                configASSERT( xSize == sizeof( Queue_t ) );
-                ( void ) xSize; /* Keeps lint quiet when configASSERT() is not defined. */
+
+                /* This assertion cannot be branch covered in unit tests */
+                configASSERT( xSize == sizeof( Queue_t ) ); /* LCOV_EXCL_BR_LINE */
+                ( void ) xSize;                             /* Keeps lint quiet when configASSERT() is not defined. */
             }
         #endif /* configASSERT_DEFINED */
 
@@ -403,22 +405,30 @@ BaseType_t xQueueGenericReset( QueueHandle_t xQueue,
                                        const UBaseType_t uxItemSize,
                                        const uint8_t ucQueueType )
     {
-        Queue_t * pxNewQueue;
+        Queue_t * pxNewQueue = NULL;
         size_t xQueueSizeInBytes;
         uint8_t * pucQueueStorage;
 
         configASSERT( uxQueueLength > ( UBaseType_t ) 0 );
 
-        /* Allocate enough space to hold the maximum number of items that
-         * can be in the queue at any time.  It is valid for uxItemSize to be
-         * zero in the case the queue is used as a semaphore. */
-        xQueueSizeInBytes = ( size_t ) ( uxQueueLength * uxItemSize ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+        if( uxItemSize == ( UBaseType_t ) 0 )
+        {
+            /* There is not going to be a queue storage area. */
+            xQueueSizeInBytes = ( size_t ) 0;
+        }
+        else
+        {
+            /* Allocate enough space to hold the maximum number of items that
+             * can be in the queue at any time.  It is valid for uxItemSize to be
+             * zero in the case the queue is used as a semaphore. */
+            xQueueSizeInBytes = ( size_t ) ( uxQueueLength * uxItemSize ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+        }
 
         /* Check for multiplication overflow. */
         configASSERT( ( uxItemSize == 0 ) || ( uxQueueLength == ( xQueueSizeInBytes / uxItemSize ) ) );
 
         /* Check for addition overflow. */
-        configASSERT( ( sizeof( Queue_t ) + xQueueSizeInBytes ) >  xQueueSizeInBytes );
+        configASSERT( ( sizeof( Queue_t ) + xQueueSizeInBytes ) > xQueueSizeInBytes );
 
         /* Allocate the queue and storage area.  Justification for MISRA
          * deviation as follows:  pvPortMalloc() always ensures returned memory
@@ -588,7 +598,10 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength,
          * calling task is the mutex holder, but not a good way of determining the
          * identity of the mutex holder, as the holder may change between the
          * following critical section exiting and the function returning. */
-        taskENTER_CRITICAL( &( pxSemaphore->xQueueLock ) );
+#ifdef ESP_PLATFORM
+        Queue_t * const pxQueue = (Queue_t *)pxSemaphore;
+#endif
+        taskENTER_CRITICAL( &( pxQueue->xQueueLock ) );
         {
             if( pxSemaphore->uxQueueType == queueQUEUE_IS_MUTEX )
             {
@@ -599,7 +612,7 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength,
                 pxReturn = NULL;
             }
         }
-        taskEXIT_CRITICAL( &( pxSemaphore->xQueueLock ) );
+        taskEXIT_CRITICAL( &( pxQueue->xQueueLock ) );
 
         return pxReturn;
     } /*lint !e818 xSemaphore cannot be a pointer to const because it is a typedef. */
@@ -737,7 +750,7 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength,
                                                        const UBaseType_t uxInitialCount,
                                                        StaticQueue_t * pxStaticQueue )
     {
-        QueueHandle_t xHandle;
+        QueueHandle_t xHandle = NULL;
 
         configASSERT( uxMaxCount != 0 );
         configASSERT( uxInitialCount <= uxMaxCount );
@@ -766,7 +779,7 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength,
     QueueHandle_t xQueueCreateCountingSemaphore( const UBaseType_t uxMaxCount,
                                                  const UBaseType_t uxInitialCount )
     {
-        QueueHandle_t xHandle;
+        QueueHandle_t xHandle = NULL;
 
         configASSERT( uxMaxCount != 0 );
         configASSERT( uxInitialCount <= uxMaxCount );
@@ -831,7 +844,7 @@ BaseType_t xQueueGenericSend( QueueHandle_t xQueue,
 
                 #if ( configUSE_QUEUE_SETS == 1 )
                     {
-                        const UBaseType_t uxPreviousMessagesWaiting = pxQueue->uxMessagesWaiting;
+                        UBaseType_t uxPreviousMessagesWaiting = pxQueue->uxMessagesWaiting;
 
                         xYieldRequired = prvCopyDataToQueue( pxQueue, pvItemToQueue, xCopyPosition );
 
@@ -844,7 +857,7 @@ BaseType_t xQueueGenericSend( QueueHandle_t xQueue,
                                  * in the queue has not changed. */
                                 mtCOVERAGE_TEST_MARKER();
                             }
-                            else if( prvNotifyQueueSetContainer( pxQueue ) != pdFALSE )
+                            else if( prvNotifyQueueSetContainer( pxQueue, xCopyPosition ) != pdFALSE )
                             {
                                 /* The queue is a member of a queue set, and posting
                                  * to the queue set caused a higher priority task to
@@ -1066,7 +1079,6 @@ BaseType_t xQueueGenericSendFromISR( QueueHandle_t xQueue,
         if( ( pxQueue->uxMessagesWaiting < pxQueue->uxLength ) || ( xCopyPosition == queueOVERWRITE ) )
         {
             const int8_t cTxLock = pxQueue->cTxLock;
-            const UBaseType_t uxPreviousMessagesWaiting = pxQueue->uxMessagesWaiting;
 
             traceQUEUE_SEND_FROM_ISR( pxQueue );
 
@@ -1085,14 +1097,7 @@ BaseType_t xQueueGenericSendFromISR( QueueHandle_t xQueue,
                     {
                         if( pxQueue->pxQueueSetContainer != NULL )
                         {
-                            if( ( xCopyPosition == queueOVERWRITE ) && ( uxPreviousMessagesWaiting != ( UBaseType_t ) 0 ) )
-                            {
-                                /* Do not notify the queue set as an existing item
-                                 * was overwritten in the queue so the number of items
-                                 * in the queue has not changed. */
-                                mtCOVERAGE_TEST_MARKER();
-                            }
-                            else if( prvNotifyQueueSetContainer( pxQueue ) != pdFALSE )
+                            if( prvNotifyQueueSetContainer( pxQueue, xCopyPosition ) != pdFALSE )
                             {
                                 /* The queue is a member of a queue set, and posting
                                  * to the queue set caused a higher priority task to
@@ -1165,9 +1170,6 @@ BaseType_t xQueueGenericSendFromISR( QueueHandle_t xQueue,
                         {
                             mtCOVERAGE_TEST_MARKER();
                         }
-
-                        /* Not used in this path. */
-                        ( void ) uxPreviousMessagesWaiting;
                     }
                 #endif /* configUSE_QUEUE_SETS */
             }
@@ -1265,7 +1267,7 @@ BaseType_t xQueueGiveFromISR( QueueHandle_t xQueue,
                     {
                         if( pxQueue->pxQueueSetContainer != NULL )
                         {
-                            if( prvNotifyQueueSetContainer( pxQueue ) != pdFALSE )
+                            if( prvNotifyQueueSetContainer( pxQueue, queueSEND_TO_BACK ) != pdFALSE )
                             {
                                 /* The semaphore is a member of a queue set, and
                                  * posting to the queue set caused a higher priority
@@ -1345,8 +1347,6 @@ BaseType_t xQueueGiveFromISR( QueueHandle_t xQueue,
             {
                 /* Increment the lock count so the task that unlocks the queue
                  * knows that data was posted while it was locked. */
-                configASSERT( cTxLock != queueINT8_MAX );
-
                 pxQueue->cTxLock = ( int8_t ) ( cTxLock + 1 );
             }
 
@@ -2007,8 +2007,6 @@ BaseType_t xQueueReceiveFromISR( QueueHandle_t xQueue,
             {
                 /* Increment the lock count so the task that unlocks the queue
                  * knows that data was removed while it was locked. */
-                configASSERT( cRxLock != queueINT8_MAX );
-
                 pxQueue->cRxLock = ( int8_t ) ( cRxLock + 1 );
             }
 
@@ -2087,14 +2085,15 @@ BaseType_t xQueuePeekFromISR( QueueHandle_t xQueue,
 UBaseType_t uxQueueMessagesWaiting( const QueueHandle_t xQueue )
 {
     UBaseType_t uxReturn;
+    Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 
     configASSERT( xQueue );
 
-    taskENTER_CRITICAL( &( ( ( Queue_t * ) xQueue )->xQueueLock ) );
+    taskENTER_CRITICAL( &( pxQueue->xQueueLock ) );
     {
         uxReturn = ( ( Queue_t * ) xQueue )->uxMessagesWaiting;
     }
-    taskEXIT_CRITICAL( &( ( ( Queue_t * ) xQueue )->xQueueLock ) );
+    taskEXIT_CRITICAL( &( pxQueue->xQueueLock ) );
 
     return uxReturn;
 } /*lint !e818 Pointer cannot be declared const as xQueue is a typedef not pointer. */
@@ -2354,7 +2353,7 @@ static void prvUnlockQueue( Queue_t * const pxQueue )
                 {
                     if( pxQueue->pxQueueSetContainer != NULL )
                     {
-                        if( prvNotifyQueueSetContainer( pxQueue ) != pdFALSE )
+                        if( prvNotifyQueueSetContainer( pxQueue, queueSEND_TO_BACK ) != pdFALSE )
                         {
                             /* The queue is a member of a queue set, and posting to
                              * the queue set caused a higher priority task to unblock.
@@ -2497,9 +2496,6 @@ static BaseType_t prvIsQueueFull( const Queue_t * pxQueue )
 {
     BaseType_t xReturn;
 
-#ifndef ESP_PLATFORM
-    taskENTER_CRITICAL( &( pxQueue->xQueueLock ) );
-#endif
     {
         if( pxQueue->uxMessagesWaiting == pxQueue->uxLength )
         {
@@ -2510,9 +2506,6 @@ static BaseType_t prvIsQueueFull( const Queue_t * pxQueue )
             xReturn = pdFALSE;
         }
     }
-#ifndef ESP_PLATFORM
-    taskEXIT_CRITICAL( &( pxQueue->xQueueLock ) );
-#endif
 
     return xReturn;
 }
@@ -2984,8 +2977,11 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
                                QueueSetHandle_t xQueueSet )
     {
         BaseType_t xReturn;
+#ifdef ESP_PLATFORM
+        Queue_t * pxQueue = (Queue_t * )xQueueOrSemaphore;
+#endif
 
-        taskENTER_CRITICAL( &( ( ( Queue_t * ) xQueueOrSemaphore )->xQueueLock ) );
+        taskENTER_CRITICAL( &( pxQueue->xQueueLock ) );
         {
             if( ( ( Queue_t * ) xQueueOrSemaphore )->pxQueueSetContainer != NULL )
             {
@@ -3004,7 +3000,7 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
                 xReturn = pdPASS;
             }
         }
-        taskEXIT_CRITICAL( &( ( ( Queue_t * ) xQueueOrSemaphore )->xQueueLock ) );
+        taskEXIT_CRITICAL( &( pxQueue->xQueueLock ) );
 
         return xReturn;
     }
@@ -3034,12 +3030,15 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
         }
         else
         {
-            taskENTER_CRITICAL( &( ( ( Queue_t * ) pxQueueOrSemaphore )->xQueueLock ) );
+#ifdef ESP_PLATFORM
+            Queue_t* pxQueue = (Queue_t*)pxQueueOrSemaphore;
+#endif
+            taskENTER_CRITICAL( &( pxQueue->xQueueLock ) );
             {
                 /* The queue is no longer contained in the set. */
                 pxQueueOrSemaphore->pxQueueSetContainer = NULL;
             }
-            taskEXIT_CRITICAL( &( ( ( Queue_t * ) pxQueueOrSemaphore )->xQueueLock ) );
+            taskEXIT_CRITICAL( &( pxQueue->xQueueLock ) );
             xReturn = pdPASS;
         }
 
@@ -3078,16 +3077,20 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
 
 #if ( configUSE_QUEUE_SETS == 1 )
 
-    static BaseType_t prvNotifyQueueSetContainer( const Queue_t * const pxQueue )
+    static BaseType_t prvNotifyQueueSetContainer( const Queue_t * const pxQueue,
+                                                  const BaseType_t xCopyPosition )
     {
         Queue_t * pxQueueSetContainer = pxQueue->pxQueueSetContainer;
         BaseType_t xReturn = pdFALSE;
 
         /* This function must be called form a critical section. */
 
-        configASSERT( pxQueueSetContainer );
+        /* The following line is not reachable in unit tests because every call
+         * to prvNotifyQueueSetContainer is preceded by a check that
+         * pxQueueSetContainer != NULL */
+        configASSERT( pxQueueSetContainer ); /* LCOV_EXCL_BR_LINE */
 
-        /* Acquire the Queue set's spinlock */
+        //Acquire the Queue set's spinlock
         taskENTER_CRITICAL( &( pxQueueSetContainer->xQueueLock ) );
 
         configASSERT( pxQueueSetContainer->uxMessagesWaiting < pxQueueSetContainer->uxLength );
@@ -3096,10 +3099,10 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
         {
             const int8_t cTxLock = pxQueueSetContainer->cTxLock;
 
-            traceQUEUE_SET_SEND( pxQueueSetContainer );
+            traceQUEUE_SEND( pxQueueSetContainer );
 
             /* The data copied is the handle of the queue that contains data. */
-            xReturn = prvCopyDataToQueue( pxQueueSetContainer, &pxQueue, queueSEND_TO_BACK );
+            xReturn = prvCopyDataToQueue( pxQueueSetContainer, &pxQueue, xCopyPosition );
 
             if( cTxLock == queueUNLOCKED )
             {
@@ -3122,8 +3125,6 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
             }
             else
             {
-                configASSERT( cTxLock != queueINT8_MAX );
-
                 pxQueueSetContainer->cTxLock = ( int8_t ) ( cTxLock + 1 );
             }
         }
@@ -3132,7 +3133,7 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
             mtCOVERAGE_TEST_MARKER();
         }
 
-        /* Release the Queue set's spinlock */
+        //Release the Queue set's spinlock
         taskEXIT_CRITICAL( &( pxQueueSetContainer->xQueueLock ) );
 
         return xReturn;
