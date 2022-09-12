@@ -67,14 +67,15 @@ def traverse_folder_tree(directory_bytes_: bytes,
                                       entry_position_=i,
                                       lfn_checksum_=lfn_checksum(obj_['DIR_Name'] + obj_['DIR_Name_ext']))
         if obj_['DIR_Attr'] == Entry.ATTR_ARCHIVE:
-            content_ = fat_.chain_content(cluster_id_=Entry.get_cluster_id(obj_)).rstrip(chr(0x00).encode())
+            content_ = fat_.get_chained_content(cluster_id_=Entry.get_cluster_id(obj_),
+                                                size=obj_['DIR_FileSize'])
             with open(os.path.join(name, obj_name_), 'wb') as new_file:
                 new_file.write(content_)
         elif obj_['DIR_Attr'] == Entry.ATTR_DIRECTORY:
             # avoid creating symlinks to itself and parent folder
             if obj_name_ in ('.', '..'):
                 continue
-            child_directory_bytes_ = fat_.chain_content(cluster_id_=obj_['DIR_FstClusLO'])
+            child_directory_bytes_ = fat_.get_chained_content(cluster_id_=obj_['DIR_FstClusLO'])
             traverse_folder_tree(directory_bytes_=child_directory_bytes_,
                                  name=os.path.join(name, obj_name_),
                                  state_=state_,

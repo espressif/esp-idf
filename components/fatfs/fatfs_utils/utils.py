@@ -12,6 +12,7 @@ from construct import BitsInteger, BitStruct, Int16ul
 
 FAT12_MAX_CLUSTERS: int = 4085
 FAT16_MAX_CLUSTERS: int = 65525
+RESERVED_CLUSTERS_COUNT: int = 2
 PAD_CHAR: int = 0x20
 FAT12: int = 12
 FAT16: int = 16
