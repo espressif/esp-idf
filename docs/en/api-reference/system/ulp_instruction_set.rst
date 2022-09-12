@@ -979,7 +979,8 @@ The detailed description of all instructions is presented below:
 
   - If the SoC is not in deep sleep mode, and ULP interrupt bit (RTC_CNTL_ULP_CP_INT_ENA) is set in RTC_CNTL_INT_ENA_REG register, RTC interrupt will be triggered.
 
-  Note that before using WAKE instruction, ULP program may needs to wait until RTC controller is ready to wake up the main CPU. This is indicated using RTC_CNTL_RDY_FOR_WAKEUP bit of RTC_CNTL_LOW_POWER_ST_REG register. If WAKE instruction is executed while RTC_CNTL_RDY_FOR_WAKEUP is zero, it has no effect (wake up does not occur).
+.. note::
+  Note that before using WAKE instruction, ULP program may need to wait until RTC controller is ready to wake up the main CPU. This is indicated using RTC_CNTL_RDY_FOR_WAKEUP bit of RTC_CNTL_LOW_POWER_ST_REG register. If WAKE instruction is executed while RTC_CNTL_RDY_FOR_WAKEUP is zero, it has no effect (wake up does not occur). If the WAKE instruction is intended to be used while the main CPU is not in sleep mode then the RTC_CNTL_MAIN_STATE_IN_IDLE (bit 27) of RTC_CNTL_LOW_POWER_ST_REG can be used to check whether main CPU is in normal mode or sleep mode.
 
 **Examples**::
 
@@ -992,6 +993,15 @@ The detailed description of all instructions is presented below:
             HALT                          // Stop the ULP program
             // After these instructions, SoC will wake up,
             // and ULP will not run again until started by the main program.
+
+  1: check_wakeup:                        // Read RTC_CNTL_RDY_FOR_WAKEUP and RTC_CNTL_MAIN_STATE_IN_IDLE bit
+            READ_RTC_REG(RTC_CNTL_LOW_POWER_ST_REG, 27, 0)
+            MOVE r1, r0                   // Copy result in to r1
+            READ_RTC_FIELD(RTC_CNTL_LOW_POWER_ST_REG, RTC_CNTL_RDY_FOR_WAKEUP)
+            OR r0, r0, r1
+            JUMP check_wakeup, eq         // Retry until either of the bit are set
+            WAKE                          // Trigger wake up
+            HALT                          // Stop the ULP program
 
 
 .. only:: esp32
