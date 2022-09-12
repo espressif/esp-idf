@@ -39,7 +39,7 @@ def test_examples_sysview_tracing(env, extra_data):
 
             gdb_args = '-x {} --directory={}'.format(tempfiles[0], os.path.join(proj_path, 'main'))
             with ttfw_idf.GDBProcess(os.path.join(proj_path, 'gdb.log'), elf_path, dut.app.target, gdb_args) as gdb:
-                gdb.pexpect_proc.expect_exact('Thread 1 hit Breakpoint 1, app_main ()')
+                gdb.pexpect_proc.expect_exact('Thread 1 "main" hit Breakpoint 1, app_main ()')
                 gdb.pexpect_proc.expect_exact('Targets connected.')
                 gdb.pexpect_proc.expect(re.compile(r'\d+'))
 
