@@ -13,6 +13,6 @@
 void app_main(void)
 {
     int *p = (int *)4;
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
     *p = 0;
 }
