@@ -74,6 +74,7 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
 void rmt_release_group_handle(rmt_group_t *group)
 {
     int group_id = group->group_id;
+    rmt_clock_source_t clk_src = group->clk_src;
     bool do_deinitialize = false;
 
     _lock_acquire(&s_platform.mutex);
@@ -87,6 +88,16 @@ void rmt_release_group_handle(rmt_group_t *group)
         free(group);
     }
     _lock_release(&s_platform.mutex);
+
+    switch (clk_src) {
+#if SOC_RMT_SUPPORT_RC_FAST
+    case RMT_CLK_SRC_RC_FAST:
+        periph_rtc_dig_clk8m_disable();
+        break;
+#endif // SOC_RMT_SUPPORT_RC_FAST
+    default:
+        break;
+    }
 
     if (do_deinitialize) {
         ESP_LOGD(TAG, "del group(%d)", group_id);
