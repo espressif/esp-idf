@@ -98,9 +98,6 @@ static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, 
     case RMT_CLK_SRC_AHB:
         dev->sys_conf.sclk_sel = 1;
         break;
-    case RMT_CLK_SRC_RC_FAST:
-        dev->sys_conf.sclk_sel = 2;
-        break;
     case RMT_CLK_SRC_XTAL:
         dev->sys_conf.sclk_sel = 3;
         break;
@@ -741,9 +738,6 @@ static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint
     switch (dev->sys_conf.sclk_sel) {
     case 1:
         clk_src = RMT_CLK_SRC_AHB;
-        break;
-    case 2:
-        clk_src = RMT_CLK_SRC_RC_FAST;
         break;
     case 3:
         clk_src = RMT_CLK_SRC_XTAL;
