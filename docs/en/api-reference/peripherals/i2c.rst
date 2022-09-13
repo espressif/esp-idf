@@ -183,6 +183,12 @@ Explanations for :cpp:member:`i2c_config_t::clk_flags` are as follows:
 
     The clock frequency of SCL in master mode should not be lager than max frequency for SCL mentioned in the table above.
 
+.. note::
+
+    The clock frequency of SCL will be influenced by the pull-up resistors and wire capacitance (or might slave capacitance) together. Therefore, users need to choose correct pull-up resistors by themselves to make the frequency accurate. It is recommended by I2C protocol that the pull-up resistors commonly range from 1KOhms to 10KOhms, but different frequencies need different resistors.
+
+    Generally speaking, the higher frequency is selected, the smaller resistor should be used (but not less than 1KOhms). This is because high resistor will decline the current, which will lengthen the rising time and reduce the frequency. Usually, range 2KOhms to 5KOhms is what we recommend, but users also might need to make some adjustment depends on their reality.
+
 .. _i2c-api-install-driver:
 
 Install Driver
