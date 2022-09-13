@@ -33,22 +33,22 @@ static const char* TAG = "test_adc2";
 #define ADC2_CHAN1              ADC2_CHANNEL_9
 #define ADC_WIDTH               ADC_WIDTH_BIT_12
 #define ADC_HIGH                4095
-#define ADC_ERROR_THRES         20
+#define ADC_ERROR_THRES         200
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define ADC2_CHAN1              ADC2_CHANNEL_7
 #define ADC_WIDTH               ADC_WIDTH_BIT_13
 #define ADC_HIGH                8191
-#define ADC_ERROR_THRES         100
+#define ADC_ERROR_THRES         200
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define ADC2_CHAN1              ADC2_CHANNEL_0
 #define ADC_WIDTH               ADC_WIDTH_BIT_12
 #define ADC_HIGH                4095
-#define ADC_ERROR_THRES         100
+#define ADC_ERROR_THRES         200
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define ADC2_CHAN1              ADC2_CHANNEL_0
 #define ADC_WIDTH               ADC_WIDTH_BIT_12
 #define ADC_HIGH                4095
-#define ADC_ERROR_THRES         100
+#define ADC_ERROR_THRES         200
 #endif
 
 #define ADC_LOW                 0
