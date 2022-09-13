@@ -493,7 +493,7 @@ typedef struct integrity_t
 	int status;
 } integrity_t;
 
-#define tlsf_insist(x) { tlsf_assert(x); if (!(x)) { status--; } }
+#define tlsf_insist(x) { if (!(x)) { status--; } }
 
 static void integrity_walker(void* ptr, size_t size, int used, void* user)
 {
@@ -511,6 +511,10 @@ static void integrity_walker(void* ptr, size_t size, int used, void* user)
 	integ->prev_status = this_status;
 	integ->status += status;
 }
+
+#ifdef MULTI_HEAP_POISONING
+extern bool tlsf_check_hook(void *start, size_t size, bool is_free);
+#endif
 
 int tlsf_check(tlsf_t tlsf)
 {
@@ -548,7 +552,8 @@ int tlsf_check(tlsf_t tlsf)
 			while (block != &control->block_null)
 			{
 				int fli, sli;
-				tlsf_insist(block_is_free(block) && "block should be free");
+				const bool is_block_free = block_is_free(block);
+				tlsf_insist(is_block_free && "block should be free");
 				tlsf_insist(!block_is_prev_free(block) && "blocks should have coalesced");
 				tlsf_insist(!block_is_free(block_next(block)) && "blocks should have coalesced");
 				tlsf_insist(block_is_prev_free(block_next(block)) && "block should be free");
@@ -556,6 +561,23 @@ int tlsf_check(tlsf_t tlsf)
 
 				mapping_insert(block_size(block), &fli, &sli);
 				tlsf_insist(fli == i && sli == j && "block size indexed in wrong list");
+
+#ifdef MULTI_HEAP_POISONING
+					/* block_size(block) returns the size of the usable memory when the block is allocated.
+					 * As the block under test is free, we need to subtract to the block size the next_free
+					 * and prev_free fields of the block header as they are not a part of the usable memory
+					 * when the block is free. In addition, we also need to subtract the size of prev_phys_block
+					 * as this field is in fact part of the current free block and not part of the next (allocated)
+					 * block. Check the comments in block_split function for more details.
+					 */
+					const size_t actual_free_block_size = block_size(block)
+															- offsetof(block_header_t, next_free)
+															- block_header_overhead;
+
+					tlsf_insist(tlsf_check_hook((void*)block + sizeof(block_header_t),
+												actual_free_block_size, is_block_free));
+#endif
+
 				block = block->next_free;
 			}
 		}
