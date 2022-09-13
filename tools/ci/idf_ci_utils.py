@@ -55,8 +55,8 @@ def _check_git_filemode(full_path):  # type: (str) -> bool
 
     mode = stdout.split(' ', 1)[0]  # e.g. 100644 for a rw-r--r--
     if any([int(i, 8) & 1 for i in mode[-3:]]):
-        return False
-    return True
+        return True
+    return False
 
 
 def is_executable(full_path):  # type: (str) -> bool

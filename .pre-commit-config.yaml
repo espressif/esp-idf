@@ -22,8 +22,6 @@ repos:
       - id: end-of-file-fixer
         exclude: *whitespace_excludes
       - id: check-executables-have-shebangs
-      - id: file-contents-sorter
-        files: 'tools/ci/executable-list.txt'
       - id: mixed-line-ending
         args: ['-f=lf']
       - id: double-quote-string-fixer
@@ -75,3 +73,8 @@ repos:
         language: python
         files: '\.gitlab/CODEOWNERS'
         pass_filenames: false
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: file-contents-sorter
+        files: 'tools/ci/executable-list.txt'
