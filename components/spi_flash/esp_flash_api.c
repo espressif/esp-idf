@@ -849,6 +849,10 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
 
 esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length)
 {
+#if CONFIG_SPI_FLASH_VERIFY_WRITE
+    const uint32_t *except_buf = buffer;
+#endif //CONFIG_SPI_FLASH_VERIFY_WRITE
+
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
     VERIFY_CHIP_OP(write);
     CHECK_WRITE_ADDRESS(chip, address, length);
@@ -924,11 +928,31 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
         buffer = (void *)((intptr_t)buffer + write_len);
     }
 
-    return rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
+    err = rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
+
+#if CONFIG_SPI_FLASH_VERIFY_WRITE
+    uint32_t *actual_buf = malloc(length);;
+    esp_flash_read(chip, actual_buf, address, length);
+
+    for (int r = 0; r < length / sizeof(uint32_t); r++) {
+        if (actual_buf[r] != except_buf[r]) {
+            ESP_LOGE(TAG, "Bad write at %d offset: 0x%x, expected: 0x%08x, readback: 0x%08x",r, address + r, except_buf[r], actual_buf[r]);
+            err = ESP_FAIL;
+        }
+    }
+
+    free(actual_buf);
+#endif //CONFIG_SPI_FLASH_VERIFY_WRITE
+
+    return err;
 }
 
 esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t address, const void *buffer, uint32_t length)
 {
+#if CONFIG_SPI_FLASH_VERIFY_WRITE
+    const uint32_t *except_buf = buffer;
+#endif //CONFIG_SPI_FLASH_VERIFY_WRITE
+
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
     // Flash encryption only support on main flash.
     if (chip != esp_flash_default_chip) {
@@ -1046,7 +1070,23 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
         }
         bus_acquired = false;
     }
-    return rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
+    err = rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
+
+#if CONFIG_SPI_FLASH_VERIFY_WRITE
+    uint32_t *actual_buf = malloc(length);;
+    esp_flash_read(chip, actual_buf, address, length);
+
+    for (int r = 0; r < length / sizeof(uint32_t); r++) {
+        if (actual_buf[r] != except_buf[r]) {
+            ESP_LOGE(TAG, "Bad write at %d offset: 0x%x, expected: 0x%08x, readback: 0x%08x",r, address + r, except_buf[r], actual_buf[r]);
+            err = ESP_FAIL;
+        }
+    }
+
+    free(actual_buf);
+#endif //CONFIG_SPI_FLASH_VERIFY_WRITE
+
+    return err;
 }
 
 inline static IRAM_ATTR bool regions_overlap(uint32_t a_start, uint32_t a_len,uint32_t b_start, uint32_t b_len)

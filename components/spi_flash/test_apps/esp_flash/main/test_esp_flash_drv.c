@@ -411,6 +411,7 @@ TEST_CASE_MULTI_FLASH("SPI flash three byte reads/writes", test_three_byte_read_
 void test_erase_large_region(const esp_partition_t *part)
 {
     esp_flash_t* chip = part->flash_chip;
+    erase_test_region(part, 2);
 
     /* Write some noise at the start and the end of the region */
     const char *ohai = "OHAI";
