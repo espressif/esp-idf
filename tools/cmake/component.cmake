@@ -564,6 +564,8 @@ function(idf_component_mock)
                         INCLUDE_DIRS ${__INCLUDE_DIRS}
                         REQUIRES ${__REQUIRES})
 
+
+    set(COMPONENT_LIB ${COMPONENT_LIB} PARENT_SCOPE)
     add_custom_command(
         OUTPUT ruby_found SYMBOLIC
         COMMAND "ruby" "-v"
