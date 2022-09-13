@@ -38,6 +38,13 @@ typedef struct {
 void timer_hal_init(timer_hal_context_t *hal, uint32_t group_num, uint32_t timer_num);
 
 /**
+ * @brief Deinit timer hal context.
+ *
+ * @param hal Context of HAL layer
+ */
+void timer_hal_deinit(timer_hal_context_t *hal);
+
+/**
  * @brief Load counter value into time-base counter
  *
  * @param hal Context of the HAL layer

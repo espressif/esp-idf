@@ -128,15 +128,24 @@ typedef enum {
  * }
  * @endcode
  */
-#define SOC_GPTIMER_CLKS {SOC_MOD_CLK_APB, SOC_MOD_CLK_XTAL}
+#if CONFIG_IDF_ENV_FPGA
+#define SOC_GPTIMER_CLKS {SOC_MOD_CLK_XTAL}
+#else
+#define SOC_GPTIMER_CLKS {SOC_MOD_CLK_APB, SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+#endif
 
 /**
  * @brief Type of GPTimer clock source
  */
 typedef enum {
-    GPTIMER_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
-    GPTIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,   /*!< Select XTAL as the source clock */
-    GPTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default choice */
+    GPTIMER_CLK_SRC_APB = SOC_MOD_CLK_APB,         /*!< Select APB as the source clock */
+    GPTIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as the source clock */
+    GPTIMER_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST, /*!< Select RC_FAST as the source clock */
+#if CONFIG_IDF_ENV_FPGA
+    GPTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as the default choice */
+#else
+    GPTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,     /*!< Select APB as the default choice */
+#endif
 } soc_periph_gptimer_clk_src_t;
 
 /**

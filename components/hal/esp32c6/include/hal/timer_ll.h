@@ -13,6 +13,7 @@
 #include "hal/misc.h"
 #include "hal/timer_types.h"
 #include "soc/timer_group_struct.h"
+#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,16 +32,43 @@ extern "C" {
  */
 static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num, gptimer_clock_source_t clk_src)
 {
+    (void)timer_num; // only one timer in each group
+    uint8_t clk_id = 0;
     switch (clk_src) {
-    case GPTIMER_CLK_SRC_APB:
-        hw->hw_timer[timer_num].config.tx_use_xtal = 0;
-        break;
     case GPTIMER_CLK_SRC_XTAL:
-        hw->hw_timer[timer_num].config.tx_use_xtal = 1;
+        clk_id = 0;
+        break;
+    case GPTIMER_CLK_SRC_APB:
+        clk_id = 1;
+        break;
+    case GPTIMER_CLK_SRC_RC_FAST:
+        clk_id = 2;
         break;
     default:
-        HAL_ASSERT(false && "unsupported clock source");
+        HAL_ASSERT(false);
         break;
+    }
+    if (hw == &TIMERG0) {
+        PCR.timergroup0_timer_clk_conf.tg0_timer_clk_sel = clk_id;
+    } else {
+        PCR.timergroup1_timer_clk_conf.tg1_timer_clk_sel = clk_id;
+    }
+}
+
+/**
+ * @brief Enable Timer Group (GPTimer) module clock
+ *
+ * @param hw Timer Group register base address
+ * @param timer_num Timer index in the group
+ * @param en true to enable, false to disable
+ */
+static inline void timer_ll_enable_clock(timg_dev_t *hw, uint32_t timer_num, bool en)
+{
+    (void)timer_num; // only one timer in each group
+    if (hw == &TIMERG0) {
+        PCR.timergroup0_timer_clk_conf.tg0_timer_clk_en = en;
+    } else {
+        PCR.timergroup1_timer_clk_conf.tg1_timer_clk_en = en;
     }
 }
 

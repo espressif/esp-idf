@@ -359,9 +359,9 @@ esp_err_t timer_deinit(timer_group_t group_num, timer_idx_t timer_num)
     timer_hal_context_t *hal = &p_timer_obj[group_num][timer_num]->hal;
 
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
-    timer_ll_enable_counter(hal->dev, timer_num, false);
     timer_ll_enable_intr(hal->dev, TIMER_LL_EVENT_ALARM(timer_num), false);
     timer_ll_clear_intr_status(hal->dev, TIMER_LL_EVENT_ALARM(timer_num));
+    timer_hal_deinit(hal);
     TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);
 
     free(p_timer_obj[group_num][timer_num]);
