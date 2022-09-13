@@ -105,6 +105,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
             .mode = I2C_MODE_SLAVE,
             .slave.addr_10bit_en = 0,
             .slave.slave_addr = ESP_SLAVE_ADDR,      // address of your project
+            .clk_flags = 0,
         };
 
 在此阶段，:cpp:func:`i2c_param_config` 还将其他 I2C 配置参数设置为 I2C 总线协议规范中定义的默认值。有关默认值及修改默认值的详细信息，请参考 :ref:`i2c-api-customized-configuration`。
