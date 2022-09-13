@@ -252,6 +252,7 @@ def main():
                                            using the same fallback logic as the IDF bootloader', action='store_true')
 
     partition_selection_parser.add_argument('--partition-subtype', '-s', help='subtype of the partition')
+    partition_selection_parser.add_argument('--extra-partition-subtypes', help='Extra partition subtype entries', nargs='*')
 
     subparsers = parser.add_subparsers(dest='operation', help='run parttool -h for additional help')
 
@@ -270,7 +271,6 @@ def main():
     print_partition_info_subparser.add_argument('--info', help='type of partition information to get',
                                                 choices=['name', 'type', 'subtype', 'offset', 'size', 'encrypted'], default=['offset', 'size'], nargs='+')
     print_partition_info_subparser.add_argument('--part_list', help='Get a list of partitions suitable for a given type', action='store_true')
-    print_partition_info_subparser.add_argument('--extra-partition-subtypes', help='Extra partition subtype entries', nargs='*')
 
     args = parser.parse_args()
     quiet = args.quiet
