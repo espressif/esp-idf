@@ -210,7 +210,7 @@ class Directory:
         entries_count: int = get_required_lfn_entries_count(lfn_full_name)
 
         # entries in long file name entries chain starts with the last entry
-        split_names_reversed = reversed(list(enumerate(split_name_to_lfn_entries(lfn_full_name, entries_count))))
+        split_names_reversed = list(reversed(list(enumerate(split_name_to_lfn_entries(lfn_full_name, entries_count)))))
         for i, name_split_to_entry in split_names_reversed:
             order: int = i + 1
             blocks_: List[bytes] = split_name_to_lfn_entry_blocks(name_split_to_entry)
