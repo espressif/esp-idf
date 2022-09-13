@@ -4,61 +4,65 @@ Networking
 :link_to_translation:`zh_CN:[中文]`
 
 Ethernet
-**********
+********
 
 esp_eth_ioctl() API
 -------------------
 
-:cpp:func:`esp_eth_ioctl` third argument could take `int` (`bool`) number as an input in some cases. However, it was not properly documented and, in addition, the number had to be "unnaturally" type casted to `void *` datatype to prevent compiler warnings as shown in below example:
+Previously, the :cpp:func:`esp_eth_ioctl` API had the following issues:
 
-.. highlight:: c
+    - The third parameter (which is of type ``void *``) would accept an ``int``/``bool`` type arguments (i.e., not pointers) as input in some cases. However, these cases were not documented properly.
+    - To pass ``int``/``bool`` type argument as the third parameter, the argument had to be "unnaturally" casted to a ``void *`` type, to prevent a compiler warning as demonstrated in the code snippet below. This casting could lead to misuse of the :cpp:func:`esp_eth_ioctl` function.
 
-::
+.. code-block:: c
 
     esp_eth_ioctl(eth_handle, ETH_CMD_S_FLOW_CTRL, (void *)true);
 
-
-This could lead to misuse of the :cpp:func:`esp_eth_ioctl`. Therefore, ESP-IDF 5.0 unified usage of :cpp:func:`esp_eth_ioctl`. Its third argument now always acts as pointer to a memory location of specific type from/to where the configuration option is read/stored.
+Therefore, the usage of :cpp:func:`esp_eth_ioctl` is now unified. Arguments to the third parameter must be passed as pointers to a specific data type to/from where data will be stored/read by :cpp:func:`esp_eth_ioctl`. The code snippets below demonstrate the usage of :cpp:func:`esp_eth_ioctl`.
 
 Usage example to set Ethernet configuration:
 
-.. highlight:: c
-
-::
+.. code-block:: c
 
     eth_duplex_t new_duplex_mode = ETH_DUPLEX_HALF;
     esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &new_duplex_mode);
 
 Usage example to get Ethernet configuration:
 
-.. highlight:: c
-
-::
-
+.. code-block:: c
+    
     eth_duplex_t duplex_mode;
     esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &duplex_mode);
-
 
 KSZ8041/81 and LAN8720 Driver Update
 ------------------------------------
 
-KSZ8041/81 and LAN8720 Drivers were updated to support more devices (generations) from associated product family. The drivers are able to recognize particular chip number and its potential support by the driver.
+The KSZ8041/81 and LAN8720 drivers are updated to support more devices (i.e., generations) from their associated product families. The drivers can recognize particular chip numbers and their potential support by the driver.
 
-As a result, the specific "chip number" functions calls were replaced by generic ones as follows:
+As a result, the specific "chip number" functions calls are replaced by generic ones as follows:
 
-* `esp_eth_phy_new_ksz8041` and `esp_eth_phy_new_ksz8081` were removed, use :cpp:func:`esp_eth_phy_new_ksz80xx` instead
-* `esp_eth_phy_new_lan8720` was removed, use :cpp:func:`esp_eth_phy_new_lan87xx` instead
+* Removed ``esp_eth_phy_new_ksz8041()`` and ``esp_eth_phy_new_ksz8081()``, and use :cpp:func:`esp_eth_phy_new_ksz80xx` instead
+* Removed ``esp_eth_phy_new_lan8720()``, and use :cpp:func:`esp_eth_phy_new_lan87xx` instead
 
 
 ESP NETIF Glue Event Handlers
 -----------------------------
 
-``esp_eth_set_default_handlers()`` and ``esp_eth_clear_default_handlers()`` functions were removed. Registration of the default IP layer handlers for Ethernet is now handled automatically. If users have already followed the recommendation to fully initialize the Ethernet driver and network interface prior to registering their Ethernet/IP event handlers, then no action is required (except for deleting the affected functions). Otherwise, users should ensure that they register the user event handlers as the last thing prior to starting the Ethernet driver.
+``esp_eth_set_default_handlers()`` and ``esp_eth_clear_default_handlers()`` functions are removed. Registration of the default IP layer handlers for Ethernet is now handled automatically. If you have already followed the suggestion to fully initialize the Ethernet driver and network interface before registering their Ethernet/IP event handlers, then no action is required (except for deleting the affected functions). Otherwise, you may start the Ethernet driver right after they register the user event handler.
 
 PHY Address Auto-detect
 -----------------------
 
-Ethernet PHY address auto-detect function ``esp_eth_detect_phy_addr`` was renamed to :cpp:func:`esp_eth_phy_802_3_detect_phy_addr` and its header declaration was moved to :component_file:`esp_eth/include/esp_eth_phy_802_3.h`.
+The Ethernet PHY address auto-detect function ``esp_eth_detect_phy_addr()`` is renamed to :cpp:func:`esp_eth_phy_802_3_detect_phy_addr` and its header declaration is moved to :component_file:`esp_eth/include/esp_eth_phy_802_3.h`.
+
+
+SPI-Ethernet Module Initialization
+-----------------------------------
+
+The SPI-Ethernet Module initialization is now simplified. Previously, you had to manually allocate an SPI device using :cpp:func:`spi_bus_add_device` before instantiating the SPI-Ethernet MAC.
+
+Now, you no longer need to call :cpp:func:`spi_bus_add_device` as SPI devices are allocated internally. As a result, the :cpp:class:`eth_dm9051_config_t`, :cpp:class:`eth_w5500_config_t`, and :cpp:class:`eth_ksz8851snl_config_t` configuration structures are updated to include members for SPI device configuration (e.g., to allow fine tuning of SPI timing which may be dependent on PCB design). Likewise, the ``ETH_DM9051_DEFAULT_CONFIG``, ``ETH_W5500_DEFAULT_CONFIG``, and ``ETH_KSZ8851SNL_DEFAULT_CONFIG`` configuration initialization macros are updated to accept new input parameters. Refer to :doc:`Ethernet API Reference Guide<../../api-reference/network/esp_eth>` for an example of SPI-Ethernet Module initialization.
+
 
 
 SPI-Ethernet Modules Initialization
@@ -74,41 +78,40 @@ Now, you no longer need to call :cpp:func:`spi_bus_add_device` as the allocation
 TCP/IP Adapter
 *****************
 
-TCP/IP Adapter was a network interface abstraction component used in ESP-IDF prior to v4.1. This page outlines migration from tcpip_adapter API to its successor :doc:`/api-reference/network/esp_netif`.
+The TCP/IP Adapter was a network interface abstraction component used in ESP-IDF prior to v4.1. This section outlines migration from tcpip_adapter API to its successor :doc:`/api-reference/network/esp_netif`.
 
 
-Updating network connection code
+Updating Network Connection Code
 --------------------------------
 
 
-Network stack initialization
+Network Stack Initialization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Simply replace ``tcpip_adapter_init()`` with ``esp_netif_init()``. Please note that the :doc:`/api-reference/network/esp_netif` initialization API returns standard error code and the ``esp_netif_deinit()`` for un-initialization is available.
+- You may simply replace ``tcpip_adapter_init()`` with ``esp_netif_init()``. However, please should note that the ``esp_netif_init()`` function now returns standard error codes. See :doc:`/api-reference/network/esp_netif` for more details.
+- The ``esp_netif_deinit()`` function is provided to de-initialize the network stack.
+- You should also replace ``#include "tcpip_adapter.h"`` with ``#include "esp_netif.h"``.
 
-Also replace ``#include "tcpip_adapter.h"`` with ``#include "esp_netif.h"``.
 
-
-Network interface creation
+Network Interface Creation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-TCP/IP Adapter defined these three interfaces statically:
+Previously, the TCP/IP Adapter defined the following network interfaces statically:
 
 - WiFi Station
 - WiFi Access Point
 - Ethernet
 
-Network interface instance shall be explicitly constructed for the :doc:`/api-reference/network/esp_netif` to enable its connection to the TCP/IP stack.
-For example initialization code for WiFi has to explicitly call ``esp_netif_create_default_wifi_sta();`` or ``esp_netif_create_default_wifi_ap();`` after the TCP/IP stack and the event loop have been initialized.
-Please consult an example initialization code for these three interfaces:
+This now changes. Network interface instance should be explicitly constructed, so that the :doc:`/api-reference/network/esp_netif` can connect to the TCP/IP stack. For example, after the TCP/IP stack and the event loop are initialized, the initialization code for WiFi must explicitly call ``esp_netif_create_default_wifi_sta();`` or ``esp_netif_create_default_wifi_ap();``.
+
+Please refer to the example initialization code for these three interfaces:
 
 - WiFi Station: :example_file:`wifi/getting_started/station/main/station_example_main.c`
 - WiFi Access Point: :example_file:`wifi/getting_started/softAP/main/softap_example_main.c`
 - Ethernet: :example_file:`ethernet/basic/main/ethernet_example_main.c`
 
-
-Replacing other tcpip_adapter API
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Other tcpip_adapter API Replacement
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All the tcpip_adapter functions have their esp-netif counter-part. Please refer to the esp_netif.h grouped into these sections:
 
@@ -117,13 +120,13 @@ All the tcpip_adapter functions have their esp-netif counter-part. Please refer 
 *  :component_file:`DNS <esp_netif/include/esp_netif.h#L516>`
 *  :component_file:`IP address <esp_netif/include/esp_netif.h#L568>`
 
-
-Default event handlers
+Default Event Handlers
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Event handlers are moved from tcpip_adapter to appropriate driver code. There is no change from application code perspective, all events shall be handled in the same way.
-Please note that within IP related event handlers, application code usually receives IP addresses in a form of esp-netif specific struct (not the LwIP structs, but binary compatible).
-This is the preferred way of printing the address:
+Event handlers are moved from tcpip_adapter to appropriate driver code. There is no change from application code perspective, as all events should be handled in the same way. Please note that for IP-related event handlers, application code usually receives IP addresses in the form of an esp-netif specific struct instead of the LwIP structs. However, both structs are binary compatible.
+
+
+This is the preferred way to print the address:
 
 .. code-block:: c
 
@@ -135,19 +138,18 @@ Instead of
 
            ESP_LOGI(TAG, "got ip:%s\n", ip4addr_ntoa(&event->ip_info.ip));
 
-Since ``ip4addr_ntoa()`` is a LwIP API, the esp-netif provides ``esp_ip4addr_ntoa()`` as a replacement, but the above method is generally preferred.
+Since ``ip4addr_ntoa()`` is a LwIP API, the esp-netif provides ``esp_ip4addr_ntoa()`` as a replacement. However, the above method using ``IP2STR()`` is generally preferred.
 
-
-IP addresses
+IP Addresses
 ^^^^^^^^^^^^
 
-It is preferred to use esp-netif defined IP structures. Please note that the LwIP structs will still work when default compatibility enabled.
+You are advised to use esp-netif defined IP structures. Please note that with default compatibility enabled, the LwIP structs will still work.
+
 *  :component_file:`esp-netif IP address definitions <esp_netif/include/esp_netif_ip_addr.h#L96>`
 
-
-Next steps
+Next Steps
 ^^^^^^^^^^
 
-Additional step in porting an application to fully benefit from the :doc:`/api-reference/network/esp_netif` is to disable the tcpip_adapter compatibility layer in the component configuration:
-``ESP NETIF Adapter`` -> ``Enable backward compatible tcpip_adapter interface`` and check if the project compiles.
-TCP/IP adapter brings many include dependencies and this step might help in decoupling the application from using specific TCP/IP stack API directly.
+To port an application which may fully benefit from the :doc:`/api-reference/network/esp_netif`, you also need to disable the tcpip_adapter compatibility layer in the component configuration option. Please go to ``ESP NETIF Adapter`` > ``Enable backward compatible tcpip_adapter interface``. After that, check if your project compiles.
+
+The TCP/IP adapter includes many dependencies. Thus, disabling its compatibility might help separate the application from using specific TCP/IP stack API directly.
