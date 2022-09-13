@@ -13,6 +13,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "esp_etm.h"
 
 /**
  * @brief Type of async memcpy handle
@@ -91,6 +92,8 @@ esp_err_t esp_async_memcpy_uninstall(async_memcpy_t asmcp);
 /**
  * @brief Send an asynchronous memory copy request
  *
+ * @note The callback function is invoked in interrupt context, never do blocking jobs in the callback.
+ *
  * @param[in] asmcp Handle of async memcpy driver that returned from esp_async_memcpy_install
  * @param[in] dst Destination address (copy to)
  * @param[in] src Source address (copy from)
@@ -101,10 +104,32 @@ esp_err_t esp_async_memcpy_uninstall(async_memcpy_t asmcp);
  *      - ESP_OK: Send memory copy request successfully
  *      - ESP_ERR_INVALID_ARG: Send memory copy request failed because of invalid argument
  *      - ESP_FAIL: Send memory copy request failed because of other error
- *
- * @note The callback function is invoked in interrupt context, never do blocking jobs in the callback.
  */
 esp_err_t esp_async_memcpy(async_memcpy_t asmcp, void *dst, void *src, size_t n, async_memcpy_isr_cb_t cb_isr, void *cb_args);
+
+/**
+ * @brief Async memory copy specific events that supported by the ETM module
+ */
+typedef enum {
+    ASYNC_MEMCPY_ETM_EVENT_COPY_DONE, /*!< memory copy finished */
+} async_memcpy_etm_event_t;
+
+/**
+ * @brief Get the ETM event handle for async memcpy done signal
+ *
+ * @note The created ETM event object can be deleted later by calling `esp_etm_del_event`
+ *
+ * @param[in] asmcp Handle of async memcpy driver that returned from `esp_async_memcpy_install`
+ * @param[in] event_type ETM event type
+ * @param[out] out_event Returned ETM event handle
+ * @return
+ * @return
+ *      - ESP_OK: Get ETM event successfully
+ *      - ESP_ERR_INVALID_ARG: Get ETM event failed because of invalid argument
+ *      - ESP_ERR_NOT_SUPPORTED: Get ETM event failed because the DMA hardware doesn't support ETM submodule
+ *      - ESP_FAIL: Get ETM event failed because of other error
+ */
+esp_err_t esp_async_memcpy_new_etm_event(async_memcpy_t asmcp, async_memcpy_etm_event_t event_type, esp_etm_event_handle_t *out_event);
 
 #ifdef __cplusplus
 }

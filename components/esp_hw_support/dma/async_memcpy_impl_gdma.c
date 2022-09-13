@@ -110,6 +110,16 @@ esp_err_t async_memcpy_impl_restart(async_memcpy_impl_t *impl)
     return ESP_OK;
 }
 
+esp_err_t async_memcpy_impl_new_etm_event(async_memcpy_impl_t *impl, async_memcpy_etm_event_t event_type, esp_etm_event_handle_t *out_event)
+{
+    if (event_type == ASYNC_MEMCPY_ETM_EVENT_COPY_DONE) {
+        // use the RX EOF to indicate the async memcpy done event
+        return gdma_new_etm_event(impl->rx_channel, GDMA_ETM_EVENT_EOF, out_event);
+    } else {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+}
+
 bool async_memcpy_impl_is_buffer_address_valid(async_memcpy_impl_t *impl, void *src, void *dst)
 {
     bool valid = true;

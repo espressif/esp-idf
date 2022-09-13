@@ -5,12 +5,14 @@
  */
 
 // DO NOT USE THESE APIS IN ANY APPLICATIONS
-// GDMA driver is not public for end users, but for ESP-IDF developpers.
+// GDMA driver is not public for end users, but for ESP-IDF developers.
 
 #pragma once
 
 #include <stdbool.h>
+#include "esp_etm.h"
 #include "soc/gdma_channel.h"
+#include "hal/gdma_types.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -324,6 +326,38 @@ esp_err_t gdma_append(gdma_channel_handle_t dma_chan);
  *      - ESP_FAIL: DMA channel reset failed due to other errors
  */
 esp_err_t gdma_reset(gdma_channel_handle_t dma_chan);
+
+/**
+ * @brief Get the ETM event for GDMA channel
+ *
+ * @note The created ETM event object can be deleted later by calling `esp_etm_del_event`
+ *
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] event_type GDMA ETM event type
+ * @param[out] out_event Returned ETM event handle
+ * @return
+ *      - ESP_OK: Get ETM event successfully
+ *      - ESP_ERR_INVALID_ARG: Get ETM event failed because of invalid argument
+ *      - ESP_ERR_NOT_SUPPORTED: Get ETM event failed because the GDMA hardware doesn't support ETM event
+ *      - ESP_FAIL: Get ETM event failed because of other error
+ */
+esp_err_t gdma_new_etm_event(gdma_channel_handle_t dma_chan, gdma_etm_event_type_t event_type, esp_etm_event_handle_t *out_event);
+
+/**
+ * @brief Get the ETM task for GDMA channel
+ *
+ * @note The created ETM task object can be deleted later by calling `esp_etm_del_task`
+ *
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] task_type GDMA ETM task type
+ * @param[out] out_task Returned ETM task handle
+ * @return
+ *      - ESP_OK: Get ETM task successfully
+ *      - ESP_ERR_INVALID_ARG: Get ETM task failed because of invalid argument
+ *      - ESP_ERR_NOT_SUPPORTED: Get ETM task failed because the gdma hardware doesn't support ETM task
+ *      - ESP_FAIL: Get ETM task failed because of other error
+ */
+esp_err_t gdma_new_etm_task(gdma_channel_handle_t dma_chan, gdma_etm_task_type_t task_type, esp_etm_task_handle_t *out_task);
 
 #ifdef __cplusplus
 }
