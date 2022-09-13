@@ -654,6 +654,21 @@ Take care when adding configuration values in this file, as they will be include
 
 ``project_include.cmake`` files are used inside ESP-IDF, for defining project-wide build features such as ``esptool.py`` command line arguments and the ``bootloader`` "special app".
 
+Wrappers to redefine or extend existing functions
+-------------------------------------------------
+
+Thanks to the linker's wrap feature, it is possible to redefine or extend the behavior of an existing ESP-IDF function. To do so, you will need to provide the following CMake declaration in your project's ``CMakeLists.txt`` file:
+
+.. code-block:: cmake
+
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=function_to_redefine")
+
+Where ``function_to_redefine`` is the name of the function to redefine or extend. This option will let the linker replace all the calls to ``function_to_redefine`` functions in the binary libraries be changed to calls to ``__wrap_function_to_redefine`` function. Thus, you must define this new symbol in your application.
+
+The linker will provide a new symbol named ``__real_function_to_redefine`` which points to the former implementation of the function to redefine. It can be called from the new implementation, making it an extension of the former one.
+
+This mechanism is shown in the example :example:`build_system/wrappers`. Check its ``README.md`` for more details.
+
 .. _config_only_component:
 
 Configuration-Only Components
