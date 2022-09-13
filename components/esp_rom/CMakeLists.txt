@@ -21,7 +21,8 @@ else()
                         "patches/esp_rom_regi2c.c"
                         "patches/esp_rom_efuse.c")
 
-    if(CONFIG_ESP_ROM_HAS_HEAP_TLSF AND CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
+    if(CONFIG_HEAP_TLSF_USE_ROM_IMPL AND CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
+        # This file shall be included in the build if TLSF in ROM is activated
         list(APPEND sources "patches/esp_rom_tlsf.c")
     endif()
 
@@ -217,6 +218,14 @@ else() # Regular app build
         endif()
 
         if(CONFIG_HEAP_TLSF_USE_ROM_IMPL)
+            # After registering the component, set the tlsf_set_rom_patches symbol as undefined
+            # to force the linker to integrate the whole `esp_rom_tlsf.c` object file inside the
+            # final binary. This is necessary because tlsf_set_rom_patches is a constructor, thus,
+            # there as no explicit reference/call to it in IDF.
+            if(CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
+                target_link_libraries(${COMPONENT_LIB} PRIVATE "-u tlsf_set_rom_patches")
+            endif()
+
             rom_linker_script("heap")
         endif()
     endif()
