@@ -114,6 +114,8 @@
   extends:
     - .target_test_job_template
     - .rules:tests:integration_test
+    - .before_script_lesser
+  image: ${CI_INTEGRATION_TEST_ENV_IMAGE}
   needs:
     - assign_test
   variables:
@@ -124,21 +126,23 @@
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/ci/integration_test/test_configs"
     PREPARE_TEST_BIN_SCRIPT: "${CI_PROJECT_DIR}/tools/ci/integration_test/prepare_test_bins.py"
     CI_RUNNER_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIRunner.py"
-    PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
-    # auto_test_script only supports python 3.7.x
-    PYTHON_VER: 3.7.7
+    PYTHONPATH: "${CI_PROJECT_DIR}/auto_test_script/packages:${CI_PROJECT_DIR}/tools/ci/python_packages:${PYTHONPATH}"
+    INITIAL_CONDITION_RETRY_COUNT: "1"
+    GIT_LFS_SKIP_SMUDGE: 1
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
+    - add_gitlab_ssh_keys
     # clone local test env configs
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # clone test bench
-    # can not retry if downing git lfs files failed, so using empty_branch first.
-    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
-    - retry_failed git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
-    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script --customized_only
+    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} auto_test_script
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
+    - cd auto_test_script
+    - ./tools/ci/setup_idfci.sh
+    # Merge known issues
     - cat ${INTEGRATION_TEST_DIR}/KnownIssues >> ${TEST_CASE_FILE_PATH}/KnownIssues
     # run test
     - python ${PREPARE_TEST_BIN_SCRIPT} $CONFIG_FILE
@@ -632,16 +636,16 @@ nvs_compatible_test:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
+    - add_gitlab_ssh_keys
     # clone local test env configs
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # clone test bench
-    # can not retry if downing git lfs files failed, so using empty_branch first.
-    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
-    - retry_failed git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
-    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script --customized_only
-    # prepare nvs bins
+    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} auto_test_script
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     - cd auto_test_script
+    - ./tools/ci/setup_idfci.sh
+    # prepare nvs bins
     - ./tools/prepare_nvs_bin.sh
     # run test
     - python ${PREPARE_TEST_BIN_SCRIPT} $CONFIG_FILE
