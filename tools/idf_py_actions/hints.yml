@@ -45,14 +45,14 @@
     hint: "Function '{}' has been removed. Please use the function {}."
     variables:
         -
-            re_variables: [bootloader_common_get_reset_reason]
-            hint_variables: [bootloader_common_get_reset_reason(), "'esp_rom_get_reset_reason()' in the ROM component"]
+            re_variables: ['bootloader_common_get_reset_reason']
+            hint_variables: ['bootloader_common_get_reset_reason()', "'esp_rom_get_reset_reason()' in the ROM component"]
         -
-            re_variables: [esp_efuse_get_chip_ver]
-            hint_variables: [esp_efuse_get_chip_ver(), efuse_hal_get_major_chip_version(), efuse_hal_get_minor_chip_version() or efuse_hal_chip_revision() instead]
+            re_variables: ['esp_efuse_get_chip_ver']
+            hint_variables: ['esp_efuse_get_chip_ver()', 'efuse_hal_get_major_chip_version()', 'efuse_hal_get_minor_chip_version() or efuse_hal_chip_revision() instead']
         -
-            re_variables: [(esp_spiram_get_chip_size|esp_spiram_get_size)]
-            hint_variables: [esp_spiram_get_chip_size and esp_spiram_get_size, esp_psram_get_size()]
+            re_variables: ['(esp_spiram_get_chip_size|esp_spiram_get_size)']
+            hint_variables: ['esp_spiram_get_chip_size and esp_spiram_get_size', 'esp_psram_get_size()']
 
 -
     re: "error: implicit declaration of function 'esp_secure_boot_verify_sbv2_signature_block|esp_secure_boot_verify_rsa_signature_block'"
@@ -63,14 +63,14 @@
     hint: '{0}.h header file is not included by esp_system.h anymore. It shall then be manually included with #include "{0}.h"'
     variables:
         -
-            re_variables: [(esp_random|esp_fill_random)]
-            hint_variables: [esp_random]
+            re_variables: ['(esp_random|esp_fill_random)']
+            hint_variables: ['esp_random']
         -
-            re_variables: [(esp_base_mac_addr_(s|g)et|esp_efuse_mac_get_(custom|default)|esp_read_mac|esp_derive_local_mac)]
-            hint_variables: [esp_mac]
+            re_variables: ['(esp_base_mac_addr_(s|g)et|esp_efuse_mac_get_(custom|default)|esp_read_mac|esp_derive_local_mac)']
+            hint_variables: ['esp_mac']
         -
-            re_variables: [esp_chip_info]
-            hint_variables: [esp_chip_info]
+            re_variables: ['esp_chip_info']
+            hint_variables: ['esp_chip_info']
 
 -
     re: "fatal error: (spiram.h|esp_spiram.h): No such file or directory"
@@ -82,31 +82,31 @@
     hint: "Use {} defined in esp_cpu.h instead of {}."
     variables:
         -
-            re_variables: [esp_cpu_ccount_t]
-            hint_variables: [esp_cpu_cycle_count_t, esp_cpu_ccount_t]
+            re_variables: ['esp_cpu_ccount_t']
+            hint_variables: ['esp_cpu_cycle_count_t', 'esp_cpu_ccount_t']
         -
-            re_variables: [esp_cpu_get_ccount]
-            hint_variables: [esp_cpu_get_cycle_count(), esp_cpu_get_ccount]
+            re_variables: ['esp_cpu_get_ccount']
+            hint_variables: ['esp_cpu_get_cycle_count()', 'esp_cpu_get_ccount']
         -
-            re_variables: [esp_cpu_set_ccount]
-            hint_variables: [esp_cpu_set_cycle_count(), esp_cpu_set_ccount]
+            re_variables: ['esp_cpu_set_ccount']
+            hint_variables: ['esp_cpu_set_cycle_count()', 'esp_cpu_set_ccount']
 
 -
     re: "fatal error: {}: No such file or directory"
     hint: "{} was removed. Include {} instead."
     variables:
         -
-            re_variables: [esp_intr.h]
-            hint_variables: [esp_intr.h, esp_intr_alloc.h]
+            re_variables: ['esp_intr.h']
+            hint_variables: ['esp_intr.h', 'esp_intr_alloc.h']
         -
-            re_variables: [soc/cpu.h]
-            hint_variables: [soc/cpu.h, and use the API function provided by esp_cpu.h]
+            re_variables: ['soc/cpu.h']
+            hint_variables: ['soc/cpu.h', 'and use the API function provided by esp_cpu.h']
         -
-            re_variables: [compare_set.h]
-            hint_variables: [compare_set.h, and use the API function provided by esp_cpu.h]
+            re_variables: ['compare_set.h']
+            hint_variables: ['compare_set.h', 'and use the API function provided by esp_cpu.h']
         -
-            re_variables: [esp_panic.h]
-            hint_variables: [esp_panic.h, use functionalities provided in esp_debug_helpers.h]
+            re_variables: ['esp_panic.h']
+            hint_variables: ['esp_panic.h', 'use functionalities provided in esp_debug_helpers.h']
 
 -
     re: "error: implicit declaration of function 'esp_int_wdt_\\w+'"
@@ -156,20 +156,20 @@
     hint: 'The {0} (functions/types/macros prefixed with "{1}") has been made into a private API. If users still require usage of the {0} (though this is not recommended), it can be included via  #include "esp_private/{2}.h".'
     variables:
         -
-            re_variables: [esp32\\w*\\/clk]
-            hint_variables: [ESP Clock API, esp_clk, esp_clk]
+            re_variables: ['esp32\\w*\\/clk']
+            hint_variables: ['ESP Clock API', 'esp_clk', 'esp_clk']
         -
-            re_variables: [esp32\\w*\\/cache_err_int]
-            hint_variables: [Cache Error Interrupt API, esp_cache_err, cache_err_int]
+            re_variables: ['esp32\\w*\\/cache_err_int']
+            hint_variables: ['Cache Error Interrupt API', 'esp_cache_err', 'cache_err_int']
         -
-            re_variables: [brownout]
-            hint_variables: [Brownout API, esp_brownout, brownout]
+            re_variables: ['brownout']
+            hint_variables: ['Brownout API', 'esp_brownout', 'brownout']
         -
-            re_variables: [trax]
-            hint_variables: [Trax API, trax_, trax]
+            re_variables: ['trax']
+            hint_variables: ['Trax API', 'trax_', 'trax']
         -
-            re_variables: [eh_frame_parser]
-            hint_variables: [Backtrace Parser API, eh_frame_parser, eh_frame_parser]
+            re_variables: ['eh_frame_parser']
+            hint_variables: ['Backtrace Parser API', 'eh_frame_parser', 'eh_frame_parser']
 
 -
     re: "fatal error: esp_adc_cal.h: No such file or directory"
