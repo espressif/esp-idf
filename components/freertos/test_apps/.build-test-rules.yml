@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/freertos/test_apps/orig_inc_path:
+  enable:
+    - if: IDF_TARGET in ["esp32"]
+      reason: The feature only depends on the build system, nothing target-specific that needs to be tested
