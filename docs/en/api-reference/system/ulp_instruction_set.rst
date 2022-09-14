@@ -281,6 +281,9 @@ The detailed description of all instructions is presented below:
 **Description**
    The instruction does a logical shift to left of the source register by the number of bits from another source register or a 16-bit signed value and stores the result to the destination register.
 
+.. note::
+   Shift operations which are greater than 15 bits will have an undefined result.
+
 **Examples**::
 
   1:       LSH R1, R2, R3            // R1 = R2 << R3
@@ -315,6 +318,9 @@ The detailed description of all instructions is presented below:
 
 **Description**
   The instruction does a logical shift to right of a source register by the number of bits from another source register or a 16-bit signed value and stores the result to the destination register.
+
+.. note::
+   Shift operations which are greater than 15 bits will have an undefined result.
 
 **Examples**::
 
