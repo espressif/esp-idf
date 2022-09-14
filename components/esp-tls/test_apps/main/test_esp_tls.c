@@ -11,14 +11,6 @@
 #include "esp_log.h"
 #include "esp_mac.h"
 #include "sys/socket.h"
-#if SOC_SHA_SUPPORT_PARALLEL_ENG
-#include "sha/sha_parallel_engine.h"
-#elif SOC_SHA_SUPPORT_DMA
-#include "sha/sha_dma.h"
-#else
-#include "sha/sha_block.h"
-#endif
-#include "test_utils.h"
 
 const char *test_cert_pem =   "-----BEGIN CERTIFICATE-----\n"\
                               "MIICrDCCAZQCCQD88gCs5AFs/jANBgkqhkiG9w0BAQsFADAYMRYwFAYDVQQDDA1F\n"\
@@ -67,40 +59,16 @@ const char *test_key_pem =    "-----BEGIN PRIVATE KEY-----\n"\
                               "Aogx44Fozd1t2hYcozPuZD4s\n"\
                               "-----END PRIVATE KEY-----\n";
 
-#if SOC_SHA_SUPPORT_SHA512
-#define SHA_TYPE SHA2_512
-#else
-#define SHA_TYPE SHA2_256
-#endif //SOC_SHA_SUPPORT_SHA512
-
-static void test_leak_setup(const char *file, long line)
+TEST_CASE("esp-tls init deinit", "[esp-tls]")
 {
-    uint8_t mac[6];
-    struct timeval te;
-    gettimeofday(&te, NULL); // get current time
-    esp_read_mac(mac, ESP_MAC_WIFI_STA);
-    printf("%s:%ld: time=%jd.%lds, mac:" MACSTR "\n", file, line, (intmax_t)te.tv_sec, te.tv_usec, MAC2STR(mac));
-    // Execute esp_sha operation to allocate internal SHA semaphore memory
-    // which is considered as leaked otherwise
-    const uint8_t input_buffer[64];
-    uint8_t output_buffer[64];
-    esp_sha(SHA_TYPE, input_buffer, sizeof(input_buffer), output_buffer);
-    test_utils_record_free_mem();
-}
-
-
-TEST_CASE("esp-tls init deinit", "[esp-tls][leaks=0]")
-{
-    test_leak_setup(__FILE__, __LINE__);
     struct esp_tls *tls = esp_tls_init();
     TEST_ASSERT_NOT_NULL(tls);
     int ret = esp_tls_conn_destroy(tls);
     TEST_ASSERT_EQUAL(0, ret);
 }
 
-TEST_CASE("esp-tls global_ca_store set free", "[esp-tls][leaks=0]")
+TEST_CASE("esp-tls global_ca_store set free", "[esp-tls]")
 {
-    test_leak_setup(__FILE__, __LINE__);
     esp_err_t ret = esp_tls_init_global_ca_store();
     TEST_ASSERT_EQUAL(ESP_OK, ret);
     ret = esp_tls_set_global_ca_store((const unsigned char *)test_cert_pem, strlen(test_cert_pem) + 1);
@@ -109,9 +77,8 @@ TEST_CASE("esp-tls global_ca_store set free", "[esp-tls][leaks=0]")
 }
 
 #ifdef CONFIG_ESP_TLS_SERVER
-TEST_CASE("esp_tls_server session create delete", "[esp-tls][leaks=0]")
+TEST_CASE("esp_tls_server session create delete", "[esp-tls]")
 {
-    test_leak_setup(__FILE__, __LINE__);
     struct esp_tls *tls = esp_tls_init();
     TEST_ASSERT_NOT_NULL(tls);
     esp_tls_cfg_server_t cfg = {
@@ -126,5 +93,6 @@ TEST_CASE("esp_tls_server session create delete", "[esp-tls][leaks=0]")
     TEST_ASSERT_LESS_THAN_INT(0, ret);
     // free the allocated memory.
     esp_tls_server_session_delete(tls);
+
 }
 #endif
