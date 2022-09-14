@@ -5,7 +5,7 @@ Device Firmware Upgrade via USB
 
 Typically, the firmware of the {IDF_TARGET_NAME} is flashed via the chip's serial port. However, flashing via the serial port requires a USB to serial converter chip (e.g., CP210x or FTDI) to be connected to the {IDF_TARGET_NAME} (see :doc:`Establish Serial Connection with {IDF_TARGET_NAME} <../get-started/establish-serial-connection>` for more details). The {IDF_TARGET_NAME} contains a USB OTG peripheral making it possible to connect the {IDF_TARGET_NAME} to the host directly via USB (thus not requiring a USB to serial converter chip).
 
-Device Firmware Upgrade (DFU) is a mechanism for upgrading the firmware of the {IDF_TARGET_NAME} directly via the Universal Serial Bus (USB).
+Device Firmware Upgrade (DFU) is a mechanism for upgrading the firmware of the {IDF_TARGET_NAME} directly via the Universal Serial Bus (USB). However, enabling Secure Boot or flash encryption disables the USB-OTG USB stack in the ROM, disallowing updates via the serial emulation or DFU on that port.
 
 - :ref:`get-started-get-prerequisites` of the Getting Started Guide introduces the software requirements of DFU.
 - Section :ref:`api_guide_dfu_build` describes how to build firmware for DFU with ESP-IDF.

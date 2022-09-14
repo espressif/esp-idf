@@ -5,7 +5,7 @@
 
 一般情况下，{IDF_TARGET_NAME} 的固件是通过芯片的串口烧录。但是，通过串口烧录 {IDF_TARGET_NAME} 需要连接 USB 转串口转换器（如 CP210x 或 FTDI），详细信息可参阅 :doc:`与 {IDF_TARGET_NAME} 创建串口连接<../get-started/establish-serial-connection>`。{IDF_TARGET_NAME} 包含一个 USB OTG 外设，使其可以通过 USB 将 {IDF_TARGET_NAME} 直接连接到主机，即不需要 USB 转串口转换器也可完成烧录。
 
-设备固件升级 (DFU) 是一种通过通用串行总线 (USB) 升级设备固件的机制。
+设备固件升级 (DFU) 是一种通过通用串行总线 (USB) 升级设备固件的机制。但是，启用安全启动 (Secure Boot) 或 flash 加密会禁用 ROM 中的 USB-OTG USB 堆栈，则无法通过该端口上的模拟串口或 DFU 进行更新。
 
 - 入门指南中的 :ref:`get-started-get-prerequisites` 介绍了 DFU 的软件要求。
 - :ref:`api_guide_dfu_build` 章节介绍了如何使用 ESP-IDF 构建固件。

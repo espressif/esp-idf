@@ -72,7 +72,7 @@ Secure Boot V2 Process
 
 This is an overview of the Secure Boot V2 Process. Instructions how to enable Secure Boot are supplied in section :ref:`secure-boot-v2-howto`.
 
-Secure Boot V2 verifies the bootloader image and application binary images using a dedicated *signature block*. Each image has a separately generated signature block which is appended to the end of the image. 
+Secure Boot V2 verifies the bootloader image and application binary images using a dedicated *signature block*. Each image has a separately generated signature block which is appended to the end of the image.
 
 .. only:: esp32
 
@@ -86,13 +86,13 @@ Secure Boot V2 verifies the bootloader image and application binary images using
 
   Up to 3 signature blocks can be appended to the bootloader or application image in {IDF_TARGET_NAME}.
 
-Each signature block contains a signature of the preceding image as well as the corresponding {IDF_TARGET_SBV2_KEY} public key. For more details about the format, refer to :ref:`signature-block-format`. A digest of the {IDF_TARGET_SBV2_KEY} public key is stored in the eFuse. 
+Each signature block contains a signature of the preceding image as well as the corresponding {IDF_TARGET_SBV2_KEY} public key. For more details about the format, refer to :ref:`signature-block-format`. A digest of the {IDF_TARGET_SBV2_KEY} public key is stored in the eFuse.
 
 The application image is not only verified on every boot but also on each over the air (OTA) update. If the currently selected OTA app image cannot be verified, the bootloader will fall back and look for another correctly signed application image.
 
 The Secure Boot V2 process follows these steps:
 
-1. On startup, the ROM code checks the Secure Boot V2 bit in the eFuse. If Secure Boot is disabled, a normal boot will be executed. If Secure Boot is enabled, the boot will proceed according to the following steps. 
+1. On startup, the ROM code checks the Secure Boot V2 bit in the eFuse. If Secure Boot is disabled, a normal boot will be executed. If Secure Boot is enabled, the boot will proceed according to the following steps.
 
 2. The ROM code verifies the bootloader's signature block (:ref:`verify_signature-block`). If this fails, the boot process will be aborted.
 
@@ -321,6 +321,8 @@ Restrictions after Secure Boot is enabled
 - Any updated bootloader or app will need to be signed with a key matching the digest already stored in eFuse.
 
 - After Secure Boot is enabled, no further eFuses can be read protected. (If :doc:`/security/flash-encryption` is enabled then the bootloader will ensure that any flash encryption key generated on first boot will already be read protected.) If :ref:`CONFIG_SECURE_BOOT_INSECURE` is enabled then this behavior can be disabled, but this is not recommended.
+
+- Please note that enabling Secure Boot or flash encryption disables the USB-OTG USB stack in the ROM, disallowing updates via the serial emulation or Device Firmware Update (DFU) on that port.
 
 .. _secure-boot-v2-generate-key:
 
