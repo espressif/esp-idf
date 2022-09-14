@@ -14,9 +14,10 @@
 
 #pragma once
 
-#define SOC_SPI_PERIPH_NUM      3
-#define SOC_SPI_DMA_CHAN_NUM    3
-#define SOC_SPI_PERIPH_CS_NUM(i)    3
+#define SOC_SPI_PERIPH_NUM          3
+#define SOC_SPI_DMA_CHAN_NUM        3
+#define SOC_SPI_PERIPH_CS_NUM(i)    (((i)==0)? 2: (((i)==1)? 6: 3))
+#define SOC_SPI_MAX_CS_NUM          6
 
 #define SPI_FUNC_NUM            0
 #define SPI_IOMUX_PIN_NUM_HD    27
@@ -54,4 +55,3 @@
 // Peripheral supports output given level during its "dummy phase"
 // Only SPI1 supports this feature
 #define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(host_id)    ((host_id) == 0)
-
