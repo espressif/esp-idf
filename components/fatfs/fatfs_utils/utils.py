@@ -14,6 +14,7 @@ from construct import BitsInteger, BitStruct, Int16ul
 # the regex pattern defines symbols that are allowed by long file names but not by short file names
 INVALID_SFN_CHARS_PATTERN = re.compile(r'[.+,;=\[\]]')
 
+FATFS_MIN_ALLOC_UNIT: int = 128
 FAT12_MAX_CLUSTERS: int = 4085
 FAT16_MAX_CLUSTERS: int = 65525
 RESERVED_CLUSTERS_COUNT: int = 2
@@ -174,7 +175,9 @@ def get_args_for_partition_generator(desc: str, wl: bool) -> argparse.Namespace:
                         help='Filename of the generated fatfs image')
     parser.add_argument('--partition_size',
                         default=FATDefaults.SIZE,
-                        help='Size of the partition in bytes')
+                        help='Size of the partition in bytes.' +
+                             ('' if wl else ' Use `--partition_size detect` for detecting the minimal partition size.')
+                        )
     parser.add_argument('--sector_size',
                         default=FATDefaults.SECTOR_SIZE,
                         type=int,
@@ -207,6 +210,8 @@ def get_args_for_partition_generator(desc: str, wl: bool) -> argparse.Namespace:
     args = parser.parse_args()
     if args.fat_type == 0:
         args.fat_type = None
+    if args.partition_size == 'detect' and not wl:
+        args.partition_size = -1
     args.partition_size = int(str(args.partition_size), 0)
     if not os.path.isdir(args.input_directory):
         raise NotADirectoryError(f'The target directory `{args.input_directory}` does not exist!')
