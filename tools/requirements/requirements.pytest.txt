@@ -14,5 +14,5 @@ scapy
 websocket-client
 netifaces
 rangehttpserver
-dbus-python; sys_platform != 'win32'
+dbus-python; sys_platform == 'linux'
 protobuf
