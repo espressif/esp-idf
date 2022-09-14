@@ -222,7 +222,7 @@ TEST_CASE("ADC continuous work with ISR and Flash", "[adc_oneshot]")
     uint32_t overhead_us = 50;
 #endif
     uint32_t wait_time_us = (1000 * 1000 / ADC_TEST_FREQ_HZ * ADC_TEST_PKG_SIZE / SOC_ADC_DIGI_RESULT_BYTES) + overhead_us;
-    printf("period is %d us\n", wait_time_us);
+    printf("period is %"PRId32" us\n", wait_time_us);
 
     //ADC IO tile low
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 0);
