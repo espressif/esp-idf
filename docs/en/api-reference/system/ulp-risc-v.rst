@@ -101,12 +101,12 @@ To access the ULP RISC-V program variables from the main program, the generated 
 Mutual Exclusion
 ^^^^^^^^^^^^^^^^
 
-If mutual exclusion is needed when accessing a variable shared between the main program and ULP then this can be achieved by using the ULP RISC-V lock API:
+If mutual exclusion is needed when accessing a variable shared between the main program and ULP, then this can be achieved by using the ULP RISC-V lock API:
 
  * :cpp:func:`ulp_riscv_lock_acquire`
  * :cpp:func:`ulp_riscv_lock_release`
 
-The ULP does not have any hardware instructions to facilitate mutual exclusion so the lock API achieves this through a software algorithm (`Peterson's algorithm <https://en.wikipedia.org/wiki/Peterson%27s_algorithm>`_).
+The ULP does not have any hardware instructions to facilitate mutual exclusion, so the lock API achieves this through a software algorithm (`Peterson's algorithm <https://en.wikipedia.org/wiki/Peterson%27s_algorithm>`_).
 
 The locks are intended to only be called from a single thread in the main program, and will not provide mutual exclusion if used simultaneously from multiple threads.
 
