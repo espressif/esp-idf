@@ -273,6 +273,18 @@ esp_err_t mcpwm_timer_set_phase_on_sync(mcpwm_timer_handle_t timer, const mcpwm_
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
     mcpwm_sync_handle_t sync_source = config->sync_src;
+    // check if the sync direction is valid
+    bool valid_direction = true;
+    if (timer->count_mode == MCPWM_TIMER_COUNT_MODE_UP) {
+        valid_direction = config->direction == MCPWM_TIMER_DIRECTION_UP;
+    } else if (timer->count_mode == MCPWM_TIMER_COUNT_MODE_DOWN) {
+        valid_direction = config->direction == MCPWM_TIMER_DIRECTION_DOWN;
+    } else if (timer->count_mode == MCPWM_TIMER_COUNT_MODE_PAUSE) {
+        valid_direction = false;
+    } else {
+        valid_direction = true;
+    }
+    ESP_RETURN_ON_FALSE(valid_direction, ESP_ERR_INVALID_ARG, TAG, "invalid sync direction");
 
     // enable sync feature and set sync phase
     if (sync_source) {
