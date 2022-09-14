@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-#include "coc_bleprph.h"
+#include "esp_peripheral.h"
 
 /**
  * Utility function to log an array of bytes.

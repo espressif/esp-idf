@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <string.h>
 #include "host/ble_hs.h"
-#include "coc_blecent.h"
+#include "esp_central.h"
 
 static void *peer_svc_mem;
 static struct os_mempool peer_svc_pool;
