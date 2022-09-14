@@ -131,6 +131,7 @@ build:integration_test:
       - sdio      # UT_044, UT_045
       - usb       # USB Device & Host tests
       - spi_multi # UT_C2_SPI_DUAL
+      - adc       # component_ut_pytest_esp32x_adc
   patterns:
     - "{0}-{1}-{2}"
     - "{0}-{2}"
