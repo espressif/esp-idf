@@ -268,6 +268,7 @@
 #define SOC_SPI_DMA_CHAN_NUM            2
 
 #define SOC_SPI_PERIPH_CS_NUM(i)        3
+#define SOC_SPI_MAX_CS_NUM              3
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 #define SOC_SPI_MAX_PRE_DIVIDER         8192

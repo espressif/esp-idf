@@ -539,6 +539,10 @@ config SOC_SPI_PERIPH_NUM
     int
     default 2
 
+config SOC_SPI_MAX_CS_NUM
+    int
+    default 6
+
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
     default 64
