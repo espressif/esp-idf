@@ -222,6 +222,10 @@ TIME_ENTRY = BitStruct(
 )
 
 
+def build_name(name: str, extension: str) -> str:
+    return f'{name}.{extension}' if len(extension) > 0 else name
+
+
 def build_date_entry(year: int, mon: int, mday: int) -> int:
     """
     :param year: denotes year starting from 1980 (0 ~ 1980, 1 ~ 1981, etc), valid values are 1980 + 0..127 inclusive
