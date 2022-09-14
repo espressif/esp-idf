@@ -13,14 +13,17 @@
 #include "crypto/sha256.h"
 #include "crypto/sha384.h"
 
-/* ToDo - Remove this once appropriate solution is available.
-We need to define this for the file as ssl_misc.h uses private structures from mbedtls,
-which are undefined if the following flag is not defined */
-/* Many APIs in the file make use of this flag instead of `MBEDTLS_PRIVATE` */
-/* ToDo - Replace them with proper getter-setter once they are added */
+/* TODO: Remove this once the appropriate solution is found
+ *
+ * ssl_misc.h header uses private elements from
+ * mbedtls, which become undefined if the following flag
+ * is not defined
+ */
 #define MBEDTLS_ALLOW_PRIVATE_ACCESS
 
+// located at mbedtls/library/ssl_misc.h
 #include "ssl_misc.h"
+
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/debug.h"
@@ -659,11 +662,7 @@ int tls_connection_established(void *tls_ctx, struct tls_connection *conn)
 {
 	mbedtls_ssl_context *ssl = &conn->tls->ssl;
 
-	if (ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_HANDSHAKE_OVER) {
-		return 1;
-	}
-
-	return 0;
+	return mbedtls_ssl_is_handshake_over(ssl);
 }
 
 int tls_global_set_verify(void *tls_ctx, int check_crl, int strict)
@@ -696,13 +695,13 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 	}
 
 	/* Multiple reads */
-	while (tls->ssl.MBEDTLS_PRIVATE(state) != MBEDTLS_SSL_HANDSHAKE_OVER) {
+	while (!mbedtls_ssl_is_handshake_over(&tls->ssl)) {
 		if (tls->ssl.MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_CLIENT_CERTIFICATE) {
 			/* Read random data before session completes, not present after handshake */
 			if (tls->ssl.MBEDTLS_PRIVATE(handshake)) {
 				os_memcpy(conn->randbytes, tls->ssl.MBEDTLS_PRIVATE(handshake)->randbytes,
 					  TLS_RANDOM_LEN * 2);
-				conn->mac = tls->ssl.handshake->ciphersuite_info->mac;
+				conn->mac = tls->ssl.MBEDTLS_PRIVATE(handshake)->ciphersuite_info->mac;
 			}
 		}
 		ret = mbedtls_ssl_handshake_step(&tls->ssl);
@@ -944,7 +943,7 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 		wpa_printf(MSG_ERROR, "TLS: %s, session ingo is null", __func__);
 		return -1;
 	}
-	if (ssl->MBEDTLS_PRIVATE(state) != MBEDTLS_SSL_HANDSHAKE_OVER) {
+	if (!mbedtls_ssl_is_handshake_over(ssl)) {
 		wpa_printf(MSG_ERROR, "TLS: %s, incorrect tls state=%d", __func__, ssl->MBEDTLS_PRIVATE(state));
 		return -1;
 	}
@@ -957,7 +956,7 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 	}
 
 	wpa_hexdump_key(MSG_MSGDUMP, "random", seed, 2 * TLS_RANDOM_LEN);
-	wpa_hexdump_key(MSG_MSGDUMP, "master", ssl->MBEDTLS_PRIVATE(session)->MBEDTLS_PRIVATE(master), TLS_MASTER_SECRET_LEN);
+	wpa_hexdump_key(MSG_MSGDUMP, "master",  ssl->MBEDTLS_PRIVATE(session)->MBEDTLS_PRIVATE(master), TLS_MASTER_SECRET_LEN);
 
 	ret = mbedtls_ssl_tls_prf(conn->tls_prf_type, conn->master_secret, TLS_MASTER_SECRET_LEN,
 				label, seed, 2 * TLS_RANDOM_LEN, out, out_len);
