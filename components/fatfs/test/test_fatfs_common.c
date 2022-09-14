@@ -891,6 +891,15 @@ void test_fatfs_concurrent(const char* filename_prefix)
     vSemaphoreDelete(args4.done);
 }
 
+void test_leading_spaces(void){
+    // fatfs should ignore leading and trailing whitespaces
+    // and files "/spiflash/        thelongfile.txt    " and "/spiflash/thelongfile.txt" should be equivalent
+    // this feature is currently not implemented
+    FILE* f = fopen( "/spiflash/        thelongfile.txt    ", "wb");
+    fclose(f);
+    TEST_ASSERT_NULL(fopen("/spiflash/thelongfile.txt", "r"));
+}
+
 void test_fatfs_rw_speed(const char* filename, void* buf, size_t buf_size, size_t file_size, bool is_write)
 {
     const size_t buf_count = file_size / buf_size;
