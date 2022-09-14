@@ -228,7 +228,7 @@ static int test_touch_parameter(touch_pad_t pad_num, int meas_time, int slp_time
     touch_pad_set_cnt_mode(pad_num, slope, TOUCH_PAD_TIE_OPT_DEFAULT);
 
     // Initialize and start a software filter to detect slight change of capacitance.
-    touch_pad_filter_start(TOUCHPAD_FILTER_TOUCH_PERIOD);
+    TEST_ESP_OK(touch_pad_filter_start(TOUCHPAD_FILTER_TOUCH_PERIOD));
     vTaskDelay(500 / portTICK_PERIOD_MS);
 
     // Start task to read values sensed by pads
@@ -293,7 +293,6 @@ static bool s_pad_activated[TOUCH_PAD_MAX];
 static void test_touch_intr_cb(void *arg)
 {
     uint32_t pad_intr = touch_pad_get_status();
-    esp_rom_printf("T%x ", pad_intr);
     //clear interrupt
     touch_pad_clear_status();
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
