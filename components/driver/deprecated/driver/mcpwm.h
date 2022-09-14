@@ -344,8 +344,8 @@ esp_err_t mcpwm_carrier_output_invert(mcpwm_unit_t mcpwm_num, mcpwm_timer_t time
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param dt_mode set deadtime mode
- * @param red set rising edge delay = red*100ns
- * @param fed set rising edge delay = fed*100ns
+ * @param red set rising edge delay = (red + 1) * MCPWM Group Resolution (default to 100ns, can be changed by `mcpwm_group_set_resolution`)
+ * @param fed set rising edge delay = (fed + 1) * MCPWM Group Resolution (default to 100ns, can be changed by `mcpwm_group_set_resolution`)
  *
  * @return
  *     - ESP_OK Success
