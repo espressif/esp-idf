@@ -153,7 +153,7 @@ The file ``portmacro_deprecated.h`` which was added to maintain backward compati
 App Update
 ----------
 
-- The functions :cpp:func:`esp_ota_get_app_description` and :cpp:func:`esp_ota_get_app_elf_sha256` have been termed as deprecated. Please use the alternative functions :cpp:func:`esp_app_get_description` and :cpp:func:`esp_app_get_elf_sha256` respectively. These functions have now been moved to a new component :component:`esp_app_format`. (Refer header file :component_file:`esp_app_desc.h <esp_app_format/include/esp_app_desc.h>`)
+- The functions :cpp:func:`esp_ota_get_app_description` and :cpp:func:`esp_ota_get_app_elf_sha256` have been termed as deprecated. Please use the alternative functions :cpp:func:`esp_app_get_description` and :cpp:func:`esp_app_get_elf_sha256` respectively. These functions have now been moved to a new component :component:`esp_app_format`. Please refer to the header file :component_file:`esp_app_desc.h <esp_app_format/include/esp_app_desc.h>`.
 
 Bootloader Support
 ------------------
