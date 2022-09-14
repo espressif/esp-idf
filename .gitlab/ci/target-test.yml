@@ -223,7 +223,7 @@ component_ut_pytest_esp32_generic:
 component_ut_pytest_esp32_adc:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32
+    - .rules:test:component_ut-esp32-adc
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, adc ]
@@ -263,7 +263,7 @@ component_ut_pytest_esp32s2_generic:
 component_ut_pytest_esp32s2_adc:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s2
+    - .rules:test:component_ut-esp32s2-adc
   needs:
     - build_pytest_components_esp32s2
   tags: [ esp32s2, adc ]
@@ -279,7 +279,7 @@ component_ut_pytest_esp32s3_generic:
 component_ut_pytest_esp32s3_adc:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s3
+    - .rules:test:component_ut-esp32s3-adc
   needs:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, adc ]
@@ -319,7 +319,7 @@ component_ut_pytest_esp32c2_generic:
 component_ut_pytest_esp32c2_adc:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32c2
+    - .rules:test:component_ut-esp32c2-adc
   needs:
     - build_pytest_components_esp32c2
   tags: [ esp32c2, adc ]
@@ -343,7 +343,7 @@ component_ut_pytest_esp32c3_generic:
 component_ut_pytest_esp32c3_adc:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32c3
+    - .rules:test:component_ut-esp32c3-adc
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, adc ]
