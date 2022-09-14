@@ -353,6 +353,13 @@ void httpd_sess_delete(struct httpd_data *hd, struct sock_db *session)
     }
 
     ESP_LOGD(TAG, LOG_FMT("fd = %d"), session->fd);
+    if (hd->config.enable_so_linger) {
+        struct linger so_linger = {
+            .l_onoff = true,
+            .l_linger = hd->config.linger_timeout,
+        };
+        setsockopt(session->fd, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger));
+    }
 
     // Call close function if defined
     if (hd->config.close_fn) {
