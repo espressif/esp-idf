@@ -381,9 +381,15 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
 
     //Allocate queues, set defaults
     dev->trans_queue = xQueueCreate(dev_config->queue_size, sizeof(spi_trans_priv_t));
-    dev->ret_queue = xQueueCreate(dev_config->queue_size, sizeof(spi_trans_priv_t));
-    if (!dev->trans_queue || !dev->ret_queue) {
+    if (!dev->trans_queue) {
         goto nomem;
+    }
+    //ret_queue nolonger needed if use flag SPI_DEVICE_NO_RETURN_RESULT
+    if (!(dev_config->flags & SPI_DEVICE_NO_RETURN_RESULT)) {
+        dev->ret_queue = xQueueCreate(dev_config->queue_size, sizeof(spi_trans_priv_t));
+        if (!dev->ret_queue) {
+            goto nomem;
+        }
     }
 
     //We want to save a copy of the dev config in the dev struct.
@@ -445,15 +451,17 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     //catch design errors and aren't meant to be triggered during normal operation.
     SPI_CHECK(uxQueueMessagesWaiting(handle->trans_queue)==0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
     SPI_CHECK(handle->host->cur_cs == DEV_NUM_MAX || handle->host->device[handle->host->cur_cs] != handle, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
-    SPI_CHECK(uxQueueMessagesWaiting(handle->ret_queue)==0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
+    if (handle->ret_queue) {
+        SPI_CHECK(uxQueueMessagesWaiting(handle->ret_queue)==0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
+    }
 
     //return
     int spics_io_num = handle->cfg.spics_io_num;
     if (spics_io_num >= 0) spicommon_cs_free_io(spics_io_num);
 
     //Kill queues
-    vQueueDelete(handle->trans_queue);
-    vQueueDelete(handle->ret_queue);
+    if (handle->trans_queue) vQueueDelete(handle->trans_queue);
+    if (handle->ret_queue) vQueueDelete(handle->ret_queue);
     spi_bus_lock_unregister_dev(handle->dev_lock);
 
     assert(handle->host->device[handle->id] == handle);
@@ -851,6 +859,9 @@ esp_err_t SPI_MASTER_ATTR spi_device_get_trans_result(spi_device_handle_t handle
     BaseType_t r;
     spi_trans_priv_t trans_buf;
     SPI_CHECK(handle!=NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
+
+    //if SPI_DEVICE_NO_RETURN_RESULT is set, ret_queue will always be empty
+    SPI_CHECK(!(handle->cfg.flags & SPI_DEVICE_NO_RETURN_RESULT), "API not Supported!", ESP_ERR_NOT_SUPPORTED);
 
     //use the interrupt, block until return
     r=xQueueReceive(handle->ret_queue, (void*)&trans_buf, ticks_to_wait);
