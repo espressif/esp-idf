@@ -180,10 +180,13 @@ bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num);
  *       configured in esp_deep_sleep_start/esp_light_sleep_start,
  *       immediately before entering sleep mode.
  *
- * @note On ESP32, ext0 wakeup source can not be used together with touch or ULP wakeup sources.
+ * @note ESP32: ext0 wakeup source can not be used together with touch or ULP wakeup sources.
  *
- * @param gpio_num  GPIO number used as wakeup source. Only GPIOs which are have RTC
- *             functionality can be used: 0,2,4,12-15,25-27,32-39.
+ * @param gpio_num  GPIO number used as wakeup source. Only GPIOs with the RTC
+ *        functionality can be used. For different SoCs, the related GPIOs are:
+ *          - ESP32: 0, 2, 4, 12-15, 25-27, 32-39;
+ *          - ESP32-S2: 0-21;
+ *          - ESP32-S3: 0-21.
  * @param level  input level which will trigger wakeup (0=low, 1=high)
  * @return
  *      - ESP_OK on success
@@ -213,8 +216,11 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  *       kept enabled using esp_sleep_pd_config function.
  *
  * @param mask  bit mask of GPIO numbers which will cause wakeup. Only GPIOs
- *              which have RTC functionality can be used in this bit map:
- *              0,2,4,12-15,25-27,32-39.
+ *              which have RTC functionality can be used in this bit map.
+ *              For different SoCs, the related GPIOs are:
+ *                - ESP32: 0, 2, 4, 12-15, 25-27, 32-39;
+ *                - ESP32-S2: 0-21;
+ *                - ESP32-S3: 0-21.
  * @param mode select logic function used to determine wakeup condition:
  *            - ESP_EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
  *            - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
