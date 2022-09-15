@@ -224,7 +224,7 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of MCPWM Timer
  */
-#define SOC_MCPWM_TIMER_CLKS {SOC_MOD_CLK_PLL_D2}
+#define SOC_MCPWM_TIMER_CLKS {SOC_MOD_CLK_PLL_F160M}
 
 /**
  * @brief Type of MCPWM timer clock source
