@@ -783,11 +783,10 @@ static dmaworkaround_cb_t dmaworkaround_cb;
 static void *dmaworkaround_cb_arg;
 static portMUX_TYPE dmaworkaround_mux = portMUX_INITIALIZER_UNLOCKED;
 static int dmaworkaround_waiting_for_chan = 0;
-#endif
 
 bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t cb, void *arg)
 {
-#if CONFIG_IDF_TARGET_ESP32
+
     int otherchan = (dmachan == 1) ? 2 : 1;
     bool ret;
     portENTER_CRITICAL_ISR(&dmaworkaround_mux);
@@ -804,24 +803,15 @@ bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t
     }
     portEXIT_CRITICAL_ISR(&dmaworkaround_mux);
     return ret;
-#else
-    //no need to reset
-    return true;
-#endif
 }
 
 bool IRAM_ATTR spicommon_dmaworkaround_reset_in_progress(void)
 {
-#if CONFIG_IDF_TARGET_ESP32
     return (dmaworkaround_waiting_for_chan != 0);
-#else
-    return false;
-#endif
 }
 
 void IRAM_ATTR spicommon_dmaworkaround_idle(int dmachan)
 {
-#if CONFIG_IDF_TARGET_ESP32
     portENTER_CRITICAL_ISR(&dmaworkaround_mux);
     dmaworkaround_channels_busy[dmachan-1] = 0;
     if (dmaworkaround_waiting_for_chan == dmachan) {
@@ -833,14 +823,12 @@ void IRAM_ATTR spicommon_dmaworkaround_idle(int dmachan)
 
     }
     portEXIT_CRITICAL_ISR(&dmaworkaround_mux);
-#endif
 }
 
 void IRAM_ATTR spicommon_dmaworkaround_transfer_active(int dmachan)
 {
-#if CONFIG_IDF_TARGET_ESP32
     portENTER_CRITICAL_ISR(&dmaworkaround_mux);
     dmaworkaround_channels_busy[dmachan-1] = 1;
     portEXIT_CRITICAL_ISR(&dmaworkaround_mux);
-#endif
 }
+#endif //#if CONFIG_IDF_TARGET_ESP32

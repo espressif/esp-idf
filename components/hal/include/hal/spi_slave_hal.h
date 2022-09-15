@@ -150,6 +150,7 @@ void spi_slave_hal_store_result(spi_slave_hal_context_t *hal);
  */
 uint32_t spi_slave_hal_get_rcv_bitlen(spi_slave_hal_context_t *hal);
 
+#if CONFIG_IDF_TARGET_ESP32
 /**
  * Check whether we need to reset the DMA according to the status of last transactions.
  *
@@ -161,3 +162,4 @@ uint32_t spi_slave_hal_get_rcv_bitlen(spi_slave_hal_context_t *hal);
  * @return true if reset is needed, else false.
  */
 bool spi_slave_hal_dma_need_reset(const spi_slave_hal_context_t *hal);
+#endif //#if CONFIG_IDF_TARGET_ESP32
