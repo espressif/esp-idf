@@ -14,7 +14,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "esp_rom_gpio.h"
-#include "hal/usbh_hal.h"
+#include "hal/usb_dwc_hal.h"
 #include "hal/usb_types_private.h"
 #include "soc/gpio_pins.h"
 #include "soc/gpio_sig_map.h"

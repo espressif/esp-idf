@@ -17,8 +17,8 @@ NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
 
 #include <stdlib.h>
 #include <stddef.h>
-#include "soc/usbh_struct.h"
-#include "hal/usbh_ll.h"
+#include "soc/usb_dwc_struct.h"
+#include "hal/usb_dwc_ll.h"
 #include "hal/usb_types_private.h"
 #include "hal/assert.h"
 

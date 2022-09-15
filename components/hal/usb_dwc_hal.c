@@ -8,8 +8,8 @@
 #include <stdint.h>
 #include <string.h>
 #include "sdkconfig.h"
-#include "hal/usbh_hal.h"
-#include "hal/usbh_ll.h"
+#include "hal/usb_dwc_hal.h"
+#include "hal/usb_dwc_ll.h"
 #include "hal/assert.h"
 
 // ------------------------------------------------ Macros and Types ---------------------------------------------------
