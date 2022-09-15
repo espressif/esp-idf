@@ -144,4 +144,4 @@ FatFs 分区分析器
 
 您可以使用::
 
-    ./fatfsparse.py [-h] [--wear-leveling] fatfs_image.img
+    ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] fatfs_image.img
