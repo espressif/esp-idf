@@ -474,6 +474,7 @@ static uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
 }
 #endif
 
+// [clk_tree] TODO: replace the following switch table by clk_tree API
 uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
 {
     switch (clk_src)
@@ -488,7 +489,7 @@ uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
         return esp_clk_xtal_freq();
 #endif
     default: // I2S_CLK_SRC_PLL_160M
-        return esp_clk_apb_freq() * 2; // [clk_tree] TODO: replace the following switch table by clk_tree API
+        return esp_clk_apb_freq() * 2;
     }
 }
 

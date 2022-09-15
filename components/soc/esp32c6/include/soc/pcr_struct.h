@@ -607,7 +607,7 @@ typedef union {
          */
         uint32_t i2s_tx_clkm_div_num:8;
         /** i2s_tx_clkm_sel : R/W; bitpos: [21:20]; default: 0;
-         *  Select I2S Tx module source clock. 0: XTAL clock. 1: APLL. 2: CLK160. 3:
+         *  Select I2S Tx module source clock. 0: XTAL clock. 1: PLL240M. 2: PLL160M. 3:
          *  I2S_MCLK_in.
          */
         uint32_t i2s_tx_clkm_sel:2;
@@ -661,7 +661,7 @@ typedef union {
          */
         uint32_t i2s_rx_clkm_div_num:8;
         /** i2s_rx_clkm_sel : R/W; bitpos: [21:20]; default: 0;
-         *  Select I2S Rx module source clock. 0: no clock. 1: APLL. 2: CLK160. 3: I2S_MCLK_in.
+         *  Select I2S Rx module source clock. 0: XTAL clock. 1: PLL240M. 2: PLL160M. 3: I2S_MCLK_in.
          */
         uint32_t i2s_rx_clkm_sel:2;
         /** i2s_rx_clkm_en : R/W; bitpos: [22]; default: 1;

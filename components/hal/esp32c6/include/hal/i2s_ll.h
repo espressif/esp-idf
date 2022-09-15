@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "hal/assert.h"
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
+#include "soc/pcr_struct.h"
 #include "hal/i2s_types.h"
 
 
@@ -24,10 +25,9 @@
 extern "C" {
 #endif
 
+#define I2S_LL_GET_HW(num)             (((num) == 0)? (&I2S0) : NULL)
 
-#define I2S_LL_GET_HW(num) (((num) == 0) ? (&I2S0) : &I2S1)
-
-#define I2S_LL_TDM_CH_MASK (0xffff)
+#define I2S_LL_TDM_CH_MASK             (0xffff)
 #define I2S_LL_PDM_BCK_FACTOR          (64)
 
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (9)
@@ -47,7 +47,8 @@ typedef struct {
  */
 static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
 {
-    hw->tx_clkm_conf.clk_en = 1;
+    // The clock gate enabling is moved to `periph_module_enable`
+    (void *)hw;
 }
 
 /**
@@ -57,7 +58,8 @@ static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
 {
-    hw->tx_clkm_conf.clk_en = 0;
+    // The clock gate disabling is moved to `periph_module_disable`
+    (void *)hw;
 }
 
 /**
@@ -67,7 +69,8 @@ static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
 {
-    hw->tx_clkm_conf.tx_clk_active = 1;
+    (void *)hw;
+    PCR.i2s_tx_clkm_conf.i2s_tx_clkm_en = 1;
 }
 
 /**
@@ -77,7 +80,8 @@ static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
 {
-    hw->rx_clkm_conf.rx_clk_active = 1;
+    (void *)hw;
+    PCR.i2s_rx_clkm_conf.i2s_rx_clkm_en = 1;
 }
 
 /**
@@ -87,7 +91,8 @@ static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_disable_clock(i2s_dev_t *hw)
 {
-    hw->tx_clkm_conf.tx_clk_active = 0;
+    (void *)hw;
+    PCR.i2s_tx_clkm_conf.i2s_tx_clkm_en = 0;
 }
 
 /**
@@ -97,7 +102,8 @@ static inline void i2s_ll_tx_disable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
 {
-    hw->rx_clkm_conf.rx_clk_active = 0;
+    (void *)hw;
+    PCR.i2s_rx_clkm_conf.i2s_rx_clkm_en = 0;
 }
 
 /**
@@ -107,7 +113,8 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 {
-    hw->rx_clkm_conf.mclk_sel = 0;
+    (void *)hw;
+    PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 0;
 }
 
 /**
@@ -117,7 +124,8 @@ static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
  */
 static inline void i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
 {
-    hw->rx_clkm_conf.mclk_sel = 1;
+    (void *)hw;
+    PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 1;
 }
 
 /**
@@ -194,13 +202,14 @@ static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
+    (void *)hw;
     switch (src)
     {
     case I2S_CLK_SRC_XTAL:
-        hw->tx_clkm_conf.tx_clk_sel = 0;
+        PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 0;
         break;
     case I2S_CLK_SRC_PLL_160M:
-        hw->tx_clkm_conf.tx_clk_sel = 2;
+        PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 2;
         break;
     default:
         HAL_ASSERT(false && "unsupported clock source");
@@ -216,19 +225,21 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
  */
 static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
+    (void *)hw;
     switch (src)
     {
     case I2S_CLK_SRC_XTAL:
-        hw->rx_clkm_conf.rx_clk_sel = 0;
+        PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 0;
         break;
     case I2S_CLK_SRC_PLL_160M:
-        hw->rx_clkm_conf.rx_clk_sel = 2;
+        PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 2;
         break;
     default:
         HAL_ASSERT(false && "unsupported clock source");
         break;
     }
 }
+
 /**
  * @brief Set I2S tx bck div num
  *
@@ -251,10 +262,11 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
 {
-    hw->tx_clkm_div_conf.tx_clkm_div_x = x;
-    hw->tx_clkm_div_conf.tx_clkm_div_y = y;
-    hw->tx_clkm_div_conf.tx_clkm_div_z = z;
-    hw->tx_clkm_div_conf.tx_clkm_div_yn1 = yn1;
+    (void *)hw;
+    PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_x = x;
+    PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_y = y;
+    PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_z = z;
+    PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_yn1 = yn1;
 }
 
 /**
@@ -268,10 +280,11 @@ static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t
  */
 static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
 {
-    hw->rx_clkm_div_conf.rx_clkm_div_x = x;
-    hw->rx_clkm_div_conf.rx_clkm_div_y = y;
-    hw->rx_clkm_div_conf.rx_clkm_div_z = z;
-    hw->rx_clkm_div_conf.rx_clkm_div_yn1 = yn1;
+    (void *)hw;
+    PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_x = x;
+    PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_y = y;
+    PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_z = z;
+    PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_yn1 = yn1;
 }
 
 /**
@@ -284,6 +297,7 @@ static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t
  */
 static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mclk, uint32_t mclk_div)
 {
+    (void *)hw;
     int ma = 0;
     int mb = 0;
     int denominator = 1;
@@ -317,23 +331,23 @@ static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mcl
     }
 finish:
     if (denominator == 0 || numerator == 0) {
-        hw->tx_clkm_div_conf.tx_clkm_div_x = 0;
-        hw->tx_clkm_div_conf.tx_clkm_div_y = 0;
-        hw->tx_clkm_div_conf.tx_clkm_div_z = 0;
+        PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_x = 0;
+        PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_y = 0;
+        PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_z = 0;
     } else {
         if (numerator > denominator / 2) {
-            hw->tx_clkm_div_conf.tx_clkm_div_x = denominator / (denominator - numerator) - 1;
-            hw->tx_clkm_div_conf.tx_clkm_div_y = denominator % (denominator - numerator);
-            hw->tx_clkm_div_conf.tx_clkm_div_z = denominator - numerator;
-            hw->tx_clkm_div_conf.tx_clkm_div_yn1 = 1;
+            PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_x = denominator / (denominator - numerator) - 1;
+            PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_y = denominator % (denominator - numerator);
+            PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_z = denominator - numerator;
+            PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_yn1 = 1;
         } else {
-            hw->tx_clkm_div_conf.tx_clkm_div_x = denominator / numerator - 1;
-            hw->tx_clkm_div_conf.tx_clkm_div_y = denominator % numerator;
-            hw->tx_clkm_div_conf.tx_clkm_div_z = numerator;
-            hw->tx_clkm_div_conf.tx_clkm_div_yn1 = 0;
+            PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_x = denominator / numerator - 1;
+            PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_y = denominator % numerator;
+            PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_z = numerator;
+            PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_yn1 = 0;
         }
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_clkm_conf, tx_clkm_div_num, mclk_div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2s_tx_clkm_conf, i2s_tx_clkm_div_num, mclk_div);
 }
 
 /**
@@ -358,6 +372,7 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mclk, uint32_t mclk_div)
 {
+    (void *)hw;
     int ma = 0;
     int mb = 0;
     int denominator = 1;
@@ -391,23 +406,23 @@ static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mcl
     }
 finish:
     if (denominator == 0 || numerator == 0) {
-        hw->rx_clkm_div_conf.rx_clkm_div_x = 0;
-        hw->rx_clkm_div_conf.rx_clkm_div_y = 0;
-        hw->rx_clkm_div_conf.rx_clkm_div_z = 0;
+        PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_x = 0;
+        PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_y = 0;
+        PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_z = 0;
     } else {
         if (numerator > denominator / 2) {
-            hw->rx_clkm_div_conf.rx_clkm_div_x = denominator / (denominator - numerator) - 1;
-            hw->rx_clkm_div_conf.rx_clkm_div_y = denominator % (denominator - numerator);
-            hw->rx_clkm_div_conf.rx_clkm_div_z = denominator - numerator;
-            hw->rx_clkm_div_conf.rx_clkm_div_yn1 = 1;
+            PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_x = denominator / (denominator - numerator) - 1;
+            PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_y = denominator % (denominator - numerator);
+            PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_z = denominator - numerator;
+            PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_yn1 = 1;
         } else {
-            hw->rx_clkm_div_conf.rx_clkm_div_x = denominator / numerator - 1;
-            hw->rx_clkm_div_conf.rx_clkm_div_y = denominator % numerator;
-            hw->rx_clkm_div_conf.rx_clkm_div_z = numerator;
-            hw->rx_clkm_div_conf.rx_clkm_div_yn1 = 0;
+            PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_x = denominator / numerator - 1;
+            PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_y = denominator % numerator;
+            PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_z = numerator;
+            PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_yn1 = 0;
         }
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_clkm_conf, rx_clkm_div_num, mclk_div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2s_rx_clkm_conf, i2s_rx_clkm_div_num, mclk_div);
 }
 
 /**
@@ -729,7 +744,6 @@ static inline void i2s_ll_rx_enable_tdm(i2s_dev_t *hw)
 {
     hw->rx_conf.rx_pdm_en = false;
     hw->rx_conf.rx_tdm_en = true;
-    hw->rx_conf.rx_pdm2pcm_en = false;
 }
 
 /**
@@ -765,57 +779,6 @@ static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw)
 }
 
 /**
- * @brief Enable RX PDM mode.
- *
- * @param hw Peripheral I2S hardware instance address.
- */
-static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw)
-{
-    hw->rx_conf.rx_pdm_en = true;
-    hw->rx_conf.rx_tdm_en = false;
-    hw->rx_conf.rx_pdm2pcm_en = true;
-}
-
-/**
- * @brief Configure I2S TX PDM sample rate
- *        Fpdm = 64*Fpcm*fp/fs
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param fp The fp value of TX PDM filter module group0.
- * @param fs The fs value of TX PDM filter module group0.
- */
-static inline void i2s_ll_tx_set_pdm_fpfs(i2s_dev_t *hw, uint32_t fp, uint32_t fs)
-{
-    hw->tx_pcm2pdm_conf1.tx_pdm_fp = fp;
-    hw->tx_pcm2pdm_conf1.tx_pdm_fs = fs;
-    hw->tx_pcm2pdm_conf.tx_sinc_osr2 = fp / fs;
-}
-
-/**
- * @brief Get I2S TX PDM fp configuration paramater
- *
- * @param hw Peripheral I2S hardware instance address.
- * @return
- *        - fp configuration paramater
- */
-static inline uint32_t i2s_ll_tx_get_pdm_fp(i2s_dev_t *hw)
-{
-    return hw->tx_pcm2pdm_conf1.tx_pdm_fp;
-}
-
-/**
- * @brief Get I2S TX PDM fs configuration paramater
- *
- * @param hw Peripheral I2S hardware instance address.
- * @return
- *        - fs configuration paramater
- */
-static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
-{
-    return hw->tx_pcm2pdm_conf1.tx_pdm_fs;
-}
-
-/**
  * @brief Set I2S TX PDM prescale
  *
  * @param hw Peripheral I2S hardware instance address.
@@ -823,7 +786,7 @@ static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_set_pdm_prescale(i2s_dev_t *hw, bool prescale)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_pcm2pdm_conf, tx_prescale, prescale);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_pcm2pdm_conf, tx_pdm_prescale, prescale);
 }
 
 /**
@@ -834,7 +797,7 @@ static inline void i2s_ll_tx_set_pdm_prescale(i2s_dev_t *hw, bool prescale)
  */
 static inline void i2s_ll_tx_set_pdm_hp_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t sig_scale)
 {
-    hw->tx_pcm2pdm_conf.tx_hp_in_shift = sig_scale;
+    hw->tx_pcm2pdm_conf.tx_pdm_hp_in_shift = sig_scale;
 }
 
 /**
@@ -845,7 +808,7 @@ static inline void i2s_ll_tx_set_pdm_hp_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t
  */
 static inline void i2s_ll_tx_set_pdm_lp_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t sig_scale)
 {
-    hw->tx_pcm2pdm_conf.tx_lp_in_shift = sig_scale;
+    hw->tx_pcm2pdm_conf.tx_pdm_lp_in_shift = sig_scale;
 }
 
 /**
@@ -856,7 +819,7 @@ static inline void i2s_ll_tx_set_pdm_lp_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t
  */
 static inline void i2s_ll_tx_set_pdm_sinc_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t sig_scale)
 {
-    hw->tx_pcm2pdm_conf.tx_sinc_in_shift = sig_scale;
+    hw->tx_pcm2pdm_conf.tx_pdm_sinc_in_shift = sig_scale;
 }
 
 /**
@@ -867,7 +830,7 @@ static inline void i2s_ll_tx_set_pdm_sinc_scale(i2s_dev_t *hw, i2s_pdm_sig_scale
  */
 static inline void i2s_ll_tx_set_pdm_sd_scale(i2s_dev_t *hw, i2s_pdm_sig_scale_t sig_scale)
 {
-    hw->tx_pcm2pdm_conf.tx_sigmadelta_in_shift = sig_scale;
+    hw->tx_pcm2pdm_conf.tx_pdm_sigmadelta_in_shift = sig_scale;
 }
 
 /**
@@ -900,7 +863,7 @@ static inline void i2s_ll_tx_set_pdm_hp_filter_param5(i2s_dev_t *hw, uint32_t pa
  */
 static inline void i2s_ll_tx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
 {
-    hw->tx_pcm2pdm_conf.tx_hp_bypass = !enable;
+    hw->tx_pcm2pdm_conf.tx_pdm_hp_bypass = !enable;
 }
 
 /**
@@ -911,7 +874,7 @@ static inline void i2s_ll_tx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
  */
 static inline void i2s_ll_tx_set_pdm_sd_dither(i2s_dev_t *hw, uint32_t dither)
 {
-    hw->tx_pcm2pdm_conf.tx_sigmadelta_dither = dither;
+    hw->tx_pcm2pdm_conf.tx_pdm_sigmadelta_dither = dither;
 }
 
 /**
@@ -922,29 +885,59 @@ static inline void i2s_ll_tx_set_pdm_sd_dither(i2s_dev_t *hw, uint32_t dither)
  */
 static inline void i2s_ll_tx_set_pdm_sd_dither2(i2s_dev_t *hw, uint32_t dither2)
 {
-    hw->tx_pcm2pdm_conf.tx_sigmadelta_dither2 = dither2;
+    hw->tx_pcm2pdm_conf.tx_pdm_sigmadelta_dither2 = dither2;
 }
 
 /**
- * @brief Configure RX PDM downsample
+ * @brief Configure I2S TX PDM sample rate
+ *        Fpdm = 64*Fpcm*fp/fs
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param dsr PDM downsample configuration paramater
+ * @param fp The fp value of TX PDM filter module group0.
+ * @param fs The fs value of TX PDM filter module group0.
  */
-static inline void i2s_ll_rx_set_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t dsr)
+static inline void i2s_ll_tx_set_pdm_fpfs(i2s_dev_t *hw, uint32_t fp, uint32_t fs)
 {
-    hw->rx_conf.rx_pdm_sinc_dsr_16_en = dsr;
+    hw->tx_pcm2pdm_conf1.tx_pdm_fp = fp;
+    hw->tx_pcm2pdm_conf1.tx_pdm_fs = fs;
+    hw->tx_pcm2pdm_conf.tx_pdm_sinc_osr2 = fp / fs;
 }
 
 /**
- * @brief Get RX PDM downsample configuration
+ * @brief Get I2S TX PDM fp configuration paramater
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param dsr Pointer to accept PDM downsample configuration
+ * @return
+ *        - fp configuration paramater
  */
-static inline void i2s_ll_rx_get_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t *dsr)
+static inline uint32_t i2s_ll_tx_get_pdm_fp(i2s_dev_t *hw)
 {
-    *dsr = (i2s_pdm_dsr_t)hw->rx_conf.rx_pdm_sinc_dsr_16_en;
+    return hw->tx_pcm2pdm_conf1.tx_pdm_fp;
+}
+
+/**
+ * @brief Get I2S TX PDM fs configuration paramater
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @return
+ *        - fs configuration paramater
+ */
+static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
+{
+    return hw->tx_pcm2pdm_conf1.tx_pdm_fs;
+}
+
+/**
+ * @brief Enable RX PDM mode.
+ * @note  ESP32-C6 doesn't support pdm in rx mode, disable anyway
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param pdm_enable Set true to RX enable PDM mode (ignored)
+ */
+static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
+{
+    hw->rx_conf.rx_pdm_en = 0;
+    hw->rx_conf.rx_tdm_en = 1;
 }
 
 /**
@@ -1057,7 +1050,7 @@ static inline void i2s_ll_tx_set_skip_mask(i2s_dev_t *hw, bool skip_mask_ena)
  */
 static inline void i2s_ll_set_single_data(i2s_dev_t *hw, uint32_t data)
 {
-    hw->conf_single_data = data;
+    hw->conf_single_data.val = data;
 }
 
 /**
@@ -1164,8 +1157,8 @@ static inline void i2s_ll_tx_pdm_slot_mode(i2s_dev_t *hw, bool is_mono, bool is_
  */
 static inline void i2s_ll_tx_pdm_line_mode(i2s_dev_t *hw, i2s_pdm_tx_line_mode_t line_mode)
 {
-    hw->tx_pcm2pdm_conf.tx_dac_mode_en = line_mode > I2S_PDM_TX_ONE_LINE_CODEC;
-    hw->tx_pcm2pdm_conf.tx_dac_2out_en = line_mode != I2S_PDM_TX_ONE_LINE_DAC;
+    hw->tx_pcm2pdm_conf.tx_pdm_dac_mode_en = line_mode > I2S_PDM_TX_ONE_LINE_CODEC;
+    hw->tx_pcm2pdm_conf.tx_pdm_dac_2out_en = line_mode != I2S_PDM_TX_ONE_LINE_DAC;
 }
 
 #ifdef __cplusplus

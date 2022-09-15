@@ -20,7 +20,6 @@ list(REMOVE_ITEM srcs
         "adc_periph.c"                  # TODO: IDF-5310
         "dedic_gpio_periph.c"           # TODO: IDF-5331
         "ledc_periph.c"                 # TODO: IDF-5328
-        "i2s_periph.c"                  # TODO: IDF-5314
         "i2c_periph.c"                  # TODO: IDF-5326
         "temperature_sensor_periph.c"   # TODO: IDF-5322
         )

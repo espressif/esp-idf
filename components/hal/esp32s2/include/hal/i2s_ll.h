@@ -278,7 +278,7 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  * @note mclk on ESP32S2 is shared by both TX and RX channel
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sclk system clock, 0 means use apll
+ * @param sclk system clock
  * @param mclk module clock
  * @param mclk_div integer part of the division from sclk to mclk
  */
@@ -354,7 +354,7 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  * @note mclk on ESP32S2 is shared by both TX and RX channel
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sclk system clock, 0 means use apll
+ * @param sclk system clock
  * @param mclk module clock
  * @param mclk_div integer part of the division from sclk to mclk
  */

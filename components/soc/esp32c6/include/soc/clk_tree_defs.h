@@ -215,14 +215,23 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of I2S
  */
-#define SOC_I2S_CLKS {SOC_MOD_CLK_PLL_F160M}
+#if CONFIG_IDF_ENV_FPGA
+#define SOC_I2S_CLKS {SOC_MOD_CLK_XTAL}
+#else
+#define SOC_I2S_CLKS {SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_XTAL}
+#endif
 
 /**
  * @brief I2S clock source enum
  */
 typedef enum {
+#if CONFIG_IDF_ENV_FPGA
+    I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,
+#else
     I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,                /*!< Select PLL_F160M as the default source clock  */
+#endif
     I2S_CLK_SRC_PLL_160M = SOC_MOD_CLK_PLL_F160M,               /*!< Select PLL_F160M as the source clock */
+    I2S_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                        /*!< Select XTAL as the source clock */
 } soc_periph_i2s_clk_src_t;
 
 /////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////

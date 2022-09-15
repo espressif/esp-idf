@@ -40,7 +40,7 @@
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1
-// #define SOC_I2S_SUPPORTED               1 // TODO: IDF-5314
+#define SOC_I2S_SUPPORTED               1
 // #define SOC_RMT_SUPPORTED               1 // TODO: IDF-5320
 // #define SOC_SDM_SUPPORTED               1 // TODO: IDF-5318
 // #define SOC_LEDC_SUPPORTED              1 // TODO: IDF-5328
@@ -181,7 +181,6 @@
 #define SOC_I2C_SUPPORT_XTAL        (1)
 #define SOC_I2C_SUPPORT_RTC         (1)
 
-// TODO: IDF-5314 (Copy from esp32c3, need check)
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (1)
 #define SOC_I2S_HW_VERSION_2        (1)

@@ -224,7 +224,7 @@ static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
         hw->rx_clkm_conf.rx_clk_sel = 2;
         break;
     default:
-        hw->rx_clkm_conf.rx_clk_sel = 2;
+        HAL_ASSERT(false && "unsupported clock source");
         break;
     }
 }
@@ -278,7 +278,7 @@ static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t
  * @brief Configure I2S TX module clock divider
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sclk system clock, 0 means use apll
+ * @param sclk system clock
  * @param mclk module clock
  * @param mclk_div integer part of the division from sclk to mclk
  */
