@@ -186,10 +186,4 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 C++ 异常
 --------
 
-默认情况下，ESP-IDF 会禁用对 C++ 异常的支持，但是可以通过 :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS` 选项启用。
-
-通常情况下，启用异常处理会让应用程序的二进制文件增加几 KB。此外，启用该功能时还应为异常事故池预留一定内存。当应用程序无法从堆中分配异常对象时，就可以使用这个池中的内存。该内存池的大小可以通过 :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE` 来设定。
-
-如果 C++ 程序抛出了异常，但是程序中并没有 ``catch`` 代码块来捕获该异常，那么程序的运行就会被 ``abort`` 函数中止，然后打印回溯信息。有关回溯的更多信息，请参阅 :doc:`不可恢复错误 <fatal-errors>` 。
-
-C++ 异常处理示例，请参考 :example:`cxx/exceptions`。
+请参考 :ref:`cplusplus_exceptions`。
