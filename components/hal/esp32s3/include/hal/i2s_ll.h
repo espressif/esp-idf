@@ -14,6 +14,7 @@
 #pragma once
 #include <stdbool.h>
 #include "hal/misc.h"
+#include "hal/assert.h"
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "hal/i2s_types.h"
@@ -28,7 +29,6 @@ extern "C" {
 
 #define I2S_LL_TDM_CH_MASK (0xffff)
 #define I2S_LL_PDM_BCK_FACTOR          (64)
-#define I2S_LL_BASE_CLK                (2*APB_CLK_FREQ)
 
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (9)
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
@@ -190,26 +190,45 @@ static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
  * @brief Set TX source clock
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param src I2S source clock,  ESP32-S3 only support `I2S_CLK_SRC_PLL_160M`
- *            TX and RX share the same clock setting
+ * @param src I2S source clock.
  */
 static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    hw->tx_clkm_conf.tx_clk_sel = 2;
+    switch (src)
+    {
+    case I2S_CLK_SRC_XTAL:
+        hw->tx_clkm_conf.tx_clk_sel = 0;
+        break;
+    case I2S_CLK_SRC_PLL_160M:
+        hw->tx_clkm_conf.tx_clk_sel = 2;
+        break;
+    default:
+        HAL_ASSERT(false && "unsupported clock source");
+        break;
+    }
 }
 
 /**
  * @brief Set RX source clock
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param src I2S source clock,  ESP32-S3 only support `I2S_CLK_SRC_PLL_160M`
- *            TX and RX share the same clock setting
+ * @param src I2S source clock
  */
 static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    hw->rx_clkm_conf.rx_clk_sel = 2;
+    switch (src)
+    {
+    case I2S_CLK_SRC_XTAL:
+        hw->rx_clkm_conf.rx_clk_sel = 0;
+        break;
+    case I2S_CLK_SRC_PLL_160M:
+        hw->rx_clkm_conf.rx_clk_sel = 2;
+        break;
+    default:
+        hw->rx_clkm_conf.rx_clk_sel = 2;
+        break;
+    }
 }
-
 /**
  * @brief Set I2S tx bck div num
  *

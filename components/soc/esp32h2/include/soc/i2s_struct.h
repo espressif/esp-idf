@@ -141,7 +141,7 @@ typedef volatile struct i2s_dev_s {
             uint32_t rx_clkm_div_num: 8;             /*Integral I2S clock divider value*/
             uint32_t reserved8:      18;             /*Reserved*/
             uint32_t rx_clk_active:   1;             /*I2S Rx module clock enable signal.*/
-            uint32_t rx_clk_sel:      2;             /*Select I2S Rx module source clock. 0: no clock. 1: APLL. 2: CLK160. 3: I2S_MCLK_in.*/
+            uint32_t rx_clk_sel:      2;             /*Select I2S Rx module source clock. 0: XTAL clock. 1: PLL240M. 2: PLL160M. 3: I2S_MCLK_in.*/
             uint32_t mclk_sel:        1;             /*0: UseI2S Tx module clock as I2S_MCLK_OUT.  1: UseI2S Rx module clock as I2S_MCLK_OUT.*/
             uint32_t reserved30:      2;             /*Reserved*/
         };
@@ -152,7 +152,7 @@ typedef volatile struct i2s_dev_s {
             uint32_t tx_clkm_div_num: 8;             /*Integral I2S TX clock divider value. f_I2S_CLK = f_I2S_CLK_S/(N+b/a). There will be (a-b) * n-div and b * (n+1)-div.  So the average combination will be:  for b <= a/2  z * [x * n-div + (n+1)-div] + y * n-div. For b > a/2  z * [n-div + x * (n+1)-div] + y * (n+1)-div.*/
             uint32_t reserved8:      18;             /*Reserved*/
             uint32_t tx_clk_active:   1;             /*I2S Tx module clock enable signal.*/
-            uint32_t tx_clk_sel:      2;             /*Select I2S Tx module source clock. 0: XTAL clock. 1: APLL. 2: CLK160. 3: I2S_MCLK_in.*/
+            uint32_t tx_clk_sel:      2;             /*Select I2S Tx module source clock. 0: XTAL clock. 1: PLL240M. 2: PLL160M. 3: I2S_MCLK_in.*/
             uint32_t clk_en:          1;             /*Set this bit to enable clk gate*/
             uint32_t reserved30:      2;             /*Reserved*/
         };

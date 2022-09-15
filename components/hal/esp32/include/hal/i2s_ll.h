@@ -29,7 +29,6 @@ extern "C" {
 
 #define I2S_LL_AD_BCK_FACTOR           (2)
 #define I2S_LL_PDM_BCK_FACTOR          (64)
-#define I2S_LL_BASE_CLK                (2 * APB_CLK_FREQ)
 
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (6)
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)

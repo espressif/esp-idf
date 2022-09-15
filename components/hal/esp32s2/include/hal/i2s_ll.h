@@ -28,8 +28,6 @@ extern "C" {
 // Get I2S hardware instance with giving i2s num
 #define I2S_LL_GET_HW(num)             (((num) == 0) ? (&I2S0) : NULL)
 
-#define I2S_LL_BASE_CLK                (2 * APB_CLK_FREQ)
-
 #define I2S_LL_BCK_MAX_PRESCALE  (64)
 
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (6)
