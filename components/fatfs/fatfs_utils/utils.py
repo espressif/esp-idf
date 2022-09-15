@@ -119,14 +119,11 @@ def lfn_checksum(short_entry_name: str) -> int:
 
 def convert_to_utf16_and_pad(content: str,
                              expected_size: int,
-                             pad: bytes = FULL_BYTE,
-                             terminator: bytes = b'\x00\x00') -> bytes:
+                             pad: bytes = FULL_BYTE) -> bytes:
     # we need to get rid of the Byte order mark 0xfeff or 0xfffe, fatfs does not use it
     bom_utf16: bytes = b'\xfe\xff'
     encoded_content_utf16: bytes = content.encode(LONG_NAMES_ENCODING)[len(bom_utf16):]
-    terminated_encoded_content_utf16: bytes = (encoded_content_utf16 + terminator) if (2 * expected_size > len(
-        encoded_content_utf16) > 0) else encoded_content_utf16
-    return terminated_encoded_content_utf16.ljust(2 * expected_size, pad)
+    return encoded_content_utf16.ljust(2 * expected_size, pad)
 
 
 def split_to_name_and_extension(full_name: str) -> Tuple[str, str]:

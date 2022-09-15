@@ -85,4 +85,9 @@ def build_lfn_full_name(name: str, extension: str) -> str:
     The extension is optional, and the long filename entry explicitly specifies it,
     on the opposite as for short file names.
     """
-    return f'{name}.{extension}' if len(extension) > 0 else name
+    lfn_record: str = f'{name}.{extension}' if len(extension) > 0 else name
+    # the name must be terminated with NULL terminator
+    # if it doesn't fit into the set of long name directory entries
+    if len(lfn_record) % Entry.CHARS_PER_ENTRY != 0:
+        return lfn_record + chr(0)
+    return lfn_record
