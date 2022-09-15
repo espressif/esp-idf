@@ -26,7 +26,7 @@
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 // #define SOC_ADC_SUPPORTED               1 // TODO: IDF-5310
-// #define SOC_DEDICATED_GPIO_SUPPORTED    1 // TODO: IDF-5331
+#define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_PCNT_SUPPORTED              1
 // #define SOC_TWAI_SUPPORTED              1 // TODO: IDF-5313
@@ -161,7 +161,6 @@
 // Support to configure sleep status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
 
-// TODO: IDF-5331 (Copy from esp32c3, need check)
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
