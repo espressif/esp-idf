@@ -9,15 +9,19 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdbool.h>
-/* ToDo - Remove this once appropriate solution is available.
-We need to define this for the file as ssl_misc.h uses private structures from mbedtls,
-which are undefined if the following flag is not defined */
-/* Many APIs in the file make use of this flag instead of `MBEDTLS_PRIVATE` */
-/* ToDo - Replace them with proper getter-setter once they are added */
+
+/* TODO: Remove this once the appropriate solution is found
+ *
+ * ssl_misc.h header uses private elements from
+ * mbedtls, which become undefined if the following flag
+ * is not defined
+ */
 #define MBEDTLS_ALLOW_PRIVATE_ACCESS
 
+// located at mbedtls/library/ssl_misc.h
+#include "ssl_misc.h"
+
 #include "mbedtls/ssl.h"
-#include "ssl_misc.h" // located at mbedtls/library/ssl_misc.h
 #include "mbedtls/platform.h"
 #include "esp_log.h"
 

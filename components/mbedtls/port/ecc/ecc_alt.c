@@ -8,11 +8,6 @@
 #include "soc/hwcrypto_periph.h"
 #include "ecc_impl.h"
 
-/* TBD: Remove this and use proper getter/setter methods to access
- * private members of EC data structures once they are available
- * in mbedTLS stack */
-#define MBEDTLS_ALLOW_PRIVATE_ACCESS
-
 #include "mbedtls/ecp.h"
 #include "mbedtls/platform_util.h"
 
@@ -37,19 +32,19 @@ static int esp_mbedtls_ecp_point_multiply(const mbedtls_ecp_group *grp, mbedtls_
 
     p_pt.len = grp->pbits / 8;
 
-    memcpy(&p_pt.x, P->X.p, mbedtls_mpi_size(&P->X));
-    memcpy(&p_pt.y, P->Y.p, mbedtls_mpi_size(&P->Y));
+    memcpy(&p_pt.x, P->MBEDTLS_PRIVATE(X).MBEDTLS_PRIVATE(p), mbedtls_mpi_size(&P->MBEDTLS_PRIVATE(X)));
+    memcpy(&p_pt.y, P->MBEDTLS_PRIVATE(Y).MBEDTLS_PRIVATE(p), mbedtls_mpi_size(&P->MBEDTLS_PRIVATE(Y)));
 
-    ret = esp_ecc_point_multiply(&p_pt, (uint8_t *)m->p, &r_pt, false);
+    ret = esp_ecc_point_multiply(&p_pt, (uint8_t *)m->MBEDTLS_PRIVATE(p), &r_pt, false);
 
     for (int i = 0; i < MAX_SIZE; i++) {
         x_tmp[MAX_SIZE - i - 1] = r_pt.x[i];
         y_tmp[MAX_SIZE - i - 1] = r_pt.y[i];
     }
 
-    mbedtls_mpi_read_binary(&R->X, x_tmp, MAX_SIZE);
-    mbedtls_mpi_read_binary(&R->Y, y_tmp, MAX_SIZE);
-    mbedtls_mpi_lset(&R->Z, 1);
+    mbedtls_mpi_read_binary(&R->MBEDTLS_PRIVATE(X), x_tmp, MAX_SIZE);
+    mbedtls_mpi_read_binary(&R->MBEDTLS_PRIVATE(Y), y_tmp, MAX_SIZE);
+    mbedtls_mpi_lset(&R->MBEDTLS_PRIVATE(Z), 1);
     return ret;
 }
 
@@ -94,13 +89,13 @@ int mbedtls_ecp_check_pubkey( const mbedtls_ecp_group *grp,
     ECP_VALIDATE_RET( pt  != NULL );
 
     /* Must use affine coordinates */
-    if( mbedtls_mpi_cmp_int( &pt->Z, 1 ) != 0 )
+    if( mbedtls_mpi_cmp_int( &pt->MBEDTLS_PRIVATE(Z), 1 ) != 0 )
         return( MBEDTLS_ERR_ECP_INVALID_KEY );
 
     mbedtls_platform_zeroize((void *)&point, sizeof(ecc_point_t));
 
-    memcpy(&point.x, pt->X.p, mbedtls_mpi_size(&pt->X));
-    memcpy(&point.y, pt->Y.p, mbedtls_mpi_size(&pt->Y));
+    memcpy(&point.x, pt->MBEDTLS_PRIVATE(X).MBEDTLS_PRIVATE(p), mbedtls_mpi_size(&pt->MBEDTLS_PRIVATE(X)));
+    memcpy(&point.y, pt->MBEDTLS_PRIVATE(Y).MBEDTLS_PRIVATE(p), mbedtls_mpi_size(&pt->MBEDTLS_PRIVATE(Y)));
 
     point.len = grp->pbits / 8;
 

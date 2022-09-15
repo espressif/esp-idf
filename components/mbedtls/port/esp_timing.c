@@ -83,4 +83,12 @@ int mbedtls_timing_get_delay( void *data )
     return( 0 );
 }
 
+/*
+ * Get the final delay.
+ */
+uint32_t mbedtls_timing_get_final_delay( const mbedtls_timing_delay_context *data )
+{
+    return( data->MBEDTLS_PRIVATE(fin_ms) );
+}
+
 #endif /* MBEDTLS_ESP_TIMING_C */
