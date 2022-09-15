@@ -419,10 +419,6 @@ config SOC_RMT_SUPPORT_APB
     bool
     default y
 
-config SOC_RMT_SUPPORT_RC_FAST
-    bool
-    default y
-
 config SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH
     int
     default 128
@@ -600,10 +596,6 @@ config SOC_TIMER_GROUP_SUPPORT_XTAL
     default y
 
 config SOC_TIMER_GROUP_SUPPORT_APB
-    bool
-    default y
-
-config SOC_TIMER_GROUP_SUPPORT_RC_FAST
     bool
     default y
 

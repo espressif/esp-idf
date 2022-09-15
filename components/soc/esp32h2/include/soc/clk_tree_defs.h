@@ -158,14 +158,13 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of RMT
  */
-#define SOC_RMT_CLKS {SOC_MOD_CLK_AHB, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL}
+#define SOC_RMT_CLKS {SOC_MOD_CLK_AHB, SOC_MOD_CLK_XTAL}
 
 /**
  * @brief Type of RMT clock source
  */
 typedef enum {
     RMT_CLK_SRC_AHB = SOC_MOD_CLK_AHB,         /*!< Select AHB clock as the source clock */
-    RMT_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST, /*!< Select RC_FAST as the source clock */
     RMT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as the source clock */
     RMT_CLK_SRC_DEFAULT = SOC_MOD_CLK_AHB,     /*!< Select AHB as the default choice */
 } soc_periph_rmt_clk_src_t;

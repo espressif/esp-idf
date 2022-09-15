@@ -214,12 +214,6 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
     int timer_id = timer->timer_id;
     ESP_LOGD(TAG, "del timer (%d,%d)", group_id, timer_id);
     timer_hal_deinit(&timer->hal);
-    // [refactor-todo]: replace the following code with clk_tree_acquire/release, and call them in gptimer_enable/disable
-#if SOC_TIMER_GROUP_SUPPORT_RC_FAST
-    if (timer->clk_src == GPTIMER_CLK_SRC_RC_FAST) {
-        periph_rtc_dig_clk8m_disable();
-    }
-#endif
     // recycle memory resource
     ESP_RETURN_ON_ERROR(gptimer_destory(timer), TAG, "destory gptimer failed");
     return ESP_OK;
@@ -475,13 +469,6 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
         counter_src_hz = esp_clk_xtal_freq();
         break;
 #endif // SOC_TIMER_GROUP_SUPPORT_XTAL
-#if SOC_TIMER_GROUP_SUPPORT_RC_FAST
-    case GPTIMER_CLK_SRC_RC_FAST:
-        // periph_rtc_dig_clk8m_enable must be called before periph_rtc_dig_clk8m_get_freq, to ensure a calibration is done
-        periph_rtc_dig_clk8m_enable();
-        periph_src_clk_hz = periph_rtc_dig_clk8m_get_freq();
-        break;
-#endif // SOC_TIMER_GROUP_SUPPORT_RC_FAST
     default:
         ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "clock source %d is not support", src_clk);
         break;
