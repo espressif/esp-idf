@@ -118,6 +118,7 @@ extern "C" {
     .sample_rate_hz = rate, \
     .clk_src = I2S_CLK_SRC_DEFAULT, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
+    .bclk_div = 8, \
 }
 
 /**
@@ -150,7 +151,8 @@ typedef struct {
     /* General fields */
     uint32_t                sample_rate_hz;     /*!< I2S sample rate */
     i2s_clock_src_t         clk_src;            /*!< Choose clock source */
-    i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate */
+    i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate, only take effect for master role */
+    uint32_t                bclk_div;           /*!< The division from mclk to bclk, only take effect for slave role, it shouldn't be smaller than 8. Increase this field when data sent by slave lag behind */
 } i2s_tdm_clk_config_t;
 
 /**
