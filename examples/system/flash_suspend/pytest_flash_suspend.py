@@ -14,7 +14,7 @@ def test_flash_suspend_example(dut: Dut) -> None:
     dut.expect_exact('found partition')
     res = dut.expect(r'During Erase, ISR callback function\(in flash\) response time:\s+(\d+(\.\d{1,2})) us')
     response_time = res.group(1).decode('utf8')
-    assert 0 <= float(response_time) < 40
+    assert 0 <= float(response_time) < 120
 
     res = dut.expect(r'During Erase, ISR callback function\(in iram\) response time:\s+(\d+(\.\d{1,2})) us')
     response_time = res.group(1).decode('utf8')
