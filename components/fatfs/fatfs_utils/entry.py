@@ -31,6 +31,8 @@ class Entry:
     LDIR_Name3_IDX: int = 28
     LDIR_Name3_SIZE: int = 2
 
+    # short entry in long file names
+    LDIR_DIR_NTRES: int = 0x18
     # one entry can hold 13 characters with size 2 bytes distributed in three regions of the 32 bytes entry
     CHARS_PER_ENTRY: int = LDIR_Name1_SIZE + LDIR_Name2_SIZE + LDIR_Name3_SIZE
 

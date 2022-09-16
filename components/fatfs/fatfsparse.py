@@ -24,7 +24,9 @@ def get_obj_name(obj_: dict, directory_bytes_: bytes, entry_position_: int, lfn_
     ext_ = f'.{obj_ext_}' if len(obj_ext_) > 0 else ''
     obj_name_: str = obj_['DIR_Name'].rstrip(chr(PAD_CHAR)) + ext_  # short entry name
 
-    if not args.long_name_support:
+    # if LFN was detected, the record is considered as single SFN record only if DIR_NTRes == 0x18 (LDIR_DIR_NTRES)
+    # if LFN was not detected, the record cannot be part of the LFN, no matter the value of DIR_NTRes
+    if not args.long_name_support or obj_['DIR_NTRes'] == Entry.LDIR_DIR_NTRES:
         return obj_name_
 
     full_name = {}
