@@ -228,6 +228,14 @@ component_ut_pytest_esp32_generic:
     - build_pytest_components_esp32
   tags: [ esp32, generic ]
 
+component_ut_pytest_esp32_generic_multi_device:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, generic_multi_device ]
+
 component_ut_pytest_esp32_adc:
   extends:
     - .pytest_components_dir_template
@@ -276,6 +284,14 @@ component_ut_pytest_esp32s2_generic:
     - build_pytest_components_esp32s2
   tags: [ esp32s2, generic ]
 
+component_ut_pytest_esp32s2_generic_multi_device:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s2
+  needs:
+    - build_pytest_components_esp32s2
+  tags: [ esp32s2, generic_multi_device ]
+
 component_ut_pytest_esp32s2_adc:
   extends:
     - .pytest_components_dir_template
@@ -299,6 +315,14 @@ component_ut_pytest_esp32s3_generic:
   needs:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, generic ]
+
+component_ut_pytest_esp32s3_generic_multi_device:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, generic_multi_device ]
 
 component_ut_pytest_esp32s3_adc:
   extends:
@@ -340,14 +364,6 @@ component_ut_pytest_esp32s3_flash_multi:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, flash_mutli ]
 
-component_ut_pytest_esp32s3_generic_multi_device:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s3
-  needs:
-    - build_pytest_components_esp32s3
-  tags: [ esp32s3, generic_multi_device ]
-
 component_ut_pytest_esp32c2_generic:
   extends:
     - .pytest_components_dir_template
@@ -379,6 +395,14 @@ component_ut_pytest_esp32c3_generic:
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, generic ]
+
+component_ut_pytest_esp32c3_generic_multi_device:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, generic_multi_device ]
 
 component_ut_pytest_esp32c3_adc:
   extends:
