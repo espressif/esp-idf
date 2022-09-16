@@ -115,8 +115,8 @@ examples/peripherals/rmt/onewire_ds18b20:
     - if: SOC_RMT_SUPPORTED != 1
 
 examples/peripherals/rmt/stepper_motor:
-  enable:
-    - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP == 1
+  disable:
+    - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP != 1
 
 examples/peripherals/sdio:
   disable:

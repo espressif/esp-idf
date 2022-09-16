@@ -99,6 +99,20 @@ static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, 
     }
 }
 
+/**
+ * @brief Enable RMT peripheral source clock
+ *
+ * @note RMT doesn't support enable/disable clock source, this function is only for compatibility
+ *
+ * @param dev Peripheral instance address
+ * @param en True to enable, False to disable
+ */
+static inline void rmt_ll_enable_group_clock(rmt_dev_t *dev, bool en)
+{
+    (void)dev;
+    (void)en;
+}
+
 ////////////////////////////////////////TX Channel Specific/////////////////////////////////////////////////////////////
 
 /**
