@@ -1405,7 +1405,7 @@ def action_download(args):  # type: ignore
 
     platform = Platforms.get(args.platform)
     if platform is None:
-        fatal('unknown platform: {}' % args.platform)
+        fatal('unknown platform: %s' % args.platform)
         raise SystemExit(1)
 
     tools_info_for_platform = OrderedDict()
@@ -1868,7 +1868,7 @@ def main(argv):  # type: (list[str]) -> None
                          ' It defaults to installing all supported targets.')
 
     download = subparsers.add_parser('download', help='Download the tools into the dist directory')
-    download.add_argument('--platform', help='Platform to download the tools for')
+    download.add_argument('--platform', default=CURRENT_PLATFORM, help='Platform to download the tools for')
     download.add_argument('tools', metavar='TOOL', nargs='*', default=['required'],
                           help='Tools to download. ' +
                           'To download a specific version use <tool_name>@<version> syntax. ' +
