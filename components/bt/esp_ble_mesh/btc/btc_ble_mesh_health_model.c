@@ -231,7 +231,7 @@ static void btc_ble_mesh_health_client_callback(esp_ble_mesh_health_client_cb_pa
     msg.pid = BTC_PID_HEALTH_CLIENT;
     msg.act = act;
 
-    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_health_client_cb_param_t),
+    btc_transfer_context(&msg, cb_params, cb_params == NULL ? 0 : sizeof(esp_ble_mesh_health_client_cb_param_t),
                          btc_ble_mesh_health_client_copy_req_data);
 }
 
@@ -542,7 +542,7 @@ static void btc_ble_mesh_health_server_callback(esp_ble_mesh_health_server_cb_pa
     msg.pid = BTC_PID_HEALTH_SERVER;
     msg.act = act;
 
-    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_health_server_cb_param_t),
+    btc_transfer_context(&msg, cb_params, cb_params == NULL ? 0 : sizeof(esp_ble_mesh_health_server_cb_param_t),
                          btc_ble_mesh_health_server_copy_req_data);
 }
 
