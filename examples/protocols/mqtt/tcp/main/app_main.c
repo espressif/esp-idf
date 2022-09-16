@@ -31,7 +31,7 @@
 #include "cJSON.h"
 
 #define TXD_PIN (GPIO_NUM_15)
-#define RXD_PIN (GPIO_NUM_16)
+#define RXD_PIN (GPIO_NUM_2)
 #define STX 0XF7
 #define SWITCHID 0X03
 #define CURTAINSWITCHID 0X06
