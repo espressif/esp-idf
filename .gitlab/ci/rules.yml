@@ -42,10 +42,13 @@
   - "components/**/*"
   - "examples/cxx/experimental/experimental_cpp_component/*"
 
+.patterns-downloadable-tools: &patterns-downloadable-tools
+  - "tools/idf_tools.py"
+  - "tools/tools.json"
+
 .patterns-build_system: &patterns-build_system
   - "tools/cmake/**/*"
   - "tools/kconfig_new/**/*"
-  - "tools/tools.json"
   - "tools/requirements.json"
   - "tools/ci/test_build_system*.sh"
   - "tools/ci/test_build_system*.py"
@@ -492,6 +495,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:component_ut:
   rules:
@@ -523,6 +528,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:component_ut-esp32:
   rules:
@@ -544,6 +551,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:component_ut-esp32c2:
   rules:
@@ -561,6 +570,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:component_ut-esp32c3:
   rules:
@@ -581,6 +592,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:component_ut-esp32h2:
   rules:
@@ -601,6 +614,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:component_ut-esp32s2:
   rules:
@@ -621,6 +636,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:component_ut-esp32s3:
   rules:
@@ -641,6 +658,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:custom_test:
   rules:
@@ -663,6 +682,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:custom_test-esp32:
   rules:
@@ -680,6 +701,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:custom_test-esp32c2:
   rules:
@@ -694,6 +717,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:custom_test-esp32c3:
   rules:
@@ -710,6 +735,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:custom_test-esp32h2:
   rules:
@@ -726,6 +753,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:custom_test-esp32s2:
   rules:
@@ -742,6 +771,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:custom_test-esp32s3:
   rules:
@@ -758,6 +789,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:docker:
   rules:
@@ -767,7 +800,11 @@
     - <<: *if-label-build
     - <<: *if-label-docker
     - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
       changes: *patterns-docker
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-submodule
 
@@ -793,6 +830,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
@@ -822,6 +861,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
@@ -845,6 +886,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
@@ -870,6 +913,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
@@ -897,6 +942,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
@@ -923,6 +970,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
@@ -948,6 +997,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
@@ -984,6 +1035,8 @@
     - <<: *if-label-macos_test
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
 
 .rules:build:target_test:
   rules:
@@ -1038,6 +1091,8 @@
     - <<: *if-dev-push
       changes: *patterns-custom_test
     - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-bt
@@ -1076,6 +1131,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1097,6 +1154,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1117,6 +1176,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
     - <<: *if-dev-push
       changes: *patterns-unit_test-spi_multi
@@ -1134,6 +1195,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
@@ -1155,6 +1218,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1175,6 +1240,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1194,6 +1261,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
