@@ -30,7 +30,7 @@
 #define EXAMPLE_SD_SPI_MOSI_IO     (17)
 #define EXAMPLE_SD_SPI_MISO_IO     (16)
 #define EXAMPLE_SD_SPI_CS_IO       (15)
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6
 #define EXAMPLE_I2C_NUM            (0)
 #define EXAMPLE_I2C_SDA_IO         (3)
 #define EXAMPLE_I2C_SCL_IO         (2)

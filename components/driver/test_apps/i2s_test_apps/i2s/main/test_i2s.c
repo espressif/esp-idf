@@ -751,7 +751,14 @@ static void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_c
                             32000, 44100, 48000, 64000, 88200, 96000,
                             128000, 144000, 196000};
     int real_pulse = 0;
-    for (int i = 0; i < 15; i++) {
+    int case_cnt = 15;
+#if SOC_I2S_HW_VERSION_2
+    // Can't support a very high sample rate while using XTAL as clock source
+    if (clk_cfg->clk_src == I2S_CLK_SRC_XTAL) {
+        case_cnt = 9;
+    }
+#endif
+    for (int i = 0; i < case_cnt; i++) {
         int expt_pulse = (int)((float)test_freq[i] * (TEST_I2S_PERIOD_MS / 1000.0));
         clk_cfg->sample_rate_hz = test_freq[i];
         TEST_ESP_OK(i2s_channel_reconfig_std_clock(rx_chan, clk_cfg));
@@ -789,6 +796,10 @@ TEST_CASE("I2S_default_PLL_clock_test", "[i2s]")
     TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
 
     i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
+#if SOC_I2S_HW_VERSION_2
+    std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_XTAL;
+    i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
+#endif
     TEST_ESP_OK(i2s_del_channel(rx_handle));
 }
 

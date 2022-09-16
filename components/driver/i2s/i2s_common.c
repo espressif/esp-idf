@@ -35,6 +35,7 @@
 
 #include "esp_private/i2s_platform.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk.h"
 
 #include "driver/gpio.h"
 #include "driver/i2s_common.h"
@@ -444,7 +445,7 @@ err:
 }
 
 #if SOC_I2S_SUPPORTS_APLL
-uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
+static uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
 {
     /* Calculate the expected APLL  */
     int mclk_div = (int)((SOC_APLL_MIN_HZ / mclk_freq_hz) + 1);
@@ -472,6 +473,25 @@ uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
     return real_freq;
 }
 #endif
+
+// [clk_tree] TODO: replace the following switch table by clk_tree API
+uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
+{
+    switch (clk_src)
+    {
+#if SOC_I2S_SUPPORTS_APLL
+    case I2S_CLK_SRC_APLL:
+        return i2s_set_get_apll_freq(mclk_freq_hz);
+#endif
+#if SOC_I2S_SUPPORTS_XTAL
+    case I2S_CLK_SRC_XTAL:
+        (void)mclk_freq_hz;
+        return esp_clk_xtal_freq();
+#endif
+    default: // I2S_CLK_SRC_PLL_160M
+        return esp_clk_apb_freq() * 2;
+    }
+}
 
 #if SOC_GDMA_SUPPORTED
 static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)

@@ -38,11 +38,7 @@ static esp_err_t i2s_pdm_tx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     clk_info->bclk = rate * I2S_LL_PDM_BCK_FACTOR * pdm_tx_clk->up_sample_fp / pdm_tx_clk->up_sample_fs;
     clk_info->bclk_div = 8;
     clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
-#if SOC_I2S_SUPPORTS_APLL
-    clk_info->sclk = (clk_cfg->clk_src == I2S_CLK_SRC_APLL) ? i2s_set_get_apll_freq(clk_info->mclk) : I2S_LL_BASE_CLK;
-#else
-    clk_info->sclk = I2S_LL_BASE_CLK;
-#endif
+    clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
     /* Check if the configuration is correct */
@@ -326,11 +322,7 @@ static esp_err_t i2s_pdm_rx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     clk_info->bclk = rate * I2S_LL_PDM_BCK_FACTOR * (pdm_rx_clk->dn_sample_mode == I2S_PDM_DSR_16S ? 2 : 1);
     clk_info->bclk_div = 8;
     clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
-#if SOC_I2S_SUPPORTS_APLL
-    clk_info->sclk = (clk_cfg->clk_src == I2S_CLK_SRC_APLL) ? i2s_set_get_apll_freq(clk_info->mclk) : I2S_LL_BASE_CLK;
-#else
-    clk_info->sclk = I2S_LL_BASE_CLK;
-#endif
+    clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
     /* Check if the configuration is correct */

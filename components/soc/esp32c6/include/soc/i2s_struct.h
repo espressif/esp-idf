@@ -255,7 +255,7 @@ typedef union {
          */
         uint32_t rx_clk_active:1;
         /** rx_clk_sel : R/W; bitpos: [28:27]; default: 0;
-         *  Select I2S Rx module source clock. 0: no clock. 1: APLL. 2: CLK160. 3: I2S_MCLK_in.
+         *  Select I2S Rx module source clock. 0: XTAL clock. 1: PLL240M. 2: PLL160M. 3: I2S_MCLK_in.
          */
         uint32_t rx_clk_sel:2;
         /** mclk_sel : R/W; bitpos: [29]; default: 0;
@@ -448,7 +448,7 @@ typedef union {
     uint32_t val;
 } i2s_rx_tdm_ctrl_reg_t;
 
-/** Type of rxeof_num register
+/** Type of rx_eof_num register
  *  I2S RX data number control register.
  */
 typedef union {
@@ -461,7 +461,7 @@ typedef union {
         uint32_t reserved_12:20;
     };
     uint32_t val;
-} i2s_rxeof_num_reg_t;
+} i2s_rx_eof_num_reg_t;
 
 
 /** Group: TX Control and configuration registers */
@@ -627,7 +627,7 @@ typedef union {
          */
         uint32_t tx_clk_active:1;
         /** tx_clk_sel : R/W; bitpos: [28:27]; default: 0;
-         *  Select I2S Tx module source clock. 0: XTAL clock. 1: APLL. 2: CLK160. 3:
+         *  Select I2S Tx module source clock. 0: XTAL clock. 1: PLL240M. 2: PLL160M. 3:
          *  I2S_MCLK_in.
          */
         uint32_t tx_clk_sel:2;
@@ -914,7 +914,7 @@ typedef union {
     uint32_t val;
 } i2s_lc_hung_conf_reg_t;
 
-/** Type of conf_sigle_data register
+/** Type of conf_single_data register
  *  I2S signal data register
  */
 typedef union {
@@ -925,7 +925,7 @@ typedef union {
         uint32_t single_data:32;
     };
     uint32_t val;
-} i2s_conf_sigle_data_reg_t;
+} i2s_conf_single_data_reg_t;
 
 
 /** Group: TX status registers */
@@ -1005,8 +1005,8 @@ typedef struct i2s_dev_t {
     volatile i2s_rx_timing_reg_t rx_timing;
     volatile i2s_tx_timing_reg_t tx_timing;
     volatile i2s_lc_hung_conf_reg_t lc_hung_conf;
-    volatile i2s_rxeof_num_reg_t rxeof_num;
-    volatile i2s_conf_sigle_data_reg_t conf_sigle_data;
+    volatile i2s_rx_eof_num_reg_t rx_eof_num;
+    volatile i2s_conf_single_data_reg_t conf_single_data;
     volatile i2s_state_reg_t state;
     volatile i2s_etm_conf_reg_t etm_conf;
     uint32_t reserved_074[3];

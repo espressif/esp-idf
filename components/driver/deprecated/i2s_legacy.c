@@ -47,6 +47,7 @@
 #include "esp_efuse.h"
 #include "esp_rom_gpio.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk.h"
 
 static const char *TAG = "i2s(legacy)";
 
@@ -624,6 +625,7 @@ err:
 /*-------------------------------------------------------------
                    I2S clock operation
   -------------------------------------------------------------*/
+  // [clk_tree] TODO: replace the following switch table by clk_tree API
 static uint32_t i2s_config_source_clock(i2s_port_t i2s_num, bool use_apll, uint32_t mclk)
 {
 #if SOC_I2S_SUPPORTS_APLL
@@ -650,12 +652,12 @@ static uint32_t i2s_config_source_clock(i2s_port_t i2s_num, bool use_apll, uint3
         /* In APLL mode, there is no sclk but only mclk, so return 0 here to indicate APLL mode */
         return real_freq;
     }
-    return I2S_LL_BASE_CLK;
+    return esp_clk_apb_freq() * 2;
 #else
     if (use_apll) {
         ESP_LOGW(TAG, "APLL not supported on current chip, use I2S_CLK_SRC_DEFAULT as default clock source");
     }
-    return I2S_LL_BASE_CLK;
+    return esp_clk_apb_freq() * 2;
 #endif
 }
 

@@ -211,7 +211,7 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of
  */
-#define SOC_I2S_CLKS {SOC_MOD_CLK_PLL}
+#define SOC_I2S_CLKS {SOC_MOD_CLK_PLL, SOC_MOD_CLK_XTAL}
 
 /**
  * @brief I2S clock source enum
@@ -219,6 +219,7 @@ typedef enum {
 typedef enum {
     I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL,        /*!< Select SOC_MOD_CLK_PLL as the default source clock  */
     I2S_CLK_SRC_PLL_96M = SOC_MOD_CLK_PLL,        /*!< Select PLL as the source clock */
+    I2S_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,          /*!< Select XTAL as the source clock */
 } soc_periph_i2s_clk_src_t;
 
 /////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////

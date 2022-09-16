@@ -28,8 +28,6 @@ extern "C" {
 // Get I2S hardware instance with giving i2s num
 #define I2S_LL_GET_HW(num)             (((num) == 0) ? (&I2S0) : NULL)
 
-#define I2S_LL_BASE_CLK                (2 * APB_CLK_FREQ)
-
 #define I2S_LL_BCK_MAX_PRESCALE  (64)
 
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (6)
@@ -280,7 +278,7 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  * @note mclk on ESP32S2 is shared by both TX and RX channel
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sclk system clock, 0 means use apll
+ * @param sclk system clock
  * @param mclk module clock
  * @param mclk_div integer part of the division from sclk to mclk
  */
@@ -356,7 +354,7 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  * @note mclk on ESP32S2 is shared by both TX and RX channel
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sclk system clock, 0 means use apll
+ * @param sclk system clock
  * @param mclk module clock
  * @param mclk_div integer part of the division from sclk to mclk
  */
