@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -135,5 +140,8 @@ TEST_CASE("pthread mix C/C++", "[pthread]")
         std::cout << "Join thread " << std::hex << t1.get_id() << std::endl;
         t1.join();
     }
+
+    /* Short delay to allow cleanup, avoid leaks */
+    vTaskDelay(10);
 }
 #endif
