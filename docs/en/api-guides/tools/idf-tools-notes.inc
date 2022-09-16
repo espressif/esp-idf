@@ -27,11 +27,6 @@
 
 ---
 
-.. tool-esp32s2ulp-elf-notes
-
-
----
-
 .. tool-openocd-esp32-notes
 
 
