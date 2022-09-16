@@ -13,6 +13,7 @@
 #include "esp_sleep.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/system_internal.h"
+#include "esp_private/esp_sleep_internal.h"
 #include "esp_log.h"
 #include "esp_newlib.h"
 #include "esp_timer.h"
@@ -499,6 +500,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
          * see the assert at top of this function.
          */
         portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
+
+#if !CONFIG_IDF_TARGET_ESP32H2 // IDF does not officially support esp32h2 in v4.4
+        esp_sleep_isolate_digital_gpio();
+#endif
 
 #if SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
         extern char _rtc_text_start[];
