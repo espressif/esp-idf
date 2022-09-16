@@ -263,6 +263,10 @@ config SOC_GPIO_VALID_GPIO_MASK
     hex
     default 0xFFFFFFFFFF
 
+config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
+    hex
+    default 0xEF0FEA
+
 config SOC_GPIO_SUPPORT_SLP_SWITCH
     bool
     default y
