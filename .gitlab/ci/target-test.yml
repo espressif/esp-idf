@@ -228,6 +228,14 @@ component_ut_pytest_esp32_generic:
     - build_pytest_components_esp32
   tags: [ esp32, generic ]
 
+component_ut_pytest_esp32_adc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32-adc
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, adc ]
+
 component_ut_pytest_esp32_ip101:
   extends:
     - .pytest_components_dir_template
@@ -268,6 +276,14 @@ component_ut_pytest_esp32s2_generic:
     - build_pytest_components_esp32s2
   tags: [ esp32s2, generic ]
 
+component_ut_pytest_esp32s2_adc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s2-adc
+  needs:
+    - build_pytest_components_esp32s2
+  tags: [ esp32s2, adc ]
+
 component_ut_pytest_esp32s2_flash_multi:
   extends:
     - .pytest_components_dir_template
@@ -283,6 +299,14 @@ component_ut_pytest_esp32s3_generic:
   needs:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, generic ]
+
+component_ut_pytest_esp32s3_adc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3-adc
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, adc ]
 
 component_ut_pytest_esp32s3_octal_psram:
   extends:
@@ -324,6 +348,14 @@ component_ut_pytest_esp32c2_generic:
     - build_pytest_components_esp32c2
   tags: [ esp32c2, generic, xtal_40mhz ]
 
+component_ut_pytest_esp32c2_adc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c2-adc
+  needs:
+    - build_pytest_components_esp32c2
+  tags: [ esp32c2, adc ]
+
 component_ut_pytest_esp32c2_xtal_26mhz:
   extends:
     - .pytest_components_dir_template
@@ -339,6 +371,14 @@ component_ut_pytest_esp32c3_generic:
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, generic ]
+
+component_ut_pytest_esp32c3_adc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3-adc
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, adc ]
 
 component_ut_pytest_esp32c3_flash_encryption:
   extends:
