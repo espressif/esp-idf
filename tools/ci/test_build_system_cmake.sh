@@ -843,28 +843,35 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     mv CMakeLists.bak CMakeLists.txt # revert previous modifications
     rm -rf extra_dir components
 
+    print_status "Components in EXCLUDE_COMPONENTS not passed to idf_component_manager"
+    clean_build_dir
+    idf.py create-component -C components/ to_be_excluded || failure "Failed to create a component"
+    echo "invalid syntax..." > components/to_be_excluded/idf_component.yml
+    ! idf.py reconfigure || failure "Build should have failed due to invalid syntax in idf_component.yml"
+    idf.py -DEXCLUDE_COMPONENTS=to_be_excluded reconfigure || failure "Build should have succeeded when the component is excluded"
+    rm -rf components/to_be_excluded
+
     print_status "Create project using idf.py and build it"
     echo "Trying to create project."
     (idf.py -C projects create-project temp_test_project) || failure "Failed to create the project."
-    cd "$IDF_PATH/projects/temp_test_project"
+    pushd "$PWD/projects/temp_test_project"
     echo "Building the project temp_test_project . . ."
     idf.py build || failure "Failed to build the project."
-    cd "$IDF_PATH"
-    rm -rf "$IDF_PATH/projects/temp_test_project"
+    popd
+    rm -rf "$PWD/projects/temp_test_project"
 
     print_status "Create component using idf.py, create project using idf.py."
     print_status "Add the component to the created project and build the project."
     echo "Trying to create project . . ."
     (idf.py -C projects create-project temp_test_project) || failure "Failed to create the project."
+    pushd "$PWD/projects/temp_test_project"
     echo "Trying to create component . . ."
     (idf.py -C components create-component temp_test_component) || failure "Failed to create the component."
-    ${SED} -i '5i\\tfunc();' "$IDF_PATH/projects/temp_test_project/main/temp_test_project.c"
-    ${SED} -i '5i#include "temp_test_component.h"' "$IDF_PATH/projects/temp_test_project/main/temp_test_project.c"
-    cd "$IDF_PATH/projects/temp_test_project"
+    ${SED} -i '5i\\tfunc();' "main/temp_test_project.c"
+    ${SED} -i '5i#include "temp_test_component.h"' "main/temp_test_project.c"
     idf.py build || failure "Failed to build the project."
-    cd "$IDF_PATH"
-    rm -rf "$IDF_PATH/projects/temp_test_project"
-    rm -rf "$IDF_PATH/components/temp_test_component"
+    popd
+    rm -rf "$PWD/projects/temp_test_project"
 
     print_status "Check that command for creating new project will fail if the target folder is not empty."
     mkdir "$IDF_PATH/example_proj/"

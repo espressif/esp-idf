@@ -429,10 +429,8 @@ macro(idf_build_process target)
         set(local_components_list_file ${build_dir}/local_components_list.temp.yml)
 
         set(__contents "components:\n")
-        idf_build_get_property(__component_targets __COMPONENT_TARGETS)
-        foreach(__component_target ${__component_targets})
-            __component_get_property(__component_name ${__component_target} COMPONENT_NAME)
-            __component_get_property(__component_dir ${__component_target} COMPONENT_DIR)
+        foreach(__component_name ${components})
+            idf_component_get_property(__component_dir ${__component_name} COMPONENT_DIR)
             set(__contents "${__contents}  - name: \"${__component_name}\"\n    path: \"${__component_dir}\"\n")
         endforeach()
 
