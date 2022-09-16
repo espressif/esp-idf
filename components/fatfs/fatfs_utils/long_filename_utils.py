@@ -3,7 +3,7 @@
 from typing import List
 
 from .entry import Entry
-from .utils import convert_to_utf16_and_pad
+from .utils import build_name, convert_to_utf16_and_pad
 
 #  File name with long filenames support can be as long as memory allows. It is split into entries
 #  holding 13 characters of the filename, thus the number of required entries is ceil(len(long_name) / 13).
@@ -85,7 +85,7 @@ def build_lfn_full_name(name: str, extension: str) -> str:
     The extension is optional, and the long filename entry explicitly specifies it,
     on the opposite as for short file names.
     """
-    lfn_record: str = f'{name}.{extension}' if len(extension) > 0 else name
+    lfn_record: str = build_name(name, extension)
     # the name must be terminated with NULL terminator
     # if it doesn't fit into the set of long name directory entries
     if len(lfn_record) % Entry.CHARS_PER_ENTRY != 0:
