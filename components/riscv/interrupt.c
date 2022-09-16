@@ -67,16 +67,6 @@ void intr_matrix_route(int intr_src, int intr_num)
     REG_WRITE(DR_REG_INTERRUPT_BASE + 4 * intr_src, intr_num);
 }
 
-void riscv_global_interrupts_enable(void)
-{
-    RV_SET_CSR(mstatus, MSTATUS_MIE);
-}
-
-void riscv_global_interrupts_disable(void)
-{
-    RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-}
-
 uint32_t esprv_intc_get_interrupt_unmask(void)
 {
     return REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG);
