@@ -97,12 +97,43 @@ Udev is a device manager for the Linux kernel. It allows us to run ``dfu-util`` 
 
 Create file ``/etc/udev/rules.d/40-dfuse.rules`` with the following content::
 
-    SUBSYSTEMS=="usb", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="00??", GROUP="plugdev", MODE="0666"
+    SUBSYSTEMS=="usb", ATTRS{idVendor}=="303a", GROUP="plugdev", MODE="0666"
 
 .. note::
     Please check the output of the command ``groups``. The user has to be a member of the `GROUP` specified above. You may use some other existing groups for this purpose (e.g., `uucp` on some systems instead of `plugdev`) or create a new group for this purpose.
 
-Restart your computer so the previous setting could take into affect or run ``sudo udevadm trigger`` to force manually udev to trigger your new rule.
+Restart "udev" management tool:
+
+.. code-block:: bash
+
+    sudo service udev restart
+
+    # or
+
+    sudo udevadm control --reload-rules
+    sudo udevadm trigger
+
+
+Ubuntu/Debian users may need to add own “username” to the “dialout” group if
+they are not “root”, doing this issuing
+
+.. code-block:: bash
+
+    sudo usermod -a -G dialout $USER
+    sudo usermod -a -G plugdev $USER
+
+Similarly, Arch users may need to add their user to the “uucp” group
+
+.. code-block:: bash
+
+    sudo usermod -a -G uucp $USER
+    sudo usermod -a -G lock $USER
+
+.. note::
+  You will need to log out and log back in again (or reboot) for the user
+  group changes to take effect.
+
+After this file is installed, physically unplug and reconnect your board.
 
 .. _api_guide_dfu_flash_win:
 
