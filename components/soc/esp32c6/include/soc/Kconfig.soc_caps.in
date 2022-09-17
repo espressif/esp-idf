@@ -51,6 +51,10 @@ config SOC_I2S_SUPPORTED
     bool
     default y
 
+config SOC_RMT_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_SUPPORTED
     bool
     default y
@@ -412,6 +416,10 @@ config SOC_RMT_SUPPORT_TX_ASYNC_STOP
     default y
 
 config SOC_RMT_SUPPORT_TX_LOOP_COUNT
+    bool
+    default y
+
+config SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP
     bool
     default y
 
