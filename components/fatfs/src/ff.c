@@ -3843,6 +3843,45 @@ FRESULT f_open (
 
 
 
+struct last_read_op_t {
+    BYTE valid;
+    BYTE pdrv;
+    BYTE* buff;
+    LBA_t sector;
+    UINT ss;
+    UINT count;
+};
+
+DRESULT disk_read_flush(struct last_read_op_t* last_read_op) {
+    if (last_read_op->valid==0) return RES_OK;
+    DRESULT ret = disk_read(last_read_op->pdrv, last_read_op->buff, last_read_op->sector, last_read_op->count);
+    last_read_op->valid = 0;
+    return ret;
+}
+DRESULT disk_read_joined(struct last_read_op_t* last_read_op, BYTE pdrv, BYTE* buff, LBA_t sector, UINT ss, UINT count) {
+    DRESULT ret = RES_OK;
+    if (last_read_op->valid==0) {
+initop:
+        last_read_op->valid = 1;
+        last_read_op->pdrv = pdrv;
+        last_read_op->buff = buff;
+        last_read_op->sector = sector;
+        last_read_op->ss = ss;
+        last_read_op->count = count;
+        return ret;
+    }
+    //Try to join read op
+    if (last_read_op->sector + last_read_op->count == sector && last_read_op->buff + (last_read_op->count*ss) == buff) {
+        //Sector id is continuous and buffer is continuous
+        last_read_op->count += count;
+        return RES_OK;
+    } else {
+        //Segment, flush and replace
+        ret = disk_read_flush(last_read_op);
+        goto initop;
+    }
+}
+
 /*-----------------------------------------------------------------------*/
 /* Read File                                                             */
 /*-----------------------------------------------------------------------*/
@@ -3869,6 +3908,8 @@ FRESULT f_read (
 	if (!(fp->flag & FA_READ)) LEAVE_FF(fs, FR_DENIED); /* Check access mode */
 	remain = fp->obj.objsize - fp->fptr;
 	if (btr > remain) btr = (UINT)remain;		/* Truncate btr by remaining bytes */
+    struct last_read_op_t last_read_op = {};
+    last_read_op.valid = 0;
 
 	for ( ; btr > 0; btr -= rcnt, *br += rcnt, rbuff += rcnt, fp->fptr += rcnt) {	/* Repeat until btr bytes read */
 		if (fp->fptr % SS(fs) == 0) {			/* On the sector boundary? */
@@ -3898,14 +3939,17 @@ FRESULT f_read (
 				if (csect + cc > fs->csize) {	/* Clip at cluster boundary */
 					cc = fs->csize - csect;
 				}
-				if (disk_read(fs->pdrv, rbuff, sect, cc) != RES_OK) ABORT(fs, FR_DISK_ERR);
+				if (disk_read_joined(&last_read_op, fs->pdrv, rbuff, sect, SS(fs), cc) != RES_OK)
+					ABORT(fs, FR_DISK_ERR);
 #if !FF_FS_READONLY && FF_FS_MINIMIZE <= 2		/* Replace one of the read sectors with cached data if it contains a dirty sector */
 #if FF_FS_TINY
 				if (fs->wflag && fs->winsect - sect < cc) {
+                    if (disk_read_flush(&last_read_op) != RES_OK) ABORT(fs, FR_DISK_ERR);
 					memcpy(rbuff + ((fs->winsect - sect) * SS(fs)), fs->win, SS(fs));
 				}
 #else
 				if ((fp->flag & FA_DIRTY) && fp->sect - sect < cc) {
+                    if (disk_read_flush(&last_read_op) != RES_OK) ABORT(fs, FR_DISK_ERR);
 					memcpy(rbuff + ((fp->sect - sect) * SS(fs)), fp->buf, SS(fs));
 				}
 #endif
@@ -3936,6 +3980,7 @@ FRESULT f_read (
 #endif
 	}
 
+    if (disk_read_flush(&last_read_op) != RES_OK) ABORT(fs, FR_DISK_ERR);
 	LEAVE_FF(fs, FR_OK);
 }
 
@@ -3943,6 +3988,45 @@ FRESULT f_read (
 
 
 #if !FF_FS_READONLY
+
+struct last_write_op_t {
+    BYTE valid;
+    BYTE pdrv;
+    const BYTE* wbuff;
+    LBA_t sector;
+    UINT ss;
+    UINT count;
+}; 
+
+DRESULT disk_write_flush(struct last_write_op_t* last_write_op) {
+    if (last_write_op->valid==0) return RES_OK;
+    DRESULT ret = disk_write(last_write_op->pdrv, last_write_op->wbuff, last_write_op->sector, last_write_op->count);
+    last_write_op->valid = 0;
+    return ret;
+}
+DRESULT disk_write_joined(struct last_write_op_t* last_write_op, BYTE pdrv, const BYTE* wbuff, LBA_t sector, UINT ss, UINT count) {
+    DRESULT ret = RES_OK;
+    if (last_write_op->valid==0) {
+initop:
+        last_write_op->valid = 1;
+        last_write_op->pdrv = pdrv;
+        last_write_op->wbuff = wbuff;
+        last_write_op->sector = sector;
+        last_write_op->ss = ss;
+        last_write_op->count = count;
+        return ret;
+    }
+    //Try to join write op
+    if (last_write_op->sector + last_write_op->count == sector && last_write_op->wbuff + (last_write_op->count*ss) == wbuff) {
+        //Sector id is continuous and buffer is continuous
+        last_write_op->count += count;
+        return RES_OK;
+    } else {
+        //Segment, flush and replace
+        ret = disk_write_flush(last_write_op);
+        goto initop;
+    }    
+}
 /*-----------------------------------------------------------------------*/
 /* Write File                                                            */
 /*-----------------------------------------------------------------------*/
@@ -3971,6 +4055,8 @@ FRESULT f_write (
 	if ((!FF_FS_EXFAT || fs->fs_type != FS_EXFAT) && (DWORD)(fp->fptr + btw) < (DWORD)fp->fptr) {
 		btw = (UINT)(0xFFFFFFFF - (DWORD)fp->fptr);
 	}
+    struct last_write_op_t last_write_op = {};
+    last_write_op.valid = 0;
 
 	for ( ; btw > 0; btw -= wcnt, *bw += wcnt, wbuff += wcnt, fp->fptr += wcnt, fp->obj.objsize = (fp->fptr > fp->obj.objsize) ? fp->fptr : fp->obj.objsize) {	/* Repeat until all data written */
 		if (fp->fptr % SS(fs) == 0) {		/* On the sector boundary? */
@@ -4013,7 +4099,7 @@ FRESULT f_write (
 				if (csect + cc > fs->csize) {	/* Clip at cluster boundary */
 					cc = fs->csize - csect;
 				}
-				if (disk_write(fs->pdrv, wbuff, sect, cc) != RES_OK) ABORT(fs, FR_DISK_ERR);
+				if (disk_write_joined(&last_write_op, fs->pdrv, wbuff, sect, SS(fs), cc) != RES_OK) ABORT(fs, FR_DISK_ERR);
 #if FF_FS_MINIMIZE <= 2
 #if FF_FS_TINY
 				if (fs->winsect - sect < cc) {	/* Refill sector cache if it gets invalidated by the direct write */
@@ -4058,6 +4144,7 @@ FRESULT f_write (
 
 	fp->flag |= FA_MODIFIED;				/* Set file change flag */
 
+    if (disk_write_flush(&last_write_op) != RES_OK) ABORT(fs, FR_DISK_ERR);
 	LEAVE_FF(fs, FR_OK);
 }
 
