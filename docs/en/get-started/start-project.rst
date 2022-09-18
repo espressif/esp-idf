@@ -401,30 +401,30 @@ ESP-IDF supports Python 3.7 or newer. It is recommended to upgrade your operatin
 
     A BSP typically supports all of the hardware components provided on development board. Apart from the pinout definition and initialization functions, a BSP ships with drivers for the external components such as sensors, displays, audio codecs etc.
 
-    The BSPs are distributed via `IDF Component Manager <../api-guides/tools/idf-component-manager>`_, so they can be found in `IDF Component Registry <https://components.espressif.com>`_.
+    The BSPs are distributed via :doc:`IDF Component Manager </api-guides/tools/idf-component-manager>`, so they can be found in `IDF Component Registry <https://components.espressif.com>`_.
 
     .. only:: esp32
 
         **Here's an example of how to add ESP-WROVER-KIT BSP to your project:**
-        
+
         .. code-block:: bash
-        
-            idf.py add-dependency esp_wrover_kit 
+
+            idf.py add-dependency esp_wrover_kit
 
     .. only:: esp32s2
 
         **Here's an example of how to add ESP32-S2-Kaluga-Kit BSP to your project:**
-        
+
         .. code-block:: bash
-        
+
             idf.py add-dependency esp32_s2_kaluga_kit
 
     .. only:: esp32s3
 
         **Here's an example of how to add ESP-BOX BSP to your project:**
-        
+
         .. code-block:: bash
-        
-            idf.py add-dependency esp-box 
+
+            idf.py add-dependency esp-box
 
     More examples of BSP usage can be found in `BSP examples folder <https://github.com/espressif/esp-bsp/tree/master/examples>`_.
