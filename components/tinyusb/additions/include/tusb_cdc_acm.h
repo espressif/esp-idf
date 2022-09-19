@@ -95,7 +95,7 @@ typedef void(*tusb_cdcacm_callback_t)(int itf, cdcacm_event_t *event);
 typedef struct {
     tinyusb_usbdev_t usb_dev; /*!< Usb device to set up */
     tinyusb_cdcacm_itf_t cdc_port;  /*!< CDC port */
-    size_t rx_unread_buf_sz; /*!< Amount of data that can be passed to the AMC at once */
+    size_t rx_unread_buf_sz; /*!< Amount of data that can be passed to the ACM at once */
     tusb_cdcacm_callback_t callback_rx;  /*!< Pointer to the function with the `tusb_cdcacm_callback_t` type that will be handled as a callback */
     tusb_cdcacm_callback_t callback_rx_wanted_char; /*!< Pointer to the function with the `tusb_cdcacm_callback_t` type that will be handled as a callback */
     tusb_cdcacm_callback_t callback_line_state_changed; /*!< Pointer to the function with the `tusb_cdcacm_callback_t` type that will be handled as a callback */

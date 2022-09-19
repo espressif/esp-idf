@@ -36,7 +36,7 @@ typedef struct {
     tusb_cdcacm_callback_t callback_rx_wanted_char;
     tusb_cdcacm_callback_t callback_line_state_changed;
     tusb_cdcacm_callback_t callback_line_coding_changed;
-} esp_tusb_cdcacm_t; /*!< CDC_AMC object */
+} esp_tusb_cdcacm_t; /*!< CDC_ACM object */
 
 static const char *TAG = "tusb_cdc_acm";
 
