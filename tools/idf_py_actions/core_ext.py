@@ -44,8 +44,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
             for hint in generate_hints(stdout, stderr):
                 yellow_print(hint)
 
-        if output_format:
-            os.environ['SIZE_OUTPUT_FORMAT'] = output_format
+        os.environ['SIZE_OUTPUT_FORMAT'] = output_format
         ensure_build_directory(args, ctx.info_name)
         run_target('all', args, force_progression=GENERATORS[args.generator].get('force_progression', False),
                    custom_error_handler=tool_error_handler)
@@ -338,12 +337,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         'global_action_callbacks': [validate_root_options],
     }
 
-    # Default value is intentionally blank, so that we know if the user explicitly specified
-    # the format and override the OUTPUT_JSON variable if it is set
+    # 'default' is introduced instead of simply setting 'text' as the default so that we know
+    # if the user explicitly specified the format or not. If the format is not specified, then
+    # the legacy OUTPUT_JSON CMake variable will be taken into account.
     size_options = [{'names': ['--format', 'output_format'],
-                     'type': click.Choice(['text', 'csv', 'json']),
-                     'help': 'Specify output format: text, csv or json.',
-                     'default': ''}]
+                     'type': click.Choice(['default', 'text', 'csv', 'json']),
+                     'help': 'Specify output format: text (same as "default"), csv or json.',
+                     'default': 'default'}]
 
     build_actions = {
         'actions': {
