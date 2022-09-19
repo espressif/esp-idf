@@ -71,6 +71,14 @@ example_test_pytest_esp32s3_generic:
     - build_pytest_examples_esp32s3
   tags: [ esp32s3, generic ]
 
+example_test_pytest_esp32s3_f4r8:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3
+  needs:
+    - build_pytest_examples_esp32s3
+  tags: [ esp32s3, MSPI_F4R8 ]
+
 example_test_pytest_esp32c2_generic:
   extends:
     - .pytest_examples_dir_template
