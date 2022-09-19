@@ -40,6 +40,7 @@ extern "C" {
     .get_bus_width = &sdmmc_host_get_slot_width, \
     .set_bus_ddr_mode = &sdmmc_host_set_bus_ddr_mode, \
     .set_card_clk = &sdmmc_host_set_card_clk, \
+    .set_cclk_always_on = &sdmmc_host_set_cclk_always_on, \
     .do_transaction = &sdmmc_host_do_transaction, \
     .deinit = &sdmmc_host_deinit, \
     .io_int_enable = sdmmc_host_io_int_enable, \
@@ -202,6 +203,19 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz);
  *      - ESP_ERR_NOT_SUPPORTED if DDR mode is not supported on this slot
  */
 esp_err_t sdmmc_host_set_bus_ddr_mode(int slot, bool ddr_enabled);
+
+/**
+ * @brief Enable or disable always-on card clock
+ * When cclk_always_on is false, the host controller is allowed to shut down
+ * the card clock between the commands. When cclk_always_on is true, the clock
+ * is generated even if no command is in progress.
+ * @param slot  slot number
+ * @param cclk_always_on  enable or disable always-on clock
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the slot number is invalid
+ */
+esp_err_t sdmmc_host_set_cclk_always_on(int slot, bool cclk_always_on);
 
 /**
  * @brief Send command to the card and get response
