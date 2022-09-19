@@ -6,7 +6,8 @@ set(includes "")
 if(CONFIG_SOC_ULP_SUPPORTED OR CONFIG_SOC_RISCV_COPROC_SUPPORTED)
 
     list(APPEND srcs
-        "ulp_common/ulp_common.c")
+        "ulp_common/ulp_common.c"
+        "ulp_common/ulp_adc.c")
 
     list(APPEND includes
         ulp_common/include
@@ -25,7 +26,6 @@ if(CONFIG_SOC_ULP_SUPPORTED OR CONFIG_SOC_RISCV_COPROC_SUPPORTED)
         list(APPEND srcs
             "ulp_riscv/ulp_riscv.c"
             "ulp_riscv/ulp_riscv_lock.c"
-            "ulp_riscv/ulp_riscv_adc.c"
             "ulp_riscv/ulp_riscv_i2c.c")
 
         list(APPEND includes

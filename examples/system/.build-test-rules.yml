@@ -160,7 +160,7 @@ examples/system/ulp_fsm/ulp:
 
 examples/system/ulp_fsm/ulp_adc:
   enable:
-    - if: IDF_TARGET == "esp32"
+    - if: IDF_TARGET in ["esp32", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
 
