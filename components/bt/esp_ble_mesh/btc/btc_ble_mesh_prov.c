@@ -368,7 +368,7 @@ static bt_status_t btc_ble_mesh_model_callback(esp_ble_mesh_model_cb_param_t *pa
     msg.pid = BTC_PID_MODEL;
     msg.act = act;
 
-    ret = btc_transfer_context(&msg, param, sizeof(esp_ble_mesh_model_cb_param_t),
+    ret = btc_transfer_context(&msg, param, param == NULL ? 0 : sizeof(esp_ble_mesh_model_cb_param_t),
                                btc_ble_mesh_model_copy_req_data);
     if (ret != BT_STATUS_SUCCESS) {
         BT_ERR("btc_transfer_context failed");
@@ -528,7 +528,7 @@ static bt_status_t btc_ble_mesh_prov_callback(esp_ble_mesh_prov_cb_param_t *para
     msg.pid = BTC_PID_PROV;
     msg.act = act;
 
-    ret = btc_transfer_context(&msg, param, sizeof(esp_ble_mesh_prov_cb_param_t), NULL);
+    ret = btc_transfer_context(&msg, param, param == NULL ? 0 : sizeof(esp_ble_mesh_prov_cb_param_t), NULL);
     if (ret != BT_STATUS_SUCCESS) {
         BT_ERR("btc_transfer_context failed");
     }
