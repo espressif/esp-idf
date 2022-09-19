@@ -1616,20 +1616,7 @@ failed:
     wpa_sm_set_seq(sm, key, 0);
     sm->key_info=key_info;
 
-    if (wpa_supplicant_send_2_of_2(sm, key, ver, key_info))
-        goto failed;
-
-    return;
-
-failed:
-    wpa_sm_deauthenticate(sm, WLAN_REASON_UNSPECIFIED);
-}
-
-  int   wpa_supplicant_send_2_of_2_txcallback(struct wpa_sm *sm)
-{
-    u16 key_info=sm->key_info;
-    u16 rekey= (WPA_SM_STATE(sm) == WPA_COMPLETED);
-
+    /*install gtk before send 2 of 2*/
     if((sm->gd).gtk_len) {
         if (wpa_supplicant_install_gtk(sm, &(sm->gd)))
             goto failed;
@@ -1637,7 +1624,10 @@ failed:
         goto failed;
     }
 
-    if (rekey) {
+    if (wpa_supplicant_send_2_of_2(sm, key, ver, key_info))
+        goto failed;
+
+    if ((WPA_SM_STATE(sm) == WPA_COMPLETED)) {
 #ifdef MSG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: Group rekeying "
             "completed with " MACSTR " [GTK=%s]",
@@ -1645,13 +1635,15 @@ failed:
 #endif
         wpa_sm_cancel_auth_timeout(sm);
         wpa_sm_set_state(WPA_COMPLETED);
-    } else
+    } else {
         wpa_supplicant_key_neg_complete(sm, sm->bssid,
-                        key_info &WPA_KEY_INFO_SECURE);
-    return 0;
+                        sm->key_info &WPA_KEY_INFO_SECURE);
+    }
+
+    return;
 
 failed:
-    return WLAN_REASON_UNSPECIFIED;
+    wpa_sm_deauthenticate(sm, WLAN_REASON_UNSPECIFIED);
 }
 
    int   wpa_supplicant_verify_eapol_key_mic(struct wpa_sm *sm,
@@ -2486,7 +2478,6 @@ void eapol_txcb(void *eb)
         case WPA_GROUP_HANDSHAKE:
             if (sm->txcb_flags & WPA_GROUP_HANDSHAKE_BIT) {
                 sm->txcb_flags &= ~WPA_GROUP_HANDSHAKE_BIT;
-                isdeauth = wpa_supplicant_send_2_of_2_txcallback(sm);
             } else {
                 wpa_printf(MSG_DEBUG, "2/2 txcb, flags=%d\n", sm->txcb_flags);
             }
