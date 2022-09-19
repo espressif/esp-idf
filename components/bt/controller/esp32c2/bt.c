@@ -550,6 +550,7 @@ void controller_sleep_deinit(void)
 #ifdef CONFIG_PM_ENABLE
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
     r_ble_rtc_wake_up_state_clr();
+    esp_sleep_disable_bt_wakeup();
 #endif
     esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_AUTO);
 
