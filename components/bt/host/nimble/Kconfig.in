@@ -240,7 +240,8 @@ config BT_NIMBLE_SVC_GAP_APPEARANCE
 menu "Memory Settings"
     config BT_NIMBLE_MSYS_1_BLOCK_COUNT
         int "MSYS_1 Block Count"
-        default 12
+        default 24 if SOC_ESP_NIMBLE_CONTROLLER
+        default 12 if !SOC_ESP_NIMBLE_CONTROLLER
         help
             MSYS is a system level mbuf registry. For prepare write & prepare
             responses MBUFs are allocated out of msys_1 pool. For NIMBLE_MESH
@@ -249,7 +250,8 @@ menu "Memory Settings"
 
     config BT_NIMBLE_MSYS_1_BLOCK_SIZE
         int    "MSYS_1 Block Size"
-        default 256
+        default 128 if SOC_ESP_NIMBLE_CONTROLLER
+        default 256 if !SOC_ESP_NIMBLE_CONTROLLER
         help
                 Dynamic memory size of block 1
 
