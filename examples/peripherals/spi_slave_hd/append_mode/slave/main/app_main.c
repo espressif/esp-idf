@@ -14,7 +14,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "driver/spi_slave_hd.h"
-#include "esp_serial_slave_link/essl_spi.h"
 
 #define GPIO_MOSI           11
 #define GPIO_MISO           13
