@@ -4,6 +4,7 @@ COMPONENT_ADD_LDFRAGMENTS := linker.lf
 
 ifdef IS_BOOTLOADER_BUILD
 COMPONENT_OBJEXCLUDE += clk_ctrl_os.o \
+						esp_clk.o \
 						intr_alloc.o \
 						sleep_modes.o \
 						sleep_gpio.o \

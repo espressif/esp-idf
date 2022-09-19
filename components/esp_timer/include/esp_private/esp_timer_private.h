@@ -52,11 +52,11 @@ void esp_timer_private_update_apb_freq(uint32_t apb_ticks_per_us);
 void esp_timer_private_advance(int64_t time_us);
 
 /**
- * @brief obtain internal critical section used esp_timer implementation
+ * @brief obtain internal critical section used in the esp_timer implementation
  * This can be used when a sequence of calls to esp_timer has to be made,
  * and it is necessary that the state of the timer is consistent between
  * the calls. Should be treated in the same way as a spinlock.
- * Call esp_timer_unlock to release the lock
+ * Call esp_timer_private_unlock to release the lock
  */
 void esp_timer_private_lock(void);
 
