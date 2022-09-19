@@ -125,6 +125,8 @@ void multi_heap_dump(multi_heap_handle_t heap);
  * can be optionally printed to stderr. Print behaviour can be overridden at compile time by defining
  * MULTI_CHECK_FAIL_PRINTF in multi_heap_platform.h.
  *
+ * @note This function is not thread-safe as it sets a global variable with the value of print_errors.
+ *
  * @param heap Handle to a registered heap.
  * @param print_errors If true, errors will be printed to stderr.
  * @return true if heap is valid, false otherwise.

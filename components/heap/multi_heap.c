@@ -81,7 +81,7 @@ typedef struct multi_heap_info {
     void* heap_data;
 } heap_t;
 
-#ifdef CONFIG_HEAP_TLSF_USE_ROM_IMPL
+#if CONFIG_HEAP_TLSF_USE_ROM_IMPL
 
 void _multi_heap_lock(void *lock)
 {
@@ -103,7 +103,7 @@ void multi_heap_in_rom_init(void)
     multi_heap_os_funcs_init(&multi_heap_os_funcs);
 }
 
-#else //#ifndef CONFIG_HEAP_TLSF_USE_ROM_IMPL
+#else // CONFIG_HEAP_TLSF_USE_ROM_IMPL
 
 /* Return true if this block is free. */
 static inline bool is_free(const block_header_t *block)
@@ -309,13 +309,46 @@ void *multi_heap_aligned_alloc_impl(multi_heap_handle_t heap, size_t size, size_
     return multi_heap_aligned_alloc_impl_offs(heap, size, alignment, 0);
 }
 
+#ifdef MULTI_HEAP_POISONING
+/*!
+ * @brief Global definition of print_errors set in multi_heap_check() when
+ * MULTI_HEAP_POISONING is active. Allows the transfer of the value to
+ * multi_heap_poisoning.c without having to propagate it to the tlsf submodule
+ * and back.
+ */
+static bool g_print_errors = false;
+
+/*!
+ * @brief Definition of the weak function declared in TLSF repository.
+ * The call of this function execute a check for block poisoning on the memory
+ * chunk passed as parameter.
+ *
+ * @param start: pointer to the start of the memory region to check for corruption
+ * @param size: size of the memory region to check for corruption
+ * @param is_free: indicate if the pattern to use the fill the region should be
+ * an after free or after allocation pattern.
+ *
+ * @return bool: true if the the memory is not corrupted, false if the memory if corrupted.
+ */
+bool tlsf_check_hook(void *start, size_t size, bool is_free)
+{
+    return multi_heap_internal_check_block_poisoning(start, size, is_free, g_print_errors);
+}
+#endif // MULTI_HEAP_POISONING
+
 bool multi_heap_check(multi_heap_handle_t heap, bool print_errors)
 {
-    (void)print_errors;
     bool valid = true;
     assert(heap != NULL);
 
     multi_heap_internal_lock(heap);
+
+#ifdef MULTI_HEAP_POISONING
+    g_print_errors = print_errors;
+#else
+    (void) print_errors;
+#endif
+
     if(tlsf_check(heap->heap_data)) {
         valid = false;
     }
