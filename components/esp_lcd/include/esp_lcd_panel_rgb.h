@@ -89,6 +89,7 @@ typedef bool (*esp_lcd_rgb_panel_vsync_cb_t)(esp_lcd_panel_handle_t panel, const
 /**
  * @brief Prototype for function to re-fill a bounce buffer, rather than copying from the frame buffer
  *
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
  * @param[in] bounce_buf Bounce buffer to write data into
  * @param[in] pos_px How many pixels already were sent to the display in this frame, in other words,
  *                   at what pixel the routine should start putting data into bounce_buf
