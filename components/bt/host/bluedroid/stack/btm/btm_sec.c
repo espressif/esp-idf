@@ -4024,7 +4024,9 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
         return;
     }
 
-    p_dev_rec->sec_flags |= BTM_SEC_AUTHENTICATED;
+    if (!(p_dev_rec->sm4 & BTM_SM4_UPGRADE)) {
+        p_dev_rec->sec_flags |= BTM_SEC_AUTHENTICATED;
+    }
 
     if (p_dev_rec->pin_code_length >= 16 ||
             p_dev_rec->link_key_type == BTM_LKEY_TYPE_AUTH_COMB ||

@@ -347,10 +347,6 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_L
                         btm_establish_continue (p);
                         return;
                     }
-                } else {
-                    /* If remote features indicated secure connection (SC) mode, check the remote feautres again*/
-                    /* this is to prevent from BIAS attack where attacker can downgrade SC mode*/
-                    btm_read_remote_features (p->hci_handle);
                 }
             }
 
