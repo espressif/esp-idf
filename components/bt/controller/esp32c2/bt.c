@@ -171,6 +171,8 @@ static DRAM_ATTR bool s_btdm_allow_light_sleep;
 // pm_lock to prevent light sleep when using main crystal as Bluetooth low power clock
 static DRAM_ATTR esp_pm_lock_handle_t s_light_sleep_pm_lock;
 #define BTDM_MIN_TIMER_UNCERTAINTY_US      (200)
+#else
+static bool s_bt_phy_enabled = false;
 #endif /* #ifdef CONFIG_PM_ENABLE */
 
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
@@ -431,7 +433,8 @@ IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
         esp_pm_lock_release(s_pm_lock);
         s_pm_lock_acquired = false;
     }
-
+#else
+    s_bt_phy_enabled = false;
 #endif // CONFIG_PM_ENABLE
 }
 
@@ -445,6 +448,8 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
         s_pm_lock_acquired = true;
         esp_pm_lock_acquire(s_pm_lock);
     }
+#else
+    s_bt_phy_enabled = true;
 #endif //CONFIG_PM_ENABLE
 }
 
@@ -468,6 +473,8 @@ void controller_sleep_init(void)
 
 #ifdef CONFIG_PM_ENABLE
     s_btdm_allow_light_sleep = false;
+#else
+    s_bt_phy_enabled = true;
 #endif // CONFIG_PM_ENABLE
 
 #ifdef CONFIG_BT_LE_SLEEP_ENABLE
@@ -570,7 +577,15 @@ void controller_sleep_deinit(void)
         s_btdm_slp_tmr = NULL;
     }
 #endif
-    s_pm_lock_acquired = false;
+    if (s_pm_lock_acquired) {
+        esp_phy_disable();
+        s_pm_lock_acquired = false;
+    }
+#else
+    if (s_bt_phy_enabled) {
+        esp_phy_disable();
+        s_bt_phy_enabled = false;
+    }
 #endif
 
 }
@@ -719,7 +734,6 @@ esp_err_t esp_bt_controller_deinit(void)
 
     npl_freertos_mempool_deinit();
 
-    esp_phy_disable();
     esp_phy_pd_mem_deinit();
 
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
