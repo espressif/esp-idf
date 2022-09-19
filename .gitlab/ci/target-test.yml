@@ -871,7 +871,7 @@ test_app_test_esp32_generic:
 
 UT_001:
   extends: .unit_test_esp32_template
-  parallel: 50
+  parallel: 44
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -880,7 +880,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_esp32_template
-  parallel: 21
+  parallel: 16
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -915,17 +915,9 @@ UT_006:
 
 UT_007:
   extends: .unit_test_esp32_template
-  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_1
-
-UT_008:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_GPIO
-    - psram
 
 UT_014:
   extends: .unit_test_esp32_template
@@ -978,14 +970,13 @@ UT_033:
 
 UT_034:
   extends: .unit_test_esp32_template
-  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_ESP_FLASH
 
 UT_035:
   extends: .unit_test_esp32s2_template
-  parallel: 50
+  parallel: 44
   tags:
     - ESP32S2_IDF
     - UT_T1_1
@@ -999,7 +990,6 @@ UT_036:
 
 UT_038:
   extends: .unit_test_esp32s2_template
-  parallel: 2
   tags:
     - ESP32S2_IDF
     - UT_T1_ESP_FLASH
@@ -1087,7 +1077,7 @@ UT_S2_SDSPI:
 
 UT_C2:
   extends: .unit_test_esp32c2_template
-  parallel: 22
+  parallel: 19
   tags:
     - ESP32C2_IDF
     - UT_T1_1
@@ -1119,14 +1109,13 @@ UT_C2_FLASH:
 
 UT_C3:
   extends: .unit_test_esp32c3_template
-  parallel: 31
+  parallel: 27
   tags:
     - ESP32C3_IDF
     - UT_T1_1
 
 UT_C3_FLASH:
   extends: .unit_test_esp32c3_template
-  parallel: 2
   tags:
     - ESP32C3_IDF
     - UT_T1_ESP_FLASH
@@ -1157,14 +1146,14 @@ UT_C3_SDSPI:
 
 UT_S3:
   extends: .unit_test_esp32s3_template
-  parallel: 29
+  parallel: 25
   tags:
     - ESP32S3_IDF
     - UT_T1_1
 
 UT_S3_QUAD_PSRAM:
   extends: .unit_test_esp32s3_template
-  parallel: 4
+  parallel: 2
   tags:
     - ESP32S3_IDF
     - UT_T1_1

@@ -82,6 +82,11 @@ static void check_leak(size_t before_free,
     if (leaked <= warn_threshold) {
         return;
     }
+    else {
+        printf("The test leaked more memory than warn threshold: Leaked: %d Warn threshold: -%u \n",
+        leaked,
+        warn_threshold);
+    }
 
     printf("MALLOC_CAP_%s %s leak: Before %u bytes free, After %u bytes free (delta %u)\n",
            type,
