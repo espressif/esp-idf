@@ -107,6 +107,19 @@ esp_err_t sdmmc_send_cmd_send_op_cond(sdmmc_card_t* card, uint32_t ocr, uint32_t
 {
     esp_err_t err;
 
+    /* If the host supports this, keep card clock enabled
+     * from the start of ACMD41 until the card is idle.
+     * (Ref. SD spec, section 4.4 "Clock control".)
+     */
+    if (card->host.set_cclk_always_on != NULL) {
+        err = card->host.set_cclk_always_on(card->host.slot, true);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "%s: set_cclk_always_on (1) err=0x%x", __func__, err);
+            return err;
+        }
+        ESP_LOGV(TAG, "%s: keeping clock on during ACMD41", __func__);
+    }
+
     sdmmc_command_t cmd = {
             .arg = ocr,
             .flags = SCF_CMD_BCR | SCF_RSP_R3,
@@ -131,7 +144,7 @@ esp_err_t sdmmc_send_cmd_send_op_cond(sdmmc_card_t* card, uint32_t ocr, uint32_t
         if (err != ESP_OK) {
             if (--err_cnt == 0) {
                 ESP_LOGD(TAG, "%s: sdmmc_send_app_cmd err=0x%x", __func__, err);
-                return err;
+                goto done;
             } else {
                 ESP_LOGV(TAG, "%s: ignoring err=0x%x", __func__, err);
                 continue;
@@ -151,13 +164,29 @@ esp_err_t sdmmc_send_cmd_send_op_cond(sdmmc_card_t* card, uint32_t ocr, uint32_t
         }
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
+
     if (nretries == 0) {
-        return ESP_ERR_TIMEOUT;
+        err = ESP_ERR_TIMEOUT;
+        goto done;
     }
+
     if (ocrp) {
         *ocrp = MMC_R3(cmd.response);
     }
-    return ESP_OK;
+
+    err = ESP_OK;
+done:
+
+    if (card->host.set_cclk_always_on != NULL) {
+        esp_err_t err_cclk_dis = card->host.set_cclk_always_on(card->host.slot, false);
+        if (err_cclk_dis != ESP_OK) {
+            ESP_LOGE(TAG, "%s: set_cclk_always_on (2) err=0x%x", __func__, err);
+            /* If we failed to disable clock, don't overwrite 'err' to return the original error */
+        }
+        ESP_LOGV(TAG, "%s: clock always-on mode disabled", __func__);
+    }
+
+    return err;
 }
 
 esp_err_t sdmmc_send_cmd_read_ocr(sdmmc_card_t *card, uint32_t *ocrp)
