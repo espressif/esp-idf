@@ -1685,6 +1685,7 @@ static void bta_jv_port_mgmt_cl_cback(UINT32 code, UINT16 port_handle, void* dat
     BD_ADDR rem_bda = {0};
     UINT16 lcid;
     tBTA_JV_RFCOMM_CBACK *p_cback;  /* the callback function */
+    tPORT_MGMT_CL_CALLBACK_ARG *p_mgmt_cb_arg = (tPORT_MGMT_CL_CALLBACK_ARG *)data;
 
     APPL_TRACE_DEBUG( "bta_jv_port_mgmt_cl_cback:code:%d, port_handle%d", code, port_handle);
     if (NULL == p_cb || NULL == p_cb->p_cback) {
@@ -1701,6 +1702,9 @@ static void bta_jv_port_mgmt_cl_cback(UINT32 code, UINT16 port_handle, void* dat
         evt_data.rfc_open.status = BTA_JV_SUCCESS;
         bdcpy(evt_data.rfc_open.rem_bda, rem_bda);
         p_pcb->state = BTA_JV_ST_CL_OPEN;
+        if (p_mgmt_cb_arg) {
+            evt_data.rfc_open.peer_mtu = p_mgmt_cb_arg->peer_mtu;
+        }
         p_cb->p_cback(BTA_JV_RFCOMM_OPEN_EVT, &evt_data, p_pcb->user_data);
     } else {
         evt_data.rfc_close.handle = p_pcb->handle;
@@ -1981,6 +1985,7 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle, void *dat
         }
         evt_data.rfc_srv_open.handle = p_pcb->handle;
         evt_data.rfc_srv_open.status = BTA_JV_SUCCESS;
+        evt_data.rfc_srv_open.peer_mtu = p_mgmt_cb_arg->peer_mtu;
         bdcpy(evt_data.rfc_srv_open.rem_bda, rem_bda);
         tBTA_JV_PCB *p_pcb_new_listen  = bta_jv_add_rfc_port(p_cb, p_pcb);
         if (p_pcb_new_listen) {

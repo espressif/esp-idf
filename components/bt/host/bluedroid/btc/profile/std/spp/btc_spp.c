@@ -52,8 +52,8 @@ typedef struct {
     uint8_t serial;
     uint8_t scn;
     uint8_t max_session;
+    uint16_t mtu;
     uint32_t id;
-    uint32_t mtu;//unused
     uint32_t sdp_handle;
     uint32_t rfc_handle;
     uint32_t rfc_port_handle;
@@ -133,6 +133,7 @@ static spp_slot_t *spp_malloc_slot(void)
             (*slot)->fd = -1;
             (*slot)->connected = false;
             (*slot)->is_server = false;
+            (*slot)->mtu = 0;
             (*slot)->write_data = NULL;
             (*slot)->close_alarm = NULL;
             /* clear the old event bits */
@@ -333,6 +334,7 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
             slot_new->max_session = slot->max_session;
             strcpy(slot_new->service_name, slot->service_name);
             slot_new->sdp_handle = slot->sdp_handle;
+            slot_new->mtu = p_data->rfc_srv_open.peer_mtu;
             slot_new->rfc_handle = p_data->rfc_srv_open.handle;
             slot_new->rfc_port_handle = BTA_JvRfcommGetPortHdl(slot_new->rfc_handle);
             BTA_JvSetPmProfile(p_data->rfc_srv_open.handle, BTA_JV_PM_ALL, BTA_JV_CONN_OPEN);
@@ -375,6 +377,7 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
         }
         slot->connected = true;
         slot->rfc_handle = p_data->rfc_open.handle;
+        slot->mtu = p_data->rfc_open.peer_mtu;
         slot->rfc_port_handle = BTA_JvRfcommGetPortHdl(p_data->rfc_open.handle);
         BTA_JvSetPmProfile(p_data->rfc_open.handle, BTA_JV_PM_ID_1, BTA_JV_CONN_OPEN);
         break;
@@ -1384,7 +1387,7 @@ static ssize_t spp_vfs_write(int fd, const void * data, size_t size)
         tx_event_group_val = 0;
         if (size) {
             if (p_buf == NULL) {
-                write_size = size < BTA_JV_DEF_RFC_MTU ? size : BTA_JV_DEF_RFC_MTU;
+                write_size = size < slot->mtu ? size : slot->mtu;
                 if ((p_buf = osi_malloc(sizeof(BT_HDR) + write_size)) == NULL) {
                     BTC_TRACE_ERROR("%s malloc failed!", __func__);
                     errno = ENOMEM;
