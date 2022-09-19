@@ -1108,12 +1108,6 @@ void bta_gattc_read(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
         /* read fail */
         if (status != BTA_GATT_OK) {
-            /* Dequeue the data, if it was enqueued */
-            if (p_clcb->p_q_cmd == p_data) {
-                p_clcb->p_q_cmd = NULL;
-                bta_gattc_pop_command_to_send(p_clcb);
-            }
-
             bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_READ, status, NULL);
         }
 }
@@ -1143,12 +1137,6 @@ void bta_gattc_read_by_type(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
     /* read fail */
     if (status != BTA_GATT_OK) {
-        /* Dequeue the data, if it was enqueued */
-        if (p_clcb->p_q_cmd == p_data) {
-            p_clcb->p_q_cmd = NULL;
-            bta_gattc_pop_command_to_send(p_clcb);
-        }
-
         bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_READ, status, NULL);
     }
 }
@@ -1179,12 +1167,6 @@ void bta_gattc_read_multi(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
         /* read fail */
         if (status != BTA_GATT_OK) {
-            /* Dequeue the data, if it was enqueued */
-            if (p_clcb->p_q_cmd == p_data) {
-                p_clcb->p_q_cmd = NULL;
-                bta_gattc_pop_command_to_send(p_clcb);
-            }
-
             bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_READ, status, NULL);
         }
     }
@@ -1221,13 +1203,12 @@ void bta_gattc_write(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
     /* write fail */
     if (status != BTA_GATT_OK) {
-        /* Dequeue the data, if it was enqueued */
-        if (p_clcb->p_q_cmd == p_data) {
-            p_clcb->p_q_cmd = NULL;
-            bta_gattc_pop_command_to_send(p_clcb);
-        }
 
-        bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_WRITE, status, NULL);
+        tGATT_CL_COMPLETE cl_data = {0};
+        cl_data.handle = p_data->api_write.handle;
+        memcpy(&cl_data.att_value, &attr, sizeof(tGATT_VALUE));
+
+        bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_WRITE, status, &cl_data);
     }
 }
 /*******************************************************************************
