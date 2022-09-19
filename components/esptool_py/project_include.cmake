@@ -112,6 +112,8 @@ endif()
 if(NOT BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
     if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
         # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
+        get_filename_component(secure_boot_signing_key "${CONFIG_SECURE_BOOT_SIGNING_KEY}"
+            ABSOLUTE BASE_DIR "${project_dir}")
         add_custom_command(OUTPUT "${build_dir}/.signed_bin_timestamp"
             COMMAND ${ESPSECUREPY} sign_data --version ${secure_boot_version} --keyfile ${secure_boot_signing_key}
                 -o "${build_dir}/${PROJECT_BIN}" "${build_dir}/${unsigned_project_binary}"
