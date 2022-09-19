@@ -552,6 +552,19 @@ void controller_sleep_deinit(void)
     r_ble_rtc_wake_up_state_clr();
 #endif
     esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_AUTO);
+
+    /*lock should release first and then delete*/
+    if (s_pm_lock_acquired) {
+        if(s_light_sleep_pm_lock != NULL)
+	    esp_pm_lock_release(s_light_sleep_pm_lock);
+	}
+
+        if(s_pm_lock != NULL) {
+            esp_pm_lock_release(s_pm_lock);
+	}
+        s_pm_lock_acquired = false;
+    }
+
     if (!s_btdm_allow_light_sleep) {
         if (s_light_sleep_pm_lock != NULL) {
             esp_pm_lock_delete(s_light_sleep_pm_lock);
