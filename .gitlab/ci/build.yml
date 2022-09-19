@@ -155,6 +155,14 @@ build_pytest_examples_esp32c2:
     IDF_TARGET: esp32c2
     TEST_DIR: examples
 
+build_pytest_examples_esp32h2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
+    TEST_DIR: examples
+
 build_pytest_components_esp32:
   extends:
     - .build_pytest_template

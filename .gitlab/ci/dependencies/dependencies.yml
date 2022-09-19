@@ -163,6 +163,19 @@ build:integration_test:
     - "build:example_test"
     - build:target_test
 
+# For i154 runners
+"test:example_test-i154":
+  patterns:
+    - "target_test-i154"
+  labels:
+    - target_test
+    - example_test
+  included_in:
+    - "build:example_test-esp32h2"
+    - "build:example_test-esp32s3"
+    - "build:example_test"
+    - build:target_test
+
 # due to the lack of runners, c2 tests will only be triggered by label
 "test:{0}-esp32c2":
   matrix:

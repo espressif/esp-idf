@@ -428,6 +428,17 @@ component_ut_pytest_esp32c3_flash_multi:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, flash_mutli ]
 
+example_test_pytest_openthread_br:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-i154
+  needs:
+    - build_pytest_examples_esp32s3
+    - build_pytest_examples_esp32h2
+  tags:
+    - esp32h2
+    - i154_multi_dut
+
 .pytest_test_apps_dir_template:
   extends: .pytest_template
   variables:
