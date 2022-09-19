@@ -292,14 +292,20 @@ The format of Ack Frame（8 bit）：
   |                  |                                                    |                                                               | 0x03: SoftAP&STA                                                      |
   +                  +                                                    +                                                               +-----------------------------------------------------------------------+
   |                  |                                                    |                                                               | data[1]：the connection state of the STA device,                      |
-  |                  |                                                    |                                                               | 0x0 indicates a connection state,                                     |
-  |                  |                                                    |                                                               | and others represent a disconnected state;                            |
+  |                  |                                                    |                                                               | 0x0 indicates a connection state with IP address,                     |
+  |                  |                                                    |                                                               | 0x1 represent a disconnected state,                                   |
+  |                  |                                                    |                                                               | 0x2 indicates a connecting state,                                     |
+  |                  |                                                    |                                                               | and 0x3 indicates a connection state but no IP address.               |
   +                  +                                                    +                                                               +-----------------------------------------------------------------------+
   |                  |                                                    |                                                               | data[2]：the connection state of the SoftAP,                          |
   |                  |                                                    |                                                               | that is, how many STA devices have been connected.                    |
   +                  +                                                    +                                                               +-----------------------------------------------------------------------+
   |                  |                                                    |                                                               | data[3] and the subsequent is in accordance with the                  |
   |                  |                                                    |                                                               | format of SSID/BSSID information.                                     |
+  |                  |                                                    |                                                               | If device is in connecting state,                                     |
+  |                  |                                                    |                                                               | maximum Wi-Fi reconnecting time would be included here.               |
+  |                  |                                                    |                                                               | If device is in disconnected state,                                   |
+  |                  |                                                    |                                                               | Wi-Fi connection end reason and RSSI would be included here.          |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
   |  0x10 (b’010000) | Version                                            |                                                               | data[0]= great versiondata[1]= sub version                            |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
@@ -324,9 +330,24 @@ The format of Ack Frame（8 bit）：
   |                  |                                                    |                                                               | 0x07: read param  error                                               |
   +                  +                                                    +                                                               +-----------------------------------------------------------------------+
   |                  |                                                    |                                                               | 0x08: make public error                                               |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x09: data format error                                               |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x0a: calculate MD5 error                                             |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x0b: Wi-Fi scan error                                                |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
   |  0x13 (b’010011) | Custom Data                                        | To send or receive custom data.                               | The data frame supports to be sent into                               |
   |                  |                                                    |                                                               | fragments if the data length is too long.                             |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x14 (b’010100) | Set the maximum Wi-Fi reconnecting time            |                                                               | data[0] represents the maximum Wi-Fi reconnecting time.               |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x15 (b’010101) | Set the Wi-Fi connection end reason                |                                                               | data[0] represents the Wi-Fi connection end reason,                   |
+  |                  |                                                    |                                                               | whose type shall be same with struct `wifi_err_reason_t`.             |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x16 (b’010110) | Set the RSSI at Wi-Fi connection end               |                                                               | data[0] represents the RSSI at Wi-Fi connection end.                  |
+  |                  |                                                    |                                                               | If there is no meaningful RSSI in the connection end,                 |
+  |                  |                                                    |                                                               | this value shall be the meaningless one, which is `-128`.             |
   +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
 
 2. Frame Control
