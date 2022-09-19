@@ -1,9 +1,15 @@
 /*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+/*
  Tests for registering new heap memory at runtime
 */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include "unity.h"
 #include "esp_heap_caps_init.h"
 #include "esp_system.h"
@@ -20,7 +26,7 @@ TEST_CASE("Allocate new heap at runtime", "[heap][ignore]")
     uint32_t before_free = esp_get_free_heap_size();
     TEST_ESP_OK( heap_caps_add_region((intptr_t)buffer, (intptr_t)buffer + BUF_SZ) );
     uint32_t after_free = esp_get_free_heap_size();
-    printf("Before %u after %u\n", before_free, after_free);
+    printf("Before %"PRIu32" after %"PRIu32"\n", before_free, after_free);
     /* allow for some 'heap overhead' from accounting structures */
     TEST_ASSERT(after_free >= before_free + BUF_SZ - HEAP_OVERHEAD_MAX);
 }
@@ -64,7 +70,7 @@ TEST_CASE("Add .bss memory to heap region runtime", "[heap][ignore]")
     uint32_t before_free = esp_get_free_heap_size();
     TEST_ESP_OK( heap_caps_add_region((intptr_t)s_buffer, (intptr_t)s_buffer + BUF_SZ) );
     uint32_t after_free = esp_get_free_heap_size();
-    printf("Before %u after %u\n", before_free, after_free);
+    printf("Before %"PRIu32" after %"PRIu32"\n", before_free, after_free);
     /* allow for some 'heap overhead' from accounting structures */
     TEST_ASSERT(after_free >= before_free + BUF_SZ - HEAP_OVERHEAD_MAX);
 

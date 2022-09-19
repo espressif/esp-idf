@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+/*
  Tests for the capabilities-based memory allocator.
 */
 
@@ -106,7 +111,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
     free(m1);
     printf("Done.\n");
 }
-#endif
+#endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
@@ -175,6 +180,7 @@ TEST_CASE("heap_caps metadata test", "[heap]")
 /* Small function runs from IRAM to check that malloc/free/realloc
    all work OK when cache is disabled...
 */
+#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 static IRAM_ATTR __attribute__((noinline)) bool iram_malloc_test(void)
 {
     spi_flash_guard_get()->start(); // Disables flash cache
@@ -196,6 +202,7 @@ TEST_CASE("heap_caps_xxx functions work with flash cache disabled", "[heap]")
 {
     TEST_ASSERT( iram_malloc_test() );
 }
+#endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS
@@ -212,7 +219,7 @@ static bool called_user_failed_hook = false;
 
 void heap_caps_alloc_failed_hook(size_t requested_size, uint32_t caps, const char *function_name)
 {
-    printf("%s was called but failed to allocate %d bytes with 0x%X capabilities. \n",function_name, requested_size, caps);
+    printf("%s was called but failed to allocate %d bytes with 0x%lX capabilities. \n",function_name, requested_size, caps);
     called_user_failed_hook = true;
 }
 

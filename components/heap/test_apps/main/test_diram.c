@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+/*
  Tests for D/IRAM support in heap capability allocator
 */
 
@@ -12,6 +17,7 @@
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 //IDF-5167
+#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 static void *malloc_block_diram(uint32_t caps)
 {
     void *attempts[256] = { 0 }; // Allocate up to 256 ALLOC_SZ blocks to exhaust all non-D/IRAM memory temporarily
@@ -74,4 +80,5 @@ TEST_CASE("Allocate D/IRAM as IRAM", "[heap]")
 
     free(iram);
 }
+#endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

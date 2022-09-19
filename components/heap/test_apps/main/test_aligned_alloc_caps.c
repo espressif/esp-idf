@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+/*
  Tests for the capabilities-based memory allocator.
 */
 
@@ -12,6 +17,7 @@
 #include <sys/param.h>
 #include <string.h>
 #include <malloc.h>
+#include <inttypes.h>
 
 TEST_CASE("Capabilities aligned allocator test", "[heap]")
 {
@@ -23,10 +29,10 @@ TEST_CASE("Capabilities aligned allocator test", "[heap]")
         uint8_t *buf = (uint8_t *)memalign(alignments, (alignments + 137));
         if(((alignments & (alignments - 1)) != 0) || (!alignments)) {
             TEST_ASSERT( buf == NULL );
-            //printf("[ALIGNED_ALLOC] alignment: %u is not a power of two, don't allow allocation \n", aligments);
+            //printf("[ALIGNED_ALLOC] alignment: %"PRIu32" is not a power of two, don't allow allocation \n", aligments);
         } else {
             TEST_ASSERT( buf != NULL );
-            printf("[ALIGNED_ALLOC] alignment required: %u \n", alignments);
+            printf("[ALIGNED_ALLOC] alignment required: %"PRIu32" \n", alignments);
             printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
             //Address of obtained block must be aligned with selected value
             TEST_ASSERT(((intptr_t)buf & (alignments - 1)) == 0);
@@ -52,10 +58,10 @@ TEST_CASE("Capabilities aligned allocator test", "[heap]")
         uint8_t *buf = (uint8_t *)heap_caps_aligned_alloc(alignments, 10*1024, MALLOC_CAP_SPIRAM);
         if(((alignments & (alignments - 1)) != 0) || (!alignments)) {
             TEST_ASSERT( buf == NULL );
-            //printf("[ALIGNED_ALLOC] alignment: %u is not a power of two, don't allow allocation \n", aligments);
+            //printf("[ALIGNED_ALLOC] alignment: %"PRIu32" is not a power of two, don't allow allocation \n", aligments);
         } else {
             TEST_ASSERT( buf != NULL );
-            printf("[ALIGNED_ALLOC] alignment required: %u \n", alignments);
+            printf("[ALIGNED_ALLOC] alignment required: %"PRIu32" \n", alignments);
             printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
             //Address of obtained block must be aligned with selected value
             TEST_ASSERT(((intptr_t)buf & (alignments - 1)) == 0);
@@ -80,10 +86,10 @@ TEST_CASE("Capabilities aligned calloc test", "[heap]")
         uint8_t *buf = (uint8_t *)heap_caps_aligned_calloc(alignments, 1, (alignments + 137), MALLOC_CAP_DEFAULT);
         if(((alignments & (alignments - 1)) != 0) || (!alignments)) {
             TEST_ASSERT( buf == NULL );
-            //printf("[ALIGNED_ALLOC] alignment: %u is not a power of two, don't allow allocation \n", aligments);
+            //printf("[ALIGNED_ALLOC] alignment: %"PRIu32" is not a power of two, don't allow allocation \n", aligments);
         } else {
             TEST_ASSERT( buf != NULL );
-            printf("[ALIGNED_ALLOC] alignment required: %u \n", alignments);
+            printf("[ALIGNED_ALLOC] alignment required: %"PRIu32" \n", alignments);
             printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
             //Address of obtained block must be aligned with selected value
             TEST_ASSERT(((intptr_t)buf & (alignments - 1)) == 0);
@@ -120,10 +126,10 @@ TEST_CASE("Capabilities aligned calloc test", "[heap]")
         uint8_t *buf = (uint8_t *)(uint8_t *)heap_caps_aligned_calloc(alignments, 1, 10*1024, MALLOC_CAP_SPIRAM);
         if(((alignments & (alignments - 1)) != 0) || (!alignments)) {
             TEST_ASSERT( buf == NULL );
-            //printf("[ALIGNED_ALLOC] alignment: %u is not a power of two, don't allow allocation \n", aligments);
+            //printf("[ALIGNED_ALLOC] alignment: %"PRIu32" is not a power of two, don't allow allocation \n", aligments);
         } else {
             TEST_ASSERT( buf != NULL );
-            printf("[ALIGNED_ALLOC] alignment required: %u \n", alignments);
+            printf("[ALIGNED_ALLOC] alignment required: %"PRIu32" \n", alignments);
             printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
             //Address of obtained block must be aligned with selected value
             TEST_ASSERT(((intptr_t)buf & (alignments - 1)) == 0);
