@@ -1214,7 +1214,7 @@ UINT8 btsnd_hcic_ble_set_extend_rand_address(UINT8 adv_handle, BD_ADDR rand_addr
 UINT8 btsnd_hcic_ble_set_ext_adv_params(UINT8 adv_handle, UINT16 properties, UINT32 interval_min,
                                           UINT32 interval_max, UINT8 channel_map, UINT8 own_addr_type,
                                           UINT8 peer_addr_type, BD_ADDR peer_addr,
-                                          UINT8 adv_filter_policy, UINT8 adv_tx_power,
+                                          UINT8 adv_filter_policy, INT8 adv_tx_power,
                                           UINT8 primary_adv_phy, UINT8 secondary_adv_max_skip,
                                           UINT8 secondary_adv_phy,
                                           UINT8 adv_sid, UINT8 scan_req_ntf_enable)
@@ -1244,7 +1244,7 @@ UINT8 btsnd_hcic_ble_set_ext_adv_params(UINT8 adv_handle, UINT16 properties, UIN
     UINT8_TO_STREAM(pp, peer_addr_type);
     BDADDR_TO_STREAM (pp, peer_addr);
     UINT8_TO_STREAM(pp, adv_filter_policy);
-    UINT8_TO_STREAM(pp, adv_tx_power);
+    INT8_TO_STREAM(pp, adv_tx_power);
     UINT8_TO_STREAM(pp, primary_adv_phy);
     UINT8_TO_STREAM(pp, secondary_adv_max_skip);
     UINT8_TO_STREAM(pp, secondary_adv_phy);

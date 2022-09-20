@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -64,6 +64,7 @@ esp_ble_gap_ext_adv_params_t ext_adv_params_1M = {
     .sid = 0,
     .scan_req_notif = false,
     .own_addr_type = BLE_ADDR_TYPE_RANDOM,
+    .tx_power = EXT_ADV_TX_PWR_NO_PREFERENCE,
 };
 
 esp_ble_gap_ext_adv_params_t ext_adv_params_2M = {
@@ -78,6 +79,7 @@ esp_ble_gap_ext_adv_params_t ext_adv_params_2M = {
     .sid = 1,
     .scan_req_notif = false,
     .own_addr_type = BLE_ADDR_TYPE_RANDOM,
+    .tx_power = EXT_ADV_TX_PWR_NO_PREFERENCE,
 };
 
 esp_ble_gap_ext_adv_params_t legacy_adv_params = {
@@ -92,6 +94,7 @@ esp_ble_gap_ext_adv_params_t legacy_adv_params = {
     .sid = 2,
     .scan_req_notif = false,
     .own_addr_type = BLE_ADDR_TYPE_RANDOM,
+    .tx_power = EXT_ADV_TX_PWR_NO_PREFERENCE,
 };
 
 esp_ble_gap_ext_adv_params_t ext_adv_params_coded = {
@@ -106,6 +109,7 @@ esp_ble_gap_ext_adv_params_t ext_adv_params_coded = {
     .sid = 3,
     .scan_req_notif = false,
     .own_addr_type = BLE_ADDR_TYPE_RANDOM,
+    .tx_power = EXT_ADV_TX_PWR_NO_PREFERENCE,
 };
 
 static uint8_t raw_adv_data_1m[] = {
