@@ -4,11 +4,19 @@ menu "FreeRTOS"
         # Upstream FreeRTOS configurations go here
 
         config FREERTOS_SMP
-            bool "Run the SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
+            bool "Run the Amazon SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
             default  "n"
             help
-                This will cause the FreeRTOS component to compile with the SMP FreeRTOS kernel instead.
-                THIS FEATURE IS UNDER ACTIVE DEVELOPMENT, users use this at their own risk.
+                Amazon has released an SMP version of the FreeRTOS Kernel which can be found via the following link:
+                https://github.com/FreeRTOS/FreeRTOS-Kernel/tree/smp
+
+                IDF has added an experimental port of this SMP kernel located in
+                components/freertos/FreeRTOS-Kernel-SMP. Enabling this option will cause IDF to use the Amazon SMP
+                kernel. Note that THIS FEATURE IS UNDER ACTIVE DEVELOPMENT, users use this at their own risk.
+
+                Leaving this option disabled will mean the IDF FreeRTOS kernel is used instead, which is located in:
+                components/freertos/FreeRTOS-Kernel. Both kernel versions are SMP capable, but differ in
+                their implementation and features.
 
         config FREERTOS_UNICORE
             # Todo: Replace with CONFIG_NUM_CORES (IDF-4986)
