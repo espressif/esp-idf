@@ -74,6 +74,15 @@ Uninstall driver (optional)
 
 :cpp:func:`esp_async_memcpy_uninstall` is used to uninstall asynchronous memcpy driver. It's not necessary to uninstall the driver after each memcpy operation. If you know your application won't use this driver anymore, then this API can recycle the memory for you.
 
+.. only:: SOC_GDMA_SUPPORT_ETM
+
+    ETM Event
+    ---------
+
+    Async memory copy is able to generate an event when one async memcpy operation is done. This event can be used to interact with the :doc:`ETM </api-reference/peripherals/etm>` module. You can call :cpp:func:`esp_async_memcpy_new_etm_event` to get the ETM event handle.
+
+    For how to connect the event to an ETM channel, please refer to the :doc:`ETM </api-reference/peripherals/etm>` documentation.
+
 API Reference
 -------------
 

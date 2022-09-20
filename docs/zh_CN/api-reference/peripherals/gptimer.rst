@@ -17,16 +17,19 @@
 
 下文介绍了配置和操作定时器的常规步骤：
 
-- :ref:`gptimer-resource-allocation` - 获取定时器句柄应设置的参数，以及如何在通用定时器完成工作时回收资源。
-- :ref:`set-and-get-count-value` - 如何强制定时器从起点开始计数，以及如何随时获取计数值。
-- :ref:`set-up-alarm-action` - 启动警报事件应设置的参数。
-- :ref:`gptimer-register-event-callbacks` - 如何将用户的特定代码挂载到警报事件回调函数。
-- :ref:`enable-and-disable-timer` - 如何使能和禁用定时器。
-- :ref:`start-and-stop-timer` - 通过不同报警行为启动定时器的典型使用场景。
-- :ref:`gptimer-power-management` - 选择不同的时钟源将会如何影响功耗。
-- :ref:`gptimer-iram-safe` - 在 cache 禁用的情况下，如何更好地让定时器处理中断事务以及实现 IO 控制功能。
-- :ref:`gptimer-thread-safety` - 驱动程序保证哪些 API 线程安全。
-- :ref:`gptimer-kconfig-options` - 支持的 Kconfig 选项，这些选项会对驱动程序行为产生不同影响。
+.. list::
+
+    - :ref:`gptimer-resource-allocation` - 获取定时器句柄应设置的参数，以及如何在通用定时器完成工作时回收资源。
+    - :ref:`set-and-get-count-value` - 如何强制定时器从起点开始计数，以及如何随时获取计数值。
+    - :ref:`set-up-alarm-action` - 启动警报事件应设置的参数。
+    - :ref:`gptimer-register-event-callbacks` - 如何将用户的特定代码挂载到警报事件回调函数。
+    - :ref:`enable-and-disable-timer` - 如何使能和禁用定时器。
+    - :ref:`start-and-stop-timer` - 通过不同报警行为启动定时器的典型使用场景。
+    :SOC_TIMER_SUPPORT_ETM: - :ref:`gptimer-etm-event-and-task` - 定时器提供了哪些事件和任务可以连接到 ETM 通道上。
+    - :ref:`gptimer-power-management` - 选择不同的时钟源将会如何影响功耗。
+    - :ref:`gptimer-iram-safe` - 在 cache 禁用的情况下，如何更好地让定时器处理中断事务以及实现 IO 控制功能。
+    - :ref:`gptimer-thread-safety` - 驱动程序保证哪些 API 线程安全。
+    - :ref:`gptimer-kconfig-options` - 支持的 Kconfig 选项，这些选项会对驱动程序行为产生不同影响。
 
 .. _gptimer-resource-allocation:
 
@@ -256,7 +259,23 @@
     ESP_ERROR_CHECK(gptimer_enable(gptimer));
     ESP_ERROR_CHECK(gptimer_start(gptimer, &alarm_config));
 
-.. _gptimer-power-management:
+
+.. only:: SOC_TIMER_SUPPORT_ETM
+
+    .. _gptimer-etm-event-and-task:
+
+    ETM 事件与任务
+    ^^^^^^^^^^^^^^
+
+    定时器可以产生多种事件，这些事件可以连接到 :doc:`ETM </api-reference/peripherals/etm>` 模块。:cpp:type:`gptimer_etm_event_type_t` 中列出了定时器能够产生的事件类型。用户可以通过调用 :cpp:func:`gptimer_new_etm_event` 来获得相应事件的 ETM event 句柄。同样地，定时器还公开了一些可被其他事件触发然后自动执行的任务。:cpp:type:`gptimer_etm_task_type_t` 中列出了定时器能够支持的任务类型。 用户可以通过调用 :cpp:func:`gptimer_new_etm_task` 来获得相应任务的 ETM task 句柄。
+
+    关于如何将定时器事件和任务连接到 ETM 通道中，请参阅 :doc:`ETM </api-reference/peripherals/etm>` 文档。
+
+    .. _gptimer-power-management:
+
+.. only:: not SOC_TIMER_SUPPORT_ETM
+
+    .. _gptimer-power-management:
 
 电源管理
 ^^^^^^^^^^^^^^^^^
@@ -319,12 +338,17 @@ Kconfig 选项
 应用示例
 ------------------
 
-* 示例 :example:`peripherals/timer_group/gptimer` 中列出了通用定时器的典型用例。
+.. list::
+
+    - 示例 :example:`peripherals/timer_group/gptimer` 中列出了通用定时器的典型用例。
+    :SOC_TIMER_SUPPORT_ETM: - 示例 :example:`peripherals/timer_group/gptimer_capture_hc_sr04` 展示了如何在 ETM 模块的帮助下，用定时器捕获外部事件的时间戳。
 
 API 参考
 -------------------
 
 .. include-build-file:: inc/gptimer.inc
+.. include-build-file:: inc/gptimer_etm.inc
+.. include-build-file:: inc/gptimer_types.inc
 .. include-build-file:: inc/timer_types.inc
 
 .. [1]

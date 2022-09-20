@@ -11,6 +11,7 @@
     :SOC_ADC_SUPPORTED: adc_calibration
     clk_tree
     :SOC_DAC_SUPPORTED: dac
+    :SOC_ETM_SUPPORTED: etm
     gpio
     gptimer
     :SOC_DEDICATED_GPIO_SUPPORTED: dedic_gpio

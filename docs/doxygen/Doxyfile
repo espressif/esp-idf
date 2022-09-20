@@ -67,7 +67,10 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/include/driver/dac_types.h \
     $(PROJECT_PATH)/components/driver/include/driver/dedic_gpio.h \
     $(PROJECT_PATH)/components/driver/include/driver/gpio.h \
+    $(PROJECT_PATH)/components/driver/include/driver/gpio_etm.h \
     $(PROJECT_PATH)/components/driver/include/driver/gptimer.h \
+    $(PROJECT_PATH)/components/driver/include/driver/gptimer_etm.h \
+    $(PROJECT_PATH)/components/driver/include/driver/gptimer_types.h \
     $(PROJECT_PATH)/components/driver/include/driver/i2c.h \
     $(PROJECT_PATH)/components/driver/include/driver/i2s_common.h \
     $(PROJECT_PATH)/components/driver/include/driver/i2s_pdm.h \
@@ -133,6 +136,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_chip_info.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_cpu.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_crc.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_etm.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_hmac.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_intr_alloc.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_mac.h \
@@ -160,6 +164,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_system/include/esp_ipc_isr.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_ipc.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_system.h \
+    $(PROJECT_PATH)/components/esp_system/include/esp_systick_etm.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_task_wdt.h \
     $(PROJECT_PATH)/components/esp_timer/include/esp_timer.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_mesh.h \
