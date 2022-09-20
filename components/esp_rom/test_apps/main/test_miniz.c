@@ -1,27 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include "sdkconfig.h"
 #include "unity.h"
+#include "rom/miniz.h"
 
-// compression/decompression will take off a bunch of memory
-// test it only with PSRAM enabled
-#ifdef CONFIG_SPIRAM
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)
-// miniz unit test can't pass on ESP32 non-ECO3 version IDF-1807
-
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/miniz.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/miniz.h"
-#else
-#error "unsupported target"
-#endif
-
-
-#define DATASIZE (1024 * 64)
+#define DATASIZE (1024 * 32)
 
 TEST_CASE("Test miniz compression/decompression", "[rom][miniz]")
 {
@@ -101,6 +91,3 @@ TEST_CASE("Test miniz compression/decompression", "[rom][miniz]")
     free(outbuf);
     free(decomp);
 }
-
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)
-#endif // CONFIG_SPIRAM
