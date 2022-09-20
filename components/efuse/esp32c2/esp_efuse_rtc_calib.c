@@ -10,6 +10,7 @@
 #include "esp_efuse_table.h"
 #include "esp_efuse_rtc_calib.h"
 #include "hal/adc_types.h"
+#include "inttypes.h"
 
 int esp_efuse_rtc_calib_get_ver(void)
 {

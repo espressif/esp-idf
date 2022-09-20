@@ -16,6 +16,7 @@
 #include "soc/soc_caps.h"
 #include "esp_adc/adc_cali_scheme.h"
 #include "adc_cali_interface.h"
+#include "inttypes.h"
 
 
 /**
