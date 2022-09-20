@@ -1576,6 +1576,7 @@ wifi_wps_scan_done(void *arg, STATUS status)
         os_memcpy(wifi_config.sta.bssid, sm->bssid, ETH_ALEN);
         os_memcpy(wifi_config.sta.ssid, (char *)sm->ssid[0], sm->ssid_len[0]);
         wifi_config.sta.bssid_set = 1;
+        wifi_config.sta.channel = sm->channel;
         wpa_printf(MSG_INFO, "WPS: connecting to %s, bssid=" MACSTR,
                    (char *)sm->ssid[0], MAC2STR(wifi_config.sta.bssid));
         esp_wifi_set_config(0, &wifi_config);
