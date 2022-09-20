@@ -834,3 +834,7 @@ config SOC_WIFI_MESH_SUPPORT
 config SOC_BLE_SUPPORTED
     bool
     default y
+
+config SOC_BLE_MESH_SUPPORTED
+    bool
+    default y

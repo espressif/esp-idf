@@ -1,6 +1,0 @@
-api-guides/esp-ble-mesh/ble-mesh-index
-api-guides/esp-ble-mesh/ble-mesh-feature-list
-api-guides/esp-ble-mesh/ble-mesh-terminology
-api-guides/esp-ble-mesh/ble-mesh-architecture
-api-guides/esp-ble-mesh/ble-mesh-faq
-api-reference/bluetooth/esp-ble-mesh
