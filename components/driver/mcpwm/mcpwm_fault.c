@@ -274,7 +274,7 @@ static void IRAM_ATTR mcpwm_gpio_fault_default_isr(void *args)
     mcpwm_ll_intr_clear_status(hal->dev, status & MCPWM_LL_EVENT_FAULT_MASK(fault_id));
 
     mcpwm_fault_event_data_t edata = {
-        // TODO
+        // TBD
     };
 
     if (status & MCPWM_LL_EVENT_FAULT_ENTER(fault_id)) {

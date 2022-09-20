@@ -861,19 +861,26 @@ There's a Kconfig option :ref:`CONFIG_MCPWM_ISR_IRAM_SAFE` that will:
 
 This will allow the interrupt to run while the cache is disabled but will come at the cost of increased IRAM consumption.
 
+There is another Kconfig option :ref:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` that can put commonly used IO control functions into IRAM as well. So, these functions can also be executable when the cache is disabled. These IO control functions are as follows:
+
+- :cpp:func:`mcpwm_comparator_set_compare_value`
+
 Thread Safety
 ^^^^^^^^^^^^^
 
 The factory functions like :cpp:func:`mcpwm_new_timer` are guaranteed to be thread safe by the driver, which means, you can call it from different RTOS tasks without protection by extra locks.
 
-No functions are allowed to run within ISR environment.
+The following functions are allowed to run under ISR context, as the driver uses a critical section to prevent them being called concurrently in the task and ISR.
 
-Functions that are not related to `Resource Allocation <#resource-allocation-and-initialization>`__, are not thread safe. Thus, you should avoid calling them in different tasks without mutex protection.
+- :cpp:func:`mcpwm_comparator_set_compare_value`
+
+Other functions that are not related to `Resource Allocation <#resource-allocation-and-initialization>`__, are not thread safe. Thus, you should avoid calling them in different tasks without mutex protection.
 
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
 - :ref:`CONFIG_MCPWM_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see `IRAM Safe <#iram-safe>`__ for more information.
+- :ref:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` controls where to place the MCPWM control functions (IRAM or flash), see `IRAM Safe <#iram-safe>`__ for more information.
 - :ref:`CONFIG_MCPWM_ENABLE_DEBUG_LOG` is used to enabled the debug log output. Enable this option will increase the firmware binary size.
 
 Application Examples
