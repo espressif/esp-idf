@@ -1469,7 +1469,7 @@ typedef struct {
     tBLE_ADDR_TYPE peer_addr_type;
     BD_ADDR peer_addr;
     tBTA_BLE_AFP filter_policy;
-    UINT8 tx_power;
+    INT8 tx_power;
     tBTA_DM_BLE_GAP_PHY primary_phy;
     UINT8 max_skip;
     tBTA_DM_BLE_GAP_PHY secondary_phy;
