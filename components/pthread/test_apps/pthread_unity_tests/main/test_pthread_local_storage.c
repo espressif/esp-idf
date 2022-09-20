@@ -1,5 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 // Test pthread_create_key, pthread_delete_key, pthread_setspecific, pthread_getspecific
 #include <pthread.h>
+#include <inttypes.h>
 #include "unity.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -36,7 +42,7 @@ TEST_CASE("pthread local storage unique keys", "[pthread]")
 
     for (int i = 0; i < NUM_KEYS; i++) {
         TEST_ASSERT_EQUAL(0, pthread_key_create(&keys[i], NULL));
-        printf("New key %d = %d\n", i, keys[i]);
+        printf("New key %d = %"PRIu32"\n", i, keys[i]);
     }
 
     for (int i = 0; i < NUM_KEYS; i++) {
