@@ -44,7 +44,7 @@
 #include "hal/systimer_hal.h"
 #include "hal/systimer_ll.h"
 #include "riscv/rvruntime-frames.h"
-#include "riscv/riscv_interrupts.h"
+#include "riscv/rv_utils.h"
 #include "riscv/interrupt.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_attr.h"
@@ -88,7 +88,6 @@ StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOIN
 
 // ----------------- Scheduler Start/End -------------------
 
-extern void esprv_intc_int_set_threshold(int); // FIXME, this function is in ROM only
 BaseType_t xPortStartScheduler(void)
 {
     uxInterruptNesting = 0;
@@ -99,7 +98,7 @@ BaseType_t xPortStartScheduler(void)
     vPortSetupTimer();
 
     esprv_intc_int_set_threshold(1); /* set global INTC masking level */
-    riscv_global_interrupts_enable();
+    rv_utils_intr_global_enable();
 
     vPortYield();
 

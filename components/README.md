@@ -42,7 +42,7 @@ This can also contain files provided by the architecture vendor.
 Example:
 
 - `xt_set_exception_handler`
-- `riscv_global_interrupts_enable`
+- `rv_utils_intr_enable`
 - `ERI_PERFMON_MAX`
 
 #### `esp_common`

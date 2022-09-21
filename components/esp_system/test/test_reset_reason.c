@@ -2,11 +2,11 @@
 #include "esp_system.h"
 #include "esp_task_wdt.h"
 #include "esp_attr.h"
+#include "esp_sleep.h"
 #include "soc/rtc.h"
 #include "hal/wdt_hal.h"
-#include "esp_sleep.h"
 #if CONFIG_IDF_TARGET_ARCH_RISCV
-#include "riscv/riscv_interrupts.h"
+#include "riscv/rv_utils.h"
 #endif
 
 #define RTC_BSS_ATTR __attribute__((section(".rtc.bss")))
@@ -199,7 +199,7 @@ static void do_int_wdt_hw(void)
 {
     setup_values();
 #if CONFIG_IDF_TARGET_ARCH_RISCV
-    riscv_global_interrupts_disable();
+    rv_utils_intr_global_disable();
 #else
     XTOS_SET_INTLEVEL(XCHAL_NMILEVEL);
 #endif
