@@ -307,11 +307,9 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
     }
 
     if (*(data) == DATA_TYPE_ACL) {
-        struct os_mbuf *om = os_msys_get_pkthdr(0, ACL_DATA_MBUF_LEADINGSPCAE);
+        struct os_mbuf *om = os_msys_get_pkthdr(len, ACL_DATA_MBUF_LEADINGSPCAE);
         assert(om);
-        memcpy(om->om_data, &data[1], len - 1);
-        om->om_len = len - 1;
-        OS_MBUF_PKTHDR(om)->omp_len = len - 1;
+        os_mbuf_append(om, &data[1], len - 1);
         ble_hci_trans_hs_acl_tx(om);
     }
 
