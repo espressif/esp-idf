@@ -7,7 +7,7 @@ ifdef CONFIG_FREERTOS_DEBUG_OCDAWARE
 endif
 
 COMPONENT_ADD_INCLUDEDIRS := include include/esp_additions include/esp_additions/freertos port/xtensa/include
-COMPONENT_PRIV_INCLUDEDIRS := include/esp_additions include/esp_additions/freertos include/freertos port/xtensa/include/freertos port/xtensa port/priv_include .
+COMPONENT_PRIV_INCLUDEDIRS := esp_additions/private_include include/esp_additions include/esp_additions/freertos include/freertos port/xtensa/include/freertos port/xtensa port/priv_include .
 COMPONENT_SRCDIRS += port port/xtensa esp_additions/
 
 ifndef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY

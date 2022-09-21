@@ -62,7 +62,8 @@ list(APPEND srcs
     "freertos_v8_compat.c")
 
 list(APPEND private_include_dirs
-    "include/freertos")
+    "include/freertos"
+    "esp_additions/private_include")    # For include "freertos_tasks_c_additions.h"
 
 if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
     list(APPEND srcs "port/xtensa/xtensa_loadstore_handler.S")
