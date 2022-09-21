@@ -195,3 +195,10 @@ examples/system/ulp_riscv/i2c:
 examples/system/ulp_riscv/uart_print:
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
+examples/system/xip_from_psram:
+  enable:
+    - if: SOC_SPIRAM_SUPPORTED == 1
+      reason: this feature is supported on chips that have PSRAM
+  disable:
+    - if: IDF_TARGET == "esp32"
+      reason: target esp32 doesn't support this feature.
