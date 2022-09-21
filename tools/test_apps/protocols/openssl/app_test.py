@@ -101,22 +101,12 @@ def test_app_esp_openssl(env, extra_data):
 
     # start test cases
     start_case(
-        case='CONFIG_TLSV1_1_CONNECT_WRONG_CERT_VERIFY_NONE',
-        desc='Connect with verify_none mode using wrong certs',
-        negotiated_protocol=ssl.PROTOCOL_TLSv1_1,
-        result='SSL Connection Succeed')
-    start_case(
-        case='CONFIG_TLSV1_1_CONNECT_WRONG_CERT_VERIFY_PEER',
-        desc='Connect with verify_peer mode using wrong certs',
-        negotiated_protocol=ssl.PROTOCOL_TLSv1_1,
-        result='SSL Connection Failed')
-    start_case(
         case='CONFIG_TLSV1_2_CONNECT_WRONG_CERT_VERIFY_NONE',
         desc='Connect with verify_none mode using wrong certs',
         negotiated_protocol=ssl.PROTOCOL_TLSv1_2,
         result='SSL Connection Succeed')
     start_case(
-        case='CONFIG_TLSV1_1_CONNECT_WRONG_CERT_VERIFY_PEER',
+        case='CONFIG_TLSV1_2_CONNECT_WRONG_CERT_VERIFY_PEER',
         desc='Connect with verify_peer mode using wrong certs',
         negotiated_protocol=ssl.PROTOCOL_TLSv1_2,
         result='SSL Connection Failed')
