@@ -803,6 +803,13 @@ if BLE_MESH
             help
                 Maximum number of groups to which the LPN can subscribe.
 
+        config BLE_MESH_LPN_SUB_ALL_NODES_ADDR
+            bool "Automatically subscribe all nodes address"
+            default n
+            help
+                Automatically subscribe all nodes address when friendship
+                established.
+
     endif # BLE_MESH_LOW_POWER
 
     config BLE_MESH_FRIEND
