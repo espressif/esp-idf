@@ -7,8 +7,6 @@
 #include "esp_private/gdma.h"
 #include "soc/soc_caps.h"
 
-#if SOC_GDMA_SUPPORTED
-
 TEST_CASE("GDMA channel allocation", "[gdma]")
 {
     gdma_channel_alloc_config_t channel_config = {};
@@ -69,5 +67,3 @@ TEST_CASE("GDMA channel allocation", "[gdma]")
     }
 #endif
 }
-
-#endif

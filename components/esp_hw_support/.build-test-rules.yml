@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_hw_support/test_apps/dma:
+  disable_test:
+    - if: IDF_TARGET in ["esp32"]
+      temporary: false
+      reason: Neither GDMA nor CPDMA is supported on ESP32
