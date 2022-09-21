@@ -26,15 +26,17 @@ extern "C" {
 #endif
 
 /*
- * The following defines are used to disable USB JTAG when pins 18 and pins 19
- * are set to be used as GPIO.
+ * The following defines are used to disable USB JTAG and DP pullup when
+ * pins 18 and pins 19 are set to be used as GPIO.
  * See gpio_pad_select_gpio() below.
  *
  * TODO: Delete these definitions once the USB device registers definition is
  * merged.
  */
-#define USB_DEVICE_CONF0_REG        (0x60043018)
-#define USB_DEVICE_USB_PAD_ENABLE   (BIT(14))
+#define USB_DEVICE_CONF0_REG         (0x60043018)
+#define USB_DEVICE_USB_PAD_ENABLE    (BIT(14))
+#define USB_DEVICE_DP_PULLUP         (BIT(9))
+#define USB_DEVICE_PAD_PULL_OVERRIDE (BIT(8))
 
 // Get GPIO hardware instance with giving gpio num
 #define GPIO_LL_GET_HW(num) (((num) == 0) ? (&GPIO) : NULL)
@@ -60,6 +62,12 @@ static inline void gpio_ll_pullup_en(gpio_dev_t *hw, gpio_num_t gpio_num)
   */
 static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
+    // The pull-up value of the USB pins are controlled by the pins’ pull-up value together with USB pull-up value
+    // USB DP pin is default to PU enabled
+    if (gpio_num == USB_DP_GPIO_NUM) {
+        SET_PERI_REG_MASK(USB_DEVICE_CONF0_REG, USB_DEVICE_PAD_PULL_OVERRIDE);
+        CLEAR_PERI_REG_MASK(USB_DEVICE_CONF0_REG, USB_DEVICE_DP_PULLUP);
+    }
     REG_CLR_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PU);
 }
 

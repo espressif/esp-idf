@@ -52,6 +52,14 @@ static inline void gpio_ll_pullup_en(gpio_dev_t *hw, gpio_num_t gpio_num)
   */
 static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
+    // The pull-up value of the USB pins are controlled by the pins’ pull-up value together with USB pull-up value
+    // USB DP pin is default to PU enabled
+    // Note that from esp32s3 ECO1, USB_EXCHG_PINS feature has been supported. If this efuse is burnt, the gpio pin
+    // which should be checked is USB_DM_GPIO_NUM instead.
+    if (gpio_num == USB_DP_GPIO_NUM) {
+        SET_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_PAD_PULL_OVERRIDE);
+        CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_DP_PULLUP);
+    }
     REG_CLR_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PU);
 }
 
