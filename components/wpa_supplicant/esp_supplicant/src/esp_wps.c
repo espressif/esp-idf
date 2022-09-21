@@ -1400,6 +1400,7 @@ wifi_station_wps_init(void)
     sm = gWpsSm;
 
     esp_wifi_get_macaddr_internal(WIFI_IF_STA, sm->ownaddr);
+    os_memcpy(gWpaSm.own_addr, sm->ownaddr, ETH_ALEN);
 
     sm->identity_len = WSC_ID_ENROLLEE_LEN;
     os_memcpy(sm->identity, WSC_ID_ENROLLEE, sm->identity_len);
