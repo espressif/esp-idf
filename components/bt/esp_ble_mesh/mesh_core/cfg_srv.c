@@ -724,6 +724,12 @@ static void beacon_set(struct bt_mesh_model *model,
     if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
         BT_ERR("Unable to send Config Beacon Status");
     }
+    else {
+        bt_mesh_cfg_server_state_change_t change = {0};
+        change.cfg_beacon_set.beacon = cfg->beacon;
+        bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
+                                           model, ctx, (const uint8_t *)&change, sizeof(change));
+    }
 }
 
 static void default_ttl_get(struct bt_mesh_model *model,
@@ -776,9 +782,15 @@ static void default_ttl_set(struct bt_mesh_model *model,
     if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
         BT_ERR("Unable to send Config Default TTL Status");
     }
+    else {
+        bt_mesh_cfg_server_state_change_t change = {0};
+        change.cfg_default_ttl_set.ttl = cfg->default_ttl;
+        bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
+                                           model, ctx, (const uint8_t *)&change, sizeof(change));
+    }
 }
 
-static void send_gatt_proxy_status(struct bt_mesh_model *model,
+static uint8_t send_gatt_proxy_status(struct bt_mesh_model *model,
                                    struct bt_mesh_msg_ctx *ctx)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_GATT_PROXY_STATUS, 1);
@@ -788,7 +800,9 @@ static void send_gatt_proxy_status(struct bt_mesh_model *model,
 
     if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
         BT_ERR("Unable to send Config GATT Proxy Status");
+        return STATUS_FAILURE;
     }
+    return STATUS_SUCCESS;
 }
 
 static void gatt_proxy_get(struct bt_mesh_model *model,
@@ -807,7 +821,7 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
                            struct net_buf_simple *buf)
 {
     struct bt_mesh_cfg_srv *cfg = model->user_data;
-
+    static uint8_t status = 1U;
     BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
            ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
            bt_hex(buf->data, buf->len));
@@ -845,6 +859,12 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
 
 send_status:
     send_gatt_proxy_status(model, ctx);
+    if (status == STATUS_SUCCESS) {
+        bt_mesh_cfg_server_state_change_t change = {0};
+        change.cfg_gatt_proxy_set.gatt_proxy = cfg->gatt_proxy;
+        bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
+                                            model, ctx, (const uint8_t *)&change, sizeof(change));
+    }
 }
 
 static void net_transmit_get(struct bt_mesh_model *model,
@@ -895,6 +915,12 @@ static void net_transmit_set(struct bt_mesh_model *model,
 
     if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
         BT_ERR("Unable to send Config Network Transmit Status");
+    }
+    else {
+        bt_mesh_cfg_server_state_change_t change = {0};
+        change.cfg_net_transmit_set.transmit = cfg->net_transmit;
+        bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
+                                            model, ctx, (const uint8_t *)&change, sizeof(change));
     }
 }
 
@@ -965,6 +991,13 @@ static void relay_set(struct bt_mesh_model *model,
 
     if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
         BT_ERR("Unable to send Config Relay Status");
+    }
+    else {
+    bt_mesh_cfg_server_state_change_t state_change = {0};
+    state_change.cfg_relay_set.relay = cfg->relay;
+    state_change.cfg_relay_set.relay = cfg->relay_retransmit;
+    bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
+                                            model, ctx, (const uint8_t *)&state_change, sizeof(state_change));
     }
 }
 
@@ -1643,6 +1676,15 @@ static void mod_sub_overwrite(struct bt_mesh_model *model,
 send_status:
     send_mod_sub_status(model, ctx, status, elem_addr, sub_addr,
                         mod_id, vnd);
+    if (status == STATUS_SUCCESS){
+        bt_mesh_cfg_server_state_change_t change = {0};
+        change.cfg_mod_sub_overwrite.cid = vnd ? mod->vnd.company : 0xFFFF;
+        change.cfg_mod_sub_overwrite.elem_addr = elem_addr;
+        change.cfg_mod_sub_overwrite.mod_id = vnd ? mod->vnd.id : mod->id;
+        change.cfg_mod_sub_overwrite.sub_addr = sub_addr;
+        bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
+                                        model, ctx, (const uint8_t *)&change, sizeof(change));
+    }
 }
 
 static void mod_sub_del_all(struct bt_mesh_model *model,
@@ -1695,6 +1737,14 @@ static void mod_sub_del_all(struct bt_mesh_model *model,
 send_status:
     send_mod_sub_status(model, ctx, status, elem_addr,
                         BLE_MESH_ADDR_UNASSIGNED, mod_id, vnd);
+    if (status == STATUS_SUCCESS){
+        bt_mesh_cfg_server_state_change_t change = {0};
+        change.cfg_mod_sub_delete_all.cid = vnd ? mod->vnd.company : 0xFFFF;
+        change.cfg_mod_sub_delete_all.elem_addr = elem_addr;
+        change.cfg_mod_sub_delete_all.mod_id = vnd ? mod->vnd.id : mod->id;
+        bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
+                                            model, ctx, (const uint8_t *)&change, sizeof(change));
+    }
 }
 
 static void mod_sub_get(struct bt_mesh_model *model,
@@ -1888,7 +1938,7 @@ static void mod_sub_va_add(struct bt_mesh_model *model,
 
 send_status:
     send_mod_sub_status(model, ctx, status, elem_addr, sub_addr,
-                        mod_id, vnd);
+                        mod_id, vnd);             
 }
 
 static void mod_sub_va_del(struct bt_mesh_model *model,
@@ -2501,6 +2551,13 @@ static void node_identity_set(struct bt_mesh_model *model,
     if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
         BT_ERR("Unable to send Config Node Identity Status");
     }
+    else {
+        bt_mesh_cfg_server_state_change_t change = {0};
+        change.cfg_node_identity_set.identity = sub->node_id;
+        change.cfg_node_identity_set.net_idx = sub->net_idx;
+        bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
+                                            model, ctx, (const uint8_t *)&change, sizeof(change));
+    }
 }
 
 static void create_mod_app_status(struct net_buf_simple *msg,
@@ -2739,7 +2796,7 @@ static void node_reset(struct bt_mesh_model *model,
     }
 }
 
-static void send_friend_status(struct bt_mesh_model *model,
+static uint8_t send_friend_status(struct bt_mesh_model *model,
                                struct bt_mesh_msg_ctx *ctx)
 {
     BLE_MESH_MODEL_BUF_DEFINE(msg, OP_FRIEND_STATUS, 1);
@@ -2750,7 +2807,9 @@ static void send_friend_status(struct bt_mesh_model *model,
 
     if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
         BT_ERR("Unable to send Config Friend Status");
+        return STATUS_FAILURE;
     }
+    return STATUS_SUCCESS;
 }
 
 static void friend_get(struct bt_mesh_model *model,
@@ -2769,6 +2828,7 @@ static void friend_set(struct bt_mesh_model *model,
                        struct net_buf_simple *buf)
 {
     struct bt_mesh_cfg_srv *cfg = model->user_data;
+    static uint8_t status = 1U;
 
     BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
            ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -2807,7 +2867,13 @@ static void friend_set(struct bt_mesh_model *model,
     }
 
 send_status:
-    send_friend_status(model, ctx);
+    status = send_friend_status(model, ctx);
+    if (status == STATUS_SUCCESS) {
+        bt_mesh_cfg_server_state_change_t change = {0};
+        change.cfg_friend_set.frnd = cfg->frnd;
+        bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
+                                            model, ctx, (const uint8_t *)&change, sizeof(change));
+    }
 }
 
 static void lpn_timeout_get(struct bt_mesh_model *model,
@@ -3124,6 +3190,19 @@ static void heartbeat_pub_set(struct bt_mesh_model *model,
     }
 
     hb_pub_send_status(model, ctx, STATUS_SUCCESS, NULL);
+    
+    /*Send a callback evt to btc layer to allow it to handle the evt
+     * with regards to app layer
+     */
+    bt_mesh_cfg_server_state_change_t change = {0};
+    change.cfg_hb_pub_set.count = cfg->hb_pub.count;
+    change.cfg_hb_pub_set.dst = cfg->hb_pub.dst;
+    change.cfg_hb_pub_set.feat = cfg->hb_pub.feat;
+    change.cfg_hb_pub_set.net_idx = cfg->hb_pub.net_idx;
+    change.cfg_hb_pub_set.period = cfg->hb_pub.period;
+    change.cfg_hb_pub_set.ttl = cfg->hb_pub.ttl;
+    bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
+                                        model, ctx, (const uint8_t *)&change, sizeof(change));
 
     /* The first Heartbeat message shall be published as soon
      * as possible after the Heartbeat Publication Period state
@@ -3141,6 +3220,7 @@ static void heartbeat_pub_set(struct bt_mesh_model *model,
 
 failed:
     hb_pub_send_status(model, ctx, status, param);
+
 }
 
 static void hb_sub_send_status(struct bt_mesh_model *model,
@@ -3257,7 +3337,12 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
     }
 
     hb_sub_send_status(model, ctx, STATUS_SUCCESS);
-
+    bt_mesh_cfg_server_state_change_t change = {0};
+    change.cfg_hb_sub_set.dst = cfg->hb_sub.dst;
+    change.cfg_hb_sub_set.src = cfg->hb_sub.src;
+    change.cfg_hb_sub_set.period = period_ms;
+    bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
+                                        model, ctx, (const uint8_t *)&change, sizeof(change));
     /* For case MESH/NODE/CFG/HBS/BV-02-C, set count_log to 0
      * when Heartbeat Subscription Status message is sent.
      */
