@@ -39,7 +39,7 @@ if(CONFIG_ESP32_WIFI_ENABLED)
     idf_build_get_property(build_dir BUILD_DIR)
 
     set(target_name "${idf_target}")
-    target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}\"")
+    target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
 
     if(link_binary_libs)
         if(CONFIG_IDF_TARGET_ESP32C2)
