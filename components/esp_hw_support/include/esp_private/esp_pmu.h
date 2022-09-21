@@ -29,6 +29,7 @@ extern "C" {
 #define RTC_SLEEP_PD_DIG_PERIPH         PMU_SLEEP_PD_HP_PERIPH  //!< Power down DIG peripherals
 #define RTC_SLEEP_PD_INT_8M             PMU_SLEEP_PD_RC_FAST    //!< Power down Internal 20M oscillator
 #define RTC_SLEEP_PD_XTAL               PMU_SLEEP_PD_XTAL       //!< Power down main XTAL
+#define RTC_SLEEP_PD_MODEM              PMU_SLEEP_PD_MODEM      //!< Power down modem(include wifi, ble and 15.4)
 
 //These flags are not power domains, but will affect some sleep parameters
 #define RTC_SLEEP_DIG_USE_8M            BIT(16)

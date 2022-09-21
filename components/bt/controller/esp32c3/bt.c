@@ -30,6 +30,7 @@
 #include "esp_ipc.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
+#include "soc/soc_caps.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc_memory_layout.h"
@@ -405,7 +406,7 @@ static DRAM_ATTR esp_pm_lock_handle_t s_light_sleep_pm_lock;
 void IRAM_ATTR btdm_hw_mac_power_down_wrapper(void)
 {
 #if CONFIG_MAC_BB_PD
-#if CONFIG_IDF_TARGET_ESP32C3
+#if SOC_PM_SUPPORT_BT_PD
     // Bluetooth module power down
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
@@ -417,7 +418,7 @@ void IRAM_ATTR btdm_hw_mac_power_down_wrapper(void)
 void IRAM_ATTR btdm_hw_mac_power_up_wrapper(void)
 {
 #if CONFIG_MAC_BB_PD
-#if CONFIG_IDF_TARGET_ESP32C3
+#if SOC_PM_SUPPORT_BT_PD
     // Bluetooth module power up
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
@@ -436,7 +437,7 @@ void IRAM_ATTR btdm_backup_dma_copy_wrapper(uint32_t reg, uint32_t mem_addr, uin
 static inline void esp_bt_power_domain_on(void)
 {
     // Bluetooth module power up
-#if CONFIG_IDF_TARGET_ESP32C3
+#if SOC_PM_SUPPORT_BT_PD
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
 #endif
@@ -446,7 +447,7 @@ static inline void esp_bt_power_domain_on(void)
 static inline void esp_bt_power_domain_off(void)
 {
     // Bluetooth module power down
-#if CONFIG_IDF_TARGET_ESP32C3
+#if SOC_PM_SUPPORT_BT_PD
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
 #endif

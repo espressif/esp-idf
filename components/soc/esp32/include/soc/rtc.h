@@ -493,7 +493,7 @@ typedef struct rtc_sleep_config_s {
     uint32_t rtc_fastmem_pd_en : 1;     //!< power down RTC fast memory
     uint32_t rtc_slowmem_pd_en : 1;     //!< power down RTC slow memory
     uint32_t rtc_peri_pd_en : 1;        //!< power down RTC peripherals
-    uint32_t wifi_pd_en : 1;            //!< power down WiFi
+    uint32_t modem_pd_en : 1;           //!< power down Modem(wifi and btdm)
     uint32_t int_8m_pd_en : 1;          //!< Power down Internal 8M oscillator
     uint32_t rom_mem_pd_en : 1;         //!< power down main RAM and ROM
     uint32_t deep_slp : 1;              //!< power down digital domain
@@ -516,8 +516,9 @@ typedef struct rtc_sleep_config_s {
 #define RTC_SLEEP_PD_RTC_FAST_MEM       BIT(3)  //!< Power down RTC FAST memory
 #define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)  //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
-#define RTC_SLEEP_PD_XTAL               BIT(6)  //!< Power down main XTAL
-#define RTC_SLEEP_PD_INT_8M             BIT(7)  //!< Power down Internal 8M oscillator
+#define RTC_SLEEP_PD_MODEM              BIT(6)  //!< Power down Modem(wifi and btdm)
+#define RTC_SLEEP_PD_XTAL               BIT(7)  //!< Power down main XTAL
+#define RTC_SLEEP_PD_INT_8M             BIT(8)  //!< Power down Internal 8M oscillator
 
 //These flags are not power domains, but will affect some sleep parameters
 #define RTC_SLEEP_DIG_USE_8M            BIT(16)

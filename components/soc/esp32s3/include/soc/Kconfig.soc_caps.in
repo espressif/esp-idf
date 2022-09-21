@@ -1035,6 +1035,10 @@ config SOC_PM_SUPPORT_MAC_BB_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_MODEM_PD
+    bool
+    default y
+
 config SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
     bool
     default y
