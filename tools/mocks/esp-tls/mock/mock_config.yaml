@@ -1,0 +1,16 @@
+
+:cmock:
+  :plugins:
+    - expect
+    - expect_any_args
+    - return_thru_ptr
+    - ignore
+    - ignore_arg
+  :when_ptr: :compare_ptr
+  :strippables:
+    - '(?:esp_tls_cfg_server_session_tickets_init\s*\(+.*?\)+)'
+    - '(?:esp_tls_cfg_server_session_tickets_free\s*\(+.*?\)+)'
+    - '(?:esp_tls_server_session_create\s*\(+.*?\)+)'
+    - '(?:esp_tls_get_global_ca_store\s*\(+.*?\)+)'
+    - '(?:esp_tls_get_client_session\s*\(+.*?\)+)'
+    - '(?:esp_tls_free_client_session\s*\(+.*?\)+)'
