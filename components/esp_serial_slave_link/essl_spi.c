@@ -19,9 +19,11 @@
 #include "driver/periph_ctrl.h"
 #include "essl_internal.h"
 #include "essl_spi.h"
-#include "essl_spi/esp32s2_defs.h"
 
 #define ESSL_SPI_CHECK(cond, warn, ret) do{if(!(cond)){ESP_LOGE(TAG, warn); return ret;}} while(0)
+
+#include "hal/spi_types.h"
+#include "hal/spi_ll.h"
 
 /**
  * Initialise device function list of SPI by this macro.
@@ -58,51 +60,54 @@ typedef struct {
     } master_in;
 } essl_spi_context_t;
 
-
-static uint16_t get_hd_command(uint16_t cmd_i, uint32_t flags)
+static uint16_t get_hd_command(spi_command_t cmd_t, uint32_t flags)
 {
-    //have no prefixes
-    if (cmd_i == CMD_HD_EN_QPI_REG) return cmd_i;
-    //doesn't support 4-line commands
-    if(flags & SPI_TRANS_MODE_QIO && flags & SPI_TRANS_MODE_DIOQIO_ADDR &&
-       (cmd_i == CMD_HD_WR_END_REG || cmd_i == CMD_HD_INT0_REG ||
-       cmd_i == CMD_HD_INT1_REG || cmd_i == CMD_HD_INT2_REG)) {
-           //the transaction will be sent in corresponding 1/2/4 bit mode, without address and data.
-           //the CMD will have no 0xA- prefix
-           return cmd_i;
-    }
+    spi_line_mode_t line_mode = {
+        .cmd_lines = 1,
+    };
 
     if (flags & SPI_TRANS_MODE_DIO) {
+        line_mode.data_lines = 2;
         if (flags & SPI_TRANS_MODE_DIOQIO_ADDR) {
-            return cmd_i | CMD_HD_DIO_MODE;
+            line_mode.addr_lines = 2;
         } else {
-            return cmd_i | CMD_HD_DOUT_MODE;
+            line_mode.addr_lines = 1;
         }
     } else if (flags & SPI_TRANS_MODE_QIO) {
+        line_mode.data_lines = 4;
         if (flags & SPI_TRANS_MODE_DIOQIO_ADDR) {
-            return cmd_i | CMD_HD_QIO_MODE;
+            line_mode.addr_lines = 4;
         } else {
-            return cmd_i | CMD_HD_QOUT_MODE;
+            line_mode.addr_lines = 1;
         }
+    } else {
+        line_mode.data_lines = 1;
+        line_mode.addr_lines = 1;
     }
-    return cmd_i | CMD_HD_ONEBIT_MODE;
+
+    return spi_ll_get_slave_hd_command(cmd_t, line_mode);
 }
 
 static int get_hd_dummy_bits(uint32_t flags)
 {
-    //dummy is always 4 cycles when dual or quad mode is enabled. Otherwise 8 cycles in normal mode.
-    if (flags & (SPI_TRANS_MODE_DIO | SPI_TRANS_MODE_QIO)) {
-        return 4;
+    spi_line_mode_t line_mode = {};
+
+    if (flags & SPI_TRANS_MODE_DIO) {
+        line_mode.data_lines = 2;
+    } else if (flags & SPI_TRANS_MODE_QIO) {
+        line_mode.data_lines = 4;
     } else {
-        return 8;
+        line_mode.data_lines = 1;
     }
+
+    return spi_ll_get_slave_hd_dummy_bits(line_mode);
 }
 
 esp_err_t essl_spi_rdbuf(spi_device_handle_t spi, uint8_t *out_data, int addr, int len, uint32_t flags)
 {
     spi_transaction_ext_t t = {
         .base = {
-            .cmd = get_hd_command(CMD_HD_RDBUF_REG, flags),
+            .cmd = get_hd_command(SPI_CMD_HD_RDBUF, flags),
             .addr = addr % 72,
             .rxlength = len * 8,
             .rx_buffer = out_data,
@@ -118,7 +123,7 @@ esp_err_t essl_spi_rdbuf_polling(spi_device_handle_t spi, uint8_t *out_data, int
 {
     spi_transaction_ext_t t = {
         .base = {
-            .cmd = get_hd_command(CMD_HD_RDBUF_REG, flags),
+            .cmd = get_hd_command(SPI_CMD_HD_RDBUF, flags),
             .addr = addr % 72,
             .rxlength = len * 8,
             .rx_buffer = out_data,
@@ -134,7 +139,7 @@ esp_err_t essl_spi_wrbuf(spi_device_handle_t spi, const uint8_t *data, int addr,
 {
     spi_transaction_ext_t t = {
         .base = {
-            .cmd = get_hd_command(CMD_HD_WRBUF_REG, flags),
+            .cmd = get_hd_command(SPI_CMD_HD_WRBUF, flags),
             .addr = addr % 72,
             .length = len * 8,
             .tx_buffer = data,
@@ -149,7 +154,7 @@ esp_err_t essl_spi_wrbuf_polling(spi_device_handle_t spi, const uint8_t *data, i
 {
     spi_transaction_ext_t t = {
         .base = {
-            .cmd = get_hd_command(CMD_HD_WRBUF_REG, flags),
+            .cmd = get_hd_command(SPI_CMD_HD_WRBUF, flags),
             .addr = addr % 72,
             .length = len * 8,
             .tx_buffer = data,
@@ -164,7 +169,7 @@ esp_err_t essl_spi_rddma_seg(spi_device_handle_t spi, uint8_t *out_data, int seg
 {
     spi_transaction_ext_t t = {
         .base = {
-            .cmd = get_hd_command(CMD_HD_RDDMA_REG, flags),
+            .cmd = get_hd_command(SPI_CMD_HD_RDDMA, flags),
             .rxlength = seg_len * 8,
             .rx_buffer = out_data,
             .flags = flags | SPI_TRANS_VARIABLE_DUMMY,
@@ -177,7 +182,7 @@ esp_err_t essl_spi_rddma_seg(spi_device_handle_t spi, uint8_t *out_data, int seg
 esp_err_t essl_spi_rddma_done(spi_device_handle_t spi, uint32_t flags)
 {
     spi_transaction_t end_t = {
-        .cmd = get_hd_command(CMD_HD_INT0_REG, flags),
+        .cmd = get_hd_command(SPI_CMD_HD_INT0, flags),
         .flags = flags,
     };
     return spi_device_transmit(spi, &end_t);
@@ -208,7 +213,7 @@ esp_err_t essl_spi_wrdma_seg(spi_device_handle_t spi, const uint8_t *data, int s
 {
     spi_transaction_ext_t t = {
         .base = {
-            .cmd = get_hd_command(CMD_HD_WRDMA_REG, flags),
+            .cmd = get_hd_command(SPI_CMD_HD_WRDMA, flags),
             .length = seg_len * 8,
             .tx_buffer = data,
             .flags = flags | SPI_TRANS_VARIABLE_DUMMY,
@@ -221,7 +226,7 @@ esp_err_t essl_spi_wrdma_seg(spi_device_handle_t spi, const uint8_t *data, int s
 esp_err_t essl_spi_wrdma_done(spi_device_handle_t spi, uint32_t flags)
 {
     spi_transaction_t end_t = {
-        .cmd = get_hd_command(CMD_HD_WR_END_REG, flags),
+        .cmd = get_hd_command(SPI_CMD_HD_WR_END, flags),
         .flags = flags,
     };
     return spi_device_transmit(spi, &end_t);
@@ -250,7 +255,7 @@ esp_err_t essl_spi_wrdma(spi_device_handle_t spi, const uint8_t *data, int len, 
 esp_err_t essl_spi_int(spi_device_handle_t spi, int int_n, uint32_t flags)
 {
     spi_transaction_t end_t = {
-        .cmd = get_hd_command(CMD_HD_INT0_REG + int_n, flags),
+        .cmd = get_hd_command(SPI_CMD_HD_INT0 + int_n, flags),
         .flags = flags,
     };
     return spi_device_transmit(spi, &end_t);
