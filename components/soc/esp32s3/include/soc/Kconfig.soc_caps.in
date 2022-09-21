@@ -715,6 +715,10 @@ config SOC_SPIRAM_SUPPORTED
     bool
     default y
 
+config SOC_SPIRAM_XIP_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_COUNTER_NUM
     int
     default 2

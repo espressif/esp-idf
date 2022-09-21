@@ -318,7 +318,8 @@
 #define SOC_UART_BITRATE_MAX        (5000000)   /*!< Max bit rate supported by UART */
 
 /*-------------------------- SPIRAM CAPS -------------------------------------*/
-#define SOC_SPIRAM_SUPPORTED    1
+#define SOC_SPIRAM_SUPPORTED          1
+#define SOC_SPIRAM_XIP_SUPPORTED      1
 
 /*-------------------------- USB CAPS ----------------------------------------*/
 #define SOC_USB_PERIPH_NUM 1

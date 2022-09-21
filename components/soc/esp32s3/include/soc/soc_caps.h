@@ -292,6 +292,7 @@
 
 /*-------------------------- SPIRAM CAPS ----------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED            1
+#define SOC_SPIRAM_XIP_SUPPORTED        1
 
 /*-------------------------- SYS TIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units
