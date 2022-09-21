@@ -153,7 +153,7 @@ typedef struct rtc_cpu_freq_config_s {
 typedef enum {
     RTC_CAL_RTC_MUX = 0,       //!< Currently selected RTC SLOW_CLK
     RTC_CAL_8MD256 = 1,        //!< Internal 8 MHz RC oscillator, divided by 256
-    RTC_CAL_EXT_CLK = 2        //!< External CLK
+    RTC_CAL_EXT_32K = 2        //!< External 32.768 KHz CLK
 } rtc_cal_sel_t;
 
 /**
@@ -402,6 +402,11 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
  * of cycles to be counted exceeds the expected time twice. This may happen if
  * 32k XTAL is being calibrated, but the oscillator has not started up (due to
  * incorrect loading capacitance, board design issue, or lack of 32 XTAL on board).
+ *
+ * @note When 32k CLK is being calibrated, this function will check the accuracy
+ * of the clock. Since the xtal 32k or ext osc 32k is generally very stable, if
+ * the check fails, then consider this an invalid 32k clock and return 0. This
+ * check can filter some jamming signal.
  *
  * @param cal_clk  clock to be measured
  * @param slow_clk_cycles  number of slow clock cycles to average
