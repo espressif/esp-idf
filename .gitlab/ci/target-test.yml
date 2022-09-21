@@ -630,7 +630,6 @@ example_test_001B_V3:
 
 example_test_001C:
   extends: .example_test_esp32_template
-  parallel: 2
   tags:
     - ESP32
     - Example_GENERIC
@@ -740,7 +739,6 @@ example_test_017:
 
 example_test_C3_GENERIC:
   extends: .example_test_esp32c3_template
-  parallel: 2
   tags:
     - ESP32C3
     - Example_GENERIC
@@ -816,43 +814,6 @@ test_app_test_eth:
   tags:
     - ESP32
     - ethernet_router
-
-test_app_test_004:
-  extends: .test_app_esp32s2_template
-  tags:
-    - ESP32S2
-    - Example_GENERIC
-
-test_app_test_esp32c2_generic:
-  extends: .test_app_esp32c2_template
-  tags:
-    - ESP32C2
-    - Example_GENERIC
-    - xtal_40mhz
-
-test_app_test_esp32c2_26mhz:
-  extends: .test_app_esp32c2_template
-  tags:
-    - ESP32C2
-    - xtal_26mhz
-
-test_app_test_005:
-  extends: .test_app_esp32c3_template
-  tags:
-    - ESP32C3
-    - Example_GENERIC
-
-test_app_test_006:
-  extends: .test_app_esp32s3_template
-  tags:
-    - ESP32S3
-    - Example_GENERIC
-
-test_app_test_esp32_generic:
-  extends: .test_app_esp32_template
-  tags:
-    - ESP32
-    - Example_GENERIC
 
 .unit_test_template:
   extends: .target_test_job_template
