@@ -113,6 +113,7 @@ typedef struct {
                                                           *  We assume that the current 'dma_buf_len' is 100, then the real length of the DMA buffer is 8 * 100 = 800 bytes.
                                                           *  Note that the length of an internal real DMA buffer shouldn't be greater than 4092.
                                                           */
+
     bool                    use_apll;                   /*!< I2S using APLL as main I2S clock, enable it to get accurate clock */
     bool                    tx_desc_auto_clear;         /*!< I2S auto clear tx descriptor if there is underflow condition (helps in avoiding noise in case of data unavailability) */
     int                     fixed_mclk;                 /*!< I2S using fixed MCLK output. If use_apll = true and fixed_mclk > 0, then the clock output for i2s is fixed and equal to the fixed_mclk value. If fixed_mclk set, mclk_multiple won't take effect */
