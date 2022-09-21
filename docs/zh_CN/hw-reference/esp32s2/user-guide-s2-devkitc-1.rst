@@ -1,14 +1,12 @@
-===================
+==================
 ESP32-S2-DevKitC-1
-===================
+==================
 
 :link_to_translation:`en: [English]`
 
 本指南将帮助您快速上手 ESP32-S2-DevKitC-1，并提供该款开发板的详细信息。
 
-ESP32-S2-DevKitC-1 是一款入门级开发板，使用带有 4 MB SPI flash 的 ESP32-S2-SOLO（板载 PCB 天线）或 ESP32-S2-SOLO-U（外部天线连接器）模组。该款开发板具备完整的 Wi-Fi 功能。
-
-板上模组大部分管脚均已引出至两侧排针，开发人员可根据实际需求，轻松通过跳线连接多种外围设备，同时也可将开发板插在面包板上使用。
+ESP32-S2-DevKitC-1 是一款入门级开发板，具备完整的 Wi-Fi 功能。板上模组大部分管脚均已引出至两侧排针，开发人员可根据实际需求，轻松通过跳线连接多种外围设备，同时也可将开发板插在面包板上使用。
 
 .. figure:: ../../../_static/esp32-s2-devkitc-1-v1-isometric.png
     :align: center
@@ -49,8 +47,8 @@ ESP32-S2-DevKitC-1 是一款入门级开发板，使用带有 4 MB SPI flash 的
 
    * - 主要组件
      - 介绍
-   * - ESP32-S2-SOLO 或 ESP32-S2-SOLO-U
-     - ESP32-S2-SOLO 和 ESP32-S2-SOLO-U 是两款通用型 Wi-Fi 模组。ESP32-S2-SOLO 采用 PCB 板载天线，ESP32-S2-SOLO-U 采用连接器连接外部天线。开发板上的 ESP32-S2-SOLO 或 ESP32-S2-SOLO-U 模组可配置 4 MB flash，也可配置 4 MB flash 加 2 MB PSRAM（芯片内置）。
+   * - 板载模组（上图中为 ESP32-S2-SOLO 或 ESP32-S2-SOLO-U）
+     - ESP32-S2-SOLO 系列模组，可搭载 PCB 板载天线或外部天线连接器，支持多种 flash 和 PSRAM 大小。更多信息，详见 :ref:`user-guide-s2-devkitc-1-v1-ordering-info`。
    * - 3.3 V Power On LED（3.3 V 电源指示灯）
      - 开发板连接 USB 电源后，该指示灯亮起。
    * - USB-to-UART Bridge（USB 转 UART 桥接器）
@@ -100,6 +98,59 @@ ESP32-S2-DevKitC-1 是一款入门级开发板，使用带有 4 MB SPI flash 的
 内含组件和包装
 --------------
 
+.. _user-guide-s2-devkitc-1-v1-ordering-info:
+
+订购信息
+^^^^^^^^
+
+该开发板有多种型号可供选择，详见下表。
+
+.. list-table::
+   :header-rows: 1
+   :widths: 35 25 10 10 20
+
+   * - 订购代码
+     - 搭载模组 [#]_
+     - Flash
+     - PSRAM
+     - 天线
+   * - ESP32-S2-DevKitC-1-N8R2
+     - ESP32-S2-SOLO-2
+
+       （推荐）
+     - 8 MB
+     - 2 MB
+     - PCB 板载天线
+   * - ESP32-S2-DevKitC-1U-N8R2
+     - ESP32-S2-SOLO-2U
+
+       （推荐）
+     - 8 MB
+     - 2 MB
+     - 外部天线连接器
+   * - ESP32-S2-DevKitC-1
+     - ESP32-S2-SOLO
+     - 4 MB
+     - ---
+     - PCB 板载天线
+   * - ESP32-S2-DevKitC-1U
+     - ESP32-S2-SOLO-U
+     - 4 MB
+     - ---
+     - 外部天线连接器
+   * - ESP32-S2-DevKitC-1R
+     - ESP32-S2-SOLO
+     - 4 MB
+     - 2 MB
+     - PCB 板载天线     
+   * - ESP32-S2-DevKitC-1RU
+     - ESP32-S2-SOLO-U
+     - 4 MB
+     - 2 MB
+     - 外部天线连接器
+
+.. [#] ESP32-S2-SOLO-2 和 ESP32-S2-SOLO-2U 模组使用 v1.0 版本芯片，其余模组使用 v0.0 版本芯片。更多关于芯片版本的信息，请参考 `《ESP32-S2 系列芯片勘误表》`_。
+
 零售订单
 ^^^^^^^^
 
@@ -144,36 +195,36 @@ ESP32-S2-DevKitC-1 的主要组件和连接方式如下图所示。
 排针 
 ---- 
  
-下表列出了开发板两侧排针（J1 和 J3）的 **名称** 和 **功能**，排针的名称如图 :ref:`user-guide-s2-devkitc-1-v1-board-front` 所示，排针的序号与 `ESP32-S2-DevKitC-1 原理图 <https://dl.espressif.com/dl/schematics/SCH_ESP32-S2-DEVKITC-1_V1_20210508.pdf>`_ (PDF) 一致。 
+下表列出了开发板两侧排针（J1 和 J3）的 **名称** 和 **功能**，排针的名称如图 :ref:`user-guide-s2-devkitc-1-v1-board-front` 所示，排针的序号与 `ESP32-S2-DevKitC-1 原理图`_ (PDF) 一致。 
 
 J1 
 ^^^ 
-==== ====  =========   =========================================================================
-序号 名称  类型 [#]_    功能
-==== ====  =========   =========================================================================
-1    3V3    P          3.3 V 电源
-2    3V3    P          3.3 V 电源
-3    RST    I          CHIP_PU
-4    4      I/O/T      RTC_GPIO4, GPIO4, TOUCH4, ADC1_CH3
-5    5      I/O/T      RTC_GPIO5, GPIO5, TOUCH5, ADC1_CH4
-6    6      I/O/T      RTC_GPIO6, GPIO6, TOUCH6, ADC1_CH5
-7    7      I/O/T      RTC_GPIO7, GPIO7, TOUCH7, ADC1_CH6
-8    15     I/O/T      RTC_GPIO15, GPIO15, U0RTS, ADC2_CH4, XTAL_32K_P
-9    16     I/O/T      RTC_GPIO16, GPIO16, U0CTS, ADC2_CH5, XTAL_32K_N
-10   17     I/O/T      RTC_GPIO17, GPIO17, U1TXD, ADC2_CH6, DAC_1
-11   18     I/O/T      RTC_GPIO18, GPIO18, U1RXD, ADC2_CH7, DAC_2, CLK_OUT3, RGB LED
-12   8      I/O/T      RTC_GPIO8, GPIO8, TOUCH8, ADC1_CH7
-13   3      I/O/T      RTC_GPIO3, GPIO3, TOUCH3, ADC1_CH2
-14   46     I          GPIO46
-15   9      I/O/T      RTC_GPIO9, GPIO9, TOUCH9, ADC1_CH8, FSPIHD
-16   10     I/O/T      RTC_GPIO10, GPIO10, TOUCH10, ADC1_CH9, FSPICS0, FSPIIO4
-17   11     I/O/T      RTC_GPIO11, GPIO11, TOUCH11, ADC2_CH0, FSPID, FSPIIO5
-18   12     I/O/T      RTC_GPIO12, GPIO12, TOUCH12, ADC2_CH1, FSPICLK, FSPIIO6
-19   13     I/O/T      RTC_GPIO13, GPIO13, TOUCH13, ADC2_CH2, FSPIQ, FSPIIO7
-20   14     I/O/T      RTC_GPIO14, GPIO14, TOUCH14, ADC2_CH3, FSPIWP, FSPIDQS
-21   5V     P          5 V 电源
-22   G      G          接地
-==== ====  =========   =========================================================================
+==== =========  =========   =========================================================================
+序号 名称       类型 [#]_    功能
+==== =========  =========   =========================================================================
+1    3V3         P          3.3 V 电源
+2    3V3         P          3.3 V 电源
+3    RST         I          CHIP_PU
+4    4           I/O/T      RTC_GPIO4, GPIO4, TOUCH4, ADC1_CH3
+5    5           I/O/T      RTC_GPIO5, GPIO5, TOUCH5, ADC1_CH4
+6    6           I/O/T      RTC_GPIO6, GPIO6, TOUCH6, ADC1_CH5
+7    7           I/O/T      RTC_GPIO7, GPIO7, TOUCH7, ADC1_CH6
+8    15          I/O/T      RTC_GPIO15, GPIO15, U0RTS, ADC2_CH4, XTAL_32K_P
+9    16          I/O/T      RTC_GPIO16, GPIO16, U0CTS, ADC2_CH5, XTAL_32K_N
+10   17          I/O/T      RTC_GPIO17, GPIO17, U1TXD, ADC2_CH6, DAC_1
+11   18 [#]_     I/O/T      RTC_GPIO18, GPIO18[#]_, U1RXD, ADC2_CH7, DAC_2, CLK_OUT3, RGB LED
+12   8           I/O/T      RTC_GPIO8, GPIO8, TOUCH8, ADC1_CH7
+13   3           I/O/T      RTC_GPIO3, GPIO3, TOUCH3, ADC1_CH2
+14   46          I          GPIO46
+15   9           I/O/T      RTC_GPIO9, GPIO9, TOUCH9, ADC1_CH8, FSPIHD
+16   10          I/O/T      RTC_GPIO10, GPIO10, TOUCH10, ADC1_CH9, FSPICS0, FSPIIO4
+17   11          I/O/T      RTC_GPIO11, GPIO11, TOUCH11, ADC2_CH0, FSPID, FSPIIO5
+18   12          I/O/T      RTC_GPIO12, GPIO12, TOUCH12, ADC2_CH1, FSPICLK, FSPIIO6
+19   13          I/O/T      RTC_GPIO13, GPIO13, TOUCH13, ADC2_CH2, FSPIQ, FSPIIO7
+20   14          I/O/T      RTC_GPIO14, GPIO14, TOUCH14, ADC2_CH3, FSPIWP, FSPIDQS
+21   5V          P          5 V 电源
+22   G           G          接地
+==== =========  =========   =========================================================================
  
 J3 
 ^^^ 
@@ -205,13 +256,14 @@ J3
 22    G     G      接地
 ====  ====  =====  ================================================================ 
 
-.. [#] P：电源；I：输入；O：输出；T：可设置为高阻。 
+.. [#] P：电源；I：输入；O：输出；T：可设置为高阻。
+.. [#] 搭载 ESP32-S2-SOLO-2 或 ESP32-S2-SOLO-2U 的开发板未上拉 GPIO18。
 
 管脚布局
 ^^^^^^^^
 .. figure:: ../../../_static/esp32-s2-devkitc-1-v1-pinout.png
     :align: center
-    :scale: 15%
+    :scale: 45%
     :alt: ESP32-S2-DevKitC-1 管脚布局（点击放大）
     :figclass: align-center
 
@@ -224,11 +276,20 @@ J3
 
 相关文档
 ========
-* `ESP32-S2 系列芯片规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_cn.pdf>`_ (PDF)
-* `ESP32-S2-SOLO & ESP32-S2-SOLO-U 模组技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-solo_esp32-s2-solo-u_datasheet_cn.pdf>`_ (PDF)
-* `ESP32-S2-DevKitC-1 原理图 <https://dl.espressif.com/dl/schematics/SCH_ESP32-S2-DEVKITC-1_V1_20210508.pdf>`_ (PDF)
+
+* `ESP32-S2 系列芯片 v1.0 版本技术规格书`_ (PDF)
+* `ESP32-S2 系列芯片 v0.0 版本技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_cn.pdf>`_ (PDF)
+* `《ESP32-S2 系列芯片勘误表》`_ (PDF)
+* `《ESP32-S2-SOLO-2 & ESP32-S2-SOLO-2U 模组技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-solo-2_esp32-s2-solo-2u_datasheet_cn.pdf>`_ (PDF)
+* `《ESP32-S2-SOLO & ESP32-S2-SOLO-U 模组技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-solo_esp32-s2-solo-u_datasheet_cn.pdf>`_ (PDF)
+* `ESP32-S2-DevKitC-1 原理图`_ (PDF)
 * `ESP32-S2-DevKitC-1 PCB 布局图 <https://dl.espressif.com/dl/schematics/PCB_ESP32-S2-DevKitC-1_V1_20210508.pdf>`_ (PDF)
 * `ESP32-S2-DevKitC-1 尺寸图 <https://dl.espressif.com/dl/schematics/DXF_ESP32-S2-DevKitC-1_V1_20210511.pdf>`_ (PDF)
 * `ESP32-S2-DevKitC-1 尺寸图源文件 <https://dl.espressif.com/dl/schematics/DXF_ESP32-S2-DevKitC-1_V1_20210511.dxf>`_ (DXF) - 可使用 `Autodesk Viewer <https://viewer.autodesk.com/>`_ 查看
 
 有关本开发板的更多设计文档，请联系我们的商务部门 `sales@espressif.com <sales@espressif.com>`_。
+
+.. _不推荐用于新设计: https://www.espressif.com/zh-hans/products/longevity-commitment
+.. _ESP32-S2 系列芯片 v1.0 版本技术规格书: https://www.espressif.com/sites/default/files/documentation/esp32-s2-v1.0_datasheet_cn.pdf
+.. _《ESP32-S2 系列芯片勘误表》: https://espressif.com/sites/default/files/documentation/esp32-s2_errata_cn.pdf
+.. _ESP32-S2-DevKitC-1 原理图: https://dl.espressif.com/dl/schematics/esp-idf/SCH_ESP32-S2-DEVKITC-1_V1_20220817.pdf
