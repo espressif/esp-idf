@@ -78,10 +78,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         time.sleep(0.1)
                     else:
                         p.kill()
-                if target + '_outfile_name' in processes:
-                    if target == 'openocd':
-                        print(_check_for_common_openocd_issues(processes[target + '_outfile_name'], print_all=False))
-                    os.unlink(processes[target + '_outfile_name'])
+                if target + '_outfile_name' in processes and target == 'openocd':
+                    print(_check_for_common_openocd_issues(processes[target + '_outfile_name'], print_all=False))
             except Exception as e:
                 print(e)
                 print('Failed to close/kill {}'.format(target))
@@ -179,7 +177,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         local_dir = project_desc['build_dir']
         args = ['openocd'] + shlex.split(openocd_arguments)
         openocd_out_name = os.path.join(local_dir, OPENOCD_OUT_FILE)
-        openocd_out = open(openocd_out_name, 'a+')
+        openocd_out = open(openocd_out_name, 'w')
         try:
             process = subprocess.Popen(args, stdout=openocd_out, stderr=subprocess.STDOUT, bufsize=1)
         except Exception as e:
@@ -222,7 +220,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if gdbgui_port is not None:
             args += ['--port', gdbgui_port]
         gdbgui_out_name = os.path.join(local_dir, GDBGUI_OUT_FILE)
-        gdbgui_out = open(gdbgui_out_name, 'a+')
+        gdbgui_out = open(gdbgui_out_name, 'w')
         env = os.environ.copy()
         # The only known solution for https://github.com/cs01/gdbgui/issues/359 is to set the following environment
         # variable. The greenlet package cannot be downgraded for compatibility with other requirements (gdbgui,
