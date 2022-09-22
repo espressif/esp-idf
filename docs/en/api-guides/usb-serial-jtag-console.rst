@@ -63,4 +63,16 @@ There are several limitations to the USB console feature. These may or may not b
 
 3. The behavior between an actual USB-to-serial bridge chip and the USB Serial/JTAG Controller is slightly different if the ESP-IDF application does not listen for incoming bytes. An USB-to-serial bridge chip will just send the bytes to a (not listening) chip, while the USB Serial/JTAG Controller will block until the application reads the bytes. This can lead to a non-responsive looking terminal program.
 
-4. If the application enters light-sleep (including automatic light-sleep) or software reset, etc. The USB CDC device will still work on the system. But be aware that this might increase the power consumption, if you don't need USB CDC in sleep and want to keep low power consumption, please disable the menuconfig ``CONFIG_RTC_CLOCK_BBPLL_POWER_ON_WITH_USB``. Moreover, the power consumption will only increase when your USB CDC port is really in use (like data transaction), therefore, if your USB CDC just connects with power bank or battery, rather than something like computer, you don't need to care about the increasing power consumption mentioned above.
+4. The USB CDC device won't work in sleep modes as normal due to the lack of APB clock in sleep modes. This includes deep-sleep, light-sleep (automataic light-sleep as well).
+
+5. The power consumption in sleep modes will be higher if the USB CDC device is in use.
+
+   This is because we want to keep the USB CDC device alive during software reset by default.
+
+   However there is an issue that this might also increase the power consumption in sleep modes. This is because the software keeps a clock source on during the reset to keep the USB CDC device alive. As a side-effect, the clock is also kept on during sleep modes. There is one exception: the clock will only be kept on when your USB CDC port is really in use (like data transaction), therefore, if your USB CDC is connected to power bank or battery, etc., instead of a valid USB host (for example, a PC), the power consumption will not increase.
+
+   If you still want to keep low power consumption in sleep modes:
+
+    1. If you are not using the USB CDC port, you don't need to do anything. Software will detect if the CDC device is connected to a valid host before going to sleep, and keep the clocks only when the host is connected. Otherwise the clocks will be turned off as normal.
+
+    2. If you are using the USB CDC port, please disable the menuconfig option ``CONFIG_RTC_CLOCK_BBPLL_POWER_ON_WITH_USB``. The clock will be switched off as normal during software reset and in sleep modes. In these cases, the USB CDC device may be unplugged from the host.
