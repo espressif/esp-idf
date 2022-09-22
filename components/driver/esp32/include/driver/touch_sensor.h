@@ -121,8 +121,11 @@ esp_err_t touch_pad_isr_register(intr_handler_t fn, void *arg);
  * @brief Set touch sensor measurement and sleep time.
  *        Excessive total time will slow down the touch response.
  *        Too small measurement time will not be sampled enough, resulting in inaccurate measurements.
- *
+ * @note The touch sensor on ESP32 will fix measuring cycles (specified by the second parameter)
+ *       and then record the count of charge and discharge cycles during the sensing period as the raw value.
+ *       That means the raw value will decrease as the capacity of the touch pad increasing.
  * @note The greater the duty cycle of the measurement time, the more system power is consumed.
+ *
  * @param sleep_cycle  The touch sensor will sleep after each measurement.
  *                     sleep_cycle decide the interval between each measurement.
  *                     t_sleep = sleep_cycle / (RTC_SLOW_CLK frequency).
