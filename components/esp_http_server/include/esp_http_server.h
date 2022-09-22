@@ -40,6 +40,8 @@ initializer that should be kept in sync
         .global_user_ctx_free_fn = NULL,                \
         .global_transport_ctx = NULL,                   \
         .global_transport_ctx_free_fn = NULL,           \
+        .enable_so_linger = false,                      \
+        .linger_timeout = 0,                            \
         .open_fn = NULL,                                \
         .close_fn = NULL,                               \
         .uri_match_fn = NULL                            \
@@ -184,6 +186,9 @@ typedef struct httpd_config {
      * Free function for global transport context
      */
     httpd_free_ctx_fn_t global_transport_ctx_free_fn;
+
+    bool enable_so_linger;  /*!< bool to enable/disable linger */
+    int linger_timeout;     /*!< linger timeout (in seconds) */
 
     /**
      * Custom session opening callback.
