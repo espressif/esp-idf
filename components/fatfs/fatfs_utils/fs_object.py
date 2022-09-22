@@ -12,8 +12,9 @@ from .fatfs_state import FATFSState
 from .long_filename_utils import (build_lfn_full_name, build_lfn_unique_entry_name_order,
                                   get_required_lfn_entries_count, split_name_to_lfn_entries,
                                   split_name_to_lfn_entry_blocks)
-from .utils import (DATETIME, MAX_EXT_SIZE, MAX_NAME_SIZE, FATDefaults, build_lfn_short_entry_name, build_name,
-                    lfn_checksum, required_clusters_count, split_content_into_sectors, split_to_name_and_extension)
+from .utils import (DATETIME, INVALID_SFN_CHARS_PATTERN, MAX_EXT_SIZE, MAX_NAME_SIZE, FATDefaults,
+                    build_lfn_short_entry_name, build_name, lfn_checksum, required_clusters_count,
+                    split_content_into_sectors, split_to_name_and_extension)
 
 
 class File:
@@ -235,6 +236,13 @@ class Directory:
                                   time=time)
         return free_cluster, free_entry, target_dir
 
+    @staticmethod
+    def _is_valid_sfn(name: str, extension: str) -> bool:
+        if INVALID_SFN_CHARS_PATTERN.search(name) or INVALID_SFN_CHARS_PATTERN.search(name):
+            return False
+        ret: bool = len(name) <= MAX_NAME_SIZE and len(extension) <= MAX_EXT_SIZE
+        return ret
+
     def allocate_object(self,
                         name,
                         entity_type,
@@ -251,12 +259,10 @@ class Directory:
         target_dir: Directory = self if not path_from_root else self.recursive_search(path_from_root, self)
         free_entry: Entry = target_dir.find_free_entry() or target_dir.chain_directory()
 
-        name_fits_short_struct: bool = len(name) <= MAX_NAME_SIZE and len(extension) <= MAX_EXT_SIZE
-
         fatfs_date_ = (object_timestamp_.year, object_timestamp_.month, object_timestamp_.day)
         fatfs_time_ = (object_timestamp_.hour, object_timestamp_.minute, object_timestamp_.second)
 
-        if not self.fatfs_state.long_names_enabled or name_fits_short_struct:
+        if not self.fatfs_state.long_names_enabled or self._is_valid_sfn(name, extension):
             free_entry.allocate_entry(first_cluster_id=free_cluster.id,
                                       entity_name=name,
                                       entity_extension=extension,

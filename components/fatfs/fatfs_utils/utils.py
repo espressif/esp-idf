@@ -4,11 +4,15 @@
 import argparse
 import binascii
 import os
+import re
 import uuid
 from datetime import datetime
 from typing import List, Optional, Tuple
 
 from construct import BitsInteger, BitStruct, Int16ul
+
+# the regex pattern defines symbols that are allowed by long file names but not by short file names
+INVALID_SFN_CHARS_PATTERN = re.compile(r'[.+,;=\[\]]')
 
 FAT12_MAX_CLUSTERS: int = 4085
 FAT16_MAX_CLUSTERS: int = 65525
