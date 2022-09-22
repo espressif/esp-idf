@@ -261,6 +261,17 @@ Now erase NVS partition by running the following commands :
 $IDF_PATH/components/esptool_py/esptool/esptool.py erase_region 0x9000 0x6000
 ```
 
+### Bluetooth Pairing Request during provisioning
+
+ESP-IDF now has functionality to enforce link encryption requirement while performing GATT write on characteristics of provisioning service. This will however result in a pairing pop-up dialog, if link is not encrypted. This feature is disabled by default. In order to enable this feature, please set `CONFIG_WIFI_PROV_BLE_FORCE_ENCRYPTION=y` in the sdkconfig or select the configuration using "idf.py menuconfig" .
+
+```
+Component Config --> Wi-Fi Provisioning Manager --> Force Link Encryption during Characteristic Read/Write
+
+```
+Recompiling the application with above changes should suffice to enable this functionality.
+
+
 ### Unsupported platform
 
 If the platform requirement, for running `esp_prov` is not satisfied, then the script execution will fallback to console mode, in which case the full process (involving user inputs) will look like this :
