@@ -5,9 +5,12 @@
  */
 
 #include "test_utils.h"
-#include "esp_cpu.h"
 
 #define configTEST_DEFAULT_STACK_SIZE               4096
 #define configTEST_UNITY_TASK_PRIORITY              UNITY_FREERTOS_PRIORITY
 
-#define portTEST_GET_TIME()                         ((UBaseType_t) esp_cpu_get_cycle_count())
+#define portTEST_REF_CLOCK_TYPE                     uint32_t
+#define portTEST_REF_CLOCK_INIT()                   ref_clock_init()
+#define portTEST_REF_CLOCK_DEINIT()                 ref_clock_deinit()
+#define portTEST_REF_CLOCK_GET_TIME()               ((uint32_t) ref_clock_get())
+#define portTEST_TICKS_TO_REF_CLOCK(ticks)          ((ticks) * (1000000/configTICK_RATE_HZ))
