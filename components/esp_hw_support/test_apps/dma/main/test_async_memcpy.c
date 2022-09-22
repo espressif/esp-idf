@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <sys/param.h>
 #include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
@@ -19,14 +20,12 @@
 #include "soc/soc_caps.h"
 #include "hal/dma_types.h"
 
-#if SOC_CP_DMA_SUPPORTED || SOC_GDMA_SUPPORTED
-
 #define ALIGN_UP(addr, align) (((addr) + (align)-1) & ~((align)-1))
 #define ALIGN_DOWN(size, align)  ((size) & ~((align) - 1))
 
 typedef struct {
     uint32_t seed;
-    uint32_t buffer_size;
+    size_t buffer_size;
     uint8_t *src_buf;
     uint8_t *dst_buf;
     uint8_t *from_addr;
@@ -41,7 +40,7 @@ static void async_memcpy_setup_testbench(memcpy_testbench_context_t *test_contex
 {
     srand(test_context->seed);
     printf("allocating memory buffer...\r\n");
-    uint32_t buffer_size = test_context->buffer_size;
+    size_t buffer_size = test_context->buffer_size;
     uint8_t *src_buf = NULL;
     uint8_t *dst_buf = NULL;
     uint8_t *from_addr = NULL;
@@ -75,7 +74,7 @@ static void async_memcpy_setup_testbench(memcpy_testbench_context_t *test_contex
     to_addr += test_context->offset;
     buffer_size -= test_context->offset;
 
-    printf("...size %d Bytes, src@%p, dst@%p\r\n", buffer_size, from_addr, to_addr);
+    printf("...size %zu Bytes, src@%p, dst@%p\r\n", buffer_size, from_addr, to_addr);
     printf("fill src buffer with random data\r\n");
     for (int i = 0; i < buffer_size; i++) {
         from_addr[i] = rand() % 256;
@@ -332,5 +331,3 @@ TEST_CASE("memory copy performance test 4KB", "[async mcp]")
 {
     memcpy_performance_test(4 * 1024);
 }
-
-#endif //SOC_CP_DMA_SUPPORTED || SOC_GDMA_SUPPORTED
