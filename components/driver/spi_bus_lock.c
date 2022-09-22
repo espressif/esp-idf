@@ -224,6 +224,44 @@ struct spi_bus_lock_dev_t {
     uint32_t            mask;       ///< Bitwise OR-ed mask of the REQ, PEND, LOCK bits of this device
 };
 
+/**
+ * @note 1
+ * This critical section is only used to fix such condition:
+ *
+ * define: lock_bits = (lock->status & LOCK_MASK) >> LOCK_SHIFT;  This `lock_bits` is the Bit 29-20 of the lock->status
+ *
+ * 1. spi_hdl_1:
+ *    acquire_end_core():
+ *    uint32_t status = lock_status_clear(lock, dev_handle->mask & LOCK_MASK);
+ *
+ *    Becuase this is the first `spi_hdl_1`, so after this , lock_bits == 0`b0. status == 0
+ *
+ * 2. spi_hdl_2:
+ *    acquire_core:
+ *    uint32_t status = lock_status_fetch_set(lock, dev_handle->mask & LOCK_MASK);
+ *
+ *    Then here status is 0`b0, but lock_bits == 0`b10. Because this is the `spi_hdl_2`
+ *
+ * 3. spi_hdl_2:
+ *    `acquire_core` return true, because status == 0. `spi_bus_lock_acquire_start(spi_hdl_2)` then won't block.
+ *
+ * 4. spi_hdl_2:
+ *    spi_device_polling_end(spi_hdl_2).
+ *
+ * 5. spi_hdl_1:
+ *    acquire_end_core:
+ *    status is 0, so it cleas the lock->acquiring_dev
+ *
+ * 6. spi_hdl_2:
+ *    spi_device_polling_end:
+ *    assert(handle == get_acquiring_dev(host)); Fail
+ *
+ * @note 2
+ * Only use this critical section in this condition. The critical section scope is limited to the smallest.
+ * As `spi_bus_lock` influences the all the SPIs (including MSPI) a lot!
+ */
+portMUX_TYPE s_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
 DRAM_ATTR static const char TAG[] = "bus_lock";
 
 #define LOCK_CHECK(a, str, ret_val, ...) \
@@ -330,7 +368,11 @@ SPI_MASTER_ATTR static inline void req_core(spi_bus_lock_dev_t *dev_handle)
 SPI_MASTER_ISR_ATTR static inline bool acquire_core(spi_bus_lock_dev_t *dev_handle)
 {
     spi_bus_lock_t* lock = dev_handle->parent;
+
+    //For this critical section, search `@note 1` in this file, to know details
+    portENTER_CRITICAL_SAFE(&s_spinlock);
     uint32_t status = lock_status_fetch_set(lock, dev_handle->mask & LOCK_MASK);
+    portEXIT_CRITICAL_SAFE(&s_spinlock);
 
     // Check all bits except WEAK_BG
     if ((status & (BG_MASK | LOCK_MASK)) == 0) {
@@ -408,10 +450,14 @@ schedule_core(spi_bus_lock_t *lock, uint32_t status, spi_bus_lock_dev_t **out_de
 IRAM_ATTR static inline void acquire_end_core(spi_bus_lock_dev_t *dev_handle)
 {
     spi_bus_lock_t* lock = dev_handle->parent;
-    uint32_t status = lock_status_clear(lock, dev_handle->mask & LOCK_MASK);
     spi_bus_lock_dev_t* desired_dev = NULL;
 
+    //For this critical section, search `@note 1` in this file, to know details
+    portENTER_CRITICAL_SAFE(&s_spinlock);
+    uint32_t status = lock_status_clear(lock, dev_handle->mask & LOCK_MASK);
     bool invoke_bg = !schedule_core(lock, status, &desired_dev);
+    portEXIT_CRITICAL_SAFE(&s_spinlock);
+
     if (invoke_bg) {
         bg_enable(lock);
     } else if (desired_dev) {
