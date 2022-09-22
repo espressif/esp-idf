@@ -42,7 +42,7 @@
 #define SOC_RTC_MEM_SUPPORTED           1
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
-// #define SOC_SDM_SUPPORTED               1 // TODO: IDF-5318
+#define SOC_SDM_SUPPORTED               1
 // #define SOC_LEDC_SUPPORTED              1 // TODO: IDF-5328
 // #define SOC_I2C_SUPPORTED               1 // TODO: IDF-5326
 #define SOC_SYSTIMER_SUPPORTED          1
@@ -268,7 +268,6 @@
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
 
-// TODO: IDF-5318 (Copy from esp32c3, need check)
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_GROUPS             1U
 #define SOC_SDM_CHANNELS_PER_GROUP 4
