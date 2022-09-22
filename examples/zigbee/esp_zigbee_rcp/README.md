@@ -3,8 +3,6 @@
 
 # Rcp Example 
 
-(See the `README.md` file in the upper level 'examples' directory for more information about examples.)
-
 This test code shows how to configure Zigbee rcp (radio co-processor) device. Rcp doesn't function alone, it needs to work together with Zigbee gateway (see [esp_zigbee_gateway example](../esp_zigbee_gateway))
 
 ## Hardware Required
@@ -17,6 +15,10 @@ This test code shows how to configure Zigbee rcp (radio co-processor) device. Rc
 ## Configure the project
 
 Before project configuration and build, make sure to set the correct chip target using `idf.py --preview set-target esp32h2`
+
+## Erase the NVRAM
+
+Before flash it to the board, it is recommended to erase NVRAM if user doesn't want to keep the previous examples or other projects stored info using `idf.py -p PORT erase-flash`
 
 ## Build and Flash
 
