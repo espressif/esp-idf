@@ -8,7 +8,6 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_err.h"
@@ -104,6 +103,7 @@ static mcpwm_context_t context[SOC_MCPWM_GROUPS] = {
         .mcpwm_intr_handle = NULL,
         .cap_isr_func = {[0 ... SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER - 1] = {NULL, NULL}},
     },
+#if SOC_MCPWM_GROUPS > 1
     [1] = {
         .hal = {MCPWM_LL_GET_HW(1)},
         .spinlock = portMUX_INITIALIZER_UNLOCKED,
@@ -116,6 +116,7 @@ static mcpwm_context_t context[SOC_MCPWM_GROUPS] = {
         .mcpwm_intr_handle = NULL,
         .cap_isr_func = {[0 ... SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER - 1] = {NULL, NULL}},
     }
+#endif
 };
 
 typedef void (*mcpwm_ll_gen_set_event_action_t)(mcpwm_dev_t *mcpwm, int op, int gen, int action);

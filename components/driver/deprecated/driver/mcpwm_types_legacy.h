@@ -68,7 +68,9 @@ typedef struct {
  */
 typedef enum {
     MCPWM_UNIT_0,   /*!<MCPWM unit0 selected*/
+#if SOC_MCPWM_GROUPS > 1
     MCPWM_UNIT_1,   /*!<MCPWM unit1 selected*/
+#endif
     MCPWM_UNIT_MAX, /*!<Max number of MCPWM units*/
 } mcpwm_unit_t;
 
