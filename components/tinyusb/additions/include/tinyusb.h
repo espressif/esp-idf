@@ -19,7 +19,12 @@ extern "C" {
 #endif
 
 /**
- * @brief Configuration structure of the tinyUSB core
+ * @brief Configuration structure of the TinyUSB core
+ *
+ * USB specification mandates self-powered devices to monitor USB VBUS to detect connection/disconnection events.
+ * If you want to use this feature, connected VBUS to any free GPIO through a voltage divider or voltage comparator.
+ * The voltage divider output should be (0.75 * Vdd) if VBUS is 4.4V (lowest valid voltage at device port).
+ * The comparator thresholds should be set with hysteresis: 4.35V (falling edge) and 4.75V (raising edge).
  */
 typedef struct {
     union {
@@ -29,6 +34,8 @@ typedef struct {
     const char **string_descriptor;            /*!< Pointer to an array of string descriptors */
     bool external_phy;                         /*!< Should USB use an external PHY */
     const uint8_t *configuration_descriptor;   /*!< Pointer to a configuration descriptor. If set to NULL, TinyUSB device will use a default configuration descriptor whose values are set in Kconfig */
+    bool self_powered;                         /*!< This is a self-powered USB device. USB VBUS must be monitored. */
+    int vbus_monitor_io;                       /*!< GPIO for VBUS monitoring. Ignored if not self_powered. */
 } tinyusb_config_t;
 
 /**
