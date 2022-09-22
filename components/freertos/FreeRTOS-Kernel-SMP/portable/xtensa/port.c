@@ -20,6 +20,7 @@
 #include "esp_private/esp_int_wdt.h"
 #include "esp_private/systimer.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
 #include "esp_task.h"
@@ -598,6 +599,240 @@ const DRAM_ATTR uint32_t offset_uxCoreAffinityMask = offsetof(StaticTask_t, uxDu
 #endif // ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 const DRAM_ATTR uint32_t offset_cpsa = XT_CP_SIZE;
 
+/**
+ * @brief Align stack pointer in a downward growing stack
+ *
+ * This macro is used to round a stack pointer downwards to the nearest n-byte boundary, where n is a power of 2.
+ * This macro is generally used when allocating aligned areas on a downward growing stack.
+ */
+#define STACKPTR_ALIGN_DOWN(n, ptr)     ((ptr) & (~((n)-1)))
+
+#if XCHAL_CP_NUM > 0
+/**
+ * @brief Allocate and initialize coprocessor save area on the stack
+ *
+ * This function allocates the coprocessor save area on the stack (sized XT_CP_SIZE) which includes...
+ *  - Individual save areas for each coprocessor (size XT_CPx_SA, inclusive of each area's alignment)
+ *  - Coprocessor context switching flags (e.g., XT_CPENABLE, XT_CPSTORED, XT_CP_CS_ST, XT_CP_ASA).
+ *
+ * The coprocessor save area is aligned to a 16-byte boundary.
+ * The coprocessor context switching flags are then initialized
+ *
+ * @param[in] uxStackPointer Current stack pointer address
+ * @return Stack pointer that points to allocated and initialized the coprocessor save area
+ */
+FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackCPSA(UBaseType_t uxStackPointer)
+{
+    /*
+    HIGH ADDRESS
+    |-------------------|      XT_CP_SIZE
+    | CPn SA            |           ^
+    | ...               |           |
+    | CP0 SA            |           |
+    | ----------------- |           |       ---- XCHAL_TOTAL_SA_ALIGN aligned
+    |-------------------|           |   12 bytes
+    | XT_CP_ASA         |           |       ^
+    | XT_CP_CS_ST       |           |       |
+    | XT_CPSTORED       |           |       |
+    | XT_CPENABLE       |           |       |
+    |-------------------| ---------------------- 16 byte aligned
+    LOW ADDRESS
+    */
+
+    // Allocate overall coprocessor save area, aligned down to 16 byte boundary
+    uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - XT_CP_SIZE);
+    // Initialize the coprocessor context switching flags.
+    uint32_t *p = (uint32_t *)uxStackPointer;
+    p[0] = 0;   // Clear XT_CPENABLE and XT_CPSTORED
+    p[1] = 0;   // Clear XT_CP_CS_ST
+    // XT_CP_ASA points to the aligned start of the individual CP save areas (i.e., start of CP0 SA)
+    p[2] = (uint32_t)ALIGNUP(XCHAL_TOTAL_SA_ALIGN, (uint32_t)uxStackPointer + 12);
+    return uxStackPointer;
+}
+#endif /* XCHAL_CP_NUM > 0 */
+
+/**
+ * @brief Allocate and initialize GCC TLS area
+ *
+ * This function allocates and initializes the area on the stack used to store GCC TLS (Thread Local Storage) variables.
+ * - The area's size is derived from the TLS section's linker variables, and rounded up to a multiple of 16 bytes
+ * - The allocated area is aligned to a 16-byte aligned address
+ * - The TLS variables in the area are then initialized
+ *
+ * Each task access the TLS variables using the THREADPTR register plus an offset to obtain the address of the variable.
+ * The value for the THREADPTR register is also calculated by this function, and that value should be use to initialize
+ * the THREADPTR register.
+ *
+ * @param[in] uxStackPointer Current stack pointer address
+ * @param[out] ret_threadptr_reg_init Calculated THREADPTR register initialization value
+ * @return Stack pointer that points to the TLS area
+ */
+FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, uint32_t *ret_threadptr_reg_init)
+{
+    /*
+    TLS layout at link-time, where 0xNNN is the offset that the linker calculates to a particular TLS variable.
+
+    LOW ADDRESS
+            |---------------------------|   Linker Symbols
+            | Section                   |   --------------
+            | .flash.rodata             |
+         0x0|---------------------------| <- _flash_rodata_start
+          ^ | Other Data                |
+          | |---------------------------| <- _thread_local_start
+          | | .tbss                     | ^
+          V |                           | |
+      0xNNN | int example;              | | tls_area_size
+            |                           | |
+            | .tdata                    | V
+            |---------------------------| <- _thread_local_end
+            | Other data                |
+            | ...                       |
+            |---------------------------|
+    HIGH ADDRESS
+    */
+    // Calculate the TLS area's size (rounded up to multiple of 16 bytes).
+    extern int _thread_local_start, _thread_local_end, _flash_rodata_start, _flash_rodata_align;
+    const uint32_t tls_area_size = ALIGNUP(16, (uint32_t)&_thread_local_end - (uint32_t)&_thread_local_start);
+    // TODO: check that TLS area fits the stack
+
+    // Allocate space for the TLS area on the stack. The area must be allocated at a 16-byte aligned address
+    uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - (UBaseType_t)tls_area_size);
+    // Initialize the TLS area with the initialization values of each TLS variable
+    memcpy((void *)uxStackPointer, &_thread_local_start, tls_area_size);
+
+    /*
+    Calculate the THREADPTR register's initialization value based on the link-time offset and the TLS area allocated on
+    the stack.
+
+    HIGH ADDRESS
+            |---------------------------|
+            | .tdata (*)                |
+          ^ | int example;              |
+          | |                           |
+          | | .tbss (*)                 |
+          | |---------------------------| <- uxStackPointer (start of TLS area)
+    0xNNN | |                           | ^
+          | |                           | |
+          |             ...               | (_thread_local_start - _flash_rodata_start) + align_up(TCB_SIZE, tls_section_alignment)
+          | |                           | |
+          | |                           | V
+          V |                           | <- threadptr register's value
+
+    LOW ADDRESS
+
+    Note: Xtensa is slightly different compared to the RISC-V port as there is an implicit aligned TCB_SIZE added to
+    the offset. (search for 'tpoff' in elf32-xtensa.c in BFD):
+        - "offset = address - tls_section_vma + align_up(TCB_SIZE, tls_section_alignment)"
+        - TCB_SIZE is hardcoded to 8
+    */
+    const uint32_t tls_section_align = (uint32_t)&_flash_rodata_align;  // ALIGN value of .flash.rodata section
+    #define TCB_SIZE 8
+    const uint32_t base = ALIGNUP(tls_section_align, TCB_SIZE);
+    *ret_threadptr_reg_init = (uint32_t)uxStackPointer - ((uint32_t)&_thread_local_start - (uint32_t)&_flash_rodata_start) - base;
+
+    return uxStackPointer;
+}
+
+/**
+ * @brief Initialize the task's starting interrupt stack frame
+ *
+ * This function initializes the task's starting interrupt stack frame. The dispatcher will use this stack frame in a
+ * context restore routine. Therefore, the starting stack frame must be initialized as if the task was interrupted right
+ * before its first instruction is called.
+ *
+ * - The stack frame is allocated to a 16-byte aligned address
+ * - The THREADPTR register is saved in the extra storage area of the stack frame. This is also initialized
+ *
+ * @param[in] uxStackPointer Current stack pointer address
+ * @param[in] pxCode Task function
+ * @param[in] pvParameters Task function's parameter
+ * @param[in] threadptr_reg_init THREADPTR register initialization value
+ * @return Stack pointer that points to the stack frame
+ */
+FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackFrame(UBaseType_t uxStackPointer, TaskFunction_t pxCode, void *pvParameters, uint32_t threadptr_reg_init)
+{
+    /*
+    HIGH ADDRESS
+    |---------------------------|       ^ XT_STK_FRMSZ
+    |                           |       |
+    | Stack Frame Extra Storage |       |
+    |                           |       |
+    | ------------------------- |       |   ^ XT_STK_EXTRA
+    |                           |       |   |
+    | Intr/Exc Stack Frame      |       |   |
+    |                           |       V   V
+    | ------------------------- | ---------------------- 16 byte aligned
+    LOW ADDRESS
+    */
+
+    /*
+    Allocate space for the task's starting interrupt stack frame.
+    - The stack frame must be allocated to a 16-byte aligned address.
+    - We use XT_STK_FRMSZ (instead of sizeof(XtExcFrame)) as it...
+        - includes the size of the extra storage area
+        - includes the size for a base save area before the stack frame
+        - rounds up the total size to a multiple of 16
+    */
+    UBaseType_t uxStackPointerPrevious = uxStackPointer;
+    uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - XT_STK_FRMSZ);
+
+    // Clear the entire interrupt stack frame
+    memset((void *)uxStackPointer, 0, (size_t)(uxStackPointerPrevious - uxStackPointer));
+
+    XtExcFrame *frame = (XtExcFrame *)uxStackPointer;
+
+    /*
+    Initialize common registers
+    */
+    frame->a0 = 0;                                          // Set the return address to 0 terminate GDB backtrace
+    frame->a1 = uxStackPointer + XT_STK_FRMSZ;              // Saved stack pointer should point to physical top of stack frame
+    frame->exit = (UBaseType_t) _xt_user_exit;              // User exception exit dispatcher
+
+    /*
+    Initialize the task's entry point. This will differ depending on
+    - Whether the task's entry point is the wrapper function or pxCode
+    - Whether Windowed ABI is used (for windowed, we mimic the task entry point being call4'd )
+    */
+    #if CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
+        frame->pc = (UBaseType_t) vPortTaskWrapper;         // Task entry point is the wrapper function
+        #ifdef __XTENSA_CALL0_ABI__
+            frame->a2 = (UBaseType_t) pxCode;               // Wrapper function's argument 0 (which is the task function)
+            frame->a3 = (UBaseType_t) pvParameters;         // Wrapper function's argument 1 (which is the task function's argument)
+        #else // __XTENSA_CALL0_ABI__
+            frame->a6 = (UBaseType_t) pxCode;               // Wrapper function's argument 0 (which is the task function), passed as if we call4'd
+            frame->a7 = (UBaseType_t) pvParameters;         // Wrapper function's argument 1 (which is the task function's argument), passed as if we call4'd
+        #endif // __XTENSA_CALL0_ABI__
+    #else
+        frame->pc = (UBaseType_t) pxCode;                   // Task entry point is the provided task function
+        #ifdef __XTENSA_CALL0_ABI__
+            frame->a2 = (UBaseType_t) pvParameters;         // Task function's argument
+        #else // __XTENSA_CALL0_ABI__
+            frame->a6 = (UBaseType_t) pvParameters;         // Task function's argument, passed as if we call4'd
+        #endif // __XTENSA_CALL0_ABI__
+    #endif
+
+    /*
+    Set initial PS to int level 0, EXCM disabled ('rfe' will enable), user mode.
+    For windowed ABI also set WOE and CALLINC (pretend task was 'call4'd)
+    */
+    #ifdef __XTENSA_CALL0_ABI__
+        frame->ps = PS_UM | PS_EXCM;
+    #else // __XTENSA_CALL0_ABI__
+        frame->ps = PS_UM | PS_EXCM | PS_WOE | PS_CALLINC(1);
+    #endif // __XTENSA_CALL0_ABI__
+
+    #ifdef XT_USE_SWPRI
+        // Set the initial virtual priority mask value to all 1's.
+        frame->vpri = 0xFFFFFFFF;
+    #endif
+
+    // Initialize the threadptr register in the extra save area of the stack frame
+    uint32_t *threadptr_reg = (uint32_t *)(uxStackPointer + XT_STK_EXTRA);
+    *threadptr_reg = threadptr_reg_init;
+
+    return uxStackPointer;
+}
+
 #if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
 StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
                                      StackType_t * pxEndOfStack,
@@ -609,108 +844,41 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
                                      void * pvParameters )
 #endif
 {
-    StackType_t *sp, *tp;
-    XtExcFrame  *frame;
-#if XCHAL_CP_NUM > 0
-    uint32_t *p;
-#endif
-    uint32_t *threadptr;
-    void *task_thread_local_start;
-    extern int _thread_local_start, _thread_local_end, _flash_rodata_start, _flash_rodata_align;
-    // TODO: check that TLS area fits the stack
-    uint32_t thread_local_sz = (uint8_t *)&_thread_local_end - (uint8_t *)&_thread_local_start;
+    /*
+    HIGH ADDRESS
+    |---------------------------| <- pxTopOfStack on entry
+    | Coproc Save Area          |
+    | ------------------------- |
+    | TLS Variables             |
+    | ------------------------- | <- Start of useable stack
+    | Starting stack frame      |
+    | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
+    |             |             |
+    |             |             |
+    |             V             |
+    ----------------------------- <- Bottom of stack
+    LOW ADDRESS
 
-    thread_local_sz = ALIGNUP(0x10, thread_local_sz);
+    - All stack areas are aligned to 16 byte boundary
+    - We use UBaseType_t for all of stack area initialization functions for more convenient pointer arithmetic
+    */
 
-    /* Initialize task's stack so that we have the following structure at the top:
-
-        ----LOW ADDRESSES ----------------------------------------HIGH ADDRESSES----------
-         task stack | interrupt stack frame | thread local vars | co-processor save area |
-        ----------------------------------------------------------------------------------
-                    |                                                                     |
-                    SP                                                                 pxTopOfStack
-
-        All parts are aligned to 16 byte boundary. */
-    sp = (StackType_t *) (((UBaseType_t)pxTopOfStack - XT_CP_SIZE - thread_local_sz - XT_STK_FRMSZ) & ~0xf);
-
-    /* Clear the entire frame (do not use memset() because we don't depend on C library) */
-    for (tp = sp; tp <= pxTopOfStack; ++tp) {
-        *tp = 0;
-    }
-
-    frame = (XtExcFrame *) sp;
-
-    /* Explicitly initialize certain saved registers */
-#if CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
-    frame->pc    = (UBaseType_t) vPortTaskWrapper;    /* task wrapper                        */
-#else
-    frame->pc   = (UBaseType_t) pxCode;                /* task entrypoint                    */
-#endif
-    frame->a0    = 0;                                /* to terminate GDB backtrace        */
-    frame->a1    = (UBaseType_t) sp + XT_STK_FRMSZ;    /* physical top of stack frame        */
-    frame->exit = (UBaseType_t) _xt_user_exit;        /* user exception exit dispatcher    */
-
-    /* Set initial PS to int level 0, EXCM disabled ('rfe' will enable), user mode. */
-    /* Also set entry point argument parameter. */
-#ifdef __XTENSA_CALL0_ABI__
-#if CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
-    frame->a2 = (UBaseType_t) pxCode;
-    frame->a3 = (UBaseType_t) pvParameters;
-#else
-    frame->a2 = (UBaseType_t) pvParameters;
-#endif
-    frame->ps = PS_UM | PS_EXCM;
-#else /* __XTENSA_CALL0_ABI__ */
-    /* + for windowed ABI also set WOE and CALLINC (pretend task was 'call4'd). */
-#if CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
-    frame->a6 = (UBaseType_t) pxCode;
-    frame->a7 = (UBaseType_t) pvParameters;
-#else
-    frame->a6 = (UBaseType_t) pvParameters;
-#endif
-    frame->ps = PS_UM | PS_EXCM | PS_WOE | PS_CALLINC(1);
-#endif /* __XTENSA_CALL0_ABI__ */
-
-#ifdef XT_USE_SWPRI
-    /* Set the initial virtual priority mask value to all 1's. */
-    frame->vpri = 0xFFFFFFFF;
-#endif
-
-    /* Init threadptr register and set up TLS run-time area.
-     * The diagram in port/riscv/port.c illustrates the calculations below.
-     */
-    task_thread_local_start = (void *)(((uint32_t)pxTopOfStack - XT_CP_SIZE - thread_local_sz) & ~0xf);
-    memcpy(task_thread_local_start, &_thread_local_start, thread_local_sz);
-    threadptr = (uint32_t *)(sp + XT_STK_EXTRA);
-    /* Calculate THREADPTR value.
-     * The generated code will add THREADPTR value to a constant value determined at link time,
-     * to get the address of the TLS variable.
-     * The constant value is calculated by the linker as follows
-     * (search for 'tpoff' in elf32-xtensa.c in BFD):
-     *    offset = address - tls_section_vma + align_up(TCB_SIZE, tls_section_alignment)
-     * where TCB_SIZE is hardcoded to 8.
-     * Note this is slightly different compared to the RISC-V port, where offset = address - tls_section_vma.
-     */
-    const uint32_t tls_section_alignment = (uint32_t) &_flash_rodata_align;  /* ALIGN value of .flash.rodata section */
-    const uint32_t tcb_size = 8; /* Unrelated to FreeRTOS, this is the constant from BFD */
-    const uint32_t base = (tcb_size + tls_section_alignment - 1) & (~(tls_section_alignment - 1));
-    *threadptr = (uint32_t)task_thread_local_start - ((uint32_t)&_thread_local_start - (uint32_t)&_flash_rodata_start) - base;
+    UBaseType_t uxStackPointer = (UBaseType_t)pxTopOfStack;
 
 #if XCHAL_CP_NUM > 0
-    /* Init the coprocessor save area (see xtensa_context.h) */
-    /* No access to TCB here, so derive indirectly. Stack growth is top to bottom.
-     * //p = (uint32_t *) xMPUSettings->coproc_area;
-     */
-    p = (uint32_t *)(((uint32_t) pxTopOfStack - XT_CP_SIZE) & ~0xf);
-    configASSERT( ( uint32_t ) p >= frame->a1 );
-    p[0] = 0;
-    p[1] = 0;
-    p[2] = (((uint32_t) p) + 12 + XCHAL_TOTAL_SA_ALIGN - 1) & -XCHAL_TOTAL_SA_ALIGN;
-#endif /* XCHAL_CP_NUM */
+    // Initialize the coprocessor save area
+    uxStackPointer = uxInitialiseStackCPSA(uxStackPointer);
+#endif /* XCHAL_CP_NUM > 0 */
 
-    return sp;
+    // Initialize the GCC TLS area
+    uint32_t threadptr_reg_init;
+    uxStackPointer = uxInitialiseStackTLS(uxStackPointer, &threadptr_reg_init);
+
+    // Initialize the starting interrupt stack frame
+    uxStackPointer = uxInitialiseStackFrame(uxStackPointer, pxCode, pvParameters, threadptr_reg_init);
+    // Return the task's current stack pointer address which should point to the starting interrupt stack frame
+    return (StackType_t *)uxStackPointer;
 }
-
 // -------------------- Co-Processor -----------------------
 #if ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 
