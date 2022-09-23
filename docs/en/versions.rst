@@ -185,7 +185,8 @@ Updating to Stable Release
 To update to a new ESP-IDF release (recommended for production use), this is the process to follow:
 
 - Check the `Releases page`_ regularly for new releases.
-- When a bugfix release for the version you are using is released (for example, if using ``v3.0.1`` and ``v3.0.2`` is released), check out the new bugfix version into the existing ESP-IDF directory:
+- When a bugfix release for the version you are using is released (for example, if using ``v3.0.1`` and ``v3.0.2`` is released), check out the new bugfix version into the existing ESP-IDF directory.
+- In Linux or macOS system, please run the following commands to update the local branch to vX.Y.Z:
 
 .. code-block:: bash
 
@@ -194,6 +195,7 @@ To update to a new ESP-IDF release (recommended for production use), this is the
     git checkout vX.Y.Z
     git submodule update --init --recursive
 
+- In the Windows system, please replace ``cd $IDF_PATH`` with ``cd %IDF_PATH%``.
 - When major or minor updates are released, check the Release Notes on the releases page and decide if you want to update or to stay with your current release. Updating is via the same Git commands shown above.
 
 .. note:: If you installed the stable release via zip file instead of using git, it might not be possible to update versions using the commands. In this case, update by downloading a new zip file and replacing the entire ``IDF_PATH`` directory with its contents.
@@ -217,13 +219,16 @@ Updating to Master Branch
 
 To use the latest version on the ESP-IDF master branch, this is the process to follow:
 
-- Check out the master branch locally::
+- In Linux or macOS system, please run the following commands to check out to the master branch locally:
+
+.. code-block:: bash
 
     cd $IDF_PATH
     git checkout master
     git pull
     git submodule update --init --recursive
 
+- In the Windows system, please replace ``cd $IDF_PATH`` with ``cd %IDF_PATH%``.
 - Periodically, re-run ``git pull`` to pull the latest version of master. Note that you may need to change your project or report bugs after updating your master branch.
 - To switch from master to a release branch or stable version, run ``git checkout`` as shown in the other sections.
 
@@ -240,13 +245,17 @@ In terms of stability, using a release branch is part-way between using the mast
 
 You can find a `list of branches`_ on GitHub.
 
-For example, to follow the branch for ESP-IDF v3.1, including any bugfixes for future releases like ``v3.1.1``, etc::
+For example, in Linux or macOS system, you can execute the following commands to follow the branch for ESP-IDF v3.1, including any bugfixes for future releases like ``v3.1.1``, etc:
+
+.. code-block:: bash
 
   cd $IDF_PATH
   git fetch
   git checkout release/v3.1
   git pull
   git submodule update --init --recursive
+
+In the Windows system, please replace ``cd $IDF_PATH`` with ``cd %IDF_PATH%``.
 
 Each time you ``git pull`` this branch, ESP-IDF will be updated with fixes for this release.
 
