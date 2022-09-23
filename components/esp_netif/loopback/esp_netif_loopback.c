@@ -32,6 +32,11 @@ static bool s_netif_up = false;
  *
  *
  */
+
+#ifndef NETIF_MAX_HWADDR_LEN
+#define NETIF_MAX_HWADDR_LEN 6U
+#endif
+
 struct esp_netif_obj {
     // default interface addresses
     uint8_t mac[NETIF_MAX_HWADDR_LEN];
@@ -112,9 +117,9 @@ static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_
     // Configure general esp-netif properties
     memcpy(esp_netif->mac, cfg->base->mac, NETIF_MAX_HWADDR_LEN);
     if (cfg->base->ip_info == NULL) {
-        ip4_addr_set_zero(&esp_netif->ip_info->ip);
-        ip4_addr_set_zero(&esp_netif->ip_info->gw);
-        ip4_addr_set_zero(&esp_netif->ip_info->netmask);
+        esp_netif->ip_info->ip.addr = 0;
+        esp_netif->ip_info->gw.addr = 0;
+        esp_netif->ip_info->netmask.addr = 0;
     } else {
         memcpy(esp_netif->ip_info, cfg->base->ip_info, sizeof(esp_netif_ip_info_t));
     }
@@ -450,7 +455,7 @@ esp_err_t esp_netif_leave_ip6_multicast_group(esp_netif_t *esp_netif, const esp_
     return ESP_ERR_NOT_SUPPORTED;
 }
 
-esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr, uint8_t preference)
+esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const ip_event_add_ip6_t *addr)
 {
     return ESP_ERR_NOT_SUPPORTED;
 }

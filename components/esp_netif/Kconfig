@@ -20,6 +20,7 @@ menu "ESP NETIF Adapter"
             Choose the TCP/IP Stack to work, for example, LwIP, uIP, etc.
         config ESP_NETIF_TCPIP_LWIP
             bool "LwIP"
+            select ESP_NETIF_USES_TCPIP_WITH_BSD_API
             help
                 lwIP is a small independent implementation of the TCP/IP protocol suite.
 
@@ -30,6 +31,9 @@ menu "ESP NETIF Adapter"
                 to receive function. This option is for testing purpose only
 
     endchoice
+
+    config ESP_NETIF_USES_TCPIP_WITH_BSD_API
+        bool # Set to true if the chosen TCP/IP stack provides BSD socket API
 
     config ESP_NETIF_L2_TAP
         bool "Enable netif L2 TAP support"

@@ -16,10 +16,8 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 
-#if CONFIG_ESP_NETIF_TCPIP_LWIP
-
 #include <string.h>
-#include "lwip/sockets.h"
+#include "sys/socket.h"
 #include "esp_smartconfig.h"
 #include "smartconfig_ack.h"
 
@@ -231,5 +229,3 @@ void sc_send_ack_stop(void)
 {
     s_sc_ack_send = false;
 }
-
-#endif

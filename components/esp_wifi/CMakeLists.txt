@@ -20,12 +20,16 @@ if(CONFIG_ESP32_WIFI_ENABLED)
         "src/coexist.c"
         "src/mesh_event.c"
         "src/smartconfig.c"
-        "src/smartconfig_ack.c"
         "src/wifi_init.c"
         "src/wifi_default.c"
         "src/wifi_netif.c"
         "src/wifi_default_ap.c"
         "${idf_target}/esp_adapter.c")
+
+    if(CONFIG_ESP_NETIF_USES_TCPIP_WITH_BSD_API)
+        list(APPEND srcs
+            "src/smartconfig_ack.c")
+    endif()
 endif()
 
 idf_component_register(SRCS "${srcs}"

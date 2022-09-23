@@ -10,7 +10,9 @@
 #include "lwip/netif.h"
 #include "esp_netif_ppp.h"
 
-#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef err_t (*init_fn_t)(struct netif*);
 typedef void (*input_fn_t)(void *netif, void *buffer, size_t len, void *eb);
@@ -72,4 +74,6 @@ err_t wlanif_init_sta(struct netif *netif);
  */
 void wlanif_input(void *h, void *buffer, size_t len, void* l2_buff);
 
-#endif // CONFIG_ESP_NETIF_TCPIP_LWIP
+#ifdef __cplusplus
+}
+#endif
