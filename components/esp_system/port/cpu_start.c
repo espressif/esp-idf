@@ -65,7 +65,6 @@
 #include "esp32c2/rom/cache.h"
 #include "esp32c2/rom/rtc.h"
 #include "esp32c2/rom/secure_boot.h"
-#include "esp32c2/memprot.h"
 #endif
 
 #include "esp_private/esp_mmu_map_private.h"

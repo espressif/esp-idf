@@ -16,12 +16,8 @@
 #include "soc/timer_periph.h"
 
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#if CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/memprot.h"
-#else
 #include "esp_private/esp_memprot_internal.h"
 #include "esp_memprot.h"
-#endif
 #endif
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
