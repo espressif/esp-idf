@@ -203,12 +203,12 @@ esp_err_t esp_psram_init(void)
     size_t total_mapped_size = 0;
     size_t size_to_map = 0;
     size_t byte_aligned_size = 0;
-    ret = esp_mmu_get_largest_free_block(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, &byte_aligned_size);
+    ret = esp_mmu_get_max_consecutive_free_block(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, &byte_aligned_size);
     assert(ret == ESP_OK);
     size_to_map = MIN(byte_aligned_size, psram_available_size);
 
     const void *v_start_8bit_aligned = NULL;
-    ret = esp_mmu_find_vaddr_range(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, &v_start_8bit_aligned);
+    ret = esp_mmu_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, &v_start_8bit_aligned);
     assert(ret == ESP_OK);
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -248,12 +248,12 @@ esp_err_t esp_psram_init(void)
         size_to_map = psram_available_size - total_mapped_size;
 
         size_t word_aligned_size = 0;
-        ret = esp_mmu_get_largest_free_block(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, &word_aligned_size);
+        ret = esp_mmu_get_max_consecutive_free_block(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, &word_aligned_size);
         assert(ret == ESP_OK);
         size_to_map = MIN(word_aligned_size, size_to_map);
 
         const void *v_start_32bit_aligned = NULL;
-        ret = esp_mmu_find_vaddr_range(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, &v_start_32bit_aligned);
+        ret = esp_mmu_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, &v_start_32bit_aligned);
         assert(ret == ESP_OK);
 
         mmu_hal_map_region(0, MMU_TARGET_PSRAM0, (intptr_t)v_start_32bit_aligned, MMU_PAGE_TO_BYTES(start_page), size_to_map, &actual_mapped_len);

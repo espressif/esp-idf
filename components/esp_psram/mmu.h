@@ -47,21 +47,21 @@ void esp_mmu_init(void);
  *        - ESP_OK:              On success
  *        - ESP_ERR_INVALID_ARG: Invalid arguments, could be null pointer
  */
-esp_err_t esp_mmu_get_largest_free_block(int caps, size_t *out_len);
+esp_err_t esp_mmu_get_max_consecutive_free_block(int caps, size_t *out_len);
 
 /**
- * @brief Find a consecutive external virtual memory range, with given capabilities and size
+ * @brief Reserve a consecutive external virtual memory block, with given capabilities and size
  *
  * @param[in] size      Size, in bytes, the amount of memory to find
  * @param[in] caps      Bitwise OR of MMU_MEM_CAP_* flags indicating the memory block
- * @param[out] out_ptr  Pointer to the memory range found
+ * @param[out] out_ptr  Pointer to start address of the memory block that is reserved
  *
  * @return
  *        - ESP_OK:              On success
  *        - ESP_ERR_INVALID_ARG: Invalid arguments, could be wrong caps makeup, or null pointer
  *        - ESP_ERR_NOT_FOUND:   Didn't find enough memory with give caps
  */
-esp_err_t esp_mmu_find_vaddr_range(size_t size, uint32_t caps, const void **out_ptr);
+esp_err_t esp_mmu_reserve_block_with_caps(size_t size, uint32_t caps, const void **out_ptr);
 
 /**
  * @brief Dump internal memory region usage

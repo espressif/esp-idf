@@ -184,7 +184,7 @@ void esp_mmu_init(void)
     assert(available_region_idx == region_num);
 }
 
-esp_err_t esp_mmu_get_largest_free_block(int caps, size_t *out_len)
+esp_err_t esp_mmu_get_max_consecutive_free_block(int caps, size_t *out_len)
 {
     ESP_RETURN_ON_FALSE(out_len, ESP_ERR_INVALID_ARG, TAG, "null pointer");
     if (caps & MMU_MEM_CAP_EXEC) {
@@ -210,7 +210,7 @@ esp_err_t esp_mmu_get_largest_free_block(int caps, size_t *out_len)
     return ESP_OK;
 }
 
-esp_err_t esp_mmu_find_vaddr_range(size_t size, uint32_t caps, const void **out_ptr)
+esp_err_t esp_mmu_reserve_block_with_caps(size_t size, uint32_t caps, const void **out_ptr)
 {
     ESP_RETURN_ON_FALSE(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
     if (caps & MMU_MEM_CAP_EXEC) {
