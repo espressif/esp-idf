@@ -8,6 +8,9 @@
 
 #include "esp_heap_caps.h"
 
+//This test only makes sense with poisoning enabled (light or comprehensive)
+#if defined(CONFIG_HEAP_POISONING_COMPREHENSIVE) || defined(CONFIG_HEAP_POISONING_LIGHT)
+
 /* executing multi_heap_internal_check_block_poisoning()
  * takes longer on external RAM and therefore the timeout
  * in the test of 30 seconds is exceeded. Execute the test
@@ -66,3 +69,5 @@ TEST_CASE("multi_heap poisoning detection", "[heap]")
         TEST_ASSERT_TRUE(is_heap_ok);
     }
 }
+
+#endif

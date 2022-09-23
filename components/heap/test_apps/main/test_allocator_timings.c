@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include "freertos/FreeRTOS.h"
 #include <esp_types.h>
 #include <stdio.h>
@@ -7,7 +12,6 @@
 #include <stdlib.h>
 #include <sys/param.h>
 #include <string.h>
-#include <test_utils.h>
 
 //This test only makes sense with poisoning disabled (light or comprehensive)
 #if !defined(CONFIG_HEAP_POISONING_COMPREHENSIVE) && !defined(CONFIG_HEAP_POISONING_LIGHT)
@@ -26,13 +30,13 @@ TEST_CASE("Heap many random allocations timings", "[heap]")
     uint64_t realloc_time_average = 0;
 
     for (int i = 0; i < ITERATIONS; i++) {
-        uint8_t n = esp_random() % NUM_POINTERS;
+        uint8_t n = (uint32_t)rand() % NUM_POINTERS;
 
-        if (esp_random() % 4 == 0) {
+        if (ITERATIONS % 4 == 0) {
             /* 1 in 4 iterations, try to realloc the buffer instead
                of using malloc/free
             */
-            size_t new_size = esp_random() % 1024;
+            size_t new_size = (uint32_t)rand() % 1024;
 
             cycles_before = portGET_RUN_TIME_COUNTER_VALUE();
             void *new_p = heap_caps_realloc(p[n], new_size, MALLOC_CAP_DEFAULT);
