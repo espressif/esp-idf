@@ -33,7 +33,6 @@
 #if (BLUFI_INCLUDED == TRUE)
 
 static uint8_t own_addr_type;
-static uint16_t  conn_handle;
 
 struct gatt_value gatt_values[SERVER_MAX_VALUES];
 const static char *TAG = "BLUFI_EXAMPLE";
@@ -265,7 +264,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
 
             param.connect.conn_id = event->connect.conn_handle;
             /* save connection handle */
-            conn_handle = event->connect.conn_handle;
+            blufi_env.conn_id = event->connect.conn_handle;
             btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
         }
         if (event->connect.status != 0) {
@@ -433,13 +432,13 @@ void esp_blufi_send_notify(void *arg)
     struct os_mbuf *om;
     om = ble_hs_mbuf_from_flat(pkts->pkt, pkts->pkt_len);
     int rc = 0;
-    rc = ble_gattc_notify_custom(conn_handle, gatt_values[1].val_handle, om);
+    rc = ble_gattc_notify_custom(blufi_env.conn_id, gatt_values[1].val_handle, om);
     assert(rc == 0);
 }
 
 void esp_blufi_disconnect(void)
 {
-    ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    ble_gap_terminate(blufi_env.conn_id, BLE_ERR_REM_USER_CONN_TERM);
 }
 
 void esp_blufi_adv_stop(void) {}
