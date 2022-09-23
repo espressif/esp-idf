@@ -4,10 +4,9 @@ Storage
 SDMMC/SDSPI
 -----------
 
-SD card frequency on SDMMC/SDSPI interface can be now configured to a specific value, not only ``SDMMC_FREQ_PROBING`` (400 kHz), ``SDMMC_FREQ_DEFAULT`` (20 MHz) or ``SDMMC_FREQ_HIGHSPEED`` (40 MHz).
-The frequency setting is available through ``sdmmc_host_t.max_freq_khz``. Previously, in case you have specified a custom frequency other than any of the above-mentioned values, the closest lower-or-equal one was selected anyway.
-Now, the underlaying drivers calculate the nearest fitting value, given by available frequency dividers instead of an enumeration item selection. This could cause troubles in communication with your SD card without a change of the existing application code.
-If you encounter such an issue, please, keep trying different frequencies around your desired value unless you find the one working well. To check the frequency value calculated and actually applied, use ``void sdmmc_card_print_info(FILE* stream, const sdmmc_card_t* card)`` function.
+SD card frequency on SDMMC/SDSPI interface can be now configured through ``sdmmc_host_t.max_freq_khz`` to a specific value, not only ``SDMMC_FREQ_PROBING`` (400 kHz), ``SDMMC_FREQ_DEFAULT`` (20 MHz), or ``SDMMC_FREQ_HIGHSPEED`` (40 MHz). Previously, in case you have specified a custom frequency other than any of the above-mentioned values, the closest lower-or-equal one was selected anyway.
+
+Now, the underlaying drivers calculate the nearest fitting value, given by available frequency dividers instead of an enumeration item selection. This could cause troubles in communication with your SD card without a change of the existing application code.If you encounter such an issue, please, keep trying different frequencies around your desired value unless you find the one working well. To check the frequency value calculated and actually applied, use ``void sdmmc_card_print_info(FILE* stream, const sdmmc_card_t* card)`` function.
 
 FatFs
 -----
@@ -17,7 +16,7 @@ FatFs is now updated to v0.14. As a result, the function signature of ``f_mkfs()
 Partition Table
 ---------------
 
-The partition table generator no longer supports misaligned partitions. When generating a partition table, ``esp-idf`` only accepts partitions with offsets that align to 4 KB. This change only affects generating new partition tables. Reading and writing to already existing partitions remains unchanged.
+The partition table generator no longer supports misaligned partitions. When generating a partition table, ``ESP-IDF`` only accepts partitions with offsets that align to 4 KB. This change only affects generating new partition tables. Reading and writing to already existing partitions remains unchanged.
 
 
 VFS
