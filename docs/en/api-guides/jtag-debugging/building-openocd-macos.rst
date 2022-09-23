@@ -41,6 +41,11 @@ Optionally you can add ``sudo make install`` step at the end. Skip it, if you ha
 .. note::
 
     * Should an error occur, resolve it and try again until the command ``make`` works.
+    * Error ``Unknown command 'raggedright'`` may indicate that the required version of ``texinfo`` was not installed on your computer or installed but was not linked to your PATH. To resolve this issue make sure ``texinfo`` is installed and PATH is adjusted prior to the ``./bootstrap`` by running::
+
+        brew install texinfo
+        export PATH=/usr/local/opt/texinfo/bin:$PATH
+
     * If there is a submodule problem from OpenOCD, please ``cd`` to the ``openocd-esp32`` directory and input ``git submodule update --init``.
     * If the ``./configure`` is successfully run, information of enabled JTAG will be printed under ``OpenOCD configuration summary``.
     * If the information of your device is not shown in the log, use ``./configure`` to enable it as described in  ``../openocd-esp32/doc/INSTALL.txt``.
