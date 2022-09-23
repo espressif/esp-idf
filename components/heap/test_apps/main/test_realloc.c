@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+/*
  Generic test for realloc
 */
 
@@ -64,5 +69,5 @@ TEST_CASE("realloc move data to a new heap type", "[heap]")
 
     free(c);
 }
-#endif
+#endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
