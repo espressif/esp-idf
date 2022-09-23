@@ -12,6 +12,7 @@
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
 #include "nimble/ble.h"
+#include "host/ble_gap.h"
 #include "modlog/modlog.h"
 #endif
 
@@ -80,5 +81,19 @@ void esp_blufi_adv_stop(void);
 void esp_blufi_adv_start(void);
 
 void esp_blufi_send_encap(void *arg);
+
+#ifdef CONFIG_BT_NIMBLE_ENABLED
+/**
+ * @brief Handle gap event for BluFi.
+ *        This function can be called inside custom use gap event handler.
+ *        It provide minimal event management for BluFi purpose.
+ *
+ * @param[in] event The type of event being signalled.
+ * @param[in] arg Application-specified argument. Currently unused
+ * @return int 0 in case of success.
+ *             Other in case of failure.
+ */
+int esp_blufi_handle_gap_events(struct ble_gap_event *event, void *arg);
+#endif
 
 #endif/* _ESP_BLUFI_ */

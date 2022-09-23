@@ -469,4 +469,71 @@ void esp_blufi_btc_deinit(void)
 {
     btc_deinit();
 }
+
+int esp_blufi_handle_gap_events(struct ble_gap_event *event, void *arg)
+{
+    struct ble_gap_conn_desc desc;
+    int rc;
+
+    if (event != NULL) {
+        switch (event->type) {
+        case BLE_GAP_EVENT_CONNECT:
+            if (event->connect.status == 0) {
+                btc_msg_t msg;
+                esp_blufi_cb_param_t param;
+
+                blufi_env.is_connected = true;
+                blufi_env.recv_seq = blufi_env.send_seq = 0;
+                blufi_env.conn_id  = event->connect.conn_handle;
+
+                msg.sig = BTC_SIG_API_CB;
+                msg.pid = BTC_PID_BLUFI;
+                msg.act = ESP_BLUFI_EVENT_BLE_CONNECT;
+
+                rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
+                assert(rc == 0);
+                memcpy(param.connect.remote_bda, desc.peer_id_addr.val, sizeof(esp_bd_addr_t));
+
+                param.connect.conn_id = event->connect.conn_handle;
+                btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+            }
+            return 0;
+        case BLE_GAP_EVENT_DISCONNECT: {
+            btc_msg_t msg;
+            esp_blufi_cb_param_t param;
+
+            blufi_env.is_connected = false;
+            blufi_env.recv_seq = blufi_env.send_seq = 0;
+            blufi_env.sec_mode = 0x0;
+            blufi_env.offset = 0;
+
+            memcpy(blufi_env.remote_bda,
+                   event->disconnect.conn.peer_id_addr.val,
+                   sizeof(esp_bd_addr_t));
+
+            if (blufi_env.aggr_buf != NULL) {
+                osi_free(blufi_env.aggr_buf);
+                blufi_env.aggr_buf = NULL;
+            }
+
+            msg.sig = BTC_SIG_API_CB;
+            msg.pid = BTC_PID_BLUFI;
+            msg.act = ESP_BLUFI_EVENT_BLE_DISCONNECT;
+            memcpy(param.disconnect.remote_bda,
+                   event->disconnect.conn.peer_id_addr.val,
+                   sizeof(esp_bd_addr_t));
+            btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+            return 0;
+        }
+
+        case BLE_GAP_EVENT_MTU:
+            blufi_env.frag_size = (event->mtu.value < BLUFI_MAX_DATA_LEN ? event->mtu.value :
+                                   BLUFI_MAX_DATA_LEN) - BLUFI_MTU_RESERVED_SIZE;
+            return 0;
+        }
+    }
+
+    return 0;
+}
+
 #endif
