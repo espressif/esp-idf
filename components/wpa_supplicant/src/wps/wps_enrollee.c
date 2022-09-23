@@ -672,6 +672,27 @@ static int wps_process_cred_e(struct wps_data *wps, const u8 *cred,
 		goto _out;
 	}
 
+	//Check RF Bands
+	if(attr->rf_bands!=NULL)
+	{
+		u8 rf_bands = *attr->rf_bands;
+		if((rf_bands & 0x01)==0) // 0x01(Bit0) means 2.4GHz
+		{
+			wpa_printf(MSG_INFO, "WPS: Reject Credential "
+				   "due to unsupported RF Bands.");
+			ret = -2;
+			goto _out;
+		}
+	}
+	//Check Channel
+	if(wps->cred.ap_channel>14)
+	{
+		wpa_printf(MSG_INFO, "WPS: Reject Credential "
+					"due to unsupported channel.");
+		ret = -2;
+		goto _out;
+	}
+
 	if (os_memcmp(wps->cred.mac_addr, wps->wps->dev.mac_addr, ETH_ALEN) !=
 	    0) {
 		wpa_printf(MSG_DEBUG,  "WPS: MAC Address in the Credential ("
