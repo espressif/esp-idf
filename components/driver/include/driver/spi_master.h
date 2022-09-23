@@ -334,6 +334,18 @@ esp_err_t spi_device_acquire_bus(spi_device_handle_t device, TickType_t wait);
 void spi_device_release_bus(spi_device_handle_t dev);
 
 /**
+ * @brief Calculate working frequency for specific device
+ *
+ * @param handle SPI device handle
+ * @param[out] freq_khz output parameter to hold calculated frequency in kHz
+ *
+ * @return
+ *      - ESP_ERR_INVALID_ARG : ``handle`` or ``freq_khz`` parameter is NULL
+ *      - ESP_OK : Success
+ */
+esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int* freq_khz);
+
+/**
  * @brief Calculate the working frequency that is most close to desired frequency.
  *
  * @param fapb The frequency of apb clock, should be ``APB_CLK_FREQ``.

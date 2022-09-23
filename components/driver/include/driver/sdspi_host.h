@@ -50,6 +50,7 @@ typedef int sdspi_dev_handle_t;
     .io_int_enable = &sdspi_host_io_int_enable, \
     .io_int_wait = &sdspi_host_io_int_wait, \
     .command_timeout_ms = 0, \
+    .get_real_freq = &sdspi_host_get_real_freq \
 }
 
 /**
@@ -155,6 +156,18 @@ esp_err_t sdspi_host_do_transaction(sdspi_dev_handle_t handle, sdmmc_command_t *
  *      - other error codes may be returned in the future
  */
 esp_err_t sdspi_host_set_card_clk(sdspi_dev_handle_t host, uint32_t freq_khz);
+
+/**
+ * @brief Calculate working frequency for specific device
+ *
+ * @param handle SDSPI device handle
+ * @param[out] real_freq_khz output parameter to hold the calculated frequency (in kHz)
+ *
+ * @return
+ *      - ESP_ERR_INVALID_ARG : ``handle`` is NULL or invalid or ``real_freq_khz`` parameter is NULL
+ *      - ESP_OK : Success
+ */
+esp_err_t sdspi_host_get_real_freq(sdspi_dev_handle_t handle, int* real_freq_khz);
 
 /**
  * @brief Release resources allocated using sdspi_host_init
