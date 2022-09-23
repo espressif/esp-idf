@@ -10,6 +10,7 @@
 #include <esp_flash_encrypt.h>
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "hal/efuse_ll.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #   include "soc/spi_struct.h"
@@ -779,4 +780,13 @@ esp_err_t IRAM_ATTR bootloader_flash_reset_chip(void)
     bootloader_execute_flash_command(0x99, 0, 0, 0);
 
     return ESP_OK;
+}
+
+bool bootloader_flash_is_octal_mode_enabled(void)
+{
+#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+    return efuse_ll_get_flash_type();
+#else
+    return false;
+#endif
 }

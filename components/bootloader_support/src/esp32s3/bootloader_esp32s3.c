@@ -218,7 +218,9 @@ static esp_err_t bootloader_init_spi_flash(void)
     bootloader_flash_unlock();
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
-    bootloader_enable_qio_mode();
+    if (!bootloader_flash_is_octal_mode_enabled()) {
+        bootloader_enable_qio_mode();
+    }
 #endif
 
     print_flash_info(&bootloader_image_hdr);

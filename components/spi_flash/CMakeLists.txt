@@ -29,7 +29,7 @@ else()
         "flash_brownout_hook.c"
     )
 
-    if(CONFIG_ESPTOOLPY_OCT_FLASH)
+    if(CONFIG_SOC_SPI_MEM_SUPPORT_OPI_MODE)
         list(APPEND srcs "${target}/spi_flash_oct_flash_init.c")
     endif()
 
