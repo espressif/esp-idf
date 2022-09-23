@@ -19,14 +19,6 @@ trim_trailing_whitespace = false
 indent_style = tab
 indent_size = 2
 
-[*/freertos/**]
-indent_style = tab
-indent_size = 4
-
-[{*/freertos/**.S,**/FreeRTOSConfig.h}]
-indent_style = space
-indent_size = 4
-
 [*.pem]
 insert_final_newline = false
 
