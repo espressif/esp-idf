@@ -6,10 +6,19 @@
 
 #pragma once
 
+#include "esp_bit_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum {
+    MMU_MEM_CAP_EXEC  = BIT(0),
+    MMU_MEM_CAP_READ  = BIT(1),
+    MMU_MEM_CAP_WRITE = BIT(2),
+    MMU_MEM_CAP_32BIT = BIT(3),
+    MMU_MEM_CAP_8BIT  = BIT(4),
+} mmu_mem_caps_t;
 
 /**
  * MMU Page size

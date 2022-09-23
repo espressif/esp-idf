@@ -8,7 +8,7 @@
 #include "sdkconfig.h"
 #include "soc/ext_mem_defs.h"
 #include "ext_mem_layout.h"
-#include "mmu.h"
+#include "hal/mmu_types.h"
 
 
 #if CONFIG_IDF_TARGET_ESP32

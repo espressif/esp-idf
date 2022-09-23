@@ -24,12 +24,6 @@ extern "C" {
  */
 
 
-#define MMU_MEM_CAP_EXEC        (1<<0)
-#define MMU_MEM_CAP_READ        (1<<1)
-#define MMU_MEM_CAP_WRITE       (1<<2)
-#define MMU_MEM_CAP_32BIT       (1<<3)
-#define MMU_MEM_CAP_8BIT        (1<<4)
-
 /**
  * @brief Initialise the MMU driver
  *
@@ -47,7 +41,7 @@ void esp_mmu_init(void);
  *        - ESP_OK:              On success
  *        - ESP_ERR_INVALID_ARG: Invalid arguments, could be null pointer
  */
-esp_err_t esp_mmu_get_max_consecutive_free_block(int caps, size_t *out_len);
+esp_err_t esp_mmu_get_max_consecutive_free_block(mmu_mem_caps_t caps, size_t *out_len);
 
 /**
  * @brief Reserve a consecutive external virtual memory block, with given capabilities and size
@@ -61,7 +55,7 @@ esp_err_t esp_mmu_get_max_consecutive_free_block(int caps, size_t *out_len);
  *        - ESP_ERR_INVALID_ARG: Invalid arguments, could be wrong caps makeup, or null pointer
  *        - ESP_ERR_NOT_FOUND:   Didn't find enough memory with give caps
  */
-esp_err_t esp_mmu_reserve_block_with_caps(size_t size, uint32_t caps, const void **out_ptr);
+esp_err_t esp_mmu_reserve_block_with_caps(size_t size, mmu_mem_caps_t caps, const void **out_ptr);
 
 /**
  * @brief Dump internal memory region usage
