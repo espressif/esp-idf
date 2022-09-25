@@ -35,12 +35,6 @@ Although pull-up resistors can be configured by the I2C driver, this code disabl
 Custom I2C configurations for the sensor can be made in the code by replacing `bme280_init()` with `bme280_custom_init()`. Full documentation  
 can be found in the `bme280.c` file.  
 
-### Configure the project
-
-Open the project configuration menu (`idf.py menuconfig`). Then go into `Example Configuration` menu.
-
-- In the `I2C Master` submenu, you can set the pin number of SDA/SCL according to your board. Also you can modify the I2C port number and frequency of the master.  
-
 ### Build and Flash
 
 Enter `idf.py -p PORT flash monitor` to build, flash and monitor the project.
