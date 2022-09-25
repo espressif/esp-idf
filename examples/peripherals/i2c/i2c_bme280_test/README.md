@@ -32,7 +32,7 @@ For more information about it, you can read its datasheet (https://www.mouser.co
 
 **Note: ** There’s no need to add an external pull-up resistors for SDA/SCL pin, because the BME280 has onboard pull-up resistors.  
 Although pull-up resistors can be configured by the I2C driver, this code disables them by default.  
-Custom I2C configurations for the sensor can be made in the code by replacing `bme_init()` with `bme_custom_init()`. Full documentation  
+Custom I2C configurations for the sensor can be made in the code by replacing `bme280_init()` with `bme280_custom_init()`. Full documentation  
 can be found in the `bme280.c` file.  
 
 ### Configure the project
