@@ -53,6 +53,8 @@ The GPIO used by the example can be changed according to your board by `EXAMPLE_
 
 ### Build and Flash
 
+By configuring one of the EC11 GPIO (e.g. `EXAMPLE_EC11_GPIO_A`) as a wake up source, we can make the rotary encoder wake the system from light sleep. This example can illustrate this feature if you enable the `EXAMPLE_WAKE_UP_LIGHT_SLEEP` from the menuconfig.
+
 Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
