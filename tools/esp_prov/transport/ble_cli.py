@@ -46,7 +46,7 @@ class BLE_Bleak_Client:
 
         print('Discovering...')
         try:
-            devices = await bleak.discover()
+            devices = await bleak.BleakScanner.discover()
         except bleak.exc.BleakDBusError as e:
             if str(e) == '[org.bluez.Error.NotReady] Resource Not Ready':
                 raise RuntimeError('Bluetooth is not ready. Maybe try `bluetoothctl power on`?')
@@ -79,7 +79,7 @@ class BLE_Bleak_Client:
                 if select != 0:
                     break
 
-                devices = await bleak.discover()
+                devices = await bleak.BleakScanner.discover()
 
             self.devname = devices[select - 1].name
             found_device = devices[select - 1]
