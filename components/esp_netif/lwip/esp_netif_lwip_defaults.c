@@ -7,9 +7,9 @@
 #include "esp_netif.h"
 #include "esp_netif_lwip_internal.h"
 #include "lwip/esp_netif_net_stack.h"
+#if defined(CONFIG_PPP_SUPPORT)
 #include "esp_netif_lwip_ppp.h"
-
-#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
+#endif
 
 #if CONFIG_ESP_NETIF_BRIDGE_EN
 #include "netif/bridgeif.h"
@@ -48,6 +48,7 @@ static const struct esp_netif_netstack_config s_wifi_netif_config_sta = {
         }
 };
 
+#if defined(CONFIG_PPP_SUPPORT)
 static const struct esp_netif_netstack_config s_netif_config_ppp = {
         .lwip_ppp = {
                 .input_fn = esp_netif_lwip_ppp_input,
@@ -57,10 +58,9 @@ static const struct esp_netif_netstack_config s_netif_config_ppp = {
                 }
         }
 };
+const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_ppp      = &s_netif_config_ppp;
+#endif // CONFIG_PPP_SUPPORT
 
 const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_eth      = &s_eth_netif_config;
 const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_sta = &s_wifi_netif_config_sta;
 const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_ap  = &s_wifi_netif_config_ap;
-const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_ppp      = &s_netif_config_ppp;
-
-#endif /*CONFIG_ESP_NETIF_TCPIP_LWIP*/
