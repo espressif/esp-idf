@@ -191,7 +191,7 @@ Will print app size information including occupied RAM and FLASH and section siz
 
 .. code-block:: bash
 
-  idf.py size
+  idf.py size-components
 
 Similarly, this will print the same information for each component used in the project.
 
@@ -201,7 +201,11 @@ Similarly, this will print the same information for each component used in the p
 
 Will print size information per source file in the project.
 
-If you define the ``OUTPUT_FORMAT`` variable as ``csv`` or ``json`` when running CMake (or ``idf.py``), the output will be formatted in the specified format and not as human readable text. See ``idf.py-size`` for more information.
+Options
+^^^^^^^
+
+- ``--format`` specifies the output format with available options: ``text``, ``csv``, ``json``, default being ``text``.
+- ``--output-file`` optionally specifies the name of the file to print the command output to instead of the standard output.
 
 Reconfigure the project: reconfigure
 ------------------------------------
