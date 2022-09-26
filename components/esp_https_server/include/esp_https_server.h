@@ -96,6 +96,11 @@ struct httpd_ssl_config {
 
     /** User callback for esp_https_server */
     esp_https_server_user_cb *user_cb;
+
+#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
+    esp_tls_handshake_callback cert_select_cb; /*!< Certificate selection callback to use */
+#endif
+    void *ssl_userdata; /*!< user data to add to the ssl context  */
 };
 
 typedef struct httpd_ssl_config httpd_ssl_config_t;
