@@ -358,7 +358,7 @@ static inline void gpio_ll_deep_sleep_hold_en(gpio_dev_t *hw)
   */
 static inline void gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
 {
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CLR_DG_PAD_AUTOHOLD);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
 }
 
 /**
