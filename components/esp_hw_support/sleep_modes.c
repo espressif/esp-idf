@@ -500,14 +500,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
     uint32_t result;
     if (deep_sleep) {
-        /* Disable interrupts in case another task writes to RTC memory while we
-         * calculate RTC memory CRC
-         *
-         * Note: for ESP32-S3 running in dual core mode this is currently not enough,
-         * see the assert at top of this function.
-         */
-        portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
-
 #if !CONFIG_IDF_TARGET_ESP32H2 // IDF does not officially support esp32h2 in v5.0
         esp_sleep_isolate_digital_gpio();
 #endif
@@ -536,8 +528,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         result = rtc_deep_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
-
-        portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
     } else {
         result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
     }
