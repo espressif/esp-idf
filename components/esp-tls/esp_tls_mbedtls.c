@@ -566,7 +566,16 @@ esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
             return esp_ret;
         }
     } else {
+#if defined(CONFIG_ESP_TLS_SERVER_SNI_HOOK)
+        if ((cfg->sni_callback == NULL)) {
+            ESP_LOGE(TAG, "Missing server certificate and/or key and no SNI callback is defined");
+        } else {
+            ESP_LOGD(TAG, "Missing server certificate and/or key, but SNI callback is defined. Callback MUST ALWAYS call mbedtls_ssl_set_hs_own_cert, or the handshake will abort!");
+            return ESP_OK;
+        }
+#else
         ESP_LOGE(TAG, "Missing server certificate and/or key");
+#endif
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -787,6 +796,14 @@ int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
         tls->conn_state = ESP_TLS_FAIL;
         return -1;
     }
+
+#if defined(CONFIG_ESP_TLS_SERVER_SNI_HOOK)
+    if (cfg->sni_callback != NULL) {
+        ESP_LOGI(TAG, "Initializing server side SNI callback");
+        mbedtls_ssl_conf_sni(&tls->conf, cfg->sni_callback, cfg->sni_callback_p_info);
+    }
+#endif
+
     tls->read = esp_mbedtls_read;
     tls->write = esp_mbedtls_write;
     int ret;

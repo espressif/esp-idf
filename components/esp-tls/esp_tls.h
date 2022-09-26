@@ -197,6 +197,18 @@ typedef struct esp_tls_server_session_ticket_ctx {
 } esp_tls_server_session_ticket_ctx_t;
 #endif
 
+/**
+ * @brief SNI callback function prototype
+ * Can be used to configure per-handshake attributes for the TLS connection.
+ * E.g. Client certificate / Key, Authmode, Client CA verification
+ *
+ * @param p_info Input data provided when registering the callback
+ * @param ssl mbedtls_ssl_context that can be used for changing settings
+ * @param name advertised server name by the client
+ * @param len length of the name buffer
+ */
+typedef int esp_tls_server_sni_callback(void *p_info, mbedtls_ssl_context *ssl, const unsigned char *name, size_t name_len);
+
 typedef struct esp_tls_cfg_server {
     const char **alpn_protos;                   /*!< Application protocols required for HTTP2.
                                                      If HTTP2/ALPN support is required, a list
@@ -259,6 +271,11 @@ typedef struct esp_tls_cfg_server {
                                                     Call esp_tls_cfg_server_session_tickets_free
                                                     to free the data associated with this context. */
 #endif
+
+#if defined(CONFIG_ESP_TLS_SERVER_SNI_HOOK)
+    esp_tls_server_sni_callback *sni_callback; /*!< Server Name Identification callback to use */
+    void *sni_callback_p_info;                 /*!< Data to pass to the SNI callback. */
+#endif
 } esp_tls_cfg_server_t;
 
 /**
@@ -278,6 +295,25 @@ typedef struct esp_tls_cfg_server {
  *             ESP_FAIL if setup failed
  */
 esp_err_t esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg);
+
+/**
+ * @brief Initialize the server side TLS server name identification hook
+ *
+ * This function initializes the server side tls server name identification hook
+ * which is called during a client connect handshake, and has the ability to check
+ * the advertised hostname and supply a specific certificate based on that for example.
+ * Check https://mbed-tls.readthedocs.io/en/latest/kb/how-to/use-sni/#server-side for details.
+ *
+ * @param[in]  cfg server configuration as esp_tls_cfg_server_t
+ * @param[in]  cb callback function pointer
+ * @param[in]  data pointer to implementation specific data supplied as the first parameter of the callback
+ * @return
+ *             ESP_OK if setup succeeded
+ *             ESP_ERR_INVALID_ARG if context is NULL
+ *             ESP_ERR_NOT_SUPPORTED if server side sni is not available due to build configuration
+ *             ESP_FAIL if setup failed
+ */
+esp_err_t esp_tls_cfg_server_sni_init(esp_tls_cfg_server_t *cfg, esp_tls_server_sni_callback *cb, void *data);
 
 /**
  * @brief Free the server side TLS session ticket context

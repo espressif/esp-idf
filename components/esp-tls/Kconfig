@@ -57,6 +57,13 @@ menu "ESP-TLS"
         help
             Sets the session ticket timeout used in the tls server.
 
+    config ESP_TLS_SERVER_SNI_HOOK
+        bool "Server name identification hook"
+        depends on ESP_TLS_USING_MBEDTLS
+        help
+            Ability to configure and use an SNI Callback during server handshake,
+            to select a certificate to present to the client for example.
+
     config ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
         bool "ESP-TLS Server: Set minimum Certificate Verification mode to Optional"
         depends on ESP_TLS_SERVER && ESP_TLS_USING_MBEDTLS
