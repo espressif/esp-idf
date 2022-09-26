@@ -42,7 +42,10 @@ FATFS_SECONDS_GRANULARITY: int = 2
 LONG_NAMES_ENCODING: str = 'utf-16'
 SHORT_NAMES_ENCODING: str = 'utf-8'
 
-ALLOWED_SECTOR_SIZES: List[int] = [4096]
+# compatible with WL_SECTOR_SIZE
+# choices are WL_SECTOR_SIZE_512 and WL_SECTOR_SIZE_4096
+ALLOWED_SECTOR_SIZES: List[int] = [512, 4096]
+
 ALLOWED_SECTORS_PER_CLUSTER: List[int] = [1, 2, 4, 8, 16, 32, 64, 128]
 
 
@@ -280,4 +283,5 @@ class FATDefaults:
     TEMP_BUFFER_SIZE: int = 32
     UPDATE_RATE: int = 16
     WR_SIZE: int = 16
+    # wear leveling metadata (config sector) contains always sector size 4096
     WL_SECTOR_SIZE: int = 4096
