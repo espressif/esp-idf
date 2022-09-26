@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,6 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "unity.h"
-#include "test_utils.h"
 #include "esp_console.h"
 #include "argtable3/argtable3.h"
 #include "freertos/FreeRTOS.h"
