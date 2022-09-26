@@ -47,6 +47,37 @@ esp_err_t esp_blufi_host_init(void)
 
 }
 
+esp_err_t esp_blufi_host_deinit(void)
+{
+    int ret;
+    ret = esp_blufi_profile_deinit();
+    if(ret != ESP_OK) {
+        return ret;
+    }
+
+    ret = esp_bluedroid_disable();
+    if (ret) {
+        BLUFI_ERROR("%s deinit bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        return ESP_FAIL;
+    }
+
+    ret = esp_bluedroid_deinit();
+    if (ret) {
+        BLUFI_ERROR("%s deinit bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        return ESP_FAIL;
+    }
+
+    ESP_ERROR_CHECK(esp_bt_controller_disable());
+    ret = esp_bt_controller_deinit();
+    if (ret) {
+        BLUFI_ERROR("%s deinit bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+
+}
+
 esp_err_t esp_blufi_gap_register_callback(void)
 {
    int rc;
@@ -159,6 +190,25 @@ esp_err_t esp_blufi_host_init(void)
     }
 
     return ESP_OK;
+}
+
+esp_err_t esp_blufi_host_deinit(void)
+{
+    esp_err_t ret = ESP_OK;
+
+    ret = esp_blufi_profile_deinit();
+    if(ret != ESP_OK) {
+        return ret;
+    }
+
+    esp_blufi_btc_deinit();
+
+    ret = nimble_port_stop();
+    if (ret == 0) {
+        nimble_port_deinit();
+    }
+
+    return ret;
 }
 
 esp_err_t esp_blufi_gap_register_callback(void)
