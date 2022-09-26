@@ -17,8 +17,8 @@ extern "C" {
 // Macros to assemble master configs with partial configs from netif, stack and driver
 //
 
-#ifdef CONFIG_LWIP_ESP_GRATUITOUS_ARP
 // If GARP enabled in menuconfig (default), make it also a default config for common netifs
+#ifdef CONFIG_LWIP_ESP_GRATUITOUS_ARP
 #define ESP_NETIF_DEFAULT_ARP_FLAGS (ESP_NETIF_FLAG_GARP)
 #else
 #define ESP_NETIF_DEFAULT_ARP_FLAGS (0)
@@ -65,6 +65,7 @@ extern "C" {
         .bridge_info = NULL \
     }
 
+#ifdef CONFIG_PPP_SUPPORT
 #define ESP_NETIF_INHERENT_DEFAULT_PPP() \
     {   \
         .flags = ESP_NETIF_FLAG_IS_PPP, \
@@ -77,6 +78,7 @@ extern "C" {
         .route_prio = 20,  \
         .bridge_info = NULL \
     }
+#endif /* CONFIG_PPP_SUPPORT */
 
 
 
@@ -126,6 +128,7 @@ extern "C" {
         .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA, \
     }
 
+#ifdef CONFIG_PPP_SUPPORT
 /**
 * @brief  Default configuration reference of PPP client
 */
@@ -135,6 +138,7 @@ extern "C" {
         .driver = NULL,                               \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_PPP,      \
     }
+#endif /* CONFIG_PPP_SUPPORT */
 
 /**
  * @brief  Default base config (esp-netif inherent) of WIFI STA
@@ -153,10 +157,12 @@ extern "C" {
  */
 #define ESP_NETIF_BASE_DEFAULT_ETH             &_g_esp_netif_inherent_eth_config
 
+#ifdef CONFIG_PPP_SUPPORT
 /**
  * @brief  Default base config (esp-netif inherent) of ppp interface
  */
 #define ESP_NETIF_BASE_DEFAULT_PPP             &_g_esp_netif_inherent_ppp_config
+#endif
 
 
 #define ESP_NETIF_NETSTACK_DEFAULT_ETH          _g_esp_netif_netstack_default_eth
@@ -165,7 +171,9 @@ extern "C" {
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP      _g_esp_netif_netstack_default_wifi_ap
 #endif
+#ifdef CONFIG_PPP_SUPPORT
 #define ESP_NETIF_NETSTACK_DEFAULT_PPP          _g_esp_netif_netstack_default_ppp
+#endif
 
 //
 // Include default network stacks configs
@@ -179,8 +187,9 @@ extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_sta
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_ap;
 #endif
+#ifdef CONFIG_PPP_SUPPORT
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_ppp;
-
+#endif
 //
 // Include default common configs inherent to esp-netif
 //  - These inherent configs are defined in esp_netif_defaults.c and describe
@@ -191,8 +200,9 @@ extern const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config;
 #endif
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config;
+#ifdef CONFIG_PPP_SUPPORT
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ppp_config;
-
+#endif
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 extern const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip;
 #endif

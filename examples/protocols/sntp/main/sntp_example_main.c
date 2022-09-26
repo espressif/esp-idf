@@ -9,6 +9,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
+#include <netdb.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"

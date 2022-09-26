@@ -46,10 +46,12 @@ static void test_wifi_init_custom(void)
         s_init_wifi_netif(&esp_netif_config);
     }
 
+#ifdef CONFIG_PPP_SUPPORT
     {
         esp_netif_inherent_config_t esp_netif_config = ESP_NETIF_INHERENT_DEFAULT_PPP();
         s_init_wifi_netif(&esp_netif_config);
     }
+#endif
 }
 
 static void test_common_init_field(void)
