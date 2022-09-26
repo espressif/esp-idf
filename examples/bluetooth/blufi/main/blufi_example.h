@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -21,3 +21,4 @@ void blufi_security_deinit(void);
 int esp_blufi_gap_register_callback(void);
 esp_err_t esp_blufi_host_init(void);
 esp_err_t esp_blufi_host_and_cb_init(esp_blufi_callbacks_t *callbacks);
+esp_err_t esp_blufi_host_deinit(void);
