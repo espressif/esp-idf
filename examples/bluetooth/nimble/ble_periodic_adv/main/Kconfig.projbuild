@@ -1,0 +1,15 @@
+menu "Example Configuration"
+
+    config EXAMPLE_EXTENDED_ADV
+        bool
+        default y if SOC_ESP_NIMBLE_CONTROLLER
+        prompt "Enable Extended Adv"
+        help
+            Use this option to enable extended advertising in the example
+
+    config EXAMPLE_RANDOM_ADDR
+        bool
+        prompt "Advertise RANDOM Address"
+        help
+            Use this option to advertise a random address instead of public address
+endmenu
