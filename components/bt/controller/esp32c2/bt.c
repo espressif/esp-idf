@@ -568,7 +568,6 @@ void controller_sleep_deinit(void)
         if (s_pm_lock != NULL) {
             esp_pm_lock_release(s_pm_lock);
         }
-        s_pm_lock_acquired = false;
     }
 
     if (!s_btdm_allow_light_sleep) {
