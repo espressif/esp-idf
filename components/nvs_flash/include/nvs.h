@@ -59,6 +59,7 @@ typedef nvs_handle_t nvs_handle IDF_DEPRECATED("Replace with nvs_handle_t");
 
 #define NVS_PART_NAME_MAX_SIZE              16   /*!< maximum length of partition name (excluding null terminator) */
 #define NVS_KEY_NAME_MAX_SIZE               16   /*!< Maximum length of NVS key name (including null terminator) */
+#define NVS_NS_NAME_MAX_SIZE                NVS_KEY_NAME_MAX_SIZE /*!< Maximum length of NVS namespace name (including null terminator) */
 
 /**
  * @brief Mode of opening the non-volatile storage
@@ -96,9 +97,9 @@ typedef enum {
  * @brief information about entry obtained from nvs_entry_info function
  */
 typedef struct {
-    char namespace_name[16];    /*!< Namespace to which key-value belong */
-    char key[NVS_KEY_NAME_MAX_SIZE];               /*!< Key of stored key-value pair */
-    nvs_type_t type;            /*!< Type of stored key-value pair */
+    char namespace_name[NVS_NS_NAME_MAX_SIZE];  /*!< Namespace to which key-value belong */
+    char key[NVS_KEY_NAME_MAX_SIZE];            /*!< Key of stored key-value pair */
+    nvs_type_t type;                            /*!< Type of stored key-value pair */
 } nvs_entry_info_t;
 
 /**
