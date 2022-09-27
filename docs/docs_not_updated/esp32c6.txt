@@ -119,7 +119,6 @@ api-reference/peripherals/usb_host
 api-reference/peripherals/twai
 api-reference/peripherals/hmac
 api-reference/peripherals/usb_device
-api-reference/peripherals/gpio
 api-reference/peripherals/sdspi_host
 api-reference/peripherals/dac
 api-reference/peripherals/spi_slave
