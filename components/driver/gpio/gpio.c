@@ -927,7 +927,7 @@ esp_err_t gpio_sleep_pupd_config_unapply(gpio_num_t gpio_num)
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
-    if (!gpio_hal_is_valid_deepsleep_wakeup_gpio(gpio_num)) {
+    if (!GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)) {
         ESP_LOGE(GPIO_TAG, "GPIO %d does not support deep sleep wakeup", gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
@@ -946,7 +946,7 @@ esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t int
 
 esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num)
 {
-    if (!gpio_hal_is_valid_deepsleep_wakeup_gpio(gpio_num)) {
+    if (!GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)) {
         ESP_LOGE(GPIO_TAG, "GPIO %d does not support deep sleep wakeup", gpio_num);
         return ESP_ERR_INVALID_ARG;
     }

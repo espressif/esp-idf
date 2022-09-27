@@ -529,6 +529,8 @@ void IRAM_ATTR call_start_cpu0(void)
 
 #if SOC_RTCIO_HOLD_SUPPORTED
     rtcio_hal_unhold_all();
+#elif CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-6027
+    CLEAR_PERI_REG_MASK(LP_AON_GPIO_HOLD0_REG, 0xFF);
 #else
     gpio_hal_force_unhold_all();
 #endif

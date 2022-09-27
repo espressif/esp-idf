@@ -451,7 +451,6 @@ void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, uint32_t gpio_n
 #endif //SOC_GPIO_SUPPORT_SLP_SWITCH
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-
 /**
  * @brief Enable GPIO deep-sleep wake-up function.
  *
@@ -468,14 +467,6 @@ void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, uint32_t gpio_n
  * @param gpio_num GPIO number
  */
 #define gpio_hal_deepsleep_wakeup_disable(hal, gpio_num) gpio_ll_deepsleep_wakeup_disable((hal)->dev, gpio_num)
-
-/**
- * @brief Judge if the gpio is valid for waking up chip from deep-sleep
- *
- * @param gpio_num GPIO number
- */
-#define gpio_hal_is_valid_deepsleep_wakeup_gpio(gpio_num) (gpio_num <= GPIO_NUM_5)
-
 #endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
 /**

@@ -269,7 +269,7 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline __attribute__((always_inline)) void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t func)
 {
-    if (gpio_num == 19 || gpio_num == 20) {
+    if (gpio_num == USB_DM_GPIO_NUM || gpio_num == USB_DP_GPIO_NUM) {
         CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE);
     }
     PIN_FUNC_SELECT(IO_MUX_GPIO0_REG + (gpio_num * 4), func);

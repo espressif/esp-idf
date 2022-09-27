@@ -139,29 +139,33 @@
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
 #define SOC_GDMA_PAIRS_PER_GROUP        (3)  // Number of GDMA pairs in each group
 
-// TODO: IDF-5321 (Copy from esp32c3, need check)
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C6 has 1 GPIO peripheral
 #define SOC_GPIO_PORT               (1U)
 #define SOC_GPIO_PIN_COUNT          (31)
 
-// Target has no full RTC IO subsystem, so GPIO is 100% "independent" of RTC
-// On ESP32-C6, Digital IOs have their own registers to control pullup/down capability, independent of RTC registers.
-#define SOC_GPIO_SUPPORTS_RTC_INDEPENDENT       (1)
-// Force hold is a new function of ESP32-C6
-#define SOC_GPIO_SUPPORT_FORCE_HOLD         (1)
-// GPIO0~5 on ESP32C6 can support chip deep sleep wakeup
+// Target has the full LP IO subsystem
+// On ESP32-C6, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
+#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
+// GPIO0~7 on ESP32C6 can support chip deep sleep wakeup
 #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
 
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
-#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)
+#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7)
 
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_30)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x000000007FFFFF00ULL
 
 // Support to configure sleep status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
+
+/*-------------------------- RTCIO CAPS --------------------------------------*/
+// TODO: IDF-6027
+// #define SOC_RTCIO_PIN_COUNT   8
+// #define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1
+// #define SOC_RTCIO_HOLD_SUPPORTED 1 (does not have force_hold_all feature, but has deep_sleep_hold_all feature)
+// #define SOC_RTCIO_WAKE_SUPPORTED 1
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
