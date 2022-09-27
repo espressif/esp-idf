@@ -50,7 +50,7 @@ On Linux and macOS, it is recommended to install CMake using the OS package mana
 
 ---
 
-.. tool-xtensa-clang-notes
+.. tool-esp-clang-notes
 
 
 ---

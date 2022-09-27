@@ -371,10 +371,10 @@
       ]
     },
     {
-      "description": "LLVM for Xtensa (ESP32, ESP32-S2) based on clang",
+      "description": "Toolchain for all Espressif chips based on clang",
       "export_paths": [
         [
-          "xtensa-esp32-elf-clang",
+          "esp-clang",
           "bin"
         ]
       ],
@@ -382,10 +382,15 @@
       "info_url": "https://github.com/espressif/llvm-project",
       "install": "on_request",
       "license": "Apache-2.0",
-      "name": "xtensa-clang",
+      "name": "esp-clang",
       "supported_targets": [
         "esp32",
-        "esp32s2"
+        "esp32s2",
+        "esp32s3",
+        "esp32c3",
+        "esp32h4",
+        "esp32c2",
+        "esp32c6"
       ],
       "version_cmd": [
         "clang",
@@ -396,26 +401,36 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "b0148627912dacf4a4cab4596ba9467cb8dd771522ca27b9526bc57b88ff366f",
-            "size": 125101504,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-14.0.0-20220415/xtensa-esp32-elf-llvm14_0_0-esp-14.0.0-20220415-linux-amd64.tar.xz"
+            "sha256": "30379631cc1cdf6526940494964371a90aa7a940c4ff7333d9ffab35e6c0f978",
+            "size": 198800680,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221014/llvm-esp-15.0.0-20221014-linux-amd64.tar.xz"
+          },
+          "linux-arm64": {
+            "sha256": "c40c1c1d7ee94fc5967641aaffcbca263018b2df4f1d4249636c1adff0e35542",
+            "size": 204969304,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221014/llvm-esp-15.0.0-20221014-linux-arm64.tar.xz"
+          },
+          "linux-armhf": {
+            "sha256": "3931c81cdaa44a47739663b647e68778d3ed9532d67096618d6901ae3adfb3c1",
+            "size": 196967420,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221014/llvm-esp-15.0.0-20221014-linux-armhf.tar.xz"
           },
           "macos": {
-            "sha256": "1a78c598825ef168c0c5668aff7848825a7b9d014bffd1f2f2484ceea9df3841",
-            "size": 107100188,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-14.0.0-20220415/xtensa-esp32-elf-llvm14_0_0-esp-14.0.0-20220415-macos.tar.xz"
+            "sha256": "e7066b1dd74cbd42c3e5d140013b0b357c190b5361a1c2fd92e29efa34305cff",
+            "size": 164130904,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221014/llvm-esp-15.0.0-20221014-macos.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "1a78c598825ef168c0c5668aff7848825a7b9d014bffd1f2f2484ceea9df3841",
-            "size": 107100188,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-14.0.0-20220415/xtensa-esp32-elf-llvm14_0_0-esp-14.0.0-20220415-macos.tar.xz"
+            "sha256": "02b8af2bd934d4352da3743fc86c00d9258309d307c5af7f2be0cf85551535d3",
+            "size": 154036240,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221014/llvm-esp-15.0.0-20221014-macos-arm64.tar.xz"
           },
-          "name": "14.0.0-38679f0333",
+          "name": "15.0.0-32e64117af",
           "status": "recommended",
           "win64": {
-            "sha256": "793e7bd9c40fcb9a4fababaaccf3e4c5b8d9554d406af1b1fbee51806bf8c5dd",
-            "size": 174294128,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-14.0.0-20220415/xtensa-esp32-elf-llvm14_0_0-esp-14.0.0-20220415-win64.zip"
+            "sha256": "eba58ea6f9018c43748e938986f32c039a6dc49a384d994e9e515502b04c83f0",
+            "size": 230488412,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221014/llvm-esp-15.0.0-20221014-win64.tar.xz"
           }
         }
       ]
