@@ -53,6 +53,7 @@ typedef UINT8 tBTA_JV_STATUS;
 #define BTA_JV_MAX_L2C_CONN     GAP_MAX_CONNECTIONS /* GAP handle is used as index, hence do not change this value */
 #define BTA_JV_MAX_SCN          PORT_MAX_RFC_PORTS /* same as BTM_MAX_SCN (in btm_int.h) */
 #define BTA_JV_MAX_RFC_CONN     MAX_RFC_PORTS
+#define BTA_JV_MAX_CREDIT_NUM   PORT_RX_BUF_HIGH_WM
 
 #ifndef BTA_JV_DEF_RFC_MTU
 #define BTA_JV_DEF_RFC_MTU      (3*330)

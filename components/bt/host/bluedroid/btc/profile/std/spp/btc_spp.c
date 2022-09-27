@@ -54,6 +54,7 @@ typedef struct {
     uint8_t scn;
     uint8_t max_session;
     uint16_t mtu;
+    uint16_t credit_rx;
     uint16_t write_data_len;
     uint32_t id;
     uint32_t sdp_handle;
@@ -139,6 +140,7 @@ static spp_slot_t *spp_malloc_slot(void)
             (*slot)->connected = false;
             (*slot)->is_server = false;
             (*slot)->mtu = 0;
+            (*slot)->credit_rx = BTA_JV_MAX_CREDIT_NUM;
             (*slot)->write_data = NULL;
             (*slot)->write_data_len = 0;
             (*slot)->is_writing = false;
@@ -1277,6 +1279,9 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                 }
             }
             if (count != 0) {
+                osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+                slot->credit_rx += count;
+                osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
                 BTA_JvRfcommFlowControl(p_data->data_ind.handle, count);
                 BTC_TRACE_DEBUG("%s give credits:%d\n", __func__, count);
             }
@@ -1342,16 +1347,17 @@ int bta_co_rfc_data_incoming(void *user_data, BT_HDR *p_buf)
             BTC_TRACE_DEBUG("%s data post! %d, %d", __func__, slot->rfc_handle, rx_len);
             status = btc_transfer_context(&msg, &p_data, sizeof(tBTA_JV), NULL);
             assert(status == BT_STATUS_SUCCESS);
-        } else if (fixed_queue_length(slot->rx.queue) > 2) {
-            BTC_TRACE_DEBUG("%s data post stop! %d %d", __func__, slot->rfc_handle, fixed_queue_length(slot->rx.queue));
-            ret = 0; // reserved for other flow control
         }
     } else {
         fixed_queue_enqueue(slot->rx.queue, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
-        if (fixed_queue_length(slot->rx.queue) > 2) {
-            BTC_TRACE_DEBUG("%s data post stop! %d %d", __func__, slot->rfc_handle, fixed_queue_length(slot->rx.queue));
-            ret = 0; // reserved for other flow control
-        }
+    }
+    if (--slot->credit_rx == 0) {
+        BTC_TRACE_DEBUG("%s data post stop! %d %d", __func__, slot->rfc_handle, fixed_queue_length(slot->rx.queue));
+        ret = 0; // reserved for other flow control
+    }
+    if (slot->credit_rx > BTA_JV_MAX_CREDIT_NUM) {
+        BTC_TRACE_WARNING("%s credit %d", __func__, slot->credit_rx);
+        assert(0);
     }
     osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
     return ret;
@@ -1579,6 +1585,7 @@ static ssize_t spp_vfs_read(int fd, void * dst, size_t size)
     }
     if (count > 0) {
         osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+        slot->credit_rx += count;
         if ((slot = spp_local_param.spp_slots[serial]) != NULL) {
             BTA_JvRfcommFlowControl(slot->rfc_handle, count);
             BTC_TRACE_DEBUG("%s give credits:%d\n", __func__, count);
