@@ -385,8 +385,10 @@ To have better control of the calling sequence of functions, send mixed transact
     Please also see the example :example:`peripherals/spi_master/hd_eeprom`.
 
 
-    GPIO Matrix and IO_MUX
-    ----------------------
+GPIO Matrix and IO_MUX
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. only:: esp32
 
     Most of ESP32's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
@@ -419,7 +421,63 @@ To have better control of the calling sequence of functions, send mixed transact
     | QUADHD   | 4    | 21   |
     +----------+------+------+
 
-    \* Only the first Device attached to the bus can use the CS0 pin.
+    * Only the first Device attached to the bus can use the CS0 pin.
+
+.. only:: esp32s2 or esp32s3
+
+    Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
+
+    When an SPI Host is set to 80MHz or lower frequencies, routing SPI pins via GPIO matrix will behave the same comparing to routing them via IOMUX.
+
+    The IO_MUX pins for SPI buses are given below.
+
+    +----------+------+------+
+    | Pin Name | SPI2 | SPI3 |
+    +          +------+------+
+    |          | GPIO Number |
+    +==========+======+======+
+    | CS0*     | 10   | N/A  |
+    +----------+------+------+
+    | SCLK     | 12   | N/A  |
+    +----------+------+------+
+    | MISO     | 13   | N/A  |
+    +----------+------+------+
+    | MOSI     | 11   | N/A  |
+    +----------+------+------+
+    | QUADWP   | 14   | N/A  |
+    +----------+------+------+
+    | QUADHD   | 9    | N/A  |
+    +----------+------+------+
+
+    * Only the first Device attached to the bus can use the CS0 pin.
+
+.. only:: esp32c2 or esp32c3
+
+    Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
+
+    When an SPI Host is set to 80MHz or lower frequencies, routing SPI pins via GPIO matrix will behave the same comparing to routing them via IOMUX.
+
+    The IO_MUX pins for SPI buses are given below.
+
+    +----------+-------------+
+    | Pin Name |    SPI2     |
+    +          +-------------+
+    |          | GPIO Number |
+    +==========+=============+
+    | CS0*     |      10     |
+    +----------+-------------+
+    | SCLK     |      6      |
+    +----------+-------------+
+    | MISO     |      2      |
+    +----------+-------------+
+    | MOSI     |      7      |
+    +----------+-------------+
+    | QUADWP   |      5      |
+    +----------+-------------+
+    | QUADHD   |      4      |
+    +----------+-------------+
+
+    * Only the first Device attached to the bus can use the CS0 pin.
 
 
 .. _speed_considerations:
