@@ -75,7 +75,7 @@ void esp_crosscore_int_send_print_backtrace(int core_id);
 void esp_crosscore_int_send_twdt_abort(int core_id);
 
 #endif // CONFIG_ESP_TASK_WDT_EN
-#endif // !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C2
+#endif // !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C2 && !CONFIG_IDF_TARGET_ESP32C6
 
 #ifdef __cplusplus
 }

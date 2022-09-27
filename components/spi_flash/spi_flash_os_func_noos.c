@@ -26,6 +26,9 @@
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/ets_sys.h"
 #include "esp32c2/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/ets_sys.h"
+#include "esp32c6/rom/cache.h"
 #endif
 
 #include "esp_attr.h"
@@ -37,7 +40,7 @@ typedef struct {
 } spi_noos_arg_t;
 
 static DRAM_ATTR spi_noos_arg_t spi_arg = { 0 };
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
 typedef struct {
     uint32_t icache_autoload;
 } spi_noos_arg_t;
@@ -54,7 +57,7 @@ static IRAM_ATTR esp_err_t start(void *arg)
     spi_noos_arg_t *spi_arg = arg;
     spi_arg->icache_autoload = Cache_Suspend_ICache();
     spi_arg->dcache_autoload = Cache_Suspend_DCache();
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
     spi_noos_arg_t *spi_arg = arg;
     spi_arg->icache_autoload = Cache_Suspend_ICache();
 #endif
@@ -73,7 +76,7 @@ static IRAM_ATTR esp_err_t end(void *arg)
     Cache_Invalidate_ICache_All();
     Cache_Resume_ICache(spi_arg->icache_autoload);
     Cache_Resume_DCache(spi_arg->dcache_autoload);
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
     spi_noos_arg_t *spi_arg = arg;
     Cache_Invalidate_ICache_All();
     Cache_Resume_ICache(spi_arg->icache_autoload);

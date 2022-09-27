@@ -195,7 +195,9 @@ FORCE_INLINE_ATTR void rv_utils_dbgr_break(void)
 
 FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_t compare_value, uint32_t new_value)
 {
-    // Single core target has no atomic CAS instruction. We can achieve atomicity by disabling interrupts
+    // ESP32C6 starts to support atomic CAS instructions, but it is still a single core target, no need to implement
+    // through lr and sc instructions for now
+    // For an RV target has no atomic CAS instruction, we can achieve atomicity by disabling interrupts
     unsigned old_mstatus;
     old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     // Compare and set

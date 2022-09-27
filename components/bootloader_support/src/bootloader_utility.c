@@ -41,6 +41,13 @@
 #include "esp32c2/rom/uart.h"
 #include "esp32c2/rom/gpio.h"
 #include "esp32c2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/efuse.h"
+#include "esp32c6/rom/crc.h"
+#include "esp32c6/rom/rtc.h"
+#include "esp32c6/rom/uart.h"
+#include "esp32c6/rom/gpio.h"
+#include "esp32c6/rom/secure_boot.h"
 
 #else // CONFIG_IDF_TARGET_*
 #error "Unsupported IDF_TARGET"

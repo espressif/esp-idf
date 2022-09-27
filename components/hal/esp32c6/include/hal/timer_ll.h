@@ -41,9 +41,6 @@ static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num,
     case GPTIMER_CLK_SRC_APB:
         clk_id = 1;
         break;
-    case GPTIMER_CLK_SRC_RC_FAST:
-        clk_id = 2;
-        break;
     default:
         HAL_ASSERT(false);
         break;

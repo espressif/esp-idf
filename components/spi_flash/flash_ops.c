@@ -40,6 +40,8 @@
 #include "esp32h2/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/cache.h"
 #endif
 #include "esp_rom_spiflash.h"
 #include "esp_flash_partitions.h"

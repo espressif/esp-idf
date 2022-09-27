@@ -29,19 +29,7 @@
 #include "eap_common/eap_wsc_common.h"
 #include "esp_wpas_glue.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-const char *wps_model_number = "ESP32";
-#elif CONFIG_IDF_TARGET_ESP32S2
-const char *wps_model_number = "ESP32S2";
-#elif CONFIG_IDF_TARGET_ESP32S3
-const char *wps_model_number = "ESP32S3";
-#elif CONFIG_IDF_TARGET_ESP32C3
-const char *wps_model_number = "ESP32C3";
-#elif CONFIG_IDF_TARGET_ESP32C2
-const char *wps_model_number = "ESP32C2";
-#elif CONFIG_IDF_TARGET_ESP32H2
-const char *wps_model_number = "ESP32H2";
-#endif
+const char *wps_model_number = CONFIG_IDF_TARGET;
 
 void *s_wps_api_lock = NULL;  /* Used in WPS public API only, never be freed */
 void *s_wps_api_sem = NULL;   /* Sync semaphore used between WPS publi API caller task and WPS task */

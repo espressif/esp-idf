@@ -46,3 +46,11 @@ config ESP_ROM_HAS_HAL_WDT
 config ESP_ROM_NEEDS_SWSETUP_WORKAROUND
     bool
     default y
+
+config ESP_ROM_HAS_LAYOUT_TABLE
+    bool
+    default y
+
+config ESP_ROM_HAS_SPI_FLASH
+    bool
+    default y

@@ -1,5 +1,10 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
+if(IDF_TARGET STREQUAL "esp32c6")
+    # TODO : IDF-5680
+    return()
+endif()
+
 set(srcs "src/phy_override.c" "src/lib_printf.c")
 
 if(CONFIG_APP_NO_BLOBS)

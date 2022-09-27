@@ -128,9 +128,9 @@ static const char *TAG = "bootloader_flash";
    50th block for bootloader_flash_read
 */
 #define MMU_BLOCK0_VADDR  SOC_DROM_LOW
-#define MMU_SIZE          (0x320000)
-#define MMU_BLOCK50_VADDR (MMU_BLOCK0_VADDR + MMU_SIZE)
-#define FLASH_READ_VADDR MMU_BLOCK50_VADDR
+#define MMAP_MMU_SIZE     (0x320000)
+#define MMU_BLOCK50_VADDR (MMU_BLOCK0_VADDR + MMAP_MMU_SIZE)
+#define FLASH_READ_VADDR  MMU_BLOCK50_VADDR
 
 #else // !CONFIG_IDF_TARGET_ESP32
 
@@ -139,15 +139,15 @@ static const char *TAG = "bootloader_flash";
 */
 #define MMU_BLOCK0_VADDR  SOC_DROM_LOW
 #ifdef SOC_MMU_PAGE_SIZE_CONFIGURABLE
-#define MMU_SIZE          (DRAM0_CACHE_ADDRESS_HIGH(SPI_FLASH_MMU_PAGE_SIZE) - DRAM0_CACHE_ADDRESS_LOW - SPI_FLASH_MMU_PAGE_SIZE) // This mmu size means that the mmu size to be mapped
+#define MMAP_MMU_SIZE     (DRAM0_CACHE_ADDRESS_HIGH(SPI_FLASH_MMU_PAGE_SIZE) - DRAM0_CACHE_ADDRESS_LOW - SPI_FLASH_MMU_PAGE_SIZE) // This mmu size means that the mmu size to be mapped
 #else
-#define MMU_SIZE          (DRAM0_CACHE_ADDRESS_HIGH - DRAM0_CACHE_ADDRESS_LOW - SPI_FLASH_MMU_PAGE_SIZE) // This mmu size means that the mmu size to be mapped
+#define MMAP_MMU_SIZE     (DRAM0_CACHE_ADDRESS_HIGH - DRAM0_CACHE_ADDRESS_LOW - SPI_FLASH_MMU_PAGE_SIZE) // This mmu size means that the mmu size to be mapped
 #endif
-#define MMU_BLOCK63_VADDR (MMU_BLOCK0_VADDR + MMU_SIZE)
+#define MMU_BLOCK63_VADDR (MMU_BLOCK0_VADDR + MMAP_MMU_SIZE)
 #define FLASH_READ_VADDR MMU_BLOCK63_VADDR
 #endif
 
-#define MMU_FREE_PAGES    (MMU_SIZE / FLASH_BLOCK_SIZE)
+#define MMU_FREE_PAGES    (MMAP_MMU_SIZE / CONFIG_MMU_PAGE_SIZE)
 
 static bool mapped;
 
@@ -169,7 +169,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
         ESP_EARLY_LOGE(TAG, "tried to bootloader_mmap twice");
         return NULL; /* can't map twice */
     }
-    if (size > MMU_SIZE) {
+    if (size > MMAP_MMU_SIZE) {
         ESP_EARLY_LOGE(TAG, "bootloader_mmap excess size %x", size);
         return NULL;
     }
@@ -769,10 +769,8 @@ esp_err_t IRAM_ATTR bootloader_flash_reset_chip(void)
     bootloader_execute_flash_command(0x05, 0, 0, 0);
 #if CONFIG_IDF_TARGET_ESP32
     if (SPI1.ext2.st != 0)
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-    if (SPIMEM1.fsm.st != 0)
 #else
-    if (SPIMEM1.fsm.spi0_mst_st != 0)
+    if (!spimem_flash_ll_host_idle(&SPIMEM1))
 #endif
     {
         return ESP_FAIL;
