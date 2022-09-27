@@ -34,16 +34,20 @@ if(CONFIG_OPENTHREAD_ENABLED)
     if(CONFIG_OPENTHREAD_FTD OR CONFIG_OPENTHREAD_MTD)
         list(APPEND src_dirs
             "src"
-            "openthread/examples/apps/cli"
             "openthread/src/core/backbone_router"
             "openthread/src/core/coap"
             "openthread/src/core/meshcop"
             "openthread/src/core/net"
-            "openthread/src/cli"
             "openthread/src/lib/platform")
 
-        list(APPEND exclude_srcs
-            "openthread/examples/apps/cli/main.c")
+        if(CONFIG_OPENTHREAD_CLI)
+            list(APPEND src_dirs
+                "openthread/examples/apps/cli"
+                "openthread/src/cli")
+
+            list(APPEND exclude_srcs
+                "openthread/examples/apps/cli/main.c")
+        endif()
 
     elseif(CONFIG_OPENTHREAD_RADIO)
         list(APPEND src_dirs
@@ -61,6 +65,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/api/ip6_api.cpp"
             "openthread/src/core/api/link_api.cpp"
             "openthread/src/core/api/message_api.cpp"
+            "openthread/src/core/api/nat64_api.cpp"
             "openthread/src/core/api/netdata_api.cpp"
             "openthread/src/core/api/random_crypto_api.cpp"
             "openthread/src/core/api/tcp_api.cpp"
