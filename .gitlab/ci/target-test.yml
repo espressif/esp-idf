@@ -508,6 +508,14 @@ component_ut_pytest_esp32c3_sdspi:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, sdcard_spimode ]
 
+component_ut_pytest_esp32h2_i154:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32h2-i154
+  needs:
+    - build_pytest_components_esp32h2
+  tags: [ esp32h2, ieee802154 ]
+
 example_test_pytest_openthread_br:
   extends:
     - .pytest_examples_dir_template

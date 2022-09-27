@@ -137,6 +137,7 @@ build:integration_test:
       - usb       # USB Device & Host tests
       - spi_multi # UT_C2_SPI_DUAL
       - adc       # component_ut_pytest_esp32x_adc
+      - i154
   patterns:
     - "{0}-{1}-{2}"
     - "{0}-{2}"
