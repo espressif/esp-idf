@@ -160,6 +160,19 @@
 #ifndef MYNEWT_VAL_BLE_WHITELIST
 #define MYNEWT_VAL_BLE_WHITELIST (1)
 #endif
+
+#ifndef CONFIG_BT_NIMBLE_53_FEATURE_SUPPORT
+#define BLE_53_FEATURE_SUPPORT (0)
+#else
+#define BLE_53_FEATURE_SUPPORT (CONFIG_BT_NIMBLE_53_FEATURE_SUPPORT)
+#endif
+
+#ifndef CONFIG_BT_NIMBLE_SUBRATE
+#define MYNEWT_VAL_BLE_CONN_SUBRATING (0)
+#else
+#define MYNEWT_VAL_BLE_CONN_SUBRATING (CONFIG_BT_NIMBLE_SUBRATE)
+#endif
+
 /*** @apache-mynewt-nimble/nimble/controller */
 /*** @apache-mynewt-nimble/nimble/controller */
 #ifndef MYNEWT_VAL_BLE_CONTROLLER
