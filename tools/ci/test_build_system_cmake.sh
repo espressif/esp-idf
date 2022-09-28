@@ -691,7 +691,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     popd
 
 
-    print_status "Confserver can be invoked by idf.py"
+    print_status "Kconfserver can be invoked by idf.py"
     echo '{"version": 1}' | idf.py confserver || failure "Couldn't load confserver"
 
     print_status "Check ccache is used to build"

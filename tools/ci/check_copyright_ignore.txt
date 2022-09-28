@@ -1749,11 +1749,6 @@ tools/catch/catch.hpp
 tools/find_build_apps/__init__.py
 tools/find_build_apps/cmake.py
 tools/find_build_apps/common.py
-tools/kconfig_new/confserver.py
-tools/kconfig_new/test/confgen/test_confgen.py
-tools/kconfig_new/test/confserver/test_confserver.py
-tools/kconfig_new/test/gen_kconfig_doc/test_kconfig_out.py
-tools/kconfig_new/test/gen_kconfig_doc/test_target_visibility.py
 tools/ldgen/entity.py
 tools/ldgen/ldgen_common.py
 tools/ldgen/output_commands.py

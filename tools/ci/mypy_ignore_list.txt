@@ -189,14 +189,6 @@ tools/esp_prov/transport/transport_console.py
 tools/esp_prov/transport/transport_http.py
 tools/gen_esp_err_to_name.py
 tools/gen_soc_caps_kconfig/test/test_gen_soc_caps_kconfig.py
-tools/kconfig_new/confgen.py
-tools/kconfig_new/confserver.py
-tools/kconfig_new/gen_kconfig_doc.py
-tools/kconfig_new/prepare_kconfig_files.py
-tools/kconfig_new/test/confgen/test_confgen.py
-tools/kconfig_new/test/confserver/test_confserver.py
-tools/kconfig_new/test/gen_kconfig_doc/test_kconfig_out.py
-tools/kconfig_new/test/gen_kconfig_doc/test_target_visibility.py
 tools/ldgen/ldgen.py
 tools/ldgen/ldgen/entity.py
 tools/ldgen/ldgen/fragments.py

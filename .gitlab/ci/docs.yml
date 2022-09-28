@@ -5,7 +5,6 @@
   - "components/**/Kconfig*"
   - "components/**/CMakeList.txt"
   - "components/**/sdkconfig*"
-  - "tools/kconfig_new/**/*"
   - "tools/tools.json"
   - "tools/idf_tools.py"
   - "CONTRIBUTING.rst"
