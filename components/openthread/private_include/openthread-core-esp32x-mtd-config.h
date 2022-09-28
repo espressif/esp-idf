@@ -42,21 +42,25 @@
 #define OPENTHREAD_CONFIG_LOG_OUTPUT OPENTHREAD_CONFIG_LOG_OUTPUT_PLATFORM_DEFINED
 
 /**
+ * @def OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE
+ *
+ * Configuration option to enable dynamic log level control.
+ *
+ */
+#define OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE CONFIG_OPENTHREAD_LOG_LEVEL_DYNAMIC
+
+/**
  * @def OPENTHREAD_CONFIG_LOG_LEVEL
  *
  * The log level (used at compile time). If `OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE` is set, this defines the most
  * verbose log level possible. See `OPENTHREAD_CONFIG_LOG_LEVEL_INIT` to set the initial log level.
  *
  */
+#if OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE
 #define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_DEBG
-
-/**
- * @def OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE
- *
- * Define as 1 to enable dynamic log level control.
- *
- */
-#define OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE 1
+#else
+#define OPENTHREAD_CONFIG_LOG_LEVEL CONFIG_OPENTHREAD_LOG_LEVEL
+#endif
 
 #define OPENTHREAD_CONFIG_LOG_CLI 1
 #define OPENTHREAD_CONFIG_LOG_PKT_DUMP 1
