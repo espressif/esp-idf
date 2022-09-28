@@ -52,7 +52,7 @@ typedef struct protocomm_ble_config {
     /**
      * BLE device name being broadcast at the time of provisioning
      */
-    char         device_name[MAX_BLE_DEVNAME_LEN];
+    char         device_name[MAX_BLE_DEVNAME_LEN + 1];
 
     /**
      * 128 bit UUID of the provisioning service
