@@ -13,7 +13,6 @@ set(srcs
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "memprot.c"
-                     "esp_hmac.c"
                      "esp_crypto_lock.c"
                      "esp_ds.c")
 
