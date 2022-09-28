@@ -1,3 +1,2 @@
 dependencies:
-  idf: ">=5.0"
-  espressif/esp_serial_slave_link: ">=1.0.0"
+  espressif/esp_serial_slave_link: "^1.0.0"
