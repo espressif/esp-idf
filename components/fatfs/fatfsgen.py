@@ -181,9 +181,7 @@ class FATFS:
 
 
 def main() -> None:
-    args = get_args_for_partition_generator('Create a FAT filesystem and populate it with directory content')
-    if args.sector_size != 0x1000:
-        raise NotImplementedError('The sector size not equal to 4096 is currently not supported for read-only mode!')
+    args = get_args_for_partition_generator('Create a FAT filesystem and populate it with directory content', wl=False)
     fatfs = FATFS(sector_size=args.sector_size,
                   sectors_per_cluster=args.sectors_per_cluster,
                   size=args.partition_size,

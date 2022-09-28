@@ -201,8 +201,7 @@ class WLFATFS:
 
 if __name__ == '__main__':
     desc = 'Create a FAT filesystem with support for wear levelling and populate it with directory content'
-    args = get_args_for_partition_generator(desc)
-
+    args = get_args_for_partition_generator(desc, wl=True)
     wl_fatfs = WLFATFS(sectors_per_cluster=args.sectors_per_cluster,
                        size=args.partition_size,
                        sector_size=args.sector_size,

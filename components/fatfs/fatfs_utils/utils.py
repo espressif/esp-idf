@@ -48,8 +48,9 @@ LONG_NAMES_ENCODING: str = 'utf-16'
 SHORT_NAMES_ENCODING: str = 'utf-8'
 
 # compatible with WL_SECTOR_SIZE
-# choices are WL_SECTOR_SIZE_512 and WL_SECTOR_SIZE_4096
-ALLOWED_SECTOR_SIZES: List[int] = [512, 4096]
+# choices for WL are WL_SECTOR_SIZE_512 and WL_SECTOR_SIZE_4096
+ALLOWED_WL_SECTOR_SIZES: List[int] = [512, 4096]
+ALLOWED_SECTOR_SIZES: List[int] = [512, 1024, 2048, 4096]
 
 ALLOWED_SECTORS_PER_CLUSTER: List[int] = [1, 2, 4, 8, 16, 32, 64, 128]
 
@@ -164,7 +165,7 @@ def split_content_into_sectors(content: bytes, sector_size: int) -> List[bytes]:
     return result
 
 
-def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
+def get_args_for_partition_generator(desc: str, wl: bool) -> argparse.Namespace:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_directory',
                         help='Path to the directory that will be encoded into fatfs image')
@@ -177,7 +178,7 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
     parser.add_argument('--sector_size',
                         default=FATDefaults.SECTOR_SIZE,
                         type=int,
-                        choices=ALLOWED_SECTOR_SIZES,
+                        choices=ALLOWED_WL_SECTOR_SIZES if wl else ALLOWED_SECTOR_SIZES,
                         help='Size of the partition in bytes')
     parser.add_argument('--sectors_per_cluster',
                         default=1,
