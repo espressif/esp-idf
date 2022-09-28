@@ -1146,6 +1146,9 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
         xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
         return ESP_OK;
     }
+    if (!UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
+        uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
+    }
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
