@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include <stddef.h> /* For NULL declaration */
 #include <stdint.h>
 #include <stdbool.h>
 #include "hal/misc.h"
@@ -23,25 +24,27 @@ extern "C" {
 #define LCD_LL_EVENT_VSYNC_END  (1 << 0)
 #define LCD_LL_EVENT_TRANS_DONE (1 << 1)
 
-// Maximum coefficient of clock prescaler
-#define LCD_LL_CLOCK_PRESCALE_MAX (64)
+#define LCD_LL_CLK_FRAC_DIV_N_MAX  256 // LCD_CLK = LCD_CLK_S / (N + b/a), the N register is 8 bit-width
+#define LCD_LL_CLK_FRAC_DIV_AB_MAX 64  // LCD_CLK = LCD_CLK_S / (N + b/a), the a/b register is 6 bit-width
+#define LCD_LL_PCLK_DIV_MAX        64  // LCD_PCLK = LCD_CLK / MO, the MO register is 6 bit-width
+
+#define LCD_LL_COLOR_RANGE_TO_REG(range) (uint8_t[]){0,1}[(range)]
+#define LCD_LL_CONV_STD_TO_REG(std)      (uint8_t[]){0,1}[(std)]
+#define LCD_LL_YUV_SAMPLE_TO_REG(sample) (uint8_t[]){0,1,2}[(sample)]
 
 static inline void lcd_ll_enable_clock(lcd_cam_dev_t *dev, bool en)
 {
     dev->lcd_clock.clk_en = en;
 }
 
-static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, lcd_clock_source_t src, int div_num, int div_a, int div_b)
+/**
+ * @brief Select clock source for LCD peripheral
+ *
+ * @param dev LCD register base address
+ * @param src Clock source
+ */
+static inline void lcd_ll_select_clk_src(lcd_cam_dev_t *dev, lcd_clock_source_t src)
 {
-    // lcd_clk = module_clock_src / (div_num + div_b / div_a)
-    HAL_ASSERT(div_num >= 2 && div_num <= 256);
-    // dic_num == 0 means 256 divider in hardware
-    if (div_num >= 256) {
-        div_num = 0;
-    }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lcd_clock, lcd_clkm_div_num, div_num);
-    dev->lcd_clock.lcd_clkm_div_a = div_a;
-    dev->lcd_clock.lcd_clkm_div_b = div_b;
     switch (src) {
     case LCD_CLK_SRC_PLL160M:
         dev->lcd_clock.lcd_clk_sel = 3;
@@ -53,13 +56,41 @@ static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, lcd_clock_sour
         dev->lcd_clock.lcd_clk_sel = 1;
         break;
     default:
-        // disble LCD clock source
+        // disable LCD clock source
         dev->lcd_clock.lcd_clk_sel = 0;
-        HAL_ASSERT(false && "unsupported clock source");
+        HAL_ASSERT(false);
         break;
     }
 }
 
+/**
+ * @brief Set clock coefficient of LCD peripheral
+ *
+ * @param dev LCD register base address
+ * @param div_num Integer part of the divider
+ * @param div_a denominator of the divider
+ * @param div_b numerator of the divider
+ */
+static inline void lcd_ll_set_group_clock_coeff(lcd_cam_dev_t *dev, int div_num, int div_a, int div_b)
+{
+    // lcd_clk = module_clock_src / (div_num + div_b / div_a)
+    HAL_ASSERT(div_num >= 2 && div_num <= LCD_LL_CLK_FRAC_DIV_N_MAX);
+    // dic_num == 0 means LCD_LL_CLK_FRAC_DIV_N_MAX divider in hardware
+    if (div_num >= LCD_LL_CLK_FRAC_DIV_N_MAX) {
+        div_num = 0;
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lcd_clock, lcd_clkm_div_num, div_num);
+    dev->lcd_clock.lcd_clkm_div_a = div_a;
+    dev->lcd_clock.lcd_clkm_div_b = div_b;
+}
+
+
+/**
+ * @brief Set the PCLK clock level state when there's no transaction undergoing
+ *
+ * @param dev LCD register base address
+ * @param level 1 is high level, 0 is low level
+ */
 __attribute__((always_inline))
 static inline void lcd_ll_set_clock_idle_level(lcd_cam_dev_t *dev, bool level)
 {
@@ -75,6 +106,7 @@ static inline void lcd_ll_set_pixel_clock_edge(lcd_cam_dev_t *dev, bool active_o
 __attribute__((always_inline))
 static inline void lcd_ll_set_pixel_clock_prescale(lcd_cam_dev_t *dev, uint32_t prescale)
 {
+    HAL_ASSERT(prescale <= LCD_LL_PCLK_DIV_MAX);
     // Formula: pixel_clk = lcd_clk / (1 + clkcnt_n)
     // clkcnt_n can't be zero
     uint32_t scale = 1;
@@ -90,6 +122,92 @@ static inline void lcd_ll_set_pixel_clock_prescale(lcd_cam_dev_t *dev, uint32_t 
 static inline void lcd_ll_enable_rgb_yuv_convert(lcd_cam_dev_t *dev, bool en)
 {
     dev->lcd_rgb_yuv.lcd_conv_bypass = en;
+}
+
+/**
+ * @brief Set convert data line width
+ *
+ * @param dev LCD register base address
+ * @param width data line width (8 or 16)
+ */
+static inline void lcd_ll_set_convert_data_width(lcd_cam_dev_t *dev, uint32_t width)
+{
+    HAL_ASSERT(width == 8 || width == 16);
+    dev->lcd_rgb_yuv.lcd_conv_mode_8bits_on = (width == 8) ? 1 : 0;
+}
+
+/**
+ * @brief Set the color range of input data
+ *
+ * @param dev LCD register base address
+ * @param range Color range
+ */
+static inline void lcd_ll_set_input_color_range(lcd_cam_dev_t *dev, lcd_color_range_t range)
+{
+    dev->lcd_rgb_yuv.lcd_conv_data_in_mode = LCD_LL_COLOR_RANGE_TO_REG(range);
+}
+
+/**
+ * @brief Set the color range of output data
+ *
+ * @param dev LCD register base address
+ * @param range Color range
+ */
+static inline void lcd_ll_set_output_color_range(lcd_cam_dev_t *dev, lcd_color_range_t range)
+{
+    dev->lcd_rgb_yuv.lcd_conv_data_out_mode = LCD_LL_COLOR_RANGE_TO_REG(range);
+}
+
+/**
+ * @brief Set YUV conversion standard
+ *
+ * @param dev LCD register base address
+ * @param std YUV conversion standard
+ */
+static inline void lcd_ll_set_yuv_convert_std(lcd_cam_dev_t *dev, lcd_yuv_conv_std_t std)
+{
+    dev->lcd_rgb_yuv.lcd_conv_protocol_mode = LCD_LL_CONV_STD_TO_REG(std);
+}
+
+/**
+ * @brief Set the converter mode: RGB565 to YUV
+ *
+ * @param dev LCD register base address
+ * @param yuv_sample YUV sample mode
+ */
+static inline void lcd_ll_set_convert_mode_rgb_to_yuv(lcd_cam_dev_t *dev, lcd_yuv_sample_t yuv_sample)
+{
+    dev->lcd_rgb_yuv.lcd_conv_trans_mode = 1;
+    dev->lcd_rgb_yuv.lcd_conv_yuv_mode = LCD_LL_YUV_SAMPLE_TO_REG(yuv_sample);
+    dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 3;
+}
+
+/**
+ * @brief Set the converter mode: YUV to RGB565
+ *
+ * @param dev LCD register base address
+ * @param yuv_sample YUV sample mode
+ */
+static inline void lcd_ll_set_convert_mode_yuv_to_rgb(lcd_cam_dev_t *dev, lcd_yuv_sample_t yuv_sample)
+{
+    dev->lcd_rgb_yuv.lcd_conv_trans_mode = 0;
+    dev->lcd_rgb_yuv.lcd_conv_yuv_mode = LCD_LL_YUV_SAMPLE_TO_REG(yuv_sample);
+    dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 3;
+}
+
+/**
+ * @brief Set the converter mode: YUV to YUV
+ *
+ * @param dev LCD register base address
+ * @param src_sample Source YUV sample mode
+ * @param dst_sample Destination YUV sample mode
+ */
+static inline void lcd_ll_set_convert_mode_yuv_to_yuv(lcd_cam_dev_t *dev, lcd_yuv_sample_t src_sample, lcd_yuv_sample_t dst_sample)
+{
+    HAL_ASSERT(src_sample != dst_sample);
+    dev->lcd_rgb_yuv.lcd_conv_trans_mode = 1;
+    dev->lcd_rgb_yuv.lcd_conv_yuv_mode = LCD_LL_YUV_SAMPLE_TO_REG(src_sample);
+    dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = LCD_LL_YUV_SAMPLE_TO_REG(dst_sample);
 }
 
 __attribute__((always_inline))
