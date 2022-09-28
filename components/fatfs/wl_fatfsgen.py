@@ -82,6 +82,7 @@ class WLFATFS:
 
     def __init__(self,
                  size: int = FATDefaults.SIZE,
+                 sector_size: int = FATDefaults.SECTOR_SIZE,
                  reserved_sectors_cnt: int = FATDefaults.RESERVED_SECTORS_COUNT,
                  fat_tables_cnt: int = FATDefaults.FAT_TABLES_COUNT,
                  sectors_per_cluster: int = FATDefaults.SECTORS_PER_CLUSTER,
@@ -122,7 +123,7 @@ class WLFATFS:
             reserved_sectors_cnt=reserved_sectors_cnt,
             fat_tables_cnt=fat_tables_cnt,
             sectors_per_cluster=sectors_per_cluster,
-            sector_size=FATDefaults.WL_SECTOR_SIZE,
+            sector_size=sector_size,
             root_entry_count=root_entry_count,
             hidden_sectors=hidden_sectors,
             long_names_enabled=long_names_enabled,
@@ -221,6 +222,7 @@ if __name__ == '__main__':
 
     wl_fatfs = WLFATFS(sectors_per_cluster=args.sectors_per_cluster,
                        size=args.partition_size,
+                       sector_size=args.sector_size,
                        root_entry_count=args.root_entry_count,
                        explicit_fat_type=args.fat_type,
                        long_names_enabled=args.long_name_support,
