@@ -165,6 +165,22 @@ esp_err_t esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us);
 esp_err_t esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period);
 
 /**
+ * @brief Restart a currently running timer
+ *
+ * If the given timer is a one-shot timer, the timer is restarted immediately and will timeout once in `timeout_us` microseconds.
+ * If the given timer is a periodic timer, the timer is restarted immediately with a new period of `timeout_us` microseconds.
+ *
+ * @param timer timer Handle created using esp_timer_create
+ * @param timeout_us Timeout, in microseconds relative to the current time.
+ *                   In case of a periodic timer, also represents the new period.
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the handle is invalid
+ *      - ESP_ERR_INVALID_STATE if the timer is not running
+ */
+esp_err_t esp_timer_restart(esp_timer_handle_t timer, uint64_t timeout_us);
+
+/**
  * @brief Stop the timer
  *
  * This function stops the timer previously started using esp_timer_start_once

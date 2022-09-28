@@ -18,12 +18,6 @@
 #include "esp_private/esp_task_wdt_impl.h"
 
 /**
- * Private API provided by esp_timer component to feed a timer without
- * the need of disabling it, removing it and inserting it manually.
- */
-esp_err_t esp_timer_feed(esp_timer_handle_t timer);
-
-/**
  * Context for the software implementation of the Task WatchDog Timer.
  * This will be passed as a parameter to public functions below. */
 typedef struct {
@@ -108,7 +102,8 @@ esp_err_t esp_task_wdt_impl_timer_feed(twdt_ctx_t obj)
     }
 
     if (ret == ESP_OK) {
-        ret = esp_timer_feed(ctx->sw_timer);
+        /* Feed the periodic timer by restarting it, specifying the same period */
+        ret = esp_timer_restart(ctx->sw_timer, ctx->period_ms * 1000);
     }
 
     return ret;
