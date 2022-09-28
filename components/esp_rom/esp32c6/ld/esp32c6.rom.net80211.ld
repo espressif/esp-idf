@@ -6,7 +6,7 @@
 /* ROM function interface esp32c6.rom.net80211.ld for esp32c6
  *
  *
- * Generated from ./target/esp32c6/interface-esp32c6.yml md5sum 49b5eec776610e08f2ed989e3ffc2ba0
+ * Generated from ./target/esp32c6/interface-esp32c6.yml md5sum 06c13e133e0743d09b87aba30d3e213b
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
@@ -50,9 +50,9 @@ ieee80211_search_node = 0x40000bbc;
 ieee80211_crypto_encap = 0x40000bc0;
 ieee80211_crypto_decap = 0x40000bc4;
 ieee80211_decap = 0x40000bc8;
-ieee80211_set_tx_pti = 0x40000bcc;
-wifi_is_started = 0x40000bd0;
-ieee80211_gettid = 0x40000bd4;
+wifi_is_started = 0x40000bcc;
+ieee80211_gettid = 0x40000bd0;
+ieee80211_encap_esfbuf_htc = 0x40000bd4;
 /* Data (.data, .bss, .rodata) */
 net80211_funcs = 0x4087ffac;
 g_scan = 0x4087ffa8;
@@ -63,3 +63,5 @@ g_tx_cacheq_ptr = 0x4087ff98;
 s_netstack_free = 0x4087ff94;
 mesh_rxcb = 0x4087ff90;
 sta_rxcb = 0x4087ff8c;
+g_itwt_fid = 0x4087ff88;
+esp_test_tx_addba_request = 0x4087ff84;

@@ -6,7 +6,7 @@
 /* ROM function interface esp32c6.rom.coexist.ld for esp32c6
  *
  *
- * Generated from ./target/esp32c6/interface-esp32c6.yml md5sum 49b5eec776610e08f2ed989e3ffc2ba0
+ * Generated from ./target/esp32c6/interface-esp32c6.yml md5sum 06c13e133e0743d09b87aba30d3e213b
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *

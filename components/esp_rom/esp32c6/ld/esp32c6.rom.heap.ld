@@ -6,7 +6,7 @@
 /* ROM function interface esp32c6.rom.heap.ld for esp32c6
  *
  *
- * Generated from ./target/esp32c6/interface-esp32c6.yml md5sum 49b5eec776610e08f2ed989e3ffc2ba0
+ * Generated from ./target/esp32c6/interface-esp32c6.yml md5sum 06c13e133e0743d09b87aba30d3e213b
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
@@ -44,7 +44,7 @@ multi_heap_get_block_address_impl = 0x40000454;
 multi_heap_get_allocated_size_impl = 0x40000458;
 multi_heap_register_impl = 0x4000045c;
 multi_heap_set_lock = 0x40000460;
-multi_heap_os_funcs_init = 0x40000464;
+multi_heap_mutex_init = 0x40000464;
 multi_heap_internal_lock = 0x40000468;
 multi_heap_internal_unlock = 0x4000046c;
 multi_heap_get_first_block = 0x40000470;
@@ -76,5 +76,6 @@ PROVIDE (multi_heap_aligned_alloc = multi_heap_aligned_alloc_impl);
 PROVIDE (multi_heap_aligned_free = multi_heap_aligned_free_impl);
 PROVIDE (multi_heap_check = multi_heap_check);
 PROVIDE (multi_heap_set_lock = multi_heap_set_lock);
+PROVIDE (multi_heap_os_funcs_init = multi_heap_mutex_init);
 PROVIDE (multi_heap_internal_lock = multi_heap_internal_lock);
 PROVIDE (multi_heap_internal_unlock = multi_heap_internal_unlock);
