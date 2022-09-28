@@ -143,11 +143,7 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
     return ESP_OK;
 }
 
-/**
- * Function to feed a timer. It is not part of the public header
- * file on purpose as it shall only be used by the Task WDT component.
- */
-esp_err_t esp_timer_feed(esp_timer_handle_t timer)
+esp_err_t esp_timer_restart(esp_timer_handle_t timer, uint64_t timeout_us)
 {
     esp_err_t ret = ESP_OK;
 
@@ -155,7 +151,7 @@ esp_err_t esp_timer_feed(esp_timer_handle_t timer)
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (!is_initialized() || !timer_armed(timer) || timer->period == 0 ) {
+    if (!is_initialized() || !timer_armed(timer)) {
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -164,10 +160,6 @@ esp_err_t esp_timer_feed(esp_timer_handle_t timer)
 
     const int64_t now = esp_timer_impl_get_time();
     const uint64_t period = timer->period;
-    /* Currently we are guaranteed that the remaining delay between now and the timer's
-     * alarm is less than the period, so the following won't cause the alarm to be
-     * triggered earlier than before feeding occurs. */
-    const uint64_t alarm = now + period;
 
     /* We need to remove the timer to the list of timers and reinsert it at
      * the right position. In fact, the timers are sorted by their alarm value
@@ -175,9 +167,19 @@ esp_err_t esp_timer_feed(esp_timer_handle_t timer)
     ret = timer_remove(timer);
 
     if (ret == ESP_OK) {
-        /* Remove function got rid of the alarm and period fields, restore them */
-        timer->alarm = alarm;
-        timer->period = period;
+        /* Two cases here:
+         * - if the alarm was a periodic one, i.e. `period` is not 0, the given timeout_us becomes the new period
+         * - if the alarm was a one-shot one, i.e. `period` is 0, it remains non-periodic. */
+        if (period != 0) {
+            /* Remove function got rid of the alarm and period fields, restore them */
+            const uint64_t new_period = MAX(timeout_us, esp_timer_impl_get_min_period_us());
+            timer->alarm = now + new_period;
+            timer->period = new_period;
+        } else {
+            /* The new one-shot alarm shall be triggered timeout_us after the current time */
+            timer->alarm = now + timeout_us;
+            timer->period = 0;
+        }
         ret = timer_insert(timer, false);
     }
 
