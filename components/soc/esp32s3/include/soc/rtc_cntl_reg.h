@@ -3683,6 +3683,9 @@ ork.*/
 #define RTC_CNTL_DISABLE_RTC_CPU_V  0x1
 #define RTC_CNTL_DISABLE_RTC_CPU_S  31
 
+/*
+Due to the LDO slaves, RTC_CNTL_DATE_REG[18:13] can only be used for LDO adjustment.
+*/
 #define RTC_CNTL_DATE_REG          (DR_REG_RTCCNTL_BASE + 0x1FC)
 /* RTC_CNTL_DATE : R/W ;bitpos:[27:0] ;default: 28'h2101271 ; */
 /*description: .*/
@@ -3690,7 +3693,12 @@ ork.*/
 #define RTC_CNTL_DATE_M  ((RTC_CNTL_DATE_V)<<(RTC_CNTL_DATE_S))
 #define RTC_CNTL_DATE_V  0xFFFFFFF
 #define RTC_CNTL_DATE_S  0
-
+/*LDO SLAVE : R/W ;bitpos:[18:13] ; default: 6'd0 ;*/
+/*description: .*/
+#define RTC_CNTL_SLAVE_PD    0x0000003F
+#define RTC_CNTL_SLAVE_PD_M  ((RTC_CNTL_SLAVE_V)<<(RTC_CNTL_SLAVE_S))
+#define RTC_CNTL_SLAVE_PD_V  0x3F
+#define RTC_CNTL_SLAVE_PD_S  13
 
 #ifdef __cplusplus
 }
