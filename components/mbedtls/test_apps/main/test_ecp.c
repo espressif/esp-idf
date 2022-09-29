@@ -18,6 +18,8 @@
 #include <mbedtls/ecdsa.h>
 #include <mbedtls/error.h>
 
+#include "test_utils.h"
+#include "ccomp_timer.h"
 #include "unity.h"
 
 /* Note: negative value here so that assert message prints a grep-able
@@ -171,6 +173,7 @@ static int rng_wrapper(void *ctx, unsigned char *buf, size_t len)
 static void test_ecp_mul(mbedtls_ecp_group_id id, const uint8_t *x_coord, const uint8_t *y_coord, const uint8_t *scalar,
                         const uint8_t *result_x_coord, const uint8_t *result_y_coord)
 {
+    int64_t elapsed_time;
     uint8_t x[32];
     uint8_t y[32];
     int size;
@@ -197,7 +200,9 @@ static void test_ecp_mul(mbedtls_ecp_group_id id, const uint8_t *x_coord, const 
 
     mbedtls_mpi_lset(&P.MBEDTLS_PRIVATE(Z), 1);
 
+    ccomp_timer_start();
     ret = mbedtls_ecp_mul(&grp, &R, &m, &P, rng_wrapper, NULL);
+    elapsed_time = ccomp_timer_stop();
 
     TEST_ASSERT_EQUAL(0, ret);
 
@@ -206,6 +211,12 @@ static void test_ecp_mul(mbedtls_ecp_group_id id, const uint8_t *x_coord, const 
 
     TEST_ASSERT_EQUAL(0, memcmp(x, result_x_coord, mbedtls_mpi_size(&R.MBEDTLS_PRIVATE(X))));
     TEST_ASSERT_EQUAL(0, memcmp(y, result_y_coord, mbedtls_mpi_size(&R.MBEDTLS_PRIVATE(Y))));
+
+    if (id == MBEDTLS_ECP_DP_SECP192R1) {
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_MULTIPLY_OP, "%d us", elapsed_time);
+    } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_MULTIPLY_OP, "%d us", elapsed_time);
+    }
 
     mbedtls_ecp_point_free(&R);
     mbedtls_ecp_point_free(&P);
@@ -227,6 +238,7 @@ TEST_CASE("mbedtls ECP point multiply with SECP256R1", "[mbedtls]")
 
 static void test_ecp_verify(mbedtls_ecp_group_id id, const uint8_t *x_coord, const uint8_t *y_coord)
 {
+    int64_t elapsed_time;
     int size;
     int ret;
 
@@ -244,9 +256,17 @@ static void test_ecp_verify(mbedtls_ecp_group_id id, const uint8_t *x_coord, con
     mbedtls_mpi_read_binary(&P.MBEDTLS_PRIVATE(Y), y_coord, size);
     mbedtls_mpi_lset(&P.MBEDTLS_PRIVATE(Z), 1);
 
+    ccomp_timer_start();
     ret = mbedtls_ecp_check_pubkey(&grp, &P);
+    elapsed_time = ccomp_timer_stop();
 
     TEST_ASSERT_EQUAL(0, ret);
+
+    if (id == MBEDTLS_ECP_DP_SECP192R1) {
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_VERIFY_OP, "%d us", elapsed_time);
+    } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_VERIFY_OP, "%d us", elapsed_time);
+    }
 
     mbedtls_ecp_point_free(&P);
     mbedtls_ecp_group_free(&grp);
