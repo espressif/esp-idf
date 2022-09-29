@@ -6,6 +6,44 @@ menu "OpenThread"
         help
             Select this option to enable OpenThread and show the submenu with OpenThread configuration choices.
 
+    config OPENTHREAD_LOG_LEVEL_DYNAMIC
+        bool "Enable dynamic log level control"
+        depends on OPENTHREAD_ENABLED
+        default y
+        help
+            Select this option to enable dynamic log level control for OpenThread
+
+    choice OPENTHREAD_LOG_LEVEL
+        prompt "OpenThread log verbosity"
+        depends on OPENTHREAD_ENABLED && !OPENTHREAD_LOG_LEVEL_DYNAMIC
+        default OPENTHREAD_LOG_LEVEL_INFO
+        help
+            Select OpenThread log level.
+
+        config OPENTHREAD_LOG_LEVEL_NONE
+            bool "No logs"
+        config OPENTHREAD_LOG_LEVEL_CRIT
+            bool "Error logs"
+        config OPENTHREAD_LOG_LEVEL_WARN
+            bool "Warning logs"
+        config OPENTHREAD_LOG_LEVEL_NOTE
+            bool "Notice logs"
+        config OPENTHREAD_LOG_LEVEL_INFO
+            bool "Info logs"
+        config OPENTHREAD_LOG_LEVEL_DEBG
+            bool "Debug logs"
+    endchoice #OPENTHREAD_LOG_LEVEL
+
+    config OPENTHREAD_LOG_LEVEL
+        int
+        depends on OPENTHREAD_ENABLED && !OPENTHREAD_LOG_LEVEL_DYNAMIC
+        default 0 if OPENTHREAD_LOG_LEVEL_NONE
+        default 1 if OPENTHREAD_LOG_LEVEL_CRIT
+        default 2 if OPENTHREAD_LOG_LEVEL_WARN
+        default 3 if OPENTHREAD_LOG_LEVEL_NOTE
+        default 4 if OPENTHREAD_LOG_LEVEL_INFO
+        default 5 if OPENTHREAD_LOG_LEVEL_DEBG
+
     choice OPENTHREAD_RADIO_TYPE
         prompt "Config the Thread radio type"
         depends on OPENTHREAD_ENABLED
@@ -50,6 +88,13 @@ menu "OpenThread"
                 The OpenThread stack will be run on the host and OpenThread will have minimal footprint on the
                 radio only device.
     endchoice
+
+    config OPENTHREAD_CLI
+        bool "Enable Openthread Command-Line Interface"
+        depends on OPENTHREAD_ENABLED
+        default y
+        help
+            Select this option to enable Command-Line Interface in OpenThread.
 
     config OPENTHREAD_DIAG
         bool "Enable diag"
