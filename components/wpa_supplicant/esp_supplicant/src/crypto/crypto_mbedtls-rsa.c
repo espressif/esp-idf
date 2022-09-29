@@ -339,8 +339,11 @@ int  crypto_public_key_decrypt_pkcs1(struct crypto_public_key *key,
 	size_t len;
 	u8 *pos;
 	mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
+	len = mbedtls_pk_rsa(*pkey)->MBEDTLS_PRIVATE(len);
+	if (len != crypt_len) {
+		return -1;
+	}
 
-	len = *plain_len;
 	if (mbedtls_rsa_public(mbedtls_pk_rsa(*pkey), crypt, plain) < 0)
 		return -1;
 
