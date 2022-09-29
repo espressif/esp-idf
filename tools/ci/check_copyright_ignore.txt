@@ -1582,7 +1582,6 @@ examples/build_system/cmake/import_prebuilt/main/main.c
 examples/build_system/cmake/import_prebuilt/prebuilt/components/prebuilt/prebuilt.c
 examples/build_system/cmake/import_prebuilt/prebuilt/components/prebuilt/prebuilt.h
 examples/build_system/cmake/import_prebuilt/prebuilt/main/main.c
-examples/build_system/cmake/linux_host_app/main/linux_host_app.cpp
 examples/build_system/cmake/multi_config/main/func.h
 examples/build_system/cmake/multi_config/main/func_dev.c
 examples/build_system/cmake/multi_config/main/func_prod.c
