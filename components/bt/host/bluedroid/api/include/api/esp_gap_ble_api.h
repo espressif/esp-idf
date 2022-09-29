@@ -765,6 +765,9 @@ typedef uint8_t esp_ble_gap_sync_t;
 #define ESP_BLE_LEGACY_ADV_TYPE_SCAN_RSP_TO_ADV_SCAN_IND  (0x1a)
 typedef uint8_t esp_ble_gap_adv_type_t;
 
+/// Extend advertising tx power, range: [-127, +126] dBm
+#define EXT_ADV_TX_PWR_NO_PREFERENCE                      (127) /*!< host has no preference for tx power */
+
 /**
 * @brief ext adv parameters
 */
