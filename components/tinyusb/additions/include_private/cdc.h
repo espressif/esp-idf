@@ -41,7 +41,7 @@ typedef struct {
     tinyusb_usbdev_t usb_dev;                           /*!< USB device to set up */
     tusb_class_code_t cdc_class;                 /*!< CDC device class : Communications or Data device */
     union {
-        cdc_comm_sublcass_type_t comm_subclass; /*!< Communications device subclasses: AMC, ECM, etc. */
+        cdc_comm_sublcass_type_t comm_subclass; /*!< Communications device subclasses: ACM, ECM, etc. */
         cdc_data_sublcass_type_t data_subclass; /*!< Data device has only one subclass.*/
     } cdc_subclass;                                     /*!< CDC device subclass according to Class Definitions for Communications Devices the CDC v.1.20 */
 } tinyusb_config_cdc_t;                                 /*!< Main configuration structure of a CDC device */
@@ -50,7 +50,7 @@ typedef struct {
     tinyusb_usbdev_t usb_dev;                           /*!< USB device used for the instance */
     tusb_class_code_t type;
     union {
-        cdc_comm_sublcass_type_t comm_subclass; /*!< Communications device subclasses: AMC, ECM, etc. */
+        cdc_comm_sublcass_type_t comm_subclass; /*!< Communications device subclasses: ACM, ECM, etc. */
         cdc_data_sublcass_type_t data_subclass; /*!< Data device has only one subclass.*/
     } cdc_subclass;                                     /*!< CDC device subclass according to Class Definitions for Communications Devices the CDC v.1.20 */
     void *subclass_obj;  /*!< Dynamically allocated subclass specific object */

@@ -108,6 +108,8 @@ assign_integration_test:
   extends:
     - .assign_test_template
     - .rules:test:integration_test
+    - .before_script_minimal
+  image: ${CI_INTEGRATION_TEST_ENV_IMAGE}
   needs:
     - build_ssc_esp32
     - build_ssc_esp32c3
@@ -120,13 +122,14 @@ assign_integration_test:
     INTEGRATION_TEST_CASE_PATH: "${CI_PROJECT_DIR}/auto_test_script/TestCaseFiles"
     ASSIGN_TEST_CASE_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIAssignTestCases.py"
     PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
-    PYTHON_VER: 3.7.7
+    GIT_LFS_SKIP_SMUDGE: 1
   script:
+    - add_gitlab_ssh_keys
     # clone test script to assign tests
-    # can not retry if downing git lfs files failed, so using empty_branch first.
-    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
-    - retry_failed git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
-    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script --customized_only
+    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} auto_test_script
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
+    - cd auto_test_script
+    - ./tools/ci/setup_idfci.sh
     # assign integration test cases
     - python ${ASSIGN_TEST_CASE_SCRIPT} -t ${INTEGRATION_TEST_CASE_PATH} -c $CI_TARGET_TEST_CONFIG_FILE -b ${BUILD_DIR} -o $TEST_DIR/test_configs
 

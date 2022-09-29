@@ -67,8 +67,6 @@ variables:
 
   # target test repo parameters
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
-  CI_AUTO_TEST_SCRIPT_REPO_URL: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/auto_test_script.git"
-  CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v4.1"
 
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |
   if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then
@@ -115,6 +113,8 @@ before_script:
     - source tools/ci/utils.sh
     - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
     - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
+    # Clean up idf-env.json which might not be compatible with one produced by newer ESP-IDF versions
+    - rm -f ${IDF_TOOLS_PATH}/idf-env.json
     - $IDF_PATH/tools/idf_tools.py install-python-env
     # On macOS, these tools need to be installed
     - $IDF_PATH/tools/idf_tools.py --non-interactive install cmake ninja
