@@ -12,6 +12,7 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "esp_intr_alloc.h"
+#include "esp_cpu.h"
 #include "unity.h"
 #include "test_utils.h"
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
@@ -39,19 +40,19 @@ static uint32_t delta_exit_cycles = 0;
 static void software_isr_using_parameter_vportyield(void *arg) {
     (void)arg;
     BaseType_t yield;
-    delta_enter_cycles += portGET_RUN_TIME_COUNTER_VALUE() - cycle_before_trigger;
+    delta_enter_cycles += esp_cpu_get_cycle_count() - cycle_before_trigger;
     TEST_CLR_INT_MASK(1 << SW_ISR_LEVEL_1);
 
     xSemaphoreGiveFromISR(sync, &yield);
     portYIELD_FROM_ISR(yield);
 
-    cycle_before_exit = portGET_RUN_TIME_COUNTER_VALUE();
+    cycle_before_exit = esp_cpu_get_cycle_count();
 }
 
 static void software_isr_using_no_argument_vportyield(void *arg) {
     (void)arg;
     BaseType_t yield;
-    delta_enter_cycles += portGET_RUN_TIME_COUNTER_VALUE() - cycle_before_trigger;
+    delta_enter_cycles += esp_cpu_get_cycle_count() - cycle_before_trigger;
 
     TEST_CLR_INT_MASK(1 << SW_ISR_LEVEL_1);
 
@@ -59,17 +60,17 @@ static void software_isr_using_no_argument_vportyield(void *arg) {
     if(yield) {
         portYIELD_FROM_ISR();
     }
-    cycle_before_exit = portGET_RUN_TIME_COUNTER_VALUE();
+    cycle_before_exit = esp_cpu_get_cycle_count();
 }
 
 static void test_task(void *arg) {
     (void) arg;
 
     for(int i = 0;i < 10000; i++) {
-        cycle_before_trigger = portGET_RUN_TIME_COUNTER_VALUE();
+        cycle_before_trigger = esp_cpu_get_cycle_count();
         TEST_SET_INT_MASK(1 << SW_ISR_LEVEL_1);
         xSemaphoreTake(sync, portMAX_DELAY);
-        delta_exit_cycles += portGET_RUN_TIME_COUNTER_VALUE() - cycle_before_exit;
+        delta_exit_cycles += esp_cpu_get_cycle_count() - cycle_before_exit;
     }
 
     delta_enter_cycles /= 10000;

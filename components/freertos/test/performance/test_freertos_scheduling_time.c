@@ -11,6 +11,7 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "esp_intr_alloc.h"
+#include "esp_cpu.h"
 #include "unity.h"
 #include "test_utils.h"
 
@@ -27,7 +28,7 @@ static void test_task_1(void *arg) {
     test_context_t *context = (test_context_t *)arg;
 
     for( ;; ) {
-        context->before_sched = portGET_RUN_TIME_COUNTER_VALUE();
+        context->before_sched = esp_cpu_get_cycle_count();
         vPortYield();
     }
 
@@ -43,7 +44,7 @@ static void test_task_2(void *arg) {
     vPortYield();
 
     for(int i = 0; i < NUMBER_OF_ITERATIONS; i++) {
-        accumulator += (portGET_RUN_TIME_COUNTER_VALUE() - context->before_sched);
+        accumulator += (esp_cpu_get_cycle_count() - context->before_sched);
         vPortYield();
     }
 

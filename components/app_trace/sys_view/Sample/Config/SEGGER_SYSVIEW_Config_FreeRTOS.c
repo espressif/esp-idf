@@ -74,6 +74,7 @@ Revision: $Rev: 3734 $
 #include "esp_app_trace.h"
 #include "esp_app_trace_util.h"
 #include "esp_intr_alloc.h"
+#include "esp_cpu.h"
 #include "soc/soc.h"
 #include "soc/interrupts.h"
 #include "esp_private/esp_clk.h"
@@ -260,7 +261,7 @@ U32 SEGGER_SYSVIEW_X_GetTimestamp(void)
     gptimer_get_raw_count(s_sv_gptimer, &ts);
     return (U32) ts; // return lower part of counter value
 #elif TS_USE_CCOUNT
-    return portGET_RUN_TIME_COUNTER_VALUE();
+    return esp_cpu_get_cycle_count();
 #elif TS_USE_ESP_TIMER
     return (U32) esp_timer_get_time(); // return lower part of counter value
 #endif
