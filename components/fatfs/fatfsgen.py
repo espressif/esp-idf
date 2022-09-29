@@ -78,7 +78,8 @@ class FATFS:
     def create_file(self, name: str,
                     extension: str = '',
                     path_from_root: Optional[List[str]] = None,
-                    object_timestamp_: datetime = FATFS_INCEPTION) -> None:
+                    object_timestamp_: datetime = FATFS_INCEPTION,
+                    is_empty: bool = False) -> None:
         """
         Root directory recursively finds the parent directory of the new file, allocates cluster,
         entry and appends a new file into the parent directory.
@@ -89,11 +90,13 @@ class FATFS:
         :param extension: The extension of the file.
         :param path_from_root: List of strings containing names of the ancestor directories in the given order.
         :param object_timestamp_: is not None, this will be propagated to the file's entry
+        :param is_empty: True if there is no need to allocate any cluster, otherwise False
         """
         self.root_directory.new_file(name=name,
                                      extension=extension,
                                      path_from_root=path_from_root,
-                                     object_timestamp_=object_timestamp_)
+                                     object_timestamp_=object_timestamp_,
+                                     is_empty=is_empty)
 
     def create_directory(self, name: str,
                          path_from_root: Optional[List[str]] = None,
@@ -159,7 +162,8 @@ class FATFS:
             self.create_file(name=file_name,
                              extension=extension,
                              path_from_root=split_path[1:-1] or None,
-                             object_timestamp_=object_timestamp)
+                             object_timestamp_=object_timestamp,
+                             is_empty=len(content) == 0)
             self.write_content(split_path[1:], content)
         elif os.path.isdir(real_path):
             if not is_dir:
