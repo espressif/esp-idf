@@ -3,10 +3,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdio.h>
+#include <string.h>
+#include <esp_types.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "test_utils.h"
 #include "unity.h"
+#include "unity_fixture.h"
+
+#include "unity_test_utils.h"
+#include "soc/soc_caps.h"
+
 #include "lwip/inet.h"
 #include "lwip/netdb.h"
 #include "lwip/sockets.h"
@@ -18,8 +27,17 @@
 #define ETH_PING_END_TIMEOUT_MS (ETH_PING_DURATION_MS * 2)
 #define TEST_ICMP_DESTINATION_DOMAIN_NAME "127.0.0.1"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5047
+
+TEST_GROUP(lwip);
+
+TEST_SETUP(lwip)
+{
+}
+
+TEST_TEAR_DOWN(lwip)
+{
+}
+
 static void test_on_ping_success(esp_ping_handle_t hdl, void *args)
 {
     uint8_t ttl;
@@ -31,7 +49,7 @@ static void test_on_ping_success(esp_ping_handle_t hdl, void *args)
     esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
     esp_ping_get_profile(hdl, ESP_PING_PROF_SIZE, &recv_len, sizeof(recv_len));
     esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
-    printf("%d bytes from %s icmp_seq=%d ttl=%d time=%d ms\n",
+    printf("%" PRId32 "bytes from %s icmp_seq=%d ttl=%d time=%" PRId32 " ms\n",
            recv_len, inet_ntoa(target_addr.u_addr.ip4), seqno, ttl, elapsed_time);
 }
 
@@ -54,13 +72,13 @@ static void test_on_ping_end(esp_ping_handle_t hdl, void *args)
     esp_ping_get_profile(hdl, ESP_PING_PROF_REQUEST, &transmitted, sizeof(transmitted));
     esp_ping_get_profile(hdl, ESP_PING_PROF_REPLY, &received, sizeof(received));
     esp_ping_get_profile(hdl, ESP_PING_PROF_DURATION, &total_time_ms, sizeof(total_time_ms));
-    printf("%d packets transmitted, %d received, time %dms\n", transmitted, received, total_time_ms);
+    printf("%" PRId32 " packets transmitted, %" PRId32 " received, time %" PRId32 "ms\n", transmitted, received, total_time_ms);
     if (transmitted == received) {
         xEventGroupSetBits(eth_event_group, ETH_PING_END_BIT);
     }
 }
 
-TEST_CASE("localhost ping test", "[lwip]")
+TEST(lwip, localhost_ping_test)
 {
     EventBits_t bits;
     EventGroupHandle_t eth_event_group = xEventGroupCreate();
@@ -112,9 +130,8 @@ TEST_CASE("localhost ping test", "[lwip]")
 
     vEventGroupDelete(eth_event_group);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
-TEST_CASE("dhcp server init/deinit", "[lwip][leaks=0]")
+TEST(lwip, dhcp_server_init_deinit)
 {
     dhcps_t *dhcps = dhcps_new();
     TEST_ASSERT_NOT_NULL(dhcps);
@@ -124,7 +141,7 @@ TEST_CASE("dhcp server init/deinit", "[lwip][leaks=0]")
     dhcps_delete(dhcps);
 }
 
-TEST_CASE("dhcp server start/stop on localhost", "[lwip]")
+TEST(lwip, dhcp_server_start_stop_localhost)
 {
     test_case_uses_tcpip();
     dhcps_t *dhcps = dhcps_new();
@@ -141,4 +158,16 @@ TEST_CASE("dhcp server start/stop on localhost", "[lwip]")
     TEST_ASSERT(dhcps_start(dhcps, netif, ip) == ERR_OK);
     TEST_ASSERT(dhcps_stop(dhcps, netif) == ERR_OK);
     dhcps_delete(dhcps);
+}
+
+TEST_GROUP_RUNNER(lwip)
+{
+    RUN_TEST_CASE(lwip, localhost_ping_test)
+    RUN_TEST_CASE(lwip, dhcp_server_init_deinit)
+    RUN_TEST_CASE(lwip, dhcp_server_start_stop_localhost)
+}
+
+void app_main(void)
+{
+    UNITY_MAIN(lwip);
 }
