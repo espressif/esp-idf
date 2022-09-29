@@ -208,8 +208,6 @@ TEST_CASE("fcntl supported in UART VFS", "[vfs]")
 }
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5139
 TEST_CASE("Can use termios for UART", "[vfs]")
 {
     uart_config_t uart_config = {
@@ -303,31 +301,41 @@ TEST_CASE("Can use termios for UART", "[vfs]")
         TEST_ASSERT_EQUAL(0, tcsetattr(uart_fd, TCSANOW, &tios));
         TEST_ASSERT_EQUAL(0, tcgetattr(uart_fd, &tios_result));
         TEST_ASSERT_EQUAL(CBAUD, tios_result.c_cflag & CBAUD);
-        TEST_ASSERT_EQUAL(B38400, tios_result.c_ispeed);
-        TEST_ASSERT_EQUAL(B38400, tios_result.c_ospeed);
         TEST_ASSERT_EQUAL(ESP_OK, uart_get_baudrate(UART_NUM_1, &baudrate));
-        TEST_ASSERT_EQUAL(38400, baudrate);
+        TEST_ASSERT_INT32_WITHIN(2, 38400, baudrate);
+        if (APB_CLK_FREQ == 40000000) {
+            // Setting the speed to 38400 will set it actually to 38401
+            // Note: can't use TEST_ASSERT_INT32_WITHIN here because B38400 == 15
+            TEST_ASSERT_EQUAL(38401, tios_result.c_ispeed);
+            TEST_ASSERT_EQUAL(38401, tios_result.c_ospeed);
+        } else {
+            TEST_ASSERT_EQUAL(B38400, tios_result.c_ispeed);
+            TEST_ASSERT_EQUAL(B38400, tios_result.c_ospeed);
+        }
 
         tios.c_cflag |= CBAUDEX;
         tios.c_ispeed = tios.c_ospeed = B230400;
         TEST_ASSERT_EQUAL(0, tcsetattr(uart_fd, TCSANOW, &tios));
         TEST_ASSERT_EQUAL(0, tcgetattr(uart_fd, &tios_result));
         TEST_ASSERT_EQUAL(BOTHER, tios_result.c_cflag & BOTHER);
-        // Setting the speed to 230400 will set it actually to 230423
-        TEST_ASSERT_EQUAL(230423, tios_result.c_ispeed);
-        TEST_ASSERT_EQUAL(230423, tios_result.c_ospeed);
         TEST_ASSERT_EQUAL(ESP_OK, uart_get_baudrate(UART_NUM_1, &baudrate));
-        TEST_ASSERT_EQUAL(230423, baudrate);
+        // Setting the speed to 230400 will set it actually to something else,
+        // depending on the APB clock
+        TEST_ASSERT_INT32_WITHIN(100, 230400, tios_result.c_ispeed);
+        TEST_ASSERT_INT32_WITHIN(100, 230400, tios_result.c_ospeed);
+        TEST_ASSERT_INT32_WITHIN(100, 230400, baudrate);
 
         tios.c_cflag |= BOTHER;
         tios.c_ispeed = tios.c_ospeed = 42321;
         TEST_ASSERT_EQUAL(0, tcsetattr(uart_fd, TCSANOW, &tios));
         TEST_ASSERT_EQUAL(0, tcgetattr(uart_fd, &tios_result));
         TEST_ASSERT_EQUAL(BOTHER, tios_result.c_cflag & BOTHER);
-        TEST_ASSERT_EQUAL(42321, tios_result.c_ispeed);
-        TEST_ASSERT_EQUAL(42321, tios_result.c_ospeed);
         TEST_ASSERT_EQUAL(ESP_OK, uart_get_baudrate(UART_NUM_1, &baudrate));
-        TEST_ASSERT_EQUAL(42321, baudrate);
+        // Setting the speed to 230400 will set it actually to something else,
+        // depending on the APB clock
+        TEST_ASSERT_INT32_WITHIN(10, 42321, tios_result.c_ispeed);
+        TEST_ASSERT_INT32_WITHIN(10, 42321, tios_result.c_ospeed);
+        TEST_ASSERT_INT32_WITHIN(10, 42321, baudrate);
 
         memset(&tios_result, 0xFF, sizeof(struct termios));
     }
@@ -336,5 +344,4 @@ TEST_CASE("Can use termios for UART", "[vfs]")
     close(uart_fd);
     uart_driver_delete(UART_NUM_1);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 #endif // CONFIG_VFS_SUPPORT_TERMIOS

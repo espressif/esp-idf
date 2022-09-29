@@ -61,8 +61,6 @@ TEST_CASE("Test erase partition", "[spi_flash][esp_flash]")
     }
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5137
 static bool s_test_nonzero_sha_of_partition(const esp_partition_t *part, bool allow_invalid_image)
 {
     uint8_t sha256[32] = { 0 };
@@ -140,4 +138,3 @@ TEST_CASE("Test esp_partition_get_sha256() that it can handle a big partition", 
 
     spi_flash_munmap(handle);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
