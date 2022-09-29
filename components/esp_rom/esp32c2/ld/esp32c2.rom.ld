@@ -1168,7 +1168,6 @@ r_ble_lll_conn_process_acked_pdu = 0x4000154c;
 r_ble_lll_conn_recv_ack = 0x40001554;
 r_ble_lll_conn_recv_valid_packet = 0x40001558;
 r_ble_lll_conn_reset_pending_sched = 0x4000155c;
-r_ble_lll_conn_rx_pkt_isr = 0x40001560;
 r_ble_lll_conn_sched_next_anchor = 0x40001564;
 r_ble_lll_conn_sched_next_event = 0x40001568;
 r_ble_lll_conn_sm_new = 0x40001574;
