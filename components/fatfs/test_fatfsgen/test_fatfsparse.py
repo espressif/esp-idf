@@ -12,6 +12,7 @@ from test_utils import compare_folders, fill_sector, generate_local_folder_struc
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import fatfsgen  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.entry import Entry  # noqa E402  # pylint: disable=C0413
 
 
 class FatFSGen(unittest.TestCase):
@@ -322,6 +323,31 @@ class FatFSGen(unittest.TestCase):
         ], stderr=STDOUT)
         run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
         assert compare_folders('testf', 'Espressif')
+
+    def test_parse_long_name(self) -> None:
+        self.assertEqual(
+            Entry.parse_entry_long(
+                b'\x01t\x00h\x00i\x00s\x00_\x00\x0f\x00\xfbi\x00s\x00_\x00l\x00o\x00n\x00\x00\x00g\x00_\x00', 251),
+            {
+                'order': 1,
+                'name1': b't\x00h\x00i\x00s\x00_\x00',
+                'name2': b'i\x00s\x00_\x00l\x00o\x00n\x00',
+                'name3': b'g\x00_\x00',
+                'is_last': False
+            }
+        )
+        self.assertEqual(
+            Entry.parse_entry_long(
+                b'\x01t\x00h\x00i\x00s\x00_\x00\x0f\x00\xfbi\x00s\x00_\x00l\x00o\x00n\x00\x00\x00g\x00_\x00', 252
+            ),
+            {}
+        )
+        self.assertEqual(
+            Entry.parse_entry_long(
+                b'\x01t\x00h\x00i\x00s\x00_\x00\x0f\x01\xfbi\x00s\x00_\x00l\x00o\x00n\x00\x00\x00g\x00_\x00', 251
+            ),
+            {}
+        )
 
 
 if __name__ == '__main__':

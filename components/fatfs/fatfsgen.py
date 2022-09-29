@@ -79,7 +79,17 @@ class FATFS:
                     extension: str = '',
                     path_from_root: Optional[List[str]] = None,
                     object_timestamp_: datetime = FATFS_INCEPTION) -> None:
-        # when path_from_root is None the dir is root
+        """
+        Root directory recursively finds the parent directory of the new file, allocates cluster,
+        entry and appends a new file into the parent directory.
+
+        When path_from_root is None the dir is root.
+
+        :param name: The name of the file.
+        :param extension: The extension of the file.
+        :param path_from_root: List of strings containing names of the ancestor directories in the given order.
+        :param object_timestamp_: is not None, this will be propagated to the file's entry
+        """
         self.root_directory.new_file(name=name,
                                      extension=extension,
                                      path_from_root=path_from_root,
@@ -88,7 +98,18 @@ class FATFS:
     def create_directory(self, name: str,
                          path_from_root: Optional[List[str]] = None,
                          object_timestamp_: datetime = FATFS_INCEPTION) -> None:
-        # when path_from_root is None the dir is root
+        """
+        Initially recursively finds a parent of the new directory
+        and then create a new directory inside the parent.
+
+        When path_from_root is None the parent dir is root.
+
+        :param name: The full name of the directory (excluding its path)
+        :param path_from_root: List of strings containing names of the ancestor directories in the given order.
+        :param object_timestamp_: in case the user preserves the timestamps, this will be propagated to the
+        metadata of the directory (to the corresponding entry)
+        :returns: None
+        """
         parent_dir = self.root_directory
         if path_from_root:
             parent_dir = self.root_directory.recursive_search(path_from_root, self.root_directory)
