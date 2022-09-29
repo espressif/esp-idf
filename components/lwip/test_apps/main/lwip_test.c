@@ -13,7 +13,6 @@
 #include "unity.h"
 #include "unity_fixture.h"
 
-#include "unity_test_utils.h"
 #include "soc/soc_caps.h"
 
 #include "lwip/inet.h"
@@ -21,6 +20,7 @@
 #include "lwip/sockets.h"
 #include "ping/ping_sock.h"
 #include "dhcpserver/dhcpserver.h"
+#include "esp_sntp.h"
 
 #define ETH_PING_END_BIT BIT(1)
 #define ETH_PING_DURATION_MS (5000)
@@ -160,11 +160,105 @@ TEST(lwip, dhcp_server_start_stop_localhost)
     dhcps_delete(dhcps);
 }
 
+
+int test_sntp_server_create(void)
+{
+    struct sockaddr_in dest_addr_ip4;
+    int sock = -1;
+    dest_addr_ip4.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    dest_addr_ip4.sin_family = AF_INET;
+    dest_addr_ip4.sin_port = htons(LWIP_IANA_PORT_SNTP);
+    sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, sock);
+    int reuse_en = 1;
+    TEST_ASSERT_GREATER_OR_EQUAL(0, setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse_en, sizeof(reuse_en)));
+    TEST_ASSERT_GREATER_OR_EQUAL(0, bind(sock, (struct sockaddr*) &dest_addr_ip4, sizeof(dest_addr_ip4)));
+    return sock;
+}
+
+bool test_sntp_server_reply_with_time(int sock, int year, bool msb_flag)
+{
+    struct sntp_timestamp {
+        uint32_t seconds;
+        uint32_t fraction;
+    };
+    const int SNTP_MSG_LEN = 48;
+    const int SNTP_MODE_CLIENT = 0x03;
+    const int SNTP_MODE_SERVER = 0x04;
+    const int SNTP_MODE_MASK = 0x07;
+    const int SNTP_OFFSET_STRATUM = 1;
+
+    char rx_buffer[SNTP_MSG_LEN];
+    struct sockaddr_storage source_addr;
+    socklen_t socklen = sizeof(source_addr);
+
+    int len = recvfrom(sock, rx_buffer, SNTP_MSG_LEN, 0, (struct sockaddr *)&source_addr, &socklen);
+    if (len == SNTP_MSG_LEN && source_addr.ss_family == PF_INET && (SNTP_MODE_MASK & rx_buffer[0]) == SNTP_MODE_CLIENT) {
+        // modify the client's request to act as a server's response with the injected *xmit* timestamp
+        rx_buffer[0] &= ~SNTP_MODE_CLIENT;
+        rx_buffer[0] |= SNTP_MODE_SERVER;
+        rx_buffer[SNTP_OFFSET_STRATUM] = 0x1;
+        // set the desired timestamp
+        struct sntp_timestamp *timestamp = (struct sntp_timestamp *)(rx_buffer + SNTP_MSG_LEN - sizeof(struct sntp_timestamp)); // xmit is the last timestamp in the datagram
+        int64_t seconds_since_1900 = (365*24*60*60 /* seconds per year */ + 24*60*60/4 /* ~ seconds per leap year */ )*(year-1900);
+        // apply the MSB convention (set: 1968-2036, cleared: 2036-2104)
+        timestamp->seconds = htonl( (msb_flag ? 0x80000000 : 0) | (0xFFFFFFFF & seconds_since_1900) );
+        len = sendto(sock, rx_buffer, SNTP_MSG_LEN, 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
+        if (len == SNTP_MSG_LEN) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void test_sntp_timestamps(int year, bool msb_flag)
+{
+    int sock = test_sntp_server_create();
+
+    // setup lwip's SNTP in polling mode
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "127.0.0.1");
+    sntp_init();
+
+    // wait until time sync
+    int retry = 0;
+    while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET) {
+        TEST_ASSERT_TRUE(test_sntp_server_reply_with_time(sock, year, msb_flag)); // post the SNTP server's reply
+        retry++;
+        TEST_ASSERT_LESS_THAN(3, retry);
+    }
+
+    // check time and assert the year
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    TEST_ASSERT_EQUAL(year, 1900 + timeinfo.tm_year);
+
+    // close the SNTP and the fake server
+    sntp_stop();
+    close(sock);
+}
+
+TEST(lwip, sntp_client_time_2015)
+{
+    test_case_uses_tcpip();
+    test_sntp_timestamps(2015, true); // NTP timestamp MSB is set for time before 2036
+}
+
+TEST(lwip, sntp_client_time_2048)
+{
+    test_case_uses_tcpip();
+    test_sntp_timestamps(2048, false); // NTP timestamp MSB is cleared for time after 2036
+}
+
 TEST_GROUP_RUNNER(lwip)
 {
     RUN_TEST_CASE(lwip, localhost_ping_test)
     RUN_TEST_CASE(lwip, dhcp_server_init_deinit)
     RUN_TEST_CASE(lwip, dhcp_server_start_stop_localhost)
+    RUN_TEST_CASE(lwip, sntp_client_time_2015)
+    RUN_TEST_CASE(lwip, sntp_client_time_2048)
 }
 
 void app_main(void)
