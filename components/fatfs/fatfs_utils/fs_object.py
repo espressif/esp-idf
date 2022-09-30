@@ -201,11 +201,11 @@ class Directory:
                                   name,
                                   extension,
                                   target_dir,
-                                  free_cluster,
+                                  free_cluster_id,
                                   entity_type,
                                   date,
                                   time):
-        # type: (Entry, str, str, Directory, Cluster, int, DATETIME, DATETIME) -> Tuple[Cluster, Entry, Directory]
+        # type: (Entry, str, str, Directory, int, int, DATETIME, DATETIME) -> Entry
         lfn_full_name: str = build_lfn_full_name(name, extension)
         lfn_unique_entry_order: int = build_lfn_unique_entry_name_order(target_dir.entities, name)
         lfn_short_entry_name: str = build_lfn_short_entry_name(name, extension, lfn_unique_entry_order)
@@ -218,7 +218,7 @@ class Directory:
             order: int = i + 1
             blocks_: List[bytes] = split_name_to_lfn_entry_blocks(name_split_to_entry)
             lfn_names: List[bytes] = list(map(lambda x: x.lower(), blocks_))
-            free_entry.allocate_entry(first_cluster_id=free_cluster.id,
+            free_entry.allocate_entry(first_cluster_id=free_cluster_id,
                                       entity_name=name,
                                       entity_extension=extension,
                                       entity_type=entity_type,
@@ -227,14 +227,14 @@ class Directory:
                                       lfn_checksum_=checksum,
                                       lfn_is_last=order == entries_count)
             free_entry = target_dir.find_free_entry() or target_dir.chain_directory()
-        free_entry.allocate_entry(first_cluster_id=free_cluster.id,
+        free_entry.allocate_entry(first_cluster_id=free_cluster_id,
                                   entity_name=lfn_short_entry_name[:MAX_NAME_SIZE],
                                   entity_extension=lfn_short_entry_name[MAX_NAME_SIZE:],
                                   entity_type=entity_type,
                                   lfn_order=Entry.SHORT_ENTRY_LN,
                                   date=date,
                                   time=time)
-        return free_cluster, free_entry, target_dir
+        return free_entry
 
     @staticmethod
     def _is_valid_sfn(name: str, extension: str) -> bool:
@@ -248,14 +248,21 @@ class Directory:
                         entity_type,
                         object_timestamp_,
                         path_from_root=None,
-                        extension=''):
-        # type: (str, int, datetime, Optional[List[str]], str) -> Tuple[Cluster, Entry, Directory]
+                        extension='',
+                        is_empty=False):
+        # type: (str, int, datetime, Optional[List[str]], str, bool) -> Tuple[Cluster, Entry, Directory]
         """
         Method finds the target directory in the path
         and allocates cluster (both the record in FAT and cluster in the data region)
         and entry in the specified directory
         """
-        free_cluster: Cluster = self.fat.find_free_cluster()
+
+        free_cluster: Optional[Cluster] = None
+        free_cluster_id = 0x00
+        if not is_empty:
+            free_cluster = self.fat.find_free_cluster()
+            free_cluster_id = free_cluster.id
+
         target_dir: Directory = self if not path_from_root else self.recursive_search(path_from_root, self)
         free_entry: Entry = target_dir.find_free_entry() or target_dir.chain_directory()
 
@@ -263,7 +270,7 @@ class Directory:
         fatfs_time_ = (object_timestamp_.hour, object_timestamp_.minute, object_timestamp_.second)
 
         if not self.fatfs_state.long_names_enabled or self._is_valid_sfn(name, extension):
-            free_entry.allocate_entry(first_cluster_id=free_cluster.id,
+            free_entry.allocate_entry(first_cluster_id=free_cluster_id,
                                       entity_name=name,
                                       entity_extension=extension,
                                       date=fatfs_date_,
@@ -271,25 +278,27 @@ class Directory:
                                       fits_short=True,
                                       entity_type=entity_type)
             return free_cluster, free_entry, target_dir
-        return self.allocate_long_name_object(free_entry=free_entry,
-                                              name=name,
-                                              extension=extension,
-                                              target_dir=target_dir,
-                                              free_cluster=free_cluster,
-                                              entity_type=entity_type,
-                                              date=fatfs_date_,
-                                              time=fatfs_time_)
+        return free_cluster, self.allocate_long_name_object(free_entry=free_entry,
+                                                            name=name,
+                                                            extension=extension,
+                                                            target_dir=target_dir,
+                                                            free_cluster_id=free_cluster_id,
+                                                            entity_type=entity_type,
+                                                            date=fatfs_date_,
+                                                            time=fatfs_time_), target_dir
 
     def new_file(self,
                  name: str,
                  extension: str,
                  path_from_root: Optional[List[str]],
-                 object_timestamp_: datetime) -> None:
+                 object_timestamp_: datetime,
+                 is_empty: bool) -> None:
         free_cluster, free_entry, target_dir = self.allocate_object(name=name,
                                                                     extension=extension,
                                                                     entity_type=Directory.ATTR_ARCHIVE,
                                                                     path_from_root=path_from_root,
-                                                                    object_timestamp_=object_timestamp_)
+                                                                    object_timestamp_=object_timestamp_,
+                                                                    is_empty=is_empty)
 
         file: File = File(name=name,
                           fat=self.fat,
