@@ -1617,3 +1617,52 @@ exit:
     RELEASE_LOCK(prov_ctx_lock);
     return err;
 }
+
+esp_err_t wifi_prov_mgr_reset_sm_state_for_reprovision(void)
+{
+    if (!prov_ctx_lock) {
+        ESP_LOGE(TAG, "Provisioning manager not initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    ACQUIRE_LOCK(prov_ctx_lock);
+
+    esp_err_t ret = ESP_OK;
+    wifi_config_t wifi_cfg_empty = {0};
+    uint8_t restore_wifi_flag = 0;
+
+    if (!prov_ctx->mgr_info.capabilities.no_auto_stop) {
+        ESP_LOGE(TAG, "Execute wifi_prov_mgr_disable_auto_stop() before calling this API");
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+
+    ret = esp_wifi_set_storage(WIFI_STORAGE_RAM);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set Wi-Fi storage to RAM");
+        goto exit;
+    }
+    restore_wifi_flag |= WIFI_PROV_STORAGE_BIT;
+
+    ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg_empty);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set empty Wi-Fi credentials, 0x%x", ret);
+        goto exit;
+    }
+
+    ret = esp_wifi_disconnect();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to disconnect wifi, 0x%x", ret);
+        goto exit;
+    }
+
+    prov_ctx->prov_state = WIFI_PROV_STATE_STARTED;
+    execute_event_cb(WIFI_PROV_START, NULL, 0);
+
+exit:
+    if (restore_wifi_flag & WIFI_PROV_STORAGE_BIT) {
+        esp_wifi_set_storage(WIFI_STORAGE_FLASH);
+    }
+    RELEASE_LOCK(prov_ctx_lock);
+    return ret;
+}

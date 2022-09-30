@@ -556,7 +556,8 @@ esp_err_t wifi_prov_mgr_reset_provisioning(void);
 /**
  * @brief   Reset internal state machine and clear provisioned credentials.
  *
- * This API can be used to restart provisioning in case invalid credentials are entered.
+ * This API should be used to restart provisioning ONLY in the case
+ * of provisioning failures without rebooting the device.
  *
  * @return
  *  - ESP_OK      : Reset provisioning state machine successfully
@@ -564,6 +565,23 @@ esp_err_t wifi_prov_mgr_reset_provisioning(void);
  *  - ESP_ERR_INVALID_STATE : Manager not initialized
  */
 esp_err_t wifi_prov_mgr_reset_sm_state_on_failure(void);
+
+/**
+ * @brief   Reset internal state machine and clear provisioned credentials.
+ *
+ * This API can be used to restart provisioning ONLY in case the device is
+ * to be provisioned again for new credentials after a previous successful
+ * provisioning without rebooting the device.
+ *
+ * @note   This API can be used only if provisioning auto-stop has been
+ *         disabled using wifi_prov_mgr_disable_auto_stop()
+ *
+ * @return
+ *  - ESP_OK      : Reset provisioning state machine successfully
+ *  - ESP_FAIL    : Failed to reset provisioning state machine
+ *  - ESP_ERR_INVALID_STATE : Manager not initialized
+ */
+esp_err_t wifi_prov_mgr_reset_sm_state_for_reprovision(void);
 
 #ifdef __cplusplus
 }

@@ -96,4 +96,11 @@ menu "Example Configuration"
         default y
         help
             This enables BLE 4.2 features for Bluedroid.
+
+    config EXAMPLE_REPROVISIONING
+        bool "Re-provisioning"
+        help
+            Enable re-provisioning - allow the device to provision for new credentials
+            after previous successful provisioning.
+
 endmenu
