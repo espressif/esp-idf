@@ -40,6 +40,8 @@ upload-submodules-cache:
       - .cache/submodule_archives
     policy: push
   script:
+    # use the default gitlab server
+    - unset LOCAL_GITLAB_HTTPS_HOST
     - rm -rf .cache/submodule_archives  # clear old submodule archives
     - add_gitlab_ssh_keys
     - fetch_submodules
