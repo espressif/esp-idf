@@ -18,8 +18,8 @@ static const char *TAG = "SSL Server";
  */
 static bool ssl_ciphersuite_uses_rsa_key_ex(mbedtls_ssl_context *ssl)
 {
-    int suite_id = mbedtls_ssl_get_ciphersuite_id_from_ssl(ssl);
-    const mbedtls_ssl_ciphersuite_t *ciphersuite_info = mbedtls_ssl_ciphersuite_from_id(suite_id);
+    const mbedtls_ssl_ciphersuite_t *ciphersuite_info =
+        ssl->MBEDTLS_PRIVATE(handshake)->ciphersuite_info;
 
     if (ciphersuite_info->MBEDTLS_PRIVATE(key_exchange) == MBEDTLS_KEY_EXCHANGE_RSA ||
         ciphersuite_info->MBEDTLS_PRIVATE(key_exchange) == MBEDTLS_KEY_EXCHANGE_RSA_PSK) {
