@@ -176,6 +176,17 @@ TEST_CASE("(WL) multiple tasks can use same volume", "[fatfs][wear_levelling]")
     test_teardown();
 }
 
+TEST_CASE("(WL) fatfs does not ignore leading spaces", "[fatfs][wear_levelling]")
+{
+    // the functionality of ignoring leading and trailing whitespaces is not implemented yet
+    // when the feature is implemented, this test will fail
+    // please, remove the test and implement the functionality in fatfsgen.py to preserve the consistency
+    test_setup();
+    test_leading_spaces();
+    test_teardown();
+}
+
+
 TEST_CASE("(WL) write/read speed test", "[fatfs][wear_levelling][timeout=60]")
 {
     /* Erase partition before running the test to get consistent results */
