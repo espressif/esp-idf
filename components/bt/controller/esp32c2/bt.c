@@ -561,14 +561,13 @@ void controller_sleep_deinit(void)
 
     /*lock should release first and then delete*/
     if (s_pm_lock_acquired) {
-        if(s_light_sleep_pm_lock != NULL)
-	    esp_pm_lock_release(s_light_sleep_pm_lock);
-	}
+        if (s_light_sleep_pm_lock != NULL) {
+            esp_pm_lock_release(s_light_sleep_pm_lock);
+        }
 
-        if(s_pm_lock != NULL) {
+        if (s_pm_lock != NULL) {
             esp_pm_lock_release(s_pm_lock);
-	}
-        s_pm_lock_acquired = false;
+        }
     }
 
     if (!s_btdm_allow_light_sleep) {
