@@ -297,25 +297,6 @@ typedef struct esp_tls_cfg_server {
 esp_err_t esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg);
 
 /**
- * @brief Initialize the server side TLS server name identification hook
- *
- * This function initializes the server side tls server name identification hook
- * which is called during a client connect handshake, and has the ability to check
- * the advertised hostname and supply a specific certificate based on that for example.
- * Check https://mbed-tls.readthedocs.io/en/latest/kb/how-to/use-sni/#server-side for details.
- *
- * @param[in]  cfg server configuration as esp_tls_cfg_server_t
- * @param[in]  cb callback function pointer
- * @param[in]  data pointer to implementation specific data supplied as the first parameter of the callback
- * @return
- *             ESP_OK if setup succeeded
- *             ESP_ERR_INVALID_ARG if context is NULL
- *             ESP_ERR_NOT_SUPPORTED if server side sni is not available due to build configuration
- *             ESP_FAIL if setup failed
- */
-esp_err_t esp_tls_cfg_server_sni_init(esp_tls_cfg_server_t *cfg, esp_tls_server_sni_callback *cb, void *data);
-
-/**
  * @brief Free the server side TLS session ticket context
  *
  * @param cfg server configuration as esp_tls_cfg_server_t

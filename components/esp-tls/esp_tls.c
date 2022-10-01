@@ -594,24 +594,6 @@ esp_err_t esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg)
 #endif
 }
 
-#ifdef CONFIG_ESP_TLS_SERVER
-esp_err_t esp_tls_cfg_server_sni_init(esp_tls_cfg_server_t *cfg, esp_tls_server_sni_callback *cb, void *data)
-{
-#if defined(CONFIG_ESP_TLS_SERVER_SNI_HOOK)
-    if (!cfg) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    cfg->sni_callback = cb;
-    cfg->sni_callback_p_info = data;
-
-    return ESP_OK;
-#else
-    return ESP_ERR_NOT_SUPPORTED;
-#endif
-}
-#endif
-
-#ifdef CONFIG_ESP_TLS_SERVER
 void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t *cfg)
 {
 #if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
@@ -620,7 +602,6 @@ void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t *cfg)
     }
 #endif
 }
-#endif
 
 /**
  * @brief      Create a server side TLS/SSL connection

@@ -567,7 +567,7 @@ esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
         }
     } else {
 #if defined(CONFIG_ESP_TLS_SERVER_SNI_HOOK)
-        if ((cfg->sni_callback == NULL)) {
+        if (cfg->sni_callback == NULL) {
             ESP_LOGE(TAG, "Missing server certificate and/or key and no SNI callback is defined");
         } else {
             ESP_LOGD(TAG, "Missing server certificate and/or key, but SNI callback is defined. Callback MUST ALWAYS call mbedtls_ssl_set_hs_own_cert, or the handshake will abort!");
