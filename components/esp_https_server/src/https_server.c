@@ -214,8 +214,8 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
     }
 
 #if defined(CONFIG_ESP_TLS_SERVER_SNI_HOOK)
-    cfg->sni_callback = config->sni_callback
-    cfg->sni_callback_p_info = config->sni_callback_p_info
+    cfg->sni_callback = config->sni_callback;
+    cfg->sni_callback_p_info = config->sni_callback_p_info;
 #endif
 
     ssl_ctx->tls_cfg = cfg;
