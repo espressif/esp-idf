@@ -219,6 +219,7 @@
   - "components/esp_wifi/**/*"
   - "components/esp_netif/**/*"
   - "components/lwip/**/*"
+  - "components/mbedtls/port/dynamic/*"
 
   # for cases with wifi_high_traffic marker
   - "examples/system/ota/**/*"
