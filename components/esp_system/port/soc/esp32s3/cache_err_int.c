@@ -58,7 +58,7 @@ void esp_cache_err_int_init(void)
         cache_ll_l1_clear_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
         cache_ll_l1_enable_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
     } else {
-        esp_rom_route_intr_matrix(PRO_CPU_NUM, ETS_CACHE_CORE1_ACS_INTR_SOURCE, ETS_CACHEERR_INUM);
+        esp_rom_route_intr_matrix(core_id, ETS_CACHE_CORE1_ACS_INTR_SOURCE, ETS_CACHEERR_INUM);
 
         /* On the hardware side, stat by clearing all the bits reponsible for
          * enabling cache access error interrupts.  */
