@@ -2,15 +2,16 @@
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 from __future__ import unicode_literals
 
+import logging
+import os
+
 import pytest
 from pytest_embedded import Dut
-
-# import logging
-# import os
 
 
 @pytest.mark.generic
 @pytest.mark.esp32
+@pytest.mark.esp32c2
 @pytest.mark.esp32c3
 def test_examples_efuse(dut: Dut) -> None:
     dut.expect(r'example: Coding Scheme (3/4)|(NONE)|(REPEAT)|(RS \(Reed-Solomon coding\))', timeout=20)
@@ -38,14 +39,15 @@ def test_examples_efuse(dut: Dut) -> None:
 @pytest.mark.generic
 @pytest.mark.esp32
 @pytest.mark.esp32s2
+@pytest.mark.esp32c2
 @pytest.mark.esp32c3
 @pytest.mark.parametrize('config', ['virt_flash_enc',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_flash_enc(dut: Dut) -> None:
     # check and log bin size
-    # binary_file = os.path.join(dut.serial.app.binary_path, 'bootloader', 'bootloader.bin')
-    # bin_sizeos.path.getsize(binary_file)
-    # logging.info('{}_bootloader_{}_bin_size'.format(dut.app.target, dut.app.config_name), '{}KB'.format(bin_size // 1024))
+    binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
+    bin_size = os.path.getsize(binary_file)
+    logging.info('{}_bootloader_virt_flash_enc_bin_size: {}KB'.format(dut.app.target, bin_size // 1024))
 
     print(' - Erase flash')
     dut.serial.erase_flash()
@@ -95,9 +97,9 @@ def test_examples_efuse_with_virt_flash_enc(dut: Dut) -> None:
 def test_examples_efuse_with_virt_flash_enc_aes_256(dut: Dut) -> None:
     # Only ESP32-S2 has support AES-256 FLASH_ENCRYPTION key
     # check and log bin size
-    # binary_file = os.path.join(dut.serial.app.binary_path, 'bootloader', 'bootloader.bin')
-    # bin_sizeos.path.getsize(binary_file)
-    # logging.info('{}_bootloader_{}_bin_size'.format(dut.app.target, dut.app.config_name), '{}KB'.format(bin_size // 1024))
+    binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
+    bin_size = os.path.getsize(binary_file)
+    logging.info('{}_bootloader_virt_flash_enc_aes_256_bin_size: {}KB'.format(dut.app.target, bin_size // 1024))
 
     print(' - Erase flash')
     dut.serial.erase_flash()
@@ -128,6 +130,11 @@ def test_examples_efuse_with_virt_flash_enc_aes_256(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
+@pytest.mark.generic
+@pytest.mark.esp32
+@pytest.mark.esp32c2
+@pytest.mark.esp32c3
+@pytest.mark.esp32s2
 @pytest.mark.parametrize('config', ['virt_flash_enc',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
@@ -136,6 +143,7 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
     dut.serial.erase_flash()
 
     print(' - Start app (flash partition_table and app)')
+    dut.serial.write_flash_no_enc()
     dut.expect('Loading virtual efuse blocks from real efuses')
     dut.expect('Flash encryption completed', timeout=90)
     dut.expect('Resetting with flash encryption enabled...')
@@ -149,7 +157,7 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
         # offset of this eFuse is taken from components/efuse/esp32/esp_efuse_table.csv
         FLASH_CRYPT_CNT = 20
         # Resets eFuse, which enables Flash encryption feature
-        dut.erase_field_on_emul_efuse([FLASH_CRYPT_CNT])
+        dut.serial.erase_field_on_emul_efuse([FLASH_CRYPT_CNT])
     elif dut.app.target == 'esp32c2':
         FLASH_CRYPT_CNT = 39
         dut.serial.erase_field_on_emul_efuse([FLASH_CRYPT_CNT])
@@ -188,18 +196,23 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
     else:
         dut.expect_exact('flash encryption is enabled (1 plaintext flashes left)')
 
-    dut.expect('Flash encryption mode is DEVELOPMENT (not secure)')
+    dut.expect_exact('Flash encryption mode is DEVELOPMENT (not secure)')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
 
+@pytest.mark.generic
+@pytest.mark.esp32
+@pytest.mark.esp32c2
+@pytest.mark.esp32c3
+@pytest.mark.esp32s2
 @pytest.mark.parametrize('config', ['virt_flash_enc_release',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
     # check and log bin size
-    # binary_file = os.path.join(dut.serial.app.binary_path, 'bootloader', 'bootloader.bin')
-    # bin_sizeos.path.getsize(binary_file)
-    # logging.info('{}_bootloader_{}_bin_size'.format(dut.app.target, dut.app.config_name), '{}KB'.format(bin_size // 1024))
+    binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
+    bin_size = os.path.getsize(binary_file)
+    logging.info('{}_bootloader_virt_flash_enc_release_bin_size: {}KB'.format(dut.app.target, bin_size // 1024))
 
     dut.serial.erase_flash()
 
@@ -245,9 +258,9 @@ def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
 def test_examples_efuse_with_virt_secure_boot_v1(dut: Dut) -> None:
     # only for ESP32
     # check and log bin size
-    # binary_file = os.path.join(dut.serial.app.binary_path, 'bootloader', 'bootloader.bin')
-    # bin_sizeos.path.getsize(binary_file)
-    # logging.info('{}_bootloader_{}_bin_size'.format(dut.app.target, dut.app.config_name), '{}KB'.format(bin_size // 1024))
+    binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
+    bin_size = os.path.getsize(binary_file)
+    logging.info('{}_bootloader_virt_secure_boot_v1_bin_size: {}KB'.format(dut.app.target, bin_size // 1024))
 
     print(' - Erase flash')
     dut.serial.erase_flash()
@@ -276,7 +289,7 @@ def test_examples_efuse_with_virt_secure_boot_v1(dut: Dut) -> None:
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
-    dut.reset()
+    dut.serial.hard_reset()
     dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v1: bootloader secure boot is already enabled. No need to generate digest. continuing..')
@@ -293,7 +306,9 @@ def test_examples_efuse_with_virt_secure_boot_v1(dut: Dut) -> None:
 def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(dut: Dut) -> None:
     print(' - Erase flash')
     dut.serial.erase_flash()
+    print(' - Flash bootloader')
     dut.serial.bootloader_flash()
+    print(' - Start app (flash partition_table and app)')
     dut.serial.flash()
 
     dut.expect('Loading virtual efuse blocks from real efuses')
@@ -329,7 +344,7 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(dut: Dut) -> None:
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
-    dut.reset()
+    dut.serial.hard_reset()
     dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v1: bootloader secure boot is already enabled. No need to generate digest. continuing..')
@@ -339,31 +354,26 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-# Todo: update the resp env marker
-# @pytest.mark.ethkitv12 ( Runners for esp32 eco3)
 @pytest.mark.esp32
 @pytest.mark.parametrize('config', [('virt_secure_boot_v2.esp32'),], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     # only for ESP32 ECO3
-    # check and log bin size
-    print('Skipping the test for now, will reenable once runner tag is setup')
-    return
-    # binary_file = os.path.join(dut.serial.app.binary_path, 'bootloader', 'bootloader.bin')
-    # bin_sizeos.path.getsize(binary_file)
-    # logging.info('{}_bootloader_{}_bin_size'.format(dut.app.target, dut.app.config_name), '{}KB'.format(bin_size // 1024))
+    binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
+    bin_size = os.path.getsize(binary_file)
+    logging.info('{}_bootloader_secure_boot_v2_bin_size: {}KB'.format(dut.app.target, bin_size // 1024))
 
     print(' - Erase flash')
     dut.serial.erase_flash()
-
     print(' - Flash bootloader')
     dut.serial.bootloader_flash()
+    print(' - Start app (flash partition_table and app)')
     dut.serial.flash()
     dut.expect('Loading virtual efuse blocks from real efuses')
 
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Secure boot V2 is not enabled yet and eFuse digest keys are not set')
-    dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
+    dut.expect('secure_boot_v2: Verifying with RSA-PSS...', timeout=20)
     dut.expect('secure_boot_v2: Signature verified successfully!')
 
     dut.expect('secure_boot_v2: enabling secure boot v2...')
@@ -373,12 +383,12 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('secure_boot_v2: Signature verified successfully!')
     dut.expect('secure_boot_v2: Secure boot digests absent, generating..')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
-    dut.expect('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
+    dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
 
     dut.expect('Writing EFUSE_BLK_KEY1 with purpose 3')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
-    dut.expect('secure_boot_v2: 1 signature block(s) found appended to the app')
-    dut.expect('secure_boot_v2: Application key(0) matches with bootloader key(0)')
+    dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the app')
+    dut.expect_exact('secure_boot_v2: Application key(0) matches with bootloader key(0)')
 
     dut.expect('secure_boot_v2: blowing secure boot efuse...')
     dut.expect('Disable JTAG...')
@@ -392,7 +402,7 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
-    dut.reset()
+    dut.serial.hard_reset()
     dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
@@ -433,8 +443,8 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('secure_boot_v2: Secure boot digests already present')
     dut.expect('secure_boot_v2: Using pre-loaded public key digest in eFuse')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
-    dut.expect('secure_boot_v2: 1 signature block(s) found appended to the app')
-    dut.expect('secure_boot_v2: Application key(0) matches with bootloader key(0)')
+    dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the app')
+    dut.expect_exact('secure_boot_v2: Application key(0) matches with bootloader key(0)')
 
     dut.expect('secure_boot_v2: blowing secure boot efuse...')
     dut.expect('Disable JTAG...')
@@ -448,7 +458,7 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
-    dut.reset()
+    dut.serial.hard_reset()
     dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
@@ -459,31 +469,90 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.generic
-@pytest.mark.esp32s2
-@pytest.mark.esp32c3
-@pytest.mark.esp32c2
-@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32c2', 'virt_secure_boot_v2.esp32c3', 'virt_secure_boot_v2.esp32s2'], indirect=True)
+@pytest.mark.esp32
+@pytest.mark.parametrize('config', [('virt_secure_boot_v2.esp32'),], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(dut: Dut) -> None:
+
+    print(' - Erase flash')
+    dut.erase_flash()
+    print(' - Flash bootloader and app')
+    dut.bootloader_flash()
+    print(' - Start app (flash partition_table and app)')
+    dut.serial.flash()
+    dut.expect('Loading virtual efuse blocks from real efuses')
+    dut.expect('cpu_start: Pro cpu up')
+    dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('Start eFuse example')
+    dut.expect('example: Done')
+
+    print(' - Flash emul_efuse with pre-loaded efuses (ABS_DONE_1 1 -> 0)')
+    # offset of this eFuse is taken from components/efuse/esp32/esp_efuse_table.csv
+    ABS_DONE_1 = 197
+    # Resets eFuse, which enables Secure boot (V2) feature
+    dut.serial.erase_field_on_emul_efuse([ABS_DONE_1])
+
+    print(' - Start app (flash partition_table and app)')
+    dut.serial.flash()
+    dut.expect('Loading virtual efuse blocks from flash')
+
+    dut.expect('Verifying image signature...')
+    dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
+    dut.expect('secure_boot_v2: Signature verified successfully!')
+
+    dut.expect('secure_boot_v2: enabling secure boot v2...')
+    dut.expect('Verifying image signature...')
+    dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
+    dut.expect('secure_boot_v2: Signature verified successfully!')
+    dut.expect('secure_boot_v2: Secure boot digests already present')
+    dut.expect('secure_boot_v2: Using pre-loaded public key digest in eFuse')
+    dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
+    dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the app')
+    dut.expect_exact('secure_boot_v2: Application key(0) matches with bootloader key(0)')
+
+    dut.expect('secure_boot_v2: blowing secure boot efuse...')
+    dut.expect('Disable JTAG...')
+    dut.expect('Disable ROM BASIC interpreter fallback...')
+    dut.expect('UART ROM Download mode kept enabled - SECURITY COMPROMISED')
+    dut.expect('Prevent read disabling of additional efuses...')
+    dut.expect('secure_boot_v2: Secure boot permanently enabled')
+
+    dut.expect('cpu_start: Pro cpu up')
+    dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('Start eFuse example')
+    dut.expect('example: Done')
+
+    dut.serial.hard_reset()
+    dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('Verifying image signature...')
+    dut.expect('secure_boot_v2: Verifying with RSA-PSS...')
+    dut.expect('secure_boot_v2: Signature verified successfully!')
+    dut.expect('secure_boot_v2: enabling secure boot v2...')
+    dut.expect('secure_boot_v2: secure boot v2 is already enabled, continuing..')
+    dut.expect('Start eFuse example')
+    dut.expect('example: Done')
+
+
 def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
     # check and log bin size
-    # binary_file = os.path.join(dut.serial.app.binary_path, 'bootloader', 'bootloader.bin')
-    # bin_sizeos.path.getsize(binary_file)
-    # logging.info('{}_bootloader_{}_bin_size'.format(dut.app.target, dut.app.config_name), '{}KB'.format(bin_size // 1024))
+    binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
+    bin_size = os.path.getsize(binary_file)
+    logging.info('{}_bootloader_virt_secure_boot_v2_bin_size: {}KB'.format(dut.app.target, bin_size // 1024))
 
     print(' - Erase flash')
     dut.serial.erase_flash()
-
     print(' - Flash bootloader')
     dut.serial.bootloader_flash()
-
     print(' - Start app (flash partition_table and app)')
     dut.serial.flash()
     dut.expect('Loading virtual efuse blocks from real efuses')
 
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Secure boot V2 is not enabled yet and eFuse digest keys are not set')
-    signed_scheme = 'ECDSA' if dut.app.target == 'esp32c2' else 'RSA-PSS'
+    if dut.app.target == 'esp32c2':
+        signed_scheme = 'ECDSA'
+    else:
+        signed_scheme = 'RSA-PSS'
     dut.expect('secure_boot_v2: Verifying with %s...' % signed_scheme)
     dut.expect('secure_boot_v2: Signature verified successfully!')
 
@@ -494,18 +563,18 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
     dut.expect('secure_boot_v2: Signature verified successfully!')
     dut.expect('secure_boot_v2: Secure boot digests absent, generating..')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
-    dut.expect('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
+    dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
 
     if dut.app.target == 'esp32c2':
         dut.expect('Writing EFUSE_BLK_KEY0 with purpose 3')
     else:
         dut.expect('Writing EFUSE_BLK_KEY0 with purpose 9')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
-    dut.expect('secure_boot_v2: 1 signature block(s) found appended to the app')
-    dut.expect('secure_boot_v2: Application key(0) matches with bootloader key(0)')
+    dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the app')
+    dut.expect_exact('secure_boot_v2: Application key(0) matches with bootloader key(0)')
     if dut.app.target != 'esp32c2':
-        dut.expect('secure_boot_v2: Revoking empty key digest slot (1)...')
-        dut.expect('secure_boot_v2: Revoking empty key digest slot (2)...')
+        dut.expect_exact('secure_boot_v2: Revoking empty key digest slot (1)...')
+        dut.expect_exact('secure_boot_v2: Revoking empty key digest slot (2)...')
     dut.expect('secure_boot_v2: blowing secure boot efuse...')
     dut.expect('UART ROM Download mode kept enabled - SECURITY COMPROMISED')
     dut.expect('Disable hardware & software JTAG...')
@@ -516,7 +585,7 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
-    dut.reset()
+    dut.serial.hard_reset()
     dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Verifying with %s...' % signed_scheme)
@@ -528,12 +597,30 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32s2
 @pytest.mark.esp32c3
-@pytest.mark.esp32c2
-@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32s2', 'virt_secure_boot_v2.esp32c2', 'virt_secure_boot_v2.esp32c3'], indirect=True)
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32c3'], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
-def test_examples_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> None:
+def test_examples_efuse_with_virt_secure_boot_v2_esp32c3(dut: Dut) -> None:
+    test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32c2
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32c2'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_secure_boot_v2_esp32c2(dut: Dut) -> None:
+    test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32s2
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32s2'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_secure_boot_v2_esp32s2(dut: Dut) -> None:
+    test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut)
+
+
+def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> None:
     print(' - Erase flash')
     dut.serial.erase_flash()
 
@@ -548,41 +635,49 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) ->
 
     print(' - Flash emul_efuse with pre-loaded efuses (SECURE_BOOT_EN 1 -> 0, SECURE_BOOT_KEY_REVOKE[0..2] -> 0)')
     # offsets of eFuses are taken from components/efuse/{target}/esp_efuse_table.csv
-    SECURE_BOOT_EN = 116
-    SECURE_BOOT_KEY_REVOKE0 = 85
-    SECURE_BOOT_KEY_REVOKE1 = 86
-    SECURE_BOOT_KEY_REVOKE2 = 87
-    # Resets eFuse, which enables Secure boot feature
-    # Resets eFuses, which control digest slots
-    dut.serial.erase_field_on_emul_efuse([SECURE_BOOT_EN, SECURE_BOOT_KEY_REVOKE0, SECURE_BOOT_KEY_REVOKE1, SECURE_BOOT_KEY_REVOKE2])
+    if dut.app.target == 'esp32c2':
+        SECURE_BOOT_EN = 53
+        dut.serial.erase_field_on_emul_efuse([SECURE_BOOT_EN])
+    else:
+        SECURE_BOOT_EN = 116
+        SECURE_BOOT_KEY_REVOKE0 = 85
+        SECURE_BOOT_KEY_REVOKE1 = 86
+        SECURE_BOOT_KEY_REVOKE2 = 87
+        # Resets eFuse, which enables Secure boot feature
+        # Resets eFuses, which control digest slots
+        dut.serial.erase_field_on_emul_efuse([SECURE_BOOT_EN, SECURE_BOOT_KEY_REVOKE0, SECURE_BOOT_KEY_REVOKE1, SECURE_BOOT_KEY_REVOKE2])
 
     print(' - Start app (flash partition_table and app)')
     dut.serial.flash()
     dut.expect('Loading virtual efuse blocks from flash')
 
     dut.expect('Verifying image signature...')
-    signed_scheme = 'ECDSA' if dut.app.taget == 'esp32c2' else 'RSA-PSS'
+    if dut.app.target == 'esp32c2':
+        signed_scheme = 'ECDSA'
+    else:
+        signed_scheme = 'RSA-PSS'
+
     dut.expect('secure_boot_v2: Verifying with %s...' % signed_scheme)
     dut.expect('secure_boot_v2: Signature verified successfully!')
     dut.expect('secure_boot_v2: Secure boot digests already present')
     dut.expect('secure_boot_v2: Using pre-loaded public key digest in eFuse')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
-    dut.expect('secure_boot_v2: 1 signature block(s) found appended to the app')
+    dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the app')
     if dut.app.target != 'esp32c2':
-        dut.expect('secure_boot_v2: Revoking empty key digest slot (1)...')
-        dut.expect('secure_boot_v2: Revoking empty key digest slot (2)...')
+        dut.expect_exact('secure_boot_v2: Revoking empty key digest slot (1)...')
+        dut.expect_exact('secure_boot_v2: Revoking empty key digest slot (2)...')
 
     dut.expect('secure_boot_v2: blowing secure boot efuse...')
     dut.expect('UART ROM Download mode kept enabled - SECURITY COMPROMISED')
     dut.expect('Disable hardware & software JTAG...')
-    dut.expect('secure_boot_v2: Secure boot permanently enabled')
+    dut.expect('secure_boot_v2: Secure boot permanently enabled', timeout=20)
 
     dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
-    dut.reset()
+    dut.serial.hard_reset()
     dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('Verifying image signature...')
     dut.expect('secure_boot_v2: Verifying with %s...' % signed_scheme)
@@ -594,14 +689,38 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) ->
 
 
 @pytest.mark.generic
+@pytest.mark.esp32c3
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32c3'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_secure_boot_v2_esp32c3_pre_loaded(dut: Dut) -> None:
+    test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32c2
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32c2'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_secure_boot_v2_esp32c2_pre_loaded(dut: Dut) -> None:
+    test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32s2
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2.esp32s2'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_secure_boot_v2_esp32s2_pre_loaded(dut: Dut) -> None:
+    test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut)
+
+
+@pytest.mark.generic
 @pytest.mark.esp32
 @pytest.mark.parametrize('config', ['virt_sb_v1_and_fe',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_sb_v1_and_fe(dut: Dut) -> None:
     # check and log bin size
-    # binary_file = os.path.join(dut.serial.app.binary_path, 'bootloader', 'bootloader.bin')
-    # bin_sizeos.path.getsize(binary_file)
-    # logging.info('{}_bootloader_{}_bin_size'.format(dut.app.target, dut.app.config_name), '{}KB'.format(bin_size // 1024))
+    binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
+    bin_size = os.path.getsize(binary_file)
+    logging.info('{}_bootloader_virt_sb_v1_and_fe_bin_size: {}KB'.format(dut.app.target, bin_size // 1024))
 
     print(' - Erase flash')
     dut.serial.erase_flash()
@@ -656,18 +775,14 @@ def test_examples_efuse_with_virt_sb_v1_and_fe(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-# Todo- Add an env marker like this
-# @pytest.mark.ethkitv12
 @pytest.mark.esp32
 @pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
-    print('skip this for now')
-    return
     # check and log bin size
-    # binary_file = os.path.join(dut.serial.app.binary_path, 'bootloader', 'bootloader.bin')
-    # bin_sizeos.path.getsize(binary_file)
-    # logging.info('{}_bootloader_{}_bin_size'.format(dut.app.target, dut.app.config_name), '{}KB'.format(bin_size // 1024))
+    binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
+    bin_size = os.path.getsize(binary_file)
+    logging.info('{}_bootloader_virt_sb_v2_and_fe_bin_size: {}KB'.format(dut.app.target, bin_size // 1024))
 
     print(' - Erase flash')
     dut.serial.erase_flash()
@@ -690,12 +805,12 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect('secure_boot_v2: Signature verified successfully')
     dut.expect('secure_boot_v2: Secure boot digests absent, generating..')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
-    dut.expect('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
+    dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
 
     dut.expect('Writing EFUSE_BLK_KEY1 with purpose 3')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
-    dut.expect('secure_boot_v2: 1 signature block(s) found appended to the app')
-    dut.expect('secure_boot_v2: Application key(0) matches with bootloader key(0)')
+    dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the app')
+    dut.expect_exact('secure_boot_v2: Application key(0) matches with bootloader key(0)')
 
     dut.expect('secure_boot_v2: blowing secure boot efuse...')
     dut.expect('Disable JTAG...')
@@ -739,16 +854,11 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
-@pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32c2', 'virt_sb_v2_and_fe.esp32c3', 'virt_sb_v2_and_fe.esp32s2'], indirect=True)
 def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
     # check and log bin size
-    # binary_file = os.path.join(dut.serial.app.binary_path, 'bootloader', 'bootloader.bin')
-    # bin_sizeos.path.getsize(binary_file)
-    # logging.info('{}_bootloader_{}_bin_size'.format(dut.app.target, dut.app.config_name), '{}KB'.format(bin_size // 1024))
+    binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
+    bin_size = os.path.getsize(binary_file)
+    logging.info('{}_bootloader_virt_sb_v2_and_fe_bin_size: {}KB'.format(dut.app.target, bin_size // 1024))
 
     dut.serial.erase_flash()
 
@@ -772,18 +882,18 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
     dut.expect('secure_boot_v2: Signature verified successfully!')
     dut.expect('secure_boot_v2: Secure boot digests absent, generating..')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
-    dut.expect('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
+    dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the bootloader')
 
     if dut.app.target == 'esp32c2':
         dut.expect('Writing EFUSE_BLK_KEY0 with purpose 3')
     else:
         dut.expect('Writing EFUSE_BLK_KEY0 with purpose 9')
     dut.expect('secure_boot_v2: Digests successfully calculated, 1 valid signatures')
-    dut.expect('secure_boot_v2: 1 signature block(s) found appended to the app')
-    dut.expect('secure_boot_v2: Application key(0) matches with bootloader key(0)')
+    dut.expect_exact('secure_boot_v2: 1 signature block(s) found appended to the app')
+    dut.expect_exact('secure_boot_v2: Application key(0) matches with bootloader key(0)')
     if dut.app.target != 'esp32c2':
-        dut.expect('secure_boot_v2: Revoking empty key digest slot (1)...')
-        dut.expect('secure_boot_v2: Revoking empty key digest slot (2)...')
+        dut.expect_exact('secure_boot_v2: Revoking empty key digest slot (1)...')
+        dut.expect_exact('secure_boot_v2: Revoking empty key digest slot (2)...')
     dut.expect('secure_boot_v2: blowing secure boot efuse...')
     dut.expect('UART ROM Download mode kept enabled - SECURITY COMPROMISED')
     dut.expect('Disable hardware & software JTAG...')
@@ -831,18 +941,22 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-if __name__ == '__main__':
-    test_examples_efuse()
-    test_examples_efuse_with_virt_flash_enc()
-    test_examples_efuse_with_virt_flash_enc_pre_loaded()
-    test_examples_efuse_with_virt_flash_enc_aes_256()
-    test_examples_efuse_with_virt_flash_enc_release()
-    test_examples_efuse_with_virt_secure_boot_v1()
-    test_examples_efuse_with_virt_secure_boot_v1_pre_loaded()
-    test_examples_efuse_with_virt_secure_boot_v2()
-    # test_examples_efuse_with_virt_secure_boot_v2_pre_loaded()
-    test_examples_efuse_with_virt_secure_boot_v2_esp32xx()
-    test_examples_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded()
-    test_examples_efuse_with_virt_sb_v1_and_fe()
-    test_examples_efuse_with_virt_sb_v2_and_fe()
-    test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx()
+@pytest.mark.esp32c3
+@pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32c3'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_sb_v2_and_fe_esp32c3(dut: Dut) -> None:
+    test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut)
+
+
+@pytest.mark.esp32c2
+@pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32c2'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_sb_v2_and_fe_esp32c2(dut: Dut) -> None:
+    test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut)
+
+
+@pytest.mark.esp32s2
+@pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32s2'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_examples_efuse_with_virt_sb_v2_and_fe_esp32s2(dut: Dut) -> None:
+    test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut)

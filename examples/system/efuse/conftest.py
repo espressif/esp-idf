@@ -35,7 +35,7 @@ class EfuseFlashEncSerial(IdfSerial):
         """
         logging.info('Flashing bootloader')
         bootloader_path = os.path.join(self.app.binary_path, 'bootloader', 'bootloader.bin')
-        offs = int(self.app.sdkconfig.get('CONFIG_BOOTLOADER_OFFSET_IN_FLASH', 0))
+        offs = int(self.app.sdkconfig.get('BOOTLOADER_OFFSET_IN_FLASH', 0))
         logging.info('bootloader offset is {0}'.format(hex(offs)))
         prev_flash_files = self.app.flash_files
         flash_files = []
