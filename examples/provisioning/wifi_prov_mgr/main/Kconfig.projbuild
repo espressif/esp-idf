@@ -17,7 +17,7 @@ menu "Example Configuration"
 
     choice EXAMPLE_PROV_SECURITY_VERSION
         bool "Protocomm security version"
-        default EXAMPLE_PROV_SECURITY_VERSION_1
+        default EXAMPLE_PROV_SECURITY_VERSION_2
         help
             Wi-Fi provisioning component offers 3 security versions.
             The example offers a choice between security version 1 and 2.
