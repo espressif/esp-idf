@@ -32,22 +32,25 @@ if(NOT BOOTLOADER_BUILD)
         "spi_slave_hal_iram.c"
         "timer_hal.c"
         "timer_hal_iram.c"
-        "ledc_hal.c"
-        "ledc_hal_iram.c"
-        "i2c_hal.c"
-        "i2c_hal_iram.c"
         "gpio_hal.c"
         "uart_hal.c"
         "uart_hal_iram.c"
         "spi_flash_hal.c"
         "spi_flash_hal_iram.c"
         "spi_flash_encrypt_hal_iram.c"
-        "sha_hal.c"
         "adc_hal_common.c"
         "adc_oneshot_hal.c")
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED AND NOT CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
         list(APPEND srcs "systimer_hal.c")
+    endif()
+
+    if(CONFIG_SOC_LEDC_SUPPORTED)
+        list(APPEND srcs "ledc_hal.c" "ledc_hal_iram.c")
+    endif()
+
+    if(CONFIG_SOC_I2C_SUPPORTED)
+        list(APPEND srcs "i2c_hal.c" "i2c_hal_iram.c")
     endif()
 
     if(CONFIG_SOC_RMT_SUPPORTED)
@@ -94,6 +97,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "ecc_hal.c")
     endif()
 
+    if(CONFIG_SOC_SHA_SUPPORTED)
+        list(APPEND srcs "sha_hal.c")
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "dac_hal.c"
@@ -119,7 +126,7 @@ if(NOT BOOTLOADER_BUILD)
                     "esp32s2/cp_dma_hal.c"
                     "esp32s2/touch_sensor_hal.c"
                     "esp32s2/dac_hal.c"
-                    "usbh_hal.c")
+                    "usb_dwc_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32s3")
@@ -136,7 +143,7 @@ if(NOT BOOTLOADER_BUILD)
             "esp32s3/hmac_hal.c"
             "esp32s3/touch_sensor_hal.c"
             "esp32s3/rtc_cntl_hal.c"
-            "usbh_hal.c")
+            "usb_dwc_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32c3")
@@ -168,6 +175,20 @@ if(NOT BOOTLOADER_BUILD)
               "spi_slave_hd_hal.c"
               "esp32c2/brownout_hal.c"
               "esp32c2/rtc_cntl_hal.c")
+    endif()
+
+    if(${target} STREQUAL "esp32c6")
+        list(APPEND srcs
+              "spi_flash_hal_gpspi.c"
+              "spi_slave_hd_hal.c"
+              "esp32c6/brownout_hal.c"
+              "esp32c6/rtc_cntl_hal.c")
+
+        # TODO: IDF-5310
+        list(REMOVE_ITEM srcs
+                "adc_oneshot_hal.c"
+                "adc_hal_common.c"
+                )
     endif()
 endif()
 

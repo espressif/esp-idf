@@ -78,9 +78,10 @@ struct gptimer_t {
     timer_hal_context_t hal;
     gptimer_fsm_t fsm;
     intr_handle_t intr;
-    portMUX_TYPE spinlock; // to protect per-timer resources concurent accessed by task and ISR handler
+    portMUX_TYPE spinlock; // to protect per-timer resources concurrent accessed by task and ISR handler
     gptimer_alarm_cb_t on_alarm;
     void *user_ctx;
+    gptimer_clock_source_t clk_src;
     esp_pm_lock_handle_t pm_lock; // power management lock
 #if CONFIG_PM_ENABLE
     char pm_lock_name[GPTIMER_PM_LOCK_NAME_LEN_MAX]; // pm lock name
@@ -176,10 +177,6 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
 
     // initialize HAL layer
     timer_hal_init(&timer->hal, group_id, timer_id);
-    // stop counter, alarm, auto-reload
-    timer_ll_enable_counter(timer->hal.dev, timer_id, false);
-    timer_ll_enable_auto_reload(timer->hal.dev, timer_id, false);
-    timer_ll_enable_alarm(timer->hal.dev, timer_id, false);
     // select clock source, set clock resolution
     ESP_GOTO_ON_ERROR(gptimer_select_periph_clock(timer, config->clk_src, config->resolution_hz), err, TAG, "set periph clock failed");
     // initialize counter value to zero
@@ -216,6 +213,7 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
     ESP_LOGD(TAG, "del timer (%d,%d)", group_id, timer_id);
+    timer_hal_deinit(&timer->hal);
     // recycle memory resource
     ESP_RETURN_ON_ERROR(gptimer_destory(timer), TAG, "destory gptimer failed");
     return ESP_OK;
@@ -476,6 +474,7 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
         break;
     }
     timer_ll_set_clock_source(timer->hal.dev, timer_id, src_clk);
+    timer->clk_src = src_clk;
     unsigned int prescale = counter_src_hz / resolution_hz; // potential resolution loss here
     timer_ll_set_clock_prescale(timer->hal.dev, timer_id, prescale);
     timer->resolution_hz = counter_src_hz / prescale; // this is the real resolution

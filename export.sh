@@ -116,8 +116,8 @@ __main() {
     "$ESP_PYTHON" "${IDF_PATH}/tools/python_version_checker.py"
 
     __verbose "Checking other ESP-IDF version."
-    idf_unset=$("$ESP_PYTHON" "${IDF_PATH}/tools/idf_tools.py" export --unset) || return 1
-    eval "${idf_unset}"
+    idf_deactivate=$("$ESP_PYTHON" "${IDF_PATH}/tools/idf_tools.py" export --deactivate) || return 1
+    eval "${idf_deactivate}"
 
     __verbose "Adding ESP-IDF tools to PATH..."
     # Call idf_tools.py to export tool paths
@@ -134,9 +134,8 @@ __main() {
     eval "${idf_exports}"
     export PATH="${IDF_ADD_PATHS_EXTRAS}:${PATH}"
 
-    __verbose "Using Python interpreter in $(which python)"
     __verbose "Checking if Python packages are up to date..."
-    python "${IDF_PATH}/tools/idf_tools.py" check-python-dependencies || return 1
+    "$ESP_PYTHON" "${IDF_PATH}/tools/idf_tools.py" check-python-dependencies || return 1
 
     if [ -n "$BASH" ]
     then
@@ -184,7 +183,7 @@ __cleanup() {
     unset path_entry
     unset IDF_ADD_PATHS_EXTRAS
     unset idf_exports
-    unset idf_unset
+    unset idf_deactivate
     unset ESP_PYTHON
     unset SOURCE_ZSH
     unset SOURCE_BASH

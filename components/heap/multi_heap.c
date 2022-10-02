@@ -81,7 +81,7 @@ typedef struct multi_heap_info {
     void* heap_data;
 } heap_t;
 
-#ifdef CONFIG_HEAP_TLSF_USE_ROM_IMPL
+#if CONFIG_HEAP_TLSF_USE_ROM_IMPL
 
 void _multi_heap_lock(void *lock)
 {
@@ -103,7 +103,7 @@ void multi_heap_in_rom_init(void)
     multi_heap_os_funcs_init(&multi_heap_os_funcs);
 }
 
-#else //#ifndef CONFIG_HEAP_TLSF_USE_ROM_IMPL
+#else // CONFIG_HEAP_TLSF_USE_ROM_IMPL
 
 /* Return true if this block is free. */
 static inline bool is_free(const block_header_t *block)

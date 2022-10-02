@@ -90,16 +90,12 @@ static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, 
     // Formula: rmt_sclk = module_clock_src / (1 + div_num + div_a / div_b)
     (void)channel; // the source clock is set for all channels
     HAL_ASSERT(divider_integral >= 1);
-    dev->sys_conf.sclk_active = 0;
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->sys_conf, sclk_div_num, divider_integral - 1);
     dev->sys_conf.sclk_div_a = divider_numerator;
     dev->sys_conf.sclk_div_b = divider_denominator;
     switch (src) {
     case RMT_CLK_SRC_AHB:
         dev->sys_conf.sclk_sel = 1;
-        break;
-    case RMT_CLK_SRC_RC_FAST:
-        dev->sys_conf.sclk_sel = 2;
         break;
     case RMT_CLK_SRC_XTAL:
         dev->sys_conf.sclk_sel = 3;
@@ -108,7 +104,17 @@ static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, 
         HAL_ASSERT(false && "unsupported RMT clock source");
         break;
     }
-    dev->sys_conf.sclk_active = 1;
+}
+
+/**
+ * @brief Enable RMT peripheral source clock
+ *
+ * @param dev Peripheral instance address
+ * @param en True to enable, False to disable
+ */
+static inline void rmt_ll_enable_group_clock(rmt_dev_t *dev, bool en)
+{
+    dev->sys_conf.sclk_active = en;
 }
 
 ////////////////////////////////////////TX Channel Specific/////////////////////////////////////////////////////////////
@@ -741,9 +747,6 @@ static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint
     switch (dev->sys_conf.sclk_sel) {
     case 1:
         clk_src = RMT_CLK_SRC_AHB;
-        break;
-    case 2:
-        clk_src = RMT_CLK_SRC_RC_FAST;
         break;
     case 3:
         clk_src = RMT_CLK_SRC_XTAL;

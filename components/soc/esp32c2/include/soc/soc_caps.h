@@ -35,6 +35,8 @@
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     0
 #define SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK 1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
+#define SOC_LEDC_SUPPORTED              1
+#define SOC_I2C_SUPPORTED               1
 #define SOC_SHA_SUPPORTED               1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_FLASH_ENC_SUPPORTED         1
@@ -88,6 +90,9 @@
 
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
 
+/*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_MMU_PAGE_SIZE_CONFIGURABLE  (1)
+
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
 #define SOC_GDMA_PAIRS_PER_GROUP        (1U) // Number of GDMA pairs in each group
@@ -122,7 +127,7 @@
 // ESP32-C2 has 1 I2C
 #define SOC_I2C_NUM                 (1U)
 
-#define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
+#define SOC_I2C_FIFO_LEN            (16) /*!< I2C hardware FIFO depth */
 
 // FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
 #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
@@ -174,6 +179,7 @@
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2
 #define SOC_SPI_PERIPH_CS_NUM(i)    6
+#define SOC_SPI_MAX_CS_NUM          6
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 
@@ -259,15 +265,9 @@
 
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
-
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-
-/*-------------------------- MMU CAPS ----------------------------------------*/
-#define SOC_MMU_PAGE_SIZE_CONFIGURABLE  (1)
 #define SOC_PM_SUPPORT_CPU_PD           (0)
-
 #define SOC_PM_SUPPORT_WIFI_PD          (0)
-
 #define SOC_PM_SUPPORT_BT_PD            (0)
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
@@ -280,4 +280,5 @@
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_BLE_MESH_SUPPORTED          (0)    /*!< Support BLE MESH */
 #define SOC_ESP_NIMBLE_CONTROLLER       (1)    /*!< Support BLE EMBEDDED controller V1 */

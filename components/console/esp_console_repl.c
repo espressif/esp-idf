@@ -174,16 +174,18 @@ esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_
     // setup prompt
     esp_console_setup_prompt(repl_config->prompt, &usb_serial_jtag_repl->repl_com);
 
+    /* Fill the structure here as it will be used directly by the created task. */
+    usb_serial_jtag_repl->uart_channel = CONFIG_ESP_CONSOLE_UART_NUM;
+    usb_serial_jtag_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
+    usb_serial_jtag_repl->repl_com.repl_core.del = esp_console_repl_usb_serial_jtag_delete;
+
     /* spawn a single thread to run REPL */
     if (xTaskCreate(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
-                    &usb_serial_jtag_repl->repl_com, repl_config->task_priority, &usb_serial_jtag_repl->repl_com.task_hdl) != pdTRUE) {
+                    usb_serial_jtag_repl, repl_config->task_priority, &usb_serial_jtag_repl->repl_com.task_hdl) != pdTRUE) {
         ret = ESP_FAIL;
         goto _exit;
     }
 
-    usb_serial_jtag_repl->uart_channel = CONFIG_ESP_CONSOLE_UART_NUM;
-    usb_serial_jtag_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
-    usb_serial_jtag_repl->repl_com.repl_core.del = esp_console_repl_usb_serial_jtag_delete;
     *ret_repl = &usb_serial_jtag_repl->repl_com.repl_core;
     return ESP_OK;
 _exit:

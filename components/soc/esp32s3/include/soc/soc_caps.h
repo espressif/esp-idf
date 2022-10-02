@@ -52,6 +52,8 @@
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_SDM_SUPPORTED               1
+#define SOC_LEDC_SUPPORTED              1
+#define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_SUPPORT_COEXISTENCE         1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
@@ -180,6 +182,7 @@
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (2)
 #define SOC_I2S_HW_VERSION_2        (1)
+#define SOC_I2S_SUPPORTS_XTAL       (1)
 #define SOC_I2S_SUPPORTS_PCM        (1)
 #define SOC_I2S_SUPPORTS_PDM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
@@ -207,7 +210,7 @@
 #include "mpu_caps.h"
 
 /*-------------------------- PCNT CAPS ---------------------------------------*/
-#define SOC_PCNT_GROUPS               (1)
+#define SOC_PCNT_GROUPS               (1U)
 #define SOC_PCNT_UNITS_PER_GROUP      (4)
 #define SOC_PCNT_CHANNELS_PER_UNIT    (2)
 #define SOC_PCNT_THRES_POINT_PER_UNIT (2)
@@ -238,6 +241,7 @@
 #define SOC_LCD_RGB_PANELS              (1U) /*!< Support one RGB LCD panel */
 #define SOC_LCD_I80_BUS_WIDTH           (16) /*!< Intel 8080 bus width */
 #define SOC_LCD_RGB_DATA_WIDTH          (16) /*!< Number of LCD data lines */
+#define SOC_LCD_SUPPORT_RGB_YUV_CONV    (1)  /*!< Support color format conversion between RGB and YUV */
 
 /*-------------------------- RTC CAPS --------------------------------------*/
 #define SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH       (128)
@@ -263,7 +267,8 @@
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM                  3
-#define SOC_SPI_PERIPH_CS_NUM(i)            3
+#define SOC_SPI_PERIPH_CS_NUM(i)            (((i)==0)? 2: (((i)==1)? 6: 3))
+#define SOC_SPI_MAX_CS_NUM                  6
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE         64
 #define SOC_SPI_SUPPORT_DDRCLK              1
 #define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
@@ -449,3 +454,4 @@
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_BLE_MESH_SUPPORTED          (1)    /*!< Support BLE MESH */

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import List
+from typing import List, Optional
 
 from .cluster import Cluster
 from .exceptions import NoFreeClusterException
@@ -39,22 +39,25 @@ class FAT:
         is_cluster_last_: bool = value_ == (1 << self.boot_sector_state.fatfs_type) - 1
         return is_cluster_last_
 
-    def chain_content(self, cluster_id_: int) -> bytearray:
-        bin_im: bytearray = self.boot_sector_state.binary_image
-        if self.is_cluster_last(cluster_id_):
-            data_address_ = Cluster.compute_cluster_data_address(self.boot_sector_state, cluster_id_)
-            content_: bytearray = bin_im[data_address_: data_address_ + self.boot_sector_state.sector_size]
-            return content_
-        fat_value_: int = self.get_cluster_value(cluster_id_)
+    def get_chained_content(self, cluster_id_: int, size: Optional[int] = None) -> bytearray:
+        """
+        The purpose of the method is retrieving the content from chain of clusters when the FAT FS partition
+        is analyzed. The file entry provides the reference to the first cluster, this method
+        traverses linked list of clusters and append partial results to the content.
+        """
+        binary_image: bytearray = self.boot_sector_state.binary_image
+
         data_address_ = Cluster.compute_cluster_data_address(self.boot_sector_state, cluster_id_)
-        content_ = bin_im[data_address_: data_address_ + self.boot_sector_state.sector_size]
+        content_ = binary_image[data_address_: data_address_ + self.boot_sector_state.sector_size]
 
         while not self.is_cluster_last(cluster_id_):
-            cluster_id_ = fat_value_
-            fat_value_ = self.get_cluster_value(cluster_id_)
+            cluster_id_ = self.get_cluster_value(cluster_id_)
             data_address_ = Cluster.compute_cluster_data_address(self.boot_sector_state, cluster_id_)
-            content_ += bin_im[data_address_: data_address_ + self.boot_sector_state.sector_size]
-        return content_
+            content_ += binary_image[data_address_: data_address_ + self.boot_sector_state.sector_size]
+        # the size is None if the object is directory
+        if size is None:
+            return content_
+        return content_[:size]
 
     def find_free_cluster(self) -> Cluster:
         # finds first empty cluster and allocates it

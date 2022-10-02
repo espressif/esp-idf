@@ -31,11 +31,14 @@ class Entry:
     LDIR_Name3_IDX: int = 28
     LDIR_Name3_SIZE: int = 2
 
+    # short entry in long file names
+    LDIR_DIR_NTRES: int = 0x18
     # one entry can hold 13 characters with size 2 bytes distributed in three regions of the 32 bytes entry
     CHARS_PER_ENTRY: int = LDIR_Name1_SIZE + LDIR_Name2_SIZE + LDIR_Name3_SIZE
 
+    # the last 16 bytes record in the LFN entry has first byte masked with the following value
+    LAST_RECORD_LFN_ENTRY: int = 0x40
     SHORT_ENTRY: int = -1
-
     # this value is used for short-like entry but with accepted lower case
     SHORT_ENTRY_LN: int = 0
 
@@ -103,7 +106,7 @@ class Entry:
         00002040: 54 48 49 53 49 53 7E 31 54 58 54 20 00 00 00 00    THISIS~1TXT.....
         00002050: 21 00 00 00 00 00 00 00 21 00 02 00 15 00 00 00    !.......!.......
         """
-        order |= (0x40 if is_last else 0x00)
+        order |= (Entry.LAST_RECORD_LFN_ENTRY if is_last else 0x00)
         long_entry: bytes = (Int8ul.build(order) +  # order of the long name entry (possibly masked with 0x40)
                              names[0] +  # first 5 characters (10 bytes) of the name part
                              Int8ul.build(Entry.ATTR_LONG_NAME) +  # one byte entity type ATTR_LONG_NAME
@@ -124,7 +127,13 @@ class Entry:
             return {}
         names1 = entry_bytes_[14:26]
         names2 = entry_bytes_[28:32]
-        return {'order': order_, 'name1': names0, 'name2': names1, 'name3': names2, 'is_last': bool(order_ & 0x40 == 0x40)}
+        return {
+            'order': order_,
+            'name1': names0,
+            'name2': names1,
+            'name3': names2,
+            'is_last': bool(order_ & Entry.LAST_RECORD_LFN_ENTRY == Entry.LAST_RECORD_LFN_ENTRY)
+        }
 
     @property
     def entry_bytes(self) -> bytes:

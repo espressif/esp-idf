@@ -1,7 +1,7 @@
 /**
  * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
@@ -183,121 +183,121 @@ extern "C" {
  *  Channel 1 configure register 0
  */
 #define RMT_CH1CONF0_REG (DR_REG_RMT_BASE + 0x14)
-/** RMT_TX_START_CH0 : WT; bitpos: [0]; default: 0;
+/** RMT_TX_START_CH1 : WT; bitpos: [0]; default: 0;
  *  Set this bit to start sending data on CHANNEL1.
  */
-#define RMT_TX_START_CH0    (BIT(0))
-#define RMT_TX_START_CH0_M  (RMT_TX_START_CH0_V << RMT_TX_START_CH0_S)
-#define RMT_TX_START_CH0_V  0x00000001U
-#define RMT_TX_START_CH0_S  0
-/** RMT_MEM_RD_RST_CH0 : WT; bitpos: [1]; default: 0;
+#define RMT_TX_START_CH1    (BIT(0))
+#define RMT_TX_START_CH1_M  (RMT_TX_START_CH1_V << RMT_TX_START_CH1_S)
+#define RMT_TX_START_CH1_V  0x00000001U
+#define RMT_TX_START_CH1_S  0
+/** RMT_MEM_RD_RST_CH1 : WT; bitpos: [1]; default: 0;
  *  Set this bit to reset read ram address for CHANNEL1 by accessing transmitter.
  */
-#define RMT_MEM_RD_RST_CH0    (BIT(1))
-#define RMT_MEM_RD_RST_CH0_M  (RMT_MEM_RD_RST_CH0_V << RMT_MEM_RD_RST_CH0_S)
-#define RMT_MEM_RD_RST_CH0_V  0x00000001U
-#define RMT_MEM_RD_RST_CH0_S  1
-/** RMT_APB_MEM_RST_CH0 : WT; bitpos: [2]; default: 0;
+#define RMT_MEM_RD_RST_CH1    (BIT(1))
+#define RMT_MEM_RD_RST_CH1_M  (RMT_MEM_RD_RST_CH1_V << RMT_MEM_RD_RST_CH1_S)
+#define RMT_MEM_RD_RST_CH1_V  0x00000001U
+#define RMT_MEM_RD_RST_CH1_S  1
+/** RMT_APB_MEM_RST_CH1 : WT; bitpos: [2]; default: 0;
  *  Set this bit to reset W/R ram address for CHANNEL1 by accessing apb fifo.
  */
-#define RMT_APB_MEM_RST_CH0    (BIT(2))
-#define RMT_APB_MEM_RST_CH0_M  (RMT_APB_MEM_RST_CH0_V << RMT_APB_MEM_RST_CH0_S)
-#define RMT_APB_MEM_RST_CH0_V  0x00000001U
-#define RMT_APB_MEM_RST_CH0_S  2
-/** RMT_TX_CONTI_MODE_CH0 : R/W; bitpos: [3]; default: 0;
+#define RMT_APB_MEM_RST_CH1    (BIT(2))
+#define RMT_APB_MEM_RST_CH1_M  (RMT_APB_MEM_RST_CH1_V << RMT_APB_MEM_RST_CH1_S)
+#define RMT_APB_MEM_RST_CH1_V  0x00000001U
+#define RMT_APB_MEM_RST_CH1_S  2
+/** RMT_TX_CONTI_MODE_CH1 : R/W; bitpos: [3]; default: 0;
  *  Set this bit to restart transmission  from the first data to the last data in
  *  CHANNEL1.
  */
-#define RMT_TX_CONTI_MODE_CH0    (BIT(3))
-#define RMT_TX_CONTI_MODE_CH0_M  (RMT_TX_CONTI_MODE_CH0_V << RMT_TX_CONTI_MODE_CH0_S)
-#define RMT_TX_CONTI_MODE_CH0_V  0x00000001U
-#define RMT_TX_CONTI_MODE_CH0_S  3
-/** RMT_MEM_TX_WRAP_EN_CH0 : R/W; bitpos: [4]; default: 0;
+#define RMT_TX_CONTI_MODE_CH1    (BIT(3))
+#define RMT_TX_CONTI_MODE_CH1_M  (RMT_TX_CONTI_MODE_CH1_V << RMT_TX_CONTI_MODE_CH1_S)
+#define RMT_TX_CONTI_MODE_CH1_V  0x00000001U
+#define RMT_TX_CONTI_MODE_CH1_S  3
+/** RMT_MEM_TX_WRAP_EN_CH1 : R/W; bitpos: [4]; default: 0;
  *  This is the channel 1 enable bit for wraparound mode: it will resume sending at the
  *  start when the data to be sent is more than its memory size.
  */
-#define RMT_MEM_TX_WRAP_EN_CH0    (BIT(4))
-#define RMT_MEM_TX_WRAP_EN_CH0_M  (RMT_MEM_TX_WRAP_EN_CH0_V << RMT_MEM_TX_WRAP_EN_CH0_S)
-#define RMT_MEM_TX_WRAP_EN_CH0_V  0x00000001U
-#define RMT_MEM_TX_WRAP_EN_CH0_S  4
-/** RMT_IDLE_OUT_LV_CH0 : R/W; bitpos: [5]; default: 0;
+#define RMT_MEM_TX_WRAP_EN_CH1    (BIT(4))
+#define RMT_MEM_TX_WRAP_EN_CH1_M  (RMT_MEM_TX_WRAP_EN_CH1_V << RMT_MEM_TX_WRAP_EN_CH1_S)
+#define RMT_MEM_TX_WRAP_EN_CH1_V  0x00000001U
+#define RMT_MEM_TX_WRAP_EN_CH1_S  4
+/** RMT_IDLE_OUT_LV_CH1 : R/W; bitpos: [5]; default: 0;
  *  This bit configures the level of output signal in CHANNEL1 when the latter is in
  *  IDLE state.
  */
-#define RMT_IDLE_OUT_LV_CH0    (BIT(5))
-#define RMT_IDLE_OUT_LV_CH0_M  (RMT_IDLE_OUT_LV_CH0_V << RMT_IDLE_OUT_LV_CH0_S)
-#define RMT_IDLE_OUT_LV_CH0_V  0x00000001U
-#define RMT_IDLE_OUT_LV_CH0_S  5
-/** RMT_IDLE_OUT_EN_CH0 : R/W; bitpos: [6]; default: 0;
+#define RMT_IDLE_OUT_LV_CH1    (BIT(5))
+#define RMT_IDLE_OUT_LV_CH1_M  (RMT_IDLE_OUT_LV_CH1_V << RMT_IDLE_OUT_LV_CH1_S)
+#define RMT_IDLE_OUT_LV_CH1_V  0x00000001U
+#define RMT_IDLE_OUT_LV_CH1_S  5
+/** RMT_IDLE_OUT_EN_CH1 : R/W; bitpos: [6]; default: 0;
  *  This is the output enable-control bit for CHANNEL1 in IDLE state.
  */
-#define RMT_IDLE_OUT_EN_CH0    (BIT(6))
-#define RMT_IDLE_OUT_EN_CH0_M  (RMT_IDLE_OUT_EN_CH0_V << RMT_IDLE_OUT_EN_CH0_S)
-#define RMT_IDLE_OUT_EN_CH0_V  0x00000001U
-#define RMT_IDLE_OUT_EN_CH0_S  6
-/** RMT_TX_STOP_CH0 : R/W/SC; bitpos: [7]; default: 0;
+#define RMT_IDLE_OUT_EN_CH1    (BIT(6))
+#define RMT_IDLE_OUT_EN_CH1_M  (RMT_IDLE_OUT_EN_CH1_V << RMT_IDLE_OUT_EN_CH1_S)
+#define RMT_IDLE_OUT_EN_CH1_V  0x00000001U
+#define RMT_IDLE_OUT_EN_CH1_S  6
+/** RMT_TX_STOP_CH1 : R/W/SC; bitpos: [7]; default: 0;
  *  Set this bit to stop the transmitter of CHANNEL1 sending data out.
  */
-#define RMT_TX_STOP_CH0    (BIT(7))
-#define RMT_TX_STOP_CH0_M  (RMT_TX_STOP_CH0_V << RMT_TX_STOP_CH0_S)
-#define RMT_TX_STOP_CH0_V  0x00000001U
-#define RMT_TX_STOP_CH0_S  7
-/** RMT_DIV_CNT_CH0 : R/W; bitpos: [15:8]; default: 2;
+#define RMT_TX_STOP_CH1    (BIT(7))
+#define RMT_TX_STOP_CH1_M  (RMT_TX_STOP_CH1_V << RMT_TX_STOP_CH1_S)
+#define RMT_TX_STOP_CH1_V  0x00000001U
+#define RMT_TX_STOP_CH1_S  7
+/** RMT_DIV_CNT_CH1 : R/W; bitpos: [15:8]; default: 2;
  *  This register is used to configure the divider for clock of CHANNEL1.
  */
-#define RMT_DIV_CNT_CH0    0x000000FFU
-#define RMT_DIV_CNT_CH0_M  (RMT_DIV_CNT_CH0_V << RMT_DIV_CNT_CH0_S)
-#define RMT_DIV_CNT_CH0_V  0x000000FFU
-#define RMT_DIV_CNT_CH0_S  8
-/** RMT_MEM_SIZE_CH0 : R/W; bitpos: [18:16]; default: 1;
+#define RMT_DIV_CNT_CH1    0x000000FFU
+#define RMT_DIV_CNT_CH1_M  (RMT_DIV_CNT_CH1_V << RMT_DIV_CNT_CH1_S)
+#define RMT_DIV_CNT_CH1_V  0x000000FFU
+#define RMT_DIV_CNT_CH1_S  8
+/** RMT_MEM_SIZE_CH1 : R/W; bitpos: [18:16]; default: 1;
  *  This register is used to configure the maximum size of memory allocated to CHANNEL1.
  */
-#define RMT_MEM_SIZE_CH0    0x00000007U
-#define RMT_MEM_SIZE_CH0_M  (RMT_MEM_SIZE_CH0_V << RMT_MEM_SIZE_CH0_S)
-#define RMT_MEM_SIZE_CH0_V  0x00000007U
-#define RMT_MEM_SIZE_CH0_S  16
-/** RMT_CARRIER_EFF_EN_CH0 : R/W; bitpos: [20]; default: 1;
+#define RMT_MEM_SIZE_CH1    0x00000007U
+#define RMT_MEM_SIZE_CH1_M  (RMT_MEM_SIZE_CH1_V << RMT_MEM_SIZE_CH1_S)
+#define RMT_MEM_SIZE_CH1_V  0x00000007U
+#define RMT_MEM_SIZE_CH1_S  16
+/** RMT_CARRIER_EFF_EN_CH1 : R/W; bitpos: [20]; default: 1;
  *  1: Add carrier modulation on the output signal only at the send data state for
  *  CHANNEL1. 0: Add carrier modulation on the output signal at all state for CHANNEL1.
  *  Only valid when RMT_CARRIER_EN_CH1 is 1.
  */
-#define RMT_CARRIER_EFF_EN_CH0    (BIT(20))
-#define RMT_CARRIER_EFF_EN_CH0_M  (RMT_CARRIER_EFF_EN_CH0_V << RMT_CARRIER_EFF_EN_CH0_S)
-#define RMT_CARRIER_EFF_EN_CH0_V  0x00000001U
-#define RMT_CARRIER_EFF_EN_CH0_S  20
-/** RMT_CARRIER_EN_CH0 : R/W; bitpos: [21]; default: 1;
+#define RMT_CARRIER_EFF_EN_CH1    (BIT(20))
+#define RMT_CARRIER_EFF_EN_CH1_M  (RMT_CARRIER_EFF_EN_CH1_V << RMT_CARRIER_EFF_EN_CH1_S)
+#define RMT_CARRIER_EFF_EN_CH1_V  0x00000001U
+#define RMT_CARRIER_EFF_EN_CH1_S  20
+/** RMT_CARRIER_EN_CH1 : R/W; bitpos: [21]; default: 1;
  *  This is the carrier modulation enable-control bit for CHANNEL1. 1: Add carrier
  *  modulation in the output signal. 0: No carrier modulation in sig_out.
  */
-#define RMT_CARRIER_EN_CH0    (BIT(21))
-#define RMT_CARRIER_EN_CH0_M  (RMT_CARRIER_EN_CH0_V << RMT_CARRIER_EN_CH0_S)
-#define RMT_CARRIER_EN_CH0_V  0x00000001U
-#define RMT_CARRIER_EN_CH0_S  21
-/** RMT_CARRIER_OUT_LV_CH0 : R/W; bitpos: [22]; default: 1;
+#define RMT_CARRIER_EN_CH1    (BIT(21))
+#define RMT_CARRIER_EN_CH1_M  (RMT_CARRIER_EN_CH1_V << RMT_CARRIER_EN_CH1_S)
+#define RMT_CARRIER_EN_CH1_V  0x00000001U
+#define RMT_CARRIER_EN_CH1_S  21
+/** RMT_CARRIER_OUT_LV_CH1 : R/W; bitpos: [22]; default: 1;
  *  This bit is used to configure the position of carrier wave for CHANNEL1.
  *
  *  1'h0: add carrier wave on low level.
  *
  *  1'h1: add carrier wave on high level.
  */
-#define RMT_CARRIER_OUT_LV_CH0    (BIT(22))
-#define RMT_CARRIER_OUT_LV_CH0_M  (RMT_CARRIER_OUT_LV_CH0_V << RMT_CARRIER_OUT_LV_CH0_S)
-#define RMT_CARRIER_OUT_LV_CH0_V  0x00000001U
-#define RMT_CARRIER_OUT_LV_CH0_S  22
-/** RMT_AFIFO_RST_CH0 : WT; bitpos: [23]; default: 0;
+#define RMT_CARRIER_OUT_LV_CH1    (BIT(22))
+#define RMT_CARRIER_OUT_LV_CH1_M  (RMT_CARRIER_OUT_LV_CH1_V << RMT_CARRIER_OUT_LV_CH1_S)
+#define RMT_CARRIER_OUT_LV_CH1_V  0x00000001U
+#define RMT_CARRIER_OUT_LV_CH1_S  22
+/** RMT_AFIFO_RST_CH1 : WT; bitpos: [23]; default: 0;
  *  Reserved
  */
-#define RMT_AFIFO_RST_CH0    (BIT(23))
-#define RMT_AFIFO_RST_CH0_M  (RMT_AFIFO_RST_CH0_V << RMT_AFIFO_RST_CH0_S)
-#define RMT_AFIFO_RST_CH0_V  0x00000001U
-#define RMT_AFIFO_RST_CH0_S  23
-/** RMT_CONF_UPDATE_CH0 : WT; bitpos: [24]; default: 0;
+#define RMT_AFIFO_RST_CH1    (BIT(23))
+#define RMT_AFIFO_RST_CH1_M  (RMT_AFIFO_RST_CH1_V << RMT_AFIFO_RST_CH1_S)
+#define RMT_AFIFO_RST_CH1_V  0x00000001U
+#define RMT_AFIFO_RST_CH1_S  23
+/** RMT_CONF_UPDATE_CH1 : WT; bitpos: [24]; default: 0;
  *  synchronization bit for CHANNEL1
  */
-#define RMT_CONF_UPDATE_CH0    (BIT(24))
-#define RMT_CONF_UPDATE_CH0_M  (RMT_CONF_UPDATE_CH0_V << RMT_CONF_UPDATE_CH0_S)
-#define RMT_CONF_UPDATE_CH0_V  0x00000001U
-#define RMT_CONF_UPDATE_CH0_S  24
+#define RMT_CONF_UPDATE_CH1    (BIT(24))
+#define RMT_CONF_UPDATE_CH1_M  (RMT_CONF_UPDATE_CH1_V << RMT_CONF_UPDATE_CH1_S)
+#define RMT_CONF_UPDATE_CH1_V  0x00000001U
+#define RMT_CONF_UPDATE_CH1_S  24
 
 /** RMT_CH2CONF0_REG register
  *  Channel 2 configure register 0
@@ -423,121 +423,121 @@ extern "C" {
  *  Channel 3 configure register 0
  */
 #define RMT_CH3CONF0_REG (DR_REG_RMT_BASE + 0x20)
-/** RMT_DIV_CNT_CH2 : R/W; bitpos: [7:0]; default: 2;
+/** RMT_DIV_CNT_CH3 : R/W; bitpos: [7:0]; default: 2;
  *  This register is used to configure the divider for clock of CHANNEL3.
  */
-#define RMT_DIV_CNT_CH2    0x000000FFU
-#define RMT_DIV_CNT_CH2_M  (RMT_DIV_CNT_CH2_V << RMT_DIV_CNT_CH2_S)
-#define RMT_DIV_CNT_CH2_V  0x000000FFU
-#define RMT_DIV_CNT_CH2_S  0
-/** RMT_IDLE_THRES_CH2 : R/W; bitpos: [22:8]; default: 32767;
+#define RMT_DIV_CNT_CH3    0x000000FFU
+#define RMT_DIV_CNT_CH3_M  (RMT_DIV_CNT_CH3_V << RMT_DIV_CNT_CH3_S)
+#define RMT_DIV_CNT_CH3_V  0x000000FFU
+#define RMT_DIV_CNT_CH3_S  0
+/** RMT_IDLE_THRES_CH3 : R/W; bitpos: [22:8]; default: 32767;
  *  When no edge is detected on the input signal and continuous clock cycles is longer
  *  than this register value, received process is finished.
  */
-#define RMT_IDLE_THRES_CH2    0x00007FFFU
-#define RMT_IDLE_THRES_CH2_M  (RMT_IDLE_THRES_CH2_V << RMT_IDLE_THRES_CH2_S)
-#define RMT_IDLE_THRES_CH2_V  0x00007FFFU
-#define RMT_IDLE_THRES_CH2_S  8
-/** RMT_MEM_SIZE_CH2 : R/W; bitpos: [25:23]; default: 1;
+#define RMT_IDLE_THRES_CH3    0x00007FFFU
+#define RMT_IDLE_THRES_CH3_M  (RMT_IDLE_THRES_CH3_V << RMT_IDLE_THRES_CH3_S)
+#define RMT_IDLE_THRES_CH3_V  0x00007FFFU
+#define RMT_IDLE_THRES_CH3_S  8
+/** RMT_MEM_SIZE_CH3 : R/W; bitpos: [25:23]; default: 1;
  *  This register is used to configure the maximum size of memory allocated to CHANNEL3.
  */
-#define RMT_MEM_SIZE_CH2    0x00000007U
-#define RMT_MEM_SIZE_CH2_M  (RMT_MEM_SIZE_CH2_V << RMT_MEM_SIZE_CH2_S)
-#define RMT_MEM_SIZE_CH2_V  0x00000007U
-#define RMT_MEM_SIZE_CH2_S  23
-/** RMT_CARRIER_EN_CH2 : R/W; bitpos: [28]; default: 1;
+#define RMT_MEM_SIZE_CH3    0x00000007U
+#define RMT_MEM_SIZE_CH3_M  (RMT_MEM_SIZE_CH3_V << RMT_MEM_SIZE_CH3_S)
+#define RMT_MEM_SIZE_CH3_V  0x00000007U
+#define RMT_MEM_SIZE_CH3_S  23
+/** RMT_CARRIER_EN_CH3 : R/W; bitpos: [28]; default: 1;
  *  This is the carrier modulation enable-control bit for CHANNEL3. 1: Add carrier
  *  modulation in the output signal. 0: No carrier modulation in sig_out.
  */
-#define RMT_CARRIER_EN_CH2    (BIT(28))
-#define RMT_CARRIER_EN_CH2_M  (RMT_CARRIER_EN_CH2_V << RMT_CARRIER_EN_CH2_S)
-#define RMT_CARRIER_EN_CH2_V  0x00000001U
-#define RMT_CARRIER_EN_CH2_S  28
-/** RMT_CARRIER_OUT_LV_CH2 : R/W; bitpos: [29]; default: 1;
+#define RMT_CARRIER_EN_CH3    (BIT(28))
+#define RMT_CARRIER_EN_CH3_M  (RMT_CARRIER_EN_CH3_V << RMT_CARRIER_EN_CH3_S)
+#define RMT_CARRIER_EN_CH3_V  0x00000001U
+#define RMT_CARRIER_EN_CH3_S  28
+/** RMT_CARRIER_OUT_LV_CH3 : R/W; bitpos: [29]; default: 1;
  *  This bit is used to configure the position of carrier wave for CHANNEL3.
  *
  *  1'h0: add carrier wave on low level.
  *
  *  1'h1: add carrier wave on high level.
  */
-#define RMT_CARRIER_OUT_LV_CH2    (BIT(29))
-#define RMT_CARRIER_OUT_LV_CH2_M  (RMT_CARRIER_OUT_LV_CH2_V << RMT_CARRIER_OUT_LV_CH2_S)
-#define RMT_CARRIER_OUT_LV_CH2_V  0x00000001U
-#define RMT_CARRIER_OUT_LV_CH2_S  29
+#define RMT_CARRIER_OUT_LV_CH3    (BIT(29))
+#define RMT_CARRIER_OUT_LV_CH3_M  (RMT_CARRIER_OUT_LV_CH3_V << RMT_CARRIER_OUT_LV_CH3_S)
+#define RMT_CARRIER_OUT_LV_CH3_V  0x00000001U
+#define RMT_CARRIER_OUT_LV_CH3_S  29
 
 /** RMT_CH3CONF1_REG register
  *  Channel 3 configure register 1
  */
 #define RMT_CH3CONF1_REG (DR_REG_RMT_BASE + 0x24)
-/** RMT_RX_EN_CH2 : R/W; bitpos: [0]; default: 0;
+/** RMT_RX_EN_CH3 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to enable receiver to receive data on CHANNEL3.
  */
-#define RMT_RX_EN_CH2    (BIT(0))
-#define RMT_RX_EN_CH2_M  (RMT_RX_EN_CH2_V << RMT_RX_EN_CH2_S)
-#define RMT_RX_EN_CH2_V  0x00000001U
-#define RMT_RX_EN_CH2_S  0
-/** RMT_MEM_WR_RST_CH2 : WT; bitpos: [1]; default: 0;
+#define RMT_RX_EN_CH3    (BIT(0))
+#define RMT_RX_EN_CH3_M  (RMT_RX_EN_CH3_V << RMT_RX_EN_CH3_S)
+#define RMT_RX_EN_CH3_V  0x00000001U
+#define RMT_RX_EN_CH3_S  0
+/** RMT_MEM_WR_RST_CH3 : WT; bitpos: [1]; default: 0;
  *  Set this bit to reset write ram address for CHANNEL3 by accessing receiver.
  */
-#define RMT_MEM_WR_RST_CH2    (BIT(1))
-#define RMT_MEM_WR_RST_CH2_M  (RMT_MEM_WR_RST_CH2_V << RMT_MEM_WR_RST_CH2_S)
-#define RMT_MEM_WR_RST_CH2_V  0x00000001U
-#define RMT_MEM_WR_RST_CH2_S  1
-/** RMT_APB_MEM_RST_CH2 : WT; bitpos: [2]; default: 0;
+#define RMT_MEM_WR_RST_CH3    (BIT(1))
+#define RMT_MEM_WR_RST_CH3_M  (RMT_MEM_WR_RST_CH3_V << RMT_MEM_WR_RST_CH3_S)
+#define RMT_MEM_WR_RST_CH3_V  0x00000001U
+#define RMT_MEM_WR_RST_CH3_S  1
+/** RMT_APB_MEM_RST_CH3 : WT; bitpos: [2]; default: 0;
  *  Set this bit to reset W/R ram address for CHANNEL3 by accessing apb fifo.
  */
-#define RMT_APB_MEM_RST_CH2    (BIT(2))
-#define RMT_APB_MEM_RST_CH2_M  (RMT_APB_MEM_RST_CH2_V << RMT_APB_MEM_RST_CH2_S)
-#define RMT_APB_MEM_RST_CH2_V  0x00000001U
-#define RMT_APB_MEM_RST_CH2_S  2
-/** RMT_MEM_OWNER_CH2 : R/W/SC; bitpos: [3]; default: 1;
+#define RMT_APB_MEM_RST_CH3    (BIT(2))
+#define RMT_APB_MEM_RST_CH3_M  (RMT_APB_MEM_RST_CH3_V << RMT_APB_MEM_RST_CH3_S)
+#define RMT_APB_MEM_RST_CH3_V  0x00000001U
+#define RMT_APB_MEM_RST_CH3_S  2
+/** RMT_MEM_OWNER_CH3 : R/W/SC; bitpos: [3]; default: 1;
  *  This register marks the ownership of CHANNEL3's ram block.
  *
  *  1'h1: Receiver is using the ram.
  *
  *  1'h0: APB bus is using the ram.
  */
-#define RMT_MEM_OWNER_CH2    (BIT(3))
-#define RMT_MEM_OWNER_CH2_M  (RMT_MEM_OWNER_CH2_V << RMT_MEM_OWNER_CH2_S)
-#define RMT_MEM_OWNER_CH2_V  0x00000001U
-#define RMT_MEM_OWNER_CH2_S  3
-/** RMT_RX_FILTER_EN_CH2 : R/W; bitpos: [4]; default: 0;
+#define RMT_MEM_OWNER_CH3    (BIT(3))
+#define RMT_MEM_OWNER_CH3_M  (RMT_MEM_OWNER_CH3_V << RMT_MEM_OWNER_CH3_S)
+#define RMT_MEM_OWNER_CH3_V  0x00000001U
+#define RMT_MEM_OWNER_CH3_S  3
+/** RMT_RX_FILTER_EN_CH3 : R/W; bitpos: [4]; default: 0;
  *  This is the receive filter's enable bit for CHANNEL3.
  */
-#define RMT_RX_FILTER_EN_CH2    (BIT(4))
-#define RMT_RX_FILTER_EN_CH2_M  (RMT_RX_FILTER_EN_CH2_V << RMT_RX_FILTER_EN_CH2_S)
-#define RMT_RX_FILTER_EN_CH2_V  0x00000001U
-#define RMT_RX_FILTER_EN_CH2_S  4
-/** RMT_RX_FILTER_THRES_CH2 : R/W; bitpos: [12:5]; default: 15;
+#define RMT_RX_FILTER_EN_CH3    (BIT(4))
+#define RMT_RX_FILTER_EN_CH3_M  (RMT_RX_FILTER_EN_CH3_V << RMT_RX_FILTER_EN_CH3_S)
+#define RMT_RX_FILTER_EN_CH3_V  0x00000001U
+#define RMT_RX_FILTER_EN_CH3_S  4
+/** RMT_RX_FILTER_THRES_CH3 : R/W; bitpos: [12:5]; default: 15;
  *  Ignores the input pulse when its width is smaller than this register value in APB
  *  clock periods (in receive mode).
  */
-#define RMT_RX_FILTER_THRES_CH2    0x000000FFU
-#define RMT_RX_FILTER_THRES_CH2_M  (RMT_RX_FILTER_THRES_CH2_V << RMT_RX_FILTER_THRES_CH2_S)
-#define RMT_RX_FILTER_THRES_CH2_V  0x000000FFU
-#define RMT_RX_FILTER_THRES_CH2_S  5
-/** RMT_MEM_RX_WRAP_EN_CH2 : R/W; bitpos: [13]; default: 0;
+#define RMT_RX_FILTER_THRES_CH3    0x000000FFU
+#define RMT_RX_FILTER_THRES_CH3_M  (RMT_RX_FILTER_THRES_CH3_V << RMT_RX_FILTER_THRES_CH3_S)
+#define RMT_RX_FILTER_THRES_CH3_V  0x000000FFU
+#define RMT_RX_FILTER_THRES_CH3_S  5
+/** RMT_MEM_RX_WRAP_EN_CH3 : R/W; bitpos: [13]; default: 0;
  *  This is the channel 3 enable bit for wraparound mode: it will resume receiving at
  *  the start when the data to be received is more than its memory size.
  */
-#define RMT_MEM_RX_WRAP_EN_CH2    (BIT(13))
-#define RMT_MEM_RX_WRAP_EN_CH2_M  (RMT_MEM_RX_WRAP_EN_CH2_V << RMT_MEM_RX_WRAP_EN_CH2_S)
-#define RMT_MEM_RX_WRAP_EN_CH2_V  0x00000001U
-#define RMT_MEM_RX_WRAP_EN_CH2_S  13
-/** RMT_AFIFO_RST_CH2 : WT; bitpos: [14]; default: 0;
+#define RMT_MEM_RX_WRAP_EN_CH3    (BIT(13))
+#define RMT_MEM_RX_WRAP_EN_CH3_M  (RMT_MEM_RX_WRAP_EN_CH3_V << RMT_MEM_RX_WRAP_EN_CH3_S)
+#define RMT_MEM_RX_WRAP_EN_CH3_V  0x00000001U
+#define RMT_MEM_RX_WRAP_EN_CH3_S  13
+/** RMT_AFIFO_RST_CH3 : WT; bitpos: [14]; default: 0;
  *  Reserved
  */
-#define RMT_AFIFO_RST_CH2    (BIT(14))
-#define RMT_AFIFO_RST_CH2_M  (RMT_AFIFO_RST_CH2_V << RMT_AFIFO_RST_CH2_S)
-#define RMT_AFIFO_RST_CH2_V  0x00000001U
-#define RMT_AFIFO_RST_CH2_S  14
-/** RMT_CONF_UPDATE_CH2 : WT; bitpos: [15]; default: 0;
+#define RMT_AFIFO_RST_CH3    (BIT(14))
+#define RMT_AFIFO_RST_CH3_M  (RMT_AFIFO_RST_CH3_V << RMT_AFIFO_RST_CH3_S)
+#define RMT_AFIFO_RST_CH3_V  0x00000001U
+#define RMT_AFIFO_RST_CH3_S  14
+/** RMT_CONF_UPDATE_CH3 : WT; bitpos: [15]; default: 0;
  *  synchronization bit for CHANNEL3
  */
-#define RMT_CONF_UPDATE_CH2    (BIT(15))
-#define RMT_CONF_UPDATE_CH2_M  (RMT_CONF_UPDATE_CH2_V << RMT_CONF_UPDATE_CH2_S)
-#define RMT_CONF_UPDATE_CH2_V  0x00000001U
-#define RMT_CONF_UPDATE_CH2_S  15
+#define RMT_CONF_UPDATE_CH3    (BIT(15))
+#define RMT_CONF_UPDATE_CH3_M  (RMT_CONF_UPDATE_CH3_V << RMT_CONF_UPDATE_CH3_S)
+#define RMT_CONF_UPDATE_CH3_V  0x00000001U
+#define RMT_CONF_UPDATE_CH3_S  15
 
 /** RMT_CH0STATUS_REG register
  *  Channel 0 status register
@@ -601,59 +601,59 @@ extern "C" {
  *  Channel 1 status register
  */
 #define RMT_CH1STATUS_REG (DR_REG_RMT_BASE + 0x2c)
-/** RMT_MEM_RADDR_EX_CH0 : RO; bitpos: [8:0]; default: 0;
+/** RMT_MEM_RADDR_EX_CH1 : RO; bitpos: [8:0]; default: 0;
  *  This register records the memory address offset when transmitter of CHANNEL1 is
  *  using the RAM.
  */
-#define RMT_MEM_RADDR_EX_CH0    0x000001FFU
-#define RMT_MEM_RADDR_EX_CH0_M  (RMT_MEM_RADDR_EX_CH0_V << RMT_MEM_RADDR_EX_CH0_S)
-#define RMT_MEM_RADDR_EX_CH0_V  0x000001FFU
-#define RMT_MEM_RADDR_EX_CH0_S  0
-/** RMT_STATE_CH0 : RO; bitpos: [11:9]; default: 0;
+#define RMT_MEM_RADDR_EX_CH1    0x000001FFU
+#define RMT_MEM_RADDR_EX_CH1_M  (RMT_MEM_RADDR_EX_CH1_V << RMT_MEM_RADDR_EX_CH1_S)
+#define RMT_MEM_RADDR_EX_CH1_V  0x000001FFU
+#define RMT_MEM_RADDR_EX_CH1_S  0
+/** RMT_STATE_CH1 : RO; bitpos: [11:9]; default: 0;
  *  This register records the FSM status of CHANNEL1.
  */
-#define RMT_STATE_CH0    0x00000007U
-#define RMT_STATE_CH0_M  (RMT_STATE_CH0_V << RMT_STATE_CH0_S)
-#define RMT_STATE_CH0_V  0x00000007U
-#define RMT_STATE_CH0_S  9
-/** RMT_APB_MEM_WADDR_CH0 : RO; bitpos: [20:12]; default: 0;
+#define RMT_STATE_CH1    0x00000007U
+#define RMT_STATE_CH1_M  (RMT_STATE_CH1_V << RMT_STATE_CH1_S)
+#define RMT_STATE_CH1_V  0x00000007U
+#define RMT_STATE_CH1_S  9
+/** RMT_APB_MEM_WADDR_CH1 : RO; bitpos: [20:12]; default: 0;
  *  This register records the memory address offset when writes RAM over APB bus.
  */
-#define RMT_APB_MEM_WADDR_CH0    0x000001FFU
-#define RMT_APB_MEM_WADDR_CH0_M  (RMT_APB_MEM_WADDR_CH0_V << RMT_APB_MEM_WADDR_CH0_S)
-#define RMT_APB_MEM_WADDR_CH0_V  0x000001FFU
-#define RMT_APB_MEM_WADDR_CH0_S  12
-/** RMT_APB_MEM_RD_ERR_CH0 : RO; bitpos: [21]; default: 0;
+#define RMT_APB_MEM_WADDR_CH1    0x000001FFU
+#define RMT_APB_MEM_WADDR_CH1_M  (RMT_APB_MEM_WADDR_CH1_V << RMT_APB_MEM_WADDR_CH1_S)
+#define RMT_APB_MEM_WADDR_CH1_V  0x000001FFU
+#define RMT_APB_MEM_WADDR_CH1_S  12
+/** RMT_APB_MEM_RD_ERR_CH1 : RO; bitpos: [21]; default: 0;
  *  This status bit will be set if the offset address out of memory size when reading
  *  via APB bus.
  */
-#define RMT_APB_MEM_RD_ERR_CH0    (BIT(21))
-#define RMT_APB_MEM_RD_ERR_CH0_M  (RMT_APB_MEM_RD_ERR_CH0_V << RMT_APB_MEM_RD_ERR_CH0_S)
-#define RMT_APB_MEM_RD_ERR_CH0_V  0x00000001U
-#define RMT_APB_MEM_RD_ERR_CH0_S  21
-/** RMT_MEM_EMPTY_CH0 : RO; bitpos: [22]; default: 0;
+#define RMT_APB_MEM_RD_ERR_CH1    (BIT(21))
+#define RMT_APB_MEM_RD_ERR_CH1_M  (RMT_APB_MEM_RD_ERR_CH1_V << RMT_APB_MEM_RD_ERR_CH1_S)
+#define RMT_APB_MEM_RD_ERR_CH1_V  0x00000001U
+#define RMT_APB_MEM_RD_ERR_CH1_S  21
+/** RMT_MEM_EMPTY_CH1 : RO; bitpos: [22]; default: 0;
  *  This status bit will be set when the data to be set is more than memory size and
  *  the wraparound mode is disabled.
  */
-#define RMT_MEM_EMPTY_CH0    (BIT(22))
-#define RMT_MEM_EMPTY_CH0_M  (RMT_MEM_EMPTY_CH0_V << RMT_MEM_EMPTY_CH0_S)
-#define RMT_MEM_EMPTY_CH0_V  0x00000001U
-#define RMT_MEM_EMPTY_CH0_S  22
-/** RMT_APB_MEM_WR_ERR_CH0 : RO; bitpos: [23]; default: 0;
+#define RMT_MEM_EMPTY_CH1    (BIT(22))
+#define RMT_MEM_EMPTY_CH1_M  (RMT_MEM_EMPTY_CH1_V << RMT_MEM_EMPTY_CH1_S)
+#define RMT_MEM_EMPTY_CH1_V  0x00000001U
+#define RMT_MEM_EMPTY_CH1_S  22
+/** RMT_APB_MEM_WR_ERR_CH1 : RO; bitpos: [23]; default: 0;
  *  This status bit will be set if the offset address out of memory size when writes
  *  via APB bus.
  */
-#define RMT_APB_MEM_WR_ERR_CH0    (BIT(23))
-#define RMT_APB_MEM_WR_ERR_CH0_M  (RMT_APB_MEM_WR_ERR_CH0_V << RMT_APB_MEM_WR_ERR_CH0_S)
-#define RMT_APB_MEM_WR_ERR_CH0_V  0x00000001U
-#define RMT_APB_MEM_WR_ERR_CH0_S  23
-/** RMT_APB_MEM_RADDR_CH0 : RO; bitpos: [31:24]; default: 0;
+#define RMT_APB_MEM_WR_ERR_CH1    (BIT(23))
+#define RMT_APB_MEM_WR_ERR_CH1_M  (RMT_APB_MEM_WR_ERR_CH1_V << RMT_APB_MEM_WR_ERR_CH1_S)
+#define RMT_APB_MEM_WR_ERR_CH1_V  0x00000001U
+#define RMT_APB_MEM_WR_ERR_CH1_S  23
+/** RMT_APB_MEM_RADDR_CH1 : RO; bitpos: [31:24]; default: 0;
  *  This register records the memory address offset when reading RAM over APB bus.
  */
-#define RMT_APB_MEM_RADDR_CH0    0x000000FFU
-#define RMT_APB_MEM_RADDR_CH0_M  (RMT_APB_MEM_RADDR_CH0_V << RMT_APB_MEM_RADDR_CH0_S)
-#define RMT_APB_MEM_RADDR_CH0_V  0x000000FFU
-#define RMT_APB_MEM_RADDR_CH0_S  24
+#define RMT_APB_MEM_RADDR_CH1    0x000000FFU
+#define RMT_APB_MEM_RADDR_CH1_M  (RMT_APB_MEM_RADDR_CH1_V << RMT_APB_MEM_RADDR_CH1_S)
+#define RMT_APB_MEM_RADDR_CH1_V  0x000000FFU
+#define RMT_APB_MEM_RADDR_CH1_S  24
 
 /** RMT_CH2STATUS_REG register
  *  Channel 2 status register
@@ -708,50 +708,50 @@ extern "C" {
  *  Channel 3 status register
  */
 #define RMT_CH3STATUS_REG (DR_REG_RMT_BASE + 0x34)
-/** RMT_MEM_WADDR_EX_CH2 : RO; bitpos: [8:0]; default: 0;
+/** RMT_MEM_WADDR_EX_CH3 : RO; bitpos: [8:0]; default: 0;
  *  This register records the memory address offset when receiver of CHANNEL3 is using
  *  the RAM.
  */
-#define RMT_MEM_WADDR_EX_CH2    0x000001FFU
-#define RMT_MEM_WADDR_EX_CH2_M  (RMT_MEM_WADDR_EX_CH2_V << RMT_MEM_WADDR_EX_CH2_S)
-#define RMT_MEM_WADDR_EX_CH2_V  0x000001FFU
-#define RMT_MEM_WADDR_EX_CH2_S  0
-/** RMT_APB_MEM_RADDR_CH2 : RO; bitpos: [20:12]; default: 0;
+#define RMT_MEM_WADDR_EX_CH3    0x000001FFU
+#define RMT_MEM_WADDR_EX_CH3_M  (RMT_MEM_WADDR_EX_CH3_V << RMT_MEM_WADDR_EX_CH3_S)
+#define RMT_MEM_WADDR_EX_CH3_V  0x000001FFU
+#define RMT_MEM_WADDR_EX_CH3_S  0
+/** RMT_APB_MEM_RADDR_CH3 : RO; bitpos: [20:12]; default: 0;
  *  This register records the memory address offset when reads RAM over APB bus.
  */
-#define RMT_APB_MEM_RADDR_CH2    0x000001FFU
-#define RMT_APB_MEM_RADDR_CH2_M  (RMT_APB_MEM_RADDR_CH2_V << RMT_APB_MEM_RADDR_CH2_S)
-#define RMT_APB_MEM_RADDR_CH2_V  0x000001FFU
-#define RMT_APB_MEM_RADDR_CH2_S  12
-/** RMT_STATE_CH2 : RO; bitpos: [24:22]; default: 0;
+#define RMT_APB_MEM_RADDR_CH3    0x000001FFU
+#define RMT_APB_MEM_RADDR_CH3_M  (RMT_APB_MEM_RADDR_CH3_V << RMT_APB_MEM_RADDR_CH3_S)
+#define RMT_APB_MEM_RADDR_CH3_V  0x000001FFU
+#define RMT_APB_MEM_RADDR_CH3_S  12
+/** RMT_STATE_CH3 : RO; bitpos: [24:22]; default: 0;
  *  This register records the FSM status of CHANNEL3.
  */
-#define RMT_STATE_CH2    0x00000007U
-#define RMT_STATE_CH2_M  (RMT_STATE_CH2_V << RMT_STATE_CH2_S)
-#define RMT_STATE_CH2_V  0x00000007U
-#define RMT_STATE_CH2_S  22
-/** RMT_MEM_OWNER_ERR_CH2 : RO; bitpos: [25]; default: 0;
+#define RMT_STATE_CH3    0x00000007U
+#define RMT_STATE_CH3_M  (RMT_STATE_CH3_V << RMT_STATE_CH3_S)
+#define RMT_STATE_CH3_V  0x00000007U
+#define RMT_STATE_CH3_S  22
+/** RMT_MEM_OWNER_ERR_CH3 : RO; bitpos: [25]; default: 0;
  *  This status bit will be set when the ownership of memory block is wrong.
  */
-#define RMT_MEM_OWNER_ERR_CH2    (BIT(25))
-#define RMT_MEM_OWNER_ERR_CH2_M  (RMT_MEM_OWNER_ERR_CH2_V << RMT_MEM_OWNER_ERR_CH2_S)
-#define RMT_MEM_OWNER_ERR_CH2_V  0x00000001U
-#define RMT_MEM_OWNER_ERR_CH2_S  25
-/** RMT_MEM_FULL_CH2 : RO; bitpos: [26]; default: 0;
+#define RMT_MEM_OWNER_ERR_CH3    (BIT(25))
+#define RMT_MEM_OWNER_ERR_CH3_M  (RMT_MEM_OWNER_ERR_CH3_V << RMT_MEM_OWNER_ERR_CH3_S)
+#define RMT_MEM_OWNER_ERR_CH3_V  0x00000001U
+#define RMT_MEM_OWNER_ERR_CH3_S  25
+/** RMT_MEM_FULL_CH3 : RO; bitpos: [26]; default: 0;
  *  This status bit will be set if the receiver receives more data than the memory size.
  */
-#define RMT_MEM_FULL_CH2    (BIT(26))
-#define RMT_MEM_FULL_CH2_M  (RMT_MEM_FULL_CH2_V << RMT_MEM_FULL_CH2_S)
-#define RMT_MEM_FULL_CH2_V  0x00000001U
-#define RMT_MEM_FULL_CH2_S  26
-/** RMT_APB_MEM_RD_ERR_CH2 : RO; bitpos: [27]; default: 0;
+#define RMT_MEM_FULL_CH3    (BIT(26))
+#define RMT_MEM_FULL_CH3_M  (RMT_MEM_FULL_CH3_V << RMT_MEM_FULL_CH3_S)
+#define RMT_MEM_FULL_CH3_V  0x00000001U
+#define RMT_MEM_FULL_CH3_S  26
+/** RMT_APB_MEM_RD_ERR_CH3 : RO; bitpos: [27]; default: 0;
  *  This status bit will be set if the offset address out of memory size when reads via
  *  APB bus.
  */
-#define RMT_APB_MEM_RD_ERR_CH2    (BIT(27))
-#define RMT_APB_MEM_RD_ERR_CH2_M  (RMT_APB_MEM_RD_ERR_CH2_V << RMT_APB_MEM_RD_ERR_CH2_S)
-#define RMT_APB_MEM_RD_ERR_CH2_V  0x00000001U
-#define RMT_APB_MEM_RD_ERR_CH2_S  27
+#define RMT_APB_MEM_RD_ERR_CH3    (BIT(27))
+#define RMT_APB_MEM_RD_ERR_CH3_M  (RMT_APB_MEM_RD_ERR_CH3_V << RMT_APB_MEM_RD_ERR_CH3_S)
+#define RMT_APB_MEM_RD_ERR_CH3_V  0x00000001U
+#define RMT_APB_MEM_RD_ERR_CH3_S  27
 
 /** RMT_INT_RAW_REG register
  *  Raw interrupt status
@@ -786,28 +786,28 @@ extern "C" {
 #define RMT_CH3_RX_END_INT_RAW_V  0x00000001U
 #define RMT_CH3_RX_END_INT_RAW_S  3
 /** RMT_CH0_ERR_INT_RAW : R/WTC/SS; bitpos: [4]; default: 0;
- *  The interrupt raw bit for CHANNEL$m. Triggered when error occurs.
+ *  The interrupt raw bit for CHANNEL0. Triggered when error occurs.
  */
 #define RMT_CH0_ERR_INT_RAW    (BIT(4))
 #define RMT_CH0_ERR_INT_RAW_M  (RMT_CH0_ERR_INT_RAW_V << RMT_CH0_ERR_INT_RAW_S)
 #define RMT_CH0_ERR_INT_RAW_V  0x00000001U
 #define RMT_CH0_ERR_INT_RAW_S  4
 /** RMT_CH1_ERR_INT_RAW : R/WTC/SS; bitpos: [5]; default: 0;
- *  The interrupt raw bit for CHANNEL$m. Triggered when error occurs.
+ *  The interrupt raw bit for CHANNEL1. Triggered when error occurs.
  */
 #define RMT_CH1_ERR_INT_RAW    (BIT(5))
 #define RMT_CH1_ERR_INT_RAW_M  (RMT_CH1_ERR_INT_RAW_V << RMT_CH1_ERR_INT_RAW_S)
 #define RMT_CH1_ERR_INT_RAW_V  0x00000001U
 #define RMT_CH1_ERR_INT_RAW_S  5
 /** RMT_CH2_ERR_INT_RAW : R/WTC/SS; bitpos: [6]; default: 0;
- *  The interrupt raw bit for CHANNEL$m. Triggered when error occurs.
+ *  The interrupt raw bit for CHANNEL2. Triggered when error occurs.
  */
 #define RMT_CH2_ERR_INT_RAW    (BIT(6))
 #define RMT_CH2_ERR_INT_RAW_M  (RMT_CH2_ERR_INT_RAW_V << RMT_CH2_ERR_INT_RAW_S)
 #define RMT_CH2_ERR_INT_RAW_V  0x00000001U
 #define RMT_CH2_ERR_INT_RAW_S  6
 /** RMT_CH3_ERR_INT_RAW : R/WTC/SS; bitpos: [7]; default: 0;
- *  The interrupt raw bit for CHANNEL$m. Triggered when error occurs.
+ *  The interrupt raw bit for CHANNEL3. Triggered when error occurs.
  */
 #define RMT_CH3_ERR_INT_RAW    (BIT(7))
 #define RMT_CH3_ERR_INT_RAW_M  (RMT_CH3_ERR_INT_RAW_V << RMT_CH3_ERR_INT_RAW_S)
@@ -1196,22 +1196,22 @@ extern "C" {
  *  Channel 1 duty cycle configuration register
  */
 #define RMT_CH1CARRIER_DUTY_REG (DR_REG_RMT_BASE + 0x4c)
-/** RMT_CARRIER_LOW_CH0 : R/W; bitpos: [15:0]; default: 64;
+/** RMT_CARRIER_LOW_CH1 : R/W; bitpos: [15:0]; default: 64;
  *  This register is used to configure carrier wave 's low level clock period for
  *  CHANNEL1.
  */
-#define RMT_CARRIER_LOW_CH0    0x0000FFFFU
-#define RMT_CARRIER_LOW_CH0_M  (RMT_CARRIER_LOW_CH0_V << RMT_CARRIER_LOW_CH0_S)
-#define RMT_CARRIER_LOW_CH0_V  0x0000FFFFU
-#define RMT_CARRIER_LOW_CH0_S  0
-/** RMT_CARRIER_HIGH_CH0 : R/W; bitpos: [31:16]; default: 64;
+#define RMT_CARRIER_LOW_CH1    0x0000FFFFU
+#define RMT_CARRIER_LOW_CH1_M  (RMT_CARRIER_LOW_CH1_V << RMT_CARRIER_LOW_CH1_S)
+#define RMT_CARRIER_LOW_CH1_V  0x0000FFFFU
+#define RMT_CARRIER_LOW_CH1_S  0
+/** RMT_CARRIER_HIGH_CH1 : R/W; bitpos: [31:16]; default: 64;
  *  This register is used to configure carrier wave 's high level clock period for
  *  CHANNEL1.
  */
-#define RMT_CARRIER_HIGH_CH0    0x0000FFFFU
-#define RMT_CARRIER_HIGH_CH0_M  (RMT_CARRIER_HIGH_CH0_V << RMT_CARRIER_HIGH_CH0_S)
-#define RMT_CARRIER_HIGH_CH0_V  0x0000FFFFU
-#define RMT_CARRIER_HIGH_CH0_S  16
+#define RMT_CARRIER_HIGH_CH1    0x0000FFFFU
+#define RMT_CARRIER_HIGH_CH1_M  (RMT_CARRIER_HIGH_CH1_V << RMT_CARRIER_HIGH_CH1_S)
+#define RMT_CARRIER_HIGH_CH1_V  0x0000FFFFU
+#define RMT_CARRIER_HIGH_CH1_S  16
 
 /** RMT_CH2_RX_CARRIER_RM_REG register
  *  Channel 2 carrier remove register
@@ -1238,22 +1238,22 @@ extern "C" {
  *  Channel 3 carrier remove register
  */
 #define RMT_CH3_RX_CARRIER_RM_REG (DR_REG_RMT_BASE + 0x54)
-/** RMT_CARRIER_LOW_THRES_CH2 : R/W; bitpos: [15:0]; default: 0;
+/** RMT_CARRIER_LOW_THRES_CH3 : R/W; bitpos: [15:0]; default: 0;
  *  The low level period in a carrier modulation mode is
  *  (REG_RMT_REG_CARRIER_LOW_THRES_CH3 + 1) for channel 3.
  */
-#define RMT_CARRIER_LOW_THRES_CH2    0x0000FFFFU
-#define RMT_CARRIER_LOW_THRES_CH2_M  (RMT_CARRIER_LOW_THRES_CH2_V << RMT_CARRIER_LOW_THRES_CH2_S)
-#define RMT_CARRIER_LOW_THRES_CH2_V  0x0000FFFFU
-#define RMT_CARRIER_LOW_THRES_CH2_S  0
-/** RMT_CARRIER_HIGH_THRES_CH2 : R/W; bitpos: [31:16]; default: 0;
+#define RMT_CARRIER_LOW_THRES_CH3    0x0000FFFFU
+#define RMT_CARRIER_LOW_THRES_CH3_M  (RMT_CARRIER_LOW_THRES_CH3_V << RMT_CARRIER_LOW_THRES_CH3_S)
+#define RMT_CARRIER_LOW_THRES_CH3_V  0x0000FFFFU
+#define RMT_CARRIER_LOW_THRES_CH3_S  0
+/** RMT_CARRIER_HIGH_THRES_CH3 : R/W; bitpos: [31:16]; default: 0;
  *  The high level period in a carrier modulation mode is
  *  (REG_RMT_REG_CARRIER_HIGH_THRES_CH3 + 1) for channel 3.
  */
-#define RMT_CARRIER_HIGH_THRES_CH2    0x0000FFFFU
-#define RMT_CARRIER_HIGH_THRES_CH2_M  (RMT_CARRIER_HIGH_THRES_CH2_V << RMT_CARRIER_HIGH_THRES_CH2_S)
-#define RMT_CARRIER_HIGH_THRES_CH2_V  0x0000FFFFU
-#define RMT_CARRIER_HIGH_THRES_CH2_S  16
+#define RMT_CARRIER_HIGH_THRES_CH3    0x0000FFFFU
+#define RMT_CARRIER_HIGH_THRES_CH3_M  (RMT_CARRIER_HIGH_THRES_CH3_V << RMT_CARRIER_HIGH_THRES_CH3_S)
+#define RMT_CARRIER_HIGH_THRES_CH3_V  0x0000FFFFU
+#define RMT_CARRIER_HIGH_THRES_CH3_S  16
 
 /** RMT_CH0_TX_LIM_REG register
  *  Channel 0 Tx event configuration register
@@ -1301,43 +1301,43 @@ extern "C" {
  *  Channel 1 Tx event configuration register
  */
 #define RMT_CH1_TX_LIM_REG (DR_REG_RMT_BASE + 0x5c)
-/** RMT_TX_LIM_CH0 : R/W; bitpos: [8:0]; default: 128;
+/** RMT_TX_LIM_CH1 : R/W; bitpos: [8:0]; default: 128;
  *  This register is used to configure the maximum entries that CHANNEL1 can send out.
  */
-#define RMT_TX_LIM_CH0    0x000001FFU
-#define RMT_TX_LIM_CH0_M  (RMT_TX_LIM_CH0_V << RMT_TX_LIM_CH0_S)
-#define RMT_TX_LIM_CH0_V  0x000001FFU
-#define RMT_TX_LIM_CH0_S  0
-/** RMT_TX_LOOP_NUM_CH0 : R/W; bitpos: [18:9]; default: 0;
+#define RMT_TX_LIM_CH1    0x000001FFU
+#define RMT_TX_LIM_CH1_M  (RMT_TX_LIM_CH1_V << RMT_TX_LIM_CH1_S)
+#define RMT_TX_LIM_CH1_V  0x000001FFU
+#define RMT_TX_LIM_CH1_S  0
+/** RMT_TX_LOOP_NUM_CH1 : R/W; bitpos: [18:9]; default: 0;
  *  This register is used to configure the maximum loop count when tx_conti_mode is
  *  valid.
  */
-#define RMT_TX_LOOP_NUM_CH0    0x000003FFU
-#define RMT_TX_LOOP_NUM_CH0_M  (RMT_TX_LOOP_NUM_CH0_V << RMT_TX_LOOP_NUM_CH0_S)
-#define RMT_TX_LOOP_NUM_CH0_V  0x000003FFU
-#define RMT_TX_LOOP_NUM_CH0_S  9
-/** RMT_TX_LOOP_CNT_EN_CH0 : R/W; bitpos: [19]; default: 0;
+#define RMT_TX_LOOP_NUM_CH1    0x000003FFU
+#define RMT_TX_LOOP_NUM_CH1_M  (RMT_TX_LOOP_NUM_CH1_V << RMT_TX_LOOP_NUM_CH1_S)
+#define RMT_TX_LOOP_NUM_CH1_V  0x000003FFU
+#define RMT_TX_LOOP_NUM_CH1_S  9
+/** RMT_TX_LOOP_CNT_EN_CH1 : R/W; bitpos: [19]; default: 0;
  *  This register is the enabled bit for loop count.
  */
-#define RMT_TX_LOOP_CNT_EN_CH0    (BIT(19))
-#define RMT_TX_LOOP_CNT_EN_CH0_M  (RMT_TX_LOOP_CNT_EN_CH0_V << RMT_TX_LOOP_CNT_EN_CH0_S)
-#define RMT_TX_LOOP_CNT_EN_CH0_V  0x00000001U
-#define RMT_TX_LOOP_CNT_EN_CH0_S  19
-/** RMT_LOOP_COUNT_RESET_CH0 : WT; bitpos: [20]; default: 0;
+#define RMT_TX_LOOP_CNT_EN_CH1    (BIT(19))
+#define RMT_TX_LOOP_CNT_EN_CH1_M  (RMT_TX_LOOP_CNT_EN_CH1_V << RMT_TX_LOOP_CNT_EN_CH1_S)
+#define RMT_TX_LOOP_CNT_EN_CH1_V  0x00000001U
+#define RMT_TX_LOOP_CNT_EN_CH1_S  19
+/** RMT_LOOP_COUNT_RESET_CH1 : WT; bitpos: [20]; default: 0;
  *  This register is used to reset the loop count when tx_conti_mode is valid.
  */
-#define RMT_LOOP_COUNT_RESET_CH0    (BIT(20))
-#define RMT_LOOP_COUNT_RESET_CH0_M  (RMT_LOOP_COUNT_RESET_CH0_V << RMT_LOOP_COUNT_RESET_CH0_S)
-#define RMT_LOOP_COUNT_RESET_CH0_V  0x00000001U
-#define RMT_LOOP_COUNT_RESET_CH0_S  20
-/** RMT_LOOP_STOP_EN_CH0 : R/W; bitpos: [21]; default: 0;
+#define RMT_LOOP_COUNT_RESET_CH1    (BIT(20))
+#define RMT_LOOP_COUNT_RESET_CH1_M  (RMT_LOOP_COUNT_RESET_CH1_V << RMT_LOOP_COUNT_RESET_CH1_S)
+#define RMT_LOOP_COUNT_RESET_CH1_V  0x00000001U
+#define RMT_LOOP_COUNT_RESET_CH1_S  20
+/** RMT_LOOP_STOP_EN_CH1 : R/W; bitpos: [21]; default: 0;
  *  This bit is used to enable the loop send stop function after the loop counter
  *  counts to  loop number for CHANNEL1.
  */
-#define RMT_LOOP_STOP_EN_CH0    (BIT(21))
-#define RMT_LOOP_STOP_EN_CH0_M  (RMT_LOOP_STOP_EN_CH0_V << RMT_LOOP_STOP_EN_CH0_S)
-#define RMT_LOOP_STOP_EN_CH0_V  0x00000001U
-#define RMT_LOOP_STOP_EN_CH0_S  21
+#define RMT_LOOP_STOP_EN_CH1    (BIT(21))
+#define RMT_LOOP_STOP_EN_CH1_M  (RMT_LOOP_STOP_EN_CH1_V << RMT_LOOP_STOP_EN_CH1_S)
+#define RMT_LOOP_STOP_EN_CH1_V  0x00000001U
+#define RMT_LOOP_STOP_EN_CH1_S  21
 
 /** RMT_CH2_RX_LIM_REG register
  *  Channel 2 Rx event configuration register

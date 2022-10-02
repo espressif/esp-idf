@@ -21,6 +21,9 @@
 
 static const char *TAG = "ethernet_connect";
 static SemaphoreHandle_t s_semph_get_ip_addrs = NULL;
+#if CONFIG_EXAMPLE_CONNECT_IPV6
+static SemaphoreHandle_t s_semph_get_ip6_addrs = NULL;
+#endif
 
 static esp_netif_t *eth_start(void);
 static void eth_stop(void);
@@ -36,9 +39,7 @@ static void eth_on_got_ip(void *arg, esp_event_base_t event_base,
         return;
     }
     ESP_LOGI(TAG, "Got IPv4 event: Interface \"%s\" address: " IPSTR, esp_netif_get_desc(event->esp_netif), IP2STR(&event->ip_info.ip));
-    if (s_semph_get_ip_addrs) {
-        xSemaphoreGive(s_semph_get_ip_addrs);
-    }
+    xSemaphoreGive(s_semph_get_ip_addrs);
 }
 
 #if CONFIG_EXAMPLE_CONNECT_IPV6
@@ -54,7 +55,7 @@ static void eth_on_got_ipv6(void *arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "Got IPv6 event: Interface \"%s\" address: " IPV6STR ", type: %s", esp_netif_get_desc(event->esp_netif),
              IPV62STR(event->ip6_info.ip), example_ipv6_addr_types_to_str[ipv6_type]);
     if (ipv6_type == EXAMPLE_CONNECT_PREFERRED_IPV6_TYPE) {
-        xSemaphoreGive(s_semph_get_ip_addrs);
+        xSemaphoreGive(s_semph_get_ip6_addrs);
     }
 }
 
@@ -204,16 +205,31 @@ void example_ethernet_shutdown(void)
     }
     vSemaphoreDelete(s_semph_get_ip_addrs);
     s_semph_get_ip_addrs = NULL;
+#if CONFIG_EXAMPLE_CONNECT_IPV6
+    vSemaphoreDelete(s_semph_get_ip6_addrs);
+    s_semph_get_ip6_addrs = NULL;
+#endif
     eth_stop();
 }
 
 esp_err_t example_ethernet_connect(void)
 {
-    s_semph_get_ip_addrs = xSemaphoreCreateCounting(NR_OF_IP_ADDRESSES_TO_WAIT_FOR, 0);
+    s_semph_get_ip_addrs = xSemaphoreCreateBinary();
+    if (s_semph_get_ip_addrs == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+#if CONFIG_EXAMPLE_CONNECT_IPV6
+    s_semph_get_ip6_addrs = xSemaphoreCreateBinary();
+    if (s_semph_get_ip6_addrs == NULL) {
+        vSemaphoreDelete(s_semph_get_ip_addrs);
+        return ESP_ERR_NO_MEM;
+    }
+#endif
     eth_start();
     ESP_LOGI(TAG, "Waiting for IP(s).");
-    for (int i = 0; i < NR_OF_IP_ADDRESSES_TO_WAIT_FOR; ++i) {
-        xSemaphoreTake(s_semph_get_ip_addrs, portMAX_DELAY);
-    }
+    xSemaphoreTake(s_semph_get_ip_addrs, portMAX_DELAY);
+#if CONFIG_EXAMPLE_CONNECT_IPV6
+    xSemaphoreTake(s_semph_get_ip6_addrs, portMAX_DELAY);
+#endif
     return ESP_OK;
 }

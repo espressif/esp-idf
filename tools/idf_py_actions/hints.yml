@@ -124,15 +124,15 @@
 
 -
     re: "error: unknown type name '(portTickType|xTaskHandle|xQueueHandle|xSemaphoreHandle|xQueueSetHandle|xQueueSetMemberHandle|xTimeOutType|xMemoryRegion|xTaskParameters|xTaskStatusType|xTimerHandle|xCoRoutineHandle|pdTASK_HOOK_CODE|tmrTIMER_CALLBACK|pdTASK_CODE|xListItem|xList)'"
-    hint: "You maybe using pre FreeRTOS V8.0.0 data types. The backward compatibility of such data types is no longer enabled by default. Please turn on CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY explicitly to use such data types."
+    hint: "You are maybe using pre FreeRTOS V8.0.0 data types. The backward compatibility of such data types is no longer enabled by default. Please turn on CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY explicitly to use such data types."
     match_to_output: True
 -
     re: "error: 'portTICK_RATE_MS' undeclared"
-    hint: "You maybe using pre FreeRTOS V8.0.0 APIs. The backward compatibility of such APIs is no longer enabled by default. Please turn on CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY explicitly to use such APIs."
+    hint: "You are maybe using pre FreeRTOS V8.0.0 APIs. The backward compatibility of such APIs is no longer enabled by default. Please turn on CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY explicitly to use such APIs."
     match_to_output: True
 -
     re: "error: implicit declaration of function '(eTaskStateGet|pcTaskGetTaskName|pcTimerGetTimerName|pcQueueGetQueueName|vTaskGetTaskInfo|xTaskGetIdleRunTimeCounter)'"
-    hint: "You maybe using pre FreeRTOS V8.0.0 APIs. The backward compatibility of such APIs is no longer enabled by default. Please turn on CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY explicitly to use such APIs."
+    hint: "You are maybe using pre FreeRTOS V8.0.0 APIs. The backward compatibility of such APIs is no longer enabled by default. Please turn on CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY explicitly to use such APIs."
     match_to_output: True
 -
     re: "error: unknown type name 'TaskSnapshot_t'"
@@ -145,10 +145,6 @@
 -
     re: "error: implicit declaration of function '(portENTER_CRITICAL_NESTED|portEXIT_CRITICAL_NESTED|vPortCPUInitializeMutex|vPortCPUAcquireMutex|vPortCPUAcquireMutexTimeout|vPortCPUReleaseMutex)'"
     hint: "The header file portmacro_deprecated.h has been removed. Users should refer the migration guide for alternative functions."
-    match_to_output: True
--
-    re: "error: implicit declaration of function '(\\w+)'"
-    hint: "Please check that the function name is correct. Also it is possible that you've forgot to import {} library(s) in header file or add the necessary REQURIES component. Try to add missing libraries to your project header file or check idf_component_register(REQUIRES ...) section in your component CmakeList.txt file. For more information run 'idf.py docs -sp api-guides/build-system.html'.\nAlso, please check if the function has been removed, renamed or replaced by an alternative function - refer to the migration guide for more information."
     match_to_output: True
 
 -
@@ -180,10 +176,6 @@
     hint: "To use CONFIG_ESP_TLS_USE_SECURE_ELEMENT option, please install `esp-cryptoauthlib` using 'idf.py add-dependency espressif/esp-cryptoauthlib'"
 
 -
-    re: "fatal error: [\\w/]+\\.h: No such file or directory"
-    hint: "Please make sure that the header name is correct. Also please check if you've specified all component dependencies with 'idf_component_register(REQUIRES ...)'. If the component is not present then it should be added by the IDF Component Manager. For more information run 'idf.py docs -sp api-guides/build-system.html'.\nAlso, please check if the header file has been removed, renamed or relocated - refer to the migration guide for more information."
-
--
     re: "The CMAKE_[A-Z]+_COMPILER: [\\w+-]+ is not a full path and was not found in the PATH\\."
     hint: "Try to reinstall the toolchain for the chip that you trying to use. \nFor more information run 'idf.py docs -sp get-started/#installation' and follow the instructions for your system"
 
@@ -196,7 +188,7 @@
     hint: "Run 'idf.py fullclean' and try the build again."
 
 -
-    re: "CMake Error at .* \\(message\\): Directory specified in EXTRA_COMPONENT_DIRS doesn't exist: \\/.*\\/examples\\/common_components\\/.*"
+    re: "CMake Error at .* \\(message\\): Directory specified in EXTRA_COMPONENT_DIRS doesn't exist: \\/?.*\\/examples\\/common_components\\/.*"
     hint: "The component with path specified in the EXTRA_COMPONENT_DIRS variable has been moved to IDF component manager (or has been removed).\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details."
 
 -
@@ -212,7 +204,7 @@
     hint: "Projects using target_link_libraries with project_elf explicitly and custom CMake projects must specify PRIVATE, PUBLIC or INTERFACE arguments."
 
 -
-    re: "format '([^']+)' expects argument of type '((unsigned )?int|long)', but argument (\\w+) has type '([u]?int32_t)'( {aka '([^']+)'})?"
+    re: "format '([^']+)' expects argument of type '((unsigned )?int|long)', but argument (\\w+) has type '([u]?int32_t)'( \\{aka '([^']+)'\\})?"
     hint: "The issue is better to resolve by replacing format specifiers to 'PRI'-family macros (include <inttypes.h> header file)."
 
 -

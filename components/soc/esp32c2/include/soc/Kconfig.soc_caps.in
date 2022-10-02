@@ -43,6 +43,14 @@ config SOC_TEMP_SENSOR_SUPPORTED
     bool
     default y
 
+config SOC_LEDC_SUPPORTED
+    bool
+    default y
+
+config SOC_I2C_SUPPORTED
+    bool
+    default y
+
 config SOC_SHA_SUPPORTED
     bool
     default y
@@ -175,6 +183,10 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
+config SOC_MMU_PAGE_SIZE_CONFIGURABLE
+    bool
+    default y
+
 config SOC_GDMA_GROUPS
     int
     default 1
@@ -233,7 +245,7 @@ config SOC_I2C_NUM
 
 config SOC_I2C_FIFO_LEN
     int
-    default 32
+    default 16
 
 config SOC_I2C_SUPPORT_HW_CLR_BUS
     bool
@@ -322,6 +334,10 @@ config SOC_SHA_SUPPORT_SHA256
 config SOC_SPI_PERIPH_NUM
     int
     default 2
+
+config SOC_SPI_MAX_CS_NUM
+    int
+    default 6
 
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
@@ -535,10 +551,6 @@ config SOC_PM_SUPPORT_BT_WAKEUP
     bool
     default y
 
-config SOC_MMU_PAGE_SIZE_CONFIGURABLE
-    bool
-    default y
-
 config SOC_PM_SUPPORT_CPU_PD
     bool
     default n
@@ -578,6 +590,10 @@ config SOC_WIFI_MESH_SUPPORT
 config SOC_BLE_SUPPORTED
     bool
     default y
+
+config SOC_BLE_MESH_SUPPORTED
+    bool
+    default n
 
 config SOC_ESP_NIMBLE_CONTROLLER
     bool

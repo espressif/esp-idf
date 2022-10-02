@@ -30,7 +30,9 @@ For more details on these internal memory types, see :ref:`memory-layout`.
 
     It's also possible to connect external SPI RAM to the {IDF_TARGET_NAME} - :doc:`external RAM </api-guides/external-ram>` can be integrated into the {IDF_TARGET_NAME}'s memory map using the flash cache, and accessed similarly to DRAM.
 
-DRAM uses capability ``MALLOC_CAP_8BIT`` (accessible in single byte reads and writes). When calling ``malloc()``, the ESP-IDF ``malloc()`` implementation internally calls ``heap_caps_malloc(size, MALLOC_CAP_8BIT)`` in order to allocate DRAM that is byte-addressable. To test the free DRAM heap size at runtime, call cpp:func:`heap_caps_get_free_size(MALLOC_CAP_8BIT)`.
+DRAM uses capability ``MALLOC_CAP_8BIT`` (accessible in single byte reads and writes). To test the free DRAM heap size at runtime, call cpp:func:`heap_caps_get_free_size(MALLOC_CAP_8BIT)`.
+
+When calling ``malloc()``, the ESP-IDF ``malloc()`` implementation internally calls cpp:func:`heap_caps_malloc_default(size)`. This will allocate memory with capability ``MALLOC_CAP_DEFAULT``, which is byte-addressable.
 
 Because malloc uses the capabilities-based allocation system, memory allocated using :cpp:func:`heap_caps_malloc` can be freed by calling
 the standard ``free()`` function.
@@ -119,14 +121,8 @@ generate a fatal LoadStoreError exception.
 
         To use the region above the 4MiB limit, you can use the :doc:`himem API</api-reference/system/himem>`.
 
-
-API Reference - Heap Allocation
--------------------------------
-
-.. include-build-file:: inc/esp_heap_caps.inc
-
 Thread Safety
-^^^^^^^^^^^^^
+-------------
 
 Heap functions are thread safe, meaning they can be called from different tasks simultaneously without any limitations.
 
@@ -141,11 +137,6 @@ The following features are documented on the :doc:`Heap Memory Debugging </api-r
 - :ref:`Heap Corruption Detection <heap-corruption>`
 - :ref:`Heap Tracing <heap-tracing>` (memory leak detection, monitoring, etc.)
 
-API Reference - Initialisation
-------------------------------
-
-.. include-build-file:: inc/esp_heap_caps_init.inc
-
 Implementation Notes
 --------------------
 
@@ -156,6 +147,18 @@ Each contiguous region of memory contains its own memory heap. The heaps are cre
 The heap capabilities allocator uses knowledge of the memory regions to initialize each individual heap. Allocation functions in the heap capabilities API will find the most appropriate heap for the allocation (based on desired capabilities, available space, and preferences for each region's use) and then calling :cpp:func:`multi_heap_malloc` for the heap situated in that particular region.
 
 Calling ``free()`` involves finding the particular heap corresponding to the freed address, and then calling :cpp:func:`multi_heap_free` on that particular multi_heap instance.
+
+
+API Reference - Heap Allocation
+-------------------------------
+
+.. include-build-file:: inc/esp_heap_caps.inc
+
+
+API Reference - Initialisation
+------------------------------
+
+.. include-build-file:: inc/esp_heap_caps_init.inc
 
 .. _multi-heap:
 

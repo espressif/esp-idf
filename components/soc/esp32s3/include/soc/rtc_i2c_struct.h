@@ -190,294 +190,27 @@ typedef union {
     uint32_t val;
 } rtc_i2c_data_reg_t;
 
-/** Type of i2c_cmd0 register
- *  i2c commond0 register
+/** Type of i2c_cmd register
+ *  i2c command register
  */
 typedef union {
     struct {
-        /** i2c_command0 : R/W; bitpos: [13:0]; default: 2307;
-         *  command0
+        /** i2c_command : R/W; bitpos: [13:0]; default: 2307;
+         *  command
          */
-        uint32_t i2c_command0:14;
-        uint32_t reserved_14:17;
-        /** i2c_command0_done : RO; bitpos: [31]; default: 0;
+        uint32_t i2c_byte_num:8;
+        uint32_t i2c_ack_en:1;
+        uint32_t i2c_ack_exp:1;
+        uint32_t i2c_ack_val:1;
+        uint32_t i2c_op_code:3;
+        uint32_t reserved14:17;
+        /** i2c_command_done : RO; bitpos: [31]; default: 0;
          *  command0_done
          */
-        uint32_t i2c_command0_done:1;
+        uint32_t i2c_command_done:1;
     };
     uint32_t val;
-} rtc_i2c_cmd0_reg_t;
-
-/** Type of i2c_cmd1 register
- *  i2c commond1 register
- */
-typedef union {
-    struct {
-        /** i2c_command1 : R/W; bitpos: [13:0]; default: 6401;
-         *  command1
-         */
-        uint32_t i2c_command1:14;
-        uint32_t reserved_14:17;
-        /** i2c_command1_done : RO; bitpos: [31]; default: 0;
-         *  command1_done
-         */
-        uint32_t i2c_command1_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd1_reg_t;
-
-/** Type of i2c_cmd2 register
- *  i2c commond2 register
- */
-typedef union {
-    struct {
-        /** i2c_command2 : R/W; bitpos: [13:0]; default: 2306;
-         *  command2
-         */
-        uint32_t i2c_command2:14;
-        uint32_t reserved_14:17;
-        /** i2c_command2_done : RO; bitpos: [31]; default: 0;
-         *  command2_done
-         */
-        uint32_t i2c_command2_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd2_reg_t;
-
-/** Type of i2c_cmd3 register
- *  i2c commond3 register
- */
-typedef union {
-    struct {
-        /** i2c_command3 : R/W; bitpos: [13:0]; default: 257;
-         *  command3
-         */
-        uint32_t i2c_command3:14;
-        uint32_t reserved_14:17;
-        /** i2c_command3_done : RO; bitpos: [31]; default: 0;
-         *  command3_done
-         */
-        uint32_t i2c_command3_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd3_reg_t;
-
-/** Type of i2c_cmd4 register
- *  i2c commond4 register
- */
-typedef union {
-    struct {
-        /** i2c_command4 : R/W; bitpos: [13:0]; default: 2305;
-         *  command4
-         */
-        uint32_t i2c_command4:14;
-        uint32_t reserved_14:17;
-        /** i2c_command4_done : RO; bitpos: [31]; default: 0;
-         *  command4_done
-         */
-        uint32_t i2c_command4_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd4_reg_t;
-
-/** Type of i2c_cmd5 register
- *  i2c commond5_register
- */
-typedef union {
-    struct {
-        /** i2c_command5 : R/W; bitpos: [13:0]; default: 5889;
-         *  command5
-         */
-        uint32_t i2c_command5:14;
-        uint32_t reserved_14:17;
-        /** i2c_command5_done : RO; bitpos: [31]; default: 0;
-         *  command5_done
-         */
-        uint32_t i2c_command5_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd5_reg_t;
-
-/** Type of i2c_cmd6 register
- *  i2c commond6 register
- */
-typedef union {
-    struct {
-        /** i2c_command6 : R/W; bitpos: [13:0]; default: 6401;
-         *  command6
-         */
-        uint32_t i2c_command6:14;
-        uint32_t reserved_14:17;
-        /** i2c_command6_done : RO; bitpos: [31]; default: 0;
-         *  command6_done
-         */
-        uint32_t i2c_command6_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd6_reg_t;
-
-/** Type of i2c_cmd7 register
- *  i2c commond7 register
- */
-typedef union {
-    struct {
-        /** i2c_command7 : R/W; bitpos: [13:0]; default: 2308;
-         *  command7
-         */
-        uint32_t i2c_command7:14;
-        uint32_t reserved_14:17;
-        /** i2c_command7_done : RO; bitpos: [31]; default: 0;
-         *  command7_done
-         */
-        uint32_t i2c_command7_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd7_reg_t;
-
-/** Type of i2c_cmd8 register
- *  i2c commond8 register
- */
-typedef union {
-    struct {
-        /** i2c_command8 : R/W; bitpos: [13:0]; default: 6401;
-         *  command8
-         */
-        uint32_t i2c_command8:14;
-        uint32_t reserved_14:17;
-        /** i2c_command8_done : RO; bitpos: [31]; default: 0;
-         *  command8_done
-         */
-        uint32_t i2c_command8_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd8_reg_t;
-
-/** Type of i2c_cmd9 register
- *  i2c commond9 register
- */
-typedef union {
-    struct {
-        /** i2c_command9 : R/W; bitpos: [13:0]; default: 2307;
-         *  command9
-         */
-        uint32_t i2c_command9:14;
-        uint32_t reserved_14:17;
-        /** i2c_command9_done : RO; bitpos: [31]; default: 0;
-         *  command9_done
-         */
-        uint32_t i2c_command9_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd9_reg_t;
-
-/** Type of i2c_cmd10 register
- *  i2c commond10 register
- */
-typedef union {
-    struct {
-        /** i2c_command10 : R/W; bitpos: [13:0]; default: 257;
-         *  command10
-         */
-        uint32_t i2c_command10:14;
-        uint32_t reserved_14:17;
-        /** i2c_command10_done : RO; bitpos: [31]; default: 0;
-         *  command10_done
-         */
-        uint32_t i2c_command10_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd10_reg_t;
-
-/** Type of i2c_cmd11 register
- *  i2c commond11 register
- */
-typedef union {
-    struct {
-        /** i2c_command11 : R/W; bitpos: [13:0]; default: 2305;
-         *  command11
-         */
-        uint32_t i2c_command11:14;
-        uint32_t reserved_14:17;
-        /** i2c_command11_done : RO; bitpos: [31]; default: 0;
-         *  command11_done
-         */
-        uint32_t i2c_command11_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd11_reg_t;
-
-/** Type of i2c_cmd12 register
- *  i2c commond12 register
- */
-typedef union {
-    struct {
-        /** i2c_command12 : R/W; bitpos: [13:0]; default: 5889;
-         *  command12
-         */
-        uint32_t i2c_command12:14;
-        uint32_t reserved_14:17;
-        /** i2c_command12_done : RO; bitpos: [31]; default: 0;
-         *  command12_done
-         */
-        uint32_t i2c_command12_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd12_reg_t;
-
-/** Type of i2c_cmd13 register
- *  i2c commond13 register
- */
-typedef union {
-    struct {
-        /** i2c_command13 : R/W; bitpos: [13:0]; default: 6401;
-         *  command13
-         */
-        uint32_t i2c_command13:14;
-        uint32_t reserved_14:17;
-        /** i2c_command13_done : RO; bitpos: [31]; default: 0;
-         *  command13_done
-         */
-        uint32_t i2c_command13_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd13_reg_t;
-
-/** Type of i2c_cmd14 register
- *  i2c commond14 register
- */
-typedef union {
-    struct {
-        /** i2c_command14 : R/W; bitpos: [13:0]; default: 0;
-         *  command14
-         */
-        uint32_t i2c_command14:14;
-        uint32_t reserved_14:17;
-        /** i2c_command14_done : RO; bitpos: [31]; default: 0;
-         *  command14_done
-         */
-        uint32_t i2c_command14_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd14_reg_t;
-
-/** Type of i2c_cmd15 register
- *  i2c commond15 register
- */
-typedef union {
-    struct {
-        /** i2c_command15 : R/W; bitpos: [13:0]; default: 0;
-         *  command15
-         */
-        uint32_t i2c_command15:14;
-        uint32_t reserved_14:17;
-        /** i2c_command15_done : RO; bitpos: [31]; default: 0;
-         *  command15_done
-         */
-        uint32_t i2c_command15_done:1;
-    };
-    uint32_t val;
-} rtc_i2c_cmd15_reg_t;
-
+} rtc_i2c_cmd_reg_t;
 
 /** Group: status register */
 /** Type of i2c_status register
@@ -750,29 +483,15 @@ typedef struct {
     volatile rtc_i2c_int_st_reg_t i2c_int_st;
     volatile rtc_i2c_int_ena_reg_t i2c_int_ena;
     volatile rtc_i2c_data_reg_t i2c_data;
-    volatile rtc_i2c_cmd0_reg_t i2c_cmd0;
-    volatile rtc_i2c_cmd1_reg_t i2c_cmd1;
-    volatile rtc_i2c_cmd2_reg_t i2c_cmd2;
-    volatile rtc_i2c_cmd3_reg_t i2c_cmd3;
-    volatile rtc_i2c_cmd4_reg_t i2c_cmd4;
-    volatile rtc_i2c_cmd5_reg_t i2c_cmd5;
-    volatile rtc_i2c_cmd6_reg_t i2c_cmd6;
-    volatile rtc_i2c_cmd7_reg_t i2c_cmd7;
-    volatile rtc_i2c_cmd8_reg_t i2c_cmd8;
-    volatile rtc_i2c_cmd9_reg_t i2c_cmd9;
-    volatile rtc_i2c_cmd10_reg_t i2c_cmd10;
-    volatile rtc_i2c_cmd11_reg_t i2c_cmd11;
-    volatile rtc_i2c_cmd12_reg_t i2c_cmd12;
-    volatile rtc_i2c_cmd13_reg_t i2c_cmd13;
-    volatile rtc_i2c_cmd14_reg_t i2c_cmd14;
-    volatile rtc_i2c_cmd15_reg_t i2c_cmd15;
+    volatile rtc_i2c_cmd_reg_t i2c_cmd[16];
     uint32_t reserved_078[33];
     volatile rtc_i2c_date_reg_t i2c_date;
-} rtc_dev_t;
+} rtc_i2c_dev_t;
+extern rtc_i2c_dev_t RTC_I2C;
 
 
 #ifndef __cplusplus
-_Static_assert(sizeof(rtc_dev_t) == 0x100, "Invalid size of rtc_dev_t structure");
+_Static_assert(sizeof(rtc_i2c_dev_t) == 0x100, "Invalid size of rtc_i2c_dev_t structure");
 #endif
 
 #ifdef __cplusplus

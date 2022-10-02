@@ -5,12 +5,11 @@
  */
 #pragma once
 
+#include "soc/soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DR_REG_PLIC_MX_BASE       ( 0x20001000 )
-#define DR_REG_PLIC_UX_BASE       ( 0x20001400 )
 #define PLIC_MXINT_CONF_REG       ( 0x200013FC )
 #define PLIC_UXINT_CONF_REG       ( 0x200017FC )
 

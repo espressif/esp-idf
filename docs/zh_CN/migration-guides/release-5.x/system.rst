@@ -149,3 +149,15 @@ FreeRTOS 移植相关的宏
 - ``vPortCPUAcquireMutex()`` 已被移除，请使用 ``spinlock_acquire()`` 函数。
 - ``vPortCPUAcquireMutexTimeout()`` 已被移除，请使用 ``spinlock_acquire()`` 函数。
 - ``vPortCPUReleaseMutex()`` 已被移除，请使用 ``spinlock_release()`` 函数。
+
+应用程序更新
+------------
+
+- 函数 :cpp:func:`esp_ota_get_app_description` 和 :cpp:func:`esp_ota_get_app_elf_sha256` 已被弃用，请分别使用 :cpp:func:`esp_app_get_description` 和 :cpp:func:`esp_app_get_elf_sha256` 函数来代替。这些函数已被移至新组件 :component:`esp_app_format`。请参考头文件 :component_file:`esp_app_desc.h <esp_app_format/include/esp_app_desc.h>`。
+
+引导加载程序支持
+----------------
+
+- :cpp:type:`esp_app_desc_t` 结构体此前在 :component_file:`esp_app_format.h <bootloader_support/include/esp_app_format.h>` 中声明，现在在 :component_file:`esp_app_desc.h <esp_app_format/include/esp_app_desc.h>` 中声明。
+
+- 函数 :cpp:func:`bootloader_common_get_partition_description` 已更新为私有函数，请使用代替函数 :cpp:func:`esp_ota_get_partition_description`。注意，此函数的第一个参数为 :cpp:type:`esp_partition_t`，而非 :cpp:type:`esp_partition_pos_t`。

@@ -335,7 +335,6 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 
 以下是可作为构建属性的构建/项目变量，可通过组件 CMakeLists.txt 中的 ``idf_build_get_property`` 查询其变量值。
 
-
 - ``PROJECT_NAME``：项目名，在项目 CMakeLists.txt 文件中设置。
 - ``PROJECT_DIR``：项目目录（包含项目 CMakeLists 文件）的绝对路径，与 ``CMAKE_SOURCE_DIR`` 变量相同。
 - ``COMPONENTS``：此次构建中包含的所有组件的名称，具体格式为用分号隔开的 CMake 列表。
@@ -343,6 +342,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 - ``IDF_VERSION_MAJOR``、 ``IDF_VERSION_MINOR``、 ``IDF_VERSION_PATCH``: ESP-IDF 的组件版本，可用于条件表达式。请注意这些信息的精确度不如 ``IDF_VER`` 变量，版本号 ``v4.0-dev-*``， ``v4.0-beta1``， ``v4.0-rc1`` 和 ``v4.0`` 对应的 ``IDF_VERSION_*`` 变量值是相同的，但是 ``IDF_VER`` 的值是不同的。
 - ``IDF_TARGET``：项目的硬件目标名称。
 - ``PROJECT_VER``：项目版本号。
+- ``EXTRA_PARTITION_SUBTYPES``：CMake 列表，用于创建额外的分区子类型。子类型的描述由字符串组成，以逗号为分隔，格式为 ``type_name, subtype_name, numeric_value``。组件可通过此列表，添加新的子类型。
 
   * 如果设置 :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` 选项，将会使用 :ref:`CONFIG_APP_PROJECT_VER` 的值。
   * 或者，如果在项目 CMakeLists.txt 文件中设置了 ``PROJECT_VER`` 变量，则该变量值可以使用。
@@ -626,12 +626,12 @@ CMake 通常会在链接器命令行上重复两次组件库名称来自动处�
 .. _override_project_config:
 
 覆盖项目的部分设置
-------------------
+=====================
 
 .. _project_include.cmake:
 
 project_include.cmake
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 如果组件的某些构建行为需要在组件 CMakeLists 文件之前被执行，您可以在组件目录下创建名为 ``project_include.cmake`` 的文件，``project.cmake`` 在运行过程中会导入此 CMake 文件。
 
@@ -646,7 +646,7 @@ project_include.cmake
 在 ``project_include.cmake`` 文件中设置变量或目标时要格外小心，这些值被包含在项目的顶层 CMake 文件中，因此他们会影响或破坏所有组件的功能。
 
 KConfig.projbuild
-^^^^^^^^^^^^^^^^^
+-----------------
 
 与 ``project_include.cmake`` 类似，也可以为组件定义一个 KConfig 文件以实现全局的 :ref:`component-configuration`。如果要在 menuconfig 的顶层添加配置选项，而不是在 “Component Configuration” 子菜单中，则可以在 ``CMakeLists.txt`` 文件所在目录的 KConfig.projbuild 文件中定义这些选项。
 
@@ -657,12 +657,12 @@ KConfig.projbuild
 .. _config_only_component:
 
 仅配置组件
-^^^^^^^^^^
+===========
 
 仅配置组件是一类不包含源文件的特殊组件，仅包含 ``Kconfig.projbuild``、``KConfig`` 和 ``CMakeLists.txt`` 文件，该 ``CMakeLists.txt`` 文件仅有一行代码，调用了 ``idf_component_register()`` 函数。此函数会将组件导入到项目构建中，但不会构建任何库，也不会将头文件添加到任何 include 搜索路径中。
 
 CMake 调试
-----------
+===========
 
 请查看 `CMake v3.16 官方文档`_ 获取更多关于 CMake_ 和 CMake 命令的信息。
 
@@ -679,7 +679,7 @@ CMake 调试
 .. _warn-undefined-variables:
 
 警告未定义的变量
-^^^^^^^^^^^^^^^^
+------------------
 
 默认情况下，``idf.py`` 在调用 CMake_ 时会给它传递 ``--warn-uninitialized`` 标志，如果在构建的过程中引用了未定义的变量，CMake_ 会打印警告。这对查找有错误的 CMake 文件非常有用。
 
@@ -1100,7 +1100,7 @@ ESP-IDF 提供了一个模板 CMake 项目，可以基于此轻松创建应用�
 ESP-IDF CMake 构建系统 API
 ==============================
 
-idf 构建命令
+ESP-IDF 构建命令
 ------------------
 
 .. code-block:: none
@@ -1163,7 +1163,7 @@ idf 构建命令
 
 .. _cmake-build-properties:
 
-idf 构建属性
+ESP-IDF 构建属性
 --------------------
 
 可以通过使用构建命令 ``idf_build_get_property`` 来获取构建属性的值。例如，以下命令可以获取构建过程中使用的 Python 解释器的相关信息。
@@ -1201,7 +1201,7 @@ idf 构建属性
 - SDKCONFIG_JSON - 包含组件配置的 JSON 文件的完整路径；由 ``idf_build_process`` 设置。
 - SDKCONFIG_JSON_MENUS - 包含配置菜单的 JSON 文件的完整路径；由 ``idf_build_process`` 设置。
 
-idf 组件命令
+ESP-IDF 组件命令
 ----------------------
 
 .. code-block:: none
@@ -1262,7 +1262,7 @@ idf 组件命令
 
 .. _cmake-component-properties:
 
-idf 组件属性
+ESP-IDF 组件属性
 ------------------------
 
 组件的属性值可以通过使用构建命令 ``idf_component_get_property`` 来获取。例如，以下命令可以获取 ``freertos`` 组件的目录。

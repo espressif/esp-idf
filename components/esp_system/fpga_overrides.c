@@ -9,20 +9,27 @@
 #include "soc/system_reg.h"
 #endif // not CONFIG_IDF_TARGET_ESP32
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/rtc.h"
+#endif
 #include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
 #include "esp_attr.h"
 
 static const char *TAG = "fpga";
-
-#ifdef CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/rtc.h"
-#endif
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/rtc.h"
-#endif
 
 extern void ets_update_cpu_frequency(uint32_t ticks_per_us);
 
@@ -42,13 +49,13 @@ void bootloader_clock_configure(void)
 #elif CONFIG_IDF_TARGET_ESP32H2
     uint32_t apb_freq_hz = 32000000;
 #else
-    uint32_t apb_freq_hz = 40000000;
+    uint32_t apb_freq_hz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000;
 #endif // CONFIG_IDF_TARGET_ESP32S2
     ets_update_cpu_frequency(apb_freq_hz / 1000000);
 #ifdef RTC_APB_FREQ_REG
     REG_WRITE(RTC_APB_FREQ_REG, (apb_freq_hz >> 12) | ((apb_freq_hz >> 12) << 16));
 #endif
-    REG_WRITE(RTC_CNTL_STORE4_REG, (xtal_freq_mhz) | ((xtal_freq_mhz) << 16));
+    REG_WRITE(RTC_XTAL_FREQ_REG, (xtal_freq_mhz) | ((xtal_freq_mhz) << 16));
 }
 
 /* Placed in IRAM since test_apps expects it to be */

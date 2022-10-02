@@ -1404,6 +1404,7 @@ wifi_station_wps_init(void)
     sm = gWpsSm;
 
     esp_wifi_get_macaddr_internal(WIFI_IF_STA, sm->ownaddr);
+    os_memcpy(gWpaSm.own_addr, sm->ownaddr, ETH_ALEN);
 
     sm->identity_len = WSC_ID_ENROLLEE_LEN;
     os_memcpy(sm->identity, WSC_ID_ENROLLEE, sm->identity_len);
@@ -1576,6 +1577,7 @@ wifi_wps_scan_done(void *arg, STATUS status)
         os_memcpy(wifi_config.sta.bssid, sm->bssid, ETH_ALEN);
         os_memcpy(wifi_config.sta.ssid, (char *)sm->ssid[0], sm->ssid_len[0]);
         wifi_config.sta.bssid_set = 1;
+        wifi_config.sta.channel = sm->channel;
         wpa_printf(MSG_INFO, "WPS: connecting to %s, bssid=" MACSTR,
                    (char *)sm->ssid[0], MAC2STR(wifi_config.sta.bssid));
         esp_wifi_set_config(0, &wifi_config);

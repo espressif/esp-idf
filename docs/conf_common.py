@@ -20,7 +20,6 @@ if os.environ.get('IDF_PATH') is None:
     raise RuntimeError('IDF_PATH should be set, run export.sh before building docs')
 
 BT_DOCS = ['api-guides/blufi.rst',
-           'api-guides/esp-ble-mesh/**',
            'api-reference/bluetooth/bt_le.rst',
            'api-reference/bluetooth/esp_bt_defs.rst',
            'api-reference/bluetooth/esp_bt_device.rst',
@@ -32,10 +31,16 @@ BT_DOCS = ['api-guides/blufi.rst',
            'api-reference/bluetooth/esp_gatts.rst',
            'api-reference/bluetooth/esp_gattc.rst',
            'api-reference/bluetooth/esp_blufi.rst',
-           'api-reference/bluetooth/esp-ble-mesh.rst',
            'api-reference/bluetooth/index.rst',
            'api-reference/bluetooth/nimble/index.rst',
            'migration-guides/release-5.x/bluetooth-low-energy.rst']
+
+BLE_MESH_DOCS = ['api-guides/esp-ble-mesh/ble-mesh-index.rst',
+                 'api-guides/esp-ble-mesh/ble-mesh-feature-list.rst',
+                 'api-guides/esp-ble-mesh/ble-mesh-terminology.rst',
+                 'api-guides/esp-ble-mesh/ble-mesh-architecture.rst',
+                 'api-guides/esp-ble-mesh/ble-mesh-faq.rst',
+                 'api-reference/bluetooth/esp-ble-mesh.rst']
 
 CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_a2dp.rst',
@@ -144,6 +149,7 @@ ESP32C3_DOCS = ['hw-reference/esp32c3/**',
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
+                            'SOC_BLE_MESH_SUPPORTED':BLE_MESH_DOCS,
                             'SOC_WIFI_SUPPORTED':WIFI_DOCS,
                             'SOC_BT_CLASSIC_SUPPORTED':CLASSIC_BT_DOCS,
                             'SOC_SUPPORT_COEXISTENCE':COEXISTENCE_DOCS,
@@ -222,7 +228,6 @@ linkcheck_exclude_documents = ['index',  # several false positives due to the wa
 
 
 linkcheck_ignore = ['https://webhome.phy.duke.edu/~rgb/General/dieharder.php',  # Certificate error
-                    'https://dl.espressif.com/dl/esp32s3_rom.elf',  # Not published
                     'https://docs.espressif.com/projects/esptool/en/latest/esp32c2/espefuse/index.html',  # Not published
                     ]
 

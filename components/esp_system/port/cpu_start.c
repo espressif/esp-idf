@@ -47,6 +47,10 @@
 #include "esp32c3/rom/cache.h"
 #include "esp32c3/rom/secure_boot.h"
 #include "esp_memprot.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rtc.h"
+#include "esp32c6/rom/cache.h"
+#include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rtc.h"
 #include "esp32h2/rom/cache.h"
@@ -287,7 +291,11 @@ void IRAM_ATTR call_start_cpu0(void)
             || rst_reas[1] == RESET_REASON_CORE_RTC_WDT || rst_reas[1] == RESET_REASON_CORE_MWDT0
 #endif
        ) {
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
+        wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
+#else
         wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+#endif
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
         wdt_hal_disable(&rtc_wdt_ctx);
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
@@ -341,7 +349,7 @@ void IRAM_ATTR call_start_cpu0(void)
         esp_restart();
     }
 
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
     /* Configure the Cache MMU size for instruction and rodata in flash. */
     extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
     extern int _rodata_reserved_start;
@@ -354,7 +362,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
-#endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
+#endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
 
 #if CONFIG_ESPTOOLPY_OCT_FLASH
     bool efuse_opflash_en = efuse_ll_get_flash_type();
@@ -473,7 +481,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32C2
-// TODO : IDF-4194
+// TODO : IDF-5020
 #if CONFIG_ESP32C2_INSTRUCTION_CACHE_WRAP
     extern void esp_enable_cache_wrap(uint32_t icache_wrap_enable);
     esp_enable_cache_wrap(1);

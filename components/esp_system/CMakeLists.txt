@@ -21,10 +21,19 @@ else()
             "startup.c"
             "system_time.c"
             "stack_check.c"
-            "task_wdt.c"
             "ubsan.c"
             "xt_wdt.c"
             "debug_stubs.c")
+
+    if(CONFIG_ESP_TASK_WDT_EN)
+        list(APPEND srcs "task_wdt/task_wdt.c")
+
+        if(CONFIG_ESP_TASK_WDT_USE_ESP_TIMER)
+            list(APPEND srcs "task_wdt/task_wdt_impl_esp_timer.c")
+        else()
+            list(APPEND srcs "task_wdt/task_wdt_impl_timergroup.c")
+        endif()
+    endif()
 
     if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
         list(APPEND srcs "eh_frame_parser.c")

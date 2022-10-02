@@ -27,10 +27,6 @@ config ESP_ROM_HAS_RETARGETABLE_LOCKING
     bool
     default y
 
-config ESP_ROM_HAS_ERASE_0_REGION_BUG
-    bool
-    default y
-
 config ESP_ROM_GET_CLK_FREQ
     bool
     default y

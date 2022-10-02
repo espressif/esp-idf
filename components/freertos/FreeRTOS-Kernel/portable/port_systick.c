@@ -16,7 +16,6 @@
 #include "sdkconfig.h"
 #ifdef CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
 #include "soc/periph_defs.h"
-#include "soc/system_reg.h"
 #include "hal/systimer_hal.h"
 #include "hal/systimer_ll.h"
 #endif

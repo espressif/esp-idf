@@ -39,13 +39,13 @@ idf_component_register(SRCS "${srcs}"
 set(target_name "${idf_target}")
 if(IDF_TARGET STREQUAL "esp32h2")
     if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
-        target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/rev2\"")
+        target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/rev2")
     endif()
     if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
-        target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/rev1\"")
+        target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/rev1")
     endif()
 else()
-    target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}\"")
+    target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
 endif()
 
 # Override functions in PHY lib with the functions in 'phy_override.c'

@@ -1,20 +1,17 @@
 # This script should be sourced, not executed.
 
-# `idf_tools.py export --unset` create statement, with keyword unset, but fish shell support only `set --erase variable`
+# `idf_tools.py export --deactivate` create statement, with keyword unset, but fish shell support only `set --erase variable`
 function unset
     set --erase $argv
 end
 
 function __main
+    set script_dir (dirname (realpath (status -f)))
     if not set -q IDF_PATH
-        set -gx IDF_PATH (cd (dirname (status -f)); and pwd)
+        set -gx IDF_PATH $script_dir
         echo "Setting IDF_PATH to '$IDF_PATH'"
     end
 
-    set script_dir (cd (dirname (status -f)); and pwd)
-    if test "$script_dir" = "."
-        set script_dir $pwd
-    end
     if test "$IDF_PATH" != "$script_dir"
         # Change IDF_PATH is important when there are 2 ESP-IDF versions in different directories.
         # Sourcing this script without change, would cause sourcing wrong export script.
@@ -31,8 +28,8 @@ function __main
     "$ESP_PYTHON" "$IDF_PATH"/tools/python_version_checker.py
 
     echo "Checking other ESP-IDF version."
-    set idf_unset ("$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py export --unset) || return 1
-    eval "$idf_unset"
+    set idf_deactivate ("$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py export --deactivate) || return 1
+    eval "$idf_deactivate"
 
     echo "Adding ESP-IDF tools to PATH..."
     # Call idf_tools.py to export tool paths
@@ -50,7 +47,7 @@ function __main
     set -x PATH "$IDF_ADD_PATHS_EXTRAS":"$PATH"
 
     echo "Checking if Python packages are up to date..."
-    python "$IDF_PATH"/tools/idf_tools.py check-python-dependencies || return 1
+    "$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py check-python-dependencies || return 1
 
     set added_path_variables
     for entry in $PATH;
@@ -88,7 +85,7 @@ function __main
     set -e ESP_PYTHON
     set -e uninstall
     set -e script_dir
-    set -e idf_unset
+    set -e idf_deactivate
 
 
     # Not unsetting IDF_PYTHON_ENV_PATH, it can be used by IDF build system

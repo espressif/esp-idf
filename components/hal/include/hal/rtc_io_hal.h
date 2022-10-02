@@ -17,9 +17,10 @@
 #include <esp_err.h>
 #include "sdkconfig.h"
 
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #include "soc/soc_caps.h"
 #include "hal/rtc_io_ll.h"
+#include "hal/rtc_io_types.h"
 #endif
 
 #ifdef __cplusplus

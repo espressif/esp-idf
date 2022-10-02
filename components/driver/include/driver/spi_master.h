@@ -224,6 +224,7 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
                         out.
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_ERR_NOT_SUPPORTED if flag `SPI_DEVICE_NO_RETURN_RESULT` is set
  *         - ESP_ERR_TIMEOUT       if there was no completed transaction before ticks_to_wait expired
  *         - ESP_OK                on success
  */
@@ -331,6 +332,18 @@ esp_err_t spi_device_acquire_bus(spi_device_handle_t device, TickType_t wait);
  * @param dev The device to release the bus.
  */
 void spi_device_release_bus(spi_device_handle_t dev);
+
+/**
+ * @brief Calculate working frequency for specific device
+ *
+ * @param handle SPI device handle
+ * @param[out] freq_khz output parameter to hold calculated frequency in kHz
+ *
+ * @return
+ *      - ESP_ERR_INVALID_ARG : ``handle`` or ``freq_khz`` parameter is NULL
+ *      - ESP_OK : Success
+ */
+esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int* freq_khz);
 
 /**
  * @brief Calculate the working frequency that is most close to desired frequency.

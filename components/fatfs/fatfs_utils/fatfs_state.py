@@ -5,8 +5,9 @@ from textwrap import dedent
 from typing import Optional
 
 from .exceptions import InconsistentFATAttributes
-from .utils import (ALLOWED_SECTOR_SIZES, FAT12, FAT12_MAX_CLUSTERS, FAT16, FAT16_MAX_CLUSTERS, FATDefaults,
-                    get_fat_sectors_count, get_fatfs_type, get_non_data_sectors_cnt, number_of_clusters)
+from .utils import (ALLOWED_SECTOR_SIZES, FAT12, FAT12_MAX_CLUSTERS, FAT16, FAT16_MAX_CLUSTERS,
+                    RESERVED_CLUSTERS_COUNT, FATDefaults, get_fat_sectors_count, get_fatfs_type,
+                    get_non_data_sectors_cnt, number_of_clusters)
 
 
 class FATFSState:
@@ -133,7 +134,13 @@ class BootSectorState:
 
     @property
     def clusters(self) -> int:
-        clusters_cnt_: int = number_of_clusters(self.data_sectors, self.sectors_per_cluster)
+        """
+        The actual number of clusters is calculated by `number_of_clusters`,
+        however, the initial two blocks of FAT are reserved (device type and root directory),
+        despite they don't refer to the data region.
+        Since that, two clusters are added to use the full potential of the FAT file system partition.
+        """
+        clusters_cnt_: int = number_of_clusters(self.data_sectors, self.sectors_per_cluster) + RESERVED_CLUSTERS_COUNT
         return clusters_cnt_
 
     @property

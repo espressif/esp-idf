@@ -18,7 +18,6 @@ components/protocomm/python/constants_pb2.py
 components/protocomm/python/sec0_pb2.py
 components/protocomm/python/sec1_pb2.py
 components/protocomm/python/session_pb2.py
-components/ulp/esp32ulp_mapgen.py
 components/wifi_provisioning/python/wifi_config_pb2.py
 components/wifi_provisioning/python/wifi_constants_pb2.py
 components/wifi_provisioning/python/wifi_scan_pb2.py

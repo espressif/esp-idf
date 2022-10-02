@@ -48,6 +48,7 @@
 #include "esp_private/sleep_retention.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/startup_internal.h"
+#include "esp_private/esp_task_wdt.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
@@ -663,6 +664,13 @@ static inline bool can_power_down_vddsdio(const uint32_t vddsdio_pd_sleep_durati
 
 esp_err_t esp_light_sleep_start(void)
 {
+#if CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
+    esp_err_t timerret = ESP_OK;
+
+    /* If a task watchdog timer is running, we have to stop it. */
+    timerret = esp_task_wdt_stop();
+#endif // CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
+
     s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
     static portMUX_TYPE light_sleep_lock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL(&light_sleep_lock);
@@ -821,6 +829,14 @@ esp_err_t esp_light_sleep_start(void)
     }
     portEXIT_CRITICAL(&light_sleep_lock);
     s_config.sleep_time_overhead_out = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
+
+#if CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
+    /* Restart the Task Watchdog timer as it was stopped before sleeping. */
+    if (timerret == ESP_OK) {
+        esp_task_wdt_restart();
+    }
+#endif // CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
+
     return err;
 }
 

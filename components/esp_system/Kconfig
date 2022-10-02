@@ -91,6 +91,7 @@ menu "ESP System Settings"
         default y if IDF_TARGET_ESP32C3
         default y if IDF_TARGET_ESP32S3
         default y if IDF_TARGET_ESP32H2
+        default y if IDF_TARGET_ESP32C6
         depends on !IDF_TARGET_ESP32C2
 
     config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
@@ -301,6 +302,7 @@ menu "ESP System Settings"
         default 1 if IDF_TARGET_ESP32
         default 20 if IDF_TARGET_ESP32C2
         default 21 if IDF_TARGET_ESP32C3
+        default 16 if IDF_TARGET_ESP32C6
         default 43
         help
              This GPIO is used for console UART TX output in the ESP-IDF Bootloader and the app (including
@@ -316,6 +318,7 @@ menu "ESP System Settings"
         default 3 if IDF_TARGET_ESP32
         default 19 if IDF_TARGET_ESP32C2
         default 20 if IDF_TARGET_ESP32C3
+        default 17 if IDF_TARGET_ESP32C6
         default 44
         help
             This GPIO is used for UART RX input in the ESP-IDF Bootloader and the app (including
@@ -367,7 +370,6 @@ menu "ESP System Settings"
 
     config ESP_INT_WDT
         bool "Interrupt watchdog"
-        default n if IDF_TARGET_ESP32C2 # add support in IDF-4114
         default y
         help
             This watchdog timer can detect if the FreeRTOS tick interrupt has not been called for a certain time,
@@ -391,19 +393,36 @@ menu "ESP System Settings"
         help
             Also detect if interrupts on CPU 1 are disabled for too long.
 
-    config ESP_TASK_WDT
-        bool "Initialize Task Watchdog Timer on startup"
+    config ESP_TASK_WDT_EN
+        bool "Enable Task Watchdog Timer"
         default y
         select FREERTOS_ENABLE_TASK_SNAPSHOT
         help
             The Task Watchdog Timer can be used to make sure individual tasks are still
-            running. Enabling this option will cause the Task Watchdog Timer to be
-            initialized automatically at startup. The Task Watchdog timer can be
-            initialized after startup as well (see Task Watchdog Timer API Reference)
+            running. Enabling this option will enable the Task Watchdog Timer. It can be
+            either initialized automatically at startup or initialized after startup
+            (see Task Watchdog Timer API Reference)
+
+    config ESP_TASK_WDT_USE_ESP_TIMER
+        # Software implementation of Task Watchdog, handy for targets with only a single
+        # Timer Group, such as the ESP32-C2
+        bool
+        depends on ESP_TASK_WDT_EN
+        default y if IDF_TARGET_ESP32C2
+        default n if !IDF_TARGET_ESP32C2
+        select ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+
+    config ESP_TASK_WDT_INIT
+        bool "Initialize Task Watchdog Timer on startup"
+        depends on ESP_TASK_WDT_EN
+        default y
+        help
+            Enabling this option will cause the Task Watchdog Timer to be initialized
+            automatically at startup.
 
     config ESP_TASK_WDT_PANIC
         bool "Invoke panic handler on Task Watchdog timeout"
-        depends on ESP_TASK_WDT
+        depends on ESP_TASK_WDT_INIT
         default n
         help
             If this option is enabled, the Task Watchdog Timer will be configured to
@@ -412,7 +431,7 @@ menu "ESP System Settings"
 
     config ESP_TASK_WDT_TIMEOUT_S
         int "Task Watchdog timeout period (seconds)"
-        depends on ESP_TASK_WDT
+        depends on ESP_TASK_WDT_INIT
         range 1 60
         default 5
         help
@@ -421,7 +440,7 @@ menu "ESP System Settings"
 
     config ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
         bool "Watch CPU0 Idle Task"
-        depends on ESP_TASK_WDT
+        depends on ESP_TASK_WDT_INIT
         default y
         help
             If this option is enabled, the Task Watchdog Timer will watch the CPU0
@@ -432,10 +451,10 @@ menu "ESP System Settings"
 
     config ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
         bool "Watch CPU1 Idle Task"
-        depends on ESP_TASK_WDT && !FREERTOS_UNICORE
+        depends on ESP_TASK_WDT_INIT && !FREERTOS_UNICORE
         default y
         help
-            If this option is enabled, the Task Wtachdog Timer will wach the CPU1
+            If this option is enabled, the Task Watchdog Timer will wach the CPU1
             Idle Task.
 
     config ESP_XT_WDT

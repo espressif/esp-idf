@@ -21,6 +21,7 @@
   patterns:
     - build_components
     - build_system
+    - downloadable-tools
   included_in:
     - build:target_test
 
@@ -34,6 +35,8 @@
   patterns:
     - docker
     - submodule
+    - build_system
+    - downloadable-tools
 
 "build:windows":
   labels:
@@ -51,6 +54,7 @@
   patterns:
     - build_system
     - macos
+    - downloadable-tools
 
 # ---------------
 # Build Test Jobs
@@ -65,6 +69,7 @@
     - build_components
     - build_system
     - build_target_test
+    - downloadable-tools
   included_in:
     - "build:{0}"
     - build:target_test
@@ -131,6 +136,7 @@ build:integration_test:
       - sdio      # UT_044, UT_045
       - usb       # USB Device & Host tests
       - spi_multi # UT_C2_SPI_DUAL
+      - adc       # component_ut_pytest_esp32x_adc
   patterns:
     - "{0}-{1}-{2}"
     - "{0}-{2}"
@@ -154,6 +160,19 @@ build:integration_test:
     - "if-example_test-ota-include_nightly_run-rule"
   included_in:
     - "build:example_test-{0}"
+    - "build:example_test"
+    - build:target_test
+
+# For i154 runners
+"test:example_test-i154":
+  patterns:
+    - "target_test-i154"
+  labels:
+    - target_test
+    - example_test
+  included_in:
+    - "build:example_test-esp32h2"
+    - "build:example_test-esp32s3"
     - "build:example_test"
     - build:target_test
 

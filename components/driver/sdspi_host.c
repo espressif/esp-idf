@@ -299,6 +299,16 @@ esp_err_t sdspi_host_set_card_clk(sdspi_dev_handle_t handle, uint32_t freq_khz)
     return configure_spi_dev(slot, freq_khz * 1000);
 }
 
+esp_err_t sdspi_host_get_real_freq(sdspi_dev_handle_t handle, int* real_freq_khz)
+{
+    slot_info_t *slot = get_slot_info(handle);
+    if (slot == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return spi_device_get_actual_freq(slot->spi_handle, real_freq_khz);
+}
+
 static void gpio_intr(void* arg)
 {
     BaseType_t awoken = pdFALSE;

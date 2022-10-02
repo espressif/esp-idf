@@ -198,7 +198,8 @@ Overview
         - JTAG: GPIO12-15 are usually used for inline debug.
         - GPI: GPIO34-39 can only be set as input mode and do not have software-enabled pullup or pulldown functions.
         - TXD & RXD are usually used for flashing and debugging.
-        - ADC2: ADC2 pins cannot be used when Wi-Fi is used. So, if you are having trouble getting the value from an ADC2 GPIO while using Wi-Fi, you may consider using an ADC1 GPIO instead, which should solve your problem. For more details, please refer to `ADC limitations <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/adc.html#adc-limitations>`_.
+        - ADC2: ADC2 pins cannot be used when Wi-Fi is used. So, if you are having trouble getting the value from an ADC2 GPIO while using Wi-Fi, you may consider using an ADC1 GPIO instead, which should solve your problem. For more details, please refer to :ref:`Hardware Limitations of ADC Continuous Mode <hardware_limitations_adc_continuous>` and :ref:`Hardware Limitations of ADC Oneshot Mode <hardware_limitations_adc_oneshot>`.
+        - Please do not use the interrupt of GPIO36 and GPIO39 when using ADC or Wi-Fi and Bluetooth with sleep mode enabled. Please refer to `ESP32 ECO and Workarounds for Bugs <https://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>`_ > Section 3.11 for the detailed description of the issue.
 
 
 .. only:: esp32s2

@@ -45,6 +45,19 @@ static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num,
 }
 
 /**
+ * @brief Enable Timer Group (GPTimer) module clock
+ *
+ * @param hw Timer Group register base address
+ * @param timer_num Timer index in the group
+ * @param en true to enable, false to disable
+ */
+static inline void timer_ll_enable_clock(timg_dev_t *hw, uint32_t timer_num, bool en)
+{
+    (void)timer_num; // only one timer in the group
+    hw->regclk.timer_clk_is_active = en;
+}
+
+/**
  * @brief Enable alarm event
  *
  * @param hw Timer Group register base address

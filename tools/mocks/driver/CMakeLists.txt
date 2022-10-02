@@ -20,5 +20,3 @@ idf_component_mock(INCLUDE_DIRS ${include_dirs}
     ${original_driver_dir}/include/driver/spi_common.h
     ${original_driver_dir}/include/driver/i2c.h
     ${original_driver_dir}/include/driver/gpio.h)
-
-idf_build_set_property(COMPILE_DEFINITIONS "-DSPI_MOCK" APPEND)

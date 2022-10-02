@@ -71,7 +71,7 @@ void task_func(void *arg)
 
 void app_main(void)
 {
-#if !CONFIG_ESP_TASK_WDT
+#if !CONFIG_ESP_TASK_WDT_INIT
     // If the TWDT was not initialized automatically on startup, manually intialize it now
     esp_task_wdt_config_t twdt_config = {
         .timeout_ms = TWDT_TIMEOUT_MS,
@@ -80,7 +80,7 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(esp_task_wdt_init(&twdt_config));
     printf("TWDT initialized\n");
-#endif // CONFIG_ESP_TASK_WDT
+#endif // CONFIG_ESP_TASK_WDT_INIT
 
     // Create a task
     run_loop = true;
@@ -94,10 +94,10 @@ void app_main(void)
     run_loop = false;
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-#if !CONFIG_ESP_TASK_WDT
+#if !CONFIG_ESP_TASK_WDT_INIT
     // If we manually initialized the TWDT, deintialize it now
     ESP_ERROR_CHECK(esp_task_wdt_deinit());
     printf("TWDT deinitialized\n");
-#endif // CONFIG_ESP_TASK_WDT
+#endif // CONFIG_ESP_TASK_WDT_INIT
     printf("Example complete\n");
 }

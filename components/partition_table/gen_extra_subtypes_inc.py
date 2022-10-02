@@ -14,7 +14,7 @@ def gen_header_file(path: str, subtypes: str) -> None:
             f.write('/*\n\t' + PARTTOOL_USAGE + '\n\t')
             f.write('--extra-partition-subtypes ')
             for line_no in subtypes:
-                f.write(line_no + ' ')
+                f.write(f'"{line_no}" ')
             f.write('\n*/\n\n')
         f.write('#pragma once\n\n')
         for line_no in subtypes:

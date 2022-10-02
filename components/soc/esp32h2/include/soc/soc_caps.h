@@ -48,6 +48,8 @@
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_SDM_SUPPORTED               1
+#define SOC_LEDC_SUPPORTED              1
+#define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_AES_SUPPORTED               1
 #define SOC_MPI_SUPPORTED               1
@@ -182,6 +184,7 @@
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (1)
 #define SOC_I2S_HW_VERSION_2        (1)
+#define SOC_I2S_SUPPORTS_XTAL       (1)
 #define SOC_I2S_SUPPORTS_PCM        (1)
 #define SOC_I2S_SUPPORTS_PDM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
@@ -216,7 +219,6 @@
 #define SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY  1  /*!< TX carrier can be modulated to data phase only */
 #define SOC_RMT_SUPPORT_XTAL                  1  /*!< Support set XTAL clock as the RMT clock source */
 #define SOC_RMT_SUPPORT_AHB                   1  /*!< Support set AHB clock as the RMT clock source */
-#define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST clock as the RMT clock source */
 
 /*-------------------------- RTC CAPS --------------------------------------*/
 #define SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH       (128)
@@ -261,6 +263,7 @@
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2
 #define SOC_SPI_PERIPH_CS_NUM(i)    6
+#define SOC_SPI_MAX_CS_NUM          6
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 
@@ -361,4 +364,5 @@
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_BLE_MESH_SUPPORTED          (1)    /*!< Support BLE MESH */
 #define SOC_ESP_NIMBLE_CONTROLLER       (1)    /*!< Support BLE EMBEDDED controller V1 */

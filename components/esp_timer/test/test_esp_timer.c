@@ -866,6 +866,49 @@ TEST_CASE("Test a latency between a call of callback and real event", "[esp_time
     TEST_ESP_OK(esp_timer_delete(periodic_timer));
 }
 
+static void test_periodic_timer_feed(void* timer1_fed)
+{
+    *((int*) timer1_fed) = 1;
+}
+
+/**
+ * Feed function is not part of the esp_timer header file: it's a public in the sense that it is not static,
+ * but it is only meant to be used in IDF components.
+ */
+esp_err_t esp_timer_feed(esp_timer_handle_t timer);
+
+TEST_CASE("periodic esp_timer can be fed", "[esp_timer]")
+{
+    const int delay_ms = 100;
+    int timer_fed = 0;
+    esp_timer_handle_t timer1;
+    esp_timer_create_args_t create_args = {
+            .callback = &test_periodic_timer_feed,
+            .arg = &timer_fed,
+            .name = "timer1",
+    };
+    TEST_ESP_OK(esp_timer_create(&create_args, &timer1));
+    TEST_ESP_OK(esp_timer_start_periodic(timer1, delay_ms * 1000));
+    /* Sleep for delay_ms/2 and feed the timer */
+    vTaskDelay((delay_ms / 2) * portTICK_PERIOD_MS);
+    /* Check that the alarm was not triggered */
+    TEST_ASSERT_EQUAL(0, timer_fed);
+    /* Reaching this point, the timer will be triggered in delay_ms/2.
+     * Let's feed the timer now. */
+    TEST_ESP_OK(esp_timer_feed(timer1));
+    /* Sleep for a bit more than delay_ms/2 */
+    vTaskDelay(((delay_ms / 2) + 1) * portTICK_PERIOD_MS);
+    /* If the alarm was triggered, feed didn't work */
+    TEST_ASSERT_EQUAL(0, timer_fed);
+    /* Else, wait for another delay_ms/2, which should trigger the alarm */
+    vTaskDelay(((delay_ms / 2) + 1) * portTICK_PERIOD_MS);
+    TEST_ASSERT_EQUAL(1, timer_fed);
+
+    TEST_ESP_OK( esp_timer_stop(timer1) );
+    TEST_ESP_OK( esp_timer_delete(timer1) );
+}
+
+
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 static int64_t old_time[2];
 

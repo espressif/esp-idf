@@ -4119,6 +4119,59 @@ tBTM_STATUS btm_ble_stop_adv(void)
     return rt;
 }
 
+tBTM_STATUS btm_ble_set_random_addr(BD_ADDR random_bda)
+{
+    tBTM_STATUS rt = BTM_SUCCESS;
+
+    osi_mutex_lock(&adv_enable_lock, OSI_MUTEX_MAX_TIMEOUT);
+    osi_mutex_lock(&scan_enable_lock, OSI_MUTEX_MAX_TIMEOUT);
+
+    if (btm_cb.ble_ctr_cb.inq_var.adv_mode == BTM_BLE_ADV_ENABLE) {
+        if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE)) {
+            osi_sem_take(&adv_enable_sem, OSI_SEM_MAX_TIMEOUT);
+            rt = adv_enable_status;
+        } else {
+            rt = BTM_BAD_VALUE_RET;
+        }
+    }
+
+    if (BTM_BLE_IS_DISCO_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
+        if (btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_SCAN_DUPLICATE_DISABLE)) {
+            osi_sem_take(&scan_enable_sem, OSI_SEM_MAX_TIMEOUT);
+            rt = scan_enable_status;
+        } else {
+            rt = BTM_BAD_VALUE_RET;
+        }
+    }
+
+    if (rt == BTM_SUCCESS) {
+        btsnd_hcic_ble_set_random_addr(random_bda);
+    }
+
+    if (btm_cb.ble_ctr_cb.inq_var.adv_mode == BTM_BLE_ADV_ENABLE) {
+        if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_ENABLE)) {
+            osi_sem_take(&adv_enable_sem, OSI_SEM_MAX_TIMEOUT);
+            rt = adv_enable_status;
+        } else {
+            rt = BTM_BAD_VALUE_RET;
+        }
+    }
+
+    if (BTM_BLE_IS_DISCO_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
+        if (btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, btm_cb.ble_ctr_cb.inq_var.scan_duplicate_filter)) {
+            osi_sem_take(&scan_enable_sem, OSI_SEM_MAX_TIMEOUT);
+            rt = scan_enable_status;
+        } else {
+            rt = BTM_BAD_VALUE_RET;
+        }
+    }
+
+    osi_mutex_unlock(&adv_enable_lock);
+    osi_mutex_unlock(&scan_enable_lock);
+
+    return rt;
+}
+
 
 /*******************************************************************************
 **
@@ -4248,10 +4301,11 @@ void btm_ble_read_remote_features_complete(UINT8 *p)
                     btsnd_hcic_rmt_ver_req (p_acl_cb->hci_handle);
                 }
                 else{
+                    uint16_t data_length = controller_get_interface()->get_ble_default_data_packet_length();
+                    uint16_t data_txtime = controller_get_interface()->get_ble_default_data_packet_txtime();
                     if (p_acl_cb->transport == BT_TRANSPORT_LE) {
-                        if (HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl_cb->peer_le_features)) {
-                            uint16_t data_length = controller_get_interface()->get_ble_default_data_packet_length();
-                            uint16_t data_txtime = controller_get_interface()->get_ble_default_data_packet_txtime();
+                        if (HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl_cb->peer_le_features) &&
+                            (p_acl_cb->data_length_params.tx_len != data_length)) {
                             p_acl_cb->data_len_updating = true;
                             btsnd_hcic_ble_set_data_length(p_acl_cb->hci_handle, data_length, data_txtime);
                         }

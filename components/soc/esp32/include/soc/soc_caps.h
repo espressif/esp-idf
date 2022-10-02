@@ -82,6 +82,8 @@
 #define SOC_I2S_SUPPORTED           1
 #define SOC_RMT_SUPPORTED           1
 #define SOC_SDM_SUPPORTED           1
+#define SOC_LEDC_SUPPORTED          1
+#define SOC_I2C_SUPPORTED           1
 #define SOC_SUPPORT_COEXISTENCE     1
 #define SOC_AES_SUPPORTED           1
 #define SOC_MPI_SUPPORTED           1
@@ -266,6 +268,7 @@
 #define SOC_SPI_DMA_CHAN_NUM            2
 
 #define SOC_SPI_PERIPH_CS_NUM(i)        3
+#define SOC_SPI_MAX_CS_NUM              3
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 #define SOC_SPI_MAX_PRE_DIVIDER         8192
@@ -390,4 +393,5 @@
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_BLE_MESH_SUPPORTED          (1)    /*!< Support BLE MESH */
 #define SOC_BT_CLASSIC_SUPPORTED        (1)    /*!< Support Bluetooth Classic hardware */

@@ -19,13 +19,9 @@ ESP-IDF 编程指南
     本文档仅包含针对 {IDF_TARGET_NAME} 芯片的 ESP-IDF 使用。
 
 ==================  ==================  ==================
-|快速入门|_          |API 参考|_         |H/W 参考|_
+|快速入门|_          |API 参考|_         |API 指南|_
 ------------------  ------------------  ------------------
-`快速入门`_          `API 参考`_         `H/W 参考`_
-------------------  ------------------  ------------------
-|API 指南|_          |贡献代码|_         |相关资源|_
-------------------  ------------------  ------------------
-`API 指南`_          `贡献代码`_         `相关资源`_
+`快速入门`_          `API 参考`_         `API 指南`_
 ==================  ==================  ==================
 
 .. |快速入门| image:: ../_static/get-started.png
@@ -34,19 +30,10 @@ ESP-IDF 编程指南
 .. |API 参考| image:: ../_static/api-reference.png
 .. _API 参考: api-reference/index.html
 
-.. |H/W 参考| image:: ../_static/hw-reference.png
-.. _H/W 参考: hw-reference/index.html
-
 .. |API 指南| image:: ../_static/api-guides.png
 .. _API 指南: api-guides/index.html
 
 .. _Libraries and Frameworks: libraries-and-frameworks/index.html
-
-.. |贡献代码| image:: ../_static/contribute.png
-.. _贡献代码: contribute/index.html
-
-.. |相关资源| image:: ../_static/resources.png
-.. _相关资源: resources.html
 
 
 .. toctree::
@@ -64,5 +51,3 @@ ESP-IDF 编程指南
    COPYRIGHT
    about
    languages
-
-* :ref:`genindex`

@@ -30,6 +30,24 @@ extern "C" {
 typedef intr_handle_t gpio_isr_handle_t;
 
 /**
+ * @brief GPIO interrupt handler
+ *
+ * @param arg User registered data
+ */
+typedef void (*gpio_isr_t)(void *arg);
+
+/**
+ * @brief Configuration parameters of GPIO pad for gpio_config function
+ */
+typedef struct {
+    uint64_t pin_bit_mask;          /*!< GPIO pin: set with bit mask, each bit maps to a GPIO */
+    gpio_mode_t mode;               /*!< GPIO mode: set input/output mode                     */
+    gpio_pullup_t pull_up_en;       /*!< GPIO pull-up                                         */
+    gpio_pulldown_t pull_down_en;   /*!< GPIO pull-down                                       */
+    gpio_int_type_t intr_type;      /*!< GPIO interrupt type                                  */
+} gpio_config_t;
+
+/**
  * @brief GPIO common configuration
  *
  *        Configure GPIO's Mode,pull-up,PullDown,IntrType
@@ -75,8 +93,7 @@ esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type);
  * @note ESP32: Please do not use the interrupt of GPIO36 and GPIO39 when using ADC or Wi-Fi and Bluetooth with sleep mode enabled.
  *       Please refer to the comments of `adc1_get_raw`.
  *       Please refer to Section 3.11 of <a href="https://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf">ESP32 ECO and Workarounds for Bugs</a> for the description of this issue.
- *       As a workaround, call adc_power_acquire() in the app. This will result in higher power consumption (by ~1mA),
- *       but will remove the glitches on GPIO36 and GPIO39.
+
  *
  * @param  gpio_num GPIO number. If you want to enable an interrupt on e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  *
@@ -255,7 +272,7 @@ esp_err_t gpio_pulldown_en(gpio_num_t gpio_num);
 esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
 
 /**
-  * @brief Install the driver's GPIO ISR handler service, which allows per-pin GPIO interrupt handlers.
+  * @brief Install the GPIO driver's ETS_GPIO_INTR_SOURCE ISR handler service, which allows per-pin GPIO interrupt handlers.
   *
   * This function is incompatible with gpio_isr_register() - if that function is used, a single global ISR is registered for all GPIO interrupts. If this function is used, the ISR service provides a global GPIO ISR and individual pin handlers are registered via the gpio_isr_handler_add() function.
   *

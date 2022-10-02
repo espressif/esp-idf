@@ -4,14 +4,19 @@
 import argparse
 import binascii
 import os
+import re
 import uuid
 from datetime import datetime
 from typing import List, Optional, Tuple
 
 from construct import BitsInteger, BitStruct, Int16ul
 
+# the regex pattern defines symbols that are allowed by long file names but not by short file names
+INVALID_SFN_CHARS_PATTERN = re.compile(r'[.+,;=\[\]]')
+
 FAT12_MAX_CLUSTERS: int = 4085
 FAT16_MAX_CLUSTERS: int = 65525
+RESERVED_CLUSTERS_COUNT: int = 2
 PAD_CHAR: int = 0x20
 FAT12: int = 12
 FAT16: int = 16
@@ -118,14 +123,11 @@ def lfn_checksum(short_entry_name: str) -> int:
 
 def convert_to_utf16_and_pad(content: str,
                              expected_size: int,
-                             pad: bytes = FULL_BYTE,
-                             terminator: bytes = b'\x00\x00') -> bytes:
+                             pad: bytes = FULL_BYTE) -> bytes:
     # we need to get rid of the Byte order mark 0xfeff or 0xfffe, fatfs does not use it
     bom_utf16: bytes = b'\xfe\xff'
     encoded_content_utf16: bytes = content.encode(LONG_NAMES_ENCODING)[len(bom_utf16):]
-    terminated_encoded_content_utf16: bytes = (encoded_content_utf16 + terminator) if (2 * expected_size > len(
-        encoded_content_utf16) > 0) else encoded_content_utf16
-    return terminated_encoded_content_utf16.ljust(2 * expected_size, pad)
+    return encoded_content_utf16.ljust(2 * expected_size, pad)
 
 
 def split_to_name_and_extension(full_name: str) -> Tuple[str, str]:
@@ -222,6 +224,10 @@ TIME_ENTRY = BitStruct(
     'minute' / BitsInteger(6),
     'second' / BitsInteger(5),
 )
+
+
+def build_name(name: str, extension: str) -> str:
+    return f'{name}.{extension}' if len(extension) > 0 else name
 
 
 def build_date_entry(year: int, mon: int, mday: int) -> int:

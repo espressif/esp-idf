@@ -17,6 +17,7 @@
 #include "hal/timer_hal.h"
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
+#include "esp_private/esp_int_wdt.h"
 
 #include "esp_private/panic_internal.h"
 #include "port/panic_funcs.h"
@@ -61,7 +62,11 @@
 bool g_panic_abort = false;
 static char *s_panic_abort_details = NULL;
 
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
+static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
+#else
 static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+#endif
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 

@@ -344,6 +344,12 @@ macro(project project_name)
     # Generate compile_commands.json (needs to come after project call).
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+    # If CMAKE_COLOR_DIAGNOSTICS not set in project CMakeLists.txt or in the environment,
+    # enable it by default.
+    if(NOT DEFINED CMAKE_COLOR_DIAGNOSTICS AND NOT DEFINED ENV{CMAKE_COLOR_DIAGNOSTICS})
+        set(CMAKE_COLOR_DIAGNOSTICS ON)
+    endif()
+
     # Since components can import third-party libraries, the original definition of project() should be restored
     # before the call to add components to the build.
     function(project)
@@ -518,8 +524,12 @@ macro(project project_name)
         set(mapfile "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.map")
         set(idf_target "${IDF_TARGET}")
         string(TOUPPER ${idf_target} idf_target)
-        target_link_libraries(${project_elf} PRIVATE "-Wl,--cref" "-Wl,--defsym=IDF_TARGET_${idf_target}=0"
-        "-Wl,--Map=\"${mapfile}\"")
+        # Add cross-reference table to the map file
+        target_link_options(${project_elf} PRIVATE "-Wl,--cref")
+        # Add this symbol as a hint for idf_size.py to guess the target name
+        target_link_options(${project_elf} PRIVATE "-Wl,--defsym=IDF_TARGET_${idf_target}=0")
+        # Enable map file output
+        target_link_options(${project_elf} PRIVATE "-Wl,--Map=${mapfile}")
         unset(idf_target)
     endif()
 

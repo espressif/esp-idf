@@ -46,7 +46,7 @@ Data type check is also performed when reading a value. An error is returned if 
 Namespaces
 ^^^^^^^^^^
 
-To mitigate potential conflicts in key names between different components, NVS assigns each key-value pair to one of namespaces. Namespace names follow the same rules as key names, i.e., the maximum length is 15 characters. Namespace name is specified in the :cpp:func:`nvs_open` or :cpp:type:`nvs_open_from_partition` call. This call returns an opaque handle, which is used in subsequent calls to the ``nvs_get_*``, ``nvs_set_*``, and :cpp:func:`nvs_commit` functions. This way, a handle is associated with a namespace, and key names will not collide with same names in other namespaces. Please note that the namespaces with the same name in different NVS partitions are considered as separate namespaces.
+To mitigate potential conflicts in key names between different components, NVS assigns each key-value pair to one of namespaces. Namespace names follow the same rules as key names, i.e., the maximum length is 15 characters. Furthermore, there can be no more than 254 different namespaces in one NVS partition. Namespace name is specified in the :cpp:func:`nvs_open` or :cpp:type:`nvs_open_from_partition` call. This call returns an opaque handle, which is used in subsequent calls to the ``nvs_get_*``, ``nvs_set_*``, and :cpp:func:`nvs_commit` functions. This way, a handle is associated with a namespace, and key names will not collide with same names in other namespaces. Please note that the namespaces with the same name in different NVS partitions are considered as separate namespaces.
 
 NVS Iterators
 ^^^^^^^^^^^^^
@@ -110,6 +110,11 @@ The XTS encryption keys in the :ref:`nvs_key_partition` can be generated in one 
     When NVS encryption is enabled the :cpp:func:`nvs_flash_init` API function can be used to initialize the encrypted default NVS partition. The API function internally generates the XTS encryption keys on the ESP chip. The API function finds the first :ref:`nvs_key_partition`. Then the API function automatically generates and stores the NVS keys in that partition by making use of the :cpp:func:`nvs_flash_generate_keys` API function provided by :component_file:`nvs_flash/include/nvs_flash.h`. New keys are generated and stored only when the respective key partition is empty. The same key partition can then be used to read the security configurations for initializing a custom encrypted NVS partition with help of :cpp:func:`nvs_flash_secure_init_partition`.
 
     The API functions :cpp:func:`nvs_flash_secure_init` and :cpp:func:`nvs_flash_secure_init_partition` do not generate the keys internally. When these API functions are used for initializing encrypted NVS partitions, the keys can be generated after startup using the :cpp:func:`nvs_flash_generate_keys` API function provided by ``nvs_flash.h``. The API function will then write those keys onto the key-partition in encrypted form.
+
+    .. note:: Please note that `nvs_keys` partition must be completely erased before starting the application in this approach. Otherwise the application may generate :c:macro:`ESP_ERR_NVS_CORRUPT_KEY_PART` error code assuming that `nvs_keys` partition was not empty and contains malformatted data. You can use the following command for this:
+        ::
+
+            parttool.py --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET erase_partition --partition-type=data --partition-subtype=nvs_keys
 
 2. Use pre-generated key partition:
 

@@ -68,7 +68,7 @@ typedef struct {
     int                     mclk;           /*!< MCK out pin, shared by tx/rx*/
 } i2s_controller_t;
 
-struct i2s_channel_t {
+struct i2s_channel_obj_t {
     /* Channel basic information */
     i2s_controller_t        *controller;    /*!< Parent pointer to controller object */
     i2s_comm_mode_t         mode;           /*!< i2s channel communication mode */
@@ -161,16 +161,15 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
  */
 uint32_t i2s_get_buf_size(i2s_chan_handle_t handle, uint32_t data_bit_width, uint32_t dma_frame_num);
 
-#if SOC_I2S_SUPPORTS_APLL
 /**
- * @brief Set mclk frequency and get the actuall APLL frequency
+ * @brief Get the frequency of the source clock
  *
+ * @param clk_src       clock source
  * @param mclk_freq_hz  Expected mclk frequenct in Hz
  * @return
- *  - Actuall APLL frequency
+ *      - Actual source clock frequency
  */
-uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz);
-#endif
+uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz);
 
 /**
  * @brief Check gpio validity and attach to corresponding signal

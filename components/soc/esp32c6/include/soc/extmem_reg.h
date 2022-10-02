@@ -32,10 +32,10 @@ extern "C" {
 #define EXTMEM_CACHE_WRAP_AROUND_CTRL_REG          (DR_REG_EXTMEM_BASE + 0x20)
 /* EXTMEM_DCACHE_WRAP : R/W ;bitpos:[4] ;default: 1'h0 ; */
 /*description: Set this bit as 1 to enable L1-DCache wrap around mode..*/
-#define EXTMEM_DCACHE_WRAP    (BIT(4))
-#define EXTMEM_DCACHE_WRAP_M  (BIT(4))
-#define EXTMEM_DCACHE_WRAP_V  0x1
-#define EXTMEM_DCACHE_WRAP_S  4
+#define EXTMEM_CACHE_FLASH_WRAP_AROUND    (BIT(4))
+#define EXTMEM_CACHE_FLASH_WRAP_AROUND_M  (BIT(4))
+#define EXTMEM_CACHE_FLASH_WRAP_AROUND_V  0x1
+#define EXTMEM_CACHE_FLASH_WRAP_AROUND_S  4
 
 #define EXTMEM_CACHE_TAG_MEM_POWER_CTRL_REG          (DR_REG_EXTMEM_BASE + 0x24)
 /* EXTMEM_DCACHE_TAG_MEM_FORCE_PU : R/W ;bitpos:[18] ;default: 1'h1 ; */

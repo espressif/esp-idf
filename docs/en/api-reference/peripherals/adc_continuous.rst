@@ -200,6 +200,7 @@ Dmax    Maximum of the output ADC raw digital reading result, which is 2^bitwidt
 
 To do further calbration to convert the ADC raw result to voltage in mV, please refer to calibration doc :doc:`adc_calibration`.
 
+.. _hardware_limitations_adc_continuous:
 
 Hardware Limitations
 ^^^^^^^^^^^^^^^^^^^^

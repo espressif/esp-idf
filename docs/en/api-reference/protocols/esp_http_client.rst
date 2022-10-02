@@ -6,7 +6,7 @@ Overview
 
 ``esp_http_client`` provides an API for making HTTP/S requests from ESP-IDF applications. The steps to use this API are as follows:
 
-    * :cpp:func:`esp_http_client_init`: Creates an :cpp:type:`esp_http_client_config_t` instance i.e. a HTTP client handle based on the given :cpp:type:`esp_http_client_config_t` configuration. This function must be the first to be called; default values will be assumed for the configuration values that are not explicitly defined by the user.
+    * :cpp:func:`esp_http_client_init`: Creates an :cpp:type:`esp_http_client_handle_t` instance i.e. a HTTP client handle based on the given :cpp:type:`esp_http_client_config_t` configuration. This function must be the first to be called; default values will be assumed for the configuration values that are not explicitly defined by the user.
     * :cpp:func:`esp_http_client_perform`: Performs all operations of the esp_http_client - opening the connection, exchanging data and closing the connection (as required), while blocking the current task until its completion. All related events will be invoked through the event handler (as specified in :cpp:type:`esp_http_client_config_t`).
     * :cpp:func:`esp_http_client_cleanup`: Closes the connection (if any) and frees up all the memory allocated to the HTTP client instance. This must be the last function to be called after the completion of operations.
 

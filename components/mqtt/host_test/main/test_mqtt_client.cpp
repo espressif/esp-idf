@@ -3,7 +3,6 @@
 
 extern "C" {
 #include "Mockesp_event.h"
-#include "Mockesp_log.h"
 #include "Mockesp_mac.h"
 #include "Mockesp_transport.h"
 #include "Mockesp_transport_ssl.h"
@@ -37,14 +36,12 @@ struct ClientInitializedFixture {
         int transport;
         int event_group;
         uint8_t mac[] = {0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55};
-        esp_log_write_Ignore();
         esp_timer_get_time_IgnoreAndReturn(0);
         xQueueTakeMutexRecursive_IgnoreAndReturn(true);
         xQueueGiveMutexRecursive_IgnoreAndReturn(true);
         xQueueCreateMutex_ExpectAnyArgsAndReturn(
             reinterpret_cast<QueueHandle_t>(&mtx));
         xEventGroupCreate_IgnoreAndReturn(reinterpret_cast<EventGroupHandle_t>(&event_group));
-        esp_log_timestamp_IgnoreAndReturn(0);
         esp_transport_list_init_IgnoreAndReturn(reinterpret_cast<esp_transport_list_handle_t>(&transport_list));
         esp_transport_tcp_init_IgnoreAndReturn(reinterpret_cast<esp_transport_handle_t>(&transport));
         esp_transport_ssl_init_IgnoreAndReturn(reinterpret_cast<esp_transport_handle_t>(&transport));

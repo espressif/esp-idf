@@ -154,7 +154,7 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
     cd ~/esp/esp-idf
     ./install.fish {IDF_TARGET_PATH_NAME}
 
-上述命令仅仅为 {IDF_TARGET_NAME} 安装所需工具。如果需要为多个目标芯片开发项目，则可以一次性指定多个目标，如下所示::
+上述命令仅仅为 {IDF_TARGET_NAME} 安装所需工具。如果需要为多个目标芯片开发项目，则可以一次性指定多个目标，如下所示：
 
 .. code-block:: bash
 
@@ -188,7 +188,6 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
      <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:xxx)
 
     可运行您电脑 Python 文件夹中的 ``Install Certificates.command`` 安装证书。了解更多信息，请参考 `安装 ESP-IDF 工具时出现的下载错误 <https://github.com/espressif/esp-idf/issues/4775>`_。
-
 
 下载工具备选方案
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

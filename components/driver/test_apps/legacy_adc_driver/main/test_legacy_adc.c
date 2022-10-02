@@ -27,14 +27,14 @@
 
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define ADC_TEST_LOW_VAL         0
-#define ADC_TEST_LOW_THRESH      25
+#define ADC_TEST_LOW_THRESH      35
 
 #define ADC_TEST_HIGH_VAL        8191
 #define ADC_TEST_HIGH_THRESH     10
 
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define ADC_TEST_LOW_VAL         0
-#define ADC_TEST_LOW_THRESH      50
+#define ADC_TEST_LOW_THRESH      60     //This is due to ADC2 accuracy is not as good as ADC1, and also we use weak pulldown
 
 #define ADC_TEST_HIGH_VAL        4095
 #define ADC_TEST_HIGH_THRESH     10
@@ -48,17 +48,11 @@
 
 #elif CONFIG_IDF_TARGET_ESP32C2
 #define ADC_TEST_LOW_VAL         2147
-#define ADC_TEST_LOW_THRESH      50
+#define ADC_TEST_LOW_THRESH      100
 
 #define ADC_TEST_HIGH_VAL        4095
 #define ADC_TEST_HIGH_THRESH     0
 
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define ADC_TEST_LOW_VAL         2147
-#define ADC_TEST_LOW_THRESH      50
-
-#define ADC_TEST_HIGH_VAL        4095
-#define ADC_TEST_HIGH_THRESH     0
 #endif
 
 //ADC Channels

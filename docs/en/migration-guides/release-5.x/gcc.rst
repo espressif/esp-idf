@@ -120,6 +120,16 @@ In other cases, it should be noted that enums have the ``int`` type.
 
 In common, ``int32_t`` and ``int``, as well as ``uint32_t`` and ``unsigned int``, are different types.
 
+If users do not make the aforementioned updates to format strings in their applications, the following error will be reported during compilation:
+
+.. code-block:: none
+    
+    /Users/name/esp/esp-rainmaker/components/esp-insights/components/esp_diagnostics/include/esp_diagnostics.h:238:29: error: format '%u' expects argument of type 'unsigned int', but argument 3 has type 'uint32_t' {aka 'long unsigned int'} [-Werror=format=]
+    238 |     esp_diag_log_event(tag, "EV (%u) %s: " format, esp_log_timestamp(), tag, ##__VA_ARGS__); \
+        |                             ^~~~~~~~~~~~~~         ~~~~~~~~~~~~~~~~~~~
+        |                                                    |
+        |                                                    uint32_t {aka long unsigned int}
+                                                  uint32_t {aka long unsigned int}
 
 Removing ``CONFIG_COMPILER_DISABLE_GCC8_WARNINGS`` Build Option
 ------------------------------------------------------------------

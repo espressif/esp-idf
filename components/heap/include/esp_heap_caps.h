@@ -58,8 +58,6 @@ esp_err_t heap_caps_register_failed_alloc_callback(esp_alloc_failed_hook_t callb
  *
  * Equivalent semantics to libc malloc(), for capability-aware memory.
  *
- * In IDF, ``malloc(p)`` is equivalent to ``heap_caps_malloc(p, MALLOC_CAP_8BIT)``.
- *
  * @param size Size, in bytes, of the amount of memory to allocate
  * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
  *                    of memory to be returned

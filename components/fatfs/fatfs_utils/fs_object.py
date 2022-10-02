@@ -12,8 +12,9 @@ from .fatfs_state import FATFSState
 from .long_filename_utils import (build_lfn_full_name, build_lfn_unique_entry_name_order,
                                   get_required_lfn_entries_count, split_name_to_lfn_entries,
                                   split_name_to_lfn_entry_blocks)
-from .utils import (DATETIME, MAX_EXT_SIZE, MAX_NAME_SIZE, FATDefaults, build_lfn_short_entry_name, lfn_checksum,
-                    required_clusters_count, split_content_into_sectors, split_to_name_and_extension)
+from .utils import (DATETIME, INVALID_SFN_CHARS_PATTERN, MAX_EXT_SIZE, MAX_NAME_SIZE, FATDefaults,
+                    build_lfn_short_entry_name, build_name, lfn_checksum, required_clusters_count,
+                    split_content_into_sectors, split_to_name_and_extension)
 
 
 class File:
@@ -45,7 +46,8 @@ class File:
         self._first_cluster = value
 
     def name_equals(self, name: str, extension: str) -> bool:
-        return self.name == name and self.extension == extension
+        equals_: bool = build_name(name, extension) == build_name(self.name, self.extension)
+        return equals_
 
     def write(self, content: bytes) -> None:
         self.entry.update_content_size(len(content))
@@ -112,7 +114,8 @@ class Directory:
         self._first_cluster = value
 
     def name_equals(self, name: str, extension: str) -> bool:
-        return self.name == name and self.extension == extension
+        equals_: bool = build_name(name, extension) == build_name(self.name, self.extension)
+        return equals_
 
     @property
     def entries_count(self) -> int:
@@ -141,7 +144,7 @@ class Directory:
 
     def lookup_entity(self, object_name: str, extension: str):  # type: ignore
         for entity in self.entities:
-            if entity.name == object_name and entity.extension == extension:
+            if build_name(entity.name, entity.extension) == build_name(object_name, extension):
                 return entity
         return None
 
@@ -210,7 +213,7 @@ class Directory:
         entries_count: int = get_required_lfn_entries_count(lfn_full_name)
 
         # entries in long file name entries chain starts with the last entry
-        split_names_reversed = reversed(list(enumerate(split_name_to_lfn_entries(lfn_full_name, entries_count))))
+        split_names_reversed = list(reversed(list(enumerate(split_name_to_lfn_entries(lfn_full_name, entries_count)))))
         for i, name_split_to_entry in split_names_reversed:
             order: int = i + 1
             blocks_: List[bytes] = split_name_to_lfn_entry_blocks(name_split_to_entry)
@@ -233,6 +236,13 @@ class Directory:
                                   time=time)
         return free_cluster, free_entry, target_dir
 
+    @staticmethod
+    def _is_valid_sfn(name: str, extension: str) -> bool:
+        if INVALID_SFN_CHARS_PATTERN.search(name) or INVALID_SFN_CHARS_PATTERN.search(name):
+            return False
+        ret: bool = len(name) <= MAX_NAME_SIZE and len(extension) <= MAX_EXT_SIZE
+        return ret
+
     def allocate_object(self,
                         name,
                         entity_type,
@@ -249,12 +259,10 @@ class Directory:
         target_dir: Directory = self if not path_from_root else self.recursive_search(path_from_root, self)
         free_entry: Entry = target_dir.find_free_entry() or target_dir.chain_directory()
 
-        name_fits_short_struct: bool = len(name) <= MAX_NAME_SIZE and len(extension) <= MAX_EXT_SIZE
-
         fatfs_date_ = (object_timestamp_.year, object_timestamp_.month, object_timestamp_.day)
         fatfs_time_ = (object_timestamp_.hour, object_timestamp_.minute, object_timestamp_.second)
 
-        if not self.fatfs_state.long_names_enabled or name_fits_short_struct:
+        if not self.fatfs_state.long_names_enabled or self._is_valid_sfn(name, extension):
             free_entry.allocate_entry(first_cluster_id=free_cluster.id,
                                       entity_name=name,
                                       entity_extension=extension,

@@ -75,6 +75,14 @@ config SOC_SDM_SUPPORTED
     bool
     default y
 
+config SOC_LEDC_SUPPORTED
+    bool
+    default y
+
+config SOC_I2C_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_SUPPORTED
     bool
     default y
@@ -355,6 +363,10 @@ config SOC_I2S_HW_VERSION_2
     bool
     default y
 
+config SOC_I2S_SUPPORTS_XTAL
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_PCM
     bool
     default y
@@ -530,6 +542,10 @@ config SOC_SDM_CHANNELS_PER_GROUP
 config SOC_SPI_PERIPH_NUM
     int
     default 2
+
+config SOC_SPI_MAX_CS_NUM
+    int
+    default 6
 
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
@@ -816,5 +832,9 @@ config SOC_WIFI_MESH_SUPPORT
     default y
 
 config SOC_BLE_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_MESH_SUPPORTED
     bool
     default y

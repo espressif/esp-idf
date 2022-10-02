@@ -1,4 +1,4 @@
-# A CMake script to run size tool commands supporting OUTPUT_FORMAT and
+# A CMake script to run size tool commands supporting SIZE_OUTPUT_FORMAT and
 # OUTPUT_JSON environment variables from within ninja or make or another
 # cmake-based build runner.
 #
@@ -12,10 +12,16 @@ cmake_minimum_required(VERSION 3.16)
 
 set(IDF_SIZE_CMD ${IDF_SIZE_TOOL})
 
-if(DEFINED ENV{SIZE_OUTPUT_FORMAT})
+if(NOT DEFINED ENV{SIZE_OUTPUT_FORMAT} OR "$ENV{SIZE_OUTPUT_FORMAT}" STREQUAL "default")
+    # Format not passed to "idf.py size" explicitly, or this target was invoked
+    # from make/ninja directly (without idf.py)
+    if(DEFINED OUTPUT_JSON AND OUTPUT_JSON)
+        # honor the legacy OUTPUT_JSON variable, if set
+        list(APPEND IDF_SIZE_CMD "--format=json")
+    endif()
+elseif(DEFINED ENV{SIZE_OUTPUT_FORMAT})
+    # specific format was requested
     list(APPEND IDF_SIZE_CMD "--format=$ENV{SIZE_OUTPUT_FORMAT}")
-elseif(DEFINED OUTPUT_JSON AND OUTPUT_JSON)
-    list(APPEND IDF_SIZE_CMD "--format=json")
 endif()
 
 if(DEFINED IDF_SIZE_MODE)

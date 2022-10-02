@@ -612,7 +612,6 @@ components/esp_system/include/esp_freertos_hooks.h
 components/esp_system/include/esp_int_wdt.h
 components/esp_system/include/esp_private/dbg_stubs.h
 components/esp_system/include/esp_private/panic_internal.h
-components/esp_system/include/esp_private/system_internal.h
 components/esp_system/include/esp_task.h
 components/esp_system/port/arch/riscv/expression_with_stack.c
 components/esp_system/port/arch/xtensa/expression_with_stack.c
@@ -703,7 +702,6 @@ components/hal/esp32/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32/include/hal/touch_sensor_hal.h
 components/hal/esp32/include/hal/trace_ll.h
 components/hal/esp32c3/hmac_hal.c
-components/hal/esp32c3/include/hal/aes_ll.h
 components/hal/esp32c3/include/hal/ds_ll.h
 components/hal/esp32c3/include/hal/hmac_hal.h
 components/hal/esp32c3/include/hal/hmac_ll.h
@@ -714,7 +712,6 @@ components/hal/esp32c3/include/hal/uhci_ll.h
 components/hal/esp32c3/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32c3/rtc_cntl_hal.c
 components/hal/esp32h2/hmac_hal.c
-components/hal/esp32h2/include/hal/aes_ll.h
 components/hal/esp32h2/include/hal/ds_ll.h
 components/hal/esp32h2/include/hal/hmac_hal.h
 components/hal/esp32h2/include/hal/hmac_ll.h
@@ -724,17 +721,14 @@ components/hal/esp32h2/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32h2/include/hal/uhci_ll.h
 components/hal/esp32h2/include/hal/uhci_types.h
 components/hal/esp32h2/include/hal/usb_serial_jtag_ll.h
-components/hal/esp32s2/include/hal/aes_ll.h
 components/hal/esp32s2/include/hal/crypto_dma_ll.h
 components/hal/esp32s2/include/hal/dac_hal.h
 components/hal/esp32s2/include/hal/dedic_gpio_ll.h
 components/hal/esp32s2/include/hal/mpu_ll.h
-components/hal/esp32s2/include/hal/rtc_io_ll.h
 components/hal/esp32s2/include/hal/sha_ll.h
 components/hal/esp32s2/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32s2/include/hal/trace_ll.h
 components/hal/esp32s2/include/hal/usb_ll.h
-components/hal/esp32s3/include/hal/aes_ll.h
 components/hal/esp32s3/include/hal/mpu_ll.h
 components/hal/esp32s3/include/hal/rwdt_ll.h
 components/hal/esp32s3/include/hal/sha_ll.h
@@ -761,7 +755,6 @@ components/hal/include/hal/twai_types.h
 components/hal/include/hal/uhci_types.h
 components/hal/include/hal/usb_hal.h
 components/hal/include/hal/usb_types_private.h
-components/hal/include/hal/wdt_hal.h
 components/hal/include/hal/wdt_types.h
 components/hal/ledc_hal_iram.c
 components/hal/mpu_hal.c
@@ -930,7 +923,6 @@ components/pthread/test/test_pthread_local_storage.c
 components/riscv/include/riscv/csr.h
 components/riscv/include/riscv/encoding.h
 components/riscv/include/riscv/instruction_decode.h
-components/riscv/include/riscv/riscv_interrupts.h
 components/riscv/include/riscv/rvruntime-frames.h
 components/riscv/instruction_decode.c
 components/sdmmc/sdmmc_common.c
@@ -1017,7 +1009,6 @@ components/soc/esp32c3/include/soc/fe_reg.h
 components/soc/esp32c3/include/soc/gpio_pins.h
 components/soc/esp32c3/include/soc/gpio_reg.h
 components/soc/esp32c3/include/soc/gpio_struct.h
-components/soc/esp32c3/include/soc/hwcrypto_reg.h
 components/soc/esp32c3/include/soc/i2c_reg.h
 components/soc/esp32c3/include/soc/i2c_struct.h
 components/soc/esp32c3/include/soc/interrupt_core0_reg.h
@@ -1045,7 +1036,6 @@ components/soc/esp32c3/include/soc/usb_serial_jtag_struct.h
 components/soc/esp32c3/include/soc/wdev_reg.h
 components/soc/esp32c3/interrupts.c
 components/soc/esp32c3/ledc_periph.c
-components/soc/esp32c3/spi_periph.c
 components/soc/esp32c3/uart_periph.c
 components/soc/esp32h2/i2c_periph.c
 components/soc/esp32h2/include/soc/apb_ctrl_reg.h
@@ -1060,7 +1050,6 @@ components/soc/esp32h2/include/soc/efuse_reg.h
 components/soc/esp32h2/include/soc/efuse_struct.h
 components/soc/esp32h2/include/soc/extmem_reg.h
 components/soc/esp32h2/include/soc/fe_reg.h
-components/soc/esp32h2/include/soc/hwcrypto_reg.h
 components/soc/esp32h2/include/soc/interrupt_reg.h
 components/soc/esp32h2/include/soc/ledc_reg.h
 components/soc/esp32h2/include/soc/nrx_reg.h
@@ -1084,7 +1073,6 @@ components/soc/esp32h2/include/soc/usb_serial_jtag_reg.h
 components/soc/esp32h2/include/soc/usb_serial_jtag_struct.h
 components/soc/esp32h2/include/soc/wdev_reg.h
 components/soc/esp32h2/ledc_periph.c
-components/soc/esp32h2/spi_periph.c
 components/soc/esp32h2/uart_periph.c
 components/soc/esp32s2/adc_periph.c
 components/soc/esp32s2/dac_periph.c
@@ -1105,7 +1093,6 @@ components/soc/esp32s2/include/soc/fe_reg.h
 components/soc/esp32s2/include/soc/gpio_pins.h
 components/soc/esp32s2/include/soc/gpio_reg.h
 components/soc/esp32s2/include/soc/gpio_sig_map.h
-components/soc/esp32s2/include/soc/hwcrypto_reg.h
 components/soc/esp32s2/include/soc/i2c_reg.h
 components/soc/esp32s2/include/soc/interrupt_reg.h
 components/soc/esp32s2/include/soc/ledc_reg.h
@@ -1141,7 +1128,6 @@ components/soc/esp32s2/include/soc/usb_wrap_struct.h
 components/soc/esp32s2/include/soc/usbh_struct.h
 components/soc/esp32s2/include/soc/wdev_reg.h
 components/soc/esp32s2/ledc_periph.c
-components/soc/esp32s2/spi_periph.c
 components/soc/esp32s2/uart_periph.c
 components/soc/esp32s2/usb_periph.c
 components/soc/esp32s3/dedic_gpio_periph.c
@@ -1172,7 +1158,6 @@ components/soc/esp32s3/include/soc/interrupt_core0_reg.h
 components/soc/esp32s3/include/soc/interrupt_core0_struct.h
 components/soc/esp32s3/include/soc/interrupt_core1_reg.h
 components/soc/esp32s3/include/soc/interrupt_core1_struct.h
-components/soc/esp32s3/include/soc/interrupt_reg.h
 components/soc/esp32s3/include/soc/interrupt_struct.h
 components/soc/esp32s3/include/soc/ledc_reg.h
 components/soc/esp32s3/include/soc/ledc_struct.h
@@ -1224,13 +1209,10 @@ components/soc/esp32s3/include/soc/usb_wrap_struct.h
 components/soc/esp32s3/include/soc/usbh_struct.h
 components/soc/esp32s3/include/soc/wdev_reg.h
 components/soc/esp32s3/ledc_periph.c
-components/soc/esp32s3/rtc_io_periph.c
 components/soc/esp32s3/sdio_slave_periph.c
 components/soc/esp32s3/sdmmc_periph.c
-components/soc/esp32s3/spi_periph.c
 components/soc/esp32s3/uart_periph.c
 components/soc/esp32s3/usb_periph.c
-components/soc/include/soc/adc_periph.h
 components/soc/include/soc/dac_periph.h
 components/soc/include/soc/dedic_gpio_periph.h
 components/soc/include/soc/emac_periph.h
@@ -1238,12 +1220,9 @@ components/soc/include/soc/gpio_periph.h
 components/soc/include/soc/i2c_periph.h
 components/soc/include/soc/interrupts.h
 components/soc/include/soc/ledc_periph.h
-components/soc/include/soc/rtc_cntl_periph.h
-components/soc/include/soc/rtc_periph.h
 components/soc/include/soc/sdio_slave_periph.h
 components/soc/include/soc/sdmmc_periph.h
 components/soc/include/soc/sens_periph.h
-components/soc/include/soc/syscon_periph.h
 components/soc/include/soc/twai_periph.h
 components/soc/include/soc/uart_periph.h
 components/soc/include/soc/uhci_periph.h
@@ -1275,8 +1254,6 @@ components/spi_flash/test/test_mmap.c
 components/spi_flash/test/test_out_of_bounds_write.c
 components/spi_flash/test/test_partition_ext.c
 components/spi_flash/test/test_spi_flash.c
-components/tcp_transport/include/esp_transport_ssl.h
-components/tcp_transport/include/esp_transport_tcp.h
 components/tcp_transport/include/esp_transport_ws.h
 components/tcp_transport/test/tcp_transport_fixtures.h
 components/tcp_transport/test/test_transport_basic.c
@@ -1284,7 +1261,6 @@ components/tcp_transport/test/test_transport_connect.c
 components/tcp_transport/test/test_transport_fixtures.c
 components/tcp_transport/transport_utils.c
 components/tinyusb/additions/include/tusb_config.h
-components/ulp/esp32ulp_mapgen.py
 components/ulp/test/esp32/test_ulp_as.c
 components/unity/include/priv/setjmp.h
 components/unity/include/unity_config.h

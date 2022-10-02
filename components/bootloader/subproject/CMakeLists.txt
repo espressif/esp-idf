@@ -57,7 +57,7 @@ idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
 idf_build_set_property(__OUTPUT_SDKCONFIG 0)
 project(bootloader)
 
-idf_build_set_property(COMPILE_DEFINITIONS "-DBOOTLOADER_BUILD=1" APPEND)
+idf_build_set_property(COMPILE_DEFINITIONS "BOOTLOADER_BUILD=1" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-fno-stack-protector" APPEND)
 
 idf_component_get_property(main_args esptool_py FLASH_ARGS)

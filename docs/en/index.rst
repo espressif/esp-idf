@@ -19,13 +19,9 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
     This document describes using ESP-IDF with the {IDF_TARGET_NAME} SoC.
 
 ==================  ==================  ==================
-|Get Started|_      |API Reference|_    |H/W Reference|_
+|Get Started|_      |API Reference|_    |API Guides|_
 ------------------  ------------------  ------------------
-`Get Started`_      `API Reference`_    `H/W Reference`_
-------------------  ------------------  ------------------
-|API Guides|_       |Contribute|_       |Resources|_
-------------------  ------------------  ------------------
-`API Guides`_       `Contribute`_       `Resources`_
+`Get Started`_      `API Reference`_    `API Guides`_
 ==================  ==================  ==================
 
 .. |Get Started| image:: ../_static/get-started.png
@@ -34,19 +30,10 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
 .. |API Reference| image:: ../_static/api-reference.png
 .. _API Reference: api-reference/index.html
 
-.. |H/W Reference| image:: ../_static/hw-reference.png
-.. _H/W Reference: hw-reference/index.html
-
 .. |API Guides| image:: ../_static/api-guides.png
 .. _API Guides: api-guides/index.html
 
 .. _Libraries and Frameworks: libraries-and-frameworks/index.html
-
-.. |Contribute| image:: ../_static/contribute.png
-.. _Contribute: contribute/index.html
-
-.. |Resources| image:: ../_static/resources.png
-.. _Resources: resources.html
 
 
 .. toctree::
@@ -64,5 +51,3 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
    COPYRIGHT
    about
    languages
-
-* :ref:`genindex`

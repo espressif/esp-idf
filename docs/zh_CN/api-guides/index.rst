@@ -14,7 +14,7 @@ API 指南
    :SOC_RTC_MEM_SUPPORTED: deep-sleep-stub
    :SOC_USB_OTG_SUPPORTED: dfu
    error-handling
-   :SOC_BT_SUPPORTED: esp-ble-mesh/ble-mesh-index
+   :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh/ble-mesh-index
    freertos-smp
    :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
    event-handling

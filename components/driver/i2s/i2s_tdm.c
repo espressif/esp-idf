@@ -49,17 +49,16 @@ static esp_err_t i2s_tdm_calculate_clock(i2s_chan_handle_t handle, const i2s_tdm
             }
         } while (clk_info->bclk_div <= 2);
     } else {
-        /* For slave mode, mclk >= bclk * 8, so fix bclk_div to 2 first */
-        clk_info->bclk_div = 8;
+        if (clk_cfg->bclk_div < 8) {
+            ESP_LOGW(TAG, "the current bclk division is too small, adjust the bclk division to 8");
+            clk_info->bclk_div = 8;
+        } else {
+            clk_info->bclk_div = clk_cfg->bclk_div;
+        }
         clk_info->bclk = rate * handle->total_slot * slot_bits;
         clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
     }
-
-#if SOC_I2S_SUPPORTS_APLL
-    clk_info->sclk = clk_cfg->clk_src == I2S_CLK_SRC_APLL ? i2s_set_get_apll_freq(clk_info->mclk) : I2S_LL_BASE_CLK;
-#else
-    clk_info->sclk = I2S_LL_BASE_CLK;
-#endif
+    clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
     /* Check if the configuration is correct */

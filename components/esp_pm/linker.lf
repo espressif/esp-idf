@@ -33,16 +33,24 @@ entries:
         freertos_hooks:esp_vApplicationIdleHook (noflash)
     if PM_SLP_IRAM_OPT = y:
         task_wdt:idle_hook_cb (noflash)
-        task_wdt:reset_hw_timer (noflash)
+        task_wdt:task_wdt_timer_feed (noflash)
         task_wdt:find_entry_and_check_all_reset (noflash)
         task_wdt:find_entry_from_task_handle_and_check_all_reset (noflash)
         task_wdt:esp_task_wdt_reset (noflash)
         task_wdt:esp_task_wdt_reset_user (noflash)
+        if ESP_TASK_WDT_USE_ESP_TIMER = y:
+            task_wdt_impl_esp_timer:esp_task_wdt_impl_timer_feed (noflash)
+        else:
+            task_wdt_impl_timergroup:esp_task_wdt_impl_timer_feed (noflash)
 
 [mapping:esp_timer_pm]
 archive: libesp_timer.a
 entries:
     if PM_SLP_IRAM_OPT = y:
+        # esp_timer_feed is called from task_wdt_timer_feed, so put it
+        # in IRAM if task_wdt_timer_feed itself is in IRAM.
+        if ESP_TASK_WDT_USE_ESP_TIMER = y:
+            esp_timer:esp_timer_feed (noflash)
         if ESP_TIMER_IMPL_TG0_LAC = y:
             esp_timer_impl_lac:esp_timer_impl_lock (noflash)
             esp_timer_impl_lac:esp_timer_impl_unlock (noflash)
