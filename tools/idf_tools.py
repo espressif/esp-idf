@@ -1879,11 +1879,19 @@ def get_requirements(new_features):  # type: (str) -> list[str]
     return [feature_to_requirements_path(feature) for feature in features]
 
 
-def get_constraints(idf_version):  # type: (str) -> str
+def get_constraints(idf_version, online=True):  # type: (str, bool) -> str
     constraint_file = 'espidf.constraints.v{}.txt'.format(idf_version)
     constraint_path = os.path.join(global_idf_tools_path or '', constraint_file)
     constraint_url = '/'.join([IDF_DL_URL, constraint_file])
     temp_path = constraint_path + '.tmp'
+
+    if not online:
+        if os.path.isfile(constraint_path):
+            return constraint_path
+        else:
+            fatal(f'{constraint_path} doesn\'t exist. Perhaps you\'ve forgotten to run the install scripts. '
+                  f'Please check the installation guide for more information.')
+            raise SystemExit(1)
 
     mkdir_p(os.path.dirname(temp_path))
 
@@ -2060,7 +2068,7 @@ def action_check_python_dependencies(args):  # type: ignore
         raise SystemExit(1)
 
     if use_constraints:
-        constr_path = get_constraints(idf_version)
+        constr_path = get_constraints(idf_version, online=False)  # keep offline for checking
         info('Constraint file: {}'.format(constr_path))
 
     info('Requirement files:')
