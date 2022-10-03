@@ -6,7 +6,6 @@ set(priv_requires efuse spi_flash bootloader_support)
 set(srcs "cpu.c" "esp_memory_utils.c")
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "esp_clk.c"
-                     "esp_hmac.c"
                      "clk_ctrl_os.c"
                      "hw_random.c"
                      "intr_alloc.c"
@@ -44,6 +43,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED)
         list(APPEND srcs "port/${target}/systimer.c")
+    endif()
+
+    if(CONFIG_SOC_HMAC_SUPPORTED)
+        list(APPEND srcs "esp_hmac.c")
     endif()
 
     # ESP32C6-TODO
