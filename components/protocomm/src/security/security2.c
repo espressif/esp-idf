@@ -90,6 +90,11 @@ static esp_err_t handle_session_command0(session_t *cur_session,
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (sv == NULL) {
+        ESP_LOGE(TAG, "Invalid security params");
+        return ESP_ERR_INVALID_ARG;
+    }
+
     cur_session->username_len = in->sc0->client_username.len;
     cur_session->username = calloc(cur_session->username_len, sizeof(char));
     if (!cur_session->username) {
@@ -129,7 +134,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     cur_session->verifier_len = sv->verifier_len;
     ESP_LOGI(TAG, "Using salt and verifier to generate public key...");
 
-    if (sv != NULL && sv->salt != NULL && sv->salt_len != 0 && sv->verifier != NULL && sv->verifier_len != 0) {
+    if (sv->salt != NULL && sv->salt_len != 0 && sv->verifier != NULL && sv->verifier_len != 0) {
         if (esp_srp_set_salt_verifier(cur_session->srp_hd, cur_session->salt, cur_session->salt_len, cur_session->verifier, cur_session->verifier_len) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set salt and verifier!");
             return ESP_FAIL;
@@ -141,9 +146,8 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     }
 
     hexdump("Device Public Key", device_pubkey, device_pubkey_len);
-
     if (esp_srp_get_session_key(cur_session->srp_hd, cur_session->client_pubkey, cur_session->client_pubkey_len,
-                                &cur_session->session_key, (int *)&cur_session->session_key_len) != ESP_OK) {
+                                &cur_session->session_key, &cur_session->session_key_len) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate device session key!");
         return ESP_FAIL;
     }
@@ -225,6 +229,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     mbed_err = mbedtls_gcm_setkey(&cur_session->ctx_gcm, MBEDTLS_CIPHER_ID_AES, (unsigned char *)cur_session->session_key, AES_GCM_KEY_LEN);
     if (mbed_err != 0) {
         ESP_LOGE(TAG, "Failure at mbedtls_gcm_setkey_enc with error code : -0x%x", -mbed_err);
+        free(device_proof);
         mbedtls_gcm_free(&cur_session->ctx_gcm);
         return ESP_FAIL;
     }
@@ -233,6 +238,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     S2SessionResp1 *out_resp = (S2SessionResp1 *) malloc(sizeof(S2SessionResp1));
     if (!out || !out_resp) {
         ESP_LOGE(TAG, "Error allocating memory for response1");
+        free(device_proof);
         free(out);
         free(out_resp);
         mbedtls_gcm_free(&cur_session->ctx_gcm);
