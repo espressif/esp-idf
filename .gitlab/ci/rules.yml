@@ -53,6 +53,7 @@
   - "tools/ci/test_build_system*.sh"
   - "tools/ci/test_build_system*.py"
   - "tools/ci/ci_build_apps.py"
+  - "tools/test_build_system/**/*"
 
 .patterns-custom_test: &patterns-custom_test
   - "components/espcoredump/**/*"
