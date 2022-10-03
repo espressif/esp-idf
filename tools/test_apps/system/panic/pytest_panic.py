@@ -6,8 +6,7 @@ from pprint import pformat
 from typing import List, Optional
 
 import pytest
-
-from conftest import PanicTestDut
+from test_panic_util import PanicTestDut
 
 CONFIGS = [
     pytest.param('coredump_flash_bin_crc', marks=[pytest.mark.esp32, pytest.mark.esp32s2]),
