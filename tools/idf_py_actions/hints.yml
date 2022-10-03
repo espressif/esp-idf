@@ -228,3 +228,36 @@
     re: "fatal error: (esp_rom_tjpgd.h): No such file or directory"
     hint: "{} was removed. Please use esp_jpeg component from IDF component manager instead.\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details."
     match_to_output: True
+
+-
+    re: "(fatal error: tcpip_adapter.h: No such file or directory|error: implicit declaration of function 'tcpip_adapter_init')"
+    hint: "TCP/IP adapter compatibility layer has been removed. Please migrate to ESP-NETIF.\nRefer to the Networking migration guide, section TCP/IP adapter, for more details."
+
+-
+    re: "error: macro \"(ETH_\\w+_CONFIG)\" requires 2 arguments, but only 1 given"
+    hint: "Macro {} now accepts both SPI host and SPI device related configuration. The SPI-Ethernet Module initialization has been simplified to allocate an SPI device internally so the configuration structure requires the related configuration.\nPlease refer to the Networking migration guide, section SPI-Ethernet Module Initialization, for more details."
+    match_to_output: True
+
+-
+    re: "error: implicit declaration of function '(esp_eth_detect_phy_addr)'"
+    hint: "Function {}() has been renamed to esp_eth_phy_802_3_detect_phy_addr().\nPlease refer to the Networking migration guide, section PHY Address Auto-detect, for more details."
+    match_to_output: True
+
+-
+    re: "error: too few arguments to function '(esp_eth_mac_\\w+)'"
+    hint: "Function {}() has been refactored to accept device specific configuration and MAC specific configuration.\nPlease refer to the Ethernet section of Networking migration guide for more details."
+    match_to_output: True
+
+-
+    re: "error: implicit declaration of function 'esp_eth_phy_new_{}'"
+    hint: "Function {}() has been removed, please use {}() instead.\nPlease refer to the Networking migration guide, section PHY Address Auto-detect, for more details."
+    variables:
+        -
+            re_variables: ['ksz8081']
+            hint_variables: ['esp_eth_phy_new_ksz8081', 'esp_eth_phy_new_ksz80xx']
+        -
+            re_variables: ['ksz8041']
+            hint_variables: ['esp_eth_phy_new_ksz8041', 'esp_eth_phy_new_ksz80xx']
+        -
+            re_variables: ['lan8720']
+            hint_variables: ['esp_eth_phy_new_lan8720', 'esp_eth_phy_new_lan87xx']
