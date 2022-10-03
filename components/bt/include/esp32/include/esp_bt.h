@@ -186,7 +186,7 @@ the adv packet will be discarded until the memory is restored. */
 }
 
 #else
-#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable bluetooth in menuconfig to use bt.h");
+#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable bluetooth in menuconfig to use esp_bt.h");
 #endif
 
 /**
