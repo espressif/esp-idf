@@ -278,7 +278,7 @@ typedef enum {
  * @brief IP address and port
  */
 typedef struct {
-    ip4_addr_t ip4;    /**< IP address */
+    esp_ip4_addr_t ip4;    /**< IP address */
     uint16_t port;     /**< port */
 } __attribute__((packed)) mip_t;
 

@@ -164,7 +164,11 @@ extern "C" {
 /**
  * LWIP_IPV4==1: Enable IPv4
  */
+#ifdef CONFIG_LWIP_IPV4
 #define LWIP_IPV4                       1
+#else
+#define LWIP_IPV4                       0
+#endif
 
 /**
  * IP_REASSEMBLY==1: Reassemble incoming fragmented IP4 packets. Note that
@@ -273,6 +277,7 @@ extern "C" {
    ---------- DHCP options ----------
    ----------------------------------
 */
+#if CONFIG_LWIP_IPV4
 /**
  * LWIP_DHCP==1: Enable DHCP module.
  */
@@ -381,6 +386,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define LWIP_HOOK_DHCP_APPEND_OPTIONS(netif, dhcp, state, msg, msg_type, options_len_ptr) \
         dhcp_append_extra_opts(netif, state, msg, options_len_ptr);
 
+#endif /* CONFIG_LWIP_IPV4 */
 /*
    ------------------------------------
    ---------- AUTOIP options ----------
@@ -1543,6 +1549,14 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define mem_clib_malloc malloc
 #define mem_clib_calloc calloc
 #endif /* CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP */
+
+
+/*
+ * Check if the lwIP configuration is sane
+ */
+#if !LWIP_IPV4 && !LWIP_IPV6
+#error "Please enable at least one IP stack (either IPv4 or IPv6 or both)"
+#endif
 
 #ifdef __cplusplus
 }

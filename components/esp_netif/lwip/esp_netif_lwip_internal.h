@@ -9,7 +9,9 @@
 #include "esp_netif.h"
 #include "esp_netif_ppp.h"
 #include "lwip/netif.h"
+#ifdef CONFIG_LWIP_DHCPS
 #include "dhcpserver/dhcpserver.h"
+#endif
 
 struct esp_netif_api_msg_s;
 

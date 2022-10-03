@@ -6,21 +6,36 @@ menu "Example Connection Configuration"
         default n
 
     if EXAMPLE_CONNECT_LWIP_TAPIF
+        config EXAMPLE_CONNECT_IPV4
+            bool
+            depends on LWIP_IPV4
+            default y
+
+        config EXAMPLE_CONNECT_IPV6
+            bool "Obtain IPv6 address"
+            depends on LWIP_IPV6
+            default y
+            help
+                Set to true to setup link local address and wait until it's valid
+
         config EXAMPLE_CONNECT_TAPIF_IP_ADDR
             string "Static IP address"
             default "192.168.5.100"
+            depends on EXAMPLE_CONNECT_IPV4
             help
                 Set static IP address.
 
         config EXAMPLE_CONNECT_TAPIF_NETMASK
             string "Static netmask address"
             default "255.255.255.0"
+            depends on EXAMPLE_CONNECT_IPV4
             help
                 Set static netmask address.
 
         config EXAMPLE_CONNECT_TAPIF_GW
             string "Static gateway address"
             default "192.168.5.1"
+            depends on EXAMPLE_CONNECT_IPV4
             help
                 Set static gateway address.
 

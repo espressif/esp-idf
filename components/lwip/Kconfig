@@ -147,6 +147,7 @@ menu "LWIP"
     config LWIP_IP4_FRAG
         bool "Enable fragment outgoing IP4 packets"
         default y
+        depends on LWIP_IPV4
         help
             Enabling this option allows fragmenting outgoing IP4 packets if their size
             exceeds MTU.
@@ -162,6 +163,7 @@ menu "LWIP"
     config LWIP_IP4_REASSEMBLY
         bool "Enable reassembly incoming fragmented IP4 packets"
         default n
+        depends on LWIP_IPV4
         help
             Enabling this option allows reassemblying incoming fragmented IP4 packets.
 
@@ -201,6 +203,7 @@ menu "LWIP"
     config LWIP_ESP_GRATUITOUS_ARP
         bool "Send gratuitous ARP periodically"
         default y
+        depends on LWIP_IPV4
         help
             Enable this option allows to send gratuitous ARP periodically.
 
@@ -227,6 +230,7 @@ menu "LWIP"
     config LWIP_DHCP_DOES_ARP_CHECK
         bool "DHCP: Perform ARP check on any offered address"
         default y
+        depends on LWIP_IPV4
         help
             Enabling this option performs a check (via ARP request) if the offered IP address
             is not already in use by another host on the network.
@@ -234,6 +238,7 @@ menu "LWIP"
     config LWIP_DHCP_DISABLE_CLIENT_ID
         bool "DHCP: Disable Use of HW address as client identification"
         default n
+        depends on LWIP_IPV4
         help
             This option could be used to disable DHCP client identification with its MAC address.
             (Client id is used by DHCP servers to uniquely identify clients and are included
@@ -243,6 +248,7 @@ menu "LWIP"
     config LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
         bool "DHCP: Disable Use of vendor class identification"
         default y
+        depends on LWIP_IPV4
         help
             This option could be used to disable DHCP client vendor class identification.
             Set this option to "y" in order to exclude option 60 from DHCP packets.
@@ -250,6 +256,7 @@ menu "LWIP"
     config LWIP_DHCP_RESTORE_LAST_IP
         bool "DHCP: Restore last IP obtained from DHCP server"
         default n
+        depends on LWIP_IPV4
         help
             When this option is enabled, DHCP client tries to re-obtain last valid IP address obtained from DHCP
             server. Last valid DHCP configuration is stored in nvs and restored after reset/power-up. If IP is still
@@ -260,6 +267,7 @@ menu "LWIP"
         default 68 if LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
         default 108 if !LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
         range 68 255
+        depends on LWIP_IPV4
         help
             Set total length of outgoing DHCP option msg. Generally bigger value means it can carry more
             options and values. If your code meets LWIP_ASSERT due to option value is too long.
@@ -285,6 +293,7 @@ menu "LWIP"
         config LWIP_DHCPS
             bool "DHCPS: Enable IPv4 Dynamic Host Configuration Protocol Server (DHCPS)"
             default y
+            depends on LWIP_IPV4
             help
                 Enabling this option allows the device to run the DHCP server
                 (to dynamically assign IPv4 addresses to clients).
@@ -314,6 +323,7 @@ menu "LWIP"
     menuconfig LWIP_AUTOIP
         bool "Enable IPV4 Link-Local Addressing (AUTOIP)"
         default n
+        depends on LWIP_IPV4
         help
             Enabling this option allows the device to self-assign an address
             in the 169.256/16 range if none is assigned statically or via DHCP.
@@ -351,6 +361,12 @@ menu "LWIP"
         help
             If rate limiting self-assignment requests, wait this long between
             each request.
+
+    config LWIP_IPV4
+        bool "Enable IPv4"
+        default y
+        help
+            Enable IPv4 stack. If you want to use IPv6 only TCP/IP stack, disable this.
 
     config LWIP_IPV6
         bool "Enable IPv6"

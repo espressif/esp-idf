@@ -182,14 +182,21 @@ static esp_err_t esp_tls_hostname_to_fd(const char *host, size_t hostlen, int po
         return ESP_ERR_ESP_TLS_CANNOT_CREATE_SOCKET;
     }
 
+#if CONFIG_LWIP_IPV4
     if (address_info->ai_family == AF_INET) {
         struct sockaddr_in *p = (struct sockaddr_in *)address_info->ai_addr;
         p->sin_port = htons(port);
         ESP_LOGD(TAG, "[sock=%d] Resolved IPv4 address: %s", *fd, ipaddr_ntoa((const ip_addr_t*)&p->sin_addr.s_addr));
         memcpy(address, p, sizeof(struct sockaddr ));
     }
+#endif
+
+#if defined(CONFIG_LWIP_IPV4) && defined(CONFIG_LWIP_IPV6)
+    else
+#endif
+
 #if CONFIG_LWIP_IPV6
-    else if (address_info->ai_family == AF_INET6) {
+    if (address_info->ai_family == AF_INET6) {
         struct sockaddr_in6 *p = (struct sockaddr_in6 *)address_info->ai_addr;
         p->sin6_port = htons(port);
         p->sin6_family = AF_INET6;

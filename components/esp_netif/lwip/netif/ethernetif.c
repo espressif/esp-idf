@@ -36,7 +36,7 @@
 static void ethernet_low_level_init(struct netif *netif)
 {
     /* set MAC hardware address length */
-    netif->hwaddr_len = ETHARP_HWADDR_LEN;
+    netif->hwaddr_len = ETH_HWADDR_LEN;
 
     /* maximum transfer unit */
     netif->mtu = 1500;
@@ -170,7 +170,9 @@ err_t ethernetif_init(struct netif *netif)
 
     netif->name[0] = IFNAME0;
     netif->name[1] = IFNAME1;
+#if LWIP_IPV4
     netif->output = etharp_output;
+#endif
 #if LWIP_IPV6
     netif->output_ip6 = ethip6_output;
 #endif /* LWIP_IPV6 */

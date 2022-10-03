@@ -354,6 +354,14 @@ lwIP IPv6
 
       IPv6 is required by some components such as ``coap`` and :doc:`/api-reference/protocols/asio`, These components will not be available if IPV6 is disabled.
 
+lwIP IPv4
+@@@@@@@@@
+
+- If IPv4 connectivity is not required, setting :ref:`CONFIG_LWIP_IPV4` to false will reduce the size of the lwIP, supporting IPv6 only TCP/IP stack.
+
+  .. note::
+
+      Before disabling IPv4 support, please note that IPv6 only network environments are not ubiquitous and must be supported in the local network, e.g. by your internet service provider or using constrained local network settings.
 
 .. _newlib-nano-formatting:
 

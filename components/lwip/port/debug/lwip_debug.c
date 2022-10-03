@@ -15,10 +15,12 @@
 #include "lwip/memp.h"
 #include "esp_log.h"
 
-#if CONFIG_LWIP_IPV6
+#if CONFIG_LWIP_IPV6 && CONFIG_LWIP_IPV4
 #define DBG_LWIP_IP_SHOW(info, ip)  ESP_LWIP_LOGI("%s type=%d ip=%x", (info), (ip).type, (ip).u_addr.ip4.addr)
-#else
+#elif CONFIG_LWIP_IPV4
 #define DBG_LWIP_IP_SHOW(info, ip)  ESP_LWIP_LOGI("%s type=%d ip=%x", (info), IPADDR_TYPE_V4, (ip).addr)
+#elif CONFIG_LWIP_IPV6
+#define DBG_LWIP_IP_SHOW(info, ip)  ESP_LWIP_LOGI("%s type=%d ip=%x,%x,5x,%x", (info), IPADDR_TYPE_V6, (ip).addr[0], (ip).addr[1], (ip).addr[2], (ip).addr[3])
 #endif
 #define DBG_LWIP_IP_PCB_SHOW(pcb) \
         DBG_LWIP_IP_SHOW("local ip", (pcb)->local_ip);\

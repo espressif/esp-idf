@@ -54,7 +54,7 @@ To install the dependency packages needed, please refer to the top level [README
 ```
 idf.py menuconfig
 ```
-* Set the BLE/Soft AP transport under "Example Configuration" options. ESP32-S2 will have only SoftAP option.
+* Set the BLE/Soft AP transport under "Example Configuration" options. ESP32-S2 will have only SoftAP option (SoftAP option cannot be used if IPv4 is disabled in lwIP)
 
 ### Build and Flash
 

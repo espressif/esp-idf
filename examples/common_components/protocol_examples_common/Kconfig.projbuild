@@ -306,6 +306,11 @@ menu "Example Connection Configuration"
                 Set PHY address according your board schematic.
     endif # EXAMPLE_CONNECT_ETHERNET
 
+    config EXAMPLE_CONNECT_IPV4
+        bool
+        depends on LWIP_IPV4
+        default y
+
     config EXAMPLE_CONNECT_IPV6
         depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET
         bool "Obtain IPv6 address"
