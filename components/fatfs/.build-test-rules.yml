@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/fatfs/test_apps/sdcard:
+  disable_test:
+    - if: IDF_TARGET in ["esp32s3", "esp32c2"]
+      temporary: true
+      reason: No sdspi runners for these targets
