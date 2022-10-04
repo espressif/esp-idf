@@ -16,7 +16,6 @@
 #include "esp_heap_caps.h"
 #include "spi_flash_mmap.h"
 #include "unity.h"
-#include "test_utils.h"
 #include "esp_rom_sys.h"
 
 //Definitions used in multiple test cases
@@ -678,7 +677,7 @@ TEST_CASE("Test ring buffer with queue sets", "[esp_ringbuf]")
     }
     //Create a task to send items to each ring buffer
     int no_of_items = BUFFER_SIZE / SMALL_ITEM_SIZE;
-    xTaskCreatePinnedToCore(queue_set_receiving_task, "rec tsk", 2048, (void *)queue_set, UNITY_FREERTOS_PRIORITY + 1, NULL, 0);
+    xTaskCreatePinnedToCore(queue_set_receiving_task, "rec tsk", 2048, (void *)queue_set, 10, NULL, 0);
 
     //Send multiple items to each type of ring buffer
     for (int i = 0; i < no_of_items; i++) {
@@ -695,6 +694,7 @@ TEST_CASE("Test ring buffer with queue sets", "[esp_ringbuf]")
         vRingbufferDelete(buffer_handles[i]);
     }
     vQueueDelete(queue_set);
+    vTaskDelay(1);
 }
 
 /* -------------------------- Test ring buffer ISR -----------------------------
@@ -1019,6 +1019,7 @@ TEST_CASE("Test static ring buffer SMP", "[esp_ringbuf]")
 }
 #endif
 
+#if !CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH && !CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
 /* -------------------------- Test ring buffer IRAM ------------------------- */
 
 static IRAM_ATTR __attribute__((noinline)) bool iram_ringbuf_test(void)
@@ -1044,3 +1045,4 @@ TEST_CASE("Test ringbuffer functions work with flash cache disabled", "[esp_ring
 {
     TEST_ASSERT( iram_ringbuf_test() );
 }
+#endif /* !CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH && !CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH */
