@@ -180,6 +180,11 @@
 #else
 #define MYNEWT_VAL_BLE_CONN_SUBRATING (CONFIG_BT_NIMBLE_SUBRATE)
 #endif
+#ifndef CONFIG_BT_NIMBLE_PERIODIC_ADV_ENH
+#define MYNEWT_VAL_BLE_PERIODIC_ADV_ENH (0)
+#else
+#define MYNEWT_VAL_BLE_PERIODIC_ADV_ENH (CONFIG_BT_NIMBLE_PERIODIC_ADV_ENH)
+#endif
 
 /*** @apache-mynewt-nimble/nimble/controller */
 /*** @apache-mynewt-nimble/nimble/controller */

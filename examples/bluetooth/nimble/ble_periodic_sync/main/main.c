@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -122,6 +122,13 @@ periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
             memcpy(&adv_sid, &disc->sid, sizeof(disc->sid));
             params.skip = 10;
             params.sync_timeout = 1000;
+
+#if CONFIG_EXAMPLE_PERIODIC_ADV_ENH
+            /* This way the periodic advertising reports will not be
+            delivered to host unless the advertising data is changed
+            or the Data-Id is updated by the advertiser */
+            params.filter_duplicates = 1;
+#endif
             rc = ble_gap_periodic_adv_sync_create(&addr, adv_sid, &params, periodic_sync_gap_event, NULL);
             assert(rc == 0);
         }
