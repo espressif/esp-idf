@@ -567,6 +567,12 @@ if BT_NIMBLE_EXT_ADV
         help
                 This enables controller transfer periodic sync events to host
 
+    config BT_NIMBLE_PERIODIC_ADV_ENH
+        bool "Periodic adv enhancements(adi support)"
+        depends on BT_NIMBLE_ENABLE_PERIODIC_ADV && SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+        help
+            Enable the periodic advertising enhancements
+
 endif
 
 config BT_NIMBLE_MAX_PERIODIC_SYNCS
