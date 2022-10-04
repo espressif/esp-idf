@@ -137,10 +137,3 @@ IP Addresses
 You are advised to use esp-netif defined IP structures. Please note that with default compatibility enabled, the LwIP structs will still work.
 
 *  :component_file:`esp-netif IP address definitions <esp_netif/include/esp_netif_ip_addr.h#L96>`
-
-Next Steps
-^^^^^^^^^^
-
-To port an application which may fully benefit from the :doc:`/api-reference/network/esp_netif`, you also need to disable the tcpip_adapter compatibility layer in the component configuration option. Please go to ``ESP NETIF Adapter`` > ``Enable backward compatible tcpip_adapter interface``. After that, check if your project compiles.
-
-The TCP/IP adapter includes many dependencies. Thus, disabling its compatibility might help separate the application from using specific TCP/IP stack API directly.
