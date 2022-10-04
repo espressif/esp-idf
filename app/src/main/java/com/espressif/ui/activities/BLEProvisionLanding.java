@@ -42,28 +42,26 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 
 import com.espressif.AppConstants;
-import com.espressif.wifi_provisioning.BuildConfig;
-import com.espressif.wifi_provisioning.R;
 import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
-import com.espressif.provisioning.ESPProvisionManager;
 import com.espressif.provisioning.listeners.BleScanListener;
 import com.espressif.ui.adapters.BleDeviceListAdapter;
 import com.espressif.ui.models.BleDevice;
+import com.espressif.ui.utils.Utils;
+import com.espressif.wifi_provisioning.BuildConfig;
+import com.espressif.wifi_provisioning.R;
 
-import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class BLEProvisionLanding extends AppCompatActivity {
+public class BLEProvisionLanding extends ManualProvBaseActivity {
 
     private static final String TAG = BLEProvisionLanding.class.getSimpleName();
 
@@ -86,14 +84,11 @@ public class BLEProvisionLanding extends AppCompatActivity {
     private BluetoothAdapter bleAdapter;
     private ArrayList<BleDevice> deviceList;
     private HashMap<BluetoothDevice, String> bluetoothDevices;
-    private SharedPreferences sharedPreferences;
     private Handler handler;
 
     private int position = -1;
     private String deviceNamePrefix;
     private boolean isDeviceConnected = false, isConnecting = false;
-    private ESPProvisionManager provisionManager;
-    private int securityType;
     private boolean isScanning = false;
 
     @Override
@@ -104,7 +99,6 @@ public class BLEProvisionLanding extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(R.string.title_activity_connect_device);
         setSupportActionBar(toolbar);
-        securityType = getIntent().getIntExtra(AppConstants.KEY_SECURITY_TYPE, 0);
 
         // Use this check to determine whether BLE is supported on the device.  Then you can
         // selectively disable BLE-related features.
@@ -128,13 +122,9 @@ public class BLEProvisionLanding extends AppCompatActivity {
         handler = new Handler();
         bluetoothDevices = new HashMap<>();
         deviceList = new ArrayList<>();
-
-        provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
-        sharedPreferences = getSharedPreferences(AppConstants.ESP_PREFERENCES, Context.MODE_PRIVATE);
         deviceNamePrefix = sharedPreferences.getString(AppConstants.KEY_BLE_DEVICE_NAME_PREFIX,
                 getResources().getString(R.string.ble_device_name_prefix));
         initViews();
-        EventBus.getDefault().register(this);
     }
 
     @Override
@@ -160,17 +150,7 @@ public class BLEProvisionLanding extends AppCompatActivity {
         if (isScanning) {
             stopScan();
         }
-        if (provisionManager.getEspDevice() != null) {
-            provisionManager.getEspDevice().disconnectDevice();
-        }
-
         super.onBackPressed();
-    }
-
-    @Override
-    protected void onDestroy() {
-        EventBus.getDefault().unregister(this);
-        super.onDestroy();
     }
 
     @Override
@@ -218,22 +198,23 @@ public class BLEProvisionLanding extends AppCompatActivity {
 
             case ESPConstants.EVENT_DEVICE_CONNECTED:
                 Log.e(TAG, "Device Connected Event Received");
-                ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
                 progressBar.setVisibility(View.GONE);
                 isConnecting = false;
                 isDeviceConnected = true;
-
-                if (deviceCaps != null && !deviceCaps.contains("no_pop") && securityType == 1) {
-
-                    goToPopActivity();
-
-                } else if (deviceCaps.contains("wifi_scan")) {
-
-                    goToWifiScanListActivity();
-
+                setSecurityTypeFromVersionInfo();
+                boolean isSecure = sharedPreferences.getBoolean(AppConstants.KEY_SECURITY_TYPE, true);
+                if (isSecure) {
+                    if (securityType == AppConstants.SEC_TYPE_0) {
+                        Utils.displayDeviceConnectionError(this, getString(R.string.error_security_mismatch));
+                    } else {
+                        processDeviceCapabilities();
+                    }
                 } else {
-
-                    goToWiFiConfigActivity();
+                    if (securityType != AppConstants.SEC_TYPE_0) {
+                        Utils.displayDeviceConnectionError(this, getString(R.string.error_security_mismatch));
+                    } else {
+                        processDeviceCapabilities();
+                    }
                 }
                 break;
 
@@ -249,7 +230,7 @@ public class BLEProvisionLanding extends AppCompatActivity {
                 progressBar.setVisibility(View.GONE);
                 isConnecting = false;
                 isDeviceConnected = false;
-                alertForDeviceNotSupported("Failed to connect with device");
+                Utils.displayDeviceConnectionError(this, getString(R.string.error_device_connect_failed));
                 break;
         }
     }
@@ -317,6 +298,23 @@ public class BLEProvisionLanding extends AppCompatActivity {
         }
     }
 
+    private void processDeviceCapabilities() {
+        ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
+
+        if (deviceCaps != null && !deviceCaps.contains("no_pop") && securityType != AppConstants.SEC_TYPE_0) {
+
+            goToPopActivity();
+
+        } else if (deviceCaps.contains("wifi_scan")) {
+
+            goToWifiScanListActivity();
+
+        } else {
+
+            goToWiFiConfigActivity();
+        }
+    }
+
     private void startScan() {
 
         if (!hasPermissions() || isScanning) {
@@ -373,27 +371,6 @@ public class BLEProvisionLanding extends AppCompatActivity {
             progressBar.setVisibility(View.GONE);
             listView.setVisibility(View.VISIBLE);
         }
-    }
-
-    private void alertForDeviceNotSupported(String msg) {
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setCancelable(false);
-
-        builder.setTitle(R.string.error_title);
-        builder.setMessage(msg);
-
-        // Set up the buttons
-        builder.setPositiveButton(R.string.btn_ok, new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-                finish();
-            }
-        });
-
-        builder.show();
     }
 
     private View.OnClickListener btnScanClickListener = new View.OnClickListener() {
@@ -496,10 +473,8 @@ public class BLEProvisionLanding extends AppCompatActivity {
         public void run() {
 
             Log.e(TAG, "Disconnect device");
-
-            // TODO Disconnect device
             progressBar.setVisibility(View.GONE);
-            alertForDeviceNotSupported(getString(R.string.error_device_not_supported));
+            Utils.displayDeviceConnectionError(BLEProvisionLanding.this, getString(R.string.error_device_not_supported));
         }
     };
 

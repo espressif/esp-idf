@@ -18,8 +18,16 @@
             app:defaultValue="true"
             app:iconSpaceReserved="false"
             app:key="security_type"
-            app:summary="@string/summary_security"
+            app:summary="@string/summary_secured"
             app:title="@string/security_selection_title" />
+
+        <EditTextPreference
+            app:defaultValue="wifiprov"
+            app:iconSpaceReserved="false"
+            app:key="sec2_username"
+            app:title="@string/username_pref_title"
+            app:dialogTitle="@string/username_selection_title"
+            app:useSimpleSummaryProvider="true" />
 
     </PreferenceCategory>
 

@@ -1,5 +1,6 @@
 package com.espressif.ui.activities;
 
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -8,8 +9,11 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.EditTextPreference;
+import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
+import androidx.preference.SwitchPreferenceCompat;
 
 import com.espressif.AppConstants;
 import com.espressif.wifi_provisioning.R;
@@ -56,12 +60,45 @@ public class SettingsActivity extends AppCompatActivity {
 
     public static class SettingsFragment extends PreferenceFragmentCompat {
 
+        SwitchPreferenceCompat securityPref;
+        EditTextPreference userNamePref;
+
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
 
             PreferenceManager prefMgr = getPreferenceManager();
             prefMgr.setSharedPreferencesName(AppConstants.ESP_PREFERENCES);
             setPreferencesFromResource(R.xml.preferences, rootKey);
+
+            SharedPreferences sharedPreferences = prefMgr.getSharedPreferences();
+            securityPref = prefMgr.findPreference(AppConstants.KEY_SECURITY_TYPE);
+            userNamePref = prefMgr.findPreference(AppConstants.KEY_USER_NAME);
+
+            boolean isSecure = sharedPreferences.getBoolean(AppConstants.KEY_SECURITY_TYPE, true);
+            if (isSecure) {
+                securityPref.setSummary(R.string.summary_secured);
+                userNamePref.setVisible(true);
+            } else {
+                securityPref.setSummary(R.string.summary_unsecured);
+                userNamePref.setVisible(false);
+            }
+
+            securityPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    boolean isSecure = (boolean) newValue;
+
+                    if (isSecure) {
+                        preference.setSummary(R.string.summary_secured);
+                        userNamePref.setVisible(true);
+                    } else {
+                        preference.setSummary(R.string.summary_unsecured);
+                        userNamePref.setVisible(false);
+                    }
+                    return true;
+                }
+            });
         }
     }
 }

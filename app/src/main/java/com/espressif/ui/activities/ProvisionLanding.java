@@ -27,24 +27,22 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.widget.ContentLoadingProgressBar;
 
 import com.espressif.AppConstants;
-import com.espressif.wifi_provisioning.R;
 import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
-import com.espressif.provisioning.ESPProvisionManager;
+import com.espressif.ui.utils.Utils;
+import com.espressif.wifi_provisioning.R;
 
-import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 
-public class ProvisionLanding extends AppCompatActivity {
+public class ProvisionLanding extends ManualProvBaseActivity {
 
     private static final String TAG = ProvisionLanding.class.getSimpleName();
 
@@ -58,36 +56,15 @@ public class ProvisionLanding extends AppCompatActivity {
     private ContentLoadingProgressBar progressBar;
     private TextView tvConnectDeviceInstruction, tvDeviceName;
 
-    private ESPProvisionManager provisionManager;
-    private int securityType;
     private String deviceName, pop;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_provision_landing);
-        securityType = getIntent().getIntExtra(AppConstants.KEY_SECURITY_TYPE, 0);
         deviceName = getIntent().getStringExtra(AppConstants.KEY_DEVICE_NAME);
         pop = getIntent().getStringExtra(AppConstants.KEY_PROOF_OF_POSSESSION);
-        provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
         initViews();
-        EventBus.getDefault().register(this);
-    }
-
-    @Override
-    protected void onDestroy() {
-        EventBus.getDefault().unregister(this);
-        super.onDestroy();
-    }
-
-    @Override
-    public void onBackPressed() {
-
-        if (provisionManager.getEspDevice() != null) {
-            provisionManager.getEspDevice().disconnectDevice();
-        }
-
-        super.onBackPressed();
     }
 
     @Override
@@ -106,7 +83,7 @@ public class ProvisionLanding extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
 
             case REQUEST_FINE_LOCATION:
@@ -125,40 +102,24 @@ public class ProvisionLanding extends AppCompatActivity {
             case ESPConstants.EVENT_DEVICE_CONNECTED:
 
                 Log.e(TAG, "Device Connected Event Received");
-                ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
-
                 btnConnect.setEnabled(true);
                 btnConnect.setAlpha(1f);
                 txtConnectBtn.setText(R.string.btn_connect);
                 progressBar.setVisibility(View.GONE);
                 arrowImage.setVisibility(View.VISIBLE);
-
-                if (!TextUtils.isEmpty(pop)) {
-
-                    provisionManager.getEspDevice().setProofOfPossession(pop);
-
-                    if (deviceCaps != null && deviceCaps.contains("wifi_scan")) {
-
-                        goToWifiScanListActivity();
-
+                setSecurityTypeFromVersionInfo();
+                boolean isSecure = sharedPreferences.getBoolean(AppConstants.KEY_SECURITY_TYPE, true);
+                if (isSecure) {
+                    if (securityType == AppConstants.SEC_TYPE_0) {
+                        Utils.displayDeviceConnectionError(this, getString(R.string.error_security_mismatch));
                     } else {
-
-                        goToWiFiConfigActivity();
+                        processDeviceCapabilities();
                     }
-
                 } else {
-
-                    if (deviceCaps != null && !deviceCaps.contains("no_pop") && securityType == 1) {
-
-                        goToPopActivity();
-
-                    } else if (deviceCaps != null && deviceCaps.contains("wifi_scan")) {
-
-                        goToWifiScanListActivity();
-
+                    if (securityType != AppConstants.SEC_TYPE_0) {
+                        Utils.displayDeviceConnectionError(this, getString(R.string.error_security_mismatch));
                     } else {
-
-                        goToWiFiConfigActivity();
+                        processDeviceCapabilities();
                     }
                 }
                 break;
@@ -170,7 +131,7 @@ public class ProvisionLanding extends AppCompatActivity {
                 txtConnectBtn.setText(R.string.btn_connect);
                 progressBar.setVisibility(View.GONE);
                 arrowImage.setVisibility(View.VISIBLE);
-                Toast.makeText(this, R.string.error_device_connect_failed, Toast.LENGTH_SHORT).show();
+                Utils.displayDeviceConnectionError(this, getString(R.string.error_device_connect_failed));
                 break;
         }
     }
@@ -246,6 +207,31 @@ public class ProvisionLanding extends AppCompatActivity {
         txtConnectBtn.setText(R.string.btn_connect);
         btnConnect.setOnClickListener(btnConnectClickListener);
         hasPermissions();
+    }
+
+    private void processDeviceCapabilities() {
+
+        ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
+
+        if (!TextUtils.isEmpty(pop)) {
+
+            provisionManager.getEspDevice().setProofOfPossession(pop);
+
+            if (deviceCaps != null && deviceCaps.contains("wifi_scan")) {
+                goToWifiScanListActivity();
+            } else {
+                goToWiFiConfigActivity();
+            }
+        } else {
+
+            if (deviceCaps != null && !deviceCaps.contains("no_pop") && securityType != AppConstants.SEC_TYPE_0) {
+                goToPopActivity();
+            } else if (deviceCaps != null && deviceCaps.contains("wifi_scan")) {
+                goToWifiScanListActivity();
+            } else {
+                goToWiFiConfigActivity();
+            }
+        }
     }
 
     private void goToPopActivity() {

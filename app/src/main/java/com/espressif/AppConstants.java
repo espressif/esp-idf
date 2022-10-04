@@ -27,6 +27,7 @@ public class AppConstants {
     public static final String KEY_WIFI_PASSWORD = "password";
     public static final String KEY_DEVICE_TYPES = "device_types";
     public static final String KEY_SECURITY_TYPE = "security_type";
+    public static final String KEY_USER_NAME = "sec2_username";
 
     public static final String ESP_PREFERENCES = "Esp_Preferences";
 
@@ -34,4 +35,10 @@ public class AppConstants {
     public static final String DEVICE_TYPE_BLE = "ble";
     public static final String DEVICE_TYPE_BOTH = "both";
     public static final String DEVICE_TYPE_DEFAULT = DEVICE_TYPE_BOTH;
+
+    public static final int SEC_TYPE_0 = 0;
+    public static final int SEC_TYPE_1 = 1;
+    public static final int SEC_TYPE_2 = 2;
+    public static final int SEC_TYPE_DEFAULT = SEC_TYPE_2;
+    public static final String DEFAULT_USER_NAME = "wifiprov";
 }

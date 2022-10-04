@@ -81,16 +81,18 @@
     <string name="error_ble_not_supported">Sorry! BLE is not supported.</string>
     <string name="error_bluetooth_not_supported">Sorry! Bluetooth is not supported.</string>
     <string name="error_device_not_supported">Communication failed. Device may not be supported.</string>
+    <string name="error_device_transport_not_supported">Device may not be supported.</string>
     <string name="error_network_not_found">Network not found.</string>
     <string name="error_authentication_failed">Wi-Fi Authentication failed.</string>
     <string name="error_unknown">Device provisioning failed. Reason : Unknown.</string>
     <string name="error_pop_incorrect">Please retry with correct proof of possession PIN.</string>
     <string name="error_no_ble_device">No Bluetooth devices found!</string>
-    <string name="error_device_connect_failed">Error! Failed to connect with device.</string>
+    <string name="error_device_connect_failed">Failed to connect with device.</string>
     <string name="error_ssid_empty">Network name cannot be empty</string>
     <string name="error_password_empty">Password cannot be empty</string>
     <string name="error_provisioning">Reset your board to factory defaults and retry</string>
     <string name="error_wifi_off">Please turn on Wi-Fi to connect with device.</string>
+    <string name="error_security_mismatch">Security applied for communicating with device does not match configuration setting</string>
 
     <string name="prefix">Prefix :</string>
     <string name="hint_prefix">Enter Prefix</string>
@@ -116,7 +118,11 @@
 
     <!-- Messages Preferences -->
     <string name="device_selection_title">Supported Device Types</string>
-    <string name="security_selection_title">Encrypted Device Communication</string>
-    <string name="summary_security">Send data using Security1</string>
+    <string name="security_selection_title">Encrypted Communication</string>
+    <string name="username_pref_title">Set Username</string>
+    <string name="username_selection_title">Username</string>
+    <string name="summary_secured">Secured</string>
+    <string name="summary_unsecured">Unsecured</string>
+    <string name="summary_username">(Applicable for security version 2)</string>
 
 </resources>

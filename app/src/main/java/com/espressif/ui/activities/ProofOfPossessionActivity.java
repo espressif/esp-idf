@@ -21,6 +21,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
@@ -46,6 +47,7 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
     private TextView tvTitle, tvBack, tvCancel;
     private CardView btnNext;
     private TextView txtNextBtn;
+    private ProgressBar progressBar;
 
     private String deviceName;
     private TextView tvPopInstruction, tvPopError;
@@ -112,6 +114,10 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
 
             final String pop = etPop.getText().toString();
             Log.d(TAG, "POP : " + pop);
+
+            btnNext.setEnabled(false);
+            btnNext.setAlpha(0.5f);
+            progressBar.setVisibility(View.VISIBLE);
             tvPopError.setVisibility(View.INVISIBLE);
             provisionManager.getEspDevice().setProofOfPossession(pop);
 
@@ -121,6 +127,9 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            btnNext.setEnabled(true);
+                            btnNext.setAlpha(1f);
+                            progressBar.setVisibility(View.GONE);
                             ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
                             if (deviceCaps.contains("wifi_scan")) {
                                 goToWiFiScanListActivity();
@@ -137,6 +146,9 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            btnNext.setEnabled(true);
+                            btnNext.setAlpha(1f);
+                            progressBar.setVisibility(View.GONE);
                             tvPopError.setVisibility(View.VISIBLE);
                         }
                     });
@@ -171,6 +183,7 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
 
         btnNext = findViewById(R.id.btn_next);
         txtNextBtn = findViewById(R.id.text_btn);
+        progressBar = findViewById(R.id.progress_indicator);
 
         txtNextBtn.setText(R.string.btn_next);
         btnNext.setOnClickListener(nextBtnClickListener);
