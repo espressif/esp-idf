@@ -165,7 +165,8 @@ public class ESPProvisionManager {
                         String deviceName = jsonObject.optString("name");
                         String pop = jsonObject.optString("pop");
                         String transport = jsonObject.optString("transport");
-                        int security = jsonObject.optInt("security", 1);
+                        int security = jsonObject.optInt("security", ESPConstants.SecurityType.SECURITY_2.ordinal());
+                        String userName = jsonObject.optString("username");
                         String password = jsonObject.optString("password");
                         isScanned = true;
 
@@ -203,15 +204,12 @@ public class ESPProvisionManager {
                             qrCodeScanListener.onFailure(new RuntimeException("Transport is not available"));
                         }
 
-                        if (security == 0) {
-                            securityType = ESPConstants.SecurityType.SECURITY_0;
-                        } else {
-                            securityType = ESPConstants.SecurityType.SECURITY_1;
-                        }
+                        securityType = setSecurityType(security);
 
                         espDevice = new ESPDevice(context, transportType, securityType);
                         espDevice.setDeviceName(deviceName);
                         espDevice.setProofOfPossession(pop);
+                        espDevice.setUserName(userName);
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && transportType.equals(ESPConstants.TransportType.TRANSPORT_SOFTAP)) {
 
@@ -264,7 +262,8 @@ public class ESPProvisionManager {
                         String deviceName = jsonObject.optString("name");
                         String pop = jsonObject.optString("pop");
                         String transport = jsonObject.optString("transport");
-                        int security = jsonObject.optInt("security", 1);
+                        int security = jsonObject.optInt("security", ESPConstants.SecurityType.SECURITY_2.ordinal());
+                        String userName = jsonObject.optString("username");
                         String password = jsonObject.optString("password");
                         isScanned = true;
 
@@ -305,15 +304,12 @@ public class ESPProvisionManager {
                             return;
                         }
 
-                        if (security == 0) {
-                            securityType = ESPConstants.SecurityType.SECURITY_0;
-                        } else {
-                            securityType = ESPConstants.SecurityType.SECURITY_1;
-                        }
+                        securityType = setSecurityType(security);
 
                         espDevice = new ESPDevice(context, transportType, securityType);
                         espDevice.setDeviceName(deviceName);
                         espDevice.setProofOfPossession(pop);
+                        espDevice.setUserName(userName);
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && transportType.equals(ESPConstants.TransportType.TRANSPORT_SOFTAP)) {
 
@@ -419,6 +415,18 @@ public class ESPProvisionManager {
         // Check device is available in scanning.
         SearchDeviceTask searchDeviceTask = new SearchDeviceTask(device, password, qrCodeScanListener);
         handler.post(searchDeviceTask);
+    }
+
+    private ESPConstants.SecurityType setSecurityType(int security) {
+        switch (security) {
+            case 0:
+                return ESPConstants.SecurityType.SECURITY_0;
+            case 1:
+                return ESPConstants.SecurityType.SECURITY_1;
+            case 2:
+            default:
+                return ESPConstants.SecurityType.SECURITY_2;
+        }
     }
 
     class SearchDeviceTask implements Runnable {

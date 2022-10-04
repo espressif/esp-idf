@@ -3,17 +3,20 @@ package espressif;
 
 import "sec0.proto";
 import "sec1.proto";
+import "sec2.proto";
 
 enum SecSchemeVersion {
     SecScheme0 = 0; /* Unsecured - plaintext communication */
     SecScheme1 = 1; /* Security scheme 1 - Curve25519 + AES-256-CTR*/
+    SecScheme2 = 2;  /*!< Security scheme 2 - SRP6a + AES-256-GCM*/
 }
 
 message SessionData {
     SecSchemeVersion sec_ver = 2;
     oneof proto {
-        Sec0Payload sec0 = 10;
-        Sec1Payload sec1 = 11;
+        Sec0Payload sec0 = 10;      /*!< Payload data in case of security 0 */
+        Sec1Payload sec1 = 11;      /*!< Payload data in case of security 1 */
+        Sec2Payload sec2 = 12;      /*!< Payload data in case of security 2 */
     }
 }
 

@@ -28,7 +28,8 @@ public class ESPConstants {
 
     public enum SecurityType {
         SECURITY_0,
-        SECURITY_1
+        SECURITY_1,
+        SECURITY_2
     }
 
     public enum ProvisionFailureReason {
