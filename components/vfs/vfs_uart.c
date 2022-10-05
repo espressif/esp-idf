@@ -496,9 +496,20 @@ static esp_err_t uart_end_select(void *end_select_args)
 
     portENTER_CRITICAL(uart_get_selectlock());
     esp_err_t ret = unregister_select(args);
+    portENTER_CRITICAL(&s_registered_select_lock);
     for (int i = 0; i < UART_NUM; ++i) {
-        uart_set_select_notif_callback(i, NULL);
+        if (FD_ISSET(i, &args->readfds_orig) || FD_ISSET(i, &args->writefds_orig) || FD_ISSET(i, &args->errorfds_orig)) {
+            bool uart_is_not_used = true;
+            for (int j = 0; j < s_registered_select_num; ++j) {
+                if (FD_ISSET(i, &s_registered_selects[j]->readfds_orig) || FD_ISSET(i, &s_registered_selects[j]->writefds_orig) || FD_ISSET(i, &s_registered_selects[j]->errorfds_orig)) {
+                    uart_is_not_used = false;
+                }
+            }
+            if (uart_is_not_used)
+                uart_set_select_notif_callback(i, NULL);
+        }
     }
+    portEXIT_CRITICAL(&s_registered_select_lock);
     portEXIT_CRITICAL(uart_get_selectlock());
 
     if (args) {
