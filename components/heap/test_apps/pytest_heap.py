@@ -17,7 +17,7 @@ from pytest_embedded import Dut
 )
 def test_heap_poisoning(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('![ignore]')
+    dut.write('*')
     dut.expect_unity_test_output(timeout=300)
 
 
@@ -34,7 +34,7 @@ def test_heap_poisoning(dut: Dut) -> None:
 )
 def test_heap(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('![ignore]')
+    dut.write('*')
     dut.expect_unity_test_output(timeout=300)
 
 

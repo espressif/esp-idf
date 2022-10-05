@@ -15,13 +15,17 @@
 #include "esp_system.h"
 #include "heap_memory_layout.h"
 
+#include "../tlsf/tlsf.h"
 
 /* NOTE: This is not a well-formed unit test, it leaks memory */
 TEST_CASE("Allocate new heap at runtime", "[heap][ignore]")
 {
-    const size_t BUF_SZ = 1000;
-    const size_t HEAP_OVERHEAD_MAX = 200;
+    // 60 bytes of overhead in multi_heap + size of control_t from tlsf
+    const size_t HEAP_OVERHEAD_MAX = tlsf_size() + 60;
+    const size_t MIN_HEAP_SIZE = HEAP_OVERHEAD_MAX + tlsf_block_size_min();
+    const size_t BUF_SZ = MIN_HEAP_SIZE;
     void *buffer = malloc(BUF_SZ);
+
     TEST_ASSERT_NOT_NULL(buffer);
     uint32_t before_free = esp_get_free_heap_size();
     TEST_ESP_OK( heap_caps_add_region((intptr_t)buffer, (intptr_t)buffer + BUF_SZ) );
@@ -36,12 +40,12 @@ TEST_CASE("Allocate new heap at runtime", "[heap][ignore]")
 */
 TEST_CASE("Allocate new heap with new capability", "[heap][ignore]")
 {
-    const size_t BUF_SZ = 100;
-#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-    const size_t ALLOC_SZ = 32;
-#else
-    const size_t ALLOC_SZ = 64; // More than half of BUF_SZ
-#endif
+    // 60 bytes of multi_heap structures overhead + size of control_t from tlsf
+    const size_t HEAP_OVERHEAD = tlsf_size() + 60;
+    const size_t MIN_HEAP_SIZE = HEAP_OVERHEAD + tlsf_block_size_min();
+    const size_t BUF_SZ = MIN_HEAP_SIZE;
+    const size_t ALLOC_SZ = tlsf_block_size_min();
+
     const uint32_t MALLOC_CAP_INVENTED = (1 << 30); /* this must be unused in esp_heap_caps.h */
 
     /* no memory exists to provide this capability */
@@ -62,8 +66,8 @@ TEST_CASE("Allocate new heap with new capability", "[heap][ignore]")
 
 TEST_CASE("Add .bss memory to heap region runtime", "[heap][ignore]")
 {
-#define BUF_SZ 1000
-#define HEAP_OVERHEAD_MAX 200
+#define HEAP_OVERHEAD_MAX 3248
+#define BUF_SZ 3260
     static uint8_t s_buffer[BUF_SZ];
 
     printf("s_buffer start %08x end %08x\n", (intptr_t)s_buffer, (intptr_t)s_buffer + BUF_SZ);
@@ -73,9 +77,6 @@ TEST_CASE("Add .bss memory to heap region runtime", "[heap][ignore]")
     printf("Before %"PRIu32" after %"PRIu32"\n", before_free, after_free);
     /* allow for some 'heap overhead' from accounting structures */
     TEST_ASSERT(after_free >= before_free + BUF_SZ - HEAP_OVERHEAD_MAX);
-
-    /* Twice add must be failed */
-    TEST_ASSERT( (heap_caps_add_region((intptr_t)s_buffer, (intptr_t)s_buffer + BUF_SZ) != ESP_OK) );
 }
 
 extern esp_err_t heap_caps_check_add_region_allowed(intptr_t heap_start, intptr_t heap_end, intptr_t start, intptr_t end);
