@@ -532,6 +532,10 @@ TEST_CASE("concurrent selects work", "[vfs]")
         TEST_ASSERT(FD_ISSET(uart_fd, &rdfds2));
         TEST_ASSERT_UNLESS(FD_ISSET(socket_fd, &rdfds2));
         TEST_ASSERT_UNLESS(FD_ISSET(dummy_socket_fd, &rdfds2));
+        char recv_message[sizeof(message)];
+        int read_bytes = read(uart_fd, recv_message, sizeof(message));
+        TEST_ASSERT_EQUAL(read_bytes, sizeof(message));
+        TEST_ASSERT_EQUAL_MEMORY(message, recv_message, sizeof(message));
 
         TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1000 / portTICK_PERIOD_MS));
         vSemaphoreDelete(param.sem);
