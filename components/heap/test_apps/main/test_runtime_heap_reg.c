@@ -87,6 +87,9 @@ TEST_CASE("Add .bss memory to heap region runtime", "[heap]")
     printf("Before %"PRIu32" after %"PRIu32"\n", before_free, after_free);
     /* allow for some 'heap overhead' from accounting structures */
     TEST_ASSERT(after_free >= before_free + BUF_SZ - HEAP_OVERHEAD_MAX);
+
+    /* Twice add must be failed */
+    TEST_ASSERT( (heap_caps_add_region((intptr_t)s_buffer, (intptr_t)s_buffer + BUF_SZ) != ESP_OK) );
 }
 
 extern esp_err_t heap_caps_check_add_region_allowed(intptr_t heap_start, intptr_t heap_end, intptr_t start, intptr_t end);
@@ -98,10 +101,10 @@ TEST_CASE("Add heap region address range checks", "[heap]")
 
     TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x0, 0x1000));
     TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x2000));
-    TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x3000));
     TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x3000, 0x4000));
     TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x0, 0x2000));
     TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x0, 0x4000));
     TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x4000));
     TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x2000, 0x4000));
+    TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x3000));
 }
