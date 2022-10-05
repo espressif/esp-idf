@@ -17,11 +17,14 @@
 
 #include "../tlsf/tlsf.h"
 
+extern void set_leak_threshold(int threshold);
+
 /* NOTE: This is not a well-formed unit test, it leaks memory */
-TEST_CASE("Allocate new heap at runtime", "[heap][ignore]")
+TEST_CASE("Allocate new heap at runtime", "[heap]")
 {
-    // 60 bytes of overhead in multi_heap + size of control_t from tlsf
-    const size_t HEAP_OVERHEAD_MAX = tlsf_size() + 60;
+    // 84 bytes of overhead to account for multi_heap structs and eventual
+    // poisoning bytes + size of control_t from tlsf
+    const size_t HEAP_OVERHEAD_MAX = tlsf_size() + 84;
     const size_t MIN_HEAP_SIZE = HEAP_OVERHEAD_MAX + tlsf_block_size_min();
     const size_t BUF_SZ = MIN_HEAP_SIZE;
     void *buffer = malloc(BUF_SZ);
@@ -33,15 +36,19 @@ TEST_CASE("Allocate new heap at runtime", "[heap][ignore]")
     printf("Before %"PRIu32" after %"PRIu32"\n", before_free, after_free);
     /* allow for some 'heap overhead' from accounting structures */
     TEST_ASSERT(after_free >= before_free + BUF_SZ - HEAP_OVERHEAD_MAX);
+
+    // set the leak threshold to a bigger value as this test leaks memory
+    set_leak_threshold(-3000);
 }
 
 /* NOTE: This is not a well-formed unit test, it leaks memory and
    may fail if run twice in a row without a reset.
 */
-TEST_CASE("Allocate new heap with new capability", "[heap][ignore]")
+TEST_CASE("Allocate new heap with new capability", "[heap]")
 {
-    // 60 bytes of multi_heap structures overhead + size of control_t from tlsf
-    const size_t HEAP_OVERHEAD = tlsf_size() + 60;
+    // 84 bytes of overhead to account for multi_heap structs and eventual
+    // poisoning bytes + size of control_t from tlsf
+    const size_t HEAP_OVERHEAD = tlsf_size() + 84;
     const size_t MIN_HEAP_SIZE = HEAP_OVERHEAD + tlsf_block_size_min();
     const size_t BUF_SZ = MIN_HEAP_SIZE;
     const size_t ALLOC_SZ = tlsf_block_size_min();
@@ -58,13 +65,16 @@ TEST_CASE("Allocate new heap with new capability", "[heap][ignore]")
 
     /* ta-da, it's now possible! */
     TEST_ASSERT_NOT_NULL( heap_caps_malloc(ALLOC_SZ, MALLOC_CAP_INVENTED) );
+
+    // set the leak threshold to a bigger value as this test leaks memory
+    set_leak_threshold(-3000);
 }
 
 /* NOTE: This is not a well-formed unit test.
  * If run twice without a reset, it will failed.
  */
 
-TEST_CASE("Add .bss memory to heap region runtime", "[heap][ignore]")
+TEST_CASE("Add .bss memory to heap region runtime", "[heap]")
 {
 #define HEAP_OVERHEAD_MAX 3248
 #define BUF_SZ 3260
