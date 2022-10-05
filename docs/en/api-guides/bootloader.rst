@@ -14,7 +14,7 @@ The ESP-IDF Software Bootloader performs the following functions:
 
 Bootloader is located at the address {IDF_TARGET_BOOTLOADER_OFFSET} in the flash.
 
-For a full description of the startup process including the the ESP-IDF bootloader, see :doc:`startup`.
+For a full description of the startup process including the ESP-IDF bootloader, see :doc:`startup`.
 
 .. _bootloader-compatibility:
 

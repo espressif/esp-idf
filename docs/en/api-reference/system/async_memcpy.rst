@@ -44,7 +44,7 @@ Send memory copy request
 
 :cpp:func:`esp_async_memcpy` is the API to send memory copy request to DMA engine. It must be called after driver is installed successfully. This API is thread safe, so it can be called from different tasks.
 
-Different from the libc version of ``memcpy``, user should also pass a callback to :cpp:func:`esp_async_memcpy`, if it's necessary to be notified when the memory copy is done. The callback is executed in the ISR context, make sure you won't violate the the restriction applied to ISR handler.
+Different from the libc version of ``memcpy``, user should also pass a callback to :cpp:func:`esp_async_memcpy`, if it's necessary to be notified when the memory copy is done. The callback is executed in the ISR context, make sure you won't violate the restriction applied to ISR handler.
 
 Besides that, the callback function should reside in IRAM space by applying ``IRAM_ATTR`` attribute. The prototype of the callback function is :cpp:type:`async_memcpy_isr_cb_t`, please note that, the callback function should return true if it wakes up a high priority task by some API like :cpp:func:`xSemaphoreGiveFromISR`.
 

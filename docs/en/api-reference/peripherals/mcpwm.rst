@@ -806,7 +806,7 @@ The MCPWM capture channel can inform the user when there's a valid edge detected
 
 - :cpp:member:`mcpwm_capture_event_callbacks_t::on_cap` sets callback function for the capture channel when a valid edge is detected.
 
-The callback function will provide event specific data of type :cpp:type:`mcpwm_capture_event_data_t`, so that you can get the the edge of the capture signal in :cpp:member:`mcpwm_capture_event_data_t::cap_edge` and the count value of that moment in :cpp:member:`mcpwm_capture_event_data_t::cap_value`.
+The callback function will provide event specific data of type :cpp:type:`mcpwm_capture_event_data_t`, so that you can get the edge of the capture signal in :cpp:member:`mcpwm_capture_event_data_t::cap_edge` and the count value of that moment in :cpp:member:`mcpwm_capture_event_data_t::cap_value`.
 
 The callback function is called within the ISR context, so is should **not** attempt to block (e.g., make sure that only FreeRTOS APIs with ``ISR`` suffix is called within the function).
 
