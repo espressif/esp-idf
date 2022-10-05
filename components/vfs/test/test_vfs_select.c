@@ -544,6 +544,69 @@ TEST_CASE("concurrent selects work", "[vfs]")
         vSemaphoreDelete(send_param.sem);
     }
 
+    {
+        // First task waits for UART writing second for reading with longer timeout.
+        // Data is written to UART after the first task time-out.
+        // Second task should be notified about them immediately.
+
+        struct timeval tv1 = {
+            .tv_sec = 0,
+            .tv_usec = 100000,
+        };
+        struct timeval tv2 = {
+            .tv_sec = 0,
+            .tv_usec = 200000,
+        };
+
+        fd_set wrfds1;
+        FD_ZERO(&wrfds1);
+        FD_SET(uart_fd, &wrfds1);
+
+        test_select_task_param_t param = {
+            .rdfds = NULL,
+            .wrfds = &wrfds1,
+            .errfds = NULL,
+            .maxfds = uart_fd + 1,
+            .tv = &tv1,
+            .select_ret = 0, // expected timeout
+            .sem = xSemaphoreCreateBinary(),
+        };
+        TEST_ASSERT_NOT_NULL(param.sem);
+
+        start_select_task(&param);
+
+        fd_set rdfds2;
+        FD_ZERO(&rdfds2);
+        FD_SET(uart_fd, &rdfds2);
+        FD_SET(socket_fd, &rdfds2);
+        FD_SET(dummy_socket_fd, &rdfds2);
+
+        const test_task_param_t send_param = {
+            .fd = uart_fd,
+            .delay_ms = 150,
+            .sem = xSemaphoreCreateBinary(),
+        };
+        TEST_ASSERT_NOT_NULL(send_param.sem);
+        start_task(&send_param);        // This task will write to UART which will be detected by select()
+
+        int s = select(MAX(MAX(uart_fd, dummy_socket_fd), socket_fd) + 1, &rdfds2, NULL, NULL, &tv2);
+        TEST_ASSERT_EQUAL(1, s); // Timeout not expected
+        TEST_ASSERT(FD_ISSET(uart_fd, &rdfds2));
+        TEST_ASSERT_UNLESS(FD_ISSET(socket_fd, &rdfds2));
+        TEST_ASSERT_UNLESS(FD_ISSET(dummy_socket_fd, &rdfds2));
+
+        char recv_message[sizeof(message)];
+        int read_bytes = read(uart_fd, recv_message, sizeof(message));
+        TEST_ASSERT_EQUAL(read_bytes, sizeof(message));
+        TEST_ASSERT_EQUAL_MEMORY(message, recv_message, sizeof(message));
+
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1000 / portTICK_PERIOD_MS));
+        vSemaphoreDelete(param.sem);
+
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(send_param.sem, 1000 / portTICK_PERIOD_MS));
+        vSemaphoreDelete(send_param.sem);
+    }
+
     deinit(uart_fd, socket_fd);
     close(dummy_socket_fd);
 }
