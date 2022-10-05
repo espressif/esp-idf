@@ -6,21 +6,33 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-The application creates a TCP transport connection and tries to connect to the server with predefined IP address and port number. When a connection is successfully established, the application sends message and waits for the answer. After the server's reply, application prints received reply as ASCII text, waits for 2 seconds and sends another message.
+The application creates a TCP connection using `tcp_transport` component and tries to connect to the server with predefined IP address and port number. When a connection is successfully established, the application sends message and waits for the answer. After the server's reply, application prints received reply as ASCII text, waits for 2 seconds and sends another message.
+
+It's possible to enable SOCKS proxy support to make the connection to go through a proxy server. 
 
 ## How to use example
 
-In order to create TCP server that communicates with TCP TRANSPORT Client example, choose one of the following options.
+In order to create TCP server that communicates with TCP TRANSPORT Client example, it's possible to choose some host-side tool or one of the scripts available in the example parent directory.
 
 There are many host-side tools which can be used to interact with the UDP/TCP server/client. 
 One command line tool is [netcat](http://netcat.sourceforge.net) which can send and receive many kinds of packets. 
-Note: please replace `192.168.0.167 3333` with desired IPV4/IPV6 address (displayed in monitor console) and port number in the following command.
 
-In addition to those tools, simple Python scripts can be found under sockets/scripts directory. Every script is designed to interact with one of the examples.
+In addition to those tools, simple Python scripts can be found under the example parent directory. Every script is designed to interact with one of the examples.
 
 ### TCP server using netcat
 ```
-nc -l 192.168.0.167 3333
+nc -l 0.0.0.0 -p 3333
+```
+
+In this scenario netcat doesn't send any data back. If the python scripts are used to test the monitor shows the message sent from the server. 
+
+### Using a proxy server
+
+A simple way of testing the usage of the proxy client on Linux systems is 
+to use ssh as a proxy:
+
+```
+ssh -N -v -D 0.0.0.0:1080 localhost
 ```
 
 ## Hardware Required
@@ -35,11 +47,17 @@ idf.py menuconfig
 
 Set following parameters under Example Configuration Options:
 
-* Set `IPV4 Address` that represents remote host the example will connect to.
+* Set `Target server Address` that represents remote host the example will connect to.
 
-* Set `Port` number that represents remote port the example will connect to.
+* Set `Target Port` number that represents remote port the example will connect to.
 
 Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
+
+### Enabling proxy client
+
+Set `Enable proxy client`
+Set `Proxy server address` that represents the proxy server the example will connect to.
+Set `Proxy server port` number that represents the proxy server port the example will connect to.
 
 ## Build and Flash
 

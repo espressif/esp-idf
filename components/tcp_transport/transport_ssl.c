@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <unistd.h>
 
 #include "esp_tls.h"
@@ -14,7 +15,6 @@
 #include "esp_transport.h"
 #include "esp_transport_ssl.h"
 #include "esp_transport_internal.h"
-#include "errno.h"
 
 #define INVALID_SOCKET (-1)
 

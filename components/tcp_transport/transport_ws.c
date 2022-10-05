@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <sys/random.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include "esp_log.h"
 #include "esp_transport.h"
 #include "esp_transport_tcp.h"

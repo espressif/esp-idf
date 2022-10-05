@@ -8,5 +8,6 @@ idf_component_mock(INCLUDE_DIRS "${original_esp_tls_dir}"
                                 "${original_esp_tls_dir}/esp-tls-crypto"
                    MOCK_HEADER_FILES ${original_esp_tls_dir}/esp_tls.h
                                      ${original_esp_tls_dir}/esp-tls-crypto/esp_tls_crypto.h
+                    REQUIRES mbedtls
                    )
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-array-parameter)
