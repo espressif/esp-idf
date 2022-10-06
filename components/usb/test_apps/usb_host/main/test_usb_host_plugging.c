@@ -10,12 +10,11 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "test_usb_common.h"
-#include "test_usb_mock_classes.h"
+#include "test_usb_mock_msc.h"
 #include "msc_client.h"
 #include "ctrl_client.h"
 #include "usb/usb_host.h"
 #include "unity.h"
-#include "test_utils.h"
 
 // --------------------------------------------------- Test Cases ------------------------------------------------------
 
@@ -34,17 +33,8 @@ Procedure:
 
 #define TEST_DCONN_NO_CLIENT_ITERATIONS     3
 
-TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][ignore]")
+TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][full_speed][low_speed]")
 {
-    test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
-    //Install USB Host Library
-    usb_host_config_t host_config = {
-        .skip_phy_setup = true,     //test_usb_init_phy() will already have setup the internal USB PHY for us
-        .intr_flags = ESP_INTR_FLAG_LEVEL1,
-    };
-    ESP_ERROR_CHECK(usb_host_install(&host_config));
-    printf("Installed\n");
-
     bool connected = false;
     int dconn_iter = 0;
     while (1) {
@@ -73,10 +63,6 @@ TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][ignore]"
             }
         }
     }
-
-    //Clean up USB Host
-    ESP_ERROR_CHECK(usb_host_uninstall());
-    test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
 }
 
 /*
@@ -95,17 +81,8 @@ Procedure:
 #define TEST_FORCE_DCONN_NUM_TRANSFERS      3
 #define TEST_MSC_SCSI_TAG                   0xDEADBEEF
 
-TEST_CASE("Test USB Host sudden disconnection (single client)", "[usb_host][ignore]")
+TEST_CASE("Test USB Host sudden disconnection (single client)", "[usb_host][full_speed]")
 {
-    test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
-    //Install USB Host
-    usb_host_config_t host_config = {
-        .skip_phy_setup = true,     //test_usb_init_phy() will already have setup the internal USB PHY for us
-        .intr_flags = ESP_INTR_FLAG_LEVEL1,
-    };
-    ESP_ERROR_CHECK(usb_host_install(&host_config));
-    printf("Installed\n");
-
     //Create task to run client that communicates with MSC SCSI interface
     msc_client_test_param_t params = {
         .num_sectors_to_read = 1,   //Unused by disconnect MSC client
@@ -134,12 +111,6 @@ TEST_CASE("Test USB Host sudden disconnection (single client)", "[usb_host][igno
             all_dev_free = true;
         }
     }
-
-    //Short delay to allow task to be cleaned up
-    vTaskDelay(10);
-    //Clean up USB Host
-    ESP_ERROR_CHECK(usb_host_uninstall());
-    test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
 }
 
 /*
@@ -160,17 +131,8 @@ Procedure:
 
 #define TEST_ENUM_ITERATIONS    3
 
-TEST_CASE("Test USB Host enumeration", "[usb_host][ignore]")
+TEST_CASE("Test USB Host enumeration", "[usb_host][full_speed]")
 {
-    test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
-    //Install USB Host
-    usb_host_config_t host_config = {
-        .skip_phy_setup = true,     //test_usb_init_phy() will already have setup the internal USB PHY for us
-        .intr_flags = ESP_INTR_FLAG_LEVEL1,
-    };
-    ESP_ERROR_CHECK(usb_host_install(&host_config));
-    printf("Installed\n");
-
     //Create task to run client that checks the enumeration of the device
     TaskHandle_t task_hdl;
     xTaskCreatePinnedToCore(msc_client_async_enum_task, "async", 6144, NULL, 2, &task_hdl, 0);
@@ -192,10 +154,4 @@ TEST_CASE("Test USB Host enumeration", "[usb_host][ignore]")
             all_dev_free = true;
         }
     }
-
-    //Short delay to allow task to be cleaned up
-    vTaskDelay(10);
-    //Clean up USB Host
-    ESP_ERROR_CHECK(usb_host_uninstall());
-    test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
 }
