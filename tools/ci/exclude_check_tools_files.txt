@@ -39,4 +39,3 @@ tools/set-submodules-to-github.sh
 tools/templates/sample_component/CMakeLists.txt
 tools/templates/sample_component/include/main.h
 tools/templates/sample_component/main.c
-tools/toolchain_versions.mk
