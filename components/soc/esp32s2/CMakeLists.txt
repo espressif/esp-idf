@@ -18,7 +18,7 @@ set(srcs
     "uart_periph.c"
     "usb_periph.c"
     "temperature_sensor_periph.c"
-    "usb_phy_periph.c")
+    "usb_otg_periph.c")
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 

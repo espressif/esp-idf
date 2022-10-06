@@ -22,7 +22,8 @@ void test_usb_init_phy(void)
         .target = USB_PHY_TARGET_INT,
         .otg_mode = USB_OTG_MODE_HOST,
         .otg_speed = USB_PHY_SPEED_UNDEFINED,   //In Host mode, the speed is determined by the connected device
-        .gpio_conf = NULL,
+        .ext_io_conf = NULL,
+        .otg_io_conf = NULL,
     };
     ESP_ERROR_CHECK(usb_new_phy(&phy_config, &phy_hdl));
 }

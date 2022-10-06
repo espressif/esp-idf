@@ -384,7 +384,8 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
             .target = USB_PHY_TARGET_INT,
             .otg_mode = USB_OTG_MODE_HOST,
             .otg_speed = USB_PHY_SPEED_UNDEFINED,   //In Host mode, the speed is determined by the connected device
-            .gpio_conf = NULL,
+            .ext_io_conf = NULL,
+            .otg_io_conf = NULL,
         };
         ret = usb_new_phy(&phy_config, &host_lib_obj->constant.phy_handle);
          if (ret != ESP_OK) {
