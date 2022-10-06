@@ -15,15 +15,11 @@
 #include <errno.h>
 #include <utime.h>
 #include "unity.h"
-#include "esp_log.h"
-#include "esp_system.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "ff.h"
 #include "test_fatfs_common.h"
-#include "esp_rom_sys.h"
 
 const char* fatfs_test_hello_str = "Hello, World!\n";
 const char* fatfs_test_hello_str_utf = "世界，你好！\n";
@@ -780,9 +776,9 @@ typedef struct {
     const char* filename;
     bool write;
     size_t word_count;
-    int seed;
+    unsigned seed;
     SemaphoreHandle_t done;
-    int result;
+    esp_err_t result;
 } read_write_test_arg_t;
 
 #define READ_WRITE_TEST_ARG_INIT(name, seed_) \
@@ -805,19 +801,19 @@ static void read_write_task(void* param)
 
     srand(args->seed);
     for (size_t i = 0; i < args->word_count; ++i) {
-        uint32_t val = rand();
+        unsigned val = rand();
         if (args->write) {
             int cnt = fwrite(&val, sizeof(val), 1, f);
             if (cnt != 1) {
-                esp_rom_printf("E(w): i=%d, cnt=%d val=%d\n\n", i, cnt, val);
+                printf("E(w): i=%d, cnt=%d val=0x08%x\n", i, cnt, val);
                 args->result = ESP_FAIL;
                 goto close;
             }
         } else {
-            uint32_t rval;
+            unsigned rval;
             int cnt = fread(&rval, sizeof(rval), 1, f);
             if (cnt != 1 || rval != val) {
-                esp_rom_printf("E(r): i=%d, cnt=%d rval=%d val=%d\n\n", i, cnt, rval, val);
+                printf("E(r): i=%d, cnt=%d rval=0x08%x val=0x08%x\n", i, cnt, rval, val);
                 args->result = ESP_FAIL;
                 goto close;
             }

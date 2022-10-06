@@ -476,6 +476,38 @@ component_ut_pytest_esp32c3_flash_multi:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, flash_mutli ]
 
+component_ut_pytest_esp32_sdmmc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, sdcard_sdmode ]
+
+component_ut_pytest_esp32_sdspi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, sdcard_spimode ]
+
+component_ut_pytest_esp32s2_sdspi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s2
+  needs:
+    - build_pytest_components_esp32s2
+  tags: [ esp32s2, sdcard_spimode ]
+
+component_ut_pytest_esp32c3_sdspi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, sdcard_spimode ]
+
 example_test_pytest_openthread_br:
   extends:
     - .pytest_examples_dir_template

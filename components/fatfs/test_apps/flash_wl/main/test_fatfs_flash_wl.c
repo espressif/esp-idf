@@ -11,7 +11,7 @@
 #include <sys/time.h>
 #include <sys/unistd.h>
 #include "unity.h"
-#include "test_utils.h"
+#include "esp_partition.h"
 #include "esp_log.h"
 #include "esp_random.h"
 #include "esp_vfs.h"
@@ -23,9 +23,11 @@
 #include "esp_partition.h"
 #include "esp_memory_utils.h"
 
+void app_main(void)
+{
+    unity_run_menu();
+}
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5136
 static wl_handle_t s_test_wl_handle;
 static void test_setup(void)
 {
@@ -44,7 +46,8 @@ static void test_teardown(void)
 
 TEST_CASE("(WL) can format partition", "[fatfs][wear_levelling]")
 {
-    const esp_partition_t* part = get_test_data_partition();
+    const esp_partition_t* part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+            ESP_PARTITION_SUBTYPE_DATA_FAT, NULL);
     esp_partition_erase_range(part, 0, part->size);
     test_setup();
     test_teardown();
@@ -190,7 +193,8 @@ TEST_CASE("(WL) fatfs does not ignore leading spaces", "[fatfs][wear_levelling]"
 TEST_CASE("(WL) write/read speed test", "[fatfs][wear_levelling][timeout=60]")
 {
     /* Erase partition before running the test to get consistent results */
-    const esp_partition_t* part = get_test_data_partition();
+    const esp_partition_t* part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+            ESP_PARTITION_SUBTYPE_DATA_FAT, NULL);
     esp_partition_erase_range(part, 0, part->size);
 
     test_setup();
@@ -221,7 +225,6 @@ TEST_CASE("(WL) can get partition info", "[fatfs][wear_levelling]")
     test_fatfs_info("/spiflash", "/spiflash/test.txt");
     test_teardown();
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 /*
  * In FatFs menuconfig, set CONFIG_FATFS_API_ENCODING to UTF-8 and set the
@@ -229,9 +232,6 @@ TEST_CASE("(WL) can get partition info", "[fatfs][wear_levelling]")
  * Ensure that the text editor is UTF-8 compatible when compiling these tests.
  */
 #if defined(CONFIG_FATFS_API_ENCODING_UTF_8) && (CONFIG_FATFS_CODEPAGE == 936)
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5136
 TEST_CASE("(WL) can read file with UTF-8 encoded strings", "[fatfs][wear_levelling]")
 {
     test_setup();
@@ -246,7 +246,6 @@ TEST_CASE("(WL) opendir, readdir, rewinddir, seekdir work as expected using UTF-
     test_fatfs_opendir_readdir_rewinddir_utf_8("/spiflash/目录");
     test_teardown();
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 #endif //defined(CONFIG_FATFS_API_ENCODING_UTF_8) && (CONFIG_FATFS_CODEPAGE == 936)
 
 #ifdef CONFIG_SPIRAM

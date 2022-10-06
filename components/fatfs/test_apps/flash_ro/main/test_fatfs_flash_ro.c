@@ -11,53 +11,30 @@
 #include <sys/time.h>
 #include <sys/unistd.h>
 #include "unity.h"
-#include "test_utils.h"
-#include "esp_log.h"
-#include "esp_system.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "test_fatfs_common.h"
-#include "esp_partition.h"
-#include "ff.h"
-#include "esp_rom_sys.h"
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5136
+void app_main(void)
+{
+    unity_run_menu();
+}
+
 static void test_setup(size_t max_files)
 {
-    extern const char fatfs_start[] asm("_binary_fatfs_img_start");
-    extern const char fatfs_end[]   asm("_binary_fatfs_img_end");
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = false,
         .max_files = max_files
     };
-    const esp_partition_t* part = get_test_data_partition();
-
-    TEST_ASSERT(part->size == (fatfs_end - fatfs_start - 1));
-
-    spi_flash_mmap_handle_t mmap_handle;
-    const void* mmap_ptr;
-    TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, SPI_FLASH_MMAP_DATA, &mmap_ptr, &mmap_handle));
-    bool content_valid = memcmp(fatfs_start, mmap_ptr, part->size) == 0;
-    spi_flash_munmap(mmap_handle);
-
-    if (!content_valid) {
-        printf("Copying fatfs.img into test partition...\n");
-        esp_partition_erase_range(part, 0, part->size);
-        for (int i = 0; i < part->size; i+= SPI_FLASH_SEC_SIZE) {
-            ESP_ERROR_CHECK( esp_partition_write(part, i, fatfs_start + i, SPI_FLASH_SEC_SIZE) );
-        }
-    }
-
-    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_ro("/spiflash", "flash_test", &mount_config));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_ro("/spiflash", "storage", &mount_config));
 }
 
 static void test_teardown(void)
 {
-    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_ro("/spiflash","flash_test"));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_ro("/spiflash", "storage"));
 }
 
 TEST_CASE("(raw) can read file", "[fatfs]")
@@ -94,7 +71,6 @@ TEST_CASE("(raw) can open maximum number of files", "[fatfs]")
 
 }
 
-
 TEST_CASE("(raw) can lseek", "[fatfs]")
 {
     test_setup(5);
@@ -129,7 +105,7 @@ TEST_CASE("(raw) stat returns correct values", "[fatfs]")
     printf("Reference time: %s", asctime(&tm));
 
     struct stat st;
-    TEST_ASSERT_EQUAL(0, stat("/spiflash/stat.txt", &st));
+    TEST_ASSERT_EQUAL(0, stat("/spiflash/hello.txt", &st));
 
     time_t mtime = st.st_mtime;
     struct tm mtm;
@@ -148,8 +124,6 @@ TEST_CASE("(raw) stat returns correct values", "[fatfs]")
     test_teardown();
 }
 
-
-
 TEST_CASE("(raw) can opendir root directory of FS", "[fatfs]")
 {
     test_setup(5);
@@ -161,7 +135,7 @@ TEST_CASE("(raw) can opendir root directory of FS", "[fatfs]")
         if (!de) {
             break;
         }
-        if (strcasecmp(de->d_name, "test_opd.txt") == 0) {
+        if (strcasecmp(de->d_name, "hello.txt") == 0) {
             found = true;
             break;
         }
@@ -171,6 +145,7 @@ TEST_CASE("(raw) can opendir root directory of FS", "[fatfs]")
 
     test_teardown();
 }
+
 TEST_CASE("(raw) opendir, readdir, rewinddir, seekdir work as expected", "[fatfs]")
 {
     test_setup(5);
@@ -229,20 +204,17 @@ TEST_CASE("(raw) opendir, readdir, rewinddir, seekdir work as expected", "[fatfs
     test_teardown();
 }
 
-
 typedef struct {
     const char* filename;
     size_t word_count;
-    int seed;
-    int val;
+    unsigned val;
     SemaphoreHandle_t done;
-    int result;
+    esp_err_t result;
 } read_test_arg_t;
 
-#define READ_TEST_ARG_INIT(name, seed_, val_) \
+#define READ_TEST_ARG_INIT(name, val_) \
         { \
             .filename = name, \
-            .seed = seed_, \
             .word_count = 8000, \
             .val = val_, \
             .done = xSemaphoreCreateBinary() \
@@ -257,12 +229,11 @@ static void read_task(void* param)
         goto done;
     }
 
-    srand(args->seed);
     for (size_t i = 0; i < args->word_count; ++i) {
-        uint32_t rval;
+        unsigned rval;
         int cnt = fread(&rval, sizeof(rval), 1, f);
         if (cnt != 1 || rval != args->val) {
-            esp_rom_printf("E(r): i=%d, cnt=%d rval=%d val=%d\n\n", i, cnt, rval, args->val);
+            printf("E(r): i=%d, cnt=%d rval=0x08%x val=0x%08x\n", i, cnt, rval, args->val);
             args->result = ESP_FAIL;
             goto close;
         }
@@ -278,7 +249,6 @@ done:
     vTaskDelete(NULL);
 }
 
-
 TEST_CASE("(raw) multiple tasks can use same volume", "[fatfs]")
 {
     test_setup(5);
@@ -287,10 +257,10 @@ TEST_CASE("(raw) multiple tasks can use same volume", "[fatfs]")
         snprintf(names[i], sizeof(names[i]), "/spiflash/ccrnt/%d.txt", i + 1);
     }
 
-    read_test_arg_t args1 = READ_TEST_ARG_INIT(names[0], 1, 0x31313131);
-    read_test_arg_t args2 = READ_TEST_ARG_INIT(names[1], 2, 0x32323232);
-    read_test_arg_t args3 = READ_TEST_ARG_INIT(names[2], 3, 0x33333333);
-    read_test_arg_t args4 = READ_TEST_ARG_INIT(names[3], 4, 0x34343434);
+    read_test_arg_t args1 = READ_TEST_ARG_INIT(names[0], 0x31313131);
+    read_test_arg_t args2 = READ_TEST_ARG_INIT(names[1], 0x32323232);
+    read_test_arg_t args3 = READ_TEST_ARG_INIT(names[2], 0x33333333);
+    read_test_arg_t args4 = READ_TEST_ARG_INIT(names[3], 0x34343434);
 
     const int cpuid_0 = 0;
     const int cpuid_1 = portNUM_PROCESSORS - 1;
@@ -339,10 +309,3 @@ TEST_CASE("(raw) read speed test", "[fatfs][timeout=60]")
     free(buf);
     test_teardown();
 }
-#else //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-TEST_CASE("FATFS dummy test", "[spi_flash]")
-{
-    printf("This test does nothing, just to make the UT build fatfs-fast-seek passed.\n");
-    printf("When any case above is supported, remove this test case\n");
-}
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
