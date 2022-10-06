@@ -189,14 +189,14 @@ bool heap_caps_check_add_region_allowed(intptr_t heap_start, intptr_t heap_end, 
      *  3.add region  (s3>=s && e3<e)                             |---------------|                      correct: bool condition_3 = start >= heap_start && end < heap_end;
      *                                                                  |--------------|                 correct
      *
-     *  4.add region  (s4<e && e4>e)                              |------------------------|             wrong:   bool condition_4 = start < heap_end && end > heap_end;
+     *  4.add region  (s4<e && e4>=e)                              |------------------------|            wrong:   bool condition_4 = start < heap_end && end >= heap_end;
      *                                                                  |---------------------|          wrong
      *
      *  5.add region  (s5>=e)                                                            |----|          correct: bool condition_5 = start >= heap_end;
      */
 
     bool condition_2 = start < heap_start && end > heap_start;        // if true then region not allowed
-    bool condition_4 = start < heap_end && end > heap_end;            // if true then region not allowed
+    bool condition_4 = start < heap_end && end >= heap_end;            // if true then region not allowed
 
     return (condition_2 || condition_4) ? false: true;
 }

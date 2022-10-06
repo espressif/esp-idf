@@ -15,13 +15,20 @@
 #include "esp_system.h"
 #include "heap_memory_layout.h"
 
+#include "../tlsf/tlsf.h"
+
+extern void set_leak_threshold(int threshold);
 
 /* NOTE: This is not a well-formed unit test, it leaks memory */
-TEST_CASE("Allocate new heap at runtime", "[heap][ignore]")
+TEST_CASE("Allocate new heap at runtime", "[heap]")
 {
-    const size_t BUF_SZ = 1000;
-    const size_t HEAP_OVERHEAD_MAX = 200;
+    // 84 bytes of overhead to account for multi_heap structs and eventual
+    // poisoning bytes + size of control_t from tlsf
+    const size_t HEAP_OVERHEAD_MAX = tlsf_size() + 84;
+    const size_t MIN_HEAP_SIZE = HEAP_OVERHEAD_MAX + tlsf_block_size_min();
+    const size_t BUF_SZ = MIN_HEAP_SIZE;
     void *buffer = malloc(BUF_SZ);
+
     TEST_ASSERT_NOT_NULL(buffer);
     uint32_t before_free = esp_get_free_heap_size();
     TEST_ESP_OK( heap_caps_add_region((intptr_t)buffer, (intptr_t)buffer + BUF_SZ) );
@@ -29,19 +36,23 @@ TEST_CASE("Allocate new heap at runtime", "[heap][ignore]")
     printf("Before %"PRIu32" after %"PRIu32"\n", before_free, after_free);
     /* allow for some 'heap overhead' from accounting structures */
     TEST_ASSERT(after_free >= before_free + BUF_SZ - HEAP_OVERHEAD_MAX);
+
+    // set the leak threshold to a bigger value as this test leaks memory
+    set_leak_threshold(-3000);
 }
 
 /* NOTE: This is not a well-formed unit test, it leaks memory and
    may fail if run twice in a row without a reset.
 */
-TEST_CASE("Allocate new heap with new capability", "[heap][ignore]")
+TEST_CASE("Allocate new heap with new capability", "[heap]")
 {
-    const size_t BUF_SZ = 100;
-#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-    const size_t ALLOC_SZ = 32;
-#else
-    const size_t ALLOC_SZ = 64; // More than half of BUF_SZ
-#endif
+    // 84 bytes of overhead to account for multi_heap structs and eventual
+    // poisoning bytes + size of control_t from tlsf
+    const size_t HEAP_OVERHEAD = tlsf_size() + 84;
+    const size_t MIN_HEAP_SIZE = HEAP_OVERHEAD + tlsf_block_size_min();
+    const size_t BUF_SZ = MIN_HEAP_SIZE;
+    const size_t ALLOC_SZ = tlsf_block_size_min();
+
     const uint32_t MALLOC_CAP_INVENTED = (1 << 30); /* this must be unused in esp_heap_caps.h */
 
     /* no memory exists to provide this capability */
@@ -54,16 +65,19 @@ TEST_CASE("Allocate new heap with new capability", "[heap][ignore]")
 
     /* ta-da, it's now possible! */
     TEST_ASSERT_NOT_NULL( heap_caps_malloc(ALLOC_SZ, MALLOC_CAP_INVENTED) );
+
+    // set the leak threshold to a bigger value as this test leaks memory
+    set_leak_threshold(-3000);
 }
 
 /* NOTE: This is not a well-formed unit test.
  * If run twice without a reset, it will failed.
  */
 
-TEST_CASE("Add .bss memory to heap region runtime", "[heap][ignore]")
+TEST_CASE("Add .bss memory to heap region runtime", "[heap]")
 {
-#define BUF_SZ 1000
-#define HEAP_OVERHEAD_MAX 200
+#define HEAP_OVERHEAD_MAX 3248
+#define BUF_SZ 3260
     static uint8_t s_buffer[BUF_SZ];
 
     printf("s_buffer start %08x end %08x\n", (intptr_t)s_buffer, (intptr_t)s_buffer + BUF_SZ);
@@ -87,10 +101,10 @@ TEST_CASE("Add heap region address range checks", "[heap]")
 
     TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x0, 0x1000));
     TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x2000));
-    TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x3000));
     TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x3000, 0x4000));
     TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x0, 0x2000));
     TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x0, 0x4000));
     TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x4000));
     TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x2000, 0x4000));
+    TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x3000));
 }

@@ -1,4 +1,4 @@
-set(src_test "test_app_main.c"
+set(src_test "test_heap_main.c"
              "test_aligned_alloc_caps.c"
              "test_allocator_timings.c"
              "test_corruption_check.c"
