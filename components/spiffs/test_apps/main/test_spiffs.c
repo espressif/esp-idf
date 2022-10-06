@@ -12,7 +12,6 @@
 #include <sys/time.h>
 #include <sys/unistd.h>
 #include "unity.h"
-#include "test_utils.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_vfs.h"
@@ -26,9 +25,22 @@
 #include "esp_rom_sys.h"
 
 const char* spiffs_test_hello_str = "Hello, World!\n";
-const char* spiffs_test_partition_label = "flash_test";
+const char* spiffs_test_partition_label = "storage";
 
-void test_spiffs_create_file_with_text(const char* name, const char* text)
+void app_main(void)
+{
+    unity_run_menu();
+}
+
+static const esp_partition_t *get_partition(void)
+{
+    const esp_partition_t *result = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+            ESP_PARTITION_SUBTYPE_DATA_SPIFFS, spiffs_test_partition_label);
+    TEST_ASSERT_NOT_NULL_MESSAGE(result, "partition table not set correctly");
+    return result;
+}
+
+static void test_spiffs_create_file_with_text(const char* name, const char* text)
 {
     FILE* f = fopen(name, "wb");
     TEST_ASSERT_NOT_NULL(f);
@@ -36,7 +48,7 @@ void test_spiffs_create_file_with_text(const char* name, const char* text)
     TEST_ASSERT_EQUAL(0, fclose(f));
 }
 
-void test_spiffs_overwrite_append(const char* filename)
+static void test_spiffs_overwrite_append(const char* filename)
 {
     /* Create new file with 'aaaa' */
     test_spiffs_create_file_with_text(filename, "aaaa");
@@ -71,7 +83,7 @@ void test_spiffs_overwrite_append(const char* filename)
     TEST_ASSERT_EQUAL(0, fclose(f_r));
 }
 
-void test_spiffs_read_file(const char* filename)
+static void test_spiffs_read_file(const char* filename)
 {
     FILE* f = fopen(filename, "r");
     TEST_ASSERT_NOT_NULL(f);
@@ -82,7 +94,7 @@ void test_spiffs_read_file(const char* filename)
     TEST_ASSERT_EQUAL(0, fclose(f));
 }
 
-void test_spiffs_open_max_files(const char* filename_prefix, size_t files_count)
+static void test_spiffs_open_max_files(const char* filename_prefix, size_t files_count)
 {
     FILE** files = calloc(files_count, sizeof(FILE*));
     for (size_t i = 0; i < files_count; ++i) {
@@ -98,7 +110,7 @@ void test_spiffs_open_max_files(const char* filename_prefix, size_t files_count)
     free(files);
 }
 
-void test_spiffs_lseek(const char* filename)
+static void test_spiffs_lseek(const char* filename)
 {
     FILE* f = fopen(filename, "wb+");
     TEST_ASSERT_NOT_NULL(f);
@@ -123,7 +135,7 @@ void test_spiffs_lseek(const char* filename)
     TEST_ASSERT_EQUAL(0, fclose(f));
 }
 
-void test_spiffs_stat(const char* filename)
+static void test_spiffs_stat(const char* filename)
 {
     test_spiffs_create_file_with_text(filename, "foo\n");
     struct stat st;
@@ -132,7 +144,7 @@ void test_spiffs_stat(const char* filename)
     TEST_ASSERT_FALSE(st.st_mode & S_IFDIR);
 }
 
-void test_spiffs_unlink(const char* filename)
+static void test_spiffs_unlink(const char* filename)
 {
     test_spiffs_create_file_with_text(filename, "unlink\n");
 
@@ -141,7 +153,7 @@ void test_spiffs_unlink(const char* filename)
     TEST_ASSERT_NULL(fopen(filename, "r"));
 }
 
-void test_spiffs_rename(const char* filename_prefix)
+static void test_spiffs_rename(const char* filename_prefix)
 {
     char name_dst[64];
     char name_src[64];
@@ -167,7 +179,7 @@ void test_spiffs_rename(const char* filename_prefix)
     TEST_ASSERT_EQUAL(0, fclose(fdst));
 }
 
-void test_spiffs_truncate(const char *filename)
+static void test_spiffs_truncate(const char *filename)
 {
     int read = 0;
     int truncated_len = 0;
@@ -217,7 +229,7 @@ void test_spiffs_truncate(const char *filename)
     TEST_ASSERT_EQUAL(0, fclose(f));
 }
 
-void test_spiffs_ftruncate(const char *filename)
+static void test_spiffs_ftruncate(const char *filename)
 {
     int truncated_len = 0;
 
@@ -272,7 +284,7 @@ void test_spiffs_ftruncate(const char *filename)
     TEST_ASSERT_EQUAL(0, close(fd));
 }
 
-void test_spiffs_can_opendir(const char* path)
+static void test_spiffs_can_opendir(const char* path)
 {
     char name_dir_file[64];
     const char * file_name = "test_opd.txt";
@@ -297,7 +309,7 @@ void test_spiffs_can_opendir(const char* path)
     unlink(name_dir_file);
 }
 
-void test_spiffs_opendir_readdir_rewinddir(const char* dir_prefix)
+static void test_spiffs_opendir_readdir_rewinddir(const char* dir_prefix)
 {
     char name_dir_inner_file[64];
     char name_dir_inner[64];
@@ -375,7 +387,7 @@ void test_spiffs_opendir_readdir_rewinddir(const char* dir_prefix)
     TEST_ASSERT_EQUAL(0, closedir(dir));
 }
 
-void test_spiffs_readdir_many_files(const char* dir_prefix)
+static void test_spiffs_readdir_many_files(const char* dir_prefix)
 {
     const int n_files = 40;
     const int n_folders = 4;
@@ -467,15 +479,15 @@ static void read_write_task(void* param)
         if (args->write) {
             int cnt = fwrite(&val, sizeof(val), 1, f);
             if (cnt != 1) {
-                esp_rom_printf("E(w): i=%d, cnt=%d val=%d\n\n", i, cnt, val);
+                printf("E(w): i=%d, cnt=%d val=0x%" PRIx32 "\n\n", i, cnt, val);
                 args->result = ESP_FAIL;
                 goto close;
             }
         } else {
             uint32_t rval;
             int cnt = fread(&rval, sizeof(rval), 1, f);
-            if (cnt != 1) {
-                esp_rom_printf("E(r): i=%d, cnt=%d rval=%d\n\n", i, cnt, rval);
+            if (cnt != 1 || rval != val) {
+                esp_rom_printf("E(r): i=%d, cnt=%d val=0x%" PRIx32 " rval=0x%" PRIx32 "\n\n", i, cnt, rval);
                 args->result = ESP_FAIL;
                 goto close;
             }
@@ -492,7 +504,7 @@ done:
     vTaskDelete(NULL);
 }
 
-void test_spiffs_concurrent(const char* filename_prefix)
+static void test_spiffs_concurrent(const char* filename_prefix)
 {
     char names[4][64];
     for (size_t i = 0; i < 4; ++i) {
@@ -569,7 +581,7 @@ static void test_teardown(void)
 
 TEST_CASE("can initialize SPIFFS in erased partition", "[spiffs]")
 {
-    const esp_partition_t* part = get_test_data_partition();
+    const esp_partition_t* part = get_partition();
     TEST_ASSERT_NOT_NULL(part);
     TEST_ESP_OK(esp_partition_erase_range(part, 0, part->size));
     test_setup();
@@ -583,7 +595,7 @@ TEST_CASE("can initialize SPIFFS in erased partition", "[spiffs]")
 TEST_CASE("can format mounted partition", "[spiffs]")
 {
     // Mount SPIFFS, create file, format, check that the file does not exist.
-    const esp_partition_t* part = get_test_data_partition();
+    const esp_partition_t* part = get_partition();
     TEST_ASSERT_NOT_NULL(part);
     test_setup();
     const char* filename = "/spiffs/hello.txt";
@@ -598,7 +610,7 @@ TEST_CASE("can format unmounted partition", "[spiffs]")
 {
     // Mount SPIFFS, create file, unmount. Format. Mount again, check that
     // the file does not exist.
-    const esp_partition_t* part = get_test_data_partition();
+    const esp_partition_t* part = get_partition();
     TEST_ASSERT_NOT_NULL(part);
     test_setup();
     const char* filename = "/spiffs/hello.txt";
@@ -866,7 +878,7 @@ static void test_spiffs_rw_speed(const char* filename, void* buf, size_t buf_siz
 TEST_CASE("write/read speed test", "[spiffs][timeout=60]")
 {
     /* Erase partition before running the test to get consistent results */
-    const esp_partition_t* part = get_test_data_partition();
+    const esp_partition_t* part = get_partition();
     esp_partition_erase_range(part, 0, part->size);
 
     test_setup();
@@ -874,8 +886,8 @@ TEST_CASE("write/read speed test", "[spiffs][timeout=60]")
     const size_t buf_size = 16 * 1024;
     uint32_t* buf = (uint32_t*) calloc(1, buf_size);
     esp_fill_random(buf, buf_size);
-    const size_t file_size = 256 * 1024;
-    const char* file = "/spiffs/256k.bin";
+    const size_t file_size = part->size / 2;
+    const char* file = "/spiffs/speedtest.bin";
 
     test_spiffs_rw_speed(file, buf, 4 * 1024, file_size, true);
     TEST_ASSERT_EQUAL(0, unlink(file));
@@ -908,7 +920,7 @@ TEST_CASE("SPIFFS garbage-collect", "[spiffs][timeout=60]")
     TEST_ESP_OK(esp_spiffs_gc(spiffs_test_partition_label, 4096));
 
     // shouldn't be possible to reclaim more than the partition size
-    const esp_partition_t* part = get_test_data_partition();
+    const esp_partition_t* part = get_partition();
     TEST_ESP_ERR(ESP_ERR_NOT_FINISHED, esp_spiffs_gc(spiffs_test_partition_label, part->size * 2));
 
     test_teardown();
