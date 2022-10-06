@@ -224,7 +224,7 @@
   - "components/driver/**/*"
   - "components/sdmmc/**/*"
 
-# for jobs: example_test_pytest_esp32s3_usb_device and test_app_test_pytest_esp32s2_usb_host:
+# for jobs: USB host and device examples
 .patterns-example_test-usb: &patterns-example_test-usb
   - "components/hal/usb*.c"
   - "components/hal/esp32s*/include/hal/usb*.h"
@@ -232,6 +232,12 @@
   - "components/usb/**/*"
   - "examples/peripherals/usb/host/**/**/**/*"
   - "examples/peripherals/usb/device/**/**/*"
+
+# for jobs: USB component (Host) pytest test_app
+.patterns-component_ut-usb: &patterns-component_ut-usb
+  - "components/hal/usb*.c"
+  - "components/hal/esp32s*/include/hal/usb*.h"
+  - "components/usb/**/*"
 
 # for jobs: component_ut_pytest_esp32x_adc:
 .patterns-component_ut-adc: &patterns-component_ut-adc
@@ -528,6 +534,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
     - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
+    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32:
@@ -551,6 +559,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
     - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
+    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32c2:
@@ -572,6 +582,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -595,6 +607,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
     - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
+    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32h2:
@@ -616,6 +630,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -639,6 +655,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
     - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
+    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32s3:
@@ -660,6 +678,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1097,6 +1117,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
     - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
+    - <<: *if-dev-push
       changes: *patterns-custom_test
     - <<: *if-dev-push
       changes: *patterns-example_test
@@ -1381,6 +1403,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
 
 .rules:test:component_ut-esp32-wifi:
   rules:
@@ -1466,6 +1490,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32c2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
 
 .rules:test:component_ut-esp32c2-wifi:
   rules:
@@ -1551,6 +1577,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32c3
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
 
 .rules:test:component_ut-esp32c3-wifi:
   rules:
@@ -1636,6 +1664,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32h2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
 
 .rules:test:component_ut-esp32h2-wifi:
   rules:
@@ -1721,6 +1751,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32s2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
 
 .rules:test:component_ut-esp32s2-wifi:
   rules:
@@ -1806,6 +1838,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32s3
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
 
 .rules:test:component_ut-esp32s3-wifi:
   rules:

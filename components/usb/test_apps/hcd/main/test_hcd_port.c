@@ -9,7 +9,6 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "esp_rom_sys.h"
-#include "test_utils.h"
 #include "test_usb_common.h"
 #include "test_hcd_common.h"
 
@@ -42,9 +41,8 @@ Procedure:
     - Teardown port and HCD
 */
 
-TEST_CASE("Test HCD port sudden disconnect", "[hcd][ignore]")
+TEST_CASE("Test HCD port sudden disconnect", "[port][low_speed][full_speed]")
 {
-    hcd_port_handle_t port_hdl = test_hcd_setup();  //Setup the HCD and port
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); //Short delay send of SOF (for FS) or EOPs (for LS)
 
@@ -110,7 +108,6 @@ TEST_CASE("Test HCD port sudden disconnect", "[hcd][ignore]")
     //Recovered port should be able to connect and disconnect again
     test_hcd_wait_for_conn(port_hdl);
     test_hcd_wait_for_disconn(port_hdl, false);
-    test_hcd_teardown(port_hdl);
 }
 
 /*
@@ -133,9 +130,8 @@ Procedure:
     - Cleanup default pipe
     - Trigger disconnection and teardown
 */
-TEST_CASE("Test HCD port suspend and resume", "[hcd][ignore]")
+TEST_CASE("Test HCD port suspend and resume", "[port][low_speed][full_speed]")
 {
-    hcd_port_handle_t port_hdl = test_hcd_setup();  //Setup the HCD and port
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); //Short delay send of SOF (for FS) or EOPs (for LS)
 
@@ -169,7 +165,6 @@ TEST_CASE("Test HCD port suspend and resume", "[hcd][ignore]")
     test_hcd_pipe_free(default_pipe);
     //Cleanup
     test_hcd_wait_for_disconn(port_hdl, false);
-    test_hcd_teardown(port_hdl);
 }
 
 /*
@@ -189,9 +184,8 @@ Procedure:
     - Check that a disconnection still works after disable
     - Teardown
 */
-TEST_CASE("Test HCD port disable", "[hcd][ignore]")
+TEST_CASE("Test HCD port disable", "[port][low_speed][full_speed]")
 {
-    hcd_port_handle_t port_hdl = test_hcd_setup();  //Setup the HCD and port
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); //Short delay send of SOF (for FS) or EOPs (for LS)
 
@@ -210,14 +204,14 @@ TEST_CASE("Test HCD port disable", "[hcd][ignore]")
     printf("Enqueuing URBs\n");
     for (int i = 0; i < NUM_URBS; i++) {
         TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb_list[i]));
+        //Add a short delay to let the transfers run for a bit
+        esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
     }
-    //Add a short delay to let the transfers run for a bit
-    esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
+
     //Halt the default pipe before suspending
     TEST_ASSERT_EQUAL(HCD_PIPE_STATE_ACTIVE, hcd_pipe_get_state(default_pipe));
     TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_HALT));
     TEST_ASSERT_EQUAL(HCD_PIPE_STATE_HALTED, hcd_pipe_get_state(default_pipe));
-
 
     //Check that port can be disabled
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_DISABLE));
@@ -252,7 +246,6 @@ TEST_CASE("Test HCD port disable", "[hcd][ignore]")
 
     //Trigger a disconnection and cleanup
     test_hcd_wait_for_disconn(port_hdl, true);
-    test_hcd_teardown(port_hdl);
 }
 
 /*
@@ -279,17 +272,16 @@ static void concurrent_task(void *arg)
     vTaskDelay(portMAX_DELAY);  //Block forever and wait to be deleted
 }
 
-TEST_CASE("Test HCD port command bailout", "[hcd][ignore]")
+TEST_CASE("Test HCD port command bailout", "[port][low_speed][full_speed]")
 {
-    hcd_port_handle_t port_hdl = test_hcd_setup();  //Setup the HCD and port
     test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); //Short delay send of SOF (for FS) or EOPs (for LS)
 
     //Create task to run port commands concurrently
     SemaphoreHandle_t sync_sem = xSemaphoreCreateBinary();
     TaskHandle_t task_handle;
-    TEST_ASSERT_NOT_EQUAL(NULL, sync_sem);
-    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(concurrent_task, "tsk", 4096, (void *) sync_sem, UNITY_FREERTOS_PRIORITY + 1, &task_handle, 0));
+    TEST_ASSERT_NOT_NULL(sync_sem);
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(concurrent_task, "tsk", 4096, (void *) sync_sem, uxTaskPriorityGet(NULL) + 1, &task_handle, 0));
 
     //Suspend the device
     printf("Suspending\n");
@@ -310,6 +302,4 @@ TEST_CASE("Test HCD port command bailout", "[hcd][ignore]")
     vTaskDelay(pdMS_TO_TICKS(10)); //Short delay for concurrent task finish running
     vTaskDelete(task_handle);
     vSemaphoreDelete(sync_sem);
-
-    test_hcd_teardown(port_hdl);
 }

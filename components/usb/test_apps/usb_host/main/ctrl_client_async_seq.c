@@ -14,7 +14,6 @@
 #include "ctrl_client.h"
 #include "usb/usb_host.h"
 #include "unity.h"
-#include "test_utils.h"
 
 /*
 Implementation of a control transfer client used for USB Host Tests.
@@ -63,7 +62,7 @@ static void ctrl_transfer_cb(usb_transfer_t *transfer)
 {
     ctrl_client_obj_t *ctrl_obj = (ctrl_client_obj_t *)transfer->context;
     //Check the completed control transfer
-    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, transfer->status);
+    TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, transfer->status, "Transfer NOT completed");
     TEST_ASSERT_EQUAL(ctrl_obj->config_desc_cached->wTotalLength, transfer->actual_num_bytes - sizeof(usb_setup_packet_t));
     ctrl_obj->num_xfer_done++;
     if (ctrl_obj->num_xfer_sent < ctrl_obj->test_param.num_ctrl_xfer_to_send) {
@@ -134,7 +133,7 @@ void ctrl_client_async_seq_task(void *arg)
             case TEST_STAGE_DEV_OPEN: {
                 ESP_LOGD(CTRL_CLIENT_TAG, "Open");
                 //Open the device
-                TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_open(ctrl_obj.client_hdl, ctrl_obj.dev_addr_to_open, &ctrl_obj.dev_hdl));
+                TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_host_device_open(ctrl_obj.client_hdl, ctrl_obj.dev_addr_to_open, &ctrl_obj.dev_hdl), "Failed to open the device");
                 //Target our transfers to the device
                 for (int i = 0; i < NUM_TRANSFER_OBJ; i++) {
                     ctrl_xfer[i]->device_handle = ctrl_obj.dev_hdl;
@@ -169,6 +168,7 @@ void ctrl_client_async_seq_task(void *arg)
             }
             case TEST_STAGE_DEV_CLOSE: {
                 ESP_LOGD(CTRL_CLIENT_TAG, "Close");
+                vTaskDelay(10); // Give USB Host Lib some time to process all trnsfers
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_close(ctrl_obj.client_hdl, ctrl_obj.dev_hdl));
                 exit_loop = true;
                 break;

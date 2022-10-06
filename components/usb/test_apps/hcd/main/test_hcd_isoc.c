@@ -9,8 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "unity.h"
-#include "test_utils.h"
-#include "test_usb_mock_classes.h"
+#include "test_usb_mock_msc.h"
 #include "test_usb_common.h"
 #include "test_hcd_common.h"
 
@@ -40,9 +39,8 @@ Procedure:
     - Teardown
 */
 
-TEST_CASE("Test HCD isochronous pipe URBs", "[hcd][ignore]")
+TEST_CASE("Test HCD isochronous pipe URBs", "[isoc][full_speed]")
 {
-    hcd_port_handle_t port_hdl = test_hcd_setup();  //Setup the HCD and port
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
     //The MPS of the ISOC OUT pipe is quite large, so we need to bias the FIFO sizing
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_set_fifo_bias(port_hdl, HCD_PORT_FIFO_BIAS_PTX));
@@ -82,9 +80,9 @@ TEST_CASE("Test HCD isochronous pipe URBs", "[hcd][ignore]")
         TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
         //Overall URB status and overall number of bytes
         TEST_ASSERT_EQUAL(URB_DATA_BUFF_SIZE, urb->transfer.actual_num_bytes);
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
+        TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status, "Transfer NOT completed");
         for (int pkt_idx = 0; pkt_idx < NUM_PACKETS_PER_URB; pkt_idx++) {
-            TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.isoc_packet_desc[pkt_idx].status);
+            TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.isoc_packet_desc[pkt_idx].status, "Transfer NOT completed");
         }
     }
     //Free URB list and pipe
@@ -95,7 +93,6 @@ TEST_CASE("Test HCD isochronous pipe URBs", "[hcd][ignore]")
     test_hcd_pipe_free(default_pipe);
     //Cleanup
     test_hcd_wait_for_disconn(port_hdl, false);
-    test_hcd_teardown(port_hdl);
 }
 
 /*
@@ -122,9 +119,8 @@ Procedure:
     - Free both pipes
     - Teardown
 */
-TEST_CASE("Test HCD isochronous pipe sudden disconnect", "[hcd][ignore]")
+TEST_CASE("Test HCD isochronous pipe sudden disconnect", "[isoc][full_speed]")
 {
-    hcd_port_handle_t port_hdl = test_hcd_setup();  //Setup the HCD and port
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
     //The MPS of the ISOC OUT pipe is quite large, so we need to bias the FIFO sizing
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_set_fifo_bias(port_hdl, HCD_PORT_FIFO_BIAS_PTX));
@@ -189,6 +185,4 @@ TEST_CASE("Test HCD isochronous pipe sudden disconnect", "[hcd][ignore]")
     }
     test_hcd_pipe_free(isoc_out_pipe);
     test_hcd_pipe_free(default_pipe);
-    //Cleanup
-    test_hcd_teardown(port_hdl);
 }
