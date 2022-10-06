@@ -65,12 +65,10 @@ There are a number of core dump related configuration options which user can cho
    * Decode and show summary (info_corefile)
    * Don't decode
 
-.. only:: esp32c3
+**Reserved stack size (Components -> Core dump -> Reserved stack size)**
 
-   **Reserved stack size (Components -> Core dump -> Reserved stack size)**
-
-      Size of the memory to be reserved for core dump stack. If 0 core dump process will run on the stack of crashed task/ISR, otherwise special stack will be allocated.
-      To ensure that core dump itself will not overflow task/ISR stack set this to the value above 800.
+   Size of the memory to be reserved for core dump stack. If 0 core dump process will run on the stack of crashed task/ISR, otherwise special stack will be allocated.
+   To ensure that core dump itself will not overflow task/ISR stack set this to the value above 800.
 
 Save core dump to flash
 -----------------------
