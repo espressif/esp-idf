@@ -10,6 +10,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
+#include <inttypes.h>
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "nvs_handle.hpp"
@@ -47,7 +48,7 @@ extern "C" void app_main(void)
         switch (err) {
             case ESP_OK:
                 printf("Done\n");
-                printf("Restart counter = %d\n", restart_counter);
+                printf("Restart counter = %" PRIu32 "\n", restart_counter);
                 break;
             case ESP_ERR_NVS_NOT_FOUND:
                 printf("The value is not initialized yet!\n");

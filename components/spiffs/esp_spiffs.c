@@ -148,7 +148,7 @@ static esp_err_t esp_spiffs_init(const esp_vfs_spiffs_conf_t* conf)
     uint32_t flash_page_size = g_rom_flashchip.page_size;
     uint32_t log_page_size = CONFIG_SPIFFS_PAGE_SIZE;
     if (log_page_size % flash_page_size != 0) {
-        ESP_LOGE(TAG, "SPIFFS_PAGE_SIZE is not multiple of flash chip page size (%d)",
+        ESP_LOGE(TAG, "SPIFFS_PAGE_SIZE is not multiple of flash chip page size (%" PRIu32 ")",
                 flash_page_size);
         return ESP_ERR_INVALID_ARG;
     }
@@ -268,11 +268,11 @@ static esp_err_t esp_spiffs_init(const esp_vfs_spiffs_conf_t* conf)
                             efs->cache, efs->cache_sz, spiffs_api_check);
 
     if (conf->format_if_mount_failed && res != SPIFFS_OK) {
-        ESP_LOGW(TAG, "mount failed, %i. formatting...", SPIFFS_errno(efs->fs));
+        ESP_LOGW(TAG, "mount failed, %" PRId32 ". formatting...", SPIFFS_errno(efs->fs));
         SPIFFS_clearerr(efs->fs);
         res = SPIFFS_format(efs->fs);
         if (res != SPIFFS_OK) {
-            ESP_LOGE(TAG, "format failed, %i", SPIFFS_errno(efs->fs));
+            ESP_LOGE(TAG, "format failed, %" PRId32, SPIFFS_errno(efs->fs));
             SPIFFS_clearerr(efs->fs);
             esp_spiffs_free(&efs);
             return ESP_FAIL;
@@ -281,7 +281,7 @@ static esp_err_t esp_spiffs_init(const esp_vfs_spiffs_conf_t* conf)
                             efs->cache, efs->cache_sz, spiffs_api_check);
     }
     if (res != SPIFFS_OK) {
-        ESP_LOGE(TAG, "mount failed, %i", SPIFFS_errno(efs->fs));
+        ESP_LOGE(TAG, "mount failed, %" PRId32, SPIFFS_errno(efs->fs));
         SPIFFS_clearerr(efs->fs);
         esp_spiffs_free(&efs);
         return ESP_FAIL;
@@ -354,7 +354,7 @@ esp_err_t esp_spiffs_format(const char* partition_label)
 
     s32_t res = SPIFFS_format(_efs[index]->fs);
     if (res != SPIFFS_OK) {
-        ESP_LOGE(TAG, "format failed, %i", SPIFFS_errno(_efs[index]->fs));
+        ESP_LOGE(TAG, "format failed, %" PRId32, SPIFFS_errno(_efs[index]->fs));
         SPIFFS_clearerr(_efs[index]->fs);
         /* If the partition was previously mounted, but format failed, don't
          * try to mount the partition back (it will probably fail). On the
@@ -371,7 +371,7 @@ esp_err_t esp_spiffs_format(const char* partition_label)
                             _efs[index]->fds, _efs[index]->fds_sz, _efs[index]->cache,
                             _efs[index]->cache_sz, spiffs_api_check);
         if (res != SPIFFS_OK) {
-            ESP_LOGE(TAG, "mount failed, %i", SPIFFS_errno(_efs[index]->fs));
+            ESP_LOGE(TAG, "mount failed, %" PRId32, SPIFFS_errno(_efs[index]->fs));
             SPIFFS_clearerr(_efs[index]->fs);
             return ESP_FAIL;
         }

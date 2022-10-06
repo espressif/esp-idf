@@ -51,7 +51,7 @@ static void find_partition(esp_partition_type_t type, esp_partition_subtype_t su
     const esp_partition_t * part  = esp_partition_find_first(type, subtype, name);
 
     if (part != NULL) {
-        ESP_LOGI(TAG, "\tfound partition '%s' at offset 0x%x with size 0x%x", part->label, part->address, part->size);
+        ESP_LOGI(TAG, "\tfound partition '%s' at offset 0x%" PRIx32 " with size 0x%" PRIx32, part->label, part->address, part->size);
     } else {
         ESP_LOGE(TAG, "\tpartition not found!");
     }
@@ -103,7 +103,7 @@ void app_main(void)
     // label is found. Verify if its the same instance as the one found before.
     for (; it != NULL; it = esp_partition_next(it)) {
         const esp_partition_t *part = esp_partition_get(it);
-        ESP_LOGI(TAG, "\tfound partition '%s' at offset 0x%x with size 0x%x", part->label, part->address, part->size);
+        ESP_LOGI(TAG, "\tfound partition '%s' at offset 0x%" PRIx32 " with size 0x%" PRIx32, part->label, part->address, part->size);
     }
     // Release the partition iterator to release memory allocated for it
     esp_partition_iterator_release(it);
@@ -115,7 +115,7 @@ void app_main(void)
     // label is found. Verify if its the same instance as the one found before.
     for (; it != NULL; it = esp_partition_next(it)) {
         const esp_partition_t *part = esp_partition_get(it);
-        ESP_LOGI(TAG, "\tfound partition '%s' at offset 0x%x with size 0x%x", part->label, part->address, part->size);
+        ESP_LOGI(TAG, "\tfound partition '%s' at offset 0x%" PRIx32 " with size 0x%" PRIx32, part->label, part->address, part->size);
     }
 
     // Release the partition iterator to release memory allocated for it

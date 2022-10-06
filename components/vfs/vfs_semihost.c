@@ -195,7 +195,7 @@ static int vfs_semihost_mkdir(void* ctx, const char* path, mode_t mode)
         return -1;
     }
 
-    ESP_LOGV(TAG, "%s: '%s 0x%x'", __func__, path, mode);
+    ESP_LOGV(TAG, "%s: '%s 0x%x'", __func__, path, (unsigned) mode);
     return semihosting_mkdir(path, mode);
 }
 
