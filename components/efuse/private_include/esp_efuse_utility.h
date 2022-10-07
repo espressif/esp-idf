@@ -127,7 +127,7 @@ uint32_t esp_efuse_utility_read_reg(esp_efuse_block_t blk, unsigned int num_reg)
 /**
  * @brief Writing efuse register with checking of repeated programming of programmed bits.
  */
-esp_err_t esp_efuse_utility_write_reg(unsigned int num_reg, esp_efuse_block_t efuse_block, uint32_t reg_to_write);
+esp_err_t esp_efuse_utility_write_reg(esp_efuse_block_t efuse_block, unsigned int num_reg, uint32_t reg_to_write);
 
 /* @brief Reset efuse write registers
  *
