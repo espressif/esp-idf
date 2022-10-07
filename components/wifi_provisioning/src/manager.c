@@ -1485,7 +1485,7 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
     /* Initialize app data */
     if (security == WIFI_PROV_SECURITY_0) {
         prov_ctx->mgr_info.capabilities.no_sec = true;
-    } else
+    }
 #endif
 #ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
     if (security == WIFI_PROV_SECURITY_1) {
@@ -1504,7 +1504,7 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
         } else {
             prov_ctx->mgr_info.capabilities.no_pop = true;
         }
-    } else
+    }
 #endif
 #ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
     if (security == WIFI_PROV_SECURITY_2) {
