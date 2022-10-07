@@ -100,8 +100,10 @@ TEST_CASE("Add heap region address range checks", "[heap]")
     const intptr_t heap_end = 0x3000;
 
     TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x0, 0x1000));
-    TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x2000));
     TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x3000, 0x4000));
+    TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x2999));
+    TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1001, 0x3000));
+    TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1001, 0x2999));
     TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x0, 0x2000));
     TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x0, 0x4000));
     TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x4000));
