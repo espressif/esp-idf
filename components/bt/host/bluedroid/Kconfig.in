@@ -215,6 +215,14 @@ config BT_GATTC_ENABLE
     help
         This option can be close when the app work only on gatt server mode
 
+config BT_GATTC_MAX_CACHE_CHAR
+    int "Max gattc cache characteristic for discover"
+    depends on BT_GATTC_ENABLE
+    range 1 500
+    default 40
+    help
+        Maximum GATTC cache characteristic count
+
 config BT_GATTC_CACHE_NVS_FLASH
     bool "Save gattc cache data to nvs flash"
     depends on BT_GATTC_ENABLE
