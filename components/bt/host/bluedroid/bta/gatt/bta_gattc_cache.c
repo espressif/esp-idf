@@ -541,7 +541,6 @@ void bta_gattc_start_disc_char_dscp(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb)
     if (bta_gattc_discover_procedure(conn_id, p_srvc_cb, GATT_DISC_CHAR_DSCPT) != 0) {
         bta_gattc_char_dscpt_disc_cmpl(conn_id, p_srvc_cb);
     }
-
 }
 
 void bta_gattc_update_include_service(const list_t *services) {
@@ -693,7 +692,9 @@ static void bta_gattc_char_dscpt_disc_cmpl(UINT16 conn_id, tBTA_GATTC_SERV *p_sr
 {
     tBTA_GATTC_ATTR_REC *p_rec = NULL;
 
-    if (--p_srvc_cb->total_char > 0) {
+    /* Recursive function will cause BTU stack overflow when there are a large number of characteristic
+     * without descriptor to discover. So replace it with while function */
+    while (--p_srvc_cb->total_char > 0) {
         p_rec = p_srvc_cb->p_srvc_list + (++ p_srvc_cb->cur_char_idx);
         /* add the next characteristic into cache */
         bta_gattc_add_char_to_cache (p_srvc_cb,
@@ -701,11 +702,14 @@ static void bta_gattc_char_dscpt_disc_cmpl(UINT16 conn_id, tBTA_GATTC_SERV *p_sr
                                      p_rec->s_handle,
                                      &p_rec->uuid,
                                      p_rec->property);
+        /* start to discover next characteristic for descriptor */
+        if (bta_gattc_discover_procedure(conn_id, p_srvc_cb, GATT_DISC_CHAR_DSCPT) == 0) {
+            /* send att req and wait for att rsp */
+            break;
+        }
+    }
 
-        /* start discoverying next characteristic for char descriptor */
-        bta_gattc_start_disc_char_dscp(conn_id, p_srvc_cb);
-    } else
-        /* all characteristic has been explored, start with next service if any */
+    if (p_srvc_cb->total_char == 0) /* all characteristic has been explored, start with next service if any */
     {
 #if (defined BTA_GATT_DEBUG && BTA_GATT_DEBUG == TRUE)
         APPL_TRACE_ERROR("all char has been explored");
@@ -772,7 +776,7 @@ static tBTA_GATT_STATUS bta_gattc_add_srvc_to_list(tBTA_GATTC_SERV *p_srvc_cb,
         /* allocate bigger buffer ?? */
         status = GATT_DB_FULL;
 
-        APPL_TRACE_ERROR("service not added, no resources or wrong state");
+        APPL_TRACE_ERROR("service not added, no resources or wrong state, see CONFIG_BT_GATTC_MAX_CACHE_CHAR");
     }
     return status;
 }
@@ -814,7 +818,7 @@ static tBTA_GATT_STATUS bta_gattc_add_char_to_list(tBTA_GATTC_SERV *p_srvc_cb,
         }
         p_srvc_cb->next_avail_idx ++;
     } else {
-        APPL_TRACE_ERROR("char not added, no resources");
+        APPL_TRACE_ERROR("char not added, no resources, see CONFIG_BT_GATTC_MAX_CACHE_CHAR");
         /* allocate bigger buffer ?? */
         status = BTA_GATT_DB_FULL;
     }
