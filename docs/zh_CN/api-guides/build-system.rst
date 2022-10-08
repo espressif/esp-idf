@@ -654,6 +654,21 @@ KConfig.projbuild
 
 ``project_include.cmake`` 文件在 ESP-IDF 内部使用，以定义项目范围内的构建功能，比如 ``esptool.py`` 的命令行参数和 ``bootloader`` 这个特殊的应用程序。
 
+通过封装对现有函数进行重新定义或扩展
+-------------------------------------
+
+链接器具有封装功能，可以重新定义或扩展现有 ESP-IDF 函数的行为。如需封装函数，您需要在项目的 ``CMakeLists.txt`` 文件中提供以下 CMake 声明：
+
+.. code-block:: cmake
+
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=function_to_redefine")
+
+其中，``function_to_redefine`` 为需要被重新定义或扩展的函数名称。启用此选项后，链接器将把二进制库中所有对 ``function_to_redefine`` 函数的调用改为对 ``__wrap_function_to_redefine`` 函数的调用。因此，您必须在应用程序中定义这一符号。
+
+链接器会提供一个名为 ``__real_function_to_redefine`` 的新符号，指向将被重新定义的函数的原有实现。由此，可以从新的实现中调用该函数，从而对原有实现进行扩展。
+
+请参考 :example:`build_system/wrappers` 示例，了解其详细原理。更多细节请参阅 :idf_file:`examples/build_system/wrappers/README.md`。
+
 .. _config_only_component:
 
 仅配置组件
