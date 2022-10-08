@@ -508,7 +508,7 @@ The scan type and other per-scan attributes are configured by :cpp:func:`esp_wif
        - min=0, max>0: scan dwells on each channel for ``max`` ms.
        - min>0, max>0: the minimum time the scan dwells on each channel is ``min`` ms. If no AP is found during this time frame, the scan switches to the next channel. Otherwise, the scan dwells on the channel for ``max`` ms.
 
-       If you want to improve the performance of the the scan, you can try to modify these two parameters.
+       If you want to improve the performance of the scan, you can try to modify these two parameters.
 
 
 There are also some global scan attributes which are configured by API :cpp:func:`esp_wifi_set_config()`, refer to `Station Basic Configuration`_
