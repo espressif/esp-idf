@@ -330,8 +330,8 @@ static void set_rtc_dig_dbias()
     if (chip_version >= 3) {
         dig_dbias = get_dig_dbias_by_efuse(chip_version);
         if (dig_dbias != 0) {
-            if (dig_dbias + 4 > 28) {
-                dig_dbias = 28;
+            if (dig_dbias + 4 > 31) {
+                dig_dbias = 31;
             } else {
                 dig_dbias += 4;
             }
