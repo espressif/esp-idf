@@ -106,6 +106,7 @@ extern "C" {
 #define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES    (1)
 #define RTC_CNTL_CK8M_WAIT_SLP_CYCLES       (4)
 #define RTC_CNTL_WAKEUP_DELAY_CYCLES        (4)
+#define RTC_CNTL_MIN_SLP_VAL_MIN            (2)
 
 #define RTC_CNTL_CK8M_DFREQ_DEFAULT 100
 #define RTC_CNTL_SCK_DCAP_DEFAULT   255
