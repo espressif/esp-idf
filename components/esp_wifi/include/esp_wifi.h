@@ -1227,6 +1227,7 @@ esp_err_t esp_wifi_ftm_resp_set_offset(int16_t offset_cm);
   */
 esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
 
+#define ESP_WIFI_CONNECTIONLESS_INTERVAL_DEFAULT_MODE 0
 /**
   * @brief      Set wake interval for connectionless modules to wake up periodically.
   *
@@ -1235,6 +1236,7 @@ esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
   *               When ESP_WIFI_STA_DISCONNECTED_PM_ENABLE is enabled, this configuration could work at disconnected status.
   * @attention 3. Event WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START would be posted each time wake interval starts.
   * @attention 4. Recommend to configure interval in multiples of hundred. (e.g. 100ms)
+  * @attention 5. Recommend to configure interval to ESP_WIFI_CONNECTIONLESS_INTERVAL_DEFAULT_MODE to get stable performance at coexistence mode.
   *
   * @param      wake_interval  Milliseconds after would the chip wake up, from 1 to 65535.
   */
