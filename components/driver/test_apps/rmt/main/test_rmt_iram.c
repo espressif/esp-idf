@@ -159,6 +159,8 @@ static void test_rmt_rx_iram_safe(size_t mem_block_symbols, bool with_dma, rmt_c
 
     // disable the flash cache, and simulate input signal by GPIO
     unity_utils_run_cache_disable_stub(test_simulate_input_post_cache_disable, 0);
+
+    TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
     TEST_ASSERT_EQUAL(1, test_user_data.received_symbol_num);
 
     printf("disable rx channels\r\n");
