@@ -94,7 +94,7 @@ esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (max_nb_attr > ESP_GATT_ATTR_HANDLE_MAX) {
-        LOG_ERROR("%s the number of attribute should not be greater than CONFIG_BT_GATT_MAX_SR_ATTRIBUTES\n");
+        LOG_ERROR("The number of attribute should not be greater than CONFIG_BT_GATT_MAX_SR_ATTRIBUTES\n");
         return ESP_ERR_INVALID_ARG;
     }
 
