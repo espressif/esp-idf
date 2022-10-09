@@ -427,7 +427,10 @@ esp_err_t mcpwm_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpw
 
 uint32_t mcpwm_get_frequency(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
 {
-    MCPWM_TIMER_CHECK(mcpwm_num, timer_num);
+    if (mcpwm_num >= MCPWM_UNIT_MAX || timer_num >= MCPWM_TIMER_MAX) {
+        ESP_LOGE(TAG, "Invalid MCPWM timer instance");
+        return 0;
+    }
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
     mcpwm_critical_enter(mcpwm_num);
     int real_group_prescale = mcpwm_ll_group_get_clock_prescale(hal->dev);
@@ -441,9 +444,12 @@ uint32_t mcpwm_get_frequency(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
 
 float mcpwm_get_duty(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_generator_t gen)
 {
+    if (mcpwm_num >= MCPWM_UNIT_MAX || timer_num >= MCPWM_TIMER_MAX || gen >= MCPWM_GEN_MAX) {
+        ESP_LOGE(TAG, "Invalid MCPWM generator instance");
+        return 0;
+    }
     //the driver currently always use the timer x for operator x
     const int op = timer_num;
-    MCPWM_GEN_CHECK(mcpwm_num, timer_num, gen);
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
     mcpwm_critical_enter(mcpwm_num);
     float duty = 100.0 * mcpwm_ll_operator_get_compare_value(hal->dev, op, gen) / mcpwm_ll_timer_get_peak(hal->dev, timer_num, false);
@@ -453,9 +459,12 @@ float mcpwm_get_duty(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_gene
 
 uint32_t mcpwm_get_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_operator_t gen)
 {
+    if (mcpwm_num >= MCPWM_UNIT_MAX || timer_num >= MCPWM_TIMER_MAX || gen >= MCPWM_GEN_MAX) {
+        ESP_LOGE(TAG, "Invalid MCPWM generator instance");
+        return 0;
+    }
     //the driver currently always use the timer x for operator x
     const int op = timer_num;
-    MCPWM_GEN_CHECK(mcpwm_num, timer_num, gen);
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
     mcpwm_critical_enter(mcpwm_num);
     int real_group_prescale = mcpwm_ll_group_get_clock_prescale(hal->dev);
@@ -851,16 +860,18 @@ esp_err_t mcpwm_capture_disable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_ch
 
 uint32_t MCPWM_ISR_ATTR mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
 {
-    ESP_RETURN_ON_FALSE(mcpwm_num < SOC_MCPWM_GROUPS, ESP_ERR_INVALID_ARG, TAG, MCPWM_GROUP_NUM_ERROR);
-    ESP_RETURN_ON_FALSE(cap_sig < SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER, ESP_ERR_INVALID_ARG, TAG, MCPWM_CAPTURE_ERROR);
+    if (mcpwm_num >= MCPWM_UNIT_MAX && cap_sig >= SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER) {
+        return 0;
+    }
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
     return mcpwm_ll_capture_get_value(hal->dev, cap_sig);
 }
 
 uint32_t MCPWM_ISR_ATTR mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
 {
-    ESP_RETURN_ON_FALSE(mcpwm_num < SOC_MCPWM_GROUPS, ESP_ERR_INVALID_ARG, TAG, MCPWM_GROUP_NUM_ERROR);
-    ESP_RETURN_ON_FALSE(cap_sig < SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER, ESP_ERR_INVALID_ARG, TAG, MCPWM_CAPTURE_ERROR);
+    if (mcpwm_num >= MCPWM_UNIT_MAX && cap_sig >= SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER) {
+        return 0;
+    }
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
     return mcpwm_ll_capture_get_edge(hal->dev, cap_sig) == MCPWM_CAP_EDGE_NEG ? 2 : 1;
 }
