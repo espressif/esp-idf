@@ -637,7 +637,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
                                        rtc_vddsdio_config_t vddsdio_config)
 {
     // Enter sleep
-    esp_err_t err = esp_sleep_start(pd_flags);
+    uint32_t reject = esp_sleep_start(pd_flags);
 
     // If VDDSDIO regulator was controlled by RTC registers before sleep,
     // restore the configuration.
@@ -650,7 +650,8 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
         // Wait for the flash chip to start up
         esp_rom_delay_us(flash_enable_time_us);
     }
-    return err;
+
+    return reject ? ESP_ERR_SLEEP_REJECT : ESP_OK;
 }
 
 /**
@@ -811,11 +812,18 @@ esp_err_t esp_light_sleep_start(void)
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
 
-    // Enter sleep, then wait for flash to be ready on wakeup
-    esp_err_t err = esp_light_sleep_inner(pd_flags,
-                                          flash_enable_time_us, vddsdio_config);
+    esp_err_t err = ESP_OK;
+    int64_t final_sleep_duration_us = (int64_t)s_config.sleep_duration - (int64_t)s_config.sleep_time_adjustment;
+    int64_t min_sleep_duration_us = rtc_time_slowclk_to_us(RTC_CNTL_MIN_SLP_VAL_MIN, s_config.rtc_clk_cal_period);
 
-    s_light_sleep_wakeup = true;
+    // if rtc timer wakeup source is enabled, need to compare final sleep duration and min sleep duration to avoid late wakeup
+    if ((s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) && (final_sleep_duration_us <= min_sleep_duration_us)) {
+        err = ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION;
+    } else {
+        // Enter sleep, then wait for flash to be ready on wakeup
+        err = esp_light_sleep_inner(pd_flags, flash_enable_time_us, vddsdio_config);
+        s_light_sleep_wakeup = true;
+    }
 
     // System timer has been stopped for the duration of the sleep, correct for that.
     uint64_t rtc_ticks_at_end = rtc_time_get();
