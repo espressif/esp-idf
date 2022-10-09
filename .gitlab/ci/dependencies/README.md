@@ -97,4 +97,4 @@ There are a few extra dependencies while generating the dependency tree graph, p
 
 ### CLI usage
 
-`python generate_rules.py --graph OUTPUT_PATH`
+`python $IDF_PATH/tools/ci/generate_rules.py --graph OUTPUT_PATH`

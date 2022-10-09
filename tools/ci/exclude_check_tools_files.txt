@@ -15,6 +15,7 @@ tools/ci/checkout_project_ref.py
 tools/ci/ci_fetch_submodule.py
 tools/ci/ci_get_mr_info.py
 tools/ci/configure_ci_environment.sh
+tools/ci/generate_rules.py
 tools/ci/deploy_docs.py
 tools/ci/envsubst.py
 tools/ci/*exclude*.txt
