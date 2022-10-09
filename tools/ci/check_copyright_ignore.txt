@@ -1138,7 +1138,6 @@ components/soc/esp32s2/include/soc/interrupt_reg.h
 components/soc/esp32s2/include/soc/ledc_reg.h
 components/soc/esp32s2/include/soc/memprot_defs.h
 components/soc/esp32s2/include/soc/nrx_reg.h
-components/soc/esp32s2/include/soc/rtc_cntl_reg.h
 components/soc/esp32s2/include/soc/rtc_cntl_struct.h
 components/soc/esp32s2/include/soc/rtc_i2c_reg.h
 components/soc/esp32s2/include/soc/rtc_io_channel.h

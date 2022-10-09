@@ -482,7 +482,6 @@ extern "C" {
 #define RTC_CNTL_MIN_SLP_VAL_M  (RTC_CNTL_MIN_SLP_VAL_V << RTC_CNTL_MIN_SLP_VAL_S)
 #define RTC_CNTL_MIN_SLP_VAL_V  0x000000FFU
 #define RTC_CNTL_MIN_SLP_VAL_S  8
-#define RTC_CNTL_MIN_SLP_VAL_MIN 2
 
 /** RTC_CNTL_TIMER6_REG register
  *  register description
