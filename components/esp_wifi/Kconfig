@@ -10,6 +10,7 @@ menu "Wi-Fi"
         bool "Software controls WiFi/Bluetooth coexistence"
         depends on ESP32_WIFI_ENABLED && BT_ENABLED
         default y
+        select ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
         help
             If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
             Recommended for heavy traffic scenarios. Both coexistence configuration options are
@@ -307,6 +308,7 @@ menu "Wi-Fi"
 
     config ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
         bool "Power Management for station at disconnected"
+        default y
         help
             Select this option to enable power_management for station when disconnected.
             Chip will do modem-sleep when rf module is not in use any more.

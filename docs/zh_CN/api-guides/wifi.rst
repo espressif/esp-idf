@@ -266,6 +266,11 @@ WIFI_EVENT_STA_BEACON_TIMEOUT
 
 如果 station 在 inactive 时间内未收到所连接 AP 的 beacon，将发生 beacon 超时，将引发此事件。inactive 时间通过调用函数 :cpp:func:`esp_wifi_set_inactive_time()` 设置。
 
+WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+非连接模块在 `Interval` 开始时触发此事件。 请参考 :ref:`非连接模块功耗管理 <connectionless-module-power-save-cn>` 。
+
 {IDF_TARGET_NAME} Wi-Fi station 一般情况
 ------------------------------------------------
 下图为 station 模式下的宏观场景，其中包含不同阶段的具体描述：
@@ -1636,6 +1641,81 @@ AP 睡眠
 目前，{IDF_TARGET_NAME} AP 不支持 Wi-Fi 协议中定义的所有节能功能。具体来说，AP 只缓存所连 station 单播数据，不缓存组播数据。如果 {IDF_TARGET_NAME} AP 所连的 station 已使能节能功能，可能发生组播数据包丢失。
 
 未来，{IDF_TARGET_NAME} AP 将支持所有节能功能。
+
+非连接状态下的休眠
++++++++++++++++++++++++++++++++
+
+非连接状态指的是 :cpp:func:`esp_wifi_start` 至 :cpp:func:`esp_wifi_stop` 期间内，没有建立 Wi-Fi 连接的阶段。
+
+目前, {IDF_TARGET_NAME} Wi-Fi 支持以 station 模式运行时，在非连接状态下休眠。可以通过选项 :ref:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE` 配置该功能。
+
+如果打开配置选项 :ref:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE`，则在该阶段内，RF, PHY and BB 将在空闲时被关闭，电流将会等同于 Modem-sleep 模式下的休眠电流。
+
+配置选项 :ref:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE` 默认情况下将会被打开，共存模式下被 Menuconfig 强制打开。
+
+.. _connectionless-module-power-save-cn:
+
+非连接模块功耗管理
++++++++++++++++++++++++++++++++
+
+非连接模块指的是一些不依赖于 Wi-Fi 连接的 Wi-Fi 模块，例如 ESP-NOW， DPP， FTM。这些模块从 :cpp:func:`esp_wifi_start` 开始工作至 :cpp:func:`esp_wifi_stop` 结束。
+
+目前，ESP-NOW 以 station 模式工作时，既支持在连接状态下休眠，也支持在非连接状态下休眠。
+
+非连接模块发包
+*******************************
+
+对于任何非连接模块，在开启了休眠的任何时间点都可以发包，不需要进行任何额外的配置。
+
+此外，:cpp:func:`esp_wifi_80211_tx` 也在休眠时被支持。
+
+非连接模块收包
+*******************************
+
+对于非连接模块，在开启休眠时如果需要进行收包，需要配置两个参数，分别为 `Window` 和 `Interval`。
+
+在每个 `Interval` 开始时，RF, PHY and BB 将会被打开并保持 `Window` 的时间。非连接模块可以在此时间内收包。
+
+**Interval**
+
+ - 全局只有一个 `Interval` 参数，所有非连接模块共享它。其数值由 API :cpp:func:`esp_wifi_set_connectionless_interval` 配置，单位为毫秒。
+
+ - `Interval` 的默认值为 `ESP_WIFI_CONNECTIONLESS_INTERVAL_DEFAULT_MODE` 。
+
+ - 在 `Interval` 开始时，将会给出 `WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START`_ 事件，由于 `Window` 将在此时开始，可以在此事件内布置发包动作。
+
+ - 在连接状态下，`Interval` 开始的时间点将会与 TBTT 时间点对齐。
+
+**Window**
+
+ - 每个非连接模块在启动后都有其自身的 `Window` 参数，休眠模块将取所有模块 `Window` 的最大值运作。
+
+ - 其数值由 API :cpp:func:`module_name_set_wake_window` 配置，单位为毫秒。
+
+ - 模块 `Window` 的默认值为最大值。
+
+.. table:: 不同 Window 与 Interval 组合下的 RF, PHY and BB 使用情况
+
+    +----------------------+-------------------------------------------------+---------------------------------------------------------------------------+
+    |                      | Interval                                                                                                                    |
+    +                      +-------------------------------------------------+---------------------------------------------------------------------------+
+    |                      | ESP_WIFI_CONNECTIONLESS_INTERVAL_DEFAULT_MODE   | 1 - maximum                                                               |
+    +--------+-------------+-------------------------------------------------+---------------------------------------------------------------------------+
+    | Window | 0           | not used                                                                                                                    |
+    +        +-------------+-------------------------------------------------+---------------------------------------------------------------------------+
+    |        | 1 - maximum | default mode                                    | used periodically (Window < Interval) / used all time (Window ≥ Interval) |
+    +--------+-------------+-------------------------------------------------+---------------------------------------------------------------------------+
+
+默认模式
+*******************************
+
+当 `Interval` 参数被配置为 `ESP_WIFI_CONNECTIONLESS_INTERVAL_DEFAULT_MODE` ，且有非零的 `Window` 参数时，非连接模块功耗管理将会按默认模式运行。
+
+在没有与非 Wi-Fi 协议共存时，RF, PHY and BB 将会在默认模式下被一直打开。
+
+在与非 Wi-Fi 协议共存时，RF, PHY and BB 资源被共存模块分时划给 Wi-Fi 非连接模块和非 Wi-Fi 协议使用。在默认模式下， Wi-Fi 非连接模块被允许周期性使用 RF, PHY and BB ，并且具有稳定性能。
+
+推荐在与非 Wi-Fi 协议共存时将非连接模块功耗管理配置为默认模式。
 
 {IDF_TARGET_NAME} Wi-Fi 吞吐量
 -----------------------------------

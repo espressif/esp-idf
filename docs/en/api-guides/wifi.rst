@@ -266,6 +266,11 @@ WIFI_EVENT_STA_BEACON_TIMEOUT
 
 If the station does not receive the beacon of the connected AP within the inactive time, the beacon timeout happens, the `WIFI_EVENT_STA_BEACON_TIMEOUT`_ will arise. The application can set inactive time via API :cpp:func:`esp_wifi_set_inactive_time()`.
 
+WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The `WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START`_ will arise at the start of connectionless module `Interval`. See :ref:`connectionless module power save <connectionless-module-power-save>`.
+
 {IDF_TARGET_NAME} Wi-Fi Station General Scenario
 ------------------------------------------------
 Below is a "big scenario" which describes some small scenarios in station mode:
@@ -1636,6 +1641,81 @@ AP Sleep
 Currently, {IDF_TARGET_NAME} AP does not support all of the power-saving feature defined in Wi-Fi specification. To be specific, the AP only caches unicast data for the stations connect to this AP, but does not cache the multicast data for the stations. If stations connected to the {IDF_TARGET_NAME} AP are power-saving enabled, they may experience multicast packet loss.
 
 In the future, all power-saving features will be supported on {IDF_TARGET_NAME} AP.
+
+Disconnected State Sleep
++++++++++++++++++++++++++++++++
+
+Disconnected state is the duration without Wi-Fi connection between :cpp:func:`esp_wifi_start` to :cpp:func:`esp_wifi_stop`.
+
+Currently, {IDF_TARGET_NAME} Wi-Fi supports sleep mode in disconnected state if running at station mode. This feature could be configured by Menuconfig choice :ref:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE`.
+
+If :ref:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE` is enabled, RF, PHY and BB would be turned off in disconnected state when IDLE. The current would be same with current at modem-sleep.
+
+The choice :ref:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE` would be selected by default, while it would be selected forcefully in Menuconfig at coexistence mode.
+
+.. _connectionless-module-power-save:
+
+Connectionless Modules Power-saving
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Connectionless modules are those Wi-Fi modules not relying on Wi-Fi connection, e.g ESP-NOW, DPP, FTM. These modules start from :cpp:func:`esp_wifi_start`, working until :cpp:func:`esp_wifi_stop`.
+
+Currently, if ESP-NOW works at station mode, its supported to sleep at both connected state and disconnected state.
+
+Connectionless Modules TX
+*******************************
+
+For each connectionless module, its supported to TX at any sleeping time without any extra configuration.
+
+Meanwhile, :cpp:func:`esp_wifi_80211_tx` is supported at sleep as well.
+
+Connectionless Modules RX
+*******************************
+
+For each connectionless module, two parameters shall be configured to RX at sleep, which are `Window` and `Interval`.
+
+At the start of `Interval` time, RF, PHY, BB would be turned on and kept for `Window` time. Connectionless Module could RX in the duration.
+
+**Interval**
+
+ - There is only one `Interval`. Its configured by :cpp:func:`esp_wifi_set_connectionless_interval`. The unit is milliseconds.
+
+ - The default value of `Interval` is `ESP_WIFI_CONNECTIONLESS_INTERVAL_DEFAULT_MODE`.
+
+ - Event `WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START`_ would be posted at the start of `Interval`. Since `Window` also starts at that momemt, its recommended to TX in that event.
+
+ - At connected state, the start of `Interval` would be aliged with TBTT.
+
+**Window**
+
+ - Each connectionless module has its own `Window` after start. Connectionless Modules Power-saving would work with the max one among them.
+
+ - `Window` is configured by :cpp:func:`module_name_set_wake_window`. The unit is milliseconds.
+
+ - The default value of `Window` is the maximum.
+
+.. table:: RF, PHY and BB usage under different circumstances
+
+    +----------------------+-------------------------------------------------+---------------------------------------------------------------------------+
+    |                      | Interval                                                                                                                    |
+    +                      +-------------------------------------------------+---------------------------------------------------------------------------+
+    |                      | ESP_WIFI_CONNECTIONLESS_INTERVAL_DEFAULT_MODE   | 1 - maximum                                                               |
+    +--------+-------------+-------------------------------------------------+---------------------------------------------------------------------------+
+    | Window | 0           | not used                                                                                                                    |
+    +        +-------------+-------------------------------------------------+---------------------------------------------------------------------------+
+    |        | 1 - maximum | default mode                                    | used periodically (Window < Interval) / used all time (Window ≥ Interval) |
+    +--------+-------------+-------------------------------------------------+---------------------------------------------------------------------------+
+
+Default mode
+*******************************
+
+If `Interval` is `ESP_WIFI_CONNECTIONLESS_INTERVAL_DEFAULT_MODE` with non-zero `Window`, Connectionless Modules Power-saving would work in default mode.
+
+In default mode, RF, PHY, BB would be kept on if no coexistence with non-Wi-Fi protocol.
+
+With coexistence, RF, PHY, BB resources are allocated by coexistence module to Wi-Fi connectionless module and non-Wi-Fi module， using time-division method. In default mode, Wi-Fi connectionless module is allowed to use RF, BB, PHY periodically under a stable performance.
+
+Its recommended to configure Connectionless Modules Power-saving to default mode if there is Wi-Fi connectionless module coexists with non-Wi-Fi module.
 
 {IDF_TARGET_NAME} Wi-Fi Throughput
 -----------------------------------

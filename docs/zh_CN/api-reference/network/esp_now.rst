@@ -98,6 +98,19 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 
 调用 :cpp:func:`esp_wifi_config_espnow_rate()` 配置指定接口的 ESPNOW 速率。确保在配置速率之前使能接口。这个 API 应该在 :cpp:func:`esp_wifi_start()` 之后调用。
 
+配置 ESP-NOW 功耗参数
+----------------------
+
+当且仅当 {IDF_TARGET_NAME} 配置为 STA 模式时，允许其进行休眠。
+
+进行休眠时，调用 :cpp:func:`esp_now_set_wake_window()` 为 ESP-NOW 收包配置 Window。默认情况下 Window 为最大值，将允许一直收包。
+
+如果对 ESP-NOW 进功耗管理，也需要调用 :cpp:func:`esp_wifi_connectionless_module_set_wake_interval()`。
+
+.. only:: SOC_WIFI_SUPPORTED
+
+    请参考 :ref:`非连接模块功耗管理 <connectionless-module-power-save-cn>` 获取更多信息。
+
 应用示例
 ----------
 
