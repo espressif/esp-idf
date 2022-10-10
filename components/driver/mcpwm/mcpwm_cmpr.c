@@ -129,7 +129,7 @@ esp_err_t mcpwm_comparator_set_compare_value(mcpwm_cmpr_handle_t cmpr, uint32_t 
     mcpwm_group_t *group = oper->group;
     mcpwm_timer_t *timer = oper->timer;
     ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_STATE, TAG, "timer and operator are not connected");
-    ESP_RETURN_ON_FALSE_ISR(cmp_ticks < timer->peak_ticks, ESP_ERR_INVALID_ARG, TAG, "compare value out of range");
+    ESP_RETURN_ON_FALSE_ISR(cmp_ticks <= timer->peak_ticks, ESP_ERR_INVALID_ARG, TAG, "compare value out of range");
 
     portENTER_CRITICAL_SAFE(&cmpr->spinlock);
     mcpwm_ll_operator_set_compare_value(group->hal.dev, oper->oper_id, cmpr->cmpr_id, cmp_ticks);
