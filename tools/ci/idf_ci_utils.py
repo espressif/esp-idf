@@ -274,14 +274,6 @@ def get_pytest_cases(
     return cases
 
 
-def get_pytest_app_paths(
-    paths: Union[str, List[str]], target: str, marker_expr: Optional[str] = None
-) -> Set[str]:
-    cases = get_pytest_cases(paths, target, marker_expr)
-
-    return set({app.path for case in cases for app in case.apps})
-
-
 ##################
 # TTFW Utilities #
 ##################

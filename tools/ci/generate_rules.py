@@ -11,6 +11,8 @@ from collections import defaultdict
 from itertools import product
 
 import yaml
+from check_rules_yml import get_needed_rules
+from idf_ci_utils import IDF_PATH
 
 try:
     import pygraphviz as pgv
@@ -21,8 +23,6 @@ try:
     from typing import Union
 except ImportError:  # used for type hint
     pass
-
-IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
 
 def _list(str_or_list):  # type: (Union[str, list]) -> list
@@ -201,6 +201,9 @@ class RulesWriter:
     def new_rules_str(self):  # type: () -> str
         res = []
         for k, v in sorted(self.rules.items()):
+            if '.rules:' + k not in get_needed_rules():
+                print(f'WARNING: unused rule: {k}, skipping...')
+                continue
             res.append(self.RULES_TEMPLATE.format(k, self._format_rule(k, v)))
         return '\n\n'.join(res)
 

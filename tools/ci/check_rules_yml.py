@@ -76,6 +76,10 @@ class YMLConfig:
 YML_CONFIG = YMLConfig(ROOT_YML_FP)
 
 
+def get_needed_rules() -> Set[str]:
+    return deepcopy(YML_CONFIG.all_extends)
+
+
 def validate_needed_rules(rules_yml: 'os.PathLike[str]') -> int:
     res = 0
     needed_rules = deepcopy(YML_CONFIG.all_extends)
