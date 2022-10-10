@@ -55,12 +55,16 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
     /* Set recv timeout of this fd as per config */
     tv.tv_sec = hd->config.recv_wait_timeout;
     tv.tv_usec = 0;
-    setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
+    if (setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv)) < 0) {
+        ESP_LOGW(TAG, LOG_FMT("error enabling SO_RCVTIMEO (%d)"), errno);
+    }
 
     /* Set send timeout of this fd as per config */
     tv.tv_sec = hd->config.send_wait_timeout;
     tv.tv_usec = 0;
-    setsockopt(new_fd, SOL_SOCKET, SO_SNDTIMEO, (const char *)&tv, sizeof(tv));
+    if (setsockopt(new_fd, SOL_SOCKET, SO_SNDTIMEO, (const char *)&tv, sizeof(tv)) < 0) {
+        ESP_LOGW(TAG, LOG_FMT("error enabling SO_SNDTIMEO (%d)"), errno);
+    }
 
     if (ESP_OK != httpd_sess_new(hd, new_fd)) {
         ESP_LOGW(TAG, LOG_FMT("session creation failed"));
