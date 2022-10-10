@@ -105,7 +105,7 @@ typedef bool (*esp_lcd_panel_io_color_trans_done_cb_t)(esp_lcd_panel_io_handle_t
  */
 typedef struct {
     int cs_gpio_num; /*!< GPIO used for CS line */
-    int dc_gpio_num; /*!< GPIO used to select the D/C line, set this to -1 if the D/C line not controlled by manually pulling high/low GPIO */
+    int dc_gpio_num; /*!< GPIO used to select the D/C line, set this to -1 if the D/C line is not used */
     int spi_mode;    /*!< Traditional SPI mode (0~3) */
     unsigned int pclk_hz;    /*!< Frequency of pixel clock */
     size_t trans_queue_depth; /*!< Size of internal transaction queue */
