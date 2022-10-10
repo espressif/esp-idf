@@ -388,7 +388,7 @@ error:
     return ESP_FAIL;
 }
 
-esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A, char **bytes_key, int *len_key)
+esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A, char **bytes_key, uint16_t *len_key)
 {
     esp_mpi_t *u = NULL;
     esp_mpi_t *vu = NULL;
@@ -524,6 +524,7 @@ esp_err_t esp_srp_exchange_proofs(esp_srp_handle_t *hd, char *username, uint16_t
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, (char *)digest, sizeof(digest), ESP_LOG_DEBUG);
 
     if (memcmp(bytes_user_proof, digest, SHA512_HASH_SZ) != 0) {
+        free(s);
         return ESP_FAIL;
     }
 

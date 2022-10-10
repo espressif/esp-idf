@@ -246,6 +246,7 @@ static cJSON* wifi_prov_get_info_json(void)
     /* Version field */
     cJSON_AddStringToObject(prov_info_json, "ver", prov_ctx->mgr_info.version);
 
+    cJSON_AddNumberToObject(prov_info_json, "sec_ver", prov_ctx->security);
     /* Capabilities field */
     cJSON_AddItemToObject(prov_info_json, "cap", prov_capabilities);
 
@@ -600,6 +601,12 @@ static bool wifi_prov_mgr_stop_service(bool blocking)
 
     /* Free proof of possession */
     if (prov_ctx->protocomm_sec_params) {
+        if (prov_ctx->security == 1) {
+            // In case of security 1 we keep an internal copy of "pop".
+            // Hence free it at this point
+            uint8_t *pop = (uint8_t *)((protocomm_security1_params_t *) prov_ctx->protocomm_sec_params)->data;
+            free(pop);
+        }
         prov_ctx->protocomm_sec_params = NULL;
     }
 
@@ -1474,20 +1481,38 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
         goto err;
     }
 
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
     /* Initialize app data */
     if (security == WIFI_PROV_SECURITY_0) {
         prov_ctx->mgr_info.capabilities.no_sec = true;
-    } else if (security == WIFI_PROV_SECURITY_1) {
+    }
+#endif
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
+    if (security == WIFI_PROV_SECURITY_1) {
         if (wifi_prov_sec_params) {
-            prov_ctx->protocomm_sec_params = wifi_prov_sec_params;
+            static protocomm_security1_params_t sec1_params;
+            // Generate internal copy of "pop", that shall be freed at the end
+            char *pop = strdup(wifi_prov_sec_params);
+            if (pop == NULL) {
+                ESP_LOGE(TAG, "Failed to allocate memory for pop");
+                ret = ESP_ERR_NO_MEM;
+                goto err;
+            }
+            sec1_params.data = (const uint8_t *)pop;
+            sec1_params.len = strlen(pop);
+            prov_ctx->protocomm_sec_params = (const void *) &sec1_params;
         } else {
             prov_ctx->mgr_info.capabilities.no_pop = true;
         }
-    } else if (security == WIFI_PROV_SECURITY_2) {
+    }
+#endif
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+    if (security == WIFI_PROV_SECURITY_2) {
         if (wifi_prov_sec_params) {
             prov_ctx->protocomm_sec_params = wifi_prov_sec_params;
         }
     }
+#endif
     prov_ctx->security = security;
 
 

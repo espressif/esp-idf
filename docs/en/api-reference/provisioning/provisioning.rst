@@ -146,7 +146,6 @@ Security1 scheme details are shown in the below sequence diagram -
         CLIENT -> CLIENT [label = "Verify Device", rightnote = "check (cli_pubkey == aes_ctr_dec(dev_verify...)"];
     }
 
-.. note:: We shall soon migrate to ``Security2 scheme`` as the default scheme in our examples as it provides enhanced security. This change shall be done once we have our phone apps (Android/iOS) upgraded to handle ``Security2 scheme``.
 
 Security2 Scheme
 >>>>>>>>>>>>>>>>

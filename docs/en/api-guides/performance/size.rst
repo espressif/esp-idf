@@ -298,7 +298,7 @@ The following configuration options will reduce the final binary size of almost 
     - Disabling :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` will remove the lookup table to translate user-friendly names for error values (see :doc:`/api-guides/error-handling`) in error logs, etc. This saves some binary size, but error values will be printed as integers only.
     - Setting :ref:`CONFIG_ESP_SYSTEM_PANIC` to "Silent reboot" will save a small amount of binary size, however this is *only* recommended if no one will use UART output to debug the device.
     :CONFIG_IDF_TARGET_ARCH_RISCV: - Set :ref:`CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS` to reduce binary size by replacing inlined prologues/epilogues with library calls.
-
+    - If the application binary uses only one of the security versions of the protocomm component, then the support for others can be disabled to save some code size. The support can be disabled through :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`, :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1` or :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2` respectively.
 .. note::
 
    In addition to the many configuration items shown here, there are a number of configuration options where changing the option from the default will increase binary size. These are not noted here. Where the increase is significant, this is usually noted in the configuration item help text.
