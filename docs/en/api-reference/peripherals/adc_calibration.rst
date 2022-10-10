@@ -33,7 +33,7 @@ The ADC calibration driver provides ADC calibration scheme(s). From calibration 
 
 For those users who use their custom ADC calibration schemes, you could either modify this function :cpp:func:`adc_cali_check_scheme`, or just skip this step and call your custom creation function.
 
-.. only:: esp32 or esp32s2
+.. only:: esp32 or esp32s2 or esp32c2
 
     ADC Calibration Line Fitting Scheme
     ```````````````````````````````````
@@ -120,7 +120,7 @@ For those users who use their custom ADC calibration schemes, you could either m
         ESP_ERROR_CHECK(adc_cali_delete_scheme_curve_fitting(handle));
 
 
-.. only:: esp32c2 or esp32h2
+.. only:: esp32h2
 
     There is no supported calibration scheme yet.
 
@@ -134,6 +134,11 @@ Result Conversion
 
 After setting up the calibration characteristics, you can call :cpp:func:`adc_cali_raw_to_voltage` to convert the ADC raw result into calibrated result. The calibrated result is in the unit of mV. This function may fail due to invalid argument. Especailly, if this function returns :c:macro:`ESP_ERR_INVALID_STATE`, this means the calibration scheme isn't created. You need to create a calibration scheme handle, use :cpp:func:`adc_cali_check_scheme` to know the supported calibration scheme. On the other hand, you could also provide a custom calibration scheme and create the handle.
 
+.. only:: esp32c2
+
+    .. note::
+
+        ADC calibration is only supported under :c:macro:`ADC_ATTEN_DB_0` and :c:macro:`ADC_ATTEN_DB_11`. Under :c:macro:`ADC_ATTEN_DB_0`, input voltage higher than 950 mV is not supported. Under :c:macro:`ADC_ATTEN_DB_11`, input voltage higher than 2800 mV is not supported.
 
 Get Voltage
 ~~~~~~~~~~~
