@@ -36,6 +36,11 @@ struct wpa_sm {
     u8 rx_replay_counter[WPA_REPLAY_COUNTER_LEN];
     int rx_replay_counter_set;
     u8 request_counter[WPA_REPLAY_COUNTER_LEN];
+    struct wpa_gtk gtk;
+#ifdef CONFIG_IEEE80211W
+    struct wpa_igtk igtk;
+#endif /* CONFIG_IEEE80211W */
+
     struct rsn_pmksa_cache *pmksa; /* PMKSA cache */
     struct rsn_pmksa_cache_entry *cur_pmksa; /* current PMKSA entry */
     u8 ssid[32];
