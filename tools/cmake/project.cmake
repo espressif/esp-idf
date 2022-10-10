@@ -559,6 +559,15 @@ macro(project project_name)
         target_link_options(${project_elf} PRIVATE "-Wl,--defsym=IDF_TARGET_${idf_target}=0")
         # Enable map file output
         target_link_options(${project_elf} PRIVATE "-Wl,--Map=${mapfile}")
+        # Check if linker supports --no-warn-rwx-segments
+        execute_process(COMMAND ${CMAKE_LINKER} "--no-warn-rwx-segments" "--version"
+            RESULT_VARIABLE result
+            OUTPUT_QUIET
+            ERROR_QUIET)
+        if(${result} EQUAL 0)
+            # Do not print RWX segment warnings
+            target_link_options(${project_elf} PRIVATE "-Wl,--no-warn-rwx-segments")
+        endif()
         unset(idf_target)
     endif()
 

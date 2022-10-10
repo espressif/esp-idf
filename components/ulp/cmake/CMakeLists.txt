@@ -69,6 +69,7 @@ if(ULP_COCPU_IS_RISCV)
     target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/include"
                                                        "${IDF_PATH}/components/ulp/ulp_riscv/shared/include")
     target_link_options(${ULP_APP_NAME} PRIVATE SHELL:-T ${IDF_PATH}/components/ulp/ld/${IDF_TARGET}.peripherals.ld)
+    target_link_options(${ULP_APP_NAME} PRIVATE "-Wl,--no-warn-rwx-segments")
     target_compile_definitions(${ULP_APP_NAME} PRIVATE IS_ULP_COCPU)
 
 else()
