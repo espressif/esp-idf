@@ -570,7 +570,7 @@ An ESP-WIFI-MESH network channel switch can be triggered by either the router or
 
 Root Node Triggered
 """""""""""""""""""
-**A root node triggered channel switch can only occur when the ESP-WIFI-MESH network is not connected to a router**. By calling :cpp:func:`esp_mesh_switch_channel`, the root node will set an initial Channel Switch Count value and begin including a CSA element in its beacon frames. Each CSA element is then received by second layer nodes, and forwarded downstream in the their own beacon frames.
+**A root node triggered channel switch can only occur when the ESP-WIFI-MESH network is not connected to a router**. By calling :cpp:func:`esp_mesh_switch_channel`, the root node will set an initial Channel Switch Count value and begin including a CSA element in its beacon frames. Each CSA element is then received by second layer nodes, and forwarded downstream in their own beacon frames.
 
 Router Triggered
 """"""""""""""""

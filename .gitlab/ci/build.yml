@@ -211,6 +211,7 @@ build_non_test_components_apps:
   extends:
     - .build_cmake_template
     - .rules:build:component_ut
+  parallel: 2
   script:
     - set_component_ut_vars
     # CI specific options start from "--collect-size-info xxx". could ignore when running locally
@@ -572,6 +573,21 @@ test_build_system_spaces:
   extends: .test_build_system_template
   variables:
     SHELL_TEST_SCRIPT: test_build_system_spaces.py
+
+pytest_build_system:
+  extends: .test_build_system_template
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - test_build_system
+    when: always
+    expire_in: 2 days
+    reports:
+      junit: XUNIT_RESULT.xml
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - cd ${IDF_PATH}/tools/test_build_system
+    - pytest --work-dir ${CI_PROJECT_DIR}/test_build_system --junitxml=${CI_PROJECT_DIR}/XUNIT_RESULT.xml
 
 build_docker:
   extends:

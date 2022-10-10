@@ -26,6 +26,7 @@ esp_mpi_t *esp_mpi_new_from_hex(const char *hex)
     int ret = mbedtls_mpi_read_string(a, 16, hex);
     if (ret != 0) {
         printf("mbedtls_mpi_read_string() failed, returned %x\n", ret);
+        esp_mpi_free(a);
         return NULL;
     }
     return a;
@@ -41,6 +42,7 @@ esp_mpi_t *esp_mpi_new_from_bin(const char *str, int str_len)
     int ret = mbedtls_mpi_read_binary(a, (unsigned char *)str, str_len);
     if (ret != 0) {
         printf("mbedtls_mpi_read_binary() failed, returned %x\n", ret);
+        esp_mpi_free(a);
         return NULL;
     }
     return a;
@@ -81,6 +83,7 @@ char *esp_mpi_to_bin(esp_mpi_t *bn, int *len)
     int ret = mbedtls_mpi_write_binary(bn, (unsigned char *)p, *len);
     if (ret != 0) {
         printf("mbedtls_mpi_read_string() failed, returned %x\n", ret);
+        free(p);
         return NULL;
     }
     return p;

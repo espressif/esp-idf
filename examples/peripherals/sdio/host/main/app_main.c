@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -24,6 +25,8 @@
 #include "sdkconfig.h"
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
+#include "sdmmc_cmd.h"
+
 
 #define TIMEOUT_MAX   UINT32_MAX
 
@@ -411,8 +414,8 @@ void job_fifo(essl_handle_t handle)
         const int wait_ms = 50;
         int length = packet_len[i];
         ret = essl_send_packet(handle, send_buffer + pointer, length, wait_ms);
-        if (ret == ESP_ERR_TIMEOUT) {
-            ESP_LOGD(TAG, "several packets are expected to timeout.");
+        if (ret == ESP_ERR_TIMEOUT || ret == ESP_ERR_NOT_FOUND) {
+            ESP_LOGD(TAG, "slave not ready to receive packet %d", i); // And there are several packets expected to timeout.
         } else {
             ESP_ERROR_CHECK(ret);
             ESP_LOGI(TAG, "send packet length: %d", length);

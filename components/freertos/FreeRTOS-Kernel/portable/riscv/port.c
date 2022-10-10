@@ -139,78 +139,161 @@ __attribute__((naked)) static void prvTaskExitError(void)
     _prvTaskExitError();
 }
 
-StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters)
+/**
+ * @brief Align stack pointer in a downward growing stack
+ *
+ * This macro is used to round a stack pointer downwards to the nearest n-byte boundary, where n is a power of 2.
+ * This macro is generally used when allocating aligned areas on a downward growing stack.
+ */
+#define STACKPTR_ALIGN_DOWN(n, ptr)     ((ptr) & (~((n)-1)))
+
+/**
+ * @brief Allocate and initialize GCC TLS area
+ *
+ * This function allocates and initializes the area on the stack used to store GCC TLS (Thread Local Storage) variables.
+ * - The area's size is derived from the TLS section's linker variables, and rounded up to a multiple of 16 bytes
+ * - The allocated area is aligned to a 16-byte aligned address
+ * - The TLS variables in the area are then initialized
+ *
+ * Each task access the TLS variables using the THREADPTR register plus an offset to obtain the address of the variable.
+ * The value for the THREADPTR register is also calculated by this function, and that value should be use to initialize
+ * the THREADPTR register.
+ *
+ * @param[in] uxStackPointer Current stack pointer address
+ * @param[out] ret_threadptr_reg_init Calculated THREADPTR register initialization value
+ * @return Stack pointer that points to the TLS area
+ */
+FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, uint32_t *ret_threadptr_reg_init)
 {
-    extern uint32_t __global_pointer$;
-    uint8_t *task_thread_local_start;
-    uint8_t *threadptr;
+    /*
+    TLS layout at link-time, where 0xNNN is the offset that the linker calculates to a particular TLS variable.
+
+    LOW ADDRESS
+            |---------------------------|   Linker Symbols
+            | Section                   |   --------------
+            | .flash.rodata             |
+         0x0|---------------------------| <- _flash_rodata_start
+          ^ | Other Data                |
+          | |---------------------------| <- _thread_local_start
+          | | .tbss                     | ^
+          V |                           | |
+      0xNNN | int example;              | | tls_area_size
+            |                           | |
+            | .tdata                    | V
+            |---------------------------| <- _thread_local_end
+            | Other data                |
+            | ...                       |
+            |---------------------------|
+    HIGH ADDRESS
+    */
+    // Calculate TLS area size and round up to multiple of 16 bytes.
     extern char _thread_local_start, _thread_local_end, _flash_rodata_start;
+    const uint32_t tls_area_size = ALIGNUP(16, (uint32_t)&_thread_local_end - (uint32_t)&_thread_local_start);
+    // TODO: check that TLS area fits the stack
 
-    /* Byte pointer, so that subsequent calculations don't depend on sizeof(StackType_t). */
-    uint8_t *sp = (uint8_t *) pxTopOfStack;
+    // Allocate space for the TLS area on the stack. The area must be aligned to 16-bytes
+    uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - (UBaseType_t)tls_area_size);
+    // Initialize the TLS area with the initialization values of each TLS variable
+    memcpy((void *)uxStackPointer, &_thread_local_start, tls_area_size);
 
-    /* Set up TLS area.
-     * The following diagram illustrates the layout of link-time and run-time
-     * TLS sections.
-     *
-     *          +-------------+
-     *          |Section:     |      Linker symbols:
-     *          |.flash.rodata|      ---------------
-     *       0x0+-------------+ <-- _flash_rodata_start
-     *        ^ |             |
-     *        | | Other data  |
-     *        | |     ...     |
-     *        | +-------------+ <-- _thread_local_start
-     *        | |.tbss        | ^
-     *        v |             | |
-     *    0xNNNN|int example; | | (thread_local_size)
-     *          |.tdata       | v
-     *          +-------------+ <-- _thread_local_end
-     *          | Other data  |
-     *          |     ...     |
-     *          |             |
-     *          +-------------+
-     *
-     *                                Local variables of
-     *                              pxPortInitialiseStack
-     *                             -----------------------
-     *          +-------------+ <-- pxTopOfStack
-     *          |.tdata (*)   |  ^
-     *        ^ |int example; |  |(thread_local_size
-     *        | |             |  |
-     *        | |.tbss (*)    |  v
-     *        | +-------------+ <-- task_thread_local_start
-     * 0xNNNN | |             |  ^
-     *        | |             |  |
-     *        | |             |  |_thread_local_start - _rodata_start
-     *        | |             |  |
-     *        | |             |  v
-     *        v +-------------+ <-- threadptr
-     *
-     *   (*) The stack grows downward!
-     */
+    /*
+    Calculate the THREADPTR register's initialization value based on the link-time offset and the TLS area allocated on
+    the stack.
 
-    uint32_t thread_local_sz = (uint32_t) (&_thread_local_end - &_thread_local_start);
-    thread_local_sz = ALIGNUP(0x10, thread_local_sz);
-    sp -= thread_local_sz;
-    task_thread_local_start = sp;
-    memcpy(task_thread_local_start, &_thread_local_start, thread_local_sz);
-    threadptr = task_thread_local_start - (&_thread_local_start - &_flash_rodata_start);
+    HIGH ADDRESS
+            |---------------------------|
+            | .tdata (*)                |
+          ^ | int example;              |
+          | |                           |
+          | | .tbss (*)                 |
+          | |---------------------------| <- uxStackPointer (start of TLS area)
+    0xNNN | |                           | ^
+          | |                           | |
+          |             ...               | _thread_local_start - _rodata_start
+          | |                           | |
+          | |                           | V
+          V |                           | <- threadptr register's value
 
-    /* Simulate the stack frame as it would be created by a context switch interrupt. */
-    sp -= RV_STK_FRMSZ;
-    RvExcFrame *frame = (RvExcFrame *)sp;
-    memset(frame, 0, sizeof(*frame));
-    /* Shifting RA into prvTaskExitError is necessary to make GDB backtrace ending inside that function.
-       Otherwise backtrace will end in the function laying just before prvTaskExitError in address space. */
-    frame->ra = (UBaseType_t)prvTaskExitError + 4/*size of the nop insruction at the beginning of prvTaskExitError*/;
+    LOW ADDRESS
+    */
+    *ret_threadptr_reg_init = (uint32_t)uxStackPointer - ((uint32_t)&_thread_local_start - (uint32_t)&_flash_rodata_start);
+    return uxStackPointer;
+}
+
+/**
+ * @brief Initialize the task's starting interrupt stack frame
+ *
+ * This function initializes the task's starting interrupt stack frame. The dispatcher will use this stack frame in a
+ * context restore routine. Therefore, the starting stack frame must be initialized as if the task was interrupted right
+ * before its first instruction is called.
+ *
+ * - The stack frame is allocated to a 16-byte aligned address
+ *
+ * @param[in] uxStackPointer Current stack pointer address
+ * @param[in] pxCode Task function
+ * @param[in] pvParameters Task function's parameter
+ * @param[in] threadptr_reg_init THREADPTR register initialization value
+ * @return Stack pointer that points to the stack frame
+ */
+FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackFrame(UBaseType_t uxStackPointer, TaskFunction_t pxCode, void *pvParameters, uint32_t threadptr_reg_init)
+{
+    /*
+    Allocate space for the task's starting interrupt stack frame.
+    - The stack frame must be allocated to a 16-byte aligned address.
+    - We use XT_STK_FRMSZ (instead of sizeof(XtExcFrame)) as it rounds up the total size to a multiple of 16.
+    */
+    uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - RV_STK_FRMSZ);
+
+    // Clear the entire interrupt stack frame
+    RvExcFrame *frame = (RvExcFrame *)uxStackPointer;
+    memset(frame, 0, sizeof(RvExcFrame));
+
+    /*
+    Initialize the stack frame.
+
+    Note: Shifting RA into prvTaskExitError is necessary to make the GDB backtrace terminate inside that function.
+    Otherwise, the backtrace will end in the function located just before prvTaskExitError in the address space.
+    */
+    extern uint32_t __global_pointer$;
+    frame->ra = (UBaseType_t)prvTaskExitError + 4; // size of the nop instruction at the beginning of prvTaskExitError
     frame->mepc = (UBaseType_t)pxCode;
     frame->a0 = (UBaseType_t)pvParameters;
     frame->gp = (UBaseType_t)&__global_pointer$;
-    frame->tp = (UBaseType_t)threadptr;
+    frame->tp = (UBaseType_t)threadptr_reg_init;
 
+    return uxStackPointer;
+}
+
+StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters)
+{
+    /*
+    HIGH ADDRESS
+    |---------------------------| <- pxTopOfStack on entry
+    | TLS Variables             |
+    | ------------------------- | <- Start of useable stack
+    | Starting stack frame      |
+    | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
+    |             |             |
+    |             |             |
+    |             V             |
+    ----------------------------- <- Bottom of stack
+    LOW ADDRESS
+
+    - All stack areas are aligned to 16 byte boundary
+    - We use UBaseType_t for all of stack area initialization functions for more convenient pointer arithmetic
+    */
+
+    UBaseType_t uxStackPointer = (UBaseType_t)pxTopOfStack;
+
+    // Initialize GCC TLS area
+    uint32_t threadptr_reg_init;
+    uxStackPointer = uxInitialiseStackTLS(uxStackPointer, &threadptr_reg_init);
+
+    // Initialize the starting interrupt stack frame
+    uxStackPointer = uxInitialiseStackFrame(uxStackPointer, pxCode, pvParameters, threadptr_reg_init);
+    // Return the task's current stack pointer address which should point to the starting interrupt stack frame
+    return (StackType_t *)uxStackPointer;
     //TODO: IDF-2393
-    return (StackType_t *)frame;
 }
 
 

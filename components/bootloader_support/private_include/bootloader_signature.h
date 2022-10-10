@@ -21,6 +21,8 @@
 #include "esp32h2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/secure_boot.h"
 #endif
 
 #if !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_3

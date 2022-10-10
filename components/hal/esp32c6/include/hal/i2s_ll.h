@@ -48,7 +48,7 @@ typedef struct {
 static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
 {
     // The clock gate enabling is moved to `periph_module_enable`
-    (void *)hw;
+    (void)hw;
 }
 
 /**
@@ -59,7 +59,7 @@ static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
 static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
 {
     // The clock gate disabling is moved to `periph_module_disable`
-    (void *)hw;
+    (void)hw;
 }
 
 /**
@@ -69,7 +69,7 @@ static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
 {
-    (void *)hw;
+    (void)hw;
     PCR.i2s_tx_clkm_conf.i2s_tx_clkm_en = 1;
 }
 
@@ -80,7 +80,7 @@ static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
 {
-    (void *)hw;
+    (void)hw;
     PCR.i2s_rx_clkm_conf.i2s_rx_clkm_en = 1;
 }
 
@@ -91,7 +91,7 @@ static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_disable_clock(i2s_dev_t *hw)
 {
-    (void *)hw;
+    (void)hw;
     PCR.i2s_tx_clkm_conf.i2s_tx_clkm_en = 0;
 }
 
@@ -102,7 +102,7 @@ static inline void i2s_ll_tx_disable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
 {
-    (void *)hw;
+    (void)hw;
     PCR.i2s_rx_clkm_conf.i2s_rx_clkm_en = 0;
 }
 
@@ -113,7 +113,7 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 {
-    (void *)hw;
+    (void)hw;
     PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 0;
 }
 
@@ -124,7 +124,7 @@ static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
  */
 static inline void i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
 {
-    (void *)hw;
+    (void)hw;
     PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 1;
 }
 
@@ -202,7 +202,7 @@ static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    (void *)hw;
+    (void)hw;
     switch (src)
     {
     case I2S_CLK_SRC_XTAL:
@@ -225,7 +225,7 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
  */
 static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    (void *)hw;
+    (void)hw;
     switch (src)
     {
     case I2S_CLK_SRC_XTAL:
@@ -262,7 +262,7 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
 {
-    (void *)hw;
+    (void)hw;
     PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_x = x;
     PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_y = y;
     PCR.i2s_tx_clkm_div_conf.i2s_tx_clkm_div_z = z;
@@ -280,7 +280,7 @@ static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t
  */
 static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
 {
-    (void *)hw;
+    (void)hw;
     PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_x = x;
     PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_y = y;
     PCR.i2s_rx_clkm_div_conf.i2s_rx_clkm_div_z = z;
@@ -297,7 +297,7 @@ static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t
  */
 static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mclk, uint32_t mclk_div)
 {
-    (void *)hw;
+    (void)hw;
     int ma = 0;
     int mb = 0;
     int denominator = 1;
@@ -372,7 +372,7 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mclk, uint32_t mclk_div)
 {
-    (void *)hw;
+    (void)hw;
     int ma = 0;
     int mb = 0;
     int denominator = 1;

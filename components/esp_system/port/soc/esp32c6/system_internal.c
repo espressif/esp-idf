@@ -11,8 +11,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_rom_sys.h"
-#include "riscv/riscv_interrupts.h"
-#include "riscv/interrupt.h"
+#include "riscv/rv_utils.h"
 #include "esp_rom_uart.h"
 #include "soc/gpio_reg.h"
 #include "esp_cpu.h"
@@ -33,7 +32,7 @@
 void IRAM_ATTR esp_restart_noos(void)
 {
     // Disable interrupts
-    riscv_global_interrupts_disable();
+    rv_utils_intr_global_disable();
     // Enable RTC watchdog for 1 second
     wdt_hal_context_t rtc_wdt_ctx;
     wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);

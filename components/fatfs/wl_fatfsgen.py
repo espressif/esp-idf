@@ -2,8 +2,6 @@
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import List, Optional
-
 from construct import Const, Int32ul, Struct
 from fatfs_utils.exceptions import WLNotInitialized
 from fatfs_utils.utils import (FULL_BYTE, UINT32_MAX, FATDefaults, crc32, generate_4bytes_random,
@@ -82,6 +80,7 @@ class WLFATFS:
 
     def __init__(self,
                  size: int = FATDefaults.SIZE,
+                 sector_size: int = FATDefaults.SECTOR_SIZE,
                  reserved_sectors_cnt: int = FATDefaults.RESERVED_SECTORS_COUNT,
                  fat_tables_cnt: int = FATDefaults.FAT_TABLES_COUNT,
                  sectors_per_cluster: int = FATDefaults.SECTORS_PER_CLUSTER,
@@ -122,7 +121,7 @@ class WLFATFS:
             reserved_sectors_cnt=reserved_sectors_cnt,
             fat_tables_cnt=fat_tables_cnt,
             sectors_per_cluster=sectors_per_cluster,
-            sector_size=FATDefaults.WL_SECTOR_SIZE,
+            sector_size=sector_size,
             root_entry_count=root_entry_count,
             hidden_sectors=hidden_sectors,
             long_names_enabled=long_names_enabled,
@@ -199,33 +198,18 @@ class WLFATFS:
         with open(output_path, 'wb') as output:
             output.write(bytearray(self.fatfs_binary_image))
 
-    def wl_generate(self, input_directory: str) -> None:
-        """
-        Normalize path to folder and recursively encode folder to binary image
-        """
-        self.plain_fatfs.generate(input_directory=input_directory)
-
-    def wl_create_file(self, name: str, extension: str = '', path_from_root: Optional[List[str]] = None) -> None:
-        self.plain_fatfs.create_file(name, extension, path_from_root)
-
-    def wl_create_directory(self, name: str, path_from_root: Optional[List[str]] = None) -> None:
-        self.plain_fatfs.create_directory(name, path_from_root)
-
-    def wl_write_content(self, path_from_root: List[str], content: bytes) -> None:
-        self.plain_fatfs.write_content(path_from_root, content)
-
 
 if __name__ == '__main__':
     desc = 'Create a FAT filesystem with support for wear levelling and populate it with directory content'
-    args = get_args_for_partition_generator(desc)
-
+    args = get_args_for_partition_generator(desc, wl=True)
     wl_fatfs = WLFATFS(sectors_per_cluster=args.sectors_per_cluster,
                        size=args.partition_size,
+                       sector_size=args.sector_size,
                        root_entry_count=args.root_entry_count,
                        explicit_fat_type=args.fat_type,
                        long_names_enabled=args.long_name_support,
                        use_default_datetime=args.use_default_datetime)
 
-    wl_fatfs.wl_generate(args.input_directory)
+    wl_fatfs.plain_fatfs.generate(args.input_directory)
     wl_fatfs.init_wl()
     wl_fatfs.wl_write_filesystem(args.output_file)

@@ -649,7 +649,6 @@ components/esp_wifi/src/smartconfig.c
 components/esp_wifi/test/test_wifi_init.c
 components/fatfs/diskio/diskio.c
 components/fatfs/diskio/diskio_impl.h
-components/fatfs/diskio/diskio_rawflash.c
 components/fatfs/diskio/diskio_rawflash.h
 components/fatfs/diskio/diskio_wl.h
 components/fatfs/port/freertos/ffsystem.c
@@ -745,7 +744,6 @@ components/hal/include/hal/esp_flash_err.h
 components/hal/include/hal/mpu_hal.h
 components/hal/include/hal/mpu_types.h
 components/hal/include/hal/rtc_io_types.h
-components/hal/include/hal/sdio_slave_hal.h
 components/hal/include/hal/sdio_slave_ll.h
 components/hal/include/hal/sha_hal.h
 components/hal/include/hal/spi_flash_encrypt_hal.h
@@ -1582,7 +1580,6 @@ examples/build_system/cmake/import_prebuilt/main/main.c
 examples/build_system/cmake/import_prebuilt/prebuilt/components/prebuilt/prebuilt.c
 examples/build_system/cmake/import_prebuilt/prebuilt/components/prebuilt/prebuilt.h
 examples/build_system/cmake/import_prebuilt/prebuilt/main/main.c
-examples/build_system/cmake/linux_host_app/main/linux_host_app.cpp
 examples/build_system/cmake/multi_config/main/func.h
 examples/build_system/cmake/multi_config/main/func_dev.c
 examples/build_system/cmake/multi_config/main/func_prod.c

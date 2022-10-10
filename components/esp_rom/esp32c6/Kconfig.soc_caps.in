@@ -30,3 +30,19 @@ config ESP_ROM_HAS_RETARGETABLE_LOCKING
 config ESP_ROM_GET_CLK_FREQ
     bool
     default y
+
+config ESP_ROM_HAS_HEAP_TLSF
+    bool
+    default y
+
+config ESP_ROM_HAS_LAYOUT_TABLE
+    bool
+    default y
+
+config ESP_ROM_HAS_RVFPLIB
+    bool
+    default y
+
+config ESP_ROM_HAS_SPI_FLASH
+    bool
+    default y

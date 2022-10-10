@@ -78,6 +78,10 @@
 #include "esp32c2/rom/cache.h"
 #include "esp32c2/rom/rtc.h"
 #include "soc/extmem_reg.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/cache.h"
+#include "esp32c6/rom/rtc.h"
+#include "soc/extmem_reg.h"
 #endif
 
 // If light sleep time is less than that, don't power down flash
@@ -106,6 +110,9 @@
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
 #elif CONFIG_IDF_TARGET_ESP32C2
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
+#elif CONFIG_IDF_TARGET_ESP32C6
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)// TODO: IDF-5348
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
 #endif
 
@@ -789,7 +796,11 @@ esp_err_t esp_light_sleep_start(void)
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
     // Safety net: enable WDT in case exit from light sleep fails
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
+#else
     wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+#endif
     bool wdt_was_enabled = wdt_hal_is_enabled(&rtc_wdt_ctx);    // If WDT was enabled in the user code, then do not change it here.
     if (!wdt_was_enabled) {
         wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
@@ -1231,6 +1242,9 @@ esp_err_t esp_sleep_disable_bt_wakeup(void)
 
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 {
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
+    return ESP_SLEEP_WAKEUP_UNDEFINED;
+#else
     if (esp_rom_get_reset_reason(0) != RESET_REASON_CORE_DEEP_SLEEP && !s_light_sleep_wakeup) {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
@@ -1278,6 +1292,7 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
     } else {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
+#endif
 }
 
 esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain,

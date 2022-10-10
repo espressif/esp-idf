@@ -1225,7 +1225,7 @@ The detailed description of all instructions is presented below:
 
 .. only:: esp32s2 or esp32s3
 
-  This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the the register, as seen from the ULP, can be calculated from the address of the same register on the PeriBUS1 as follows::
+  This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the register, as seen from the ULP, can be calculated from the address of the same register on the PeriBUS1 as follows::
 
     addr_ulp = (addr_peribus1 - DR_REG_RTCCNTL_BASE) / 4
 

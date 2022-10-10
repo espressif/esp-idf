@@ -6,11 +6,6 @@ examples/build_system/cmake/import_lib:
       temporary: true
       reason: lack of runners
 
-examples/build_system/cmake/linux_host_app:
-  enable:
-    - if: IDF_TARGET == "linux"
-      reason: only test on linux
-
 examples/build_system/cmake/plugins:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]

@@ -88,7 +88,7 @@ esp_err_t esp_srp_srv_pubkey_from_salt_verifier(esp_srp_handle_t *hd, char **byt
 /* Returns bytes_key
  * *bytes_key MUST NOT BE FREED BY THE CALLER
  */
-esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A, char **bytes_key, int *len_key);
+esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A, char **bytes_key, uint16_t *len_key);
 
 /* Exchange proofs
  * Returns 1 if user's proof is ok. Also 1 when is returned, bytes_host_proof contains our proof.

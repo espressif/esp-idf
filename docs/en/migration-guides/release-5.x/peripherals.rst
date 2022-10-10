@@ -119,7 +119,7 @@ Timer Group Driver
 
 Timer Group driver has been redesigned into :doc:`GPTimer <../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer. 
 
-Although it's recommended to use the the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` will trigger the build warning below. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
+Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` will trigger the build warning below. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
 
 .. code-block:: text
 

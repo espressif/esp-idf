@@ -5,15 +5,19 @@
  */
 
 #include "unity.h"
-#include "esp_serial_slave_link/essl_sdio.h"
-#include "driver/sdspi_host.h"
 #include "test_utils.h"
 #include "param_test.h"
 #include "esp_log.h"
 #include "esp_timer.h"
-#include "driver/spi_common.h"
 #include "soc/soc_caps.h"
 #include "ccomp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#include "driver/spi_common.h"
+#include "driver/sdspi_host.h"
+#include "esp_serial_slave_link/essl_sdio.h"
+#include "sdmmc_cmd.h"
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 

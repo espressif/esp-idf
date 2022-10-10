@@ -10,11 +10,11 @@ This example demonstrates an [OpenThread border router](https://openthread.io/gu
 ## How to use example
 
 ### Hardware Required
-
+#### **Wi-Fi based Thread Border Router**
 The following SoCs are required to run this example:
 * An ESP32 series Wi-Fi SoC (ESP32, ESP32-C, ESP32-S, etc) loaded with this ot_br example.
 * An ESP32-H2 802.15.4 SoC loaded with [ot_rcp](../ot_rcp) example.
-* Another ESP32-H2 SoC loaded with [ot_cli](../ot_cli) example. Enable `OPENTHREAD_JOINER` option in menuconfig before compiling the example.
+* Another ESP32-H2 SoC loaded with [ot_cli](../ot_cli) example.
 
 Connect the two SoCs via UART, below is an example setup with ESP32 DevKitC and ESP32-H2 DevKitC:
 ![thread_br](image/thread-border-router-esp32-esp32h2.jpg)
@@ -24,6 +24,9 @@ ESP32 pin | ESP32-H2 pin
    GND    |      G
    GPIO4  |      TX
    GPIO5  |      RX
+
+#### **Ethernet based Thread Border Router**
+Similar to the previous Wi-Fi based Thread Border Route setup, but a device with Ethernet interface is required, such as [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-ethernet-kit.html)
 
 ### Configure the project
 
@@ -38,6 +41,8 @@ The device will connect to Wi-Fi and form a Thread network automatically after b
 
 - Manual mode
 Disable `OPENTHREAD_BR_AUTO_START` and enable `OPENTHREAD_CLI_ESP_EXTENSION`. `wifi` command will be added for connecting the device to the Wi-Fi network.
+
+If the `CONFIG_EXAMPLE_CONNECT_ETHERNET` option is enabled, the device will connect to `Ethernet`, form a Thread network and act as a Ethernet based Thread Border Router.
 
 ### Build, Flash, and Run
 

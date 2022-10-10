@@ -6,6 +6,43 @@ endif()
 
 idf_build_get_property(target IDF_TARGET)
 
+if(${target} STREQUAL "linux")
+    set(kernel_dir "FreeRTOS-Kernel")
+    set(srcs
+        "${kernel_dir}/portable/linux/port.c"
+        "${kernel_dir}/portable/linux/port_idf.c"
+        "${kernel_dir}/portable/linux/utils/wait_for_event.c"
+        "${kernel_dir}/list.c"
+        "${kernel_dir}/queue.c"
+        "${kernel_dir}/tasks.c"
+        "${kernel_dir}/timers.c"
+        )
+
+    set(include_dirs
+        ${kernel_dir}/include
+        ${kernel_dir}/portable/linux/include  # For arch-specific FreeRTOSConfig_arch.h in portable/<arch>/include
+        ${kernel_dir}/portable/linux/include/freertos
+        "esp_additions/include/freertos" # For config via #include "FreeRTOSConfig.h"
+        "esp_additions/include" # For #include "freertos/task_snapshot.h" and #include "freertos/FreeRTOSConfig.h"
+        )
+
+    set(private_include_dirs
+        ${kernel_dir}/portable/linux
+        ${kernel_dir}/portable/priv_include
+        ${kernel_dir}/include/freertos
+        .
+        )
+
+    idf_component_register(SRCS "${srcs}"
+                        INCLUDE_DIRS ${include_dirs}
+                        PRIV_INCLUDE_DIRS  ${private_include_dirs})
+
+    target_compile_definitions(${COMPONENT_LIB} PUBLIC "projCOVERAGE_TEST=0")
+    target_link_libraries(${COMPONENT_LIB} PUBLIC pthread)
+
+    return()
+endif()
+
 if(CONFIG_FREERTOS_SMP)
     set(ldfragments linker_smp.lf)
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)

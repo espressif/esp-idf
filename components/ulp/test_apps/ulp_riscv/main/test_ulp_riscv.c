@@ -184,7 +184,7 @@ TEST_CASE("ULP-RISC-V can stop itself and be resumed from the main CPU", "[ulp]"
 * Keep this test case as the last test case in this suite as a CPU reset occurs.
 * Add new test cases above in order to ensure they run when all test cases are run together.
 */
-TEST_CASE("ULP-RISC-V is able to wakeup main CPU from deep sleep", "[ulp][reset=SW_CPU_RESET][ignore]")
+TEST_CASE("ULP-RISC-V is able to wakeup main CPU from deep sleep", "[ulp][ulp_deep_sleep_wakeup]")
 {
     /* Load ULP RISC-V firmware and start the ULP RISC-V Coprocessor */
     load_and_start_ulp_firmware();

@@ -102,8 +102,17 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #endif //configUSE_TICKLESS_IDLE
 #define configCPU_CLOCK_HZ                              (CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000)
 #define configTICK_RATE_HZ                              CONFIG_FREERTOS_HZ
+#ifdef CONFIG_IDF_TARGET_LINUX
+#define configMAX_PRIORITIES                            ( 7 ) // Default in upstream simulator
+/* The stack allocated by FreeRTOS will be passed passed to a pthread.
+   pthread has a minimal stack size which currently is 16KB.
+   The rest is for additional structures of the POSIX/Linux port.
+   This is a magic number since PTHREAD_STACK_MIN seems to not be a constant. */
+#define configMINIMAL_STACK_SIZE                        ( ( unsigned short ) (0x4000 + 40) / sizeof(portSTACK_TYPE) )
+#else
 #define configMAX_PRIORITIES                            ( 25 )  //This has impact on speed of search for highest priority
 #define configMINIMAL_STACK_SIZE                        ( 768 + configSTACK_OVERHEAD_TOTAL )
+#endif
 #define configUSE_TIME_SLICING                          1
 #define configUSE_16_BIT_TICKS                          0
 #define configIDLE_SHOULD_YIELD                         0
@@ -123,9 +132,12 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 
 #define configMAX_TASK_NAME_LEN                         CONFIG_FREERTOS_MAX_TASK_NAME_LEN
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS         CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
-#ifndef CONFIG_IDF_TARGET_LINUX
 #define configSTACK_DEPTH_TYPE                          uint32_t
+#ifndef CONFIG_IDF_TARGET_LINUX
 #define configUSE_NEWLIB_REENTRANT                      1
+#define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H       1
+#else
+#define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H       0 // Default in upstream simulator
 #endif
 #if CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY
 #define configENABLE_BACKWARD_COMPATIBILITY             1
@@ -133,15 +145,18 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #define configENABLE_BACKWARD_COMPATIBILITY             0
 #endif
 #define configASSERT(a)                                 assert(a)
-#define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H       1
 
 // ----------------------- Memory  -------------------------
 
 #define configSUPPORT_STATIC_ALLOCATION                 1
 #define configSUPPORT_DYNAMIC_ALLOCATION                1
+#ifdef CONFIG_IDF_TARGET_LINUX
+#define configTOTAL_HEAP_SIZE                           ( ( size_t ) ( 65 * 1024 ) ) // Default in upstream simulator
+#else
 //We define the heap to span all of the non-statically-allocated shared RAM. ToDo: Make sure there
 //is some space left for the app and main cpu when running outside of a thread.
 #define configTOTAL_HEAP_SIZE                           (&_heap_end - &_heap_start)//( ( size_t ) (64 * 1024) )
+#endif
 #define configAPPLICATION_ALLOCATED_HEAP                1
 #define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP       0
 
@@ -163,8 +178,12 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
 #define configGENERATE_RUN_TIME_STATS                   1   /* Used by vTaskGetRunTimeStats() */
 #endif
+#ifdef CONFIG_IDF_TARGET_LINUX
+#define configUSE_TRACE_FACILITY                        1
+#else
 #ifdef CONFIG_FREERTOS_USE_TRACE_FACILITY
 #define configUSE_TRACE_FACILITY                        1   /* Used by uxTaskGetSystemState(), and other trace facility functions */
+#endif
 #endif
 #ifdef CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
 #define configUSE_STATS_FORMATTING_FUNCTIONS            1   /* Used by vTaskList() */
@@ -194,7 +213,6 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #define INCLUDE_uxTaskPriorityGet                       1
 #define INCLUDE_vTaskDelete                             1
 #define INCLUDE_vTaskSuspend                            1
-#define INCLUDE_xTaskDelayUntil                         1
 #define INCLUDE_vTaskDelay                              1
 #define INCLUDE_xTaskGetIdleTaskHandle                  1
 #define INCLUDE_xTaskAbortDelay                         1
@@ -206,7 +224,13 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #define INCLUDE_xTaskResumeFromISR                      1
 #define INCLUDE_xTimerPendFunctionCall                  1
 #define INCLUDE_xTaskGetSchedulerState                  1
+#ifdef CONFIG_IDF_TARGET_LINUX
+#define INCLUDE_xTaskGetCurrentTaskHandle               0 // not defined in POSIX simulator
+#define INCLUDE_vTaskDelayUntil                         1
+#else
+#define INCLUDE_xTaskDelayUntil                         1
 #define INCLUDE_xTaskGetCurrentTaskHandle               1
+#endif
 //Unlisted
 #define INCLUDE_pxTaskGetStackStart                     1
 

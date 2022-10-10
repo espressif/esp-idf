@@ -69,6 +69,16 @@ if(target STREQUAL "linux")
 else()
     target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/${ld_folder}/${target}.rom.ld")
     rom_linker_script("api")
+
+    # esp32c6.rom.api.ld has been split to several lds by components
+    if(target STREQUAL "esp32c6")
+        rom_linker_script("phy")
+        rom_linker_script("coexist")
+        rom_linker_script("net80211")
+        rom_linker_script("pp")
+        # rom_linker_script("spiflash") # TODO: IDF-5632 (Supports more rom components)
+    endif()
+
     if(CONFIG_COMPILER_FLOAT_LIB_FROM_GCCLIB)
         rom_linker_script("libgcc")
     else()
@@ -104,6 +114,9 @@ if(BOOTLOADER_BUILD)
     elseif(target STREQUAL "esp32c2")
         rom_linker_script("newlib")
         rom_linker_script("mbedtls")
+
+    elseif(target STREQUAL "esp32c6")
+        rom_linker_script("newlib")
     endif()
 
 else() # Regular app build
@@ -217,17 +230,21 @@ else() # Regular app build
             endif()
         endif()
 
-        if(CONFIG_HEAP_TLSF_USE_ROM_IMPL)
-            # After registering the component, set the tlsf_set_rom_patches symbol as undefined
-            # to force the linker to integrate the whole `esp_rom_tlsf.c` object file inside the
-            # final binary. This is necessary because tlsf_set_rom_patches is a constructor, thus,
-            # there as no explicit reference/call to it in IDF.
-            if(CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
-                target_link_libraries(${COMPONENT_LIB} PRIVATE "-u tlsf_set_rom_patches")
-            endif()
+    elseif(target STREQUAL "esp32c6")
+        rom_linker_script("newlib")
+        rom_linker_script("version")
+    endif()
 
-            rom_linker_script("heap")
+    if(CONFIG_HEAP_TLSF_USE_ROM_IMPL)
+        # After registering the component, set the tlsf_set_rom_patches symbol as undefined
+        # to force the linker to integrate the whole `esp_rom_tlsf.c` object file inside the
+        # final binary. This is necessary because tlsf_set_rom_patches is a constructor, thus,
+        # there as no explicit reference/call to it in IDF.
+        if(CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
+            target_link_libraries(${COMPONENT_LIB} PRIVATE "-u tlsf_set_rom_patches")
         endif()
+
+        rom_linker_script("heap")
     endif()
 
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)

@@ -329,7 +329,7 @@ Message Fields and Flags
 
 The TWAI driver distinguishes different types of messages by using the various bit field members of the :cpp:type:`twai_message_t` structure. These bit field members determine whether a message is in standard or extended format, a remote frame, and the type of transmission to use when transmitting such a message.
 
-These bit field members can also be toggled using the the `flags` member of :cpp:type:`twai_message_t` and the following message flags:
+These bit field members can also be toggled using the `flags` member of :cpp:type:`twai_message_t` and the following message flags:
 
 .. list-table::
     :widths: 30 70

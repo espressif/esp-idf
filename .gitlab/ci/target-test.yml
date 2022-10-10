@@ -223,6 +223,46 @@ example_test_pytest_esp32s2_usb_device:
     - build_pytest_examples_esp32s2
   tags: [ esp32s2, usb_device ]
 
+example_test_pytest_esp32_sdmmc:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, sdcard_sdmode ]
+
+example_test_pytest_esp32_sdspi:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, sdcard_spimode ]
+
+example_test_pytest_esp32s2_sdspi:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2
+  needs:
+    - build_pytest_examples_esp32s2
+  tags: [ esp32s2, sdcard_spimode ]
+
+example_test_pytest_esp32c3_sdspi:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3
+  needs:
+    - build_pytest_examples_esp32c3
+  tags: [ esp32c3, sdcard_spimode ]
+
+example_test_pytest_esp32_extflash:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, external_flash ]
+
 .pytest_components_dir_template:
   extends: .pytest_template
   variables:
@@ -435,6 +475,38 @@ component_ut_pytest_esp32c3_flash_multi:
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, flash_mutli ]
+
+component_ut_pytest_esp32_sdmmc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, sdcard_sdmode ]
+
+component_ut_pytest_esp32_sdspi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, sdcard_spimode ]
+
+component_ut_pytest_esp32s2_sdspi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s2
+  needs:
+    - build_pytest_components_esp32s2
+  tags: [ esp32s2, sdcard_spimode ]
+
+component_ut_pytest_esp32c3_sdspi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, sdcard_spimode ]
 
 example_test_pytest_openthread_br:
   extends:
@@ -707,23 +779,11 @@ example_test_009:
     SETUP_TOOLS: "1"
     PYTHON_VER: 3
 
-example_test_010:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_ExtFlash
-
 example_test_011:
   extends: .example_test_esp32_template
   tags:
     - ESP32
     - Example_T2_RS485
-
-example_test_013:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - UT_T1_SDMODE
 
 example_test_016:
   extends: .example_test_esp32_template
@@ -748,24 +808,6 @@ example_test_C2_GENERIC:
   tags:
     - ESP32C2
     - Example_GENERIC
-
-example_test_ESP32_SDSPI:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - UT_T1_SPIMODE
-
-example_test_ESP32S2_SDSPI:
-  extends: .example_test_esp32s2_template
-  tags:
-    - ESP32S2
-    - UT_T1_SPIMODE
-
-example_test_ESP32C3_SDSPI:
-  extends: .example_test_esp32c3_template
-  tags:
-    - ESP32C3
-    - UT_T1_SPIMODE
 
 .test_app_template:
   extends: .target_test_job_template

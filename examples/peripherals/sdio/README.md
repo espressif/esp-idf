@@ -104,8 +104,14 @@ and ``api_reference/peripherals/sd_pullup_requirements`` to see more
 descriptions about pullups and MTDI requirements and solutions of official
 modules and devkits.
 
-## About `esp_serial_slave_link` component used in this example
+## About `esp_serial_slave_link` component used in the host example
 
-`esp_serial_slave_link` component in the IDF is used to communicate to a ESP slave device.
-When the `esp_serial_slave_link` device is initialized with an `essl_sdio_config_t` structure,
-the `esp_serial_slave_link` can be used to communicate with an ESP32 SDIO slave.
+The host example is based on [esp_serial_slave_link component](https://components.espressif.com/components/espressif/esp_serial_slave_link), which is used to communicate to a ESP slave device.
+
+The component can be installed by esp component manager. Since this example already installed it, no need to re-installed it again, but if you want to install this component in your own project, you can input the following command:
+
+```
+idf.py add-dependency espressif/esp_serial_slave_link
+```
+
+If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_componets` folder.

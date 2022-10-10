@@ -36,10 +36,11 @@ The current focus of the Linux host tests is on creating isolated unit tests of 
 
 A complete implementation of IDF to run on Linux does not exist currently.
 
-There are currently two examples for running IDF-built code on Linux host: 
+Examples for running IDF-built code on Linux host include (non-exhaustive list): 
 
-- An example :example_file:`hello-world application <build_system/cmake/linux_host_app/README.md>` 
-- A :component_file:`unit test for NVS <nvs_flash/host_test/nvs_page_test/README.md>`.
+- :component_file:`unit test for the NVS Page class <nvs_flash/host_test/nvs_page_test/README.md>`.
+- :component_file:`unit test for esp_event <esp_event/host_test/esp_event_unit_test/main/esp_event_test.cpp>`.
+- :component_file:`unit test for mqtt <mqtt/host_test/README.md>`.
 
 Inside the component which should be tested, there is a separate directory ``host_test``, besides the "traditional" ``test`` directory or the ``test_apps`` directory. It has one or more subdirectories::
 

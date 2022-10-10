@@ -28,7 +28,7 @@ project(g0_components)
 
 # As a workaround for ESP32-C2, we need to define the MMU page size here, until MMU hal-driver
 # is refactored
-if(CONFIG_IDF_TARGET_ESP32C2)
+if(CONFIG_IDF_TARGET_ESP32C2 OR CONFIG_IDF_TARGET_ESP32C6)
     idf_build_set_property(C_COMPILE_OPTIONS "-DCONFIG_MMU_PAGE_SIZE=64" APPEND)
 endif()
 

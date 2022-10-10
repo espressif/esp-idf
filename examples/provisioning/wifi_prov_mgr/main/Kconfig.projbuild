@@ -17,7 +17,7 @@ menu "Example Configuration"
 
     choice EXAMPLE_PROV_SECURITY_VERSION
         bool "Protocomm security version"
-        default EXAMPLE_PROV_SECURITY_VERSION_1
+        default EXAMPLE_PROV_SECURITY_VERSION_2
         help
             Wi-Fi provisioning component offers 3 security versions.
             The example offers a choice between security version 1 and 2.
@@ -96,4 +96,11 @@ menu "Example Configuration"
         default y
         help
             This enables BLE 4.2 features for Bluedroid.
+
+    config EXAMPLE_REPROVISIONING
+        bool "Re-provisioning"
+        help
+            Enable re-provisioning - allow the device to provision for new credentials
+            after previous successful provisioning.
+
 endmenu
