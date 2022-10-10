@@ -5,127 +5,169 @@
  */
 
 #include "sdkconfig.h"
+#include <math.h>
 #include "soc/soc_caps.h"
-
-#if CONFIG_FREERTOS_SMP && SOC_CPU_HAS_FPU
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "xtensa/xtensa_api.h"
-#include "esp_intr_alloc.h"
+#include "freertos/semphr.h"
 #include "unity.h"
 #include "test_utils.h"
 
-/*
-Note: We need to declare the float here to prevent compiler optimizing float
-operations into non-float instructions.
-*/
-static volatile float test_float;
+#if SOC_CPU_HAS_FPU
+
+/* ------------------------------------------------------------------------------------------------------------------ */
 
 /*
-Test coprocessor (CP) usage in task
+Test FPU usage from a task context
 
 Purpose:
-    - Test that CP can be used in a task (e.g., the FPU)
-    - Test that unpinned tasks are pinned when the CP is used
-    - Test that CP is properly saved in restored
-    - Test that CP context is properly cleaned up when task is deleted
+    - Test that the FPU can be used from a task context
+    - Test that FPU context is properly saved and restored
+Procedure:
+    - Create TEST_PINNED_NUM_TASKS tasks pinned to each core
+    - Start each task
+    - Each task updates a float variable and then blocks (to allow other tasks to run thus forcing the an FPU context
+      save and restore).
+Expected:
+    - Correct float value calculated by each task
 */
 
-#define COPROC_TASK_TEST_ITER   10
+#define TEST_PINNED_NUM_TASKS       3
+
+static void pinned_task(void *arg)
+{
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    /*
+    Use the FPU
+    - We test using a calculation that will cause a change in mantissa and exponent for extra thoroughness
+    - cosf(0.0f) should return 1.0f, thus we are simply doubling test_float every iteration.
+    - Therefore, we should end up with (0.01) * (2^8) = 2.56 at the end of the loop
+    */
+    volatile float test_float = 0.01f;
+    for (int i = 0; i < 8; i++) {
+        test_float = test_float * 2.0f * cosf(0.0f);
+        vTaskDelay(1);  // Block to cause a context switch, forcing the FPU context to be saved
+    }
+    // We allow a 0.1% delta on the final result in case of any loss of precision from floating point calculations
+    TEST_ASSERT_FLOAT_WITHIN(0.00256f, 2.56f, test_float);
+
+    // Indicate done wand wait to be deleted
+    xSemaphoreGive((SemaphoreHandle_t)arg);
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("FPU: Usage in task", "[freertos]")
+{
+    SemaphoreHandle_t done_sem = xSemaphoreCreateCounting(configNUM_CORES * TEST_PINNED_NUM_TASKS, 0);
+    TEST_ASSERT_NOT_EQUAL(NULL, done_sem);
+
+    TaskHandle_t task_handles[configNUM_CORES][TEST_PINNED_NUM_TASKS];
+
+    // Create test tasks for each core
+    for (int i = 0; i < configNUM_CORES; i++) {
+        for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
+            TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(pinned_task, "task", 4096, (void *)done_sem, UNITY_FREERTOS_PRIORITY + 1, &task_handles[i][j], i));
+        }
+    }
+
+    // Start the created tasks simultaneously
+    for (int i = 0; i < configNUM_CORES; i++) {
+        for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
+            xTaskNotifyGive(task_handles[i][j]);
+        }
+    }
+
+    // Wait for the tasks to complete
+    for (int i = 0; i < configNUM_CORES * TEST_PINNED_NUM_TASKS; i++) {
+        xSemaphoreTake(done_sem, portMAX_DELAY);
+    }
+
+    // Delete the tasks
+    for (int i = 0; i < configNUM_CORES; i++) {
+        for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
+            vTaskDelete(task_handles[i][j]);
+        }
+    }
+
+    vTaskDelay(10); // Short delay to allow idle task to be free task memory and FPU contexts
+    vSemaphoreDelete(done_sem);
+}
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+
+/*
+Test FPU usage will pin an unpinned task
+
+Purpose:
+    - Test that unpinned tasks are automatically pinned to the current core on the task's first use of the FPU
+Procedure:
+    - Create an unpinned task
+    - Task disables scheduling/preemption to ensure that it does not switch cores
+    - Task uses the FPU
+    - Task checks its core affinity after FPU usage
+Expected:
+    - Task remains unpinned until its first usage of the FPU
+    - The task becomes pinned to the current core after first use of the FPU
+*/
+
+#if configNUM_CORES > 1
 
 static void unpinned_task(void *arg)
 {
-    // Test that task gets pinned to the current core when it uses the coprocessor
-    vTaskPreemptionDisable(NULL);   // Disable preemption to make current core ID doesn't change
-    BaseType_t xCoreID = xPortGetCoreID();
+    // Disable scheduling/preemption to make sure current core ID doesn't change
+#if CONFIG_FREERTOS_SMP
+    vTaskPreemptionDisable(NULL);
+#else
+    vTaskSuspendAll();
+#endif
+    BaseType_t cur_core_num = xPortGetCoreID();
+    // Check that the task is unpinned
+#if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, vTaskCoreAffinityGet(NULL));
-    test_float = 1.1f;
-    test_float *= 2.0f;
-    TEST_ASSERT_EQUAL(2.2f, test_float);
-    TEST_ASSERT_EQUAL(1 << xCoreID, vTaskCoreAffinityGet(NULL));
+#else
+    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetAffinity(NULL));
+#endif
+
+    /*
+    Use the FPU
+    - We test using a calculation that will cause a change in mantissa and exponent for extra thoroughness
+    - cosf(0.0f) should return 1.0f, thus we are simply doubling test_float every iteration.
+    - Therefore, we should end up with (0.01) * (2^8) = 2.56 at the end of the loop
+    */
+    volatile float test_float = 0.01f;
+    for (int i = 0; i < 8; i++) {
+        test_float = test_float * 2.0f * cosf(0.0f);
+    }
+    // We allow a 0.1% delta on the final result in case of any loss of precision from floating point calculations
+    TEST_ASSERT_FLOAT_WITHIN(0.00256f, 2.56f, test_float);
+
+#if CONFIG_FREERTOS_SMP
+    TEST_ASSERT_EQUAL(1 << cur_core_num, vTaskCoreAffinityGet(NULL));
+#else
+    TEST_ASSERT_EQUAL(cur_core_num, xTaskGetAffinity(NULL));
+#endif
+    // Reenable scheduling/preemption
+#if CONFIG_FREERTOS_SMP
     vTaskPreemptionEnable(NULL);
+#else
+    xTaskResumeAll();
+#endif
 
-    // Delay to trigger a solicited context switch
-    vTaskDelay(1);
-    // Test that CP context was saved and restored properly
-    test_float *= 2.0f;
-    TEST_ASSERT_EQUAL(4.4f, test_float);
-
-    // Wait to be deleted
+    // Indicate done and self delete
     xTaskNotifyGive((TaskHandle_t)arg);
-    vTaskSuspend(NULL);
+    vTaskDelete(NULL);
 }
 
-TEST_CASE("Test coproc usage in task", "[freertos]")
+TEST_CASE("FPU: Usage in unpinned task", "[freertos]")
 {
     TaskHandle_t unity_task_handle = xTaskGetCurrentTaskHandle();
-    for (int i = 0; i < COPROC_TASK_TEST_ITER; i++) {
-        TaskHandle_t unpinned_task_handle;
-        xTaskCreate(unpinned_task, "unpin", 2048, (void *)unity_task_handle, UNITY_FREERTOS_PRIORITY + 1, &unpinned_task_handle);
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        vTaskDelete(unpinned_task_handle);
-        vTaskDelay(10); // Short delay to allow task memory to be freed
-    }
+    // Create unpinned task
+    xTaskCreate(unpinned_task, "unpin", 4096, (void *)unity_task_handle, UNITY_FREERTOS_PRIORITY + 1, NULL);
+    // Wait for task to complete
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    vTaskDelay(10); // Short delay to allow task memory to be freed
 }
 
-#if CONFIG_FREERTOS_FPU_IN_ISR
-
-/*
-Test coprocessor (CP) usage in ISR
-
-Purpose:
-    - Test that CP can be used in an ISR
-    - Test that an interrupted unpinned task will not be pinned by the ISR using the CP
-*/
-
-#define SW_ISR_LEVEL_1  7
-
-static void software_isr(void *arg)
-{
-    (void) arg;
-    xt_set_intclear(1 << SW_ISR_LEVEL_1);
-    test_float *= 2;
-}
-
-static void unpinned_task_isr(void *arg)
-{
-    vTaskPreemptionDisable(NULL);   // Disable preemption to make current core ID doesn't change
-    TEST_ASSERT_EQUAL(tskNO_AFFINITY, vTaskCoreAffinityGet(NULL));
-    // Allocate ISR on the current core
-    intr_handle_t handle;
-    esp_err_t err = esp_intr_alloc(ETS_INTERNAL_SW0_INTR_SOURCE, ESP_INTR_FLAG_LEVEL1, &software_isr, NULL, &handle);
-    TEST_ASSERT_EQUAL_HEX32(ESP_OK, err);
-    // Trigger the ISR
-    xt_set_intset(1 << SW_ISR_LEVEL_1);
-    // Test that task affinity hasn't changed
-    TEST_ASSERT_EQUAL(tskNO_AFFINITY, vTaskCoreAffinityGet(NULL));
-    // Free the ISR
-    esp_intr_free(handle);
-    // Wait to be deleted
-    vTaskPreemptionEnable(NULL);
-    xTaskNotifyGive((TaskHandle_t)arg);
-    vTaskSuspend(NULL);
-}
-
-TEST_CASE("Test coproc usage in ISR", "[freertos]")
-{
-    TaskHandle_t unity_task_handle = xTaskGetCurrentTaskHandle();
-    for (int i = 0; i < COPROC_TASK_TEST_ITER; i++) {
-        // Initialize the test float
-        test_float = 1.1f;
-        // Create an unpinned task to trigger the ISR
-        TaskHandle_t unpinned_task_handle;
-        xTaskCreate(unpinned_task_isr, "unpin", 2048, (void *)unity_task_handle, UNITY_FREERTOS_PRIORITY + 1, &unpinned_task_handle);
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        // Check that the test float value
-        TEST_ASSERT_EQUAL(2.2f, test_float);
-        // Delete the unpinned task. Short delay to allow task memory to be freed
-        vTaskDelete(unpinned_task_handle);
-        vTaskDelay(10);
-    }
-}
-
-#endif // CONFIG_FREERTOS_FPU_IN_ISR
-
-#endif // CONFIG_FREERTOS_SMP && SOC_CPU_HAS_FPU
+#endif // configNUM_CORES > 1
+#endif // SOC_CPU_HAS_FPU
