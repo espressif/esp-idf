@@ -33,7 +33,7 @@
 void mmu_hal_init(void)
 {
     mmu_ll_unmap_all(0);
-#if !CONFIG_FREERTOS_UNICORE
+#ifdef TWO_MMU_DEVICES
     mmu_ll_unmap_all(1);
 #endif
 }
