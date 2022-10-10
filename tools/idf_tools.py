@@ -1983,9 +1983,7 @@ def action_install_python_env(args):  # type: ignore
     venv_can_upgrade = False
 
     if not os.path.exists(virtualenv_python):
-        try:
-            import venv  # noqa: F401
-
+        if subprocess.run([sys.executable, '-m', 'venv', '-h'], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
             # venv available
             virtualenv_options = ['--clear']  # delete environment if already exists
             if sys.version_info[:2] >= (3, 9):
@@ -1998,7 +1996,7 @@ def action_install_python_env(args):  # type: ignore
                                   *virtualenv_options,
                                   idf_python_env_path],
                                   stdout=sys.stdout, stderr=sys.stderr)
-        except ImportError:
+        else:
             # The embeddable Python for Windows doesn't have the built-in venv module
             install_legacy_python_virtualenv(idf_python_env_path)
 
