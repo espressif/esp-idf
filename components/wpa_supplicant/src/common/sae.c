@@ -17,6 +17,7 @@
 #include "crypto/dh_groups.h"
 #include "ieee802_11_defs.h"
 #include "sae.h"
+#include "dragonfly.h"
 #include "esp_wifi_crypto_types.h"
 
 int sae_set_group(struct sae_data *sae, int group)
@@ -176,105 +177,13 @@ static void sae_pwd_seed_key(const u8 *addr1, const u8 *addr2, u8 *key)
 	}
 }
 
-static struct crypto_bignum *
-get_rand_1_to_p_1(const u8 *prime, size_t prime_len, size_t prime_bits,
-		  int *r_odd)
-{
-	for (;;) {
-		struct crypto_bignum *r;
-		u8 tmp[SAE_MAX_ECC_PRIME_LEN];
-
-		if (random_get_bytes(tmp, prime_len) < 0)
-			break;
-		if (prime_bits % 8)
-			buf_shift_right(tmp, prime_len, 8 - prime_bits % 8);
-		if (os_memcmp(tmp, prime, prime_len) >= 0)
-			continue;
-		r = crypto_bignum_init_set(tmp, prime_len);
-		if (!r)
-			break;
-		if (crypto_bignum_is_zero(r)) {
-			crypto_bignum_deinit(r, 0);
-			continue;
-		}
-
-		*r_odd = tmp[prime_len - 1] & 0x01;
-		return r;
-	}
-
-	return NULL;
-}
-
-static int is_quadratic_residue_blind(struct sae_data *sae,
-				      const u8 *prime, size_t bits,
-				      const struct crypto_bignum *qr,
-				      const struct crypto_bignum *qnr,
-				      const struct crypto_bignum *y_sqr)
-{
-	struct crypto_bignum *r, *num;
-	int r_odd, check, res = -1;
-
-	/*
-	 * Use the blinding technique to mask y_sqr while determining
-	 * whether it is a quadratic residue modulo p to avoid leaking
-	 * timing information while determining the Legendre symbol.
-	 *
-	 * v = y_sqr
-	 * r = a random number between 1 and p-1, inclusive
-	 * num = (v * r * r) modulo p
-	 */
-	r = get_rand_1_to_p_1(prime, sae->tmp->prime_len, bits, &r_odd);
-	if (!r)
-		return ESP_FAIL;
-
-	num = crypto_bignum_init();
-	if (!num ||
-	    crypto_bignum_mulmod(y_sqr, r, sae->tmp->prime, num) < 0 ||
-	    crypto_bignum_mulmod(num, r, sae->tmp->prime, num) < 0)
-		goto fail;
-
-	if (r_odd) {
-		/*
-		 * num = (num * qr) module p
-		 * LGR(num, p) = 1 ==> quadratic residue
-		 */
-		if (crypto_bignum_mulmod(num, qr, sae->tmp->prime, num) < 0)
-			goto fail;
-		check = 1;
-	} else {
-		/*
-		 * num = (num * qnr) module p
-		 * LGR(num, p) = -1 ==> quadratic residue
-		 */
-		if (crypto_bignum_mulmod(num, qnr, sae->tmp->prime, num) < 0)
-			goto fail;
-		check = -1;
-	}
-
-	res = crypto_bignum_legendre(num, sae->tmp->prime);
-	if (res == -2) {
-		res = -1;
-		goto fail;
-	}
-	res = res == check;
-fail:
-	crypto_bignum_deinit(num, 1);
-	crypto_bignum_deinit(r, 1);
-	return res;
-}
-
 static int sae_test_pwd_seed_ecc(struct sae_data *sae, const u8 *pwd_seed,
-				 const u8 *prime,
-				 const struct crypto_bignum *qr,
-				 const struct crypto_bignum *qnr,
-				 struct crypto_bignum **ret_x_cand)
+				 const u8 *prime, const u8 *qr, const u8 *qnr,
+				 u8 *pwd_value)
 {
-	u8 pwd_value[SAE_MAX_ECC_PRIME_LEN];
 	struct crypto_bignum *y_sqr, *x_cand;
 	int res;
 	size_t bits;
-
-	*ret_x_cand = NULL;
 
 	wpa_hexdump_key(MSG_DEBUG, "SAE: pwd-seed", pwd_seed, SHA256_MAC_LEN);
 
@@ -284,7 +193,7 @@ static int sae_test_pwd_seed_ecc(struct sae_data *sae, const u8 *pwd_seed,
 			    prime, sae->tmp->prime_len, pwd_value, bits) < 0)
 		return ESP_FAIL;
 	if (bits % 8)
-		buf_shift_right(pwd_value, sizeof(pwd_value), 8 - bits % 8);
+		buf_shift_right(pwd_value, sae->tmp->prime_len, 8 - bits % 8);
 	wpa_hexdump_key(MSG_DEBUG, "SAE: pwd-value",
 			pwd_value, sae->tmp->prime_len);
 
@@ -295,30 +204,28 @@ static int sae_test_pwd_seed_ecc(struct sae_data *sae, const u8 *pwd_seed,
 	if (!x_cand)
 		return ESP_FAIL;
 	y_sqr = crypto_ec_point_compute_y_sqr(sae->tmp->ec, x_cand);
-	if (!y_sqr) {
-		crypto_bignum_deinit(x_cand, 1);
+	crypto_bignum_deinit(x_cand, 1);
+	if (!y_sqr)
 		return ESP_FAIL;
-	}
 
-	res = is_quadratic_residue_blind(sae, prime, bits, qr, qnr, y_sqr);
+	res = dragonfly_is_quadratic_residue_blind(sae->tmp->ec, qr, qnr,
+                           y_sqr);
 	crypto_bignum_deinit(y_sqr, 1);
-	if (res <= 0) {
-		crypto_bignum_deinit(x_cand, 1);
-		return res;
-	}
 
-	*ret_x_cand = x_cand;
-	return 1;
+	return res;
 }
 
+/* Returns -1 on fatal failure, 0 if PWE cannot be derived from the provided
+ * pwd-seed, or 1 if a valid PWE was derived from pwd-seed. */
 static int sae_test_pwd_seed_ffc(struct sae_data *sae, const u8 *pwd_seed,
 				 struct crypto_bignum *pwe)
 {
 	u8 pwd_value[SAE_MAX_PRIME_LEN];
 	size_t bits = sae->tmp->prime_len * 8;
 	u8 exp[1];
-	struct crypto_bignum *a, *b;
-	int res;
+	struct crypto_bignum *a, *b = NULL;
+	int res, is_val;
+	u8 pwd_value_valid;
 
 	wpa_hexdump_key(MSG_DEBUG, "SAE: pwd-seed", pwd_seed, SHA256_MAC_LEN);
 
@@ -330,16 +237,30 @@ static int sae_test_pwd_seed_ffc(struct sae_data *sae, const u8 *pwd_seed,
 	wpa_hexdump_key(MSG_DEBUG, "SAE: pwd-value", pwd_value,
 			sae->tmp->prime_len);
 
-	if (os_memcmp(pwd_value, sae->tmp->dh->prime, sae->tmp->prime_len) >= 0)
-	{
-		wpa_printf(MSG_DEBUG, "SAE: pwd-value >= p");
-		return ESP_OK;
-	}
+	/* Check whether pwd-value < p */
+	res = const_time_memcmp(pwd_value, sae->tmp->dh->prime,
+				sae->tmp->prime_len);
+	/* pwd-value >= p is invalid, so res is < 0 for the valid cases and
+	 * the negative sign can be used to fill the mask for constant time
+	 * selection */
+	pwd_value_valid = const_time_fill_msb(res);
+
+	/* If pwd-value >= p, force pwd-value to be < p and perform the
+	 * calculations anyway to hide timing difference. The derived PWE will
+	 * be ignored in that case. */
+	pwd_value[0] = const_time_select_u8(pwd_value_valid, pwd_value[0], 0);
 
 	/* PWE = pwd-value^((p-1)/r) modulo p */
 
+	res = -1;
 	a = crypto_bignum_init_set(pwd_value, sae->tmp->prime_len);
 
+	if (!a)
+		goto fail;
+
+	/* This is an optimization based on the used group that does not depend
+	 * on the password in any way, so it is fine to use separate branches
+	 * for this step without constant time operations. */
 	if (sae->tmp->dh->safe_prime) {
 		/*
 		 * r = (p-1)/2 for the group used here, so this becomes:
@@ -353,68 +274,34 @@ static int sae_test_pwd_seed_ffc(struct sae_data *sae, const u8 *pwd_seed,
 		b = crypto_bignum_init_set(exp, sizeof(exp));
 		if (b == NULL ||
 		    crypto_bignum_sub(sae->tmp->prime, b, b) < 0 ||
-		    crypto_bignum_div(b, sae->tmp->order, b) < 0) {
-			crypto_bignum_deinit(b, 0);
-			b = NULL;
-		}
+			crypto_bignum_div(b, sae->tmp->order, b) < 0)
+			    goto fail;
 	}
 
-	if (a == NULL || b == NULL)
-		res = -1;
-	else
-		res = crypto_bignum_exptmod(a, b, sae->tmp->prime, pwe);
 
-	crypto_bignum_deinit(a, 0);
-	crypto_bignum_deinit(b, 0);
+	if (!b)
+		goto fail;
 
-	if (res < 0) {
-		wpa_printf(MSG_DEBUG, "SAE: Failed to calculate PWE");
-		return ESP_FAIL;
-	}
+	res = crypto_bignum_exptmod(a, b, sae->tmp->prime, pwe);
+	if (res < 0)
+		goto fail;
 
-	/* if (PWE > 1) --> found */
-	if (crypto_bignum_is_zero(pwe) || crypto_bignum_is_one(pwe)) {
-		wpa_printf(MSG_DEBUG, "SAE: PWE <= 1");
-		return ESP_OK;
-	}
-
-	wpa_printf(MSG_DEBUG, "SAE: PWE found");
-	return 1;
-}
-
-static int get_random_qr_qnr(const u8 *prime, size_t prime_len,
-			     const struct crypto_bignum *prime_bn,
-			     size_t prime_bits, struct crypto_bignum **qr,
-			     struct crypto_bignum **qnr)
-{
-	*qr = NULL;
-	*qnr = NULL;
-
-	while (!(*qr) || !(*qnr)) {
-		u8 tmp[SAE_MAX_ECC_PRIME_LEN];
-		struct crypto_bignum *q;
-		int res;
-
-		if (random_get_bytes(tmp, prime_len) < 0)
-			break;
-		if (prime_bits % 8)
-			buf_shift_right(tmp, prime_len, 8 - prime_bits % 8);
-		if (os_memcmp(tmp, prime, prime_len) >= 0)
-			continue;
-		q = crypto_bignum_init_set(tmp, prime_len);
-		if (!q)
-			break;
-		res = crypto_bignum_legendre(q, prime_bn);
-
-		if (res == 1 && !(*qr))
-			*qr = q;
-		else if (res == -1 && !(*qnr))
-			*qnr = q;
-		else
-			crypto_bignum_deinit(q, 0);
-	}
-
-	return (*qr && *qnr) ? 0 : -1;
+	/* There were no fatal errors in calculations, so determine the return
+	 * value using constant time operations. We get here for number of
+	 * invalid cases which are cleared here after having performed all the
+	 * computation. PWE is valid if pwd-value was less than prime and
+	 * PWE > 1. Start with pwd-value check first and then use constant time
+	 * operations to clear res to 0 if PWE is 0 or 1.
+	 */
+	res = const_time_select_u8(pwd_value_valid, 1, 0);
+	is_val = crypto_bignum_is_zero(pwe);
+	res = const_time_select_u8(const_time_is_zero(is_val), res, 0);
+	is_val = crypto_bignum_is_one(pwe);
+	res = const_time_select_u8(const_time_is_zero(is_val), res, 0);
+fail:
+	crypto_bignum_deinit(a, 1);
+	crypto_bignum_deinit(b, 1);
+	return res;
 }
 
 static int sae_derive_pwe_ecc(struct sae_data *sae, const u8 *addr1,
@@ -425,34 +312,42 @@ static int sae_derive_pwe_ecc(struct sae_data *sae, const u8 *addr1,
 	u8 addrs[2 * ETH_ALEN];
 	const u8 *addr[3];
 	size_t len[3];
-	u8 dummy_password[32];
-	size_t dummy_password_len;
+	u8 *dummy_password, *tmp_password;
 	int pwd_seed_odd = 0;
 	u8 prime[SAE_MAX_ECC_PRIME_LEN];
 	size_t prime_len;
-	struct crypto_bignum *x = NULL, *qr, *qnr;
-	size_t bits;
-	int res;
+	struct crypto_bignum *x = NULL, *y = NULL, *qr = NULL, *qnr = NULL;
+	u8 x_bin[SAE_MAX_ECC_PRIME_LEN];
+	u8 x_cand_bin[SAE_MAX_ECC_PRIME_LEN];
+	u8 qr_bin[SAE_MAX_ECC_PRIME_LEN];
+	u8 qnr_bin[SAE_MAX_ECC_PRIME_LEN];
+	u8 x_y[2 * SAE_MAX_ECC_PRIME_LEN];
+	int res = -1;
+	u8 found = 0; /* 0 (false) or 0xff (true) to be used as const_time_*
+		       * mask */
+	unsigned int is_eq;
 
-	dummy_password_len = password_len;
-	if (dummy_password_len > sizeof(dummy_password))
-		dummy_password_len = sizeof(dummy_password);
-	if (random_get_bytes(dummy_password, dummy_password_len) < 0)
-		return ESP_FAIL;
+	os_memset(x_bin, 0, sizeof(x_bin));
+
+	dummy_password = os_malloc(password_len);
+	tmp_password = os_malloc(password_len);
+	if (!dummy_password || !tmp_password ||
+	    random_get_bytes(dummy_password, password_len) < 0)
+		goto fail;
 
 	prime_len = sae->tmp->prime_len;
 	if (crypto_bignum_to_bin(sae->tmp->prime, prime, sizeof(prime),
 				 prime_len) < 0)
-		return ESP_FAIL;
-	bits = crypto_ec_prime_len_bits(sae->tmp->ec);
+		goto fail;
 
 	/*
 	 * Create a random quadratic residue (qr) and quadratic non-residue
 	 * (qnr) modulo p for blinding purposes during the loop.
 	 */
-	if (get_random_qr_qnr(prime, prime_len, sae->tmp->prime, bits,
-			      &qr, &qnr) < 0)
-		return ESP_FAIL;
+	if (dragonfly_get_random_qr_qnr(sae->tmp->prime, &qr, &qnr) < 0 ||
+	    crypto_bignum_to_bin(qr, qr_bin, sizeof(qr_bin), prime_len) < 0 ||
+	    crypto_bignum_to_bin(qnr, qnr_bin, sizeof(qnr_bin), prime_len) < 0)
+		    goto fail;
 
 	wpa_hexdump_ascii_key(MSG_DEBUG, "SAE: password",
 			      password, password_len);
@@ -465,7 +360,7 @@ static int sae_derive_pwe_ecc(struct sae_data *sae, const u8 *addr1,
 	 */
 	sae_pwd_seed_key(addr1, addr2, addrs);
 
-	addr[0] = password;
+	addr[0] = tmp_password;
 	len[0] = password_len;
 	addr[1] = &counter;
 	len[1] = sizeof(counter);
@@ -475,9 +370,8 @@ static int sae_derive_pwe_ecc(struct sae_data *sae, const u8 *addr1,
 	 * attacks that attempt to determine the number of iterations required
 	 * in the loop.
 	 */
-	for (counter = 1; counter <= k || !x; counter++) {
+	for (counter = 1; counter <= k || !found; counter++) {
 		u8 pwd_seed[SHA256_MAC_LEN];
-		struct crypto_bignum *x_cand;
 
 		if (counter > 200) {
 			/* This should not happen in practice */
@@ -485,79 +379,119 @@ static int sae_derive_pwe_ecc(struct sae_data *sae, const u8 *addr1,
 			break;
 		}
 
-		wpa_printf(MSG_DEBUG, "SAE: counter = %u", counter);
+		wpa_printf(MSG_DEBUG, "SAE: counter = %03u", counter);
+		const_time_select_bin(found, dummy_password, password,
+				      password_len, tmp_password);
 		if (hmac_sha256_vector(addrs, sizeof(addrs), 2,
 				       addr, len, pwd_seed) < 0)
 			break;
 
 		res = sae_test_pwd_seed_ecc(sae, pwd_seed,
-					    prime, qr, qnr, &x_cand);
+					                prime, qr_bin, qnr_bin, x_cand_bin);
+		const_time_select_bin(found, x_bin, x_cand_bin, prime_len,
+				      x_bin);
+		pwd_seed_odd = const_time_select_u8(
+			found, pwd_seed_odd,
+			pwd_seed[SHA256_MAC_LEN - 1] & 0x01);
+		os_memset(pwd_seed, 0, sizeof(pwd_seed));
 		if (res < 0)
 			goto fail;
-		if (res > 0 && !x) {
-			wpa_printf(MSG_DEBUG,
-				   "SAE: Selected pwd-seed with counter %u",
-				   counter);
-			x = x_cand;
-			pwd_seed_odd = pwd_seed[SHA256_MAC_LEN - 1] & 0x01;
-			os_memset(pwd_seed, 0, sizeof(pwd_seed));
+		/* Need to minimize differences in handling res == 0 and 1 here
+		 * to avoid differences in timing and instruction cache access,
+		 * so use const_time_select_*() to make local copies of the
+		 * values based on whether this loop iteration was the one that
+		 * found the pwd-seed/x. */
 
-			/*
-			 * Use a dummy password for the following rounds, if
-			 * any.
-			 */
-			addr[0] = dummy_password;
-			len[0] = dummy_password_len;
-		} else if (res > 0) {
-			crypto_bignum_deinit(x_cand, 1);
-		}
+		/* found is 0 or 0xff here and res is 0 or 1. Bitwise OR of them
+		 * (with res converted to 0/0xff) handles this in constant time.
+		 */
+		found |= res * 0xff;
+		wpa_printf(MSG_DEBUG, "SAE: pwd-seed result %d found=0x%02x",
+			   res, found);
 	}
-
-	if (!x) {
+	if (!found) {
 		wpa_printf(MSG_DEBUG, "SAE: Could not generate PWE");
 		res = -1;
 		goto fail;
 	}
-
-	if (!sae->tmp->pwe_ecc)
-		sae->tmp->pwe_ecc = crypto_ec_point_init(sae->tmp->ec);
-	if (!sae->tmp->pwe_ecc)
+	x = crypto_bignum_init_set(x_bin, prime_len);
+	if (!x) {
 		res = -1;
-	else
-		res = crypto_ec_point_solve_y_coord(sae->tmp->ec,
-						    sae->tmp->pwe_ecc, x,
-						    pwd_seed_odd);
-	crypto_bignum_deinit(x, 1);
-	if (res < 0) {
-		/*
-		 * This should not happen since we already checked that there
-		 * is a result.
-		 */
+		goto fail;
+	}
+	/* y = sqrt(x^3 + ax + b) mod p
+	 * if LSB(save) == LSB(y): PWE = (x, y)
+	 * else: PWE = (x, p - y)
+	 *
+	 * Calculate y and the two possible values for PWE and after that,
+	 * use constant time selection to copy the correct alternative.
+	 */
+	y = crypto_ec_point_compute_y_sqr(sae->tmp->ec, x);
+	if (!y ||
+	    dragonfly_sqrt(sae->tmp->ec, y, y) < 0 ||
+	    crypto_bignum_to_bin(y, x_y, SAE_MAX_ECC_PRIME_LEN,
+				 prime_len) < 0 ||
+	    crypto_bignum_sub(sae->tmp->prime, y, y) < 0 ||
+	    crypto_bignum_to_bin(y, x_y + SAE_MAX_ECC_PRIME_LEN,
+				 SAE_MAX_ECC_PRIME_LEN, prime_len) < 0) {
 		wpa_printf(MSG_DEBUG, "SAE: Could not solve y");
+		goto fail;
+	}
+
+	is_eq = const_time_eq(pwd_seed_odd, x_y[prime_len - 1] & 0x01);
+	const_time_select_bin(is_eq, x_y, x_y + SAE_MAX_ECC_PRIME_LEN,
+			      prime_len, x_y + prime_len);
+	os_memcpy(x_y, x_bin, prime_len);
+	wpa_hexdump_key(MSG_DEBUG, "SAE: PWE", x_y, 2 * prime_len);
+	crypto_ec_point_deinit(sae->tmp->pwe_ecc, 1);
+	sae->tmp->pwe_ecc = crypto_ec_point_from_bin(sae->tmp->ec, x_y);
+	if (!sae->tmp->pwe_ecc) {
+		wpa_printf(MSG_DEBUG, "SAE: Could not generate PWE");
+		res = -1;
 	}
 
 fail:
+	forced_memzero(x_y, sizeof(x_y));
 	crypto_bignum_deinit(qr, 0);
 	crypto_bignum_deinit(qnr, 0);
-
+	crypto_bignum_deinit(y, 1);
+	os_free(dummy_password);
+	bin_clear_free(tmp_password, password_len);
+	crypto_bignum_deinit(x, 1);
+	os_memset(x_bin, 0, sizeof(x_bin));
+	os_memset(x_cand_bin, 0, sizeof(x_cand_bin));
 	return res;
+}
+
+static int sae_modp_group_require_masking(int group)
+{
+	/* Groups for which pwd-value is likely to be >= p frequently */
+	return group == 22 || group == 23 || group == 24;
 }
 
 static int sae_derive_pwe_ffc(struct sae_data *sae, const u8 *addr1,
 			      const u8 *addr2, const u8 *password,
 			      size_t password_len)
 {
-	u8 counter;
+	u8 counter, k, sel_counter = 0;
 	u8 addrs[2 * ETH_ALEN];
 	const u8 *addr[3];
 	size_t len[3];
-	int found = 0;
+	u8 found = 0; /* 0 (false) or 0xff (true) to be used as const_time_*
+		       * mask */
+	u8 mask;
+	struct crypto_bignum *pwe;
+	size_t prime_len = sae->tmp->prime_len * 8;
+	u8 *pwe_buf;
+	crypto_bignum_deinit(sae->tmp->pwe_ffc, 1);
+	sae->tmp->pwe_ffc = NULL;
 
-	if (sae->tmp->pwe_ffc == NULL) {
-		sae->tmp->pwe_ffc = crypto_bignum_init();
-		if (sae->tmp->pwe_ffc == NULL)
-			return ESP_FAIL;
-	}
+	/* Allocate a buffer to maintain selected and candidate PWE for constant
+	 * time selection. */
+	pwe_buf = os_zalloc(prime_len * 2);
+	pwe = crypto_bignum_init();
+	if (!pwe_buf || !pwe)
+		goto fail;
 
 	wpa_hexdump_ascii_key(MSG_DEBUG, "SAE: password",
 			      password, password_len);
@@ -574,8 +508,10 @@ static int sae_derive_pwe_ffc(struct sae_data *sae, const u8 *addr1,
 	addr[1] = &counter;
 	len[1] = sizeof(counter);
 
-	for (counter = 1; !found; counter++) {
-		u8 pwd_seed[SHA256_MAC_LEN];
+	k = sae_modp_group_require_masking(sae->group) ? 40 : 1;
+
+	for (counter = 1; counter <= k || !found; counter++) {
+        u8 pwd_seed[SHA256_MAC_LEN];
 		int res;
 
 		if (counter > 200) {
@@ -584,20 +520,35 @@ static int sae_derive_pwe_ffc(struct sae_data *sae, const u8 *addr1,
 			break;
 		}
 
-		wpa_printf(MSG_DEBUG, "SAE: counter = %u", counter);
+		wpa_printf(MSG_DEBUG, "SAE: counter = %02u", counter);
 		if (hmac_sha256_vector(addrs, sizeof(addrs), 2,
 				       addr, len, pwd_seed) < 0)
 			break;
-		res = sae_test_pwd_seed_ffc(sae, pwd_seed, sae->tmp->pwe_ffc);
+		res = sae_test_pwd_seed_ffc(sae, pwd_seed, pwe);
+		/* res is -1 for fatal failure, 0 if a valid PWE was not found,
+		 * or 1 if a valid PWE was found. */
 		if (res < 0)
 			break;
-		if (res > 0) {
-			wpa_printf(MSG_DEBUG, "SAE: Use this PWE");
-			found = 1;
-		}
+		/* Store the candidate PWE into the second half of pwe_buf and
+		 * the selected PWE in the beginning of pwe_buf using constant
+		 * time selection. */
+		if (crypto_bignum_to_bin(pwe, pwe_buf + prime_len, prime_len,
+					 prime_len) < 0)
+			break;
+		const_time_select_bin(found, pwe_buf, pwe_buf + prime_len,
+				      prime_len, pwe_buf);
+		sel_counter = const_time_select_u8(found, sel_counter, counter);
+		mask = const_time_eq_u8(res, 1);
+		found = const_time_select_u8(found, found, mask);
 	}
-
-	return found ? 0 : -1;
+	if (!found)
+		goto fail;
+	wpa_printf(MSG_DEBUG, "SAE: Use PWE from counter = %02u", sel_counter);
+	sae->tmp->pwe_ffc = crypto_bignum_init_set(pwe_buf, prime_len);
+fail:
+	crypto_bignum_deinit(pwe, 1);
+	bin_clear_free(pwe_buf, prime_len * 2);
+	return sae->tmp->pwe_ffc ? 0 : -1;
 }
 
 static int hkdf_extract(size_t hash_len, const u8 *salt, size_t salt_len,
@@ -2308,6 +2259,9 @@ int sae_check_confirm(struct sae_data *sae, const u8 *data, size_t len)
 	}
 
 	if (sae->tmp->ec) {
+		if (!sae->tmp->peer_commit_element_ecc ||
+		    !sae->tmp->own_commit_element_ecc)
+			return ESP_FAIL;
 		if (sae_cn_confirm_ecc(sae, data, sae->peer_commit_scalar,
 				       sae->tmp->peer_commit_element_ecc,
 				       sae->tmp->own_commit_scalar,
@@ -2317,6 +2271,9 @@ int sae_check_confirm(struct sae_data *sae, const u8 *data, size_t len)
 			return ESP_FAIL;
 		}
 	} else {
+		if (!sae->tmp->peer_commit_element_ffc ||
+		    !sae->tmp->own_commit_element_ffc)
+			return ESP_FAIL;
 		if (sae_cn_confirm_ffc(sae, data, sae->peer_commit_scalar,
 				       sae->tmp->peer_commit_element_ffc,
 				       sae->tmp->own_commit_scalar,
