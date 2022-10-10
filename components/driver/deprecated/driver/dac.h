@@ -13,7 +13,7 @@
 #include "driver/dac_types_legacy.h"
 
 #if !CONFIG_DAC_SUPPRESS_DEPRECATE_WARN
-#warning "The legacy DAC driver is deprecated, please use driver/dac_driver.h instead"
+#warning "The legacy DAC driver is deprecated, please use `driver/dac_oneshot.h`, `driver/dac_cosine.h` or `driver/dac_conti.h` instead"
 #endif
 
 #ifdef __cplusplus
@@ -109,7 +109,7 @@ esp_err_t dac_i2s_enable(void);
  *     - ESP_OK success
  */
 esp_err_t dac_i2s_disable(void);
-#endif
+#endif // CONFIG_IDF_TARGET_ESP32
 
 #if CONFIG_IDF_TARGET_ESP32S2
 /**
@@ -164,7 +164,7 @@ esp_err_t dac_digi_fifo_reset(void);
  *     - ESP_OK success
  */
 esp_err_t dac_digi_reset(void);
-#endif
+#endif // CONFIG_IDF_TARGET_ESP32S2
 
 #ifdef __cplusplus
 }

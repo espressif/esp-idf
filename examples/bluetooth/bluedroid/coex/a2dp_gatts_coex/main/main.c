@@ -36,8 +36,7 @@
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-// DAC DMA mode is only supported by the legacy I2S driver, it will be replaced once DAC has its own DMA dirver
-#include "driver/dac_driver.h"
+#include "driver/dac_conti.h"
 #else
 #include "driver/i2s_std.h"
 #endif
@@ -78,7 +77,7 @@ static prepare_type_env_t b_prepare_write_env;
 #ifndef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
 i2s_chan_handle_t tx_chan;
 #else
-dac_channels_handle_t tx_chan;
+dac_conti_handle_t tx_chan;
 #endif
 
 //Declare the static function
@@ -693,24 +692,19 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-    dac_channels_config_t cfg = {
-        .chan_sel = DAC_CHANNEL_MASK_BOTH,
-    };
     dac_conti_config_t conti_cfg = {
-        .freq_hz = 44100,
-        .chan_mode = DAC_CHANNEL_MODE_ALTER,
-        .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,     // If the frequency is out of range, try 'DAC_DIGI_CLK_SRC_APLL'
-        .desc_num = 6,
+        .chan_mask = DAC_CHANNEL_MASK_ALL,
+        .desc_num = 8,
         .buf_size = 2048,
+        .freq_hz = 44100,
+        .offset = 127,
+        .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,   // Using APLL as clock source to get a wider frequency range
+        .chan_mode = DAC_CHANNEL_MODE_ALTER,
     };
-    /* Allocate the channel group */
-    ESP_ERROR_CHECK(dac_new_channels(&cfg, &tx_chan));
-    /* Enable the channels in the group */
-    ESP_ERROR_CHECK(dac_channels_enable(tx_chan));
-    /* Initialize DAC DMA peripheral */
-    ESP_ERROR_CHECK(dac_channels_init_continuous_mode(tx_chan, conti_cfg));
-    /* Start the DAC DMA peripheral */
-    ESP_ERROR_CHECK(dac_channels_enable_continuous_mode(tx_chan));
+    /* Allocate continuous channels */
+    ESP_ERROR_CHECK(dac_new_conti_channels(&conti_cfg, &tx_chan));
+    /* Enable the continuous channels */
+    ESP_ERROR_CHECK(dac_conti_enable(tx_chan));
 #else
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     chan_cfg.auto_clear = true;

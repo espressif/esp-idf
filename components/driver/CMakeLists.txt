@@ -103,16 +103,18 @@ if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
                      "${target}/touch_sensor.c")
 endif()
 
-if(CONFIG_SOC_DAC_SUPPORTED)
-    list(APPEND srcs "dac/dac_driver.c"
-    "dac/${target}/dac_dma.c"
-    "deprecated/dac_common_legacy.c"
-    "deprecated/${target}/dac_legacy.c")
-    list(APPEND includes "deprecated/${target}")
-endif()
-
 if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
     list(APPEND srcs "sdio_slave.c")
+endif()
+
+if(CONFIG_SOC_DAC_SUPPORTED)
+    list(APPEND srcs "dac/dac_oneshot.c"
+                     "dac/dac_cosine.c"
+                     "dac/dac_conti.c"
+                     "dac/dac_common.c"
+                     "dac/${target}/dac_dma.c"
+                     "deprecated/dac_common_legacy.c"
+                     "deprecated/${target}/dac_legacy.c")
 endif()
 
 if(${target} STREQUAL "esp32")

@@ -12,16 +12,15 @@
 #include "freertos/task.h"
 #include "esp_app_trace.h"
 #include "esp_log.h"
-#include "soc/rtc_periph.h"
-#include "soc/sens_periph.h"
 #include "esp_adc/adc_oneshot.h"
-#include "driver/dac_driver.h"
+#include "driver/dac_cosine.h"
 #include "soc/adc_channel.h"
 #include "soc/dac_channel.h"
 
-#define ADC1_TEST_CHANNEL (ADC_CHANNEL_6)
+#define ADC1_TEST_CHANNEL       (ADC_CHANNEL_6)
+#define EXAMPLE_DAC_CHENNEL     DAC_CHAN_0
 
-#define TEST_SAMPLING_PERIOD 20
+#define TEST_SAMPLING_PERIOD    20
 
 static const char *TAG = "example";
 
@@ -34,21 +33,18 @@ static const char *TAG = "example";
  */
 static void enable_cosine_generator(void)
 {
-    dac_channels_handle_t dac_handle;
-    dac_channels_config_t dac_cfg = {
-        .chan_sel = DAC_CHANNEL_MASK_CH0,
-    };
-    ESP_ERROR_CHECK(dac_new_channels(&dac_cfg, &dac_handle));
-    ESP_ERROR_CHECK(dac_channels_enable(dac_handle));
+    dac_cosine_handle_t dac_handle;
     dac_cosine_config_t cos_cfg = {
+        .chan_id = EXAMPLE_DAC_CHENNEL,
         .freq_hz = 130,
         .clk_src = DAC_COSINE_CLK_SRC_DEFAULT,
         .offset = 0,
         .phase = DAC_COSINE_PHASE_0,
-        .scale = DAC_COSINE_NO_ATTEN,
+        .atten = DAC_COSINE_ATTEN_DEFAULT,
+        .flags.force_set_freq = false,
     };
-    ESP_ERROR_CHECK(dac_channels_init_cosine_mode(dac_handle, &cos_cfg));
-    ESP_ERROR_CHECK(dac_channels_start_cosine_output(dac_handle));
+    ESP_ERROR_CHECK(dac_new_cosine_channel(&cos_cfg, &dac_handle));
+    ESP_ERROR_CHECK(dac_cosine_start(dac_handle));
 }
 
 /*
@@ -92,7 +88,7 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, ADC1_TEST_CHANNEL, &config));
 
-    ESP_LOGI(TAG, "Enabling CW generator on DAC channel 0 / GPIO%d.", DAC_CHAN_0_GPIO_NUM);
+    ESP_LOGI(TAG, "Enabling CW generator on DAC channel 0 / GPIO%d.", DAC_CHAN0_GPIO_NUM);
     enable_cosine_generator();
 
     while (1) {

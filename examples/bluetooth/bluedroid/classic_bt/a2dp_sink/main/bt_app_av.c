@@ -21,8 +21,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-// DAC DMA mode is only supported by the legacy I2S driver, it will be replaced once DAC has its own DMA dirver
-#include "driver/dac_driver.h"
+#include "driver/dac_conti.h"
 #else
 #include "driver/i2s_std.h"
 #endif
@@ -90,7 +89,7 @@ static bool s_volume_notify;                 /* notify volume change or not */
 #ifndef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
 i2s_chan_handle_t tx_chan = NULL;
 #else
-dac_channels_handle_t tx_chan;
+dac_conti_handle_t tx_chan;
 #endif
 
 /********************************
@@ -171,24 +170,19 @@ static void bt_av_notify_evt_handler(uint8_t event_id, esp_avrc_rn_param_t *even
 void bt_i2s_driver_install(void)
 {
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-    dac_channels_config_t cfg = {
-        .chan_sel = DAC_CHANNEL_MASK_BOTH,
-    };
     dac_conti_config_t conti_cfg = {
-        .freq_hz = 44100,
-        .chan_mode = DAC_CHANNEL_MODE_ALTER,
-        .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,     // If the frequency is out of range, try 'DAC_DIGI_CLK_SRC_APLL'
-        .desc_num = 6,
+        .chan_mask = DAC_CHANNEL_MASK_ALL,
+        .desc_num = 8,
         .buf_size = 2048,
+        .freq_hz = 44100,
+        .offset = 127,
+        .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,   // Using APLL as clock source to get a wider frequency range
+        .chan_mode = DAC_CHANNEL_MODE_ALTER,
     };
-    /* Allocate the channel group */
-    ESP_ERROR_CHECK(dac_new_channels(&cfg, &tx_chan));
-    /* Enable the channels in the group */
-    ESP_ERROR_CHECK(dac_channels_enable(tx_chan));
-    /* Initialize DAC DMA peripheral */
-    ESP_ERROR_CHECK(dac_channels_init_continuous_mode(tx_chan, &conti_cfg));
-    /* Start the DAC DMA peripheral */
-    ESP_ERROR_CHECK(dac_channels_enable_continuous_mode(tx_chan));
+    /* Allocate continuous channels */
+    ESP_ERROR_CHECK(dac_new_conti_channels(&conti_cfg, &tx_chan));
+    /* Enable the continuous channels */
+    ESP_ERROR_CHECK(dac_conti_enable(tx_chan));
 #else
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     chan_cfg.auto_clear = true;
@@ -218,10 +212,8 @@ void bt_i2s_driver_install(void)
 void bt_i2s_driver_uninstall(void)
 {
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-    ESP_ERROR_CHECK(dac_channels_disable_continuous_mode(tx_chan));
-    ESP_ERROR_CHECK(dac_channels_deinit_continuous_mode(tx_chan));
-    ESP_ERROR_CHECK(dac_channels_disable(tx_chan));
-    ESP_ERROR_CHECK(dac_del_channels(tx_chan));
+    ESP_ERROR_CHECK(dac_conti_disable(tx_chan));
+    ESP_ERROR_CHECK(dac_del_conti_channels(tx_chan));
 #else
     ESP_ERROR_CHECK(i2s_channel_disable(tx_chan));
     ESP_ERROR_CHECK(i2s_del_channel(tx_chan));
@@ -322,17 +314,21 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
                 ch_count = 1;
             }
         #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+            dac_conti_disable(tx_chan);
+            dac_del_conti_channels(tx_chan);
             dac_conti_config_t conti_cfg = {
-                .freq_hz = sample_rate,
-                .chan_mode = ch_count == 1 ? DAC_CHANNEL_MODE_SIMUL : DAC_CHANNEL_MODE_ALTER,
-                .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,     // If the frequency is out of range, try 'DAC_DIGI_CLK_SRC_APLL'
-                .desc_num = 6,
+                .chan_mask = DAC_CHANNEL_MASK_ALL,
+                .desc_num = 8,
                 .buf_size = 2048,
+                .freq_hz = sample_rate,
+                .offset = 127,
+                .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,   // Using APLL as clock source to get a wider frequency range
+                .chan_mode = (ch_count == 1) ? DAC_CHANNEL_MODE_SIMUL : DAC_CHANNEL_MODE_ALTER,
             };
-            dac_channels_disable_continuous_mode(tx_chan);
-            dac_channels_deinit_continuous_mode(tx_chan);
-            dac_channels_init_continuous_mode(tx_chan, &conti_cfg);
-            dac_channels_enable_continuous_mode(tx_chan);
+            /* Allocate continuous channels */
+            dac_new_conti_channels(&conti_cfg, &tx_chan);
+            /* Enable the continuous channels */
+            dac_conti_enable(tx_chan);
         #else
             i2s_channel_disable(tx_chan);
             i2s_std_clk_config_t clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(sample_rate);

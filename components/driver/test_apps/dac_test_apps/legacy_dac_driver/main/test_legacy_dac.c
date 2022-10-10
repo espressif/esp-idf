@@ -6,6 +6,7 @@
 /*
  Tests for the dac device driver
 */
+#include <inttypes.h>
 #include "esp_system.h"
 
 #include "unity.h"
@@ -158,26 +159,26 @@ TEST_CASE("esp32s2_adc2-dac_with_adc2_calibration", "[dac_legacy]")
     printf("Test 0dB atten...\n");
     adc2_config_channel_atten((adc2_channel_t)ADC_TEST_CHANNEL_NUM, ADC_ATTEN_DB_0);
     esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_0, ADC_WIDTH_BIT_13, 0, &chars);
-    printf("a %d, b %d\n", chars.coeff_a, chars.coeff_b);
+    printf("a %"PRIu32", b %"PRIu32"\n", chars.coeff_a, chars.coeff_b);
     subtest_adc_dac(750, &chars);
 
     printf("Test 2.5dB atten...\n");
     adc2_config_channel_atten((adc2_channel_t)ADC_TEST_CHANNEL_NUM, ADC_ATTEN_DB_2_5);
     esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_2_5, ADC_WIDTH_BIT_13, 0, &chars);
-    printf("a %d, b %d\n", chars.coeff_a, chars.coeff_b);
+    printf("a %"PRIu32", b %"PRIu32"\n", chars.coeff_a, chars.coeff_b);
     subtest_adc_dac(1100, &chars);
 
     printf("Test 6dB atten...\n");
     adc2_config_channel_atten((adc2_channel_t)ADC_TEST_CHANNEL_NUM, ADC_ATTEN_DB_6);
     esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_6, ADC_WIDTH_BIT_13, 0, &chars);
-    printf("a %d, b %d\n", chars.coeff_a, chars.coeff_b);
+    printf("a %"PRIu32", b %"PRIu32"\n", chars.coeff_a, chars.coeff_b);
     subtest_adc_dac(800, &chars);
     subtest_adc_dac(1250, &chars);
 
     printf("Test 11dB atten...\n");
     adc2_config_channel_atten((adc2_channel_t)ADC_TEST_CHANNEL_NUM, ADC_ATTEN_DB_11);
     esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_13, 0, &chars);
-    printf("a %d, b %d\n", chars.coeff_a, chars.coeff_b);
+    printf("a %"PRIu32", b %"PRIu32"\n", chars.coeff_a, chars.coeff_b);
     subtest_adc_dac(1500, &chars);
     subtest_adc_dac(2500, &chars);
 }

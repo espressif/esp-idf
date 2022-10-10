@@ -277,23 +277,23 @@ typedef enum {
  *
  */
 typedef enum {
-    DAC_DIGI_CLK_SRC_APB = SOC_MOD_CLK_APB,
-    DAC_DIGI_CLK_SRC_APLL = SOC_MOD_CLK_APLL,
-    DAC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,
+    DAC_DIGI_CLK_SRC_APB = SOC_MOD_CLK_APB,         /*!< Select APB as the source clock */
+    DAC_DIGI_CLK_SRC_APLL = SOC_MOD_CLK_APLL,       /*!< Select APLL as the source clock */
+    DAC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,     /*!< Select APB as the default source clock */
 } soc_periph_dac_digi_clk_src_t;
 
 /**
  * @brief Array initializer for all supported clock sources of DAC cosine wave generator
  */
-#define SOC_DAC_COSINE_CLKS {DAC_COSINE_CLK_SRC_RTC}
+#define SOC_DAC_COSINE_CLKS {SOC_MOD_CLK_RTC_FAST}
 
 /**
  * @brief DAC cosine wave generator clock source
  *
  */
 typedef enum {
-    DAC_COSINE_CLK_SRC_RTC = SOC_MOD_CLK_RTC_FAST,
-    DAC_COSINE_CLK_SRC_DEFAULT = SOC_MOD_CLK_RTC_FAST,
+    DAC_COSINE_CLK_SRC_RTC_FAST = SOC_MOD_CLK_RTC_FAST, /*!< Select RTC FAST as the source clock */
+    DAC_COSINE_CLK_SRC_DEFAULT = SOC_MOD_CLK_RTC_FAST,  /*!< Select RTC FAST as the default source clock */
 } soc_periph_dac_cosine_clk_src_t;
 
 #ifdef __cplusplus

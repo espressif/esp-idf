@@ -18,6 +18,7 @@ entries:
     if SDM_CTRL_FUNC_IN_IRAM = y:
         sdm: sdm_channel_set_duty (noflash)
     if DAC_CTRL_FUNC_IN_IRAM = y:
-        dac_driver: dac_channels_set_voltage (noflash)
+        dac_oneshot: dac_oneshot_output_voltage (noflash)
+        dac_conti: dac_conti_write_asynchronously (noflash)
     if MCPWM_CTRL_FUNC_IN_IRAM = y:
         mcpwm_cmpr: mcpwm_comparator_set_compare_value (noflash)

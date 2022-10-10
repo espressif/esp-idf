@@ -9,7 +9,9 @@ menu "A2DP Example Configuration"
         config EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
             bool "Internal DAC"
             help
-                Select this to use Internal DAC sink output
+                Select this to use Internal DAC sink output,
+                note that DAC_DMA_AUTO_16BIT_ALIGN should be turned off
+                because the audio data are already 16-bit width
 
         config EXAMPLE_A2DP_SINK_OUTPUT_EXTERNAL_I2S
             bool "External I2S Codec"

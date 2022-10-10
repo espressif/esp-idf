@@ -24,7 +24,7 @@ static __attribute__((unused)) const char *TAG = "DAC";
 ---------------------------------------------------------------*/
 esp_err_t dac_pad_get_io_num(dac_channel_t channel, gpio_num_t *gpio_num)
 {
-    ESP_RETURN_ON_FALSE(channel < SOC_DAC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
+    ESP_RETURN_ON_FALSE(channel < SOC_DAC_CHAN_NUM, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
 
     *gpio_num = (gpio_num_t)dac_periph_signal.dac_channel_io_num[channel];
 
@@ -33,7 +33,7 @@ esp_err_t dac_pad_get_io_num(dac_channel_t channel, gpio_num_t *gpio_num)
 
 static esp_err_t dac_rtc_pad_init(dac_channel_t channel)
 {
-    ESP_RETURN_ON_FALSE(channel < SOC_DAC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
+    ESP_RETURN_ON_FALSE(channel < SOC_DAC_CHAN_NUM, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
 
     gpio_num_t gpio_num = 0;
     dac_pad_get_io_num(channel, &gpio_num);
@@ -47,7 +47,7 @@ static esp_err_t dac_rtc_pad_init(dac_channel_t channel)
 
 esp_err_t dac_output_enable(dac_channel_t channel)
 {
-    ESP_RETURN_ON_FALSE(channel < SOC_DAC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
+    ESP_RETURN_ON_FALSE(channel < SOC_DAC_CHAN_NUM, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
 
     dac_rtc_pad_init(channel);
     portENTER_CRITICAL(&rtc_spinlock);
@@ -60,7 +60,7 @@ esp_err_t dac_output_enable(dac_channel_t channel)
 
 esp_err_t dac_output_disable(dac_channel_t channel)
 {
-    ESP_RETURN_ON_FALSE(channel < SOC_DAC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
+    ESP_RETURN_ON_FALSE(channel < SOC_DAC_CHAN_NUM, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
 
     portENTER_CRITICAL(&rtc_spinlock);
     dac_ll_power_down(channel);
@@ -71,7 +71,7 @@ esp_err_t dac_output_disable(dac_channel_t channel)
 
 esp_err_t dac_output_voltage(dac_channel_t channel, uint8_t dac_value)
 {
-    ESP_RETURN_ON_FALSE(channel < SOC_DAC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
+    ESP_RETURN_ON_FALSE(channel < SOC_DAC_CHAN_NUM, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
 
     portENTER_CRITICAL(&rtc_spinlock);
     dac_ll_update_output_value(channel, dac_value);
@@ -82,7 +82,7 @@ esp_err_t dac_output_voltage(dac_channel_t channel, uint8_t dac_value)
 
 esp_err_t dac_out_voltage(dac_channel_t channel, uint8_t dac_value)
 {
-    ESP_RETURN_ON_FALSE(channel < SOC_DAC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
+    ESP_RETURN_ON_FALSE(channel < SOC_DAC_CHAN_NUM, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
 
     portENTER_CRITICAL(&rtc_spinlock);
     dac_ll_update_output_value(channel, dac_value);
@@ -94,6 +94,7 @@ esp_err_t dac_out_voltage(dac_channel_t channel, uint8_t dac_value)
 esp_err_t dac_cw_generator_enable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
+    periph_rtc_dig_clk8m_enable();
     dac_ll_cw_generator_enable();
     portEXIT_CRITICAL(&rtc_spinlock);
 
@@ -104,6 +105,7 @@ esp_err_t dac_cw_generator_disable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     dac_ll_cw_generator_disable();
+    periph_rtc_dig_clk8m_disable();
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
@@ -112,13 +114,16 @@ esp_err_t dac_cw_generator_disable(void)
 esp_err_t dac_cw_generator_config(dac_cw_config_t *cw)
 {
     ESP_RETURN_ON_FALSE(cw, ESP_ERR_INVALID_ARG, TAG, "invalid clock configuration");
-
     portENTER_CRITICAL(&rtc_spinlock);
-    dac_ll_cw_set_freq(cw->freq, periph_rtc_dig_clk8m_get_freq());
-    dac_ll_cw_set_scale(cw->en_ch, cw->scale);
-    dac_ll_cw_set_phase(cw->en_ch, cw->phase);
+    /* Enable the rtc8m clock temporary to get the correct frequecy */
+    periph_rtc_dig_clk8m_enable();
+    uint32_t rtc_freq = periph_rtc_dig_clk8m_get_freq();
+    periph_rtc_dig_clk8m_disable();
+    dac_ll_cw_set_freq(cw->freq, rtc_freq);
+    dac_ll_cw_set_atten(cw->en_ch, (dac_cosine_atten_t)cw->scale);
+    dac_ll_cw_set_phase(cw->en_ch, (dac_cosine_phase_t)cw->phase);
     dac_ll_cw_set_dc_offset(cw->en_ch, cw->offset);
-    dac_ll_cw_set_channel(cw->en_ch, true);
+    dac_ll_cw_enable_channel(cw->en_ch, true);
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
@@ -131,11 +136,11 @@ __attribute__((constructor))
 static void check_dac_legacy_driver_conflict(void)
 {
     // This function was declared as weak here. The new DAC driver has one implementation.
-    // So if the new DAC driver is not linked in, then `dac_new_channels()` should be NULL at runtime.
-    extern __attribute__((weak)) esp_err_t dac_new_channels(const void *dac_cfg, void **handle);
-    if ((void *)dac_new_channels != NULL) {
+    // So if the new DAC driver is not linked in, then `dac_priv_register_channel()` should be NULL at runtime.
+    extern __attribute__((weak)) esp_err_t dac_priv_register_channel(dac_channel_t chan_id, const char *mode_name);
+    if ((void *)dac_priv_register_channel != NULL) {
         ESP_EARLY_LOGE(TAG, "CONFLICT! The new DAC driver is not allowed to be used together with the legacy driver");
         abort();
     }
-    ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/dac_driver.h` instead");
+    ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/dac_oneshot.h`, `driver/dac_cosine.h` or `driver/dac_conti.h` instead");
 }

@@ -405,7 +405,7 @@ menu "Driver Configurations"
             bool "Place DAC control functions into IRAM"
             default n
             help
-                Place 'dac_channels_set_voltage' function into IRAM,
+                Place DAC control functions (e.g. 'dac_oneshot_output_voltage') into IRAM,
                 so that this function can be IRAM-safe and able to be called in the other IRAM interrupt context.
                 Enabling this option can improve driver performance as well.
 
@@ -420,7 +420,7 @@ menu "Driver Configurations"
             bool "Suppress legacy driver deprecated warning"
             default n
             help
-                Wether to suppress the deprecation warnings when using legacy DAC driver (driver/DAC.h).
+                Wether to suppress the deprecation warnings when using legacy DAC driver (driver/dac.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
 
@@ -433,7 +433,7 @@ menu "Driver Configurations"
 
         config DAC_DMA_AUTO_16BIT_ALIGN
             bool "Align the continuous data to 16 bit automatically"
-            depends on IDF_TARGET_ESP32
+            depends on SOC_DAC_DMA_16BIT_ALIGN
             default y
             help
                 Whether to left shift the continuous data to align every bytes to 16 bits in the driver.

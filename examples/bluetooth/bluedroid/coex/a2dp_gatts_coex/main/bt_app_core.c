@@ -16,7 +16,7 @@
 #include "bt_app_core.h"
 #include "freertos/ringbuf.h"
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-#include "driver/dac_driver.h"
+#include "driver/dac_conti.h"
 #else
 #include "driver/i2s_std.h"
 #endif
@@ -32,7 +32,7 @@ static RingbufHandle_t s_ringbuf_i2s = NULL;
 #ifndef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
 extern i2s_chan_handle_t tx_chan;
 #else
-extern dac_channels_handle_t tx_chan;
+extern dac_conti_handle_t tx_chan;
 #endif
 
 bool bt_app_work_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p_params, int param_len, bt_app_copy_cb_t p_copy_cback)
@@ -133,7 +133,7 @@ static void bt_i2s_task_handler(void *arg)
         data = (uint8_t *)xRingbufferReceive(s_ringbuf_i2s, &item_size, (TickType_t)portMAX_DELAY);
         if (item_size != 0){
         #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-            dac_channels_write_continuously(tx_chan, data, item_size, &bytes_written, portMAX_DELAY);
+            dac_conti_write(tx_chan, data, item_size, &bytes_written, -1);
         #else
             i2s_channel_write(tx_chan, data, item_size, &bytes_written, portMAX_DELAY);
         #endif

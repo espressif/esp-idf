@@ -243,7 +243,7 @@ config SOC_CPU_WATCHPOINT_SIZE
     int
     default 64
 
-config SOC_DAC_PERIPH_NUM
+config SOC_DAC_CHAN_NUM
     int
     default 2
 

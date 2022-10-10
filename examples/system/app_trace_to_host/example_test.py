@@ -17,7 +17,7 @@ def test_examples_app_trace_to_host(env, extra_data):
     with ttfw_idf.OCDBackend(oocd_log_path, dut.app.target) as ocd:
         dut.start_app()
         dut.expect_all('example: Enabling ADC1 on channel 6 / GPIO34.',
-                       'example: Enabling CW generator on DAC channel 0',
+                       'example: Enabling CW generator on DAC channel 0 / GPIO25',
                        'example: Sampling ADC and sending data to the host...',
                        re.compile(r'example: Collected \d+ samples in 20 ms.'),
                        'example: Sampling ADC and sending data to the UART...',

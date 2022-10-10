@@ -16,17 +16,12 @@ This example will output cosine wave on both channels.
 ### Hardware Required
 
 * A development board with ESP32 or ESP32-S2 SoC
-    - Note that some ESP32-S2 DevKits have LED on it which is connected to GPIO18 (same pin as DAC channel2), so the output voltage of DAC channel 1 can't go down due the this LED.
+    - Note that some ESP32-S2 DevKits have LED on it which is connected to GPIO18 (same pin as DAC channel1), so the output voltage of DAC channel 1 can't go down due the this LED.
 * (Optional) An oscilloscope to monitor the output wave
 
-### Configure the Project
-
-There is a macro `EXAMPLE_DAC_USE_SEPARATE_CHANNEL` in the example to choose whether put the two DAC channels into a same group
-
-    - If `EXAMPLE_DAC_USE_SEPARATE_CHANNEL` is 1, DAC channel 0 and channel 2 can be set to different cosine wave (but the frequency are same) by their own group handle.
-    - If `EXAMPLE_DAC_USE_SEPARATE_CHANNEL` is 0, DAC channel 0 and channel 2 will be set to a same cosine wave by the same group handle.
-
 ### Build and Flash
+
+Note that as we use the ADC to monitor the output data, we need to set false to `CONFIG_ADC_DISABLE_DAC_OUTPUT` in the menuconfig, otherwise the ADC will shutdown the DAC power to guarantee it won't be affect by DAC.
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
@@ -45,26 +40,26 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 The DAC channels can be read by ADC channels internally. The ADC read period is 100 ms, the following log is the raw ADC value read from the DAC channels. But since the ADC sample-rate might be lower than the DAC cosine period, the sampling value can only indicate that the voltage is changing.
 
 ```
-DAC channel 0 vaule:  647       DAC channel 1 vaule: 1728
-DAC channel 0 vaule: 2112       DAC channel 1 vaule: 2166
-DAC channel 0 vaule:  778       DAC channel 1 vaule: 2483
-DAC channel 0 vaule: 4095       DAC channel 1 vaule: 1922
-DAC channel 0 vaule:  238       DAC channel 1 vaule: 1282
-DAC channel 0 vaule: 3187       DAC channel 1 vaule: 2609
-DAC channel 0 vaule:  627       DAC channel 1 vaule: 1068
-DAC channel 0 vaule: 3168       DAC channel 1 vaule: 2624
-DAC channel 0 vaule:  225       DAC channel 1 vaule: 1286
-DAC channel 0 vaule: 4095       DAC channel 1 vaule: 2083
-DAC channel 0 vaule:   89       DAC channel 1 vaule: 1934
-DAC channel 0 vaule: 3603       DAC channel 1 vaule: 1434
-DAC channel 0 vaule:  725       DAC channel 1 vaule: 2469
-DAC channel 0 vaule: 2277       DAC channel 1 vaule:  960
-DAC channel 0 vaule: 1306       DAC channel 1 vaule: 2670
-DAC channel 0 vaule: 1670       DAC channel 1 vaule:  899
-DAC channel 0 vaule: 3189       DAC channel 1 vaule: 2609
-DAC channel 0 vaule:   86       DAC channel 1 vaule: 1459
-DAC channel 0 vaule: 4095       DAC channel 1 vaule: 2258
+DAC channel 0 value:  647       DAC channel 1 value: 1728
+DAC channel 0 value: 2112       DAC channel 1 value: 2166
+DAC channel 0 value:  778       DAC channel 1 value: 2483
+DAC channel 0 value: 4095       DAC channel 1 value: 1922
+DAC channel 0 value:  238       DAC channel 1 value: 1282
+DAC channel 0 value: 3187       DAC channel 1 value: 2609
+DAC channel 0 value:  627       DAC channel 1 value: 1068
+DAC channel 0 value: 3168       DAC channel 1 value: 2624
+DAC channel 0 value:  225       DAC channel 1 value: 1286
+DAC channel 0 value: 4095       DAC channel 1 value: 2083
+DAC channel 0 value:   89       DAC channel 1 value: 1934
+DAC channel 0 value: 3603       DAC channel 1 value: 1434
+DAC channel 0 value:  725       DAC channel 1 value: 2469
+DAC channel 0 value: 2277       DAC channel 1 value:  960
+DAC channel 0 value: 1306       DAC channel 1 value: 2670
+DAC channel 0 value: 1670       DAC channel 1 value:  899
+DAC channel 0 value: 3189       DAC channel 1 value: 2609
+DAC channel 0 value:   86       DAC channel 1 value: 1459
+DAC channel 0 value: 4095       DAC channel 1 value: 2258
 ...
 ```
 
-If monitoring the DAC channels with an oscilloscope, there will be two same cosine waves at 1000 Hz if `EXAMPLE_DAC_USE_SEPARATE_CHANNEL` is 0, and two cosine waves with opposite phase and different amplitude at 8000 Hz if `EXAMPLE_DAC_USE_SEPARATE_CHANNEL` is 1.
+If monitoring the DAC channels with an oscilloscope, there will be two cosine waves with opposite phase and different amplitude at 8000 Hz on the two DAC channels.

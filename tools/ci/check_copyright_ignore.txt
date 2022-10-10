@@ -1191,7 +1191,6 @@ components/soc/esp32s3/sdio_slave_periph.c
 components/soc/esp32s3/sdmmc_periph.c
 components/soc/esp32s3/uart_periph.c
 components/soc/esp32s3/usb_periph.c
-components/soc/include/soc/dac_periph.h
 components/soc/include/soc/dedic_gpio_periph.h
 components/soc/include/soc/emac_periph.h
 components/soc/include/soc/gpio_periph.h

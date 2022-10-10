@@ -6,30 +6,28 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
-@pytest.mark.generic
+@pytest.mark.adc
 def test_dac_cosine_wave_example_with_12bit_adc(dut: Dut) -> None:
     res = []
-    for _ in range(20):
-        res.append(dut.expect(r'DAC channel 0 vaule:( +)(\d+)(.*)DAC channel 1 vaule:( +)(\d+)', timeout=10))
+    for _ in range(30):
+        res.append(dut.expect(r'DAC channel 0 value:( +)(\d+)(.*)DAC channel 1 value:( +)(\d+)', timeout=10))
 
-    chan1_val = []
+    chan0_val = []
     for val in res:
-        chan1_val.append(int(val.group(2)))
+        chan0_val.append(int(val.group(2)))
 
-    assert min(chan1_val) < 300
-    assert max(chan1_val) > 3500
+    assert max(chan0_val) - min(chan0_val) > 1000
 
 
 @pytest.mark.esp32s2
-@pytest.mark.generic
+@pytest.mark.adc
 def test_dac_cosine_wave_example_with_13bit_adc(dut: Dut) -> None:
     res = []
-    for _ in range(20):
-        res.append(dut.expect(r'DAC channel 0 vaule:( +)(\d+)(.*)DAC channel 1 vaule:( +)(\d+)', timeout=10))
+    for _ in range(30):
+        res.append(dut.expect(r'DAC channel 0 value:( +)(\d+)(.*)DAC channel 1 value:( +)(\d+)', timeout=10))
 
-    chan1_val = []
+    chan0_val = []
     for val in res:
-        chan1_val.append(int(val.group(2)))
+        chan0_val.append(int(val.group(2)))
 
-    assert min(chan1_val) < 600
-    assert max(chan1_val) > 7000
+    assert max(chan0_val) - min(chan0_val) > 3000
