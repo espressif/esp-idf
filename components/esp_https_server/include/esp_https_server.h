@@ -97,10 +97,10 @@ struct httpd_ssl_config {
     /** User callback for esp_https_server */
     esp_https_server_user_cb *user_cb;
 
-#if defined(CONFIG_ESP_TLS_SERVER_SNI_HOOK)
-    esp_tls_server_sni_callback *sni_callback; /*!< Server Name Identification callback to use */
-    void *sni_callback_p_info;                 /*!< Data to pass to the SNI callback. */
+#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
+    esp_tls_handshake_callback cert_select_cb; /*!< Certificate selection callback to use */
 #endif
+    void *ssl_userdata; /*!< user data to add to the ssl context  */
 };
 
 typedef struct httpd_ssl_config httpd_ssl_config_t;

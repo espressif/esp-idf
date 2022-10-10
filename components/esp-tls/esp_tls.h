@@ -197,17 +197,19 @@ typedef struct esp_tls_server_session_ticket_ctx {
 } esp_tls_server_session_ticket_ctx_t;
 #endif
 
+
+#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
 /**
- * @brief SNI callback function prototype
+ * @brief tls handshake callback
  * Can be used to configure per-handshake attributes for the TLS connection.
- * E.g. Client certificate / Key, Authmode, Client CA verification
+ * E.g. Client certificate / Key, Authmode, Client CA verification, etc.
  *
- * @param p_info Input data provided when registering the callback
  * @param ssl mbedtls_ssl_context that can be used for changing settings
- * @param name advertised server name by the client
- * @param len length of the name buffer
+ * @return The reutn value of the callback must be 0 if successful,
+ *         or a specific MBEDTLS_ERR_XXX code, which will cause the handhsake to abort
  */
-typedef int esp_tls_server_sni_callback(void *p_info, mbedtls_ssl_context *ssl, const unsigned char *name, size_t name_len);
+typedef mbedtls_ssl_hs_cb_t esp_tls_handshake_callback;
+#endif
 
 typedef struct esp_tls_cfg_server {
     const char **alpn_protos;                   /*!< Application protocols required for HTTP2.
@@ -272,10 +274,13 @@ typedef struct esp_tls_cfg_server {
                                                     to free the data associated with this context. */
 #endif
 
-#if defined(CONFIG_ESP_TLS_SERVER_SNI_HOOK)
-    esp_tls_server_sni_callback *sni_callback; /*!< Server Name Identification callback to use */
-    void *sni_callback_p_info;                 /*!< Data to pass to the SNI callback. */
+#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
+    esp_tls_handshake_callback cert_select_cb;  /*!< Certificate selection callback that gets called after ClientHello is processed.
+                                                     Can be used as an SNI callback, but also has access to other
+                                                     TLS extensions, such as ALPN and server_certificate_type . */
 #endif
+
+    void *userdata; /*!< User data to be add to the ssl context. Can be retrieved by callbacks */
 } esp_tls_cfg_server_t;
 
 /**

@@ -200,22 +200,20 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
     }
     esp_tls_cfg_server_t *cfg = (esp_tls_cfg_server_t *)calloc(1, sizeof(esp_tls_cfg_server_t));
     if (!cfg) {
-        free(ssl_ctx);
-        return NULL;
+        goto free_ssl_ctx;
     }
 
     if (config->session_tickets) {
         if ( esp_tls_cfg_server_session_tickets_init(cfg) != ESP_OK ) {
             ESP_LOGE(TAG, "Failed to init session ticket support");
-            free(ssl_ctx);
-            free(cfg);
-            return NULL;
+            goto free_cfg;
         }
     }
 
-#if defined(CONFIG_ESP_TLS_SERVER_SNI_HOOK)
-    cfg->sni_callback = config->sni_callback;
-    cfg->sni_callback_p_info = config->sni_callback_p_info;
+    cfg->userdata = config->ssl_userdata;
+
+#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
+    cfg->cert_select_cb = config->cert_select_cb;
 #endif
 
     ssl_ctx->tls_cfg = cfg;
@@ -230,9 +228,7 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
             cfg->cacert_bytes = config->cacert_len;
         } else {
             ESP_LOGE(TAG, "Could not allocate memory for client certificate authority");
-            free(cfg);
-            free(ssl_ctx);
-            return NULL;
+            goto free_cfg;
         }
     }
 
@@ -245,23 +241,17 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
             cfg->servercert_bytes = config->servercert_len;
         } else {
             ESP_LOGE(TAG, "Could not allocate memory for server certificate");
-            free((void *) cfg->cacert_buf);
-            free(cfg);
-            free(ssl_ctx);
-            return NULL;
+            goto free_cacert;
         }
     } else {
-#if defined(CONFIG_ESP_TLS_SERVER_SNI_HOOK)
-        if (config->sni_callback == NULL) {
+#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
+        if (config->cert_select_cb == NULL) {
 #endif
         ESP_LOGE(TAG, "No Server certificate supplied");
-        free((void *) cfg->cacert_buf);
-        free(cfg);
-        free(ssl_ctx);
-        return NULL;
-#if defined(CONFIG_ESP_TLS_SERVER_SNI_HOOK)
+        goto free_cacert;
+#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
         } else {
-            ESP_LOGW(TAG, "Server certificate not supplied, make sure to supply it in the SNI hook!");
+            ESP_LOGW(TAG, "Server certificate not supplied, make sure to supply it in the certificate selection hook!");
         }
 #endif
     }
@@ -277,36 +267,34 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
                 cfg->serverkey_bytes = config->prvtkey_len;
             } else {
                 ESP_LOGE(TAG, "Could not allocate memory for server key");
-                free((void *) cfg->servercert_buf);
-                free((void *) cfg->cacert_buf);
-                free(cfg);
-                free(ssl_ctx);
-                return NULL;
+                goto free_servercert;
             }
         } else {
-#if defined(CONFIG_ESP_TLS_SERVER_SNI_HOOK)
-            if (config->sni_callback == NULL) {
-                ESP_LOGE(TAG, "No Server key supplied and no SNI hook is present");
-                free((void *) cfg->servercert_buf);
-                free((void *) cfg->cacert_buf);
-                free(cfg);
-                free(ssl_ctx);
-                return NULL;
+#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
+            if (config->cert_select_cb == NULL) {
+                ESP_LOGE(TAG, "No Server key supplied and no certificate selection hook is present");
+                goto free_servercert;
             } else {
-                ESP_LOGW(TAG, "Server key not supplied, make sure to supply it in the SNI hook");
+                ESP_LOGW(TAG, "Server key not supplied, make sure to supply it in the certificate selection hook");
             }
 #else
             ESP_LOGE(TAG, "No Server key supplied");
-            free((void *) cfg->servercert_buf);
-            free((void *) cfg->cacert_buf);
-            free(cfg);
-            free(ssl_ctx);
-            return NULL;
+            goto free_servercert;
 #endif
         }
     }
 
     return ssl_ctx;
+
+free_servercert:
+    free((void *) cfg->servercert_buf);
+free_cacert:
+    free((void *) cfg->cacert_buf);
+free_cfg:
+    free(cfg);
+free_ssl_ctx:
+    free(ssl_ctx);
+    return NULL;
 }
 
 /** Start the server */
