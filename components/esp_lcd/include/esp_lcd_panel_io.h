@@ -117,6 +117,7 @@ typedef struct {
         unsigned int dc_low_on_data: 1;  /*!< If this flag is enabled, DC line = 0 means transfer data, DC line = 1 means transfer command; vice versa */
         unsigned int octal_mode: 1;      /*!< transmit with octal mode (8 data lines), this mode is used to simulate Intel 8080 timing */
         unsigned int lsb_first: 1;       /*!< transmit LSB bit first */
+        unsigned int cs_high_active: 1;  /*!< CS line is high active */
     } flags; /*!< Extra flags to fine-tune the SPI device */
 } esp_lcd_panel_io_spi_config_t;
 
