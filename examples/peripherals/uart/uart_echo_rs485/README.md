@@ -13,7 +13,7 @@ The approach demonstrated in this example can be used in user application to tra
 
 ### Hardware Required
 PC + USB Serial adapter connected to USB port + RS485 line drivers + Espressif development board.
-The MAX485 line driver is used for example below but other similar chips can be used as well.
+The MAX483 line driver is used for example below but other similar chips can be used as well.
 
 #### RS485 example connection circuit schematic:
 ```
@@ -22,7 +22,7 @@ The MAX485 line driver is used for example below but other similar chips can be 
                     +-------x-------+               +-------x-------+
          RXD <------| RO            |               |             RO|-----> RXD
                     |              B|---------------|B              |
-         TXD ------>| DI  MAX485    |    \  /       |    MAX485   DI|<----- TXD
+         TXD ------>| DI  MAX483    |    \  /       |    MAX483   DI|<----- TXD
 ESP32 BOARD         |               |   RS-485 side |               |  SERIAL ADAPTER SIDE
          RTS --+--->| DE            |    /  \       |             DE|---+
                |    |              A|---------------|A              |   |
