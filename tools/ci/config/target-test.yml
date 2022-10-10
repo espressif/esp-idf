@@ -380,7 +380,7 @@ test_app_test_003:
 
 UT_001:
   extends: .unit_test_template
-  parallel: 39
+  parallel: 40
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -527,6 +527,7 @@ UT_033:
 
 UT_034:
   extends: .unit_test_template
+  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_ESP_FLASH
