@@ -219,24 +219,12 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
         case WIFI_REASON_HANDSHAKE_TIMEOUT:
             esp_wpa3_free_sae_data();
             wpa_sta_clear_curr_pmksa();
+            wpa_sm_notify_disassoc(&gWpaSm);
             break;
         default:
             break;
     }
 }
-
-#ifndef CONFIG_WPA_11KV_SUPPORT
-static inline int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
-{
-	wpa_cb->wpa_sta_rx_mgmt = NULL;
-	wpa_cb->wpa_sta_profile_match = NULL;
-
-	return 0;
-}
-static inline void esp_supplicant_common_deinit(void)
-{
-}
-#endif
 
 int esp_supplicant_init(void)
 {

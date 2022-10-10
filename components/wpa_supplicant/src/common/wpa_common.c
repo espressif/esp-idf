@@ -829,6 +829,14 @@ int wpa_cipher_to_alg(int cipher)
 	return WIFI_WPA_ALG_NONE;
 }
 
+int wpa_cipher_valid_pairwise(int cipher)
+{
+    return cipher == WPA_CIPHER_GCMP_256 ||
+        cipher == WPA_CIPHER_CCMP ||
+        cipher == WPA_CIPHER_GCMP ||
+        cipher == WPA_CIPHER_TKIP;
+}
+
 u32 wpa_cipher_to_suite(int proto, int cipher)
 {
 	if (cipher & WPA_CIPHER_CCMP)
