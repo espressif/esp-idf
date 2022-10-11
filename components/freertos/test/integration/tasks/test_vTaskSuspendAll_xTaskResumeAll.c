@@ -229,6 +229,8 @@ TEST_CASE("Test vTaskSuspendAll() and xTaskResumeAll() multicore", "[freertos]")
     }
 
     vSemaphoreDelete(done_sem);
+    // Add a short delay to allow the idle task to free any remaining task memory
+    vTaskDelay(10);
 }
 #endif  // !CONFIG_FREERTOS_UNICORE
 
@@ -387,6 +389,8 @@ TEST_CASE("Test vTaskSuspendAll allows scheduling on other cores", "[freertos]")
     }
 
     vSemaphoreDelete(test_unblk_done_sem);
+    // Add a short delay to allow the idle task to free any remaining task memory
+    vTaskDelay(10);
 }
 #endif  // !CONFIG_FREERTOS_UNICORE
 
@@ -504,5 +508,7 @@ TEST_CASE("Test xTaskResumeAll resumes pended tasks", "[freertos]")
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         vTaskDelete(susp_tsk_hdl);
     }
+    // Add a short delay to allow the idle task to free any remaining task memory
+    vTaskDelay(10);
 }
 #endif // !CONFIG_FREERTOS_SMP
