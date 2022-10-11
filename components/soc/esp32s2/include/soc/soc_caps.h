@@ -149,6 +149,9 @@
 // GPIO 46 is input only
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK     (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT46))
 
+// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_26~GPIO_NUM_46)
+#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK  0x00007FFFFC000000ULL
+
 // Support to configure slept status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
 
