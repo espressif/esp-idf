@@ -1367,7 +1367,6 @@ r_ble_phy_timer_start_now = 0x400018cc;
 r_ble_phy_timer_stop = 0x400018d0;
 r_ble_phy_tx_set_start_time = 0x400018d4;
 r_ble_phy_txpwr_set = 0x400018dc;
-r_ble_phy_update_encryption = 0x400018e4;
 r_ble_phy_update_ifs = 0x400018e8;
 r_ble_phy_xcvr_state_get = 0x400018ec;
 r_ble_plf_set_log_level = 0x400018f0;
