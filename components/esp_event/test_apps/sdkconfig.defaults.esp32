@@ -1,0 +1,2 @@
+# Set CPU frequency to max for performance tests
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
