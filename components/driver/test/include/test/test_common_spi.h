@@ -298,6 +298,13 @@ void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, 
 
 /**
  * This function is used to get tx_buffer used in dual-board test
+ * `master_send_buf` and `slave_send_buf` will be fulfilled with same random numbers with the seed of `seed`.
+ *
+ * @param seed            Random number seed
+ * @param master_send_buf Master TX buffer
+ * @param slave_send_buf  Slave TX buffer
+ * @param send_buf_size   Buffer size
  */
 void get_tx_buffer(uint32_t seed, uint8_t *master_send_buf, uint8_t *slave_send_buf, int send_buf_size);
+
 #endif  //_TEST_COMMON_SPI_H_

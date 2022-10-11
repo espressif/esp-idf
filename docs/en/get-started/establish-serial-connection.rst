@@ -83,7 +83,7 @@ For boards with an installed USB-to-UART bridge, the connection between the pers
                 shape = line;
                 style = dotted;
                 color = "#FF0000";
-                label = "Developmment Board\n\n\n";
+                label = "Development Board\n\n\n";
                 BRIDGE; CHIP;
             }
     }
@@ -121,7 +121,7 @@ Sometimes the USB-to-UART bridge is external. This is often used in small develo
                 shape = line;
                 style = dotted;
                 color = "#FF0000";
-                label = "Programmmer Board\n\n\n";
+                label = "Programmer Board\n\n\n";
                 BRIDGE
             }
             group {
@@ -243,12 +243,20 @@ Verify serial connection
 
 Now verify that the serial connection is operational. You can do this using a serial terminal program by checking if you get any output on the terminal after resetting {IDF_TARGET_NAME}.
 
+.. only:: esp32c2
+
+    The default console baud rate on ESP32-C2 is 115200 when a 40 MHz XTAL is used, or 74880 when a 26 MHz XTAL is used.
+
+.. only:: not esp32c2
+
+    The default console baud rate on {IDF_TARGET_NAME} is 115200.
+
 Windows and Linux
 ^^^^^^^^^^^^^^^^^
 
 In this example we will use `PuTTY SSH Client <https://www.putty.org/>`_ that is available for both Windows and Linux. You can use other serial programs and set communication parameters like below.
 
-Run terminal, set identified serial port, baud rate = 115200, data bits = 8, stop bits = 1, and parity = N. Below are example screen shots of setting the port and such transmission parameters (in short described as  115200-8-1-N) on Windows and Linux. Remember to select exactly the same serial port you have identified in steps above.
+Run terminal and set identified serial port. Baud rate = 115200 (if needed, change this to the default baud rate of the chip in use), data bits = 8, stop bits = 1, and parity = N. Below are example screenshots of setting the port and such transmission parameters (in short described as 115200-8-1-N) on Windows and Linux. Remember to select exactly the same serial port you have identified in steps above.
 
 .. figure:: ../../_static/putty-settings-windows.png
     :align: center
@@ -283,7 +291,7 @@ To spare you the trouble of installing a serial terminal program, macOS offers t
 
     /dev/cu.Bluetooth-Incoming-Port /dev/cu.SLAB_USBtoUART      /dev/cu.SLAB_USBtoUART7
 
-- The output will vary depending on the type and the number of boards connected to your PC. Then pick the device name of your board and run::
+- The output will vary depending on the type and the number of boards connected to your PC. Then pick the device name of your board and run (if needed, change "115200" to the default baud rate of the chip in use)::
 
     screen /dev/cu.device_name 115200
 
@@ -322,7 +330,7 @@ An example log is shown below. Reset the board if you do not see anything.
     I (45) boot: compile time 18:48:10
     ...
 
-If you can see readable log output, it means serial connection is working and you are ready to proceed with installation and finally upload of application to {IDF_TARGET_NAME}.
+If you can see readable log output, it means serial connection is working and you are ready to proceed with installation and finally upload an application to {IDF_TARGET_NAME}.
 
 .. note::
 

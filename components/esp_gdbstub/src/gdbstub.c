@@ -114,7 +114,11 @@ static uint32_t gdbstub_hton(uint32_t i)
     return __builtin_bswap32(i);
 }
 
+#if !CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
 static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+#else
+static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
+#endif
 static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 static wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
 
@@ -847,7 +851,7 @@ static bool get_task_handle(size_t index, TaskHandle_t *handle)
 static eTaskState get_task_state(size_t index)
 {
     eTaskState result = eReady;
-    TaskHandle_t handle;
+    TaskHandle_t handle = NULL;
     get_task_handle(index, &handle);
     if (gdb_debug_int == false) {
         result = eTaskGetState(handle);
@@ -858,7 +862,9 @@ static eTaskState get_task_state(size_t index)
 static int get_task_cpu_id(size_t index)
 {
     TaskHandle_t handle;
-    get_task_handle(index, &handle);
+    if (!get_task_handle(index, &handle)) {
+        return -1;
+    }
     BaseType_t core_id = xTaskGetAffinity(handle);
     return (int)core_id;
 }

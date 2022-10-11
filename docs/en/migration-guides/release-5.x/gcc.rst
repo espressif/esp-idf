@@ -1,64 +1,32 @@
 GCC 
 ***
 
-Previous GCC version was 8.4.0
+:link_to_translation:`zh_CN:[中文]`
 
 
-Official GNU porting guides for your code
-=========================================
+GCC Version
+===========
+
+The previous GCC version was GCC 8.4.0. This has now been upgraded to GCC 11.2.0 on all targets. Users that need to port their code from GCC 8.4.0 to 11.2.0 should refer to the series of official GCC porting guides listed below:
+
+* `Porting to GCC 9 <https://gcc.gnu.org/gcc-9/porting_to.html>`_
+* `Porting to GCC 10 <https://gcc.gnu.org/gcc-10/porting_to.html>`_
+* `Porting to GCC 11 <https://gcc.gnu.org/gcc-11/porting_to.html>`_
 
 
-* https://gcc.gnu.org/gcc-9/porting_to.html
+Warnings
+========
 
-* https://gcc.gnu.org/gcc-10/porting_to.html
+The upgrade to GCC 11.2.0 has resulted in the addition of new warnings, or enhancements to existing warnings. The full details of all GCC warnings can be found in `GCC Warning Options <https://gcc.gnu.org/onlinedocs/gcc-11.2.0/gcc/Warning-Options.html>`_. Users are advised to double-check their code, then fix the warnings if possible. Unfortunately, depending on the warning and the complexity of the user's code, some warnings will be false positives that require non-trivial fixes. In such cases, users can choose to suppress the warning in multiple ways. This section outlines some common warnings that users are likely to encounter, and ways to suppress them.
 
-* https://gcc.gnu.org/gcc-11/porting_to.html
-
-
-Espressif Toolchain changes
-===========================
+.. warning::
+    Users are advised to check that a warning is indeed a false positive before attempting to suppress them it.
 
 
-``int32_t`` and ``uint32_t`` for Xtensa compiler
-------------------------------------------------
+``-Wstringop-overflow``, ``-Wstringop-overread``, ``-Wstringop-truncation``, and ``-Warray-bounds``
+--------------------------------------------------------------------------------------------------------
 
-The types ``int32_t`` and ``uint32_t`` have been changed from ``int`` and ``unsigned int`` to ``long`` and ``unsigned long``. Upstream GCC uses ``long`` integers for int32_t/uint32_t on Xtensa, RISC-V and other architectures.
-
-+---------+--------------------------+-----------------+
-|         | 2021r2 and older, GCC 8  | 2022r1, GCC 11  |
-+=========+==========================+=================+
-| xtensa  | (unsigned) int           | (unsigned) long |
-+---------+--------------------------+-----------------+
-| riscv32 | (unsigned) long          | (unsigned) long |
-+---------+--------------------------+-----------------+
-
-
-The most cases in code are related to the formatting. Using ``%i``, ``%x``, etc., should be replaced to ``PRIi32``, ``PRIxx``, and others from ``<inttypes.h>``.
-
-In other cases it should be noted that enums have ``int`` type.
-
-In common, ``int32_t`` and ``int`` are different types, as well as ``uint32_t`` and ``unsigned int``.
-
-
-Removing of ``CONFIG_COMPILER_DISABLE_GCC8_WARNINGS`` build option
-------------------------------------------------------------------
-
-``CONFIG_COMPILER_DISABLE_GCC8_WARNINGS`` option was introduced to help transition from rigid GCC 5 toolchain to new ones with helping build ancient code. Enough time has passed to fix the warnings.
-
-For now in GCC 11, the suggestion is to review your own code to comply compiler warnings.
-
-
-Common cases in code
-====================
-
-
-``-Wstringop-overflow``, ``-Wstringop-overread``, ``-Wstringop-truncation``, and ``-Warray-bounds`` warnings
-------------------------------------------------------------------------------------------------------------
-
-Warning details: https://gcc.gnu.org/onlinedocs/gcc-11.2.0/gcc/Warning-Options.html
-
-Double check your code then fix please. Unfortunately, not all seemingly simple ways to satisfy the compiler will work.
-You can supress such warnings if the compiler worried for nothing.
+Users that use memory/string copy/compare functions will run into one of the ``-Wstringop`` warnings if the compiler cannot properly determine the size of the memory/string. The examples below demonstrate code that triggers these warnings and how to suppress them.
 
 .. code-block:: c
 
@@ -80,15 +48,10 @@ You can supress such warnings if the compiler worried for nothing.
     #pragma GCC diagnostic pop
 
 
+``-Waddress-of-packed-member``
+--------------------------------
 
-``-Waddress-of-packed-member`` warning
---------------------------------------
-
-Warning details: https://gcc.gnu.org/onlinedocs/gcc-11.2.0/gcc/Warning-Options.html
-
-Double check your code then fix please.
-
-Unaligned pointer value for data doesn't have penalty for xtensa and riscv32 Espressif chips so we can ignore it in most cases.
+GCC will issue this warning when accessing an unaligned member of a packed ``struct`` due to the incurred penalty of unaligned memory access. However, all ESP chips (on both Xtensa and RISC-V architectures) allow for unaligned memory access and incur no extra penalty. Thus, this warning can be ignored in most cases.
 
 .. code-block:: none
 
@@ -98,7 +61,7 @@ Unaligned pointer value for data doesn't have penalty for xtensa and riscv32 Esp
           |                     ^~~~~~~~~~~~~
 
 
-on CMake level for tons of cases:
+If the warning occurs in multiple places across multiple source files, users can suppress the warning at the CMake level as demonstrated below.
 
 .. code-block:: cmake
 
@@ -109,7 +72,7 @@ on CMake level for tons of cases:
         "host/bluedroid/btc/profile/std/gatt/btc_gatts.c"
         PROPERTIES COMPILE_FLAGS -Wno-address-of-packed-member)
 
-or on code level:
+However, if there are only one or two instances, users can suppress the warning directly in the source code itself as demonstrated below.
 
 .. code-block:: c
 
@@ -121,8 +84,56 @@ or on code level:
     #pragma GCC diagnostic pop
 
 
-
-``llabs()`` for 64-bit integers
+``llabs()`` for 64-bit Integers
 -------------------------------
 
-The function ``abs()`` from stdlib.h takes ``int`` argument. Please use ``llabs()`` for types that intended to be 64-bit. In particular it's important for ``time_t``.
+The function ``abs()`` from stdlib.h takes ``int`` argument. Please use ``llabs()`` for types that are intended to be 64-bit. It is particularly important for ``time_t``.
+
+
+Espressif Toolchain Changes
+===========================
+
+``int32_t`` and ``uint32_t`` for Xtensa Compiler
+------------------------------------------------
+
+The types ``int32_t`` and ``uint32_t`` have been changed from the previous ``int`` and ``unsigned int`` to ``long`` and ``unsigned long`` respectively for the Xtensa compiler. This change now matches upstream GCC which ``long`` integers for ``int32_t`` and ``uint32_t`` on Xtensa, RISC-V, and other architectures.
+
+
+.. list-table::
+   :widths: 20 45 35
+   :header-rows: 1
+
+   * - 
+     - 2021r2 and older, GCC 8
+     - 2022r1, GCC 11
+   * - Xtensa
+     - (unsigned) int
+     - (unsigned) long
+   * - riscv32
+     - (unsigned) long 
+     - (unsigned) long
+
+
+The change mostly affects code that formats strings using types provided by ``<inttypes.h>``. Users will need to replace placeholders such as ``%i`` and ``%x`` with ``PRIi32`` and ``PRIxx`` respectively.
+
+In other cases, it should be noted that enums have the ``int`` type.
+
+In common, ``int32_t`` and ``int``, as well as ``uint32_t`` and ``unsigned int``, are different types.
+
+If users do not make the aforementioned updates to format strings in their applications, the following error will be reported during compilation:
+
+.. code-block:: none
+    
+    /Users/name/esp/esp-rainmaker/components/esp-insights/components/esp_diagnostics/include/esp_diagnostics.h:238:29: error: format '%u' expects argument of type 'unsigned int', but argument 3 has type 'uint32_t' {aka 'long unsigned int'} [-Werror=format=]
+    238 |     esp_diag_log_event(tag, "EV (%u) %s: " format, esp_log_timestamp(), tag, ##__VA_ARGS__); \
+        |                             ^~~~~~~~~~~~~~         ~~~~~~~~~~~~~~~~~~~
+        |                                                    |
+        |                                                    uint32_t {aka long unsigned int}
+                                                  uint32_t {aka long unsigned int}
+
+Removing ``CONFIG_COMPILER_DISABLE_GCC8_WARNINGS`` Build Option
+------------------------------------------------------------------
+
+``CONFIG_COMPILER_DISABLE_GCC8_WARNINGS`` option was introduced to allow building of legacy code dating from the rigid GCC 5 toolchain. However, enough time has passed to allow for the warnings to be fixed, thus this option has been removed.
+
+For now in GCC 11, users are advised to review their code and fix the compiler warnings where possible.

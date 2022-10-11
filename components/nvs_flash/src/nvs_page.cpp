@@ -128,37 +128,11 @@ esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
     NVS_ASSERT_OR_RETURN(mFirstUsedEntry != INVALID_ENTRY, ESP_FAIL);
     const uint16_t count = size / ENTRY_SIZE;
 
-    const uint8_t* buf = data;
-
-#if !defined LINUX_TARGET
-    // TODO: check whether still necessary with esp_partition* API
-    /* On the ESP32, data can come from DROM, which is not accessible by spi_flash_write
-     * function. To work around this, we copy the data to heap if it came from DROM.
-     * Hopefully this won't happen very often in practice. For data from DRAM, we should
-     * still be able to write it to flash directly.
-     * TODO: figure out how to make this platform-specific check nicer (probably by introducing
-     * a platform-specific flash layer).
-     */
-    if ((uint32_t) data < 0x3ff00000) {
-        buf = (uint8_t*) malloc(size);
-        if (!buf) {
-            return ESP_ERR_NO_MEM;
-        }
-        memcpy((void*)buf, data, size);
-    }
-#endif // ! LINUX_TARGET
-
     uint32_t phyAddr;
     esp_err_t rc = getEntryAddress(mNextFreeEntry, &phyAddr);
     if (rc == ESP_OK) {
-        rc = mPartition->write(phyAddr, buf, size);
+        rc = mPartition->write(phyAddr, data, size);
     }
-
-#if !defined LINUX_TARGET
-    if (buf != data) {
-        free((void*)buf);
-    }
-#endif // ! LINUX_TARGET
     if (rc != ESP_OK) {
         mState = PageState::INVALID;
         return rc;

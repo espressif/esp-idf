@@ -1,18 +1,18 @@
 #!/usr/bin/env pwsh
 $S = [IO.Path]::PathSeparator # path separator. WIN:';', UNIX:":"
 
-$IDF_PATH = $PSScriptRoot
+$IDF_PATH = "$PSScriptRoot"
 
 Write-Output "Setting IDF_PATH: $IDF_PATH"
-$env:IDF_PATH = $IDF_PATH
+$env:IDF_PATH = "$IDF_PATH"
 
 Write-Output "Checking Python compatibility"
-python $IDF_PATH/tools/python_version_checker.py
+python "$IDF_PATH/tools/python_version_checker.py"
 
 Write-Output "Adding ESP-IDF tools to PATH..."
 $OLD_PATH = $env:PATH.split($S) | Select-Object -Unique # array without duplicates
 # using idf_tools.py to get $envars_array to set
-$envars_raw = python $IDF_PATH/tools/idf_tools.py export --format key-value
+$envars_raw = python "$IDF_PATH/tools/idf_tools.py" export --format key-value
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } # if error
 
 $envars_array = @() # will be filled like:
@@ -75,7 +75,7 @@ Write-Output "Checking if Python packages are up to date..."
 Start-Process -Wait -NoNewWindow -FilePath "python" -Args "`"$IDF_PATH/tools/idf_tools.py`" check-python-dependencies"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } # if error
 
-$uninstall = python $IDF_PATH/tools/idf_tools.py uninstall --dry-run
+$uninstall = python "$IDF_PATH/tools/idf_tools.py" uninstall --dry-run
 
 if (![string]::IsNullOrEmpty($uninstall)){
     Write-Output ""

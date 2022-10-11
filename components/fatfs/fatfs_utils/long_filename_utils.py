@@ -3,13 +3,16 @@
 from typing import List
 
 from .entry import Entry
-from .utils import convert_to_utf16_and_pad
+from .exceptions import NoFreeClusterException
+from .utils import build_name, convert_to_utf16_and_pad
 
 #  File name with long filenames support can be as long as memory allows. It is split into entries
 #  holding 13 characters of the filename, thus the number of required entries is ceil(len(long_name) / 13).
 #  This is computed using `get_required_lfn_entries_count`.
 #  For creating long name entries we need to split the name by 13 characters using `split_name_to_lfn_entries`
 #  and in every entry into three blocks with sizes 5, 6 and 2 characters using `split_name_to_lfn_entry`.
+
+MAXIMAL_FILES_SAME_PREFIX: int = 127
 
 
 def get_required_lfn_entries_count(lfn_full_name: str) -> int:
@@ -68,16 +71,18 @@ def build_lfn_unique_entry_name_order(entities: list, lfn_entry_name: str) -> in
     The short entry contains only the first 6 characters of the file name,
     and we have to distinguish it from other names within the directory starting with the same 6 characters.
     To make it unique, we add its order in relation to other names such that lfn_entry_name[:6] == other[:6].
-    The order is specified by the character, starting with '1'.
+    The order is specified by the character, starting with chr(1).
 
     E.g. the file in directory 'thisisverylongfilenama.txt' will be named 'THISIS~1TXT' in its short entry.
     If we add another file 'thisisverylongfilenamax.txt' its name in the short entry will be 'THISIS~2TXT'.
     """
-    preceding_entries: int = 0
+    preceding_entries: int = 1
     for entity in entities:
         if entity.name[:6] == lfn_entry_name[:6]:
             preceding_entries += 1
-    return preceding_entries + ord('1')
+    if preceding_entries > MAXIMAL_FILES_SAME_PREFIX:
+        raise NoFreeClusterException('Maximal number of files with the same prefix is 127')
+    return preceding_entries
 
 
 def build_lfn_full_name(name: str, extension: str) -> str:
@@ -85,4 +90,9 @@ def build_lfn_full_name(name: str, extension: str) -> str:
     The extension is optional, and the long filename entry explicitly specifies it,
     on the opposite as for short file names.
     """
-    return f'{name}.{extension}' if len(extension) > 0 else name
+    lfn_record: str = build_name(name, extension)
+    # the name must be terminated with NULL terminator
+    # if it doesn't fit into the set of long name directory entries
+    if len(lfn_record) % Entry.CHARS_PER_ENTRY != 0:
+        return lfn_record + chr(0)
+    return lfn_record

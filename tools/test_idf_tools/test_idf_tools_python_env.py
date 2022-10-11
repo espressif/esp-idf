@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
+import inspect
 import os
 import shutil
 import subprocess
@@ -33,8 +34,13 @@ class TestPythonInstall(unittest.TestCase):
 
     def run_idf_tools(self, extra_args):  # type: (List[str]) -> str
         args = [sys.executable, '../idf_tools.py'] + extra_args
-        ret = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120)
-        return ret.stdout.decode('utf-8', 'ignore')
+        ret = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=300)
+        decoded_output = ret.stdout.decode('utf-8', 'ignore')
+        with open(os.path.join(IDF_PATH, 'tools', 'test_idf_tools', 'test_python_env_logs.txt'), 'a+') as w:
+            # stack() returns list of callers frame records. [1] represent caller of this function
+            w.write('============================= ' + inspect.stack()[1].function + ' =============================\n')
+            w.write(decoded_output)
+        return decoded_output
 
     def test_default_arguments(self):  # type: () -> None
         output = self.run_idf_tools(['check-python-dependencies'])

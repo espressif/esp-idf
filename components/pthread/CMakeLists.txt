@@ -6,7 +6,7 @@ set(sources "pthread.c"
 idf_component_register(SRCS ${sources}
                     INCLUDE_DIRS include)
 
-idf_build_set_property(COMPILE_DEFINITIONS "-D_POSIX_READER_WRITER_LOCKS" APPEND)
+idf_build_set_property(COMPILE_DEFINITIONS "_POSIX_READER_WRITER_LOCKS" APPEND)
 
 set(extra_link_flags "-u pthread_include_pthread_impl")
 list(APPEND extra_link_flags "-u pthread_include_pthread_cond_impl")

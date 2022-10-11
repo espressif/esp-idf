@@ -69,7 +69,6 @@
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_SDMMC_HOST_SUPPORTED    1
 #define SOC_BT_SUPPORTED            1
-#define SOC_CLASSIC_BT_SUPPORTED    1
 #define SOC_PCNT_SUPPORTED          1
 #define SOC_WIFI_SUPPORTED          1
 #define SOC_SDIO_SLAVE_SUPPORTED    1
@@ -83,6 +82,8 @@
 #define SOC_I2S_SUPPORTED           1
 #define SOC_RMT_SUPPORTED           1
 #define SOC_SDM_SUPPORTED           1
+#define SOC_LEDC_SUPPORTED          1
+#define SOC_I2C_SUPPORTED           1
 #define SOC_SUPPORT_COEXISTENCE     1
 #define SOC_AES_SUPPORTED           1
 #define SOC_MPI_SUPPORTED           1
@@ -131,8 +132,11 @@
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 #endif
 
-/*-------------------------- CACHE CAPS --------------------------------------*/
+
+/*-------------------------- CACHE/MMU CAPS ----------------------------------*/
 #define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
+#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM       5
+
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #define SOC_CPU_CORES_NUM               2
@@ -160,6 +164,9 @@
 #define SOC_GPIO_VALID_GPIO_MASK        (0xFFFFFFFFFFULL & ~(0ULL | BIT24 | BIT28 | BIT29 | BIT30 | BIT31))
 // GPIO >= 34 are input only
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT34 | BIT35 | BIT36 | BIT37 | BIT38 | BIT39))
+
+// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM: 1, 3, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 21, 22, 23)
+#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0xEF0FEAULL
 
 // Support to configure slept status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
@@ -264,6 +271,7 @@
 #define SOC_SPI_DMA_CHAN_NUM            2
 
 #define SOC_SPI_PERIPH_CS_NUM(i)        3
+#define SOC_SPI_MAX_CS_NUM              3
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 #define SOC_SPI_MAX_PRE_DIVIDER         8192
@@ -306,6 +314,7 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32 have 3 UART.
 #define SOC_UART_NUM                (3)
+#define SOC_UART_SUPPORT_APB_CLK    (1)         /*!< Support APB as the clock source */
 #define SOC_UART_SUPPORT_REF_TICK   (1)         /*!< Support REF_TICK as the clock source */
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)   /*!< Max bit rate supported by UART */
@@ -377,9 +386,6 @@
 #define SOC_SDMMC_USE_IOMUX  1
 #define SOC_SDMMC_NUM_SLOTS  2
 
-/*------------------------------ BLE --------------------------------------------*/
-#define SOC_BLE_DONT_UPDATE_OWN_RPA  (1)
-
 /*-------------------------- WI-FI HARDWARE CAPS -------------------------------*/
 #define SOC_WIFI_HW_TSF                 (0)    /*!< Hardware TSF is not supported */
 #define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM is not supported */
@@ -387,3 +393,8 @@
 #define SOC_WIFI_WAPI_SUPPORT           (1)    /*!< Support WAPI */
 #define SOC_WIFI_CSI_SUPPORT            (1)    /*!< Support CSI */
 #define SOC_WIFI_MESH_SUPPORT           (1)    /*!< Support WIFI MESH */
+
+/*---------------------------------- Bluetooth CAPS ----------------------------------*/
+#define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_BLE_MESH_SUPPORTED          (1)    /*!< Support BLE MESH */
+#define SOC_BT_CLASSIC_SUPPORTED        (1)    /*!< Support Bluetooth Classic hardware */

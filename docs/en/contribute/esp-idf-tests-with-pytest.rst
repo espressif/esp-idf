@@ -270,8 +270,6 @@ Advanced Examples
 Multi Dut Tests with the Same App
 """""""""""""""""""""""""""""""""
 
-This code example is taken from :idf_file:`pytest_usb_host.py <tools/test_apps/peripherals/usb/pytest_usb_host.py>`.
-
 .. code:: python
 
     @pytest.mark.esp32s2

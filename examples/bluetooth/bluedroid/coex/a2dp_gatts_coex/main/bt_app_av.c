@@ -173,8 +173,10 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
             i2s_set_clk(0, sample_rate, 16, 2);
         #else
+            i2s_channel_disable(tx_chan);
             i2s_std_clk_config_t clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(sample_rate);
             i2s_channel_reconfig_std_clock(tx_chan, &clk_cfg);
+            i2s_channel_enable(tx_chan);
         #endif
 
             ESP_LOGI(BT_AV_TAG, "Configure audio player %x-%x-%x-%x",

@@ -8,7 +8,6 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_err.h"
@@ -104,6 +103,7 @@ static mcpwm_context_t context[SOC_MCPWM_GROUPS] = {
         .mcpwm_intr_handle = NULL,
         .cap_isr_func = {[0 ... SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER - 1] = {NULL, NULL}},
     },
+#if SOC_MCPWM_GROUPS > 1
     [1] = {
         .hal = {MCPWM_LL_GET_HW(1)},
         .spinlock = portMUX_INITIALIZER_UNLOCKED,
@@ -116,6 +116,7 @@ static mcpwm_context_t context[SOC_MCPWM_GROUPS] = {
         .mcpwm_intr_handle = NULL,
         .cap_isr_func = {[0 ... SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER - 1] = {NULL, NULL}},
     }
+#endif
 };
 
 typedef void (*mcpwm_ll_gen_set_event_action_t)(mcpwm_dev_t *mcpwm, int op, int gen, int action);
@@ -298,9 +299,11 @@ esp_err_t mcpwm_set_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, 
 
     mcpwm_critical_enter(mcpwm_num);
     int real_group_prescale = mcpwm_ll_group_get_clock_prescale(hal->dev);
-    unsigned long int real_timer_clk_hz =
+    // to avid multiplication overflow, use uint64_t here
+    uint64_t real_timer_clk_hz =
         MCPWM_GROUP_CLK_SRC_HZ / real_group_prescale / mcpwm_ll_timer_get_clock_prescale(hal->dev, timer_num);
-    mcpwm_ll_operator_set_compare_value(hal->dev, op, cmp, duty_in_us * real_timer_clk_hz / 1000000);
+    uint64_t compare_val = real_timer_clk_hz * duty_in_us / 1000000;
+    mcpwm_ll_operator_set_compare_value(hal->dev, op, cmp, (uint32_t)compare_val);
     mcpwm_ll_operator_enable_update_compare_on_tez(hal->dev, op, cmp, true);
     mcpwm_critical_exit(mcpwm_num);
     return ESP_OK;
@@ -787,7 +790,7 @@ esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_cha
     mcpwm_ll_capture_enable_negedge(hal->dev, cap_channel, cap_conf->cap_edge & MCPWM_NEG_EDGE);
     mcpwm_ll_capture_enable_posedge(hal->dev, cap_channel, cap_conf->cap_edge & MCPWM_POS_EDGE);
     mcpwm_ll_capture_set_prescale(hal->dev, cap_channel, cap_conf->cap_prescale);
-    // capture feature should be used with interupt, so enable it by default
+    // capture feature should be used with interrupt, so enable it by default
     mcpwm_ll_intr_enable(hal->dev, MCPWM_LL_EVENT_CAPTURE(cap_channel), true);
     mcpwm_ll_intr_clear_capture_status(hal->dev, 1 << cap_channel);
     mcpwm_critical_exit(mcpwm_num);

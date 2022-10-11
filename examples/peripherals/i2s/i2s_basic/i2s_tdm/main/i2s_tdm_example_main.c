@@ -38,6 +38,9 @@ static void i2s_example_read_task(void *args)
     uint8_t *r_buf = (uint8_t *)calloc(1, EXAMPLE_BUFF_SIZE);
     assert(r_buf); // Check if r_buf allocation success
     size_t r_bytes = 0;
+    /* ATTENTION: The print and delay in the read task only for monitoring the data by human,
+     * Normally there shouldn't be any delays to ensure a short polling time,
+     * Otherwise the dma buffer will overflow and lead to the data lost */
     while (1) {
         /* Read i2s data */
         if (i2s_channel_read(rx_chan, r_buf, EXAMPLE_BUFF_SIZE, &r_bytes, 1000) == ESP_OK) {

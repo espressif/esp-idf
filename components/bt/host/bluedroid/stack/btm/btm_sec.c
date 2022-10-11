@@ -240,12 +240,6 @@ BOOLEAN BTM_SecRegister(tBTM_APPL_INFO *p_cb_info)
         if (memcmp(btm_cb.devcb.id_keys.ir, &temp_value, sizeof(BT_OCTET16)) == 0) {
             btm_ble_reset_id();
         }
-#if (!BLE_UPDATE_BLE_ADDR_TYPE_RPA)
-        BD_ADDR peer_addr = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
-        BT_OCTET16 peer_irk = {0x0};
-        /* add local irk to controller */
-        btsnd_hcic_ble_add_device_resolving_list (0, peer_addr, peer_irk, btm_cb.devcb.id_keys.irk);
-#endif
     } else {
         BTM_TRACE_WARNING("%s p_cb_info->p_le_callback == NULL\n", __func__);
     }
@@ -4030,7 +4024,9 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
         return;
     }
 
-    p_dev_rec->sec_flags |= BTM_SEC_AUTHENTICATED;
+    if (!(p_dev_rec->sm4 & BTM_SM4_UPGRADE)) {
+        p_dev_rec->sec_flags |= BTM_SEC_AUTHENTICATED;
+    }
 
     if (p_dev_rec->pin_code_length >= 16 ||
             p_dev_rec->link_key_type == BTM_LKEY_TYPE_AUTH_COMB ||

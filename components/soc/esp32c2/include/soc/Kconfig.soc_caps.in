@@ -19,10 +19,6 @@ config SOC_BT_SUPPORTED
     bool
     default y
 
-config SOC_ESP_NIMBLE_CONTROLLER
-    bool
-    default y
-
 config SOC_WIFI_SUPPORTED
     bool
     default y
@@ -44,6 +40,14 @@ config SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
     default y
 
 config SOC_TEMP_SENSOR_SUPPORTED
+    bool
+    default y
+
+config SOC_LEDC_SUPPORTED
+    bool
+    default y
+
+config SOC_I2C_SUPPORTED
     bool
     default y
 
@@ -179,6 +183,10 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
+config SOC_MMU_PAGE_SIZE_CONFIGURABLE
+    bool
+    default y
+
 config SOC_GDMA_GROUPS
     int
     default 1
@@ -215,6 +223,10 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
     int
     default 0
 
+config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
+    hex
+    default 0x00000000001FFFC0
+
 config SOC_GPIO_SUPPORT_SLP_SWITCH
     bool
     default y
@@ -237,7 +249,7 @@ config SOC_I2C_NUM
 
 config SOC_I2C_FIFO_LEN
     int
-    default 32
+    default 16
 
 config SOC_I2C_SUPPORT_HW_CLR_BUS
     bool
@@ -326,6 +338,10 @@ config SOC_SHA_SUPPORT_SHA256
 config SOC_SPI_PERIPH_NUM
     int
     default 2
+
+config SOC_SPI_MAX_CS_NUM
+    int
+    default 6
 
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
@@ -499,6 +515,10 @@ config SOC_UART_SUPPORT_WAKEUP_INT
     bool
     default y
 
+config SOC_UART_SUPPORT_PLL_F40M_CLK
+    bool
+    default y
+
 config SOC_UART_SUPPORT_RTC_CLK
     bool
     default y
@@ -532,10 +552,6 @@ config SOC_PM_SUPPORT_WIFI_WAKEUP
     default y
 
 config SOC_PM_SUPPORT_BT_WAKEUP
-    bool
-    default y
-
-config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool
     default y
 
@@ -574,3 +590,15 @@ config SOC_WIFI_CSI_SUPPORT
 config SOC_WIFI_MESH_SUPPORT
     bool
     default n
+
+config SOC_BLE_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_MESH_SUPPORTED
+    bool
+    default n
+
+config SOC_ESP_NIMBLE_CONTROLLER
+    bool
+    default y

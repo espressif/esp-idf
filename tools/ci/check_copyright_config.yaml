@@ -132,6 +132,13 @@ argtable3:
     - BSD-3-Clause
     - Apache-2.0
 
+md5_hash:
+  include:
+    - 'components/esp_rom/include/**/rom/md5_hash.h'
+  allowed_licenses:
+    - BSD-3-Clause
+    - Apache-2.0
+
 xtensa:
   include:
     - 'components/xtensa/**'
@@ -143,7 +150,9 @@ tinyusb:
     - 'examples/peripherals/usb/device/tusb_midi/'
   allowed_licenses:
     - Apache-2.0
-    - MIT
+    - MIT           # Example derived from TinyUSB code by HaThach
+    - Unlicense
+    - CC0-1.0
 
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.

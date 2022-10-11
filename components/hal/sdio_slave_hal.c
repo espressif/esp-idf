@@ -40,7 +40,7 @@ typedef enum {
 } sdio_ringbuf_pointer_t;
 
 static esp_err_t sdio_ringbuf_send(sdio_ringbuf_t *buf, esp_err_t (*copy_callback)(uint8_t *, void *), void *arg);
-static inline esp_err_t sdio_ringbuf_recv(sdio_ringbuf_t *buf, uint8_t **start, uint8_t **end, ringbuf_get_all_t get_all);
+esp_err_t sdio_ringbuf_recv(sdio_ringbuf_t *buf, uint8_t **start, uint8_t **end, ringbuf_get_all_t get_all);
 static inline int sdio_ringbuf_return(sdio_ringbuf_t* buf, uint8_t *ptr);
 
 #define _SEND_DESC_NEXT(x)    STAILQ_NEXT(&((sdio_slave_hal_send_desc_t*)x)->dma_desc, qe)
@@ -95,7 +95,12 @@ static esp_err_t sdio_ringbuf_send(sdio_ringbuf_t *buf, esp_err_t (*copy_callbac
 
 // this ringbuf is a return-before-recv-again strategy
 // since this is designed to be called in the ISR, no parallel logic
-static inline esp_err_t sdio_ringbuf_recv(sdio_ringbuf_t *buf, uint8_t **start, uint8_t **end, ringbuf_get_all_t get_all)
+/*
+ * Workaround for gcc 11. GCC-277. Break the inferring of callers.
+ * This function used to be static inline.
+ */
+__attribute__((weak))
+esp_err_t sdio_ringbuf_recv(sdio_ringbuf_t *buf, uint8_t **start, uint8_t **end, ringbuf_get_all_t get_all)
 {
     HAL_ASSERT(buf->free_ptr == buf->read_ptr);   //must return before recv again
     if (start == NULL && end == NULL) return ESP_ERR_INVALID_ARG; // must have a output
@@ -163,7 +168,7 @@ void sdio_slave_hal_init(sdio_slave_context_t *hal)
 void sdio_slave_hal_hw_init(sdio_slave_context_t *hal)
 {
     sdio_slave_ll_init(hal->slc);
-    sdio_slave_ll_enable_hs(hal->hinf, true);
+    sdio_slave_ll_enable_hs(hal->hinf, !hal->no_highspeed);
     sdio_slave_ll_set_timing(hal->host, hal->timing);
     sdio_slave_ll_slvint_t intr_ena = 0xff;
     sdio_slave_ll_slvint_set_ena(hal->slc, &intr_ena);

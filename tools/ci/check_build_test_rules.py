@@ -12,6 +12,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+import yaml
 from idf_ci_utils import IDF_PATH, get_pytest_cases, get_ttfw_cases
 
 YES = u'\u2713'
@@ -30,6 +31,7 @@ USUAL_TO_FORMAL = {
     'esp32c3': 'ESP32-C3',
     'esp32h2': 'ESP32-H2',
     'esp32c2': 'ESP32-C2',
+    'esp32c6': 'ESP32-C6',
     'linux': 'Linux',
 }
 
@@ -40,6 +42,7 @@ FORMAL_TO_USUAL = {
     'ESP32-C3': 'esp32c3',
     'ESP32-H2': 'esp32h2',
     'ESP32-C2': 'esp32c2',
+    'ESP32-C6': 'esp32c6',
     'Linux': 'linux',
 }
 
@@ -51,7 +54,11 @@ def doublequote(s: str) -> str:
     return f'"{s}"'
 
 
-def check_readme(paths: List[str]) -> None:
+def check_readme(
+    paths: List[str],
+    exclude_dirs: Optional[List[str]] = None,
+    extra_default_build_targets: Optional[List[str]] = None,
+) -> None:
     from idf_build_apps import App, find_apps
     from idf_build_apps.constants import SUPPORTED_TARGETS
 
@@ -136,9 +143,11 @@ def check_readme(paths: List[str]) -> None:
             paths,
             'all',
             recursive=True,
+            exclude_list=exclude_dirs or [],
             manifest_files=[
                 str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')
             ],
+            default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
         )
     )
     exit_code = 0
@@ -196,7 +205,11 @@ def check_readme(paths: List[str]) -> None:
     sys.exit(exit_code)
 
 
-def check_test_scripts(paths: List[str]) -> None:
+def check_test_scripts(
+    paths: List[str],
+    exclude_dirs: Optional[List[str]] = None,
+    bypass_check_test_targets: Optional[List[str]] = None,
+) -> None:
     from idf_build_apps import App, find_apps
 
     # takes long time, run only in CI
@@ -242,7 +255,7 @@ def check_test_scripts(paths: List[str]) -> None:
         actual_extra_tested_targets = set(actual_verified_targets) - set(
             _app.verified_targets
         )
-        if actual_extra_tested_targets:
+        if actual_extra_tested_targets - set(bypass_check_test_targets or []):
             print(
                 inspect.cleandoc(
                     f'''
@@ -303,6 +316,7 @@ def check_test_scripts(paths: List[str]) -> None:
             paths,
             'all',
             recursive=True,
+            exclude_list=exclude_dirs or [],
             manifest_files=[
                 str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')
             ],
@@ -397,9 +411,21 @@ if __name__ == '__main__':
 
     _check_readme = action.add_parser('check-readmes')
     _check_readme.add_argument('paths', nargs='+', help='check under paths')
+    _check_readme.add_argument(
+        '-c',
+        '--config',
+        default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'default-build-test-rules.yml'),
+        help='default build test rules config file',
+    )
 
     _check_test_scripts = action.add_parser('check-test-scripts')
     _check_test_scripts.add_argument('paths', nargs='+', help='check under paths')
+    _check_test_scripts.add_argument(
+        '-c',
+        '--config',
+        default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'default-build-test-rules.yml'),
+        help='default build test rules config file',
+    )
 
     _sort_yaml = action.add_parser('sort-yaml')
     _sort_yaml.add_argument('files', nargs='+', help='all specified yaml files')
@@ -407,19 +433,60 @@ if __name__ == '__main__':
     arg = parser.parse_args()
 
     # Since this script is executed from the pre-commit hook environment, make sure IDF_PATH is set
-    os.environ['IDF_PATH'] = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    os.environ['IDF_PATH'] = os.path.realpath(
+        os.path.join(os.path.dirname(__file__), '..', '..')
+    )
 
     if arg.action == 'sort-yaml':
         sort_yaml(arg.files)
     else:
         check_dirs = set()
-        for path in arg.paths:
-            if os.path.isfile(path):
-                check_dirs.add(os.path.dirname(path))
+
+        # check if *_caps.h files changed
+        check_all = False
+        soc_caps_header_files = list(
+            (Path(IDF_PATH) / 'components' / 'soc').glob('**/*_caps.h')
+        )
+        for p in arg.paths:
+            if Path(p).resolve() in soc_caps_header_files:
+                check_all = True
+                break
+
+            if os.path.isfile(p):
+                check_dirs.add(os.path.dirname(p))
             else:
-                check_dirs.add(path)
+                check_dirs.add(p)
+
+        if check_all:
+            check_dirs = {IDF_PATH}
+            _exclude_dirs = [os.path.join(IDF_PATH, 'tools', 'unit-test-app'),
+                             os.path.join(IDF_PATH, 'tools', 'test_build_system', 'build_test_app')]
+        else:
+            _exclude_dirs = []
+
+        extra_default_build_targets: List[str] = []
+        bypass_check_test_targets: List[str] = []
+        if arg.config:
+            with open(arg.config) as fr:
+                configs = yaml.safe_load(fr)
+
+            if configs:
+                extra_default_build_targets = (
+                    configs.get('extra_default_build_targets') or []
+                )
+                bypass_check_test_targets = (
+                    configs.get('bypass_check_test_targets') or []
+                )
 
         if arg.action == 'check-readmes':
-            check_readme(list(check_dirs))
+            check_readme(
+                list(check_dirs),
+                exclude_dirs=_exclude_dirs,
+                extra_default_build_targets=extra_default_build_targets,
+            )
         elif arg.action == 'check-test-scripts':
-            check_test_scripts(list(check_dirs))
+            check_test_scripts(
+                list(check_dirs),
+                exclude_dirs=_exclude_dirs,
+                bypass_check_test_targets=bypass_check_test_targets,
+            )

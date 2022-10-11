@@ -79,7 +79,7 @@ typedef struct {
 /**
  * @brief RGB LCD VSYNC event callback prototype
  *
- * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
  * @param[in] edata Panel event data, fed by driver
  * @param[in] user_ctx User data, passed from `esp_lcd_rgb_panel_register_event_callbacks()`
  * @return Whether a high priority task has been waken up by this function
@@ -89,6 +89,7 @@ typedef bool (*esp_lcd_rgb_panel_vsync_cb_t)(esp_lcd_panel_handle_t panel, const
 /**
  * @brief Prototype for function to re-fill a bounce buffer, rather than copying from the frame buffer
  *
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
  * @param[in] bounce_buf Bounce buffer to write data into
  * @param[in] pos_px How many pixels already were sent to the display in this frame, in other words,
  *                   at what pixel the routine should start putting data into bounce_buf
@@ -115,7 +116,7 @@ typedef struct {
     lcd_clock_source_t clk_src;   /*!< Clock source for the RGB LCD peripheral */
     esp_lcd_rgb_timing_t timings; /*!< RGB timing parameters, including the screen resolution */
     size_t data_width;            /*!< Number of data lines */
-    size_t bits_per_pixel;        /*!< Color depth, in bpp, specially, if set to zero, it will default to `data_width`.
+    size_t bits_per_pixel;        /*!< Frame buffer color depth, in bpp, specially, if set to zero, it will default to `data_width`.
                                        When using a Serial RGB interface, this value could be different from `data_width` */
     size_t bounce_buffer_size_px; /*!< If it's non-zero, the driver allocates two DRAM bounce buffers for DMA use.
                                        DMA fetching from DRAM bounce buffer is much faster than PSRAM frame buffer. */
@@ -156,7 +157,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
 /**
  * @brief Register LCD RGB panel event callbacks
  *
- * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
  * @param[in] callbacks Group of callback functions
  * @param[in] user_ctx User data, which will be passed to the callback functions directly
  * @return
@@ -175,7 +176,7 @@ esp_err_t esp_lcd_rgb_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
  * @note This function doesn't cause the hardware to update the PCLK immediately but to record the new frequency and set a flag internally.
  *       Only in the next VSYNC event handler, will the driver attempt to update the PCLK frequency.
  *
- * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
  * @param[in] freq_hz Frequency of pixel clock, in Hz
  * @return
  *      - ESP_ERR_INVALID_ARG: Set PCLK frequency failed because of invalid argument
@@ -184,9 +185,27 @@ esp_err_t esp_lcd_rgb_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
 esp_err_t esp_lcd_rgb_panel_set_pclk(esp_lcd_panel_handle_t panel, uint32_t freq_hz);
 
 /**
+ * @brief Restart the LCD transmission
+ *
+ * @note This function can be useful when the LCD controller is out of sync with the DMA because of insufficient bandwidth.
+ *       To save the screen from a permanent shift, you can call this function to restart the LCD DMA.
+ * @note This function doesn't restart the DMA immediately but to set a flag internally.
+ *       Only in the next VSYNC event handler, will the driver attempt to do the restart job.
+ * @note If CONFIG_LCD_RGB_RESTART_IN_VSYNC is enabled, you don't need to call this function manually,
+ *       because the restart job will be done automatically in the VSYNC event handler.
+ *
+ * @param[in] panel panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
+ * @return
+ *      - ESP_ERR_INVALID_ARG: Restart the LCD failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Restart the LCD failed because the LCD diver is working in refresh-on-demand mode
+ *      - ESP_OK: Restart the LCD successfully
+ */
+esp_err_t esp_lcd_rgb_panel_restart(esp_lcd_panel_handle_t panel);
+
+/**
  * @brief Get the address of the frame buffer(s) that allocated by the driver
  *
- * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
  * @param[in] fb_num Number of frame buffer(s) to get. This value must be the same as the number of the following parameters.
  * @param[out] fb0 Returned address of the frame buffer 0
  * @param[out] ... List of other frame buffer addresses
@@ -201,13 +220,46 @@ esp_err_t esp_lcd_rgb_panel_get_frame_buffer(esp_lcd_panel_handle_t panel, uint3
  *
  * @note This function should only be called when the RGB panel is working under the `refresh_on_demand` mode.
  *
- * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
  * @return
  *      - ESP_ERR_INVALID_ARG: Start a refresh failed because of invalid argument
  *      - ESP_ERR_INVALID_STATE: Start a refresh failed because the LCD panel is not created with the `refresh_on_demand` flag enabled.
  *      - ESP_OK: Start a refresh successfully
  */
 esp_err_t esp_lcd_rgb_panel_refresh(esp_lcd_panel_handle_t panel);
+
+/**
+ * @brief LCD color conversion profile
+ */
+typedef struct {
+    lcd_color_space_t color_space; /*!< Color space of the image */
+    lcd_color_range_t color_range; /*!< Color range of the image */
+    lcd_yuv_sample_t yuv_sample;   /*!< YUV sample format of the image */
+} esp_lcd_color_conv_profile_t;
+
+/**
+ * @brief Configuration of YUG-RGB conversion
+ */
+typedef struct {
+    lcd_yuv_conv_std_t std;           /*!< YUV conversion standard: BT601, BT709 */
+    esp_lcd_color_conv_profile_t src; /*!< Color conversion profile of the input image */
+    esp_lcd_color_conv_profile_t dst; /*!< Color conversion profile of the output image */
+} esp_lcd_yuv_conv_config_t;
+
+/**
+ * @brief Configure how to convert the color format between RGB and YUV
+ *
+ * @note Pass in `config` as NULL will disable the RGB-YUV converter.
+ * @note The hardware converter can only parse a "packed" storage format, while "planar" and "semi-planar" format is not supported.
+ *
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
+ * @param[in] config Configuration of RGB-YUV conversion
+ * @return
+ *      - ESP_ERR_INVALID_ARG: Configure RGB-YUV conversion failed because of invalid argument
+ *      - ESP_ERR_NOT_SUPPORTED: Configure RGB-YUV conversion failed because the conversion mode is not supported by the hardware
+ *      - ESP_OK: Configure RGB-YUV conversion successfully
+ */
+esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_yuv_conv_config_t *config);
 
 #endif // SOC_LCD_RGB_SUPPORTED
 

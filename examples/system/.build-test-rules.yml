@@ -43,10 +43,6 @@ examples/system/deep_sleep:
       reason: target esp32c2 is not supported yet
 
 examples/system/efuse:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32s3"
       temporary: true
@@ -140,29 +136,15 @@ examples/system/select:
       temporary: true
       reason: lack of runners
 
-examples/system/startup_time:
-  disable_test:
-    - if: IDF_TARGET == "esp32s3" or IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: lack of runners
-
 examples/system/sysview_tracing:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
-      temporary: true
-      reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET == "esp32s2" or IDF_TARGET == "esp32c3"
+    - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/system/sysview_tracing_heap_log:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
-      temporary: true
-      reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET == "esp32s2" or IDF_TARGET == "esp32c3"
+    - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
@@ -178,7 +160,7 @@ examples/system/ulp_fsm/ulp:
 
 examples/system/ulp_fsm/ulp_adc:
   enable:
-    - if: IDF_TARGET == "esp32"
+    - if: IDF_TARGET in ["esp32", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
 
@@ -206,6 +188,17 @@ examples/system/ulp_riscv/gpio_interrupt:
       temporary: true
       reason: the other targets are not tested yet
 
+examples/system/ulp_riscv/i2c:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+
 examples/system/ulp_riscv/uart_print:
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
+examples/system/xip_from_psram:
+  enable:
+    - if: SOC_SPIRAM_SUPPORTED == 1
+      reason: this feature is supported on chips that have PSRAM
+  disable:
+    - if: IDF_TARGET == "esp32"
+      reason: target esp32 doesn't support this feature.

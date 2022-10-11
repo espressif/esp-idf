@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,16 @@
 extern "C" {
 #endif
 
-typedef int i2c_port_t;
+/**
+ * @brief I2C port number, can be I2C_NUM_0 ~ (I2C_NUM_MAX-1).
+ */
+typedef enum {
+    I2C_NUM_0 = 0, /*!< I2C port 0 */
+#if SOC_I2C_NUM >= 2
+    I2C_NUM_1, /*!< I2C port 1 */
+#endif
+    I2C_NUM_MAX, /*!< I2C port max */
+} i2c_port_t;
 
 typedef enum{
     I2C_MODE_SLAVE = 0,   /*!< I2C slave mode */

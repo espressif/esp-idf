@@ -6,7 +6,7 @@
 
 #include "esp_transport_internal.h"
 
-static const char *TAG = "TRANSPORT";
+static const char *TAG = "transport";
 struct timeval* esp_transport_utils_ms_to_timeval(int timeout_ms, struct timeval *tv)
 {
     if (timeout_ms == -1) {

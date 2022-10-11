@@ -83,7 +83,8 @@ struct esp_rgb_panel_t {
     int panel_id;          // LCD panel ID
     lcd_hal_context_t hal; // Hal layer object
     size_t data_width;     // Number of data lines
-    size_t bits_per_pixel; // Color depth, in bpp
+    size_t fb_bits_per_pixel; // Frame buffer color depth, in bpp
+    size_t output_bits_per_pixel; // Color depth seen from the output data line. Default to fb_bits_per_pixel, but can be changed by YUV-RGB conversion
     size_t sram_trans_align;  // Alignment for framebuffer that allocated in SRAM
     size_t psram_trans_align; // Alignment for framebuffer that allocated in PSRAM
     int disp_gpio_num;     // Display control GPIO, which is used to perform action like "disp_off"
@@ -114,6 +115,7 @@ struct esp_rgb_panel_t {
         uint32_t no_fb: 1;               // No frame buffer allocated in the driver
         uint32_t fb_in_psram: 1;         // Whether the frame buffer is in PSRAM
         uint32_t need_update_pclk: 1;    // Whether to update the PCLK before start a new transaction
+        uint32_t need_restart: 1;        // Whether to restart the LCD controller and the DMA
         uint32_t bb_invalidate_cache: 1; // Whether to do cache invalidation in bounce buffer mode
     } flags;
     dma_descriptor_t *dma_links[2];    // fbs[0] <-> dma_links[0], fbs[1] <-> dma_links[1]
@@ -220,13 +222,13 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
 #endif
 
     // bpp defaults to the number of data lines, but for serial RGB interface, they're not equal
-    size_t bits_per_pixel = rgb_panel_config->data_width;
+    size_t fb_bits_per_pixel = rgb_panel_config->data_width;
     if (rgb_panel_config->bits_per_pixel) { // override bpp if it's set
-        bits_per_pixel = rgb_panel_config->bits_per_pixel;
+        fb_bits_per_pixel = rgb_panel_config->bits_per_pixel;
     }
     // calculate buffer size
-    size_t fb_size = rgb_panel_config->timings.h_res * rgb_panel_config->timings.v_res * bits_per_pixel / 8;
-    size_t bb_size = rgb_panel_config->bounce_buffer_size_px * bits_per_pixel / 8;
+    size_t fb_size = rgb_panel_config->timings.h_res * rgb_panel_config->timings.v_res * fb_bits_per_pixel / 8;
+    size_t bb_size = rgb_panel_config->bounce_buffer_size_px * fb_bits_per_pixel / 8;
     if (bb_size) {
         // we want the bounce can always end in the second buffer
         ESP_GOTO_ON_FALSE(fb_size % (2 * bb_size) == 0, ESP_ERR_INVALID_ARG, err, TAG,
@@ -278,7 +280,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
         rgb_panel->lcd_clk_flags |= LCD_HAL_PCLK_FLAG_ALLOW_EQUAL_SYSCLK;
     }
     // install interrupt service, (LCD peripheral shares the interrupt source with Camera by different mask)
-    int isr_flags = LCD_RGB_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
+    int isr_flags = LCD_RGB_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.panels[panel_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(rgb_panel->hal.dev),
                                     LCD_LL_EVENT_VSYNC_END, lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);
@@ -297,7 +299,8 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     memcpy(rgb_panel->data_gpio_nums, rgb_panel_config->data_gpio_nums, SOC_LCD_RGB_DATA_WIDTH);
     rgb_panel->timings = rgb_panel_config->timings;
     rgb_panel->data_width = rgb_panel_config->data_width;
-    rgb_panel->bits_per_pixel = bits_per_pixel;
+    rgb_panel->fb_bits_per_pixel = fb_bits_per_pixel;
+    rgb_panel->output_bits_per_pixel = fb_bits_per_pixel; // by default, the output bpp is the same as the frame buffer bpp
     rgb_panel->disp_gpio_num = rgb_panel_config->disp_gpio_num;
     rgb_panel->flags.disp_en_level = !rgb_panel_config->flags.disp_active_low;
     rgb_panel->flags.no_fb = rgb_panel_config->flags.no_fb;
@@ -360,6 +363,19 @@ esp_err_t esp_lcd_rgb_panel_set_pclk(esp_lcd_panel_handle_t panel, uint32_t freq
     return ESP_OK;
 }
 
+esp_err_t esp_lcd_rgb_panel_restart(esp_lcd_panel_handle_t panel)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+    ESP_RETURN_ON_FALSE(rgb_panel->flags.stream_mode, ESP_ERR_INVALID_STATE, TAG, "not in stream mode");
+
+    // the underlying restart job will be done in the `LCD_LL_EVENT_VSYNC_END` event handler
+    portENTER_CRITICAL(&rgb_panel->spinlock);
+    rgb_panel->flags.need_restart = true;
+    portEXIT_CRITICAL(&rgb_panel->spinlock);
+    return ESP_OK;
+}
+
 esp_err_t esp_lcd_rgb_panel_get_frame_buffer(esp_lcd_panel_handle_t panel, uint32_t fb_num, void **fb0, ...)
 {
     ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -384,6 +400,57 @@ esp_err_t esp_lcd_rgb_panel_refresh(esp_lcd_panel_handle_t panel)
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     ESP_RETURN_ON_FALSE(!rgb_panel->flags.stream_mode, ESP_ERR_INVALID_STATE, TAG, "refresh on demand is not enabled");
     lcd_rgb_panel_start_transmission(rgb_panel);
+    return ESP_OK;
+}
+
+esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_yuv_conv_config_t *config)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+    lcd_hal_context_t *hal = &rgb_panel->hal;
+    bool en_conversion = config != NULL;
+
+    // bits per pixel for different YUV sample
+    const uint8_t bpp_yuv[] = {
+        [LCD_YUV_SAMPLE_422] = 16,
+        [LCD_YUV_SAMPLE_420] = 12,
+        [LCD_YUV_SAMPLE_411] = 12,
+    };
+
+    if (en_conversion) {
+        if (memcmp(&config->src, &config->dst, sizeof(config->src)) == 0) {
+            ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "conversion source and destination are the same");
+        }
+
+        if (config->src.color_space == LCD_COLOR_SPACE_YUV && config->dst.color_space == LCD_COLOR_SPACE_RGB) { // YUV->RGB
+            lcd_ll_set_convert_mode_yuv_to_rgb(hal->dev, config->src.yuv_sample);
+            // Note, the RGB->YUV conversion only support RGB565
+            rgb_panel->output_bits_per_pixel = 16;
+        } else if (config->src.color_space == LCD_COLOR_SPACE_RGB && config->dst.color_space == LCD_COLOR_SPACE_YUV) { // RGB->YUV
+            lcd_ll_set_convert_mode_rgb_to_yuv(hal->dev, config->dst.yuv_sample);
+            rgb_panel->output_bits_per_pixel = bpp_yuv[config->dst.yuv_sample];
+        } else if (config->src.color_space == LCD_COLOR_SPACE_YUV && config->dst.color_space == LCD_COLOR_SPACE_YUV) { // YUV->YUV
+            lcd_ll_set_convert_mode_yuv_to_yuv(hal->dev, config->src.yuv_sample, config->dst.yuv_sample);
+            rgb_panel->output_bits_per_pixel = bpp_yuv[config->dst.yuv_sample];
+        } else {
+            ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "unsupported conversion mode");
+        }
+
+        // set conversion standard
+        lcd_ll_set_yuv_convert_std(hal->dev, config->std);
+        // set conversion data width
+        lcd_ll_set_convert_data_width(hal->dev, rgb_panel->data_width);
+        // set color range
+        lcd_ll_set_input_color_range(hal->dev, config->src.color_range);
+        lcd_ll_set_output_color_range(hal->dev, config->dst.color_range);
+    } else {
+        // output bpp equals to frame buffer bpp
+        rgb_panel->output_bits_per_pixel = rgb_panel->fb_bits_per_pixel;
+    }
+
+    // enable or disable RGB-YUV conversion
+    lcd_ll_enable_rgb_yuv_convert(hal->dev, en_conversion);
+
     return ESP_OK;
 }
 
@@ -425,7 +492,7 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     // configure blank region timing
     lcd_ll_set_blank_cycles(rgb_panel->hal.dev, 1, 1); // RGB panel always has a front and back blank (porch region)
     lcd_ll_set_horizontal_timing(rgb_panel->hal.dev, rgb_panel->timings.hsync_pulse_width,
-                                 rgb_panel->timings.hsync_back_porch, rgb_panel->timings.h_res * rgb_panel->bits_per_pixel / rgb_panel->data_width,
+                                 rgb_panel->timings.hsync_back_porch, rgb_panel->timings.h_res * rgb_panel->output_bits_per_pixel / rgb_panel->data_width,
                                  rgb_panel->timings.hsync_front_porch);
     lcd_ll_set_vertical_timing(rgb_panel->hal.dev, rgb_panel->timings.vsync_pulse_width,
                                rgb_panel->timings.vsync_back_porch, rgb_panel->timings.v_res,
@@ -444,7 +511,7 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     if (rgb_panel->flags.stream_mode) {
         lcd_rgb_panel_start_transmission(rgb_panel);
     }
-    ESP_LOGD(TAG, "rgb panel(%d) start, pclk=%uHz", rgb_panel->panel_id, rgb_panel->timings.pclk_hz);
+    ESP_LOGD(TAG, "rgb panel(%d) start, pclk=%"PRIu32"Hz", rgb_panel->panel_id, rgb_panel->timings.pclk_hz);
     return ret;
 }
 
@@ -500,7 +567,7 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         y_end = MIN(y_end, v_res);
     }
 
-    int bytes_per_pixel = rgb_panel->bits_per_pixel / 8;
+    int bytes_per_pixel = rgb_panel->fb_bits_per_pixel / 8;
     int pixels_per_line = rgb_panel->timings.h_res;
     uint32_t bytes_per_line = bytes_per_pixel * pixels_per_line;
     uint8_t *fb = rgb_panel->fbs[rgb_panel->cur_fb_index];
@@ -862,7 +929,7 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_cloc
 static IRAM_ATTR bool lcd_rgb_panel_fill_bounce_buffer(esp_rgb_panel_t *panel, uint8_t *buffer)
 {
     bool need_yield = false;
-    int bytes_per_pixel = panel->bits_per_pixel / 8;
+    int bytes_per_pixel = panel->fb_bits_per_pixel / 8;
     if (panel->flags.no_fb) {
         if (panel->on_bounce_empty) {
             // We don't have a frame buffer here; we need to call a callback to refill the bounce buffer
@@ -943,16 +1010,15 @@ static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
         }
     }
 
-#if CONFIG_LCD_RGB_RESTART_IN_VSYNC
     // On restart, the data sent to the LCD peripheral needs to start LCD_FIFO_PRESERVE_SIZE_PX pixels after the FB start
     // so we use a dedicated DMA node to restart the DMA transaction
+    // see also `lcd_rgb_panel_try_restart_transmission`
     memcpy(&panel->dma_restart_node, &panel->dma_nodes[0], sizeof(panel->dma_restart_node));
     int restart_skip_bytes = LCD_FIFO_PRESERVE_SIZE_PX * sizeof(uint16_t);
     uint8_t *p = (uint8_t *)panel->dma_restart_node.buffer;
     panel->dma_restart_node.buffer = &p[restart_skip_bytes];
     panel->dma_restart_node.dw0.length -= restart_skip_bytes;
     panel->dma_restart_node.dw0.size -= restart_skip_bytes;
-#endif
 
     // alloc DMA channel and connect to LCD peripheral
     gdma_channel_alloc_config_t dma_chan_config = {
@@ -977,9 +1043,31 @@ static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
     return ESP_OK;
 }
 
-#if CONFIG_LCD_RGB_RESTART_IN_VSYNC
-static IRAM_ATTR void lcd_rgb_panel_restart_transmission_in_isr(esp_rgb_panel_t *panel)
+// reset the GDMA channel every VBlank to stop permanent desyncs from happening.
+// Note that this fix can lead to single-frame desyncs itself, as in: if this interrupt
+// is late enough, the display will shift as the LCD controller already read out the
+// first data bytes, and resetting DMA will re-send those. However, the single-frame
+// desync this leads to is preferable to the permanent desync that could otherwise
+// happen. It's also not super-likely as this interrupt has the entirety of the VBlank
+// time to reset DMA.
+static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *panel)
 {
+    bool do_restart = false;
+#if CONFIG_LCD_RGB_RESTART_IN_VSYNC
+    do_restart = true;
+#else
+    portENTER_CRITICAL_ISR(&panel->spinlock);
+    if (panel->flags.need_restart) {
+        panel->flags.need_restart = false;
+        do_restart = true;
+    }
+    portEXIT_CRITICAL_ISR(&panel->spinlock);
+#endif // CONFIG_LCD_RGB_RESTART_IN_VSYNC
+
+    if (!do_restart) {
+        return;
+    }
+
     if (panel->bb_size) {
         // Catch de-synced frame buffer and reset if needed.
         if (panel->bounce_pos_px > panel->bb_size) {
@@ -1002,7 +1090,6 @@ static IRAM_ATTR void lcd_rgb_panel_restart_transmission_in_isr(esp_rgb_panel_t 
         }
     }
 }
-#endif
 
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
 {
@@ -1056,16 +1143,8 @@ IRAM_ATTR static void lcd_default_isr_handler(void *args)
         lcd_rgb_panel_try_update_pclk(rgb_panel);
 
         if (rgb_panel->flags.stream_mode) {
-#if CONFIG_LCD_RGB_RESTART_IN_VSYNC
-            // reset the GDMA channel every VBlank to stop permanent desyncs from happening.
-            // Note that this fix can lead to single-frame desyncs itself, as in: if this interrupt
-            // is late enough, the display will shift as the LCD controller already read out the
-            // first data bytes, and resetting DMA will re-send those. However, the single-frame
-            // desync this leads to is preferable to the permanent desync that could otherwise
-            // happen. It's also not super-likely as this interrupt has the entirety of the VBlank
-            // time to reset DMA.
-            lcd_rgb_panel_restart_transmission_in_isr(rgb_panel);
-#endif
+            // check whether to restart the transmission
+            lcd_rgb_panel_try_restart_transmission(rgb_panel);
         }
 
     }

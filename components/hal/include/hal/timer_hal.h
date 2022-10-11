@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,12 +38,27 @@ typedef struct {
 void timer_hal_init(timer_hal_context_t *hal, uint32_t group_num, uint32_t timer_num);
 
 /**
+ * @brief Deinit timer hal context.
+ *
+ * @param hal Context of HAL layer
+ */
+void timer_hal_deinit(timer_hal_context_t *hal);
+
+/**
  * @brief Load counter value into time-base counter
  *
  * @param hal Context of the HAL layer
  * @param load_val Counter value
  */
 void timer_hal_set_counter_value(timer_hal_context_t *hal, uint64_t load_val);
+
+/**
+ * @brief Trigger a software capture event and then return the captured count value
+ *
+ * @param hal Context of the HAL layer
+ * @return Counter value
+ */
+uint64_t timer_hal_capture_and_get_counter_value(timer_hal_context_t *hal);
 
 #ifdef __cplusplus
 }

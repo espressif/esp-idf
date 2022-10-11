@@ -1,5 +1,0 @@
-# As this is protocol specific, only test for one target.
-CONFIG_IDF_TARGET="esp32"
-TEST_COMPONENTS=esp-tls
-TEST_EXCLUDE_COMPONENTS=bt
-CONFIG_ESP_TLS_SERVER=y

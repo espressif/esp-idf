@@ -8,11 +8,6 @@
 #include "soc/hwcrypto_periph.h"
 #include "ecc_impl.h"
 
-/* TBD: Remove this and use proper getter/setter methods to access
- * private members of EC data structures once they are available
- * in mbedTLS stack */
-#define MBEDTLS_ALLOW_PRIVATE_ACCESS
-
 #include "mbedtls/ecp.h"
 #include "mbedtls/platform_util.h"
 
@@ -37,56 +32,41 @@ static int esp_mbedtls_ecp_point_multiply(const mbedtls_ecp_group *grp, mbedtls_
 
     p_pt.len = grp->pbits / 8;
 
-    memcpy(&p_pt.x, P->X.p, mbedtls_mpi_size(&P->X));
-    memcpy(&p_pt.y, P->Y.p, mbedtls_mpi_size(&P->Y));
+    memcpy(&p_pt.x, P->MBEDTLS_PRIVATE(X).MBEDTLS_PRIVATE(p), mbedtls_mpi_size(&P->MBEDTLS_PRIVATE(X)));
+    memcpy(&p_pt.y, P->MBEDTLS_PRIVATE(Y).MBEDTLS_PRIVATE(p), mbedtls_mpi_size(&P->MBEDTLS_PRIVATE(Y)));
 
-    ret = esp_ecc_point_multiply(&p_pt, (uint8_t *)m->p, &r_pt, false);
+    ret = esp_ecc_point_multiply(&p_pt, (uint8_t *)m->MBEDTLS_PRIVATE(p), &r_pt, false);
 
     for (int i = 0; i < MAX_SIZE; i++) {
         x_tmp[MAX_SIZE - i - 1] = r_pt.x[i];
         y_tmp[MAX_SIZE - i - 1] = r_pt.y[i];
     }
 
-    mbedtls_mpi_read_binary(&R->X, x_tmp, MAX_SIZE);
-    mbedtls_mpi_read_binary(&R->Y, y_tmp, MAX_SIZE);
-    mbedtls_mpi_lset(&R->Z, 1);
+    mbedtls_mpi_read_binary(&R->MBEDTLS_PRIVATE(X), x_tmp, MAX_SIZE);
+    mbedtls_mpi_read_binary(&R->MBEDTLS_PRIVATE(Y), y_tmp, MAX_SIZE);
+    mbedtls_mpi_lset(&R->MBEDTLS_PRIVATE(Z), 1);
     return ret;
 }
 
-/*
- * Restartable multiplication R = m * P
- */
-int mbedtls_ecp_mul_restartable( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
+int ecp_mul_restartable_internal( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
              const mbedtls_mpi *m, const mbedtls_ecp_point *P,
              int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
              mbedtls_ecp_restart_ctx *rs_ctx )
 {
     int ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-
     if (grp->id != MBEDTLS_ECP_DP_SECP192R1 && grp->id != MBEDTLS_ECP_DP_SECP256R1) {
 #if defined(MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK)
-        return mbedtls_ecp_mul_restartable_soft(grp, R, m, P, f_rng, p_rng, rs_ctx);
+        return ecp_mul_restartable_internal_soft(grp, R, m, P, f_rng, p_rng, rs_ctx);
 #else
         return ret;
 #endif
     }
-    ECP_VALIDATE_RET( grp != NULL );
-    ECP_VALIDATE_RET( R   != NULL );
-    ECP_VALIDATE_RET( m   != NULL );
-    ECP_VALIDATE_RET( P   != NULL );
 
-    /* Common sanity checks */
-    MBEDTLS_MPI_CHK( mbedtls_ecp_check_privkey( grp, m ) );
-    MBEDTLS_MPI_CHK( mbedtls_ecp_check_pubkey( grp, P ) );
-
-    ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    /* MBEDTLS_MPI_CHK macro assigns the return value of the function to
-     * `ret` variable
-     */
     MBEDTLS_MPI_CHK( esp_mbedtls_ecp_point_multiply(grp, R, m, P) );
 cleanup:
     return( ret );
 }
+
 #endif /* defined(MBEDTLS_ECP_MUL_ALT) || defined(MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK) */
 
 #if defined(MBEDTLS_ECP_VERIFY_ALT) || defined(MBEDTLS_ECP_VERIFY_ALT_SOFT_FALLBACK)
@@ -109,13 +89,13 @@ int mbedtls_ecp_check_pubkey( const mbedtls_ecp_group *grp,
     ECP_VALIDATE_RET( pt  != NULL );
 
     /* Must use affine coordinates */
-    if( mbedtls_mpi_cmp_int( &pt->Z, 1 ) != 0 )
+    if( mbedtls_mpi_cmp_int( &pt->MBEDTLS_PRIVATE(Z), 1 ) != 0 )
         return( MBEDTLS_ERR_ECP_INVALID_KEY );
 
     mbedtls_platform_zeroize((void *)&point, sizeof(ecc_point_t));
 
-    memcpy(&point.x, pt->X.p, mbedtls_mpi_size(&pt->X));
-    memcpy(&point.y, pt->Y.p, mbedtls_mpi_size(&pt->Y));
+    memcpy(&point.x, pt->MBEDTLS_PRIVATE(X).MBEDTLS_PRIVATE(p), mbedtls_mpi_size(&pt->MBEDTLS_PRIVATE(X)));
+    memcpy(&point.y, pt->MBEDTLS_PRIVATE(Y).MBEDTLS_PRIVATE(p), mbedtls_mpi_size(&pt->MBEDTLS_PRIVATE(Y)));
 
     point.len = grp->pbits / 8;
 

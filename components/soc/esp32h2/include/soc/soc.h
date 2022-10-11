@@ -235,3 +235,6 @@
 
 //Interrupt medium level, used for INT WDT for example
 #define SOC_INTERRUPT_LEVEL_MEDIUM              4
+
+// Interrupt number for the Interrupt watchdog
+#define ETS_INT_WDT_INUM                         (ETS_T1_WDT_INUM)

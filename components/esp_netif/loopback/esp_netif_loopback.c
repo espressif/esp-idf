@@ -6,7 +6,6 @@
 
 #include <string.h>
 
-#include "esp_netif_lwip_internal.h"
 
 #include "esp_netif.h"
 #include "esp_netif_private.h"

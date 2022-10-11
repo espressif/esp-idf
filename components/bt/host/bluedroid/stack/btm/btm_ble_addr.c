@@ -56,31 +56,15 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
         p_cb->private_addr[5] = p->param_buf[0];
         p_cb->private_addr[4] = p->param_buf[1];
         p_cb->private_addr[3] = p->param_buf[2];
+
         /* set it to controller */
-        btsnd_hcic_ble_set_random_addr(p_cb->private_addr);
+        btm_ble_set_random_addr(p_cb->private_addr);
 
         p_cb->exist_addr_bit |= BTM_BLE_GAP_ADDR_BIT_RESOLVABLE;
         memcpy(p_cb->resolvale_addr, p_cb->private_addr, BD_ADDR_LEN);
         if (p_cb->set_local_privacy_cback){
             (*p_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_SUCCESS);
             p_cb->set_local_privacy_cback = NULL;
-        }
-
-        if (btm_cb.ble_ctr_cb.inq_var.adv_mode == BTM_BLE_ADV_ENABLE){
-            BTM_TRACE_DEBUG("Advertise with new resolvable private address, now.");
-            /**
-             * Restart advertising, using new resolvable private address
-             */
-            btm_ble_stop_adv();
-            btm_ble_start_adv();
-        }
-        if (btm_cb.ble_ctr_cb.inq_var.state == BTM_BLE_SCANNING){
-            BTM_TRACE_DEBUG("Scan with new resolvable private address, now.");
-            /**
-             * Restart scaning, using new resolvable private address
-             */
-            btm_ble_stop_scan();
-            btm_ble_start_scan();
         }
 
         /* start a periodical timer to refresh random addr */

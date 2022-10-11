@@ -188,6 +188,14 @@ No.     Name               Type    Function
     3. This pin is connected to the pin of the USB bridge chip on the board.
     4. The operating voltage of ESP32-PICO-KIT’s embedded SPI flash is 3.3 V. Therefore, the strapping pin MTDI should hold bit zero during the module power-on reset. If connected, please make sure that this pin is not held up on reset.
 
+Pin Layout
+^^^^^^^^^^^
+.. figure:: ../../../_static/esp32-pico-kit-v4-pinout.png
+    :align: center
+    :scale: 43%
+    :alt: ESP32-PICO-KIT (click to enlarge)
+
+    ESP32-PICO-KIT Pin Layout (click to enlarge)
 
 Start Application Development
 -----------------------------

@@ -8,6 +8,8 @@
 */
 #include "esp_log.h"
 #include "esp_err.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "driver/spi_common.h"
 #include "driver/spi_master.h"
 #include "esp_serial_slave_link/essl.h"

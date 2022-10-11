@@ -131,16 +131,29 @@ The following list summarizes available measurement parameters and corresponding
 
     * Charge and discharge times of one measurement: :cpp:func:`touch_pad_set_charge_discharge_times`
 
-Relationship between the voltage range (high / low reference voltages), speed (slope), and measurement time is shown in the figure below.
+Relationship between the voltage range (high/low reference voltages), speed (slope), and measurement time is shown in the figure below.
 
-.. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
-    :align: center
-    :alt: Touch Pad - relationship between measurement parameters
-    :figclass: align-center
+.. only:: SOC_TOUCH_VERSION_1
 
-    Touch pad - relationship between measurement parameters
+    .. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
+        :align: center
+        :alt: Touch Pad - relationship between measurement parameters
+        :figclass: align-center
 
-The last chart *Output* represents the touch sensor reading, i.e., the count of pulses collected within the measurement time.
+        Touch pad - relationship between measurement parameters
+
+    The last chart *Output* represents the touch sensor reading, i.e., the count of pulses collected within the measurement time.
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    .. figure:: ../../../_static/touch_pad-measurement-parameters-version2.png
+        :align: center
+        :alt: Touch Pad - relationship between measurement parameters
+        :figclass: align-center
+
+        Touch pad - relationship between measurement parameters
+
+    The last chart *Output* represents the touch sensor reading, i.e., the time taken to accumulate the fixed number of cycles.
 
 All functions are provided in pairs to *set* a specific parameter and to *get* the current parameter's value, e.g., :cpp:func:`touch_pad_set_voltage` and :cpp:func:`touch_pad_get_voltage`.
 

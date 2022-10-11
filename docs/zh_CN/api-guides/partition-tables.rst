@@ -69,7 +69,7 @@ CSV 文件的格式与上面摘要中打印的格式相同，但是在 CSV 文�
 Name 字段
 ~~~~~~~~~
 
-Name 字段可以是任何有意义的名称，但不能超过 16 个字符（之后的内容将被截断）。该字段对 {IDF_TARGET_NAME} 并不是特别重要。
+Name 字段可以是任何有意义的名称，但不能超过 16 个字节，其中包括一个空字节（之后的内容将被截断）。该字段对 {IDF_TARGET_NAME} 并不是特别重要。
 
 Type 字段
 ~~~~~~~~~
@@ -130,6 +130,11 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp
 * 如果分区类型是由应用程序定义的任意值（0x40-0xFE），那么 ``subtype`` 字段可以是由应用程序选择的任何值（0x00-0xFE）。
 
 请注意如果用 C++ 编写，应用程序定义的子类型值需要转换为 :cpp:type:`esp_partition_type_t`，从而与 :ref:`分区 API<api-reference-partition-table>` 一起使用。
+
+额外分区 SubType 字段
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+组件可以通过设置 ``EXTRA_PARTITION_SUBTYPES`` 属性来定义额外的分区子类型。 ``EXTRA_PARTITION_SUBTYPES`` 是一个 CMake 列表，其中的每个条目由字符串组成，以逗号为分隔，格式为 ``<type>, <subtype>, <value>``。构建系统通过该属性会自动添加额外的子类型，并在 :cpp:type:`esp_partition_subtype_t` 中插入名为 ``ESP_PARTITION_SUBTYPE_<type>_<subtype>`` 的字段。项目可以使用这个子类型来定义分区表 CSV 文件中的分区，并使用 :cpp:type:`esp_partition_subtype_t` 中的新字段。
 
 Offset 和 Size 字段
 ~~~~~~~~~~~~~~~~~~~

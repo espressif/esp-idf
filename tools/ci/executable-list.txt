@@ -1,4 +1,3 @@
-.gitlab/ci/dependencies/generate_rules.py
 components/app_update/otatool.py
 components/efuse/efuse_table_gen.py
 components/efuse/test_efuse_host/efuse_tests.py
@@ -71,6 +70,7 @@ tools/ci/checkout_project_ref.py
 tools/ci/deploy_docs.py
 tools/ci/envsubst.py
 tools/ci/fix_empty_prototypes.sh
+tools/ci/generate_rules.py
 tools/ci/get-full-sources.sh
 tools/ci/get_supported_examples.sh
 tools/ci/mirror-submodule-update.sh
@@ -113,6 +113,7 @@ tools/python_version_checker.py
 tools/set-submodules-to-github.sh
 tools/test_apps/system/no_embedded_paths/check_for_file_paths.py
 tools/test_idf_monitor/run_test_idf_monitor.py
+tools/test_idf_py/test_hints.py
 tools/test_idf_py/test_idf_py.py
 tools/test_idf_size/test.sh
 tools/test_idf_tools/test_idf_tools.py

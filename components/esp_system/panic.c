@@ -17,6 +17,7 @@
 #include "hal/timer_hal.h"
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
+#include "esp_private/esp_int_wdt.h"
 
 #include "esp_private/panic_internal.h"
 #include "port/panic_funcs.h"
@@ -24,9 +25,9 @@
 
 #include "sdkconfig.h"
 
-#if __has_include("esp_ota_ops.h")
-#include "esp_ota_ops.h"
-#define HAS_ESP_OTA 1
+#if __has_include("esp_app_desc.h")
+#define WITH_ELF_SHA256
+#include "esp_app_desc.h"
 #endif
 
 #if CONFIG_ESP_COREDUMP_ENABLE
@@ -61,7 +62,11 @@
 bool g_panic_abort = false;
 static char *s_panic_abort_details = NULL;
 
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
+static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
+#else
 static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+#endif
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
@@ -312,13 +317,13 @@ void esp_panic_handler(panic_info_t *info)
     PANIC_INFO_DUMP(info, state);
     panic_print_str("\r\n");
 
-#if HAS_ESP_OTA
+#ifdef WITH_ELF_SHA256
     panic_print_str("\r\nELF file SHA256: ");
     char sha256_buf[65];
-    esp_ota_get_app_elf_sha256(sha256_buf, sizeof(sha256_buf));
+    esp_app_get_elf_sha256(sha256_buf, sizeof(sha256_buf));
     panic_print_str(sha256_buf);
     panic_print_str("\r\n");
-#endif //HAS_ESP_OTA
+#endif
 
     panic_print_str("\r\n");
 

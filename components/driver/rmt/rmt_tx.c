@@ -260,7 +260,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     // resolution lost due to division, calculate the real resolution
     tx_channel->base.resolution_hz = group->resolution_hz / real_div;
     if (tx_channel->base.resolution_hz != config->resolution_hz) {
-        ESP_LOGW(TAG, "channel resolution loss, real=%u", tx_channel->base.resolution_hz);
+        ESP_LOGW(TAG, "channel resolution loss, real=%"PRIu32, tx_channel->base.resolution_hz);
     }
 
     rmt_ll_tx_set_mem_blocks(hal->regs, channel_id, tx_channel->base.mem_block_num);
@@ -300,7 +300,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     tx_channel->base.disable = rmt_tx_disable;
     // return general channel handle
     *ret_chan = &tx_channel->base;
-    ESP_LOGD(TAG, "new tx channel(%d,%d) at %p, gpio=%d, res=%uHz, hw_mem_base=%p, dma_mem_base=%p, ping_pong_size=%zu, queue_depth=%zu",
+    ESP_LOGD(TAG, "new tx channel(%d,%d) at %p, gpio=%d, res=%"PRIu32"Hz, hw_mem_base=%p, dma_mem_base=%p, ping_pong_size=%zu, queue_depth=%zu",
              group_id, channel_id, tx_channel, config->gpio_num, tx_channel->base.resolution_hz,
              tx_channel->base.hw_mem_base, tx_channel->base.dma_mem_base, tx_channel->ping_pong_symbols, tx_channel->queue_size);
     return ESP_OK;
@@ -380,7 +380,7 @@ esp_err_t rmt_new_sync_manager(const rmt_sync_manager_config_t *config, rmt_sync
 
 
     *ret_synchro = synchro;
-    ESP_LOGD(TAG, "new sync manager at %p, with channel mask:%02x", synchro, synchro->channel_mask);
+    ESP_LOGD(TAG, "new sync manager at %p, with channel mask:%02"PRIx32, synchro, synchro->channel_mask);
     return ESP_OK;
 
 err:
@@ -797,7 +797,7 @@ static esp_err_t rmt_tx_modulate_carrier(rmt_channel_handle_t channel, const rmt
     portEXIT_CRITICAL(&channel->spinlock);
 
     if (real_frequency > 0) {
-        ESP_LOGD(TAG, "enable carrier modulation for channel(%d,%d), freq=%uHz", group_id, channel_id, real_frequency);
+        ESP_LOGD(TAG, "enable carrier modulation for channel(%d,%d), freq=%"PRIu32"Hz", group_id, channel_id, real_frequency);
     } else {
         ESP_LOGD(TAG, "disable carrier modulation for channel(%d,%d)", group_id, channel_id);
     }

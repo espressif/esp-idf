@@ -239,7 +239,7 @@ static esp_err_t handle_idle_state_events(void)
             evt.sdmmc_status &= ~SDMMC_INTMASK_CD;
         }
         if (evt.sdmmc_status != 0 || evt.dma_status != 0) {
-            ESP_LOGE(TAG, "handle_idle_state_events unhandled: %08x %08x",
+            ESP_LOGE(TAG, "handle_idle_state_events unhandled: %08"PRIx32" %08"PRIx32,
                     evt.sdmmc_status, evt.dma_status);
         }
 
@@ -260,13 +260,13 @@ static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* state,
         }
         return err;
     }
-    ESP_LOGV(TAG, "sdmmc_handle_event: event %08x %08x, unhandled %08x %08x",
+    ESP_LOGV(TAG, "sdmmc_handle_event: event %08"PRIx32" %08"PRIx32", unhandled %08"PRIx32" %08"PRIx32,
             event.sdmmc_status, event.dma_status,
             unhandled_events->sdmmc_status, unhandled_events->dma_status);
     event.sdmmc_status |= unhandled_events->sdmmc_status;
     event.dma_status |= unhandled_events->dma_status;
     process_events(event, cmd, state, unhandled_events);
-    ESP_LOGV(TAG, "sdmmc_handle_event: events unhandled: %08x %08x", unhandled_events->sdmmc_status, unhandled_events->dma_status);
+    ESP_LOGV(TAG, "sdmmc_handle_event: events unhandled: %08"PRIx32" %08"PRIx32, unhandled_events->sdmmc_status, unhandled_events->dma_status);
     return ESP_OK;
 }
 
@@ -347,7 +347,7 @@ static void process_command_response(uint32_t status, sdmmc_command_t* cmd)
         if (cmd->data) {
             sdmmc_host_dma_stop();
         }
-        ESP_LOGD(TAG, "%s: error 0x%x  (status=%08x)", __func__, err, status);
+        ESP_LOGD(TAG, "%s: error 0x%x  (status=%08"PRIx32")", __func__, err, status);
     }
 }
 
@@ -370,7 +370,7 @@ static void process_data_status(uint32_t status, sdmmc_command_t* cmd)
         if (cmd->data) {
             sdmmc_host_dma_stop();
         }
-        ESP_LOGD(TAG, "%s: error 0x%x (status=%08x)", __func__, cmd->error, status);
+        ESP_LOGD(TAG, "%s: error 0x%x (status=%08"PRIx32")", __func__, cmd->error, status);
     }
 
 }
@@ -391,7 +391,7 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
         "BUSY"
     };
     sdmmc_event_t orig_evt = evt;
-    ESP_LOGV(TAG, "%s: state=%s evt=%x dma=%x", __func__, s_state_names[*pstate],
+    ESP_LOGV(TAG, "%s: state=%s evt=%"PRIx32" dma=%"PRIx32, __func__, s_state_names[*pstate],
             evt.sdmmc_status, evt.dma_status);
     sdmmc_req_state_t next_state = *pstate;
     sdmmc_req_state_t state = (sdmmc_req_state_t) -1;

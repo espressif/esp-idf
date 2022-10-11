@@ -7,7 +7,7 @@ set(priv_include)
 set(priv_require driver) # usb_phy driver relies on gpio driver API
 
 if(CONFIG_USB_OTG_SUPPORTED)
-    list(APPEND srcs "hcd.c"
+    list(APPEND srcs "hcd_dwc.c"
                      "hub.c"
                      "usb_helpers.c"
                      "usb_host.c"
@@ -23,7 +23,3 @@ idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS ${priv_include}
                        PRIV_REQUIRES ${priv_require}
                        )
-
-if(CONFIG_USB_OTG_SUPPORTED)
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
-endif()

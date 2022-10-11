@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -21,9 +13,7 @@
 #pragma once
 
 #include <stdlib.h>
-#include "soc/rtc_io_periph.h"
-#include "soc/rtc_io_struct.h"
-#include "hal/rtc_io_types.h"
+#include "soc/rtc_periph.h"
 #include "hal/gpio_types.h"
 
 #define RTCIO_LL_PIN_FUNC     0
@@ -229,6 +219,7 @@ static inline void rtcio_ll_pulldown_disable(int rtcio_num)
 static inline void rtcio_ll_force_hold_enable(int rtcio_num)
 {
     REG_SET_BIT(RTC_CNTL_HOLD_FORCE_REG, rtc_io_desc[rtcio_num].hold_force);
+    REG_SET_BIT(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].hold);
 }
 
 /**

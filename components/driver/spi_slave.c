@@ -125,6 +125,11 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
 #endif
     SPI_CHECK(slave_config->spics_io_num < 0 || GPIO_IS_VALID_GPIO(slave_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
 
+    //Check post_trans_cb status when `SPI_SLAVE_NO_RETURN_RESULT` flag is set.
+    if(slave_config->flags & SPI_SLAVE_NO_RETURN_RESULT) {
+        SPI_CHECK(slave_config->post_trans_cb != NULL, "use feature flag 'SPI_SLAVE_NO_RETURN_RESULT' but no post_trans_cb function sets", ESP_ERR_INVALID_ARG);
+    }
+
     spi_chan_claimed=spicommon_periph_claim(host, "spi slave");
     SPI_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
 
@@ -183,10 +188,16 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
 
     //Create queues
     spihost[host]->trans_queue = xQueueCreate(slave_config->queue_size, sizeof(spi_slave_transaction_t *));
-    spihost[host]->ret_queue = xQueueCreate(slave_config->queue_size, sizeof(spi_slave_transaction_t *));
-    if (!spihost[host]->trans_queue || !spihost[host]->ret_queue) {
+    if (!spihost[host]->trans_queue) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
+    }
+    if(!(slave_config->flags & SPI_SLAVE_NO_RETURN_RESULT)) {
+        spihost[host]->ret_queue = xQueueCreate(slave_config->queue_size, sizeof(spi_slave_transaction_t *));
+        if (!spihost[host]->ret_queue) {
+            ret = ESP_ERR_NO_MEM;
+            goto cleanup;
+        }
     }
 
     int flags = bus_config->intr_flags | ESP_INTR_FLAG_INTRDISABLED;
@@ -298,6 +309,9 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_get_trans_result(spi_host_device_t host, spi_
     BaseType_t r;
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
+    //if SPI_SLAVE_NO_RETURN_RESULT is set, ret_queue will always be empty
+    SPI_CHECK(!(spihost[host]->cfg.flags & SPI_SLAVE_NO_RETURN_RESULT), "API not Supported!", ESP_ERR_NOT_SUPPORTED);
+
     r = xQueueReceive(spihost[host]->ret_queue, (void *)trans_desc, ticks_to_wait);
     if (!r) return ESP_ERR_TIMEOUT;
     return ESP_OK;
@@ -349,9 +363,10 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
             spicommon_dmaworkaround_req_reset(host->tx_dma_chan, spi_slave_restart_after_dmareset, host);
         }
         if (host->cfg.post_trans_cb) host->cfg.post_trans_cb(host->cur_trans);
-        //Okay, transaction is done.
-        //Return transaction descriptor.
-        xQueueSendFromISR(host->ret_queue, &host->cur_trans, &do_yield);
+
+        if(!(host->cfg.flags & SPI_SLAVE_NO_RETURN_RESULT)) {
+            xQueueSendFromISR(host->ret_queue, &host->cur_trans, &do_yield);
+        }
         host->cur_trans = NULL;
     }
     if (use_dma) {

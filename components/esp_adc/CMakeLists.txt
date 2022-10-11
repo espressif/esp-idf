@@ -27,8 +27,16 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deprecated/${target}/esp_adc_cal_legacy.c
     list(APPEND srcs "deprecated/${target}/esp_adc_cal_legacy.c")
 endif()
 
+# ESP32C6-TODO
+if(CONFIG_IDF_TARGET_ESP32C6)
+    list(REMOVE_ITEM srcs
+            "adc_cali_curve_fitting.c" # TODO: IDF-5312
+            "adc_oneshot.c"            # TODO: IDF-5310
+            "adc_common.c"
+        )
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_REQUIRES driver efuse
                        LDFRAGMENTS linker.lf)
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

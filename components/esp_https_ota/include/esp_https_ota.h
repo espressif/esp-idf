@@ -8,6 +8,7 @@
 
 #include <esp_http_client.h>
 #include <bootloader_common.h>
+#include "esp_app_desc.h"
 #include <sdkconfig.h>
 
 #ifdef __cplusplus

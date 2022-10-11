@@ -292,7 +292,7 @@ esp_err_t sdmmc_enable_hs_mode_and_check(sdmmc_card_t* card)
         return ESP_ERR_NOT_SUPPORTED;
     }
 
-    card->max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+    card->max_freq_khz = MIN(card->host.max_freq_khz, SDMMC_FREQ_HIGHSPEED);
     return ESP_OK;
 }
 

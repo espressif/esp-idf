@@ -18,8 +18,6 @@ from collections import defaultdict, namedtuple
 from pathlib import Path
 from typing import List
 
-EXCLUDE_DOCS_LIST = ['examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib/cryptoauthlib/**']
-
 # The apple apps links are not accessible from the company network for some reason
 EXCLUDE_URL_LIST = ['https://apps.apple.com/in/app/esp-ble-provisioning/id1473590141', 'https://apps.apple.com/in/app/esp-softap-provisioning/id1474040630']
 
@@ -98,10 +96,6 @@ def get_md_links(folder: str) -> List:
     links = []
 
     for path in (idf_path / folder).rglob('*.md'):
-        if any([path.relative_to(idf_path).match(exclude_doc) for exclude_doc in EXCLUDE_DOCS_LIST]):
-            print('{} - excluded'.format(path))
-            continue
-
         with path.open(encoding='utf8') as f:
             content = f.read()
 

@@ -146,7 +146,7 @@ or partition table as applicable.
 Hints on how to resolve errors
 ==============================
 
-``idf.py`` will try to suggest hints on how to resolve errors. It works with a database of hints stored in :idf_file:`tools/idf_py_actions/hints.yml` and the hints will be printed if a match is found for the given error. ``idf.py menuconfig`` is not supported by automatic hints on resolving errors.
+``idf.py`` will try to suggest hints on how to resolve errors. It works with a database of hints stored in :idf_file:`tools/idf_py_actions/hints.yml` and the hints will be printed if a match is found for the given error. The monitor, menuconfig, gdb and openocd targets are not supported at the moment by automatic hints on resolving errors.
 
 The ``--no-hints`` argument of ``idf.py`` can be used to turn the hints off in case they are not desired.
 
@@ -191,7 +191,7 @@ Will print app size information including occupied RAM and FLASH and section siz
 
 .. code-block:: bash
 
-  idf.py size
+  idf.py size-components
 
 Similarly, this will print the same information for each component used in the project.
 
@@ -201,7 +201,11 @@ Similarly, this will print the same information for each component used in the p
 
 Will print size information per source file in the project.
 
-If you define variable ``-DOUTPUT_JSON=1`` when running CMake (or ``idf.py``), the output will be formatted as JSON not as human readable text. See ``idf.py-size`` for more information.
+Options
+^^^^^^^
+
+- ``--format`` specifies the output format with available options: ``text``, ``csv``, ``json``, default being ``text``.
+- ``--output-file`` optionally specifies the name of the file to print the command output to instead of the standard output.
 
 Reconfigure the project: reconfigure
 ------------------------------------

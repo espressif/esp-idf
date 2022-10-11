@@ -63,13 +63,9 @@ The configuration involves the following steps -
 
 For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *Digital Signature (DS)* [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__].
 
-To configure the DS peripheral for development purposes, you can use the python script :example_file:`configure_ds.py<protocols/mqtt/ssl_ds/configure_ds.py>`.
-More details about the `configure_ds.py` script can be found at :example_file:`mqtt example README <protocols/mqtt/ssl_ds/README.md>`.
+To configure the DS peripheral for development purposes, you can use the `esp-secure-cert-tool <https://pypi.org/project/esp-secure-cert-tool>`_.
 
-The encrypted private key parameters obtained after the DS peripheral configuration are then to be kept in flash. Furthermore, they are to be passed to the DS peripheral which makes use of those parameters for the Digital Signature operation.
-:doc:`Non Volatile Storage<../storage/nvs_flash>` can be used to store the encrypted private key parameters in flash.
-The script :example_file:`configure_ds.py<protocols/mqtt/ssl_ds/configure_ds.py>` creates an NVS partition for the encrypted private key parameters. Then the script flashes this partition onto the {IDF_TARGET_NAME}.
-The application then needs to read the DS data from NVS, which can be done with the function ``esp_read_ds_data_from_nvs()`` in file :example_file:`ssl_ds/main/app_main.c <protocols/mqtt/ssl_ds/main/app_main.c>`
+The encrypted private key parameters obtained after the DS peripheral configuration are then to be kept in flash. Furthermore, they are to be passed to the DS peripheral which makes use of those parameters for the Digital Signature operation. The application then needs to read the ds data from the flash which has been done through the API's provided by the `esp_secure_cert_mgr <https://github.com/espressif/esp_secure_cert_mgr>`_ component. Please refer the `component/README. <https://github.com/espressif/esp_secure_cert_mgr#readme>`_ for more details.
 
 The process of initializing the DS peripheral and then performing the Digital Signature operation is done internally with help of `ESP-TLS`. Please refer to `Digital Signature with ESP-TLS` in :doc:`ESP-TLS <../protocols/esp_tls>` for more details.
 As mentioned in the `ESP-TLS` documentation, the application only needs to provide the encrypted private key parameters to the esp_tls context (as `ds_data`), which internally performs

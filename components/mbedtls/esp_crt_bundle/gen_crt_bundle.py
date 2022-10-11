@@ -107,7 +107,7 @@ class CertificateBundle:
             if start is True:
                 crt += strg
 
-        if(count == 0):
+        if count == 0:
             raise InputError('No certificate found')
 
         status('Successfully added %d certificates' % count)

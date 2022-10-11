@@ -188,11 +188,13 @@ typedef struct {
  * These are same as the security modes provided by protocomm
  */
 typedef enum wifi_prov_security {
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
     /**
      * No security (plain-text communication)
      */
     WIFI_PROV_SECURITY_0 = 0,
-
+#endif
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
     /**
      * This secure communication mode consists of
      *   X25519 key exchange
@@ -200,16 +202,27 @@ typedef enum wifi_prov_security {
      * + AES-CTR encryption
      */
     WIFI_PROV_SECURITY_1,
-
+#endif
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
     /**
      * This secure communication mode consists of
      *  SRP6a based authentication and key exchange
      *  + AES-GCM encryption/decryption
      */
     WIFI_PROV_SECURITY_2
+#endif
 } wifi_prov_security_t;
 
-typedef protocomm_security1_params_t wifi_prov_security1_params_t;
+/**
+ * @brief  Security 1 params structure
+ *         This needs to be passed when using WIFI_PROV_SECURITY_1
+ */
+typedef const char wifi_prov_security1_params_t;
+
+/**
+ * @brief  Security 2 params structure
+ *         This needs to be passed when using WIFI_PROV_SECURITY_2
+ */
 typedef protocomm_security2_params_t wifi_prov_security2_params_t;
 
 /**
@@ -266,7 +279,6 @@ void wifi_prov_mgr_deinit(void);
  *  - ESP_OK      : Retrieved provision state successfully
  *  - ESP_FAIL    : Wi-Fi not initialized
  *  - ESP_ERR_INVALID_ARG   : Null argument supplied
- *  - ESP_ERR_INVALID_STATE : Manager not initialized
  */
 esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned);
 
@@ -301,6 +313,8 @@ esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned);
  *                          This pointer should hold the struct of type
  *                          wifi_prov_security1_params_t for protocomm security 1
  *                          and wifi_prov_security2_params_t for protocomm security 2 respectively.
+ *                          This pointer and its contents should be valid till the provisioning service is
+ *                          running and has not been stopped or de-inited.
  * @param[in] service_name  Unique name of the service. This translates to:
  *                              - Wi-Fi SSID when provisioning mode is softAP
  *                              - Device name when provisioning mode is BLE
@@ -555,7 +569,8 @@ esp_err_t wifi_prov_mgr_reset_provisioning(void);
 /**
  * @brief   Reset internal state machine and clear provisioned credentials.
  *
- * This API can be used to restart provisioning in case invalid credentials are entered.
+ * This API should be used to restart provisioning ONLY in the case
+ * of provisioning failures without rebooting the device.
  *
  * @return
  *  - ESP_OK      : Reset provisioning state machine successfully
@@ -563,6 +578,23 @@ esp_err_t wifi_prov_mgr_reset_provisioning(void);
  *  - ESP_ERR_INVALID_STATE : Manager not initialized
  */
 esp_err_t wifi_prov_mgr_reset_sm_state_on_failure(void);
+
+/**
+ * @brief   Reset internal state machine and clear provisioned credentials.
+ *
+ * This API can be used to restart provisioning ONLY in case the device is
+ * to be provisioned again for new credentials after a previous successful
+ * provisioning without rebooting the device.
+ *
+ * @note   This API can be used only if provisioning auto-stop has been
+ *         disabled using wifi_prov_mgr_disable_auto_stop()
+ *
+ * @return
+ *  - ESP_OK      : Reset provisioning state machine successfully
+ *  - ESP_FAIL    : Failed to reset provisioning state machine
+ *  - ESP_ERR_INVALID_STATE : Manager not initialized
+ */
+esp_err_t wifi_prov_mgr_reset_sm_state_for_reprovision(void);
 
 #ifdef __cplusplus
 }

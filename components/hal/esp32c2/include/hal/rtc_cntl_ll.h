@@ -54,6 +54,16 @@ static inline void rtc_cntl_ll_disable_cpu_retention(void)
     REG_CLR_BIT(RTC_CNTL_RETENTION_CTRL_REG, RTC_CNTL_RETENTION_EN);
 }
 
+static inline void rtc_cntl_ll_reset_system(void)
+{
+    REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
+}
+
+static inline void rtc_cntl_ll_reset_cpu(int cpu_no)
+{
+    REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_PROCPU_RST);
+}
+
 #ifdef __cplusplus
 }
 #endif

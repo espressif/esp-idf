@@ -78,7 +78,7 @@ TEST_CASE("ADC oneshot fast work with ISR and Flash", "[adc_oneshot]")
     //-------------ADC1 Init---------------//
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = ADC_UNIT_1,
-        .ulp_mode = false,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
     TEST_ESP_OK(adc_oneshot_new_unit(&init_config1, &oneshot_handle));
 
@@ -215,14 +215,12 @@ TEST_CASE("ADC continuous work with ISR and Flash", "[adc_oneshot]")
     };
     TEST_ESP_OK(adc_continuous_register_event_callbacks(handle, &cbs, &isr_test_ctx));
 
-#if CONFIG_IDF_TARGET_ESP32
-    //This may need to be bigger, when the sampling freq is low
-    uint32_t overhead_us = 150;
-#else
-    uint32_t overhead_us = 50;
-#endif
-    uint32_t wait_time_us = (1000 * 1000 / ADC_TEST_FREQ_HZ * ADC_TEST_PKG_SIZE / SOC_ADC_DIGI_RESULT_BYTES) + overhead_us;
-    printf("period is %d us\n", wait_time_us);
+    /**
+     * Ideal time consumption for one conversion_frame done is `(1000 * 1000 / ADC_TEST_FREQ_HZ * ADC_TEST_PKG_SIZE / SOC_ADC_DIGI_RESULT_BYTES)`
+     * Here we just wait for 1 second
+     */
+    uint32_t wait_time_us = 1 * 1000 * 1000;
+    printf("period is %"PRId32" us\n", wait_time_us);
 
     //ADC IO tile low
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 0);
@@ -233,6 +231,7 @@ TEST_CASE("ADC continuous work with ISR and Flash", "[adc_oneshot]")
     //Checks
     TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, isr_test_ctx.adc_raw_low);
     esp_rom_printf("callback runs %d times when $ disabled\n", isr_test_ctx.cb_exe_times_low);
+    //At least 1 time conv_done callback happens during this period is ok
     TEST_ASSERT_GREATER_OR_EQUAL(1, isr_test_ctx.cb_exe_times_low);
 
     vTaskDelay(10);
@@ -245,8 +244,9 @@ TEST_CASE("ADC continuous work with ISR and Flash", "[adc_oneshot]")
     s_test_cache_disable_period_us(&isr_test_ctx, wait_time_us);
     TEST_ESP_OK(adc_continuous_stop(handle));
     //Checks
-    // TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL_DMA, isr_test_ctx.adc_raw_high);
+    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL_DMA, isr_test_ctx.adc_raw_high);
     esp_rom_printf("callback runs %d times when $ disabled\n", isr_test_ctx.cb_exe_times_high);
+    //At least 1 time conv_done callback happens during this period is ok
     TEST_ASSERT_GREATER_OR_EQUAL(1, isr_test_ctx.cb_exe_times_high);
 
     TEST_ESP_OK(adc_continuous_deinit(handle));

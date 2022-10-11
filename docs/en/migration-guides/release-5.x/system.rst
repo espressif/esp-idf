@@ -115,6 +115,8 @@ Task Watchdog Timers
     - Configuration is now passed as a configuration structure.
     - The function will now handle subscribing of the idle tasks if configured to do so.
 
+- The former ``CONFIG_ESP_TASK_WDT`` configuration option has been renamed to :ref:`CONFIG_ESP_TASK_WDT_INIT` and a new :ref:`CONFIG_ESP_TASK_WDT_EN` option has been introduced.
+
 FreeRTOS
 --------
 
@@ -149,3 +151,15 @@ The file ``portmacro_deprecated.h`` which was added to maintain backward compati
 - ``vPortCPUAcquireMutex()`` is removed. Users should use the ``spinlock_acquire()`` function instead.
 - ``vPortCPUAcquireMutexTimeout()`` is removed. Users should use the ``spinlock_acquire()`` function instead.
 - ``vPortCPUReleaseMutex()`` is removed. Users should use the ``spinlock_release()`` function instead.
+
+App Update
+----------
+
+- The functions :cpp:func:`esp_ota_get_app_description` and :cpp:func:`esp_ota_get_app_elf_sha256` have been termed as deprecated. Please use the alternative functions :cpp:func:`esp_app_get_description` and :cpp:func:`esp_app_get_elf_sha256` respectively. These functions have now been moved to a new component :component:`esp_app_format`. Please refer to the header file :component_file:`esp_app_desc.h <esp_app_format/include/esp_app_desc.h>`.
+
+Bootloader Support
+------------------
+
+- The :cpp:type:`esp_app_desc_t` structure, which used to be declared in :component_file:`esp_app_format.h <bootloader_support/include/esp_app_format.h>`, is now declared in :component_file:`esp_app_desc.h <esp_app_format/include/esp_app_desc.h>`.
+
+- The function :cpp:func:`bootloader_common_get_partition_description` has now been made private. Please use the alternative function :cpp:func:`esp_ota_get_partition_description`. Note that this function takes :cpp:type:`esp_partition_t` as its first argument instead of :cpp:type:`esp_partition_pos_t`.

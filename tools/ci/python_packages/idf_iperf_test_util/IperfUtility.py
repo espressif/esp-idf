@@ -4,7 +4,6 @@ import os
 import re
 import subprocess
 import time
-from builtins import object, range, str
 
 from idf_iperf_test_util import LineChart
 from tiny_test_fw import DUT, Utility
@@ -336,7 +335,7 @@ class IperfTestUtility(object):
                     self.dut.write('iperf -s -i 1 -t {}'.format(TEST_TIME))
                     # wait until DUT TCP server created
                     try:
-                        self.dut.expect('iperf tcp server create successfully', timeout=1)
+                        self.dut.expect('iperf: Socket created', timeout=5)
                     except DUT.ExpectTimeout:
                         # compatible with old iperf example binary
                         Utility.console_log('create iperf tcp server fail')
@@ -356,7 +355,7 @@ class IperfTestUtility(object):
                     self.dut.write('iperf -s -u -i 1 -t {}'.format(TEST_TIME))
                     # wait until DUT TCP server created
                     try:
-                        self.dut.expect('iperf udp server create successfully', timeout=1)
+                        self.dut.expect('iperf: Socket bound', timeout=5)
                     except DUT.ExpectTimeout:
                         # compatible with old iperf example binary
                         Utility.console_log('create iperf udp server fail')

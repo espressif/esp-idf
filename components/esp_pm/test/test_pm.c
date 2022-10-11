@@ -54,6 +54,8 @@ static void switch_freq(int mhz)
     esp_pm_config_esp32c3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32H2
     esp_pm_config_esp32h2_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32C6
+    esp_pm_config_esp32c6_t pm_config = {
 #endif
         .max_freq_mhz = mhz,
         .min_freq_mhz = MIN(mhz, xtal_freq_mhz),
@@ -109,6 +111,8 @@ static void light_sleep_enable(void)
     esp_pm_config_esp32c3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32H2
     esp_pm_config_esp32h2_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32C6
+    esp_pm_config_esp32c6_t pm_config = {
 #endif
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = xtal_freq,
@@ -133,6 +137,8 @@ static void light_sleep_disable(void)
     esp_pm_config_esp32c3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32H2
     esp_pm_config_esp32h2_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32C6
+    esp_pm_config_esp32c6_t pm_config = {
 #endif
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = cur_freq_mhz,

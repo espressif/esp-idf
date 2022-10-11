@@ -35,6 +35,26 @@ menu "Example Configuration"
         help
             The remote port to which the client example will connect to.
 
+    choice EXAMPLE_INTERFACE
+        prompt "Interface selection"
+        depends on EXAMPLE_IPV6
+        help
+            Example can use either "Auto" or "User specified".
+
+        config EXAMPLE_IFACE_AUTO
+            bool "Auto"
+
+        config EXAMPLE_USER_SPECIFIED_IFACE
+            bool "User specified interface"
+    endchoice
+
+    config EXAMPLE_USER_SPECIFIED_IFACE_NAME
+        string "User specified interface name"
+        default "st1"
+        depends on EXAMPLE_USER_SPECIFIED_IFACE
+        help
+            This interface will be used for communication.
+
     choice EXAMPLE_SOCKET_IP_INPUT
         prompt "Socket example source"
         default EXAMPLE_SOCKET_IP_INPUT_STRING

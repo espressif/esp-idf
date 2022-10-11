@@ -45,6 +45,19 @@ static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num,
 }
 
 /**
+ * @brief Enable Timer Group (GPTimer) module clock
+ *
+ * @param hw Timer Group register base address
+ * @param timer_num Timer index in the group
+ * @param en true to enable, false to disable
+ */
+static inline void timer_ll_enable_clock(timg_dev_t *hw, uint32_t timer_num, bool en)
+{
+    (void)timer_num; // only one timer in the group
+    hw->regclk.timer_clk_is_active = en;
+}
+
+/**
  * @brief Enable alarm event
  *
  * @param hw Timer Group register base address
@@ -116,6 +129,22 @@ static inline void timer_ll_enable_counter(timg_dev_t *hw, uint32_t timer_num, b
 }
 
 /**
+ * @brief Trigger software capture event
+ *
+ * @param hw Timer Group register base address
+ * @param timer_num Timer number in the group
+ */
+__attribute__((always_inline))
+static inline void timer_ll_trigger_soft_capture(timg_dev_t *hw, uint32_t timer_num)
+{
+    hw->hw_timer[timer_num].update.tx_update = 1;
+    // Timer register is in a different clock domain from Timer hardware logic
+    // We need to wait for the update to take effect before fetching the count value
+    while (hw->hw_timer[timer_num].update.tx_update) {
+    }
+}
+
+/**
  * @brief Get counter value
  *
  * @param hw Timer Group register base address
@@ -126,11 +155,6 @@ static inline void timer_ll_enable_counter(timg_dev_t *hw, uint32_t timer_num, b
 __attribute__((always_inline))
 static inline uint64_t timer_ll_get_counter_value(timg_dev_t *hw, uint32_t timer_num)
 {
-    hw->hw_timer[timer_num].update.tx_update = 1;
-    // Timer register is in a different clock domain from Timer hardware logic
-    // We need to wait for the update to take effect before fetching the count value
-    while (hw->hw_timer[timer_num].update.tx_update) {
-    }
     return ((uint64_t) hw->hw_timer[timer_num].hi.tx_hi << 32) | (hw->hw_timer[timer_num].lo.tx_lo);
 }
 

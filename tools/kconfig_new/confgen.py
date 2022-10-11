@@ -22,7 +22,6 @@ from collections import defaultdict
 
 import gen_kconfig_doc
 import kconfiglib
-from future.utils import iteritems
 
 __version__ = '0.1'
 
@@ -39,8 +38,10 @@ class DeprecatedOptions(object):
         # r_dic maps deprecated options to new options; rev_r_dic maps in the opposite direction
         self.r_dic, self.rev_r_dic = self._parse_replacements(path_rename_files)
 
-        # note the '=' at the end of regex for not getting partial match of configs
-        self._RE_CONFIG = re.compile(r'{}(\w+)='.format(self.config_prefix))
+        # note the '=' at the end of regex for not getting partial match of configs.
+        # Also match if the config option is followed by a whitespace, this is the case
+        # in sdkconfig.defaults files contaning "# CONFIG_MMM_NNN is not set".
+        self._RE_CONFIG = re.compile(r'{}(\w+)(=|\s+)'.format(self.config_prefix))
 
     def _parse_replacements(self, repl_paths):
         rep_dic = {}
@@ -175,21 +176,6 @@ class DeprecatedOptions(object):
                         f_o.write('#define {}{} {}{}\n'.format(self.config_prefix, dep_opt, self.config_prefix, new_opt))
 
 
-def dict_enc_for_env(dic, encoding=sys.getfilesystemencoding() or 'utf-8'):
-    """
-    This function can be deleted after dropping support for Python 2.
-    There is no rule for it that environment variables cannot be Unicode but usually people try to avoid it.
-    The upstream kconfiglib cannot detect strings properly if the environment variables are "unicode". This is problem
-    only in Python 2.
-    """
-    if sys.version_info[0] >= 3:
-        return dic
-    ret = dict()
-    for (key, value) in iteritems(dic):
-        ret[key.encode(encoding)] = value.encode(encoding)
-    return ret
-
-
 def main():
     parser = argparse.ArgumentParser(description='confgen.py v%s - Config Generation Tool' % __version__, prog=os.path.basename(sys.argv[0]))
 
@@ -251,7 +237,7 @@ def main():
 
     if args.env_file is not None:
         env = json.load(args.env_file)
-        os.environ.update(dict_enc_for_env(env))
+        os.environ.update(env)
 
     config = kconfiglib.Kconfig(args.kconfig)
     config.warn_assign_redun = False

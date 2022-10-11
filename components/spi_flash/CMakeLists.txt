@@ -8,7 +8,7 @@ if(${target} STREQUAL "linux")
     idf_component_register(SRCS "${srcs}"
         INCLUDE_DIRS include ${hal_dir}/include ${bootloader_support_dir}/include
         PRIV_INCLUDE_DIRS include/spi_flash
-        PRIV_REQUIRES linux partition_table)
+        PRIV_REQUIRES partition_table)
     return()
 endif()
 

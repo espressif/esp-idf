@@ -188,6 +188,14 @@ No.     Name               Type    Function
     3. 该管脚已连接至开发板的 USB 桥接器芯片。
     4. ESP32-PICO-KIT 内置 SPI flash 的工作电压为 3.3 V。因此，strapping 管脚 MTDI 在模组上电复位过程中应保持低电平。如连接该管脚，请确保该管脚在复位中不要保持高电平。
 
+管脚布局
+^^^^^^^^^^^
+.. figure:: ../../../_static/esp32-pico-kit-v4-pinout.png
+    :align: center
+    :scale: 43%
+    :alt: ESP32-PICO-KIT 管脚布局（点击放大）
+
+    ESP32-PICO-KIT 管脚布局（点击放大）
 
 应用程序开发
 ------------

@@ -8,7 +8,6 @@
 #include "esp_log.h"
 #include "esp_partition.h"
 #include "esp_spiffs.h"
-#include "esp_vfs.h"
 #include "spiffs_api.h"
 
 static const char* TAG = "SPIFFS";

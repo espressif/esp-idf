@@ -218,7 +218,7 @@ After we get the LCD handle, the remaining LCD operations are the same for diffe
     .. note::
 
         It should never happen in a well-designed embedded application, but it can in theory be possible that the DMA cannot deliver data as fast as the LCD consumes it. In the {IDF_TARGET_NAME} hardware, this leads to the LCD simply outputting dummy bytes while DMA waits for data. If we were to run DMA in a stream fashion, this would mean a de-sync between the LCD address the DMA reads the data for and the LCD address the LCD peripheral thinks it outputs data for, leading to a **permanently** shifted image.
-        In order to stop this from happening, you can enable the :ref:`CONFIG_LCD_RGB_RESTART_IN_VSYNC` option, so the driver will restart the DMA in the VBlank interrupt; this way we always know where it starts.
+        In order to stop this from happening, you can either enable the :ref:`CONFIG_LCD_RGB_RESTART_IN_VSYNC` option, so the driver can restart the DMA in the VBlank interrupt automatically or call :cpp:func:`esp_lcd_rgb_panel_restart` to restart the DMA manually. Note :cpp:func:`esp_lcd_rgb_panel_restart` doesn't restart the DMA immediately, the DMA will still be restarted in the next VSYNC event.
 
 Application Example
 -------------------
@@ -230,6 +230,11 @@ LCD examples are located under: :example:`peripherals/lcd`:
 * i80 controller based LCD and LVGL animation UI - :example:`peripherals/lcd/i80_controller`
 * RGB panel example with scatter chart UI - :example:`peripherals/lcd/rgb_panel`
 * I2C interfaced OLED display scrolling text - :example:`peripherals/lcd/i2c_oled`
+
+Other LCD drivers
+-----------------
+
+Drivers for some LCD and touch controllers are available in `IDF Component Registry <https://components.espressif.com/search/lcd>`_. The list of available and planned drivers with links is in this `table <https://github.com/espressif/esp-bsp/blob/master/LCD.md>`__.
 
 API Reference
 -------------

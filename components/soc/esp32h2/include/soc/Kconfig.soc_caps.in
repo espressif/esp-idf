@@ -23,10 +23,6 @@ config SOC_BT_SUPPORTED
     bool
     default y
 
-config SOC_ESP_NIMBLE_CONTROLLER
-    bool
-    default y
-
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -64,6 +60,14 @@ config SOC_RMT_SUPPORTED
     default y
 
 config SOC_SDM_SUPPORTED
+    bool
+    default y
+
+config SOC_LEDC_SUPPORTED
+    bool
+    default y
+
+config SOC_I2C_SUPPORTED
     bool
     default y
 
@@ -287,6 +291,10 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
     int
     default 0
 
+config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
+    hex
+    default 0x000001FFFFFFFFC0
+
 config SOC_GPIO_SUPPORT_SLP_SWITCH
     bool
     default y
@@ -332,6 +340,10 @@ config SOC_I2S_NUM
     default y
 
 config SOC_I2S_HW_VERSION_2
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_XTAL
     bool
     default y
 
@@ -447,10 +459,6 @@ config SOC_RMT_SUPPORT_AHB
     bool
     default y
 
-config SOC_RMT_SUPPORT_RC_FAST
-    bool
-    default y
-
 config SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH
     int
     default 128
@@ -506,6 +514,10 @@ config SOC_SDM_CHANNELS_PER_GROUP
 config SOC_SPI_PERIPH_NUM
     int
     default 2
+
+config SOC_SPI_MAX_CS_NUM
+    int
+    default 6
 
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
@@ -695,6 +707,10 @@ config SOC_UART_SUPPORT_WAKEUP_INT
     bool
     default y
 
+config SOC_UART_SUPPORT_AHB_CLK
+    bool
+    default y
+
 config SOC_UART_SUPPORT_RTC_CLK
     bool
     default y
@@ -736,5 +752,17 @@ config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
     default y
 
 config SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_BLE_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_MESH_SUPPORTED
+    bool
+    default y
+
+config SOC_ESP_NIMBLE_CONTROLLER
     bool
     default y

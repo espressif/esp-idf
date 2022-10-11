@@ -22,16 +22,16 @@
 extern "C" {
 #endif
 
-#if CONFIG_MCPWM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_IRAM_SAFE || CONFIG_MCPWM_CTRL_FUNC_IN_IRAM
 #define MCPWM_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define MCPWM_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
 #endif
 
 #if CONFIG_MCPWM_ISR_IRAM_SAFE
-#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM)
+#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM)
 #else
-#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED)
+#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED)
 #endif
 
 #define MCPWM_PERIPH_CLOCK_PRE_SCALE (2)
@@ -109,7 +109,7 @@ struct mcpwm_oper_t {
 
 struct mcpwm_cmpr_t {
     int cmpr_id;                       // comparator ID, index from 0
-    mcpwm_oper_t *operator;            // which operator that the comparator resides in
+    mcpwm_oper_t *oper;                // which operator that the comparator resides in
     intr_handle_t intr;                // interrupt handle
     portMUX_TYPE spinlock;             // spin lock
     uint32_t compare_ticks;            // compare value of this comparator
@@ -119,7 +119,7 @@ struct mcpwm_cmpr_t {
 
 struct mcpwm_gen_t {
     int gen_id;             // generator ID, index from 0
-    mcpwm_oper_t *operator; // which operator that the generator resides in
+    mcpwm_oper_t *oper;     // which operator that the generator resides in
     int gen_gpio_num;       // GPIO number used by the generator
     portMUX_TYPE spinlock;  // spin lock
 };
@@ -138,7 +138,7 @@ struct mcpwm_fault_t {
 struct mcpwm_gpio_fault_t {
     mcpwm_fault_t base;  // base class
     int fault_id;        // fault detector ID, index from 0
-    int gpio_num;  // GPIO number of fault detector
+    int gpio_num;        // GPIO number of fault detector
     intr_handle_t intr;  // interrupt handle
     mcpwm_fault_event_cb_t on_fault_enter; // ISR callback function that would be invoked when fault signal got triggered
     mcpwm_fault_event_cb_t on_fault_exit;  // ISR callback function that would be invoked when fault signal got clear
@@ -147,7 +147,7 @@ struct mcpwm_gpio_fault_t {
 
 struct mcpwm_soft_fault_t {
     mcpwm_fault_t base;     // base class
-    mcpwm_oper_t *operator; // the operator where the soft fault allocated from
+    mcpwm_oper_t *oper;     // the operator where the soft fault allocated from
 };
 
 typedef enum {
@@ -193,6 +193,11 @@ typedef enum {
     MCPWM_CAP_TIMER_FSM_ENABLE,
 } mcpwm_cap_timer_fsm_t;
 
+typedef enum {
+    MCPWM_CAP_CHAN_FSM_INIT,
+    MCPWM_CAP_CHAN_FSM_ENABLE,
+} mcpwm_cap_channel_fsm_t;
+
 struct mcpwm_cap_timer_t {
     mcpwm_group_t *group;   // which group the capture timer belongs to
     portMUX_TYPE spinlock;  // spin lock, to prevent concurrently accessing capture timer level resources, including registers
@@ -206,7 +211,8 @@ struct mcpwm_cap_channel_t {
     int cap_chan_id;                  // capture channel ID, index from 0
     mcpwm_cap_timer_t *cap_timer;     // which capture timer that the channel resides in
     uint32_t prescale;                // prescale of capture signal
-    int gpio_num;                 // GPIO number used by the channel
+    int gpio_num;                     // GPIO number used by the channel
+    mcpwm_cap_channel_fsm_t fsm;      // driver FSM
     intr_handle_t intr;               // Interrupt handle
     mcpwm_capture_event_cb_t on_cap;  // Callback function which would be invoked in capture interrupt routine
     void *user_data;                  // user data which would be passed to the capture callback

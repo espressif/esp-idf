@@ -4,14 +4,19 @@
 import argparse
 import binascii
 import os
+import re
 import uuid
 from datetime import datetime
 from typing import List, Optional, Tuple
 
 from construct import BitsInteger, BitStruct, Int16ul
 
+# the regex pattern defines symbols that are allowed by long file names but not by short file names
+INVALID_SFN_CHARS_PATTERN = re.compile(r'[.+,;=\[\]]')
+
 FAT12_MAX_CLUSTERS: int = 4085
 FAT16_MAX_CLUSTERS: int = 65525
+RESERVED_CLUSTERS_COUNT: int = 2
 PAD_CHAR: int = 0x20
 FAT12: int = 12
 FAT16: int = 16
@@ -42,7 +47,11 @@ FATFS_SECONDS_GRANULARITY: int = 2
 LONG_NAMES_ENCODING: str = 'utf-16'
 SHORT_NAMES_ENCODING: str = 'utf-8'
 
-ALLOWED_SECTOR_SIZES: List[int] = [4096]
+# compatible with WL_SECTOR_SIZE
+# choices for WL are WL_SECTOR_SIZE_512 and WL_SECTOR_SIZE_4096
+ALLOWED_WL_SECTOR_SIZES: List[int] = [512, 4096]
+ALLOWED_SECTOR_SIZES: List[int] = [512, 1024, 2048, 4096]
+
 ALLOWED_SECTORS_PER_CLUSTER: List[int] = [1, 2, 4, 8, 16, 32, 64, 128]
 
 
@@ -118,14 +127,11 @@ def lfn_checksum(short_entry_name: str) -> int:
 
 def convert_to_utf16_and_pad(content: str,
                              expected_size: int,
-                             pad: bytes = FULL_BYTE,
-                             terminator: bytes = b'\x00\x00') -> bytes:
+                             pad: bytes = FULL_BYTE) -> bytes:
     # we need to get rid of the Byte order mark 0xfeff or 0xfffe, fatfs does not use it
     bom_utf16: bytes = b'\xfe\xff'
     encoded_content_utf16: bytes = content.encode(LONG_NAMES_ENCODING)[len(bom_utf16):]
-    terminated_encoded_content_utf16: bytes = (encoded_content_utf16 + terminator) if (2 * expected_size > len(
-        encoded_content_utf16) > 0) else encoded_content_utf16
-    return terminated_encoded_content_utf16.ljust(2 * expected_size, pad)
+    return encoded_content_utf16.ljust(2 * expected_size, pad)
 
 
 def split_to_name_and_extension(full_name: str) -> Tuple[str, str]:
@@ -159,7 +165,7 @@ def split_content_into_sectors(content: bytes, sector_size: int) -> List[bytes]:
     return result
 
 
-def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
+def get_args_for_partition_generator(desc: str, wl: bool) -> argparse.Namespace:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_directory',
                         help='Path to the directory that will be encoded into fatfs image')
@@ -172,7 +178,7 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
     parser.add_argument('--sector_size',
                         default=FATDefaults.SECTOR_SIZE,
                         type=int,
-                        choices=ALLOWED_SECTOR_SIZES,
+                        choices=ALLOWED_WL_SECTOR_SIZES if wl else ALLOWED_SECTOR_SIZES,
                         help='Size of the partition in bytes')
     parser.add_argument('--sectors_per_cluster',
                         default=1,
@@ -222,6 +228,10 @@ TIME_ENTRY = BitStruct(
     'minute' / BitsInteger(6),
     'second' / BitsInteger(5),
 )
+
+
+def build_name(name: str, extension: str) -> str:
+    return f'{name}.{extension}' if len(extension) > 0 else name
 
 
 def build_date_entry(year: int, mon: int, mday: int) -> int:
@@ -280,4 +290,5 @@ class FATDefaults:
     TEMP_BUFFER_SIZE: int = 32
     UPDATE_RATE: int = 16
     WR_SIZE: int = 16
+    # wear leveling metadata (config sector) contains always sector size 4096
     WL_SECTOR_SIZE: int = 4096

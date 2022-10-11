@@ -611,6 +611,7 @@ TEST_CASE("LEDC timer pause and resume", "[ledc]")
     printf("reset ledc timer\n");
     TEST_ESP_OK(ledc_timer_rst(test_speed_mode, LEDC_TIMER_0));
     vTaskDelay(100 / portTICK_PERIOD_MS);
+    count = wave_count(1000);
     TEST_ASSERT_UINT32_WITHIN(5, count, 5000);
     tear_testbench();
 }

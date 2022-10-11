@@ -154,7 +154,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         idf_py = [PYTHON] + _get_commandline_options(ctx)  # commands to re-run idf.py
         monitor_args += ['-m', ' '.join("'%s'" % a for a in idf_py)]
-        hints = not args.no_hints
+        hints = False  # Temporarily disabled because of https://github.com/espressif/esp-idf/issues/9610
 
         RunTool('idf_monitor', monitor_args, args.project_dir, build_dir=args.build_dir, hints=hints, interactive=True)()
 
@@ -175,7 +175,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         ensure_build_directory(args, ctx.info_name)
         esptool_args = _get_esptool_args(args)
         esptool_args += ['erase_flash']
-        RunTool('esptool.py', esptool_args, args.build_dir)()
+        RunTool('esptool.py', esptool_args, args.build_dir, hints=not args.no_hints)()
 
     def global_callback(ctx: click.core.Context, global_args: Dict, tasks: PropertyDict) -> None:
         encryption = any([task.name in ('encrypted-flash', 'encrypted-app-flash') for task in tasks])

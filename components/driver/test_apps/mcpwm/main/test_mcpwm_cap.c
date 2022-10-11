@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -101,6 +102,9 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     uint32_t cap_value[2] = {0};
     TEST_ESP_OK(mcpwm_capture_channel_register_event_callbacks(pps_channel, &cbs, cap_value));
 
+    printf("enable capture channel\r\n");
+    TEST_ESP_OK(mcpwm_capture_channel_enable(pps_channel));
+
     printf("enable and start capture timer\r\n");
     TEST_ESP_OK(mcpwm_capture_timer_enable(cap_timer));
     TEST_ESP_OK(mcpwm_capture_timer_start(cap_timer));
@@ -110,12 +114,13 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     vTaskDelay(pdMS_TO_TICKS(100));
     gpio_set_level(cap_gpio, 0);
     vTaskDelay(pdMS_TO_TICKS(100));
-    printf("capture value: Pos=%u, Neg=%u\r\n", cap_value[0], cap_value[1]);
+    printf("capture value: Pos=%"PRIu32", Neg=%"PRIu32"\r\n", cap_value[0], cap_value[1]);
     // Capture timer is clocked from APB by default
     uint32_t clk_src_res = esp_clk_apb_freq();
     TEST_ASSERT_UINT_WITHIN(100000, clk_src_res / 10, cap_value[1] - cap_value[0]);
 
     printf("uninstall capture channel and timer\r\n");
+    TEST_ESP_OK(mcpwm_capture_channel_disable(pps_channel));
     TEST_ESP_OK(mcpwm_del_capture_channel(pps_channel));
     TEST_ESP_OK(mcpwm_capture_timer_disable(cap_timer));
     TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));
@@ -153,11 +158,16 @@ TEST_CASE("mcpwm_capture_software_catch", "[mcpwm]")
     test_soft_catch_user_data_t test_callback_data = {};
     TEST_ESP_OK(mcpwm_new_capture_channel(cap_timer, &cap_chan_config, &cap_channel));
 
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_capture_channel_trigger_soft_catch(cap_channel));
+
     printf("register event callback for capture channel\r\n");
     mcpwm_capture_event_callbacks_t cbs = {
         .on_cap = soft_cap_callback,
     };
     TEST_ESP_OK(mcpwm_capture_channel_register_event_callbacks(cap_channel, &cbs, &test_callback_data));
+
+    printf("enable capture channel\r\n");
+    TEST_ESP_OK(mcpwm_capture_channel_enable(cap_channel));
 
     printf("enable and start capture timer\r\n");
     TEST_ESP_OK(mcpwm_capture_timer_enable(cap_timer));
@@ -178,6 +188,7 @@ TEST_CASE("mcpwm_capture_software_catch", "[mcpwm]")
     TEST_ASSERT_UINT_WITHIN(80000, clk_src_res / 100, delta);
 
     printf("uninstall capture channel and timer\r\n");
+    TEST_ESP_OK(mcpwm_capture_channel_disable(cap_channel));
     TEST_ESP_OK(mcpwm_capture_timer_disable(cap_timer));
     TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel));
     TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));
@@ -210,6 +221,7 @@ TEST_CASE("mcpwm_capture_timer_sync_phase_lock", "[mcpwm]")
         .sync_src = soft_sync,
     };
     TEST_ESP_OK(mcpwm_capture_timer_set_phase_on_sync(cap_timer, &sync_config));
+
     mcpwm_cap_channel_handle_t cap_channel = NULL;
     mcpwm_capture_channel_config_t cap_chan_config = {
         .gpio_num = -1, // don't need any GPIO, we use software to trigger a catch
@@ -223,15 +235,19 @@ TEST_CASE("mcpwm_capture_timer_sync_phase_lock", "[mcpwm]")
     uint32_t cap_data;
     TEST_ESP_OK(mcpwm_capture_channel_register_event_callbacks(cap_channel, &cbs, &cap_data));
 
+    printf("enable capture channel\r\n");
+    TEST_ESP_OK(mcpwm_capture_channel_enable(cap_channel));
+
     TEST_ESP_OK(mcpwm_capture_channel_trigger_soft_catch(cap_channel));
     vTaskDelay(pdMS_TO_TICKS(10));
-    printf("capture data before sync: %u\r\n", cap_data);
+    printf("capture data before sync: %"PRIu32"\r\n", cap_data);
 
     TEST_ESP_OK(mcpwm_soft_sync_activate(soft_sync));
     TEST_ESP_OK(mcpwm_capture_channel_trigger_soft_catch(cap_channel));
     vTaskDelay(pdMS_TO_TICKS(10));
-    printf("capture data after sync: %u\r\n", cap_data);
+    printf("capture data after sync: %"PRIu32"\r\n", cap_data);
     TEST_ASSERT_EQUAL(1000, cap_data);
+    TEST_ESP_OK(mcpwm_capture_channel_disable(cap_channel));
     TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel));
     TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));
     TEST_ESP_OK(mcpwm_del_sync_src(soft_sync));

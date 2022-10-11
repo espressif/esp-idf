@@ -173,7 +173,7 @@ The PCNT unit features filters to ignore possible short glitches in the signals.
 
 You can enable the glitch filter for PCNT unit by calling :cpp:func:`pcnt_unit_set_glitch_filter` with the filter configuration provided above. Particularly, you can disable the glitch filter later by calling :cpp:func:`pcnt_unit_set_glitch_filter` with a `NULL` filter configuration.
 
-This function should be called when the the unit is in the init state. Otherwise, it will return :c:macro:`ESP_ERR_INVALID_STATE` error.
+This function should be called when the unit is in the init state. Otherwise, it will return :c:macro:`ESP_ERR_INVALID_STATE` error.
 
 .. note::
 

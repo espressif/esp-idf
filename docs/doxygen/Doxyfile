@@ -80,12 +80,16 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/include/driver/touch_sensor_common.h \
     $(PROJECT_PATH)/components/driver/include/driver/twai.h \
     $(PROJECT_PATH)/components/driver/include/driver/uart.h \
+    $(PROJECT_PATH)/components/driver/test/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
+    $(PROJECT_PATH)/components/driver/test/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
+    $(PROJECT_PATH)/components/driver/test/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h \
     $(PROJECT_PATH)/components/efuse/$(IDF_TARGET)/include/esp_efuse_chip.h \
     $(PROJECT_PATH)/components/efuse/include/esp_efuse.h \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_cali_scheme.h \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_cali.h \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_continuous.h \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_oneshot.h \
+    $(PROJECT_PATH)/components/esp_app_format/include/esp_app_desc.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_idf_version.h \
@@ -126,9 +130,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_pm/include/esp_pm.h \
     $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     $(PROJECT_PATH)/components/esp_rom/include/esp_rom_sys.h \
-    $(PROJECT_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
-    $(PROJECT_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
-    $(PROJECT_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_system.h \

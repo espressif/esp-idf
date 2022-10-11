@@ -12,10 +12,15 @@ from test_utils import CFG, fill_sector, generate_test_dir_1, generate_test_dir_
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import fatfsgen  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.boot_sector import BootSector  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.cluster import Cluster  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.entry import Entry  # noqa E402  # pylint: disable=C0413
 from fatfs_utils.exceptions import InconsistentFATAttributes  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.exceptions import NotInitialized  # noqa E402  # pylint: disable=C0413
 from fatfs_utils.exceptions import TooLongNameException  # noqa E402  # pylint: disable=C0413
 from fatfs_utils.exceptions import WriteDirectoryException  # noqa E402  # pylint: disable=C0413
 from fatfs_utils.exceptions import LowerCaseException, NoFreeClusterException  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.utils import right_strip_string  # noqa E402  # pylint: disable=C0413
 from fatfs_utils.utils import FAT12, read_filesystem  # noqa E402  # pylint: disable=C0413
 
 
@@ -311,11 +316,11 @@ class FatFSGen(unittest.TestCase):
         fatfs.create_file('HELLOHELLOHELLO', extension='TXT')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = read_filesystem(CFG['output_file'])
-        self.assertEqual(file_system[0x2000: 0x2010], b'Bl\x00o\x00.\x00t\x00x\x00\x0f\x00\xb3t\x00')
+        self.assertEqual(file_system[0x2000: 0x2010], b'Bl\x00o\x00.\x00t\x00x\x00\x0f\x00\xadt\x00')
         self.assertEqual(file_system[0x2012: 0x2020], b'\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff')
-        self.assertEqual(file_system[0x2020: 0x2030], b'\x01h\x00e\x00l\x00l\x00o\x00\x0f\x00\xb3h\x00')
+        self.assertEqual(file_system[0x2020: 0x2030], b'\x01h\x00e\x00l\x00l\x00o\x00\x0f\x00\xadh\x00')
         self.assertEqual(file_system[0x2030: 0x2040], b'e\x00l\x00l\x00o\x00h\x00\x00\x00e\x00l\x00')
-        self.assertEqual(file_system[0x2040: 0x2050], b'HELLOH~1TXT \x00\x00\x00\x00')
+        self.assertEqual(file_system[0x2040: 0x2050], b'HELLOH~\x01TXT \x00\x00\x00\x00')
         self.assertEqual(file_system[0x2050: 0x2060], b'!\x00!\x00\x00\x00\x00\x00!\x00\x02\x00\x00\x00\x00\x00')
 
     def test_lfn_plain_name(self) -> None:
@@ -324,11 +329,11 @@ class FatFSGen(unittest.TestCase):
         fatfs.write_content(path_from_root=['HELLOHELLOHELLO.TXT'], content=b'this is a test')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = read_filesystem(CFG['output_file'])
-        self.assertEqual(file_system[0x2000: 0x2010], b'Bl\x00o\x00.\x00t\x00x\x00\x0f\x00\xb3t\x00')
+        self.assertEqual(file_system[0x2000: 0x2010], b'Bl\x00o\x00.\x00t\x00x\x00\x0f\x00\xadt\x00')
         self.assertEqual(file_system[0x2012: 0x2020], b'\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff')
-        self.assertEqual(file_system[0x2020: 0x2030], b'\x01h\x00e\x00l\x00l\x00o\x00\x0f\x00\xb3h\x00')
+        self.assertEqual(file_system[0x2020: 0x2030], b'\x01h\x00e\x00l\x00l\x00o\x00\x0f\x00\xadh\x00')
         self.assertEqual(file_system[0x2030: 0x2040], b'e\x00l\x00l\x00o\x00h\x00\x00\x00e\x00l\x00')
-        self.assertEqual(file_system[0x2040: 0x2050], b'HELLOH~1TXT \x00\x00\x00\x00')
+        self.assertEqual(file_system[0x2040: 0x2050], b'HELLOH~\x01TXT \x00\x00\x00\x00')
         self.assertEqual(file_system[0x2050: 0x2060], b'!\x00!\x00\x00\x00\x00\x00!\x00\x02\x00\x0e\x00\x00\x00')
         self.assertEqual(file_system[0x6000: 0x6010], b'this is a test\x00\x00')
 
@@ -338,11 +343,11 @@ class FatFSGen(unittest.TestCase):
         fatfs.write_content(path_from_root=['HELLOHELLOHELLO'], content=b'this is a test')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = read_filesystem(CFG['output_file'])
-        self.assertEqual(file_system[0x2000: 0x2010], b'Bl\x00o\x00\x00\x00\xff\xff\xff\xff\x0f\x00V\xff\xff')
+        self.assertEqual(file_system[0x2000: 0x2010], b'Bl\x00o\x00\x00\x00\xff\xff\xff\xff\x0f\x00P\xff\xff')
         self.assertEqual(file_system[0x2012: 0x2020], b'\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff')
-        self.assertEqual(file_system[0x2020: 0x2030], b'\x01h\x00e\x00l\x00l\x00o\x00\x0f\x00Vh\x00')
+        self.assertEqual(file_system[0x2020: 0x2030], b'\x01h\x00e\x00l\x00l\x00o\x00\x0f\x00Ph\x00')
         self.assertEqual(file_system[0x2030: 0x2040], b'e\x00l\x00l\x00o\x00h\x00\x00\x00e\x00l\x00')
-        self.assertEqual(file_system[0x2040: 0x2050], b'HELLOH~1    \x00\x00\x00\x00')
+        self.assertEqual(file_system[0x2040: 0x2050], b'HELLOH~\x01    \x00\x00\x00\x00')
         self.assertEqual(file_system[0x2050: 0x2060], b'!\x00!\x00\x00\x00\x00\x00!\x00\x02\x00\x0e\x00\x00\x00')
         self.assertEqual(file_system[0x6000: 0x6010], b'this is a test\x00\x00')
 
@@ -356,11 +361,11 @@ class FatFSGen(unittest.TestCase):
         fatfs.create_file('HELLO', extension='TXT', path_from_root=['VERYLONGTESTFOLD'])
         fatfs.write_filesystem(CFG['output_file'])
         file_system = read_filesystem(CFG['output_file'])
-        self.assertEqual(file_system[0x2000: 0x2010], b'Bo\x00l\x00d\x00\x00\x00\xff\xff\x0f\x00\xa6\xff\xff')
+        self.assertEqual(file_system[0x2000: 0x2010], b'Bo\x00l\x00d\x00\x00\x00\xff\xff\x0f\x00\xa0\xff\xff')
         self.assertEqual(file_system[0x2012: 0x2020], b'\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff')
-        self.assertEqual(file_system[0x2020: 0x2030], b'\x01v\x00e\x00r\x00y\x00l\x00\x0f\x00\xa6o\x00')
+        self.assertEqual(file_system[0x2020: 0x2030], b'\x01v\x00e\x00r\x00y\x00l\x00\x0f\x00\xa0o\x00')
         self.assertEqual(file_system[0x2030: 0x2040], b'n\x00g\x00t\x00e\x00s\x00\x00\x00t\x00f\x00')
-        self.assertEqual(file_system[0x2040: 0x2050], b'VERYLO~1   \x10\x00\x00\x00\x00')
+        self.assertEqual(file_system[0x2040: 0x2050], b'VERYLO~\x01   \x10\x00\x00\x00\x00')
         self.assertEqual(file_system[0x2050: 0x2060], b'!\x00!\x00\x00\x00\x00\x00!\x00\x02\x00\x00\x00\x00\x00')
 
         self.assertEqual(file_system[0x6000: 0x6010], b'.          \x10\x00\x00\x00\x00')
@@ -377,18 +382,18 @@ class FatFSGen(unittest.TestCase):
         fatfs.write_filesystem(CFG['output_file'])
 
         file_system = read_filesystem(CFG['output_file'])
-        self.assertEqual(file_system[0x2000: 0x2010], b'Bo\x00l\x00d\x00\x00\x00\xff\xff\x0f\x00\x10\xff\xff')
+        self.assertEqual(file_system[0x2000: 0x2010], b'Bo\x00l\x00d\x00\x00\x00\xff\xff\x0f\x00\n\xff\xff')
         self.assertEqual(file_system[0x2012: 0x2020], b'\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff')
-        self.assertEqual(file_system[0x2020: 0x2030], b'\x01v\x00e\x00r\x00y\x00l\x00\x0f\x00\x10o\x00')
+        self.assertEqual(file_system[0x2020: 0x2030], b'\x01v\x00e\x00r\x00y\x00l\x00\x0f\x00\no\x00')
         self.assertEqual(file_system[0x2030: 0x2040], b'n\x00g\x00t\x00e\x00s\x00\x00\x00t\x00f\x00')
-        self.assertEqual(file_system[0x2040: 0x2050], b'verylo~1   \x10\x00\x00\x00\x00')
+        self.assertEqual(file_system[0x2040: 0x2050], b'verylo~\x01   \x10\x00\x00\x00\x00')
         self.assertEqual(file_system[0x2050: 0x2060], b'!\x00!\x00\x00\x00\x00\x00!\x00\x02\x00\x00\x00\x00\x00')
 
         self.assertEqual(file_system[0x6000: 0x6010], b'.          \x10\x00\x00\x00\x00')
         self.assertEqual(file_system[0x6012: 0x6020], b'!\x00\x00\x00\x00\x00!\x00\x02\x00\x00\x00\x00\x00')
         self.assertEqual(file_system[0x6020: 0x6030], b'..         \x10\x00\x00\x00\x00')
         self.assertEqual(file_system[0x6030: 0x6040], b'!\x00!\x00\x00\x00\x00\x00!\x00\x01\x00\x00\x00\x00\x00')
-        self.assertEqual(file_system[0x6040: 0x6050], b'Bl\x00o\x00.\x00t\x00x\x00\x0f\x00\xd5t\x00')
+        self.assertEqual(file_system[0x6040: 0x6050], b'Bl\x00o\x00.\x00t\x00x\x00\x0f\x00\xcft\x00')
         self.assertEqual(file_system[0x6050: 0x6060],
                          b'\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff')
 
@@ -399,11 +404,11 @@ class FatFSGen(unittest.TestCase):
         fatfs.write_content(path_from_root=['VERYLONGTESTFOLD', 'HELLO.TXT'], content=b'this is a test')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = read_filesystem(CFG['output_file'])
-        self.assertEqual(file_system[0x2000: 0x2010], b'Bo\x00l\x00d\x00\x00\x00\xff\xff\x0f\x00\xa6\xff\xff')
+        self.assertEqual(file_system[0x2000: 0x2010], b'Bo\x00l\x00d\x00\x00\x00\xff\xff\x0f\x00\xa0\xff\xff')
         self.assertEqual(file_system[0x2012: 0x2020], b'\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff')
-        self.assertEqual(file_system[0x2020: 0x2030], b'\x01v\x00e\x00r\x00y\x00l\x00\x0f\x00\xa6o\x00')
+        self.assertEqual(file_system[0x2020: 0x2030], b'\x01v\x00e\x00r\x00y\x00l\x00\x0f\x00\xa0o\x00')
         self.assertEqual(file_system[0x2030: 0x2040], b'n\x00g\x00t\x00e\x00s\x00\x00\x00t\x00f\x00')
-        self.assertEqual(file_system[0x2040: 0x2050], b'VERYLO~1   \x10\x00\x00\x00\x00')
+        self.assertEqual(file_system[0x2040: 0x2050], b'VERYLO~\x01   \x10\x00\x00\x00\x00')
         self.assertEqual(file_system[0x2050: 0x2060], b'!\x00!\x00\x00\x00\x00\x00!\x00\x02\x00\x00\x00\x00\x00')
 
         self.assertEqual(file_system[0x6000: 0x6010], b'.          \x10\x00\x00\x00\x00')
@@ -447,31 +452,83 @@ class FatFSGen(unittest.TestCase):
         fatfs.write_filesystem(CFG['output_file'])
         file_system = read_filesystem(CFG['output_file'])
 
-        self.assertEqual(file_system[0x2000: 0x2010], b'Bo\x00l\x00d\x00\x00\x00\xff\xff\x0f\x00\xa6\xff\xff')
+        self.assertEqual(file_system[0x2000: 0x2010], b'Bo\x00l\x00d\x00\x00\x00\xff\xff\x0f\x00\xa0\xff\xff')
         self.assertEqual(file_system[0x2011: 0x2020], b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\xff\xff\xff\xff')
-        self.assertEqual(file_system[0x2020: 0x2030], b'\x01v\x00e\x00r\x00y\x00l\x00\x0f\x00\xa6o\x00')
+        self.assertEqual(file_system[0x2020: 0x2030], b'\x01v\x00e\x00r\x00y\x00l\x00\x0f\x00\xa0o\x00')
         self.assertEqual(file_system[0x2030: 0x2040], b'n\x00g\x00t\x00e\x00s\x00\x00\x00t\x00f\x00')
-        self.assertEqual(file_system[0x2040: 0x2050], b'VERYLO~1   \x10\x00\x00\x00\x00')
+        self.assertEqual(file_system[0x2040: 0x2050], b'VERYLO~\x01   \x10\x00\x00\x00\x00')
         self.assertEqual(file_system[0x2050: 0x2060], b'!\x00!\x00\x00\x00\x00\x00!\x00\x02\x00\x00\x00\x00\x00')
 
         self.assertEqual(file_system[0x6000: 0x6010], b'.          \x10\x00\x00\x00\x00')
         self.assertEqual(file_system[0x6011: 0x6020], b'\x00!\x00\x00\x00\x00\x00!\x00\x02\x00\x00\x00\x00\x00')
         self.assertEqual(file_system[0x6020: 0x6030], b'..         \x10\x00\x00\x00\x00')
         self.assertEqual(file_system[0x6030: 0x6040], b'!\x00!\x00\x00\x00\x00\x00!\x00\x01\x00\x00\x00\x00\x00')
-        self.assertEqual(file_system[0x6040: 0x6050], b'Bl\x00o\x00o\x00o\x00o\x00\x0f\x00\xb3o\x00')
+        self.assertEqual(file_system[0x6040: 0x6050], b'Bl\x00o\x00o\x00o\x00o\x00\x0f\x00\xado\x00')
         self.assertEqual(file_system[0x6050: 0x6060], b'o\x00o\x00.\x00t\x00x\x00\x00\x00t\x00\x00\x00')
 
         self.assertEqual(file_system[0x6050: 0x6060], b'o\x00o\x00.\x00t\x00x\x00\x00\x00t\x00\x00\x00')
-        self.assertEqual(file_system[0x6060: 0x6070], b'\x01h\x00e\x00l\x00l\x00o\x00\x0f\x00\xb3h\x00')
+        self.assertEqual(file_system[0x6060: 0x6070], b'\x01h\x00e\x00l\x00l\x00o\x00\x0f\x00\xadh\x00')
         self.assertEqual(file_system[0x6070: 0x6080], b'e\x00l\x00l\x00o\x00h\x00\x00\x00e\x00l\x00')
-        self.assertEqual(file_system[0x6080: 0x6090], b'HELLOH~1TXT \x00\x00\x00\x00')
+        self.assertEqual(file_system[0x6080: 0x6090], b'HELLOH~\x01TXT \x00\x00\x00\x00')
         self.assertEqual(file_system[0x6090: 0x60a0], b'!\x00!\x00\x00\x00\x00\x00!\x00\x03\x00\x10\x00\x00\x00')
-        self.assertEqual(file_system[0x60a0: 0x60b0], b'Bl\x00o\x00o\x00o\x00o\x00\x0f\x00\x93o\x00')
+        self.assertEqual(file_system[0x60a0: 0x60b0], b'Bl\x00o\x00o\x00o\x00o\x00\x0f\x00\x8do\x00')
 
         self.assertEqual(file_system[0x60b0: 0x60c0], b'o\x00b\x00.\x00t\x00x\x00\x00\x00t\x00\x00\x00')
-        self.assertEqual(file_system[0x60c0: 0x60d0], b'\x01h\x00e\x00l\x00l\x00o\x00\x0f\x00\x93h\x00')
+        self.assertEqual(file_system[0x60c0: 0x60d0], b'\x01h\x00e\x00l\x00l\x00o\x00\x0f\x00\x8dh\x00')
         self.assertEqual(file_system[0x60d0: 0x60e0], b'e\x00l\x00l\x00o\x00h\x00\x00\x00e\x00l\x00')
-        self.assertEqual(file_system[0x60e0: 0x60f0], b'HELLOH~2TXT \x00\x00\x00\x00')
+        self.assertEqual(file_system[0x60e0: 0x60f0], b'HELLOH~\x02TXT \x00\x00\x00\x00')
+
+    def test_bs_not_initialized(self) -> None:
+        self.assertEqual(str(BootSector()), 'Boot sector is not initialized!')
+        self.assertRaises(NotInitialized, BootSector().generate_boot_sector)
+        self.assertRaises(NotInitialized, lambda: BootSector().binary_image)  # encapsulate property to callable
+
+    def test_bs_str(self) -> None:
+        fatfs = fatfsgen.FATFS()
+        bs = BootSector(fatfs.state.boot_sector_state)
+        bs.generate_boot_sector()
+        bs.parse_boot_sector(bs.binary_image)
+        x = 'FATFS properties:,clusters: 252,data_region_start: 24576,data_sectors: ' \
+            '250,entries_root_count: 512,fat_table_start_address: 4096,fat_tables_cnt: 1,' \
+            'fatfs_type: 12,file_sys_type: FAT     ,hidden_sectors: 0,media_type: 248,' \
+            'non_data_sectors: 6,num_heads: 255,oem_name: MSDOS5.0,reserved_sectors_cnt: 1,' \
+            'root_dir_sectors_cnt: 4,root_directory_start: 8192,sec_per_track: 63,sector_size: 4096,' \
+            'sectors_count: 256,sectors_per_cluster: 1,sectors_per_fat_cnt: 1,size: 1048576,' \
+            'volume_label: Espressif  ,volume_uuid: 1144419653,'
+        self.assertEqual(x.split(',')[:-2], str(bs).split('\n')[:-2])  # except for volume id
+
+    def test_parsing_error(self) -> None:
+        self.assertRaises(NotInitialized, BootSector().parse_boot_sector, b'')
+
+    def test_not_implemented_fat32(self) -> None:
+        self.assertEqual(
+            Entry.get_cluster_id(
+                Entry.ENTRY_FORMAT_SHORT_NAME.parse(
+                    bytearray(b'AHOJ        \x18\x00\xb0[&U&U\x00\x00\xb0[&U\x02\x00\x08\x00\x00\x00'))),
+            2)
+
+    def test_get_cluster_value_from_fat(self) -> None:
+        fatfs = fatfsgen.FATFS()
+        self.assertEqual(fatfs.fat.get_cluster_value(1), 0xFFF)
+
+    def test_is_cluster_last(self) -> None:
+        fatfs = fatfsgen.FATFS()
+        self.assertEqual(fatfs.fat.is_cluster_last(2), False)
+
+    def test_chain_in_fat(self) -> None:
+        fatfs = fatfsgen.FATFS()
+        self.assertEqual(fatfs.fat.get_chained_content(1), b'\x00' * 0x1000)
+
+    def test_retrieve_file_chaining(self) -> None:
+        fatfs = fatfsgen.FATFS()
+        fatfs.create_file('WRITEF', extension='TXT')
+        fatfs.write_content(path_from_root=['WRITEF.TXT'], content=CFG['sector_size'] * b'a' + b'a')
+        fatfs.write_filesystem(CFG['output_file'])
+        self.assertEqual(fatfs.fat.get_chained_content(1)[:15], b'WRITEF  TXT \x00\x00\x00')
+        self.assertEqual(fatfs.fat.get_chained_content(2)[:15], b'aaaaaaaaaaaaaaa')
+
+    def test_lstrip(self) -> None:
+        self.assertEqual(right_strip_string('\x20\x20\x20thisistest\x20\x20\x20'), '   thisistest')
 
 
 if __name__ == '__main__':

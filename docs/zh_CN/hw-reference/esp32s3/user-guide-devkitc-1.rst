@@ -38,7 +38,7 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载 Wi-Fi + Bluetooth® LE �
 
 .. _user-guide-s3-devkitc-1-v1.1-board-front:
 
-.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v1.1-annotated-photo.png
+.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v2-annotated-photo.png
     :align: center
     :alt: ESP32-S3-DevKitC-1 - 正面
 
@@ -64,7 +64,7 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载 Wi-Fi + Bluetooth® LE �
      - 下载按键。按住 **Boot** 键的同时按一下 **Reset** 键进入“固件下载”模式，通过串口下载固件。
    * - Reset Button（Reset 键）
      - 复位按键。
-   * - ESP32-S3 USB Port（ESP32-S3 USB 接口）
+   * - USB Port（USB 接口）
      - ESP32-S3 USB OTG 接口，支持全速 USB 1.1 标准。ESP32-S3 USB 接口可用作开发板的供电接口，可烧录固件至芯片，可通过 USB 协议与芯片通信，也可用于 JTAG 调试。
    * - USB-to-UART Bridge（USB 转 UART 桥接器）
      - 单芯片 USB 至 UART 桥接器，可提供高达 3 Mbps 的传输速率。

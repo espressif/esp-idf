@@ -65,7 +65,7 @@ The component can be installed by esp component manager. Since this example alre
 idf.py add-dependency espressif/es8311==0.0.2-alpha
 ```
 
-If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other project with managed component in it, the component manager will search the component online and download it under the `managed_componets` folder.
+If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_componets` folder.
 
 ### Configure the Project
 

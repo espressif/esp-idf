@@ -21,7 +21,7 @@
 
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 #include "soc/dport_reg.h"
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
+#else
 #include "soc/system_reg.h"
 #endif
 
@@ -29,7 +29,7 @@
 #define REASON_FREQ_SWITCH      BIT(1)
 #define REASON_GDB_CALL         BIT(3)
 
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2
+#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C6
 #define REASON_PRINT_BACKTRACE  BIT(2)
 #define REASON_TWDT_ABORT       BIT(4)
 #endif
@@ -66,7 +66,7 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
     } else {
         WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, 0);
     }
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
     WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
 #endif
 
@@ -96,12 +96,14 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
         esp_backtrace_print(100);
     }
 
+#if CONFIG_ESP_TASK_WDT_EN
     if (my_reason_val & REASON_TWDT_ABORT) {
         extern void task_wdt_timeout_abort_xtensa(bool);
         /* Called from a crosscore interrupt, thus, we are not the core that received
          * the TWDT interrupt, call the function with `false` as a parameter. */
         task_wdt_timeout_abort_xtensa(false);
     }
+#endif // CONFIG_ESP_TASK_WDT_EN
 #endif // CONFIG_IDF_TARGET_ARCH_XTENSA
 }
 
@@ -145,7 +147,7 @@ static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask) 
     } else {
         WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, SYSTEM_CPU_INTR_FROM_CPU_1);
     }
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
     WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, SYSTEM_CPU_INTR_FROM_CPU_0);
 #endif
 }
@@ -165,13 +167,15 @@ void IRAM_ATTR esp_crosscore_int_send_gdb_call(int core_id)
     esp_crosscore_int_send(core_id, REASON_GDB_CALL);
 }
 
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2
+#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C6
 void IRAM_ATTR esp_crosscore_int_send_print_backtrace(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_PRINT_BACKTRACE);
 }
 
+#if CONFIG_ESP_TASK_WDT_EN
 void IRAM_ATTR esp_crosscore_int_send_twdt_abort(int core_id) {
     esp_crosscore_int_send(core_id, REASON_TWDT_ABORT);
 }
+#endif // CONFIG_ESP_TASK_WDT_EN
 #endif

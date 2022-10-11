@@ -21,6 +21,8 @@
 #include "esp32h2/pm.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/pm.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/pm.h"
 #endif
 
 #ifdef __cplusplus

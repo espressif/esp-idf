@@ -133,14 +133,27 @@
 
 电压门限（参考低值/参考高值）、速率（斜率）与测量时间的关系如下图所示：
 
-.. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
-    :align: center
-    :alt: Touch Pad - relationship between measurement parameters
-    :figclass: align-center
+.. only:: SOC_TOUCH_VERSION_1
 
-    触摸传感器 - 测量参数之间的关系
+    .. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
+        :align: center
+        :alt: Touch Pad - relationship between measurement parameters
+        :figclass: align-center
 
-上图中的 *Output* 代表触摸传感器读值，即一个测量周期内测得的脉冲计数值。
+        触摸传感器 - 测量参数之间的关系
+
+    上图中的 *Output* 代表触摸传感器读值，即一个测量周期内测得的脉冲计数值。
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    .. figure:: ../../../_static/touch_pad-measurement-parameters-version2.png
+        :align: center
+        :alt: Touch Pad - relationship between measurement parameters
+        :figclass: align-center
+
+        触摸传感器 - 测量参数之间的关系
+
+    上图中的 *Output* 代表触摸传感器读值，即固定充放电次数所需的时间。
 
 所有函数均成对出现，用于设定某一特定参数，并获取当前参数值。例如：:cpp:func:`touch_pad_set_voltage` 和 :cpp:func:`touch_pad_get_voltage`。
 

@@ -8,6 +8,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
+@pytest.mark.esp32s3
 @pytest.mark.generic
 def test_ulp_fsm_adc(dut: Dut) -> None:
 

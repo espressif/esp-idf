@@ -16,6 +16,9 @@ To optimize both firmware binary size and memory usage it's necessary to measure
 
 Using the :ref:`idf.py` sub-commands ``size``, ``size-components`` and ``size-files`` provides a summary of memory used by the project:
 
+.. note::
+    It is possible to add ``-DOUTPUT_FORMAT=csv`` or ``-DOUTPUT_FORMAT=json`` to get the output in CSV or JSON format.
+
 Size Summary (idf.py size)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -188,9 +191,9 @@ Comparing Two Binaries
 
 If making some changes that affect binary size, it's possible to use an ESP-IDF tool to break down the exact differences in size.
 
-This operation isn't part of ``idf.py``, it's necessary to run the ``idf-size.py`` Python tool directly.
+This operation isn't part of ``idf.py``, it's necessary to run the ``idf_size.py`` Python tool directly.
 
-To do so, first locate the linker map file in the build directory. It will have the name ``PROJECTNAME.map``. The ``idf-size.py`` tool performs its analysis based on the output of the linker map file.
+To do so, first locate the linker map file in the build directory. It will have the name ``PROJECTNAME.map``. The ``idf_size.py`` tool performs its analysis based on the output of the linker map file.
 
 To compare with another binary, you will also need its corresponding ``.map`` file saved from the build directory.
 
@@ -214,6 +217,9 @@ For example, to compare two builds: one with the default :ref:`CONFIG_COMPILER_O
 We can see from the "Difference" column that changing this one setting caused the whole binary to be over 60 KB smaller and over 5 KB more RAM is available.
 
 It's also possible to use the "diff" mode to output a table of component-level (static library archive) differences:
+
+.. note::
+    To get the output in JSON or CSV format using ``idf_size.py`` it is possible to use the ``--format`` option.
 
 .. code-block:: bash
 
@@ -298,7 +304,7 @@ The following configuration options will reduce the final binary size of almost 
     - Disabling :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` will remove the lookup table to translate user-friendly names for error values (see :doc:`/api-guides/error-handling`) in error logs, etc. This saves some binary size, but error values will be printed as integers only.
     - Setting :ref:`CONFIG_ESP_SYSTEM_PANIC` to "Silent reboot" will save a small amount of binary size, however this is *only* recommended if no one will use UART output to debug the device.
     :CONFIG_IDF_TARGET_ARCH_RISCV: - Set :ref:`CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS` to reduce binary size by replacing inlined prologues/epilogues with library calls.
-
+    - If the application binary uses only one of the security versions of the protocomm component, then the support for others can be disabled to save some code size. The support can be disabled through :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`, :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1` or :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2` respectively.
 .. note::
 
    In addition to the many configuration items shown here, there are a number of configuration options where changing the option from the default will increase binary size. These are not noted here. Where the increase is significant, this is usually noted in the configuration item help text.

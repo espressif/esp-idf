@@ -9,6 +9,7 @@
 upload-pip-cache:
   extends:
     - .upload_cache_template
+    - .before_script_minimal
     - .rules:patterns:python-cache
   tags:
     - $GEO
@@ -18,13 +19,9 @@ upload-pip-cache:
     paths:
       - .cache/pip
     policy: push
-  before_script: []
   script:
-    - source tools/ci/utils.sh
-    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
-    - source tools/ci/setup_python.sh
     - rm -rf .cache/pip  # clear old packages
-    - $IDF_PATH/tools/idf_tools.py install-python-env --features pytest,ci
+    - bash install.sh --enable-ci --enable-pytest
   parallel:
     matrix:
       - GEO: [ 'shiny',  'brew' ]
@@ -32,6 +29,7 @@ upload-pip-cache:
 upload-submodules-cache:
   extends:
     - .upload_cache_template
+    - .before_script_minimal
     - .rules:patterns:submodule
   tags:
     - $GEO
@@ -41,12 +39,11 @@ upload-submodules-cache:
     paths:
       - .cache/submodule_archives
     policy: push
-  before_script: []
   script:
-    - source tools/ci/utils.sh
-    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
-    - source tools/ci/setup_python.sh
+    # use the default gitlab server
+    - unset LOCAL_GITLAB_HTTPS_HOST
     - rm -rf .cache/submodule_archives  # clear old submodule archives
+    - add_gitlab_ssh_keys
     - fetch_submodules
   parallel:
     matrix:

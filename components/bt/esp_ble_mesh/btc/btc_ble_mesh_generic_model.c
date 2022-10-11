@@ -368,7 +368,7 @@ static void btc_ble_mesh_generic_client_callback(esp_ble_mesh_generic_client_cb_
     msg.pid = BTC_PID_GENERIC_CLIENT;
     msg.act = act;
 
-    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_generic_client_cb_param_t),
+    btc_transfer_context(&msg, cb_params, cb_params == NULL ? 0 : sizeof(esp_ble_mesh_generic_client_cb_param_t),
                          btc_ble_mesh_generic_client_copy_req_data);
 }
 
@@ -685,7 +685,7 @@ static void btc_ble_mesh_generic_server_callback(esp_ble_mesh_generic_server_cb_
     msg.pid = BTC_PID_GENERIC_SERVER;
     msg.act = act;
 
-    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_generic_server_cb_param_t),
+    btc_transfer_context(&msg, cb_params, cb_params == NULL ? 0 : sizeof(esp_ble_mesh_generic_server_cb_param_t),
                          btc_ble_mesh_generic_server_copy_req_data);
 }
 

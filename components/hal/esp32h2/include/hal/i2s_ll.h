@@ -15,6 +15,7 @@
 #pragma once
 #include <stdbool.h>
 #include "hal/misc.h"
+#include "hal/assert.h"
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "hal/i2s_types.h"
@@ -24,12 +25,10 @@
 extern "C" {
 #endif
 
-#define I2S_LL_GET_HW(num)             (&I2S0)
+#define I2S_LL_GET_HW(num)             (((num) == 0)? (&I2S0) : NULL)
 
 #define I2S_LL_TDM_CH_MASK             (0xffff)
 #define I2S_LL_PDM_BCK_FACTOR          (64)
-// [clk_tree] TODO: replace the following switch table by clk_tree API
-#define I2S_LL_BASE_CLK                (96*1000000)
 
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (9)
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
@@ -195,18 +194,40 @@ static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    hw->tx_clkm_conf.tx_clk_sel = 2;
+    switch (src)
+    {
+    case I2S_CLK_SRC_XTAL:
+        hw->tx_clkm_conf.tx_clk_sel = 0;
+        break;
+    case I2S_CLK_SRC_PLL_96M:
+        hw->tx_clkm_conf.tx_clk_sel = 2;
+        break;
+    default:
+        HAL_ASSERT(false && "unsupported clock source");
+        break;
+    }
 }
 
 /**
  * @brief Set RX source clock
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param src I2S source clock, ESP32-H2 only support `I2S_CLK_SRC_PLL_96M` for now
+ * @param src I2S source clock
  */
 static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    hw->rx_clkm_conf.rx_clk_sel = 2;
+    switch (src)
+    {
+    case I2S_CLK_SRC_XTAL:
+        hw->rx_clkm_conf.rx_clk_sel = 0;
+        break;
+    case I2S_CLK_SRC_PLL_96M:
+        hw->rx_clkm_conf.rx_clk_sel = 2;
+        break;
+    default:
+        HAL_ASSERT(false && "unsupported clock source");
+        break;
+    }
 }
 
 /**
@@ -258,7 +279,7 @@ static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t
  * @brief Configure I2S TX module clock divider
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param sclk system clock, 0 means use apll
+ * @param sclk system clock
  * @param mclk module clock
  * @param mclk_div integer part of the division from sclk to mclk
  */

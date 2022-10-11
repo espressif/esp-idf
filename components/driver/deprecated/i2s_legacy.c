@@ -47,6 +47,7 @@
 #include "esp_efuse.h"
 #include "esp_rom_gpio.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk.h"
 
 static const char *TAG = "i2s(legacy)";
 
@@ -535,7 +536,7 @@ static esp_err_t i2s_alloc_dma_buffer(i2s_port_t i2s_num, i2s_dma_t *dma_obj)
     if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
         i2s_ll_rx_set_eof_num(p_i2s[i2s_num]->hal.dev, dma_obj->buf_size);
     }
-    ESP_LOGD(TAG, "DMA Malloc info, datalen=blocksize=%d, dma_desc_num=%d", dma_obj->buf_size, buf_cnt);
+    ESP_LOGD(TAG, "DMA Malloc info, datalen=blocksize=%d, dma_desc_num=%"PRIu32, dma_obj->buf_size, buf_cnt);
     return ESP_OK;
 err:
     /* Delete DMA buffer if failed to allocate memory */
@@ -624,6 +625,7 @@ err:
 /*-------------------------------------------------------------
                    I2S clock operation
   -------------------------------------------------------------*/
+  // [clk_tree] TODO: replace the following switch table by clk_tree API
 static uint32_t i2s_config_source_clock(i2s_port_t i2s_num, bool use_apll, uint32_t mclk)
 {
 #if SOC_I2S_SUPPORTS_APLL
@@ -644,18 +646,18 @@ static uint32_t i2s_config_source_clock(i2s_port_t i2s_num, bool use_apll, uint3
             return 0;
         }
         if (ret == ESP_ERR_INVALID_STATE) {
-            ESP_LOGW(TAG, "APLL is occupied already, it is working at %d Hz", real_freq);
+            ESP_LOGW(TAG, "APLL is occupied already, it is working at %"PRIu32" Hz", real_freq);
         }
-        ESP_LOGD(TAG, "APLL expected frequency is %d Hz, real frequency is %d Hz", expt_freq, real_freq);
+        ESP_LOGD(TAG, "APLL expected frequency is %"PRIu32" Hz, real frequency is %"PRIu32" Hz", expt_freq, real_freq);
         /* In APLL mode, there is no sclk but only mclk, so return 0 here to indicate APLL mode */
         return real_freq;
     }
-    return I2S_LL_BASE_CLK;
+    return esp_clk_apb_freq() * 2;
 #else
     if (use_apll) {
         ESP_LOGW(TAG, "APLL not supported on current chip, use I2S_CLK_SRC_DEFAULT as default clock source");
     }
-    return I2S_LL_BASE_CLK;
+    return esp_clk_apb_freq() * 2;
 #endif
 }
 
@@ -804,7 +806,7 @@ static esp_err_t i2s_calculate_clock(i2s_port_t i2s_num, i2s_hal_clock_info_t *c
 
     /* Calculate clock for common mode */
     ESP_RETURN_ON_ERROR(i2s_calculate_common_clock(i2s_num, clk_info), TAG, "Common clock calculate failed");
-    ESP_LOGD(TAG, "[sclk] %d [mclk] %d [mclk_div] %d [bclk] %d [bclk_div] %d",
+    ESP_LOGD(TAG, "[sclk] %"PRIu32" [mclk] %"PRIu32" [mclk_div] %d [bclk] %"PRIu32" [bclk_div] %d",
              clk_info->sclk, clk_info->mclk, clk_info->mclk_div, clk_info->bclk, clk_info->bclk_div);
     return ESP_OK;
 }
@@ -1077,7 +1079,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
             slot_mask = (slot_cfg->slot_mode == I2S_SLOT_MODE_MONO) ? 1 : 2;
         }
         ESP_RETURN_ON_FALSE(p_i2s[i2s_num]->total_slot >= (32 - __builtin_clz(slot_mask)), ESP_ERR_INVALID_ARG, TAG,
-                            "The max channel number can't be greater than CH%d\n", p_i2s[i2s_num]->total_slot);
+                            "The max channel number can't be greater than CH%"PRIu32, p_i2s[i2s_num]->total_slot);
         p_i2s[i2s_num]->active_slot = __builtin_popcount(slot_mask);
     } else
 #endif

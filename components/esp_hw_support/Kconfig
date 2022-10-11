@@ -40,7 +40,7 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_GPIO_RESET_WORKAROUND
             bool "light sleep GPIO reset workaround"
-            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 # TODO: IDF-5641 (esp32c6)
             select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
             help
                 esp32c2, esp32c3 and esp32s3 will reset at wake-up if GPIO is received a small electrostatic
@@ -114,12 +114,24 @@ menu "Hardware Settings"
             depends on ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
             default y
             help
-                When the chip goes sleep or software reset, the clock source would change to XTAL
-                and switch off the BBPLL clock for saving power. However, this might make the
-                USB_SERIAL_JTAG down which depends on BBPLL as its unique clock source.
-                Therefore, this is used for keeping bbpll clock always on when USB_SERIAL_JTAG PORT is using.
-                If you want to use USB_SERIAL_JTAG under sw_reset case or sleep-wakeup case, you shoule select
-                this option. But be aware that this might increase the power consumption.
+                When software switches the CPU clock source from BBPLL clock to XTAL, usually the BBPLL will be
+                switched off. This helps to save some power consumption in sleep modes. However this may also happen
+                during the software reset, resulting in the inactive (disconnected from host) of the USB_SERIAL_JTAG
+                device during software reset.
+
+                When USB_SERIAL_JTAG is being used, whether to turn off the clock source during software reset and in
+                sleep modes is determined by RTC_CLOCK_BBPLL_POWER_ON_WITH_USB.
+
+                  - When RTC_CLOCK_BBPLL_POWER_ON_WITH_USB is enabled, the clock will be kept, so that the
+                    USB_SERIAL_JTAG will keep alive during software reset. The side-effect is the increasing of power
+                    consumption during sleep modes, even though USB_SERIAL_JTAG will not work in sleep modes.
+
+                  - When RTC_CLOCK_BBPLL_POWER_ON_WITH_USB is disabled, the clock will be turned off. USB_SERIAL_JTAG
+                    will be inactive during software reset and in sleep modes. This saves some power consumption in
+                    sleep modes.
+
+                When USB_SERIAL_JTAG is not being used, software will always turn off BBPLL regardless of
+                RTC_CLOCK_BBPLL_POWER_ON_WITH_USB is set or not.
     endmenu
 
     menu "Peripheral Control"
@@ -153,6 +165,7 @@ menu "Hardware Settings"
 
         config MMU_PAGE_MODE
             string
+            default "8KB" if MMU_PAGE_SIZE_8KB
             default "16KB" if MMU_PAGE_SIZE_16KB
             default "32KB" if MMU_PAGE_SIZE_32KB
             default "64KB" if MMU_PAGE_SIZE_64KB
@@ -164,6 +177,7 @@ menu "Hardware Settings"
             # use of small flash sizes (reducing the wasted space due to alignment), we
             # need to use the smallest possible MMU page size for the given flash size.
             hex
+            default 0x2000 if MMU_PAGE_SIZE_8KB
             default 0x4000 if MMU_PAGE_SIZE_16KB
             default 0x8000 if MMU_PAGE_SIZE_32KB
             default 0x10000 if MMU_PAGE_SIZE_64KB

@@ -12,7 +12,7 @@ def test_gptimer_example(dut: Dut) -> None:
     dut.expect_exact('Start timer, stop it at alarm event', timeout=5)
     res = dut.expect(r'Timer stopped, count=(\d+)', timeout=30)
     stopped_count = res.group(1).decode('utf8')
-    assert (1000000 - 10) < int(stopped_count) < (1000000 + 10)
+    assert (1000000 - 20) < int(stopped_count) < (1000000 + 20)
 
     dut.expect_exact('Set count value')
     dut.expect_exact('Get count value')

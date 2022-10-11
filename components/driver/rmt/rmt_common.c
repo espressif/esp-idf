@@ -66,7 +66,7 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
     _lock_release(&s_platform.mutex);
 
     if (new_group) {
-        ESP_LOGD(TAG, "new group(%d) at %p, occupy=%x", group_id, group, group->occupy_mask);
+        ESP_LOGD(TAG, "new group(%d) at %p, occupy=%"PRIx32, group_id, group, group->occupy_mask);
     }
     return group;
 }
@@ -74,6 +74,7 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
 void rmt_release_group_handle(rmt_group_t *group)
 {
     int group_id = group->group_id;
+    rmt_clock_source_t clk_src = group->clk_src;
     bool do_deinitialize = false;
 
     _lock_acquire(&s_platform.mutex);
@@ -87,6 +88,16 @@ void rmt_release_group_handle(rmt_group_t *group)
         free(group);
     }
     _lock_release(&s_platform.mutex);
+
+    switch (clk_src) {
+#if SOC_RMT_SUPPORT_RC_FAST
+    case RMT_CLK_SRC_RC_FAST:
+        periph_rtc_dig_clk8m_disable();
+        break;
+#endif // SOC_RMT_SUPPORT_RC_FAST
+    default:
+        break;
+    }
 
     if (do_deinitialize) {
         ESP_LOGD(TAG, "del group(%d)", group_id);
@@ -153,7 +164,7 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     // no division for group clock source, to achieve highest resolution
     rmt_ll_set_group_clock_src(group->hal.regs, channel_id, clk_src, 1, 1, 0);
     group->resolution_hz = periph_src_clk_hz;
-    ESP_LOGD(TAG, "group clock resolution:%u", group->resolution_hz);
+    ESP_LOGD(TAG, "group clock resolution:%"PRIu32, group->resolution_hz);
     return ret;
 }
 

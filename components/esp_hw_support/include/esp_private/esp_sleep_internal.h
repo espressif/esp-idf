@@ -6,6 +6,7 @@
 
 #pragma once
 #include <stdbool.h>
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +21,15 @@ extern "C" {
  */
 void esp_sleep_enable_adc_tsens_monitor(bool enable);
 
+// TODO: IDF-6051, IDF-6052
+#if !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C6
+/**
+ * @brief Isolate all digital IOs except those that are held during deep sleep
+ *
+ * Reduce digital IOs current leakage during deep sleep.
+ */
+void esp_sleep_isolate_digital_gpio(void);
+#endif
 
 #ifdef __cplusplus
 }

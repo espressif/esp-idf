@@ -7,10 +7,10 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32
 @pytest.mark.esp32s2
-@pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.esp32c3
 @pytest.mark.esp32c2
-@pytest.mark.generic
+@pytest.mark.adc
 @pytest.mark.parametrize('config', [
     'iram_safe',
     'release',

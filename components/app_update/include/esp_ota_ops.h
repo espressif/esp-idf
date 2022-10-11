@@ -12,7 +12,7 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "esp_partition.h"
-#include "esp_image_format.h"
+#include "esp_app_desc.h"
 #include "esp_flash_partitions.h"
 #include "soc/soc_caps.h"
 
@@ -44,20 +44,27 @@ typedef uint32_t esp_ota_handle_t;
 /**
  * @brief   Return esp_app_desc structure. This structure includes app version.
  *
+ * @note This API is present for backward compatibility reasons. Alternative function
+ * with the same functionality is `esp_app_get_description`
+ *
  * Return description for running app.
  * @return Pointer to esp_app_desc structure.
  */
-const esp_app_desc_t *esp_ota_get_app_description(void);
+const esp_app_desc_t *esp_ota_get_app_description(void) __attribute__((deprecated("Please use esp_app_get_description instead")));
 
 /**
  * @brief   Fill the provided buffer with SHA256 of the ELF file, formatted as hexadecimal, null-terminated.
  * If the buffer size is not sufficient to fit the entire SHA256 in hex plus a null terminator,
  * the largest possible number of bytes will be written followed by a null.
+ *
+* @note This API is present for backward compatibility reasons. Alternative function
+ * with the same functionality is `esp_app_get_elf_sha256`
+ *
  * @param dst   Destination buffer
  * @param size  Size of the buffer
  * @return      Number of bytes written to dst (including null terminator)
  */
-int esp_ota_get_app_elf_sha256(char* dst, size_t size);
+int esp_ota_get_app_elf_sha256(char* dst, size_t size) __attribute__((deprecated("Please use esp_app_get_elf_sha256 instead")));
 
 /**
  * @brief   Commence an OTA update writing to the specified partition.

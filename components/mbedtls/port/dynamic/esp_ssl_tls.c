@@ -45,33 +45,18 @@ static int rx_done(mbedtls_ssl_context *ssl)
 static void ssl_update_checksum_start( mbedtls_ssl_context *ssl,
                                        const unsigned char *buf, size_t len )
 {
-#if defined(MBEDTLS_SSL_PROTO_SSL3) || defined(MBEDTLS_SSL_PROTO_TLS1) || \
-    defined(MBEDTLS_SSL_PROTO_TLS1_1)
-    mbedtls_md5_update( &ssl->handshake->fin_md5 , buf, len );
-    mbedtls_sha1_update( &ssl->handshake->fin_sha1, buf, len );
-#endif
-#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
 #if defined(MBEDTLS_SHA256_C)
     mbedtls_sha256_update( &ssl->handshake->fin_sha256, buf, len );
 #endif
 #if defined(MBEDTLS_SHA512_C)
     mbedtls_sha512_update( &ssl->handshake->fin_sha512, buf, len );
 #endif
-#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
 }
 
 static void ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
 {
     memset( handshake, 0, sizeof( mbedtls_ssl_handshake_params ) );
 
-#if defined(MBEDTLS_SSL_PROTO_SSL3) || defined(MBEDTLS_SSL_PROTO_TLS1) || \
-    defined(MBEDTLS_SSL_PROTO_TLS1_1)
-    mbedtls_md5_init(   &handshake->fin_md5  );
-    mbedtls_sha1_init(   &handshake->fin_sha1 );
-    mbedtls_md5_starts( &handshake->fin_md5  );
-    mbedtls_sha1_starts( &handshake->fin_sha1 );
-#endif
-#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
 #if defined(MBEDTLS_SHA256_C)
     mbedtls_sha256_init(   &handshake->fin_sha256    );
     mbedtls_sha256_starts( &handshake->fin_sha256, 0 );
@@ -80,14 +65,8 @@ static void ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
     mbedtls_sha512_init(   &handshake->fin_sha512    );
     mbedtls_sha512_starts( &handshake->fin_sha512, 1 );
 #endif
-#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
 
     handshake->update_checksum = ssl_update_checksum_start;
-
-#if defined(MBEDTLS_SSL_PROTO_TLS1_2) && \
-    defined(MBEDTLS_KEY_EXCHANGE_WITH_CERT_ENABLED)
-    mbedtls_ssl_sig_hash_set_init( &handshake->hash_algs );
-#endif
 
 #if defined(MBEDTLS_DHM_C)
     mbedtls_dhm_init( &handshake->dhm_ctx );
@@ -145,6 +124,12 @@ static int ssl_handshake_init( mbedtls_ssl_context *ssl )
     {
         ssl->handshake = mbedtls_calloc( 1, sizeof(mbedtls_ssl_handshake_params) );
     }
+#if defined(MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH)
+    /* If the buffers are too small - reallocate */
+
+    handle_buffer_resizing( ssl, 0, MBEDTLS_SSL_IN_BUFFER_LEN,
+                                    MBEDTLS_SSL_OUT_BUFFER_LEN );
+#endif
 
     /* All pointers should exist and can be directly freed without issue */
     if( ssl->handshake == NULL ||
@@ -168,6 +153,120 @@ static int ssl_handshake_init( mbedtls_ssl_context *ssl )
     mbedtls_ssl_session_init( ssl->session_negotiate );
     mbedtls_ssl_transform_init( ssl->transform_negotiate );
     ssl_handshake_params_init( ssl->handshake );
+
+/*
+ * curve_list is translated to IANA TLS group identifiers here because
+ * mbedtls_ssl_conf_curves returns void and so can't return
+ * any error codes.
+ */
+#if defined(MBEDTLS_ECP_C)
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+    /* Heap allocate and translate curve_list from internal to IANA group ids */
+    if ( ssl->conf->curve_list != NULL )
+    {
+        size_t length;
+        const mbedtls_ecp_group_id *curve_list = ssl->conf->curve_list;
+
+        for( length = 0;  ( curve_list[length] != MBEDTLS_ECP_DP_NONE ) &&
+                          ( length < MBEDTLS_ECP_DP_MAX ); length++ ) {}
+
+        /* Leave room for zero termination */
+        uint16_t *group_list = mbedtls_calloc( length + 1, sizeof(uint16_t) );
+        if ( group_list == NULL )
+            return( MBEDTLS_ERR_SSL_ALLOC_FAILED );
+
+        for( size_t i = 0; i < length; i++ )
+        {
+            const mbedtls_ecp_curve_info *info =
+                        mbedtls_ecp_curve_info_from_grp_id( curve_list[i] );
+            if ( info == NULL )
+            {
+                mbedtls_free( group_list );
+                return( MBEDTLS_ERR_SSL_BAD_CONFIG );
+            }
+            group_list[i] = info->tls_id;
+        }
+
+        group_list[length] = 0;
+
+        ssl->handshake->group_list = group_list;
+        ssl->handshake->group_list_heap_allocated = 1;
+    }
+    else
+    {
+        ssl->handshake->group_list = ssl->conf->group_list;
+        ssl->handshake->group_list_heap_allocated = 0;
+    }
+#endif /* MBEDTLS_DEPRECATED_REMOVED */
+#endif /* MBEDTLS_ECP_C */
+
+#if defined(MBEDTLS_KEY_EXCHANGE_WITH_CERT_ENABLED)
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
+    /* Heap allocate and translate sig_hashes from internal hash identifiers to
+       signature algorithms IANA identifiers.  */
+    if ( mbedtls_ssl_conf_is_tls12_only( ssl->conf ) &&
+         ssl->conf->sig_hashes != NULL )
+    {
+        const int *md;
+        const int *sig_hashes = ssl->conf->sig_hashes;
+        size_t sig_algs_len = 0;
+        uint16_t *p;
+
+#if defined(static_assert)
+        static_assert( MBEDTLS_SSL_MAX_SIG_ALG_LIST_LEN
+                       <= ( SIZE_MAX - ( 2 * sizeof(uint16_t) ) ),
+                       "MBEDTLS_SSL_MAX_SIG_ALG_LIST_LEN too big" );
+#endif
+
+        for( md = sig_hashes; *md != MBEDTLS_MD_NONE; md++ )
+        {
+            if( mbedtls_ssl_hash_from_md_alg( *md ) == MBEDTLS_SSL_HASH_NONE )
+                continue;
+#if defined(MBEDTLS_ECDSA_C)
+            sig_algs_len += sizeof( uint16_t );
+#endif
+
+#if defined(MBEDTLS_RSA_C)
+            sig_algs_len += sizeof( uint16_t );
+#endif
+            if( sig_algs_len > MBEDTLS_SSL_MAX_SIG_ALG_LIST_LEN )
+                return( MBEDTLS_ERR_SSL_BAD_CONFIG );
+        }
+
+        if( sig_algs_len < MBEDTLS_SSL_MIN_SIG_ALG_LIST_LEN )
+            return( MBEDTLS_ERR_SSL_BAD_CONFIG );
+
+        ssl->handshake->sig_algs = mbedtls_calloc( 1, sig_algs_len +
+                                                      sizeof( uint16_t ));
+        if( ssl->handshake->sig_algs == NULL )
+            return( MBEDTLS_ERR_SSL_ALLOC_FAILED );
+
+        p = (uint16_t *)ssl->handshake->sig_algs;
+        for( md = sig_hashes; *md != MBEDTLS_MD_NONE; md++ )
+        {
+            unsigned char hash = mbedtls_ssl_hash_from_md_alg( *md );
+            if( hash == MBEDTLS_SSL_HASH_NONE )
+                continue;
+#if defined(MBEDTLS_ECDSA_C)
+            *p = (( hash << 8 ) | MBEDTLS_SSL_SIG_ECDSA);
+            p++;
+#endif
+#if defined(MBEDTLS_RSA_C)
+            *p = (( hash << 8 ) | MBEDTLS_SSL_SIG_RSA);
+            p++;
+#endif
+        }
+        *p = MBEDTLS_TLS_SIG_NONE;
+        ssl->handshake->sig_algs_heap_allocated = 1;
+    }
+    else
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
+    {
+        ssl->handshake->sig_algs_heap_allocated = 0;
+    }
+#endif /* !MBEDTLS_DEPRECATED_REMOVED */
+#endif /* MBEDTLS_KEY_EXCHANGE_WITH_CERT_ENABLED */
 
     return( 0 );
 }

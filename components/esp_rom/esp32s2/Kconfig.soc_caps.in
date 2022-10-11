@@ -10,3 +10,7 @@ config ESP_ROM_HAS_CRC_LE
 config ESP_ROM_SUPPORT_MULTIPLE_UART
     bool
     default y
+
+config ESP_ROM_NEEDS_SWSETUP_WORKAROUND
+    bool
+    default y

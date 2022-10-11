@@ -115,7 +115,7 @@ int esprv_intc_int_get_priority(int rv_int_num);
  *
  * @param priority_threshold  Interrupt priority threshold, 0 to 7
  */
-void esprv_intc_set_threshold(int priority_threshold);
+void esprv_intc_int_set_threshold(int priority_threshold);
 
 /**
  * @brief Get interrupt unmask

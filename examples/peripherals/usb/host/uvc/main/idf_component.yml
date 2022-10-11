@@ -1,0 +1,7 @@
+## IDF Component Manager Manifest File
+dependencies:
+  idf: ">=4.4"
+  usb_host_uvc: "1.0.0"
+  mdns:
+    rules:
+      - if: "idf_version >= 5.0"

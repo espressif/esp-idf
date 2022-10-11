@@ -19,7 +19,7 @@ extern "C" {
 /**
  * @brief set eFuse timings
  *
- * @param apb_freq_hz APB frequency in Hz
+ * @param apb_freq_hz APB frequency in Hz (not used, kept for API compatibility)
  */
 void efuse_hal_set_timing(uint32_t apb_freq_hz);
 

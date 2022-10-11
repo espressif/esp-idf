@@ -10,6 +10,7 @@ Storage API
     mass_mfg.rst
     nvs_flash
     nvs_partition_gen.rst
+    nvs_partition_parse.rst
     sdmmc
     spi_flash
     spiffs

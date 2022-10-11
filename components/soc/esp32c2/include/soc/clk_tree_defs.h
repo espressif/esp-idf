@@ -51,7 +51,7 @@ typedef enum {
     SOC_ROOT_CLK_INT_RC_FAST,          /*!< Internal 17.5MHz RC oscillator */
     SOC_ROOT_CLK_INT_RC_SLOW,          /*!< Internal 136kHz RC oscillator */
     SOC_ROOT_CLK_EXT_XTAL,             /*!< External 26/40MHz crystal */
-    SOC_ROOT_CLK_EXT_OSC_SLOW,         /*!< External slow clock signal at pin0 */
+    SOC_ROOT_CLK_EXT_OSC_SLOW,         /*!< External slow clock signal at pin0, only support 32.768 KHz currently */
 } soc_root_clk_t;
 
 /**

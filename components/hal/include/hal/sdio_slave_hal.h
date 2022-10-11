@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -210,6 +202,10 @@ typedef struct {
                                              * configured before using the HAL. `SDIO_SLAVE_TIMING_PSEND_PSAMPLE` is
                                              * recommended by default.
                                              */
+    //some boolean flags
+    struct {
+        uint32_t no_highspeed: 1;           /**< Disable the highspeed support */
+    };
     int                 send_queue_size;    /**< Max buffers that can be queued before sending. Should be manually
                                              * configured before using the HAL.
                                              */
@@ -220,6 +216,7 @@ typedef struct {
     sdio_ringbuf_t      send_desc_queue;            /**< The ring buffer used to hold queued descriptors. Should be manually
                                              * initialized before using the HAL.
                                              */
+
     //Internal status, no need to touch.
     send_state_t        send_state;         // Current state of sending part.
     uint32_t            tail_pkt_len;       // The accumulated send length of the tail packet.

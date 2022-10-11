@@ -196,12 +196,18 @@ static int set_ca_cert(tls_context_t *tls, const unsigned char *cacert, size_t c
 }
 
 #ifdef CONFIG_SUITEB192
-static int tls_sig_hashes_for_suiteb[] = {
+static uint16_t tls_sig_algs_for_suiteb[] = {
 #if defined(MBEDTLS_SHA512_C)
-	MBEDTLS_MD_SHA512,
-	MBEDTLS_MD_SHA384,
+#if defined(MBEDTLS_ECDSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512 ),
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA384 ),
 #endif
-	MBEDTLS_MD_NONE
+#if defined(MBEDTLS_RSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA512 ),
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA384 ),
+#endif
+#endif /* MBEDTLS_SHA512_C */
+    MBEDTLS_TLS_SIG_NONE
 };
 
 const mbedtls_x509_crt_profile suiteb_mbedtls_x509_crt_profile =
@@ -220,23 +226,40 @@ static void tls_set_suiteb_config(tls_context_t *tls)
 {
 	const mbedtls_x509_crt_profile *crt_profile = &suiteb_mbedtls_x509_crt_profile;
 	mbedtls_ssl_conf_cert_profile(&tls->conf, crt_profile);
-	mbedtls_ssl_conf_sig_hashes(&tls->conf, tls_sig_hashes_for_suiteb);
+	mbedtls_ssl_conf_sig_algs(&tls->conf, tls_sig_algs_for_suiteb);
 }
 #endif
 
-static int tls_sig_hashes_for_eap[] = {
+static uint16_t tls_sig_algs_for_eap[] = {
 #if defined(MBEDTLS_SHA512_C)
-	MBEDTLS_MD_SHA512,
-	MBEDTLS_MD_SHA384,
+#if defined(MBEDTLS_ECDSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512 ),
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA384 ),
 #endif
+#if defined(MBEDTLS_RSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA512 ),
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA384 ),
+#endif
+#endif /* MBEDTLS_SHA512_C */
 #if defined(MBEDTLS_SHA256_C)
-	MBEDTLS_MD_SHA256,
-	MBEDTLS_MD_SHA224,
+#if defined(MBEDTLS_ECDSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA256 ),
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA224 ),
 #endif
+#if defined(MBEDTLS_RSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA256 ),
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA224 ),
+#endif
+#endif /* MBEDTLS_SHA256_C */
 #if defined(MBEDTLS_SHA1_C)
-	MBEDTLS_MD_SHA1,
+#if defined(MBEDTLS_ECDSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA1 ),
 #endif
-	MBEDTLS_MD_NONE
+#if defined(MBEDTLS_RSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA1 ),
+#endif
+#endif /* MBEDTLS_SHA1_C */
+    MBEDTLS_TLS_SIG_NONE
 };
 
 const mbedtls_x509_crt_profile eap_mbedtls_x509_crt_profile =
@@ -262,7 +285,7 @@ static void tls_enable_sha1_config(tls_context_t *tls)
 {
 	const mbedtls_x509_crt_profile *crt_profile = &eap_mbedtls_x509_crt_profile;
 	mbedtls_ssl_conf_cert_profile(&tls->conf, crt_profile);
-	mbedtls_ssl_conf_sig_hashes(&tls->conf, tls_sig_hashes_for_eap);
+	mbedtls_ssl_conf_sig_algs(&tls->conf, tls_sig_algs_for_eap);
 }
 
 static const int eap_ciphersuite_preference[] =
@@ -390,23 +413,6 @@ static const int eap_ciphersuite_preference[] =
 #if defined(MBEDTLS_CCM_C)
 	MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8,
 #endif
-#endif
-
-#if defined(MBEDTLS_DES_C)
-	/* 3DES suites */
-	MBEDTLS_TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA,
-	MBEDTLS_TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA,
-	MBEDTLS_TLS_RSA_WITH_3DES_EDE_CBC_SHA,
-	MBEDTLS_TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA,
-	MBEDTLS_TLS_PSK_WITH_3DES_EDE_CBC_SHA,
-#endif
-#if defined(MBEDTLS_ARC4_C)
-	/* RC4 suites */
-	MBEDTLS_TLS_DHE_PSK_WITH_RC4_128_SHA,
-	MBEDTLS_TLS_RSA_WITH_RC4_128_SHA,
-	MBEDTLS_TLS_RSA_WITH_RC4_128_MD5,
-	MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA,
-	MBEDTLS_TLS_PSK_WITH_RC4_128_SHA,
 #endif
 	0
 };

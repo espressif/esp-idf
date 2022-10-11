@@ -4,8 +4,6 @@ set(srcs
     "gpio/gpio.c"
     "gpio/rtc_io.c"
     "gptimer.c"
-    "i2c.c"
-    "ledc.c"
     "sdspi_crc.c"
     "sdspi_host.c"
     "sdspi_transaction.c"
@@ -21,6 +19,14 @@ list(APPEND srcs "deprecated/timer_legacy.c")
 set(includes "include" "deprecated")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${target}/include")
     list(APPEND includes "${target}/include")
+endif()
+
+if(CONFIG_SOC_LEDC_SUPPORTED)
+    list(APPEND srcs "ledc.c")
+endif()
+
+if(CONFIG_SOC_I2C_SUPPORTED)
+    list(APPEND srcs "i2c.c")
 endif()
 
 if(CONFIG_SOC_ADC_SUPPORTED)
@@ -125,5 +131,3 @@ else()
                         REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
                         LDFRAGMENTS linker.lf)
 endif()
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

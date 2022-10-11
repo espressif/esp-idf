@@ -23,7 +23,7 @@ extern "C" {
 /** RTC_I2C_SCL_LOW_REG register
  *  configure low scl period
  */
-#define RTC_I2C_SCL_LOW_REG (DR_REG_RTC_BASE + 0x0)
+#define RTC_I2C_SCL_LOW_REG (DR_REG_RTC_I2C_BASE + 0x0)
 /** RTC_I2C_SCL_LOW_PERIOD_REG : R/W; bitpos: [19:0]; default: 256;
  *  time period that scl =0
  */
@@ -35,7 +35,7 @@ extern "C" {
 /** RTC_I2C_CTRL_REG register
  *  configure i2c ctrl
  */
-#define RTC_I2C_CTRL_REG (DR_REG_RTC_BASE + 0x4)
+#define RTC_I2C_CTRL_REG (DR_REG_RTC_I2C_BASE + 0x4)
 /** RTC_I2C_SDA_FORCE_OUT : R/W; bitpos: [0]; default: 0;
  *  1=push pull,0=open drain
  */
@@ -103,7 +103,7 @@ extern "C" {
 /** RTC_I2C_STATUS_REG register
  *  get i2c status
  */
-#define RTC_I2C_STATUS_REG (DR_REG_RTC_BASE + 0x8)
+#define RTC_I2C_STATUS_REG (DR_REG_RTC_I2C_BASE + 0x8)
 /** RTC_I2C_ACK_REC : RO; bitpos: [0]; default: 0;
  *  ack response
  */
@@ -178,7 +178,7 @@ extern "C" {
 /** RTC_I2C_TO_REG register
  *  configure time out
  */
-#define RTC_I2C_TO_REG (DR_REG_RTC_BASE + 0xc)
+#define RTC_I2C_TO_REG (DR_REG_RTC_I2C_BASE + 0xc)
 /** RTC_I2C_TIME_OUT_REG : R/W; bitpos: [19:0]; default: 65536;
  *  time out threshold
  */
@@ -190,7 +190,7 @@ extern "C" {
 /** RTC_I2C_SLAVE_ADDR_REG register
  *  configure slave id
  */
-#define RTC_I2C_SLAVE_ADDR_REG (DR_REG_RTC_BASE + 0x10)
+#define RTC_I2C_SLAVE_ADDR_REG (DR_REG_RTC_I2C_BASE + 0x10)
 /** RTC_I2C_SLAVE_ADDR : R/W; bitpos: [14:0]; default: 0;
  *  slave address
  */
@@ -209,7 +209,7 @@ extern "C" {
 /** RTC_I2C_SCL_HIGH_REG register
  *  configure high scl period
  */
-#define RTC_I2C_SCL_HIGH_REG (DR_REG_RTC_BASE + 0x14)
+#define RTC_I2C_SCL_HIGH_REG (DR_REG_RTC_I2C_BASE + 0x14)
 /** RTC_I2C_SCL_HIGH_PERIOD_REG : R/W; bitpos: [19:0]; default: 256;
  *  time period that scl = 1
  */
@@ -221,7 +221,7 @@ extern "C" {
 /** RTC_I2C_SDA_DUTY_REG register
  *  configure sda duty
  */
-#define RTC_I2C_SDA_DUTY_REG (DR_REG_RTC_BASE + 0x18)
+#define RTC_I2C_SDA_DUTY_REG (DR_REG_RTC_I2C_BASE + 0x18)
 /** RTC_I2C_SDA_DUTY_NUM : R/W; bitpos: [19:0]; default: 16;
  *  time period for SDA to toggle after SCL goes low
  */
@@ -233,7 +233,7 @@ extern "C" {
 /** RTC_I2C_SCL_START_PERIOD_REG register
  *  configure scl start period
  */
-#define RTC_I2C_SCL_START_PERIOD_REG (DR_REG_RTC_BASE + 0x1c)
+#define RTC_I2C_SCL_START_PERIOD_REG (DR_REG_RTC_I2C_BASE + 0x1c)
 /** RTC_I2C_SCL_START_PERIOD : R/W; bitpos: [19:0]; default: 8;
  *  time period for SCL to toggle after I2C start is triggered
  */
@@ -245,7 +245,7 @@ extern "C" {
 /** RTC_I2C_SCL_STOP_PERIOD_REG register
  *  configure scl stop period
  */
-#define RTC_I2C_SCL_STOP_PERIOD_REG (DR_REG_RTC_BASE + 0x20)
+#define RTC_I2C_SCL_STOP_PERIOD_REG (DR_REG_RTC_I2C_BASE + 0x20)
 /** RTC_I2C_SCL_STOP_PERIOD : R/W; bitpos: [19:0]; default: 8;
  *  time period for SCL to stop after I2C end is triggered
  */
@@ -257,7 +257,7 @@ extern "C" {
 /** RTC_I2C_INT_CLR_REG register
  *  interrupt clear register
  */
-#define RTC_I2C_INT_CLR_REG (DR_REG_RTC_BASE + 0x24)
+#define RTC_I2C_INT_CLR_REG (DR_REG_RTC_I2C_BASE + 0x24)
 /** RTC_I2C_SLAVE_TRAN_COMP_INT_CLR : WO; bitpos: [0]; default: 0;
  *  clear slave transit complete interrupt
  */
@@ -325,7 +325,7 @@ extern "C" {
 /** RTC_I2C_INT_RAW_REG register
  *  interrupt raw register
  */
-#define RTC_I2C_INT_RAW_REG (DR_REG_RTC_BASE + 0x28)
+#define RTC_I2C_INT_RAW_REG (DR_REG_RTC_I2C_BASE + 0x28)
 /** RTC_I2C_SLAVE_TRAN_COMP_INT_RAW : RO; bitpos: [0]; default: 0;
  *  slave transit complete interrupt raw
  */
@@ -393,7 +393,7 @@ extern "C" {
 /** RTC_I2C_INT_ST_REG register
  *  interrupt state register
  */
-#define RTC_I2C_INT_ST_REG (DR_REG_RTC_BASE + 0x2c)
+#define RTC_I2C_INT_ST_REG (DR_REG_RTC_I2C_BASE + 0x2c)
 /** RTC_I2C_SLAVE_TRAN_COMP_INT_ST : RO; bitpos: [0]; default: 0;
  *  slave transit complete interrupt state
  */
@@ -461,7 +461,7 @@ extern "C" {
 /** RTC_I2C_INT_ENA_REG register
  *  interrupt enable register
  */
-#define RTC_I2C_INT_ENA_REG (DR_REG_RTC_BASE + 0x30)
+#define RTC_I2C_INT_ENA_REG (DR_REG_RTC_I2C_BASE + 0x30)
 /** RTC_I2C_SLAVE_TRAN_COMP_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  enable slave transit complete interrupt
  */
@@ -529,7 +529,7 @@ extern "C" {
 /** RTC_I2C_DATA_REG register
  *  get i2c data status
  */
-#define RTC_I2C_DATA_REG (DR_REG_RTC_BASE + 0x34)
+#define RTC_I2C_DATA_REG (DR_REG_RTC_I2C_BASE + 0x34)
 /** RTC_I2C_I2C_RDATA : RO; bitpos: [7:0]; default: 0;
  *  data received
  */
@@ -555,7 +555,7 @@ extern "C" {
 /** RTC_I2C_CMD0_REG register
  *  i2c commond0 register
  */
-#define RTC_I2C_CMD0_REG (DR_REG_RTC_BASE + 0x38)
+#define RTC_I2C_CMD0_REG (DR_REG_RTC_I2C_BASE + 0x38)
 /** RTC_I2C_COMMAND0 : R/W; bitpos: [13:0]; default: 2307;
  *  command0
  */
@@ -574,7 +574,7 @@ extern "C" {
 /** RTC_I2C_CMD1_REG register
  *  i2c commond1 register
  */
-#define RTC_I2C_CMD1_REG (DR_REG_RTC_BASE + 0x3c)
+#define RTC_I2C_CMD1_REG (DR_REG_RTC_I2C_BASE + 0x3c)
 /** RTC_I2C_COMMAND1 : R/W; bitpos: [13:0]; default: 6401;
  *  command1
  */
@@ -593,7 +593,7 @@ extern "C" {
 /** RTC_I2C_CMD2_REG register
  *  i2c commond2 register
  */
-#define RTC_I2C_CMD2_REG (DR_REG_RTC_BASE + 0x40)
+#define RTC_I2C_CMD2_REG (DR_REG_RTC_I2C_BASE + 0x40)
 /** RTC_I2C_COMMAND2 : R/W; bitpos: [13:0]; default: 2306;
  *  command2
  */
@@ -612,7 +612,7 @@ extern "C" {
 /** RTC_I2C_CMD3_REG register
  *  i2c commond3 register
  */
-#define RTC_I2C_CMD3_REG (DR_REG_RTC_BASE + 0x44)
+#define RTC_I2C_CMD3_REG (DR_REG_RTC_I2C_BASE + 0x44)
 /** RTC_I2C_COMMAND3 : R/W; bitpos: [13:0]; default: 257;
  *  command3
  */
@@ -631,7 +631,7 @@ extern "C" {
 /** RTC_I2C_CMD4_REG register
  *  i2c commond4 register
  */
-#define RTC_I2C_CMD4_REG (DR_REG_RTC_BASE + 0x48)
+#define RTC_I2C_CMD4_REG (DR_REG_RTC_I2C_BASE + 0x48)
 /** RTC_I2C_COMMAND4 : R/W; bitpos: [13:0]; default: 2305;
  *  command4
  */
@@ -650,7 +650,7 @@ extern "C" {
 /** RTC_I2C_CMD5_REG register
  *  i2c commond5_register
  */
-#define RTC_I2C_CMD5_REG (DR_REG_RTC_BASE + 0x4c)
+#define RTC_I2C_CMD5_REG (DR_REG_RTC_I2C_BASE + 0x4c)
 /** RTC_I2C_COMMAND5 : R/W; bitpos: [13:0]; default: 5889;
  *  command5
  */
@@ -669,7 +669,7 @@ extern "C" {
 /** RTC_I2C_CMD6_REG register
  *  i2c commond6 register
  */
-#define RTC_I2C_CMD6_REG (DR_REG_RTC_BASE + 0x50)
+#define RTC_I2C_CMD6_REG (DR_REG_RTC_I2C_BASE + 0x50)
 /** RTC_I2C_COMMAND6 : R/W; bitpos: [13:0]; default: 6401;
  *  command6
  */
@@ -688,7 +688,7 @@ extern "C" {
 /** RTC_I2C_CMD7_REG register
  *  i2c commond7 register
  */
-#define RTC_I2C_CMD7_REG (DR_REG_RTC_BASE + 0x54)
+#define RTC_I2C_CMD7_REG (DR_REG_RTC_I2C_BASE + 0x54)
 /** RTC_I2C_COMMAND7 : R/W; bitpos: [13:0]; default: 2308;
  *  command7
  */
@@ -707,7 +707,7 @@ extern "C" {
 /** RTC_I2C_CMD8_REG register
  *  i2c commond8 register
  */
-#define RTC_I2C_CMD8_REG (DR_REG_RTC_BASE + 0x58)
+#define RTC_I2C_CMD8_REG (DR_REG_RTC_I2C_BASE + 0x58)
 /** RTC_I2C_COMMAND8 : R/W; bitpos: [13:0]; default: 6401;
  *  command8
  */
@@ -726,7 +726,7 @@ extern "C" {
 /** RTC_I2C_CMD9_REG register
  *  i2c commond9 register
  */
-#define RTC_I2C_CMD9_REG (DR_REG_RTC_BASE + 0x5c)
+#define RTC_I2C_CMD9_REG (DR_REG_RTC_I2C_BASE + 0x5c)
 /** RTC_I2C_COMMAND9 : R/W; bitpos: [13:0]; default: 2307;
  *  command9
  */
@@ -745,7 +745,7 @@ extern "C" {
 /** RTC_I2C_CMD10_REG register
  *  i2c commond10 register
  */
-#define RTC_I2C_CMD10_REG (DR_REG_RTC_BASE + 0x60)
+#define RTC_I2C_CMD10_REG (DR_REG_RTC_I2C_BASE + 0x60)
 /** RTC_I2C_COMMAND10 : R/W; bitpos: [13:0]; default: 257;
  *  command10
  */
@@ -764,7 +764,7 @@ extern "C" {
 /** RTC_I2C_CMD11_REG register
  *  i2c commond11 register
  */
-#define RTC_I2C_CMD11_REG (DR_REG_RTC_BASE + 0x64)
+#define RTC_I2C_CMD11_REG (DR_REG_RTC_I2C_BASE + 0x64)
 /** RTC_I2C_COMMAND11 : R/W; bitpos: [13:0]; default: 2305;
  *  command11
  */
@@ -783,7 +783,7 @@ extern "C" {
 /** RTC_I2C_CMD12_REG register
  *  i2c commond12 register
  */
-#define RTC_I2C_CMD12_REG (DR_REG_RTC_BASE + 0x68)
+#define RTC_I2C_CMD12_REG (DR_REG_RTC_I2C_BASE + 0x68)
 /** RTC_I2C_COMMAND12 : R/W; bitpos: [13:0]; default: 5889;
  *  command12
  */
@@ -802,7 +802,7 @@ extern "C" {
 /** RTC_I2C_CMD13_REG register
  *  i2c commond13 register
  */
-#define RTC_I2C_CMD13_REG (DR_REG_RTC_BASE + 0x6c)
+#define RTC_I2C_CMD13_REG (DR_REG_RTC_I2C_BASE + 0x6c)
 /** RTC_I2C_COMMAND13 : R/W; bitpos: [13:0]; default: 6401;
  *  command13
  */
@@ -821,7 +821,7 @@ extern "C" {
 /** RTC_I2C_CMD14_REG register
  *  i2c commond14 register
  */
-#define RTC_I2C_CMD14_REG (DR_REG_RTC_BASE + 0x70)
+#define RTC_I2C_CMD14_REG (DR_REG_RTC_I2C_BASE + 0x70)
 /** RTC_I2C_COMMAND14 : R/W; bitpos: [13:0]; default: 0;
  *  command14
  */
@@ -840,7 +840,7 @@ extern "C" {
 /** RTC_I2C_CMD15_REG register
  *  i2c commond15 register
  */
-#define RTC_I2C_CMD15_REG (DR_REG_RTC_BASE + 0x74)
+#define RTC_I2C_CMD15_REG (DR_REG_RTC_I2C_BASE + 0x74)
 /** RTC_I2C_COMMAND15 : R/W; bitpos: [13:0]; default: 0;
  *  command15
  */
@@ -859,7 +859,7 @@ extern "C" {
 /** RTC_I2C_DATE_REG register
  *  version register
  */
-#define RTC_I2C_DATE_REG (DR_REG_RTC_BASE + 0xfc)
+#define RTC_I2C_DATE_REG (DR_REG_RTC_I2C_BASE + 0xfc)
 /** RTC_I2C_I2C_DATE : R/W; bitpos: [27:0]; default: 26235664;
  *  version
  */

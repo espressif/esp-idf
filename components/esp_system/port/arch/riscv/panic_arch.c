@@ -13,6 +13,7 @@
 #include "esp_private/panic_reason.h"
 #include "riscv/rvruntime-frames.h"
 #include "esp_private/cache_err_int.h"
+#include "soc/timer_periph.h"
 
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #if CONFIG_IDF_TARGET_ESP32C2
@@ -76,6 +77,7 @@ static inline bool test_and_print_register_bits(const uint32_t status,
  */
 static inline void print_cache_err_details(const void *frame)
 {
+#if !CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5657
     /* Define the array that contains the status (bits) to test on the register
      * EXTMEM_CORE0_ACS_CACHE_INT_ST_REG. each bit is accompanied by a small
      * message.
@@ -148,6 +150,7 @@ static inline void print_cache_err_details(const void *frame)
             panic_print_str("\r\n");
         }
     }
+#endif
 }
 
 
@@ -287,7 +290,7 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         info->reason = pseudo_reason[PANIC_RSN_CACHEERR];
         info->details = print_cache_err_details;
 
-    } else if (frame->mcause == ETS_T1_WDT_INUM) {
+    } else if (frame->mcause == ETS_INT_WDT_INUM) {
         /* Watchdog interrupt occured, get the core on which it happened
          * and update the reason/message accordingly. */
 

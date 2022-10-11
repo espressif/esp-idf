@@ -76,6 +76,8 @@ entries:
         tasks: eTaskGetState (default)
         tasks: uxTaskPriorityGet (default)
         tasks: vTaskPrioritySet (default)
+        tasks: prvTaskPriorityRaise (default)
+        tasks: prvTaskPriorityRestore (default)
         tasks: vTaskSuspend (default)
         tasks: vTaskResume (default)
         tasks: prvCreateIdleTasks (default)

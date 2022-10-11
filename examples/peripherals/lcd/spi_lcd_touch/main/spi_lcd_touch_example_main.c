@@ -208,9 +208,9 @@ void app_main(void)
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = EXAMPLE_PIN_NUM_LCD_RST,
 #if CONFIG_EXAMPLE_LCD_CONTROLLER_ILI9341
-        .color_space = ESP_LCD_COLOR_SPACE_RGB,
+        .rgb_endian = LCD_RGB_ENDIAN_RGB,
 #elif CONFIG_EXAMPLE_LCD_CONTROLLER_GC9A01
-        .color_space = ESP_LCD_COLOR_SPACE_BGR,
+        .rgb_endian = LCD_RGB_ENDIAN_BGR,
 #endif
         .bits_per_pixel = 16,
     };

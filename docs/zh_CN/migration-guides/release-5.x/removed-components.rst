@@ -1,6 +1,8 @@
 从 ESP-IDF 中移出或弃用的组件
 ================================
 
+:link_to_translation:`en:[English]`
+
 移至 IDF Component Registry 的组件
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -18,6 +20,9 @@
 * `sh2lib <https://components.espressif.com/component/espressif/sh2lib>`_
 * `expat <https://components.espressif.com/component/espressif/expat>`_
 * `coap <https://components.espressif.com/component/espressif/coap>`_
+* `esp-cryptoauthlib <https://components.espressif.com/component/espressif/esp-cryptoauthlib>`_
+* `qrcode <https://components.espressif.com/component/espressif/qrcode>`_
+* `tjpgd <https://components.espressif.com/component/espressif/esp_jpeg>`_
 
 .. note::
     请注意，http 解析功能以前属于 ``nghttp`` 组件一部分，但现在属于 :component:`http_parser <http_parser>` 组件。
@@ -39,6 +44,9 @@ IDF v4.x 版本中已不再使用以下组件，这些组件已弃用：
 
 .. note::
     不再支持 OpenSSL-API 组件。IDF Component Registry 中也没有该组件。请直接使用 :doc:`ESP-TLS </api-reference/protocols/esp_tls>` 或 :component:`mbedtls` API。
+
+.. note::
+    不再支持 esp_adc_cal 组件。 新的 adc 校准驱动在 esp_adc 组件中。旧版 adc 校准驱动已被迁移进 esp_adc 组件中。 要使用旧版 esp_adc_cal 驱动接口，你应该在 CMakeLists.txt 文件的组件依赖列表中增加 esp_adc 。更多细节请查看 :doc:`Peripherals Migration Guide </migration-guides/release-5.x/peripherals>`。
 
 版本更新后无需目标组件，因此以下目标组件也已经从 ESP-IDF 中删除：
 

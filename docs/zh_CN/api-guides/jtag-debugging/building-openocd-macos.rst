@@ -41,6 +41,11 @@ MacOS 环境下从源码编译 OpenOCD
 .. note::
 
     * 如果发生错误，请解决后再次尝试编译，直到 ``make`` 成功为止。
+    * 发生 ``Unknown command 'raggedright'`` 错误可能是因为安装的 ``texinfo`` 版本不对，或是由于没有将其添加到 PATH 路径。为了解决该问题，在运行 ``./bootstrap`` 前，请先运行如下命令确保安装合适版本的 ``texinfo`` 并将其添加到 PATH 路径::
+
+        brew install texinfo
+        export PATH=/usr/local/opt/texinfo/bin:$PATH
+
     * 如果 OpenOCD 存在子模块问题，请 ``cd`` 到 ``openocd-esp32`` 目录，并输入 ``git submodule update --init`` 命令。
     * 如果 ``./configure`` 成功运行，JTAG 被使能的信息会被打印在 ``OpenOCD configuration summary`` 下面。
     * 如果您的设备信息未显示在日志中，请根据 ``../openocd-esp32/doc/INSTALL.txt`` 文中的描述使用 ``./configure`` 启用它。

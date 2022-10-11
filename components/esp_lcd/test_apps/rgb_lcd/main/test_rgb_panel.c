@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
@@ -213,6 +214,31 @@ TEST_CASE("lcd_rgb_panel_update_pclk", "[lcd]")
     free(img);
 }
 
+TEST_CASE("lcd_rgb_panel_restart", "[lcd]")
+{
+    uint8_t *img = malloc(TEST_IMG_SIZE);
+    TEST_ASSERT_NOT_NULL(img);
+
+    printf("initialize RGB panel with stream mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, 16, 0, false, NULL, NULL);
+    printf("flush one clock block to the LCD\r\n");
+    uint8_t color_byte = esp_random() & 0xFF;
+    int x_start = esp_random() % (TEST_LCD_H_RES - 100);
+    int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+    memset(img, color_byte, TEST_IMG_SIZE);
+    esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
+    printf("The LCD driver should keep flushing the color block in the background (as it's in stream mode)\r\n");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    printf("Restart the DMA transmission in the background\r\n");
+    TEST_ESP_OK(esp_lcd_rgb_panel_restart(panel_handle));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    printf("delete RGB panel\r\n");
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    free(img);
+}
+
 TEST_CASE("lcd_rgb_panel_rotate", "[lcd]")
 {
     const int w = 200;
@@ -281,7 +307,7 @@ TEST_CASE("lcd_rgb_panel_iram_safe", "[lcd]")
     printf("disable the cache for a while\r\n");
     test_disable_flash_cache();
     printf("the RGB ISR handle should keep working while the flash cache is disabled\r\n");
-    printf("callback calls: %d\r\n", callback_calls);
+    printf("callback calls: %"PRIu32"\r\n", callback_calls);
     TEST_ASSERT(callback_calls > 2);
 
     printf("delete RGB panel\r\n");

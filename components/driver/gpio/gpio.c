@@ -53,6 +53,7 @@ typedef struct {
     uint32_t isr_core_id;
     gpio_isr_func_t *gpio_isr_func;
     gpio_isr_handle_t gpio_isr_handle;
+    uint64_t isr_clr_on_entry_mask; // for edge-triggered interrupts, interrupt status bits should be cleared before entering per-pin handlers
 } gpio_context_t;
 
 static gpio_hal_context_t _gpio_hal = {
@@ -64,6 +65,7 @@ static gpio_context_t gpio_context = {
     .gpio_spinlock = portMUX_INITIALIZER_UNLOCKED,
     .isr_core_id = GPIO_ISR_CORE_ID_UNINIT,
     .gpio_isr_func = NULL,
+    .isr_clr_on_entry_mask = 0,
 };
 
 esp_err_t gpio_pullup_en(gpio_num_t gpio_num)
@@ -149,13 +151,17 @@ esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     gpio_hal_set_intr_type(gpio_context.gpio_hal, gpio_num, intr_type);
+    if (intr_type == GPIO_INTR_POSEDGE || intr_type == GPIO_INTR_NEGEDGE || intr_type == GPIO_INTR_ANYEDGE) {
+        gpio_context.isr_clr_on_entry_mask |= (1ULL << (gpio_num));
+    } else {
+        gpio_context.isr_clr_on_entry_mask &= ~(1ULL << (gpio_num));
+    }
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;
 }
 
 static esp_err_t gpio_intr_enable_on_core(gpio_num_t gpio_num, uint32_t core_id)
 {
-    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_intr_enable_on_core(gpio_context.gpio_hal, gpio_num, core_id);
     return ESP_OK;
 }
@@ -371,7 +377,7 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
                 gpio_pulldown_dis(io_num);
             }
 
-            ESP_LOGI(GPIO_TAG, "GPIO[%d]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d ", io_num, input_en, output_en, od_en, pu_en, pd_en, pGPIOConfig->intr_type);
+            ESP_LOGI(GPIO_TAG, "GPIO[%"PRIu32"]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d ", io_num, input_en, output_en, od_en, pu_en, pd_en, pGPIOConfig->intr_type);
             gpio_set_intr_type(io_num, pGPIOConfig->intr_type);
 
             if (pGPIOConfig->intr_type) {
@@ -412,8 +418,20 @@ static inline void IRAM_ATTR gpio_isr_loop(uint32_t status, const uint32_t gpio_
         status &= ~(1 << nbit);
         int gpio_num = gpio_num_start + nbit;
 
+        bool intr_status_bit_cleared = false;
+        // Edge-triggered type interrupt can clear the interrupt status bit before entering per-pin interrupt handler
+        if ((1ULL << (gpio_num)) & gpio_context.isr_clr_on_entry_mask) {
+            intr_status_bit_cleared = true;
+            gpio_hal_clear_intr_status_bit(gpio_context.gpio_hal, gpio_num);
+        }
+
         if (gpio_context.gpio_isr_func[gpio_num].fn != NULL) {
             gpio_context.gpio_isr_func[gpio_num].fn(gpio_context.gpio_isr_func[gpio_num].args);
+        }
+
+        // If the interrupt status bit was not cleared at the entry, then must clear it before exiting
+        if (!intr_status_bit_cleared) {
+            gpio_hal_clear_intr_status_bit(gpio_context.gpio_hal, gpio_num);
         }
     }
 }
@@ -431,7 +449,6 @@ static void IRAM_ATTR gpio_intr_service(void *arg)
 
     if (gpio_intr_status) {
         gpio_isr_loop(gpio_intr_status, 0);
-        gpio_hal_clear_intr_status(gpio_context.gpio_hal, gpio_intr_status);
     }
 
     //read status1 to get interrupt status for GPIO32-39
@@ -440,21 +457,30 @@ static void IRAM_ATTR gpio_intr_service(void *arg)
 
     if (gpio_intr_status_h) {
         gpio_isr_loop(gpio_intr_status_h, 32);
-        gpio_hal_clear_intr_status_high(gpio_context.gpio_hal, gpio_intr_status_h);
     }
 }
 
 esp_err_t gpio_install_isr_service(int intr_alloc_flags)
 {
     GPIO_CHECK(gpio_context.gpio_isr_func == NULL, "GPIO isr service already installed", ESP_ERR_INVALID_STATE);
-    esp_err_t ret;
-    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_context.gpio_isr_func = (gpio_isr_func_t *) calloc(GPIO_NUM_MAX, sizeof(gpio_isr_func_t));
-    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
-    if (gpio_context.gpio_isr_func == NULL) {
-        ret = ESP_ERR_NO_MEM;
-    } else {
-        ret = gpio_isr_register(gpio_intr_service, NULL, intr_alloc_flags, &gpio_context.gpio_isr_handle);
+    esp_err_t ret = ESP_ERR_NO_MEM;
+    gpio_isr_func_t *isr_func = (gpio_isr_func_t *) calloc(GPIO_NUM_MAX, sizeof(gpio_isr_func_t));
+    if (isr_func) {
+        portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+        if (gpio_context.gpio_isr_func == NULL) {
+            gpio_context.gpio_isr_func = isr_func;
+            portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+            ret = gpio_isr_register(gpio_intr_service, NULL, intr_alloc_flags, &gpio_context.gpio_isr_handle);
+            if (ret != ESP_OK) {
+                // registering failed, uninstall isr service
+                gpio_uninstall_isr_service();
+            }
+        } else {
+            // isr service already installed, free allocated resource
+            portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+            ret = ESP_ERR_INVALID_STATE;
+            free(isr_func);
+        }
     }
 
     return ret;

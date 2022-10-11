@@ -16,16 +16,14 @@
 #include "soc/spi_periph.h"
 #include "driver/spi_master.h"
 #include "esp_serial_slave_link/essl_spi.h"
-
-
-#if (TEST_SPI_PERIPH_NUM >= 2)
-//These will be only enabled on chips with 2 or more SPI peripherals
+#include "test/test_common_spi.h"
 
 #if SOC_SPI_SUPPORT_SLAVE_HD_VER2
 #include "driver/spi_slave_hd.h"
+
+#if (TEST_SPI_PERIPH_NUM >= 2) //These will be only enabled on chips with 2 or more SPI peripherals
+
 #include "esp_rom_gpio.h"
-#include "unity.h"
-#include "test/test_common_spi.h"
 
 #define TEST_DMA_MAX_SIZE    4092
 #define TEST_BUFFER_SIZE 256     ///< buffer size of each wrdma buffer in fifo mode
@@ -56,7 +54,6 @@ typedef struct {
     spi_slave_hd_data_t tx_data;
     spi_slave_hd_data_t rx_data;
 } testhd_context_t;
-
 
 static uint32_t get_hd_flags(void)
 {
@@ -595,13 +592,9 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
     master_free_device_bus(spi);
 }
 
-#endif //SOC_SPI_SUPPORT_SLAVE_HD_VER2
 #endif //#if (TEST_SPI_PERIPH_NUM >= 2)
 
-
 #if (TEST_SPI_PERIPH_NUM == 1)
-#if SOC_SPI_SUPPORT_SLAVE_HD_VER2
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 //These tests are for chips which only have 1 SPI controller
 /********************************************************************************
  *      Test By Master & Slave (2 boards)
@@ -616,9 +609,6 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
  *      GND | GND        | GND        |
  *
  ********************************************************************************/
-#include "driver/spi_slave_hd.h"
-#include "unity.h"
-#include "test/test_common_spi.h"
 
 static void hd_master(void)
 {
@@ -749,6 +739,148 @@ static void hd_slave(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI Slave HD: segment mode, master sends too long", "[spi_ms][test_env=Example_SPI_Multi_device]", hd_master, hd_slave);
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
-#endif  //#if SOC_SPI_SUPPORT_SLAVE_HD_VER2
 #endif  //#if (TEST_SPI_PERIPH_NUM == 1)
+
+/**
+ *  TODO IDF-5483
+ **/
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+
+#define BUF_SIZE 256
+
+static void hd_master_quad(void){
+    spi_bus_config_t bus_cfg = {
+        .miso_io_num = PIN_NUM_MISO,
+        .mosi_io_num = PIN_NUM_MOSI,
+        .sclk_io_num = PIN_NUM_CLK,
+        .quadwp_io_num = PIN_NUM_WP,
+        .quadhd_io_num = PIN_NUM_HD
+    };
+
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
+
+    spi_device_handle_t spi;
+    spi_device_interface_config_t dev_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    dev_cfg.flags = SPI_DEVICE_HALFDUPLEX;
+    dev_cfg.command_bits = 8;
+    dev_cfg.address_bits = 8;
+    dev_cfg.dummy_bits = 8;
+    dev_cfg.clock_speed_hz = 100 * 1000;
+
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &spi));
+
+    WORD_ALIGNED_ATTR uint8_t *master_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
+    WORD_ALIGNED_ATTR uint8_t *master_recv_buf = heap_caps_calloc(BUF_SIZE, 1, MALLOC_CAP_DMA);
+    //This buffer is used for 2-board test and should be assigned totally the same as the ``hd_slave`` does.
+    WORD_ALIGNED_ATTR uint8_t *slave_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
+    get_tx_buffer(199, master_send_buf, slave_send_buf, BUF_SIZE);
+
+    unity_wait_for_signal("slave ready");
+    essl_spi_wrdma(spi, master_send_buf, BUF_SIZE / 2, -1, SPI_TRANS_MODE_QIO);
+
+    unity_wait_for_signal("slave ready");
+    essl_spi_wrdma(spi, master_send_buf + BUF_SIZE / 2, BUF_SIZE / 2, -1, SPI_TRANS_MODE_QIO);
+
+    unity_wait_for_signal("slave ready");
+    essl_spi_rddma(spi, master_recv_buf, BUF_SIZE / 2, -1, SPI_TRANS_MODE_QIO);
+
+    unity_wait_for_signal("slave ready");
+    essl_spi_rddma(spi, master_recv_buf+ BUF_SIZE / 2, BUF_SIZE / 2, -1, SPI_TRANS_MODE_QIO);
+
+    ESP_LOG_BUFFER_HEX("slave send", slave_send_buf, BUF_SIZE);
+    ESP_LOG_BUFFER_HEX("master recv", master_recv_buf, BUF_SIZE);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_send_buf, master_recv_buf, BUF_SIZE);
+
+    free(master_recv_buf);
+    free(master_send_buf);
+    free(slave_send_buf);
+
+    master_free_device_bus(spi);
+}
+
+static void hd_slave_quad(void){
+
+    spi_bus_config_t bus_cfg = {
+        .miso_io_num = PIN_NUM_MISO,
+        .mosi_io_num = PIN_NUM_MOSI,
+        .sclk_io_num = PIN_NUM_CLK,
+        .quadwp_io_num = PIN_NUM_WP,
+        .quadhd_io_num = PIN_NUM_HD,
+        .max_transfer_sz = 14000 * 30
+    };
+
+    spi_slave_hd_slot_config_t slave_hd_cfg = {
+        .spics_io_num = PIN_NUM_CS,
+        .dma_chan = SPI_DMA_CH_AUTO,
+        .flags = 0,
+        .mode = 0,
+        .command_bits = 8,
+        .address_bits = 8,
+        .dummy_bits = 8,
+        .queue_size = 10,
+    };
+    TEST_ESP_OK(spi_slave_hd_init(TEST_SLAVE_HOST, &bus_cfg, &slave_hd_cfg));
+
+    WORD_ALIGNED_ATTR uint8_t *slave_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
+    WORD_ALIGNED_ATTR uint8_t *slave_recv_buf = heap_caps_calloc(BUF_SIZE, 1, MALLOC_CAP_DMA);
+    //This buffer is used for 2-board test and should be assigned totally the same as the ``hd_master`` does.
+    WORD_ALIGNED_ATTR uint8_t *master_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
+    get_tx_buffer(199, master_send_buf, slave_send_buf, BUF_SIZE);
+
+    int trans_len = BUF_SIZE / 2;
+    spi_slave_hd_data_t slave_trans[4] = {
+        //recv, the buffer size should be aligned to 4
+        {
+            .data = slave_recv_buf,
+            .len = (trans_len + 3) & (~3),
+        },
+        {
+            .data = slave_recv_buf+BUF_SIZE/2,
+            .len = (trans_len + 3) & (~3),
+        },
+        //send
+        {
+            .data = slave_send_buf,
+            .len = (trans_len + 3) & (~3),
+        },
+          {
+            .data = slave_send_buf+BUF_SIZE/2,
+            .len = (trans_len + 3) & (~3),
+        },
+    };
+
+    for (int i = 0; i < 2; i ++) {
+        TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &slave_trans[i], portMAX_DELAY));
+        unity_send_signal("slave ready");
+    }
+    for (int i = 2; i < 4; i ++) {
+        TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &slave_trans[i], portMAX_DELAY));
+        unity_send_signal("slave ready");
+    }
+    for (int i = 0; i < 2; i ++) {
+        spi_slave_hd_data_t *ret_trans;
+        TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
+    }
+    for (int i = 2; i < 4; i ++) {
+        spi_slave_hd_data_t *ret_trans;
+        TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
+    }
+
+    ESP_LOG_BUFFER_HEX("master send", master_send_buf, BUF_SIZE);
+    ESP_LOG_BUFFER_HEX("slave recv", slave_recv_buf, BUF_SIZE);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(master_send_buf, slave_recv_buf, BUF_SIZE);
+
+    free(slave_recv_buf);
+    free(slave_send_buf);
+    free(master_send_buf);
+
+    spi_slave_hd_deinit(TEST_SLAVE_HOST);
+}
+
+TEST_CASE_MULTIPLE_DEVICES("SPI quad hd test ", "[spi_ms][test_env=Example_SPI_Quad_Multi_device]", hd_master_quad, hd_slave_quad);
+
+#endif  // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+
+#endif //SOC_SPI_SUPPORT_SLAVE_HD_VER2

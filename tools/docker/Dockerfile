@@ -2,7 +2,6 @@ FROM ubuntu:20.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# We need libpython2.7 due to GDB tools
 RUN : \
   && apt-get update \
   && apt-get install -y \
@@ -14,12 +13,12 @@ RUN : \
     curl \
     flex \
     git \
+    git-lfs \
     gperf \
     lcov \
     libbsd-dev \
     libffi-dev \
     libncurses-dev \
-    libpython2.7 \
     libusb-1.0-0-dev \
     make \
     ninja-build \

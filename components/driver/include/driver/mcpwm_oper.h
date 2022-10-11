@@ -82,14 +82,14 @@ typedef struct {
 /**
  * @brief Set brake method for MCPWM operator
  *
- * @param[in] operator MCPWM operator, allocated by `mcpwm_new_operator()`
+ * @param[in] oper MCPWM operator, allocated by `mcpwm_new_operator()`
  * @param[in] config MCPWM brake configuration
  * @return
  *      - ESP_OK: Set trip for operator successfully
  *      - ESP_ERR_INVALID_ARG: Set trip for operator failed because of invalid argument
  *      - ESP_FAIL: Set trip for operator failed because of other error
  */
-esp_err_t mcpwm_operator_set_brake_on_fault(mcpwm_oper_handle_t operator, const mcpwm_brake_config_t *config);
+esp_err_t mcpwm_operator_set_brake_on_fault(mcpwm_oper_handle_t oper, const mcpwm_brake_config_t *config);
 
 /**
  * @brief Try to make the operator recover from fault
@@ -97,7 +97,7 @@ esp_err_t mcpwm_operator_set_brake_on_fault(mcpwm_oper_handle_t operator, const 
  * @note To recover from fault or escape from trip, you make sure the fault signal has dissappeared already.
  *       Otherwise the recovery can't succeed.
  *
- * @param[in] operator MCPWM operator, allocated by `mcpwm_new_operator()`
+ * @param[in] oper MCPWM operator, allocated by `mcpwm_new_operator()`
  * @param[in] fault MCPWM fault handle
  * @return
  *      - ESP_OK: Recover from fault successfully
@@ -105,7 +105,7 @@ esp_err_t mcpwm_operator_set_brake_on_fault(mcpwm_oper_handle_t operator, const 
  *      - ESP_ERR_INVALID_STATE: Recover from fault failed because the fault source is still active
  *      - ESP_FAIL: Recover from fault failed because of other error
  */
-esp_err_t mcpwm_operator_recover_from_fault(mcpwm_oper_handle_t operator, mcpwm_fault_handle_t fault);
+esp_err_t mcpwm_operator_recover_from_fault(mcpwm_oper_handle_t oper, mcpwm_fault_handle_t fault);
 
 /**
  * @brief Group of supported MCPWM operator event callbacks
@@ -118,6 +118,8 @@ typedef struct {
 
 /**
  * @brief Set event callbacks for MCPWM operator
+ *
+ * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `cbs` structure to NULL.
  *
  * @param[in] oper MCPWM operator handle, allocated by `mcpwm_new_operator()`
  * @param[in] cbs Group of callback functions

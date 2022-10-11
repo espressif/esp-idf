@@ -99,6 +99,14 @@ config SOC_SDM_SUPPORTED
     bool
     default y
 
+config SOC_LEDC_SUPPORTED
+    bool
+    default y
+
+config SOC_I2C_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_SUPPORTED
     bool
     default y
@@ -235,6 +243,10 @@ config SOC_BROWNOUT_RESET_SUPPORTED
     bool
     default y
 
+config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
+    int
+    default 6
+
 config SOC_CP_DMA_MAX_BUFFER_SIZE
     int
     default 4095
@@ -286,6 +298,10 @@ config SOC_GPIO_SUPPORT_FORCE_HOLD
 config SOC_GPIO_VALID_GPIO_MASK
     hex
     default 0x7FFFFFFFFFFF
+
+config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
+    hex
+    default 0x00007FFFFC000000
 
 config SOC_GPIO_SUPPORT_SLP_SWITCH
     bool
@@ -555,6 +571,10 @@ config SOC_SPI_DMA_CHAN_NUM
     int
     default 3
 
+config SOC_SPI_MAX_CS_NUM
+    int
+    default 6
+
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
     default 72
@@ -688,6 +708,10 @@ config SOC_UART_NUM
     default 2
 
 config SOC_UART_SUPPORT_WAKEUP_INT
+    bool
+    default y
+
+config SOC_UART_SUPPORT_APB_CLK
     bool
     default y
 

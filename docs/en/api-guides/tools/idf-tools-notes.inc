@@ -37,11 +37,6 @@
 
 ---
 
-.. tool-esp32s2ulp-elf-notes
-
-
----
-
 .. tool-openocd-esp32-notes
 
 
@@ -75,6 +70,11 @@ On Linux and macOS, it is recommended to install ninja using the OS-specific pac
 ---
 
 .. tool-dfu-util-notes
+
+
+---
+
+.. tool-esp-rom-elfs-notes
 
 
 ---

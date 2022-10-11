@@ -151,6 +151,14 @@ config SOC_SDM_SUPPORTED
     bool
     default y
 
+config SOC_LEDC_SUPPORTED
+    bool
+    default y
+
+config SOC_I2C_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_SUPPORTED
     bool
     default y
@@ -299,6 +307,10 @@ config SOC_BROWNOUT_RESET_SUPPORTED
     bool
     default y
 
+config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
+    int
+    default 1
+
 config SOC_CPU_CORES_NUM
     int
     default 2
@@ -371,6 +383,10 @@ config SOC_GPIO_VALID_GPIO_MASK
     hex
     default 0x1FFFFFFFFFFFF
 
+config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
+    hex
+    default 0x0001FFFFFC000000
+
 config SOC_GPIO_SUPPORT_SLP_SWITCH
     bool
     default y
@@ -416,6 +432,10 @@ config SOC_I2S_NUM
     default 2
 
 config SOC_I2S_HW_VERSION_2
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_XTAL
     bool
     default y
 
@@ -488,8 +508,8 @@ config SOC_MCPWM_SWSYNC_CAN_PROPAGATE
     default y
 
 config SOC_PCNT_GROUPS
-    bool
-    default y
+    int
+    default 1
 
 config SOC_PCNT_UNITS_PER_GROUP
     int
@@ -591,6 +611,10 @@ config SOC_LCD_RGB_DATA_WIDTH
     int
     default 16
 
+config SOC_LCD_SUPPORT_RGB_YUV_CONV
+    bool
+    default y
+
 config SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH
     int
     default 128
@@ -630,6 +654,10 @@ config SOC_SDM_CHANNELS_PER_GROUP
 config SOC_SPI_PERIPH_NUM
     int
     default 3
+
+config SOC_SPI_MAX_CS_NUM
+    int
+    default 6
 
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
@@ -784,6 +812,10 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     default y
 
 config SOC_UART_SUPPORT_WAKEUP_INT
+    bool
+    default y
+
+config SOC_UART_SUPPORT_APB_CLK
     bool
     default y
 
@@ -1028,6 +1060,14 @@ config SOC_WIFI_CSI_SUPPORT
     default y
 
 config SOC_WIFI_MESH_SUPPORT
+    bool
+    default y
+
+config SOC_BLE_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_MESH_SUPPORTED
     bool
     default y
 

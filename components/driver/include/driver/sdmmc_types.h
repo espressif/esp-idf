@@ -183,6 +183,7 @@ typedef struct {
     esp_err_t (*io_int_enable)(int slot); /*!< Host function to enable SDIO interrupt line */
     esp_err_t (*io_int_wait)(int slot, TickType_t timeout_ticks); /*!< Host function to wait for SDIO interrupt line to be active */
     int command_timeout_ms;     /*!< timeout, in milliseconds, of a single command. Set to 0 to use the default value. */
+    esp_err_t (*get_real_freq)(int slot, int* real_freq); /*!< Host function to provide real working freq, based on SDMMC controller setup */
 } sdmmc_host_t;
 
 /**
@@ -202,6 +203,7 @@ typedef struct {
     sdmmc_ext_csd_t ext_csd;    /*!< decoded EXT_CSD (Extended Card Specific Data) register value */
     uint16_t rca;               /*!< RCA (Relative Card Address) */
     uint16_t max_freq_khz;      /*!< Maximum frequency, in kHz, supported by the card */
+    int real_freq_khz;          /*!< Real working frequency, in kHz, configured on the host controller */
     uint32_t is_mem : 1;        /*!< Bit indicates if the card is a memory card */
     uint32_t is_sdio : 1;       /*!< Bit indicates if the card is an IO card */
     uint32_t is_mmc : 1;        /*!< Bit indicates if the card is MMC */

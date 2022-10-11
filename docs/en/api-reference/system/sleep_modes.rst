@@ -16,9 +16,8 @@ In Deep-sleep mode, the CPUs, most of the RAM, and all digital peripherals that 
     .. list::
 
         - RTC controller
-        - RTC peripherals
         :SOC_ULP_SUPPORTED: - ULP coprocessor
-        - RTC fast memory
+        :SOC_RTC_FAST_MEM_SUPPORTED: - RTC fast memory
         :SOC_RTC_SLOW_MEM_SUPPORTED: - RTC slow memory
 
 There are several wakeup sources in Deep-sleep and Light-sleep modes. These sources can also be combined so that the chip will wake up when any of the sources are triggered. Wakeup sources can be enabled using ``esp_sleep_enable_X_wakeup`` APIs and can be disabled using :cpp:func:`esp_sleep_disable_wakeup_source` API. Next section describes these APIs in detail. Wakeup sources can be configured at any moment before entering Light-sleep or Deep-sleep mode.
@@ -164,7 +163,7 @@ By default, :cpp:func:`esp_deep_sleep_start` and :cpp:func:`esp_light_sleep_star
 
     If some variables in the program are placed into RTC slow memory (for example, using ``RTC_DATA_ATTR`` attribute), RTC slow memory will be kept powered on by default. This can be overridden using :cpp:func:`esp_sleep_pd_config` function, if desired.
 
-.. only:: not SOC_RTC_SLOW_MEM_SUPPORTED
+.. only:: not SOC_RTC_SLOW_MEM_SUPPORTED and SOC_RTC_FAST_MEM_SUPPORTED
 
     In {IDF_TARGET_NAME}, there is only RTC fast memory, so if some variables in the program are marked by ``RTC_DATA_ATTR``, ``RTC_SLOW_ATTR`` or ``RTC_FAST_ATTR`` attributes, all of them go to RTC fast memory. It will be kept powered on by default. This can be overridden using :cpp:func:`esp_sleep_pd_config` function, if desired.
 
@@ -213,7 +212,7 @@ Configuring IOs
 
 Some {IDF_TARGET_NAME} IOs have internal pullups or pulldowns, which are enabled by default. If an external circuit drives this pin in Deep-sleep mode, current consumption may increase due to current flowing through these pullups and pulldowns.
 
-.. only:: not esp32c3
+.. only:: SOC_RTCIO_HOLD_SUPPORTED
 
     To isolate a pin to prevent extra current draw, call :cpp:func:`rtc_gpio_isolate` function.
 
@@ -223,7 +222,7 @@ Some {IDF_TARGET_NAME} IOs have internal pullups or pulldowns, which are enabled
 
 	rtc_gpio_isolate(GPIO_NUM_12);
 
-.. only:: esp32c3
+.. only:: esp32c2 or esp32c3
 
     In Deep-sleep mode:
         - digital GPIOs (GPIO6 ~ 21) are in a high impedance state.
@@ -267,7 +266,7 @@ Application Example
 
     - :example:`system/deep_sleep`: the usage of various Deep-sleep wakeup triggers and ULP coprocessor programming.
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp32c2
 
     - :example:`system/deep_sleep`: the usage of Deep-sleep wakeup triggered by timer.
 

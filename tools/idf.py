@@ -27,7 +27,7 @@ from collections import Counter, OrderedDict, _OrderedDictKeysView
 from importlib import import_module
 from pkgutil import iter_modules
 from types import FrameType
-from typing import Any, Callable, Dict, List, Optional, TextIO, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 # pyc files remain in the filesystem when switching between branches which might raise errors for incompatible
 # idf.py extensions. Therefore, pyc file generation is turned off:
@@ -37,8 +37,10 @@ import python_version_checker  # noqa: E402
 
 try:
     from idf_py_actions.errors import FatalError  # noqa: E402
-    from idf_py_actions.tools import (PropertyDict, executable_exists, get_target, idf_version,  # noqa: E402
-                                      merge_action_lists, realpath)
+    from idf_py_actions.tools import (PROG, SHELL_COMPLETE_RUN, SHELL_COMPLETE_VAR, PropertyDict,  # noqa: E402
+                                      debug_print_idf_version, get_target, merge_action_lists, print_warning, realpath)
+    if os.getenv('IDF_COMPONENT_MANAGER') != '0':
+        from idf_component_manager import idf_extensions
 except ImportError:
     # For example, importing click could cause this.
     print('Please use idf.py only in an ESP-IDF shell environment.', file=sys.stderr)
@@ -51,23 +53,6 @@ PYTHON = sys.executable
 # you have to pass env=os.environ explicitly anywhere that we create a process
 os.environ['PYTHON'] = sys.executable
 
-# Name of the program, normally 'idf.py'.
-# Can be overridden from idf.bat using IDF_PY_PROGRAM_NAME
-PROG = os.getenv('IDF_PY_PROGRAM_NAME', 'idf.py')
-
-# environment variable used during click shell completion run
-SHELL_COMPLETE_VAR = '_IDF.PY_COMPLETE'
-
-# was shell completion invoked?
-SHELL_COMPLETE_RUN = SHELL_COMPLETE_VAR in os.environ
-
-
-# function prints warning when autocompletion is not being performed
-# set argument stream to sys.stderr for errors and exceptions
-def print_warning(message: str, stream: TextIO=None) -> None:
-    if not SHELL_COMPLETE_RUN:
-        print(message, file=stream or sys.stderr)
-
 
 def check_environment() -> List:
     """
@@ -76,10 +61,6 @@ def check_environment() -> List:
     (cmake will check a lot of other things)
     """
     checks_output = []
-
-    if not executable_exists(['cmake', '--version']):
-        debug_print_idf_version()
-        raise FatalError("'cmake' must be available on the PATH to use %s" % PROG)
 
     # verify that IDF_PATH env variable is set
     # find the directory idf.py is in, then the parent directory of this, and assume this is IDF_PATH
@@ -133,14 +114,6 @@ def _safe_relpath(path: str, start: Optional[str]=None) -> str:
         return os.path.relpath(path, os.curdir if start is None else start)
     except ValueError:
         return os.path.abspath(path)
-
-
-def debug_print_idf_version() -> None:
-    version = idf_version()
-    if version:
-        print_warning('ESP-IDF %s' % version)
-    else:
-        print_warning('ESP-IDF version unknown')
 
 
 def init_cli(verbose_output: List=None) -> Any:
@@ -672,7 +645,6 @@ def init_cli(verbose_output: List=None) -> Any:
 
     # Load component manager idf.py extensions if not explicitly disabled
     if os.getenv('IDF_COMPONENT_MANAGER') != '0':
-        from idf_component_manager import idf_extensions
         extensions.append(('component_manager_ext', idf_extensions))
 
     # Optional load `pyclang` for additional clang-tidy related functionalities

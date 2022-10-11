@@ -24,7 +24,7 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_private/spi_flash_os.h"
-
+#include "hal/efuse_hal.h"
 
 #define RTC_CNTL_MEM_FORCE_NOISO (RTC_CNTL_SLOWMEM_FORCE_NOISO | RTC_CNTL_FASTMEM_FORCE_NOISO)
 
@@ -32,6 +32,13 @@ static const char *TAG = "rtcinit";
 
 static void set_ocode_by_efuse(int calib_version);
 static void calibrate_ocode(void);
+static void rtc_set_stored_dbias(void);
+
+// Initial values are used for bootloader, and these variables will be re-assigned based on efuse values during application startup
+uint32_t g_dig_dbias_pvt_240m = 28;
+uint32_t g_rtc_dbias_pvt_240m = 28;
+uint32_t g_dig_dbias_pvt_non_240m = 27;
+uint32_t g_rtc_dbias_pvt_non_240m = 27;
 
 void rtc_init(rtc_config_t cfg)
 {
@@ -88,6 +95,12 @@ void rtc_init(rtc_config_t cfg)
             calibrate_ocode();
         }
     }
+
+    //LDO dbias initialization
+    rtc_set_stored_dbias();
+
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
 
     if (cfg.clkctl_init) {
         //clear CMMU clock force on
@@ -300,4 +313,117 @@ static void calibrate_ocode(void)
     //System clock is switched back to PLL. Here we switch to the MSPI high speed mode, add the delays back
     spi_timing_change_speed_mode_cache_safe(false);
 #endif
+}
+
+static uint32_t get_dig_dbias_by_efuse(uint8_t pvt_scheme_ver)
+{
+    assert(pvt_scheme_ver == 1);
+    uint32_t dig_dbias = 28;
+    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_DIG_DBIAS_HVT, &dig_dbias, ESP_EFUSE_DIG_DBIAS_HVT[0]->bit_count);
+    if (err != ESP_OK) {
+        dig_dbias = 28;
+        ESP_HW_LOGW(TAG, "efuse read fail, set default dig_dbias value: %d\n", dig_dbias);
+    }
+    return dig_dbias;
+}
+
+static uint32_t get_rtc_dbias_by_efuse(uint8_t pvt_scheme_ver, uint32_t dig_dbias)
+{
+    assert(pvt_scheme_ver == 1);
+    uint32_t rtc_dbias = 0;
+    signed int k_rtc_ldo = 0, k_dig_ldo = 0, v_rtc_bias20 = 0, v_dig_bias20 = 0;
+    esp_err_t err0 = esp_efuse_read_field_blob(ESP_EFUSE_K_RTC_LDO, &k_rtc_ldo, ESP_EFUSE_K_RTC_LDO[0]->bit_count);
+    esp_err_t err1 = esp_efuse_read_field_blob(ESP_EFUSE_K_DIG_LDO, &k_dig_ldo, ESP_EFUSE_K_DIG_LDO[0]->bit_count);
+    esp_err_t err2 = esp_efuse_read_field_blob(ESP_EFUSE_V_RTC_DBIAS20, &v_rtc_bias20, ESP_EFUSE_V_RTC_DBIAS20[0]->bit_count);
+    esp_err_t err3 = esp_efuse_read_field_blob(ESP_EFUSE_V_DIG_DBIAS20, &v_dig_bias20, ESP_EFUSE_V_DIG_DBIAS20[0]->bit_count);
+    if ((err0 != ESP_OK) | (err1 != ESP_OK) | (err2 != ESP_OK) | (err3 != ESP_OK)) {
+        k_rtc_ldo = 0;
+        k_dig_ldo = 0;
+        v_rtc_bias20 = 0;
+        v_dig_bias20 = 0;
+        ESP_HW_LOGW(TAG, "efuse read fail, k_rtc_ldo: %d, k_dig_ldo: %d, v_rtc_bias20: %d,  v_dig_bias20: %d\n", k_rtc_ldo, k_dig_ldo, v_rtc_bias20, v_dig_bias20);
+        }
+
+    k_rtc_ldo =  ((k_rtc_ldo & BIT(6)) != 0)? -(k_rtc_ldo & 0x3f): (uint8_t)k_rtc_ldo;
+    k_dig_ldo =  ((k_dig_ldo & BIT(6)) != 0)? -(k_dig_ldo & 0x3f): (uint8_t)k_dig_ldo;
+    v_rtc_bias20 =  ((v_rtc_bias20 & BIT(7)) != 0)? -(v_rtc_bias20 & 0x7f): (uint8_t)v_rtc_bias20;
+    v_dig_bias20 =  ((v_dig_bias20 & BIT(7)) != 0)? -(v_dig_bias20 & 0x7f): (uint8_t)v_dig_bias20;
+
+    uint32_t v_rtc_dbias20_real_mul10000 = V_RTC_MID_MUL10000 + v_rtc_bias20 * 10000 / 500;
+    uint32_t v_dig_dbias20_real_mul10000 = V_DIG_MID_MUL10000 + v_dig_bias20 * 10000 / 500;
+    signed int k_rtc_ldo_real_mul10000 = K_RTC_MID_MUL10000 + k_rtc_ldo;
+    signed int k_dig_ldo_real_mul10000 = K_DIG_MID_MUL10000 + k_dig_ldo;
+    uint32_t v_dig_nearest_1v15_mul10000 = v_dig_dbias20_real_mul10000 + k_dig_ldo_real_mul10000 * (dig_dbias - 20);
+    for (rtc_dbias = 15; rtc_dbias < 31; rtc_dbias++) {
+        uint32_t v_rtc_nearest_1v15_mul10000 = 0;
+        v_rtc_nearest_1v15_mul10000 = v_rtc_dbias20_real_mul10000 + k_rtc_ldo_real_mul10000 * (rtc_dbias - 20);
+        if (v_rtc_nearest_1v15_mul10000 >= v_dig_nearest_1v15_mul10000 - 250) {
+            break;
+        }
+    }
+    return rtc_dbias;
+}
+
+static uint32_t get_dig1v3_dbias_by_efuse(uint8_t pvt_scheme_ver)
+{
+    assert(pvt_scheme_ver == 1);
+    signed int k_dig_ldo = 0, v_dig_bias20 = 0;
+    esp_err_t err0 = esp_efuse_read_field_blob(ESP_EFUSE_K_DIG_LDO, &k_dig_ldo, ESP_EFUSE_K_DIG_LDO[0]->bit_count);
+    esp_err_t err1 = esp_efuse_read_field_blob(ESP_EFUSE_V_DIG_DBIAS20, &v_dig_bias20, ESP_EFUSE_V_DIG_DBIAS20[0]->bit_count);
+    if ((err0 != ESP_OK) | (err1 != ESP_OK)) {
+        k_dig_ldo = 0;
+        v_dig_bias20 = 0;
+        ESP_HW_LOGW(TAG, "efuse read fail, k_dig_ldo: %d,  v_dig_bias20: %d\n",  k_dig_ldo, v_dig_bias20);
+    }
+
+    k_dig_ldo =  ((k_dig_ldo & BIT(6)) != 0)? -(k_dig_ldo & 0x3f): (uint8_t)k_dig_ldo;
+    v_dig_bias20 =  ((v_dig_bias20 & BIT(7)) != 0)? -(v_dig_bias20 & 0x7f): (uint8_t)v_dig_bias20;
+
+    uint32_t v_dig_dbias20_real_mul10000 = V_DIG_MID_MUL10000 + v_dig_bias20 * 10000 / 500;
+    signed int k_dig_ldo_real_mul10000 = K_DIG_MID_MUL10000 + k_dig_ldo;
+    uint32_t dig_dbias =15;
+    for (dig_dbias = 15; dig_dbias < 31; dig_dbias++) {
+        uint32_t v_dig_nearest_1v3_mul10000 = 0;
+        v_dig_nearest_1v3_mul10000 = v_dig_dbias20_real_mul10000 + k_dig_ldo_real_mul10000 * (dig_dbias - 20);
+        if (v_dig_nearest_1v3_mul10000 >= 13000) {
+            break;
+        }
+    }
+    return dig_dbias;
+}
+
+static void rtc_set_stored_dbias(void)
+{
+    /*
+    1. a reasonable dig_dbias which by scaning pvt to make 240 CPU run successful stored in efuse;
+    2. also we store some value in efuse, include:
+        k_rtc_ldo (slope of rtc voltage & rtc_dbias);
+        k_dig_ldo (slope of digital voltage & digital_dbias);
+        v_rtc_bias20 (rtc voltage when rtc dbais is 20);
+        v_dig_bias20 (digital voltage when digital dbais is 20).
+    3. a reasonable rtc_dbias can be calculated by a certion formula.
+    4. save these values for reuse
+    */
+    uint8_t blk_minor = efuse_ll_get_blk_version_minor();
+    uint8_t blk_major = efuse_ll_get_blk_version_major();
+    uint8_t pvt_scheme_ver = 0;
+    if ( (blk_major <= 1 && blk_minor == 1) || blk_major > 1 || (blk_major == 1 && blk_minor >= 2) ) {
+        /* PVT supported after blk_ver 1.2 */
+        pvt_scheme_ver = 1;
+    }
+
+    if (pvt_scheme_ver == 1) {
+        uint32_t dig1v3_dbias = get_dig1v3_dbias_by_efuse(pvt_scheme_ver);
+        uint32_t dig_dbias = get_dig_dbias_by_efuse(pvt_scheme_ver);
+        if (dig_dbias != 0) {
+            g_dig_dbias_pvt_240m = MIN(dig1v3_dbias, dig_dbias + 3);
+            g_dig_dbias_pvt_non_240m = MIN(dig1v3_dbias, dig_dbias + 2);
+            g_rtc_dbias_pvt_240m = get_rtc_dbias_by_efuse(pvt_scheme_ver, g_dig_dbias_pvt_240m);
+            g_rtc_dbias_pvt_non_240m = get_rtc_dbias_by_efuse(pvt_scheme_ver, g_dig_dbias_pvt_non_240m);
+        } else {
+            ESP_HW_LOGD(TAG, "not burn core voltage in efuse or burn wrong voltage value in blk version: 0%d\n", pvt_scheme_ver);
+        }
+    } else {
+        ESP_HW_LOGD(TAG, "core voltage not decided in efuse, use default value.");
+    }
 }

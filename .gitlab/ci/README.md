@@ -116,7 +116,7 @@ curl -X POST --header "PRIVATE-TOKEN: [YOUR PERSONAL ACCESS TOKEN]" [GITLAB_SERV
     ```yaml
     check_docs_lang_sync:
       extends:
-        - .pre_check_job_template
+        - .pre_check_template
         - .rules:build:docs
       script:
         - cd docs

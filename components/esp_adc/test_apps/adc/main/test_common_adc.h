@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
+#include "unity.h"
 #include "esp_log.h"
 #include "soc/soc_caps.h"
 #include "esp_private/adc_private.h"
@@ -71,7 +72,7 @@ void test_adc_calibration_deinit(adc_cali_handle_t handle);
 
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define ADC_TEST_LOW_VAL         0
-#define ADC_TEST_LOW_THRESH      60
+#define ADC_TEST_LOW_THRESH      60     //This is due to ADC2 accuracy is not as good as ADC1, and also we use weak pulldown
 
 #define ADC_TEST_HIGH_VAL        4095
 #define ADC_TEST_HIGH_VAL_DMA    4095
@@ -87,7 +88,7 @@ void test_adc_calibration_deinit(adc_cali_handle_t handle);
 
 #elif CONFIG_IDF_TARGET_ESP32C2
 #define ADC_TEST_LOW_VAL         2147
-#define ADC_TEST_LOW_THRESH      50
+#define ADC_TEST_LOW_THRESH      100
 
 #define ADC_TEST_HIGH_VAL        4095
 #define ADC_TEST_HIGH_THRESH     0

@@ -133,11 +133,14 @@ typedef enum {
 } psram_cache_speed_t;
 
 #if CONFIG_SPIRAM_SPEED_40M && CONFIG_ESPTOOLPY_FLASHFREQ_40M
-#define PSRAM_SPEED PSRAM_CACHE_F40M_S40M
+#define PSRAM_SPEED           PSRAM_CACHE_F40M_S40M
+#define PSRAM_CS_HOLD_TIME    0
 #elif CONFIG_SPIRAM_SPEED_40M && CONFIG_ESPTOOLPY_FLASHFREQ_80M
-#define PSRAM_SPEED PSRAM_CACHE_F80M_S40M
+#define PSRAM_SPEED           PSRAM_CACHE_F80M_S40M
+#define PSRAM_CS_HOLD_TIME    0
 #elif CONFIG_SPIRAM_SPEED_80M && CONFIG_ESPTOOLPY_FLASHFREQ_80M
-#define PSRAM_SPEED PSRAM_CACHE_F80M_S80M
+#define PSRAM_SPEED           PSRAM_CACHE_F80M_S80M
+#define PSRAM_CS_HOLD_TIME    1
 #else
 #error "FLASH speed can only be equal to or higher than SRAM speed while SRAM is enabled!"
 #endif
@@ -680,7 +683,7 @@ void psram_set_cs_timing(psram_spi_num_t spi_num, psram_clk_mode_t clk_mode)
     if (clk_mode == PSRAM_CLK_MODE_NORM) {
         SET_PERI_REG_MASK(SPI_USER_REG(spi_num), SPI_CS_HOLD_M | SPI_CS_SETUP_M);
         // Set cs time.
-        SET_PERI_REG_BITS(SPI_CTRL2_REG(spi_num), SPI_HOLD_TIME_V, 1, SPI_HOLD_TIME_S);
+        SET_PERI_REG_BITS(SPI_CTRL2_REG(spi_num), SPI_HOLD_TIME_V, PSRAM_CS_HOLD_TIME, SPI_HOLD_TIME_S);
         SET_PERI_REG_BITS(SPI_CTRL2_REG(spi_num), SPI_SETUP_TIME_V, 0, SPI_SETUP_TIME_S);
     } else {
         CLEAR_PERI_REG_MASK(SPI_USER_REG(spi_num), SPI_CS_HOLD_M | SPI_CS_SETUP_M);

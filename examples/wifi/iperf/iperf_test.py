@@ -19,13 +19,10 @@ The test env Example_ShieldBox do need the following config::
     apc_ip: "192.168.1.88"
     pc_nic: "eth0"
 """
-from __future__ import division, unicode_literals
-
 import os
 import re
 import subprocess
 import time
-from builtins import range, str
 
 import ttfw_idf
 from idf_iperf_test_util import Attenuator, IperfUtility, PowerControl, TestReport

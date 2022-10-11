@@ -83,6 +83,8 @@ hw-reference/get-started-pico-kit-v3            hw-reference/esp32/get-started-p
 hw-reference/get-started-ethernet-kit-v1.0      hw-reference/esp32/get-started-ethernet-kit-v1.0
 hw-reference/get-started-ethernet-kit           hw-reference/esp32/get-started-ethernet-kit
 hw-reference/esp32s2/usermacos-setup_mesh       api-reference/network/esp-wifi-mesh
+# The 'chip series comparison' is merged into 'esp product selector'
+hw-reference/chip-series-comparison             "https://products.espressif.com/#/product-comparison"
 
 # Getting Started
 get-started/macos-setup                         get-started/linux-macos-setup

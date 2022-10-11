@@ -6,7 +6,8 @@ Migration from 4.4 to 5.0
 .. toctree::
     :maxdepth: 1
 
-    :SOC_CLASSIC_BT_SUPPORTED: bluetooth-classic
+    :SOC_BT_CLASSIC_SUPPORTED: bluetooth-classic
+    :SOC_BLE_SUPPORTED: bluetooth-low-energy
     build-system
     gcc
     networking

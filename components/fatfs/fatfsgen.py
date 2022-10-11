@@ -78,17 +78,41 @@ class FATFS:
     def create_file(self, name: str,
                     extension: str = '',
                     path_from_root: Optional[List[str]] = None,
-                    object_timestamp_: datetime = FATFS_INCEPTION) -> None:
-        # when path_from_root is None the dir is root
+                    object_timestamp_: datetime = FATFS_INCEPTION,
+                    is_empty: bool = False) -> None:
+        """
+        Root directory recursively finds the parent directory of the new file, allocates cluster,
+        entry and appends a new file into the parent directory.
+
+        When path_from_root is None the dir is root.
+
+        :param name: The name of the file.
+        :param extension: The extension of the file.
+        :param path_from_root: List of strings containing names of the ancestor directories in the given order.
+        :param object_timestamp_: is not None, this will be propagated to the file's entry
+        :param is_empty: True if there is no need to allocate any cluster, otherwise False
+        """
         self.root_directory.new_file(name=name,
                                      extension=extension,
                                      path_from_root=path_from_root,
-                                     object_timestamp_=object_timestamp_)
+                                     object_timestamp_=object_timestamp_,
+                                     is_empty=is_empty)
 
     def create_directory(self, name: str,
                          path_from_root: Optional[List[str]] = None,
                          object_timestamp_: datetime = FATFS_INCEPTION) -> None:
-        # when path_from_root is None the dir is root
+        """
+        Initially recursively finds a parent of the new directory
+        and then create a new directory inside the parent.
+
+        When path_from_root is None the parent dir is root.
+
+        :param name: The full name of the directory (excluding its path)
+        :param path_from_root: List of strings containing names of the ancestor directories in the given order.
+        :param object_timestamp_: in case the user preserves the timestamps, this will be propagated to the
+        metadata of the directory (to the corresponding entry)
+        :returns: None
+        """
         parent_dir = self.root_directory
         if path_from_root:
             parent_dir = self.root_directory.recursive_search(path_from_root, self.root_directory)
@@ -138,7 +162,8 @@ class FATFS:
             self.create_file(name=file_name,
                              extension=extension,
                              path_from_root=split_path[1:-1] or None,
-                             object_timestamp_=object_timestamp)
+                             object_timestamp_=object_timestamp,
+                             is_empty=len(content) == 0)
             self.write_content(split_path[1:], content)
         elif os.path.isdir(real_path):
             if not is_dir:
@@ -160,7 +185,7 @@ class FATFS:
 
 
 def main() -> None:
-    args = get_args_for_partition_generator('Create a FAT filesystem and populate it with directory content')
+    args = get_args_for_partition_generator('Create a FAT filesystem and populate it with directory content', wl=False)
     fatfs = FATFS(sector_size=args.sector_size,
                   sectors_per_cluster=args.sectors_per_cluster,
                   size=args.partition_size,

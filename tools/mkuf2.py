@@ -13,8 +13,6 @@ import struct
 from functools import partial
 from typing import Dict, List
 
-from future.utils import iteritems
-
 
 def round_up_int_div(n: int, d: int) -> int:
     # equivalent to math.ceil(n / d)
@@ -66,7 +64,7 @@ class UF2Writer(object):
         md5_part = self._to_uint32(addr)
         md5_part += self._to_uint32(len_chunk)
         md5_part += hashlib.md5(chunk).digest()
-        assert(len(md5_part) == self.UF2_MD5_PART_SIZE)
+        assert len(md5_part) == self.UF2_MD5_PART_SIZE
 
         block += md5_part
         block += b'\x00' * (self.UF2_DATA_SIZE - self.UF2_MD5_PART_SIZE - len_chunk)
@@ -172,15 +170,15 @@ def main() -> None:
                 flash_dic = dict((x['offset'], x['file']) for x in bin_selection)
             except KeyError:
                 print('Invalid binary was selected.')
-                valid = [k if all(x in v for x in ('offset', 'file')) else None for k, v in iteritems(json_content)]
+                valid = [k if all(x in v for x in ('offset', 'file')) else None for k, v in json_content.items()]
                 print('Valid ones:', ' '.join(x for x in valid if x))
                 exit(1)
         else:
             flash_dic = json_content['flash_files']
 
-        files += [(parse_addr(addr), process_json_file(f_name)) for addr, f_name in iteritems(flash_dic)]
+        files += [(parse_addr(addr), process_json_file(f_name)) for addr, f_name in flash_dic.items()]
 
-    files = sorted([(addr, f_name) for addr, f_name in iteritems(dict(files))],
+    files = sorted([(addr, f_name) for addr, f_name in dict(files).items()],
                    key=lambda x: x[0])  # remove possible duplicates and sort based on the address
 
     cmd_args = {'output_file': args.output_file,

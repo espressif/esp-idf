@@ -47,15 +47,6 @@
 #include "stack_macros.h"
 
 #ifdef ESP_PLATFORM
-#define taskCRITICAL_MUX &xTaskQueueMutex
-#undef taskENTER_CRITICAL
-#undef taskEXIT_CRITICAL
-#undef taskENTER_CRITICAL_ISR
-#undef taskEXIT_CRITICAL_ISR
-#define taskENTER_CRITICAL( )           portENTER_CRITICAL( taskCRITICAL_MUX )
-#define taskEXIT_CRITICAL( )            portEXIT_CRITICAL( taskCRITICAL_MUX )
-#define taskENTER_CRITICAL_ISR( )       portENTER_CRITICAL_ISR( taskCRITICAL_MUX )
-#define taskEXIT_CRITICAL_ISR( )        portEXIT_CRITICAL_ISR( taskCRITICAL_MUX )
 #undef _REENT_INIT_PTR
 #define _REENT_INIT_PTR                 esp_reent_init
 extern void esp_vApplicationIdleHook(void);
@@ -249,7 +240,33 @@ extern void esp_vApplicationIdleHook(void);
     tracePOST_MOVED_TASK_TO_READY_STATE( pxTCB )
 /*-----------------------------------------------------------*/
 
-#define tskCAN_RUN_HERE( cpuid ) ( cpuid==xPortGetCoreID() || cpuid==tskNO_AFFINITY )
+#if ( configNUM_CORES > 1 )
+    #define prvCheckForYield( pxTCB, xCurCoreID, xYieldEqualPriority )                                      ( prvCheckForYieldUsingPrioritySMP( ( pxTCB )->uxPriority, ( pxTCB )->xCoreID, xCurCoreID, xYieldEqualPriority ) == pdTRUE )
+    #define prvCheckForYieldUsingPriority( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )   ( prvCheckForYieldUsingPrioritySMP( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority ) == pdTRUE )
+#else
+    #define prvCheckForYield( pxTargetTCB, xCurCoreID, xYieldEqualPriority )                                ( ( ( pxTargetTCB )->uxPriority + ( ( xYieldEqualPriority == pdTRUE ) ? 1 : 0 ) ) > pxCurrentTCB[ 0 ]->uxPriority )
+    #define prvCheckForYieldUsingPriority( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )   ( ( uxTaskPriority + ( ( xYieldEqualPriority == pdTRUE ) ? 1 : 0 ) ) >= pxCurrentTCB[ 0 ]->uxPriority )
+#endif /* configNUM_CORES > 1 */
+/*-----------------------------------------------------------*/
+
+/*
+ * Check if a particular task (using its xCoreID) can run on a designated core.
+ * On single core, this macro always evaluates to true.
+ */
+#if ( configNUM_CORES > 1 )
+    #define taskCAN_RUN_ON_CORE( xCore, xCoreID )   ( ( ( ( xCoreID ) == xCore ) || ( ( xCoreID ) == tskNO_AFFINITY ) ) ? pdTRUE : pdFALSE )
+#else
+    #define taskCAN_RUN_ON_CORE( xCore, xCoreID )   ( pdTRUE )
+#endif /* configNUM_CORES > 1 */
+
+/* Check if a task is a currently running task. */
+#if ( configNUM_CORES > 1 )
+    #define taskIS_CURRENTLY_RUNNING( pxTCB )                   ( ( ( pxTCB ) == pxCurrentTCB[ 0 ] ) || ( ( pxTCB ) == pxCurrentTCB[ 1 ] ) )
+    #define taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, xCoreID )  ( ( pxTCB ) == pxCurrentTCB[ ( xCoreID ) ] )
+#else
+    #define taskIS_CURRENTLY_RUNNING( pxTCB )                   ( ( pxTCB ) == pxCurrentTCB[ 0 ] )
+    #define taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, xCoreID )  taskIS_CURRENTLY_RUNNING( ( pxTCB ) )
+#endif /* configNUM_CORES > 1 */
 
 /*
  * Several functions take a TaskHandle_t parameter that can optionally be NULL,
@@ -386,7 +403,9 @@ PRIVILEGED_DATA static List_t * volatile pxOverflowDelayedTaskList;      /*< Poi
 PRIVILEGED_DATA static List_t xPendingReadyList[ configNUM_CORES ];                      /*< Tasks that have been readied while the scheduler was suspended.  They will be moved to the ready list when the scheduler is resumed. */
 
 #ifdef ESP_PLATFORM
-PRIVILEGED_DATA static portMUX_TYPE xTaskQueueMutex = portMUX_INITIALIZER_UNLOCKED;
+/* Spinlock required for SMP critical sections. This lock protects all of the
+ * kernel's data structures such as various tasks lists, flags, and tick counts. */
+PRIVILEGED_DATA static portMUX_TYPE xKernelLock = portMUX_INITIALIZER_UNLOCKED;
 #endif // ESP_PLATFORM
 
 #if ( INCLUDE_vTaskDelete == 1 )
@@ -530,8 +549,8 @@ static void prvCheckTasksWaitingTermination( void ) PRIVILEGED_FUNCTION;
  * The currently executing task is entering the Blocked state.  Add the task to
  * either the current or the overflow delayed task list.
  */
-static void prvAddCurrentTaskToDelayedList( const portBASE_TYPE xCoreID,
-                                            const TickType_t xTicksToWait )  PRIVILEGED_FUNCTION;
+static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
+                                            const BaseType_t xCanBlockIndefinitely ) PRIVILEGED_FUNCTION;
 
 /*
  * Fills an TaskStatus_t structure with information on each task that is
@@ -621,9 +640,49 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
  * Called after a new task has been created and initialised to place the task
  * under the control of the scheduler.
  */
-static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
-                                      TaskFunction_t pxTaskCode,
-                                      BaseType_t xCoreID ) PRIVILEGED_FUNCTION;
+static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
+
+#if ( configNUM_CORES > 1 )
+
+/*
+ * Check whether a yield (on either core) is required after unblocking (or
+ * changing the priority of) a particular task.
+ *
+ * - This function is the SMP replacement for checking if an unblocked task has
+ *   a higher (or equal) priority than the current task.
+ * - It should be called before calling taskYIELD_IF_USING_PREEMPTION() or
+ *   before setting xYieldRequired
+ * - If it is the other core that requires a yield, this function will
+ *   internally trigger the other core to yield
+ *
+ * Note: In some special instances, a yield is triggered if the unblocked task
+ *       has an equal priority (such as in xTaskResumeAll). Thus the
+ *       xYieldEqualPriority parameter specifies whether to yield if the current
+ *       task has equal priority.
+ *
+ * Scheduling Algorithm:
+ * This function will bias towards yielding the current core.
+ * - If the unblocked task has a higher (or equal) priority than then current
+ *   core, the current core is yielded regardless of the current priority of the
+ *   other core.
+ * - A core (current or other) will only yield if their schedulers are not
+ *   suspended.
+ *
+ * Todo: This can be optimized (IDF-5772)
+ *
+ * Entry:
+ * - This function must be called in a critical section
+ * - A task must just have been unblocked, or its priority raised
+ * Exit:
+ * - Returns pdTRUE if the current core requires yielding
+ * - The other core will be triggered to yield if required
+ */
+static BaseType_t prvCheckForYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
+                                                    BaseType_t xTaskCoreID,
+                                                    BaseType_t xCurCoreID,
+                                                    BaseType_t xYieldEqualPriority ) PRIVILEGED_FUNCTION;
+
+#endif /* configNUM_CORES > 1 */
 
 /*
  * freertos_tasks_c_additions_init() should only be called if the user definable
@@ -636,54 +695,25 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
 #endif
 
-/*
- * This routine tries to send an interrupt to another core if needed to make it execute a task
- * of higher priority. We try to figure out if needed first by inspecting the pxTCB of the
- * other CPU first. Specifically for Xtensa, we can do this because pxTCB is an atomic pointer. It
- * is possible that it is inaccurate because the other CPU just did a task switch, but in that case
- * at most a superfluous interrupt is generated.
-*/
-void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
-{
-    BaseType_t i;
-
-    if (xCoreID != tskNO_AFFINITY) {
-        if ( pxCurrentTCB[ xCoreID ]->uxPriority < uxPriority ) {   // NOLINT(clang-analyzer-core.NullDereference) IDF-685
-            vPortYieldOtherCore( xCoreID );
-        }
-    }
-    else
-    {
-        /* The task has no affinity. See if we can find a CPU to put it on.*/
-        for (i=0; i<configNUM_CORES; i++) {
-            if (i != xPortGetCoreID() && pxCurrentTCB[ i ]->uxPriority < uxPriority)
-            {
-                vPortYieldOtherCore( i );
-                break;
-            }
-        }
-    }
-}
-
 /*-----------------------------------------------------------*/
 
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 
-    TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pvTaskCode,
+    TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pxTaskCode,
                                                 const char * const pcName,
                                                 const uint32_t ulStackDepth,
                                                 void * const pvParameters,
                                                 UBaseType_t uxPriority,
-                                                StackType_t * const pxStackBuffer,
+                                                StackType_t * const puxStackBuffer,
                                                 StaticTask_t * const pxTaskBuffer,
                                                 const BaseType_t xCoreID )
     {
     TCB_t *pxNewTCB;
     TaskHandle_t xReturn;
 
-        configASSERT( portVALID_TCB_MEM(pxTaskBuffer) );
-        configASSERT( portVALID_STACK_MEM(pxStackBuffer) );
-        configASSERT( (xCoreID>=0 && xCoreID<configNUM_CORES) || (xCoreID==tskNO_AFFINITY) );
+        configASSERT( portVALID_STACK_MEM( puxStackBuffer ) );
+        configASSERT( portVALID_TCB_MEM( pxTaskBuffer ) );
+        configASSERT( ( ( xCoreID >= 0 ) && ( xCoreID < configNUM_CORES ) ) || ( xCoreID == tskNO_AFFINITY ) );
 
         #if ( configASSERT_DEFINED == 1 )
             {
@@ -696,13 +726,12 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
             }
         #endif /* configASSERT_DEFINED */
 
-
-        if( ( pxTaskBuffer != NULL ) && ( pxStackBuffer != NULL ) )
+        if( ( pxTaskBuffer != NULL ) && ( puxStackBuffer != NULL ) )
         {
             /* The memory used for the task's TCB and stack are passed into this
              * function - use them. */
             pxNewTCB = ( TCB_t * ) pxTaskBuffer; /*lint !e740 !e9087 Unusual cast is ok as the structures are designed to have the same alignment, and the size is checked by an assert. */
-            pxNewTCB->pxStack = ( StackType_t * ) pxStackBuffer;
+            pxNewTCB->pxStack = ( StackType_t * ) puxStackBuffer;
 
             #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 ) /*lint !e731 !e9029 Macro has been consolidated for readability reasons. */
                 {
@@ -712,8 +741,8 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
                 }
             #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
 
-            prvInitialiseNewTask( pvTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL, xCoreID );
-            prvAddNewTaskToReadyList( pxNewTCB, pvTaskCode, xCoreID );
+            prvInitialiseNewTask( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL, xCoreID );
+            prvAddNewTaskToReadyList( pxNewTCB );
         }
         else
         {
@@ -764,7 +793,7 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
                                   pxTaskDefinition->xRegions,
                                   tskNO_AFFINITY );
 
-            prvAddNewTaskToReadyList( pxNewTCB, pxTaskDefinition->pvTaskCode, tskNO_AFFINITY);
+            prvAddNewTaskToReadyList( pxNewTCB );
             xReturn = pdPASS;
         }
 
@@ -814,7 +843,7 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
                                       pxTaskDefinition->xRegions,
                                       tskNO_AFFINITY );
 
-                prvAddNewTaskToReadyList( pxNewTCB, pxTaskDefinition->pvTaskCode, tskNO_AFFINITY);
+                prvAddNewTaskToReadyList( pxNewTCB );
                 xReturn = pdPASS;
             }
         }
@@ -827,13 +856,13 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 
 #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
 
-    BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pvTaskCode,
-                            const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
-                            const uint32_t usStackDepth,
-                            void * const pvParameters,
-                            UBaseType_t uxPriority,
-                            TaskHandle_t * const pvCreatedTask,
-                            const BaseType_t xCoreID)
+    BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pxTaskCode,
+                                        const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                                        const configSTACK_DEPTH_TYPE usStackDepth,
+                                        void * const pvParameters,
+                                        UBaseType_t uxPriority,
+                                        TaskHandle_t * const pxCreatedTask,
+                                        const BaseType_t xCoreID)
     {
         TCB_t * pxNewTCB;
         BaseType_t xReturn;
@@ -904,8 +933,8 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
                 }
             #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
 
-            prvInitialiseNewTask( pvTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pvCreatedTask, pxNewTCB, NULL, xCoreID );
-            prvAddNewTaskToReadyList( pxNewTCB, pvTaskCode, xCoreID);
+            prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL, xCoreID );
+            prvAddNewTaskToReadyList( pxNewTCB );
             xReturn = pdPASS;
         }
         else
@@ -932,8 +961,10 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
     StackType_t * pxTopOfStack;
     UBaseType_t x;
 
-    #if (configNUM_CORES < 2)
-    xCoreID = 0;
+    #if ( configNUM_CORES == 1 )
+    {
+        xCoreID = 0;
+    }
     #endif
 
     #if ( portUSING_MPU_WRAPPERS == 1 )
@@ -1188,76 +1219,42 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
 }
 /*-----------------------------------------------------------*/
 
-static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
-                                      TaskFunction_t pxTaskCode,
-                                      BaseType_t xCoreID )
+static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 {
-    TCB_t *curTCB, *tcb0, *tcb1;
-
-    #if (configNUM_CORES < 2)
-    xCoreID = 0;
-    #endif
-
     /* Ensure interrupts don't access the task lists while the lists are being
      * updated. */
-    taskENTER_CRITICAL();
+    taskENTER_CRITICAL( &xKernelLock );
     {
         uxCurrentNumberOfTasks++;
 
-        if ( xCoreID == tskNO_AFFINITY )
+        if( uxCurrentNumberOfTasks == ( UBaseType_t ) 1 )
         {
-            if ( configNUM_CORES == 1 )
-            {
-                xCoreID = 0;
-            }
-            else
-            {
-                // if the task has no affinity, put it on either core if nothing is currently scheduled there. Failing that,
-                // put it on the core where it will preempt the lowest priority running task. If neither of these are true,
-                // queue it on the currently running core.
-                tcb0 = pxCurrentTCB[0];
-                tcb1 = pxCurrentTCB[1];
-                if ( tcb0 == NULL )
-                {
-                    xCoreID = 0;
-                }
-                else if ( tcb1 == NULL )
-                {
-                    xCoreID = 1;
-                }
-                else if ( tcb0->uxPriority < pxNewTCB->uxPriority && tcb0->uxPriority < tcb1->uxPriority )
-                {
-                    xCoreID = 0;
-                }
-                else if ( tcb1->uxPriority < pxNewTCB->uxPriority )
-                {
-                    xCoreID = 1;
-                }
-                else
-                {
-                    xCoreID = xPortGetCoreID(); // Both CPU have higher priority tasks running on them, so this won't run yet
-                }
-            }
+            /* This is the first task to be created so do the preliminary
+             * initialisation required.  We will not recover if this call
+             * fails, but we will report the failure. */
+            prvInitialiseTaskLists();
+        }
+        else
+        {
+            mtCOVERAGE_TEST_MARKER();
         }
 
-        if( pxCurrentTCB[xCoreID] == NULL )
+        if( ( pxCurrentTCB[ 0 ] == NULL ) && ( taskCAN_RUN_ON_CORE( 0, pxNewTCB->xCoreID ) == pdTRUE ) )
         {
-            /* There are no other tasks, or all the other tasks are in
-             * the suspended state - make this the current task. */
-            pxCurrentTCB[xCoreID] = pxNewTCB;
-
-            if( uxCurrentNumberOfTasks == ( UBaseType_t ) 1 )
-            {
-                /* This is the first task to be created so do the preliminary
-                 * initialisation required.  We will not recover if this call
-                 * fails, but we will report the failure. */
-                prvInitialiseTaskLists();
-            }
-            else
-            {
-                mtCOVERAGE_TEST_MARKER();
-            }
+            /* On core 0, there are no other tasks, or all the other tasks
+             * are in the suspended state - make this the current task. */
+            pxCurrentTCB[ 0 ] = pxNewTCB;
         }
+
+        #if ( configNUM_CORES > 1 )
+            else if( ( pxCurrentTCB[ 1 ] == NULL ) && ( taskCAN_RUN_ON_CORE( 1, pxNewTCB->xCoreID ) == pdTRUE ) )
+            {
+                /* On core 1, there are no other tasks, or all the other tasks
+                 * are in the suspended state - make this the current task. */
+                pxCurrentTCB[ 1 ] = pxNewTCB;
+            }
+        #endif /* configNUM_CORES > 1 */
+
         else
         {
             /* If the scheduler is not already running, make this task the
@@ -1265,10 +1262,22 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
              * so far. */
             if( xSchedulerRunning == pdFALSE )
             {
-                if( pxCurrentTCB[xCoreID] == NULL || pxCurrentTCB[xCoreID]->uxPriority <= pxNewTCB->uxPriority )
+                if(    ( pxCurrentTCB[ 0 ] != NULL )
+                    && ( taskCAN_RUN_ON_CORE( 0, pxNewTCB->xCoreID ) == pdTRUE )
+                    && ( pxCurrentTCB[ 0 ]->uxPriority <= pxNewTCB->uxPriority ) )
                 {
-                    pxCurrentTCB[xCoreID] = pxNewTCB;
+                    pxCurrentTCB[ 0 ] = pxNewTCB;
                 }
+
+                #if ( configNUM_CORES > 1 )
+                    else if(    ( pxCurrentTCB[ 1 ] != NULL )
+                             && ( taskCAN_RUN_ON_CORE( 1, pxNewTCB->xCoreID ) == pdTRUE )
+                             && ( pxCurrentTCB[ 1 ]->uxPriority <= pxNewTCB->uxPriority ) )
+                    {
+                        pxCurrentTCB[ 1 ] = pxNewTCB;
+                    }
+                #endif /* configNUM_CORES > 1 */
+
                 else
                 {
                     mtCOVERAGE_TEST_MARKER();
@@ -1293,37 +1302,70 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         prvAddTaskToReadyList( pxNewTCB );
 
         portSETUP_TCB( pxNewTCB );
-    }
-    taskEXIT_CRITICAL();
 
-    if( xSchedulerRunning != pdFALSE )
-    {
-        /* If the created task is of a higher priority than the current task
-         * then it should run now. */
-        taskENTER_CRITICAL();
-
-        curTCB = pxCurrentTCB[ xCoreID ];
-        if( curTCB == NULL || curTCB->uxPriority < pxNewTCB->uxPriority )
+        if( xSchedulerRunning != pdFALSE )
         {
-            if( xCoreID == xPortGetCoreID() )
+            /* If the created task is of a higher priority than the current task
+             * then it should run now. */
+            if( prvCheckForYield( pxNewTCB, xPortGetCoreID(), pdTRUE ) )
             {
                 taskYIELD_IF_USING_PREEMPTION();
             }
-            else {
-                taskYIELD_OTHER_CORE(xCoreID, pxNewTCB->uxPriority);
+            else
+            {
+                mtCOVERAGE_TEST_MARKER();
             }
         }
         else
         {
             mtCOVERAGE_TEST_MARKER();
         }
-        taskEXIT_CRITICAL();
+
     }
-    else
-    {
-        mtCOVERAGE_TEST_MARKER();
-    }
+    taskEXIT_CRITICAL( &xKernelLock );
 }
+/*-----------------------------------------------------------*/
+
+#if ( configNUM_CORES > 1 )
+
+    static BaseType_t prvCheckForYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
+                                                        BaseType_t xTaskCoreID,
+                                                        BaseType_t xCurCoreID,
+                                                        BaseType_t xYieldEqualPriority )
+    {
+        if( xYieldEqualPriority == pdTRUE )
+        {
+            /* Increment the task priority to achieve the same affect as if( uxTaskPriority >= pxCurrentTCB->uxPriority ) */
+            uxTaskPriority++;
+        }
+
+        /* Indicate whether the current core needs to yield */
+        BaseType_t xYieldRequiredCurrentCore;
+
+        /* If the target task can run on the current core, and has a higher priority than the current core, then yield the current core */
+        if( ( ( xTaskCoreID == xCurCoreID ) || ( xTaskCoreID == tskNO_AFFINITY ) ) && ( uxTaskPriority > pxCurrentTCB[ xCurCoreID ]->uxPriority ) )
+        {
+            /* Return true for the caller to yield the current core */
+            xYieldRequiredCurrentCore = pdTRUE;
+        }
+        /* If the target task can run on the other core, and has a higher priority then the other core, and the other core has not suspended scheduling, the yield the other core */
+        else if(    ( ( xTaskCoreID == !xCurCoreID ) || ( xTaskCoreID == tskNO_AFFINITY ) )
+                 && ( uxTaskPriority > pxCurrentTCB[ !xCurCoreID ]->uxPriority )
+                 && ( uxSchedulerSuspended[ !xCurCoreID ] == ( UBaseType_t ) pdFALSE ) )
+        {
+            /* Signal the other core to yield */
+            vPortYieldOtherCore( !xCurCoreID );
+            xYieldRequiredCurrentCore = pdFALSE;
+        }
+        else
+        {
+            xYieldRequiredCurrentCore = pdFALSE;
+        }
+
+        return xYieldRequiredCurrentCore;
+    }
+
+#endif /* configNUM_CORES > 1 */
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_vTaskDelete == 1 )
@@ -1331,14 +1373,17 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
     void vTaskDelete( TaskHandle_t xTaskToDelete )
     {
         TCB_t * pxTCB;
-        TCB_t * curTCB;
-        BaseType_t core;
-        BaseType_t xFreeNow = 0;
+        BaseType_t xFreeNow;
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
-            core = xPortGetCoreID();
-            curTCB = pxCurrentTCB[core];
+            BaseType_t xCurCoreID;
+            #if ( configNUM_CORES > 1 )
+                xCurCoreID = xPortGetCoreID();
+            #else
+                xCurCoreID = 0;
+                ( void ) xCurCoreID;
+            #endif
 
             /* If null is passed in here then it is the calling task that is
              * being deleted. */
@@ -1370,12 +1415,19 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
              * not return. */
             uxTaskNumber++;
 
-            if( pxTCB == curTCB ||
-                /* in SMP, we also can't immediately delete the task active on the other core */
-                (configNUM_CORES > 1 && pxTCB == pxCurrentTCB[ !core ]) ||
-                /* ... and we can't delete a non-running task pinned to the other core, as
-                   FPU cleanup has to happen on the same core */
-                (configNUM_CORES > 1 && pxTCB->xCoreID == (!core)) )
+            /*
+             * We cannot immediately a task that is
+             * - Currently running on either core
+             * - If the task is not currently running but is pinned to the other (due to FPU cleanup)
+             * Todo: Allow deletion of tasks pinned to other core (IDF-5803)
+             */
+            #if ( configNUM_CORES > 1 )
+                xFreeNow = ( taskIS_CURRENTLY_RUNNING( pxTCB ) || ( pxTCB->xCoreID == !xCurCoreID ) ) ? pdFALSE : pdTRUE;
+            #else
+                xFreeNow = ( taskIS_CURRENTLY_RUNNING( pxTCB ) ) ? pdFALSE : pdTRUE;
+            #endif /* configNUM_CORES > 1 */
+
+            if( xFreeNow == pdFALSE )
             {
                 /* A task is deleting itself.  This cannot complete within the
                  * task itself, as a context switch to another task is required.
@@ -1389,43 +1441,47 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                  * check the xTasksWaitingTermination list. */
                 ++uxDeletedTasksWaitingCleanUp;
 
+                /* Call the delete hook before portPRE_TASK_DELETE_HOOK() as
+                 * portPRE_TASK_DELETE_HOOK() does not return in the Win32 port. */
+                traceTASK_DELETE( pxTCB );
+
                 /* The pre-delete hook is primarily for the Windows simulator,
                  * in which Windows specific clean up operations are performed,
                  * after which it is not possible to yield away from this task -
                  * hence xYieldPending is used to latch that a context switch is
                  * required. */
-                portPRE_TASK_DELETE_HOOK( pxTCB, &xYieldPending[core] );
+                portPRE_TASK_DELETE_HOOK( pxTCB, &xYieldPending[ xCurCoreID ] );
 
-                if (configNUM_CORES > 1 && pxTCB == pxCurrentTCB[ !core ])
-                {
-                    /* SMP case of deleting a task running on a different core. Same issue
-                    as a task deleting itself, but we need to send a yield to this task now
-                    before we release xTaskQueueMutex.
+                #if ( configNUM_CORES > 1 )
+                    if( taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, !xCurCoreID ) )
+                    {
+                        /* SMP case of deleting a task running on a different core. Same issue
+                        as a task deleting itself, but we need to send a yield to this task now
+                        before we release xKernelLock.
 
-                    Specifically there is a case where the other core may already be spinning on
-                    xTaskQueueMutex waiting to go into a blocked state. A check is added in
-                    prvAddCurrentTaskToDelayedList() to prevent it from removing itself from
-                    xTasksWaitingTermination list in this case (instead it will immediately
-                    release xTaskQueueMutex again and be yielded before the FreeRTOS function
-                    returns.) */
-                    vPortYieldOtherCore( !core );
-                }
+                        Specifically there is a case where the other core may already be spinning on
+                        xKernelLock waiting to go into a blocked state. A check is added in
+                        prvAddCurrentTaskToDelayedList() to prevent it from removing itself from
+                        xTasksWaitingTermination list in this case (instead it will immediately
+                        release xKernelLock again and be yielded before the FreeRTOS function
+                        returns.) */
+                        vPortYieldOtherCore( !xCurCoreID );
+                    }
+                #endif /* configNUM_CORES > 1 */
             }
             else
             {
                 --uxCurrentNumberOfTasks;
-                xFreeNow = pdTRUE;
+                traceTASK_DELETE( pxTCB );
 
                 /* Reset the next expected unblock time in case it referred to
                  * the task that has just been deleted. */
                 prvResetNextTaskUnblockTime();
             }
-
-            traceTASK_DELETE( pxTCB );
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
-        if(xFreeNow == pdTRUE) {
+        if( xFreeNow == pdTRUE ) {
             #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
                 prvDeleteTLS( pxTCB );
             #endif
@@ -1437,7 +1493,8 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
          * been deleted. */
         if( xSchedulerRunning != pdFALSE )
         {
-            if( pxTCB == curTCB )
+            taskENTER_CRITICAL( &xKernelLock );
+            if( taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, xPortGetCoreID() ) )
             {
                 configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
                 portYIELD_WITHIN_API();
@@ -1446,6 +1503,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
             {
                 mtCOVERAGE_TEST_MARKER();
             }
+            taskEXIT_CRITICAL( &xKernelLock );
         }
     }
 
@@ -1467,18 +1525,14 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                                 const TickType_t xTimeIncrement )
     {
         TickType_t xTimeToWake;
-#ifdef ESP_PLATFORM
-        BaseType_t xShouldDelay = pdFALSE;
-#else
         BaseType_t xAlreadyYielded, xShouldDelay = pdFALSE;
-#endif // ESP_PLATFORM
 
         configASSERT( pxPreviousWakeTime );
         configASSERT( ( xTimeIncrement > 0U ) );
         configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 
 #ifdef ESP_PLATFORM // IDF-3755
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
 #else
         vTaskSuspendAll();
 #endif // ESP_PLATFORM
@@ -1526,11 +1580,11 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
             if( xShouldDelay != pdFALSE )
             {
-                traceTASK_DELAY_UNTIL();
+                traceTASK_DELAY_UNTIL( xTimeToWake );
 
                 /* prvAddCurrentTaskToDelayedList() needs the block time, not
                  * the time to wake, so subtract the current tick count. */
-                prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTimeToWake - xConstTickCount );
+                prvAddCurrentTaskToDelayedList( xTimeToWake - xConstTickCount, pdFALSE );
             }
             else
             {
@@ -1538,16 +1592,14 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
             }
         }
 #ifdef ESP_PLATFORM // IDF-3755
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
+        xAlreadyYielded = pdFALSE;
 #else
         xAlreadyYielded = xTaskResumeAll();
 #endif // ESP_PLATFORM
 
         /* Force a reschedule if xTaskResumeAll has not already done so, we may
          * have put ourselves to sleep. */
-#ifdef ESP_PLATFORM
-        portYIELD_WITHIN_API();
-#else
         if( xAlreadyYielded == pdFALSE )
         {
             portYIELD_WITHIN_API();
@@ -1556,7 +1608,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         {
             mtCOVERAGE_TEST_MARKER();
         }
-#endif // ESP_PLATFORM
+
         return xShouldDelay;
     }
 
@@ -1567,12 +1619,14 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
     void vTaskDelay( const TickType_t xTicksToDelay )
     {
+        BaseType_t xAlreadyYielded = pdFALSE;
+
         /* A delay time of zero just forces a reschedule. */
         if( xTicksToDelay > ( TickType_t ) 0U )
         {
             configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 #ifdef ESP_PLATFORM // IDF-3755
-            taskENTER_CRITICAL();
+            taskENTER_CRITICAL( &xKernelLock );
 #else
             vTaskSuspendAll();
 #endif // ESP_PLATFORM
@@ -1586,10 +1640,11 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                  *
                  * This task cannot be in an event list as it is the currently
                  * executing task. */
-                prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToDelay );
+                prvAddCurrentTaskToDelayedList( xTicksToDelay, pdFALSE );
             }
 #ifdef ESP_PLATFORM // IDF-3755
-            taskEXIT_CRITICAL();
+            taskEXIT_CRITICAL( &xKernelLock );
+            xAlreadyYielded = pdFALSE;
 #else
             xAlreadyYielded = xTaskResumeAll();
 #endif // ESP_PLATFORM
@@ -1599,8 +1654,16 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
             mtCOVERAGE_TEST_MARKER();
         }
 
-        /* Force a reschedule, we may have put ourselves to sleep. */
-        portYIELD_WITHIN_API();
+        /* Force a reschedule if xTaskResumeAll has not already done so, we may
+         * have put ourselves to sleep. */
+        if( xAlreadyYielded == pdFALSE )
+        {
+            portYIELD_WITHIN_API();
+        }
+        else
+        {
+            mtCOVERAGE_TEST_MARKER();
+        }
     }
 
 #endif /* INCLUDE_vTaskDelay */
@@ -1616,19 +1679,12 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
         configASSERT( pxTCB );
 
-        taskENTER_CRITICAL();     //Need critical section incase either core context switches in between
-        if( pxTCB == pxCurrentTCB[xPortGetCoreID()])
+        taskENTER_CRITICAL( &xKernelLock );     //Need critical section incase either core context switches in between
+        if( taskIS_CURRENTLY_RUNNING( pxTCB ) )
         {
             /* The task calling this function is querying its own state. */
             eReturn = eRunning;
         }
-        #if (configNUM_CORES > 1)
-        else if (pxTCB == pxCurrentTCB[!xPortGetCoreID()])
-        {
-            /* The task calling this function is querying its own state. */
-            eReturn = eRunning;
-        }
-        #endif
         else
         {
             pxStateList = listLIST_ITEM_CONTAINER( &( pxTCB->xStateListItem ) );
@@ -1700,7 +1756,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 eReturn = eReady;
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return eReturn;
     } /*lint !e818 xTask cannot be a pointer to const because it is a typedef. */
@@ -1715,14 +1771,14 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         TCB_t const * pxTCB;
         UBaseType_t uxReturn;
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
             /* If null is passed in here then it is the priority of the task
              * that called uxTaskPriorityGet() that is being queried. */
             pxTCB = prvGetTCBFromHandle( xTask );
             uxReturn = pxTCB->uxPriority;
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return uxReturn;
     }
@@ -1755,14 +1811,14 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
          * https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
         portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
-        portENTER_CRITICAL_ISR(&xTaskQueueMutex );
+        taskENTER_CRITICAL_ISR( &xKernelLock );
         {
             /* If null is passed in here then it is the priority of the calling
              * task that is being queried. */
             pxTCB = prvGetTCBFromHandle( xTask );
             uxReturn = pxTCB->uxPriority;
         }
-        portEXIT_CRITICAL_ISR(&xTaskQueueMutex);
+        taskEXIT_CRITICAL_ISR( &xKernelLock );
 
         return uxReturn;
     }
@@ -1791,7 +1847,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
             mtCOVERAGE_TEST_MARKER();
         }
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
             /* If null is passed in here then it is the priority of the calling
              * task that is being changed. */
@@ -1815,18 +1871,14 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                  * priority than the calling task. */
                 if( uxNewPriority > uxCurrentBasePriority )
                 {
-                    if( pxTCB != pxCurrentTCB[xPortGetCoreID()] )
+                    if( !taskIS_CURRENTLY_RUNNING( pxTCB ) )
                     {
                         /* The priority of a task other than the currently
                          * running task is being raised.  Is the priority being
                          * raised above that of the running task? */
-                        if ( tskCAN_RUN_HERE(pxTCB->xCoreID) && uxNewPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+                        if ( prvCheckForYieldUsingPriority( uxNewPriority, pxTCB->xCoreID, xPortGetCoreID(), pdTRUE ) )
                         {
                             xYieldRequired = pdTRUE;
-                        }
-                        else if ( pxTCB->xCoreID != xPortGetCoreID() )
-                        {
-                            taskYIELD_OTHER_CORE( pxTCB->xCoreID, uxNewPriority );
                         }
                         else
                         {
@@ -1840,31 +1892,22 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                          * priority task able to run so no yield is required. */
                     }
                 }
-                else if( pxTCB == pxCurrentTCB[xPortGetCoreID()] )
+                else if( taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, 0 ) )
                 {
                     /* Setting the priority of the running task down means
                      * there may now be another task of higher priority that
                      * is ready to execute. */
                     xYieldRequired = pdTRUE;
                 }
-                else if( pxTCB != pxCurrentTCB[xPortGetCoreID()] )
-                {
-                    /* The priority of a task other than the currently
-                     * running task is being raised.  Is the priority being
-                     * raised above that of the running task? */
-                    if( uxNewPriority >= pxCurrentTCB[xPortGetCoreID()]->uxPriority )
+                #if ( configNUM_CORES > 1 )
+                    else if( taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, 1 ) )
                     {
-                        xYieldRequired = pdTRUE;
+                        /* Setting the priority of the running task on the other
+                         * core down means there may now be another task of
+                         * higher priority that is ready to execute. */
+                        vPortYieldOtherCore( 1 );
                     }
-                    else if ( pxTCB->xCoreID != xPortGetCoreID() )      //Need to check if not currently running on other core
-                    {
-                        taskYIELD_OTHER_CORE( pxTCB->xCoreID, uxNewPriority );
-                    }
-                    else
-                    {
-                        mtCOVERAGE_TEST_MARKER();
-                    }
-                }
+                #endif /* configNUM_CORES > 1 */
                 else
                 {
                     /* Setting the priority of any other task down does not
@@ -1952,7 +1995,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 ( void ) uxPriorityUsedOnEntry;
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
     }
 
 #endif /* INCLUDE_vTaskPrioritySet */
@@ -1963,9 +2006,8 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
     void vTaskSuspend( TaskHandle_t xTaskToSuspend )
     {
         TCB_t * pxTCB;
-        TCB_t * curTCB;
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
             /* If null is passed in here then it is the running task that is
              * being suspended. */
@@ -1995,7 +2037,6 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
             }
 
             vListInsertEnd( &xSuspendedTaskList, &( pxTCB->xStateListItem ) );
-            curTCB = pxCurrentTCB[ xPortGetCoreID() ];
 
             #if ( configUSE_TASK_NOTIFICATIONS == 1 )
                 {
@@ -2012,76 +2053,70 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                     }
                 }
             #endif /* if ( configUSE_TASK_NOTIFICATIONS == 1 ) */
-        }
-        taskEXIT_CRITICAL();
 
-        if( xSchedulerRunning != pdFALSE )
-        {
-            /* Reset the next expected unblock time in case it referred to the
-             * task that is now in the Suspended state. */
-            taskENTER_CRITICAL();
-            {
-                prvResetNextTaskUnblockTime();
-            }
-            taskEXIT_CRITICAL();
-        }
-        else
-        {
-            mtCOVERAGE_TEST_MARKER();
-        }
-
-        if( pxTCB == curTCB )
-        {
             if( xSchedulerRunning != pdFALSE )
             {
-                /* The current task has just been suspended. */
-                taskENTER_CRITICAL();
-                BaseType_t suspended = uxSchedulerSuspended[xPortGetCoreID()];
-                taskEXIT_CRITICAL();
-
-                configASSERT( suspended == 0 );
-                (void)suspended;
-                portYIELD_WITHIN_API();
-            }
-            else
-            {
-                /* The scheduler is not running, but the task that was pointed
-                 * to by pxCurrentTCB has just been suspended and pxCurrentTCB
-                 * must be adjusted to point to a different task. */
-                if( listCURRENT_LIST_LENGTH( &xSuspendedTaskList ) == uxCurrentNumberOfTasks ) /*lint !e931 Right has no side effect, just volatile. */
-                {
-                    /* No other tasks are ready, so set pxCurrentTCB back to
-                     * NULL so when the next task is created pxCurrentTCB will
-                     * be set to point to it no matter what its relative priority
-                     * is. */
-                    taskENTER_CRITICAL();
-                    pxCurrentTCB[ xPortGetCoreID() ] = NULL;
-                    taskEXIT_CRITICAL();
-                }
-                else
-                {
-                    vTaskSwitchContext();
-                }
-            }
-        }
-        else
-        {
-            if( xSchedulerRunning != pdFALSE )
-            {
-                /* A task other than the currently running task was suspended,
-                 * reset the next expected unblock time in case it referred to the
+                /* Reset the next expected unblock time in case it referred to the
                  * task that is now in the Suspended state. */
-                taskENTER_CRITICAL();
-                {
-                    prvResetNextTaskUnblockTime();
-                }
-                taskEXIT_CRITICAL();
+                prvResetNextTaskUnblockTime();
             }
             else
             {
                 mtCOVERAGE_TEST_MARKER();
             }
+
+            if( taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, xPortGetCoreID() ) )
+            {
+                if( xSchedulerRunning != pdFALSE )
+                {
+                    /* The current task has just been suspended. */
+                    configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] == 0 );
+                    portYIELD_WITHIN_API();
+                }
+                else
+                {
+                    /* The scheduler is not running, but the task that was pointed
+                     * to by pxCurrentTCB has just been suspended and pxCurrentTCB
+                     * must be adjusted to point to a different task. */
+                    if( listCURRENT_LIST_LENGTH( &xSuspendedTaskList ) == uxCurrentNumberOfTasks ) /*lint !e931 Right has no side effect, just volatile. */
+                    {
+                        /* No other tasks are ready, so set pxCurrentTCB back to
+                         * NULL so when the next task is created pxCurrentTCB will
+                         * be set to point to it no matter what its relative priority
+                         * is. */
+                        pxCurrentTCB[ xPortGetCoreID() ] = NULL;
+                    }
+                    else
+                    {
+                        vTaskSwitchContext();
+                    }
+                }
+            }
+            #if ( configNUM_CORES > 1 )
+                else if( taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, !xPortGetCoreID() ) )
+                {
+                    /* The other core's current task has just been suspended */
+                    if( xSchedulerRunning != pdFALSE )
+                    {
+                        vPortYieldOtherCore( !xPortGetCoreID() );
+                    }
+                    else
+                    {
+                        /* The scheduler is not running, but the task that was pointed
+                         * to by pxCurrentTCB[ otherCore ] has just been suspended.
+                         * We simply set the pxCurrentTCB[ otherCore ] to NULL for now.
+                         * Todo: Update vTaskSwitchContext() to be runnable on
+                         * behalf of the other core. */
+                        pxCurrentTCB[ !xPortGetCoreID() ] = NULL;
+                    }
+                }
+            #endif /* configNUM_CORES > 1 */
+            else
+            {
+                mtCOVERAGE_TEST_MARKER();
+            }
         }
+        taskEXIT_CRITICAL( &xKernelLock );
     }
 
 #endif /* INCLUDE_vTaskSuspend */
@@ -2104,8 +2139,12 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         if( listIS_CONTAINED_WITHIN( &xSuspendedTaskList, &( pxTCB->xStateListItem ) ) != pdFALSE )
         {
             /* Has the task already been resumed from within an ISR? */
-            if( listIS_CONTAINED_WITHIN( &xPendingReadyList[xPortGetCoreID()], &( pxTCB->xEventListItem )) == pdFALSE &&
-                listIS_CONTAINED_WITHIN( &xPendingReadyList[!xPortGetCoreID()], &( pxTCB->xEventListItem ))  == pdFALSE )
+            #if ( configNUM_CORES > 1 )
+                if(    ( listIS_CONTAINED_WITHIN( &xPendingReadyList[ 0 ], &( pxTCB->xEventListItem ) ) == pdFALSE )
+                    && ( listIS_CONTAINED_WITHIN( &xPendingReadyList[ 1 ], &( pxTCB->xEventListItem ) ) == pdFALSE ) )
+            #else
+                if( listIS_CONTAINED_WITHIN( &xPendingReadyList[ 0 ], &( pxTCB->xEventListItem ) ) == pdFALSE )
+            #endif
             {
                 /* Is it in the suspended list because it is in the Suspended
                  * state, or because is is blocked with no timeout? */
@@ -2142,12 +2181,12 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
         /* It does not make sense to resume the calling task. */
         configASSERT( xTaskToResume );
-        taskENTER_CRITICAL();
 
-        /* The parameter cannot be NULL as it is impossible to resume the
-         * currently executing task. */
-        if( ( pxTCB != pxCurrentTCB[xPortGetCoreID()] ) && ( pxTCB != NULL ) )
+        taskENTER_CRITICAL( &xKernelLock );
         {
+            /* The parameter cannot be NULL as it is impossible to resume the
+             * currently executing task. */
+            if( !taskIS_CURRENTLY_RUNNING( pxTCB ) && ( pxTCB != NULL ) )
             {
                 if( prvTaskIsTaskSuspended( pxTCB ) != pdFALSE )
                 {
@@ -2158,17 +2197,13 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                     ( void ) uxListRemove( &( pxTCB->xStateListItem ) );
                     prvAddTaskToReadyList( pxTCB );
 
-                    /* We may have just resumed a higher priority task. */
-                    if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+                    /* A higher priority task may have just been resumed. */
+                    if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdTRUE ) )
                     {
                         /* This yield may not cause the task just resumed to run,
                          * but will leave the lists in the correct state for the
                          * next yield. */
                         taskYIELD_IF_USING_PREEMPTION();
-                    }
-                    else if( pxTCB->xCoreID != xPortGetCoreID() )
-                    {
-                        taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority );
                     }
                     else
                     {
@@ -2180,12 +2215,12 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                     mtCOVERAGE_TEST_MARKER();
                 }
             }
+            else
+            {
+                mtCOVERAGE_TEST_MARKER();
+            }
         }
-        else
-        {
-            mtCOVERAGE_TEST_MARKER();
-        }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
     }
 
 #endif /* INCLUDE_vTaskSuspend */
@@ -2217,41 +2252,43 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
          * simple as possible.  More information (albeit Cortex-M specific) is
          * provided on the following link:
          * https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
-        //portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
+        portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
-        taskENTER_CRITICAL_ISR();
+        taskENTER_CRITICAL_ISR( &xKernelLock );
         {
             if( prvTaskIsTaskSuspended( pxTCB ) != pdFALSE )
             {
                 traceTASK_RESUME_FROM_ISR( pxTCB );
 
                 /* Check the ready lists can be accessed. */
-                if( uxSchedulerSuspended[xPortGetCoreID()] == ( UBaseType_t ) pdFALSE )
+                /* Known issue IDF-5856. We also need to check if the other core is suspended */
+                if( uxSchedulerSuspended[ xPortGetCoreID() ] == ( UBaseType_t ) pdFALSE )
                 {
-
-                    ( void ) uxListRemove( &( pxTCB->xStateListItem ) );
-                    prvAddTaskToReadyList( pxTCB );
-
-                    if( tskCAN_RUN_HERE( pxTCB->xCoreID ) && pxTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+                    /* Ready lists can be accessed so move the task from the
+                     * suspended list to the ready list directly. */
+                    if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdTRUE ) )
                     {
                         xYieldRequired = pdTRUE;
-                    }
-                    else if ( pxTCB->xCoreID != xPortGetCoreID() )
-                    {
-                        taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority);
+
+                        /* Mark that a yield is pending in case the user is not
+                         * using the return value to initiate a context switch
+                         * from the ISR using portYIELD_FROM_ISR. */
+                        xYieldPending[ xPortGetCoreID() ] = pdTRUE;
                     }
                     else
                     {
                         mtCOVERAGE_TEST_MARKER();
                     }
 
+                    ( void ) uxListRemove( &( pxTCB->xStateListItem ) );
+                    prvAddTaskToReadyList( pxTCB );
                 }
                 else
                 {
                     /* The delayed or ready lists cannot be accessed so the task
                      * is held in the pending ready list until the scheduler is
                      * unsuspended. */
-                    vListInsertEnd( &( xPendingReadyList[xPortGetCoreID()] ), &( pxTCB->xEventListItem ) );
+                    vListInsertEnd( &( xPendingReadyList[ xPortGetCoreID() ] ), &( pxTCB->xEventListItem ) );
                 }
             }
             else
@@ -2259,7 +2296,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL_ISR();
+        taskEXIT_CRITICAL_ISR( &xKernelLock );
 
         return xYieldRequired;
     }
@@ -2273,7 +2310,7 @@ void vTaskStartScheduler( void )
 
 #ifdef ESP_PLATFORM
     /* Create an IDLE task for each core */
-    for(BaseType_t xCoreID = 0; xCoreID < configNUM_CORES; xCoreID++)
+    for( BaseType_t xCoreID = 0; xCoreID < configNUM_CORES; xCoreID++ )
 #endif //ESP_PLATFORM
     /* Add the idle task at the lowest priority. */
     #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
@@ -2283,7 +2320,7 @@ void vTaskStartScheduler( void )
             uint32_t ulIdleTaskStackSize;
 
             /* The Idle task is created using user provided RAM - obtain the
-            address of the RAM then create the idle task. */
+             * address of the RAM then create the idle task. */
             vApplicationGetIdleTaskMemory( &pxIdleTaskTCBBuffer, &pxIdleTaskStackBuffer, &ulIdleTaskStackSize );
             xIdleTaskHandle[ xCoreID ] = xTaskCreateStaticPinnedToCore( prvIdleTask,
                                                     configIDLE_TASK_NAME,
@@ -2423,12 +2460,12 @@ void vTaskSuspendAll( void )
      * BaseType_t.  Please read Richard Barry's reply in the following link to a
      * post in the FreeRTOS support forum before reporting this as a bug! -
      * https://goo.gl/wu4acr */
-#ifdef ESP_PLATFORM
-    /* For SMP, although each core has their own uxSchedulerSuspended, we still
-     * need to disable interrupts or enter a critical section when accessing. */
-    unsigned state;
-    state = portSET_INTERRUPT_MASK_FROM_ISR();
-#endif
+
+    #if ( configNUM_CORES > 1 )
+        /* For SMP, although each core has their own uxSchedulerSuspended, we still
+         * need enter a critical section when accessing. */
+        taskENTER_CRITICAL( &xKernelLock );
+    #endif
 
     /* portSOFRWARE_BARRIER() is only implemented for emulated/simulated ports that
      * do not otherwise exhibit real time behaviour. */
@@ -2442,55 +2479,53 @@ void vTaskSuspendAll( void )
      * the above increment elsewhere. */
     portMEMORY_BARRIER();
 
-#ifdef ESP_PLATFORM
-    portCLEAR_INTERRUPT_MASK_FROM_ISR( state );
-#endif
+    #if ( configNUM_CORES > 1 )
+        taskEXIT_CRITICAL( &xKernelLock );
+    #endif
 }
 /*----------------------------------------------------------*/
 
 #if ( configUSE_TICKLESS_IDLE != 0 )
 
-#if ( configNUM_CORES > 1 )
-
-    static BaseType_t xHaveReadyTasks( void )
-    {
-        for (int i = tskIDLE_PRIORITY + 1; i < configMAX_PRIORITIES; ++i)
-        {
-            if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ i ] ) ) > 0 )
-            {
-                return pdTRUE;
-            }
-            else
-            {
-                mtCOVERAGE_TEST_MARKER();
-            }
-        }
-        return pdFALSE;
-    }
-
-#endif // configNUM_CORES > 1
-
     static TickType_t prvGetExpectedIdleTime( void )
     {
-    TickType_t xReturn;
+        TickType_t xReturn;
+        UBaseType_t uxHigherPriorityReadyTasks = pdFALSE;
 
+        /* We need a critical section here as we are about to access kernel data structures */
+        taskENTER_CRITICAL( &xKernelLock );
 
-        taskENTER_CRITICAL();
+        /* uxHigherPriorityReadyTasks takes care of the case where
+         * configUSE_PREEMPTION is 0, so there may be tasks above the idle priority
+         * task that are in the Ready state, even though the idle task is
+         * running. */
+        #if ( configUSE_PORT_OPTIMISED_TASK_SELECTION == 0 )
+            {
+                if( uxTopReadyPriority > tskIDLE_PRIORITY )
+                {
+                    uxHigherPriorityReadyTasks = pdTRUE;
+                }
+            }
+        #else
+            {
+                const UBaseType_t uxLeastSignificantBit = ( UBaseType_t ) 0x01;
+
+                /* When port optimised task selection is used the uxTopReadyPriority
+                 * variable is used as a bit map.  If bits other than the least
+                 * significant bit are set then there are tasks that have a priority
+                 * above the idle priority that are in the Ready state.  This takes
+                 * care of the case where the co-operative scheduler is in use. */
+                if( uxTopReadyPriority > uxLeastSignificantBit )
+                {
+                    uxHigherPriorityReadyTasks = pdTRUE;
+                }
+            }
+        #endif /* if ( configUSE_PORT_OPTIMISED_TASK_SELECTION == 0 ) */
+
         if( pxCurrentTCB[ xPortGetCoreID() ]->uxPriority > tskIDLE_PRIORITY )
         {
             xReturn = 0;
         }
-#if configNUM_CORES > 1
-        /* This function is called from Idle task; in single core case this
-         * means that no higher priority tasks are ready to run, and we can
-         * enter sleep. In SMP case, there might be ready tasks waiting for
-         * the other CPU, so need to check all ready lists.
-         */
-        else if( xHaveReadyTasks() )
-        {
-            xReturn = 0;
-        }
-#endif // configNUM_CORES > 1
         else if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) ) > configNUM_CORES )
         {
             /* There are other idle priority tasks in the ready state.  If
@@ -2498,11 +2533,19 @@ void vTaskSuspendAll( void )
              * processed. */
             xReturn = 0;
         }
+        else if( uxHigherPriorityReadyTasks != pdFALSE )
+        {
+            /* There are tasks in the Ready state that have a priority above the
+             * idle priority.  This path can only be reached if
+             * configUSE_PREEMPTION is 0. */
+            xReturn = 0;
+        }
         else
         {
             xReturn = xNextTaskUnblockTime - xTickCount;
         }
-        taskEXIT_CRITICAL();
+
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return xReturn;
     }
@@ -2524,14 +2567,11 @@ BaseType_t xTaskResumeAll( void )
      * removed task will have been added to the xPendingReadyList.  Once the
      * scheduler has been resumed it is safe to move all the pending ready
      * tasks from this list into their appropriate ready list. */
-    taskENTER_CRITICAL();
+    taskENTER_CRITICAL( &xKernelLock );
     {
-#ifdef ESP_PLATFORM
         /* Minor optimization. Core ID can't change while inside a critical section */
         BaseType_t xCoreID = xPortGetCoreID();
-#else
-        BaseType_t xCoreID = 0;
-#endif
+
         --uxSchedulerSuspended[ xCoreID ];
 
         if( uxSchedulerSuspended[ xCoreID ] == ( UBaseType_t ) pdFALSE )
@@ -2549,7 +2589,7 @@ BaseType_t xTaskResumeAll( void )
 
                     /* If the moved task has a priority higher than the current
                      * task then a yield must be performed. */
-                    if( pxTCB->uxPriority >= pxCurrentTCB[ xCoreID ]->uxPriority )
+                    if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdTRUE ) )
                     {
                         xYieldPending[ xCoreID ] = pdTRUE;
                     }
@@ -2574,11 +2614,9 @@ BaseType_t xTaskResumeAll( void )
                  * they should be processed now.  This ensures the tick count does
                  * not  slip, and that any delayed tasks are resumed at the correct
                  * time. */
-#ifdef ESP_PLATFORM
                 /* Core 0 is solely responsible for managing tick count, thus it
                  * must be the only core to unwind the pended ticks */
                 if ( xCoreID == 0 )
-#endif
                 {
                     TickType_t xPendedCounts = xPendedTicks; /* Non-volatile copy. */
 
@@ -2626,7 +2664,7 @@ BaseType_t xTaskResumeAll( void )
             mtCOVERAGE_TEST_MARKER();
         }
     }
-    taskEXIT_CRITICAL();
+    taskEXIT_CRITICAL( &xKernelLock );
 
     return xAlreadyYielded;
 }
@@ -2636,7 +2674,12 @@ TickType_t xTaskGetTickCount( void )
 {
     TickType_t xTicks;
 
-    xTicks = xTickCount;
+    /* Critical section required if running on a 16 bit processor. */
+    portTICK_TYPE_ENTER_CRITICAL();
+    {
+        xTicks = xTickCount;
+    }
+    portTICK_TYPE_EXIT_CRITICAL();
 
     return xTicks;
 }
@@ -2645,7 +2688,6 @@ TickType_t xTaskGetTickCount( void )
 TickType_t xTaskGetTickCountFromISR( void )
 {
     TickType_t xReturn;
-    UBaseType_t uxSavedInterruptStatus;
 
     /* RTOS ports that support interrupt nesting have the concept of a maximum
      * system call (or maximum API call) interrupt priority.  Interrupts that are
@@ -2663,11 +2705,21 @@ TickType_t xTaskGetTickCountFromISR( void )
      * link: https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
     portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
-    uxSavedInterruptStatus = portTICK_TYPE_SET_INTERRUPT_MASK_FROM_ISR();
+    #if ( configNUM_CORES > 1 )
+        /* We need a critical section here as we are about to access kernel data structures */
+        taskENTER_CRITICAL_ISR( &xKernelLock );
+    #else
+        UBaseType_t uxSavedInterruptStatus;
+        uxSavedInterruptStatus = portTICK_TYPE_SET_INTERRUPT_MASK_FROM_ISR();
+    #endif
     {
         xReturn = xTickCount;
     }
-    portTICK_TYPE_CLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
+    #if ( configNUM_CORES > 1 )
+        taskEXIT_CRITICAL_ISR( &xKernelLock );
+    #else
+        portTICK_TYPE_CLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
+    #endif
 
     return xReturn;
 }
@@ -2773,7 +2825,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
         configASSERT( strlen( pcNameToQuery ) < configMAX_TASK_NAME_LEN );
 
 #ifdef ESP_PLATFORM // IDF-3755
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
 #else
         vTaskSuspendAll();
 #endif // ESP_PLATFORM
@@ -2823,7 +2875,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
             #endif
         }
 #ifdef ESP_PLATFORM // IDF-3755
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 #else
         ( void ) xTaskResumeAll();
 #endif // ESP_PLATFORM
@@ -2843,7 +2895,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
         UBaseType_t uxTask = 0, uxQueue = configMAX_PRIORITIES;
 
 #ifdef ESP_PLATFORM // IDF-3755
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
 #else
         vTaskSuspendAll();
 #endif // ESP_PLATFORM
@@ -2906,7 +2958,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
             }
         }
 #ifdef ESP_PLATFORM // IDF-3755
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 #else
         ( void ) xTaskResumeAll();
 #endif // ESP_PLATFORM
@@ -2946,7 +2998,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
     {
 #ifdef ESP_PLATFORM
         /* For SMP, we require a critical section to access xTickCount */
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
 #endif
         /* Correct the tick count value after a period during which the tick
          * was suppressed.  Note this does *not* call the tick hook function for
@@ -2955,7 +3007,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
         xTickCount += xTicksToJump;
         traceINCREASE_TICK_COUNT( xTicksToJump );
 #ifdef ESP_PLATFORM
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 #endif
     }
 
@@ -2980,9 +3032,9 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
 #ifdef ESP_PLATFORM
     /* For SMP, we still require a critical section to access xPendedTicks even
      * if the scheduler is disabled. */
-    taskENTER_CRITICAL();
+    taskENTER_CRITICAL( &xKernelLock );
     xPendedTicks += xTicksToCatchUp;
-    taskEXIT_CRITICAL();
+    taskEXIT_CRITICAL( &xKernelLock );
 #else // ESP_PLATFORM
     xPendedTicks += xTicksToCatchUp;
 #endif // ESP_PLATFORM
@@ -3002,7 +3054,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
         configASSERT( pxTCB );
 
 #ifdef ESP_PLATFORM // IDF-3755
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
 #else
         vTaskSuspendAll();
 #endif // ESP_PLATFORM
@@ -3022,7 +3074,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
                  * the event list too.  Interrupts can touch the event list item,
                  * even though the scheduler is suspended, so a critical section
                  * is used. */
-                taskENTER_CRITICAL();
+                taskENTER_CRITICAL( &xKernelLock );
                 {
                     if( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) != NULL )
                     {
@@ -3038,7 +3090,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
                         mtCOVERAGE_TEST_MARKER();
                     }
                 }
-                taskEXIT_CRITICAL();
+                taskEXIT_CRITICAL( &xKernelLock );
 
                 /* Place the unblocked task into the appropriate ready list. */
                 prvAddTaskToReadyList( pxTCB );
@@ -3050,15 +3102,11 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
                         /* Preemption is on, but a context switch should only be
                          *  performed if the unblocked task has a priority that is
                          *  equal to or higher than the currently executing task. */
-                        if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority  )
+                        if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdFALSE ) )
                         {
                             /* Pend the yield to be performed when the scheduler
                              * is unsuspended. */
-                            xYieldPending[xPortGetCoreID()] = pdTRUE;
-                        }
-                        else if ( pxTCB->xCoreID != xPortGetCoreID() )
-                        {
-                            taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority );
+                            xYieldPending[ xPortGetCoreID() ] = pdTRUE;
                         }
                         else
                         {
@@ -3073,7 +3121,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
             }
         }
 #ifdef ESP_PLATFORM // IDF-3755
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 #else
         ( void ) xTaskResumeAll();
 #endif // ESP_PLATFORM
@@ -3109,7 +3157,7 @@ BaseType_t xTaskIncrementTick( void )
      * - Other cores could be accessing them simultaneously
      * - Unlike other ports, we call xTaskIncrementTick() without disabling nested
      *   interrupts, which in turn is disabled by the critical section. */
-    taskENTER_CRITICAL_ISR();
+    taskENTER_CRITICAL_ISR( &xKernelLock );
 #endif // ESP_PLATFORM
 
     if( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) pdFALSE )
@@ -3241,7 +3289,7 @@ BaseType_t xTaskIncrementTick( void )
             TickType_t xPendedCounts = xPendedTicks; /* Non-volatile copy. */
         #endif /* configUSE_TICK_HOOK */
         /* Exit the critical section as we have finished accessing the kernel data structures. */
-        taskEXIT_CRITICAL_ISR();
+        taskEXIT_CRITICAL_ISR( &xKernelLock );
 #endif // ESP_PLATFORM
 
         #if ( configUSE_TICK_HOOK == 1 )
@@ -3281,7 +3329,7 @@ BaseType_t xTaskIncrementTick( void )
         ++xPendedTicks;
 #ifdef ESP_PLATFORM
         /* Exit the critical section as we have finished accessing the kernel data structures. */
-        taskEXIT_CRITICAL_ISR();
+        taskEXIT_CRITICAL_ISR( &xKernelLock );
 #endif // ESP_PLATFORM
 
         /* The tick hook gets called at regular intervals, even if the
@@ -3320,7 +3368,7 @@ BaseType_t xTaskIncrementTick( void )
             * - Unlike other ports, we call xTaskIncrementTick() without disabling
             *   nested interrupts, which in turn is disabled by the critical
             *   section. */
-            taskENTER_CRITICAL_ISR();
+            taskENTER_CRITICAL_ISR( &xKernelLock );
 
             /* A task being unblocked cannot cause an immediate context switch
              * if preemption is turned off. */
@@ -3354,7 +3402,7 @@ BaseType_t xTaskIncrementTick( void )
             #endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) ) */
 
             /* Exit the critical section as we have finished accessing the kernel data structures. */
-            taskEXIT_CRITICAL_ISR();
+            taskEXIT_CRITICAL_ISR( &xKernelLock );
 
             #if ( configUSE_PREEMPTION == 1 )
                 {
@@ -3402,11 +3450,11 @@ BaseType_t xTaskIncrementTick( void )
 
         /* Save the hook function in the TCB.  A critical section is required as
          * the value can be accessed from an interrupt. */
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
             xTCB->pxTaskTag = pxHookFunction;
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
     }
 
 #endif /* configUSE_APPLICATION_TASK_TAG */
@@ -3424,11 +3472,11 @@ BaseType_t xTaskIncrementTick( void )
 
         /* Save the hook function in the TCB.  A critical section is required as
          * the value can be accessed from an interrupt. */
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
             xReturn = pxTCB->pxTaskTag;
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return xReturn;
     }
@@ -3442,28 +3490,26 @@ BaseType_t xTaskIncrementTick( void )
     {
         TCB_t * pxTCB;
         TaskHookFunction_t xReturn;
-#ifndef ESP_PLATFORM
-        UBaseType_t uxSavedInterruptStatus;
-#endif
 
         /* If xTask is NULL then set the calling task's hook. */
         pxTCB = prvGetTCBFromHandle( xTask );
 
         /* Save the hook function in the TCB.  A critical section is required as
          * the value can be accessed from an interrupt. */
-#ifdef ESP_PLATFORM
-        portENTER_CRITICAL_ISR(&xTaskQueueMutex);
-#else
-        uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
-#endif
+        #if ( configNUM_CORES > 1 )
+            taskENTER_CRITICAL_ISR( &xKernelLock );
+        #else
+            UBaseType_t uxSavedInterruptStatus;
+            uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
+        #endif
         {
             xReturn = pxTCB->pxTaskTag;
         }
-#ifdef ESP_PLATFORM
-        portEXIT_CRITICAL_ISR(&xTaskQueueMutex);
-#else
-        portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
-#endif
+        #if ( configNUM_CORES > 1 )
+            taskEXIT_CRITICAL_ISR( &xKernelLock );
+        #else
+            portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
+        #endif
 
         return xReturn;
     }
@@ -3598,7 +3644,7 @@ void vTaskSwitchContext( void )
      * - ISR dispatcher when return from an ISR (interrupts will already be disabled)
      * - vTaskSuspend() which is not in a critical section
      * Therefore, we enter a critical section ISR version to ensure safety */
-    taskENTER_CRITICAL_ISR();
+    taskENTER_CRITICAL_ISR( &xKernelLock );
 #endif // ESP_PLATFORM
     if( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE )
     {
@@ -3688,7 +3734,7 @@ void vTaskSwitchContext( void )
     }
 #ifdef ESP_PLATFORM
     /* Exit the critical section previously entered */
-    taskEXIT_CRITICAL_ISR();
+    taskEXIT_CRITICAL_ISR( &xKernelLock );
 #endif // ESP_PLATFORM
 }
 /*-----------------------------------------------------------*/
@@ -3697,7 +3743,9 @@ void vTaskPlaceOnEventList( List_t * const pxEventList,
                             const TickType_t xTicksToWait )
 {
     configASSERT( pxEventList );
-    taskENTER_CRITICAL();
+
+    /* Take the kernel lock as we are about to access the task lists. */
+    taskENTER_CRITICAL( &xKernelLock );
 
     /* THIS FUNCTION MUST BE CALLED WITH EITHER INTERRUPTS DISABLED OR THE
      * SCHEDULER SUSPENDED AND THE QUEUE BEING ACCESSED LOCKED. */
@@ -3706,10 +3754,11 @@ void vTaskPlaceOnEventList( List_t * const pxEventList,
      * This is placed in the list in priority order so the highest priority task
      * is the first to be woken by the event.  The queue that contains the event
      * list is locked, preventing simultaneous access from interrupts. */
-    vListInsert( pxEventList, &( pxCurrentTCB[xPortGetCoreID()]->xEventListItem ) );
+    vListInsert( pxEventList, &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ) );
 
-    prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToWait);
-    taskEXIT_CRITICAL();
+    prvAddCurrentTaskToDelayedList( xTicksToWait, pdTRUE );
+
+    taskEXIT_CRITICAL( &xKernelLock );
 }
 /*-----------------------------------------------------------*/
 
@@ -3718,22 +3767,30 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
                                      const TickType_t xTicksToWait )
 {
     configASSERT( pxEventList );
-    taskENTER_CRITICAL();
+
+    /* Take the kernel lock as we are about to access the task lists. */
+    taskENTER_CRITICAL( &xKernelLock );
+
+    /* THIS FUNCTION MUST BE CALLED WITH THE SCHEDULER SUSPENDED.  It is used by
+     * the event groups implementation. */
+    /* Note. We currently don't always suspend the scheduler. Todo: IDF-3755
+     * configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] != 0 ); */
 
     /* Store the item value in the event list item.  It is safe to access the
      * event list item here as interrupts won't access the event list item of a
      * task that is not in the Blocked state. */
-    listSET_LIST_ITEM_VALUE( &( pxCurrentTCB[xPortGetCoreID()]->xEventListItem ), xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE );
+    listSET_LIST_ITEM_VALUE( &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ), xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE );
 
     /* Place the event list item of the TCB at the end of the appropriate event
      * list.  It is safe to access the event list here because it is part of an
      * event group implementation - and interrupts don't access event groups
      * directly (instead they access them indirectly by pending function calls to
      * the task level). */
-    vListInsertEnd( pxEventList, &( pxCurrentTCB[xPortGetCoreID()]->xEventListItem ) );
+    vListInsertEnd( pxEventList, &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ) );
 
-    prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToWait );
-    taskEXIT_CRITICAL();
+    prvAddCurrentTaskToDelayedList( xTicksToWait, pdTRUE );
+
+    taskEXIT_CRITICAL( &xKernelLock );
 }
 /*-----------------------------------------------------------*/
 
@@ -3741,8 +3798,10 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
 
     void vTaskPlaceOnEventListRestricted( List_t * const pxEventList, TickType_t xTicksToWait, const BaseType_t xWaitIndefinitely )
     {
-        taskENTER_CRITICAL();
         configASSERT( pxEventList );
+
+        /* Take the kernel lock as we are about to access the task lists. */
+        taskENTER_CRITICAL( &xKernelLock );
 
         /* This function should not be called by application code hence the
          * 'Restricted' in its name.  It is not part of the public API.  It is
@@ -3754,7 +3813,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
          * In this case it is assume that this is the only task that is going to
          * be waiting on this event list, so the faster vListInsertEnd() function
          * can be used in place of vListInsert. */
-        vListInsertEnd( pxEventList, &( pxCurrentTCB[xPortGetCoreID()]->xEventListItem ) );
+        vListInsertEnd( pxEventList, &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ) );
 
         /* If the task should block indefinitely then set the block time to a
          * value that will be recognised as an indefinite delay inside the
@@ -3764,9 +3823,10 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
             xTicksToWait = portMAX_DELAY;
         }
 
-        traceTASK_DELAY_UNTIL( );
-        prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToWait );
-        taskEXIT_CRITICAL();
+        traceTASK_DELAY_UNTIL( ( xTickCount + xTicksToWait ) );
+        prvAddCurrentTaskToDelayedList( xTicksToWait, xWaitIndefinitely );
+
+        taskEXIT_CRITICAL( &xKernelLock );
     }
 
 #endif /* configUSE_TIMERS */
@@ -3776,117 +3836,125 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
 {
     TCB_t * pxUnblockedTCB;
     BaseType_t xReturn;
-    BaseType_t xTaskCanBeReady;
-    UBaseType_t i, uxTargetCPU;
 
-    taskENTER_CRITICAL_ISR();
     /* THIS FUNCTION MUST BE CALLED FROM A CRITICAL SECTION.  It can also be
-     * called from a critical section within an ISR. */
-
-    /* The event list is sorted in priority order, so the first in the list can
-     * be removed as it is known to be the highest priority.  Remove the TCB from
-     * the delayed list, and add it to the ready list.
+     * called from a critical section within an ISR.
      *
-     * If an event is for a queue that is locked then this function will never
-     * get called - the lock count on the queue will get modified instead.  This
-     * means exclusive access to the event list is guaranteed here.
-     *
-     * This function assumes that a check has already been made to ensure that
-     * pxEventList is not empty. */
-    if ( ( listLIST_IS_EMPTY( pxEventList ) ) == pdFALSE )
+     * However, we still need to take the kernel lock as we are about to access
+     * kernel data structures. Note that we use the ISR version of the macro as
+     * this function could be called from an ISR critical section. */
+    taskENTER_CRITICAL_ISR( &xKernelLock );
     {
-        pxUnblockedTCB = listGET_OWNER_OF_HEAD_ENTRY( pxEventList ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
-        configASSERT( pxUnblockedTCB );
-        ( void ) uxListRemove( &( pxUnblockedTCB->xEventListItem ) );
-    }
-    else
-    {
-        taskEXIT_CRITICAL_ISR();
-        return pdFALSE;
-    }
-
-    xTaskCanBeReady = pdFALSE;
-    if ( pxUnblockedTCB->xCoreID == tskNO_AFFINITY )
-    {
-        uxTargetCPU = xPortGetCoreID();
-        for (i = 0; i < configNUM_CORES; i++)
+        /* Before taking the kernel lock, another task/ISR could have already
+         * emptied the pxEventList. So we insert a check here to see if
+         * pxEventList is empty before attempting to remove an item from it. */
+        if( listLIST_IS_EMPTY( pxEventList ) == pdFALSE )
         {
-            if ( uxSchedulerSuspended[ i ] == ( UBaseType_t ) pdFALSE )
+            BaseType_t xCurCoreID = xPortGetCoreID();
+
+            /* The event list is sorted in priority order, so the first in the list can
+             * be removed as it is known to be the highest priority.  Remove the TCB from
+             * the delayed list, and add it to the ready list.
+             *
+             * If an event is for a queue that is locked then this function will never
+             * get called - the lock count on the queue will get modified instead.  This
+             * means exclusive access to the event list is guaranteed here.
+             *
+             * This function assumes that a check has already been made to ensure that
+             * pxEventList is not empty. */
+            pxUnblockedTCB = listGET_OWNER_OF_HEAD_ENTRY( pxEventList ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
+            configASSERT( pxUnblockedTCB );
+            ( void ) uxListRemove( &( pxUnblockedTCB->xEventListItem ) );
+
+            /* Add the task to the ready list if a core with compatible affinity
+             * has NOT suspended its scheduler. This occurs when:
+             * - The task is pinned, and the pinned core's scheduler is running
+             * - The task is unpinned, and at least one of the core's scheduler is running */
+            #if ( configNUM_CORES > 1 )
+                if(    ( ( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) pdFALSE ) && ( taskCAN_RUN_ON_CORE( 0, pxUnblockedTCB->xCoreID) == pdTRUE ) )
+                    || ( ( uxSchedulerSuspended[ 1 ] == ( UBaseType_t ) pdFALSE ) && ( taskCAN_RUN_ON_CORE( 1, pxUnblockedTCB->xCoreID) == pdTRUE ) ) )
+            #else
+                if( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) pdFALSE )
+            #endif /* configNUM_CORES > 1 */
             {
-                xTaskCanBeReady = pdTRUE;
-                break;
+                ( void ) uxListRemove( &( pxUnblockedTCB->xStateListItem ) );
+                prvAddTaskToReadyList( pxUnblockedTCB );
+
+                #if ( configUSE_TICKLESS_IDLE != 0 )
+                    {
+                        /* If a task is blocked on a kernel object then xNextTaskUnblockTime
+                         * might be set to the blocked task's time out time.  If the task is
+                         * unblocked for a reason other than a timeout xNextTaskUnblockTime is
+                         * normally left unchanged, because it is automatically reset to a new
+                         * value when the tick count equals xNextTaskUnblockTime.  However if
+                         * tickless idling is used it might be more important to enter sleep mode
+                         * at the earliest possible time - so reset xNextTaskUnblockTime here to
+                         * ensure it is updated at the earliest possible time. */
+                        prvResetNextTaskUnblockTime();
+                    }
+                #endif
+            }
+            else
+            {
+                /* We arrive here due to one of the following possibilities:
+                 * - The task is pinned to core X and core X has suspended its scheduler
+                 * - The task is unpinned and both cores have suspend their schedulers
+                 * Therefore, we add the task to one of the pending lists:
+                 * - If the task is pinned to core X, add it to core X's pending list
+                 * - If the task is unpinned, add it to the current core's pending list */
+                BaseType_t xPendingListCore;
+                #if ( configNUM_CORES > 1 )
+                    xPendingListCore = ( ( pxUnblockedTCB->xCoreID == tskNO_AFFINITY ) ? xCurCoreID : pxUnblockedTCB->xCoreID );
+                #else
+                    xPendingListCore = 0;
+                #endif /* configNUM_CORES > 1 */
+                configASSERT( uxSchedulerSuspended[ xPendingListCore ] == pdTRUE );
+
+                /* The delayed and ready lists cannot be accessed, so hold this task
+                 * pending until the scheduler is resumed. */
+                vListInsertEnd( &( xPendingReadyList[ xPendingListCore ] ), &( pxUnblockedTCB->xEventListItem ) );
+            }
+
+            if( prvCheckForYield( pxUnblockedTCB, xCurCoreID, pdFALSE ) )
+            {
+                /* Return true if the task removed from the event list has a higher
+                 * priority than the calling task.  This allows the calling task to know if
+                 * it should force a context switch now. */
+                xReturn = pdTRUE;
+
+                /* Mark that a yield is pending in case the user is not using the
+                 * "xHigherPriorityTaskWoken" parameter to an ISR safe FreeRTOS function. */
+                xYieldPending[ xCurCoreID ] = pdTRUE;
+            }
+            else
+            {
+                xReturn = pdFALSE;
             }
         }
+        else
+        {
+            /* The pxEventList was emptied before we entered the critical section,
+             * Nothing to do except return pdFALSE. */
+            xReturn = pdFALSE;
+        }
     }
-    else
-    {
-        uxTargetCPU = pxUnblockedTCB->xCoreID;
-        xTaskCanBeReady = uxSchedulerSuspended[ uxTargetCPU ] == ( UBaseType_t ) pdFALSE;
-    }
+    taskEXIT_CRITICAL_ISR( &xKernelLock );
 
-    if( xTaskCanBeReady )
-    {
-        ( void ) uxListRemove( &( pxUnblockedTCB->xStateListItem ) );
-        prvAddTaskToReadyList( pxUnblockedTCB );
-    }
-    else
-    {
-        /* The delayed and ready lists cannot be accessed, so hold this task
-         * pending until the scheduler is resumed on this CPU. */
-        vListInsertEnd( &( xPendingReadyList[ uxTargetCPU ] ), &( pxUnblockedTCB->xEventListItem ) );
-    }
-
-    if ( tskCAN_RUN_HERE(pxUnblockedTCB->xCoreID) && pxUnblockedTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
-    {
-        /* Return true if the task removed from the event list has a higher
-         * priority than the calling task.  This allows the calling task to know if
-         * it should force a context switch now. */
-        xReturn = pdTRUE;
-
-        /* Mark that a yield is pending in case the user is not using the
-         * "xHigherPriorityTaskWoken" parameter to an ISR safe FreeRTOS function. */
-        xYieldPending[ xPortGetCoreID() ] = pdTRUE;
-    }
-    else if ( pxUnblockedTCB->xCoreID != xPortGetCoreID() )
-    {
-        taskYIELD_OTHER_CORE( pxUnblockedTCB->xCoreID, pxUnblockedTCB->uxPriority );
-        xReturn = pdFALSE;
-    }
-    else
-    {
-        xReturn = pdFALSE;
-    }
-
-    #if( configUSE_TICKLESS_IDLE != 0 )
-    {
-        /* If a task is blocked on a kernel object then xNextTaskUnblockTime
-        might be set to the blocked task's time out time.  If the task is
-        unblocked for a reason other than a timeout xNextTaskUnblockTime is
-        normally left unchanged, because it is automatically reset to a new
-        value when the tick count equals xNextTaskUnblockTime.  However if
-        tickless idling is used it might be more important to enter sleep mode
-        at the earliest possible time - so reset xNextTaskUnblockTime here to
-        ensure it is updated at the earliest possible time. */
-        prvResetNextTaskUnblockTime();
-    }
-    #endif
-
-    taskEXIT_CRITICAL_ISR();
     return xReturn;
 }
 /*-----------------------------------------------------------*/
 
 #ifdef ESP_PLATFORM
-void vTaskTakeEventListLock( void )
+void vTaskTakeKernelLock( void )
 {
-    /* We call the tasks.c critical section macro to take xTaskQueueMutex */
-    taskENTER_CRITICAL();
+    /* We call the tasks.c critical section macro to take xKernelLock */
+    taskENTER_CRITICAL( &xKernelLock );
 }
 
-void vTaskReleaseEventListLock( void )
+void vTaskReleaseKernelLock( void )
 {
-    /* We call the tasks.c critical section macro to release xTaskQueueMutex */
-    taskEXIT_CRITICAL();
+    /* We call the tasks.c critical section macro to release xKernelLock */
+    taskEXIT_CRITICAL( &xKernelLock );
 }
 #endif // ESP_PLATFORM
 
@@ -3894,17 +3962,38 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
                                         const TickType_t xItemValue )
 {
     TCB_t * pxUnblockedTCB;
+    BaseType_t xCurCoreID = xPortGetCoreID();
 
-    taskENTER_CRITICAL();
+    /* THIS FUNCTION MUST BE CALLED WITH THE KERNEL LOCK ALREADY TAKEN.
+     * It is used by the event flags implementation, thus those functions
+     * should call vTaskTakeKernelLock() before calling this function. */
+    /*
+    Todo: IDF-5785
+    configASSERT( uxSchedulerSuspended[ xCurCoreID ] != pdFALSE );
+    */
 
     /* Store the new item value in the event list. */
     listSET_LIST_ITEM_VALUE( pxEventListItem, xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE );
 
     /* Remove the event list form the event flag.  Interrupts do not access
      * event flags. */
-    pxUnblockedTCB = ( TCB_t * ) listGET_LIST_ITEM_OWNER( pxEventListItem );
+    pxUnblockedTCB = listGET_LIST_ITEM_OWNER( pxEventListItem ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
     configASSERT( pxUnblockedTCB );
     ( void ) uxListRemove( pxEventListItem );
+
+    #if ( configUSE_TICKLESS_IDLE != 0 )
+        {
+            /* If a task is blocked on a kernel object then xNextTaskUnblockTime
+             * might be set to the blocked task's time out time.  If the task is
+             * unblocked for a reason other than a timeout xNextTaskUnblockTime is
+             * normally left unchanged, because it is automatically reset to a new
+             * value when the tick count equals xNextTaskUnblockTime.  However if
+             * tickless idling is used it might be more important to enter sleep mode
+             * at the earliest possible time - so reset xNextTaskUnblockTime here to
+             * ensure it is updated at the earliest possible time. */
+            prvResetNextTaskUnblockTime();
+        }
+    #endif
 
     /* Remove the task from the delayed list and add it to the ready list.  The
      * scheduler is suspended so interrupts will not be accessing the ready
@@ -3912,30 +4001,26 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
     ( void ) uxListRemove( &( pxUnblockedTCB->xStateListItem ) );
     prvAddTaskToReadyList( pxUnblockedTCB );
 
-    if ( tskCAN_RUN_HERE(pxUnblockedTCB->xCoreID) && pxUnblockedTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+    if( prvCheckForYield( pxUnblockedTCB, xCurCoreID, pdFALSE ) )
     {
-        /* Mark that a yield is pending in case the user is not using the
-         * "xHigherPriorityTaskWoken" parameter to an ISR safe FreeRTOS function. */
-        xYieldPending[ xPortGetCoreID() ] = pdTRUE;
+        /* The unblocked task has a priority above that of the calling task, so
+         * a context switch is required.  This function is called with the
+         * scheduler suspended so xYieldPending is set so the context switch
+         * occurs immediately that the scheduler is resumed (unsuspended). */
+        xYieldPending[ xCurCoreID ] = pdTRUE;
     }
-    else if ( pxUnblockedTCB->xCoreID != xPortGetCoreID() )
-    {
-        taskYIELD_OTHER_CORE( pxUnblockedTCB->xCoreID, pxUnblockedTCB->uxPriority );
-    }
-
-    taskEXIT_CRITICAL();
 }
 /*-----------------------------------------------------------*/
 
 void vTaskSetTimeOutState( TimeOut_t * const pxTimeOut )
 {
     configASSERT( pxTimeOut );
-    taskENTER_CRITICAL();
+    taskENTER_CRITICAL( &xKernelLock );
     {
         pxTimeOut->xOverflowCount = xNumOfOverflows;
         pxTimeOut->xTimeOnEntering = xTickCount;
     }
-    taskEXIT_CRITICAL();
+    taskEXIT_CRITICAL( &xKernelLock );
 }
 /*-----------------------------------------------------------*/
 
@@ -3955,7 +4040,7 @@ void vTaskInternalSetTimeOutState( TimeOut_t * const pxTimeOut )
      */
     #if ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
         configASSERT( pxTimeOut );
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
     #endif // ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
 
         /* For internal use only as it does not use a critical section. */
@@ -3963,7 +4048,7 @@ void vTaskInternalSetTimeOutState( TimeOut_t * const pxTimeOut )
         pxTimeOut->xTimeOnEntering = xTickCount;
 
     #if ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
     #endif // ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
 }
 /*-----------------------------------------------------------*/
@@ -3976,7 +4061,7 @@ BaseType_t xTaskCheckForTimeOut( TimeOut_t * const pxTimeOut,
     configASSERT( pxTimeOut );
     configASSERT( pxTicksToWait );
 
-    taskENTER_CRITICAL();
+    taskENTER_CRITICAL( &xKernelLock );
     {
         /* Minor optimisation.  The tick count cannot change in this block. */
         const TickType_t xConstTickCount = xTickCount;
@@ -4012,6 +4097,7 @@ BaseType_t xTaskCheckForTimeOut( TimeOut_t * const pxTimeOut,
              * around and gone past again. This passed since vTaskSetTimeout()
              * was called. */
             xReturn = pdTRUE;
+            *pxTicksToWait = ( TickType_t ) 0;
         }
         else if( xElapsedTime < *pxTicksToWait ) /*lint !e961 Explicit casting is only redundant with some compilers, whereas others require it to prevent integer conversion errors. */
         {
@@ -4022,11 +4108,11 @@ BaseType_t xTaskCheckForTimeOut( TimeOut_t * const pxTimeOut,
         }
         else
         {
-            *pxTicksToWait = 0;
+            *pxTicksToWait = ( TickType_t ) 0;
             xReturn = pdTRUE;
         }
     }
-    taskEXIT_CRITICAL();
+    taskEXIT_CRITICAL( &xKernelLock );
 
     return xReturn;
 }
@@ -4175,7 +4261,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
                 if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
                 {
 #ifdef ESP_PLATFORM // IDF-3755
-                    taskENTER_CRITICAL();
+                    taskENTER_CRITICAL( &xKernelLock );
 #else
                     vTaskSuspendAll();
 #endif // ESP_PLATFORM
@@ -4203,7 +4289,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
                         }
                     }
 #ifdef ESP_PLATFORM // IDF-3755
-                    taskEXIT_CRITICAL();
+                    taskEXIT_CRITICAL( &xKernelLock );
 #else
                     ( void ) xTaskResumeAll();
 #endif // ESP_PLATFORM
@@ -4226,7 +4312,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
         const UBaseType_t uxNonApplicationTasks = 1;
         eSleepModeStatus eReturn = eStandardSleep;
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         if( listCURRENT_LIST_LENGTH( &xPendingReadyList[xPortGetCoreID()] ) != 0 )
         {
             /* A task was made ready while the scheduler was suspended. */
@@ -4252,7 +4338,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return eReturn;
     }
@@ -4270,11 +4356,11 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
         if( xIndex < configNUM_THREAD_LOCAL_STORAGE_POINTERS )
         {
-            taskENTER_CRITICAL();
+            taskENTER_CRITICAL( &xKernelLock );
             pxTCB = prvGetTCBFromHandle( xTaskToSet );
             pxTCB->pvThreadLocalStoragePointers[ xIndex ] = pvValue;
             pxTCB->pvThreadLocalStoragePointersDelCallback[ xIndex ] = xDelCallback;
-            taskEXIT_CRITICAL();
+            taskEXIT_CRITICAL( &xKernelLock );
         }
     }
 
@@ -4293,10 +4379,10 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
         if( xIndex < configNUM_THREAD_LOCAL_STORAGE_POINTERS )
         {
-            taskENTER_CRITICAL();
+            taskENTER_CRITICAL( &xKernelLock );
             pxTCB = prvGetTCBFromHandle( xTaskToSet );
             pxTCB->pvThreadLocalStoragePointers[ xIndex ] = pvValue;
-            taskEXIT_CRITICAL();
+            taskEXIT_CRITICAL( &xKernelLock );
         }
     }
 #endif /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS */
@@ -4357,13 +4443,10 @@ static void prvInitialiseTaskLists( void )
     vListInitialise( &xDelayedTaskList1 );
     vListInitialise( &xDelayedTaskList2 );
 
-    #if ( configNUM_CORES > 1 )
-    for(BaseType_t i = 0; i < configNUM_CORES; i++) {
-        vListInitialise( &xPendingReadyList[ i ] );
+    for( BaseType_t x = 0; x < configNUM_CORES; x++ )
+    {
+        vListInitialise( &xPendingReadyList[ x ] );
     }
-    #else
-    vListInitialise( &xPendingReadyList[xPortGetCoreID()] );
-    #endif
 
     #if ( INCLUDE_vTaskDelete == 1 )
         {
@@ -4393,13 +4476,13 @@ static void prvCheckTasksWaitingTermination( void )
             BaseType_t xListIsEmpty;
             BaseType_t core = xPortGetCoreID();
 
-            /* uxDeletedTasksWaitingCleanUp is used to prevent taskENTER_CRITICAL()
+            /* uxDeletedTasksWaitingCleanUp is used to prevent taskENTER_CRITICAL( &xKernelLock )
              * being called too often in the idle task. */
             while( uxDeletedTasksWaitingCleanUp > ( UBaseType_t ) 0U )
             {
                 TCB_t *pxTCB = NULL;
 
-                taskENTER_CRITICAL();
+                taskENTER_CRITICAL( &xKernelLock );
                 {
                     xListIsEmpty = listLIST_IS_EMPTY( &xTasksWaitingTermination );
                     if( xListIsEmpty == pdFALSE )
@@ -4426,7 +4509,7 @@ static void prvCheckTasksWaitingTermination( void )
                         }
                     }
                 }
-                taskEXIT_CRITICAL();    //Need to call deletion callbacks outside critical section
+                taskEXIT_CRITICAL( &xKernelLock );    //Need to call deletion callbacks outside critical section
 
                 if (pxTCB != NULL) {    //Call deletion callbacks and free TCB memory
                     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
@@ -4462,9 +4545,8 @@ static void prvCheckTasksWaitingTermination( void )
         pxTaskStatus->uxCurrentPriority = pxTCB->uxPriority;
         pxTaskStatus->pxStackBase = pxTCB->pxStack;
         pxTaskStatus->xTaskNumber = pxTCB->uxTCBNumber;
-
         #if ( configTASKLIST_INCLUDE_COREID == 1 )
-        pxTaskStatus->xCoreID = pxTCB->xCoreID;
+            pxTaskStatus->xCoreID = pxTCB->xCoreID;
         #endif /* configTASKLIST_INCLUDE_COREID */
 
         #if ( configUSE_MUTEXES == 1 )
@@ -4508,7 +4590,7 @@ static void prvCheckTasksWaitingTermination( void )
                         if( eState == eSuspended )
                         {
 #ifdef ESP_PLATFORM // IDF-3755
-                            taskENTER_CRITICAL();
+                            taskENTER_CRITICAL( &xKernelLock );
 #else
                             vTaskSuspendAll();
 #endif // ESP_PLATFORM
@@ -4519,7 +4601,7 @@ static void prvCheckTasksWaitingTermination( void )
                                 }
                             }
 #ifdef ESP_PLATFORM // IDF-3755
-                            taskEXIT_CRITICAL();
+                            taskEXIT_CRITICAL( &xKernelLock );
 #else
                             ( void ) xTaskResumeAll();
 #endif // ESP_PLATFORM
@@ -4843,6 +4925,7 @@ static void prvResetNextTaskUnblockTime( void )
         BaseType_t xReturn;
         unsigned state;
 
+        /* Known issue. This should use critical sections. See IDF-5889 */
         state = portSET_INTERRUPT_MASK_FROM_ISR();
         if( xSchedulerRunning == pdFALSE )
         {
@@ -4874,7 +4957,7 @@ static void prvResetNextTaskUnblockTime( void )
         TCB_t * const pxMutexHolderTCB = pxMutexHolder;
         BaseType_t xReturn = pdFALSE;
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         /* If the mutex was given back by an interrupt while the queue was
          * locked then the mutex holder might now be NULL.  _RB_ Is this still
          * needed as interrupts can no longer use mutexes? */
@@ -4951,7 +5034,7 @@ static void prvResetNextTaskUnblockTime( void )
         {
             mtCOVERAGE_TEST_MARKER();
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return xReturn;
     }
@@ -4966,7 +5049,7 @@ static void prvResetNextTaskUnblockTime( void )
         TCB_t * const pxTCB = pxMutexHolder;
         BaseType_t xReturn = pdFALSE;
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         if( pxMutexHolder != NULL )
         {
             /* A task can only have an inherited priority if it holds the mutex.
@@ -5033,7 +5116,7 @@ static void prvResetNextTaskUnblockTime( void )
         {
             mtCOVERAGE_TEST_MARKER();
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return xReturn;
     }
@@ -5050,7 +5133,7 @@ static void prvResetNextTaskUnblockTime( void )
         UBaseType_t uxPriorityUsedOnEntry, uxPriorityToUse;
         const UBaseType_t uxOnlyOneMutexHeld = ( UBaseType_t ) 1;
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         if( pxMutexHolder != NULL )
         {
             /* If pxMutexHolder is not NULL then the holder must hold at least
@@ -5143,7 +5226,7 @@ static void prvResetNextTaskUnblockTime( void )
         {
             mtCOVERAGE_TEST_MARKER();
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
     }
 
 #endif /* configUSE_MUTEXES */
@@ -5477,14 +5560,18 @@ static void prvResetNextTaskUnblockTime( void )
 TickType_t uxTaskResetEventItemValue( void )
 {
     TickType_t uxReturn;
+    TCB_t *pxCurTCB;
 
-    taskENTER_CRITICAL();
-    uxReturn = listGET_LIST_ITEM_VALUE( &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ) );
+    taskENTER_CRITICAL( &xKernelLock );
+    pxCurTCB = pxCurrentTCB[ xPortGetCoreID() ];
+
+    uxReturn = listGET_LIST_ITEM_VALUE( &( pxCurTCB->xEventListItem ) );
 
     /* Reset the event list item to its normal value - so it can be used with
      * queues and semaphores. */
-    listSET_LIST_ITEM_VALUE( &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ), ( ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) pxCurrentTCB[ xPortGetCoreID() ]->uxPriority ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-    taskEXIT_CRITICAL();
+    listSET_LIST_ITEM_VALUE( &( pxCurTCB->xEventListItem ), ( ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) pxCurTCB->uxPriority ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+
+    taskEXIT_CRITICAL( &xKernelLock );
 
     return uxReturn;
 }
@@ -5498,13 +5585,13 @@ TickType_t uxTaskResetEventItemValue( void )
 
         /* If xSemaphoreCreateMutex() is called before any tasks have been created
          * then pxCurrentTCB will be NULL. */
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         if( pxCurrentTCB[ xPortGetCoreID() ] != NULL )
         {
             ( pxCurrentTCB[ xPortGetCoreID() ]->uxMutexesHeld )++;
         }
         curTCB = pxCurrentTCB[ xPortGetCoreID() ];
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return curTCB;
     }
@@ -5532,7 +5619,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
         configASSERT( uxIndexToWait < configTASK_NOTIFICATION_ARRAY_ENTRIES );
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
             /* Only block if the notification count is not already non-zero. */
             if( pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue[ uxIndexToWait ] == 0UL )
@@ -5542,7 +5629,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
                 if( xTicksToWait > ( TickType_t ) 0 )
                 {
-                    prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToWait );
+                    prvAddCurrentTaskToDelayedList( xTicksToWait, pdTRUE );
                     traceTASK_NOTIFY_TAKE_BLOCK( uxIndexToWait );
 
                     /* All ports are written to allow a yield in a critical
@@ -5561,9 +5648,9 @@ TickType_t uxTaskResetEventItemValue( void )
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
             traceTASK_NOTIFY_TAKE( uxIndexToWait );
             ulReturn = pxCurrentTCB[xPortGetCoreID()]->ulNotifiedValue[ uxIndexToWait ];
@@ -5586,7 +5673,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
             pxCurrentTCB[xPortGetCoreID()]->ucNotifyState[ uxIndexToWait ] = taskNOT_WAITING_NOTIFICATION;
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return ulReturn;
     }
@@ -5618,7 +5705,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
         configASSERT( uxIndexToWait < configTASK_NOTIFICATION_ARRAY_ENTRIES );
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
             /* Only block if a notification is not already pending. */
             if( pxCurrentTCB[xPortGetCoreID()]->ucNotifyState[ uxIndexToWait ] != taskNOTIFICATION_RECEIVED )
@@ -5633,7 +5720,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
                 if( xTicksToWait > ( TickType_t ) 0 )
                 {
-                    prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToWait);
+                    prvAddCurrentTaskToDelayedList( xTicksToWait, pdTRUE );
                     traceTASK_NOTIFY_WAIT_BLOCK( uxIndexToWait );
 
                     /* All ports are written to allow a yield in a critical
@@ -5652,9 +5739,9 @@ TickType_t uxTaskResetEventItemValue( void )
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
             traceTASK_NOTIFY_WAIT( uxIndexToWait );
 
@@ -5684,7 +5771,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
             pxCurrentTCB[xPortGetCoreID()]->ucNotifyState[ uxIndexToWait ] = taskNOT_WAITING_NOTIFICATION;
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return xReturn;
     }
@@ -5708,7 +5795,7 @@ TickType_t uxTaskResetEventItemValue( void )
         configASSERT( xTaskToNotify );
         pxTCB = xTaskToNotify;
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
             if( pulPreviousNotificationValue != NULL )
             {
@@ -5791,15 +5878,11 @@ TickType_t uxTaskResetEventItemValue( void )
                     }
                 #endif
 
-                if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority > pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+                if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdFALSE ) )
                 {
                     /* The notified task has a priority above the currently
                      * executing task so a yield is required. */
-                    portYIELD_WITHIN_API();
-                }
-                else if ( pxTCB->xCoreID != xPortGetCoreID() )
-                {
-                    taskYIELD_OTHER_CORE(pxTCB->xCoreID, pxTCB->uxPriority);
+                    taskYIELD_IF_USING_PREEMPTION();
                 }
                 else
                 {
@@ -5811,7 +5894,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return xReturn;
     }
@@ -5855,7 +5938,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
         pxTCB = xTaskToNotify;
 
-        taskENTER_CRITICAL_ISR();
+        taskENTER_CRITICAL_ISR( &xKernelLock );
         {
             if( pulPreviousNotificationValue != NULL )
             {
@@ -5929,7 +6012,7 @@ TickType_t uxTaskResetEventItemValue( void )
                     vListInsertEnd( &( xPendingReadyList[xPortGetCoreID()] ), &( pxTCB->xEventListItem ) );
                 }
 
-                if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority > pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+                if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdFALSE ) )
                 {
                     /* The notified task has a priority above the currently
                      * executing task so a yield is required. */
@@ -5937,10 +6020,11 @@ TickType_t uxTaskResetEventItemValue( void )
                     {
                         *pxHigherPriorityTaskWoken = pdTRUE;
                     }
-                }
-                else if ( pxTCB->xCoreID != xPortGetCoreID() )
-                {
-                    taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority );
+
+                    /* Mark that a yield is pending in case the user is not
+                     * using the "xHigherPriorityTaskWoken" parameter to an ISR
+                     * safe FreeRTOS function. */
+                    xYieldPending[ xPortGetCoreID() ] = pdTRUE;
                 }
                 else
                 {
@@ -5948,7 +6032,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 }
             }
         }
-        taskEXIT_CRITICAL_ISR();
+        taskEXIT_CRITICAL_ISR( &xKernelLock );
 
         return xReturn;
     }
@@ -5989,7 +6073,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
         pxTCB = xTaskToNotify;
 
-        taskENTER_CRITICAL_ISR();
+        taskENTER_CRITICAL_ISR( &xKernelLock );
         {
             ucOriginalNotifyState = pxTCB->ucNotifyState[ uxIndexToNotify ];
             pxTCB->ucNotifyState[ uxIndexToNotify ] = taskNOTIFICATION_RECEIVED;
@@ -6019,7 +6103,7 @@ TickType_t uxTaskResetEventItemValue( void )
                     vListInsertEnd( &( xPendingReadyList[xPortGetCoreID()] ), &( pxTCB->xEventListItem ) );
                 }
 
-                if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority > pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+                if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdFALSE ) )
                 {
                     /* The notified task has a priority above the currently
                      * executing task so a yield is required. */
@@ -6027,10 +6111,11 @@ TickType_t uxTaskResetEventItemValue( void )
                     {
                         *pxHigherPriorityTaskWoken = pdTRUE;
                     }
-                }
-                else if ( pxTCB->xCoreID != xPortGetCoreID() )
-                {
-                    taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority );
+
+                    /* Mark that a yield is pending in case the user is not
+                     * using the "xHigherPriorityTaskWoken" parameter in an ISR
+                     * safe FreeRTOS function. */
+                    xYieldPending[ xPortGetCoreID() ] = pdTRUE;
                 }
                 else
                 {
@@ -6038,7 +6123,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 }
             }
         }
-        taskEXIT_CRITICAL_ISR();
+        taskEXIT_CRITICAL_ISR( &xKernelLock );
     }
 
 #endif /* configUSE_TASK_NOTIFICATIONS */
@@ -6058,7 +6143,7 @@ TickType_t uxTaskResetEventItemValue( void )
          * its notification state cleared. */
         pxTCB = prvGetTCBFromHandle( xTask );
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
             if( pxTCB->ucNotifyState[ uxIndexToClear ] == taskNOTIFICATION_RECEIVED )
             {
@@ -6070,7 +6155,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 xReturn = pdFAIL;
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return xReturn;
     }
@@ -6091,14 +6176,14 @@ TickType_t uxTaskResetEventItemValue( void )
          * its notification state cleared. */
         pxTCB = prvGetTCBFromHandle( xTask );
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         {
             /* Return the notification as it was before the bits were cleared,
              * then clear the bit mask. */
             ulReturn = pxTCB->ulNotifiedValue[ uxIndexToClear ];
             pxTCB->ulNotifiedValue[ uxIndexToClear ] &= ~ulBitsToClear;
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return ulReturn;
     }
@@ -6110,9 +6195,9 @@ TickType_t uxTaskResetEventItemValue( void )
 
     uint32_t ulTaskGetIdleRunTimeCounter( void )
     {
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xKernelLock );
         tskTCB *pxTCB = (tskTCB *)xIdleTaskHandle[xPortGetCoreID()];
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xKernelLock );
 
         return pxTCB->ulRunTimeCounter;
     }
@@ -6120,34 +6205,39 @@ TickType_t uxTaskResetEventItemValue( void )
 #endif
 /*-----------------------------------------------------------*/
 
-static void prvAddCurrentTaskToDelayedList( const portBASE_TYPE xCoreID, const TickType_t xTicksToWait )
+static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
+                                            const BaseType_t xCanBlockIndefinitely )
 {
     TickType_t xTimeToWake;
     const TickType_t xConstTickCount = xTickCount;
+    BaseType_t xCurCoreID = xPortGetCoreID();
 
-    if (configNUM_CORES > 1 && listIS_CONTAINED_WITHIN(&xTasksWaitingTermination,  &( pxCurrentTCB[xCoreID]->xStateListItem))) {
-        /* vTaskDelete() has been called to delete this task. This would have happened from the other core while this task was spinning on xTaskQueueMutex,
-           so don't move the running task to the delayed list - as soon as this core re-enables interrupts this task will
-           be suspended permanently */
-        return;
-    }
+    #if ( configNUM_CORES > 1 )
+        if( listIS_CONTAINED_WITHIN( &xTasksWaitingTermination, &( pxCurrentTCB[ xCurCoreID ]->xStateListItem ) ) == pdTRUE )
+        {
+            /* vTaskDelete() has been called to delete this task. This would have happened from the other core while this task was spinning on xTaskQueueMutex,
+               so don't move the running task to the delayed list - as soon as this core re-enables interrupts this task will
+               be suspended permanently. Todo: IDF-5844. */
+            return;
+        }
+    #endif
 
     #if ( INCLUDE_xTaskAbortDelay == 1 )
         {
             /* About to enter a delayed list, so ensure the ucDelayAborted flag is
              * reset to pdFALSE so it can be detected as having been set to pdTRUE
              * when the task leaves the Blocked state. */
-        pxCurrentTCB[xCoreID]->ucDelayAborted = pdFALSE;
+            pxCurrentTCB[ xCurCoreID ]->ucDelayAborted = pdFALSE;
         }
     #endif
 
     /* Remove the task from the ready list before adding it to the blocked list
      * as the same list item is used for both lists. */
-    if( uxListRemove( &( pxCurrentTCB[xCoreID]->xStateListItem ) ) == ( UBaseType_t ) 0 )
+    if( uxListRemove( &( pxCurrentTCB[ xCurCoreID ]->xStateListItem ) ) == ( UBaseType_t ) 0 )
     {
         /* The current task must be in a ready list, so there is no need to
          * check, and the port reset macro can be called directly. */
-        portRESET_READY_PRIORITY( pxCurrentTCB[xCoreID]->uxPriority, uxTopReadyPriority ); /*lint !e931 pxCurrentTCB[xPortGetCoreID()] cannot change as it is the calling task.  pxCurrentTCB->uxPriority and uxTopReadyPriority cannot change as called with scheduler suspended or in a critical section. */
+        portRESET_READY_PRIORITY( pxCurrentTCB[ xCurCoreID ]->uxPriority, uxTopReadyPriority ); /*lint !e931 pxCurrentTCB cannot change as it is the calling task.  pxCurrentTCB->uxPriority and uxTopReadyPriority cannot change as called with scheduler suspended or in a critical section. */
     }
     else
     {
@@ -6156,12 +6246,12 @@ static void prvAddCurrentTaskToDelayedList( const portBASE_TYPE xCoreID, const T
 
     #if ( INCLUDE_vTaskSuspend == 1 )
         {
-            if( ( xTicksToWait == portMAX_DELAY ) )
+            if( ( xTicksToWait == portMAX_DELAY ) && ( xCanBlockIndefinitely != pdFALSE ) )
             {
                 /* Add the task to the suspended task list instead of a delayed task
                  * list to ensure it is not woken by a timing event.  It will block
                  * indefinitely. */
-                vListInsertEnd( &xSuspendedTaskList, &( pxCurrentTCB[xCoreID]->xStateListItem ) );
+                vListInsertEnd( &xSuspendedTaskList, &( pxCurrentTCB[ xCurCoreID ]->xStateListItem ) );
             }
             else
             {
@@ -6171,19 +6261,19 @@ static void prvAddCurrentTaskToDelayedList( const portBASE_TYPE xCoreID, const T
                 xTimeToWake = xConstTickCount + xTicksToWait;
 
                 /* The list item will be inserted in wake time order. */
-                listSET_LIST_ITEM_VALUE( &( pxCurrentTCB[xCoreID]->xStateListItem ), xTimeToWake );
+                listSET_LIST_ITEM_VALUE( &( pxCurrentTCB[ xCurCoreID ]->xStateListItem ), xTimeToWake );
 
                 if( xTimeToWake < xConstTickCount )
                 {
                     /* Wake time has overflowed.  Place this item in the overflow
                      * list. */
-                    vListInsert( pxOverflowDelayedTaskList, &( pxCurrentTCB[xCoreID]->xStateListItem ) );
+                    vListInsert( pxOverflowDelayedTaskList, &( pxCurrentTCB[ xCurCoreID ]->xStateListItem ) );
                 }
                 else
                 {
                     /* The wake time has not overflowed, so the current block list
                      * is used. */
-                    vListInsert( pxDelayedTaskList, &( pxCurrentTCB[xCoreID]->xStateListItem ) );
+                    vListInsert( pxDelayedTaskList, &( pxCurrentTCB[ xCurCoreID ]->xStateListItem ) );
 
                     /* If the task entering the blocked state was placed at the
                      * head of the list of blocked tasks then xNextTaskUnblockTime
@@ -6207,17 +6297,17 @@ static void prvAddCurrentTaskToDelayedList( const portBASE_TYPE xCoreID, const T
             xTimeToWake = xConstTickCount + xTicksToWait;
 
             /* The list item will be inserted in wake time order. */
-            listSET_LIST_ITEM_VALUE( &( pxCurrentTCB[xCoreID]->xStateListItem ), xTimeToWake );
+            listSET_LIST_ITEM_VALUE( &( pxCurrentTCB[ xCurCoreID ]->xStateListItem ), xTimeToWake );
 
             if( xTimeToWake < xConstTickCount )
             {
                 /* Wake time has overflowed.  Place this item in the overflow list. */
-                vListInsert( pxOverflowDelayedTaskList, &( pxCurrentTCB[xCoreID]->xStateListItem ) );
+                vListInsert( pxOverflowDelayedTaskList, &( pxCurrentTCB[ xCurCoreID ]->xStateListItem ) );
             }
             else
             {
                 /* The wake time has not overflowed, so the current block list is used. */
-                vListInsert( pxDelayedTaskList, &( pxCurrentTCB[xCoreID]->xStateListItem ) );
+                vListInsert( pxDelayedTaskList, &( pxCurrentTCB[ xCurCoreID ]->xStateListItem ) );
 
                 /* If the task entering the blocked state was placed at the head of the
                  * list of blocked tasks then xNextTaskUnblockTime needs to be updated
@@ -6231,6 +6321,9 @@ static void prvAddCurrentTaskToDelayedList( const portBASE_TYPE xCoreID, const T
                     mtCOVERAGE_TEST_MARKER();
                 }
             }
+
+            /* Avoid compiler warning when INCLUDE_vTaskSuspend is not 1. */
+            ( void ) xCanBlockIndefinitely;
         }
     #endif /* INCLUDE_vTaskSuspend */
 }

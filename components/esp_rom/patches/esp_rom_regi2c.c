@@ -6,11 +6,11 @@
 
 #include <stdlib.h>
 #include "esp_bit_defs.h"
-#include "soc/syscon_reg.h"
 #include "esp_rom_caps.h"
 #include "sdkconfig.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
+#include "soc/syscon_reg.h"
 
 #define I2C_RTC_WIFI_CLK_EN (SYSCON_WIFI_CLK_EN_REG)
 

@@ -44,29 +44,30 @@ Send memory copy request
 
 :cpp:func:`esp_async_memcpy` is the API to send memory copy request to DMA engine. It must be called after driver is installed successfully. This API is thread safe, so it can be called from different tasks.
 
-Different from the libc version of `memcpy`, user should also pass a callback to :cpp:func:`esp_async_memcpy`, if it's necessary to be notified when the memory copy is done. The callback is executed in the ISR context, make sure you won't violate the the restriction applied to ISR handler.
+Different from the libc version of ``memcpy``, user should also pass a callback to :cpp:func:`esp_async_memcpy`, if it's necessary to be notified when the memory copy is done. The callback is executed in the ISR context, make sure you won't violate the restriction applied to ISR handler.
 
-Besides that, the callback function should reside in IRAM space by applying `IRAM_ATTR` attribute. The prototype of the callback function is :cpp:type:`async_memcpy_isr_cb_t`, please note that, the callback function should return true if it wakes up a high priority task by some API like :cpp:func:`xSemaphoreGiveFromISR`.
+Besides that, the callback function should reside in IRAM space by applying ``IRAM_ATTR`` attribute. The prototype of the callback function is :cpp:type:`async_memcpy_isr_cb_t`, please note that, the callback function should return true if it wakes up a high priority task by some API like :cpp:func:`xSemaphoreGiveFromISR`.
 
 .. highlight:: c
 
 ::
-
-    Semphr_Handle_t semphr; //already initialized in somewhere
 
     // Callback implementation, running in ISR context
     static IRAM_ATTR bool my_async_memcpy_cb(async_memcpy_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)
     {
         SemaphoreHandle_t sem = (SemaphoreHandle_t)cb_args;
         BaseType_t high_task_wakeup = pdFALSE;
-        SemphrGiveInISR(semphr, &high_task_wakeup); // high_task_wakeup set to pdTRUE if some high priority task unblocked
+        xSemaphoreGiveFromISR(semphr, &high_task_wakeup); // high_task_wakeup set to pdTRUE if some high priority task unblocked
         return high_task_wakeup == pdTRUE;
     }
 
+    // Create a semaphore used to report the completion of async memcpy
+    SemaphoreHandle_t semphr = xSemaphoreCreateBinary();
+
     // Called from user's context
     ESP_ERROR_CHECK(esp_async_memcpy(driver_handle, to, from, copy_len, my_async_memcpy_cb, my_semaphore));
-    //Do something else here
-    SemphrTake(my_semaphore, ...); //wait until the buffer copy is done
+    // Do something else here
+    xSemaphoreTake(my_semaphore, portMAX_DELAY); // Wait until the buffer copy is done
 
 Uninstall driver (optional)
 ---------------------------

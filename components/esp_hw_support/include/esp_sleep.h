@@ -75,7 +75,7 @@ typedef enum {
     ESP_SLEEP_WAKEUP_TIMER,        //!< Wakeup caused by timer
     ESP_SLEEP_WAKEUP_TOUCHPAD,     //!< Wakeup caused by touchpad
     ESP_SLEEP_WAKEUP_ULP,          //!< Wakeup caused by ULP program
-    ESP_SLEEP_WAKEUP_GPIO,         //!< Wakeup caused by GPIO (light sleep only)
+    ESP_SLEEP_WAKEUP_GPIO,         //!< Wakeup caused by GPIO (light sleep only on ESP32, S2 and S3)
     ESP_SLEEP_WAKEUP_UART,         //!< Wakeup caused by UART (light sleep only)
     ESP_SLEEP_WAKEUP_WIFI,              //!< Wakeup caused by WIFI (light sleep only)
     ESP_SLEEP_WAKEUP_COCPU,             //!< Wakeup caused by COCPU int
@@ -107,10 +107,8 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source);
 #if SOC_ULP_SUPPORTED
 /**
  * @brief Enable wakeup by ULP coprocessor
- * @note In revisions 0 and 1 of the ESP32, ULP wakeup source
- *       cannot be used when RTC_PERIPH power domain is forced
- *       to be powered on (ESP_PD_OPTION_ON) or when
- *       ext0 wakeup source is used.
+ * @note On ESP32, ULP wakeup source cannot be used when RTC_PERIPH power domain is forced,
+ *       to be powered on (ESP_PD_OPTION_ON) or when ext0 wakeup source is used.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NOT_SUPPORTED if additional current by touch (CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT) is enabled.
@@ -133,10 +131,8 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
 /**
  * @brief Enable wakeup by touch sensor
  *
- * @note In revisions 0 and 1 of the ESP32, touch wakeup source
- *       can not be used when RTC_PERIPH power domain is forced
- *       to be powered on (ESP_PD_OPTION_ON) or when ext0 wakeup
- *       source is used.
+ * @note On ESP32, touch wakeup source can not be used when RTC_PERIPH power domain is forced
+ *       to be powered on (ESP_PD_OPTION_ON) or when ext0 wakeup source is used.
  *
  * @note The FSM mode of the touch button should be configured
  *       as the timer trigger mode.
@@ -184,11 +180,13 @@ bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num);
  *       configured in esp_deep_sleep_start/esp_light_sleep_start,
  *       immediately before entering sleep mode.
  *
- * @note In revisions 0 and 1 of the ESP32, ext0 wakeup source
- *       can not be used together with touch or ULP wakeup sources.
+ * @note ESP32: ext0 wakeup source can not be used together with touch or ULP wakeup sources.
  *
- * @param gpio_num  GPIO number used as wakeup source. Only GPIOs which are have RTC
- *             functionality can be used: 0,2,4,12-15,25-27,32-39.
+ * @param gpio_num  GPIO number used as wakeup source. Only GPIOs with the RTC
+ *        functionality can be used. For different SoCs, the related GPIOs are:
+ *          - ESP32: 0, 2, 4, 12-15, 25-27, 32-39;
+ *          - ESP32-S2: 0-21;
+ *          - ESP32-S3: 0-21.
  * @param level  input level which will trigger wakeup (0=low, 1=high)
  * @return
  *      - ESP_OK on success
@@ -218,8 +216,11 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  *       kept enabled using esp_sleep_pd_config function.
  *
  * @param mask  bit mask of GPIO numbers which will cause wakeup. Only GPIOs
- *              which have RTC functionality can be used in this bit map:
- *              0,2,4,12-15,25-27,32-39.
+ *              which have RTC functionality can be used in this bit map.
+ *              For different SoCs, the related GPIOs are:
+ *                - ESP32: 0, 2, 4, 12-15, 25-27, 32-39;
+ *                - ESP32-S2: 0-21;
+ *                - ESP32-S3: 0-21.
  * @param mode select logic function used to determine wakeup condition:
  *            - ESP_EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
  *            - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
@@ -270,8 +271,7 @@ esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepslee
  * wakeup level, for each GPIO which is used for wakeup.
  * Then call this function to enable wakeup feature.
  *
- * @note In revisions 0 and 1 of the ESP32, GPIO wakeup source
- *       can not be used together with touch or ULP wakeup sources.
+ * @note On ESP32, GPIO wakeup source can not be used together with touch or ULP wakeup sources.
  *
  * @return
  *      - ESP_OK on success

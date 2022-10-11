@@ -112,7 +112,7 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
     cap_timer->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     cap_timer->fsm = MCPWM_CAP_TIMER_FSM_INIT;
     *ret_cap_timer = cap_timer;
-    ESP_LOGD(TAG, "new capture timer at %p, in group (%d)", cap_timer, group_id);
+    ESP_LOGD(TAG, "new capture timer at %p, in group (%d), resolution %"PRIu32, cap_timer, group_id, cap_timer->resolution_hz);
     return ESP_OK;
 
 err:
@@ -242,7 +242,6 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
     mcpwm_hal_context_t *hal = &group->hal;
     int cap_chan_id = cap_chan->cap_chan_id;
 
-    mcpwm_ll_capture_enable_channel(hal->dev, cap_chan_id, true); // enable channel
     mcpwm_ll_capture_enable_negedge(hal->dev, cap_chan_id, config->flags.neg_edge);
     mcpwm_ll_capture_enable_posedge(hal->dev, cap_chan_id, config->flags.pos_edge);
     mcpwm_ll_invert_input(hal->dev, cap_chan_id, config->flags.invert_cap_signal);
@@ -262,6 +261,7 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
     }
 
     cap_chan->gpio_num = config->gpio_num;
+    cap_chan->fsm = MCPWM_CAP_CHAN_FSM_INIT;
     *ret_cap_channel = cap_chan;
     ESP_LOGD(TAG, "new capture channel (%d,%d) at %p", group->group_id, cap_chan_id, cap_chan);
     return ESP_OK;
@@ -275,6 +275,7 @@ err:
 esp_err_t mcpwm_del_capture_channel(mcpwm_cap_channel_handle_t cap_channel)
 {
     ESP_RETURN_ON_FALSE(cap_channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(cap_channel->fsm == MCPWM_CAP_CHAN_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
     mcpwm_cap_timer_t *cap_timer = cap_channel->cap_timer;
     mcpwm_group_t *group = cap_timer->group;
     mcpwm_hal_context_t *hal = &group->hal;
@@ -290,11 +291,43 @@ esp_err_t mcpwm_del_capture_channel(mcpwm_cap_channel_handle_t cap_channel)
     mcpwm_ll_intr_clear_status(hal->dev, MCPWM_LL_EVENT_CAPTURE(cap_chan_id));
     portEXIT_CRITICAL(&group->spinlock);
 
-    // disable capture channel
-    mcpwm_ll_capture_enable_channel(group->hal.dev, cap_channel->cap_chan_id, false);
-
     // recycle memory resource
     ESP_RETURN_ON_ERROR(mcpwm_capture_channel_destory(cap_channel), TAG, "destory capture channel failed");
+    return ESP_OK;
+}
+
+esp_err_t mcpwm_capture_channel_enable(mcpwm_cap_channel_handle_t cap_channel)
+{
+    ESP_RETURN_ON_FALSE(cap_channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(cap_channel->fsm == MCPWM_CAP_CHAN_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
+    mcpwm_hal_context_t *hal = &cap_channel->cap_timer->group->hal;
+
+    // enable interrupt service
+    if (cap_channel->intr) {
+        ESP_RETURN_ON_ERROR(esp_intr_enable(cap_channel->intr), TAG, "enable interrupt service failed");
+    }
+    // enable channel
+    mcpwm_ll_capture_enable_channel(hal->dev, cap_channel->cap_chan_id, true);
+
+    cap_channel->fsm = MCPWM_CAP_CHAN_FSM_ENABLE;
+    return ESP_OK;
+}
+
+esp_err_t mcpwm_capture_channel_disable(mcpwm_cap_channel_handle_t cap_channel)
+{
+    ESP_RETURN_ON_FALSE(cap_channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(cap_channel->fsm == MCPWM_CAP_CHAN_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "channel not in enable state");
+    mcpwm_hal_context_t *hal = &cap_channel->cap_timer->group->hal;
+
+    // disable channel
+    mcpwm_ll_capture_enable_channel(hal->dev, cap_channel->cap_chan_id, false);
+
+    // disable interrupt service
+    if (cap_channel->intr) {
+        ESP_RETURN_ON_ERROR(esp_intr_disable(cap_channel->intr), TAG, "disable interrupt service failed");
+    }
+
+    cap_channel->fsm = MCPWM_CAP_CHAN_FSM_INIT;
     return ESP_OK;
 }
 
@@ -317,8 +350,8 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
 
     // lazy install interrupt service
     if (!cap_channel->intr) {
-        // we want the interrupt servie to be enabled after allocation successfully
-        int isr_flags = MCPWM_INTR_ALLOC_FLAG & ~ ESP_INTR_FLAG_INTRDISABLED;
+        ESP_RETURN_ON_FALSE(cap_channel->fsm == MCPWM_CAP_CHAN_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
+        int isr_flags = MCPWM_INTR_ALLOC_FLAG;
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
                             (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_CAPTURE(cap_chan_id),
                             mcpwm_capture_default_isr, cap_channel, &cap_channel->intr), TAG, "install interrupt service for cap channel failed");
@@ -337,6 +370,7 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
 esp_err_t mcpwm_capture_channel_trigger_soft_catch(mcpwm_cap_channel_handle_t cap_channel)
 {
     ESP_RETURN_ON_FALSE(cap_channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(cap_channel->fsm == MCPWM_CAP_CHAN_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "channel not enabled yet");
     mcpwm_cap_timer_t *cap_timer = cap_channel->cap_timer;
     mcpwm_group_t *group = cap_timer->group;
 

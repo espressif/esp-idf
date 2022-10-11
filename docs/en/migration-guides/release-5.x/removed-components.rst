@@ -1,6 +1,8 @@
 Removed or Deprecated Components
 ================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Components Moved to IDF Component Registry
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -18,6 +20,10 @@ Following components are removed from ESP-IDF and moved to `IDF Component Regist
 * `sh2lib <https://components.espressif.com/component/espressif/sh2lib>`_
 * `expat <https://components.espressif.com/component/espressif/expat>`_
 * `coap <https://components.espressif.com/component/espressif/coap>`_
+* `esp-cryptoauthlib <https://components.espressif.com/component/espressif/esp-cryptoauthlib>`_
+* `qrcode <https://components.espressif.com/component/espressif/qrcode>`_
+* `tjpgd <https://components.espressif.com/component/espressif/esp_jpeg>`_
+* `esp_serial_slave_link <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_
 
 .. note::
     Please note that http parser functionality which was previously part of ``nghttp`` component is now part of :component:`http_parser <http_parser>` component.
@@ -39,6 +45,9 @@ The following components are removed since they were deprecated in IDF v4.x:
 
 .. note::
     OpenSSL-API component is no longer supported. It is not available in the IDF Component Registry, either. Please use :doc:`ESP-TLS </api-reference/protocols/esp_tls>` or :component:`mbedtls` API directly.
+
+.. note::
+    ``esp_adc_cal`` component is no longer supported. New adc calibration driver is in ``esp_adc`` component. Legacy adc calibration driver has been moved into ``esp_adc`` component. To use legacy ``esp_adc_cal`` driver APIs, you should add ``esp_adc`` component to the list of component requirements in CMakeLists.txt. Also check :doc:`Peripherals Migration Guide </migration-guides/release-5.x/peripherals>` for more details.
 
 The targets components are no longer necessary after refactoring and have been removed:
 

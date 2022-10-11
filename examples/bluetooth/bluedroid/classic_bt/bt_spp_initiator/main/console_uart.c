@@ -25,6 +25,7 @@ static const uart_config_t uart_cfg = {
     .stop_bits = UART_STOP_BITS_1,
     .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
     .rx_flow_ctrl_thresh = 127,
+    .source_clk = UART_SCLK_DEFAULT,
 };
 
 extern void spp_msg_args_parser(char *buf, int len);

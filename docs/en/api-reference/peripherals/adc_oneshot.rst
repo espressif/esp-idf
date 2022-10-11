@@ -41,7 +41,7 @@ The ADC oneshot mode driver is implemented based on {IDF_TARGET_NAME} SAR ADC mo
 To install an ADC instance, set up the required initial configuration structure :cpp:type:`adc_oneshot_unit_init_cfg_t`:
 
 -  :cpp:member:`adc_oneshot_unit_init_cfg_t::unit_id` selects the ADC. Please refer to the `datasheet <{IDF_TARGET_TRM_EN_URL}>`__ to know dedicated analog IOs for this ADC.
--  :cpp:member:`adc_oneshot_unit_init_cfg_t::ulp_mode` sets if the ADC will be working under super low power mode.
+-  :cpp:member:`adc_oneshot_unit_init_cfg_t::ulp_mode` sets if the ADC will be working under ULP mode.
 
 .. todo::
 
@@ -62,7 +62,7 @@ Create an ADC Unit Handle under Normal Oneshot Mode
     adc_oneshot_unit_handle_t adc1_handle;
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = ADC_UNIT_1,
-        .ulp_mode = false,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
     ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
 
@@ -78,10 +78,9 @@ Recycle the ADC Unit
 Unit Configuration
 ^^^^^^^^^^^^^^^^^^
 
-After an ADC instance is created, set up the :cpp:type:`adc_oneshot_chan_cfg_t` to configure ADC IO to measure analog signal:
+After an ADC instance is created, set up the :cpp:type:`adc_oneshot_chan_cfg_t` to configure ADC IOs to measure analog signal:
 
 -  :cpp:member:`adc_oneshot_chan_cfg_t::atten`, ADC attenuation. Refer to the On-Chip Sensor chapter in `TRM <{IDF_TARGET_TRM_EN_URL}>`__.
--  :cpp:member:`adc_oneshot_chan_cfg_t::channel`, the IO corresponding ADC channel number. See below note.
 -  :cpp:member:`adc_oneshot_chan_cfg_t::bitwidth`, the bitwidth of the raw conversion result.
 
 .. note::
@@ -89,7 +88,8 @@ After an ADC instance is created, set up the :cpp:type:`adc_oneshot_chan_cfg_t` 
     For the IO corresponding ADC channel number. Check `datasheet <{IDF_TARGET_TRM_EN_URL}>`__ to know the ADC IOs.
     On the other hand, :cpp:func:`adc_continuous_io_to_channel` and :cpp:func:`adc_continuous_channel_to_io` can be used to know the ADC channels and ADC IOs.
 
-To make these settings take effect, call :cpp:func:`adc_oneshot_config_channel` with above configuration structure. Especially, this :cpp:func:`adc_oneshot_config_channel` can be called multiple times to configure different ADC channels. Drvier will save these per channel configurations internally.
+To make these settings take effect, call :cpp:func:`adc_oneshot_config_channel` with above configuration structure. You should specify an ADC channel to be configured as well.
+Especially, this :cpp:func:`adc_oneshot_config_channel` can be called multiple times to configure different ADC channels. Drvier will save these per channel configurations internally.
 
 
 Configure Two ADC Channels
@@ -98,14 +98,11 @@ Configure Two ADC Channels
 .. code:: c
 
     adc_oneshot_chan_cfg_t config = {
-        .channel = EXAMPLE_ADC1_CHAN0,
         .bitwidth = ADC_BITWIDTH_DEFAULT,
         .atten = ADC_ATTEN_DB_11,
     };
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, &config));
-
-    config.channel = EXAMPLE_ADC1_CHAN1;
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, &config));
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN0, &config));
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN1, &config));
 
 
 Read Conversion Result
@@ -146,6 +143,7 @@ Read Raw Result
     ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw[0][1]));
     ESP_LOGI(TAG, "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN1, adc_raw[0][1]);
 
+.. _hardware_limitations_adc_oneshot:
 
 Hardware Limitations
 ^^^^^^^^^^^^^^^^^^^^
@@ -188,7 +186,7 @@ Thread Safety
 
 Above functions are guaranteed to be thread safe. Therefore, you can call them from different RTOS tasks without protection by extra locks.
 
--  :cpp:func:`adc_oneshot_del_unit` is not thread safe. Besides, concurrently calling this function may result in thread-safe APIs fail.
+-  :cpp:func:`adc_oneshot_del_unit` is not thread safe. Besides, concurrently calling this function may result in failures of above thread-safe APIs.
 
 
 Kconfig Options

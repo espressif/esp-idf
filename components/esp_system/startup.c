@@ -20,8 +20,6 @@
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
 
-#include "esp_system.h"
-#include "esp_log.h"
 #include "esp_heap_caps_init.h"
 #include "spi_flash_mmap.h"
 #include "esp_flash_internal.h"
@@ -33,15 +31,17 @@
 #include "esp_xt_wdt.h"
 #include "esp_cpu.h"
 
-#if __has_include("esp_ota_ops.h")
-#include "esp_ota_ops.h"
-#define HAS_ESP_OTA 1
-#endif
+#include "esp_partition.h"
 
 /***********************************************/
 // Headers for other components init functions
 #if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 #include "esp_coexist_internal.h"
+#endif
+
+#if __has_include("esp_app_desc.h")
+#define WITH_APP_IMAGE_INFO
+#include "esp_app_desc.h"
 #endif
 
 #if CONFIG_ESP_COREDUMP_ENABLE
@@ -65,6 +65,7 @@
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/brownout.h"
 
+#include "esp_rom_caps.h"
 #include "esp_rom_sys.h"
 
 #if CONFIG_SPIRAM
@@ -306,6 +307,20 @@ static void do_core_init(void)
     _GLOBAL_REENT->_stdin  = fopen(default_stdio_dev, "r");
     _GLOBAL_REENT->_stdout = fopen(default_stdio_dev, "w");
     _GLOBAL_REENT->_stderr = fopen(default_stdio_dev, "w");
+#if ESP_ROM_NEEDS_SWSETUP_WORKAROUND
+    /*
+    - This workaround for printf functions using 32-bit time_t after the 64-bit time_t upgrade
+    - The 32-bit time_t usage is triggered through ROM Newlib functions printf related functions calling __swsetup_r() on
+      the first call to a particular file pointer (i.e., stdin, stdout, stderr)
+    - Thus, we call the toolchain version of __swsetup_r() now (before any printf calls are made) to setup all of the
+      file pointers. Thus, the ROM newlib code will never call the ROM version of __swsetup_r().
+    - See IDFGH-7728 for more details
+    */
+    extern int __swsetup_r(struct _reent *, FILE *);
+    __swsetup_r(_GLOBAL_REENT, _GLOBAL_REENT->_stdout);
+    __swsetup_r(_GLOBAL_REENT, _GLOBAL_REENT->_stderr);
+    __swsetup_r(_GLOBAL_REENT, _GLOBAL_REENT->_stdin);
+#endif // ESP_ROM_NEEDS_SWSETUP_WORKAROUND
 #else // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
     _REENT_SMALL_CHECK_INIT(_GLOBAL_REENT);
 #endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
@@ -408,10 +423,10 @@ static void start_cpu0_default(void)
     int cpu_freq = esp_clk_cpu_freq();
     ESP_EARLY_LOGI(TAG, "cpu freq: %d Hz", cpu_freq);
 
-#if HAS_ESP_OTA // [refactor-todo] find a better way to handle this.
+#ifdef WITH_APP_IMAGE_INFO
     // Display information about the current running image.
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
-        const esp_app_desc_t *app_desc = esp_ota_get_app_description();
+        const esp_app_desc_t *app_desc = esp_app_get_description();
         ESP_EARLY_LOGI(TAG, "Application information:");
 #ifndef CONFIG_APP_EXCLUDE_PROJECT_NAME_VAR
         ESP_EARLY_LOGI(TAG, "Project name:     %s", app_desc->project_name);
@@ -426,11 +441,11 @@ static void start_cpu0_default(void)
         ESP_EARLY_LOGI(TAG, "Compile time:     %s %s", app_desc->date, app_desc->time);
 #endif
         char buf[17];
-        esp_ota_get_app_elf_sha256(buf, sizeof(buf));
+        esp_app_get_elf_sha256(buf, sizeof(buf));
         ESP_EARLY_LOGI(TAG, "ELF file SHA256:  %s...", buf);
         ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", app_desc->idf_ver);
     }
-#endif //HAS_ESP_OTA
+#endif
 
     // Initialize core components and services.
     do_core_init();
@@ -444,7 +459,11 @@ static void start_cpu0_default(void)
 
     // Now that the application is about to start, disable boot watchdog
 #ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
+#else
     wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+#endif
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
     wdt_hal_disable(&rtc_wdt_ctx);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);

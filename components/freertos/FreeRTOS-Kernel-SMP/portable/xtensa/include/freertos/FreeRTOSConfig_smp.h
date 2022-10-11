@@ -282,6 +282,18 @@ Default values for trace macros added by ESP-IDF and are not part of Vanilla Fre
     #define traceISR_ENTER(_n_)
 #endif
 
+#ifndef traceQUEUE_GIVE_FROM_ISR
+    #define traceQUEUE_GIVE_FROM_ISR( pxQueue )
+#endif
+
+#ifndef traceQUEUE_GIVE_FROM_ISR_FAILED
+    #define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
+#endif
+
+#ifndef traceQUEUE_SEMAPHORE_RECEIVE
+    #define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
+#endif
+
 /* ------------------------------------------------ IDF Compatibility --------------------------------------------------
  * - We need these in order for ESP-IDF to compile
  * ------------------------------------------------------------------------------------------------------------------ */

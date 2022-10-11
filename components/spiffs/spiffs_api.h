@@ -12,12 +12,13 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "spiffs.h"
-#include "esp_vfs.h"
 #include "esp_compiler.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ESP_SPIFFS_PATH_MAX 15
 
 /**
  * @brief SPIFFS definition structure
@@ -26,7 +27,7 @@ typedef struct {
     spiffs *fs;                             /*!< Handle to the underlying SPIFFS */
     SemaphoreHandle_t lock;                 /*!< FS lock */
     const esp_partition_t* partition;       /*!< The partition on which SPIFFS is located */
-    char base_path[ESP_VFS_PATH_MAX+1];     /*!< Mount point */
+    char base_path[ESP_SPIFFS_PATH_MAX+1];  /*!< Mount point */
     bool by_label;                          /*!< Partition was mounted by label */
     spiffs_config cfg;                      /*!< SPIFFS Mount configuration */
     uint8_t *work;                          /*!< Work Buffer */

@@ -20,6 +20,7 @@
 #include "soc/rtc.h"
 #include "hal/uart_ll.h"
 #include "hal/uart_types.h"
+#include "driver/uart.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -55,6 +56,9 @@
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/pm.h"
 #include "driver/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/pm.h"
+#include "driver/gpio.h"
 #endif
 
 #define MHZ (1000000)
@@ -84,12 +88,14 @@
 #define REF_CLK_DIV_MIN 2
 #elif CONFIG_IDF_TARGET_ESP32S3
 /* Minimal divider at which REF_CLK_FREQ can be obtained */
-#define REF_CLK_DIV_MIN 2
+#define REF_CLK_DIV_MIN 2         // TODO: IDF-5660
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define REF_CLK_DIV_MIN 2
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define REF_CLK_DIV_MIN 2
 #elif CONFIG_IDF_TARGET_ESP32C2
+#define REF_CLK_DIV_MIN 2
+#elif CONFIG_IDF_TARGET_ESP32C6
 #define REF_CLK_DIV_MIN 2
 #endif
 
@@ -227,6 +233,8 @@ esp_err_t esp_pm_configure(const void* vconfig)
     const esp_pm_config_esp32h2_t* config = (const esp_pm_config_esp32h2_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32C2
     const esp_pm_config_esp32c2_t* config = (const esp_pm_config_esp32c2_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32C6
+    const esp_pm_config_esp32c6_t* config = (const esp_pm_config_esp32c6_t*) vconfig;
 #endif
 
 #ifndef CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -337,6 +345,8 @@ esp_err_t esp_pm_get_configuration(void* vconfig)
     esp_pm_config_esp32h2_t* config = (esp_pm_config_esp32h2_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32C2
     esp_pm_config_esp32c2_t* config = (esp_pm_config_esp32c2_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32C6
+    esp_pm_config_esp32c6_t* config = (esp_pm_config_esp32c6_t*) vconfig;
 #endif
 
     portENTER_CRITICAL(&s_switch_lock);
@@ -732,7 +742,11 @@ void esp_pm_impl_init(void)
     while(!uart_ll_is_tx_idle(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM)));
     /* When DFS is enabled, override system setting and use REFTICK as UART clock source */
     uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), clk_source);
-    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+
+    uint32_t sclk_freq;
+    esp_err_t err = uart_get_sclk_freq(clk_source, &sclk_freq);
+    assert(err == ESP_OK);
+    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
 #endif // CONFIG_ESP_CONSOLE_UART
 
 #ifdef CONFIG_PM_TRACE
@@ -777,6 +791,8 @@ void esp_pm_impl_init(void)
     esp_pm_config_esp32h2_t cfg = {
 #elif CONFIG_IDF_TARGET_ESP32C2
     esp_pm_config_esp32c2_t cfg = {
+#elif CONFIG_IDF_TARGET_ESP32C6
+    esp_pm_config_esp32c6_t cfg = {
 #endif
         .max_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
         .min_freq_mhz = xtal_freq_mhz,

@@ -118,8 +118,6 @@
 #    - Simple GET on /hello/restart_results (returns the leak results)
 
 
-from __future__ import division, print_function
-
 import argparse
 import http.client
 import logging
@@ -129,7 +127,6 @@ import string
 import sys
 import threading
 import time
-from builtins import object, range, str
 
 _verbose_ = False
 

@@ -111,7 +111,7 @@ static void main_task(void* args)
 #endif
 
     //Initialize TWDT if configured to do so
-#if CONFIG_ESP_TASK_WDT
+#if CONFIG_ESP_TASK_WDT_INIT
     esp_task_wdt_config_t twdt_config = {
         .timeout_ms = CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000,
         .idle_core_mask = 0,

@@ -15,7 +15,6 @@
 .pytest_template:
   extends:
     - .target_test_template
-    - .before_script_pytest
   artifacts:
     when: always
     paths:
@@ -71,6 +70,14 @@ example_test_pytest_esp32s3_generic:
   needs:
     - build_pytest_examples_esp32s3
   tags: [ esp32s3, generic ]
+
+example_test_pytest_esp32s3_f4r8:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3
+  needs:
+    - build_pytest_examples_esp32s3
+  tags: [ esp32s3, MSPI_F4R8 ]
 
 example_test_pytest_esp32c2_generic:
   extends:
@@ -208,6 +215,54 @@ example_test_pytest_esp32c3_flash_encryption:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, flash_encryption ]
 
+example_test_pytest_esp32s2_usb_device:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2-usb
+  needs:
+    - build_pytest_examples_esp32s2
+  tags: [ esp32s2, usb_device ]
+
+example_test_pytest_esp32_sdmmc:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, sdcard_sdmode ]
+
+example_test_pytest_esp32_sdspi:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, sdcard_spimode ]
+
+example_test_pytest_esp32s2_sdspi:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2
+  needs:
+    - build_pytest_examples_esp32s2
+  tags: [ esp32s2, sdcard_spimode ]
+
+example_test_pytest_esp32c3_sdspi:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3
+  needs:
+    - build_pytest_examples_esp32c3
+  tags: [ esp32c3, sdcard_spimode ]
+
+example_test_pytest_esp32_extflash:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, external_flash ]
+
 .pytest_components_dir_template:
   extends: .pytest_template
   variables:
@@ -220,6 +275,22 @@ component_ut_pytest_esp32_generic:
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, generic ]
+
+component_ut_pytest_esp32_generic_multi_device:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, generic_multi_device ]
+
+component_ut_pytest_esp32_adc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32-adc
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, adc ]
 
 component_ut_pytest_esp32_ip101:
   extends:
@@ -245,6 +316,14 @@ component_ut_pytest_esp32_flash_encryption:
     - build_pytest_components_esp32
   tags: [ esp32, flash_encryption ]
 
+component_ut_pytest_esp32_flash_multi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, flash_mutli ]
+
 component_ut_pytest_esp32s2_generic:
   extends:
     - .pytest_components_dir_template
@@ -253,6 +332,30 @@ component_ut_pytest_esp32s2_generic:
     - build_pytest_components_esp32s2
   tags: [ esp32s2, generic ]
 
+component_ut_pytest_esp32s2_generic_multi_device:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s2
+  needs:
+    - build_pytest_components_esp32s2
+  tags: [ esp32s2, generic_multi_device ]
+
+component_ut_pytest_esp32s2_adc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s2-adc
+  needs:
+    - build_pytest_components_esp32s2
+  tags: [ esp32s2, adc ]
+
+component_ut_pytest_esp32s2_flash_multi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s2
+  needs:
+    - build_pytest_components_esp32s2
+  tags: [ esp32s2, flash_mutli ]
+
 component_ut_pytest_esp32s3_generic:
   extends:
     - .pytest_components_dir_template
@@ -260,6 +363,22 @@ component_ut_pytest_esp32s3_generic:
   needs:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, generic ]
+
+component_ut_pytest_esp32s3_generic_multi_device:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, generic_multi_device ]
+
+component_ut_pytest_esp32s3_adc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3-adc
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, adc ]
 
 component_ut_pytest_esp32s3_octal_psram:
   extends:
@@ -285,6 +404,14 @@ component_ut_pytest_esp32s3_flash_encryption_f8r8:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, flash_encryption_f8r8 ]
 
+component_ut_pytest_esp32s3_flash_multi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, flash_mutli ]
+
 component_ut_pytest_esp32c2_generic:
   extends:
     - .pytest_components_dir_template
@@ -292,6 +419,14 @@ component_ut_pytest_esp32c2_generic:
   needs:
     - build_pytest_components_esp32c2
   tags: [ esp32c2, generic, xtal_40mhz ]
+
+component_ut_pytest_esp32c2_adc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c2-adc
+  needs:
+    - build_pytest_components_esp32c2
+  tags: [ esp32c2, adc ]
 
 component_ut_pytest_esp32c2_xtal_26mhz:
   extends:
@@ -309,6 +444,22 @@ component_ut_pytest_esp32c3_generic:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, generic ]
 
+component_ut_pytest_esp32c3_generic_multi_device:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, generic_multi_device ]
+
+component_ut_pytest_esp32c3_adc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3-adc
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, adc ]
+
 component_ut_pytest_esp32c3_flash_encryption:
   extends:
     - .pytest_components_dir_template
@@ -316,6 +467,57 @@ component_ut_pytest_esp32c3_flash_encryption:
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, flash_encryption ]
+
+component_ut_pytest_esp32c3_flash_multi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, flash_mutli ]
+
+component_ut_pytest_esp32_sdmmc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, sdcard_sdmode ]
+
+component_ut_pytest_esp32_sdspi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, sdcard_spimode ]
+
+component_ut_pytest_esp32s2_sdspi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s2
+  needs:
+    - build_pytest_components_esp32s2
+  tags: [ esp32s2, sdcard_spimode ]
+
+component_ut_pytest_esp32c3_sdspi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, sdcard_spimode ]
+
+example_test_pytest_openthread_br:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-i154
+  needs:
+    - build_pytest_examples_esp32s3
+    - build_pytest_examples_esp32h2
+  tags:
+    - esp32h2
+    - i154_multi_dut
 
 .pytest_test_apps_dir_template:
   extends: .pytest_template
@@ -329,6 +531,16 @@ test_app_test_pytest_esp32_generic:
   needs:
     - build_pytest_test_apps_esp32
   tags: [ esp32, generic ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb
+
+test_app_test_pytest_esp32_jtag:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32
+  needs:
+    - build_pytest_test_apps_esp32
+  tags: [ esp32, test_jtag_arm]
   variables:
     SETUP_TOOLS: "1"  # need gdb
 
@@ -373,14 +585,6 @@ test_app_test_pytest_esp32c3_generic:
   needs:
     - build_pytest_test_apps_esp32c3
   tags: [ esp32c3, generic ]
-
-test_app_test_pytest_esp32s2_usb_host:
-  extends:
-    - .pytest_test_apps_dir_template
-    - .rules:test:custom_test-esp32s2
-  needs:
-    - build_pytest_test_apps_esp32s2
-  tags: [ esp32s2, usb_host ]
 
 test_app_test_pytest_esp32s3_mspi_f8r8:
   extends:
@@ -498,7 +702,6 @@ example_test_001B_V3:
 
 example_test_001C:
   extends: .example_test_esp32_template
-  parallel: 2
   tags:
     - ESP32
     - Example_GENERIC
@@ -576,23 +779,11 @@ example_test_009:
     SETUP_TOOLS: "1"
     PYTHON_VER: 3
 
-example_test_010:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_ExtFlash
-
 example_test_011:
   extends: .example_test_esp32_template
   tags:
     - ESP32
     - Example_T2_RS485
-
-example_test_013:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - UT_T1_SDMODE
 
 example_test_016:
   extends: .example_test_esp32_template
@@ -608,28 +799,15 @@ example_test_017:
 
 example_test_C3_GENERIC:
   extends: .example_test_esp32c3_template
-  parallel: 2
   tags:
     - ESP32C3
     - Example_GENERIC
 
-example_test_ESP32_SDSPI:
-  extends: .example_test_esp32_template
+example_test_C2_GENERIC:
+  extends: .example_test_esp32c2_template
   tags:
-    - ESP32
-    - UT_T1_SPIMODE
-
-example_test_ESP32S2_SDSPI:
-  extends: .example_test_esp32s2_template
-  tags:
-    - ESP32S2
-    - UT_T1_SPIMODE
-
-example_test_ESP32C3_SDSPI:
-  extends: .example_test_esp32c3_template
-  tags:
-    - ESP32C3
-    - UT_T1_SPIMODE
+    - ESP32C2
+    - Example_GENERIC
 
 .test_app_template:
   extends: .target_test_job_template
@@ -679,43 +857,6 @@ test_app_test_eth:
     - ESP32
     - ethernet_router
 
-test_app_test_004:
-  extends: .test_app_esp32s2_template
-  tags:
-    - ESP32S2
-    - Example_GENERIC
-
-test_app_test_esp32c2_generic:
-  extends: .test_app_esp32c2_template
-  tags:
-    - ESP32C2
-    - Example_GENERIC
-    - xtal_40mhz
-
-test_app_test_esp32c2_26mhz:
-  extends: .test_app_esp32c2_template
-  tags:
-    - ESP32C2
-    - xtal_26mhz
-
-test_app_test_005:
-  extends: .test_app_esp32c3_template
-  tags:
-    - ESP32C3
-    - Example_GENERIC
-
-test_app_test_006:
-  extends: .test_app_esp32s3_template
-  tags:
-    - ESP32S3
-    - Example_GENERIC
-
-test_app_test_esp32_generic:
-  extends: .test_app_esp32_template
-  tags:
-    - ESP32
-    - Example_GENERIC
-
 .unit_test_template:
   extends: .target_test_job_template
   needs: # the assign already needs all the build jobs
@@ -752,7 +893,7 @@ test_app_test_esp32_generic:
 
 UT_001:
   extends: .unit_test_esp32_template
-  parallel: 50
+  parallel: 42
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -761,7 +902,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_esp32_template
-  parallel: 21
+  parallel: 15
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -792,20 +933,6 @@ UT_006:
   tags:
     - ESP32_IDF
     - UT_T1_SPIMODE
-    - psram
-
-UT_007:
-  extends: .unit_test_esp32_template
-  parallel: 2
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-
-UT_008:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_GPIO
     - psram
 
 UT_014:
@@ -859,14 +986,13 @@ UT_033:
 
 UT_034:
   extends: .unit_test_esp32_template
-  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_ESP_FLASH
 
 UT_035:
   extends: .unit_test_esp32s2_template
-  parallel: 50
+  parallel: 43
   tags:
     - ESP32S2_IDF
     - UT_T1_1
@@ -880,7 +1006,6 @@ UT_036:
 
 UT_038:
   extends: .unit_test_esp32s2_template
-  parallel: 2
   tags:
     - ESP32S2_IDF
     - UT_T1_ESP_FLASH
@@ -916,24 +1041,36 @@ UT_045:
     - UT_SDIO
     - psram
 
-UT_046:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_GPIO
-
-UT_047:
-  extends: .unit_test_esp32s2_template
-  parallel: 6
-  tags:
-    - ESP32S2_IDF
-    - UT_T1_1
-
 UT_S2_SPI_DUAL:
   extends: .unit_test_esp32s2_template
   tags:
     - ESP32S2_IDF
     - Example_SPI_Multi_device
+
+UT_S2_SPI_QUAD:
+  extends: .unit_test_esp32s2_template
+  tags:
+    - ESP32S2_IDF
+    - Example_SPI_Quad_Multi_device
+
+UT_S3_SPI_QUAD:
+  extends: .unit_test_esp32s3_template
+  tags:
+    - ESP32S3_IDF
+    - Example_SPI_Quad_Multi_device
+
+UT_C2_SPI_QUAD:
+  extends: .unit_test_esp32c2_template
+  tags:
+    - ESP32C2_IDF
+    - Example_SPI_Quad_Multi_device
+    - xtal_40mhz
+
+UT_C3_SPI_QUAD:
+  extends: .unit_test_esp32c3_template
+  tags:
+    - ESP32C3_IDF
+    - Example_SPI_Quad_Multi_device
 
 UT_S2_SDSPI:
   extends: .unit_test_esp32s2_template
@@ -943,10 +1080,19 @@ UT_S2_SDSPI:
 
 UT_C2:
   extends: .unit_test_esp32c2_template
-  parallel: 21
+  parallel: 19
   tags:
     - ESP32C2_IDF
     - UT_T1_1
+    - xtal_40mhz
+
+UT_C2_SPI_DUAL:
+  extends:
+    - .unit_test_esp32c2_template
+    - .rules:test:unit_test-esp32c2-spi_multi
+  tags:
+    - ESP32C2_IDF
+    - Example_SPI_Multi_device
     - xtal_40mhz
 
 UT_C2_26M:
@@ -956,16 +1102,23 @@ UT_C2_26M:
     - UT_T1_1
     - xtal_26mhz
 
+UT_C2_FLASH:
+  extends:
+    - .unit_test_esp32c2_template
+  tags:
+    - ESP32C2_IDF
+    - UT_T1_ESP_FLASH
+    - xtal_40mhz
+
 UT_C3:
   extends: .unit_test_esp32c3_template
-  parallel: 31
+  parallel: 26
   tags:
     - ESP32C3_IDF
     - UT_T1_1
 
 UT_C3_FLASH:
   extends: .unit_test_esp32c3_template
-  parallel: 2
   tags:
     - ESP32C3_IDF
     - UT_T1_ESP_FLASH
@@ -996,14 +1149,14 @@ UT_C3_SDSPI:
 
 UT_S3:
   extends: .unit_test_esp32s3_template
-  parallel: 29
+  parallel: 24
   tags:
     - ESP32S3_IDF
     - UT_T1_1
 
 UT_S3_QUAD_PSRAM:
   extends: .unit_test_esp32s3_template
-  parallel: 4
+  parallel: 3
   tags:
     - ESP32S3_IDF
     - UT_T1_1
@@ -1026,8 +1179,9 @@ UT_S3_FLASH:
   extends:
     - .target_test_job_template
     - .rules:test:integration_test
-    # needn't install idf python env
-    - .before_script_integration_test
+    - .before_script_minimal
+  image: ${CI_INTEGRATION_TEST_ENV_IMAGE}
+  cache: []
   needs: # the assign already needs all the build jobs
     - assign_integration_test
   variables:
@@ -1038,22 +1192,23 @@ UT_S3_FLASH:
     KNOWN_ISSUE_FILE: "${CI_PROJECT_DIR}/tools/ci/integration_test/KnownIssues"
     CI_RUNNER_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIRunner.py"
     PREPARE_TEST_BIN_SCRIPT: "${CI_PROJECT_DIR}/tools/ci/integration_test/prepare_test_bins.py"
-    PYTHONPATH: "${CI_PROJECT_DIR}/auto_test_script/packages:${PYTHONPATH}"
+    PYTHONPATH: "${CI_PROJECT_DIR}/auto_test_script/packages:${CI_PROJECT_DIR}/tools/ci/python_packages:${PYTHONPATH}"
     INITIAL_CONDITION_RETRY_COUNT: "1"
-    # auto_test_script only supports python 3.7.x
-    PYTHON_VER: 3.7.7
+    GIT_LFS_SKIP_SMUDGE: 1
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
     # clone local test env configs
+    - add_gitlab_ssh_keys
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # clone test bench
-    # can not retry if downing git lfs files failed, so using empty_branch first.
-    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
-    - retry_failed git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
-    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script --customized_only
+    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} auto_test_script
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
+    - cd auto_test_script
+    - ./tools/ci/setup_idfci.sh
+    # Merge known issues
     - cat ${KNOWN_ISSUE_FILE} >> ${TEST_CASE_FILE_PATH}/KnownIssues
     # run test
     - python ${PREPARE_TEST_BIN_SCRIPT} $CONFIG_FILE
@@ -1080,20 +1235,16 @@ nvs_compatible_test:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
-    # prepare test utilities
-    - source tools/ci/setup_python.sh
-    - add_gitlab_ssh_keys
-    - fetch_submodules
     # clone local test env configs
+    - add_gitlab_ssh_keys
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # clone test bench
-    # can not retry if downing git lfs files failed, so using empty_branch first.
-    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
-    - retry_failed git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
-    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script --customized_only
-    # prepare nvs bins
+    - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} auto_test_script
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     - cd auto_test_script
+    - ./tools/ci/setup_idfci.sh
+    # prepare nvs bins
     - ./tools/prepare_nvs_bin.sh
     # run test
     - python ${PREPARE_TEST_BIN_SCRIPT} $CONFIG_FILE

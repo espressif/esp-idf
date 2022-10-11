@@ -143,6 +143,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .port_secure = 443,                           \
     .port_insecure = 80,                          \
     .session_tickets = false,                     \
+    .use_secure_element = false,                  \
     .user_cb = NULL,                              \
 }
 

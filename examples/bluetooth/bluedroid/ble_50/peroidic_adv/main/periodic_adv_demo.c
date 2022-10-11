@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -65,6 +65,7 @@ esp_ble_gap_ext_adv_params_t ext_adv_params_2M = {
     .sid = 0,
     .scan_req_notif = false,
     .own_addr_type = BLE_ADDR_TYPE_RANDOM,
+    .tx_power = EXT_ADV_TX_PWR_NO_PREFERENCE,
 };
 
 static esp_ble_gap_periodic_adv_params_t periodic_adv_params = {

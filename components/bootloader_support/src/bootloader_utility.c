@@ -41,6 +41,13 @@
 #include "esp32c2/rom/uart.h"
 #include "esp32c2/rom/gpio.h"
 #include "esp32c2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/efuse.h"
+#include "esp32c6/rom/crc.h"
+#include "esp32c6/rom/rtc.h"
+#include "esp32c6/rom/uart.h"
+#include "esp32c6/rom/gpio.h"
+#include "esp32c6/rom/secure_boot.h"
 
 #else // CONFIG_IDF_TARGET_*
 #error "Unsupported IDF_TARGET"
@@ -60,6 +67,7 @@
 
 #include "esp_cpu.h"
 #include "esp_image_format.h"
+#include "esp_app_desc.h"
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
 #include "esp_flash_partitions.h"
@@ -118,6 +126,31 @@ static esp_err_t read_otadata(const esp_partition_pos_t *ota_info, esp_ota_selec
 
     return ESP_OK;
 }
+
+esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc)
+{
+    if (partition == NULL || app_desc == NULL || partition->offset == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const uint32_t app_desc_offset = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
+    const uint32_t mmap_size = app_desc_offset + sizeof(esp_app_desc_t);
+    const uint8_t *image = bootloader_mmap(partition->offset, mmap_size);
+    if (image == NULL) {
+        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", partition->offset, mmap_size);
+        return ESP_FAIL;
+    }
+
+    memcpy(app_desc, image + app_desc_offset, sizeof(esp_app_desc_t));
+    bootloader_munmap(image);
+
+    if (app_desc->magic_word != ESP_APP_DESC_MAGIC_WORD) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    return ESP_OK;
+}
+
 
 bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
 {
@@ -838,7 +871,7 @@ void bootloader_reset(void)
 #ifdef BOOTLOADER_BUILD
     bootloader_atexit();
     esp_rom_delay_us(1000); /* Allow last byte to leave FIFO */
-    REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
+    esp_rom_software_reset_system();
     while (1) { }       /* This line will never be reached, used to keep gcc happy */
 #else
     abort();            /* This function should really not be called from application code */

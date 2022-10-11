@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -328,6 +328,20 @@ static esp_err_t slider_object_remove_instance(te_slider_handle_t slider_handle)
     return ret;
 }
 
+bool is_slider_object_handle(touch_elem_handle_t element_handle)
+{
+    te_slider_handle_list_t *item;
+    xSemaphoreTake(s_te_sld_obj->mutex, portMAX_DELAY);
+    SLIST_FOREACH(item, &s_te_sld_obj->handle_list, next) {
+        if (element_handle == item->slider_handle) {
+            xSemaphoreGive(s_te_sld_obj->mutex);
+            return true;
+        }
+    }
+    xSemaphoreGive(s_te_sld_obj->mutex);
+    return false;
+}
+
 static bool slider_channel_check(te_slider_handle_t slider_handle, touch_pad_t channel_num)
 {
     te_dev_t *device;
@@ -403,6 +417,13 @@ static inline void slider_dispatch(te_slider_handle_t slider_handle, touch_elem_
         slider_info.position = slider_handle->position;
         void *arg = slider_handle->config->arg;
         slider_handle->config->callback(slider_handle, &slider_info, arg);  //Event callback
+    }
+}
+
+void slider_enable_wakeup_calibration(te_slider_handle_t slider_handle, bool en)
+{
+    for (int idx = 0; idx < slider_handle->channel_sum; ++idx) {
+        slider_handle->device[idx]->is_use_last_threshold = !en;
     }
 }
 

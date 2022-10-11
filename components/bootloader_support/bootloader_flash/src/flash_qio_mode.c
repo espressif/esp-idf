@@ -11,6 +11,7 @@
 #include "bootloader_flash_priv.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_attr.h"
 #include "esp_rom_spiflash.h"
 #include "esp_rom_efuse.h"
 #include "flash_qio_mode.h"
@@ -105,8 +106,8 @@ static void s_flash_set_qio_pins(void)
     const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
     int wp_pin = bootloader_flash_get_wp_pin();
     esp_rom_spiflash_select_qio_pins(wp_pin, spiconfig);
-#elif CONFIG_IDF_TARGET_ESP32C2
-    // ESP32C2 doesn't support configure mspi pins. So the second
+#elif CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5649 Add a soc_caps
+    // ESP32C2/ESP32C6 doesn't support configure mspi pins. So the second
     // parameter is set to 0, means that chip uses default SPI pins
     // and wp_gpio_num parameter(the first parameter) is ignored.
     esp_rom_spiflash_select_qio_pins(0, 0);
@@ -159,47 +160,47 @@ static esp_err_t enable_qio_mode(bootloader_flash_read_status_fn_t read_status_f
     return ESP_OK;
 }
 
-unsigned bootloader_read_status_8b_rdsr(void)
+IRAM_ATTR unsigned bootloader_read_status_8b_rdsr(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8);
 }
 
-unsigned bootloader_read_status_8b_rdsr2(void)
+IRAM_ATTR unsigned bootloader_read_status_8b_rdsr2(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8);
 }
 
-unsigned bootloader_read_status_8b_rdsr3(void)
+IRAM_ATTR unsigned bootloader_read_status_8b_rdsr3(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR3, 0, 0, 8);
 }
 
-unsigned bootloader_read_status_16b_rdsr_rdsr2(void)
+IRAM_ATTR unsigned bootloader_read_status_16b_rdsr_rdsr2(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8) | (bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8) << 8);
 }
 
-void bootloader_write_status_8b_wrsr(unsigned new_status)
+IRAM_ATTR void bootloader_write_status_8b_wrsr(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_WRSR, new_status, 8, 0);
 }
 
-void bootloader_write_status_8b_wrsr2(unsigned new_status)
+IRAM_ATTR void bootloader_write_status_8b_wrsr2(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_WRSR2, new_status, 8, 0);
 }
 
-void bootloader_write_status_8b_wrsr3(unsigned new_status)
+IRAM_ATTR void bootloader_write_status_8b_wrsr3(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_WRSR3, new_status, 8, 0);
 }
 
-void bootloader_write_status_16b_wrsr(unsigned new_status)
+IRAM_ATTR void bootloader_write_status_16b_wrsr(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_WRSR, new_status, 16, 0);
 }
 
-unsigned bootloader_read_status_8b_xmc25qu64a(void)
+IRAM_ATTR unsigned bootloader_read_status_8b_xmc25qu64a(void)
 {
     bootloader_execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
@@ -208,7 +209,7 @@ unsigned bootloader_read_status_8b_xmc25qu64a(void)
     return read_status;
 }
 
-void bootloader_write_status_8b_xmc25qu64a(unsigned new_status)
+IRAM_ATTR void bootloader_write_status_8b_xmc25qu64a(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);

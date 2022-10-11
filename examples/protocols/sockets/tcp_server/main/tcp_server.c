@@ -53,6 +53,8 @@ static void do_retransmit(const int sock)
                 int written = send(sock, rx_buffer + (len - to_write), to_write, 0);
                 if (written < 0) {
                     ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
+                    // Failed to retransmit, giving up
+                    return;
                 }
                 to_write -= written;
             }

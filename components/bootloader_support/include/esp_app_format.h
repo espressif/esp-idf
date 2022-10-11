@@ -22,6 +22,7 @@ typedef enum {
 #elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
     ESP_CHIP_ID_ESP32H2 = 0x000A, /*!< chip ID: ESP32-H2 Beta1 */
 #endif
+    ESP_CHIP_ID_ESP32C6 = 0x000D, /*!< chip ID: ESP32-C6 */
     ESP_CHIP_ID_INVALID = 0xFFFF /*!< Invalid chip ID (we defined it to make sure the esp_chip_id_t is 2 bytes size) */
 } __attribute__((packed)) esp_chip_id_t;
 
@@ -106,25 +107,3 @@ typedef struct {
 } esp_image_segment_header_t;
 
 #define ESP_IMAGE_MAX_SEGMENTS 16           /*!< Max count of segments in the image. */
-
-#define ESP_APP_DESC_MAGIC_WORD 0xABCD5432  /*!< The magic word for the esp_app_desc structure that is in DROM. */
-
-/**
- * @brief Description about application.
- */
-typedef struct {
-    uint32_t magic_word;        /*!< Magic word ESP_APP_DESC_MAGIC_WORD */
-    uint32_t secure_version;    /*!< Secure version */
-    uint32_t reserv1[2];        /*!< reserv1 */
-    char version[32];           /*!< Application version */
-    char project_name[32];      /*!< Project name */
-    char time[16];              /*!< Compile time */
-    char date[16];              /*!< Compile date*/
-    char idf_ver[32];           /*!< Version IDF */
-    uint8_t app_elf_sha256[32]; /*!< sha256 of elf file */
-    uint32_t reserv2[20];       /*!< reserv2 */
-} esp_app_desc_t;
-
-/** @cond */
-_Static_assert(sizeof(esp_app_desc_t) == 256, "esp_app_desc_t should be 256 bytes");
-/** @endcond */

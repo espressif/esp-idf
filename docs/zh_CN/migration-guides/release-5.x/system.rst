@@ -54,7 +54,7 @@ esp_hw_support
 - ``esp_cpu_get_ccount()``、``esp_cpu_set_ccount()`` 和 ``esp_cpu_in_ocd_debug_mode()`` 已从 ``esp_cpu.h`` 中移除。请分别使用 ``esp_cpu_get_cycle_count()``、``esp_cpu_set_cycle_count()`` 和 ``esp_cpu_dbgr_is_attached()`` 代替。
 - 头文件 ``esp_intr.h`` 已被移除。请包含 ``esp_intr_alloc.h`` 以分配和操作中断。
 - Panic API（即以 ``esp_panic`` 为前缀的函数、类型或宏）已被更新为私有 API。因此，原先的包含路径 ``#include "esp_panic.h"`` 已被移除。如仍需使用 Panic API（并不推荐），请使用 ``#include "esp_private/panic_reason.h"`` 来包含。此外，请包含 ``esp_debug_helpers.h`` 以使用与调试有关的任意辅助函数，如打印回溯。
-- 头文件 ``soc_log.h`` 现更名为 ``esp_hw_log.h``，所有日志宏也从 ``SOC_LOGx`` 更新为 ``ESP_HW_LOGx``。请使用更新后的格式。
+- 头文件 ``soc_log.h`` 现更名为 ``esp_hw_log.h``，并已更新为私有。建议用户使用 ``esp_log.h`` 头文件下的日志 API。
 - 包含头文件 ``spinlock.h``、``clk_ctrl_os.h`` 和 ``rtc_wdt.h`` 时不应当使用 ``soc`` 前缀，如 ``#include "spinlock.h"``。
 - ``esp_chip_info()`` 命令返回芯片版本，格式为 = 100 * ``主要 eFuse 版本`` + ``次要 eFuse 版本``。因此，为适应新格式， ``esp_chip_info_t`` 结构体中的 ``revision`` 被扩展为 uint16_t。
 
@@ -115,6 +115,8 @@ ESP 镜像中关于 SPI 速度的枚举成员已重新更名：
     - 以结构体的形式传递配置。
     - 可将该函数配置为订阅空闲任务。
 
+- 原先的配置选项 ``CONFIG_ESP_TASK_WDT`` 被重新命名为 :ref:`CONFIG_ESP_TASK_WDT_INIT` 并引入了一个新选项 :ref:`CONFIG_ESP_TASK_WDT_EN`。
+
 FreeRTOS
 --------
 
@@ -149,3 +151,15 @@ FreeRTOS 移植相关的宏
 - ``vPortCPUAcquireMutex()`` 已被移除，请使用 ``spinlock_acquire()`` 函数。
 - ``vPortCPUAcquireMutexTimeout()`` 已被移除，请使用 ``spinlock_acquire()`` 函数。
 - ``vPortCPUReleaseMutex()`` 已被移除，请使用 ``spinlock_release()`` 函数。
+
+应用程序更新
+------------
+
+- 函数 :cpp:func:`esp_ota_get_app_description` 和 :cpp:func:`esp_ota_get_app_elf_sha256` 已被弃用，请分别使用 :cpp:func:`esp_app_get_description` 和 :cpp:func:`esp_app_get_elf_sha256` 函数来代替。这些函数已被移至新组件 :component:`esp_app_format`。请参考头文件 :component_file:`esp_app_desc.h <esp_app_format/include/esp_app_desc.h>`。
+
+引导加载程序支持
+----------------
+
+- :cpp:type:`esp_app_desc_t` 结构体此前在 :component_file:`esp_app_format.h <bootloader_support/include/esp_app_format.h>` 中声明，现在在 :component_file:`esp_app_desc.h <esp_app_format/include/esp_app_desc.h>` 中声明。
+
+- 函数 :cpp:func:`bootloader_common_get_partition_description` 已更新为私有函数，请使用代替函数 :cpp:func:`esp_ota_get_partition_description`。注意，此函数的第一个参数为 :cpp:type:`esp_partition_t`，而非 :cpp:type:`esp_partition_pos_t`。

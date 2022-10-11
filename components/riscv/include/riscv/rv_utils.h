@@ -10,7 +10,7 @@
 
 #include "soc/soc_caps.h"
 #include "soc/assist_debug_reg.h"
-#include "soc/interrupt_core0_reg.h"
+#include "soc/interrupt_reg.h"
 #include "esp_attr.h"
 #include "riscv/csr.h"
 #include "riscv/interrupt.h"
@@ -83,7 +83,7 @@ FORCE_INLINE_ATTR void rv_utils_set_mtvec(uint32_t mtvec_val)
 
 FORCE_INLINE_ATTR void rv_utils_intr_enable(uint32_t intr_mask)
 {
-    //Disable all interrupts to make updating of the interrupt mask atomic.
+    // Disable all interrupts to make updating of the interrupt mask atomic.
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     esprv_intc_int_enable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
@@ -91,7 +91,7 @@ FORCE_INLINE_ATTR void rv_utils_intr_enable(uint32_t intr_mask)
 
 FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
 {
-    //Disable all interrupts to make updating of the interrupt mask atomic.
+    // Disable all interrupts to make updating of the interrupt mask atomic.
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     esprv_intc_int_disable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
@@ -105,6 +105,16 @@ FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
 FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(int intr_num)
 {
     REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr_num);
+}
+
+FORCE_INLINE_ATTR void rv_utils_intr_global_enable(void)
+{
+    RV_SET_CSR(mstatus, MSTATUS_MIE);
+}
+
+FORCE_INLINE_ATTR void rv_utils_intr_global_disable(void)
+{
+    RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
 }
 
 /* -------------------------------------------------- Memory Ports -----------------------------------------------------
@@ -185,7 +195,9 @@ FORCE_INLINE_ATTR void rv_utils_dbgr_break(void)
 
 FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_t compare_value, uint32_t new_value)
 {
-    // Single core target has no atomic CAS instruction. We can achieve atomicity by disabling interrupts
+    // ESP32C6 starts to support atomic CAS instructions, but it is still a single core target, no need to implement
+    // through lr and sc instructions for now
+    // For an RV target has no atomic CAS instruction, we can achieve atomicity by disabling interrupts
     unsigned old_mstatus;
     old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     // Compare and set

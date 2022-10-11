@@ -1,18 +1,28 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
+// TODO: IDF-5645
+#if CONFIG_IDF_TARGET_ESP32C6
+#include "soc/lp_aon_reg.h"
+#include "soc/lp_analog_peri_reg.h"
+#include "soc/lp_clkrst_reg.h"
+#include "soc/lp_clkrst_struct.h"
+#include "soc/lp_i2c_reg.h"
+#include "soc/lp_i2c_struct.h"
+#include "soc/lp_io_reg.h"
+#include "soc/lp_io_struct.h"
+#include "soc/lp_timer_reg.h"
+#include "soc/lp_timer_struct.h"
+#include "soc/lp_uart_reg.h"
+#include "soc/lp_uart_struct.h"
+#include "soc/lp_wdt_reg.h"
+#include "soc/lp_wdt_struct.h"
+#else
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_cntl_struct.h"
+#endif

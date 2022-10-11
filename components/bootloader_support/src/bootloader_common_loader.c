@@ -112,33 +112,11 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
     return active_otadata;
 }
 
-esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc)
-{
-    if (partition == NULL || app_desc == NULL || partition->offset == 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    const uint32_t app_desc_offset = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
-    const uint32_t mmap_size = app_desc_offset + sizeof(esp_app_desc_t);
-    const uint8_t *image = bootloader_mmap(partition->offset, mmap_size);
-    if (image == NULL) {
-        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", partition->offset, mmap_size);
-        return ESP_FAIL;
-    }
-
-    memcpy(app_desc, image + app_desc_offset, sizeof(esp_app_desc_t));
-    bootloader_munmap(image);
-
-    if (app_desc->magic_word != ESP_APP_DESC_MAGIC_WORD) {
-        return ESP_ERR_NOT_FOUND;
-    }
-
-    return ESP_OK;
-}
-
 #if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
 
 #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t))
+
+_Static_assert(RTC_RETAIN_MEM_ADDR >= SOC_RTC_DRAM_LOW, "rtc_retain_mem_t structure size is bigger than the RTC memory size. Consider reducing RTC reserved memory size.");
 
 rtc_retain_mem_t *const rtc_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
 
@@ -152,17 +130,28 @@ rtc_retain_mem_t *const rtc_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR
 SOC_RESERVE_MEMORY_REGION(RTC_RETAIN_MEM_ADDR, RTC_RETAIN_MEM_ADDR + sizeof(rtc_retain_mem_t), rtc_retain_mem);
 #endif
 
+static uint32_t rtc_retain_mem_size(void) {
+#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
+    /* A custom memory has been reserved by the user, do not consider this memory into CRC calculation as it may change without
+     * the have the user updating the CRC. Return the offset of the custom field, which is equivalent to size of the structure
+     * minus the size of everything after (including) `custom` */
+    return offsetof(rtc_retain_mem_t, custom);
+#else
+    return sizeof(rtc_retain_mem_t) - sizeof(rtc_retain_mem->crc);
+#endif
+}
+
 static bool check_rtc_retain_mem(void)
 {
-    return esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, sizeof(rtc_retain_mem_t) - sizeof(rtc_retain_mem->crc)) == rtc_retain_mem->crc && rtc_retain_mem->crc != UINT32_MAX;
+    return esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, rtc_retain_mem_size()) == rtc_retain_mem->crc && rtc_retain_mem->crc != UINT32_MAX;
 }
 
 static void update_rtc_retain_mem_crc(void)
 {
-    rtc_retain_mem->crc = esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, sizeof(rtc_retain_mem_t) - sizeof(rtc_retain_mem->crc));
+    rtc_retain_mem->crc = esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, rtc_retain_mem_size());
 }
 
-void bootloader_common_reset_rtc_retain_mem(void)
+NOINLINE_ATTR void bootloader_common_reset_rtc_retain_mem(void)
 {
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wstringop-overflow"

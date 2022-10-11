@@ -381,31 +381,31 @@ ESP-IDF 支持 Python 3.7 及以上版本，建议升级操作系统到最新版
 
     一般来说，BSP 支持开发板上所有硬件组件。除了管脚定义和初始化功能外，BSP 还附带如传感器、显示器、音频编解码器等外部元件的驱动程序。
 
-    BSP 通过 `IDF 组件管理器 <../api-guides/tools/idf-component-manager>`_ 发布，您可以前往 `IDF 组件注册器 <https://components.espressif.com>`_ 进行下载。
+    BSP 通过 :doc:`IDF 组件管理器 </api-guides/tools/idf-component-manager>` 发布，您可以前往 `IDF 组件注册器 <https://components.espressif.com>`_ 进行下载。
 
     .. only:: esp32
 
         **以下示例演示了如何将 ESP-WROVER-KIT BSP 添加到项目中：**
-        
+
         .. code-block:: bash
-        
-            idf.py add-dependency esp_wrover_kit 
+
+            idf.py add-dependency esp_wrover_kit
 
     .. only:: esp32s2
 
         **以下示例演示了如何将 ESP32-S2-Kaluga-Kit BSP 添加到项目中：**
-        
+
         .. code-block:: bash
-        
+
             idf.py add-dependency esp32_s2_kaluga_kit
 
     .. only:: esp32s3
 
         **以下示例演示了如何将 ESP-BOX BSP 添加到项目中：**
-        
+
         .. code-block:: bash
-        
-            idf.py add-dependency esp-box 
+
+            idf.py add-dependency esp-box
 
     更多有关使用 BSP 的示例，请前往 `BSP 示例文件夹 <https://github.com/espressif/esp-bsp/tree/master/examples>`_。
 

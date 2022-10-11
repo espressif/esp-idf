@@ -35,6 +35,7 @@
 
 #include "esp_private/i2s_platform.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk.h"
 
 #include "driver/gpio.h"
 #include "driver/i2s_common.h"
@@ -55,10 +56,10 @@
 // If ISR handler is allowed to run whilst cache is disabled,
 // Make sure all the code and related variables used by the handler are in the SRAM
 #if CONFIG_I2S_ISR_IRAM_SAFE
-#define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
+#define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
 #define I2S_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
+#define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
 #define I2S_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
 #endif //CONFIG_I2S_ISR_IRAM_SAFE
 #define I2S_DMA_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
@@ -242,7 +243,7 @@ static esp_err_t i2s_register_channel(i2s_controller_t *i2s_obj, i2s_dir_t dir, 
 
     esp_err_t ret = ESP_OK;
 
-    i2s_chan_handle_t new_chan = (i2s_chan_handle_t)heap_caps_calloc(1, sizeof(struct i2s_channel_t), I2S_MEM_ALLOC_CAPS);
+    i2s_chan_handle_t new_chan = (i2s_chan_handle_t)heap_caps_calloc(1, sizeof(struct i2s_channel_obj_t), I2S_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(new_chan, ESP_ERR_NO_MEM, TAG, "No memory for new channel");
     new_chan->mode = I2S_COMM_MODE_NONE;
     new_chan->role = I2S_ROLE_MASTER; // Set default role to master
@@ -371,7 +372,7 @@ uint32_t i2s_get_buf_size(i2s_chan_handle_t handle, uint32_t data_bit_width, uin
     if (bufsize > I2S_DMA_BUFFER_MAX_SIZE) {
         uint32_t frame_num = I2S_DMA_BUFFER_MAX_SIZE / bytes_per_frame;
         bufsize = frame_num * bytes_per_frame;
-        ESP_LOGW(TAG, "dma frame num is out of dma buffer size, limited to %d", frame_num);
+        ESP_LOGW(TAG, "dma frame num is out of dma buffer size, limited to %"PRIu32, frame_num);
     }
     return bufsize;
 }
@@ -436,7 +437,7 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
     if (handle->dir == I2S_DIR_RX) {
         i2s_ll_rx_set_eof_num(handle->controller->hal.dev, bufsize);
     }
-    ESP_LOGD(TAG, "DMA malloc info: dma_desc_num = %d, dma_desc_buf_size = dma_frame_num * slot_num * data_bit_width = %d", num, bufsize);
+    ESP_LOGD(TAG, "DMA malloc info: dma_desc_num = %"PRIu32", dma_desc_buf_size = dma_frame_num * slot_num * data_bit_width = %"PRIu32, num, bufsize);
     return ESP_OK;
 err:
     i2s_free_dma_desc(handle);
@@ -444,7 +445,7 @@ err:
 }
 
 #if SOC_I2S_SUPPORTS_APLL
-uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
+static uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
 {
     /* Calculate the expected APLL  */
     int mclk_div = (int)((SOC_APLL_MIN_HZ / mclk_freq_hz) + 1);
@@ -465,13 +466,32 @@ uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
         return 0;
     }
     if (ret == ESP_ERR_INVALID_STATE) {
-        ESP_LOGW(TAG, "APLL is occupied already, it is working at %d Hz while the expected frequency is %d Hz", real_freq, expt_freq);
-        ESP_LOGW(TAG, "Trying to work at %d Hz...", real_freq);
+        ESP_LOGW(TAG, "APLL is occupied already, it is working at %"PRIu32" Hz while the expected frequency is %"PRIu32" Hz", real_freq, expt_freq);
+        ESP_LOGW(TAG, "Trying to work at %"PRIu32" Hz...", real_freq);
     }
-    ESP_LOGD(TAG, "APLL expected frequency is %d Hz, real frequency is %d Hz", expt_freq, real_freq);
+    ESP_LOGD(TAG, "APLL expected frequency is %"PRIu32" Hz, real frequency is %"PRIu32" Hz", expt_freq, real_freq);
     return real_freq;
 }
 #endif
+
+// [clk_tree] TODO: replace the following switch table by clk_tree API
+uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
+{
+    switch (clk_src)
+    {
+#if SOC_I2S_SUPPORTS_APLL
+    case I2S_CLK_SRC_APLL:
+        return i2s_set_get_apll_freq(mclk_freq_hz);
+#endif
+#if SOC_I2S_SUPPORTS_XTAL
+    case I2S_CLK_SRC_XTAL:
+        (void)mclk_freq_hz;
+        return esp_clk_xtal_freq();
+#endif
+    default: // I2S_CLK_SRC_PLL_160M
+        return esp_clk_apb_freq() * 2;
+    }
+}
 
 #if SOC_GDMA_SUPPORTED
 static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)

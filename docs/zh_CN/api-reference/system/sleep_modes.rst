@@ -16,9 +16,8 @@
     .. list::
 
         - RTC 控制器
-        - RTC 外设
         :SOC_ULP_SUPPORTED: - ULP 协处理器
-        - RTC 高速内存
+        :SOC_RTC_FAST_MEM_SUPPORTED: - RTC 高速内存
         :SOC_RTC_SLOW_MEM_SUPPORTED: - RTC 低速内存
 
 Light-sleep 和 Deep-sleep 模式有多种唤醒源。这些唤醒源也可以组合在一起，此时任何一个唤醒源都可以触发唤醒。通过 API ``esp_sleep_enable_X_wakeup`` 可启用唤醒源，通过 API :cpp:func:`esp_sleep_disable_wakeup_source` 可禁用唤醒源，详见下一小节。在系统进入 Light-sleep 或 Deep-sleep 模式前，可以在任意时刻配置唤醒源。
@@ -164,14 +163,16 @@ RTC 外设和内存断电
 
     如果程序中的某些值被放入 RTC 低速内存中（例如使用 ``RTC_DATA_ATTR`` 属性），RTC 低速内存将默认保持供电。如果有需要，也可以使用函数 :cpp:func:`esp_sleep_pd_config` 对其进行修改。
 
-.. only:: not SOC_RTC_SLOW_MEM_SUPPORTED
+.. only:: not SOC_RTC_SLOW_MEM_SUPPORTED and SOC_RTC_FAST_MEM_SUPPORTED
 
     {IDF_TARGET_NAME} 中只有 RTC 高速内存，因此，如果程序中的某些值被标记为 ``RTC_DATA_ATTR``、``RTC_SLOW_ATTR`` 或 ``RTC_FAST_ATTR`` 属性，那么所有这些值都将被存入 RTC 高速内存，默认情况下保持供电。如果有需要，您也可以使用函数 :cpp:func:`esp_sleep_pd_config` 对其进行修改。
 
 Flash 断电
 ----------
 
-默认情况下，调用函数 :cpp:func:`esp_light_sleep_start` 后， **不会** 断电 flash。在 sleep 过程中断电 flash 存在风险。因为 flash 断电需要时间，但是在此期间，系统有可能被唤醒。此时 flash 重新被上电，断电尚未完成又重新上电的硬件行为有概率导致 flash 不能正常工作。如果用户为 flash 供电电路添加了滤波电容，断电所需时间可能会更长。此外，即使可以预知 flash 彻底断电所需的时间，有时也不能通过设置足够长的睡眠时间来确保 flash 断电的安全（比如，突发的异步唤醒源会使得实际的睡眠时间不可控）。
+默认情况下，调用函数 :cpp:func:`esp_light_sleep_start` 后， flash **不会** 断电，因为在 sleep 过程中断电 flash 存在风险。具体而言，flash 断电需要时间，但是在此期间，系统有可能被唤醒，导致 flash 重新被上电。此时，断电尚未完成又重新上电的硬件行为有可能导致 flash 无法正常工作。
+
+理论上讲，在 flash 完全断电后可以仅唤醒系统，然而现实情况是 flash 断电所需的时间很难预测。如果用户为 flash 供电电路添加了滤波电容，断电所需时间可能会更长。此外，即使可以预知 flash 彻底断电所需的时间，有时也不能通过设置足够长的睡眠时间来确保 flash 断电的安全（比如，突发的异步唤醒源会使得实际的睡眠时间不可控）。
 
 .. warning::
     如果在 flash 的供电电路上添加了滤波电容，那么应当尽一切可能避免 flash 断电。
@@ -193,7 +194,7 @@ Flash 断电
 
     .. list::
 
-        - Light sleep 时，ESP-IDF 并未提供保证 flash 一定会被断电的机制。
+        - Light sleep 时，ESP-IDF 没有提供保证 flash 一定会被断电的机制。
         - 不管用户的配置如何，函数 :cpp:func:`esp_deep_sleep_start` 都会强制断电 flash。
 
 进入 Light-sleep 模式
@@ -211,7 +212,7 @@ Flash 断电
 
 一些 {IDF_TARGET_NAME} IO 在默认情况下启用内部上拉或下拉电阻。如果这些管脚在 Deep-sleep 模式下中受外部电路驱动，电流流经这些上下拉电阻时，可能会增加电流消耗。
 
-.. only:: not esp32c3
+.. only:: SOC_RTCIO_HOLD_SUPPORTED
 
     想要隔离这些管脚以避免额外的电流消耗，请调用 :cpp:func:`rtc_gpio_isolate` 函数。
 
@@ -221,7 +222,7 @@ Flash 断电
 
 	rtc_gpio_isolate(GPIO_NUM_12);
 
-.. only:: esp32c3
+.. only:: esp32c2 or esp32c3
 
     在 Deep-sleep 模式中：
         - 数字 GPIO (GPIO6 ~ 21) 处于高阻态。
@@ -265,7 +266,7 @@ UART 输出处理
 
     - :example:`system/deep_sleep`：如何使用 Deep-sleep 唤醒触发器和 ULP 协处理器编程。
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp32c2
 
     - :example:`system/deep_sleep`：如何通过定时器触发 Deep-sleep 唤醒。
 
