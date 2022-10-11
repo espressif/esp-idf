@@ -66,7 +66,9 @@ def test_examples_esp_local_ctrl(dut: Dut) -> None:
     # Running mDNS services in docker is not a trivial task. Therefore, the script won't connect to the host name but
     # to IP address. However, the certificates were generated for the host name and will be rejected.
     cmd = ' '.join([sys.executable, os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
-                    '--sec_ver 0',
+                    '--sec_ver 2',
+                    '--sec2_username wifiprov',
+                    '--sec2_pwd abcd1234',
                     '--name', dut_ip,
                     '--dont-check-hostname'])  # don't reject the certificate because of the hostname
     esp_local_ctrl_log = os.path.join(idf_path, rel_project_path, 'esp_local_ctrl.log')
