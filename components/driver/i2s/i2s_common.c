@@ -527,12 +527,11 @@ static bool IRAM_ATTR i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_e
             user_need_yield |= handle->callbacks.on_send_q_ovf(handle, &evt, handle->user_data);
         }
     }
-    xQueueSendFromISR(handle->msg_queue, &(finish_desc->buf), &need_yield2);
-
     if (handle->dma.auto_clear) {
         uint8_t *sent_buf = (uint8_t *)finish_desc->buf;
         memset(sent_buf, 0, handle->dma.buf_size);
     }
+    xQueueSendFromISR(handle->msg_queue, &(finish_desc->buf), &need_yield2);
 
     return need_yield1 | need_yield2 | user_need_yield;
 }
@@ -607,12 +606,12 @@ static void IRAM_ATTR i2s_dma_tx_callback(void *arg)
                 user_need_yield |= handle->callbacks.on_send_q_ovf(handle, &evt, handle->user_data);
             }
         }
-        xQueueSendFromISR(handle->msg_queue, &(finish_desc->buf), &need_yield2);
         // Auto clear the dma buffer after data sent
         if (handle->dma.auto_clear) {
             uint8_t *buff = (uint8_t *)finish_desc->buf;
             memset(buff, 0, handle->dma.buf_size);
         }
+        xQueueSendFromISR(handle->msg_queue, &(finish_desc->buf), &need_yield2);
     }
 
     if (need_yield1 || need_yield2 || user_need_yield) {
