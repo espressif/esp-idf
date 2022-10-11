@@ -308,6 +308,11 @@ class IdfPytestEmbedded:
 
         items.sort(key=lambda x: (os.path.dirname(x.path), _get_param_config(x)))
 
+        # set default timeout 10 minutes for each case
+        for item in items:
+            if 'timeout' not in item.keywords:
+                item.add_marker(pytest.mark.timeout(10 * 60))
+
         # add markers for special markers
         for item in items:
             if 'supported_targets' in item.keywords:
