@@ -60,6 +60,10 @@ void heap_caps_init(void)
     soc_memory_region_t regions[num_regions];
     num_regions = soc_get_available_memory_regions(regions);
 
+    // the following for loop will calculate the number of possible heaps
+    // based on how many regions were coalesed.
+    size_t num_heaps = num_regions;
+
     //The heap allocator will treat every region given to it as separate. In order to get bigger ranges of contiguous memory,
     //it's useful to coalesce adjacent regions that have the same type.
     for (size_t i = 1; i < num_regions; i++) {
@@ -69,14 +73,10 @@ void heap_caps_init(void)
             a->type = -1;
             b->start = a->start;
             b->size += a->size;
-        }
-    }
 
-    /* Count the heaps left after merging */
-    size_t num_heaps = 0;
-    for (size_t i = 0; i < num_regions; i++) {
-        if (regions[i].type != -1) {
-            num_heaps++;
+            // remove one heap from the number of heaps as
+            // 2 regions just got coalesed.
+            num_heaps--;
         }
     }
 
@@ -174,9 +174,9 @@ bool heap_caps_check_add_region_allowed(intptr_t heap_start, intptr_t heap_end, 
      *  Specially, the 3rd scenario can be allowed. For example, allocate memory from heap,
      *  then change the capability and call this function to create a new region for special
      *  application.
-     *  In the following chart, 'start = start' and 'end = end' is contained in 4th scenario.
-     *  This all equal scenario is incorrect because the same region cannot be add twice. For example,
-     *  add the .bss memory to region twice, if not do the check, it will cause exception.
+     *  This 'start = start' and 'end = end' scenario is incorrect because the same region
+     *  cannot be add twice. For example, add the .bss memory to region twice, if not do the
+     *  check, it will cause exception.
      *
      *  the existing heap region                                  s(tart)                e(nd)
      *                                                            |----------------------|
@@ -189,16 +189,19 @@ bool heap_caps_check_add_region_allowed(intptr_t heap_start, intptr_t heap_end, 
      *  3.add region  (s3>=s && e3<e)                             |---------------|                      correct: bool condition_3 = start >= heap_start && end < heap_end;
      *                                                                  |--------------|                 correct
      *
-     *  4.add region  (s4<e && e4>=e)                              |------------------------|            wrong:   bool condition_4 = start < heap_end && end >= heap_end;
+     *  4.add region  (s4<e && e4>e)                              |------------------------|             wrong:   bool condition_4 = start < heap_end && end > heap_end;
      *                                                                  |---------------------|          wrong
      *
      *  5.add region  (s5>=e)                                                            |----|          correct: bool condition_5 = start >= heap_end;
+     *
+     * 6.add region (s6==s && e6==e)                              |----------------------|               wrong: bool condition_6 = start == heap_start && end == heap_end;
      */
 
     bool condition_2 = start < heap_start && end > heap_start;        // if true then region not allowed
-    bool condition_4 = start < heap_end && end >= heap_end;            // if true then region not allowed
+    bool condition_4 = start < heap_end && end > heap_end;            // if true then region not allowed
+    bool condition_6 = start == heap_start && end == heap_end;        // if true then region not allowed
 
-    return (condition_2 || condition_4) ? false: true;
+    return (condition_2 || condition_4 || condition_6) ? false: true;
 }
 
 esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, intptr_t end)
