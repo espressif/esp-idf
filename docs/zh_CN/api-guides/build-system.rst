@@ -696,9 +696,9 @@ CMake 调试
 警告未定义的变量
 ------------------
 
-默认情况下，``idf.py`` 在调用 CMake_ 时会给它传递 ``--warn-uninitialized`` 标志，如果在构建的过程中引用了未定义的变量，CMake_ 会打印警告。这对查找有错误的 CMake 文件非常有用。
+默认情况下，警告未定义的变量这一功能是关闭的。
 
-如果您不想启用此功能，可以给 ``idf.py`` 传递 ``--no-warnings`` 标志。
+可通过将 ``--warn-uninitialized`` 标志传递给 CMake_ 或通过将 ``--cmake-warn-uninitialized`` 传递给 ``idf.py`` 来使能这一功能。这样，如果在构建的过程中引用了未定义的变量，CMake_ 会打印警告。这对查找有错误的 CMake 文件非常有用。
 
 更多信息，请参考文件 :idf_file:`/tools/cmake/project.cmake` 以及 :idf:`/tools/cmake/` 中支持的函数。
 

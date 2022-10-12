@@ -696,9 +696,9 @@ It also defines an overridden custom version of the built-in CMake_ ``project`` 
 Warning On Undefined Variables
 ------------------------------
 
-By default, ``idf.py`` passes the ``--warn-uninitialized`` flag to CMake_ so it will print a warning if an undefined variable is referenced in the build. This can be very useful to find buggy CMake files.
+By default, the function of warnings on undefined variables is disabled.
 
-If you don't want this behaviour, it can be disabled by passing ``--no-warnings`` to ``idf.py``.
+To enable this function, we can pass the ``--warn-uninitialized`` flag to CMake_ or pass the ``--cmake-warn-uninitialized`` flag to ``idf.py`` so it will print a warning if an undefined variable is referenced in the build. This can be very useful to find buggy CMake files.
 
 Browse the :idf_file:`/tools/cmake/project.cmake` file and supporting functions in :idf:`/tools/cmake/` for more details.
 
