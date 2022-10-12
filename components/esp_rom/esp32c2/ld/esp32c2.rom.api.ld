@@ -38,6 +38,7 @@ PROVIDE ( esp_rom_software_reset_system = software_reset );
 PROVIDE ( esp_rom_software_reset_cpu    = software_reset_cpu );
 
 PROVIDE ( esp_rom_printf   = ets_printf );
+PROVIDE ( esp_rom_install_uart_printf = ets_install_uart_printf );
 PROVIDE ( esp_rom_delay_us = ets_delay_us );
 PROVIDE ( esp_rom_get_reset_reason = rtc_get_reset_reason );
 PROVIDE ( esp_rom_route_intr_matrix = intr_matrix_set );
