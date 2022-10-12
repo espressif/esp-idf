@@ -788,25 +788,18 @@ void avdt_scb_hdl_setconfig_cmd(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 
     if (!p_scb->in_use) {
         p_cfg = p_data->msg.config_cmd.p_cfg;
-        if (p_scb->cs.cfg.codec_info[AVDT_CODEC_TYPE_INDEX] == p_cfg->codec_info[AVDT_CODEC_TYPE_INDEX]) {
-            /* set sep as in use */
-            p_scb->in_use = TRUE;
+        /* set sep as in use */
+        p_scb->in_use = TRUE;
 
-            /* copy info to scb */
-            p_scb->p_ccb = avdt_ccb_by_idx(p_data->msg.config_cmd.hdr.ccb_idx);
-            p_scb->peer_seid = p_data->msg.config_cmd.int_seid;
-            memcpy(&p_scb->req_cfg, p_cfg, sizeof(tAVDT_CFG));
-            /* call app callback */
-            (*p_scb->cs.p_ctrl_cback)(avdt_scb_to_hdl(p_scb), /* handle of scb- which is same as sep handle of bta_av_cb.p_scb*/
-                                      p_scb->p_ccb ? p_scb->p_ccb->peer_addr : NULL,
-                                      AVDT_CONFIG_IND_EVT,
-                                      (tAVDT_CTRL *) &p_data->msg.config_cmd);
-        } else {
-            p_data->msg.hdr.err_code = AVDT_ERR_UNSUP_CFG;
-            p_data->msg.hdr.err_param = 0;
-            avdt_msg_send_rej(avdt_ccb_by_idx(p_data->msg.hdr.ccb_idx),
-                              p_data->msg.hdr.sig_id, &p_data->msg);
-        }
+        /* copy info to scb */
+        p_scb->p_ccb = avdt_ccb_by_idx(p_data->msg.config_cmd.hdr.ccb_idx);
+        p_scb->peer_seid = p_data->msg.config_cmd.int_seid;
+        memcpy(&p_scb->req_cfg, p_cfg, sizeof(tAVDT_CFG));
+        /* call app callback */
+        (*p_scb->cs.p_ctrl_cback)(avdt_scb_to_hdl(p_scb), /* handle of scb- which is same as sep handle of bta_av_cb.p_scb*/
+                                    p_scb->p_ccb ? p_scb->p_ccb->peer_addr : NULL,
+                                    AVDT_CONFIG_IND_EVT,
+                                    (tAVDT_CTRL *) &p_data->msg.config_cmd);
     } else {
         avdt_scb_rej_in_use(p_scb, p_data);
     }
