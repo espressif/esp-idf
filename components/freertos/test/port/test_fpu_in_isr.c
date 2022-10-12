@@ -106,9 +106,6 @@ Expected:
     - The ISR using the FPU will not affect the unpinned task's affinity
 */
 
-// Known issue in IDF FreeRTOS (IDF-6068), already fixed in SMP FreeRTOS
-#if CONFIG_FREERTOS_SMP
-
 static void unpinned_task(void *arg)
 {
     // Disable scheduling/preemption to make sure the current task doesn't switch cores
@@ -158,7 +155,5 @@ TEST_CASE("FPU: Level 1 ISR does not affect unpinned task", "[freertos]")
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     vTaskDelay(10); // Short delay to allow task memory to be freed
 }
-
-#endif // CONFIG_FREERTOS_SMP
 
 #endif // SOC_CPU_HAS_FPU && CONFIG_FREERTOS_FPU_IN_ISR
