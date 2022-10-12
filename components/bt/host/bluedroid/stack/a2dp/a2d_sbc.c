@@ -105,7 +105,7 @@ tA2D_STATUS A2D_BldSbcInfo(UINT8 media_type, tA2D_SBC_CIE *p_ie, UINT8 *p_result
 ******************************************************************************/
 tA2D_STATUS A2D_ParsSbcInfo(tA2D_SBC_CIE *p_ie, UINT8 *p_info, BOOLEAN for_caps)
 {
-    tA2D_STATUS status;
+    tA2D_STATUS status = A2D_SUCCESS;
     UINT8   losc;
 
     if ( p_ie == NULL || p_info == NULL) {
@@ -127,7 +127,6 @@ tA2D_STATUS A2D_ParsSbcInfo(tA2D_SBC_CIE *p_ie, UINT8 *p_info, BOOLEAN for_caps)
             p_info++;
             p_ie->min_bitpool = *p_info++;
             p_ie->max_bitpool = *p_info;
-            status = A2D_SUCCESS;
             if (p_ie->min_bitpool < A2D_SBC_IE_MIN_BITPOOL || p_ie->min_bitpool > A2D_SBC_IE_MAX_BITPOOL ) {
                 status = A2D_BAD_MIN_BITPOOL;
             }
@@ -140,17 +139,13 @@ tA2D_STATUS A2D_ParsSbcInfo(tA2D_SBC_CIE *p_ie, UINT8 *p_info, BOOLEAN for_caps)
             if (for_caps == FALSE) {
                 if (A2D_BitsSet(p_ie->samp_freq) != A2D_SET_ONE_BIT) {
                     status = A2D_BAD_SAMP_FREQ;
-                }
-                if (A2D_BitsSet(p_ie->ch_mode) != A2D_SET_ONE_BIT) {
+                } else if (A2D_BitsSet(p_ie->ch_mode) != A2D_SET_ONE_BIT) {
                     status = A2D_BAD_CH_MODE;
-                }
-                if (A2D_BitsSet(p_ie->block_len) != A2D_SET_ONE_BIT) {
+                } else if (A2D_BitsSet(p_ie->block_len) != A2D_SET_ONE_BIT) {
                     status = A2D_BAD_BLOCK_LEN;
-                }
-                if (A2D_BitsSet(p_ie->num_subbands) != A2D_SET_ONE_BIT) {
+                } else if (A2D_BitsSet(p_ie->num_subbands) != A2D_SET_ONE_BIT) {
                     status = A2D_BAD_SUBBANDS;
-                }
-                if (A2D_BitsSet(p_ie->alloc_mthd) != A2D_SET_ONE_BIT) {
+                } else if (A2D_BitsSet(p_ie->alloc_mthd) != A2D_SET_ONE_BIT) {
                     status = A2D_BAD_ALLOC_MTHD;
                 }
             }
