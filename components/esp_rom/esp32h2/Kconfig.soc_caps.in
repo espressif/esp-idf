@@ -38,3 +38,7 @@ config ESP_ROM_GET_CLK_FREQ
 config ESP_ROM_HAS_LAYOUT_TABLE
     bool
     default y
+
+config ESP_ROM_HAS_ETS_PRINTF_BUG
+    bool
+    default y
