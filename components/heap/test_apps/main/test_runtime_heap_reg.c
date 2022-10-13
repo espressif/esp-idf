@@ -15,18 +15,16 @@
 #include "esp_system.h"
 #include "heap_memory_layout.h"
 
-#include "../tlsf/tlsf.h"
-
 extern void set_leak_threshold(int threshold);
 
 /* NOTE: This is not a well-formed unit test, it leaks memory */
 TEST_CASE("Allocate new heap at runtime", "[heap]")
 {
-    // 84 bytes of overhead to account for multi_heap structs and eventual
-    // poisoning bytes + size of control_t from tlsf
-    const size_t HEAP_OVERHEAD_MAX = tlsf_size() + 84;
-    const size_t MIN_HEAP_SIZE = HEAP_OVERHEAD_MAX + tlsf_block_size_min();
-    const size_t BUF_SZ = MIN_HEAP_SIZE;
+    /* The value of the heap overhead is calculated for the worst case scenario
+    * where the tlsf has a size of metadata fixed at runtime.
+    */
+    const size_t HEAP_OVERHEAD_MAX = 3248;
+    const size_t BUF_SZ = 3500;
     void *buffer = malloc(BUF_SZ);
 
     TEST_ASSERT_NOT_NULL(buffer);
@@ -46,12 +44,8 @@ TEST_CASE("Allocate new heap at runtime", "[heap]")
 */
 TEST_CASE("Allocate new heap with new capability", "[heap]")
 {
-    // 84 bytes of overhead to account for multi_heap structs and eventual
-    // poisoning bytes + size of control_t from tlsf
-    const size_t HEAP_OVERHEAD = tlsf_size() + 84;
-    const size_t MIN_HEAP_SIZE = HEAP_OVERHEAD + tlsf_block_size_min();
-    const size_t BUF_SZ = MIN_HEAP_SIZE;
-    const size_t ALLOC_SZ = tlsf_block_size_min();
+    const size_t BUF_SZ = 3500;
+    const size_t ALLOC_SZ = 64;
 
     const uint32_t MALLOC_CAP_INVENTED = (1 << 30); /* this must be unused in esp_heap_caps.h */
 
@@ -67,7 +61,7 @@ TEST_CASE("Allocate new heap with new capability", "[heap]")
     TEST_ASSERT_NOT_NULL( heap_caps_malloc(ALLOC_SZ, MALLOC_CAP_INVENTED) );
 
     // set the leak threshold to a bigger value as this test leaks memory
-    set_leak_threshold(-3000);
+    set_leak_threshold(-4000);
 }
 
 /* NOTE: This is not a well-formed unit test.
@@ -76,8 +70,11 @@ TEST_CASE("Allocate new heap with new capability", "[heap]")
 
 TEST_CASE("Add .bss memory to heap region runtime", "[heap]")
 {
+/* The value of the heap overhead is calculated for the worst case scenario
+ * where the tlsf has a size of metadata fixed at runtime.
+ */
 #define HEAP_OVERHEAD_MAX 3248
-#define BUF_SZ 3260
+#define BUF_SZ 3500
     static uint8_t s_buffer[BUF_SZ];
 
     printf("s_buffer start %08x end %08x\n", (intptr_t)s_buffer, (intptr_t)s_buffer + BUF_SZ);
