@@ -583,6 +583,9 @@ BOOLEAN bta_gattc_co_cache_append_assoc_addr(BD_ADDR src_addr, BD_ADDR assoc_add
     UINT8 addr_index = 0;
     cache_addr_info_t *addr_info;
     UINT8 *p_assoc_buf = osi_malloc(sizeof(BD_ADDR));
+    if(!p_assoc_buf) {
+        return FALSE;
+    }
     memcpy(p_assoc_buf, assoc_addr, sizeof(BD_ADDR));
     if ((addr_index = bta_gattc_co_find_addr_in_cache(src_addr)) != INVALID_ADDR_NUM) {
         addr_info = &cache_env->cache_addr[addr_index];
@@ -590,6 +593,8 @@ BOOLEAN bta_gattc_co_cache_append_assoc_addr(BD_ADDR src_addr, BD_ADDR assoc_add
             addr_info->assoc_addr =list_new(NULL);
         }
         return list_append(addr_info->assoc_addr, p_assoc_buf);
+    } else {
+        osi_free(p_assoc_buf);
     }
 
     return FALSE;
