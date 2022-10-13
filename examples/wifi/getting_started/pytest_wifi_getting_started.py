@@ -22,7 +22,7 @@ from pytest_embedded_idf.dut import IdfDut
 
 
 @pytest.mark.esp32
-@pytest.mark.multi_dut_generic
+@pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
     'count, app_path', [
         (2,
@@ -33,10 +33,12 @@ def test_wifi_getting_started(dut: Tuple[IdfDut, IdfDut]) -> None:
     softap = dut[0]
     station = dut[1]
 
-    ssid = 'myssid'
-    password = 'mypassword'
-    tag = 'wifi station'
+    ssid = softap.app.sdkconfig.get('ESP_WIFI_SSID')
+    password = softap.app.sdkconfig.get('ESP_WIFI_PASSWORD')
+    assert station.app.sdkconfig.get('ESP_WIFI_SSID') == ssid
+    assert station.app.sdkconfig.get('ESP_WIFI_PASSWORD') == password
 
+    tag = 'wifi station'
     station.expect(f'{tag}: got ip:', timeout=60)
     station.expect(f'{tag}: connected to ap SSID:{ssid} password:{password}', timeout=60)
     softap.expect('station .+ join, AID=', timeout=60)
