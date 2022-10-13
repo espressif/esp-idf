@@ -142,7 +142,7 @@ size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
 multi_heap_handle_t multi_heap_register_impl(void *start_ptr, size_t size)
 {
     assert(start_ptr);
-    if(size < (tlsf_size(NULL) + tlsf_block_size_min() + sizeof(heap_t))) {
+    if(size < (sizeof(heap_t))) {
         //Region too small to be a heap.
         return NULL;
     }
