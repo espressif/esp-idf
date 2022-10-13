@@ -4,6 +4,8 @@
 # this file defines some functions for testing cli and br under pytest framework
 
 import re
+import socket
+import struct
 import subprocess
 import time
 from typing import Tuple, Union
@@ -14,10 +16,12 @@ from pytest_embedded_idf.dut import IdfDut
 
 
 def reset_thread(dut:IdfDut) -> None:
-    time.sleep(1)
+    dut.write(' ')
+    dut.write('state')
+    clean_buffer(dut)
+    wait(dut, 1)
     dut.write('factoryreset')
-    time.sleep(3)
-    dut.expect('OpenThread attached to netif', timeout=10)
+    dut.expect('OpenThread attached to netif', timeout=20)
     dut.write(' ')
     dut.write('state')
 
@@ -92,18 +96,30 @@ def start_thread(dut:IdfDut) -> str:
     return role
 
 
+def wait_key_str(leader:IdfDut, child:IdfDut) -> None:
+    wait(leader, 1)
+    leader.expect('OpenThread attached to netif', timeout=20)
+    leader.write(' ')
+    leader.write('state')
+    child.expect('OpenThread attached to netif', timeout=20)
+    child.write(' ')
+    child.write('state')
+
+
+def config_network(leader:IdfDut, child:IdfDut, leader_name:str, thread_dataset_model:str,
+                   thread_dataset:str, wifi:IdfDut, wifi_ssid:str, wifi_psk:str) -> str:
+    wait_key_str(leader, child)
+    return form_network_using_manual_configuration(leader, child, leader_name, thread_dataset_model,
+                                                   thread_dataset, wifi, wifi_ssid, wifi_psk)
+
+
 # config br and cli manually
 def form_network_using_manual_configuration(leader:IdfDut, child:IdfDut, leader_name:str, thread_dataset_model:str,
                                             thread_dataset:str, wifi:IdfDut, wifi_ssid:str, wifi_psk:str) -> str:
-    time.sleep(3)
-    leader.expect('OpenThread attached to netif', timeout=10)
-    leader.write(' ')
-    leader.write('state')
-    child.expect('OpenThread attached to netif', timeout=10)
-    child.write(' ')
-    child.write('state')
     reset_thread(leader)
+    clean_buffer(leader)
     reset_thread(child)
+    clean_buffer(child)
     leader.write('channel 12')
     leader.expect('Done', timeout=2)
     child.write('channel 12')
@@ -130,6 +146,7 @@ def form_network_using_manual_configuration(leader:IdfDut, child:IdfDut, leader_
         child.expect('Done', timeout=2)
     role = start_thread(child)
     assert role == 'child'
+    wait(leader, 10)
     return res
 
 
@@ -152,7 +169,8 @@ def connect_wifi(dut:IdfDut, ssid:str, psk:str, nums:int) -> Tuple[str, int]:
     for order in range(1, nums):
         dut.write('wifi connect -s ' + str(ssid) + ' -p ' + str(psk))
         tmp = dut.expect(pexpect.TIMEOUT, timeout=5)
-        ip_address = re.findall(r'sta ip: (\w+.\w+.\w+.\w+),', str(tmp))[0]
+        if 'sta ip' in str(tmp):
+            ip_address = re.findall(r'sta ip: (\w+.\w+.\w+.\w+),', str(tmp))[0]
         information = dut.expect(r'wifi sta (\w+ \w+ \w+)\W', timeout=5)[1].decode()
         if information == 'is connected successfully':
             break
@@ -166,13 +184,13 @@ def reset_host_interface() -> None:
     try:
         command = 'ifconfig ' + interface_name + ' down'
         subprocess.call(command, shell=True, timeout=5)
-        time.sleep(10)
+        time.sleep(1)
         command = 'ifconfig ' + interface_name + ' up'
         subprocess.call(command, shell=True, timeout=10)
-        time.sleep(20)
+        time.sleep(1)
         flag = True
     finally:
-        time.sleep(10)
+        time.sleep(1)
         assert flag
 
 
@@ -185,10 +203,10 @@ def set_interface_sysctl_options() -> None:
         time.sleep(1)
         command = 'sysctl -w net/ipv6/conf/' + interface_name + '/accept_ra_rt_info_max_plen=128'
         subprocess.call(command, shell=True, timeout=5)
-        time.sleep(5)
+        time.sleep(1)
         flag = True
     finally:
-        time.sleep(5)
+        time.sleep(2)
         assert flag
 
 
@@ -207,7 +225,7 @@ def init_interface_ipv6_address() -> None:
         time.sleep(1)
         flag = True
     finally:
-        time.sleep(5)
+        time.sleep(1)
         assert flag
 
 
@@ -220,3 +238,98 @@ def get_host_interface_name() -> str:
 def clean_buffer(dut:IdfDut) -> None:
     str_length = str(len(dut.expect(pexpect.TIMEOUT, timeout=0.1)))
     dut.expect(r'[\s\S]{%s}' % str(str_length), timeout=10)
+
+
+def check_if_host_receive_ra(br:IdfDut) -> bool:
+    interface_name = get_host_interface_name()
+    clean_buffer(br)
+    br.write('br omrprefix')
+    omrprefix = br.expect(r'\n((?:\w+:){4}):/\d+\r', timeout=5)[1].decode()
+    command = 'ip -6 route | grep ' + str(interface_name)
+    out_str = subprocess.getoutput(command)
+    print('br omrprefix: ', str(omrprefix))
+    print('host route table:\n', str(out_str))
+    return str(omrprefix) in str(out_str)
+
+
+def host_connect_wifi() -> None:
+    command = '. /home/test/wlan_connection_OTTE.sh'
+    subprocess.call(command, shell=True, timeout=30)
+    time.sleep(5)
+
+
+def is_joined_wifi_network(br:IdfDut) -> bool:
+    return check_if_host_receive_ra(br)
+
+
+thread_ipv6_group = 'ff04:0:0:0:0:0:0:125'
+
+
+def check_ipmaddr(dut:IdfDut) -> bool:
+    clean_buffer(dut)
+    dut.write('ipmaddr')
+    info = dut.expect(pexpect.TIMEOUT, timeout=2)
+    if thread_ipv6_group in str(info):
+        return True
+    return False
+
+
+def thread_is_joined_group(dut:IdfDut) -> bool:
+    command = 'mcast join ' + thread_ipv6_group
+    dut.write(command)
+    dut.expect('Done', timeout=2)
+    order = 0
+    while order < 3:
+        if check_ipmaddr(dut):
+            return True
+        dut.write(command)
+        wait(dut, 2)
+        order = order + 1
+    return False
+
+
+host_ipv6_group = 'ff04::125'
+
+
+def host_joined_group() -> bool:
+    interface_name = get_host_interface_name()
+    command = 'netstat -g | grep ' + str(interface_name)
+    out_str = subprocess.getoutput(command)
+    print('groups:\n', str(out_str))
+    return host_ipv6_group in str(out_str)
+
+
+class udp_parameter:
+
+    def __init__(self, group:str='', try_join_udp_group:bool=False, timeout:float=15.0, udp_bytes:bytes=b''):
+        self.group = group
+        self.try_join_udp_group = try_join_udp_group
+        self.timeout = timeout
+        self.udp_bytes = udp_bytes
+
+
+def create_host_udp_server(myudp:udp_parameter) -> None:
+    interface_name = get_host_interface_name()
+    try:
+        print('The host start to create udp server!')
+        if_index = socket.if_nametoindex(interface_name)
+        sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        sock.bind(('::', 5090))
+        sock.setsockopt(
+            socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP,
+            struct.pack('16si', socket.inet_pton(socket.AF_INET6, myudp.group),
+                        if_index))
+        myudp.try_join_udp_group = True
+        sock.settimeout(myudp.timeout)
+        print('The host start to receive message!')
+        myudp.udp_bytes = (sock.recvfrom(1024))[0]
+        print('The host has received message: ', myudp.udp_bytes)
+    except socket.error:
+        print('The host did not receive message!')
+    finally:
+        print('Close the socket.')
+        sock.close()
+
+
+def wait(dut:IdfDut, wait_time:float) -> None:
+    dut.expect(pexpect.TIMEOUT, timeout=wait_time)

@@ -5,9 +5,8 @@
 
 import os.path
 import re
-import socket
-import struct
 import subprocess
+import threading
 import time
 from typing import Tuple
 
@@ -34,32 +33,37 @@ from pytest_embedded_idf.dut import IdfDut
 def fixture_Init_interface() -> bool:
     ocf.init_interface_ipv6_address()
     ocf.reset_host_interface()
+    time.sleep(30)
     ocf.set_interface_sysctl_options()
     return True
+
+
+wifi_ssid = 'OTCITE'
+wifi_psk = 'otcitest888'
 
 
 # Case 1: Thread network formation and attaching
 @pytest.mark.esp32s3
 @pytest.mark.esp32h2
+@pytest.mark.timeout(40 * 60)
 @pytest.mark.i154_multi_dut
-@pytest.mark.flaky(reruns=2, reruns_delay=10)
 @pytest.mark.parametrize(
     'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_BR|/dev/USB_CLI|/dev/USB_RCP', 'br|cli|rcp', 3,
-         f'{os.path.join(os.path.dirname(__file__), "ot_br")}'
+        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR', 'rcp|cli|br', 3,
+         f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
-         f'|{os.path.join(os.path.dirname(__file__), "ot_rcp")}',
-         'esp32s3|esp32h2beta2|esp32h2beta2', 'esp32s3|esp32h2|esp32h2'),
+         f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h2|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
-def test_thread_connect(dut:Tuple[IdfDut, IdfDut]) -> None:
-    br = dut[0]
+def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+    br = dut[2]
     cli  = dut[1]
+    dut[0].close()
 
     dataset = '-1'
-    ocf.form_network_using_manual_configuration(br, cli, 'br', 'random', dataset, br, 'OTCITE', '0000')
-    time.sleep(1)
+    ocf.config_network(br, cli, 'br', 'random', dataset, br, wifi_ssid, '0000')
     flag = False
     try:
         cli_mleid_addr = ocf.get_mleid_addr(cli)
@@ -79,32 +83,34 @@ def test_thread_connect(dut:Tuple[IdfDut, IdfDut]) -> None:
 # Case 2: Bidirectional IPv6 connectivity
 @pytest.mark.esp32s3
 @pytest.mark.esp32h2
+@pytest.mark.timeout(40 * 60)
 @pytest.mark.i154_multi_dut
-@pytest.mark.flaky(reruns=5, reruns_delay=10)
 @pytest.mark.parametrize(
     'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_BR|/dev/USB_CLI|/dev/USB_RCP', 'br|cli|rcp', 3,
-         f'{os.path.join(os.path.dirname(__file__), "ot_br")}'
+        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR', 'rcp|cli|br', 3,
+         f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
-         f'|{os.path.join(os.path.dirname(__file__), "ot_rcp")}',
-         'esp32s3|esp32h2beta2|esp32h2beta2', 'esp32s3|esp32h2|esp32h2'),
+         f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h2|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
-def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut, IdfDut]) -> None:
-    br = dut[0]
+def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+    br = dut[2]
     cli  = dut[1]
     assert Init_interface
+    dut[0].close()
 
     dataset = '-1'
-    ocf.form_network_using_manual_configuration(br, cli, 'br', 'random', dataset, br, 'OTCITE', 'otcitest888')
-    time.sleep(5)
-    cli_global_unicast_addr = ocf.get_global_unicast_addr(cli, br)
+    ocf.config_network(br, cli, 'br', 'random', dataset, br, wifi_ssid, wifi_psk)
     flag = False
     try:
+        assert ocf.is_joined_wifi_network(br)
+        cli_global_unicast_addr = ocf.get_global_unicast_addr(cli, br)
+        print('cli_global_unicast_addr', cli_global_unicast_addr)
         command = 'ping ' + str(cli_global_unicast_addr) + ' -c 10'
-        out_bytes = subprocess.check_output(command, shell=True, timeout=60)
-        out_str = out_bytes.decode('utf-8')
+        out_str = subprocess.getoutput(command)
+        print('ping result:\n', str(out_str))
         role = re.findall(r' (\d+)%', str(out_str))[0]
         assert role != '100'
         interface_name = ocf.get_host_interface_name()
@@ -128,37 +134,36 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
 # Case 3: Multicast forwarding from Wi-Fi to Thread network
 @pytest.mark.esp32s3
 @pytest.mark.esp32h2
+@pytest.mark.timeout(40 * 60)
 @pytest.mark.i154_multi_dut
-@pytest.mark.flaky(reruns=5, reruns_delay=10)
 @pytest.mark.parametrize(
     'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_BR|/dev/USB_CLI|/dev/USB_RCP', 'br|cli|rcp', 3,
-         f'{os.path.join(os.path.dirname(__file__), "ot_br")}'
+        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR', 'rcp|cli|br', 3,
+         f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
-         f'|{os.path.join(os.path.dirname(__file__), "ot_rcp")}',
-         'esp32s3|esp32h2beta2|esp32h2beta2', 'esp32s3|esp32h2|esp32h2'),
+         f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h2|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
-def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut]) -> None:
-    br = dut[0]
+def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+    br = dut[2]
     cli  = dut[1]
     assert Init_interface
+    dut[0].close()
 
     dataset = '-1'
-    ocf.form_network_using_manual_configuration(br, cli, 'br', 'random', dataset, br, 'OTCITE', 'otcitest888')
-    time.sleep(5)
+    ocf.config_network(br, cli, 'br', 'random', dataset, br, wifi_ssid, wifi_psk)
     flag = False
     try:
+        assert ocf.is_joined_wifi_network(br)
         br.write('bbr')
         br.expect('server16', timeout=2)
-        cli.write('mcast join ff04::125')
-        cli.expect('Done', timeout=2)
-        time.sleep(1)
+        assert ocf.thread_is_joined_group(cli)
         interface_name = ocf.get_host_interface_name()
         command = 'ping -I ' + str(interface_name) + ' -t 64 ff04::125 -c 10'
-        out_bytes = subprocess.check_output(command, shell=True, timeout=60)
-        out_str = out_bytes.decode('utf-8')
+        out_str = subprocess.getoutput(command)
+        print('ping result:\n', str(out_str))
         role = re.findall(r' (\d+)%', str(out_str))[0]
         assert role != '100'
         flag = True
@@ -172,52 +177,52 @@ def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut])
 # Case 4: Multicast forwarding from Thread to Wi-Fi network
 @pytest.mark.esp32s3
 @pytest.mark.esp32h2
+@pytest.mark.timeout(40 * 60)
 @pytest.mark.i154_multi_dut
-@pytest.mark.flaky(reruns=5, reruns_delay=5)
 @pytest.mark.parametrize(
     'port, config, count, app_path, beta_target, target', [
-        ('/dev/USB_BR|/dev/USB_CLI|/dev/USB_RCP', 'br|cli|rcp', 3,
-         f'{os.path.join(os.path.dirname(__file__), "ot_br")}'
+        ('/dev/USB_RCP|/dev/USB_CLI|/dev/USB_BR', 'rcp|cli|br', 3,
+         f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
-         f'|{os.path.join(os.path.dirname(__file__), "ot_rcp")}',
-         'esp32s3|esp32h2beta2|esp32h2beta2', 'esp32s3|esp32h2|esp32h2'),
+         f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h2|esp32h2|esp32s3'),
     ],
     indirect=True,
 )
-def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut]) -> None:
-    br = dut[0]
+def test_multicast_forwarding_B(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+    br = dut[2]
     cli  = dut[1]
     assert Init_interface
+    dut[0].close()
 
     dataset = '-1'
-    ocf.form_network_using_manual_configuration(br, cli, 'br', 'random', dataset, br, 'OTCITE', 'otcitest888')
-    time.sleep(5)
-    br.write('bbr')
-    br.expect('server16', timeout=2)
-    interface_name = ocf.get_host_interface_name()
-    if_index = socket.if_nametoindex(interface_name)
-    sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-    sock.bind(('::', 5090))
-    sock.setsockopt(
-        socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP,
-        struct.pack('16si', socket.inet_pton(socket.AF_INET6, 'ff04::125'),
-                    if_index))
-    time.sleep(1)
-    cli.write('udp open')
-    cli.expect('Done', timeout=2)
-    cli.write('udp send ff04::125 5090 hello')
-    cli.expect('Done', timeout=2)
-    data = b''
+    ocf.config_network(br, cli, 'br', 'random', dataset, br, wifi_ssid, wifi_psk)
     try:
-        print('The host start to receive message!')
-        sock.settimeout(5)
-        data = (sock.recvfrom(1024))[0]
-        print('The host has received message!')
-    except socket.error:
-        print('The host did not received message!')
+        assert ocf.is_joined_wifi_network(br)
+        br.write('bbr')
+        br.expect('server16', timeout=2)
+        cli.write('udp open')
+        cli.expect('Done', timeout=2)
+        ocf.wait(cli, 1)
+        cli.write('udp open')
+        cli.expect('Already', timeout=2)
+        myudp = ocf.udp_parameter('ff04::125', False, 15.0, b'')
+        udp_mission = threading.Thread(target=ocf.create_host_udp_server, args=(myudp, ))
+        udp_mission.start()
+        start_time = time.time()
+        while not myudp.try_join_udp_group:
+            if (time.time() - start_time) > 10:
+                assert False
+        assert ocf.host_joined_group()
+        for num in range(0, 3):
+            command = 'udp send ff04::125 5090 hello' + str(num)
+            cli.write(command)
+            cli.expect('Done', timeout=2)
+            ocf.wait(cli, 0.5)
+        while udp_mission.is_alive():
+            time.sleep(1)
     finally:
-        sock.close()
         br.write('factoryreset')
         cli.write('factoryreset')
         time.sleep(3)
-    assert data == b'hello'
+    assert b'hello' in myudp.udp_bytes
