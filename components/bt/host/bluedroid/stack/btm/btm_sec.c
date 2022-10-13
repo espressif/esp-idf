@@ -3170,6 +3170,10 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
         }
     }
 
+    if(!p_dev_rec) {
+        return;
+    }
+
     /* If this is a bonding procedure can disconnect the link now */
     if ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)
             && (p_dev_rec->sec_flags & BTM_SEC_AUTHENTICATED)) {
@@ -3951,6 +3955,10 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
                 p_dev_rec = NULL;
             }
         }
+    }
+
+    if(!p_dev_rec) {
+        return;
     }
 
     p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
@@ -4794,6 +4802,10 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
                 p_dev_rec = NULL;
             }
         }
+    }
+
+    if(!p_dev_rec) {
+        return;
     }
 
     /* We will save link key only if the user authorized it - BTE report link key in all cases */
