@@ -228,7 +228,6 @@ int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t 
 static void wpa_sta_disconnected_cb(uint8_t reason_code)
 {
     switch (reason_code) {
-        case WIFI_REASON_UNSPECIFIED:
         case WIFI_REASON_AUTH_EXPIRE:
         case WIFI_REASON_NOT_AUTHED:
         case WIFI_REASON_NOT_ASSOCED:
