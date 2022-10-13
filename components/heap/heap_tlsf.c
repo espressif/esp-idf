@@ -142,7 +142,7 @@ static inline __attribute__((__always_inline__)) void mapping_insert(control_t *
 	{
 		/* Store small blocks in first list. */
 		fl = 0;
-		sl = tlsf_cast(int, size) >> 2;
+		sl = tlsf_cast(int, size) / (control->small_block_size / control->sl_index_count);
 	}
 	else
 	{
@@ -459,16 +459,19 @@ static inline __attribute__((__always_inline__)) void* block_prepare_used(contro
 }
 
 /* Clear structure and point all empty lists at the null block. */
-static void control_construct(control_t* control, size_t bytes)
+static control_t* control_construct(control_t* control, size_t bytes)
 {
-	int i, j;
+	// check that the requested size can at least hold the control_t. This will allow us
+	// to fill in the field of control_t necessary to determine the final size of
+	// the metadata overhead and check that the requested size can hold
+	// this data and at least a block of minimum size
+	if (bytes < sizeof(control_t))
+	{
+		return NULL;
+	}
 
-	control->block_null.next_free = &control->block_null;
-	control->block_null.prev_free = &control->block_null;
-
-	/* find the closest ^2 for first layer */
-	i = (bytes - 1) / (16 * 1024);
-	control->fl_index_max = FL_INDEX_MAX_MIN + sizeof(i) * 8 - __builtin_clz(i);
+	/* Find the closest power of two for first layer */
+	control->fl_index_max = 32 - __builtin_clz(bytes);
 
 	/* adapt second layer to the pool */
 	if (bytes <= 16 * 1024) control->sl_index_count_log2 = 3;
@@ -479,11 +482,26 @@ static void control_construct(control_t* control, size_t bytes)
 	control->sl_index_count = 1 << control->sl_index_count_log2;
 	control->fl_index_count = control->fl_index_max - control->fl_index_shift + 1;
 	control->small_block_size = 1 << control->fl_index_shift;
+
+	// the total size fo the metadata overhead is the size of the control_t
+	// added to the size of the sl_bitmaps and the size of blocks
+	control->size = sizeof(control_t) + (sizeof(*control->sl_bitmap) * control->fl_index_count) +
+										(sizeof(*control->blocks) * (control->fl_index_count * control->sl_index_count));
+
+	// check that the requested size can hold the whole control structure and
+	// a small block at least
+	if (bytes < control->size + block_size_min)
+	{
+		return NULL;
+	}
+
+	control->block_null.next_free = &control->block_null;
+	control->block_null.prev_free = &control->block_null;
+
 	control->fl_bitmap = 0;
 
 	control->sl_bitmap = align_ptr(control + 1, sizeof(*control->sl_bitmap));
 	control->blocks = align_ptr(control->sl_bitmap + control->fl_index_count, sizeof(*control->blocks));
-	control->size = (void*) (control->blocks + control->sl_index_count * control->fl_index_count) - (void*) control;
 
 	/* SL_INDEX_COUNT must be <= number of bits in sl_bitmap's storage type. */
 	tlsf_assert(sizeof(unsigned int) * CHAR_BIT >= control->sl_index_count && "CHAR_BIT less than sl_index_count");
@@ -491,14 +509,16 @@ static void control_construct(control_t* control, size_t bytes)
 	/* Ensure we've properly tuned our sizes. */
 	tlsf_assert(ALIGN_SIZE == control->small_block_size / control->sl_index_count && "ALIGN_SIZE does not match");
 
-	for (i = 0; i < control->fl_index_count; ++i)
+	for (int i = 0; i < control->fl_index_count; ++i)
 	{
 		control->sl_bitmap[i] = 0;
-		for (j = 0; j < control->sl_index_count; ++j)
+		for (int j = 0; j < control->sl_index_count; ++j)
 		{
 			control->blocks[i*control->sl_index_count + j] = &control->block_null;
 		}
 	}
+
+	return control;
 }
 
 /*
@@ -630,13 +650,13 @@ int tlsf_check_pool(pool_t pool)
 size_t tlsf_fit_size(tlsf_t tlsf, size_t size)
 {
 	/* because it's GoodFit, allocable size is one range lower */
-    if (size)
+    if (size && tlsf != NULL)
 	{
 		size_t sl_interval;
 		control_t* control = tlsf_cast(control_t*, tlsf);
-        sl_interval = (1 << ((sizeof(size_t) * 8 - 1) - __builtin_clz(size))) / control->sl_index_count;
-        return size & ~(sl_interval - 1);
-    }
+		sl_interval = (1 << (32 - __builtin_clz(size) - 1)) / control->sl_index_count;
+		return size & ~(sl_interval - 1);
+	}
 
 	return 0;
 }
@@ -648,16 +668,12 @@ size_t tlsf_fit_size(tlsf_t tlsf, size_t size)
 */
 size_t tlsf_size(tlsf_t tlsf)
 {
-	if (tlsf)
+	if (tlsf == NULL)
 	{
-		control_t* control = tlsf_cast(control_t*, tlsf);
-		return control->size;
+		return 0;
 	}
-
-	/* no tlsf, we'll just return a min size */
-	return sizeof(control_t) +
-	       sizeof(int) * SL_INDEX_COUNT_MIN +
-	       sizeof(block_header_t*) * SL_INDEX_COUNT_MIN * FL_INDEX_COUNT_MIN;
+	control_t* control = tlsf_cast(control_t*, tlsf);
+	return control->size;
 }
 
 size_t tlsf_align_size(void)
@@ -672,6 +688,10 @@ size_t tlsf_block_size_min(void)
 
 size_t tlsf_block_size_max(tlsf_t tlsf)
 {
+	if (tlsf == NULL)
+	{
+		return 0;
+	}
 	control_t* control = tlsf_cast(control_t*, tlsf);
 	return tlsf_cast(size_t, 1) << control->fl_index_max;
 }
@@ -765,20 +785,24 @@ tlsf_t tlsf_create(void* mem, size_t max_bytes)
 #if _DEBUG
 	if (test_ffs_fls())
 	{
-		return 0;
+		return NULL;
 	}
 #endif
+
+	if (mem == NULL)
+	{
+		return NULL;
+	}
 
 	if (((tlsfptr_t)mem % ALIGN_SIZE) != 0)
 	{
 		printf("tlsf_create: Memory must be aligned to %u bytes.\n",
 			(unsigned int)ALIGN_SIZE);
-		return 0;
+		return NULL;
 	}
 
-	control_construct(tlsf_cast(control_t*, mem), max_bytes);
-
-	return tlsf_cast(tlsf_t, mem);
+	control_t* control_ptr = control_construct(tlsf_cast(control_t*, mem), max_bytes);
+	return tlsf_cast(tlsf_t, control_ptr);
 }
 
 pool_t tlsf_get_pool(tlsf_t tlsf)
@@ -789,7 +813,10 @@ pool_t tlsf_get_pool(tlsf_t tlsf)
 tlsf_t tlsf_create_with_pool(void* mem, size_t pool_bytes, size_t max_bytes)
 {
 	tlsf_t tlsf = tlsf_create(mem, max_bytes ? max_bytes : pool_bytes);
-	tlsf_add_pool(tlsf, (char*)mem + tlsf_size(tlsf), pool_bytes - tlsf_size(tlsf));
+	if (tlsf != NULL)
+	{
+		tlsf_add_pool(tlsf, (char*)mem + tlsf_size(tlsf), pool_bytes - tlsf_size(tlsf));
+	}
 	return tlsf;
 }
 
@@ -956,6 +983,12 @@ void* tlsf_realloc(tlsf_t tlsf, void* ptr, size_t size)
 		const size_t cursize = block_size(block);
 		const size_t combined = cursize + block_size(next) + block_header_overhead;
 		const size_t adjust = adjust_request_size(tlsf, size, ALIGN_SIZE);
+
+		// if adjust if equal to 0, the size is too big
+		if (adjust == 0)
+		{
+			return p;
+		}
 
 		tlsf_assert(!block_is_free(block) && "block already marked as free");
 
