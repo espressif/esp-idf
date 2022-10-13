@@ -9,6 +9,8 @@
 /*
 This header contains various general purpose helper macros used across ESP-IDF
 */
+#include <assert.h>
+#include "esp_assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,19 +55,12 @@ extern "C" {
 #define foo(...) CHOOSE_MACRO_VA_ARG(foo_args, foo_no_args, ##__VA_ARGS__)(__VA_ARGS__)
 #endif
 
-#if defined(__cplusplus)
-#define MY_STATIC_ASSERT static_assert
-#else
-#define MY_STATIC_ASSERT _Static_assert
-#endif
-
-MY_STATIC_ASSERT(foo() == 2, "CHOOSE_MACRO_VA_ARG() result does not match for 0 arguments");
-MY_STATIC_ASSERT(foo(42) == 1, "CHOOSE_MACRO_VA_ARG() result does not match for 1 argument");
+ESP_STATIC_ASSERT(foo() == 2, "CHOOSE_MACRO_VA_ARG() result does not match for 0 arguments");
+ESP_STATIC_ASSERT(foo(42) == 1, "CHOOSE_MACRO_VA_ARG() result does not match for 1 argument");
 #if defined(__cplusplus) && (__cplusplus >  201703L)
-static_assert(foo(42, 87) == 1, "CHOOSE_MACRO_VA_ARG() result does not match for n arguments");
+ESP_STATIC_ASSERT(foo(42, 87) == 1, "CHOOSE_MACRO_VA_ARG() result does not match for n arguments");
 #endif
 
-#undef MY_STATIC_ASSERT
 #undef foo
 #undef foo_args
 #undef foo_no_args

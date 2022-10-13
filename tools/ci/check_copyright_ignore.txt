@@ -419,7 +419,6 @@ components/esp32/include/rom/tjpgd.h
 components/esp32/include/rom/uart.h
 components/esp_eth/src/dm9051.h
 components/esp_eth/src/ksz8851.h
-components/esp_eth/src/openeth.h
 components/esp_eth/src/w5500.h
 components/esp_eth/test_apps/component_ut_test.py
 components/esp_eth/test_apps/main/esp_eth_test.c
@@ -533,7 +532,6 @@ components/esp_rom/include/esp32c3/rom/libc_stubs.h
 components/esp_rom/include/esp32c3/rom/md5_hash.h
 components/esp_rom/include/esp32c3/rom/rom_layout.h
 components/esp_rom/include/esp32c3/rom/rsa_pss.h
-components/esp_rom/include/esp32c3/rom/rtc.h
 components/esp_rom/include/esp32c3/rom/sha.h
 components/esp_rom/include/esp32c3/rom/tjpgd.h
 components/esp_rom/include/esp32c3/rom/uart.h
@@ -708,7 +706,6 @@ components/hal/dac_hal.c
 components/hal/ds_hal.c
 components/hal/esp32/include/hal/aes_ll.h
 components/hal/esp32/include/hal/mpu_ll.h
-components/hal/esp32/include/hal/rwdt_ll.h
 components/hal/esp32/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32/include/hal/touch_sensor_hal.h
 components/hal/esp32/include/hal/trace_ll.h
@@ -748,7 +745,6 @@ components/hal/esp32s2/include/hal/trace_ll.h
 components/hal/esp32s2/include/hal/usb_ll.h
 components/hal/esp32s3/include/hal/aes_ll.h
 components/hal/esp32s3/include/hal/mpu_ll.h
-components/hal/esp32s3/include/hal/rwdt_ll.h
 components/hal/esp32s3/include/hal/sha_ll.h
 components/hal/esp32s3/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32s3/include/hal/uhci_ll.h
@@ -775,7 +771,6 @@ components/hal/include/hal/wdt_hal.h
 components/hal/include/hal/wdt_types.h
 components/hal/ledc_hal_iram.c
 components/hal/mpu_hal.c
-components/hal/platform_port/include/hal/check.h
 components/hal/platform_port/include/hal/misc.h
 components/hal/rtc_io_hal.c
 components/hal/sha_hal.c
@@ -986,7 +981,6 @@ components/soc/esp32/include/soc/rtc_io_struct.h
 components/soc/esp32/include/soc/sdio_slave_pins.h
 components/soc/esp32/include/soc/sdmmc_pins.h
 components/soc/esp32/include/soc/sdmmc_reg.h
-components/soc/esp32/include/soc/sdmmc_struct.h
 components/soc/esp32/include/soc/sens_reg.h
 components/soc/esp32/include/soc/sens_struct.h
 components/soc/esp32/include/soc/slc_reg.h
@@ -999,7 +993,6 @@ components/soc/esp32/include/soc/spi_struct.h
 components/soc/esp32/include/soc/syscon_reg.h
 components/soc/esp32/include/soc/syscon_struct.h
 components/soc/esp32/include/soc/touch_sensor_channel.h
-components/soc/esp32/include/soc/twai_struct.h
 components/soc/esp32/include/soc/uart_pins.h
 components/soc/esp32/include/soc/uart_reg.h
 components/soc/esp32/include/soc/uart_struct.h
@@ -1043,7 +1036,6 @@ components/soc/esp32c3/include/soc/system_reg.h
 components/soc/esp32c3/include/soc/system_struct.h
 components/soc/esp32c3/include/soc/systimer_reg.h
 components/soc/esp32c3/include/soc/systimer_struct.h
-components/soc/esp32c3/include/soc/twai_struct.h
 components/soc/esp32c3/include/soc/uart_pins.h
 components/soc/esp32c3/include/soc/uart_reg.h
 components/soc/esp32c3/include/soc/uhci_reg.h
@@ -1076,7 +1068,6 @@ components/soc/esp32h2/include/soc/rtc_i2c_struct.h
 components/soc/esp32h2/include/soc/sensitive_struct.h
 components/soc/esp32h2/include/soc/soc_pins.h
 components/soc/esp32h2/include/soc/spi_mem_reg.h
-components/soc/esp32h2/include/soc/spi_mem_struct.h
 components/soc/esp32h2/include/soc/spi_pins.h
 components/soc/esp32h2/include/soc/spi_reg.h
 components/soc/esp32h2/include/soc/spi_struct.h
@@ -1084,7 +1075,6 @@ components/soc/esp32h2/include/soc/syscon_reg.h
 components/soc/esp32h2/include/soc/syscon_struct.h
 components/soc/esp32h2/include/soc/system_reg.h
 components/soc/esp32h2/include/soc/system_struct.h
-components/soc/esp32h2/include/soc/twai_struct.h
 components/soc/esp32h2/include/soc/uart_pins.h
 components/soc/esp32h2/include/soc/usb_serial_jtag_reg.h
 components/soc/esp32h2/include/soc/usb_serial_jtag_struct.h
@@ -1132,7 +1122,6 @@ components/soc/esp32s2/include/soc/systimer_reg.h
 components/soc/esp32s2/include/soc/systimer_struct.h
 components/soc/esp32s2/include/soc/touch_sensor_channel.h
 components/soc/esp32s2/include/soc/touch_sensor_pins.h
-components/soc/esp32s2/include/soc/twai_struct.h
 components/soc/esp32s2/include/soc/uart_pins.h
 components/soc/esp32s2/include/soc/uart_reg.h
 components/soc/esp32s2/include/soc/uhci_reg.h
@@ -1141,7 +1130,6 @@ components/soc/esp32s2/include/soc/usb_struct.h
 components/soc/esp32s2/include/soc/usb_types.h
 components/soc/esp32s2/include/soc/usb_wrap_reg.h
 components/soc/esp32s2/include/soc/usb_wrap_struct.h
-components/soc/esp32s2/include/soc/usbh_struct.h
 components/soc/esp32s2/include/soc/wdev_reg.h
 components/soc/esp32s2/ledc_periph.c
 components/soc/esp32s2/uart_periph.c
@@ -1192,7 +1180,6 @@ components/soc/esp32s3/include/soc/rtc_io_struct.h
 components/soc/esp32s3/include/soc/sdio_slave_pins.h
 components/soc/esp32s3/include/soc/sdmmc_pins.h
 components/soc/esp32s3/include/soc/sdmmc_reg.h
-components/soc/esp32s3/include/soc/sdmmc_struct.h
 components/soc/esp32s3/include/soc/sens_reg.h
 components/soc/esp32s3/include/soc/sensitive_reg.h
 components/soc/esp32s3/include/soc/sensitive_struct.h
@@ -1210,7 +1197,6 @@ components/soc/esp32s3/include/soc/systimer_struct.h
 components/soc/esp32s3/include/soc/touch_channel.h
 components/soc/esp32s3/include/soc/touch_sensor_caps.h
 components/soc/esp32s3/include/soc/twai_caps.h
-components/soc/esp32s3/include/soc/twai_struct.h
 components/soc/esp32s3/include/soc/uart_caps.h
 components/soc/esp32s3/include/soc/uart_pins.h
 components/soc/esp32s3/include/soc/uart_reg.h
@@ -1223,7 +1209,6 @@ components/soc/esp32s3/include/soc/usb_struct.h
 components/soc/esp32s3/include/soc/usb_types.h
 components/soc/esp32s3/include/soc/usb_wrap_reg.h
 components/soc/esp32s3/include/soc/usb_wrap_struct.h
-components/soc/esp32s3/include/soc/usbh_struct.h
 components/soc/esp32s3/include/soc/wdev_reg.h
 components/soc/esp32s3/interrupts.c
 components/soc/esp32s3/ledc_periph.c
