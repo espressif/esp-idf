@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "soc/soc_caps.h"
+#include "esp_assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +32,7 @@ typedef struct {
 } systimer_counter_value_t;
 
 /** @cond */
-_Static_assert(sizeof(systimer_counter_value_t) == 8, "systimer_counter_value_t should occupy 8 bytes in memory");
+ESP_STATIC_ASSERT(sizeof(systimer_counter_value_t) == 8, "systimer_counter_value_t should occupy 8 bytes in memory");
 /** @endcond */
 
 /**

@@ -28,12 +28,13 @@
 #define _OS_H
 
 #include <assert.h>
+#include "esp_assert.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if !defined __cplusplus
+#if !defined __cplusplus && !defined static_assert
 #define static_assert _Static_assert
 #endif
 

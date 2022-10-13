@@ -400,7 +400,6 @@ components/console/linenoise/linenoise.c
 components/console/linenoise/linenoise.h
 components/esp_eth/src/dm9051.h
 components/esp_eth/src/ksz8851.h
-components/esp_eth/src/openeth.h
 components/esp_eth/src/w5500.h
 components/esp_eth/test_apps/component_ut_test.py
 components/esp_eth/test_apps/main/esp_eth_test.c
@@ -500,7 +499,6 @@ components/esp_rom/include/esp32c3/rom/hmac.h
 components/esp_rom/include/esp32c3/rom/libc_stubs.h
 components/esp_rom/include/esp32c3/rom/rom_layout.h
 components/esp_rom/include/esp32c3/rom/rsa_pss.h
-components/esp_rom/include/esp32c3/rom/rtc.h
 components/esp_rom/include/esp32c3/rom/sha.h
 components/esp_rom/include/esp32c3/rom/tjpgd.h
 components/esp_rom/include/esp32c3/rom/uart.h
@@ -656,7 +654,6 @@ components/hal/aes_hal.c
 components/hal/ds_hal.c
 components/hal/esp32/include/hal/aes_ll.h
 components/hal/esp32/include/hal/mpu_ll.h
-components/hal/esp32/include/hal/rwdt_ll.h
 components/hal/esp32/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32/include/hal/touch_sensor_hal.h
 components/hal/esp32/include/hal/trace_ll.h
@@ -678,7 +675,6 @@ components/hal/esp32s2/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32s2/include/hal/trace_ll.h
 components/hal/esp32s2/include/hal/usb_ll.h
 components/hal/esp32s3/include/hal/mpu_ll.h
-components/hal/esp32s3/include/hal/rwdt_ll.h
 components/hal/esp32s3/include/hal/sha_ll.h
 components/hal/esp32s3/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32s3/include/hal/uhci_ll.h
@@ -702,7 +698,6 @@ components/hal/include/hal/usb_types_private.h
 components/hal/include/hal/wdt_types.h
 components/hal/ledc_hal_iram.c
 components/hal/mpu_hal.c
-components/hal/platform_port/include/hal/check.h
 components/hal/platform_port/include/hal/misc.h
 components/hal/rtc_io_hal.c
 components/hal/sha_hal.c
@@ -887,7 +882,6 @@ components/soc/esp32/include/soc/rtc_io_struct.h
 components/soc/esp32/include/soc/sdio_slave_pins.h
 components/soc/esp32/include/soc/sdmmc_pins.h
 components/soc/esp32/include/soc/sdmmc_reg.h
-components/soc/esp32/include/soc/sdmmc_struct.h
 components/soc/esp32/include/soc/sens_reg.h
 components/soc/esp32/include/soc/sens_struct.h
 components/soc/esp32/include/soc/slc_reg.h
@@ -1042,7 +1036,6 @@ components/soc/esp32s3/include/soc/rtc_io_struct.h
 components/soc/esp32s3/include/soc/sdio_slave_pins.h
 components/soc/esp32s3/include/soc/sdmmc_pins.h
 components/soc/esp32s3/include/soc/sdmmc_reg.h
-components/soc/esp32s3/include/soc/sdmmc_struct.h
 components/soc/esp32s3/include/soc/sens_reg.h
 components/soc/esp32s3/include/soc/sensitive_reg.h
 components/soc/esp32s3/include/soc/sensitive_struct.h

@@ -13,6 +13,7 @@ Host stack.
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_assert.h"
 #include "usb/usb_types_ch9.h"
 
 #ifdef __cplusplus
@@ -259,7 +260,7 @@ typedef union {
     } __attribute__((packed));
     uint8_t val[3];
 } mock_hid_mouse_report_t;
-_Static_assert(sizeof(mock_hid_mouse_report_t) == 3, "Size of HID mouse report incorrect");
+ESP_STATIC_ASSERT(sizeof(mock_hid_mouse_report_t) == 3, "Size of HID mouse report incorrect");
 
 void mock_hid_process_report(mock_hid_mouse_report_t *report, int iter);
 
