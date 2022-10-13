@@ -170,13 +170,13 @@ esp_err_t heap_caps_add_region(intptr_t start, intptr_t end)
 bool heap_caps_check_add_region_allowed(intptr_t heap_start, intptr_t heap_end, intptr_t start, intptr_t end)
 {
     /*
-     *  We assume that in any region, the "start" must be stictly less than the end.
+     *  We assume that in any region, the "start" must be strictly less than the end.
      *  Specially, the 3rd scenario can be allowed. For example, allocate memory from heap,
      *  then change the capability and call this function to create a new region for special
      *  application.
      *  This 'start = start' and 'end = end' scenario is incorrect because the same region
-     *  cannot be add twice. For example, add the .bss memory to region twice, if not do the
-     *  check, it will cause exception.
+     *  cannot be added twice. In fact, registering the same memory region as a heap twice
+     *  would cause a corruption and then an exception at runtime.
      *
      *  the existing heap region                                  s(tart)                e(nd)
      *                                                            |----------------------|
@@ -201,7 +201,7 @@ bool heap_caps_check_add_region_allowed(intptr_t heap_start, intptr_t heap_end, 
     bool condition_4 = start < heap_end && end > heap_end;            // if true then region not allowed
     bool condition_6 = start == heap_start && end == heap_end;        // if true then region not allowed
 
-    return (condition_2 || condition_4 || condition_6) ? false: true;
+    return !(condition_2 || condition_4 || condition_6);
 }
 
 esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, intptr_t end)
