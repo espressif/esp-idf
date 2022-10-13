@@ -39,28 +39,7 @@
 
 enum tlsf_config
 {
-	/* log2 of number of linear subdivisions of block sizes. Larger
-	** values require more memory in the control structure. Values of
-	** 4 or 5 are typical, 3 is for very small pools.
-	*/
-	SL_INDEX_COUNT_LOG2_MIN = 3,
-
 	/* All allocation sizes and addresses are aligned to 4 bytes. */
 	ALIGN_SIZE_LOG2 = 2,
 	ALIGN_SIZE = (1 << ALIGN_SIZE_LOG2),
-
-	/*
-	** We support allocations of sizes up to (1 << FL_INDEX_MAX) bits.
-	** However, because we linearly subdivide the second-level lists, and
-	** our minimum size granularity is 4 bytes, it doesn't make sense to
-	** create first-level lists for sizes smaller than SL_INDEX_COUNT * 4,
-	** or (1 << (SL_INDEX_COUNT_LOG2 + 2)) bytes, as there we will be
-	** trying to split size ranges into more slots than we have available.
-	** Instead, we calculate the minimum threshold size, and place all
-	** blocks below that size into the 0th first-level list.
-	** Values below are the absolute minimum to accept a pool addition
-	*/
-	FL_INDEX_MAX_MIN = 14, // For a less than 16kB pool
-	SL_INDEX_COUNT_MIN = (1 << SL_INDEX_COUNT_LOG2_MIN),
-	FL_INDEX_COUNT_MIN = (FL_INDEX_MAX_MIN - (SL_INDEX_COUNT_LOG2_MIN + ALIGN_SIZE_LOG2) + 1),
 };

@@ -78,13 +78,25 @@ typedef struct control_t
 	/* Empty lists point at this block to indicate they are free. */
 	block_header_t block_null;
 
-	/* Local parameter for the pool */
-	unsigned int fl_index_count;
-	unsigned int fl_index_shift;
-	unsigned int fl_index_max;
-	unsigned int sl_index_count;
-	unsigned int sl_index_count_log2;
-	unsigned int small_block_size;
+ 	/* Local parameter for the pool. Given the maximum
+	 * value of each field, all the following parameters
+	 * can fit on 4 bytes when using bitfields
+	 */
+	unsigned int fl_index_count : 5; // 5 cumulated bits
+	unsigned int fl_index_shift : 3; // 8 cumulated bits
+	unsigned int fl_index_max : 6; // 14 cumulated bits
+	unsigned int sl_index_count : 6; // 20 cumulated bits
+
+	/* log2 of number of linear subdivisions of block sizes. Larger
+	** values require more memory in the control structure. Values of
+	** 4 or 5 are typical.
+	*/
+	unsigned int sl_index_count_log2 : 3; // 23 cumulated bits
+	unsigned int small_block_size : 8; // 31 cumulated bits
+
+	/* size of the metadata ( size of control block,
+	 * sl_bitmap and blocks )
+	 */
 	size_t size;
 
 	/* Bitmaps for free lists. */
@@ -128,6 +140,15 @@ size_t tlsf_block_size_min(void);
 size_t tlsf_block_size_max(tlsf_t tlsf);
 size_t tlsf_pool_overhead(void);
 size_t tlsf_alloc_overhead(void);
+
+/**
+ * @brief Return the allocable size based on the size passed
+ * as parameter
+ *
+ * @param tlsf Pointer to the tlsf structure
+ * @param size The allocation size
+ * @return size_t The updated allocation size
+ */
 size_t tlsf_fit_size(tlsf_t tlsf, size_t size);
 
 /* Debugging. */
