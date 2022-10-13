@@ -755,8 +755,9 @@ typedef volatile struct spi_dev_s {
 extern spi_dev_t GPSPI2;   //FSPI
 extern spi_dev_t GPSPI3;   //HSPI
 
+#ifndef __cplusplus
 _Static_assert(sizeof(spi_dev_t)==0x400, "***invalid spi");
-
+#endif
 
 #ifdef __cplusplus
 }

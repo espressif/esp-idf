@@ -410,7 +410,9 @@ typedef volatile struct i2s_dev_s {
 } i2s_dev_t;
 extern i2s_dev_t I2S0;
 
+#ifndef __cplusplus
 _Static_assert(sizeof(i2s_dev_t)==0x100, "invalid i2s_dev_t size");
+#endif
 
 #ifdef __cplusplus
 }

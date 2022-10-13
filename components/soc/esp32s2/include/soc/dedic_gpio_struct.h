@@ -519,7 +519,9 @@ typedef struct {
     volatile dedic_gpio_intr_clr_reg_t gpio_intr_clr;
 } dedic_dev_t;
 
+#ifndef __cplusplus
 _Static_assert(sizeof(dedic_dev_t) == 0x30, "dedic_dev_t should occupy 0x30 bytes in memory");
+#endif
 
 extern dedic_dev_t DEDIC_GPIO;
 

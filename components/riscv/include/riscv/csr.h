@@ -36,6 +36,7 @@ extern "C" {
 #include <stdbool.h>
 #include <sys/param.h>
 #include "encoding.h"
+#include "esp_assert.h"
 
 /********************************************************
  Physical Memory Protection (PMP) register fields
@@ -60,8 +61,8 @@ extern "C" {
    register. The PMP_ENTRY_SET macro will do this.
  */
 #define PMPADDR_NAPOT(START, END) ({                                    \
-            _Static_assert(__builtin_popcount((END)-(START)) == 1, "Size must be a power of 2"); \
-            _Static_assert((START) % ((END)-(START)) == 0, "Start must be aligned to size"); \
+            ESP_STATIC_ASSERT(__builtin_popcount((END)-(START)) == 1, "Size must be a power of 2"); \
+            ESP_STATIC_ASSERT((START) % ((END)-(START)) == 0, "Start must be aligned to size"); \
             (((START)) | (((END)-(START)-1)>>1));                       \
         })
 

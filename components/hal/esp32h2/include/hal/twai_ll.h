@@ -85,7 +85,7 @@ typedef union {
     uint8_t bytes[13];
 } __attribute__((packed)) twai_ll_frame_buffer_t;
 
-_Static_assert(sizeof(twai_ll_frame_buffer_t) == 13, "TX/RX buffer type should be 13 bytes");
+ESP_STATIC_ASSERT(sizeof(twai_ll_frame_buffer_t) == 13, "TX/RX buffer type should be 13 bytes");
 
 /* ---------------------------- Mode Register ------------------------------- */
 
