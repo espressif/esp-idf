@@ -7,6 +7,7 @@
 #pragma once
 
 #include "soc/soc_caps.h"
+#include "esp_assert.h"
 #if SOC_MCPWM_SUPPORTED
 #include "esp_err.h"
 #include "soc/soc.h"
@@ -74,7 +75,7 @@ typedef enum {
     MCPWM_UNIT_MAX, /*!<Max number of MCPWM units*/
 } mcpwm_unit_t;
 
-_Static_assert(MCPWM_UNIT_MAX == SOC_MCPWM_GROUPS, "MCPWM unit number not equal to chip capabilities");
+ESP_STATIC_ASSERT(MCPWM_UNIT_MAX == SOC_MCPWM_GROUPS, "MCPWM unit number not equal to chip capabilities");
 
 /**
  * @brief Select MCPWM timer

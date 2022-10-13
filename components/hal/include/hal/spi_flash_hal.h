@@ -25,6 +25,7 @@
 #include "hal/spi_flash_ll.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
+#include "soc/soc_memory_types.h"
 #include "esp_assert.h"
 
 /* Hardware host-specific constants */
