@@ -1222,9 +1222,11 @@ BOOLEAN bta_av_hdl_event(BT_HDR *p_msg)
     } else {
         APPL_TRACE_VERBOSE("handle=0x%x\n", p_msg->layer_specific);
         tBTA_AV_SCB *p_scb = bta_av_hndl_to_scb(p_msg->layer_specific);
-        p_scb->disc_rsn = p_msg->offset;
-        /* stream state machine events */
-        bta_av_ssm_execute(p_scb, p_msg->event, (tBTA_AV_DATA *) p_msg);
+        if (p_scb) {
+            p_scb->disc_rsn = p_msg->offset;
+            /* stream state machine events */
+            bta_av_ssm_execute(p_scb, p_msg->event, (tBTA_AV_DATA *) p_msg);
+        }
     }
     return TRUE;
 }
