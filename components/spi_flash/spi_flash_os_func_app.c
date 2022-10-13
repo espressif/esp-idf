@@ -245,6 +245,8 @@ static bool use_bus_lock(int host_id)
 #endif
 }
 
+// This function is only called by users usually via `spi_bus_add_flash_device` to initialise os functions.
+// System will initialise them via `esp_flash_app_enable_os_functions`
 esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id, spi_bus_lock_dev_handle_t dev_handle)
 {
     if (use_bus_lock(host_id) && !dev_handle) {
@@ -317,7 +319,7 @@ esp_err_t esp_flash_app_enable_os_functions(esp_flash_t* chip)
 {
     main_flash_arg = (app_func_arg_t) {
         .dev_lock = g_spi_lock_main_flash_dev,
-        .no_protect = false,
+        .no_protect = false, // Required for the main flash chip
     };
     chip->os_func = &esp_flash_spi1_default_os_functions;
     chip->os_func_data = &main_flash_arg;
