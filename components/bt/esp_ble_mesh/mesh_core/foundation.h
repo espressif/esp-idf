@@ -120,6 +120,7 @@ extern "C" {
 #define STATUS_CANNOT_SET                  0x0f
 #define STATUS_UNSPECIFIED                 0x10
 #define STATUS_INVALID_BINDING             0x11
+#define STATUS_FAILURE                     0x12
 
 enum {
     BLE_MESH_VA_CHANGED,    /* Label information changed */

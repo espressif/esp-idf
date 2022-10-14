@@ -1,4 +1,4 @@
-/*
+//*
  * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -697,6 +697,126 @@ typedef struct {
     uint8_t  kr_phase;          /*!< New Key Refresh Phase Transition */
 } esp_ble_mesh_state_change_cfg_kr_phase_set_t;
 
+typedef struct
+{
+    uint8_t friend_state; /*!< The friend state value */
+} esp_ble_mesh_state_change_cfg_friend_set_t;
+
+/** Parameters of Config Relay State */
+typedef struct
+{
+    uint8_t relay;            /*!< The relay value */
+    uint8_t relay_retransmit; /*!< The relay retransmit value */
+} esp_ble_mesh_state_change_cfg_relay_set_t;
+
+/** Parameters of Config GATT Proxy State */
+typedef struct
+{
+    uint8_t gatt_proxy; /*!< The GATT Proxy state value */
+} esp_ble_mesh_state_change_cfg_gatt_proxy_set_t;
+
+/** Parameters of Config Default TTL Set. */
+typedef struct
+{
+    uint8_t ttl; /*!< The default TTL state value */
+} esp_ble_mesh_state_change_cfg_default_ttl_set_t;
+
+/** Parameters of Config Beacon Set. */
+typedef struct
+{
+    uint8_t beacon; /*!< New Secure Network Beacon state */
+} esp_ble_mesh_state_change_cfg_beacon_set_t;
+
+/** Parameters of Config Model Subscription Overwrite. */
+typedef struct
+{
+    uint16_t element_addr; /*!< The element address */
+    uint16_t sub_addr;     /*!< The address to be added to the Subscription List */
+    uint16_t model_id;     /*!< The model id */
+    uint16_t company_id;   /*!< The company id, if not a vendor model, shall set to 0xFFFF */
+} esp_ble_mesh_state_change_cfg_model_sub_overwrite_t;
+
+/** Parameters of Config Model Subscription Virtual Address Add. */
+typedef struct
+{
+    uint16_t element_addr;  /*!< The element address */
+    uint8_t label_uuid[16]; /*!< The Label UUID of the virtual address to be added to the Subscription List */
+    uint16_t model_id;      /*!< The model id */
+    uint16_t company_id;    /*!< The company id, if not a vendor model, shall set to 0xFFFF */
+} esp_ble_mesh_state_change_cfg_model_sub_va_add_t;
+
+/** Parameters of Config Model Subscription Virtual Address Delete. */
+typedef struct
+{
+    uint16_t element_addr;  /*!< The element address */
+    uint8_t label_uuid[16]; /*!< The Label UUID of the virtual address to be removed from the Subscription List */
+    uint16_t model_id;      /*!< The model id */
+    uint16_t company_id;    /*!< The company id, if not a vendor model, shall set to 0xFFFF */
+} esp_ble_mesh_state_change_cfg_model_sub_va_delete_t;
+
+/** Parameters of Config Model Subscription Virtual Address Overwrite. */
+typedef struct
+{
+    uint16_t element_addr;  /*!< The element address */
+    uint8_t label_uuid[16]; /*!< The Label UUID of the virtual address to be added to the Subscription List */
+    uint16_t model_id;      /*!< The model id */
+    uint16_t company_id;    /*!< The company id, if not a vendor model, shall set to 0xFFFF */
+} esp_ble_mesh_state_change_cfg_model_sub_va_overwrite_t;
+
+/** Parameters of Config Model Heartbeat Publication Set. */
+typedef struct
+{
+    uint16_t dst;     /*!< Destination address for Heartbeat messages */
+    uint8_t count;    /*!< Number of Heartbeat messages to be sent */
+    uint8_t period;   /*!< Period for sending Heartbeat messages */
+    uint8_t ttl;      /*!< TTL to be used when sending Heartbeat messages */
+    uint16_t feature; /*!< Bit field indicating features that trigger Heartbeat messages when changed */
+    uint16_t net_idx; /*!< NetKey Index */
+} esp_ble_mesh_state_change_cfg_heartbeat_pub_set_t;
+
+/** Parameters of Config Model Heartbeat Subscription Set. */
+typedef struct
+{
+    uint16_t src;   /*!< Source address for Heartbeat messages */
+    uint16_t dst;   /*!< Destination address for Heartbeat messages */
+    uint8_t period; /*!< Period for receiving Heartbeat messages */
+} esp_ble_mesh_state_change_cfg_heartbeat_sub_set_t;
+
+/** Parameters of Config Model Publication Virtual Address Set. */
+typedef struct
+{
+    uint16_t element_addr;      /*!< The element address */
+    uint8_t label_uuid[16];     /*!< Value of the Label UUID publish address */
+    uint16_t publish_app_idx;   /*!< Index of the application key */
+    bool cred_flag;             /*!< Value of the Friendship Credential Flag */
+    uint8_t publish_ttl;        /*!< Default TTL value for the publishing messages */
+    uint8_t publish_period;     /*!< Period for periodic status publishing */
+    uint8_t publish_retransmit; /*!< Number of retransmissions and number of 50-millisecond steps between retransmissions */
+    uint16_t model_id;          /*!< The model id */
+    uint16_t company_id;        /*!< The company id, if not a vendor model, shall set to 0xFFFF */
+} esp_ble_mesh_state_change_cfg_model_pub_va_set_t;
+
+/** Parameters of Config Model Subscription Delete All. */
+typedef struct
+{
+    uint16_t element_addr; /*!< The element address */
+    uint16_t model_id;     /*!< The model id */
+    uint16_t company_id;   /*!< The company id, if not a vendor model, shall set to 0xFFFF */
+} esp_ble_mesh_state_change_cfg_model_sub_delete_all_t;
+
+/** Parameters of Config Node Identity Set. */
+typedef struct
+{
+    uint16_t net_idx; /*!< The network key index */
+    uint8_t identity; /*!< New Node Identity state */
+} esp_ble_mesh_state_change_cfg_node_identity_set_t;
+
+/** Parameters of Config Network Transmit Set. */
+typedef struct
+{
+    uint8_t net_transmit; /*!< Network Transmit State */
+} esp_ble_mesh_state_change_cfg_net_transmit_set_t;
+    
 /**
  * @brief Configuration Server model state change value union
  */
@@ -716,6 +836,21 @@ typedef union {
     esp_ble_mesh_state_change_cfg_model_app_bind_t      mod_app_bind;       /*!< Config Model App Bind */
     esp_ble_mesh_state_change_cfg_model_app_unbind_t    mod_app_unbind;     /*!< Config Model App Unbind */
     esp_ble_mesh_state_change_cfg_kr_phase_set_t        kr_phase_set;       /*!< Config Key Refresh Phase Set */
+    esp_ble_mesh_state_change_cfg_friend_set_t          friend_set;         /*!< Config Friend Set */
+    esp_ble_mesh_state_change_cfg_relay_set_t           relay_set;          /*!< Config Relay Set */
+    esp_ble_mesh_state_change_cfg_gatt_proxy_set_t      gatt_proxy_set;     /*!< Config Gatt Proxy Set */
+    esp_ble_mesh_state_change_cfg_default_ttl_set_t     default_ttl_set;    /*!< Config Default TTL Set */
+    esp_ble_mesh_state_change_cfg_beacon_set_t          beacon_set;         /*!< Config Beaconing Set */
+    esp_ble_mesh_state_change_cfg_model_sub_overwrite_t mod_sub_overwrite;  /*!< Config Model Subscription Overwrite Set */
+    //esp_ble_mesh_state_change_cfg_model_sub_va_add_t    mod_sub_va_add;     /*!< Config Model Subscription Virtual Addr Add Set */
+    //esp_ble_mesh_state_change_cfg_model_sub_va_delete_t mod_sub_va_delete;  /*!< Config Model Subscription Virtual Addr Delete Set */
+    //esp_ble_mesh_state_change_cfg_model_sub_va_overwrite_t mod_sub_va_overwrite; /*!< Config Model Subscription Virtual Addr Overwrite Set */
+    //esp_ble_mesh_state_change_cfg_model_pub_va_set_t    mod_pub_va_set;     /*!< Config Model Publication Virtual Addr Set */
+    esp_ble_mesh_state_change_cfg_heartbeat_pub_set_t   heartbeat_pub_set;  /*!< Config Heartbeat Publication Set */
+    esp_ble_mesh_state_change_cfg_heartbeat_sub_set_t   heartbeat_sub_set;  /*!< Config Heartbeat Subscription Set */
+    esp_ble_mesh_state_change_cfg_model_sub_delete_all_t mod_sub_delete_all;/*!< Config Model Subscription Delete All Set */
+    esp_ble_mesh_state_change_cfg_node_identity_set_t   node_identity_set;  /*!< Config Node Identity Set */
+    esp_ble_mesh_state_change_cfg_net_transmit_set_t    net_transmit_set;   /*!< Config Net Transmit Set */
 } esp_ble_mesh_cfg_server_state_change_t;
 
 /**
