@@ -261,3 +261,7 @@
         -
             re_variables: ['lan8720']
             hint_variables: ['esp_eth_phy_new_lan8720', 'esp_eth_phy_new_lan87xx']
+
+-
+    re: "`iram0_0_seg' overflowed"
+    hint: "The applications static IRAM usage is larger than the available IRAM size.\nFor more information on how to reduze IRAM usage run 'idf.py docs -sp api-guides/performance/ram-usage.html#optimizing-iram-usage' "
