@@ -60,10 +60,7 @@ void bootloader_console_init(void)
     // Some constants to make the following code less upper-case
     const int uart_tx_gpio = CONFIG_ESP_CONSOLE_UART_TX_GPIO;
     const int uart_rx_gpio = CONFIG_ESP_CONSOLE_UART_RX_GPIO;
-    // Switch to the new UART (this just changes UART number used for esp_rom_printf in ROM code).
-#if ESP_ROM_SUPPORT_MULTIPLE_UART
-    esp_rom_uart_set_as_console(uart_num);
-#endif
+
     // If console is attached to UART1 or if non-default pins are used,
     // need to reconfigure pins using GPIO matrix
     if (uart_num != 0 ||

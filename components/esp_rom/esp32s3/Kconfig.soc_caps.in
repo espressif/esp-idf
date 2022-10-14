@@ -15,10 +15,6 @@ config ESP_ROM_HAS_JPEG_DECODE
     bool
     default y
 
-config ESP_ROM_SUPPORT_MULTIPLE_UART
-    bool
-    default y
-
 config ESP_ROM_UART_CLK_IS_XTAL
     bool
     default y
