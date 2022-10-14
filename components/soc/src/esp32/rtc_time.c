@@ -49,7 +49,10 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN, 1);
     }
 
+    bool clk8m_enabled = rtc_clk_8m_enabled();
+    bool clk8md256_enabled = rtc_clk_8md256_enabled();
     if (cal_clk == RTC_CAL_8MD256) {
+        rtc_clk_8m_enable(true, true);
         SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN);
     }
     /* Prepare calibration */
@@ -100,6 +103,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
 
     if (cal_clk == RTC_CAL_8MD256) {
         CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN);
+        rtc_clk_8m_enable(clk8m_enabled, clk8md256_enabled);
     }
     if (timeout_us == 0) {
         /* timed out waiting for calibration */
