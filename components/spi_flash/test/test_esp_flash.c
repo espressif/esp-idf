@@ -7,6 +7,7 @@
 #include <unity.h>
 #include "esp_flash.h"
 #include "esp_private/spi_common_internal.h"
+#include "spi_flash_mmap.h"
 #include "esp_flash_spi_init.h"
 #include "memspi_host_driver.h"
 #include <esp_attr.h>

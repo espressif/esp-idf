@@ -238,10 +238,10 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition, size_t off
 {
     assert(partition != NULL);
 
-    if (offset > partition->size || offset % SPI_FLASH_SEC_SIZE != 0) {
+    if (offset > partition->size || offset % partition->erase_size != 0) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (offset + size > partition->size || size % SPI_FLASH_SEC_SIZE != 0) {
+    if (offset + size > partition->size || size % partition->erase_size != 0) {
         return ESP_ERR_INVALID_SIZE;
     }
 

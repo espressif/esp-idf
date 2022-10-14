@@ -20,6 +20,8 @@
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_spiflash.h"
+#include "esp_flash.h"
+
 #if CONFIG_IDF_TARGET_ESP32
 // Used for rom_fix function
 #include "esp32/rom/spi_flash.h"

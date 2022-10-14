@@ -13,6 +13,7 @@
 #include "esp_private/esp_clk.h"
 #include "sdkconfig.h"
 #include "esp_cpu.h"
+#include "spi_flash_mmap.h"
 
 
 TEST_GROUP(wear_levelling);

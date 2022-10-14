@@ -49,7 +49,7 @@ TEST_CASE("Can write, read, mmap partition", "[partition][ignore]")
     const esp_partition_t *p = get_test_data_partition();
     printf("Using partition %s at 0x%x, size 0x%x\n", p->label, p->address, p->size);
     TEST_ASSERT_NOT_NULL(p);
-    const size_t max_size = 2 * SPI_FLASH_SEC_SIZE;
+    const size_t max_size = 2 * p->erase_size;
     uint8_t *data = (uint8_t *) malloc(max_size);
     TEST_ASSERT_NOT_NULL(data);
 
@@ -85,10 +85,10 @@ TEST_CASE("Can write, read, mmap partition", "[partition][ignore]")
     free(data);
 
     const uint32_t *mmap_data;
-    spi_flash_mmap_handle_t mmap_handle;
+    esp_partition_mmap_handle_t mmap_handle;
     size_t begin = 3000;
     size_t size = 64000; //chosen so size is smaller than 64K but the mmap straddles 2 MMU blocks
-    TEST_ASSERT_EQUAL(ESP_OK, esp_partition_mmap(p, begin, size, SPI_FLASH_MMAP_DATA,
+    TEST_ASSERT_EQUAL(ESP_OK, esp_partition_mmap(p, begin, size, ESP_PARTITION_MMAP_DATA,
                       (const void **)&mmap_data, &mmap_handle));
     srand(0);
     for (size_t offset = 0; offset < p->size; offset += block_size) {
@@ -107,5 +107,5 @@ TEST_CASE("Can write, read, mmap partition", "[partition][ignore]")
         }
     }
 
-    spi_flash_munmap(mmap_handle);
+    esp_partition_munmap(mmap_handle);
 }

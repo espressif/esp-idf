@@ -1,10 +1,5 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/spi_flash/host_test/partition_api_test:
-  enable:
-    - if: IDF_TARGET == "linux"
-      reason: only test on linux
-
 components/spi_flash/test_apps/esp_flash:
   disable:
     - if: IDF_TARGET == "esp32c6"

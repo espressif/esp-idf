@@ -28,6 +28,7 @@
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "test_esp_flash_def.h"
+#include "spi_flash_mmap.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"

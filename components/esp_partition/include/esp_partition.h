@@ -11,8 +11,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "esp_err.h"
-#include "esp_flash.h"
-#include "spi_flash_mmap.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,6 +21,22 @@ extern "C" {
  * @brief Partition APIs
  */
 
+/** @cond */
+typedef struct esp_flash_t esp_flash_t;
+/** @endcond */
+
+/**
+ * @brief Enumeration which specifies memory space requested in an mmap call
+ */
+typedef enum {
+    ESP_PARTITION_MMAP_DATA,    /**< map to data memory (Vaddr0), allows byte-aligned access, 4 MB total */
+    ESP_PARTITION_MMAP_INST,    /**< map to instruction memory (Vaddr1-3), allows only 4-byte-aligned access, 11 MB total */
+} esp_partition_mmap_memory_t;
+
+/**
+ * @brief Opaque handle for memory region obtained from esp_partition_mmap.
+ */
+typedef uint32_t esp_partition_mmap_handle_t;
 
 /**
  * @brief Partition type
@@ -114,6 +128,7 @@ typedef struct {
     esp_partition_subtype_t subtype;    /*!< partition subtype */
     uint32_t address;                   /*!< starting address of the partition in flash */
     uint32_t size;                      /*!< size of the partition, in bytes */
+    uint32_t erase_size;                /*!< size the erase operation should be aligned to */
     char label[17];                     /*!< partition label, zero-terminated ASCII string */
     bool encrypted;                     /*!< flag is set to true if partition is encrypted */
 } esp_partition_t;
@@ -318,9 +333,9 @@ esp_err_t esp_partition_write_raw(const esp_partition_t* partition,
  *                  esp_partition_find_first or esp_partition_get.
  *                  Must be non-NULL.
  * @param offset Offset from the beginning of partition where erase operation
- *               should start. Must be aligned to 4 kilobytes.
+ *               should start. Must be aligned to partition->erase_size.
  * @param size Size of the range which should be erased, in bytes.
- *                   Must be divisible by 4 kilobytes.
+ *                   Must be divisible by partition->erase_size.
  *
  * @return ESP_OK, if the range was erased successfully;
  *         ESP_ERR_INVALID_ARG, if iterator or dst are NULL;
@@ -342,7 +357,7 @@ esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
  * requested offset (not necessarily to the beginning of mmap-ed region).
  *
  * To release mapped memory, pass handle returned via out_handle argument to
- * spi_flash_munmap function.
+ * esp_partition_munmap function.
  *
  * @param partition Pointer to partition structure obtained using
  *                  esp_partition_find_first or esp_partition_get.
@@ -351,13 +366,25 @@ esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
  * @param size Size of the area to be mapped.
  * @param memory  Memory space where the region should be mapped
  * @param out_ptr  Output, pointer to the mapped memory region
- * @param out_handle  Output, handle which should be used for spi_flash_munmap call
+ * @param out_handle  Output, handle which should be used for esp_partition_munmap call
  *
  * @return ESP_OK, if successful
  */
 esp_err_t esp_partition_mmap(const esp_partition_t* partition, size_t offset, size_t size,
-                             spi_flash_mmap_memory_t memory,
-                             const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
+                             esp_partition_mmap_memory_t memory,
+                             const void** out_ptr, esp_partition_mmap_handle_t* out_handle);
+
+/**
+ * @brief Release region previously obtained using esp_partition_mmap
+ *
+ * @note Calling this function will not necessarily unmap memory region.
+ *       Region will only be unmapped when there are no other handles which
+ *       reference this region. In case of partially overlapping regions
+ *       it is possible that memory will be unmapped partially.
+ *
+ * @param handle  Handle obtained from spi_flash_mmap
+ */
+void esp_partition_munmap(esp_partition_mmap_handle_t handle);
 
 /**
  * @brief Get SHA-256 digest for required partition.

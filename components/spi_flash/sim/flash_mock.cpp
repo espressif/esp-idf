@@ -1,11 +1,8 @@
-#include "SpiFlash.h"
-
 #include <string.h>
 #include <stdlib.h>
 
+#include "SpiFlash.h"
 #include "spi_flash_mmap.h"
-#include "esp_partition.h"
-
 #include "esp_err.h"
 #include "esp_rom_spiflash.h"
 #include "esp_flash.h"

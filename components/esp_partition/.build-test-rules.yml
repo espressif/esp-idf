@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_partition/host_test/partition_api_test:
+  enable:
+    - if: IDF_TARGET == "linux"
+      reason: only test on linux

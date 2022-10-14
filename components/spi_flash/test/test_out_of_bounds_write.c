@@ -3,6 +3,7 @@
 #include "unity.h"
 #include "spi_flash_mmap.h"
 #include "esp_ota_ops.h"
+#include "esp_flash.h"
 
 #if CONFIG_SPI_FLASH_DANGEROUS_WRITE_ABORTS || CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS
 
