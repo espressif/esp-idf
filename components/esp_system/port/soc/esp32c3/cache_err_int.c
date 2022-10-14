@@ -58,7 +58,7 @@ void esp_cache_err_int_init(void)
     intr_matrix_set(core_id, ETS_CACHE_CORE0_ACS_INTR_SOURCE, ETS_CACHEERR_INUM);
 
     /* Set the type and priority to cache error interrupts. */
-    esprv_intc_int_set_type(BIT(ETS_CACHEERR_INUM), INTR_TYPE_LEVEL);
+    esprv_intc_int_set_type(ETS_CACHEERR_INUM, INTR_TYPE_LEVEL);
     esprv_intc_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
     /* On the hardware side, stat by clearing all the bits reponsible for
