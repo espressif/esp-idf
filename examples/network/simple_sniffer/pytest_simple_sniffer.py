@@ -2,13 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import pytest
+from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
 
 
-def _sniffer_packets_check(dut: Dut, packet_num: int) -> None:
+def _sniffer_packets_check(dut: Dut, channel: int, packet_num: int) -> None:
     dut.write('pcap --open -f simple-sniffer')
     dut.expect('cmd_pcap: open file successfully')
-    dut.write(f'sniffer -i wlan -c 2 -n {packet_num}')
+    dut.write(f'sniffer -i wlan -c {channel} -n {packet_num}')
     dut.expect(f'cmd_sniffer: {packet_num} packages will be captured')
     dut.expect('cmd_sniffer: start WiFi promiscuous ok')
     dut.expect('cmd_sniffer: stop promiscuous ok')
@@ -43,8 +44,9 @@ def _sniffer_packets_check(dut: Dut, packet_num: int) -> None:
 ], indirect=True)
 def test_examples_simple_sniffer(dut: Dut) -> None:
     dut.expect('sniffer>')
+    channel = get_env_config_variable('wifi_ap', 'sniffer_channel', default=1)
     # Sniffer multiple times with few packets
     for _ in range(3):
-        _sniffer_packets_check(dut, 5)
+        _sniffer_packets_check(dut, channel, 5)
     dut.write('')
     dut.expect('sniffer>')
