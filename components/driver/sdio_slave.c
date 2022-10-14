@@ -230,6 +230,7 @@ static esp_err_t init_context(const sdio_slave_config_t *config)
 
     context.hal->sending_mode = config->sending_mode;
     context.hal->timing = config->timing;
+    context.hal->no_highspeed = (config->flags & SDIO_SLAVE_FLAG_DEFAULT_SPEED) == SDIO_SLAVE_FLAG_DEFAULT_SPEED;
     context.hal->send_queue_size = config->send_queue_size;
     context.hal->recv_buffer_size = config->recv_buffer_size;
     //initialize ringbuffer resources
@@ -312,7 +313,6 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
     periph_module_enable(PERIPH_SDIO_SLAVE_MODULE);
 
     sdio_slave_hal_hw_init(context.hal);
-
     return ESP_OK;
 }
 
