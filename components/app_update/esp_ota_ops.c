@@ -14,7 +14,6 @@
 
 #include "esp_err.h"
 #include "esp_partition.h"
-#include "spi_flash_mmap.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
@@ -84,16 +83,16 @@ static const esp_partition_t *read_otadata(esp_ota_select_entry_t *two_otadata)
         return NULL;
     }
 
-    spi_flash_mmap_handle_t ota_data_map;
+    esp_partition_mmap_handle_t ota_data_map;
     const void *result = NULL;
-    esp_err_t err = esp_partition_mmap(otadata_partition, 0, otadata_partition->size, SPI_FLASH_MMAP_DATA, &result, &ota_data_map);
+    esp_err_t err = esp_partition_mmap(otadata_partition, 0, otadata_partition->size, ESP_PARTITION_MMAP_DATA, &result, &ota_data_map);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "mmap otadata filed. Err=0x%8x", err);
         return NULL;
     } else {
         memcpy(&two_otadata[0], result, sizeof(esp_ota_select_entry_t));
         memcpy(&two_otadata[1], result + SPI_FLASH_SEC_SIZE, sizeof(esp_ota_select_entry_t));
-        spi_flash_munmap(ota_data_map);
+        esp_partition_munmap(ota_data_map);
     }
     return otadata_partition;
 }

@@ -22,6 +22,7 @@
 #include "esp_partition.h"
 #include "ff.h"
 #include "esp_rom_sys.h"
+#include "spi_flash_mmap.h"
 
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

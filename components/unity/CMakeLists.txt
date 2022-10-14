@@ -45,8 +45,8 @@ endif()
 
 if(NOT "${target}" STREQUAL "linux")
     target_compile_definitions(${COMPONENT_LIB} PUBLIC
-        -DUNITY_INCLUDE_CONFIG_H
-    )
+            -DUNITY_INCLUDE_CONFIG_H
+            )
 endif()
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-const-variable)

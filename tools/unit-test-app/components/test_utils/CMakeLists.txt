@@ -25,6 +25,6 @@ endif()
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS include
                     PRIV_INCLUDE_DIRS private_include
-                    REQUIRES spi_flash idf_test cmock
+                    REQUIRES esp_partition idf_test cmock
                     PRIV_REQUIRES perfmon driver esp_netif)
 target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

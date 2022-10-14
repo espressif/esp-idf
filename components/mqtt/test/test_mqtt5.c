@@ -17,6 +17,7 @@
 #include "test_mqtt5_client_broker.h"
 #include "test_mqtt_connection.h"
 #include "esp_mac.h"
+#include "spi_flash_mmap.h"
 
 static esp_mqtt5_user_property_item_t user_property_arr[3] = {
     {"board", "esp32"},

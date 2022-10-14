@@ -8,6 +8,7 @@
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_flash_spi_init.h"
+#include "spi_flash_mmap.h"
 
 #include "test/test_common_spi.h"
 #include "unity.h"

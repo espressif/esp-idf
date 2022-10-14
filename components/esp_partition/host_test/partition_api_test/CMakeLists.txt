@@ -7,3 +7,5 @@ set(COMPONENTS main)
 list(APPEND EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/tools/mocks/freertos/")
 
 project(partition_api_test)
+
+add_dependencies(partition_api_test.elf partition-table)

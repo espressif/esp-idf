@@ -207,7 +207,7 @@ INPUT = \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash_spi_init.h \
-    $(PROJECT_PATH)/components/spi_flash/include/esp_partition.h \
+    $(PROJECT_PATH)/components/esp_partition/include/esp_partition.h \
     $(PROJECT_PATH)/components/spi_flash/include/spi_flash_mmap.h \
     $(PROJECT_PATH)/components/spiffs/include/esp_spiffs.h \
     $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
