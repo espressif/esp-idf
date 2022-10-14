@@ -112,7 +112,7 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
     cap_timer->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     cap_timer->fsm = MCPWM_CAP_TIMER_FSM_INIT;
     *ret_cap_timer = cap_timer;
-    ESP_LOGD(TAG, "new capture timer at %p, in group (%d)", cap_timer, group_id);
+    ESP_LOGD(TAG, "new capture timer at %p, in group (%d), resolution %"PRIu32, cap_timer, group_id, cap_timer->resolution_hz);
     return ESP_OK;
 
 err:

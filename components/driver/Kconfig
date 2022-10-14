@@ -352,6 +352,14 @@ menu "Driver Configurations"
                 cache misses, and also be able to run whilst the cache is disabled.
                 (e.g. SPI Flash write)
 
+        config MCPWM_CTRL_FUNC_IN_IRAM
+            bool "Place MCPWM control functions into IRAM"
+            default n
+            help
+                Place MCPWM control functions (like set_compare_value) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+                Enabling this option can improve driver performance as well.
+
         config MCPWM_SUPPRESS_DEPRECATE_WARN
             bool "Suppress leagcy driver deprecated warning"
             default n

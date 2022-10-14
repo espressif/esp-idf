@@ -124,12 +124,12 @@ esp_err_t mcpwm_del_comparator(mcpwm_cmpr_handle_t cmpr)
 
 esp_err_t mcpwm_comparator_set_compare_value(mcpwm_cmpr_handle_t cmpr, uint32_t cmp_ticks)
 {
-    ESP_RETURN_ON_FALSE(cmpr, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(cmpr, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     mcpwm_oper_t *oper = cmpr->oper;
     mcpwm_group_t *group = oper->group;
     mcpwm_timer_t *timer = oper->timer;
-    ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_STATE, TAG, "timer and operator are not connected");
-    ESP_RETURN_ON_FALSE(cmp_ticks < timer->peak_ticks, ESP_ERR_INVALID_ARG, TAG, "compare value out of range");
+    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_STATE, TAG, "timer and operator are not connected");
+    ESP_RETURN_ON_FALSE_ISR(cmp_ticks <= timer->peak_ticks, ESP_ERR_INVALID_ARG, TAG, "compare value out of range");
 
     portENTER_CRITICAL_SAFE(&cmpr->spinlock);
     mcpwm_ll_operator_set_compare_value(group->hal.dev, oper->oper_id, cmpr->cmpr_id, cmp_ticks);
@@ -181,6 +181,7 @@ static void IRAM_ATTR mcpwm_comparator_default_isr(void *args)
 {
     mcpwm_cmpr_t *cmpr = (mcpwm_cmpr_t *)args;
     mcpwm_oper_t *oper = cmpr->oper;
+    mcpwm_timer_t *timer = oper->timer;
     mcpwm_group_t *group = oper->group;
     mcpwm_hal_context_t *hal = &group->hal;
     int oper_id = oper->oper_id;
@@ -192,7 +193,7 @@ static void IRAM_ATTR mcpwm_comparator_default_isr(void *args)
 
     mcpwm_compare_event_data_t edata = {
         .compare_ticks = cmpr->compare_ticks,
-        // .direction = TODO
+        .direction = mcpwm_ll_timer_get_count_direction(hal->dev, timer->timer_id),
     };
 
     if (status & MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id)) {
