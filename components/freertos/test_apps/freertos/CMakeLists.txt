@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.16)
 # type is treated as separate component
 set(test_types
     "kernel"
+    "misc"
     "performance"
     "port")
 
