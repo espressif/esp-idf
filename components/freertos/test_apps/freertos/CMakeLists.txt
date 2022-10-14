@@ -5,7 +5,8 @@ cmake_minimum_required(VERSION 3.16)
 # split into different directores in the test app's root directory. Each test
 # type is treated as separate component
 set(test_types
-    "kernel")
+    "kernel"
+    "port")
 
 list(APPEND EXTRA_COMPONENT_DIRS
      ${test_types}  # Add each test type as a component
