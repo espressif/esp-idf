@@ -538,7 +538,7 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const void* src, size_t si
  *
  * @return
  *     - (-1) Error
- *     - OTHERS (>=0) The number of bytes read from UART FIFO
+ *     - OTHERS (>=0) The number of bytes read from UART buffer
  */
 int uart_read_bytes(uart_port_t uart_num, void* buf, uint32_t length, TickType_t ticks_to_wait);
 
