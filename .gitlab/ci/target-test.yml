@@ -199,13 +199,13 @@ example_test_pytest_esp32_flash_encryption:
     - build_pytest_examples_esp32
   tags: [ esp32, flash_encryption ]
 
-example_test_pytest_esp32_multi_dut_generic:
+example_test_pytest_esp32_wifi_two_dut:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32
+    - .rules:test:example_test-esp32-wifi
   needs:
     - build_pytest_examples_esp32
-  tags: [ esp32, multi_dut_generic ]
+  tags: [ esp32, wifi_two_dut ]
 
 example_test_pytest_esp32c3_flash_encryption:
   extends:
