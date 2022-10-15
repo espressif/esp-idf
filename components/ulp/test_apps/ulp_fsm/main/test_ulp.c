@@ -205,7 +205,7 @@ TEST_CASE("ULP FSM light-sleep wakeup test", "[ulp]")
     TEST_ASSERT(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_ULP);
 }
 
-TEST_CASE("ULP FSM deep-sleep wakeup test", "[ulp][reset=SW_CPU_RESET][ignore]")
+TEST_CASE("ULP FSM deep-sleep wakeup test", "[ulp][ulp_deep_sleep_wakeup]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
@@ -389,7 +389,7 @@ TEST_CASE("ULP FSM I_WR_REG instruction test", "[ulp]")
 }
 
 
-TEST_CASE("ULP FSM controls RTC_IO", "[ulp][ignore]")
+TEST_CASE("ULP FSM controls RTC_IO", "[ulp][ulp_deep_sleep_wakeup]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
@@ -455,7 +455,7 @@ TEST_CASE("ULP FSM controls RTC_IO", "[ulp][ignore]")
     UNITY_TEST_FAIL(__LINE__, "Should not get here!");
 }
 
-TEST_CASE("ULP FSM power consumption in deep sleep", "[ulp][ignore]")
+TEST_CASE("ULP FSM power consumption in deep sleep", "[ulp][ulp_deep_sleep_wakeup]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 4 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
@@ -555,7 +555,7 @@ TEST_CASE("ULP FSM timer setting", "[ulp]")
 }
 
 #if !DISABLED_FOR_TARGETS(ESP32)
-TEST_CASE("ULP FSM can use temperature sensor (TSENS) in deep sleep", "[ulp][ignore]")
+TEST_CASE("ULP FSM can use temperature sensor (TSENS) in deep sleep", "[ulp][ulp_deep_sleep_wakeup]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
@@ -622,7 +622,7 @@ TEST_CASE("ULP FSM can use temperature sensor (TSENS) in deep sleep", "[ulp][ign
 }
 #endif //#if !DISABLED_FOR_TARGETS(ESP32)
 
-TEST_CASE("ULP FSM can use ADC in deep sleep", "[ulp][ignore]")
+TEST_CASE("ULP FSM can use ADC in deep sleep", "[ulp][ulp_deep_sleep_wakeup]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 

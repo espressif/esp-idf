@@ -9,6 +9,8 @@
 #include "unity.h"
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
+#include "esp_log.h"
+#include "esp_cpu.h"
 #include <stdlib.h>
 #include <sys/param.h>
 #include <string.h>
@@ -17,7 +19,9 @@
 #if !defined(CONFIG_HEAP_POISONING_COMPREHENSIVE) && !defined(CONFIG_HEAP_POISONING_LIGHT)
 
 #define NUM_POINTERS 128
-#define ITERATIONS 10000
+#define ITERATIONS 5000
+
+static const char *TAG = "test_heap";
 
 TEST_CASE("Heap many random allocations timings", "[heap]")
 {
@@ -32,17 +36,17 @@ TEST_CASE("Heap many random allocations timings", "[heap]")
     for (int i = 0; i < ITERATIONS; i++) {
         uint8_t n = (uint32_t)rand() % NUM_POINTERS;
 
-        if (ITERATIONS % 4 == 0) {
+        if (i % 4 == 0) {
             /* 1 in 4 iterations, try to realloc the buffer instead
                of using malloc/free
             */
             size_t new_size = (uint32_t)rand() % 1024;
 
-            cycles_before = portGET_RUN_TIME_COUNTER_VALUE();
+            cycles_before = esp_cpu_get_cycle_count();
             void *new_p = heap_caps_realloc(p[n], new_size, MALLOC_CAP_DEFAULT);
-            realloc_time_average = portGET_RUN_TIME_COUNTER_VALUE() - cycles_before;
+            realloc_time_average = esp_cpu_get_cycle_count() - cycles_before;
 
-            printf("realloc %p -> %p (%zu -> %zu) time spent cycles: %lld \n", p[n], new_p, s[n], new_size, realloc_time_average);
+            ESP_LOGD(TAG, "realloc %p -> %p (%zu -> %zu) time spent cycles: %lld \n", p[n], new_p, s[n], new_size, realloc_time_average);
             heap_caps_check_integrity(MALLOC_CAP_DEFAULT, true);
             if (new_size == 0 || new_p != NULL) {
                 p[n] = new_p;
@@ -63,11 +67,11 @@ TEST_CASE("Heap many random allocations timings", "[heap]")
             }
             TEST_ASSERT(heap_caps_check_integrity(MALLOC_CAP_DEFAULT, true));
 
-            cycles_before = portGET_RUN_TIME_COUNTER_VALUE();
+            cycles_before = esp_cpu_get_cycle_count();
             heap_caps_free(p[n]);
-            free_time_average = portGET_RUN_TIME_COUNTER_VALUE() - cycles_before;
+            free_time_average = esp_cpu_get_cycle_count() - cycles_before;
 
-            printf("freed %p (%zu) time spent cycles: %lld\n", p[n], s[n], free_time_average);
+           ESP_LOGD(TAG, "freed %p (%zu) time spent cycles: %lld\n", p[n], s[n], free_time_average);
 
             if (!heap_caps_check_integrity(MALLOC_CAP_DEFAULT, true)) {
                 printf("FAILED iteration %d after freeing %p\n", i, p[n]);
@@ -78,11 +82,11 @@ TEST_CASE("Heap many random allocations timings", "[heap]")
 
         s[n] = rand() % 1024;
         heap_caps_check_integrity(MALLOC_CAP_DEFAULT, true);
-        cycles_before = portGET_RUN_TIME_COUNTER_VALUE();
+        cycles_before = esp_cpu_get_cycle_count();
         p[n] = heap_caps_malloc(s[n], MALLOC_CAP_DEFAULT);
-        alloc_time_average = portGET_RUN_TIME_COUNTER_VALUE() - cycles_before;
+        alloc_time_average = esp_cpu_get_cycle_count() - cycles_before;
 
-        printf("malloc %p (%zu) time spent cycles: %lld \n", p[n], s[n], alloc_time_average);
+        ESP_LOGD(TAG, "malloc %p (%zu) time spent cycles: %lld \n", p[n], s[n], alloc_time_average);
 
         if (!heap_caps_check_integrity(MALLOC_CAP_DEFAULT, true)) {
             printf("FAILED iteration %d after mallocing %p (%zu bytes)\n", i, p[n], s[n]);
@@ -96,9 +100,9 @@ TEST_CASE("Heap many random allocations timings", "[heap]")
     }
 
     for (int i = 0; i < NUM_POINTERS; i++) {
-        cycles_before = portGET_RUN_TIME_COUNTER_VALUE();
+        cycles_before = esp_cpu_get_cycle_count();
         heap_caps_free( p[i]);
-        free_time_average = portGET_RUN_TIME_COUNTER_VALUE() - cycles_before;
+        free_time_average = esp_cpu_get_cycle_count() - cycles_before;
 
         if (!heap_caps_check_integrity(MALLOC_CAP_DEFAULT, true)) {
             printf("FAILED during cleanup after freeing %p\n", p[i]);

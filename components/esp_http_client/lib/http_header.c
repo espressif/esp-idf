@@ -159,9 +159,6 @@ int http_header_set_format(http_header_handle_t header, const char *key, const c
     len = vasprintf(&buf, format, argptr);
     va_end(argptr);
     ESP_RETURN_ON_FALSE(buf, 0, TAG, "Memory exhausted");
-    if (buf == NULL) {
-        return 0;
-    }
     http_header_set(header, key, buf);
     free(buf);
     return len;

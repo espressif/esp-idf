@@ -137,10 +137,3 @@ IP 地址
 推荐使用 esp-netif 定义的 IP 结构。请注意，在启用默认兼容性时，LwIP 结构体仍然可以工作。
 
 * :component_file:`esp-netif IP address definitions <esp_netif/include/esp_netif_ip_addr.h#L96>`
-
-后续步骤
-^^^^^^^^^^^^^^
-
-为了令移植应用程序可以使用 :doc:`/api-reference/network/esp_netif`，还需在组件配置中禁用 tcpip_adapter 兼容层。请前往 ``ESP NETIF Adapter`` > ``Enable backward compatible tcpip_adapter interface`` 进行设置，并检查项目是否编译成功。
-
-TCP/IP 适配器涉及大量依赖项，禁用兼容层可能有助于将应用程序与使用特定 TCP/IP 软件栈的 API 分离开来。

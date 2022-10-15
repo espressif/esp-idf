@@ -168,7 +168,7 @@ void sdio_slave_hal_init(sdio_slave_context_t *hal)
 void sdio_slave_hal_hw_init(sdio_slave_context_t *hal)
 {
     sdio_slave_ll_init(hal->slc);
-    sdio_slave_ll_enable_hs(hal->hinf, true);
+    sdio_slave_ll_enable_hs(hal->hinf, !hal->no_highspeed);
     sdio_slave_ll_set_timing(hal->host, hal->timing);
     sdio_slave_ll_slvint_t intr_ena = 0xff;
     sdio_slave_ll_slvint_set_ena(hal->slc, &intr_ena);

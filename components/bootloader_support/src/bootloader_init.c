@@ -58,27 +58,31 @@ void bootloader_config_wdt(void)
      * protect the remainder of the bootloader process.
      */
     //Disable RWDT flashboot protection.
-    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
-    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-    wdt_hal_set_flashboot_en(&rtc_wdt_ctx, false);
-    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
+    wdt_hal_context_t rwdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
+#else
+    wdt_hal_context_t rwdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+#endif
+    wdt_hal_write_protect_disable(&rwdt_ctx);
+    wdt_hal_set_flashboot_en(&rwdt_ctx, false);
+    wdt_hal_write_protect_enable(&rwdt_ctx);
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     //Initialize and start RWDT to protect the  for bootloader if configured to do so
     ESP_LOGD(TAG, "Enabling RTCWDT(%d ms)", CONFIG_BOOTLOADER_WDT_TIME_MS);
-    wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
+    wdt_hal_init(&rwdt_ctx, WDT_RWDT, 0, false);
     uint32_t stage_timeout_ticks = (uint32_t)((uint64_t)CONFIG_BOOTLOADER_WDT_TIME_MS * rtc_clk_slow_freq_get_hz() / 1000);
-    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-    wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
-    wdt_hal_enable(&rtc_wdt_ctx);
-    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_disable(&rwdt_ctx);
+    wdt_hal_config_stage(&rwdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
+    wdt_hal_enable(&rwdt_ctx);
+    wdt_hal_write_protect_enable(&rwdt_ctx);
 #endif
 
     //Disable MWDT0 flashboot protection. But only after we've enabled the RWDT first so that there's not gap in WDT protection.
-    wdt_hal_context_t wdt_ctx = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
-    wdt_hal_write_protect_disable(&wdt_ctx);
-    wdt_hal_set_flashboot_en(&wdt_ctx, false);
-    wdt_hal_write_protect_enable(&wdt_ctx);
+    wdt_hal_context_t mwdt_ctx = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
+    wdt_hal_write_protect_disable(&mwdt_ctx);
+    wdt_hal_set_flashboot_en(&mwdt_ctx, false);
+    wdt_hal_write_protect_enable(&mwdt_ctx);
 }
 
 void bootloader_enable_random(void)

@@ -98,8 +98,8 @@ Phase           Description
 ==============  =========================================================================================================
 **Command**     In this phase, a command (0-16 bit) is written to the bus by the Host.
 **Address**     In this phase, an address (0-{IDF_TARGET_ADDR_LEN} bit) is transmitted over the bus by the Host.
-**Write**       Host sends data to a Device. This data follows the optional command and address phases and is indistinguishable from them at the electrical level.
 **Dummy**       This phase is configurable and is used to meet the timing requirements.
+**Write**       Host sends data to a Device. This data follows the optional command and address phases and is indistinguishable from them at the electrical level.
 **Read**        Device sends data to its Host.
 ==============  =========================================================================================================
 
@@ -461,8 +461,37 @@ Typical transaction duration for one byte of data are given below.
 
 SPI Clock Frequency
 ^^^^^^^^^^^^^^^^^^^
+The driver support setting an SPI peripheral to different clock frequencies. Actual clock frequency may not be exactly equal to the number you set, it will be re-calculated by the driver to the nearest hardware compatible number, you can call :cpp:func:`spi_device_get_actual_freq` to get the actual frequency computed by driver.
 
-Transferring each byte takes eight times the clock period *8/fspi*.
+Theoretical maximum transfer speed of Write or Read phase can be calculated according to the table below:
+
+.. only:: not SOC_SPI_SUPPORT_OCT
+
+    +--------------------------------+------------------------+
+    | Line Width of Write/Read phase |      Speed (Bps)       |
+    +================================+========================+
+    |            1-Line              |  *SPI Frequency / 8*   |
+    +--------------------------------+------------------------+
+    |            2-Line              |  *SPI Frequency / 4*   |
+    +--------------------------------+------------------------+
+    |            4-Line              |  *SPI Frequency / 2*   |
+    +--------------------------------+------------------------+
+
+.. only:: SOC_SPI_SUPPORT_OCT
+
+    +--------------------------------+------------------------+
+    | Line Width of Write/Read phase |      Speed (Bps)       |
+    +================================+========================+
+    |            1-Line              |  *SPI Frequency / 8*   |
+    +--------------------------------+------------------------+
+    |            2-Line              |  *SPI Frequency / 4*   |
+    +--------------------------------+------------------------+
+    |            4-Line              |  *SPI Frequency / 2*   |
+    +--------------------------------+------------------------+
+    |            8-Line              |  *SPI Frequency*       |
+    +--------------------------------+------------------------+
+
+The transfer speed calculation of other phases(command, address, dummy) are similar.
 
 .. only:: esp32
 

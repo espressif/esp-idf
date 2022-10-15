@@ -40,7 +40,7 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_GPIO_RESET_WORKAROUND
             bool "light sleep GPIO reset workaround"
-            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 # TODO: IDF-5641 (esp32c6)
             select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
             help
                 esp32c2, esp32c3 and esp32s3 will reset at wake-up if GPIO is received a small electrostatic
@@ -165,6 +165,7 @@ menu "Hardware Settings"
 
         config MMU_PAGE_MODE
             string
+            default "8KB" if MMU_PAGE_SIZE_8KB
             default "16KB" if MMU_PAGE_SIZE_16KB
             default "32KB" if MMU_PAGE_SIZE_32KB
             default "64KB" if MMU_PAGE_SIZE_64KB
@@ -176,6 +177,7 @@ menu "Hardware Settings"
             # use of small flash sizes (reducing the wasted space due to alignment), we
             # need to use the smallest possible MMU page size for the given flash size.
             hex
+            default 0x2000 if MMU_PAGE_SIZE_8KB
             default 0x4000 if MMU_PAGE_SIZE_16KB
             default 0x8000 if MMU_PAGE_SIZE_32KB
             default 0x10000 if MMU_PAGE_SIZE_64KB

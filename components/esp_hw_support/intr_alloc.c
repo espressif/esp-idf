@@ -801,6 +801,7 @@ esp_err_t IRAM_ATTR esp_intr_enable(intr_handle_t handle)
     } else {
         //Re-enable using cpu int ena reg
         if (handle->vector_desc->cpu != esp_cpu_get_core_id()) {
+            portEXIT_CRITICAL_SAFE(&spinlock);
             return ESP_ERR_INVALID_ARG; //Can only enable these ints on this cpu
         }
         ESP_INTR_ENABLE(handle->vector_desc->intno);

@@ -115,6 +115,8 @@ ESP 镜像中关于 SPI 速度的枚举成员已重新更名：
     - 以结构体的形式传递配置。
     - 可将该函数配置为订阅空闲任务。
 
+- 原先的配置选项 ``CONFIG_ESP_TASK_WDT`` 被重新命名为 :ref:`CONFIG_ESP_TASK_WDT_INIT` 并引入了一个新选项 :ref:`CONFIG_ESP_TASK_WDT_EN`。
+
 FreeRTOS
 --------
 

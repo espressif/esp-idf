@@ -33,7 +33,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args, force_progression=GENERATORS[args.generator].get('force_progression', False))
 
-    def size_target(target_name: str, ctx: Context, args: PropertyDict, output_format: str) -> None:
+    def size_target(target_name: str, ctx: Context, args: PropertyDict, output_format: str, output_file: str) -> None:
         """
         Builds the app and then executes a size-related target passed in 'target_name'.
         `tool_error_handler` handler is used to suppress errors during the build,
@@ -45,6 +45,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
                 yellow_print(hint)
 
         os.environ['SIZE_OUTPUT_FORMAT'] = output_format
+        if output_file:
+            os.environ['SIZE_OUTPUT_FILE'] = os.path.abspath(output_file)
+
         ensure_build_directory(args, ctx.info_name)
         run_target('all', args, force_progression=GENERATORS[args.generator].get('force_progression', False),
                    custom_error_handler=tool_error_handler)
@@ -343,7 +346,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
     size_options = [{'names': ['--format', 'output_format'],
                      'type': click.Choice(['default', 'text', 'csv', 'json']),
                      'help': 'Specify output format: text (same as "default"), csv or json.',
-                     'default': 'default'}]
+                     'default': 'default'},
+                    {'names': ['--output-file', 'output_file'],
+                     'help': 'Print output to the specified file instead of to the standard output'}]
 
     build_actions = {
         'actions': {

@@ -235,7 +235,6 @@ static void supplicant_sta_disconn_handler(void* arg, esp_event_base_t event_bas
 					   int32_t event_id, void* event_data)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
-	wifi_event_sta_disconnected_t *disconn = event_data;
 
 #ifdef CONFIG_WPA_11KV_SUPPORT
 	wpas_rrm_reset(wpa_s);
@@ -243,10 +242,6 @@ static void supplicant_sta_disconn_handler(void* arg, esp_event_base_t event_bas
 #endif /* CONFIG_WPA_11KV_SUPPORT */
 	if (wpa_s->current_bss) {
 		wpa_s->current_bss = NULL;
-	}
-
-	if (disconn->reason != WIFI_REASON_ROAMING) {
-		clear_bssid_flag(wpa_s);
 	}
 }
 

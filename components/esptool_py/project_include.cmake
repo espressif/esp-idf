@@ -46,7 +46,10 @@ set(MMU_PAGE_SIZE ${CONFIG_MMU_PAGE_MODE})
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND esptool_elf2image_args --elf-sha256-offset 0xb0)
-    if(CONFIG_IDF_TARGET_ESP32C2)
+    # For chips that support configurable MMU page size feature
+    # If page size is configured to values other than the default "64KB" in menuconfig,
+    # then we need to pass the actual size to flash-mmu-page-size arg
+    if(NOT MMU_PAGE_SIZE STREQUAL "64KB")
         list(APPEND esptool_elf2image_args --flash-mmu-page-size ${MMU_PAGE_SIZE})
     endif()
 endif()

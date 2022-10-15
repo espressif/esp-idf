@@ -12,24 +12,33 @@
 #include <stdbool.h>
 #include <esp_random.h>
 
-/* ToDo - Remove this once appropriate solution is available.
-We need to define this for the file as ssl_misc.h uses private structures from mbedtls,
-which are undefined if the following flag is not defined */
-/* Many APIs in the file make use of this flag instead of `MBEDTLS_PRIVATE` */
-/* ToDo - Replace them with proper getter-setter once they are added */
-#define MBEDTLS_ALLOW_PRIVATE_ACCESS
-
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/ecdh.h>
 #include <mbedtls/ecdsa.h>
 #include <mbedtls/error.h>
 
+#include "test_utils.h"
+#include "ccomp_timer.h"
 #include "unity.h"
 
 /* Note: negative value here so that assert message prints a grep-able
    error hex value (mbedTLS uses -N for error codes) */
 #define TEST_ASSERT_MBEDTLS_OK(X) TEST_ASSERT_EQUAL_HEX32(0, -(X))
+
+/* TODO: Currently MBEDTLS_ECDH_LEGACY_CONTEXT is enabled by default
+ * when MBEDTLS_ECP_RESTARTABLE is enabled.
+ * This is a temporary workaround to allow that.
+ *
+ * The legacy option is soon going to be removed in future mbedtls
+ * versions and this workaround will be removed once the appropriate
+ * solution is available.
+ */
+#ifdef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
+#define ACCESS_ECDH(S, var) S.MBEDTLS_PRIVATE(var)
+#else
+#define ACCESS_ECDH(S, var) S.MBEDTLS_PRIVATE(ctx).MBEDTLS_PRIVATE(mbed_ecdh).MBEDTLS_PRIVATE(var)
+#endif
 
 TEST_CASE("mbedtls ECDH Generate Key", "[mbedtls]")
 {
@@ -43,9 +52,9 @@ TEST_CASE("mbedtls ECDH Generate Key", "[mbedtls]")
     mbedtls_entropy_init(&entropy);
     TEST_ASSERT_MBEDTLS_OK( mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) );
 
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecp_group_load(&ctx.ctx.mbed_ecdh.grp, MBEDTLS_ECP_DP_CURVE25519) );
+    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecp_group_load(ACCESS_ECDH(&ctx, grp), MBEDTLS_ECP_DP_CURVE25519) );
 
-    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecdh_gen_public(&ctx.ctx.mbed_ecdh.grp, &ctx.ctx.mbed_ecdh.d, &ctx.ctx.mbed_ecdh.Q,
+    TEST_ASSERT_MBEDTLS_OK( mbedtls_ecdh_gen_public(ACCESS_ECDH(&ctx, grp), ACCESS_ECDH(&ctx, d), ACCESS_ECDH(&ctx, Q),
                                                     mbedtls_ctr_drbg_random, &ctr_drbg ) );
 
     mbedtls_ecdh_free(&ctx);
@@ -77,7 +86,8 @@ TEST_CASE("mbedtls ECP mul w/ koblitz", "[mbedtls]")
                                                  mbedtls_ctr_drbg_random, &ctxRandom) );
 
 
-    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_mul(&ctxECDSA.grp, &ctxECDSA.Q, &ctxECDSA.d, &ctxECDSA.grp.G,
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_mul(&ctxECDSA.MBEDTLS_PRIVATE(grp), &ctxECDSA.MBEDTLS_PRIVATE(Q),
+                                           &ctxECDSA.MBEDTLS_PRIVATE(d), &ctxECDSA.MBEDTLS_PRIVATE(grp).G,
                                            mbedtls_ctr_drbg_random, &ctxRandom) );
 
     mbedtls_ecdsa_free(&ctxECDSA);
@@ -163,6 +173,7 @@ static int rng_wrapper(void *ctx, unsigned char *buf, size_t len)
 static void test_ecp_mul(mbedtls_ecp_group_id id, const uint8_t *x_coord, const uint8_t *y_coord, const uint8_t *scalar,
                         const uint8_t *result_x_coord, const uint8_t *result_y_coord)
 {
+    int64_t elapsed_time;
     uint8_t x[32];
     uint8_t y[32];
     int size;
@@ -184,20 +195,28 @@ static void test_ecp_mul(mbedtls_ecp_group_id id, const uint8_t *x_coord, const 
 
     mbedtls_mpi_read_binary(&m, scalar, size);
 
-    mbedtls_mpi_read_binary(&P.X, x_coord, size);
-    mbedtls_mpi_read_binary(&P.Y, y_coord, size);
+    mbedtls_mpi_read_binary(&P.MBEDTLS_PRIVATE(X), x_coord, size);
+    mbedtls_mpi_read_binary(&P.MBEDTLS_PRIVATE(Y), y_coord, size);
 
-    mbedtls_mpi_lset(&P.Z, 1);
+    mbedtls_mpi_lset(&P.MBEDTLS_PRIVATE(Z), 1);
 
+    ccomp_timer_start();
     ret = mbedtls_ecp_mul(&grp, &R, &m, &P, rng_wrapper, NULL);
+    elapsed_time = ccomp_timer_stop();
 
     TEST_ASSERT_EQUAL(0, ret);
 
-    mbedtls_mpi_write_binary(&R.X, x, mbedtls_mpi_size(&R.X));
-    mbedtls_mpi_write_binary(&R.Y, y, mbedtls_mpi_size(&R.Y));
+    mbedtls_mpi_write_binary(&R.MBEDTLS_PRIVATE(X), x, mbedtls_mpi_size(&R.MBEDTLS_PRIVATE(X)));
+    mbedtls_mpi_write_binary(&R.MBEDTLS_PRIVATE(Y), y, mbedtls_mpi_size(&R.MBEDTLS_PRIVATE(Y)));
 
-    TEST_ASSERT_EQUAL(0, memcmp(x, result_x_coord, mbedtls_mpi_size(&R.X)));
-    TEST_ASSERT_EQUAL(0, memcmp(y, result_y_coord, mbedtls_mpi_size(&R.Y)));
+    TEST_ASSERT_EQUAL(0, memcmp(x, result_x_coord, mbedtls_mpi_size(&R.MBEDTLS_PRIVATE(X))));
+    TEST_ASSERT_EQUAL(0, memcmp(y, result_y_coord, mbedtls_mpi_size(&R.MBEDTLS_PRIVATE(Y))));
+
+    if (id == MBEDTLS_ECP_DP_SECP192R1) {
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_MULTIPLY_OP, "%d us", elapsed_time);
+    } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_MULTIPLY_OP, "%d us", elapsed_time);
+    }
 
     mbedtls_ecp_point_free(&R);
     mbedtls_ecp_point_free(&P);
@@ -219,6 +238,7 @@ TEST_CASE("mbedtls ECP point multiply with SECP256R1", "[mbedtls]")
 
 static void test_ecp_verify(mbedtls_ecp_group_id id, const uint8_t *x_coord, const uint8_t *y_coord)
 {
+    int64_t elapsed_time;
     int size;
     int ret;
 
@@ -232,13 +252,21 @@ static void test_ecp_verify(mbedtls_ecp_group_id id, const uint8_t *x_coord, con
 
     size = grp.pbits / 8;
 
-    mbedtls_mpi_read_binary(&P.X, x_coord, size);
-    mbedtls_mpi_read_binary(&P.Y, y_coord, size);
-    mbedtls_mpi_lset(&P.Z, 1);
+    mbedtls_mpi_read_binary(&P.MBEDTLS_PRIVATE(X), x_coord, size);
+    mbedtls_mpi_read_binary(&P.MBEDTLS_PRIVATE(Y), y_coord, size);
+    mbedtls_mpi_lset(&P.MBEDTLS_PRIVATE(Z), 1);
 
+    ccomp_timer_start();
     ret = mbedtls_ecp_check_pubkey(&grp, &P);
+    elapsed_time = ccomp_timer_stop();
 
     TEST_ASSERT_EQUAL(0, ret);
+
+    if (id == MBEDTLS_ECP_DP_SECP192R1) {
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_VERIFY_OP, "%d us", elapsed_time);
+    } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_VERIFY_OP, "%d us", elapsed_time);
+    }
 
     mbedtls_ecp_point_free(&P);
     mbedtls_ecp_group_free(&grp);

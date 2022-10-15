@@ -270,8 +270,11 @@ void esp_mbedtls_conn_delete(esp_tls_t *tls)
     if (tls != NULL) {
         esp_mbedtls_cleanup(tls);
         if (tls->is_tls) {
-            mbedtls_net_free(&tls->server_fd);
-            tls->sockfd = tls->server_fd.fd;
+            if (tls->server_fd.fd != -1) {
+                mbedtls_net_free(&tls->server_fd);
+                /* Socket is already closed by `mbedtls_net_free` and hence also change assignment of its copy to an invalid value */
+                tls->sockfd = -1;
+            }
         }
     }
 }
@@ -968,14 +971,17 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
                                         esp_ds_get_keylen )) != 0) {
         ESP_LOGE(TAG, "Error in mbedtls_pk_setup_rsa_alt, returned -0x%04X", -ret);
         mbedtls_print_error_msg(ret);
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto exit;
     }
     ret = esp_ds_init_data_ctx(((const esp_tls_pki_t*)pki)->esp_ds_data);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize DS parameters from nvs");
-        return ESP_FAIL;
+        goto exit;
     }
     ESP_LOGD(TAG, "DS peripheral params initialized.");
-    return ESP_OK;
+exit:
+    mbedtls_rsa_free(&rsakey);
+    return ret;
 }
 #endif /* CONFIG_ESP_TLS_USE_DS_PERIPHERAL */

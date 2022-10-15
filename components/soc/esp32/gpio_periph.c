@@ -5,6 +5,7 @@
  */
 
 #include "soc/gpio_periph.h"
+#include "esp_attr.h"
 
 const uint32_t GPIO_PIN_MUX_REG[] = {
     IO_MUX_GPIO0_REG,
@@ -47,6 +48,49 @@ const uint32_t GPIO_PIN_MUX_REG[] = {
     IO_MUX_GPIO37_REG,
     IO_MUX_GPIO38_REG,
     IO_MUX_GPIO39_REG,
+};
+
+DRAM_ATTR const uint8_t GPIO_PIN_MUX_REG_OFFSET[] = {
+    0x44,
+    0x88,
+    0x40,
+    0x84,
+    0x48,
+    0x6c,
+    0x60,
+    0x64,
+    0x68,
+    0x54,
+    0x58,
+    0x5c,
+    0x34,
+    0x38,
+    0x30,
+    0x3c,
+    0x4c,
+    0x50,
+    0x70,
+    0x74,
+    0x78,
+    0x7c,
+    0x80,
+    0x8c,
+    0xFF, // 24
+    0x24,
+    0x28,
+    0x2c,
+    0xFF, // 28
+    0xFF, // 29
+    0xFF, // 30
+    0xFF, // 31
+    0x1c,
+    0x20,
+    0x14,
+    0x18,
+    0x04,
+    0x08,
+    0x0c,
+    0x10,
 };
 
 _Static_assert(sizeof(GPIO_PIN_MUX_REG) == SOC_GPIO_PIN_COUNT * sizeof(uint32_t), "Invalid size of GPIO_PIN_MUX_REG");

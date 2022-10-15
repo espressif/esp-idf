@@ -14,6 +14,7 @@ from construct import BitsInteger, BitStruct, Int16ul
 # the regex pattern defines symbols that are allowed by long file names but not by short file names
 INVALID_SFN_CHARS_PATTERN = re.compile(r'[.+,;=\[\]]')
 
+FATFS_MIN_ALLOC_UNIT: int = 128
 FAT12_MAX_CLUSTERS: int = 4085
 FAT16_MAX_CLUSTERS: int = 65525
 RESERVED_CLUSTERS_COUNT: int = 2
@@ -47,7 +48,11 @@ FATFS_SECONDS_GRANULARITY: int = 2
 LONG_NAMES_ENCODING: str = 'utf-16'
 SHORT_NAMES_ENCODING: str = 'utf-8'
 
-ALLOWED_SECTOR_SIZES: List[int] = [4096]
+# compatible with WL_SECTOR_SIZE
+# choices for WL are WL_SECTOR_SIZE_512 and WL_SECTOR_SIZE_4096
+ALLOWED_WL_SECTOR_SIZES: List[int] = [512, 4096]
+ALLOWED_SECTOR_SIZES: List[int] = [512, 1024, 2048, 4096]
+
 ALLOWED_SECTORS_PER_CLUSTER: List[int] = [1, 2, 4, 8, 16, 32, 64, 128]
 
 
@@ -161,7 +166,7 @@ def split_content_into_sectors(content: bytes, sector_size: int) -> List[bytes]:
     return result
 
 
-def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
+def get_args_for_partition_generator(desc: str, wl: bool) -> argparse.Namespace:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_directory',
                         help='Path to the directory that will be encoded into fatfs image')
@@ -170,11 +175,13 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
                         help='Filename of the generated fatfs image')
     parser.add_argument('--partition_size',
                         default=FATDefaults.SIZE,
-                        help='Size of the partition in bytes')
+                        help='Size of the partition in bytes.' +
+                             ('' if wl else ' Use `--partition_size detect` for detecting the minimal partition size.')
+                        )
     parser.add_argument('--sector_size',
                         default=FATDefaults.SECTOR_SIZE,
                         type=int,
-                        choices=ALLOWED_SECTOR_SIZES,
+                        choices=ALLOWED_WL_SECTOR_SIZES if wl else ALLOWED_SECTOR_SIZES,
                         help='Size of the partition in bytes')
     parser.add_argument('--sectors_per_cluster',
                         default=1,
@@ -203,6 +210,8 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
     args = parser.parse_args()
     if args.fat_type == 0:
         args.fat_type = None
+    if args.partition_size == 'detect' and not wl:
+        args.partition_size = -1
     args.partition_size = int(str(args.partition_size), 0)
     if not os.path.isdir(args.input_directory):
         raise NotADirectoryError(f'The target directory `{args.input_directory}` does not exist!')
@@ -286,4 +295,5 @@ class FATDefaults:
     TEMP_BUFFER_SIZE: int = 32
     UPDATE_RATE: int = 16
     WR_SIZE: int = 16
+    # wear leveling metadata (config sector) contains always sector size 4096
     WL_SECTOR_SIZE: int = 4096

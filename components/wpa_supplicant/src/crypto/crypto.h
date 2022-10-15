@@ -664,6 +664,18 @@ int crypto_bignum_mulmod(const struct crypto_bignum *a,
 int crypto_bignum_sqrmod(const struct crypto_bignum *a,
 			  const struct crypto_bignum *b,
 			  struct crypto_bignum *c);
+
+/**
+ * crypto_bignum_sqrtmod - returns sqrt(a) (mod b)
+ * @a: Bignum
+ * @b: Bignum
+ * @c: Bignum; used to store the result
+ * Returns: 0 on success, -1 on failure
+ */
+int crypto_bignum_sqrtmod(const struct crypto_bignum *a,
+			  const struct crypto_bignum *b,
+			  struct crypto_bignum *c);
+
 /**
  * crypto_bignum_rshift - r = a >> n
  * @a: Bignum
@@ -703,6 +715,13 @@ int crypto_bignum_is_zero(const struct crypto_bignum *a);
  * Returns: 1 if @a is one or 0 if not
  */
 int crypto_bignum_is_one(const struct crypto_bignum *a);
+
+/**
+ * crypto_bignum_is_odd - Is the given bignum odd
+ * @a: Bignum
+ * Returns: 1 if @a is odd or 0 if not
+ */
+int crypto_bignum_is_odd(const struct crypto_bignum *a);
 
 /**
  * crypto_bignum_legendre - Compute the Legendre symbol (a/p)

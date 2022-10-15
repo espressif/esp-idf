@@ -169,7 +169,7 @@ static int base_poll_read(esp_transport_handle_t t, int timeout_ms)
         ESP_LOGE(TAG, "poll_read select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->sockfd);
         ret = -1;
     } else if (ret == 0) {
-        ESP_LOGD(TAG, "poll_read: select - Timeout before any socket was ready!");
+        ESP_LOGV(TAG, "poll_read: select - Timeout before any socket was ready!");
     }
     return ret;
 }

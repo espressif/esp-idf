@@ -5,6 +5,8 @@
  */
 #pragma once
 
+#include "sdkconfig.h" // TODO: IDF-5973
+
 #ifdef __cplusplus
 extern "C" {
 #endif

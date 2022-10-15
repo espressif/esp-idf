@@ -10,23 +10,18 @@
 #include <esp_err.h>
 #include <esp_log.h>
 
-/* ToDo - Remove this once appropriate solution is available.
-We need to define this for the file as ssl_misc.h uses private structures from mbedtls,
-which are undefined if the following flag is not defined */
-/* Many APIs in the file make use of this flag instead of `MBEDTLS_PRIVATE` */
-/* ToDo - Replace them with proper getter-setter once they are added */
-#define MBEDTLS_ALLOW_PRIVATE_ACCESS
-
-/* ToDo - Remove this once appropriate solution is available.
- * Currently MBEDTLS_LEGACY_CONTEXT is enabled by default for MBEDTLS_ECP_RESTARTABLE
+/* TODO: Currently MBEDTLS_ECDH_LEGACY_CONTEXT is enabled by default
+ * when MBEDTLS_ECP_RESTARTABLE is enabled.
  * This is a temporary workaround to allow that.
- * The LEGACY option is soon going to be removed in future mbedtls
- * once it is removed we can remove the workaround.
+ *
+ * The legacy option is soon going to be removed in future mbedtls
+ * versions and this workaround will be removed once the appropriate
+ * solution is available.
  */
 #ifdef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
-#define ACCESS_ECDH(S, var) S->var
+#define ACCESS_ECDH(S, var) S->MBEDTLS_PRIVATE(var)
 #else
-#define ACCESS_ECDH(S, var) S->ctx.mbed_ecdh.var
+#define ACCESS_ECDH(S, var) S->MBEDTLS_PRIVATE(ctx).MBEDTLS_PRIVATE(mbed_ecdh).MBEDTLS_PRIVATE(var)
 #endif
 
 #include <mbedtls/aes.h>
@@ -36,7 +31,6 @@ which are undefined if the following flag is not defined */
 #include <mbedtls/ecdh.h>
 #include <mbedtls/error.h>
 #include <mbedtls/constant_time.h>
-#include <ssl_misc.h>
 
 #include <protocomm_security.h>
 #include <protocomm_security1.h>
@@ -249,7 +243,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
         goto exit_cmd0;
     }
 
-    mbed_err = mbedtls_mpi_write_binary(ACCESS_ECDH(&ctx_server, Q).X,
+    mbed_err = mbedtls_mpi_write_binary(ACCESS_ECDH(&ctx_server, Q).MBEDTLS_PRIVATE(X),
                                         cur_session->device_pubkey,
                                         PUBLIC_KEY_LEN);
     if (mbed_err != 0) {
@@ -266,7 +260,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     hexdump("Device pubkey", dev_pubkey, PUBLIC_KEY_LEN);
     hexdump("Client pubkey", cli_pubkey, PUBLIC_KEY_LEN);
 
-    mbed_err = mbedtls_mpi_lset(ACCESS_ECDH(&ctx_server, Qp).Z, 1);
+    mbed_err = mbedtls_mpi_lset(ACCESS_ECDH(&ctx_server, Qp).MBEDTLS_PRIVATE(Z), 1);
     if (mbed_err != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_lset with error code : -0x%x", -mbed_err);
         ret = ESP_FAIL;
@@ -274,7 +268,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     }
 
     flip_endian(cur_session->client_pubkey, PUBLIC_KEY_LEN);
-    mbed_err = mbedtls_mpi_read_binary(ACCESS_ECDH(&ctx_server, Qp).X, cli_pubkey, PUBLIC_KEY_LEN);
+    mbed_err = mbedtls_mpi_read_binary(ACCESS_ECDH(&ctx_server, Qp).MBEDTLS_PRIVATE(X), cli_pubkey, PUBLIC_KEY_LEN);
     flip_endian(cur_session->client_pubkey, PUBLIC_KEY_LEN);
     if (mbed_err != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_read_binary with error code : -0x%x", -mbed_err);

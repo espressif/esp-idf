@@ -2247,6 +2247,10 @@ The maximum number of payload octets that the local device can receive in a sing
 #define BTA_DM_AVOID_A2DP_ROLESWITCH_ON_INQUIRY FALSE
 #endif
 
+#ifndef BTA_GATTC_MAX_CACHE_CHAR
+#define BTA_GATTC_MAX_CACHE_CHAR UC_BT_GATTC_MAX_CACHE_CHAR
+#endif
+
 /******************************************************************************
 **
 ** Tracing:  Include trace header file here.

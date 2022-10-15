@@ -4,6 +4,7 @@
     "build_dir":          "${BUILD_DIR}",
     "config_file":        "${SDKCONFIG}",
     "config_defaults":    "${SDKCONFIG_DEFAULTS}",
+    "bootloader_elf":     "${BOOTLOADER_ELF_FILE}",
     "app_elf":            "${PROJECT_EXECUTABLE}",
     "app_bin":            "${PROJECT_BIN}",
     "git_revision":       "${IDF_VER}",

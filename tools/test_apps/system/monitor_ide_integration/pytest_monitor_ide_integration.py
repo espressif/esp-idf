@@ -67,26 +67,27 @@ class WebSocketServer(object):
 
 
 @pytest.mark.esp32
-@pytest.mark.test_jtag_arm
+@pytest.mark.generic
 @pytest.mark.parametrize('config', ['gdb_stub', 'coredump'], indirect=True)
 def test_monitor_ide_integration(config: str, dut: Dut) -> None:
     # The port needs to be closed because idf_monitor.py will connect to it
     dut.serial.stop_redirect_thread()
 
     monitor_py = os.path.join(os.environ['IDF_PATH'], 'tools', 'idf_monitor.py')
-    with open(f'monitor_{config}.log', 'w') as log:
-        monitor_cmd = ' '.join([sys.executable, monitor_py, os.path.join(dut.app.binary_path, 'panic.elf'),
-                                '--port', str(dut.serial.port),
-                                '--ws', f'ws://{WebSocketServer.HOST}:{WebSocketServer.PORT}'])
-        with WebSocketServer(), pexpect.spawn(monitor_cmd,
-                                              logfile=log,
-                                              timeout=60,
-                                              encoding='utf-8',
-                                              codec_errors='ignore') as p:
-            p.expect(re.compile(r'Guru Meditation Error'), timeout=10)
-            p.expect_exact('Communicating through WebSocket', timeout=5)
-            # The elements of dictionary can be printed in different order depending on the Python version.
-            p.expect(re.compile(r"WebSocket sent: \{.*'event': '" + config + "'"), timeout=5)
-            p.expect_exact('Waiting for debug finished event', timeout=5)
-            p.expect(re.compile(r"WebSocket received: \{'event': 'debug_finished'\}"), timeout=5)
-            p.expect_exact('Communications through WebSocket is finished', timeout=5)
+    monitor_cmd = ' '.join([sys.executable, monitor_py, os.path.join(dut.app.binary_path, 'panic.elf'),
+                            '--port', str(dut.serial.port),
+                            '--ws', f'ws://{WebSocketServer.HOST}:{WebSocketServer.PORT}'])
+    monitor_log_path = os.path.join(dut.logdir, 'monitor.log')
+
+    with open(monitor_log_path, 'w') as log, WebSocketServer(), pexpect.spawn(monitor_cmd,
+                                                                              logfile=log,
+                                                                              timeout=5,
+                                                                              encoding='utf-8',
+                                                                              codec_errors='ignore') as p:
+        p.expect(re.compile(r'Guru Meditation Error'), timeout=10)
+        p.expect_exact('Communicating through WebSocket')
+        # The elements of dictionary can be printed in different order depending on the Python version.
+        p.expect(re.compile(r"WebSocket sent: \{.*'event': '" + config + "'"))
+        p.expect_exact('Waiting for debug finished event')
+        p.expect(re.compile(r"WebSocket received: \{'event': 'debug_finished'\}"))
+        p.expect_exact('Communications through WebSocket is finished')

@@ -22,6 +22,7 @@ typedef enum {
 #elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
     ESP_CHIP_ID_ESP32H2 = 0x000A, /*!< chip ID: ESP32-H2 Beta1 */
 #endif
+    ESP_CHIP_ID_ESP32C6 = 0x000D, /*!< chip ID: ESP32-C6 */
     ESP_CHIP_ID_INVALID = 0xFFFF /*!< Invalid chip ID (we defined it to make sure the esp_chip_id_t is 2 bytes size) */
 } __attribute__((packed)) esp_chip_id_t;
 

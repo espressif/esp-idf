@@ -359,7 +359,9 @@ void httpd_sess_delete(struct httpd_data *hd, struct sock_db *session)
             .l_onoff = true,
             .l_linger = hd->config.linger_timeout,
         };
-        setsockopt(session->fd, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger));
+        if (setsockopt(session->fd, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(struct linger)) < 0) {
+            ESP_LOGW(TAG, LOG_FMT("error enabling SO_LINGER (%d)"), errno);
+        }
     }
 
     // Call close function if defined

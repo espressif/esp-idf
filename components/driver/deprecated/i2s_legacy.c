@@ -200,15 +200,15 @@ static bool IRAM_ATTR i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_e
         if (xQueueIsQueueFullFromISR(p_i2s->tx->queue)) {
             xQueueReceiveFromISR(p_i2s->tx->queue, &dummy, &tmp);
             need_awoke |= tmp;
-            if (p_i2s->tx_desc_auto_clear) {
-                memset((void *) dummy, 0, p_i2s->tx->buf_size);
-            }
             if (p_i2s->i2s_queue) {
                 i2s_event.type = I2S_EVENT_TX_Q_OVF;
                 i2s_event.size = p_i2s->tx->buf_size;
                 xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &tmp);
                 need_awoke |= tmp;
             }
+        }
+        if (p_i2s->tx_desc_auto_clear) {
+            memset((void *) (((lldesc_t *)finish_desc)->buf), 0, p_i2s->tx->buf_size);
         }
         xQueueSendFromISR(p_i2s->tx->queue, &(((lldesc_t *)finish_desc)->buf), &tmp);
         need_awoke |= tmp;
@@ -256,17 +256,17 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
         if (xQueueIsQueueFullFromISR(p_i2s->tx->queue)) {
             xQueueReceiveFromISR(p_i2s->tx->queue, &dummy, &tmp);
             need_awoke |= tmp;
-            // See if tx descriptor needs to be auto cleared:
-            // This will avoid any kind of noise that may get introduced due to transmission
-            // of previous data from tx descriptor on I2S line.
-            if (p_i2s->tx_desc_auto_clear == true) {
-                memset((void *) dummy, 0, p_i2s->tx->buf_size);
-            }
             if (p_i2s->i2s_queue) {
                 i2s_event.type = I2S_EVENT_TX_Q_OVF;
                 xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &tmp);
                 need_awoke |= tmp;
             }
+        }
+        // See if tx descriptor needs to be auto cleared:
+        // This will avoid any kind of noise that may get introduced due to transmission
+        // of previous data from tx descriptor on I2S line.
+        if (p_i2s->tx_desc_auto_clear == true) {
+            memset((void *)(((lldesc_t *)finish_desc)->buf), 0, p_i2s->tx->buf_size);
         }
         xQueueSendFromISR(p_i2s->tx->queue, &(((lldesc_t *)finish_desc)->buf), &tmp);
         need_awoke |= tmp;

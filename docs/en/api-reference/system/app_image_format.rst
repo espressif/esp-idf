@@ -80,7 +80,7 @@ You can also see the information on segments in the ESP-IDF logs while your appl
 Application Description
 -----------------------
 
-The ``DROM`` segment starts with the :cpp:type:`esp_app_desc_t` structure which carries specific fields describing the application:
+The ``DROM`` segment of the application binary starts with the :cpp:type:`esp_app_desc_t` structure which carries specific fields describing the application:
 
  * ``magic_word`` - the magic word for the esp_app_desc structure.
  * ``secure_version`` - see :doc:`Anti-rollback</api-reference/system/ota>`.
@@ -88,11 +88,16 @@ The ``DROM`` segment starts with the :cpp:type:`esp_app_desc_t` structure which 
  * ``project_name`` is filled from ``PROJECT_NAME``. ``*``
  * ``time`` and ``date`` - compile time and date.
  * ``idf_ver`` - version of ESP-IDF. ``*``
- * ``app_elf_sha256`` - contains sha256 for the elf application file.
+ * ``app_elf_sha256`` - contains sha256 for the application ELF file.
 
-``*`` - The maximum length is 32 characters, including null-termination character. For example, if the length of ``PROJECT_NAME`` exceeds 32 characters, the excess characters will be disregarded.
+``*`` - The maximum length is 32 characters, including null-termination character. For example, if the length of ``PROJECT_NAME`` exceeds 31 characters, the excess characters will be disregarded.
 
 This structure is useful for identification of images uploaded OTA because it has a fixed offset = sizeof(:cpp:type:`esp_image_header_t`) + sizeof(:cpp:type:`esp_image_segment_header_t`). As soon as a device receives the first fragment containing this structure, it has all the information to determine whether the update should be continued or not.
+
+To obtain the :cpp:type:`esp_app_desc_t` structure for the currently running application, use :cpp:func:`esp_app_get_description`.
+
+To obtain the :cpp:type:`esp_app_desc_t` structure for another OTA partition, use :cpp:func:`esp_ota_get_partition_description`.
+
 
 Adding a Custom Structure to an Application
 -------------------------------------------

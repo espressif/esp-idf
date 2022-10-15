@@ -458,10 +458,10 @@ size_t esp_mbedtls_get_crt_size(mbedtls_x509_crt *cert, size_t *num)
     size_t bytes = 0;
 
     while (cert) {
-        bytes += cert->MBEDTLS_PRIVATE(raw).MBEDTLS_PRIVATE(len);
+        bytes += cert->raw.len;
         n++;
 
-        cert = cert->MBEDTLS_PRIVATE(next);
+        cert = cert->next;
     }
 
     *num = n;
@@ -473,14 +473,15 @@ size_t esp_mbedtls_get_crt_size(mbedtls_x509_crt *cert, size_t *num)
 void esp_mbedtls_free_dhm(mbedtls_ssl_context *ssl)
 {
 #ifdef CONFIG_MBEDTLS_DHM_C
-    mbedtls_mpi_free((mbedtls_mpi *)&ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(dhm_P));
-    mbedtls_mpi_free((mbedtls_mpi *)&ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(dhm_G));
+    const mbedtls_ssl_config *conf = mbedtls_ssl_context_get_config(ssl);
+    mbedtls_mpi_free((mbedtls_mpi *)conf->MBEDTLS_PRIVATE(dhm_P));
+    mbedtls_mpi_free((mbedtls_mpi *)conf->MBEDTLS_PRIVATE(dhm_G));
 #endif /* CONFIG_MBEDTLS_DHM_C */
 }
 
 void esp_mbedtls_free_keycert(mbedtls_ssl_context *ssl)
 {
-    mbedtls_ssl_config *conf = (mbedtls_ssl_config *)ssl->MBEDTLS_PRIVATE(conf);
+    mbedtls_ssl_config *conf = (mbedtls_ssl_config * )mbedtls_ssl_context_get_config(ssl);
     mbedtls_ssl_key_cert *keycert = conf->MBEDTLS_PRIVATE(key_cert), *next;
 
     while (keycert) {
@@ -498,7 +499,8 @@ void esp_mbedtls_free_keycert(mbedtls_ssl_context *ssl)
 
 void esp_mbedtls_free_keycert_key(mbedtls_ssl_context *ssl)
 {
-    mbedtls_ssl_key_cert *keycert = ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(key_cert);
+    const mbedtls_ssl_config *conf = mbedtls_ssl_context_get_config(ssl);
+    mbedtls_ssl_key_cert *keycert = conf->MBEDTLS_PRIVATE(key_cert);
 
     while (keycert) {
         if (keycert->key) {
@@ -511,7 +513,8 @@ void esp_mbedtls_free_keycert_key(mbedtls_ssl_context *ssl)
 
 void esp_mbedtls_free_keycert_cert(mbedtls_ssl_context *ssl)
 {
-    mbedtls_ssl_key_cert *keycert = ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(key_cert);
+    const mbedtls_ssl_config *conf = mbedtls_ssl_context_get_config(ssl);
+    mbedtls_ssl_key_cert *keycert = conf->MBEDTLS_PRIVATE(key_cert);
 
     while (keycert) {
         if (keycert->cert) {
@@ -527,7 +530,7 @@ void esp_mbedtls_free_keycert_cert(mbedtls_ssl_context *ssl)
 void esp_mbedtls_free_cacert(mbedtls_ssl_context *ssl)
 {
     if (ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(ca_chain)) {
-        mbedtls_ssl_config *conf = (mbedtls_ssl_config *)ssl->MBEDTLS_PRIVATE(conf);
+        mbedtls_ssl_config *conf = (mbedtls_ssl_config * )mbedtls_ssl_context_get_config(ssl);
 
         mbedtls_x509_crt_free(conf->MBEDTLS_PRIVATE(ca_chain));
         conf->MBEDTLS_PRIVATE(ca_chain) = NULL;

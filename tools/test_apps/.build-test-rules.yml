@@ -11,6 +11,14 @@ tools/test_apps/build_system/ldgen_test:
       temporary: true
       reason: target esp32c2 is not supported yet
 
+tools/test_apps/linux_compatible/hello_world_linux_compatible:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      temporary: true
+      reason: pytest doesn't support linux target yet, hence, it's tested independenly in the host_tests stage
+
 tools/test_apps/peripherals/usb:
   enable:
     - if: IDF_TARGET in ["esp32s2", "esp32s3"]
@@ -95,7 +103,7 @@ tools/test_apps/system/flash_psram:
 
 tools/test_apps/system/g0_components:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "esp32h2"
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32h2", "esp32c6"] # preview targets
 
 tools/test_apps/system/g1_components:
   disable:
