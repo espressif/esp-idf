@@ -61,6 +61,7 @@
 #define EXT_FUNC_VERSION             0x20220125
 #define EXT_FUNC_MAGIC_VALUE         0xA5A5A5A5
 
+#define BT_ASSERT_PRINT              ets_printf
 
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 /* ACL_DATA_MBUF_LEADINGSPCAE: The leadingspace in user info header for ACL data */
@@ -226,7 +227,7 @@ static void IRAM_ATTR esp_reset_rpa_moudle(void)
 
 static void IRAM_ATTR osi_assert_wrapper(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2)
 {
-    ESP_LOGE(NIMBLE_PORT_LOG_TAG, "BLE assert: line %d in function %s, param: 0x%x, 0x%x", ln, fn, param1, param2);
+    BT_ASSERT_PRINT("BLE assert: line %d in function %s, param: 0x%x, 0x%x", ln, fn, param1, param2);
     assert(0);
 }
 
