@@ -21,7 +21,6 @@
 #define BT_TARGET_H
 
 #include <bt_common.h>
-#include "soc/soc_caps.h"
 
 #ifndef BUILDCFG
 #define BUILDCFG
@@ -258,11 +257,6 @@
 #define BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT UC_BT_BLE_ESTAB_LINK_CONN_TOUT
 #endif
 
-#ifdef SOC_BLE_DONT_UPDATE_OWN_RPA
-#define BLE_UPDATE_BLE_ADDR_TYPE_RPA FALSE
-#else
-#define BLE_UPDATE_BLE_ADDR_TYPE_RPA TRUE
-#endif
 //------------------Added from bdroid_buildcfg.h---------------------
 #ifndef L2CAP_EXTFEA_SUPPORTED_MASK
 #define L2CAP_EXTFEA_SUPPORTED_MASK (L2CAP_EXTFEA_ENH_RETRANS | L2CAP_EXTFEA_STREAM_MODE | L2CAP_EXTFEA_NO_CRC | L2CAP_EXTFEA_FIXED_CHNLS)
@@ -1171,15 +1165,27 @@
 #endif
 
 #ifndef BTM_BLE_ADV_TX_POWER
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S3)
 #define BTM_BLE_ADV_TX_POWER {-12, -9, -6, -3, 0, 3, 6, 9}
+#else
+#define BTM_BLE_ADV_TX_POWER {-27, -21, -18, -15, -12, -9, -6, -3, 0, 3, 6, 9, 12, 15, 18}
+#endif
 #endif
 
 #ifndef BTM_TX_POWER
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S3)
 #define BTM_TX_POWER {-12, -9, -6, -3, 0, 3, 6, 9}
+#else
+#define BTM_TX_POWER {-27, -24, -21, -18, -15, -12, -9, -6, -3, 0, 3, 6, 9, 12, 15, 18}
+#endif
 #endif
 
 #ifndef BTM_TX_POWER_LEVEL_MAX
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S3)
 #define BTM_TX_POWER_LEVEL_MAX 7
+#else
+#define BTM_TX_POWER_LEVEL_MAX 15
+#endif
 #endif
 
 
@@ -2117,6 +2123,10 @@ The maximum number of payload octets that the local device can receive in a sing
 
 #ifndef BTA_DM_AVOID_A2DP_ROLESWITCH_ON_INQUIRY
 #define BTA_DM_AVOID_A2DP_ROLESWITCH_ON_INQUIRY FALSE
+#endif
+
+#ifndef BTA_GATTC_MAX_CACHE_CHAR
+#define BTA_GATTC_MAX_CACHE_CHAR UC_BT_GATTC_MAX_CACHE_CHAR
 #endif
 
 /******************************************************************************

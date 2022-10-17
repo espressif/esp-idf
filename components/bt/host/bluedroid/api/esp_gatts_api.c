@@ -85,13 +85,18 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
 
 esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db,
                                         esp_gatt_if_t gatts_if,
-                                        uint8_t max_nb_attr,
+                                        uint16_t max_nb_attr,
                                         uint8_t srvc_inst_id)
 {
     btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (max_nb_attr > ESP_GATT_ATTR_HANDLE_MAX) {
+        LOG_ERROR("The number of attribute should not be greater than CONFIG_BT_GATT_MAX_SR_ATTRIBUTES\n");
+        return ESP_ERR_INVALID_ARG;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
