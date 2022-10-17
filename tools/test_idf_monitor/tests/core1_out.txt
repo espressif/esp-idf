@@ -36,7 +36,6 @@ I (401) esp_core_dump_uart: Press Enter to print core dump to UART...
 Core Dump detected!
 I (434) esp_core_dump_uart: Print core dump to uart...
 I (434) esp_core_dump_elf: Found tasks: 8
-espcoredump.py v0.4-dev
 ===============================================================
 ==================== ESP32 CORE DUMP START ====================
 
