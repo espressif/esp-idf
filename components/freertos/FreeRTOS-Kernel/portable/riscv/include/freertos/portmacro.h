@@ -399,6 +399,19 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 #define portALT_GET_RUN_TIME_COUNTER_VALUE(x)    do {x = (uint32_t)esp_timer_get_time();} while(0)
 #endif
 
+// -------------- Optimized Task Selection -----------------
+
+#if configUSE_PORT_OPTIMISED_TASK_SELECTION == 1
+/* Check the configuration. */
+#if( configMAX_PRIORITIES > 32 )
+#error configUSE_PORT_OPTIMISED_TASK_SELECTION can only be set to 1 when configMAX_PRIORITIES is less than or equal to 32.  It is very rare that a system requires more than 10 to 15 different priorities as tasks that share a priority will time slice.
+#endif
+
+/* Store/clear the ready priorities in a bit map. */
+#define portRECORD_READY_PRIORITY( uxPriority, uxReadyPriorities ) ( uxReadyPriorities ) |= ( 1UL << ( uxPriority ) )
+#define portRESET_READY_PRIORITY( uxPriority, uxReadyPriorities ) ( uxReadyPriorities ) &= ~( 1UL << ( uxPriority ) )
+#define portGET_HIGHEST_PRIORITY( uxTopPriority, uxReadyPriorities ) uxTopPriority = ( 31 - __builtin_clz( ( uxReadyPriorities ) ) )
+#endif /* configUSE_PORT_OPTIMISED_TASK_SELECTION */
 
 
 /* --------------------------------------------- Inline Implementations ------------------------------------------------
