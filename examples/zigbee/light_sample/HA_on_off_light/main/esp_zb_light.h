@@ -35,43 +35,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "zboss_api.h"
+#include "esp_zigbee_core.h"
 #include "light_driver.h"
 
 /* Zigbee configuration */
-#define IEEE_CHANNEL_MASK               (1l << 13)  /* Zigbee default setting is channel 13 for light example usage */
-#define ERASE_PERSISTENT_CONFIG         ZB_TRUE     /* erase network devices before running example */
+#define INSTALLCODE_POLICY_ENABLE       false    /* enable the install code policy for security */
+#define ED_AGING_TIMEOUT                ED_AGING_TIMEOUT_64MIN
+#define ED_KEEP_ALIVE                   ZB_MILLISECONDS_TO_BEACON_INTERVAL(3000)
+#define HA_ESP_LIGHT_ENDPOINT           10    /* esp light bulb device endpoint, used to process light controlling commands */
 
-/* groups cluster attributes */
-typedef struct {
-    zb_uint8_t name_support;
-} zb_zcl_groups_attrs_t;
+#define ESP_ZB_ZED_CONFIG()                                         \
+    {                                                               \
+        .esp_zb_role = ESP_ZB_DEVICE_TYPE_ED,                       \
+        .install_code_policy = INSTALLCODE_POLICY_ENABLE,           \
+        .nwk_cfg.zed_cfg = {                                        \
+            .ed_timeout = ED_AGING_TIMEOUT,                         \
+            .keep_alive = ED_KEEP_ALIVE,                            \
+        },                                                          \
+    }
 
-/* scene cluster attributes */
-typedef struct {
-    zb_uint8_t  scene_count;
-    zb_uint8_t  current_scene;
-    zb_uint8_t  scene_valid;
-    zb_uint8_t  name_support;
-    zb_uint16_t current_group;
-} zb_zcl_scenes_attrs_t;
-
-/* light bulb device cluster attributes */
-typedef struct {
-    zb_zcl_basic_attrs_t            basic_attr;
-    zb_zcl_identify_attrs_t         identify_attr;
-    zb_zcl_groups_attrs_t           groups_attr;
-    zb_zcl_scenes_attrs_t           scenes_attr;
-    zb_zcl_on_off_attrs_t           on_off_attr;
-} bulb_device_ctx_t;
-
-#define HA_ESP_LIGHT_ENDPOINT        10    /* esp light bulb device endpoint, used to process light controlling commands */
-#define ZB_ESP_DEFAULT_RADIO_CONFIG()                           \
+#define ESP_ZB_DEFAULT_RADIO_CONFIG()                           \
     {                                                           \
         .radio_mode = RADIO_MODE_NATIVE,                        \
     }
 
-#define ZB_ESP_DEFAULT_HOST_CONFIG()                            \
+#define ESP_ZB_DEFAULT_HOST_CONFIG()                            \
     {                                                           \
         .host_connection_mode = HOST_CONNECTION_MODE_NONE,      \
     }

@@ -34,39 +34,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "zboss_api.h"
-#include "zboss_api_zcl.h"
-#include "zb_ha.h"
+#include "esp_zigbee_core.h"
 #include "switch_driver.h"
 
 /* Zigbee configuration */
-#define IEEE_CHANNEL_MASK               (1l << 13)  /* ZigBee default setting is channel 13 for light example usage */
-#define ERASE_PERSISTENT_CONFIG         ZB_TRUE     /* erase network devices before running example  */
-#define MAX_CHILDREN                    10          /* the max number of connected devices */
+#define MAX_CHILDREN                    10          /* the max amount of connected devices */
+#define INSTALLCODE_POLICY_ENABLE       false    /* enable the install code policy for security */
+#define HA_ONOFF_SWITCH_ENDPOINT        1          /* esp light switch device endpoint */
 
-/* ZCL configuration */
-#define HA_ONOFF_SWITCH_ENDPOINT             1
-#define MATCH_DESC_REQ_START_DELAY          (2 * ZB_TIME_ONE_SECOND)            /* time delay between the light switch startup and light finding procedure */
-#define MATCH_DESC_REQ_TIMEOUT              (5 * ZB_TIME_ONE_SECOND)            /* timeout for finding bulb */
-#define MATCH_DESC_REQ_ROLE                 ZB_NWK_BROADCAST_RX_ON_WHEN_IDLE    /* find non-sleep Zigbee device */
+#define ESP_ZB_ZC_CONFIG()                                                              \
+    {                                                                                   \
+        .esp_zb_role = ESP_ZB_DEVICE_TYPE_COORDINATOR,                                  \
+        .install_code_policy = INSTALLCODE_POLICY_ENABLE,                               \
+        .nwk_cfg.zczr_cfg = {                                                           \
+            .max_children = MAX_CHILDREN,                                               \
+        },                                                                              \
+    }
 
-typedef struct light_switch_bulb_params_s {
-    zb_uint8_t  endpoint;
-    zb_uint16_t short_addr;
-} light_switch_bulb_params_t;
-
-/* light switch device cluster attributes */
-typedef struct {
-    zb_zcl_basic_attrs_t            basic_attr;
-    zb_zcl_identify_attrs_t         identify_attr;
-    light_switch_bulb_params_t      bulb_params;
-} switch_device_ctx_t;
-#define ZB_ESP_DEFAULT_RADIO_CONFIG()                           \
+#define ESP_ZB_DEFAULT_RADIO_CONFIG()                           \
     {                                                           \
         .radio_mode = RADIO_MODE_NATIVE,                        \
     }
 
-#define ZB_ESP_DEFAULT_HOST_CONFIG()                            \
+#define ESP_ZB_DEFAULT_HOST_CONFIG()                            \
     {                                                           \
         .host_connection_mode = HOST_CONNECTION_MODE_NONE,      \
     }

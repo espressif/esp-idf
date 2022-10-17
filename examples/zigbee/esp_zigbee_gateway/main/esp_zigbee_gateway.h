@@ -36,14 +36,21 @@
  */
 
 #include "esp_err.h"
-#include "zboss_api.h"
+#include "esp_zigbee_core.h"
 
 /* Zigbee Configuration */
-#define IEEE_CHANNEL_MASK               (1l << 13)  /* ZigBee default setting is channel 13 for light example usage */
-#define ERASE_PERSISTENT_CONFIG         ZB_TRUE     /* erase network devices before running example */
 #define MAX_CHILDREN                    10          /* the max amount of connected devices */
+#define INSTALLCODE_POLICY_ENABLE       false    /* enable the install code policy for security */
 
-#define ZB_ESP_DEFAULT_RADIO_CONFIG()                           \
+#define ESP_ZB_ZC_CONFIG()                                                              \
+    {                                                                                   \
+        .esp_zb_role = ESP_ZB_DEVICE_TYPE_COORDINATOR,                                  \
+        .install_code_policy = INSTALLCODE_POLICY_ENABLE,                               \
+        .nwk_cfg.zczr_cfg = {                                                           \
+            .max_children = MAX_CHILDREN,                                               \
+        },                                                                              \
+    }
+#define ESP_ZB_DEFAULT_RADIO_CONFIG()                           \
     {                                                           \
         .radio_mode = RADIO_MODE_UART_RCP,                      \
             .radio_uart_config = {                              \
@@ -63,7 +70,7 @@
         },                                                      \
     }
 
-#define ZB_ESP_DEFAULT_HOST_CONFIG()                            \
+#define ESP_ZB_DEFAULT_HOST_CONFIG()                            \
     {                                                           \
         .host_connection_mode = HOST_CONNECTION_MODE_NONE,      \
     }

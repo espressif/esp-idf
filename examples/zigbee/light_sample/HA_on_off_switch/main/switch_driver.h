@@ -78,7 +78,7 @@ typedef struct {
     switch_func_t func;
 } switch_func_pair_t;
 
-typedef void (*esp_switch_callback_t)(switch_func_pair_t param);
+typedef void (*esp_switch_callback_t)(switch_func_pair_t *param);
 
 /**
  * @brief init function for switch and callback setup

@@ -3,8 +3,6 @@
 
 # Gateway Example
 
-(See the `README.md` file in the upper level 'examples' directory for more information about examples.)
-
 This example demonstrates how to build a Zigbee Gateway device. It runs on a Wi-Fi SoC such as ESP32, ESP32-C3 and ESP32-S3, with an 802.15.4 SoC like ESP32-H2 running [esp_zigbee_rcp](../esp_zigbee_rcp) to provide 802.15.4 radio.
 
 ## Hardware Required
@@ -29,6 +27,10 @@ ESP32 pin     | ESP32-H2 pin
 
 Before project configuration and build, make sure to set the correct chip target using `idf.py set-target esp32` or `idf.py set-target esp32s3`
 
+## Erase the NVRAM 
+
+Before flash it to the board, it is recommended to erase NVRAM if user doesn't want to keep the previous examples or other projects stored info using `idf.py -p PORT erase-flash`
+
 ## Build and Flash
 
 Build the project, flash it to the board, and start the monitor tool to view the serial output by running `idf.py -p PORT flash monitor`
@@ -40,13 +42,13 @@ Build the project, flash it to the board, and start the monitor tool to view the
 As you run the example, you will see the following log:
 
 esp_zigbee_gateway:
-I (660) ESP_ZB_GATEWAY: status: -1
-I (670) ESP_ZB_GATEWAY: Zigbee stack initialized
-I (680) ESP_ZB_GATEWAY: Zigbee rcp device booted
-I (1280) ESP_ZB_GATEWAY: Start network formation
-I (3060) ESP_ZB_GATEWAY: Formed network successfully (ieee extended address: f9:54:2d:01:a0:03:f7:84, PAN ID: 0x8651)
-I (4060) ESP_ZB_GATEWAY: status: 0
-I (4400) ESP_ZB_GATEWAY: Network steering started
+I (660) ESP_ZB_GATEWAY: status: -1  
+I (670) ESP_ZB_GATEWAY: Zigbee stack initialized  
+I (680) ESP_ZB_GATEWAY: Zigbee rcp device booted  
+I (1280) ESP_ZB_GATEWAY: Start network formation  
+I (3060) ESP_ZB_GATEWAY: Formed network successfully (ieee extended address: f9:54:2d:01:a0:03:f7:84, PAN ID: 0x8651)  
+I (4060) ESP_ZB_GATEWAY: status: 0  
+I (4400) ESP_ZB_GATEWAY: Network steering started  
 
 ## Gateway Functions
 

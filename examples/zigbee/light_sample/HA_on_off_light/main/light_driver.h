@@ -35,27 +35,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "esp_log.h"
-#include "led_strip.h"
-#include "light_driver.h"
+#pragma once
 
-static led_strip_handle_t s_led_strip;
+#include <stdbool.h>
 
-void light_driver_set_power(bool power)
-{
-    ESP_ERROR_CHECK(led_strip_set_pixel(s_led_strip, 0, 255 * power, 255 * power, 255 * power));
-    ESP_ERROR_CHECK(led_strip_refresh(s_led_strip));
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void light_driver_init(bool power)
-{
-    led_strip_config_t led_strip_conf = {
-        .max_leds = CONFIG_EXAMPLE_STRIP_LED_NUMBER,
-        .strip_gpio_num = CONFIG_EXAMPLE_STRIP_LED_GPIO,
-    };
-    led_strip_rmt_config_t rmt_conf = {
-        .resolution_hz = 10 * 1000 * 1000, // 10MHz
-    };
-    ESP_ERROR_CHECK(led_strip_new_rmt_device(&led_strip_conf, &rmt_conf, &s_led_strip));
-    light_driver_set_power(power);
-}
+/* light intensity level */
+#define LIGHT_DEFAULT_ON  1
+#define LIGHT_DEFAULT_OFF 0
+
+/* LED strip configuration */
+#define CONFIG_EXAMPLE_STRIP_LED_GPIO   8
+#define CONFIG_EXAMPLE_STRIP_LED_NUMBER 1
+
+/**
+* @brief Set light power (on/off).
+*
+* @param  power  The light power to be set
+*/
+void light_driver_set_power(bool power);
+
+/**
+* @brief color light driver init, be invoked where you want to use color light
+*
+* @param power power on/off
+*/
+void light_driver_init(bool power);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif

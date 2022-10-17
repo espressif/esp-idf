@@ -113,7 +113,7 @@ static void switch_driver_button_detected(void *arg)
             case SWITCH_RELEASE_DETECTED:
                 switch_state = SWITCH_IDLE;
                 /* callback to button_handler */
-                (*func_ptr)(button_func_pair);
+                (*func_ptr)(&button_func_pair);
                 break;
             default:
                 break;

@@ -46,7 +46,7 @@
 #endif
 static const char *TAG = "ESP_ZB_RCP";
 
-void zboss_signal_handler(zb_bufid_t bufid)
+void zboss_signal_handler(uint8_t bufid)
 {
     zb_zdo_app_signal_hdr_t *sg_p = NULL;
     /* get application signal from the buffer */
@@ -72,7 +72,7 @@ void zboss_signal_handler(zb_bufid_t bufid)
     }
 }
 
-static void zboss_task(void * pvParameters)
+static void esp_zb_task(void * pvParameters)
 {
     ZB_INIT("esp_zigbee_rcp");
     while (1) {
@@ -82,11 +82,12 @@ static void zboss_task(void * pvParameters)
 
 void app_main(void)
 {
-    zb_esp_platform_config_t config = {
-        .radio_config = ZB_ESP_DEFAULT_RADIO_CONFIG(),
-        .host_config = ZB_ESP_DEFAULT_HOST_CONFIG(),
+    esp_zb_platform_config_t config = {
+        .radio_config = ESP_ZB_DEFAULT_RADIO_CONFIG(),
+        .host_config = ESP_ZB_DEFAULT_HOST_CONFIG(),
     };
     /* load Zigbee rcp platform config to initialization */
-    ESP_ERROR_CHECK(zb_esp_platform_config(&config));
-    xTaskCreate(zboss_task, "zboss_main", 4096, NULL, 5, NULL);
+    esp_zb_macsplit_set_version(RCP_COMPILE_DEFINE);
+    ESP_ERROR_CHECK(esp_zb_platform_config(&config));
+    xTaskCreate(esp_zb_task, "Zigbee_main", 4096, NULL, 5, NULL);
 }
