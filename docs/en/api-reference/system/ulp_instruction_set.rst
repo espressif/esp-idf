@@ -1001,7 +1001,7 @@ The detailed description of all instructions is presented below:
             // and ULP will not run again until started by the main program.
 
   1: check_wakeup:                        // Read RTC_CNTL_RDY_FOR_WAKEUP and RTC_CNTL_MAIN_STATE_IN_IDLE bit
-            READ_RTC_REG(RTC_CNTL_LOW_POWER_ST_REG, 27, 0)
+            READ_RTC_REG(RTC_CNTL_LOW_POWER_ST_REG, 27, 1)
             MOVE r1, r0                   // Copy result in to r1
             READ_RTC_FIELD(RTC_CNTL_LOW_POWER_ST_REG, RTC_CNTL_RDY_FOR_WAKEUP)
             OR r0, r0, r1
