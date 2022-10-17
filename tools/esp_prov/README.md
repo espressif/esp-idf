@@ -1,17 +1,10 @@
-****# ESP Provisioning Tool
+# ESP Provisioning Tool
 
-# NAME
-`esp_prov` - A python based utility for testing the provisioning examples over a host
+## Description
 
-# SYNOPSIS
+`esp_prov` - A python-based utility for testing the provisioning examples over a host machine.
 
-```
-python esp_prov.py --transport < mode of provisioning : softap \ ble \ console > [ Optional parameters... ]
-```
-
-# DESCRIPTION
-
-Usage of `esp-prov` assumes that the provisioning app has specific protocomm endpoints active. These endpoints are active in the provisioning examples and accept specific protobuf data structures:
+Usage of `esp-prov` assumes that the provisioning app has specific protocomm endpoints active. These endpoints are active in the provisioning examples and accept specific protobuf data structure:
 
 | Endpoint Name | URI (HTTP server on ip:port) | Description                                                                              |
 |---------------|------------------------------|------------------------------------------------------------------------------------------|
@@ -22,7 +15,12 @@ Usage of `esp-prov` assumes that the provisioning app has specific protocomm end
 | custom-data   | http://ip:port/custom-data   | Optional endpoint for sending custom data (refer `wifi_prov_mgr` example)                |
 
 
-# PARAMETERS
+## Usage
+
+```
+python esp_prov.py --transport < mode of provisioning : softap \ ble \ console > [ Optional parameters... ]
+```
+### Parameters
 
 * `--help`
     Print the list of options along with brief descriptions
@@ -84,9 +82,16 @@ Usage of `esp-prov` assumes that the provisioning app has specific protocomm end
     An information string can be sent to the `custom-data` endpoint during provisioning using this argument.
     (Assumes the provisioning app has an endpoint called `custom-data` - see [provisioning/wifi_prov_mgr](https://github.com/espressif/esp-idf/tree/master/examples/provisioning/wifi_prov_mgr) example for implementation details).
 
-# AVAILABILITY
 
-For Android, a provisioning tool along with source code is available [here](https://github.com/espressif/esp-idf-provisioning-android)
+### Example Usage
+
+Please refer to the `README.md` file with the `wifi_prov_mgr` example present under `$IDF_PATH/examples/provisioning/`.
+
+This example uses specific options of the `esp_prov` tool and gives an overview of simple as well as advanced usage scenarios.
+
+## Availability
+
+For Android, a provisioning tool along with source code is available [here](https://github.com/espressif/esp-idf-provisioning-android).
 
 ## Dependencies
 
@@ -102,8 +107,4 @@ To install the dependency packages needed, please run the following command:
 bash install.sh --enable-ttfw
 ```
 
-# EXAMPLE USAGE
-
-Please refer to the `README.md` file with the `wifi_prov_mgr` example present under `$IDF_PATH/examples/provisioning/`.
-
-This example uses specific options of the `esp_prov` tool and gives an overview of simple as well as advanced usage scenarios.
+**Note:** For troubleshooting errors with BLE transport, please refer this [link](https://bleak.readthedocs.io/en/latest/troubleshooting.html).
