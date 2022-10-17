@@ -23,6 +23,7 @@
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/error.h"
 #include "mbedtls/debug.h"
+#include "mbedtls/esp_debug.h"
 
 #include "esp_crt_bundle.h"
 #include "esp_random.h"
@@ -91,6 +92,9 @@ esp_err_t server_setup(mbedtls_endpoint_t *server)
 {
     int ret;
     mbedtls_ssl_config_init( &server->conf );
+#if CONFIG_MBEDTLS_DEBUG
+    mbedtls_esp_enable_debug_log( &server->conf, CONFIG_MBEDTLS_DEBUG_LEVEL );
+#endif
     mbedtls_net_init( &server->listen_fd );
     mbedtls_net_init( &server->client_fd );
     mbedtls_ssl_init( &server->ssl );
@@ -213,6 +217,9 @@ esp_err_t client_setup(mbedtls_endpoint_t *client)
 {
     int ret;
     mbedtls_ssl_config_init( &client->conf );
+#if CONFIG_MBEDTLS_DEBUG
+    mbedtls_esp_enable_debug_log( &client->conf, CONFIG_MBEDTLS_DEBUG_LEVEL );
+#endif
     mbedtls_net_init( &client->client_fd );
     mbedtls_ssl_init( &client->ssl );
     mbedtls_x509_crt_init( &client->cert );
