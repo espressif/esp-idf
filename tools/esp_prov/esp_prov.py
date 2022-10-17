@@ -290,6 +290,17 @@ async def wait_wifi_connected(tp, sec):
             return False
 
 
+async def reset_wifi(sel_transport, tp, sec):
+    try:
+        message = prov.ctrl_reset_request(sec)
+        response = await tp.send_data('prov-ctrl', message)
+        prov.ctrl_reset_response(sec, response)
+
+    except RuntimeError as e:
+        on_except(e)
+        return None
+
+
 def desc_format(*args):
     desc = ''
     for arg in args:
@@ -372,6 +383,8 @@ async def main():
                             'This is an optional parameter, only intended for use with '
                             '"examples/provisioning/wifi_prov_mgr"'))
 
+    parser.add_argument('--reset', help='Reset WiFi', action='store_true')
+
     parser.add_argument('-v','--verbose', help='Increase output verbosity', action='store_true')
 
     args = parser.parse_args()
@@ -431,6 +444,11 @@ async def main():
             print('Failed to establish session. Ensure that security scheme and proof of possession are correct')
             raise RuntimeError('Error in establishing session')
         print('==== Session Established ====')
+
+        if args.reset:
+            print('==== Reseting WiFi====')
+            await reset_wifi(args.mode.lower(), obj_transport, obj_security)
+            sys.exit()
 
         if args.custom_data != '':
             print('\n==== Sending Custom data to Target ====')

@@ -3,5 +3,6 @@
 #
 
 from .custom_prov import *  # noqa F403
+from .wifi_ctrl import *  # noqa F403
 from .wifi_prov import *  # noqa F403
 from .wifi_scan import *  # noqa F403
