@@ -36,6 +36,14 @@ void cache_hal_disable(cache_type_t type);
  */
 void cache_hal_enable(cache_type_t type);
 
+/**
+ * Invalidate a Cache item for either ICache or DCache.
+ *
+ * @param vaddr  Start address of the region to be invalidated
+ * @param size   Size of the region to be invalidated
+ */
+void cache_hal_invalidate_addr(uint32_t vaddr, uint32_t size);
+
 #ifdef __cplusplus
 }
 #endif
