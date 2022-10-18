@@ -32,7 +32,9 @@ esp_err_t tinyusb_driver_install(const tinyusb_config_t *config)
         .controller = USB_PHY_CTRL_OTG,
         .otg_mode = USB_OTG_MODE_DEVICE,
     };
-    usb_phy_gpio_conf_t gpio_conf = {
+
+    // External PHY IOs config
+    usb_phy_ext_io_conf_t ext_io_conf = {
         .vp_io_num = USBPHY_VP_NUM,
         .vm_io_num = USBPHY_VM_NUM,
         .rcv_io_num = USBPHY_RCV_NUM,
@@ -42,9 +44,15 @@ esp_err_t tinyusb_driver_install(const tinyusb_config_t *config)
     };
     if (config->external_phy) {
         phy_conf.target = USB_PHY_TARGET_EXT;
-        phy_conf.gpio_conf = &gpio_conf;
+        phy_conf.ext_io_conf = &ext_io_conf;
     } else {
         phy_conf.target = USB_PHY_TARGET_INT;
+    }
+
+    // OTG IOs config
+    const usb_phy_otg_io_conf_t otg_io_conf = USB_PHY_SELF_POWERED_DEVICE(config->vbus_monitor_io);
+    if (config->self_powered) {
+        phy_conf.otg_io_conf = &otg_io_conf;
     }
     ESP_RETURN_ON_ERROR(usb_new_phy(&phy_conf, &phy_hdl), TAG, "Install USB PHY failed");
 
