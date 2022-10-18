@@ -80,7 +80,7 @@ typedef struct {
         .tos = 0,                        \
         .ttl = IP_DEFAULT_TTL,           \
         .target_addr = *(IP_ANY_TYPE),   \
-        .task_stack_size = 2048,         \
+        .task_stack_size = ESP_TASK_PING_STACK,         \
         .task_prio = 2,                  \
         .interface = 0,\
     }
