@@ -84,9 +84,9 @@ esp_err_t adc_cali_create_scheme_curve_fitting(const adc_cali_curve_fitting_conf
     if (ret != ESP_OK) {
         return ret;
     }
-    // current version only accepts encoding ver 1.
+    // current version only accepts encoding version: `ESP_EFUSE_ADC_CALIB_VER`.
     uint8_t adc_encoding_version = esp_efuse_rtc_calib_get_ver();
-    ESP_RETURN_ON_FALSE(adc_encoding_version == 1, ESP_ERR_NOT_SUPPORTED, TAG, "Calibration required eFuse bits not burnt");
+    ESP_RETURN_ON_FALSE(adc_encoding_version == ESP_EFUSE_ADC_CALIB_VER, ESP_ERR_NOT_SUPPORTED, TAG, "Calibration required eFuse bits not burnt");
 
     adc_cali_scheme_t *scheme = (adc_cali_scheme_t *)heap_caps_calloc(1, sizeof(adc_cali_scheme_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(scheme, ESP_ERR_NO_MEM, TAG, "no mem for adc calibration scheme");
@@ -151,7 +151,7 @@ static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
 //To get the reference point (Dout, Vin)
 static void get_first_step_reference_point(int version_num, adc_unit_t unit_id, adc_atten_t atten, adc_calib_info_t *calib_info)
 {
-    assert(version_num == 1);
+    assert(version_num == ESP_EFUSE_ADC_CALIB_VER);
     esp_err_t ret;
 
     calib_info->version_num = version_num;

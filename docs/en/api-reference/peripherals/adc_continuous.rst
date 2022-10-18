@@ -205,11 +205,11 @@ To do further calbration to convert the ADC raw result to voltage in mV, please 
 Hardware Limitations
 ^^^^^^^^^^^^^^^^^^^^
 
-- A specific ADC unit can only work under one operating mode at any one time, either Continuous Mode or Oneshot Mode. :cpp:func:`adc_continuous_start` has provided the protection.
+- A specific ADC unit can only work under one operating mode at any one time, either continuous mode or oneshot mode. :cpp:func:`adc_continuous_start` has provided the protection.
 
 - Random Number Generator uses ADC as an input source. When ADC continuous mode driver works, the random number generated from RNG will be less random.
 
-.. only:: esp32s2 or esp32c3 or esp32s3
+.. only:: esp32 or esp32s2 or esp32c3 or esp32s3
 
     - ADC2 is also used by the Wi-Fi. :cpp:func:`adc_continuous_start` has provided the protection between Wi-Fi driver and ADC continuous mode driver.
 

@@ -7,17 +7,24 @@
 #include <esp_bit_defs.h>
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
+#include "esp_efuse_rtc_calib.h"
 
 int esp_efuse_rtc_calib_get_ver(void)
 {
-    uint32_t result = 0;
-    esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MAJOR, &result, ESP_EFUSE_BLK_VERSION_MAJOR[0]->bit_count); // IDF-5366
-    return result;
+    uint32_t blk_ver_major = 0;
+    esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MAJOR, &blk_ver_major, ESP_EFUSE_BLK_VERSION_MAJOR[0]->bit_count); // IDF-5366
+
+    uint32_t cali_version = (blk_ver_major == 1) ? ESP_EFUSE_ADC_CALIB_VER : 0;
+    if (!cali_version) {
+        ESP_LOGW("eFuse", "calibration efuse version does not match, set default version to 0");
+    }
+
+    return cali_version;
 }
 
 uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten)
 {
-    assert(version == 1);
+    assert(version == ESP_EFUSE_ADC_CALIB_VER);
     (void) adc_unit;
     const esp_efuse_desc_t** init_code_efuse;
     assert(atten < 4);
@@ -44,7 +51,7 @@ esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, in
     (void)adc_unit;    //On esp32c3,  V1 we don't have calibration data for ADC2, using the efuse data of ADC1
     const esp_efuse_desc_t** cal_vol_efuse;
     uint32_t calib_vol_expected_mv;
-    if (version != 1) {
+    if (version != ESP_EFUSE_ADC_CALIB_VER) {
         return ESP_ERR_INVALID_ARG;
     }
     if (atten >= 4) {

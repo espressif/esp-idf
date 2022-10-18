@@ -71,7 +71,6 @@
         BLK_VERSION_MAJOR,                    EFUSE_BLK2,   60,    2,     BLK_VERSION_MAJOR
 
     # EFUSE_RD_BLK2_DATA2_REG
-        PVT_LOW,                              EFUSE_BLK2,   91,    5,     EFUSE_PVT_LOW
 
 
 ################
@@ -83,6 +82,11 @@ KEY0.SB_128BIT,                           EFUSE_BLK3,  128,  128,     [128bit SB
 # AUTO CONFIG DIG&RTC DBIAS#
 ################
 OCODE,                                  EFUSE_BLK2,     62,    7,      OCode
+TEMP_CALIB,                             EFUSE_BLK2,     69,    9,      Temperature calibration data
+ADC1_INIT_CODE_ATTEN0,                  EFUSE_BLK2,     78,    8,      ADC1 init code at atten0
+ADC1_INIT_CODE_ATTEN3,                  EFUSE_BLK2,     86,    5,      ADC1 init code at atten3
+ADC1_CAL_VOL_ATTEN0,                    EFUSE_BLK2,     91,    8,      ADC1 calibration voltage at atten0
+ADC1_CAL_VOL_ATTEN3,                    EFUSE_BLK2,     99,    6,      ADC1 calibration voltage at atten3
 DIG_DBIAS_HVT,                          EFUSE_BLK2,    105,    5,      BLOCK2 digital dbias when hvt
 DIG_LDO_SLP_DBIAS2,                     EFUSE_BLK2,    110,    7,      BLOCK2 DIG_LDO_DBG0_DBIAS2
 DIG_LDO_SLP_DBIAS26,                    EFUSE_BLK2,    117,    8,      BLOCK2 DIG_LDO_DBG0_DBIAS26
