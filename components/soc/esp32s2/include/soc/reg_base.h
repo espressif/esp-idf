@@ -20,7 +20,6 @@
 #define DR_REG_ASSIST_DEBUG_BASE                0x3f4ce000
 #define DR_REG_DEDICATED_GPIO_BASE              0x3f4cf000
 #define DR_REG_INTRUSION_BASE                   0x3f4d0000
-#define DR_REG_DPORT_END                        0x3f4d3FFC
 #define DR_REG_UART_BASE                        0x3f400000
 #define DR_REG_SPI1_BASE                        0x3f402000
 #define DR_REG_SPI0_BASE                        0x3f403000

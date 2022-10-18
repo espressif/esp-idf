@@ -32,12 +32,9 @@
 #include "esp_rom_sys.h"
 
 #include "soc/rtc_cntl_reg.h"
-#if CONFIG_IDF_TARGET_ESP32C3
 #include "soc/syscon_reg.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "soc/syscon_reg.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "soc/syscon_reg.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "soc/dport_reg.h"
 #endif
 #include "hal/efuse_hal.h"
 
@@ -287,9 +284,12 @@ void IRAM_ATTR esp_wifi_bt_power_domain_on(void)
     _lock_acquire(&s_wifi_bt_pd_controller.lock);
     if (s_wifi_bt_pd_controller.count++ == 0) {
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
-        SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_WIFIBB_RST | SYSTEM_FE_RST);
-        CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_WIFIBB_RST | SYSTEM_FE_RST);
+#if CONFIG_IDF_TARGET_ESP32
+        DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, MODEM_RESET_FIELD_WHEN_PU);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, MODEM_RESET_FIELD_WHEN_PU);
+#else
+        SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, MODEM_RESET_FIELD_WHEN_PU);
+        CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, MODEM_RESET_FIELD_WHEN_PU);
 #endif
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
     }

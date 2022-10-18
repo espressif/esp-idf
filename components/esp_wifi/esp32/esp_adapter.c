@@ -515,8 +515,8 @@ static void IRAM_ATTR timer_arm_us_wrapper(void *ptimer, uint32_t us, bool repea
 
 static void wifi_reset_mac_wrapper(void)
 {
-    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_WIFIMAC_RST);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_WIFIMAC_RST);
 }
 
 static void wifi_clock_enable_wrapper(void)
