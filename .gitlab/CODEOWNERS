@@ -139,7 +139,7 @@
 /components/vfs/                      @esp-idf-codeowners/storage
 /components/wear_levelling/           @esp-idf-codeowners/storage
 /components/wifi_provisioning/        @esp-idf-codeowners/app-utilities/provisioning
-/components/wpa_supplicant/           @esp-idf-codeowners/wifi
+/components/wpa_supplicant/           @esp-idf-codeowners/wifi @esp-idf-codeowners/app-utilities/mbedtls
 /components/xtensa/                   @esp-idf-codeowners/system
 
 /docs/                                  @esp-idf-codeowners/docs
