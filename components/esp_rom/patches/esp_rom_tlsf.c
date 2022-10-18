@@ -17,7 +17,7 @@
 #include <string.h>
 
 #include "esp_rom_caps.h"
-#include "rom/tlsf.h"
+#include "esp_rom_tlsf.h"
 
 /*!
  * @brief Opaque types for TLSF implementation
@@ -164,12 +164,11 @@ static inline __attribute__((__always_inline__)) void mapping_insert(size_t size
  * defined below
  * ---------------------------------------------------------------- */
 
-typedef bool (*poison_check_pfunc_t)(void *start, size_t size, bool is_free, bool print_errors);
 static poison_check_pfunc_t s_poison_check_region = NULL;
 
-void tlsf_poison_check_pfunc_set(void *pfunc)
+void tlsf_poison_check_pfunc_set(poison_check_pfunc_t pfunc)
 {
-    s_poison_check_region = (poison_check_pfunc_t)pfunc;
+    s_poison_check_region = pfunc;
 }
 
 #define tlsf_insist_no_assert(x) { if (!(x)) { status--; } }
