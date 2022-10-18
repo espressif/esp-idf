@@ -1047,7 +1047,7 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
              * 1 tick before triggering a timeout. Thus, we need to pass 2 ticks as a timeout
              * to `xSemaphoreTake`. */
             ticks_to_wait = ((timeout_ms + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS) + 1;
-            ESP_LOGD(TAG, "timeout is %dms", timeout_ms);
+            ESP_LOGD(TAG, "timeout is %" PRIu32 "ms", timeout_ms);
         }
         ESP_LOGD(TAG, "waiting without calling socket_select");
         xSemaphoreTake(sel_sem.sem, ticks_to_wait);

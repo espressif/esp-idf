@@ -14,5 +14,3 @@ idf_component_register(SRCS ${srcs}
                        REQUIRES wear_levelling sdmmc
                        PRIV_REQUIRES vfs
                       )
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
