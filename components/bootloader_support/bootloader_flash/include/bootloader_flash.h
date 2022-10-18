@@ -57,6 +57,13 @@ esp_err_t  __attribute__((weak)) bootloader_flash_unlock(void);
  */
 esp_err_t bootloader_flash_reset_chip(void);
 
+/**
+ * @brief Check if octal flash mode is enabled in eFuse
+ *
+ * @return True if flash is in octal mode, false else
+ */
+bool bootloader_flash_is_octal_mode_enabled(void);
+
 #ifdef __cplusplus
 }
 #endif

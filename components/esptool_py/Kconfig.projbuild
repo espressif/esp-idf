@@ -14,6 +14,25 @@ menu "Serial flasher config"
         bool "Enable Octal Flash"
         default n
 
+    config ESPTOOLPY_FLASH_MODE_AUTO_DETECT
+        depends on IDF_TARGET_ESP32S3
+        bool "Choose flash mode automatically (please read help)"
+        default y
+        help
+            This config option helps decide whether flash is Quad or Octal, but please note some limitations:
+
+            1. If the flash chip is an Octal one, even if one of "QIO", "QOUT", "DIO", "DOUT" options is
+               selected in `ESPTOOLPY_FLASHMODE`, our code will automatically change the
+               mode to "OPI" and the sample mode will be STR.
+            2. If the flash chip is a Quad one, even if "OPI" is selected in `ESPTOOLPY_FLASHMODE`, our code will
+               automatically change the mode to "DIO".
+            3. Please do not rely on this option when you are pretty sure that you are using Octal flash,
+               please enable `ESPTOOLPY_OCT_FLASH` option, then you can choose `DTR` sample mode
+               in `ESPTOOLPY_FLASH_SAMPLE_MODE`. Otherwise, only `STR` mode is available.
+            4. Enabling this feature reduces available internal RAM size (around 900 bytes).
+               If your IRAM space is insufficient and you're aware of your flash type,
+               disable this option and select corresponding flash type options.
+
     choice ESPTOOLPY_FLASHMODE
         prompt "Flash SPI mode"
         default ESPTOOLPY_FLASHMODE_DIO

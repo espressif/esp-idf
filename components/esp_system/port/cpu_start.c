@@ -364,7 +364,7 @@ void IRAM_ATTR call_start_cpu0(void)
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 #endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
 
-#if CONFIG_ESPTOOLPY_OCT_FLASH
+#if CONFIG_ESPTOOLPY_OCT_FLASH && !CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
     bool efuse_opflash_en = efuse_ll_get_flash_type();
     if (!efuse_opflash_en) {
         ESP_EARLY_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");

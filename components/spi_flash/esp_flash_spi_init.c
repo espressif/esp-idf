@@ -23,6 +23,7 @@
 #include "esp_private/cache_utils.h"
 #include "esp_spi_flash_counters.h"
 #include "esp_rom_spiflash.h"
+#include "bootloader_flash.h"
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
 
@@ -61,18 +62,25 @@ esp_flash_t *esp_flash_default_chip = NULL;
 
 #if defined(CONFIG_ESPTOOLPY_FLASHMODE_QIO)
 #define DEFAULT_FLASH_MODE  SPI_FLASH_QIO
+#define FLASH_MODE_STRING   "qio"
 #elif defined(CONFIG_ESPTOOLPY_FLASHMODE_QOUT)
 #define DEFAULT_FLASH_MODE  SPI_FLASH_QOUT
+#define FLASH_MODE_STRING   "qout"
 #elif defined(CONFIG_ESPTOOLPY_FLASHMODE_DIO)
 #define DEFAULT_FLASH_MODE  SPI_FLASH_DIO
+#define FLASH_MODE_STRING   "dio"
 #elif defined(CONFIG_ESPTOOLPY_FLASHMODE_DOUT)
 #define DEFAULT_FLASH_MODE  SPI_FLASH_DOUT
+#define FLASH_MODE_STRING   "dout"
 #elif defined(CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_STR)
 #define DEFAULT_FLASH_MODE SPI_FLASH_OPI_STR
+#define FLASH_MODE_STRING   "opi_str"
 #elif defined(CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR)
 #define DEFAULT_FLASH_MODE SPI_FLASH_OPI_DTR
+#define FLASH_MODE_STRING   "opi_dtr"
 #else
 #define DEFAULT_FLASH_MODE SPI_FLASH_FASTRD
+#define FLASH_MODE_STRING   "fast_rd"
 #endif
 
 //TODO: modify cs hold to meet requirements of all chips!!!
@@ -326,6 +334,29 @@ static DRAM_ATTR esp_flash_t default_chip = {
     .os_func = &esp_flash_noos_functions,
 };
 
+#if CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
+/* This function is used to correct flash mode if config option is not consistent with efuse information */
+static void s_esp_flash_choose_correct_mode(memspi_host_config_t *cfg)
+{
+    static const char *mode = FLASH_MODE_STRING;
+    if (bootloader_flash_is_octal_mode_enabled()) {
+    #if !CONFIG_ESPTOOLPY_FLASHMODE_OPI
+        ESP_EARLY_LOGW(TAG, "Octal flash chip is using but %s mode is selected, will automatically swich to Octal mode", mode);
+        cfg->octal_mode_en = 1;
+        cfg->default_io_mode = SPI_FLASH_OPI_STR;
+        default_chip.read_mode = SPI_FLASH_OPI_STR;
+    #endif
+    } else {
+    #if CONFIG_ESPTOOLPY_FLASHMODE_OPI
+        ESP_EARLY_LOGW(TAG, "Quad flash chip is using but %s flash mode is selected, will automatically swich to DIO mode", mode);
+        cfg->octal_mode_en = 0;
+        cfg->default_io_mode = SPI_FLASH_DIO;
+        default_chip.read_mode = SPI_FLASH_DIO;
+    #endif
+    }
+}
+#endif // CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
+
 extern esp_err_t esp_flash_suspend_cmd_init(esp_flash_t* chip);
 esp_err_t esp_flash_init_default_chip(void)
 {
@@ -341,6 +372,12 @@ esp_err_t esp_flash_init_default_chip(void)
     cfg.octal_mode_en = 1;
     cfg.default_io_mode = DEFAULT_FLASH_MODE;
     #endif
+
+    #if CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
+    // Automatically detect flash mode in run time
+    s_esp_flash_choose_correct_mode(&cfg);
+    #endif
+
 
     // For chips need time tuning, get value directely from system here.
     #if SOC_SPI_MEM_SUPPORT_TIME_TUNING
