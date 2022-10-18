@@ -110,8 +110,30 @@ void esp_vfs_dev_uart_use_driver(int uart_num);
  * @brief set VFS to use USB-SERIAL-JTAG driver for reading and writing
  * @note application must configure USB-SERIAL-JTAG driver before calling these functions
  * With these functions, read and write are blocking and interrupt-driven.
+ * 
+ * @warning If there is no terminal *consuming* the bytes we are sending,
+ * sending data will block indefinitely, until a terminal attaches and consumes them.
+ * (i.e. printf & ESP_LOGI will block, pausing the application when the tx buffer becomes full)
  */
 void esp_vfs_usb_serial_jtag_use_driver(void);
+
+/**
+ * @brief set VFS to use USB-SERIAL-JTAG driver for writing.
+ * @note application must configure USB-SERIAL-JTAG driver before calling these functions
+ * With this function, read is blocking and interrupt-driven.
+ */
+void esp_vfs_usb_serial_jtag_use_driver_for_rx(void);
+
+/**
+ * @brief set VFS to use USB-SERIAL-JTAG driver for reading
+ * @note application must configure USB-SERIAL-JTAG driver before calling these functions
+ * With this function, write is blocking and interrupt-driven.
+ * 
+ * @warning If there is no terminal *consuming* the bytes we are sending,
+ * sending data will block indefinitely, until a terminal attaches and consumes them.
+ * (i.e. printf & ESP_LOGI will block, pausing the application when the tx buffer becomes full)
+ */
+void esp_vfs_usb_serial_jtag_use_driver_for_tx(void);
 
 /**
  * @brief set VFS to use simple functions for reading and writing UART

@@ -417,6 +417,20 @@ void esp_vfs_usb_serial_jtag_use_nonblocking(void)
     _lock_release_recursive(&s_ctx.read_lock);
 }
 
+void esp_vfs_usb_serial_jtag_use_driver_for_rx(void)
+{
+    _lock_acquire_recursive(&s_ctx.read_lock);
+    s_ctx.rx_func = usbjtag_rx_char_via_driver;
+    _lock_release_recursive(&s_ctx.read_lock);
+}
+
+void esp_vfs_usb_serial_jtag_use_driver_for_tx(void)
+{
+    _lock_acquire_recursive(&s_ctx.write_lock);
+    s_ctx.tx_func = usbjtag_tx_char_via_driver;
+    _lock_release_recursive(&s_ctx.write_lock);
+}
+
 void esp_vfs_usb_serial_jtag_use_driver(void)
 {
     _lock_acquire_recursive(&s_ctx.read_lock);
