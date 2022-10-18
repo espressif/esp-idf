@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
 #include <stdbool.h>
 #include <string.h>
@@ -17,8 +22,6 @@
 
 #include "sdkconfig.h"
 #include "unity.h"
-
-#include "test_utils.h"
 
 typedef struct {
     void* data;

@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include <stdbool.h>
 #include <string.h>
 
@@ -106,6 +111,8 @@ enum {
     TEST_EVENT_BASE2_EV2,
     TEST_EVENT_BASE2_MAX
 };
+
+extern void set_leak_threshold(int threshold);
 
 static BaseType_t test_event_get_core(void)
 {
@@ -1984,6 +1991,9 @@ bool test_event_on_timer_alarm(gptimer_handle_t timer, const gptimer_alarm_event
 
 TEST_CASE("can post events from interrupt handler", "[event]")
 {
+    /* Lazy allocated resources in gptimer/intr_alloc */
+    set_leak_threshold(-120);
+
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
     gptimer_handle_t gptimer = NULL;
     /* Select and initialize basic parameters of the timer */
@@ -2014,6 +2024,7 @@ TEST_CASE("can post events from interrupt handler", "[event]")
     xSemaphoreTake(sem, portMAX_DELAY);
 
     TEST_TEARDOWN();
+    vSemaphoreDelete(sem);
     TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
