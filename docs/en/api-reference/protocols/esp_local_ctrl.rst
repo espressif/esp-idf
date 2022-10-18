@@ -27,7 +27,7 @@ Initialization of the **esp_local_ctrl** service over BLE transport is performed
             .proto_sec = {
                 .version = PROTOCOM_SEC0,
                 .custom_handle = NULL,
-                .pop = NULL,
+                .sec_params = NULL,
             },
             .handlers = {
                 /* User defined handler functions */
@@ -73,7 +73,7 @@ Similarly for HTTPS transport:
             .proto_sec = {
                 .version = PROTOCOM_SEC0,
                 .custom_handle = NULL,
-                .pop = NULL,
+                .sec_params = NULL,
             },
             .handlers = {
                 /* User defined handler functions */

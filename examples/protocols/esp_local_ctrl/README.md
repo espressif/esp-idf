@@ -31,16 +31,17 @@ Sample output:
 After you've tested the name resolution, run:
 
 ```
-python scripts/esp_local_ctrl.py --sec_ver 0
+python scripts/esp_local_ctrl.py --sec_ver 2 --sec2_username wifiprov --sec2_pwd abcd1234
 ```
 Sample output:
 
 ```
-python scripts/esp_local_ctrl.py --sec_ver 0
+python scripts/esp_local_ctrl.py --sec_ver 2 --sec2_username wifiprov --sec2_pwd abcd1234
 
-==== Acquiring properties information ====
+++++ Connecting to my_esp_ctrl_device.local++++
 
-==== Acquired properties information ====
+==== Starting Session ====
+==== Session Established ====
 
 ==== Available Properties ====
 S.N. Name             Type       Flags            Value
