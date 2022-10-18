@@ -4,3 +4,5 @@
 // include them here.
 
 #pragma once
+
+#define SOC_CACHE_SUPPORT_WRAP    1

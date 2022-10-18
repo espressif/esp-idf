@@ -28,7 +28,7 @@
 #include "esp32s2beta/rom/gpio.h"
 #endif
 #include "esp_flash_partitions.h"
-#include "bootloader_flash.h"
+#include "bootloader_flash_priv.h"
 #include "bootloader_common.h"
 #include "bootloader_utility.h"
 #include "soc/gpio_periph.h"

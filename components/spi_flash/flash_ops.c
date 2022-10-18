@@ -35,14 +35,13 @@
 #include "esp32/clk.h"
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
 #include "esp32s2beta/clk.h"
-#include "soc/spi_mem_reg.h"
-#include "soc/spi_mem_struct.h"
 #endif
 #include "esp_flash_partitions.h"
 #include "cache_utils.h"
 #include "esp_flash.h"
 #include "esp_attr.h"
 #include "esp_timer.h"
+#include "bootloader_flash.h"
 
 esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size);
 
@@ -200,11 +199,8 @@ static esp_rom_spiflash_result_t IRAM_ATTR spi_flash_unlock(void)
     static bool unlocked = false;
     if (!unlocked) {
         spi_flash_guard_start();
-        esp_rom_spiflash_result_t rc = esp_rom_spiflash_unlock();
+        bootloader_flash_unlock();
         spi_flash_guard_end();
-        if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
-            return rc;
-        }
         unlocked = true;
     }
     return ESP_ROM_SPIFLASH_RESULT_OK;
@@ -831,6 +827,7 @@ void spi_flash_dump_counters(void)
 }
 
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
+
 
 #if defined(CONFIG_SPI_FLASH_USE_LEGACY_IMPL) && defined(CONFIG_IDF_TARGET_ESP32S2BETA)
 // TODO esp32s2beta: Remove once ESP32S2Beta has new SPI Flash API support

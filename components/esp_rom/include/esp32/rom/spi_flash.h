@@ -121,6 +121,7 @@ extern "C" {
 #define ESP_ROM_SPIFLASH_BP2                  BIT4
 #define ESP_ROM_SPIFLASH_WR_PROTECT           (ESP_ROM_SPIFLASH_BP0|ESP_ROM_SPIFLASH_BP1|ESP_ROM_SPIFLASH_BP2)
 #define ESP_ROM_SPIFLASH_QE                   BIT9
+#define ESP_ROM_SPIFLASH_BP_MASK_ISSI         (BIT7 | BIT5 | BIT4 | BIT3 | BIT2)
 
 //Extra dummy for flash read
 #define ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_20M   0
@@ -259,7 +260,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_read_status(esp_rom_spiflash_chip_t *
 esp_rom_spiflash_result_t esp_rom_spiflash_read_statushigh(esp_rom_spiflash_chip_t *spi, uint32_t *status);
 
 /**
-  * @brief Write status to Falsh status register.
+  * @brief Write status to Flash status register.
   *        Please do not call this function in SDK.
   *
   * @param  esp_rom_spiflash_chip_t *spi : The information for Flash, which is exported from ld file.
