@@ -3,40 +3,40 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _CACHE_MEMORY_H_
-#define _CACHE_MEMORY_H_
+#pragma once
 
+#include <stdint.h>
+#include "sdkconfig.h"
 #include "esp_bit_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
 
 /*IRAM0 is connected with Cache IBUS0*/
 #define IRAM0_ADDRESS_LOW                      0x4037C000
 #define IRAM0_ADDRESS_HIGH                     0x403C0000
 #define IRAM0_CACHE_ADDRESS_LOW                0x42000000
-#define IRAM0_CACHE_ADDRESS_HIGH(page_size)    (IRAM0_CACHE_ADDRESS_LOW + ((page_size) * 64)) // MMU has 64 pages
+#define IRAM0_CACHE_ADDRESS_HIGH               (IRAM0_CACHE_ADDRESS_LOW + ((CONFIG_MMU_PAGE_SIZE) * 64)) // MMU has 64 pages
 
 /*DRAM0 is connected with Cache DBUS0*/
 #define DRAM0_ADDRESS_LOW                      0x3FCA0000
 #define DRAM0_ADDRESS_HIGH                     0x3FCE0000
 #define DRAM0_CACHE_ADDRESS_LOW                0x3C000000
-#define DRAM0_CACHE_ADDRESS_HIGH(page_size)    (DRAM0_CACHE_ADDRESS_LOW + ((page_size) * 64)) // MMU has 64 pages
-#define DRAM0_CACHE_OPERATION_HIGH(page_size)  DRAM0_CACHE_ADDRESS_HIGH(page_size)
+#define DRAM0_CACHE_ADDRESS_HIGH               (DRAM0_CACHE_ADDRESS_LOW + ((CONFIG_MMU_PAGE_SIZE) * 64)) // MMU has 64 pages
+#define DRAM0_CACHE_OPERATION_HIGH             DRAM0_CACHE_ADDRESS_HIGH
 
-#define BUS_SIZE(bus_name, page_size)                 (bus_name##_ADDRESS_HIGH(page_size) - bus_name##_ADDRESS_LOW)
-#define ADDRESS_IN_BUS(bus_name, vaddr, page_size)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH(page_size))
+#define BUS_SIZE(bus_name)                 (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
+#define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
 
-#define ADDRESS_IN_IRAM0(vaddr, page_size)            ADDRESS_IN_BUS(IRAM0, vaddr, page_size)
-#define ADDRESS_IN_IRAM0_CACHE(vaddr, page_size)      ADDRESS_IN_BUS(IRAM0_CACHE, vaddr, page_size)
-#define ADDRESS_IN_DRAM0(vaddr, page_size)            ADDRESS_IN_BUS(DRAM0, vaddr, page_size)
-#define ADDRESS_IN_DRAM0_CACHE(vaddr, page_size)      ADDRESS_IN_BUS(DRAM0_CACHE, vaddr, page_size)
+#define ADDRESS_IN_IRAM0(vaddr)            ADDRESS_IN_BUS(IRAM0, vaddr)
+#define ADDRESS_IN_IRAM0_CACHE(vaddr)      ADDRESS_IN_BUS(IRAM0_CACHE, vaddr)
+#define ADDRESS_IN_DRAM0(vaddr)            ADDRESS_IN_BUS(DRAM0, vaddr)
+#define ADDRESS_IN_DRAM0_CACHE(vaddr)      ADDRESS_IN_BUS(DRAM0_CACHE, vaddr)
 
-#define BUS_IRAM0_CACHE_SIZE(page_size)              BUS_SIZE(IRAM0_CACHE, page_size)
-#define BUS_DRAM0_CACHE_SIZE(page_size)              BUS_SIZE(DRAM0_CACHE, page_size)
+#define BUS_IRAM0_CACHE_SIZE              BUS_SIZE(IRAM0_CACHE)
+#define BUS_DRAM0_CACHE_SIZE              BUS_SIZE(DRAM0_CACHE)
 
 #define CACHE_IBUS                      0
 #define CACHE_IBUS_MMU_START            0
@@ -91,7 +91,7 @@ extern "C" {
  * This is the mask used for mapping. e.g.:
  * 0x4200_0000 & MMU_VADDR_MASK
  */
-#define MMU_VADDR_MASK(page_size)                 ((page_size) * 64 - 1)
+#define MMU_VADDR_MASK                 ((CONFIG_MMU_PAGE_SIZE) * 64 - 1)
 //MMU entry num
 #define MMU_ENTRY_NUM  64
 
@@ -108,5 +108,3 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-#endif /*_CACHE_MEMORY_H_ */

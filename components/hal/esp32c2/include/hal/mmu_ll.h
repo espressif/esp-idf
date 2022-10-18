@@ -13,7 +13,6 @@
 #include "soc/ext_mem_defs.h"
 #include "hal/assert.h"
 #include "hal/mmu_types.h"
-#include "sdkconfig.h"
 
 
 #ifdef __cplusplus
@@ -69,7 +68,7 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
 {
     (void)mmu_id;
     uint32_t vaddr_end = vaddr_start + len - 1;
-    return (ADDRESS_IN_IRAM0_CACHE(vaddr_start, MMU_LL_PAGE_SIZE) && ADDRESS_IN_IRAM0_CACHE(vaddr_end, MMU_LL_PAGE_SIZE)) || (ADDRESS_IN_DRAM0_CACHE(vaddr_start, MMU_LL_PAGE_SIZE) && ADDRESS_IN_DRAM0_CACHE(vaddr_end, MMU_LL_PAGE_SIZE));
+    return (ADDRESS_IN_IRAM0_CACHE(vaddr_start) && ADDRESS_IN_IRAM0_CACHE(vaddr_end)) || (ADDRESS_IN_DRAM0_CACHE(vaddr_start) && ADDRESS_IN_DRAM0_CACHE(vaddr_end));
 }
 
 /**
@@ -102,7 +101,7 @@ static inline uint32_t mmu_ll_get_entry_id(uint32_t mmu_id, uint32_t vaddr)
             HAL_ASSERT(shift_code);
     }
 
-    return ((vaddr & MMU_VADDR_MASK(page_size)) >> shift_code);
+    return ((vaddr & MMU_VADDR_MASK) >> shift_code);
 }
 
 /**
