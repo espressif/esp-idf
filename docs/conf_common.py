@@ -59,6 +59,9 @@ WIFI_DOCS = ['api-guides/wifi.rst',
              'api-guides/wifi-security.rst',
              'api-guides/wireshark-user-guide.rst']
 
+WIFI_MESH_DOCS = ['api-guides/esp-wifi-mesh.rst',
+                  'api-reference/network/esp-wifi-mesh.rst']
+
 COEXISTENCE_DOCS = ['api-guides/coexist.rst']
 
 SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst',
@@ -123,8 +126,7 @@ ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-reference/peripherals/secure_element.rst',
               'api-reference/peripherals/dac.rst',
               'hw-reference/esp32/**',
-              'api-guides/esp-wifi-mesh.rst',
-              'api-reference/network/esp-wifi-mesh.rst'] + FTDI_JTAG_DOCS
+              'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/usb-console.rst',
@@ -133,19 +135,18 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
                 'api-reference/peripherals/touch_element.rst',
-                'api-guides/esp-wifi-mesh.rst',
-                'api-reference/network/esp-wifi-mesh.rst'] + FTDI_JTAG_DOCS
+                'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
 
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/system/ipc.rst',
                 'api-guides/flash_psram_config.rst',
-                'api-guides/esp-wifi-mesh.rst',
-                'api-reference/network/esp-wifi-mesh.rst']
+                'api-guides/RF_calibration.rst']
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**',
-                'api-guides/esp-wifi-mesh.rst',
-                'api-reference/network/esp-wifi-mesh.rst']
+                'api-guides/RF_calibration.rst']
+
+ESP32C2_DOCS = ['api-guides/RF_calibration.rst']
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
@@ -178,9 +179,11 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_ADC_SUPPORTED':ADC_DOCS,
                             'SOC_ADC_DMA_SUPPORTED':ADC_DMA_DOCS,
                             'SOC_SDM_SUPPORTED':SDM_DOCS,
+                            'SOC_WIFI_MESH_SUPPORT':WIFI_MESH_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,
+                            'esp32c2':ESP32C2_DOCS,
                             'esp32c3':ESP32C3_DOCS}
 
 extensions += ['sphinx_copybutton',
