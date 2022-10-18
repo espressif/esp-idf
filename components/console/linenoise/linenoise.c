@@ -89,7 +89,7 @@
  *    Sequence: ESC [ n B
  *    Effect: moves cursor down of n chars.
  *
- * When linenoiseClearScreen() is called, two additional escape sequences
+ * When linenoise2ClearScreen() is called, two additional escape sequences
  * are used in order to clear the screen and position the cursor at home
  * position.
  *
@@ -122,24 +122,31 @@
 #define LINENOISE_DEFAULT_MAX_LINE 4096
 #define LINENOISE_MINIMAL_MAX_LINE 64
 #define LINENOISE_COMMAND_MAX_LEN 32
-#define LINENOISE_PASTE_KEY_DELAY 30 /* Delay, in milliseconds, between two characters being pasted from clipboard */
+#define LINENOISE_PASTE_KEY_DELAY 30 /* Delay, in milliseconds, between two characters 
+                                        being pasted from clipboard */
 
-static linenoiseCompletionCallback *completionCallback = NULL;
-static linenoiseHintsCallback *hintsCallback = NULL;
-static linenoiseFreeHintsCallback *freeHintsCallback = NULL;
+typedef struct {
+    linenoiseCompletionCallback *completionCallback;
+    linenoiseHintsCallback *hintsCallback;
+    linenoiseFreeHintsCallback *freeHintsCallback;
+} linenoiseCallbacks_t;
 
-static size_t max_cmdline_length = LINENOISE_DEFAULT_MAX_LINE;
-static int mlmode = 0;  /* Multi line mode. Default is single line. */
-static int dumbmode = 0; /* Dumb mode where line editing is disabled. Off by default */
-static int history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN;
-static int history_len = 0;
-static char **history = NULL;
-static bool allow_empty = true;
+typedef struct {
+    size_t max_cmdline_length;
+    int mlmode; /* Multi line mode. Default is single line. */
+    int dumbmode; /* Dumb mode where line editing is disabled. Off by default */
+    int history_max_len;
+    int history_len;
+    char **history;
+    bool allow_empty;
+    FILE* fpIn;
+    FILE* fpOut;
+} linenoiseOptions_t;
 
 /* The linenoiseState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
  * functionalities. */
-struct linenoiseState {
+typedef struct {
     char *buf;          /* Edited line buffer. */
     size_t buflen;      /* Edited line buffer size. */
     const char *prompt; /* Prompt to display. */
@@ -150,7 +157,31 @@ struct linenoiseState {
     size_t cols;        /* Number of columns in terminal. */
     size_t maxrows;     /* Maximum num of rows used so far (multiline mode) */
     int history_index;  /* The history index we are currently editing. */
+} linenoiseState_t;
+
+struct linenoise_t{
+    linenoiseCallbacks_t callbacks;
+    linenoiseOptions_t options;
+    linenoiseState_t state;
 };
+
+#define LINENOISE_DEFAULT { \
+    .callbacks = {0}, \
+    .options = { \
+        .max_cmdline_length = LINENOISE_DEFAULT_MAX_LINE, \
+        .mlmode = 0, \
+        .dumbmode = 0, \
+        .history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN, \
+        .history_len = 0, \
+        .history = NULL, \
+        .allow_empty = true, \
+        .fpIn = 0, \
+        .fpOut = 0, \
+    },  \
+    .state = {0} \
+}
+
+struct linenoise_t stdio = LINENOISE_DEFAULT;
 
 enum KEY_ACTION{
 	KEY_NULL = 0,	    /* NULL */
@@ -174,8 +205,70 @@ enum KEY_ACTION{
 	BACKSPACE =  127    /* Backspace */
 };
 
-int linenoiseHistoryAdd(const char *line);
-static void refreshLine(struct linenoiseState *l);
+linenoiseOptions_t* getOptions(linenoiseHandle_t handle) {
+    if (handle == 0) {
+        stdio.options.fpIn = stdin;
+        stdio.options.fpOut = stdout;
+        return &stdio.options;
+    }
+    return &handle->options;
+}
+
+linenoiseState_t* getState(linenoiseHandle_t handle) {
+    if (handle == 0) {return &stdio.state;}
+    return &handle->state;
+}
+
+linenoiseCallbacks_t* getCallbacks(linenoiseHandle_t handle) {
+    if (handle == 0) {return &stdio.callbacks;}
+    return &handle->callbacks;
+}
+
+////////////////////////////////////////////////////////////////////
+// Linenoise 1
+//
+
+void linenoiseSetCompletionCallback(linenoiseCompletionCallback *cb)     {linenoise2SetCompletionCallback(0, cb);}
+void linenoiseSetHintsCallback(linenoiseHintsCallback *cb)               {linenoise2SetHintsCallback(0, cb);}
+void linenoiseSetFreeHintsCallback(linenoiseFreeHintsCallback *cb)       {linenoise2SetFreeHintsCallback(0, cb);}
+void linenoiseAddCompletion(linenoiseCompletions *cmpl, const char * str){linenoise2AddCompletion(cmpl, str);}
+
+int   linenoiseProbe(void)                      {return linenoise2Probe(0);}
+char* linenoise(const char *prompt)             {return linenoise2(0, prompt);}
+void  linenoiseFree(void *ptr)                  {return linenoise2Free(ptr);}
+int   linenoiseHistoryAdd(const char *line)     {return linenoise2HistoryAdd(0, line);}
+int   linenoiseHistorySetMaxLen(int len)        {return linenoise2HistorySetMaxLen(0, len);}
+int   linenoiseHistorySave(const char *filename){return linenoise2HistorySave(0, filename);}
+int   linenoiseHistoryLoad(const char *filename){return linenoise2HistoryLoad(0, filename);}
+void  linenoiseHistoryFree(void)                {return linenoise2HistoryFree(0);}
+void  linenoiseClearScreen(void)                {return linenoise2ClearScreen(0);}
+void  linenoiseSetMultiLine(int ml)             {return linenoise2SetMultiLine(0, ml);}
+void  linenoiseSetDumbMode(int set)             {return linenoise2SetDumbMode(0, set);}
+bool  linenoiseIsDumbMode(void)                 {return linenoise2IsDumbMode(0);}
+void  linenoisePrintKeyCodes(void)              {return linenoise2PrintKeyCodes(0);}
+void  linenoiseAllowEmpty(bool allow)           {return linenoise2AllowEmpty(0, allow);}
+int   linenoiseSetMaxLineLen(size_t len)        {return linenoise2SetMaxLineLen(0, len);}
+
+
+////////////////////////////////////////////////////////////////////
+// Linenoise 2
+//
+
+linenoiseHandle_t linenoise2Create()
+{   
+    struct linenoise_t def = LINENOISE_DEFAULT;
+    linenoiseHandle_t handle = (linenoiseHandle_t) malloc(sizeof(struct linenoise_t));
+    memcpy(handle, &def, sizeof(struct linenoise_t));
+    return handle;
+}
+
+void  linenoise2Delete(linenoiseHandle_t handle)
+{
+    free(handle);
+}
+
+int linenoise2HistoryAdd(linenoiseHandle_t handle, const char *line);
+static void refreshLine(linenoiseHandle_t handle, linenoiseState_t *l);
 
 /* Debugging macro. */
 #if 0
@@ -199,37 +292,49 @@ FILE *lndebug_fp = NULL;
 /* ======================= Low level terminal handling ====================== */
 
 /* Set if to use or not the multi line mode. */
-void linenoiseSetMultiLine(int ml) {
-    mlmode = ml;
+void linenoise2SetMultiLine(linenoiseHandle_t handle, int ml)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+    opts->mlmode = ml;
 }
 
 /* Set if terminal does not recognize escape sequences */
-void linenoiseSetDumbMode(int set) {
-    dumbmode = set;
+void linenoise2SetDumbMode(linenoiseHandle_t handle, int set)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+    opts->dumbmode = set;
 }
 
 /* Returns whether the current mode is dumbmode or not. */
-bool linenoiseIsDumbMode(void) {
-    return dumbmode;
+bool linenoise2IsDumbMode(linenoiseHandle_t handle)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+    return opts->dumbmode;
 }
 
-static void flushWrite(void) {
-    if (__fbufsize(stdout) > 0) {
-        fflush(stdout);
+static void flushWrite(linenoiseHandle_t handle)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
+    if (__fbufsize(opts->fpOut) > 0) {
+        fflush(opts->fpOut);
     }
-    fsync(fileno(stdout));
+    fsync(fileno(opts->fpOut));
 }
 
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
- * and return it. On error -1 is returned, on success the position of the
- * cursor. */
-static int getCursorPosition(void) {
+ * and return it. On read error -1 is returned, On cursor error, -2 is returned.
+ * On success the position of the cursor. */
+static int getCursorPosition(linenoiseHandle_t handle)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
     char buf[LINENOISE_COMMAND_MAX_LEN] = { 0 };
     int cols = 0;
     int rows = 0;
     int i = 0;
-    const int out_fd = fileno(stdout);
-    const int in_fd = fileno(stdin);
+    const int out_fd = fileno(opts->fpOut);
+    const int in_fd = fileno(opts->fpIn);
     /* The following ANSI escape sequence is used to get from the TTY the
      * cursor position. */
     const char get_cursor_cmd[] = "\x1b[6n";
@@ -240,7 +345,7 @@ static int getCursorPosition(void) {
     write(out_fd, get_cursor_cmd, sizeof(get_cursor_cmd));
 
     /* For USB CDC, it is required to flush the output. */
-    flushWrite();
+    flushWrite(handle);
 
     /* The other end will send its response which format is ESC [ rows ; cols R
      * We don't know exactly how many bytes we have to read, thus, perform a
@@ -248,11 +353,15 @@ static int getCursorPosition(void) {
      * Stop right before the last character of the buffer, to be able to NULL
      * terminate it. */
     while (i < sizeof(buf)-1) {
+
+        int nread = read(in_fd, buf + i, 1);
+        if (nread == -1 && errno == EWOULDBLOCK) {return -1;} // read error
+        
         /* Keep using unistd's functions. Here, using `read` instead of `fgets`
          * or `fgets` guarantees us that we we can read a byte regardless on
          * whether the sender sent end of line character(s) (CR, CRLF, LF). */
-        if (read(in_fd, buf + i, 1) != 1 || buf[i] == 'R') {
-            /* If we couldn't read a byte from STDIN or if 'R' was received,
+        if (nread != 1 || buf[i] == 'R') {
+            /* If we couldn't read a byte from opts->fpIn or if 'R' was received,
              * the transmission is finished. */
             break;
         }
@@ -270,19 +379,23 @@ static int getCursorPosition(void) {
 
     /* Parse the received data to get the position of the cursor. */
     if (buf[0] != ESC || buf[1] != '[' || sscanf(buf+2,"%d;%d",&rows,&cols) != 2) {
-        return -1;
+        // cursor error
+        return -2;
     }
     return cols;
 }
 
 /* Try to get the number of columns in the current terminal, or assume 80
  * if it fails. */
-static int getColumns(void) {
+static int getColumns(linenoiseHandle_t handle)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
     int start = 0;
     int cols = 0;
     int written = 0;
     char seq[LINENOISE_COMMAND_MAX_LEN] = { 0 };
-    const int fd = fileno(stdout);
+    const int fd = fileno(opts->fpOut);
 
     /* The following ANSI escape sequence is used to tell the TTY to move
      * the cursor to the most-right position. */
@@ -293,24 +406,22 @@ static int getColumns(void) {
     const char set_cursor_pos[] = "\x1b[%dD";
 
     /* Get the initial position so we can restore it later. */
-    start = getCursorPosition();
-    if (start == -1) {
-        goto failed;
-    }
+    start = getCursorPosition(handle);
+    if (start == -1 && errno == EWOULDBLOCK) {return -1;}
+    if (start == -2) {goto failed;}
 
     /* Send the command to go to right margin. Use `write` function instead of
      * `fwrite` for the same reasons explained in `getCursorPosition()` */
     if (write(fd, move_cursor_right, cmd_len) != cmd_len) {
         goto failed;
     }
-    flushWrite();
+    flushWrite(handle);
 
     /* After sending this command, we can get the new position of the cursor,
      * we'd get the size, in columns, of the opened TTY. */
-    cols = getCursorPosition();
-    if (cols == -1) {
-        goto failed;
-    }
+    cols = getCursorPosition(handle);
+    if (cols == -1 && errno == EWOULDBLOCK) {return -1;}
+    if (cols == -2) {goto failed;}
 
     /* Restore the position of the cursor back. */
     if (cols > start) {
@@ -326,7 +437,7 @@ static int getColumns(void) {
         if (write(fd, seq, written) == -1) {
             /* Can't recover... */
         }
-        flushWrite();
+        flushWrite(handle);
     }
     return cols;
 
@@ -335,22 +446,27 @@ failed:
 }
 
 /* Clear the screen. Used to handle ctrl+l */
-void linenoiseClearScreen(void) {
-    fprintf(stdout,"\x1b[H\x1b[2J");
-    flushWrite();
+void linenoise2ClearScreen(linenoiseHandle_t handle)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+    fprintf(opts->fpOut,"\x1b[H\x1b[2J");
+    flushWrite(handle);
 }
 
 /* Beep, used for completion when there is nothing to complete or when all
  * the choices were already shown. */
-static void linenoiseBeep(void) {
-    fprintf(stdout, "\x7");
-    flushWrite();
+static void linenoise2Beep(linenoiseHandle_t handle)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+    fprintf(opts->fpOut, "\x7");
+    flushWrite(handle);
 }
 
 /* ============================== Completion ================================ */
 
 /* Free a list of completion option populated by linenoiseAddCompletion(). */
-static void freeCompletions(linenoiseCompletions *lc) {
+static void freeCompletions(linenoiseCompletions *lc)
+{
     size_t i;
     for (i = 0; i < lc->len; i++)
         free(lc->cvec[i]);
@@ -364,31 +480,35 @@ static void freeCompletions(linenoiseCompletions *lc) {
  *
  * The state of the editing is encapsulated into the pointed linenoiseState
  * structure as described in the structure definition. */
-static int completeLine(struct linenoiseState *ls) {
+static int completeLine(linenoiseHandle_t handle, linenoiseState_t *ls)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+    linenoiseCallbacks_t* callbacks = getCallbacks(handle);
+
     linenoiseCompletions lc = { 0, NULL };
     int nread, nwritten;
     char c = 0;
-    int in_fd = fileno(stdin);
+    int in_fd = fileno(opts->fpIn);
 
-    completionCallback(ls->buf,&lc);
+    callbacks->completionCallback(ls->buf,&lc);
     if (lc.len == 0) {
-        linenoiseBeep();
+        linenoise2Beep(handle);
     } else {
         size_t stop = 0, i = 0;
 
         while(!stop) {
             /* Show completion or original buffer */
             if (i < lc.len) {
-                struct linenoiseState saved = *ls;
+                linenoiseState_t saved = *ls;
 
                 ls->len = ls->pos = strlen(lc.cvec[i]);
                 ls->buf = lc.cvec[i];
-                refreshLine(ls);
+                refreshLine(handle,ls);
                 ls->len = saved.len;
                 ls->pos = saved.pos;
                 ls->buf = saved.buf;
             } else {
-                refreshLine(ls);
+                refreshLine(handle,ls);
             }
 
             nread = read(in_fd, &c, 1);
@@ -400,11 +520,11 @@ static int completeLine(struct linenoiseState *ls) {
             switch(c) {
                 case TAB: /* tab */
                     i = (i+1) % (lc.len+1);
-                    if (i == lc.len) linenoiseBeep();
+                    if (i == lc.len) linenoise2Beep(handle);
                     break;
                 case ESC: /* escape */
                     /* Re-show original buffer */
-                    if (i < lc.len) refreshLine(ls);
+                    if (i < lc.len) refreshLine(handle,ls);
                     stop = 1;
                     break;
                 default:
@@ -424,27 +544,33 @@ static int completeLine(struct linenoiseState *ls) {
 }
 
 /* Register a callback function to be called for tab-completion. */
-void linenoiseSetCompletionCallback(linenoiseCompletionCallback *fn) {
-    completionCallback = fn;
+void linenoise2SetCompletionCallback(linenoiseHandle_t handle, linenoiseCompletionCallback *fn)
+{
+    linenoiseCallbacks_t* callbacks = getCallbacks(handle);
+    callbacks->completionCallback = fn;
 }
 
 /* Register a hits function to be called to show hits to the user at the
  * right of the prompt. */
-void linenoiseSetHintsCallback(linenoiseHintsCallback *fn) {
-    hintsCallback = fn;
+void linenoise2SetHintsCallback(linenoiseHandle_t handle, linenoiseHintsCallback *fn)
+{
+    linenoiseCallbacks_t* callbacks = getCallbacks(handle);
+    callbacks->hintsCallback = fn;
 }
 
 /* Register a function to free the hints returned by the hints callback
  * registered with linenoiseSetHintsCallback(). */
-void linenoiseSetFreeHintsCallback(linenoiseFreeHintsCallback *fn) {
-    freeHintsCallback = fn;
+void linenoise2SetFreeHintsCallback(linenoiseHandle_t handle, linenoiseFreeHintsCallback *fn)
+{
+    linenoiseCallbacks_t* callbacks = getCallbacks(handle);
+    callbacks->freeHintsCallback = fn;
 }
 
 /* This function is used by the callback function registered by the user
  * in order to add completion options given the input string when the
  * user typed <tab>. See the example.c source code for a very easy to
  * understand example. */
-void linenoiseAddCompletion(linenoiseCompletions *lc, const char *str) {
+void linenoise2AddCompletion(linenoiseCompletions *lc, const char *str) {
     size_t len = strlen(str);
     char *copy, **cvec;
 
@@ -491,11 +617,14 @@ static void abFree(struct abuf *ab) {
 
 /* Helper of refreshSingleLine() and refreshMultiLine() to show hints
  * to the right of the prompt. */
-void refreshShowHints(struct abuf *ab, struct linenoiseState *l, int plen) {
+void refreshShowHints(linenoiseHandle_t handle, struct abuf *ab, linenoiseState_t *l, int plen)
+{
+    linenoiseCallbacks_t* callbacks = getCallbacks(handle);
+
     char seq[64];
-    if (hintsCallback && plen+l->len < l->cols) {
+    if (callbacks->hintsCallback && plen+l->len < l->cols) {
         int color = -1, bold = 0;
-        char *hint = hintsCallback(l->buf,&color,&bold);
+        char *hint = callbacks->hintsCallback(l->buf,&color,&bold);
         if (hint) {
             int hintlen = strlen(hint);
             int hintmaxlen = l->cols-(plen+l->len);
@@ -509,7 +638,7 @@ void refreshShowHints(struct abuf *ab, struct linenoiseState *l, int plen) {
             if (color != -1 || bold != 0)
                 abAppend(ab,"\033[0m",4);
             /* Call the function to free the hint returned. */
-            if (freeHintsCallback) freeHintsCallback(hint);
+            if (callbacks->freeHintsCallback) callbacks->freeHintsCallback(hint);
         }
     }
 }
@@ -518,10 +647,13 @@ void refreshShowHints(struct abuf *ab, struct linenoiseState *l, int plen) {
  *
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
-static void refreshSingleLine(struct linenoiseState *l) {
+static void refreshSingleLine(linenoiseHandle_t handle, linenoiseState_t *l)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
     char seq[64];
     size_t plen = l->plen;
-    int fd = fileno(stdout);
+    int fd = fileno(opts->fpOut);
     char *buf = l->buf;
     size_t len = l->len;
     size_t pos = l->pos;
@@ -544,7 +676,7 @@ static void refreshSingleLine(struct linenoiseState *l) {
     abAppend(&ab,l->prompt,strlen(l->prompt));
     abAppend(&ab,buf,len);
     /* Show hits if any. */
-    refreshShowHints(&ab,l,plen);
+    refreshShowHints(handle,&ab,l,plen);
     /* Erase to right */
     snprintf(seq,64,"\x1b[0K");
     abAppend(&ab,seq,strlen(seq));
@@ -552,7 +684,7 @@ static void refreshSingleLine(struct linenoiseState *l) {
     snprintf(seq,64,"\r\x1b[%dC", (int)(pos+plen));
     abAppend(&ab,seq,strlen(seq));
     if (write(fd, ab.b, ab.len) == -1) {} /* Can't recover from write error. */
-    flushWrite();
+    flushWrite(handle);
     abFree(&ab);
 }
 
@@ -560,7 +692,10 @@ static void refreshSingleLine(struct linenoiseState *l) {
  *
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
-static void refreshMultiLine(struct linenoiseState *l) {
+static void refreshMultiLine(linenoiseHandle_t handle, linenoiseState_t *l)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
     char seq[64];
     int plen = l->plen;
     int rows = (plen+l->len+l->cols-1)/l->cols; /* rows used by current buf. */
@@ -569,7 +704,7 @@ static void refreshMultiLine(struct linenoiseState *l) {
     int col; /* colum position, zero-based. */
     int old_rows = l->maxrows;
     int j;
-    int fd = fileno(stdout);
+    int fd = fileno(opts->fpOut);
     struct abuf ab;
 
     /* Update maxrows if needed. */
@@ -601,7 +736,7 @@ static void refreshMultiLine(struct linenoiseState *l) {
     abAppend(&ab,l->buf,l->len);
 
     /* Show hits if any. */
-    refreshShowHints(&ab,l,plen);
+    refreshShowHints(handle,&ab,l,plen);
 
     /* If we are at the very end of the screen with our prompt, we need to
      * emit a newline and move the prompt to the first column. */
@@ -641,39 +776,47 @@ static void refreshMultiLine(struct linenoiseState *l) {
     l->oldpos = l->pos;
 
     if (write(fd,ab.b,ab.len) == -1) {} /* Can't recover from write error. */
-    flushWrite();
+    flushWrite(handle);
     abFree(&ab);
 }
 
 /* Calls the two low level functions refreshSingleLine() or
  * refreshMultiLine() according to the selected mode. */
-static void refreshLine(struct linenoiseState *l) {
-    if (mlmode)
-        refreshMultiLine(l);
-    else
-        refreshSingleLine(l);
+static void refreshLine(linenoiseHandle_t handle, linenoiseState_t *l)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
+    if (opts->mlmode) {
+        refreshMultiLine(handle, l);
+    } else {
+        refreshSingleLine(handle, l);
+    }
 }
 
 /* Insert the character 'c' at cursor current position.
  *
  * On error writing to the terminal -1 is returned, otherwise 0. */
-int linenoiseEditInsert(struct linenoiseState *l, char c) {
-    int fd = fileno(stdout);
+int linenoise2EditInsert(linenoiseHandle_t handle, linenoiseState_t *l, char c)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+    linenoiseCallbacks_t* callbacks = getCallbacks(handle);
+
+    int fd = fileno(opts->fpOut);
     if (l->len < l->buflen) {
         if (l->len == l->pos) {
             l->buf[l->pos] = c;
             l->pos++;
             l->len++;
             l->buf[l->len] = '\0';
-            if ((!mlmode && l->plen+l->len < l->cols && !hintsCallback)) {
+            if ((!opts->mlmode && l->plen+l->len < l->cols && !callbacks->hintsCallback)) {
                 /* Avoid a full update of the line in the
                  * trivial case. */
                 if (write(fd, &c,1) == -1) {
                     return -1;
                 }
-                flushWrite();
+                flushWrite(handle);
             } else {
-                refreshLine(l);
+                refreshLine(handle,l);
             }
         } else {
             memmove(l->buf+l->pos+1,l->buf+l->pos,l->len-l->pos);
@@ -681,14 +824,17 @@ int linenoiseEditInsert(struct linenoiseState *l, char c) {
             l->len++;
             l->pos++;
             l->buf[l->len] = '\0';
-            refreshLine(l);
+            refreshLine(handle,l);
         }
     }
     return 0;
 }
 
-int linenoiseInsertPastedChar(struct linenoiseState *l, char c) {
-    int fd = fileno(stdout);
+int linenoise2InsertPastedChar(linenoiseHandle_t handle, linenoiseState_t *l, char c)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
+    int fd = fileno(opts->fpOut);
     if (l->len < l->buflen && l->len == l->pos) {
         l->buf[l->pos] = c;
         l->pos++;
@@ -697,40 +843,44 @@ int linenoiseInsertPastedChar(struct linenoiseState *l, char c) {
         if (write(fd, &c,1) == -1) {
             return -1;
         }
-        flushWrite();
+        flushWrite(handle);
     }
     return 0;
 }
 
 /* Move cursor on the left. */
-void linenoiseEditMoveLeft(struct linenoiseState *l) {
+void linenoise2EditMoveLeft(linenoiseHandle_t handle, linenoiseState_t *l)
+{
     if (l->pos > 0) {
         l->pos--;
-        refreshLine(l);
+        refreshLine(handle,l);
     }
 }
 
 /* Move cursor on the right. */
-void linenoiseEditMoveRight(struct linenoiseState *l) {
+void linenoise2EditMoveRight(linenoiseHandle_t handle, linenoiseState_t *l)
+{
     if (l->pos != l->len) {
         l->pos++;
-        refreshLine(l);
+        refreshLine(handle,l);
     }
 }
 
 /* Move cursor to the start of the line. */
-void linenoiseEditMoveHome(struct linenoiseState *l) {
+void linenoise2EditMoveHome(linenoiseHandle_t handle, linenoiseState_t *l)
+{
     if (l->pos != 0) {
         l->pos = 0;
-        refreshLine(l);
+        refreshLine(handle,l);
     }
 }
 
 /* Move cursor to the end of the line. */
-void linenoiseEditMoveEnd(struct linenoiseState *l) {
+void linenoise2EditMoveEnd(linenoiseHandle_t handle, linenoiseState_t *l)
+{
     if (l->pos != l->len) {
         l->pos = l->len;
-        refreshLine(l);
+        refreshLine(handle,l);
     }
 }
 
@@ -738,53 +888,60 @@ void linenoiseEditMoveEnd(struct linenoiseState *l) {
  * entry as specified by 'dir'. */
 #define LINENOISE_HISTORY_NEXT 0
 #define LINENOISE_HISTORY_PREV 1
-void linenoiseEditHistoryNext(struct linenoiseState *l, int dir) {
-    if (history_len > 1) {
+void linenoise2EditHistoryNext(linenoiseHandle_t handle, linenoiseState_t *l, int dir)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
+    if (opts->history_len > 1) {
         /* Update the current history entry before to
          * overwrite it with the next one. */
-        free(history[history_len - 1 - l->history_index]);
-        history[history_len - 1 - l->history_index] = strdup(l->buf);
+        free(opts->history[opts->history_len - 1 - l->history_index]);
+        opts->history[opts->history_len - 1 - l->history_index] = strdup(l->buf);
+
         /* Show the new entry */
         l->history_index += (dir == LINENOISE_HISTORY_PREV) ? 1 : -1;
         if (l->history_index < 0) {
             l->history_index = 0;
             return;
-        } else if (l->history_index >= history_len) {
-            l->history_index = history_len-1;
+        } else if (l->history_index >= opts->history_len) {
+            l->history_index = opts->history_len-1;
             return;
         }
-        strncpy(l->buf,history[history_len - 1 - l->history_index],l->buflen);
+        strncpy(l->buf,opts->history[opts->history_len - 1 - l->history_index],l->buflen);
         l->buf[l->buflen-1] = '\0';
         l->len = l->pos = strlen(l->buf);
-        refreshLine(l);
+        refreshLine(handle,l);
     }
 }
 
 /* Delete the character at the right of the cursor without altering the cursor
  * position. Basically this is what happens with the "Delete" keyboard key. */
-void linenoiseEditDelete(struct linenoiseState *l) {
+void linenoise2EditDelete(linenoiseHandle_t handle, linenoiseState_t *l)
+{
     if (l->len > 0 && l->pos < l->len) {
         memmove(l->buf+l->pos,l->buf+l->pos+1,l->len-l->pos-1);
         l->len--;
         l->buf[l->len] = '\0';
-        refreshLine(l);
+        refreshLine(handle,l);
     }
 }
 
 /* Backspace implementation. */
-void linenoiseEditBackspace(struct linenoiseState *l) {
+void linenoiseEditBackspace(linenoiseHandle_t handle, linenoiseState_t *l)
+{
     if (l->pos > 0 && l->len > 0) {
         memmove(l->buf+l->pos-1,l->buf+l->pos,l->len-l->pos);
         l->pos--;
         l->len--;
         l->buf[l->len] = '\0';
-        refreshLine(l);
+        refreshLine(handle,l);
     }
 }
 
 /* Delete the previosu word, maintaining the cursor at the start of the
  * current word. */
-void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
+void linenoise2EditDeletePrevWord(linenoiseHandle_t handle, linenoiseState_t *l)
+{
     size_t old_pos = l->pos;
     size_t diff;
 
@@ -795,10 +952,11 @@ void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
     diff = old_pos - l->pos;
     memmove(l->buf+l->pos,l->buf+old_pos,l->len-old_pos+1);
     l->len -= diff;
-    refreshLine(l);
+    refreshLine(handle,l);
 }
 
-uint32_t getMillis(void) {
+uint32_t getMillis(void)
+{
     struct timeval tv = { 0 };
     gettimeofday(&tv, NULL);
     return tv.tv_sec * 1000 + tv.tv_usec / 1000;
@@ -812,12 +970,18 @@ uint32_t getMillis(void) {
  * when ctrl+d is typed.
  *
  * The function returns the length of the current buffer. */
-static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
+static int linenoise2Edit(linenoiseHandle_t handle, char *buf, size_t buflen, const char *prompt)
 {
+    linenoiseOptions_t* opts = getOptions(handle);
+    linenoiseCallbacks_t* callbacks = getCallbacks(handle);
+
     uint32_t t1 = 0;
-    struct linenoiseState l;
-    int out_fd = fileno(stdout);
-    int in_fd = fileno(stdin);
+    linenoiseState_t l;
+    int out_fd = fileno(opts->fpOut);
+    int in_fd = fileno(opts->fpIn);
+
+    int cols = getColumns(handle);
+    if (cols == -1 && errno == EWOULDBLOCK) {return -1;}
 
     /* Populate the linenoise state that we pass to functions implementing
      * specific editing functionalities. */
@@ -827,9 +991,9 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
     l.plen = strlen(prompt);
     l.oldpos = l.pos = 0;
     l.len = 0;
-    l.cols = getColumns();
     l.maxrows = 0;
     l.history_index = 0;
+    l.cols = cols;
 
     /* Buffer starts empty. */
     l.buf[0] = '\0';
@@ -837,14 +1001,19 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
 
     /* The latest history entry is always our current buffer, that
      * initially is just an empty string. */
-    linenoiseHistoryAdd("");
+    linenoise2HistoryAdd(handle,"");
 
-    int pos1 = getCursorPosition();
+    int pos1 = getCursorPosition(handle);
+    if (pos1 == -1 && errno == EWOULDBLOCK){return -1;}
+
     if (write(out_fd, prompt,l.plen) == -1) {
         return -1;
     }
-    flushWrite();
-    int pos2 = getCursorPosition();
+    flushWrite(handle);
+    
+    int pos2 = getCursorPosition(handle);
+    if (pos2 == -1 && errno == EWOULDBLOCK){return -1;}
+
     if (pos1 >= 0 && pos2 >= 0) {
         l.plen = pos2 - pos1;
     }
@@ -864,13 +1033,14 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
          */
         t1 = getMillis();
         nread = read(in_fd, &c, 1);
-        if (nread <= 0) return l.len;
+        if (nread == -1 && errno == EWOULDBLOCK) {return -1;}
+        if (nread <= 0){return l.len;}
 
         if ( (getMillis() - t1) < LINENOISE_PASTE_KEY_DELAY && c != ENTER) {
             /* Pasting data, insert characters without formatting.
              * This can only be performed when the cursor is at the end of the
              * line. */
-            if (linenoiseInsertPastedChar(&l,c)) {
+            if (linenoise2InsertPastedChar(handle,&l,c)) {
                 return -1;
             }
             continue;
@@ -879,8 +1049,8 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
         /* Only autocomplete when the callback is set. It returns < 0 when
          * there was an error reading from fd. Otherwise it will return the
          * character that should be handled next. */
-        if (c == 9 && completionCallback != NULL) {
-            int c2 = completeLine(&l);
+        if (c == 9 && callbacks->completionCallback != NULL) {
+            int c2 = completeLine(handle, &l);
             /* Return on errors */
             if (c2 < 0) return l.len;
             /* Read next character when 0 */
@@ -890,16 +1060,16 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
 
         switch(c) {
         case ENTER:    /* enter */
-            history_len--;
-            free(history[history_len]);
-            if (mlmode) linenoiseEditMoveEnd(&l);
-            if (hintsCallback) {
+            opts->history_len--;
+            free(opts->history[opts->history_len]);
+            if (opts->mlmode) linenoise2EditMoveEnd(handle, &l);
+            if (callbacks->hintsCallback) {
                 /* Force a refresh without hints to leave the previous
                  * line as the user typed it after a newline. */
-                linenoiseHintsCallback *hc = hintsCallback;
-                hintsCallback = NULL;
-                refreshLine(&l);
-                hintsCallback = hc;
+                linenoiseHintsCallback *hc = callbacks->hintsCallback;
+                callbacks->hintsCallback = NULL;
+                refreshLine(handle,&l);
+                callbacks->hintsCallback = hc;
             }
             return (int)l.len;
         case CTRL_C:     /* ctrl-c */
@@ -907,15 +1077,15 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
             return -1;
         case BACKSPACE:   /* backspace */
         case 8:     /* ctrl-h */
-            linenoiseEditBackspace(&l);
+            linenoiseEditBackspace(handle, &l);
             break;
         case CTRL_D:     /* ctrl-d, remove char at right of cursor, or if the
                             line is empty, act as end-of-file. */
             if (l.len > 0) {
-                linenoiseEditDelete(&l);
+                linenoise2EditDelete(handle, &l);
             } else {
-                history_len--;
-                free(history[history_len]);
+                opts->history_len--;
+                free(opts->history[opts->history_len]);
                 return -1;
             }
             break;
@@ -925,60 +1095,60 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
                 buf[l.pos-1] = buf[l.pos];
                 buf[l.pos] = aux;
                 if (l.pos != l.len-1) l.pos++;
-                refreshLine(&l);
+                refreshLine(handle,&l);
             }
             break;
         case CTRL_B:     /* ctrl-b */
-            linenoiseEditMoveLeft(&l);
+            linenoise2EditMoveLeft(handle, &l);
             break;
         case CTRL_F:     /* ctrl-f */
-            linenoiseEditMoveRight(&l);
+            linenoise2EditMoveRight(handle, &l);
             break;
         case CTRL_P:    /* ctrl-p */
-            linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_PREV);
+            linenoise2EditHistoryNext(handle, &l, LINENOISE_HISTORY_PREV);
             break;
         case CTRL_N:    /* ctrl-n */
-            linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_NEXT);
+            linenoise2EditHistoryNext(handle, &l, LINENOISE_HISTORY_NEXT);
             break;
-        case ESC:    /* escape sequence */
+        case ESC:{    /* escape sequence */
             /* Read the next two bytes representing the escape sequence. */
-            if (read(in_fd, seq, 2) < 2) {
-                break;
-            }
+            int n = read(in_fd, seq, 2);
+            if (n == -1 && errno == EWOULDBLOCK) {return -1;}
+            if (n < 2) {break;}
 
             /* ESC [ sequences. */
             if (seq[0] == '[') {
                 if (seq[1] >= '0' && seq[1] <= '9') {
                     /* Extended escape, read additional byte. */
-                    if (read(in_fd, seq+2, 1) == -1) {
-                        break;
-                    }
+                    int n = read(in_fd, seq+2, 1);
+                    if (n == -1 && errno == EWOULDBLOCK) {return -1;}
+                    if (n == -1) {break;}
                     if (seq[2] == '~') {
                         switch(seq[1]) {
                         case '3': /* Delete key. */
-                            linenoiseEditDelete(&l);
+                            linenoise2EditDelete(handle, &l);
                             break;
                         }
                     }
                 } else {
                     switch(seq[1]) {
                     case 'A': /* Up */
-                        linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_PREV);
+                        linenoise2EditHistoryNext(handle, &l, LINENOISE_HISTORY_PREV);
                         break;
                     case 'B': /* Down */
-                        linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_NEXT);
+                        linenoise2EditHistoryNext(handle, &l, LINENOISE_HISTORY_NEXT);
                         break;
                     case 'C': /* Right */
-                        linenoiseEditMoveRight(&l);
+                        linenoise2EditMoveRight(handle, &l);
                         break;
                     case 'D': /* Left */
-                        linenoiseEditMoveLeft(&l);
+                        linenoise2EditMoveLeft(handle, &l);
                         break;
                     case 'H': /* Home */
-                        linenoiseEditMoveHome(&l);
+                        linenoise2EditMoveHome(handle, &l);
                         break;
                     case 'F': /* End*/
-                        linenoiseEditMoveEnd(&l);
+                        linenoise2EditMoveEnd(handle, &l);
                         break;
                     }
                 }
@@ -988,72 +1158,80 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
             else if (seq[0] == 'O') {
                 switch(seq[1]) {
                 case 'H': /* Home */
-                    linenoiseEditMoveHome(&l);
+                    linenoise2EditMoveHome(handle, &l);
                     break;
                 case 'F': /* End*/
-                    linenoiseEditMoveEnd(&l);
+                    linenoise2EditMoveEnd(handle, &l);
                     break;
                 }
             }
             break;
+        }
         default:
-            if (linenoiseEditInsert(&l,c)) return -1;
+            if (linenoise2EditInsert(handle,&l,c)) return -1;
             break;
         case CTRL_U: /* Ctrl+u, delete the whole line. */
             buf[0] = '\0';
             l.pos = l.len = 0;
-            refreshLine(&l);
+            refreshLine(handle,&l);
             break;
         case CTRL_K: /* Ctrl+k, delete from current to end of line. */
             buf[l.pos] = '\0';
             l.len = l.pos;
-            refreshLine(&l);
+            refreshLine(handle,&l);
             break;
         case CTRL_A: /* Ctrl+a, go to the start of the line */
-            linenoiseEditMoveHome(&l);
+            linenoise2EditMoveHome(handle, &l);
             break;
         case CTRL_E: /* ctrl+e, go to the end of the line */
-            linenoiseEditMoveEnd(&l);
+            linenoise2EditMoveEnd(handle, &l);
             break;
         case CTRL_L: /* ctrl+l, clear screen */
-            linenoiseClearScreen();
-            refreshLine(&l);
+            linenoise2ClearScreen(handle);
+            refreshLine(handle, &l);
             break;
         case CTRL_W: /* ctrl+w, delete previous word */
-            linenoiseEditDeletePrevWord(&l);
+            linenoise2EditDeletePrevWord(handle, &l);
             break;
         }
-        flushWrite();
+        flushWrite(handle);
     }
     return l.len;
 }
 
-void linenoiseAllowEmpty(bool val) {
-    allow_empty = val;
+void linenoise2AllowEmpty(linenoiseHandle_t handle, bool val)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+    opts->allow_empty = val;
 }
 
-int linenoiseProbe(void) {
+int linenoise2Probe(linenoiseHandle_t handle)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
     /* Switch to non-blocking mode */
-    int stdin_fileno = fileno(stdin);
-    int flags = fcntl(stdin_fileno, F_GETFL);
+    int fpIn_fileno = fileno(opts->fpIn);
+    int flags = fcntl(fpIn_fileno, F_GETFL);
     flags |= O_NONBLOCK;
-    int res = fcntl(stdin_fileno, F_SETFL, flags);
+    int res = fcntl(fpIn_fileno, F_SETFL, flags);
     if (res != 0) {
         return -1;
     }
     /* Device status request */
-    fprintf(stdout, "\x1b[5n");
-    flushWrite();
+    fprintf(opts->fpOut, "\x1b[5n");
+    flushWrite(handle);
 
     /* Try to read response */
-    int timeout_ms = 300;
+    int timeout_ms = 200;
     const int retry_ms = 10;
     size_t read_bytes = 0;
     while (timeout_ms > 0 && read_bytes < 4) { // response is ESC[0n or ESC[3n
         usleep(retry_ms * 1000);
         timeout_ms -= retry_ms;
         char c;
-        int cb = read(stdin_fileno, &c, 1);
+        int cb = read(fpIn_fileno, &c, 1);
+        // Note! Due to the fcntl call above, this is read in non-blocking mode!
+        // So, nread == -1 && errno == EWOULDBLOCK are expected here!
         if (cb < 0) {
             continue;
         }
@@ -1065,7 +1243,7 @@ int linenoiseProbe(void) {
     }
     /* Restore old mode */
     flags &= ~O_NONBLOCK;
-    res = fcntl(stdin_fileno, F_SETFL, flags);
+    res = fcntl(fpIn_fileno, F_SETFL, flags);
     if (res != 0) {
         return -1;
     }
@@ -1075,26 +1253,36 @@ int linenoiseProbe(void) {
     return 0;
 }
 
-static int linenoiseRaw(char *buf, size_t buflen, const char *prompt) {
+static int linenoise2Raw(linenoiseHandle_t handle, char *buf, size_t buflen, const char *prompt)
+{
     int count;
+
+    linenoiseOptions_t* opts = getOptions(handle);
 
     if (buflen == 0) {
         errno = EINVAL;
         return -1;
     }
 
-    count = linenoiseEdit(buf, buflen, prompt);
-    fputc('\n', stdout);
-    flushWrite();
+    count = linenoise2Edit(handle, buf, buflen, prompt);
+    if (count != -1){
+        fputc('\n', opts->fpOut);
+        flushWrite(handle);
+    }
     return count;
 }
 
-static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
+static int linenoise2Dumb(linenoiseHandle_t handle, char* buf, size_t buflen, const char* prompt)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
     /* dumb terminal, fall back to fgets */
-    fputs(prompt, stdout);
+    fputs(prompt, opts->fpOut);
     size_t count = 0;
     while (count < buflen) {
-        int c = fgetc(stdin);
+        int c = fgetc(opts->fpIn);
+        if (c == -1 && errno == EWOULDBLOCK) {return -1;}
+
         if (c == '\n') {
             break;
         } else if (c >= 0x1c && c <= 0x1f){
@@ -1104,15 +1292,15 @@ static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
                 buf[count - 1] = 0;
                 count --;
             }
-            fputs("\x08 ", stdout); /* Windows CMD: erase symbol under cursor */
+            fputs("\x08 ", opts->fpOut); /* Windows CMD: erase symbol under cursor */
         } else {
             buf[count] = c;
             ++count;
         }
-        fputc(c, stdout); /* echo */
+        fputc(c, opts->fpOut); /* echo */
     }
-    fputc('\n', stdout);
-    flushWrite();
+    fputc('\n', opts->fpOut);
+    flushWrite(handle);
     return count;
 }
 
@@ -1128,21 +1316,24 @@ static void sanitize(char* src) {
 }
 
 /* The high level function that is the main API of the linenoise library. */
-char *linenoise(const char *prompt) {
-    char *buf = calloc(1, max_cmdline_length);
+char *linenoise2(linenoiseHandle_t handle, const char *prompt)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
+    char *buf = calloc(1, opts->max_cmdline_length);
     int count = 0;
     if (buf == NULL) {
         return NULL;
     }
-    if (!dumbmode) {
-        count = linenoiseRaw(buf, max_cmdline_length, prompt);
+    if (!opts->dumbmode) {
+        count = linenoise2Raw(handle, buf, opts->max_cmdline_length, prompt);
     } else {
-        count = linenoiseDumb(buf, max_cmdline_length, prompt);
+        count = linenoise2Dumb(handle, buf, opts->max_cmdline_length, prompt);
     }
     if (count > 0) {
         sanitize(buf);
         count = strlen(buf);
-    } else if (count == 0 && allow_empty) {
+    } else if (count == 0 && opts->allow_empty) {
         /* will return an empty (0-length) string */
     } else {
         free(buf);
@@ -1151,24 +1342,38 @@ char *linenoise(const char *prompt) {
     return buf;
 }
 
+void  linenoise2SetFpIn(linenoiseHandle_t handle, FILE* fpIn)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+    opts->fpIn = fpIn;
+}
+void  linenoise2SetFpOut(linenoiseHandle_t handle, FILE* fpOut)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+    opts->fpOut = fpOut;
+}
+
 /* This is just a wrapper the user may want to call in order to make sure
  * the linenoise returned buffer is freed with the same allocator it was
  * created with. Useful when the main program is using an alternative
  * allocator. */
-void linenoiseFree(void *ptr) {
+void linenoise2Free(void* ptr) {
     free(ptr);
 }
 
 /* ================================ History ================================= */
 
-void linenoiseHistoryFree(void) {
-    if (history) {
-        for (int j = 0; j < history_len; j++) {
-            free(history[j]);
+void linenoise2HistoryFree(linenoiseHandle_t handle)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
+    if (opts->history) {
+        for (int j = 0; j < opts->history_len; j++) {
+            free(opts->history[j]);
         }
-        free(history);
+        free(opts->history);
     }
-    history = NULL;
+    opts->history = NULL;
 }
 
 /* This is the API call to add a new entry in the linenoise history.
@@ -1178,32 +1383,36 @@ void linenoiseHistoryFree(void) {
  * histories, but will work well for a few hundred of entries.
  *
  * Using a circular buffer is smarter, but a bit more complex to handle. */
-int linenoiseHistoryAdd(const char *line) {
+int linenoise2HistoryAdd(linenoiseHandle_t handle, const char *line)
+{
     char *linecopy;
 
-    if (history_max_len == 0) return 0;
+    linenoiseOptions_t* opts = getOptions(handle);
+
+    if (opts->history_max_len == 0) return 0;
 
     /* Initialization on first call. */
-    if (history == NULL) {
-        history = malloc(sizeof(char*)*history_max_len);
-        if (history == NULL) return 0;
-        memset(history,0,(sizeof(char*)*history_max_len));
+    if (opts->history == NULL) {
+        opts->history = malloc(sizeof(char*) * opts->history_max_len);
+        if (opts->history == NULL) return 0;
+        memset(opts->history,0,(sizeof(char*) * opts->history_max_len));
     }
 
     /* Don't add duplicated lines. */
-    if (history_len && !strcmp(history[history_len-1], line)) return 0;
+    if (opts->history_len && !strcmp(opts->history[opts->history_len-1], line)) return 0;
 
     /* Add an heap allocated copy of the line in the history.
      * If we reached the max length, remove the older line. */
     linecopy = strdup(line);
     if (!linecopy) return 0;
-    if (history_len == history_max_len) {
-        free(history[0]);
-        memmove(history,history+1,sizeof(char*)*(history_max_len-1));
-        history_len--;
+    if (opts->history_len == opts->history_max_len) {
+        free(opts->history[0]);
+        memmove(opts->history,opts->history+1,sizeof(char*) * (opts->history_max_len-1));
+        opts->history_len--;
     }
-    history[history_len] = linecopy;
-    history_len++;
+    opts->history[opts->history_len] = linecopy;
+    opts->history_len++;
+
     return 1;
 }
 
@@ -1211,12 +1420,15 @@ int linenoiseHistoryAdd(const char *line) {
  * if there is already some history, the function will make sure to retain
  * just the latest 'len' elements if the new history length value is smaller
  * than the amount of items already inside the history. */
-int linenoiseHistorySetMaxLen(int len) {
+int linenoise2HistorySetMaxLen(linenoiseHandle_t handle, int len)
+{
     char **new;
 
+    linenoiseOptions_t* opts = getOptions(handle);
+
     if (len < 1) return 0;
-    if (history) {
-        int tocopy = history_len;
+    if (opts->history) {
+        int tocopy = opts->history_len;
 
         new = malloc(sizeof(char*)*len);
         if (new == NULL) return 0;
@@ -1225,30 +1437,33 @@ int linenoiseHistorySetMaxLen(int len) {
         if (len < tocopy) {
             int j;
 
-            for (j = 0; j < tocopy-len; j++) free(history[j]);
+            for (j = 0; j < tocopy-len; j++) free(opts->history[j]);
             tocopy = len;
         }
         memset(new,0,sizeof(char*)*len);
-        memcpy(new,history+(history_len-tocopy), sizeof(char*)*tocopy);
-        free(history);
-        history = new;
+        memcpy(new,opts->history + (opts->history_len - tocopy), sizeof(char*)*tocopy);
+        free(opts->history);
+        opts->history = new;
     }
-    history_max_len = len;
-    if (history_len > history_max_len)
-        history_len = history_max_len;
+    opts->history_max_len = len;
+    if (opts->history_len > opts->history_max_len)
+        opts->history_len = opts->history_max_len;
     return 1;
 }
 
 /* Save the history in the specified file. On success 0 is returned
  * otherwise -1 is returned. */
-int linenoiseHistorySave(const char *filename) {
+int linenoise2HistorySave(linenoiseHandle_t handle, const char *filename)
+{
     FILE *fp;
     int j;
 
+    linenoiseOptions_t* opts = getOptions(handle);
+
     fp = fopen(filename,"w");
     if (fp == NULL) return -1;
-    for (j = 0; j < history_len; j++)
-        fprintf(fp,"%s\n",history[j]);
+    for (j = 0; j < opts->history_len; j++)
+        fprintf(fp,"%s\n",opts->history[j]);
     fclose(fp);
     return 0;
 }
@@ -1258,25 +1473,28 @@ int linenoiseHistorySave(const char *filename) {
  *
  * If the file exists and the operation succeeded 0 is returned, otherwise
  * on error -1 is returned. */
-int linenoiseHistoryLoad(const char *filename) {
+int linenoise2HistoryLoad(linenoiseHandle_t handle, const char *filename)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
+
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) {
         return -1;
     }
 
-    char *buf = calloc(1, max_cmdline_length);
+    char *buf = calloc(1, opts->max_cmdline_length);
     if (buf == NULL) {
         fclose(fp);
         return -1;
     }
 
-    while (fgets(buf, max_cmdline_length, fp) != NULL) {
+    while (fgets(buf, opts->max_cmdline_length, fp) != NULL) {
         char *p;
 
         p = strchr(buf,'\r');
         if (!p) p = strchr(buf,'\n');
         if (p) *p = '\0';
-        linenoiseHistoryAdd(buf);
+        linenoise2HistoryAdd(handle, buf);
     }
 
     free(buf);
@@ -1288,10 +1506,12 @@ int linenoiseHistoryLoad(const char *filename) {
 /* Set line maximum length. If len parameter is smaller than
  * LINENOISE_MINIMAL_MAX_LINE, -1 is returned
  * otherwise 0 is returned. */
-int linenoiseSetMaxLineLen(size_t len) {
+int linenoise2SetMaxLineLen(linenoiseHandle_t handle, size_t len)
+{
+    linenoiseOptions_t* opts = getOptions(handle);
     if (len < LINENOISE_MINIMAL_MAX_LINE) {
         return -1;
     }
-    max_cmdline_length = len;
+    opts->max_cmdline_length = len;
     return 0;
 }

@@ -51,6 +51,11 @@ typedef struct linenoiseCompletions {
   char **cvec;
 } linenoiseCompletions;
 
+//
+// linenoise() is equivalent to calling
+// linenoise2() with stdin & stdout
+//
+
 typedef void(linenoiseCompletionCallback)(const char *, linenoiseCompletions *);
 typedef char*(linenoiseHintsCallback)(const char *, int *color, int *bold);
 typedef void(linenoiseFreeHintsCallback)(void *);
@@ -59,21 +64,56 @@ void linenoiseSetHintsCallback(linenoiseHintsCallback *);
 void linenoiseSetFreeHintsCallback(linenoiseFreeHintsCallback *);
 void linenoiseAddCompletion(linenoiseCompletions *, const char *);
 
-int linenoiseProbe(void);
-char *linenoise(const char *prompt);
-void linenoiseFree(void *ptr);
-int linenoiseHistoryAdd(const char *line);
-int linenoiseHistorySetMaxLen(int len);
-int linenoiseHistorySave(const char *filename);
-int linenoiseHistoryLoad(const char *filename);
-void linenoiseHistoryFree(void);
-void linenoiseClearScreen(void);
-void linenoiseSetMultiLine(int ml);
-void linenoiseSetDumbMode(int set);
-bool linenoiseIsDumbMode(void);
-void linenoisePrintKeyCodes(void);
-void linenoiseAllowEmpty(bool);
-int linenoiseSetMaxLineLen(size_t len);
+int   linenoiseProbe(void);
+char* linenoise(const char *prompt);
+void  linenoiseFree(void *ptr);
+int   linenoiseHistoryAdd(const char *line);
+int   linenoiseHistorySetMaxLen(int len);
+int   linenoiseHistorySave(const char *filename);
+int   linenoiseHistoryLoad(const char *filename);
+void  linenoiseHistoryFree(void);
+void  linenoiseClearScreen(void);
+void  linenoiseSetMultiLine(int ml);
+void  linenoiseSetDumbMode(int set);
+bool  linenoiseIsDumbMode(void);
+void  linenoisePrintKeyCodes(void);
+void  linenoiseAllowEmpty(bool);
+int   linenoiseSetMaxLineLen(size_t len);
+
+//
+// Linenoise 2 
+//
+// Supports replacing stdin/stdout 
+// with a terminal of your choosing
+//
+
+struct linenoise_t;
+typedef struct linenoise_t* linenoiseHandle_t;
+
+linenoiseHandle_t linenoise2Create();
+
+void  linenoise2SetCompletionCallback(linenoiseHandle_t handle, linenoiseCompletionCallback *);
+void  linenoise2SetHintsCallback(linenoiseHandle_t handle, linenoiseHintsCallback *);
+void  linenoise2SetFreeHintsCallback(linenoiseHandle_t handle, linenoiseFreeHintsCallback *);
+void  linenoise2AddCompletion(linenoiseCompletions *, const char *);
+
+int   linenoise2Probe(linenoiseHandle_t handle);
+char* linenoise2(linenoiseHandle_t handle, const char *prompt);
+void  linenoise2SetFpIn(linenoiseHandle_t handle, FILE* fpIn);
+void  linenoise2SetFpOut(linenoiseHandle_t handle, FILE* fpOut);
+int   linenoise2HistoryAdd(linenoiseHandle_t handle, const char *line);
+int   linenoise2HistorySetMaxLen(linenoiseHandle_t handle, int len);
+int   linenoise2HistorySave(linenoiseHandle_t handle, const char *filename);
+int   linenoise2HistoryLoad(linenoiseHandle_t handle, const char *filename);
+void  linenoise2HistoryFree(linenoiseHandle_t handle);
+void  linenoise2ClearScreen(linenoiseHandle_t handle);
+void  linenoise2SetMultiLine(linenoiseHandle_t handle, int ml);
+void  linenoise2SetDumbMode(linenoiseHandle_t handle, int set);
+bool  linenoise2IsDumbMode(linenoiseHandle_t handle);
+void  linenoise2PrintKeyCodes(linenoiseHandle_t handle);
+void  linenoise2AllowEmpty(linenoiseHandle_t handle, bool);
+int   linenoise2SetMaxLineLen(linenoiseHandle_t handle, size_t len);
+void  linenoise2Free(void* ptr);
 
 #ifdef __cplusplus
 }
