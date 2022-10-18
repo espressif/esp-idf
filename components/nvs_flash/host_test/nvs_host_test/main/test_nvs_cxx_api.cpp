@@ -1,29 +1,15 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "catch.hpp"
 #include <algorithm>
 #include <cstring>
-#include "nvs_test_api.h"
 #include "nvs_handle_simple.hpp"
 #include "nvs_partition_manager.hpp"
-#include "spi_flash_emulation.h"
-
 #include "test_fixtures.hpp"
-
 #include <iostream>
-
-using namespace std;
 
 TEST_CASE("NVSHandleSimple CXX api open invalid arguments", "[nvs cxx]")
 {
@@ -34,7 +20,7 @@ TEST_CASE("NVSHandleSimple CXX api open invalid arguments", "[nvs cxx]")
     shared_ptr<nvs::NVSHandle> handle;
 
     REQUIRE(nvs::NVSPartitionManager::get_instance()->
-            init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN) == ESP_OK);
+            init_custom(f.part(), NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN) == ESP_OK);
 
     handle = nvs::open_nvs_handle_from_partition(nullptr, "ns_1", NVS_READWRITE, &result);
     CHECK(result == ESP_ERR_INVALID_ARG);
@@ -49,7 +35,9 @@ TEST_CASE("NVSHandleSimple CXX api open invalid arguments", "[nvs cxx]")
 
 TEST_CASE("NVSHandleSimple CXX api open partition uninitialized", "[nvs cxx]")
 {
-    SpiFlashEmulator emu(10);
+    uint8_t *p_part_desc_addr_start;
+    CHECK(esp_partition_file_mmap((const uint8_t **)&p_part_desc_addr_start) == ESP_OK);
+
     esp_err_t result;
     shared_ptr<nvs::NVSHandle> handle;
 
@@ -67,7 +55,7 @@ TEST_CASE("NVSHandleSimple CXX api open successful", "[nvs cxx]")
     esp_err_t result;
     shared_ptr<nvs::NVSHandle> handle;
 
-    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
             == ESP_OK);
 
     CHECK(nvs::NVSPartitionManager::get_instance()->open_handles_size() == 0);
@@ -93,7 +81,7 @@ TEST_CASE("NVSHandleSimple CXX api open default part successful", "[nvs cxx]")
     esp_err_t result;
     shared_ptr<nvs::NVSHandle> handle;
 
-    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
             == ESP_OK);
 
     CHECK(nvs::NVSPartitionManager::get_instance()->open_handles_size() == 0);
@@ -119,7 +107,7 @@ TEST_CASE("NVSHandleSimple CXX api open default part ns NULL", "[nvs cxx]")
     esp_err_t result;
     shared_ptr<nvs::NVSHandle> handle;
 
-    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
             == ESP_OK);
 
     CHECK(nvs::NVSPartitionManager::get_instance()->open_handles_size() == 0);
@@ -142,7 +130,7 @@ TEST_CASE("NVSHandleSimple CXX api read/write string", "[nvs cxx]")
     esp_err_t result;
     shared_ptr<nvs::NVSHandle> handle;
 
-    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
             == ESP_OK);
 
     CHECK(nvs::NVSPartitionManager::get_instance()->open_handles_size() == 0);
@@ -172,7 +160,7 @@ TEST_CASE("NVSHandleSimple CXX api read/write blob", "[nvs cxx]")
     esp_err_t result;
     shared_ptr<nvs::NVSHandle> handle;
 
-    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
             == ESP_OK);
 
     CHECK(nvs::NVSPartitionManager::get_instance()->open_handles_size() == 0);

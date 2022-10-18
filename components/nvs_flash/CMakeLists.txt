@@ -17,6 +17,7 @@ idf_component_register(SRCS "${srcs}"
                     REQUIRES "esp_partition"
                     PRIV_REQUIRES spi_flash
                     INCLUDE_DIRS "include"
+                    "../spi_flash/include"
                     PRIV_INCLUDE_DIRS "private_include")
 
 # If we use the linux target, we need to redirect the crc functions to the linux
@@ -28,6 +29,13 @@ if(${target} STREQUAL "linux")
     target_compile_options(${COMPONENT_LIB} PUBLIC "-DLINUX_TARGET")
     target_compile_options(${COMPONENT_LIB} PUBLIC --coverage)
     target_link_libraries(${COMPONENT_LIB} PUBLIC --coverage)
+
+    find_library(LIB_BSD bsd)
+    if(LIB_BSD)
+        target_link_libraries(${COMPONENT_LIB} PRIVATE ${LIB_BSD})
+    elseif(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        message(WARNING "Missing LIBBSD library. Install libbsd-dev package and/or check linker directories.")
+    endif()
 endif()
 
 if(CONFIG_NVS_ENCRYPTION)

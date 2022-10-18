@@ -804,7 +804,6 @@ components/mqtt/host_test/mocks/include/freertos/FreeRTOSConfig.h
 components/mqtt/host_test/mocks/include/freertos/portmacro.h
 components/mqtt/host_test/mocks/include/machine/endian.h
 components/mqtt/host_test/mocks/include/sys/queue.h
-components/nvs_flash/host_test/fixtures/test_fixtures.hpp
 components/nvs_flash/host_test/nvs_page_test/main/nvs_page_test.cpp
 components/nvs_flash/include/nvs_flash.h
 components/nvs_flash/include/nvs_handle.hpp
@@ -831,12 +830,10 @@ components/nvs_flash/test/test_nvs.c
 components/nvs_flash/test_nvs_host/esp_error_check_stub.cpp
 components/nvs_flash/test_nvs_host/main.cpp
 components/nvs_flash/test_nvs_host/sdkconfig.h
-components/nvs_flash/test_nvs_host/spi_flash_emulation.cpp
 components/nvs_flash/test_nvs_host/test_fixtures.hpp
 components/nvs_flash/test_nvs_host/test_intrusive_list.cpp
 components/nvs_flash/test_nvs_host/test_nvs_cxx_api.cpp
 components/nvs_flash/test_nvs_host/test_nvs_initialization.cpp
-components/nvs_flash/test_nvs_host/test_nvs_partition.cpp
 components/nvs_flash/test_nvs_host/test_nvs_storage.cpp
 components/openthread/include/esp_openthread_lock.h
 components/protocomm/include/transports/protocomm_console.h

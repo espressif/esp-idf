@@ -21,12 +21,8 @@ SOURCE_FILES = \
 	test_spi_flash_emulation.cpp \
 	test_intrusive_list.cpp \
 	test_nvs.cpp \
-	test_partition_manager.cpp \
-	test_nvs_handle.cpp \
-	test_nvs_storage.cpp \
 	test_nvs_partition.cpp \
-	test_nvs_cxx_api.cpp \
-	test_nvs_initialization.cpp \
+	test_partition_manager.cpp \
 	main.cpp
 
 SOURCE_FILES_C = ../../esp_rom/linux/esp_rom_crc.c ../../esp_common/src/esp_err_check_linux.c

@@ -9,12 +9,10 @@
 #include "spi_flash_emulation.h"
 #include <functional>
 
-using namespace std;
-
 template <typename Tit>
 bool range_empty_n(Tit it_begin, size_t n)
 {
-    return all_of(it_begin, it_begin + n, bind(equal_to<uint32_t>(), placeholders::_1, 0xffffffff));
+    return std::all_of(it_begin, it_begin + n, bind(std::equal_to<uint32_t>(), std::placeholders::_1, 0xffffffff));
 }
 
 struct FlashEmuFixture {

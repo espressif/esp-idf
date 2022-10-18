@@ -20,6 +20,13 @@ test_nvs_on_host:
     - cd components/nvs_flash/test_nvs_host
     - make test
 
+test_nvs_on_host_cmake:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/components/nvs_flash/host_test/nvs_host_test
+    - idf.py build
+    - build/nvs_host_test.elf
+
 test_nvs_coverage:
   extends:
     - .host_test_template
