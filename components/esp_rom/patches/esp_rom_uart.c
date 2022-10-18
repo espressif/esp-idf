@@ -17,7 +17,6 @@
 #include "esp_attr.h"
 #include "sdkconfig.h"
 #include "hal/uart_ll.h"
-#include "soc/uart_struct.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 /**
@@ -25,24 +24,12 @@
  */
 IRAM_ATTR void esp_rom_uart_tx_wait_idle(uint8_t uart_no)
 {
-    uart_dev_t *device = NULL;
-    switch (uart_no) {
-    case 0:
-        device = &UART0;
-        break;
-    case 1:
-        device = &UART1;
-        break;
-    default:
-        device = &UART2;
-        break;
-    }
-    while (!uart_ll_is_tx_idle(device));
+    while (!uart_ll_is_tx_idle(UART_LL_GET_HW(uart_no))) {};
 }
 #endif
 
 IRAM_ATTR void esp_rom_uart_set_clock_baudrate(uint8_t uart_no, uint32_t clock_hz, uint32_t baud_rate)
 {
-    extern void uart_div_modify(uint8_t uart_no, uint32_t DivLatchValue);
-    uart_div_modify(uart_no, (clock_hz << 4) / baud_rate);
+    (void)clock_hz;
+    uart_ll_set_baudrate(UART_LL_GET_HW(uart_no), baud_rate);
 }
