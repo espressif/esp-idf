@@ -350,7 +350,8 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
         }
 
         /* Allocate LE Advertising Report Event from lo pool only */
-        if ((data[1] == BLE_HCI_EVCODE_LE_META) && (data[3] == BLE_HCI_LE_SUBEV_ADV_RPT)) {
+        if ((data[1] == BLE_HCI_EVCODE_LE_META) &&
+            (data[3] == BLE_HCI_LE_SUBEV_ADV_RPT || data[3] == BLE_HCI_LE_SUBEV_EXT_ADV_RPT)) {
             evbuf = ble_hci_trans_buf_alloc(BLE_HCI_TRANS_BUF_EVT_LO);
             /* Skip advertising report if we're out of memory */
             if (!evbuf) {
