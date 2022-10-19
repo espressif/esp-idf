@@ -51,7 +51,7 @@ esp_err_t esp_hf_ag_init(void)
     msg.act = BTC_HF_INIT_EVT;
 
     /* Switch to BTC context */
-    bt_status_t status = btc_transfer_context(&msg, NULL, sizeof(btc_hf_args_t), NULL, NULL);
+    bt_status_t status = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -66,7 +66,7 @@ esp_err_t esp_hf_ag_deinit(void)
     msg.act = BTC_HF_DEINIT_EVT;
 
     /* Switch to BTC context */
-    bt_status_t status = btc_transfer_context(&msg, NULL, sizeof(btc_hf_args_t), NULL, NULL);
+    bt_status_t status = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
