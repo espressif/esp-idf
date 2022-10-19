@@ -27,8 +27,8 @@ Procedure:
     - For single core, run the test directly from the UnityTask
     - For SMP, run the test once on each core (using vTestOnAllCores())
 Expected:
-    - The elapsed ticks should be TEST_VTASKDELAY_TICKS, with 1 tick of error allowed (in case ref clock functions last
-      long enough to cross a tick boundary).
+    - The elapsed ticks should be TEST_VTASKDELAY_TICKS, with 1 tick of error allowed (in case the delay and ref clock
+      functions last long enough to cross a tick boundary).
     - The elapsed time should be equivalent to TEST_VTASKDELAY_TICKS tick periods, with 1 tick period of error allowed
       (in case ref clock functions last longer that a tick period).
 */
@@ -57,8 +57,8 @@ static void test_vTaskDelay(void *arg)
         tick_end = xTaskGetTickCount();
         ref_clock_end = portTEST_REF_CLOCK_GET_TIME();
 
-        /* Check that elapsed ticks and ref clock is accurate. We allow 1 tick of error in case vTaskDelay() was called
-         * right before/after the tick boundary. */
+        /* Check that elapsed ticks and ref clock is accurate. We allow 1 tick of error in case vTaskDelay() or
+         * portTEST_REF_CLOCK_GET_TIME() last long enough to cross a tick boundary */
         #if ( configUSE_16_BIT_TICKS == 1 )
             TEST_ASSERT_UINT16_WITHIN(1, TEST_VTASKDELAY_TICKS, tick_end - tick_start);
         #else
@@ -102,8 +102,8 @@ Procedure:
     - For single core, run the test directly from the UnityTask
     - For SMP, run the test once on each core (using vTestOnAllCores())
 Expected:
-    - The elapsed ticks should be exactly TEST_VTASKDELAYUNTIL_TICKS since vTaskDelayUntil() is relative to the previous
-      wake time
+    - The elapsed ticks should be TEST_VTASKDELAYUNTIL_TICKS, with 1 tick of error allowed (in case the delay and ref
+      clock functions last long enough to cross a tick boundary).
     - The elapsed time should be equivalent to TEST_VTASKDELAYUNTIL_TICKS tick periods, with 1 tick period of error
       allowed (in case ref clock functions last longer that a tick period).
 */
@@ -115,12 +115,12 @@ Expected:
 
 static void test_vTaskDelayUntil(void *arg)
 {
-    /* Delay until the next tick boundary */
-    vTaskDelay(1);
-
     for (int i = 0; i < TEST_VTASKDELAYUNTIL_ITERATIONS; i++) {
         TickType_t tick_start, tick_end, last_wake_tick;
         portTEST_REF_CLOCK_TYPE ref_clock_start, ref_clock_end;
+
+        /* Delay until the next tick boundary */
+        vTaskDelay(1);
 
         /* Get the current tick count and ref clock time */
         tick_start = xTaskGetTickCount();
@@ -133,10 +133,16 @@ static void test_vTaskDelayUntil(void *arg)
         tick_end = xTaskGetTickCount();
         ref_clock_end = portTEST_REF_CLOCK_GET_TIME();
 
-        /* Check that the elapsed ticks is accurate. Elapsed ticks should be exact as vTaskDelayUntil() executes a
-         * delay relative to last_wake_tick. */
-        TEST_ASSERT_EQUAL(TEST_VTASKDELAYUNTIL_TICKS, tick_end - tick_start);
-        TEST_ASSERT_EQUAL(tick_end, last_wake_tick);
+
+        /* Check that elapsed ticks and ref clock is accurate. We allow 1 tick of error in case vTaskDelayUntil() or
+         * portTEST_REF_CLOCK_GET_TIME() last long enough to cross a tick boundary */
+        #if ( configUSE_16_BIT_TICKS == 1 )
+            TEST_ASSERT_UINT16_WITHIN(1, TEST_VTASKDELAYUNTIL_TICKS, tick_end - tick_start);
+            TEST_ASSERT_UINT16_WITHIN(1, tick_end, last_wake_tick);
+        #else
+            TEST_ASSERT_UINT32_WITHIN(1, TEST_VTASKDELAYUNTIL_TICKS, tick_end - tick_start);
+            TEST_ASSERT_UINT32_WITHIN(1, tick_end, last_wake_tick);
+        #endif
 
         /* Check that the elapsed ref clock time is accurate. We allow 1 tick time worth of error to account for the
          * the execution time of the ref clock functions. */

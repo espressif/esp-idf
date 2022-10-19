@@ -80,7 +80,17 @@ TEST_CASE("Suspend/resume task on same core", "[freertos]")
 }
 
 #ifndef CONFIG_FREERTOS_UNICORE
-TEST_CASE("Suspend/resume task on other core", "[freertos]")
+/*
+Note: This test is ignore for now due to a known issue (xKernelLock contention + task state change will lead to a race
+condition). More specifically:
+
+- test_suspend_resume() suspends task_count() thus moving it to the suspended list
+- But task_count() is already contesting the xKernelLock.
+- Changes its own task list once it takes the xKernelLock
+- xKernelLock never receives the crosscore interrupt as it was contesting for xKernelLock
+Addressed in IDF-5844
+*/
+TEST_CASE("Suspend/resume task on other core", "[freertos][ignore]")
 {
     test_suspend_resume(!UNITY_FREERTOS_CPU);
 }

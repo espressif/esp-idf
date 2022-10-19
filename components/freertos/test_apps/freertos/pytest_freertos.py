@@ -18,5 +18,6 @@ CONFIGS = [
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
 def test_freertos(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output()
+    dut.write('![ignore]')
+    # All of the FreeRTOS tests combined take > 60s to run. So we use a 120s timeout
+    dut.expect_unity_test_output(timeout=120)
