@@ -294,14 +294,15 @@
 #define SOC_TOUCH_PAD_THRESHOLD_MAX         (0)     /*!<If set touch threshold max value, The touch sensor can't be in touched status */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
-#define SOC_TWAI_BRP_MIN                        2
+#define SOC_TWAI_CONTROLLER_NUM         1UL
+#define SOC_TWAI_BRP_MIN                2
 #if SOC_CAPS_ECO_VER >= 200
 #  define SOC_TWAI_BRP_MAX              256
 #  define SOC_TWAI_BRP_DIV_SUPPORTED    1
-#  define SOC_TWAI_BRP_DIV_THRESH       128
 #else
 #  define SOC_TWAI_BRP_MAX              128
 #endif
+#define SOC_TWAI_CLK_SUPPORT_APB        1
 #define SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT   1
 
 /*-------------------------- UART CAPS ---------------------------------------*/

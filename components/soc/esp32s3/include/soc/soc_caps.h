@@ -323,7 +323,11 @@
 #define SOC_TOUCH_PAD_MEASURE_WAIT_MAX      (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
-#include "twai_caps.h"
+#define SOC_TWAI_CONTROLLER_NUM         1UL
+#define SOC_TWAI_CLK_SUPPORT_APB        1
+#define SOC_TWAI_BRP_MIN                2
+#define SOC_TWAI_BRP_MAX                16384
+#define SOC_TWAI_SUPPORTS_RX_STATUS     1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-S3 has 3 UARTs

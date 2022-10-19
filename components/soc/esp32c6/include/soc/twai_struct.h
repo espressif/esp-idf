@@ -502,6 +502,28 @@ typedef union {
     uint32_t val;
 } twai_tx_rx_buffer_reg_t;
 
+typedef struct {
+    union {
+        struct {
+            uint32_t byte: 8;           /* ACRx[7:0] Acceptance Code */
+            uint32_t reserved8: 24;     /* Internal Reserved */
+        };
+        uint32_t val;
+    } acr[4];
+    union {
+        struct {
+            uint32_t byte: 8;           /* AMRx[7:0] Acceptance Mask */
+            uint32_t reserved8: 24;     /* Internal Reserved */
+        };
+        uint32_t val;
+    } amr[4];
+    uint32_t reserved_60;
+    uint32_t reserved_64;
+    uint32_t reserved_68;
+    uint32_t reserved_6c;
+    uint32_t reserved_70;
+} acceptance_filter_reg_t;
+
 
 typedef struct twai_dev_s {
     volatile twai_mode_reg_t mode;
@@ -518,7 +540,10 @@ typedef struct twai_dev_s {
     volatile twai_err_warning_limit_reg_t err_warning_limit;
     volatile twai_rx_err_cnt_reg_t rx_err_cnt;
     volatile twai_tx_err_cnt_reg_t tx_err_cnt;
-    volatile twai_tx_rx_buffer_reg_t tx_rx_buffer[13];
+    volatile union {
+        acceptance_filter_reg_t acceptance_filter;
+        twai_tx_rx_buffer_reg_t tx_rx_buffer[13];
+    };
     volatile twai_rx_message_counter_reg_t rx_message_counter;
     uint32_t reserved_078;
     volatile twai_clock_divider_reg_t clock_divider;

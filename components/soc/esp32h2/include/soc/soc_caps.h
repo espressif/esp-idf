@@ -319,6 +319,8 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
+#define SOC_TWAI_CONTROLLER_NUM         1UL
+#define SOC_TWAI_CLK_SUPPORT_APB        1
 #define SOC_TWAI_BRP_MIN                2
 #define SOC_TWAI_BRP_MAX                16384
 #define SOC_TWAI_SUPPORTS_RX_STATUS     1

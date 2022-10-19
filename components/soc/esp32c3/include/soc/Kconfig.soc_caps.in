@@ -679,6 +679,14 @@ config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 2
 
+config SOC_TWAI_CONTROLLER_NUM
+    int
+    default 1
+
+config SOC_TWAI_CLK_SUPPORT_APB
+    bool
+    default y
+
 config SOC_TWAI_BRP_MIN
     int
     default 2
