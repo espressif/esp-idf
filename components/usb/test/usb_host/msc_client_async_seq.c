@@ -192,6 +192,8 @@ void msc_client_async_seq_task(void *arg)
                 xfer_out->num_bytes = sizeof(usb_setup_packet_t);
                 xfer_out->bEndpointAddress = 0;
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_submit_control(msc_obj.client_hdl, xfer_out));
+                //Test that an inflight control transfer cannot be resubmitted
+                TEST_ASSERT_EQUAL(ESP_ERR_NOT_FINISHED, usb_host_transfer_submit_control(msc_obj.client_hdl, xfer_out));
                 //Next stage set from transfer callback
                 break;
             }
@@ -201,6 +203,8 @@ void msc_client_async_seq_task(void *arg)
                 xfer_out->num_bytes = sizeof(mock_msc_bulk_cbw_t);
                 xfer_out->bEndpointAddress = MOCK_MSC_SCSI_BULK_OUT_EP_ADDR;
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_submit(xfer_out));
+                //Test that an inflight transfer cannot be resubmitted
+                TEST_ASSERT_EQUAL(ESP_ERR_NOT_FINISHED, usb_host_transfer_submit(xfer_out));
                 //Next stage set from transfer callback
                 break;
             }
@@ -209,6 +213,8 @@ void msc_client_async_seq_task(void *arg)
                 xfer_in->num_bytes = usb_round_up_to_mps(MOCK_MSC_SCSI_SECTOR_SIZE * msc_obj.test_param.num_sectors_per_xfer, MOCK_MSC_SCSI_BULK_EP_MPS);
                 xfer_in->bEndpointAddress = MOCK_MSC_SCSI_BULK_IN_EP_ADDR;
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_submit(xfer_in));
+                //Test that an inflight transfer cannot be resubmitted
+                TEST_ASSERT_EQUAL(ESP_ERR_NOT_FINISHED, usb_host_transfer_submit(xfer_in));
                 //Next stage set from transfer callback
                 break;
             }
@@ -217,6 +223,8 @@ void msc_client_async_seq_task(void *arg)
                 xfer_in->num_bytes = usb_round_up_to_mps(sizeof(mock_msc_bulk_csw_t), MOCK_MSC_SCSI_BULK_EP_MPS);
                 xfer_in->bEndpointAddress = MOCK_MSC_SCSI_BULK_IN_EP_ADDR;
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_submit(xfer_in));
+                //Test that an inflight transfer cannot be resubmitted
+                TEST_ASSERT_EQUAL(ESP_ERR_NOT_FINISHED, usb_host_transfer_submit(xfer_in));
                 //Next stage set from transfer callback
                 break;
             }
