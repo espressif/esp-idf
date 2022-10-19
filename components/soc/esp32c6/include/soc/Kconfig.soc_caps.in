@@ -231,11 +231,7 @@ config SOC_GPIO_PIN_COUNT
     int
     default 31
 
-config SOC_GPIO_SUPPORTS_RTC_INDEPENDENT
-    bool
-    default y
-
-config SOC_GPIO_SUPPORT_FORCE_HOLD
+config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
     bool
     default y
 

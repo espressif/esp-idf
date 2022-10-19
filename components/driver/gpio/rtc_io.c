@@ -226,6 +226,8 @@ bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num)
 {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
     return (gpio_num < GPIO_PIN_COUNT && rtc_io_num_map[gpio_num] >= 0);
+#elif CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-6027
+    return (gpio_num >= 0 && gpio_num < 8);
 #else
     return false;
 #endif

@@ -936,7 +936,6 @@ components/soc/esp32/include/soc/bb_reg.h
 components/soc/esp32/include/soc/boot_mode.h
 components/soc/esp32/include/soc/can_periph.h
 components/soc/esp32/include/soc/can_struct.h
-components/soc/esp32/include/soc/clkout_channel.h
 components/soc/esp32/include/soc/dac_channel.h
 components/soc/esp32/include/soc/emac_dma_struct.h
 components/soc/esp32/include/soc/emac_ext_struct.h
@@ -999,7 +998,6 @@ components/soc/esp32c3/include/soc/apb_saradc_reg.h
 components/soc/esp32c3/include/soc/assist_debug_reg.h
 components/soc/esp32c3/include/soc/bb_reg.h
 components/soc/esp32c3/include/soc/boot_mode.h
-components/soc/esp32c3/include/soc/clkout_channel.h
 components/soc/esp32c3/include/soc/extmem_reg.h
 components/soc/esp32c3/include/soc/fe_reg.h
 components/soc/esp32c3/include/soc/gpio_pins.h
@@ -1040,7 +1038,6 @@ components/soc/esp32h2/include/soc/apb_saradc_reg.h
 components/soc/esp32h2/include/soc/apb_saradc_struct.h
 components/soc/esp32h2/include/soc/bb_reg.h
 components/soc/esp32h2/include/soc/boot_mode.h
-components/soc/esp32h2/include/soc/clkout_channel.h
 components/soc/esp32h2/include/soc/clkrst_reg.h
 components/soc/esp32h2/include/soc/efuse_reg.h
 components/soc/esp32h2/include/soc/efuse_struct.h
@@ -1079,7 +1076,6 @@ components/soc/esp32s2/include/soc/apb_saradc_reg.h
 components/soc/esp32s2/include/soc/assist_debug_reg.h
 components/soc/esp32s2/include/soc/bb_reg.h
 components/soc/esp32s2/include/soc/boot_mode.h
-components/soc/esp32s2/include/soc/clkout_channel.h
 components/soc/esp32s2/include/soc/crypto_dma_reg.h
 components/soc/esp32s2/include/soc/dac_channel.h
 components/soc/esp32s2/include/soc/dedic_gpio_reg.h
@@ -1135,7 +1131,6 @@ components/soc/esp32s3/include/soc/assist_debug_struct.h
 components/soc/esp32s3/include/soc/bb_reg.h
 components/soc/esp32s3/include/soc/boot_mode.h
 components/soc/esp32s3/include/soc/brownout_caps.h
-components/soc/esp32s3/include/soc/clkout_channel.h
 components/soc/esp32s3/include/soc/cpu.h
 components/soc/esp32s3/include/soc/extmem_reg.h
 components/soc/esp32s3/include/soc/extmem_struct.h

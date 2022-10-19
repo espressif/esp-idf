@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <stdlib.h>
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
 #include "soc/rtc_cntl_reg.h"
@@ -21,7 +22,6 @@
 #include "soc/usb_serial_jtag_reg.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
-#include "stdlib.h"
 
 #ifdef __cplusplus
 extern "C" {

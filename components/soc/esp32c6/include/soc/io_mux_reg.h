@@ -13,7 +13,7 @@
 #define SLP_OE_M (BIT(0))
 #define SLP_OE_V 1
 #define SLP_OE_S 0
-/* Pin used for wakeup from sleep */
+/* Used to enable sleep mode pin functions */
 #define SLP_SEL (BIT(1))
 #define SLP_SEL_M (BIT(1))
 #define SLP_SEL_V 1
@@ -64,14 +64,25 @@
 #define MCU_SEL_V 0x7
 #define MCU_SEL_S 12
 
-#define PIN_INPUT_ENABLE(PIN_NAME)               SET_PERI_REG_MASK(PIN_NAME,FUN_IE)
-#define PIN_INPUT_DISABLE(PIN_NAME)              CLEAR_PERI_REG_MASK(PIN_NAME,FUN_IE)
-#define PIN_SET_DRV(PIN_NAME, drv)            REG_SET_FIELD(PIN_NAME, FUN_DRV, (drv));
-#define PIN_PULLUP_DIS(PIN_NAME)                 REG_CLR_BIT(PIN_NAME, FUN_PU)
-#define PIN_PULLUP_EN(PIN_NAME)                  REG_SET_BIT(PIN_NAME, FUN_PU)
-#define PIN_PULLDWN_DIS(PIN_NAME)             REG_CLR_BIT(PIN_NAME, FUN_PD)
-#define PIN_PULLDWN_EN(PIN_NAME)              REG_SET_BIT(PIN_NAME, FUN_PD)
-#define PIN_FUNC_SELECT(PIN_NAME, FUNC)      REG_SET_FIELD(PIN_NAME, MCU_SEL, FUNC)
+#define PIN_SLP_INPUT_ENABLE(PIN_NAME)      SET_PERI_REG_MASK(PIN_NAME,SLP_IE)
+#define PIN_SLP_INPUT_DISABLE(PIN_NAME)     CLEAR_PERI_REG_MASK(PIN_NAME,SLP_IE)
+#define PIN_SLP_OUTPUT_ENABLE(PIN_NAME)     SET_PERI_REG_MASK(PIN_NAME,SLP_OE)
+#define PIN_SLP_OUTPUT_DISABLE(PIN_NAME)    CLEAR_PERI_REG_MASK(PIN_NAME,SLP_OE)
+#define PIN_SLP_PULLUP_ENABLE(PIN_NAME)     SET_PERI_REG_MASK(PIN_NAME,SLP_PU)
+#define PIN_SLP_PULLUP_DISABLE(PIN_NAME)    CLEAR_PERI_REG_MASK(PIN_NAME,SLP_PU)
+#define PIN_SLP_PULLDOWN_ENABLE(PIN_NAME)   SET_PERI_REG_MASK(PIN_NAME,SLP_PD)
+#define PIN_SLP_PULLDOWN_DISABLE(PIN_NAME)  CLEAR_PERI_REG_MASK(PIN_NAME,SLP_PD)
+#define PIN_SLP_SEL_ENABLE(PIN_NAME)        SET_PERI_REG_MASK(PIN_NAME,SLP_SEL)
+#define PIN_SLP_SEL_DISABLE(PIN_NAME)       CLEAR_PERI_REG_MASK(PIN_NAME,SLP_SEL)
+
+#define PIN_INPUT_ENABLE(PIN_NAME)          SET_PERI_REG_MASK(PIN_NAME,FUN_IE)
+#define PIN_INPUT_DISABLE(PIN_NAME)         CLEAR_PERI_REG_MASK(PIN_NAME,FUN_IE)
+#define PIN_SET_DRV(PIN_NAME, drv)          REG_SET_FIELD(PIN_NAME, FUN_DRV, (drv));
+#define PIN_PULLUP_DIS(PIN_NAME)            REG_CLR_BIT(PIN_NAME, FUN_PU)
+#define PIN_PULLUP_EN(PIN_NAME)             REG_SET_BIT(PIN_NAME, FUN_PU)
+#define PIN_PULLDWN_DIS(PIN_NAME)           REG_CLR_BIT(PIN_NAME, FUN_PD)
+#define PIN_PULLDWN_EN(PIN_NAME)            REG_SET_BIT(PIN_NAME, FUN_PD)
+#define PIN_FUNC_SELECT(PIN_NAME, FUNC)     REG_SET_FIELD(PIN_NAME, MCU_SEL, FUNC)
 
 #define IO_MUX_GPIO0_REG               PERIPHS_IO_MUX_XTAL_32K_P_U
 #define IO_MUX_GPIO1_REG               PERIPHS_IO_MUX_XTAL_32K_N_U
@@ -125,7 +136,10 @@
 #define SD_DATA2_GPIO_NUM            22
 #define SD_DATA3_GPIO_NUM            23
 
-#define MAX_RTC_GPIO_NUM              5
+#define USB_DM_GPIO_NUM              12
+#define USB_DP_GPIO_NUM              13
+
+#define MAX_RTC_GPIO_NUM              8
 #define MAX_PAD_GPIO_NUM             30
 #define MAX_GPIO_NUM                 34
 #define DIG_IO_HOLD_BIT_SHIFT        32
@@ -133,25 +147,16 @@
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE
 #define PIN_CTRL                          (REG_IO_MUX_BASE +0x00)
-#define PAD_POWER_SEL                               BIT(15)
-#define PAD_POWER_SEL_V                             0x1
-#define PAD_POWER_SEL_M                             BIT(15)
-#define PAD_POWER_SEL_S                             15
 
-#define PAD_POWER_SWITCH_DELAY                      0x7
-#define PAD_POWER_SWITCH_DELAY_V                    0x7
-#define PAD_POWER_SWITCH_DELAY_M                    (PAD_POWER_SWITCH_DELAY_V << PAD_POWER_SWITCH_DELAY_S)
-#define PAD_POWER_SWITCH_DELAY_S                    12
-
-#define CLK_OUT3                                    0xf
+#define CLK_OUT3                                    0x1f
 #define CLK_OUT3_V                                  CLK_OUT3
-#define CLK_OUT3_S                                  8
+#define CLK_OUT3_S                                  10
 #define CLK_OUT3_M                                  (CLK_OUT3_V << CLK_OUT3_S)
-#define CLK_OUT2                                    0xf
+#define CLK_OUT2                                    0x1f
 #define CLK_OUT2_V                                  CLK_OUT2
-#define CLK_OUT2_S                                  4
+#define CLK_OUT2_S                                  5
 #define CLK_OUT2_M                                  (CLK_OUT2_V << CLK_OUT2_S)
-#define CLK_OUT1                                    0xf
+#define CLK_OUT1                                    0x1f
 #define CLK_OUT1_V                                  CLK_OUT1
 #define CLK_OUT1_S                                  0
 #define CLK_OUT1_M                                  (CLK_OUT1_V << CLK_OUT1_S)
