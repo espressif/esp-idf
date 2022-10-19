@@ -80,6 +80,7 @@
   - "tools/ci/python_packages/tiny_test_fw/**/*"
   - "tools/ci/python_packages/ttfw_idf/**/*"
   - "tools/ci/python_packages/common_test_methods.py"
+  - "tools/test_apps/configs/sdkconfig.debug_helpers"
 
   - "components/**/*"
 
