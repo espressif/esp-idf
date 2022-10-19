@@ -38,13 +38,12 @@ menu "FreeRTOS"
                 details).
 
         config FREERTOS_OPTIMIZED_SCHEDULER
-            # Todo: Not available in SMP FREERTOS (IDF-4986)
-            # Todo: Rename to CONFIG_FREERTOS_USE_PORT_OPTIMISED_TASK_SELECTION (IDF-4986)
+            # Todo: Not available in SMP FREERTOS (IDF-3733)
             bool "configUSE_PORT_OPTIMISED_TASK_SELECTION"
             depends on FREERTOS_UNICORE
             default y
             help
-                Enables port specific task selection method. This option can will speed up the search of ready tasks
+                Enables port specific task selection method. This option can speed up the search of ready tasks
                 when scheduling (see configUSE_PORT_OPTIMISED_TASK_SELECTION documentation for more details).
 
         choice FREERTOS_CHECK_STACKOVERFLOW
