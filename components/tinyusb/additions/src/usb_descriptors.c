@@ -54,9 +54,6 @@ tusb_desc_strarray_device_t descriptor_str_tinyusb = {
     "TinyUSB",            // 1: Manufacturer
     "TinyUSB Device",     // 2: Product
     "123456",             // 3: Serials, should use chip ID
-    "TinyUSB CDC",        // 4: CDC Interface
-    "TinyUSB MSC",        // 5: MSC Interface
-    "TinyUSB MIDI"        // 6: MIDI
 };
 /* End of TinyUSB default */
 
@@ -108,7 +105,7 @@ tusb_desc_strarray_device_t descriptor_str_kconfig = {
     CONFIG_TINYUSB_DESC_PRODUCT_STRING,      // 2: Product
     CONFIG_TINYUSB_DESC_SERIAL_STRING,       // 3: Serials, should use chip ID
 
-#if CONFIG_TINYUSB_CDC_ENABLED
+    #if CONFIG_TINYUSB_CDC_ENABLED
     CONFIG_TINYUSB_DESC_CDC_STRING,          // 4: CDC Interface
 #else
     "",
@@ -116,12 +113,6 @@ tusb_desc_strarray_device_t descriptor_str_kconfig = {
 
 #if CONFIG_TINYUSB_MSC_ENABLED
     CONFIG_TINYUSB_DESC_MSC_STRING,          // 5: MSC Interface
-#else
-    "",
-#endif
-
-#if CONFIG_TINYUSB_MIDI_ENABLED
-    CONFIG_TINYUSB_DESC_MIDI_STRING           // 6: MIDI
 #else
     "",
 #endif
@@ -143,20 +134,13 @@ enum {
 #if CFG_TUD_MSC
     ITF_NUM_MSC,
 #endif
-
-#if CFG_TUD_MIDI
-    ITF_NUM_MIDI,
-    ITF_NUM_MIDI_STREAMING,
-#endif
-
     ITF_NUM_TOTAL
 };
 
 enum {
     TUSB_DESC_TOTAL_LEN = TUD_CONFIG_DESC_LEN +
                         CFG_TUD_CDC * TUD_CDC_DESC_LEN +
-                        CFG_TUD_MSC * TUD_MSC_DESC_LEN +
-                        CFG_TUD_MIDI * TUD_MIDI_DESC_LEN
+                        CFG_TUD_MSC * TUD_MSC_DESC_LEN
 };
 
 //------------- USB Endpoint numbers -------------//
@@ -175,10 +159,6 @@ enum {
 
 #if CFG_TUD_MSC
     EPNUM_MSC,
-#endif
-
-#if CFG_TUD_MIDI
-    EPNUM_MIDI,
 #endif
 };
 
@@ -199,11 +179,6 @@ uint8_t const descriptor_cfg_kconfig[] = {
 #if CFG_TUD_MSC
     // Interface number, string index, EP Out & EP In address, EP size
     TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC, 0x80 | EPNUM_MSC, 64), // highspeed 512
-#endif
-
-#if CFG_TUD_MIDI
-    // Interface number, string index, EP Out & EP In address, EP size
-    TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 6, EPNUM_MIDI, 0x80 | EPNUM_MIDI, 64) // highspeed 512
 #endif
 };
 

@@ -56,13 +56,31 @@ esp_err_t tinyusb_driver_install(const tinyusb_config_t *config)
     }
     ESP_RETURN_ON_ERROR(usb_new_phy(&phy_conf, &phy_hdl), TAG, "Install USB PHY failed");
 
-#if (CONFIG_TINYUSB_HID_COUNT > 0)
-    // For HID device, configuration descriptor must be provided
-    ESP_RETURN_ON_FALSE(config->configuration_descriptor, ESP_ERR_INVALID_ARG, TAG, "Configuration descriptor must be provided for HID device");
+    if (config->configuration_descriptor) {
+        cfg_descriptor = config->configuration_descriptor;
+    } else {
+#if (CONFIG_TINYUSB_HID_COUNT > 0 || CONFIG_TINYUSB_MIDI_COUNT > 0)
+        // For HID device, configuration descriptor must be provided
+        ESP_RETURN_ON_FALSE(config->configuration_descriptor, ESP_ERR_INVALID_ARG, TAG, "Configuration descriptor must be provided for this device");
+#else
+        cfg_descriptor = descriptor_cfg_kconfig;
+        ESP_LOGW(TAG, "The device's configuration descriptor is not provided by user, using default.");
 #endif
-    dev_descriptor = config->device_descriptor ? config->device_descriptor : &descriptor_dev_kconfig;
-    string_descriptor = config->string_descriptor ? config->string_descriptor : descriptor_str_kconfig;
-    cfg_descriptor = config->configuration_descriptor ? config->configuration_descriptor : descriptor_cfg_kconfig;
+    }
+
+    if (config->string_descriptor) {
+        string_descriptor = config->string_descriptor;
+    } else {
+        string_descriptor = descriptor_str_kconfig;
+        ESP_LOGW(TAG, "The device's string descriptor is not provided by user, using default.");
+    }
+
+    if (config->device_descriptor) {
+        dev_descriptor = config->device_descriptor;
+    } else {
+        dev_descriptor = &descriptor_dev_kconfig;
+        ESP_LOGW(TAG, "The device's device descriptor is not provided by user, using default.");
+    }
 
     tusb_set_descriptor(dev_descriptor, string_descriptor, cfg_descriptor);
 
