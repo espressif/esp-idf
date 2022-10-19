@@ -21,15 +21,13 @@
 /* Defines compile-time configuration macros */
 #include "multi_heap_config.h"
 
-#if !CONFIG_HEAP_TLSF_USE_ROM_IMPL
-#include "tlsf.h"
-#else
+#if CONFIG_HEAP_TLSF_USE_ROM_IMPL
 /* Header containing the declaration of tlsf_poison_fill_pfunc_set()
  * and tlsf_poison_check_pfunc_set() used to register callbacks to
  * fill and check memory region with given patterns in the heap
  * components.
  */
-#include "rom/tlsf.h"
+#include "esp_rom_tlsf.h"
 #endif
 
 #ifdef MULTI_HEAP_POISONING
