@@ -71,9 +71,9 @@
 #include "esp32c3/rom/rtc.h"
 #include "soc/extmem_reg.h"
 #include "esp_private/sleep_mac_bb.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/cache.h"
-#include "esp32h2/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/cache.h"
+#include "esp32h4/rom/rtc.h"
 #include "soc/extmem_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/cache.h"
@@ -106,7 +106,7 @@
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
-#elif CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32H4
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
 #elif CONFIG_IDF_TARGET_ESP32C2
@@ -510,7 +510,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     uint32_t result;
     if (deep_sleep) {
 // TODO: IDF-6051, IDF-6052
-#if !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C6
+#if !CONFIG_IDF_TARGET_ESP32H4 && !CONFIG_IDF_TARGET_ESP32C6
         esp_sleep_isolate_digital_gpio();
 #endif
 

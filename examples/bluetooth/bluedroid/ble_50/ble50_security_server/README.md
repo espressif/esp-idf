@@ -1,4 +1,4 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-H2 | ESP32-S3 |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-H4 | ESP32-S3 |
 | ----------------- | -------- | -------- | -------- | -------- |
 
 # ESP-IDF BLE50 Security Server Example
@@ -16,15 +16,15 @@ Before project configuration and build, be sure to set the correct chip target u
 ```bash
 idf.py set-target <chip_name>
 ```
-There are some important points for this demo:  
-1.`esp_ble_gap_set_security_param` should be used to set the security parameters in the initial stage;  
+There are some important points for this demo:
+1.`esp_ble_gap_set_security_param` should be used to set the security parameters in the initial stage;
 2.`esp_ble_set_encryption` should be used to start encryption with peer device. If the peer device initiates the encryption,
-  `esp_ble_gap_security_rsp` should be used to send security response to the peer device when `ESP_GAP_BLE_SEC_REQ_EVT` is received.  
-3.The `ble50_sec_gattc_demo` will receive a `ESP_GAP_BLE_AUTH_CMPL_EVT` once the encryption procedure has completed.  
+  `esp_ble_gap_security_rsp` should be used to send security response to the peer device when `ESP_GAP_BLE_SEC_REQ_EVT` is received.
+3.The `ble50_sec_gattc_demo` will receive a `ESP_GAP_BLE_AUTH_CMPL_EVT` once the encryption procedure has completed.
 
 ### Hardware Required
 
-* A development board with ESP32-C3 SoC, ESP32-S3, ESP32-C2/ESP32-H2 SoC and BLE5.0 supoorted chips. (e.g., ESP32-C3-DevKitC-1, etc.)
+* A development board with ESP32-C3 SoC, ESP32-S3, ESP32-C2/ESP32-H4 SoC and BLE5.0 supoorted chips. (e.g., ESP32-C3-DevKitC-1, etc.)
 * A USB cable for Power supply and programming
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.

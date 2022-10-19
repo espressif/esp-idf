@@ -2,5 +2,5 @@
 
 components/ieee802154/test_apps/test_ieee802154:
   enable:
-    - if: IDF_TARGET == "esp32h2"
-      reason: only test on esp32h2
+    - if: IDF_TARGET == "esp32h4"
+      reason: only test on esp32h4

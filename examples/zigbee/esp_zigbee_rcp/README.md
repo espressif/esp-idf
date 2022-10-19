@@ -1,20 +1,20 @@
-| Supported Targets | ESP32-H2 |
+| Supported Targets | ESP32-H4 |
 | ----------------- | -------- |
 
-# Rcp Example 
+# Rcp Example
 
 This test code shows how to configure Zigbee rcp (radio co-processor) device. Rcp doesn't function alone, it needs to work together with Zigbee gateway (see [esp_zigbee_gateway example](../esp_zigbee_gateway))
 
 ## Hardware Required
 
-* One development board with ESP32-H2 SoC acting as Zigbee rcp (loaded with esp_zigbee_rcp example)
+* One development board with ESP32-H4 SoC acting as Zigbee rcp (loaded with esp_zigbee_rcp example)
 * A USB cable for power supply and programming
 * Choose ESP32 or ESP32-S3 as Zigbee gateway. The connection and setup refer to the Zigbee gateway example for setup details (see [esp_zigbee_gateway example](../esp_zigbee_gateway))
 * TX, RX pin can be also configured by user in esp_zigbee_rcp.h
 
 ## Configure the project
 
-Before project configuration and build, make sure to set the correct chip target using `idf.py --preview set-target esp32h2`
+Before project configuration and build, make sure to set the correct chip target using `idf.py --preview set-target esp32h4`
 
 ## Erase the NVRAM
 

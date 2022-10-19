@@ -54,7 +54,7 @@ For more details, see [ES8311 datasheet](http://www.everest-semi.com/pdf/ES8311%
 │              GND├───────────┤GND                       │
 └─────────────────┘           └──────────────────────────┘
 ```
-Note: Since ESP32-C3 & ESP32-H2 board does not have GPIO 16/17, you can use other available GPIOs instead. In this example, we set GPIO 6/7 as I2C pins for ESP32-C3 & ESP32-H2 and GPIO 16/17 for other chips, same as GPIO 18/19, we use GPIO 2/3 instead.
+Note: Since ESP32-C3 & ESP32-H4 board does not have GPIO 16/17, you can use other available GPIOs instead. In this example, we set GPIO 6/7 as I2C pins for ESP32-C3 & ESP32-H4 and GPIO 16/17 for other chips, same as GPIO 18/19, we use GPIO 2/3 instead.
 
 ### Dependency
 

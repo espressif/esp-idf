@@ -1,6 +1,6 @@
 
 menu "Wi-Fi"
-    visible if !IDF_TARGET_ESP32H2
+    visible if !IDF_TARGET_ESP32H4
 
     config ESP32_WIFI_ENABLED
         bool

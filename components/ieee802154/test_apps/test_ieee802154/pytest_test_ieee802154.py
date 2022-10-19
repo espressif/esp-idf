@@ -7,11 +7,11 @@ import pytest
 from pytest_embedded_idf.dut import IdfDut
 
 
-@pytest.mark.esp32h2
+@pytest.mark.esp32h4
 @pytest.mark.ieee802154
 @pytest.mark.parametrize(
     'count, config, beta_target', [
-        (2, 'release', 'esp32h2beta2'),
+        (2, 'release', 'esp32h2beta2'),     # No need to rename beta_target as it is still called h2 in esptool
     ], indirect=True
 )
 def test_based_txrx(dut: Tuple[IdfDut, IdfDut]) -> None:

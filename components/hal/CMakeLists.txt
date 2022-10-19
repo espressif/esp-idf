@@ -15,10 +15,10 @@ if(NOT ${target} STREQUAL "esp32")
     list(APPEND srcs "cache_hal.c")
 endif()
 
-if(${target} STREQUAL "esp32h2")
-    if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+if(${target} STREQUAL "esp32h4")
+    if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
         list(APPEND includes "${target}/include/rev1")
-    elseif(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+    elseif(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
         list(APPEND includes "${target}/include/rev2")
     endif()
 endif()
@@ -155,15 +155,15 @@ if(NOT BOOTLOADER_BUILD)
               "esp32c3/rtc_cntl_hal.c")
     endif()
 
-    if(${target} STREQUAL "esp32h2")
+    if(${target} STREQUAL "esp32h4")
         list(APPEND srcs
             "ds_hal.c"
             "spi_flash_hal_gpspi.c"
             "spi_slave_hd_hal.c"
             "aes_hal.c"
-            "esp32h2/brownout_hal.c"
-            "esp32h2/hmac_hal.c"
-            "esp32h2/rtc_cntl_hal.c")
+            "esp32h4/brownout_hal.c"
+            "esp32h4/hmac_hal.c"
+            "esp32h4/rtc_cntl_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32c2")

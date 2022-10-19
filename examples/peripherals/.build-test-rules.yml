@@ -277,7 +277,7 @@ examples/peripherals/uart/uart_echo:
 
 examples/peripherals/uart/uart_echo_rs485:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "esp32h2"
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "esp32h4"
   disable:
     - if: IDF_TARGET == "esp32c6"
       temporary: true

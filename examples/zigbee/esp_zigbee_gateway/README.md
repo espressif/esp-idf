@@ -3,19 +3,19 @@
 
 # Gateway Example
 
-This example demonstrates how to build a Zigbee Gateway device. It runs on a Wi-Fi SoC such as ESP32, ESP32-C3 and ESP32-S3, with an 802.15.4 SoC like ESP32-H2 running [esp_zigbee_rcp](../esp_zigbee_rcp) to provide 802.15.4 radio.
+This example demonstrates how to build a Zigbee Gateway device. It runs on a Wi-Fi SoC such as ESP32, ESP32-C3 and ESP32-S3, with an 802.15.4 SoC like ESP32-H4 running [esp_zigbee_rcp](../esp_zigbee_rcp) to provide 802.15.4 radio.
 
 ## Hardware Required
 
 * One development board with ESP32 or ESP32-S3 SoC acting as Zigbee gateway (loaded with esp_zigbee_gateway example)
 * A USB cable for power supply and programming
 * Three jumper wires for UART (TX, RX and GND)
-* Gateway doesn't function alone. Choose ESP32-H2 as Zigbee rcp (see [esp_zigbee_rcp example](../esp_zigbee_rcp))
-* **Flash** Zigbee rcp on the ESP32-H2 DevKitC first **before** connecting to Zigbee gateway
-* Connect the two SoCs via UART, below is an example setup with ESP32-DevKitC and ESP32-H2-DevKitC:
-![Zigbee_gateway](../../openthread/ot_br/image/thread-border-router-esp32-esp32h2.jpg)
+* Gateway doesn't function alone. Choose ESP32-H4 as Zigbee rcp (see [esp_zigbee_rcp example](../esp_zigbee_rcp))
+* **Flash** Zigbee rcp on the ESP32-H4 DevKitC first **before** connecting to Zigbee gateway
+* Connect the two SoCs via UART, below is an example setup with ESP32-DevKitC and ESP32-H4-DevKitC:
+![Zigbee_gateway](../../openthread/ot_br/image/thread-border-router-esp32-esp32h4.jpg)
 
-ESP32 pin     | ESP32-H2 pin
+ESP32 pin     | ESP32-H4 pin
 ------------- |-------------
    GND        |    G
    GPIO4 (RX) |    TX
@@ -42,6 +42,7 @@ Build the project, flash it to the board, and start the monitor tool to view the
 As you run the example, you will see the following log:
 
 esp_zigbee_gateway:
+```
 I (660) ESP_ZB_GATEWAY: status: -1  
 I (670) ESP_ZB_GATEWAY: Zigbee stack initialized  
 I (680) ESP_ZB_GATEWAY: Zigbee rcp device booted  
@@ -49,6 +50,7 @@ I (1280) ESP_ZB_GATEWAY: Start network formation
 I (3060) ESP_ZB_GATEWAY: Formed network successfully (ieee extended address: f9:54:2d:01:a0:03:f7:84, PAN ID: 0x8651)  
 I (4060) ESP_ZB_GATEWAY: status: 0  
 I (4400) ESP_ZB_GATEWAY: Network steering started  
+```
 
 ## Gateway Functions
 

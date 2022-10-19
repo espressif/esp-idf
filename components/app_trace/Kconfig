@@ -47,7 +47,7 @@ menu "Application Level Tracing"
             select APPTRACE_ENABLE
             select APPTRACE_DEST_UART
             select APPTRACE_DEST_UART_NOUSB
-            depends on (ESP_CONSOLE_UART_NUM !=2) && !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32S2 && !IDF_TARGET_ESP32H2
+            depends on (ESP_CONSOLE_UART_NUM !=2) && (SOC_UART_NUM > 2)
 
         config APPTRACE_DEST_USB_CDC
             bool "USB_CDC"

@@ -1,0 +1,7 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+#
+CONFIG_IDF_TARGET="esp32h4"
+CONFIG_BT_ENABLED=y
+CONFIG_RTC_CLK_SRC_EXT_CRYS=y
+CONFIG_RTC_CLK_CAL_CYCLES=576

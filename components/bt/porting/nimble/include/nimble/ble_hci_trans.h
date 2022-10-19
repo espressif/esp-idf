@@ -66,7 +66,7 @@ struct os_mbuf;
 typedef int ble_hci_trans_rx_cmd_fn(uint8_t *cmd, void *arg);
 typedef int ble_hci_trans_rx_acl_fn(struct os_mbuf *om, void *arg);
 
-#if CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2
 struct ble_hci_trans_funcs_t {
     int(*_ble_hci_trans_hs_acl_tx)(struct os_mbuf *om);
     int(*_ble_hci_trans_hs_cmd_tx)(uint8_t *cmd);

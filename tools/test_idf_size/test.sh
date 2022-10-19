@@ -101,16 +101,16 @@ csv_test() {
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s2 --archive_details libdriver.a app_esp32s2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py diff with another app (different target)..." &>> output \
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py app.map --diff app_esp32s2.map &>> output \
-    && echo -e "\n***\nRunning idf_size.py for esp32h2..." &>> output \
-    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h2 app_esp32h2.map &>> output \
-    && echo -e "\n***\nRunning idf_size.py for esp32h2 (target autodetected)..." &>> output \
-    && python -m coverage run -a $IDF_PATH/tools/idf_size.py app_esp32h2.map &>> output \
-    && echo -e "\n***\nRunning idf_size.py --archives for esp32h2..." &>> output \
-    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h2 --archives app_esp32h2.map &>> output \
-    && echo -e "\n***\nRunning idf_size.py --files for esp32h2..." &>> output \
-    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h2 --files app_esp32h2.map &>> output \
-    && echo -e "\n***\nRunning idf_size.py --archive_details for esp32h2..." &>> output \
-    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h2 --archive_details libdriver.a app_esp32h2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32h4..." &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h4 app_esp32h4.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32h4 (target autodetected)..." &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py app_esp32h4.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --archives for esp32h4..." &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h4 --archives app_esp32h4.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --files for esp32h4..." &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h4 --files app_esp32h4.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py --archive_details for esp32h4..." &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32h4 --archive_details libdriver.a app_esp32h4.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32c3..." &>> output \
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32c3 app_esp32c3.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32c3 with overflow..." &>> output \
@@ -146,7 +146,7 @@ csv_test() {
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py --format=json --archive_details libdriver.a app.map --diff app2.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
     && json_test esp32s2 \
     && json_test esp32c3 \
-    && json_test esp32h2 \
+    && json_test esp32h4 \
     && json_test esp32s3 \
     && echo -e "\n***\nProducing CSV output..." &>> output \
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py --format=csv app.map &>> output \
@@ -159,7 +159,7 @@ csv_test() {
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py --format=csv --archive_details libdriver.a app.map --diff app2.map &>> output \
     && csv_test esp32s2 \
     && csv_test esp32c3 \
-    && csv_test esp32h2 \
+    && csv_test esp32h4 \
     && csv_test esp32s3 \
     && echo -e "\n***\nProducing JSON file output..." &>> output \
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py --format=json --output-file output.json app.map &>> output \

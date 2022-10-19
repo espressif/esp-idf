@@ -22,7 +22,7 @@ extern "C" {
 void esp_sleep_enable_adc_tsens_monitor(bool enable);
 
 // TODO: IDF-6051, IDF-6052
-#if !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C6
+#if !CONFIG_IDF_TARGET_ESP32H4 && !CONFIG_IDF_TARGET_ESP32C6
 /**
  * @brief Isolate all digital IOs except those that are held during deep sleep
  *

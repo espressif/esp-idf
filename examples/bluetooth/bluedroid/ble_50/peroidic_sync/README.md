@@ -1,4 +1,4 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-H2 | ESP32-S3 |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-H4 | ESP32-S3 |
 | ----------------- | -------- | -------- | -------- | -------- |
 
 # ESP-IDF Periodic Sync Example
@@ -19,7 +19,7 @@ idf.py set-target <chip_name>
 
 ### Hardware Required
 
-* A development board with ESP32-C3 SoC, ESP32-S3, ESP32-C2, ESP32-H2 and  BLE5.0 supported chips (e.g., ESP32-C3-DevKitC-1, etc.)
+* A development board with ESP32-C3 SoC, ESP32-S3, ESP32-C2, ESP32-H4 and  BLE5.0 supported chips (e.g., ESP32-C3-DevKitC-1, etc.)
 * A USB cable for Power supply and programming
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
@@ -55,7 +55,7 @@ I (712) PERIODIC_SYNC: ESP_GAP_BLE_EXT_SCAN_START_COMPLETE_EVT, status 0
 I (712) PERIODIC_SYNC: Start create sync with the peer device ESP_MULTI_ADV_80MS
 I (722) PERIODIC_SYNC: ESP_GAP_BLE_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT, status 0
 I (812) PERIODIC_SYNC: ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT, status 0
-I (812) sync addr: c0 de 52 00 00 02 
+I (812) sync addr: c0 de 52 00 00 02
 I (812) PERIODIC_SYNC: sync handle 1 sid 0 perioic adv interval 64 adv phy 2
 I (812) PERIODIC_SYNC: periodic adv report, sync handle 1 data status 0 data len 28 rssi -48
 I (892) PERIODIC_SYNC: periodic adv report, sync handle 1 data status 0 data len 28 rssi -47

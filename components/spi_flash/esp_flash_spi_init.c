@@ -133,8 +133,8 @@ esp_flash_t *esp_flash_default_chip = NULL;
     .cs_setup = 1,\
 }
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/efuse.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/efuse.h"
 #if !CONFIG_SPI_FLASH_AUTO_SUSPEND
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI1_HOST,\

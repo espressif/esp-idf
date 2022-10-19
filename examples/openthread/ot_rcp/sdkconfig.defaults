@@ -1,4 +1,4 @@
-CONFIG_IDF_TARGET="esp32h2"
+CONFIG_IDF_TARGET="esp32h4"
 #
 # libsodium
 #
