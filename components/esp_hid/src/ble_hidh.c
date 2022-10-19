@@ -112,6 +112,8 @@ static void read_device_services(esp_gatt_if_t gattc_if, esp_hidh_dev_t *dev)
             ESP_LOGE(TAG, "malloc report maps failed");
             return;
         }
+        /* read characteristic value may failed, so we should init report maps */
+        memset(dev->config.report_maps, 0, dev->config.report_maps_len * sizeof(esp_hid_raw_report_map_t));
 
         for (uint16_t s = 0; s < dcount; s++) {
             suuid = service_result[s].uuid.uuid.uuid16;
