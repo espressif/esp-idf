@@ -89,6 +89,7 @@
   - "components/esp_phy/**/*"
   - "components/ieee802154/**/*"
   - "components/lwip/**/*"
+  - "components/openthread/**/*"
   - "examples/common_components/iperf/**/*"
   - "examples/openthread/**/*"
 
