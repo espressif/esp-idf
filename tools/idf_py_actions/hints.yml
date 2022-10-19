@@ -268,3 +268,8 @@
 -
     re: "`iram0_0_seg' overflowed"
     hint: "The applications static IRAM usage is larger than the available IRAM size.\nFor more information on how to reduze IRAM usage run 'idf.py docs -sp api-guides/performance/ram-usage.html#optimizing-iram-usage' "
+
+-
+    re: "fatal error: (tinyusb.h): No such file or directory"
+    hint: "{} was removed. Please use esp_tinyusb component from IDF component manager instead.\nYou can install `esp_tinyusb` using 'idf.py add-dependency espressif/esp_tinyusb' command.\nRefer to the migration guide for more details."
+    match_to_output: True

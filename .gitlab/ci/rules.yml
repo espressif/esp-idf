@@ -184,7 +184,6 @@
   - "components/openthread/openthread"
   - "components/protobuf-c/protobuf-c"
   - "components/spiffs/spiffs"
-  - "components/tinyusb/tinyusb"
   - "components/unity/unity"
   - "components/heap/tlsf"
   - ".gitmodules"
@@ -239,7 +238,6 @@
 .patterns-example_test-usb: &patterns-example_test-usb
   - "components/hal/usb*.c"
   - "components/hal/esp32s*/include/hal/usb*.h"
-  - "components/tinyusb/**/**/*"
   - "components/usb/**/*"
   - "examples/peripherals/usb/host/**/**/**/*"
   - "examples/peripherals/usb/device/**/**/*"
