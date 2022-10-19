@@ -442,6 +442,7 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
                 '-G',
                 args.generator,
                 '-DPYTHON_DEPS_CHECKED=1',
+                '-DPYTHON={}'.format(sys.executable),
                 '-DESP_PLATFORM=1',
             ]
             if args.cmake_warn_uninitialized:
@@ -481,6 +482,15 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
                 (build_dir, realpath(home_dir), realpath(project_dir), prog_name))
     except KeyError:
         pass  # if cmake failed part way, CMAKE_HOME_DIRECTORY may not be set yet
+
+    try:
+        python = cache['PYTHON']
+        if python != sys.executable:
+            raise FatalError(
+                "'{}' is currently active in the environment while the project was configured with '{}'. "
+                "Run '{} fullclean' to start again.".format(sys.executable, python, prog_name))
+    except KeyError:
+        pass
 
 
 def merge_action_lists(*action_lists: Dict) -> Dict:
