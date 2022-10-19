@@ -220,7 +220,8 @@ int crypto_hash_finish(struct crypto_hash *crypto_ctx, u8 *mac, size_t *len)
 	if (mac == NULL || len == NULL) {
 		goto err;
 	}
-	md_type = mbedtls_md_get_type(ctx->MBEDTLS_PRIVATE(md_info));
+
+	md_type = mbedtls_md_get_type(mbedtls_md_info_from_ctx(ctx));
 	switch(md_type) {
 	case MBEDTLS_MD_MD5:
 		if (*len < MD5_MAC_LEN) {

@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define MBEDTLS_ALLOW_PRIVATE_ACCESS
-
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
 #include "mbedtls/bignum.h"
@@ -31,9 +29,9 @@
 #define ECP_PRV_DER_MAX_BYTES   29 + 3 * MBEDTLS_ECP_MAX_BYTES
 
 #ifdef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
-#define ACCESS_ECDH(S, var) S->var
+#define ACCESS_ECDH(S, var) S->MBEDTLS_PRIVATE(var)
 #else
-#define ACCESS_ECDH(S, var) S->ctx.mbed_ecdh.var
+#define ACCESS_ECDH(S, var) S->MBEDTLS_PRIVATE(ctx).MBEDTLS_PRIVATE(mbed_ecdh).MBEDTLS_PRIVATE(var)
 #endif
 
 #ifdef CONFIG_ECC
@@ -1053,7 +1051,7 @@ struct crypto_ecdh * crypto_ecdh_init(int group)
 	}
 	mbedtls_ecdh_init(ctx);
 #ifndef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
-	ctx->var = MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0;
+	ctx->MBEDTLS_PRIVATE(var) = MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0;
 #endif
 
 	if ((mbedtls_ecp_group_load(ACCESS_ECDH(&ctx, grp), crypto_mbedtls_get_grp_id(group))) != 0) {
@@ -1105,7 +1103,7 @@ struct wpabuf * crypto_ecdh_get_pubkey(struct crypto_ecdh *ecdh, int y)
         }
 
 	/* Export an MPI into unsigned big endian binary data of fixed size */
-	mbedtls_mpi_write_binary(ACCESS_ECDH(&ctx, Q).X, buf, prime_len);
+	mbedtls_mpi_write_binary(ACCESS_ECDH(&ctx, Q).MBEDTLS_PRIVATE(X), buf, prime_len);
 	public_key = wpabuf_alloc_copy(buf, 32);
 	os_free(buf);
 	return public_key;
@@ -1179,9 +1177,9 @@ struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
 	/* Setup ECDH context from EC key */
 /* Call to mbedtls_ecdh_get_params() will initialize the context when not LEGACY context */
         if (ctx != NULL && peer != NULL) {
-                mbedtls_ecp_copy( ACCESS_ECDH(&ctx, Qp), &(mbedtls_pk_ec(*peer))->Q );
+				mbedtls_ecp_copy( ACCESS_ECDH(&ctx, Qp), &(mbedtls_pk_ec(*peer))->MBEDTLS_PRIVATE(Q) );
 #ifndef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
-                ctx->var = MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0;
+				ctx->MBEDTLS_PRIVATE(var) = MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0;
 #endif
         } else {
                 wpa_printf(MSG_ERROR, "Failed to set peer's ECDH context");

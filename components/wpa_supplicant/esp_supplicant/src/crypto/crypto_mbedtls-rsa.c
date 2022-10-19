@@ -217,7 +217,7 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
 		wpa_printf(MSG_ERROR, " failed  !  mbedtls_rsa_pkcs1_encrypt returned -0x%04x", -ret);
 		goto cleanup;
 	}
-	*outlen = mbedtls_pk_rsa(*pkey)->MBEDTLS_PRIVATE(len);
+	*outlen = mbedtls_rsa_get_len(mbedtls_pk_rsa(*pkey));
 
 cleanup:
 	mbedtls_ctr_drbg_free( ctr_drbg );
@@ -256,7 +256,7 @@ int  crypto_private_key_decrypt_pkcs1_v15(struct crypto_private_key *key,
 	if (ret < 0)
 		goto cleanup;
 
-	i =  mbedtls_pk_rsa(*pkey)->MBEDTLS_PRIVATE(len);
+	i = mbedtls_rsa_get_len(mbedtls_pk_rsa(*pkey));
 	ret = mbedtls_rsa_rsaes_pkcs1_v15_decrypt(mbedtls_pk_rsa(*pkey), mbedtls_ctr_drbg_random,
 			ctr_drbg, &i, in, out, *outlen);
 
@@ -301,7 +301,8 @@ int crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
 		wpa_printf(MSG_ERROR, " failed  ! mbedtls_rsa_pkcs1_sign returned %d", ret );
 		goto cleanup;
 	}
-	*outlen = mbedtls_pk_rsa(*pkey)->MBEDTLS_PRIVATE(len);
+	*outlen = mbedtls_rsa_get_len(mbedtls_pk_rsa(*pkey));
+
 cleanup:
 	mbedtls_ctr_drbg_free( ctr_drbg );
 	mbedtls_entropy_free( entropy );
