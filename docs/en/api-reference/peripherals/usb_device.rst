@@ -13,6 +13,8 @@ Overview
 
 The driver allows users to use {IDF_TARGET_NAME} chips to develop USB devices on a top of the TinyUSB stack. TinyUSB is integrated with ESP-IDF to provide USB features of the framework. Using this driver the chip works as a composite device supporting several USB devices simultaneously. Currently, only the Communications Device Class (CDC) type of the device with the Abstract Control Model (ACM) subclass and the Musical Instrument Digital Interface (MIDI) are supported.
 
+TinyUSB stack is distributed via `IDF Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`_.
+
 Our USB-OTG implementation is limited to {IDF_TARGET_USB_EP_NUM} USB endpoints ({IDF_TARGET_USB_EP_NUM_INOUT} IN/OUT endpoints and {IDF_TARGET_USB_EP_NUM_IN} IN endpoint) - find more information in `technical reference manual <{IDF_TARGET_TRM_EN_URL}>`_.
 
 Features
@@ -151,21 +153,9 @@ The table below describes the code examples available in the directory :example:
      - Description
    * - :example:`peripherals/usb/device/tusb_console`
      - How to set up {IDF_TARGET_NAME} chip to get log output via Serial Device connection
-   * - :example:`peripherals/usb/device/tusb_sample_descriptor`
-     - How to set up {IDF_TARGET_NAME} chip to work as a Generic USB Device with a user-defined descriptor
    * - :example:`peripherals/usb/device/tusb_serial_device`
      - How to set up {IDF_TARGET_NAME} chip to work as a USB Serial Device
    * - :example:`peripherals/usb/device/tusb_midi`
      - How to set up {IDF_TARGET_NAME} chip to work as a USB MIDI Device
    * - :example:`peripherals/usb/device/tusb_hid`
      - How to set up {IDF_TARGET_NAME} chip to work as a USB Human Interface Device
-
-API Reference
--------------
-
-.. include-build-file:: inc/tinyusb.inc
-.. include-build-file:: inc/tinyusb_types.inc
-.. include-build-file:: inc/tusb_cdc_acm.inc
-.. include-build-file:: inc/tusb_console.inc
-.. include-build-file:: inc/tusb_tasks.inc
-.. include-build-file:: inc/vfs_tinyusb.inc
