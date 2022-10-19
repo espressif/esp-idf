@@ -239,6 +239,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
     bt_status_t ret;
     //                              arg XOR arg_len
     if ((msg == NULL) || ((arg == NULL) == !(arg_len == 0))) {
+        BTC_TRACE_WARNING("%s Invalid parameters\n", __func__);
         return BT_STATUS_PARM_INVALID;
     }
 
@@ -246,6 +247,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 
     lmsg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + arg_len);
     if (lmsg == NULL) {
+        BTC_TRACE_WARNING("%s No memory\n", __func__);
         return BT_STATUS_NOMEM;
     }
 
