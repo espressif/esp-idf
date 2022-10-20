@@ -387,6 +387,14 @@ menu "LWIP"
                 After this number is exceeded, DHCP server removes of the oldest device
                 from it's address pool, without notification.
 
+        config LWIP_DHCPS_STATIC_ENTRIES
+            bool "Enable ARP static entries"
+            default y
+            depends on LWIP_DHCPS
+            help
+                Enabling this option allows DHCP server to support temporary static ARP entries
+                for DHCP Client. This will help the DHCP server to send the DHCP OFFER and DHCP ACK using IP unicast.
+
     endmenu # DHCPS
 
     menuconfig LWIP_AUTOIP
