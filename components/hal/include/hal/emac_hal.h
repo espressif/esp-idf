@@ -19,6 +19,12 @@ extern "C" {
 #include "soc/emac_ext_struct.h"
 
 /**
+ * @brief Indicate to ::emac_hal_receive_frame that receive frame buffer was allocated by ::emac_hal_alloc_recv_buf
+ *
+ */
+#define EMAC_HAL_BUF_SIZE_AUTO 0
+
+/**
 * @brief Ethernet DMA TX Descriptor
 *
 */
@@ -237,13 +243,67 @@ void emac_hal_start(emac_hal_context_t *hal);
  */
 esp_err_t emac_hal_stop(emac_hal_context_t *hal);
 
-uint32_t emac_hal_get_tx_desc_owner(emac_hal_context_t *hal);
-
+/**
+ * @brief Transmit data from buffer over EMAC
+ *
+ * @param[in] hal EMAC HAL context infostructure
+ * @param[in] buf buffer to be transmitted
+ * @param[in] length length of the buffer
+ * @return number of transmitted bytes when success
+ */
 uint32_t emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t length);
 
+/**
+ * @brief Transmit data from multiple buffers over EMAC in single Ethernet frame. Data will be joint into
+ *        single frame in order in which the buffers are stored in input array.
+ *
+ * @param[in] hal EMAC HAL context infostructure
+ * @param[in] buffs array of pointers to buffers to be transmitted
+ * @param[in] lengths array of lengths of the buffers
+ * @param[in] inbuffs_cnt number of buffers (i.e. input arrays size)
+ * @return number of transmitted bytes when success
+ *
+ * @pre @p lengths array must have the same size as @p buffs array and their elements need to be stored in the same
+ *      order, i.e. lengths[1] is a length assocaited with data buffer referenced at buffs[1] position.
+ */
 uint32_t emac_hal_transmit_multiple_buf_frame(emac_hal_context_t *hal, uint8_t **buffs, uint32_t *lengths, uint32_t inbuffs_cnt);
 
+/**
+ * @brief Allocate buffer with size equal to actually received Ethernet frame size.
+ *
+ * @param[in] hal EMAC HAL context infostructure
+ * @param[in, out] size as an input defines maximum size of buffer to be allocated. As an output, indicates actual size of received
+ *                      Ethernet frame which is waiting to be processed. Returned size may be 0 when there is no waiting frame.
+ *
+ * @note If maximum allowed size of buffer to be allocated is less than actual size of received Ethernet frame, the buffer
+ *       is allocated with that limit and the frame will be truncated by emac_hal_receive_frame.
+ *
+ * @return Pointer to allocated buffer
+ *         NULL when allocation fails or when there is no waiting Ethernet frame
+ */
+uint8_t *emac_hal_alloc_recv_buf(emac_hal_context_t *hal, uint32_t *size);
+
+/**
+ * @brief Copy received Ethernet frame from EMAC DMA memory space to application.
+ *
+ * @param[in] hal EMAC HAL context infostructure
+ * @param[in] buf buffer into which the Ethernet frame is to be copied
+ * @param[in] size buffer size. When buffer was allocated by ::emac_hal_alloc_recv_buf, this parameter needs to be set
+ *                 to EMAC_HAL_BUF_SIZE_AUTO
+ * @param[out] frames_remain number of frames remaining to be processed
+ * @param[out] free_desc muber of free DMA Rx descriptors
+ *
+ * @return number of copied bytes when success
+ *         0 when there is no waiting Ethernet frame or on error
+ *
+ * @note FCS field is never copied
+ * @note If buffer size is less than actual size of received Ethernet frame, the frame will be truncated.
+ * @note When this function is called with EMAC_HAL_BUF_SIZE_AUTO size parameter, buffer needs to be allocated by
+ *       ::emac_hal_alloc_recv_buf function at first.
+ */
 uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain, uint32_t *free_desc);
+
+uint32_t emac_hal_flush_recv_frame(emac_hal_context_t *hal, uint32_t *frames_remain, uint32_t *free_desc);
 
 void emac_hal_enable_flow_ctrl(emac_hal_context_t *hal, bool enable);
 
