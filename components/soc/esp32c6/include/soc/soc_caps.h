@@ -34,7 +34,7 @@
 #define SOC_BT_SUPPORTED                1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
-// #define SOC_TEMP_SENSOR_SUPPORTED       1 // TODO: IDF-5322
+#define SOC_TEMP_SENSOR_SUPPORTED       1
 // #define SOC_WIFI_SUPPORTED              1 // TODO: IDF-5679
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 //#define SOC_RISCV_COPROC_SUPPORTED       1 // TODO: IDF-5816
@@ -415,7 +415,6 @@
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
 
-// TODO: IDF-5322 (Copy from esp32c3, need check)
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                (1)
