@@ -355,25 +355,32 @@ class TestUsage(unittest.TestCase):
                       (self.temp_tools_dir, ESP_ROM_ELFS_VERSION), output)
 
     def test_uninstall_option(self):
-        self.run_idf_tools_with_action(['install', '--targets=esp32,esp32c3'])
-        output = self.run_idf_tools_with_action(['uninstall', '--dry-run'])
-        self.assertEqual(output, '')
+        self.run_idf_tools_with_action(['install', '--targets=esp32'])
 
-        self.assertTrue(os.path.isfile(self.idf_env_json), 'File {} was not found. '.format(self.idf_env_json))
-        self.assertNotEqual(os.stat(self.idf_env_json).st_size, 0, 'File {} is empty. '.format(self.idf_env_json))
-        with open(self.idf_env_json, 'r') as idf_env_file:
-            idf_env_json = json.load(idf_env_file)
-        # outside idf_tools.py we dont know the active idf key, but can determine it since in new idf_env_file is only one record
-        active_idf_key = list(idf_env_json['idfInstalled'].keys())[0]
-        idf_env_json['idfInstalled'][active_idf_key]['targets'].remove('esp32')
-        with open(self.idf_env_json, 'w') as w:
-            json.dump(idf_env_json, w)
-
+        test_tool_name = XTENSA_ESP32_ELF
+        test_tool_version = 'test_version'
+        tools_json_new = os.path.join(self.temp_tools_dir, 'tools', 'tools.new.json')
+        self.run_idf_tools_with_action(
+            [
+                'add-version',
+                '--tool',
+                test_tool_name,
+                '--url-prefix',
+                'http://test.com',
+                '--version',
+                test_tool_version,
+                '--override',
+                '--checksum-file',
+                'add_version/checksum.sha256',
+                '--output',
+                tools_json_new
+            ])
+        output = self.run_idf_tools_with_action(['--tools-json', tools_json_new, 'uninstall', '--dry-run'])
+        self.assertIn('For removing old versions of ' + test_tool_name, output)
+        output = self.run_idf_tools_with_action(['--tools-json',  tools_json_new, 'uninstall'])
+        self.assertIn(os.path.join(self.temp_tools_dir, 'tools', test_tool_name, XTENSA_ESP32_ELF_VERSION) + ' was removed.', output)
         output = self.run_idf_tools_with_action(['uninstall'])
-        self.assertIn(XTENSA_ESP32_ELF, output)
-        self.assertIn(ESP32ULP, output)
-        output = self.run_idf_tools_with_action(['uninstall', '--dry-run'])
-        self.assertEqual(output, '')
+        self.assertEqual('', output)
 
     def test_deactivate(self):
         self.run_idf_tools_with_action(['install'])
