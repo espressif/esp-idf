@@ -2231,45 +2231,54 @@ def action_rewrite(args):  # type: ignore
 
 
 def action_uninstall(args):  # type: (Any) -> None
-    """ Print or remove installed tools, that are currently not used by active ESP-IDF version.
+    """ Print or remove installed tools versions, that are not used by active ESP-IDF version anymore.
     Additionally remove all older versions of previously downloaded archives.
     """
 
-    def is_tool_selected(tool):  # type: (IDFTool) -> bool
-        supported_targets = tool.get_supported_targets()
-        return (supported_targets == ['all'] or any(item in targets for item in supported_targets))
-
     tools_info = load_tools_info()
-    targets = IDFEnv.get_idf_env().get_active_idf_record().targets
     tools_path = os.path.join(global_idf_tools_path or '', 'tools')
     dist_path = os.path.join(global_idf_tools_path or '', 'dist')
-    used_tools = [k for k, v in tools_info.items() if (v.get_install_type() == IDFTool.INSTALL_ALWAYS and is_tool_selected(tools_info[k]))]
     installed_tools = os.listdir(tools_path) if os.path.isdir(tools_path) else []
-    unused_tools = [tool for tool in installed_tools if tool not in used_tools]
+
+    unused_tools_versions = {}
+    for tool in installed_tools:
+        tool_versions = os.listdir(os.path.join(tools_path, tool)) if os.path.isdir(os.path.join(tools_path, tool)) else []
+        try:
+            unused_versions = ([x for x in tool_versions if x != tools_info[tool].get_recommended_version()])
+        except KeyError:  # When tool that is not supported by tools_info (tools.json) anymore, remove the whole tool file
+            unused_versions = ['']
+        if unused_versions:
+            unused_tools_versions[tool] = unused_versions
+
     # Keeping tools added by windows installer
     KEEP_WIN_TOOLS = ['idf-git', 'idf-python']
     for tool in KEEP_WIN_TOOLS:
-        if tool in unused_tools:
-            unused_tools.remove(tool)
+        if tool in unused_tools_versions:
+            unused_tools_versions.pop(tool)
 
     # Print unused tools.
     if args.dry_run:
-        if unused_tools:
-            print('For removing {} use command \'{} {} {}\''.format(', '.join(unused_tools), get_python_exe_and_subdir()[0],
+        if unused_tools_versions:
+            print('For removing old versions of {} use command \'{} {} {}\''.format(', '.join(unused_tools_versions), get_python_exe_and_subdir()[0],
                   os.path.join(global_idf_path or '', 'tools', 'idf_tools.py'), 'uninstall'))
         return
 
     # Remove installed tools that are not used by current ESP-IDF version.
-    for tool in unused_tools:
-        try:
-            shutil.rmtree(os.path.join(tools_path, tool))
-            info(os.path.join(tools_path, tool) + ' was removed.')
-        except OSError as error:
-            warn(f'{error.filename} can not be removed because {error.strerror}.')
+    for tool in unused_tools_versions:
+        for version in unused_tools_versions[tool]:
+            try:
+                if version:
+                    path_to_remove = os.path.join(tools_path, tool, version)
+                else:
+                    path_to_remove = os.path.join(tools_path, tool)
+                shutil.rmtree(path_to_remove)
+                info(path_to_remove + ' was removed.')
+            except OSError as error:
+                warn(f'{error.filename} can not be removed because {error.strerror}.')
 
     # Remove old archives versions and archives that are not used by the current ESP-IDF version.
     if args.remove_archives:
-        tools_spec, tools_info_for_platform = get_tools_spec_and_platform_info(CURRENT_PLATFORM, targets, ['required'], quiet=True)
+        tools_spec, tools_info_for_platform = get_tools_spec_and_platform_info(CURRENT_PLATFORM, ['all'], ['all'], quiet=True)
         used_archives = []
 
         # Detect used active archives
