@@ -188,6 +188,11 @@ esp_err_t esp_spp_write(uint32_t handle, int len, uint8_t *p_data)
     btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (len <= 0 || p_data == NULL) {
+        LOG_ERROR("Invalid data or len!\n");
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_WRITE;
