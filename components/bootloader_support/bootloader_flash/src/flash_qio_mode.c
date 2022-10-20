@@ -102,18 +102,20 @@ void bootloader_enable_qio_mode(void)
 
 static void s_flash_set_qio_pins(void)
 {
+#if SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
+
 #if CONFIG_IDF_TARGET_ESP32
-    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
-    int wp_pin = bootloader_flash_get_wp_pin();
-    esp_rom_spiflash_select_qio_pins(wp_pin, spiconfig);
-#elif CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5649 Add a soc_caps
+    esp_rom_spiflash_select_qio_pins(bootloader_flash_get_wp_pin(), esp_rom_efuse_get_flash_gpio_info());
+#else
+    esp_rom_spiflash_select_qio_pins(esp_rom_efuse_get_flash_wp_gpio(), esp_rom_efuse_get_flash_gpio_info());
+#endif // CONFIG_IDF_TARGET_ESP32
+
+#else
     // ESP32C2/ESP32C6 doesn't support configure mspi pins. So the second
     // parameter is set to 0, means that chip uses default SPI pins
     // and wp_gpio_num parameter(the first parameter) is ignored.
     esp_rom_spiflash_select_qio_pins(0, 0);
-#else
-    esp_rom_spiflash_select_qio_pins(esp_rom_efuse_get_flash_wp_gpio(), esp_rom_efuse_get_flash_gpio_info());
-#endif
+#endif // SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
 }
 
 

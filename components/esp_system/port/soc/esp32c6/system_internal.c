@@ -63,16 +63,6 @@ void IRAM_ATTR esp_restart_noos(void)
     // Disable cache
     Cache_Disable_ICache();
 
-    // 2nd stage bootloader reconfigures SPI flash signals.
-    // Reset them to the defaults expected by ROM.
-    WRITE_PERI_REG(GPIO_FUNC0_IN_SEL_CFG_REG, 0x30);
-    // TODO: IDF-5659
-    // WRITE_PERI_REG(GPIO_FUNC1_IN_SEL_CFG_REG, 0x30);
-    // WRITE_PERI_REG(GPIO_FUNC2_IN_SEL_CFG_REG, 0x30);
-    // WRITE_PERI_REG(GPIO_FUNC3_IN_SEL_CFG_REG, 0x30);
-    // WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
-    // WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
-
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     // Moved to module internal
     // SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,

@@ -46,27 +46,18 @@ static const char *TAG = "boot.esp32c6";
 
 void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 {
-    // TODO: IDF-5649
-    const uint32_t spiconfig = 0;
     uint8_t clk_gpio_num = SPI_CLK_GPIO_NUM;
     uint8_t q_gpio_num   = SPI_Q_GPIO_NUM;
     uint8_t d_gpio_num   = SPI_D_GPIO_NUM;
     uint8_t cs0_gpio_num = SPI_CS0_GPIO_NUM;
     uint8_t hd_gpio_num  = SPI_HD_GPIO_NUM;
     uint8_t wp_gpio_num  = SPI_WP_GPIO_NUM;
-    if (spiconfig == 0) {
-
-    }
     esp_rom_gpio_pad_set_drv(clk_gpio_num, drv);
     esp_rom_gpio_pad_set_drv(q_gpio_num,   drv);
     esp_rom_gpio_pad_set_drv(d_gpio_num,   drv);
     esp_rom_gpio_pad_set_drv(cs0_gpio_num, drv);
-    if (hd_gpio_num <= MAX_PAD_GPIO_NUM) {
-        esp_rom_gpio_pad_set_drv(hd_gpio_num, drv);
-    }
-    if (wp_gpio_num <= MAX_PAD_GPIO_NUM) {
-        esp_rom_gpio_pad_set_drv(wp_gpio_num, drv);
-    }
+    esp_rom_gpio_pad_set_drv(hd_gpio_num, drv);
+    esp_rom_gpio_pad_set_drv(wp_gpio_num, drv);
 }
 
 static void update_flash_config(const esp_image_header_t *bootloader_hdr)
@@ -168,7 +159,7 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
 
 static void IRAM_ATTR bootloader_init_flash_configure(void)
 {
-    bootloader_flash_dummy_config(&bootloader_image_hdr);
+    bootloader_configure_spi_pins(1);
     bootloader_flash_cs_timing_config();
 }
 
@@ -181,15 +172,6 @@ static void bootloader_spi_flash_resume(void)
 static esp_err_t bootloader_init_spi_flash(void)
 {
     bootloader_init_flash_configure();
-// TODO: IDF-5649
-// #ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
-//     const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
-//     if (spiconfig != ESP_ROM_EFUSE_FLASH_DEFAULT_SPI && spiconfig != ESP_ROM_EFUSE_FLASH_DEFAULT_HSPI) {
-//         ESP_LOGE(TAG, "SPI flash pins are overridden. Enable CONFIG_SPI_FLASH_ROM_DRIVER_PATCH in menuconfig");
-//         return ESP_FAIL;
-//     }
-// #endif
-
     bootloader_spi_flash_resume();
     bootloader_flash_unlock();
 

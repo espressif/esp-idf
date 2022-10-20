@@ -55,15 +55,3 @@ void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t *pfhdr)
     }
     esp_rom_spiflash_config_clk(spi_clk_div, 0);
 }
-
-void IRAM_ATTR bootloader_flash_set_dummy_out(void)
-{
-    REG_SET_BIT(SPI_MEM_CTRL_REG(0), /*SPI_MEM_FDUMMY_OUT |*/ SPI_MEM_D_POL | SPI_MEM_Q_POL); // TODO: IDF-5631 ESP32C6 not have SPI_MEM_FDUMMY_OUT
-    REG_SET_BIT(SPI_MEM_CTRL_REG(1), /*SPI_MEM_FDUMMY_OUT |*/ SPI_MEM_D_POL | SPI_MEM_Q_POL); // TODO: idf-5631 ESP32C6 not have SPI_MEM_FDUMMY_OUT
-}
-
-void IRAM_ATTR bootloader_flash_dummy_config(const esp_image_header_t *pfhdr)
-{
-    bootloader_configure_spi_pins(1);
-    bootloader_flash_set_dummy_out();
-}
