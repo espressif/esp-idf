@@ -431,6 +431,10 @@ config SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP
     int
     default 3
 
+config SOC_MCPWM_CLK_SUPPORT_PLL160M
+    bool
+    default y
+
 config SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
     bool
     default n

@@ -74,7 +74,7 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     printf("install mcpwm capture timer\r\n");
     mcpwm_cap_timer_handle_t cap_timer = NULL;
     mcpwm_capture_timer_config_t cap_timer_config = {
-        .clk_src = MCPWM_CAPTURE_CLK_SRC_APB,
+        .clk_src = MCPWM_CAPTURE_CLK_SRC_DEFAULT,
         .group_id = 0,
     };
     TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));
@@ -115,8 +115,8 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     gpio_set_level(cap_gpio, 0);
     vTaskDelay(pdMS_TO_TICKS(100));
     printf("capture value: Pos=%"PRIu32", Neg=%"PRIu32"\r\n", cap_value[0], cap_value[1]);
-    // Capture timer is clocked from APB by default
-    uint32_t clk_src_res = esp_clk_apb_freq();
+    uint32_t clk_src_res;
+    mcpwm_capture_timer_get_resolution(cap_timer, &clk_src_res);
     TEST_ASSERT_UINT_WITHIN(100000, clk_src_res / 10, cap_value[1] - cap_value[0]);
 
     printf("uninstall capture channel and timer\r\n");
@@ -183,8 +183,8 @@ TEST_CASE("mcpwm_capture_software_catch", "[mcpwm]")
     TEST_ASSERT_EQUAL(2, test_callback_data.cap_data_index);
     uint32_t delta = test_callback_data.cap_data[1] - test_callback_data.cap_data[0];
     esp_rom_printf("duration=%u ticks\r\n", delta);
-    // Capture timer is clocked from APB by default
-    uint32_t clk_src_res = esp_clk_apb_freq();
+    uint32_t clk_src_res;
+    mcpwm_capture_timer_get_resolution(cap_timer, &clk_src_res);
     TEST_ASSERT_UINT_WITHIN(80000, clk_src_res / 100, delta);
 
     printf("uninstall capture channel and timer\r\n");

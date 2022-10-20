@@ -1683,7 +1683,7 @@ typedef struct mcpwm_dev_t {
     volatile mcpwm_version_reg_t version;
 } mcpwm_dev_t;
 
-extern mcpwm_dev_t MCPWM;
+extern mcpwm_dev_t MCPWM0;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(mcpwm_dev_t) == 0x130, "Invalid size of mcpwm_dev_t structure");

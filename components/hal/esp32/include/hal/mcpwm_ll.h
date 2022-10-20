@@ -64,6 +64,32 @@ typedef enum {
 ////////////////////////////////////////MCPWM Group Specific////////////////////////////////////////////////////////////
 
 /**
+ * @brief Set the clock source for MCPWM
+ *
+ * @param mcpwm Peripheral instance address
+ * @param clk_src Clock source for the MCPWM peripheral
+ */
+static inline void mcpwm_ll_group_set_clock_source(mcpwm_dev_t *mcpwm, mcpwm_timer_clock_source_t clk_src)
+{
+    (void)mcpwm;
+    (void)clk_src;
+}
+
+/**
+ * @brief Enable MCPWM module clock
+ *
+ * @note Not support to enable/disable the peripheral clock
+ *
+ * @param mcpwm Peripheral instance address
+ * @param en true to enable, false to disable
+ */
+static inline void mcpwm_ll_group_enable_clock(mcpwm_dev_t *mcpwm, bool en)
+{
+    (void)mcpwm; // only one MCPWM instance
+    (void)en;
+}
+
+/**
  * @brief Set the MCPWM group clock prescale
  *
  * @param mcpwm Peripheral instance address
