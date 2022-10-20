@@ -509,11 +509,11 @@ static void arg_cat(char** pdest, const char* src, size_t* pndest) {
     char* end = dest + *pndest;
 
     /*locate null terminator of dest string */
-    while (dest < end && *dest != 0)
+    while (dest < end-1 && *dest != 0)
         dest++;
 
     /* concat src string to dest string */
-    while (dest < end && *src != 0)
+    while (dest < end-1 && *src != 0)
         *dest++ = *src++;
 
     /* null terminate dest string */
