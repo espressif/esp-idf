@@ -185,7 +185,8 @@ Git 工作流
 对于量产用户，推荐更新至一个新的 ESP-IDF 发布版本，请参考以下步骤：
 
 - 请定期查看 `发布说明页面`_ ，了解最新发布情况。
-- 如有新发布的 Bugfix 版本（例 ``v3.0.1`` 或 ``v3.0.2``）时，请将新的 Bugfix 版本更新至您的 ESP-IDF 目录：
+- 如有新发布的 Bugfix 版本（例 ``v3.0.1`` 或 ``v3.0.2``）时，请将新的 Bugfix 版本更新至您的 ESP-IDF 目录。
+- 在 Linux 或 macOS 系统中，请运行如下命令将分支更新至 vX.Y.Z：
 
 .. code-block:: bash
 
@@ -194,6 +195,7 @@ Git 工作流
     git checkout vX.Y.Z
     git submodule update --init --recursive
 
+- 在 Windows 系统中，需要将 ``cd $IDF_PATH`` 替换为 ``cd %IDF_PATH%``。
 - 在主要版本或次要版本新发布时，请查看发布说明中的具体描述，并决定是否升级您的版本。具体命令与上方描述一致。
 
 .. note:: 如果您之前在安装 ESP-IDF 时使用了 zip 文件包，而非通过 Git 命令，则您将无法使用 Git 命令进行版本升级，此属正常情况。这种情况下，请重新下载最新 zip 文件包，并替换掉之前 ``IDF_PATH`` 下的全部内容。
@@ -217,13 +219,16 @@ Git 工作流
 
 如需使用 ESP-IDF 的 master 分支，请参考以下步骤：
 
-- 本地切换至 master 分支::
+- 在 Linux 或 macOS 系统中，使用如下命令在本地切换至 master 分支：
+
+.. code-block:: bash
 
     cd $IDF_PATH
     git checkout master
     git pull
     git submodule update --init --recursive
 
+- 在 Windows 系统中，需要将 ``cd $IDF_PATH`` 替换为 ``cd %IDF_PATH%``。
 - 此外，您还应在后续工作中不时使用 ``git pull`` 命令，将远端 master 上的更新同步到本地。注意，在更新 master 分支后，您可能需要更改工程代码，也可能遇到新的 bug。
 - 如需从 master 分支切换至一个发布分支或稳定版本，请使用 ``git checkout`` 命令。
 
@@ -240,13 +245,17 @@ Git 工作流
 
 更多详情，请前往 GitHub 查看完整 `标签列表`_。
 
-举例，您可以关注 ESP-IDF v3.1 分支，随时关注该分支上的 Bugfix 版本发布（ 例 ``v3.1.1`` 等）::
+例如，在 Linux 或 macOS 系统中，您可以运行以下命令更新至ESP-IDF v3.1，随时关注该分支上的 Bugfix 版本发布（如 ``v3.1.1`` 等）：
+
+.. code-block:: bash
 
     cd $IDF_PATH
     git fetch
     git checkout release/v3.1
     git pull
     git submodule update --init --recursive
+
+在 Windows 系统中，需要将 ``cd $IDF_PATH`` 替换为 ``cd %IDF_PATH%``。
 
 您每次在该分支上使用 ``git pull`` 时都相当于把最新的 Bugfix 版本发布更新至您的本地副本中。
 
