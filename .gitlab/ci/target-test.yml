@@ -32,7 +32,12 @@
     # Runner tags are comma separated, replace the comma with " and " for markers
     - job_tags=$(python tools/ci/python_packages/gitlab_api.py get_job_tags $CI_PROJECT_ID --job_id $CI_JOB_ID)
     - markers=$(echo $job_tags | sed -e "s/,/ and /g")
-    - run_cmd pytest $TEST_DIR -m \"${markers}\" --junitxml=XUNIT_RESULT.xml --known-failure-cases-file known_failure_cases/known_failure_cases.txt
+    - run_cmd pytest $TEST_DIR
+      -m \"${markers}\"
+      --junitxml=XUNIT_RESULT.xml
+      --known-failure-cases-file known_failure_cases/known_failure_cases.txt
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
 
 .pytest_examples_dir_template:
   extends: .pytest_template
@@ -275,6 +280,7 @@ component_ut_pytest_esp32_generic:
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, generic ]
+  parallel: 2
 
 component_ut_pytest_esp32_generic_multi_device:
   extends:
@@ -331,6 +337,7 @@ component_ut_pytest_esp32s2_generic:
   needs:
     - build_pytest_components_esp32s2
   tags: [ esp32s2, generic ]
+  parallel: 2
 
 component_ut_pytest_esp32s2_generic_multi_device:
   extends:
@@ -363,6 +370,7 @@ component_ut_pytest_esp32s3_generic:
   needs:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, generic ]
+  parallel: 2
 
 component_ut_pytest_esp32s3_generic_multi_device:
   extends:
