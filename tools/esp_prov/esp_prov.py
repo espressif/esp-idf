@@ -290,11 +290,22 @@ async def wait_wifi_connected(tp, sec):
             return False
 
 
-async def reset_wifi(sel_transport, tp, sec):
+async def reset_wifi(tp, sec):
     try:
         message = prov.ctrl_reset_request(sec)
         response = await tp.send_data('prov-ctrl', message)
         prov.ctrl_reset_response(sec, response)
+
+    except RuntimeError as e:
+        on_except(e)
+        return None
+
+
+async def reprov_wifi(tp, sec):
+    try:
+        message = prov.ctrl_reprov_request(sec)
+        response = await tp.send_data('prov-ctrl', message)
+        prov.ctrl_reprov_response(sec, response)
 
     except RuntimeError as e:
         on_except(e)
@@ -385,6 +396,8 @@ async def main():
 
     parser.add_argument('--reset', help='Reset WiFi', action='store_true')
 
+    parser.add_argument('--reprov', help='Reprovision WiFi', action='store_true')
+
     parser.add_argument('-v','--verbose', help='Increase output verbosity', action='store_true')
 
     args = parser.parse_args()
@@ -447,7 +460,12 @@ async def main():
 
         if args.reset:
             print('==== Reseting WiFi====')
-            await reset_wifi(args.mode.lower(), obj_transport, obj_security)
+            await reset_wifi(obj_transport, obj_security)
+            sys.exit()
+
+        if args.reprov:
+            print('==== Reprovisioning WiFi====')
+            await reprov_wifi(obj_transport, obj_security)
             sys.exit()
 
         if args.custom_data != '':

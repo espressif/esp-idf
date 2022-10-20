@@ -97,6 +97,96 @@ void   resp_ctrl_reset__free_unpacked
   assert(message->base.descriptor == &resp_ctrl_reset__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   cmd_ctrl_reprov__init
+                     (CmdCtrlReprov         *message)
+{
+  static const CmdCtrlReprov init_value = CMD_CTRL_REPROV__INIT;
+  *message = init_value;
+}
+size_t cmd_ctrl_reprov__get_packed_size
+                     (const CmdCtrlReprov *message)
+{
+  assert(message->base.descriptor == &cmd_ctrl_reprov__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t cmd_ctrl_reprov__pack
+                     (const CmdCtrlReprov *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &cmd_ctrl_reprov__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t cmd_ctrl_reprov__pack_to_buffer
+                     (const CmdCtrlReprov *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &cmd_ctrl_reprov__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+CmdCtrlReprov *
+       cmd_ctrl_reprov__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (CmdCtrlReprov *)
+     protobuf_c_message_unpack (&cmd_ctrl_reprov__descriptor,
+                                allocator, len, data);
+}
+void   cmd_ctrl_reprov__free_unpacked
+                     (CmdCtrlReprov *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &cmd_ctrl_reprov__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   resp_ctrl_reprov__init
+                     (RespCtrlReprov         *message)
+{
+  static const RespCtrlReprov init_value = RESP_CTRL_REPROV__INIT;
+  *message = init_value;
+}
+size_t resp_ctrl_reprov__get_packed_size
+                     (const RespCtrlReprov *message)
+{
+  assert(message->base.descriptor == &resp_ctrl_reprov__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t resp_ctrl_reprov__pack
+                     (const RespCtrlReprov *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &resp_ctrl_reprov__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t resp_ctrl_reprov__pack_to_buffer
+                     (const RespCtrlReprov *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &resp_ctrl_reprov__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+RespCtrlReprov *
+       resp_ctrl_reprov__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (RespCtrlReprov *)
+     protobuf_c_message_unpack (&resp_ctrl_reprov__descriptor,
+                                allocator, len, data);
+}
+void   resp_ctrl_reprov__free_unpacked
+                     (RespCtrlReprov *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &resp_ctrl_reprov__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   wi_fi_ctrl_payload__init
                      (WiFiCtrlPayload         *message)
 {
@@ -178,7 +268,43 @@ const ProtobufCMessageDescriptor resp_ctrl_reset__descriptor =
   (ProtobufCMessageInit) resp_ctrl_reset__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor wi_fi_ctrl_payload__field_descriptors[4] =
+#define cmd_ctrl_reprov__field_descriptors NULL
+#define cmd_ctrl_reprov__field_indices_by_name NULL
+#define cmd_ctrl_reprov__number_ranges NULL
+const ProtobufCMessageDescriptor cmd_ctrl_reprov__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "CmdCtrlReprov",
+  "CmdCtrlReprov",
+  "CmdCtrlReprov",
+  "",
+  sizeof(CmdCtrlReprov),
+  0,
+  cmd_ctrl_reprov__field_descriptors,
+  cmd_ctrl_reprov__field_indices_by_name,
+  0,  cmd_ctrl_reprov__number_ranges,
+  (ProtobufCMessageInit) cmd_ctrl_reprov__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+#define resp_ctrl_reprov__field_descriptors NULL
+#define resp_ctrl_reprov__field_indices_by_name NULL
+#define resp_ctrl_reprov__number_ranges NULL
+const ProtobufCMessageDescriptor resp_ctrl_reprov__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "RespCtrlReprov",
+  "RespCtrlReprov",
+  "RespCtrlReprov",
+  "",
+  sizeof(RespCtrlReprov),
+  0,
+  resp_ctrl_reprov__field_descriptors,
+  resp_ctrl_reprov__field_indices_by_name,
+  0,  resp_ctrl_reprov__number_ranges,
+  (ProtobufCMessageInit) resp_ctrl_reprov__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor wi_fi_ctrl_payload__field_descriptors[6] =
 {
   {
     "msg",
@@ -228,10 +354,36 @@ static const ProtobufCFieldDescriptor wi_fi_ctrl_payload__field_descriptors[4] =
     0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "cmd_ctrl_reprov",
+    13,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(WiFiCtrlPayload, payload_case),
+    offsetof(WiFiCtrlPayload, cmd_ctrl_reprov),
+    &cmd_ctrl_reprov__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "resp_ctrl_reprov",
+    14,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_MESSAGE,
+    offsetof(WiFiCtrlPayload, payload_case),
+    offsetof(WiFiCtrlPayload, resp_ctrl_reprov),
+    &resp_ctrl_reprov__descriptor,
+    NULL,
+    0 | PROTOBUF_C_FIELD_FLAG_ONEOF,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned wi_fi_ctrl_payload__field_indices_by_name[] = {
+  4,   /* field[4] = cmd_ctrl_reprov */
   2,   /* field[2] = cmd_ctrl_reset */
   0,   /* field[0] = msg */
+  5,   /* field[5] = resp_ctrl_reprov */
   3,   /* field[3] = resp_ctrl_reset */
   1,   /* field[1] = status */
 };
@@ -239,7 +391,7 @@ static const ProtobufCIntRange wi_fi_ctrl_payload__number_ranges[2 + 1] =
 {
   { 1, 0 },
   { 11, 2 },
-  { 0, 4 }
+  { 0, 6 }
 };
 const ProtobufCMessageDescriptor wi_fi_ctrl_payload__descriptor =
 {
@@ -249,26 +401,30 @@ const ProtobufCMessageDescriptor wi_fi_ctrl_payload__descriptor =
   "WiFiCtrlPayload",
   "",
   sizeof(WiFiCtrlPayload),
-  4,
+  6,
   wi_fi_ctrl_payload__field_descriptors,
   wi_fi_ctrl_payload__field_indices_by_name,
   2,  wi_fi_ctrl_payload__number_ranges,
   (ProtobufCMessageInit) wi_fi_ctrl_payload__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCEnumValue wi_fi_ctrl_msg_type__enum_values_by_number[3] =
+static const ProtobufCEnumValue wi_fi_ctrl_msg_type__enum_values_by_number[5] =
 {
   { "TypeCtrlReserved", "WI_FI_CTRL_MSG_TYPE__TypeCtrlReserved", 0 },
   { "TypeCmdCtrlReset", "WI_FI_CTRL_MSG_TYPE__TypeCmdCtrlReset", 1 },
   { "TypeRespCtrlReset", "WI_FI_CTRL_MSG_TYPE__TypeRespCtrlReset", 2 },
+  { "TypeCmdCtrlReprov", "WI_FI_CTRL_MSG_TYPE__TypeCmdCtrlReprov", 3 },
+  { "TypeRespCtrlReprov", "WI_FI_CTRL_MSG_TYPE__TypeRespCtrlReprov", 4 },
 };
 static const ProtobufCIntRange wi_fi_ctrl_msg_type__value_ranges[] = {
-{0, 0},{0, 3}
+{0, 0},{0, 5}
 };
-static const ProtobufCEnumValueIndex wi_fi_ctrl_msg_type__enum_values_by_name[3] =
+static const ProtobufCEnumValueIndex wi_fi_ctrl_msg_type__enum_values_by_name[5] =
 {
+  { "TypeCmdCtrlReprov", 3 },
   { "TypeCmdCtrlReset", 1 },
   { "TypeCtrlReserved", 0 },
+  { "TypeRespCtrlReprov", 4 },
   { "TypeRespCtrlReset", 2 },
 };
 const ProtobufCEnumDescriptor wi_fi_ctrl_msg_type__descriptor =
@@ -278,9 +434,9 @@ const ProtobufCEnumDescriptor wi_fi_ctrl_msg_type__descriptor =
   "WiFiCtrlMsgType",
   "WiFiCtrlMsgType",
   "",
-  3,
+  5,
   wi_fi_ctrl_msg_type__enum_values_by_number,
-  3,
+  5,
   wi_fi_ctrl_msg_type__enum_values_by_name,
   1,
   wi_fi_ctrl_msg_type__value_ranges,

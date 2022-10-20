@@ -18,6 +18,8 @@ PROTOBUF_C__BEGIN_DECLS
 
 typedef struct CmdCtrlReset CmdCtrlReset;
 typedef struct RespCtrlReset RespCtrlReset;
+typedef struct CmdCtrlReprov CmdCtrlReprov;
+typedef struct RespCtrlReprov RespCtrlReprov;
 typedef struct WiFiCtrlPayload WiFiCtrlPayload;
 
 
@@ -26,7 +28,9 @@ typedef struct WiFiCtrlPayload WiFiCtrlPayload;
 typedef enum _WiFiCtrlMsgType {
   WI_FI_CTRL_MSG_TYPE__TypeCtrlReserved = 0,
   WI_FI_CTRL_MSG_TYPE__TypeCmdCtrlReset = 1,
-  WI_FI_CTRL_MSG_TYPE__TypeRespCtrlReset = 2
+  WI_FI_CTRL_MSG_TYPE__TypeRespCtrlReset = 2,
+  WI_FI_CTRL_MSG_TYPE__TypeCmdCtrlReprov = 3,
+  WI_FI_CTRL_MSG_TYPE__TypeRespCtrlReprov = 4
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(WI_FI_CTRL_MSG_TYPE)
 } WiFiCtrlMsgType;
 
@@ -50,10 +54,30 @@ struct  RespCtrlReset
      }
 
 
+struct  CmdCtrlReprov
+{
+  ProtobufCMessage base;
+};
+#define CMD_CTRL_REPROV__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&cmd_ctrl_reprov__descriptor) \
+     }
+
+
+struct  RespCtrlReprov
+{
+  ProtobufCMessage base;
+};
+#define RESP_CTRL_REPROV__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&resp_ctrl_reprov__descriptor) \
+     }
+
+
 typedef enum {
   WI_FI_CTRL_PAYLOAD__PAYLOAD__NOT_SET = 0,
   WI_FI_CTRL_PAYLOAD__PAYLOAD_CMD_CTRL_RESET = 11,
-  WI_FI_CTRL_PAYLOAD__PAYLOAD_RESP_CTRL_RESET = 12
+  WI_FI_CTRL_PAYLOAD__PAYLOAD_RESP_CTRL_RESET = 12,
+  WI_FI_CTRL_PAYLOAD__PAYLOAD_CMD_CTRL_REPROV = 13,
+  WI_FI_CTRL_PAYLOAD__PAYLOAD_RESP_CTRL_REPROV = 14
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(WI_FI_CTRL_PAYLOAD__PAYLOAD__CASE)
 } WiFiCtrlPayload__PayloadCase;
 
@@ -66,6 +90,8 @@ struct  WiFiCtrlPayload
   union {
     CmdCtrlReset *cmd_ctrl_reset;
     RespCtrlReset *resp_ctrl_reset;
+    CmdCtrlReprov *cmd_ctrl_reprov;
+    RespCtrlReprov *resp_ctrl_reprov;
   };
 };
 #define WI_FI_CTRL_PAYLOAD__INIT \
@@ -111,6 +137,44 @@ RespCtrlReset *
 void   resp_ctrl_reset__free_unpacked
                      (RespCtrlReset *message,
                       ProtobufCAllocator *allocator);
+/* CmdCtrlReprov methods */
+void   cmd_ctrl_reprov__init
+                     (CmdCtrlReprov         *message);
+size_t cmd_ctrl_reprov__get_packed_size
+                     (const CmdCtrlReprov   *message);
+size_t cmd_ctrl_reprov__pack
+                     (const CmdCtrlReprov   *message,
+                      uint8_t             *out);
+size_t cmd_ctrl_reprov__pack_to_buffer
+                     (const CmdCtrlReprov   *message,
+                      ProtobufCBuffer     *buffer);
+CmdCtrlReprov *
+       cmd_ctrl_reprov__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   cmd_ctrl_reprov__free_unpacked
+                     (CmdCtrlReprov *message,
+                      ProtobufCAllocator *allocator);
+/* RespCtrlReprov methods */
+void   resp_ctrl_reprov__init
+                     (RespCtrlReprov         *message);
+size_t resp_ctrl_reprov__get_packed_size
+                     (const RespCtrlReprov   *message);
+size_t resp_ctrl_reprov__pack
+                     (const RespCtrlReprov   *message,
+                      uint8_t             *out);
+size_t resp_ctrl_reprov__pack_to_buffer
+                     (const RespCtrlReprov   *message,
+                      ProtobufCBuffer     *buffer);
+RespCtrlReprov *
+       resp_ctrl_reprov__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   resp_ctrl_reprov__free_unpacked
+                     (RespCtrlReprov *message,
+                      ProtobufCAllocator *allocator);
 /* WiFiCtrlPayload methods */
 void   wi_fi_ctrl_payload__init
                      (WiFiCtrlPayload         *message);
@@ -138,6 +202,12 @@ typedef void (*CmdCtrlReset_Closure)
 typedef void (*RespCtrlReset_Closure)
                  (const RespCtrlReset *message,
                   void *closure_data);
+typedef void (*CmdCtrlReprov_Closure)
+                 (const CmdCtrlReprov *message,
+                  void *closure_data);
+typedef void (*RespCtrlReprov_Closure)
+                 (const RespCtrlReprov *message,
+                  void *closure_data);
 typedef void (*WiFiCtrlPayload_Closure)
                  (const WiFiCtrlPayload *message,
                   void *closure_data);
@@ -150,6 +220,8 @@ typedef void (*WiFiCtrlPayload_Closure)
 extern const ProtobufCEnumDescriptor    wi_fi_ctrl_msg_type__descriptor;
 extern const ProtobufCMessageDescriptor cmd_ctrl_reset__descriptor;
 extern const ProtobufCMessageDescriptor resp_ctrl_reset__descriptor;
+extern const ProtobufCMessageDescriptor cmd_ctrl_reprov__descriptor;
+extern const ProtobufCMessageDescriptor resp_ctrl_reprov__descriptor;
 extern const ProtobufCMessageDescriptor wi_fi_ctrl_payload__descriptor;
 
 PROTOBUF_C__END_DECLS

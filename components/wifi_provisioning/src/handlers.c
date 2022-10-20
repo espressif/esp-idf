@@ -203,11 +203,17 @@ static esp_err_t ctrl_reset(void)
     return wifi_prov_mgr_reset_sm_state_on_failure();
 }
 
+static esp_err_t ctrl_reprov(void)
+{
+    return wifi_prov_mgr_reset_sm_state_for_reprovision();
+}
+
 esp_err_t get_wifi_ctrl_handlers(wifi_ctrl_handlers_t *ptr)
 {
     if (!ptr) {
         return ESP_ERR_INVALID_ARG;
     }
     ptr->ctrl_reset  = ctrl_reset;
+    ptr->ctrl_reprov  = ctrl_reprov;
     return ESP_OK;
 }

@@ -25,10 +25,18 @@ static esp_err_t cmd_ctrl_reset_handler(WiFiCtrlPayload *req,
                                         WiFiCtrlPayload *resp,
                                         void *priv_data);
 
+static esp_err_t cmd_ctrl_reprov_handler(WiFiCtrlPayload *req,
+                                        WiFiCtrlPayload *resp,
+                                        void *priv_data);
+
 static wifi_ctrl_cmd_t cmd_table[] = {
     {
         .cmd_id = WI_FI_CTRL_MSG_TYPE__TypeCmdCtrlReset,
         .command_handler = cmd_ctrl_reset_handler
+    },
+    {
+        .cmd_id = WI_FI_CTRL_MSG_TYPE__TypeCmdCtrlReprov,
+        .command_handler = cmd_ctrl_reprov_handler
     },
 };
 
@@ -55,6 +63,29 @@ static esp_err_t cmd_ctrl_reset_handler(WiFiCtrlPayload *req,
     return ESP_OK;
 }
 
+static esp_err_t cmd_ctrl_reprov_handler(WiFiCtrlPayload *req,
+                                        WiFiCtrlPayload *resp, void *priv_data)
+{
+    wifi_ctrl_handlers_t *h = (wifi_ctrl_handlers_t *) priv_data;
+    if (!h) {
+        ESP_LOGE(TAG, "Command invoked without handlers");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    RespCtrlReprov *resp_payload = (RespCtrlReprov *) malloc(sizeof(RespCtrlReprov));
+    if (!resp_payload) {
+        ESP_LOGE(TAG, "Error allocating memory");
+        return ESP_ERR_NO_MEM;
+    }
+
+    resp_ctrl_reprov__init(resp_payload);
+    resp->status = (h->ctrl_reprov() == ESP_OK ?
+                            STATUS__Success : STATUS__InternalError);
+    resp->payload_case = WI_FI_CTRL_PAYLOAD__PAYLOAD_RESP_CTRL_REPROV;
+    resp->resp_ctrl_reprov = resp_payload;
+    return ESP_OK;
+}
+
 static int lookup_cmd_handler(int cmd_id)
 {
     for (size_t i = 0; i < sizeof(cmd_table)/sizeof(wifi_ctrl_cmd_t); i++) {
@@ -72,6 +103,11 @@ static void wifi_ctrl_cmd_cleanup(WiFiCtrlPayload *resp, void *priv_data)
         case WI_FI_CTRL_MSG_TYPE__TypeRespCtrlReset:
             {
                 free(resp->resp_ctrl_reset);
+            }
+            break;
+        case WI_FI_CTRL_MSG_TYPE__TypeRespCtrlReprov:
+            {
+                free(resp->resp_ctrl_reprov);
             }
             break;
         default:
