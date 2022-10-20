@@ -36,6 +36,14 @@ static const char *TAG = "w5500.mac";
 #define W5500_SPI_LOCK_TIMEOUT_MS (50)
 #define W5500_TX_MEM_SIZE (0x4000)
 #define W5500_RX_MEM_SIZE (0x4000)
+#define W5500_ETH_MAC_RX_BUF_SIZE_AUTO (0)
+
+typedef struct {
+    uint32_t offset;
+    uint32_t copy_len;
+    uint32_t rx_len;
+    uint32_t remain;
+}__attribute__((packed)) emac_w5500_auto_buf_info_t;
 
 typedef struct {
     esp_eth_mac_t parent;
@@ -47,6 +55,7 @@ typedef struct {
     int int_gpio_num;
     uint8_t addr[6];
     bool packets_remain;
+    uint8_t *rx_buffer;
 } emac_w5500_t;
 
 static inline bool w5500_lock(emac_w5500_t *emac)
@@ -299,59 +308,6 @@ err:
     return ret;
 }
 
-IRAM_ATTR static void w5500_isr_handler(void *arg)
-{
-    emac_w5500_t *emac = (emac_w5500_t *)arg;
-    BaseType_t high_task_wakeup = pdFALSE;
-    /* notify w5500 task */
-    vTaskNotifyGiveFromISR(emac->rx_task_hdl, &high_task_wakeup);
-    if (high_task_wakeup != pdFALSE) {
-        portYIELD_FROM_ISR();
-    }
-}
-
-static void emac_w5500_task(void *arg)
-{
-    emac_w5500_t *emac = (emac_w5500_t *)arg;
-    uint8_t status = 0;
-    uint8_t *buffer = NULL;
-    uint32_t length = 0;
-    while (1) {
-        // check if the task receives any notification
-        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&    // if no notification ...
-            gpio_get_level(emac->int_gpio_num) != 0) {               // ...and no interrupt asserted
-            continue;                                                // -> just continue to check again
-        }
-
-        /* read interrupt status */
-        w5500_read(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status));
-        /* packet received */
-        if (status & W5500_SIR_RECV) {
-            status = W5500_SIR_RECV;
-            // clear interrupt status
-            w5500_write(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status));
-            do {
-                length = ETH_MAX_PACKET_SIZE;
-                buffer = heap_caps_malloc(length, MALLOC_CAP_DMA);
-                if (!buffer) {
-                    ESP_LOGE(TAG, "no mem for receive buffer");
-                    break;
-                } else if (emac->parent.receive(&emac->parent, buffer, &length) == ESP_OK) {
-                    /* pass the buffer to stack (e.g. TCP/IP layer) */
-                    if (length) {
-                        emac->eth->stack_input(emac->eth, buffer, length);
-                    } else {
-                        free(buffer);
-                    }
-                } else {
-                    free(buffer);
-                }
-            } while (emac->packets_remain);
-        }
-    }
-    vTaskDelete(NULL);
-}
-
 static esp_err_t emac_w5500_set_mediator(esp_eth_mac_t *mac, esp_eth_mediator_t *eth)
 {
     esp_err_t ret = ESP_OK;
@@ -517,6 +473,8 @@ static esp_err_t emac_w5500_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
     emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
     uint16_t offset = 0;
 
+    ESP_GOTO_ON_FALSE(length <= ETH_MAX_PACKET_SIZE, ESP_ERR_INVALID_ARG, err,
+                        TAG, "frame size is too big (actual %u, maximum %u)", length, ETH_MAX_PACKET_SIZE);
     // check if there're free memory to store this packet
     uint16_t free_size = 0;
     ESP_GOTO_ON_ERROR(w5500_get_tx_free_size(emac, &free_size), err, TAG, "get free size failed");
@@ -550,10 +508,101 @@ err:
     return ret;
 }
 
+static esp_err_t emac_w5500_alloc_recv_buf(emac_w5500_t *emac, uint8_t **buf, uint32_t *length)
+{
+    esp_err_t ret = ESP_OK;
+    uint16_t offset = 0;
+    uint16_t rx_len = 0;
+    uint32_t copy_len = 0;
+    uint16_t remain_bytes = 0;
+    *buf = NULL;
+
+    w5500_get_rx_received_size(emac, &remain_bytes);
+    if (remain_bytes) {
+        // get current read pointer
+        ESP_GOTO_ON_ERROR(w5500_read(emac, W5500_REG_SOCK_RX_RD(0), &offset, sizeof(offset)), err, TAG, "read RX RD failed");
+        offset = __builtin_bswap16(offset);
+        // read head
+        ESP_GOTO_ON_ERROR(w5500_read_buffer(emac, &rx_len, sizeof(rx_len), offset), err, TAG, "read frame header failed");
+        rx_len = __builtin_bswap16(rx_len) - 2; // data size includes 2 bytes of header
+        // frames larger than expected will be truncated
+        copy_len = rx_len > *length ? *length : rx_len;
+        // runt frames are not forwarded by W5500 (tested on target), but check the length anyway since it could be corrupted at SPI bus
+        ESP_GOTO_ON_FALSE(copy_len >= ETH_MIN_PACKET_SIZE - ETH_CRC_LEN, ESP_ERR_INVALID_SIZE, err, TAG, "invalid frame length %u", copy_len);
+        *buf = malloc(copy_len);
+        if (*buf != NULL) {
+            emac_w5500_auto_buf_info_t *buff_info = (emac_w5500_auto_buf_info_t *)*buf;
+            buff_info->offset = offset;
+            buff_info->copy_len = copy_len;
+            buff_info->rx_len = rx_len;
+            buff_info->remain = remain_bytes;
+        } else {
+            ret = ESP_ERR_NO_MEM;
+            goto err;
+        }
+    }
+err:
+    *length = rx_len;
+    return ret;
+}
+
 static esp_err_t emac_w5500_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *length)
 {
     esp_err_t ret = ESP_OK;
     emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
+    uint16_t offset = 0;
+    uint16_t rx_len = 0;
+    uint16_t copy_len = 0;
+    uint16_t remain_bytes = 0;
+    emac->packets_remain = false;
+
+    if (*length != W5500_ETH_MAC_RX_BUF_SIZE_AUTO) {
+        w5500_get_rx_received_size(emac, &remain_bytes);
+        if (remain_bytes) {
+            // get current read pointer
+            ESP_GOTO_ON_ERROR(w5500_read(emac, W5500_REG_SOCK_RX_RD(0), &offset, sizeof(offset)), err, TAG, "read RX RD failed");
+            offset = __builtin_bswap16(offset);
+            // read head first
+            ESP_GOTO_ON_ERROR(w5500_read_buffer(emac, &rx_len, sizeof(rx_len), offset), err, TAG, "read frame header failed");
+            rx_len = __builtin_bswap16(rx_len) - 2; // data size includes 2 bytes of header
+            // frames larger than expected will be truncated
+            copy_len = rx_len > *length ? *length : rx_len;
+        } else {
+            // silently return when no frame is waiting
+            goto err;
+        }
+    } else {
+        emac_w5500_auto_buf_info_t *buff_info = (emac_w5500_auto_buf_info_t *)buf;
+        offset = buff_info->offset;
+        copy_len = buff_info->copy_len;
+        rx_len = buff_info->rx_len;
+        remain_bytes = buff_info->remain;
+    }
+    // 2 bytes of header
+    offset += 2;
+    // read the payload
+    ESP_GOTO_ON_ERROR(w5500_read_buffer(emac, emac->rx_buffer, copy_len, offset), err, TAG, "read payload failed, len=%d, offset=%d", rx_len, offset);
+    memcpy(buf, emac->rx_buffer, copy_len);
+    offset += rx_len;
+    // update read pointer
+    offset = __builtin_bswap16(offset);
+    ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_SOCK_RX_RD(0), &offset, sizeof(offset)), err, TAG, "write RX RD failed");
+    /* issue RECV command */
+    ESP_GOTO_ON_ERROR(w5500_send_command(emac, W5500_SCR_RECV, 100), err, TAG, "issue RECV command failed");
+    // check if there're more data need to process
+    remain_bytes -= rx_len + 2;
+    emac->packets_remain = remain_bytes > 0;
+
+    *length = rx_len;
+    return ret;
+err:
+    *length = 0;
+    return ret;
+}
+
+static esp_err_t emac_w5500_flush_recv_frame(emac_w5500_t *emac)
+{
+    esp_err_t ret = ESP_OK;
     uint16_t offset = 0;
     uint16_t rx_len = 0;
     uint16_t remain_bytes = 0;
@@ -566,24 +615,84 @@ static esp_err_t emac_w5500_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *
         offset = __builtin_bswap16(offset);
         // read head first
         ESP_GOTO_ON_ERROR(w5500_read_buffer(emac, &rx_len, sizeof(rx_len), offset), err, TAG, "read frame header failed");
-        rx_len = __builtin_bswap16(rx_len) - 2; // data size includes 2 bytes of header
-        offset += 2;
-        // read the payload
-        ESP_GOTO_ON_ERROR(w5500_read_buffer(emac, buf, rx_len, offset), err, TAG, "read payload failed, len=%d, offset=%d", rx_len, offset);
-        offset += rx_len;
         // update read pointer
-        offset = __builtin_bswap16(offset);
+        offset = rx_len;
         ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_SOCK_RX_RD(0), &offset, sizeof(offset)), err, TAG, "write RX RD failed");
         /* issue RECV command */
         ESP_GOTO_ON_ERROR(w5500_send_command(emac, W5500_SCR_RECV, 100), err, TAG, "issue RECV command failed");
         // check if there're more data need to process
-        remain_bytes -= rx_len + 2;
+        rx_len = __builtin_bswap16(rx_len);
+        remain_bytes -= rx_len;
         emac->packets_remain = remain_bytes > 0;
     }
-
-    *length = rx_len;
 err:
     return ret;
+}
+
+IRAM_ATTR static void w5500_isr_handler(void *arg)
+{
+    emac_w5500_t *emac = (emac_w5500_t *)arg;
+    BaseType_t high_task_wakeup = pdFALSE;
+    /* notify w5500 task */
+    vTaskNotifyGiveFromISR(emac->rx_task_hdl, &high_task_wakeup);
+    if (high_task_wakeup != pdFALSE) {
+        portYIELD_FROM_ISR();
+    }
+}
+
+static void emac_w5500_task(void *arg)
+{
+    emac_w5500_t *emac = (emac_w5500_t *)arg;
+    uint8_t status = 0;
+    uint8_t *buffer = NULL;
+    uint32_t frame_len = 0;
+    uint32_t buf_len = 0;
+    while (1) {
+        /* check if the task receives any notification */
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&    // if no notification ...
+            gpio_get_level(emac->int_gpio_num) != 0) {               // ...and no interrupt asserted
+            continue;                                                // -> just continue to check again
+        }
+        /* read interrupt status */
+        w5500_read(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status));
+        /* packet received */
+        if (status & W5500_SIR_RECV) {
+            status = W5500_SIR_RECV;
+            /* clear interrupt status */
+            w5500_write(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status));
+            do {
+                /* define max expected frame len */
+                frame_len = ETH_MAX_PACKET_SIZE;
+                emac_w5500_alloc_recv_buf(emac, &buffer, &frame_len);
+                /* there is a waiting frame */
+                if (frame_len) {
+                    /* we have memory to receive the frame of maximal size previously defined */
+                    if (buffer != NULL) {
+                        buf_len = W5500_ETH_MAC_RX_BUF_SIZE_AUTO;
+                        if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
+                            if (buf_len == 0) {
+                                free(buffer);
+                            } else if (frame_len > buf_len) {
+                                ESP_LOGE(TAG, "received frame was truncated");
+                                free(buffer);
+                            } else {
+                                ESP_LOGD(TAG, "receive len=%u", buf_len);
+                                /* pass the buffer to stack (e.g. TCP/IP layer) */
+                                emac->eth->stack_input(emac->eth, buffer, buf_len);
+                            }
+                        } else {
+                            ESP_LOGE(TAG, "frame read from module failed");
+                            free(buffer);
+                        }
+                    } else {
+                        ESP_LOGE(TAG, "no mem for receive buffer");
+                        emac_w5500_flush_recv_frame(emac);
+                    }
+                }
+            } while (emac->packets_remain);
+        }
+    }
+    vTaskDelete(NULL);
 }
 
 static esp_err_t emac_w5500_init(esp_eth_mac_t *mac)
@@ -628,6 +737,7 @@ static esp_err_t emac_w5500_del(esp_eth_mac_t *mac)
     emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
     vTaskDelete(emac->rx_task_hdl);
     vSemaphoreDelete(emac->spi_lock);
+    heap_caps_free(emac->rx_buffer);
     free(emac);
     return ESP_OK;
 }
@@ -674,6 +784,10 @@ esp_eth_mac_t *esp_eth_mac_new_w5500(const eth_w5500_config_t *w5500_config, con
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_w5500_task, "w5500_tsk", mac_config->rx_task_stack_size, emac,
                            mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);
     ESP_GOTO_ON_FALSE(xReturned == pdPASS, NULL, err, TAG, "create w5500 task failed");
+
+    emac->rx_buffer = heap_caps_malloc(ETH_MAX_PACKET_SIZE, MALLOC_CAP_DMA);
+    ESP_GOTO_ON_FALSE(emac->rx_buffer, NULL, err, TAG, "RX buffer allocation failed");
+
     return &(emac->parent);
 
 err:
@@ -684,6 +798,7 @@ err:
         if (emac->spi_lock) {
             vSemaphoreDelete(emac->spi_lock);
         }
+        heap_caps_free(emac->rx_buffer);
         free(emac);
     }
     return ret;

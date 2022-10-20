@@ -30,6 +30,15 @@ static const char *TAG = "dm9051.mac";
 
 #define DM9051_SPI_LOCK_TIMEOUT_MS (50)
 #define DM9051_PHY_OPERATION_TIMEOUT_US (1000)
+#define DM9051_RX_MEM_START_ADDR (3072)
+#define DM9051_RX_MEM_MAX_SIZE (16384)
+#define DM9051_RX_HDR_SIZE (4)
+#define DM9051_ETH_MAC_RX_BUF_SIZE_AUTO (0)
+
+typedef struct {
+    uint32_t copy_len;
+    uint32_t byte_cnt;
+}__attribute__((packed)) dm9051_auto_buf_info_t;
 
 typedef struct {
     uint8_t flag;
@@ -49,6 +58,7 @@ typedef struct {
     uint8_t addr[6];
     bool packets_remain;
     bool flow_ctrl_enabled;
+    uint8_t *rx_buffer;
 } emac_dm9051_t;
 
 static inline bool dm9051_lock(emac_dm9051_t *emac)
@@ -383,44 +393,6 @@ IRAM_ATTR static void dm9051_isr_handler(void *arg)
     }
 }
 
-static void emac_dm9051_task(void *arg)
-{
-    emac_dm9051_t *emac = (emac_dm9051_t *)arg;
-    uint8_t status = 0;
-    uint8_t *buffer = NULL;
-    uint32_t length = 0;
-    while (1) {
-        // check if the task receives any notification
-        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&    // if no notification ...
-            gpio_get_level(emac->int_gpio_num) == 0) {               // ...and no interrupt asserted
-            continue;                                                // -> just continue to check again
-        }
-        /* clear interrupt status */
-        dm9051_register_read(emac, DM9051_ISR, &status);
-        dm9051_register_write(emac, DM9051_ISR, status);
-        /* packet received */
-        if (status & ISR_PR) {
-            do {
-                length = ETH_MAX_PACKET_SIZE;
-                buffer = heap_caps_malloc(length, MALLOC_CAP_DMA);
-                if (!buffer) {
-                    ESP_LOGE(TAG, "no mem for receive buffer");
-                } else if (emac->parent.receive(&emac->parent, buffer, &length) == ESP_OK) {
-                    /* pass the buffer to stack (e.g. TCP/IP layer) */
-                    if (length) {
-                        emac->eth->stack_input(emac->eth, buffer, length);
-                    } else {
-                        free(buffer);
-                    }
-                } else {
-                    free(buffer);
-                }
-            } while (emac->packets_remain);
-        }
-    }
-    vTaskDelete(NULL);
-}
-
 static esp_err_t emac_dm9051_set_mediator(esp_eth_mac_t *mac, esp_eth_mediator_t *eth)
 {
     esp_err_t ret = ESP_OK;
@@ -613,6 +585,9 @@ static esp_err_t emac_dm9051_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t
     /* Check if last transmit complete */
     uint8_t tcr = 0;
 
+    ESP_GOTO_ON_FALSE(length <= ETH_MAX_PACKET_SIZE, ESP_ERR_INVALID_ARG, err,
+                        TAG, "frame size is too big (actual %u, maximum %u)", length, ETH_MAX_PACKET_SIZE);
+
     int64_t wait_time =  esp_timer_get_time();
     do {
         ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_TCR, &tcr), err, TAG, "read TCR failed");
@@ -635,47 +610,137 @@ err:
     return ret;
 }
 
-static esp_err_t emac_dm9051_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *length)
+static esp_err_t dm9051_skip_recv_frame(emac_dm9051_t *emac, uint16_t rx_length)
 {
     esp_err_t ret = ESP_OK;
-    emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
+    uint8_t mrrh, mrrl;
+    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_MRRH, &mrrh), err, TAG, "read MDRAH failed");
+    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_MRRL, &mrrl), err, TAG, "read MDRAL failed");
+    uint16_t addr = mrrh << 8 | mrrl;
+    /* include 4B for header */
+    addr += rx_length + DM9051_RX_HDR_SIZE;
+    if (addr > DM9051_RX_MEM_MAX_SIZE) {
+        addr = addr - DM9051_RX_MEM_MAX_SIZE + DM9051_RX_MEM_START_ADDR;
+    }
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_MRRH, addr >> 8), err, TAG, "write MDRAH failed");
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_MRRL, addr & 0xFF), err, TAG, "write MDRAL failed");
+err:
+    return ret;
+}
+
+static esp_err_t dm9051_get_recv_byte_count(emac_dm9051_t *emac, uint16_t *size)
+{
+    esp_err_t ret = ESP_OK;
     uint8_t rxbyte = 0;
-    uint16_t rx_len = 0;
     __attribute__((aligned(4))) dm9051_rx_header_t header; // SPI driver needs the rx buffer 4 byte align
-    emac->packets_remain = false;
+
+    *size = 0;
     /* dummy read, get the most updated data */
     ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_MRCMDX, &rxbyte), err, TAG, "read MRCMDX failed");
     ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_MRCMDX, &rxbyte), err, TAG, "read MRCMDX failed");
     /* rxbyte must be 0xFF, 0 or 1 */
     if (rxbyte > 1) {
-        ESP_GOTO_ON_ERROR(mac->stop(mac), err, TAG, "stop dm9051 failed");
+        ESP_GOTO_ON_ERROR(emac->parent.stop(&emac->parent), err, TAG, "stop dm9051 failed");
         /* reset rx fifo pointer */
         ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_MPTRCR, MPTRCR_RST_RX), err, TAG, "write MPTRCR failed");
         esp_rom_delay_us(10);
-        ESP_GOTO_ON_ERROR(mac->start(mac), err, TAG, "start dm9051 failed");
+        ESP_GOTO_ON_ERROR(emac->parent.start(&emac->parent), err, TAG, "start dm9051 failed");
         ESP_GOTO_ON_FALSE(false, ESP_FAIL, err, TAG, "reset rx fifo pointer");
     } else if (rxbyte) {
         ESP_GOTO_ON_ERROR(dm9051_memory_peek(emac, (uint8_t *)&header, sizeof(header)), err, TAG, "peek rx header failed");
-        rx_len = header.length_low + (header.length_high << 8);
-        /* check if the buffer can hold all the incoming data */
-        if (*length < rx_len - 4) {
-            ESP_LOGE(TAG, "buffer size too small, needs %d", rx_len - 4);
-            /* tell upper layer the size we need */
-            *length = rx_len - 4;
-            ret = ESP_ERR_INVALID_SIZE;
+        uint16_t rx_len = header.length_low + (header.length_high << 8);
+        if (header.status & 0xBF) {
+            /* erroneous frames should not be forwarded by DM9051, however, if it happens, just skip it */
+            dm9051_skip_recv_frame(emac, rx_len);
+            ESP_GOTO_ON_FALSE(false, ESP_FAIL, err, TAG, "receive status error: %xH", header.status);
+        }
+        *size = rx_len;
+    }
+err:
+    return ret;
+}
+
+static esp_err_t dm9051_flush_recv_frame(emac_dm9051_t *emac)
+{
+    esp_err_t ret = ESP_OK;
+    uint16_t rx_len;
+    ESP_GOTO_ON_ERROR(dm9051_get_recv_byte_count(emac, &rx_len), err, TAG, "get rx frame length failed");
+    ESP_GOTO_ON_ERROR(dm9051_skip_recv_frame(emac, rx_len), err, TAG, "skipping frame in RX memory failed");
+err:
+    return ret;
+}
+
+static esp_err_t dm9051_alloc_recv_buf(emac_dm9051_t *emac, uint8_t **buf, uint32_t *length)
+{
+    esp_err_t ret = ESP_OK;
+    uint16_t rx_len = 0;
+    uint16_t byte_count;
+    *buf = NULL;
+
+    ESP_GOTO_ON_ERROR(dm9051_get_recv_byte_count(emac, &byte_count), err, TAG, "get rx frame length failed");
+    // silently return when no frame is waiting
+    if (!byte_count) {
+        goto err;
+    }
+    // do not include 4 bytes CRC at the end
+    rx_len = byte_count - ETH_CRC_LEN;
+    // frames larger than expected will be truncated
+    uint16_t copy_len = rx_len > *length ? *length : rx_len;
+    // runt frames are not forwarded, but check the length anyway since it could be corrupted at SPI bus
+    ESP_GOTO_ON_FALSE(copy_len >= ETH_MIN_PACKET_SIZE - ETH_CRC_LEN, ESP_ERR_INVALID_SIZE, err, TAG, "invalid frame length %u", copy_len);
+    *buf = malloc(copy_len);
+    if (*buf != NULL) {
+        dm9051_auto_buf_info_t *buff_info = (dm9051_auto_buf_info_t *)*buf;
+        buff_info->copy_len = copy_len;
+        buff_info->byte_cnt = byte_count;
+    } else {
+        ret = ESP_ERR_NO_MEM;
+        goto err;
+    }
+err:
+    *length = rx_len;
+    return ret;
+}
+
+static esp_err_t emac_dm9051_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *length)
+{
+    esp_err_t ret = ESP_OK;
+    emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
+    uint16_t rx_len = 0;
+    uint8_t rxbyte;
+    uint16_t copy_len = 0;
+    uint16_t byte_count = 0;
+    emac->packets_remain = false;
+
+    if (*length != DM9051_ETH_MAC_RX_BUF_SIZE_AUTO) {
+        ESP_GOTO_ON_ERROR(dm9051_get_recv_byte_count(emac, &byte_count), err, TAG, "get rx frame length failed");
+        /* silently return when no frame is waiting */
+        if (!byte_count) {
             goto err;
         }
-        ESP_GOTO_ON_ERROR(dm9051_memory_read(emac, (uint8_t *)&header, sizeof(header)), err, TAG, "read rx header failed");
-        ESP_GOTO_ON_ERROR(dm9051_memory_read(emac, buf, rx_len), err, TAG, "read rx data failed");
-        ESP_GOTO_ON_FALSE(!(header.status & 0xBF), ESP_FAIL, err, TAG, "receive status error: %xH", header.status);
-        *length = rx_len - 4; // substract the CRC length (4Bytes)
-        /* dummy read, get the most updated data */
-        ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_MRCMDX, &rxbyte), err, TAG, "read MRCMDX failed");
-        ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_MRCMDX, &rxbyte), err, TAG, "read MRCMDX failed");
-        emac->packets_remain = rxbyte > 0;
+        /* do not include 4 bytes CRC at the end */
+        rx_len = byte_count - ETH_CRC_LEN;
+        /* frames larger than expected will be truncated */
+        copy_len = rx_len > *length ? *length : rx_len;
+    } else {
+        dm9051_auto_buf_info_t *buff_info = (dm9051_auto_buf_info_t *)buf;
+        copy_len = buff_info->copy_len;
+        byte_count = buff_info->byte_cnt;
     }
+
+    byte_count += DM9051_RX_HDR_SIZE;
+    ESP_GOTO_ON_ERROR(dm9051_memory_read(emac, emac->rx_buffer, byte_count), err, TAG, "read rx data failed");
+    memcpy(buf, emac->rx_buffer + DM9051_RX_HDR_SIZE, copy_len);
+    *length = copy_len;
+
+    /* dummy read, get the most updated data */
+    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_MRCMDX, &rxbyte), err, TAG, "read MRCMDX failed");
+    /* check for remaing packets */
+    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_MRCMDX, &rxbyte), err, TAG, "read MRCMDX failed");
+    emac->packets_remain = rxbyte > 0;
     return ESP_OK;
 err:
+    *length = 0;
     return ret;
 }
 
@@ -720,11 +785,65 @@ static esp_err_t emac_dm9051_deinit(esp_eth_mac_t *mac)
     return ESP_OK;
 }
 
+static void emac_dm9051_task(void *arg)
+{
+    emac_dm9051_t *emac = (emac_dm9051_t *)arg;
+    uint8_t status = 0;
+    while (1) {
+        // check if the task receives any notification
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&    // if no notification ...
+            gpio_get_level(emac->int_gpio_num) == 0) {               // ...and no interrupt asserted
+            continue;                                                // -> just continue to check again
+        }
+        /* clear interrupt status */
+        dm9051_register_read(emac, DM9051_ISR, &status);
+        dm9051_register_write(emac, DM9051_ISR, status);
+        /* packet received */
+        if (status & ISR_PR) {
+            do {
+                /* define max expected frame len */
+                uint32_t frame_len = ETH_MAX_PACKET_SIZE;
+                uint8_t *buffer;
+                dm9051_alloc_recv_buf(emac, &buffer, &frame_len);
+                /* there is a waiting frame */
+                if (frame_len) {
+                    /* we have memory to receive the frame of maximal size previously defined */
+                    if (buffer != NULL) {
+                        uint32_t buf_len = DM9051_ETH_MAC_RX_BUF_SIZE_AUTO;
+                        if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
+                            if (buf_len == 0) {
+                                dm9051_flush_recv_frame(emac);
+                                free(buffer);
+                            } else if (frame_len > buf_len) {
+                                ESP_LOGE(TAG, "received frame was truncated");
+                                free(buffer);
+                            } else {
+                                ESP_LOGD(TAG, "receive len=%u", buf_len);
+                                /* pass the buffer to stack (e.g. TCP/IP layer) */
+                                emac->eth->stack_input(emac->eth, buffer, buf_len);
+                            }
+                        } else {
+                            ESP_LOGE(TAG, "frame read from module failed");
+                            dm9051_flush_recv_frame(emac);
+                            free(buffer);
+                        }
+                    } else {
+                        ESP_LOGE(TAG, "no mem for receive buffer");
+                        dm9051_flush_recv_frame(emac);
+                    }
+                }
+            } while (emac->packets_remain);
+        }
+    }
+    vTaskDelete(NULL);
+}
+
 static esp_err_t emac_dm9051_del(esp_eth_mac_t *mac)
 {
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
     vTaskDelete(emac->rx_task_hdl);
     vSemaphoreDelete(emac->spi_lock);
+    heap_caps_free(emac->rx_buffer);
     free(emac);
     return ESP_OK;
 }
@@ -772,6 +891,10 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_dm9051_task, "dm9051_tsk", mac_config->rx_task_stack_size, emac,
                            mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);
     ESP_GOTO_ON_FALSE(xReturned == pdPASS, NULL, err, TAG, "create dm9051 task failed");
+
+    emac->rx_buffer = heap_caps_malloc(ETH_MAX_PACKET_SIZE + DM9051_RX_HDR_SIZE, MALLOC_CAP_DMA);
+    ESP_GOTO_ON_FALSE(emac->rx_buffer, NULL, err, TAG, "RX buffer allocation failed");
+
     return &(emac->parent);
 
 err:
@@ -782,6 +905,7 @@ err:
         if (emac->spi_lock) {
             vSemaphoreDelete(emac->spi_lock);
         }
+        heap_caps_free(emac->rx_buffer);
         free(emac);
     }
     return ret;

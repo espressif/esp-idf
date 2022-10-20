@@ -252,24 +252,35 @@ static void emac_esp32_rx_task(void *arg)
 {
     emac_esp32_t *emac = (emac_esp32_t *)arg;
     uint8_t *buffer = NULL;
-    uint32_t length = 0;
     while (1) {
         // block indefinitely until got notification from underlay event
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         do {
-            length = ETH_MAX_PACKET_SIZE;
-            buffer = malloc(length);
-            if (!buffer) {
-                ESP_LOGE(TAG, "no mem for receive buffer");
-            } else if (emac_esp32_receive(&emac->parent, buffer, &length) == ESP_OK) {
-                /* pass the buffer to stack (e.g. TCP/IP layer) */
-                if (length) {
-                    emac->eth->stack_input(emac->eth, buffer, length);
+            /* set max expected frame len */
+            uint32_t frame_len = ETH_MAX_PACKET_SIZE;
+            buffer = emac_hal_alloc_recv_buf(&emac->hal, &frame_len);
+            /* there is a waiting frame */
+            if (frame_len) {
+                /* we have memory to receive the frame of maximal size previously defined */
+                if (buffer != NULL) {
+                    uint32_t recv_len = emac_hal_receive_frame(&emac->hal, buffer, EMAC_HAL_BUF_SIZE_AUTO, &emac->frames_remain, &emac->free_rx_descriptor);
+                    if (recv_len == 0) {
+                        ESP_LOGE(TAG, "frame copy error");
+                        free(buffer);
+                        /* ensure that interface to EMAC does not get stuck with unprocessed frames */
+                        emac_hal_flush_recv_frame(&emac->hal, &emac->frames_remain, &emac->free_rx_descriptor);
+                    } else if (frame_len > recv_len) {
+                        ESP_LOGE(TAG, "received frame was truncated");
+                        free(buffer);
+                    } else {
+                        ESP_LOGD(TAG, "receive len= %d", recv_len);
+                        emac->eth->stack_input(emac->eth, buffer, recv_len);
+                    }
                 } else {
-                    free(buffer);
+                    ESP_LOGE(TAG, "no mem for receive buffer");
+                    /* ensure that interface to EMAC does not get stuck with unprocessed frames */
+                    emac_hal_flush_recv_frame(&emac->hal, &emac->frames_remain, &emac->free_rx_descriptor);
                 }
-            } else {
-                free(buffer);
             }
 #if CONFIG_ETH_SOFT_FLOW_CONTROL
             // we need to do extra checking of remained frames in case there are no unhandled frames left, but pause frame is still undergoing
