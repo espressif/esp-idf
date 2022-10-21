@@ -204,6 +204,9 @@ Once connected to the device, the provisioning related protocomm endpoints can b
    * - prov-scan
      - http://wifi-prov.local/prov-scan
      - Endpoint used for starting Wi-Fi scan and receiving scan results
+   * - prov-ctrl
+     - http://wifi-prov.local/prov-ctrl
+     - Endpoint used for controlling Wi-Fi provisioning state
    * - prov-config
      - http://<mdns-hostname>.local/prov-config
      - Endpoint used for configuring Wi-Fi credentials on device
@@ -240,6 +243,12 @@ After session establishment, client can also request Wi-Fi scan results from the
         * `start_index` (input) - Starting index from where to fetch the entries from the results list
         * `count` (input) - Number of entries to fetch from the starting index
         * `entries` (output) - List of entries returned. Each entry consists of `ssid`, `channel` and `rssi` information
+
+The client can also control the provisioning state of the device using `wifi_ctrl` endpoint. The `wifi_ctrl` endpoint supports the following protobuf commands:
+
+    * `ctrl_reset` - Resets internal state machine of the device and clears provisioned credentials only in case of provisioning failures.
+
+    * `ctrl_reprov` - Resets internal state machine of the device and clears provisioned credentials only in case the device is to be provisioned again for new credentials after a previous successful provisioning
 
 Additional Endpoints
 ^^^^^^^^^^^^^^^^^^^^

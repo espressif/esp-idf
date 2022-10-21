@@ -12,6 +12,7 @@ Usage of `esp-prov` assumes that the provisioning app has specific protocomm end
 | prov-config   | http://ip:port/prov-config   | Endpoint used for configuring Wi-Fi credentials on device                                |
 | proto-ver     | http://ip:port/proto-ver     | Version endpoint for checking protocol compatibility                                     |
 | prov-scan     | http://ip:port/prov-scan     | Endpoint used for scanning Wi-Fi APs                                                     |
+| prov-ctrl     | http://ip:port/prov-ctrl     | Endpoint used for controlling Wi-Fi provisioning state                                   |
 | custom-data   | http://ip:port/custom-data   | Optional endpoint for sending custom data (refer `wifi_prov_mgr` example)                |
 
 
@@ -77,6 +78,12 @@ python esp_prov.py --transport < mode of provisioning : softap \ ble \ console >
 * `--sec2_salt_len <SRP6a Salt Length>` (Optional)
     - For specifying the optional `SRP6a` salt length to be used for generating protocomm endpoint security version 2 credentials
     - Ignored when other security versions are used and the ``--sec2_gen_cred` option is not set
+
+* `--reset` (Optional)
+    - Resets internal state machine of the device and clears provisioned credentials; to be used only in case of provisioning failures
+
+* `--reprov` (Optional)
+    - Resets internal state machine of the device and clears provisioned credentials; to be used only in case the device is to be provisioned again for new credentials after a previous successful provisioning
 
 * `--custom_data <some string>` (Optional)
     An information string can be sent to the `custom-data` endpoint during provisioning using this argument.
