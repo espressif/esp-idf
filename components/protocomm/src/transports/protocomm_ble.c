@@ -15,6 +15,8 @@
 #include "protocomm_priv.h"
 #include "simple_ble.h"
 
+ESP_EVENT_DEFINE_BASE(PROTOCOMM_TRANSPORT_BLE_EVENT);
+
 /* NOTE: For the security2 scheme, the payload size is quite larger
  * than that for security1. The increased value has been selected
  * keeping in mind the largest packet size for security2 and the
@@ -25,6 +27,7 @@
 #else
     #define CHAR_VAL_LEN_MAX         (256 + 1)
 #endif // CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+
 #define PREPARE_BUF_MAX_SIZE     CHAR_VAL_LEN_MAX
 
 static const char *TAG = "protocomm_ble";
@@ -342,6 +345,10 @@ static void transport_simple_ble_disconnect(esp_gatts_cb_event_t event, esp_gatt
                 param->disconnect.conn_id);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error closing the session after disconnect");
+        } else {
+            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_DISCONNECTED, NULL, 0, portMAX_DELAY) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to post transport disconnection event");
+            }
         }
     }
     protoble_internal->gatt_mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
@@ -357,6 +364,10 @@ static void transport_simple_ble_connect(esp_gatts_cb_event_t event, esp_gatt_if
                 param->connect.conn_id);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error creating the session");
+        } else {
+            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_CONNECTED, NULL, 0, portMAX_DELAY) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to post transport pairing event");
+            }
         }
     }
 }

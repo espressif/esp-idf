@@ -156,16 +156,44 @@ static void event_handler(void* arg, esp_event_base_t event_base,
             default:
                 break;
         }
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        esp_wifi_connect();
+    } else if (event_base == WIFI_EVENT) {
+        switch (event_id) {
+            case WIFI_EVENT_STA_START:
+                esp_wifi_connect();
+                break;
+            case WIFI_EVENT_STA_DISCONNECTED:
+                ESP_LOGI(TAG, "Disconnected. Connecting to the AP again...");
+                esp_wifi_connect();
+                break;
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
+            case WIFI_EVENT_AP_STACONNECTED:
+                ESP_LOGI(TAG, "SoftAP transport: Connected!");
+                break;
+            case WIFI_EVENT_AP_STADISCONNECTED:
+                ESP_LOGI(TAG, "SoftAP transport: Disconnected!");
+                break;
+#endif
+            default:
+                break;
+        }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         ESP_LOGI(TAG, "Connected with IP Address:" IPSTR, IP2STR(&event->ip_info.ip));
         /* Signal main application to continue execution */
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        ESP_LOGI(TAG, "Disconnected. Connecting to the AP again...");
-        esp_wifi_connect();
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
+    } else if (event_base == PROTOCOMM_TRANSPORT_BLE_EVENT) {
+        switch (event_id) {
+            case PROTOCOMM_TRANSPORT_BLE_CONNECTED:
+                ESP_LOGI(TAG, "BLE transport: Connected!");
+                break;
+            case PROTOCOMM_TRANSPORT_BLE_DISCONNECTED:
+                ESP_LOGI(TAG, "BLE transport: Disconnected!");
+                break;
+            default:
+                break;
+        }
+#endif
     }
 }
 
@@ -258,6 +286,9 @@ void app_main(void)
 
     /* Register our event handler for Wi-Fi, IP and Provisioning related events */
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
+    ESP_ERROR_CHECK(esp_event_handler_register(PROTOCOMM_TRANSPORT_BLE_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+#endif
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 

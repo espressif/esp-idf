@@ -22,6 +22,8 @@
 
 static const char *TAG = "protocomm_nimble";
 
+ESP_EVENT_DEFINE_BASE(PROTOCOMM_TRANSPORT_BLE_EVENT);
+
 int ble_uuid_flat(const ble_uuid_t *, void *);
 static uint8_t ble_uuid_base[BLE_UUID128_VAL_LENGTH];
 static int num_chr_dsc;
@@ -226,7 +228,7 @@ simple_ble_gap_event(struct ble_gap_event *event, void *arg)
                 ESP_LOGE(TAG, "No open connection with the specified handle");
                 return rc;
             }
-	    s_cached_conn_handle = event->connect.conn_handle;
+            s_cached_conn_handle = event->connect.conn_handle;
         } else {
             /* Connection failed; resume advertising. */
             simple_ble_advertise();
@@ -236,7 +238,11 @@ simple_ble_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_DISCONNECT:
         ESP_LOGD(TAG, "disconnect; reason=%d ", event->disconnect.reason);
         transport_simple_ble_disconnect(event, arg);
-        s_cached_conn_handle = 0; /* Clear conn_handle value */
+        /* Clear conn_handle value */
+        s_cached_conn_handle = 0;
+        if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_DISCONNECTED, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to post pairing event");
+        }
         /* Connection terminated; resume advertising. */
         simple_ble_advertise();
         return 0;
@@ -552,6 +558,10 @@ static void transport_simple_ble_disconnect(struct ble_gap_event *event, void *a
             protoble_internal->pc_ble->sec->close_transport_session(protoble_internal->pc_ble->sec_inst, event->disconnect.conn.conn_handle);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error closing the session after disconnect");
+        } else {
+            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_DISCONNECTED, NULL, 0, portMAX_DELAY) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to post transport disconnection event");
+            }
         }
     }
     protoble_internal->gatt_mtu = BLE_ATT_MTU_DFLT;
@@ -567,6 +577,10 @@ static void transport_simple_ble_connect(struct ble_gap_event *event, void *arg)
             protoble_internal->pc_ble->sec->new_transport_session(protoble_internal->pc_ble->sec_inst, event->connect.conn_handle);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error creating the session");
+        } else {
+            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_CONNECTED, NULL, 0, portMAX_DELAY) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to post transport pairing event");
+            }
         }
     }
 }
