@@ -87,8 +87,7 @@ BOOLEAN l2c_link_hci_conn_req (BD_ADDR bd_addr)
 
             if (p_lcb_cur->in_use) {
                 no_links = FALSE;
-                // p_lcb->link_role = HCI_ROLE_MASTER;
-                p_lcb->link_role = HCI_ROLE_SLAVE;
+                p_lcb->link_role = HCI_ROLE_MASTER;
                 break;
             }
         }
