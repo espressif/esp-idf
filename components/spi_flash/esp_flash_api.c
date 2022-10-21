@@ -53,6 +53,17 @@ static const char TAG[] = "spi_flash";
     } while(0)
 #endif // CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
 
+/* Convenience macro for beginning of all API functions.
+ * Check the return value of `rom_spiflash_api_funcs->chip_check` is correct,
+ * and the chip supports the operation in question.
+ */
+#define VERIFY_CHIP_OP(op) do {                                  \
+        if (err != ESP_OK) return err; \
+        if (chip->chip_drv->op == NULL) {                        \
+            return ESP_ERR_FLASH_UNSUPPORTED_CHIP;              \
+        }                                                   \
+    } while (0)
+
 #define IO_STR_LEN  10
 
 static const char io_mode_str[][IO_STR_LEN] = {
@@ -211,7 +222,7 @@ esp_err_t IRAM_ATTR esp_flash_init(esp_flash_t *chip)
 
     // Detect flash size
     uint32_t size;
-    err = esp_flash_get_size(chip, &size);
+    err = esp_flash_get_physical_size(chip, &size);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "failed to get chip size");
         return err;
@@ -291,7 +302,7 @@ esp_err_t IRAM_ATTR esp_flash_init_main(esp_flash_t *chip)
 
     // Detect flash size
     uint32_t size;
-    err = esp_flash_get_size(chip, &size);
+    err = esp_flash_get_physical_size(chip, &size);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "failed to get chip size");
         return err;
@@ -449,32 +460,15 @@ static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
     return ESP_OK;
 }
 
-#ifndef CONFIG_SPI_FLASH_ROM_IMPL
-
-/* Convenience macro for beginning of all API functions.
- * Check the return value of `rom_spiflash_api_funcs->chip_check` is correct,
- * and the chip supports the operation in question.
- */
-#define VERIFY_CHIP_OP(OP) do {                                  \
-        if (err != ESP_OK) return err; \
-        if (chip->chip_drv->OP == NULL) {                        \
-            return ESP_ERR_FLASH_UNSUPPORTED_CHIP;              \
-        }                                                   \
-    } while (0)
-
-/* Return true if regions 'a' and 'b' overlap at all, based on their start offsets and lengths. */
-inline static bool regions_overlap(uint32_t a_start, uint32_t a_len,uint32_t b_start, uint32_t b_len);
-
-esp_err_t IRAM_ATTR esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size)
+esp_err_t IRAM_ATTR esp_flash_get_physical_size(esp_flash_t *chip, uint32_t *flash_size)
 {
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
-    VERIFY_CHIP_OP(detect_size);
-    if (out_size == NULL) {
-        return ESP_ERR_INVALID_ARG;
+    if (err != ESP_OK) {
+        return err;
     }
-    if (chip->size != 0) {
-        *out_size = chip->size;
-        return ESP_OK;
+    VERIFY_CHIP_OP(detect_size);
+    if (flash_size == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     err = rom_spiflash_api_funcs->start(chip);
@@ -484,10 +478,36 @@ esp_err_t IRAM_ATTR esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size)
     uint32_t detect_size;
     err = chip->chip_drv->detect_size(chip, &detect_size);
     if (err == ESP_OK) {
-        chip->size = detect_size;
-        *out_size = chip->size;
+        if (chip->size == 0) {
+            // chip->size will not be changed if detected, it will always be equal to configured flash size.
+            chip->size = detect_size;
+        }
+        *flash_size = detect_size;
     }
     return rom_spiflash_api_funcs->end(chip, err);
+}
+
+#ifndef CONFIG_SPI_FLASH_ROM_IMPL
+
+/* Return true if regions 'a' and 'b' overlap at all, based on their start offsets and lengths. */
+inline static bool regions_overlap(uint32_t a_start, uint32_t a_len,uint32_t b_start, uint32_t b_len);
+
+esp_err_t IRAM_ATTR esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size)
+{
+    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if (out_size == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (chip->size != 0) {
+        *out_size = chip->size;
+        return ESP_OK;
+    }
+    //Return flash chip physical size, when this API is called before flash initialisation,
+    //After initialization will return available size.
+    return esp_flash_get_physical_size(chip, out_size);
 }
 
 esp_err_t IRAM_ATTR esp_flash_erase_chip(esp_flash_t *chip)
