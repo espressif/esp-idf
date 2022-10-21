@@ -200,13 +200,13 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
     }
     esp_tls_cfg_server_t *cfg = (esp_tls_cfg_server_t *)calloc(1, sizeof(esp_tls_cfg_server_t));
     if (!cfg) {
-        goto free_ssl_ctx;
+        goto exit;
     }
 
     if (config->session_tickets) {
         if ( esp_tls_cfg_server_session_tickets_init(cfg) != ESP_OK ) {
             ESP_LOGE(TAG, "Failed to init session ticket support");
-            goto free_cfg;
+            goto exit;
         }
     }
 
@@ -228,7 +228,7 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
             cfg->cacert_bytes = config->cacert_len;
         } else {
             ESP_LOGE(TAG, "Could not allocate memory for client certificate authority");
-            goto free_cfg;
+            goto exit;
         }
     }
 
@@ -241,14 +241,14 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
             cfg->servercert_bytes = config->servercert_len;
         } else {
             ESP_LOGE(TAG, "Could not allocate memory for server certificate");
-            goto free_cacert;
+            goto exit;
         }
     } else {
 #if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
         if (config->cert_select_cb == NULL) {
 #endif
         ESP_LOGE(TAG, "No Server certificate supplied");
-        goto free_cacert;
+        goto exit;
 #if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
         } else {
             ESP_LOGW(TAG, "Server certificate not supplied, make sure to supply it in the certificate selection hook!");
@@ -260,39 +260,36 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
     cfg->use_secure_element = config->use_secure_element;
     if (!cfg->use_secure_element) {
         if (config->prvtkey_pem != NULL && config->prvtkey_len > 0) {
-            cfg->serverkey_buf = (unsigned char *) malloc(config->prvtkey_len);
+            cfg->serverkey_buf = malloc(config->prvtkey_len);
 
             if (cfg->serverkey_buf) {
                 memcpy((char *) cfg->serverkey_buf, config->prvtkey_pem, config->prvtkey_len);
                 cfg->serverkey_bytes = config->prvtkey_len;
             } else {
                 ESP_LOGE(TAG, "Could not allocate memory for server key");
-                goto free_servercert;
+                goto exit;
             }
         } else {
 #if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
             if (config->cert_select_cb == NULL) {
                 ESP_LOGE(TAG, "No Server key supplied and no certificate selection hook is present");
-                goto free_servercert;
+                goto exit;
             } else {
                 ESP_LOGW(TAG, "Server key not supplied, make sure to supply it in the certificate selection hook");
             }
 #else
             ESP_LOGE(TAG, "No Server key supplied");
-            goto free_servercert;
+            goto exit;
 #endif
         }
     }
 
     return ssl_ctx;
 
-free_servercert:
+exit:
     free((void *) cfg->servercert_buf);
-free_cacert:
     free((void *) cfg->cacert_buf);
-free_cfg:
     free(cfg);
-free_ssl_ctx:
     free(ssl_ctx);
     return NULL;
 }

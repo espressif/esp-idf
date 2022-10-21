@@ -59,7 +59,7 @@ menu "ESP-TLS"
 
     config ESP_TLS_SERVER_CERT_SELECT_HOOK
         bool "Certificate selection hook"
-        depends on ESP_TLS_USING_MBEDTLS
+        depends on ESP_TLS_USING_MBEDTLS && ESP_TLS_SERVER
         help
             Ability to configure and use a certificate selection callback during server handshake,
             to select a certificate to present to the client based on the TLS extensions supplied in

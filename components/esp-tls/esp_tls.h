@@ -198,7 +198,6 @@ typedef struct esp_tls_server_session_ticket_ctx {
 #endif
 
 
-#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
 /**
  * @brief tls handshake callback
  * Can be used to configure per-handshake attributes for the TLS connection.
@@ -209,7 +208,6 @@ typedef struct esp_tls_server_session_ticket_ctx {
  *         or a specific MBEDTLS_ERR_XXX code, which will cause the handhsake to abort
  */
 typedef mbedtls_ssl_hs_cb_t esp_tls_handshake_callback;
-#endif
 
 typedef struct esp_tls_cfg_server {
     const char **alpn_protos;                   /*!< Application protocols required for HTTP2.
@@ -274,13 +272,14 @@ typedef struct esp_tls_cfg_server {
                                                     to free the data associated with this context. */
 #endif
 
+    void *userdata;                             /*!< User data to be added to the ssl context.
+                                                  Can be retrieved by callbacks */
 #if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
     esp_tls_handshake_callback cert_select_cb;  /*!< Certificate selection callback that gets called after ClientHello is processed.
                                                      Can be used as an SNI callback, but also has access to other
                                                      TLS extensions, such as ALPN and server_certificate_type . */
 #endif
 
-    void *userdata; /*!< User data to be add to the ssl context. Can be retrieved by callbacks */
 } esp_tls_cfg_server_t;
 
 /**
