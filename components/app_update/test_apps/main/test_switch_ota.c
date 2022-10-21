@@ -23,6 +23,7 @@
 #include "bootloader_common.h"
 #include "../bootloader_flash/include/bootloader_flash_priv.h"
 
+#include "esp_err.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
@@ -34,12 +35,31 @@
 #include "esp_sleep.h"
 #include "test_utils.h"
 
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5131
-RTC_DATA_ATTR static int boot_count = 0;
+#define BOOT_COUNT_NAMESPACE "boot_count"
 
 static const char *TAG = "ota_test";
+
+static void set_boot_count_in_nvs(uint8_t boot_count)
+{
+    nvs_handle_t boot_count_handle;
+    TEST_ESP_OK(nvs_open(BOOT_COUNT_NAMESPACE, NVS_READWRITE, &boot_count_handle));
+    TEST_ESP_OK(nvs_set_u8(boot_count_handle, "boot_count", boot_count));
+    TEST_ESP_OK(nvs_commit(boot_count_handle));
+    nvs_close(boot_count_handle);
+}
+
+static uint8_t get_boot_count_from_nvs(void)
+{
+    nvs_handle_t boot_count_handle;
+    esp_err_t err = nvs_open(BOOT_COUNT_NAMESPACE, NVS_READONLY, &boot_count_handle);
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
+        set_boot_count_in_nvs(0);
+    }
+    uint8_t boot_count;
+    TEST_ESP_OK(nvs_get_u8(boot_count_handle, "boot_count", &boot_count));
+    nvs_close(boot_count_handle);
+    return boot_count;
+}
 
 /* @brief Copies a current app to next partition using handle.
  *
@@ -313,7 +333,7 @@ static void mark_app_valid(void)
 static void start_test(void)
 {
     ESP_LOGI(TAG, "boot count 1 - reset");
-    boot_count = 1;
+    set_boot_count_in_nvs(1);
     erase_ota_data();
     ESP_LOGI(TAG, "ota_data erased");
     reboot_as_deep_sleep();
@@ -321,7 +341,9 @@ static void start_test(void)
 
 static void test_flow1(void)
 {
+    uint8_t boot_count = get_boot_count_from_nvs();
     boot_count++;
+    set_boot_count_in_nvs(boot_count);
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
     switch (boot_count) {
@@ -364,7 +386,9 @@ TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, OTA1, OTA0", "[app_u
 
 static void test_flow2(void)
 {
+    uint8_t boot_count = get_boot_count_from_nvs();
     boot_count++;
+    set_boot_count_in_nvs(boot_count);
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
     switch (boot_count) {
@@ -401,7 +425,9 @@ TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, corrupt ota_sec1, fa
 
 static void test_flow3(void)
 {
+    uint8_t boot_count = get_boot_count_from_nvs();
     boot_count++;
+    set_boot_count_in_nvs(boot_count);
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
     switch (boot_count) {
@@ -441,64 +467,36 @@ static void test_flow3(void)
 // 3 Stage: run OTA0    -> check it -> copy OTA0 to OTA1                -> reboot  --//--
 // 3 Stage: run OTA1    -> check it -> corrupt ota sector2              -> reboot  --//--
 // 4 Stage: run OTA0    -> check it -> erase OTA_DATA for next tests    -> PASS
-TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, OTA1, currupt ota_sec2, OTA0", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow3, test_flow3, test_flow3, test_flow3);
+TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, OTA1, corrupt ota_sec2, OTA0", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow3, test_flow3, test_flow3, test_flow3);
 
 #ifdef CONFIG_BOOTLOADER_FACTORY_RESET
-#define STORAGE_NAMESPACE "update_ota"
-
 static void test_flow4(void)
 {
+    uint8_t boot_count = get_boot_count_from_nvs();
     boot_count++;
+    set_boot_count_in_nvs(boot_count);
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
-    nvs_handle_t handle = 0;
-    int32_t boot_count_nvs = 0;
     switch (boot_count) {
         case 2:
             ESP_LOGI(TAG, "Factory");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
-
-            TEST_ESP_OK(nvs_flash_erase());
-            TEST_ESP_OK(nvs_flash_init());
-            TEST_ESP_OK(nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &handle));
-            TEST_ESP_OK(nvs_set_i32(handle, "boot_count", boot_count));
-            TEST_ESP_OK(nvs_commit(handle));
-            nvs_close(handle);
-            nvs_flash_deinit();
-
             copy_current_app_to_next_part_and_reboot();
             break;
         case 3:
             ESP_LOGI(TAG, "OTA0");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
             mark_app_valid();
-            TEST_ESP_OK(nvs_flash_init());
-            TEST_ESP_OK(nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &handle));
-            TEST_ESP_OK(nvs_get_i32(handle, "boot_count", &boot_count_nvs));
-            TEST_ASSERT_EQUAL(boot_count_nvs + 1, boot_count);
-            nvs_close(handle);
-            nvs_flash_deinit();
-
             set_output_pin(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET);
-
-            reboot_as_deep_sleep();
+            esp_restart();
             break;
         case 4:
             reset_output_pin(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET);
             ESP_LOGI(TAG, "Factory");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
-
-            int32_t boot_count_nvs;
-            TEST_ESP_OK(nvs_flash_init());
-            TEST_ESP_OK(nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &handle));
-            TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, nvs_get_i32(handle, "boot_count", &boot_count_nvs));
-            nvs_close(handle);
-            nvs_flash_deinit();
-
             erase_ota_data();
             break;
         default:
-            reset_output_pin(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET);
             erase_ota_data();
             TEST_FAIL_MESSAGE("Unexpected stage");
             break;
@@ -506,33 +504,32 @@ static void test_flow4(void)
 }
 // 1 Stage: After POWER_RESET erase OTA_DATA for this test           -> reboot through deep sleep.
 // 2 Stage: run factory -> check it -> copy factory to OTA0          -> reboot  --//--
-// 3 Stage: run OTA0    -> check it -> set_pin_factory_reset         -> reboot  --//--
+// 3 Stage: run OTA0    -> check it -> set_pin_factory_reset         -> reboot
 // 4 Stage: run factory -> check it -> erase OTA_DATA for next tests -> PASS
-TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, sets pin_factory_reset, factory", "[app_update][timeout=90][ignore][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow4, test_flow4, test_flow4);
+TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, sets pin_factory_reset, factory", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, SW_CPU_RESET, DEEPSLEEP_RESET]", start_test, test_flow4, test_flow4, test_flow4);
 #endif
 
 #ifdef CONFIG_BOOTLOADER_APP_TEST
 static void test_flow5(void)
 {
+    uint8_t boot_count = get_boot_count_from_nvs();
     boot_count++;
+    set_boot_count_in_nvs(boot_count);
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
     switch (boot_count) {
         case 2:
             ESP_LOGI(TAG, "Factory");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
-
             set_output_pin(CONFIG_BOOTLOADER_NUM_PIN_APP_TEST);
-
             copy_partition(esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_TEST, NULL), cur_app);
-            esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, NULL);
-            reboot_as_deep_sleep();
+            esp_restart();
             break;
         case 3:
             reset_output_pin(CONFIG_BOOTLOADER_NUM_PIN_APP_TEST);
             ESP_LOGI(TAG, "Test");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_TEST, cur_app->subtype);
-            reboot_as_deep_sleep();
+            esp_restart();
             break;
         case 4:
             ESP_LOGI(TAG, "Factory");
@@ -548,10 +545,10 @@ static void test_flow5(void)
 }
 
 // 1 Stage: After POWER_RESET erase OTA_DATA for this test                          -> reboot through deep sleep.
-// 2 Stage: run factory    -> check it -> copy factory to Test and set pin_test_app -> reboot  --//--
-// 3 Stage: run test       -> check it -> reset pin_test_app                        -> reboot  --//--
+// 2 Stage: run factory    -> check it -> copy factory to Test and set pin_test_app -> reboot
+// 3 Stage: run test       -> check it -> reset pin_test_app                        -> reboot
 // 4 Stage: run factory    -> check it -> erase OTA_DATA for next tests             -> PASS
-TEST_CASE_MULTIPLE_STAGES("Switching between factory, test, factory", "[app_update][timeout=90][ignore][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow5, test_flow5, test_flow5);
+TEST_CASE_MULTIPLE_STAGES("Switching between factory, test, factory", "[app_update][timeout=90][reset=SW_CPU_RESET, SW_CPU_RESET, DEEPSLEEP_RESET]", start_test, test_flow5, test_flow5, test_flow5);
 #endif
 
 static const esp_partition_t* app_update(void)
@@ -570,7 +567,9 @@ static const esp_partition_t* app_update(void)
 
 static void test_rollback1(void)
 {
+    uint8_t boot_count = get_boot_count_from_nvs();
     boot_count++;
+    set_boot_count_in_nvs(boot_count);
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
     esp_ota_img_states_t ota_state = 0x5555AAAA;
@@ -621,8 +620,9 @@ static void test_rollback1(void)
 
 static void test_rollback1_1(void)
 {
-    boot_count = 5;
+    set_boot_count_in_nvs(5);
     esp_ota_img_states_t ota_state = 0x5555AAAA;
+    uint8_t boot_count = get_boot_count_from_nvs();
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
     ESP_LOGI(TAG, "Factory");
@@ -649,7 +649,9 @@ TEST_CASE_MULTIPLE_STAGES("Test rollback. factory, OTA0, OTA0, rollback -> facto
 
 static void test_rollback2(void)
 {
+    uint8_t boot_count = get_boot_count_from_nvs();
     boot_count++;
+    set_boot_count_in_nvs(boot_count);
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
     esp_ota_img_states_t ota_state = 0x5555AAAA;
@@ -714,7 +716,8 @@ static void test_rollback2(void)
 
 static void test_rollback2_1(void)
 {
-    boot_count = 5;
+    set_boot_count_in_nvs(5);
+    uint8_t boot_count = get_boot_count_from_nvs();
     esp_ota_img_states_t ota_state = 0x5555AAAA;
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
@@ -747,7 +750,9 @@ TEST_CASE_MULTIPLE_STAGES("Test rollback. factory, OTA0, OTA1, rollback -> OTA0"
 
 static void test_erase_last_app_flow(void)
 {
+    uint8_t boot_count = get_boot_count_from_nvs();
     boot_count++;
+    set_boot_count_in_nvs(boot_count);
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
     switch (boot_count) {
@@ -780,7 +785,8 @@ static void test_erase_last_app_flow(void)
 
 static void test_erase_last_app_rollback(void)
 {
-    boot_count = 5;
+    set_boot_count_in_nvs(5);
+    uint8_t boot_count = get_boot_count_from_nvs();
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
     ESP_LOGI(TAG, "erase_last_app");
@@ -798,7 +804,9 @@ TEST_CASE_MULTIPLE_STAGES("Test erase_last_boot_app_partition. factory, OTA1, OT
 
 static void test_flow6(void)
 {
+    uint8_t boot_count = get_boot_count_from_nvs();
     boot_count++;
+    set_boot_count_in_nvs(boot_count);
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
     switch (boot_count) {
@@ -847,4 +855,3 @@ TEST_CASE("Test bootloader_common_get_sha256_of_partition returns ESP_ERR_IMAGE_
     TEST_ESP_ERR(ESP_ERR_IMAGE_INVALID, bootloader_common_get_sha256_of_partition(other_app->address, other_app->size, other_app->type, sha_256_other_app));
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha_256_cur_app, sha_256_other_app, sizeof(sha_256_cur_app), "must be the same");
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
