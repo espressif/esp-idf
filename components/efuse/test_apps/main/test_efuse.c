@@ -20,7 +20,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "test_utils.h"
 #include "sdkconfig.h"
 #include "esp_rom_efuse.h"
 #include "bootloader_common.h"
@@ -28,6 +27,8 @@
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define MAC_FACTORY_HAS_CRC 1
 #endif
+
+#define TASK_PRIORITY (5)
 
 __attribute__((unused)) static const char* TAG = "efuse_test";
 
@@ -707,8 +708,8 @@ TEST_CASE("Batch mode is thread-safe", "[efuse]")
     sema = xSemaphoreCreateBinary();
 
     printf("\n");
-    xTaskCreatePinnedToCore(task1, "task1", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
-    xTaskCreatePinnedToCore(task2, "task2", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    xTaskCreatePinnedToCore(task1, "task1", 3072, NULL, TASK_PRIORITY - 1, NULL, 0);
+    xTaskCreatePinnedToCore(task2, "task2", 3072, NULL, TASK_PRIORITY - 1, NULL, 1);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     xSemaphoreTake(sema, portMAX_DELAY);
 
@@ -716,8 +717,8 @@ TEST_CASE("Batch mode is thread-safe", "[efuse]")
     esp_efuse_utility_erase_virt_blocks();
 
     printf("\n");
-    xTaskCreatePinnedToCore(task1, "task1", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
-    xTaskCreatePinnedToCore(task3, "task3", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    xTaskCreatePinnedToCore(task1, "task1", 3072, NULL, TASK_PRIORITY - 1, NULL, 0);
+    xTaskCreatePinnedToCore(task3, "task3", 3072, NULL, TASK_PRIORITY - 1, NULL, 1);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     xSemaphoreTake(sema, portMAX_DELAY);
 
@@ -810,7 +811,7 @@ TEST_CASE("Check a case when ESP_ERR_DAMAGED_READING occurs during reading efuse
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, &mac, sizeof(mac) * 8));
     ESP_LOGI(TAG, "read MAC address: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-    xTaskCreatePinnedToCore(reset_task, "reset_task", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    xTaskCreatePinnedToCore(reset_task, "reset_task", 3072, NULL, TASK_PRIORITY - 1, NULL, 1);
 
     uint8_t new_mac[6];
     for (int i = 0; i < 1000; ++i) {

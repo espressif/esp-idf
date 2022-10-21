@@ -160,16 +160,16 @@ TEST_CASE("Test Coding Scheme for efuse manager", "[efuse]")
         esp_efuse_utility_debug_dump_blocks();
         printf("Data from encoded\n");
         for (int j = 0; j < 8; ++j) {
-            printf("0x%08x ", encoded[j]);
+            printf("0x%08lx ", encoded[j]);
         }
         printf("\nData from w_data_after_coding\n");
         for (int j = 0; j < 8; ++j) {
-            printf("0x%08x ", w_data_after_coding[j]);
+            printf("0x%08lx ", w_data_after_coding[j]);
         }
 
         printf("\nData from buf\n");
         for (int j = 0; j < 8; ++j) {
-            printf("0x%08x ", *((uint32_t*)buf + j));
+            printf("0x%08lx ", *((uint32_t*)buf + j));
         }
         printf("\n");
 #endif
