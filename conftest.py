@@ -34,6 +34,12 @@ from pytest_embedded.utils import find_by_suffix
 from pytest_embedded_idf.dut import IdfDut
 
 try:
+    from tools.ci.idf_unity_tester import CaseTester
+except ImportError:
+    sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci'))
+    from idf_unity_tester import CaseTester
+
+try:
     import common_test_methods  # noqa: F401
 except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages'))
@@ -116,6 +122,11 @@ def log_minimum_free_heap_size(dut: IdfDut, config: str) -> Callable[..., None]:
         )
 
     return real_func
+
+
+@pytest.fixture
+def case_tester(dut: IdfDut, **kwargs):      # type: ignore
+    yield CaseTester(dut, **kwargs)
 
 
 @pytest.fixture
