@@ -522,7 +522,7 @@ esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 
 #if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
     if (cfg->cert_select_cb != NULL) {
-        ESP_LOGI(TAG, "Initializing server side certificate selection callback");
+        ESP_LOGI(TAG, "Initializing server side cert selection cb");
         mbedtls_ssl_conf_cert_cb(&tls->conf, cfg->cert_select_cb);
     }
 #endif
@@ -580,9 +580,10 @@ esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
     } else {
 #if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
         if (cfg->cert_select_cb == NULL) {
-            ESP_LOGE(TAG, "Missing server certificate and/or key and no certificate selection callback is defined");
+            ESP_LOGE(TAG, "No cert select cb is defined");
         } else {
-            ESP_LOGD(TAG, "Missing server certificate and/or key, but certificate selection callback is defined. Callback MUST ALWAYS call mbedtls_ssl_set_hs_own_cert, or the handshake will abort!");
+            /* At this point Callback MUST ALWAYS call mbedtls_ssl_set_hs_own_cert, or the handshake will abort! */
+            ESP_LOGD(TAG, "Missing server cert and/or key, but cert selection cb is defined.");
             return ESP_OK;
         }
 #else
