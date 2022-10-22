@@ -369,16 +369,6 @@
 #define SOC_PM_SUPPORT_RTC_FAST_MEM_PD            (1)
 #define SOC_PM_SUPPORT_RTC_SLOW_MEM_PD            (1)
 
-/* ---------------------------- Compatibility ------------------------------- */
-#define SOC_CAN_SUPPORTED                   SOC_TWAI_SUPPORTED
-#define CAN_BRP_MIN                         SOC_TWAI_BRP_MIN
-#define CAN_BRP_MAX                         SOC_TWAI_BRP_MAX
-#define CAN_SUPPORT_MULTI_ADDRESS_LAYOUT    SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT
-#if SOC_CAPS_ECO_VER >= 2
-#  define CAN_BRP_DIV_SUPPORTED             SOC_TWAI_BRP_DIV_SUPPORTED
-#  define CAN_BRP_DIV_THRESH                SOC_TWAI_BRP_DIV_THRESH
-#endif
-
 /*-------------------------- SDMMC CAPS -----------------------------------------*/
 
 /* On ESP32, clock/cmd/data pins use IO MUX.
