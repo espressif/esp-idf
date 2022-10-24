@@ -435,6 +435,7 @@ build_template_app:
     name: $CI_DOCKER_REGISTRY/sonarqube-scanner:2
   before_script:
     - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
     - export PYTHONPATH="$CI_PROJECT_DIR/tools:$CI_PROJECT_DIR/tools/ci/python_packages:$PYTHONPATH"
     - fetch_submodules
     # Exclude the submodules, all paths ends with /**
