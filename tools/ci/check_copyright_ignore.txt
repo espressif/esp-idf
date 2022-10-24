@@ -1104,7 +1104,6 @@ components/soc/esp32s3/include/soc/extmem_struct.h
 components/soc/esp32s3/include/soc/fe_reg.h
 components/soc/esp32s3/include/soc/gpio_pins.h
 components/soc/esp32s3/include/soc/gpio_reg.h
-components/soc/esp32s3/include/soc/gpio_sig_map.h
 components/soc/esp32s3/include/soc/hinf_reg.h
 components/soc/esp32s3/include/soc/hinf_struct.h
 components/soc/esp32s3/include/soc/host_reg.h

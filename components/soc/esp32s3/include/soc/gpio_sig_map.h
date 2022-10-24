@@ -1,16 +1,8 @@
-// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_GPIO_SIG_MAP_H_
 #define _SOC_GPIO_SIG_MAP_H_
 
@@ -113,11 +105,11 @@
 #define BB_DIAG14_IDX                 49
 #define GPIO_BT_PRIORITY_IDX          50
 #define BB_DIAG15_IDX                 50
-#define I2S0I_SD1_IN_IDX              51
+#define I2S0I_SD1_IN_IDX              51        // Only used in I2S PDM RX mode
 #define BB_DIAG16_IDX                 51
-#define I2S0I_SD2_IN_IDX              52
+#define I2S0I_SD2_IN_IDX              52        // Only used in I2S PDM RX mode
 #define BB_DIAG17_IDX                 52
-#define I2S0I_SD3_IN_IDX              53
+#define I2S0I_SD3_IN_IDX              53        // Only used in I2S PDM RX mode
 #define BB_DIAG18_IDX                 53
 #define CORE1_GPIO_IN7_IDX            54
 #define CORE1_GPIO_OUT7_IDX           54
@@ -232,7 +224,7 @@
 #define SUBSPICS1_OUT_IDX             125
 #define FSPIDQS_OUT_IDX               126
 #define SPI3_CS2_OUT_IDX              127
-#define I2S0O_SD1_OUT_IDX             128
+#define I2S0O_SD1_OUT_IDX             128       // Only used in I2S PDM TX mode
 #define CORE1_GPIO_IN0_IDX            129
 #define CORE1_GPIO_OUT0_IDX           129
 #define CORE1_GPIO_IN1_IDX            130

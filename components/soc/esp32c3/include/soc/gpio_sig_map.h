@@ -92,7 +92,7 @@
 #define GPIO_SD1_OUT_IDX              56
 #define GPIO_SD2_OUT_IDX              57
 #define GPIO_SD3_OUT_IDX              58
-#define I2SO_SD1_OUT_IDX              59
+#define I2SO_SD1_OUT_IDX              59        // Only used in I2S PDM TX mode
 #define FSPICLK_IN_IDX                63
 #define FSPICLK_OUT_IDX               63
 #define FSPIQ_IN_IDX                  64

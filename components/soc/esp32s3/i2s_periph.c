@@ -24,9 +24,12 @@ const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
         .s_tx_ws_sig  = I2S0O_WS_IN_IDX,
         .s_rx_ws_sig  = I2S0I_WS_IN_IDX,
 
-        .data_out_sig = I2S0O_SD_OUT_IDX,
-        .data_out1_sig = I2S0O_SD1_OUT_IDX,
-        .data_in_sig  = I2S0I_SD_IN_IDX,
+        .data_out_sigs[0] = I2S0O_SD_OUT_IDX,
+        .data_out_sigs[1] = I2S0O_SD1_OUT_IDX,
+        .data_in_sigs[0]  = I2S0I_SD_IN_IDX,
+        .data_in_sigs[1]  = I2S0I_SD1_IN_IDX,
+        .data_in_sigs[2]  = I2S0I_SD2_IN_IDX,
+        .data_in_sigs[3]  = I2S0I_SD3_IN_IDX,
 
         .irq          = -1,
         .module       = PERIPH_I2S0_MODULE,
@@ -44,9 +47,12 @@ const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
         .s_tx_ws_sig  = I2S1O_WS_IN_IDX,
         .s_rx_ws_sig  = I2S1I_WS_IN_IDX,
 
-        .data_out_sig = I2S1O_SD_OUT_IDX,
-        .data_out1_sig = -1,
-        .data_in_sig  = I2S1I_SD_IN_IDX,
+        .data_out_sigs[0] = I2S1O_SD_OUT_IDX,
+        .data_out_sigs[1] = -1,
+        .data_in_sigs[0]  = I2S1I_SD_IN_IDX,
+        .data_in_sigs[1]  = -1,
+        .data_in_sigs[2]  = -1,
+        .data_in_sigs[3]  = -1,
 
         .irq          = -1,
         .module       = PERIPH_I2S1_MODULE,

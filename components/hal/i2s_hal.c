@@ -145,7 +145,7 @@ void i2s_hal_pdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_tx_force_enable_fifo_mod(hal->dev, true);
     i2s_ll_tx_set_sample_bit(hal->dev, slot_bit_width, slot_cfg->data_bit_width);
     i2s_ll_tx_enable_mono_mode(hal->dev, is_mono);
-    i2s_ll_tx_select_pdm_slot(hal->dev, slot_cfg->pdm_tx.slot_mask, is_mono);
+    i2s_ll_tx_select_pdm_slot(hal->dev, slot_cfg->pdm_tx.slot_mask & I2S_STD_SLOT_BOTH, is_mono);
     i2s_ll_tx_enable_msb_right(hal->dev, false);
     i2s_ll_tx_enable_right_first(hal->dev, false);
 #elif SOC_I2S_HW_VERSION_2
@@ -202,10 +202,15 @@ void i2s_hal_pdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
 #elif SOC_I2S_HW_VERSION_2
     i2s_ll_tx_set_half_sample_bit(hal->dev, 16);
     i2s_ll_rx_enable_mono_mode(hal->dev, false);
+#if SOC_I2S_PDM_MAX_RX_LINES > 1
+    uint32_t slot_mask = (slot_cfg->slot_mode == I2S_SLOT_MODE_STEREO && slot_cfg->pdm_rx.slot_mask <= I2S_PDM_SLOT_BOTH) ?
+                          I2S_PDM_SLOT_BOTH : slot_cfg->pdm_rx.slot_mask;
+#else
     /* Set the channel mask to enable corresponding slots, always enable two slots for stereo mode */
-    i2s_ll_rx_set_active_chan_mask(hal->dev, slot_cfg->slot_mode == I2S_SLOT_MODE_STEREO ?
-                                             I2S_PDM_SLOT_BOTH : slot_cfg->pdm_rx.slot_mask);
-#endif
+    uint32_t slot_mask = slot_cfg->slot_mode == I2S_SLOT_MODE_STEREO ? I2S_PDM_SLOT_BOTH : slot_cfg->pdm_rx.slot_mask;
+#endif  // SOC_I2S_SUPPORTS_PDM_RX > 1
+    i2s_ll_rx_set_active_chan_mask(hal->dev, slot_mask);
+#endif  // SOC_I2S_SUPPORTS_PDM_RX
 }
 
 void i2s_hal_pdm_enable_rx_channel(i2s_hal_context_t *hal)
