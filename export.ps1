@@ -50,6 +50,7 @@ foreach ($pair  in $envars_array) {
 # Allow calling some IDF python tools without specifying the full path
 function idf.py { &python "$IDF_PATH\tools\idf.py" $args }
 function espefuse.py { &python "$IDF_PATH\components\esptool_py\esptool\espefuse.py" $args }
+function espsecure.py { &python "$IDF_PATH\components\esptool_py\esptool\espsecure.py" $args }
 function otatool.py { &python "$IDF_PATH\components\app_update\otatool.py" $args }
 function parttool.py { &python "$IDF_PATH\components\partition_table\parttool.py" $args }
 
