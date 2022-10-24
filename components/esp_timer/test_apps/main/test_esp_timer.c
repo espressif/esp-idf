@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/param.h>
@@ -150,7 +151,7 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
         vTaskDelay(delays_ms[i] * 2 / portTICK_PERIOD_MS);
         TEST_ASSERT(t_end != 0);
         int32_t ms_diff = (t_end - t_start) / 1000;
-        printf("%d %d\n", delays_ms[i], ms_diff);
+        printf("%d %"PRIi32"\n", delays_ms[i], ms_diff);
 
         TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, delays_ms[i], ms_diff);
     }
@@ -177,7 +178,7 @@ static void test_periodic_correct_delays_timer_func(void* arg)
     test_periodic_correct_delays_args_t* p_args = (test_periodic_correct_delays_args_t*) arg;
     int64_t t_end = ref_clock_get();
     int32_t ms_diff = (t_end - p_args->t_start) / 1000;
-    printf("timer #%d %dms\n", p_args->cur_interval, ms_diff);
+    printf("timer #%d %"PRIi32"ms\n", p_args->cur_interval, ms_diff);
     p_args->intervals[p_args->cur_interval++] = ms_diff;
     // Deliberately make timer handler run longer.
     // We check that this doesn't affect the result.
