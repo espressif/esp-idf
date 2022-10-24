@@ -329,7 +329,7 @@ esp_err_t esp_wifi_restore(void);
   *
   * @attention 1. This API only impact WIFI_MODE_STA or WIFI_MODE_APSTA mode
   * @attention 2. If the ESP32 is connected to an AP, call esp_wifi_disconnect to disconnect.
-  * @attention 3. The scanning triggered by esp_wifi_start_scan() will not be effective until connection between ESP32 and the AP is established.
+  * @attention 3. The scanning triggered by esp_wifi_scan_start() will not be effective until connection between ESP32 and the AP is established.
   *               If ESP32 is scanning and connecting at the same time, ESP32 will abort scanning and return a warning message and error
   *               number ESP_ERR_WIFI_STATE.
   *               If you want to do reconnection after ESP32 received disconnect event, remember to add the maximum retry time, otherwise the called	
@@ -587,20 +587,21 @@ esp_err_t esp_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second);
 /**
   * @brief     configure country info
   *
-  * @attention 1. The default country is {.cc="CN", .schan=1, .nchan=13, policy=WIFI_COUNTRY_POLICY_AUTO}
-  * @attention 2. When the country policy is WIFI_COUNTRY_POLICY_AUTO, the country info of the AP to which
-  *               the station is connected is used. E.g. if the configured country info is {.cc="USA", .schan=1, .nchan=11}
+  * @attention 1. The default country is CHINA {.cc="CN", .schan=1, .nchan=13, .policy=WIFI_COUNTRY_POLICY_AUTO}.
+  * @attention 2. The third octect of country code string is one of the following: ' ', 'O', 'I', 'X', otherwise it is considered as ' '.
+  * @attention 3. When the country policy is WIFI_COUNTRY_POLICY_AUTO, the country info of the AP to which
+  *               the station is connected is used. E.g. if the configured country info is {.cc="US", .schan=1, .nchan=11}
   *               and the country info of the AP to which the station is connected is {.cc="JP", .schan=1, .nchan=14}
   *               then the country info that will be used is {.cc="JP", .schan=1, .nchan=14}. If the station disconnected
-  *               from the AP the country info is set back back to the country info of the station automatically,
+  *               from the AP the country info is set back to the country info of the station automatically,
   *               {.cc="US", .schan=1, .nchan=11} in the example.
-  * @attention 3. When the country policy is WIFI_COUNTRY_POLICY_MANUAL, always use the configured country info.
-  * @attention 4. When the country info is changed because of configuration or because the station connects to a different
-  *               external AP, the country IE in probe response/beacon of the soft-AP is changed also.
-  * @attention 5. The country configuration is stored into flash.
-  * @attention 6. This API doesn't validate the per-country rules, it's up to the user to fill in all fields according to 
+  * @attention 4. When the country policy is WIFI_COUNTRY_POLICY_MANUAL, then the configured country info is used always.
+  * @attention 5. When the country info is changed because of configuration or because the station connects to a different
+  *               external AP, the country IE in probe response/beacon of the soft-AP is also changed.
+  * @attention 6. The country configuration is stored into flash.
+  * @attention 7. This API doesn't validate the per-country rules, it's up to the user to fill in all fields according to
   *               local regulations.
-  * @attention 7. When this API is called, the PHY init data will switch to the PHY init data type corresponding to the
+  * @attention 8. When this API is called, the PHY init data will switch to the PHY init data type corresponding to the
   *               country info.
   *
   * @param     country   the configured country info
@@ -898,7 +899,7 @@ esp_err_t esp_wifi_set_vendor_ie_cb(esp_vendor_ie_cb_t cb, void *ctx);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   *    - ESP_ERR_WIFI_ARG: invalid argument, e.g. parameter is out of range
   */
 esp_err_t esp_wifi_set_max_tx_power(int8_t power);
@@ -911,7 +912,7 @@ esp_err_t esp_wifi_set_max_tx_power(int8_t power);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   *    - ESP_ERR_WIFI_ARG: invalid argument
   */
 esp_err_t esp_wifi_get_max_tx_power(int8_t *power);
@@ -1007,7 +1008,7 @@ esp_err_t esp_wifi_set_csi_rx_cb(wifi_csi_cb_t cb, void *ctx);
   * return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start or promiscuous mode is not enabled
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start or promiscuous mode is not enabled
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_set_csi_config(const wifi_csi_config_t *config);
@@ -1020,7 +1021,7 @@ esp_err_t esp_wifi_set_csi_config(const wifi_csi_config_t *config);
   * return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start or promiscuous mode is not enabled
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start or promiscuous mode is not enabled
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_set_csi(bool en);
