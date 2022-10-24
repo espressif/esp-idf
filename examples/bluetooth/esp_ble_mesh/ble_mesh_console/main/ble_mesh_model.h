@@ -16,8 +16,9 @@
 #define _BLE_MESH_CFG_SRV_MODEL_H_
 
 #include "esp_ble_mesh_defs.h"
+#if (CONFIG_BLE_MESH_CFG_CLI)
 #include "esp_ble_mesh_config_model_api.h"
-
+#endif
 #if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
 #include "esp_ble_mesh_generic_model_api.h"
 #endif //CONFIG_BLE_MESH_GENERIC_ONOFF_CLI
@@ -37,42 +38,26 @@ extern esp_ble_mesh_prov_t prov;
 
 extern esp_ble_mesh_model_pub_t vendor_model_pub_config;
 
-// configure server module
+// Configuration Server model
 extern esp_ble_mesh_cfg_srv_t cfg_srv;
-
 extern esp_ble_mesh_model_t config_server_models[];
-
 extern esp_ble_mesh_elem_t config_server_elements[];
-
 extern esp_ble_mesh_comp_t config_server_comp;
 
-// config client model
-esp_ble_mesh_client_t cfg_cli;
+// Configuration Client model
+extern esp_ble_mesh_client_t cfg_cli;
 extern esp_ble_mesh_model_t config_client_models[];
-
 extern esp_ble_mesh_elem_t config_client_elements[];
-
 extern esp_ble_mesh_comp_t config_client_comp;
 
-// configure special module
+// Generic OnOff Server model
+extern esp_ble_mesh_gen_onoff_srv_t onoff_server;
 extern esp_ble_mesh_model_op_t gen_onoff_srv_model_op_config[];
 
-extern esp_ble_mesh_model_t gen_onoff_srv_models[];
-
-extern esp_ble_mesh_elem_t gen_onoff_srv_elements[];
-
-extern esp_ble_mesh_comp_t gen_onoff_srv_comp;
-
-// config generic onoff client
+// Generic OnOff Client model
 #if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
-
 extern esp_ble_mesh_client_t gen_onoff_cli;
-
 extern esp_ble_mesh_model_t gen_onoff_cli_models[];
-
-extern esp_ble_mesh_elem_t gen_onoff_cli_elements[];
-
-extern esp_ble_mesh_comp_t gen_onoff_cli_comp;
 #endif //CONFIG_BLE_MESH_GENERIC_ONOFF_CLI
 
 //CONFIG VENDOR MODEL TEST PERFORMANCE
@@ -85,23 +70,17 @@ extern esp_ble_mesh_comp_t gen_onoff_cli_comp;
 #define ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_STATUS              ESP_BLE_MESH_MODEL_OP_3(0x04, CID_ESP)
 
 extern esp_ble_mesh_client_t test_perf_cli;
-
 extern esp_ble_mesh_model_op_t test_perf_srv_op[];
-
 extern esp_ble_mesh_model_op_t test_perf_cli_op[];
-
 extern esp_ble_mesh_model_t config_models[];
 
-extern esp_ble_mesh_model_t test_perf_cli_models[];
+#if (CONFIG_BLE_MESH_CFG_CLI)
+void ble_mesh_configuration_client_model_cb(esp_ble_mesh_cfg_client_cb_event_t event,
+        esp_ble_mesh_cfg_client_cb_param_t *param);
+#endif
 
-extern esp_ble_mesh_elem_t test_perf_cli_elements[];
-
-extern esp_ble_mesh_comp_t test_perf_cli_comp;
-
-extern esp_ble_mesh_model_t test_perf_srv_models[];
-
-extern esp_ble_mesh_elem_t test_perf_srv_elements[];
-
-extern esp_ble_mesh_comp_t test_perf_srv_comp;
-
+#if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
+void ble_mesh_generic_onoff_client_model_cb(esp_ble_mesh_generic_client_cb_event_t event,
+        esp_ble_mesh_generic_client_cb_param_t *param);
+#endif
 #endif //_BLE_MESH_CFG_SRV_MODEL_H_
