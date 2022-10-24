@@ -158,6 +158,8 @@ deploy_test_result:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"
   before_script:
+    - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
