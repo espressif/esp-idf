@@ -12,6 +12,7 @@
 #
 # This is an experimental feature, and if you found any bug or have any question, please report to
 # https://github.com/espressif/pytest-embedded/issues
+
 import logging
 import os
 import sys
@@ -185,10 +186,9 @@ def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> st
         )
 
     recommend_place = check_dirs[0]
-    logging.error(
+    raise ValueError(
         f'no build dir valid. Please build the binary via "idf.py -B {recommend_place} build" and run pytest again'
     )
-    sys.exit(1)
 
 
 @pytest.fixture(autouse=True)
@@ -369,9 +369,6 @@ class IdfPytestEmbedded:
     def pytest_runtest_makereport(
         self, item: Function, call: CallInfo[None]
     ) -> Optional[TestReport]:
-        if call.when == 'setup':
-            return None
-
         report = TestReport.from_item_and_call(item, call)
         if report.outcome == 'failed':
             test_case_name = item.funcargs.get('test_case_name', '')
