@@ -40,6 +40,7 @@ void ble_mesh_register_server(void)
 int ble_mesh_module_publish_message(int argc, char **argv)
 {
     esp_err_t err;
+    esp_ble_mesh_elem_t *element = NULL;
     esp_ble_mesh_model_t *model = NULL;
     uint8_t *data = NULL;
     uint8_t device_role = ROLE_NODE;
@@ -57,7 +58,19 @@ int ble_mesh_module_publish_message(int argc, char **argv)
     get_value_string((char *)msg_publish.data->sval[0], (char *) data);
 
     arg_int_to_value(msg_publish.role, device_role, "device role");
-    model = ble_mesh_get_model(msg_publish.model->ival[0]);
+
+    element = esp_ble_mesh_find_element(esp_ble_mesh_get_primary_element_address());
+    if (!element) {
+        ESP_LOGE(TAG, "Element 0x%04x not exists", esp_ble_mesh_get_primary_element_address());
+        return ESP_FAIL;
+    }
+
+    model = esp_ble_mesh_find_sig_model(element, msg_publish.model->ival[0]);
+    if (!model) {
+        ESP_LOGE(TAG, "MsgPublish：Load Model Fail");
+        return ESP_FAIL;
+    }
+
     if (msg_publish.role->count != 0) {
         device_role = msg_publish.role->ival[0];
     }
