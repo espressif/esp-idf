@@ -21,9 +21,9 @@ ADC
 ADC Oneshot & Continuous Mode drivers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ADC oneshot mode driver has been redesigned. 
+The ADC oneshot mode driver has been redesigned.
 
-- The new driver is in ``esp_adc`` component and the include path is ``esp_adc/adc_oneshot.h``. 
+- The new driver is in ``esp_adc`` component and the include path is ``esp_adc/adc_oneshot.h``.
 - The legacy driver is still available in the previous include path ``driver/adc.h``.
 
 The ADC continuous mode driver has been moved from ``driver`` component to ``esp_adc`` component.
@@ -56,8 +56,8 @@ API Changes
 
 - The ADC power management APIs ``adc_power_acquire`` and ``adc_power_release`` have made private and moved to ``esp_private/adc_share_hw_ctrl.h``.
 
-    - The two APIs were previously made public due to a HW errata workaround. 
-    - Now, ADC power management is completely handled internally by drivers. 
+    - The two APIs were previously made public due to a HW errata workaround.
+    - Now, ADC power management is completely handled internally by drivers.
     - Users who still require this API can include ``esp_private/adc_share_hw_ctrl.h`` to continue using these functions.
 
 - ``driver/adc2_wifi_private.h`` has been moved to ``esp_private/adc_share_hw_ctrl.h``.
@@ -87,11 +87,11 @@ GPIO
     Sigma-Delta Modulator
     ---------------------
 
-    The Sigma-Delta Modulator driver has been redesigned into :doc:`SDM <../../api-reference/peripherals/sdm>`. 
-    
-    - The new driver implements a factory pattern, where the SDM channels are managed in a pool internally, thus users don't have to fix a SDM channel to a GPIO manually. 
-    - All SDM channels can be allocated dynamically. 
-    
+    The Sigma-Delta Modulator driver has been redesigned into :doc:`SDM <../../api-reference/peripherals/sdm>`.
+
+    - The new driver implements a factory pattern, where the SDM channels are managed in a pool internally, thus users don't have to fix a SDM channel to a GPIO manually.
+    - All SDM channels can be allocated dynamically.
+
     Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/sigmadelta.h``. However, by default, including ``driver/sigmadelta.h`` will trigger the build warning below. The warning can be suppressed by Kconfig option :ref:`CONFIG_SDM_SUPPRESS_DEPRECATE_WARN`.
 
     .. code-block:: text
@@ -117,7 +117,7 @@ GPIO
 Timer Group Driver
 ------------------
 
-Timer Group driver has been redesigned into :doc:`GPTimer <../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer. 
+Timer Group driver has been redesigned into :doc:`GPTimer <../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer.
 
 Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` will trigger the build warning below. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
 
@@ -149,8 +149,8 @@ Breaking Changes in Usage
 UART
 ----
 
-.. list-table:: 
-    :width: 700 px 
+.. list-table::
+    :width: 700 px
     :header-rows: 1
 
     * - Removed/Deprecated items
@@ -162,18 +162,18 @@ UART
     * - ``uart_isr_free()``
       - None
       - UART interrupt handling is implemented by driver itself.
-    * - ``use_ref_tick`` in :cpp:type:`uart_config_t` 
+    * - ``use_ref_tick`` in :cpp:type:`uart_config_t`
       - :cpp:member:`uart_config_t::source_clk`
-      - Select the clock source. 
+      - Select the clock source.
     * - ``uart_enable_pattern_det_intr()``
-      - :cpp:func:`uart_enable_pattern_det_baud_intr` 
-      - Enable pattern detection interrupt.  
+      - :cpp:func:`uart_enable_pattern_det_baud_intr`
+      - Enable pattern detection interrupt.
 
 I2C
 ---
 
 .. list-table::
-    :width: 700 px 
+    :width: 700 px
     :header-rows: 1
 
     * - Removed/Deprecated items
@@ -182,7 +182,7 @@ I2C
     * - ``i2c_isr_register()``
       - None
       - I2C interrupt handling is implemented by driver itself.
-    * - ``i2c_isr_register()`` 
+    * - ``i2c_isr_register()``
       - None
       - I2C interrupt handling is implemented by driver itself.
     * - ``i2c_opmode_t``
@@ -192,15 +192,15 @@ I2C
 SPI
 ---
 
-.. list-table:: 
-    :width: 700 px 
+.. list-table::
+    :width: 700 px
     :header-rows: 1
 
     * - Removed/Deprecated items
       - Replacement
       - Remarks
     * - ``spi_cal_clock()``
-      - :cpp:func:`spi_get_actual_clock` 
+      - :cpp:func:`spi_get_actual_clock`
       - Get SPI real working frequency.
 
 - The internal header file ``spi_common_internal.h`` has been moved to ``esp_private/spi_common_internal.h``.
@@ -210,22 +210,22 @@ SPI
     SDMMC
     -----
 
-    .. list-table:: 
-        :width: 700 px 
+    .. list-table::
+        :width: 700 px
         :header-rows: 1
 
         * - Removed/Deprecated items
           - Replacement
           - Remarks
         * - ``sdmmc_host_pullup_en()``
-          - set ``SDMMC_SLOT_FLAG_INTERNAL_PULLUP`` flag in :cpp:member:`sdmmc_slot_config_t::flags` 
+          - set ``SDMMC_SLOT_FLAG_INTERNAL_PULLUP`` flag in :cpp:member:`sdmmc_slot_config_t::flags`
           - Enable internal pull up.
 
 LEDC
 -----
 
-.. list-table:: 
-    :width: 700 px 
+.. list-table::
+    :width: 700 px
     :header-rows: 1
 
     * - Removed/Deprecated items
@@ -233,15 +233,15 @@ LEDC
       - Remarks
     * - ``bit_num`` in :cpp:type:`ledc_timer_config_t`
       - :cpp:member:`ledc_timer_config_t::duty_resolution`
-      - Set resolution of the duty cycle. 
+      - Set resolution of the duty cycle.
 
 .. only:: SOC_PCNT_SUPPORTED
 
     Pulse Counter Driver
     --------------------
 
-    Pulse counter driver has been redesigned (see :doc:`PCNT <../../api-reference/peripherals/pcnt>`), which aims to unify and simplify the usage of PCNT peripheral. 
-    
+    Pulse counter driver has been redesigned (see :doc:`PCNT <../../api-reference/peripherals/pcnt>`), which aims to unify and simplify the usage of PCNT peripheral.
+
     Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/pcnt.h``. However, including ``driver/pcnt.h`` will trigger the build warning below by default. The warning can be suppressed by the Kconfig option :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN`.
 
     .. code-block:: text
@@ -261,7 +261,7 @@ LEDC
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - Previously, the PCNT unit configuration and channel configuration were combined into a single function: ``pcnt_unit_config``. They are now split into the two factory APIs: :cpp:func:`pcnt_new_unit` and :cpp:func:`pcnt_new_channel` respectively.
-    
+
         - Only the count range is necessary for initializing a PCNT unit. GPIO number assignment has been moved to :cpp:func:`pcnt_new_channel`.
         - High/Low control mode and positive/negative edge count mode are set by stand-alone functions: :cpp:func:`pcnt_channel_set_edge_action` and :cpp:func:`pcnt_channel_set_level_action`.
 
@@ -301,8 +301,8 @@ LEDC
     RMT Driver
     ----------
 
-    RMT driver has been redesigned (see :doc:`RMT transceiver <../../api-reference/peripherals/rmt>`), which aims to unify and extend the usage of RMT peripheral. 
-    
+    RMT driver has been redesigned (see :doc:`RMT transceiver <../../api-reference/peripherals/rmt>`), which aims to unify and extend the usage of RMT peripheral.
+
     Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/rmt.h``. However, including ``driver/rmt.h`` will trigger the build warning below by default. The warning can be suppressed by the Kconfig option :ref:`CONFIG_RMT_SUPPRESS_DEPRECATE_WARN`.
 
     .. code-block:: text
@@ -376,10 +376,10 @@ LCD
     MCPWM
     -----
 
-    MCPWM driver was redesigned (see :doc:`MCPWM <../../api-reference/peripherals/mcpwm>`), meanwhile, the legacy driver is deprecated. 
-    
-    The new driver's aim is to make each MCPWM submodule independent to each other, and give the freedom of resource connection back to users. 
-    
+    MCPWM driver was redesigned (see :doc:`MCPWM <../../api-reference/peripherals/mcpwm>`), meanwhile, the legacy driver is deprecated.
+
+    The new driver's aim is to make each MCPWM submodule independent to each other, and give the freedom of resource connection back to users.
+
     Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/mcpwm.h``. However, using legacy driver will rigger the build warning below by default. This warning can be suppressed by the Kconfig option :ref:`CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN`.
 
     .. code-block:: text
@@ -454,10 +454,10 @@ LCD
     I2S driver
     ----------
 
-    The I2S driver has been redesigned (see :doc:`I2S Driver <../../api-reference/peripherals/i2s>`), which aims to rectify the shortcomings of the driver that were exposed when supporting all the new features of ESP32-C3 & ESP32-S3. The new driver's APIs are available by including corresponding I2S mode's header files :component_file:`driver/include/driver/i2s_std.h`, :component_file:`driver/include/driver/i2s_pdm.h`, or :component_file:`driver/include/driver/i2s_tdm.h`. 
-    
-    Meanwhile, the old driver's APIs in :component_file:`driver/deprecated/driver/i2s.h` are still supported for backward compatibility. But there will be warnings if users keep using the old APIs in their projects, these warnings can be suppressed by the Kconfig option :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`. 
-    
+    The I2S driver has been redesigned (see :doc:`I2S Driver <../../api-reference/peripherals/i2s>`), which aims to rectify the shortcomings of the driver that were exposed when supporting all the new features of ESP32-C3 & ESP32-S3. The new driver's APIs are available by including corresponding I2S mode's header files :component_file:`driver/include/driver/i2s_std.h`, :component_file:`driver/include/driver/i2s_pdm.h`, or :component_file:`driver/include/driver/i2s_tdm.h`.
+
+    Meanwhile, the old driver's APIs in :component_file:`driver/deprecated/driver/i2s.h` are still supported for backward compatibility. But there will be warnings if users keep using the old APIs in their projects, these warnings can be suppressed by the Kconfig option :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`.
+
     Here is the general overview of the current I2S files:
 
     .. figure:: ../../../_static/diagrams/i2s/i2s_file_structure.png
@@ -499,7 +499,7 @@ LCD
     - Calling :cpp:func:`i2s_channel_reconfig_std_slot`, :cpp:func:`i2s_channel_reconfig_pdm_rx_slot`, :cpp:func:`i2s_channel_reconfig_pdm_tx_slot`, or :cpp:func:`i2s_channel_reconfig_tdm_slot` can change the slot configurations after initialization.
     - Calling :cpp:func:`i2s_channel_reconfig_std_clock`, :cpp:func:`i2s_channel_reconfig_pdm_rx_clock`, :cpp:func:`i2s_channel_reconfig_pdm_tx_clock`, or :cpp:func:`i2s_channel_reconfig_tdm_clock` can change the clock configurations after initialization.
     - Calling :cpp:func:`i2s_channel_reconfig_std_gpio`, :cpp:func:`i2s_channel_reconfig_pdm_rx_gpio`, :cpp:func:`i2s_channel_reconfig_pdm_tx_gpio`, or :cpp:func:`i2s_channel_reconfig_tdm_gpio` can change the GPIO configurations after initialization.
-        
+
     Misc
     """"
 
@@ -519,6 +519,13 @@ LCD
     6. (Optional) The slot, clock and GPIO configurations can be changed by corresponding 'reconfig' functions, but :cpp:func:`i2s_channel_disable` must be called before updating the configurations.
     7. Call :cpp:func:`i2s_channel_disable` to stop the hardware of I2S channel.
     8. Call :cpp:func:`i2s_del_channel` to delete and release the resources of the channel if it is not needed any more, but the channel must be disabled before deleting it.
+
+.. only:: SOC_TWAI_SUPPORTED
+
+    TWAI Driver
+    -----------
+
+    The deprecated ``CAN`` peripheral driver is removed. Please use ``TWAI`` driver instead (i.e. include ``driver/twai.h`` in your application).
 
 Register Access Macros
 ----------------------
