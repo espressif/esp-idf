@@ -298,6 +298,11 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN1_REG, hwcrypto_perip_clk);
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, hwcrypto_perip_clk);
 
+    /* Force clear backup dma reset signal. This is a fix to the backup dma
+     * implementation in the ROM, the reset signal was not cleared when the
+     * backup dma was started, which caused the backup dma operation to fail. */
+    CLEAR_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_PERI_BACKUP_RST);
+
     /* Disable WiFi/BT/SDIO clocks. */
     CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, wifi_bt_sdio_clk);
     SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
