@@ -175,10 +175,12 @@ class PartitionTable(list):
         for e in res:
             if e.offset is not None and e.offset < last_end:
                 if e == res[0]:
-                    raise InputError('CSV Error: First partition offset 0x%x overlaps end of partition table 0x%x'
-                                     % (e.offset, last_end))
+                    raise InputError('CSV Error at line %d: Partitions overlap. Partition sets offset 0x%x. '
+                                     'But partition table occupies the whole sector 0x%x. '
+                                     'Use a free offset 0x%x or higher.'
+                                     % (e.line_no, e.offset, offset_part_table, last_end))
                 else:
-                    raise InputError('CSV Error: Partitions overlap. Partition at line %d sets offset 0x%x. Previous partition ends 0x%x'
+                    raise InputError('CSV Error at line %d: Partitions overlap. Partition sets offset 0x%x. Previous partition ends 0x%x'
                                      % (e.line_no, e.offset, last_end))
             if e.offset is None:
                 pad_to = get_alignment_for_type(e.type)

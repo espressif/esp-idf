@@ -7,7 +7,8 @@ Overview
 
 A single {IDF_TARGET_NAME}'s flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) 0x8000 in the flash.
 
-Partition table length is 0xC00 bytes (maximum 95 partition table entries). An MD5 checksum, which is used for checking the integrity of the partition table, is appended after the table data.
+The partition table length is 0xC00 bytes, as we allow a maximum of 95 entries. An MD5 checksum, used for checking the integrity of the partition table at runtime, is appended after the table data. Thus, the partition table occupies an entire flash sector, which size is 0x1000 (4KB). As a result, any partition following it must be at least located at (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) + 0x1000.
+
 
 Each entry in the partition table has a name (label), type (app, data, or something else), subtype and the offset in flash where the partition is loaded.
 
@@ -138,6 +139,8 @@ A component can define a new partition subtype by setting the ``EXTRA_PARTITION_
 
 Offset & Size
 ~~~~~~~~~~~~~
+
+The offset represents the partition address in the SPI flash, which sector size is 0x1000 (4KB). Thus, the offset must be a multiple of 4KB.
 
 Partitions with blank offsets in the CSV file will start after the previous partition, or after the partition table in the case of the first partition.
 
