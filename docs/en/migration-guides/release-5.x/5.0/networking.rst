@@ -61,7 +61,7 @@ SPI-Ethernet Module Initialization
 
 The SPI-Ethernet Module initialization is now simplified. Previously, you had to manually allocate an SPI device using :cpp:func:`spi_bus_add_device` before instantiating the SPI-Ethernet MAC.
 
-Now, you no longer need to call :cpp:func:`spi_bus_add_device` as SPI devices are allocated internally. As a result, the :cpp:class:`eth_dm9051_config_t`, :cpp:class:`eth_w5500_config_t`, and :cpp:class:`eth_ksz8851snl_config_t` configuration structures are updated to include members for SPI device configuration (e.g., to allow fine tuning of SPI timing which may be dependent on PCB design). Likewise, the ``ETH_DM9051_DEFAULT_CONFIG``, ``ETH_W5500_DEFAULT_CONFIG``, and ``ETH_KSZ8851SNL_DEFAULT_CONFIG`` configuration initialization macros are updated to accept new input parameters. Refer to :doc:`Ethernet API Reference Guide<../../api-reference/network/esp_eth>` for an example of SPI-Ethernet Module initialization.
+Now, you no longer need to call :cpp:func:`spi_bus_add_device` as SPI devices are allocated internally. As a result, the :cpp:class:`eth_dm9051_config_t`, :cpp:class:`eth_w5500_config_t`, and :cpp:class:`eth_ksz8851snl_config_t` configuration structures are updated to include members for SPI device configuration (e.g., to allow fine tuning of SPI timing which may be dependent on PCB design). Likewise, the ``ETH_DM9051_DEFAULT_CONFIG``, ``ETH_W5500_DEFAULT_CONFIG``, and ``ETH_KSZ8851SNL_DEFAULT_CONFIG`` configuration initialization macros are updated to accept new input parameters. Refer to :doc:`Ethernet API Reference Guide<../../../api-reference/network/esp_eth>` for an example of SPI-Ethernet Module initialization.
 
 
 .. _tcpip-adapter:

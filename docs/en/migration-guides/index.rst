@@ -9,4 +9,5 @@ ESP-IDF 5.x Migration Guide
 .. toctree::
     :maxdepth: 1
 
-    release-5.x/index
+    release-5.x/5.0/index
+    release-5.x/5.1/index

@@ -33,7 +33,7 @@ BT_DOCS = ['api-guides/blufi.rst',
            'api-reference/bluetooth/esp_blufi.rst',
            'api-reference/bluetooth/index.rst',
            'api-reference/bluetooth/nimble/index.rst',
-           'migration-guides/release-5.x/bluetooth-low-energy.rst']
+           'migration-guides/release-5.x/5.0/bluetooth-low-energy.rst']
 
 BLE_MESH_DOCS = ['api-guides/esp-ble-mesh/ble-mesh-index.rst',
                  'api-guides/esp-ble-mesh/ble-mesh-feature-list.rst',
@@ -53,7 +53,7 @@ CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_hf_ag.rst',
                    'api-reference/bluetooth/esp_spp.rst',
                    'api-reference/bluetooth/esp_gap_bt.rst',
-                   'migration-guides/release-5.x/bluetooth-classic.rst']
+                   'migration-guides/release-5.x/5.0/bluetooth-classic.rst']
 
 WIFI_DOCS = ['api-guides/wifi.rst',
              'api-guides/wifi-security.rst',

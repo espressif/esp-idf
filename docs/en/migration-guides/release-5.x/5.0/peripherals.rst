@@ -87,7 +87,7 @@ GPIO
     Sigma-Delta Modulator
     ---------------------
 
-    The Sigma-Delta Modulator driver has been redesigned into :doc:`SDM <../../api-reference/peripherals/sdm>`.
+    The Sigma-Delta Modulator driver has been redesigned into :doc:`SDM <../../../api-reference/peripherals/sdm>`.
 
     - The new driver implements a factory pattern, where the SDM channels are managed in a pool internally, thus users don't have to fix a SDM channel to a GPIO manually.
     - All SDM channels can be allocated dynamically.
@@ -117,7 +117,7 @@ GPIO
 Timer Group Driver
 ------------------
 
-Timer Group driver has been redesigned into :doc:`GPTimer <../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer.
+Timer Group driver has been redesigned into :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer.
 
 Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` will trigger the build warning below. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
 
@@ -240,7 +240,7 @@ LEDC
     Pulse Counter Driver
     --------------------
 
-    Pulse counter driver has been redesigned (see :doc:`PCNT <../../api-reference/peripherals/pcnt>`), which aims to unify and simplify the usage of PCNT peripheral.
+    Pulse counter driver has been redesigned (see :doc:`PCNT <../../../api-reference/peripherals/pcnt>`), which aims to unify and simplify the usage of PCNT peripheral.
 
     Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/pcnt.h``. However, including ``driver/pcnt.h`` will trigger the build warning below by default. The warning can be suppressed by the Kconfig option :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN`.
 
@@ -294,14 +294,14 @@ LEDC
 
     Configuration contents has been changed. In the old version, users need to configure ``clk_div`` and ``dac_offset``. While in the new version, users only need to choose ``tsens_range``.
 
-    The process of using temperature sensor has been changed. In the old version, users can use ``config->start->read_celsius`` to get value. In the new version, users should install the temperature sensor driver firstly, by ``temperature_sensor_install`` and uninstall it when finished. For more information, please refer to :doc:`Temperature Sensor <../../api-reference/peripherals/temp_sensor>` .
+    The process of using temperature sensor has been changed. In the old version, users can use ``config->start->read_celsius`` to get value. In the new version, users should install the temperature sensor driver firstly, by ``temperature_sensor_install`` and uninstall it when finished. For more information, please refer to :doc:`Temperature Sensor <../../../api-reference/peripherals/temp_sensor>` .
 
 .. only:: SOC_RMT_SUPPORTED
 
     RMT Driver
     ----------
 
-    RMT driver has been redesigned (see :doc:`RMT transceiver <../../api-reference/peripherals/rmt>`), which aims to unify and extend the usage of RMT peripheral.
+    RMT driver has been redesigned (see :doc:`RMT transceiver <../../../api-reference/peripherals/rmt>`), which aims to unify and extend the usage of RMT peripheral.
 
     Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/rmt.h``. However, including ``driver/rmt.h`` will trigger the build warning below by default. The warning can be suppressed by the Kconfig option :ref:`CONFIG_RMT_SUPPRESS_DEPRECATE_WARN`.
 
@@ -376,7 +376,7 @@ LCD
     MCPWM
     -----
 
-    MCPWM driver was redesigned (see :doc:`MCPWM <../../api-reference/peripherals/mcpwm>`), meanwhile, the legacy driver is deprecated.
+    MCPWM driver was redesigned (see :doc:`MCPWM <../../../api-reference/peripherals/mcpwm>`), meanwhile, the legacy driver is deprecated.
 
     The new driver's aim is to make each MCPWM submodule independent to each other, and give the freedom of resource connection back to users.
 
@@ -454,13 +454,13 @@ LCD
     I2S driver
     ----------
 
-    The I2S driver has been redesigned (see :doc:`I2S Driver <../../api-reference/peripherals/i2s>`), which aims to rectify the shortcomings of the driver that were exposed when supporting all the new features of ESP32-C3 & ESP32-S3. The new driver's APIs are available by including corresponding I2S mode's header files :component_file:`driver/include/driver/i2s_std.h`, :component_file:`driver/include/driver/i2s_pdm.h`, or :component_file:`driver/include/driver/i2s_tdm.h`.
+    The I2S driver has been redesigned (see :doc:`I2S Driver <../../../api-reference/peripherals/i2s>`), which aims to rectify the shortcomings of the driver that were exposed when supporting all the new features of ESP32-C3 & ESP32-S3. The new driver's APIs are available by including corresponding I2S mode's header files :component_file:`driver/include/driver/i2s_std.h`, :component_file:`driver/include/driver/i2s_pdm.h`, or :component_file:`driver/include/driver/i2s_tdm.h`.
 
     Meanwhile, the old driver's APIs in :component_file:`driver/deprecated/driver/i2s.h` are still supported for backward compatibility. But there will be warnings if users keep using the old APIs in their projects, these warnings can be suppressed by the Kconfig option :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`.
 
     Here is the general overview of the current I2S files:
 
-    .. figure:: ../../../_static/diagrams/i2s/i2s_file_structure.png
+    .. figure:: ../../../../_static/diagrams/i2s/i2s_file_structure.png
         :align: center
         :alt: I2S File Structure
 

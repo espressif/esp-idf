@@ -18,13 +18,3 @@
     storage
     system
     tools
-
-.. Please create a separate file for each minor release, for example:
-
-.. 从 5.0 迁移到 5.1
-.. -----------------
-
-.. toctree::
-..    :maxdepth: 1
-
-..    release-5.1
