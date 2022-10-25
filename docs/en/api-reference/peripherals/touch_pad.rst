@@ -9,14 +9,6 @@ Introduction
 
 A touch sensor system is built on a substrate which carries electrodes and relevant connections under a protective flat surface. When a user touches the surface, the capacitance variation is used to evaluate if the touch was valid.
 
-.. only:: SOC_TOUCH_VERSION_1
-
-    Touch sensor on {IDF_TARGET_NAME} can support up to 10 capacitive touch pads / GPIOs.
-
-.. only:: SOC_TOUCH_VERSION_2
-
-    Touch sensor on {IDF_TARGET_NAME} can support up to 14 capacitive touch pads / GPIOs.
-
 The sensing pads can be arranged in different combinations (e.g., matrix, slider), so that a larger area or more points can be detected. The touch pad sensing process is under the control of a hardware-implemented finite-state machine (FSM) which is initiated by software or a dedicated hardware timer.
 
 For design, operation, and control registers of a touch sensor, see *{IDF_TARGET_NAME} Technical Reference Manual* > *On-Chip Sensors and Analog Signal Processing* [`PDF <{IDF_TARGET_TRM_EN_URL}#sensor>`__].
@@ -43,7 +35,6 @@ Description of API is broken down into groups of functions to provide a quick ov
 
 For detailed description of a particular function, please go to Section :ref:`touch_pad-api-reference`. Practical implementation of this API is covered in Section :ref:`Application Examples <touch_pad-api-examples>`.
 
-
 Initialization
 ^^^^^^^^^^^^^^
 
@@ -54,7 +45,79 @@ If the driver is not required anymore, deinitialize it by calling :cpp:func:`tou
 Configuration
 ^^^^^^^^^^^^^
 
-Enabling the touch sensor functionality for a particular GPIO is done with :cpp:func:`touch_pad_config`.
+.. only:: esp32
+
+    Enabling the touch sensor functionality for a particular GPIO is done with :cpp:func:`touch_pad_config()`. The following 10 capacitive touch pads are supported for {IDF_TARGET_NAME}.
+
+    .. list-table::
+        :align: center
+        :widths: 50 50
+        :header-rows: 1
+
+        * - Touch Pad
+          - GPIO Pin
+        * - T0
+          - GPIO4
+        * - T1
+          - GPIO0
+        * - T2
+          - GPIO2
+        * - T3
+          - MTDO
+        * - T4
+          - MTCK
+        * - T5
+          - MTDI
+        * - T6
+          - MTMS
+        * - T7
+          - GPIO27
+        * - T8
+          - 32K_XN
+        * - T9
+          - 32K_XP
+
+.. only:: esp32s2 or esp32s3
+
+    Enabling the touch sensor functionality for a particular GPIO is done with :cpp:func:`touch_pad_config()`. The following 14 capacitive touch pads are supported for {IDF_TARGET_NAME}.
+
+    .. list-table::
+        :align: center
+        :widths: 50 50
+        :header-rows: 1
+
+        * - Touch Pad
+          - GPIO Pin
+        * - T0
+          - Internal channel, not connect to a GPIO
+        * - T1
+          - GPIO1
+        * - T2
+          - GPIO2
+        * - T3
+          - GPIO3
+        * - T4
+          - GPIO4
+        * - T5
+          - GPIO5
+        * - T6
+          - GPIO6
+        * - T7
+          - GPIO7
+        * - T8
+          - GPIO8
+        * - T9
+          - GPIO9
+        * - T10
+          - GPIO10
+        * - T11
+          - GPIO11
+        * - T12
+          - GPIO12
+        * - T13
+          - GPIO13
+        * - T14
+          - GPIO14    
 
 Use the function :cpp:func:`touch_pad_set_fsm_mode` to select if touch pad measurement (operated by FSM) should be started automatically by a hardware timer, or by software. If software mode is selected, use :cpp:func:`touch_pad_sw_start` to start the FSM.
 
