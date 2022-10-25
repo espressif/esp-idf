@@ -15,6 +15,7 @@
 #include "unity.h"
 #include "test_utils.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C3)
 typedef struct {
     StreamBufferHandle_t sb;
     SemaphoreHandle_t end_test;
@@ -107,3 +108,4 @@ TEST_CASE("Send-receive stream buffer test", "[freertos]")
     vStreamBufferDelete(tc.sb);
     vSemaphoreDelete(tc.end_test);
 }
+#endif

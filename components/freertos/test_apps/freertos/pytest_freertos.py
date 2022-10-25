@@ -13,7 +13,6 @@ CONFIGS = [
 ]
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
 def test_freertos(dut: Dut) -> None:
