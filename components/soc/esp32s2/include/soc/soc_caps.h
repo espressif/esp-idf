@@ -130,7 +130,7 @@
 #define SOC_CPU_WATCHPOINT_SIZE         64 // bytes
 
 /*-------------------------- DAC CAPS ----------------------------------------*/
-#define SOC_DAC_PERIPH_NUM      2
+#define SOC_DAC_CHAN_NUM      2
 #define SOC_DAC_RESOLUTION      8 // DAC resolution ratio 8 bit
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/

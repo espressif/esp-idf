@@ -1,0 +1,4 @@
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_TASK_WDT=n
+# Disable this config, otherwise DAC will be disabled when ADC initialized
+CONFIG_ADC_DISABLE_DAC_OUTPUT=n

@@ -9,10 +9,10 @@ This example demonstrates how to use the [Application Level Tracing Library](htt
 
 UART logs are time consuming and can significantly slow down the function that calls it. Therefore, it is generally a bad idea to use UART logs in time-critical functions. Logging to host via JTAG is significantly faster and can be used in time-critical functions. For more details regarding logging to host via JTAG, refer to the [Logging to Host Documentation](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#app-trace-logging-to-host).
 
-This example demonstrates JTAG logging to host in the context of polling for a [zero crossing](https://en.wikipedia.org/wiki/Zero_crossing). The example app will continuously sample a 50 to 60 Hz sinusoidal signal (using the ADC) and log the sampled values (via JTAG). Due to the higher speed of JTAG logging, the polling rate of the ADC should be high enough to detect a zero crossing.
+This example demonstrates JTAG logging to host in the context of polling for a [zero crossing](https://en.wikipedia.org/wiki/Zero_crossing). The example app will continuously sample a 130 Hz sinusoidal signal (using the ADC) and log the sampled values (via JTAG). Due to the higher speed of JTAG logging, the polling rate of the ADC should be high enough to detect a zero crossing.
 
 This example utilizes the following ESP-IDF features:
-* [DAC driver](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/dac.html) to generate the 50 Hz sinusoidal signal.
+* [DAC driver](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/dac.html) to generate the 130 Hz sinusoidal signal.
 * [ADC driver](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/adc.html) to sample the sinusoidal signal.
 * [Application Level Tracing Library](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#) to log ADC samples to host.
 * [OpenOCD](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#setup-of-openocd) to interface with the target and receive the log output over JTAG.
@@ -30,12 +30,12 @@ This example will assume that that an ESP-WROVER-KIT is used.
 
 #### Pin Assignment:
 
-The sinusoidal signal of 50 to 60 Hz ranging from 0 V ~ 3.1 V should be input into `ADC1_CHANNEL_6`. Users may provide this signal themselves, or use the example-generated signal in `DAC_CHANNEL_1`. Listed below are the corresponding DAC/ADC channel pins for supported targets.
+The sinusoidal signal ranging from 0 V ~ 3.1 V should be input into `ADC1_CHANNEL_6`. Users may provide this signal themselves, or use the example-generated signal in `DAC_CHAN_0`. Listed below are the corresponding DAC/ADC channel pins for supported targets.
 
 | Target             | DAC Output         | ADC Input          |
 | ------------------ | ------------------ | ------------------ |
-| ESP32              | Channel 1 (GPIO25) | Channel 6 (GPIO34) |
-| ESP32S2            | Channel 1 (GPIO17) | Channel 6 (GPIO7)  |
+| ESP32              | Channel 0 (GPIO25) | Channel 6 (GPIO34) |
+| ESP32S2            | Channel 0 (GPIO17) | Channel 6 (GPIO7)  |
 
 #### Extra Connections:
 
@@ -55,7 +55,7 @@ The sinusoidal signal of 50 to 60 Hz ranging from 0 V ~ 3.1 V should be input in
 idf.py menuconfig
 ```
 
-* By default, the DAC will generate 130 Hz signal ranging from 0 V ~ 3.1 V. To generate a 50 Hz signal, the RTC 8 MHz clock will need to use a non-standard divider. This is achieved by enabling the `Example Configuration > Set custom RTC 8 MHz clock divider to lower CW frequency` configuration option.
+* By default, the DAC will generate about 130 Hz signal ranging from 0 V ~ 3.1 V. Note that to generate a 130 Hz signal, the RTC 8 MHz clock will need to use a non-standard divider.
 
 * To enable application tracing, select the `(X) Trace memory` option under `Component config > Application Level Tracing`. This option should have been selected by default.
 
@@ -85,11 +85,11 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
-The example will continuously sample the ADC for 20ms per iteration, and will alternate between JTAG and UART logging per iteration. However, the JTAG logs should be captured by OpenOCD, thus will not appear in the monitor's output. Therefore, the monitor should only display the iterations where UART logging was used (i.e. every alternate iteration) such as the following:
+The example will continuously sample the ADC for 2 ms per iteration, and will alternate between JTAG and UART logging per iteration. However, the JTAG logs should be captured by OpenOCD, thus will not appear in the monitor's output. Therefore, the monitor should only display the iterations where UART logging was used (i.e. every alternate iteration) such as the following:
 
 ```
 I (4289) example: Sampling ADC and sending data to the host...
-I (4309) example: Collected 427 samples in 20 ms.
+I (4309) example: Collected 427 samples in 2 ms.
 
 I (4309) example: Sampling ADC and sending data to the UART...
 I (4309) example: Sample:1, Value:2224
@@ -97,7 +97,7 @@ I (4309) example: Sample:2, Value:840
 I (4309) example: Sample:3, Value:3503
 I (4319) example: Sample:4, Value:27
 I (4319) example: Sample:5, Value:4095
-I (4329) example: Collected 5 samples in 20 ms.
+I (4329) example: Collected 5 samples in 2 ms.
 ```
 
 **Note:** The UART log above was produced with the CPU running at 240 MHz.
@@ -172,10 +172,10 @@ The log should be identical to those printed via UART (complete with timestamps)
 
 ## Example Breakdown
 
-The following code snippet demonstrates a loop of the sampling and logging the ADC over a 20 ms period in order to capture one full period of a 50 Hz signal.
+The following code snippet demonstrates a loop of the sampling and logging the ADC over a 2 ms period in order to capture one full period of a 130 Hz signal.
 
 ```c
-int sampling_period = 20;
+int sampling_period = 2;
 int i = 0;
 uint32_t sampling_start =  esp_log_timestamp();  //this clock counts milliseconds
 do {
@@ -193,7 +193,7 @@ I (4309) example: Sample:2, Value:840
 I (4309) example: Sample:3, Value:3503
 I (4319) example: Sample:4, Value:27
 I (4319) example: Sample:5, Value:4095
-I (4329) example: Collected 5 samples in 20 ms.
+I (4329) example: Collected 5 samples in 2 ms.
 ```
 
 However, by logging via JTAG, the logging is much quicker hence allows a much higher sampling frequency (over 400 times) as shown the the log output below thus would be able to detect a zero crossing more consistently.

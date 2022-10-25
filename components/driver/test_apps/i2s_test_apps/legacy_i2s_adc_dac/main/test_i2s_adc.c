@@ -14,6 +14,7 @@
 #include "driver/adc.h"
 #include "driver/rtc_io.h"
 #include "driver/gpio.h"
+#include "soc/adc_periph.h"
 #include "unity.h"
 #include "esp_system.h"
 #include "esp_event.h"
@@ -21,8 +22,6 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_rom_sys.h"
-#include "driver/dac.h"
-#include "soc/adc_periph.h"
 
 /*
  * ADC DMA testcase

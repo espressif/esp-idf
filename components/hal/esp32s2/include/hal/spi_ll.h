@@ -1260,6 +1260,7 @@ static inline void spi_dma_ll_enable_out_auto_wrback(spi_dma_dev_t *dma_out, uin
  * @param channel DMA channel, for chip version compatibility, not used.
  * @return        The address
  */
+__attribute__((always_inline))
 static inline uint32_t spi_dma_ll_get_out_eof_desc_addr(spi_dma_dev_t *dma_out, uint32_t channel)
 {
     return dma_out->dma_out_eof_des_addr;

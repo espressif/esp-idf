@@ -277,6 +277,37 @@ typedef enum {
     SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
 } soc_periph_sdm_clk_src_t;
 
+////////////////////////////////////////////////////DAC/////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of DAC digital controller
+ */
+#define SOC_DAC_DIGI_CLKS {SOC_MOD_CLK_PLL_D2, SOC_MOD_CLK_APLL}
+
+/**
+ * @brief DAC digital controller clock source
+ *
+ */
+typedef enum {
+    DAC_DIGI_CLK_SRC_PLLD2 = SOC_MOD_CLK_PLL_D2,    /*!< Select PLL_D2 as the source clock */
+    DAC_DIGI_CLK_SRC_APLL = SOC_MOD_CLK_APLL,       /*!< Select APLL as the source clock */
+    DAC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_D2,  /*!< Select PLL_D2 as the default source clock  */
+} soc_periph_dac_digi_clk_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of DAC cosine wave generator
+ */
+#define SOC_DAC_COSINE_CLKS {SOC_MOD_CLK_RTC_FAST}
+
+/**
+ * @brief DAC cosine wave generator clock source
+ *
+ */
+typedef enum {
+    DAC_COSINE_CLK_SRC_RTC_FAST = SOC_MOD_CLK_RTC_FAST, /*!< Select RTC FAST as the source clock */
+    DAC_COSINE_CLK_SRC_DEFAULT = SOC_MOD_CLK_RTC_FAST,  /*!< Select RTC FAST as the default source clock */
+} soc_periph_dac_cosine_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif

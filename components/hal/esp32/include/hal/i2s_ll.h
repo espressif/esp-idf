@@ -39,6 +39,7 @@ extern "C" {
 #define I2S_LL_EVENT_TX_EOF         BIT(12)
 #define I2S_LL_EVENT_RX_DSCR_ERR    BIT(13)
 #define I2S_LL_EVENT_TX_DSCR_ERR    BIT(14)
+#define I2S_LL_EVENT_TX_TEOF        BIT(16)
 #define I2S_INTR_MAX                (UINT32_MAX)
 
 #define I2S_LL_TX_EVENT_MASK        I2S_LL_EVENT_TX_EOF

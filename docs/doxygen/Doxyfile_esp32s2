@@ -1,5 +1,4 @@
 INPUT += \
-         $(PROJECT_PATH)/components/driver/$(IDF_TARGET)/include/driver/dac.h \
          $(PROJECT_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
          $(PROJECT_PATH)/components/esp_hw_support/include/soc/esp32s2/esp_ds.h \
          $(PROJECT_PATH)/components/esp_hw_support/include/soc/esp32s2/esp_hmac.h \

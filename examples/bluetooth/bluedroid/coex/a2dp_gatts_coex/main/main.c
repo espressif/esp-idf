@@ -36,8 +36,7 @@
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-// DAC DMA mode is only supported by the legacy I2S driver, it will be replaced once DAC has its own DMA dirver
-#include "driver/i2s.h"
+#include "driver/dac_conti.h"
 #else
 #include "driver/i2s_std.h"
 #endif
@@ -77,6 +76,8 @@ static prepare_type_env_t b_prepare_write_env;
 
 #ifndef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
 i2s_chan_handle_t tx_chan;
+#else
+dac_conti_handle_t tx_chan;
 #endif
 
 //Declare the static function
@@ -691,23 +692,19 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-    /* I2S configuration parameters */
-    i2s_config_t i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
-        .sample_rate = 44100,
-        .bits_per_sample = 16,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,       /* 2-channels */
-        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
-        .dma_buf_count = 6,
-        .dma_buf_len = 60,
-        .intr_alloc_flags = 0,                              /* default interrupt priority */
-        .tx_desc_auto_clear = true                          /* auto clear tx descriptor on underflow */
+    dac_conti_config_t conti_cfg = {
+        .chan_mask = DAC_CHANNEL_MASK_ALL,
+        .desc_num = 8,
+        .buf_size = 2048,
+        .freq_hz = 44100,
+        .offset = 127,
+        .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,   // Using APLL as clock source to get a wider frequency range
+        .chan_mode = DAC_CHANNEL_MODE_ALTER,
     };
-
-    /* enable I2S */
-    ESP_ERROR_CHECK(i2s_driver_install(0, &i2s_config, 0, NULL));
-    ESP_ERROR_CHECK(i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN));
-    ESP_ERROR_CHECK(i2s_set_pin(0, NULL));
+    /* Allocate continuous channels */
+    ESP_ERROR_CHECK(dac_new_conti_channels(&conti_cfg, &tx_chan));
+    /* Enable the continuous channels */
+    ESP_ERROR_CHECK(dac_conti_enable(tx_chan));
 #else
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     chan_cfg.auto_clear = true;

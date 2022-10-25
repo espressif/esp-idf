@@ -103,7 +103,6 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
-            "dac_hal.c"
             "sdio_slave_hal.c"
             "touch_sensor_hal.c"
             "aes_hal.c"
@@ -114,7 +113,6 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
-                    "dac_hal.c"
                     "spi_flash_hal_gpspi.c"
                     "spi_slave_hd_hal.c"
                     "touch_sensor_hal.c"
@@ -125,7 +123,6 @@ if(NOT BOOTLOADER_BUILD)
                     "esp32s2/brownout_hal.c"
                     "esp32s2/cp_dma_hal.c"
                     "esp32s2/touch_sensor_hal.c"
-                    "esp32s2/dac_hal.c"
                     "usb_dwc_hal.c")
     endif()
 

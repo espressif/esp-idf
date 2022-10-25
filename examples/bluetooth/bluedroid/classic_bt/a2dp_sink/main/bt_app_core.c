@@ -16,8 +16,7 @@
 #include "esp_log.h"
 #include "bt_app_core.h"
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-// DAC DMA mode is only supported by the legacy I2S driver, it will be replaced once DAC has its own DMA dirver
-#include "driver/i2s.h"
+#include "driver/dac_conti.h"
 #else
 #include "driver/i2s_std.h"
 #endif
@@ -62,6 +61,8 @@ static uint16_t ringbuffer_mode = RINGBUFFER_MODE_PROCESSING;
  ********************************/
 #ifndef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
 extern i2s_chan_handle_t tx_chan;
+#else
+extern dac_conti_handle_t tx_chan;
 #endif
 
 /*******************************
@@ -139,7 +140,7 @@ static void bt_i2s_task_handler(void *arg)
                 }
 
             #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-                i2s_write(0, data, item_size, &bytes_written, portMAX_DELAY);
+                dac_conti_write(tx_chan, data, item_size, &bytes_written, -1);
             #else
                 i2s_channel_write(tx_chan, data, item_size, &bytes_written, portMAX_DELAY);
             #endif

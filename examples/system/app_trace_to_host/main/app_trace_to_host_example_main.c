@@ -12,59 +12,39 @@
 #include "freertos/task.h"
 #include "esp_app_trace.h"
 #include "esp_log.h"
-#include "soc/rtc_periph.h"
-#include "soc/sens_periph.h"
 #include "esp_adc/adc_oneshot.h"
-#include "driver/dac.h"
+#include "driver/dac_cosine.h"
 #include "soc/adc_channel.h"
 #include "soc/dac_channel.h"
 
-#define ADC1_TEST_CHANNEL (ADC_CHANNEL_6)
+#define ADC1_TEST_CHANNEL       (ADC_CHANNEL_6)
+#define EXAMPLE_DAC_CHENNEL     DAC_CHAN_0
 
-#define TEST_SAMPLING_PERIOD 20
-
-/*
- * When setting custom divider of RTC 8 MHz clock in menuconfig,
- * use the following values to set the CW frequency:
- * ~ 50 Hz (entered below)
- *     RTC_CLK_8M_DIV 7
- *     CW_FREQUENCY_STEP 3
- * ~ 60 Hz
- *     RTC_CLK_8M_DIV 1
- *     CW_FREQUENCY_STEP 1
- */
-#ifdef CONFIG_CUSTOM_RTC_CLK_8M_DIV
-#define RTC_CLK_8M_DIV 7
-#define CW_FREQUENCY_STEP 3
-#else
-#define CW_FREQUENCY_STEP 1
-#endif
+#define TEST_SAMPLING_PERIOD    20
 
 static const char *TAG = "example";
 
 /*
  * Enable cosine waveform generator (CW)
- * on DAC channel 1 to provide sinusoidal signal
+ * on DAC channel 0 to provide sinusoidal signal
  * It can be used instead of a live signal for testing
  * of speed of logging to the host
  * sequentially with data retrieval from ADC
  */
 static void enable_cosine_generator(void)
 {
-    // Enable tone generator common to both DAC channels 1 and 2
-    SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_SW_TONE_EN);
-    // Enable / connect tone tone generator on / to channel 1
-    SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN1_M);
-    // Invert MSB, otherwise part of the waveform will be inverted
-    SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_INV1, 2, SENS_DAC_INV1_S);
-    // Set the frequency of waveform on CW output
-#ifdef CONFIG_CUSTOM_RTC_CLK_8M_DIV
-    REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DIV_SEL, RTC_CLK_8M_DIV);
-    ESP_LOGI(TAG, "Custom divider of RTC 8 MHz clock has been set.");
-#endif
-    SET_PERI_REG_BITS(SENS_SAR_DAC_CTRL1_REG, SENS_SW_FSTEP, CW_FREQUENCY_STEP, SENS_SW_FSTEP_S);
-
-    dac_output_enable(DAC_CHANNEL_1);
+    dac_cosine_handle_t dac_handle;
+    dac_cosine_config_t cos_cfg = {
+        .chan_id = EXAMPLE_DAC_CHENNEL,
+        .freq_hz = 130,
+        .clk_src = DAC_COSINE_CLK_SRC_DEFAULT,
+        .offset = 0,
+        .phase = DAC_COSINE_PHASE_0,
+        .atten = DAC_COSINE_ATTEN_DEFAULT,
+        .flags.force_set_freq = false,
+    };
+    ESP_ERROR_CHECK(dac_new_cosine_channel(&cos_cfg, &dac_handle));
+    ESP_ERROR_CHECK(dac_cosine_start(dac_handle));
 }
 
 /*
@@ -108,7 +88,7 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, ADC1_TEST_CHANNEL, &config));
 
-    ESP_LOGI(TAG, "Enabling CW generator on DAC channel 1 / GPIO%d.", DAC_CHANNEL_1_GPIO_NUM);
+    ESP_LOGI(TAG, "Enabling CW generator on DAC channel 0 / GPIO%d.", DAC_CHAN0_GPIO_NUM);
     enable_cosine_generator();
 
     while (1) {
