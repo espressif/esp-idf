@@ -85,9 +85,11 @@
   - "components/**/*"
 
 .patterns-target_test-i154: &patterns-target_test-i154
-  - "components/esp_netif/**/*"
   - "components/esp_phy/**/*"
   - "components/ieee802154/**/*"
+
+.patterns-example_test-i154: &patterns-example_test-i154
+  - "components/esp_netif/**/*"
   - "components/lwip/**/*"
   - "components/openthread/**/*"
   - "examples/common_components/iperf/**/*"
@@ -1000,6 +1002,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
+      changes: *patterns-example_test-i154
+    - <<: *if-dev-push
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
@@ -1034,6 +1038,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
+      changes: *patterns-example_test-i154
+    - <<: *if-dev-push
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
@@ -1065,6 +1071,8 @@
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
+    - <<: *if-dev-push
+      changes: *patterns-example_test-i154
     - <<: *if-dev-push
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
@@ -1099,6 +1107,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
+      changes: *patterns-example_test-i154
+    - <<: *if-dev-push
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
@@ -1130,6 +1140,8 @@
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
+    - <<: *if-dev-push
+      changes: *patterns-example_test-i154
     - <<: *if-dev-push
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
@@ -1163,6 +1175,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
+      changes: *patterns-example_test-i154
+    - <<: *if-dev-push
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
@@ -1195,6 +1209,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
+      changes: *patterns-example_test-i154
+    - <<: *if-dev-push
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
@@ -1226,6 +1242,8 @@
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
+    - <<: *if-dev-push
+      changes: *patterns-example_test-i154
     - <<: *if-dev-push
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
@@ -1335,6 +1353,8 @@
       changes: *patterns-example_test-bt
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
+    - <<: *if-dev-push
+      changes: *patterns-example_test-i154
     - <<: *if-dev-push
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
@@ -2016,6 +2036,8 @@
       when: never
     - <<: *if-label-example_test
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
 
