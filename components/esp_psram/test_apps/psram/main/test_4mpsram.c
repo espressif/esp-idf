@@ -70,7 +70,7 @@ static void test_spi_bus_occupy(spi_host_device_t expected_occupied_host)
 }
 
 #if CONFIG_SPIRAM_OCCUPY_HSPI_HOST || CONFIG_SPIRAM_OCCUPY_VSPI_HOST
-TEST_CASE("some spi bus occpied by psram", "[psram_4m][test_env=UT_T1_PSRAMV0]")
+TEST_CASE("some spi bus occpied by psram", "[psram_4m]")
 {
 // NOTE: this unit test rely on the config that PSRAM of 8MB is used only when CONFIG_SPIRAM_BANKSWITCH_ENABLE is set
 //currently all 8M psram don't need more SPI peripherals

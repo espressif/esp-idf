@@ -362,6 +362,22 @@ component_ut_pytest_esp32_flash_multi:
     - build_pytest_components_esp32
   tags: [ esp32, flash_mutli ]
 
+component_ut_pytest_esp32_xtal32k:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, xtal32k ]
+
+component_ut_pytest_esp32_no32kXtal:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, no32kXtal ]
+
 component_ut_pytest_esp32_rs485_multi:
   extends:
     - .pytest_components_dir_template
@@ -369,6 +385,15 @@ component_ut_pytest_esp32_rs485_multi:
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, multi_dut_modbus_rs485 ]
+
+component_ut_pytest_esp32_psramv0:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, psramv0 ]
+
 
 component_ut_pytest_esp32s2_generic:
   extends:
@@ -1042,32 +1067,11 @@ UT_035:
     - ESP32S2_IDF
     - UT_T1_1
 
-UT_036:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_PSRAMV0
-    - psram
-
 UT_038:
   extends: .unit_test_esp32s2_template
   tags:
     - ESP32S2_IDF
     - UT_T1_ESP_FLASH
-
-UT_041:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_no32kXTAL
-    - psram
-
-UT_043:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_32kXTAL
-    - psram
 
 UT_S2_SDSPI:
   extends: .unit_test_esp32s2_template

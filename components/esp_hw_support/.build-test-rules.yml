@@ -9,3 +9,9 @@ components/esp_hw_support/test_apps/dma:
 components/esp_hw_support/test_apps/etm:
   disable:
     - if: SOC_ETM_SUPPORTED != 1
+
+components/esp_hw_support/test_apps/rtc_clk:
+  disable:
+    - if: IDF_TARGET in ["esp32c6"]
+      temporary: true
+      reason: Unsupported on C6 for now. TODO IDF-5645

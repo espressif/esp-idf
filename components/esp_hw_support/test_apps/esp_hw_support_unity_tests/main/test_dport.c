@@ -8,6 +8,7 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include "xtensa/core-macros.h"
 #include "xtensa/hal.h"
 #include "esp_types.h"
@@ -28,7 +29,8 @@
 #include "soc/rtc.h"
 #include "esp_cpu.h"
 #include "esp_intr_alloc.h"
-
+#include "esp_task.h"
+#include "test_config.h"
 
 #define MHZ (1000000)
 static volatile bool exit_flag;
@@ -91,15 +93,15 @@ void run_tasks(const char *task1_description, void (* task1_func)(void *), const
 
 #ifndef CONFIG_FREERTOS_UNICORE
     printf("assign task accessing DPORT to core 0 and task accessing APB to core 1\n");
-    if(task1_func != NULL) xTaskCreatePinnedToCore(task1_func, task1_description, 2048, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, &th[0], 0);
-    if(task2_func != NULL) xTaskCreatePinnedToCore(task2_func, task2_description, 2048, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, &th[1], 1);
+    if(task1_func != NULL) xTaskCreatePinnedToCore(task1_func, task1_description, 2048, &exit_sema[0], TEST_TASK_PRIORITY - 1, &th[0], 0);
+    if(task2_func != NULL) xTaskCreatePinnedToCore(task2_func, task2_description, 2048, &exit_sema[1], TEST_TASK_PRIORITY - 1, &th[1], 1);
 #else
     printf("assign task accessing DPORT and accessing APB\n");
-    if(task1_func != NULL) xTaskCreate(task1_func, task1_description, 2048, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, &th[0]);
-    if(task2_func != NULL) xTaskCreate(task2_func, task2_description, 2048, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, &th[1]);
+    if(task1_func != NULL) xTaskCreate(task1_func, task1_description, 2048, &exit_sema[0], TEST_TASK_PRIORITY - 1, &th[0]);
+    if(task2_func != NULL) xTaskCreate(task2_func, task2_description, 2048, &exit_sema[1], TEST_TASK_PRIORITY - 1, &th[1]);
 #endif
 
-    printf("start wait for %d seconds [Test %s and %s]\n", delay_ms/1000, task1_description, task2_description);
+    printf("start wait for %"PRIu32" seconds [Test %s and %s]\n", delay_ms/1000, task1_description, task2_description);
     vTaskDelay(delay_ms / portTICK_PERIOD_MS);
 
     // set exit flag to let thread exit
@@ -131,7 +133,7 @@ void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
     rtc_cpu_freq_config_t old_config;
     rtc_clk_cpu_freq_get_config(&old_config);
 
-    printf("CPU_FREQ = %d MHz\n", old_config.freq_mhz);
+    printf("CPU_FREQ = %"PRIu32" MHz\n", old_config.freq_mhz);
 
     if (cpu_freq_mhz != old_config.freq_mhz) {
         rtc_cpu_freq_config_t new_config;
@@ -281,16 +283,16 @@ TEST_CASE("test for DPORT access performance", "[esp32]")
 
     printf("\nPerformance table: \n"
             "The number of simultaneous read operations of the APB and DPORT registers\n"
-            "by different methods for %d seconds.\n", delay_ms/1000);
+            "by different methods for %"PRIu32" seconds.\n", delay_ms/1000);
     printf("+-----------------------+----------+----------+----------+\n");
     printf("|    Method read DPORT  |   DPORT  |    APB   |   SUMM   |\n");
     printf("+-----------------------+----------+----------+----------+\n");
-    printf("|1.Only accessAPB       |%10d|%10d|%10d|\n", t[0].dport, t[0].apb, t[0].summ);
-    printf("|2.Only STALL_OTHER_CPU |%10d|%10d|%10d|\n", t[1].dport, t[1].apb, t[1].summ);
-    printf("|3.Only PRE_READ_APB_REG|%10d|%10d|%10d|\n", t[2].dport, t[2].apb, t[2].summ);
+    printf("|1.Only accessAPB       |%10"PRIu32"|%10"PRIu32"|%10"PRIu32"|\n", t[0].dport, t[0].apb, t[0].summ);
+    printf("|2.Only STALL_OTHER_CPU |%10"PRIu32"|%10"PRIu32"|%10"PRIu32"|\n", t[1].dport, t[1].apb, t[1].summ);
+    printf("|3.Only PRE_READ_APB_REG|%10"PRIu32"|%10"PRIu32"|%10"PRIu32"|\n", t[2].dport, t[2].apb, t[2].summ);
     printf("+-----------------------+----------+----------+----------+\n");
-    printf("|4.STALL_OTHER_CPU      |%10d|%10d|%10d|\n", t[3].dport, t[3].apb, t[3].summ);
-    printf("|5.PRE_READ_APB_REG     |%10d|%10d|%10d|\n", t[4].dport, t[4].apb, t[4].summ);
+    printf("|4.STALL_OTHER_CPU      |%10"PRIu32"|%10"PRIu32"|%10"PRIu32"|\n", t[3].dport, t[3].apb, t[3].summ);
+    printf("|5.PRE_READ_APB_REG     |%10"PRIu32"|%10"PRIu32"|%10"PRIu32"|\n", t[4].dport, t[4].apb, t[4].summ);
     printf("+-----------------------+----------+----------+----------+\n");
     printf("| ratio=PRE_READ/STALL  |%10f|%10f|%10f|\n", (float)t[4].dport/t[3].dport, (float)t[4].apb/t[3].apb, (float)t[4].summ/t[3].summ);
     printf("+-----------------------+----------+----------+----------+\n");
@@ -306,7 +308,7 @@ static uint32_t start, end;
 
 #define BENCHMARK_END(OPERATION) do {                               \
         RSR(CCOUNT, end);                                           \
-        printf("%s took %d cycles/op (%d cycles for %d ops)\n",     \
+        printf("%s took %"PRIu32" cycles/op (%"PRIu32" cycles for %d ops)\n",     \
                OPERATION, (end - start)/REPEAT_OPS,                 \
                (end - start), REPEAT_OPS);                          \
     } while(0)
