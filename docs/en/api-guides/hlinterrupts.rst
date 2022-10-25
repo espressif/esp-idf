@@ -88,3 +88,4 @@ Notes
 
  - In theory, medium priority interrupts could also be handled in this way. ESP-IDF does not support this yet.
 
+ - To check Xtensa instruction set architecture (ISA), please refer to `Xtensa ISA Summary <https://www.cadence.com/content/dam/cadence-www/global/en_US/documents/tools/ip/tensilica-ip/isa-summary.pdf>`_.
