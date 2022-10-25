@@ -394,6 +394,14 @@ LCD
 
     8. Calling :cpp:func:`i2s_del_channel` to delete and release the resources of the channel if it is not needed any more, but the channel must be disabled before deleting it.
 
+
+.. only:: SOC_TWAI_SUPPORTED
+
+    TWAI Driver
+    -----------
+
+    The deprecated ``CAN`` peripheral driver is removed. Please use ``TWAI`` driver instead (i.e. include ``driver/twai.h`` in your application).
+
 Register access macros
 ----------------------
 
