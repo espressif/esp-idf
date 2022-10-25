@@ -90,7 +90,7 @@ SOC Dependency
 APP Trace
 ---------
 
-One of the timestamp sources has changed from the legacy timer group driver to the new :doc:`GPTimer <../../api-reference/peripherals/gptimer>`. Kconfig choices like ``APPTRACE_SV_TS_SOURCE_TIMER00`` has been changed to ``APPTRACE_SV_TS_SOURCE_GPTIMER``. User no longer need to choose the group and timer ID.
+One of the timestamp sources has changed from the legacy timer group driver to the new :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`. Kconfig choices like ``APPTRACE_SV_TS_SOURCE_TIMER00`` has been changed to ``APPTRACE_SV_TS_SOURCE_GPTIMER``. User no longer need to choose the group and timer ID.
 
 esp_timer
 -----------

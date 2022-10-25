@@ -87,7 +87,7 @@ GPIO
     Sigma-Delta 调制器
     ---------------------------------
 
-    Sigma-Delta 调制器的驱动现已更新为 :doc:`SDM <../../api-reference/peripherals/sdm>`。
+    Sigma-Delta 调制器的驱动现已更新为 :doc:`SDM <../../../api-reference/peripherals/sdm>`。
     
     - 新驱动中实现了工厂模式，SDM 通道都位于内部通道池中，因此用户无需手动将 SDM 通道配置到 GPIO 管脚。
     - SDM 通道会被自动分配。
@@ -117,7 +117,7 @@ GPIO
 定时器组驱动
 -----------------------------------------
 
-为统一和简化通用定时器的使用，定时器组驱动已更新为 :doc:`GPTimer <../../api-reference/peripherals/gptimer>`。
+为统一和简化通用定时器的使用，定时器组驱动已更新为 :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`。
 
 尽管我们推荐使用新的驱动 API， 旧版驱动仍然可用，其头文件引用路径为 ``driver/timer.h``。但是，引用 ``driver/timer.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
 
@@ -240,7 +240,7 @@ LEDC
     脉冲计数器 (PCNT) 驱动
     ----------------------------------
     
-    为统一和简化 PCNT 外设，PCNT 驱动已更新，详见 :doc:`PCNT <../../api-reference/peripherals/pcnt>`。
+    为统一和简化 PCNT 外设，PCNT 驱动已更新，详见 :doc:`PCNT <../../../api-reference/peripherals/pcnt>`。
     
     尽管我们推荐使用新的驱动 API，旧版驱动仍然可用，保留在头文件引用路径 ``driver/pcnt.h`` 中。但是，引用路径 ``driver/pcnt.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
 
@@ -294,14 +294,14 @@ LEDC
 
     配置内容已更新。更新前，用户需要设置 ``clk_div`` 与 ``dac_offset``。更新后，用户仅需设置 ``tsens_range``。
 
-    温度传感器的使用过程也已更新。更新前，用户可通过 ``config->start->read_celsius`` 获取数据。更新后，用户需要通过 ``temperature_sensor_install`` 先安装温度传感器的驱动，测量完成后需卸载驱动，详情请参考 :doc:`Temperature Sensor <../../api-reference/peripherals/temp_sensor>`。
+    温度传感器的使用过程也已更新。更新前，用户可通过 ``config->start->read_celsius`` 获取数据。更新后，用户需要通过 ``temperature_sensor_install`` 先安装温度传感器的驱动，测量完成后需卸载驱动，详情请参考 :doc:`Temperature Sensor <../../../api-reference/peripherals/temp_sensor>`。
 
 .. only:: SOC_RMT_SUPPORTED
 
     RMT 驱动
     ----------------------
 
-    为统一和扩展 RMT 外设的使用，RMT 驱动已更新，详见 :doc:`RMT transceiver <../../api-reference/peripherals/rmt>`。
+    为统一和扩展 RMT 外设的使用，RMT 驱动已更新，详见 :doc:`RMT transceiver <../../../api-reference/peripherals/rmt>`。
     
     尽管我们建议使用新的驱动 API，旧版驱动仍然可用，保留在头文件引用路径 ``driver/rmt.h``中。但是，引用路径 ``driver/rmt.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_RMT_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
     
@@ -376,7 +376,7 @@ LCD
     MCPWM
     -----
 
-    MCPWM 驱动已更新（详见 :doc:`MCPWM <../../api-reference/peripherals/mcpwm>`）。同时，旧版驱动已被弃用。
+    MCPWM 驱动已更新（详见 :doc:`MCPWM <../../../api-reference/peripherals/mcpwm>`）。同时，旧版驱动已被弃用。
     
     新驱动中，每个 MCPWM 子模块相互独立，用户可以自由进行资源连接。
     
@@ -454,13 +454,13 @@ LCD
     I2S 驱动
     -----------------------
 
-    旧版 I2S 驱动在支持 ESP32-C3 和 ESP32-S3 新功能时暴露了很多缺点，为解决这些缺点，I2S 驱动已更新（请参考:doc:`I2S Driver <../../api-reference/peripherals/i2s>`）。用户可以通过引用不同 I2S 模式对应的头文件来使用新版驱动的 API，如 :component_file:`driver/include/driver/i2s_std.h`， :component_file:`driver/include/driver/i2s_pdm.h` 以及 :component_file:`driver/include/driver/i2s_tdm.h`。 
+    旧版 I2S 驱动在支持 ESP32-C3 和 ESP32-S3 新功能时暴露了很多缺点，为解决这些缺点，I2S 驱动已更新（请参考:doc:`I2S Driver <../../../api-reference/peripherals/i2s>`）。用户可以通过引用不同 I2S 模式对应的头文件来使用新版驱动的 API，如 :component_file:`driver/include/driver/i2s_std.h`， :component_file:`driver/include/driver/i2s_pdm.h` 以及 :component_file:`driver/include/driver/i2s_tdm.h`。 
     
     为保证前向兼容，旧版驱动的 API 仍然在 :component_file:`driver/deprecated/driver/i2s.h` 中可用。但使用旧版 API 会触发编译警告，该警告可通过配置 Kconfig 选项 :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN` 来关闭。
     
     以下是更新后的 I2S 文件概况。
 
-    .. figure:: ../../../_static/diagrams/i2s/i2s_file_structure.png
+    .. figure:: ../../../../_static/diagrams/i2s/i2s_file_structure.png
         :align: center
         :alt: I2S File Structure
 

@@ -90,7 +90,7 @@ SOC 依赖性
 应用跟踪
 --------
 
-其中一个时间戳源已从定时器组驱动改为新的 :doc:`GPTimer <../../api-reference/peripherals/gptimer>`。Kconfig 选项已重新命名，例如 ``APPTRACE_SV_TS_SOURCE_TIMER00`` 已更改为 ``APPTRACE_SV_TS_SOURCE_GPTIMER``。用户已无需选择组和定时器 ID。
+其中一个时间戳源已从定时器组驱动改为新的 :doc:`GPTimer <../../../api-reference/peripherals/gptimer>`。Kconfig 选项已重新命名，例如 ``APPTRACE_SV_TS_SOURCE_TIMER00`` 已更改为 ``APPTRACE_SV_TS_SOURCE_GPTIMER``。用户已无需选择组和定时器 ID。
 
 esp_timer
 -----------

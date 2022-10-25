@@ -61,7 +61,7 @@ SPI 以太网模块初始化
 
 SPI 以太网模块的初始化过程已经简化。此前，您需要在实例化 SPI 以太网 MAC 之前，使用 :cpp:func:`spi_bus_add_device` 手动分配 SPI 设备。
 
-现在，由于 SPI 设备已在内部分配，您无需再调用 :cpp:func:`spi_bus_add_device`。:cpp:class:`eth_dm9051_config_t`、:cpp:class:`eth_w5500_config_t` 和 :cpp:class:`eth_ksz8851snl_config_t` 配置结构体现已包含 SPI 设备配置成员（例如，可以微调可能依赖 PCB 设计的 SPI 时序）。``ETH_DM9051_DEFAULT_CONFIG``、``ETH_W5500_DEFAULT_CONFIG`` 和 ``ETH_KSZ8851SNL_DEFAULT_CONFIG`` 配置初始化宏也已接受新的参数输入。了解 SPI 以太网模块初始化示例，请查看 :doc:`以太网 API 参考指南<../../api-reference/network/esp_eth>`。
+现在，由于 SPI 设备已在内部分配，您无需再调用 :cpp:func:`spi_bus_add_device`。:cpp:class:`eth_dm9051_config_t`、:cpp:class:`eth_w5500_config_t` 和 :cpp:class:`eth_ksz8851snl_config_t` 配置结构体现已包含 SPI 设备配置成员（例如，可以微调可能依赖 PCB 设计的 SPI 时序）。``ETH_DM9051_DEFAULT_CONFIG``、``ETH_W5500_DEFAULT_CONFIG`` 和 ``ETH_KSZ8851SNL_DEFAULT_CONFIG`` 配置初始化宏也已接受新的参数输入。了解 SPI 以太网模块初始化示例，请查看 :doc:`以太网 API 参考指南<../../../api-reference/network/esp_eth>`。
 
 
 .. _tcpip-adapter:
