@@ -20,7 +20,11 @@ static void mutex_release_task(void* arg)
     TEST_FAIL_MESSAGE("should not be reached");
 }
 
-TEST_CASE("mutex released not by owner causes an assert", "[freertos][reset=assert,SW_CPU_RESET]")
+/*
+Reset tests are temporarily ignored until the test app supports running them separately.
+IDF-6096
+*/
+TEST_CASE("mutex released not by owner causes an assert", "[freertos][ignore][reset=assert,SW_CPU_RESET]")
 {
     SemaphoreHandle_t mutex = xSemaphoreCreateMutex();
     xSemaphoreTake(mutex, portMAX_DELAY);

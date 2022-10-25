@@ -56,13 +56,13 @@ TEST_CASE("Test eTaskGetState", "[freertos]")
 
     // Create tasks of each state on each core
     for (int i = 0; i < portNUM_PROCESSORS; i++) {
-        TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(blocked_task, "blkd", configMINIMAL_STACK_SIZE, NULL, UNITY_FREERTOS_PRIORITY - 1, &blocked_tasks[i], i));
-        TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(suspended_task, "susp", configMINIMAL_STACK_SIZE, NULL, UNITY_FREERTOS_PRIORITY - 1, &suspended_tasks[i], i));
-        TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(loop_task, "rdy", configMINIMAL_STACK_SIZE, NULL, UNITY_FREERTOS_PRIORITY - 1, &ready_tasks[i], i));
+        TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(blocked_task, "blkd", configMINIMAL_STACK_SIZE * 2, NULL, UNITY_FREERTOS_PRIORITY - 1, &blocked_tasks[i], i));
+        TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(suspended_task, "susp", configMINIMAL_STACK_SIZE * 2, NULL, UNITY_FREERTOS_PRIORITY - 1, &suspended_tasks[i], i));
+        TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(loop_task, "rdy", configMINIMAL_STACK_SIZE * 2, NULL, UNITY_FREERTOS_PRIORITY - 1, &ready_tasks[i], i));
         if (i == UNITY_FREERTOS_CPU) {
             running_tasks[i] = xTaskGetCurrentTaskHandle();
         } else {
-            xTaskCreatePinnedToCore(loop_task, "run", configMINIMAL_STACK_SIZE, NULL, UNITY_FREERTOS_PRIORITY, &running_tasks[i], i);
+            xTaskCreatePinnedToCore(loop_task, "run", configMINIMAL_STACK_SIZE * 2, NULL, UNITY_FREERTOS_PRIORITY, &running_tasks[i], i);
         }
     }
 
