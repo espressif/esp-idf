@@ -984,7 +984,7 @@ config BT_SMP_ENABLE
 
 config BT_BLE_ACT_SCAN_REP_ADV_SCAN
     bool "Report adv data and scan response individually when BLE active scan"
-    depends on BT_BLUEDROID_ENABLED && (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
+    depends on BT_BLUEDROID_ENABLED && BT_BLE_ENABLED
     default n
     help
         Originally, when doing BLE active scan, Bluedroid will not report adv to application layer
