@@ -55,7 +55,7 @@ static void setup_mmap_tests(void)
         printf("Test data partition @ 0x%"PRIx32" - 0x%"PRIx32"\n", start, end);
     }
     TEST_ASSERT(end > start);
-    TEST_ASSERT(end - start >= 512*1024);
+    TEST_ASSERT(end - start >= 512 * 1024);
 
     /* clean up any mmap handles left over from failed tests */
     if (handle1) {
@@ -232,15 +232,15 @@ TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]"
     int startpage;
 
     setup_mmap_tests();
-    nopages=(end-start)/SPI_FLASH_MMU_PAGE_SIZE;
-    pages=alloca(sizeof(int)*nopages);
+    nopages = (end - start) / SPI_FLASH_MMU_PAGE_SIZE;
+    pages = alloca(sizeof(int) * nopages);
 
-    startpage=start/SPI_FLASH_MMU_PAGE_SIZE;
+    startpage = start / SPI_FLASH_MMU_PAGE_SIZE;
 
     //make inverse mapping: virt 0 -> page (nopages-1), virt 1 -> page (nopages-2), ...
-    for (int i=0; i<nopages; i++) {
-        pages[i]=startpage+(nopages-1)-i;
-        printf("Offset %x page %d\n", i*SPI_FLASH_MMU_PAGE_SIZE, pages[i]);
+    for (int i = 0; i < nopages; i++) {
+        pages[i] = startpage + (nopages - 1) - i;
+        printf("Offset %x page %d\n", i * SPI_FLASH_MMU_PAGE_SIZE, pages[i]);
     }
 
     printf("Attempting mapping of unordered pages to contiguous memory area\n");
@@ -266,7 +266,7 @@ TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]"
     for (int block = 0; block < 1; ++block) {
         for (int sector = 0; sector < 16; ++sector) {
             for (uint32_t word = 0; word < words_per_sector; ++word) {
-                TEST_ASSERT_EQUAL_UINT32(rand(), data[(((nopages-1)-block) * 16 + sector) * words_per_sector + word]);
+                TEST_ASSERT_EQUAL_UINT32(rand(), data[(((nopages - 1) - block) * 16 + sector) * words_per_sector + word]);
             }
         }
     }
@@ -391,7 +391,7 @@ TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
 
     /* Read the flash @ 'phys' and compare it to the data we get via regular cache access */
     spi_flash_read_maybe_encrypted(phys, buf, sizeof(buf));
-    TEST_ASSERT_EQUAL_HEX32_ARRAY((void *)esp_partition_find, buf, sizeof(buf)/sizeof(uint32_t));
+    TEST_ASSERT_EQUAL_HEX32_ARRAY((void *)esp_partition_find, buf, sizeof(buf) / sizeof(uint32_t));
 
     /* spi_flash_mmap is in IRAM */
     printf("%p\n", spi_flash_mmap);
@@ -443,16 +443,16 @@ TEST_CASE("munmap followed by mmap flushes cache", "[spi_flash][mmap]")
 
     const esp_partition_t *p = get_test_data_partition();
 
-    const uint32_t* data;
+    const uint32_t *data;
     spi_flash_mmap_handle_t handle;
     TEST_ESP_OK( esp_partition_mmap(p, 0, SPI_FLASH_MMU_PAGE_SIZE,
-            SPI_FLASH_MMAP_DATA, (const void **) &data, &handle) );
+                                    SPI_FLASH_MMAP_DATA, (const void **) &data, &handle) );
     uint32_t buf[16];
     memcpy(buf, data, sizeof(buf));
 
     spi_flash_munmap(handle);
     TEST_ESP_OK( esp_partition_mmap(p, SPI_FLASH_MMU_PAGE_SIZE, SPI_FLASH_MMU_PAGE_SIZE,
-            SPI_FLASH_MMAP_DATA, (const void **) &data, &handle) );
+                                    SPI_FLASH_MMAP_DATA, (const void **) &data, &handle) );
     TEST_ASSERT_NOT_EQUAL(0, memcmp(buf, data, sizeof(buf)));
 }
 
@@ -465,10 +465,10 @@ TEST_CASE("no stale data read post mmap and write partition", "[spi_flash][mmap]
 
     const esp_partition_t *p = get_test_data_partition();
 
-    const uint32_t* data;
+    const uint32_t *data;
     spi_flash_mmap_handle_t handle;
     TEST_ESP_OK(esp_partition_mmap(p, 0, SPI_FLASH_MMU_PAGE_SIZE,
-            SPI_FLASH_MMAP_DATA, (const void **) &data, &handle) );
+                                   SPI_FLASH_MMAP_DATA, (const void **) &data, &handle) );
     memcpy(read_data, data, sizeof(read_data));
     TEST_ESP_OK(esp_partition_erase_range(p, 0, SPI_FLASH_MMU_PAGE_SIZE));
     /* not using esp_partition_write here, since the partition in not marked as "encrypted"
