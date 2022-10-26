@@ -251,13 +251,22 @@ TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]"
     printf("mmap_res: handle=%"PRIx32" ptr=%p\n", (uint32_t)handle1, ptr1);
 
     spi_flash_mmap_dump();
+#if (CONFIG_MMU_PAGE_SIZE == 0x10000)
+    uint32_t words_per_sector = 1024;
+#elif (CONFIG_MMU_PAGE_SIZE == 0x8000)
+    uint32_t words_per_sector = 512;
+#elif (CONFIG_MMU_PAGE_SIZE == 0x4000)
+    uint32_t words_per_sector = 256;
+#else
+    uint32_t words_per_sector = 128;
+#endif
 
     srand(0);
     const uint32_t *data = (const uint32_t *) ptr1;
-    for (int block = 0; block < nopages; ++block) {
+    for (int block = 0; block < 1; ++block) {
         for (int sector = 0; sector < 16; ++sector) {
-            for (uint32_t word = 0; word < 1024; ++word) {
-                TEST_ASSERT_EQUAL_UINT32(rand(), data[(((nopages-1)-block) * 16 + sector) * 1024 + word]);
+            for (uint32_t word = 0; word < words_per_sector; ++word) {
+                TEST_ASSERT_EQUAL_UINT32(rand(), data[(((nopages-1)-block) * 16 + sector) * words_per_sector + word]);
             }
         }
     }
