@@ -865,7 +865,7 @@ esp_err_t mcpwm_capture_disable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_ch
 
 uint32_t MCPWM_ISR_ATTR mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
 {
-    if (mcpwm_num >= MCPWM_UNIT_MAX && cap_sig >= SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER) {
+    if (mcpwm_num >= MCPWM_UNIT_MAX || cap_sig >= SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER) {
         return 0;
     }
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
@@ -887,7 +887,7 @@ uint32_t mcpwm_capture_get_resolution(mcpwm_unit_t mcpwm_num)
 
 uint32_t MCPWM_ISR_ATTR mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
 {
-    if (mcpwm_num >= MCPWM_UNIT_MAX && cap_sig >= SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER) {
+    if (mcpwm_num >= MCPWM_UNIT_MAX || cap_sig >= SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER) {
         return 0;
     }
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
