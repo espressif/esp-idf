@@ -847,8 +847,9 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
         case HttpStatus_PermanentRedirect:
             if (client->disable_auto_redirect) {
                 http_dispatch_event(client, HTTP_EVENT_REDIRECT, NULL, 0);
+            } else {
+                ESP_ERROR_CHECK(esp_http_client_set_redirection(client));
             }
-            esp_http_client_set_redirection(client);
             client->redirect_counter ++;
             client->process_again = 1;
             break;
