@@ -72,7 +72,7 @@ ble_npl_error_t npl_freertos_sem_pend(struct ble_npl_sem *sem,
 
 ble_npl_error_t npl_freertos_sem_release(struct ble_npl_sem *sem);
 
-void npl_freertos_callout_init(struct ble_npl_callout *co,
+int npl_freertos_callout_init(struct ble_npl_callout *co,
                                struct ble_npl_eventq *evq,
                                ble_npl_event_fn *ev_cb, void *ev_arg);
 

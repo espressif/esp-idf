@@ -121,7 +121,7 @@ uint16_t ble_npl_sem_get_count(struct ble_npl_sem *sem);
  * Callouts
  */
 
-void ble_npl_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq,
+int ble_npl_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq,
                           ble_npl_event_fn *ev_cb, void *ev_arg);
 
 ble_npl_error_t ble_npl_callout_reset(struct ble_npl_callout *co,

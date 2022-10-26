@@ -102,7 +102,7 @@ struct npl_funcs_t {
     ble_npl_error_t (*p_ble_npl_sem_pend)(struct ble_npl_sem *, ble_npl_time_t);
     ble_npl_error_t (*p_ble_npl_sem_release)(struct ble_npl_sem *);
     uint16_t (*p_ble_npl_sem_get_count)(struct ble_npl_sem *);
-    void (*p_ble_npl_callout_init)(struct ble_npl_callout *, struct ble_npl_eventq *, ble_npl_event_fn *, void *);
+    int (*p_ble_npl_callout_init)(struct ble_npl_callout *, struct ble_npl_eventq *, ble_npl_event_fn *, void *);
     ble_npl_error_t (*p_ble_npl_callout_reset)(struct ble_npl_callout *, ble_npl_time_t);
     void (*p_ble_npl_callout_stop)(struct ble_npl_callout *);
     void (*p_ble_npl_callout_deinit)(struct ble_npl_callout *);
@@ -259,12 +259,13 @@ IRAM_ATTR ble_npl_sem_get_count(struct ble_npl_sem *sem)
     return npl_funcs->p_ble_npl_sem_get_count(sem);
 }
 
-static inline void
+static inline int
 IRAM_ATTR ble_npl_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq,
                      ble_npl_event_fn *ev_cb, void *ev_arg)
 {
     return npl_funcs->p_ble_npl_callout_init(co, evq, ev_cb, ev_arg);
 }
+
 static inline void
 IRAM_ATTR ble_npl_callout_deinit(struct ble_npl_callout *co)
 {
