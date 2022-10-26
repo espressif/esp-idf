@@ -60,7 +60,7 @@
 #define OSI_COEX_VERSION              0x00010006
 #define OSI_COEX_MAGIC_VALUE          0xFADEBEAD
 
-#define EXT_FUNC_VERSION             0x20220125
+#define EXT_FUNC_VERSION             0x20221122
 #define EXT_FUNC_MAGIC_VALUE         0xA5A5A5A5
 
 #define BT_ASSERT_PRINT              ets_printf
@@ -102,6 +102,7 @@ struct ext_funcs_t {
     int (* _ecc_gen_key_pair)(uint8_t *public, uint8_t *priv);
     int (* _ecc_gen_dh_key)(const uint8_t *remote_pub_key_x, const uint8_t *remote_pub_key_y, const uint8_t *local_priv_key, uint8_t *dhkey);
     void (* _esp_reset_rpa_moudle)(void);
+    void (* _esp_bt_track_pll_cap)(void);
     uint32_t magic;
 };
 
@@ -641,6 +642,8 @@ void ble_rtc_clk_init(void)
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
+    esp_err_t ret = ESP_OK;
+
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
         return ESP_FAIL;
@@ -659,7 +662,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     /* Initialize the function pointers for OS porting */
     npl_freertos_funcs_init();
-
     struct npl_funcs_t *p_npl_funcs = npl_freertos_funcs_get();
     if (!p_npl_funcs) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "npl functions get failed");
@@ -668,18 +670,21 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     if (esp_register_npl_funcs(p_npl_funcs) != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "npl functions register failed");
-        return ESP_ERR_INVALID_ARG;
+        ret = ESP_ERR_INVALID_ARG;
+        goto free_mem;
     }
 
     if (npl_freertos_mempool_init() != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "npl mempool init failed");
-        return ESP_ERR_INVALID_ARG;
+        ret = ESP_ERR_INVALID_ARG;
+        goto free_mem;
     }
 
     /* Initialize the global memory pool */
     if (os_msys_buf_alloc() != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "os msys alloc failed");
-        return ESP_ERR_INVALID_ARG;
+        ret = ESP_ERR_INVALID_ARG;
+        goto free_mem;
     }
 
     os_msys_init();
@@ -699,7 +704,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     if (ble_osi_coex_funcs_register((struct osi_coex_funcs_t *)&s_osi_coex_funcs_ro) != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "osi coex funcs reg failed");
-        return ESP_ERR_INVALID_ARG;
+        ret = ESP_ERR_INVALID_ARG;
+        goto free_phy;
     }
 
 #if CONFIG_SW_COEXIST_ENABLE
@@ -708,7 +714,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     int rc = ble_controller_init(cfg);
     if (rc != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_init failed %d", rc);
-        return ESP_ERR_NO_MEM;
+        ret = ESP_ERR_NO_MEM;
+        goto free_phy;
     }
 
     controller_sleep_init();
@@ -724,8 +731,20 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     ble_hci_trans_cfg_hs((ble_hci_trans_rx_cmd_fn *)ble_hci_unregistered_hook,NULL,
                          (ble_hci_trans_rx_acl_fn *)ble_hci_unregistered_hook,NULL);
-
     return ESP_OK;
+free_phy:
+    esp_phy_disable();
+    esp_phy_pd_mem_deinit();
+#if CONFIG_BT_NIMBLE_ENABLED
+    ble_npl_eventq_deinit(nimble_port_get_dflt_eventq());
+#endif // CONFIG_BT_NIMBLE_ENABLED
+free_mem:
+    os_msys_buf_free();
+    npl_freertos_mempool_deinit();
+    esp_unregister_npl_funcs();
+    npl_freertos_funcs_deinit();
+    esp_unregister_ext_funcs();
+    return ret;
 }
 
 esp_err_t esp_bt_controller_deinit(void)

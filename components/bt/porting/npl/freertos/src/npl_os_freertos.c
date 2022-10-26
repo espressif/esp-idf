@@ -676,7 +676,7 @@ IRAM_ATTR os_callout_timer_cb(TimerHandle_t timer)
 }
 #endif
 
-void
+int
 npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq,
                       ble_npl_event_fn *ev_cb, void *ev_arg)
 {
@@ -692,61 +692,82 @@ npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq
         ble_npl_event_init(&callout->ev, ev_cb, ev_arg);
 
 #if CONFIG_BT_NIMBLE_USE_ESP_TIMER
-	callout->evq = evq;
+        callout->evq = evq;
 
-	esp_timer_create_args_t create_args = {
-		.callback = ble_npl_event_fn_wrapper,
-		.arg = callout,
-		.name = "nimble_timer"
-	};
+        esp_timer_create_args_t create_args = {
+            .callback = ble_npl_event_fn_wrapper,
+            .arg = callout,
+            .name = "nimble_timer"
+        };
 
-	ESP_ERROR_CHECK(esp_timer_create(&create_args, &callout->handle));
-
+        if (esp_timer_create(&create_args, &callout->handle) != ESP_OK) {
+            ble_npl_event_deinit(&callout->ev);
+            os_memblock_put(&ble_freertos_co_pool,callout);
+            co->co = NULL;
+            return -1;
+        }
 #else
-	callout->handle = xTimerCreate("co", 1, pdFALSE, callout, os_callout_timer_cb);
-#endif
+        callout->handle = xTimerCreate("co", 1, pdFALSE, callout, os_callout_timer_cb);
 
-	BLE_LL_ASSERT(callout->handle);
+        if (!callout->handle) {
+            ble_npl_event_deinit(&callout->ev);
+            os_memblock_put(&ble_freertos_co_pool,callout);
+            co->co = NULL;
+            return -1;
+        }
+#endif // CONFIG_BT_NIMBLE_USE_ESP_TIMER
     } else {
-	callout = (struct ble_npl_callout_freertos *)co->co;
-	BLE_LL_ASSERT(callout);
-	callout->evq = evq;
-	ble_npl_event_init(&callout->ev, ev_cb, ev_arg);
+        callout = (struct ble_npl_callout_freertos *)co->co;
+        BLE_LL_ASSERT(callout);
+        callout->evq = evq;
+        ble_npl_event_init(&callout->ev, ev_cb, ev_arg);
     }
 #else
 
     if(!co->co) {
         co->co = malloc(sizeof(struct ble_npl_callout_freertos));
         callout = (struct ble_npl_callout_freertos *)co->co;
-        BLE_LL_ASSERT(callout);
+        if (!callout) {
+            return -1;
+        }
 
-	memset(callout, 0, sizeof(*callout));
+        memset(callout, 0, sizeof(*callout));
         ble_npl_event_init(&callout->ev, ev_cb, ev_arg);
 
 #if CONFIG_BT_NIMBLE_USE_ESP_TIMER
-	callout->evq = evq;
+        callout->evq = evq;
 
-	esp_timer_create_args_t create_args = {
-		.callback = ble_npl_event_fn_wrapper,
-		.arg = callout,
-		.name = "nimble_timer"
-	};
+        esp_timer_create_args_t create_args = {
+            .callback = ble_npl_event_fn_wrapper,
+            .arg = callout,
+            .name = "nimble_timer"
+        };
 
-	ESP_ERROR_CHECK(esp_timer_create(&create_args, &callout->handle));
+        if (esp_timer_create(&create_args, &callout->handle) != ESP_OK) {
+            ble_npl_event_deinit(&callout->ev);
+            free((void *)callout);
+            co->co = NULL;
+            return -1;
+        }
 #else
-	callout->handle = xTimerCreate("co", 1, pdFALSE, callout, os_callout_timer_cb);
-#endif
+        callout->handle = xTimerCreate("co", 1, pdFALSE, callout, os_callout_timer_cb);
 
-	BLE_LL_ASSERT(callout->handle);
+        if (!callout->handle) {
+            ble_npl_event_deinit(&callout->ev);
+            free((void *)callout);
+            co->co = NULL;
+            return -1;
+        }
+#endif // CONFIG_BT_NIMBLE_USE_ESP_TIMER
     }
     else {
         callout = (struct ble_npl_callout_freertos *)co->co;
         BLE_LL_ASSERT(callout);
-	callout->evq = evq;
-	ble_npl_event_init(&callout->ev, ev_cb, ev_arg);
+        callout->evq = evq;
+        ble_npl_event_init(&callout->ev, ev_cb, ev_arg);
     }
-#endif
-
+#endif // OS_MEM_ALLOC
+    return 0;
 }
 
 void
@@ -756,11 +777,14 @@ npl_freertos_callout_deinit(struct ble_npl_callout *co)
 
     /* Since we dynamically deinit timers, function can be called for NULL timers. Return for such scenarios */
     if (!callout) {
-	return;
+        return;
     }
 
-    BLE_LL_ASSERT(callout->handle);
+    if (!callout->handle) {
+        return;
+    }
 
+    ble_npl_event_deinit(&callout->ev);
 #if CONFIG_BT_NIMBLE_USE_ESP_TIMER
     esp_err_t err = esp_timer_stop(callout->handle);
     if(err != ESP_OK) {
@@ -773,17 +797,13 @@ npl_freertos_callout_deinit(struct ble_npl_callout *co)
         ESP_LOGW(TAG, "Timer not deleted");
     }
 #else
-
     xTimerDelete(callout->handle, portMAX_DELAY);
-    ble_npl_event_deinit(&callout->ev);
-
 #if OS_MEM_ALLOC
     os_memblock_put(&ble_freertos_co_pool,callout);
 #else
     free((void *)callout);
-#endif
-
-#endif
+#endif // OS_MEM_ALLOC
+#endif // CONFIG_BT_NIMBLE_USE_ESP_TIMER
     co->co = NULL;
     memset(co, 0, sizeof(struct ble_npl_callout));
 }
