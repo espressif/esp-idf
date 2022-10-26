@@ -38,14 +38,17 @@ static esp_err_t prov_start(protocomm_t *pc, void *config)
 
     protocomm_ble_config_t *ble_config = (protocomm_ble_config_t *) config;
 
-    #if defined(CONFIG_WIFI_PROV_BLE_BONDING)
+#if defined(CONFIG_WIFI_PROV_BLE_BONDING)
    	ble_config->ble_bonding = 1;
-    #endif
+#endif
 
-    #if defined(CONFIG_WIFI_PROV_BLE_SEC_CONN) || defined(CONFIG_BT_BLUEDROID_ENABLED)
-        ble_config->ble_sm_sc = 1;
-    #endif
+#if defined(CONFIG_WIFI_PROV_BLE_SEC_CONN) || defined(CONFIG_BT_BLUEDROID_ENABLED)
+    ble_config->ble_sm_sc = 1;
+#endif
 
+#if defined(CONFIG_WIFI_PROV_BLE_FORCE_ENCRYPTION)
+    ble_config->ble_link_encryption = 1;
+#endif
     /* Start protocomm as BLE service */
     if (protocomm_ble_start(pc, ble_config) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start protocomm BLE service");
