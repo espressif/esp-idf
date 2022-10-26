@@ -19,7 +19,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "test_utils.h"
 #include "sdkconfig.h"
 #include "esp_rom_efuse.h"
 #include "bootloader_common.h"

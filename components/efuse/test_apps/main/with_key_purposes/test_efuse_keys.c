@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "unity.h"
-#include "test_utils.h"
 #include "esp_log.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"

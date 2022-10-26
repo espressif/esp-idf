@@ -909,7 +909,7 @@ test_app_test_eth:
 
 UT_001:
   extends: .unit_test_esp32_template
-  parallel: 40
+  parallel: 32
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -918,7 +918,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_esp32_template
-  parallel: 14
+  parallel: 12
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -926,7 +926,6 @@ UT_002:
 
 UT_003:
   extends: .unit_test_esp32_template
-  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_SDMODE
@@ -1008,7 +1007,7 @@ UT_034:
 
 UT_035:
   extends: .unit_test_esp32s2_template
-  parallel: 41
+  parallel: 32
   tags:
     - ESP32S2_IDF
     - UT_T1_1
@@ -1096,7 +1095,7 @@ UT_S2_SDSPI:
 
 UT_C2:
   extends: .unit_test_esp32c2_template
-  parallel: 17
+  parallel: 15
   tags:
     - ESP32C2_IDF
     - UT_T1_1
@@ -1128,7 +1127,7 @@ UT_C2_FLASH:
 
 UT_C3:
   extends: .unit_test_esp32c3_template
-  parallel: 24
+  parallel: 21
   tags:
     - ESP32C3_IDF
     - UT_T1_1
@@ -1165,7 +1164,7 @@ UT_C3_SDSPI:
 
 UT_S3:
   extends: .unit_test_esp32s3_template
-  parallel: 22
+  parallel: 19
   tags:
     - ESP32S3_IDF
     - UT_T1_1
@@ -1186,7 +1185,6 @@ UT_S3_SPI_DUAL:
 
 UT_S3_FLASH:
   extends: .unit_test_esp32s3_template
-  parallel: 2
   tags:
     - ESP32S3_IDF
     - UT_T1_ESP_FLASH
