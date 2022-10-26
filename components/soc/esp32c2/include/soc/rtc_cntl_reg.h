@@ -303,7 +303,6 @@ RO CPU.*/
 #define RTC_CNTL_MIN_SLP_VAL_M  ((RTC_CNTL_MIN_SLP_VAL_V)<<(RTC_CNTL_MIN_SLP_VAL_S))
 #define RTC_CNTL_MIN_SLP_VAL_V  0xFF
 #define RTC_CNTL_MIN_SLP_VAL_S  8
-#define RTC_CNTL_MIN_SLP_VAL_MIN 2
 
 #define RTC_CNTL_ANA_CONF_REG          (DR_REG_RTCCNTL_BASE + 0x2C)
 /* RTC_CNTL_PLL_I2C_PU :  ;bitpos:[31] ;default: 1'd0 ; */
