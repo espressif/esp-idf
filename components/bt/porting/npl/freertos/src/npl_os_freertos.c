@@ -198,7 +198,7 @@ IRAM_ATTR npl_freertos_event_reset(struct ble_npl_event *ev)
 }
 
 void
-IRAM_ATTR npl_freertos_eventq_init(struct ble_npl_eventq *evq)
+npl_freertos_eventq_init(struct ble_npl_eventq *evq)
 {
     struct ble_npl_eventq_freertos *eventq = NULL;
 #if OS_MEM_ALLOC
@@ -225,7 +225,7 @@ IRAM_ATTR npl_freertos_eventq_init(struct ble_npl_eventq *evq)
 }
 
 void
-IRAM_ATTR npl_freertos_eventq_deinit(struct ble_npl_eventq *evq)
+npl_freertos_eventq_deinit(struct ble_npl_eventq *evq)
 {
     struct ble_npl_eventq_freertos *eventq = (struct ble_npl_eventq_freertos *)evq->eventq;
 
@@ -380,7 +380,7 @@ IRAM_ATTR npl_freertos_eventq_remove(struct ble_npl_eventq *evq,
 }
 
 ble_npl_error_t
-IRAM_ATTR npl_freertos_mutex_init(struct ble_npl_mutex *mu)
+npl_freertos_mutex_init(struct ble_npl_mutex *mu)
 {
     struct ble_npl_mutex_freertos *mutex = NULL;
 #if OS_MEM_ALLOC
@@ -415,7 +415,7 @@ IRAM_ATTR npl_freertos_mutex_init(struct ble_npl_mutex *mu)
 }
 
 ble_npl_error_t
-IRAM_ATTR npl_freertos_mutex_deinit(struct ble_npl_mutex *mu)
+npl_freertos_mutex_deinit(struct ble_npl_mutex *mu)
 {
     struct ble_npl_mutex_freertos *mutex = (struct ble_npl_mutex_freertos *)mu->mutex;
 
@@ -517,7 +517,7 @@ IRAM_ATTR npl_freertos_mutex_release(struct ble_npl_mutex *mu)
 }
 
 ble_npl_error_t
-IRAM_ATTR npl_freertos_sem_init(struct ble_npl_sem *sem, uint16_t tokens)
+npl_freertos_sem_init(struct ble_npl_sem *sem, uint16_t tokens)
 {
     struct ble_npl_sem_freertos *semaphor = NULL;
 #if OS_MEM_ALLOC
@@ -552,7 +552,7 @@ IRAM_ATTR npl_freertos_sem_init(struct ble_npl_sem *sem, uint16_t tokens)
 }
 
 ble_npl_error_t
-IRAM_ATTR npl_freertos_sem_deinit(struct ble_npl_sem *sem)
+npl_freertos_sem_deinit(struct ble_npl_sem *sem)
 {
     struct ble_npl_sem_freertos *semaphor = (struct ble_npl_sem_freertos *)sem->sem;
 
@@ -677,7 +677,7 @@ IRAM_ATTR os_callout_timer_cb(TimerHandle_t timer)
 #endif
 
 void
-IRAM_ATTR npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq,
+npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq,
                       ble_npl_event_fn *ev_cb, void *ev_arg)
 {
     struct ble_npl_callout_freertos *callout = NULL;
@@ -750,7 +750,7 @@ IRAM_ATTR npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_e
 }
 
 void
-IRAM_ATTR npl_freertos_callout_deinit(struct ble_npl_callout *co)
+npl_freertos_callout_deinit(struct ble_npl_callout *co)
 {
     struct ble_npl_callout_freertos *callout = (struct ble_npl_callout_freertos *)co->co;
 
