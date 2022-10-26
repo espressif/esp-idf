@@ -138,7 +138,7 @@ Remaining external RAM can also be added to the capability heap allocator using 
 
     - The corresponding virtual memory range of those instructions will also be re-mapped to PSRAM.
 
-    If :ref:`CONFIG_SPIRAM_RODATA` is also enabled, the Cache won't be disabled during an SPI1 Flash operation. You don't need to make sure ISRs, ISR callbacks and involved data are placed in internal RAM, thus internal RAM usage can be optimized.
+    If :ref:`CONFIG_SPIRAM_RODATA` is also enabled, the cache won't be disabled during an SPI1 flash operation. You don't need to make sure ISRs, ISR callbacks and involved data are placed in internal RAM, thus internal RAM usage can be optimized.
 
     .. _external_ram_config_rodata:
 
@@ -153,7 +153,7 @@ Remaining external RAM can also be added to the capability heap allocator using 
 
     - The corresponding virtual memory range of those rodata will also be re-mapped to PSRAM.
 
-    If :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` is also enabled, the Cache won't be disabled during an SPI1 Flash operation. You don't need to make sure ISRs, ISR callbacks and involved data are placed in internal RAM, thus internal RAM usage can be optimized.
+    If :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` is also enabled, the cache won't be disabled during an SPI1 flash operation. You don't need to make sure ISRs, ISR callbacks and involved data are placed in internal RAM, thus internal RAM usage can be optimized.
 
 Restrictions
 ============
