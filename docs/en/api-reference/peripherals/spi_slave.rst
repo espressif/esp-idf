@@ -111,16 +111,14 @@ The amount of data that the driver can read or write to the buffers is limited b
 
 If the length of the transmission is greater than the buffer length, only the initial number of bits specified in the :cpp:member:`spi_slave_transaction_t::length` member will be sent and received. In this case, :cpp:member:`spi_slave_transaction_t::trans_len` is set to :cpp:member:`spi_slave_transaction_t::length` instead of the actual transaction length. To meet the actual transaction length requirements, set :cpp:member:`spi_slave_transaction_t::length` to a value greater than the maximum :cpp:member:`spi_slave_transaction_t::trans_len` expected. If the transmission length is shorter than the buffer length, only the data equal to the length of the buffer will be transmitted.
 
-.. only:: esp32
+GPIO Matrix and IO_MUX
+^^^^^^^^^^^^^^^^^^^^^^
 
-    GPIO Matrix and IO_MUX
-    ----------------------
+.. only:: esp32
 
     Most of {IDF_TARGET_NAME}'s peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix.
 
-    If at least one signal is routed through the GPIO matrix, then all signals will be routed through it. The GPIO matrix samples all signals at 80 MHz and transmits them between the GPIO and the peripheral.
-
-    If the driver is configured so that all SPI signals are either routed to their dedicated IO_MUX pins or are not connected at all, the GPIO matrix will be bypassed.
+    If at least one signal is routed through the GPIO matrix, then all signals will be routed through it. If the driver is configured so that all SPI signals are either routed to their dedicated IO_MUX pins or are not connected at all, the GPIO matrix will be bypassed.
 
     The GPIO matrix introduces flexibility of routing but also increases the input delay of the MISO signal, which makes MISO setup time violations more likely. If SPI needs to operate at high speeds, use dedicated IO_MUX pins.
 
@@ -130,35 +128,77 @@ If the length of the transmission is greater than the buffer length, only the in
 
     The IO_MUX pins for SPI buses are given below.
 
-    .. only:: esp32
+    +----------+------+------+
+    | Pin Name | SPI2 | SPI3 |
+    +          +------+------+
+    |          | GPIO Number |
+    +==========+======+======+
+    | CS0*     | 15   | 5    |
+    +----------+------+------+
+    | SCLK     | 14   | 18   |
+    +----------+------+------+
+    | MISO     | 12   | 19   |
+    +----------+------+------+
+    | MOSI     | 13   | 23   |
+    +----------+------+------+
+    | QUADWP   | 2    | 22   |
+    +----------+------+------+
+    | QUADHD   | 4    | 21   |
+    +----------+------+------+
 
-        .. list-table::
-           :widths: 40 30 30
-           :header-rows: 1
+.. only:: esp32s2 or esp32s3
 
-           * - Pin Name
-             - GPIO Number (SPI2)
-             - GPIO Number (SPI3)
-           * - CS0*
-             - 15
-             - 5
-           * - SCLK
-             - 14
-             - 18
-           * - MISO
-             - 12
-             - 19
-           * - MOSI
-             - 13
-             - 23
-           * - QUADWP
-             - 2
-             - 22
-           * - QUADHD
-             - 4
-             - 21
+    Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
-    * Only the first Device attached to the bus can use the CS0 pin.
+    When an SPI Host is set to 80MHz or lower frequencies, routing SPI pins via GPIO matrix will behave the same comparing to routing them via IOMUX.
+
+    The IO_MUX pins for SPI buses are given below.
+
+    +----------+------+------+
+    | Pin Name | SPI2 | SPI3 |
+    +          +------+------+
+    |          | GPIO Number |
+    +==========+======+======+
+    | CS0*     | 10   | N/A  |
+    +----------+------+------+
+    | SCLK     | 12   | N/A  |
+    +----------+------+------+
+    | MISO     | 13   | N/A  |
+    +----------+------+------+
+    | MOSI     | 11   | N/A  |
+    +----------+------+------+
+    | QUADWP   | 14   | N/A  |
+    +----------+------+------+
+    | QUADHD   | 9    | N/A  |
+    +----------+------+------+
+
+.. only:: esp32c2 or esp32c3
+
+    Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
+
+    When an SPI Host is set to 80MHz or lower frequencies, routing SPI pins via GPIO matrix will behave the same comparing to routing them via IOMUX.
+
+    The IO_MUX pins for SPI buses are given below.
+
+    +----------+-------------+
+    | Pin Name |    SPI2     |
+    +          +-------------+
+    |          | GPIO Number |
+    +==========+=============+
+    | CS0*     |      10     |
+    +----------+-------------+
+    | SCLK     |      6      |
+    +----------+-------------+
+    | MISO     |      2      |
+    +----------+-------------+
+    | MOSI     |      7      |
+    +----------+-------------+
+    | QUADWP   |      5      |
+    +----------+-------------+
+    | QUADHD   |      4      |
+    +----------+-------------+
+
+* Only the first Device attached to the bus can use the CS0 pin.
 
 
 Speed and Timing Considerations
@@ -196,7 +236,7 @@ The SPI slaves are designed to operate at up to {IDF_TARGET_MAX_FREQ} MHz. The d
         .. list-table::
            :widths: 30 40 40
            :header-rows: 1
-        
+
            * - /
              - Output delay of MISO (ns)
              - Freq. limit (MHz)
