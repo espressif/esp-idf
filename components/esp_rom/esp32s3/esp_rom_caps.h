@@ -23,3 +23,4 @@
 #define ESP_ROM_USB_SERIAL_DEVICE_NUM       (4) // The serial port ID (UART, USB, ...) of USB_SERIAL_JTAG in the ROM.
 #define ESP_ROM_HAS_ERASE_0_REGION_BUG      (1) // ROM has esp_flash_erase_region(size=0) bug
 #define ESP_ROM_NEEDS_SWSETUP_WORKAROUND    (1) // ROM uses 32-bit time_t. A workaround is required to prevent printf functions from crashing
+#define ESP_ROM_HAS_ETS_PRINTF_BUG          (1) // ROM has ets_printf bug when disable the ROM log either by eFuse or RTC storage register

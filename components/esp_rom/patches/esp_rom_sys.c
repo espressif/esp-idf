@@ -16,7 +16,7 @@
 #include <stdbool.h>
 #include "esp_attr.h"
 
-#include "sdkconfig.h"
+#include "esp_rom_caps.h"
 
 IRAM_ATTR void esp_rom_install_channel_putc(int channel, void (*putc)(char c))
 {
@@ -34,14 +34,16 @@ IRAM_ATTR void esp_rom_install_channel_putc(int channel, void (*putc)(char c))
     }
 }
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if ESP_ROM_HAS_ETS_PRINTF_BUG
 IRAM_ATTR void esp_rom_install_uart_printf(void)
 {
     extern void ets_install_uart_printf(void);
     extern bool g_uart_print;
+    extern bool g_usb_print;
     // If ROM log is disabled permanently via eFuse or temporarily via RTC storage register,
     // this ROM symbol will be set to false, and cause ``esp_rom_printf`` can't work on esp-idf side.
     g_uart_print = true;
+    g_usb_print = true;
     ets_install_uart_printf();
 }
 #endif
