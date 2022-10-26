@@ -98,7 +98,7 @@ On macOS, using FT2232 for JTAG and serial port at the same time needs some addi
 
 1. Manually unload the FTDI serial port driver before starting OpenOCD, start OpenOCD, then load the serial port driver.
 
-2. Modify FTDI driver configuration so that it doesn't load itself for channel B of FT2232 chip, which is the channel used for JTAG on |devkit-name|.
+2. Modify FTDI driver configuration so that it doesn't load itself for channel A of FT2232 chip, which is the channel used for JTAG on |devkit-name|.
 
 Manually unloading the driver
 .............................
