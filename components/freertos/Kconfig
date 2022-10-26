@@ -313,7 +313,9 @@ menu "FreeRTOS"
                 Note: Users will need to provide a ``void vPortCleanUpTCB ( void *pxTCB )`` callback
 
         config FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
-            # Todo: Not supported on SMP FreeRTOS (IDF-4986)
+            # This feature is innately supported in FreeRTOS SMP, and hence not available as a config option when
+            # FreeRTOS SMP is enabled.
+            depends on !FREERTOS_SMP
             bool "Check that mutex semaphore is given by owner task"
             default y
             help
