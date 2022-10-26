@@ -34,7 +34,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "zboss_api.h"
+#include "esp_zigbee_core.h"
 
 #define ESP_ZB_DEFAULT_RADIO_CONFIG()                           \
     {                                                           \
