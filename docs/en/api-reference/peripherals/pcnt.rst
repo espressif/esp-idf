@@ -44,7 +44,8 @@ Install PCNT Unit
 
 To install a PCNT unit, there's a configuration structure that needs to be given in advance: :cpp:type:`pcnt_unit_config_t`:
 
--  :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit` specify the range for the internal counter. Counter will back to zero when it crosses either limit value.
+-  :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit` specify the range for the internal hardware counter. The counter will reset to zero automatically when it crosses either the high or low limit.
+-  :cpp:member:`pcnt_unit_config_t::accum_count` sets whether to create an internal accumulator for the counter. This is helpful when you want to extend the counter's width, which by default is 16bit at most, defined in the hardware. See also :ref:`pcnt-compensate-overflow-loss` for how to use this feature to compensate the overflow loss.
 
 Unit allocation and initialization is done by calling a function :cpp:func:`pcnt_new_unit` with :cpp:type:`pcnt_unit_config_t` as an input parameter. The function will return a PCNT unit handle only when it runs correctly. Specifically, when there are no more free PCNT units in the pool (i.e. unit resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. The total number of available PCNT units is recorded by :c:macro:`SOC_PCNT_UNITS_PER_GROUP` for reference.
 
@@ -223,16 +224,27 @@ Note, :cpp:func:`pcnt_unit_start` and :cpp:func:`pcnt_unit_stop` should be calle
 Get Count Value
 ~~~~~~~~~~~~~~~
 
-You can check current count value at any time by calling :cpp:func:`pcnt_unit_get_count`.
-
-.. note::
-
-    The returned count value is a **signed** integer, where the sign can be used to reflect the direction. The internal counter will overflow when it reaches high or low limit, but this function doesn't compensate for that loss.
+You can read current count value at any time by calling :cpp:func:`pcnt_unit_get_count`. The returned count value is a **signed** integer, where the sign can be used to reflect the direction.
 
 .. code:: c
 
     int pulse_count = 0;
     ESP_ERROR_CHECK(pcnt_unit_get_count(pcnt_unit, &pulse_count));
+
+.. _pcnt-compensate-overflow-loss:
+
+Compensate Overflow Loss
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The internal hardware counter will be cleared to zero automatically when it reaches high or low limit. If you want to compensate for that count loss and extend the counter's bit-width, you can:
+
+    1. Enable :cpp:member:`pcnt_unit_config_t::accum_count` when installing the PCNT unit.
+    2. Add the high/low limit as the :ref:`pcnt-watch-points`.
+    3. Now, the returned count value from the :cpp:func:`pcnt_unit_get_count` function not only reflects the hardware's count value, but also accumulates the high/low overflow loss to it.
+
+.. note::
+
+    :cpp:func:`pcnt_unit_clear_count` will reset the accumulated count value as well.
 
 .. _pcnt-power-management:
 

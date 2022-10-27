@@ -45,6 +45,7 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 安装 PCNT 单元时，需要先完成配置 :cpp:type:`pcnt_unit_config_t`：
 
 -  :cpp:member:`pcnt_unit_config_t::low_limit` 与 :cpp:member:`pcnt_unit_config_t::high_limit` 用于指定内部计数器的最小值和最大值。当计数器超过任一限值时，计数器将归零。
+-  :cpp:member:`pcnt_unit_config_t::accum_count` 用于设置是否需要软件在硬件计数值溢出的时候进行累加保存，这有助于“拓宽”计数器的实际位宽。默认情况下，计数器的位宽最高只有 16 比特。请参考 :ref:`pcnt-compensate-overflow-loss` 了解如何利用此功能来补偿硬件计数器的溢出损失。
 
 调用函数 :cpp:func:`pcnt_new_unit` 并将 :cpp:type:`pcnt_unit_config_t` 作为其输入值，可对 PCNT 单元进行分配和初始化。该函数正常运行时，会返回一个 PCNT 单元句柄。没有可用的 PCNT 单元时（即 PCNT 单元全部被占用），该函数会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。可用的 PCNT 单元总数记录在 :c:macro:`SOC_PCNT_UNITS_PER_GROUP` 中，以供参考。
 
@@ -110,8 +111,8 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 
 .. _pcnt-watch-points:
 
-配置观察点
-^^^^^^^^^^
+PCNT 观察点
+^^^^^^^^^^^
 
 PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值被称为 **观察点**。观察点不能超过 :cpp:type:`pcnt_unit_config_t` 设置的范围，最小值和最大值分别为 :cpp:member:`pcnt_unit_config_t::low_limit` 和 :cpp:member:`pcnt_unit_config_t::high_limit`。当计数器到达任一观察点时，会触发一个观察事件，如果在 :cpp:func:`pcnt_unit_register_event_callbacks` 注册过事件回调函数，该事件就会通过中断通知您。关于如何注册事件回调函数，请参考 :ref:`pcnt-register-event-callbacks`。
 
@@ -205,8 +206,8 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
 .. _pcnt-unit-io-control:
 
-控制单元 IO
-^^^^^^^^^^^^^^^
+控制单元 IO 操作
+^^^^^^^^^^^^^^^^
 
 启用/停用及清零
 ^^^^^^^^^^^^^^^^^^
@@ -223,16 +224,27 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 获取计数器数值
 ^^^^^^^^^^^^^^^^^^^
 
-通过调用 :cpp:func:`pcnt_unit_get_count` 可随时获取当前计数器的数值。
-
-.. note::
-
-    返回的计数器数值是一个 **带符号** 的整数，符号代表计数方向。计数器的数值大于等于最大值或小于等于最小值时，计数器会溢出。
+调用 :cpp:func:`pcnt_unit_get_count` 可随时获取当前计数器的数值。返回的计数值是一个 **带符号** 的整型数，其符号反映了计数的方向。
 
  .. code:: c
 
     int pulse_count = 0;
     ESP_ERROR_CHECK(pcnt_unit_get_count(pcnt_unit, &pulse_count));
+
+.. _pcnt-compensate-overflow-loss:
+
+计数溢出补偿
+~~~~~~~~~~~~
+
+PCNT 内部的硬件计数器会在计数达到高/低门限的时候自动清零。如果你想补偿该计数值的溢出损失，以期进一步拓宽计数器的实际位宽，你可以：
+
+    1. 在安装 PCNT 计数单元的时候使能 :cpp:member:`pcnt_unit_config_t::accum_count` 选项。
+    2. 将高/低计数门限设置为 :ref:`pcnt-watch-points`.
+    3. 现在，:cpp:func:`pcnt_unit_get_count` 函数返回的计数值就会包含硬件计数器当前的计数值，累加上计数器溢出造成的损失。
+
+.. note::
+
+    :cpp:func:`pcnt_unit_clear_count` 会复位该软件累加器。
 
 .. _pcnt-power-management:
 
