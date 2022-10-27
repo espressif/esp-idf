@@ -8,11 +8,6 @@ set(includes "include")
 if(NOT CONFIG_HEAP_TLSF_USE_ROM_IMPL)
     set(priv_includes "tlsf")
     list(APPEND srcs "tlsf/tlsf.c")
-    if(NOT CMAKE_BUILD_EARLY_EXPANSION)
-        set_source_files_properties(tlsf/tlsf.c
-                                    PROPERTIES COMPILE_FLAGS
-                                    "-include ../tlsf_platform.h")
-    endif()
 endif()
 
 if(NOT CONFIG_HEAP_POISONING_DISABLED)
