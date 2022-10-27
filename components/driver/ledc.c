@@ -101,8 +101,8 @@ static bool ledc_slow_clk_calibrate(void)
 {
     if (periph_rtc_dig_clk8m_enable()) {
         s_ledc_slow_clk_8M = periph_rtc_dig_clk8m_get_freq();
-#if CONFIG_IDF_TARGET_ESP32H2
-        /* Workaround: Calibration cannot be done for CLK8M on H2, we just use its theoretic frequency */
+#if !SOC_CLK_RC_FAST_D256_SUPPORTED
+        /* Workaround: CLK8M calibration cannot be performed if there is no d256 div clk, we can only use its theoretic freq */
         ESP_LOGD(LEDC_TAG, "Calibration cannot be performed, approximate CLK8M_CLK : %"PRIu32" Hz", s_ledc_slow_clk_8M);
 #else
         ESP_LOGD(LEDC_TAG, "Calibrate CLK8M_CLK : %"PRIu32" Hz", s_ledc_slow_clk_8M);

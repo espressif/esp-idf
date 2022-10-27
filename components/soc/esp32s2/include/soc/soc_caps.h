@@ -107,7 +107,6 @@
 /*!< RTC */
 #define SOC_ADC_RTC_MIN_BITWIDTH                (13)
 #define SOC_ADC_RTC_MAX_BITWIDTH                (13)
-#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
 
 /*!< Calibration */
 #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
@@ -175,14 +174,6 @@
 
 #define SOC_I2C_SUPPORT_REF_TICK   (1)
 #define SOC_I2C_SUPPORT_APB        (1)
-
-/*-------------------------- APLL CAPS ----------------------------------------*/
-#define SOC_CLK_APLL_SUPPORTED       (1)
-// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
-#define SOC_APLL_MULTIPLIER_OUT_MIN_HZ (350000000) // 350 MHz
-#define SOC_APLL_MULTIPLIER_OUT_MAX_HZ (500000000) // 500 MHz
-#define SOC_APLL_MIN_HZ    (5303031)   // 5.303031 MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
-#define SOC_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32-S2 has 1 I2S
@@ -404,6 +395,17 @@
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP        (1)     /*!<Supports waking up from touch pad trigger */
 #define SOC_PM_SUPPORT_RTC_FAST_MEM_PD            (1)
 #define SOC_PM_SUPPORT_RTC_SLOW_MEM_PD            (1)
+
+/*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
+#define SOC_CLK_APLL_SUPPORTED                    (1)
+// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
+#define SOC_APLL_MULTIPLIER_OUT_MIN_HZ (350000000) // 350 MHz
+#define SOC_APLL_MULTIPLIER_OUT_MAX_HZ (500000000) // 500 MHz
+#define SOC_APLL_MIN_HZ    (5303031)   // 5.303031 MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+#define SOC_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+
+#define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
+#define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

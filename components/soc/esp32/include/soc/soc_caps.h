@@ -125,7 +125,6 @@
 /*!< RTC */
 #define SOC_ADC_RTC_MIN_BITWIDTH                (9)
 #define SOC_ADC_RTC_MAX_BITWIDTH                (12)
-#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #if SOC_CAPS_ECO_VER >= 1
@@ -180,14 +179,6 @@
 #define SOC_I2C_SUPPORT_SLAVE   (1)
 
 #define SOC_I2C_SUPPORT_APB     (1)
-
-/*-------------------------- APLL CAPS ----------------------------------------*/
-#define SOC_CLK_APLL_SUPPORTED       (1)
-// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
-#define SOC_APLL_MULTIPLIER_OUT_MIN_HZ (350000000) // 350 MHz
-#define SOC_APLL_MULTIPLIER_OUT_MAX_HZ (500000000) // 500 MHz
-#define SOC_APLL_MIN_HZ    (5303031)   // 5.303031 MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
-#define SOC_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32 has 2 I2S
@@ -370,6 +361,17 @@
 #define SOC_PM_SUPPORT_RTC_FAST_MEM_PD            (1)
 #define SOC_PM_SUPPORT_RTC_SLOW_MEM_PD            (1)
 
+/*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
+#define SOC_CLK_APLL_SUPPORTED                    (1)
+// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
+#define SOC_APLL_MULTIPLIER_OUT_MIN_HZ (350000000) // 350 MHz
+#define SOC_APLL_MULTIPLIER_OUT_MAX_HZ (500000000) // 500 MHz
+#define SOC_APLL_MIN_HZ    (5303031)   // 5.303031 MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+#define SOC_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+
+#define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
+#define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
+
 /*-------------------------- SDMMC CAPS -----------------------------------------*/
 
 /* On ESP32, clock/cmd/data pins use IO MUX.
@@ -379,7 +381,6 @@
 #define SOC_SDMMC_NUM_SLOTS  2
 
 /*-------------------------- WI-FI HARDWARE CAPS -------------------------------*/
-#define SOC_WIFI_HW_TSF                 (0)    /*!< Hardware TSF is not supported */
 #define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM is not supported */
 #define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP is not supported(GCMP128 and GCMP256) */
 #define SOC_WIFI_WAPI_SUPPORT           (1)    /*!< Support WAPI */

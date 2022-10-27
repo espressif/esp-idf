@@ -2,9 +2,7 @@
 
 components/esp_system/test_apps/rtc_8md256:
   disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
+    - if: SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256 != 1
 components/esp_system/test_apps/rtc_power_modes:
   enable:
     - if: IDF_TARGET == "esp32s3"
