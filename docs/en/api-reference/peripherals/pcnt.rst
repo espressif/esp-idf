@@ -227,7 +227,7 @@ You can check current count value at any time by calling :cpp:func:`pcnt_unit_ge
 
 .. note::
 
-    The returned count value is a **signed** integer, where the sign can be used to reflect the direction. The internal counter will overflow when it reaches high or low limit, but this function doesn't compensate for that loss.
+    The returned count value is a **signed** integer, where the sign can be used to reflect the direction. The internal counter will be cleared to zero automatically when it reaches high or low limit, but this function doesn't compensate for that loss.
 
 .. code:: c
 
