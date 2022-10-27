@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <stdlib.h>
+#include <stdbool.h>
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
 #include "soc/rtc_cntl_reg.h"
@@ -21,7 +23,6 @@
 #include "soc/usb_serial_jtag_reg.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
-#include "stdlib.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -415,7 +416,7 @@ static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func,
 }
 
 /**
-  * @brief Force hold digital and rtc gpio pad.
+  * @brief Force hold all digital(VDD3P3_CPU) and rtc(VDD3P3_RTC) gpio pads.
   * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
   */
 static inline void gpio_ll_force_hold_all(void)
@@ -426,15 +427,15 @@ static inline void gpio_ll_force_hold_all(void)
 }
 
 /**
-  * @brief Force unhold digital and rtc gpio pad.
+  * @brief Force unhold all digital(VDD3P3_CPU) and rtc(VDD3P3_RTC) gpio pads.
   * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
   */
 static inline void gpio_ll_force_unhold_all(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);
-    CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_PAD_FORCE_HOLD_M);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CLR_DG_PAD_AUTOHOLD);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_PAD_FORCE_HOLD_M);
 }
 
 /**
@@ -561,10 +562,10 @@ static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, uint32_t gpio
 
     REG_SET_BIT(RTC_CNTL_GPIO_WAKEUP_REG, RTC_CNTL_GPIO_PIN_CLK_GATE);
     REG_SET_BIT(RTC_CNTL_EXT_WAKEUP_CONF_REG, RTC_CNTL_GPIO_WAKEUP_FILTER);
-    SET_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, 1 << (RTC_CNTL_GPIO_PIN0_WAKEUP_ENABLE_S - gpio_num));
+    SET_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, 1 << (RTC_CNTL_GPIO_PIN0_WAKEUP_ENABLE_S - (gpio_num - 7)));
     uint32_t reg = REG_READ(RTC_CNTL_GPIO_WAKEUP_REG);
-    reg &= (~(RTC_CNTL_GPIO_PIN0_INT_TYPE_V << (RTC_CNTL_GPIO_PIN0_INT_TYPE_S - gpio_num * 3)));
-    reg |= (intr_type << (RTC_CNTL_GPIO_PIN0_INT_TYPE_S - gpio_num * 3));
+    reg &= (~(RTC_CNTL_GPIO_PIN0_INT_TYPE_V << (RTC_CNTL_GPIO_PIN0_INT_TYPE_S - (gpio_num - 7) * 3)));
+    reg |= (intr_type << (RTC_CNTL_GPIO_PIN0_INT_TYPE_S - (gpio_num - 7) * 3));
     REG_WRITE(RTC_CNTL_GPIO_WAKEUP_REG, reg);
 }
 
@@ -579,8 +580,23 @@ static inline void gpio_ll_deepsleep_wakeup_disable(gpio_dev_t *hw, uint32_t gpi
     HAL_ASSERT((gpio_num >= GPIO_NUM_7 && gpio_num <= GPIO_NUM_12) &&
                 "only gpio7~12 support deep sleep wake-up function");
 
-    CLEAR_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, 1 << (RTC_CNTL_GPIO_PIN0_WAKEUP_ENABLE_S - gpio_num));
-    CLEAR_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, RTC_CNTL_GPIO_PIN0_INT_TYPE_S - gpio_num * 3);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, 1 << (RTC_CNTL_GPIO_PIN0_WAKEUP_ENABLE_S - (gpio_num - 7)));
+    CLEAR_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, RTC_CNTL_GPIO_PIN0_INT_TYPE_S - (gpio_num - 7) * 3);
+}
+
+/**
+ * @brief Get the status of whether an IO is used for deep-sleep wake-up.
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param gpio_num GPIO number
+ * @return True if the pin is enabled to wake up from deep-sleep
+ */
+static inline bool gpio_ll_deepsleep_wakeup_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    HAL_ASSERT((gpio_num >= GPIO_NUM_7 && gpio_num <= GPIO_NUM_12) &&
+                "only gpio7~12 support deep sleep wake-up function");
+
+    return GET_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, 1 << (RTC_CNTL_GPIO_PIN0_WAKEUP_ENABLE_S - (gpio_num - 7)));
 }
 
 #ifdef __cplusplus
