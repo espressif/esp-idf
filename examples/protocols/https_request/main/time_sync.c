@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,12 +33,12 @@ static const char *TAG = "time_sync";
 void initialize_sntp(void)
 {
     ESP_LOGI(TAG, "Initializing SNTP");
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "pool.ntp.org");
+    esp_sntp_setoperatingmode(ESP_SNTP_OPMODE_POLL);
+    esp_sntp_setservername(0, "pool.ntp.org");
 #ifdef CONFIG_SNTP_TIME_SYNC_METHOD_SMOOTH
     sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
 #endif
-    sntp_init();
+    esp_sntp_init();
 }
 
 static void obtain_time(void)
@@ -47,8 +47,8 @@ static void obtain_time(void)
      * NTP server address could be aquired via DHCP,
      * see LWIP_DHCP_GET_NTP_SRV menuconfig option
      */
-#ifdef LWIP_DHCP_GET_NTP_SRV
-    sntp_servermode_dhcp(1);
+#if LWIP_DHCP_GET_NTP_SRV
+    esp_sntp_servermode_dhcp(1);
 #endif
 
     // wait for time to be set
@@ -89,7 +89,7 @@ void fetch_and_store_time_in_nvs(void *args)
     }
 
     nvs_close(my_handle);
-    sntp_stop();
+    esp_sntp_stop();
 
 exit:
     if (err != ESP_OK) {
