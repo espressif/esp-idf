@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "catch.hpp"
 #include <algorithm>
 #include <cstring>
@@ -26,6 +18,47 @@
 
 using namespace std;
 using namespace nvs;
+
+TEST_CASE("open_nvs_handle too long namespace name", "[partition_mgr]")
+{
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    const char *TOO_LONG_NS_NAME = "0123456789abcdef";
+    char test_e = 'a';
+    NVSHandleSimple *handle;
+    PartitionEmulationFixture f(0, 10, "test");
+    CHECK(NVSPartitionManager::get_instance()->open_handles_size() == 0);
+    REQUIRE(NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+            == ESP_OK);
+
+    REQUIRE(NVSPartitionManager::get_instance()->open_handle("test", TOO_LONG_NS_NAME, NVS_READWRITE, &handle) == ESP_ERR_NVS_KEY_TOO_LONG);
+
+    CHECK(NVSPartitionManager::get_instance()->open_handles_size() == 0);
+    REQUIRE(NVSPartitionManager::get_instance()->deinit_partition("test") == ESP_OK);
+
+}
+
+TEST_CASE("open_nvs_handle longest namespace name", "[partition_mgr]")
+{
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    const char *LONGEST_NS_NAME = "0123456789abcde";
+    char test_e = 'a';
+    NVSHandleSimple *handle;
+    PartitionEmulationFixture f(0, 10, "test");
+    CHECK(NVSPartitionManager::get_instance()->open_handles_size() == 0);
+    REQUIRE(NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+            == ESP_OK);
+
+    REQUIRE(NVSPartitionManager::get_instance()->open_handle("test", LONGEST_NS_NAME, NVS_READWRITE, &handle) == ESP_OK);
+
+    CHECK(NVSPartitionManager::get_instance()->open_handles_size() == 1);
+
+    delete handle;
+
+    REQUIRE(NVSPartitionManager::get_instance()->deinit_partition("test") == ESP_OK);
+
+}
 
 TEST_CASE("NVSHandleSimple closes its reference in PartitionManager", "[partition_mgr]")
 {

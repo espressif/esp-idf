@@ -880,7 +880,6 @@ components/nvs_flash/test_nvs_host/spi_flash_emulation.cpp
 components/nvs_flash/test_nvs_host/test_fixtures.hpp
 components/nvs_flash/test_nvs_host/test_intrusive_list.cpp
 components/nvs_flash/test_nvs_host/test_nvs_cxx_api.cpp
-components/nvs_flash/test_nvs_host/test_nvs_handle.cpp
 components/nvs_flash/test_nvs_host/test_nvs_initialization.cpp
 components/nvs_flash/test_nvs_host/test_nvs_partition.cpp
 components/nvs_flash/test_nvs_host/test_nvs_storage.cpp
