@@ -73,6 +73,7 @@
 
 #include "hal/rtc_io_hal.h"
 #include "hal/gpio_hal.h"
+#include "hal/rtc_hal.h"
 #include "hal/wdt_hal.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
@@ -130,6 +131,8 @@ static volatile bool s_resume_cores;
 
 // If CONFIG_SPIRAM_IGNORE_NOTFOUND is set and external RAM is not found or errors out on testing, this is set to false.
 bool g_spiram_ok = true;
+
+static void esp_deep_sleep_wakeup_io_reset(void);
 
 static void core_intr_matrix_clear(void)
 {
@@ -472,11 +475,10 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif
 
-#if SOC_RTCIO_HOLD_SUPPORTED
-    rtcio_hal_unhold_all();
-#else
-    gpio_hal_force_unhold_all();
-#endif
+    // Need to unhold the IOs that were hold right before entering deep sleep, which are used as wakeup pins
+    if (rst_reas[0] == DEEPSLEEP_RESET) {
+        esp_deep_sleep_wakeup_io_reset();
+    }
 
     esp_cache_err_int_init();
 
@@ -545,4 +547,38 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
     SYS_STARTUP_FN();
+}
+
+static void esp_deep_sleep_wakeup_io_reset(void)
+{
+#if SOC_PM_SUPPORT_EXT_WAKEUP
+    uint32_t rtc_io_mask = rtc_hal_ext1_get_wakeup_pins();
+    // Disable ext1 wakeup before releasing hold, such that wakeup status can reflect the correct wakeup pin
+    rtc_hal_ext1_clear_wakeup_pins();
+    for (int gpio_num = 0; gpio_num < SOC_GPIO_PIN_COUNT && rtc_io_mask != 0; ++gpio_num) {
+        int rtcio_num = rtc_io_num_map[gpio_num];
+        if ((rtc_io_mask & BIT(rtcio_num)) == 0) {
+            continue;
+        }
+        rtcio_hal_hold_disable(rtcio_num);
+        rtc_io_mask &= ~BIT(rtcio_num);
+    }
+#endif
+
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+    uint32_t dl_io_mask = SOC_GPIO_DEEP_SLEEP_WAKEUP_VALID_GPIO_MASK;
+    gpio_hal_context_t gpio_hal = {
+        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
+    };
+    while (dl_io_mask) {
+        int gpio_num = __builtin_ffs(dl_io_mask) - 1;
+        bool wakeup_io_enabled = gpio_hal_deepsleep_wakeup_is_enabled(&gpio_hal, gpio_num);
+        if (wakeup_io_enabled) {
+            // Disable the wakeup before releasing hold, such that wakeup status can reflect the correct wakeup pin
+            gpio_hal_deepsleep_wakeup_disable(&gpio_hal, gpio_num);
+            gpio_hal_hold_dis(&gpio_hal, gpio_num);
+        }
+        dl_io_mask &= ~BIT(gpio_num);
+    }
+#endif
 }
