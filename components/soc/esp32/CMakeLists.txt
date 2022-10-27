@@ -17,6 +17,7 @@ set(srcs
     "sdmmc_periph.c"
     "spi_periph.c"
     "timer_periph.c"
+    "twai_periph.c"
     "touch_sensor_periph.c"
     "uart_periph.c")
 

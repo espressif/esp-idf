@@ -16,9 +16,10 @@ set(srcs
     "sdio_slave_periph.c"
     "sdmmc_periph.c"
     "spi_periph.c"
+    "temperature_sensor_periph.c"
     "timer_periph.c"
     "touch_sensor_periph.c"
-    "temperature_sensor_periph.c"
+    "twai_periph.c"
     "uart_periph.c"
     "usb_periph.c"
     "usb_otg_periph.c")

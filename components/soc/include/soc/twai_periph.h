@@ -1,27 +1,32 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
-#include "sdkconfig.h"
+#include <stdint.h>
+#include "soc/soc_caps.h"
+#include "soc/periph_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "soc/soc_caps.h"
-#include "soc/twai_struct.h"
+typedef struct {
+    struct {
+        const periph_module_t module;  // peripheral module
+        const int irq_id;              // interrupt source ID
+        const int tx_sig;              // TX signal ID in GPIO matrix
+        const int rx_sig;              // RX signal ID in GPIO matrix
+        const int clk_out_sig;         // CLK_OUT signal ID in GPIO matrix
+        const int bus_off_sig;         // BUS_OFF status signal ID in GPIO matrix
+        const int stand_by_sig;        // STAND_BY signal ID in GPIO matrix
+    } controllers[SOC_TWAI_CONTROLLER_NUM];
+} twai_controller_signal_conn_t;
+
+extern const twai_controller_signal_conn_t twai_controller_periph_signals;
 
 #ifdef __cplusplus
 }
