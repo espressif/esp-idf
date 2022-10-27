@@ -7,17 +7,21 @@
 #define _TEST_COMMON_SPI_H_
 
 #include <esp_types.h>
-#include "driver/spi_master.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/ringbuf.h"
+#include "freertos/semphr.h"
+#include "freertos/queue.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "test_utils.h"
-#include <string.h>
 #include "param_test.h"
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
 #include "soc/spi_periph.h"
+#include "driver/spi_master.h"
 
 // All the tests using the header should use this definition as much as possible,
 // so that the working host can be changed easily in the future.
@@ -249,7 +253,7 @@ typedef struct {
 void spitest_def_param(void* arg);
 
 // functions for slave task
-esp_err_t init_slave_context(spi_slave_task_context_t *context);
+esp_err_t init_slave_context(spi_slave_task_context_t *context, spi_host_device_t host);
 void deinit_slave_context(spi_slave_task_context_t *context);
 void spitest_slave_task(void* arg);
 

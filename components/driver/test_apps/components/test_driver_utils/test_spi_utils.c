@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "test/test_common_spi.h"
+#include "test_spi_utils.h"
 #include "driver/spi_slave.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
@@ -44,7 +44,7 @@ void spitest_def_param(void* arg)
 /**********************************************************************************
  * functions for slave task
  *********************************************************************************/
-esp_err_t init_slave_context(spi_slave_task_context_t *context)
+esp_err_t init_slave_context(spi_slave_task_context_t *context, spi_host_device_t host)
 {
     context->data_to_send = xQueueCreate( 16, sizeof( slave_txdata_t ));
     if ( context->data_to_send == NULL ) {
@@ -54,7 +54,7 @@ esp_err_t init_slave_context(spi_slave_task_context_t *context)
     if ( context->data_received == NULL ) {
         return ESP_ERR_NO_MEM;
     }
-    context->spi=TEST_SLAVE_HOST;
+    context->spi=host;
     return ESP_OK;
 }
 
@@ -96,7 +96,7 @@ void spitest_slave_task(void* arg)
         } while ( t.trans_len <= 2 );
         memcpy(recvbuf, &t.trans_len, sizeof(uint32_t));
         *(uint8_t**)(recvbuf+4) = (uint8_t*)txdata.start;
-        ESP_LOGD( SLAVE_TAG, "received: %d", t.trans_len );
+        ESP_LOGD( SLAVE_TAG, "received: %" PRIu32, (uint32_t)t.trans_len );
         xRingbufferSend( ringbuf, recvbuf, 8+(t.trans_len+7)/8, portMAX_DELAY );
     }
 }
@@ -163,7 +163,7 @@ void spitest_master_print_data(spi_transaction_t *t, int rxlength)
 void spitest_slave_print_data(slave_rxdata_t *t, bool print_rxdata)
 {
     int rcv_len = (t->len+7)/8;
-    ESP_LOGI(SLAVE_TAG, "trans_len: %d", t->len);
+    ESP_LOGI(SLAVE_TAG, "trans_len: %" PRIu32, t->len);
     ESP_LOG_BUFFER_HEX("slave tx", t->tx_start, rcv_len);
     if (print_rxdata) ESP_LOG_BUFFER_HEX("slave rx", t->data, rcv_len);
 }
@@ -188,7 +188,7 @@ esp_err_t spitest_check_data(int len, spi_transaction_t *master_t, slave_rxdata_
             ret = ESP_FAIL;
     }
     if (ret != ESP_OK) {
-        ESP_LOGI(SLAVE_TAG, "slave_recv_len: %d", rcv_len);
+        ESP_LOGI(SLAVE_TAG, "slave_recv_len: %" PRIu32, rcv_len);
         spitest_master_print_data(master_t, len);
         spitest_slave_print_data(slave_t, true);
         //already failed, try to use the TEST_ASSERT to output the reason...
@@ -250,4 +250,5 @@ void get_tx_buffer(uint32_t seed, uint8_t *master_send_buf, uint8_t *slave_send_
         master_send_buf[i] = rand() % 256;
     }
 }
+
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
