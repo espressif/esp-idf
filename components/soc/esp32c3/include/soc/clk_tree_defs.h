@@ -248,6 +248,21 @@ typedef enum {
     SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
 } soc_periph_sdm_clk_src_t;
 
+//////////////////////////////////////////////////TWAI/////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of TWAI
+ */
+#define SOC_TWAI_CLKS {SOC_MOD_CLK_APB}
+
+/**
+ * @brief TWAI clock source
+ */
+typedef enum {
+    TWAI_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
+    TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
+} soc_periph_twai_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif
