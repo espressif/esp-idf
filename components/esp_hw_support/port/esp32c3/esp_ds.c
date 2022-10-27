@@ -28,7 +28,7 @@ struct esp_ds_context {
  */
 #define ESP_DS_SIGN_TASK_DELAY_MS 10
 
-#define RSA_LEN_MAX 127
+#define RSA_LEN_MAX 95
 
 /*
  * esp_digital_signature_length_t is used in esp_ds_data_t in contrast to ets_ds_data_t, where unsigned is used.
