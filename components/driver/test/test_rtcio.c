@@ -271,4 +271,52 @@ TEST_CASE("RTCIO output hold test", "[rtcio]")
     ESP_LOGI(TAG, "RTCIO hold test over");
 }
 
-#endif
+// It is not necessary to test every rtcio pin, it will take too much ci testing time for deep sleep
+// Only tests on s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX] pin
+// (ESP32: IO25, ESP32S2: IO6) these pads' default configuration is low level
+#define TEST_RTCIO_DEEP_SLEEP_PIN_INDEX 5
+
+static void rtcio_deep_sleep_hold_test_first_stage(void)
+{
+    printf("configure rtcio pin to hold during deep sleep");
+    int io_num = s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX];
+
+    TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2000000));
+
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_INPUT_OUTPUT,
+        .pin_bit_mask = (1ULL << io_num),
+        .pull_down_en = 0,
+        .pull_up_en = 0,
+    };
+    gpio_config(&io_conf);
+
+    gpio_set_level(io_num, 1);
+    // Enable global persistence
+    TEST_ESP_OK(gpio_hold_en(io_num));
+
+    esp_deep_sleep_start();
+}
+
+static void rtcio_deep_sleep_hold_test_second_stage(void)
+{
+    int io_num = s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX];
+    // Check reset reason is waking up from deepsleep
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+    // Pin should stay at high level after the deep sleep
+    TEST_ASSERT_EQUAL_INT(1, gpio_get_level(io_num));
+
+    gpio_hold_dis(io_num);
+}
+
+/*
+ * Test rtcio hold function during deep sleep.
+ * This test case can only check the hold state after waking up from deep sleep
+ * If you want to check that the rtcio hold function works properly during deep sleep,
+ * please use logic analyzer or oscillscope
+ */
+TEST_CASE_MULTIPLE_STAGES("RTCIO_deep_sleep_output_hold_test", "[rtcio]",
+                         rtcio_deep_sleep_hold_test_first_stage,
+                         rtcio_deep_sleep_hold_test_second_stage)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
