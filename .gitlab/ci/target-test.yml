@@ -60,6 +60,22 @@ example_test_pytest_esp32_ir_transceiver:
     - build_pytest_examples_esp32
   tags: [ esp32, ir_transceiver ]
 
+example_test_pytest_esp32_twai_transceiver:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, twai_transceiver ]
+
+example_test_pytest_esp32_twai_network:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, twai_network ]
+
 example_test_pytest_esp32s2_generic:
   extends:
     - .pytest_examples_dir_template
@@ -751,18 +767,6 @@ example_test_ethernet_router:
   tags:
     - ESP32
     - Example_SDIO
-
-example_test_004A:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_TWAI1
-
-example_test_004B:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_TWAI2
 
 example_test_005:
   extends:
