@@ -19,7 +19,10 @@ typedef struct esp_netif_api_msg_s {
     int type;  /**< The first field MUST be int */
     int ret;
     esp_netif_api_fn api_fn;
-    esp_netif_t *esp_netif;
+    union {
+        esp_netif_t *esp_netif;
+        esp_netif_callback_fn user_fn;
+    };
     void    *data;
 } esp_netif_api_msg_t;
 

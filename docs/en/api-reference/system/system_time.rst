@@ -108,27 +108,45 @@ SNTP Time Synchronization
 
 To set the current time, you can use the POSIX functions ``settimeofday()`` and ``adjtime()``. They are used internally in the lwIP SNTP library to set current time when a response from the NTP server is received. These functions can also be used separately from the lwIP SNTP library.
 
-The function to use inside the lwIP SNTP library depends on the sync mode for system time. Use the function :cpp:func:`sntp_set_sync_mode` to set one of the following sync modes:
+Some lwIP APIs, including SNTP functions, are not thread safe, so it is recommended to use :doc:`esp_netif component <../network/esp_netif>` when interacting with SNTP module.
+
+To initialize a particular SNTP server and also start the SNTP service, simply create a default SNTP server configuration with a particular server name, then call :cpp:func:`esp_netif_sntp_init()` to register that server and start the SNTP service.
+
+.. code-block:: c
+
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+    esp_netif_sntp_init(&config);
+
+This code automatically performs time synchronization once a reply from the SNTP server is received. Sometimes it is useful to wait until the time gets synchronized, :cpp:func:`esp_netif_sntp_sync_wait()` can be used for this purpose:
+
+.. code-block:: c
+
+    if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) != ESP_OK) {
+        printf("Failed to update system time within 10s timeout");
+    }
+
+To configure multiple NTP servers (or use more advanced settings, such as DHCP provided NTP servers), please refer to the detailed description of :ref:`esp_netif-sntp-api` in :doc:`esp_netif <../network/esp_netif>` documentation.
+
+The lwIP SNTP library could work in one of the following sync modes:
 
 - :cpp:enumerator:`SNTP_SYNC_MODE_IMMED` (default): Updates system time immediately upon receiving a response from the SNTP server after using ``settimeofday()``.
 - :cpp:enumerator:`SNTP_SYNC_MODE_SMOOTH`: Updates time smoothly by gradually reducing time error using the function ``adjtime()``. If the difference between the SNTP response time and system time is more than 35 minutes, update system time immediately by using ``settimeofday()``.
 
-The lwIP SNTP library has API functions for setting a callback function for a certain event. You might need the following functions:
+If you want to choose the :cpp:enumerator:`SNTP_SYNC_MODE_SMOOTH` mode, please set the :cpp:member:`esp_sntp_config::smooth` to ``true`` in the SNTP configuration struct. Otherwise (and by default) the :cpp:enumerator:`SNTP_SYNC_MODE_IMMED` mode will be used.
 
-- :cpp:func:`sntp_set_time_sync_notification_cb()`: Can be used to set a callback function that will notify of the time synchronization process.
-- :cpp:func:`sntp_get_sync_status()` and :cpp:func:`sntp_set_sync_status()`: Can be used to get/set time synchronization status.
-
-To start synchronization via SNTP, just call the following three functions:
-
-.. code-block:: c
-
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "pool.ntp.org");
-    sntp_init();
+For setting a callback function when time gets synchronized, use the :cpp:member:`esp_sntp_config::sync_cb` field in the configuration struct.
 
 An application with this initialization code will periodically synchronize the time. The time synchronization period is determined by :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` (the default value is one hour). To modify the variable, set :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` in project configuration.
 
 A code example that demonstrates the implementation of time synchronization based on the lwIP SNTP library is provided in the :example:`protocols/sntp` directory.
+
+Note that it's also possible to use lwIP API directly, but care must be taken to thread safety. Here we list the thread-safe APIs:
+
+- :cpp:func:`sntp_set_time_sync_notification_cb()`: Can be used to set a callback function that will notify of the time synchronization process.
+- :cpp:func:`sntp_get_sync_status()` and :cpp:func:`sntp_set_sync_status()`: Can be used to get/set time synchronization status.
+- :cpp:func:`sntp_set_sync_mode` can be used to set the synchronization mode
+- :cpp:func:`esp_sntp_setoperatingmode` sets the preferred operating mode :cpp:enumerator:`ESP_SNTP_OPMODE_POLL` and :cpp:func:`esp_sntp_init` initializes SNTP modeule
+- :cpp:func:`esp_sntp_setservername` configures one SNTP server
 
 
 Timezones

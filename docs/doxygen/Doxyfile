@@ -155,6 +155,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif_types.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_vfs_l2tap.h \
+    $(PROJECT_PATH)/components/esp_netif/include/esp_netif_sntp.h \
     $(PROJECT_PATH)/components/esp_partition/include/esp_partition.h \
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
     $(PROJECT_PATH)/components/esp_pm/include/$(IDF_TARGET)/pm.h \
