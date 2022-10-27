@@ -95,7 +95,7 @@ Required Hardware
 Hardware Setup
 ^^^^^^^^^^^^^^
 
-Connect the board with the computer using **USB-to-UART Port**. Connection using **ESP32-S3 USB Port** is not fully implemented in software. In subsequent steps, **USB-to-UART Port** will be used by default.
+Connect the board with the computer using **USB-to-UART Port** or **ESP32-S3 USB Port**. In subsequent steps, **USB-to-UART Port** will be used by default.
 
 Software Setup
 ^^^^^^^^^^^^^^
