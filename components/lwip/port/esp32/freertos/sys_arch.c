@@ -560,3 +560,36 @@ sys_delay_ms(uint32_t ms)
 {
   vTaskDelay(ms / portTICK_PERIOD_MS);
 }
+
+bool
+sys_thread_tcpip(sys_thread_core_lock_t type)
+{
+    static sys_thread_t lwip_task = NULL;
+#if LWIP_TCPIP_CORE_LOCKING
+    static sys_thread_t core_lock_holder = NULL;
+#endif
+    switch (type) {
+        default:
+            return false;
+        case LWIP_CORE_IS_TCPIP_INITIALIZED:
+            return lwip_task != NULL;
+        case LWIP_CORE_MARK_TCPIP_TASK:
+            LWIP_ASSERT("LWIP_CORE_MARK_TCPIP_TASK: lwip_task == NULL", (lwip_task == NULL));
+            lwip_task = (sys_thread_t) xTaskGetCurrentTaskHandle();
+            return true;
+#if LWIP_TCPIP_CORE_LOCKING
+        case LWIP_CORE_LOCK_QUERY_HOLDER:
+            return lwip_task ? core_lock_holder == (sys_thread_t) xTaskGetCurrentTaskHandle() : true;
+        case LWIP_CORE_LOCK_MARK_HOLDER:
+            core_lock_holder = (sys_thread_t) xTaskGetCurrentTaskHandle();
+            return true;
+        case LWIP_CORE_LOCK_UNMARK_HOLDER:
+            core_lock_holder = NULL;
+            return true;
+#else
+        case LWIP_CORE_LOCK_QUERY_HOLDER:
+            return lwip_task == NULL || lwip_task == (sys_thread_t) xTaskGetCurrentTaskHandle();
+#endif /* LWIP_TCPIP_CORE_LOCKING */
+    }
+    return true;
+}

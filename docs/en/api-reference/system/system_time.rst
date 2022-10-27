@@ -110,9 +110,9 @@ To start synchronization via SNTP, just call the following three functions.
 
 .. code-block:: c
 
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "pool.ntp.org");
-    sntp_init();
+    esp_sntp_setoperatingmode(ESP_SNTP_OPMODE_POLL);
+    esp_sntp_setservername(0, "pool.ntp.org");
+    esp_sntp_init();
 
 An application with this initialization code will periodically synchronize the time. The time synchronization period is determined by :envvar:`CONFIG_LWIP_SNTP_UPDATE_DELAY` (default value is one hour). To modify the variable, set :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` in project configuration.
 

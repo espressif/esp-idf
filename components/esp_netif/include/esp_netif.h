@@ -910,6 +910,27 @@ void esp_netif_netstack_buf_free(void *netstack_buf);
  * @}
  */
 
+/** @addtogroup ESP_NETIF_TCPIP_EXEC
+ * @{
+ */
+
+/**
+ * @brief  TCPIP thread safe callback used with esp_netif_tcpip_exec()
+ */
+typedef esp_err_t (*esp_netif_callback_fn)(void *ctx);
+
+/**
+ * @brief Utility to execute the supplied callback in TCP/IP context
+ * @param fn Pointer to the callback
+ * @param ctx Parameter to the callback
+ * @return The error code (esp_err_t) returned by the callback
+ */
+esp_err_t esp_netif_tcpip_exec(esp_netif_callback_fn fn, void *ctx);
+
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif
