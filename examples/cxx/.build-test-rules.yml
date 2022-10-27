@@ -12,6 +12,18 @@ examples/cxx/experimental/esp_modem_cxx:
       temporary: true
       reason: the other targets are not tested yet
 
+examples/cxx/experimental/esp_mqtt_cxx/ssl:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
+
+examples/cxx/experimental/esp_mqtt_cxx/tcp:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
+
 examples/cxx/experimental/experimental_cpp_component/host_test:
   enable:
     - if: IDF_TARGET == "linux"
@@ -19,21 +31,22 @@ examples/cxx/experimental/experimental_cpp_component/host_test:
 
 examples/cxx/experimental/simple_i2c_rw_example:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/cxx/experimental/simple_spi_rw_example:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/cxx/pthread:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       temporary: true
       reason: lack of runners
+
 examples/cxx/rtti:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]

@@ -1,5 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/esp_system/test_apps/rtc_8md256:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
 components/esp_system/test_apps/rtc_power_modes:
   enable:
     - if: IDF_TARGET == "esp32s3"

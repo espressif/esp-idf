@@ -6,14 +6,11 @@
 #     suppress the check_build_test_rules check-test-script warnings for the specified targets
 #
 # This file should ONLY be used during bringup. Should be reset to empty after the bringup process
-#
-# Take esp32c6 as an example:
-#
-#extra_default_build_targets:
-#  - esp32c6
-#
-#bypass_check_test_targets:
-#  - esp32c6
+extra_default_build_targets:
+ - esp32c6
+
+bypass_check_test_targets:
+ - esp32c6
 #
 # These lines would
 # - enable the README.md check for esp32c6. Don't forget to add the build jobs in .gitlab/ci/build.yml

@@ -6,6 +6,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
+@pytest.mark.preview_targets
 @pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'default',

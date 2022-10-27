@@ -2,9 +2,9 @@
 
 examples/wifi:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/wifi/ftm:
   enable:
@@ -13,12 +13,20 @@ examples/wifi/ftm:
       reason: the other targets are not tested yet
 
 examples/wifi/getting_started:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/wifi/iperf:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true

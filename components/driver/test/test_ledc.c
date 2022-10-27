@@ -24,6 +24,7 @@
 #include "soc/io_mux_reg.h"
 #include "esp_system.h"
 #include "esp_timer.h"
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 #include "driver/ledc.h"
 #include "hal/ledc_ll.h"
 #include "driver/gpio.h"
@@ -644,3 +645,4 @@ TEST_CASE_MULTIPLE_STAGES("LEDC continue work after software reset", "[ledc]",
                           ledc_cpu_reset_test_second_stage);
 
 #endif // SOC_PCNT_SUPPORTED
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

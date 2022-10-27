@@ -32,7 +32,7 @@ static constexpr I2CNumber I2C_SLAVE_NUM(I2CNumber::I2C0()); /*!<I2C port number
 #define I2C_SLAVE_SDA_IO     18    /*!<gpio number for i2c slave data */
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
 static constexpr I2CNumber I2C_MASTER_NUM(I2CNumber::I2C0()); /*!< I2C port number for master dev */
 #define I2C_MASTER_SCL_IO     5     /*!<gpio number for i2c master clock  */
 #define I2C_MASTER_SDA_IO     6     /*!<gpio number for i2c master data */
@@ -55,7 +55,7 @@ struct MasterFixture {
 };
 
 // TODO The I2C driver tests are disabled, so disable them here, too. Probably due to no runners.
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C2, ESP32C6)
 
 static void i2c_slave_read_raw_byte(void)
 {
@@ -257,5 +257,5 @@ static void i2c_master_composed_trans(void)
 TEST_CASE_MULTIPLE_DEVICES("I2CMaster Composed transfer", "[cxx i2c][test_env=UT_T2_I2C][timeout=150]",
         i2c_master_composed_trans, i2c_slave_composed_trans);
 
-#endif  //TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+#endif  //TEMPORARY_DISABLED_FOR_TARGETS(...)
 #endif // __cpp_exceptions

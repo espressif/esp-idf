@@ -2,7 +2,10 @@ menu "Power Management"
     config PM_ENABLE
         bool "Support for power management"
         # SMP FreeRTOS currently does not support power management IDF-4997
-        depends on !FREERTOS_SMP
+        # ESP32C6 currently does not support power management IDF-5347
+        # Note. Disabling this option for C6 will also cause all sdkconfig.release test cases run without pm enabled
+        # ORed with  __DOXYGEN__ to pass C6 docs build, need to remove when pm is supported on C6
+        depends on (!FREERTOS_SMP && !IDF_TARGET_ESP32C6) || __DOXYGEN__
         default n
         help
             If enabled, application is compiled with support for power management.

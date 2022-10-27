@@ -20,6 +20,12 @@ components/driver/test_apps/i2s_test_apps/legacy_i2s_adc_dac:
   disable:
     - if: SOC_I2S_SUPPORTS_ADC_DAC != 1
 
+components/driver/test_apps/legacy_adc_driver:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
+
 components/driver/test_apps/legacy_mcpwm_driver:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
@@ -27,6 +33,9 @@ components/driver/test_apps/legacy_mcpwm_driver:
 components/driver/test_apps/legacy_pcnt_driver:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: test depends on ledc to be supported on esp32c6
 
 components/driver/test_apps/legacy_rmt_driver:
   disable:

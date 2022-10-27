@@ -2,9 +2,9 @@
 
 examples/zigbee/esp_zigbee_gateway:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/zigbee/esp_zigbee_rcp:
   enable:

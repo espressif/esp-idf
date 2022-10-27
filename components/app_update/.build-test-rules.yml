@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/app_update/test_apps:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: false
+      reason: target esp32c6 is not supported yet

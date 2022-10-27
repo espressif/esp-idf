@@ -12,9 +12,9 @@ examples/system/app_trace_to_host:
 
 examples/system/console/advanced:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
   disable_test:
     - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       temporary: true
@@ -28,9 +28,9 @@ examples/system/console/advanced_usb_cdc:
 
 examples/system/console/basic:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
   disable_test:
     - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       temporary: true
@@ -38,9 +38,9 @@ examples/system/console/basic:
 
 examples/system/deep_sleep:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/system/efuse:
   disable_test:
@@ -49,6 +49,10 @@ examples/system/efuse:
       reason: lack of runners
 
 examples/system/esp_timer:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
@@ -92,15 +96,25 @@ examples/system/ipc/ipc_isr:
 
 examples/system/light_sleep:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/system/ota/advanced_https_ota:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
       reason: lack of runners
+
+examples/system/ota/native_ota_example:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
 
 examples/system/ota/otatool:
   disable:
@@ -109,12 +123,20 @@ examples/system/ota/otatool:
       reason: target esp32c2 is not supported yet
 
 examples/system/ota/pre_encrypted_ota:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
       reason: lack of runners
 
 examples/system/ota/simple_ota_example:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
@@ -195,6 +217,7 @@ examples/system/ulp_riscv/i2c:
 examples/system/ulp_riscv/uart_print:
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
+
 examples/system/xip_from_psram:
   enable:
     - if: SOC_SPIRAM_SUPPORTED == 1
