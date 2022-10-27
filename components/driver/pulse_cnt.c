@@ -84,6 +84,7 @@ struct pcnt_unit_t {
     int unit_id;                                          // allocated unit numerical ID
     int low_limit;                                        // low limit value
     int high_limit;                                       // high limit value
+    int accum_value;                                      // accumulated count value
     pcnt_chan_t *channels[SOC_PCNT_CHANNELS_PER_UNIT];    // array of PCNT channels
     pcnt_watch_point_t watchers[PCNT_LL_WATCH_EVENT_MAX]; // array of PCNT watchers
     intr_handle_t intr;                                   // interrupt handle
@@ -94,6 +95,9 @@ struct pcnt_unit_t {
     pcnt_unit_fsm_t fsm;      // record PCNT unit's driver state
     pcnt_watch_cb_t on_reach; // user registered callback function
     void *user_data;          // user data registered by user, which would be passed to the right callback function
+    struct {
+        uint32_t accum_count: 1; /*!< Whether to accumulate the count value when overflows at the high/low limit */
+    } flags;
 };
 
 struct pcnt_chan_t {
@@ -186,6 +190,16 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
 
+    // to accumulate count value, we should install the interrupt handler first, and in the ISR we do the accumulation
+    bool to_install_isr = (config->flags.accum_count == 1);
+    if (to_install_isr) {
+        int isr_flags = PCNT_INTR_ALLOC_FLAGS;
+        ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(pcnt_periph_signals.groups[group_id].irq, isr_flags,
+                          (uint32_t)pcnt_ll_get_intr_status_reg(group->hal.dev), PCNT_LL_UNIT_WATCH_EVENT(unit_id),
+                          pcnt_default_isr, unit, &unit->intr), err,
+                          TAG, "install interrupt service failed");
+    }
+
     // some events are enabled by default, disable them all
     pcnt_ll_disable_all_events(group->hal.dev, unit_id);
     // disable filter by default
@@ -196,12 +210,15 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     pcnt_ll_set_low_limit_value(group->hal.dev, unit_id, config->low_limit);
     unit->high_limit = config->high_limit;
     unit->low_limit = config->low_limit;
+    unit->accum_value = 0;
+    unit->flags.accum_count = config->flags.accum_count;
 
     // clear/pause register is shared by all units, so using group's spinlock
     portENTER_CRITICAL(&group->spinlock);
     pcnt_ll_stop_count(group->hal.dev, unit_id);
     pcnt_ll_clear_count(group->hal.dev, unit_id);
-    pcnt_ll_enable_intr(group->hal.dev, PCNT_LL_UNIT_WATCH_EVENT(unit_id), false);
+    // enable the interrupt if we want to accumulate the counter in the ISR
+    pcnt_ll_enable_intr(group->hal.dev, PCNT_LL_UNIT_WATCH_EVENT(unit_id), to_install_isr);
     pcnt_ll_clear_intr_status(group->hal.dev, PCNT_LL_UNIT_WATCH_EVENT(unit_id));
     portEXIT_CRITICAL(&group->spinlock);
 
@@ -349,6 +366,11 @@ esp_err_t pcnt_unit_clear_count(pcnt_unit_handle_t unit)
     pcnt_ll_clear_count(group->hal.dev, unit->unit_id);
     portEXIT_CRITICAL_SAFE(&group->spinlock);
 
+    // reset the accumulated count as well
+    portENTER_CRITICAL_SAFE(&unit->spinlock);
+    unit->accum_value = 0;
+    portEXIT_CRITICAL_SAFE(&unit->spinlock);
+
     return ESP_OK;
 }
 
@@ -357,7 +379,11 @@ esp_err_t pcnt_unit_get_count(pcnt_unit_handle_t unit, int *value)
     pcnt_group_t *group = NULL;
     ESP_RETURN_ON_FALSE_ISR(unit && value, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     group = unit->group;
-    *value = pcnt_ll_get_count(group->hal.dev, unit->unit_id);
+
+    // the accum_value is also accessed by the ISR, so adding a critical section
+    portENTER_CRITICAL_SAFE(&unit->spinlock);
+    *value = pcnt_ll_get_count(group->hal.dev, unit->unit_id) + unit->accum_value;
+    portEXIT_CRITICAL_SAFE(&unit->spinlock);
 
     return ESP_OK;
 }
@@ -722,6 +748,16 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
         while (event_status) {
             int event_id = __builtin_ffs(event_status) - 1;
             event_status &= (event_status - 1); // clear the right most bit
+
+            portENTER_CRITICAL_ISR(&unit->spinlock);
+            if (unit->flags.accum_count) {
+                if (event_id == PCNT_LL_WATCH_EVENT_LOW_LIMIT) {
+                    unit->accum_value += unit->low_limit;
+                } else if (event_id == PCNT_LL_WATCH_EVENT_HIGH_LIMIT) {
+                    unit->accum_value += unit->high_limit;
+                }
+            }
+            portEXIT_CRITICAL_ISR(&unit->spinlock);
 
             // invoked user registered callback
             if (on_reach) {

@@ -39,18 +39,13 @@ static rmt_channel_handle_t s_rmt_chan;
 static rmt_encoder_handle_t s_rmt_encoder;
 static volatile uint32_t s_milliseconds;
 
-static bool on_reach_watch_point(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx)
-{
-    s_milliseconds += REF_CLOCK_PRESCALER_MS;
-    return false;
-}
-
 void ref_clock_init(void)
 {
     // Initialize PCNT
     pcnt_unit_config_t unit_config = {
         .high_limit = REF_CLOCK_PRESCALER_MS * 1000,
         .low_limit = -100, // any minus value is OK, in this case, we don't count down
+        .flags.accum_count = true, // accumulate the counter value
     };
     TEST_ESP_OK(pcnt_new_unit(&unit_config, &s_pcnt_unit));
     pcnt_chan_config_t chan_config = {
@@ -63,13 +58,8 @@ void ref_clock_init(void)
     TEST_ESP_OK(pcnt_channel_set_edge_action(s_pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_INCREASE));
     // don't care level change
     TEST_ESP_OK(pcnt_channel_set_level_action(s_pcnt_chan, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
-    // add watch point
+    // add watch point: high limit
     TEST_ESP_OK(pcnt_unit_add_watch_point(s_pcnt_unit, REF_CLOCK_PRESCALER_MS * 1000));
-    // register watch event
-    pcnt_event_callbacks_t cbs = {
-        .on_reach = on_reach_watch_point,
-    };
-    TEST_ESP_OK(pcnt_unit_register_event_callbacks(s_pcnt_unit, &cbs, NULL));
     // enable pcnt
     TEST_ESP_OK(pcnt_unit_enable(s_pcnt_unit));
     // start pcnt
@@ -110,8 +100,6 @@ void ref_clock_init(void)
         .flags.eot_level = 1,
     };
     TEST_ESP_OK(rmt_transmit(s_rmt_chan, s_rmt_encoder, &data, sizeof(data), &trans_config));
-
-    s_milliseconds = 0;
 }
 
 void ref_clock_deinit(void)
@@ -133,5 +121,6 @@ uint64_t ref_clock_get(void)
 {
     int microseconds = 0;
     TEST_ESP_OK(pcnt_unit_get_count(s_pcnt_unit, &microseconds));
-    return 1000 * (uint64_t)s_milliseconds + (uint64_t)microseconds;
+    // because the PCNT is configured to always count up, it's impossible to get a negative value
+    return (uint64_t)microseconds;
 }

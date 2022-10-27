@@ -38,16 +38,8 @@ typedef struct {
     bdc_motor_handle_t motor;
     pcnt_unit_handle_t pcnt_encoder;
     pid_ctrl_block_handle_t pid_ctrl;
-    int accumu_count;
     int report_pulses;
 } motor_control_context_t;
-
-static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx)
-{
-    int *accumu_count = (int *)user_ctx;
-    *accumu_count += edata->watch_point_value;
-    return false;
-}
 
 static void pid_loop_cb(void *args)
 {
@@ -60,7 +52,6 @@ static void pid_loop_cb(void *args)
     // get the result from rotary encoder
     int cur_pulse_count = 0;
     pcnt_unit_get_count(pcnt_unit, &cur_pulse_count);
-    cur_pulse_count += ctx->accumu_count;
     int real_pulses = cur_pulse_count - last_pulse_count;
     last_pulse_count = cur_pulse_count;
     ctx->report_pulses = real_pulses;
@@ -77,7 +68,6 @@ static void pid_loop_cb(void *args)
 void app_main(void)
 {
     static motor_control_context_t motor_ctrl_ctx = {
-        .accumu_count = 0,
         .pcnt_encoder = NULL,
     };
 
@@ -99,6 +89,7 @@ void app_main(void)
     pcnt_unit_config_t unit_config = {
         .high_limit = BDC_ENCODER_PCNT_HIGH_LIMIT,
         .low_limit = BDC_ENCODER_PCNT_LOW_LIMIT,
+        .flags.accum_count = true, // enable counter accumulation
     };
     pcnt_unit_handle_t pcnt_unit = NULL;
     ESP_ERROR_CHECK(pcnt_new_unit(&unit_config, &pcnt_unit));
@@ -124,10 +115,6 @@ void app_main(void)
     ESP_ERROR_CHECK(pcnt_channel_set_level_action(pcnt_chan_b, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
     ESP_ERROR_CHECK(pcnt_unit_add_watch_point(pcnt_unit, BDC_ENCODER_PCNT_HIGH_LIMIT));
     ESP_ERROR_CHECK(pcnt_unit_add_watch_point(pcnt_unit, BDC_ENCODER_PCNT_LOW_LIMIT));
-    pcnt_event_callbacks_t pcnt_cbs = {
-        .on_reach = example_pcnt_on_reach, // accumulate the overflow in the callback
-    };
-    ESP_ERROR_CHECK(pcnt_unit_register_event_callbacks(pcnt_unit, &pcnt_cbs, &motor_ctrl_ctx.accumu_count));
     ESP_ERROR_CHECK(pcnt_unit_enable(pcnt_unit));
     ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
     ESP_ERROR_CHECK(pcnt_unit_start(pcnt_unit));
