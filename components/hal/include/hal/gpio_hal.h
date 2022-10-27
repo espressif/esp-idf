@@ -338,13 +338,13 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**
-  * @brief Force hold digital gpio pad.
+  * @brief Force hold all digital gpio pads (including those powered by VDD3P3_RTC power domain).
   * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
   */
 #define gpio_hal_force_hold_all() gpio_ll_force_hold_all()
 
 /**
-  * @brief Force unhold digital gpio pad.
+  * @brief Force unhold all digital gpio pads (including those powered by VDD3P3_RTC power domain).
   * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
   */
 #define gpio_hal_force_unhold_all() gpio_ll_force_unhold_all()
@@ -467,6 +467,16 @@ void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, uint32_t gpio_n
  * @param gpio_num GPIO number
  */
 #define gpio_hal_deepsleep_wakeup_disable(hal, gpio_num) gpio_ll_deepsleep_wakeup_disable((hal)->dev, gpio_num)
+
+/**
+ * @brief Get the status of whether an IO is used for deep-sleep wake-up.
+ *
+ * @param hal Context of the HAL layer
+ * @param gpio_num GPIO number
+ *
+ * @return True if the pin is enabled to wake up from deep-sleep
+ */
+#define gpio_hal_deepsleep_wakeup_is_enabled(hal, gpio_num) gpio_ll_deepsleep_wakeup_is_enabled((hal)->dev, gpio_num)
 #endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
 /**
