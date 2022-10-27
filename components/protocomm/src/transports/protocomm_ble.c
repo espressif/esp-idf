@@ -15,7 +15,16 @@
 #include "protocomm_priv.h"
 #include "simple_ble.h"
 
-#define CHAR_VAL_LEN_MAX         (256 + 1)
+/* NOTE: For the security2 scheme, the payload size is quite larger
+ * than that for security1. The increased value has been selected
+ * keeping in mind the largest packet size for security2 and the
+ * factors affecting it.
+ */
+#if CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+    #define CHAR_VAL_LEN_MAX         (480 + 1)
+#else
+    #define CHAR_VAL_LEN_MAX         (256 + 1)
+#endif // CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
 #define PREPARE_BUF_MAX_SIZE     CHAR_VAL_LEN_MAX
 
 static const char *TAG = "protocomm_ble";
