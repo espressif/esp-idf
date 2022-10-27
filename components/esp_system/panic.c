@@ -257,8 +257,8 @@ void esp_panic_handler(panic_info_t *info)
       *
       * ----------------------------------------------------------------------------------------
       * core - core where exception was triggered
-      * exception - what kind of exception occured
-      * description - a short description regarding the exception that occured
+      * exception - what kind of exception occurred
+      * description - a short description regarding the exception that occurred
       * details - more details about the exception
       * state - processor state like register contents, and backtrace
       * elf_info - details about the image currently running
@@ -323,6 +323,14 @@ void esp_panic_handler(panic_info_t *info)
     PANIC_INFO_DUMP(info, state);
     panic_print_str("\r\n");
 
+    /* No matter if we come here from abort or an exception, this variable must be reset.
+     * Else, any exception/error occurring during the current panic handler would considered
+     * an abort. Do this after PANIC_INFO_DUMP(info, state) as it also checks this variable.
+     * For example, if coredump triggers a stack overflow and this variable is not reset,
+     * the second panic would be still be marked as the result of an abort, even the previous
+     * message reason would be kept. */
+    g_panic_abort = false;
+
 #ifdef WITH_ELF_SHA256
     panic_print_str("\r\nELF file SHA256: ");
     char sha256_buf[65];
@@ -359,10 +367,6 @@ void esp_panic_handler(panic_info_t *info)
     } else {
         disable_all_wdts();
         s_dumping_core = true;
-        /* No matter if we come here from abort or an exception, this variable must be reset.
-         * Else, any exception/error occuring during the current panic handler would considered
-         * an abort. */
-        g_panic_abort = false;
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
         esp_core_dump_to_flash(info);
 #endif
