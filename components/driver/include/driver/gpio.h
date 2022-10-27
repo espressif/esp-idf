@@ -364,16 +364,21 @@ esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t *stren
 /**
   * @brief Enable gpio pad hold function.
   *
+  * When the pin is set to hold, the state is latched at that moment and will not change no matter how the internal
+  * signals change or how the IO MUX/GPIO configuration is modified (including input enable, output enable,
+  * output value, function, and drive strength values). It can be used to retain the pin state through a
+  * core reset and system reset triggered by watchdog time-out or Deep-sleep events.
+  *
   * The gpio pad hold function works in both input and output modes, but must be output-capable gpios.
   * If pad hold enabled:
   *   in output mode: the output level of the pad will be force locked and can not be changed.
-  *   in input mode: the input value read will not change, regardless the changes of input signal.
+  *   in input mode: input read value can still reflect the changes of the input signal.
   *
-  * The state of digital gpio cannot be held during Deep-sleep, and it will resume the hold function
+  * The state of the digital gpio cannot be held during Deep-sleep, and it will resume to hold at its default pin state
   * when the chip wakes up from Deep-sleep. If the digital gpio also needs to be held during Deep-sleep,
   * `gpio_deep_sleep_hold_en` should also be called.
   *
-  * Power down or call gpio_hold_dis will disable this function.
+  * Power down or call `gpio_hold_dis` will disable this function.
   *
   * @param gpio_num GPIO number, only support output-capable GPIOs
   *
@@ -403,19 +408,21 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num);
 esp_err_t gpio_hold_dis(gpio_num_t gpio_num);
 
 /**
-  * @brief Enable all digital gpio pad hold function during Deep-sleep.
+  * @brief Enable all digital gpio pads hold function during Deep-sleep.
   *
-  * When the chip is in Deep-sleep mode, all digital gpio will hold the state before sleep, and when the chip is woken up,
-  * the status of digital gpio will not be held. Note that the pad hold feature only works when the chip is in Deep-sleep mode,
-  * when not in sleep mode, the digital gpio state can be changed even you have called this function.
+  * Enabling this feature makes all digital gpio pads be at the holding state during Deep-sleep. The state of each pad
+  * holds is its active configuration (not pad's sleep configuration!).
   *
-  * Power down or call gpio_hold_dis will disable this function, otherwise, the digital gpio hold feature works as long as the chip enter Deep-sleep.
+  * Note that this pad hold feature only works when the chip is in Deep-sleep mode. When the chip is in active mode,
+  * the digital gpio state can be changed freely even you have called this function.
+  *
+  * After this API is being called, the digital gpio Deep-sleep hold feature will work during every sleep process. You
+  * should call `gpio_deep_sleep_hold_dis` to disable this feature.
   */
 void gpio_deep_sleep_hold_en(void);
 
 /**
-  * @brief Disable all digital gpio pad hold function during Deep-sleep.
-  *
+  * @brief Disable all digital gpio pads hold function during Deep-sleep.
   */
 void gpio_deep_sleep_hold_dis(void);
 
@@ -437,14 +444,21 @@ void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv);
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**
-  * @brief Force hold digital and rtc gpio pad.
-  * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
+  * @brief Force hold all digital and rtc gpio pads.
+  *
+  * GPIO force hold, no matter the chip in active mode or sleep modes.
+  *
+  * This function will immediately cause all pads to latch the current values of input enable, output enable,
+  * output value, function, and drive strength values.
+  *
+  * @warning This function will hold flash and UART pins as well. Therefore, this function, and all code run afterwards
+  * (till calling `gpio_force_unhold_all` to disable this feature), MUST be placed in internal RAM as holding the flash
+  * pins will halt SPI flash operation, and holding the UART pins will halt any UART logging.
   * */
 esp_err_t gpio_force_hold_all(void);
 
 /**
-  * @brief Force unhold digital and rtc gpio pad.
-  * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
+  * @brief Force unhold all digital and rtc gpio pads.
   * */
 esp_err_t gpio_force_unhold_all(void);
 #endif

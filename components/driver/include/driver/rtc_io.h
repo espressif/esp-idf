@@ -269,7 +269,7 @@ esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num);
  * Force hold signal is enabled before going into deep sleep for pins which
  * are used for EXT1 wakeup.
  */
-esp_err_t rtc_gpio_force_hold_all(void);
+esp_err_t rtc_gpio_force_hold_en_all(void);
 
 /**
  * @brief Disable force hold signal for all RTC IOs
