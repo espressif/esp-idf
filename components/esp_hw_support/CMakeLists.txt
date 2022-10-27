@@ -45,6 +45,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "port/${target}/systimer.c")
     endif()
 
+    if(CONFIG_SOC_HMAC_SUPPORTED)
+        list(APPEND srcs "esp_hmac.c")
+    endif()
+
     # ESP32C6-TODO
     if(CONFIG_IDF_TARGET_ESP32C6)
         list(REMOVE_ITEM srcs

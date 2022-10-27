@@ -133,6 +133,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_chip_info.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_cpu.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_crc.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_hmac.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_intr_alloc.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_mac.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_random.h \

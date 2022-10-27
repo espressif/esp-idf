@@ -18,6 +18,9 @@
 #if __has_include("esp_dpp.h")
 #include "esp_dpp.h"
 #endif
+#if __has_include("esp_ds_err.h")
+#include "esp_ds_err.h"
+#endif
 #if __has_include("esp_efuse.h")
 #include "esp_efuse.h"
 #endif
@@ -68,9 +71,6 @@
 #endif
 #if __has_include("nvs.h")
 #include "nvs.h"
-#endif
-#if __has_include("soc/esp32s2/esp_ds.h")
-#include "soc/esp32s2/esp_ds.h"
 #endif
 #if __has_include("spi_flash_mmap.h")
 #include "spi_flash_mmap.h"
@@ -767,7 +767,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_HW_CRYPTO_BASE),                         /* 49152 0xc000 Starting number of HW cryptography
                                                                                 module error codes */
 #   endif
-    // components/esp_hw_support/include/soc/esp32s2/esp_ds.h
+    // components/esp_hw_support/include/esp_ds_err.h
 #   ifdef      ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL
     ERR_TBL_IT(ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL),                 /* 49153 0xc001 HMAC peripheral problem */
 #   endif

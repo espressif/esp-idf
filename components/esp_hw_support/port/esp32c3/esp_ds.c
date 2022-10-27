@@ -115,7 +115,7 @@ esp_err_t esp_ds_start_sign(const void *message,
     uint32_t conf_error = hmac_hal_configure(HMAC_OUTPUT_DS, key_id);
     if (conf_error) {
         ds_disable_release();
-        return ESP32C3_ERR_HW_CRYPTO_DS_HMAC_FAIL;
+        return ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL;
     }
 
     ds_hal_start();
@@ -125,7 +125,7 @@ esp_err_t esp_ds_start_sign(const void *message,
     while (ds_ll_busy() != 0) {
         if ((esp_timer_get_time() - start_time) > SOC_DS_KEY_CHECK_MAX_WAIT_US) {
             ds_disable_release();
-            return ESP32C3_ERR_HW_CRYPTO_DS_INVALID_KEY;
+            return ESP_ERR_HW_CRYPTO_DS_INVALID_KEY;
         }
     }
 
@@ -170,11 +170,11 @@ esp_err_t esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx)
     esp_err_t return_value = ESP_OK;
 
     if (sig_check_result == DS_SIGNATURE_MD_FAIL || sig_check_result == DS_SIGNATURE_PADDING_AND_MD_FAIL) {
-        return_value = ESP32C3_ERR_HW_CRYPTO_DS_INVALID_DIGEST;
+        return_value = ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST;
     }
 
     if (sig_check_result == DS_SIGNATURE_PADDING_FAIL) {
-        return_value = ESP32C3_ERR_HW_CRYPTO_DS_INVALID_PADDING;
+        return_value = ESP_ERR_HW_CRYPTO_DS_INVALID_PADDING;
     }
 
     free(esp_ds_ctx);
