@@ -10,6 +10,8 @@
 #include <string.h>
 
 #include "esp_random.h"
+#include "esp_heap_caps.h"
+#include "esp_heap_caps_init.h"
 #include <esp_mac.h>
 
 #include "sdkconfig.h"
@@ -134,6 +136,14 @@ extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
 extern int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv);
 extern int ble_txpwr_set(esp_ble_enhanced_power_type_t power_type, uint16_t handle, int power_level);
 extern int ble_txpwr_get(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
+extern uint32_t _bt_bss_start;
+extern uint32_t _bt_bss_end;
+extern uint32_t _nimble_bss_start;
+extern uint32_t _nimble_bss_end;
+extern uint32_t _nimble_data_start;
+extern uint32_t _nimble_data_end;
+extern uint32_t _bt_data_start;
+extern uint32_t _bt_data_end;
 
 /* Local Function Declaration
  *********************************************************************
@@ -787,13 +797,57 @@ esp_err_t esp_bt_controller_disable(void)
 
 esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
 {
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "%s not implemented, return OK", __func__);
+    ESP_LOGD(NIMBLE_PORT_LOG_TAG, "%s not implemented, return OK", __func__);
     return ESP_OK;
+}
+
+static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end)
+{
+    int ret = heap_caps_add_region(start, end);
+    /* heap_caps_add_region() returns ESP_ERR_INVALID_SIZE if the memory region is
+     * is too small to fit a heap. This cannot be termed as a fatal error and hence
+     * we replace it by ESP_OK
+     */
+    if (ret == ESP_ERR_INVALID_SIZE) {
+        return ESP_OK;
+    }
+    return ret;
 }
 
 esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "%s not implemented, return OK", __func__);
+    intptr_t mem_start, mem_end;
+
+    if (mode == ESP_BT_MODE_BLE) {
+	mem_start = (intptr_t)&_bt_bss_start;
+        mem_end = (intptr_t)&_bt_bss_end;
+        if (mem_start != mem_end) {
+            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release BT BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
+            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+        }
+
+        mem_start = (intptr_t)&_bt_data_start;
+        mem_end = (intptr_t)&_bt_data_end;
+        if (mem_start != mem_end) {
+            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release BT Data [0x%08x] - [0x%08x]", mem_start, mem_end);
+            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+        }
+
+        mem_start = (intptr_t)&_nimble_bss_start;
+	mem_end = (intptr_t)&_nimble_bss_end;
+	if (mem_start != mem_end) {
+	    ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release NimBLE BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
+	    ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+	}
+
+	mem_start = (intptr_t)&_nimble_data_start;
+	mem_end = (intptr_t)&_nimble_data_end;
+	if (mem_start != mem_end) {
+	    ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release NimBLE Data [0x%08x] - [0x%08x]", mem_start, mem_end);
+	    ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+	}
+    }
+
     return ESP_OK;
 }
 
