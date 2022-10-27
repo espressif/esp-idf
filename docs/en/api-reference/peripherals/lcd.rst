@@ -14,7 +14,7 @@ In ``esp_lcd``, an LCD panel is represented by :cpp:type:`esp_lcd_panel_handle_t
 -  ``RGB LCD panel`` - is simply based on a group of specific synchronous signals indicating where to start and stop a frame.
 -  ``Controller based LCD panel`` involves multiple steps to get a panel handle, like bus allocation, IO device registration and controller driver install.
 
-After we get the LCD handle, the remaining LCD operations are the same for different LCD interfaces and vendors.
+After we get the LCD handle, the remaining LCD operations are similar for different LCD interfaces and vendors.
 
 .. only:: SOC_LCD_RGB_SUPPORTED
 
@@ -83,7 +83,12 @@ After we get the LCD handle, the remaining LCD operations are the same for diffe
     Single Frame Buffer in PSRAM
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    If you have PSRAM and want to store the frame buffer there rather than in the limited internal memory, the LCD peripheral will use EDMA to fetch frame data directly from the PSRAM, bypassing the internal cache. You can enable this feature by setting the :cpp:member:`esp_lcd_rgb_panel_config_t::fb_in_psram` to ``true``. The downside of this is that when both the CPU as well as EDMA need access to the PSRAM, the bandwidth will be **shared** between them, that is, EDMA gets half and the CPUs the other half. If there're other peripherals using EDMA as well, with a high enough pixel clock this can lead to starvation of the LCD peripheral, leading to display corruption. However, if the pixel clock is low enough for this not to be an issue, this is a solution that uses almost no CPU intervention.
+    If you have PSRAM and want to store the frame buffer there rather than in the limited internal memory, the LCD peripheral will use EDMA to fetch frame data directly from the PSRAM, bypassing the internal cache. You can enable this feature by setting the :cpp:member:`esp_lcd_rgb_panel_config_t::fb_in_psram` to ``true``. The downside of this is that when both the CPU as well as EDMA need access to the PSRAM, the bandwidth will be **shared** between them, that is, EDMA gets half and the CPUs get the other half. If there're other peripherals using EDMA as well, with a high enough pixel clock this can lead to starvation of the LCD peripheral, leading to display corruption. However, if the pixel clock is low enough for this not to be an issue, this is a solution that uses almost no CPU intervention.
+
+    .. only:: esp32s3
+
+        The PSRAM shares the same SPI bus with the main Flash (the one stores your firmware binary). At one time, there only be one consumer of the SPI bus. When you also use the main flash to serve your file system (e.g. :doc:`SPIFFS </api-reference/storage/spiffs>`), the bandwidth of the underlying SPI bus will also be shared, leading to display corruption. You can use :cpp:func:`esp_lcd_rgb_panel_set_pclk` to update the pixel clock frequency to a lower value.
+
 
     .. code:: c
 
@@ -225,11 +230,13 @@ Application Example
 
 LCD examples are located under: :example:`peripherals/lcd`:
 
-* Universal SPI LCD example with SPI touch - :example:`peripherals/lcd/spi_lcd_touch`
-* Jpeg decoding and LCD display - :example:`peripherals/lcd/tjpgd`
-* i80 controller based LCD and LVGL animation UI - :example:`peripherals/lcd/i80_controller`
-* RGB panel example with scatter chart UI - :example:`peripherals/lcd/rgb_panel`
-* I2C interfaced OLED display scrolling text - :example:`peripherals/lcd/i2c_oled`
+.. list::
+
+    * Universal SPI LCD example with SPI touch - :example:`peripherals/lcd/spi_lcd_touch`
+    * Jpeg decoding and LCD display - :example:`peripherals/lcd/tjpgd`
+    :SOC_LCD_I80_SUPPORTED: * i80 controller based LCD and LVGL animation UI - :example:`peripherals/lcd/i80_controller`
+    :SOC_LCD_RGB_SUPPORTED: * RGB panel example with scatter chart UI - :example:`peripherals/lcd/rgb_panel`
+    * I2C interfaced OLED display scrolling text - :example:`peripherals/lcd/i2c_oled`
 
 Other LCD drivers
 -----------------
