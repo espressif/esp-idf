@@ -9,14 +9,18 @@ import subprocess
 import sys
 import threading
 import time
+from base64 import b64decode
 from textwrap import indent
 from threading import Thread
 from typing import Any, Dict, List, Optional
 
+from click import INT
 from click.core import Context
+from esp_coredump import CoreDump
 from idf_py_actions.constants import OPENOCD_TAGET_CONFIG, OPENOCD_TAGET_CONFIG_DEFAULT
 from idf_py_actions.errors import FatalError
-from idf_py_actions.tools import PropertyDict, ensure_build_directory
+from idf_py_actions.serial_ext import BAUD_RATE, PORT
+from idf_py_actions.tools import PropertyDict, ensure_build_directory, get_default_serial_port, get_sdkconfig_value
 
 PYTHON = sys.executable
 ESP_ROM_INFO_FILE = 'roms.json'
@@ -132,13 +136,94 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 print('Failed to close/kill {}'.format(target))
             processes[target] = None  # to indicate this has ended
 
+    def _get_espcoredump_instance(ctx: Context,
+                                  args: PropertyDict,
+                                  gdb_timeout_sec: int = None,
+                                  core: str = None,
+                                  save_core: str = None) -> CoreDump:
+
+        ensure_build_directory(args, ctx.info_name)
+        project_desc = get_project_desc(args, ctx)
+        coredump_to_flash_config = get_sdkconfig_value(project_desc['config_file'],
+                                                       'CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH')
+        coredump_to_flash = coredump_to_flash_config.rstrip().endswith('y') if coredump_to_flash_config else False
+
+        prog = os.path.join(project_desc['build_dir'], project_desc['app_elf'])
+        esp_port = args.port or get_default_serial_port()
+
+        espcoredump_kwargs = dict()
+
+        espcoredump_kwargs['port'] = esp_port
+        espcoredump_kwargs['baud'] = args.baud
+        espcoredump_kwargs['gdb_timeout_sec'] = gdb_timeout_sec
+
+        # for reproducible builds
+        extra_gdbinit_file = project_desc.get('debug_prefix_map_gdbinit', None)
+
+        if extra_gdbinit_file:
+            espcoredump_kwargs['extra_gdbinit_file'] = extra_gdbinit_file
+
+        core_format = None
+
+        if core:
+            espcoredump_kwargs['core'] = core
+            espcoredump_kwargs['chip'] = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_IDF_TARGET')
+            core_format = get_core_file_format(core)
+        elif coredump_to_flash:
+            #  If the core dump is read from flash, we don't need to specify the --core-format argument at all.
+            #  The format will be determined automatically
+            pass
+        else:
+            print('Path to core dump file is not provided. '
+                  "Core dump can't be read from flash since this option is not enabled in menuconfig")
+            sys.exit(1)
+
+        if core_format:
+            espcoredump_kwargs['core_format'] = core_format
+
+        if save_core:
+            espcoredump_kwargs['save_core'] = save_core
+
+        espcoredump_kwargs['prog'] = prog
+
+        return CoreDump(**espcoredump_kwargs)
+
+    def get_core_file_format(core_file: str) -> str:
+        bin_v1 = 1
+        bin_v2 = 2
+        elf_crc32 = 256
+        elf_sha256 = 257
+
+        with open(core_file, 'rb') as f:
+            coredump_bytes = f.read(16)
+
+            if coredump_bytes.startswith(b'\x7fELF'):
+                return 'elf'
+
+            core_version = int.from_bytes(coredump_bytes[4:7], 'little')
+            if core_version in [bin_v1, bin_v2, elf_crc32, elf_sha256]:
+                #  esp-coredump will determine automatically the core format (ELF or BIN)
+                return 'raw'
+        with open(core_file) as c:
+            coredump_str = c.read()
+            try:
+                b64decode(coredump_str)
+            except Exception:
+                print('The format of the provided core-file is not recognized. '
+                      'Please ensure that the core-format matches one of the following: ELF (“elf”), '
+                      'raw (raw) or base64-encoded (b64) binary')
+                sys.exit(1)
+            else:
+                return 'b64'
+
     def is_gdb_with_python(gdb: str) -> bool:
         # execute simple python command to check is it supported
-        return subprocess.run([gdb, '--batch-silent', '--ex', 'python import os'], stderr=subprocess.DEVNULL).returncode == 0
+        return subprocess.run([gdb, '--batch-silent', '--ex', 'python import os'],
+                              stderr=subprocess.DEVNULL).returncode == 0
 
     def get_normalized_path(path: str) -> str:
         if os.name == 'nt':
-            return os.path.normpath(path).replace('\\','\\\\')
+            return os.path.normpath(path).replace('\\', '\\\\')
         return path
 
     def get_rom_if_condition_str(date_addr: int, date_str: str) -> str:
@@ -286,7 +371,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             project_desc = json.load(f)
             return project_desc
 
-    def openocd(action: str, ctx: Context, args: PropertyDict, openocd_scripts: Optional[str], openocd_commands: str) -> None:
+    def openocd(action: str, ctx: Context, args: PropertyDict, openocd_scripts: Optional[str],
+                openocd_commands: str) -> None:
         """
         Execute openocd as external tool
         """
@@ -311,7 +397,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             process = subprocess.Popen(args, stdout=openocd_out, stderr=subprocess.STDOUT, bufsize=1)
         except Exception as e:
             print(e)
-            raise FatalError('Error starting openocd. Please make sure it is installed and is present in executable paths', ctx)
+            raise FatalError(
+                'Error starting openocd. Please make sure it is installed and is present in executable paths', ctx)
 
         processes['openocd'] = process
         processes['openocd_outfile'] = openocd_out
@@ -326,7 +413,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             args.append('-ix={}'.format(debug_prefix_gdbinit))
         return args
 
-    def gdbui(action: str, ctx: Context, args: PropertyDict, gdbgui_port: Optional[str], gdbinit: Optional[str], require_openocd: bool) -> None:
+    def gdbui(action: str, ctx: Context, args: PropertyDict, gdbgui_port: Optional[str], gdbinit: Optional[str],
+              require_openocd: bool) -> None:
         """
         Asynchronous GDB-UI target
         """
@@ -436,16 +524,51 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     # Valid scenario: watch_openocd task won't be in the list if openocd not started from idf.py
                     pass
 
+    def coredump_info(action: str,
+                      ctx: Context,
+                      args: PropertyDict,
+                      gdb_timeout_sec: int,
+                      core: str = None,
+                      save_core: str = None) -> None:
+        espcoredump = _get_espcoredump_instance(ctx=ctx, args=args, gdb_timeout_sec=gdb_timeout_sec, core=core,
+                                                save_core=save_core)
+
+        espcoredump.info_corefile()
+
+    def coredump_debug(action: str,
+                       ctx: Context,
+                       args: PropertyDict,
+                       core: str = None,
+                       save_core: str = None) -> None:
+        espcoredump = _get_espcoredump_instance(ctx=ctx, args=args, core=core, save_core=save_core)
+
+        espcoredump.dbg_corefile()
+
+    coredump_base = [
+        {
+            'names': ['--core', '-c'],
+            'help': 'Path to core dump file (if skipped core dump will be read from flash)',
+        },
+        {
+            'names': ['--save-core', '-s'],
+            'help': 'Save core to file. Otherwise temporary core file will be deleted.',
+        },
+    ]
+    gdb_timeout_sec_opt = {
+        'names': ['--gdb-timeout-sec'],
+        'type': INT,
+        'default': 1,
+        'help': 'Overwrite the default internal delay for gdb responses',
+    }
     fail_if_openocd_failed = {
         'names': ['--require-openocd', '--require_openocd'],
-        'help':
-        ('Fail this target if openocd (this targets dependency) failed.\n'),
+        'help': 'Fail this target if openocd (this targets dependency) failed.\n',
         'is_flag': True,
         'default': False,
     }
     gdbinit = {
         'names': ['--gdbinit'],
-        'help': ('Specify the name of gdbinit file to use\n'),
+        'help': 'Specify the name of gdbinit file to use\n',
         'default': None,
     }
     debug_actions = {
@@ -508,6 +631,19 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 'callback': gdbtui,
                 'help': 'GDB TUI mode.',
                 'options': [gdbinit, fail_if_openocd_failed],
+                'order_dependencies': ['all', 'flash'],
+            },
+            'coredump-info': {
+                'callback': coredump_info,
+                'help': 'Print crashed task’s registers, callstack, list of available tasks in the system, '
+                        'memory regions and contents of memory stored in core dump (TCBs and stacks)',
+                'options': coredump_base + [PORT, BAUD_RATE, gdb_timeout_sec_opt],  # type: ignore
+                'order_dependencies': ['all', 'flash'],
+            },
+            'coredump-debug': {
+                'callback': coredump_debug,
+                'help': 'Create core dump ELF file and run GDB debug session with this file.',
+                'options': coredump_base + [PORT, BAUD_RATE],  # type: ignore
                 'order_dependencies': ['all', 'flash'],
             },
             'post-debug': {

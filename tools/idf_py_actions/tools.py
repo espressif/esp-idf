@@ -12,6 +12,7 @@ from typing import Any, Dict, Generator, List, Match, Optional, TextIO, Tuple, U
 
 import click
 import yaml
+from idf_py_actions.errors import NoSerialPortFoundError
 
 from .constants import GENERATORS
 from .errors import FatalError
@@ -86,6 +87,31 @@ def idf_version() -> Optional[str]:
         version = _idf_version_from_cmake()
 
     return version
+
+
+def get_default_serial_port() -> Any:
+    # Import is done here in order to move it after the check_environment()
+    # ensured that pyserial has been installed
+    try:
+        import esptool
+        import serial.tools.list_ports
+        ports = list(sorted(p.device for p in serial.tools.list_ports.comports()))
+        # high baud rate could cause the failure of creation of the connection
+        esp = esptool.get_default_connected_device(serial_list=ports, port=None, connect_attempts=4,
+                                                   initial_baud=115200)
+        if esp is None:
+            raise NoSerialPortFoundError(
+                "No serial ports found. Connect a device, or use '-p PORT' option to set a specific port.")
+
+        serial_port = esp.serial_port
+        esp._port.close()
+
+        return serial_port
+
+    except NoSerialPortFoundError:
+        raise
+    except Exception as e:
+        raise FatalError('An exception occurred during detection of the serial port: {}'.format(e))
 
 
 # function prints warning when autocompletion is not being performed
