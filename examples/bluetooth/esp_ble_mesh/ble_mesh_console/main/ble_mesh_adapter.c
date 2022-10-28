@@ -78,7 +78,7 @@ esp_ble_mesh_comp_t *ble_mesh_get_component(uint16_t model_id)
     return comp;
 }
 
-void ble_mesh_node_init(void)
+int ble_mesh_init_node_prestore_params(void)
 {
     uint16_t i;
 
@@ -86,11 +86,14 @@ void ble_mesh_node_init(void)
         ble_mesh_node_prestore_params[i].net_idx = ESP_BLE_MESH_KEY_UNUSED;
         ble_mesh_node_prestore_params[i].unicast_addr = ESP_BLE_MESH_ADDR_UNASSIGNED;
     }
-
-    ble_mesh_node_sema = xSemaphoreCreateMutex();
-    if (!ble_mesh_node_sema) {
-        ESP_LOGE(TAG, "%s init fail, mesh node semaphore create fail", __func__);
+    if(ble_mesh_node_sema == NULL) {
+        ble_mesh_node_sema = xSemaphoreCreateMutex();
+        if (!ble_mesh_node_sema) {
+            ESP_LOGE(TAG, "%s init fail, mesh node semaphore create fail", __func__);
+            return ESP_ERR_NO_MEM;
+        }
     }
+    return 0;
 }
 
 void ble_mesh_set_node_prestore_params(uint16_t netkey_index, uint16_t unicast_addr)
@@ -104,6 +107,14 @@ void ble_mesh_set_node_prestore_params(uint16_t netkey_index, uint16_t unicast_a
         }
     }
     xSemaphoreGive(ble_mesh_node_sema);
+}
+
+void ble_mesh_deinit_node_prestore_params(void)
+{
+    if (ble_mesh_node_sema != NULL) {
+        vSemaphoreDelete(ble_mesh_node_sema);
+        ble_mesh_node_sema = NULL;
+    }
 }
 
 void ble_mesh_node_statistics_get(void)
