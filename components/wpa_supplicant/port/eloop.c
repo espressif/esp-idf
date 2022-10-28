@@ -140,15 +140,30 @@ overflow:
 	return 0;
 }
 
+static bool timeout_exists(struct eloop_timeout *old)
+{
+	struct eloop_timeout *timeout, *prev;
+	dl_list_for_each_safe(timeout, prev, &eloop.timeout,
+			      struct eloop_timeout, list) {
+		if (old == timeout)
+			return true;
+	}
+
+	return false;
+}
 
 static void eloop_remove_timeout(struct eloop_timeout *timeout)
 {
+	bool timeout_present = false;
 	ELOOP_LOCK();
-	dl_list_del(&timeout->list);
+	/* Make sure timeout still exists(Another context may have deleted this) */
+	timeout_present = timeout_exists(timeout);
+	if (timeout_present)
+		dl_list_del(&timeout->list);
 	ELOOP_UNLOCK();
-	os_free(timeout);
+	if (timeout_present)
+		os_free(timeout);
 }
-
 
 #ifdef ELOOP_DEBUG
 int eloop_cancel_timeout_debug(eloop_timeout_handler handler, void *eloop_data,
