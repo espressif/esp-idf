@@ -252,6 +252,9 @@ void heap_caps_print_heap_info( uint32_t caps );
  *
  * @param print_errors Print specific errors if heap corruption is found.
  *
+ * @note Please increase the value of `CONFIG_ESP_INT_WDT_TIMEOUT_MS` when using this API
+ * with PSRAM enabled.
+ *
  * @return True if all heaps are valid, False if at least one heap is corrupt.
  */
 bool heap_caps_check_integrity_all(bool print_errors);
@@ -269,6 +272,9 @@ bool heap_caps_check_integrity_all(bool print_errors);
  * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
  *                    of memory
  * @param print_errors Print specific errors if heap corruption is found.
+ *
+ * @note Please increase the value of `CONFIG_ESP_INT_WDT_TIMEOUT_MS` when using this API
+ * with PSRAM capability flag.
  *
  * @return True if all heaps are valid, False if at least one heap is corrupt.
  */
