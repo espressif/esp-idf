@@ -613,14 +613,14 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
             (bearers & BLE_MESH_PROV_ADV)) {
-        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-                                        BLE_MESH_EXCEP_INFO_MESH_BEACON, NULL);
+        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_ADD,
+                                        BLE_MESH_EXCEP_LIST_TYPE_MESH_BEACON, NULL);
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
             (bearers & BLE_MESH_PROV_GATT)) {
-        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-                                        BLE_MESH_EXCEP_INFO_MESH_PROV_ADV, NULL);
+        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_ADD,
+                                        BLE_MESH_EXCEP_LIST_TYPE_MESH_PROV_ADV, NULL);
     }
 #endif
 
@@ -668,8 +668,8 @@ int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers)
             (bearers & BLE_MESH_PROV_GATT)) {
         bt_mesh_proxy_client_prov_disable();
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
-        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-                                        BLE_MESH_EXCEP_INFO_MESH_PROV_ADV, NULL);
+        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_REMOVE,
+                                        BLE_MESH_EXCEP_LIST_TYPE_MESH_PROV_ADV, NULL);
 #endif
     }
 
@@ -680,8 +680,8 @@ int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers)
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
                 (enable & BLE_MESH_PROV_ADV)) {
-            bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-                                            BLE_MESH_EXCEP_INFO_MESH_BEACON, NULL);
+            bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_REMOVE,
+                                            BLE_MESH_EXCEP_LIST_TYPE_MESH_BEACON, NULL);
         }
 #endif
 
