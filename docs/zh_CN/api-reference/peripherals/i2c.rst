@@ -24,7 +24,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 .. only:: SOC_I2C_SUPPORT_SLAVE
 
     - 支持从机模式
-    
+
 - 读取并写入寄存器，然后由主机读取/写入
 
 
@@ -329,7 +329,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 .. only:: not SOC_I2C_SUPPORT_SLAVE
 
     .. _i2c-api-interrupt-handling:
-    
+
 中断处理
 ^^^^^^^^^^^
 
@@ -340,7 +340,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 用户自定义配置
 ^^^^^^^^^^^^^^^
 
-如本节末尾所述 :ref:`i2c-api-configure-driver`，函数 :cpp:func:`i2c_param_config` 在初始化 I2C 端口的驱动程序配置时，也会将几个 I2C 通信参数设置为 `I2C 总线协议规范 <https://www.nxp.com/docs/en/user-guide/UM10204.pdf>`_ 规定的默认值。 其他一些相关参数已在 I2C 控制器的寄存器中预先配置。
+如本节末尾所述 :ref:`i2c-api-configure-driver`，函数 :cpp:func:`i2c_param_config` 在初始化 I2C 端口的驱动程序配置时，也会将几个 I2C 通信参数设置为 I2C 总线协议规范规定的默认值。其他一些相关参数已在 I2C 控制器的寄存器中预先配置。
 
 通过调用下表中提供的专用函数，可以将所有这些参数更改为用户自定义值。请注意，时序值是在 APB 时钟周期中定义。APB 的频率在 :c:macro:`I2C_APB_CLK_FREQ` 中指定。
 
@@ -372,7 +372,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 
 .. 注解 ::
 
-    {IDF_TARGET_NAME} 的内部上拉电阻范围为几万欧姆，因此在大多数情况下，它们本身不足以用作 I2C 上拉电阻。建议用户使用阻值在 `I2C 总线协议规范 <https://www.nxp.com/docs/en/user-guide/UM10204.pdf>`_ 规定范围内的上拉电阻。
+    {IDF_TARGET_NAME} 的内部上拉电阻范围为几万欧姆，因此在大多数情况下，它们本身不足以用作 I2C 上拉电阻。建议用户使用阻值在 I2C 总线协议规范规定范围内的上拉电阻。计算阻值的具体方法，可参考 `TI 应用说明 <https://www.ti.com/lit/an/slva689/slva689.pdf>`_
 
 
 .. _i2c-api-error-handling:
