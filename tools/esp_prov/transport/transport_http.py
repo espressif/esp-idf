@@ -39,6 +39,13 @@ class Transport_HTTP(Transport):
         try:
             self.conn.request('POST', path, tobytes(data), self.headers)
             response = self.conn.getresponse()
+            # While establishing a session, the device sends the Set-Cookie header
+            # with value 'session=cookie_session_id' in its first response of the session to the tool.
+            # To maintain the same session, successive requests from the tool should include
+            # an additional 'Cookie' header with the above recieved value.
+            for hdr_key, hdr_val in response.getheaders():
+                if hdr_key == 'Set-Cookie':
+                    self.headers['Cookie'] = hdr_val
             if response.status == 200:
                 return response.read().decode('latin-1')
         except Exception as err:
