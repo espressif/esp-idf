@@ -351,6 +351,10 @@
 #define SBC_ENC_INCLUDED FALSE
 #endif
 
+#ifndef BTC_SPP_SEND_BUF_DEFAULT
+#define BTC_SPP_SEND_BUF_DEFAULT UC_BT_SPP_SEND_BUF_DEFAULT
+#endif
+
 /******************************************************************************
 **
 ** BTA-layer components
@@ -1578,7 +1582,7 @@
 
 /* ERTM Tx window size */
 #ifndef RFC_FCR_OPT_TX_WINDOW_SIZE
-#define RFC_FCR_OPT_TX_WINDOW_SIZE  20
+#define RFC_FCR_OPT_TX_WINDOW_SIZE  10
 #endif
 
 /* ERTM Maximum transmissions before disconnecting */

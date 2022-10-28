@@ -296,6 +296,12 @@
 #define UC_BT_HFP_WBS_ENABLE                    FALSE
 #endif
 
+#ifdef CONFIG_BT_SPP_SEND_BUF_DEFAULT
+#define UC_BT_SPP_SEND_BUF_DEFAULT              CONFIG_BT_SPP_SEND_BUF_DEFAULT
+#else
+#define UC_BT_SPP_SEND_BUF_DEFAULT              0
+#endif
+
 /**********************************************************
  * Memory reference
  **********************************************************/

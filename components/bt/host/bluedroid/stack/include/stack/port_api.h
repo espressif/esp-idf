@@ -113,7 +113,15 @@ typedef void (tPORT_MGMT_CALLBACK) (UINT32 code, UINT16 port_handle, void* data)
 typedef struct {
     BOOLEAN accept; /* If upper layer accepts the incoming connection */
     BOOLEAN ignore_rfc_state; /* If need to ignore rfc state for PORT_CheckConnection */
+    UINT16  peer_mtu; /* Max MTU that port can send */
 } tPORT_MGMT_SR_CALLBACK_ARG;
+
+/**
+ * Define the client port manage callback function argument
+ */
+typedef struct {
+    UINT16  peer_mtu; /* Max MTU that port can send */
+} tPORT_MGMT_CL_CALLBACK_ARG;
 
 /*
 ** Define events that registered application can receive in the callback
