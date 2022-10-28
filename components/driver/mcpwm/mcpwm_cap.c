@@ -185,6 +185,13 @@ esp_err_t mcpwm_capture_timer_stop(mcpwm_cap_timer_handle_t cap_timer)
     return ESP_OK;
 }
 
+esp_err_t mcpwm_capture_timer_get_resolution(mcpwm_cap_timer_handle_t cap_timer, uint32_t *out_resolution)
+{
+    ESP_RETURN_ON_FALSE(cap_timer && out_resolution, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *out_resolution = cap_timer->resolution_hz;
+    return ESP_OK;
+}
+
 static esp_err_t mcpwm_capture_channel_register_to_timer(mcpwm_cap_channel_t *cap_channel, mcpwm_cap_timer_t *cap_timer)
 {
     int cap_chan_id = -1;

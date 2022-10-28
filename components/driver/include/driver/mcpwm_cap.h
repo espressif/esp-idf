@@ -95,6 +95,18 @@ esp_err_t mcpwm_capture_timer_start(mcpwm_cap_timer_handle_t cap_timer);
 esp_err_t mcpwm_capture_timer_stop(mcpwm_cap_timer_handle_t cap_timer);
 
 /**
+ * @brief Get MCPWM capture timer resolution, in Hz
+ *
+ * @param[in] cap_timer MCPWM capture timer, allocated by `mcpwm_new_capture_timer()`
+ * @param[out] out_resolution Returned capture timer resolution, in Hz
+ * @return
+ *      - ESP_OK: Get capture timer resolution successfully
+ *      - ESP_ERR_INVALID_ARG: Get capture timer resolution failed because of invalid argument
+ *      - ESP_FAIL: Get capture timer resolution failed because of other error
+ */
+esp_err_t mcpwm_capture_timer_get_resolution(mcpwm_cap_timer_handle_t cap_timer, uint32_t *out_resolution);
+
+/**
  * @brief MCPWM Capture timer sync phase configuration
  */
 typedef struct {

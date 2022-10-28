@@ -472,7 +472,7 @@ uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_si
  * @param cap_sig capture channel of whose edge is to be determined
  *
  * @return
- *     Capture signal edge: 1 - positive edge, 2 - negtive edge
+ *     Capture signal edge: 1 - positive edge, 2 - negative edge, 0 - Invalid
  */
 uint32_t mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig);
 
