@@ -1959,17 +1959,20 @@ int bt_mesh_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
 }
 
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
-int bt_mesh_update_exceptional_list(uint8_t sub_code, uint8_t type, void *info)
+int bt_mesh_update_exceptional_list(uint8_t sub_code, uint32_t type, void *info)
 {
     BD_ADDR value = {0};
 
-    if ((sub_code > BLE_MESH_EXCEP_LIST_CLEAN) ||
-            (type > BLE_MESH_EXCEP_INFO_MESH_PROXY_ADV)) {
+    if ((sub_code > BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN) ||
+        (sub_code < BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN &&
+         type > BLE_MESH_EXCEP_LIST_TYPE_MESH_PROXY_ADV) ||
+        (sub_code == BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN &&
+         !(type & BLE_MESH_EXCEP_LIST_CLEAN_ALL_LIST))) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }
 
-    if (type == BLE_MESH_EXCEP_INFO_MESH_LINK_ID) {
+    if (type == BLE_MESH_EXCEP_LIST_TYPE_MESH_LINK_ID) {
         if (!info) {
             BT_ERR("Invalid Provisioning Link ID");
             return -EINVAL;
@@ -1977,7 +1980,7 @@ int bt_mesh_update_exceptional_list(uint8_t sub_code, uint8_t type, void *info)
         sys_memcpy_swap(value, info, sizeof(uint32_t));
     }
 
-    BT_DBG("%s exceptional list, type 0x%02x", sub_code ? "Remove" : "Add", type);
+    BT_DBG("%s exceptional list, type 0x%08x", sub_code ? "Remove" : "Add", type);
 
     /* The parameter "device_info" can't be NULL in the API */
     BLE_MESH_BTM_CHECK_STATUS(BTM_UpdateBleDuplicateExceptionalList(sub_code, type, value, NULL));

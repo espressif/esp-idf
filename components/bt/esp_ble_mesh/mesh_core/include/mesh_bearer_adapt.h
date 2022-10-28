@@ -776,29 +776,28 @@ int bt_mesh_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
                        uint8_t enc_data[16]);
 
 enum {
-    BLE_MESH_EXCEP_LIST_ADD = 0,
-    BLE_MESH_EXCEP_LIST_REMOVE,
-    BLE_MESH_EXCEP_LIST_CLEAN,
+    BLE_MESH_EXCEP_LIST_SUB_CODE_ADD = 0,
+    BLE_MESH_EXCEP_LIST_SUB_CODE_REMOVE,
+    BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN,
 };
 
 enum {
-    BLE_MESH_EXCEP_INFO_ADV_ADDR = 0,
-    BLE_MESH_EXCEP_INFO_MESH_LINK_ID,
-    BLE_MESH_EXCEP_INFO_MESH_BEACON,
-    BLE_MESH_EXCEP_INFO_MESH_PROV_ADV,
-    BLE_MESH_EXCEP_INFO_MESH_PROXY_ADV,
+    BLE_MESH_EXCEP_LIST_TYPE_ADV_ADDR = 0,
+    BLE_MESH_EXCEP_LIST_TYPE_MESH_LINK_ID,
+    BLE_MESH_EXCEP_LIST_TYPE_MESH_BEACON,
+    BLE_MESH_EXCEP_LIST_TYPE_MESH_PROV_ADV,
+    BLE_MESH_EXCEP_LIST_TYPE_MESH_PROXY_ADV,
 };
 
-enum {
-    BLE_MESH_EXCEP_CLEAN_ADDR_LIST           = BIT(0),
-    BLE_MESH_EXCEP_CLEAN_MESH_LINK_ID_LIST   = BIT(1),
-    BLE_MESH_EXCEP_CLEAN_MESH_BEACON_LIST    = BIT(2),
-    BLE_MESH_EXCEP_CLEAN_MESH_PROV_ADV_LIST  = BIT(3),
-    BLE_MESH_EXCEP_CLEAN_MESH_PROXY_ADV_LIST = BIT(4),
-    BLE_MESH_EXCEP_CLEAN_ALL_LIST            = 0xFFFF,
-};
+#define BLE_MESH_EXCEP_LIST_CLEAN_ADDR_LIST              BIT(0)
+#define BLE_MESH_EXCEP_LIST_CLEAN_MESH_LINK_ID_LIST      BIT(1)
+#define BLE_MESH_EXCEP_LIST_CLEAN_MESH_BEACON_LIST       BIT(2)
+#define BLE_MESH_EXCEP_LIST_CLEAN_MESH_PROV_ADV_LIST     BIT(3)
+#define BLE_MESH_EXCEP_LIST_CLEAN_MESH_PROXY_ADV_LIST    BIT(4)
+#define BLE_MESH_EXCEP_LIST_CLEAN_ALL_LIST               (BIT(0) | BIT(1) | \
+                                                          BIT(2) | BIT(3) | BIT(4))
 
-int bt_mesh_update_exceptional_list(uint8_t sub_code, uint8_t type, void *info);
+int bt_mesh_update_exceptional_list(uint8_t sub_code, uint32_t type, void *info);
 
 #ifdef __cplusplus
 }
