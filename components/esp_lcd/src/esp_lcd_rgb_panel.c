@@ -83,7 +83,8 @@ struct esp_rgb_panel_t {
     int panel_id;          // LCD panel ID
     lcd_hal_context_t hal; // Hal layer object
     size_t data_width;     // Number of data lines
-    size_t bits_per_pixel; // Color depth, in bpp
+    size_t fb_bits_per_pixel; // Frame buffer color depth, in bpp
+    size_t output_bits_per_pixel; // Color depth seen from the output data line. Default to fb_bits_per_pixel, but can be changed by YUV-RGB conversion
     size_t sram_trans_align;  // Alignment for framebuffer that allocated in SRAM
     size_t psram_trans_align; // Alignment for framebuffer that allocated in PSRAM
     int disp_gpio_num;     // Display control GPIO, which is used to perform action like "disp_off"
@@ -220,13 +221,13 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
 #endif
 
     // bpp defaults to the number of data lines, but for serial RGB interface, they're not equal
-    size_t bits_per_pixel = rgb_panel_config->data_width;
+    size_t fb_bits_per_pixel = rgb_panel_config->data_width;
     if (rgb_panel_config->bits_per_pixel) { // override bpp if it's set
-        bits_per_pixel = rgb_panel_config->bits_per_pixel;
+        fb_bits_per_pixel = rgb_panel_config->bits_per_pixel;
     }
     // calculate buffer size
-    size_t fb_size = rgb_panel_config->timings.h_res * rgb_panel_config->timings.v_res * bits_per_pixel / 8;
-    size_t bb_size = rgb_panel_config->bounce_buffer_size_px * bits_per_pixel / 8;
+    size_t fb_size = rgb_panel_config->timings.h_res * rgb_panel_config->timings.v_res * fb_bits_per_pixel / 8;
+    size_t bb_size = rgb_panel_config->bounce_buffer_size_px * fb_bits_per_pixel / 8;
     if (bb_size) {
         // we want the bounce can always end in the second buffer
         ESP_GOTO_ON_FALSE(fb_size % (2 * bb_size) == 0, ESP_ERR_INVALID_ARG, err, TAG,
@@ -297,7 +298,8 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     memcpy(rgb_panel->data_gpio_nums, rgb_panel_config->data_gpio_nums, SOC_LCD_RGB_DATA_WIDTH);
     rgb_panel->timings = rgb_panel_config->timings;
     rgb_panel->data_width = rgb_panel_config->data_width;
-    rgb_panel->bits_per_pixel = bits_per_pixel;
+    rgb_panel->fb_bits_per_pixel = fb_bits_per_pixel;
+    rgb_panel->output_bits_per_pixel = fb_bits_per_pixel; // by default, the output bpp is the same as the frame buffer bpp
     rgb_panel->disp_gpio_num = rgb_panel_config->disp_gpio_num;
     rgb_panel->flags.disp_en_level = !rgb_panel_config->flags.disp_active_low;
     rgb_panel->flags.no_fb = rgb_panel_config->flags.no_fb;
@@ -387,6 +389,57 @@ esp_err_t esp_lcd_rgb_panel_refresh(esp_lcd_panel_handle_t panel)
     return ESP_OK;
 }
 
+esp_err_t esp_lcd_rgb_panel_set_yuv_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_yuv_conv_config_t *config)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+    lcd_hal_context_t *hal = &rgb_panel->hal;
+    bool en_conversion = config != NULL;
+
+    // bits per pixel for different YUV sample
+    const uint8_t bpp_yuv[] = {
+        [LCD_YUV_SAMPLE_422] = 16,
+        [LCD_YUV_SAMPLE_420] = 12,
+        [LCD_YUV_SAMPLE_411] = 12,
+    };
+
+    if (en_conversion) {
+        if (memcmp(&config->src, &config->dst, sizeof(config->src)) == 0) {
+            ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "conversion source and destination are the same");
+        }
+
+        if (config->src.color_space == LCD_COLOR_SPACE_YUV && config->dst.color_space == LCD_COLOR_SPACE_RGB) { // YUV->RGB
+            lcd_ll_set_convert_mode_yuv_to_rgb(hal->dev, config->src.yuv_sample);
+            // Note, the RGB->YUV conversion only support RGB565
+            rgb_panel->output_bits_per_pixel = 16;
+        } else if (config->src.color_space == LCD_COLOR_SPACE_RGB && config->dst.color_space == LCD_COLOR_SPACE_YUV) { // RGB->YUV
+            lcd_ll_set_convert_mode_rgb_to_yuv(hal->dev, config->dst.yuv_sample);
+            rgb_panel->output_bits_per_pixel = bpp_yuv[config->dst.yuv_sample];
+        } else if (config->src.color_space == LCD_COLOR_SPACE_YUV && config->dst.color_space == LCD_COLOR_SPACE_YUV) { // YUV->YUV
+            lcd_ll_set_convert_mode_yuv_to_yuv(hal->dev, config->src.yuv_sample, config->dst.yuv_sample);
+            rgb_panel->output_bits_per_pixel = bpp_yuv[config->dst.yuv_sample];
+        } else {
+            ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "unsupported conversion mode");
+        }
+
+        // set conversion standard
+        lcd_ll_set_yuv_convert_std(hal->dev, config->std);
+        // set conversion data width
+        lcd_ll_set_convert_data_width(hal->dev, rgb_panel->data_width);
+        // set color range
+        lcd_ll_set_input_color_range(hal->dev, config->src.color_range);
+        lcd_ll_set_output_color_range(hal->dev, config->dst.color_range);
+    } else {
+        // output bpp equals to frame buffer bpp
+        rgb_panel->output_bits_per_pixel = rgb_panel->fb_bits_per_pixel;
+    }
+
+    // enable or disable RGB-YUV conversion
+    lcd_ll_enable_rgb_yuv_convert(hal->dev, en_conversion);
+
+    return ESP_OK;
+}
+
 static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel)
 {
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
@@ -425,7 +478,7 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     // configure blank region timing
     lcd_ll_set_blank_cycles(rgb_panel->hal.dev, 1, 1); // RGB panel always has a front and back blank (porch region)
     lcd_ll_set_horizontal_timing(rgb_panel->hal.dev, rgb_panel->timings.hsync_pulse_width,
-                                 rgb_panel->timings.hsync_back_porch, rgb_panel->timings.h_res * rgb_panel->bits_per_pixel / rgb_panel->data_width,
+                                 rgb_panel->timings.hsync_back_porch, rgb_panel->timings.h_res * rgb_panel->output_bits_per_pixel / rgb_panel->data_width,
                                  rgb_panel->timings.hsync_front_porch);
     lcd_ll_set_vertical_timing(rgb_panel->hal.dev, rgb_panel->timings.vsync_pulse_width,
                                rgb_panel->timings.vsync_back_porch, rgb_panel->timings.v_res,
@@ -500,7 +553,7 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         y_end = MIN(y_end, v_res);
     }
 
-    int bytes_per_pixel = rgb_panel->bits_per_pixel / 8;
+    int bytes_per_pixel = rgb_panel->fb_bits_per_pixel / 8;
     int pixels_per_line = rgb_panel->timings.h_res;
     uint32_t bytes_per_line = bytes_per_pixel * pixels_per_line;
     uint8_t *fb = rgb_panel->fbs[rgb_panel->cur_fb_index];
@@ -862,7 +915,7 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_cloc
 static IRAM_ATTR bool lcd_rgb_panel_fill_bounce_buffer(esp_rgb_panel_t *panel, uint8_t *buffer)
 {
     bool need_yield = false;
-    int bytes_per_pixel = panel->bits_per_pixel / 8;
+    int bytes_per_pixel = panel->fb_bits_per_pixel / 8;
     if (panel->flags.no_fb) {
         if (panel->on_bounce_empty) {
             // We don't have a frame buffer here; we need to call a callback to refill the bounce buffer
