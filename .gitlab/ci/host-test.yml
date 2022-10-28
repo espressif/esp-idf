@@ -93,13 +93,13 @@ test_reproducible_build:
     when: always
     paths:
       - ${FUZZER_TEST_DIR}/out/crashes
-      - ${FUZZER_TEST_DIR}/fuzz_output.log
+      - ${FUZZER_TEST_DIR}/fuzz_output.txt
     expire_in: 1 week
   script:
     - export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 && export AFL_SKIP_CPUFREQ=1
     - cd ${FUZZER_TEST_DIR}
     # run AFL fuzzer for one hour
-    - ( ( make ${FUZZER_PARAMS} fuzz | tee fuzz_output.log | grep -v '\(Fuzzing test case\|Entering queue cycle\)' ) || pkill sleep ) &
+    - ( ( make ${FUZZER_PARAMS} fuzz | tee fuzz_output.txt | grep -v '\(Fuzzing test case\|Entering queue cycle\)' ) || pkill sleep ) &
     - ( sleep 3600 || mkdir -p out/crashes/env_failed ) && pkill afl-fuz
     # check no crashes found
     - test -z "$(ls out/crashes/)" || exit 1
@@ -386,8 +386,8 @@ test_hello_world_linux_compatible_example:
     - cd ${IDF_PATH}/tools/test_apps/linux_compatible/hello_world_linux_compatible
     - idf.py --preview set-target linux
     - idf.py build
-    - timeout 15 build/hello_world.elf | tee test.log
-    - grep "Hello world!" test.log
+    - timeout 15 build/hello_world.elf | tee test.txt
+    - grep "Hello world!" test.txt
 
 test_esp_timer_cxx:
   extends: .host_test_template
@@ -443,16 +443,16 @@ test_partition_api_host:
   script:
     - cd ${IDF_PATH}/components/spi_flash/host_test/partition_api_test
     - idf.py build
-    - timeout 5 ./build/partition_api_test.elf | tee test.log
-    - grep " 0 Failures" test.log
+    - timeout 5 ./build/partition_api_test.elf | tee test.txt
+    - grep " 0 Failures" test.txt
 
 test_spiffs_host:
   extends: .host_test_template
   script:
     - cd ${IDF_PATH}/components/spiffs/host_test
     - idf.py build
-    - timeout 5 ./build/host_test_spiffs.elf | tee test.log
-    - grep " 0 Failures" test.log
+    - timeout 5 ./build/host_test_spiffs.elf | tee test.txt
+    - grep " 0 Failures" test.txt
 
 test_gen_soc_caps_kconfig:
   extends: .host_test_template
