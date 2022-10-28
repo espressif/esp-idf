@@ -991,8 +991,8 @@ int bt_mesh_proxy_client_init(void)
     bt_mesh_gattc_conn_cb_register(&conn_callbacks);
 
 #if CONFIG_BLE_MESH_USE_DUPLICATE_SCAN && CONFIG_BLE_MESH_GATT_PROXY_CLIENT
-    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-                                    BLE_MESH_EXCEP_INFO_MESH_PROXY_ADV, NULL);
+    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_ADD,
+                                    BLE_MESH_EXCEP_LIST_TYPE_MESH_PROXY_ADV, NULL);
 #endif
 
     return 0;
