@@ -29,6 +29,17 @@ Recorded voice will be saved to SD card in `wav` format, and can be played or pr
 
 All the GPIO used in this example can be changed according to your board, by macros `EXAMPLE_xxx_IO` defined at the beginning of [i2s_es7210_record_example.c](main/i2s_es7210_record_example.c).
 
+### Dependency
+
+This example is based on [es7210 component](https://components.espressif.com/component/espressif/es7210)
+
+The component can be installed by esp component manager. Since this example already installed it, no need to re-installed it again, but if you want to install this component in your own project, you can input the following command:
+```
+idf.py add-dependency espressif/es7210^1.0.0
+```
+
+If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_componets` folder.
+
 ### Configure the project
 
 * Set the target of the build by following command, where TARGET can be `esp32s3` or `esp32c3`.
