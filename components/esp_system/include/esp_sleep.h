@@ -85,6 +85,11 @@ typedef enum {
     ESP_SLEEP_WAKEUP_BT,           //!< Wakeup caused by BT (light sleep only)
 } esp_sleep_source_t;
 
+enum {
+    ESP_ERR_SLEEP_REJECT = ESP_ERR_INVALID_STATE,
+    ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION = ESP_ERR_INVALID_ARG,
+};
+
 /* Leave this type define for compatibility */
 typedef esp_sleep_source_t esp_sleep_wakeup_cause_t;
 
@@ -359,7 +364,10 @@ void esp_deep_sleep_start(void) __attribute__((noreturn));
  *
  * @return
  *  - ESP_OK on success (returned after wakeup)
- *  - ESP_ERR_INVALID_STATE if WiFi or BT is not stopped
+ *  - ESP_ERR_SLEEP_REJECT sleep request is rejected(wakeup source set before the sleep request)
+ *  - ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION after deducting the sleep flow overhead, the final sleep duration
+ *                                           is too short to cover the minimum sleep duration of the chip, when
+ *                                           rtc timer wakeup source enabled
  */
 esp_err_t esp_light_sleep_start(void);
 
