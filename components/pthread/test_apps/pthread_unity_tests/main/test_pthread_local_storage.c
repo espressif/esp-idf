@@ -12,7 +12,7 @@
 #include "test_utils.h"
 #include "esp_random.h"
 
-TEST_CASE("pthread local storage basics", "[pthread]")
+TEST_CASE("pthread local storage basics", "[thread-specific]")
 {
     pthread_key_t key;
     TEST_ASSERT_EQUAL(0, pthread_key_create(&key, NULL));
@@ -35,7 +35,7 @@ TEST_CASE("pthread local storage basics", "[pthread]")
     TEST_ASSERT_EQUAL(0, pthread_key_delete(key));
 }
 
-TEST_CASE("pthread local storage unique keys", "[pthread]")
+TEST_CASE("pthread local storage unique keys", "[thread-specific]")
 {
     const int NUM_KEYS = 10;
     pthread_key_t keys[NUM_KEYS];
@@ -63,7 +63,7 @@ static void *expected_destructor_ptr;
 static void *actual_destructor_ptr;
 static void *thread_test_pthread_destructor(void *);
 
-TEST_CASE("pthread local storage destructor", "[pthread]")
+TEST_CASE("pthread local storage destructor", "[thread-specific]")
 {
     pthread_t thread;
     pthread_key_t key = -1;
@@ -84,9 +84,25 @@ TEST_CASE("pthread local storage destructor", "[pthread]")
     TEST_ASSERT_EQUAL(0, pthread_key_delete(key));
 }
 
+static void *thread_test_pthread_destructor(void *v_key)
+{
+    printf("Local storage thread running...\n");
+    pthread_key_t key = (pthread_key_t) v_key;
+    expected_destructor_ptr = &key; // address of stack variable in the task...
+    pthread_setspecific(key, expected_destructor_ptr);
+    printf("Local storage thread done.\n");
+    return NULL;
+}
+
+static void test_pthread_destructor(void *value)
+{
+    actual_destructor_ptr = value;
+}
+
+#if defined(CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS)
 static void task_test_pthread_destructor(void *v_key);
 
-TEST_CASE("pthread local storage destructor in FreeRTOS task", "[pthread]")
+TEST_CASE("pthread local storage destructor in FreeRTOS task", "[thread-specific]")
 {
     // Same as previous test case, but doesn't use pthread APIs therefore must wait
     // for the idle task to call the destructor
@@ -112,29 +128,13 @@ TEST_CASE("pthread local storage destructor in FreeRTOS task", "[pthread]")
     TEST_ASSERT_EQUAL(0, pthread_key_delete(key));
 }
 
-
-
-static void *thread_test_pthread_destructor(void *v_key)
-{
-    printf("Local storage thread running...\n");
-    pthread_key_t key = (pthread_key_t) v_key;
-    expected_destructor_ptr = &key; // address of stack variable in the task...
-    pthread_setspecific(key, expected_destructor_ptr);
-    printf("Local storage thread done.\n");
-    return NULL;
-}
-
-static void test_pthread_destructor(void *value)
-{
-    actual_destructor_ptr = value;
-}
-
 static void task_test_pthread_destructor(void *v_key)
 {
     /* call the pthread main routine, then delete ourselves... */
     thread_test_pthread_destructor(v_key);
     vTaskDelete(NULL);
 }
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
 
 #define STRESS_NUMITER 2000000
 #define STRESS_NUMTASKS 16
@@ -155,7 +155,7 @@ static void *thread_stress_test(void *v_key)
 
 
 // This test case added to reproduce issues with unpinned tasks and TLS
-TEST_CASE("pthread local storage stress test", "[pthread]")
+TEST_CASE("pthread local storage stress test", "[thread-specific]")
 {
     pthread_key_t key = -1;
     pthread_t threads[STRESS_NUMTASKS] = { 0 };
@@ -187,7 +187,7 @@ static void *s_test_repeat_destructor_thread(void *vp_state);
 // pthread_setspecific() to set another value when it runs, and also
 //
 // As described in https://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_key_create.html
-TEST_CASE("pthread local storage 'repeat' destructor test", "[pthread]")
+TEST_CASE("pthread local storage 'repeat' destructor test", "[thread-specific]")
 {
     int r;
     destr_test_state_t state = { .last_idx = -1 };

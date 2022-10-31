@@ -365,6 +365,8 @@ int pthread_join(pthread_t thread, void **retval)
             pthread_delete(pthread);
             xSemaphoreGive(s_threads_mux);
         }
+        /* clean up thread local storage before task deletion */
+        pthread_internal_local_storage_destructor_callback(handle);
         vTaskDelete(handle);
     }
 
@@ -399,6 +401,8 @@ int pthread_detach(pthread_t thread)
     } else {
         // pthread already stopped
         pthread_delete(pthread);
+        /* clean up thread local storage before task deletion */
+        pthread_internal_local_storage_destructor_callback(handle);
         vTaskDelete(handle);
     }
     xSemaphoreGive(s_threads_mux);
@@ -409,9 +413,8 @@ int pthread_detach(pthread_t thread)
 void pthread_exit(void *value_ptr)
 {
     bool detached = false;
-    /* preemptively clean up thread local storage, rather than
-       waiting for the idle task to clean up the thread */
-    pthread_internal_local_storage_destructor_callback();
+    /* clean up thread local storage before task deletion */
+    pthread_internal_local_storage_destructor_callback(NULL);
 
     if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
         assert(false && "Failed to lock threads list!");

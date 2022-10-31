@@ -884,7 +884,6 @@ components/openthread/include/esp_openthread_lock.h
 components/protocomm/include/transports/protocomm_console.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/pthread/pthread_cond_var.c
-components/pthread/pthread_internal.h
 components/pthread/test/test_cxx_cond_var.cpp
 components/pthread/test/test_cxx_std_future.cpp
 components/pthread/test/test_pthread.c

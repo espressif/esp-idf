@@ -293,7 +293,7 @@ menu "FreeRTOS"
 
         config FREERTOS_TLSP_DELETION_CALLBACKS
             bool "Enable thread local storage pointers deletion callbacks"
-            depends on FREERTOS_SMP && (FREERTOS_THREAD_LOCAL_STORAGE_POINTERS > 0)
+            depends on (FREERTOS_THREAD_LOCAL_STORAGE_POINTERS > 0)
             default y
             help
                 ESP-IDF provides users with the ability to free TLSP memory by registering TLSP deletion callbacks.
