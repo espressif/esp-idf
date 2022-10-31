@@ -46,7 +46,6 @@ api-guides/RF_calibration
 api-guides/unit-tests
 api-guides/deep-sleep-stub
 api-guides/blufi
-api-guides/lwip
 api-guides/coexist
 api-guides/flash_psram_config
 api-guides/usb-serial-jtag-console
@@ -149,15 +148,12 @@ api-reference/peripherals/rmt
 api-reference/kconfig
 api-reference/network
 api-reference/network/esp_openthread
-api-reference/network/esp_eth
-api-reference/network/esp_netif_driver
 api-reference/network/esp_dpp
 api-reference/network/esp_now
 api-reference/network/esp-wifi-mesh
 api-reference/network/esp_smartconfig
 api-reference/network/esp_wifi
 api-reference/network/index
-api-reference/network/esp_netif
 api-reference/system
 api-reference/system/sleep_modes
 api-reference/system/ota
@@ -227,9 +223,7 @@ api-reference/bluetooth/classic_bt
 api-reference/error-codes
 api-reference/index
 api-reference/protocols
-api-reference/protocols/icmp_echo
 api-reference/protocols/esp_serial_slave_link
-api-reference/protocols/mqtt
 api-reference/protocols/mbedtls
 api-reference/protocols/esp_http_server
 api-reference/protocols/esp_sdio_slave_protocol
@@ -240,9 +234,7 @@ api-reference/protocols/esp_https_server
 api-reference/protocols/esp_spi_slave_protocol
 api-reference/protocols/modbus
 api-reference/protocols/esp_tls
-api-reference/protocols/mdns
 api-reference/protocols/index
-api-reference/protocols/asio
 security
 security/flash-encryption
 security/secure-boot-v2
