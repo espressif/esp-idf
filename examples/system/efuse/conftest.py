@@ -15,7 +15,7 @@ from pytest_embedded_idf.serial import IdfSerial
 # which is required only for this test
 class EfuseFlashEncSerial(IdfSerial):
 
-    @IdfSerial.use_esptool
+    @IdfSerial.use_esptool()
     def write_flash_no_enc(self) -> None:
         self.app.flash_settings['encrypt'] = False
         flash_files = []
