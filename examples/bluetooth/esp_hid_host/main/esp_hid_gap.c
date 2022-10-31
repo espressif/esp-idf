@@ -391,9 +391,16 @@ static void bt_gap_event_handler(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_para
         handle_bt_device_result(&param->disc_res);
         break;
     }
+#if (CONFIG_BT_SSP_ENABLED)
     case ESP_BT_GAP_KEY_NOTIF_EVT:
         ESP_LOGI(TAG, "BT GAP KEY_NOTIF passkey:%d", param->key_notif.passkey);
         break;
+    case ESP_BT_GAP_CFM_REQ_EVT: {
+        ESP_LOGI(TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %d", param->cfm_req.num_val);
+        esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
+        break;
+    }
+#endif
     default:
         ESP_LOGV(TAG, "BT GAP EVENT %s", bt_gap_evt_str(event));
         break;
@@ -403,9 +410,12 @@ static void bt_gap_event_handler(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_para
 static esp_err_t init_bt_gap(void)
 {
     esp_err_t ret;
+#if (CONFIG_BT_SSP_ENABLED)
+    /* Set default parameters for Secure Simple Pairing */
     esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
     esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_IO;
     esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
+#endif
     /*
      * Set default parameters for Legacy Pairing
      * Use fixed pin code
