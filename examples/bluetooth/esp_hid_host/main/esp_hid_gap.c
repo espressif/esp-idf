@@ -405,8 +405,25 @@ static void bt_gap_event_handler(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_para
         break;
     }
 #endif
+    case ESP_BT_GAP_PIN_REQ_EVT: {
+        ESP_LOGI(TAG, "ESP_BT_GAP_PIN_REQ_EVT min_16_digit:%d", param->pin_req.min_16_digit);
+        if (param->pin_req.min_16_digit) {
+            ESP_LOGI(TAG, "Input pin code: 0000 0000 0000 0000");
+            esp_bt_pin_code_t pin_code = {0};
+            esp_bt_gap_pin_reply(param->pin_req.bda, true, 16, pin_code);
+        } else {
+            ESP_LOGI(TAG, "Input pin code: 1234");
+            esp_bt_pin_code_t pin_code;
+            pin_code[0] = '1';
+            pin_code[1] = '2';
+            pin_code[2] = '3';
+            pin_code[3] = '4';
+            esp_bt_gap_pin_reply(param->pin_req.bda, true, 4, pin_code);
+        }
+        break;
+    }
     default:
-        ESP_LOGV(TAG, "BT GAP EVENT %s", bt_gap_evt_str(event));
+        ESP_LOGW(TAG, "BT GAP EVENT %s", bt_gap_evt_str(event));
         break;
     }
 }
@@ -422,15 +439,11 @@ static esp_err_t init_bt_gap(void)
 #endif
     /*
      * Set default parameters for Legacy Pairing
-     * Use fixed pin code
+     * Use variable pin, input pin code when pairing
      */
-    esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
+    esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_VARIABLE;
     esp_bt_pin_code_t pin_code;
-    pin_code[0] = '1';
-    pin_code[1] = '2';
-    pin_code[2] = '3';
-    pin_code[3] = '4';
-    esp_bt_gap_set_pin(pin_type, 4, pin_code);
+    esp_bt_gap_set_pin(pin_type, 0, pin_code);
 
     if ((ret = esp_bt_gap_register_callback(bt_gap_event_handler)) != ESP_OK) {
         ESP_LOGE(TAG, "esp_bt_gap_register_callback failed: %d", ret);
