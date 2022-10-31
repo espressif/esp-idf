@@ -343,7 +343,7 @@ void ble_server_uart_task(void *pvParameters){
 			    if (connection_handle[i] != 0) {
 				struct os_mbuf *txom;
 				txom = ble_hs_mbuf_from_flat(ntf, sizeof(ntf));
-				rc = ble_gattc_notify_custom(connection_handle[i],
+				rc = ble_gatts_notify_custom(connection_handle[i],
 							     ble_spp_svc_gatt_read_val_handle,
 							     txom);
 				if ( rc == 0 ) {
