@@ -78,8 +78,8 @@ void example_i2s_init(void)
         .communication_format = I2S_COMM_FORMAT_STAND_MSB,
         .channel_format = EXAMPLE_I2S_FORMAT,
         .intr_alloc_flags = 0,
-        .dma_desc_num = 2,
-        .dma_frame_num = 1024,
+        .dma_desc_num = 6,
+        .dma_frame_num = 256,
         .use_apll = 1,
      };
      //install and start i2s driver
