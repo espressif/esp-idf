@@ -13,7 +13,7 @@ TEST_CASE("Temperature_sensor_driver_workflow_test", "[temperature_sensor]")
 {
     printf("Initializing Temperature sensor\n");
     float tsens_out;
-    temperature_sensor_config_t temp_sensor = TEMPERAUTRE_SENSOR_CONFIG_DEFAULT(10, 50);
+    temperature_sensor_config_t temp_sensor = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
     temperature_sensor_handle_t temp_handle = NULL;
     TEST_ESP_OK(temperature_sensor_install(&temp_sensor, &temp_handle));
     // read sensor before enable it should fail
@@ -41,7 +41,7 @@ TEST_CASE("Temperature_sensor_driver_workflow_test", "[temperature_sensor]")
 TEST_CASE("Double install error cause test", "[temperature_sensor]")
 {
     printf("Initializing Temperature sensor\n");
-    temperature_sensor_config_t temp_sensor = TEMPERAUTRE_SENSOR_CONFIG_DEFAULT(10, 50);
+    temperature_sensor_config_t temp_sensor = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
     temperature_sensor_handle_t temp_handle = NULL;
     TEST_ESP_OK(temperature_sensor_install(&temp_sensor, &temp_handle));
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, temperature_sensor_install(&temp_sensor, &temp_handle));
@@ -51,7 +51,7 @@ TEST_CASE("Double install error cause test", "[temperature_sensor]")
 TEST_CASE("Double start error cause test", "[temperature_sensor]")
 {
     printf("Initializing Temperature sensor\n");
-    temperature_sensor_config_t temp_sensor = TEMPERAUTRE_SENSOR_CONFIG_DEFAULT(10, 50);
+    temperature_sensor_config_t temp_sensor = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
     temperature_sensor_handle_t temp_handle = NULL;
     TEST_ESP_OK(temperature_sensor_install(&temp_sensor, &temp_handle));
     TEST_ESP_OK(temperature_sensor_enable(temp_handle));
@@ -64,7 +64,7 @@ TEST_CASE("Double Start-Stop test", "[temperature_sensor]")
 {
     printf("Initializing Temperature sensor\n");
     float tsens_out;
-    temperature_sensor_config_t temp_sensor = TEMPERAUTRE_SENSOR_CONFIG_DEFAULT(10, 50);
+    temperature_sensor_config_t temp_sensor = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
     temperature_sensor_handle_t temp_handle = NULL;
     TEST_ESP_OK(temperature_sensor_install(&temp_sensor, &temp_handle));
     TEST_ESP_OK(temperature_sensor_enable(temp_handle));

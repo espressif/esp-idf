@@ -34,7 +34,7 @@ typedef struct {
 /**
  * @brief temperature_sensor_config_t default constructure
  */
-#define TEMPERAUTRE_SENSOR_CONFIG_DEFAULT(min, max)    \
+#define TEMPERATURE_SENSOR_CONFIG_DEFAULT(min, max)    \
     {                                                  \
         .range_min = min,                              \
         .range_max = max,                              \
