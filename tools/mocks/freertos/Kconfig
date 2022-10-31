@@ -18,5 +18,15 @@ menu "FreeRTOS"
                 more details).
 
                 Note: For most uses, the default of 16 characters is sufficient.
+
+        config FREERTOS_TASK_NOTIFICATION_ARRAY_ENTRIES
+            int "configTASK_NOTIFICATION_ARRAY_ENTRIES"
+            range 1 32
+            default 1
+            help
+                Set the size of the task notification array of each task. When increasing this value, keep in
+                mind that this means additional memory for each and every task on the system.
+                However, task notifications in general are more light weight compared to alternatives
+                such as semaphores.
     endmenu
 endmenu

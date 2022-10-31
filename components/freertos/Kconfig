@@ -190,6 +190,16 @@ menu "FreeRTOS"
 
                 Note: A value of 0 will disable queue registry functionality
 
+        config FREERTOS_TASK_NOTIFICATION_ARRAY_ENTRIES
+            int "configTASK_NOTIFICATION_ARRAY_ENTRIES"
+            range 1 32
+            default 1
+            help
+                Set the size of the task notification array of each task. When increasing this value, keep in
+                mind that this means additional memory for each and every task on the system.
+                However, task notifications in general are more light weight compared to alternatives
+                such as semaphores.
+
         config FREERTOS_USE_TRACE_FACILITY
             bool "configUSE_TRACE_FACILITY"
             default n
