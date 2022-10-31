@@ -433,7 +433,7 @@ void esp_blufi_send_notify(void *arg)
     struct os_mbuf *om;
     om = ble_hs_mbuf_from_flat(pkts->pkt, pkts->pkt_len);
     int rc = 0;
-    rc = ble_gattc_notify_custom(conn_handle, gatt_values[1].val_handle, om);
+    rc = ble_gatts_notify_custom(conn_handle, gatt_values[1].val_handle, om);
     assert(rc == 0);
 }
 

@@ -1253,7 +1253,7 @@ int bt_mesh_gatts_notify(struct bt_mesh_conn *conn,
 
     om = ble_hs_mbuf_from_flat(data, len);
     assert(om);
-    ble_gattc_notify_custom(conn_id, attr->handle, om);
+    ble_gatts_notify_custom(conn_id, attr->handle, om);
 
     return 0;
 }
