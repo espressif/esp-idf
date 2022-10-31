@@ -9,14 +9,222 @@ ESP chips can generate various kinds of timings that needed by common LCDs on th
 Functional Overview
 -------------------
 
-In ``esp_lcd``, an LCD panel is represented by :cpp:type:`esp_lcd_panel_handle_t`, which plays the role of an **abstract frame buffer**, regardless of the frame memory is allocated inside ESP chip or in external LCD controller. Based on the location of the frame buffer, the LCD panel allocation functions are mainly grouped into the following categories:
+In ``esp_lcd``, an LCD panel is represented by :cpp:type:`esp_lcd_panel_handle_t`, which plays the role of an **abstract frame buffer**, regardless of the frame memory is allocated inside ESP chip or in external LCD controller. Based on the location of the frame buffer and the hardware connection interface, the LCD panel drivers are mainly grouped into the following categories:
 
--  ``RGB LCD panel`` - is simply based on a group of specific synchronous signals indicating where to start and stop a frame.
--  ``Controller based LCD panel`` involves multiple steps to get a panel handle, like bus allocation, IO device registration and controller driver install.
+.. list::
 
-After we get the LCD handle, the remaining LCD operations are similar for different LCD interfaces and vendors.
+    - Controller based LCD driver involves multiple steps to get a panel handle, like bus allocation, IO device registration and controller driver install. The frame buffer is located in the controller's internal GRAM (Graphical RAM). ESP-IDF provides only a limited number of LCD controller drivers out of the box (e.g. ST7789, SSD1306), :ref:`more_controller_based_lcd_drivers` are maintained in the `Espressif Component Registry <https://components.espressif.com/>_`.
+    - :ref:`spi_lcd_panel` describes the steps to install the SPI LCD IO driver and then get the panel handle.
+    - :ref:`i2c_lcd_panel` describes the steps to install the I2C LCD IO driver and then get the panel handle.
+    :SOC_LCD_I80_SUPPORTED: - :ref:`i80_lcd_panel` describes the steps to install the I80 LCD IO driver and then get the panel handle.
+    :SOC_LCD_RGB_SUPPORTED: - :ref:`rgb_lcd_panel` - is based on a group of specific synchronous signals indicating where to start and stop a frame. The frame buffer is allocated on the ESP side. The driver install steps are much simplified because we don't need to install any IO interface driver in this case.
+    - :ref:`lcd_panel_operations` - provides a set of APIs to operate the LCD panel, like turning on/off the display, setting the orientation, etc. These operations are common for either controller-based LCD panel driver or RGB LCD panel driver.
+
+.. _spi_lcd_panel:
+
+SPI Interfaced LCD
+------------------
+
+#. Create an SPI bus. Please refer to :doc:`SPI Master API doc </api-reference/peripherals/spi_master>` for more details.
+
+    .. code-block:: c
+
+        spi_bus_config_t buscfg = {
+            .sclk_io_num = EXAMPLE_PIN_NUM_SCLK,
+            .mosi_io_num = EXAMPLE_PIN_NUM_MOSI,
+            .miso_io_num = EXAMPLE_PIN_NUM_MISO,
+            .quadwp_io_num = -1, // Quad SPI LCD driver is not yet supported
+            .quadhd_io_num = -1, // Quad SPI LCD driver is not yet supported
+            .max_transfer_sz = EXAMPLE_LCD_H_RES * 80 * sizeof(uint16_t), // transfer 80 lines of pixels (assume pixel is RGB565) at most in one SPI transaction
+        };
+        ESP_ERROR_CHECK(spi_bus_initialize(LCD_HOST, &buscfg, SPI_DMA_CH_AUTO)); // Enable the DMA feature
+
+#. Allocate an LCD IO device handle from the SPI bus. In this step, you need to provide the following information:
+
+    - :cpp:member:`esp_lcd_panel_io_spi_config_t::dc_gpio_num`: Sets the gpio number for the DC signal line (some LCD calls this ``RS`` line). The LCD driver will use this GPIO to switch between sending command and sending data.
+    - :cpp:member:`esp_lcd_panel_io_spi_config_t::cs_gpio_num`: Sets the gpio number for the CS signal line. The LCD driver will use this GPIO to select the LCD chip. If the SPI bus only has one device attached (i.e. this LCD), you can set the gpio number to ``-1`` to occupy the bus exclusively.
+    - :cpp:member:`esp_lcd_panel_io_spi_config_t::pclk_hz` sets the frequency of the pixel clock, in Hz. The value should not exceed the range recommended in the LCD spec.
+    - :cpp:member:`esp_lcd_panel_io_spi_config_t::spi_mode` sets the SPI mode. The LCD driver will use this mode to communicate with the LCD. For the meaning of the SPI mode, please refer to the :doc:`SPI Master API doc </api-reference/peripherals/spi_master>`.
+    - :cpp:member:`esp_lcd_panel_io_spi_config_t::lcd_cmd_bits` and :cpp:member:`esp_lcd_panel_io_spi_config_t::lcd_param_bits` set the bit width of the command and parameter that recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
+    - :cpp:member:`esp_lcd_panel_io_spi_config_t::trans_queue_depth` sets the depth of the SPI transaction queue. A bigger value means more transactions can be queued up, but it also consumes more memory.
+
+    .. code-block:: c
+
+        esp_lcd_panel_io_handle_t io_handle = NULL;
+        esp_lcd_panel_io_spi_config_t io_config = {
+            .dc_gpio_num = EXAMPLE_PIN_NUM_LCD_DC,
+            .cs_gpio_num = EXAMPLE_PIN_NUM_LCD_CS,
+            .pclk_hz = EXAMPLE_LCD_PIXEL_CLOCK_HZ,
+            .lcd_cmd_bits = EXAMPLE_LCD_CMD_BITS,
+            .lcd_param_bits = EXAMPLE_LCD_PARAM_BITS,
+            .spi_mode = 0,
+            .trans_queue_depth = 10,
+        };
+        // Attach the LCD to the SPI bus
+        ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_HOST, &io_config, &io_handle));
+
+#. Install the LCD controller driver. The LCD controller driver is responsible for sending the commands and parameters to the LCD controller chip. In this step, you need to specify the SPI IO device handle that allocated in the last step, and some panel specific configurations:
+
+    - :cpp:member:`esp_lcd_panel_dev_config_t::reset_gpio_num` sets the LCD's hardware reset GPIO number. If the LCD does not have a hardware reset pin, set this to ``-1``.
+    - :cpp:member:`esp_lcd_panel_dev_config_t::rgb_endian` sets the endian of the RGB color data.
+    - :cpp:member:`esp_lcd_panel_dev_config_t::bits_per_pixel` sets the bit width of the pixel color data. The LCD driver will use this value to calculate the number of bytes to send to the LCD controller chip.
+
+    .. code-block:: c
+
+        esp_lcd_panel_handle_t panel_handle = NULL;
+        esp_lcd_panel_dev_config_t panel_config = {
+            .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
+            .rgb_endian = LCD_RGB_ENDIAN_BGR,
+            .bits_per_pixel = 16,
+        };
+        // Create LCD panel handle for ST7789, with the SPI IO device handle
+        ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
+
+.. _i2c_lcd_panel:
+
+I2C Interfaced LCD
+------------------
+
+#. Create I2C bus. Please refer to :doc:`I2C API doc </api-reference/peripherals/i2c>` for more details.
+
+    .. code-block:: c
+
+        i2c_config_t i2c_conf = {
+            .mode = I2C_MODE_MASTER, // I2C LCD is a master node
+            .sda_io_num = EXAMPLE_PIN_NUM_SDA,
+            .scl_io_num = EXAMPLE_PIN_NUM_SCL,
+            .sda_pullup_en = GPIO_PULLUP_ENABLE,
+            .scl_pullup_en = GPIO_PULLUP_ENABLE,
+            .master.clk_speed = EXAMPLE_LCD_PIXEL_CLOCK_HZ,
+        };
+        ESP_ERROR_CHECK(i2c_param_config(I2C_HOST, &i2c_conf));
+        ESP_ERROR_CHECK(i2c_driver_install(I2C_HOST, I2C_MODE_MASTER, 0, 0, 0));
+
+#. Allocate an LCD IO device handle from the I2C bus. In this step, you need to provide the following information:
+
+    - :cpp:member:`esp_lcd_panel_io_i2c_config_t::dev_addr` sets the I2C device address of the LCD controller chip. The LCD driver will use this address to communicate with the LCD controller chip.
+    - :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_cmd_bits` and :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_param_bits` set the bit width of the command and parameter that recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
+
+    .. code-block:: c
+
+        esp_lcd_panel_io_handle_t io_handle = NULL;
+        esp_lcd_panel_io_i2c_config_t io_config = {
+            .dev_addr = EXAMPLE_I2C_HW_ADDR,
+            .control_phase_bytes = 1, // refer to LCD spec
+            .dc_bit_offset = 6,       // refer to LCD spec
+            .lcd_cmd_bits = EXAMPLE_LCD_CMD_BITS,
+            .lcd_param_bits = EXAMPLE_LCD_CMD_BITS,
+        };
+        ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)I2C_HOST, &io_config, &io_handle));
+
+#. Install the LCD controller driver. The LCD controller driver is responsible for sending the commands and parameters to the LCD controller chip. In this step, you need to specify the I2C IO device handle that allocated in the last step, and some panel specific configurations:
+
+    - :cpp:member:`esp_lcd_panel_dev_config_t::reset_gpio_num` sets the LCD's hardware reset GPIO number. If the LCD does not have a hardware reset pin, set this to ``-1``.
+    - :cpp:member:`esp_lcd_panel_dev_config_t::bits_per_pixel` sets the bit width of the pixel color data. The LCD driver will use this value to calculate the number of bytes to send to the LCD controller chip.
+
+    .. code-block:: c
+
+        esp_lcd_panel_handle_t panel_handle = NULL;
+        esp_lcd_panel_dev_config_t panel_config = {
+            .bits_per_pixel = 1,
+            .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
+        };
+        ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));
+
+.. only:: SOC_LCD_I80_SUPPORTED
+
+    .. _i80_lcd_panel:
+
+    I80 Interfaced LCD
+    ------------------
+
+    #. Create I80 bus by :cpp:func:`esp_lcd_new_i80_bus`. You need to set up the following parameters for an Intel 8080 parallel bus:
+
+        - :cpp:member:`esp_lcd_i80_bus_config_t::clk_src` sets the clock source of the I80 bus. Note, the default clock source may be different between ESP targets.
+        - :cpp:member:`esp_lcd_i80_bus_config_t::wr_gpio_num` sets the GPIO number of the pixel clock (also referred as ``WR`` in some LCD spec)
+        - :cpp:member:`esp_lcd_i80_bus_config_t::dc_gpio_num` sets the GPIO number of the data/command select pin (also referred as ``RS`` in some LCD spec)
+        - :cpp:member:`esp_lcd_i80_bus_config_t::bus_width` sets the bit width of the data bus (only support ``8`` or ``16``)
+        - :cpp:member:`esp_lcd_i80_bus_config_t::data_gpio_nums` is the array of the GPIO number of the data bus. The number of GPIOs should be equal to the :cpp:member:`esp_lcd_i80_bus_config_t::bus_width` value.
+        - :cpp:member:`esp_lcd_i80_bus_config_t::max_transfer_bytes` sets the maximum number of bytes that can be transferred in one transaction.
+
+        .. code-block:: c
+
+            esp_lcd_i80_bus_handle_t i80_bus = NULL;
+            esp_lcd_i80_bus_config_t bus_config = {
+                .clk_src = LCD_CLK_SRC_DEFAULT,
+                .dc_gpio_num = EXAMPLE_PIN_NUM_DC,
+                .wr_gpio_num = EXAMPLE_PIN_NUM_PCLK,
+                .data_gpio_nums = {
+                    EXAMPLE_PIN_NUM_DATA0,
+                    EXAMPLE_PIN_NUM_DATA1,
+                    EXAMPLE_PIN_NUM_DATA2,
+                    EXAMPLE_PIN_NUM_DATA3,
+                    EXAMPLE_PIN_NUM_DATA4,
+                    EXAMPLE_PIN_NUM_DATA5,
+                    EXAMPLE_PIN_NUM_DATA6,
+                    EXAMPLE_PIN_NUM_DATA7,
+                },
+                .bus_width = 8,
+                .max_transfer_bytes = EXAMPLE_LCD_H_RES * 100 * sizeof(uint16_t), // transfer 100 lines of pixels (assume pixel is RGB565) at most in one transaction
+                .psram_trans_align = EXAMPLE_PSRAM_DATA_ALIGNMENT,
+                .sram_trans_align = 4,
+            };
+            ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
+
+    #. Allocate an LCD IO device handle from the I80 bus. In this step, you need to provide the following information:
+
+        - :cpp:member:`esp_lcd_panel_io_i80_config_t::cs_gpio_num` sets the GPIO number of the chip select pin.
+        - :cpp:member:`esp_lcd_panel_io_i80_config_t::pclk_hz` sets the pixel clock frequency in Hz. Higher pixel clock frequency will result in higher refresh rate, but may cause flickering if the DMA bandwidth is not sufficient or the LCD controller chip does not support high pixel clock frequency.
+        - :cpp:member:`esp_lcd_panel_io_i80_config_t::lcd_cmd_bits` and :cpp:member:`esp_lcd_panel_io_i80_config_t::lcd_param_bits` set the bit width of the command and parameter that recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
+        - :cpp:member:`esp_lcd_panel_io_i80_config_t::trans_queue_depth` sets the maximum number of transactions that can be queued in the LCD IO device. A bigger value means more transactions can be queued up, but it also consumes more memory.
+
+        .. code-block:: c
+
+            esp_lcd_panel_io_handle_t io_handle = NULL;
+            esp_lcd_panel_io_i80_config_t io_config = {
+                .cs_gpio_num = EXAMPLE_PIN_NUM_CS,
+                .pclk_hz = EXAMPLE_LCD_PIXEL_CLOCK_HZ,
+                .trans_queue_depth = 10,
+                .dc_levels = {
+                    .dc_idle_level = 0,
+                    .dc_cmd_level = 0,
+                    .dc_dummy_level = 0,
+                    .dc_data_level = 1,
+                },
+                .lcd_cmd_bits = EXAMPLE_LCD_CMD_BITS,
+                .lcd_param_bits = EXAMPLE_LCD_PARAM_BITS,
+            };
+            ESP_ERROR_CHECK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
+
+    #. Install the LCD controller driver. The LCD controller driver is responsible for sending the commands and parameters to the LCD controller chip. In this step, you need to specify the I80 IO device handle that allocated in the last step, and some panel specific configurations:
+
+        - :cpp:member:`esp_lcd_panel_dev_config_t::bits_per_pixel` sets the bit width of the pixel color data. The LCD driver will use this value to calculate the number of bytes to send to the LCD controller chip.
+        - :cpp:member:`esp_lcd_panel_dev_config_t::reset_gpio_num` sets the GPIO number of the reset pin. If the LCD controller chip does not have a reset pin, you can set this value to ``-1``.
+        - :cpp:member:`esp_lcd_panel_dev_config_t::rgb_endian` sets the endian of the pixel color data.
+
+        .. code-block:: c
+
+            esp_lcd_panel_dev_config_t panel_config = {
+                .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
+                .rgb_endian = LCD_RGB_ENDIAN_RGB,
+                .bits_per_pixel = 16,
+            };
+            ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
+
+    .. _more_controller_based_lcd_drivers:
+
+.. only:: not SOC_LCD_I80_SUPPORTED
+
+    .. _more_controller_based_lcd_drivers:
+
+More Controller Based LCD Drivers
+---------------------------------
+
+More LCD panel drivers and touch drivers are available in `IDF Component Registry <https://components.espressif.com/search/lcd>`_. The list of available and planned drivers with links is in this `table <https://github.com/espressif/esp-bsp/blob/master/LCD.md>`_.
 
 .. only:: SOC_LCD_RGB_SUPPORTED
+
+    .. _rgb_lcd_panel:
 
     RGB Interfaced LCD
     ------------------
@@ -31,8 +239,8 @@ After we get the LCD handle, the remaining LCD operations are similar for differ
     - :cpp:member:`esp_lcd_rgb_panel_config_t::bounce_buffer_size_px` set the size of bounce buffer. This is only necessary for a so-called "bounce buffer" mode. Please refer to :ref:`bounce_buffer_with_single_psram_frame_buffer` for more information.
     - :cpp:member:`esp_lcd_rgb_panel_config_t::timings` sets the LCD panel specific timing parameters. All required parameters are listed in the :cpp:type:`esp_lcd_rgb_timing_t`, including the LCD resolution and blanking porches. Please fill them according to the datasheet of your LCD.
     - :cpp:member:`esp_lcd_rgb_panel_config_t::fb_in_psram` sets whether to allocate the frame buffer from PSRAM or not. Please refer to :ref:`single_frame_buffer_in_psram` for more information.
-    - :cpp:member:`esp_lcd_rgb_panel_config_t::double_fb` sets whether to enable the double frame buffer mode. Please refer to :ref:`double_frame_buffer_in_psram` for more information.
-    - :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` sets whether to use the :ref:`bounce_buffer_only` mode.
+    - :cpp:member:`esp_lcd_rgb_panel_config_t::num_fbs` sets the number of frame buffers allocated by the driver. For backward compatibility, ``0`` means to allocate ``one`` frame buffer. Please use :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` if you don't want to allocate any frame buffer.
+    - :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` if sets, no frame buffer will be allocated. This is also called the :ref:`bounce_buffer_only` mode.
 
     RGB LCD Frame Buffer Operation Modes
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -137,6 +345,7 @@ After we get the LCD handle, the remaining LCD operations are similar for differ
         esp_lcd_panel_handle_t panel_handle = NULL;
         esp_lcd_rgb_panel_config_t panel_config = {
             .data_width = 16, // RGB565 in parallel mode, thus 16bit in width
+            .num_fbs = 2,     // allocate double frame buffer
             .clk_src = LCD_CLK_SRC_DEFAULT,
             .disp_gpio_num = EXAMPLE_PIN_NUM_DISP_EN,
             .pclk_gpio_num = EXAMPLE_PIN_NUM_PCLK,
@@ -164,7 +373,6 @@ After we get the LCD handle, the remaining LCD operations are similar for differ
                 .vsync_pulse_width = 1,
             },
             .flags.fb_in_psram = true, // allocate frame buffer from PSRAM
-            .flags.double_fb = true,   // allocate double frame buffer
         };
         ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
 
@@ -225,6 +433,20 @@ After we get the LCD handle, the remaining LCD operations are similar for differ
         It should never happen in a well-designed embedded application, but it can in theory be possible that the DMA cannot deliver data as fast as the LCD consumes it. In the {IDF_TARGET_NAME} hardware, this leads to the LCD simply outputting dummy bytes while DMA waits for data. If we were to run DMA in a stream fashion, this would mean a de-sync between the LCD address the DMA reads the data for and the LCD address the LCD peripheral thinks it outputs data for, leading to a **permanently** shifted image.
         In order to stop this from happening, you can either enable the :ref:`CONFIG_LCD_RGB_RESTART_IN_VSYNC` option, so the driver can restart the DMA in the VBlank interrupt automatically or call :cpp:func:`esp_lcd_rgb_panel_restart` to restart the DMA manually. Note :cpp:func:`esp_lcd_rgb_panel_restart` doesn't restart the DMA immediately, the DMA will still be restarted in the next VSYNC event.
 
+    .. _lcd_panel_operations:
+
+.. only:: not SOC_LCD_RGB_SUPPORTED
+
+    .. _lcd_panel_operations:
+
+LCD Panel IO Operations
+-----------------------
+
+* :cpp:func:`esp_lcd_panel_reset` can reset the LCD panel.
+* Use :cpp:func:`esp_lcd_panel_swap_xy` and :cpp:func:`esp_lcd_panel_mirror`, you can rotate the LCD screen.
+* :cpp:func:`esp_lcd_panel_disp_on_off` can turn on or off the LCD screen (different from LCD backlight).
+* :cpp:func:`esp_lcd_panel_draw_bitmap` is the most significant function, that will do the magic to draw the user provided color buffer to the LCD screen, where the draw window is also configurable.
+
 Application Example
 -------------------
 
@@ -237,11 +459,6 @@ LCD examples are located under: :example:`peripherals/lcd`:
     :SOC_LCD_I80_SUPPORTED: * i80 controller based LCD and LVGL animation UI - :example:`peripherals/lcd/i80_controller`
     :SOC_LCD_RGB_SUPPORTED: * RGB panel example with scatter chart UI - :example:`peripherals/lcd/rgb_panel`
     * I2C interfaced OLED display scrolling text - :example:`peripherals/lcd/i2c_oled`
-
-Other LCD drivers
------------------
-
-Drivers for some LCD and touch controllers are available in `IDF Component Registry <https://components.espressif.com/search/lcd>`_. The list of available and planned drivers with links is in this `table <https://github.com/espressif/esp-bsp/blob/master/LCD.md>`__.
 
 API Reference
 -------------
