@@ -303,8 +303,6 @@ menu "FreeRTOS"
                 off to save space in the TCB memory.
 
         config FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
-            # Todo: This is incompatible with SMP FreeRTOS. See if this can be deprecated (IDF-4986)
-            depends on !FREERTOS_SMP
             bool "Enable static task clean up hook"
             default n
             help
