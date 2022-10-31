@@ -350,7 +350,7 @@ void esp_netif_destroy_default_wifi(void *esp_netif)
 /**
  * @brief User init custom wifi interface
  */
-esp_netif_t* esp_netif_create_wifi(wifi_interface_t wifi_if, esp_netif_inherent_config_t *esp_netif_config)
+esp_netif_t* esp_netif_create_wifi(wifi_interface_t wifi_if, const esp_netif_inherent_config_t *esp_netif_config)
 {
     esp_netif_config_t cfg = {
         .base = esp_netif_config
