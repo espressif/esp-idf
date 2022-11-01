@@ -136,10 +136,10 @@ static BaseType_t prvTestWaitCondition( const EventBits_t uxCurrentEventBits,
                 }
             #endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 
-            traceEVENT_GROUP_CREATE( pxEventBits );
-#ifdef ESP_PLATFORM
+            /* Initialize the event group's spinlock. */
             portMUX_INITIALIZE( &pxEventBits->xEventGroupLock );
-#endif // ESP_PLATFORM
+
+            traceEVENT_GROUP_CREATE( pxEventBits );
         }
         else
         {
@@ -190,9 +190,8 @@ static BaseType_t prvTestWaitCondition( const EventBits_t uxCurrentEventBits,
                 }
             #endif /* configSUPPORT_STATIC_ALLOCATION */
 
-#ifdef ESP_PLATFORM
+            /* Initialize the event group's spinlock. */
             portMUX_INITIALIZE( &pxEventBits->xEventGroupLock );
-#endif // ESP_PLATFORM
 
             traceEVENT_GROUP_CREATE( pxEventBits );
         }

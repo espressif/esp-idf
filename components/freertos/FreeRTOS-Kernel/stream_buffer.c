@@ -189,9 +189,8 @@ typedef struct StreamBufferDef_t                 /*lint !e9058 Style convention 
     #if ( configUSE_TRACE_FACILITY == 1 )
         UBaseType_t uxStreamBufferNumber; /* Used for tracing purposes. */
     #endif
-#ifdef ESP_PLATFORM
+
     portMUX_TYPE xStreamBufferLock;     /* Spinlock required for SMP critical sections */
-#endif // ESP_PLATFORM
 } StreamBuffer_t;
 
 /*
@@ -254,17 +253,6 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
                                           size_t xTriggerLevelBytes,
                                           uint8_t ucFlags ) PRIVILEGED_FUNCTION;
 
-#ifdef ESP_PLATFORM
-/**
- * Called by xStreamBufferReset() to reset the members of the StreamBuffer, excluding
- * its spinlock.
- */
-static void prvResetStreamBufferFields( StreamBuffer_t * const pxStreamBuffer,
-                                        uint8_t * const pucBuffer,
-                                        size_t xBufferSizeBytes,
-                                        size_t xTriggerLevelBytes,
-                                        uint8_t ucFlags ) PRIVILEGED_FUNCTION;
-#endif
 /*-----------------------------------------------------------*/
 
 #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
@@ -327,6 +315,11 @@ static void prvResetStreamBufferFields( StreamBuffer_t * const pxStreamBuffer,
                                           xBufferSizeBytes,
                                           xTriggerLevelBytes,
                                           ucFlags );
+
+            /* Initialize the stream buffer's spinlock separately, as
+             * prvInitialiseNewStreamBuffer() is also called from
+             * xStreamBufferReset(). */
+            portMUX_INITIALIZE( &( ( ( StreamBuffer_t * ) pucAllocatedMemory )->xStreamBufferLock ) );
 
             traceSTREAM_BUFFER_CREATE( ( ( StreamBuffer_t * ) pucAllocatedMemory ), xIsMessageBuffer );
         }
@@ -403,6 +396,11 @@ static void prvResetStreamBufferFields( StreamBuffer_t * const pxStreamBuffer,
              * again. */
             pxStreamBuffer->ucFlags |= sbFLAGS_IS_STATICALLY_ALLOCATED;
 
+            /* Initialize the stream buffer's spinlock separately, as
+             * prvInitialiseNewStreamBuffer() is also called from
+             * xStreamBufferReset(). */
+            portMUX_INITIALIZE( &( pxStreamBuffer->xStreamBufferLock ) );
+
             traceSTREAM_BUFFER_CREATE( pxStreamBuffer, xIsMessageBuffer );
 
             xReturn = ( StreamBufferHandle_t ) pxStaticStreamBuffer; /*lint !e9087 Data hiding requires cast to opaque type. */
@@ -478,23 +476,11 @@ BaseType_t xStreamBufferReset( StreamBufferHandle_t xStreamBuffer )
         {
             if( pxStreamBuffer->xTaskWaitingToSend == NULL )
             {
-                #ifdef ESP_PLATFORM
-                    /* As we just entered a critical section, we must NOT reset the spinlock field.
-                     * Thus, call `prvResetStreamBufferFields` instead of `prvInitialiseNewStreamBuffer`
-                     */
-                    prvResetStreamBufferFields( pxStreamBuffer,
-                                                pxStreamBuffer->pucBuffer,
-                                                pxStreamBuffer->xLength,
-                                                pxStreamBuffer->xTriggerLevelBytes,
-                                                pxStreamBuffer->ucFlags );
-
-                #else  // ESP_PLATFORM
-                    prvInitialiseNewStreamBuffer( pxStreamBuffer,
-                                                  pxStreamBuffer->pucBuffer,
-                                                  pxStreamBuffer->xLength,
-                                                  pxStreamBuffer->xTriggerLevelBytes,
-                                                  pxStreamBuffer->ucFlags );
-                #endif // ESP_PLATFORM
+                prvInitialiseNewStreamBuffer( pxStreamBuffer,
+                                              pxStreamBuffer->pucBuffer,
+                                              pxStreamBuffer->xLength,
+                                              pxStreamBuffer->xTriggerLevelBytes,
+                                              pxStreamBuffer->ucFlags );
                 xReturn = pdPASS;
 
                 #if ( configUSE_TRACE_FACILITY == 1 )
@@ -1338,52 +1324,22 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
         } /*lint !e529 !e438 xWriteValue is only used if configASSERT() is defined. */
     #endif
 
-    ( void ) memset( ( void * ) pxStreamBuffer, 0x00, sizeof( StreamBuffer_t ) ); /*lint !e9087 memset() requires void *. */
+    /* This function could be called from xStreamBufferReset(), so we reset the
+     * stream buffer fields manually in order to avoid clearing
+     * xStreamBufferLock. The xStreamBufferLock is initialized separately on
+     * stream buffer creation. */
+    pxStreamBuffer->xTail = ( size_t ) 0;
+    pxStreamBuffer->xHead = ( size_t ) 0;
+    pxStreamBuffer->xTaskWaitingToReceive = ( TaskHandle_t ) 0;
+    pxStreamBuffer->xTaskWaitingToSend = ( TaskHandle_t ) 0;
+    #if ( configUSE_TRACE_FACILITY == 1 )
+        pxStreamBuffer->uxStreamBufferNumber = ( UBaseType_t ) 0;
+    #endif
     pxStreamBuffer->pucBuffer = pucBuffer;
     pxStreamBuffer->xLength = xBufferSizeBytes;
     pxStreamBuffer->xTriggerLevelBytes = xTriggerLevelBytes;
     pxStreamBuffer->ucFlags = ucFlags;
-#ifdef ESP_PLATFORM
-    portMUX_INITIALIZE( &( pxStreamBuffer->xStreamBufferLock ) );
-#endif // ESP_PLATFORM
 }
-
-
-#ifdef ESP_PLATFORM
-
-    /** The goal of this function is to (re)set all the fields of the given StreamBuffer, except
-     * its lock.
-     */
-    static void prvResetStreamBufferFields( StreamBuffer_t * const pxStreamBuffer,
-                                            uint8_t * const pucBuffer,
-                                            size_t xBufferSizeBytes,
-                                            size_t xTriggerLevelBytes,
-                                            uint8_t ucFlags )
-    {
-        #if ( configASSERT_DEFINED == 1 )
-            {
-                /* The value written just has to be identifiable when looking at the
-                * memory.  Don't use 0xA5 as that is the stack fill value and could
-                * result in confusion as to what is actually being observed. */
-                const BaseType_t xWriteValue = 0x55;
-                configASSERT( memset( pucBuffer, ( int ) xWriteValue, xBufferSizeBytes ) == pucBuffer );
-            } /*lint !e529 !e438 xWriteValue is only used if configASSERT() is defined. */
-        #endif
-
-        /* Do not include the spinlock in the part to reset!
-         * Thus, make sure the spinlock is the last field of the structure. */
-        _Static_assert( offsetof(StreamBuffer_t, xStreamBufferLock) == sizeof( StreamBuffer_t ) - sizeof(portMUX_TYPE),
-                        "xStreamBufferLock must be the last field of structure StreamBuffer_t" );
-        const size_t erasable = sizeof( StreamBuffer_t ) - sizeof(portMUX_TYPE);
-        ( void ) memset( ( void * ) pxStreamBuffer, 0x00, erasable ); /*lint !e9087 memset() requires void *. */
-        pxStreamBuffer->pucBuffer = pucBuffer;
-        pxStreamBuffer->xLength = xBufferSizeBytes;
-        pxStreamBuffer->xTriggerLevelBytes = xTriggerLevelBytes;
-        pxStreamBuffer->ucFlags = ucFlags;
-    }
-
-#endif // ESP_PLATFORM
-
 
 #if ( configUSE_TRACE_FACILITY == 1 )
 
