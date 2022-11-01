@@ -236,9 +236,9 @@ static void bootloader_check_wdt_reset(void)
 
 static void bootloader_super_wdt_auto_feed(void)
 {
-    REG_WRITE(LP_WDT_WPROTECT_REG, RTC_CNTL_SWD_WKEY_VALUE);
+    REG_WRITE(LP_WDT_SWD_WPROTECT_REG, LP_WDT_SWD_WKEY_VALUE);
     REG_SET_BIT(LP_WDT_SWD_CONFIG_REG, LP_WDT_SWD_AUTO_FEED_EN);
-    REG_WRITE(LP_WDT_WPROTECT_REG, 0);
+    REG_WRITE(LP_WDT_SWD_WPROTECT_REG, 0);
 }
 
 static inline void bootloader_hardware_init(void)
@@ -255,8 +255,8 @@ static inline void bootloader_hardware_init(void)
 static inline void bootloader_ana_reset_config(void)
 {
     // TODO: IDF-5990 copied from C3, need update
+    // Have removed bootloader_ana_super_wdt_reset_config for now; can be evaluated later to see whether needs to add it back
     /*
-      esp32c6 has removed super wdt!
       For origin chip & ECO1: only support swt reset;
       For ECO2: fix brownout reset bug, support swt & brownout reset;
       For ECO3: fix clock glitch reset bug, support all reset, include: swt & brownout & clock glitch reset.
