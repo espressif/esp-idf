@@ -2,7 +2,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example illustrates the usage of the [Console Component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/console.html#console) to create an interactive shell on the ESP32. The interactive shell running on the ESP32 can then be controlled/interacted with over a serial port (UART).
+This example illustrates the usage of the [Console Component](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/console.html#console) to create an interactive shell on the ESP32. The interactive shell running on the ESP32 can then be controlled/interacted with over a serial port (UART).
 
 The interactive shell implemented in this example contains a wide variety of commands, and can act as a basis for applications that require a command-line interface (CLI).
 
