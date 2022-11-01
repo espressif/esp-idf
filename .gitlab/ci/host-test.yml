@@ -386,7 +386,7 @@ test_hello_world_linux_compatible_example:
     - cd ${IDF_PATH}/tools/test_apps/linux_compatible/hello_world_linux_compatible
     - idf.py --preview set-target linux
     - idf.py build
-    - timeout 15 build/hello_world.elf > test.log
+    - timeout 15 build/hello_world.elf | tee test.log
     - grep "Hello world!" test.log
 
 test_esp_timer_cxx:
@@ -443,7 +443,7 @@ test_partition_api_host:
   script:
     - cd ${IDF_PATH}/components/spi_flash/host_test/partition_api_test
     - idf.py build
-    - timeout 5 ./build/partition_api_test.elf >test.log
+    - timeout 5 ./build/partition_api_test.elf | tee test.log
     - grep " 0 Failures" test.log
 
 test_spiffs_host:
@@ -451,7 +451,7 @@ test_spiffs_host:
   script:
     - cd ${IDF_PATH}/components/spiffs/host_test
     - idf.py build
-    - timeout 5 ./build/host_test_spiffs.elf >test.log
+    - timeout 5 ./build/host_test_spiffs.elf | tee test.log
     - grep " 0 Failures" test.log
 
 test_gen_soc_caps_kconfig:
