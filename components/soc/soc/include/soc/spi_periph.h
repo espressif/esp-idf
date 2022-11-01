@@ -56,7 +56,7 @@ typedef struct {
     const uint8_t spiq_in;
     const uint8_t spiwp_in;
     const uint8_t spihd_in;
-    const uint8_t spics_out[3];     // /CS GPIO output mux signals
+    const uint8_t spics_out[SOC_SPI_MAX_CS_NUM];     // /CS GPIO output mux signals
     const uint8_t spics_in;
     const uint8_t spidqs_out;
     const uint8_t spicd_out;
