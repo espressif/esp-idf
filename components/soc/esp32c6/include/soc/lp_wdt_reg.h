@@ -11,11 +11,11 @@
 extern "C" {
 #endif
 
-// TODO: IDF-5730 (better to move to wdt_types.h?)
-/* The value that needs to be written to RTC_CNTL_WDT_WKEY to write-enable the wdt registers */
+// TODO: IDF-5730 (better to rename and move to wdt_types.h?)
+/* The value that needs to be written to LP_WDT_WPROTECT_REG to write-enable the wdt registers */
 #define RTC_CNTL_WDT_WKEY_VALUE 0x50D83AA1
-/* The value that needs to be written to RTC_CNTL_SWD_WPROTECT_REG to write-enable the wdt registers */
-#define RTC_CNTL_SWD_WKEY_VALUE 0x8F1D312A
+/* The value that needs to be written to LP_WDT_SWD_WPROTECT_REG to write-enable the swd registers */
+#define LP_WDT_SWD_WKEY_VALUE 0x50D83AA1
 
 /* Possible values for RTC_CNTL_WDT_CPU_RESET_LENGTH and RTC_CNTL_WDT_SYS_RESET_LENGTH */
 #define RTC_WDT_RESET_LENGTH_100_NS    0
