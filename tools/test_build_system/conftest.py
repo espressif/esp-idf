@@ -120,6 +120,7 @@ def idf_copy(session_work_dir: Path, request: FixtureRequest) -> typing.Generato
     shutil.copytree(path_from, path_to, ignore=ignore, symlinks=True)
 
     orig_idf_path = os.environ['IDF_PATH']
+    os.environ['IDF_PATH'] = str(path_to)
 
     yield Path(path_to)
 
