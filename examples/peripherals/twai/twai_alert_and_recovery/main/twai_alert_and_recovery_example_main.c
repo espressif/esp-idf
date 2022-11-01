@@ -1,11 +1,8 @@
-/* TWAI Alert and Recovery Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: CC0-1.0
+ */
 
 /*
  * The following example demonstrates how to use the alert and bus recovery
@@ -29,7 +26,7 @@
 #include "driver/twai.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
-#include "soc/gpio_sig_map.h" // For TWAI_TX_IDX
+#include "soc/gpio_sig_map.h" // For GPIO matrix signal index
 
 /* --------------------- Definitions and static variables ------------------ */
 //Example Configuration
@@ -40,6 +37,12 @@
 #define ERR_DELAY_US                    800     //Approximate time for arbitration phase at 25KBPS
 #define ERR_PERIOD_US                   80      //Approximate time for two bits at 25KBPS
 #define EXAMPLE_TAG                     "TWAI Alert and Recovery"
+
+#if CONFIG_IDF_TARGET_ESP32C6
+#define TWAI_TX_SIGNAL_IDX              TWAI0_TX_IDX
+#else
+#define TWAI_TX_SIGNAL_IDX              TWAI_TX_IDX
+#endif
 
 static const twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 static const twai_timing_config_t t_config = TWAI_TIMING_CONFIG_25KBITS();
@@ -56,10 +59,10 @@ static void invert_tx_bits(bool enable)
 {
     if (enable) {
         //Inverts output of TX to trigger errors
-        esp_rom_gpio_connect_out_signal(TX_GPIO_NUM, TWAI_TX_IDX, true, false);
+        esp_rom_gpio_connect_out_signal(TX_GPIO_NUM, TWAI_TX_SIGNAL_IDX, true, false);
     } else {
         //Returns TX to default settings
-        esp_rom_gpio_connect_out_signal(TX_GPIO_NUM, TWAI_TX_IDX, false, false);
+        esp_rom_gpio_connect_out_signal(TX_GPIO_NUM, TWAI_TX_SIGNAL_IDX, false, false);
     }
 }
 

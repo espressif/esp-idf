@@ -17,25 +17,23 @@ Note: If you don't have an external transceiver, this example can still be run b
 
 ### Configure the project
 
-* Set the target of the build (where `{IDF_TARGET}` stands for the target chip such as `esp32`, `esp32s2`, `esp32s2` or `esp32c3`).
+* Set the target of the build (where `{IDF_TARGET}` stands for the target chip such as `esp32`, `esp32c3`).
 * Then run `menuconfig` to configure the example.
 
-```
+```sh
 idf.py set-target {IDF_TARGET}
 idf.py menuconfig
 ```
 
 * Under `Example Configuration`, configure the pin assignments using the options `TX GPIO Number` and `RX GPIO Number` according to how the target was connected to the transceiver. By default, `TX GPIO Number` and `RX GPIO Number` are set to the following values:
-    * On the ESP32, `TX GPIO Number` and `RX GPIO Number` default to `21` and `22` respectively
-    * On the ESP32-S2, `TX GPIO Number` and `RX GPIO Number` default to `20` and `21` respectively
-    * On the ESP32-S3, `TX GPIO Number` and `RX GPIO Number` default to `4` and `5` respectively
-    * On the ESP32-C3, `TX GPIO Number` and `RX GPIO Number` default to `2` and `3` respectively
+  * On the ESP32, `TX GPIO Number` and `RX GPIO Number` default to `21` and `22` respectively
+  * On other chips, `TX GPIO Number` and `RX GPIO Number` default to `0` and `2` respectively
 
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
-```
+```sh
 idf.py -p PORT flash monitor
 ```
 
@@ -47,7 +45,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
-```
+```text
 I (330) TWAI Alert and Recovery: Driver installed
 I (340) TWAI Alert and Recovery: Driver started
 I (340) TWAI Alert and Recovery: Starting transmissions
@@ -68,19 +66,19 @@ I (7350) TWAI Alert and Recovery: Driver uninstalled
 
 ## Troubleshooting
 
-```
+```text
 I (3350) TWAI Alert and Recovery: Trigger errors
 ```
 
 If the example does not progress pass triggering errors, check that the target is correctly connected to the transceiver.
 
-```
+```text
 I (3350) TWAI Alert and Recovery: Trigger errors
 I (3650) TWAI Alert and Recovery: Surpassed Error Warning Limit
 I (3650) TWAI Alert and Recovery: Entered Error Passive state
 ```
 
-If the example is able to trigger errors but does not enter the bus off state (i.e., stays in the error passive state), check that the triggering of the bit error is properly set to the examples operating bit rate. By default, the example runs at a bit rate of 125kbits/sec, and the bit error should be triggered after the arbitration phase of each transmitted message.
+If the example is able to trigger errors but does not enter the bus off state (i.e., stays in the error passive state), check that the triggering of the bit error is properly set to the examples operating bit rate. By default, the example runs at a bit rate of 25kbits/sec, and the bit error should be triggered after the arbitration phase of each transmitted message.
 
 ## Example Breakdown
 

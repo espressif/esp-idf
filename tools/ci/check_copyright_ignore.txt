@@ -1656,14 +1656,6 @@ examples/peripherals/spi_slave_hd/append_mode/master/main/app_main.c
 examples/peripherals/spi_slave_hd/append_mode/slave/main/app_main.c
 examples/peripherals/spi_slave_hd/segment_mode/seg_master/main/app_main.c
 examples/peripherals/spi_slave_hd/segment_mode/seg_slave/main/app_main.c
-examples/peripherals/twai/twai_alert_and_recovery/example_test.py
-examples/peripherals/twai/twai_alert_and_recovery/main/twai_alert_and_recovery_example_main.c
-examples/peripherals/twai/twai_network/example_test.py
-examples/peripherals/twai/twai_network/twai_network_listen_only/main/twai_network_example_listen_only_main.c
-examples/peripherals/twai/twai_network/twai_network_master/main/twai_network_example_master_main.c
-examples/peripherals/twai/twai_network/twai_network_slave/main/twai_network_example_slave_main.c
-examples/peripherals/twai/twai_self_test/example_test.py
-examples/peripherals/twai/twai_self_test/main/twai_self_test_example_main.c
 examples/peripherals/uart/nmea0183_parser/main/nmea_parser_example_main.c
 examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 examples/peripherals/uart/uart_echo/main/uart_echo_example_main.c
