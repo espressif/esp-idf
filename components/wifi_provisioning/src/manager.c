@@ -112,6 +112,9 @@ struct wifi_prov_mgr_ctx {
     /* Protocomm handlers for Wi-Fi scan endpoint */
     wifi_prov_scan_handlers_t *wifi_scan_handlers;
 
+    /* Protocomm handlers for Wi-Fi ctrl endpoint */
+    wifi_ctrl_handlers_t *wifi_ctrl_handlers;
+
     /* Count of used endpoint UUIDs */
     unsigned int endpoint_uuid_used;
 
@@ -386,12 +389,36 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
         return ret;
     }
 
+    prov_ctx->wifi_ctrl_handlers = malloc(sizeof(wifi_ctrl_handlers_t));
+    ret = get_wifi_ctrl_handlers(prov_ctx->wifi_ctrl_handlers);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to allocate memory for Wi-Fi ctrl handlers");
+        free(prov_ctx->wifi_prov_handlers);
+        scheme->prov_stop(prov_ctx->pc);
+        protocomm_delete(prov_ctx->pc);
+        return ESP_ERR_NO_MEM;
+    }
+
+    /* Add endpoint for controlling state of Wi-Fi station */
+    ret = protocomm_add_endpoint(prov_ctx->pc, "prov-ctrl",
+                                 wifi_ctrl_handler,
+                                 prov_ctx->wifi_ctrl_handlers);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set Wi-Fi ctrl endpoint");
+        free(prov_ctx->wifi_ctrl_handlers);
+        free(prov_ctx->wifi_prov_handlers);
+        scheme->prov_stop(prov_ctx->pc);
+        protocomm_delete(prov_ctx->pc);
+        return ret;
+    }
+
     /* Register global event handler */
     ret = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
                                      wifi_prov_mgr_event_handler_internal, NULL);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to register WiFi event handler");
         free(prov_ctx->wifi_scan_handlers);
+        free(prov_ctx->wifi_ctrl_handlers);
         free(prov_ctx->wifi_prov_handlers);
         scheme->prov_stop(prov_ctx->pc);
         protocomm_delete(prov_ctx->pc);
@@ -405,6 +432,7 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
         esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID,
                                      wifi_prov_mgr_event_handler_internal);
         free(prov_ctx->wifi_scan_handlers);
+        free(prov_ctx->wifi_ctrl_handlers);
         free(prov_ctx->wifi_prov_handlers);
         scheme->prov_stop(prov_ctx->pc);
         protocomm_delete(prov_ctx->pc);
@@ -511,6 +539,9 @@ static void prov_stop_task(void *arg)
     free(prov_ctx->wifi_scan_handlers->ctx);
     free(prov_ctx->wifi_scan_handlers);
     prov_ctx->wifi_scan_handlers = NULL;
+
+    free(prov_ctx->wifi_ctrl_handlers);
+    prov_ctx->wifi_ctrl_handlers = NULL;
 
     /* Switch device to Wi-Fi STA mode irrespective of
      * whether provisioning was completed or not */
@@ -1259,6 +1290,12 @@ esp_err_t wifi_prov_mgr_init(wifi_prov_mgr_config_t config)
     if (!prov_ctx->prov_scheme_config) {
         ESP_LOGE(TAG, "failed to allocate provisioning scheme configuration");
         ret = ESP_ERR_NO_MEM;
+        goto exit;
+    }
+
+    ret = scheme->set_config_endpoint(prov_ctx->prov_scheme_config, "prov-ctrl", 0xFF4F);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "failed to configure Wi-Fi state control endpoint");
         goto exit;
     }
 

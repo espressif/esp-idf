@@ -1,10 +1,12 @@
 set(srcs "src/wifi_config.c"
         "src/wifi_scan.c"
+        "src/wifi_ctrl.c"
         "src/manager.c"
         "src/handlers.c"
         "src/scheme_console.c"
         "proto-c/wifi_config.pb-c.c"
         "proto-c/wifi_scan.pb-c.c"
+        "proto-c/wifi_ctrl.pb-c.c"
         "proto-c/wifi_constants.pb-c.c")
 
 if(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
