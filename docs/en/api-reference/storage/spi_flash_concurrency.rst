@@ -1,29 +1,29 @@
 .. _concurrency-constraints-flash:
 
-Concurrency Constraints for flash on SPI1
+Concurrency Constraints for Flash on SPI1
 =========================================
 
 The SPI0/1 bus is shared between the instruction & data cache (for firmware execution) and the SPI1 peripheral (controlled by the drivers including this SPI Flash driver). Hence, operations to SPI1 will cause significant influence to the whole system. This kind of operations include calling SPI Flash API or other drivers on SPI1 bus, any operations like read/write/erase or other user defined SPI operations, regardless to the main flash or other SPI slave devices.
 
 .. only:: not (esp32c3 or SOC_SPIRAM_XIP_SUPPORTED)
 
-   On {IDF_TARGET_NAME}, these caches must be disabled while reading/writing/erasing.
+    On {IDF_TARGET_NAME}, these caches must be disabled while reading/writing/erasing.
 
 .. only:: esp32c3
 
     On {IDF_TARGET_NAME}, the config option :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` (enabled by default) allows the cache to read flash concurrently with SPI1 operations. See :ref:`auto-suspend` for more details.
 
-    If this option is disabled, the caches must be disabled while reading/writing/erasing operations. There are some constraints using driver on the SPI1 bus, see :ref:`impact_disabled_cache`. This constraints will cause more IRAM/DRAM usages.
+    If this option is disabled, the caches must be disabled while reading/writing/erasing operations. There are some constraints using driver on the SPI1 bus, see :ref:`impact_disabled_cache`. These constraints will cause more IRAM/DRAM usages.
 
 .. only:: SOC_SPIRAM_XIP_SUPPORTED
 
-    On {IDF_TARGET_NAME}, the config option :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` (disabled by default) and :ref:`CONFIG_SPIRAM_RODATA` (disabled by default) allow the cache to read/write PSRAM concurrently with SPI1 operations. See :ref:`xip_from_psram` for more details.
+    On {IDF_TARGET_NAME}, the config options :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` (disabled by default) and :ref:`CONFIG_SPIRAM_RODATA` (disabled by default) allow the cache to read/write PSRAM concurrently with SPI1 operations. See :ref:`xip_from_psram` for more details.
 
-    If this option is disabled, the caches must be disabled while reading/writing/erasing operations. There are some constraints using driver on the SPI1 bus, see :ref:`impact_disabled_cache`. This constraints will cause more IRAM/DRAM usages.
+    If these options are disabled, the caches must be disabled while reading/writing/erasing operations. There are some constraints using driver on the SPI1 bus, see :ref:`impact_disabled_cache`. These constraints will cause more IRAM/DRAM usages.
 
 .. _impact_disabled_cache:
 
-When the caches are disabled
+When the Caches Are Disabled
 ----------------------------
 
 Under this condition, all CPUs should always execute code and access data from internal RAM. The APIs documented in this file will disable the caches automatically and transparently.

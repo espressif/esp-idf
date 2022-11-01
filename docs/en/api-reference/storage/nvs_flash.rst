@@ -111,7 +111,7 @@ The XTS encryption keys in the :ref:`nvs_key_partition` can be generated in one 
 
     The API functions :cpp:func:`nvs_flash_secure_init` and :cpp:func:`nvs_flash_secure_init_partition` do not generate the keys internally. When these API functions are used for initializing encrypted NVS partitions, the keys can be generated after startup using the :cpp:func:`nvs_flash_generate_keys` API function provided by ``nvs_flash.h``. The API function will then write those keys onto the key-partition in encrypted form.
 
-    .. note:: Please note that `nvs_keys` partition must be completely erased before starting the application in this approach. Otherwise the application may generate :c:macro:`ESP_ERR_NVS_CORRUPT_KEY_PART` error code assuming that `nvs_keys` partition was not empty and contains malformatted data. You can use the following command for this:
+    .. note:: Please note that `nvs_keys` partition must be completely erased before you start the application in this approach. Otherwise the application may generate :c:macro:`ESP_ERR_NVS_CORRUPT_KEY_PART` error code assuming that `nvs_keys` partition is not empty and contains malformatted data. You can use the following command for this:
         ::
 
             parttool.py --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET erase_partition --partition-type=data --partition-subtype=nvs_keys

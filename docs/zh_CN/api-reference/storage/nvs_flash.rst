@@ -111,6 +111,11 @@ NVS 密钥分区
 
     API 函数 :cpp:func:`nvs_flash_secure_init` 和 :cpp:func:`nvs_flash_secure_init_partition` 不在内部产生密钥。当这些 API 函数用于初始化加密的 NVS 分区时，可以在启动后使用 `nvs_flash.h` 提供的 :cpp:func:`nvs_flash_generate_keys` API 函数生成密钥，以加密的形式把密钥写到密钥分区上。
 
+    .. note:: 请注意，使用该方法启动应用前，必须先完全擦除 `nvs_keys` 分区，否则该应用可能会认为 `nvs_keys` 分区不为空，并且包含数据格式错误，从而导致 :c:macro:`ESP_ERR_NVS_CORRUPT_KEY_PART` 报错。如果遇到这种情况，可以使用以下命令：
+        ::
+
+            parttool.py --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET erase_partition --partition-type=data --partition-subtype=nvs_keys
+
 2. 使用预先生成的密钥分区：
 
     若 :ref:`nvs_key_partition` 中的密钥不是由应用程序生成，则需要使用预先生成的密钥分区。可以使用 :doc:`NVS 分区生成工具 </api-reference/storage/nvs_partition_gen>` 生成包含 XTS 加密密钥的 :ref:`nvs_key_partition`。用户可以借助以下两个命令，将预先生成的密钥分区储存在 flash 上：
