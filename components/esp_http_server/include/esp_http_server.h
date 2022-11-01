@@ -42,6 +42,10 @@ initializer that should be kept in sync
         .global_transport_ctx_free_fn = NULL,           \
         .enable_so_linger = false,                      \
         .linger_timeout = 0,                            \
+        .keep_alive_enable = false,                     \
+        .keep_alive_idle = 0,                           \
+        .keep_alive_interval = 0,                       \
+        .keep_alive_count = 0,                          \
         .open_fn = NULL,                                \
         .close_fn = NULL,                               \
         .uri_match_fn = NULL                            \
@@ -189,7 +193,10 @@ typedef struct httpd_config {
 
     bool enable_so_linger;  /*!< bool to enable/disable linger */
     int linger_timeout;     /*!< linger timeout (in seconds) */
-
+    bool keep_alive_enable; /*!< Enable keep-alive timeout */
+    int keep_alive_idle;    /*!< Keep-alive idle time. Default is 5 (second) */
+    int keep_alive_interval;/*!< Keep-alive interval time. Default is 5 (second) */
+    int keep_alive_count;   /*!< Keep-alive packet retry send count. Default is 3 counts */
     /**
      * Custom session opening callback.
      *

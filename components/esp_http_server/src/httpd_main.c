@@ -19,6 +19,10 @@
 #include "freertos/semphr.h"
 #endif
 
+static const int DEFAULT_KEEP_ALIVE_IDLE = 5;
+static const int DEFAULT_KEEP_ALIVE_INTERVAL= 5;
+static const int DEFAULT_KEEP_ALIVE_COUNT= 3;
+
 typedef struct {
     fd_set *fdset;
     struct httpd_data *hd;
@@ -46,7 +50,7 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
     socklen_t addr_from_len = sizeof(addr_from);
     int new_fd = accept(listen_fd, (struct sockaddr *)&addr_from, &addr_from_len);
     if (new_fd < 0) {
-        ESP_LOGW(TAG, LOG_FMT("error in accept (%d)"), errno);
+        ESP_LOGE(TAG, LOG_FMT("error in accept (%d)"), errno);
         return ESP_FAIL;
     }
     ESP_LOGD(TAG, LOG_FMT("newfd = %d"), new_fd);
@@ -56,23 +60,51 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
     tv.tv_sec = hd->config.recv_wait_timeout;
     tv.tv_usec = 0;
     if (setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv)) < 0) {
-        ESP_LOGW(TAG, LOG_FMT("error enabling SO_RCVTIMEO (%d)"), errno);
+        ESP_LOGE(TAG, LOG_FMT("error in setsockopt SO_RCVTIMEO (%d)"), errno);
+        goto exit;
     }
 
     /* Set send timeout of this fd as per config */
     tv.tv_sec = hd->config.send_wait_timeout;
     tv.tv_usec = 0;
     if (setsockopt(new_fd, SOL_SOCKET, SO_SNDTIMEO, (const char *)&tv, sizeof(tv)) < 0) {
-        ESP_LOGW(TAG, LOG_FMT("error enabling SO_SNDTIMEO (%d)"), errno);
+        ESP_LOGE(TAG, LOG_FMT("error in setsockopt SO_SNDTIMEO (%d)"), errno);
+        goto exit;
     }
 
+    if (hd->config.keep_alive_enable) {
+        int keep_alive_enable = 1;
+        int keep_alive_idle = hd->config.keep_alive_idle ? hd->config.keep_alive_idle : DEFAULT_KEEP_ALIVE_IDLE;
+        int keep_alive_interval = hd->config.keep_alive_interval ? hd->config.keep_alive_interval : DEFAULT_KEEP_ALIVE_INTERVAL;
+        int keep_alive_count = hd->config.keep_alive_count ? hd->config.keep_alive_count : DEFAULT_KEEP_ALIVE_COUNT;
+        ESP_LOGD(TAG, "Enable TCP keep alive. idle: %d, interval: %d, count: %d", keep_alive_idle, keep_alive_interval, keep_alive_count);
+
+        if (setsockopt(new_fd, SOL_SOCKET, SO_KEEPALIVE, &keep_alive_enable, sizeof(keep_alive_enable)) < 0) {
+            ESP_LOGE(TAG, LOG_FMT("error in setsockopt SO_KEEPALIVE (%d)"), errno);
+            goto exit;
+        }
+        if (setsockopt(new_fd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_alive_idle, sizeof(keep_alive_idle)) < 0) {
+            ESP_LOGE(TAG, LOG_FMT("error in setsockopt TCP_KEEPIDLE (%d)"), errno);
+            goto exit;
+        }
+        if (setsockopt(new_fd, IPPROTO_TCP, TCP_KEEPINTVL, &keep_alive_interval, sizeof(keep_alive_interval)) < 0) {
+            ESP_LOGE(TAG, LOG_FMT("error in setsockopt TCP_KEEPINTVL (%d)"), errno);
+            goto exit;
+        }
+        if (setsockopt(new_fd, IPPROTO_TCP, TCP_KEEPCNT, &keep_alive_count, sizeof(keep_alive_count)) < 0) {
+            ESP_LOGE(TAG, LOG_FMT("error in setsockopt TCP_KEEPCNT (%d)"), errno);
+            goto exit;
+        }
+    }
     if (ESP_OK != httpd_sess_new(hd, new_fd)) {
-        ESP_LOGW(TAG, LOG_FMT("session creation failed"));
-        close(new_fd);
-        return ESP_FAIL;
+        ESP_LOGE(TAG, LOG_FMT("session creation failed"));
+        goto exit;
     }
     ESP_LOGD(TAG, LOG_FMT("complete"));
     return ESP_OK;
+exit:
+    close(new_fd);
+    return ESP_FAIL;
 }
 
 struct httpd_ctrl_data {
@@ -321,7 +353,7 @@ static esp_err_t httpd_server_init(struct httpd_data *hd)
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) < 0) {
         /* This will fail if CONFIG_LWIP_SO_REUSE is not enabled. But
          * it does not affect the normal working of the HTTP Server */
-        ESP_LOGW(TAG, LOG_FMT("error enabling SO_REUSEADDR (%d)"), errno);
+        ESP_LOGW(TAG, LOG_FMT("error in setsockopt SO_REUSEADDR (%d)"), errno);
     }
 
     int ret = bind(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
