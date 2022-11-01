@@ -655,6 +655,12 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         }
     }
 
+#if CONFIG_ESP_TLS_USE_SECURE_ELEMENT
+    if (config->use_secure_element) {
+        esp_transport_ssl_use_secure_element(ssl);
+    }
+#endif
+
     if (config->client_key_pem) {
         if (!config->client_key_len) {
             esp_transport_ssl_set_client_key_data(ssl, config->client_key_pem, strlen(config->client_key_pem));
