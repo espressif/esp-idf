@@ -71,7 +71,6 @@
 /*!< RTC */
 #define SOC_ADC_RTC_MIN_BITWIDTH                (12)
 #define SOC_ADC_RTC_MAX_BITWIDTH                (12)
-#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
 
 /*!< Calibration */
 #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
@@ -275,6 +274,10 @@
 #define SOC_PM_SUPPORT_CPU_PD           (0)
 #define SOC_PM_SUPPORT_WIFI_PD          (0)
 #define SOC_PM_SUPPORT_BT_PD            (0)
+
+/*--------------------------- CLOCK SUBSYSTEM CAPS -------------------------- */
+#define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
+#define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)    /*!< Support hardware TSF */

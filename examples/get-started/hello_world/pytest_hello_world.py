@@ -12,6 +12,7 @@ from pytest_embedded_qemu.dut import QemuDut
 
 
 @pytest.mark.supported_targets
+@pytest.mark.preview_targets
 @pytest.mark.generic
 def test_hello_world(
     dut: IdfDut, log_minimum_free_heap_size: Callable[..., None]

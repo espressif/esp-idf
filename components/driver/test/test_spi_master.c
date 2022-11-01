@@ -32,10 +32,11 @@
 #include "test/test_common_spi.h"
 
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 const static char TAG[] = "test_spi";
 
-// There is no input-only pin on esp32c3 and esp32s3
-#define TEST_SOC_HAS_INPUT_ONLY_PINS  (!DISABLED_FOR_TARGETS(ESP32C3, ESP32S3, ESP32C2))
+// There is no input-only pin except on esp32 and esp32s2
+#define TEST_SOC_HAS_INPUT_ONLY_PINS  (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2)
 
 static void check_spi_pre_n_for(int clk, int pre, int n)
 {
@@ -355,7 +356,7 @@ TEST_CASE("spi placed on input-only pins", "[spi]")
     TEST_ESP_OK(test_slave_pins(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, INPUT_ONLY_PIN));
 }
 
-//There is no input-only pin on esp32c3 and esp32s3, so this test could be ignored.
+//There is no input-only pin except on esp32 and esp32s2, so this test could be ignored.
 #endif  //#if TEST_SOC_HAS_INPUT_ONLY_PINS
 
 TEST_CASE("spi bus setting with different pin configs", "[spi]")
@@ -1573,3 +1574,4 @@ void test_add_device_slave(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms][test_env=Example_SPI_Multi_device]", test_add_device_master, test_add_device_slave);
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

@@ -11,6 +11,7 @@
 #include "esp_rom_gpio.h"
 
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 int test_freq_default[]=TEST_FREQ_DEFAULT();
 
 const char MASTER_TAG[] = "test_master";
@@ -249,3 +250,4 @@ void get_tx_buffer(uint32_t seed, uint8_t *master_send_buf, uint8_t *slave_send_
         master_send_buf[i] = rand() % 256;
     }
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

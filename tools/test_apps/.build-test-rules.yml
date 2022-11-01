@@ -11,6 +11,12 @@ tools/test_apps/build_system/ldgen_test:
       temporary: true
       reason: target esp32c2 is not supported yet
 
+tools/test_apps/build_system/rsource_test:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
+
 tools/test_apps/linux_compatible/hello_world_linux_compatible:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
@@ -18,6 +24,12 @@ tools/test_apps/linux_compatible/hello_world_linux_compatible:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       temporary: true
       reason: pytest doesn't support linux target yet, hence, it's tested independenly in the host_tests stage
+
+tools/test_apps/peripherals/i2c_wifi:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
 
 tools/test_apps/peripherals/usb:
   enable:
@@ -27,9 +39,9 @@ tools/test_apps/peripherals/usb:
 
 tools/test_apps/phy/phy_multi_init_data_test:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 tools/test_apps/protocols/esp_netif/build_config:
   enable:
@@ -79,9 +91,9 @@ tools/test_apps/system/bootloader_sections:
 
 tools/test_apps/system/build_test:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 tools/test_apps/system/cxx_no_except:
   enable:
@@ -116,6 +128,10 @@ tools/test_apps/system/gdb_loadable_elf:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
 
 tools/test_apps/system/longjmp_test:
   enable:
@@ -160,3 +176,7 @@ tools/test_apps/system/panic:
     - if: IDF_TARGET not in ["esp32", "esp32s2"]
       temporary: true
       reason: lack of runners
+
+tools/test_apps/system/startup:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32h2", "esp32c6"] # preview targets

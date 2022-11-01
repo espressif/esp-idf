@@ -8,9 +8,9 @@ examples/storage/custom_flash_driver:
 
 examples/storage/ext_flash_fatfs:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
   disable_test:
     - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
       temporary: true
@@ -106,9 +106,9 @@ examples/storage/sd_card/sdmmc:
 
 examples/storage/sd_card/sdspi:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32s3"
       temporary: true

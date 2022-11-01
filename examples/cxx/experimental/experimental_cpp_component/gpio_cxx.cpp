@@ -27,6 +27,8 @@ constexpr std::array<uint32_t, 4> INVALID_GPIOS = {22, 23, 24, 25};
 constexpr std::array<uint32_t, 0> INVALID_GPIOS = {};
 #elif CONFIG_IDF_TARGET_ESP32C2
 constexpr std::array<uint32_t, 0> INVALID_GPIOS = {};
+#elif CONFIG_IDF_TARGET_ESP32C6
+constexpr std::array<uint32_t, 0> INVALID_GPIOS = {};
 #else
 #error "No GPIOs defined for the current target"
 #endif

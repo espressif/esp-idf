@@ -53,59 +53,101 @@ examples/protocols/asio/udp_echo_server:
       reason: lack of runners
 
 examples/protocols/coap_client:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: running this test on single platform is sufficient for coverage
 
 examples/protocols/coap_server:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
+
+examples/protocols/esp_http_client:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
+
+examples/protocols/esp_local_ctrl:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
 
 examples/protocols/http2_request:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/protocols/http_request:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/protocols/http_server:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/protocols/https_mbedtls:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
       reason: lack of runners
 
+examples/protocols/https_request:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
+
 examples/protocols/https_server/simple:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
       reason: lack of runners
 
 examples/protocols/https_server/wss_server:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
       reason: lack of runners
 
 examples/protocols/https_x509_bundle:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
       reason: lack of runners
 
 examples/protocols/icmp_echo:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
@@ -113,9 +155,9 @@ examples/protocols/icmp_echo:
 
 examples/protocols/l2tap:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
   disable_test:
     - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
       temporary: true
@@ -133,15 +175,15 @@ examples/protocols/mdns:
 
 examples/protocols/modbus:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/protocols/mqtt/ssl:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
   disable_test:
     - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
       temporary: true
@@ -153,21 +195,21 @@ examples/protocols/mqtt/ssl_ds:
 
 examples/protocols/mqtt/ssl_mutual_auth:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/protocols/mqtt/ssl_psk:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/protocols/mqtt/tcp:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
   disable_test:
     - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
       temporary: true
@@ -175,9 +217,9 @@ examples/protocols/mqtt/tcp:
 
 examples/protocols/mqtt/ws:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
   disable_test:
     - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
       temporary: true
@@ -185,9 +227,9 @@ examples/protocols/mqtt/ws:
 
 examples/protocols/mqtt/wss:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
   disable_test:
     - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
       temporary: true
@@ -195,9 +237,9 @@ examples/protocols/mqtt/wss:
 
 examples/protocols/mqtt5:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
   disable_test:
     - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
       temporary: true
@@ -211,9 +253,9 @@ examples/protocols/slip/slip_udp:
 
 examples/protocols/smtp_client:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/protocols/sntp:
   enable:
@@ -234,6 +276,10 @@ examples/protocols/sockets/non_blocking:
       reason: lack of runners
 
 examples/protocols/sockets/tcp_client:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -243,28 +289,54 @@ examples/protocols/sockets/tcp_client:
 
 examples/protocols/sockets/tcp_client_multi_net:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
 
 examples/protocols/sockets/tcp_server:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
+examples/protocols/sockets/tcp_transport_client:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
+
 examples/protocols/sockets/udp_client:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target(s) not supported yet
   disable_test:
     - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
       temporary: true
       reason: lack of runners
 
+examples/protocols/sockets/udp_multicast:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
+
 examples/protocols/sockets/udp_server:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+
+examples/protocols/static_ip:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet

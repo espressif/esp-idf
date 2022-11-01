@@ -40,7 +40,7 @@ TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
     printf("install mcpwm capture timer\r\n");
     mcpwm_cap_timer_handle_t cap_timer = NULL;
     mcpwm_capture_timer_config_t cap_timer_config = {
-        .clk_src = MCPWM_CAPTURE_CLK_SRC_APB,
+        .clk_src = MCPWM_CAPTURE_CLK_SRC_DEFAULT,
         .group_id = 0,
     };
     TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));

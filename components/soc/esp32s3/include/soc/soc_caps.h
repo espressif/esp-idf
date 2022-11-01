@@ -100,7 +100,6 @@
 /*!< RTC */
 #define SOC_ADC_RTC_MIN_BITWIDTH                (12)
 #define SOC_ADC_RTC_MAX_BITWIDTH                (12)
-#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
 
 /*!< Calibration */
 #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
@@ -398,6 +397,10 @@
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP    (1)     /*!<Supports waking up from touch pad trigger */
 
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1)
+
+/*--------------------------- CLOCK SUBSYSTEM CAPS -------------------------- */
+#define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
+#define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1

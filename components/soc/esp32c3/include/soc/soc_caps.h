@@ -227,8 +227,6 @@
 
 #define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
 
-#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
-
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 /* No dedicated RTCIO subsystem on ESP32-C3. RTC functions are still supported
  * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
@@ -370,6 +368,10 @@
 #define SOC_PM_SUPPORT_WIFI_PD          (1)
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
+
+/*--------------------------- CLOCK SUBSYSTEM CAPS -------------------------- */
+#define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
+#define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

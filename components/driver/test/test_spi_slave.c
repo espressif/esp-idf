@@ -261,7 +261,7 @@ TEST_CASE("test slave send unaligned","[spi]")
 
 #endif // #if (TEST_SPI_PERIPH_NUM >= 2)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C6)
 #if (TEST_SPI_PERIPH_NUM == 1)
 //These tests are for chips which only have 1 SPI controller
 /********************************************************************************

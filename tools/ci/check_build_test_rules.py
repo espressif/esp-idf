@@ -273,6 +273,9 @@ def check_test_scripts(
 
         if actual_verified_targets == _app.verified_targets:
             return True
+        elif actual_verified_targets == sorted(_app.verified_targets + bypass_check_test_targets or []):
+            print(f'WARNING: bypass test script check on {_app.app_dir} for targets {bypass_check_test_targets} ')
+            return True
 
         if_clause = f'IDF_TARGET in [{", ".join([doublequote(target) for target in sorted(set(_app.verified_targets) - set(actual_verified_targets))])}]'
 

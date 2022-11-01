@@ -594,6 +594,7 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
 
 #endif //#if (TEST_SPI_PERIPH_NUM >= 2)
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 #if (TEST_SPI_PERIPH_NUM == 1)
 //These tests are for chips which only have 1 SPI controller
 /********************************************************************************
@@ -882,5 +883,7 @@ static void hd_slave_quad(void){
 TEST_CASE_MULTIPLE_DEVICES("SPI quad hd test ", "[spi_ms][test_env=Example_SPI_Quad_Multi_device]", hd_master_quad, hd_slave_quad);
 
 #endif  // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 
 #endif //SOC_SPI_SUPPORT_SLAVE_HD_VER2

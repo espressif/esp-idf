@@ -5,6 +5,12 @@ components/spi_flash/host_test/partition_api_test:
     - if: IDF_TARGET == "linux"
       reason: only test on linux
 
+components/spi_flash/test_apps/esp_flash:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
+
 components/spi_flash/test_apps/flash_encryption:
   disable_test:
     - if: IDF_TARGET in ["esp32c2", "esp32s2"]

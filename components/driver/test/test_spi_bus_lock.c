@@ -44,6 +44,7 @@ typedef struct {
 } task_context_t;
 
 #if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 
 const static char TAG[] = "test_spi";
 
@@ -296,7 +297,7 @@ TEST_CASE("spi bus lock","[spi]")
     test_bus_lock(false);
 }
 
-#if !DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP32C2, ESP32H2)
+#if !DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP32C2, ESP32H2, ESP32C6)
 //disable, SPI1 is not available for GPSPI usage on chips later than ESP32
 static IRAM_ATTR esp_err_t test_polling_send(spi_device_handle_t handle)
 {
@@ -348,4 +349,5 @@ TEST_CASE("spi master can be used on SPI1", "[spi]")
 
 //TODO: add a case when a non-polling transaction happened in the bus-acquiring time and then release the bus then queue a new trans
 
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 #endif //!(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)
