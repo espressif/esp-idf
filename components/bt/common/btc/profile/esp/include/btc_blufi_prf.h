@@ -21,6 +21,11 @@
 #define ESP_BLUFI_SUCCESS 0x00
 #endif
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BT_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
 #define BT_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
 
@@ -100,4 +105,7 @@ void btc_blufi_call_deep_free(btc_msg_t *msg);
 
 uint16_t btc_blufi_get_version(void);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* __BTC_BLUFI_PRF_H__ */
