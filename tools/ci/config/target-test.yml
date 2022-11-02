@@ -82,10 +82,15 @@
     - .component_ut_template
     - .rules:tests:unit_test_32
 
-.component_ut_s2_template: # unused yet
+.component_ut_s2_template:
   extends:
     - .component_ut_template
     - .rules:tests:unit_test_s2
+
+.component_ut_c3_template:
+  extends:
+    - .component_ut_template
+    - .rules:tests:unit_test_c3
 
 .unit_test_template:
   extends:
@@ -363,6 +368,18 @@ component_ut_test_001:
   extends: .component_ut_32_template
   tags:
     - ESP32
+    - COMPONENT_UT_GENERIC
+
+component_ut_test_s2_generic:
+  extends: .component_ut_s2_template
+  tags:
+    - ESP32S2
+    - COMPONENT_UT_GENERIC
+
+component_ut_test_c3_generic:
+  extends: .component_ut_c3_template
+  tags:
+    - ESP32C3
     - COMPONENT_UT_GENERIC
 
 UT_001:
