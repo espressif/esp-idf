@@ -107,7 +107,7 @@ class Env(object):
                     dut_config = dict()
                 dut_config.update(dut_init_args)
                 dut = dut_class(dut_name, port,
-                                os.path.join(self.log_path, dut_name + '.log'),
+                                os.path.join(self.log_path, dut_name + '.txt'),
                                 app_inst,
                                 **dut_config)
                 self.allocated_duts[dut_name] = {'port': port, 'dut': dut}

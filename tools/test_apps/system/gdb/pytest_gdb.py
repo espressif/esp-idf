@@ -27,14 +27,14 @@ def test_idf_gdb(dut: Dut) -> None:
     # Don't need to have output from UART any more
     dut.serial.stop_redirect_thread()
 
-    with open(os.path.join(dut.logdir, 'ocd.log'), 'w') as ocd_log:
+    with open(os.path.join(dut.logdir, 'ocd.txt'), 'w') as ocd_log:
         ocd = subprocess.Popen(f'openocd {get_openocd_arguments(dut.target)}', stdout=ocd_log, stderr=ocd_log, shell=True)
 
         try:
             gdb_env = os.environ.copy()
             gdb_env['ESP_IDF_GDB_TESTING'] = '1'
 
-            with open(os.path.join(dut.logdir, 'gdb.log'), 'w') as gdb_log, \
+            with open(os.path.join(dut.logdir, 'gdb.txt'), 'w') as gdb_log, \
                  pexpect.spawn(f'idf.py -B {dut.app.binary_path} gdb --batch',
                                env=gdb_env,
                                timeout=60,

@@ -30,7 +30,7 @@ _COLOR_CODES = {
 
 def _get_log_file_name():
     if Env.Env.CURRENT_LOG_FOLDER:
-        file_name = os.path.join(Env.Env.CURRENT_LOG_FOLDER, 'console.log')
+        file_name = os.path.join(Env.Env.CURRENT_LOG_FOLDER, 'console.txt')
     else:
         raise OSError('env log folder does not exist, will not save to log file')
     return file_name

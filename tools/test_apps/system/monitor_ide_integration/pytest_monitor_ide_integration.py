@@ -77,7 +77,7 @@ def test_monitor_ide_integration(config: str, dut: Dut) -> None:
     monitor_cmd = ' '.join([sys.executable, monitor_py, os.path.join(dut.app.binary_path, 'panic.elf'),
                             '--port', str(dut.serial.port),
                             '--ws', f'ws://{WebSocketServer.HOST}:{WebSocketServer.PORT}'])
-    monitor_log_path = os.path.join(dut.logdir, 'monitor.log')
+    monitor_log_path = os.path.join(dut.logdir, 'monitor.txt')
 
     with open(monitor_log_path, 'w') as log, WebSocketServer(), pexpect.spawn(monitor_cmd,
                                                                               logfile=log,
