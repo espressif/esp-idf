@@ -41,3 +41,14 @@ Nimble
         - Remove : esp_err_t esp_nimble_hci_and_controller_deinit(void);
 
             - Controller deinitialization, disable and HCI deinitialization calls have been moved to `nimble_port_deinit`. This function can be deleted directly.
+
+ESP-BLE-MESH
+------------
+
+    The following ESP-BLE-MESH macro has been renamed:
+
+    - :component_file:`bt/esp_ble_mesh/api/esp_ble_mesh_defs.h`
+
+        - In :cpp:enum:`esp_ble_mesh_prov_cb_event_t`:
+
+            - ``ESP_BLE_MESH_PROVISIONER_DRIECT_ERASE_SETTINGS_COMP_EVT`` renamed to ``ESP_BLE_MESH_PROVISIONER_DIRECT_ERASE_SETTINGS_COMP_EVT``
