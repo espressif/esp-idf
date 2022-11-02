@@ -7,7 +7,8 @@
 #include "esp_attr.h"
 #include "soc/spi_periph.h"
 #include "sdkconfig.h"
-#include "test/test_common_spi.h"
+#include "test_utils.h"
+#include "test_spi_utils.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
 
@@ -44,7 +45,7 @@ static void local_test_init(void** arg)
     spitest_context_t* context = (spitest_context_t*)*arg;
     TEST_ASSERT(context!=NULL);
     context->slave_context = (spi_slave_task_context_t){};
-    esp_err_t err = init_slave_context( &context->slave_context);
+    esp_err_t err = init_slave_context( &context->slave_context, TEST_SLAVE_HOST);
     TEST_ASSERT(err == ESP_OK);
 
     xTaskCreate(spitest_slave_task, "spi_slave", 4096, &context->slave_context, 0, &context->handle_slave);
@@ -211,7 +212,7 @@ static void local_test_loop(const void* arg1, void* arg2)
             }
 
             if (failed) {
-                ESP_LOGI(SLAVE_TAG, "slave_recv_len: %d", rcv_len);
+                ESP_LOGI(SLAVE_TAG, "slave_recv_len: %" PRIu32, rcv_len);
                 spitest_master_print_data(t, len);
 
                 ESP_LOG_BUFFER_HEX("slave tx", slave_trans.tx_buffer, len);
@@ -659,9 +660,12 @@ static const ptest_func_t slave_test_func = {
     .def_param = spitest_def_param,
 };
 
+//temporarily close mass data print to avoid pytest run too busy to timeout
+#define TEST_LOG_DBUG   false
+
 #define TEST_SPI_MASTER_SLAVE(name, param_group, extra_tag) \
     PARAM_GROUP_DECLARE(name, param_group) \
-    TEST_MASTER_SLAVE(name, param_group, "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]"extra_tag, &master_test_func, &slave_test_func)
+    TEST_MASTER_SLAVE(name, param_group, "[spi_ms][test_env=generic_multi_device][timeout=120]"extra_tag, &master_test_func, &slave_test_func)
 
 /************ Master Code ***********************************************/
 static void test_master_init(void** arg)
@@ -671,8 +675,9 @@ static void test_master_init(void** arg)
     spitest_context_t* context = *arg;
     TEST_ASSERT(context!=NULL);
     context->slave_context = (spi_slave_task_context_t){};
-    esp_err_t err = init_slave_context(&context->slave_context);
+    esp_err_t err = init_slave_context(&context->slave_context, TEST_SPI_HOST);
     TEST_ASSERT(err == ESP_OK);
+    unity_send_signal("Master ready");
 }
 
 static void test_master_deinit(void* arg)
@@ -685,13 +690,10 @@ static void test_master_start(spi_device_handle_t *spi, int freq, const spitest_
 {
     //master config
     spi_bus_config_t buspset=SPI_BUS_TEST_DEFAULT_CONFIG();
-    buspset.miso_io_num = MASTER_IOMUX_PIN_MISO;
-    buspset.mosi_io_num = MASTER_IOMUX_PIN_MOSI;
-    buspset.sclk_io_num = MASTER_IOMUX_PIN_SCLK;
     //this does nothing, but avoid the driver from using native pins
     if (!pset->master_iomux) buspset.quadhd_io_num = UNCONNECTED_PIN;
     spi_device_interface_config_t devpset=SPI_DEVICE_TEST_DEFAULT_CONFIG();
-    devpset.spics_io_num = MASTER_IOMUX_PIN_CS;
+    devpset.spics_io_num = SPI2_IOMUX_PIN_NUM_CS;
     devpset.mode = pset->mode;
     const int cs_pretrans_max = 15;
     if (pset->dup==HALF_DUPLEX_MISO) {
@@ -757,7 +759,7 @@ static void test_master_loop(const void *arg1, void* arg2)
         ESP_LOGI(MASTER_TAG, "==============> %dk", freq/1000);
         test_master_start(&spi, freq, test_cfg, context);
 
-        unity_wait_for_signal("slave ready");
+        unity_wait_for_signal("Slave ready");
 
         for( int j= 0; j < test_cfg->test_size; j ++ ) {
             //wait for both master and slave end
@@ -768,11 +770,15 @@ static void test_master_loop(const void *arg1, void* arg2)
             spi_transaction_t *t = &context->master_trans[j];
             TEST_ESP_OK (spi_device_transmit(spi, t) );
             int len = get_trans_len(test_cfg->dup, t);
-            spitest_master_print_data(t, len);
+            if(TEST_LOG_DBUG){
+                spitest_master_print_data(t, len);
+            }
 
             size_t rcv_len;
             slave_rxdata_t *rcv_data = xRingbufferReceive( context->slave_context.data_received, &rcv_len, portMAX_DELAY );
-            spitest_slave_print_data(rcv_data, false);
+            if(TEST_LOG_DBUG){
+                spitest_slave_print_data(rcv_data, false);
+            }
 
             //check result
             bool check_master_data = (test_cfg->dup != HALF_DUPLEX_MOSI &&
@@ -800,9 +806,10 @@ static void test_slave_init(void** arg)
     spitest_context_t* context = (spitest_context_t*)*arg;
     TEST_ASSERT(context!=NULL);
     context->slave_context = (spi_slave_task_context_t){};
-    esp_err_t err = init_slave_context( &context->slave_context );
+    esp_err_t err = init_slave_context( &context->slave_context, TEST_SPI_HOST);
     TEST_ASSERT( err == ESP_OK );
 
+    unity_wait_for_signal("Master ready");
     xTaskCreate( spitest_slave_task, "spi_slave", 4096, &context->slave_context, 0, &context->handle_slave);
 }
 
@@ -819,19 +826,16 @@ static void timing_slave_start(int speed, const spitest_param_set_t* pset, spite
 {
     //slave config
     spi_bus_config_t slv_buscfg=SPI_BUS_TEST_DEFAULT_CONFIG();
-    slv_buscfg.miso_io_num = SLAVE_IOMUX_PIN_MISO;
-    slv_buscfg.mosi_io_num = SLAVE_IOMUX_PIN_MOSI;
-    slv_buscfg.sclk_io_num = SLAVE_IOMUX_PIN_SCLK;
     //this does nothing, but avoid the driver from using native pins
     if (!pset->slave_iomux) slv_buscfg.quadhd_io_num = UNCONNECTED_PIN;
     spi_slave_interface_config_t slvcfg=SPI_SLAVE_TEST_DEFAULT_CONFIG();
-    slvcfg.spics_io_num = SLAVE_IOMUX_PIN_CS;
+    slvcfg.spics_io_num = SPI2_IOMUX_PIN_NUM_CS;
     slvcfg.mode = pset->mode;
     //Enable pull-ups on SPI lines so we don't detect rogue pulses when no master is connected.
     slave_pull_up(&slv_buscfg, slvcfg.spics_io_num);
 
     int slave_dma_chan = (pset->slave_dma_chan == 0) ? 0 : SPI_DMA_CH_AUTO;
-    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &slv_buscfg, &slvcfg, slave_dma_chan));
+    TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &slv_buscfg, &slvcfg, slave_dma_chan));
 
     //prepare data for the master
     for (int i = 0; i < pset->test_size; i++) {
@@ -867,7 +871,7 @@ static void test_slave_loop(const void *arg1, void* arg2)
         }
 
         vTaskDelay(50/portTICK_PERIOD_MS);
-        unity_send_signal("slave ready");
+        unity_send_signal("Slave ready");
 
         for( int i= 0; i < pset->test_size; i ++ ) {
             //wait for both master and slave end
@@ -877,11 +881,15 @@ static void test_slave_loop(const void *arg1, void* arg2)
 
             spi_transaction_t *t = &context->master_trans[i];
             int len = get_trans_len(pset->dup, t);
-            spitest_master_print_data(t, FULL_DUPLEX);
+            if(TEST_LOG_DBUG){
+                spitest_master_print_data(t, FULL_DUPLEX);
+            }
 
             size_t rcv_len;
             slave_rxdata_t *rcv_data = xRingbufferReceive( context->slave_context.data_received, &rcv_len, portMAX_DELAY );
-            spitest_slave_print_data(rcv_data, true);
+            if(TEST_LOG_DBUG){
+                spitest_slave_print_data(rcv_data, true);
+            }
 
             //check result
             const bool check_master_data = false;
@@ -891,7 +899,7 @@ static void test_slave_loop(const void *arg1, void* arg2)
             //clean
             vRingbufferReturnItem( context->slave_context.data_received, rcv_data );
         }
-        TEST_ASSERT(spi_slave_free(TEST_SLAVE_HOST) == ESP_OK);
+        TEST_ASSERT(spi_slave_free(TEST_SPI_HOST) == ESP_OK);
     }
 }
 

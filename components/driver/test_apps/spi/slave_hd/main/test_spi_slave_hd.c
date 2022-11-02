@@ -8,15 +8,10 @@
 */
 
 #include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "unity.h"
-
+#include "test_utils.h"
+#include "test_spi_utils.h"
 #include "soc/spi_periph.h"
-#include "driver/spi_master.h"
 #include "esp_serial_slave_link/essl_spi.h"
-#include "test/test_common_spi.h"
 
 #if SOC_SPI_SUPPORT_SLAVE_HD_VER2
 #include "driver/spi_slave_hd.h"
@@ -631,11 +626,12 @@ static void hd_master(void)
     WORD_ALIGNED_ATTR uint8_t *master_recv_buf = calloc(1, send_buf_size * 2);
     //This buffer is used for 2-board test and should be assigned totally the same as the ``hd_slave`` does.
     WORD_ALIGNED_ATTR uint8_t *slave_send_buf = malloc(send_buf_size * 2);
-    get_tx_buffer(199, master_send_buf, slave_send_buf, send_buf_size);
+    get_tx_buffer(199, master_send_buf, slave_send_buf, send_buf_size * 2);
 
     //This is the same as the ``hd_slave`` sets.
     int trans_len[] = {5, send_buf_size};
 
+    unity_send_signal("master ready");
     unity_wait_for_signal("slave ready");
     essl_spi_wrdma(spi, master_send_buf, send_buf_size, -1, 0);
 
@@ -676,13 +672,14 @@ static void hd_slave(void)
     };
     TEST_ESP_OK(spi_slave_hd_init(TEST_SLAVE_HOST, &bus_cfg, &slave_hd_cfg));
 
+    unity_wait_for_signal("master ready");
     const int send_buf_size = 1024;
 
     WORD_ALIGNED_ATTR uint8_t *slave_send_buf = malloc(send_buf_size * 2);
     WORD_ALIGNED_ATTR uint8_t *slave_recv_buf = calloc(1, send_buf_size * 2);
     //This buffer is used for 2-board test and should be assigned totally the same as the ``hd_master`` does.
     WORD_ALIGNED_ATTR uint8_t *master_send_buf = malloc(send_buf_size * 2);
-    get_tx_buffer(199, master_send_buf, slave_send_buf, send_buf_size);
+    get_tx_buffer(199, master_send_buf, slave_send_buf, send_buf_size * 2);
 
     //make the first transaction shorter than the actual trans length of the master, so that the second one will be loaded while the master is still doing the first transaction.
     int trans_len[] = {5, send_buf_size};
@@ -739,7 +736,7 @@ static void hd_slave(void)
     spi_slave_hd_deinit(TEST_SLAVE_HOST);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("SPI Slave HD: segment mode, master sends too long", "[spi_ms][test_env=Example_SPI_Multi_device]", hd_master, hd_slave);
+TEST_CASE_MULTIPLE_DEVICES("SPI Slave HD: segment mode, master sends too long", "[spi_ms][test_env=generic_multi_device]", hd_master, hd_slave);
 #endif  //#if (TEST_SPI_PERIPH_NUM == 1)
 
 /**
@@ -776,6 +773,7 @@ static void hd_master_quad(void){
     WORD_ALIGNED_ATTR uint8_t *slave_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
     get_tx_buffer(199, master_send_buf, slave_send_buf, BUF_SIZE);
 
+    unity_send_signal("Master ready");
     unity_wait_for_signal("slave ready");
     essl_spi_wrdma(spi, master_send_buf, BUF_SIZE / 2, -1, SPI_TRANS_MODE_QIO);
 
@@ -851,6 +849,7 @@ static void hd_slave_quad(void){
         },
     };
 
+    unity_wait_for_signal("Master ready");
     for (int i = 0; i < 2; i ++) {
         TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &slave_trans[i], portMAX_DELAY));
         unity_send_signal("slave ready");
@@ -880,7 +879,7 @@ static void hd_slave_quad(void){
     spi_slave_hd_deinit(TEST_SLAVE_HOST);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("SPI quad hd test ", "[spi_ms][test_env=Example_SPI_Quad_Multi_device]", hd_master_quad, hd_slave_quad);
+TEST_CASE_MULTIPLE_DEVICES("SPI quad hd test ", "[spi_ms][test_env=generic_multi_device]", hd_master_quad, hd_slave_quad);
 
 #endif  // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 

@@ -7,21 +7,13 @@
  Tests for the spi_master device driver
 */
 
-#include <esp_types.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <malloc.h>
-#include <string.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "freertos/queue.h"
-#include "unity.h"
+
 #include "sdkconfig.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
 #include "driver/gpio.h"
 #include "soc/gpio_periph.h"
+#include "soc/spi_periph.h"
 #include "soc/soc_memory_layout.h"
 #include "esp_private/cache_utils.h"
 #include "esp_private/spi_common_internal.h"
@@ -29,7 +21,7 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "test_utils.h"
-#include "test/test_common_spi.h"
+#include "test_spi_utils.h"
 
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
@@ -913,7 +905,7 @@ void test_cmd_addr(spi_slave_task_context_t *slave_context, bool lsb_first)
             addr_got = addr_got >> (64 - addr_bits);
         }
 
-        ESP_LOGI(SLAVE_TAG, "cmd_got: %04X, addr_got: %08X%08X", cmd_got, (uint32_t)(addr_got >> 32), (uint32_t)addr_got);
+        ESP_LOGI(SLAVE_TAG, "cmd_got: %" PRIX16 ", addr_got: %" PRIX32 "%" PRIX32, cmd_got, (uint32_t)(addr_got >> 32), (uint32_t)addr_got);
 
         TEST_ASSERT_EQUAL_HEX16(cmd_expected, cmd_got);
         if (addr_bits > 0) {
@@ -932,7 +924,7 @@ void test_cmd_addr(spi_slave_task_context_t *slave_context, bool lsb_first)
 TEST_CASE("SPI master variable cmd & addr test", "[spi]")
 {
     spi_slave_task_context_t slave_context = {};
-    esp_err_t err = init_slave_context( &slave_context );
+    esp_err_t err = init_slave_context( &slave_context, TEST_SLAVE_HOST );
     TEST_ASSERT( err == ESP_OK );
     TaskHandle_t handle_slave;
     xTaskCreate( spitest_slave_task, "spi_slave", 4096, &slave_context, 0, &handle_slave);
@@ -1301,7 +1293,7 @@ static void fd_slave(void)
     TEST_ASSERT(spi_slave_free(SPI2_HOST) == ESP_OK);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", "[spi_ms][test_env=Example_SPI_Multi_device]", fd_master, fd_slave);
+TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", "[spi_ms][test_env=generic_multi_device]", fd_master, fd_slave);
 #endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)    //TODO: IDF-3494
 #endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)    //TODO: IDF-3494
 
@@ -1416,7 +1408,6 @@ TEST_CASE("spi_speed", "[spi]")
 
     //release the bus
     spi_device_release_bus(spi);
-
     master_free_device_bus(spi);
 
     speed_setup(&spi, !use_dma);
@@ -1437,6 +1428,7 @@ TEST_CASE("spi_speed", "[spi]")
     //acquire the bus to send polling transactions faster
     ret = spi_device_acquire_bus(spi, portMAX_DELAY);
     TEST_ESP_OK(ret);
+
     //record flight time by polling, without DMA
     t_flight_num = 0;
     for (int i = 0; i < TEST_TIMES; i++) {
@@ -1541,13 +1533,6 @@ void test_add_device_slave(void)
         .spics_io_num = CS_REAL_DEV,
         .queue_size = 3,
     };
-#if CONFIG_IDF_TARGET_ESP32
-    //now esp32 runners use SPI3 pin group to test gpio matrix together on CI.
-    bus_cfg.miso_io_num = SPI3_IOMUX_PIN_NUM_MISO;
-    bus_cfg.mosi_io_num = SPI3_IOMUX_PIN_NUM_MOSI;
-    bus_cfg.sclk_io_num = SPI3_IOMUX_PIN_NUM_CLK;
-    slvcfg.spics_io_num = SPI3_IOMUX_PIN_NUM_CS;
-#endif
     TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
 
     spi_slave_transaction_t slave_trans = {};
@@ -1573,5 +1558,5 @@ void test_add_device_slave(void)
     spi_bus_free(TEST_SPI_HOST);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms][test_env=Example_SPI_Multi_device]", test_add_device_master, test_add_device_slave);
+TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms][test_env=generic_multi_device]", test_add_device_master, test_add_device_slave);
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

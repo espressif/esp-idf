@@ -1,7 +1,7 @@
 idf_component_register(
     SRC_DIRS .
     PRIV_INCLUDE_DIRS include
-    PRIV_REQUIRES cmock test_utils test_driver_utils driver nvs_flash spi_flash esp_timer esp_adc esp_event esp_wifi
+    PRIV_REQUIRES cmock test_utils test_driver_utils driver nvs_flash esp_timer esp_adc esp_event esp_wifi
 )
 target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 

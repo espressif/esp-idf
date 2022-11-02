@@ -1,0 +1,2 @@
+# test_case `spi_speed` need freq 240M
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y

@@ -8,9 +8,9 @@
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_flash_spi_init.h"
+#include "test_utils.h"
+#include "test_spi_utils.h"
 #include "spi_flash_mmap.h"
-
-#include "test/test_common_spi.h"
 #include "unity.h"
 
 
@@ -283,14 +283,13 @@ static void test_bus_lock(bool test_flash)
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST) );
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP32C2)
-//no runners
-//IDF-5049
-TEST_CASE("spi bus lock, with flash","[spi][test_env=UT_T1_ESP_FLASH]")
+#if CONFIG_IDF_TARGET_ESP32
+// no need this case in other target, only esp32 need buslock to split MSPI and GPSPI2 action
+TEST_CASE("spi bus lock, with flash","[spi][test_env=external_flash]")
 {
     test_bus_lock(true);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
+#endif //CONFIG_IDF_TARGET_ESP32
 
 
 TEST_CASE("spi bus lock","[spi]")

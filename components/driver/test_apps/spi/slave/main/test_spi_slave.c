@@ -10,7 +10,8 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "unity.h"
-#include "test/test_common_spi.h"
+#include "test_utils.h"
+#include "test_spi_utils.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
 #include "driver/gpio.h"
@@ -382,7 +383,7 @@ static void unaligned_test_slave(void)
     TEST_ASSERT(spi_slave_free(TEST_SPI_HOST) == ESP_OK);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]", unaligned_test_master, unaligned_test_slave);
+TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][test_env=generic_multi_device][timeout=120]", unaligned_test_master, unaligned_test_slave);
 
 #endif  //#if (TEST_SPI_PERIPH_NUM == 1)
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)

@@ -24,7 +24,7 @@
 #include "esp_log.h"
 #include "soc/spi_periph.h"
 #include "test_utils.h"
-#include "test/test_common_spi.h"
+#include "test_spi_utils.h"
 #include "soc/gpio_periph.h"
 
 #include "hal/spi_ll.h"
@@ -269,14 +269,6 @@ void test_sio_slave_emulate(bool sio_master_in)
 
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     spi_slave_interface_config_t slv_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
-#if CONFIG_IDF_TARGET_ESP32
-    // esp32 use different pin for slave in current runner
-    bus_cfg.mosi_io_num = spi_periph_signal[TEST_SLAVE_HOST].spid_iomux_pin;
-    bus_cfg.miso_io_num = spi_periph_signal[TEST_SLAVE_HOST].spiq_iomux_pin;
-    bus_cfg.sclk_io_num = spi_periph_signal[TEST_SLAVE_HOST].spiclk_iomux_pin;
-
-    slv_cfg.spics_io_num = spi_periph_signal[TEST_SLAVE_HOST].spics0_iomux_pin;
-#endif
     TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slv_cfg, SPI_DMA_CH_AUTO));
     printf("CS:CLK:MO:MI: %d\t%d\t%d\t%d\n", slv_cfg.spics_io_num, bus_cfg.sclk_io_num, bus_cfg.mosi_io_num, bus_cfg.miso_io_num);
 
@@ -334,5 +326,5 @@ void test_slave_run(void)
     test_sio_slave_emulate(true);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test_SIO_Mode_Multi_Board", "[spi_ms][test_env=Example_SPI_Multi_device]", test_master_run, test_slave_run);
+TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test_SIO_Mode_Multi_Board", "[spi_ms][test_env=generic_multi_device]", test_master_run, test_slave_run);
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
