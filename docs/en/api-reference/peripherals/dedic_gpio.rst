@@ -95,7 +95,7 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
         - Clear bits of GPIO: ``clr_bit_gpio_out imm[7:0]``
         - Note: Immediate value width depends on the number of dedicated GPIO channels
 
-    .. only:: esp32c2 or esp32c3
+    .. only:: esp32c2 or esp32c3 or esp32c6
 
         - Set bits of GPIO: ``csrrsi rd, csr, imm[4:0]``
         - Clear bits of GPIO: ``csrrci rd, csr, imm[4:0]``
@@ -109,7 +109,9 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
 
     For details of supported dedicated GPIO instructions, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *Processor Instruction Extensions (PIE) (to be added later)* [`PDF <{IDF_TARGET_TRM_EN_URL}#pie>`__].
 
-.. only:: esp32c2 or esp32c3
+.. only:: esp32c2 or esp32c3 or esp32c6
+
+    Code examples for manipulating dedicated GPIOs from assembly are provided in the :example:`peripherals/dedicated_gpio` directory of ESP-IDF examples. These examples show how to emulate a UART, an I2C and an SPI bus in assembly thanks to dedicated GPIOs.
 
     For details of supported dedicated GPIO instructions, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *ESP-RISC-V CPU* [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__].
 

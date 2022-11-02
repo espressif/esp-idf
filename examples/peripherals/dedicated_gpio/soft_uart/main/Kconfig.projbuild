@@ -1,0 +1,21 @@
+menu "Example Configuration"
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    config EMULATE_UART_GPIO_TX
+        int "GPIO pin for UART TX"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 0 if IDF_TARGET_ARCH_RISCV
+        default 16
+        help
+            GPIO pin number to be used as UART TX.
+
+    config EMULATE_UART_GPIO_RX
+        int "GPIO pin for UART RX"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 2 if IDF_TARGET_ARCH_RISCV
+        default 17
+        help
+            GPIO pin number to be used as UART RX.
+
+endmenu

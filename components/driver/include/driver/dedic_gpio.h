@@ -52,13 +52,13 @@ typedef struct {
 esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_gpio_bundle_handle_t *ret_bundle);
 
 /**
- * @brief Destory GPIO bundle
+ * @brief Destroy GPIO bundle
  *
  * @param[in] bundle Handle of GPIO bundle that returned from "dedic_gpio_new_bundle"
  * @return
- *      - ESP_OK: Destory GPIO bundle successfully
- *      - ESP_ERR_INVALID_ARG: Destory GPIO bundle failed because of invalid argument
- *      - ESP_FAIL: Destory GPIO bundle failed because of other error
+ *      - ESP_OK: Destroy GPIO bundle successfully
+ *      - ESP_ERR_INVALID_ARG: Destroy GPIO bundle failed because of invalid argument
+ *      - ESP_FAIL: Destroy GPIO bundle failed because of other error
  */
 esp_err_t dedic_gpio_del_bundle(dedic_gpio_bundle_handle_t bundle);
 
@@ -79,6 +79,25 @@ esp_err_t dedic_gpio_del_bundle(dedic_gpio_bundle_handle_t bundle);
  */
 esp_err_t dedic_gpio_get_out_mask(dedic_gpio_bundle_handle_t bundle, uint32_t *mask);
 esp_err_t dedic_gpio_get_in_mask(dedic_gpio_bundle_handle_t bundle, uint32_t *mask);
+/**@}*/
+
+/**@{*/
+/**
+ * @brief Get the channel offset of the GPIO bundle
+ *
+ * A GPIO bundle maps the GPIOS of a particular direction to a consecutive set of channels within
+ * a particular GPIO bank of a particular CPU. This function returns the offset to
+ * the bundle's first channel of a particular direction within the bank.
+ *
+ * @param[in] bundle Handle of GPIO bundle that returned from "dedic_gpio_new_bundle"
+ * @param[out] offset Offset value to the first channel of a specific direction (in or out)
+ * @return
+ *      - ESP_OK: Get channel offset successfully
+ *      - ESP_ERR_INVALID_ARG: Get channel offset failed because of invalid argument
+ *      - ESP_FAIL: Get channel offset failed because of other error
+ */
+esp_err_t dedic_gpio_get_out_offset(dedic_gpio_bundle_handle_t bundle, uint32_t *offset);
+esp_err_t dedic_gpio_get_in_offset(dedic_gpio_bundle_handle_t bundle, uint32_t *offset);
 /**@}*/
 
 /**
