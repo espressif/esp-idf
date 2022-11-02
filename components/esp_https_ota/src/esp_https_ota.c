@@ -170,12 +170,30 @@ static void _http_cleanup(esp_http_client_handle_t client)
     esp_http_client_cleanup(client);
 }
 
+// Table to lookup ota event name
+static const char* ota_event_name_table[] = {
+    "ESP_HTTPS_OTA_START",
+    "ESP_HTTPS_OTA_CONNECTED",
+    "ESP_HTTPS_OTA_GET_IMG_DESC",
+    "ESP_HTTPS_OTA_VERIFY_CHIP_ID",
+    "ESP_HTTPS_OTA_DECRYPT_CB",
+    "ESP_HTTPS_OTA_WRITE_FLASH",
+    "ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION",
+    "ESP_HTTPS_OTA_FINISH",
+    "ESP_HTTPS_OTA_ABORT",
+};
+
+static void esp_https_ota_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size)
+{
+    if (esp_event_post(ESP_HTTPS_OTA_EVENT, event_id, event_data, event_data_size, portMAX_DELAY) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to post https_ota event: %s", ota_event_name_table[event_id]);
+    }
+}
+
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
 static esp_err_t esp_https_ota_decrypt_cb(esp_https_ota_t *handle, decrypt_cb_arg_t *args)
 {
-    if (esp_event_post(ESP_HTTPS_OTA_EVENT, ESP_HTTPS_OTA_DECRYPT_CB, NULL, 0, portMAX_DELAY) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to post https_ota event");
-    }
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_DECRYPT_CB, NULL, 0);
 
     esp_err_t ret = handle->decrypt_cb(args, handle->decrypt_user_ctx);
     if (ret != ESP_OK) {
@@ -208,9 +226,7 @@ static esp_err_t _ota_write(esp_https_ota_t *https_ota_handle, const void *buffe
         ESP_LOGD(TAG, "Written image length %d", https_ota_handle->binary_file_len);
         err = ESP_ERR_HTTPS_OTA_IN_PROGRESS;
     }
-    if (esp_event_post(ESP_HTTPS_OTA_EVENT, ESP_HTTPS_OTA_WRITE_FLASH, NULL, 0, portMAX_DELAY) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to post https_ota event");
-    }
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_WRITE_FLASH, (void *)(&https_ota_handle->binary_file_len), sizeof(int));
 
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     esp_https_ota_decrypt_cb_free_buf((void *) buffer);
@@ -226,9 +242,7 @@ static bool is_server_verification_enabled(const esp_https_ota_config_t *ota_con
 
 esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle)
 {
-    if (esp_event_post(ESP_HTTPS_OTA_EVENT, ESP_HTTPS_OTA_START, NULL, 0, portMAX_DELAY) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to post https_ota event");
-    }
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_START, NULL, 0);
 
     esp_err_t err;
 
@@ -313,9 +327,7 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         ESP_LOGE(TAG, "Failed to establish HTTP connection");
         goto http_cleanup;
     } else {
-        if (esp_event_post(ESP_HTTPS_OTA_EVENT, ESP_HTTPS_OTA_CONNECTED, NULL, 0, portMAX_DELAY) != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to post https_ota event");
-        }
+        esp_https_ota_dispatch_event(ESP_HTTPS_OTA_CONNECTED, NULL, 0);
     }
 
     if (!https_ota_handle->partial_http_download) {
@@ -400,9 +412,7 @@ static esp_err_t read_header(esp_https_ota_t *handle)
 
 esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, esp_app_desc_t *new_app_info)
 {
-    if (esp_event_post(ESP_HTTPS_OTA_EVENT, ESP_HTTPS_OTA_GET_IMG_DESC, NULL, 0, portMAX_DELAY) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to post https_ota event");
-    }
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_GET_IMG_DESC, NULL, 0);
 
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     // This API is not supported in case firmware image is encrypted in nature.
@@ -436,11 +446,9 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
 
 static esp_err_t esp_ota_verify_chip_id(const void *arg)
 {
-    if (esp_event_post(ESP_HTTPS_OTA_EVENT, ESP_HTTPS_OTA_VERIFY_CHIP_ID, NULL, 0, portMAX_DELAY) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to post https_ota event");
-    }
-
     esp_image_header_t *data = (esp_image_header_t *)(arg);
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_VERIFY_CHIP_ID, (void *)(&data->chip_id), sizeof(esp_chip_id_t));
+
     if (data->chip_id != CONFIG_IDF_FIRMWARE_CHIP_ID) {
         ESP_LOGE(TAG, "Mismatch chip id, expected %d, found %d", CONFIG_IDF_FIRMWARE_CHIP_ID, data->chip_id);
         return ESP_ERR_INVALID_VERSION;
@@ -628,24 +636,18 @@ esp_err_t esp_https_ota_finish(esp_https_ota_handle_t https_ota_handle)
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
         } else {
-            if (esp_event_post(ESP_HTTPS_OTA_EVENT, ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION, NULL, 0, portMAX_DELAY) != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to post https_ota event");
-            }
+            esp_https_ota_dispatch_event(ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION, (void *)(&handle->update_partition->subtype), sizeof(esp_partition_subtype_t));
         }
     }
     free(handle);
-    if (esp_event_post(ESP_HTTPS_OTA_EVENT, ESP_HTTPS_OTA_FINISH, NULL, 0, portMAX_DELAY) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to post https_ota event");
-    }
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_FINISH, NULL, 0);
 
     return err;
 }
 
 esp_err_t esp_https_ota_abort(esp_https_ota_handle_t https_ota_handle)
 {
-    if (esp_event_post(ESP_HTTPS_OTA_EVENT, ESP_HTTPS_OTA_ABORT, NULL, 0, portMAX_DELAY) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to post https_ota event");
-    }
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_ABORT, NULL, 0);
 
     esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
     if (handle == NULL) {
