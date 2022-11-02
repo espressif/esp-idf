@@ -340,11 +340,9 @@ void IRAM_ATTR call_start_cpu0(void)
     /* If we need use SPIRAM, we should use data cache, or if we want to access rodata, we also should use data cache.
        Configure the mode of data : cache size, cache associated ways, cache line size.
        Enable data cache, so if we don't use SPIRAM, it just works. */
-#if CONFIG_SPIRAM_BOOT_INIT
     extern void esp_config_data_cache_mode(void);
     esp_config_data_cache_mode();
     Cache_Enable_DCache(0);
-#endif
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32S3
