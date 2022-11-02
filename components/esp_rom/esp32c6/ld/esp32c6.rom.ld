@@ -166,6 +166,8 @@ rom_spiflash_legacy_funcs = 0x4087fff0;
 rom_spiflash_legacy_data = 0x4087ffec;
 g_flash_guard_ops = 0x4087fff4;
 
+/* Note: esp_rom_spiflash_write_disable was moved from esp32c6.rom.spiflash.ld */
+esp_rom_spiflash_write_disable = 0x40000278;
 
 /***************************************
  Group hal_wdt
