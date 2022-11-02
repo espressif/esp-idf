@@ -266,7 +266,7 @@ Note: Include trace macros here and not above as trace macros are dependent on s
 
 // ---------------------- Features -------------------------
 
-#define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS     1
+#define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS     CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 #ifndef configIDLE_TASK_STACK_SIZE
 #define configIDLE_TASK_STACK_SIZE                      CONFIG_FREERTOS_IDLE_TASK_STACKSIZE
 #endif

@@ -16,7 +16,7 @@ from pytest_embedded import Dut
 )
 def test_pthread(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
+    dut.write('![thread-specific]')
     dut.expect_unity_test_output(timeout=300)
 
 
@@ -31,5 +31,34 @@ def test_pthread(dut: Dut) -> None:
 )
 def test_pthread_single_core(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
+    dut.write('![thread-specific]')
+    dut.expect_unity_test_output(timeout=300)
+
+
+@pytest.mark.generic
+@pytest.mark.supported_targets
+@pytest.mark.parametrize(
+    'config',
+    [
+        'tls',
+    ],
+    indirect=True,
+)
+def test_pthread_tls(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('[thread-specific]')
+    dut.expect_unity_test_output(timeout=300)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        pytest.param('single_core_esp32_tls', marks=[pytest.mark.esp32]),
+    ],
+    indirect=True,
+)
+def test_pthread_single_core_tls(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('[thread-specific]')
     dut.expect_unity_test_output(timeout=300)
