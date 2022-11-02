@@ -1217,7 +1217,6 @@ components/tcp_transport/test/test_transport_basic.c
 components/tcp_transport/test/test_transport_connect.c
 components/tcp_transport/test/test_transport_fixtures.c
 components/tcp_transport/transport_utils.c
-components/tinyusb/additions/include/tusb_config.h
 components/ulp/test/esp32/test_ulp_as.c
 components/unity/include/priv/setjmp.h
 components/unity/include/unity_config.h

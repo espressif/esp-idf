@@ -24,6 +24,7 @@ Following components are removed from ESP-IDF and moved to `IDF Component Regist
 * `qrcode <https://components.espressif.com/component/espressif/qrcode>`_
 * `tjpgd <https://components.espressif.com/component/espressif/esp_jpeg>`_
 * `esp_serial_slave_link <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_
+* `tinyusb <https://components.espressif.com/components/espressif/esp_tinyusb>`_
 
 .. note::
     Please note that http parser functionality which was previously part of ``nghttp`` component is now part of :component:`http_parser <http_parser>` component.
