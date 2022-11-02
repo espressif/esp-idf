@@ -2095,7 +2095,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
 #endif /* CONFIG_BLE_MESH_PROVISIONER_RECV_HB */
 #if CONFIG_BLE_MESH_SETTINGS
     case BTC_BLE_MESH_ACT_PROVISIONER_DIRECT_ERASE_SETTINGS:
-        act = ESP_BLE_MESH_PROVISIONER_DRIECT_ERASE_SETTINGS_COMP_EVT;
+        act = ESP_BLE_MESH_PROVISIONER_DIRECT_ERASE_SETTINGS_COMP_EVT;
         param.provisioner_direct_erase_settings_comp.err_code = bt_mesh_provisioner_direct_erase_settings();
         break;
 #endif /* CONFIG_BLE_MESH_SETTINGS */
