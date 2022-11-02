@@ -162,8 +162,8 @@ esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_
         goto _exit;
     }
 
-    /* Tell vfs to use usb-serial-jtag driver */
-    esp_vfs_usb_serial_jtag_use_driver();
+    /* Tell vfs to use usb-serial-jtag driver for reads*/
+    esp_vfs_usb_serial_jtag_use_driver_for_rx();
 
     // setup history
     ret = esp_console_setup_history(repl_config->history_save_path, repl_config->max_history_len, &usb_serial_jtag_repl->repl_com);
