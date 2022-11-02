@@ -76,20 +76,23 @@ static void iperf_report_task(void *arg)
     double average = 0;
     double actual_bandwidth = 0;
     int k = 1;
+    const double coefficient[3] = {1048576.0, 1024.0, 1.0};
+    const char unit[3] = {'M', 'K', '\0'};
+    iperf_output_format format = s_iperf_ctrl.cfg.format;
 
     printf("\n%16s %s\n", "Interval", "Bandwidth");
     while (!s_iperf_ctrl.finish) {
         vTaskDelay(delay_interval);
-        actual_bandwidth = (s_iperf_ctrl.actual_len / 1e6 * 8) / interval;
-        printf("%4d-%4d sec       %.2f Mbits/sec\n", cur, cur + interval,
-            actual_bandwidth);
+        actual_bandwidth = (s_iperf_ctrl.actual_len / coefficient[format] * 8) / interval;
+        printf("%4d-%4d sec       %.2f %cbits/sec\n", cur, cur + interval,
+            actual_bandwidth, unit[format]);
         cur += interval;
         average = ((average * (k - 1) / k) + (actual_bandwidth / k));
         k++;
         s_iperf_ctrl.actual_len = 0;
         if (cur >= time) {
-            printf("%4d-%4d sec       %.2f Mbits/sec\n", 0, time,
-                average);
+            printf("%4d-%4d sec       %.2f %cbits/sec\n", 0, time,
+                average, unit[format]);
             break;
         }
     }
