@@ -291,6 +291,8 @@ static int tcp_read(esp_transport_handle_t t, char *buffer, int len, int timeout
         esp_transport_capture_errno(t, errno);
         if (errno == EAGAIN) {
             ret = ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT;
+        } else {
+            ret = ERR_TCP_TRANSPORT_CONNECTION_FAILED;
         }
     } else if (ret == 0) {
         if (poll > 0) {
