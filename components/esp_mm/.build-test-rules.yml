@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/spi_flash/test_apps/mmap:
+  disable_test:
+    - if: IDF_TARGET == "esp32h2"
+      temporary: true
+      reason: h2 not supported yet

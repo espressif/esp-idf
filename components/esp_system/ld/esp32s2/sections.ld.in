@@ -335,7 +335,6 @@ SECTIONS
     *(.tbss)
     *(.tbss.*)
     _thread_local_end = ABSOLUTE(.);
-    _rodata_reserved_end = ABSOLUTE(.);  /* This is a symbol marking the flash.rodata end, this can be used for mmu driver to maintain virtual address */
     . = ALIGN(4);
   } >default_rodata_seg
 
@@ -345,6 +344,7 @@ SECTIONS
   {
     . = ALIGN (4);
     mapping[rodata_noload]
+    _rodata_reserved_end = ABSOLUTE(.);  /* This is a symbol marking the flash.rodata end, this can be used for mmu driver to maintain virtual address */
   } > default_rodata_seg
 
   .flash.text :

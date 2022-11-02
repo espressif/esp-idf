@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,6 @@ extern "C" {
 #define SOC_MMU_INVALID_ENTRY_VAL               MMU_TABLE_INVALID_VAL
 #define SOC_MMU_ADDR_MASK                       (MMU_VALID - 1)
 #define SOC_MMU_PAGE_IN_FLASH(page)             (page) //Always in Flash
-#define SOC_MMU_DPORT_PRO_FLASH_MMU_TABLE       FLASH_MMU_TABLE
 #define SOC_MMU_VADDR1_START_ADDR               IRAM0_CACHE_ADDRESS_LOW
 #define SOC_MMU_PRO_IRAM0_FIRST_USABLE_PAGE     SOC_MMU_IROM0_PAGES_START
 #define SOC_MMU_VADDR0_START_ADDR               (SOC_IROM_LOW + (SOC_MMU_DROM0_PAGES_START * SPI_FLASH_MMU_PAGE_SIZE))

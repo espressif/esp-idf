@@ -299,10 +299,6 @@ config SOC_BROWNOUT_RESET_SUPPORTED
     bool
     default y
 
-config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
-    int
-    default 1
-
 config SOC_CPU_CORES_NUM
     int
     default 2
@@ -538,6 +534,14 @@ config SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP
 config SOC_MCPWM_SWSYNC_CAN_PROPAGATE
     bool
     default y
+
+config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
+    int
+    default 1
+
+config SOC_MMU_PERIPH_NUM
+    int
+    default 1
 
 config SOC_PCNT_GROUPS
     int

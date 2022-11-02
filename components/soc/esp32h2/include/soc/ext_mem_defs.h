@@ -15,28 +15,23 @@ extern "C" {
 
 /*IRAM0 is connected with Cache IBUS0*/
 #define IRAM0_CACHE_ADDRESS_LOW             0x42000000
-#define IRAM0_CACHE_ADDRESS_HIGH(page_size) (IRAM0_CACHE_ADDRESS_LOW + ((page_size) * 128)) // MMU has 256 pages, first 128 for instruction
-#define IRAM0_ADDRESS_LOW                   0x40000000
-#define IRAM0_ADDRESS_HIGH(page_size)       IRAM0_CACHE_ADDRESS_HIGH(page_size)
+#define IRAM0_CACHE_ADDRESS_HIGH            (IRAM0_CACHE_ADDRESS_LOW + ((CONFIG_MMU_PAGE_SIZE) * 128)) // MMU has 256 pages, first 128 for instruction
 
 /*DRAM0 is connected with Cache DBUS0*/
-#define DRAM0_ADDRESS_LOW               0x42000000
-#define DRAM0_ADDRESS_HIGH              0x43000000
-#define DRAM0_CACHE_ADDRESS_LOW         IRAM0_CACHE_ADDRESS_HIGH(CONFIG_MMU_PAGE_SIZE) // ESP32H2-TODO : IDF-6370
-#define DRAM0_CACHE_ADDRESS_HIGH(page_size)        (IRAM0_CACHE_ADDRESS_HIGH(page_size) + ((page_size) * 128)) // MMU has 256 pages, second 128 for data
-#define DRAM0_CACHE_OPERATION_HIGH(page_size)      DRAM0_CACHE_ADDRESS_HIGH(page_size)
-#define ESP_CACHE_TEMP_ADDR             0x42000000
+#define DRAM0_CACHE_ADDRESS_LOW             IRAM0_CACHE_ADDRESS_HIGH // ESP32H2-TODO : IDF-6370
+#define DRAM0_CACHE_ADDRESS_HIGH            (DRAM0_CACHE_ADDRESS_LOW + ((CONFIG_MMU_PAGE_SIZE) * 128)) // MMU has 256 pages, second 128 for data
+#define DRAM0_CACHE_OPERATION_HIGH          DRAM0_CACHE_ADDRESS_HIGH
 
-#define BUS_SIZE(bus_name, page_size)                 (bus_name##_ADDRESS_HIGH(page_size) - bus_name##_ADDRESS_LOW)
-#define ADDRESS_IN_BUS(bus_name, vaddr, page_size)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH(page_size))
+#define BUS_SIZE(bus_name)                 (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
+#define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
 
-#define ADDRESS_IN_IRAM0(vaddr, page_size)            ADDRESS_IN_BUS(IRAM0, vaddr, page_size)
-#define ADDRESS_IN_IRAM0_CACHE(vaddr, page_size)      ADDRESS_IN_BUS(IRAM0_CACHE, vaddr, page_size)
-#define ADDRESS_IN_DRAM0(vaddr, page_size)            ADDRESS_IN_BUS(DRAM0, vaddr, page_size)
-#define ADDRESS_IN_DRAM0_CACHE(vaddr, page_size)      ADDRESS_IN_BUS(DRAM0_CACHE, vaddr, page_size)
+#define ADDRESS_IN_IRAM0(vaddr)            ADDRESS_IN_BUS(IRAM0, vaddr)
+#define ADDRESS_IN_IRAM0_CACHE(vaddr)      ADDRESS_IN_BUS(IRAM0_CACHE, vaddr)
+#define ADDRESS_IN_DRAM0(vaddr)            ADDRESS_IN_BUS(DRAM0, vaddr)
+#define ADDRESS_IN_DRAM0_CACHE(vaddr)      ADDRESS_IN_BUS(DRAM0_CACHE, vaddr)
 
-#define BUS_IRAM0_CACHE_SIZE(page_size)              BUS_SIZE(IRAM0_CACHE, page_size)
-#define BUS_DRAM0_CACHE_SIZE(page_size)              BUS_SIZE(DRAM0_CACHE, page_size)
+#define BUS_IRAM0_CACHE_SIZE(page_size)              BUS_SIZE(IRAM0_CACHE)
+#define BUS_DRAM0_CACHE_SIZE(page_size)              BUS_SIZE(DRAM0_CACHE)
 
 #define CACHE_IBUS                      0
 #define CACHE_IBUS_MMU_START            0
@@ -82,9 +77,6 @@ extern "C" {
 #define CACHE_MAX_SYNC_NUM 0x400000
 #define CACHE_MAX_LOCK_NUM 0x8000
 
-#define FLASH_MMU_TABLE ((volatile uint32_t*) DR_REG_MMU_TABLE)
-#define FLASH_MMU_TABLE_SIZE (ICACHE_MMU_SIZE/sizeof(uint32_t))
-
 /**
  * MMU entry valid bit mask for mapping value. For an entry:
  * valid bit + value bits
@@ -104,9 +96,69 @@ extern "C" {
  * This is the mask used for mapping. e.g.:
  * 0x4200_0000 & MMU_VADDR_MASK
  */
-#define MMU_VADDR_MASK(page_size)                 ((page_size) * MMU_ENTRY_NUM - 1)
+#define MMU_VADDR_MASK                 ((CONFIG_MMU_PAGE_SIZE) * MMU_ENTRY_NUM - 1)
 
 #define CACHE_MEMORY_IBANK0_ADDR        0x40800000
+
+
+#define SOC_MMU_DBUS_VADDR_BASE               0x42000000
+#define SOC_MMU_IBUS_VADDR_BASE               0x42000000
+
+/*------------------------------------------------------------------------------
+ * MMU Linear Address
+ *----------------------------------------------------------------------------*/
+#if (CONFIG_MMU_PAGE_SIZE == 0x10000)
+/**
+ * - 64KB MMU page size: the last 0xFFFF, which is the offset
+ * - 128 MMU entries, needs 0x7F to hold it.
+ *
+ * Therefore, 0x7F,FFFF
+ */
+#define SOC_MMU_LINEAR_ADDR_MASK              0x7FFFFF
+
+#elif (CONFIG_MMU_PAGE_SIZE == 0x8000)
+/**
+ * - 32KB MMU page size: the last 0x7FFF, which is the offset
+ * - 128 MMU entries, needs 0x7F to hold it.
+ *
+ * Therefore, 0x3F,FFFF
+ */
+#define SOC_MMU_LINEAR_ADDR_MASK              0x3FFFFF
+
+#elif (CONFIG_MMU_PAGE_SIZE == 0x4000)
+/**
+ * - 16KB MMU page size: the last 0x3FFF, which is the offset
+ * - 128 MMU entries, needs 0x7F to hold it.
+ *
+ * Therefore, 0x1F,FFFF
+ */
+#define SOC_MMU_LINEAR_ADDR_MASK              0x1FFFFF
+#endif  //CONFIG_MMU_PAGE_SIZE
+
+/**
+ * - If high linear address isn't 0, this means MMU can recognize these addresses
+ * - If high linear address is 0, this means MMU linear address range is equal or smaller than vaddr range.
+ *   Under this condition, we use the max linear space.
+ */
+#define SOC_MMU_IRAM0_LINEAR_ADDRESS_LOW      (IRAM0_CACHE_ADDRESS_LOW & SOC_MMU_LINEAR_ADDR_MASK)
+#if ((IRAM0_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK) > 0)
+#define SOC_MMU_IRAM0_LINEAR_ADDRESS_HIGH     (IRAM0_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK)
+#else
+#define SOC_MMU_IRAM0_LINEAR_ADDRESS_HIGH     (SOC_MMU_LINEAR_ADDR_MASK + 1)
+#endif
+
+#define SOC_MMU_DRAM0_LINEAR_ADDRESS_LOW      (DRAM0_CACHE_ADDRESS_LOW & SOC_MMU_LINEAR_ADDR_MASK)
+#if ((DRAM0_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK) > 0)
+#define SOC_MMU_DRAM0_LINEAR_ADDRESS_HIGH     (DRAM0_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK)
+#else
+#define SOC_MMU_DRAM0_LINEAR_ADDRESS_HIGH     (SOC_MMU_LINEAR_ADDR_MASK + 1)
+#endif
+
+/**
+ * I/D share the MMU linear address range
+ */
+_Static_assert(SOC_MMU_IRAM0_LINEAR_ADDRESS_LOW == SOC_MMU_DRAM0_LINEAR_ADDRESS_LOW, "IRAM0 and DRAM0 linear address should be same");
+
 
 #ifdef __cplusplus
 }

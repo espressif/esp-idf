@@ -439,6 +439,14 @@ config SOC_LEDC_GAMMA_FADE_RANGE_MAX
     int
     default 1
 
+config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
+    int
+    default 1
+
+config SOC_MMU_PERIPH_NUM
+    int
+    default 1
+
 config SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
     bool
     default n

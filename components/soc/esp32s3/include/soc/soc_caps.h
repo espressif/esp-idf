@@ -116,9 +116,6 @@
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 
-/*-------------------------- CACHE/MMU CAPS ----------------------------------*/
-#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM       (1U)
-
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #define SOC_CPU_CORES_NUM               2
 #define SOC_CPU_INTR_NUM                32
@@ -220,6 +217,10 @@
 #define SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER (3)    ///< The number of capture channels that each capture timer has
 #define SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP    (3)    ///< The number of GPIO synchros that each group has
 #define SOC_MCPWM_SWSYNC_CAN_PROPAGATE       (1)    ///< Software sync event can be routed to its output
+
+/*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM       (1U)
+#define SOC_MMU_PERIPH_NUM                      (1U)
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 #include "mpu_caps.h"

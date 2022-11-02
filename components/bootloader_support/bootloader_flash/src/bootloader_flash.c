@@ -139,8 +139,8 @@ static const char *TAG = "bootloader_flash";
    63th block for bootloader_flash_read
 */
 #define MMU_BLOCK0_VADDR  SOC_DROM_LOW
-#define MMU_SIZE          (DRAM0_CACHE_ADDRESS_HIGH - DRAM0_CACHE_ADDRESS_LOW - SPI_FLASH_MMU_PAGE_SIZE) // This mmu size means that the mmu size to be mapped
-#define MMU_BLOCK63_VADDR (MMU_BLOCK0_VADDR + MMU_SIZE)
+#define MMAP_MMU_SIZE     (DRAM0_CACHE_ADDRESS_HIGH - DRAM0_CACHE_ADDRESS_LOW) // This mmu size means that the mmu size to be mapped
+#define MMU_BLOCK63_VADDR (MMU_BLOCK0_VADDR + MMAP_MMU_SIZE - SPI_FLASH_MMU_PAGE_SIZE)
 #define FLASH_READ_VADDR MMU_BLOCK63_VADDR
 #endif
 

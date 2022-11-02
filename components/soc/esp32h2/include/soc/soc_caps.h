@@ -126,7 +126,8 @@
 
 // TODO: IDF-6370 (Copy from esp32c6, need check)
 /*-------------------------- MMU CAPS ----------------------------------------*/
-#define SOC_MMU_PAGE_SIZE_CONFIGURABLE  (1)
+#define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (1)
+#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM     (1U)
 
 // TODO: IDF-6285 (Copy from esp32c6, need check)
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/

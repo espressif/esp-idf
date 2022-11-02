@@ -199,10 +199,6 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
-config SOC_MMU_PAGE_SIZE_CONFIGURABLE
-    bool
-    default y
-
 config SOC_GDMA_GROUPS
     int
     default 1
@@ -304,6 +300,18 @@ config SOC_LEDC_SUPPORT_FADE_STOP
     default y
 
 config SOC_LEDC_GAMMA_FADE_RANGE_MAX
+    int
+    default 1
+
+config SOC_MMU_PAGE_SIZE_CONFIGURABLE
+    bool
+    default y
+
+config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
+    int
+    default 1
+
+config SOC_MMU_PERIPH_NUM
     int
     default 1
 

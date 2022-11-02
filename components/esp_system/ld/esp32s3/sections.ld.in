@@ -288,11 +288,11 @@ SECTIONS
     /* Prepare the alignment of the section above. Few bytes (0x20) must be
      * added for the mapping header. */
     . = ALIGN(_esp_mmu_block_size) + 0x20;
-    _rodata_reserved_start = .;  /* This is a symbol marking the flash.rodata start, this can be used for mmu driver to maintain virtual address */
   } > default_rodata_seg
 
   .flash.appdesc : ALIGN(0x10)
   {
+    _rodata_reserved_start = ABSOLUTE(.);  /* This is a symbol marking the flash.rodata start, this can be used for mmu driver to maintain virtual address */
     _rodata_start = ABSOLUTE(.);
 
     *(.rodata_desc .rodata_desc.*)               /* Should be the first.  App version info.        DO NOT PUT ANYTHING BEFORE IT! */
@@ -361,7 +361,6 @@ SECTIONS
     *(.tbss)
     *(.tbss.*)
     _thread_local_end = ABSOLUTE(.);
-    _rodata_reserved_end = ABSOLUTE(.);  /* This is a symbol marking the flash.rodata end, this can be used for mmu driver to maintain virtual address */
     . = ALIGN(4);
   } > default_rodata_seg
 
@@ -371,6 +370,7 @@ SECTIONS
   {
     . = ALIGN (4);
     mapping[rodata_noload]
+    _rodata_reserved_end = ABSOLUTE(.);  /* This is a symbol marking the flash.rodata end, this can be used for mmu driver to maintain virtual address */
   } > default_rodata_seg
 
   /**

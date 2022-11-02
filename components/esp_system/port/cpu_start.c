@@ -68,6 +68,7 @@
 #include "esp32c2/memprot.h"
 #endif
 
+#include "esp_private/esp_mmu_map_private.h"
 #if CONFIG_SPIRAM
 #include "esp_psram.h"
 #include "esp_private/esp_psram_extram.h"
@@ -400,6 +401,11 @@ void IRAM_ATTR call_start_cpu0(void)
 #if SOC_MEMSPI_SRC_FREQ_120M
     mspi_timing_flash_tuning();
 #endif
+
+#if !CONFIG_IDF_TARGET_ESP32H2
+    //ESP32H2 MMU-TODO: IDF-6251
+    esp_mmu_map_init();
+#endif  //!CONFIG_IDF_TARGET_ESP32H2
 
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_psram_init() != ESP_OK) {

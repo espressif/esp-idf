@@ -204,6 +204,10 @@
 #define SOC_LEDC_SUPPORT_FADE_STOP       (1)
 #define SOC_LEDC_GAMMA_FADE_RANGE_MAX    (1U) // The target does not support gamma curve fading
 
+/*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM       (1U)
+#define SOC_MMU_PERIPH_NUM                      (1U)
+
 /*-------------------------- MPU CAPS ----------------------------------------*/
 #define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0
 #define SOC_MPU_MIN_REGION_SIZE                   0x20000000U

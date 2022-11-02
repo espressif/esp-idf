@@ -42,8 +42,8 @@ typedef enum {
  * External physical memory
  */
 typedef enum {
-    MMU_TARGET_FLASH0,
-    MMU_TARGET_PSRAM0,
+    MMU_TARGET_FLASH0 = BIT(0),
+    MMU_TARGET_PSRAM0 = BIT(1),
 } mmu_target_t;
 
 /**

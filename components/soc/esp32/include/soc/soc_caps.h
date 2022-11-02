@@ -136,11 +136,8 @@
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 #endif
 
-
-/*-------------------------- CACHE/MMU CAPS ----------------------------------*/
+/*-------------------------- CACHE CAPS --------------------------------------*/
 #define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
-#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM       5
-
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #define SOC_CPU_CORES_NUM               2
@@ -230,6 +227,10 @@
 #define SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP   (1)    ///< The number of capture timers that each group has
 #define SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER (3)    ///< The number of capture channels that each capture timer has
 #define SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP    (3)    ///< The number of GPIO synchros that each group has
+
+/*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_MMU_PERIPH_NUM                      2
+#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM       3
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 //TODO: correct the caller and remove unsupported lines

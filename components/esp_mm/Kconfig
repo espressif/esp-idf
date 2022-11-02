@@ -1,0 +1,8 @@
+menu "ESP Memory Management"
+
+    # Add MMU setting menu here
+    # Add Cache setting menu here
+
+    orsource "./Kconfig.mmap"
+
+endmenu  # ESP Memory Management

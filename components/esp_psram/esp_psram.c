@@ -26,7 +26,8 @@
 #include "esp_private/mmu_psram_flash.h"
 #include "esp_psram_impl.h"
 #include "esp_psram.h"
-#include "mmu.h"
+#include "esp_private/esp_mmu_map_private.h"
+#include "esp_mmu_map.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/himem.h"
@@ -184,15 +185,6 @@ esp_err_t esp_psram_init(void)
     ESP_EARLY_LOGV(TAG, "after copy .rodata, used page is %d, start_page is %d, psram_available_size is %d B", used_page, start_page, psram_available_size);
 #endif  //#if CONFIG_SPIRAM_RODATA
 
-    /**
-     * For now,
-     * - we only need to use MMU driver when PSRAM is enabled
-     * - MMU driver isn't public
-     *
-     * So we call `esp_mmu_init()` here, instead of calling it in startup code.
-     */
-    esp_mmu_init();
-
     //----------------------------------Map the PSRAM physical range to MMU-----------------------------//
     /**
      * @note 2
@@ -203,12 +195,12 @@ esp_err_t esp_psram_init(void)
     size_t total_mapped_size = 0;
     size_t size_to_map = 0;
     size_t byte_aligned_size = 0;
-    ret = esp_mmu_get_max_consecutive_free_block(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, &byte_aligned_size);
+    ret = esp_mmu_map_get_max_consecutive_free_block_size(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &byte_aligned_size);
     assert(ret == ESP_OK);
     size_to_map = MIN(byte_aligned_size, psram_available_size);
 
     const void *v_start_8bit_aligned = NULL;
-    ret = esp_mmu_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, &v_start_8bit_aligned);
+    ret = esp_mmu_map_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &v_start_8bit_aligned);
     assert(ret == ESP_OK);
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -248,12 +240,12 @@ esp_err_t esp_psram_init(void)
         size_to_map = psram_available_size - total_mapped_size;
 
         size_t word_aligned_size = 0;
-        ret = esp_mmu_get_max_consecutive_free_block(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, &word_aligned_size);
+        ret = esp_mmu_map_get_max_consecutive_free_block_size(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0,  &word_aligned_size);
         assert(ret == ESP_OK);
         size_to_map = MIN(word_aligned_size, size_to_map);
 
         const void *v_start_32bit_aligned = NULL;
-        ret = esp_mmu_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, &v_start_32bit_aligned);
+        ret = esp_mmu_map_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &v_start_32bit_aligned);
         assert(ret == ESP_OK);
 
         mmu_hal_map_region(0, MMU_TARGET_PSRAM0, (intptr_t)v_start_32bit_aligned, MMU_PAGE_TO_BYTES(start_page), size_to_map, &actual_mapped_len);

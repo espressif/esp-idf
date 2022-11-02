@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <esp_types.h>
 #include "hal/mmu_types.h"
 
 #ifdef __cplusplus
@@ -17,7 +18,6 @@ extern "C" {
  */
 void mmu_hal_init(void);
 
-#if !CONFIG_IDF_TARGET_ESP32
 /**
  * Helper functions to convert the MMU page numbers into bytes. e.g.:
  * - When MMU page size is 16KB, page_num = 2 will be converted into 32KB
@@ -45,7 +45,7 @@ uint32_t mmu_hal_pages_to_bytes(uint32_t mmu_id, uint32_t page_num);
 uint32_t mmu_hal_bytes_to_pages(uint32_t mmu_id, uint32_t bytes);
 
 /**
- * To map a virtual address region to a physical memory region
+ * To map a virtual address block to a physical memory block
  *
  * @param mmu_id       MMU ID
  * @param mem_type     physical memory type, see `mmu_target_t`
@@ -57,7 +57,47 @@ uint32_t mmu_hal_bytes_to_pages(uint32_t mmu_id, uint32_t bytes);
  * @note vaddr and paddr should be aligned with the mmu page size, see CONFIG_MMU_PAGE_SIZE
  */
 void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, uint32_t paddr, uint32_t len, uint32_t *out_len);
-#endif
+
+/**
+ * To unmap a virtual address block that is mapped to a physical memory block previously
+ *
+ * @param[in] mmu_id  MMU ID
+ * @param[in] vaddr   start virtual address
+ * @param[in] len     length to be unmapped, in bytes
+ */
+void mmu_hal_unmap_region(uint32_t mmu_id, uint32_t vaddr, uint32_t len);
+
+/**
+ * Convert virtual address to physical address
+ *
+ * @param mmu_id           MMU ID
+ * @param vaddr            virtual address
+ * @param[out] out_paddr   physical address
+ * @param[out] out_target  Indicating the vaddr/paddr is mapped on which target, see `mmu_target_t`
+ *
+ * @return
+ *        - true: virtual address is valid
+ *        - false: virtual address isn't valid
+ */
+bool mmu_hal_vaddr_to_paddr(uint32_t mmu_id, uint32_t vaddr, uint32_t *out_paddr, mmu_target_t *out_target);
+
+/**
+ * Convert physical address to virtual address
+ *
+ * @note This function can only find the first match virtual address.
+ *       However it is possible that a physical address is mapped to multiple virtual addresses.
+ *
+ * @param mmu_id          MMU ID
+ * @param paddr           physical address
+ * @param target          physical memory target, see `mmu_target_t`
+ * @param type            virtual address type, could be instruction or data
+ * @param[out] out_vaddr  virtual address
+ *
+ * @return
+ *        - true: found a matched vaddr
+ *        - false: not found a matched vaddr
+ */
+bool mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr);
 
 #ifdef __cplusplus
 }

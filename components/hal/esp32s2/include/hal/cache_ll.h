@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,7 +38,7 @@ __attribute__((always_inline))
 #endif
 static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
-    HAL_ASSERT(cache_id == 0);
+    (void)cache_id;
 
     cache_bus_mask_t mask = 0;
     uint32_t vaddr_end = vaddr_start + len - 1;
@@ -87,7 +87,7 @@ __attribute__((always_inline))
 #endif
 static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t mask)
 {
-    HAL_ASSERT(cache_id == 0);
+    (void)cache_id;
 
     uint32_t ibus_mask = 0;
     ibus_mask |= (mask & CACHE_BUS_IBUS0) ? EXTMEM_PRO_ICACHE_MASK_IRAM0 : 0;
@@ -111,7 +111,7 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
 __attribute__((always_inline))
 static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
 {
-    HAL_ASSERT(cache_id == 0);
+    (void)cache_id;
 
     uint32_t ibus_mask = 0;
     ibus_mask |= (mask & CACHE_BUS_IBUS0) ? EXTMEM_PRO_ICACHE_MASK_IRAM0 : 0;

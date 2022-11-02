@@ -97,9 +97,6 @@
 
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
 
-/*-------------------------- MMU CAPS ----------------------------------------*/
-#define SOC_MMU_PAGE_SIZE_CONFIGURABLE  (1)
-
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
 #define SOC_GDMA_PAIRS_PER_GROUP        (1U) // Number of GDMA pairs in each group
@@ -153,6 +150,11 @@
 #define SOC_LEDC_TIMER_BIT_WIDTH        (14)
 #define SOC_LEDC_SUPPORT_FADE_STOP      (1)
 #define SOC_LEDC_GAMMA_FADE_RANGE_MAX   (1U) // The target does not support gamma curve fading
+
+/*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_MMU_PAGE_SIZE_CONFIGURABLE          (1)
+#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM       (1U)
+#define SOC_MMU_PERIPH_NUM                      (1U)
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 #define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0
