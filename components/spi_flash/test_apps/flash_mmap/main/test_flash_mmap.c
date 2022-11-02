@@ -101,6 +101,7 @@ static void setup_mmap_tests(void)
     }
 }
 
+
 TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
 {
     esp_err_t ret = ESP_FAIL;
@@ -110,8 +111,6 @@ TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
     const void *ptr1;
     TEST_ESP_OK( spi_flash_mmap(start, end - start, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
     printf("mmap_res: handle=%"PRIx32" ptr=%p\n", (uint32_t)handle1, ptr1);
-
-    spi_flash_mmap_dump();
 
     srand(0);
     const uint32_t *data = (const uint32_t *) ptr1;
@@ -130,9 +129,8 @@ TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
     printf("mmap_res: handle=%"PRIx32" ptr=%p\n", (uint32_t)handle2, ptr2);
 
     TEST_ASSERT_EQUAL_HEX32(start - 0x10000, spi_flash_cache2phys(ptr2));
-    TEST_ASSERT_EQUAL_PTR(ptr2, spi_flash_phys2cache(start - 0x10000, SPI_FLASH_MMAP_DATA));
 
-    spi_flash_mmap_dump();
+    TEST_ASSERT_EQUAL_PTR(ptr2, spi_flash_phys2cache(start - 0x10000, SPI_FLASH_MMAP_DATA));
 
     printf("Mapping %"PRIx32" (+%x)\n", start, 0x10000);
     const void *ptr3;
@@ -145,17 +143,13 @@ TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
     TEST_ASSERT_EQUAL_PTR(ptr3, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
     TEST_ASSERT_EQUAL_PTR((intptr_t)ptr3 + 0x4444, spi_flash_phys2cache(start + 0x4444, SPI_FLASH_MMAP_DATA));
 
-    spi_flash_mmap_dump();
-
     printf("Unmapping handle1\n");
     spi_flash_munmap(handle1);
     handle1 = 0;
-    spi_flash_mmap_dump();
 
     printf("Unmapping handle2\n");
     spi_flash_munmap(handle2);
     handle2 = 0;
-    spi_flash_mmap_dump();
 
     printf("Unmapping handle3\n");
     spi_flash_munmap(handle3);
@@ -165,11 +159,6 @@ TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
 
-#if !(CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6)
-/* On S3/C3/C2 the cache is programmatically split between Icache and dcache and with the default setup we dont leave a lot pages
-   available for additional mmaps into instruction space. Disabling this test for now since any hypothetical use case for this
-   is no longer supported "out of the box"
-*/
 TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
 {
     setup_mmap_tests();
@@ -179,8 +168,6 @@ TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
     const void *ptr1;
     TEST_ESP_OK( spi_flash_mmap(start, end - start, SPI_FLASH_MMAP_INST, &ptr1, &handle1) );
     printf("mmap_res: handle=%"PRIx32" ptr=%p\n", (uint32_t)handle1, ptr1);
-
-    spi_flash_mmap_dump();
 
     srand(0);
     const uint32_t *data = (const uint32_t *) ptr1;
@@ -200,8 +187,6 @@ TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
     TEST_ASSERT_EQUAL_HEX32(start - 0x10000, spi_flash_cache2phys(ptr2));
     TEST_ASSERT_EQUAL_PTR(ptr2, spi_flash_phys2cache(start - 0x10000, SPI_FLASH_MMAP_INST));
 
-    spi_flash_mmap_dump();
-
     printf("Mapping %"PRIx32" (+%x)\n", start, 0x10000);
     spi_flash_mmap_handle_t handle3;
     const void *ptr3;
@@ -211,20 +196,15 @@ TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
     TEST_ASSERT_EQUAL_HEX32(start, spi_flash_cache2phys(ptr3));
     TEST_ASSERT_EQUAL_PTR(ptr3, spi_flash_phys2cache(start, SPI_FLASH_MMAP_INST));
 
-    spi_flash_mmap_dump();
-
     printf("Unmapping handle1\n");
     spi_flash_munmap(handle1);
-    spi_flash_mmap_dump();
 
     printf("Unmapping handle2\n");
     spi_flash_munmap(handle2);
-    spi_flash_mmap_dump();
 
     printf("Unmapping handle3\n");
     spi_flash_munmap(handle3);
 }
-#endif //  #if !CONFIG_IDF_TARGET_ESP32C2
 
 TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]")
 {
@@ -251,7 +231,6 @@ TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]"
     TEST_ESP_OK( spi_flash_mmap_pages(pages, nopages, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
     printf("mmap_res: handle=%"PRIx32" ptr=%p\n", (uint32_t)handle1, ptr1);
 
-    spi_flash_mmap_dump();
 #if (CONFIG_MMU_PAGE_SIZE == 0x10000)
     uint32_t words_per_sector = 1024;
 #elif (CONFIG_MMU_PAGE_SIZE == 0x8000)
@@ -335,8 +314,6 @@ TEST_CASE("flash_mmap can mmap after get enough free MMU pages", "[spi_flash][mm
     TEST_ESP_OK( spi_flash_mmap(start, end - start, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
     printf("mmap_res: handle=%"PRIx32" ptr=%p\n", (uint32_t)handle1, ptr1);
 
-    spi_flash_mmap_dump();
-
     srand(0);
     const uint32_t *data = (const uint32_t *) ptr1;
     for (int block = 0; block < (end - start) / 0x10000; ++block) {
@@ -359,18 +336,13 @@ TEST_CASE("flash_mmap can mmap after get enough free MMU pages", "[spi_flash][mm
     TEST_ESP_OK( spi_flash_mmap(0, free_pages * SPI_FLASH_MMU_PAGE_SIZE, SPI_FLASH_MMAP_DATA, &ptr2, &handle2) );
     printf("mmap_res: handle=%"PRIx32" ptr=%p\n", (uint32_t)handle2, ptr2);
 
-    spi_flash_mmap_dump();
-
-
     printf("Unmapping handle1\n");
     spi_flash_munmap(handle1);
     handle1 = 0;
-    spi_flash_mmap_dump();
 
     printf("Unmapping handle2\n");
     spi_flash_munmap(handle2);
     handle2 = 0;
-    spi_flash_mmap_dump();
 
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
@@ -393,11 +365,6 @@ TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
     /* Read the flash @ 'phys' and compare it to the data we get via regular cache access */
     spi_flash_read_maybe_encrypted(phys, buf, sizeof(buf));
     TEST_ASSERT_EQUAL_HEX32_ARRAY((void *)esp_partition_find, buf, sizeof(buf) / sizeof(uint32_t));
-
-    /* spi_flash_mmap is in IRAM */
-    printf("%p\n", spi_flash_mmap);
-    TEST_ASSERT_EQUAL_HEX32(SPI_FLASH_CACHE2PHYS_FAIL,
-                            spi_flash_cache2phys(spi_flash_mmap));
 
     /* 'constant_data' should be in DROM */
     phys = spi_flash_cache2phys(&constant_data);
