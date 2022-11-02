@@ -170,7 +170,6 @@
   - "components/openthread/openthread"
   - "components/protobuf-c/protobuf-c"
   - "components/spiffs/spiffs"
-  - "components/tinyusb/tinyusb"
   - "components/unity/unity"
   - "components/heap/tlsf"
   - ".gitmodules"

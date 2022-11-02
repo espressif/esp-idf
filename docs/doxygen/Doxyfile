@@ -210,13 +210,6 @@ INPUT = \
     $(PROJECT_PATH)/components/spi_flash/include/esp_partition.h \
     $(PROJECT_PATH)/components/spi_flash/include/spi_flash_mmap.h \
     $(PROJECT_PATH)/components/spiffs/include/esp_spiffs.h \
-    $(PROJECT_PATH)/components/tinyusb/additions/include/tinyusb.h \
-    $(PROJECT_PATH)/components/tinyusb/additions/include/tinyusb_types.h \
-    $(PROJECT_PATH)/components/tinyusb/additions/include/tusb_cdc_acm.h \
-    $(PROJECT_PATH)/components/tinyusb/additions/include/tusb_config.h \
-    $(PROJECT_PATH)/components/tinyusb/additions/include/tusb_console.h \
-    $(PROJECT_PATH)/components/tinyusb/additions/include/tusb_tasks.h \
-    $(PROJECT_PATH)/components/tinyusb/additions/include/vfs_tinyusb.h \
     $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
     $(PROJECT_PATH)/components/ulp/ulp_fsm/include/ulp_fsm_common.h \
     $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv.h \
