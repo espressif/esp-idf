@@ -124,6 +124,13 @@ menu "ESP-MQTT Configurations"
         help
             MQTT task priority. Higher number denotes higher priority.
 
+    config MQTT_EVENT_QUEUE_SIZE
+        int "Number of queued events."
+        default 1
+        depends on MQTT_USE_CUSTOM_CONFIG
+        help
+            A value higher than 1 enables multiple queued events.
+
     config MQTT_TASK_CORE_SELECTION_ENABLED
         bool "Enable MQTT task core selection"
         help
