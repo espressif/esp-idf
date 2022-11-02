@@ -5,6 +5,7 @@
  *
  * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
+
 /*
  * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
@@ -76,8 +77,8 @@
         #define uxTaskGetStackHighWaterMark2           MPU_uxTaskGetStackHighWaterMark2
         #define vTaskSetApplicationTaskTag             MPU_vTaskSetApplicationTaskTag
         #define xTaskGetApplicationTaskTag             MPU_xTaskGetApplicationTaskTag
-        // #define vTaskSetThreadLocalStoragePointer   MPU_vTaskSetThreadLocalStoragePointer
-        // #define pvTaskGetThreadLocalStoragePointer  MPU_pvTaskGetThreadLocalStoragePointer
+        /* #define vTaskSetThreadLocalStoragePointer   MPU_vTaskSetThreadLocalStoragePointer */
+        /* #define pvTaskGetThreadLocalStoragePointer  MPU_pvTaskGetThreadLocalStoragePointer */
         #define xTaskCallApplicationTaskHook           MPU_xTaskCallApplicationTaskHook
         #define xTaskGetIdleTaskHandle                 MPU_xTaskGetIdleTaskHandle
         #define uxTaskGetSystemState                   MPU_uxTaskGetSystemState
@@ -95,7 +96,7 @@
         #define xTaskCheckForTimeOut                   MPU_xTaskCheckForTimeOut
         #define xTaskGetSchedulerState                 MPU_xTaskGetSchedulerState
 
-        /* Map standard queue.h API functions to the MPU equivalents. */
+/* Map standard queue.h API functions to the MPU equivalents. */
         #define xQueueGenericSend                      MPU_xQueueGenericSend
         #define xQueueReceive                          MPU_xQueueReceive
         #define xQueuePeek                             MPU_xQueuePeek

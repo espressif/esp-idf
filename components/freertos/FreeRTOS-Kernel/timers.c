@@ -5,6 +5,7 @@
  *
  * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
+
 /*
  * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
@@ -147,11 +148,12 @@
     PRIVILEGED_DATA static QueueHandle_t xTimerQueue = NULL;
     PRIVILEGED_DATA static TaskHandle_t xTimerTaskHandle = NULL;
 
-#ifdef ESP_PLATFORM
+    #ifdef ESP_PLATFORM
+
 /* Spinlock required in SMP when accessing the timers. For now we use a single lock
  * Todo: Each timer could possible have its own lock for increased granularity. */
-PRIVILEGED_DATA portMUX_TYPE xTimerLock = portMUX_INITIALIZER_UNLOCKED;
-#endif // ESP_PLATFORM
+        PRIVILEGED_DATA portMUX_TYPE xTimerLock = portMUX_INITIALIZER_UNLOCKED;
+    #endif // ESP_PLATFORM
 
 /*lint -restore */
 
@@ -250,14 +252,14 @@ PRIVILEGED_DATA portMUX_TYPE xTimerLock = portMUX_INITIALIZER_UNLOCKED;
                     uint32_t ulTimerTaskStackSize;
 
                     vApplicationGetTimerTaskMemory( &pxTimerTaskTCBBuffer, &pxTimerTaskStackBuffer, &ulTimerTaskStackSize );
-                    xTimerTaskHandle = xTaskCreateStaticPinnedToCore(   prvTimerTask,
-                                                          configTIMER_SERVICE_TASK_NAME,
-                                                          ulTimerTaskStackSize,
-                                                          NULL,
-                                                          ( ( UBaseType_t ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT,
-                                                          pxTimerTaskStackBuffer,
-                                                          pxTimerTaskTCBBuffer,
-                                                          0 );
+                    xTimerTaskHandle = xTaskCreateStaticPinnedToCore( prvTimerTask,
+                                                                      configTIMER_SERVICE_TASK_NAME,
+                                                                      ulTimerTaskStackSize,
+                                                                      NULL,
+                                                                      ( ( UBaseType_t ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT,
+                                                                      pxTimerTaskStackBuffer,
+                                                                      pxTimerTaskTCBBuffer,
+                                                                      0 );
 
                     if( xTimerTaskHandle != NULL )
                     {
@@ -267,11 +269,11 @@ PRIVILEGED_DATA portMUX_TYPE xTimerLock = portMUX_INITIALIZER_UNLOCKED;
             #else /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
                 {
                     xReturn = xTaskCreatePinnedToCore( prvTimerTask,
-                                           configTIMER_SERVICE_TASK_NAME,
-                                           configTIMER_TASK_STACK_DEPTH,
-                                           NULL,
-                                           ( ( UBaseType_t ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT,
-                                           &xTimerTaskHandle, 0 );
+                                                       configTIMER_SERVICE_TASK_NAME,
+                                                       configTIMER_TASK_STACK_DEPTH,
+                                                       NULL,
+                                                       ( ( UBaseType_t ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT,
+                                                       &xTimerTaskHandle, 0 );
                 }
             #endif /* configSUPPORT_STATIC_ALLOCATION */
         }
@@ -604,11 +606,11 @@ PRIVILEGED_DATA portMUX_TYPE xTimerLock = portMUX_INITIALIZER_UNLOCKED;
         TickType_t xTimeNow;
         BaseType_t xTimerListsWereSwitched;
 
-#ifdef ESP_PLATFORM
-        taskENTER_CRITICAL( &xTimerLock );
-#else
-        vTaskSuspendAll();
-#endif // ESP_PLATFORM
+        #ifdef ESP_PLATFORM
+            taskENTER_CRITICAL( &xTimerLock );
+        #else
+            vTaskSuspendAll();
+        #endif // ESP_PLATFORM
         {
             /* Obtain the time now to make an assessment as to whether the timer
              * has expired or not.  If obtaining the time causes the lists to switch
@@ -622,11 +624,11 @@ PRIVILEGED_DATA portMUX_TYPE xTimerLock = portMUX_INITIALIZER_UNLOCKED;
                 /* The tick count has not overflowed, has the timer expired? */
                 if( ( xListWasEmpty == pdFALSE ) && ( xNextExpireTime <= xTimeNow ) )
                 {
-#ifdef ESP_PLATFORM
-                    taskEXIT_CRITICAL( &xTimerLock );
-#else
-                    ( void ) xTaskResumeAll();
-#endif // ESP_PLATFORM
+                    #ifdef ESP_PLATFORM
+                        taskEXIT_CRITICAL( &xTimerLock );
+                    #else
+                        ( void ) xTaskResumeAll();
+                    #endif // ESP_PLATFORM
                     prvProcessExpiredTimer( xNextExpireTime, xTimeNow );
                 }
                 else
@@ -646,11 +648,11 @@ PRIVILEGED_DATA portMUX_TYPE xTimerLock = portMUX_INITIALIZER_UNLOCKED;
 
                     vQueueWaitForMessageRestricted( xTimerQueue, ( xNextExpireTime - xTimeNow ), xListWasEmpty );
 
-#ifdef ESP_PLATFORM // IDF-3755
-                    taskEXIT_CRITICAL( &xTimerLock );
-#else
-                    if( xTaskResumeAll() == pdFALSE )
-#endif // ESP_PLATFORM
+                    #ifdef ESP_PLATFORM /* IDF-3755 */
+                        taskEXIT_CRITICAL( &xTimerLock );
+                    #else
+                        if( xTaskResumeAll() == pdFALSE )
+                    #endif // ESP_PLATFORM
                     {
                         /* Yield to wait for either a command to arrive, or the
                          * block time to expire.  If a command arrived between the
@@ -658,21 +660,22 @@ PRIVILEGED_DATA portMUX_TYPE xTimerLock = portMUX_INITIALIZER_UNLOCKED;
                          * will not cause the task to block. */
                         portYIELD_WITHIN_API();
                     }
-#ifndef ESP_PLATFORM // IDF-3755
-                    else
-                    {
-                        mtCOVERAGE_TEST_MARKER();
-                    }
-#endif // ESP_PLATFORM
+
+                    #ifndef ESP_PLATFORM /* IDF-3755 */
+                        else
+                        {
+                            mtCOVERAGE_TEST_MARKER();
+                        }
+                    #endif // ESP_PLATFORM
                 }
             }
             else
             {
-#ifdef ESP_PLATFORM // IDF-3755
-                taskEXIT_CRITICAL( &xTimerLock );
-#else
-                ( void ) xTaskResumeAll();
-#endif // ESP_PLATFORM
+                #ifdef ESP_PLATFORM /* IDF-3755 */
+                    taskEXIT_CRITICAL( &xTimerLock );
+                #else
+                    ( void ) xTaskResumeAll();
+                #endif // ESP_PLATFORM
             }
         }
     }
@@ -1001,7 +1004,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerLock = portMUX_INITIALIZER_UNLOCKED;
                     {
                         /* The timer queue is allocated statically in case
                          * configSUPPORT_DYNAMIC_ALLOCATION is 0. */
-                        PRIVILEGED_DATA static StaticQueue_t xStaticTimerQueue; /*lint !e956 Ok to declare in this manner to prevent additional conditional compilation guards in other locations. */
+                        PRIVILEGED_DATA static StaticQueue_t xStaticTimerQueue;                                                                          /*lint !e956 Ok to declare in this manner to prevent additional conditional compilation guards in other locations. */
                         PRIVILEGED_DATA static uint8_t ucStaticTimerQueueStorage[ ( size_t ) configTIMER_QUEUE_LENGTH * sizeof( DaemonTaskMessage_t ) ]; /*lint !e956 Ok to declare in this manner to prevent additional conditional compilation guards in other locations. */
 
                         xTimerQueue = xQueueCreateStatic( ( UBaseType_t ) configTIMER_QUEUE_LENGTH, ( UBaseType_t ) sizeof( DaemonTaskMessage_t ), &( ucStaticTimerQueueStorage[ 0 ] ), &xStaticTimerQueue );

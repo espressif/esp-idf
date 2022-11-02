@@ -5,6 +5,7 @@
  *
  * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
+
 /*
  * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
@@ -756,32 +757,32 @@
 #endif
 
 /*
-Default values for trace macros added by ESP-IDF and are not part of Vanilla FreeRTOS
-*/
+ * Default values for trace macros added by ESP-IDF and are not part of Vanilla FreeRTOS
+ */
 #ifdef ESP_PLATFORM
-#ifndef traceISR_EXIT_TO_SCHEDULER
-    #define traceISR_EXIT_TO_SCHEDULER()
-#endif
+    #ifndef traceISR_EXIT_TO_SCHEDULER
+        #define traceISR_EXIT_TO_SCHEDULER()
+    #endif
 
-#ifndef traceISR_EXIT
-    #define traceISR_EXIT()
-#endif
+    #ifndef traceISR_EXIT
+        #define traceISR_EXIT()
+    #endif
 
-#ifndef traceISR_ENTER
-    #define traceISR_ENTER(_n_)
-#endif
+    #ifndef traceISR_ENTER
+        #define traceISR_ENTER( _n_ )
+    #endif
 
-#ifndef traceQUEUE_SEMAPHORE_RECEIVE
-    #define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
-#endif
+    #ifndef traceQUEUE_SEMAPHORE_RECEIVE
+        #define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
+    #endif
 
-#ifndef traceQUEUE_GIVE_FROM_ISR
-    #define traceQUEUE_GIVE_FROM_ISR( pxQueue )
-#endif
+    #ifndef traceQUEUE_GIVE_FROM_ISR
+        #define traceQUEUE_GIVE_FROM_ISR( pxQueue )
+    #endif
 
-#ifndef traceQUEUE_GIVE_FROM_ISR_FAILED
-    #define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
-#endif
+    #ifndef traceQUEUE_GIVE_FROM_ISR_FAILED
+        #define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
+    #endif
 #endif // ESP_PLATFORM
 
 #ifndef configGENERATE_RUN_TIME_STATS
@@ -934,7 +935,7 @@ Default values for trace macros added by ESP-IDF and are not part of Vanilla Fre
 
 #ifndef configSTACK_ALLOCATION_FROM_SEPARATE_HEAP
     /* Defaults to 0 for backward compatibility. */
-    #define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP   0
+    #define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP    0
 #endif
 
 #ifndef configSTACK_DEPTH_TYPE
@@ -1230,9 +1231,9 @@ typedef struct xSTATIC_TCB
     #endif
     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 )
         void * pvDummy15[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-    #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
-        void            *pvDummyLocalStorageCallBack[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-    #endif
+        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+            void * pvDummyLocalStorageCallBack[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
+        #endif
     #endif
     #if ( configGENERATE_RUN_TIME_STATS == 1 )
         uint32_t ulDummy16;

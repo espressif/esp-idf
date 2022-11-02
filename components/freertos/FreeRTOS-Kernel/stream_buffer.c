@@ -5,6 +5,7 @@
  *
  * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
+
 /*
  * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
@@ -61,8 +62,8 @@
 /*lint -save -e9026 Function like macros allowed and needed here so they can be overridden. */
 
 #ifndef sbRECEIVE_COMPLETED
-#ifdef ESP_PLATFORM // IDF-3775
-    #define sbRECEIVE_COMPLETED( pxStreamBuffer )                         \
+    #ifdef ESP_PLATFORM /* IDF-3775 */
+        #define sbRECEIVE_COMPLETED( pxStreamBuffer )                     \
     taskENTER_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );         \
     {                                                                     \
         if( ( pxStreamBuffer )->xTaskWaitingToSend != NULL )              \
@@ -74,8 +75,8 @@
         }                                                                 \
     }                                                                     \
     taskEXIT_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
-#else
-    #define sbRECEIVE_COMPLETED( pxStreamBuffer )                         \
+    #else  /* ifdef ESP_PLATFORM */
+        #define sbRECEIVE_COMPLETED( pxStreamBuffer )                     \
     vTaskSuspendAll();                                                    \
     {                                                                     \
         if( ( pxStreamBuffer )->xTaskWaitingToSend != NULL )              \
@@ -87,7 +88,7 @@
         }                                                                 \
     }                                                                     \
     ( void ) xTaskResumeAll();
-#endif // ESP_PLATFORM
+    #endif // ESP_PLATFORM
 #endif /* sbRECEIVE_COMPLETED */
 
 #ifndef sbRECEIVE_COMPLETED_FROM_ISR
@@ -115,8 +116,8 @@
  * or #defined the notification macro away, them provide a default implementation
  * that uses task notifications. */
 #ifndef sbSEND_COMPLETED
-#ifdef ESP_PLATFORM // IDF-3755
-    #define sbSEND_COMPLETED( pxStreamBuffer )                               \
+    #ifdef ESP_PLATFORM /* IDF-3755 */
+        #define sbSEND_COMPLETED( pxStreamBuffer )                           \
     taskENTER_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );            \
     {                                                                        \
         if( ( pxStreamBuffer )->xTaskWaitingToReceive != NULL )              \
@@ -128,8 +129,8 @@
         }                                                                    \
     }                                                                        \
     taskEXIT_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
-#else
-    #define sbSEND_COMPLETED( pxStreamBuffer )                               \
+    #else  /* ifdef ESP_PLATFORM */
+        #define sbSEND_COMPLETED( pxStreamBuffer )                           \
     vTaskSuspendAll();                                                       \
     {                                                                        \
         if( ( pxStreamBuffer )->xTaskWaitingToReceive != NULL )              \
@@ -141,7 +142,7 @@
         }                                                                    \
     }                                                                        \
     ( void ) xTaskResumeAll();
-#endif // ESP_PLATFORM
+    #endif // ESP_PLATFORM
 #endif /* sbSEND_COMPLETED */
 
 #ifndef sbSEND_COMPLETE_FROM_ISR
@@ -190,7 +191,7 @@ typedef struct StreamBufferDef_t                 /*lint !e9058 Style convention 
         UBaseType_t uxStreamBufferNumber; /* Used for tracing purposes. */
     #endif
 
-    portMUX_TYPE xStreamBufferLock;     /* Spinlock required for SMP critical sections */
+    portMUX_TYPE xStreamBufferLock; /* Spinlock required for SMP critical sections */
 } StreamBuffer_t;
 
 /*
