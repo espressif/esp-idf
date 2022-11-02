@@ -221,8 +221,8 @@ static void flushWrite(void) {
 }
 
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
- * and return it. On error -1 is returned, on success the position of the
- * cursor. */
+ * and return it. On read error -1 is returned, On cursor error, -2 is returned.
+ * On success the position of the cursor. */
 static int getCursorPosition(void) {
     char buf[LINENOISE_COMMAND_MAX_LEN] = { 0 };
     int cols = 0;
@@ -248,10 +248,14 @@ static int getCursorPosition(void) {
      * Stop right before the last character of the buffer, to be able to NULL
      * terminate it. */
     while (i < sizeof(buf)-1) {
+
+        int nread = read(in_fd, buf + i, 1);
+        if (nread == -1 && errno == EWOULDBLOCK) {return -1;} // read error
+        
         /* Keep using unistd's functions. Here, using `read` instead of `fgets`
          * or `fgets` guarantees us that we we can read a byte regardless on
          * whether the sender sent end of line character(s) (CR, CRLF, LF). */
-        if (read(in_fd, buf + i, 1) != 1 || buf[i] == 'R') {
+        if (nread != 1 || buf[i] == 'R') {
             /* If we couldn't read a byte from STDIN or if 'R' was received,
              * the transmission is finished. */
             break;
@@ -270,7 +274,8 @@ static int getCursorPosition(void) {
 
     /* Parse the received data to get the position of the cursor. */
     if (buf[0] != ESC || buf[1] != '[' || sscanf(buf+2,"%d;%d",&rows,&cols) != 2) {
-        return -1;
+        // cursor error
+        return -2;
     }
     return cols;
 }
@@ -294,9 +299,8 @@ static int getColumns(void) {
 
     /* Get the initial position so we can restore it later. */
     start = getCursorPosition();
-    if (start == -1) {
-        goto failed;
-    }
+    if (start == -1 && errno == EWOULDBLOCK) {return -1;}
+    if (start == -2) {goto failed;}
 
     /* Send the command to go to right margin. Use `write` function instead of
      * `fwrite` for the same reasons explained in `getCursorPosition()` */
@@ -308,9 +312,8 @@ static int getColumns(void) {
     /* After sending this command, we can get the new position of the cursor,
      * we'd get the size, in columns, of the opened TTY. */
     cols = getCursorPosition();
-    if (cols == -1) {
-        goto failed;
-    }
+    if (cols == -1 && errno == EWOULDBLOCK) {return -1;}
+    if (cols == -2) {goto failed;}
 
     /* Restore the position of the cursor back. */
     if (cols > start) {
@@ -819,6 +822,9 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
     int out_fd = fileno(stdout);
     int in_fd = fileno(stdin);
 
+    int cols = getColumns();
+    if (cols == -1 && errno == EWOULDBLOCK) {return -1;}
+
     /* Populate the linenoise state that we pass to functions implementing
      * specific editing functionalities. */
     l.buf = buf;
@@ -827,9 +833,9 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
     l.plen = strlen(prompt);
     l.oldpos = l.pos = 0;
     l.len = 0;
-    l.cols = getColumns();
     l.maxrows = 0;
     l.history_index = 0;
+    l.cols = cols;
 
     /* Buffer starts empty. */
     l.buf[0] = '\0';
@@ -840,11 +846,16 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
     linenoiseHistoryAdd("");
 
     int pos1 = getCursorPosition();
+    if (pos1 == -1 && errno == EWOULDBLOCK){return -1;}
+
     if (write(out_fd, prompt,l.plen) == -1) {
         return -1;
     }
     flushWrite();
+    
     int pos2 = getCursorPosition();
+    if (pos2 == -1 && errno == EWOULDBLOCK){return -1;}
+
     if (pos1 >= 0 && pos2 >= 0) {
         l.plen = pos2 - pos1;
     }
@@ -864,7 +875,8 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
          */
         t1 = getMillis();
         nread = read(in_fd, &c, 1);
-        if (nread <= 0) return l.len;
+        if (nread == -1 && errno == EWOULDBLOCK) {return -1;}
+        if (nread <= 0){return l.len;}
 
         if ( (getMillis() - t1) < LINENOISE_PASTE_KEY_DELAY && c != ENTER) {
             /* Pasting data, insert characters without formatting.
@@ -940,19 +952,19 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
         case CTRL_N:    /* ctrl-n */
             linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_NEXT);
             break;
-        case ESC:    /* escape sequence */
+        case ESC:{    /* escape sequence */
             /* Read the next two bytes representing the escape sequence. */
-            if (read(in_fd, seq, 2) < 2) {
-                break;
-            }
+            int n = read(in_fd, seq, 2);
+            if (n == -1 && errno == EWOULDBLOCK) {return -1;}
+            if (n < 2) {break;}
 
             /* ESC [ sequences. */
             if (seq[0] == '[') {
                 if (seq[1] >= '0' && seq[1] <= '9') {
                     /* Extended escape, read additional byte. */
-                    if (read(in_fd, seq+2, 1) == -1) {
-                        break;
-                    }
+                    int n = read(in_fd, seq+2, 1);
+                    if (n == -1 && errno == EWOULDBLOCK) {return -1;}
+                    if (n == -1) {break;}
                     if (seq[2] == '~') {
                         switch(seq[1]) {
                         case '3': /* Delete key. */
@@ -996,6 +1008,7 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
                 }
             }
             break;
+        }
         default:
             if (linenoiseEditInsert(&l,c)) return -1;
             break;
@@ -1054,6 +1067,8 @@ int linenoiseProbe(void) {
         timeout_ms -= retry_ms;
         char c;
         int cb = read(stdin_fileno, &c, 1);
+        // Note! Due to the fcntl call above, this is read in non-blocking mode!
+        // So, nread == -1 && errno == EWOULDBLOCK are expected here!
         if (cb < 0) {
             continue;
         }
@@ -1084,8 +1099,10 @@ static int linenoiseRaw(char *buf, size_t buflen, const char *prompt) {
     }
 
     count = linenoiseEdit(buf, buflen, prompt);
-    fputc('\n', stdout);
-    flushWrite();
+    if (count != -1){
+        fputc('\n', stdout);
+        flushWrite();
+    }
     return count;
 }
 
@@ -1095,6 +1112,8 @@ static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
     size_t count = 0;
     while (count < buflen) {
         int c = fgetc(stdin);
+        if (c == -1 && errno == EWOULDBLOCK) {return -1;}
+
         if (c == '\n') {
             break;
         } else if (c >= 0x1c && c <= 0x1f){

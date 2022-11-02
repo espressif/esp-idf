@@ -21,6 +21,7 @@
 #define rbBYTE_BUFFER_FLAG          ( ( UBaseType_t ) 2 )   //The ring buffer is a byte buffer
 #define rbBUFFER_FULL_FLAG          ( ( UBaseType_t ) 4 )   //The ring buffer is currently full (write pointer == free pointer)
 #define rbBUFFER_STATIC_FLAG        ( ( UBaseType_t ) 8 )   //The ring buffer is statically allocated
+#define rbBUFFER_UNBLOCK_RX_FLAG       ( ( UBaseType_t ) 16)  //A request has been made to unblock any pending reads
 
 //Item flags
 #define rbITEM_FREE_FLAG            ( ( UBaseType_t ) 1 )   //Item has been retrieved and returned by application, free to overwrite
@@ -759,6 +760,8 @@ static size_t prvGetCurMaxSizeByteBuf(Ringbuffer_t *pxRingbuffer)
     return xFreeSize;
 }
 
+
+
 static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
                                     void **pvItem1,
                                     void **pvItem2,
@@ -772,9 +775,16 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
     TickType_t xTicksEnd = xTaskGetTickCount() + xTicksToWait;
     TickType_t xTicksRemaining = xTicksToWait;
     while (xTicksRemaining <= xTicksToWait) {   //xTicksToWait will underflow once xTaskGetTickCount() > ticks_end
-        //Block until more free space becomes available or timeout
+        //Block until some bytes become available or timeout
         if (xSemaphoreTake(rbGET_RX_SEM_HANDLE(pxRingbuffer), xTicksRemaining) != pdTRUE) {
             xReturn = pdFALSE;     //Timed out attempting to get semaphore
+            break;
+        }
+
+        // has a request been made to unblock?
+        if (pxRingbuffer->uxRingbufferFlags & rbBUFFER_UNBLOCK_RX_FLAG) {
+            pxRingbuffer->uxRingbufferFlags &= ~rbBUFFER_UNBLOCK_RX_FLAG; // clear flag
+            xReturn = pdFALSE;
             break;
         }
 
@@ -1421,6 +1431,18 @@ void vRingbufferGetInfo(RingbufHandle_t xRingbuffer,
     portEXIT_CRITICAL(&pxRingbuffer->mux);
 }
 
+void vRingbufferUnblockRx(RingbufHandle_t xRingbuffer)
+{
+    Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
+    configASSERT(pxRingbuffer);
+
+    // is the semaphore taken?
+    if (uxSemaphoreGetCount(rbGET_RX_SEM_HANDLE(pxRingbuffer)) == 0) {
+        pxRingbuffer->uxRingbufferFlags |= rbBUFFER_UNBLOCK_RX_FLAG;
+        xSemaphoreGive(rbGET_RX_SEM_HANDLE(pxRingbuffer));
+    }
+}
+
 void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer)
 {
     Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
@@ -1432,3 +1454,5 @@ void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer)
            pxRingbuffer->pucWrite - pxRingbuffer->pucHead,
            pxRingbuffer->pucAcquire - pxRingbuffer->pucHead);
 }
+
+

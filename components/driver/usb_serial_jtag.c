@@ -132,6 +132,16 @@ _exit:
     return err;
 }
 
+esp_err_t usb_serial_jtag_unblock_reads()
+{
+    if (p_usb_serial_jtag_obj->rx_ring_buf == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    vRingbufferUnblockRx(p_usb_serial_jtag_obj->rx_ring_buf);
+    return ESP_OK;
+}
+
 int usb_serial_jtag_read_bytes(void* buf, uint32_t length, TickType_t ticks_to_wait)
 {
     uint8_t *data = NULL;
