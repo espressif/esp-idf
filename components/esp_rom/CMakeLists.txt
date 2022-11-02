@@ -237,6 +237,18 @@ else() # Regular app build
             rom_linker_script("spiflash")
         endif()
 
+        if(time_t_size EQUAL 8)
+            # The ROM functions listed in this linker script depend on sizeof(time_t).
+            # ESP32-C6 ROM was compiled for 64-bit time_t, only link these functions
+            # if the toolchain is also using 64-bit time_t.
+            rom_linker_script("newlib-time")
+
+            if(NOT CONFIG_NEWLIB_NANO_FORMAT)
+                # Normal(Non-nano) formatting functions in ROM are also built for 64-bit time_t.
+                rom_linker_script("newlib-normal")
+            endif()
+       endif()
+
     endif()
 
     if(CONFIG_HEAP_TLSF_USE_ROM_IMPL)
