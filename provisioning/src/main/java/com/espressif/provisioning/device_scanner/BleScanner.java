@@ -71,6 +71,45 @@ public class BleScanner {
      */
     @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN})
     public void startScan() {
+        List<ScanFilter> filters = new ArrayList<>();
+        ScanSettings settings = new ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
+                .build();
+        startScan(filters, settings);
+    }
+
+    /**
+     * This method is used to start BLE scan.
+     *
+     * @param filters The scan filters that will be used
+     */
+    @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN})
+    public void startScan(List<ScanFilter> filters) {
+        ScanSettings settings = new ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
+                .build();
+        startScan(filters, settings);
+    }
+
+    /**
+     * This method is used to start BLE scan.
+     *
+     * @param scanSettings The scan settings that will be used
+     */
+    @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN})
+    public void startScan(ScanSettings scanSettings) {
+        List<ScanFilter> filters = new ArrayList<>();
+        startScan(filters, scanSettings);
+    }
+
+    /**
+     * This method is used to start BLE scan.
+     *
+     * @param filters      The scan filters that will be used
+     * @param scanSettings The scan settings that will be used
+     */
+    @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN})
+    public void startScan(List<ScanFilter> filters, ScanSettings scanSettings) {
 
         if (!bluetoothAdapter.isEnabled()) {
             bleScanListener.scanStartFailed();
@@ -79,13 +118,8 @@ public class BleScanner {
         Log.d(TAG, "Starting BLE device scanning...");
 
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
-        List<ScanFilter> filters = new ArrayList<>();
-        ScanSettings settings = new ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
-                .build();
-
         isScanning = true;
-        bluetoothLeScanner.startScan(filters, settings, scanCallback);
+        bluetoothLeScanner.startScan(filters, scanSettings, scanCallback);
         handler.postDelayed(stopScanTask, SCAN_TIME_OUT);
     }
 

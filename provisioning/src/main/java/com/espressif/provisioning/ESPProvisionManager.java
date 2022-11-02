@@ -17,7 +17,9 @@ package com.espressif.provisioning;
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
@@ -332,6 +334,49 @@ public class ESPProvisionManager {
                 }
             }
         });
+    }
+
+    /**
+     * This method is used to scan BLE devices.
+     *
+     * @param filters            The scan filters that will be used
+     * @param bleScannerListener BleScanListener for scanning callbacks.
+     */
+    @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_FINE_LOCATION})
+    public void searchBleEspDevices(List<ScanFilter> filters, BleScanListener bleScannerListener) {
+
+        Log.e(TAG, "Search for BLE devices");
+        bleScanner = new BleScanner(context, bleScannerListener);
+        bleScanner.startScan(filters);
+    }
+
+    /**
+     * This method is used to scan BLE devices.
+     *
+     * @param scanSettings       The scan settings that will be used
+     * @param bleScannerListener BleScanListener for scanning callbacks.
+     */
+    @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_FINE_LOCATION})
+    public void searchBleEspDevices(ScanSettings scanSettings, BleScanListener bleScannerListener) {
+
+        Log.e(TAG, "Search for BLE devices");
+        bleScanner = new BleScanner(context, bleScannerListener);
+        bleScanner.startScan(scanSettings);
+    }
+
+    /**
+     * This method is used to scan BLE devices.
+     *
+     * @param filters            The scan filters that will be used
+     * @param scanSettings       The scan settings that will be used
+     * @param bleScannerListener BleScanListener for scanning callbacks.
+     */
+    @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_FINE_LOCATION})
+    public void searchBleEspDevices(List<ScanFilter> filters, ScanSettings scanSettings, BleScanListener bleScannerListener) {
+
+        Log.e(TAG, "Search for BLE devices");
+        bleScanner = new BleScanner(context, bleScannerListener);
+        bleScanner.startScan(filters, scanSettings);
     }
 
     /**
