@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
 #include "hal/i2c_hal.h"
 #include "hal/i2c_ll.h"
 #include "hal/i2c_types.h"
@@ -51,6 +52,13 @@ void i2c_hal_master_init(i2c_hal_context_t *hal)
 void i2c_hal_init(i2c_hal_context_t *hal, int i2c_port)
 {
     hal->dev = I2C_LL_GET_HW(i2c_port);
+    i2c_ll_enable_controller_clock(hal->dev, true);
+}
+
+void i2c_hal_deinit(i2c_hal_context_t *hal)
+{
+    i2c_ll_enable_controller_clock(hal->dev, false);
+    hal->dev = NULL;
 }
 
 void i2c_hal_master_trans_start(i2c_hal_context_t *hal)

@@ -16,7 +16,6 @@
 #include "hal/i2c_types.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/clk_tree_defs.h"
-#include "esp_rom_sys.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -38,7 +37,7 @@ typedef union {
                  done:        1;
     };
     uint32_t val;
-} i2c_hw_cmd_t;
+} i2c_ll_hw_cmd_t;
 
 // I2C operation mode command
 #define I2C_LL_CMD_RESTART    6    /*!<I2C restart command */
@@ -63,9 +62,10 @@ typedef enum {
     I2C_INTR_START = (1 << 15),
 } i2c_ll_slave_intr_t;
 
+// Get the I2C hardware instance
+#define I2C_LL_GET_HW(i2c_num)        (&I2C0)
 #define I2C_LL_MASTER_EVENT_INTR    (I2C_NACK_INT_ENA_M|I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
 #define I2C_LL_SLAVE_EVENT_INTR     (I2C_RXFIFO_WM_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_TXFIFO_WM_INT_ENA_M)
-
 
 /**
  * @brief  Calculate I2C bus frequency
@@ -292,7 +292,7 @@ static inline void i2c_ll_set_slave_addr(i2c_dev_t *hw, uint16_t slave_addr, boo
  *
  * @return None
  */
-static inline void i2c_ll_write_cmd_reg(i2c_dev_t *hw, i2c_hw_cmd_t cmd, int cmd_idx)
+static inline void i2c_ll_write_cmd_reg(i2c_dev_t *hw, i2c_ll_hw_cmd_t cmd, int cmd_idx)
 {
     hw->command[cmd_idx].val = cmd.val;
 }
@@ -662,7 +662,16 @@ static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_c
     hw->clk_conf.sclk_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1 : 0;
 }
 
-
+/**
+ * @brief Enable I2C peripheral controller clock
+ *
+ * @param dev Peripheral instance address
+ * @param en True to enable, False to disable
+ */
+static inline void i2c_ll_enable_controller_clock(i2c_dev_t *hw, bool en)
+{
+    hw->clk_conf.sclk_active = en;
+}
 
 /**
  * @brief  Init I2C master
@@ -723,10 +732,6 @@ static inline volatile void *i2c_ll_get_interrupt_status_reg(i2c_dev_t *dev)
 /////////////////////////////They might be removed in the next major release (ESP-IDF 6.0)//////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Get the I2C hardware instance
-#define I2C_LL_GET_HW(i2c_num)        (&I2C0)
-// Get the I2C hardware FIFO address
-#define I2C_LL_GET_FIFO_ADDR(i2c_num) (I2C_DATA_APB_REG(i2c_num))
 // I2C master TX interrupt bitmap
 #define I2C_LL_MASTER_TX_INT          (I2C_NACK_INT_ENA_M|I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
 // I2C master RX interrupt bitmap

@@ -59,6 +59,10 @@ config SOC_SDM_SUPPORTED
     bool
     default y
 
+config SOC_I2C_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_SUPPORTED
     bool
     default y

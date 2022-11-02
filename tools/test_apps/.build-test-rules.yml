@@ -25,12 +25,6 @@ tools/test_apps/linux_compatible/hello_world_linux_compatible:
       temporary: true
       reason: pytest doesn't support linux target yet, hence, it's tested independenly in the host_tests stage
 
-tools/test_apps/peripherals/i2c_wifi:
-  disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
-
 tools/test_apps/peripherals/usb:
   enable:
     - if: IDF_TARGET in ["esp32s2", "esp32s3"]

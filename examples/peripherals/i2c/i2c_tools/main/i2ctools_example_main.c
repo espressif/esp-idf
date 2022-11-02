@@ -62,7 +62,6 @@ void app_main(void)
 #endif
 
     register_i2ctools();
-    register_system();
 
     printf("\n ==============================================================\n");
     printf(" |             Steps to Use i2c-tools                         |\n");

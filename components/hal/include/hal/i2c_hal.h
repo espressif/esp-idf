@@ -102,6 +102,13 @@ void i2c_hal_master_handle_rx_event(i2c_hal_context_t *hal, i2c_intr_event_t *ev
 void i2c_hal_init(i2c_hal_context_t *hal, int i2c_port);
 
 /**
+ * @brief Deinit I2C hal layer
+ *
+ * @param hal Context of the HAL
+ */
+void i2c_hal_deinit(i2c_hal_context_t *hal);
+
+/**
  * @brief Start I2C master transaction
  *
  * @param hal Context of the HAL
