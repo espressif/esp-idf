@@ -111,7 +111,7 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #define configMINIMAL_STACK_SIZE                        ( ( unsigned short ) (0x4000 + 40) / sizeof(portSTACK_TYPE) )
 #else
 #define configMAX_PRIORITIES                            ( 25 )  //This has impact on speed of search for highest priority
-#define configMINIMAL_STACK_SIZE                        ( 768 + configSTACK_OVERHEAD_TOTAL )
+#define configMINIMAL_STACK_SIZE                        ( CONFIG_FREERTOS_IDLE_TASK_STACKSIZE + configSTACK_OVERHEAD_TOTAL )
 #endif
 #define configUSE_TIME_SLICING                          1
 #define configUSE_16_BIT_TICKS                          0
@@ -267,9 +267,6 @@ Note: Include trace macros here and not above as trace macros are dependent on s
 // ---------------------- Features -------------------------
 
 #define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS     CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
-#ifndef configIDLE_TASK_STACK_SIZE
-#define configIDLE_TASK_STACK_SIZE                      CONFIG_FREERTOS_IDLE_TASK_STACKSIZE
-#endif
 
 #if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
 #define configCHECK_MUTEX_GIVEN_BY_OWNER                1
