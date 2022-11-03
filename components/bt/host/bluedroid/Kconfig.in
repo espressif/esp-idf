@@ -1010,12 +1010,16 @@ menu "BT DEBUG LOG LEVEL"
 endmenu #BT DEBUG LOG LEVEL
 
 config BT_ACL_CONNECTIONS
-    int "BT/BLE MAX ACL CONNECTIONS(1~7)"
+    int "BT/BLE MAX ACL CONNECTIONS(1~9)"
     depends on BT_BLUEDROID_ENABLED
-    range 1 7
+    range 1 9
     default 4
     help
-        Maximum BT/BLE connection count
+        Maximum BT/BLE connection count. The ESP32-C3/S3 chip supports a maximum of 10 instances,
+        including ADV, SCAN and connections. The ESP32-C3/S3 chip can connect up to 9 devices if
+        ADV or SCAN uses only one. If ADV and SCAN are both used, The ESP32-C3/S3 chip is connected
+        to a maximum of 8 devices. Because Bluetooth cannot reclaim used instances once ADV or SCAN
+        is used.
 
 config BT_MULTI_CONNECTION_ENBALE
     bool "Enable BLE multi-conections"
