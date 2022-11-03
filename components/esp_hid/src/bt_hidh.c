@@ -27,6 +27,7 @@ typedef struct {
 typedef struct {
     fixed_queue_t *connection_queue; /* Queue of connection */
     esp_event_loop_handle_t event_loop_handle;
+    esp_event_handler_t event_callback;
 } hidh_local_param_t;
 
 static hidh_local_param_t hidh_local_param;
@@ -172,6 +173,8 @@ static void free_local_param(void)
     if (hidh_local_param.connection_queue) {
         fixed_queue_free(hidh_local_param.connection_queue, free);
     }
+
+    hidh_local_param.event_callback = NULL;
 }
 
 static void open_failed_cb(esp_hidh_dev_t *dev, esp_hidh_status_t status, esp_hidh_event_data_t *p,
@@ -992,6 +995,18 @@ static void esp_bt_hidh_dev_dump(esp_hidh_dev_t *dev, FILE *fp)
     }
 }
 
+static void esp_bt_hidh_event_handler_wrapper(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+                                              void *event_data)
+{
+    esp_hidh_preprocess_event_handler(event_handler_arg, event_base, event_id, event_data);
+
+    if (hidh_local_param.event_callback) {
+        hidh_local_param.event_callback(event_handler_arg, event_base, event_id, event_data);
+    }
+
+    esp_hidh_post_process_event_handler(event_handler_arg, event_base, event_id, event_data);
+}
+
 esp_err_t esp_bt_hidh_init(const esp_hidh_config_t *config)
 {
     esp_err_t ret = ESP_OK;
@@ -1019,10 +1034,10 @@ esp_err_t esp_bt_hidh_init(const esp_hidh_config_t *config)
             ret = ESP_FAIL;
             break;
         }
+
+        hidh_local_param.event_callback = config->callback;
         ret = esp_event_handler_register_with(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID,
-                                              esp_hidh_process_event_data_handler, NULL);
-        ret |= esp_event_handler_register_with(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID,
-                                               config->callback, config->callback_arg);
+                                              esp_bt_hidh_event_handler_wrapper, config->callback_arg);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "event_loop register failed!");
             ret = ESP_FAIL;
