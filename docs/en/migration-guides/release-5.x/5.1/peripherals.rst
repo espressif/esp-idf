@@ -8,7 +8,7 @@ Peripherals
     DAC
     ---
 
-    DAC driver has been redesigned (see :doc:`DAC API Reference <../../../api-reference/peripherals/dac>`), which aims to unify and extend the usage of DAC peripheral. Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/dac.h``. However, by default, including ``driver/dac.h`` will bring a build warning like `The legacy DAC driver is deprecated, please use 'driver/dac_oneshot.h', 'driver/dac_cosine.h' or 'driver/dac_conti.h' instead`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_DAC_SUPPRESS_DEPRECATE_WARN`.
+    DAC driver has been redesigned (see :doc:`DAC API Reference <../../../api-reference/peripherals/dac>`), which aims to unify and extend the usage of DAC peripheral. Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/dac.h``. However, by default, including ``driver/dac.h`` will bring a build warning like `The legacy DAC driver is deprecated, please use 'driver/dac_oneshot.h', 'driver/dac_cosine.h' or 'driver/dac_continuous.h' instead`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_DAC_SUPPRESS_DEPRECATE_WARN`.
 
     The major breaking changes in concept and usage are listed as follows:
 
@@ -23,7 +23,7 @@ Peripherals
     .. only:: esp32s2
 
         - ``dac_digi_convert_mode_t`` is removed. The driver now can transmit DMA data in different ways by calling :cpp:func:`dac_channels_write_continuously` or :cpp:func:`dac_channels_write_cyclically`.
-        - ``dac_digi_config_t`` is replaced by :cpp:type:`dac_conti_config_t`.
+        - ``dac_digi_config_t`` is replaced by :cpp:type:`dac_continuous_config_t`.
 
     Breaking Changes in Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -34,16 +34,16 @@ Peripherals
     - ``dac_output_disable`` is removed, for oneshot mode, it will be disabled before the channel deleted.
     - ``dac_cw_generator_enable`` is replaced by :cpp:func:`dac_cosine_start`.
     - ``dac_cw_generator_disable`` is replaced by :cpp:func:`dac_cosine_stop`.
-    - ``dac_cw_generator_config`` is replaced by :cpp:func:`dac_new_cosine_channel`.
+    - ``dac_cw_generator_config`` is replaced by :cpp:func:`dac_cosine_new_channel`.
 
     .. only:: esp32
 
-        - ``dac_i2s_enable`` is replaced by :cpp:func:`dac_conti_enable`, but it needs to allocate the continuous DAC channel first by :cpp:func:`dac_new_conti_channels`.
-        - ``dac_i2s_disable`` is replaced by :cpp:func:`dac_conti_disable`.
+        - ``dac_i2s_enable`` is replaced by :cpp:func:`dac_continuous_enable`, but it needs to allocate the continuous DAC channel first by :cpp:func:`dac_continuous_new_channels`.
+        - ``dac_i2s_disable`` is replaced by :cpp:func:`dac_continuous_disable`.
 
     .. only:: esp32s2
 
-        - ``dac_digi_init`` and ``dac_digi_controller_config`` is merged into :cpp:func:`dac_new_conti_channels`.
-        - ``dac_digi_deinit`` is replaced by :cpp:func:`dac_del_conti_channels`.
-        - ``dac_digi_start``, ``dac_digi_fifo_reset`` and ``dac_digi_reset`` are merged into :cpp:func:`dac_conti_enable`.
-        - ``dac_digi_stop`` is replaced by :cpp:func:`dac_conti_disable`.
+        - ``dac_digi_init`` and ``dac_digi_controller_config`` is merged into :cpp:func:`dac_continuous_new_channels`.
+        - ``dac_digi_deinit`` is replaced by :cpp:func:`dac_continuous_del_channels`.
+        - ``dac_digi_start``, ``dac_digi_fifo_reset`` and ``dac_digi_reset`` are merged into :cpp:func:`dac_continuous_enable`.
+        - ``dac_digi_stop`` is replaced by :cpp:func:`dac_continuous_disable`.

@@ -36,7 +36,7 @@
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-#include "driver/dac_conti.h"
+#include "driver/dac_continuous.h"
 #else
 #include "driver/i2s_std.h"
 #endif
@@ -77,7 +77,7 @@ static prepare_type_env_t b_prepare_write_env;
 #ifndef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
 i2s_chan_handle_t tx_chan;
 #else
-dac_conti_handle_t tx_chan;
+dac_continuous_handle_t tx_chan;
 #endif
 
 //Declare the static function
@@ -692,7 +692,7 @@ void app_main(void)
     ESP_ERROR_CHECK(err);
 
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-    dac_conti_config_t conti_cfg = {
+    dac_continuous_config_t cont_cfg = {
         .chan_mask = DAC_CHANNEL_MASK_ALL,
         .desc_num = 8,
         .buf_size = 2048,
@@ -702,9 +702,9 @@ void app_main(void)
         .chan_mode = DAC_CHANNEL_MODE_ALTER,
     };
     /* Allocate continuous channels */
-    ESP_ERROR_CHECK(dac_new_conti_channels(&conti_cfg, &tx_chan));
+    ESP_ERROR_CHECK(dac_continuous_new_channels(&cont_cfg, &tx_chan));
     /* Enable the continuous channels */
-    ESP_ERROR_CHECK(dac_conti_enable(tx_chan));
+    ESP_ERROR_CHECK(dac_continuous_enable(tx_chan));
 #else
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     chan_cfg.auto_clear = true;

@@ -7,9 +7,9 @@
 #include <math.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/dac_conti.h"
+#include "driver/dac_continuous.h"
 #include "esp_check.h"
-#include "dac_conti_example.h"
+#include "dac_continuous_example.h"
 
 #define EXAMPLE_WAVE_FREQ_HZ        2000                      // Default wave frequency 2000 Hz, it can't be too low
 #define EXAMPLE_CONVERT_FREQ_HZ     (EXAMPLE_ARRAY_LEN * EXAMPLE_WAVE_FREQ_HZ) // The frequency that DAC convert every data in the wave array
@@ -24,7 +24,7 @@ static const char wav_name[DAC_WAVE_MAX][15] = {"sine", "triangle", "sawtooth", 
 
 static void dac_dma_write_task(void *args)
 {
-    dac_conti_handle_t handle = (dac_conti_handle_t)args;
+    dac_continuous_handle_t handle = (dac_continuous_handle_t)args;
     dac_example_wave_type_t wav_sel = DAC_SINE_WAVE; // Start from sine wave
 
     size_t buf_len = EXAMPLE_ARRAY_LEN;
@@ -33,16 +33,16 @@ static void dac_dma_write_task(void *args)
         /* The wave in the buffer will be converted cyclically */
         switch (wav_sel) {
             case DAC_SINE_WAVE:
-                ESP_ERROR_CHECK(dac_conti_write_cyclically(handle, (uint8_t *)sin_wav, buf_len, NULL));
+                ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, (uint8_t *)sin_wav, buf_len, NULL));
                 break;
             case DAC_TRIANGLE_WAVE:
-                ESP_ERROR_CHECK(dac_conti_write_cyclically(handle, (uint8_t *)tri_wav, buf_len, NULL));
+                ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, (uint8_t *)tri_wav, buf_len, NULL));
                 break;
             case DAC_SAWTOOTH_WAVE:
-                ESP_ERROR_CHECK(dac_conti_write_cyclically(handle, (uint8_t *)saw_wav, buf_len, NULL));
+                ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, (uint8_t *)saw_wav, buf_len, NULL));
                 break;
             case DAC_SQUARE_WAVE:
-                ESP_ERROR_CHECK(dac_conti_write_cyclically(handle, (uint8_t *)squ_wav, buf_len, NULL));
+                ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, (uint8_t *)squ_wav, buf_len, NULL));
                 break;
             default:
                 break;
@@ -57,8 +57,8 @@ static void dac_dma_write_task(void *args)
 
 void example_dac_continuous_by_dma(void)
 {
-    dac_conti_handle_t conti_handle;
-    dac_conti_config_t conti_cfg = {
+    dac_continuous_handle_t cont_handle;
+    dac_continuous_config_t cont_cfg = {
         .chan_mask = DAC_CHANNEL_MASK_ALL,
         .desc_num = 8,
         .buf_size = 2048,
@@ -76,12 +76,12 @@ void example_dac_continuous_by_dma(void)
         .chan_mode = DAC_CHANNEL_MODE_SIMUL,
     };
     /* Allocate continuous channel */
-    ESP_ERROR_CHECK(dac_new_conti_channels(&conti_cfg, &conti_handle));
+    ESP_ERROR_CHECK(dac_continuous_new_channels(&cont_cfg, &cont_handle));
     /* Enable the channels in the group */
-    ESP_ERROR_CHECK(dac_conti_enable(conti_handle));
+    ESP_ERROR_CHECK(dac_continuous_enable(cont_handle));
 
     example_log_info(EXAMPLE_CONVERT_FREQ_HZ, EXAMPLE_WAVE_FREQ_HZ);
 
     /* Start to convert wave */
-    xTaskCreate(dac_dma_write_task, "dac_dma_write_task", 4096, conti_handle, 5, NULL);
+    xTaskCreate(dac_dma_write_task, "dac_dma_write_task", 4096, cont_handle, 5, NULL);
 }

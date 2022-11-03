@@ -10,13 +10,13 @@
 #include "hal/clk_tree_ll.h"
 #include "dac_priv_common.h"
 #include "clk_ctrl_os.h"
-#include "esp_check.h"
 
 #if CONFIG_DAC_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #endif
+#include "esp_check.h"
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #endif
@@ -35,7 +35,7 @@ static uint32_t s_cwg_refer_cnt = 0;
 /* The frequency of cosine wave generator */
 static uint32_t s_cwg_freq = 0;
 
-esp_err_t dac_new_cosine_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_handle_t *ret_handle)
+esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_handle_t *ret_handle)
 {
 #if CONFIG_DAC_ENABLE_DEBUG_LOG
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
@@ -87,7 +87,7 @@ err1:
     return ret;
 }
 
-esp_err_t dac_del_cosine_channel(dac_cosine_handle_t handle)
+esp_err_t dac_cosine_del_channel(dac_cosine_handle_t handle)
 {
     DAC_NULL_POINTER_CHECK(handle);
     ESP_RETURN_ON_FALSE(!handle->is_started, ESP_ERR_INVALID_STATE, TAG,

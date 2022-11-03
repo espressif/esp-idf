@@ -9,7 +9,7 @@
 #include "unity_test_utils.h"
 #include "unity_test_utils_cache.h"
 #include "driver/dac_oneshot.h"
-#include "driver/dac_conti.h"
+#include "driver/dac_continuous.h"
 #include "esp_heap_caps.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -43,7 +43,7 @@ static void IRAM_ATTR test_dac_dma_intr_iram_safety(void *usr_ctx)
     data->result = data->cnt > 0;
 }
 
-static bool IRAM_ATTR test_dac_on_convert_done_cb(dac_conti_handle_t handle, const dac_event_data_t *event, void *user_data)
+static bool IRAM_ATTR test_dac_on_convert_done_cb(dac_continuous_handle_t handle, const dac_event_data_t *event, void *user_data)
 {
     test_dac_intr_data_t *data = (test_dac_intr_data_t *)user_data;
     data->cnt++;
@@ -53,15 +53,15 @@ static bool IRAM_ATTR test_dac_on_convert_done_cb(dac_conti_handle_t handle, con
 TEST_CASE("DAC_IRAM_safe_test", "[dac]")
 {
     dac_oneshot_handle_t oneshot_handle;
-    TEST_ESP_OK(dac_new_oneshot_channel(&(dac_oneshot_config_t){.chan_id = DAC_CHAN_0}, &oneshot_handle));
+    TEST_ESP_OK(dac_oneshot_new_channel(&(dac_oneshot_config_t){.chan_id = DAC_CHAN_0}, &oneshot_handle));
 
     /* Test direct voltage setting safety */
     unity_utils_run_cache_disable_stub(test_dac_direct_set_safety, oneshot_handle);
 
-    TEST_ESP_OK(dac_del_oneshot_channel(oneshot_handle));
+    TEST_ESP_OK(dac_oneshot_del_channel(oneshot_handle));
 
-    dac_conti_handle_t conti_handle;
-    dac_conti_config_t conti_cfg = {
+    dac_continuous_handle_t cont_handle;
+    dac_continuous_config_t cont_cfg = {
         .chan_mask = DAC_CHANNEL_MASK_ALL,
         .desc_num = 8,
         .buf_size = 2048,
@@ -79,7 +79,7 @@ TEST_CASE("DAC_IRAM_safe_test", "[dac]")
         .chan_mode = DAC_CHANNEL_MODE_SIMUL,
     };
     /* Allocate continuous channel */
-    TEST_ESP_OK(dac_new_conti_channels(&conti_cfg, &conti_handle));
+    TEST_ESP_OK(dac_continuous_new_channels(&cont_cfg, &cont_handle));
     /* Register a callback to check if the interrupt can still triggered when cache is disabled */
     dac_event_callbacks_t cbs = {
         .on_convert_done = test_dac_on_convert_done_cb,
@@ -89,9 +89,9 @@ TEST_CASE("DAC_IRAM_safe_test", "[dac]")
         .cnt = 0,
         .result = false,
     };
-    TEST_ESP_OK(dac_conti_register_event_callback(conti_handle, &cbs, &intr_data));
+    TEST_ESP_OK(dac_continuous_register_event_callback(cont_handle, &cbs, &intr_data));
     /* Enable the channels in the group */
-    TEST_ESP_OK(dac_conti_enable(conti_handle));
+    TEST_ESP_OK(dac_continuous_enable(cont_handle));
 
     /* Real data in internal memory */
     uint8_t *data = (uint8_t *)heap_caps_calloc(1, BUF_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -99,12 +99,12 @@ TEST_CASE("DAC_IRAM_safe_test", "[dac]")
     for (int i = 0; i < BUF_SIZE; i++) {
         data[i] = i % 256;
     }
-    dac_conti_write_cyclically(conti_handle, data, BUF_SIZE, NULL);
+    dac_continuous_write_cyclically(cont_handle, data, BUF_SIZE, NULL);
     unity_utils_run_cache_disable_stub(test_dac_dma_iram_safety, data);
     unity_utils_run_cache_disable_stub(test_dac_dma_intr_iram_safety, &intr_data);
     TEST_ASSERT(intr_data.result);
 
-    TEST_ESP_OK(dac_conti_disable(conti_handle));
-    TEST_ESP_OK(dac_del_conti_channels(conti_handle));
+    TEST_ESP_OK(dac_continuous_disable(cont_handle));
+    TEST_ESP_OK(dac_continuous_del_channels(cont_handle));
     free(data);
 }

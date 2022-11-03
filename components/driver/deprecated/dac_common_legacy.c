@@ -142,5 +142,5 @@ static void check_dac_legacy_driver_conflict(void)
         ESP_EARLY_LOGE(TAG, "CONFLICT! The new DAC driver is not allowed to be used together with the legacy driver");
         abort();
     }
-    ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/dac_oneshot.h`, `driver/dac_cosine.h` or `driver/dac_conti.h` instead");
+    ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/dac_oneshot.h`, `driver/dac_cosine.h` or `driver/dac_continuous.h` instead");
 }

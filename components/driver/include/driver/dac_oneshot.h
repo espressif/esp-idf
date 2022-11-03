@@ -37,7 +37,7 @@ typedef struct {
  *      - ESP_ERR_NO_MEM        No memory for the DAC oneshot channel resources
  *      - ESP_OK                Allocate the new DAC oneshot channel success
  */
-esp_err_t dac_new_oneshot_channel(const dac_oneshot_config_t *oneshot_cfg, dac_oneshot_handle_t *ret_handle);
+esp_err_t dac_oneshot_new_channel(const dac_oneshot_config_t *oneshot_cfg, dac_oneshot_handle_t *ret_handle);
 
 /**
  * @brief Delete the DAC oneshot channel
@@ -49,7 +49,7 @@ esp_err_t dac_new_oneshot_channel(const dac_oneshot_config_t *oneshot_cfg, dac_o
  *      - ESP_ERR_INVALID_STATE The channel has already been de-registered
  *      - ESP_OK                Delete the oneshot channel success
  */
-esp_err_t dac_del_oneshot_channel(dac_oneshot_handle_t handle);
+esp_err_t dac_oneshot_del_channel(dac_oneshot_handle_t handle);
 
 /**
  * @brief Output the voltage

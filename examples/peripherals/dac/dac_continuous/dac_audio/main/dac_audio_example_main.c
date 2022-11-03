@@ -9,14 +9,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "driver/dac_conti.h"
+#include "driver/dac_continuous.h"
 #include "esp_check.h"
 #include "audio_example_file.h"
 
 static const char *TAG = "dac_audio";
 
 #if CONFIG_EXAMPLE_DAC_WRITE_ASYNC
-static bool IRAM_ATTR  dac_on_convert_done_callback(dac_conti_handle_t handle, const dac_event_data_t *event, void *user_data)
+static bool IRAM_ATTR  dac_on_convert_done_callback(dac_continuous_handle_t handle, const dac_event_data_t *event, void *user_data)
 {
     QueueHandle_t que = (QueueHandle_t)user_data;
     BaseType_t need_awoke;
@@ -30,7 +30,7 @@ static bool IRAM_ATTR  dac_on_convert_done_callback(dac_conti_handle_t handle, c
     return need_awoke;
 }
 
-static void dac_write_data_asynchronously(dac_conti_handle_t handle, QueueHandle_t que, uint8_t *data, size_t data_size)
+static void dac_write_data_asynchronously(dac_continuous_handle_t handle, QueueHandle_t que, uint8_t *data, size_t data_size)
 {
     ESP_LOGI(TAG, "Audio size %d bytes, played at frequency %d Hz asynchronously", data_size, CONFIG_EXAMPLE_AUDIO_SAMPLE_RATE);
     uint32_t cnt = 1;
@@ -42,11 +42,11 @@ static void dac_write_data_asynchronously(dac_conti_handle_t handle, QueueHandle
         while (byte_written < data_size) {
             xQueueReceive(que, &evt_data, portMAX_DELAY);
             size_t loaded_bytes = 0;
-            ESP_ERROR_CHECK(dac_conti_write_asynchronously(handle, evt_data.buf, evt_data.buf_size,
+            ESP_ERROR_CHECK(dac_continuous_write_asynchronously(handle, evt_data.buf, evt_data.buf_size,
                                             data + byte_written, data_size - byte_written, &loaded_bytes));
             byte_written += loaded_bytes;
         }
-        /* Clear the legacy data in DMA, clear times equal to the 'dac_conti_config_t::desc_num' */
+        /* Clear the legacy data in DMA, clear times equal to the 'dac_continuous_config_t::desc_num' */
         for (int i = 0; i < 4; i++) {
             xQueueReceive(que, &evt_data, portMAX_DELAY);
             memset(evt_data.buf, 0, evt_data.buf_size);
@@ -55,13 +55,13 @@ static void dac_write_data_asynchronously(dac_conti_handle_t handle, QueueHandle
     }
 }
 #else
-static void dac_write_data_synchronously(dac_conti_handle_t handle, uint8_t *data, size_t data_size)
+static void dac_write_data_synchronously(dac_continuous_handle_t handle, uint8_t *data, size_t data_size)
 {
     ESP_LOGI(TAG, "Audio size %d bytes, played at frequency %d Hz synchronously", data_size, CONFIG_EXAMPLE_AUDIO_SAMPLE_RATE);
     uint32_t cnt = 1;
     while (1) {
         printf("Play count: %"PRIu32"\n", cnt++);
-        ESP_ERROR_CHECK(dac_conti_write(handle, data, data_size, NULL, -1));
+        ESP_ERROR_CHECK(dac_continuous_write(handle, data, data_size, NULL, -1));
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -72,8 +72,8 @@ void app_main(void)
     ESP_LOGI(TAG, "DAC audio example start");
     ESP_LOGI(TAG, "--------------------------------------");
 
-    dac_conti_handle_t dac_handle;
-    dac_conti_config_t conti_cfg = {
+    dac_continuous_handle_t dac_handle;
+    dac_continuous_config_t cont_cfg = {
         .chan_mask = DAC_CHANNEL_MASK_ALL,
         .desc_num = 4,
         .buf_size = 2048,
@@ -91,7 +91,7 @@ void app_main(void)
         .chan_mode = DAC_CHANNEL_MODE_SIMUL,
     };
     /* Allocate continuous channels */
-    ESP_ERROR_CHECK(dac_new_conti_channels(&conti_cfg, &dac_handle));
+    ESP_ERROR_CHECK(dac_continuous_new_channels(&cont_cfg, &dac_handle));
 #if CONFIG_EXAMPLE_DAC_WRITE_ASYNC
     /* Create a queue to transport the interrupt event data */
     QueueHandle_t que = xQueueCreate(10, sizeof(dac_event_data_t));
@@ -101,15 +101,15 @@ void app_main(void)
         .on_stop = NULL,
     };
     /* Must register the callback if using asynchronous writing */
-    ESP_ERROR_CHECK(dac_conti_register_event_callback(dac_handle, &cbs, que));
+    ESP_ERROR_CHECK(dac_continuous_register_event_callback(dac_handle, &cbs, que));
 #endif
     /* Enable the continuous channels */
-    ESP_ERROR_CHECK(dac_conti_enable(dac_handle));
+    ESP_ERROR_CHECK(dac_continuous_enable(dac_handle));
     ESP_LOGI(TAG, "DAC initialized success, DAC DMA is ready");
 
     size_t audio_size = sizeof(audio_table);
 #if CONFIG_EXAMPLE_DAC_WRITE_ASYNC
-    ESP_ERROR_CHECK(dac_conti_start_async_writing(dac_handle));
+    ESP_ERROR_CHECK(dac_continuous_start_async_writing(dac_handle));
     dac_write_data_asynchronously(dac_handle, que, (uint8_t *)audio_table, audio_size);
 #else
     dac_write_data_synchronously(dac_handle, (uint8_t *)audio_table, audio_size);
