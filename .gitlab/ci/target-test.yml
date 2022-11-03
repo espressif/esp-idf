@@ -38,6 +38,7 @@
       --known-failure-cases-file known_failure_cases/known_failure_cases.txt
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
+      ${PYTEST_EXTRA_FLAGS}
 
 .pytest_examples_dir_template:
   extends: .pytest_template
@@ -672,6 +673,7 @@ test_app_test_pytest_esp32_jtag:
   tags: [ esp32, test_jtag_arm]
   variables:
     SETUP_TOOLS: "1"  # need gdb
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 test_app_test_pytest_esp32s2_generic:
   extends:
