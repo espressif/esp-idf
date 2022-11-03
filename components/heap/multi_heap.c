@@ -105,18 +105,6 @@ void multi_heap_in_rom_init(void)
 
 #else // CONFIG_HEAP_TLSF_USE_ROM_IMPL
 
-/* Return true if this block is free. */
-static inline bool is_free(const block_header_t *block)
-{
-    return ((block->size & 0x01) != 0);
-}
-
-/* Data size of the block (excludes this block's header) */
-static inline size_t block_data_size(const block_header_t *block)
-{
-    return (block->size & ~0x03);
-}
-
 /* Check a block is valid for this heap. Used to verify parameters. */
 static void assert_valid_block(const heap_t *heap, const block_header_t *block)
 {
@@ -130,8 +118,7 @@ static void assert_valid_block(const heap_t *heap, const block_header_t *block)
 
 void *multi_heap_get_block_address_impl(multi_heap_block_handle_t block)
 {
-    void *ptr = block_to_ptr(block);
-    return (ptr);
+    return block_to_ptr(block);
 }
 
 size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
@@ -195,7 +182,7 @@ multi_heap_block_handle_t multi_heap_get_next_block(multi_heap_handle_t heap, mu
     assert_valid_block(heap, block);
     block_header_t* next = block_next(block);
 
-    if(block_data_size(next) == 0) {
+    if(block_size(next) == 0) {
         //Last block:
         return NULL;
     } else {
@@ -206,7 +193,7 @@ multi_heap_block_handle_t multi_heap_get_next_block(multi_heap_handle_t heap, mu
 
 bool multi_heap_is_free(multi_heap_block_handle_t block)
 {
-    return is_free(block);
+    return block_is_free(block);
 }
 
 void *multi_heap_malloc_impl(multi_heap_handle_t heap, size_t size)
