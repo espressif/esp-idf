@@ -169,4 +169,4 @@ Chip Revision
 
 The bootloader checks the chip revision at the beginning of the application loading. The application can only be loaded if the version is ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and `<` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.
 
-The application checks the chip revision in the OTA update. The application can only be updated if the version is ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and `<` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.
+During the OTA upgrade, the version requirements and chip revision in the application header are checked for compatibility. The application can only be updated if the version is ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and `<` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.
