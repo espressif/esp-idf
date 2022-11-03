@@ -603,14 +603,14 @@ static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
 // A workaround for avoiding cause timeout issue when using
 // hardware reset.
 #if !SOC_I2C_SUPPORT_HW_FSM_RST
-    int scl_low_period, scl_high_period;
+    int scl_low_period, scl_high_period, scl_wait_high_period;
     int scl_start_hold, scl_rstart_setup;
     int scl_stop_hold, scl_stop_setup;
     int sda_hold, sda_sample;
     int timeout;
     uint8_t filter_cfg;
 
-    i2c_hal_get_scl_timing(&(i2c_context[i2c_num].hal), &scl_high_period, &scl_low_period);
+    i2c_hal_get_scl_clk_timing(&(i2c_context[i2c_num].hal), &scl_high_period, &scl_low_period, &scl_wait_high_period);
     i2c_hal_get_start_timing(&(i2c_context[i2c_num].hal), &scl_rstart_setup, &scl_start_hold);
     i2c_hal_get_stop_timing(&(i2c_context[i2c_num].hal), &scl_stop_setup, &scl_stop_hold);
     i2c_hal_get_sda_timing(&(i2c_context[i2c_num].hal), &sda_sample, &sda_hold);
@@ -625,7 +625,7 @@ static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
     i2c_hal_master_init(&(i2c_context[i2c_num].hal), i2c_num);
     i2c_hal_disable_intr_mask(&(i2c_context[i2c_num].hal), I2C_LL_INTR_MASK);
     i2c_hal_clr_intsts_mask(&(i2c_context[i2c_num].hal), I2C_LL_INTR_MASK);
-    i2c_hal_set_scl_timing(&(i2c_context[i2c_num].hal), scl_high_period, scl_low_period);
+    i2c_hal_set_scl_clk_timing(&(i2c_context[i2c_num].hal), scl_high_period, scl_low_period, scl_wait_high_period);
     i2c_hal_set_start_timing(&(i2c_context[i2c_num].hal), scl_rstart_setup, scl_start_hold);
     i2c_hal_set_stop_timing(&(i2c_context[i2c_num].hal), scl_stop_setup, scl_stop_hold);
     i2c_hal_set_sda_timing(&(i2c_context[i2c_num].hal), sda_sample, sda_hold);
