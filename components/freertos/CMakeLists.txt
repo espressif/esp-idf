@@ -49,12 +49,6 @@ if(${target} STREQUAL "linux")
     list(APPEND srcs
         "${kernel_dir}/portable/${arch}/port_idf.c"
         "${kernel_dir}/portable/${arch}/utils/wait_for_event.c")
-
-    # TODO: This is temporary until the following files can safely be added to the Linux target:
-    list(REMOVE_ITEM srcs
-        "${kernel_dir}/croutine.c"
-        "${kernel_dir}/event_groups.c"
-        "${kernel_dir}/stream_buffer.c")
 else()
     list(APPEND srcs
         "FreeRTOS-openocd.c"

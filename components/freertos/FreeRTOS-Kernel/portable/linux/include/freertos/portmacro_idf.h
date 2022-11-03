@@ -13,6 +13,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdlib.h> // This is for malloc(), used by portmacro.h
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "spinlock.h"

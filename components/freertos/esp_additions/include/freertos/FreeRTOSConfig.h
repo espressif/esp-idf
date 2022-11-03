@@ -191,7 +191,7 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 
 // -------------------- Co-routines  -----------------------
 
-#define configUSE_CO_ROUTINES                           0
+#define configUSE_CO_ROUTINES                           0 // CO_ROUTINES are not supported in ESP-IDF
 #define configMAX_CO_ROUTINE_PRIORITIES                 2
 
 // ------------------- Software Timer ----------------------
