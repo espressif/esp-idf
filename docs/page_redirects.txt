@@ -57,10 +57,11 @@ get-started-cmake/get-started-pico-kit-v3       hw-reference/esp32/get-started-p
 api-guides/build-system-cmake                   api-guides/build-system
 api-guides/ulp-cmake                            api-guides/ulp
 api-guides/unit-tests-cmake                     api-guides/unit-tests
-api-guides/ulp_instruction_set.rst              api-reference/system/ulp_instruction_set.rst
-api-guides/ulps2_instruction_set.rst            api-reference/system/ulp_instruction_set.rst
-api-guides/ulp_macros.rst                       api-reference/system/ulp_macros.rst
-api-guides/ulp-risc-v.rst                       api-reference/system/ulp-risc-v.rst
+api-guides/ulp_instruction_set                  api-reference/system/ulp_instruction_set
+api-guides/ulps2_instruction_set                api-reference/system/ulp_instruction_set
+api-guides/ulp_macros                           api-reference/system/ulp_macros
+api-guides/ulp-risc-v                           api-reference/system/ulp-risc-v
+api-guides/console                              api-reference/system/console
 
 api-reference/network/tcpip_adapter             migration-guides/tcpip-adapter
 api-reference/system/system                     api-reference/system/misc_system_api
