@@ -22,12 +22,6 @@
 extern "C" {
 #endif
 
-// TODO: IDF-5983 From esp_task.h, should later be used from there
-// or be refactored in IDF (e.g. move esp_task.h to freertos)
-// See also configMINIMAL_STACK_SIZE for more information.
-#define CONFIG_ESP_MAIN_TASK_STACK_SIZE ( ( unsigned short ) (0x4000 + 40) / sizeof(portSTACK_TYPE) ) // should be in Kconfig again
-#define CONFIG_ESP_MAIN_TASK_AFFINITY   0
-
 #define ESP_TASK_PRIO_MAX (configMAX_PRIORITIES)
 #define ESP_TASK_PRIO_MIN (0)
 #define ESP_TASK_MAIN_PRIO            (ESP_TASK_PRIO_MIN + 1)

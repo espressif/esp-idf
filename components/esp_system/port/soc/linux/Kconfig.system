@@ -1,0 +1,1 @@
+# Original Kconfig has settings related to brownout, rom and cache. All non-existent on Linux.

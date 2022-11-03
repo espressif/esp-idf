@@ -389,6 +389,14 @@ test_hello_world_linux_compatible_example:
     - timeout 15 build/hello_world.elf | tee test.txt
     - grep "Hello world!" test.txt
 
+test_esp_system:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/components/esp_system/host_test/test_esp_system/
+    - idf.py build
+    - timeout 5 build/test_esp_system.elf | tee log.txt || true
+    - grep "6 Tests 0 Failures 0 Ignored" log.txt
+
 test_esp_timer_cxx:
   extends: .host_test_template
   script:

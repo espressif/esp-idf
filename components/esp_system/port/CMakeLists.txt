@@ -6,7 +6,8 @@ endif()
 
 target_include_directories(${COMPONENT_LIB} PRIVATE ${INCLUDE_FILES} include/private)
 
-set(srcs "cpu_start.c" "panic_handler.c" "brownout.c")
+set(srcs "cpu_start.c" "panic_handler.c" "brownout.c" "esp_system_chip.c")
+
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})
 
 target_sources(${COMPONENT_LIB} PRIVATE ${srcs})
