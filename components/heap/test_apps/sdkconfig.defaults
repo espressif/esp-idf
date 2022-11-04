@@ -1,2 +1,3 @@
+CONFIG_COMPILER_DUMP_RTL_FILES=y
 CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=n
 CONFIG_ESP_SYSTEM_MEMPROT_FEATURE=n # memory protection needs to be disabled for certain tests
