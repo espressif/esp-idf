@@ -6,7 +6,6 @@
 
 #include "sdkconfig.h"
 
-#ifndef CONFIG_FREERTOS_SMP
 /*
 Note: We disable this test when using the FreeRTOS SMP kernel as the port will already provide
 a definition for vApplicationTickHook(). Thus this test cannot be run.
@@ -19,6 +18,7 @@ a definition for vApplicationTickHook(). Thus this test cannot be run.
 #include "unity.h"
 #include "test_utils.h"
 
+#ifndef CONFIG_FREERTOS_SMP
 /*
 Test FreeRTOS idle hook. Only compiled in if FreeRTOS idle hooks are enabled.
 */
@@ -63,6 +63,7 @@ TEST_CASE("FreeRTOS tick hook", "[freertos]")
 }
 
 #endif // configUSE_TICK_HOOK
+#endif // CONFIG_FREERTOS_SMP
 
 #if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
 
@@ -91,4 +92,3 @@ TEST_CASE("static task cleanup hook is called based on config", "[freertos]")
 }
 
 #endif // CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
-#endif // CONFIG_FREERTOS_SMP
