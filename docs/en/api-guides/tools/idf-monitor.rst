@@ -72,7 +72,7 @@ IDF-specific features
 Automatic Address Decoding
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Whenever ESP-IDF outputs a hexadecimal code address of the form ``0x4_______``, IDF Monitor uses ``addr2line_`` to look up the location in the source code and find the function name.
+Whenever the chip outputs a hexadecimal address which points to executable code, IDF monitor looks up the location in source code (file name and line number) and prints the location on the next line in yellow.
 
 .. highlight:: none
 

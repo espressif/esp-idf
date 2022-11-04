@@ -8,8 +8,9 @@ from typing import BinaryIO, Callable, Optional, Union  # noqa: F401
 
 from serial.tools import miniterm  # noqa: F401
 
-from .constants import MATCH_PCADDR
+from .constants import ADDRESS_RE
 from .output_helpers import lookup_pc_address, red_print, yellow_print
+from .pc_address_matcher import PcAddressMatcher
 
 
 class Logger:
@@ -25,6 +26,7 @@ class Logger:
         self._pc_address_buffer = pc_address_buffer
         self.enable_address_decoding = enable_address_decoding
         self.toolchain_prefix = toolchain_prefix
+        self.pc_address_matcher = PcAddressMatcher(self.elf_file) if enable_address_decoding else None
 
     @property
     def pc_address_buffer(self):  # type: () -> bytes
@@ -117,7 +119,9 @@ class Logger:
         self._pc_address_buffer = b''
         if not self.enable_address_decoding:
             return
-        for m in re.finditer(MATCH_PCADDR, line.decode(errors='ignore')):
-            translation = lookup_pc_address(m.group(), self.toolchain_prefix, self.elf_file)
-            if translation:
-                self.print(translation, console_printer=yellow_print)
+        for m in re.finditer(ADDRESS_RE, line.decode(errors='ignore')):
+            num = m.group()
+            if self.pc_address_matcher.is_executable_address(int(num, 16)):
+                translation = lookup_pc_address(num, self.toolchain_prefix, self.elf_file)
+                if translation:
+                    self.print(translation, console_printer=yellow_print)
