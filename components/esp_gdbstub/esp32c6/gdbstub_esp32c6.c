@@ -55,6 +55,7 @@ void esp_gdbstub_target_init()
 {
 }
 
+// Note: we only interact with the primary console
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 
 int esp_gdbstub_getchar()

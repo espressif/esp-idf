@@ -23,7 +23,7 @@
 #include "cmd_wifi.h"
 #include "cmd_nvs.h"
 
-#ifdef CONFIG_ESP_CONSOLE_USB_CDC
+#if CONFIG_ESP_CONSOLE_USB_CDC
 #error This example is incompatible with USB CDC console. Please try "console_usb" example instead.
 #endif // CONFIG_ESP_CONSOLE_USB_CDC
 

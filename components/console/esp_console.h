@@ -76,7 +76,7 @@ typedef struct {
     int rx_gpio_num; //!< GPIO number for RX path, -1 means using default one
 } esp_console_dev_uart_config_t;
 
-#ifdef CONFIG_ESP_CONSOLE_UART_CUSTOM
+#if CONFIG_ESP_CONSOLE_UART_CUSTOM || CONFIG_ESP_CONSOLE_SECONDARY_UART_CUSTOM
 #define ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT()       \
 {                                                   \
     .channel = CONFIG_ESP_CONSOLE_UART_NUM,         \
@@ -108,7 +108,7 @@ typedef struct {
 {                                            \
 }
 
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 /**
  * @brief Parameters for console device: USB-SERIAL-JTAG
  *
@@ -121,7 +121,7 @@ typedef struct {
 
 #define ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT() {}
 
-#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#endif // CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 
 /**
  * @brief initialize console module
@@ -348,7 +348,7 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
  */
 esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
 
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 /**
  * @brief Establish a console REPL (Read-eval-print loop) environment over USB-SERIAL-JTAG
  *
@@ -369,7 +369,7 @@ esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *d
  *      - ESP_FAIL Parameter error
  */
 esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_jtag_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
-#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#endif // CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 
 /**
  * @brief Start REPL environment

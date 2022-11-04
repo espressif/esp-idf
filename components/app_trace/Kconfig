@@ -53,7 +53,7 @@ menu "Application Level Tracing"
             bool "USB_CDC"
             select APPTRACE_ENABLE
             select APPTRACE_DEST_UART
-            depends on !ESP_CONSOLE_USB_CDC && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3) && !USB_ENABLED
+            depends on !ESP_CONSOLE_IS_USB_CDC_ENABLED && SOC_USB_OTG_SUPPORTED && !USB_ENABLED
 
         config APPTRACE_DEST_UART_NONE
             bool "None"

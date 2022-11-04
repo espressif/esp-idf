@@ -12,11 +12,11 @@ idf_component_register(SRCS ${sources}
                        PRIV_INCLUDE_DIRS private_include
                        PRIV_REQUIRES ${pr})
 
-if(CONFIG_ESP_CONSOLE_USB_CDC)
+if(CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED)
     target_sources(${COMPONENT_LIB} PRIVATE "vfs_cdcacm.c")
 endif()
 
-if(CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG OR CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG)
+if(CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED)
     target_sources(${COMPONENT_LIB} PRIVATE "vfs_usb_serial_jtag.c")
 endif()
 

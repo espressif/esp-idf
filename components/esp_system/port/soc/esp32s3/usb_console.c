@@ -52,7 +52,7 @@ static esp_usb_console_cb_t s_rx_cb;
 static esp_usb_console_cb_t s_tx_cb;
 static void *s_cb_arg;
 
-#ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
+#if CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
 static portMUX_TYPE s_write_lock = portMUX_INITIALIZER_UNLOCKED;
 void esp_usb_console_write_char(char c);
 #define ISR_FLAG  ESP_INTR_FLAG_IRAM
@@ -249,7 +249,7 @@ esp_err_t esp_usb_console_init(void)
     /* Enable the interrupt handler */
     esp_intr_enable(s_usb_int_handle);
 
-#ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
+#if CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
     /* Install esp_rom_printf handler */
     ets_install_putc1(&esp_usb_console_write_char);
 #endif // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
@@ -379,7 +379,7 @@ bool esp_usb_console_write_available(void)
 }
 
 
-#ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
+#if CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
 /* Used as an output function by esp_rom_printf.
  * The LF->CRLF replacement logic replicates the one in esp_rom_uart_putc.
  * Not static to allow placement into IRAM by ldgen.

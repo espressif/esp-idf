@@ -26,7 +26,7 @@
 #include "esp32s3/rom/usb/usb_persist.h"
 #endif
 
-#ifdef CONFIG_ESP_CONSOLE_USB_CDC
+#if CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
 /* The following functions replace esp_rom_uart_putc, esp_rom_uart_tx_one_char,
  * and uart_tx_one_char_uart ROM functions. The main difference is that
  * uart_tx_one_char_uart calls cdc_acm_fifo_fill for each byte passed to it,
@@ -61,16 +61,16 @@ void bootloader_console_write_char_usb(char c)
         bootloader_console_write_one_char_usb(c);
     }
 }
-#endif //CONFIG_ESP_CONSOLE_USB_CDC
+#endif // CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
 
 void bootloader_console_deinit(void)
 {
-#ifdef CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_IS_UART_ENABLED
     /* Ensure any buffered log output is displayed */
     esp_rom_uart_flush_tx(CONFIG_ESP_CONSOLE_UART_NUM);
-#endif // CONFIG_ESP_CONSOLE_UART
+#endif // CONFIG_ESP_CONSOLE_IS_UART_ENABLED
 
-#ifdef CONFIG_ESP_CONSOLE_USB_CDC
+#if CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
     bootloader_console_flush_usb();
     usb_dc_prepare_persist();
     chip_usb_set_persist_flags(USBDC_PERSIST_ENA);
@@ -79,5 +79,5 @@ void bootloader_console_deinit(void)
         usb_dc_check_poll_for_interrupts();
     }
     esp_rom_install_channel_putc(1, NULL);
-#endif
+#endif // CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
 }

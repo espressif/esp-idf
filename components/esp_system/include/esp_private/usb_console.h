@@ -58,6 +58,8 @@ ssize_t esp_usb_console_available_for_read(void);
 
 bool esp_usb_console_write_available(void);
 
+bool esp_usb_console_read_available(void);
+
 esp_err_t esp_usb_console_set_cb(esp_usb_console_cb_t rx_cb, esp_usb_console_cb_t tx_cb, void* arg);
 
 #ifdef __cplusplus

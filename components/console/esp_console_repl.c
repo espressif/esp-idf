@@ -49,9 +49,9 @@ typedef struct {
 static void esp_console_repl_task(void *args);
 static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl);
 static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl);
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *repl);
-#endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#endif // CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 static esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_history(const char *history_path, uint32_t max_history_len, esp_console_repl_com_t *repl_com);
@@ -120,7 +120,7 @@ _exit:
     return ret;
 }
 
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_jtag_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
 {
     esp_console_repl_universal_t *usb_serial_jtag_repl = NULL;
@@ -198,7 +198,7 @@ _exit:
     }
     return ret;
 }
-#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#endif // CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 
 esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
 {
@@ -442,7 +442,7 @@ _exit:
     return ret;
 }
 
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *repl)
 {
     esp_err_t ret = ESP_OK;
@@ -462,7 +462,7 @@ static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *rep
 _exit:
     return ret;
 }
-#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#endif // CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 
 static void esp_console_repl_task(void *args)
 {
