@@ -57,6 +57,23 @@ The ESP-TLS provides multiple options for TLS server verification on the client 
     * **skip server verification**: This is an insecure option provided in the ESP-TLS for testing purpose. The option can be set by enabling :ref:`CONFIG_ESP_TLS_INSECURE` and :ref:`CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY` in the ESP-TLS menuconfig. When this option is enabled the ESP-TLS will skip server verification by default when no other options for server verification are selected in the :cpp:type:`esp_tls_cfg_t` structure.
       *WARNING:Enabling this option comes with a potential risk of establishing a TLS connection with a server which has a fake identity, provided that the server certificate is not provided either through API or other mechanism like ca_store etc.*
 
+ESP-TLS Server cert selection hook
+----------------------------------
+The ESP-TLS component provides an option to set the server cert selection hook when using the mbedTLS stack. This provides an ability to configure and use a certificate selection callback during server handshake, to select a certificate to present to the client based on the TLS extensions supplied in the client hello (alpn, sni, etc). To enable this feature, please enable  :ref:`CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK` in the ESP-TLS menuconfig.
+The certificate selection callback can be configured in the :cpp:type:`esp_tls_cfg_t` structure as follows:
+
+.. code-block:: c
+    
+    int cert_selection_callback(mbedtls_ssl_context *ssl)
+    {
+        /* Code that the callback should execute */
+        return 0;
+    }
+
+    esp_tls_cfg_t cfg = {
+        cert_select_cb = cert_section_callback,
+    };
+
 .. _esp_tls_wolfssl:
 
 Underlying SSL/TLS Library Options
