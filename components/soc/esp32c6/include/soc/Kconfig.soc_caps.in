@@ -67,6 +67,10 @@ config SOC_SUPPORT_COEXISTENCE
     bool
     default y
 
+config SOC_ECC_SUPPORTED
+    bool
+    default y
+
 config SOC_FLASH_ENC_SUPPORTED
     bool
     default y

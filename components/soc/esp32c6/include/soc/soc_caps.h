@@ -53,6 +53,7 @@
 // #define SOC_SHA_SUPPORTED               1 // TODO: IDF-5353
 // #define SOC_HMAC_SUPPORTED              1 // TODO: IDF-5355
 // #define SOC_DIG_SIGN_SUPPORTED          1 // TODO: IDF-5360
+#define SOC_ECC_SUPPORTED               1
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
 // #define SOC_MEMPROT_SUPPORTED           1 // TODO: IDF-5684
