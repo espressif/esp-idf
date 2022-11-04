@@ -8,13 +8,13 @@
 #include "soc/soc_caps.h"
 #include "dac_priv_common.h"
 #include "driver/dac_oneshot.h"
-#include "esp_check.h"
 
 #if CONFIG_DAC_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #endif
+#include "esp_check.h"
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #endif
@@ -25,7 +25,7 @@
 
 static const char *TAG = "dac_oneshot";
 
-esp_err_t dac_new_oneshot_channel(const dac_oneshot_config_t *oneshot_cfg, dac_oneshot_handle_t *ret_handle)
+esp_err_t dac_oneshot_new_channel(const dac_oneshot_config_t *oneshot_cfg, dac_oneshot_handle_t *ret_handle)
 {
 #if CONFIG_DAC_ENABLE_DEBUG_LOG
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
@@ -55,7 +55,7 @@ err2:
     return ret;
 }
 
-esp_err_t dac_del_oneshot_channel(dac_oneshot_handle_t handle)
+esp_err_t dac_oneshot_del_channel(dac_oneshot_handle_t handle)
 {
     DAC_NULL_POINTER_CHECK(handle);
 

@@ -55,13 +55,13 @@ void app_main(void)
     dac_oneshot_config_t chan0_cfg = {
         .chan_id = DAC_CHAN_0,
     };
-    ESP_ERROR_CHECK(dac_new_oneshot_channel(&chan0_cfg, &chan0_handle));
+    ESP_ERROR_CHECK(dac_oneshot_new_channel(&chan0_cfg, &chan0_handle));
 
     dac_oneshot_handle_t chan1_handle;
     dac_oneshot_config_t chan1_cfg = {
         .chan_id = DAC_CHAN_1,
     };
-    ESP_ERROR_CHECK(dac_new_oneshot_channel(&chan1_cfg, &chan1_handle));
+    ESP_ERROR_CHECK(dac_oneshot_new_channel(&chan1_cfg, &chan1_handle));
 
     /* DAC oneshot outputting threads */
     xTaskCreate(dac_output_task, "dac_chan0_output_task", 4096, chan0_handle, 5, NULL);

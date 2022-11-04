@@ -110,7 +110,7 @@ endif()
 if(CONFIG_SOC_DAC_SUPPORTED)
     list(APPEND srcs "dac/dac_oneshot.c"
                      "dac/dac_cosine.c"
-                     "dac/dac_conti.c"
+                     "dac/dac_continuous.c"
                      "dac/dac_common.c"
                      "dac/${target}/dac_dma.c"
                      "deprecated/dac_common_legacy.c"

@@ -13,7 +13,7 @@
 #include "driver/dac_types_legacy.h"
 
 #if !CONFIG_DAC_SUPPRESS_DEPRECATE_WARN
-#warning "The legacy DAC driver is deprecated, please use `driver/dac_oneshot.h`, `driver/dac_cosine.h` or `driver/dac_conti.h` instead"
+#warning "The legacy DAC driver is deprecated, please use `driver/dac_oneshot.h`, `driver/dac_cosine.h` or `driver/dac_continuous.h` instead"
 #endif
 
 #ifdef __cplusplus

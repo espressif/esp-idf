@@ -55,7 +55,7 @@ typedef struct {
  *      - ESP_ERR_NO_MEM        No memory for the DAC cosine wave channel resources
  *      - ESP_OK                Allocate the new DAC cosine wave channel success
  */
-esp_err_t dac_new_cosine_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_handle_t *ret_handle);
+esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_handle_t *ret_handle);
 
 /**
  * @brief Delete the DAC cosine wave channel
@@ -66,7 +66,7 @@ esp_err_t dac_new_cosine_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
  *      - ESP_ERR_INVALID_STATE The channel has already been deregistered
  *      - ESP_OK                Delete the cosine wave channel success
  */
-esp_err_t dac_del_cosine_channel(dac_cosine_handle_t handle);
+esp_err_t dac_cosine_del_channel(dac_cosine_handle_t handle);
 
 /**
  * @brief Start outputting the cosine wave on the channel

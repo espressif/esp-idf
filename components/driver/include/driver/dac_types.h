@@ -35,13 +35,13 @@ extern "C" {
 typedef enum {
     DAC_CHANNEL_MODE_SIMUL,         /*!< The data in the DMA buffer is simultaneously output to the enable channel of the DAC. */
     DAC_CHANNEL_MODE_ALTER,         /*!< The data in the DMA buffer is alternately output to the enable channel of the DAC. */
-} dac_conti_channel_mode_t;
+} dac_continuous_channel_mode_t;
 
 /**
  * @brief DAC DMA (digitial controller) clock source
  *
  */
-typedef soc_periph_dac_digi_clk_src_t       dac_conti_digi_clk_src_t;
+typedef soc_periph_dac_digi_clk_src_t       dac_continuous_digi_clk_src_t;
 
 /**
  * @brief DAC cosine wave generator clock source

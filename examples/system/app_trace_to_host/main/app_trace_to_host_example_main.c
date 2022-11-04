@@ -43,7 +43,7 @@ static void enable_cosine_generator(void)
         .atten = DAC_COSINE_ATTEN_DEFAULT,
         .flags.force_set_freq = false,
     };
-    ESP_ERROR_CHECK(dac_new_cosine_channel(&cos_cfg, &dac_handle));
+    ESP_ERROR_CHECK(dac_cosine_new_channel(&cos_cfg, &dac_handle));
     ESP_ERROR_CHECK(dac_cosine_start(dac_handle));
 }
 

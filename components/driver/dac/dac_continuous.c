@@ -14,18 +14,17 @@
 
 #include "rom/lldesc.h"
 #include "soc/soc_caps.h"
-#include "driver/dac_conti.h"
+#include "driver/dac_continuous.h"
 
 #include "dac_priv_common.h"
 #include "dac_priv_dma.h"
-
-#include "esp_check.h"
 
 #if CONFIG_DAC_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #endif
+#include "esp_check.h"
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #endif
@@ -59,9 +58,9 @@
     }                                                           \
 } while (/*CONSTCOND*/0)
 
-struct dac_conti_s {
+struct dac_continuous_s {
     uint32_t                chan_cnt;
-    dac_conti_config_t      cfg;
+    dac_continuous_config_t cfg;
     atomic_bool             is_enabled;
     atomic_bool             is_cyclic;
     atomic_bool             is_running;
@@ -86,7 +85,7 @@ struct dac_conti_s {
     void                    *user_data;
 };
 
-static const char *TAG = "dac_conti";
+static const char *TAG = "dac_continuous";
 
 static bool s_dma_in_use = false;
 static portMUX_TYPE desc_spinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -97,7 +96,7 @@ static portMUX_TYPE desc_spinlock = portMUX_INITIALIZER_UNLOCKED;
 #define DESC_ENTER_CRITICAL_ISR()    portENTER_CRITICAL_ISR(&desc_spinlock)
 #define DESC_EXIT_CRITICAL_ISR()     portEXIT_CRITICAL_ISR(&desc_spinlock)
 
-static void s_dac_free_dma_desc(dac_conti_handle_t handle)
+static void s_dac_free_dma_desc(dac_continuous_handle_t handle)
 {
     STAILQ_INIT(&handle->head);
     if (handle->desc != NULL) {
@@ -120,7 +119,7 @@ static void s_dac_free_dma_desc(dac_conti_handle_t handle)
     }
 }
 
-static esp_err_t s_dac_alloc_dma_desc(dac_conti_handle_t handle)
+static esp_err_t s_dac_alloc_dma_desc(dac_continuous_handle_t handle)
 {
     esp_err_t ret = ESP_OK;
 
@@ -155,7 +154,7 @@ err:
 
 static void IRAM_ATTR s_dac_default_intr_handler(void *arg)
 {
-    dac_conti_handle_t handle = (dac_conti_handle_t)arg;
+    dac_continuous_handle_t handle = (dac_continuous_handle_t)arg;
     uint32_t dummy;
     BaseType_t need_awoke = pdFALSE;
     BaseType_t tmp = pdFALSE;
@@ -199,22 +198,22 @@ static void IRAM_ATTR s_dac_default_intr_handler(void *arg)
 }
 
 
-esp_err_t dac_new_conti_channels(const dac_conti_config_t *conti_cfg, dac_conti_handle_t *ret_handle)
+esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, dac_continuous_handle_t *ret_handle)
 {
 #if CONFIG_DAC_ENABLE_DEBUG_LOG
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
 #endif
     /* Parameters validation */
-    DAC_NULL_POINTER_CHECK(conti_cfg);
+    DAC_NULL_POINTER_CHECK(cont_cfg);
     DAC_NULL_POINTER_CHECK(ret_handle);
-    ESP_RETURN_ON_FALSE(conti_cfg->chan_mask <= DAC_CHANNEL_MASK_ALL, ESP_ERR_INVALID_ARG, TAG, "invalid dac channel id");
-    ESP_RETURN_ON_FALSE(conti_cfg->desc_num > 1, ESP_ERR_INVALID_STATE, TAG, "at least two DMA descriptor needed");
+    ESP_RETURN_ON_FALSE(cont_cfg->chan_mask <= DAC_CHANNEL_MASK_ALL, ESP_ERR_INVALID_ARG, TAG, "invalid dac channel id");
+    ESP_RETURN_ON_FALSE(cont_cfg->desc_num > 1, ESP_ERR_INVALID_STATE, TAG, "at least two DMA descriptor needed");
     ESP_RETURN_ON_FALSE(!s_dma_in_use, ESP_ERR_INVALID_STATE, TAG, "DMA already in use");
 
     esp_err_t ret = ESP_OK;
 
     /* Register the channels */
-    for (uint32_t i = 0, mask = conti_cfg->chan_mask; mask; mask >>= 1, i++) {
+    for (uint32_t i = 0, mask = cont_cfg->chan_mask; mask; mask >>= 1, i++) {
         if (mask & 0x01) {
             ESP_GOTO_ON_ERROR(dac_priv_register_channel(i, "dac continuous"),
                               err4, TAG, "register dac channel %"PRIu32" failed", i);
@@ -222,13 +221,13 @@ esp_err_t dac_new_conti_channels(const dac_conti_config_t *conti_cfg, dac_conti_
     }
 
     /* Allocate continuous mode struct */
-    dac_conti_handle_t handle = heap_caps_calloc(1, sizeof(struct dac_conti_s), DAC_MEM_ALLOC_CAPS);
+    dac_continuous_handle_t handle = heap_caps_calloc(1, sizeof(struct dac_continuous_s), DAC_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_NO_MEM, TAG, "no memory for the dac continuous mode structure");
 
     /* Allocate static queue */
-    handle->desc_pool_storage = (uint8_t *)heap_caps_calloc(conti_cfg->desc_num, sizeof(lldesc_t *), DAC_MEM_ALLOC_CAPS);
+    handle->desc_pool_storage = (uint8_t *)heap_caps_calloc(cont_cfg->desc_num, sizeof(lldesc_t *), DAC_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(handle->desc_pool_storage, ESP_ERR_NO_MEM, err3, TAG, "no memory for message queue storage");
-    handle->desc_pool = xQueueCreateStatic(conti_cfg->desc_num, sizeof(lldesc_t *), handle->desc_pool_storage, &handle->desc_pool_struct);
+    handle->desc_pool = xQueueCreateStatic(cont_cfg->desc_num, sizeof(lldesc_t *), handle->desc_pool_storage, &handle->desc_pool_struct);
     ESP_GOTO_ON_FALSE(handle->desc_pool, ESP_ERR_NO_MEM, err3, TAG, "no memory for message queue");
 
     /* Allocate static mutex */
@@ -237,11 +236,11 @@ esp_err_t dac_new_conti_channels(const dac_conti_config_t *conti_cfg, dac_conti_
 
     /* Create PM lock */
 #if CONFIG_PM_ENABLE
-    esp_pm_lock_type_t pm_lock_type = conti_cfg->clk_src == DAC_DIGI_CLK_SRC_APLL ? ESP_PM_NO_LIGHT_SLEEP : ESP_PM_APB_FREQ_MAX;
+    esp_pm_lock_type_t pm_lock_type = cont_cfg->clk_src == DAC_DIGI_CLK_SRC_APLL ? ESP_PM_NO_LIGHT_SLEEP : ESP_PM_APB_FREQ_MAX;
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, "dac_driver", &handle->pm_lock), err3, TAG, "Failed to create DAC pm lock");
 #endif
-    handle->chan_cnt = __builtin_popcount(conti_cfg->chan_mask);
-    memcpy(&(handle->cfg), conti_cfg, sizeof(dac_conti_config_t));
+    handle->chan_cnt = __builtin_popcount(cont_cfg->chan_mask);
+    memcpy(&(handle->cfg), cont_cfg, sizeof(dac_continuous_config_t));
 
     atomic_init(&handle->is_enabled, false);
     atomic_init(&handle->is_cyclic, false);
@@ -252,9 +251,9 @@ esp_err_t dac_new_conti_channels(const dac_conti_config_t *conti_cfg, dac_conti_
     ESP_GOTO_ON_ERROR(s_dac_alloc_dma_desc(handle), err2, TAG, "Failed to allocate memory for DMA buffers");
 
     /* Initialize DAC DMA peripheral */
-    ESP_GOTO_ON_ERROR(dac_dma_periph_init(conti_cfg->freq_hz,
-                                          conti_cfg->chan_mode == DAC_CHANNEL_MODE_ALTER,
-                                          conti_cfg->clk_src == DAC_DIGI_CLK_SRC_APLL),
+    ESP_GOTO_ON_ERROR(dac_dma_periph_init(cont_cfg->freq_hz,
+                                          cont_cfg->chan_mode == DAC_CHANNEL_MODE_ALTER,
+                                          cont_cfg->clk_src == DAC_DIGI_CLK_SRC_APLL),
                       err2, TAG, "Failed to initialize DAC DMA peripheral");
     /* Register DMA interrupt */
     ESP_GOTO_ON_ERROR(esp_intr_alloc(dac_dma_periph_get_intr_signal(), DAC_INTR_ALLOC_FLAGS,
@@ -285,7 +284,7 @@ err3:
     free(handle);
 err4:
     /* Deregister the channels */
-    for (uint32_t i = 0, mask = conti_cfg->chan_mask; mask; mask >>= 1, i++) {
+    for (uint32_t i = 0, mask = cont_cfg->chan_mask; mask; mask >>= 1, i++) {
         if (mask & 0x01) {
             dac_priv_deregister_channel(i);
         }
@@ -293,7 +292,7 @@ err4:
     return ret;
 }
 
-esp_err_t dac_del_conti_channels(dac_conti_handle_t handle)
+esp_err_t dac_continuous_del_channels(dac_continuous_handle_t handle)
 {
     DAC_NULL_POINTER_CHECK(handle);
     ESP_RETURN_ON_FALSE(!atomic_load(&handle->is_enabled), ESP_ERR_INVALID_STATE, TAG, "dac continuous output not disabled yet");
@@ -343,7 +342,7 @@ esp_err_t dac_del_conti_channels(dac_conti_handle_t handle)
     return ESP_OK;
 }
 
-esp_err_t dac_conti_register_event_callback(dac_conti_handle_t handle, const dac_event_callbacks_t *callbacks, void *user_data)
+esp_err_t dac_continuous_register_event_callback(dac_continuous_handle_t handle, const dac_event_callbacks_t *callbacks, void *user_data)
 {
     DAC_NULL_POINTER_CHECK(handle);
     if (!callbacks) {
@@ -367,7 +366,7 @@ esp_err_t dac_conti_register_event_callback(dac_conti_handle_t handle, const dac
     return ESP_OK;
 }
 
-esp_err_t dac_conti_enable(dac_conti_handle_t handle)
+esp_err_t dac_continuous_enable(dac_continuous_handle_t handle)
 {
     DAC_NULL_POINTER_CHECK(handle);
     ESP_RETURN_ON_FALSE(!atomic_load(&handle->is_enabled), ESP_ERR_INVALID_STATE, TAG, "dac continuous has already enabled");
@@ -396,7 +395,7 @@ err:
     return ret;
 }
 
-esp_err_t dac_conti_disable(dac_conti_handle_t handle)
+esp_err_t dac_continuous_disable(dac_continuous_handle_t handle)
 {
     DAC_NULL_POINTER_CHECK(handle);
     ESP_RETURN_ON_FALSE(atomic_load(&handle->is_enabled), ESP_ERR_INVALID_STATE, TAG, "dac continuous has already disabled");
@@ -418,7 +417,7 @@ esp_err_t dac_conti_disable(dac_conti_handle_t handle)
     return ESP_OK;
 }
 
-esp_err_t dac_conti_start_async_writing(dac_conti_handle_t handle)
+esp_err_t dac_continuous_start_async_writing(dac_continuous_handle_t handle)
 {
     DAC_NULL_POINTER_CHECK(handle);
     ESP_RETURN_ON_FALSE(atomic_load(&handle->is_enabled), ESP_ERR_INVALID_STATE, TAG, "dac continuous has not been enabled");
@@ -447,7 +446,7 @@ esp_err_t dac_conti_start_async_writing(dac_conti_handle_t handle)
     return ESP_OK;
 }
 
-esp_err_t dac_conti_stop_async_writing(dac_conti_handle_t handle)
+esp_err_t dac_continuous_stop_async_writing(dac_continuous_handle_t handle)
 {
     DAC_NULL_POINTER_CHECK(handle);
     ESP_RETURN_ON_FALSE(atomic_load(&handle->is_async), ESP_ERR_INVALID_STATE, TAG, "dac asynchronous writing has not been started");
@@ -470,7 +469,7 @@ esp_err_t dac_conti_stop_async_writing(dac_conti_handle_t handle)
 #define DAC_16BIT_ALIGN_COEFF   1
 #endif
 
-static size_t s_dac_load_data_into_buf(dac_conti_handle_t handle, uint8_t *dest, size_t dest_len, const uint8_t *src, size_t src_len)
+static size_t s_dac_load_data_into_buf(dac_continuous_handle_t handle, uint8_t *dest, size_t dest_len, const uint8_t *src, size_t src_len)
 {
     size_t load_bytes = 0;
 #if CONFIG_DAC_DMA_AUTO_16BIT_ALIGN
@@ -489,7 +488,7 @@ static size_t s_dac_load_data_into_buf(dac_conti_handle_t handle, uint8_t *dest,
     return load_bytes;
 }
 
-esp_err_t dac_conti_write_asynchronously(dac_conti_handle_t handle, uint8_t *dma_buf,
+esp_err_t dac_continuous_write_asynchronously(dac_continuous_handle_t handle, uint8_t *dma_buf,
                                          size_t dma_buf_len, const uint8_t *data,
                                          size_t data_len, size_t *bytes_loaded)
 {
@@ -513,7 +512,7 @@ esp_err_t dac_conti_write_asynchronously(dac_conti_handle_t handle, uint8_t *dma
     return ESP_OK;
 }
 
-esp_err_t dac_conti_write_cyclically(dac_conti_handle_t handle, uint8_t *buf, size_t buf_size, size_t *bytes_loaded)
+esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, uint8_t *buf, size_t buf_size, size_t *bytes_loaded)
 {
     DAC_NULL_POINTER_CHECK(handle);
     ESP_RETURN_ON_FALSE(atomic_load(&handle->is_enabled), ESP_ERR_INVALID_STATE, TAG, "This set of DAC channels has not been enabled");
@@ -560,7 +559,7 @@ esp_err_t dac_conti_write_cyclically(dac_conti_handle_t handle, uint8_t *buf, si
     return ret;
 }
 
-static esp_err_t s_dac_wait_to_load_dma_data(dac_conti_handle_t handle, uint8_t *buf, size_t buf_size, size_t *w_size, TickType_t timeout_tick)
+static esp_err_t s_dac_wait_to_load_dma_data(dac_continuous_handle_t handle, uint8_t *buf, size_t buf_size, size_t *w_size, TickType_t timeout_tick)
 {
     lldesc_t *desc;
     /* Try to get the descriptor from the pool */
@@ -593,7 +592,7 @@ static esp_err_t s_dac_wait_to_load_dma_data(dac_conti_handle_t handle, uint8_t 
     return ESP_OK;
 }
 
-esp_err_t dac_conti_write(dac_conti_handle_t handle, uint8_t *buf, size_t buf_size, size_t *bytes_loaded, int timeout_ms)
+esp_err_t dac_continuous_write(dac_continuous_handle_t handle, uint8_t *buf, size_t buf_size, size_t *bytes_loaded, int timeout_ms)
 {
     DAC_NULL_POINTER_CHECK(handle);
     DAC_NULL_POINTER_CHECK(buf);

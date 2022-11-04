@@ -11,7 +11,7 @@
 #include "soc/dac_channel.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_check.h"
-#include "dac_conti_example.h"
+#include "dac_continuous_example.h"
 
 /**
  *  There are two ways to convert digital data to analog signal continuously:

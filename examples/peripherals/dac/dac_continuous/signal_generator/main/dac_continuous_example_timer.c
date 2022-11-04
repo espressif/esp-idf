@@ -15,7 +15,7 @@
 #include "driver/gptimer.h"
 #include "driver/dac_oneshot.h"
 #include "esp_log.h"
-#include "dac_conti_example.h"
+#include "dac_continuous_example.h"
 
 #define EXAMPLE_TIMER_RESOLUTION    1000000                 // 1MHz, 1 tick = 1us
 #define EXAMPLE_WAVE_FREQ_HZ        50                      // Default wave frequency 50 Hz, it can't be too high
@@ -86,11 +86,11 @@ void example_dac_continuous_by_timer(void)
     dac_oneshot_config_t dac0_cfg = {
         .chan_id = DAC_CHAN_0,
     };
-    ESP_ERROR_CHECK(dac_new_oneshot_channel(&dac0_cfg, &chan0_handle));
+    ESP_ERROR_CHECK(dac_oneshot_new_channel(&dac0_cfg, &chan0_handle));
     dac_oneshot_config_t dac1_cfg = {
         .chan_id = DAC_CHAN_1,
     };
-    ESP_ERROR_CHECK(dac_new_oneshot_channel(&dac1_cfg, &chan1_handle));
+    ESP_ERROR_CHECK(dac_oneshot_new_channel(&dac1_cfg, &chan1_handle));
 
     example_log_info(EXAMPLE_CONVERT_FREQ_HZ, EXAMPLE_WAVE_FREQ_HZ);
 

@@ -61,8 +61,8 @@ void app_main(void)
         .atten = DAC_COSINE_ATTEN_DB_6,
         .flags.force_set_freq = true, // set true will allow to overwrite the frequency that set before
     };
-    ESP_ERROR_CHECK(dac_new_cosine_channel(&cos0_cfg, &chan0_handle));
-    ESP_ERROR_CHECK(dac_new_cosine_channel(&cos1_cfg, &chan1_handle));
+    ESP_ERROR_CHECK(dac_cosine_new_channel(&cos0_cfg, &chan0_handle));
+    ESP_ERROR_CHECK(dac_cosine_new_channel(&cos1_cfg, &chan1_handle));
     ESP_ERROR_CHECK(dac_cosine_start(chan0_handle));
     ESP_ERROR_CHECK(dac_cosine_start(chan1_handle));
 
