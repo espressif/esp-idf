@@ -252,7 +252,7 @@
  *      22                      3               extern edge
  *      23                      3               extern level
  *      24                      4               extern level            TG1_WDT
- *      25                      4               extern level            CACHEERR
+ *      25                      4               extern level            CACHEERR                CACHEERR
  *      26                      5               extern level
  *      27                      3               extern level            Reserved                Reserved
  *      28                      4               extern edge             IPC_ISR                 IPC_ISR
