@@ -216,17 +216,18 @@
   - "examples/protocols/**/*"
   - "examples/wifi/**/*"
   - "examples/network/simple_sniffer/**/*"
-
-  - "components/esp_phy/**/*"
-  - "components/esp_wifi/**/*"
-  - "components/esp_netif/**/*"
-  - "components/lwip/**/*"
+  # components
   - "components/mbedtls/port/dynamic/*"
-
   # for cases with wifi_high_traffic marker
   - "examples/system/ota/**/*"
   - "components/app_update/**/*"
   - "components/esp_https_ota/**/*"
+
+.patterns-target_test-wifi: &patterns-target_test-wifi
+  - "components/esp_phy/**/*"
+  - "components/esp_wifi/**/*"
+  - "components/esp_netif/**/*"
+  - "components/lwip/**/*"
 
 # for jobs: UT_044, UT_045
 .patterns-unit_test-sdio: &patterns-unit_test-sdio
@@ -556,6 +557,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32:
   rules:
@@ -581,6 +584,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32c2:
   rules:
@@ -602,6 +607,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32c3:
   rules:
@@ -626,6 +633,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32c6:
   rules:
@@ -650,6 +659,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32h4:
   rules:
@@ -674,6 +685,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32s2:
   rules:
@@ -698,6 +711,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32s3:
   rules:
@@ -722,6 +737,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test:
   rules:
@@ -749,6 +766,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32:
   rules:
@@ -770,6 +789,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32c2:
   rules:
@@ -788,6 +809,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32c3:
   rules:
@@ -808,6 +831,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32c6:
   rules:
@@ -828,6 +853,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32s2:
   rules:
@@ -848,6 +875,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32s3:
   rules:
@@ -868,6 +897,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:docker:
   rules:
@@ -922,6 +953,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32:
   rules:
@@ -954,6 +987,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32c2:
   rules:
@@ -980,6 +1015,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32c3:
   rules:
@@ -1011,6 +1048,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32c6:
   rules:
@@ -1041,6 +1080,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32h4:
   rules:
@@ -1071,6 +1112,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32s2:
   rules:
@@ -1101,6 +1144,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32s3:
   rules:
@@ -1131,6 +1176,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:integration_test:
   rules:
@@ -1233,6 +1280,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1264,6 +1313,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1289,6 +1340,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1313,6 +1366,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
     - <<: *if-dev-push
       changes: *patterns-unit_test-spi_multi
@@ -1334,6 +1389,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
@@ -1359,6 +1416,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1383,6 +1442,8 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1406,6 +1467,8 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
@@ -1473,6 +1536,19 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
 
+.rules:test:component_ut-esp32-wifi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+
 .rules:test:component_ut-esp32c2:
   rules:
     - <<: *if-revert-branch
@@ -1523,6 +1599,19 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+
+.rules:test:component_ut-esp32c3-wifi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32c3
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:component_ut-esp32h4-i154:
   rules:
@@ -1716,6 +1805,8 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:example_test-esp32c2:
   rules:
