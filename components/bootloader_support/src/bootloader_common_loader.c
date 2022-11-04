@@ -57,7 +57,7 @@ int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata)
     return bootloader_common_select_otadata(two_otadata, valid_two_otadata, true);
 }
 
-esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr, esp_image_type type)
+esp_err_t __attribute__((optimize("-Os"))) bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr, esp_image_type type)
 {
     esp_err_t err = ESP_OK;
     esp_chip_id_t chip_id = CONFIG_IDF_FIRMWARE_CHIP_ID;
