@@ -617,6 +617,17 @@ choice BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM
                 Disable the limitation on max tx/rx time for Coded-PHY connection
 endchoice
 
+menuconfig BT_NIMBLE_52_FEATURE_SUPPORT
+    bool "Enable BLE 5.2 Feature"
+    help
+        Enable this option to select 5.2 features
+
+config BT_NIMBLE_BLE_POWER_CONTROL
+    bool "Enable support for BLE Power Control"
+    depends on BT_NIMBLE_52_FEATURE_SUPPORT && SOC_ESP_NIMBLE_CONTROLLER
+    help
+        Set this option to enable the Power Control feature
+
 config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EFF
     int
     default 0 if !(ESP32_WIFI_SW_COEXIST_ENABLE && BT_NIMBLE_ENABLED)
