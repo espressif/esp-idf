@@ -587,7 +587,6 @@ components/esp_rom/include/esp_rom_uart.h
 components/esp_rom/include/linux/soc/reset_reasons.h
 components/esp_rom/linux/esp_rom_crc.c
 components/esp_rom/linux/esp_rom_md5.c
-components/esp_rom/linux/esp_rom_sys.c
 components/esp_rom/patches/esp_rom_crc.c
 components/esp_rom/patches/esp_rom_tjpgd.c
 components/esp_rom/test/test_libgcc.c
