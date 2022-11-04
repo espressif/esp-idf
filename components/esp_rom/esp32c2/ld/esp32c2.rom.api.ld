@@ -28,6 +28,7 @@ PROVIDE ( esp_rom_uart_tx_one_char    = uart_tx_one_char );
 PROVIDE ( esp_rom_uart_tx_wait_idle   = uart_tx_wait_idle );
 PROVIDE ( esp_rom_uart_rx_one_char    = uart_rx_one_char );
 PROVIDE ( esp_rom_uart_rx_string      = UartRxString );
+PROVIDE ( esp_rom_uart_set_as_console = uart_tx_switch );
 PROVIDE ( esp_rom_uart_putc           = ets_write_char_uart );
 
 PROVIDE ( esp_rom_mbedtls_md5_starts_ret = mbedtls_md5_starts_ret );
