@@ -97,7 +97,10 @@ entries:
         event_groups: xEventGroupSetBits (default)
         event_groups: xEventGroupSync (default)
         event_groups: vEventGroupDelete (default)
-        queue: prvIsQueueFull (default)
+        if FREERTOS_UNICORE = y:
+            queue: prvUnlockQueue (default)
+            queue: prvIsQueueEmpty (default)
+            queue: prvIsQueueFull (default)
         queue: prvInitialiseNewQueue (default)
         queue: prvInitialiseMutex (default)
         queue: uxQueueSpacesAvailable (default)
