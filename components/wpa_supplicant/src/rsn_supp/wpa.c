@@ -818,7 +818,7 @@ void   wpa_supplicant_key_neg_complete(struct wpa_sm *sm,
     wpa_sm_cancel_auth_timeout(sm);
     wpa_sm_set_state(WPA_COMPLETED);
 
-    sm->wpa_neg_complete();
+    wpa_neg_complete();
 
     if (secure) {
         wpa_sm_mlme_setprotection(
@@ -2192,26 +2192,14 @@ void wpa_sm_set_pmk_from_pmksa(struct wpa_sm *sm)
 }
 
 
-
-
-#ifdef ESP_SUPPLICANT
-bool wpa_sm_init(char * payload, WPA_SEND_FUNC snd_func,
-                   WPA_SET_ASSOC_IE set_assoc_ie_func, WPA_INSTALL_KEY ppinstallkey, WPA_GET_KEY ppgetkey, WPA_DEAUTH_FUNC wpa_deauth,
-                   WPA_NEG_COMPLETE wpa_neg_complete)
+bool wpa_sm_init(void)
 {
     struct wpa_sm *sm = &gWpaSm;
     u16 spp_attrubute = 0;
 
+    os_memset(sm, 0, sizeof(struct wpa_sm));
+
     sm->eapol_version = DEFAULT_EAPOL_VERSION;   /* DEFAULT_EAPOL_VERSION */
-    sm->sendto = snd_func;
-    sm->config_assoc_ie = set_assoc_ie_func;
-    sm->install_ppkey = ppinstallkey;
-    sm->get_ppkey = ppgetkey;
-    sm->wpa_deauthenticate = wpa_deauth;
-    sm->wpa_neg_complete = wpa_neg_complete;
-    sm->key_install = false;
-    sm->ap_rsnxe = NULL;
-    sm->assoc_rsnxe = NULL;
 
     spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_STA);
     sm->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);
@@ -2242,6 +2230,7 @@ void wpa_sm_deinit(void)
 }
 
 
+#ifdef ESP_SUPPLICANT
 void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
 {
     struct wpa_sm *sm = &gWpaSm;
@@ -2468,7 +2457,7 @@ set_assoc_ie(u8 * assoc_buf)
     else
          sm->assoc_wpa_ie_len = ASSOC_IE_LEN - 2;
 
-    sm->config_assoc_ie(sm->proto, assoc_buf, sm->assoc_wpa_ie_len);
+    wpa_config_assoc_ie(sm->proto, assoc_buf, sm->assoc_wpa_ie_len);
 }
 
 int wpa_sm_set_key(struct install_key *key_sm, enum wpa_alg alg,
@@ -2492,15 +2481,14 @@ int wpa_sm_set_key(struct install_key *key_sm, enum wpa_alg alg,
     key_sm->set_tx = set_tx;
     memcpy(key_sm->key, key, key_len);
 
-    sm->install_ppkey(alg, addr, key_idx, set_tx, seq, seq_len, key, key_len, key_flag);
+    wpa_install_key(alg, addr, key_idx, set_tx, seq, seq_len, key, key_len, key_flag);
     return 0;
 }
 
 static int
 wpa_sm_get_key(uint8_t *ifx, int *alg, u8 *addr, int *key_idx, u8 *key, size_t key_len, enum key_flag key_flag)
 {
-    struct wpa_sm *sm = &gWpaSm;
-    return sm->get_ppkey(ifx, alg, addr, key_idx, key, key_len, key_flag);
+    return wpa_get_key(ifx, alg, addr, key_idx, key, key_len, key_flag);
 }
 
 void wpa_supplicant_clr_countermeasures(u16 *pisunicast)

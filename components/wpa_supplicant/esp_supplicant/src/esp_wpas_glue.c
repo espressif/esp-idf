@@ -107,11 +107,10 @@ void wpa_sm_free_eapol(u8 *buffer)
 
 void  wpa_sm_deauthenticate(struct wpa_sm *sm, u8 reason_code)
 {
-
     /*only need send deauth frame when associated*/
     if (WPA_SM_STATE(sm) >= WPA_ASSOCIATED) {
         pmksa_cache_clear_current(sm);
-        sm->wpa_deauthenticate(reason_code);
+        wpa_deauthenticate(reason_code);
     }
 }
 
