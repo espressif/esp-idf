@@ -237,11 +237,6 @@ test_efuse_table_on_host_esp32s2:
   variables:
     IDF_TARGET: esp32s2
 
-test_efuse_table_on_host_esp32s3:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32s3
-
 test_efuse_table_on_host_esp32c3:
   extends: .test_efuse_table_on_host_template
   variables:
