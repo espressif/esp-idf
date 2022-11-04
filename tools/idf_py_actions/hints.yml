@@ -273,3 +273,8 @@
     re: "fatal error: (tinyusb.h): No such file or directory"
     hint: "{} was removed. Please use esp_tinyusb component from IDF component manager instead.\nYou can install `esp_tinyusb` using 'idf.py add-dependency espressif/esp_tinyusb' command.\nRefer to the migration guide for more details."
     match_to_output: True
+
+-
+    re: "fatal error: esp_partition.h: No such file or directory"
+    hint: "All the Partition APIs have been moved to the new component 'esp_partition' - please, update your project dependencies. See Storage migration guide 5.x for more details."
+    match_to_output: True

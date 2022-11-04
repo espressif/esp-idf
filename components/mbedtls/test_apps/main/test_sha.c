@@ -12,6 +12,7 @@
 #include "esp_heap_caps.h"
 #include "idf_performance.h"
 #include "esp_private/esp_clk.h"
+#include "spi_flash_mmap.h"
 
 #include "soc/soc_caps.h"
 

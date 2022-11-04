@@ -17,6 +17,8 @@
 #include "esp_private/esp_psram_io.h"
 #include "esp_psram.h"
 #include "esp_private/esp_psram_extram.h"
+#include "esp_flash.h"
+#include "esp_partition.h"
 
 __attribute__((unused)) const static char *TAG = "PSRAM";
 

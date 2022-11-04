@@ -98,7 +98,7 @@ TEST(partition_api, test_partition_ops)
     memset(buffout, 0, sizeof(buffout));
     size_t sector_off = 0; //erase works per whole sector - offset must be aligned to 4kB boundaries
 
-    err = esp_partition_erase_range(partition_data, sector_off, SPI_FLASH_SEC_SIZE);
+    err = esp_partition_erase_range(partition_data, sector_off, partition_data->erase_size);
     assert(esp_partition_read(partition_data, off, (void *)buffout, bufsize) == ESP_OK);
     TEST_ESP_OK(err);
     TEST_ASSERT_EQUAL(0, memcmp(buffout, buferase, bufsize));

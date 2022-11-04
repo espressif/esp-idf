@@ -23,6 +23,7 @@
 #include "test_mqtt_client_broker.h"
 #include "test_mqtt_connection.h"
 #include "esp_mac.h"
+#include "spi_flash_mmap.h"
 
 static void test_leak_setup(const char * file, long line)
 {

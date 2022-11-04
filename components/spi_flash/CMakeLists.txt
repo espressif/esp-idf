@@ -1,14 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
 if(${target} STREQUAL "linux")
-    set(srcs "partition.c"
-         "partition_linux.c")
-    idf_component_get_property(hal_dir hal COMPONENT_DIR)
-    idf_component_get_property(bootloader_support_dir bootloader_support COMPONENT_DIR)
-
-    idf_component_register(SRCS "${srcs}"
-        INCLUDE_DIRS include ${hal_dir}/include ${bootloader_support_dir}/include
-        PRIV_INCLUDE_DIRS include/spi_flash
-        PRIV_REQUIRES partition_table)
     return()
 endif()
 
@@ -23,11 +14,7 @@ else()
         "${target}/flash_ops_${target}.c"
     )
 
-    set(srcs
-        "partition.c"
-        "partition_target.c"
-        "flash_brownout_hook.c"
-    )
+    set(srcs "flash_brownout_hook.c")
 
     if(CONFIG_SOC_SPI_MEM_SUPPORT_OPI_MODE)
         list(APPEND srcs "${target}/spi_flash_oct_flash_init.c")

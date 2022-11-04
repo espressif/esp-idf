@@ -12,10 +12,10 @@
 #include "sdkconfig.h"
 #include "esp_flash_partitions.h"
 #include "esp_attr.h"
-#include "esp_flash.h"
 #include "esp_partition.h"
 
 #if !CONFIG_IDF_TARGET_LINUX
+#include "esp_flash.h"
 #include "esp_flash_encrypt.h"
 #endif
 
@@ -90,9 +90,11 @@ static esp_err_t load_partitions(void)
 
 #if CONFIG_IDF_TARGET_LINUX
     esp_err_t err = esp_partition_file_mmap(&p_start);
+    size_t mapped_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
 #else
     esp_err_t err = spi_flash_mmap(partition_align_pg_size,
                                    SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_DATA, (const void **)&p_start, &handle);
+    size_t mapped_size = SPI_FLASH_SEC_SIZE;
 #endif
 
     if (err != ESP_OK) {
@@ -101,7 +103,7 @@ static esp_err_t load_partitions(void)
 
     // calculate partition address within mmap-ed region
     p_start += partition_pad;
-    p_end = p_start + SPI_FLASH_SEC_SIZE;
+    p_end = p_start + mapped_size;
 
     for (const uint8_t *p_entry = p_start; p_entry < p_end; p_entry += sizeof(esp_partition_info_t)) {
         esp_partition_info_t entry;
@@ -136,6 +138,11 @@ static esp_err_t load_partitions(void)
 #endif
         item->info.address = entry.pos.offset;
         item->info.size = entry.pos.size;
+#if CONFIG_IDF_TARGET_LINUX
+        item->info.erase_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
+#else
+        item->info.erase_size = SPI_FLASH_SEC_SIZE;
+#endif
         item->info.type = entry.type;
         item->info.subtype = entry.subtype;
         item->info.encrypted = entry.flags & PART_FLAG_ENCRYPTED;
@@ -363,9 +370,14 @@ esp_err_t esp_partition_register_external(esp_flash_t *flash_chip, size_t offset
         *out_partition = NULL;
     }
 
+#if CONFIG_IDF_TARGET_LINUX
+    return ESP_ERR_NOT_SUPPORTED;
+
+#else
     if (offset + size > flash_chip->size) {
         return ESP_ERR_INVALID_SIZE;
     }
+#endif // CONFIG_IDF_TARGET_LINUX
 
     esp_err_t err = ensure_partitions_loaded();
     if (err != ESP_OK) {

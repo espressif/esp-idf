@@ -37,5 +37,6 @@ INCLUDE_DIRS := \
 	bootloader_support/bootloader_flash/include \
 	app_update/include \
 	hal/include \
+	esp_partition/include \
 	spi_flash/include \
 	)

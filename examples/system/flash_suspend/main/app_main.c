@@ -19,6 +19,7 @@
 #include "esp_cpu.h"
 #include "esp_partition.h"
 #include "driver/gptimer.h"
+#include "esp_flash.h"
 
 
 #define TIMER_RESOLUTION_HZ     (1 * 1000 * 1000) // 1MHz resolution

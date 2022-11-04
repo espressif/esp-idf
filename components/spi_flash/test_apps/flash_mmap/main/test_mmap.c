@@ -16,6 +16,7 @@
 #include <esp_attr.h>
 #include <esp_partition.h>
 #include <esp_flash_encrypt.h>
+#include "esp_flash.h"
 
 #include "test_utils.h"
 

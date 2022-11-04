@@ -12,6 +12,8 @@
 #include <stddef.h>
 #include <string.h>
 #include "esp_system.h"
+#include "esp_partition.h"
+#include "spi_flash_mmap.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_netif.h"

@@ -441,7 +441,7 @@ test_system_cxx:
 test_partition_api_host:
   extends: .host_test_template
   script:
-    - cd ${IDF_PATH}/components/spi_flash/host_test/partition_api_test
+    - cd ${IDF_PATH}/components/esp_partition/host_test/partition_api_test
     - idf.py build
     - timeout 5 ./build/partition_api_test.elf | tee test.txt
     - grep " 0 Failures" test.txt

@@ -1,6 +1,34 @@
 Storage
 =======
 
+New Component for the Partition APIs
+------------------------------------
+
+Breaking change: all the Partition API code has been moved to a new component :component:`esp_partition`. For the complete list of affected functions and data-types, see header file :component_file:`esp_partition.h <esp_partition/include/esp_partition.h>`.
+
+These API functions and data-types were previously a part of the :component:`spi_flash` component, and thus possible dependencies on the ``spi_flash`` in existing applications may cause the build failure, in case of direct esp_partition_* APIs/data-types use (for instance, ``fatal error: esp_partition.h: No such file or directory`` at lines with ``#include "esp_partition.h"``). If you encounter such an issue, please update your project's CMakeLists.txt file as follows:
+
+Original dependency setup:
+
+.. code-block:: cmake
+
+   idf_component_register(...
+                          REQUIRES spi_flash)
+
+Updated dependency setup:
+
+.. code-block:: cmake
+
+   idf_component_register(...
+                          REQUIRES spi_flash esp_partition)
+
+.. note:: 
+
+   Please update relevant ``REQUIRES`` or ``PRIV_REQUIRES`` section according to your project. The above-presented code snippet is just an example.
+
+If the issue persists, please let us know and we will assist you with your code migration.
+
+
 SDMMC/SDSPI
 -----------
 

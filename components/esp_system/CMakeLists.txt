@@ -47,7 +47,9 @@ else()
                                     # link-time registration is used.
                                     # [refactor-todo] requires "driver" for headers:
                                     # - spi_common_internal.h
-                                    pthread bootloader_support efuse driver
+                                    # [refactor-todo] esp_partition required for virtual efuse
+                                    # init code. Move to esp_efuse component.
+                                    pthread bootloader_support efuse driver esp_partition
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 

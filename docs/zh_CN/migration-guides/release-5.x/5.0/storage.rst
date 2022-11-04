@@ -1,6 +1,34 @@
 存储
 =======
 
+分区 API 的新组件
+------------------------------------
+
+非兼容性更新：所有的分区 API 代码都已迁移到新组件 :component:`esp_partition` 中。如需查看所有受影响的函数及数据类型，请参见头文件 :component_file:`esp_partition.h <esp_partition/include/esp_partition.h>`。
+
+在以前，这些 API 函数和数据类型属于 :component:`spi_flash` 组件。因此，在现有的应用程序中或将依赖 ``spi_flash``，这也意味着在直接使用 esp_partition_* API/数据类型时，可能会导致构建过程失败（比如，在出现 ``#include "esp_partition.h"`` 的行中报错 ``fatal error: esp_partition.h: No such file or directory``）。如果遇到类似问题，请按以下步骤更新项目中的 CMakeLists.txt 文件：
+
+原有的依赖性设置：
+
+.. code-block:: cmake
+
+   idf_component_register(...
+                          REQUIRES spi_flash)
+
+更新后的依赖性设置：
+
+.. code-block:: cmake
+
+   idf_component_register(...
+                          REQUIRES spi_flash esp_partition)
+
+.. note:: 
+
+   请根据项目的实际情况，更新相应的 ``REQUIRES`` 或是 ``PRIV_REQUIRES`` 部分。上述代码片段仅为范例。
+
+如果问题仍未解决，请联系我们，我们将协助您进行代码迁移。
+
+
 SDMMC/SDSPI
 -----------
 
