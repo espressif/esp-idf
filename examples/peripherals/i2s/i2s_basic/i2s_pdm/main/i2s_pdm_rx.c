@@ -15,7 +15,12 @@
 #include "i2s_pdm_example.h"
 
 #define EXAMPLE_PDM_RX_CLK_IO           GPIO_NUM_0      // I2S PDM RX clock io number
-#define EXAMPLE_PDM_RX_DIN_IO           GPIO_NUM_2      // I2S PDM RX data in io number
+#define EXAMPLE_PDM_RX_DIN_IO           GPIO_NUM_4      // I2S PDM RX data in io number
+#if CONFIG_IDF_TARGET_ESP32S3
+#define EXAMPLE_PDM_RX_DIN1_IO          GPIO_NUM_5      // I2S PDM RX data line1 in io number
+#define EXAMPLE_PDM_RX_DIN2_IO          GPIO_NUM_6      // I2S PDM RX data line2 in io number
+#define EXAMPLE_PDM_RX_DIN3_IO          GPIO_NUM_7      // I2S PDM RX data line3 in io number
+#endif
 
 #define EXAMPLE_PDM_RX_FREQ_HZ          16000           // I2S PDM RX frequency
 
@@ -39,12 +44,27 @@ static i2s_chan_handle_t i2s_example_init_pdm_rx(void)
         .slot_cfg = I2S_PDM_RX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
         .gpio_cfg = {
             .clk = EXAMPLE_PDM_RX_CLK_IO,
+#if CONFIG_IDF_TARGET_ESP32S3
+            // Only ESP32-S3 can support 4-line PDM RX
+            .dins = {
+                EXAMPLE_PDM_RX_DIN_IO,
+                EXAMPLE_PDM_RX_DIN1_IO,
+                EXAMPLE_PDM_RX_DIN2_IO,
+                EXAMPLE_PDM_RX_DIN3_IO,
+            },
+#else
             .din = EXAMPLE_PDM_RX_DIN_IO,
+#endif
             .invert_flags = {
                 .clk_inv = false,
             },
         },
     };
+#if CONFIG_IDF_TARGET_ESP32S3
+    // Enable all slots for example
+    pdm_rx_cfg.slot_cfg.slot_mode = I2S_SLOT_MODE_STEREO;
+    pdm_rx_cfg.slot_cfg.slot_mask = I2S_PDM_LINE_SLOT_ALL;
+#endif
     ESP_ERROR_CHECK(i2s_channel_init_pdm_rx_mode(rx_chan, &pdm_rx_cfg));
 
     /* Step 3: Enable the rx channels before reading data */

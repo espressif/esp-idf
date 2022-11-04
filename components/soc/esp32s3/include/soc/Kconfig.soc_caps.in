@@ -447,13 +447,17 @@ config SOC_I2S_SUPPORTS_PDM_TX
     bool
     default y
 
+config SOC_I2S_PDM_MAX_TX_LINES
+    int
+    default 2
+
 config SOC_I2S_SUPPORTS_PDM_RX
     bool
     default y
 
-config SOC_I2S_SUPPORTS_PDM_CODEC
-    bool
-    default y
+config SOC_I2S_PDM_MAX_RX_LINES
+    int
+    default 4
 
 config SOC_I2S_SUPPORTS_TDM
     bool

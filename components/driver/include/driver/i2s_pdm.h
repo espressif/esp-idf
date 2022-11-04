@@ -75,8 +75,11 @@ typedef struct {
  * @brief I2S PDM tx mode GPIO pins configuration
  */
 typedef struct {
-    gpio_num_t clk;                /*!< PDM clk pin, output */
-    gpio_num_t din;                /*!< DATA pin, input */
+    gpio_num_t clk;                                     /*!< PDM clk pin, output */
+    union {
+        gpio_num_t din;                                 /*!< DATA pin 0, input */
+        gpio_num_t dins[SOC_I2S_PDM_MAX_RX_LINES];      /*!< DATA pins, input, only take effect when corresponding I2S_PDM_RX_LINEx_SLOT_xxx is enabled in i2s_pdm_rx_slot_config_t::slot_mask */
+    };
     struct {
         uint32_t   clk_inv: 1;     /*!< Set 1 to invert the clk output */
     } invert_flags;                /*!< GPIO pin invert flags */
@@ -280,7 +283,7 @@ typedef struct {
 typedef struct {
     gpio_num_t clk;                /*!< PDM clk pin, output */
     gpio_num_t dout;               /*!< DATA pin, output */
-#if SOC_I2S_HW_VERSION_2
+#if SOC_I2S_PDM_MAX_TX_LINES > 1
     gpio_num_t dout2;              /*!< The second data pin for the DAC dual-line mode,
                                     *   only take effect when the line mode is `I2S_PDM_TX_TWO_LINE_DAC`
                                     */

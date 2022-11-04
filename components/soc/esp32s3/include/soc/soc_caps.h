@@ -187,8 +187,9 @@
 #define SOC_I2S_SUPPORTS_PCM        (1)
 #define SOC_I2S_SUPPORTS_PDM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
+#define SOC_I2S_PDM_MAX_TX_LINES    (2)
 #define SOC_I2S_SUPPORTS_PDM_RX     (1)
-#define SOC_I2S_SUPPORTS_PDM_CODEC  (1)
+#define SOC_I2S_PDM_MAX_RX_LINES    (4)
 #define SOC_I2S_SUPPORTS_TDM        (1)
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/

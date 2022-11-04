@@ -80,8 +80,8 @@ examples/peripherals/i2s/i2s_codec/i2s_es8311:
       reason: target esp32c6 is not supported yet
 
 examples/peripherals/i2s/i2s_recorder:
-  disable:
-    - if: SOC_I2S_SUPPORTS_PDM_RX != 1
+  enable:
+    - if: SOC_I2S_SUPPORTS_PDM_RX > 0
 
 examples/peripherals/lcd/i2c_oled:
   disable:

@@ -135,7 +135,7 @@ Standard mode always has left and right two sound channels which are called 'slo
     PDM Mode (TX)
     ^^^^^^^^^^^^^
 
-    PDM(Pulse-density Modulation) mode for tx channel can convert PCM data into PDM format which always has left and right slots. PDM TX can only support 16 bits width sample data. PDM TX only needs CLK pin for clock signal and DOUT pin for data signal (i.e. WS and SD signal in the following figure, the BCK signal is an internal bit sampling clock, not needed between PDM devices). This mode allows user to configure the up-sampling parameters :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fp` :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fs`. The up-sampling rate can be calculated by ``up_sample_rate = fp / fs``, there are up-sampling modes in PDM TX:
+    PDM(Pulse-density Modulation) mode for tx channel can convert PCM data into PDM format which always has left and right slots. PDM TX can only support 16 bits width sample data. PDM TX is only supported on I2S0, it needs at least a CLK pin for clock signal and a DOUT pin for data signal (i.e. WS and SD signal in the following figure, the BCK signal is an internal bit sampling clock, not needed between PDM devices). This mode allows user to configure the up-sampling parameters :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fp` :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fs`. The up-sampling rate can be calculated by ``up_sample_rate = fp / fs``, there are up-sampling modes in PDM TX:
 
     - **Fixed Clock Frequency**: In this mode the up-sampling rate will change according to the sample rate. Setting ``fp = 960`` and ``fs = sample_rate / 100``, then the clock frequency(Fpdm) on CLK pin will be fixed to 128 * 48 KHz = 6.144 MHz, note that this frequency is not equal to the sample rate(Fpcm).
     - **Fixed Up-sampling Rate**: In this mode the up-sampling rate is fixed to 2. Setting ``fp = 960`` and ``fs = 480``, then the clock frequency(Fpdm) on CLK pin will be ``128 * sample_rate``
@@ -148,7 +148,7 @@ Standard mode always has left and right two sound channels which are called 'slo
     PDM Mode (RX)
     ^^^^^^^^^^^^^
 
-    PDM(Pulse-density Modulation) mode for rx channel can receive PDM format data and convert the data into PCM format. PDM RX can only support 16 bits width sample data. PDM RX only need WS pin for clock signal and DIN pin for data signal. This mode allows user to configure the down-sampling parameter :cpp:member:`i2s_pdm_rx_clk_config_t::dn_sample_mode`, there are two down-sampling modes in PDM RX:
+    PDM(Pulse-density Modulation) mode for rx channel can receive PDM format data and convert the data into PCM format. PDM RX is only supported on I2S0, it can only support 16 bits width sample data. PDM RX needs at least a CLK pin for clock signal and a DIN pin for data signal. This mode allows user to configure the down-sampling parameter :cpp:member:`i2s_pdm_rx_clk_config_t::dn_sample_mode`, there are two down-sampling modes in PDM RX:
 
     - :cpp:enumerator:`i2s_pdm_dsr_t::I2S_PDM_DSR_8S`: In this mode, the clock frequency(Fpdm) on WS pin will be sample_rate(Fpcm) * 64.
     - :cpp:enumerator:`i2s_pdm_dsr_t::I2S_PDM_DSR_16S`: In this mode, the clock frequency(Fpdm) on WS pin will be sample_rate(Fpcm) * 128.
@@ -343,7 +343,7 @@ Here is the table of the real data on the line with different :cpp:member:`i2s_s
 
         Similar for 8-bit and 32-bit data width, the type of the buffer is better to be ``uint8_t`` and ``uint32_t`` type. But specially, when the data width is 24-bit, the data buffer should aligned with 3-byte(i.e. every 3 bytes stands for a 24-bit data in one slot), additionally, :cpp:member:`i2s_chan_config_t::dma_frame_num`, :cpp:member:`i2s_std_clk_config_t::mclk_multiple` and the writting buffer size should be the multiple of ``3``, otherwise the data on the line or the sample rate will be incorrect.
 
-.. only:: esp32c3 or esp32s3 or esp32h2
+.. only:: not (esp32 or esp32s2)
 
     +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
     | data bit width | slot mode | slot mask | ws low   | ws high  | ws low   | ws high  | ws low   | ws high  | ws low   | ws high  |
@@ -464,7 +464,7 @@ Here is the table of the data that received in the buffer with different :cpp:me
 
         ``8-bit``, ``24-bit`` and ``32-bit`` are similar as ``16-bit``, the data bit-width in the receiving buffer are equal to the data bit-width on the line. Additionally, when using ``24-bit`` data width, :cpp:member:`i2s_chan_config_t::dma_frame_num`, :cpp:member:`i2s_std_clk_config_t::mclk_multiple` and the receiving buffer size should be the multiple of ``3``, otherwise the data on the line or the sample rate will be incorrect.
 
-.. only:: esp32c3 or esp32s3 or esp32h2
+.. only:: not (esp32 or esp32s2)
 
     +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
     | data bit width | slot mode | slot mask | data 0   | data 1   | data 2   | data 3   | data 4   | data 5   | data 6   | data 7   |
@@ -569,7 +569,7 @@ Here is the table of the data that received in the buffer with different :cpp:me
         |           |   both    | 0x0001   | 0x0002   | 0x0003   | 0x0004   | 0x0005   | 0x0006   | 0x0007   | 0x0008   |
         +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
 
-    .. only:: esp32c3 or esp32s3 or esp32h2
+    .. only:: not esp32
 
         Here is the table of the real data on the line with different :cpp:member:`i2s_pdm_tx_slot_config_t::slot_mode` and :cpp:member:`i2s_pdm_tx_slot_config_t::line_mode` (The PDM format on the line is transferred to PCM format for easier comprehension).
 
@@ -675,6 +675,8 @@ Here is the table of the data that received in the buffer with different :cpp:me
         .. note::
 
             The right slot is received first in stereo mode. To switch the left and right slot in the buffer, please set the :cpp:member:`i2s_pdm_rx_gpio_config_t::invert_flags::clk_inv` to force invert the clock signal.
+
+            Specially, ESP32-S3 can support up to 4 data lines in PDM RX mode, each data line can be connected to two PDM MICs (left and right slots), which means the PDM RX on ESP32-S3 can support up to 8 PDM MICs. To enable multiple data lines, set the bits in :cpp:member:`i2s_pdm_rx_gpio_config_t::slot_mask` to enable corresponding slots first, and then set the data GPIOs in :cpp:type:`i2s_pdm_rx_gpio_config_t`.
 
     .. code-block:: c
 

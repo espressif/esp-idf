@@ -141,6 +141,18 @@ typedef enum {
     I2S_PDM_SLOT_RIGHT      = BIT(0),           /*!< I2S PDM only transmits or receives the PDM device whose 'select' pin is pulled up */
     I2S_PDM_SLOT_LEFT       = BIT(1),           /*!< I2S PDM only transmits or receives the PDM device whose 'select' pin is pulled down */
     I2S_PDM_SLOT_BOTH       = BIT(0) | BIT(1),  /*!< I2S PDM transmits or receives both two slots */
+#if SOC_I2S_PDM_MAX_RX_LINES > 1
+    /* The following enumerators are only used in multi-line PDM RX mode */
+    I2S_PDM_RX_LINE0_SLOT_RIGHT  = I2S_PDM_SLOT_RIGHT,  /*!< I2S PDM receives the right slot on line 0 */
+    I2S_PDM_RX_LINE0_SLOT_LEFT   = I2S_PDM_SLOT_LEFT,   /*!< I2S PDM receives the left slot on line 0 */
+    I2S_PDM_RX_LINE1_SLOT_RIGHT  = BIT(2),              /*!< I2S PDM receives the right slot on line 1 */
+    I2S_PDM_RX_LINE1_SLOT_LEFT   = BIT(3),              /*!< I2S PDM receives the left slot on line 1 */
+    I2S_PDM_RX_LINE2_SLOT_RIGHT  = BIT(4),              /*!< I2S PDM receives the right slot on line 2 */
+    I2S_PDM_RX_LINE2_SLOT_LEFT   = BIT(5),              /*!< I2S PDM receives the left slot on line 2 */
+    I2S_PDM_RX_LINE3_SLOT_RIGHT  = BIT(6),              /*!< I2S PDM receives the right slot on line 3 */
+    I2S_PDM_RX_LINE3_SLOT_LEFT   = BIT(7),              /*!< I2S PDM receives the left slot on line 3 */
+    I2S_PDM_LINE_SLOT_ALL        = 0x00ff,              /*!< I2S PDM receives all slots */
+#endif
 } i2s_pdm_slot_mask_t;
 
 #if SOC_I2S_SUPPORTS_TDM

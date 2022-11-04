@@ -31,9 +31,19 @@ typedef struct {
     const uint8_t s_tx_ws_sig;
     const uint8_t s_rx_ws_sig;
 
-    const uint8_t data_out_sig;
-    const uint8_t data_out1_sig; // Only valid in version 2
-    const uint8_t data_in_sig;
+    union {
+        const uint8_t data_out_sig;
+#if SOC_I2S_PDM_MAX_TX_LINES
+        const uint8_t data_out_sigs[SOC_I2S_PDM_MAX_TX_LINES]; // Only valid in version 2
+#endif
+    };
+
+    union {
+        const uint8_t data_in_sig;
+#if SOC_I2S_PDM_MAX_RX_LINES
+        const uint8_t data_in_sigs[SOC_I2S_PDM_MAX_RX_LINES];
+#endif
+    };
 
     const uint8_t irq;
     const periph_module_t module;
