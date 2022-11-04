@@ -27,16 +27,21 @@ Procedure:
     - For single core, run the test directly from the UnityTask
     - For SMP, run the test once on each core (using vTestOnAllCores())
 Expected:
-    - The elapsed ticks should be TEST_VTASKDELAY_TICKS, with 1 tick of error allowed (in case the delay and ref clock
-      functions last long enough to cross a tick boundary).
-    - The elapsed time should be equivalent to TEST_VTASKDELAY_TICKS tick periods, with 1 tick period of error allowed
-      (in case ref clock functions last longer that a tick period).
+    - The elapsed ticks should be TEST_VTASKDELAY_TICKS, with TEST_VTASKDELAY_DELTA_TICKS error allowed (in case the
+      delay and ref clock functions last long enough to cross a tick boundary).
+    - The elapsed time should be equivalent to TEST_VTASKDELAY_TICKS tick periods, with TEST_VTASKDELAY_TICKS tick
+      period of error allowed (in case ref clock functions last longer that a tick period).
 */
 
 #if ( INCLUDE_vTaskDelay == 1 )
 
 #define TEST_VTASKDELAY_TICKS           5   // Number of ticks to delay in test
 #define TEST_VTASKDELAY_ITERATIONS      5   // Number of iterations in test
+#if CONFIG_FREERTOS_SMP
+#define TEST_VTASKDELAY_DELTA_TICKS     1   // Number of ticks worth of delta allowed
+#else
+#define TEST_VTASKDELAY_DELTA_TICKS     2   // Number of ticks worth of delta allowed. We allow 2 ticks in IDF FreeRTOS as each core's tick interrupt could be out of phase
+#endif
 
 static void test_vTaskDelay(void *arg)
 {
@@ -57,14 +62,14 @@ static void test_vTaskDelay(void *arg)
         tick_end = xTaskGetTickCount();
         ref_clock_end = portTEST_REF_CLOCK_GET_TIME();
 
-        /* Check that elapsed ticks and ref clock is accurate. We allow 1 tick of error in case vTaskDelay() or
-         * portTEST_REF_CLOCK_GET_TIME() last long enough to cross a tick boundary */
+        /* Check that elapsed ticks and ref clock is accurate. We allow TEST_VTASKDELAY_DELTA_TICKS of error in case
+         * vTaskDelay() or portTEST_REF_CLOCK_GET_TIME() last long enough to cross a tick boundary */
         #if ( configUSE_16_BIT_TICKS == 1 )
-            TEST_ASSERT_UINT16_WITHIN(1, TEST_VTASKDELAY_TICKS, tick_end - tick_start);
+            TEST_ASSERT_UINT16_WITHIN(TEST_VTASKDELAY_DELTA_TICKS, TEST_VTASKDELAY_TICKS, tick_end - tick_start);
         #else
-            TEST_ASSERT_UINT32_WITHIN(1, TEST_VTASKDELAY_TICKS, tick_end - tick_start);
+            TEST_ASSERT_UINT32_WITHIN(TEST_VTASKDELAY_DELTA_TICKS, TEST_VTASKDELAY_TICKS, tick_end - tick_start);
         #endif
-        TEST_ASSERT_UINT32_WITHIN(portTEST_TICKS_TO_REF_CLOCK(1),
+        TEST_ASSERT_UINT32_WITHIN(portTEST_TICKS_TO_REF_CLOCK(TEST_VTASKDELAY_DELTA_TICKS),
                                   portTEST_TICKS_TO_REF_CLOCK(TEST_VTASKDELAY_TICKS),
                                   ref_clock_end - ref_clock_start);
     }
@@ -102,16 +107,22 @@ Procedure:
     - For single core, run the test directly from the UnityTask
     - For SMP, run the test once on each core (using vTestOnAllCores())
 Expected:
-    - The elapsed ticks should be TEST_VTASKDELAYUNTIL_TICKS, with 1 tick of error allowed (in case the delay and ref
-      clock functions last long enough to cross a tick boundary).
-    - The elapsed time should be equivalent to TEST_VTASKDELAYUNTIL_TICKS tick periods, with 1 tick period of error
-      allowed (in case ref clock functions last longer that a tick period).
+    - The elapsed ticks should be TEST_VTASKDELAYUNTIL_TICKS, with TEST_VTASKDELAYUNTIL_DELTA_TICKS tick of error
+      allowed (in case the delay and ref clock functions last long enough to cross a tick boundary).
+    - The elapsed time should be equivalent to TEST_VTASKDELAYUNTIL_TICKS tick periods, with
+      TEST_VTASKDELAYUNTIL_DELTA_TICKS tick period of error allowed (in case ref clock functions last longer that a tick
+      period).
 */
 
 #if ( INCLUDE_xTaskDelayUntil == 1 )
 
 #define TEST_VTASKDELAYUNTIL_TICKS              5   // Number of ticks to delay in test
 #define TEST_VTASKDELAYUNTIL_ITERATIONS         5   // Number of iterations in test
+#if CONFIG_FREERTOS_SMP
+#define TEST_VTASKDELAYUNTIL_DELTA_TICKS        1   // Number of ticks worth of delta allowed
+#else
+#define TEST_VTASKDELAYUNTIL_DELTA_TICKS        2   // Number of ticks worth of delta allowed. We allow 2 ticks in IDF FreeRTOS as each core's tick interrupt could be out of phase
+#endif
 
 static void test_vTaskDelayUntil(void *arg)
 {
@@ -134,19 +145,19 @@ static void test_vTaskDelayUntil(void *arg)
         ref_clock_end = portTEST_REF_CLOCK_GET_TIME();
 
 
-        /* Check that elapsed ticks and ref clock is accurate. We allow 1 tick of error in case vTaskDelayUntil() or
-         * portTEST_REF_CLOCK_GET_TIME() last long enough to cross a tick boundary */
+        /* Check that elapsed ticks and ref clock is accurate. We allow TEST_VTASKDELAYUNTIL_DELTA_TICKS of error in
+         * case vTaskDelayUntil() or portTEST_REF_CLOCK_GET_TIME() last long enough to cross a tick boundary */
         #if ( configUSE_16_BIT_TICKS == 1 )
-            TEST_ASSERT_UINT16_WITHIN(1, TEST_VTASKDELAYUNTIL_TICKS, tick_end - tick_start);
-            TEST_ASSERT_UINT16_WITHIN(1, tick_end, last_wake_tick);
+            TEST_ASSERT_UINT16_WITHIN(TEST_VTASKDELAYUNTIL_DELTA_TICKS, TEST_VTASKDELAYUNTIL_TICKS, tick_end - tick_start);
+            TEST_ASSERT_UINT16_WITHIN(TEST_VTASKDELAYUNTIL_DELTA_TICKS, tick_end, last_wake_tick);
         #else
-            TEST_ASSERT_UINT32_WITHIN(1, TEST_VTASKDELAYUNTIL_TICKS, tick_end - tick_start);
-            TEST_ASSERT_UINT32_WITHIN(1, tick_end, last_wake_tick);
+            TEST_ASSERT_UINT32_WITHIN(TEST_VTASKDELAYUNTIL_DELTA_TICKS, TEST_VTASKDELAYUNTIL_TICKS, tick_end - tick_start);
+            TEST_ASSERT_UINT32_WITHIN(TEST_VTASKDELAYUNTIL_DELTA_TICKS, tick_end, last_wake_tick);
         #endif
 
-        /* Check that the elapsed ref clock time is accurate. We allow 1 tick time worth of error to account for the
-         * the execution time of the ref clock functions. */
-        TEST_ASSERT_UINT32_WITHIN(portTEST_TICKS_TO_REF_CLOCK(1),
+        /* Check that the elapsed ref clock time is accurate. We allow TEST_VTASKDELAYUNTIL_DELTA_TICKS time worth of
+         * error to account for the execution time of the ref clock functions. */
+        TEST_ASSERT_UINT32_WITHIN(portTEST_TICKS_TO_REF_CLOCK(TEST_VTASKDELAYUNTIL_DELTA_TICKS),
                                   portTEST_TICKS_TO_REF_CLOCK(TEST_VTASKDELAYUNTIL_TICKS),
                                   ref_clock_end - ref_clock_start);
     }
