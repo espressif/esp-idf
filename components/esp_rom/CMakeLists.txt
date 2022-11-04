@@ -85,7 +85,7 @@ if(BOOTLOADER_BUILD)
         if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
             rom_linker_script("spiflash")
         endif()
-        if(CONFIG_ESP32_REV_MIN_3)
+        if(CONFIG_ESP32_REV_MIN_FULL GREATER_EQUAL 300)
             rom_linker_script("eco3")
         endif()
 
@@ -139,7 +139,7 @@ else() # Regular app build
             rom_linker_script("spiflash")
         endif()
 
-        if(CONFIG_ESP32_REV_MIN_3)
+        if(CONFIG_ESP32_REV_MIN_FULL GREATER_EQUAL 300)
             rom_linker_script("eco3")
         endif()
 
@@ -192,7 +192,7 @@ else() # Regular app build
             endif()
         endif()
 
-        if(CONFIG_ESP32C3_REV_MIN_3 OR CONFIG_ESP32C3_REV_MIN_4)
+        if(CONFIG_ESP32C3_REV_MIN_FULL GREATER_EQUAL 3)
             rom_linker_script("eco3")
         endif()
 

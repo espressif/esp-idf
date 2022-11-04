@@ -63,7 +63,7 @@ menu "SPI RAM config"
 
     config SPIRAM_CACHE_WORKAROUND
         bool "Enable workaround for bug in SPI RAM cache for Rev1 ESP32s"
-        depends on (SPIRAM_USE_MEMMAP || SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC) && (ESP32_REV_MIN < 3)
+        depends on (SPIRAM_USE_MEMMAP || SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC) && (ESP32_REV_MIN_FULL < 300)
         default "y"
         help
             Revision 1 of the ESP32 has a bug that can cause a write to PSRAM not to take place in some situations

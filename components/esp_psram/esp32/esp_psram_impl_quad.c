@@ -25,6 +25,7 @@
 #include "soc/efuse_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/spi_periph.h"
+#include "soc/chip_revision.h"
 #include "driver/gpio.h"
 #include "hal/efuse_hal.h"
 #include "hal/gpio_hal.h"
@@ -832,7 +833,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psra
         }
         psram_io.psram_clk_io = D2WD_PSRAM_CLK_IO;
         psram_io.psram_cs_io  = D2WD_PSRAM_CS_IO;
-    } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 && efuse_hal_get_major_chip_version() >= 3) {
+    } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 && ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300)) {
         ESP_EARLY_LOGE(TAG, "This chip is ESP32-PICO-V3. It does not support PSRAM (disable it in Kconfig)");
         abort();
     } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4)) {

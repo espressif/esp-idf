@@ -19,6 +19,7 @@
 #include "hal/wdt_hal.h"
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
+#include "hal/efuse_hal.h"
 
 #include "esp_heap_caps_init.h"
 #include "spi_flash_mmap.h"
@@ -444,6 +445,12 @@ static void start_cpu0_default(void)
         esp_app_get_elf_sha256(buf, sizeof(buf));
         ESP_EARLY_LOGI(TAG, "ELF file SHA256:  %s...", buf);
         ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", app_desc->idf_ver);
+
+        ESP_EARLY_LOGI(TAG, "Min chip rev:     v%d.%d", CONFIG_ESP_REV_MIN_FULL / 100, CONFIG_ESP_REV_MIN_FULL % 100);
+        ESP_EARLY_LOGI(TAG, "Max chip rev:     v%d.%d %s",CONFIG_ESP_REV_MAX_FULL / 100, CONFIG_ESP_REV_MAX_FULL % 100,
+                       efuse_ll_get_disable_wafer_version_major() ? "(constraint ignored)" : "");
+        unsigned revision = efuse_hal_chip_revision();
+        ESP_EARLY_LOGI(TAG, "Chip rev:         v%d.%d", revision / 100, revision % 100);
     }
 #endif
 

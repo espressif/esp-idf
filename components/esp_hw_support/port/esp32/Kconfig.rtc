@@ -36,7 +36,7 @@ endchoice
 choice RTC_EXT_CRYST_ADDIT_CURRENT_METHOD
     prompt "Additional current for external 32kHz crystal"
     depends on RTC_CLK_SRC_EXT_CRYS
-    depends on ESP32_REV_MIN <= 1
+    depends on ESP32_REV_MIN_FULL < 200
     default RTC_EXT_CRYST_ADDIT_CURRENT_NONE
     help
         With some 32kHz crystal configurations, the X32N and X32P pins may not have enough

@@ -494,7 +494,6 @@ components/esp_rom/include/esp32/rom/crc.h
 components/esp_rom/include/esp32/rom/efuse.h
 components/esp_rom/include/esp32/rom/libc_stubs.h
 components/esp_rom/include/esp32/rom/miniz.h
-components/esp_rom/include/esp32/rom/rsa_pss.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/tbconsole.h
 components/esp_rom/include/esp32/rom/tjpgd.h
@@ -739,7 +738,6 @@ components/hal/include/hal/sha_hal.h
 components/hal/include/hal/spi_flash_encrypt_hal.h
 components/hal/include/hal/spi_slave_hal.h
 components/hal/include/hal/spi_slave_hd_hal.h
-components/hal/include/hal/twai_types.h
 components/hal/include/hal/uhci_types.h
 components/hal/include/hal/usb_hal.h
 components/hal/include/hal/usb_types_private.h
