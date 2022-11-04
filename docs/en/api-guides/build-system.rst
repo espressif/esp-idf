@@ -605,12 +605,12 @@ The order of components in the ``BUILD_COMPONENTS`` variable determines other or
 - Order that :ref:`project_include.cmake` files are included into the project.
 - Order that the list of header paths is generated for compilation (via ``-I`` argument). (Note that for a given component's source files, only that component's dependency's header paths are passed to the compiler.)
 
-Adding link-time dependencies
+Adding Link-Time Dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. highlight:: cmake
 
-The ESP-IDF CMake helper function ``idf_component_add_link_dependency`` adds a link-only dependency between one component and another. In almost all cases, it's better to use the ``PRIV_REQUIRES`` feature in ``idf_component_register`` to create a dependency. However in some cases it's necessary the link-time dependency of another component to this component, i.e. the reverse order to ``PRIV_REQUIRES`` (for example: :doc:`/api-reference/storage/spi_flash_override_driver`).
+The ESP-IDF CMake helper function ``idf_component_add_link_dependency`` adds a link-only dependency between one component and another. In almost all cases, it is better to use the ``PRIV_REQUIRES`` feature in ``idf_component_register`` to create a dependency. However, in some cases, it's necessary to add the link-time dependency of another component to this component, i.e., the reverse order to ``PRIV_REQUIRES`` (for example: :doc:`/api-reference/storage/spi_flash_override_driver`).
 
 To make another component depend on this component at link time::
 
