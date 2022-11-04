@@ -19,6 +19,9 @@ extern "C" {
  * @brief Private API functions used for Linux-target emulation of the Partition APIs (host-side testing)
  */
 
+/** @brief emulated sector size for the partition API on Linux */
+#define ESP_PARTITION_EMULATED_SECTOR_SIZE 0x1000
+
 /**
  * @brief Partition type to string conversion routine
  *

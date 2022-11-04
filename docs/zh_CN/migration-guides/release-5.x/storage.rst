@@ -1,6 +1,41 @@
 存储
 =======
 
+分区 API 的新组件
+------------------------------------
+
+非兼容性更新：所有的分区 API 代码都已迁移到新组件 :component:`esp_partition` 中。如需查看所有受影响的函数及数据类型，请参见头文件 :component_file:`esp_partition.h <esp_partition/include/esp_partition.h>`。
+
+在以前，这些 API 函数和数据类型属于 :component:`spi_flash` 组件。因此，在现有的应用程序中或将依赖 ``spi_flash``，这也意味着在直接使用 esp_partition_* API/数据类型时，可能会导致构建过程失败（比如，在出现 ``#include "esp_partition.h"`` 的行中报错 ``fatal error: esp_partition.h: No such file or directory``）。如果遇到类似问题，请按以下步骤更新项目中的 CMakeLists.txt 文件：
+
+原有的依赖性设置：
+
+.. code-block:: cmake
+
+   idf_component_register(...
+                          REQUIRES spi_flash)
+
+更新后的依赖性设置：
+
+.. code-block:: cmake
+
+   idf_component_register(...
+                          REQUIRES spi_flash esp_partition)
+
+.. note:: 
+
+   请根据项目的实际情况，更新相应的 ``REQUIRES`` 或是 ``PRIV_REQUIRES`` 部分。上述代码片段仅为范例。
+
+如果问题仍未解决，请联系我们，我们将协助您进行代码迁移。
+
+
+SDMMC/SDSPI
+-----------
+
+用户现可通过 ``sdmmc_host_t.max_freq_khz`` 将 SDMMC/SDSPI 接口上的 SD 卡频率配置为特定值，不再局限于之前的 ``SDMMC_FREQ_PROBING`` (400 kHz)、 ``SDMMC_FREQ_DEFAULT`` (20 MHz) 或是 ``SDMMC_FREQ_HIGHSPEED`` (40 MHz)。此前，如果用户配置了上述三个给定频率之外的值，用户所选频率将自动调整为与其最为接近的给定值。
+
+更新后，底层驱动将计算与用户配置的特定值最为接近的合适频率。相对于枚举项选择，该频率现由可用的分频器提供。不过，如果尚未更新现有的应用代码，可能会导致与 SD 卡的通信过程出现问题。如发现上述问题，请继续尝试配置与期望值接近的不同频率，直到找到合适的频率。如需查看底层驱动的计算结果以及实际应用的频率，请使用 ``void sdmmc_card_print_info(FILE* stream, const sdmmc_card_t* card)`` 函数。
+
 FatFs
 -----
 
@@ -9,7 +44,7 @@ FatFs 已更新至 v0.14， ``f_mkfs()`` 函数签名也已变更。新签名为
 分区表
 ---------------
 
-分区表生成器不再支持未对齐的分区。生成分区表时， ``esp-idf`` 将只接受偏移量与 4 KB 对齐的分区。此变更仅影响新生成的分区表，不影响读写现有分区。
+分区表生成器不再支持未对齐的分区。生成分区表时， ``ESP-IDF`` 将只接受偏移量与 4 KB 对齐的分区。此变更仅影响新生成的分区表，不影响读写现有分区。
 
 
 VFS

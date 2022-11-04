@@ -24,7 +24,7 @@ idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${includes}
                     PRIV_INCLUDE_DIRS ${priv_includes}
                     LDFRAGMENTS linker.lf
-                    PRIV_REQUIRES spi_flash bootloader_support mbedtls esp_rom soc esp_system driver)
+                    PRIV_REQUIRES esp_partition spi_flash bootloader_support mbedtls esp_rom soc esp_system driver)
 
 if(CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF)
   target_link_libraries(${COMPONENT_LIB} PRIVATE idf::esp_app_format)

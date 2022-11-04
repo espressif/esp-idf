@@ -143,8 +143,8 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition,
  * mmaped pointers, and a single handle for all these regions.
  */
 esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, size_t size,
-                             spi_flash_mmap_memory_t memory,
-                             const void **out_ptr, spi_flash_mmap_handle_t *out_handle)
+                             esp_partition_mmap_memory_t memory,
+                             const void **out_ptr, esp_partition_mmap_handle_t *out_handle)
 {
     assert(partition != NULL);
     if (offset > partition->size) {
@@ -160,12 +160,17 @@ esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, si
     // offset within mmu page size block
     size_t region_offset = phys_addr & (CONFIG_MMU_PAGE_SIZE - 1);
     size_t mmap_addr = phys_addr & ~(CONFIG_MMU_PAGE_SIZE - 1);
-    esp_err_t rc = spi_flash_mmap(mmap_addr, size + region_offset, memory, out_ptr, out_handle);
+    esp_err_t rc = spi_flash_mmap(mmap_addr, size + region_offset, (spi_flash_mmap_memory_t) memory, out_ptr, (spi_flash_mmap_handle_t*) out_handle);
     // adjust returned pointer to point to the correct offset
     if (rc == ESP_OK) {
         *out_ptr = (void *) (((ptrdiff_t) * out_ptr) + region_offset);
     }
     return rc;
+}
+
+void esp_partition_munmap(esp_partition_mmap_handle_t handle)
+{
+    spi_flash_munmap((spi_flash_mmap_handle_t) handle);
 }
 
 esp_err_t esp_partition_get_sha256(const esp_partition_t *partition, uint8_t *sha_256)

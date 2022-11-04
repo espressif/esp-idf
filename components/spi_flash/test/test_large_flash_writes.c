@@ -20,6 +20,7 @@
 #include "esp_rom_spiflash.h"
 #include "esp_private/cache_utils.h"
 #include "soc/timer_periph.h"
+#include "esp_flash.h"
 
 static const uint8_t large_const_buffer[16400] = {
     203, // first byte

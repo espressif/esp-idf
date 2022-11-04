@@ -14,7 +14,8 @@ set(srcs "src/nvs_api.cpp"
          "src/nvs_types.cpp")
 
 idf_component_register(SRCS "${srcs}"
-                    REQUIRES "spi_flash"
+                    REQUIRES "esp_partition"
+                    PRIV_REQUIRES spi_flash
                     INCLUDE_DIRS "include"
                     PRIV_INCLUDE_DIRS "private_include")
 

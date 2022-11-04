@@ -3,8 +3,8 @@ SOURCE_FILES := \
     flash_mock.cpp \
     flash_mock_util.c \
     $(addprefix ../, \
-    partition.c \
-    ../spi_flash/partition_target.c \
+    ../esp_partition/partition.c \
+    ../esp_partition/partition_target.c \
     flash_ops.c \
     ../esp_rom/linux/esp_rom_efuse.c \
     ) \
@@ -46,4 +46,5 @@ INCLUDE_DIRS := \
     hal/esp32/include \
     hal/platform_port/include \
     spi_flash/include \
+    esp_partition/include \
     )

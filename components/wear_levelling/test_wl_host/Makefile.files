@@ -39,4 +39,5 @@ INCLUDE_DIRS := \
 	app_update/include \
 	hal/include \
 	spi_flash/include \
+	esp_partition/include \
 	)

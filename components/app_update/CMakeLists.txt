@@ -1,7 +1,7 @@
 idf_component_register(SRCS "esp_ota_ops.c" "esp_ota_app_desc.c"
                     INCLUDE_DIRS "include"
-                    REQUIRES spi_flash partition_table bootloader_support esp_app_format
-                    PRIV_REQUIRES esptool_py efuse)
+                    REQUIRES partition_table bootloader_support esp_app_format esp_partition
+                    PRIV_REQUIRES esptool_py efuse spi_flash)
 
 if(NOT BOOTLOADER_BUILD)
     partition_table_get_partition_info(otadata_offset "--partition-type data --partition-subtype ota" "offset")

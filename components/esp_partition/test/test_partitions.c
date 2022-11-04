@@ -18,6 +18,8 @@
 #include <esp_log.h>
 #include <esp_partition.h>
 #include <esp_attr.h>
+#include "esp_flash.h"
+#include "spi_flash_mmap.h"
 
 TEST_CASE("Test erase partition", "[spi_flash][esp_flash]")
 {

@@ -12,7 +12,7 @@ set(srcs "diskio/diskio.c"
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS diskio vfs src
                        REQUIRES wear_levelling sdmmc
-                       PRIV_REQUIRES vfs
+                       PRIV_REQUIRES vfs spi_flash
                       )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
