@@ -57,6 +57,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "esp_etm.c")
     endif()
 
+    if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
+        list(APPEND srcs "esp_ds.c")
+    endif()
+
     # ESP32C6-TODO
     if(CONFIG_IDF_TARGET_ESP32C6)
         list(REMOVE_ITEM srcs

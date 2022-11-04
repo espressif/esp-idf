@@ -13,7 +13,6 @@ set(srcs
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "memprot.c"
                      "esp_crypto_lock.c"
-                     "esp_ds.c"
                      "sar_periph_ctrl.c")
 
     # init constructor for wifi

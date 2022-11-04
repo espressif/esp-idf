@@ -8,11 +8,11 @@ set(srcs
     "rtc_pm.c"
     "rtc_sleep.c"
     "rtc_time.c"
-    "chip_info.c")
+    "chip_info.c"
+    )
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "esp_ds.c"
-                     "esp_crypto_lock.c"
+    list(APPEND srcs "esp_crypto_lock.c"
                      "sar_periph_ctrl.c")
 
     if(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE)
