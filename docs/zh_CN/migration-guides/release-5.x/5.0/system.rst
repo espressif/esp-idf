@@ -163,3 +163,10 @@ FreeRTOS 移植相关的宏
 - :cpp:type:`esp_app_desc_t` 结构体此前在 :component_file:`esp_app_format.h <bootloader_support/include/esp_app_format.h>` 中声明，现在在 :component_file:`esp_app_desc.h <esp_app_format/include/esp_app_desc.h>` 中声明。
 
 - 函数 :cpp:func:`bootloader_common_get_partition_description` 已更新为私有函数，请使用代替函数 :cpp:func:`esp_ota_get_partition_description`。注意，此函数的第一个参数为 :cpp:type:`esp_partition_t`，而非 :cpp:type:`esp_partition_pos_t`。
+
+芯片版本
+^^^^^^^^^^^^^
+
+在应用程序开始加载时，引导加载程序会检查芯片版本。只有当版本为 ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 和 `<` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL`` 时，应用程序才能成功加载。
+
+在 OTA 升级时，会检查应用程序头部中的版本需求和芯片版本是否符合条件。只有当版本为 ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 和 `<` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL`` 时，应用程序才能成功更新。
