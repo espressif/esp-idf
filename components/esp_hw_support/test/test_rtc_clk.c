@@ -200,7 +200,7 @@ TEST_CASE("Test fast switching between PLL and XTAL", "[rtc_clk]")
 
 /* In CI environments, the 32kXTAL runners don't have 8MB psram for bank switching.
    So can only test one config or the other. */
-#if !IDF_CI_BUILD || !CONFIG_SPIRAM_BANKSWITCH_ENABLE
+#if !defined(CONFIG_IDF_CI_BUILD) || !CONFIG_SPIRAM_BANKSWITCH_ENABLE
 
 #define COUNT_TEST      3
 #define TIMEOUT_TEST_MS (5 + CONFIG_RTC_CLK_CAL_CYCLES / 16)
@@ -345,7 +345,7 @@ TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_
     start_freq(SOC_RTC_SLOW_CLK_SRC_RC_SLOW, 0);
 }
 
-#endif // !IDF_CI_BUILD || !CONFIG_SPIRAM_BANKSWITCH_ENABLE
+#endif // !defined(CONFIG_IDF_CI_BUILD) || !CONFIG_SPIRAM_BANKSWITCH_ENABLE
 
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 

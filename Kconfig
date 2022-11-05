@@ -17,7 +17,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
     config IDF_CI_BUILD
         bool
-        option env="IDF_CI_BUILD"
+        default y if "$(IDF_CI_BUILD)" = "y" || "$(IDF_CI_BUILD)" = 1
 
     config IDF_TARGET_ARCH_RISCV
         bool
