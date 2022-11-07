@@ -36,10 +36,6 @@
 #include "crypto.h"
 #include "mbedtls/esp_config.h"
 
-#ifdef MBEDTLS_ARC4_C
-#include "mbedtls/arc4.h"
-#endif
-
 static int digest_vector(mbedtls_md_type_t md_type, size_t num_elem,
 			 const u8 *addr[], const size_t *len, u8 *mac)
 {
@@ -526,10 +522,6 @@ static mbedtls_cipher_type_t alg_to_mbedtls_cipher(enum crypto_cipher_alg alg,
 						   size_t key_len)
 {
 	switch (alg) {
-#ifdef MBEDTLS_ARC4_C
-	case CRYPTO_CIPHER_ALG_RC4:
-		return MBEDTLS_CIPHER_ARC4_128;
-#endif
 	case CRYPTO_CIPHER_ALG_AES:
 		if (key_len == 16) {
 			return MBEDTLS_CIPHER_AES_128_CBC;
@@ -864,46 +856,6 @@ cleanup:
 	mbedtls_ccm_free(&ccm);
 
 	return ret;
-}
-#endif
-
-#ifdef MBEDTLS_ARC4_C
-int rc4_skip(const u8 *key, size_t keylen, size_t skip,
-             u8 *data, size_t data_len)
-{
-	int ret;
-	unsigned char skip_buf_in[16];
-	unsigned char skip_buf_out[16];
-	mbedtls_arc4_context ctx;
-	unsigned char *obuf = os_malloc(data_len);
-
-	if (!obuf) {
-		wpa_printf(MSG_ERROR, "%s:memory allocation failed", __func__);
-		return -1;
-	}
-	mbedtls_arc4_init(&ctx);
-	mbedtls_arc4_setup(&ctx, key, keylen);
-	while (skip >= sizeof(skip_buf_in)) {
-		size_t len = skip;
-		if (len > sizeof(skip_buf_in)) {
-			len = sizeof(skip_buf_in);
-		}
-		if ((ret = mbedtls_arc4_crypt(&ctx, len, skip_buf_in,
-					      skip_buf_out)) != 0) {
-			wpa_printf(MSG_ERROR, "rc4 encryption failed");
-			os_free(obuf);
-			return -1;
-		}
-		os_memcpy(skip_buf_in, skip_buf_out, 16);
-		skip -= len;
-	}
-
-	mbedtls_arc4_crypt(&ctx, data_len, data, obuf);
-
-	memcpy(data, obuf, data_len);
-	os_free(obuf);
-
-	return 0;
 }
 #endif
 
