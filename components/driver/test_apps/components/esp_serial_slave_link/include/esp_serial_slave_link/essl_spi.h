@@ -7,12 +7,12 @@
 #pragma once
 
 #include "esp_err.h"
+#include "driver/spi_master.h"
+
 #include "esp_serial_slave_link/essl.h"
 
-
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /// Configuration of ESSL SPI device

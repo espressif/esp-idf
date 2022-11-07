@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 #include "essl.h"
 #include "essl_internal.h"
-#include "esp_log.h"
-#include "freertos/task.h"
 
 #define TIME_EXPIRED_SINCE_CORE(start, end, timeout, max) (bool)((end)>=(start)? \
          ((end)-(start)>(timeout)) :\
@@ -142,7 +144,7 @@ esp_err_t essl_get_tx_buffer_num(essl_handle_t handle, uint32_t *out_tx_num, uin
     if (handle == NULL || out_tx_num == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (handle->update_tx_buffer_num == NULL|| handle->get_tx_buffer_num == NULL) {
+    if (handle->update_tx_buffer_num == NULL || handle->get_tx_buffer_num == NULL) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 
@@ -160,7 +162,7 @@ esp_err_t essl_get_rx_data_size(essl_handle_t handle, uint32_t *out_rx_size, uin
     if (handle == NULL || out_rx_size == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (handle->update_rx_data_size == NULL|| handle->get_rx_data_size == NULL) {
+    if (handle->update_rx_data_size == NULL || handle->get_rx_data_size == NULL) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 

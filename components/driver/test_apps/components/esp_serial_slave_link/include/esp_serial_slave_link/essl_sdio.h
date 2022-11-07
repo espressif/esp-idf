@@ -9,10 +9,13 @@
 #pragma once
 
 #include "esp_err.h"
+#include "driver/sdmmc_host.h"
+
 #include "esp_serial_slave_link/essl.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "driver/sdmmc_defs.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /// Configuration for the ESSL SDIO device
 typedef struct {
@@ -238,3 +241,7 @@ esp_err_t essl_sdio_send_slave_intr(void *arg, uint32_t intr_mask, uint32_t wait
 void essl_sdio_reset_cnt(void *arg);
 
 /** @endcond */
+
+#ifdef __cplusplus
+}
+#endif

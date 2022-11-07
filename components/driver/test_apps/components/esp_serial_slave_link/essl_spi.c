@@ -9,12 +9,14 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_memory_utils.h"
-#include "driver/spi_master.h"
 #include "esp_private/periph_ctrl.h"
-#include "essl_internal.h"
-#include "essl_spi.h"
+
+#include "driver/spi_master.h"
 #include "hal/spi_types.h"
 #include "hal/spi_ll.h"
+
+#include "essl_internal.h"
+#include "essl_spi.h"
 
 /**
  * Initialise device function list of SPI by this macro.
@@ -107,7 +109,7 @@ esp_err_t essl_spi_rdbuf(spi_device_handle_t spi, uint8_t *out_data, int addr, i
         .dummy_bits = get_hd_dummy_bits(flags),
     };
 
-    return spi_device_transmit(spi, (spi_transaction_t*)&t);
+    return spi_device_transmit(spi, (spi_transaction_t *)&t);
 }
 
 esp_err_t essl_spi_rdbuf_polling(spi_device_handle_t spi, uint8_t *out_data, int addr, int len, uint32_t flags)
@@ -123,7 +125,7 @@ esp_err_t essl_spi_rdbuf_polling(spi_device_handle_t spi, uint8_t *out_data, int
         .dummy_bits = get_hd_dummy_bits(flags),
     };
 
-    return spi_device_polling_transmit(spi, (spi_transaction_t*)&t);
+    return spi_device_polling_transmit(spi, (spi_transaction_t *)&t);
 }
 
 esp_err_t essl_spi_wrbuf(spi_device_handle_t spi, const uint8_t *data, int addr, int len, uint32_t flags)
@@ -138,7 +140,7 @@ esp_err_t essl_spi_wrbuf(spi_device_handle_t spi, const uint8_t *data, int addr,
         },
         .dummy_bits = get_hd_dummy_bits(flags),
     };
-    return spi_device_transmit(spi, (spi_transaction_t*)&t);
+    return spi_device_transmit(spi, (spi_transaction_t *)&t);
 }
 
 esp_err_t essl_spi_wrbuf_polling(spi_device_handle_t spi, const uint8_t *data, int addr, int len, uint32_t flags)
@@ -153,7 +155,7 @@ esp_err_t essl_spi_wrbuf_polling(spi_device_handle_t spi, const uint8_t *data, i
         },
         .dummy_bits = get_hd_dummy_bits(flags),
     };
-    return spi_device_polling_transmit(spi, (spi_transaction_t*)&t);
+    return spi_device_polling_transmit(spi, (spi_transaction_t *)&t);
 }
 
 esp_err_t essl_spi_rddma_seg(spi_device_handle_t spi, uint8_t *out_data, int seg_len, uint32_t flags)
@@ -167,7 +169,7 @@ esp_err_t essl_spi_rddma_seg(spi_device_handle_t spi, uint8_t *out_data, int seg
         },
         .dummy_bits = get_hd_dummy_bits(flags),
     };
-    return spi_device_transmit(spi, (spi_transaction_t*)&t);
+    return spi_device_transmit(spi, (spi_transaction_t *)&t);
 }
 
 esp_err_t essl_spi_rddma_done(spi_device_handle_t spi, uint32_t flags)
@@ -184,15 +186,17 @@ esp_err_t essl_spi_rddma(spi_device_handle_t spi, uint8_t *out_data, int len, in
     if (!esp_ptr_dma_capable(out_data) || ((intptr_t)out_data % 4) != 0) {
         return ESP_ERR_INVALID_ARG;
     }
-    seg_len = (seg_len > 0)? seg_len : len;
+    seg_len = (seg_len > 0) ? seg_len : len;
 
-    uint8_t* read_ptr = out_data;
+    uint8_t *read_ptr = out_data;
     esp_err_t ret = ESP_OK;
     while (len > 0) {
         int send_len = MIN(seg_len, len);
 
         ret = essl_spi_rddma_seg(spi, read_ptr, send_len, flags);
-        if (ret != ESP_OK) return ret;
+        if (ret != ESP_OK) {
+            return ret;
+        }
 
         len -= send_len;
         read_ptr += send_len;
@@ -211,7 +215,7 @@ esp_err_t essl_spi_wrdma_seg(spi_device_handle_t spi, const uint8_t *data, int s
         },
         .dummy_bits = get_hd_dummy_bits(flags),
     };
-    return spi_device_transmit(spi, (spi_transaction_t*)&t);
+    return spi_device_transmit(spi, (spi_transaction_t *)&t);
 }
 
 esp_err_t essl_spi_wrdma_done(spi_device_handle_t spi, uint32_t flags)
@@ -228,13 +232,15 @@ esp_err_t essl_spi_wrdma(spi_device_handle_t spi, const uint8_t *data, int len, 
     if (!esp_ptr_dma_capable(data)) {
         return ESP_ERR_INVALID_ARG;
     }
-    seg_len = (seg_len > 0)? seg_len : len;
+    seg_len = (seg_len > 0) ? seg_len : len;
 
     while (len > 0) {
         int send_len = MIN(seg_len, len);
 
         esp_err_t ret = essl_spi_wrdma_seg(spi, data, send_len, flags);
-        if (ret != ESP_OK) return ret;
+        if (ret != ESP_OK) {
+            return ret;
+        }
 
         len -= send_len;
         data += send_len;
@@ -329,8 +335,8 @@ static uint32_t essl_spi_get_rx_data_size(void *arg)
 static esp_err_t essl_spi_update_rx_data_size(void *arg, uint32_t wait_ms)
 {
     essl_spi_context_t *ctx = arg;
-    uint32_t updated_size;
-    uint32_t previous_size;
+    uint32_t updated_size = 0;
+    uint32_t previous_size = 0;
     esp_err_t ret;
 
     ret = essl_spi_rdbuf_polling(ctx->spi, (uint8_t *)&previous_size, ctx->master_in.rx_sync_reg, sizeof(uint32_t), 0);
@@ -350,7 +356,7 @@ static esp_err_t essl_spi_update_rx_data_size(void *arg, uint32_t wait_ms)
         }
         if (updated_size == previous_size) {
             ctx->master_in.slave_tx_bytes = updated_size;
-            ESP_LOGV(TAG, "updated: slave prepared tx buffer is: %d bytes", updated_size);
+            ESP_LOGV(TAG, "updated: slave prepared tx buffer is: %d bytes", (unsigned int)updated_size);
             return ret;
         }
         previous_size = updated_size;
@@ -419,8 +425,8 @@ static uint32_t essl_spi_get_tx_buffer_num(void *arg)
 static esp_err_t essl_spi_update_tx_buffer_num(void *arg, uint32_t wait_ms)
 {
     essl_spi_context_t *ctx = arg;
-    uint32_t updated_num;
-    uint32_t previous_size;
+    uint32_t updated_num = 0;
+    uint32_t previous_size = 0;
     esp_err_t ret;
 
     ret = essl_spi_rdbuf_polling(ctx->spi, (uint8_t *)&previous_size, ctx->master_out.tx_sync_reg, sizeof(uint32_t), 0);
@@ -440,7 +446,7 @@ static esp_err_t essl_spi_update_tx_buffer_num(void *arg, uint32_t wait_ms)
         }
         if (updated_num == previous_size) {
             ctx->master_out.slave_rx_buf_num = updated_num;
-            ESP_LOGV(TAG, "updated: slave prepared rx buffer: %d", updated_num);
+            ESP_LOGV(TAG, "updated: slave prepared rx buffer: %d", (unsigned int)updated_num);
             return ret;
         }
         previous_size = updated_num;
@@ -469,12 +475,12 @@ esp_err_t essl_spi_send_packet(void *arg, const void *data, size_t size, uint32_
         }
         //Slave still did not load a sufficient amount of buffers
         if (essl_spi_get_tx_buffer_num(arg) < buf_num_to_use) {
-            ESP_LOGV(TAG, "slave buffer: %d is not enough, %d is required", ctx->master_out.slave_rx_buf_num, ctx->master_out.sent_buf_num + buf_num_to_use);
+            ESP_LOGV(TAG, "slave buffer: %"PRIu32" is not enough, %"PRIu32" is required", (uint32_t)ctx->master_out.slave_rx_buf_num, (uint32_t)ctx->master_out.sent_buf_num + buf_num_to_use);
             return ESP_ERR_NOT_FOUND;
         }
     }
 
-    ESP_LOGV(TAG, "send_packet: size to write is: %d", size);
+    ESP_LOGV(TAG, "send_packet: size to write is: %zu", size);
     ret = essl_spi_wrdma_seg(ctx->spi, data, size, 0);
     if (ret != ESP_OK) {
         return ret;
