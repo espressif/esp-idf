@@ -89,7 +89,7 @@ After an ADC instance is created, set up the :cpp:type:`adc_oneshot_chan_cfg_t` 
     On the other hand, :cpp:func:`adc_continuous_io_to_channel` and :cpp:func:`adc_continuous_channel_to_io` can be used to know the ADC channels and ADC IOs.
 
 To make these settings take effect, call :cpp:func:`adc_oneshot_config_channel` with above configuration structure. You should specify an ADC channel to be configured as well.
-Especially, this :cpp:func:`adc_oneshot_config_channel` can be called multiple times to configure different ADC channels. Drvier will save these per channel configurations internally.
+This function (:cpp:func:`adc_oneshot_config_channel`) can be called multiple times to configure different ADC channels. The Driver will save each of these channel configurations internally.
 
 
 Configure Two ADC Channels
@@ -108,9 +108,9 @@ Configure Two ADC Channels
 Read Conversion Result
 ^^^^^^^^^^^^^^^^^^^^^^
 
-After above configurations, the ADC is ready to measure the analog siganl(s) from the configured ADC channel(s). Call :cpp:func:`adc_oneshot_read` to get the conversion raw result of an ADC channel.
+After above configurations, the ADC is ready to measure the analog signal(s) from the configured ADC channel(s). Call :cpp:func:`adc_oneshot_read` to get the conversion raw result of an ADC channel.
 
--  :cpp:func:`adc_oneshot_read` is safer. ADC(s) are shared by some other drivers / peripherals, see `Hardware Limitations <#hardware-limitations>`__. This function takes some mutexes, to avoid concurrent hardware usage. Therefore, this function should not be used in an ISR context. This function may fail when the ADC is in use by other drivers / peripherals, and return :c:macro:`ESP_ERR_TIMEOUT`. Under this condition, the ADC raw result is invalid.
+-  :cpp:func:`adc_oneshot_read` is safe to use. ADC(s) are shared by some other drivers / peripherals, see `Hardware Limitations <#hardware-limitations>`__. This function uses mutexes to avoid concurrent hardware usage. Therefore, this function should not be used in an ISR context. This function may fail when the ADC is in use by other drivers / peripherals, and return :c:macro:`ESP_ERR_TIMEOUT`. Under this condition, the ADC raw result is invalid.
 
 These two functions will both fail due to invalid arguments.
 
