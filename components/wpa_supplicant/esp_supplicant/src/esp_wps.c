@@ -1462,6 +1462,9 @@ _err:
         sm->dev = NULL;
     }
     if (sm->wps_ctx) {
+        if (sm->wps_ctx->dh_privkey) {
+            wpabuf_free(sm->wps_ctx->dh_privkey);
+        }
         os_free(sm->wps_ctx);
         sm->wps_ctx = NULL;
     }
@@ -1511,6 +1514,9 @@ wifi_station_wps_deinit(void)
         sm->dev = NULL;
     }
     if (sm->wps_ctx) {
+        if (sm->wps_ctx->dh_privkey) {
+            wpabuf_free(sm->wps_ctx->dh_privkey);
+        }
         os_free(sm->wps_ctx);
         sm->wps_ctx = NULL;
     }
@@ -1630,11 +1636,13 @@ int wifi_station_wps_start(void)
         sm->is_wps_scan = true;
 
         wps_build_public_key(sm->wps, NULL);
-        sm->wps->wps->dh_privkey = wpabuf_dup(sm->wps->dh_privkey);
+        if (sm->wps->wps->dh_privkey) {
+            wpabuf_free(sm->wps->wps->dh_privkey);
+        }
+        sm->wps->wps->dh_privkey = sm->wps->dh_privkey;
         sm->wps->wps->dh_ctx = sm->wps->dh_ctx;
         sm->wps->wps->dh_pubkey = sm->wps->dh_pubkey_e;
         sm->wps->wps->rf_band_cb = wps_rf_band_cb;
-        wpabuf_clear_free(sm->wps->dh_privkey);
         sm->wps->dh_privkey = NULL;
         wifi_wps_scan(NULL, NULL);
         break;
