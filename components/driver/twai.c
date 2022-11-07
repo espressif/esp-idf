@@ -18,6 +18,7 @@
 #include "esp_heap_caps.h"
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk.h"
 #include "driver/twai.h"
 #include "soc/soc_caps.h"
 #include "soc/soc.h"
@@ -59,6 +60,8 @@
 
 //Control structure for TWAI driver
 typedef struct {
+    int controller_id;
+    periph_module_t module;  // peripheral module
     //Control and status members
     twai_state_t state;
     twai_mode_t mode;
@@ -84,10 +87,8 @@ typedef struct {
     SemaphoreHandle_t alert_semphr;
     uint32_t alerts_enabled;
     uint32_t alerts_triggered;
-#ifdef CONFIG_PM_ENABLE
-    //Power Management
+    //Power Management Lock
     esp_pm_lock_handle_t pm_lock;
-#endif
 } twai_obj_t;
 
 static twai_obj_t *p_twai_obj = NULL;
@@ -121,6 +122,7 @@ TWAI_ISR_ATTR static void twai_alert_handler(uint32_t alert_code, int *alert_req
     }
 }
 
+TWAI_ISR_ATTR
 static inline void twai_handle_rx_buffer_frames(BaseType_t *task_woken, int *alert_req)
 {
 #ifdef SOC_TWAI_SUPPORTS_RX_STATUS
@@ -170,6 +172,7 @@ static inline void twai_handle_rx_buffer_frames(BaseType_t *task_woken, int *ale
 #endif  //SOC_TWAI_SUPPORTS_RX_STATUS
 }
 
+TWAI_ISR_ATTR
 static inline void twai_handle_tx_buffer_frame(BaseType_t *task_woken, int *alert_req)
 {
     //Handle previously transmitted frame
@@ -214,7 +217,7 @@ TWAI_ISR_ATTR static void twai_intr_handler_main(void *arg)
 #if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
     if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
         twai_hal_prepare_for_reset(&twai_context);
-        periph_module_reset(PERIPH_TWAI_MODULE);
+        periph_module_reset(p_twai_obj->module);
         twai_hal_recover_from_reset(&twai_context);
         p_twai_obj->rx_missed_count += twai_hal_get_reset_lost_rx_cnt(&twai_context);
         twai_alert_handler(TWAI_ALERT_PERIPH_RESET, &alert_req);
@@ -281,28 +284,37 @@ TWAI_ISR_ATTR static void twai_intr_handler_main(void *arg)
 
 static void twai_configure_gpio(gpio_num_t tx, gpio_num_t rx, gpio_num_t clkout, gpio_num_t bus_status)
 {
-    //Set TX pin
-    gpio_set_pull_mode(tx, GPIO_FLOATING);
-    esp_rom_gpio_connect_out_signal(tx, TWAI_TX_IDX, false, false);
-    esp_rom_gpio_pad_select_gpio(tx);
-
+    int controller_id = p_twai_obj->controller_id;
+    // if TX and RX set to the same GPIO, which means we want to create a loop-back in the GPIO matrix
+    bool io_loop_back = (tx == rx);
+    gpio_config_t gpio_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .pull_down_en = false,
+        .pull_up_en = false,
+    };
     //Set RX pin
-    gpio_set_pull_mode(rx, GPIO_FLOATING);
-    esp_rom_gpio_connect_in_signal(rx, TWAI_RX_IDX, false);
-    esp_rom_gpio_pad_select_gpio(rx);
-    gpio_set_direction(rx, GPIO_MODE_INPUT);
+    gpio_conf.mode = GPIO_MODE_INPUT | (io_loop_back ? GPIO_MODE_OUTPUT : 0);
+    gpio_conf.pin_bit_mask = 1ULL << rx;
+    gpio_config(&gpio_conf);
+    esp_rom_gpio_connect_in_signal(rx, twai_controller_periph_signals.controllers[controller_id].rx_sig, false);
+
+    //Set TX pin
+    gpio_conf.mode = GPIO_MODE_OUTPUT | (io_loop_back ? GPIO_MODE_INPUT : 0);
+    gpio_conf.pin_bit_mask = 1ULL << tx;
+    gpio_config(&gpio_conf);
+    esp_rom_gpio_connect_out_signal(tx, twai_controller_periph_signals.controllers[controller_id].tx_sig, false, false);
 
     //Configure output clock pin (Optional)
     if (clkout >= 0 && clkout < GPIO_NUM_MAX) {
         gpio_set_pull_mode(clkout, GPIO_FLOATING);
-        esp_rom_gpio_connect_out_signal(clkout, TWAI_CLKOUT_IDX, false, false);
+        esp_rom_gpio_connect_out_signal(clkout, twai_controller_periph_signals.controllers[controller_id].clk_out_sig, false, false);
         esp_rom_gpio_pad_select_gpio(clkout);
     }
 
     //Configure bus status pin (Optional)
     if (bus_status >= 0 && bus_status < GPIO_NUM_MAX) {
         gpio_set_pull_mode(bus_status, GPIO_FLOATING);
-        esp_rom_gpio_connect_out_signal(bus_status, TWAI_BUS_OFF_ON_IDX, false, false);
+        esp_rom_gpio_connect_out_signal(bus_status, twai_controller_periph_signals.controllers[controller_id].bus_off_sig, false, false);
         esp_rom_gpio_pad_select_gpio(bus_status);
     }
 }
@@ -310,11 +322,9 @@ static void twai_configure_gpio(gpio_num_t tx, gpio_num_t rx, gpio_num_t clkout,
 static void twai_free_driver_obj(twai_obj_t *p_obj)
 {
     //Free driver object and any dependent SW resources it uses (queues, semaphores etc)
-#ifdef CONFIG_PM_ENABLE
     if (p_obj->pm_lock != NULL) {
         ESP_ERROR_CHECK(esp_pm_lock_delete(p_obj->pm_lock));
     }
-#endif
     //Delete queues and semaphores
     if (p_obj->tx_queue != NULL) {
         vQueueDelete(p_obj->tx_queue);
@@ -382,12 +392,6 @@ static twai_obj_t *twai_alloc_driver_obj(uint32_t tx_queue_len, uint32_t rx_queu
     }
 #endif  //CONFIG_TWAI_ISR_IN_IRAM
 
-#ifdef CONFIG_PM_ENABLE
-    esp_err_t pm_err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "twai", &(p_obj->pm_lock));
-    if (pm_err != ESP_OK ) {
-        goto cleanup;
-    }
-#endif
     return p_obj;
 
 cleanup:
@@ -406,13 +410,46 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     TWAI_CHECK(g_config->rx_queue_len > 0, ESP_ERR_INVALID_ARG);
     TWAI_CHECK(g_config->tx_io >= 0 && g_config->tx_io < GPIO_NUM_MAX, ESP_ERR_INVALID_ARG);
     TWAI_CHECK(g_config->rx_io >= 0 && g_config->rx_io < GPIO_NUM_MAX, ESP_ERR_INVALID_ARG);
-    TWAI_CHECK(t_config->brp >= SOC_TWAI_BRP_MIN && t_config->brp <= SOC_TWAI_BRP_MAX, ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_TWAI_ISR_IN_IRAM
     TWAI_CHECK(!(g_config->intr_flags & ESP_INTR_FLAG_IRAM), ESP_ERR_INVALID_ARG);
 #endif
     TWAI_ENTER_CRITICAL();
     TWAI_CHECK_FROM_CRIT(p_twai_obj == NULL, ESP_ERR_INVALID_STATE);
     TWAI_EXIT_CRITICAL();
+
+    //Get clock source resolution
+    uint32_t clock_source_hz = 0;
+    twai_clock_source_t clk_src = t_config->clk_src;
+    //Fall back to default clock source
+    if (clk_src == 0) {
+        clk_src = TWAI_CLK_SRC_DEFAULT;
+    }
+
+    switch (clk_src) {
+#if SOC_TWAI_CLK_SUPPORT_APB
+    case TWAI_CLK_SRC_APB:
+        clock_source_hz = esp_clk_apb_freq();
+        break;
+#endif //SOC_TWAI_CLK_SUPPORT_APB
+
+#if SOC_TWAI_CLK_SUPPORT_XTAL
+    case TWAI_CLK_SRC_XTAL:
+        clock_source_hz = esp_clk_xtal_freq();
+        break;
+#endif //SOC_TWAI_CLK_SUPPORT_XTAL
+
+    default:
+        //Invalid clock source
+        TWAI_CHECK(false, ESP_ERR_INVALID_ARG);
+    }
+
+    //Check brp validation
+    uint32_t brp = t_config->brp;
+    if (t_config->quanta_resolution_hz) {
+        TWAI_CHECK(clock_source_hz % t_config->quanta_resolution_hz == 0, ESP_ERR_INVALID_ARG);
+        brp = clock_source_hz / t_config->quanta_resolution_hz;
+    }
+    TWAI_CHECK(twai_ll_check_brp_validation(brp), ESP_ERR_INVALID_ARG);
 
     esp_err_t ret;
     twai_obj_t *p_twai_obj_dummy;
@@ -421,10 +458,25 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     p_twai_obj_dummy = twai_alloc_driver_obj(g_config->tx_queue_len, g_config->rx_queue_len);
     TWAI_CHECK(p_twai_obj_dummy != NULL, ESP_ERR_NO_MEM);
 
+    // TODO: Currently only controller 0 is supported by the driver. IDF-4775
+    int controller_id = p_twai_obj_dummy->controller_id;
+
     //Initialize flags and variables. All other members are already set to zero by twai_alloc_driver_obj()
     p_twai_obj_dummy->state = TWAI_STATE_STOPPED;
     p_twai_obj_dummy->mode = g_config->mode;
     p_twai_obj_dummy->alerts_enabled = g_config->alerts_enabled;
+    p_twai_obj_dummy->module = twai_controller_periph_signals.controllers[controller_id].module;
+
+
+#ifdef CONFIG_PM_ENABLE
+    if (clk_src == TWAI_CLK_SRC_APB) {
+        // TODO: pm_lock name should also reflect the controller ID
+        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "twai", &(p_twai_obj_dummy->pm_lock));
+        if (ret != ESP_OK) {
+            goto err;
+        }
+    }
+#endif //CONFIG_PM_ENABLE
 
     //Initialize TWAI peripheral registers, and allocate interrupt
     TWAI_ENTER_CRITICAL();
@@ -436,21 +488,28 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
         ret = ESP_ERR_INVALID_STATE;
         goto err;
     }
-    periph_module_reset(PERIPH_TWAI_MODULE);
-    periph_module_enable(PERIPH_TWAI_MODULE);            //Enable APB CLK to TWAI peripheral
-    bool init = twai_hal_init(&twai_context);
-    assert(init);
-    (void)init;
+    //Enable TWAI peripheral register clock
+    periph_module_reset(p_twai_obj_dummy->module);
+    periph_module_enable(p_twai_obj_dummy->module);
+
+    //Initialize TWAI HAL layer
+    twai_hal_config_t hal_config = {
+        .clock_source_hz = clock_source_hz,
+        .controller_id = controller_id,
+    };
+    bool res = twai_hal_init(&twai_context, &hal_config);
+    assert(res);
     twai_hal_configure(&twai_context, t_config, f_config, DRIVER_DEFAULT_INTERRUPTS, g_config->clkout_divider);
     TWAI_EXIT_CRITICAL();
 
     //Allocate GPIO and Interrupts
     twai_configure_gpio(g_config->tx_io, g_config->rx_io, g_config->clkout_io, g_config->bus_off_io);
-    ESP_ERROR_CHECK(esp_intr_alloc(ETS_TWAI_INTR_SOURCE, g_config->intr_flags, twai_intr_handler_main, NULL, &p_twai_obj->isr_handle));
+    ESP_ERROR_CHECK(esp_intr_alloc(twai_controller_periph_signals.controllers[controller_id].irq_id, g_config->intr_flags,
+                                   twai_intr_handler_main, NULL, &p_twai_obj->isr_handle));
 
-#ifdef CONFIG_PM_ENABLE
-    ESP_ERROR_CHECK(esp_pm_lock_acquire(p_twai_obj->pm_lock));     //Acquire pm_lock to keep APB clock at 80MHz
-#endif
+    if (p_twai_obj->pm_lock) {
+        ESP_ERROR_CHECK(esp_pm_lock_acquire(p_twai_obj->pm_lock));     //Acquire pm_lock during the whole driver lifetime
+    }
     return ESP_OK;      //TWAI module is still in reset mode, users need to call twai_start() afterwards
 
 err:
@@ -468,17 +527,18 @@ esp_err_t twai_driver_uninstall(void)
     TWAI_CHECK_FROM_CRIT(p_twai_obj->state == TWAI_STATE_STOPPED || p_twai_obj->state == TWAI_STATE_BUS_OFF, ESP_ERR_INVALID_STATE);
     //Clear registers by reading
     twai_hal_deinit(&twai_context);
-    periph_module_disable(PERIPH_TWAI_MODULE);               //Disable TWAI peripheral
+    periph_module_disable(p_twai_obj->module);   //Disable TWAI peripheral
     p_twai_obj_dummy = p_twai_obj;        //Use dummy to shorten critical section
     p_twai_obj = NULL;
     TWAI_EXIT_CRITICAL();
 
     ESP_ERROR_CHECK(esp_intr_free(p_twai_obj_dummy->isr_handle));  //Free interrupt
 
-#ifdef CONFIG_PM_ENABLE
-    //Release and delete power management lock
-    ESP_ERROR_CHECK(esp_pm_lock_release(p_twai_obj_dummy->pm_lock));
-#endif
+    if (p_twai_obj_dummy->pm_lock) {
+        //Release and delete power management lock
+        ESP_ERROR_CHECK(esp_pm_lock_release(p_twai_obj_dummy->pm_lock));
+    }
+
     //Free can driver object
     twai_free_driver_obj(p_twai_obj_dummy);
     return ESP_OK;

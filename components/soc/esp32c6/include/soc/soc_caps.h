@@ -30,7 +30,7 @@
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_MCPWM_SUPPORTED             1
-// #define SOC_TWAI_SUPPORTED              1 // TODO: IDF-5313
+#define SOC_TWAI_SUPPORTED              1
 #define SOC_BT_SUPPORTED                1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
@@ -350,10 +350,11 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 #define SOC_TIMER_SUPPORT_ETM             (1)
 
-// TODO: IDF-5313 (Copy from esp32c3, need check)
 /*-------------------------- TWAI CAPS ---------------------------------------*/
+#define SOC_TWAI_CONTROLLER_NUM         2
+#define SOC_TWAI_CLK_SUPPORT_XTAL       1
 #define SOC_TWAI_BRP_MIN                2
-#define SOC_TWAI_BRP_MAX                16384
+#define SOC_TWAI_BRP_MAX                32768
 #define SOC_TWAI_SUPPORTS_RX_STATUS     1
 
 // TODO: IDF-5357 (Copy from esp32c3, need check)

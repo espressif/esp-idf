@@ -1,24 +1,21 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "soc/soc_caps.h"
-#if SOC_TWAI_SUPPORTED
-
 #include "freertos/FreeRTOS.h"
 #include "esp_types.h"
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
-#include "gpio.h"
+#include "driver/gpio.h"
 #include "hal/twai_types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* -------------------- Default initializers and flags ---------------------- */
 /** @cond */    //Doxy command to hide preprocessor definitions from docs
@@ -135,7 +132,7 @@ typedef struct {
  *
  * @return
  *      - ESP_OK: Successfully installed TWAI driver
- *      - ESP_ERR_INVALID_ARG: Arguments are invalid
+ *      - ESP_ERR_INVALID_ARG: Arguments are invalid, e.g. invalid clock source, invalid quanta resolution
  *      - ESP_ERR_NO_MEM: Insufficient memory
  *      - ESP_ERR_INVALID_STATE: Driver is already installed
  */
@@ -341,5 +338,3 @@ esp_err_t twai_clear_receive_queue(void);
 #ifdef __cplusplus
 }
 #endif
-
-#endif //SOC_TWAI_SUPPORTED

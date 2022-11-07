@@ -15,6 +15,7 @@ set(srcs
     "spi_periph.c"
     "timer_periph.c"
     "touch_sensor_periph.c"
+    "twai_periph.c"
     "uart_periph.c"
     "usb_periph.c"
     "temperature_sensor_periph.c"

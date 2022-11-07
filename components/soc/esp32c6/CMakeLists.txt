@@ -14,7 +14,8 @@ set(srcs
     "i2c_periph.c"
     "uart_periph.c"
     "temperature_sensor_periph.c"
-    "timer_periph.c")
+    "timer_periph.c"
+    "twai_periph.c")
 
 # ESP32C6-TODO
 list(REMOVE_ITEM srcs
