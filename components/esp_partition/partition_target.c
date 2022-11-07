@@ -53,7 +53,7 @@ esp_err_t esp_partition_read(const esp_partition_t *partition,
         return err;
     }
     memcpy(dst, buf, size);
-    spi_flash_munmap(handle);
+    esp_partition_munmap(handle);
     return ESP_OK;
 #else
     return ESP_ERR_NOT_SUPPORTED;

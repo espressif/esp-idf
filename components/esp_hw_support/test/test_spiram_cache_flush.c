@@ -126,14 +126,14 @@ TEST_CASE("Spiram cache flush on write/read", "[spiram]")
     char buf[512];
 
     const void *out;
-    spi_flash_mmap_handle_t handle;
-    esp_partition_mmap(part, 0, 512, SPI_FLASH_MMAP_DATA, &out, &handle);
+    esp_partition_mmap_handle_t handle;
+    esp_partition_mmap(part, 0, 512, ESP_PARTITION_MMAP_DATA, &out, &handle);
     for (int i=0; i<CYCLES; i++) {
         esp_partition_write(part, 0, buf, 512);
         esp_partition_read(part, 0, buf, 512);
         vTaskDelay(1);
     }
-    spi_flash_munmap(handle);
+    esp_partition_munmap(handle);
 
     printf("Checked memory %d and %d times.\n", res[0], res[1]);
 
