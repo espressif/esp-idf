@@ -445,15 +445,15 @@ TEST_CASE("munmap followed by mmap flushes cache", "[spi_flash][mmap]")
     const esp_partition_t *p = get_test_data_partition();
 
     const uint32_t *data;
-    spi_flash_mmap_handle_t handle;
+    esp_partition_mmap_handle_t handle;
     TEST_ESP_OK( esp_partition_mmap(p, 0, SPI_FLASH_MMU_PAGE_SIZE,
-                                    SPI_FLASH_MMAP_DATA, (const void **) &data, &handle) );
+                                    ESP_PARTITION_MMAP_DATA, (const void **) &data, &handle) );
     uint32_t buf[16];
     memcpy(buf, data, sizeof(buf));
 
-    spi_flash_munmap(handle);
+    esp_partition_munmap(handle);
     TEST_ESP_OK( esp_partition_mmap(p, SPI_FLASH_MMU_PAGE_SIZE, SPI_FLASH_MMU_PAGE_SIZE,
-                                    SPI_FLASH_MMAP_DATA, (const void **) &data, &handle) );
+                                    ESP_PARTITION_MMAP_DATA, (const void **) &data, &handle) );
     TEST_ASSERT_NOT_EQUAL(0, memcmp(buf, data, sizeof(buf)));
 }
 
@@ -467,9 +467,9 @@ TEST_CASE("no stale data read post mmap and write partition", "[spi_flash][mmap]
     const esp_partition_t *p = get_test_data_partition();
 
     const uint32_t *data;
-    spi_flash_mmap_handle_t handle;
+    esp_partition_mmap_handle_t handle;
     TEST_ESP_OK(esp_partition_mmap(p, 0, SPI_FLASH_MMU_PAGE_SIZE,
-                                   SPI_FLASH_MMAP_DATA, (const void **) &data, &handle) );
+                                   ESP_PARTITION_MMAP_DATA, (const void **) &data, &handle) );
     memcpy(read_data, data, sizeof(read_data));
     TEST_ESP_OK(esp_partition_erase_range(p, 0, SPI_FLASH_MMU_PAGE_SIZE));
     /* not using esp_partition_write here, since the partition in not marked as "encrypted"
@@ -478,6 +478,6 @@ TEST_CASE("no stale data read post mmap and write partition", "[spi_flash][mmap]
     /* This should retrigger actual flash content read */
     memcpy(read_data, data, sizeof(read_data));
 
-    spi_flash_munmap(handle);
+    esp_partition_munmap(handle);
     TEST_ASSERT_EQUAL(0, memcmp(buf, read_data, sizeof(buf)));
 }
