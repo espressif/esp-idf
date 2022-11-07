@@ -14,7 +14,7 @@ The following terms will be used in this document to avoid confusion between the
 
 # Organization
 
-This directory contains a copy of SMP FreeRTOS based off of upstream commit [2eff03708](https://github.com/FreeRTOS/FreeRTOS-Kernel/commit/2eff037080996e67a79e381667f0b77252e653b8)
+This directory contains a copy of SMP FreeRTOS based off of upstream commit [8128208](https://github.com/FreeRTOS/FreeRTOS-Kernel/commit/8128208bdee1f997f83cae631b861f36aeea9b1f)
 
 - IDF FreeRTOS remains in  `components/freertos/FreeRTOS-Kernel`
 - SMP FreeRTOS is entirely contained in `components/freertos/FreeRTOS-Kernel-SMP`
