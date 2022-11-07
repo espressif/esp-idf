@@ -11,11 +11,11 @@ This example shows the basic usage of outputting continuous voltage by the DAC d
 
 ### Timer Interrupt
 
-While using timer interrupt to output the waves, it actrually sets the voltage by `oneshot` API in every timer interrupt callback. Which means the conversion frequency is equal to the timer interrupt frequency. Obviously, the conversion frequency is limited by the interrupt, which relies on the CPU scheduling, thus it can't reach a high frequency in this mode. But it can be used as a supplementary way while the conversion frequency is too low to use DMA mode.
+While using timer interrupt to output the waves, it actually sets the voltage by `oneshot` API in every timer interrupt callback. Which means the conversion frequency is equal to the timer interrupt frequency. Obviously, the conversion frequency is limited by the interrupt, which relies on the CPU scheduling, thus it can't reach a high frequency in this mode. But it can be used as a supplementary way while the conversion frequency is too low to use DMA mode.
 
 ### DMA transmission
 
-While using DMA to transmit the wave buffers, the digital values are put into a DMA buffer waiting for transmition and conversion, that means the conversion frequency is equal to the frequency that DMA transmitting the data. We can set the DMA frequency directly, and the digital data in the buffer will be sent automatically when the buffer has been loaded into the DMA. So the conversion frequency can reach even several MHz while using DMA mode. But the wave can be distorted if the frequency is too high.
+While using DMA to transmit the wave buffers, the digital values are put into a DMA buffer waiting for transmission and conversion, that means the conversion frequency is equal to the frequency that DMA transmitting the data. We can set the DMA frequency directly, and the digital data in the buffer will be sent automatically when the buffer has been loaded into the DMA. So the conversion frequency can reach even several MHz while using DMA mode. But the wave can be distorted if the frequency is too high.
 
 ## How to use the Example
 
