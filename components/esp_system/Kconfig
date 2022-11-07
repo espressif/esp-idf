@@ -268,6 +268,10 @@ menu "ESP System Settings"
                 please change the primary config to ESP_CONSOLE_USB_SERIAL_JTAG above.
     endchoice
 
+    config ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+        # Internal option, indicates that console USB SERIAL JTAG is used
+        bool
+        default y if ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 
     config ESP_CONSOLE_UART
         # Internal option, indicates that console UART is used (and not USB, for example)

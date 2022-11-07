@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai)
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer of the USB-serial-jtag controller
 
@@ -74,13 +66,23 @@ static inline uint32_t usb_serial_jtag_ll_get_intsts_mask(void)
 }
 
 /**
+ * @brief  Get the USB_SERIAL_JTAG raw interrupt status.
+ *
+ * @return The USB_SERIAL_JTAG raw interrupt status.
+ */
+static inline __attribute__((always_inline)) uint32_t usb_serial_jtag_ll_get_intraw_mask(void)
+{
+    return USB_SERIAL_JTAG.int_raw.val;
+}
+
+/**
  * @brief  Clear the USB_SERIAL_JTAG interrupt status based on the given mask.
  *
  * @param  mask The bitmap of the interrupts need to be cleared.
  *
  * @return None
  */
-static inline void usb_serial_jtag_ll_clr_intsts_mask(uint32_t mask)
+static inline __attribute__((always_inline)) void usb_serial_jtag_ll_clr_intsts_mask(uint32_t mask)
 {
     USB_SERIAL_JTAG.int_clr.val = mask;
 }

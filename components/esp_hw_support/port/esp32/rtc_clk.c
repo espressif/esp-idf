@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "soc/rtc.h"
+#include "esp_private/rtc_clk.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 #include "soc/soc_caps.h"
@@ -347,20 +348,22 @@ static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
 }
 
 /**
- * Switch to XTAL frequency. Does not disable the PLL.
+ * Switch to use XTAL as the CPU clock source.
+ * Must satisfy: cpu_freq = XTAL_FREQ / div.
+ * Does not disable the PLL.
  */
-void rtc_clk_cpu_freq_to_xtal(int freq, int div)
+void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 {
-    ets_update_cpu_frequency(freq);
+    ets_update_cpu_frequency(cpu_freq);
     /* set divider from XTAL to APB clock */
     clk_ll_cpu_set_divider(div);
     /* adjust ref_tick */
-    clk_ll_ref_tick_set_divider(SOC_CPU_CLK_SRC_XTAL, freq);
+    clk_ll_ref_tick_set_divider(SOC_CPU_CLK_SRC_XTAL, cpu_freq);
     /* switch clock source */
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
-    rtc_clk_apb_freq_update(freq * MHZ);
+    rtc_clk_apb_freq_update(cpu_freq * MHZ);
     /* lower the voltage */
-    int dbias = (freq <= 2) ? DIG_DBIAS_2M : DIG_DBIAS_XTAL;
+    int dbias = (cpu_freq <= 2) ? DIG_DBIAS_2M : DIG_DBIAS_XTAL;
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, dbias);
 }
 
@@ -397,11 +400,16 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 
 void rtc_clk_cpu_freq_set_xtal(void)
 {
+    rtc_clk_cpu_set_to_default_config();
+    rtc_clk_bbpll_disable();
+}
+
+void rtc_clk_cpu_set_to_default_config(void)
+{
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
 
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
     rtc_clk_wait_for_slow_cycle();
-    rtc_clk_bbpll_disable();
 }
 
 bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t* out_config)

@@ -183,7 +183,8 @@ endif()
 
 # USB Serial JTAG related source files
 if(CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED)
-    list(APPEND srcs "usb_serial_jtag/usb_serial_jtag.c")
+    list(APPEND srcs "usb_serial_jtag/usb_serial_jtag.c"
+                     "usb_serial_jtag/usb_serial_jtag_connection_monitor.c")
 endif()
 
 # Other source files
@@ -203,4 +204,11 @@ else()
                         PRIV_REQUIRES efuse esp_timer
                         REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
                         LDFRAGMENTS linker.lf)
+endif()
+
+# If system needs to monitor USJ connection status, then usb_serial_jtag_connection_monitor object file has to be linked
+# to the binary, to allow tick hook to be registered
+if(CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION OR
+   (CONFIG_SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP AND CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED))
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u usb_serial_jtag_connection_monitor_include")
 endif()

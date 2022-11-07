@@ -65,16 +65,12 @@ There are several limitations to the USB Serial/JTAG console feature. These may 
 
 4. For data sent in the PC Terminal to {IDF_TARGET_NAME} direction (e.g. console commands), many PC Terminals will wait for the {IDF_TARGET_NAME} to ingest the bytes before allowing you to sending more data. This is in contrast to using a USB-to-Serial (UART) bridge chip, which will always ingest the bytes and send them to a (possibly not listening) {IDF_TARGET_NAME}.
 
-5. The USB Serial/JTAG device won't work in sleep modes as normal due to the lack of APB clock in sleep modes. This includes deep-sleep, light-sleep (automataic light-sleep as well).
+.. only:: not SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
 
-6. The power consumption in sleep modes will be higher if the USB Serial/JTAG device is in use.
+    5. The USB Serial/JTAG controller will not work during sleep (both light and deep sleep) due to the lack of an APB and USB PHY clock during sleep. Thus, entering sleep has the following implications on the USB Serial/JTAG controller:
 
-   This is because we want to keep the USB Serial/JTAG device alive during software reset by default.
+        i. Both the APB clock and the USB PHY clock (derived form the main PLL clock) will be disabled during sleep. As a result, the USB Serial/JTAG controller will not be able receive or respond to any USB transactions from the connected host (including periodic CDC Data IN transactions). Thus it may appear to the host that the USB Serial/JTAG controller has disconnected.
 
-   However there is an issue that this might also increase the power consumption in sleep modes. This is because the software keeps a clock source on during the reset to keep the USB Serial/JTAG device alive. As a side-effect, the clock is also kept on during sleep modes. There is one exception: the clock will only be kept on when your USB Serial/JTAG port is really in use (like data transaction), therefore, if your USB Serial/JTAG is connected to power bank or battery, etc., instead of a valid USB host (for example, a PC), the power consumption will not increase.
+        ii. If users enter sleep manually (via :cpp:func:`esp_light_sleep_start` or :cpp:func:`esp_deep_sleep_start`), users should be cognizant of the fact that USB Serial/JTAG controller will not work during sleep. ESP-IDF **does not add any safety check to reject entry to sleep** even if the USB Serial/JTAG controller is connected. In the case where sleep is entered while the USB Serial/JTAG controller is connected, connection can be re-established by unplugging and re-plugging the USB cable.
 
-   If you still want to keep low power consumption in sleep modes:
-
-    1. If you are not using the USB Serial/JTAG port, you don't need to do anything. Software will detect if the USB Serial/JTAG is connected to a valid host before going to sleep, and keep the clocks only when the host is connected. Otherwise the clocks will be turned off as normal.
-
-    2. If you are using the USB Serial/JTAG port, please disable the menuconfig option ``CONFIG_RTC_CLOCK_BBPLL_POWER_ON_WITH_USB``. The clock will be switched off as normal during software reset and in sleep modes. In these cases, the USB Serial/JTAG device may be unplugged from the host.
+        iii. If users enter sleep automatically (via :cpp:func:`esp_pm_configure`), enabling the :ref:`CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION` option will allow the {IDF_TARGET_NAME} to automatically detect whether the USB Serial/JTAG controller is currently connected to a host, and prevent automatic entry to sleep as long as the connection persists. However, note that this option will increase power consumption.

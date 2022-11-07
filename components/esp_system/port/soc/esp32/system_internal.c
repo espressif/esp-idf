@@ -20,6 +20,7 @@
 #include "soc/timer_periph.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
+#include "esp_private/rtc_clk.h"
 #include "hal/wdt_hal.h"
 #include "freertos/xtensa_api.h"
 #include "soc/soc_memory_layout.h"
@@ -120,8 +121,8 @@ void IRAM_ATTR esp_restart_noos(void)
             DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_SPI2_RST | DPORT_SPI3_RST | DPORT_SPI_DMA_RST | DPORT_UART_RST | DPORT_UART1_RST | DPORT_UART2_RST | DPORT_UART_MEM_RST);
     DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
 
-    // Set CPU back to XTAL source, no PLL, same as hard reset
-    rtc_clk_cpu_freq_set_xtal();
+    // Set CPU back to XTAL source, same as hard reset. PLL keeps on to match the behavior with chips.
+    rtc_clk_cpu_set_to_default_config();
 
     // Clear entry point for APP CPU
     DPORT_REG_WRITE(DPORT_APPCPU_CTRL_D_REG, 0);

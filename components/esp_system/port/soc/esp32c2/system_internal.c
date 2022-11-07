@@ -14,10 +14,10 @@
 #include "riscv/rv_utils.h"
 #include "esp_rom_uart.h"
 #include "soc/gpio_reg.h"
-#include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
+#include "esp_private/rtc_clk.h"
 #include "soc/rtc_periph.h"
 #include "soc/syscon_reg.h"
 #include "soc/system_reg.h"
@@ -90,9 +90,9 @@ void IRAM_ATTR esp_restart_noos(void)
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
 
-    // Set CPU back to XTAL source, no PLL, same as hard reset
+    // Set CPU back to XTAL source, same as hard reset. PLL keeps on to match the behavior with chips.
 #if !CONFIG_IDF_ENV_FPGA
-    rtc_clk_cpu_freq_set_xtal();
+    rtc_clk_cpu_set_to_default_config();
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE
