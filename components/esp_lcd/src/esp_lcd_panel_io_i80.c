@@ -53,6 +53,7 @@ static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const 
 static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_i80_t *next_device);
 static void lcd_start_transaction(esp_lcd_i80_bus_t *bus, lcd_i80_trans_descriptor_t *trans_desc);
 static void lcd_default_isr_handler(void *args);
+static esp_err_t panel_io_i80_register_event_callbacks(esp_lcd_panel_io_handle_t io, const esp_lcd_panel_io_callbacks_t *cbs, void *user_ctx);
 
 struct esp_lcd_i80_bus_t {
     int bus_id;            // Bus ID, index from 0
@@ -279,6 +280,7 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     i80_device->base.del = panel_io_i80_del;
     i80_device->base.tx_param = panel_io_i80_tx_param;
     i80_device->base.tx_color = panel_io_i80_tx_color;
+    i80_device->base.register_event_callbacks = panel_io_i80_register_event_callbacks;
     // we only configure the CS GPIO as output, don't connect to the peripheral signal at the moment
     // we will connect the CS GPIO to peripheral signal when switching devices in lcd_i80_switch_devices()
     if (io_config->cs_gpio_num >= 0) {
@@ -324,6 +326,20 @@ static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io)
     vQueueDelete(i80_device->trans_queue);
     vQueueDelete(i80_device->done_queue);
     free(i80_device);
+    return ESP_OK;
+}
+
+static esp_err_t panel_io_i80_register_event_callbacks(esp_lcd_panel_io_handle_t io, const esp_lcd_panel_io_callbacks_t *cbs, void *user_ctx)
+{
+    lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
+
+    if(i80_device->on_color_trans_done != NULL) {
+        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was owerwritten!");
+    }
+
+    i80_device->on_color_trans_done = cbs->on_color_trans_done;
+    i80_device->user_ctx = user_ctx;
+
     return ESP_OK;
 }
 
