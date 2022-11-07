@@ -181,7 +181,7 @@ Standalone Mode
 Once you've identified the code which you think is leaking:
 
 - In the project configuration menu, navigate to ``Component settings`` -> ``Heap Memory Debugging`` -> ``Heap tracing`` and select ``Standalone`` option (see :ref:`CONFIG_HEAP_TRACING_DEST`).
-- Call the function :cpp:func:`heap_trace_init_standalone` early in the program, to register a buffer which can be used to record the memory trace.
+- Call the function :cpp:func:`heap_trace_init_standalone` or `heap_trace_init_standalone_with_spi_ram` early in the program, to register a buffer which can be used to record the memory trace.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all mallocs/frees in the system. Call this immediately before the piece of code which you suspect is leaking memory.
 - Call the function :cpp:func:`heap_trace_stop` to stop the trace once the suspect piece of code has finished executing.
 - Call the function :cpp:func:`heap_trace_dump` to dump the results of the heap trace.
@@ -253,6 +253,7 @@ In ``HEAP_TRACE_LEAKS`` mode, for each traced memory allocation which has not al
 
     - ``XX bytes`` is the number of bytes allocated
     - ``@ 0x...`` is the heap address returned from malloc/calloc.
+    - ``Internal`` or ``SPI-RAM`` is the general location of the allocated memory. 
     - ``CPU x`` is the CPU (0 or 1) running when the allocation was made.
     - ``ccount 0x...`` is the CCOUNT (CPU cycle count) register value when the allocation was mode. Is different for CPU 0 vs CPU 1.
     :CONFIG_IDF_TARGET_ARCH_XTENSA: - ``caller 0x...`` gives the call stack of the call to malloc()/free(), as a list of PC addresses. These can be decoded to source files and line numbers, as shown above.
