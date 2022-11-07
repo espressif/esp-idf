@@ -34,3 +34,10 @@ esp_err_t esp_lcd_panel_io_del(esp_lcd_panel_io_handle_t io)
     ESP_RETURN_ON_FALSE(io, ESP_ERR_INVALID_ARG, TAG, "invalid panel io handle");
     return io->del(io);
 }
+
+esp_err_t esp_lcd_panel_io_register_event_callbacks(esp_lcd_panel_io_handle_t io, const esp_lcd_panel_io_callbacks_t *cbs, void *user_ctx)
+{
+    ESP_RETURN_ON_FALSE(io, ESP_ERR_INVALID_ARG, TAG, "invalid panel io handle");
+    ESP_RETURN_ON_FALSE(cbs, ESP_ERR_INVALID_ARG, TAG, "invalid callbacks structure");
+    return io->register_event_callbacks(io, cbs, user_ctx);
+}
