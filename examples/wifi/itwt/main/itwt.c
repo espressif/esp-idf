@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -27,6 +27,7 @@
 #include "cmd_system.h"
 #include "wifi_cmd.h"
 #include "esp_wifi_he.h"
+#include "esp_pm.h"
 
 /*******************************************************
  *                Constants
@@ -244,10 +245,7 @@ void app_main(void)
     }
 
     // TODO: WIFI-5150
-#if CONFIG_PM_ENABLE
-    io_toggle_pmu_internal_signal_map_to_io_init();
-    io_toggle_gpio_init();
-
+#if CONFIG_PM_ENABLE && 0
     sleep_clock_system_retention_init();
     sleep_clock_modem_retention_init();
     sleep_peripheral_retention_init();

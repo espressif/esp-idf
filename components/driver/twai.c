@@ -470,7 +470,7 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     p_twai_obj_dummy->module = twai_controller_periph_signals.controllers[controller_id].module;
 
 
-#ifdef CONFIG_PM_ENABLE
+#if CONFIG_PM_ENABLE && SOC_TWAI_CLK_SUPPORT_APB
     if (clk_src == TWAI_CLK_SRC_APB) {
         // TODO: pm_lock name should also reflect the controller ID
         ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "twai", &(p_twai_obj_dummy->pm_lock));
@@ -478,7 +478,7 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
             goto err;
         }
     }
-#endif //CONFIG_PM_ENABLE
+#endif //CONFIG_PM_ENABLE && SOC_TWAI_CLK_SUPPORT_APB
 
     //Initialize TWAI peripheral registers, and allocate interrupt
     TWAI_ENTER_CRITICAL();
