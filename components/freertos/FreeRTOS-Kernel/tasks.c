@@ -2355,7 +2355,7 @@ void vTaskStartScheduler( void )
             /* The Idle task is being created using dynamically allocated RAM. */
             xReturn = xTaskCreatePinnedToCore( prvIdleTask,
                                                configIDLE_TASK_NAME,
-                                               configIDLE_TASK_STACK_SIZE,
+                                               configMINIMAL_STACK_SIZE,
                                                ( void * ) NULL,
                                                portPRIVILEGE_BIT, /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
                                                &xIdleTaskHandle[ xCoreID ],

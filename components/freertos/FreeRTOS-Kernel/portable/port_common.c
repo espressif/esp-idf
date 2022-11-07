@@ -171,12 +171,12 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
     {
         //Allocate TCB and stack buffer in internal memory
         pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
-        pxStackBufferTemp = pvPortMallocStackMem(configIDLE_TASK_STACK_SIZE);
+        pxStackBufferTemp = pvPortMallocStackMem(configMINIMAL_STACK_SIZE);
     }
     #else /* portSTACK_GROWTH */
     {
         //Allocate TCB and stack buffer in internal memory
-        pxStackBufferTemp = pvPortMallocStackMem(configIDLE_TASK_STACK_SIZE);
+        pxStackBufferTemp = pvPortMallocStackMem(configMINIMAL_STACK_SIZE);
         pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
     }
     #endif /* portSTACK_GROWTH */
@@ -186,7 +186,7 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
     //Write back pointers
     *ppxIdleTaskTCBBuffer = pxTCBBufferTemp;
     *ppxIdleTaskStackBuffer = pxStackBufferTemp;
-    *pulIdleTaskStackSize = configIDLE_TASK_STACK_SIZE;
+    *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
 
 /*
