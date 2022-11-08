@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <ctype.h>
 #include <sys/random.h>
 #include <sys/socket.h>
@@ -16,6 +17,7 @@
 #include "esp_transport_internal.h"
 #include "errno.h"
 #include "esp_tls_crypto.h"
+#include <arpa/inet.h>
 
 static const char *TAG = "transport_ws";
 
@@ -145,7 +147,11 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     }
 
     unsigned char random_key[16];
-    getrandom(random_key, sizeof(random_key), 0);
+    ssize_t rc;
+    if ((rc = getrandom(random_key, sizeof(random_key), 0)) < 0) {
+        ESP_LOGD(TAG, "getrandom() returned %zd", rc);
+        return -1;
+    }
 
     // Size of base64 coded string is equal '((input_size * 4) / 3) + (input_size / 96) + 6' including Z-term
     unsigned char client_key[28] = {0};
@@ -289,7 +295,11 @@ static int _ws_write(esp_transport_handle_t t, int opcode, int mask_flag, const 
 
     if (mask_flag) {
         mask = &ws_header[header_len];
-        getrandom(ws_header + header_len, 4, 0);
+        ssize_t rc;
+        if ((rc = getrandom(ws_header + header_len, 4, 0)) < 0) {
+            ESP_LOGD(TAG, "getrandom() returned %zd", rc);
+            return -1;
+        }
         header_len += 4;
 
         for (i = 0; i < len; ++i) {
