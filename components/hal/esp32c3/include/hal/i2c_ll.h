@@ -131,6 +131,7 @@ static inline void i2c_ll_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_update(i2c_dev_t *hw)
 {
     hw->ctr.conf_upgate = 1;
@@ -256,6 +257,7 @@ static inline void i2c_ll_disable_intr_mask(i2c_dev_t *hw, uint32_t mask)
  *
  * @return I2C interrupt status
  */
+__attribute__((always_inline))
 static inline uint32_t i2c_ll_get_intsts_mask(i2c_dev_t *hw)
 {
     return hw->int_status.val;
@@ -311,6 +313,7 @@ static inline void i2c_ll_set_slave_addr(i2c_dev_t *hw, uint16_t slave_addr, boo
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_write_cmd_reg(i2c_dev_t *hw, i2c_hw_cmd_t cmd, int cmd_idx)
 {
     hw->command[cmd_idx].val = cmd.val;
@@ -475,6 +478,7 @@ static inline bool i2c_ll_is_master_mode(i2c_dev_t *hw)
  *
  * @return RxFIFO readable length
  */
+__attribute__((always_inline))
 static inline uint32_t i2c_ll_get_rxfifo_cnt(i2c_dev_t *hw)
 {
     return hw->sr.rx_fifo_cnt;
@@ -487,6 +491,7 @@ static inline uint32_t i2c_ll_get_rxfifo_cnt(i2c_dev_t *hw)
  *
  * @return TxFIFO writable length
  */
+__attribute__((always_inline))
 static inline uint32_t i2c_ll_get_txfifo_len(i2c_dev_t *hw)
 {
     return SOC_I2C_FIFO_LEN - hw->sr.tx_fifo_cnt;
@@ -511,6 +516,7 @@ static inline uint32_t i2c_ll_get_tout(i2c_dev_t *hw)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_trans_start(i2c_dev_t *hw)
 {
     hw->ctr.trans_start = 1;
@@ -570,6 +576,7 @@ static inline void i2c_ll_get_scl_timing(i2c_dev_t *hw, int *high_period, int *l
  *
  * @return None.
  */
+__attribute__((always_inline))
 static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
     for (int i = 0; i< len; i++) {
@@ -586,6 +593,7 @@ static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
     for(int i = 0; i < len; i++) {
@@ -634,6 +642,7 @@ static inline uint8_t i2c_ll_get_filter(i2c_dev_t *hw)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_master_enable_tx_it(i2c_dev_t *hw)
 {
     hw->int_clr.val = ~0;
@@ -647,6 +656,7 @@ static inline void i2c_ll_master_enable_tx_it(i2c_dev_t *hw)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_master_enable_rx_it(i2c_dev_t *hw)
 {
     hw->int_clr.val = ~0;
@@ -660,6 +670,7 @@ static inline void i2c_ll_master_enable_rx_it(i2c_dev_t *hw)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_master_disable_tx_it(i2c_dev_t *hw)
 {
     hw->int_ena.val &= (~I2C_LL_MASTER_TX_INT);
@@ -672,6 +683,7 @@ static inline void i2c_ll_master_disable_tx_it(i2c_dev_t *hw)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_master_disable_rx_it(i2c_dev_t *hw)
 {
     hw->int_ena.val &= (~I2C_LL_MASTER_RX_INT);
@@ -684,6 +696,7 @@ static inline void i2c_ll_master_disable_rx_it(i2c_dev_t *hw)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_master_clr_tx_it(i2c_dev_t *hw)
 {
     hw->int_clr.val = I2C_LL_MASTER_TX_INT;
@@ -696,6 +709,7 @@ static inline void i2c_ll_master_clr_tx_it(i2c_dev_t *hw)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_master_clr_rx_it(i2c_dev_t *hw)
 {
     hw->int_clr.val = I2C_LL_MASTER_RX_INT;
@@ -732,6 +746,7 @@ static inline void i2c_ll_slave_enable_rx_it(i2c_dev_t *hw)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_slave_disable_tx_it(i2c_dev_t *hw)
 {
     hw->int_ena.val &= (~I2C_LL_SLAVE_TX_INT);
@@ -756,6 +771,7 @@ static inline void i2c_ll_slave_disable_rx_it(i2c_dev_t *hw)
  *
  * @return None
  */
+ __attribute__((always_inline))
 static inline void i2c_ll_slave_clr_tx_it(i2c_dev_t *hw)
 {
     hw->int_clr.val = I2C_LL_SLAVE_TX_INT;
@@ -833,6 +849,7 @@ static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_sclk_t src_clk)
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_master_get_event(i2c_dev_t *hw, i2c_intr_event_t *event)
 {
     typeof(hw->int_status) int_sts = hw->int_status;
@@ -859,6 +876,7 @@ static inline void i2c_ll_master_get_event(i2c_dev_t *hw, i2c_intr_event_t *even
  *
  * @return None
  */
+__attribute__((always_inline))
 static inline void i2c_ll_slave_get_event(i2c_dev_t *hw, i2c_intr_event_t *event)
 {
     typeof(hw->int_status) int_sts = hw->int_status;
