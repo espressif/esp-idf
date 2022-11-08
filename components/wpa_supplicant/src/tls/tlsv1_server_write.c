@@ -620,7 +620,7 @@ static int tls_write_server_key_exchange(struct tlsv1_server *conn,
 			hlen = tls_key_x_server_params_hash(
 				conn->rl.tls_version, conn->client_random,
 				conn->server_random, server_params,
-				pos - server_params, hash);
+				pos - server_params, hash, sizeof(hash));
 		}
 
 		if (hlen < 0) {
