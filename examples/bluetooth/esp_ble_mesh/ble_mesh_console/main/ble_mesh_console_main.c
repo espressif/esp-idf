@@ -88,7 +88,7 @@ static void initialize_console(void)
     linenoiseSetHintsCallback((linenoiseHintsCallback *) &esp_console_get_hint);
 
     /* Set command history size */
-    linenoiseHistorySetMaxLen(100);
+    linenoiseHistorySetMaxLen(1);
 
 #if CONFIG_STORE_HISTORY
     /* Load command history from filesystem */
