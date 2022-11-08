@@ -266,7 +266,9 @@ Note: Include trace macros here and not above as trace macros are dependent on s
 
 // ---------------------- Features -------------------------
 
-#define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS     CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
+#ifdef CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
+#define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS     1
+#endif
 
 #if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
 #define configCHECK_MUTEX_GIVEN_BY_OWNER                1

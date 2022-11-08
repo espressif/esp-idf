@@ -340,7 +340,7 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
 
     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 )
         void * pvThreadLocalStoragePointers[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
             TlsDeleteCallbackFunction_t pvThreadLocalStoragePointersDelCallback[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
         #endif
     #endif
@@ -539,7 +539,7 @@ static portTASK_FUNCTION_PROTO( prvIdleTask, pvParameters ) PRIVILEGED_FUNCTION;
 /* Function to call the Thread Local Storage Pointer Deletion Callbacks. Will be
  * called during task deletion before prvDeleteTCB is called.
  */
-#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
     static void prvDeleteTLS( TCB_t * pxTCB );
 #endif
 
@@ -1486,7 +1486,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 
         if( xFreeNow == pdTRUE )
         {
-            #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+            #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
                 prvDeleteTLS( pxTCB );
             #endif
 
@@ -4378,7 +4378,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
 #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
 
-    #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+    #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
 
         void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet,
                                                               BaseType_t xIndex,
@@ -4405,7 +4405,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
         }
 
 
-    #else /* if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS ) */
+    #else /* if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 ) */
         void vTaskSetThreadLocalStoragePointer( TaskHandle_t xTaskToSet,
                                                 BaseType_t xIndex,
                                                 void * pvValue )
@@ -4420,7 +4420,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
                 taskEXIT_CRITICAL( &xKernelLock );
             }
         }
-    #endif /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS */
+    #endif /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 */
 
 #endif /* configNUM_THREAD_LOCAL_STORAGE_POINTERS */
 /*-----------------------------------------------------------*/
@@ -4557,7 +4557,7 @@ static void prvCheckTasksWaitingTermination( void )
 
                 if( pxTCB != NULL )                /*Call deletion callbacks and free TCB memory */
                 {
-                    #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+                    #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
                         prvDeleteTLS( pxTCB );
                     #endif
                     prvDeleteTCB( pxTCB );
@@ -4892,7 +4892,7 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 #endif /* INCLUDE_vTaskDelete */
 /*-----------------------------------------------------------*/
 
-#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
 
     static void prvDeleteTLS( TCB_t * pxTCB )
     {
@@ -4907,7 +4907,7 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
         }
     }
 
-#endif /* ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS ) */
+#endif /* ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 ) */
 /*-----------------------------------------------------------*/
 
 

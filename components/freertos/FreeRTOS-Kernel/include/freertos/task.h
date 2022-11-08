@@ -2024,7 +2024,7 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
     void * pvTaskGetThreadLocalStoragePointer( TaskHandle_t xTaskToQuery,
                                                BaseType_t xIndex ) PRIVILEGED_FUNCTION;
 
-    #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+    #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
 
         /**
          * Prototype of local storage pointer deletion callback.

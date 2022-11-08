@@ -228,6 +228,10 @@
     #define configNUM_THREAD_LOCAL_STORAGE_POINTERS    0
 #endif
 
+#ifndef configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS
+    #define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS    0
+#endif
+
 #ifndef configUSE_RECURSIVE_MUTEXES
     #define configUSE_RECURSIVE_MUTEXES    0
 #endif
@@ -1231,7 +1235,7 @@ typedef struct xSTATIC_TCB
     #endif
     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 )
         void * pvDummy15[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
             void * pvDummyLocalStorageCallBack[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
         #endif
     #endif
