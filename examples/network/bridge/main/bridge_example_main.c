@@ -16,6 +16,8 @@
 #include "esp_mac.h"
 #include "ethernet_init.h"
 #include "sdkconfig.h"
+#include "esp_console.h"
+#include "bridge_console_cmd.h"
 
 static const char *TAG = "eth_bridge_example";
 
@@ -57,9 +59,9 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
 
     ESP_LOGI(TAG, "Ethernet Got IP Address");
     ESP_LOGI(TAG, "~~~~~~~~~~~");
-    ESP_LOGI(TAG, "ETHIP:" IPSTR, IP2STR(&ip_info->ip));
-    ESP_LOGI(TAG, "ETHMASK:" IPSTR, IP2STR(&ip_info->netmask));
-    ESP_LOGI(TAG, "ETHGW:" IPSTR, IP2STR(&ip_info->gw));
+    ESP_LOGI(TAG, "ETHIP:" IPSTR "\r", IP2STR(&ip_info->ip));
+    ESP_LOGI(TAG, "ETHMASK:" IPSTR "\r", IP2STR(&ip_info->netmask));
+    ESP_LOGI(TAG, "ETHGW:" IPSTR "\r", IP2STR(&ip_info->gw));
     ESP_LOGI(TAG, "~~~~~~~~~~~");
 }
 
@@ -146,4 +148,16 @@ void app_main(void)
         // Start Ethernet driver state machine
         ESP_ERROR_CHECK(esp_eth_start(eth_handles[i]));
     }
+
+    // --- Initialize Console ---
+    esp_console_repl_t *repl = NULL;
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    repl_config.prompt = "bridge>";
+
+    // install console REPL environment
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
+    example_register_br_config_commands(br_netif, eth_port_cnt);
+    // start console REPL
+    ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }

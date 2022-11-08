@@ -72,9 +72,13 @@ idf.py -p PORT build flash monitor
 
 (Replace PORT with the name of the serial port to use.)
 
-(To exit the serial monitor, type ``Ctrl-]``.)
+(To exit the serial monitor, press ``Ctrl-]``.)
 
 See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
+
+### Forwarding Database Configuration
+
+You can configure bridge’s static Forwarding Database (FDB) via interactive console. Type ``help`` in the serial monitor to show available options.
 
 ## Example Output
 
