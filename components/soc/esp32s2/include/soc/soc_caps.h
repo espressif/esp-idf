@@ -63,6 +63,7 @@
 #define SOC_ADC_MAX_CHANNEL_NUM         (10)
 #define SOC_ADC_MAX_BITWIDTH            (13)
 #define SOC_ADC_HW_CALIBRATION_V1       (1) /*!< support HW offset calibration */
+#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
 
 
 /**

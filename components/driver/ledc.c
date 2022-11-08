@@ -265,6 +265,8 @@ esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags,
 }
 
 // Setting the LEDC timer divisor with the given source clock, frequency and resolution.
+extern void esp_sleep_periph_use_8m(bool use_or_not);
+
 static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_num, ledc_clk_cfg_t clk_cfg, int freq_hz, int duty_resolution)
 {
     uint32_t div_param = 0;
@@ -303,6 +305,9 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         goto error;
     }
     if (speed_mode == LEDC_LOW_SPEED_MODE) {
+
+        /* keep ESP_PD_DOMAIN_RTC8M on during light sleep */
+        esp_sleep_periph_use_8m(clk_cfg == LEDC_USE_RTC8M_CLK);
         portENTER_CRITICAL(&ledc_spinlock);
         ledc_hal_set_slow_clk(&(p_ledc_obj[speed_mode]->ledc_hal), clk_cfg);
         portEXIT_CRITICAL(&ledc_spinlock);
