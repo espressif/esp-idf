@@ -654,6 +654,7 @@ typedef struct {
     uint8_t ssid_len;         /**< SSID length of disconnected AP */
     uint8_t bssid[6];         /**< BSSID of disconnected AP */
     uint8_t reason;           /**< reason of disconnection */
+    int8_t  rssi;             /**< rssi of disconnection */
 } wifi_event_sta_disconnected_t;
 
 /** Argument structure for WIFI_EVENT_STA_AUTHMODE_CHANGE event */
