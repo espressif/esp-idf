@@ -80,7 +80,7 @@ struct wpa_sm {
     struct install_key install_ptk;
     struct install_key install_gtk;
     int mic_errors_seen; /* Michael MIC errors with the current PTK */
-
+    int use_ext_key_id; /* Enabled only for WPA PSK first key exchange */
     void (* sendto) (void *buffer, uint16_t len);
     void (*config_assoc_ie) (u8 proto, u8 *assoc_buf, u32 assoc_wpa_ie_len);
     void (*install_ppkey) (enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
