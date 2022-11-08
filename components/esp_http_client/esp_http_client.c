@@ -8,7 +8,6 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "esp_system.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "http_parser.h"
@@ -20,6 +19,7 @@
 #include "sdkconfig.h"
 #include "esp_http_client.h"
 #include "errno.h"
+#include "esp_random.h"
 
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
 #include "esp_transport_ssl.h"
@@ -298,7 +298,7 @@ static int http_on_body(http_parser *parser, const char *at, size_t length)
 
 static int http_on_message_complete(http_parser *parser)
 {
-    ESP_LOGD(TAG, "http_on_message_complete, parser=%x", (int)parser);
+    ESP_LOGD(TAG, "http_on_message_complete, parser=%x", parser);
     esp_http_client_handle_t client = parser->data;
     client->is_chunk_complete = true;
     return 0;
