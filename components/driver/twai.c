@@ -284,6 +284,8 @@ TWAI_ISR_ATTR static void twai_intr_handler_main(void *arg)
 
 static void twai_configure_gpio(gpio_num_t tx, gpio_num_t rx, gpio_num_t clkout, gpio_num_t bus_status)
 {
+    // assert the GPIO number is not a negative number (shift operation on a negative number is undefined)
+    assert(tx >= 0 && rx >= 0);
     int controller_id = p_twai_obj->controller_id;
     // if TX and RX set to the same GPIO, which means we want to create a loop-back in the GPIO matrix
     bool io_loop_back = (tx == rx);
@@ -408,8 +410,8 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     TWAI_CHECK(t_config != NULL, ESP_ERR_INVALID_ARG);
     TWAI_CHECK(f_config != NULL, ESP_ERR_INVALID_ARG);
     TWAI_CHECK(g_config->rx_queue_len > 0, ESP_ERR_INVALID_ARG);
-    TWAI_CHECK(g_config->tx_io >= 0 && g_config->tx_io < GPIO_NUM_MAX, ESP_ERR_INVALID_ARG);
-    TWAI_CHECK(g_config->rx_io >= 0 && g_config->rx_io < GPIO_NUM_MAX, ESP_ERR_INVALID_ARG);
+    TWAI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(g_config->tx_io), ESP_ERR_INVALID_ARG);
+    TWAI_CHECK(GPIO_IS_VALID_GPIO(g_config->rx_io), ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_TWAI_ISR_IN_IRAM
     TWAI_CHECK(!(g_config->intr_flags & ESP_INTR_FLAG_IRAM), ESP_ERR_INVALID_ARG);
 #endif
