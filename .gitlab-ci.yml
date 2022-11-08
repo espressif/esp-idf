@@ -99,6 +99,8 @@ variables:
   # This is used only if CI_PYTHON_TOOL_REPO is not empty.
   CI_PYTHON_TOOL_BRANCH: ""
 
+  IDF_CI_BUILD: 1
+
 cache:
   # pull only for most of the use cases since it's cache dir.
   # Only set "push" policy for "upload_cache" stage jobs

@@ -151,9 +151,9 @@ void unity_testcase_register(test_desc_t* desc);
 
 /*
   Test case macro to be ignored in CI.
-  Tests will still be built (to check for compile error) but not linked if IDF_CI_BUILD.
+  Tests will still be built (to check for compile error) but not linked if CONFIG_IDF_CI_BUILD.
  */
-#if IDF_CI_BUILD
+#ifdef CONFIG_IDF_CI_BUILD
 #define TEST_CASE_CI_IGNORE(name_, desc_) \
     __attribute__((unused)) static void UNITY_TEST_UID(test_func_) (void)
 #else
