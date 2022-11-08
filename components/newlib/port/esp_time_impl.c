@@ -61,7 +61,7 @@ static uint64_t s_boot_time; // when RTC is used to persist time, two RTC_STORE 
 static _lock_t s_boot_time_lock;
 
 static _lock_t s_esp_rtc_time_lock;
-static RTC_DATA_ATTR uint64_t s_esp_rtc_time_us = 0, s_rtc_last_ticks = 0;
+static RTC_NOINIT_ATTR uint64_t s_esp_rtc_time_us, s_rtc_last_ticks;
 
 #if defined( CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER ) || defined( CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER )
 uint64_t esp_time_impl_get_time_since_boot(void)
@@ -137,6 +137,10 @@ uint64_t esp_rtc_get_time_us(void)
 {
     _lock_acquire(&s_esp_rtc_time_lock);
     const uint32_t cal = esp_clk_slowclk_cal_get();
+    if (cal == 0) {
+        s_esp_rtc_time_us = 0;
+        s_rtc_last_ticks = 0;
+    }
     const uint64_t rtc_this_ticks = rtc_time_get();
     const uint64_t ticks = rtc_this_ticks - s_rtc_last_ticks;
     /* RTC counter result is up to 2^48, calibration factor is up to 2^24,
