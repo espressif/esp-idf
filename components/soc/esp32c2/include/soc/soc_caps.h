@@ -261,6 +261,9 @@
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
 
+/*-------------------------- HARDWARE ADVANCED EXTERNAL COEXISTENCE CAPS -------------------*/
+#define SOC_EXTERNAL_COEX_ADVANCE       (1)
+
 /*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 #define SOC_MAC_BB_PD_MEM_SIZE          (192*4)

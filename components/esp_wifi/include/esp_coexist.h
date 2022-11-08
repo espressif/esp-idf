@@ -40,13 +40,15 @@ typedef enum {
     ESP_COEX_ST_TYPE_BT,
 } esp_coex_status_type_t;
 
+#if CONFIG_EXTERNAL_COEX_ENABLE
 /**
  * @brief external coex gpio pti
  */
 typedef struct {
-    int32_t in_pin0;
-    int32_t in_pin1;
-    int32_t out_pin0;
+    uint32_t in_pin0;
+    uint32_t in_pin1;
+    uint32_t out_pin0;
+    uint32_t out_pin1;
 } esp_external_coex_gpio_set_t;
 
 /**
@@ -59,16 +61,43 @@ typedef enum {
 } esp_coex_pti_level_t;
 
 /**
- * @brief external coex pti
+ * @brief external coex follower pti
  */
 typedef struct {
-    uint32_t in_pti1;
-    uint32_t in_pti2;
-    uint32_t in_pti3;
-    uint32_t out_pti1;
-    uint32_t out_pti2;
-    uint32_t out_pti3;
-} esp_external_coex_pti_set_t;
+    uint32_t pti_val1;
+    uint32_t pti_val2;
+} esp_external_coex_follower_pti_t;
+
+/**
+ * @brief external coex role
+ */
+typedef enum {
+    EXTERNAL_COEX_LEADER_ROLE = 0,
+    EXTERNAL_COEX_FOLLOWER_ROLE = 2,
+    EXTERNAL_COEX_UNKNOWN_ROLE,
+} esp_extern_coex_work_mode_t;
+
+/**
+ * @brief external coex wiretype & role composition
+ */
+typedef enum {
+    wire_3_leader_mode = 0,
+    wire_2_leader_mode,
+    wire_1_leader_mode,
+    wire_3_follower_mode,
+    wire_2_follower_mode,
+    wire_1_follower_mode,
+} external_coex_classification;
+
+/**
+ * @brief external coex advance setup
+ */
+typedef struct {
+    esp_extern_coex_work_mode_t work_mode;
+    uint8_t delay_us;
+    bool is_high_valid;
+} esp_external_coex_advance_t;
+#endif
 
 #define ESP_COEX_BLE_ST_MESH_CONFIG        0x08
 #define ESP_COEX_BLE_ST_MESH_TRAFFIC       0x10
@@ -115,15 +144,61 @@ esp_err_t esp_coex_status_bit_clear(esp_coex_status_type_t type, uint32_t status
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
 /**
- * @brief Setup gpio pin and corresponding pti level, start external coex.
+ * @brief Setup gpio pin and corresponding pti level, start external coex,
+ *        the default work mode is leader role, the default output grant validate pin is high,
+ *        and the default delay output grant value is zero.
  * @param wire_type : to select the whole external coex gpio number.
  * @param gpio_pin : gpio pin number to choose.
  * @return : ESP_OK - success, other - failed
  */
 esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type,
-                    esp_external_coex_gpio_set_t gpio_pin);
+                     esp_external_coex_gpio_set_t gpio_pin);
 
+/**
+ * @brief Disable external coex.
+ * @return : ESP_OK - success, other - failed
+ */
 esp_err_t esp_disable_extern_coex_gpio_pin();
+
+#if SOC_EXTERNAL_COEX_ADVANCE
+/**
+ * @brief Configure leader work mode, gpio pin correspondly and finally enable external coex,
+ *        demand not to call the legacy function of `esp_enable_extern_coex_gpio_pin` any more.
+ * @param wire_type : to select the whole external coex gpio number.
+ * @param gpio_pin : gpio pin number to select.
+ * @return : ESP_OK - success, other - failed
+ */
+esp_err_t esp_external_coex_leader_role_set_gpio_pin(external_coex_wire_t wire_type, uint32_t in_pin0,
+                uint32_t in_pin1, uint32_t out_pin0);
+
+/**
+ * @brief Configure follower work mode, gpio pin correspondly and finally enable external coex,
+ *        demand not to call the legacy function of `esp_enable_extern_coex_gpio_pin` any more.
+ * @param wire_type : to select the whole external coex gpio number.
+ * @param gpio_pin : gpio pin number to select.
+ * @return : ESP_OK - success, other - failed
+ */
+esp_err_t esp_external_coex_follower_role_set_gpio_pin(external_coex_wire_t wire_type, uint32_t in_pin0,
+                uint32_t out_pin0, uint32_t out_pin1);
+
+/**
+ * @brief Configure output grant signal latency in delay microseconds only for leader role of external coex,
+ *        demand to call this function before `esp_external_coex_leader_role_set_gpio_pin`,
+ *        if users want to setup output delay value.
+ * @param delay_us : to setup how many microseconds the output signal performs latency.
+ * @return : ESP_OK - success, other - failed
+ */
+esp_err_t esp_external_coex_set_grant_delay(uint8_t delay_us);
+
+/**
+ * @brief Configure output grant signal is high validate or not only for leader role of external coex,
+ *        demand to call this function before `esp_external_coex_leader_role_set_gpio_pin`,
+ *        if users want to setup output grant validate pin value.
+ * @param is_high_valid : to select true means the output grant signal validate is high, other - validate is low.
+ * @return : ESP_OK - success, other - failed
+ */
+esp_err_t esp_external_coex_set_validate_high(bool is_high_valid);
+#endif
 #endif
 
 #ifdef __cplusplus
