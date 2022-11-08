@@ -477,14 +477,6 @@ extern int xPortSwitchFlag;
 #define os_task_switch_is_pended(_cpu_) (false)
 #endif
 
-// --------------------- Debugging -------------------------
-
-#if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
-#define UNTESTED_FUNCTION() do{ esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
-#else
-#define UNTESTED_FUNCTION()
-#endif
-
 #ifdef __cplusplus
 }
 #endif
