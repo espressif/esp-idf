@@ -1213,7 +1213,7 @@ typedef struct xSTATIC_TCB
     UBaseType_t uxDummy5;
     void * pxDummy6;
     uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ];
-    BaseType_t xDummyCore;
+    BaseType_t xDummyCoreID;
     #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
         void * pxDummy8;
     #endif
@@ -1297,7 +1297,7 @@ typedef struct xSTATIC_QUEUE
         UBaseType_t uxDummy8;
         uint8_t ucDummy9;
     #endif
-    portMUX_TYPE xDummy10;
+    portMUX_TYPE xDummyQueueLock;
 } StaticQueue_t;
 typedef StaticQueue_t StaticSemaphore_t;
 
@@ -1327,7 +1327,7 @@ typedef struct xSTATIC_EVENT_GROUP
     #if ( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
         uint8_t ucDummy4;
     #endif
-    portMUX_TYPE xDummy5;
+    portMUX_TYPE xDummyEventGroupLock;
 } StaticEventGroup_t;
 
 /*
@@ -1364,12 +1364,12 @@ typedef struct xSTATIC_TIMER
  * internally by FreeRTOS is not accessible to application code.  However, if
  * the application writer wants to statically allocate the memory required to
  * create a stream buffer then the size of the stream buffer object needs to be
- * known.  The StaticStreamBuffer_t structure below is provided for this
- * purpose.  Its size and alignment requirements are guaranteed to match those
- * of the genuine structure, no matter which architecture is being used, and
- * no matter how the values in FreeRTOSConfig.h are set.  Its contents are
- * somewhat obfuscated in the hope users will recognise that it would be unwise
- * to make direct use of the structure members.
+ * known.  The StaticStreamBuffer_t structure below is provided for this purpose.
+ * Its size and alignment requirements are guaranteed to match those of the
+ * genuine structure, no matter which architecture is being used, and no matter
+ * how the values in FreeRTOSConfig.h are set.  Its contents are somewhat
+ * obfuscated in the hope users will recognise that it would be unwise to make
+ * direct use of the structure members.
  */
 typedef struct xSTATIC_STREAM_BUFFER
 {
@@ -1379,7 +1379,7 @@ typedef struct xSTATIC_STREAM_BUFFER
     #if ( configUSE_TRACE_FACILITY == 1 )
         UBaseType_t uxDummy4;
     #endif
-    portMUX_TYPE xDummy5;
+    portMUX_TYPE xStreamBufferLock;
 } StaticStreamBuffer_t;
 
 /* Message buffers are built on stream buffers. */

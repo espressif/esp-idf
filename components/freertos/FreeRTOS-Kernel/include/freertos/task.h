@@ -5,6 +5,7 @@
  *
  * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
+
 /*
  * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
@@ -116,6 +117,7 @@ typedef enum
 } eNotifyAction;
 
 /** @cond !DOC_EXCLUDE_HEADER_SECTION */
+
 /**
  * Used internally only.
  */
@@ -165,9 +167,9 @@ typedef struct xTASK_STATUS
     uint32_t ulRunTimeCounter;                       /* The total run time allocated to the task so far, as defined by the run time stats clock.  See https://www.FreeRTOS.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
     StackType_t * pxStackBase;                       /* Points to the lowest address of the task's stack area. */
     configSTACK_DEPTH_TYPE usStackHighWaterMark;     /* The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
-#if configTASKLIST_INCLUDE_COREID
-    BaseType_t xCoreID;                              /*!< Core this task is pinned to (0, 1, or -1 for tskNO_AFFINITY). This field is present if CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID is set. */
-#endif
+    #if ( configTASKLIST_INCLUDE_COREID == 1 )
+        BaseType_t xCoreID;                          /*!< Core this task is pinned to (0, 1, or -1 for tskNO_AFFINITY). This field is present if CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID is set. */
+    #endif
 } TaskStatus_t;
 
 /** @endcond */
@@ -219,18 +221,9 @@ typedef enum
  * @endcond
  * \ingroup SchedulerControl
  */
-#ifdef ESP_PLATFORM
-#define taskENTER_CRITICAL( x )   portENTER_CRITICAL( x )
-#else
-#define taskENTER_CRITICAL( )     portENTER_CRITICAL( )
-#endif //  ESP_PLATFORM
-#define taskENTER_CRITICAL_FROM_ISR( ) portSET_INTERRUPT_MASK_FROM_ISR()
-
-#ifdef ESP_PLATFORM
-#define taskENTER_CRITICAL_ISR( x )   portENTER_CRITICAL_ISR( x )
-#else
-#define taskENTER_CRITICAL_ISR( )     portENTER_CRITICAL_ISR( )
-#endif //  ESP_PLATFORM
+#define taskENTER_CRITICAL( x )            portENTER_CRITICAL( x )
+#define taskENTER_CRITICAL_FROM_ISR()      portSET_INTERRUPT_MASK_FROM_ISR()
+#define taskENTER_CRITICAL_ISR( x )        portENTER_CRITICAL_ISR( x )
 
 /**
  * @cond !DOC_EXCLUDE_HEADER_SECTION
@@ -248,19 +241,10 @@ typedef enum
  * @endcond
  * \ingroup SchedulerControl
  */
+#define taskEXIT_CRITICAL( x )             portEXIT_CRITICAL( x )
+#define taskEXIT_CRITICAL_FROM_ISR( x )    portCLEAR_INTERRUPT_MASK_FROM_ISR( x )
+#define taskEXIT_CRITICAL_ISR( x )         portEXIT_CRITICAL_ISR( x )
 
-#ifdef ESP_PLATFORM
-#define taskEXIT_CRITICAL( x )          portEXIT_CRITICAL( x )
-#else
-#define taskEXIT_CRITICAL( )            portEXIT_CRITICAL( )
-#endif // ESP_PLATFORM
-#define taskEXIT_CRITICAL_FROM_ISR( x ) portCLEAR_INTERRUPT_MASK_FROM_ISR( x )
-
-#ifdef ESP_PLATFORM
-#define taskEXIT_CRITICAL_ISR( x )      portEXIT_CRITICAL_ISR( x )
-#else
-#define taskEXIT_CRITICAL_ISR( )        portEXIT_CRITICAL_ISR( )
-#endif // ESP_PLATFORM
 /**
  * @cond !DOC_EXCLUDE_HEADER_SECTION
  * task. h
@@ -302,12 +286,13 @@ typedef enum
  *----------------------------------------------------------*/
 
 /**
- * Create a new task with a specified affinity.
+ * Create a new task with a specified affinity and add it to the list of tasks
+ * that are ready to run.
  *
  * This function is similar to xTaskCreate, but allows setting task affinity
  * in SMP system.
  *
- * @param pvTaskCode Pointer to the task entry function.  Tasks
+ * @param pxTaskCode Pointer to the task entry function.  Tasks
  * must be implemented to never return (i.e. continuous loop), or should be
  * terminated using vTaskDelete function.
  *
@@ -327,32 +312,192 @@ typedef enum
  * example, to create a privileged task at priority 2 the uxPriority parameter
  * should be set to ( 2 | portPRIVILEGE_BIT ).
  *
- * @param pvCreatedTask Used to pass back a handle by which the created task
+ * @param[out] pvCreatedTask Used to pass back a handle by which the created task
  * can be referenced.
  *
  * @param xCoreID If the value is tskNO_AFFINITY, the created task is not
  * pinned to any CPU, and the scheduler can run it on any core available.
  * Values 0 or 1 indicate the index number of the CPU which the task should
- * be pinned to. Specifying values larger than (portNUM_PROCESSORS - 1) will
+ * be pinned to. Specifying values larger than (configNUM_CORES - 1) will
  * cause the function to fail.
  *
  * @return pdPASS if the task was successfully created and added to a ready
  * list, otherwise an error code defined in the file projdefs.h
  *
+ * @note If program uses thread local variables (ones specified with "__thread" keyword)
+ * then storage for them will be allocated on the task's stack.
+ *
+ * Example usage:
+ * @code{c}
+ * // Task to be created.
+ * void vTaskCode( void * pvParameters )
+ * {
+ *   for( ;; )
+ *   {
+ *       // Task code goes here.
+ *   }
+ * }
+ *
+ * // Function that creates a task.
+ * void vOtherFunction( void )
+ * {
+ * static uint8_t ucParameterToPass;
+ * TaskHandle_t xHandle = NULL;
+ *
+ *   // Create the task pinned to core 0, storing the handle.  Note that the passed parameter ucParameterToPass
+ *   // must exist for the lifetime of the task, so in this case is declared static.  If it was just an
+ *   // an automatic stack variable it might no longer exist, or at least have been corrupted, by the time
+ *   // the new task attempts to access it.
+ *   xTaskCreatePinnedToCore( vTaskCode, "NAME", STACK_SIZE, &ucParameterToPass, tskIDLE_PRIORITY, &xHandle, 0 );
+ *   configASSERT( xHandle );
+ *
+ *   // Use the handle to delete the task.
+ *   if( xHandle != NULL )
+ *   {
+ *      vTaskDelete( xHandle );
+ *   }
+ * }
+ * @endcode
+ * @cond !DOC_SINGLE_GROUP
+ * \defgroup xTaskCreatePinnedToCore xTaskCreatePinnedToCore
+ * @endcond
  * \ingroup Tasks
  */
-#if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
-    BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pvTaskCode,
+#if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
+    BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pxTaskCode,
                                         const char * const pcName,
-                                        const uint32_t usStackDepth,
+                                        const configSTACK_DEPTH_TYPE usStackDepth,
                                         void * const pvParameters,
                                         UBaseType_t uxPriority,
                                         TaskHandle_t * const pvCreatedTask,
-                                        const BaseType_t xCoreID);
-
+                                        const BaseType_t xCoreID );
 #endif
 
 /**
+ * Create a new task with a specified affinity and add it to the list of tasks
+ * that are ready to run.
+ *
+ * This function is similar to xTaskCreateStatic, but allows specifying
+ * task affinity in an SMP system.
+ *
+ * @param pxTaskCode Pointer to the task entry function.  Tasks
+ * must be implemented to never return (i.e. continuous loop), or should be
+ * terminated using vTaskDelete function.
+ *
+ * @param pcName A descriptive name for the task.  This is mainly used to
+ * facilitate debugging.  The maximum length of the string is defined by
+ * configMAX_TASK_NAME_LEN in FreeRTOSConfig.h.
+ *
+ * @param ulStackDepth The size of the task stack specified as the number of
+ * bytes. Note that this differs from vanilla FreeRTOS.
+ *
+ * @param pvParameters Pointer that will be used as the parameter for the task
+ * being created.
+ *
+ * @param uxPriority The priority at which the task will run.
+ *
+ * @param pxStackBuffer Must point to a StackType_t array that has at least
+ * ulStackDepth indexes - the array will then be used as the task's stack,
+ * removing the need for the stack to be allocated dynamically.
+ *
+ * @param pxTaskBuffer Must point to a variable of type StaticTask_t, which will
+ * then be used to hold the task's data structures, removing the need for the
+ * memory to be allocated dynamically.
+ *
+ * @param xCoreID If the value is tskNO_AFFINITY, the created task is not
+ * pinned to any CPU, and the scheduler can run it on any core available.
+ * Values 0 or 1 indicate the index number of the CPU which the task should
+ * be pinned to. Specifying values larger than (configNUM_CORES - 1) will
+ * cause the function to fail.
+ *
+ * @return If neither pxStackBuffer or pxTaskBuffer are NULL, then the task will
+ * be created and pdPASS is returned.  If either pxStackBuffer or pxTaskBuffer
+ * are NULL then the task will not be created and
+ * errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY is returned.
+ *
+ * Example usage:
+ * @code{c}
+ *
+ *  // Dimensions the buffer that the task being created will use as its stack.
+ *  // NOTE:  This is the number of words the stack will hold, not the number of
+ *  // bytes.  For example, if each stack item is 32-bits, and this is set to 100,
+ *  // then 400 bytes (100 * 32-bits) will be allocated.
+ * #define STACK_SIZE 200
+ *
+ *  // Structure that will hold the TCB of the task being created.
+ *  StaticTask_t xTaskBuffer;
+ *
+ *  // Buffer that the task being created will use as its stack.  Note this is
+ *  // an array of StackType_t variables.  The size of StackType_t is dependent on
+ *  // the RTOS port.
+ *  StackType_t xStack[ STACK_SIZE ];
+ *
+ *  // Function that implements the task being created.
+ *  void vTaskCode( void * pvParameters )
+ *  {
+ *      // The parameter value is expected to be 1 as 1 is passed in the
+ *      // pvParameters value in the call to xTaskCreateStaticPinnedToCore().
+ *      configASSERT( ( uint32_t ) pvParameters == 1UL );
+ *
+ *      for( ;; )
+ *      {
+ *          // Task code goes here.
+ *      }
+ *  }
+ *
+ *  // Function that creates a task.
+ *  void vOtherFunction( void )
+ *  {
+ *      TaskHandle_t xHandle = NULL;
+ *
+ *      // Create the task pinned to core 0 without using any dynamic memory allocation.
+ *      xHandle = xTaskCreateStaticPinnedToCore(
+ *                    vTaskCode,       // Function that implements the task.
+ *                    "NAME",          // Text name for the task.
+ *                    STACK_SIZE,      // Stack size in bytes, not words.
+ *                    ( void * ) 1,    // Parameter passed into the task.
+ *                    tskIDLE_PRIORITY,// Priority at which the task is created.
+ *                    xStack,          // Array to use as the task's stack.
+ *                    &xTaskBuffer,    // Variable to hold the task's data structure.
+ *                    0 );             // Specify the task's core affinity
+ *
+ *      // puxStackBuffer and pxTaskBuffer were not NULL, so the task will have
+ *      // been created, and xHandle will be the task's handle.  Use the handle
+ *      // to suspend the task.
+ *      vTaskSuspend( xHandle );
+ *  }
+ * @endcode
+ * @cond !DOC_SINGLE_GROUP
+ * \defgroup xTaskCreateStaticPinnedToCore xTaskCreateStaticPinnedToCore
+ * @endcond
+ * \ingroup Tasks
+ */
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+    TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pxTaskCode,
+                                                const char * const pcName,
+                                                const uint32_t ulStackDepth,
+                                                void * const pvParameters,
+                                                UBaseType_t uxPriority,
+                                                StackType_t * const pxStackBuffer,
+                                                StaticTask_t * const pxTaskBuffer,
+                                                const BaseType_t xCoreID );
+#endif /* configSUPPORT_STATIC_ALLOCATION */
+
+/**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * task. h
+ * @code{c}
+ * BaseType_t xTaskCreate(
+ *                            TaskFunction_t pvTaskCode,
+ *                            const char * const pcName,
+ *                            configSTACK_DEPTH_TYPE usStackDepth,
+ *                            void *pvParameters,
+ *                            UBaseType_t uxPriority,
+ *                            TaskHandle_t *pvCreatedTask
+ *                        );
+ * @endcode
+ * @endcond
+ *
  * Create a new task and add it to the list of tasks that are ready to run.
  *
  * Internally, within the FreeRTOS implementation, tasks use two blocks of
@@ -373,7 +518,7 @@ typedef enum
  * support can alternatively create an MPU constrained task using
  * xTaskCreateRestricted().
  *
- * @param pvTaskCode Pointer to the task entry function.  Tasks
+ * @param pxTaskCode Pointer to the task entry function.  Tasks
  * must be implemented to never return (i.e. continuous loop), or should be
  * terminated using vTaskDelete function.
  *
@@ -439,78 +584,32 @@ typedef enum
  * \ingroup Tasks
  */
 #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
-
-    static inline IRAM_ATTR BaseType_t xTaskCreate(
-                            TaskFunction_t pvTaskCode,
-                            const char * const pcName,     /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
-                            const uint32_t usStackDepth,
+    static inline __attribute__( ( always_inline ) )
+    BaseType_t xTaskCreate( TaskFunction_t pxTaskCode,
+                            const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                            const configSTACK_DEPTH_TYPE usStackDepth,
                             void * const pvParameters,
                             UBaseType_t uxPriority,
-                            TaskHandle_t * const pxCreatedTask) PRIVILEGED_FUNCTION
+                            TaskHandle_t * const pxCreatedTask ) PRIVILEGED_FUNCTION
     {
-        return xTaskCreatePinnedToCore( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask, tskNO_AFFINITY );
+        return xTaskCreatePinnedToCore( pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask, tskNO_AFFINITY );
     }
-
-#endif
-
-
-
+#endif /* if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) */
 
 /**
- * Create a new task with a specified affinity.
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * task. h
+ * @code{c}
+ * TaskHandle_t xTaskCreateStatic( TaskFunction_t pvTaskCode,
+ *                               const char * const pcName,
+ *                               uint32_t ulStackDepth,
+ *                               void *pvParameters,
+ *                               UBaseType_t uxPriority,
+ *                               StackType_t *pxStackBuffer,
+ *                               StaticTask_t *pxTaskBuffer );
+ * @endcode
+ * @endcond
  *
- * This function is similar to xTaskCreateStatic, but allows specifying
- * task affinity in an SMP system.
- *
- * @param pvTaskCode Pointer to the task entry function.  Tasks
- * must be implemented to never return (i.e. continuous loop), or should be
- * terminated using vTaskDelete function.
- *
- * @param pcName A descriptive name for the task.  This is mainly used to
- * facilitate debugging.  The maximum length of the string is defined by
- * configMAX_TASK_NAME_LEN in FreeRTOSConfig.h.
- *
- * @param ulStackDepth The size of the task stack specified as the number of
- * bytes. Note that this differs from vanilla FreeRTOS.
- *
- * @param pvParameters Pointer that will be used as the parameter for the task
- * being created.
- *
- * @param uxPriority The priority at which the task will run.
- *
- * @param pxStackBuffer Must point to a StackType_t array that has at least
- * ulStackDepth indexes - the array will then be used as the task's stack,
- * removing the need for the stack to be allocated dynamically.
- *
- * @param pxTaskBuffer Must point to a variable of type StaticTask_t, which will
- * then be used to hold the task's data structures, removing the need for the
- * memory to be allocated dynamically.
- *
- * @param xCoreID If the value is tskNO_AFFINITY, the created task is not
- * pinned to any CPU, and the scheduler can run it on any core available.
- * Values 0 or 1 indicate the index number of the CPU which the task should
- * be pinned to. Specifying values larger than (portNUM_PROCESSORS - 1) will
- * cause the function to fail.
- *
- * @return If neither pxStackBuffer or pxTaskBuffer are NULL, then the task will
- * be created and pdPASS is returned.  If either pxStackBuffer or pxTaskBuffer
- * are NULL then the task will not be created and
- * errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY is returned.
- *
- * \ingroup Tasks
- */
-#if( configSUPPORT_STATIC_ALLOCATION == 1 )
-    TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pvTaskCode,
-                                                const char * const pcName,
-                                                const uint32_t ulStackDepth,
-                                                void * const pvParameters,
-                                                UBaseType_t uxPriority,
-                                                StackType_t * const pxStackBuffer,
-                                                StaticTask_t * const pxTaskBuffer,
-                                                const BaseType_t xCoreID );
-#endif /* configSUPPORT_STATIC_ALLOCATION */
-
-/**
  * Create a new task and add it to the list of tasks that are ready to run.
  *
  * Internally, within the FreeRTOS implementation, tasks use two blocks of
@@ -518,12 +617,12 @@ typedef enum
  * second block is used by the task as its stack.  If a task is created using
  * xTaskCreate() then both blocks of memory are automatically dynamically
  * allocated inside the xTaskCreate() function.  (see
- * http://www.freertos.org/a00111.html).  If a task is created using
+ * https://www.FreeRTOS.org/a00111.html).  If a task is created using
  * xTaskCreateStatic() then the application writer must provide the required
  * memory.  xTaskCreateStatic() therefore allows a task to be created without
  * using any dynamic memory allocation.
  *
- * @param pvTaskCode Pointer to the task entry function.  Tasks
+ * @param pxTaskCode Pointer to the task entry function.  Tasks
  * must be implemented to never return (i.e. continuous loop), or should be
  * terminated using vTaskDelete function.
  *
@@ -608,17 +707,17 @@ typedef enum
  * \ingroup Tasks
  */
 
-#if( configSUPPORT_STATIC_ALLOCATION == 1 )
-    static inline IRAM_ATTR TaskHandle_t xTaskCreateStatic(
-                                    TaskFunction_t pvTaskCode,
-                                    const char * const pcName,     /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+    static inline __attribute__( ( always_inline ) )
+    TaskHandle_t xTaskCreateStatic( TaskFunction_t pxTaskCode,
+                                    const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
                                     const uint32_t ulStackDepth,
                                     void * const pvParameters,
                                     UBaseType_t uxPriority,
                                     StackType_t * const puxStackBuffer,
-                                    StaticTask_t * const pxTaskBuffer) PRIVILEGED_FUNCTION
+                                    StaticTask_t * const pxTaskBuffer ) PRIVILEGED_FUNCTION
     {
-        return xTaskCreateStaticPinnedToCore( pvTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, tskNO_AFFINITY );
+        return xTaskCreateStaticPinnedToCore( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, tskNO_AFFINITY );
     }
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
@@ -650,7 +749,7 @@ typedef enum
  * @param pxCreatedTask Used to pass back a handle by which the created task
  * can be referenced.
  *
- * return pdPASS if the task was successfully created and added to a ready
+ * @return pdPASS if the task was successfully created and added to a ready
  * list, otherwise an error code defined in the file projdefs.h
  *
  * Example usage:
@@ -738,7 +837,7 @@ typedef enum
  * @param pxCreatedTask Used to pass back a handle by which the created task
  * can be referenced.
  *
- * return pdPASS if the task was successfully created and added to a ready
+ * @return pdPASS if the task was successfully created and added to a ready
  * list, otherwise an error code defined in the file projdefs.h
  *
  * Example usage:
@@ -752,7 +851,7 @@ typedef enum
  * {
  *  vATask,     // pvTaskCode - the function that implements the task.
  *  "ATask",    // pcName - just a text name for the task to assist debugging.
- *   100,       // usStackDepth - the stack size DEFINED IN BYTES.
+ *  100,        // usStackDepth - the stack size DEFINED IN BYTES.
  *  NULL,       // pvParameters - passed into the task function as the function parameters.
  *  ( 1UL | portPRIVILEGE_BIT ),// uxPriority - task priority, set the portPRIVILEGE_BIT if the task should run in a privileged state.
  *  cStackBuffer,// puxStackBuffer - the buffer to be used as the task stack.
@@ -1428,6 +1527,7 @@ BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume ) PRIVILEGED_FUNCTION;
  * SCHEDULER CONTROL
  *----------------------------------------------------------*/
 /** @cond !DOC_EXCLUDE_HEADER_SECTION */
+
 /**
  * @cond !DOC_EXCLUDE_HEADER_SECTION
  * task. h
@@ -1438,8 +1538,8 @@ BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume ) PRIVILEGED_FUNCTION;
  *
  * Starts the real time kernel tick processing.  After calling the kernel
  * has control over which tasks are executed and when.
-
- * NOTE: In ESP-IDF the scheduler is started automatically during
+ *
+ * @note: In ESP-IDF the scheduler is started automatically during
  * application startup, vTaskStartScheduler() should not be called from
  * ESP-IDF applications.
  *
@@ -1753,14 +1853,21 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) PRIVILEGED_FUNCTION;     /*lin
 TaskHandle_t xTaskGetHandle( const char * pcNameToQuery ) PRIVILEGED_FUNCTION;     /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 
 /**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * task.h
+ * @code{c}
+ * UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask );
+ * @endcode
+ * @endcond
+ *
  * Returns the high water mark of the stack associated with xTask.
  *
  * INCLUDE_uxTaskGetStackHighWaterMark must be set to 1 in FreeRTOSConfig.h for
  * this function to be available.
  *
  * Returns the high water mark of the stack associated with xTask.  That is,
- * the minimum free stack space there has been (in bytes not words, unlike vanilla
- * FreeRTOS) since the task started.  The smaller the returned
+ * the minimum free stack space there has been (in bytes not words, unlike
+ * vanilla FreeRTOS) since the task started.  The smaller the returned
  * number the closer the task has come to overflowing its stack.
  *
  * uxTaskGetStackHighWaterMark() and uxTaskGetStackHighWaterMark2() are the
@@ -1772,21 +1879,28 @@ TaskHandle_t xTaskGetHandle( const char * pcNameToQuery ) PRIVILEGED_FUNCTION;  
  * @param xTask Handle of the task associated with the stack to be checked.
  * Set xTask to NULL to check the stack of the calling task.
  *
- * @return The smallest amount of free stack space there has been (in bytes not words,
- * unlike vanilla FreeRTOS) since the task referenced by
+ * @return The smallest amount of free stack space there has been (in bytes not
+ * words, unlike vanilla FreeRTOS) since the task referenced by
  * xTask was created.
  */
 UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 
 /**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * task.h
+ * @code{c}
+ * configSTACK_DEPTH_TYPE uxTaskGetStackHighWaterMark2( TaskHandle_t xTask );
+ * @endcode
+ * @endcond
+ *
  * Returns the start of the stack associated with xTask.
  *
  * INCLUDE_uxTaskGetStackHighWaterMark2 must be set to 1 in FreeRTOSConfig.h for
  * this function to be available.
  *
  * Returns the high water mark of the stack associated with xTask.  That is,
- * the minimum free stack space there has been (in words, so on a 32 bit machine
- * a value of 1 means 4 bytes) since the task started.  The smaller the returned
+ * the minimum free stack space there has been (in bytes not words, unlike
+ * vanilla FreeRTOS) since the task started.  The smaller the returned
  * number the closer the task has come to overflowing its stack.
  *
  * uxTaskGetStackHighWaterMark() and uxTaskGetStackHighWaterMark2() are the
@@ -1798,8 +1912,8 @@ UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask ) PRIVILEGED_FUNCTIO
  * @param xTask Handle of the task associated with the stack to be checked.
  * Set xTask to NULL to check the stack of the calling task.
  *
- * @return The smallest amount of free stack space there has been (in words, so
- * actual spaces on the stack rather than bytes) since the task referenced by
+ * @return The smallest amount of free stack space there has been (in bytes not
+ * words, unlike vanilla FreeRTOS) since the task referenced by
  * xTask was created.
  */
 configSTACK_DEPTH_TYPE uxTaskGetStackHighWaterMark2( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
@@ -1817,7 +1931,7 @@ configSTACK_DEPTH_TYPE uxTaskGetStackHighWaterMark2( TaskHandle_t xTask ) PRIVIL
  *
  * @return A pointer to the start of the stack.
  */
-uint8_t* pxTaskGetStackStart( TaskHandle_t xTask) PRIVILEGED_FUNCTION;
+uint8_t * pxTaskGetStackStart( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 
 /* When using trace macros it is sometimes necessary to include task.h before
  * FreeRTOS.h.  When this is done TaskHookFunction_t will not yet have been defined,
@@ -1827,6 +1941,7 @@ uint8_t* pxTaskGetStackStart( TaskHandle_t xTask) PRIVILEGED_FUNCTION;
  * constant. */
 #ifdef configUSE_APPLICATION_TASK_TAG
     #if configUSE_APPLICATION_TASK_TAG == 1
+
 /**
  * @cond !DOC_EXCLUDE_HEADER_SECTION
  * task.h
@@ -1942,62 +2057,64 @@ uint8_t* pxTaskGetStackStart( TaskHandle_t xTask) PRIVILEGED_FUNCTION;
         void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet, BaseType_t xIndex, void *pvValue, TlsDeleteCallbackFunction_t pvDelCallback);
     #endif
 
-#endif
+#endif /* if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) */
 
 #if ( configCHECK_FOR_STACK_OVERFLOW > 0 )
 
-     /**
-      * @cond !DOC_EXCLUDE_HEADER_SECTION
-      * task.h
-      * @code{c}
-      * void vApplicationStackOverflowHook( TaskHandle_t xTask char *pcTaskName);
-      * @endcode
-      * @endcond
-      * The application stack overflow hook is called when a stack overflow is detected for a task.
-      *
-      * Details on stack overflow detection can be found here: https://www.FreeRTOS.org/Stacks-and-stack-overflow-checking.html
-      *
-      * @param xTask the task that just exceeded its stack boundaries.
-      * @param pcTaskName A character string containing the name of the offending task.
-      */
-     void vApplicationStackOverflowHook( TaskHandle_t xTask,
-                                               char * pcTaskName );
+/**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * task.h
+ * @code{c}
+ * void vApplicationStackOverflowHook( TaskHandle_t xTask char *pcTaskName);
+ * @endcode
+ * @endcond
+ * The application stack overflow hook is called when a stack overflow is detected for a task.
+ *
+ * Details on stack overflow detection can be found here: https://www.FreeRTOS.org/Stacks-and-stack-overflow-checking.html
+ *
+ * @param xTask the task that just exceeded its stack boundaries.
+ * @param pcTaskName A character string containing the name of the offending task.
+ */
+    void vApplicationStackOverflowHook( TaskHandle_t xTask,
+                                        char * pcTaskName );
 
 #endif
 
-#if  (  configUSE_TICK_HOOK > 0 )
-    /**
-     * @cond !DOC_EXCLUDE_HEADER_SECTION
-     *  task.h
-     * @code{c}
-     * void vApplicationTickHook( void );
-     * @endcode
-     * @endcond
-     *
-     * This hook function is called in the system tick handler after any OS work is completed.
-     */
+#if  ( configUSE_TICK_HOOK > 0 )
+
+/**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ *  task.h
+ * @code{c}
+ * void vApplicationTickHook( void );
+ * @endcode
+ * @endcond
+ *
+ * This hook function is called in the system tick handler after any OS work is completed.
+ */
     void vApplicationTickHook( void ); /*lint !e526 Symbol not defined as it is an application callback. */
 
 #endif
 
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-    /**
-     * @cond !DOC_EXCLUDE_HEADER_SECTION
-     * task.h
-     * @code{c}
-     * void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer, StackType_t ** ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
-     * @endcode
-     * @endcond
-     * This function is used to provide a statically allocated block of memory to FreeRTOS to hold the Idle Task TCB.  This function is required when
-     * configSUPPORT_STATIC_ALLOCATION is set.  For more information see this URI: https://www.FreeRTOS.org/a00110.html#configSUPPORT_STATIC_ALLOCATION
-     *
-     * @param ppxIdleTaskTCBBuffer A handle to a statically allocated TCB buffer
-     * @param ppxIdleTaskStackBuffer A handle to a statically allocated Stack buffer for thie idle task
-     * @param pulIdleTaskStackSize A pointer to the number of elements that will fit in the allocated stack buffer
-     */
+
+/**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * task.h
+ * @code{c}
+ * void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer, StackType_t ** ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+ * @endcode
+ * @endcond
+ * This function is used to provide a statically allocated block of memory to FreeRTOS to hold the Idle Task TCB.  This function is required when
+ * configSUPPORT_STATIC_ALLOCATION is set.  For more information see this URI: https://www.FreeRTOS.org/a00110.html#configSUPPORT_STATIC_ALLOCATION
+ *
+ * @param ppxIdleTaskTCBBuffer A handle to a statically allocated TCB buffer
+ * @param ppxIdleTaskStackBuffer A handle to a statically allocated Stack buffer for thie idle task
+ * @param pulIdleTaskStackSize A pointer to the number of elements that will fit in the allocated stack buffer
+ */
     void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer,
-                                               StackType_t ** ppxIdleTaskStackBuffer,
-                                               uint32_t * pulIdleTaskStackSize ); /*lint !e526 Symbol not defined as it is an application callback. */
+                                        StackType_t ** ppxIdleTaskStackBuffer,
+                                        uint32_t * pulIdleTaskStackSize );        /*lint !e526 Symbol not defined as it is an application callback. */
 #endif
 
 /**
@@ -2038,7 +2155,7 @@ TaskHandle_t xTaskGetIdleTaskHandle( void ) PRIVILEGED_FUNCTION;
  * of run time consumed by the task.  See the TaskStatus_t structure
  * definition in this file for the full member list.
  *
- * NOTE: This function is intended for debugging use only as its use results in
+ * @note This function is intended for debugging use only as its use results in
  * the scheduler remaining suspended for an extended period.
  *
  * @param pxTaskStatusArray A pointer to an array of TaskStatus_t structures.
@@ -2130,6 +2247,13 @@ UBaseType_t uxTaskGetSystemState( TaskStatus_t * const pxTaskStatusArray,
                                   uint32_t * const pulTotalRunTime ) PRIVILEGED_FUNCTION;
 
 /**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * task. h
+ * @code{c}
+ * void vTaskList( char *pcWriteBuffer );
+ * @endcode
+ * @endcond
+ *
  * List all the current tasks.
  *
  * configUSE_TRACE_FACILITY and configUSE_STATS_FORMATTING_FUNCTIONS must
@@ -2178,6 +2302,13 @@ UBaseType_t uxTaskGetSystemState( TaskStatus_t * const pxTaskStatusArray,
 void vTaskList( char * pcWriteBuffer ) PRIVILEGED_FUNCTION;     /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 
 /**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * task. h
+ * @code{c}
+ * void vTaskGetRunTimeStats( char *pcWriteBuffer );
+ * @endcode
+ * @endcond
+ *
  * Get the state of running tasks as a string
  *
  * configGENERATE_RUN_TIME_STATS and configUSE_STATS_FORMATTING_FUNCTIONS
@@ -3275,6 +3406,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp ) PRIVILEGED_FUNCTION;
  * SCHEDULER INTERNALS AVAILABLE FOR PORTING PURPOSES
  *----------------------------------------------------------*/
 /** @cond !DOC_EXCLUDE_HEADER_SECTION */
+
 /*
  * Return the handle of the task running on a certain CPU. Because of
  * the nature of SMP processing, there is no guarantee that this
@@ -3321,7 +3453,8 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
  */
 BaseType_t xTaskIncrementTick( void ) PRIVILEGED_FUNCTION;
 
-#ifdef ESP_PLATFORM
+#if ( configNUM_CORES > 1 )
+
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS ONLY
  * INTENDED FOR USE WHEN IMPLEMENTING A PORT OF THE SCHEDULER AND IS
@@ -3331,8 +3464,8 @@ BaseType_t xTaskIncrementTick( void ) PRIVILEGED_FUNCTION;
  * occurs. This function will check if the current core requires time slicing,
  * and also call the application tick hook.
  */
-BaseType_t xTaskIncrementTickOtherCores( void ) PRIVILEGED_FUNCTION;
-#endif // ESP_PLATFORM
+    BaseType_t xTaskIncrementTickOtherCores( void ) PRIVILEGED_FUNCTION;
+#endif /* configNUM_CORES > 1 */
 
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
@@ -3386,7 +3519,6 @@ void vTaskPlaceOnEventListRestricted( List_t * const pxEventList,
                                       TickType_t xTicksToWait,
                                       const BaseType_t xWaitIndefinitely ) PRIVILEGED_FUNCTION;
 
-#ifdef ESP_PLATFORM
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
  * INTERFACE WHICH IS FOR THE EXCLUSIVE USE OF THE SCHEDULER.
@@ -3403,7 +3535,6 @@ void vTaskPlaceOnEventListRestricted( List_t * const pxEventList,
  */
 void vTaskTakeKernelLock( void );
 void vTaskReleaseKernelLock( void );
-#endif //  ESP_PLATFORM
 
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
