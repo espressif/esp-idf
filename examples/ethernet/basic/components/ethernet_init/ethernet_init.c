@@ -255,12 +255,12 @@ esp_err_t example_eth_init(esp_eth_handle_t *eth_handles_out[], uint8_t *eth_cnt
     // Note that Locally Administered OUI range should be used only when testing on a LAN under your control!
     uint8_t base_mac_addr[ETH_ADDR_LEN];
     ESP_GOTO_ON_ERROR(esp_efuse_mac_get_default(base_mac_addr), err, TAG, "get EFUSE MAC failed");
-    u_int8_t local_mac_1[ETH_ADDR_LEN];
+    uint8_t local_mac_1[ETH_ADDR_LEN];
     esp_derive_local_mac(local_mac_1, base_mac_addr);
     spi_eth_module_config[0].mac_addr = local_mac_1;
 #if CONFIG_EXAMPLE_SPI_ETHERNETS_NUM > 1
     INIT_SPI_ETH_MODULE_CONFIG(spi_eth_module_config, 1);
-    u_int8_t local_mac_2[ETH_ADDR_LEN];
+    uint8_t local_mac_2[ETH_ADDR_LEN];
     base_mac_addr[ETH_ADDR_LEN - 1] += 1;
     esp_derive_local_mac(local_mac_2, base_mac_addr);
     spi_eth_module_config[1].mac_addr = local_mac_2;

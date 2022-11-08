@@ -5,6 +5,7 @@ import contextlib
 import logging
 import os
 import socket
+import time
 from multiprocessing import Pipe, Process, connection
 from typing import Iterator
 
@@ -16,28 +17,34 @@ ETH_TYPE = 0x2222
 
 
 class EthTestIntf(object):
-    def __init__(self, eth_type: int):
+    def __init__(self, eth_type: int, my_if: str = ''):
         self.target_if = ''
         self.eth_type = eth_type
+        self.find_target_if(my_if)
 
-    def find_target_if(self) -> None:
+    def find_target_if(self, my_if: str = '') -> None:
         # try to determine which interface to use
         netifs = os.listdir('/sys/class/net/')
         logging.info('detected interfaces: %s', str(netifs))
 
         for netif in netifs:
-            if netif.find('eth') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
-                self.target_if = netif
-                break
+            # if no interface defined, try to find it automatically
+            if my_if == '':
+                if netif.find('eth') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
+                    self.target_if = netif
+                    break
+            else:
+                if netif.find(my_if) == 0:
+                    self.target_if = my_if
+                    break
         if self.target_if == '':
-            raise Exception('no network interface found')
+            raise Exception('network interface not found')
         logging.info('Use %s for testing', self.target_if)
 
     @contextlib.contextmanager
     def configure_eth_if(self) -> Iterator[socket.socket]:
         so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(self.eth_type))
         so.bind((self.target_if, 0))
-
         try:
             yield so
         finally:
@@ -83,25 +90,34 @@ class EthTestIntf(object):
                 raise e
 
 
-def actual_test(dut: Dut) -> None:
-    target_if = EthTestIntf(ETH_TYPE)
-    target_if.find_target_if()
-
+def ethernet_test(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('\n')
 
     dut.expect_exact('Enter test for running.')
-    dut.write('"start_and_stop"')
+    dut.write('[ethernet]')
+    dut.expect_unity_test_output(timeout=980)
+
+
+def ethernet_int_emac_hal_test(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('\n')
+
+    dut.expect_exact('Enter test for running.')
+    dut.write('[emac_hal]')
     dut.expect_unity_test_output()
 
-    dut.expect_exact("Enter next test, or 'enter' to see menu")
-    dut.write('"get_set_mac"')
-    dut.expect_unity_test_output()
 
-    dut.expect_exact("Enter next test, or 'enter' to see menu")
+def ethernet_l2_test(dut: Dut) -> None:
+    target_if = EthTestIntf(ETH_TYPE)
+
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('\n')
+    dut.expect_exact('Enter test for running.')
+
     with target_if.configure_eth_if() as so:
         so.settimeout(30)
-        dut.write('"ethernet_broadcast_transmit"')
+        dut.write('"ethernet broadcast transmit"')
         eth_frame = Ether(so.recv(1024))
         for i in range(0, 1010):
             if eth_frame.load[i] != i & 0xff:
@@ -109,18 +125,19 @@ def actual_test(dut: Dut) -> None:
     dut.expect_unity_test_output()
 
     dut.expect_exact("Enter next test, or 'enter' to see menu")
-    dut.write('"recv_pkt"')
+    dut.write('"ethernet recv_pkt"')
     res = dut.expect(
         r'([\s\S]*)'
         r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
     )
+    time.sleep(1)
     target_if.send_eth_packet('ff:ff:ff:ff:ff:ff')  # broadcast frame
     target_if.send_eth_packet('01:00:00:00:00:00')  # multicast frame
     target_if.send_eth_packet(res.group(2))  # unicast frame
     dut.expect_unity_test_output(extra_before=res.group(1))
 
     dut.expect_exact("Enter next test, or 'enter' to see menu")
-    dut.write('"start_stop_stress_test"')
+    dut.write('"ethernet start/stop stress test under heavy traffic"')
     res = dut.expect(
         r'([\s\S]*)'
         r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
@@ -145,20 +162,42 @@ def actual_test(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
+@pytest.mark.ethernet
+@pytest.mark.parametrize('config', [
+    'default_ip101',
+    'release_ip101',
+    'single_core_ip101'
+], indirect=True)
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
+def test_esp_ethernet(dut: Dut) -> None:
+    ethernet_test(dut)
+
+
+@pytest.mark.esp32
+@pytest.mark.ethernet
+@pytest.mark.parametrize('config', [
+    'default_ip101',
+], indirect=True)
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
+def test_esp_emac_hal(dut: Dut) -> None:
+    ethernet_int_emac_hal_test(dut)
+
+
+@pytest.mark.esp32
 @pytest.mark.ip101
 @pytest.mark.parametrize('config', [
-    'ip101',
+    'default_ip101',
 ], indirect=True)
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_esp_eth_ip101(dut: Dut) -> None:
-    actual_test(dut)
+    ethernet_l2_test(dut)
 
 
 @pytest.mark.esp32
 @pytest.mark.lan8720
 @pytest.mark.parametrize('config', [
-    'lan8720',
+    'default_lan8720',
 ], indirect=True)
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_esp_eth_lan8720(dut: Dut) -> None:
-    actual_test(dut)
+    ethernet_l2_test(dut)

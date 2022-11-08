@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -28,8 +29,6 @@
 #include "test_utils.h"
 
 #include "esp_vfs_l2tap.h"
-
-#if CONFIG_ESP_NETIF_L2_TAP
 
 #define ETH_FILTER_LE 0x7A05
 #define ETH_FILTER_BE 0x057A
@@ -240,7 +239,7 @@ static void send_task(void *task_param)
  * @brief Verifies vfs register/unregister functions
  *
  */
-TEST_CASE("esp32 l2tap - vfs register", "[ethernet][test_env=UT_T2_Ethernet]")
+TEST_CASE("esp32 l2tap - vfs register", "[ethernet]")
 {
     int eth_tap_fd;
 
@@ -344,7 +343,7 @@ static void close_task(void *task_param)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("esp32 l2tap - open/close", "[ethernet][test_env=UT_T2_Ethernet]")
+TEST_CASE("esp32 l2tap - open/close", "[ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
 
@@ -415,7 +414,7 @@ TEST_CASE("esp32 l2tap - open/close", "[ethernet][test_env=UT_T2_Ethernet]")
  * @brief Verifies that read does not block when fd is opened in non-blocking mode
  *
  */
-TEST_CASE("esp32 l2tap - non blocking read", "[ethernet][test_env=UT_T2_Ethernet]")
+TEST_CASE("esp32 l2tap - non blocking read", "[ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
@@ -536,7 +535,7 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet][test_env=UT_T2_Ethernet
  * @brief Verifies that read blocks when fd opened in blocking mode
  *
  */
-TEST_CASE("esp32 l2tap - blocking read", "[ethernet][test_env=UT_T2_Ethernet]")
+TEST_CASE("esp32 l2tap - blocking read", "[ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
@@ -599,7 +598,7 @@ TEST_CASE("esp32 l2tap - blocking read", "[ethernet][test_env=UT_T2_Ethernet]")
  * @brief Verifies write
  *
  */
-TEST_CASE("esp32 l2tap - write", "[ethernet][test_env=UT_T2_Ethernet]")
+TEST_CASE("esp32 l2tap - write", "[ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
@@ -718,12 +717,12 @@ static void multi_fds_task (void *task_param)
     for (int i = 0; i < sizeof(eth_tap_fds) / sizeof(int); i++) {
         TEST_ASSERT_EQUAL(0, close(eth_tap_fds[i]));
     }
-    ESP_LOGI(TAG, "multi_fds_task %u done", task_info->task_id);
+    ESP_LOGI(TAG, "multi_fds_task %" PRIu16 "done", task_info->task_id);
     xSemaphoreGive(task_info->semaphore);
     vTaskDelete(NULL);
 }
 
-TEST_CASE("esp32 l2tap - read/write multiple fd's used by multiple tasks", "[ethernet][test_env=UT_T2_Ethernet]")
+TEST_CASE("esp32 l2tap - read/write multiple fd's used by multiple tasks", "[ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
 
@@ -752,7 +751,7 @@ TEST_CASE("esp32 l2tap - read/write multiple fd's used by multiple tasks", "[eth
  * @brief Verifies proper functionality of ioctl RCV_FILTER option
  *
  */
-TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet][test_env=UT_T2_Ethernet]")
+TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
@@ -849,7 +848,7 @@ TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet][test_env=UT_T2_Etherne
  * @brief Verifies proper functionality of ioctl INTF_DEVICE option
  *
  */
-TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE/DEVICE_DRV_HNDL", "[ethernet][test_env=UT_T2_Ethernet]")
+TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE/DEVICE_DRV_HNDL", "[ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
@@ -939,7 +938,7 @@ TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE/DEVICE_DRV_HNDL", "[ethernet][test_
  * @brief Verifies proper functionality of ioctl unknown option
  *
  */
-TEST_CASE("esp32 l2tap - ioctl - unknown", "[ethernet][test_env=UT_T2_Ethernet]")
+TEST_CASE("esp32 l2tap - ioctl - unknown", "[ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
@@ -964,7 +963,7 @@ TEST_CASE("esp32 l2tap - ioctl - unknown", "[ethernet][test_env=UT_T2_Ethernet]"
  * @brief Verifies proper functionality of fcntl
  *
  */
-TEST_CASE("esp32 l2tap - fcntl", "[ethernet][test_env=UT_T2_Ethernet]")
+TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
@@ -1064,4 +1063,8 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_unregister(NULL));
     ethernet_deinit(&eth_network_hndls);
 }
-#endif // CONFIG_ESP_NETIF_L2_TAP
+
+void app_main(void)
+{
+    unity_run_menu();
+}
