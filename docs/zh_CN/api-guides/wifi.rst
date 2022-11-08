@@ -1112,12 +1112,30 @@ Wi-Fi 原因代码
      - 描述
    * - 4WAY_HANDSHAKE_TIMEOUT
      - 15
-     - 四次握手超时。
+     - 四次握手超时。STA 在连接加密的 AP 的时候输入了错误的密码
    * - NO_AP_FOUND
      - 201
      - 密码错误会出现这个原因代码的场景有如下两个：
+
        - STA 在连接加密的 AP 的时候没有输入密码
        - STA 在连接非加密的 AP 的时候输入了密码
+   * - HANDSHAKE_TIMEOUT
+     - 204
+     - 握手超时。
+
+
+下表罗列了与低 RSSI 相关的 Wi-Fi 原因代码。
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 10 40
+
+   * - 原因代码
+     - 数值
+     - 描述
+   * - NO_AP_FOUND
+     - 201
+     - 低 RSSI 导致 station 无法扫描到目标 AP
    * - HANDSHAKE_TIMEOUT
      - 204
      - 握手超时。

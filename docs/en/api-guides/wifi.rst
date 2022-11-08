@@ -1112,12 +1112,30 @@ The table below shows the Wi-Fi reason-code may related to wrong password.
      - Description
    * - 4WAY_HANDSHAKE_TIMEOUT
      - 15
-     - Four-way handshake times out.
+     - Four-way handshake times out. Setting wrong password when STA connecting to an encrpted AP.
    * - NO_AP_FOUND
      - 201
      - This may related to wrong password in the two scenarios:
+
        - Setting password when STA connecting to an unencrypted AP.
        - Doesn't setting password when STA connecting to an encrpted AP.
+   * - HANDSHAKE_TIMEOUT
+     - 204
+     - Four-way handshake fails.
+
+
+The table below shows the Wi-Fi reason-code may related to low RSSI.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 10 40
+
+   * - Reason code
+     - Value
+     - Description
+   * - NO_AP_FOUND
+     - 201
+     - The station fails to scan the target AP due to low RSSI
    * - HANDSHAKE_TIMEOUT
      - 204
      - Four-way handshake fails.
