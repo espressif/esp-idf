@@ -23,10 +23,18 @@ static portMUX_TYPE trace_mux = portMUX_INITIALIZER_UNLOCKED;
 static bool tracing;
 static heap_trace_mode_t mode;
 
+/* Linked List of Records */
 struct records_t {
 
-    /* Buffer used for records, starting at offset 0 */
+    /* Buffer used for records. Linked list.*/
     heap_trace_record_t *buffer;
+
+    /* The first record in the Linked list.*/
+    heap_trace_record_t* first;
+
+    /* The last valid record in the Linked list, 
+       i.e. a record that has actual data when count > 0*/
+    heap_trace_record_t* last;
 
     /* capacity of the buffer */
     size_t capacity;
@@ -34,9 +42,9 @@ struct records_t {
     /* Count of entries logged in the buffer.*/
     size_t count;
 
-    /* During execution, we remember the minimum 
-       value of (capacity - count). This can help you
-       choose the right size for your buffer capacity.*/
+    /* During execution, we remember the maximuim 
+       value of count. This can help you choose
+       the right size for your buffer capacity.*/
     size_t high_water_mark;
 
     /* Has the buffer overflowed and lost trace entries? */
@@ -47,8 +55,14 @@ typedef struct records_t records_t;
 
 // Forward Defines
 static void drain_internal_cache();
-static void remove_record(records_t* r, int index);
 static void heap_trace_dump_base(bool internalRam, bool spiRam);
+static void linked_list_setup(records_t* r);
+static void linked_list_move(heap_trace_record_t* toInsert, heap_trace_record_t* after);
+static void linked_list_remove(records_t* r, heap_trace_record_t* rec);
+static void linked_list_copy(heap_trace_record_t *dest, const heap_trace_record_t* src);
+static bool linked_list_append_copy(records_t* r, const heap_trace_record_t* toAppend);
+static heap_trace_record_t* linked_list_next_available(const records_t* r);
+static heap_trace_record_t* linked_list_find_address_reverse(const records_t* r, void* p);
 
 /* The actual records. Only used as a 
    temporary cache if SPI RAM is used */
@@ -71,7 +85,6 @@ esp_err_t heap_trace_init_standalone(heap_trace_record_t* record_buffer, size_t 
 
     internal_records.buffer = record_buffer;
     internal_records.capacity = num_records;
-    memset(internal_records.buffer, 0, num_records * sizeof(heap_trace_record_t));
 
     spi_records.buffer = NULL;
     spi_records.capacity = 0;
@@ -90,11 +103,9 @@ esp_err_t heap_trace_init_standalone_with_spi_ram(
 
     internal_records.buffer = internal_record_buffer;
     internal_records.capacity = internal_num_records;
-    memset(internal_records.buffer, 0, internal_num_records * sizeof(heap_trace_record_t));
 
     spi_records.buffer = spi_record_buffer;
     spi_records.capacity = spi_num_records;
-    memset(spi_records.buffer, 0, spi_num_records * sizeof(heap_trace_record_t));
 
     return ESP_OK;
 }
@@ -116,9 +127,11 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 
     internal_records.count = 0;
     internal_records.has_overflowed = false;
+    linked_list_setup(&internal_records);
 
     spi_records.count = 0;
     spi_records.has_overflowed = false;
+    linked_list_setup(&spi_records);
 
     total_allocations = 0;
     total_frees = 0;
@@ -185,7 +198,22 @@ esp_err_t heap_trace_get(size_t index, heap_trace_record_t *record)
     if (index >= r->count) {
         result = ESP_ERR_INVALID_ARG; /* out of range for 'count' */
     } else {
-        memcpy(record, &r->buffer[index], sizeof(heap_trace_record_t));
+
+        heap_trace_record_t* rec = r->first;
+
+        for (int i = 0; i < index; i++) {
+            if (rec->next) {
+                rec = rec->next;
+            } else {
+                // this should not happen, since we already
+                // checked that index < r->count 
+                result = ESP_ERR_INVALID_STATE;
+                break;
+            }
+        }
+
+        // copy to destination
+        memcpy(record, rec, sizeof(heap_trace_record_t));
     }
 
     portEXIT_CRITICAL(&trace_mux);
@@ -233,6 +261,17 @@ static void heap_trace_dump_base(bool internalRam, bool spiRam)
         drain_internal_cache();
     }
 
+    // In order to keep the linked list valid,
+    // we must stop tracing
+    bool was_tracing = false;
+    if (tracing) {
+        printf("Heap Tracing: temporarily disabled\n");
+        was_tracing = true;
+        tracing = false;
+    }
+
+    portENTER_CRITICAL(&trace_mux);
+
     records_t* r = spi_records.capacity ? 
         &spi_records : &internal_records;
 
@@ -245,7 +284,7 @@ static void heap_trace_dump_base(bool internalRam, bool spiRam)
 
     for (int i = 0; i < r->count; i++) {
 
-        heap_trace_record_t *rec = &r->buffer[i];
+        heap_trace_record_t *rec = r->first;
 
         bool shouldPrint = rec->address != NULL &&
             ((spiRam && internalRam) ||
@@ -282,6 +321,13 @@ static void heap_trace_dump_base(bool internalRam, bool spiRam)
                 }
             }
         }
+
+        if (rec->next) {
+            rec = rec->next;
+        } else {
+            printf("\nError: heap trace dump linked list is corrupt\n");
+            break;
+        }
     }
 
     printf("====== Heap Trace Summary ======\n");
@@ -315,6 +361,13 @@ static void heap_trace_dump_base(bool internalRam, bool spiRam)
         printf("(NB: SPI Buffer has overflowed, so trace data is incomplete.)\n");
     }
     printf("================================\n");
+
+    portEXIT_CRITICAL(&trace_mux);
+
+    if (was_tracing) {
+        printf("Heap Tracing: re-enabled\n");;
+        tracing = true;
+    }
 }
 
 // Move from internal_records to spi_records
@@ -326,59 +379,44 @@ static void drain_internal_cache()
 
     portENTER_CRITICAL(&trace_mux);
 
+    heap_trace_record_t* rec = internal_records.first;
+
     // process in chronological order
     for (int i = 0; i < internal_records.count; i++) {
 
-        heap_trace_record_t* rec = &internal_records.buffer[i];
-
         if (rec->alloced_by[0]) {
 
-            if (spi_records.count < spi_records.capacity) {
-
-                // move the record into the SPI cache
-                heap_trace_record_t* spiRec = &spi_records.buffer[spi_records.count];
-                memcpy(spiRec, rec, sizeof(heap_trace_record_t));
-
-                spi_records.count++;
-
-                // high water mark
-                if (spi_records.count > spi_records.high_water_mark) {
-                    spi_records.high_water_mark = spi_records.count;
-                }
-
-            } else {
-                spi_records.has_overflowed = true;
-            }
+            // move the internal record into the SPI cache
+            linked_list_append_copy(&spi_records, rec);
     
         } else if (rec->freed_by[0]) {
 
             // search backwards for the allocation record matching this free 
-            int i = -1;
-            if (spi_records.count > 0) {
-                for (i = spi_records.count - 1; i >= 0; i--) {
-                    if (spi_records.buffer[i].address == rec->address) {
-                        break;
-                    }
-                }
-            }
+            heap_trace_record_t* found = linked_list_find_address_reverse(
+                &spi_records, rec->address);
 
-            if (i >= 0) {
+            if (found) {
 
                 if (mode == HEAP_TRACE_ALL) {
 
-                    // copy 'freed_by' info
-                    memcpy(spi_records.buffer[i].freed_by, rec->freed_by, sizeof(void *) * STACK_DEPTH);
+                    // copy 'freed_by' info into found
+                    memcpy(found->freed_by, rec->freed_by, sizeof(void *) * STACK_DEPTH);
 
                 } else { // HEAP_TRACE_LEAKS
 
-                    // Leak trace mode, once an allocation is freed we remove it from the list
-                    remove_record(&spi_records, i);
+                    // Leak trace mode, once an allocation is 
+                    // freed we remove it from the list
+                    linked_list_remove(&spi_records, found);
                 }
             }
         }
+
+        // go to next record
+        rec = rec->next;
     }
 
     internal_records.count = 0;
+    internal_records.last = internal_records.first;
 
     portEXIT_CRITICAL(&trace_mux);
 }
@@ -397,28 +435,15 @@ static IRAM_ATTR void record_allocation(const heap_trace_record_t *record)
         // record into internal buffer
         records_t* r = &internal_records;
 
+        // If buffer is full, pop off the oldest record 
+        // to make more space
         if (r->count == r->capacity) {
             r->has_overflowed = true;
-            /* Move the whole buffer back one slot.
-
-               This is a bit slow, compared to treating this buffer as a ringbuffer and rotating a head pointer.
-
-               However, ringbuffer code gets tricky when we remove elements in mid-buffer (for leak trace mode) while
-               trying to keep track of an item count that may overflow.
-            */
-            memmove(&r->buffer[0], &r->buffer[1], sizeof(heap_trace_record_t) * (r->capacity -1));
-            r->count--;
+            linked_list_remove(r, r->first);
         }
 
-        // Copy new record into place
-        memcpy(&r->buffer[r->count], record, sizeof(heap_trace_record_t));
-
-        r->count++;
-
-        // high water mark
-        if (r->count > r->high_water_mark) {
-            r->high_water_mark = r->count;
-        }
+        // push onto end of list
+        linked_list_append_copy(r, record);
 
         total_allocations++;
     }
@@ -467,37 +492,28 @@ static IRAM_ATTR void record_free(void *p, void **callers)
 
         total_frees++;
 
-        /* search backwards for the allocation record matching this free */
-        int i = -1;
-        if (r->count > 0) {
-            for (i = r->count - 1; i >= 0; i--) {
-                if (r->buffer[i].address == p) {
-                    break;
-                }
-            }
-        }
+        // search backwards for the allocation record matching this free 
+        heap_trace_record_t* found = linked_list_find_address_reverse(r,p);
 
-        if (i >= 0) {
-
+        if (found) {
             if (mode == HEAP_TRACE_ALL) {
-                memcpy(r->buffer[i].freed_by, callers, sizeof(void *) * STACK_DEPTH);
+
+                // just copy the freed_by info into found
+                memcpy(found->freed_by, callers, sizeof(void *) * STACK_DEPTH);
+
             } else { // HEAP_TRACE_LEAKS
+
                 // Leak trace mode, once an allocation is freed we remove it from the list
-                remove_record(r, i);
+                linked_list_remove(r, found);
             }
 
         } else if (spi_records.capacity > 0) {
-            if (r->count < r->capacity) {
-                // temporarily keep the 'free' in the internal cache.
-                // We'll search through the SPI records later.
-                heap_trace_record_t* rec = &r->buffer[r->count];
-                memset(rec, 0, sizeof(heap_trace_record_t));
-                memcpy(rec->freed_by, callers, sizeof(void *) * STACK_DEPTH);
-                rec->address = p;
-                r->count++;
-            } else {
-                r->has_overflowed = true;
-            }
+
+            // Temporily store the 'freed_by' info in the internal cache.
+            // We'll search the SPI records later.
+            heap_trace_record_t freed = {.address = p};
+            memcpy(freed.freed_by, callers, sizeof(void *) * STACK_DEPTH);
+            linked_list_append_copy(r, &freed);
         }
     }
 
@@ -525,18 +541,162 @@ static IRAM_ATTR void record_free(void *p, void **callers)
     }
 }
 
-/* remove the entry at 'index' from the ringbuffer of saved records */
-static IRAM_ATTR void remove_record(records_t* r, int index)
+// connect all records into a linked list
+static void linked_list_setup(records_t* r)
 {
-    if (index < r->count - 1) {
-        // Remove the buffer entry from the list
-        memmove(&r->buffer[index], &r->buffer[index+1],
-                sizeof(heap_trace_record_t) * (r->capacity - index - 1));
-    } else {
-        // For last element, just zero it out to avoid ambiguity
-        memset(&r->buffer[index], 0, sizeof(heap_trace_record_t));
+    r->first = &r->buffer[0];
+    r->last = &r->buffer[0];
+
+    for (int i = 0; i < r->capacity; i++) {
+
+        heap_trace_record_t* rec = &r->buffer[i];
+
+        memset(rec, 0, sizeof(heap_trace_record_t));
+
+        if (i != r->capacity - 1) {
+            rec->next = rec + 1;
+        }
+
+        if (i != 0) {
+            rec->prev = rec - 1;
+        }
     }
-    r->count--;
+}
+
+
+/* remove the record from the linked list */
+static IRAM_ATTR void linked_list_remove(records_t* r, heap_trace_record_t* rec)
+{
+    // set as available
+    rec->address = 0;
+    rec->size = 0;
+
+    if (r->count > 1) {
+
+        heap_trace_record_t* prev = rec->prev;
+        heap_trace_record_t* next = rec->next;
+
+        if (prev){
+            assert(prev->next == rec);
+        }
+
+        if (next){
+            assert(next->prev == rec);
+        }
+        
+        // update prev neighbor
+        if (prev) {
+            prev->next = next;
+        }
+
+        // update next neighbor
+        if (next) {
+            next->prev = prev;
+        }
+
+        // update first
+        if (rec == r->first) {
+            r->first = next;
+        }
+
+        // update last
+        if (rec == r->last) {
+            r->last = prev;
+        }
+
+        // move after last
+        linked_list_move(rec, r->last);
+
+        r->count--;
+
+        if (r->count == 1){
+            assert(r->last == r->first);
+        }
+
+    } else if (r->count == 1) {
+        r->count--;
+    }
+}
+
+// insert a record after the given record
+static IRAM_ATTR void linked_list_move(heap_trace_record_t* toInsert, heap_trace_record_t* after)
+{
+    after->next->prev = toInsert;
+    toInsert->prev = after;
+    toInsert->next = after->next;
+    after->next = toInsert;
+}
+
+static IRAM_ATTR heap_trace_record_t* linked_list_next_available(const records_t* r)
+{
+    if (r->count == r->capacity){
+        return NULL;
+    }
+    if (r->count == 0){
+        assert(r->last == r->first);
+        return r->last;
+    } else {
+        return r->last->next;
+    }
+}
+
+// only copies the *allocation data*, not the next & prev ptrs
+static IRAM_ATTR void linked_list_copy(heap_trace_record_t *dest, const heap_trace_record_t *src)
+{
+    dest->ccount = src->ccount;
+    dest->address = src->address;
+    dest->size = src->size;
+    memcpy(dest->freed_by, src->freed_by, sizeof(void *) * STACK_DEPTH);
+    memcpy(dest->alloced_by, src->alloced_by, sizeof(void *) * STACK_DEPTH);
+}
+
+// Append a record to the end of the linked list.
+// This implicitly creates a copy.
+static IRAM_ATTR bool linked_list_append_copy(records_t* r, const heap_trace_record_t *toAppend)
+{
+    if (r->count < r->capacity) {
+
+        // copy record into the next available slot
+        heap_trace_record_t* nextA = linked_list_next_available(r);
+        linked_list_copy(nextA, toAppend);
+
+        r->last = nextA;
+        r->count++;
+
+        // high water mark
+        if (r->count > r->high_water_mark) {
+            r->high_water_mark = r->count;
+        }
+
+        return true;
+
+    } else {
+        r->has_overflowed = true;
+        return false;
+    }
+}
+
+// search backwards for the allocation record matching this address 
+static IRAM_ATTR heap_trace_record_t* linked_list_find_address_reverse(const records_t* r, void* p)
+{
+    if (r->count == 0) {
+        return NULL;
+    }
+
+    heap_trace_record_t* found = NULL;
+
+    heap_trace_record_t* cur = r->last;
+    for (size_t i = 0; i < r->count; i++) {
+
+        if (cur->address == p) {
+            found = cur;
+            break;
+        }
+
+        cur = cur->prev;
+    }
+
+    return found;
 }
 
 #include "heap_trace.inc"

@@ -31,10 +31,12 @@ typedef enum {
  */
 typedef struct {
     uint32_t ccount; ///< CCOUNT of the CPU when the allocation was made. LSB (bit value 1) is the CPU number (0 or 1).
-    void *address;   ///< Address which was allocated
+    void *address;   ///< Address which was allocated. If NULL, then this record is empty.
     size_t size;     ///< Size of the allocation
     void *alloced_by[CONFIG_HEAP_TRACING_STACK_DEPTH]; ///< Call stack of the caller which allocated the memory.
     void *freed_by[CONFIG_HEAP_TRACING_STACK_DEPTH];   ///< Call stack of the caller which freed the memory (all zero if not freed.)
+    struct heap_trace_record_t* next; ///< The next record (linked list)
+    struct heap_trace_record_t* prev; ///< The previous record (linked list)
 } heap_trace_record_t;
 
 /**
