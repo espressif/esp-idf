@@ -112,7 +112,7 @@ _Static_assert(I2C_NUM_1 == 1, "I2C_NUM_1 must be equal to 1");
 _Static_assert(I2C_NUM_MAX == SOC_I2C_NUM, "I2C_NUM_MAX must be equal to SOC_I2C_NUM");
 
 typedef struct {
-    i2c_hw_cmd_t hw_cmd;
+    i2c_ll_hw_cmd_t hw_cmd;
     union {
         uint8_t* data;      // When total_bytes > 1
         uint8_t data_byte;  //when total_byte == 1
@@ -373,6 +373,7 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         return ESP_FAIL;
     }
     i2c_hw_enable(i2c_num);
+    i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
     //Disable I2C interrupt.
     i2c_ll_disable_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
     i2c_ll_clear_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
@@ -487,6 +488,7 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     }
 #endif
 
+    i2c_hal_deinit(&i2c_context[i2c_num].hal);
     free(p_i2c_obj[i2c_num]);
     p_i2c_obj[i2c_num] = NULL;
 
@@ -1382,14 +1384,14 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num, portBASE_T
         p_i2c->status = I2C_STATUS_IDLE;
         return;
     }
-    const i2c_hw_cmd_t hw_end_cmd = {
+    const i2c_ll_hw_cmd_t hw_end_cmd = {
         .op_code = I2C_LL_CMD_END
     };
     while (p_i2c->cmd_link.head) {
         i2c_cmd_t *cmd = &p_i2c->cmd_link.head->cmd;
         const size_t remaining_bytes = cmd->total_bytes - cmd->bytes_used;
 
-        i2c_hw_cmd_t hw_cmd = cmd->hw_cmd;
+        i2c_ll_hw_cmd_t hw_cmd = cmd->hw_cmd;
         uint8_t fifo_fill = 0;
 
         if (cmd->hw_cmd.op_code == I2C_LL_CMD_WRITE) {

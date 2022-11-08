@@ -24,23 +24,13 @@ examples/peripherals/i2c/i2c_self_test:
   disable:
     - if: SOC_I2C_SUPPORT_SLAVE != 1
       reason: the test requires both master and slave
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
 
 examples/peripherals/i2c/i2c_simple:
   disable:
     - if: SOC_I2C_SUPPORT_SLAVE != 1
       reason: the test requires both master and slave
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
 
 examples/peripherals/i2c/i2c_tools:
-  disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true

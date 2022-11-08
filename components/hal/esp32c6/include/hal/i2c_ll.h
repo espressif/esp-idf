@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,10 +13,9 @@
 #include "soc/i2c_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/i2c_struct.h"
+#include "soc/pcr_struct.h"
 #include "hal/i2c_types.h"
-#include "soc/rtc_cntl_reg.h"
 #include "soc/clk_tree_defs.h"
-#include "esp_attr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -123,7 +122,11 @@ static inline void i2c_ll_update(i2c_dev_t *hw)
  */
 static inline void i2c_ll_set_bus_timing(i2c_dev_t *hw, i2c_hal_clk_config_t *bus_cfg)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, bus_cfg->clkm_div - 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2c_sclk_conf, i2c_sclk_div_num, bus_cfg->clkm_div - 1);
+
+    /* Set div_a and div_b to 0, as it's not necessary to use them */
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2c_sclk_conf, i2c_sclk_div_a, 0);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2c_sclk_conf, i2c_sclk_div_b, 0);
     /* According to the Technical Reference Manual, the following timings must be subtracted by 1.
      * However, according to the practical measurement and some hardware behaviour, if wait_high_period and scl_high minus one.
      * The SCL frequency would be a little higher than expected. Therefore, the solution
@@ -265,6 +268,21 @@ static inline void i2c_ll_set_fifo_mode(i2c_dev_t *hw, bool fifo_mode_en)
 static inline void i2c_ll_set_tout(i2c_dev_t *hw, int tout)
 {
     hw->to.time_out_value = tout;
+}
+
+/**
+ * @brief  Configure I2C slave address
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  slave_addr I2C slave address needs to be set
+ * @param  addr_10bit_en Set true to enable 10-bit slave address mode, set false to enable 7-bit address mode
+ *
+ * @return None
+ */
+static inline void i2c_ll_set_slave_addr(i2c_dev_t *hw, uint16_t slave_addr, bool addr_10bit_en)
+{
+    hw->slave_addr.slave_addr = slave_addr;
+    hw->slave_addr.addr_10bit_en = addr_10bit_en;
 }
 
 /**
@@ -640,8 +658,9 @@ static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw)
  */
 static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_clk)
 {
+    (void)hw;
     // src_clk : (1) for RTC_CLK, (0) for XTAL
-    hw->clk_conf.sclk_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1 : 0;
+    PCR.i2c_sclk_conf.i2c_sclk_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1 : 0;
 }
 
 /**
@@ -652,7 +671,8 @@ static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_c
  */
 static inline void i2c_ll_enable_controller_clock(i2c_dev_t *hw, bool en)
 {
-    hw->clk_conf.sclk_active = en;
+    (void)hw;
+    PCR.i2c_sclk_conf.i2c_sclk_en = en;
 }
 
 /**
@@ -667,10 +687,37 @@ static inline void i2c_ll_master_init(i2c_dev_t *hw)
     typeof(hw->ctr) ctrl_reg;
     ctrl_reg.val = 0;
     ctrl_reg.ms_mode = 1;
-    ctrl_reg.clk_en = 1;
     ctrl_reg.sda_force_out = 1;
     ctrl_reg.scl_force_out = 1;
     hw->ctr.val = ctrl_reg.val;
+}
+
+/**
+ * @brief  Init I2C slave
+ *
+ * @param  hw Beginning address of the peripheral registers
+ *
+ * @return None
+ */
+static inline void i2c_ll_slave_init(i2c_dev_t *hw)
+{
+    typeof(hw->ctr) ctrl_reg;
+    ctrl_reg.val = 0;
+    ctrl_reg.sda_force_out = 1;
+    ctrl_reg.scl_force_out = 1;
+    hw->ctr.val = ctrl_reg.val;
+    hw->fifo_conf.fifo_addr_cfg_en = 0;
+}
+
+/**
+ * @brief Set whether slave should auto start, or only start with start signal from master
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param slv_ex_auto_en 1 if slave auto start data transaction, otherwise, 0.
+ */
+static inline void i2c_ll_slave_tx_auto_start_en(i2c_dev_t *hw, bool slv_ex_auto_en)
+{
+    hw->ctr.slv_tx_auto_start_en = slv_ex_auto_en;
 }
 
 /**
@@ -690,6 +737,10 @@ static inline volatile void *i2c_ll_get_interrupt_status_reg(i2c_dev_t *dev)
 #define I2C_LL_MASTER_TX_INT          (I2C_NACK_INT_ENA_M|I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
 // I2C master RX interrupt bitmap
 #define I2C_LL_MASTER_RX_INT          (I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
+// I2C slave TX interrupt bitmap
+#define I2C_LL_SLAVE_TX_INT           (I2C_TXFIFO_WM_INT_ENA_M)
+// I2C slave RX interrupt bitmap
+#define I2C_LL_SLAVE_RX_INT           (I2C_RXFIFO_WM_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M)
 // I2C max timeout value
 #define I2C_LL_MAX_TIMEOUT I2C_TIME_OUT_VALUE
 
@@ -770,6 +821,29 @@ static inline void i2c_ll_master_get_event(i2c_dev_t *hw, i2c_intr_event_t *even
 }
 
 /**
+ * @brief  Get I2C slave interrupt event
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  event Pointer to accept the interrupt event
+ *
+ * @return None
+ */
+__attribute__((always_inline))
+static inline void i2c_ll_slave_get_event(i2c_dev_t *hw, i2c_intr_event_t *event)
+{
+    typeof(hw->int_status) int_sts = hw->int_status;
+    if (int_sts.txfifo_wm_int_st) {
+        *event = I2C_INTR_EVENT_TXFIFO_EMPTY;
+    } else if (int_sts.trans_complete_int_st) {
+        *event = I2C_INTR_EVENT_TRANS_DONE;
+    } else if (int_sts.rxfifo_wm_int_st) {
+        *event = I2C_INTR_EVENT_RXFIFO_FULL;
+    } else {
+        *event = I2C_INTR_EVENT_ERR;
+    }
+}
+
+/**
  * @brief  Enable I2C master TX interrupt
  *
  * @param  hw Beginning address of the peripheral registers
@@ -818,6 +892,55 @@ __attribute__((always_inline))
 static inline void i2c_ll_master_disable_rx_it(i2c_dev_t *hw)
 {
     hw->int_ena.val &= (~I2C_LL_MASTER_RX_INT);
+}
+
+/**
+ * @brief
+ *
+ * @param  hw Beginning address of the peripheral registers
+ *
+ * @return None
+ */
+static inline void i2c_ll_slave_enable_tx_it(i2c_dev_t *hw)
+{
+    hw->int_ena.val |= I2C_LL_SLAVE_TX_INT;
+}
+
+/**
+ * @brief Enable I2C slave RX interrupt
+ *
+ * @param  hw Beginning address of the peripheral registers
+ *
+ * @return None
+ */
+static inline void i2c_ll_slave_enable_rx_it(i2c_dev_t *hw)
+{
+    hw->int_ena.val |= I2C_LL_SLAVE_RX_INT;
+}
+
+/**
+ * @brief Disable I2C slave TX interrupt
+ *
+ * @param  hw Beginning address of the peripheral registers
+ *
+ * @return None
+ */
+__attribute__((always_inline))
+static inline void i2c_ll_slave_disable_tx_it(i2c_dev_t *hw)
+{
+    hw->int_ena.val &= (~I2C_LL_SLAVE_TX_INT);
+}
+
+/**
+ * @brief  Disable I2C slave RX interrupt
+ *
+ * @param  hw Beginning address of the peripheral registers
+ *
+ * @return None
+ */
+static inline void i2c_ll_slave_disable_rx_it(i2c_dev_t *hw)
+{
+    hw->int_ena.val &= (~I2C_LL_SLAVE_RX_INT);
 }
 
 #ifdef __cplusplus

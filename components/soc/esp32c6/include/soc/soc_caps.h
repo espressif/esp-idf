@@ -45,7 +45,7 @@
 #define SOC_RMT_SUPPORTED               1
 #define SOC_SDM_SUPPORTED               1
 // #define SOC_LEDC_SUPPORTED              1 // TODO: IDF-5328
-// #define SOC_I2C_SUPPORTED               1 // TODO: IDF-5326
+#define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_SUPPORT_COEXISTENCE         1
 // #define SOC_AES_SUPPORTED               1 // TODO: IDF-5356
@@ -173,7 +173,6 @@
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
 #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
-// TODO: IDF-5326 (Copy from esp32c3, need check)
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-C6 has 1 I2C
 #define SOC_I2C_NUM                 (1U)
