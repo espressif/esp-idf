@@ -137,14 +137,6 @@ int bt_mesh_server_get_optional(struct bt_mesh_model *model,
         return -EINVAL;
     }
 
-    /* Currently we only get optional msg info which dst is set to a unicast address */
-    if (!BLE_MESH_ADDR_IS_UNICAST(ctx->recv_dst)) {
-        *trans_time = 0U;
-        *delay = 0U;
-        *optional = false;
-        return 0;
-    }
-
     /* No optional fields are available */
     if (buf->len == 0x00) {
         if (model->id == BLE_MESH_MODEL_ID_LIGHT_LC_SRV) {
