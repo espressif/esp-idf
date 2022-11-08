@@ -354,12 +354,15 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
         data_buf = calloc(1, data_len);
         if (data_buf == NULL) {
             ESP_LOGE(TAG, "Error allocating memory for characteristic value");
+            free(uuid);
             return BLE_ATT_ERR_INSUFFICIENT_RES;
         }
 
         rc = ble_hs_mbuf_to_flat(ctxt->om, data_buf, data_len, &data_buf_len);
         if (rc != 0) {
             ESP_LOGE(TAG, "Error getting data from memory buffers");
+            free(uuid);
+            free(data_buf);
             return BLE_ATT_ERR_UNLIKELY;
         }
 
@@ -786,8 +789,12 @@ static void protocomm_ble_cleanup(void)
 
 static void free_gatt_ble_misc_memory(simple_ble_cfg_t *ble_config)
 {
+    if (ble_config == NULL) {
+        return;
+    }
+
     /* Free up gatt_db memory if exists */
-    if (ble_config->gatt_db->characteristics) {
+    if (ble_config->gatt_db && ble_config->gatt_db->characteristics) {
         for (int i = 0; i < num_chr_dsc; i++) {
             if ((ble_config->gatt_db->characteristics + i)->descriptors) {
                 free((void *)(ble_config->gatt_db->characteristics + i)->descriptors->uuid);
@@ -803,9 +810,7 @@ static void free_gatt_ble_misc_memory(simple_ble_cfg_t *ble_config)
         free(ble_config->gatt_db);
     }
 
-    if (ble_config) {
-        free(ble_config);
-    }
+    free(ble_config);
     ble_config = NULL;
 
     /* Free the uuid_name_table struct list if exists */
@@ -831,12 +836,6 @@ static void free_gatt_ble_misc_memory(simple_ble_cfg_t *ble_config)
 
 esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *config)
 {
-    /* copy the 128 bit service UUID into local buffer to use as base 128 bit
-     * UUID. */
-    if (config->service_uuid != NULL) {
-        memcpy(ble_uuid_base, config->service_uuid, BLE_UUID128_VAL_LENGTH);
-    }
-
     if (!pc || !config || !config->device_name || !config->nu_lookup) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -845,6 +844,10 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
         ESP_LOGE(TAG, "Protocomm BLE already started");
         return ESP_FAIL;
     }
+
+    /* copy the 128 bit service UUID into local buffer to use as base 128 bit
+     * UUID. */
+    memcpy(ble_uuid_base, config->service_uuid, BLE_UUID128_VAL_LENGTH);
 
     /* Store 128 bit service UUID internally. */
     ble_uuid128_t *svc_uuid128 = (ble_uuid128_t *)
