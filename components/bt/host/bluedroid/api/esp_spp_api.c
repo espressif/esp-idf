@@ -192,19 +192,14 @@ esp_err_t esp_spp_stop_srv_scn(uint8_t scn)
 
 esp_err_t esp_spp_write(uint32_t handle, int len, uint8_t *p_data)
 {
-    btc_msg_t msg;
-    btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_SPP;
-    msg.act = BTC_SPP_ACT_WRITE;
+    if (len <= 0 || p_data == NULL) {
+        LOG_ERROR("Invalid data or len!\n");
+        return ESP_ERR_INVALID_ARG;
+    }
 
-    arg.write.handle = handle;
-    arg.write.len = len;
-    arg.write.p_data = p_data;
-
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), btc_spp_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return spp_send_data_to_btc(handle, len, p_data, ESP_SPP_MODE_CB);
 }
 
 esp_err_t esp_spp_vfs_register(void)
