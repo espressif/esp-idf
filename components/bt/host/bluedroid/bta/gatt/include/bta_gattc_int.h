@@ -270,7 +270,6 @@ typedef struct {
 } tBTA_GATTC_ATTR_REC;
 
 
-#define BTA_GATTC_MAX_CACHE_CHAR    40
 #define BTA_GATTC_ATTR_LIST_SIZE    (BTA_GATTC_MAX_CACHE_CHAR * sizeof(tBTA_GATTC_ATTR_REC))
 
 #ifndef BTA_GATTC_CACHE_SRVR_SIZE
@@ -305,10 +304,10 @@ typedef struct {
 
     tBTA_GATTC_ATTR_REC *p_srvc_list;
     UINT8               cur_srvc_idx;
-    UINT8               cur_char_idx;
-    UINT8               next_avail_idx;
+    UINT16               cur_char_idx;
+    UINT16               next_avail_idx;
     UINT8               total_srvc;
-    UINT8               total_char;
+    UINT16               total_char;
     UINT16              total_attr;
     UINT8               srvc_hdl_chg;   /* service handle change indication pending */
     UINT16              attr_index;     /* cahce NV saving/loading attribute index */

@@ -26,7 +26,7 @@ extern "C" {
 /// GATT INVALID HANDLE
 #define ESP_GATT_ILLEGAL_HANDLE             0
 /// GATT attribute max handle
-#define ESP_GATT_ATTR_HANDLE_MAX            100
+#define ESP_GATT_ATTR_HANDLE_MAX            UC_CONFIG_BT_GATT_MAX_SR_ATTRIBUTES
 #define ESP_GATT_MAX_READ_MULTI_HANDLES     10           /* Max attributes to read in one request */
 
 
