@@ -819,6 +819,8 @@ void   wpa_supplicant_key_neg_complete(struct wpa_sm *sm,
     wpa_sm_set_state(WPA_COMPLETED);
 
     wpa_neg_complete();
+    sm->eapol1_count = 0;
+    sm->use_ext_key_id = 0;
 
     if (secure) {
         wpa_sm_mlme_setprotection(
@@ -1303,7 +1305,7 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
         goto failed;
     }
 
-    if (sm->key_install && sm->key_info & WPA_KEY_INFO_INSTALL) {
+    if (sm->key_install && sm->key_info & WPA_KEY_INFO_INSTALL && sm->use_ext_key_id) {
         wpa_supplicant_install_ptk(sm, KEY_FLAG_RX);
     }
     /*after txover, callback will continue run remain task*/
@@ -1352,8 +1354,13 @@ static int wpa_supplicant_send_4_of_4_txcallback(struct wpa_sm *sm)
        u16 key_info=sm->key_info;
 
     if (sm->key_install && key_info & WPA_KEY_INFO_INSTALL) {
-        if (wpa_supplicant_activate_ptk(sm))
-            goto failed;
+        if (sm->use_ext_key_id) {
+            if (wpa_supplicant_activate_ptk(sm))
+                goto failed;
+        } else {
+            if (wpa_supplicant_install_ptk(sm, KEY_FLAG_TX | KEY_FLAG_RX))
+                goto failed;
+        }
     }
     else if (sm->key_install == false) {
         wpa_printf(MSG_DEBUG, "PTK has been installed, it may be an attack, ignor it.");
@@ -2303,6 +2310,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     memcpy(sm->own_addr, macddr, ETH_ALEN);
     memcpy(sm->bssid, bssid, ETH_ALEN);
     sm->ap_notify_completed_rsne = esp_wifi_sta_is_ap_notify_completed_rsne_internal();
+    sm->use_ext_key_id = (sm->proto == WPA_PROTO_WPA);
 
     if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
         sm->key_mgmt == WPA_KEY_MGMT_OWE ||

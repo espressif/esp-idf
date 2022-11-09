@@ -75,7 +75,7 @@ struct wpa_sm {
     struct install_key install_ptk;
     struct install_key install_gtk;
     int mic_errors_seen; /* Michael MIC errors with the current PTK */
-
+    int use_ext_key_id; /* Enabled only for WPA PSK first key exchange */
     struct wpa_gtk_data gd; //used for calllback save param
     u16 key_info;       //used for txcallback param
     u16 txcb_flags;
