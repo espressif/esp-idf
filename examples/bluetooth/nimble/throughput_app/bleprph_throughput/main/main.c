@@ -194,7 +194,7 @@ notify_task(void *arg)
                         assert(om != NULL);
                     }
 
-                    rc = ble_gattc_notify_custom(conn_handle, notify_handle, om);
+                    rc = ble_gatts_notify_custom(conn_handle, notify_handle, om);
                     if (rc != 0) {
                         ESP_LOGE(tag, "Error while sending notification; rc = %d", rc);
                         notify_count -= 1;
