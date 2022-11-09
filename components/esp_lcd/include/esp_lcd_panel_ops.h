@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,7 +111,20 @@ esp_err_t esp_lcd_panel_set_gap(esp_lcd_panel_handle_t panel, int x_gap, int y_g
 esp_err_t esp_lcd_panel_invert_color(esp_lcd_panel_handle_t panel, bool invert_color_data);
 
 /**
+ * @brief Turn on or off the display
+ *
+ * @param[in] panel LCD panel handle, which is created by other factory API like `esp_lcd_new_panel_st7789()`
+ * @param[in] on_off True to turns on display, False to turns off display
+ * @return
+ *          - ESP_OK on success
+ *          - ESP_ERR_NOT_SUPPORTED if this function is not supported by the panel
+ */
+esp_err_t esp_lcd_panel_disp_on_off(esp_lcd_panel_handle_t panel, bool on_off);
+
+/**
  * @brief Turn off the display
+ *
+ * @deprecated This function has similar functionality to `esp_lcd_panel_disp_on_off`.
  *
  * @param[in] panel LCD panel handle, which is created by other factory API like `esp_lcd_new_panel_st7789()`
  * @param[in] off Whether to turn off the screen
