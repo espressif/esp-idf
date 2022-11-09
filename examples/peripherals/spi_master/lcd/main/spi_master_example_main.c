@@ -39,13 +39,13 @@
 #define PIN_NUM_DC   21
 #define PIN_NUM_RST  18
 #define PIN_NUM_BCKL 5
-#elif defined CONFIG_IDF_TARGET_ESP32S2
+#elif defined CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define LCD_HOST    SPI2_HOST
 
 #define PIN_NUM_MISO 37
 #define PIN_NUM_MOSI 35
 #define PIN_NUM_CLK  36
-#define PIN_NUM_CS   34
+#define PIN_NUM_CS   45
 
 #define PIN_NUM_DC   4
 #define PIN_NUM_RST  5
@@ -248,9 +248,11 @@ void lcd_init(spi_device_handle_t spi)
     const lcd_init_cmd_t* lcd_init_cmds;
 
     //Initialize non-SPI GPIOs
-    gpio_set_direction(PIN_NUM_DC, GPIO_MODE_OUTPUT);
-    gpio_set_direction(PIN_NUM_RST, GPIO_MODE_OUTPUT);
-    gpio_set_direction(PIN_NUM_BCKL, GPIO_MODE_OUTPUT);
+    gpio_config_t io_conf = {};
+    io_conf.pin_bit_mask = ((1ULL<<PIN_NUM_DC) | (1ULL<<PIN_NUM_RST) | (1ULL<<PIN_NUM_BCKL));
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pull_up_en = true;
+    gpio_config(&io_conf);
 
     //Reset the display
     gpio_set_level(PIN_NUM_RST, 0);
