@@ -48,7 +48,7 @@ import tempfile
 import time
 from collections import OrderedDict, namedtuple
 from json import JSONEncoder
-from ssl import SSLContext  # noqa: F401
+from ssl import Purpose, SSLContext  # noqa: F401
 from tarfile import TarFile  # noqa: F401
 from zipfile import ZipFile
 
@@ -431,13 +431,8 @@ def download(url, destination):  # type: (str, str) -> Optional[Exception]
         # For dl.espressif.com and github.com, add the DigiCert root certificate.
         # This works around the issue with outdated certificate stores in some installations.
         if 'dl.espressif.com' in url or 'github.com' in url:
-            try:
-                ctx = ssl.create_default_context()
-                ctx.load_verify_locations(cadata=DIGICERT_ROOT_CERT)
-            except AttributeError:
-                # no ssl.create_default_context or load_verify_locations cadata argument
-                # in Python <=2.7.8
-                pass
+            ctx = ssl.create_default_context(purpose=Purpose.SERVER_AUTH, cadata=DIGICERT_ROOT_CERT)
+            ssl.load_default_certs()
 
         urlretrieve_ctx(url, destination, report_progress if not global_non_interactive else None, context=ctx)
         sys.stdout.write('\rDone\n')
