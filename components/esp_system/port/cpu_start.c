@@ -51,10 +51,10 @@
 #include "esp32c6/rtc.h"
 #include "esp32c6/rom/cache.h"
 #include "esp_memprot.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rtc.h"
-#include "esp32h2/rom/cache.h"
-#include "esp32h2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rtc.h"
+#include "esp32h4/rom/cache.h"
+#include "esp32h4/rom/secure_boot.h"
 #include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rtc.h"
@@ -349,7 +349,7 @@ void IRAM_ATTR call_start_cpu0(void)
         esp_restart();
     }
 
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
     /* Configure the Cache MMU size for instruction and rodata in flash. */
     extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
     extern int _rodata_reserved_start;
@@ -362,7 +362,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
-#endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
+#endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
 
 #if CONFIG_ESPTOOLPY_OCT_FLASH && !CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
     bool efuse_opflash_en = efuse_ll_get_flash_type();

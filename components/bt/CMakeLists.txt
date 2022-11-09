@@ -17,9 +17,9 @@ if(CONFIG_BT_ENABLED)
         list(APPEND srcs "controller/esp32s3/bt.c")
         list(APPEND include_dirs include/esp32s3/include)
 
-    elseif(CONFIG_IDF_TARGET_ESP32H2)
-        list(APPEND srcs "controller/esp32h2/bt.c")
-        list(APPEND include_dirs include/esp32h2/include)
+    elseif(CONFIG_IDF_TARGET_ESP32H4)
+        list(APPEND srcs "controller/esp32h4/bt.c")
+        list(APPEND include_dirs include/esp32h4/include)
 
     elseif(CONFIG_IDF_TARGET_ESP32C2)
         list(APPEND srcs "controller/esp32c2/bt.c")
@@ -699,10 +699,12 @@ if(CONFIG_BT_ENABLED)
         target_link_directories(${COMPONENT_LIB} INTERFACE
                 "${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c3_family/esp32s3")
         target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
-    elseif(CONFIG_IDF_TARGET_ESP32H2)
-        if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+    elseif(CONFIG_IDF_TARGET_ESP32H4)
+        if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
+            # TODO: rename esp32h2 to esp32h4 [BT-2875]
             add_prebuilt_library(nimblelib "controller/lib_esp32h2/esp32h2-bt-lib/beta1/libble_app.a")
-        elseif(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+        elseif(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
+            # TODO: rename esp32h2 to esp32h4 [BT-2875]
             add_prebuilt_library(nimblelib "controller/lib_esp32h2/esp32h2-bt-lib/beta2/libble_app.a")
         endif()
         target_link_libraries(${COMPONENT_LIB} PRIVATE nimblelib)

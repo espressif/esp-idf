@@ -242,7 +242,7 @@ typedef enum {
     GPIO_NUM_MAX,
 /** @endcond */
 } gpio_num_t;
-#elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
+#elif CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1
 typedef enum {
     GPIO_NUM_NC = -1,    /*!< Use to signal not connected to S/W */
     GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */
@@ -289,7 +289,7 @@ typedef enum {
     GPIO_NUM_MAX,
 /** @endcond */
 } gpio_num_t;
-#elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
+#elif CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2
 typedef enum {
     GPIO_NUM_NC = -1,    /*!< Use to signal not connected to S/W */
     GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */

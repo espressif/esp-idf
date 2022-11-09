@@ -120,7 +120,7 @@ For those users who use their custom ADC calibration schemes, you could either m
         ESP_ERROR_CHECK(adc_cali_delete_scheme_curve_fitting(handle));
 
 
-.. only:: esp32h2
+.. only:: esp32h4
 
     There is no supported calibration scheme yet.
 

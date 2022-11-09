@@ -192,15 +192,17 @@ if(CONFIG_OPENTHREAD_ENABLED)
         endif()
 
     else()
-        if(IDF_TARGET STREQUAL "esp32h2")
-            if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+        if(IDF_TARGET STREQUAL "esp32h4")
+        if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
+                # TODO: rename esp32h2 to esp32h4 [IDF-6097]
                 add_prebuilt_library(openthread_port
-                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev1/libopenthread_port.a"
+                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h2/rev1/libopenthread_port.a"
                     REQUIRES openthread)
             endif()
-            if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+            if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
+                # TODO: rename esp32h2 to esp32h4 [IDF-6097]
                 add_prebuilt_library(openthread_port
-                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev2/libopenthread_port.a"
+                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h2/rev2/libopenthread_port.a"
                     REQUIRES openthread)
             endif()
         else()

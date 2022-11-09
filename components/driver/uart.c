@@ -210,7 +210,7 @@ esp_err_t uart_get_sclk_freq(uart_sclk_t sclk, uint32_t* out_freq_hz)
 #endif
 #if SOC_UART_SUPPORT_AHB_CLK
     case UART_SCLK_AHB:
-        freq = APB_CLK_FREQ;    //This only exist on H2. Fix this when H2 MP is supported.
+        freq = APB_CLK_FREQ;    //This only exist on H4. Fix this when H2 MP is supported.
         break;
 #endif
 #if SOC_UART_SUPPORT_PLL_F40M_CLK

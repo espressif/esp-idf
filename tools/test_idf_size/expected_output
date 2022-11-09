@@ -3728,7 +3728,7 @@ Used Flash size :  186524 bytes                                       93019     
 Total image size:  234780 bytes (.bin may be padded larger)          134103        +100677
 
 ***
-Running idf_size.py for esp32h2...
+Running idf_size.py for esp32h4...
 Total sizes:
 Used stat D/IRAM:   45656 bytes ( 282024 remain, 13.9% used)
       .data size:    4864 bytes
@@ -3740,7 +3740,7 @@ Used Flash size :  110492 bytes
 Total image size:  152484 bytes (.bin may be padded larger)
 
 ***
-Running idf_size.py for esp32h2 (target autodetected)...
+Running idf_size.py for esp32h4 (target autodetected)...
 Total sizes:
 Used stat D/IRAM:   45656 bytes ( 282024 remain, 13.9% used)
       .data size:    4864 bytes
@@ -3752,7 +3752,7 @@ Used Flash size :  110492 bytes
 Total image size:  152484 bytes (.bin may be padded larger)
 
 ***
-Running idf_size.py --archives for esp32h2...
+Running idf_size.py --archives for esp32h4...
 Total sizes:
 Used stat D/IRAM:   45656 bytes ( 282024 remain, 13.9% used)
       .data size:    4864 bytes
@@ -3789,7 +3789,7 @@ Per-archive contributions to ELF file:
                 libcxx.a          0         0         0           0            0           2         0          0           2
 
 ***
-Running idf_size.py --files for esp32h2...
+Running idf_size.py --files for esp32h4...
 Total sizes:
 Used stat D/IRAM:   45656 bytes ( 282024 remain, 13.9% used)
       .data size:    4864 bytes
@@ -3883,7 +3883,7 @@ spi_flash_chip_mxic.c.ob        190         0         0          76          266
    system_internal.c.obj          0         0         0         260          260           0         0          0         260
        system_time.c.obj          0         0         8          38           46         142        80          0         260
           lib_a-ctype_.o          0         0         0           0            0           0       257          0         257
-  cpu_util_esp32h2.c.obj          0         0         0           0            0         250         0          0         250
+  cpu_util_esp32h4.c.obj          0         0         0           0            0         250         0          0         250
 pthread_local_storage.c.          0         0         4           0            4         242         0          0         242
 spi_flash_chip_issi.c.ob        125         0         0         112          237           0         0          0         237
      memory_layout.c.obj          4         0         0           0            4           0       231          0         235
@@ -3948,7 +3948,7 @@ bootloader_flash_config_          0         0         0           0            0
               _umoddi3.o          0         0         0           0            0           0         0          0           0
 
 ***
-Running idf_size.py --archive_details for esp32h2...
+Running idf_size.py --archive_details for esp32h4...
 Total sizes:
 Used stat D/IRAM:   45656 bytes ( 282024 remain, 13.9% used)
       .data size:    4864 bytes
@@ -15381,7 +15381,7 @@ Producing JSON output for esp32c3...
 }
 
 ***
-Producing JSON output for esp32h2...
+Producing JSON output for esp32h4...
 {
     "dram_data": 0,
     "dram_bss": 0,
@@ -16133,7 +16133,7 @@ Producing JSON output for esp32h2...
         "flash_total": 257,
         "ram_st_total": 0
     },
-    "libesp_hw_support.a:cpu_util_esp32h2.c.obj": {
+    "libesp_hw_support.a:cpu_util_esp32h4.c.obj": {
         ".flash.text": 250,
         "flash_total": 250,
         "ram_st_total": 0
@@ -16399,7 +16399,7 @@ Producing JSON output for esp32h2...
         "flash_total": 28,
         "ram_st_total": 28
     },
-    "libbootloader_support.a:bootloader_flash_config_esp32h2.c.obj": {
+    "libbootloader_support.a:bootloader_flash_config_esp32h4.c.obj": {
         ".flash.text": 26,
         "flash_total": 26,
         "ram_st_total": 0
@@ -20032,7 +20032,7 @@ Symbols from section: .rtc_noinit
 Section total: 0
 
 ***
-Producing CSV output for esp32h2...
+Producing CSV output for esp32h4...
 Total sizes:,,,
 Used stat D/IRAM,45656 bytes (282024 remain 13.9% used),,,
 .data size,4864 bytes,,,
@@ -20169,7 +20169,7 @@ esp_err.c.obj,108,0,0,154,262,0,0,0
 system_internal.c.obj,0,0,0,260,260,0,0,0
 system_time.c.obj,0,0,8,38,46,142,80,0
 lib_a-ctype_.o,0,0,0,0,0,0,257,0
-cpu_util_esp32h2.c.obj,0,0,0,0,0,250,0,0
+cpu_util_esp32h4.c.obj,0,0,0,0,0,250,0,0
 pthread_local_storage.c.,0,0,4,0,4,242,0,0
 spi_flash_chip_issi.c.ob,125,0,0,112,237,0,0,0
 memory_layout.c.obj,4,0,0,0,4,0,231,0

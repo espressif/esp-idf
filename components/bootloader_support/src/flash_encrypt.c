@@ -142,7 +142,7 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
             if (dis_dl_enc && dis_dl_icache && dis_dl_dcache) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
             }
-#elif CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C6
+#elif CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C6
             bool dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
             bool dis_dl_icache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
             if (dis_dl_enc && dis_dl_icache) {
@@ -191,7 +191,7 @@ void esp_flash_encryption_set_release_mode(void)
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
-#elif CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C6
+#elif CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C6
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
 #ifdef CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED

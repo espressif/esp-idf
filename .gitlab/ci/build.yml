@@ -155,20 +155,20 @@ build_pytest_examples_esp32c2:
     IDF_TARGET: esp32c2
     TEST_DIR: examples
 
-build_pytest_examples_esp32h2:
+build_pytest_examples_esp32h4:
   extends:
     - .build_pytest_template
-    - .rules:build:example_test-esp32h2
+    - .rules:build:example_test-esp32h4
   variables:
-    IDF_TARGET: esp32h2
+    IDF_TARGET: esp32h4
     TEST_DIR: examples
 
-build_pytest_components_esp32h2:
+build_pytest_components_esp32h4:
   extends:
     - .build_pytest_template
-    - .rules:build:component_ut-esp32h2
+    - .rules:build:component_ut-esp32h4
   variables:
-    IDF_TARGET: esp32h2
+    IDF_TARGET: esp32h4
     TEST_DIR: components
 
 build_pytest_examples_esp32c6:
@@ -526,12 +526,12 @@ build_examples_cmake_esp32c3:
     IDF_TARGET: esp32c3
     TEST_DIR: examples
 
-build_examples_cmake_esp32h2:
+build_examples_cmake_esp32h4:
   extends:
     - .build_cmake_template
-    - .rules:build:example_test-esp32h2
+    - .rules:build:example_test-esp32h4
   variables:
-    IDF_TARGET: esp32h2
+    IDF_TARGET: esp32h4
     TEST_DIR: examples
 
 build_examples_cmake_esp32c6:

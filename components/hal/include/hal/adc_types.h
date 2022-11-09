@@ -116,7 +116,7 @@ typedef struct {
     };
 } adc_digi_output_data_t;
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.

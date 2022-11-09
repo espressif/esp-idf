@@ -1,9 +1,9 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-H2 | ESP32-S3 |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-H4 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # ESP-IDF Gatt Client Multi Connection Example
 
-This example shows the usage of APIs to create a GATT multi-connection client. It can be used to connect to three GATT servers at the same time. 
+This example shows the usage of APIs to create a GATT multi-connection client. It can be used to connect to three GATT servers at the same time.
 
 To test this example, please run [gatt_server_demo](../gatt_server) to create three GATT server devices, namely ESP_GATTS_DEMO_a, ESP_GATTS_DEMO_b and ESP_GATTS_DEMO_c, `Gatt_client_multi_connection_demo` will connect to these three gatt server demos, and then exchange data.
 
@@ -21,7 +21,7 @@ The code can be modified to connect to more devices (up to 4 devices by default)
 
 ### Hardware Required
 
-* A development board with ESP32/ESP32-C3/ESP32-C2/ESP32-H2/ESP32-S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with ESP32/ESP32-C3/ESP32-C2/ESP32-H4/ESP32-S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for Power supply and programming
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
@@ -46,34 +46,34 @@ I (932) GATTC_MULTIPLE_DEMO: REG_EVT
 I (932) GATTC_MULTIPLE_DEMO: REG_EVT
 I (932) GATTC_MULTIPLE_DEMO: REG_EVT
 I (942) GATTC_MULTIPLE_DEMO: Scan start success
-I (1072) GATTC_MULTIPLE_DEMO: 38 68 a4 69 bb 7c 
+I (1072) GATTC_MULTIPLE_DEMO: 38 68 a4 69 bb 7c
 I (1072) GATTC_MULTIPLE_DEMO: Searched Adv Data Len 28, Scan Response Len 0
 I (1072) GATTC_MULTIPLE_DEMO: Searched Device Name Len 0
-I (1082) GATTC_MULTIPLE_DEMO: 
+I (1082) GATTC_MULTIPLE_DEMO:
 
-I (1102) GATTC_MULTIPLE_DEMO: 08 ef 3b a7 04 41 
+I (1102) GATTC_MULTIPLE_DEMO: 08 ef 3b a7 04 41
 I (1102) GATTC_MULTIPLE_DEMO: Searched Adv Data Len 9, Scan Response Len 15
 I (1102) GATTC_MULTIPLE_DEMO: Searched Device Name Len 13
 I (1112) GATTC_MULTIPLE_DEMO: LG CM2760(41)
-I (1112) GATTC_MULTIPLE_DEMO: 
+I (1112) GATTC_MULTIPLE_DEMO:
 
-I (1222) GATTC_MULTIPLE_DEMO: 38 68 a4 69 bb 7c 
+I (1222) GATTC_MULTIPLE_DEMO: 38 68 a4 69 bb 7c
 I (1222) GATTC_MULTIPLE_DEMO: Searched Adv Data Len 28, Scan Response Len 0
 I (1222) GATTC_MULTIPLE_DEMO: Searched Device Name Len 0
-I (1232) GATTC_MULTIPLE_DEMO: 
+I (1232) GATTC_MULTIPLE_DEMO:
 
-I (1372) GATTC_MULTIPLE_DEMO: 38 68 a4 69 bb 7c 
+I (1372) GATTC_MULTIPLE_DEMO: 38 68 a4 69 bb 7c
 I (1372) GATTC_MULTIPLE_DEMO: Searched Adv Data Len 28, Scan Response Len 0
 I (1372) GATTC_MULTIPLE_DEMO: Searched Device Name Len 0
-I (1382) GATTC_MULTIPLE_DEMO: 
+I (1382) GATTC_MULTIPLE_DEMO:
 
-I (1412) GATTC_MULTIPLE_DEMO: 08 ef 3b a7 04 41 
+I (1412) GATTC_MULTIPLE_DEMO: 08 ef 3b a7 04 41
 I (1412) GATTC_MULTIPLE_DEMO: Searched Adv Data Len 9, Scan Response Len 15
 I (1422) GATTC_MULTIPLE_DEMO: Searched Device Name Len 13
 I (1422) GATTC_MULTIPLE_DEMO: LG CM2760(41)
-I (1432) GATTC_MULTIPLE_DEMO: 
+I (1432) GATTC_MULTIPLE_DEMO:
 
-I (1522) GATTC_MULTIPLE_DEMO: 38 68 a4 69 bb 7c 
+I (1522) GATTC_MULTIPLE_DEMO: 38 68 a4 69 bb 7c
 I (1522) GATTC_MULTIPLE_DEMO: Searched Adv Data Len 28, Scan Response Len 0
 I (1522) GATTC_MULTIPLE_DEMO: Searched Device Name Len 0
 I (1532) GATTC_MULTIPLE_DEMO:

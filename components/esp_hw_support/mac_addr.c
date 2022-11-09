@@ -221,10 +221,10 @@ esp_err_t esp_read_mac(uint8_t *mac, esp_mac_type_t type)
     case ESP_MAC_BT:
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
         memcpy(mac, efuse_mac, 6);
-#if !CONFIG_IDF_TARGET_ESP32H2
-        // esp32h2 chips do not have wifi module, so the mac address do not need to add the BT offset
+#if !CONFIG_IDF_TARGET_ESP32H4
+        // esp32h4 chips do not have wifi module, so the mac address do not need to add the BT offset
         mac[5] += MAC_ADDR_UNIVERSE_BT_OFFSET;
-#endif //!CONFIG_IDF_TARGET_ESP32H2
+#endif //!CONFIG_IDF_TARGET_ESP32H4
 #else
         return ESP_ERR_NOT_SUPPORTED;
 #endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_BT

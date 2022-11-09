@@ -46,7 +46,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
             clk_ll_cpu_get_freq_mhz_from_pll() == CLK_LL_PLL_240M_FREQ_MHZ) {
         cpu_freq_mhz = 240;
     }
-#elif CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32H4
     cpu_freq_mhz = 64;
 #endif
 

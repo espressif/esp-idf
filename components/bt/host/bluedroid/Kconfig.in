@@ -1096,7 +1096,7 @@ config BT_BLE_RPA_SUPPORTED
         cannot be used. This option is disabled by default on ESP32, please enable or disable this option according
         to your own needs.
 
-        For ESP32C3, ESP32S3, ESP32H2 and ESP32C2, devices support network privacy mode and device privacy mode,
+        For ESP32C3, ESP32S3, ESP32H4 and ESP32C2, devices support network privacy mode and device privacy mode,
         users can switch the two modes according to their own needs. So this option is enabled by default.
 
 config BT_BLE_50_FEATURES_SUPPORTED

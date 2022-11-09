@@ -303,12 +303,12 @@ void esp_cpu_configure_region_protection(void)
 
     mpu_hal_set_region_access(1, MPU_REGION_RW); // 0x20000000
 }
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4
 void esp_cpu_configure_region_protection(void)
 {
     /* Notes on implementation:
      *
-     * 1) Note: ESP32-C3/H2 CPU doesn't support overlapping PMP regions
+     * 1) Note: ESP32-C3/H4 CPU doesn't support overlapping PMP regions
      *
      * 2) Therefore, we use TOR (top of range) entries to map the whole address
      * space, bottom to top.

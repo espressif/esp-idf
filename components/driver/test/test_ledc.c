@@ -399,7 +399,7 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
 }
 #endif // SOC_LEDC_SUPPORT_FADE_STOP
 
-#if SOC_PCNT_SUPPORTED // Note. C3, C2, H2 do not have PCNT peripheral, the following test cases cannot be tested
+#if SOC_PCNT_SUPPORTED // Note. C3, C2, H4 do not have PCNT peripheral, the following test cases cannot be tested
 
 #include "driver/pulse_cnt.h"
 

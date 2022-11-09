@@ -1,4 +1,4 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-H2 | ESP32-S3 |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-H4 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # ESP-IDF Gatt Client Example
@@ -21,7 +21,7 @@ Please, check this [tutorial](tutorial/Gatt_Client_Example_Walkthrough.md) for m
 
 ### Hardware Required
 
-* A development board with ESP32/ESP32-C3/ESP32-H2/ESP32-C2/ESP32-S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with ESP32/ESP32-C3/ESP32-H4/ESP32-C2/ESP32-S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for Power supply and programming
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
@@ -91,24 +91,24 @@ I (525) system_api: read default base MAC address from EFUSE
 I (535) phy_init: phy_version 4670,719f9f6,Feb 18 2021,17:07:07
 I (945) GATTC_DEMO: REG_EVT
 I (955) GATTC_DEMO: scan start success
-I (1115) GATTC_DEMO: 08 ef 3b a7 04 41 
+I (1115) GATTC_DEMO: 08 ef 3b a7 04 41
 I (1115) GATTC_DEMO: searched Adv Data Len 9, Scan Response Len 15
 I (1115) GATTC_DEMO: searched Device Name Len 13
 I (1125) GATTC_DEMO: LG CM2760(41)
-I (1125) GATTC_DEMO: 
+I (1125) GATTC_DEMO:
 
-I (1425) GATTC_DEMO: 08 ef 3b a7 04 41 
+I (1425) GATTC_DEMO: 08 ef 3b a7 04 41
 I (1425) GATTC_DEMO: searched Adv Data Len 9, Scan Response Len 15
 I (1425) GATTC_DEMO: searched Device Name Len 13
 I (1435) GATTC_DEMO: LG CM2760(41)
-I (1435) GATTC_DEMO: 
+I (1435) GATTC_DEMO:
 
-I (1865) GATTC_DEMO: 38 68 a4 69 bb 7c 
+I (1865) GATTC_DEMO: 38 68 a4 69 bb 7c
 I (1865) GATTC_DEMO: searched Adv Data Len 31, Scan Response Len 14
 I (1865) GATTC_DEMO: searched Device Name Len 0
-I (1875) GATTC_DEMO: 
+I (1875) GATTC_DEMO:
 
-I (2185) GATTC_DEMO: 38 68 a4 69 bb 7c 
+I (2185) GATTC_DEMO: 38 68 a4 69 bb 7c
 I (2185) GATTC_DEMO: searched Adv Data Len 31, Scan Response Len 14
 I (2185) GATTC_DEMO: searched Device Name Len 0
 I (2185) GATTC_DEMO:

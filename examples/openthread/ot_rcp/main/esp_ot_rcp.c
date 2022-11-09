@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: CC0
+ * SPDX-License-Identifier: CC0-1.0
  *
  * OpenThread Radio Co-Processor (RCP) Example
  *
- * This example code is in the Public Domain (or CC0 licensed, at your option.)
+ * This example code is in the Public Domain (or CC0-1.0 licensed, at your option.)
  *
  * Unless required by applicable law or agreed to in writing, this
  * software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -21,8 +21,8 @@
 #include "esp_vfs_eventfd.h"
 #include "driver/uart.h"
 
-#if !CONFIG_IDF_TARGET_ESP32H2
-#error "RCP is only supported for esp32h2"
+#if !CONFIG_IDF_TARGET_ESP32H4
+#error "RCP is only supported for esp32h4"
 #endif
 
 #define TAG "ot_esp_rcp"

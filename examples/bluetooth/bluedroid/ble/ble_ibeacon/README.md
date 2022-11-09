@@ -1,4 +1,4 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-H2 | ESP32-S3 |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-H4 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # ESP-IDF iBeacon demo
@@ -22,16 +22,16 @@ Before building devices which use iBeacon technology, visit [Apple iBeacon](http
 This example demonstrates iBeacon-compatible BLE advertising, and scanning of iBeacons:
 
 - **IBEACON_SENDER**: demo to send iBeacon-compatible advertising data.
- 
+
 - **IBEACON_RECEIVER**: demo to receive and resolve iBeacon advertising data.
 
-Which demo will be run depends on the menuconfig, developers can set it in `iBeacon Example Configuration`. 
+Which demo will be run depends on the menuconfig, developers can set it in `iBeacon Example Configuration`.
 
 The default mode is iBeacon Sender.
 
 ### Configure the project
 
-Open the project configuration menu: 
+Open the project configuration menu:
 
 ```bash
 idf.py menuconfig

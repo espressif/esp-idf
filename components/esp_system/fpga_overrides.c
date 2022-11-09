@@ -17,8 +17,8 @@
 #include "esp32s3/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
@@ -46,7 +46,7 @@ void bootloader_clock_configure(void)
     uint32_t xtal_freq_mhz = 40;
 #ifdef CONFIG_IDF_TARGET_ESP32S2
     uint32_t apb_freq_hz = 20000000;
-#elif CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32H4
     uint32_t apb_freq_hz = 32000000;
 #else
     uint32_t apb_freq_hz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000;

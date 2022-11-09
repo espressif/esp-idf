@@ -50,8 +50,8 @@
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/pm.h"
 #include "driver/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/pm.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/pm.h"
 #include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/pm.h"
@@ -91,7 +91,7 @@
 #define REF_CLK_DIV_MIN 2         // TODO: IDF-5660
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define REF_CLK_DIV_MIN 2
-#elif CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32H4
 #define REF_CLK_DIV_MIN 2
 #elif CONFIG_IDF_TARGET_ESP32C2
 #define REF_CLK_DIV_MIN 2
@@ -229,8 +229,8 @@ esp_err_t esp_pm_configure(const void* vconfig)
     const esp_pm_config_esp32s3_t* config = (const esp_pm_config_esp32s3_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32C3
     const esp_pm_config_esp32c3_t* config = (const esp_pm_config_esp32c3_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32H2
-    const esp_pm_config_esp32h2_t* config = (const esp_pm_config_esp32h2_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32H4
+    const esp_pm_config_esp32h4_t* config = (const esp_pm_config_esp32h4_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32C2
     const esp_pm_config_esp32c2_t* config = (const esp_pm_config_esp32c2_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32C6
@@ -341,8 +341,8 @@ esp_err_t esp_pm_get_configuration(void* vconfig)
     esp_pm_config_esp32s3_t* config = (esp_pm_config_esp32s3_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t* config = (esp_pm_config_esp32c3_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32H2
-    esp_pm_config_esp32h2_t* config = (esp_pm_config_esp32h2_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32H4
+    esp_pm_config_esp32h4_t* config = (esp_pm_config_esp32h4_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32C2
     esp_pm_config_esp32c2_t* config = (esp_pm_config_esp32c2_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32C6
@@ -787,8 +787,8 @@ void esp_pm_impl_init(void)
     esp_pm_config_esp32s3_t cfg = {
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t cfg = {
-#elif CONFIG_IDF_TARGET_ESP32H2
-    esp_pm_config_esp32h2_t cfg = {
+#elif CONFIG_IDF_TARGET_ESP32H4
+    esp_pm_config_esp32h4_t cfg = {
 #elif CONFIG_IDF_TARGET_ESP32C2
     esp_pm_config_esp32c2_t cfg = {
 #elif CONFIG_IDF_TARGET_ESP32C6

@@ -12,8 +12,8 @@
 #include "esp32s2/rom/digital_signature.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/digital_signature.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/digital_signature.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/digital_signature.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/digital_signature.h"
 #else

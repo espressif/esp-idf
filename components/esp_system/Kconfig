@@ -90,7 +90,7 @@ menu "ESP System Settings"
         default y if IDF_TARGET_ESP32S2
         default y if IDF_TARGET_ESP32C3
         default y if IDF_TARGET_ESP32S3
-        default y if IDF_TARGET_ESP32H2
+        default y if IDF_TARGET_ESP32H4
         default y if IDF_TARGET_ESP32C6
         depends on !IDF_TARGET_ESP32C2
 
@@ -266,7 +266,7 @@ menu "ESP System Settings"
 
     config ESP_CONSOLE_MULTIPLE_UART
         bool
-        default y if !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2
+        default y if !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32H4 && !IDF_TARGET_ESP32C2
 
     choice ESP_CONSOLE_UART_NUM
         prompt "UART peripheral to use for console output (0-1)"

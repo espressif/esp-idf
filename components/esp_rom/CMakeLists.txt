@@ -42,10 +42,10 @@ idf_component_register(SRCS ${sources}
                        PRIV_REQUIRES ${private_required_comp}
                        LDFRAGMENTS linker.lf)
 
-if(target STREQUAL "esp32h2")
-    if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+if(target STREQUAL "esp32h4")
+    if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
         set(ld_folder "ld/rev1")
-    elseif(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+    elseif(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
         set(ld_folder "ld/rev2")
     endif()
 else()
@@ -99,7 +99,7 @@ if(BOOTLOADER_BUILD)
     elseif(target STREQUAL "esp32c3")
         rom_linker_script("newlib")
 
-    elseif(target STREQUAL "esp32h2")
+    elseif(target STREQUAL "esp32h4")
         rom_linker_script("newlib")
 
     elseif(target STREQUAL "esp32c2")
@@ -196,7 +196,7 @@ else() # Regular app build
             rom_linker_script("eco3")
         endif()
 
-    elseif(target STREQUAL "esp32h2")
+    elseif(target STREQUAL "esp32h4")
         rom_linker_script("newlib")
         rom_linker_script("version")
 

@@ -44,7 +44,7 @@ wifi_psk = 'otcitest888'
 
 # Case 1: Thread network formation and attaching
 @pytest.mark.esp32s3
-@pytest.mark.esp32h2
+@pytest.mark.esp32h4
 @pytest.mark.timeout(40 * 60)
 @pytest.mark.i154_multi_dut
 @pytest.mark.parametrize(
@@ -53,7 +53,7 @@ wifi_psk = 'otcitest888'
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h2|esp32h2|esp32s3'),
+         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h4|esp32h4|esp32s3'),       # No need to rename beta_target as it is still called h2 in esptool
     ],
     indirect=True,
 )
@@ -82,7 +82,7 @@ def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
 
 # Case 2: Bidirectional IPv6 connectivity
 @pytest.mark.esp32s3
-@pytest.mark.esp32h2
+@pytest.mark.esp32h4
 @pytest.mark.timeout(40 * 60)
 @pytest.mark.i154_multi_dut
 @pytest.mark.parametrize(
@@ -91,7 +91,7 @@ def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h2|esp32h2|esp32s3'),
+         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h4|esp32h4|esp32s3'),
     ],
     indirect=True,
 )
@@ -133,7 +133,7 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
 
 # Case 3: Multicast forwarding from Wi-Fi to Thread network
 @pytest.mark.esp32s3
-@pytest.mark.esp32h2
+@pytest.mark.esp32h4
 @pytest.mark.timeout(40 * 60)
 @pytest.mark.i154_multi_dut
 @pytest.mark.parametrize(
@@ -142,7 +142,7 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h2|esp32h2|esp32s3'),
+         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h4|esp32h4|esp32s3'),
     ],
     indirect=True,
 )
@@ -176,7 +176,7 @@ def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
 
 # Case 4: Multicast forwarding from Thread to Wi-Fi network
 @pytest.mark.esp32s3
-@pytest.mark.esp32h2
+@pytest.mark.esp32h4
 @pytest.mark.timeout(40 * 60)
 @pytest.mark.i154_multi_dut
 @pytest.mark.parametrize(
@@ -185,7 +185,7 @@ def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
          f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
          f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
-         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h2|esp32h2|esp32s3'),
+         'esp32h2beta2|esp32h2beta2|esp32s3', 'esp32h4|esp32h4|esp32s3'),
     ],
     indirect=True,
 )

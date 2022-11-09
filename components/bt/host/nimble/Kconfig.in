@@ -64,10 +64,10 @@ config BT_NIMBLE_LOG_LEVEL
 
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
-    range 1 8 if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H2)
+    range 1 8 if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H4)
     range 1 2 if IDF_TARGET_ESP32C2
     range 1 9 if IDF_TARGET_ESP32
-    default 3 if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H2)
+    default 3 if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H4)
     default 2 if IDF_TARGET_ESP32C2
     depends on BT_NIMBLE_ENABLED
     help
@@ -483,7 +483,7 @@ config BT_NIMBLE_HOST_BASED_PRIVACY
 
 config BT_NIMBLE_ENABLE_CONN_REATTEMPT
     bool "Enable connection reattempts on connection establishment error"
-    default y if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C2)
+    default y if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32C2)
     default n if IDF_TARGET_ESP32
     help
         Enable to make the NimBLE host to reattempt GAP connection on connection
@@ -579,7 +579,7 @@ config BT_NIMBLE_MAX_PERIODIC_SYNCS
 
 config BT_NIMBLE_MAX_PERIODIC_ADVERTISER_LIST
     int "Maximum number of periodic advertiser list"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT && (IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2)
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT && (IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H4)
     range 1 5
     default 5 if BT_NIMBLE_50_FEATURE_SUPPORT
     help
