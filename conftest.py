@@ -35,7 +35,7 @@ from pytest_embedded.utils import find_by_suffix
 from pytest_embedded_idf.dut import IdfDut
 
 try:
-    from tools.ci.idf_unity_tester import CaseTester
+    from idf_unity_tester import CaseTester
 except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci'))
     from idf_unity_tester import CaseTester

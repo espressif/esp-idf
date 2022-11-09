@@ -206,7 +206,7 @@ class MultiDevCaseTester(BaseTester):
             dev_res = MultiDevResource(dut)
             self.group.append(dev_res)
 
-    def _wait_multi_dev_case_finish(self, timeout: int = 90) -> None:
+    def _wait_multi_dev_case_finish(self, timeout: int = 60) -> None:
         """
         Wait until all the sub-cases of this multi_device case finished
         """
@@ -216,7 +216,7 @@ class MultiDevCaseTester(BaseTester):
             else:
                 raise TimeoutError('Wait case to finish timeout')
 
-    def _start_sub_case_thread(self, dev_res: MultiDevResource, case: UnittestMenuCase, sub_case_index: int) -> None:
+    def _start_sub_case_thread(self, dev_res: MultiDevResource, case: UnittestMenuCase, sub_case_index: int, timeout: int = 60) -> None:
         """
         Start the thread monitoring on the corresponding dut of the sub-case
         """
@@ -226,6 +226,7 @@ class MultiDevCaseTester(BaseTester):
         _kwargs['dev_res'] = dev_res
         _kwargs['case'] = case
         _kwargs['sub_case_index'] = sub_case_index
+        _kwargs['timeout'] = timeout
 
         # Create the thread of the sub-case
         dev_res.thread = Thread(target=self._run, kwargs=_kwargs, daemon=True)
@@ -254,6 +255,7 @@ class MultiDevCaseTester(BaseTester):
         dev_res = kwargs['dev_res']
         case = kwargs['case']
         sub_case_index = kwargs['sub_case_index']
+        timeout = kwargs['timeout']
         # Start the case
         dut.expect(self.ready_pattern_list)
         # Retry at most 30 times if not write successfully
@@ -271,7 +273,7 @@ class MultiDevCaseTester(BaseTester):
 
         # Wait for the specific patterns, only exist when the sub-case finished
         while True:
-            pat = dut.expect(signal_pattern_list, timeout=60)
+            pat = dut.expect(signal_pattern_list, timeout=timeout)
             if pat is not None:
                 match_str = pat.group().decode('utf-8')
 
@@ -302,7 +304,7 @@ class MultiDevCaseTester(BaseTester):
         # The case finished, release the semaphore to unblock the '_wait_multi_dev_case_finish'
         dev_res.sem.release()
 
-    def run_all_multi_dev_cases(self, reset: bool = False, timeout: int = 90) -> None:
+    def run_all_multi_dev_cases(self, reset: bool = False, timeout: int = 60) -> None:
         """
         Run only multi_device cases
 
@@ -314,7 +316,7 @@ class MultiDevCaseTester(BaseTester):
             # Run multi_device case on every device
             self.run_multi_dev_case(case, reset, timeout)
 
-    def run_multi_dev_case(self, case: UnittestMenuCase, reset: bool = False, timeout: int = 90) -> None:
+    def run_multi_dev_case(self, case: UnittestMenuCase, reset: bool = False, timeout: int = 60) -> None:
         """
         Run a specific multi_device case
 
@@ -335,8 +337,8 @@ class MultiDevCaseTester(BaseTester):
                     index = int(sub_case['index'], 10)
                 else:
                     index = sub_case['index']
-                self._start_sub_case_thread(dev_res=self.group[index - 1],
-                                            case=case, sub_case_index=index)
+                self._start_sub_case_thread(dev_res=self.group[index - 1], case=case,
+                                            sub_case_index=index, timeout=timeout)
             # Waiting all the devices to finish their test cases
             self._wait_multi_dev_case_finish(timeout=timeout)
 
@@ -351,7 +353,7 @@ class CaseTester(NormalCaseTester, MultiStageCaseTester, MultiDevCaseTester):
         test_menu (List[UnittestMenuCase]): The list of the cases
     """
 
-    def run_all_cases(self, reset: bool = False, timeout: int = 90) -> None:
+    def run_all_cases(self, reset: bool = False, timeout: int = 60) -> None:
         """
         Run all cases
 
@@ -362,18 +364,19 @@ class CaseTester(NormalCaseTester, MultiStageCaseTester, MultiDevCaseTester):
         for case in self.test_menu:
             self.run_case(case, reset, timeout=timeout)
 
-    def run_case(self, case: UnittestMenuCase, reset: bool = False, timeout: int = 90) -> None:
+    def run_case(self, case: UnittestMenuCase, reset: bool = False, timeout: int = 60) -> None:
         """
         Run a specific case
 
         Args:
             case: the specific case that parsed in test menu
             reset: whether do a hardware reset before running the case
-            timeout: timeout in second
+            timeout: timeout in second, the case's timeout attribute has a higher priority than this param.
         """
+        _timeout = int(case.attributes.get('timeout', timeout))
         if case.type == 'normal':
-            self.run_normal_case(case, reset, timeout=timeout)
+            self.run_normal_case(case, reset, timeout=_timeout)
         elif case.type == 'multi_stage':
-            self.run_multi_stage_case(case, reset, timeout=timeout)
+            self.run_multi_stage_case(case, reset, timeout=_timeout)
         elif case.type == 'multi_device':
-            self.run_multi_dev_case(case, reset, timeout=timeout)
+            self.run_multi_dev_case(case, reset, timeout=_timeout)
