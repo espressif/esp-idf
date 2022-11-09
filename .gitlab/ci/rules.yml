@@ -1628,6 +1628,21 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
+.rules:test:component_ut-esp32c6:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32c6
+    - <<: *if-label-target_test
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32c6
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+
 .rules:test:component_ut-esp32h4-i154:
   rules:
     - <<: *if-revert-branch
@@ -1732,6 +1747,19 @@
       when: never
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32c3
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+
+.rules:test:custom_test-esp32c6:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32c6
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-custom_test
@@ -1865,6 +1893,21 @@
     - <<: *if-label-build-only
       when: never
     - <<: *if-example_test-ota-include_nightly_run-rule
+
+.rules:test:example_test-esp32c6:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c6
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test
 
 .rules:test:example_test-esp32s2:
   rules:
@@ -2004,6 +2047,19 @@
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+
+.rules:test:unit_test-esp32c6:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-target_test
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32c6
     - <<: *if-dev-push
       changes: *patterns-unit_test
 

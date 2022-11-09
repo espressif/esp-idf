@@ -132,6 +132,14 @@ example_test_pytest_esp32c3_flash_suspend:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, flash_suspend ]
 
+example_test_pytest_esp32c6_generic:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c6
+  needs:
+    - build_pytest_examples_esp32c6
+  tags: [ esp32c6, generic ]
+
 example_test_pytest_esp32_ethernet_ota:
   extends:
     - .pytest_examples_dir_template
@@ -597,6 +605,14 @@ component_ut_pytest_esp32c3_sdspi:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, sdcard_spimode ]
 
+component_ut_pytest_esp32c6_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c6
+  needs:
+    - build_pytest_components_esp32c6
+  tags: [ esp32c6, generic ]
+
 component_ut_pytest_esp32h4_i154:
   extends:
     - .pytest_components_dir_template
@@ -682,6 +698,14 @@ test_app_test_pytest_esp32c3_generic:
   needs:
     - build_pytest_test_apps_esp32c3
   tags: [ esp32c3, generic ]
+
+test_app_test_pytest_esp32c6_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c6
+  needs:
+    - build_pytest_test_apps_esp32c6
+  tags: [ esp32c6, generic ]
 
 test_app_test_pytest_esp32s3_mspi_f8r8:
   extends:
@@ -785,6 +809,11 @@ test_weekend_mqtt:
   extends:
     - .example_test_template
     - .rules:test:example_test-esp32c3
+
+.example_test_esp32c6_template:
+  extends:
+    - .example_test_template
+    - .rules:test:example_test-esp32c6
 
 .example_test_esp32s3_template:
   extends:
@@ -894,6 +923,12 @@ example_test_C2_GENERIC:
     - ESP32C2
     - Example_GENERIC
 
+example_test_C6_GENERIC:
+  extends: .example_test_esp32c6_template
+  tags:
+    - ESP32C6
+    - Example_GENERIC
+
 .test_app_template:
   extends: .target_test_job_template
   needs:
@@ -922,6 +957,11 @@ example_test_C2_GENERIC:
   extends:
     - .test_app_template
     - .rules:test:custom_test-esp32c3
+
+.test_app_esp32c6_template:
+  extends:
+    - .test_app_template
+    - .rules:test:custom_test-esp32c6
 
 .test_app_esp32s3_template:
   extends:
@@ -975,6 +1015,11 @@ test_app_test_eth:
   extends:
     - .unit_test_template
     - .rules:test:unit_test-esp32c3
+
+.unit_test_esp32c6_template:
+  extends:
+    - .unit_test_template
+    - .rules:test:unit_test-esp32c6
 
 UT_001:
   extends: .unit_test_esp32_template
@@ -1132,6 +1177,13 @@ UT_C3_SDSPI:
   tags:
     - ESP32C3_IDF
     - UT_T1_SPIMODE
+
+UT_C6:
+  extends: .unit_test_esp32c6_template
+  parallel: 12
+  tags:
+    - ESP32C6_IDF
+    - UT_T1_1
 
 UT_S3:
   extends: .unit_test_esp32s3_template

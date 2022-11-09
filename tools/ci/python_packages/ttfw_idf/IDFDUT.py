@@ -628,7 +628,7 @@ class ESP32C6DUT(IDFDUT):
 
     @classmethod
     def get_rom(cls):
-        return targets.ESP32C6BETAROM
+        return targets.ESP32C6ROM
 
 
 class ESP32H4DUT(IDFDUT):

@@ -31,6 +31,9 @@ assign_example_test:
     - job: build_examples_cmake_esp32c3
       artifacts: false
       optional: true
+    - job: build_examples_cmake_esp32c6
+      artifacts: false
+      optional: true
     - job: build_examples_cmake_esp32s3
       artifacts: false
       optional: true
@@ -55,6 +58,9 @@ assign_custom_test:
     - job: build_test_apps_esp32c3
       artifacts: false
       optional: true
+    - job: build_test_apps_esp32c6
+      artifacts: false
+      optional: true
     - job: build_test_apps_esp32s3
       artifacts: false
       optional: true
@@ -74,6 +80,8 @@ assign_unit_test:
     - job: build_esp_idf_tests_cmake_esp32c2
       optional: true
     - job: build_esp_idf_tests_cmake_esp32c3
+      optional: true
+    - job: build_esp_idf_tests_cmake_esp32c6
       optional: true
     - job: build_esp_idf_tests_cmake_esp32s3
       optional: true
