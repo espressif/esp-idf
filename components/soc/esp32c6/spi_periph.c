@@ -11,7 +11,7 @@
  Bunch of constants for every SPI peripheral: GPIO signals, irqs, hw addr of registers etc
 */
 const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
-    { // TODO: IDF-5333 Need check
+    {
         .spiclk_in = 0,/* SPI clock is not an input signal*/
         .spics_in = 0,/* SPI cs is not an input signal*/
         .spiclk_iomux_pin = SPI_IOMUX_PIN_NUM_CLK,

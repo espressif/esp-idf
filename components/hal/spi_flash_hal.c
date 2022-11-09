@@ -23,7 +23,7 @@ static const char *TAG = "flash_hal";
 static uint32_t get_flash_clock_divider(const spi_flash_hal_config_t *cfg)
 {
     int clk_source = cfg->clock_src_freq;
-    // On ESP32, ESP32-S2, ESP32-C3, we allow specific frequency 26.666MHz, // TODO: IDF-5333 (check this)
+    // On ESP32, ESP32-S2, ESP32-C3, we allow specific frequency 26.666MHz
     // If user passes freq_mhz like 26 or 27, it's allowed to use integer divider 3.
     // However on other chips or on other frequency, we only allow user pass frequency which
     // can be integer divided. If no, the following strategy is round up the division and

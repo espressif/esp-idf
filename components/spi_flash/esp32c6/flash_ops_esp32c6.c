@@ -29,7 +29,6 @@ esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode)
     SPIFLASH.user.fwrite_dual = 0;
     SPIFLASH.user.fwrite_qio = 1;
     SPIFLASH.user.fwrite_quad = 0;
-    // SPIFLASH.ctrl.fcmd_dual = 0; // TODO: IDF-5333
     SPIFLASH.ctrl.fcmd_quad = 0;
     SPIFLASH.user.usr_dummy = 0;
     SPIFLASH.user.usr_addr = 1;
@@ -53,7 +52,8 @@ esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode)
 
 esp_err_t spi_flash_enable_wrap(uint32_t wrap_size)
 {
-    CLEAR_PERI_REG_MASK(SPI_MEM_CTRL2_REG(0), SPI_MEM_SPLIT_TRANS_EN_M); // TODO: IDF-5333 Newly added
+    // IDF-6198 TODO: support wrap on esp32-c6
+    CLEAR_PERI_REG_MASK(SPI_MEM_CTRL2_REG(0), SPI_MEM_SPLIT_TRANS_EN_M);
     switch (wrap_size) {
     case 8:
         return spi_flash_wrap_set(FLASH_WRAP_MODE_8B);

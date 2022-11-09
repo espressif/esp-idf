@@ -4,7 +4,7 @@ components/spi_flash/test_apps/esp_flash:
   disable:
     - if: IDF_TARGET == "esp32c6"
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: target esp32c6 cannot pass atomic build
 
 components/spi_flash/test_apps/flash_encryption:
   disable_test:
