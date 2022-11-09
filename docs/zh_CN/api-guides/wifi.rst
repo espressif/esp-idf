@@ -767,7 +767,7 @@ Wi-Fi 驱动程序内部扫描阶段
 Wi-Fi 原因代码
 +++++++++++++++++++++
 
-下表罗列了 {IDF_TARGET_NAME} 中定义的原因代码。其中，第一列为 esp_wifi_types.h 中定义的宏名称。名称中省去了前缀 *WIFI_REASON*，也就是说，名称 *UNSPECIFIED* 实际应为 *WIFI_REASON_UNSPECIFIED*，以此类推。第二列为原因代码的相应数值。第三列为该原因映射到 IEEE 802.11-2012 中 8.4.1.7 段的标准值。（更多详细信息，请参阅前文描述。）最后一列为这一原因的描述。
+下表罗列了 {IDF_TARGET_NAME} 中定义的原因代码。其中，第一列为 esp_wifi_types.h 中定义的宏名称。名称中省去了前缀 *WIFI_REASON*，也就是说，名称 *UNSPECIFIED* 实际应为 *WIFI_REASON_UNSPECIFIED*，以此类推。第二列为原因代码的相应数值。第三列为该原因映射到 IEEE 802.11-2020 中 9.4.1.7 段的标准值。（更多详细信息，请参阅前文描述。）最后一列为这一原因的描述。
 
 .. list-table::
    :header-rows: 1
@@ -996,6 +996,102 @@ Wi-Fi 原因代码
        对于 ESP station，出现以下情况时报告该代码：
 
        - 从 AP 接收到该代码。
+   * - TDLS_PEER_UNREACHABLE
+     - 25
+     - 25
+     - 通过 TDLS 直连无法到达TDLS 对端 STA，导致 TDLS 直连中断。
+   * - TDLS_UNSPECIFIED
+     - 26
+     - 26
+     - 不明原因的 TDLS 直连中断。
+   * - SSP_REQUESTED_DISASSOC
+     - 27
+     - 27
+     - association 取消，由于会话被 SSP request 终止。
+   * - NO_SSP_ROAMING_AGREEMENT
+     - 28
+     - 28
+     - association 取消，由于缺乏 SSP 漫游认证。
+   * - BAD_CIPHER_OR_AKM
+     - 29
+     - 29
+     - 请求的服务被拒绝，由于 SSP 密码套件或者 AKM 的需求。
+   * - NOT_AUTHORIZED_THIS_LO CATION
+     - 30
+     - 30
+     - 请求的服务在此位置未得到授权。
+   * - SERVICE_CHANGE_PRECLUDES_TS
+     - 31
+     - 31
+     - TS 被删除，原因是：BSS 服务特性或者运行模式改变导致 Qos AP 缺少足够的带宽给 Qos STA 使用（例如：一个HT BSS 从 40 MHz 的信道切换到 20 MHz 的信道）。
+   * - UNSPECIFIED_QOS
+     - 32
+     - 32
+     - association 取消，由于不明确的 QoS 相关原因。
+   * - NOT_ENOUGH_BANDWIDTH
+     - 33
+     - 33
+     - association 取消，由于QoS AP 缺少足够的带宽给该 QoS STA 使用。
+   * - MISSING_ACKS
+     - 34
+     - 34
+     - association 取消，原因是：大量的帧需要被确认，但由于 AP 传输或者糟糕的信道条件而没有被确认。
+   * - EXCEEDED_TXOP
+     - 35
+     - 35
+     - association 取消，由于 STA 的传输超过了 TXOPs 的限制。
+   * - STA_LEAVING
+     - 36
+     - 36
+     - 请求 STA 离开了 BSS 或者重置了。
+   * - END_BA
+     - 37
+     - 37
+     - 请求 STA 不再使用该流或者会话。
+   * - UNKNOWN_BA
+     - 38
+     - 38
+     - 请求 STA 使用一种尚未完成的机制接收帧。
+   * - TIMEOUT
+     - 39
+     - 39
+     - 对端 STA 的请求超时。
+   * - Reserved
+     - 40 ~ 45
+     - 40 ~ 45
+     - 保留
+   * - PEER_INITIATED
+     - 46
+     - 46
+     - 在 Disassociation 帧中：已达到授权访问限制。
+   * - AP_INITIATED
+     - 47
+     - 47
+     - 在 Disassociation 帧中：外部服务需求。
+   * - INVALID_FT_ACTION_FRAME_COUNT
+     - 48
+     - 48
+     - 无效的 FT Action 帧计数。
+   * - INVALID_PMKID
+     - 49
+     - 49
+     - 无效的成对主密钥标识符（PMKID）。
+   * - INVALID_MDE
+     - 50
+     - 50
+     - 无效的 MDE。
+   * - INVALID_FTE
+     - 51
+     - 51
+     - 无效的 FTE。
+   * - TRANSMISSION_LINK_ESTABLISHMENT_FAILED
+     - 67
+     - 67
+     - 在备用信道中建立传输链路失败。
+   * - ALTERATIVE_CHANNEL_OCCUPIED
+     - 68
+     - 68
+     - 备用信道被占用。
    * - BEACON_TIMEOUT
      - 200
      - 保留
@@ -1020,6 +1116,52 @@ Wi-Fi 原因代码
      - 205
      - 保留
      - 乐鑫特有的 Wi-Fi 原因代码： AP 连接失败。
+
+
+与密码错误有关的 Wi-Fi 原因代码
++++++++++++++++++++++++++++++++++
+
+下表罗列了与密码错误相关的 Wi-Fi 原因代码。
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 10 40
+
+   * - 原因代码
+     - 数值
+     - 描述
+   * - 4WAY_HANDSHAKE_TIMEOUT
+     - 15
+     - 四次握手超时。STA 在连接加密的 AP 的时候输入了错误的密码
+   * - NO_AP_FOUND
+     - 201
+     - 密码错误会出现这个原因代码的场景有如下两个：
+
+       - STA 在连接加密的 AP 的时候没有输入密码
+       - STA 在连接非加密的 AP 的时候输入了密码
+   * - HANDSHAKE_TIMEOUT
+     - 204
+     - 握手超时。
+
+
+与低 RSSI 有关的 Wi-Fi 原因代码
++++++++++++++++++++++++++++++++++
+
+下表罗列了与低 RSSI 相关的 Wi-Fi 原因代码。
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 10 40
+
+   * - 原因代码
+     - 数值
+     - 描述
+   * - NO_AP_FOUND
+     - 201
+     - 低 RSSI 导致 station 无法扫描到目标 AP
+   * - HANDSHAKE_TIMEOUT
+     - 204
+     - 握手超时。
 
 
 找到多个 AP 时的 {IDF_TARGET_NAME} Wi-Fi station 连接
@@ -1076,7 +1218,7 @@ Wi-Fi 模式
 station 基本配置
 +++++++++++++++++++++++++++++++++++++
 
-API esp_wifi_set_config() 可用于配置 station。下表详细介绍了各个字段。
+API :cpp:func:`esp_wifi_set_config()` 可用于配置 station。配置的参数信息会保存到 NVS 中。下表详细介绍了各个字段。
 
 .. list-table::
    :header-rows: 1
@@ -1115,7 +1257,7 @@ API esp_wifi_set_config() 可用于配置 station。下表详细介绍了各个�
 AP 基本配置
 +++++++++++++++++++++++++++++++++++++
 
-API esp_wifi_set_config() 可用于配置 AP。下表详细介绍了各个字段。
+API :cpp:func:`esp_wifi_set_config()` 可用于配置 AP。配置的参数信息会保存到 NVS 中。下表详细介绍了各个字段。
 
 .. only:: esp32 or esp32s2 or esp32c3 or esp32s3
 
