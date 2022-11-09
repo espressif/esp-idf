@@ -218,7 +218,7 @@
 
     /* Get mask of pending, enabled interrupts at this level into a2. */
 
-.L_xt_user_int_&level&:
+.L_xt_user_int_\level :
     rsr     a2, INTENABLE
     rsr     a3, INTERRUPT
     movi    a4, \mask
@@ -327,14 +327,14 @@
     #ifdef XT_USE_SWPRI
     j       8f
     #else
-    j       .L_xt_user_int_&level&          /* check for more interrupts */
+    j       .L_xt_user_int_\level           /* check for more interrupts */
     #endif
 
     #ifdef XT_RTOS_TIMER_INT
 7:
 
     .ifeq XT_TIMER_INTPRI - \level
-.L_xt_user_int_timer_&level&:
+.L_xt_user_int_timer_\level :
     /*
     Interrupt handler for the RTOS tick timer if at this level.
     We'll be reading the interrupt state again after this call
@@ -355,7 +355,7 @@
     #ifdef XT_USE_SWPRI
     j       8f
     #else
-    j       .L_xt_user_int_&level&          /* check for more interrupts */
+    j       .L_xt_user_int_\level           /* check for more interrupts */
     #endif
 
     #ifdef XT_USE_SWPRI
