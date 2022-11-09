@@ -1264,8 +1264,9 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
         goto failed;
     }
 
-    if (ie.transition_disable)
-        esp_wifi_sta_disable_wpa2_authmode_internal();
+    if (ie.transition_disable) {
+        wpa_supplicant_transition_disable(sm, ie.transition_disable[0]);
+    }
 
     if (sm->key_install && sm->key_info & WPA_KEY_INFO_INSTALL && sm->use_ext_key_id) {
         wpa_supplicant_install_ptk(sm, KEY_FLAG_RX);

@@ -30,4 +30,6 @@ int wpa_sm_get_beacon_ie(struct wpa_sm *sm);
 
 void wpa_sm_free_eapol(u8 *buffer);
 
+void wpa_supplicant_transition_disable(void *sm, u8 bitmap);
+
 #endif /* WPAS_GLUE_H */
