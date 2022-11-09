@@ -151,8 +151,8 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .use_secure_element = false,                  \
     .user_cb = NULL,                              \
     .ssl_userdata = NULL,                         \
-    .cert_select_cb = NULL                        \
-    .alpn_protos = NULL                           \
+    .cert_select_cb = NULL,                       \
+    .alpn_protos = NULL,                          \
 }
 
 /**
