@@ -13,6 +13,7 @@ if(CONFIG_COMPILER_DUMP_RTL_FILES)
                       find-refs
                       --from-sections=.iram0.text
                       --to-sections=.flash.text,.flash.rodata
+                      --ignore-symbols=__func__/__assert_func,__func__/heap_caps_alloc_failed
                       --exit-code
                       DEPENDS ${elf}
                       )
