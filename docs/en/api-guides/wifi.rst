@@ -1015,8 +1015,8 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
    * - BAD_CIPHER_OR_AKM
      - 29
      - 29
-     - Requested service rejected because of SSP cipher suite or AKM requiremen.
-   * - NOT_AUTHORIZED_THIS_LO CATION
+     - Requested service rejected because of SSP cipher suite or AKM requirement.
+   * - NOT_AUTHORIZED_THIS_LOCATION
      - 30
      - 30
      - Requested service not authorized in this location.
@@ -1132,17 +1132,19 @@ The table below shows the Wi-Fi reason-code may related to wrong password.
      - Description
    * - 4WAY_HANDSHAKE_TIMEOUT
      - 15
-     - Four-way handshake times out. Setting wrong password when STA connecting to an encrpted AP.
+     - Four-way handshake times out. Setting wrong password when STA connecting to an encrpyted AP.
    * - NO_AP_FOUND
      - 201
      - This may related to wrong password in the two scenarios:
 
        - Setting password when STA connecting to an unencrypted AP.
-       - Doesn't setting password when STA connecting to an encrpted AP.
+       - Doesn't setting password when STA connecting to an encrypted AP.
    * - HANDSHAKE_TIMEOUT
      - 204
      - Four-way handshake fails.
 
+Wi-Fi Reason code related to low RSSI
+++++++++++++++++++++++++++++++++++++++++++++++
 
 The table below shows the Wi-Fi reason-code may related to low RSSI.
 
