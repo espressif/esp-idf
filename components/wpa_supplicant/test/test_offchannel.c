@@ -32,7 +32,7 @@
 #define TEST_LISTEN_CHANNEL     6
 
 /* No runners */
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32C6)
 //IDF-5046
 static const char *TAG = "test_offchan";
 esp_netif_t *wifi_netif;
@@ -242,4 +242,4 @@ static void test_wifi_roc(void)
 
 TEST_CASE_MULTIPLE_DEVICES("test ROC and Offchannel Action Frame Tx", "[Offchan][test_env=UT_T2_1][timeout=90]", test_wifi_roc, test_wifi_offchan_tx);
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)

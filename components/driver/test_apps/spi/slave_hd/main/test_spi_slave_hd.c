@@ -589,7 +589,6 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
 
 #endif //#if (TEST_SPI_PERIPH_NUM >= 2)
 
-
 #if (TEST_SPI_PERIPH_NUM == 1)
 //These tests are for chips which only have 1 SPI controller
 /********************************************************************************

@@ -60,7 +60,7 @@ TEST_CASE("reset reason ESP_RST_POWERON", "[reset][ignore]")
 }
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C6)
 //IDF-5059
 static __NOINIT_ATTR uint32_t s_noinit_val;
 static RTC_NOINIT_ATTR uint32_t s_rtc_noinit_val;
@@ -305,7 +305,7 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
         do_brownout,
         check_reset_reason_brownout);
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
 
 
 #ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY

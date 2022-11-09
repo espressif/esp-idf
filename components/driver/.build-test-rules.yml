@@ -73,6 +73,24 @@ components/driver/test_apps/sdm:
   disable:
     - if: SOC_SDM_SUPPORTED != 1
 
+components/driver/test_apps/spi/master:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
+
+components/driver/test_apps/spi/slave:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
+
+components/driver/test_apps/spi/slave_hd:
+  disable:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
+
 components/driver/test_apps/temperature_sensor:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1

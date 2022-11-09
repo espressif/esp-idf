@@ -76,7 +76,7 @@ TEST_CASE("esp_netif: create and delete multiple netifs", "[esp_netif][leaks=0]"
 }
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C6)
 //IDF-5047
 
 TEST_CASE("esp_netif: test dhcp client state transitions for wifi station", "[esp_netif]")
@@ -302,7 +302,7 @@ TEST_CASE("esp_netif: get/set hostname", "[esp_netif]")
     esp_netif_destroy(esp_netif);
 }
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
 
 TEST_CASE("esp_netif: convert ip address from string", "[esp_netif]")
 {
@@ -328,7 +328,7 @@ TEST_CASE("esp_netif: convert ip address from string", "[esp_netif]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_netif_str_to_ip6(ipv6_src[0], NULL));
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C6)
 //IDF-5047
 TEST_CASE("esp_netif: create and destroy default wifi interfaces", "[esp_netif][leaks=0]")
 {
@@ -365,7 +365,7 @@ TEST_CASE("esp_netif: create and destroy default wifi interfaces", "[esp_netif][
 }
 
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
 
 static esp_err_t dummy_transmit(void* hd, void *buf, size_t length)
 {

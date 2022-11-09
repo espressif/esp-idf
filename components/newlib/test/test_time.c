@@ -14,7 +14,6 @@
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
 #include "esp_system.h"
 #include "test_utils.h"
 #include "esp_log.h"
@@ -45,6 +44,7 @@
 #endif
 
 #if portNUM_PROCESSORS == 2
+#include "soc/rtc_cntl_reg.h"
 
 // This runs on APP CPU:
 static void time_adc_test_task(void* arg)
