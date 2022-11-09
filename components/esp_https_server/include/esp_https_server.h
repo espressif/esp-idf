@@ -152,6 +152,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .user_cb = NULL,                              \
     .ssl_userdata = NULL,                         \
     .cert_select_cb = NULL                        \
+    .alpn_protos = NULL                           \
 }
 
 /**
