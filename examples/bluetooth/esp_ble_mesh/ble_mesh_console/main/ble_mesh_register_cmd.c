@@ -18,6 +18,7 @@
 #include "transaction.h"
 #include "esp_ble_mesh_config_model_api.h"
 #include "ble_mesh_console_decl.h"
+#include "ble_mesh_model.h"
 
 typedef struct {
     struct arg_str *static_val;
@@ -144,6 +145,11 @@ typedef struct {
 } ble_mesh_provisioner_heartbeat_t;
 static ble_mesh_provisioner_heartbeat_t heartbeat;
 
+extern void ble_mesh_generic_onoff_client_model_cb(esp_ble_mesh_generic_client_cb_event_t event,
+        esp_ble_mesh_generic_client_cb_param_t *param);
+extern void ble_mesh_configuration_client_model_cb(esp_ble_mesh_cfg_client_cb_event_t event,
+        esp_ble_mesh_cfg_client_cb_param_t *param);
+
 void ble_mesh_register_cmd(void);
 // Register callback function
 void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_param_t *param);
@@ -164,6 +170,8 @@ int ble_mesh_register_cb(int argc, char** argv)
     esp_ble_mesh_register_prov_callback(ble_mesh_prov_cb);
     esp_ble_mesh_register_custom_model_callback(ble_mesh_model_cb);
     esp_ble_mesh_register_generic_server_callback(ble_mesh_generic_server_model_cb);
+    esp_ble_mesh_register_generic_client_callback(ble_mesh_generic_onoff_client_model_cb);
+    esp_ble_mesh_register_config_client_callback(ble_mesh_configuration_client_model_cb);
     ESP_LOGI(TAG, "Bm:Reg,OK");
     ESP_LOGD(TAG, "exit %s\n", __func__);
     return 0;
