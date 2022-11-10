@@ -28,6 +28,9 @@ priority_headers = [os.path.join('components', 'esp_common', 'include', 'esp_err
 dont_include = [os.path.join('soc', 'soc.h'),
                 os.path.join('esp_err.h')]
 
+# Don't search the following directories, e.g. test directories
+exclude_search_dirs = ['test_apps', 'unit-test-app']
+
 err_dict = collections.defaultdict(list)  # identified errors are stored here; mapped by the error code
 rev_err_dict = dict()  # map of error string to error code
 unproc_list = list()  # errors with unknown codes which depend on other errors
@@ -309,7 +312,10 @@ def main() -> None:
     include_as_pattern = re.compile(r'\s*//\s*{}: [^"]* "([^"]+)"'.format(os.path.basename(__file__)))
     define_pattern = re.compile(r'\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)')
 
-    for root, dirnames, filenames in os.walk(idf_path):
+    for root, dirnames, filenames in os.walk(idf_path, topdown=True):
+        # When topdown is True, we can modify the dirnames list in-place
+        # walk() will only recurse into the subdirectories whose names remain in dirnames
+        dirnames[:] = [d for d in dirnames if d not in exclude_search_dirs]
         for filename in fnmatch.filter(filenames, '*.[ch]'):
             full_path = os.path.join(root, filename)
             path_in_idf = os.path.relpath(full_path, idf_path)
