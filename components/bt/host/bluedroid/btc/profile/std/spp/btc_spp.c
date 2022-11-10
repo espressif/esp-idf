@@ -40,10 +40,7 @@
 #define VFS_CLOSE_TIMEOUT (20 * 1000)
 
 typedef struct {
-    bool peer_fc;         /* true if flow control is set based on peer's request */
-    bool user_fc;         /* true if flow control is set based on user's request  */
     fixed_queue_t *queue; /* Queue of buffers waiting to be sent */
-    uint32_t data_size;   /* Number of data bytes in the queue */
 } slot_data_t;
 
 typedef struct {
@@ -104,11 +101,10 @@ static void spp_osi_free(void *p)
 
 static int init_slot_data(slot_data_t *slot_data, size_t queue_size)
 {
-    memset(slot_data, 0, sizeof(slot_data_t));
-    if ((slot_data->queue = fixed_queue_new(queue_size)) == NULL) {
+    slot_data->queue = fixed_queue_new(queue_size);
+    if (slot_data->queue == NULL) {
         return -1;
     }
-    slot_data->data_size = 0;
     return 0;
 }
 
@@ -128,23 +124,13 @@ static spp_slot_t *spp_malloc_slot(void)
     for (size_t i = 1; i <= MAX_RFC_PORTS; i++) {
         slot = &spp_local_param.spp_slots[i];
         if ((*slot) == NULL) {
-            if (((*slot) = (spp_slot_t *)osi_malloc(sizeof(spp_slot_t))) == NULL) {
+            if (((*slot) = (spp_slot_t *)osi_calloc(sizeof(spp_slot_t))) == NULL) {
                 return NULL;
             }
             (*slot)->id = spp_local_param.spp_slot_id;
             (*slot)->serial = i;
-            (*slot)->sdp_handle = 0;
-            (*slot)->rfc_handle = 0;
-            (*slot)->rfc_port_handle = 0;
             (*slot)->fd = -1;
-            (*slot)->connected = false;
-            (*slot)->is_server = false;
-            (*slot)->mtu = 0;
             (*slot)->credit_rx = BTA_JV_MAX_CREDIT_NUM;
-            (*slot)->write_data = NULL;
-            (*slot)->write_data_len = 0;
-            (*slot)->is_writing = false;
-            (*slot)->close_alarm = NULL;
             /* clear the old event bits */
             if (spp_local_param.tx_event_group) {
                 xEventGroupClearBits(spp_local_param.tx_event_group, SLOT_WRITE_BIT(i) | SLOT_CLOSE_BIT(i));
@@ -308,8 +294,8 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
     bt_status_t status;
     btc_msg_t msg;
     void *new_user_data = NULL;
-    uint32_t id = (uintptr_t)user_data, id_temp = 0;
-    spp_slot_t *slot = NULL, *slot_new = NULL;
+    uint32_t id = (uintptr_t)user_data;
+    spp_slot_t *slot = NULL;
 
     if (!is_spp_init()) {
         BTC_TRACE_WARNING("%s SPP have been deinit, incoming events ignore!\n", __func__);
@@ -340,7 +326,8 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
             slot->rfc_handle = p_data->rfc_srv_open.new_listen_handle;
             slot->rfc_port_handle = BTA_JvRfcommGetPortHdl(slot->rfc_handle);
         } else {
-            slot_new = spp_malloc_slot();
+            uint32_t id_temp;
+            spp_slot_t *slot_new = spp_malloc_slot();
             if (!slot_new) {
                 BTC_TRACE_ERROR("%s unable to malloc RFCOMM slot!", __func__);
                 p_data->rfc_srv_open.status = ESP_SPP_NO_RESOURCE;
@@ -645,8 +632,8 @@ static void btc_spp_connect(btc_spp_args_t *arg)
         osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
         spp_slot_t *slot = spp_malloc_slot();
         if (!slot) {
-            BTC_TRACE_ERROR("%s unable to malloc RFCOMM slot!", __func__);
             osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
+            BTC_TRACE_ERROR("%s unable to malloc RFCOMM slot!", __func__);
             ret = ESP_SPP_NO_RESOURCE;
             break;
         }
@@ -718,8 +705,8 @@ static void btc_spp_start_srv(btc_spp_args_t *arg)
         osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
         spp_slot_t *slot = spp_malloc_slot();
         if (!slot) {
-            BTC_TRACE_ERROR("%s unable to malloc RFCOMM slot!", __func__);
             osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
+            BTC_TRACE_ERROR("%s unable to malloc RFCOMM slot!", __func__);
             ret = ESP_SPP_NO_RESOURCE;
             break;
         }
@@ -1161,8 +1148,8 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                 uint32_t id = (uintptr_t)p_data->rfc_close.user_data;
                 slot = spp_find_slot_by_id(id);
                 if (!slot) {
-                    param.close.status = ESP_SPP_NO_CONNECTION;
                     osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
+                    param.close.status = ESP_SPP_NO_CONNECTION;
                     BTC_TRACE_ERROR("%s unable to find RFCOMM slot, event:%d!", __func__, event);
                     break;
                 }
@@ -1170,25 +1157,25 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                 if (slot->close_alarm == NULL && slot->rx.queue && fixed_queue_length(slot->rx.queue) > 0) {
                     tBTA_JV *p_arg = NULL;
                     if ((p_arg = osi_malloc(sizeof(tBTA_JV))) == NULL) {
-                        param.close.status = ESP_SPP_NO_RESOURCE;
                         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
+                        param.close.status = ESP_SPP_NO_RESOURCE;
                         BTC_TRACE_ERROR("%s unable to malloc slot close_alarm arg!", __func__);
                         break;
                     }
                     memcpy(p_arg, p_data, sizeof(tBTA_JV));
                     if ((slot->close_alarm =
                              osi_alarm_new("slot", close_timeout_handler, (void *)p_arg, VFS_CLOSE_TIMEOUT)) == NULL) {
+                        osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
                         free(p_arg);
                         param.close.status = ESP_SPP_NO_RESOURCE;
-                        osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
                         BTC_TRACE_ERROR("%s unable to malloc slot close_alarm!", __func__);
                         break;
                     }
                     if (osi_alarm_set(slot->close_alarm, VFS_CLOSE_TIMEOUT) != OSI_ALARM_ERR_PASS) {
-                        free(p_arg);
                         osi_alarm_free(slot->close_alarm);
-                        param.close.status = ESP_SPP_BUSY;
                         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
+                        free(p_arg);
+                        param.close.status = ESP_SPP_BUSY;
                         BTC_TRACE_ERROR("%s set slot close_alarm failed!", __func__);
                         break;
                     }
@@ -1455,10 +1442,10 @@ static ssize_t spp_vfs_write(int fd, const void * data, size_t size)
                 }
             }
 
-            BTC_TRACE_DEBUG("%s items_waiting:%d, fd:%d\n", __func__, items_waiting, fd);
             osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
+            BTC_TRACE_DEBUG("%s items_waiting:%d, fd:%d\n", __func__, items_waiting, fd);
 
-            // block untill under water level, be closed or time out
+            // block until under water level, be closed or time out
             tx_event_group_val =
                 xEventGroupWaitBits(spp_local_param.tx_event_group, SLOT_WRITE_BIT(serial) | SLOT_CLOSE_BIT(serial), pdTRUE,
                                     pdFALSE, VFS_WRITE_TIMEOUT / portTICK_PERIOD_MS);
