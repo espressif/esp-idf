@@ -10,6 +10,7 @@ CONFIGS = [
     pytest.param('psram', marks=[pytest.mark.esp32]),
     pytest.param('release', marks=[pytest.mark.supported_targets]),
     pytest.param('single_core', marks=[pytest.mark.esp32]),
+    pytest.param('smp', marks=[pytest.mark.supported_targets]),
 ]
 
 
