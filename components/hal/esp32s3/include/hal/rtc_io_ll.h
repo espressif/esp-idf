@@ -19,6 +19,7 @@
 #include "hal/gpio_types.h"
 #include "soc/io_mux_reg.h"
 #include "soc/usb_serial_jtag_reg.h"
+#include "soc/usb_serial_jtag_struct.h"
 
 #define RTCIO_LL_PIN_FUNC     0
 
@@ -52,6 +53,10 @@ typedef enum {
 static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
 {
     if (func == RTCIO_FUNC_RTC) {
+        // Disable USB Serial JTAG if pin 19 or pin 20 needs to select the rtc function
+        if (rtcio_num == rtc_io_num_map[USB_DM_GPIO_NUM] || rtcio_num == rtc_io_num_map[USB_DP_GPIO_NUM]) {
+            USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
+        }
         SENS.sar_peri_clk_gate_conf.iomux_clk_en = 1;
         // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
         SET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
@@ -60,6 +65,8 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
     } else if (func == RTCIO_FUNC_DIGITAL) {
         CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
         SENS.sar_peri_clk_gate_conf.iomux_clk_en = 0;
+        // USB Serial JTAG pad re-enable won't be done here (it requires both DM and DP pins not in rtc function)
+        // Instead, USB_SERIAL_JTAG_USB_PAD_ENABLE needs to be guaranteed to be set in usb_serial_jtag driver
     }
 }
 
