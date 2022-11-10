@@ -340,7 +340,7 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
 
     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 )
         void * pvThreadLocalStoragePointers[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
             TlsDeleteCallbackFunction_t pvThreadLocalStoragePointersDelCallback[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
         #endif
     #endif
@@ -539,7 +539,7 @@ static portTASK_FUNCTION_PROTO( prvIdleTask, pvParameters ) PRIVILEGED_FUNCTION;
 /* Function to call the Thread Local Storage Pointer Deletion Callbacks. Will be
  * called during task deletion before prvDeleteTCB is called.
  */
-#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
     static void prvDeleteTLS( TCB_t * pxTCB );
 #endif
 
@@ -1486,7 +1486,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 
         if( xFreeNow == pdTRUE )
         {
-            #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+            #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
                 prvDeleteTLS( pxTCB );
             #endif
 
@@ -3360,93 +3360,91 @@ BaseType_t xTaskIncrementTick( void )
     return xSwitchRequired;
 }
 
-#ifdef ESP_PLATFORM
-    #if ( configNUM_CORES > 1 )
-        BaseType_t xTaskIncrementTickOtherCores( void )
+#if ( configNUM_CORES > 1 )
+    BaseType_t xTaskIncrementTickOtherCores( void )
+    {
+        /* Minor optimization. This function can never switch cores mid
+         * execution */
+        BaseType_t xCoreID = xPortGetCoreID();
+        BaseType_t xSwitchRequired = pdFALSE;
+
+        /* This function should never be called by Core 0. */
+        configASSERT( xCoreID != 0 );
+
+        /* Called by the portable layer each time a tick interrupt occurs.
+         * Increments the tick then checks to see if the new tick value will cause any
+         * tasks to be unblocked. */
+        traceTASK_INCREMENT_TICK( xTickCount );
+
+        if( uxSchedulerSuspended[ xCoreID ] == ( UBaseType_t ) pdFALSE )
         {
-            /* Minor optimization. This function can never switch cores mid
-             * execution */
-            BaseType_t xCoreID = xPortGetCoreID();
-            BaseType_t xSwitchRequired = pdFALSE;
+            /* We need a critical section here as we are about to access kernel data
+             * structures:
+             * - Other cores could be accessing them simultaneously
+             * - Unlike other ports, we call xTaskIncrementTick() without disabling
+             *   nested interrupts, which in turn is disabled by the critical
+             *   section. */
+            taskENTER_CRITICAL_ISR( &xKernelLock );
 
-            /* This function should never be called by Core 0. */
-            configASSERT( xCoreID != 0 );
-
-            /* Called by the portable layer each time a tick interrupt occurs.
-             * Increments the tick then checks to see if the new tick value will cause any
-             * tasks to be unblocked. */
-            traceTASK_INCREMENT_TICK( xTickCount );
-
-            if( uxSchedulerSuspended[ xCoreID ] == ( UBaseType_t ) pdFALSE )
-            {
-                /* We need a critical section here as we are about to access kernel data
-                 * structures:
-                 * - Other cores could be accessing them simultaneously
-                 * - Unlike other ports, we call xTaskIncrementTick() without disabling
-                 *   nested interrupts, which in turn is disabled by the critical
-                 *   section. */
-                taskENTER_CRITICAL_ISR( &xKernelLock );
-
-                /* A task being unblocked cannot cause an immediate context switch
-                 * if preemption is turned off. */
-                #if ( configUSE_PREEMPTION == 1 )
-                    {
-                        /* Check if core 0 calling xTaskIncrementTick() has
-                         * unblocked a task that can be run. */
-                        if( uxTopReadyPriority > pxCurrentTCB[ xCoreID ]->uxPriority )
-                        {
-                            xSwitchRequired = pdTRUE;
-                        }
-                        else
-                        {
-                            mtCOVERAGE_TEST_MARKER();
-                        }
-                    }
-                #endif /* if ( configUSE_PREEMPTION == 1 ) */
-
-                /* Tasks of equal priority to the currently running task will share
-                 * processing time (time slice) if preemption is on, and the application
-                 * writer has not explicitly turned time slicing off. */
-                #if ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) )
-                    {
-                        if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ pxCurrentTCB[ xCoreID ]->uxPriority ] ) ) > ( UBaseType_t ) 1 )
-                        {
-                            xSwitchRequired = pdTRUE;
-                        }
-                        else
-                        {
-                            mtCOVERAGE_TEST_MARKER();
-                        }
-                    }
-                #endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) ) */
-
-                /* Exit the critical section as we have finished accessing the kernel data structures. */
-                taskEXIT_CRITICAL_ISR( &xKernelLock );
-
-                #if ( configUSE_PREEMPTION == 1 )
-                    {
-                        if( xYieldPending[ xCoreID ] != pdFALSE )
-                        {
-                            xSwitchRequired = pdTRUE;
-                        }
-                        else
-                        {
-                            mtCOVERAGE_TEST_MARKER();
-                        }
-                    }
-                #endif /* configUSE_PREEMPTION */
-            }
-
-            #if ( configUSE_TICK_HOOK == 1 )
+            /* A task being unblocked cannot cause an immediate context switch
+             * if preemption is turned off. */
+            #if ( configUSE_PREEMPTION == 1 )
                 {
-                    vApplicationTickHook();
+                    /* Check if core 0 calling xTaskIncrementTick() has
+                     * unblocked a task that can be run. */
+                    if( uxTopReadyPriority > pxCurrentTCB[ xCoreID ]->uxPriority )
+                    {
+                        xSwitchRequired = pdTRUE;
+                    }
+                    else
+                    {
+                        mtCOVERAGE_TEST_MARKER();
+                    }
                 }
-            #endif
+            #endif /* if ( configUSE_PREEMPTION == 1 ) */
 
-            return xSwitchRequired;
+            /* Tasks of equal priority to the currently running task will share
+             * processing time (time slice) if preemption is on, and the application
+             * writer has not explicitly turned time slicing off. */
+            #if ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) )
+                {
+                    if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ pxCurrentTCB[ xCoreID ]->uxPriority ] ) ) > ( UBaseType_t ) 1 )
+                    {
+                        xSwitchRequired = pdTRUE;
+                    }
+                    else
+                    {
+                        mtCOVERAGE_TEST_MARKER();
+                    }
+                }
+            #endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) ) */
+
+            /* Exit the critical section as we have finished accessing the kernel data structures. */
+            taskEXIT_CRITICAL_ISR( &xKernelLock );
+
+            #if ( configUSE_PREEMPTION == 1 )
+                {
+                    if( xYieldPending[ xCoreID ] != pdFALSE )
+                    {
+                        xSwitchRequired = pdTRUE;
+                    }
+                    else
+                    {
+                        mtCOVERAGE_TEST_MARKER();
+                    }
+                }
+            #endif /* configUSE_PREEMPTION */
         }
-    #endif /* ( configNUM_CORES > 1 ) */
-#endif // ESP_PLATFORM
+
+        #if ( configUSE_TICK_HOOK == 1 )
+            {
+                vApplicationTickHook();
+            }
+        #endif
+
+        return xSwitchRequired;
+    }
+#endif /* ( configNUM_CORES > 1 ) */
 
 /*-----------------------------------------------------------*/
 
@@ -4380,7 +4378,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
 #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
 
-    #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+    #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
 
         void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet,
                                                               BaseType_t xIndex,
@@ -4407,7 +4405,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
         }
 
 
-    #else /* if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS ) */
+    #else /* if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 ) */
         void vTaskSetThreadLocalStoragePointer( TaskHandle_t xTaskToSet,
                                                 BaseType_t xIndex,
                                                 void * pvValue )
@@ -4422,7 +4420,7 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
                 taskEXIT_CRITICAL( &xKernelLock );
             }
         }
-    #endif /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS */
+    #endif /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 */
 
 #endif /* configNUM_THREAD_LOCAL_STORAGE_POINTERS */
 /*-----------------------------------------------------------*/
@@ -4559,7 +4557,7 @@ static void prvCheckTasksWaitingTermination( void )
 
                 if( pxTCB != NULL )                /*Call deletion callbacks and free TCB memory */
                 {
-                    #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+                    #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
                         prvDeleteTLS( pxTCB );
                     #endif
                     prvDeleteTCB( pxTCB );
@@ -4894,7 +4892,7 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 #endif /* INCLUDE_vTaskDelete */
 /*-----------------------------------------------------------*/
 
-#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+#if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
 
     static void prvDeleteTLS( TCB_t * pxTCB )
     {
@@ -4909,7 +4907,7 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
         }
     }
 
-#endif /* ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS ) */
+#endif /* ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 ) */
 /*-----------------------------------------------------------*/
 
 

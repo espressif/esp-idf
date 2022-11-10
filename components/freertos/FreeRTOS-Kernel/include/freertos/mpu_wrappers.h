@@ -37,7 +37,7 @@
 
 /* This file redefines API functions to be called through a wrapper macro, but
  * only for ports that are using the MPU. */
-#if portUSING_MPU_WRAPPERS
+#ifdef portUSING_MPU_WRAPPERS
 
 /* MPU_WRAPPERS_INCLUDED_FROM_API_FILE will be defined when this file is
  * included from queue.c or task.c to prevent it from having an effect within
@@ -55,11 +55,9 @@
 /* Map standard tasks.h API functions to the MPU equivalents. */
         #define xTaskCreate                            MPU_xTaskCreate
         #define xTaskCreateStatic                      MPU_xTaskCreateStatic
-        #define xTaskCreateRestricted                  MPU_xTaskCreateRestricted
-        #define vTaskAllocateMPURegions                MPU_vTaskAllocateMPURegions
         #define vTaskDelete                            MPU_vTaskDelete
         #define vTaskDelay                             MPU_vTaskDelay
-        #define vTaskDelayUntil                        MPU_vTaskDelayUntil
+        #define xTaskDelayUntil                        MPU_xTaskDelayUntil
         #define xTaskAbortDelay                        MPU_xTaskAbortDelay
         #define uxTaskPriorityGet                      MPU_uxTaskPriorityGet
         #define eTaskGetState                          MPU_eTaskGetState
@@ -77,8 +75,8 @@
         #define uxTaskGetStackHighWaterMark2           MPU_uxTaskGetStackHighWaterMark2
         #define vTaskSetApplicationTaskTag             MPU_vTaskSetApplicationTaskTag
         #define xTaskGetApplicationTaskTag             MPU_xTaskGetApplicationTaskTag
-        /* #define vTaskSetThreadLocalStoragePointer   MPU_vTaskSetThreadLocalStoragePointer */
-        /* #define pvTaskGetThreadLocalStoragePointer  MPU_pvTaskGetThreadLocalStoragePointer */
+        #define vTaskSetThreadLocalStoragePointer      MPU_vTaskSetThreadLocalStoragePointer
+        #define pvTaskGetThreadLocalStoragePointer     MPU_pvTaskGetThreadLocalStoragePointer
         #define xTaskCallApplicationTaskHook           MPU_xTaskCallApplicationTaskHook
         #define xTaskGetIdleTaskHandle                 MPU_xTaskGetIdleTaskHandle
         #define uxTaskGetSystemState                   MPU_uxTaskGetSystemState
@@ -86,9 +84,10 @@
         #define vTaskGetRunTimeStats                   MPU_vTaskGetRunTimeStats
         #define ulTaskGetIdleRunTimeCounter            MPU_ulTaskGetIdleRunTimeCounter
         #define xTaskGenericNotify                     MPU_xTaskGenericNotify
-        #define xTaskNotifyWait                        MPU_xTaskNotifyWait
-        #define ulTaskNotifyTake                       MPU_ulTaskNotifyTake
-        #define xTaskNotifyStateClear                  MPU_xTaskNotifyStateClear
+        #define xTaskGenericNotifyWait                 MPU_xTaskGenericNotifyWait
+        #define ulTaskGenericNotifyTake                MPU_ulTaskGenericNotifyTake
+        #define xTaskGenericNotifyStateClear           MPU_xTaskGenericNotifyStateClear
+        #define ulTaskGenericNotifyValueClear          MPU_ulTaskGenericNotifyValueClear
         #define xTaskCatchUpTicks                      MPU_xTaskCatchUpTicks
 
         #define xTaskGetCurrentTaskHandle              MPU_xTaskGetCurrentTaskHandle
@@ -135,6 +134,7 @@
         #define xTimerPendFunctionCall                 MPU_xTimerPendFunctionCall
         #define pcTimerGetName                         MPU_pcTimerGetName
         #define vTimerSetReloadMode                    MPU_vTimerSetReloadMode
+        #define uxTimerGetReloadMode                   MPU_uxTimerGetReloadMode
         #define xTimerGetPeriod                        MPU_xTimerGetPeriod
         #define xTimerGetExpiryTime                    MPU_xTimerGetExpiryTime
         #define xTimerGenericCommand                   MPU_xTimerGenericCommand
