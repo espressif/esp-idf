@@ -52,8 +52,9 @@ esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes);
  *
  * @param vaddrmode  Mode the psram cache works in.
  * @return
- *        - ESP_OK:                On success,
- *        - ESP_ERR_INVALID_STATE: On esp32, when VSPI peripheral is needed but cannot be claimed.
+ *        - ESP_OK:                On success
+ *        - ESP_ERR_NOT_SUPPORTED: PSRAM ID / vendor ID check fail
+ *        - ESP_ERR_INVALID_STATE: On esp32, when VSPI peripheral is needed but cannot be claimed
  */
 esp_err_t esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode);
 

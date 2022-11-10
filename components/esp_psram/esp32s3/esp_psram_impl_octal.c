@@ -30,6 +30,7 @@
 #define OCT_PSRAM_RD_DUMMY_BITLEN       (2*(10-1))
 #define OCT_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
 #define OCT_PSRAM_CS1_IO                SPI_CS1_GPIO_NUM
+#define OCT_PSRAM_VENDOR_ID             0xD
 
 #define OCT_PSRAM_CS_SETUP_TIME         3
 #define OCT_PSRAM_CS_HOLD_TIME          3
@@ -310,6 +311,10 @@ esp_err_t esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)
     s_init_psram_mode_reg(1, &mode_reg);
     //Print PSRAM info
     s_get_psram_mode_reg(1, &mode_reg);
+    if (mode_reg.mr1.vendor_id != OCT_PSRAM_VENDOR_ID) {
+        ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x, PSRAM chip not found or not supported, or wrong PSRAM line mode", mode_reg.mr1.vendor_id);
+        return ESP_ERR_NOT_SUPPORTED;
+    }
     s_print_psram_info(&mode_reg);
     s_psram_size = mode_reg.mr2.density == 0x1 ? PSRAM_SIZE_4MB  :
                    mode_reg.mr2.density == 0X3 ? PSRAM_SIZE_8MB  :
