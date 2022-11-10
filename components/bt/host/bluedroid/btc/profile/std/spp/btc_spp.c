@@ -785,6 +785,7 @@ static void btc_spp_stop_srv(btc_spp_args_t *arg)
             }
         }
         if (srv_cnt == 0) {
+            osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
             if (is_remove_all) {
                 BTC_TRACE_ERROR("%s can not find any server!\n", __func__);
             } else {
