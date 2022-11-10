@@ -219,6 +219,18 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 esp_err_t esp_http_client_perform(esp_http_client_handle_t client);
 
 /**
+ * @brief       Cancel an ongoing HTTP request. This API closes the current socket and opens a new socket with the same esp_http_client context.
+ *
+ * @param       client  The esp_http_client handle
+ * @return
+ *  - ESP_OK on successful
+ *  - ESP_FAIL on error
+ *  - ESP_ERR_INVALID_ARG
+ *  - ESP_ERR_INVALID_STATE
+ */
+esp_err_t esp_http_client_cancel_request(esp_http_client_handle_t client);
+
+/**
  * @brief      Set URL for client, when performing this behavior, the options in the URL will replace the old ones
  *
  * @param[in]  client  The esp_http_client handle

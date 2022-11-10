@@ -365,6 +365,29 @@ esp_err_t esp_http_client_get_password(esp_http_client_handle_t client, char **v
     return ESP_OK;
 }
 
+esp_err_t esp_http_client_cancel_request(esp_http_client_handle_t client)
+{
+    if (client == NULL) {
+        ESP_LOGD(TAG, "Client handle is NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (client->state < HTTP_STATE_CONNECTED) {
+        ESP_LOGD(TAG, "Invalid State: %d", client->state);
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (esp_transport_close(client->transport) != 0) {
+        return ESP_FAIL;
+    }
+
+    esp_err_t err = esp_http_client_connect(client);
+    // esp_http_client_connect() will return ESP_ERR_HTTP_CONNECTING in case of non-blocking mode and if the connection has not been established.
+    if (err == ESP_OK || (client->is_async && err == ESP_ERR_HTTP_CONNECTING)) {
+        client->response->data_process = client->response->content_length;
+        return ESP_OK;
+    }
+    return ESP_FAIL;
+}
+
 esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, const char *password)
 {
     if (client == NULL) {
