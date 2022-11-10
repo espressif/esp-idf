@@ -84,7 +84,7 @@ ble_mesh_node_status node_status = {
     .previous = 0x0,
     .current = 0x0,
 };
-SemaphoreHandle_t ble_mesh_node_sema;
+SemaphoreHandle_t ble_mesh_node_sema = NULL;
 
 typedef struct {
     struct arg_str *add_del;
@@ -166,7 +166,6 @@ void ble_mesh_register_mesh_node(void)
 int ble_mesh_register_cb(int argc, char** argv)
 {
     ESP_LOGD(TAG, "enter %s\n", __func__);
-    ble_mesh_node_init();
     esp_ble_mesh_register_prov_callback(ble_mesh_prov_cb);
     esp_ble_mesh_register_custom_model_callback(ble_mesh_model_cb);
     esp_ble_mesh_register_generic_server_callback(ble_mesh_generic_server_model_cb);
@@ -249,6 +248,9 @@ void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_p
     switch (event) {
     case ESP_BLE_MESH_PROV_REGISTER_COMP_EVT:
         ble_mesh_callback_check_err_code(param->prov_register_comp.err_code, "Bm:Init");
+        break;
+    case ESP_BLE_MESH_DEINIT_MESH_COMP_EVT:
+        ble_mesh_callback_check_err_code(param->deinit_mesh_comp.err_code, "Bm:DeInit");
         break;
     case ESP_BLE_MESH_NODE_PROV_ENABLE_COMP_EVT:
         ble_mesh_callback_check_err_code(param->node_prov_enable_comp.err_code, "Node:EnBearer");
@@ -406,7 +408,7 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
                 outcome = esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
                          sizeof(status), &status);
                 if (outcome != ESP_OK) {
-                    ESP_LOGE(TAG, "Node:SendMsg,Fal");
+                    ESP_LOGE(TAG, "Node:SendMsg,Fail");
                 }
             } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
                 ble_mesh_node_set_state(param->model_operation.msg[0]);
@@ -414,7 +416,7 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
                 outcome = esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
                          sizeof(status), param->model_operation.msg);
                 if (outcome != ESP_OK) {
-                    ESP_LOGE(TAG, "Node:SendMsg,Fal");
+                    ESP_LOGE(TAG, "Node:SendMsg,Fail");
                 }
             } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
                 ble_mesh_node_set_state(param->model_operation.msg[0]);
@@ -578,6 +580,12 @@ int ble_mesh_init(int argc, char **argv)
         return 1;
     }
 
+    err = ble_mesh_init_node_prestore_params();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Bm:NodeInitPreParam,Fail\n");
+        return err;
+    }
+
     ESP_LOGD(TAG, "enter %s, module %x\n", __func__, component.model_type->ival[0]);
     local_component = ble_mesh_get_component(component.model_type->ival[0]);
 
@@ -600,10 +608,6 @@ int ble_mesh_init(int argc, char **argv)
     }
 
     err = esp_ble_mesh_init(&prov, local_component);
-    if (err) {
-        ESP_LOGI(TAG, "Bm:Init,OK\n");
-        return err;
-    }
 
     free(device_uuid);
     ESP_LOGD(TAG, "exit %s\n", __func__);
@@ -690,17 +694,13 @@ int ble_mesh_deinit(int argc, char **argv)
         arg_print_errors(stderr, deinit.end, argv[0]);
         return 1;
     }
+
+    ble_mesh_deinit_node_prestore_params();
+
     if (deinit.action->count != 0) {
         param.erase_flash = deinit.action->ival[0];
         err = esp_ble_mesh_deinit(&param);
-        if (err == ESP_OK) {
-            ESP_LOGI(TAG, "Bm:DeInit,OK,%d,\n", deinit.action->ival[0]);
-        }
-        else{
-            ESP_LOGI(TAG, "Bm:DeInit,Fail\n");
-        }
-    }
-    else {
+    } else {
         return 1;
     }
     ESP_LOGD(TAG, "exit %s\n", __func__);
