@@ -116,7 +116,7 @@ esp_err_t touch_pad_get_meas_time(uint16_t *sleep_cycle, uint16_t *meas_times)
 __attribute__((deprecated("please use 'touch_pad_get_charge_discharge_times' and 'touch_pad_get_measurement_interval' instead")));
 
 /**
- * @brief Set connection type of touch channel in idle status.
+ * @brief Set the connection type of touch channels in idle status.
  *        When a channel is in measurement mode, other initialized channels are in idle mode.
  *        The touch channel is generally adjacent to the trace, so the connection state of the idle channel
  *        affects the stability and sensitivity of the test channel.
@@ -129,7 +129,7 @@ __attribute__((deprecated("please use 'touch_pad_get_charge_discharge_times' and
 esp_err_t touch_pad_set_idle_channel_connect(touch_pad_conn_type_t type);
 
 /**
- * @brief Set connection type of touch channel in idle status.
+ * @brief Get the connection type of touch channels in idle status.
  *        When a channel is in measurement mode, other initialized channels are in idle mode.
  *        The touch channel is generally adjacent to the trace, so the connection state of the idle channel
  *        affects the stability and sensitivity of the test channel.
