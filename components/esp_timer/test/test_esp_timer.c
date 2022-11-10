@@ -932,7 +932,7 @@ static void timer_isr_callback(void* arg)
     int64_t now = esp_timer_get_time();
     int64_t dt = now - old_time[num_timer];
     old_time[num_timer] = now;
-    if (num_timer == 1) {
+    if (num_timer == 0) {
         esp_rom_printf("(%lld): \t\t\t\t timer ISR, dt: %lld us\n", now, dt);
         assert(xPortInIsrContext());
     } else {
@@ -944,7 +944,7 @@ static void timer_isr_callback(void* arg)
 TEST_CASE("Test ESP_TIMER_ISR dispatch method", "[esp_timer]")
 {
     TEST_ESP_OK(esp_timer_dump(stdout));
-    int timer[2]= {1, 2};
+    int timer[2]= {0, 1};
     const esp_timer_create_args_t periodic_timer1_args = {
         .callback = &timer_isr_callback,
         .dispatch_method = ESP_TIMER_ISR,
