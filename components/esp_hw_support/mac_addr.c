@@ -12,10 +12,7 @@
 
 /* esp_system.h APIs relating to MAC addresses */
 
-#if CONFIG_ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR   || \
-    CONFIG_ESP32S3_UNIVERSAL_MAC_ADDRESSES_FOUR || \
-    CONFIG_ESP32C2_UNIVERSAL_MAC_ADDRESSES_FOUR || \
-    CONFIG_ESP32C3_UNIVERSAL_MAC_ADDRESSES_FOUR
+#if CONFIG_ESP_MAC_UNIVERSAL_MAC_ADDRESSES_FOUR
 #define MAC_ADDR_UNIVERSE_BT_OFFSET 2
 #else
 #define MAC_ADDR_UNIVERSE_BT_OFFSET 1
@@ -26,39 +23,129 @@
 #else
 #define ESP_MAC_ADDRESS_LEN 6
 #endif
+
 static const char *TAG = "system_api";
 
-static uint8_t base_mac_addr[ESP_MAC_ADDRESS_LEN] = { 0 };
+typedef enum {
+    STATE_INIT      = 0,
+    STATE_SET       = (1 << 0),
+} state_t;
+
+typedef struct {
+    esp_mac_type_t type: 4;
+    state_t state: 4;
+    uint8_t len;
+    uint8_t mac[ESP_MAC_ADDRESS_LEN];
+} mac_t;
+
+static mac_t s_mac_table[] = {
+#ifdef CONFIG_ESP32_WIFI_ENABLED
+    {ESP_MAC_WIFI_STA,      STATE_INIT, 6,                   {0}},
+    {ESP_MAC_WIFI_SOFTAP,   STATE_INIT, 6,                   {0}},
+#endif
+
+#ifdef CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
+    {ESP_MAC_BT,            STATE_INIT, 6,                   {0}},
+#endif
+
+    {ESP_MAC_ETH,           STATE_INIT, 6,                   {0}},
+
+#ifdef CONFIG_ESP_MAC_ADDR_UNIVERSE_IEEE802154
+    {ESP_MAC_IEEE802154,    STATE_INIT, 8,                   {0}},
+#endif
+
+    {ESP_MAC_BASE,          STATE_INIT, ESP_MAC_ADDRESS_LEN, {0}},
+    {ESP_MAC_EFUSE_FACTORY, STATE_INIT, ESP_MAC_ADDRESS_LEN, {0}},
+    {ESP_MAC_EFUSE_CUSTOM,  STATE_INIT, ESP_MAC_ADDRESS_LEN, {0}},
+};
+
+#define ITEMS_IN_MAC_TABLE (sizeof(s_mac_table) / sizeof(mac_t))
+
+static esp_err_t generate_mac(uint8_t *mac, uint8_t *base_mac_addr, esp_mac_type_t type);
+
+static int get_idx(esp_mac_type_t type)
+{
+    for (int idx = 0; idx < ITEMS_IN_MAC_TABLE; idx++) {
+        if (s_mac_table[idx].type == type) {
+            return idx;
+        }
+    }
+    ESP_LOGE(TAG, "mac type is incorrect (not found)");
+    return -1;
+}
+
+static esp_err_t get_mac_addr_from_mac_table(uint8_t *mac, unsigned idx, bool silent)
+{
+    if (!(s_mac_table[idx].state & STATE_SET)) {
+        esp_mac_type_t type = s_mac_table[idx].type;
+        if (type == ESP_MAC_BASE || type == ESP_MAC_EFUSE_FACTORY || type == ESP_MAC_EFUSE_CUSTOM) {
+            esp_err_t err = ESP_OK;
+            if (type == ESP_MAC_BASE || type == ESP_MAC_EFUSE_FACTORY) {
+                err = esp_efuse_mac_get_default(s_mac_table[idx].mac);
+            } else if (type == ESP_MAC_EFUSE_CUSTOM) {
+                err = esp_efuse_mac_get_custom(s_mac_table[idx].mac);
+            }
+            if (err != ESP_OK) {
+                return err;
+            }
+            s_mac_table[idx].state = STATE_SET;
+        } else {
+            if (!silent) {
+                ESP_LOGE(TAG, "MAC address (type %d) is not set in mac table", type);
+            }
+            return ESP_ERR_INVALID_MAC;
+        }
+    }
+    memcpy(mac, s_mac_table[idx].mac, s_mac_table[idx].len);
+    return ESP_OK;
+}
+
+size_t esp_mac_addr_len_get(esp_mac_type_t type)
+{
+    for (int idx = 0; idx < ITEMS_IN_MAC_TABLE; idx++) {
+        if (s_mac_table[idx].type == type) {
+            return s_mac_table[idx].len;
+        }
+    }
+    return 0;
+}
+
+esp_err_t esp_iface_mac_addr_set(const uint8_t *mac, esp_mac_type_t type)
+{
+    if (mac == NULL) {
+        ESP_LOGE(TAG, "mac address param is NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    int idx = get_idx(type);
+    if (idx == -1) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    if (type == ESP_MAC_EFUSE_FACTORY || type == ESP_MAC_EFUSE_CUSTOM) {
+        ESP_LOGE(TAG, "EFUSE MAC can not be set using this API");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (type == ESP_MAC_BASE) {
+        if (mac[0] & 0x01) {
+            ESP_LOGE(TAG, "Base MAC must be a unicast MAC");
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    memcpy(s_mac_table[idx].mac, mac, s_mac_table[idx].len);
+    s_mac_table[idx].state = STATE_SET;
+    return ESP_OK;
+}
 
 esp_err_t esp_base_mac_addr_set(const uint8_t *mac)
 {
-    if (mac == NULL) {
-        ESP_LOGE(TAG, "Base MAC address is NULL");
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (mac[0] & 0x01) {
-        ESP_LOGE(TAG, "Base MAC must be a unicast MAC");
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    memcpy(base_mac_addr, mac, ESP_MAC_ADDRESS_LEN);
-
-    return ESP_OK;
+    return esp_iface_mac_addr_set(mac, ESP_MAC_BASE);
 }
 
 esp_err_t esp_base_mac_addr_get(uint8_t *mac)
 {
-    if (mac == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (base_mac_addr[0] == 0 && memcmp(base_mac_addr, &base_mac_addr[1], ESP_MAC_ADDRESS_LEN - 1) == 0) {
-        ESP_LOGI(TAG, "Base MAC address is not set");
-        return ESP_ERR_INVALID_MAC;
-    }
-
-    memcpy(mac, base_mac_addr, ESP_MAC_ADDRESS_LEN);
-
-    return ESP_OK;
+    return esp_read_mac(mac, ESP_MAC_BASE);
 }
 
 esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
@@ -169,35 +256,48 @@ esp_err_t esp_derive_local_mac(uint8_t *local_mac, const uint8_t *universal_mac)
 
 esp_err_t esp_read_mac(uint8_t *mac, esp_mac_type_t type)
 {
-    uint8_t efuse_mac[ESP_MAC_ADDRESS_LEN];
-
     if (mac == NULL) {
         ESP_LOGE(TAG, "mac address param is NULL");
         return ESP_ERR_INVALID_ARG;
     }
-#if CONFIG_IEEE802154_ENABLED
-    if (type < ESP_MAC_WIFI_STA || type > ESP_MAC_IEEE802154) {
-#else
-    if (type < ESP_MAC_WIFI_STA || type > ESP_MAC_ETH) {
-#endif
-        ESP_LOGE(TAG, "mac type is incorrect");
-        return ESP_ERR_INVALID_ARG;
+    int idx = get_idx(type);
+    if (idx == -1) {
+        return ESP_ERR_NOT_SUPPORTED;
     }
 
-    // if base mac address is not set, read one from EFUSE and then write back
-    if (esp_base_mac_addr_get(efuse_mac) != ESP_OK) {
-        ESP_LOGI(TAG, "read default base MAC address from EFUSE");
-        esp_efuse_mac_get_default(efuse_mac);
-        esp_base_mac_addr_set(efuse_mac);
+    if (get_mac_addr_from_mac_table(mac, idx, true) == ESP_OK) {
+        return ESP_OK;
+    }
+    // A MAC with a specific type has not yet been set (or generated)
+
+    // then go ahead and generate it based on the base mac
+    uint8_t base_mac_addr[ESP_MAC_ADDRESS_LEN];
+    esp_err_t err = get_mac_addr_from_mac_table(base_mac_addr, get_idx(ESP_MAC_BASE), false);
+    if (err) {
+        ESP_LOGE(TAG, "Error reading BASE MAC address");
+        return ESP_FAIL;
     }
 
+    err = generate_mac(mac, base_mac_addr, type);
+    if (err) {
+        ESP_LOGE(TAG, "MAC address generation error");
+        return err;
+    }
+    // MAC was generated. We write it into the s_mac_table
+    s_mac_table[idx].state = STATE_SET;
+    memcpy(s_mac_table[idx].mac, mac, s_mac_table[idx].len);
+    return err;
+}
+
+static esp_err_t generate_mac(uint8_t *mac, uint8_t *base_mac_addr, esp_mac_type_t type)
+{
     switch (type) {
     case ESP_MAC_WIFI_STA:
-        memcpy(mac, efuse_mac, 6);
+        memcpy(mac, base_mac_addr, 6);
         break;
     case ESP_MAC_WIFI_SOFTAP:
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_WIFI_AP
-        memcpy(mac, efuse_mac, 6);
+        memcpy(mac, base_mac_addr, 6);
         // as a result of some esp32s2 chips burned with one MAC address by mistake,
         // there are some MAC address are reserved for this bug fix.
         // related mistake MAC address is 0x7cdfa1003000~0x7cdfa1005fff,
@@ -215,12 +315,12 @@ esp_err_t esp_read_mac(uint8_t *mac, esp_mac_type_t type)
         mac[5] += 1;
 #endif // IDF_TARGET_ESP32S2
 #else
-        esp_derive_local_mac(mac, efuse_mac);
+        esp_derive_local_mac(mac, base_mac_addr);
 #endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_WIFI_AP
         break;
     case ESP_MAC_BT:
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
-        memcpy(mac, efuse_mac, 6);
+        memcpy(mac, base_mac_addr, 6);
 #if !CONFIG_IDF_TARGET_ESP32H4
         // esp32h4 chips do not have wifi module, so the mac address do not need to add the BT offset
         mac[5] += MAC_ADDR_UNIVERSE_BT_OFFSET;
@@ -231,22 +331,21 @@ esp_err_t esp_read_mac(uint8_t *mac, esp_mac_type_t type)
         break;
     case ESP_MAC_ETH:
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_ETH
-        memcpy(mac, efuse_mac, 6);
+        memcpy(mac, base_mac_addr, 6);
         mac[5] += 3;
 #else
-        efuse_mac[5] += 1;
-        esp_derive_local_mac(mac, efuse_mac);
+        base_mac_addr[5] += 1;
+        esp_derive_local_mac(mac, base_mac_addr);
 #endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_ETH
         break;
 #if CONFIG_IEEE802154_ENABLED
     case ESP_MAC_IEEE802154:
-        memcpy(mac, efuse_mac, 8);
+        memcpy(mac, base_mac_addr, 8);
         break;
 #endif
     default:
         ESP_LOGE(TAG, "unsupported mac type");
-        break;
+        return ESP_ERR_NOT_SUPPORTED;
     }
-
     return ESP_OK;
 }

@@ -20,6 +20,18 @@ menu "Hardware Settings"
         config ESP_MAC_ADDR_UNIVERSE_ETH
             bool
 
+        config ESP_MAC_ADDR_UNIVERSE_IEEE802154
+            bool
+
+        config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_ONE
+            bool
+
+        config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_TWO
+            bool
+
+        config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_FOUR
+            bool
+
             # Insert chip-specific MAC config
         rsource "./port/$IDF_TARGET/Kconfig.mac"
     endmenu
