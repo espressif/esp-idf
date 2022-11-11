@@ -1,8 +1,6 @@
 [mapping:heap]
 archive: libheap.a
 entries:
-    heap_tlsf:tlsf_ffs (noflash)
-    heap_tlsf:tlsf_fls (noflash)
     heap_tlsf:tlsf_block_size (noflash)
     heap_tlsf:tlsf_size (noflash)
     heap_tlsf:tlsf_align_size (noflash)
