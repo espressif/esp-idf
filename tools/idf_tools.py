@@ -93,6 +93,7 @@ URL_PREFIX_MAP_SEPARATOR = ','
 IDF_TOOLS_INSTALL_CMD = os.environ.get('IDF_TOOLS_INSTALL_CMD')
 IDF_TOOLS_EXPORT_CMD = os.environ.get('IDF_TOOLS_INSTALL_CMD')
 IDF_DL_URL = 'https://dl.espressif.com/dl/esp-idf'
+IDF_PIP_WHEELS_URL = os.environ.get('IDF_PIP_WHEELS_URL', 'https://dl.espressif.com/pypi')
 
 PYTHON_PLATFORM = platform.system() + '-' + platform.machine()
 
@@ -2431,7 +2432,7 @@ def main(argv):  # type: (list[str]) -> None
                                     action='store_true')
     install_python_env.add_argument('--extra-wheels-dir', help='Additional directories with wheels ' +
                                     'to use during installation')
-    install_python_env.add_argument('--extra-wheels-url', help='Additional URL with wheels', default='https://dl.espressif.com/pypi')
+    install_python_env.add_argument('--extra-wheels-url', help='Additional URL with wheels', default=IDF_PIP_WHEELS_URL)
     install_python_env.add_argument('--no-index', help='Work offline without retrieving wheels index')
     install_python_env.add_argument('--features', default='core', help='A comma separated list of desired features for installing.'
                                                                        ' It defaults to installing just the core funtionality.')
