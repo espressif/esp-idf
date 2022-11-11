@@ -2,7 +2,7 @@
 
 examples/wifi:
   disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6"
       temporary: true
       reason: target(s) not supported yet
 
