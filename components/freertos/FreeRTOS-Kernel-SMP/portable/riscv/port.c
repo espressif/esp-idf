@@ -44,6 +44,8 @@
 #include "esp_gdbstub.h"
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
+_Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
+
 /* ---------------------------------------------------- Variables ------------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
@@ -609,6 +611,7 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     frame->tp = (UBaseType_t)threadptr;
 
     //TODO: IDF-2393
+    configASSERT(((uint32_t) frame & portBYTE_ALIGNMENT_MASK) == 0);
     return (StackType_t *)frame;
 }
 
