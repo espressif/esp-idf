@@ -6,7 +6,7 @@
 
 #include "unity.h"
 #include "test_utils.h"
-#include "param_test.h"
+#include "test_spi_utils.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "soc/soc_caps.h"
@@ -115,8 +115,6 @@ const sdio_test_config_t* default_config = &test_cfg_array[0];
 
 #define TEST_SIZE   (sizeof(test_cfg_array)/sizeof(sdio_test_config_t))
 
-static const char MASTER_TAG[] = "master";
-static const char SLAVE_TAG[] = "slave";
 
 /*******************************************************************************
  * Master

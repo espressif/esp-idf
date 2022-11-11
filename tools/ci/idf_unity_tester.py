@@ -95,7 +95,7 @@ class NormalCaseTester(BaseTester):
             for retry in range(self.retry_times):
                 self.dut.write(str(case.index))
                 try:
-                    self.dut.expect('Running {}...'.format(case.name), timeout=1)
+                    self.dut.expect_exact('Running {}...'.format(case.name), timeout=1)
                     break
                 except TIMEOUT as e:
                     if retry >= self.retry_times - 1:

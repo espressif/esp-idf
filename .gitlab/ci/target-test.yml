@@ -452,6 +452,14 @@ component_ut_pytest_esp32c2_adc:
     - build_pytest_components_esp32c2
   tags: [ esp32c2, adc ]
 
+component_ut_pytest_esp32c2_generic_multi_device:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c2
+  needs:
+    - build_pytest_components_esp32c2
+  tags: [ esp32c2, generic_multi_device, xtal_40mhz ]
+
 component_ut_pytest_esp32c2_xtal_26mhz:
   extends:
     - .pytest_components_dir_template
@@ -975,13 +983,6 @@ UT_018:
     - UT_T1_1
     - 8Mpsram
 
-UT_020:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - Example_SPI_Multi_device
-    - psram
-
 UT_022:
   extends: .unit_test_esp32_template
   tags:
@@ -1060,37 +1061,6 @@ UT_045:
     - UT_SDIO
     - psram
 
-UT_S2_SPI_DUAL:
-  extends: .unit_test_esp32s2_template
-  tags:
-    - ESP32S2_IDF
-    - Example_SPI_Multi_device
-
-UT_S2_SPI_QUAD:
-  extends: .unit_test_esp32s2_template
-  tags:
-    - ESP32S2_IDF
-    - Example_SPI_Quad_Multi_device
-
-UT_S3_SPI_QUAD:
-  extends: .unit_test_esp32s3_template
-  tags:
-    - ESP32S3_IDF
-    - Example_SPI_Quad_Multi_device
-
-UT_C2_SPI_QUAD:
-  extends: .unit_test_esp32c2_template
-  tags:
-    - ESP32C2_IDF
-    - Example_SPI_Quad_Multi_device
-    - xtal_40mhz
-
-UT_C3_SPI_QUAD:
-  extends: .unit_test_esp32c3_template
-  tags:
-    - ESP32C3_IDF
-    - Example_SPI_Quad_Multi_device
-
 UT_S2_SDSPI:
   extends: .unit_test_esp32s2_template
   tags:
@@ -1103,15 +1073,6 @@ UT_C2:
   tags:
     - ESP32C2_IDF
     - UT_T1_1
-    - xtal_40mhz
-
-UT_C2_SPI_DUAL:
-  extends:
-    - .unit_test_esp32c2_template
-    - .rules:test:unit_test-esp32c2-spi_multi
-  tags:
-    - ESP32C2_IDF
-    - Example_SPI_Multi_device
     - xtal_40mhz
 
 UT_C2_26M:
@@ -1141,12 +1102,6 @@ UT_C3_FLASH:
   tags:
     - ESP32C3_IDF
     - UT_T1_ESP_FLASH
-
-UT_C3_SPI_DUAL:
-  extends: .unit_test_esp32c3_template
-  tags:
-    - ESP32C3_IDF
-    - Example_SPI_Multi_device
 
 UT_C3_I2C:
   extends: .unit_test_esp32c3_template
@@ -1180,12 +1135,6 @@ UT_S3_QUAD_PSRAM:
     - ESP32S3_IDF
     - UT_T1_1
     - quad_psram
-
-UT_S3_SPI_DUAL:
-  extends: .unit_test_esp32s3_template
-  tags:
-    - ESP32S3_IDF
-    - Example_SPI_Multi_device
 
 UT_S3_FLASH:
   extends: .unit_test_esp32s3_template
