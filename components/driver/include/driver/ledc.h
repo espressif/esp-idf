@@ -78,8 +78,9 @@ typedef struct {
  * @brief Type of LEDC event callback
  * @param param LEDC callback parameter
  * @param user_arg User registered data
+ * @return Whether a high priority task has been waken up by this function
  */
-typedef bool (* ledc_cb_t)(const ledc_cb_param_t *param, void *user_arg);
+typedef bool (*ledc_cb_t)(const ledc_cb_param_t *param, void *user_arg);
 
 /**
  * @brief Group of supported LEDC callbacks
@@ -99,7 +100,7 @@ typedef struct {
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf);
+esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf);
 
 /**
  * @brief LEDC timer configuration
@@ -112,7 +113,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf);
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_FAIL Can not find a proper pre-divider number base on the given frequency and the current duty_resolution.
  */
-esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf);
+esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf);
 
 /**
  * @brief LEDC update channel parameters
@@ -285,7 +286,7 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Function pointer error.
  */
-esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, ledc_isr_handle_t *handle);
+esp_err_t ledc_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags, ledc_isr_handle_t *handle);
 
 /**
  * @brief Configure LEDC settings
@@ -496,6 +497,7 @@ esp_err_t ledc_set_fade_step_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
  *     - ESP_FAIL Fade function init error
  */
 esp_err_t ledc_cb_register(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_cbs_t *cbs, void *user_arg);
+
 #ifdef __cplusplus
 }
 #endif

@@ -108,7 +108,9 @@ LED PWM 控制器硬件可逐渐改变占空比的数值。要使用此功能，
 * :cpp:func:`ledc_set_fade_with_step`
 * :cpp:func:`ledc_set_fade`
 
-最后用 :cpp:func:`ledc_fade_start` 开启渐变。
+最后需要调用 :cpp:func:`ledc_fade_start` 开启渐变。渐变可以在阻塞或非阻塞模式下运行，具体区别请查看 :cpp:enum:`ledc_fade_mode_t`。需要特别注意的是，不管在哪种模式下，下一次渐变或单次占空比配置的指令生效都必须等到前一次渐变结束。
+
+此外，在使能渐变后，每个通道都可以额外通过调用 :cpp:func:`ledc_cb_register` 注册一个回调函数用以获得渐变完成的事件通知。回调函数的原型被定义在 :cpp:type:`ledc_cb_t`。每个回调函数都应当返回一个布尔值给驱动的中断处理函数，用以表示是否有高优先级任务被其唤醒。
 
 如不需要渐变和渐变中断，可用函数 :cpp:func:`ledc_fade_func_uninstall` 关闭。
 
