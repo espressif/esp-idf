@@ -150,7 +150,7 @@
 // Force hold is a new function of ESP32-S3
 #define SOC_GPIO_SUPPORT_FORCE_HOLD      (1)
 
-// 0~48 except from 22~25 are valid
+// 0~48 valid except 22~25
 #define SOC_GPIO_VALID_GPIO_MASK         (0x1FFFFFFFFFFFFULL & ~(0ULL | BIT22 | BIT23 | BIT24 | BIT25))
 // No GPIO is input only
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK  (SOC_GPIO_VALID_GPIO_MASK)
