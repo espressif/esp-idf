@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -52,6 +44,7 @@
 #define CMD_PROGRAM_PAGE_4B     0x12
 #define CMD_SUSPEND             0x75
 #define CMD_RESUME              0x7A
+#define CMD_HPMEN               0xA3 /* Enable High Performance mode on flash */
 
 #define CMD_RST_EN      0x66
 #define CMD_RST_DEV     0x99
@@ -72,3 +65,5 @@
 #define SPI_FLASH_OPISTR_DUMMY_BITLEN   20
 #define SPI_FLASH_OPIDTR_ADDR_BITLEN    32
 #define SPI_FLASH_OPIDTR_DUMMY_BITLEN   40
+#define SPI_FLASH_QIO_HPM_DUMMY_BITLEN  10
+#define SPI_FLASH_DIO_HPM_DUMMY_BITLEN  8
