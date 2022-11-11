@@ -49,7 +49,19 @@ list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_assert_impl")
 target_link_libraries(${COMPONENT_LIB} INTERFACE "${EXTRA_LINK_FLAGS}")
 
 if(CONFIG_NEWLIB_NANO_FORMAT)
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "--specs=nano.specs")
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+        set(libc_dir_cmd ${CMAKE_C_COMPILER})
+        string(REPLACE " " ";" cflags_list ${CMAKE_C_FLAGS})
+        list(APPEND libc_dir_cmd ${cflags_list} "-print-file-name=libc.a")
+        execute_process(
+            COMMAND ${libc_dir_cmd}
+            OUTPUT_VARIABLE libc_dir
+        )
+        get_filename_component(libc_dir ${libc_dir} DIRECTORY)
+        target_link_directories(${COMPONENT_LIB} INTERFACE "${libc_dir}/nano")
+    else()
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "--specs=nano.specs")
+    endif()
 endif()
 
 add_subdirectory(port)
