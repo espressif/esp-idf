@@ -26,3 +26,7 @@ endif()
 # due to cyclic dependencies present in IDF for lwip/esp_netif/mbedtls
 idf_component_get_property(lwip lwip COMPONENT_LIB)
 set_property(TARGET ${lwip} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 5)
+
+if(CONFIG_ESP_TLS_USE_SECURE_ELEMENT)
+    idf_component_optional_requires(PRIVATE espressif__esp-cryptoauthlib esp-cryptoauthlib)
+endif()
