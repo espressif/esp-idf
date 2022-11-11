@@ -38,7 +38,7 @@
 #define OCT_PSRAM_ADDR_BITLEN           32
 #define OCT_PSRAM_RD_DUMMY_BITLEN       (2*(10-1))
 #define OCT_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
-#define OCT_PSRAM_CS1_IO                CONFIG_DEFAULT_PSRAM_CS_IO
+#define OCT_PSRAM_CS1_IO                SPI_CS1_GPIO_NUM
 
 #define OCT_PSRAM_CS_SETUP_TIME         3
 #define OCT_PSRAM_CS_HOLD_TIME          3
