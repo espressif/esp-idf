@@ -2,8 +2,6 @@
 archive: libheap.a
 entries:
     if HEAP_TLSF_USE_ROM_IMPL = n:
-        tlsf:tlsf_ffs (noflash)
-        tlsf:tlsf_fls (noflash)
         tlsf:tlsf_block_size (noflash)
         tlsf:tlsf_size (noflash)
         tlsf:tlsf_align_size (noflash)
