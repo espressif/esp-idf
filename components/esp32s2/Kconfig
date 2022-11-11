@@ -164,22 +164,14 @@ menu "ESP32S2-specific"
             default 8388608 if SPIRAM_TYPE_ESPPSRAM64
             default 0
 
-        menu "PSRAM clock and cs IO for ESP32S2"
-            depends on ESP32S2_SPIRAM_SUPPORT
-            config DEFAULT_PSRAM_CLK_IO
-                int "PSRAM CLK IO number"
-                range 0 33
-                default 30
-                help
-                    The PSRAM CLOCK IO can be any unused GPIO, user can config it based on hardware design.
+        config SPIRAM_CLK_IO
+            int
+            default 30
 
-            config DEFAULT_PSRAM_CS_IO
-                int "PSRAM CS IO number"
-                range 0 33
-                default 26
-                help
-                    The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design.
-        endmenu
+        config SPIRAM_CS_IO
+            int
+            default 26
+
         config SPIRAM_FETCH_INSTRUCTIONS
             bool "Cache fetch instructions from SPI RAM"
             default n
