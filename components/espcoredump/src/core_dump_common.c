@@ -121,7 +121,13 @@ FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
     esp_core_dump_restore_sp(&s_stack_context);
 }
 
-#else
+#else // CONFIG_ESP_COREDUMP_STACK_SIZE > 0
+
+/* Here, we are not going to use a custom stack for coredump. Make sure the current configuration doesn't require one. */
+#if CONFIG_ESP_COREDUMP_USE_STACK_SIZE
+    #pragma error "CONFIG_ESP_COREDUMP_STACK_SIZE must not be 0 in the current configuration"
+#endif // ESP_COREDUMP_USE_STACK_SIZE
+
 FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
 {
     /* If we are in ISR set watchpoint to the end of ISR stack */
@@ -139,7 +145,7 @@ FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
 FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
 {
 }
-#endif
+#endif // CONFIG_ESP_COREDUMP_STACK_SIZE > 0
 
 static void* s_exc_frame = NULL;
 
