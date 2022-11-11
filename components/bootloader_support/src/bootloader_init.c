@@ -41,7 +41,10 @@ esp_err_t bootloader_read_bootloader_header(void)
 
 esp_err_t bootloader_check_bootloader_validity(void)
 {
-    ESP_LOGI(TAG, "chip revision: V%03d", efuse_hal_chip_revision());
+    unsigned int revision = efuse_hal_chip_revision();
+    unsigned int major = revision / 100;
+    unsigned int minor = revision % 100;
+    ESP_LOGI(TAG, "chip revision: v%d.%d", major, minor);
     /* compare with the one set in bootloader image header */
     if (bootloader_common_check_chip_validity(&bootloader_image_hdr, ESP_IMAGE_BOOTLOADER) != ESP_OK) {
         return ESP_FAIL;

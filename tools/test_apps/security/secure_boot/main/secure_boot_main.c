@@ -41,7 +41,9 @@ static void example_print_chip_info(void)
     esp_chip_info(&chip_info);
     printf("This is %s chip with %d CPU cores\n", CONFIG_IDF_TARGET, chip_info.cores);
 
-    printf("silicon revision %d, ", chip_info.revision);
+    unsigned major_rev = chip_info.revision / 100;
+    unsigned minor_rev = chip_info.revision % 100;
+    printf("silicon revision v%d.%d, ", major_rev, minor_rev);
     if(esp_flash_get_size(NULL, &flash_size) != ESP_OK) {
         printf("Get flash size failed");
         return;
