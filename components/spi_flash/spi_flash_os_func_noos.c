@@ -64,8 +64,6 @@ static IRAM_ATTR esp_err_t start(void *arg)
 static IRAM_ATTR esp_err_t end(void *arg)
 {
 #if CONFIG_IDF_TARGET_ESP32
-    Cache_Flush(0);
-    Cache_Flush(1);
     Cache_Read_Enable(0);
     Cache_Read_Enable(1);
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
