@@ -28,6 +28,7 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
 static esp_err_t panel_io_spi_del(esp_lcd_panel_io_t *io);
 static void lcd_spi_pre_trans_cb(spi_transaction_t *trans);
 static void lcd_spi_post_trans_color_cb(spi_transaction_t *trans);
+static esp_err_t panel_io_spi_register_event_callbacks(esp_lcd_panel_io_handle_t io, const esp_lcd_panel_io_callbacks_t *cbs, void *user_ctx);
 
 typedef struct {
     spi_transaction_t base;
@@ -73,7 +74,7 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
         .queue_size = io_config->trans_queue_depth,
         .command_bits = io_config->flags.dc_as_cmd_phase ? 1 : 0, // whether to encode DC line into command transaction
         .pre_cb = lcd_spi_pre_trans_cb, // pre-transaction callback, mainly control DC gpio level
-        .post_cb = io_config->on_color_trans_done ? lcd_spi_post_trans_color_cb : NULL, // post-transaction, where we invoke user registered "on_color_trans_done()"
+        .post_cb = lcd_spi_post_trans_color_cb, // post-transaction, where we invoke user registered "on_color_trans_done()"
     };
     ret = spi_bus_add_device((spi_host_device_t)bus, &devcfg, &spi_panel_io->spi_dev);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "adding spi device to bus failed");
@@ -100,6 +101,7 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     spi_panel_io->base.tx_param = panel_io_spi_tx_param;
     spi_panel_io->base.tx_color = panel_io_spi_tx_color;
     spi_panel_io->base.del = panel_io_spi_del;
+    spi_panel_io->base.register_event_callbacks = panel_io_spi_register_event_callbacks;
     *ret_io = &(spi_panel_io->base);
     ESP_LOGD(TAG, "new spi lcd panel io @%p", spi_panel_io);
 
@@ -135,6 +137,20 @@ static esp_err_t panel_io_spi_del(esp_lcd_panel_io_t *io)
 
 err:
     return ret;
+}
+
+static esp_err_t panel_io_spi_register_event_callbacks(esp_lcd_panel_io_handle_t io, const esp_lcd_panel_io_callbacks_t *cbs, void *user_ctx)
+{
+    esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
+
+    if(spi_panel_io->on_color_trans_done != NULL) {
+        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was owerwritten!");
+    }
+
+    spi_panel_io->on_color_trans_done = cbs->on_color_trans_done;
+    spi_panel_io->user_ctx = user_ctx;
+
+    return ESP_OK;
 }
 
 static void spi_lcd_prepare_cmd_buffer(esp_lcd_panel_io_spi_t *panel_io, const void *cmd)

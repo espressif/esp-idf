@@ -20,6 +20,30 @@ typedef void *esp_lcd_i2c_bus_handle_t;                       /*!< Type of LCD I
 typedef struct esp_lcd_i80_bus_t *esp_lcd_i80_bus_handle_t;   /*!< Type of LCD intel 8080 bus handle */
 
 /**
+ * @brief Type of LCD panel IO event data
+ */
+typedef struct {
+} esp_lcd_panel_io_event_data_t;
+
+/**
+ * @brief Declare the prototype of the function that will be invoked when panel IO finishes transferring color data
+ *
+ * @param[in] panel_io LCD panel IO handle, which is created by factory API like `esp_lcd_new_panel_io_spi()`
+ * @param[in] edata Panel IO event data, fed by driver
+ * @param[in] user_ctx User data, passed from `esp_lcd_panel_io_xxx_config_t`
+ * @return Whether a high priority task has been waken up by this function
+ */
+typedef bool (*esp_lcd_panel_io_color_trans_done_cb_t)(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx);
+
+/**
+ * @brief Type of LCD panel IO callbacks
+ */
+typedef struct {
+    esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; /*!< Callback invoked when color data transfer has finished */
+} esp_lcd_panel_io_callbacks_t;
+
+
+/**
  * @brief Transmit LCD command and receive corresponding parameters
  *
  * @note Commands sent by this function are short, so they are sent using polling transactions.
@@ -85,20 +109,16 @@ esp_err_t esp_lcd_panel_io_tx_color(esp_lcd_panel_io_handle_t io, int lcd_cmd, c
 esp_err_t esp_lcd_panel_io_del(esp_lcd_panel_io_handle_t io);
 
 /**
- * @brief Type of LCD panel IO event data
- */
-typedef struct {
-} esp_lcd_panel_io_event_data_t;
-
-/**
- * @brief Declare the prototype of the function that will be invoked when panel IO finishes transferring color data
+ * @brief Register LCD panel IO callbacks
  *
- * @param[in] panel_io LCD panel IO handle, which is created by factory API like `esp_lcd_new_panel_io_spi()`
- * @param[in] edata Panel IO event data, fed by driver
- * @param[in] user_ctx User data, passed from `esp_lcd_panel_io_xxx_config_t`
- * @return Whether a high priority task has been waken up by this function
+ * @param[in] io LCD panel IO handle, which is created by factory API like `esp_lcd_new_panel_io_spi()`
+ * @param[in] cbs structure with all LCD panel IO callbacks
+ * @param[in] user_ctx User private data, passed directly to callback's user_ctx
+ * @return
+ *          - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *          - ESP_OK                on success
  */
-typedef bool (*esp_lcd_panel_io_color_trans_done_cb_t)(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx);
+esp_err_t esp_lcd_panel_io_register_event_callbacks(esp_lcd_panel_io_handle_t io, const esp_lcd_panel_io_callbacks_t *cbs, void *user_ctx);
 
 /**
  * @brief Panel IO configuration structure, for SPI interface
