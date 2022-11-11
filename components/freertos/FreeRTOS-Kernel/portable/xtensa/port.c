@@ -78,6 +78,8 @@
 #include "esp_cpu.h"
 #include "esp_memory_utils.h"
 
+_Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
+
 _Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "incorrect tskNO_AFFINITY value");
 
 
@@ -415,20 +417,24 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     - All stack areas are aligned to 16 byte boundary
     - We use UBaseType_t for all of stack area initialization functions for more convenient pointer arithmetic
     */
-
     UBaseType_t uxStackPointer = (UBaseType_t)pxTopOfStack;
-
+    // Make sure the incoming stack pointer is aligned on 16
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 #if XCHAL_CP_NUM > 0
     // Initialize the coprocessor save area
     uxStackPointer = uxInitialiseStackCPSA(uxStackPointer);
+    // Each allocated section on the stack must have a size aligned on 16
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 #endif /* XCHAL_CP_NUM > 0 */
 
     // Initialize the GCC TLS area
     uint32_t threadptr_reg_init;
     uxStackPointer = uxInitialiseStackTLS(uxStackPointer, &threadptr_reg_init);
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 
     // Initialize the starting interrupt stack frame
     uxStackPointer = uxInitialiseStackFrame(uxStackPointer, pxCode, pvParameters, threadptr_reg_init);
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
     // Return the task's current stack pointer address which should point to the starting interrupt stack frame
     return (StackType_t *)uxStackPointer;
 }
