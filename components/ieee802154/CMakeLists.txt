@@ -14,14 +14,12 @@ if(CONFIG_IEEE802154_ENABLED)
     else()
         if(IDF_TARGET STREQUAL "esp32h4")
             if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
-                # TODO: rename esp32h2 to esp32h4 [IDF-6097]
                 target_link_libraries(${COMPONENT_LIB} INTERFACE
-                            "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h2/rev1")
+                            "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev1")
             endif()
             if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
-                # TODO: rename esp32h2 to esp32h4 [IDF-6097]
                 target_link_libraries(${COMPONENT_LIB} INTERFACE
-                            "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h2/rev2")
+                            "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev2")
             endif()
         else()
             target_link_directories(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}")
