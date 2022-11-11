@@ -306,6 +306,14 @@ component_ut_pytest_esp32_generic_multi_device:
     - build_pytest_components_esp32
   tags: [ esp32, generic_multi_device ]
 
+component_ut_pytest_esp32_wifi_two_dut:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32-wifi
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, wifi_two_dut ]
+
 component_ut_pytest_esp32_adc:
   extends:
     - .pytest_components_dir_template
@@ -483,6 +491,14 @@ component_ut_pytest_esp32c3_generic_multi_device:
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, generic_multi_device ]
+
+component_ut_pytest_esp32c3_wifi_two_dut:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3-wifi
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, wifi_two_dut ]
 
 component_ut_pytest_esp32c3_adc:
   extends:
