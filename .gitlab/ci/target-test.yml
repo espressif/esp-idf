@@ -354,6 +354,14 @@ component_ut_pytest_esp32_flash_multi:
     - build_pytest_components_esp32
   tags: [ esp32, flash_mutli ]
 
+component_ut_pytest_esp32_rs485_multi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, multi_dut_modbus_rs485 ]
+
 component_ut_pytest_esp32s2_generic:
   extends:
     - .pytest_components_dir_template
@@ -976,13 +984,6 @@ UT_006:
   tags:
     - ESP32_IDF
     - UT_T1_SPIMODE
-    - psram
-
-UT_014:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T2_RS485
     - psram
 
 UT_017:

@@ -6,7 +6,6 @@
 #include <string.h>
 #include <sys/param.h>
 #include "unity.h"
-#include "test_utils.h"             // unity_send_signal
 #include "driver/uart.h"            // for the uart driver access
 #include "esp_log.h"
 #include "esp_system.h"             // for uint32_t esp_random()
@@ -23,14 +22,6 @@
 #define TOLERANCE        (0.02)    //baud rate error tolerance 2%.
 
 #define UART1_CTS_PIN    (13)
-// RTS for RS485 Half-Duplex Mode manages DE/~RE
-#define UART1_RTS_PIN    (18)
-
-// Number of packets to be send during test
-#define PACKETS_NUMBER  (10)
-
-// Wait timeout for uart driver
-#define PACKET_READ_TICS    (1000 / portTICK_PERIOD_MS)
 
 static void uart_config(uint32_t baud_rate, uart_sclk_t source_clk)
 {
@@ -48,9 +39,9 @@ static void uart_config(uint32_t baud_rate, uart_sclk_t source_clk)
     TEST_ESP_OK(uart_set_loop_back(UART_NUM1, true));
 }
 
-static volatile bool exit_flag;
+static volatile bool exit_flag, case_end;
 
-static void test_task(void *pvParameters)
+static void test_task1(void *pvParameters)
 {
     SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     char* data = (char *) malloc(256);
@@ -76,26 +67,39 @@ static void test_task2(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("test uart_wait_tx_done is not blocked when ticks_to_wait=0", "[uart]")
+static void test_task3(void *pvParameters)
 {
     uart_config(UART_BAUD_11520, UART_SCLK_DEFAULT);
 
     SemaphoreHandle_t exit_sema = xSemaphoreCreateBinary();
     exit_flag = false;
+    case_end = false;
 
-    xTaskCreate(test_task,  "tsk1", 2048, &exit_sema, 5, NULL);
+    xTaskCreate(test_task1, "tsk1", 2048, &exit_sema, 5, NULL);
     xTaskCreate(test_task2, "tsk2", 2048, NULL,       5, NULL);
 
     printf("Waiting for 5 sec\n");
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    vTaskDelay(pdMS_TO_TICKS(5000));
     exit_flag = true;
 
-    if (xSemaphoreTake(exit_sema, 1000 / portTICK_PERIOD_MS) == pdTRUE) {
+    if (xSemaphoreTake(exit_sema, pdMS_TO_TICKS(1000)) == pdTRUE) {
         vSemaphoreDelete(exit_sema);
     } else {
         TEST_FAIL_MESSAGE("uart_wait_tx_done is blocked");
     }
     TEST_ESP_OK(uart_driver_delete(UART_NUM1));
+
+    vTaskDelay(2);  // wait for test_task1 to exit
+
+    case_end = true;
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("test uart_wait_tx_done is not blocked when ticks_to_wait=0", "[uart]")
+{
+    xTaskCreate(test_task3, "tsk3", 4096, NULL, 5, NULL);
+    while(!case_end);
+    vTaskDelay(2);  // wait for test_task3 to exit
 }
 
 TEST_CASE("test uart get baud-rate", "[uart]")
@@ -130,7 +134,7 @@ TEST_CASE("test uart tx data with break", "[uart]")
     uart_config(UART_BAUD_115200, UART_SCLK_DEFAULT);
     printf("Uart%d send %d bytes with break\n", UART_NUM1, send_len);
     uart_write_bytes_with_break(UART_NUM1, (const char *)psend, send_len, brk_len);
-    uart_wait_tx_done(UART_NUM1, (TickType_t)portMAX_DELAY);
+    uart_wait_tx_done(UART_NUM1, portMAX_DELAY);
     //If the code is running here, it means the test passed, otherwise it will crash due to the interrupt wdt timeout.
     printf("Send data with break test passed\n");
     free(psend);
@@ -238,7 +242,7 @@ static void uart_write_task(void *param)
         tx_buf[0] = (i & 0xff);
         tx_buf[1023] = ((~i) & 0xff);
         uart_write_bytes(uart_num, (const char*)tx_buf, 1024);
-        uart_wait_tx_done(uart_num, (TickType_t)portMAX_DELAY);
+        uart_wait_tx_done(uart_num, portMAX_DELAY);
     }
     free(tx_buf);
     vTaskDelete(NULL);
@@ -277,15 +281,14 @@ TEST_CASE("uart read write test", "[uart]")
     esp_rom_gpio_connect_out_signal(UART1_CTS_PIN, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
 
     TEST_ESP_OK(uart_wait_tx_done(uart_num, portMAX_DELAY));
-    vTaskDelay(1 / portTICK_PERIOD_MS); // make sure last byte has flushed from TX FIFO
+    vTaskDelay(pdMS_TO_TICKS(20)); // make sure last byte has flushed from TX FIFO
     TEST_ESP_OK(uart_flush_input(uart_num));
-
-    xTaskCreate(uart_write_task, "uart_write_task", 2048 * 4, (void *)uart_num, UNITY_FREERTOS_PRIORITY - 1, NULL);
+    xTaskCreate(uart_write_task, "uart_write_task", 8192, (void *)uart_num, 5, NULL);
     for (int i = 0; i < 1024; i++) {
         int bytes_remaining = 1024;
         memset(rd_data, 0, 1024);
         while (bytes_remaining) {
-            int bytes_received = uart_read_bytes(uart_num, rd_data + 1024 - bytes_remaining, bytes_remaining, (TickType_t)1000);
+            int bytes_received = uart_read_bytes(uart_num, rd_data + 1024 - bytes_remaining, bytes_remaining, pdMS_TO_TICKS(100));
             if (bytes_received < 0) {
                 TEST_FAIL_MESSAGE("read timeout, uart read write test fail");
             }
@@ -315,9 +318,11 @@ TEST_CASE("uart read write test", "[uart]")
             TEST_FAIL();
         }
     }
-    uart_wait_tx_done(uart_num, (TickType_t)portMAX_DELAY);
+    uart_wait_tx_done(uart_num, portMAX_DELAY);
     uart_driver_delete(uart_num);
     free(rd_data);
+
+    vTaskDelay(pdMS_TO_TICKS(100)); // wait for uart_write_task to exit
 }
 
 TEST_CASE("uart tx with ringbuffer test", "[uart]")
@@ -357,10 +362,10 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
     uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
     TEST_ASSERT_LESS_THAN(2048, tx_buffer_free_space); // tx transmit in progress: tx buffer has content
     TEST_ASSERT_GREATER_OR_EQUAL(1024, tx_buffer_free_space);
-    uart_wait_tx_done(uart_num, (TickType_t)portMAX_DELAY);
+    uart_wait_tx_done(uart_num, portMAX_DELAY);
     uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
     TEST_ASSERT_EQUAL_INT(2048, tx_buffer_free_space); // tx done: tx buffer back to empty
-    uart_read_bytes(uart_num, rd_data, 1024, (TickType_t)1000);
+    uart_read_bytes(uart_num, rd_data, 1024, pdMS_TO_TICKS(1000));
     TEST_ASSERT_EQUAL_HEX8_ARRAY(wr_data, rd_data, 1024);
     TEST_ESP_OK(uart_driver_delete(uart_num));
     free(rd_data);
@@ -403,7 +408,7 @@ TEST_CASE("uart int state restored after flush", "[uart]")
     uart_write_bytes(uart_echo, (const char *) data, buf_size);
 
     /* As we set up a loopback, we can read them back on RX */
-    int len = uart_read_bytes(uart_echo, data, buf_size, 1000 / portTICK_PERIOD_MS);
+    int len = uart_read_bytes(uart_echo, data, buf_size, pdMS_TO_TICKS(1000));
     TEST_ASSERT_EQUAL(len, buf_size);
 
     /* Fill the RX buffer, this should disable the RX interrupts */
@@ -418,7 +423,7 @@ TEST_CASE("uart int state restored after flush", "[uart]")
     uart_flush_input(uart_echo);
     written = uart_write_bytes(uart_echo, (const char *) data, buf_size);
     TEST_ASSERT_NOT_EQUAL(-1, written);
-    len = uart_read_bytes(uart_echo, data, buf_size, 1000 / portTICK_PERIOD_MS);
+    len = uart_read_bytes(uart_echo, data, buf_size, pdMS_TO_TICKS(1000));
     /* len equals buf_size bytes if interrupts were indeed re-enabled */
     TEST_ASSERT_EQUAL(len, buf_size);
 
@@ -433,7 +438,7 @@ TEST_CASE("uart int state restored after flush", "[uart]")
     uart_flush_input(uart_echo);
     written = uart_write_bytes(uart_echo, (const char *) data, buf_size);
     TEST_ASSERT_NOT_EQUAL(-1, written);
-    len = uart_read_bytes(uart_echo, data, buf_size, 250 / portTICK_PERIOD_MS);
+    len = uart_read_bytes(uart_echo, data, buf_size, pdMS_TO_TICKS(250));
     TEST_ASSERT_EQUAL(len, 0);
 
     TEST_ESP_OK(uart_driver_delete(uart_echo));
