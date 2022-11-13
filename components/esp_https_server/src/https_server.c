@@ -212,6 +212,9 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
 
     cfg->userdata = config->ssl_userdata;
 
+
+    cfg->alpn_protos = config->alpn_protos;
+
 #if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
     cfg->cert_select_cb = config->cert_select_cb;
 #endif

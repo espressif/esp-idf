@@ -306,6 +306,14 @@ component_ut_pytest_esp32_generic_multi_device:
     - build_pytest_components_esp32
   tags: [ esp32, generic_multi_device ]
 
+component_ut_pytest_esp32_wifi_two_dut:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32-wifi
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, wifi_two_dut ]
+
 component_ut_pytest_esp32_adc:
   extends:
     - .pytest_components_dir_template
@@ -345,6 +353,14 @@ component_ut_pytest_esp32_flash_multi:
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, flash_mutli ]
+
+component_ut_pytest_esp32_rs485_multi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, multi_dut_modbus_rs485 ]
 
 component_ut_pytest_esp32s2_generic:
   extends:
@@ -483,6 +499,14 @@ component_ut_pytest_esp32c3_generic_multi_device:
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, generic_multi_device ]
+
+component_ut_pytest_esp32c3_wifi_two_dut:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3-wifi
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, wifi_two_dut ]
 
 component_ut_pytest_esp32c3_adc:
   extends:
@@ -960,13 +984,6 @@ UT_006:
   tags:
     - ESP32_IDF
     - UT_T1_SPIMODE
-    - psram
-
-UT_014:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T2_RS485
     - psram
 
 UT_017:

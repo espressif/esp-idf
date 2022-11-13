@@ -814,8 +814,19 @@ void vApplicationMinimalIdleHook( void )
  * Hook function called during prvDeleteTCB() to cleanup any
  * user defined static memory areas in the TCB.
  */
+#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
+void __real_vPortCleanUpTCB( void *pxTCB );
+
+void __wrap_vPortCleanUpTCB( void *pxTCB )
+#else
 void vPortCleanUpTCB ( void *pxTCB )
+#endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
 {
+#if ( CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP )
+    /* Call user defined vPortCleanUpTCB */
+    __real_vPortCleanUpTCB( pxTCB );
+#endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
+
 #if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
     /* Call TLS pointers deletion callbacks */
     vPortTLSPointersDelCb( pxTCB );
