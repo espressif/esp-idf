@@ -73,6 +73,7 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     spi_device_interface_config_t devcfg = {
         .flags = SPI_DEVICE_HALFDUPLEX |
         (io_config->flags.lsb_first ? SPI_DEVICE_TXBIT_LSBFIRST : 0) |
+        (io_config->flags.interface_I_mode ? SPI_DEVICE_3WIRE : 0) |
         (io_config->flags.cs_high_active ? SPI_DEVICE_POSITIVE_CS : 0),
         .clock_speed_hz = io_config->pclk_hz,
         .mode = io_config->spi_mode,
