@@ -40,6 +40,8 @@ the standard ``free()`` function.
 Available Heap
 --------------
 
+.. _dram-definition:
+
 DRAM
 ^^^^
 
@@ -49,7 +51,7 @@ To find the amount of statically allocated memory, use the :ref:`idf.py size <id
 
 .. only:: esp32
 
-    .. note:: Due to a technical limitation, the maximum statically allocated DRAM usage is 160KB. The remaining 160KB (for a total of 320KB of DRAM) can only be allocated at runtime as heap.
+    .. note:: See the :ref:`dram` section for more details about the DRAM usage limitations.
 
 .. note:: At runtime, the available heap DRAM may be less than calculated at compile time, because at startup some memory is allocated from the heap before the FreeRTOS scheduler is started (including memory for the stacks of initial FreeRTOS tasks).
 
