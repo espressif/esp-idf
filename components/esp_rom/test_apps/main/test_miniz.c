@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "sdkconfig.h"
 #include "unity.h"
-#include "rom/miniz.h"
+#include "miniz.h"
 
 #define DATASIZE (1024 * 32)
 
