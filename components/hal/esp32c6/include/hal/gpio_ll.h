@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
 #include "soc/gpio_struct.h"
@@ -569,6 +570,20 @@ static inline void gpio_ll_deepsleep_wakeup_disable(gpio_dev_t *hw, uint32_t gpi
     // On ESP32-C6, (lp_io pin number) == (gpio pin number)
     LP_IO.pin[gpio_num].wakeup_enable = 0;
     LP_IO.pin[gpio_num].int_type = 0; // Disable io interrupt
+}
+
+/**
+ * @brief Get the status of whether an IO is used for deep-sleep wake-up.
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param gpio_num GPIO number
+ * @return True if the pin is enabled to wake up from deep-sleep
+ */
+static inline bool gpio_ll_deepsleep_wakeup_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    HAL_ASSERT(gpio_num <= GPIO_NUM_7 && "gpio larger than 7 does not support deep sleep wake-up function");
+    // On ESP32-C6, (lp_io pin number) == (gpio pin number)
+    return LP_IO.pin[gpio_num].wakeup_enable;
 }
 
 #ifdef __cplusplus

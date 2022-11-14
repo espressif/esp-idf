@@ -75,8 +75,7 @@
 #include "esp_private/crosscore_int.h"
 #include "esp_flash_encrypt.h"
 
-#include "hal/rtc_io_hal.h"
-#include "hal/gpio_hal.h"
+#include "esp_private/sleep_gpio.h"
 #include "hal/wdt_hal.h"
 #include "soc/rtc.h"
 #include "hal/efuse_ll.h"
@@ -527,13 +526,10 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 #endif
 
-#if SOC_RTCIO_HOLD_SUPPORTED
-    rtcio_hal_unhold_all();
-#elif CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-6027
-    CLEAR_PERI_REG_MASK(LP_AON_GPIO_HOLD0_REG, 0xFF);
-#else
-    gpio_hal_force_unhold_all();
-#endif
+    // Need to unhold the IOs that were hold right before entering deep sleep, which are used as wakeup pins
+    if (rst_reas[0] == RESET_REASON_CORE_DEEP_SLEEP) {
+        esp_deep_sleep_wakeup_io_reset();
+    }
 
     esp_cache_err_int_init();
 

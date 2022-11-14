@@ -19,18 +19,13 @@ static inline void rtc_cntl_ll_set_wakeup_timer(uint64_t t)
     // TODO: IDF-5645
 }
 
-static inline uint32_t rtc_cntl_ll_gpio_get_wakeup_pins(void)
+static inline uint32_t rtc_cntl_ll_gpio_get_wakeup_status(void)
 {
     // TODO: IDF-5645
     return 0;
 }
 
-static inline void rtc_cntl_ll_gpio_set_wakeup_pins(void)
-{
-    // TODO: IDF-5645
-}
-
-static inline void rtc_cntl_ll_gpio_clear_wakeup_pins(void)
+static inline void rtc_cntl_ll_gpio_clear_wakeup_status(void)
 {
     // TODO: IDF-5645
 }

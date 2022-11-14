@@ -50,6 +50,8 @@
 #include "hal/systimer_ll.h"
 #endif // CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
 
+_Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
+
 /*
 OS state variables
 */
@@ -884,18 +886,23 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
     */
 
     UBaseType_t uxStackPointer = (UBaseType_t)pxTopOfStack;
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 
 #if XCHAL_CP_NUM > 0
     // Initialize the coprocessor save area
     uxStackPointer = uxInitialiseStackCPSA(uxStackPointer);
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 #endif /* XCHAL_CP_NUM > 0 */
 
     // Initialize the GCC TLS area
     uint32_t threadptr_reg_init;
     uxStackPointer = uxInitialiseStackTLS(uxStackPointer, &threadptr_reg_init);
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 
     // Initialize the starting interrupt stack frame
     uxStackPointer = uxInitialiseStackFrame(uxStackPointer, pxCode, pvParameters, threadptr_reg_init);
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
+
     // Return the task's current stack pointer address which should point to the starting interrupt stack frame
     return (StackType_t *)uxStackPointer;
 }
