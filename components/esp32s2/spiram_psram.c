@@ -96,8 +96,8 @@ static const char* TAG = "psram";
 #define FLASH_CLK_IO          SPI_CLK_GPIO_NUM
 #define FLASH_CS_IO           SPI_CS0_GPIO_NUM
 // PSRAM clock and cs IO should be configured based on hardware design.
-#define PSRAM_CLK_IO     CONFIG_DEFAULT_PSRAM_CLK_IO  // Default value is 30
-#define PSRAM_CS_IO      CONFIG_DEFAULT_PSRAM_CS_IO   // Default value is 26
+#define PSRAM_CLK_IO          SPI_CLK_GPIO_NUM
+#define PSRAM_CS_IO           SPI_CS1_GPIO_NUM
 #define PSRAM_SPIQ_SD0_IO     SPI_Q_GPIO_NUM
 #define PSRAM_SPID_SD1_IO     SPI_D_GPIO_NUM
 #define PSRAM_SPIWP_SD3_IO    SPI_WP_GPIO_NUM
