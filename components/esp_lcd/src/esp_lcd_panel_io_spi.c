@@ -209,7 +209,9 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
 
     lcd_trans->base.user = spi_panel_io;
-    lcd_trans->base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
+    if (param && param_size) {
+        lcd_trans->base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
+    }
     if (spi_panel_io->flags.octal_mode) {
         // use 8 lines for transmitting command, address and data
         lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
