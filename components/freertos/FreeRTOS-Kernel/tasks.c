@@ -3108,14 +3108,11 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
 
 BaseType_t xTaskIncrementTick( void )
 {
-    #ifdef ESP_PLATFORM
-        #if ( configNUM_CORES > 1 )
-            {
-                /* Only Core 0 should ever call this function. */
-                configASSERT( xPortGetCoreID() == 0 );
-            }
-        #endif /* ( configNUM_CORES > 1 ) */
-    #endif // ESP_PLATFORM
+    #if ( configNUM_CORES > 1 )
+        /* Only Core 0 should ever call this function. */
+        configASSERT( xPortGetCoreID() == 0 );
+    #endif /* ( configNUM_CORES > 1 ) */
+
     TCB_t * pxTCB;
     TickType_t xItemValue;
     BaseType_t xSwitchRequired = pdFALSE;
@@ -3125,15 +3122,13 @@ BaseType_t xTaskIncrementTick( void )
      * tasks to be unblocked. */
     traceTASK_INCREMENT_TICK( xTickCount );
 
-    #ifdef ESP_PLATFORM
+    #if ( configNUM_CORES > 1 )
 
-        /* We need a critical section here as we are about to access kernel data
-         * structures:
-         * - Other cores could be accessing them simultaneously
-         * - Unlike other ports, we call xTaskIncrementTick() without disabling nested
-         *   interrupts, which in turn is disabled by the critical section. */
+        /* For SMP, we need to take the kernel lock here as we are about to
+         * access kernel data structures (unlike single core which calls this
+         * function with interrupts disabled). */
         taskENTER_CRITICAL_ISR( &xKernelLock );
-    #endif // ESP_PLATFORM
+    #endif /* ( configNUM_CORES > 1 ) */
 
     if( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) pdFALSE )
     {
@@ -3221,16 +3216,12 @@ BaseType_t xTaskIncrementTick( void )
                             /* Preemption is on, but a context switch should
                              * only be performed if the unblocked task has a
                              * priority that is equal to or higher than the
-                             * currently executing task. */
-                            #if defined( ESP_PLATFORM ) && ( configNUM_CORES > 1 )
-
-                                /* Since this function is only run on core 0, we
-                                 * only need to switch contexts if the unblocked task
-                                 * can run on core 0. */
-                                if( ( ( pxTCB->xCoreID == 0 ) || ( pxTCB->xCoreID == tskNO_AFFINITY ) ) && ( pxTCB->uxPriority >= pxCurrentTCB[ 0 ]->uxPriority ) )
-                            #else
-                                if( pxTCB->uxPriority >= pxCurrentTCB[ 0 ]->uxPriority )
-                            #endif
+                             * currently executing task.
+                             *
+                             * For SMP, since this function is only run on core
+                             * 0, only need to switch contexts if the unblocked
+                             * task can run on core 0. */
+                            if( ( taskCAN_RUN_ON_CORE( 0, pxTCB->xCoreID ) == pdTRUE ) && ( pxTCB->uxPriority >= pxCurrentTCB[ 0 ]->uxPriority ) )
                             {
                                 xSwitchRequired = pdTRUE;
                             }
@@ -3260,23 +3251,22 @@ BaseType_t xTaskIncrementTick( void )
             }
         #endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) ) */
 
-        #ifdef ESP_PLATFORM
-            #if ( configUSE_TICK_HOOK == 1 )
-                TickType_t xPendedCounts = xPendedTicks; /* Non-volatile copy. */
-            #endif /* configUSE_TICK_HOOK */
-            /* Exit the critical section as we have finished accessing the kernel data structures. */
+        #if ( configUSE_TICK_HOOK == 1 )
+            TickType_t xPendedTicksTemp = xPendedTicks; /* Non-volatile copy. */
+        #endif /* configUSE_TICK_HOOK */
+
+        #if ( configNUM_CORES > 1 )
+
+            /* Release the previously taken kernel lock as we have finished
+             * accessing the kernel data structures. */
             taskEXIT_CRITICAL_ISR( &xKernelLock );
-        #endif // ESP_PLATFORM
+        #endif /* ( configNUM_CORES > 1 ) */
 
         #if ( configUSE_TICK_HOOK == 1 )
             {
                 /* Guard against the tick hook being called when the pended tick
                  * count is being unwound (when the scheduler is being unlocked). */
-                #ifdef ESP_PLATFORM
-                    if( xPendedCounts == ( TickType_t ) 0 )
-                #else
-                    if( xPendedTicks == ( TickType_t ) 0 )
-                #endif
+                if( xPendedTicksTemp == ( TickType_t ) 0 )
                 {
                     vApplicationTickHook();
                 }
@@ -3303,10 +3293,12 @@ BaseType_t xTaskIncrementTick( void )
     else
     {
         ++xPendedTicks;
-        #ifdef ESP_PLATFORM
-            /* Exit the critical section as we have finished accessing the kernel data structures. */
+        #if ( configNUM_CORES > 1 )
+
+            /* Release the previously taken kernel lock as we have finished
+             * accessing the kernel data structures. */
             taskEXIT_CRITICAL_ISR( &xKernelLock );
-        #endif // ESP_PLATFORM
+        #endif /* ( configNUM_CORES > 1 ) */
 
         /* The tick hook gets called at regular intervals, even if the
          * scheduler is locked. */
@@ -3338,12 +3330,8 @@ BaseType_t xTaskIncrementTick( void )
 
         if( uxSchedulerSuspended[ xCoreID ] == ( UBaseType_t ) pdFALSE )
         {
-            /* We need a critical section here as we are about to access kernel data
-             * structures:
-             * - Other cores could be accessing them simultaneously
-             * - Unlike other ports, we call xTaskIncrementTick() without disabling
-             *   nested interrupts, which in turn is disabled by the critical
-             *   section. */
+            /* We need take the kernel lock here as we are about to access
+             * kernel data structures. */
             taskENTER_CRITICAL_ISR( &xKernelLock );
 
             /* A task being unblocked cannot cause an immediate context switch
@@ -3379,7 +3367,8 @@ BaseType_t xTaskIncrementTick( void )
                 }
             #endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) ) */
 
-            /* Exit the critical section as we have finished accessing the kernel data structures. */
+            /* Release the previously taken kernel lock as we have finished
+             * accessing the kernel data structures. */
             taskEXIT_CRITICAL_ISR( &xKernelLock );
 
             #if ( configUSE_PREEMPTION == 1 )
@@ -3612,14 +3601,14 @@ get_next_task:
 
 void vTaskSwitchContext( void )
 {
-    #ifdef ESP_PLATFORM
+    #if ( configNUM_CORES > 1 )
 
-        /* vTaskSwitchContext is called either from:
-         * - ISR dispatcher when return from an ISR (interrupts will already be disabled)
-         * - vTaskSuspend() which is not in a critical section
-         * Therefore, we enter a critical section ISR version to ensure safety */
+        /* For SMP, we need to take the kernel lock here as we are about to
+         * access kernel data structures (unlike single core which calls this
+         * function with either interrupts disabled or when the scheduler hasn't
+         * started yet). */
         taskENTER_CRITICAL_ISR( &xKernelLock );
-    #endif // ESP_PLATFORM
+    #endif /* ( configNUM_CORES > 1 ) */
 
     if( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE )
     {
@@ -3708,10 +3697,12 @@ void vTaskSwitchContext( void )
         #endif // ESP_PLATFORM
     }
 
-    #ifdef ESP_PLATFORM
-        /* Exit the critical section previously entered */
+    #if ( configNUM_CORES > 1 )
+
+        /* Release the previously taken kernel lock as we have finished
+         * accessing the kernel data structures. */
         taskEXIT_CRITICAL_ISR( &xKernelLock );
-    #endif // ESP_PLATFORM
+    #endif /* ( configNUM_CORES > 1 ) */
 }
 /*-----------------------------------------------------------*/
 
