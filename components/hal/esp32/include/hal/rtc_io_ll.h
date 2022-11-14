@@ -207,7 +207,7 @@ static inline void rtcio_ll_pulldown_disable(int rtcio_num)
 }
 
 /**
- * Enable force hold function for RTC IO pad.
+ * Enable force hold function on an RTC IO pad.
  *
  * Enabling HOLD function will cause the pad to lock current status, such as,
  * input/output enable, input/output value, function, drive strength values.
@@ -223,7 +223,7 @@ static inline void rtcio_ll_force_hold_enable(int rtcio_num)
 }
 
 /**
- * Disable hold function on an RTC IO pad
+ * Disable hold function on an RTC IO pad.
  *
  * @note If disable the pad hold, the status of pad maybe changed in sleep mode.
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
@@ -235,7 +235,7 @@ static inline void rtcio_ll_force_hold_disable(int rtcio_num)
 }
 
 /**
- * Enable force hold function for RTC IO pad.
+ * Enable force hold function on all RTC IO pads.
  *
  * Enabling HOLD function will cause the pad to lock current status, such as,
  * input/output enable, input/output value, function, drive strength values.
@@ -250,7 +250,7 @@ static inline void rtcio_ll_force_hold_all(void)
 }
 
 /**
- * Disable hold function on an RTC IO pad
+ * Disable hold function on all RTC IO pads.
  *
  * @note If disable the pad hold, the status of pad maybe changed in sleep mode.
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).

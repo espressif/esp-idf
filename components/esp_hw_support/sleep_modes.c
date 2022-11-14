@@ -215,7 +215,7 @@ static void timer_wakeup_prepare(void);
 static void touch_wakeup_prepare(void);
 #endif
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-static void esp_deep_sleep_wakeup_prepare(void);
+static void gpio_deep_sleep_wakeup_prepare(void);
 #endif
 
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
@@ -431,8 +431,8 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 #endif
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-    if (s_config.wakeup_triggers & RTC_GPIO_TRIG_EN) {
-        esp_deep_sleep_wakeup_prepare();
+    if (deep_sleep && (s_config.wakeup_triggers & RTC_GPIO_TRIG_EN)) {
+        gpio_deep_sleep_wakeup_prepare();
     }
 #endif
 
@@ -1096,7 +1096,7 @@ static void ext1_wakeup_prepare(void)
     }
 
     // Clear state from previous wakeup
-    rtc_hal_ext1_clear_wakeup_pins();
+    rtc_hal_ext1_clear_wakeup_status();
     // Set RTC IO pins and mode (any high, all low) to be used for wakeup
     rtc_hal_ext1_set_wakeup_pins(s_config.ext1_rtc_gpio_mask, s_config.ext1_trigger_mode);
 }
@@ -1106,7 +1106,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
     if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_EXT1) {
         return 0;
     }
-    uint32_t status = rtc_hal_ext1_get_wakeup_pins();
+    uint32_t status = rtc_hal_ext1_get_wakeup_status();
     // Translate bit map of RTC IO numbers into the bit map of GPIO numbers
     uint64_t gpio_mask = 0;
     for (int gpio = 0; gpio < GPIO_PIN_COUNT; ++gpio) {
@@ -1131,10 +1131,10 @@ uint64_t esp_sleep_get_gpio_wakeup_status(void)
         return 0;
     }
 
-    return rtc_hal_gpio_get_wakeup_pins();
+    return rtc_hal_gpio_get_wakeup_status();
 }
 
-static void esp_deep_sleep_wakeup_prepare(void)
+static void gpio_deep_sleep_wakeup_prepare(void)
 {
     for (gpio_num_t gpio_idx = GPIO_NUM_0; gpio_idx < GPIO_NUM_MAX; gpio_idx++) {
         if (((1ULL << gpio_idx) & s_config.gpio_wakeup_mask) == 0) {
@@ -1147,9 +1147,10 @@ static void esp_deep_sleep_wakeup_prepare(void)
             ESP_ERROR_CHECK(gpio_pullup_en(gpio_idx));
             ESP_ERROR_CHECK(gpio_pulldown_dis(gpio_idx));
         }
-        rtc_hal_gpio_set_wakeup_pins();
         ESP_ERROR_CHECK(gpio_hold_en(gpio_idx));
     }
+    // Clear state from previous wakeup
+    rtc_hal_gpio_clear_wakeup_status();
 }
 
 esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepsleep_gpio_wake_up_mode_t mode)
@@ -1165,7 +1166,7 @@ esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepslee
             continue;
         }
         if (!esp_sleep_is_valid_wakeup_gpio(gpio_idx)) {
-            ESP_LOGE(TAG, "invalid mask, please ensure gpio number is no more than 5");
+            ESP_LOGE(TAG, "gpio %d is an invalid deep sleep wakeup IO", gpio_idx);
             return ESP_ERR_INVALID_ARG;
         }
         err = gpio_deep_sleep_wakeup_enable(gpio_idx, intr_type);
@@ -1178,7 +1179,6 @@ esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepslee
         }
     }
     s_config.wakeup_triggers |= RTC_GPIO_TRIG_EN;
-    rtc_hal_gpio_clear_wakeup_pins();
     return err;
 }
 

@@ -245,25 +245,25 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode
  * This function enables an IO pin to wake up the chip from deep sleep.
  *
  * @note This function does not modify pin configuration. The pins are
- *       configured in esp_deep_sleep_start/esp_light_sleep_start,
- *       immediately before entering sleep mode.
+ *       configured inside esp_deep_sleep_start, immediately before entering sleep mode.
  *
  * @note You don't need to care to pull-up or pull-down before using this
- *       function, because this will be done in esp_deep_sleep_start/esp_light_sleep_start
- *       based on param mask you give. BTW, when you use low level to wake up the
- *       chip, we strongly recommand you to add external registors (pull-up).
+ *       function, because this will be set internally in esp_deep_sleep_start
+ *       based on the wakeup mode. BTW, when you use low level to wake up the
+ *       chip, we strongly recommend you to add external resistors (pull-up).
  *
  * @param gpio_pin_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
- *              which are have RTC functionality can be used in this bit map.
+ *              which have RTC functionality (pads that powered by VDD3P3_RTC) can be used in this bit map.
  * @param mode Select logic function used to determine wakeup condition:
  *            - ESP_GPIO_WAKEUP_GPIO_LOW: wake up when the gpio turn to low.
  *            - ESP_GPIO_WAKEUP_GPIO_HIGH: wake up when the gpio turn to high.
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if gpio num is more than 5 or mode is invalid,
+ *      - ESP_ERR_INVALID_ARG if the mask contains any invalid deep sleep wakeup pin or wakeup mode is invalid
  */
 esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepsleep_gpio_wake_up_mode_t mode);
 #endif
+
 /**
  * @brief Enable wakeup from light sleep using GPIOs
  *

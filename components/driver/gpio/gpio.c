@@ -717,10 +717,10 @@ void gpio_deep_sleep_hold_dis(void)
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 
-esp_err_t gpio_force_hold_all()
+esp_err_t IRAM_ATTR gpio_force_hold_all()
 {
 #if SOC_RTCIO_HOLD_SUPPORTED
-    rtc_gpio_force_hold_all();
+    rtc_gpio_force_hold_en_all();
 #endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     gpio_hal_force_hold_all();
@@ -728,14 +728,14 @@ esp_err_t gpio_force_hold_all()
     return ESP_OK;
 }
 
-esp_err_t gpio_force_unhold_all()
+esp_err_t IRAM_ATTR gpio_force_unhold_all()
 {
-#if SOC_RTCIO_HOLD_SUPPORTED
-    rtc_gpio_force_hold_dis_all();
-#endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     gpio_hal_force_unhold_all();
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+#if SOC_RTCIO_HOLD_SUPPORTED
+    rtc_gpio_force_hold_dis_all();
+#endif
     return ESP_OK;
 }
 #endif

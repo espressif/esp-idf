@@ -19,6 +19,8 @@
 
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
+#include "hal/rtc_io_hal.h"
+#include "hal/rtc_hal.h"
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_gpio.h"
 #include "esp_private/spi_flash_os.h"
@@ -144,3 +146,37 @@ IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
     }
 }
 #endif
+
+void esp_deep_sleep_wakeup_io_reset(void)
+{
+#if SOC_PM_SUPPORT_EXT_WAKEUP
+    uint32_t rtc_io_mask = rtc_hal_ext1_get_wakeup_pins();
+    // Disable ext1 wakeup before releasing hold, such that wakeup status can reflect the correct wakeup pin
+    rtc_hal_ext1_clear_wakeup_pins();
+    for (int gpio_num = 0; gpio_num < SOC_GPIO_PIN_COUNT && rtc_io_mask != 0; ++gpio_num) {
+        int rtcio_num = rtc_io_num_map[gpio_num];
+        if ((rtc_io_mask & BIT(rtcio_num)) == 0) {
+            continue;
+        }
+        rtcio_hal_hold_disable(rtcio_num);
+        rtc_io_mask &= ~BIT(rtcio_num);
+    }
+#endif
+
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+    uint32_t dl_io_mask = SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK;
+    gpio_hal_context_t gpio_hal = {
+        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
+    };
+    while (dl_io_mask) {
+        int gpio_num = __builtin_ffs(dl_io_mask) - 1;
+        bool wakeup_io_enabled = gpio_hal_deepsleep_wakeup_is_enabled(&gpio_hal, gpio_num);
+        if (wakeup_io_enabled) {
+            // Disable the wakeup before releasing hold, such that wakeup status can reflect the correct wakeup pin
+            gpio_hal_deepsleep_wakeup_disable(&gpio_hal, gpio_num);
+            gpio_hal_hold_dis(&gpio_hal, gpio_num);
+        }
+        dl_io_mask &= ~BIT(gpio_num);
+    }
+#endif
+}
