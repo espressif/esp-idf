@@ -60,35 +60,19 @@
  * or #defined the notification macros away, then provide default implementations
  * that uses task notifications. */
 /*lint -save -e9026 Function like macros allowed and needed here so they can be overridden. */
-
 #ifndef sbRECEIVE_COMPLETED
-    #ifdef ESP_PLATFORM /* IDF-3775 */
-        #define sbRECEIVE_COMPLETED( pxStreamBuffer )                     \
-    taskENTER_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );         \
-    {                                                                     \
-        if( ( pxStreamBuffer )->xTaskWaitingToSend != NULL )              \
-        {                                                                 \
-            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToSend, \
-                                  ( uint32_t ) 0,                         \
-                                  eNoAction );                            \
-            ( pxStreamBuffer )->xTaskWaitingToSend = NULL;                \
-        }                                                                 \
-    }                                                                     \
-    taskEXIT_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
-    #else  /* ifdef ESP_PLATFORM */
-        #define sbRECEIVE_COMPLETED( pxStreamBuffer )                     \
-    vTaskSuspendAll();                                                    \
-    {                                                                     \
-        if( ( pxStreamBuffer )->xTaskWaitingToSend != NULL )              \
-        {                                                                 \
-            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToSend, \
-                                  ( uint32_t ) 0,                         \
-                                  eNoAction );                            \
-            ( pxStreamBuffer )->xTaskWaitingToSend = NULL;                \
-        }                                                                 \
-    }                                                                     \
-    ( void ) xTaskResumeAll();
-    #endif // ESP_PLATFORM
+    #define sbRECEIVE_COMPLETED( pxStreamBuffer )                               \
+    prvENTER_CRITICAL_OR_SUSPEND_ALL( &( pxStreamBuffer->xStreamBufferLock ) ); \
+    {                                                                           \
+        if( ( pxStreamBuffer )->xTaskWaitingToSend != NULL )                    \
+        {                                                                       \
+            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToSend,       \
+                                  ( uint32_t ) 0,                               \
+                                  eNoAction );                                  \
+            ( pxStreamBuffer )->xTaskWaitingToSend = NULL;                      \
+        }                                                                       \
+    }                                                                           \
+    ( void ) prvEXIT_CRITICAL_OR_RESUME_ALL( &( pxStreamBuffer->xStreamBufferLock ) );
 #endif /* sbRECEIVE_COMPLETED */
 
 #ifndef sbRECEIVE_COMPLETED_FROM_ISR
@@ -116,33 +100,18 @@
  * or #defined the notification macro away, them provide a default implementation
  * that uses task notifications. */
 #ifndef sbSEND_COMPLETED
-    #ifdef ESP_PLATFORM /* IDF-3755 */
-        #define sbSEND_COMPLETED( pxStreamBuffer )                           \
-    taskENTER_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );            \
-    {                                                                        \
-        if( ( pxStreamBuffer )->xTaskWaitingToReceive != NULL )              \
-        {                                                                    \
-            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToReceive, \
-                                  ( uint32_t ) 0,                            \
-                                  eNoAction );                               \
-            ( pxStreamBuffer )->xTaskWaitingToReceive = NULL;                \
-        }                                                                    \
-    }                                                                        \
-    taskEXIT_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
-    #else  /* ifdef ESP_PLATFORM */
-        #define sbSEND_COMPLETED( pxStreamBuffer )                           \
-    vTaskSuspendAll();                                                       \
-    {                                                                        \
-        if( ( pxStreamBuffer )->xTaskWaitingToReceive != NULL )              \
-        {                                                                    \
-            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToReceive, \
-                                  ( uint32_t ) 0,                            \
-                                  eNoAction );                               \
-            ( pxStreamBuffer )->xTaskWaitingToReceive = NULL;                \
-        }                                                                    \
-    }                                                                        \
-    ( void ) xTaskResumeAll();
-    #endif // ESP_PLATFORM
+    #define sbSEND_COMPLETED( pxStreamBuffer )                                  \
+    prvENTER_CRITICAL_OR_SUSPEND_ALL( &( pxStreamBuffer->xStreamBufferLock ) ); \
+    {                                                                           \
+        if( ( pxStreamBuffer )->xTaskWaitingToReceive != NULL )                 \
+        {                                                                       \
+            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToReceive,    \
+                                  ( uint32_t ) 0,                               \
+                                  eNoAction );                                  \
+            ( pxStreamBuffer )->xTaskWaitingToReceive = NULL;                   \
+        }                                                                       \
+    }                                                                           \
+    ( void ) prvEXIT_CRITICAL_OR_RESUME_ALL( &( pxStreamBuffer->xStreamBufferLock ) );
 #endif /* sbSEND_COMPLETED */
 
 #ifndef sbSEND_COMPLETE_FROM_ISR
@@ -308,7 +277,6 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
         {
             pucAllocatedMemory = NULL;
         }
-
 
         if( pucAllocatedMemory != NULL )
         {
