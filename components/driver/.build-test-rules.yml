@@ -63,6 +63,12 @@ components/driver/test_apps/rs485:
       temporary: true
       reason: lack of runners
 
+components/driver/test_apps/sdio:
+  disable:
+    - if: SOC_SDIO_SLAVE_SUPPORTED != 1
+      temporary: true
+      reason: Not supported.
+
 components/driver/test_apps/sdm:
   disable:
     - if: SOC_SDM_SUPPORTED != 1

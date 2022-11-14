@@ -134,9 +134,8 @@ build:integration_test:
     - - bt        # example_test_005
       - wifi      # example_test_002, example_test*wifi*
       - ethernet  # example_test*ethernet*
-      - sdio      # UT_044, UT_045
+      - sdio      # component_ut_pytest_esp32_sdio
       - usb       # USB Device & Host tests
-      - spi_multi # UT_C2_SPI_DUAL
       - adc       # component_ut_pytest_esp32x_adc
       - i154
   patterns:
