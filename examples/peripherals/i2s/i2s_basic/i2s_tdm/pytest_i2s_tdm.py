@@ -7,6 +7,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
+@pytest.mark.esp32c6
 @pytest.mark.generic
 def test_i2s_tdm_example(dut: Dut) -> None:
 

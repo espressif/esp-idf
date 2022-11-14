@@ -1926,7 +1926,7 @@ esp_err_t i2s_platform_release_occupation(int id)
 }
 
 /**
- * @brief This function will be called during start up, to check that pulse_cnt driver is not running along with the legacy i2s driver
+ * @brief This function will be called during start up, to check that the new i2s driver is not running along with the legacy i2s driver
  */
 static __attribute__((constructor)) void check_i2s_driver_conflict(void)
 {

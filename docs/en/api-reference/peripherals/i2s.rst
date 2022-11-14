@@ -1,7 +1,7 @@
 Inter-IC Sound (I2S)
 ====================
 
-{IDF_TARGET_I2S_NUM:default="two", esp32s2="one", esp32c3="one"}
+{IDF_TARGET_I2S_NUM:default="one", esp32="two", esp32s3="two"}
 
 Introduction
 ------------
@@ -109,6 +109,7 @@ Overview of All Modes
 ESP32      I2S 0/1    I2S 0     I2S 0      none     I2S 0      I2S 0
 ESP32S2     I2S 0     none      none       none     none       I2S 0
 ESP32C3     I2S 0     I2S 0     none      I2S 0     none       none
+ESP32C6     I2S 0     I2S 0     none      I2S 0     none       none
 ESP32S3    I2S 0/1    I2S 0     I2S 0    I2S 0/1    none       none
 =========  ========  ========  ========  ========  ========  ==========
 
@@ -177,7 +178,7 @@ Standard mode always has left and right two sound channels which are called 'slo
 
     .. wavedrom:: /../_static/diagrams/i2s/tdm_pcm_long.json
 
-.. only:: SOC_I2S_SUPPORTS_LDC_CAMERA
+.. only:: SOC_I2S_SUPPORTS_LCD_CAMERA
 
     LCD/Camera Mode
     ^^^^^^^^^^^^^^^

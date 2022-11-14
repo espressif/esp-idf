@@ -11,7 +11,7 @@ This example is going to show how to use the TDM mode in simplex mode or full-du
 
 ### Hardware Required
 
-* A development board with any one of ESP32-C3 or ESP32-S3 SoC
+* A development board with any supported Espressif SOC chip (see `Supported Targets` table above)
 * A USB cable for power supply and programming
 
 ### Configure the Project
