@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <setjmp.h>
 #include "unity.h"
+#include "unity_test_runner.h"
 
 #include "esp_system.h"
 
@@ -40,12 +41,12 @@ static void cleanup(void)
     esp_unregister_shutdown_handler(action);
 }
 
-void test_reset_reason(void)
+TEST_CASE("reset_reason", "[esp_system]")
 {
     TEST_ASSERT_EQUAL(ESP_RST_POWERON, esp_reset_reason());
 }
 
-void test_unregister_handler_works(void)
+TEST_CASE("unregister_handler_works", "[esp_system]")
 {
     token = 0;
     // for some reason, the handlers are executed in reverse order of adding handlers, so we always
@@ -64,7 +65,7 @@ void test_unregister_handler_works(void)
     TEST_ASSERT_EQUAL(0, token);
 }
 
-void test_register_shutdown_handler_twice_fails(void)
+TEST_CASE("register_shutdown_handler_twice_fails", "[esp_system]")
 {
     TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(jump_back_shutdown_handler));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_register_shutdown_handler(jump_back_shutdown_handler));
@@ -72,7 +73,7 @@ void test_register_shutdown_handler_twice_fails(void)
     cleanup();
 }
 
-void test_register_shutdown_handler_works(void)
+TEST_CASE("register_shutdown_handler_works", "[esp_system]")
 {
     token = 0;
     TEST_ASSERT_EQUAL(esp_register_shutdown_handler(jump_back_shutdown_handler), ESP_OK);
@@ -87,7 +88,7 @@ void test_register_shutdown_handler_works(void)
     TEST_ASSERT_EQUAL(1, token);
 }
 
-void test_register_too_many_shutdown_handler_fails(void)
+TEST_CASE("register_too_many_shutdown_handler_fails", "[esp_system]")
 {
     TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(dummy_shutdown_handler_0));
     TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(dummy_shutdown_handler_1));
@@ -100,7 +101,7 @@ void test_register_too_many_shutdown_handler_fails(void)
     cleanup();
 }
 
-void test_heap_size_stubs(void)
+TEST_CASE("heap_size_stubs", "[esp_system]")
 {
     TEST_ASSERT_EQUAL(47000, esp_get_free_heap_size());
     TEST_ASSERT_EQUAL(47000, esp_get_free_internal_heap_size());
@@ -109,12 +110,6 @@ void test_heap_size_stubs(void)
 
 void app_main(void)
 {
-    UNITY_BEGIN();
-    RUN_TEST(test_reset_reason);
-    RUN_TEST(test_unregister_handler_works);
-    RUN_TEST(test_register_shutdown_handler_twice_fails);
-    RUN_TEST(test_register_shutdown_handler_works);
-    RUN_TEST(test_register_too_many_shutdown_handler_fails);
-    RUN_TEST(test_heap_size_stubs);
-    UNITY_END();
+    printf("Running esp_system host test app");
+    unity_run_menu();
 }
