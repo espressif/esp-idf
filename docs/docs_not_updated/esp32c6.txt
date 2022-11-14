@@ -142,7 +142,6 @@ api-reference/peripherals/spi_master
 api-reference/peripherals/index
 api-reference/peripherals/sdmmc_host
 api-reference/peripherals/uart
-api-reference/peripherals/rmt
 api-reference/kconfig
 api-reference/network
 api-reference/network/esp_openthread
