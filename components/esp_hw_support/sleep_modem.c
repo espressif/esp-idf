@@ -12,7 +12,7 @@
 #include "esp_attr.h"
 #include "esp_sleep.h"
 #include "soc/soc_caps.h"
-#include "esp_private/sleep_mac_bb.h"
+#include "esp_private/sleep_modem.h"
 #include "sdkconfig.h"
 
 #if CONFIG_MAC_BB_PD

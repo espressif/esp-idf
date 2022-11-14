@@ -66,10 +66,10 @@
 #include "esp_private/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/rtc.h"
-#include "esp_private/sleep_mac_bb.h"
+#include "esp_private/sleep_modem.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/rtc.h"
-#include "esp_private/sleep_mac_bb.h"
+#include "esp_private/sleep_modem.h"
 #elif CONFIG_IDF_TARGET_ESP32H4
 #include "esp32h4/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C2

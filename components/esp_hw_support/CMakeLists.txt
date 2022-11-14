@@ -23,7 +23,7 @@ if(NOT BOOTLOADER_BUILD)
                      "rtc_module.c"
                      "sleep_modes.c"
                      "sleep_gpio.c"
-                     "sleep_mac_bb.c"
+                     "sleep_modem.c"
                      "regi2c_ctrl.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/clk_tree.c"

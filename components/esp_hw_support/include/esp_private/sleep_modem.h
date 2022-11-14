@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 /**
- * @file sleep_mac_bb.h
+ * @file sleep_modem.h
  *
  * This file contains declarations of MAC and baseband power consumption related functions in light sleep mode.
  */
