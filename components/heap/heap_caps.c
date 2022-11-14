@@ -14,7 +14,6 @@
 #include "esp_log.h"
 #include "heap_private.h"
 #include "esp_system.h"
-#include "esp_private/cache_utils.h"
 
 /* Forward declaration for base function, put in IRAM.
  * These functions don't check for errors after trying to allocate memory. */
@@ -56,16 +55,10 @@ IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
 }
 
 
-IRAM_ATTR static void heap_caps_alloc_failed(size_t requested_size, uint32_t caps, const char *function_name)
+IRAM_ATTR NOINLINE_ATTR static void heap_caps_alloc_failed(size_t requested_size, uint32_t caps, const char *function_name)
 {
-    static const DRAM_ATTR char *default_func_name = "<function_name>";
     if (alloc_failed_callback) {
-        if (!spi_flash_cache_enabled() && !esp_ptr_internal(function_name)) {
-            alloc_failed_callback(requested_size, caps, default_func_name);
-        }
-        else {
-            alloc_failed_callback(requested_size, caps, function_name);
-        }
+        alloc_failed_callback(requested_size, caps, function_name);
     }
 
 #ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS

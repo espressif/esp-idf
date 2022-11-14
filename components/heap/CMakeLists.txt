@@ -37,7 +37,7 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${includes}
                     PRIV_INCLUDE_DIRS ${priv_includes}
                     LDFRAGMENTS linker.lf
-                    PRIV_REQUIRES soc spi_flash)
+                    PRIV_REQUIRES soc)
 
 if(CONFIG_HEAP_TRACING)
     set(WRAP_FUNCTIONS
