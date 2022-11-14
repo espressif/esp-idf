@@ -86,7 +86,7 @@ typedef struct multi_heap_info {
 } heap_t;
 
 /* Check a block is valid for this heap. Used to verify parameters. */
-static void assert_valid_block(const heap_t *heap, const block_header_t *block)
+__attribute__((noinline)) NOCLONE_ATTR static void assert_valid_block(const heap_t *heap, const block_header_t *block)
 {
     pool_t pool = tlsf_get_pool(heap->heap_data);
     void *ptr = block_to_ptr(block);
@@ -137,12 +137,12 @@ void multi_heap_set_lock(multi_heap_handle_t heap, void *lock)
     heap->lock = lock;
 }
 
-void inline multi_heap_internal_lock(multi_heap_handle_t heap)
+void multi_heap_internal_lock(multi_heap_handle_t heap)
 {
     MULTI_HEAP_LOCK(heap->lock);
 }
 
-void inline multi_heap_internal_unlock(multi_heap_handle_t heap)
+void multi_heap_internal_unlock(multi_heap_handle_t heap)
 {
     MULTI_HEAP_UNLOCK(heap->lock);
 }
@@ -299,7 +299,7 @@ bool multi_heap_check(multi_heap_handle_t heap, bool print_errors)
     return valid;
 }
 
-static void multi_heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
+__attribute__((noinline)) static void multi_heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
 {
     (void)user;
     MULTI_HEAP_STDERR_PRINTF("Block %p data, size: %d bytes, Free: %s \n",
@@ -336,7 +336,7 @@ size_t multi_heap_minimum_free_size_impl(multi_heap_handle_t heap)
     return heap->minimum_free_bytes;
 }
 
-static void multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* user)
+__attribute__((noinline)) static void multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* user)
 {
     multi_heap_info_t *info = user;
 
