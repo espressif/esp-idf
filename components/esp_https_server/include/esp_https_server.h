@@ -122,7 +122,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
         .stack_size         = 10240,              \
         .core_id            = tskNO_AFFINITY,     \
         .server_port        = 0,                  \
-        .ctrl_port          = 32768,              \
+        .ctrl_port   = ESP_HTTPD_DEF_CTRL_PORT+1, \
         .max_open_sockets   = 4,                  \
         .max_uri_handlers   = 8,                  \
         .max_resp_headers   = 8,                  \
