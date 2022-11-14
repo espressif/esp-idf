@@ -15,7 +15,6 @@ entries:
         tlsf:tlsf_free (noflash)
         tlsf:tlsf_realloc (noflash)
 
-        multi_heap:assert_valid_block (noflash)
         multi_heap:multi_heap_get_block_address_impl (noflash)
         multi_heap:multi_heap_get_allocated_size_impl (noflash)
         multi_heap:multi_heap_set_lock (noflash)
@@ -27,6 +26,9 @@ entries:
         multi_heap:multi_heap_realloc_impl (noflash)
         multi_heap:multi_heap_aligned_alloc_impl_offs (noflash)
         multi_heap:multi_heap_aligned_alloc_impl (noflash)
+        multi_heap:multi_heap_internal_lock (noflash)
+        multi_heap:multi_heap_internal_unlock (noflash)
+        multi_heap:assert_valid_block (noflash)
 
     if HEAP_TLSF_USE_ROM_IMPL = y:
         multi_heap:_multi_heap_lock (noflash)
@@ -47,6 +49,6 @@ entries:
         multi_heap_poisoning:multi_heap_internal_check_block_poisoning (noflash)
         multi_heap_poisoning:multi_heap_internal_poison_fill_region (noflash)
 
-        if HEAP_POISONING_COMPREHENSIVE = y:
-            multi_heap_poisoning:verify_fill_pattern (noflash)
-            multi_heap_poisoning:block_absorb_post_hook (noflash)
+    if HEAP_POISONING_COMPREHENSIVE = y:
+        multi_heap_poisoning:verify_fill_pattern (noflash)
+        multi_heap_poisoning:block_absorb_post_hook (noflash)
