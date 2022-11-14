@@ -211,11 +211,14 @@ TEST_CASE("RMT multiple channels", "[rmt]")
 TEST_CASE("RMT install/uninstall test", "[rmt]")
 {
     rmt_config_t tx_cfg = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, RMT_TX_CHANNEL_ENCODING_END);
+    // uninstall function is allowed to be called at any time
+    TEST_ESP_OK(rmt_driver_uninstall(tx_cfg.channel));
     TEST_ESP_OK(rmt_config(&tx_cfg));
     for (int i = 0; i < 100; i++) {
         TEST_ESP_OK(rmt_driver_install(tx_cfg.channel, 1000, 0));
         TEST_ESP_OK(rmt_driver_uninstall(tx_cfg.channel));
     }
+    TEST_ESP_OK(rmt_driver_uninstall(tx_cfg.channel));
     rmt_config_t rx_cfg = RMT_DEFAULT_CONFIG_RX(RMT_DATA_IO, RMT_RX_CHANNEL_ENCODING_START);
     TEST_ESP_OK(rmt_config(&rx_cfg));
     for (int i = 0; i < 100; i++) {
