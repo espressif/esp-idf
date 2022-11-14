@@ -516,7 +516,6 @@ components/esp_rom/include/esp32/rom/crc.h
 components/esp_rom/include/esp32/rom/efuse.h
 components/esp_rom/include/esp32/rom/libc_stubs.h
 components/esp_rom/include/esp32/rom/md5_hash.h
-components/esp_rom/include/esp32/rom/miniz.h
 components/esp_rom/include/esp32/rom/rsa_pss.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/tbconsole.h
@@ -533,7 +532,6 @@ components/esp_rom/include/esp32c3/rom/gpio.h
 components/esp_rom/include/esp32c3/rom/hmac.h
 components/esp_rom/include/esp32c3/rom/libc_stubs.h
 components/esp_rom/include/esp32c3/rom/md5_hash.h
-components/esp_rom/include/esp32c3/rom/miniz.h
 components/esp_rom/include/esp32c3/rom/rom_layout.h
 components/esp_rom/include/esp32c3/rom/rsa_pss.h
 components/esp_rom/include/esp32c3/rom/rtc.h
@@ -551,7 +549,6 @@ components/esp_rom/include/esp32h2/rom/ets_sys.h
 components/esp_rom/include/esp32h2/rom/hmac.h
 components/esp_rom/include/esp32h2/rom/libc_stubs.h
 components/esp_rom/include/esp32h2/rom/md5_hash.h
-components/esp_rom/include/esp32h2/rom/miniz.h
 components/esp_rom/include/esp32h2/rom/rsa_pss.h
 components/esp_rom/include/esp32h2/rom/sha.h
 components/esp_rom/include/esp32h2/rom/tjpgd.h
@@ -566,7 +563,6 @@ components/esp_rom/include/esp32s2/rom/gpio.h
 components/esp_rom/include/esp32s2/rom/hmac.h
 components/esp_rom/include/esp32s2/rom/libc_stubs.h
 components/esp_rom/include/esp32s2/rom/md5_hash.h
-components/esp_rom/include/esp32s2/rom/miniz.h
 components/esp_rom/include/esp32s2/rom/opi_flash.h
 components/esp_rom/include/esp32s2/rom/rsa_pss.h
 components/esp_rom/include/esp32s2/rom/sha.h
@@ -592,7 +588,6 @@ components/esp_rom/include/esp32s3/rom/gpio.h
 components/esp_rom/include/esp32s3/rom/hmac.h
 components/esp_rom/include/esp32s3/rom/libc_stubs.h
 components/esp_rom/include/esp32s3/rom/md5_hash.h
-components/esp_rom/include/esp32s3/rom/miniz.h
 components/esp_rom/include/esp32s3/rom/opi_flash.h
 components/esp_rom/include/esp32s3/rom/rom_layout.h
 components/esp_rom/include/esp32s3/rom/rsa_pss.h
