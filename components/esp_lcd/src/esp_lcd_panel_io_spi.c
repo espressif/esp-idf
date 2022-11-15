@@ -73,6 +73,7 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     spi_device_interface_config_t devcfg = {
         .flags = SPI_DEVICE_HALFDUPLEX |
         (io_config->flags.lsb_first ? SPI_DEVICE_TXBIT_LSBFIRST : 0) |
+        (io_config->flags.sio_mode ? SPI_DEVICE_3WIRE : 0) |
         (io_config->flags.cs_high_active ? SPI_DEVICE_POSITIVE_CS : 0),
         .clock_speed_hz = io_config->pclk_hz,
         .mode = io_config->spi_mode,
@@ -208,7 +209,9 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
 
     lcd_trans->base.user = spi_panel_io;
-    lcd_trans->base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
+    if (param && param_size) {
+        lcd_trans->base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
+    }
     if (spi_panel_io->flags.octal_mode) {
         // use 8 lines for transmitting command, address and data
         lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
