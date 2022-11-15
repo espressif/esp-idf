@@ -25,7 +25,7 @@ repos:
       - id: mixed-line-ending
         args: ['-f=lf']
       - id: double-quote-string-fixer
-  - repo: https://gitlab.com/pycqa/flake8
+  - repo: https://github.com/PyCQA/flake8
     rev: 3.8.4
     hooks:
       - id: flake8
