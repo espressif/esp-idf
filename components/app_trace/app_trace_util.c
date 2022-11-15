@@ -57,47 +57,26 @@ esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo)
 
 esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, esp_apptrace_tmo_t *tmo)
 {
-    int res;
+    esp_err_t ret;
 
     while (1) {
-        //Todo: Replace the current locking mechanism and int_state with portTRY_ENTER_CRITICAL() instead.
-        // do not overwrite lock->int_state before we actually acquired the mux
-#if CONFIG_FREERTOS_SMP
-        unsigned int_state = portDISABLE_INTERRUPTS();
-#else
-        unsigned int_state = portSET_INTERRUPT_MASK_FROM_ISR();
-#endif
-        bool success = spinlock_acquire(&lock->mux, 0);
-        if (success) {
-            lock->int_state = int_state;
+        // Try enter a critical section (i.e., take the spinlock) with 0 timeout
+        if (portTRY_ENTER_CRITICAL(&(lock->mux), 0) == pdTRUE) {
             return ESP_OK;
         }
-#if CONFIG_FREERTOS_SMP
-        portRESTORE_INTERRUPTS(int_state);
-#else
-        portCLEAR_INTERRUPT_MASK_FROM_ISR(int_state);
-#endif
-        // we can be preempted from this place till the next call (above) to portSET_INTERRUPT_MASK_FROM_ISR()
-        res = esp_apptrace_tmo_check(tmo);
-        if (res != ESP_OK) {
-            break;
+        // Failed to enter the critical section, so interrupts are still enabled. Check if we have timed out.
+        ret = esp_apptrace_tmo_check(tmo);
+        if (ret != ESP_OK) {
+            break;  // Timed out, exit now
         }
+        // Haven't timed out, try again
     }
-    return res;
+    return ret;
 }
 
 esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock)
 {
-    // save lock's irq state value for this CPU
-    unsigned int_state = lock->int_state;
-    // after call to the following func we can not be sure that lock->int_state
-    // is not overwritten by other CPU who has acquired the mux just after we released it. See esp_apptrace_lock_take().
-    spinlock_release(&lock->mux);
-#if CONFIG_FREERTOS_SMP
-    portRESTORE_INTERRUPTS(int_state);
-#else
-    portCLEAR_INTERRUPT_MASK_FROM_ISR(int_state);
-#endif
+    portEXIT_CRITICAL(&(lock->mux));
     return ESP_OK;
 }
 
