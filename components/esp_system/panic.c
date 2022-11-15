@@ -383,6 +383,27 @@ void esp_panic_handler(panic_info_t *info)
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #if CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
+#if CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS
+
+    disable_all_wdts();
+
+    panic_print_str("Waiting to reboot...\r\n");
+
+    for(int i = 0; i < CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS; i++) {
+
+        // Display a progress countdown.
+        // Only print every 5th second so users terminal is still "calm".
+        if (i % 5 == 0) {
+            panic_print_dec(CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS - i);
+            panic_print_str(" seconds...\r\n");
+        }
+
+        esp_rom_delay_us(1000000);
+    }
+
+    esp_panic_handler_reconfigure_wdts();
+#endif /* CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS */
+
     if (esp_reset_reason_get_hint() == ESP_RST_UNKNOWN) {
         switch (info->exception) {
         case PANIC_EXCEPTION_IWDT:

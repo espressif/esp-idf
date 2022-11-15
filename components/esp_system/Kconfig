@@ -48,6 +48,14 @@ menu "ESP System Settings"
                 Invoke gdbstub on the serial port, allowing for gdb to attach to it and to do a debug on runtime.
     endchoice
 
+    config ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS
+        int "Panic reboot delay (Seconds)"
+        default 0
+        depends on ESP_SYSTEM_PANIC_PRINT_REBOOT || ESP_SYSTEM_PANIC_SILENT_REBOOT
+        help
+            After the panic handler executes, you can specify a number of seconds to
+            wait before the device reboots.
+
     config ESP_SYSTEM_SINGLE_CORE_MODE
         bool
         default n
