@@ -233,6 +233,11 @@ esp_err_t uart_get_sclk_freq(uart_sclk_t sclk, uint32_t* out_freq_hz)
         freq = esp_clk_xtal_freq();
         break;
 #endif
+#if SOC_UART_SUPPORT_PLL_F80M_CLK
+    case UART_SCLK_PLL_F80M:
+        freq = UART_LL_PLL_DIV_FREQ;
+        break;
+#endif
     default:
         return ESP_ERR_INVALID_ARG;
     }

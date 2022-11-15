@@ -31,6 +31,20 @@ extern "C" {
 #define UART_LL_FSM_IDLE                       (0x0)
 #define UART_LL_FSM_TX_WAIT_SEND               (0xf)
 
+#define UART_LL_PLL_DIV_FREQ      (80000000)  // 80 MHz
+
+#define UART_LL_PCR_REG_U32_SET(hw, reg_suffix, field_suffix, val)  \
+    if ((hw) == &UART0) { \
+        HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.uart0_##reg_suffix, uart0_##field_suffix, (val))  \
+    } else {  \
+        HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.uart1_##reg_suffix, uart1_##field_suffix, (val))  \
+    }
+
+#define UART_LL_PCR_REG_U32_GET(hw, reg_suffix, field_suffix)  \
+    (((hw) == &UART0) ? \
+    HAL_FORCE_READ_U32_REG_FIELD(PCR.uart0_##reg_suffix, uart0_##field_suffix) : \
+    HAL_FORCE_READ_U32_REG_FIELD(PCR.uart1_##reg_suffix, uart1_##field_suffix))
+
 #define UART_LL_PCR_REG_SET(hw, reg_suffix, field_suffix, val)    \
     if ((hw) == &UART0) { \
         PCR.uart0_##reg_suffix.uart0_##field_suffix = (val);  \
@@ -62,14 +76,21 @@ typedef enum {
     UART_INTR_RS485_FRM_ERR    = (0x1 << 16),
     UART_INTR_RS485_CLASH      = (0x1 << 17),
     UART_INTR_CMD_CHAR_DET     = (0x1 << 18),
-    // UART_INTR_WAKEUP           = (0x1 << 19), // TODO: IDF-5338
+    // UART_INTR_WAKEUP           = (0x1 << 19),  // TODO: Test UART wakeup while supporting sleep
 } uart_intr_t;
 
+/**
+ * @brief Sync the update to UART core clock domain
+ *
+ * @param hw Beginning address of the peripheral registers.
+ *
+ * @return None.
+ */
 static inline void uart_ll_update(uart_dev_t *hw)
 {
     // TODO: set a timeout ??
-    while (hw->reg_update.reg_update);
     hw->reg_update.reg_update = 1;
+    while (hw->reg_update.reg_update);
 }
 
 /**
@@ -82,7 +103,7 @@ static inline void uart_ll_update(uart_dev_t *hw)
  */
 static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
 {
-    UART_LL_PCR_REG_SET(hw, conf, rst_en, core_rst_en);
+    hw->clk_conf.rst_core = core_rst_en;
 }
 
 /**
@@ -94,7 +115,6 @@ static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
  */
 static inline void uart_ll_sclk_enable(uart_dev_t *hw)
 {
-    UART_LL_PCR_REG_SET(hw, conf, clk_en, 1);
     UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_en, 1);
 }
 
@@ -107,7 +127,6 @@ static inline void uart_ll_sclk_enable(uart_dev_t *hw)
  */
 static inline void uart_ll_sclk_disable(uart_dev_t *hw)
 {
-    UART_LL_PCR_REG_SET(hw, conf, clk_en, 0);
     UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_en, 0);
 }
 
@@ -124,7 +143,7 @@ static inline void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
 {
     switch (source_clk) {
         default:
-        case UART_SCLK_APB:
+        case UART_SCLK_PLL_F80M:
             UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 1);
             break;
         case UART_SCLK_RTC:
@@ -149,7 +168,7 @@ static inline void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t *source_clk)
     switch (UART_LL_PCR_REG_GET(hw, sclk_conf, sclk_sel)) {
         default:
         case 1:
-            *source_clk = UART_SCLK_APB;
+            *source_clk = UART_SCLK_PLL_F80M;
             break;
         case 2:
             *source_clk = UART_SCLK_RTC;
@@ -180,7 +199,7 @@ static inline void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t 
     // an integer part and a fractional part.
     hw->clkdiv_sync.clkdiv_int = clk_div >> 4;
     hw->clkdiv_sync.clkdiv_frag = clk_div &  0xf;
-    UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_div_num, sclk_div - 1);
+    UART_LL_PCR_REG_U32_SET(hw, sclk_conf, sclk_div_num, sclk_div - 1);
 #undef DIV_UP
     uart_ll_update(hw);
 }
@@ -197,7 +216,7 @@ static inline uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_freq)
 {
     typeof(hw->clkdiv_sync) div_reg;
     div_reg.val = hw->clkdiv_sync.val;
-    return ((sclk_freq << 4)) / (((div_reg.clkdiv_int << 4) | div_reg.clkdiv_frag) * (UART_LL_PCR_REG_GET(hw, sclk_conf, sclk_div_num) + 1));
+    return ((sclk_freq << 4)) / (((div_reg.clkdiv_int << 4) | div_reg.clkdiv_frag) * (UART_LL_PCR_REG_U32_GET(hw, sclk_conf, sclk_div_num) + 1));
 }
 
 /**
@@ -211,7 +230,6 @@ static inline uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_freq)
 static inline void uart_ll_ena_intr_mask(uart_dev_t *hw, uint32_t mask)
 {
     hw->int_ena.val |= mask;
-    uart_ll_update(hw);
 }
 
 /**
@@ -225,7 +243,6 @@ static inline void uart_ll_ena_intr_mask(uart_dev_t *hw, uint32_t mask)
 static inline void uart_ll_disable_intr_mask(uart_dev_t *hw, uint32_t mask)
 {
     hw->int_ena.val &= (~mask);
-    uart_ll_update(hw);
 }
 
 /**
@@ -251,7 +268,6 @@ static inline uint32_t uart_ll_get_intsts_mask(uart_dev_t *hw)
 static inline void uart_ll_clr_intsts_mask(uart_dev_t *hw, uint32_t mask)
 {
     hw->int_clr.val = mask;
-    uart_ll_update(hw);
 }
 
 /**
@@ -425,7 +441,6 @@ static inline void uart_ll_get_parity(uart_dev_t *hw, uart_parity_t *parity_mode
 static inline void uart_ll_set_rxfifo_full_thr(uart_dev_t *hw, uint16_t full_thrhd)
 {
     hw->conf1.rxfifo_full_thrhd = full_thrhd;
-    uart_ll_update(hw);
 }
 
 /**
@@ -440,7 +455,6 @@ static inline void uart_ll_set_rxfifo_full_thr(uart_dev_t *hw, uint16_t full_thr
 static inline void uart_ll_set_txfifo_empty_thr(uart_dev_t *hw, uint16_t empty_thrhd)
 {
     hw->conf1.txfifo_empty_thrhd = empty_thrhd;
-    uart_ll_update(hw);
 }
 
 /**
@@ -484,13 +498,11 @@ static inline void uart_ll_tx_break(uart_dev_t *hw, uint32_t break_num)
 {
     if (break_num > 0) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->txbrk_conf_sync, tx_brk_num, break_num);
-        uart_ll_update(hw);
         hw->conf0_sync.txd_brk = 1;
-        uart_ll_update(hw);
     } else {
         hw->conf0_sync.txd_brk = 0;
-        uart_ll_update(hw);
     }
+    uart_ll_update(hw);
 }
 
 /**
@@ -507,20 +519,16 @@ static inline void uart_ll_set_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcontrol_
     //only when UART_HW_FLOWCTRL_RTS is set , will the rx_thresh value be set.
     if (flow_ctrl & UART_HW_FLOWCTRL_RTS) {
         hw->hwfc_conf_sync.rx_flow_thrhd = rx_thrs;
-        uart_ll_update(hw);
         hw->hwfc_conf_sync.rx_flow_en = 1;
-        uart_ll_update(hw);
     } else {
         hw->hwfc_conf_sync.rx_flow_en = 0;
-        uart_ll_update(hw);
     }
     if (flow_ctrl & UART_HW_FLOWCTRL_CTS) {
         hw->conf0_sync.tx_flow_en = 1;
-        uart_ll_update(hw);
     } else {
         hw->conf0_sync.tx_flow_en = 0;
-        uart_ll_update(hw);
     }
+    uart_ll_update(hw);
 }
 
 /**
@@ -555,21 +563,16 @@ static inline void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl_t *
 {
     if (sw_flow_ctrl_en) {
         hw->swfc_conf0_sync.xonoff_del = 1;
-        uart_ll_update(hw);
         hw->swfc_conf0_sync.sw_flow_con_en = 1;
-        uart_ll_update(hw);
         hw->swfc_conf1.xon_threshold = flow_ctrl->xon_thrd;
         hw->swfc_conf1.xoff_threshold = flow_ctrl->xoff_thrd;
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xon_char, flow_ctrl->xon_char);
-        uart_ll_update(hw);
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xoff_char, flow_ctrl->xoff_char);
-        uart_ll_update(hw);
     } else {
         hw->swfc_conf0_sync.sw_flow_con_en = 0;
-        uart_ll_update(hw);
         hw->swfc_conf0_sync.xonoff_del = 0;
-        uart_ll_update(hw);
     }
+    uart_ll_update(hw);
 }
 
 /**
@@ -588,13 +591,9 @@ static inline void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl_t *
 static inline void uart_ll_set_at_cmd_char(uart_dev_t *hw, uart_at_cmd_t *cmd_char)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_char_sync, data, cmd_char->cmd_char);
-    uart_ll_update(hw);
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_char_sync, char_num, cmd_char->char_num);
-    uart_ll_update(hw);
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_postcnt_sync, post_idle_num, cmd_char->post_idle);
-    uart_ll_update(hw);
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_precnt_sync, pre_idle_num, cmd_char->pre_idle);
-    uart_ll_update(hw);
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_gaptout_sync, rx_gap_tout, cmd_char->gap_tout);
     uart_ll_update(hw);
 }
@@ -638,7 +637,6 @@ static inline void uart_ll_set_rts_active_level(uart_dev_t *hw, int level)
 static inline void uart_ll_set_dtr_active_level(uart_dev_t *hw, int level)
 {
     hw->conf1.sw_dtr = level & 0x1;
-    uart_ll_update(hw);
 }
 
 /**
@@ -653,7 +651,6 @@ static inline void uart_ll_set_dtr_active_level(uart_dev_t *hw, int level)
 static inline void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
 {
     hw->sleep_conf2.active_threshold = wakeup_thrd - UART_LL_MIN_WAKEUP_THRESH;
-    uart_ll_update(hw);
 }
 
 /**
@@ -666,11 +663,8 @@ static inline void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
 static inline void uart_ll_set_mode_normal(uart_dev_t *hw)
 {
     hw->rs485_conf_sync.rs485_en = 0;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.rs485tx_rx_en = 0;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.rs485rxby_tx_en = 0;
-    uart_ll_update(hw);
     hw->conf0_sync.irda_en = 0;
     uart_ll_update(hw);
 }
@@ -686,17 +680,11 @@ static inline void uart_ll_set_mode_rs485_app_ctrl(uart_dev_t *hw)
 {
     // Application software control, remove echo
     hw->rs485_conf_sync.rs485rxby_tx_en = 1;
-    uart_ll_update(hw);
     hw->conf0_sync.irda_en = 0;
-    uart_ll_update(hw);
     hw->conf0_sync.sw_rts = 0;
-    uart_ll_update(hw);
     hw->conf0_sync.irda_en = 0;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.dl0_en = 1;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.dl1_en = 1;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.rs485_en = 1;
     uart_ll_update(hw);
 }
@@ -712,20 +700,14 @@ static inline void uart_ll_set_mode_rs485_half_duplex(uart_dev_t *hw)
 {
     // Enable receiver, sw_rts = 1  generates low level on RTS pin
     hw->conf0_sync.sw_rts = 1;
-    uart_ll_update(hw);
     // Half duplex mode
     hw->rs485_conf_sync.rs485tx_rx_en = 0;
-    uart_ll_update(hw);
     // Setting this bit will allow data to be transmitted while receiving data(full-duplex mode).
     // But note that this full-duplex mode has no conflict detection function
     hw->rs485_conf_sync.rs485rxby_tx_en = 0;
-    uart_ll_update(hw);
     hw->conf0_sync.irda_en = 0;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.dl0_en = 1;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.dl1_en = 1;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.rs485_en = 1;
     uart_ll_update(hw);
 }
@@ -740,19 +722,13 @@ static inline void uart_ll_set_mode_rs485_half_duplex(uart_dev_t *hw)
 static inline void uart_ll_set_mode_collision_detect(uart_dev_t *hw)
 {
     hw->conf0_sync.irda_en = 0;
-    uart_ll_update(hw);
     // Enable full-duplex mode
     hw->rs485_conf_sync.rs485tx_rx_en = 1;
-    uart_ll_update(hw);
     // Transmitter should send data when the receiver is busy,
     hw->rs485_conf_sync.rs485rxby_tx_en = 1;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.dl0_en = 1;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.dl1_en = 1;
-    uart_ll_update(hw);
     hw->conf0_sync.sw_rts = 0;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.rs485_en = 1;
     uart_ll_update(hw);
 }
@@ -767,13 +743,9 @@ static inline void uart_ll_set_mode_collision_detect(uart_dev_t *hw)
 static inline void uart_ll_set_mode_irda(uart_dev_t *hw)
 {
     hw->rs485_conf_sync.rs485_en = 0;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.rs485tx_rx_en = 0;
-    uart_ll_update(hw);
     hw->rs485_conf_sync.rs485rxby_tx_en = 0;
-    uart_ll_update(hw);
     hw->conf0_sync.sw_rts = 0;
-    uart_ll_update(hw);
     hw->conf0_sync.irda_en = 1;
     uart_ll_update(hw);
 }
@@ -820,9 +792,7 @@ static inline void uart_ll_set_mode(uart_dev_t *hw, uart_mode_t mode)
 static inline void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char, uint8_t *char_num)
 {
     *cmd_char = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char_sync, data);
-    uart_ll_update(hw);
     *char_num = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char_sync, char_num);
-    uart_ll_update(hw);
 }
 
 /**
@@ -928,7 +898,6 @@ static inline void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
     conf0_reg.rxd_inv = (inv_mask & UART_SIGNAL_RXD_INV) ? 1 : 0;
     conf0_reg.txd_inv = (inv_mask & UART_SIGNAL_TXD_INV) ? 1 : 0;
     hw->conf0_sync.val = conf0_reg.val;
-    uart_ll_update(hw);
 
     typeof(hw->conf1) conf1_reg;
     conf1_reg.val = hw->conf1.val;
@@ -953,13 +922,11 @@ static inline void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thrd)
     uint16_t tout_val = tout_thrd;
     if(tout_thrd > 0) {
         hw->tout_conf_sync.rx_tout_thrhd = tout_val;
-        uart_ll_update(hw);
         hw->tout_conf_sync.rx_tout_en = 1;
-        uart_ll_update(hw);
     } else {
         hw->tout_conf_sync.rx_tout_en = 0;
-        uart_ll_update(hw);
     }
+    uart_ll_update(hw);
 }
 
 /**
@@ -1062,7 +1029,6 @@ static inline uint32_t uart_ll_get_low_pulse_cnt(uart_dev_t *hw)
 static inline void uart_ll_force_xoff(uart_port_t uart_num)
 {
     REG_CLR_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_FORCE_XON);
-    uart_ll_update(UART_LL_GET_HW(uart_num));
     REG_SET_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_SW_FLOW_CON_EN | UART_FORCE_XOFF);
     uart_ll_update(UART_LL_GET_HW(uart_num));
 }
@@ -1077,9 +1043,7 @@ static inline void uart_ll_force_xoff(uart_port_t uart_num)
 static inline void uart_ll_force_xon(uart_port_t uart_num)
 {
     REG_CLR_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_FORCE_XOFF);
-    uart_ll_update(UART_LL_GET_HW(uart_num));
     REG_SET_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_FORCE_XON);
-    uart_ll_update(UART_LL_GET_HW(uart_num));
     REG_CLR_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_SW_FLOW_CON_EN | UART_FORCE_XON);
     uart_ll_update(UART_LL_GET_HW(uart_num));
 }

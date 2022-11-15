@@ -393,11 +393,10 @@
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
 
-#define SOC_UART_SUPPORT_APB_CLK    (1)     /*!< Support APB as the clock source */
-#define SOC_UART_SUPPORT_RTC_CLK    (0)     /*!< Support RTC clock as the clock source */ // TODO: IDF-5338
+#define SOC_UART_SUPPORT_PLL_F80M_CLK (1)    /*!< Support PLL_DIV as the clock source */
+#define SOC_UART_SUPPORT_RTC_CLK    (1)     /*!< Support RTC clock as the clock source */
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
-// #define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */ // TODO: IDF-5338
-#define SOC_UART_REQUIRE_CORE_RESET (1)
+// #define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */ // TODO: Test UART wakeup while supporting sleep
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
