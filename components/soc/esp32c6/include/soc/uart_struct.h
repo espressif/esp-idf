@@ -16,7 +16,7 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** rxfifo_rd_byte : RO; bitpos: [7:0]; default: 0;
+        /** rxfifo_rd_byte : RO; bitpos: [31:0]; default: 0;
          *  UART $n accesses FIFO via this register.
          */
         uint32_t rxfifo_rd_byte:32;

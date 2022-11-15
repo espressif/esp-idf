@@ -227,7 +227,11 @@ typedef enum {
     UART_SCLK_APB = SOC_MOD_CLK_APB,     /*!< UART source clock is APB CLK */
     UART_SCLK_RTC = SOC_MOD_CLK_RC_FAST, /*!< UART source clock is RC_FAST */
     UART_SCLK_XTAL = SOC_MOD_CLK_XTAL,   /*!< UART source clock is XTAL */
+#if CONFIG_IDF_ENV_FPGA
+    UART_SCLK_DEFAULT = SOC_MOD_CLK_XTAL, /*!< UART source clock default choice is XTAL for FPGA environment */
+#else
     UART_SCLK_DEFAULT = SOC_MOD_CLK_APB, /*!< UART source clock default choice is APB */
+#endif
 } soc_periph_uart_clk_src_legacy_t;
 
 //////////////////////////////////////////////////MCPWM/////////////////////////////////////////////////////////////////
