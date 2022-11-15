@@ -98,6 +98,8 @@ uint32_t spi_slave_hal_get_rcv_bitlen(spi_slave_hal_context_t *hal)
     return hal->rcv_bitlen;
 }
 
+#if CONFIG_IDF_TARGET_ESP32
+//This workaround is only for esp32
 bool spi_slave_hal_dma_need_reset(const spi_slave_hal_context_t *hal)
 {
     bool ret;
@@ -114,3 +116,4 @@ bool spi_slave_hal_dma_need_reset(const spi_slave_hal_context_t *hal)
     }
     return ret;
 }
+#endif //#if CONFIG_IDF_TARGET_ESP32

@@ -2,6 +2,7 @@
 set(srcs
     "test_app_main.c"
     "test_spi_slave.c"
+    "test_spi_slave_queue.c"
 )
 
 

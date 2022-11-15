@@ -283,6 +283,33 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     return ESP_OK;
 }
 
+/**
+ * @note
+ * This API is used to reset SPI Slave transaction queue. After calling this function:
+ * - The SPI Slave transaction queue will be reset.
+ *
+ * Therefore, this API shouldn't be called when the corresponding SPI Master is doing an SPI transaction.
+ *
+ * @note
+ * We don't actually need to enter a critical section here.
+ * SPI Slave ISR will only get triggered when its corresponding SPI Master's transaction is done.
+ * As we don't expect this function to be called when its corresponding SPI Master is doing an SPI transaction,
+ * so concurrent call to these registers won't happen
+ *
+ */
+esp_err_t SPI_SLAVE_ATTR spi_slave_queue_reset(spi_host_device_t host)
+{
+    SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
+
+    esp_intr_disable(spihost[host]->intr);
+    spi_ll_set_int_stat(spihost[host]->hal.hw);
+
+    spihost[host]->cur_trans = NULL;
+    xQueueReset(spihost[host]->trans_queue);
+
+    return ESP_OK;
+}
 
 esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait)
 {
@@ -331,11 +358,13 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_transmit(spi_host_device_t host, spi_slave_tr
     return ESP_OK;
 }
 
+#if CONFIG_IDF_TARGET_ESP32
 static void SPI_SLAVE_ISR_ATTR spi_slave_restart_after_dmareset(void *arg)
 {
     spi_slave_t *host = (spi_slave_t *)arg;
     esp_intr_enable(host->intr);
 }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
 
 //This is run in interrupt context and apart from initialization and destruction, this is the only code
 //touching the host (=spihost[x]) variable. The rest of the data arrives in queues. That is why there are
@@ -358,10 +387,14 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
         spi_slave_hal_store_result(hal);
         host->cur_trans->trans_len = spi_slave_hal_get_rcv_bitlen(hal);
 
+#if CONFIG_IDF_TARGET_ESP32
+        //This workaround is only for esp32
         if (spi_slave_hal_dma_need_reset(hal)) {
-            //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+            //On ESP32, actual_tx_dma_chan and actual_rx_dma_chan are always same
             spicommon_dmaworkaround_req_reset(host->tx_dma_chan, spi_slave_restart_after_dmareset, host);
         }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
+
         if (host->cfg.post_trans_cb) host->cfg.post_trans_cb(host->cur_trans);
 
         if(!(host->cfg.flags & SPI_SLAVE_NO_RETURN_RESULT)) {
@@ -369,8 +402,11 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
         }
         host->cur_trans = NULL;
     }
+
+#if CONFIG_IDF_TARGET_ESP32
+    //This workaround is only for esp32
     if (use_dma) {
-        //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+        //On ESP32, actual_tx_dma_chan and actual_rx_dma_chan are always same
         spicommon_dmaworkaround_idle(host->tx_dma_chan);
         if (spicommon_dmaworkaround_reset_in_progress()) {
             //We need to wait for the reset to complete. Disable int (will be re-enabled on reset callback) and exit isr.
@@ -379,6 +415,7 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
             return;
         }
     }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
 
     //Disable interrupt before checking to avoid concurrency issue.
     esp_intr_disable(host->intr);
@@ -398,10 +435,13 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
         hal->rx_buffer = trans->rx_buffer;
         hal->tx_buffer = trans->tx_buffer;
 
+#if CONFIG_IDF_TARGET_ESP32
         if (use_dma) {
-            //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+            //This workaround is only for esp32
+            //On ESP32, actual_tx_dma_chan and actual_rx_dma_chan are always same
             spicommon_dmaworkaround_transfer_active(host->tx_dma_chan);
         }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
 
         spi_slave_hal_prepare_data(hal);
 
