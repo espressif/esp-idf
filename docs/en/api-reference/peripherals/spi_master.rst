@@ -7,7 +7,7 @@ SPI Master driver is a program that controls {IDF_TARGET_NAME}'s SPI peripherals
 Overview of {IDF_TARGET_NAME}'s SPI peripherals
 -----------------------------------------------
 
-{IDF_TARGET_MAX_PERIPH_NUM:default="4", esp32c3="3", esp32c2="3"}
+{IDF_TARGET_MAX_PERIPH_NUM:default="4", esp32c3="3", esp32c2="3", esp32c6="3"}
 {IDF_TARGET_SPI2_CS_NUM:default="6", esp32="3"}
 {IDF_TARGET_SPI3_CS_NUM:default="3"}
 
@@ -32,7 +32,7 @@ Overview of {IDF_TARGET_NAME}'s SPI peripherals
 
     - SPI2 and SPI3 are general purpose SPI controllers. They are open to users. SPI2 and SPI3 have independent signal buses with the same respective names. SPI2 has {IDF_TARGET_SPI2_CS_NUM} CS lines. SPI3 has {IDF_TARGET_SPI3_CS_NUM} CS lines.  Each CS line can be used to drive one SPI slave.
 
-.. only:: esp32c3 or esp32c2
+.. only:: esp32c3 or esp32c2 or esp32c6
 
     - SPI2 is a general purpose SPI controller. It has an independent signal bus with the same name. The bus has {IDF_TARGET_SPI2_CS_NUM} CS lines to drive up to {IDF_TARGET_SPI2_CS_NUM} SPI slaves.
 
@@ -230,7 +230,7 @@ If using more than one data lines to transmit, please set `SPI_DEVICE_HALFDUPLEX
 
         Half-duplex transactions with both read and write phases are not supported when using DMA. For details and workarounds, see :ref:`spi_known_issues`.
 
-.. only:: esp32s3 or esp32c3 or esp32c2
+.. only:: esp32s3 or esp32c3 or esp32c2 or esp32c6
 
     .. note::
 
@@ -423,13 +423,15 @@ GPIO Matrix and IO_MUX
 
     * Only the first Device attached to the bus can use the CS0 pin.
 
-.. only:: esp32s2 or esp32s3
+.. only:: not esp32
 
     Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
     When an SPI Host is set to 80MHz or lower frequencies, routing SPI pins via GPIO matrix will behave the same comparing to routing them via IOMUX.
 
     The IO_MUX pins for SPI buses are given below.
+
+.. only:: esp32s2 or esp32s3
 
     +----------+------+------+
     | Pin Name | SPI2 | SPI3 |
@@ -449,15 +451,7 @@ GPIO Matrix and IO_MUX
     | QUADHD   | 9    | N/A  |
     +----------+------+------+
 
-    * Only the first Device attached to the bus can use the CS0 pin.
-
 .. only:: esp32c2 or esp32c3
-
-    Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
-
-    When an SPI Host is set to 80MHz or lower frequencies, routing SPI pins via GPIO matrix will behave the same comparing to routing them via IOMUX.
-
-    The IO_MUX pins for SPI buses are given below.
 
     +----------+-------------+
     | Pin Name |    SPI2     |
@@ -468,17 +462,38 @@ GPIO Matrix and IO_MUX
     +----------+-------------+
     | SCLK     |      6      |
     +----------+-------------+
-    | MISO     |      2      |
-    +----------+-------------+
     | MOSI     |      7      |
     +----------+-------------+
-    | QUADWP   |      5      |
+    | MISO     |      2      |
     +----------+-------------+
     | QUADHD   |      4      |
     +----------+-------------+
+    | QUADWP   |      5      |
+    +----------+-------------+
+
+.. only:: esp32c6
+
+    +----------+-------------+
+    | Pin Name |    SPI2     |
+    +          +-------------+
+    |          | GPIO Number |
+    +==========+=============+
+    | CS0*     |      16     |
+    +----------+-------------+
+    | SCLK     |      6      |
+    +----------+-------------+
+    | MOSI     |      7      |
+    +----------+-------------+
+    | MISO     |      2      |
+    +----------+-------------+
+    | QUADHD   |      4      |
+    +----------+-------------+
+    | QUADWP   |      5      |
+    +----------+-------------+
+
+.. only:: not esp32
 
     * Only the first Device attached to the bus can use the CS0 pin.
-
 
 .. _speed_considerations:
 

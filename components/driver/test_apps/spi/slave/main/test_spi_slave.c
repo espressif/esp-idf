@@ -262,7 +262,7 @@ TEST_CASE("test slave send unaligned","[spi]")
 
 #endif // #if (TEST_SPI_PERIPH_NUM >= 2)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C6)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 #if (TEST_SPI_PERIPH_NUM == 1)
 //These tests are for chips which only have 1 SPI controller
 /********************************************************************************
@@ -386,4 +386,4 @@ static void unaligned_test_slave(void)
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][test_env=generic_multi_device][timeout=120]", unaligned_test_master, unaligned_test_slave);
 
 #endif  //#if (TEST_SPI_PERIPH_NUM == 1)
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

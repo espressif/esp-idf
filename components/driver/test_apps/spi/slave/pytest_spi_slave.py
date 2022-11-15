@@ -5,6 +5,7 @@ import pytest
 
 
 # If `test_env` is define, should not run on generic runner
+@pytest.mark.esp32c6
 @pytest.mark.supported_targets
 @pytest.mark.generic
 def test_slave_single_dev(case_tester) -> None:       # type: ignore

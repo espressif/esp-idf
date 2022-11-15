@@ -115,6 +115,17 @@
 #define GPIO_DELAY              0
 #define ESP_SPI_SLAVE_TV        0
 #define WIRE_DELAY              12.5
+
+#elif CONFIG_IDF_TARGET_ESP32C6
+#define TEST_SPI_HOST           SPI2_HOST
+#define TEST_SLAVE_HOST         SPI2_HOST
+
+#define PIN_NUM_MISO            SPI2_IOMUX_PIN_NUM_MISO
+#define PIN_NUM_MOSI            SPI2_IOMUX_PIN_NUM_MOSI
+#define PIN_NUM_CLK             SPI2_IOMUX_PIN_NUM_CLK
+#define PIN_NUM_CS              10  //the IOMUX pin of SPI2 CS0&CS1 is Pin_16&17 which is same from UART Tx&Rx Pin
+#define PIN_NUM_WP              SPI2_IOMUX_PIN_NUM_WP
+#define PIN_NUM_HD              SPI2_IOMUX_PIN_NUM_HD
 #endif
 
 #define GET_DMA_CHAN(HOST)      (HOST)

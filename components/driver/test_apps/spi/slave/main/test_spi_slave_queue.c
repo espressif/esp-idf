@@ -22,7 +22,6 @@
 #define TEST_BUF_SIZE    32
 #define TEST_TIMES       4
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 
 static void test_master(void)
 {
@@ -216,4 +215,3 @@ static void test_slave(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Reset_Queue_Test", "[spi_ms][timeout=120]", test_master, test_slave);
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

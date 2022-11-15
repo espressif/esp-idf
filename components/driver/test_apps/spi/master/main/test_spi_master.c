@@ -24,7 +24,6 @@
 #include "test_spi_utils.h"
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 const static char TAG[] = "test_spi";
 
 // There is no input-only pin except on esp32 and esp32s2
@@ -597,8 +596,7 @@ TEST_CASE("SPI Master no response when switch from host1 (SPI2) to host2 (SPI3)"
     TEST_ESP_OK(spi_bus_free(host));
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5146
+
 DRAM_ATTR  static uint32_t data_dram[80] = {0};
 //force to place in code area.
 static const uint8_t data_drom[320 + 3] = {
@@ -631,18 +629,8 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     ESP_LOGI(TAG, "dram: %p", data_dram);
     ESP_LOGI(TAG, "drom: %p, malloc: %p", data_drom, data_malloc);
 
-#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-    uint32_t *data_iram = (uint32_t *)heap_caps_malloc(324, MALLOC_CAP_EXEC);
-    TEST_ASSERT(data_iram != NULL);
-    TEST_ASSERT(esp_ptr_executable(data_iram) || esp_ptr_in_iram(data_iram) || esp_ptr_in_diram_iram(data_iram));
-    ESP_LOGI(TAG, "iram: %p", data_iram);
-#endif
-
     srand(52);
     for (int i = 0; i < 320 / 4; i++) {
-#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-        data_iram[i] = rand();
-#endif
         data_dram[i] = rand();
         data_malloc[i] = rand();
     }
@@ -660,42 +648,24 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     //connect MOSI to two devices breaks the output, fix it.
     spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
 
-#define TEST_REGION_SIZE 5
+#define TEST_REGION_SIZE 2
     static spi_transaction_t trans[TEST_REGION_SIZE];
     int x;
     memset(trans, 0, sizeof(trans));
 
-#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
     trans[0].length = 320 * 8,
-            trans[0].tx_buffer = data_iram;
-    trans[0].rx_buffer = data_malloc + 1;
+            trans[0].tx_buffer = data_malloc + 2;
+    trans[0].rx_buffer = data_dram;
 
-    trans[1].length = 320 * 8,
-            trans[1].tx_buffer = data_dram;
-    trans[1].rx_buffer = data_iram;
-
-    trans[2].length = 320 * 8,
-            trans[2].tx_buffer = data_drom;
-    trans[2].rx_buffer = data_iram;
-#endif
-
-    trans[3].length = 320 * 8,
-            trans[3].tx_buffer = data_malloc + 2;
-    trans[3].rx_buffer = data_dram;
-
-    trans[4].length = 4 * 8,
-            trans[4].flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA;
-    uint32_t *ptr = (uint32_t *)trans[4].rx_data;
+    trans[1].length = 4 * 8,
+            trans[1].flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA;
+    uint32_t *ptr = (uint32_t *)trans[1].rx_data;
     *ptr = 0x54545454;
-    ptr = (uint32_t *)trans[4].tx_data;
+    ptr = (uint32_t *)trans[1].tx_data;
     *ptr = 0xbc124960;
 
     //Queue all transactions.
-#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
     for (x = 0; x < TEST_REGION_SIZE; x++) {
-#else
-    for (x = 3; x < TEST_REGION_SIZE; x++) {
-#endif
         ESP_LOGI(TAG, "transmitting %d...", x);
         ret = spi_device_transmit(spi, &trans[x]);
         TEST_ASSERT(ret == ESP_OK);
@@ -708,11 +678,7 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
     TEST_ASSERT(spi_bus_free(TEST_SPI_HOST) == ESP_OK);
     free(data_malloc);
-#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-    free(data_iram);
-#endif
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 //this part tests 3 DMA issues in master mode, full-duplex in IDF2.1
 // 1. RX buffer not aligned (start and end)
@@ -1459,7 +1425,7 @@ TEST_CASE("spi_speed", "[spi]")
 #define DUMMY_CS_PINS() {0, 1, 4, 5, 8, 9}
 #endif //CONFIG_IDF_TARGET_ESP32
 
-#define CS_REAL_DEV  SPI2_IOMUX_PIN_NUM_CS
+#define CS_REAL_DEV       PIN_NUM_CS
 #define TEST_TRANS_LEN    48
 
 void test_add_device_master(void)
@@ -1559,4 +1525,3 @@ void test_add_device_slave(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms][test_env=generic_multi_device]", test_add_device_master, test_add_device_slave);
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

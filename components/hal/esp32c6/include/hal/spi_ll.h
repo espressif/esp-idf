@@ -24,6 +24,7 @@
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/spi_types.h"
+#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -111,9 +112,8 @@ static inline void spi_ll_master_init(spi_dev_t *hw)
     hw->slave.val = 0;
     hw->user.val = 0;
 
-    hw->clk_gate.clk_en = 1;
-    hw->clk_gate.mst_clk_active = 1;
-    hw->clk_gate.mst_clk_sel = 1;
+    PCR.spi2_clkm_conf.spi2_clkm_en = 1;
+    PCR.spi2_clkm_conf.spi2_clkm_sel = 1;
 
     hw->dma_conf.val = 0;
     hw->dma_conf.slv_tx_seg_trans_clr_en = 1;
@@ -1044,7 +1044,7 @@ static inline void spi_ll_disable_int(spi_dev_t *hw)
  */
 static inline void spi_ll_clear_int_stat(spi_dev_t *hw)
 {
-    hw->dma_int_raw.trans_done = 0;
+    hw->dma_int_clr.trans_done = 1;
 }
 
 /**
@@ -1054,7 +1054,7 @@ static inline void spi_ll_clear_int_stat(spi_dev_t *hw)
  */
 static inline void spi_ll_set_int_stat(spi_dev_t *hw)
 {
-    hw->dma_int_raw.trans_done = 1;
+    hw->dma_int_set.trans_done_int_set = 1;
 }
 
 /**

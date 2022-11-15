@@ -100,7 +100,6 @@ api-reference/peripherals/hmac
 api-reference/peripherals/usb_device
 api-reference/peripherals/sdspi_host
 api-reference/peripherals/dac
-api-reference/peripherals/spi_slave
 api-reference/peripherals/gptimer
 api-reference/peripherals/pcnt
 api-reference/peripherals/touch_element
@@ -108,17 +107,14 @@ api-reference/peripherals/lcd
 api-reference/peripherals/secure_element
 api-reference/peripherals/ledc
 api-reference/peripherals/temp_sensor
-api-reference/peripherals/spi_features
 api-reference/peripherals/sdio_slave
 api-reference/peripherals/clk_tree
 api-reference/peripherals/sdm
 api-reference/peripherals/touch_pad
 api-reference/peripherals/adc_calibration
-api-reference/peripherals/spi_slave_hd
 api-reference/peripherals/ds
 api-reference/peripherals/dedic_gpio
 api-reference/peripherals/sd_pullup_requirements
-api-reference/peripherals/spi_master
 api-reference/peripherals/index
 api-reference/peripherals/sdmmc_host
 api-reference/peripherals/uart
