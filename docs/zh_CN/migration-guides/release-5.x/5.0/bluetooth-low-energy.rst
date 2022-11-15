@@ -43,3 +43,14 @@ Nimble
         - 移除 ``esp_err_t esp_nimble_hci_and_controller_deinit(void)``
 
             - 控制器去初始化、禁用以及 HCI 去初始化的调用已经被移到 `nimble_port_deinit` 中。可直接删除该函数。
+
+ESP-BLE-MESH
+------------
+
+    以下 ESP-BLE-MESH 宏已被重命名：
+
+    - :component_file:`bt/esp_ble_mesh/api/esp_ble_mesh_defs.h`
+
+        - :cpp:enum:`esp_ble_mesh_prov_cb_event_t` 中:
+
+            - ``ESP_BLE_MESH_PROVISIONER_DRIECT_ERASE_SETTINGS_COMP_EVT`` 改名为 ``ESP_BLE_MESH_PROVISIONER_DIRECT_ERASE_SETTINGS_COMP_EVT``
