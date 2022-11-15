@@ -94,6 +94,7 @@ URL_PREFIX_MAP_SEPARATOR = ','
 IDF_TOOLS_INSTALL_CMD = os.environ.get('IDF_TOOLS_INSTALL_CMD')
 IDF_TOOLS_EXPORT_CMD = os.environ.get('IDF_TOOLS_INSTALL_CMD')
 IDF_DL_URL = 'https://dl.espressif.com/dl/esp-idf'
+IDF_PIP_WHEELS_URL = os.environ.get('IDF_PIP_WHEELS_URL', 'https://dl.espressif.com/pypi')
 
 PYTHON_PLATFORM = platform.system() + '-' + platform.machine()
 
@@ -1654,48 +1655,48 @@ def action_export(args):  # type: ignore
         raise SystemExit(1)
 
 
-def apply_url_mirrors(args, tool_download_obj):  # type: ignore
-    apply_mirror_prefix_map(args, tool_download_obj)
-    apply_github_assets_option(tool_download_obj)
+def get_idf_download_url_apply_mirrors(args=None, download_url=IDF_DL_URL):  # type: (Any, str) -> str
+    url = apply_mirror_prefix_map(args, download_url)
+    url = apply_github_assets_option(url)
+    return url
 
 
-def apply_mirror_prefix_map(args, tool_download_obj):  # type: ignore
-    """Rewrite URL for given tool_obj, given tool_version, and current platform,
+def apply_mirror_prefix_map(args, idf_download_url):  # type: (Any, str) -> str
+    """Rewrite URL for given idf_download_url.
        if --mirror-prefix-map flag or IDF_MIRROR_PREFIX_MAP environment variable is given.
     """
+    new_url = idf_download_url
     mirror_prefix_map = None
     mirror_prefix_map_env = os.getenv('IDF_MIRROR_PREFIX_MAP')
     if mirror_prefix_map_env:
         mirror_prefix_map = mirror_prefix_map_env.split(';')
-    if IDF_MAINTAINER and args.mirror_prefix_map:
+    if IDF_MAINTAINER and args and args.mirror_prefix_map:
         if mirror_prefix_map:
             warn('Both IDF_MIRROR_PREFIX_MAP environment variable and --mirror-prefix-map flag are specified, ' +
                  'will use the value from the command line.')
         mirror_prefix_map = args.mirror_prefix_map
-    if mirror_prefix_map and tool_download_obj:
+    if mirror_prefix_map:
         for item in mirror_prefix_map:
             if URL_PREFIX_MAP_SEPARATOR not in item:
                 warn('invalid mirror-prefix-map item (missing \'{}\') {}'.format(URL_PREFIX_MAP_SEPARATOR, item))
                 continue
             search, replace = item.split(URL_PREFIX_MAP_SEPARATOR, 1)
-            old_url = tool_download_obj.url
-            new_url = re.sub(search, replace, old_url)
-            if new_url != old_url:
-                info('Changed download URL: {} => {}'.format(old_url, new_url))
-                tool_download_obj.url = new_url
+            new_url = re.sub(search, replace, idf_download_url)
+            if new_url != idf_download_url:
+                info('Changed download URL: {} => {}'.format(idf_download_url, new_url))
                 break
+    return new_url
 
 
-def apply_github_assets_option(tool_download_obj):  # type: ignore
-    """ Rewrite URL for given tool_obj if the download URL is an https://github.com/ URL and the variable
+def apply_github_assets_option(idf_download_url):  # type: (str) -> str
+    """ Rewrite URL for given idf_download_url if the download URL is an https://github.com/ URL and the variable
     IDF_GITHUB_ASSETS is set. The github.com part of the URL will be replaced.
     """
-    try:
-        github_assets = os.environ['IDF_GITHUB_ASSETS'].strip()
-    except KeyError:
-        return  # no IDF_GITHUB_ASSETS
-    if not github_assets:  # variable exists but is empty
-        return
+    new_url = idf_download_url
+    github_assets = os.environ.get('IDF_GITHUB_ASSETS', '').strip()
+    if not github_assets:
+        # no IDF_GITHUB_ASSETS or variable exists but is empty
+        return new_url
 
     # check no URL qualifier in the mirror URL
     if '://' in github_assets:
@@ -1705,11 +1706,10 @@ def apply_github_assets_option(tool_download_obj):  # type: ignore
     # Strip any trailing / from the mirror URL
     github_assets = github_assets.rstrip('/')
 
-    old_url = tool_download_obj.url
-    new_url = re.sub(r'^https://github.com/', 'https://{}/'.format(github_assets), old_url)
-    if new_url != old_url:
-        info('Using GitHub assets mirror for URL: {} => {}'.format(old_url, new_url))
-        tool_download_obj.url = new_url
+    new_url = re.sub(r'^https://github.com/', 'https://{}/'.format(github_assets), idf_download_url)
+    if new_url != idf_download_url:
+        info('Using GitHub assets mirror for URL: {} => {}'.format(idf_download_url, new_url))
+    return new_url
 
 
 def get_tools_spec_and_platform_info(selected_platform, targets, tools_spec,
@@ -1788,7 +1788,8 @@ def action_download(args):  # type: ignore
         tool_spec = '{}@{}'.format(tool_name, tool_version)
 
         info('Downloading {}'.format(tool_spec))
-        apply_url_mirrors(args, tool_obj.versions[tool_version].get_download_for_platform(args.platform))
+        _idf_tool_obj = tool_obj.versions[tool_version].get_download_for_platform(args.platform)
+        _idf_tool_obj.url = get_idf_download_url_apply_mirrors(args, _idf_tool_obj.url)
 
         tool_obj.download(tool_version)
 
@@ -1852,7 +1853,8 @@ def action_install(args):  # type: ignore
             continue
 
         info('Installing {}'.format(tool_spec))
-        apply_url_mirrors(args, tool_obj.versions[tool_version].get_download_for_platform(PYTHON_PLATFORM))
+        _idf_tool_obj = tool_obj.versions[tool_version].get_download_for_platform(PYTHON_PLATFORM)
+        _idf_tool_obj.url = get_idf_download_url_apply_mirrors(args, _idf_tool_obj.url)
 
         tool_obj.download(tool_version)
         tool_obj.install(tool_version)
@@ -1886,9 +1888,10 @@ def get_requirements(new_features):  # type: (str) -> list[str]
 
 
 def get_constraints(idf_version, online=True):  # type: (str, bool) -> str
+    idf_download_url = get_idf_download_url_apply_mirrors()
     constraint_file = 'espidf.constraints.v{}.txt'.format(idf_version)
     constraint_path = os.path.join(global_idf_tools_path or '', constraint_file)
-    constraint_url = '/'.join([IDF_DL_URL, constraint_file])
+    constraint_url = '/'.join([idf_download_url, constraint_file])
     temp_path = constraint_path + '.tmp'
 
     if not online:
@@ -2486,7 +2489,7 @@ def main(argv):  # type: (list[str]) -> None
                                     action='store_true')
     install_python_env.add_argument('--extra-wheels-dir', help='Additional directories with wheels ' +
                                     'to use during installation')
-    install_python_env.add_argument('--extra-wheels-url', help='Additional URL with wheels', default='https://dl.espressif.com/pypi')
+    install_python_env.add_argument('--extra-wheels-url', help='Additional URL with wheels', default=IDF_PIP_WHEELS_URL)
     install_python_env.add_argument('--no-index', help='Work offline without retrieving wheels index')
     install_python_env.add_argument('--features', default='core', help='A comma separated list of desired features for installing.'
                                                                        ' It defaults to installing just the core funtionality.')
