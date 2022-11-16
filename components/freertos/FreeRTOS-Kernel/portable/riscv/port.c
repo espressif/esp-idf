@@ -118,11 +118,12 @@ void vPortEndScheduler(void)
  * Wrapper to allow task functions to return. Force the optimization option -O1 on that function to make sure there
  * is no tail-call. Indeed, we need the compiler to keep the return address to this function when calling `panic_abort`.
  *
- * Thanks to the `naked` attribute, GDB stub backtrace doesn't print:
- * #2  0x00000000 in ?? ()
+ * Thanks to `naked` attribute, the compiler won't generate a prologue and epilogue for the function, which saves time
+ * and stack space.
  */
 static void __attribute__((optimize("O1"), naked)) vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 {
+    asm volatile(".cfi_undefined ra\n");
     extern void __attribute__((noreturn)) panic_abort(const char *details);
     static char DRAM_ATTR msg[80] = "FreeRTOS: FreeRTOS Task \"\0";
     pxCode(pvParameters);
@@ -132,7 +133,6 @@ static void __attribute__((optimize("O1"), naked)) vPortTaskWrapper(TaskFunction
     strcat(msg, pcTaskName);
     strcat(msg, "\" should not return, Aborting now!");
     panic_abort(msg);
-
 }
 #endif // CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
 
