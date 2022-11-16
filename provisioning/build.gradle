@@ -6,7 +6,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.17'
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.9.1'
     }
 }
 
@@ -41,7 +41,7 @@ android {
 
 protobuf {
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.8.0'
+        artifact = 'com.google.protobuf:protoc:3.21.9'
     }
     generateProtoTasks {
         all().each { task ->
