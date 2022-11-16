@@ -158,7 +158,7 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #define configUSE_QUEUE_SETS                            1
 #define configQUEUE_REGISTRY_SIZE                       CONFIG_FREERTOS_QUEUE_REGISTRY_SIZE
 #define configUSE_TASK_NOTIFICATIONS                    1
-#define configTASK_NOTIFICATION_ARRAY_ENTRIES           1
+#define configTASK_NOTIFICATION_ARRAY_ENTRIES           CONFIG_FREERTOS_TASK_NOTIFICATION_ARRAY_ENTRIES
 
 // ----------------------- System --------------------------
 

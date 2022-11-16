@@ -196,3 +196,44 @@ TEST_CASE("Test Task_Notify", "[freertos]")
         TEST_ESP_OK(gptimer_del_timer(gptimers[i]));
     }
 }
+
+TEST_CASE("Notify too high index fails", "[ignore]")
+{
+    uint32_t notification_value = 47;
+    xTaskNotifyIndexed(xTaskGetCurrentTaskHandle(), 2, notification_value, eNoAction);
+}
+
+TEST_CASE("Notify Wait too high index fails", "[ignore]")
+{
+    uint32_t notification_value;
+    xTaskNotifyWaitIndexed(2, 0, 0, &notification_value, pdMS_TO_TICKS(10));
+}
+
+#if CONFIG_FREERTOS_TASK_NOTIFICATION_ARRAY_ENTRIES > 1
+const uint32_t NOTIFICATION_VALUE_0 = 47;
+const uint32_t NOTIFICATION_VALUE_1 = 48;
+
+void notify(void *arg)
+{
+    TaskHandle_t main_task = (TaskHandle_t) arg;
+    xTaskNotifyIndexed(main_task, 0, NOTIFICATION_VALUE_0, eSetValueWithOverwrite);
+    xTaskNotifyIndexed(main_task, 1, NOTIFICATION_VALUE_1, eSetValueWithOverwrite);
+    vTaskDelete(NULL);
+}
+static TaskHandle_t notificator_task;
+
+TEST_CASE("Notify to different indexes works", "[freertos]")
+{
+    uint32_t notification_value_0 = 0;
+    uint32_t notification_value_1 = 0;
+
+    TaskHandle_t main_task = xTaskGetCurrentTaskHandle();
+    xTaskCreate(notify, "notificator", 2048, main_task, 2, &notificator_task);
+
+    xTaskNotifyWaitIndexed(0, 0, 0xFFFFFFFF, &notification_value_0, pdMS_TO_TICKS(10));
+    xTaskNotifyWaitIndexed(1, 0, 0xFFFFFFFF, &notification_value_1, pdMS_TO_TICKS(10));
+
+    TEST_ASSERT_EQUAL(notification_value_0, NOTIFICATION_VALUE_0);
+    TEST_ASSERT_EQUAL(notification_value_1, NOTIFICATION_VALUE_1);
+}
+#endif
