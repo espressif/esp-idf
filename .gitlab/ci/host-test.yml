@@ -150,25 +150,6 @@ test_certificate_bundle_on_host:
     - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
     - ./test_gen_crt_bundle.py
 
-test_confserver:
-  extends: .host_test_template
-  script:
-    - cd tools/kconfig_new/test/confserver
-    - ./test_confserver.py
-
-test_gen_kconfig_doc:
-  extends: .host_test_template
-  script:
-    - cd tools/kconfig_new/test/gen_kconfig_doc/
-    - ./test_target_visibility.py
-    - ./test_kconfig_out.py
-
-test_confgen:
-  extends: .host_test_template
-  script:
-    - cd tools/kconfig_new/test/confgen/
-    - ./test_confgen.py
-
 test_idf_monitor:
   extends: .host_test_template
   artifacts:

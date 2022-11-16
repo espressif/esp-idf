@@ -129,24 +129,6 @@ ESP-IDF 适用于 Python 3.7 以上版本。
 
 如果想在命令行中更优雅地管理 Python 的各个版本，请查看 pyenv_ 或 virtualenv_ 工具，它们会帮助您更改默认的 python 版本。
 
-潜在问题
-^^^^^^^^^^^^^^^
-
-使用 ``idf.py`` 可能会出现如下 ``ImportError`` 错误：
-
-.. code-block:: none
-
-    Traceback (most recent call last):
-      File "/Users/user_name/e/esp-idf/tools/kconfig_new/confgen.py"、 line 27、 in <module>
-        import kconfiglib
-    ImportError: bad magic number in 'kconfiglib': b'\x03\xf3\r\n'
-
-该错误通常是由不同 Python 版本生成的 ``.pyc`` 文件引起的，可以通过运行以下命令解决该问题：
-
-.. code-block:: bash
-
-    idf.py python-clean
-
 .. _example-project-structure:
 
 示例项目
@@ -1359,11 +1341,11 @@ JSON 配置服务器
 
 .. highlight :: json
 
-``confserver.py`` 工具可以帮助 IDE 轻松地与配置系统的逻辑进行集成，它运行在后台，通过使用 stdin 和 stdout 读写 JSON 文件的方式与调用进程交互。
+``kconfserver`` 工具可以帮助 IDE 轻松地与配置系统的逻辑进行集成，它运行在后台，通过使用 stdin 和 stdout 读写 JSON 文件的方式与调用进程交互。
 
-您可以通过 ``idf.py confserver`` 或 ``ninja confserver`` 从项目中运行 ``confserver.py``，也可以使用不同的构建生成器来触发类似的目标。
+您可以通过 ``idf.py confserver`` 或 ``ninja kconfserver`` 从项目中运行 ``kconfserver``，也可以使用不同的构建生成器来触发类似的目标。
 
-有关 confserver.py 的更多信息，请参阅 :idf_file:`tools/kconfig_new/README.md`
+有关 kconfserver 的更多信息，请参阅 `esp-idf-kconfig documentation <https://github.com/espressif/esp-idf-kconfig/blob/master/docs/DOCUMENTATION.md>`_.
 
 构建系统内部
 =======================
