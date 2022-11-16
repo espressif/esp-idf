@@ -5,7 +5,8 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from test_build_system_helpers import EnvDict, IdfPyFunc, get_snapshot, replace_in_file
+from _pytest.monkeypatch import MonkeyPatch
+from test_build_system_helpers import IdfPyFunc, get_snapshot, replace_in_file
 
 
 @pytest.mark.usefixtures('test_app_copy')
@@ -34,7 +35,7 @@ def test_of_test_app_copy(idf_py: IdfPyFunc) -> None:
 
 
 @pytest.mark.usefixtures('test_app_copy')
-def test_hints_no_color_output_when_noninteractive(idf_py: EnvDict) -> None:
+def test_hints_no_color_output_when_noninteractive(idf_py: IdfPyFunc) -> None:
     """Check that idf.py hints don't include color escape codes in non-interactive builds"""
 
     # make the build fail in such a way that idf.py shows a hint
@@ -55,3 +56,18 @@ def test_idf_copy(idf_copy: Path, idf_py: IdfPyFunc) -> None:
     # For example, we can check if idf.py build can work without the .git directory:
     shutil.rmtree(idf_copy / '.git', ignore_errors=True)
     idf_py('build')
+
+
+def test_idf_build_with_env_var_sdkconfig_defaults(
+    test_app_copy: Path,
+    idf_py: IdfPyFunc,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    with open(test_app_copy / 'sdkconfig.test', 'w') as fw:
+        fw.write('CONFIG_BT_ENABLED=y')
+
+    monkeypatch.setenv('SDKCONFIG_DEFAULTS', 'sdkconfig.test')
+    idf_py('build')
+
+    with open(test_app_copy / 'sdkconfig') as fr:
+        assert 'CONFIG_BT_ENABLED=y' in fr.read()
