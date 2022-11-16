@@ -516,11 +516,18 @@ macro(project project_name)
         __component_get_target(build_component_target ${build_component})
         __component_get_property(whole_archive ${build_component_target} WHOLE_ARCHIVE)
         if(whole_archive)
-            message(STATUS "Component ${build_component} will be linked with -Wl,--whole-archive")
-            target_link_libraries(${project_elf} PRIVATE
-                                  "-Wl,--whole-archive"
-                                   ${build_component}
-                                   "-Wl,--no-whole-archive")
+            if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+                message(STATUS "Component ${build_component} will be linked with -Wl,-force_load")
+                target_link_libraries(${project_elf} PRIVATE
+                                       "-Wl,-force_load"
+                                       ${build_component})
+            else()
+                message(STATUS "Component ${build_component} will be linked with -Wl,--whole-archive")
+                target_link_libraries(${project_elf} PRIVATE
+                                       "-Wl,--whole-archive"
+                                       ${build_component}
+                                       "-Wl,--no-whole-archive")
+            endif()
         else()
             target_link_libraries(${project_elf} PRIVATE ${build_component})
         endif()

@@ -13,11 +13,6 @@
 #include "spi_flash_mmap.h"
 #include "catch.hpp"
 
-using std::copy;
-using std::begin;
-using std::end;
-using std::fill_n;
-
 class SpiFlashEmulator;
 
 void spi_flash_emulator_set(SpiFlashEmulator*);
