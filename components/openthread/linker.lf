@@ -8,3 +8,6 @@ entries:
     link_metrics (noflash_text)
     mac (noflash_text)
     sub_mac (noflash_text)
+
+  if OPENTHREAD_RCP_SPI = y:
+    ncp_spi (noflash_text)

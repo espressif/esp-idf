@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "esp_openthread_platform.h"
 #include "esp_openthread_types.h"
 #include "esp_system.h"
+#include "esp_spi_spinel_interface.hpp"
 #include "esp_uart_spinel_interface.hpp"
 #include "openthread-core-config.h"
 #include "lib/spinel/radio_spinel.hpp"
@@ -20,19 +21,30 @@
 #include "openthread/platform/diag.h"
 #include "openthread/platform/radio.h"
 
-using esp::openthread::UartSpinelInterface;
 using ot::Spinel::RadioSpinel;
 
+#if CONFIG_OPENTHREAD_RADIO_SPINEL_UART
+using esp::openthread::UartSpinelInterface;
 static RadioSpinel<UartSpinelInterface, esp_openthread_mainloop_context_t> s_radio;
-static const char *radiouart_workflow = "radio_uart";
+#else // CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
+using esp::openthread::SpiSpinelInterface;
+static RadioSpinel<SpiSpinelInterface, esp_openthread_mainloop_context_t> s_radio;
+#endif // CONFIG_OPENTHREAD_RADIO_SPINEL_UART
+
+static const char *radiospinel_workflow = "radio_spinel";
 
 esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *config)
 {
+#if CONFIG_OPENTHREAD_RADIO_SPINEL_UART
     ESP_RETURN_ON_ERROR(s_radio.GetSpinelInterface().Init(config->radio_config.radio_uart_config), OT_PLAT_LOG_TAG,
                         "Spinel interface init falied");
+#else   // CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
+    ESP_RETURN_ON_ERROR(s_radio.GetSpinelInterface().Init(config->radio_config.radio_spi_config), OT_PLAT_LOG_TAG,
+                        "Spinel interface init failed");
+#endif  // CONFIG_OPENTHREAD_RADIO_SPINEL_UART
     s_radio.Init(/*reset_radio=*/true, /*restore_dataset_from_ncp=*/false, /*skip_rcp_compatibility_check=*/false);
     return esp_openthread_platform_workflow_register(&esp_openthread_radio_update, &esp_openthread_radio_process,
-                                                     radiouart_workflow);
+                                                     radiospinel_workflow);
 }
 
 void esp_openthread_register_rcp_failure_handler(esp_openthread_rcp_failure_handler handler)
@@ -48,7 +60,7 @@ void esp_openthread_rcp_deinit(void)
 void esp_openthread_radio_deinit(void)
 {
     s_radio.Deinit();
-    esp_openthread_platform_workflow_unregister(radiouart_workflow);
+    esp_openthread_platform_workflow_unregister(radiospinel_workflow);
 }
 
 esp_err_t esp_openthread_radio_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop)

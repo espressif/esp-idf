@@ -13,6 +13,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_eventfd.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/portmacro.h"
 #include "freertos/queue.h"
 
 static QueueHandle_t s_task_queue = NULL;
@@ -36,7 +37,7 @@ esp_err_t esp_openthread_task_queue_init(const esp_openthread_platform_config_t 
                                                      &esp_openthread_task_queue_process, task_queue_workflow);
 }
 
-esp_err_t esp_openthread_task_queue_post(esp_openthread_task_t task, void *arg)
+esp_err_t IRAM_ATTR esp_openthread_task_queue_post(esp_openthread_task_t task, void *arg)
 {
     task_storage_t task_storage = {
         .task = task,
@@ -44,12 +45,21 @@ esp_err_t esp_openthread_task_queue_post(esp_openthread_task_t task, void *arg)
     };
     uint64_t val = 1;
     ssize_t ret;
+    BaseType_t task_woken = pdFALSE;
 
-    ESP_RETURN_ON_FALSE(xQueueSend(s_task_queue, &task_storage, portMAX_DELAY), ESP_FAIL, OT_PLAT_LOG_TAG,
-                        "Failed to post task to OpenThread task queue");
+    if (!xPortCanYield()) {
+        ESP_RETURN_ON_FALSE_ISR(xQueueSendFromISR(s_task_queue, &task_storage, &task_woken), ESP_FAIL, OT_PLAT_LOG_TAG,
+                                "Failed to post task to OpenThread task queue");
+    } else {
+        ESP_RETURN_ON_FALSE(xQueueSend(s_task_queue, &task_storage, portMAX_DELAY), ESP_FAIL, OT_PLAT_LOG_TAG,
+                            "Failed to post task to OpenThread task queue");
+    }
     ret = write(s_task_queue_event_fd, &val, sizeof(val));
     assert(ret == sizeof(val));
 
+    if (task_woken) {
+        portYIELD_FROM_ISR_NO_ARG();
+    }
     return ESP_OK;
 }
 

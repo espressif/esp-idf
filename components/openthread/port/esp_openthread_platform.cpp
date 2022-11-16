@@ -14,6 +14,7 @@
 #include "esp_openthread_flash.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_radio.h"
+#include "esp_openthread_spi_slave.h"
 #include "esp_openthread_task_queue.h"
 #include "esp_openthread_types.h"
 #include "esp_openthread_uart.h"
@@ -87,30 +88,40 @@ void esp_openthread_platform_workflow_unregister(const char *name)
 esp_err_t esp_openthread_platform_init(const esp_openthread_platform_config_t *config)
 {
     ESP_RETURN_ON_FALSE(config->radio_config.radio_mode == RADIO_MODE_NATIVE ||
-                            config->radio_config.radio_mode == RADIO_MODE_UART_RCP,
+                            config->radio_config.radio_mode == RADIO_MODE_UART_RCP ||
+                            config->radio_config.radio_mode == RADIO_MODE_SPI_RCP,
                         ESP_ERR_INVALID_ARG, OT_PLAT_LOG_TAG, "Radio mode not supported");
     ESP_RETURN_ON_FALSE(config->host_config.host_connection_mode == HOST_CONNECTION_MODE_NONE ||
                             config->host_config.host_connection_mode == HOST_CONNECTION_MODE_CLI_UART ||
-                            config->host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_UART,
+                            config->host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_UART ||
+                            config->host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_SPI,
                         ESP_ERR_INVALID_ARG, OT_PLAT_LOG_TAG, "Host connection mode not supported");
     ESP_RETURN_ON_FALSE(!s_openthread_platform_initialized, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG,
                         "OpenThread platform already initialized");
 
     s_openthread_platform_initialized = true;
     esp_err_t ret = ESP_OK;
+
+/* Avoid to compile flash in RADIO type device */
+#if !CONFIG_OPENTHREAD_RADIO
     const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY,
                                                                 config->port_config.storage_partition_name);
-
     ESP_RETURN_ON_FALSE(partition, ESP_ERR_INVALID_ARG, OT_PLAT_LOG_TAG, "OpenThread storage partition not found");
+    esp_openthread_flash_set_partition(partition);
+#endif
 
     s_platform_config = *config;
-    esp_openthread_flash_set_partition(partition);
     ESP_GOTO_ON_ERROR(esp_openthread_lock_init(), exit, OT_PLAT_LOG_TAG, "esp_openthread_lock_init failed");
     ESP_GOTO_ON_ERROR(esp_openthread_alarm_init(), exit, OT_PLAT_LOG_TAG, "esp_openthread_alarm_init failed");
-    if (config->host_config.host_connection_mode == HOST_CONNECTION_MODE_CLI_UART ||
+
+    if (config->host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_SPI) {
+        ESP_GOTO_ON_ERROR(esp_openthread_spi_slave_init(config), exit, OT_PLAT_LOG_TAG,
+                          "esp_openthread_spi_slave_init failed");
+    }else if (config->host_config.host_connection_mode == HOST_CONNECTION_MODE_CLI_UART ||
         config->host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_UART) {
         ESP_GOTO_ON_ERROR(esp_openthread_uart_init(config), exit, OT_PLAT_LOG_TAG, "esp_openthread_uart_init failed");
     }
+
     ESP_GOTO_ON_ERROR(esp_openthread_task_queue_init(config), exit, OT_PLAT_LOG_TAG,
                       "esp_openthread_task_queue_init failed");
     ESP_GOTO_ON_ERROR(esp_openthread_radio_init(config), exit, OT_PLAT_LOG_TAG, "esp_openthread_radio_init failed");
@@ -135,9 +146,14 @@ esp_err_t esp_openthread_platform_deinit(void)
     s_openthread_platform_initialized = false;
     esp_openthread_task_queue_deinit();
     esp_openthread_radio_deinit();
-    if (s_platform_config.host_config.host_connection_mode == HOST_CONNECTION_MODE_CLI_UART) {
+
+    if (s_platform_config.host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_SPI){
+        esp_openthread_spi_slave_deinit();
+    }else if (s_platform_config.host_config.host_connection_mode == HOST_CONNECTION_MODE_CLI_UART ||
+        s_platform_config.host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_UART) {
         esp_openthread_uart_deinit();
     }
+
     esp_openthread_lock_deinit();
     esp_openthread_alarm_deinit();
     return ESP_OK;

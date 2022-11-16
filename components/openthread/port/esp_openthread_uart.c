@@ -27,6 +27,7 @@ static int s_uart_fd;
 static uint8_t s_uart_buffer[ESP_OPENTHREAD_UART_BUFFER_SIZE];
 static const char *uart_workflow = "uart";
 
+#if (CONFIG_OPENTHREAD_CLI || (CONFIG_OPENTHREAD_RADIO && CONFIG_OPENTHREAD_RCP_UART))
 otError otPlatUartEnable(void)
 {
     return OT_ERROR_NONE;
@@ -54,6 +55,7 @@ otError otPlatUartSend(const uint8_t *buf, uint16_t buf_length)
 
     return OT_ERROR_NONE;
 }
+#endif
 
 esp_err_t esp_openthread_uart_init_port(const esp_openthread_uart_config_t *config)
 {
@@ -117,7 +119,7 @@ esp_err_t esp_openthread_uart_process(otInstance *instance, const esp_openthread
     int rval = read(s_uart_fd, s_uart_buffer, sizeof(s_uart_buffer));
 
     if (rval > 0) {
-#if CONFIG_OPENTHREAD_CLI || CONFIG_OPENTHREAD_RADIO
+#if (CONFIG_OPENTHREAD_CLI || (CONFIG_OPENTHREAD_RADIO && CONFIG_OPENTHREAD_RCP_UART))
         otPlatUartReceived(s_uart_buffer, (uint16_t)rval);
 #endif
     } else if (rval < 0) {

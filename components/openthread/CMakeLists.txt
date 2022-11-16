@@ -111,9 +111,11 @@ if(CONFIG_OPENTHREAD_ENABLED)
 
     if(CONFIG_OPENTHREAD_RADIO_NATIVE)
         list(APPEND exclude_srcs
-            "port/esp_openthread_radio_uart.cpp"
-            "port/esp_uart_spinel_interface.cpp")
-    elseif(CONFIG_OPENTHREAD_RADIO_SPINEL_UART)
+            "port/esp_openthread_radio_spinel.cpp"
+            "port/esp_spi_spinel_interface.cpp"
+            "port/esp_uart_spinel_interface.cpp"
+            )
+    elseif(CONFIG_OPENTHREAD_RADIO_SPINEL_UART OR CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
         list(APPEND exclude_srcs
             "port/esp_openthread_radio.c")
     endif()
@@ -166,9 +168,9 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        EXCLUDE_SRCS "${exclude_srcs}"
                        INCLUDE_DIRS "${public_include_dirs}"
                        PRIV_INCLUDE_DIRS "${private_include_dirs}"
-                       REQUIRES esp_netif lwip
+                       REQUIRES esp_netif lwip driver
                        LDFRAGMENTS linker.lf
-                       PRIV_REQUIRES console driver esp_event esp_partition esp_timer
+                       PRIV_REQUIRES console esp_event esp_partition esp_timer
                                      ieee802154 mbedtls spi_flash)
 
 if(CONFIG_OPENTHREAD_ENABLED)
