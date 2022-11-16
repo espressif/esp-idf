@@ -143,6 +143,7 @@ void vPortCleanUpTCB ( void *pxTCB );
 #define portDISABLE_INTERRUPTS()            ({ \
     unsigned int prev_level = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); \
     portbenchmarkINTERRUPT_DISABLE(); \
+    prev_level = ((prev_level >> XCHAL_PS_INTLEVEL_SHIFT) & XCHAL_PS_INTLEVEL_MASK); \
     prev_level; \
 })
 
