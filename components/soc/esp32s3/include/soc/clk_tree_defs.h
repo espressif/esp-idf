@@ -114,6 +114,15 @@ typedef enum {
     SOC_MOD_CLK_TEMP_SENSOR,                   /*!< TEMP_SENSOR_CLK comes directly from the internal 20MHz rc oscillator */
 } soc_module_clk_t;
 
+//////////////////////////////////////////////////SYSTIMER///////////////////////////////////////////////////////////////
+
+/**
+ * @brief Type of SYSTIMER clock source
+ */
+typedef enum {
+    SYSTIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< SYSTIMER source clock is XTAL */
+    SYSTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< SYSTIMER source clock default choice is XTAL */
+} soc_periph_systimer_clk_src_t;
 
 //////////////////////////////////////////////////GPTimer///////////////////////////////////////////////////////////////
 

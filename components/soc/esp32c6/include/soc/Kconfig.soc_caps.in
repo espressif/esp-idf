@@ -659,6 +659,10 @@ config SOC_SYSTIMER_FIXED_DIVIDER
     bool
     default y
 
+config SOC_SYSTIMER_SUPPORT_RC_FAST
+    bool
+    default y
+
 config SOC_SYSTIMER_INT_LEVEL
     bool
     default y
