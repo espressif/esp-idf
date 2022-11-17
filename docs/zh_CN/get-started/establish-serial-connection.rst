@@ -33,7 +33,7 @@
             default_fontsize = 16
 
             # labels of diagram nodes
-            PC [label="Personal\n Computer"];  
+            PC [label="Personal\n Computer"];
             CHIP [label="{IDF_TARGET_NAME}", width=120];
             DUMMY [shape=none, width=1]
 
@@ -71,8 +71,8 @@
         default_fontsize = 16
 
         # labels of diagram nodes
-        PC [label="Personal\nComputer"];  
-        BRIDGE [label="USB-to-UART\n Bridge"];  
+        PC [label="Personal\nComputer"];
+        BRIDGE [label="USB-to-UART\n Bridge"];
         CHIP [label="{IDF_TARGET_NAME}", width=120];
 
             # node connections
@@ -106,8 +106,8 @@
         default_fontsize = 16
 
         # labels of diagram nodes
-        PC [label="Personal\n Computer"];  
-        BRIDGE [label="USB-to-UART\n Bridge", width=180];  
+        PC [label="Personal\n Computer"];
+        BRIDGE [label="USB-to-UART\n Bridge", width=180];
         CHIP [label="{IDF_TARGET_NAME}", width=120];
         DUMMY [shape=none, width=1]
 
@@ -132,18 +132,18 @@
                 CHIP; DUMMY;
             }
     }
-    
+
 
 .. only:: SOC_USB_OTG_SUPPORTED or SOC_USB_SERIAL_JTAG_SUPPORTED
 
     使用 USB 进行烧录
     ------------------
-    
+
     {IDF_TARGET_NAME} 支持 USB 外设，无需外部 USB 至 UART 桥，即可烧录二进制文件。
 
-    {IDF_TARGET_USB_PIN_DM:default="尚未更新！", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19"}
-    {IDF_TARGET_USB_PIN_DP:default="尚未更新！", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20"}
-    
+    {IDF_TARGET_USB_PIN_DM:default="尚未更新！", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19", esp32c6="GPIO12"}
+    {IDF_TARGET_USB_PIN_DP:default="尚未更新！", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20", esp32c6="GPIO13"}
+
     {IDF_TARGET_NAME} 上的 USB 使用 **{IDF_TARGET_USB_PIN_DP}** 作为 **D+**， **{IDF_TARGET_USB_PIN_DM}** 作为 **D-**。
 
     .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
@@ -182,7 +182,7 @@
 如需改变烧录器的波特率，请用需要的波特率代替 ``BAUD``。默认的波特率为 ``460800``。
 
 .. note::
-    
+
     如果设备不支持自动下载模式，则需要手动进入下载模式。请按住 ``BOOT`` 按钮，同时按一下 ``RESET`` 按钮。之后，松开 ``BOOT`` 按钮。
 
 在 Windows 上查看端口

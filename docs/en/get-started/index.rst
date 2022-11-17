@@ -59,6 +59,15 @@ Introduction
     * Multiple peripherals
     * Intended for simple, high-volume IoT applications
 
+.. only:: esp32c6
+
+    * Wi-Fi 6 (2.4 GHz band)
+    * Bluetooth Low Energy
+    * 802.15.4 Thread/Zigbee
+    * High performance 32-bit RISC-V single-core processor
+    * Multiple peripherals
+    * Built-in security hardware
+
 Powered by 40 nm technology, {IDF_TARGET_NAME} provides a robust, highly integrated platform, which helps meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
 
 Espressif provides basic hardware and software resources to help application developers realize their ideas using the {IDF_TARGET_NAME} series hardware. The software development framework by Espressif is intended for development of Internet-of-Things (IoT) applications with Wi-Fi, Bluetooth, power management and several other system features.

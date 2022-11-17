@@ -5,7 +5,7 @@ Establish Serial Connection with {IDF_TARGET_NAME}
 
 .. only:: not SOC_USB_OTG_SUPPORTED and not SOC_USB_SERIAL_JTAG_SUPPORTED
 
-    Establishing a serial connection with the {IDF_TARGET_NAME} target device could be done using a USB-to-UART bridge. 
+    Establishing a serial connection with the {IDF_TARGET_NAME} target device could be done using a USB-to-UART bridge.
 
 .. only:: SOC_USB_OTG_SUPPORTED or SOC_USB_SERIAL_JTAG_SUPPORTED
 
@@ -33,7 +33,7 @@ Some development boards have the USB-to-UART bridge installed. If a board does n
             default_fontsize = 16
 
             # labels of diagram nodes
-            PC [label="Personal\n Computer"];  
+            PC [label="Personal\n Computer"];
             CHIP [label="{IDF_TARGET_NAME}", width=120];
             DUMMY [shape=none, width=1]
 
@@ -71,8 +71,8 @@ For boards with an installed USB-to-UART bridge, the connection between the pers
         default_fontsize = 16
 
         # labels of diagram nodes
-        PC [label="Personal\nComputer"];  
-        BRIDGE [label="USB-to-UART\n Bridge"];  
+        PC [label="Personal\nComputer"];
+        BRIDGE [label="USB-to-UART\n Bridge"];
         CHIP [label="{IDF_TARGET_NAME}", width=120];
 
             # node connections
@@ -106,8 +106,8 @@ Sometimes the USB-to-UART bridge is external. This is often used in small develo
         default_fontsize = 16
 
         # labels of diagram nodes
-        PC [label="Personal\n Computer"];  
-        BRIDGE [label="USB-to-UART\n Bridge", width=180];  
+        PC [label="Personal\n Computer"];
+        BRIDGE [label="USB-to-UART\n Bridge", width=180];
         CHIP [label="{IDF_TARGET_NAME}", width=120];
         DUMMY [shape=none, width=1]
 
@@ -132,18 +132,18 @@ Sometimes the USB-to-UART bridge is external. This is often used in small develo
                 CHIP; DUMMY;
             }
     }
-    
+
 
 .. only:: SOC_USB_OTG_SUPPORTED or SOC_USB_SERIAL_JTAG_SUPPORTED
 
     Flash using USB
     ---------------
-    
+
     For the {IDF_TARGET_NAME}, the USB peripheral is available, allowing you to flash the binaries without the need for an external USB-to-UART bridge.
 
-    {IDF_TARGET_USB_PIN_DM:default="Not Updated!", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19"}
-    {IDF_TARGET_USB_PIN_DP:default="Not Updated!", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20"}
-    
+    {IDF_TARGET_USB_PIN_DM:default="Not Updated!", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19", esp32c6="GPIO12"}
+    {IDF_TARGET_USB_PIN_DP:default="Not Updated!", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20", esp32c6="GPIO13"}
+
     The USB on the {IDF_TARGET_NAME} uses the **{IDF_TARGET_USB_PIN_DP}** for **D+** and **{IDF_TARGET_USB_PIN_DM}** for **D-**.
 
     .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
@@ -182,7 +182,7 @@ For devices downloaded using a USB-to-UART bridge, you can run the following com
 You can change the flasher baud rate by replacing ``BAUD`` with the baud rate you need. The default baud rate is ``460800``.
 
 .. note::
-    
+
     If the device does not support the auto download mode, you need to get into the download mode manually. To do so, press and hold the ``BOOT`` button and then press the ``RESET`` button once. After that release the ``BOOT`` button.
 
 Check port on Windows
