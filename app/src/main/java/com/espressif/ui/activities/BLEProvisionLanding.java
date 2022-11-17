@@ -197,7 +197,7 @@ public class BLEProvisionLanding extends ManualProvBaseActivity {
         switch (event.getEventType()) {
 
             case ESPConstants.EVENT_DEVICE_CONNECTED:
-                Log.e(TAG, "Device Connected Event Received");
+                Log.d(TAG, "Device Connected Event Received");
                 progressBar.setVisibility(View.GONE);
                 isConnecting = false;
                 isDeviceConnected = true;

@@ -166,7 +166,7 @@ public class AddDeviceActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        Log.e(TAG, "onRequestPermissionsResult , requestCode : " + requestCode);
+        Log.d(TAG, "onRequestPermissionsResult , requestCode : " + requestCode);
 
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
 
@@ -200,7 +200,7 @@ public class AddDeviceActivity extends AppCompatActivity {
                     String userName = sharedPreferences.getString(AppConstants.KEY_USER_NAME, AppConstants.DEFAULT_USER_NAME);
                     provisionManager.getEspDevice().setUserName(userName);
                 }
-                Log.e(TAG, "Device Connected Event Received");
+                Log.d(TAG, "Device Connected Event Received");
                 setSecurityTypeFromVersionInfo();
                 break;
 
@@ -357,7 +357,7 @@ public class AddDeviceActivity extends AppCompatActivity {
         @Override
         public void deviceDetected(final ESPDevice device) {
 
-            Log.e(TAG, "Device detected");
+            Log.d(TAG, "Device detected");
             espDevice = device;
             final String deviceType = sharedPreferences.getString(AppConstants.KEY_DEVICE_TYPES, AppConstants.DEVICE_TYPE_DEFAULT);
 

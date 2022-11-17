@@ -101,7 +101,7 @@ public class ProvisionLanding extends ManualProvBaseActivity {
 
             case ESPConstants.EVENT_DEVICE_CONNECTED:
 
-                Log.e(TAG, "Device Connected Event Received");
+                Log.d(TAG, "Device Connected Event Received");
                 btnConnect.setEnabled(true);
                 btnConnect.setAlpha(1f);
                 txtConnectBtn.setText(R.string.btn_connect);

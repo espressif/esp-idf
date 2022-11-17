@@ -345,7 +345,7 @@ public class ESPProvisionManager {
     @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_FINE_LOCATION})
     public void searchBleEspDevices(List<ScanFilter> filters, BleScanListener bleScannerListener) {
 
-        Log.e(TAG, "Search for BLE devices");
+        Log.d(TAG, "Search for BLE devices");
         bleScanner = new BleScanner(context, bleScannerListener);
         bleScanner.startScan(filters);
     }
@@ -359,7 +359,7 @@ public class ESPProvisionManager {
     @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_FINE_LOCATION})
     public void searchBleEspDevices(ScanSettings scanSettings, BleScanListener bleScannerListener) {
 
-        Log.e(TAG, "Search for BLE devices");
+        Log.d(TAG, "Search for BLE devices");
         bleScanner = new BleScanner(context, bleScannerListener);
         bleScanner.startScan(scanSettings);
     }
@@ -374,7 +374,7 @@ public class ESPProvisionManager {
     @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_FINE_LOCATION})
     public void searchBleEspDevices(List<ScanFilter> filters, ScanSettings scanSettings, BleScanListener bleScannerListener) {
 
-        Log.e(TAG, "Search for BLE devices");
+        Log.d(TAG, "Search for BLE devices");
         bleScanner = new BleScanner(context, bleScannerListener);
         bleScanner.startScan(filters, scanSettings);
     }
@@ -387,7 +387,7 @@ public class ESPProvisionManager {
     @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_FINE_LOCATION})
     public void searchBleEspDevices(BleScanListener bleScannerListener) {
 
-        Log.e(TAG, "Search for BLE devices");
+        Log.d(TAG, "Search for BLE devices");
         bleScanner = new BleScanner(context, bleScannerListener);
         bleScanner.startScan();
     }
@@ -401,7 +401,7 @@ public class ESPProvisionManager {
     @RequiresPermission(allOf = {Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_FINE_LOCATION})
     public void searchBleEspDevices(String prefix, BleScanListener bleScannerListener) {
 
-        Log.e(TAG, "Search for BLE devices");
+        Log.d(TAG, "Search for BLE devices");
         bleScanner = new BleScanner(context, prefix, bleScannerListener);
         bleScanner.startScan();
     }

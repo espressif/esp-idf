@@ -188,7 +188,7 @@ public class ESPDevice {
     @RequiresPermission(allOf = {Manifest.permission.CHANGE_WIFI_STATE, Manifest.permission.ACCESS_WIFI_STATE, Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_FINE_LOCATION})
     public void connectWiFiDevice(String ssid, String password) {
 
-        Log.e(TAG, "connectWiFiDevice ========== SSID : " + ssid + " and Password : " + password);
+        Log.d(TAG, "connectWiFiDevice ========== SSID : " + ssid + " and Password : " + password);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 
@@ -726,7 +726,7 @@ public class ESPDevice {
 
     private void getFullWiFiList() {
 
-        Log.e(TAG, "Total count : " + totalCount + " and start index is : " + startIndex);
+        Log.d(TAG, "Total count : " + totalCount + " and start index is : " + startIndex);
 
         if (totalCount < 4) {
 
@@ -974,11 +974,11 @@ public class ESPDevice {
             WifiScan.WiFiScanPayload payload = WifiScan.WiFiScanPayload.parseFrom(responseData);
             final WifiScan.RespScanResult response = payload.getRespScanResult();
 
-            Log.e(TAG, "Response count : " + response.getEntriesCount());
+            Log.d(TAG, "Response count : " + response.getEntriesCount());
 
             for (int i = 0; i < response.getEntriesCount(); i++) {
 
-                Log.e(TAG, "SSID : " + response.getEntries(i).getSsid().toStringUtf8());
+                Log.d(TAG, "SSID : " + response.getEntries(i).getSsid().toStringUtf8());
                 String ssid = response.getEntries(i).getSsid().toStringUtf8();
                 int rssi = response.getEntries(i).getRssi();
                 boolean isAvailable = false;
@@ -1006,7 +1006,7 @@ public class ESPDevice {
                     wifiApList.add(wifiAp);
                 }
 
-                Log.e(TAG, "Size of  list : " + wifiApList.size());
+                Log.d(TAG, "Size of  list : " + wifiApList.size());
             }
 
             startIndex = startIndex + 4;
@@ -1216,7 +1216,7 @@ public class ESPDevice {
             ssid = wifiInfo.getSSID();
             ssid = ssid.replace("\"", "");
         }
-        Log.e(TAG, "Returning ssid : " + ssid);
+        Log.d(TAG, "Returning ssid : " + ssid);
         return ssid;
     }
 
