@@ -2,7 +2,6 @@
 archive: libesp_rom.a
 entries:
     esp_rom_spiflash (noflash)
-    esp_rom_regi2c (noflash)
     if HEAP_TLSF_USE_ROM_IMPL = y && ESP_ROM_TLSF_CHECK_PATCH = y:
         esp_rom_tlsf (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:

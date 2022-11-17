@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "esp_bit_defs.h"
 #include "esp_rom_caps.h"
+#include "esp_attr.h"
 #include "sdkconfig.h"
 
 #include "soc/syscon_reg.h"
@@ -86,7 +87,7 @@
 #define I2C_SAR_ADC 0X69
 #define I2C_APLL    0X6D
 
-static void i2c_rtc_enable_block(uint8_t block)
+static IRAM_ATTR void i2c_rtc_enable_block(uint8_t block)
 {
     REG_SET_FIELD(I2C_RTC_CONFIG0, I2C_RTC_MAGIC_CTRL, I2C_RTC_MAGIC_DEFAULT);
     REG_SET_FIELD(I2C_RTC_CONFIG1, I2C_RTC_ALL_MASK, I2C_RTC_ALL_MASK_V);
@@ -107,7 +108,7 @@ static void i2c_rtc_enable_block(uint8_t block)
     }
 }
 
-uint8_t esp_rom_regi2c_read(uint8_t block, uint8_t host_id, uint8_t reg_add)
+uint8_t IRAM_ATTR esp_rom_regi2c_read(uint8_t block, uint8_t host_id, uint8_t reg_add)
 {
     i2c_rtc_enable_block(block);
 
@@ -118,7 +119,7 @@ uint8_t esp_rom_regi2c_read(uint8_t block, uint8_t host_id, uint8_t reg_add)
     return REG_GET_FIELD(I2C_RTC_CONFIG2, I2C_RTC_DATA);
 }
 
-uint8_t esp_rom_regi2c_read_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
+uint8_t IRAM_ATTR esp_rom_regi2c_read_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
 {
     assert(msb - lsb < 8);
     i2c_rtc_enable_block(block);
@@ -131,7 +132,7 @@ uint8_t esp_rom_regi2c_read_mask(uint8_t block, uint8_t host_id, uint8_t reg_add
     return (uint8_t)((data >> lsb) & (~(0xFFFFFFFF << (msb - lsb + 1))));
 }
 
-void esp_rom_regi2c_write(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
+void IRAM_ATTR esp_rom_regi2c_write(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
 {
     i2c_rtc_enable_block(block);
 
@@ -143,7 +144,7 @@ void esp_rom_regi2c_write(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8
     while (REG_GET_BIT(I2C_RTC_CONFIG2, I2C_RTC_BUSY));
 }
 
-void esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
+void IRAM_ATTR esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
 {
     assert(msb - lsb < 8);
     i2c_rtc_enable_block(block);

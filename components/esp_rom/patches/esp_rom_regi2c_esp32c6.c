@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "esp_rom_sys.h"
+#include "esp_attr.h"
 #include "soc/lp_i2c_ana_mst_reg.h"
 #include "modem/modem_lpcon_reg.h"
 /**
@@ -69,7 +70,7 @@
 
 #define REGI2C_RTC_MAGIC_DEFAULT (0x1C610)
 
-static void regi2c_enable_block(uint8_t block)
+static IRAM_ATTR void regi2c_enable_block(uint8_t block)
 {
     REG_SET_BIT(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
     REG_SET_BIT(LP_I2C_ANA_MST_DATE_REG, LP_I2C_ANA_MST_I2C_MAT_CLK_EN);
@@ -96,7 +97,7 @@ static void regi2c_enable_block(uint8_t block)
     }
 }
 
-static void regi2c_disable_block(uint8_t block)
+static IRAM_ATTR void regi2c_disable_block(uint8_t block)
 {
     switch (block) {
     case REGI2C_BBPLL  :
@@ -122,7 +123,7 @@ static void regi2c_disable_block(uint8_t block)
     REG_CLR_BIT(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
 }
 
-uint8_t esp_rom_regi2c_read(uint8_t block, uint8_t host_id, uint8_t reg_add)
+uint8_t IRAM_ATTR esp_rom_regi2c_read(uint8_t block, uint8_t host_id, uint8_t reg_add)
 {
     regi2c_enable_block(block);
 
@@ -136,7 +137,7 @@ uint8_t esp_rom_regi2c_read(uint8_t block, uint8_t host_id, uint8_t reg_add)
     regi2c_disable_block(block);
 }
 
-uint8_t esp_rom_regi2c_read_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
+uint8_t IRAM_ATTR esp_rom_regi2c_read_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
 {
     assert(msb - lsb < 8);
     regi2c_enable_block(block);
@@ -152,7 +153,7 @@ uint8_t esp_rom_regi2c_read_mask(uint8_t block, uint8_t host_id, uint8_t reg_add
     regi2c_disable_block(block);
 }
 
-void esp_rom_regi2c_write(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
+void IRAM_ATTR esp_rom_regi2c_write(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
 {
     (void)host_id;
     regi2c_enable_block(block);
@@ -167,7 +168,7 @@ void esp_rom_regi2c_write(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8
     regi2c_disable_block(block);
 }
 
-void esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
+void IRAM_ATTR esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
 {
     (void)host_id;
     assert(msb - lsb < 8);
