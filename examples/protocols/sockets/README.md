@@ -30,7 +30,23 @@ There are many host-side tools which can be used to interact with the UDP/TCP se
 One command line tool is [netcat](http://netcat.sourceforge.net) which can send and receive many kinds of packets. 
 Note: please replace `192.168.0.167 3333` with desired IPV4/IPV6 address (displayed in monitor console) and port number in the following commands.
 
-In addition to those tools, simple Python scripts can be found under sockets/scripts directory. Every script is designed to interact with one of the examples.
+In addition to those tools, Python scripts named `pytest_xxx.py` can be found under each example directory. 
+
+
+### Python scripts
+
+Script named `pytest_xxxx` in the application directory can be used for automated tests. 
+They can also be run locally. Ref: [ESP-IDF Tests with Pytest Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/contribute/esp-idf-tests-with-pytest.html).
+
+Example:
+```bash
+$ cd $IDF_PATH
+$ bash install.sh --enable-pytest
+$ . ./export.sh
+$ cd examples/protocols/sockets/tcp_client
+$ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -vv --pytest-apps
+$ pytest --target esp32
+```
 
 ### Send UDP packet via netcat
 ```
@@ -60,16 +76,6 @@ nc 192.168.0.167 3333
 ### TCP server using netcat
 ```
 nc -l 192.168.0.167 -p 3333
-```
-
-### Python scripts
-Each script in the application directory could be used to exercise the socket communication. 
-Command line arguments such as IP version (IPv4 or IPv6) and IP address and payload data (only clients) shall be supplied.
-In addition to that, port number and interface id are hardcoded in the scripts and might need to be altered to match the values used by the application. Example:
-
-```
-PORT = 3333
-INTERFACE = 'en0'
 ```
 
 ### Note about IPv6 addresses

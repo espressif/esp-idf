@@ -41,27 +41,13 @@ In order to create TCP server that communicates with TCP Client example, choose 
 There are many host-side tools which can be used to interact with the UDP/TCP server/client.
 One command line tool is [netcat](http://netcat.sourceforge.net) which can send and receive many kinds of packets.
 
-In addition to those tools, simple Python scripts can be found under sockets/scripts directory. Every script is designed to interact with one of the examples.
+Ref to the [upper level README](../README.md#host-tools) for more information.
 
 ### TCP server using netcat
 ```
 nc -l 192.168.0.167 3333
 ```
 
-### Python scripts
-Script example_test.py could be used as a counter part to the tcp-client project, ip protocol name (IPv4 or IPv6) shall be stated as argument. 
-
-Note that this script is used in automated tests, as well, so the IDF test framework packages need to be imported.
-Please run the following commands to configure the terminal to execute the script.
-```
-export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages"
-python -m pip install -r $IDF_PATH/tools/ci/python_packages/ttfw_idf/requirements.txt
-```
-
-Example:
-```
-python example_test.py IPv4
-```
 ## Hardware Required
 
 This example can be run on any commonly available ESP32 development board.
