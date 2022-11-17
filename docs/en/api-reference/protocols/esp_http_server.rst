@@ -158,6 +158,23 @@ Websocket Server
 The HTTP server component provides websocket support. The websocket feature can be enabled in menuconfig using the :ref:`CONFIG_HTTPD_WS_SUPPORT` option. Please refer to the :example:`protocols/http_server/ws_echo_server` example which demonstrates usage of the websocket feature.
 
 
+Event Handling
+--------------
+
+ESP HTTP Server has various events for which a handler can be triggered by :doc:`the Event Loop library <../system/esp_event>` when the particular event occurs. The handler has to be registered using :cpp:func:`esp_event_handler_register`. This helps in event handling for ESP HTTP Server.
+:cpp:enum:`esp_http_server_event_id_t` has all the events which can happen for ESP HTTP Server.
+
+Expected data type for different ESP HTTP Server events in event loop:
+    - HTTP_SERVER_EVENT_ERROR           :   ``httpd_err_code_t``
+    - HTTP_SERVER_EVENT_START           :   ``NULL``
+    - HTTP_SERVER_EVENT_ON_CONNECTED    :   ``int``
+    - HTTP_SERVER_EVENT_ON_HEADER       :   ``int``
+    - HTTP_SERVER_EVENT_HEADERS_SENT    :   ``int``
+    - HTTP_SERVER_EVENT_ON_DATA         :   ``esp_http_server_event_data``
+    - HTTP_SERVER_EVENT_SENT_DATA       :   ``esp_http_server_event_data``
+    - HTTP_SERVER_EVENT_DISCONNECTED    :   ``int``
+    - HTTP_SERVER_EVENT_STOP            :   ``NULL``
+
 API Reference
 -------------
 

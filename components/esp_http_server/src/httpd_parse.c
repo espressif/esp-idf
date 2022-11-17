@@ -401,6 +401,7 @@ static esp_err_t cb_headers_complete(http_parser *parser)
 
     parser_data->status = PARSING_BODY;
     ra->remaining_len = r->content_len;
+    esp_http_server_dispatch_event(HTTP_SERVER_EVENT_ON_HEADER, &(ra->sd->fd), sizeof(int));
     return ESP_OK;
 }
 

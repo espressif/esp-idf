@@ -544,6 +544,12 @@ esp_err_t httpd_sess_trigger_close_(httpd_handle_t handle, struct sock_db *sessi
  * @}
  */
 
+/**
+ * @brief Function to dispatch events in default event loop
+ *
+ */
+void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size);
+
 #ifdef __cplusplus
 }
 #endif

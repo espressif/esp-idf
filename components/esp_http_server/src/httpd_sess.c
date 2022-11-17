@@ -370,6 +370,7 @@ void httpd_sess_delete(struct httpd_data *hd, struct sock_db *session)
     } else {
         close(session->fd);
     }
+    esp_http_server_dispatch_event(HTTP_SERVER_EVENT_DISCONNECTED, &session->fd, sizeof(int));
 
     // clear all contexts
     httpd_sess_clear_ctx(session);
