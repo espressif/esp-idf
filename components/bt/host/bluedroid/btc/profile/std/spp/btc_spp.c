@@ -76,6 +76,7 @@ typedef struct {
 } spp_slot_t;
 
 typedef struct {
+    uint16_t tx_buffer_size;
     spp_slot_t *spp_slots[MAX_RFC_PORTS + 1];
     uint32_t spp_slot_id;
     esp_spp_mode_t spp_mode;
@@ -162,7 +163,7 @@ static spp_slot_t *spp_malloc_slot(void)
                     goto err;
                 }
             } else {
-                if (((*slot)->ringbuf_write = xRingbufferCreate(BTC_SPP_SEND_BUF_DEFAULT, RINGBUF_TYPE_BYTEBUF)) == NULL) {
+                if (((*slot)->ringbuf_write = xRingbufferCreate(spp_local_param.tx_buffer_size, RINGBUF_TYPE_BYTEBUF)) == NULL) {
                     BTC_TRACE_ERROR("%s write ringbuffer create error!", __func__);
                     err_no = 2;
                     goto err;
@@ -547,6 +548,7 @@ static void btc_spp_init(btc_spp_args_t *arg)
         }
         spp_local_param.spp_mode = arg->init.mode;
         spp_local_param.spp_slot_id = 0;
+        spp_local_param.tx_buffer_size = arg->init.tx_buffer_size;
         BTA_JvEnable((tBTA_JV_DM_CBACK *)btc_spp_dm_inter_cb);
         BTA_JvRfcommConfig(arg->init.enable_l2cap_ertm);
     } while (0);
@@ -1102,7 +1104,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                     slot->is_writing = false;
                     slot->write_data_len = 0;
                     vRingbufferGetInfo(slot->ringbuf_write, NULL, NULL, NULL, NULL, &items_waiting);
-                    if (BTC_SPP_SEND_BUF_DEFAULT > items_waiting) {
+                    if (spp_local_param.tx_buffer_size > items_waiting) {
                         xEventGroupSetBits(spp_local_param.tx_event_group, SLOT_WRITE_BIT(serial));
                     }
                     if (items_waiting == 0) {
@@ -1435,12 +1437,12 @@ static ssize_t spp_vfs_write(int fd, const void * data, size_t size)
             items_waiting = 0;
             item_size = 0;
             vRingbufferGetInfo(slot->ringbuf_write, NULL, NULL, NULL, NULL, &items_waiting);
-            if (items_waiting < BTC_SPP_SEND_BUF_DEFAULT) {
-                if ((BTC_SPP_SEND_BUF_DEFAULT - items_waiting) > size) {
+            if (items_waiting < spp_local_param.tx_buffer_size) {
+                if ((spp_local_param.tx_buffer_size - items_waiting) > size) {
                     item_size = size;
                     done = xRingbufferSend(slot->ringbuf_write, (void *)data + sent, item_size, 0);
                 } else {
-                    item_size = BTC_SPP_SEND_BUF_DEFAULT - items_waiting;
+                    item_size = spp_local_param.tx_buffer_size - items_waiting;
                     done = xRingbufferSend(slot->ringbuf_write, (void *)data + sent, item_size, 0);
                 }
 

@@ -245,6 +245,7 @@ void app_main(void)
     esp_spp_cfg_t bt_spp_cfg = {
         .mode = esp_spp_mode,
         .enable_l2cap_ertm = esp_spp_enable_l2cap_ertm,
+        .tx_buffer_size = 0, /* Only used for ESP_SPP_MODE_VFS mode */
     };
     if ((ret = esp_spp_enhanced_init(&bt_spp_cfg)) != ESP_OK) {
         ESP_LOGE(SPP_TAG, "%s spp init failed: %s\n", __func__, esp_err_to_name(ret));
