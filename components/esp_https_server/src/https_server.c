@@ -290,8 +290,10 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
     return ssl_ctx;
 
 exit:
-    free((void *) cfg->servercert_buf);
-    free((void *) cfg->cacert_buf);
+    if (cfg) {
+        free((void *) cfg->servercert_buf);
+        free((void *) cfg->cacert_buf);
+    }
     free(cfg);
     free(ssl_ctx);
     return NULL;
