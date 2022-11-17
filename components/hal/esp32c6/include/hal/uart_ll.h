@@ -191,7 +191,8 @@ static inline void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t 
  */
 static inline uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_freq)
 {
-    typeof(hw->clkdiv_sync) div_reg = hw->clkdiv_sync;
+    typeof(hw->clkdiv_sync) div_reg;
+    div_reg.val = hw->clkdiv_sync.val;
     return ((sclk_freq << 4)) / (((div_reg.clkdiv_int << 4) | div_reg.clkdiv_frag) * (HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1));
 }
 
@@ -368,7 +369,7 @@ static inline void uart_ll_set_stop_bits(uart_dev_t *hw, uart_stop_bits_t stop_b
  */
 static inline void uart_ll_get_stop_bits(uart_dev_t *hw, uart_stop_bits_t *stop_bit)
 {
-    *stop_bit = hw->conf0_sync.stop_bit_num;
+    *stop_bit = (uart_stop_bits_t)hw->conf0_sync.stop_bit_num;
 }
 
 /**
@@ -399,7 +400,7 @@ static inline void uart_ll_set_parity(uart_dev_t *hw, uart_parity_t parity_mode)
 static inline void uart_ll_get_parity(uart_dev_t *hw, uart_parity_t *parity_mode)
 {
     if (hw->conf0_sync.parity_en) {
-        *parity_mode = 0X2 | hw->conf0_sync.parity;
+        *parity_mode = (uart_parity_t)(0x2 | hw->conf0_sync.parity);
     } else {
         *parity_mode = UART_PARITY_DISABLE;
     }
@@ -525,10 +526,10 @@ static inline void uart_ll_get_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcontrol_
 {
     *flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
     if (hw->hwfc_conf_sync.rx_flow_en) {
-        *flow_ctrl |= UART_HW_FLOWCTRL_RTS;
+        *flow_ctrl = (uart_hw_flowcontrol_t)((unsigned int)(*flow_ctrl) | (unsigned int)UART_HW_FLOWCTRL_RTS);
     }
     if (hw->conf0_sync.tx_flow_en) {
-        *flow_ctrl |= UART_HW_FLOWCTRL_CTS;
+        *flow_ctrl = (uart_hw_flowcontrol_t)((unsigned int)(*flow_ctrl) | (unsigned int)UART_HW_FLOWCTRL_CTS);
     }
 }
 
@@ -835,7 +836,7 @@ static inline uint32_t uart_ll_get_wakeup_thrd(uart_dev_t *hw)
  */
 static inline void uart_ll_get_data_bit_num(uart_dev_t *hw, uart_word_length_t *data_bit)
 {
-    *data_bit = hw->conf0_sync.bit_num;
+    *data_bit = (uart_word_length_t)hw->conf0_sync.bit_num;
 }
 
 /**
@@ -908,7 +909,8 @@ static inline void uart_ll_xon_force_on(uart_dev_t *hw, bool always_on)
  */
 static inline void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
 {
-    typeof(hw->conf0_sync) conf0_reg = hw->conf0_sync;
+    typeof(hw->conf0_sync) conf0_reg;
+    conf0_reg.val = hw->conf0_sync.val;
     conf0_reg.irda_tx_inv = (inv_mask & UART_SIGNAL_IRDA_TX_INV) ? 1 : 0;
     conf0_reg.irda_rx_inv = (inv_mask & UART_SIGNAL_IRDA_RX_INV) ? 1 : 0;
     conf0_reg.rxd_inv = (inv_mask & UART_SIGNAL_RXD_INV) ? 1 : 0;
@@ -916,7 +918,8 @@ static inline void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
     hw->conf0_sync.val = conf0_reg.val;
     uart_ll_update(0); // TODO: IDF-5338
 
-    typeof(hw->conf1) conf1_reg = hw->conf1;
+    typeof(hw->conf1) conf1_reg;
+    conf1_reg.val = hw->conf1.val;
     conf1_reg.rts_inv = (inv_mask & UART_SIGNAL_RTS_INV) ? 1 : 0;
     conf1_reg.dtr_inv = (inv_mask & UART_SIGNAL_DTR_INV) ? 1 : 0;
     conf1_reg.cts_inv = (inv_mask & UART_SIGNAL_CTS_INV) ? 1 : 0;
