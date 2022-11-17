@@ -256,11 +256,11 @@ void vPortEnterCritical(void);
 void vPortExitCritical(void);
 
 //IDF task critical sections
-#define portTRY_ENTER_CRITICAL(lock, timeout)       {((void) lock; (void) timeout; vPortEnterCritical(); pdPASS;)}
+#define portTRY_ENTER_CRITICAL(lock, timeout)       ({(void) lock; (void) timeout; vPortEnterCritical(); pdPASS;})
 #define portENTER_CRITICAL_IDF(lock)                ({(void) lock; vPortEnterCritical();})
 #define portEXIT_CRITICAL_IDF(lock)                 ({(void) lock; vPortExitCritical();})
 //IDF ISR critical sections
-#define portTRY_ENTER_CRITICAL_ISR(lock, timeout)   {((void) lock; (void) timeout; vPortEnterCritical(); pdPASS;)}
+#define portTRY_ENTER_CRITICAL_ISR(lock, timeout)   ({(void) lock; (void) timeout; vPortEnterCritical(); pdPASS;})
 #define portENTER_CRITICAL_ISR(lock)                ({(void) lock; vPortEnterCritical();})
 #define portEXIT_CRITICAL_ISR(lock)                 ({(void) lock; vPortExitCritical();})
 //IDF safe critical sections (they're the same)
