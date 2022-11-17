@@ -9,7 +9,6 @@
 #include "esp_rom_caps.h"
 #include "sdkconfig.h"
 
-#if CONFIG_IDF_TARGET_ESP32S2
 #include "soc/syscon_reg.h"
 
 #define I2C_RTC_WIFI_CLK_EN (SYSCON_WIFI_CLK_EN_REG)
@@ -165,4 +164,3 @@ void esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, 
     REG_WRITE(I2C_RTC_CONFIG2, temp);
     while (REG_GET_BIT(I2C_RTC_CONFIG2, I2C_RTC_BUSY));
 }
-#endif //CONFIG_IDF_TARGET_ESP32S2
