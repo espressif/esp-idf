@@ -1,5 +1,6 @@
 # This file was generated using idf.py save-defconfig. It can be edited manually.
 # Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
 #
-CONFIG_GATTC_WRITE_THROUGHPUT=y
 CONFIG_BT_ENABLED=y
+CONFIG_GATTS_NOTIFY_THROUGHPUT=y
+CONFIG_GATTC_WRITE_THROUGHPUT=n
