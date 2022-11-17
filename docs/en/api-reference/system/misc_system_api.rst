@@ -91,10 +91,15 @@ In ESP-IDF, the MAC addresses for the various network interfaces are calculated 
 
     .. note:: Although {IDF_TARGET_NAME} has no integrated Ethernet MAC, it is still possible to calculate an Ethernet MAC address. However, this MAC address can only be used with an external ethernet interface such as an SPI-Ethernet device. See :doc:`/api-reference/network/esp_eth`.
 
+Custom Interface MAC
+^^^^^^^^^^^^^^^^^^^^
+
+Sometimes you may need to define custom MAC addresses that are not generated from the base MAC address. To set a custom interface MAC address, use the :cpp:func:`esp_iface_mac_addr_set` function. This function allows you to overwrite the MAC addresses of interfaces set (or not yet set) by the base MAC address. Once a MAC address has been set for a particular interface, changing the base MAC address does not affect it.
+
 Custom Base MAC
 ^^^^^^^^^^^^^^^
 
-The default base MAC is pre-programmed by Espressif in eFuse {IDF_TARGET_BASE_MAC_BLOCK}. To set a custom base MAC instead, call the function :cpp:func:`esp_base_mac_addr_set` before initializing any network interfaces or calling the :cpp:func:`esp_read_mac` function. The custom MAC address can be stored in any supported storage device (e.g., flash, NVS).
+The default base MAC is pre-programmed by Espressif in eFuse {IDF_TARGET_BASE_MAC_BLOCK}. To set a custom base MAC instead, call the function :cpp:func:`esp_iface_mac_addr_set` with the ``ESP_MAC_BASE`` argument (or :cpp:func:`esp_base_mac_addr_set`) before initializing any network interfaces or calling the :cpp:func:`esp_read_mac` function. The custom MAC address can be stored in any supported storage device (e.g., flash, NVS).
 
 The custom base MAC addresses should be allocated such that derived MAC addresses will not overlap. Based on the table above, users can configure the option :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` to set the number of valid universal MAC addresses that can be derived from the custom base MAC.
 
@@ -106,7 +111,7 @@ The custom base MAC addresses should be allocated such that derived MAC addresse
 Custom MAC Address in eFuse
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function :cpp:func:`esp_efuse_mac_get_custom`. This loads the MAC address from eFuse BLK3. This function assumes that the custom base MAC address is stored in the following format:
+When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function :cpp:func:`esp_efuse_mac_get_custom` or use :cpp:func:`esp_read_mac` with the ``ESP_MAC_EFUSE_CUSTOM`` argument. This loads the MAC address from eFuse BLK3. The :cpp:func:`esp_efuse_mac_get_custom` function assumes that the custom base MAC address is stored in the following format:
 
 .. only:: esp32
 
@@ -156,7 +161,10 @@ When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function
 
         The eFuse BLK3 uses RS-coding during a burn operation, which means that all eFuse fields in this block must be burnt at the same time.
 
-Once MAC address has been obtained using :cpp:func:`esp_efuse_mac_get_custom`, call :cpp:func:`esp_base_mac_addr_set` to set this MAC address as base MAC address.
+Once custom efuse MAC address has been obtained (using cpp:func:`esp_efuse_mac_get_custom` or :cpp:func:`esp_read_mac`) you need to set it as the base MAC address. There is two ways to do it:
+
+1. using an old API, call :cpp:func:`esp_base_mac_addr_set`.
+2. using a new API, call :cpp:func:`esp_iface_mac_addr_set` with the ``ESP_MAC_BASE`` argument.
 
 
 .. _local-mac-addresses:

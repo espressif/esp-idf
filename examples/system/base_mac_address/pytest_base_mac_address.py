@@ -33,9 +33,14 @@ def test_base_mac_address(dut: Dut) -> None:
 
         return ', '.join(['0x{}'.format(m.decode('utf8')) for m in mac_m[:-1]] + [hex(int(mac_m[-1], 16) + increment)])
 
-    dut.expect_exact('WIFI_STA MAC: ' + get_expected_mac_string(0, dut.target), timeout=2)
-    dut.expect_exact('SoftAP MAC: ' + get_expected_mac_string(1, dut.target))
+    sdkconfig = dut.app.sdkconfig
+
+    if sdkconfig.get('ESP32_WIFI_ENABLED'):
+        dut.expect_exact('WIFI_STA MAC: ' + get_expected_mac_string(0, dut.target), timeout=2)
+        dut.expect_exact('SoftAP MAC: ' + get_expected_mac_string(1, dut.target))
 
     if dut.target != 'esp32s2':
-        dut.expect_exact('BT MAC: ' + get_expected_mac_string(2, dut.target))
+        if sdkconfig.get('ESP_MAC_ADDR_UNIVERSE_BT'):
+            dut.expect_exact('BT MAC: ' + get_expected_mac_string(2, dut.target))
         dut.expect_exact('Ethernet MAC: ' + get_expected_mac_string(3, dut.target))
+        dut.expect_exact('New Ethernet MAC: ' + get_expected_mac_string(6, dut.target))

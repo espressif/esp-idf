@@ -24,6 +24,9 @@ typedef enum {
     ESP_MAC_BT,
     ESP_MAC_ETH,
     ESP_MAC_IEEE802154,
+    ESP_MAC_BASE,
+    ESP_MAC_EFUSE_FACTORY,
+    ESP_MAC_EFUSE_CUSTOM,
 } esp_mac_type_t;
 
 /** @cond */
@@ -128,6 +131,8 @@ esp_err_t esp_efuse_mac_get_default(uint8_t *mac);
   * Then calculates the MAC address of the specific interface requested,
   * refer to ESP-IDF Programming Guide for the algorithm.
   *
+  * The MAC address set by the esp_iface_mac_addr_set() function will not depend on the base MAC address.
+  *
   * @param  mac base MAC address, length: 6 bytes/8 bytes.
   *         length: 6 bytes for MAC-48
   *                 8 bytes for EUI-64(used for IEEE 802.15.4)
@@ -156,6 +161,34 @@ esp_err_t esp_read_mac(uint8_t *mac, esp_mac_type_t type);
   * @return ESP_OK on success
   */
 esp_err_t esp_derive_local_mac(uint8_t *local_mac, const uint8_t *universal_mac);
+
+/**
+  * @brief  Set custom MAC address of the interface. This function allows you to overwrite the MAC addresses
+  *         of the interfaces set by the base MAC address.
+  *
+  * @param  mac  MAC address, length: 6 bytes/8 bytes.
+  *         length: 6 bytes for MAC-48
+  *                 8 bytes for EUI-64(used for ESP_MAC_IEEE802154 type)
+  * @param  type  Type of MAC address
+  *
+  * @return ESP_OK on success
+  */
+esp_err_t esp_iface_mac_addr_set(const uint8_t *mac, esp_mac_type_t type);
+
+/**
+  * @brief  Return the size of the MAC type in bytes.
+  *
+  * If CONFIG_IEEE802154_ENABLED is set then for these types:
+  * ESP_MAC_IEEE802154, ESP_MAC_BASE, ESP_MAC_EFUSE_FACTORY and ESP_MAC_EFUSE_CUSTOM the MAC size is 8 bytes.
+  * If CONFIG_IEEE802154_ENABLED is not set then for all types it returns 6 bytes.
+  *
+  * @param  type  Type of MAC address
+  *
+  * @return 0 MAC type not found (not supported)
+  *         6 bytes for MAC-48.
+  *         8 bytes for EUI-64.
+  */
+size_t esp_mac_addr_len_get(esp_mac_type_t type);
 
 #ifdef __cplusplus
 }
