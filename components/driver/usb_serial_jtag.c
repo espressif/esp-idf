@@ -28,6 +28,7 @@ typedef struct{
     RingbufHandle_t rx_ring_buf;        /*!< RX ring buffer handler */
     uint32_t rx_buf_size;               /*!< TX buffer size */
     uint8_t rx_data_buf[64];            /*!< Data buffer to stash FIFO data */
+    bool rx_has_received_bytes;         /*!< True if the driver has ever received bytes since install */
 
     // TX parameters
     uint32_t tx_buf_size;               /*!< TX buffer size */
@@ -73,6 +74,7 @@ static void usb_serial_jtag_isr_handler_default(void *arg) {
     if (usbjtag_intr_status & USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT) {
         // read rx buffer(max length is 64), and send avaliable data to ringbuffer.
         // Ensure the rx buffer size is larger than RX_MAX_SIZE.
+        p_usb_serial_jtag_obj->rx_has_received_bytes = true;
         usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
         uint32_t rx_fifo_len = usb_serial_jtag_ll_read_rxfifo(p_usb_serial_jtag_obj->rx_data_buf, USB_SER_JTAG_RX_MAX_SIZE);
         xRingbufferSendFromISR(p_usb_serial_jtag_obj->rx_ring_buf, p_usb_serial_jtag_obj->rx_data_buf, rx_fifo_len, &xTaskWoken);
@@ -167,6 +169,14 @@ int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_t
     // Now trigger the ISR to read data from the ring buffer.
     usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
     return size;
+}
+
+bool usb_serial_jtag_driver_has_received_bytes()
+{
+    if (p_usb_serial_jtag_obj != NULL){
+        return p_usb_serial_jtag_obj->rx_has_received_bytes;
+    }
+    return false;
 }
 
 esp_err_t usb_serial_jtag_driver_uninstall(void)

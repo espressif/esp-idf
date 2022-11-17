@@ -72,6 +72,16 @@ int usb_serial_jtag_read_bytes(void* buf, uint32_t length, TickType_t ticks_to_w
  */
 int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_to_wait);
 
+
+/**
+ * @brief Returns true if the USB Serial/JTAG Controller driver has ever
+ * received any bytes over its serial port since the driver was installed.
+ *
+ * This can be used as a simple way to determine that a serial
+ * console has definitely been attached at some point
+ */
+bool usb_serial_jtag_driver_has_received_bytes();
+
 /**
  * @brief Uninstall USB-SERIAL-JTAG driver.
  *
