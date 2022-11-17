@@ -9,8 +9,8 @@ menu "Bluetooth"
 
     config BT_SOC_SUPPORT_5_0
         bool
-        depends on BT_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
-        default y if BT_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        depends on BT_ENABLED && (IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        default y if BT_ENABLED && (IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
         default n
 
     menu "Bluetooth controller"
