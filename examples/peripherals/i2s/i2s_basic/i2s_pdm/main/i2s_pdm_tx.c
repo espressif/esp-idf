@@ -98,7 +98,7 @@ void i2s_example_pdm_tx_task(void *args)
             }
         }
         cnt++;
-        /* If finished played, switch the tone level */
+        /* If finished playing, switch the tone level */
         if (cnt == sizeof(song)) {
             cnt = 0;
             tone_select++;

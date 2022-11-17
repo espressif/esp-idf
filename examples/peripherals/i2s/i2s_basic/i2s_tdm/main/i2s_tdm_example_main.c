@@ -120,8 +120,8 @@ static void i2s_example_init_tdm_duplex(void)
             },
         },
     };
-    /* While there are more than two slots activated, receiving data might be wrong if the mclk multiple is too samll
-     * The driver will increasing the multiple automatically to ensure the bclk_div bigger than 2.
+    /* While there are more than two slots activated, receiving data might be wrong if the mclk multiple is too small
+     * The driver will increasing the multiple automatically to ensure the bclk_div is greater than 2.
      * Modify the mclk_multiple to 512 directly here to avoid the warning */
     tdm_cfg.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_512;
 
@@ -184,8 +184,8 @@ static void i2s_example_init_tdm_simplex(void)
             },
         },
     };
-    /* While there are more than two slots activated, receiving data might be wrong if the mclk multiple is too samll
-     * The driver will increasing the multiple automatically to ensure the bclk_div bigger than 2.
+    /* While there are more than two slots activated, receiving data might be wrong if the mclk multiple is too small
+     * The driver will increasing the multiple automatically to ensure the bclk_div  is greater than 2.
      * Modify the mclk_multiple to 512 directly here to avoid the warning */
     rx_tdm_cfg.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_512;
     ESP_ERROR_CHECK(i2s_channel_init_tdm_mode(rx_chan, &rx_tdm_cfg));

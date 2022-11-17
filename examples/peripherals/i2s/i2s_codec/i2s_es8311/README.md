@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # I2S ES8311 Example
 
@@ -25,7 +25,7 @@ For more details, see [ES8311 datasheet](http://www.everest-semi.com/pdf/ES8311%
 
 ### Hardware Required
 
-* An ESP development board that support I2S.
+* A development board with any supported Espressif SOC chip (see `Supported Targets` table above)
 * A USB cable for power supply and programming.
 * A board with ES8311 codec, mic and earphone interface(e.g. ESP-LyraT-8311A extension board).
 

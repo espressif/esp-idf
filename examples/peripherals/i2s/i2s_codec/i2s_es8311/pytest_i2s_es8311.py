@@ -9,6 +9,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
+@pytest.mark.esp32c6
 @pytest.mark.generic
 def test_i2s_es8311_example_generic(dut: Dut) -> None:
     dut.expect('i2s es8311 codec example start')

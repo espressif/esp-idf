@@ -24,6 +24,7 @@ def run_multi_device_case(master: Dut, slave: Dut, case_name: str) -> None:
 
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
+@pytest.mark.esp32c6
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [
     2,

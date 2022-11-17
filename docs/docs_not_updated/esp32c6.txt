@@ -120,7 +120,6 @@ api-reference/peripherals/usb_device
 api-reference/peripherals/sdspi_host
 api-reference/peripherals/dac
 api-reference/peripherals/spi_slave
-api-reference/peripherals/i2s
 api-reference/peripherals/gptimer
 api-reference/peripherals/pcnt
 api-reference/peripherals/touch_element

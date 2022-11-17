@@ -15,12 +15,12 @@
 
 /* I2C port and GPIOs */
 #define I2C_NUM         (0)
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4
-#define I2C_SCL_IO      (GPIO_NUM_6)
-#define I2C_SDA_IO      (GPIO_NUM_7)
-#else
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define I2C_SCL_IO      (GPIO_NUM_16)
 #define I2C_SDA_IO      (GPIO_NUM_17)
+#else
+#define I2C_SCL_IO      (GPIO_NUM_6)
+#define I2C_SDA_IO      (GPIO_NUM_7)
 #endif
 
 /* I2S port and GPIOs */
@@ -28,12 +28,12 @@
 #define I2S_MCK_IO      (GPIO_NUM_0)
 #define I2S_BCK_IO      (GPIO_NUM_4)
 #define I2S_WS_IO       (GPIO_NUM_5)
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4
-#define I2S_DO_IO       (GPIO_NUM_2)
-#define I2S_DI_IO       (GPIO_NUM_3)
-#else
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define I2S_DO_IO       (GPIO_NUM_18)
 #define I2S_DI_IO       (GPIO_NUM_19)
+#else
+#define I2S_DO_IO       (GPIO_NUM_2)
+#define I2S_DI_IO       (GPIO_NUM_3)
 #endif
 /* Example configurations */
 #define EXAMPLE_RECV_BUF_SIZE   (2400)
