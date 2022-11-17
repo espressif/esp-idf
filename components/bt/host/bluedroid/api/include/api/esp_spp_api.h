@@ -16,6 +16,8 @@ extern "C" {
 
 #define ESP_SPP_MAX_MTU                 (3*330)     /*!< SPP max MTU */
 #define ESP_SPP_MAX_SCN                 31          /*!< SPP max SCN */
+#define ESP_SPP_MIN_TX_BUFFER_SIZE      100         /*!< SPP min tx buffer */
+#define ESP_SPP_MAX_TX_BUFFER_SIZE      (ESP_SPP_MAX_MTU * 10)  /*!< SPP max tx buffer size */
 
 /**
  * @brief SPP default configuration
@@ -23,6 +25,7 @@ extern "C" {
 #define BT_SPP_DEFAULT_CONFIG() { \
     .mode = ESP_SPP_MODE_VFS, \
     .enable_l2cap_ertm = true, \
+    .tx_buffer_size = ESP_SPP_MAX_TX_BUFFER_SIZE, \
 }
 
 /* Security Setting Mask
@@ -68,6 +71,7 @@ typedef enum {
 typedef struct {
     esp_spp_mode_t mode;                  /*!< Choose the mode of SPP, ESP_SPP_MODE_CB or ESP_SPP_MODE_VFS. */
     bool enable_l2cap_ertm;               /*!< Enable/disable Logical Link Control and Adaptation Layer Protocol enhanced retransmission mode. */
+    uint16_t tx_buffer_size;              /*!< Tx buffer size for a new SPP channel. A smaller setting can save memory, but may incur a decrease in throughput. Only for ESP_SPP_MODE_VFS mode. */
 } esp_spp_cfg_t;
 
 /**
