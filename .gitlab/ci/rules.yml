@@ -229,9 +229,9 @@
   - "components/esp_netif/**/*"
   - "components/lwip/**/*"
 
-# for jobs: UT_044, UT_045
+# for jobs: component_ut_pytest_esp32_sdio
 .patterns-unit_test-sdio: &patterns-unit_test-sdio
-  - "components/esp_serial_slave_link/**/*"
+  - "components/hal/**/*"
   - "components/driver/**/*"
   - "components/sdmmc/**/*"
 
@@ -242,13 +242,6 @@
   - "components/usb/**/*"
   - "examples/peripherals/usb/host/**/**/**/*"
   - "examples/peripherals/usb/device/**/**/*"
-
-# for job: unit_test-spi_multi which has only one runner
-.patterns-unit_test-spi_multi: &patterns-unit_test-spi_multi
-  - "components/esp_serial_slave_link/**/*"
-  - "components/driver/**/*"
-  - "components/hal/**/*"
-  - "examples/peripherals/spi_slave*/**/*"
 
 # for jobs: component_ut_pytest_esp32x_adc:
 .patterns-component_ut-adc: &patterns-component_ut-adc
@@ -1294,8 +1287,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-spi_multi
 
 .rules:build:unit_test:
   rules:
@@ -1327,8 +1318,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-spi_multi
 
 .rules:build:unit_test-esp32:
   rules:
@@ -1354,8 +1343,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-spi_multi
 
 .rules:build:unit_test-esp32c2:
   rules:
@@ -1380,8 +1367,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-spi_multi
 
 .rules:build:unit_test-esp32c3:
   rules:
@@ -1406,8 +1391,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-spi_multi
 
 .rules:build:unit_test-esp32c6:
   rules:
@@ -1432,8 +1415,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-spi_multi
 
 .rules:build:unit_test-esp32s2:
   rules:
@@ -1458,8 +1439,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-spi_multi
 
 .rules:build:unit_test-esp32s3:
   rules:
@@ -1484,8 +1463,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-spi_multi
 
 .rules:labels-protected:lan8720:
   rules:

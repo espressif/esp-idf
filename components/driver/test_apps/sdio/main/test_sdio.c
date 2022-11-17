@@ -7,17 +7,14 @@
 #include "unity.h"
 #include "test_utils.h"
 #include "test_spi_utils.h"
+#include "esp_serial_slave_link/essl_sdio.h"
 #include "esp_log.h"
+#include "sdmmc_cmd.h"
 #include "esp_timer.h"
-#include "soc/soc_caps.h"
 #include "ccomp_timer.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
 #include "driver/spi_common.h"
 #include "driver/sdspi_host.h"
-#include "esp_serial_slave_link/essl_sdio.h"
-#include "sdmmc_cmd.h"
+#include "soc/soc_caps.h"
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
@@ -351,13 +348,13 @@ static void log_performance_tohost(uint32_t speed, const sdio_test_config_t* con
     if (!config->check_data) {
         switch (config->sdio_mode) {
         case SDIO_4BIT:
-            TEST_PERFORMANCE_CCOMP_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_TOHOST_4BIT, "%d", speed);
+            TEST_PERFORMANCE_CCOMP_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_TOHOST_4BIT, "%" PRIu32, speed);
             break;
         case SDIO_1BIT:
-            TEST_PERFORMANCE_CCOMP_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_TOHOST_1BIT, "%d", speed);
+            TEST_PERFORMANCE_CCOMP_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_TOHOST_1BIT, "%" PRIu32, speed);
             break;
         case SDIO_SPI:
-            TEST_PERFORMANCE_CCOMP_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_TOHOST_SPI, "%d", speed);
+            TEST_PERFORMANCE_CCOMP_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_TOHOST_SPI, "%" PRIu32, speed);
             break;
         }
     }
@@ -422,7 +419,7 @@ static void test_tp_tohost_master(essl_handle_t handle, const sdio_test_config_t
     int64_t end_us = esp_timer_get_time();
 
     uint32_t total_time_ms = (end_us - pre_us)/1000;
-    ESP_LOGI(MASTER_TAG, "test done, total time: %d ms (%d ms compensated), bytes transferred: %d", total_time_ms, (int)c_time_ms, expected_length);
+    ESP_LOGI(MASTER_TAG, "test done, total time: %" PRIu32 " ms (%d ms compensated), bytes transferred: %d", total_time_ms, (int)c_time_ms, expected_length);
 
     uint32_t throughput_byte_per_ms = expected_length / c_time_ms;
     ESP_LOGI(MASTER_TAG, "Throughput: compensated %.2lf MB/s, typical %.2lf MB/s",
@@ -437,13 +434,13 @@ static void log_performance_frhost(uint32_t speed, const sdio_test_config_t* con
     if (!config->check_data) {
         switch (config->sdio_mode) {
         case SDIO_4BIT:
-            TEST_PERFORMANCE_CCOMP_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_FRHOST_4BIT, "%d", speed);
+            TEST_PERFORMANCE_CCOMP_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_FRHOST_4BIT, "%" PRIu32, speed);
             break;
         case SDIO_1BIT:
-            TEST_PERFORMANCE_CCOMP_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_FRHOST_1BIT, "%d", speed);
+            TEST_PERFORMANCE_CCOMP_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_FRHOST_1BIT, "%" PRIu32, speed);
             break;
         case SDIO_SPI:
-            TEST_PERFORMANCE_CCOMP_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_FRHOST_SPI, "%d", speed);
+            TEST_PERFORMANCE_CCOMP_GREATER_THAN(SDIO_THROUGHPUT_KBSEC_FRHOST_SPI, "%" PRIu32, speed);
             break;
         }
     }
@@ -482,7 +479,7 @@ static void test_tp_frhost_master(essl_handle_t handle, const sdio_test_config_t
     int64_t end_us = esp_timer_get_time();
 
     uint32_t total_time_ms = (end_us - pre_us)/1000;
-    ESP_LOGI(MASTER_TAG, "test done, total time: %d ms (%d ms compensated), bytes transferred: %d", total_time_ms, (int)c_time_ms, expected_length);
+    ESP_LOGI(MASTER_TAG, "test done, total time: %" PRIu32 " ms (%d ms compensated), bytes transferred: %d", total_time_ms, (int)c_time_ms, expected_length);
 
     uint32_t throughput_byte_per_ms = expected_length / c_time_ms;
     ESP_LOGI(MASTER_TAG, "Throughput: compensated %.2lf MB/s, typical %.2lf MB/s",
@@ -734,15 +731,15 @@ void test_sdio_reset_slave(void)
 }
 
 
-TEST_CASE_MULTIPLE_DEVICES("sdio interrupt", "[sdio][test_env=UT_SDIO]", test_sdio_interrupt_master, test_sdio_interrupt_slave);
+TEST_CASE_MULTIPLE_DEVICES("sdio interrupt", "[sdio][test_env=sdio_master_slave]", test_sdio_interrupt_master, test_sdio_interrupt_slave);
 
-TEST_CASE_MULTIPLE_DEVICES("sdio register", "[sdio][test_env=UT_SDIO]", test_sdio_reg_master, test_sdio_interrupt_slave);
+TEST_CASE_MULTIPLE_DEVICES("sdio register", "[sdio][test_env=sdio_master_slave]", test_sdio_reg_master, test_sdio_interrupt_slave);
 
 #if !CONFIG_FREERTOS_UNICORE
-TEST_CASE_MULTIPLE_DEVICES("sdio reset", "[sdio][test_env=UT_SDIO]", test_sdio_reset_master, test_sdio_reset_slave);
+TEST_CASE_MULTIPLE_DEVICES("sdio reset", "[sdio][test_env=sdio_master_slave]", test_sdio_reset_master, test_sdio_reset_slave);
 #else
 //Currently there is weird issue on the runner, when tested with single core config, seems to relate to receiving
-TEST_CASE_MULTIPLE_DEVICES("sdio reset", "[sdio][test_env=UT_SDIO][ignore]", test_sdio_reset_master, test_sdio_reset_slave);
+TEST_CASE_MULTIPLE_DEVICES("sdio reset", "[sdio][test_env=sdio_master_slave][ignore]", test_sdio_reset_master, test_sdio_reset_slave);
 #endif
 
 
@@ -792,10 +789,10 @@ ptest_func_t frhost_slave = {
 PARAM_GROUP_DECLARE_TYPE(IO_MODE, sdio_test_config_t, test_cfg_array);
 
 #if !CONFIG_FREERTOS_UNICORE
-TEST_MASTER_SLAVE(SDIO_FRHOST, test_cfg_array, "[sdio][timeout=180][test_env=UT_SDIO]", &frhost_master, &frhost_slave);
+TEST_MASTER_SLAVE(SDIO_FRHOST, test_cfg_array, "[sdio][timeout=180][test_env=sdio_master_slave]", &frhost_master, &frhost_slave);
 #else
 //Currently there is weird issue on the runner, when tested with single core config, seems to relate to receiving
-TEST_MASTER_SLAVE(SDIO_FRHOST, test_cfg_array, "[sdio][timeout=180][test_env=UT_SDIO][ignore]", &frhost_master, &frhost_slave);
+TEST_MASTER_SLAVE(SDIO_FRHOST, test_cfg_array, "[sdio][timeout=180][test_env=sdio_master_slave][ignore]", &frhost_master, &frhost_slave);
 #endif
 
 ptest_func_t tohost_master = {
@@ -810,7 +807,7 @@ ptest_func_t tohost_slave = {
     .post_test = null_post,
 };
 
-TEST_MASTER_SLAVE(SDIO_TOHOST, test_cfg_array, "[sdio][timeout=180][test_env=UT_SDIO]", &tohost_master, &tohost_slave);
+TEST_MASTER_SLAVE(SDIO_TOHOST, test_cfg_array, "[sdio][timeout=180][test_env=sdio_master_slave]", &tohost_master, &tohost_slave);
 
 #endif //SOC_SDMMC_HOST_SUPPORTED && SOC_SDIO_SLAVE_SUPPORTED
 

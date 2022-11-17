@@ -322,6 +322,14 @@ component_ut_pytest_esp32_adc:
     - build_pytest_components_esp32
   tags: [ esp32, adc ]
 
+component_ut_pytest_esp32_sdio:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:unit_test-esp32-sdio
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, sdio_master_slave ]
+
 component_ut_pytest_esp32_ip101:
   extends:
     - .pytest_components_dir_template
@@ -1059,23 +1067,6 @@ UT_043:
   tags:
     - ESP32_IDF
     - UT_T1_32kXTAL
-    - psram
-
-UT_044:
-  extends:
-    - .unit_test_esp32_template
-    - .rules:test:unit_test-esp32-sdio
-  tags:
-    - ESP32_IDF
-    - UT_SDIO
-
-UT_045:
-  extends:
-    - .unit_test_esp32_template
-    - .rules:test:unit_test-esp32-sdio
-  tags:
-    - ESP32_IDF
-    - UT_SDIO
     - psram
 
 UT_S2_SDSPI:
