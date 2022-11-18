@@ -227,7 +227,7 @@ static void bootloader_super_wdt_auto_feed(void)
 static inline void bootloader_hardware_init(void)
 {
     // TODO: IDF-5990 need update, enable i2c mst clk by force on temporarily
-    SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
+    SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_FORCE_ON_REG, MODEM_LPCON_CLK_I2C_MST_FO);
     SET_PERI_REG_MASK(MODEM_LPCON_I2C_MST_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_SEL_160M);
 }
 

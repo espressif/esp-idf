@@ -46,13 +46,14 @@ extern "C" {
 
 #define MHZ (1000000)
 
-#define RTC_SLOW_CLK_X32K_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
-#define RTC_SLOW_CLK_8MD256_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
 #define RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
+#define RTC_SLOW_CLK_32K_CAL_TIMEOUT_THRES(cycles)   (cycles << 12)
+#define RTC_FAST_CLK_20M_CAL_TIMEOUT_THRES(cycles)   (TIMG_RTC_CALI_TIMEOUT_THRES_V) // Just use the max timeout thres value
 
 #define OTHER_BLOCKS_POWERUP        1
 #define OTHER_BLOCKS_WAIT           1
 
+// TODO: IDF-5781
 /* Approximate mapping of voltages to RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_SLP,
  * RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DIG_DBIAS_SLP values.
  */
@@ -74,9 +75,10 @@ extern "C" {
 #define SOC_DELAY_RTC_SLOW_CLK_SWITCH       300
 #define SOC_DELAY_RC_FAST_ENABLE            50
 #define SOC_DELAY_RC_FAST_DIGI_SWITCH       5
+#define SOC_DELAY_RC32K_ENABLE              300
 
-/* Core voltage:
- * Currently, ESP32C3 never adjust its wake voltage in runtime
+/* Core voltage: // TODO: IDF-5781
+ * Currently, ESP32C6 never adjust its wake voltage in runtime
  * Only sets dig/rtc voltage dbias at startup time
  */
 #define DIG_DBIAS_80M       RTC_CNTL_DBIAS_1V20
@@ -89,8 +91,9 @@ extern "C" {
 #define RTC_CNTL_CK8M_WAIT_DEFAULT  20
 #define RTC_CK8M_ENABLE_WAIT_DEFAULT 5
 
-#define RTC_CNTL_CK8M_DFREQ_DEFAULT 100
-#define RTC_CNTL_SCK_DCAP_DEFAULT   255
+#define RTC_CNTL_CK8M_DFREQ_DEFAULT  100
+#define RTC_CNTL_SCK_DCAP_DEFAULT    128
+#define RTC_CNTL_RC32K_DFREQ_DEFAULT 700
 
 /* Various delays to be programmed into power control state machines */
 #define RTC_CNTL_XTL_BUF_WAIT_SLP_US            (250)
@@ -140,7 +143,7 @@ typedef enum {
 typedef struct rtc_cpu_freq_config_s {
     soc_cpu_clk_src_t source;       //!< The clock from which CPU clock is derived
     uint32_t source_freq_mhz;       //!< Source clock frequency
-    uint32_t div;                   //!< Divider, freq_mhz = source_freq_mhz / div
+    uint32_t div;                   //!< Divider, freq_mhz = SOC_ROOT_CLK freq_mhz / div
     uint32_t freq_mhz;              //!< CPU clock frequency
 } rtc_cpu_freq_config_t;
 
@@ -151,12 +154,18 @@ typedef struct rtc_cpu_freq_config_s {
 
 /**
  * @brief Clock source to be calibrated using rtc_clk_cal function
+ *
+ * @note On previous targets, the enum values somehow reflects the register field values of TIMG_RTC_CALI_CLK_SEL
+ *       However, this is not true on ESP32C6. The conversion to register field values is explicitly done in
+ *       rtc_clk_cal_internal
  */
 typedef enum {
-    RTC_CAL_RTC_MUX = 0,       //!< Currently selected RTC SLOW_CLK
-    RTC_CAL_32K_XTAL = 2,      //!< External 32 kHz XTAL
-    RTC_CAL_INTERNAL_OSC = 3,  //!< Internal 150 kHz oscillator
-    RTC_CAL_RC_FAST,           //!< Internal 20 MHz oscillator
+    RTC_CAL_RTC_MUX = -1,                                  //!< Currently selected RTC_SLOW_CLK
+    RTC_CAL_RC_SLOW = SOC_RTC_SLOW_CLK_SRC_RC_SLOW,        //!< Internal 150kHz RC oscillator
+    RTC_CAL_RC32K = SOC_RTC_SLOW_CLK_SRC_RC32K,            //!< Internal 32kHz RC oscillator, as one type of 32k clock
+    RTC_CAL_32K_XTAL = SOC_RTC_SLOW_CLK_SRC_XTAL32K,       //!< External 32kHz XTAL, as one type of 32k clock
+    RTC_CAL_32K_OSC_SLOW = SOC_RTC_SLOW_CLK_SRC_OSC_SLOW,  //!< External 32kHz clk signal input by lp_pad_gpio0, as one type of 32k clock
+    RTC_CAL_RC_FAST                                        //!< Internal 20MHz RC oscillator
 } rtc_cal_sel_t;
 
 /**
@@ -166,11 +175,12 @@ typedef struct {
     rtc_xtal_freq_t xtal_freq : 8;             //!< Main XTAL frequency
     uint32_t cpu_freq_mhz : 10;                //!< CPU frequency to set, in MHz
     soc_rtc_fast_clk_src_t fast_clk_src : 2;   //!< RTC_FAST_CLK clock source to choose
-    soc_rtc_slow_clk_src_t slow_clk_src : 2;   //!< RTC_SLOW_CLK clock source to choose
+    soc_rtc_slow_clk_src_t slow_clk_src : 3;   //!< RTC_SLOW_CLK clock source to choose
     uint32_t clk_rtc_clk_div : 8;
-    uint32_t clk_8m_clk_div : 3;               //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
-    uint32_t slow_clk_dcap : 8;                //!< RTC 150k clock adjustment parameter (higher value leads to lower frequency)
-    uint32_t clk_8m_dfreq : 8;                 //!< RTC 8m clock adjustment parameter (higher value leads to higher frequency)
+    uint32_t clk_8m_clk_div : 3;               //!< RC_FAST clock divider (division is by clk_8m_div+1, i.e. 0 means ~20MHz frequency)
+    uint32_t slow_clk_dcap : 8;                //!< RC_SLOW clock adjustment parameter (higher value leads to lower frequency)
+    uint32_t clk_8m_dfreq : 8;                 //!< RC_FAST clock adjustment parameter (higher value leads to higher frequency)
+    uint32_t rc32k_dfreq : 10;                 //!< Internal RC32K clock adjustment parameter (higher value leads to higher frequency)
 } rtc_clk_config_t;
 
 /**
@@ -185,6 +195,7 @@ typedef struct {
     .clk_8m_clk_div = 0, \
     .slow_clk_dcap = RTC_CNTL_SCK_DCAP_DEFAULT, \
     .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \
+    .rc32k_dfreq = RTC_CNTL_RC32K_DFREQ_DEFAULT, \
 }
 
 typedef struct {
@@ -212,10 +223,6 @@ typedef struct {
     .dg_peri_powerup_cycles = OTHER_BLOCKS_POWERUP, \
     .dg_peri_wait_cycles = OTHER_BLOCKS_WAIT, \
 }
-
-void rtc_clk_divider_set(uint32_t div);
-
-void rtc_clk_8m_divider_set(uint32_t div);
 
 /**
  * Initialize clocks and set CPU frequency
@@ -274,34 +281,23 @@ bool rtc_clk_32k_enabled(void);
 void rtc_clk_32k_bootstrap(uint32_t cycle);
 
 /**
+ * @brief Enable or disable 32 kHz internal rc oscillator
+ * @param en  true to enable, false to disable
+ */
+void rtc_clk_rc32k_enable(bool enable);
+
+/**
  * @brief Enable or disable 8 MHz internal oscillator
  *
- * Output from 8 MHz internal oscillator is passed into a configurable
- * divider, which by default divides the input clock frequency by 256.
- * Output of the divider may be used as RTC_SLOW_CLK source.
- * Output of the divider is referred to in register descriptions and code as
- * 8md256 or simply d256. Divider values other than 256 may be configured, but
- * this facility is not currently needed, so is not exposed in the code.
- *
- * When 8MHz/256 divided output is not needed, the divider should be disabled
- * to reduce power consumption.
- *
  * @param clk_8m_en true to enable 8MHz generator
- * @param d256_en true to enable /256 divider
  */
-void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en);
+void rtc_clk_8m_enable(bool clk_8m_en);
 
 /**
  * @brief Get the state of 8 MHz internal oscillator
  * @return true if the oscillator is enabled
  */
 bool rtc_clk_8m_enabled(void);
-
-/**
- * @brief Get the state of /256 divider which is applied to 8MHz clock
- * @return true if the divided output is enabled
- */
-bool rtc_clk_8md256_enabled(void);
 
 /**
  * @brief Select source for RTC_SLOW_CLK
@@ -401,25 +397,29 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config);
 void rtc_clk_cpu_freq_set_xtal(void);
 
 /**
- * @brief Store new APB frequency value into RTC_APB_FREQ_REG
- *
- * This function doesn't change any hardware clocks.
- *
- * Functions which perform frequency switching and change APB frequency call
- * this function to update the value of APB frequency stored in RTC_APB_FREQ_REG
- * (one of RTC general purpose retention registers). This should not normally
- * be called from application code.
- *
- * @param apb_freq  new APB frequency, in Hz
- */
-void rtc_clk_apb_freq_update(uint32_t apb_freq);
-
-/**
- * @brief Get the current stored APB frequency.
- * @return The APB frequency value as last set via rtc_clk_apb_freq_update(), in Hz.
+ * @brief Get the current APB frequency.
+ * @return The calculated APB frequency value, in Hz.
  */
 uint32_t rtc_clk_apb_freq_get(void);
 
+/**
+ * @brief Clock calibration function used by rtc_clk_cal
+ *
+ * Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
+ * This feature counts the number of XTAL clock cycles within a given number of
+ * RTC_SLOW_CLK cycles.
+ *
+ * Slow clock calibration feature has two modes of operation: one-off and cycling.
+ * In cycling mode (which is enabled by default on SoC reset), counting of XTAL
+ * cycles within RTC_SLOW_CLK cycle is done continuously. Cycling mode is enabled
+ * using TIMG_RTC_CALI_START_CYCLING bit. In one-off mode counting is performed
+ * once, and TIMG_RTC_CALI_RDY bit is set when counting is done. One-off mode is
+ * enabled using TIMG_RTC_CALI_START bit.
+ *
+ * @param cal_clk which clock to calibrate
+ * @param slowclk_cycles number of slow clock cycles to count
+ * @return number of XTAL clock cycles within the given number of slow clock cycles
+ */
 uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
 
 /**
@@ -430,21 +430,17 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
  * 32k XTAL is being calibrated, but the oscillator has not started up (due to
  * incorrect loading capacitance, board design issue, or lack of 32 XTAL on board).
  *
+ * @note When 32k CLK is being calibrated, this function will check the accuracy
+ * of the clock. Since the xtal 32k or ext osc 32k is generally very stable, if
+ * the check fails, then consider this an invalid 32k clock and return 0. This
+ * check can filter some jamming signal.
+ *
  * @param cal_clk  clock to be measured
  * @param slow_clk_cycles  number of slow clock cycles to average
  * @return average slow clock period in microseconds, Q13.19 fixed point format,
  *         or 0 if calibration has timed out
  */
 uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slow_clk_cycles);
-
-/**
- * @brief Measure ratio between XTAL frequency and RTC slow clock frequency
- * @param cal_clk slow clock to be measured
- * @param slow_clk_cycles number of slow clock cycles to average
- * @return average ratio between XTAL frequency and slow clock frequency,
- *         Q13.19 fixed point format, or 0 if calibration has timed out.
- */
-uint32_t rtc_clk_cal_ratio(rtc_cal_sel_t cal_clk, uint32_t slow_clk_cycles);
 
 /**
  * @brief Convert time interval from microseconds to RTC_SLOW_CLK cycles

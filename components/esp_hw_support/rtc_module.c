@@ -101,7 +101,7 @@ out:
 esp_err_t rtc_isr_register(intr_handler_t handler, void* handler_arg, uint32_t rtc_intr_mask, uint32_t flags)
 {
 #if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
-    ESP_LOGW(TAG, "rtc_isr_register() has not been implemented yet");
+    ESP_EARLY_LOGW(TAG, "rtc_isr_register() has not been implemented yet");
     return ESP_OK;
 #else
     esp_err_t err = rtc_isr_ensure_installed();
@@ -132,7 +132,7 @@ esp_err_t rtc_isr_register(intr_handler_t handler, void* handler_arg, uint32_t r
 esp_err_t rtc_isr_deregister(intr_handler_t handler, void* handler_arg)
 {
 #if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
-    ESP_LOGW(TAG, "rtc_isr_deregister() has not been implemented yet");
+    ESP_EARLY_LOGW(TAG, "rtc_isr_deregister() has not been implemented yet");
     return ESP_OK;
 #else
     rtc_isr_handler_t* it;

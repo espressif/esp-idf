@@ -167,7 +167,7 @@ static void calibrate_ocode(void)
     soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
     rtc_cal_sel_t cal_clk = RTC_CAL_RTC_MUX;
     if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
-        cal_clk = RTC_CAL_EXT_32K;
+        cal_clk = RTC_CAL_32K_OSC_SLOW;
     } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
         cal_clk  = RTC_CAL_8MD256;
     }

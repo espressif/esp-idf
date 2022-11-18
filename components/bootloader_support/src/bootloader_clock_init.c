@@ -52,15 +52,28 @@ __attribute__((weak)) void bootloader_clock_configure(void)
 
     if (esp_rom_get_reset_reason(0) != RESET_REASON_CPU0_SW || rtc_clk_apb_freq_get() < APB_CLK_FREQ) {
         rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
+
         clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
+
+        // Use RTC_SLOW clock source sel register field's default value, RC_SLOW, for 2nd stage bootloader
+        // RTC_SLOW clock source will be switched according to Kconfig selection at application startup
         clk_cfg.slow_clk_src = rtc_clk_slow_src_get();
         if (clk_cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_INVALID) {
             clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
         }
+
+#if CONFIG_IDF_TARGET_ESP32C6
+        // TODO: IDF-5781 Some of esp32c6 SOC_RTC_FAST_CLK_SRC_XTAL_D2 rtc_fast clock has timing issue
+        // Force to use SOC_RTC_FAST_CLK_SRC_RC_FAST since 2nd stage bootloader
+        clk_cfg.fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST;
+#else
+        // Use RTC_FAST clock source sel register field's default value, XTAL_DIV, for 2nd stage bootloader
+        // RTC_FAST clock source will be switched to RC_FAST at application startup
         clk_cfg.fast_clk_src = rtc_clk_fast_src_get();
         if (clk_cfg.fast_clk_src == SOC_RTC_FAST_CLK_SRC_INVALID) {
             clk_cfg.fast_clk_src = SOC_RTC_FAST_CLK_SRC_XTAL_DIV;
         }
+#endif
         rtc_clk_init(clk_cfg);
     }
 
@@ -82,15 +95,15 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     CLEAR_PERI_REG_MASK(LP_TIMER_LP_INT_ENA_REG, LP_TIMER_MAIN_TIMER_LP_INT_ENA);                           /* MAIN_TIMER */
     CLEAR_PERI_REG_MASK(LP_ANALOG_PERI_LP_ANA_LP_INT_ENA_REG, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_ENA);  /* BROWN_OUT */
     CLEAR_PERI_REG_MASK(LP_WDT_INT_ENA_REG, LP_WDT_LP_WDT_INT_ENA);                                         /* WDT */
-    CLEAR_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SOC_WAKEUP_INT_ENA);                                        /* SLP_REJECT */
-    CLEAR_PERI_REG_MASK(PMU_SOC_SLEEP_REJECT_INT_ENA, PMU_SOC_SLEEP_REJECT_INT_ENA);                        /* SLP_WAKEUP */
+    // CLEAR_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SOC_WAKEUP_INT_ENA);  // TODO: IDF-5348                                    /* SLP_REJECT */
+    // CLEAR_PERI_REG_MASK(PMU_SOC_SLEEP_REJECT_INT_ENA, PMU_SOC_SLEEP_REJECT_INT_ENA);                        /* SLP_WAKEUP */
     // SET CLR
     SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_SUPER_WDT_INT_CLR);                                        /* SWD */
     SET_PERI_REG_MASK(LP_TIMER_LP_INT_CLR_REG, LP_TIMER_MAIN_TIMER_LP_INT_CLR);                             /* MAIN_TIMER */
     SET_PERI_REG_MASK(LP_ANALOG_PERI_LP_ANA_LP_INT_CLR_REG, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_CLR);    /* BROWN_OUT */
     SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_LP_WDT_INT_CLR);                                           /* WDT */
-    SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_WAKEUP_INT_CLR);                                          /* SLP_REJECT */
-    SET_PERI_REG_MASK(PMU_SOC_SLEEP_REJECT_INT_CLR, PMU_SOC_SLEEP_REJECT_INT_CLR);                          /* SLP_WAKEUP */
+    // SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_WAKEUP_INT_CLR);  // TODO: IDF-5348                                          /* SLP_REJECT */
+    // SET_PERI_REG_MASK(PMU_SOC_SLEEP_REJECT_INT_CLR, PMU_SOC_SLEEP_REJECT_INT_CLR);                          /* SLP_WAKEUP */
 #else
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);

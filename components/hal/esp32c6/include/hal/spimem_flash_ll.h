@@ -550,6 +550,7 @@ static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_
  */
 static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
 {
+    // MAY CAN IMPROVE (ONLY rc_fast case is incorrect)!
     // TODO: Default is PLL480M, this is hard-coded.
     // In the future, we can get the CPU clock source by calling interface.
     uint8_t clock_val = 0;
@@ -584,8 +585,6 @@ static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
             HAL_ASSERT(false);
         }
     }
-    // Hard-coded line, will be removed when pll is enabled.
-    clock_val = 80;
 
     return clock_val;
 }

@@ -88,7 +88,7 @@ menu "Serial flasher config"
     choice ESPTOOLPY_FLASHFREQ
         prompt "Flash SPI speed"
         default ESPTOOLPY_FLASHFREQ_40M if IDF_TARGET_ESP32
-        default ESPTOOLPY_FLASHFREQ_80M if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3
+        default ESPTOOLPY_FLASHFREQ_80M if ESPTOOLPY_FLASHFREQ_80M_DEFAULT
         default ESPTOOLPY_FLASHFREQ_60M if IDF_TARGET_ESP32C2
         default ESPTOOLPY_FLASHFREQ_48M if IDF_TARGET_ESP32H4
         config ESPTOOLPY_FLASHFREQ_120M
@@ -123,6 +123,12 @@ menu "Serial flasher config"
             bool "15 MHz"
             depends on SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED
     endchoice
+
+    config ESPTOOLPY_FLASHFREQ_80M_DEFAULT
+        bool
+        default y if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
+        help
+            This is an invisible item, used to define the targets that defaults to use 80MHz Flash SPI speed.
 
     config ESPTOOLPY_FLASHFREQ
         string

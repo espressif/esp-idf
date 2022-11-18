@@ -14,7 +14,6 @@
 #include "esp_clk_internal.h"
 #include "esp32c6/rom/ets_sys.h"
 #include "esp32c6/rom/uart.h"
-// #include "soc/system_reg.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
@@ -23,8 +22,6 @@
 #include "hal/wdt_hal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
-#include "bootloader_clock.h"
-// #include "soc/syscon_reg.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 
@@ -36,28 +33,7 @@
 
 #define MHZ (1000000)
 
-/* Lower threshold for a reasonably-looking calibration value for a 32k XTAL.
- * The ideal value (assuming 32768 Hz frequency) is 1000000/32768*(2**19) = 16*10^6.
- */
-#define MIN_32K_XTAL_CAL_VAL  15000000L
-
-/* Indicates that this 32k oscillator gets input from external oscillator, rather
- * than a crystal.
- */
-#define EXT_OSC_FLAG    BIT(3)
-
-/* This is almost the same as soc_rtc_slow_clk_src_t, except that we define
- * an extra enum member for the external 32k oscillator.
- * For convenience, lower 2 bits should correspond to soc_rtc_slow_clk_src_t values.
- */
-typedef enum {
-    SLOW_CLK_RTC = SOC_RTC_SLOW_CLK_SRC_RC_SLOW,                       //!< Internal 150 kHz RC oscillator
-    SLOW_CLK_32K_XTAL = SOC_RTC_SLOW_CLK_SRC_XTAL32K,                  //!< External 32 kHz XTAL
-    SLOW_CLK_8MD256 = SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256,               //!< Internal 8 MHz RC oscillator, divided by 256
-    SLOW_CLK_32K_EXT_OSC = SOC_RTC_SLOW_CLK_SRC_XTAL32K | EXT_OSC_FLAG //!< External 32k oscillator connected to 32K_XP pin
-} slow_clk_sel_t;
-
-static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
+static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src);
 
 static const char *TAG = "clk";
 
@@ -75,8 +51,7 @@ static const char *TAG = "clk";
 
     assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
 
-    bool rc_fast_d256_is_enabled = rtc_clk_8md256_enabled();
-    rtc_clk_8m_enable(true, rc_fast_d256_is_enabled);
+    rtc_clk_8m_enable(true);
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
 #endif
 
@@ -96,13 +71,13 @@ static const char *TAG = "clk";
 #endif
 
 #if defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
-    select_rtc_slow_clk(SLOW_CLK_32K_XTAL);
+    select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
 #elif defined(CONFIG_RTC_CLK_SRC_EXT_OSC)
-    select_rtc_slow_clk(SLOW_CLK_32K_EXT_OSC);
-#elif defined(CONFIG_RTC_CLK_SRC_INT_8MD256)
-    select_rtc_slow_clk(SLOW_CLK_8MD256);
+    select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_OSC_SLOW);
+#elif defined(CONFIG_RTC_CLK_SRC_INT_RC32K)
+    select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC32K);
 #else
-    select_rtc_slow_clk(SLOW_CLK_RTC);
+    select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
 #endif
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
@@ -134,11 +109,8 @@ static const char *TAG = "clk";
     esp_cpu_set_cycle_count( (uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz );
 }
 
-static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
+static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
 {
-    ESP_EARLY_LOGW(TAG, "select_rtc_slow_clk() has not been implemented yet");
-#if 0 // TODO: IDF-5645
-    soc_rtc_slow_clk_src_t rtc_slow_clk_src = slow_clk & RTC_CNTL_ANA_CLK_RTC_SEL_V;
     uint32_t cal_val = 0;
     /* number of times to repeat 32k XTAL calibration
      * before giving up and switching to the internal RC
@@ -146,7 +118,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     int retry_32k_xtal = 3;
 
     do {
-        if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K || rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
             /* 32k XTAL oscillator needs to be enabled and running before it can
              * be used. Hardware doesn't have a direct way of checking if the
              * oscillator is running. Here we use rtc_clk_cal function to count
@@ -155,24 +127,27 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
              * will time out, returning 0.
              */
             ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
-            if (slow_clk == SLOW_CLK_32K_XTAL) {
+            rtc_cal_sel_t cal_sel = 0;
+            if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
                 rtc_clk_32k_enable(true);
-            } else if (slow_clk == SLOW_CLK_32K_EXT_OSC) {
+                cal_sel = RTC_CAL_32K_XTAL;
+            } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
                 rtc_clk_32k_enable_external();
+                cal_sel = RTC_CAL_32K_OSC_SLOW;
             }
             // When SLOW_CLK_CAL_CYCLES is set to 0, clock calibration will not be performed at startup.
             if (SLOW_CLK_CAL_CYCLES > 0) {
-                cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
-                if (cal_val == 0 || cal_val < MIN_32K_XTAL_CAL_VAL) {
+                cal_val = rtc_clk_cal(cal_sel, SLOW_CLK_CAL_CYCLES);
+                if (cal_val == 0) {
                     if (retry_32k_xtal-- > 0) {
                         continue;
                     }
-                    ESP_EARLY_LOGW(TAG, "32 kHz XTAL not found, switching to internal 150 kHz oscillator");
+                    ESP_EARLY_LOGW(TAG, "32 kHz clock not found, switching to internal 150 kHz oscillator");
                     rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
                 }
             }
-        } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
-            rtc_clk_8m_enable(true, true);
+        } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
+            rtc_clk_rc32k_enable(true);
         }
         rtc_clk_slow_src_set(rtc_slow_clk_src);
 
@@ -188,12 +163,11 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     } while (cal_val == 0);
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);
     esp_clk_slowclk_cal_set(cal_val);
-#endif
 }
 
 void rtc_clk_select_rtc_slow_clk(void)
 {
-    select_rtc_slow_clk(SLOW_CLK_32K_XTAL);
+    select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
 }
 
 /* This function is not exposed as an API at this point.

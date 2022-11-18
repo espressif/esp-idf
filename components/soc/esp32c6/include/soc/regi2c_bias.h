@@ -11,7 +11,7 @@
  * @brief Register definitions for bias
  *
  * This file lists register fields of BIAS. These definitions are used via macros defined in regi2c_ctrl.h, by
- * bootloader_hardware_init function in bootloader_esp32c3.c.
+ * bootloader_hardware_init function in bootloader_esp32c6.c.
  */
 
 #define I2C_BIAS            0X6A
