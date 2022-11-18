@@ -30,7 +30,7 @@ typedef enum {
  * @brief I2S controller communication mode
  */
 typedef enum {
-    I2S_COMM_MODE_STD,              /*!< I2S controller using standard communication mode, support philip/MSB/PCM format */
+    I2S_COMM_MODE_STD,              /*!< I2S controller using standard communication mode, support philips/MSB/PCM format */
 #if SOC_I2S_SUPPORTS_PDM
     I2S_COMM_MODE_PDM,              /*!< I2S controller using PDM communication mode, support PDM output or input */
 #endif

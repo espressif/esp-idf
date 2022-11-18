@@ -355,9 +355,9 @@ LCD
 
     - I2S communication modes are extracted into three modes.
 
-        1. **Standard mode**: Standard mode always has two slots, it can support Philip, MSB and PCM(short sync) format, please refer to :component_file:`driver/include/driver/i2s_std.h` for details;
+        1. **Standard mode**: Standard mode always has two slots, it can support Philips, MSB and PCM(short sync) format, please refer to :component_file:`driver/include/driver/i2s_std.h` for details;
         2. **PDM mode**: PDM mode only support two slots with 16 bits data width, but the configurations of PDM TX and PDM RX are little bit different. For PDM TX, the sample rate can be set by :cpp:member:`i2s_pdm_tx_clk_config_t::sample_rate`, and its clock frequency is depended on the up-sampling configuration. For PDM RX, the sample rate can be set by :cpp:member:`i2s_pdm_rx_clk_config_t::sample_rate`, and its clock frequency is depended on the down-sampling configuration. Please refer to :component_file:`driver/include/driver/i2s_pdm.h` for details;
-        3. **TDM mode**: TDM mode can support upto 16 slots. It can work in Philip, MSB, PCM(short sync) and PCM(long sync) format, please refer to :component_file:`driver/include/driver/i2s_tdm.h` for details;
+        3. **TDM mode**: TDM mode can support upto 16 slots. It can work in Philips, MSB, PCM(short sync) and PCM(long sync) format, please refer to :component_file:`driver/include/driver/i2s_tdm.h` for details;
         4. When allocating a new channel in a specific mode, must initialize this channel by corresponding function. It is strongly recommended to use the helper macros to generate the default configurations, in case the default values will be changed one day.
 
     - States and state-machine are adopted in the new I2S driver to avoid APIs called in wrong state.
