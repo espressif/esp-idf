@@ -272,7 +272,7 @@ const tBTA_AG_ST_TBL bta_ag_st_tbl[] =
 /*****************************************************************************
 ** Global data
 *****************************************************************************/
-const uint16_t bta_ag_version = HFP_VERSION_1_7;
+const uint16_t bta_ag_version = HFP_VERSION_1_8;
 /* AG control block */
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_AG_CB  bta_ag_cb;
