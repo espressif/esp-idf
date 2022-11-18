@@ -254,6 +254,12 @@ static void btc_hd_deinit(void)
             break;
         }
 
+        if (btc_hd_cb.status == BTC_HD_DISABLING) {
+            BTC_TRACE_ERROR("%s is disabling, try later!", __func__);
+            ret = ESP_HIDD_BUSY;
+            break;
+        }
+
         btc_hd_cb.service_dereg_active = FALSE;
         btc_hd_cb.status = BTC_HD_DISABLING;
         // unresgister app will also relase the connection
@@ -411,6 +417,13 @@ static void btc_hd_connect(BD_ADDR bd_addr)
             ret = ESP_HIDD_NEED_REG;
             break;
         }
+
+        if (btc_hd_cb.status == BTC_HD_CONNECTED) {
+            BTC_TRACE_ERROR("%s: already connect to the other HID host!", __func__);
+            ret = ESP_HIDD_NO_RES;
+            break;
+        }
+
         BTA_HdConnect(bd_addr);
     } while (0);
 
@@ -448,6 +461,13 @@ static void btc_hd_disconnect(void)
             ret = ESP_HIDD_NEED_REG;
             break;
         }
+
+        if (btc_hd_cb.status != BTC_HD_CONNECTED) {
+            BTC_TRACE_ERROR("%s: already disconnected!", __func__);
+            ret = ESP_HIDD_NO_CONNECTION;
+            break;
+        }
+
         BTA_HdDisconnect();
     } while (0);
 
@@ -721,6 +741,7 @@ void btc_hd_cb_handler(btc_msg_t *msg)
             //     break;
             // }
             // btc_storage_set_hidd((bt_bdaddr_t *)&p_data->conn.bda);
+            btc_hd_cb.status = BTC_HD_CONNECTED;
         }
         param.open.status = p_data->conn.status;
         param.open.conn_status = p_data->conn.conn_status;
@@ -736,6 +757,11 @@ void btc_hd_cb_handler(btc_msg_t *msg)
             btc_hd_cb.forced_disc = FALSE;
             break;
         }
+
+        if (btc_hd_cb.status == BTC_HD_CONNECTED) {
+            btc_hd_cb.status = BTC_HD_ENABLED;
+        }
+
         param.close.status = p_data->conn.status;
         param.close.conn_status = p_data->conn.conn_status;
         btc_hd_cb_to_app(ESP_HIDD_CLOSE_EVT, &param);
@@ -782,9 +808,14 @@ void btc_hd_cb_handler(btc_msg_t *msg)
             BTC_TRACE_DEBUG("%s: Only removing HID data as some other profiles connected", __func__);
             btc_hd_remove_device(*bd_addr);
         }
-        param.close.status = p_data->conn.status;
-        param.close.conn_status = p_data->conn.conn_status;
-        btc_hd_cb_to_app(ESP_HIDD_CLOSE_EVT, &param);
+
+        if (btc_hd_cb.status == BTC_HD_CONNECTED) {
+            btc_hd_cb.status = BTC_HD_ENABLED;
+            param.close.status = p_data->conn.status;
+            param.close.conn_status = p_data->conn.conn_status;
+            btc_hd_cb_to_app(ESP_HIDD_CLOSE_EVT, &param);
+        }
+
         param.vc_unplug.status = p_data->conn.status;
         param.vc_unplug.conn_status = p_data->conn.conn_status;
         btc_hd_cb_to_app(ESP_HIDD_VC_UNPLUG_EVT, &param);
