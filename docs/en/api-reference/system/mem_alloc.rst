@@ -105,12 +105,13 @@ Use the ``MALLOC_CAP_DMA`` flag to allocate memory which is suitable for use wit
 32-Bit Accessible Memory
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-If a certain memory structure is only addressed in 32-bit units, for example an array of ints or pointers, it can be
-useful to allocate it with the ``MALLOC_CAP_32BIT`` flag. This also allows the allocator to give out IRAM memory; something
-which it can't do for a normal malloc() call. This can help to use all the available memory in the {IDF_TARGET_NAME}.
+If a certain memory structure is only addressed in 32-bit units, for example an array of ints or pointers, it can be useful to allocate it with the ``MALLOC_CAP_32BIT`` flag. This also allows the allocator to give out IRAM memory; something which it can't do for a normal malloc() call. This can help to use all the available memory in the {IDF_TARGET_NAME}.
 
-Memory allocated with ``MALLOC_CAP_32BIT`` can *only* be accessed via 32-bit reads and writes, any other type of access will
-generate a fatal LoadStoreError exception.
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA and SOC_CPU_HAS_FPU
+
+    Please note that on {IDF_TARGET_NAME} series chips, ``MALLOC_CAP_32BIT`` cannot be used for storing floating-point variables. This is because ``MALLOC_CAP_32BIT`` may return instruction RAM, and the floating-point assembly instructions on {IDF_TARGET_NAME} cannot access instruction RAM.
+
+Memory allocated with ``MALLOC_CAP_32BIT`` can *only* be accessed via 32-bit reads and writes, any other type of access will generate a fatal LoadStoreError exception.
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
