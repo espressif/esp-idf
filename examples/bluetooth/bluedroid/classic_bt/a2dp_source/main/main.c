@@ -357,7 +357,7 @@ static int32_t bt_app_a2d_data_cb(uint8_t *data, int32_t len)
         return 0;
     }
 
-    int *p_buf = (int *)data;
+    int16_t *p_buf = (int16_t *)data;
     for (int i = 0; i < (len >> 1); i++) {
         p_buf[i] = rand() % (1 << 16);
     }
