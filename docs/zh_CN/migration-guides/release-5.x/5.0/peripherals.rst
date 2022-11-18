@@ -88,12 +88,12 @@ GPIO
     ---------------------------------
 
     Sigma-Delta 调制器的驱动现已更新为 :doc:`SDM <../../../api-reference/peripherals/sdm>`。
-    
+
     - 新驱动中实现了工厂模式，SDM 通道都位于内部通道池中，因此用户无需手动将 SDM 通道配置到 GPIO 管脚。
     - SDM 通道会被自动分配。
-    
+
     尽管我们推荐用户使用新的驱动 API，旧版驱动仍然可用，位于头文件引用路径 ``driver/sigmadelta.h`` 中。但是，引用 ``driver/sigmadelta.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_SDM_SUPPRESS_DEPRECATE_WARN` 关闭该警告。
-    
+
     .. code-block:: text
 
         The legacy sigma-delta driver is deprecated, please use driver/sdm.h
@@ -150,7 +150,7 @@ UART
 ------------
 
 .. list-table::
-    :width: 700 px 
+    :width: 700 px
     :header-rows: 1
 
     * - 删除/弃用项目
@@ -162,11 +162,11 @@ UART
     * - ``uart_isr_free()``
       - 无
       - 更新后，UART 中断由驱动处理。
-    * - :cpp:type:`uart_config_t` 中的 ``use_ref_tick`` 
+    * - :cpp:type:`uart_config_t` 中的 ``use_ref_tick``
       - :cpp:member:`uart_config_t::source_clk`
       - 选择时钟源。
     * - ``uart_enable_pattern_det_intr()``
-      - :cpp:func:`uart_enable_pattern_det_baud_intr` 
+      - :cpp:func:`uart_enable_pattern_det_baud_intr`
       - 使能模式检测中断。
 
 I2C
@@ -182,7 +182,7 @@ I2C
     * - ``i2c_isr_register()``
       - 无
       - 更新后，I2C 中断由驱动处理。
-    * - ``i2c_isr_register()`` 
+    * - ``i2c_isr_register()``
       - 无
       - 更新后，I2C 中断由驱动处理。
     * - ``i2c_opmode_t``
@@ -192,7 +192,7 @@ I2C
 SPI
 ---
 
-.. list-table:: 
+.. list-table::
     :width: 700 px
     :header-rows: 1
 
@@ -200,7 +200,7 @@ SPI
       - 替代
       - 备注
     * - ``spi_cal_clock()``
-      - :cpp:func:`spi_get_actual_clock` 
+      - :cpp:func:`spi_get_actual_clock`
       - 获取 SPI 真实的工作频率。
 
 - 内部头文件 ``spi_common_internal.h`` 已被移至 ``esp_private/spi_common_internal.h``。
@@ -211,7 +211,7 @@ SPI
     -----
 
     .. list-table::
-        :width: 700 px 
+        :width: 700 px
         :header-rows: 1
 
         * - 删除/弃用项目
@@ -239,14 +239,14 @@ LEDC
 
     脉冲计数器 (PCNT) 驱动
     ----------------------------------
-    
+
     为统一和简化 PCNT 外设，PCNT 驱动已更新，详见 :doc:`PCNT <../../../api-reference/peripherals/pcnt>`。
-    
+
     尽管我们推荐使用新的驱动 API，旧版驱动仍然可用，保留在头文件引用路径 ``driver/pcnt.h`` 中。但是，引用路径 ``driver/pcnt.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
 
     .. code-block:: text
 
-        legacy pcnt driver is deprecated, please migrate to use driver/pulse_cnt.h 
+        legacy pcnt driver is deprecated, please migrate to use driver/pulse_cnt.h
 
     主要概念和使用方法上的更新如下所示：
 
@@ -261,7 +261,7 @@ LEDC
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     - 更新前，PCNT 的单元配置和通道配置都通过函数 ``pcnt_unit_config`` 实现。更新后，PCNT 的单元配置通过工厂 API :cpp:func:`pcnt_new_unit` 完成，通道配置通过工厂 API :cpp:func:`pcnt_new_channel` 完成。
-    
+
         - 只需配置计数范围即可初始化一个 PCNT 单元。更新后，GPIO 管脚分配通过 :cpp:func:`pcnt_new_channel` 完成。
         - 高/低电平控制模式和上升沿/下降沿计数模式分别通过函数 :cpp:func:`pcnt_channel_set_edge_action` 和 :cpp:func:`pcnt_channel_set_level_action` 进行设置。
 
@@ -276,7 +276,7 @@ LEDC
     - 更新后， ``pcnt_isr_register`` 与 ``pcnt_isr_unregister`` 已被删除，不允许注册 ISR 句柄。 用户可以通过调用:cpp:func:`pcnt_unit_register_event_callbacks` 来注册事件回调函数。
     - 更新后， ``pcnt_set_pin`` 已被删除，新的驱动不再允许在运行时切换 GPIO 管脚。如果用户想切换为其他 GPIO 管脚，可通过:cpp:func:`pcnt_del_channel` 删除当前的 PCNT 通道，然后通过:cpp:func:`pcnt_new_channel` 安装新的 GPIO 管脚。
     - ``pcnt_filter_enable``， ``pcnt_filter_disable`` 与 ``pcnt_set_filter_value`` 更新为 :cpp:func:`pcnt_unit_set_glitch_filter`。同时， ``pcnt_get_filter_value`` 已被删除。
-    - ``pcnt_set_mode`` 更新为 :cpp:func:`pcnt_channel_set_edge_action` 与 :cpp:func:`pcnt_channel_set_level_action`。   
+    - ``pcnt_set_mode`` 更新为 :cpp:func:`pcnt_channel_set_edge_action` 与 :cpp:func:`pcnt_channel_set_level_action`。
     - ``pcnt_isr_service_install``， ``pcnt_isr_service_uninstall``， ``pcnt_isr_handler_add`` 与 ``pcnt_isr_handler_remove`` 更新为 :cpp:func:`pcnt_unit_register_event_callbacks`。默认的 ISR 句柄已安装在新的驱动中。
 
 .. only:: SOC_TEMP_SENSOR_SUPPORTED
@@ -302,9 +302,9 @@ LEDC
     ----------------------
 
     为统一和扩展 RMT 外设的使用，RMT 驱动已更新，详见 :doc:`RMT transceiver <../../../api-reference/peripherals/rmt>`。
-    
+
     尽管我们建议使用新的驱动 API，旧版驱动仍然可用，保留在头文件引用路径 ``driver/rmt.h``中。但是，引用路径 ``driver/rmt.h`` 会默认触发如下编译警告，可通过配置 Kconfig 选项 :ref:`CONFIG_RMT_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
-    
+
     .. code-block:: text
 
         The legacy RMT driver is deprecated, please use driver/rmt_tx.h and/or driver/rmt_rx.h
@@ -377,9 +377,9 @@ LCD
     -----
 
     MCPWM 驱动已更新（详见 :doc:`MCPWM <../../../api-reference/peripherals/mcpwm>`）。同时，旧版驱动已被弃用。
-    
+
     新驱动中，每个 MCPWM 子模块相互独立，用户可以自由进行资源连接。
-    
+
     尽管我们推荐使用新的驱动 API，旧版驱动仍然可用，其引用路径为 ``driver/mcpwm.h``。但是，使用旧版驱动会默认触发如下编译警告，可以通过配置 Kconfig 选项 :ref:`CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN` 来关闭该警告。
 
     .. code-block:: text
@@ -454,10 +454,10 @@ LCD
     I2S 驱动
     -----------------------
 
-    旧版 I2S 驱动在支持 ESP32-C3 和 ESP32-S3 新功能时暴露了很多缺点，为解决这些缺点，I2S 驱动已更新（请参考:doc:`I2S Driver <../../../api-reference/peripherals/i2s>`）。用户可以通过引用不同 I2S 模式对应的头文件来使用新版驱动的 API，如 :component_file:`driver/include/driver/i2s_std.h`， :component_file:`driver/include/driver/i2s_pdm.h` 以及 :component_file:`driver/include/driver/i2s_tdm.h`。 
-    
+    旧版 I2S 驱动在支持 ESP32-C3 和 ESP32-S3 新功能时暴露了很多缺点，为解决这些缺点，I2S 驱动已更新（请参考:doc:`I2S Driver <../../../api-reference/peripherals/i2s>`）。用户可以通过引用不同 I2S 模式对应的头文件来使用新版驱动的 API，如 :component_file:`driver/include/driver/i2s_std.h`， :component_file:`driver/include/driver/i2s_pdm.h` 以及 :component_file:`driver/include/driver/i2s_tdm.h`。
+
     为保证前向兼容，旧版驱动的 API 仍然在 :component_file:`driver/deprecated/driver/i2s.h` 中可用。但使用旧版 API 会触发编译警告，该警告可通过配置 Kconfig 选项 :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN` 来关闭。
-    
+
     以下是更新后的 I2S 文件概况。
 
     .. figure:: ../../../../_static/diagrams/i2s/i2s_file_structure.png
@@ -484,9 +484,9 @@ LCD
 
     I2S 通信模式包括以下三种模式，请注意：
 
-    - **标准模式**：标准模式通常包括两个声道，支持 Philip，MSB 和 PCM（短帧同步）格式，详见 :component_file:`driver/include/driver/i2s_std.h`。
+    - **标准模式**：标准模式通常包括两个声道，支持 Philips，MSB 和 PCM（短帧同步）格式，详见 :component_file:`driver/include/driver/i2s_std.h`。
     - **PDM模式**：PDM 模式仅支持两个声道，16 bit 数据位宽，但是 PDM TX 和 PDM RX 的配置略有不同。对于 PDM TX，采样率可通过 :cpp:member:`i2s_pdm_tx_clk_config_t::sample_rate` 进行设置，其时钟频率取决于上采样的配置。对于 PDM RX，采样率可通过 :cpp:member:`i2s_pdm_rx_clk_config_t::sample_rate` 进行设置，其时钟频率取决于下采样的配置，详见 :component_file:`driver/include/driver/i2s_pdm.h`。
-    - **TDM 模式**：TDM 模式可支持高达 16 声道，该模式可工作在 Philip，MSB，PCM（短帧同步）和PCM（长帧同步）格式下，详见 :component_file:`driver/include/driver/i2s_tdm.h`。
+    - **TDM 模式**：TDM 模式可支持高达 16 声道，该模式可工作在 Philips，MSB，PCM（短帧同步）和PCM（长帧同步）格式下，详见 :component_file:`driver/include/driver/i2s_tdm.h`。
 
     在某个模式下分配新通道时，必须通过相应的函数初始化这个通道。我们强烈建议使用辅助宏来生成默认配置，以避免默认值被改动。
 
@@ -502,7 +502,7 @@ LCD
 
     Misc
     """"
-    
+
     - 更新后，I2S 驱动利用状态和状态机避免在错误状态下调用 API。
     - 更新后，ADC 和 DAC 模式已被删除，只有它们各自专用的驱动及 I2S 旧版驱动还支持这两种模式。
 
@@ -515,11 +515,11 @@ LCD
     2. 通过调用 :func:`i2s_channel_init_std_mode`， :func:`i2s_channel_init_pdm_rx_mode`， :func:`i2s_channel_init_pdm_tx_mode` 或 :func:`i2s_channel_init_tdm_mode` 将通道初始化为指定模式。进行相应的声道、时钟和 GPIO 管脚配置。
     3. （可选）通过调用 :cpp:func:`i2s_channel_register_event_callback` 注册 ISR 事件回调函数。I2S 事件由回调函数同步接收，而不是从事件队列中异步接收。
     4. 通过调用 :cpp:func:`i2s_channel_enable` 来开启 I2S 通道的硬件资源。在更新后的驱动中，I2S 在安装后不会再自动开启，用户需要确定通道是否已经开启。
-    5. 分别通过 :cpp:func:`i2s_channel_read` 和 :cpp:func:`i2s_channel_write` 来读取和写入数据。当然，在 :cpp:func:`i2s_channel_read` 中只能输入接收通道句柄，在 :cpp:func:`i2s_channel_write` 中只能输入发送通道句柄。   
+    5. 分别通过 :cpp:func:`i2s_channel_read` 和 :cpp:func:`i2s_channel_write` 来读取和写入数据。当然，在 :cpp:func:`i2s_channel_read` 中只能输入接收通道句柄，在 :cpp:func:`i2s_channel_write` 中只能输入发送通道句柄。
     6. （可选）通过相应的 'reconfig' 函数可以更改声道、时钟和 GPIO 管脚配置，但是更改配置前必须调用 :cpp:func:`i2s_channel_disable`。
     7. 通过调用 :cpp:func:`i2s_channel_disable` 可以停止使用 I2S 通道的硬件资源。
     8. 不再使用某通道时，通过调用 :cpp:func:`i2s_del_channel` 可以删除和释放该通道资源，但是删除之前必须先停用该通道。
-    
+
 用于访问寄存器的宏
 ---------------------------------------------
 

@@ -90,7 +90,7 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
     /* Configure channels to TDM mode */
     i2s_tdm_config_t i2s_tdm_config = {
         .clk_cfg = I2S_TDM_CLK_DEFAULT_CONFIG(sample_rate),
-        .slot_cfg = I2S_TDM_PHILIP_SLOT_DEFAULT_CONFIG(bit_width, I2S_SLOT_MODE_STEREO, slot_mask),
+        .slot_cfg = I2S_TDM_PHILIPS_SLOT_DEFAULT_CONFIG(bit_width, I2S_SLOT_MODE_STEREO, slot_mask),
         .gpio_cfg = {
             .mclk = GPIO_NUM_NC,
             .bclk = TEST_I2S_BCK_IO,
@@ -197,7 +197,7 @@ static void test_i2s_tdm_slave(uint32_t sample_rate, i2s_data_bit_width_t bit_wi
     /* Configure channels to TDM mode */
     i2s_tdm_config_t i2s_tdm_config = {
         .clk_cfg = I2S_TDM_CLK_DEFAULT_CONFIG(sample_rate),
-        .slot_cfg = I2S_TDM_PHILIP_SLOT_DEFAULT_CONFIG(bit_width, I2S_SLOT_MODE_STEREO, slot_mask),
+        .slot_cfg = I2S_TDM_PHILIPS_SLOT_DEFAULT_CONFIG(bit_width, I2S_SLOT_MODE_STEREO, slot_mask),
         .gpio_cfg = {
             .mclk = GPIO_NUM_NC,
             .bclk = TEST_I2S_BCK_IO,
