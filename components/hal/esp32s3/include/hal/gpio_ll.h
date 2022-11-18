@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
 #include "soc/rtc_cntl_reg.h"
@@ -56,9 +57,10 @@ static inline void gpio_ll_pullup_en(gpio_dev_t *hw, gpio_num_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    REG_CLR_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PU);
+    REG_CLR_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PU);
 }
 
 /**
@@ -78,9 +80,10 @@ static inline void gpio_ll_pulldown_en(gpio_dev_t *hw, gpio_num_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_pulldown_dis(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    REG_CLR_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PD);
+    REG_CLR_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PD);
 }
 
 /**
@@ -175,9 +178,10 @@ static inline void gpio_ll_intr_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_input_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[gpio_num]);
+    PIN_INPUT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
 }
 
 /**
@@ -197,6 +201,7 @@ static inline void gpio_ll_input_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_output_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     if (gpio_num < 32) {
@@ -245,6 +250,18 @@ static inline void gpio_ll_od_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 static inline void gpio_ll_od_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     hw->pin[gpio_num].pad_driver = 1;
+}
+
+/**
+ * @brief  Select a function for the pin in the IOMUX
+ *
+ * @param  hw Peripheral GPIO hardware instance address.
+ * @param  gpio_num GPIO number
+ * @param  func Function to assign to the pin
+ */
+static inline __attribute__((always_inline)) void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t func)
+{
+    PIN_FUNC_SELECT(IO_MUX_GPIO0_REG + (gpio_num * 4), func);
 }
 
 /**
@@ -347,6 +364,7 @@ static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, gpio_num_t gpio_
   */
 static inline void gpio_ll_deep_sleep_hold_en(gpio_dev_t *hw)
 {
+    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
 }
 
@@ -357,7 +375,22 @@ static inline void gpio_ll_deep_sleep_hold_en(gpio_dev_t *hw)
   */
 static inline void gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
 {
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CLR_DG_PAD_AUTOHOLD);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
+}
+
+/**
+ * @brief  Get deep sleep hold status
+ *
+ * @param  hw Peripheral GPIO hardware instance address.
+ *
+ * @return
+ *     - true  deep sleep hold is enabled
+ *     - false deep sleep hold is disabled
+ */
+__attribute__((always_inline))
+static inline bool gpio_ll_deep_sleep_hold_is_en(gpio_dev_t *hw)
+{
+    return !GET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD) && GET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
 }
 
 /**
@@ -380,6 +413,24 @@ static inline void gpio_ll_hold_en(gpio_dev_t *hw, gpio_num_t gpio_num)
 static inline void gpio_ll_hold_dis(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
+}
+
+/**
+  * @brief Get gpio pad hold status.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number, only support output GPIOs
+  *
+  * @note caller must ensure that gpio_num is a digital io pad
+  *
+  * @return
+  *     - true  digital gpio pad is held
+  *     - false digital gpio pad is unheld
+  */
+__attribute__((always_inline))
+static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    return GET_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, BIT(gpio_num - 21));
 }
 
 /**

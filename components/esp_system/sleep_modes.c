@@ -27,6 +27,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/soc_caps.h"
+#include "soc/soc_memory_layout.h"
 #include "regi2c_ctrl.h"
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
@@ -40,6 +41,7 @@
 #include "hal/wdt_hal.h"
 #include "hal/rtc_hal.h"
 #include "hal/uart_hal.h"
+#include "hal/gpio_hal.h"
 #if SOC_TOUCH_SENSOR_NUM > 0
 #include "hal/touch_sensor_hal.h"
 #include "driver/touch_sensor.h"
@@ -461,6 +463,44 @@ void esp_sleep_enable_gpio_switch(bool enable)
 }
 #endif // SOC_GPIO_SUPPORT_SLP_SWITCH
 
+static IRAM_ATTR void esp_sleep_isolate_digital_gpio(void)
+{
+    gpio_hal_context_t gpio_hal = {
+        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
+    };
+
+    /* no need to do isolate if digital IOs are not being held in deep sleep */
+    if (!gpio_hal_deep_sleep_hold_is_en(&gpio_hal)) {
+        return;
+    }
+
+    /**
+     * there is a situation where we cannot isolate digital IO before deep sleep:
+     * - task stack is located in external ram(mspi ram), since we will isolate mspi io
+     *
+     * assert here instead of returning directly, because if digital IO is not isolated,
+     * the bottom current of deep sleep will be higher than light sleep, and there is no
+     * reason to use deep sleep at this time.
+     */
+    assert(esp_ptr_internal(&gpio_hal) && "If hold digital IO, the stack of the task calling esp_deep_sleep_start must be in internal ram!");
+
+    /* isolate digital IO that is not held(keep the configuration of digital IOs held by users) */
+    for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
+        if (GPIO_IS_VALID_DIGITAL_IO_PAD(gpio_num) && !gpio_hal_is_digital_io_hold(&gpio_hal, gpio_num)) {
+            /* disable I/O */
+            gpio_hal_input_disable(&gpio_hal, gpio_num);
+            gpio_hal_output_disable(&gpio_hal, gpio_num);
+
+            /* disable pull up/down */
+            gpio_hal_pullup_dis(&gpio_hal, gpio_num);
+            gpio_hal_pulldown_dis(&gpio_hal, gpio_num);
+
+            /* make pad work as gpio(otherwise, deep sleep bottom current will rise) */
+            gpio_hal_func_sel(&gpio_hal, gpio_num, PIN_FUNC_GPIO);
+        }
+    }
+}
+
 inline static void IRAM_ATTR misc_modules_sleep_prepare(void)
 {
 #if CONFIG_MAC_BB_PD
@@ -620,6 +660,8 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
          * see the assert at top of this function.
          */
         portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
+
+        esp_sleep_isolate_digital_gpio();
 
 #if !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         /* If not possible stack is in RTC FAST memory, use the ROM function to calculate the CRC and save ~140 bytes IRAM */
