@@ -422,13 +422,28 @@ extern void bta_hd_report_error_act(tBTA_HD_DATA *p_data)
 extern void bta_hd_vc_unplug_act(UNUSED_ATTR tBTA_HD_DATA *p_data)
 {
     tHID_STATUS ret;
+    tBTA_HD cback_data = {0};
+    BD_ADDR plugged_addr = {0};
 
     APPL_TRACE_API("%s", __func__);
 
     bta_hd_cb.vc_unplug = TRUE;
     ret = HID_DevVirtualCableUnplug();
 
-    if (ret != HID_SUCCESS) {
+    if (ret == HID_ERR_NO_CONNECTION) {
+        /* This is a local VUP without connection, set the vc_unplug to FALSE */
+        bta_hd_cb.vc_unplug = FALSE;
+        APPL_TRACE_WARNING("%s: HID_DevVirtualCableUnplug returned %d", __func__, ret);
+        if (HID_DevGetDevice(&plugged_addr) == HID_SUCCESS) {
+            HID_DevUnplugDevice(plugged_addr);
+        }
+        APPL_TRACE_DEBUG("%s local VUP, remove bda: %02x:%02x:%02x:%02x:%02x:%02x", __func__, plugged_addr[0],
+                         plugged_addr[1], plugged_addr[2], plugged_addr[3], plugged_addr[4], plugged_addr[5]);
+        cback_data.conn.status = BTA_HD_OK;
+        cback_data.conn.conn_status = BTA_HD_CONN_STATE_DISCONNECTED;
+        bta_hd_cb.p_cback(BTA_HD_VC_UNPLUG_EVT, &cback_data);
+        return;
+    } else if (ret != HID_SUCCESS) {
         APPL_TRACE_WARNING("%s: HID_DevVirtualCableUnplug returned %d", __func__, ret);
     }
 
