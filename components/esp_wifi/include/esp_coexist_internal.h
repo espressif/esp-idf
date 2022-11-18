@@ -217,6 +217,22 @@ int coex_schm_curr_phase_idx_get(void);
 int coex_register_start_cb(int (* cb)(void));
 
 /**
+ * @brief Restart current coexistence scheme.
+ *
+ *  @return : 0 - success, other - failed
+ */
+int coex_schm_process_restart(void);
+
+/**
+ * @brief Register callback for coexistence scheme.
+ *
+ *  @param type : callback type
+ *  @param callback : callback
+ *  @return : 0 - success, other - failed
+ */
+int coex_schm_register_callback(int type, void *callback);
+
+/**
  * @brief Register coexistence adapter functions.
  *
  *  @param funcs : coexistence adapter functions

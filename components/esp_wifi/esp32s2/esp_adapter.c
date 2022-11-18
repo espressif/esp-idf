@@ -694,28 +694,28 @@ static void * coex_schm_curr_phase_get_wrapper(void)
 #endif
 }
 
-static int coex_schm_curr_phase_idx_set_wrapper(int idx)
-{
-#if CONFIG_EXTERNAL_COEX_ENABLE
-    return coex_schm_curr_phase_idx_set(idx);
-#else
-    return 0;
-#endif
-}
-
-static int coex_schm_curr_phase_idx_get_wrapper(void)
-{
-#if CONFIG_EXTERNAL_COEX_ENABLE
-    return coex_schm_curr_phase_idx_get();
-#else
-    return 0;
-#endif
-}
-
 static int coex_register_start_cb_wrapper(int (* cb)(void))
 {
 #if CONFIG_SW_COEXIST_ENABLE
     return coex_register_start_cb(cb);
+#else
+    return 0;
+#endif
+}
+
+static int coex_schm_process_restart_wrapper(void)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_schm_process_restart();
+#else
+    return 0;
+#endif
+}
+
+static int coex_schm_register_cb_wrapper(int type, void(*cb)(int))
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_schm_register_callback(type, cb);
 #else
     return 0;
 #endif
@@ -847,9 +847,10 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_schm_interval_get = coex_schm_interval_get_wrapper,
     ._coex_schm_curr_period_get = coex_schm_curr_period_get_wrapper,
     ._coex_schm_curr_phase_get = coex_schm_curr_phase_get_wrapper,
-    ._coex_schm_curr_phase_idx_set = coex_schm_curr_phase_idx_set_wrapper,
-    ._coex_schm_curr_phase_idx_get = coex_schm_curr_phase_idx_get_wrapper,
     ._coex_register_start_cb = coex_register_start_cb_wrapper,
+    ._coex_schm_process_restart = coex_schm_process_restart_wrapper,
+    ._coex_schm_register_cb = coex_schm_register_cb_wrapper,
+
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
 };
 
@@ -866,5 +867,9 @@ coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._malloc_internal =  malloc_internal_wrapper,
     ._free = free,
     ._esp_timer_get_time = esp_timer_get_time,
+    ._timer_disarm = timer_disarm_wrapper,
+    ._timer_done = timer_done_wrapper,
+    ._timer_setfn = timer_setfn_wrapper,
+    ._timer_arm_us = timer_arm_us_wrapper,
     ._magic = COEX_ADAPTER_MAGIC,
 };
