@@ -58,6 +58,8 @@ PROVIDE ( PCR               = 0x60096000 );
 PROVIDE ( TEE               = 0x60098000 );
 PROVIDE ( HP_APM            = 0x60099000 );
 
+PROVIDE ( MODEM_LPCON   = 0x600AF000 );
+
 PROVIDE ( PMU           = 0x600B0000 );
 PROVIDE ( LP_CLKRST     = 0x600B0400 );
 PROVIDE ( EFUSE         = 0x600B0800 );

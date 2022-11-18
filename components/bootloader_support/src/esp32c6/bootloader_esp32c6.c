@@ -41,6 +41,7 @@
 #include "hal/cache_hal.h"
 #include "soc/lp_wdt_reg.h"
 #include "hal/efuse_hal.h"
+#include "modem/modem_lpcon_reg.h"
 
 static const char *TAG = "boot.esp32c6";
 
@@ -225,13 +226,9 @@ static void bootloader_super_wdt_auto_feed(void)
 
 static inline void bootloader_hardware_init(void)
 {
-    // TODO: IDF-5990 copied from C3, need update
-    // This check is always included in the bootloader so it can
-    // print the minimum revision error message later in the boot
-    if (efuse_hal_get_minor_chip_version() < 3) {
-        REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_XPD_IPH, 1);
-        REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 12);
-    }
+    // TODO: IDF-5990 need update, enable i2c mst clk by force on temporarily
+    SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
+    SET_PERI_REG_MASK(MODEM_LPCON_I2C_MST_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_SEL_160M);
 }
 
 static inline void bootloader_ana_reset_config(void)
