@@ -102,6 +102,7 @@ function(__build_set_default_build_specifications)
                                     "-Werror=all"
                                     "-Wno-error=unused-function"
                                     "-Wno-error=unused-variable"
+                                    "-Wno-error=unused-but-set-variable"
                                     "-Wno-error=deprecated-declarations"
                                     "-Wextra"
                                     "-Wno-unused-parameter"

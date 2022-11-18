@@ -512,7 +512,7 @@ static xt_handler set_isr_hlevel_wrapper(int mask, xt_handler f, void *arg)
 static void IRAM_ATTR interrupt_hlevel_disable(void)
 {
     assert(xPortGetCoreID() == CONFIG_BTDM_CTRL_PINNED_TO_CORE);
-    assert(hli_cb.nested != ~0);
+    assert(hli_cb.nested != UCHAR_MAX);
     uint32_t status = hli_intr_disable();
     if (hli_cb.nested++ == 0) {
         hli_cb.status = status;

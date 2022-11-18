@@ -898,14 +898,14 @@ tBTM_STATUS BTM_EnableTestMode(void)
     }
 
     /* put device to connectable mode */
-    if (!BTM_SetConnectability(BTM_CONNECTABLE, BTM_DEFAULT_CONN_WINDOW,
-                               BTM_DEFAULT_CONN_INTERVAL) == BTM_SUCCESS) {
+    if (BTM_SetConnectability(BTM_CONNECTABLE, BTM_DEFAULT_CONN_WINDOW,
+                               BTM_DEFAULT_CONN_INTERVAL) != BTM_SUCCESS) {
         return BTM_NO_RESOURCES;
     }
 
     /* put device to discoverable mode */
-    if (!BTM_SetDiscoverability(BTM_GENERAL_DISCOVERABLE, BTM_DEFAULT_DISC_WINDOW,
-                                BTM_DEFAULT_DISC_INTERVAL) == BTM_SUCCESS) {
+    if (BTM_SetDiscoverability(BTM_GENERAL_DISCOVERABLE, BTM_DEFAULT_DISC_WINDOW,
+                                BTM_DEFAULT_DISC_INTERVAL) != BTM_SUCCESS) {
         return BTM_NO_RESOURCES;
     }
 

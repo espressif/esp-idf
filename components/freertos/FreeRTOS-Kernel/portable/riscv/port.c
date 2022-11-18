@@ -205,6 +205,17 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, u
  */
 static void __attribute__((optimize("O1"), naked)) vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 {
+#ifdef __clang__
+    // clang generates error "error: non-ASM statement in naked function is not supported"
+    // The reason for it is described at
+    // https://stackoverflow.com/questions/47316611/clang-error-non-asm-statement-in-naked-function-is-not-supported.
+    // GCC docs say that there is no guarantee that non-ASM statement in naked function will work:
+    // "Only basic asm statements can safely be included in naked functions (see Basic Asm).
+    //  While using extended asm or a mixture of basic asm and C code may appear to work, they cannot be
+    //  depended upon to work reliably and are not supported."
+    // TODO: IDF-6347
+    #error CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER not supported yet when building with Clang!
+#else
     asm volatile(".cfi_undefined ra\n");
     extern void __attribute__((noreturn)) panic_abort(const char *details);
     static char DRAM_ATTR msg[80] = "FreeRTOS: FreeRTOS Task \"\0";
@@ -215,6 +226,7 @@ static void __attribute__((optimize("O1"), naked)) vPortTaskWrapper(TaskFunction
     strcat(msg, pcTaskName);
     strcat(msg, "\" should not return, Aborting now!");
     panic_abort(msg);
+#endif
 }
 #endif // CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
 

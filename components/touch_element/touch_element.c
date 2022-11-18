@@ -608,7 +608,7 @@ esp_err_t te_dev_set_threshold(te_dev_t *device)
         smo_val = te_read_smooth_signal(device->channel);
         ret = te_config_thresh(device->channel, device->sens * smo_val);
     }
-    ESP_LOGD(TE_DEBUG_TAG, "channel: %"PRIu8", smo_val: %"PRIu32, device->channel, smo_val);
+    ESP_LOGD(TE_DEBUG_TAG, "channel: %"PRIu8", smo_val: %"PRIu32, (uint8_t)device->channel, smo_val);
     return ret;
 }
 
@@ -906,14 +906,14 @@ static bool waterproof_channel_check(touch_pad_t channel_num)
     if (waterproof_shield_check_state()) {
         if (channel_num == waterproof_handle->shield_channel) {
             ESP_LOGE(TE_TAG, "TOUCH_PAD_NUM%"PRIu8" has been used for waterproof shield channel,"
-                     " please change the touch sensor channel or disable waterproof", channel_num);
+                     " please change the touch sensor channel or disable waterproof", (uint8_t)channel_num);
             return true;
         }
     }
     if (waterproof_guard_check_state()) {
         if (channel_num == waterproof_handle->guard_device->channel) {
             ESP_LOGE(TE_TAG, "TOUCH_PAD_NUM%"PRIu8" has been used for waterproof guard channel,"
-                     " please change the touch sensor channel or disable waterproof", channel_num);
+                     " please change the touch sensor channel or disable waterproof", (uint8_t)channel_num);
             return true;
         }
     }

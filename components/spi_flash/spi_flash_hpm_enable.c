@@ -59,12 +59,14 @@ extern uint32_t IRAM_ATTR bootloader_flash_read_sfdp(uint32_t sfdp_addr, unsigne
 static esp_err_t spi_flash_hpm_probe_chip_with_cmd(uint32_t flash_id)
 {
     esp_err_t ret = ESP_OK;
+    uint32_t gd_sfdp;
+
     switch (flash_id) {
     /* The flash listed here should enter the HPM with command 0xA3 */
     case 0xC84016:
     case 0xC84017:
         // Read BYTE4 in SFDP, 0 means C series, 6 means E series
-        uint32_t gd_sfdp = bootloader_flash_read_sfdp(0x4, 1);
+        gd_sfdp = bootloader_flash_read_sfdp(0x4, 1);
         if (gd_sfdp == 0x0) {
             break;
         } else {
@@ -125,6 +127,8 @@ static esp_err_t spi_flash_high_performance_check_hpf_bit_5(void)
 static esp_err_t spi_flash_hpm_probe_chip_with_dummy(uint32_t flash_id)
 {
     esp_err_t ret = ESP_OK;
+    uint32_t gd_sfdp;
+
     switch (flash_id) {
     /* The flash listed here should enter the HPM by adjusting dummy cycles */
     // XMC chips.
@@ -135,7 +139,7 @@ static esp_err_t spi_flash_hpm_probe_chip_with_dummy(uint32_t flash_id)
     case 0xC84017:
     case 0xC84018:
         // Read BYTE4 in SFDP, 0 means C series, 6 means E series
-        uint32_t gd_sfdp = bootloader_flash_read_sfdp(0x4, 1);
+        gd_sfdp = bootloader_flash_read_sfdp(0x4, 1);
         if (gd_sfdp == 0x6) {
             break;
         } else {

@@ -102,8 +102,19 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     # Disable Clang warnings for atomic operations with access size
     # more then 4 bytes
     list(APPEND compile_options "-Wno-atomic-alignment")
+    # several warnings in wpa_supplicant component
+    list(APPEND compile_options "-Wno-unused-but-set-variable")
     # Clang also produces many -Wunused-function warnings which GCC doesn't.
-    # However these aren't treated as errors.
+    list(APPEND compile_options "-Wno-unused-function")
+    # many warnings in bluedroid code
+    # warning: field 'hdr' with variable sized type 'BT_HDR' not at the end of a struct or class is a GNU extension
+    list(APPEND compile_options "-Wno-gnu-variable-sized-type-not-at-end")
+    # several warnings in bluedroid code
+    list(APPEND compile_options "-Wno-constant-logical-operand")
+    # warning: '_Static_assert' with no message is a C2x extension
+    list(APPEND compile_options "-Wno-c2x-extensions")
+    # warning on xMPU_SETTINGS for esp32s2 has size 0 for C and 1 for C++
+    list(APPEND compile_options "-Wno-extern-c-compat")
 endif()
 # More warnings may exist in unit tests and example projects.
 
@@ -171,7 +182,6 @@ endif()
 # GCC-specific options
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     list(APPEND compile_options "-fstrict-volatile-bitfields"
-                                "-Wno-error=unused-but-set-variable"
                                 )
 endif()
 
@@ -205,7 +215,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     list(APPEND compile_options "-fno-tree-switch-conversion")
 endif()
 
-if(CMAKE_C_COMPILER_ID MATCHES "LLVM")
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     list(APPEND compile_options "-fno-use-cxa-atexit")
 endif()
 

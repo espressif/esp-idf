@@ -116,7 +116,9 @@ esp_err_t esp_efuse_utility_burn_chip(void)
                 uint8_t block_rs[12];
                 efuse_hal_rs_calculate((void *)range_write_addr_blocks[num_block].start, block_rs);
 #pragma GCC diagnostic push
+#ifndef __clang__
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
 #pragma GCC diagnostic ignored "-Warray-bounds"
                 memcpy((void *)EFUSE_PGM_CHECK_VALUE0_REG, block_rs, sizeof(block_rs));
 #pragma GCC diagnostic pop
@@ -162,7 +164,9 @@ esp_err_t esp_efuse_utility_burn_chip(void)
                 if (!correct_written_data || coding_error_occurred) {
                     ESP_LOGW(TAG, "BLOCK%d: next retry to fix an error [%d/3]...", num_block, repeat_burn_op);
 #pragma GCC diagnostic push
+#ifndef __clang__
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
 #pragma GCC diagnostic ignored "-Warray-bounds"
                     memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)backup_write_data, sizeof(backup_write_data));
 #pragma GCC diagnostic pop
