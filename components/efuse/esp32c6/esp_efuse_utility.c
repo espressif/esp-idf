@@ -115,26 +115,14 @@ esp_err_t esp_efuse_utility_burn_chip(void)
             if (esp_efuse_get_coding_scheme(num_block) == EFUSE_CODING_SCHEME_RS) {
                 uint8_t block_rs[12];
                 efuse_hal_rs_calculate((void *)range_write_addr_blocks[num_block].start, block_rs);
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#endif
-#pragma GCC diagnostic ignored "-Warray-bounds"
-                memcpy((void *)EFUSE_PGM_CHECK_VALUE0_REG, block_rs, sizeof(block_rs));
-#pragma GCC diagnostic pop
+                hal_memcpy((void *)EFUSE_PGM_CHECK_VALUE0_REG, block_rs, sizeof(block_rs));
             }
             unsigned r_data_len = (range_read_addr_blocks[num_block].end - range_read_addr_blocks[num_block].start) + sizeof(uint32_t);
             unsigned data_len = (range_write_addr_blocks[num_block].end - range_write_addr_blocks[num_block].start) + sizeof(uint32_t);
             memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)range_write_addr_blocks[num_block].start, data_len);
 
             uint32_t backup_write_data[8 + 3]; // 8 words are data and 3 words are RS coding data
-#pragma GCC diagnostic push
-#if     __GNUC__ >= 11
-#pragma GCC diagnostic ignored "-Wstringop-overread"
-#endif
-#pragma GCC diagnostic ignored "-Warray-bounds"
-            memcpy(backup_write_data, (void *)EFUSE_PGM_DATA0_REG, sizeof(backup_write_data));
-#pragma GCC diagnostic pop
+            hal_memcpy(backup_write_data, (void *)EFUSE_PGM_DATA0_REG, sizeof(backup_write_data));
             int repeat_burn_op = 1;
             bool correct_written_data;
             bool coding_error_before = efuse_hal_is_coding_error_in_block(num_block);
@@ -163,13 +151,7 @@ esp_err_t esp_efuse_utility_burn_chip(void)
                 correct_written_data = esp_efuse_utility_is_correct_written_data(num_block, r_data_len);
                 if (!correct_written_data || coding_error_occurred) {
                     ESP_LOGW(TAG, "BLOCK%d: next retry to fix an error [%d/3]...", num_block, repeat_burn_op);
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
-#endif
-#pragma GCC diagnostic ignored "-Warray-bounds"
-                    memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)backup_write_data, sizeof(backup_write_data));
-#pragma GCC diagnostic pop
+                    hal_memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)backup_write_data, sizeof(backup_write_data));
                 }
 
             } while ((!correct_written_data || coding_error_occurred) && repeat_burn_op++ < 3);

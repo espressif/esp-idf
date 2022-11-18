@@ -697,7 +697,6 @@ components/hal/include/hal/usb_types_private.h
 components/hal/include/hal/wdt_types.h
 components/hal/ledc_hal_iram.c
 components/hal/mpu_hal.c
-components/hal/platform_port/include/hal/misc.h
 components/hal/rtc_io_hal.c
 components/hal/sha_hal.c
 components/hal/spi_flash_encrypt_hal_iram.c
