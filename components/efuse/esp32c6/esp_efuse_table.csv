@@ -59,13 +59,12 @@
         DIS_DOWNLOAD_ICACHE,              EFUSE_BLK0,   42,    1,     Disable Icache in download mode
         DIS_USB_SERIAL_JTAG,              EFUSE_BLK0,   43,    1,     Disable USB_SERIAL_JTAG
         DIS_FORCE_DOWNLOAD,               EFUSE_BLK0,   44,    1,     Disable force chip go to download mode function
+        DIS_SPI_DOWNLOAD_MSPI,            EFUSE_BLK0,   45,    1,     Represents whether the SPI0 controller is disabled in boot_mode_download
         DIS_TWAI,                         EFUSE_BLK0,   46,    1,     Disable TWAI function
         JTAG_SEL_ENABLE,                  EFUSE_BLK0,   47,    1,     Set this bit to enable selection between usb_to_jtag and pad_to_jtag through strapping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0.
-        SOFT_DIS_JTAG,                    EFUSE_BLK0,   48,    3,     Set these bits to disable JTAG in the soft way (odd number 1 means disable). JTAG can be enabled in HMAC module.
-        DIS_PAD_JTAG,                     EFUSE_BLK0,   51,    1,     Disable JTAG in the hard way. JTAG is disabled permanently.
+        SOFT_DIS_JTAG,                    EFUSE_BLK0,   48,    3,     Set these bits to soft disable JTAG (odd number 1 means disable). JTAG can be enabled in HMAC module.
+        DIS_PAD_JTAG,                     EFUSE_BLK0,   51,    1,     Hard disable JTAG. JTAG is disabled permanently.
         DIS_DOWNLOAD_MANUAL_ENCRYPT,      EFUSE_BLK0,   52,    1,     Disable flash encryption when in download boot modes.
-        USB_DREFH,                        EFUSE_BLK0,   53,    2,     Controls single-end input threshold vrefh 1.76 V to 2 V with step of 80 mV stored in eFuse.
-        USB_DREFL,                        EFUSE_BLK0,   55,    2,     Controls single-end input threshold vrefl 0.8 V to 1.04 V with step of 80 mV stored in eFuse.
         USB_EXCHG_PINS,                   EFUSE_BLK0,   57,    1,     Exchange D+ D- pins
         VDD_SPI_AS_GPIO,                  EFUSE_BLK0,   58,    1,     Set this bit to vdd spi pin function as gpio
 
@@ -84,7 +83,8 @@
         KEY_PURPOSE_3,                    EFUSE_BLK0,  100,    4,     Key3 purpose
         KEY_PURPOSE_4,                    EFUSE_BLK0,  104,    4,     Key4 purpose
         KEY_PURPOSE_5,                    EFUSE_BLK0,  108,    4,     Key5 purpose
-        SEC_DPA_LEVEL,                    EFUSE_BLK0,  112,    2,     Configures the clock random divide mode to determine the spa secure level
+        SEC_DPA_LEVEL,                    EFUSE_BLK0,  112,    2,     Configures the clock random divide mode to determine the DPA security level
+        CRYPT_DPA_ENABLE,                 EFUSE_BLK0,  115,    1,     Represents whether defense against DPA attack is enabled
         SECURE_BOOT_EN,                   EFUSE_BLK0,  116,    1,     Secure boot enable
         SECURE_BOOT_AGGRESSIVE_REVOKE,    EFUSE_BLK0,  117,    1,     Enable aggressive secure boot revoke
         FLASH_TPUW,                       EFUSE_BLK0,  124,    4,     Flash wait time after power up. (unit is ms). When value is 15. the time is 30 ms
@@ -92,12 +92,13 @@
     # EFUSE_RD_REPEAT_DATA3_REG #
         DIS_DOWNLOAD_MODE,                EFUSE_BLK0,  128,    1,     Disble download mode include boot_mode[3:0] is 0 1 2 3 6 7
         DIS_DIRECT_BOOT,                  EFUSE_BLK0,  129,    1,     Disable direct boot mode
-        DIS_USB_PRINT,                    EFUSE_BLK0,  130,    1,     Disable USB Print
-        DIS_USB_DOWNLOAD_MODE,            EFUSE_BLK0,  132,    1,     Disable download through USB
-        ENABLE_SECURITY_DOWNLOAD,         EFUSE_BLK0,  133,    1,     Enable security download mode
+        DIS_USB_SERIAL_JTAG_ROM_PRINT,    EFUSE_BLK0,  130,    1,     Represents whether print from USB-Serial-JTAG during ROM boot is disabled
+        DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE, EFUSE_BLK0, 132,    1,     Represents whether the USB-Serial-JTAG download func- tion is disabled
+        ENABLE_SECURITY_DOWNLOAD,         EFUSE_BLK0,  133,    1,     Enable secure download mode
         UART_PRINT_CONTROL,               EFUSE_BLK0,  134,    2,     b00:force print. b01:control by GPIO8 - low level print. b10:control by GPIO8 - high level print. b11:force disable print.
         FORCE_SEND_RESUME,                EFUSE_BLK0,  141,    1,     Force ROM code to send a resume command during SPI boot
         SECURE_VERSION,                   EFUSE_BLK0,  142,   16,     Secure version for anti-rollback
+        SECURE_BOOT_DISABLE_FAST_WAKE,    EFUSE_BLK0,  158,    1,     Represents whether FAST VERIFY ON WAKE is disabled or enabled when Secure Boot is enabled
 
     # EFUSE_RD_REPEAT_DATA4_REG #
         DISABLE_WAFER_VERSION_MAJOR,      EFUSE_BLK0,  160,    1,      Disables check of wafer version major
