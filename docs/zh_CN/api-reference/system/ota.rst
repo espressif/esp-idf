@@ -60,6 +60,8 @@ OTA 数据分区是两个 0x2000 字节大小的 flash 扇区，防止写入时�
 
 Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户追踪新版应用程序的第一次启动。应用程序需调用 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 函数确认可以运行，否则将会在重启时回滚至旧版本。该功能可让用户在启动阶段控制应用程序的可操作性。新版应用程序仅有一次机会尝试是否能成功启动。
 
+.. _ota_rollback:
+
 回滚过程
 ^^^^^^^^
 

@@ -35,6 +35,7 @@ API Guides
    performance/index
    reproducible-builds
    :not esp32c6: RF_calibration
+   ../security/security
    :esp32: ../security/secure-boot-v1
    ../security/secure-boot-v2
    thread-local-storage

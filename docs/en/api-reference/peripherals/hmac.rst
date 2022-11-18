@@ -82,6 +82,8 @@ The calculation of the HMAC and its hand-over to the DS component happen interna
 
 For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *Digital Signature (DS)* [`PDF <{IDF_TARGET_TRM_EN_URL}#digsig>`__].
 
+.. _hmac_for_enabling_jtag:
+
 HMAC for Enabling JTAG
 ^^^^^^^^^^^^^^^^^^^^^^
 Key Purpose values: 6, 5
