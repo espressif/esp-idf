@@ -46,7 +46,7 @@ TEST_CASE("Test keys and purposes, rd, wr, wr_key_purposes are in the initial st
 #endif // CONFIG_EFUSE_VIRTUAL
 
 // If using efuse is real, then turn off writing tests.
-#if CONFIG_EFUSE_VIRTUAL || CONFIG_IDF_ENV_FPGA
+#if CONFIG_EFUSE_VIRTUAL || CONFIG_EFUSE_FPGA_TEST
 
 static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key, esp_efuse_purpose_t purpose)
 {
@@ -63,16 +63,16 @@ static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key, esp_efuse_
     uint8_t rd_key[32] = { 0xEE };
     TEST_ESP_OK(esp_efuse_read_block(EFUSE_BLK_KEY0, &rd_key, offset_in_bits, key_size * 8));
 
-#ifndef CONFIG_IDF_ENV_FPGA
+#ifndef CONFIG_EFUSE_FPGA_TEST
     TEST_ASSERT_EQUAL_HEX8_ARRAY(wr_key, rd_key, key_size);
-#endif // not CONFIG_IDF_ENV_FPGA
+#endif // not CONFIG_EFUSE_FPGA_TEST
 
     TEST_ASSERT_TRUE(esp_efuse_get_key_dis_write(num_key));
     if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY || purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS) {
         TEST_ASSERT_TRUE(esp_efuse_get_key_dis_read(num_key));
-#if CONFIG_IDF_ENV_FPGA && !CONFIG_EFUSE_VIRTUAL
+#if CONFIG_EFUSE_FPGA_TEST && !CONFIG_EFUSE_VIRTUAL
         TEST_ASSERT_EACH_EQUAL_HEX8(0, rd_key, key_size);
-#endif // CONFIG_IDF_ENV_FPGA && ! CONFIG_EFUSE_VIRTUAL
+#endif // CONFIG_EFUSE_FPGA_TEST && ! CONFIG_EFUSE_VIRTUAL
     } else {
         TEST_ASSERT_EQUAL_HEX8_ARRAY(wr_key, rd_key, key_size);
     }
@@ -106,7 +106,7 @@ void test_write_key(esp_efuse_block_t num_key, esp_efuse_purpose_t purpose) {
     printf("EFUSE_BLK_KEY%d, purpose=%d ... OK\n", id, purpose);
 }
 
-#ifndef CONFIG_IDF_ENV_FPGA
+#ifndef CONFIG_EFUSE_FPGA_TEST
 TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
 {
     uint8_t rd_key[32] = { 0xEE };
@@ -135,7 +135,7 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
         esp_efuse_utility_debug_dump_blocks();
     }
 }
-#endif // not CONFIG_IDF_ENV_FPGA
+#endif // not CONFIG_EFUSE_FPGA_TEST
 
 TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
 {
@@ -151,7 +151,7 @@ TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
     esp_efuse_utility_debug_dump_blocks();
 
     TEST_ASSERT_FALSE(esp_efuse_key_block_unused(EFUSE_BLK_KEY0));
-#ifdef CONFIG_IDF_ENV_FPGA
+#ifdef CONFIG_EFUSE_FPGA_TEST
     TEST_ASSERT_TRUE(esp_efuse_block_is_empty(EFUSE_BLK_KEY0));
 #else
     TEST_ASSERT_FALSE(esp_efuse_block_is_empty(EFUSE_BLK_KEY0));
@@ -195,7 +195,7 @@ TEST_CASE("Test 3 esp_efuse_write_key for FPGA", "[efuse]")
     esp_efuse_utility_debug_dump_blocks();
 
     TEST_ASSERT_FALSE(esp_efuse_key_block_unused(EFUSE_BLK_KEY0));
-#ifdef CONFIG_IDF_ENV_FPGA
+#ifdef CONFIG_EFUSE_FPGA_TEST
     TEST_ASSERT_TRUE(esp_efuse_block_is_empty(EFUSE_BLK_KEY0));
 #else
     TEST_ASSERT_FALSE(esp_efuse_block_is_empty(EFUSE_BLK_KEY0));
@@ -281,11 +281,11 @@ TEST_CASE("Test esp_efuse_write_keys for returned errors", "[efuse]")
     esp_efuse_utility_debug_dump_blocks();
 
     TEST_ASSERT_FALSE(esp_efuse_key_block_unused(EFUSE_BLK_KEY0));
-#ifdef CONFIG_IDF_ENV_FPGA
+#ifdef CONFIG_EFUSE_FPGA_TEST
     TEST_ASSERT_TRUE(esp_efuse_block_is_empty(EFUSE_BLK_KEY0));
 #else
     TEST_ASSERT_FALSE(esp_efuse_block_is_empty(EFUSE_BLK_KEY0));
 #endif
 }
 
-#endif // CONFIG_EFUSE_VIRTUAL || CONFIG_IDF_ENV_FPGA
+#endif // CONFIG_EFUSE_VIRTUAL || CONFIG_EFUSE_FPGA_TEST

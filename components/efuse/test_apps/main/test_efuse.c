@@ -824,7 +824,7 @@ TEST_CASE("Check a case when ESP_ERR_DAMAGED_READING occurs during reading efuse
 }
 #endif // if not CONFIG_FREERTOS_UNICORE
 
-#ifdef CONFIG_IDF_ENV_FPGA
+#ifdef CONFIG_EFUSE_FPGA_TEST
 TEST_CASE("Test a real write (FPGA)", "[efuse]")
 {
     ESP_LOGI(TAG, "1. Write MAC address");
@@ -859,7 +859,7 @@ TEST_CASE("Test a real write (FPGA)", "[efuse]")
         TEST_ASSERT_EQUAL_INT(i + 1, read_sec_version);
     }
 }
-#endif  // CONFIG_IDF_ENV_FPGA
+#endif  // CONFIG_EFUSE_FPGA_TEST
 
 TEST_CASE("Test chip_ver_pkg APIs return the same value", "[efuse]")
 {

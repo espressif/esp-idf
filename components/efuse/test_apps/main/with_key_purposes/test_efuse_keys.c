@@ -49,16 +49,16 @@ TEST_CASE("Test keys and purposes, rd, wr, wr_key_purposes are in the initial st
 #endif // CONFIG_EFUSE_VIRTUAL
 
 // If using efuse is real, then turn off writing tests.
-#if CONFIG_EFUSE_VIRTUAL || CONFIG_IDF_ENV_FPGA
+#if CONFIG_EFUSE_VIRTUAL || CONFIG_EFUSE_FPGA_TEST
 
 static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key)
 {
     uint8_t rd_key[32] = { 0xEE };
     esp_efuse_purpose_t purpose = esp_efuse_get_key_purpose(num_key);
     TEST_ESP_OK(esp_efuse_read_field_blob(esp_efuse_get_key(num_key), &rd_key, sizeof(rd_key) * 8));
-#ifndef CONFIG_IDF_ENV_FPGA
+#ifndef CONFIG_EFUSE_FPGA_TEST
     TEST_ASSERT_EQUAL_HEX8_ARRAY(wr_key, rd_key, sizeof(wr_key));
-#endif // not CONFIG_IDF_ENV_FPGA
+#endif // not CONFIG_EFUSE_FPGA_TEST
 
     TEST_ASSERT_TRUE(esp_efuse_get_key_dis_write(num_key));
     if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY ||
@@ -71,9 +71,9 @@ static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key)
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_UP) {
         TEST_ASSERT_TRUE(esp_efuse_get_key_dis_read(num_key));
-#if CONFIG_IDF_ENV_FPGA && !CONFIG_EFUSE_VIRTUAL
+#if CONFIG_EFUSE_FPGA_TEST && !CONFIG_EFUSE_VIRTUAL
         TEST_ASSERT_EACH_EQUAL_HEX8(0, rd_key, sizeof(rd_key));
-#endif // CONFIG_IDF_ENV_FPGA && ! CONFIG_EFUSE_VIRTUAL
+#endif // CONFIG_EFUSE_FPGA_TEST && ! CONFIG_EFUSE_VIRTUAL
     } else {
         TEST_ASSERT_FALSE(esp_efuse_get_key_dis_read(num_key));
         TEST_ASSERT_EQUAL_HEX8_ARRAY(wr_key, rd_key, sizeof(wr_key));
@@ -108,7 +108,7 @@ void test_write_key(esp_efuse_block_t num_key, esp_efuse_purpose_t purpose) {
     printf("EFUSE_BLK_KEY%d, purpose=%d ... OK\n", id, purpose);
 }
 
-#ifndef CONFIG_IDF_ENV_FPGA
+#ifndef CONFIG_EFUSE_FPGA_TEST
 TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
 {
     uint8_t rd_key[32] = { 0xEE };
@@ -137,7 +137,7 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
         esp_efuse_utility_debug_dump_blocks();
     }
 }
-#endif // not CONFIG_IDF_ENV_FPGA
+#endif // not CONFIG_EFUSE_FPGA_TEST
 
 TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
 {
@@ -372,7 +372,7 @@ TEST_CASE("Test set_write_protect_of_digest_revoke", "[efuse]")
     TEST_ESP_OK(esp_efuse_set_digest_revoke(1));
     TEST_ESP_OK(esp_efuse_set_digest_revoke(2));
 
-#if CONFIG_IDF_ENV_FPGA && !CONFIG_EFUSE_VIRTUAL
+#if CONFIG_EFUSE_FPGA_TEST && !CONFIG_EFUSE_VIRTUAL
     // the write protection bits are set and the revocation bits will not be changed.
     TEST_ASSERT_FALSE(esp_efuse_get_digest_revoke(0));
     TEST_ASSERT_FALSE(esp_efuse_get_digest_revoke(1));
@@ -381,8 +381,8 @@ TEST_CASE("Test set_write_protect_of_digest_revoke", "[efuse]")
     TEST_ASSERT_TRUE(esp_efuse_get_digest_revoke(0));
     TEST_ASSERT_TRUE(esp_efuse_get_digest_revoke(1));
     TEST_ASSERT_TRUE(esp_efuse_get_digest_revoke(2));
-#endif // CONFIG_IDF_ENV_FPGA && !CONFIG_EFUSE_VIRTUAL
+#endif // CONFIG_EFUSE_FPGA_TEST && !CONFIG_EFUSE_VIRTUAL
 }
 #endif // SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
 
-#endif // CONFIG_EFUSE_VIRTUAL || CONFIG_IDF_ENV_FPGA
+#endif // CONFIG_EFUSE_VIRTUAL || CONFIG_EFUSE_FPGA_TEST
