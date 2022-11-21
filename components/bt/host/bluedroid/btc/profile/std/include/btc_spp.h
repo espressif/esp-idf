@@ -36,6 +36,7 @@ typedef union {
     //BTC_SPP_ACT_INIT
     struct init_arg {
         esp_spp_mode_t mode;
+        bool enable_l2cap_ertm;
     } init;
     //BTC_SPP_ACT_UNINIT
     struct uninit_arg {

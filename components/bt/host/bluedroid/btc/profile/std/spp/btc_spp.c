@@ -548,6 +548,7 @@ static void btc_spp_init(btc_spp_args_t *arg)
         spp_local_param.spp_mode = arg->init.mode;
         spp_local_param.spp_slot_id = 0;
         BTA_JvEnable((tBTA_JV_DM_CBACK *)btc_spp_dm_inter_cb);
+        BTA_JvRfcommConfig(arg->init.enable_l2cap_ertm);
     } while (0);
 
     if (ret != ESP_SPP_SUCCESS) {

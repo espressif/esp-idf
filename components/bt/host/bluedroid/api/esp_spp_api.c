@@ -35,6 +35,16 @@ esp_err_t esp_spp_register_callback(esp_spp_cb_t callback)
 
 esp_err_t esp_spp_init(esp_spp_mode_t mode)
 {
+    esp_spp_cfg_t bt_spp_cfg = {
+        .mode = mode,
+        .enable_l2cap_ertm = true,
+    };
+
+    return esp_spp_enhanced_init(&bt_spp_cfg);
+}
+
+esp_err_t esp_spp_enhanced_init(const esp_spp_cfg_t *cfg)
+{
     btc_msg_t msg;
     btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -43,7 +53,9 @@ esp_err_t esp_spp_init(esp_spp_mode_t mode)
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_INIT;
 
-    arg.init.mode = mode;
+    arg.init.mode = cfg->mode;
+    arg.init.enable_l2cap_ertm = cfg->enable_l2cap_ertm;
+
     return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 

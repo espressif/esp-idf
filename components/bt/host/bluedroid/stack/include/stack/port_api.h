@@ -692,6 +692,17 @@ extern UINT8 PORT_SetTraceLevel (UINT8 new_level);
 *******************************************************************************/
 extern const char *PORT_GetResultString (const uint8_t result_code);
 
+/*******************************************************************************
+**
+** Function         PORT_SetL2capErtm
+**
+** Description      This function sets whether RFCOMM uses L2CAP ERTM.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void PORT_SetL2capErtm (BOOLEAN enable_l2cap_ertm);
+
 #ifdef __cplusplus
 }
 #endif
