@@ -14,6 +14,8 @@
 #include "os.h"
 #include "esp_bit_defs.h"
 
+#define SSID_MAX_LEN 32
+
 /* Define platform specific variable type macros */
 #if defined(ESP_PLATFORM)
 #include <stdint.h>
