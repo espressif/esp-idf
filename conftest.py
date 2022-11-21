@@ -47,8 +47,8 @@ except ImportError:
     import common_test_methods  # noqa: F401
 
 
-SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2']
-PREVIEW_TARGETS = ['esp32h4', 'esp32c6']  # this PREVIEW_TARGETS excludes 'linux' target
+SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6']
+PREVIEW_TARGETS = ['esp32h4']  # this PREVIEW_TARGETS excludes 'linux' target
 DEFAULT_SDKCONFIG = 'default'
 
 
