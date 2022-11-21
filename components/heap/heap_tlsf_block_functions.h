@@ -65,7 +65,6 @@
 ** bits for FL_INDEX.
 */
 #define block_size_min  (sizeof(block_header_t) - sizeof(block_header_t*))
-#define block_size_max  (tlsf_cast(size_t, 1) << FL_INDEX_MAX)
 
 /*
 ** block_header_t member functions.
