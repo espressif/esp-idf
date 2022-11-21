@@ -14,6 +14,9 @@
 #include "os.h"
 #include "esp_bit_defs.h"
 
+
+#define SSID_MAX_LEN 32
+
 /* Define platform specific variable type macros */
 #if defined(ESP_PLATFORM)
 #include <stdint.h>
@@ -66,7 +69,6 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 #define WPA_BYTE_SWAP_DEFINED
 
 #endif /* __CYGWIN__ || CONFIG_NATIVE_WINDOWS */
-
 
 #ifndef WPA_BYTE_SWAP_DEFINED
 
