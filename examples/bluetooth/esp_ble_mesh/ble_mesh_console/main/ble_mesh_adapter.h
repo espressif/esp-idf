@@ -65,6 +65,7 @@ typedef struct {
 extern ble_mesh_node_statistics_t ble_mesh_node_statistics;
 
 extern SemaphoreHandle_t ble_mesh_node_sema;
+extern ble_mesh_node_status node_status;
 
 #define SEND_MESSAGE_TIMEOUT (30000/portTICK_PERIOD_MS)
 

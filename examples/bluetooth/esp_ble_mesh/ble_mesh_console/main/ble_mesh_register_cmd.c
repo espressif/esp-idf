@@ -162,18 +162,18 @@ typedef struct {
 static ble_mesh_exceptional_list_t exceptional_list_test;
 #endif
 
+extern bool deinit_flag;
 extern void ble_mesh_generic_onoff_client_model_cb(esp_ble_mesh_generic_client_cb_event_t event,
-        esp_ble_mesh_generic_client_cb_param_t *param);
+                                                   esp_ble_mesh_generic_client_cb_param_t *param);
 extern void ble_mesh_configuration_client_model_cb(esp_ble_mesh_cfg_client_cb_event_t event,
-        esp_ble_mesh_cfg_client_cb_param_t *param);
+                                                   esp_ble_mesh_cfg_client_cb_param_t *param);
+extern void ble_mesh_vendor_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_cb_param_t *param);
+extern void ble_mesh_generic_server_model_cb(esp_ble_mesh_generic_server_cb_event_t event,
+                                             esp_ble_mesh_generic_server_cb_param_t *param);
 
 void ble_mesh_register_cmd(void);
 // Register callback function
 void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_param_t *param);
-void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_cb_param_t *param);
-void ble_mesh_generic_server_model_cb(esp_ble_mesh_generic_server_cb_event_t event,
-        esp_ble_mesh_generic_server_cb_param_t *param);
-
 
 void ble_mesh_register_mesh_node(void)
 {
@@ -182,92 +182,38 @@ void ble_mesh_register_mesh_node(void)
 
 int ble_mesh_register_cb(int argc, char** argv)
 {
-    ESP_LOGD(TAG, "enter %s\n", __func__);
     esp_ble_mesh_register_prov_callback(ble_mesh_prov_cb);
-    esp_ble_mesh_register_custom_model_callback(ble_mesh_model_cb);
+    esp_ble_mesh_register_custom_model_callback(ble_mesh_vendor_model_cb);
     esp_ble_mesh_register_generic_server_callback(ble_mesh_generic_server_model_cb);
     esp_ble_mesh_register_generic_client_callback(ble_mesh_generic_onoff_client_model_cb);
     esp_ble_mesh_register_config_client_callback(ble_mesh_configuration_client_model_cb);
     ESP_LOGI(TAG, "Bm:Reg,OK");
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return 0;
-}
-
-void ble_mesh_generic_server_model_cb(esp_ble_mesh_generic_server_cb_event_t event,
-        esp_ble_mesh_generic_server_cb_param_t *param)
-{
-    uint32_t opcode = param->ctx.recv_op;
-    uint8_t status;
-
-    ESP_LOGD(TAG, "enter %s: event is %d, opcode is 0x%04" PRIx32, __func__, event, opcode);
-
-    switch (event) {
-        case ESP_BLE_MESH_GENERIC_SERVER_STATE_CHANGE_EVT:
-            if (opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
-                ESP_LOGI(TAG, "GenOnOffServer:SetStatus,OK,%d", param->value.state_change.onoff_set.onoff);
-                ble_mesh_node_set_state(param->value.state_change.onoff_set.onoff);
-            } else if (opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
-                ESP_LOGI(TAG, "GenOnOffServer:SetUnAck,OK,%d", param->value.state_change.onoff_set.onoff);
-                ble_mesh_node_set_state(param->value.state_change.onoff_set.onoff);
-            }
-            break;
-    case ESP_BLE_MESH_GENERIC_SERVER_RECV_GET_MSG_EVT: {
-        switch (opcode) {
-        case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET:
-            ESP_LOGI(TAG, "GenOnOffServer:GetStatus,OK");
-            ble_mesh_node_get_state(status);
-            esp_ble_mesh_server_model_send_msg(param->model, &param->ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
-                                                   sizeof(status), &status);
-            break;
-        default:
-            break;
-        }
-        break;
-    }
-    case ESP_BLE_MESH_GENERIC_SERVER_RECV_SET_MSG_EVT: {
-        if (opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET || opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
-            esp_ble_mesh_gen_onoff_srv_t *srv = param->model->user_data;
-            if (param->value.set.onoff.op_en == false) {
-                srv->state.onoff = param->value.set.onoff.onoff;
-            } else {
-                /* TODO: Delay and state transition */
-               srv->state.onoff = param->value.set.onoff.onoff;
-            }
-        }
-
-        switch (opcode) {
-            case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET:
-                ESP_LOGI(TAG, "GenOnOffServer:SetStatus,OK,%d", param->value.set.onoff.onoff);
-                ble_mesh_node_set_state(param->value.set.onoff.onoff);
-                ble_mesh_node_get_state(status);
-                esp_ble_mesh_server_model_send_msg(param->model, &param->ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
-                                                   sizeof(status), &status);
-                break;
-            case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK:
-                ble_mesh_node_set_state(param->value.set.onoff.onoff);
-                ESP_LOGI(TAG, "GenOnOffServer:SetUNACK,OK,%d", param->value.set.onoff.onoff);
-                break;
-            default:
-                break;
-        }
-        break;
-    }
-    default:
-        break;
-    }
-    ESP_LOGD(TAG, "exit %s \n", __func__);
 }
 
 void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_param_t *param)
 {
+    transaction_t *trans = NULL;
     ESP_LOGD(TAG, "enter %s, event = %d", __func__, event);
 
     switch (event) {
     case ESP_BLE_MESH_PROV_REGISTER_COMP_EVT:
         ble_mesh_callback_check_err_code(param->prov_register_comp.err_code, "Bm:Init");
+        if (param->prov_register_comp.err_code == ESP_OK) {
+            deinit_flag = false;
+        }
         break;
     case ESP_BLE_MESH_DEINIT_MESH_COMP_EVT:
         ble_mesh_callback_check_err_code(param->deinit_mesh_comp.err_code, "Bm:DeInit");
+        if (param->deinit_mesh_comp.err_code == ESP_OK) {
+            deinit_flag = true;
+            do {
+                trans = transaction_get(TRANS_TYPE_MESH_PERF, TRANS_MESH_SEND_MESSAGE, trans);
+                if (trans) {
+                    transaction_abort(trans, ESP_ERR_INVALID_STATE);
+                }
+            }while(trans);
+        }
         break;
     case ESP_BLE_MESH_NODE_PROV_ENABLE_COMP_EVT:
         ble_mesh_callback_check_err_code(param->node_prov_enable_comp.err_code, "Node:EnBearer");
@@ -383,117 +329,10 @@ void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_p
     ESP_LOGD(TAG, "exit %s", __func__);
 }
 
-void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_cb_param_t *param)
-{
-    uint16_t result;
-    uint8_t data[4];
-    esp_err_t outcome = ESP_OK;
-    uint8_t status;
-    uint64_t *start_time = NULL;
-    transaction_t *trans = NULL;
-
-    ESP_LOGD(TAG, "enter %s, event=%x\n", __func__, event);
-    do {
-        trans = transaction_get(TRANS_TYPE_MESH_PERF, TRANS_MESH_SEND_MESSAGE, trans);
-        if (trans) {
-            start_time = (uint64_t *)trans->input;
-            break;
-        }
-    }while(trans);
-
-    switch (event) {
-    case ESP_BLE_MESH_MODEL_OPERATION_EVT:
-        if (param->model_operation.model != NULL && param->model_operation.model->op != NULL) {
-            if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET) {
-                ESP_LOGI(TAG, "VendorModel:SetAck,Success,%d", param->model_operation.ctx->recv_ttl);
-                data[0] = param->model_operation.msg[0];
-                data[1] = param->model_operation.msg[1];
-                data[2] = param->model_operation.msg[2];
-                data[3] = param->model_operation.ctx->recv_ttl;
-                result = ble_mesh_node_statistics_accumulate(param->model_operation.msg, param->model_operation.length, VENDOR_MODEL_PERF_OPERATION_TYPE_SET);
-                if (result == 0) {
-                    esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx,
-                                                       ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_STATUS, sizeof(data), data);
-                }
-            } else if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET_UNACK) {
-                ESP_LOGI(TAG, "VendorModel:SetUnAck,Success,%d,%d", param->model_operation.ctx->recv_ttl, param->model_operation.length);
-                result = ble_mesh_node_statistics_accumulate(param->model_operation.msg, param->model_operation.length, VENDOR_MODEL_PERF_OPERATION_TYPE_SET_UNACK);
-            }
-            else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET) {
-                ESP_LOGI(TAG, "Node:GetStatus,OK");
-                ble_mesh_node_get_state(status);
-                outcome = esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
-                         sizeof(status), &status);
-                if (outcome != ESP_OK) {
-                    ESP_LOGE(TAG, "Node:SendMsg,Fail");
-                }
-            } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
-                ble_mesh_node_set_state(param->model_operation.msg[0]);
-                ESP_LOGI(TAG, "Node:SetAck,OK,%d,%d", param->model_operation.msg[0], param->model_operation.ctx->recv_ttl);
-                outcome = esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
-                         sizeof(status), param->model_operation.msg);
-                if (outcome != ESP_OK) {
-                    ESP_LOGE(TAG, "Node:SendMsg,Fail");
-                }
-            } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
-                ble_mesh_node_set_state(param->model_operation.msg[0]);
-                ESP_LOGI(TAG, "Node:SetUnAck,OK,%d,%d", param->model_operation.msg[0], param->model_operation.ctx->recv_ttl);
-            } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS) {
-                ESP_LOGI(TAG, "Node:Status,Success,%d", param->model_operation.length);
-            } else if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET) {
-                ESP_LOGI(TAG, "VendorModel:SetAck,OK,%d", param->model_operation.ctx->recv_ttl);
-            } else if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_STATUS) {
-                if (trans) {
-                    uint64_t current_time = esp_timer_get_time();
-                    outcome = ble_mesh_test_performance_client_model_accumulate_time(((uint32_t)(current_time - *start_time) / 1000), param->model_operation.msg,
-                        param->model_operation.ctx->recv_ttl, param->model_operation.length);
-                    transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
-                }
-            }
-        }
-        break;
-    case ESP_BLE_MESH_MODEL_SEND_COMP_EVT:
-        if (param->model_send_comp.err_code == ESP_OK) {
-            ESP_LOGI(TAG, "Node:ModelSend,OK");
-        } else {
-            ESP_LOGE(TAG, "Node:ModelSend,Fail");
-        }
-        break;
-    case ESP_BLE_MESH_MODEL_PUBLISH_COMP_EVT:
-        ESP_LOGI(TAG, "PublishSend,OK,0x%x,%d,", param->model_publish_comp.model->model_id, param->model_publish_comp.model->pub->msg->len);
-        break;
-    case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT:
-        ESP_LOGI(TAG, "Node:PublishReceive,OK,0x%04" PRIx32 ",%d,%d", param->client_recv_publish_msg.opcode, param->client_recv_publish_msg.length, param->client_recv_publish_msg.msg[1]);
-        if (trans) {
-            uint64_t current_time = esp_timer_get_time();
-            outcome = ble_mesh_test_performance_client_model_accumulate_time(((uint32_t)(current_time - *start_time) / 2000), param->client_recv_publish_msg.msg,
-                param->client_recv_publish_msg.ctx->recv_ttl, param->client_recv_publish_msg.length);
-            transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
-        }
-        break;
-    case ESP_BLE_MESH_MODEL_PUBLISH_UPDATE_EVT:
-        ESP_LOGI(TAG, "PublishUpdate,OK");
-        break;
-    case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT:
-        ESP_LOGI(TAG, "Node:TimeOut, 0x%04" PRIx32, param->client_send_timeout.opcode);
-        if (trans) {
-            transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
-        }
-        break;
-    case ESP_BLE_MESH_MODEL_EVT_MAX:
-        ESP_LOGI(TAG, "Node:MaxEvt");
-        break;
-    default:
-        break;
-    }
-
-    ESP_LOGD(TAG, "exit %s\n", __func__);
-}
-
 int ble_mesh_power_set(int argc, char **argv)
 {
     esp_err_t result = ESP_OK;
-    ESP_LOGD(TAG, "enter %s\n", __func__);
+
     int nerrors = arg_parse(argc, argv, (void **) &power_set);
     if (nerrors != 0) {
         arg_print_errors(stderr, power_set.end, argv[0]);
@@ -513,9 +352,8 @@ int ble_mesh_power_set(int argc, char **argv)
     }
 
     if (result == ESP_OK) {
-        ESP_LOGI(TAG, "Node:SetPower,OK\n");
+        ESP_LOGI(TAG, "Node:SetPower,OK");
     }
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return result;
 }
 
@@ -536,8 +374,6 @@ static int ble_mesh_load_oob(int argc, char **argv)
 {
     uint8_t *static_val;
 
-    ESP_LOGD(TAG, "enter %s \n", __func__);
-
     int nerrors = arg_parse(argc, argv, (void **) &oob);
     if (nerrors != 0) {
         arg_print_errors(stderr, oob.end, argv[0]);
@@ -553,7 +389,7 @@ static int ble_mesh_load_oob(int argc, char **argv)
     if (oob.static_val->count != 0) {
         static_val = malloc(oob.static_val_len->ival[0] + 1);
         if (static_val == NULL) {
-            ESP_LOGE(TAG, "malloc fail,%s,%d\n", __func__, __LINE__);
+            ESP_LOGE(TAG, "malloc fail,%s,%d", __func__, __LINE__);
             return ESP_ERR_NO_MEM;
         }
         get_value_string((char *)oob.static_val->sval[0], (char *)static_val);
@@ -571,7 +407,7 @@ static int ble_mesh_load_oob(int argc, char **argv)
     if (oob.static_val->count != 0) {
         static_val = malloc(oob.static_val_len->ival[0] + 1);
         if (static_val == NULL) {
-            ESP_LOGE(TAG, "malloc fail,%s,%d\n", __func__, __LINE__);
+            ESP_LOGE(TAG, "malloc fail,%s,%d", __func__, __LINE__);
             return ESP_ERR_NO_MEM;
         }
         get_value_string((char *)oob.static_val->sval[0], (char *)static_val);
@@ -581,9 +417,7 @@ static int ble_mesh_load_oob(int argc, char **argv)
     arg_int_to_value(oob.static_val_len, prov.prov_static_oob_len, "provisioner static value length");
 #endif
 
-    ESP_LOGI(TAG, "OOB:Load,OK\n");
-
-    ESP_LOGD(TAG, "exit %s\n", __func__);
+    ESP_LOGI(TAG, "OOB:Load,OK");
     return 0;
 }
 
@@ -601,17 +435,16 @@ int ble_mesh_init(int argc, char **argv)
 
     err = ble_mesh_init_node_prestore_params();
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Bm:NodeInitPreParam,Fail\n");
+        ESP_LOGE(TAG, "Bm:NodeInitPreParam,Fail");
         return err;
     }
 
-    ESP_LOGD(TAG, "enter %s, module %x\n", __func__, component.model_type->ival[0]);
     local_component = ble_mesh_get_component(component.model_type->ival[0]);
 
     if (component.dev_uuid->count != 0) {
         device_uuid = malloc((ESP_BLE_MESH_OCTET16_LEN + 1) * sizeof(uint8_t));
         if (device_uuid == NULL) {
-            ESP_LOGE(TAG, "ble mesh malloc failed, %d\n", __LINE__);
+            ESP_LOGE(TAG, "ble mesh malloc failed, %d", __LINE__);
             return ESP_ERR_NO_MEM;
         }
         err = get_value_string((char *)component.dev_uuid->sval[0], (char *)device_uuid);
@@ -630,7 +463,6 @@ int ble_mesh_init(int argc, char **argv)
     err = esp_ble_mesh_init(&prov, local_component);
 
     free(device_uuid);
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
 }
 
@@ -641,8 +473,6 @@ int ble_mesh_provisioner_heartbeat(int argc, char** argv)
     uint8_t type = 0;
     esp_ble_mesh_heartbeat_filter_info_t info;
     uint8_t op = 0;
-
-    ESP_LOGD(TAG, "enter %s\n", __func__);
 
     int nerrors = arg_parse(argc, argv, (void **) &heartbeat);
     if (nerrors != 0) {
@@ -665,20 +495,16 @@ int ble_mesh_provisioner_heartbeat(int argc, char** argv)
     }
 
     if(result == ESP_OK){
-        ESP_LOGI(TAG, "provisioner:OK\n");
+        ESP_LOGI(TAG, "provisioner:OK");
     }else{
-        ESP_LOGE(TAG, "provisioner:ERROR\n");
+        ESP_LOGE(TAG, "provisioner:ERROR");
     }
-
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return result;
 }
 
 int ble_mesh_node_enable_bearer(int argc, char **argv)
 {
     esp_err_t  err = 0;
-
-    ESP_LOGD(TAG, "enter %s \n", __func__);
 
     int nerrors = arg_parse(argc, argv, (void **) &bearer);
     if (nerrors != 0) {
@@ -697,8 +523,6 @@ int ble_mesh_node_enable_bearer(int argc, char **argv)
     } else {
         return 1;
     }
-
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
 }
 
@@ -720,7 +544,7 @@ int ble_mesh_exceptional_list_test(int argc, char **argv)
     if (exceptional_list_test.info->count != 0) {
         info = malloc((BD_ADDR_LEN + 1) * sizeof(uint8_t));
         if (info == NULL) {
-            ESP_LOGE(TAG, "ble mesh malloc failed, %d\n", __LINE__);
+            ESP_LOGE(TAG, "ble mesh malloc failed, %d", __LINE__);
             return ESP_ERR_NO_MEM;
         } else {
             get_value_string((char *)exceptional_list_test.info->sval[0], (char *)info);
@@ -736,9 +560,9 @@ int ble_mesh_exceptional_list_test(int argc, char **argv)
     }
 
     if (err == ESP_OK) {
-        ESP_LOGI(TAG, "Bm:UpdateExcepList,OK\n");
+        ESP_LOGI(TAG, "Bm:UpdateExcepList,OK");
     } else {
-        ESP_LOGE(TAG, "Bm:UpdateExcepList,Fail\n");
+        ESP_LOGE(TAG, "Bm:UpdateExcepList,Fail");
     }
 
     if (info != NULL) {
@@ -754,8 +578,6 @@ int ble_mesh_deinit(int argc, char **argv)
     int err;
     esp_ble_mesh_deinit_param_t param = {};
 
-    ESP_LOGD(TAG, "enter %s \n", __func__);
-
     int nerrors = arg_parse(argc, argv, (void **) &deinit);
     if (nerrors != 0) {
         arg_print_errors(stderr, deinit.end, argv[0]);
@@ -770,15 +592,12 @@ int ble_mesh_deinit(int argc, char **argv)
     } else {
         return 1;
     }
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
 }
 
 int ble_mesh_provisioner_enable_bearer(int argc, char **argv)
 {
     esp_err_t  err = 0;
-
-    ESP_LOGD(TAG, "enter %s \n", __func__);
 
     int nerrors = arg_parse(argc, argv, (void **) &bearer);
     if (nerrors != 0) {
@@ -795,19 +614,14 @@ int ble_mesh_provisioner_enable_bearer(int argc, char **argv)
     } else {
         return 1;
     }
-
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
 }
 
 int ble_mesh_node_reset(int argc, char** argv)
 {
     esp_err_t err;
-    ESP_LOGD(TAG, "enter %s\n", __func__);
 
     err = esp_ble_mesh_node_local_reset();
-
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
 }
 
@@ -821,20 +635,17 @@ int ble_mesh_node_statistics_regist(int argc, char **argv)
         return 1;
     }
 
-    ESP_LOGD(TAG, "enter %s\n", __func__);
-
     if (strcmp(node_statistices.action_type->sval[0], "init") == 0) {
         result = ble_mesh_node_statistics_init(node_statistices.package_num->ival[0]);
-        ESP_LOGI(TAG, "Node:InitStatistics,OK\n");
+        ESP_LOGI(TAG, "Node:InitStatistics,OK");
     } else if (strcmp(node_statistices.action_type->sval[0], "get") == 0) {
         ble_mesh_node_statistics_get();
-        ESP_LOGI(TAG, "Node:GetStatistics,OK\n");
+        ESP_LOGI(TAG, "Node:GetStatistics,OK");
     } else if (strcmp(node_statistices.action_type->sval[0], "destroy") == 0) {
         ble_mesh_node_statistics_destroy();
-        ESP_LOGI(TAG, "Node:DestroyStatistics\n");
+        ESP_LOGI(TAG, "Node:DestroyStatistics");
     }
 
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return result;
 }
 
@@ -852,8 +663,6 @@ int ble_mesh_node_enter_network_auto(int argc, char **argv)
         return 1;
     }
 
-    ESP_LOGD(TAG, "enter %s\n", __func__);
-
     err = get_value_string((char *)node_network_info.net_key->sval[0], (char *)info.net_key);
     err = get_value_string((char *)node_network_info.dev_key->sval[0], (char *)info.dev_key);
     err = get_value_string((char *)node_network_info.app_key->sval[0], (char *)info.app_key);
@@ -868,8 +677,6 @@ int ble_mesh_node_enter_network_auto(int argc, char **argv)
     } else {
         ESP_LOGE(TAG, "NODE:EnNetwork,FAIL,%d", err);
     }
-
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
 }
 
@@ -881,8 +688,6 @@ int ble_mesh_provision_address(int argc, char **argv)
     esp_ble_mesh_device_delete_t del_dev = {
         .flag = BIT(0),
     };
-
-    ESP_LOGD(TAG, "enter %s \n", __func__);
 
     int nerrors = arg_parse(argc, argv, (void **) &provisioner_addr);
     if (nerrors != 0) {
@@ -922,8 +727,6 @@ int ble_mesh_provision_address(int argc, char **argv)
     } else {
         ESP_LOGI(TAG, "Provisioner:AddDelAddr,OK");
     }
-
-    ESP_LOGD(TAG, "exit %s \n", __func__);
     return err;
 }
 
@@ -935,7 +738,6 @@ int ble_mesh_provisioner_add_key(int argc, char **argv)
         .net_idx = 1,
         .flag = PROV_DATA_NET_IDX_FLAG,
     };
-    ESP_LOGD(TAG, " enter %s\n", __func__);
 
     int nerrors = arg_parse(argc, argv, (void **) &provisioner_add_key);
     if (nerrors != 0) {
@@ -958,8 +760,6 @@ int ble_mesh_provisioner_add_key(int argc, char **argv)
     } else {
         ESP_LOGI(TAG, "Provisioner:KeyAction,OK");
     }
-
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
 }
 
@@ -969,7 +769,6 @@ int ble_mesh_provisioner_get_node(int argc, char **argv)
     uint16_t i = 0;
     esp_ble_mesh_node_t *node_info;
 
-    ESP_LOGD(TAG, "enter %s\n", __func__);
     int nerrors = arg_parse(argc, argv, (void **) &provisioner_get_node);
     if (nerrors != 0) {
         arg_print_errors(stderr, provisioner_get_node.end, argv[0]);
@@ -993,8 +792,6 @@ int ble_mesh_provisioner_get_node(int argc, char **argv)
         }
         printf("\n");
     }
-
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return ESP_OK;
 }
 
@@ -1002,7 +799,6 @@ int ble_mesh_provisioner_add_node(int argc, char **argv)
 {
     struct bt_mesh_node node_info;
     esp_err_t result;
-    ESP_LOGD(TAG, " enter %s\n", __func__);
 
     int nerrors = arg_parse(argc, argv, (void **) &provisioner_add_node);
     if (nerrors != 0) {
@@ -1024,12 +820,10 @@ int ble_mesh_provisioner_add_node(int argc, char **argv)
 
     result = bt_mesh_provisioner_store_node_info(&node_info);
     if (result == ESP_OK) {
-        ESP_LOGI(TAG, "Provisioner:AddNodeInfo,OK\n");
+        ESP_LOGI(TAG, "Provisioner:AddNodeInfo,OK");
     } else {
-        ESP_LOGI(TAG, "Provisioner:AddNodeInfo,ERROR,%d\n", result);
+        ESP_LOGI(TAG, "Provisioner:AddNodeInfo,ERROR,%d", result);
     }
-
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return result;
 }
 
@@ -1040,8 +834,6 @@ int ble_mesh_provision_bind_local_model(int argc, char **argv)
     uint16_t app_idx = 0;
     uint16_t model_id = 0;
     uint16_t company_id = 0xFFFF;
-
-    ESP_LOGD(TAG, " enter %s\n", __func__);
 
     int nerrors = arg_parse(argc, argv, (void **) &provisioner_local_bind);
     if (nerrors != 0) {
@@ -1056,11 +848,10 @@ int ble_mesh_provision_bind_local_model(int argc, char **argv)
     err = esp_ble_mesh_provisioner_bind_app_key_to_local_model(element_addr, app_idx, model_id, company_id);
 
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Provisioner:BindModel,Fail,%d\n", err);
+        ESP_LOGE(TAG, "Provisioner:BindModel,Fail,%d", err);
     } else {
-        ESP_LOGI(TAG, "Provisioner:BindModel,OK\n");
+        ESP_LOGI(TAG, "Provisioner:BindModel,OK");
     }
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
 }
 
