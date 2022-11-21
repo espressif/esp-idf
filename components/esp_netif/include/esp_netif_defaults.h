@@ -42,7 +42,7 @@ extern "C" {
         .if_desc = "ap", \
         .route_prio = 10, \
         .bridge_info = NULL \
-    };
+    }
 #endif
 
 #define ESP_NETIF_INHERENT_DEFAULT_ETH() \
@@ -56,7 +56,7 @@ extern "C" {
         .if_desc = "eth", \
         .route_prio = 50, \
         .bridge_info = NULL \
-    };
+    }
 
 #define ESP_NETIF_INHERENT_DEFAULT_PPP() \
     {   \
@@ -69,7 +69,7 @@ extern "C" {
         .if_desc = "ppp",   \
         .route_prio = 20,  \
         .bridge_info = NULL \
-};
+    }
 
 
 
@@ -85,7 +85,7 @@ extern "C" {
         .if_desc = "br", \
         .route_prio = 70, \
         .bridge_info = NULL \
-    };
+    }
 
 /**
  * @brief  Default configuration reference of ethernet interface
