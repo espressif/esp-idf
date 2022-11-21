@@ -864,6 +864,33 @@ tBTA_JV_STATUS BTA_JvL2capWriteFixed(UINT16 channel, BD_ADDR *addr, UINT32 req_i
 #if BTA_JV_RFCOMM_INCLUDED
 /*******************************************************************************
 **
+** Function         BTA_JvRfcommConfig
+**
+** Description      This function is to configure RFCOMM.
+**
+** Returns          BTA_JV_SUCCESS, if the request is being processed.
+**                  BTA_JV_FAILURE, otherwise.
+**
+*******************************************************************************/
+tBTA_JV_STATUS BTA_JvRfcommConfig(BOOLEAN enable_l2cap_ertm)
+{
+    tBTA_JV_STATUS status = BTA_JV_FAILURE;
+    tBTA_JV_API_RFCOMM_CONFIG *p_msg;
+
+    APPL_TRACE_API( "%s", __func__);
+
+    if ((p_msg = (tBTA_JV_API_RFCOMM_CONFIG *)osi_malloc(sizeof(tBTA_JV_API_RFCOMM_CONFIG))) != NULL) {
+        p_msg->hdr.event = BTA_JV_API_RFCOMM_CONFIG_EVT;
+        p_msg->enable_l2cap_ertm = enable_l2cap_ertm;
+        bta_sys_sendmsg(p_msg);
+        status = BTA_JV_SUCCESS;
+    }
+
+    return (status);
+}
+
+/*******************************************************************************
+**
 ** Function         BTA_JvRfcommConnect
 **
 ** Description      This function makes an RFCOMM conection to a remote BD

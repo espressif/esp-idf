@@ -209,6 +209,7 @@ typedef struct t_port_info tPORT;
 typedef struct {
     tPORT        port[MAX_RFC_PORTS];            /* Port info pool */
     tRFC_MCB     rfc_mcb[MAX_BD_CONNECTIONS];    /* RFCOMM bd_connections pool */
+    BOOLEAN      enable_l2cap_ertm;              /* enable/disable l2cap ertm */
 } tPORT_CB;
 
 #ifdef __cplusplus
