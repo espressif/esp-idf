@@ -8,6 +8,8 @@
 
 #include "esp_timer.h"
 #include "ble_mesh_adapter.h"
+#include "esp_ble_mesh_defs.h"
+#include "esp_ble_mesh_networking_api.h"
 
 #if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
 typedef struct {
@@ -34,7 +36,7 @@ void ble_mesh_register_gen_onoff_client(void)
 }
 
 void ble_mesh_generic_onoff_client_model_cb(esp_ble_mesh_generic_client_cb_event_t event,
-        esp_ble_mesh_generic_client_cb_param_t *param)
+                                            esp_ble_mesh_generic_client_cb_param_t *param)
 {
     uint32_t opcode = param->params->opcode;
 
@@ -94,7 +96,72 @@ void ble_mesh_generic_onoff_client_model_cb(esp_ble_mesh_generic_client_cb_event
     default:
         break;
     }
-    ESP_LOGD(TAG, "exit %s \n", __func__);
+    ESP_LOGD(TAG, "exit %s", __func__);
+}
+
+void ble_mesh_generic_server_model_cb(esp_ble_mesh_generic_server_cb_event_t event,
+                                      esp_ble_mesh_generic_server_cb_param_t *param)
+{
+    uint32_t opcode = param->ctx.recv_op;
+    uint8_t status;
+
+    ESP_LOGD(TAG, "enter %s: event is %d, opcode is 0x%04" PRIx32, __func__, event, opcode);
+
+    switch (event) {
+        case ESP_BLE_MESH_GENERIC_SERVER_STATE_CHANGE_EVT:
+            if (opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
+                ESP_LOGI(TAG, "GenOnOffServer:Set,OK,%d", param->value.state_change.onoff_set.onoff);
+                ble_mesh_node_set_state(param->value.state_change.onoff_set.onoff);
+            } else if (opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
+                ESP_LOGI(TAG, "GenOnOffServer:SetUnAck,OK,%d", param->value.state_change.onoff_set.onoff);
+                ble_mesh_node_set_state(param->value.state_change.onoff_set.onoff);
+            }
+            break;
+    case ESP_BLE_MESH_GENERIC_SERVER_RECV_GET_MSG_EVT: {
+        switch (opcode) {
+        case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET:
+            ESP_LOGI(TAG, "GenOnOffServer:Get,OK");
+            ble_mesh_node_get_state(status);
+            esp_ble_mesh_server_model_send_msg(param->model, &param->ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
+                                                   sizeof(status), &status);
+            break;
+        default:
+            break;
+        }
+        break;
+    }
+    case ESP_BLE_MESH_GENERIC_SERVER_RECV_SET_MSG_EVT: {
+        if (opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET || opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
+            esp_ble_mesh_gen_onoff_srv_t *srv = param->model->user_data;
+            if (param->value.set.onoff.op_en == false) {
+                srv->state.onoff = param->value.set.onoff.onoff;
+            } else {
+                /* TODO: Delay and state transition */
+               srv->state.onoff = param->value.set.onoff.onoff;
+            }
+        }
+
+        switch (opcode) {
+            case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET:
+                ESP_LOGI(TAG, "GenOnOffServer:Set,OK,%d", param->value.set.onoff.onoff);
+                ble_mesh_node_set_state(param->value.set.onoff.onoff);
+                ble_mesh_node_get_state(status);
+                esp_ble_mesh_server_model_send_msg(param->model, &param->ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
+                                                   sizeof(status), &status);
+                break;
+            case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK:
+                ble_mesh_node_set_state(param->value.set.onoff.onoff);
+                ESP_LOGI(TAG, "GenOnOffServer:SetUnAck,OK,%d", param->value.set.onoff.onoff);
+                break;
+            default:
+                break;
+        }
+        break;
+    }
+    default:
+        break;
+    }
+    ESP_LOGD(TAG, "exit %s", __func__);
 }
 
 int ble_mesh_generic_onoff_client_model(int argc, char **argv)
@@ -107,8 +174,6 @@ int ble_mesh_generic_onoff_client_model(int argc, char **argv)
         .msg_timeout = 0,
         .ctx.send_ttl = 7,
     };
-
-    ESP_LOGD(TAG, "enter %s\n", __func__);
 
     int nerrors = arg_parse(argc, argv, (void **) &gen_onoff_state);
     if (nerrors != 0) {
@@ -147,7 +212,6 @@ int ble_mesh_generic_onoff_client_model(int argc, char **argv)
             err = esp_ble_mesh_generic_client_set_state(&onoff_common, &gen_client_set);
         }
     }
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
 }
 
