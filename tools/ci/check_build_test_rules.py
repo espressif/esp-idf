@@ -209,8 +209,10 @@ def check_test_scripts(
     paths: List[str],
     exclude_dirs: Optional[List[str]] = None,
     bypass_check_test_targets: Optional[List[str]] = None,
+    extra_default_build_targets: Optional[List[str]] = None,
 ) -> None:
     from idf_build_apps import App, find_apps
+    from idf_build_apps.constants import SUPPORTED_TARGETS
 
     # takes long time, run only in CI
     # dict:
@@ -323,6 +325,7 @@ def check_test_scripts(
             manifest_files=[
                 str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')
             ],
+            default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
         )
     )
     exit_code = 0
@@ -467,17 +470,17 @@ if __name__ == '__main__':
         else:
             _exclude_dirs = []
 
-        extra_default_build_targets: List[str] = []
-        bypass_check_test_targets: List[str] = []
+        extra_default_build_targets_list: List[str] = []
+        bypass_check_test_targets_list: List[str] = []
         if arg.config:
             with open(arg.config) as fr:
                 configs = yaml.safe_load(fr)
 
             if configs:
-                extra_default_build_targets = (
+                extra_default_build_targets_list = (
                     configs.get('extra_default_build_targets') or []
                 )
-                bypass_check_test_targets = (
+                bypass_check_test_targets_list = (
                     configs.get('bypass_check_test_targets') or []
                 )
 
@@ -485,11 +488,12 @@ if __name__ == '__main__':
             check_readme(
                 list(check_dirs),
                 exclude_dirs=_exclude_dirs,
-                extra_default_build_targets=extra_default_build_targets,
+                extra_default_build_targets=extra_default_build_targets_list,
             )
         elif arg.action == 'check-test-scripts':
             check_test_scripts(
                 list(check_dirs),
                 exclude_dirs=_exclude_dirs,
-                bypass_check_test_targets=bypass_check_test_targets,
+                bypass_check_test_targets=bypass_check_test_targets_list,
+                extra_default_build_targets=extra_default_build_targets_list,
             )
