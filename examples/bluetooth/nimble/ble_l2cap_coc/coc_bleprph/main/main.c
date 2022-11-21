@@ -20,7 +20,7 @@ static uint8_t ext_adv_pattern_1[] = {
         0x02, 0x01, 0x06,
 	0x03, 0x03, 0xab, 0xcd,
 	0x03, 0x03, 0x18, 0x12,
-	0x11, 0X09, 'e', 's', 'p', '3', '2', 'h', '2', '-', 'B', 'L', 'E', '5', '0', '-', 'S', '\0',
+	0x12, 0X09, 'e', 'x', 't', '-', 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'l', '2', 'c', 'o', 'c',
 };
 #endif
 
@@ -87,8 +87,6 @@ ext_bleprph_advertise(void)
 
     /* enable connectable advertising */
     params.connectable = 1;
-    params.scannable = 1;
-    params.legacy_pdu = 1;
 
     /* advertise using random addr */
     params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
