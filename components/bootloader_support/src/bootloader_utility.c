@@ -732,6 +732,48 @@ static void load_image(const esp_image_metadata_t *image_data)
     unpack_load_app(image_data);
 }
 
+#if SOC_MMU_DI_VADDR_SHARED
+static void unpack_load_app(const esp_image_metadata_t *data)
+{
+    /**
+     * note:
+     * On chips with shared D/I external vaddr, we don't divide them into either D or I,
+     * as essentially they are the same.
+     * We integrate all the hardware difference into this `unpack_load_app` function.
+     */
+    uint32_t rom_addr[2] = {};
+    uint32_t rom_load_addr[2] = {};
+    uint32_t rom_size[2] = {};
+    int rom_index = 0;  //shall not exceed 2
+
+    // Find DROM & IROM addresses, to configure MMU mappings
+    for (int i = 0; i < data->image.segment_count; i++) {
+        const esp_image_segment_header_t *header = &data->segments[i];
+        //`SOC_DROM_LOW` and `SOC_DROM_HIGH` are the same as `SOC_IROM_LOW` and `SOC_IROM_HIGH`, reasons are in above `note`
+        if (header->load_addr >= SOC_DROM_LOW && header->load_addr < SOC_DROM_HIGH) {
+            /**
+             * D/I are shared, but there should not be a third segment on flash
+             */
+            assert(rom_index < 2);
+            rom_addr[rom_index] = data->segment_data[i];
+            rom_load_addr[rom_index] = header->load_addr;
+            rom_size[rom_index] = header->data_len;
+            rom_index++;
+        }
+    }
+    assert(rom_index == 2);
+
+    ESP_EARLY_LOGD(TAG, "calling set_cache_and_start_app");
+    set_cache_and_start_app(rom_addr[0],
+                            rom_load_addr[0],
+                            rom_size[0],
+                            rom_addr[1],
+                            rom_load_addr[1],
+                            rom_size[1],
+                            data->image.entry_addr);
+}
+
+#else  //!SOC_MMU_DI_VADDR_SHARED
 static void unpack_load_app(const esp_image_metadata_t *data)
 {
     uint32_t drom_addr = 0;
@@ -741,14 +783,14 @@ static void unpack_load_app(const esp_image_metadata_t *data)
     uint32_t irom_load_addr = 0;
     uint32_t irom_size = 0;
 
-    // Find DROM & IROM addresses, to configure cache mappings
+    // Find DROM & IROM addresses, to configure MMU mappings
     for (int i = 0; i < data->image.segment_count; i++) {
         const esp_image_segment_header_t *header = &data->segments[i];
         if (header->load_addr >= SOC_DROM_LOW && header->load_addr < SOC_DROM_HIGH) {
             if (drom_addr != 0) {
-                ESP_LOGE(TAG, MAP_ERR_MSG, "DROM");
+                ESP_EARLY_LOGE(TAG, MAP_ERR_MSG, "DROM");
             } else {
-                ESP_LOGD(TAG, "Mapping segment %d as %s", i, "DROM");
+                ESP_EARLY_LOGD(TAG, "Mapping segment %d as %s", i, "DROM");
             }
             drom_addr = data->segment_data[i];
             drom_load_addr = header->load_addr;
@@ -756,9 +798,9 @@ static void unpack_load_app(const esp_image_metadata_t *data)
         }
         if (header->load_addr >= SOC_IROM_LOW && header->load_addr < SOC_IROM_HIGH) {
             if (irom_addr != 0) {
-                ESP_LOGE(TAG, MAP_ERR_MSG, "IROM");
+                ESP_EARLY_LOGE(TAG, MAP_ERR_MSG, "IROM");
             } else {
-                ESP_LOGD(TAG, "Mapping segment %d as %s", i, "IROM");
+                ESP_EARLY_LOGD(TAG, "Mapping segment %d as %s", i, "IROM");
             }
             irom_addr = data->segment_data[i];
             irom_load_addr = header->load_addr;
@@ -766,7 +808,7 @@ static void unpack_load_app(const esp_image_metadata_t *data)
         }
     }
 
-    ESP_LOGD(TAG, "calling set_cache_and_start_app");
+    ESP_EARLY_LOGD(TAG, "calling set_cache_and_start_app");
     set_cache_and_start_app(drom_addr,
                             drom_load_addr,
                             drom_size,
@@ -775,6 +817,7 @@ static void unpack_load_app(const esp_image_metadata_t *data)
                             irom_size,
                             data->image.entry_addr);
 }
+#endif  //#if SOC_MMU_DI_VADDR_SHARED
 
 static void set_cache_and_start_app(
     uint32_t drom_addr,

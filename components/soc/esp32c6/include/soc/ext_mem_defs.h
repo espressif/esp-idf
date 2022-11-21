@@ -15,17 +15,17 @@ extern "C" {
 
 /*IRAM0 is connected with Cache IBUS0*/
 #define IRAM0_CACHE_ADDRESS_LOW             0x42000000
-#define IRAM0_CACHE_ADDRESS_HIGH(page_size) (IRAM0_CACHE_ADDRESS_LOW + ((page_size) * 128)) // MMU has 256 pages, first 128 for instruction
+#define IRAM0_CACHE_ADDRESS_HIGH(page_size) (IRAM0_CACHE_ADDRESS_LOW + ((page_size) * 256))
 #define IRAM0_ADDRESS_LOW                   0x40000000
 #define IRAM0_ADDRESS_HIGH(page_size)       IRAM0_CACHE_ADDRESS_HIGH(page_size)
 
 /*DRAM0 is connected with Cache DBUS0*/
-#define DRAM0_ADDRESS_LOW               0x42000000
-#define DRAM0_ADDRESS_HIGH              0x43000000
-#define DRAM0_CACHE_ADDRESS_LOW         IRAM0_CACHE_ADDRESS_HIGH(CONFIG_MMU_PAGE_SIZE) // ESP32C6-TODO after fixed, also need to remove the sdkconfig.h inclusion
-#define DRAM0_CACHE_ADDRESS_HIGH(page_size)        (IRAM0_CACHE_ADDRESS_HIGH(page_size) + ((page_size) * 128)) // MMU has 256 pages, second 128 for data
-#define DRAM0_CACHE_OPERATION_HIGH(page_size)      DRAM0_CACHE_ADDRESS_HIGH(page_size)
-#define ESP_CACHE_TEMP_ADDR             0x42000000
+#define DRAM0_ADDRESS_LOW                        0x42000000
+#define DRAM0_ADDRESS_HIGH                       0x43000000
+#define DRAM0_CACHE_ADDRESS_LOW                  IRAM0_CACHE_ADDRESS_LOW     //I/D share the same vaddr range
+#define DRAM0_CACHE_ADDRESS_HIGH(page_size)      IRAM0_CACHE_ADDRESS_HIGH(page_size)    //I/D share the same vaddr range
+#define DRAM0_CACHE_OPERATION_HIGH(page_size)    DRAM0_CACHE_ADDRESS_HIGH(page_size)
+#define ESP_CACHE_TEMP_ADDR                      0x42000000
 
 #define BUS_SIZE(bus_name, page_size)                 (bus_name##_ADDRESS_HIGH(page_size) - bus_name##_ADDRESS_LOW)
 #define ADDRESS_IN_BUS(bus_name, vaddr, page_size)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH(page_size))
