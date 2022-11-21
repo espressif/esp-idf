@@ -74,8 +74,11 @@ static int get_idx(esp_mac_type_t type)
     return -1;
 }
 
-static esp_err_t get_mac_addr_from_mac_table(uint8_t *mac, unsigned idx, bool silent)
+static esp_err_t get_mac_addr_from_mac_table(uint8_t *mac, int idx, bool silent)
 {
+    if (idx == -1) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
     if (!(s_mac_table[idx].state & STATE_SET)) {
         esp_mac_type_t type = s_mac_table[idx].type;
         if (type == ESP_MAC_BASE || type == ESP_MAC_EFUSE_FACTORY || type == ESP_MAC_EFUSE_CUSTOM) {
