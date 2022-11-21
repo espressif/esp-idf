@@ -180,14 +180,24 @@ BaseType_t xPortSysTickHandler(void)
 
     // Call FreeRTOS Increment tick function
     BaseType_t xSwitchRequired;
-#if CONFIG_FREERTOS_UNICORE
-    xSwitchRequired = xTaskIncrementTick();
-#else
+#if ( configNUM_CORES > 1 )
+    /*
+    For SMP, xTaskIncrementTick() will internally enter a critical section. But only core 0 calls xTaskIncrementTick()
+    while core 1 should call xTaskIncrementTickOtherCores().
+    */
     if (xPortGetCoreID() == 0) {
         xSwitchRequired = xTaskIncrementTick();
     } else {
         xSwitchRequired = xTaskIncrementTickOtherCores();
     }
+#else // configNUM_CORES > 1
+    /*
+    Vanilla (single core) FreeRTOS expects that xTaskIncrementTick() cannot be interrupted (i.e., no nested interrupts).
+    Thus we have to disable interrupts before calling it.
+    */
+    UBaseType_t uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
+    xSwitchRequired = xTaskIncrementTick();
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedInterruptStatus);
 #endif
 
     // Check if yield is required

@@ -447,6 +447,13 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void);
 
 #define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
 
+/**
+ * @brief Used by FreeRTOS functions to call the correct version of critical section API
+ */
+#if ( configNUM_CORES > 1 )
+#define portCHECK_IF_IN_ISR()   xPortInIsrContext()
+#endif
+
 // ------------------ Critical Sections --------------------
 
 /**

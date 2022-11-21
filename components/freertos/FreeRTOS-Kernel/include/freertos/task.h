@@ -3408,6 +3408,32 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp ) PRIVILEGED_FUNCTION;
 /** @cond !DOC_EXCLUDE_HEADER_SECTION */
 
 /*
+ * Various convenience macros for critical sections and scheduler suspension
+ * called by other FreeRTOS sources and not meant to be called by the
+ * application. The behavior of each macro depends on whether FreeRTOS is
+ * currently configured for SMP or single core.
+ */
+#if ( configNUM_CORES > 1 )
+    #define prvENTER_CRITICAL_OR_SUSPEND_ALL( x )  taskENTER_CRITICAL( ( x ) )
+    #define prvEXIT_CRITICAL_OR_RESUME_ALL( x )    ( { taskEXIT_CRITICAL( ( x ) ); pdFALSE; } )
+    #define prvENTER_CRITICAL_OR_MASK_ISR( pxLock, uxInterruptStatus ) \
+        taskENTER_CRITICAL_ISR( ( pxLock ) );                          \
+        ( void ) ( uxInterruptStatus );
+    #define prvEXIT_CRITICAL_OR_UNMASK_ISR( pxLock, uxInterruptStatus ) \
+        taskEXIT_CRITICAL_ISR( ( pxLock ) );                            \
+        ( void ) ( uxInterruptStatus );
+#else /* configNUM_CORES > 1 */
+    #define prvENTER_CRITICAL_OR_SUSPEND_ALL( x )  ( { vTaskSuspendAll(); ( void ) ( x ); } )
+    #define prvEXIT_CRITICAL_OR_RESUME_ALL( x )    xTaskResumeAll()
+    #define prvENTER_CRITICAL_OR_MASK_ISR( pxLock, uxInterruptStatus )  \
+        ( uxSavedInterruptStatus ) = portSET_INTERRUPT_MASK_FROM_ISR(); \
+        ( void ) ( pxLock );
+    #define prvEXIT_CRITICAL_OR_UNMASK_ISR( pxLock, uxInterruptStatus )  \
+        portCLEAR_INTERRUPT_MASK_FROM_ISR( ( uxSavedInterruptStatus ) ); \
+        ( void ) ( pxLock );
+#endif /* configNUM_CORES > 1 */
+
+/*
  * Return the handle of the task running on a certain CPU. Because of
  * the nature of SMP processing, there is no guarantee that this
  * value will still be valid on return and should only be used for
@@ -3519,6 +3545,8 @@ void vTaskPlaceOnEventListRestricted( List_t * const pxEventList,
                                       TickType_t xTicksToWait,
                                       const BaseType_t xWaitIndefinitely ) PRIVILEGED_FUNCTION;
 
+#if ( configNUM_CORES > 1 )
+
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
  * INTERFACE WHICH IS FOR THE EXCLUSIVE USE OF THE SCHEDULER.
@@ -3533,8 +3561,9 @@ void vTaskPlaceOnEventListRestricted( List_t * const pxEventList,
  * of delegating the entire responsibility to one of vTask...EventList()
  * functions).
  */
-void vTaskTakeKernelLock( void );
-void vTaskReleaseKernelLock( void );
+    void vTaskTakeKernelLock( void );
+    void vTaskReleaseKernelLock( void );
+#endif /* configNUM_CORES > 1 */
 
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN

@@ -606,11 +606,7 @@
         TickType_t xTimeNow;
         BaseType_t xTimerListsWereSwitched;
 
-        #ifdef ESP_PLATFORM
-            taskENTER_CRITICAL( &xTimerLock );
-        #else
-            vTaskSuspendAll();
-        #endif // ESP_PLATFORM
+        prvENTER_CRITICAL_OR_SUSPEND_ALL( &xTimerLock );
         {
             /* Obtain the time now to make an assessment as to whether the timer
              * has expired or not.  If obtaining the time causes the lists to switch
@@ -624,11 +620,7 @@
                 /* The tick count has not overflowed, has the timer expired? */
                 if( ( xListWasEmpty == pdFALSE ) && ( xNextExpireTime <= xTimeNow ) )
                 {
-                    #ifdef ESP_PLATFORM
-                        taskEXIT_CRITICAL( &xTimerLock );
-                    #else
-                        ( void ) xTaskResumeAll();
-                    #endif // ESP_PLATFORM
+                    ( void ) prvEXIT_CRITICAL_OR_RESUME_ALL( &xTimerLock );
                     prvProcessExpiredTimer( xNextExpireTime, xTimeNow );
                 }
                 else
@@ -648,11 +640,7 @@
 
                     vQueueWaitForMessageRestricted( xTimerQueue, ( xNextExpireTime - xTimeNow ), xListWasEmpty );
 
-                    #ifdef ESP_PLATFORM /* IDF-3755 */
-                        taskEXIT_CRITICAL( &xTimerLock );
-                    #else
-                        if( xTaskResumeAll() == pdFALSE )
-                    #endif // ESP_PLATFORM
+                    if( prvEXIT_CRITICAL_OR_RESUME_ALL( &xTimerLock ) == pdFALSE )
                     {
                         /* Yield to wait for either a command to arrive, or the
                          * block time to expire.  If a command arrived between the
@@ -660,22 +648,15 @@
                          * will not cause the task to block. */
                         portYIELD_WITHIN_API();
                     }
-
-                    #ifndef ESP_PLATFORM /* IDF-3755 */
-                        else
-                        {
-                            mtCOVERAGE_TEST_MARKER();
-                        }
-                    #endif // ESP_PLATFORM
+                    else
+                    {
+                        mtCOVERAGE_TEST_MARKER();
+                    }
                 }
             }
             else
             {
-                #ifdef ESP_PLATFORM /* IDF-3755 */
-                    taskEXIT_CRITICAL( &xTimerLock );
-                #else
-                    ( void ) xTaskResumeAll();
-                #endif // ESP_PLATFORM
+                ( void ) prvEXIT_CRITICAL_OR_RESUME_ALL( &xTimerLock );
             }
         }
     }

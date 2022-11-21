@@ -1095,12 +1095,7 @@ BaseType_t xQueueGenericSendFromISR( QueueHandle_t xQueue,
      * read, instead return a flag to say whether a context switch is required or
      * not (i.e. has a task with a higher priority than us been woken by this
      * post). */
-    #if ( configNUM_CORES > 1 )
-        taskENTER_CRITICAL_ISR( &( pxQueue->xQueueLock ) );
-        ( void ) uxSavedInterruptStatus;
-    #else
-        uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
-    #endif
+    prvENTER_CRITICAL_OR_MASK_ISR( &( pxQueue->xQueueLock ), uxSavedInterruptStatus );
     {
         if( ( pxQueue->uxMessagesWaiting < pxQueue->uxLength ) || ( xCopyPosition == queueOVERWRITE ) )
         {
@@ -1236,11 +1231,7 @@ BaseType_t xQueueGenericSendFromISR( QueueHandle_t xQueue,
             xReturn = errQUEUE_FULL;
         }
     }
-    #if ( configNUM_CORES > 1 )
-        taskEXIT_CRITICAL_ISR( &( pxQueue->xQueueLock ) );
-    #else
-        portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
-    #endif
+    prvEXIT_CRITICAL_OR_UNMASK_ISR( &( pxQueue->xQueueLock ), uxSavedInterruptStatus );
 
     return xReturn;
 }
@@ -1286,12 +1277,7 @@ BaseType_t xQueueGiveFromISR( QueueHandle_t xQueue,
      * link: https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
     portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
-    #if ( configNUM_CORES > 1 )
-        taskENTER_CRITICAL_ISR( &( pxQueue->xQueueLock ) );
-        ( void ) uxSavedInterruptStatus;
-    #else
-        uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
-    #endif
+    prvENTER_CRITICAL_OR_MASK_ISR( &( pxQueue->xQueueLock ), uxSavedInterruptStatus );
     {
         const UBaseType_t uxMessagesWaiting = pxQueue->uxMessagesWaiting;
 
@@ -1422,11 +1408,7 @@ BaseType_t xQueueGiveFromISR( QueueHandle_t xQueue,
             xReturn = errQUEUE_FULL;
         }
     }
-    #if ( configNUM_CORES > 1 )
-        taskEXIT_CRITICAL_ISR( &( pxQueue->xQueueLock ) );
-    #else
-        portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
-    #endif
+    prvEXIT_CRITICAL_OR_UNMASK_ISR( &( pxQueue->xQueueLock ), uxSavedInterruptStatus );
 
     return xReturn;
 }
@@ -2094,12 +2076,7 @@ BaseType_t xQueueReceiveFromISR( QueueHandle_t xQueue,
      * link: https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
     portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
-    #if ( configNUM_CORES > 1 )
-        taskENTER_CRITICAL_ISR( &( pxQueue->xQueueLock ) );
-        ( void ) uxSavedInterruptStatus;
-    #else
-        uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
-    #endif
+    prvENTER_CRITICAL_OR_MASK_ISR( &( pxQueue->xQueueLock ), uxSavedInterruptStatus );
     {
         const UBaseType_t uxMessagesWaiting = pxQueue->uxMessagesWaiting;
 
@@ -2170,12 +2147,7 @@ BaseType_t xQueueReceiveFromISR( QueueHandle_t xQueue,
             traceQUEUE_RECEIVE_FROM_ISR_FAILED( pxQueue );
         }
     }
-    #if ( configNUM_CORES > 1 )
-        taskEXIT_CRITICAL_ISR( &( pxQueue->xQueueLock ) );
-    #else
-        portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
-    #endif
-
+    prvEXIT_CRITICAL_OR_UNMASK_ISR( &( pxQueue->xQueueLock ), uxSavedInterruptStatus );
 
     return xReturn;
 }
@@ -2209,12 +2181,7 @@ BaseType_t xQueuePeekFromISR( QueueHandle_t xQueue,
      * link: https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
     portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
-    #if ( configNUM_CORES > 1 )
-        taskENTER_CRITICAL_ISR( &( pxQueue->xQueueLock ) );
-        ( void ) uxSavedInterruptStatus;
-    #else
-        uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
-    #endif
+    prvENTER_CRITICAL_OR_MASK_ISR( &( pxQueue->xQueueLock ), uxSavedInterruptStatus );
     {
         /* Cannot block in an ISR, so check there is data available. */
         if( pxQueue->uxMessagesWaiting > ( UBaseType_t ) 0 )
@@ -2235,12 +2202,7 @@ BaseType_t xQueuePeekFromISR( QueueHandle_t xQueue,
             traceQUEUE_PEEK_FROM_ISR_FAILED( pxQueue );
         }
     }
-    #if ( configNUM_CORES > 1 )
-        taskEXIT_CRITICAL_ISR( &( pxQueue->xQueueLock ) );
-    #else
-        portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
-    #endif
-
+    prvEXIT_CRITICAL_OR_UNMASK_ISR( &( pxQueue->xQueueLock ), uxSavedInterruptStatus );
 
     return xReturn;
 }
@@ -3269,8 +3231,21 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
         configASSERT( pxQueueSetContainer );
         configASSERT( pxQueueSetContainer->uxMessagesWaiting < pxQueueSetContainer->uxLength );
 
-        /* We need to also acquire the queue set's spinlock as well. */
-        taskENTER_CRITICAL( &( pxQueueSetContainer->xQueueLock ) );
+        #if ( configNUM_CORES > 1 )
+
+            /* In SMP, queue sets have their own spinlock. Thus we need to also
+             * acquire the queue set's spinlock before accessing it. This
+             * function can also be called from an ISR context, so we need to
+             * check whether we are in an ISR. */
+            if( portCHECK_IF_IN_ISR() == pdFALSE )
+            {
+                taskENTER_CRITICAL( &( pxQueueSetContainer->xQueueLock ) );
+            }
+            else
+            {
+                taskENTER_CRITICAL_ISR( &( pxQueueSetContainer->xQueueLock ) );
+            }
+        #endif /* configNUM_CORES > 1 */
 
         if( pxQueueSetContainer->uxMessagesWaiting < pxQueueSetContainer->uxLength )
         {
@@ -3321,8 +3296,17 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
             mtCOVERAGE_TEST_MARKER();
         }
 
-        /* Release the previously acquired queue set's spinlock. */
-        taskEXIT_CRITICAL( &( pxQueueSetContainer->xQueueLock ) );
+        #if ( configNUM_CORES > 1 )
+            /* Release the previously acquired queue set's spinlock. */
+            if( portCHECK_IF_IN_ISR() == pdFALSE )
+            {
+                taskEXIT_CRITICAL( &( pxQueueSetContainer->xQueueLock ) );
+            }
+            else
+            {
+                taskEXIT_CRITICAL_ISR( &( pxQueueSetContainer->xQueueLock ) );
+            }
+        #endif /* configNUM_CORES > 1 */
 
         return xReturn;
     }
