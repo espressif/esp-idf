@@ -512,6 +512,15 @@ macro(project project_name)
         list(REMOVE_ITEM build_components ${test_components})
     endif()
 
+    if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        # Compiling for the host, and the host is macOS, so the linker is Darwin LD.
+        # Note, when adding support for Clang and LLD based toolchain this check will
+        # need to be modified.
+        set(linker_type "Darwin")
+    else()
+        set(linker_type "GNU")
+    endif()
+
     foreach(build_component ${build_components})
         __component_get_target(build_component_target ${build_component})
         __component_get_property(whole_archive ${build_component_target} WHOLE_ARCHIVE)
@@ -534,7 +543,7 @@ macro(project project_name)
     endforeach()
 
 
-    if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    if(linker_type STREQUAL "GNU")
         set(mapfile "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.map")
         set(idf_target "${IDF_TARGET}")
         string(TOUPPER ${idf_target} idf_target)
