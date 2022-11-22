@@ -105,7 +105,8 @@ typedef struct {
  * in parallel.
  * It blocks until the signing is finished and then returns the signature.
  *
- * @note This function locks the HMAC, SHA, AES and RSA components during its entire execution time.
+ * @note
+ * Please see note section of \c esp_ds_start_sign() for more details about the input parameters.
  *
  * @param message the message to be signed; its length should be (data->rsa_length + 1)*4 bytes
  * @param data the encrypted signing key data (AES encrypted RSA key + IV)
@@ -139,8 +140,14 @@ esp_err_t esp_ds_sign(const void *message,
  * Z is the signature, X is the input message,
  * Y and M are the RSA private key parameters.
  *
- * @note This function locks the HMAC, SHA, AES and RSA components, so the user has to ensure to call
- *       \c esp_ds_finish_sign() in a timely manner.
+ * @note
+ * This function locks the HMAC, SHA, AES and RSA components, so the user has to ensure to call
+ * \c esp_ds_finish_sign() in a timely manner.
+ * The numbers Y, M, Rb which are a part of esp_ds_data_t should be provided in little endian format
+ * and should be of length equal to the RSA private key bit length
+ * The message length in bits should also be equal to the RSA private key bit length.
+ * No padding is applied to the message automatically, Please ensure the message is appropriate padded before
+ * calling the API.
  *
  * @param message the message to be signed; its length should be (data->rsa_length + 1)*4 bytes
  * @param data the encrypted signing key data (AES encrypted RSA key + IV)
@@ -197,6 +204,13 @@ esp_err_t esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx);
  *        is done and 'data' is stored.
  * @param key Pointer to 32 bytes of key data. Type determined by key_type parameter. The expectation is the
  *        corresponding HMAC key will be stored to efuse and then permanently erased.
+ *
+ * @note
+ * The numbers Y, M, Rb which are a part of esp_ds_data_t should be provided in little endian format
+ * and should be of length equal to the RSA private key bit length
+ * The message length in bits should also be equal to the RSA private key bit length.
+ * No padding is applied to the message automatically, Please ensure the message is appropriate padded before
+ * calling the API.
  *
  * @return
  *      - ESP_OK if successful, the ds operation has been finished and the result is written to signature.
