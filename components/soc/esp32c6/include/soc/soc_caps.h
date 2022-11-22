@@ -57,7 +57,6 @@
 #define SOC_ECC_SUPPORTED               1
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
-// #define SOC_MEMPROT_SUPPORTED           1 // TODO: IDF-5684
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -120,6 +119,9 @@
 #define SOC_CPU_BREAKPOINTS_NUM         4
 #define SOC_CPU_WATCHPOINTS_NUM         4
 #define SOC_CPU_WATCHPOINT_SIZE         0x80000000 // bytes
+
+#define SOC_CPU_HAS_PMA                 1
+#define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
 
 // TODO: IDF-5339 (Copy from esp32c3, need check)
 /*-------------------------- MMU CAPS ----------------------------------------*/
@@ -218,7 +220,6 @@
 /*-------------------------- MMU CAPS ----------------------------------------*/
 #define SOC_MMU_DI_VADDR_SHARED               (1) /*!< D/I vaddr are shared */
 
-// TODO: IDF-5684 (Copy from esp32c3, need check)
 /*-------------------------- MPU CAPS ----------------------------------------*/
 #define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0
 #define SOC_MPU_MIN_REGION_SIZE                   0x20000000U
@@ -384,10 +385,7 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 
-// TODO: IDF-5684 (Copy from esp32c3, need check)
 /*-------------------------- MEMPROT CAPS ------------------------------------*/
-#define SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE   16
-#define SOC_MEMPROT_MEM_ALIGN_SIZE          512
 
 // TODO: IDF-5338 (Copy from esp32c3, need check)
 /*-------------------------- UART CAPS ---------------------------------------*/

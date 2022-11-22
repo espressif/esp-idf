@@ -223,6 +223,14 @@ config SOC_CPU_WATCHPOINT_SIZE
     hex
     default 0x80000000
 
+config SOC_CPU_HAS_PMA
+    bool
+    default y
+
+config SOC_CPU_IDRAM_SPLIT_USING_PMP
+    bool
+    default y
+
 config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool
     default y
@@ -790,14 +798,6 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
     bool
     default y
-
-config SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE
-    int
-    default 16
-
-config SOC_MEMPROT_MEM_ALIGN_SIZE
-    int
-    default 512
 
 config SOC_UART_NUM
     int
