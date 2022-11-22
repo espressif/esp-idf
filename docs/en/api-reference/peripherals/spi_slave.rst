@@ -7,21 +7,13 @@ SPI Slave driver is a program that controls {IDF_TARGET_NAME}'s SPI peripherals 
 Overview of {IDF_TARGET_NAME}'s SPI peripherals
 -----------------------------------------------
 
-.. only:: esp32 or esp32s2 or esp32s3
+On {IDF_TARGET_NAME}, {SOC_SPI_PERIPH_NUM} SPI controllers are available for general purpose usage. A certain SPI controller has independent signal bus with the same name.
 
-    {IDF_TARGET_NAME} integrates two general purpose SPI controllers which can be used as slave nodes driven by an off-chip SPI master.
+.. only:: esp32
 
-    .. only:: esp32
+    .. note::
 
-        - SPI2, sometimes referred to as HSPI
-        - SPI3, sometimes referred to as VSPI
-
-    SPI2 and SPI3 have independent signal buses with the same respective names.
-
-.. only:: esp32c3 or esp32c2
-
-    {IDF_TARGET_NAME} integrates one general purpose SPI controller which can be used as a slave node driven by an off-chip SPI master. The controller is called SPI2 and has an independent signal bus with the same name.
-
+        On ESP32, HSPI refers to SPI2, VSPI refers to SPI3. 
 
 Terminology
 -----------
@@ -146,13 +138,15 @@ GPIO Matrix and IO_MUX
     | QUADHD   | 4    | 21   |
     +----------+------+------+
 
-.. only:: esp32s2 or esp32s3
+.. only:: not esp32
 
     Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
     When an SPI Host is set to 80MHz or lower frequencies, routing SPI pins via GPIO matrix will behave the same comparing to routing them via IOMUX.
 
     The IO_MUX pins for SPI buses are given below.
+
+.. only:: esp32s2 or esp32s3
 
     +----------+------+------+
     | Pin Name | SPI2 | SPI3 |
@@ -174,18 +168,32 @@ GPIO Matrix and IO_MUX
 
 .. only:: esp32c2 or esp32c3
 
-    Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
-
-    When an SPI Host is set to 80MHz or lower frequencies, routing SPI pins via GPIO matrix will behave the same comparing to routing them via IOMUX.
-
-    The IO_MUX pins for SPI buses are given below.
-
     +----------+-------------+
     | Pin Name |    SPI2     |
     +          +-------------+
     |          | GPIO Number |
     +==========+=============+
     | CS0*     |      10     |
+    +----------+-------------+
+    | SCLK     |      6      |
+    +----------+-------------+
+    | MISO     |      2      |
+    +----------+-------------+
+    | MOSI     |      7      |
+    +----------+-------------+
+    | QUADWP   |      5      |
+    +----------+-------------+
+    | QUADHD   |      4      |
+    +----------+-------------+
+
+.. only:: esp32c6
+
+    +----------+-------------+
+    | Pin Name |    SPI2     |
+    +          +-------------+
+    |          | GPIO Number |
+    +==========+=============+
+    | CS0*     |      16     |
     +----------+-------------+
     | SCLK     |      6      |
     +----------+-------------+

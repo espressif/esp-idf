@@ -171,30 +171,6 @@ examples/peripherals/sigma_delta:
   disable:
     - if: SOC_SDM_SUPPORTED != 1
 
-examples/peripherals/spi_master/hd_eeprom:
-  disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target(s) not supported yet
-
-examples/peripherals/spi_master/lcd:
-  disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target(s) not supported yet
-
-examples/peripherals/spi_slave/receiver:
-  disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target(s) not supported yet
-
-examples/peripherals/spi_slave/sender:
-  disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target(s) not supported yet
-
 examples/peripherals/spi_slave_hd/append_mode/master:
   disable:
     - if: IDF_TARGET == "esp32c6"
@@ -207,20 +183,11 @@ examples/peripherals/spi_slave_hd/append_mode/slave:
       temporary: true
       reason: the other targets are not tested yet
 
-examples/peripherals/spi_slave_hd/segment_mode/seg_master:
-  disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target(s) not supported yet
-
 examples/peripherals/spi_slave_hd/segment_mode/seg_slave:
   disable:
     - if: IDF_TARGET == "esp32"
       temporary: true
-      reason: not tested yet
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: not supported
 
 examples/peripherals/temp_sensor:
   disable:
