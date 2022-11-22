@@ -31,6 +31,8 @@ typedef SemaphoreHandle_t osi_sem_t;
 #define osi_sem_valid( x ) ( ( ( *x ) == NULL) ? pdFALSE : pdTRUE )
 #define osi_sem_set_invalid( x ) ( ( *x ) = NULL )
 
+TickType_t osi_ms_to_ticks(uint32_t timeout_ms);
+
 int osi_sem_new(osi_sem_t *sem, uint32_t max_count, uint32_t init_count);
 
 void osi_sem_free(osi_sem_t *sem);
