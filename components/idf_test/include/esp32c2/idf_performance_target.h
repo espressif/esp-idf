@@ -28,9 +28,9 @@
 #define IDF_PERFORMANCE_MAX_ECDSA_P256_VERIFY_OP                                49000
 
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                               20
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA                        15
+#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA                        16
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                            45
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA                     40
+#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA                     41
 
 // floating point instructions per divide and per sqrt (configured for worst-case with PSRAM workaround)
 #define IDF_PERFORMANCE_MAX_CYCLES_PER_DIV                                      70
