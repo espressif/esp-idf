@@ -16,6 +16,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include <stdatomic.h>
 
 #if !defined(CONFIG_FREERTOS_UNICORE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
 
@@ -26,23 +27,21 @@
 #endif //CONFIG_COMPILER_OPTIMIZATION_NONE
 
 static DRAM_ATTR StaticSemaphore_t s_ipc_mutex_buffer[portNUM_PROCESSORS];
-static DRAM_ATTR StaticSemaphore_t s_ipc_sem_buffer[portNUM_PROCESSORS];
-static DRAM_ATTR StaticSemaphore_t s_ipc_ack_buffer[portNUM_PROCESSORS];
 
 static TaskHandle_t s_ipc_task_handle[portNUM_PROCESSORS];
 static SemaphoreHandle_t s_ipc_mutex[portNUM_PROCESSORS];    // This mutex is used as a global lock for esp_ipc_* APIs
-static SemaphoreHandle_t s_ipc_sem[portNUM_PROCESSORS];      // Two semaphores used to wake each of ipc tasks
-static SemaphoreHandle_t s_ipc_ack[portNUM_PROCESSORS];      // Semaphore used to acknowledge that task was woken up,
+static atomic_uintptr_t s_ipc_ack[portNUM_PROCESSORS] = { ATOMIC_VAR_INIT(0), ATOMIC_VAR_INIT(0) };      // Task handle used to acknowledge that task was woken up,
                                                              // or function has finished running
-static volatile esp_ipc_func_t s_func[portNUM_PROCESSORS];   // Function which should be called by high priority task
-static void * volatile s_func_arg[portNUM_PROCESSORS];       // Argument to pass into s_func
+static atomic_uintptr_t s_func[portNUM_PROCESSORS] = { ATOMIC_VAR_INIT(0), ATOMIC_VAR_INIT(0) };   // Function which should be called by high priority task
+static atomic_uintptr_t s_func_arg[portNUM_PROCESSORS] = { ATOMIC_VAR_INIT(0), ATOMIC_VAR_INIT(0) };       // Argument to pass into s_func
+
 typedef enum {
     IPC_WAIT_FOR_START,
     IPC_WAIT_FOR_END
 } esp_ipc_wait_t;
 
-static volatile esp_ipc_wait_t s_ipc_wait[portNUM_PROCESSORS];// This variable tells high priority task when it should give
-                                                             //   s_ipc_ack semaphore: before s_func is called, or
+static atomic_int s_ipc_wait[portNUM_PROCESSORS] = { ATOMIC_VAR_INIT(IPC_WAIT_FOR_START), ATOMIC_VAR_INIT(IPC_WAIT_FOR_START) };// This variable tells high priority task when it should give
+                                                             //   s_ipc_ack handle: before s_func is called, or
                                                              //   after it returns
 
 #if CONFIG_APPTRACE_GCOV_ENABLE
@@ -52,16 +51,21 @@ static void * volatile s_gcov_func_arg;                      // Argument to pass
 
 static void IRAM_ATTR ipc_task(void* arg)
 {
-    const int cpuid = (int) arg;
+    const int cpuid = (int)((intptr_t) arg);
+    esp_ipc_func_t func;
+    void* func_arg;
+    esp_ipc_wait_t ipc_wait;
+    TaskHandle_t ipc_ack;
+
     assert(cpuid == xPortGetCoreID());
 #ifdef CONFIG_ESP_IPC_ISR_ENABLE
     esp_ipc_isr_init();
 #endif
     while (true) {
         // Wait for IPC to be initiated.
-        // This will be indicated by giving the semaphore corresponding to
+        // This will be indicated by giving the task handle corresponding to
         // this CPU.
-        if (xSemaphoreTake(s_ipc_sem[cpuid], portMAX_DELAY) != pdTRUE) {
+        if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) == 0) {
             // TODO: when can this happen?
             abort();
         }
@@ -74,19 +78,22 @@ static void IRAM_ATTR ipc_task(void* arg)
             continue;
         }
 #endif
-        if (s_func[cpuid]) {
-            // we need to cache s_func, s_func_arg and s_ipc_wait variables locally because they can be changed by a subsequent IPC call.
-            esp_ipc_func_t func = s_func[cpuid];
-            s_func[cpuid] = NULL;
-            void* arg = s_func_arg[cpuid];
-            esp_ipc_wait_t ipc_wait = s_ipc_wait[cpuid];
+        // we need to cache s_func, s_func_arg and s_ipc_wait variables locally
+        // because they can be changed by a subsequent IPC call.
+        func = (esp_ipc_func_t)atomic_exchange(&s_func[cpuid], 0);
+        if (func) {
+            func_arg = (void*)atomic_load(&s_func_arg[cpuid]);
+            ipc_wait = (esp_ipc_wait_t)atomic_load(&s_ipc_wait[cpuid]);
+            ipc_ack = (TaskHandle_t)atomic_exchange(&s_ipc_ack[cpuid], 0);
 
-            if (ipc_wait == IPC_WAIT_FOR_START) {
-                xSemaphoreGive(s_ipc_ack[cpuid]);
+            if ((ipc_wait == IPC_WAIT_FOR_START) && ipc_ack) {
+                xTaskNotifyGive(ipc_ack);
             }
-            (*func)(arg);
-            if (ipc_wait == IPC_WAIT_FOR_END) {
-                xSemaphoreGive(s_ipc_ack[cpuid]);
+
+            (*func)(func_arg);
+
+            if ((ipc_wait == IPC_WAIT_FOR_END) && ipc_ack) {
+                xTaskNotifyGive(ipc_ack);
             }
         }
 
@@ -113,13 +120,11 @@ static void esp_ipc_init(void) __attribute__((constructor));
 
 static void esp_ipc_init(void)
 {
-    char task_name[configMAX_TASK_NAME_LEN];
+    char task_name[] = "ipcX"; // up to 10 ipc tasks/cores (0-9)
 
     for (int i = 0; i < portNUM_PROCESSORS; ++i) {
-        snprintf(task_name, sizeof(task_name), "ipc%d", i);
+        task_name[3] = i + 0x30;
         s_ipc_mutex[i] = xSemaphoreCreateMutexStatic(&s_ipc_mutex_buffer[i]);
-        s_ipc_ack[i] = xSemaphoreCreateBinaryStatic(&s_ipc_ack_buffer[i]);
-        s_ipc_sem[i] = xSemaphoreCreateBinaryStatic(&s_ipc_sem_buffer[i]);
         portBASE_TYPE res = xTaskCreatePinnedToCore(ipc_task, task_name, IPC_STACK_SIZE, (void*) i,
                                                     configMAX_PRIORITIES - 1, &s_ipc_task_handle[i], i);
         assert(res == pdTRUE);
@@ -131,6 +136,9 @@ static esp_err_t esp_ipc_call_and_wait(uint32_t cpu_id, esp_ipc_func_t func, voi
 {
     if (cpu_id >= portNUM_PROCESSORS) {
         return ESP_ERR_INVALID_ARG;
+    }
+    if (s_ipc_task_handle[cpu_id] == NULL) {
+        return ESP_ERR_INVALID_STATE;
     }
     if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
         return ESP_ERR_INVALID_STATE;
@@ -150,11 +158,12 @@ static esp_err_t esp_ipc_call_and_wait(uint32_t cpu_id, esp_ipc_func_t func, voi
     xSemaphoreTake(s_ipc_mutex[0], portMAX_DELAY);
 #endif
 
-    s_func[cpu_id] = func;
-    s_func_arg[cpu_id] = arg;
-    s_ipc_wait[cpu_id] = wait_for;
-    xSemaphoreGive(s_ipc_sem[cpu_id]);
-    xSemaphoreTake(s_ipc_ack[cpu_id], portMAX_DELAY);
+    atomic_store(&s_func[cpu_id], (uintptr_t)func);
+    atomic_store(&s_func_arg[cpu_id], (uintptr_t)arg);
+    atomic_store(&s_ipc_wait[cpu_id], (int)wait_for);
+    atomic_store(&s_ipc_ack[cpu_id], (uintptr_t)task_handler);
+    xTaskNotifyGive(s_ipc_task_handle[cpu_id]);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 #ifdef CONFIG_ESP_IPC_USES_CALLERS_PRIORITY
     xSemaphoreGive(s_ipc_mutex[cpu_id]);
 #else
@@ -197,13 +206,17 @@ esp_err_t esp_ipc_start_gcov_from_isr(uint32_t cpu_id, esp_ipc_func_t func, void
 
     s_gcov_func = func;
     s_gcov_func_arg = arg;
-    ret = xSemaphoreGiveFromISR(s_ipc_sem[cpu_id], NULL);
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xTaskNotifyGiveFromISR(s_ipc_task_handle[cpu_id], &xHigherPriorityTaskWoken);
 
 #ifdef CONFIG_ESP_IPC_USES_CALLERS_PRIORITY
     xSemaphoreGiveFromISR(s_ipc_mutex[cpu_id], NULL);
 #else
     xSemaphoreGiveFromISR(s_ipc_mutex[0], NULL);
 #endif
+    if (xHigherPriorityTaskWoken) {
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
 
     return ret == pdTRUE ? ESP_OK : ESP_FAIL;
 }
