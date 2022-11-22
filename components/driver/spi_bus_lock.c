@@ -212,7 +212,7 @@ struct spi_bus_lock_t {
 };
 
 struct spi_bus_lock_dev_t {
-    SemaphoreHandle_t   semphr;     ///< Binray semaphore to notify the device it claimed the bus
+    SemaphoreHandle_t   semphr;     ///< Binary semaphore to notify the device it claimed the bus
     spi_bus_lock_t*     parent;     ///< Pointer to parent spi_bus_lock_t
     uint32_t            mask;       ///< Bitwise OR-ed mask of the REQ, PEND, LOCK bits of this device
 };
