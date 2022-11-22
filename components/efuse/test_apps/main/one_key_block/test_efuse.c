@@ -121,7 +121,7 @@ TEST_CASE("Test a key read protection 2", "[efuse]")
 }
 #endif // CONFIG_EFUSE_VIRTUAL
 
-#ifdef CONFIG_IDF_ENV_FPGA
+#ifdef CONFIG_EFUSE_FPGA_TEST
 TEST_CASE("Test a real write (FPGA)2", "[efuse]")
 {
     esp_efuse_utility_debug_dump_blocks();
@@ -150,4 +150,4 @@ TEST_CASE("Test a real write (FPGA)2", "[efuse]")
 #endif // CONFIG_EFUSE_VIRTUAL
     esp_efuse_utility_debug_dump_blocks();
 }
-#endif  // CONFIG_IDF_ENV_FPGA
+#endif  // CONFIG_EFUSE_FPGA_TEST

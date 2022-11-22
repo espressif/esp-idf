@@ -84,7 +84,7 @@ TEST_CASE("Test a write/read protection", "[efuse]")
 }
 #endif // CONFIG_EFUSE_VIRTUAL
 
-#ifdef CONFIG_IDF_ENV_FPGA
+#ifdef CONFIG_EFUSE_FPGA_TEST
 TEST_CASE("Test a real write (FPGA)2", "[efuse]")
 {
     esp_efuse_utility_debug_dump_blocks();
@@ -113,9 +113,9 @@ TEST_CASE("Test a real write (FPGA)2", "[efuse]")
 #endif // CONFIG_EFUSE_VIRTUAL
     esp_efuse_utility_debug_dump_blocks();
 }
-#endif  // CONFIG_IDF_ENV_FPGA
+#endif  // CONFIG_EFUSE_FPGA_TEST
 
-#if CONFIG_IDF_ENV_FPGA || CONFIG_EFUSE_VIRTUAL
+#if CONFIG_EFUSE_FPGA_TEST || CONFIG_EFUSE_VIRTUAL
 TEST_CASE("Test writing order is BLK_MAX->BLK0", "[efuse]")
 {
     uint8_t new_key[32] = {33,  1,  2,  3,  4,  5,  6,  7,  8,  9,
@@ -191,4 +191,4 @@ TEST_CASE("Test reading inside of batch mode in a nested way", "[efuse]")
 
     esp_efuse_utility_debug_dump_blocks();
 }
-#endif  // CONFIG_IDF_ENV_FPGA || CONFIG_EFUSE_VIRTUAL
+#endif  // CONFIG_EFUSE_FPGA_TEST || CONFIG_EFUSE_VIRTUAL

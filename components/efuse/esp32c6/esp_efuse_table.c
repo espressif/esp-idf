@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 5b3b6e026d28aacca6dc3b96be8bd280
+// md5_digest_table e3b1264d26cc94f387d58e4ba9a3677c
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -191,6 +191,10 @@ static const esp_efuse_desc_t DIS_FORCE_DOWNLOAD[] = {
     {EFUSE_BLK0, 44, 1}, 	 // Disable force chip go to download mode function,
 };
 
+static const esp_efuse_desc_t DIS_SPI_DOWNLOAD_MSPI[] = {
+    {EFUSE_BLK0, 45, 1}, 	 // Represents whether the SPI0 controller is disabled in boot_mode_download,
+};
+
 static const esp_efuse_desc_t DIS_TWAI[] = {
     {EFUSE_BLK0, 46, 1}, 	 // Disable TWAI function,
 };
@@ -200,23 +204,15 @@ static const esp_efuse_desc_t JTAG_SEL_ENABLE[] = {
 };
 
 static const esp_efuse_desc_t SOFT_DIS_JTAG[] = {
-    {EFUSE_BLK0, 48, 3}, 	 // Set these bits to disable JTAG in the soft way (odd number 1 means disable). JTAG can be enabled in HMAC module.,
+    {EFUSE_BLK0, 48, 3}, 	 // Set these bits to soft disable JTAG (odd number 1 means disable). JTAG can be enabled in HMAC module.,
 };
 
 static const esp_efuse_desc_t DIS_PAD_JTAG[] = {
-    {EFUSE_BLK0, 51, 1}, 	 // Disable JTAG in the hard way. JTAG is disabled permanently.,
+    {EFUSE_BLK0, 51, 1}, 	 // Hard disable JTAG. JTAG is disabled permanently.,
 };
 
 static const esp_efuse_desc_t DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
     {EFUSE_BLK0, 52, 1}, 	 // Disable flash encryption when in download boot modes.,
-};
-
-static const esp_efuse_desc_t USB_DREFH[] = {
-    {EFUSE_BLK0, 53, 2}, 	 // Controls single-end input threshold vrefh 1.76 V to 2 V with step of 80 mV stored in eFuse.,
-};
-
-static const esp_efuse_desc_t USB_DREFL[] = {
-    {EFUSE_BLK0, 55, 2}, 	 // Controls single-end input threshold vrefl 0.8 V to 1.04 V with step of 80 mV stored in eFuse.,
 };
 
 static const esp_efuse_desc_t USB_EXCHG_PINS[] = {
@@ -272,7 +268,11 @@ static const esp_efuse_desc_t KEY_PURPOSE_5[] = {
 };
 
 static const esp_efuse_desc_t SEC_DPA_LEVEL[] = {
-    {EFUSE_BLK0, 112, 2}, 	 // Configures the clock random divide mode to determine the spa secure level,
+    {EFUSE_BLK0, 112, 2}, 	 // Configures the clock random divide mode to determine the DPA security level,
+};
+
+static const esp_efuse_desc_t CRYPT_DPA_ENABLE[] = {
+    {EFUSE_BLK0, 115, 1}, 	 // Represents whether defense against DPA attack is enabled,
 };
 
 static const esp_efuse_desc_t SECURE_BOOT_EN[] = {
@@ -295,16 +295,16 @@ static const esp_efuse_desc_t DIS_DIRECT_BOOT[] = {
     {EFUSE_BLK0, 129, 1}, 	 // Disable direct boot mode,
 };
 
-static const esp_efuse_desc_t DIS_USB_PRINT[] = {
-    {EFUSE_BLK0, 130, 1}, 	 // Disable USB Print,
+static const esp_efuse_desc_t DIS_USB_SERIAL_JTAG_ROM_PRINT[] = {
+    {EFUSE_BLK0, 130, 1}, 	 // Represents whether print from USB-Serial-JTAG during ROM boot is disabled,
 };
 
-static const esp_efuse_desc_t DIS_USB_DOWNLOAD_MODE[] = {
-    {EFUSE_BLK0, 132, 1}, 	 // Disable download through USB,
+static const esp_efuse_desc_t DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[] = {
+    {EFUSE_BLK0, 132, 1}, 	 // Represents whether the USB-Serial-JTAG download func- tion is disabled,
 };
 
 static const esp_efuse_desc_t ENABLE_SECURITY_DOWNLOAD[] = {
-    {EFUSE_BLK0, 133, 1}, 	 // Enable security download mode,
+    {EFUSE_BLK0, 133, 1}, 	 // Enable secure download mode,
 };
 
 static const esp_efuse_desc_t UART_PRINT_CONTROL[] = {
@@ -317,6 +317,10 @@ static const esp_efuse_desc_t FORCE_SEND_RESUME[] = {
 
 static const esp_efuse_desc_t SECURE_VERSION[] = {
     {EFUSE_BLK0, 142, 16}, 	 // Secure version for anti-rollback,
+};
+
+static const esp_efuse_desc_t SECURE_BOOT_DISABLE_FAST_WAKE[] = {
+    {EFUSE_BLK0, 158, 1}, 	 // Represents whether FAST VERIFY ON WAKE is disabled or enabled when Secure Boot is enabled,
 };
 
 static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
@@ -729,6 +733,11 @@ const esp_efuse_desc_t* ESP_EFUSE_DIS_FORCE_DOWNLOAD[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_DIS_SPI_DOWNLOAD_MSPI[] = {
+    &DIS_SPI_DOWNLOAD_MSPI[0],    		// Represents whether the SPI0 controller is disabled in boot_mode_download
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_DIS_TWAI[] = {
     &DIS_TWAI[0],    		// Disable TWAI function
     NULL
@@ -740,27 +749,17 @@ const esp_efuse_desc_t* ESP_EFUSE_JTAG_SEL_ENABLE[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SOFT_DIS_JTAG[] = {
-    &SOFT_DIS_JTAG[0],    		// Set these bits to disable JTAG in the soft way (odd number 1 means disable). JTAG can be enabled in HMAC module.
+    &SOFT_DIS_JTAG[0],    		// Set these bits to soft disable JTAG (odd number 1 means disable). JTAG can be enabled in HMAC module.
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_PAD_JTAG[] = {
-    &DIS_PAD_JTAG[0],    		// Disable JTAG in the hard way. JTAG is disabled permanently.
+    &DIS_PAD_JTAG[0],    		// Hard disable JTAG. JTAG is disabled permanently.
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
     &DIS_DOWNLOAD_MANUAL_ENCRYPT[0],    		// Disable flash encryption when in download boot modes.
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_USB_DREFH[] = {
-    &USB_DREFH[0],    		// Controls single-end input threshold vrefh 1.76 V to 2 V with step of 80 mV stored in eFuse.
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_USB_DREFL[] = {
-    &USB_DREFL[0],    		// Controls single-end input threshold vrefl 0.8 V to 1.04 V with step of 80 mV stored in eFuse.
     NULL
 };
 
@@ -830,7 +829,12 @@ const esp_efuse_desc_t* ESP_EFUSE_KEY_PURPOSE_5[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SEC_DPA_LEVEL[] = {
-    &SEC_DPA_LEVEL[0],    		// Configures the clock random divide mode to determine the spa secure level
+    &SEC_DPA_LEVEL[0],    		// Configures the clock random divide mode to determine the DPA security level
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_CRYPT_DPA_ENABLE[] = {
+    &CRYPT_DPA_ENABLE[0],    		// Represents whether defense against DPA attack is enabled
     NULL
 };
 
@@ -859,18 +863,18 @@ const esp_efuse_desc_t* ESP_EFUSE_DIS_DIRECT_BOOT[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_PRINT[] = {
-    &DIS_USB_PRINT[0],    		// Disable USB Print
+const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT[] = {
+    &DIS_USB_SERIAL_JTAG_ROM_PRINT[0],    		// Represents whether print from USB-Serial-JTAG during ROM boot is disabled
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_DOWNLOAD_MODE[] = {
-    &DIS_USB_DOWNLOAD_MODE[0],    		// Disable download through USB
+const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[] = {
+    &DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[0],    		// Represents whether the USB-Serial-JTAG download func- tion is disabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD[] = {
-    &ENABLE_SECURITY_DOWNLOAD[0],    		// Enable security download mode
+    &ENABLE_SECURITY_DOWNLOAD[0],    		// Enable secure download mode
     NULL
 };
 
@@ -886,6 +890,11 @@ const esp_efuse_desc_t* ESP_EFUSE_FORCE_SEND_RESUME[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[] = {
     &SECURE_VERSION[0],    		// Secure version for anti-rollback
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_DISABLE_FAST_WAKE[] = {
+    &SECURE_BOOT_DISABLE_FAST_WAKE[0],    		// Represents whether FAST VERIFY ON WAKE is disabled or enabled when Secure Boot is enabled
     NULL
 };
 
