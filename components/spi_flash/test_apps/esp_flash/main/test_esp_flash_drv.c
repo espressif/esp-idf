@@ -252,10 +252,11 @@ static void flash_test_func(flash_test_func_t func, int test_num)
 static void test_metadata(const esp_partition_t* part)
 {
     esp_flash_t* chip = part->flash_chip;
-    uint32_t id, size;
+    uint32_t id, size, actual_size;
     TEST_ESP_OK(esp_flash_read_id(chip, &id));
     TEST_ESP_OK(esp_flash_get_size(chip, &size));
-    printf("Flash ID %08lx detected size %" PRIu32 "bytes\n", id, size);
+    TEST_ESP_OK(esp_flash_get_physical_size(chip, &actual_size));
+    printf("Flash ID %08lx, size %" PRIu32 "bytes can be mapped, actual flash size is %" PRIu32 "bytes\n", id, size, actual_size);
 }
 
 TEST_CASE_FLASH("SPI flash metadata functions", test_metadata);
