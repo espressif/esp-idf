@@ -21,7 +21,7 @@ uint32_t hmac_hal_configure(hmac_hal_output_t config, uint32_t key_id)
     hmac_ll_config_finish();
     hmac_ll_wait_idle();
 
-    uint32_t conf_error = hmac_ll_query_config_error();
+    uint32_t conf_error = hmac_ll_config_error();
     if (conf_error) {
         hmac_ll_calc_finish();
         return 1;
