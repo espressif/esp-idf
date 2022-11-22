@@ -13,16 +13,14 @@
 extern "C" {
 #endif
 
-/*IRAM0 is connected with Cache IBUS0*/
-#define IRAM0_CACHE_ADDRESS_LOW             0x42000000
-#define IRAM0_CACHE_ADDRESS_HIGH(page_size) (IRAM0_CACHE_ADDRESS_LOW + ((page_size) * 256))
-#define IRAM0_ADDRESS_LOW                   0x40000000
-#define IRAM0_ADDRESS_HIGH(page_size)       IRAM0_CACHE_ADDRESS_HIGH(page_size)
+#define IRAM0_ADDRESS_LOW                        0x40800000
+#define IRAM0_ADDRESS_HIGH                       0x40880000
+#define IRAM0_CACHE_ADDRESS_LOW                  0x42000000
+#define IRAM0_CACHE_ADDRESS_HIGH(page_size)      (IRAM0_CACHE_ADDRESS_LOW + ((page_size) * 256))
 
-/*DRAM0 is connected with Cache DBUS0*/
-#define DRAM0_ADDRESS_LOW                        0x42000000
-#define DRAM0_ADDRESS_HIGH                       0x43000000
-#define DRAM0_CACHE_ADDRESS_LOW                  IRAM0_CACHE_ADDRESS_LOW     //I/D share the same vaddr range
+#define DRAM0_ADDRESS_LOW                        IRAM0_ADDRESS_LOW                      //I/D share the same vaddr range
+#define DRAM0_ADDRESS_HIGH                       IRAM0_ADDRESS_HIGH                     //I/D share the same vaddr range
+#define DRAM0_CACHE_ADDRESS_LOW                  IRAM0_CACHE_ADDRESS_LOW                //I/D share the same vaddr range
 #define DRAM0_CACHE_ADDRESS_HIGH(page_size)      IRAM0_CACHE_ADDRESS_HIGH(page_size)    //I/D share the same vaddr range
 #define DRAM0_CACHE_OPERATION_HIGH(page_size)    DRAM0_CACHE_ADDRESS_HIGH(page_size)
 #define ESP_CACHE_TEMP_ADDR                      0x42000000
