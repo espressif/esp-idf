@@ -12,14 +12,14 @@ extern "C" {
 #endif
 
 /*IRAM0 is connected with Cache IBUS0*/
-#define IRAM0_ADDRESS_LOW               0x40000000
-#define IRAM0_ADDRESS_HIGH              0x44000000
+#define IRAM0_ADDRESS_LOW               0x40370000
+#define IRAM0_ADDRESS_HIGH              0x403E0000
 #define IRAM0_CACHE_ADDRESS_LOW         0x42000000
 #define IRAM0_CACHE_ADDRESS_HIGH        0x44000000
 
 /*DRAM0 is connected with Cache DBUS0*/
-#define DRAM0_ADDRESS_LOW               0x3C000000
-#define DRAM0_ADDRESS_HIGH              0x40000000
+#define DRAM0_ADDRESS_LOW               0x3FC88000
+#define DRAM0_ADDRESS_HIGH              0x3FD00000
 #define DRAM0_CACHE_ADDRESS_LOW         0x3C000000
 #define DRAM0_CACHE_ADDRESS_HIGH        0x3E000000
 #define DRAM0_CACHE_OPERATION_HIGH      DRAM0_CACHE_ADDRESS_HIGH
