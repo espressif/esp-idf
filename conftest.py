@@ -126,7 +126,7 @@ def log_minimum_free_heap_size(dut: IdfDut, config: str) -> Callable[..., None]:
 
 
 @pytest.fixture
-def case_tester(dut: IdfDut, **kwargs):      # type: ignore
+def case_tester(dut: IdfDut, **kwargs):  # type: ignore
     yield CaseTester(dut, **kwargs)
 
 
@@ -326,15 +326,39 @@ class IdfPytestEmbedded:
 
         # add markers for special markers
         for item in items:
+            skip_ci_marker = item.get_closest_marker('temp_skip_ci')
+            skip_ci_targets: List[str] = []
+            if skip_ci_marker:
+                # `temp_skip_ci` should always use keyword arguments `targets` and `reason`
+                if not skip_ci_marker.kwargs.get('targets') or not skip_ci_marker.kwargs.get('reason'):
+                    raise ValueError(
+                        f'`temp_skip_ci` should always use keyword arguments `targets` and `reason`. '
+                        f'For example: '
+                        f'`@pytest.mark.temp_skip_ci(targets=["esp32"], reason="IDF-xxxx, will fix it ASAP")`'
+                    )
+
+                skip_ci_targets = skip_ci_marker.kwargs['targets']
+
             if 'supported_targets' in item.keywords:
                 for _target in SUPPORTED_TARGETS:
-                    item.add_marker(_target)
+                    if _target not in skip_ci_targets:
+                        item.add_marker(_target)
             if 'preview_targets' in item.keywords:
                 for _target in PREVIEW_TARGETS:
-                    item.add_marker(_target)
+                    if _target not in skip_ci_targets:
+                        item.add_marker(_target)
             if 'all_targets' in item.keywords:
                 for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
-                    item.add_marker(_target)
+                    if _target not in skip_ci_targets:
+                        item.add_marker(_target)
+
+            # `temp_skip_ci(targets=...)` can't work with specified single target
+            for skip_ci_target in skip_ci_targets:
+                if skip_ci_target in item.keywords:
+                    raise ValueError(
+                        '`skip_ci_targets` can only work with '
+                        '`supported_targets`, `preview_targets`, `all_targets` markers'
+                    )
 
         # add 'xtal_40mhz' tag as a default tag for esp32c2 target
         for item in items:
