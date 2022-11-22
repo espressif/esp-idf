@@ -11,7 +11,7 @@ This example demonstrates how to use I2S TDM mode to record 4 MICs connected to 
 
 |  Mode of ES7210 TDM  | Mode of I2S Driver TDM |
 | :------------------: | :--------------------: |
-|  ES7210_I2S_FMT_I2S  |     Philip format      |
+|  ES7210_I2S_FMT_I2S  |     Philips format     |
 |  ES7210_I2S_FMT_LJ   |       MSB format       |
 | ES7210_I2S_FMT_DSP_A |    PCM short format    |
 | ES7210_I2S_FMT_DSP_B |    PCM long format     |

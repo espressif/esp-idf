@@ -37,7 +37,7 @@ typedef struct {
             i2s_std_slot_mask_t     slot_mask;          /*!< Select the left, right or both slot */
             uint32_t                ws_width;           /*!< WS signal width (i.e. the number of bclk ticks that ws signal is high) */
             bool                    ws_pol;             /*!< WS signal polarity, set true to enable high lever first */
-            bool                    bit_shift;          /*!< Set to enbale bit shift in Philip mode */
+            bool                    bit_shift;          /*!< Set to enbale bit shift in Philips mode */
 #if SOC_I2S_HW_VERSION_1    // For esp32/esp32-s2
             bool                    msb_right;          /*!< Set to place right channel data at the MSB in the FIFO */
 #else
@@ -53,7 +53,7 @@ typedef struct {
             i2s_tdm_slot_mask_t     slot_mask;          /*!< Slot mask. Activating slots by setting 1 to corresponding bits. When the activated slots is not consecutive, those data in unactivated slots will be ignored */
             uint32_t                ws_width;           /*!< WS signal width ((i.e. the number of bclk ticks that ws signal is high)) */
             bool                    ws_pol;             /*!< WS signal polarity, set true to enable high lever first */
-            bool                    bit_shift;          /*!< Set true to enable bit shift in Philip mode */
+            bool                    bit_shift;          /*!< Set true to enable bit shift in Philips mode */
 
             bool                    left_align;         /*!< Set true to enable left alignment */
             bool                    big_endian;         /*!< Set true to enable big endian */

@@ -707,22 +707,22 @@ static inline void i2s_ll_enable_dma(i2s_dev_t *hw, bool ena)
 }
 
 /**
- * @brief Set I2S TX to philip standard
+ * @brief Set I2S TX to philips standard
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_tx_set_format_philip(i2s_dev_t *hw)
+static inline void i2s_ll_tx_set_format_philips(i2s_dev_t *hw)
 {
     hw->conf.tx_short_sync = 0;
     hw->conf.tx_msb_shift = 1;
 }
 
 /**
- * @brief Set I2S RX to philip standard
+ * @brief Set I2S RX to philips standard
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_rx_set_format_philip(i2s_dev_t *hw)
+static inline void i2s_ll_rx_set_format_philips(i2s_dev_t *hw)
 {
     hw->conf.rx_short_sync = 0;
     hw->conf.rx_msb_shift = 1;
