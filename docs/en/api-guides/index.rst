@@ -41,7 +41,7 @@ API Guides
    thread-local-storage
    tools/index
    unit-tests
-   linux-host-testing
+   host-apps
    :SOC_USB_OTG_SUPPORTED: usb-otg-console
    :SOC_USB_SERIAL_JTAG_SUPPORTED: usb-serial-jtag-console
    :SOC_WIFI_SUPPORTED: wifi
