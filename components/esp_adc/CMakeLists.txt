@@ -1,3 +1,8 @@
+if(IDF_TARGET STREQUAL "esp32h2")
+    # TODO : IDF-6214
+    return()
+endif()
+
 idf_build_get_property(target IDF_TARGET)
 
 set(includes "include" "interface" "${target}/include" "deprecated/include")
