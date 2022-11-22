@@ -57,7 +57,15 @@ def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     dut.expect('Finish http example')
 
 
-@pytest.mark.parametrize('config', [pytest.param('ssldyn', marks=[pytest.mark.supported_targets, pytest.mark.ethernet]),], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        pytest.param('ssldyn', marks=[pytest.mark.supported_targets,
+                                      pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD'),
+                                      pytest.mark.ethernet]),
+    ],
+    indirect=True
+)
 def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
     # test mbedtls dynamic resource
     # check and log bin size

@@ -7,6 +7,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32
 @pytest.mark.esp32s3
+@pytest.mark.esp32c6
 @pytest.mark.generic
 @pytest.mark.parametrize('config', [
     pytest.param('gpio', marks=[pytest.mark.esp32, pytest.mark.esp32s3]),

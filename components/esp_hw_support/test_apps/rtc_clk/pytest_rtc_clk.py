@@ -33,5 +33,6 @@ def test_rtc_no_xtal32k(dut: Dut) -> None:
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
 def test_rtc_calib(case_tester: Any) -> None:
     case_tester.run_all_multi_stage_cases()

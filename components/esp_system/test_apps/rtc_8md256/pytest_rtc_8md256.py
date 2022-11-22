@@ -48,7 +48,10 @@ def lightsleep_test(dut: Dut, case_name: str) -> None:
         dut.expect(r'Returned from light sleep, reason: timer', timeout=10)
 
 
-@pytest.mark.supported_targets
+@pytest.mark.esp32
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c3
 @pytest.mark.generic
 def test_rtc_8md256_lightsleep(dut: Dut) -> None:
     lightsleep_test(dut, '"Can use 8MD256 as RTC clock source in lightsleep"')

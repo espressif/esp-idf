@@ -122,6 +122,7 @@ def start_chunked_server(ota_image_dir: str, server_port: int) -> subprocess.Pop
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
 @pytest.mark.ethernet_ota
 def test_examples_protocol_native_ota_example(dut: Dut) -> None:
     """
@@ -161,6 +162,7 @@ def test_examples_protocol_native_ota_example(dut: Dut) -> None:
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
 @pytest.mark.ethernet_ota
 def test_examples_protocol_native_ota_example_truncated_bin(dut: Dut) -> None:
     """
@@ -211,6 +213,7 @@ def test_examples_protocol_native_ota_example_truncated_bin(dut: Dut) -> None:
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
 @pytest.mark.ethernet_ota
 def test_examples_protocol_native_ota_example_truncated_header(dut: Dut) -> None:
     """
@@ -260,6 +263,7 @@ def test_examples_protocol_native_ota_example_truncated_header(dut: Dut) -> None
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
 @pytest.mark.ethernet_ota
 def test_examples_protocol_native_ota_example_random(dut: Dut) -> None:
     """
@@ -309,6 +313,7 @@ def test_examples_protocol_native_ota_example_random(dut: Dut) -> None:
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
 @pytest.mark.ethernet_ota
 def test_examples_protocol_native_ota_example_chunked(dut: Dut) -> None:
     """

@@ -40,6 +40,7 @@ class CustomProcess(object):
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
 @pytest.mark.wifi_router
 def test_examples_esp_local_ctrl(dut: Dut) -> None:
 

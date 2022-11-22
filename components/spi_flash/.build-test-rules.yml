@@ -8,7 +8,7 @@ components/spi_flash/test_apps/esp_flash:
 
 components/spi_flash/test_apps/flash_encryption:
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32s2"]
+    - if: IDF_TARGET in ["esp32c2", "esp32s2", "esp32c6"]
       temporary: true
       reason: No runners # IDF-5634
 

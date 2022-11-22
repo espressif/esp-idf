@@ -47,6 +47,9 @@ examples/system/efuse:
     - if: IDF_TARGET == "esp32s3"
       temporary: true
       reason: lack of runners
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
 
 examples/system/esp_timer:
   disable:
@@ -174,7 +177,7 @@ examples/system/task_watchdog:
   disable_test:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
-      reason: lack of runners
+      reason: target esp32c2 is not supported yet
 
 examples/system/ulp_fsm/ulp:
   disable:

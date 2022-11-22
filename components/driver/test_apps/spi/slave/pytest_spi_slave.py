@@ -5,7 +5,6 @@ import pytest
 
 
 # If `test_env` is define, should not run on generic runner
-@pytest.mark.esp32c6
 @pytest.mark.supported_targets
 @pytest.mark.generic
 def test_slave_single_dev(case_tester) -> None:       # type: ignore
@@ -17,6 +16,7 @@ def test_slave_single_dev(case_tester) -> None:       # type: ignore
 
 # if `test_env` not defined, will run on `generic_multi_device` by default
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='no runner')
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2,], indirect=True)
 def test_slave_multi_dev(case_tester) -> None:        # type: ignore
