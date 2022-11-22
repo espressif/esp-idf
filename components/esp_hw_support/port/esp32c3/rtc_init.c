@@ -9,18 +9,16 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/efuse_periph.h"
 #include "soc/gpio_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/extmem_reg.h"
 #include "soc/system_reg.h"
 #include "hal/efuse_hal.h"
+#include "hal/efuse_ll.h"
 #include "regi2c_ctrl.h"
 #include "soc/regi2c_dig_reg.h"
 #include "soc/regi2c_lp_bias.h"
 #include "esp_hw_log.h"
-#include "esp_efuse.h"
-#include "esp_efuse_table.h"
 #ifndef BOOTLOADER_BUILD
 #include "esp_private/sar_periph_ctrl.h"
 #endif
@@ -55,12 +53,7 @@ void rtc_init(rtc_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_TIMER6_REG, RTC_CNTL_DG_PERI_WAIT_TIMER, rtc_init_cfg.dg_peri_wait_cycles);
 
     if (cfg.cali_ocode) {
-        uint32_t rtc_calib_version = 0;
-        esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MAJOR, &rtc_calib_version, ESP_EFUSE_BLK_VERSION_MAJOR[0]->bit_count); // IDF-5366
-        if (err != ESP_OK) {
-            rtc_calib_version = 0;
-            ESP_HW_LOGW(TAG, "efuse read fail, set default rtc_calib_version: %d\n", rtc_calib_version);
-        }
+        uint32_t rtc_calib_version = efuse_ll_get_blk_version_major(); // IDF-5366
         if (rtc_calib_version == 1) {
             set_ocode_by_efuse(rtc_calib_version);
         } else {
@@ -207,11 +200,7 @@ void rtc_vddsdio_set_config(rtc_vddsdio_config_t config)
 static void set_ocode_by_efuse(int calib_version)
 {
     assert(calib_version == 1);
-    // use efuse ocode.
-    uint32_t ocode;
-    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_OCODE, &ocode, 8);
-    assert(err == ESP_OK);
-    (void) err;
+    uint32_t ocode = efuse_ll_get_ocode();
     REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_EXT_CODE, ocode);
     REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE, 1);
 }
@@ -268,32 +257,17 @@ static void calibrate_ocode(void)
 static uint32_t get_dig_dbias_by_efuse(uint8_t chip_version)
 {
     assert(chip_version >= 3);
-    uint32_t dig_dbias = 28;
-    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_DIG_DBIAS_HVT, &dig_dbias, 5);
-    if (err != ESP_OK) {
-        dig_dbias = 28;
-        ESP_HW_LOGW(TAG, "efuse read fail, set default dig_dbias value: %d\n", dig_dbias);
-    }
-    return dig_dbias;
+    return efuse_ll_get_dig_dbias_hvt();
 }
 
 uint32_t get_rtc_dbias_by_efuse(uint8_t chip_version, uint32_t dig_dbias)
 {
     assert(chip_version >= 3);
     uint32_t rtc_dbias = 0;
-    signed int k_rtc_ldo = 0, k_dig_ldo = 0, v_rtc_bias20 = 0, v_dig_bias20 = 0;
-    esp_err_t err0 = esp_efuse_read_field_blob(ESP_EFUSE_K_RTC_LDO, &k_rtc_ldo, 7);
-    esp_err_t err1 = esp_efuse_read_field_blob(ESP_EFUSE_K_DIG_LDO, &k_dig_ldo, 7);
-    esp_err_t err2 = esp_efuse_read_field_blob(ESP_EFUSE_V_RTC_DBIAS20, &v_rtc_bias20, 8);
-    esp_err_t err3 = esp_efuse_read_field_blob(ESP_EFUSE_V_DIG_DBIAS20, &v_dig_bias20, 8);
-    if ((err0 != ESP_OK) | (err1 != ESP_OK) | (err2 != ESP_OK) | (err3 != ESP_OK)) {
-        k_rtc_ldo = 0;
-        k_dig_ldo = 0;
-        v_rtc_bias20 = 0;
-        v_dig_bias20 = 0;
-        ESP_HW_LOGW(TAG, "efuse read fail, k_rtc_ldo: %d, k_dig_ldo: %d, v_rtc_bias20: %d,  v_dig_bias20: %d\n", k_rtc_ldo, k_dig_ldo, v_rtc_bias20, v_dig_bias20);
-    }
-
+    signed int k_rtc_ldo = efuse_ll_get_k_rtc_ldo();
+    signed int k_dig_ldo = efuse_ll_get_k_dig_ldo();
+    signed int v_rtc_bias20 = efuse_ll_get_v_rtc_dbias20();
+    signed int v_dig_bias20 = efuse_ll_get_v_dig_dbias20();
     k_rtc_ldo =  ((k_rtc_ldo & BIT(6)) != 0)? -(k_rtc_ldo & 0x3f): k_rtc_ldo;
     k_dig_ldo =  ((k_dig_ldo & BIT(6)) != 0)? -(k_dig_ldo & 0x3f): (uint8_t)k_dig_ldo;
     v_rtc_bias20 =  ((v_rtc_bias20 & BIT(7)) != 0)? -(v_rtc_bias20 & 0x7f): (uint8_t)v_rtc_bias20;

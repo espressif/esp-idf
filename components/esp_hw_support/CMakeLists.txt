@@ -1,6 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
 
 set(requires soc)
+# only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
 set(priv_requires efuse spi_flash bootloader_support)
 
 set(srcs "cpu.c" "esp_memory_utils.c")

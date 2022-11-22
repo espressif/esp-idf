@@ -112,6 +112,14 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_sdio_drefh(vo
     return EFUSE.rd_repeat_data0.sdio_drefh;
 }
 
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
+{
+    // OCODE1,  BLOCK2, 128, 4,   (#4 reg, pos 0)
+    // OCODE2,  BLOCK2, 144, 3,   (#4 reg, pos 16)
+    // OCODE = (ocode2 << 4) + ocode1
+    return (EFUSE.rd_sys_data4.ocode_hi << 4) + EFUSE.rd_sys_data4.ocode_low;
+}
+
 /******************* eFuse control functions *************************/
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_read_cmd(void)

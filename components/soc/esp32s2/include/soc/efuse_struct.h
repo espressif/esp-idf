@@ -228,9 +228,11 @@ typedef volatile struct efuse_dev_s {
     uint32_t rd_sys_data3;                                      /**/
     union {
         struct {
-            uint32_t reserved1:              4;
+            uint32_t ocode_low:              4;
             uint32_t blk_version_minor :     3;
-            uint32_t reserved2:              25;
+            uint32_t reserved1:              9;
+            uint32_t ocode_hi:               3;
+            uint32_t reserved2:              13;
         };
         uint32_t val;
     } rd_sys_data4;                                             /**/

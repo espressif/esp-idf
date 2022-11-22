@@ -2,7 +2,7 @@ idf_build_get_property(target IDF_TARGET)
 
 set(includes "include")
 
-set(priv_requires efuse heap spi_flash)
+set(priv_requires heap spi_flash)
 if(${target} STREQUAL "esp32")
     list(APPEND priv_requires bootloader_support)
     # [refactor-todo]: requires "driver" for `spicommon_periph_claim`

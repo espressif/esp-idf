@@ -10,6 +10,7 @@
 #include "esp_efuse_table.h"
 #include "esp_log.h"
 #include "hal/adc_types.h"
+#include "hal/efuse_ll.h"
 #include "soc/soc_caps.h"
 
 #define RTC_TBL_LOG_TAG "efuse_rtc_table"
@@ -90,9 +91,7 @@ static const efuse_map_info_t adc_efuse_raw_map[] = {
 
 int esp_efuse_rtc_table_read_calib_version(void)
 {
-    uint32_t result = 0;
-    esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MINOR, &result, 3);
-    return result;
+    return efuse_ll_get_blk_version_minor();
 }
 
 int esp_efuse_rtc_table_get_tag(int version, int adc_num, int atten, int extra_params)
