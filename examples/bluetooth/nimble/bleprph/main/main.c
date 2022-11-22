@@ -47,6 +47,10 @@ static uint8_t own_addr_type;
 
 void ble_store_config_init(void);
 
+#if MYNEWT_VAL(BLE_POWER_CONTROL)
+static struct ble_gap_event_listener power_control_event_listener;
+#endif
+
 /**
  * Logs information about a connection to the console.
  */
@@ -197,6 +201,20 @@ bleprph_advertise(void)
 }
 #endif
 
+#if MYNEWT_VAL(BLE_POWER_CONTROL)
+static void bleprph_power_control(uint16_t conn_handle)
+{
+    int rc;
+
+    rc = ble_gap_read_remote_transmit_power_level(conn_handle, 0x01 );  // Attempting on LE 1M phy
+    assert (rc == 0);
+
+    rc = ble_gap_set_transmit_power_reporting_enable(conn_handle, 0x1, 0x1);
+   assert (rc == 0);
+}
+#endif
+
+
 /**
  * The nimble host executes this callback when a GAP event occurs.  The
  * application associates a GAP event callback with each connection that forms.
@@ -239,6 +257,13 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
             bleprph_advertise();
 #endif
         }
+
+#if MYNEWT_VAL(BLE_POWER_CONTROL)
+       bleprph_power_control(event->connect.conn_handle);
+
+       ble_gap_event_listener_register(&power_control_event_listener,
+                                        bleprph_gap_event, NULL);
+#endif
         return 0;
 
     case BLE_GAP_EVENT_DISCONNECT:
@@ -361,6 +386,28 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
             ESP_LOGI(tag, "ble_sm_inject_io result: %d\n", rc);
         }
         return 0;
+
+#if MYNEWT_VAL(BLE_POWER_CONTROL)
+    case BLE_GAP_EVENT_TRANSMIT_POWER:
+       MODLOG_DFLT(INFO, "Transmit power event : status=%d conn_handle=%d reason=%d "
+                          "phy=%d power_level=%x power_level_flag=%d delta=%d",
+                   event->transmit_power.status,
+                   event->transmit_power.conn_handle,
+                   event->transmit_power.reason,
+                   event->transmit_power.phy,
+                  event->transmit_power.transmit_power_level,
+                   event->transmit_power.transmit_power_level_flag,
+                   event->transmit_power.delta);
+       return 0;
+
+    case BLE_GAP_EVENT_PATHLOSS_THRESHOLD:
+       MODLOG_DFLT(INFO, "Pathloss threshold event : conn_handle=%d current path loss=%d "
+                          "zone_entered =%d",
+                   event->pathloss_threshold.conn_handle,
+                   event->pathloss_threshold.current_path_loss,
+                   event->pathloss_threshold.zone_entered);
+       return 0;
+#endif
     }
 
     return 0;
