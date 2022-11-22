@@ -5,10 +5,12 @@
  */
 
 #pragma once
+#include <stdbool.h>
 
 #include "esp_hmac.h"
 #include "esp_err.h"
 #include "esp_ds_err.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,14 +18,14 @@ extern "C" {
 
 #define ESP_DS_IV_BIT_LEN 128
 #define ESP_DS_IV_LEN (ESP_DS_IV_BIT_LEN / 8)
-#define ESP_DS_SIGNATURE_MAX_BIT_LEN 3072
+#define ESP_DS_SIGNATURE_MAX_BIT_LEN SOC_RSA_MAX_BIT_LEN
 #define ESP_DS_SIGNATURE_MD_BIT_LEN 256
 #define ESP_DS_SIGNATURE_M_PRIME_BIT_LEN 32
 #define ESP_DS_SIGNATURE_L_BIT_LEN 32
 #define ESP_DS_SIGNATURE_PADDING_BIT_LEN 64
 
 /* Length of parameter 'C' stored in flash, in bytes
-   - Operands Y, M and r_bar; each 3072 bits
+   - Operands Y, M and r_bar; each equal to maximum RSA bit length
    - Operand MD (message digest); 256 bits
    - Operands M' and L; each 32 bits
    - Operand beta (padding value; 64 bits
@@ -39,7 +41,8 @@ typedef struct esp_ds_context esp_ds_context_t;
 typedef enum {
     ESP_DS_RSA_1024 = (1024 / 32) - 1,
     ESP_DS_RSA_2048 = (2048 / 32) - 1,
-    ESP_DS_RSA_3072 = (3072 / 32) - 1
+    ESP_DS_RSA_3072 = (3072 / 32) - 1,
+    ESP_DS_RSA_4096 = (4096 / 32) - 1
 } esp_digital_signature_length_t;
 
 /**
@@ -51,8 +54,6 @@ typedef struct esp_digital_signature_data {
     /**
      * RSA LENGTH register parameters
      * (number of words in RSA key & operands, minus one).
-     *
-     * Max value 127 (for RSA 3072).
      *
      * This value must match the length field encrypted and stored in 'c',
      * or invalid results will be returned. (The DS peripheral will
