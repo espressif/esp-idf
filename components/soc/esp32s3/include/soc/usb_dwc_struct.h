@@ -1140,7 +1140,9 @@ typedef struct {
 } usb_dwc_dev_t;
 
 
+#ifndef __cplusplus
 _Static_assert(sizeof(usb_dwc_dev_t) == 0xe08, "Invalid size of usb_dwc_dev_t structure");
+#endif
 
 extern usb_dwc_dev_t USB_DWC;
 

@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "esp_err.h"
+#include "esp_assert.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -38,7 +39,7 @@ typedef struct {
 } esp_app_desc_t;
 
 /** @cond */
-_Static_assert(sizeof(esp_app_desc_t) == 256, "esp_app_desc_t should be 256 bytes");
+ESP_STATIC_ASSERT(sizeof(esp_app_desc_t) == 256, "esp_app_desc_t should be 256 bytes");
 /** @endcond */
 
 #ifdef __cplusplus

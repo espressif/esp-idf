@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -547,7 +547,9 @@ typedef struct timg_dev_t {
 extern timg_dev_t TIMERG0;
 extern timg_dev_t TIMERG1;
 
+#ifndef __cplusplus
 _Static_assert(sizeof(timg_dev_t) == 0x100, "Invalid size of timg_dev_t structure");
+#endif
 
 #ifdef __cplusplus
 }

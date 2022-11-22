@@ -10,6 +10,7 @@
 #include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/opi_flash.h"
 #include "mspi_timing_tuning_configs.h"
+#include "esp_assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,17 +145,17 @@ extern "C" {
  * the expected CORE CLOCK frequencies should be the same.
  */
 #if SPI_TIMING_FLASH_NEEDS_TUNING && SPI_TIMING_PSRAM_NEEDS_TUNING
-_Static_assert(SPI_TIMING_FLASH_EXPECTED_CORE_CLK_MHZ == SPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ, "FLASH and PSRAM Mode configuration are not supported");
+ESP_STATIC_ASSERT(SPI_TIMING_FLASH_EXPECTED_CORE_CLK_MHZ == SPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ, "FLASH and PSRAM Mode configuration are not supported");
 #define SPI_TIMING_CORE_CLOCK_MHZ                   SPI_TIMING_FLASH_EXPECTED_CORE_CLK_MHZ
 
 //If only FLASH needs tuning, the core clock COULD be as FLASH expected
 #elif SPI_TIMING_FLASH_NEEDS_TUNING && !SPI_TIMING_PSRAM_NEEDS_TUNING
-_Static_assert(SPI_TIMING_FLASH_EXPECTED_CORE_CLK_MHZ % SPI_TIMING_PSRAM_MODULE_CLOCK == 0, "FLASH and PSRAM Mode configuration are not supported");
+ESP_STATIC_ASSERT(SPI_TIMING_FLASH_EXPECTED_CORE_CLK_MHZ % SPI_TIMING_PSRAM_MODULE_CLOCK == 0, "FLASH and PSRAM Mode configuration are not supported");
 #define SPI_TIMING_CORE_CLOCK_MHZ                   SPI_TIMING_FLASH_EXPECTED_CORE_CLK_MHZ
 
 //If only PSRAM needs tuning, the core clock COULD be as PSRAM expected
 #elif !SPI_TIMING_FLASH_NEEDS_TUNING && SPI_TIMING_PSRAM_NEEDS_TUNING
-_Static_assert(SPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ % SPI_TIMING_FLASH_MODULE_CLOCK == 0, "FLASH and PSRAM Mode configuration are not supported");
+ESP_STATIC_ASSERT(SPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ % SPI_TIMING_FLASH_MODULE_CLOCK == 0, "FLASH and PSRAM Mode configuration are not supported");
 #define SPI_TIMING_CORE_CLOCK_MHZ                   SPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ
 
 #else
@@ -168,10 +169,10 @@ _Static_assert(SPI_TIMING_PSRAM_EXPECTED_CORE_CLK_MHZ % SPI_TIMING_FLASH_MODULE_
 #define CHECK_POWER_OF_2(n)                         ((((n) & ((~(n)) + 1))) == (n))
 
 #if SPI_TIMING_FLASH_DTR_MODE
-_Static_assert(CHECK_POWER_OF_2(SPI_TIMING_CORE_CLOCK_MHZ / SPI_TIMING_FLASH_MODULE_CLOCK), "FLASH and PSRAM Mode configuration are not supported");
+ESP_STATIC_ASSERT(CHECK_POWER_OF_2(SPI_TIMING_CORE_CLOCK_MHZ / SPI_TIMING_FLASH_MODULE_CLOCK), "FLASH and PSRAM Mode configuration are not supported");
 #endif
 #if SPI_TIMING_PSRAM_DTR_MODE
-_Static_assert(CHECK_POWER_OF_2(SPI_TIMING_CORE_CLOCK_MHZ / SPI_TIMING_PSRAM_MODULE_CLOCK), "FLASH and PSRAM Mode configuration are not supported");
+ESP_STATIC_ASSERT(CHECK_POWER_OF_2(SPI_TIMING_CORE_CLOCK_MHZ / SPI_TIMING_PSRAM_MODULE_CLOCK), "FLASH and PSRAM Mode configuration are not supported");
 #endif
 
 
