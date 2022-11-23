@@ -48,7 +48,7 @@ On Linux and macOS, it is recommended to install CMake using the OS-specific pac
 
 ---
 
-.. tool-xtensa-clang-notes
+.. tool-esp-clang-notes
 
 
 ---

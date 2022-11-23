@@ -1643,7 +1643,7 @@ static void wpa_supplicant_process_1_of_2(struct wpa_sm *sm,
     if (wpa_supplicant_send_2_of_2(sm, key, ver, key_info))
         goto failed;
 
-    if ((WPA_SM_STATE(sm) == WPA_COMPLETED)) {
+    if (WPA_SM_STATE(sm) == WPA_COMPLETED) {
 #ifdef MSG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: Group rekeying "
             "completed with " MACSTR " [GTK=%s]",

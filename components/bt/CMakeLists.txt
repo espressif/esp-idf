@@ -734,7 +734,11 @@ if(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE AND CONFIG_BT_NIMBLE_ENABLED)
 endif()
 
 if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+    set(jump_table_opts "-fjump-tables")
+    if(NOT (CMAKE_C_COMPILER_ID MATCHES "Clang") )
+        set(jump_table_opts "${jump_table_opts} -ftree-switch-conversion")
+    endif()
     set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/host/bluedroid/bta/hf_ag/bta_ag_cmd.c"
                                 "${CMAKE_CURRENT_LIST_DIR}/host/bluedroid/btc/profile/std/gap/btc_gap_ble.c"
-                                 PROPERTIES COMPILE_FLAGS "-fjump-tables -ftree-switch-conversion")
+                                PROPERTIES COMPILE_FLAGS "${jump_table_opts}")
 endif()

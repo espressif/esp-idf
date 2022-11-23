@@ -21,7 +21,7 @@ If you have never run this tool before, take the following steps to get this too
 
 #. Run the export scripts (``export.sh`` / ``export.bat`` / ... ) to set up the environment variables.
 #. Run ``pip install --upgrade pyclang`` to install this plugin. The extra commands would be activated in ``idf.py`` automatically.
-#. Run ``idf_tools.py install xtensa-clang`` to install the clang-tidy required binaries
+#. Run ``idf_tools.py install esp-clang`` to install the clang-tidy required binaries
 
    .. note::
 

@@ -168,6 +168,11 @@ cache:
     fi
   fi
 
+  # Install esp-clang if necessary
+  if [[ "$IDF_TOOLCHAIN" == "clang" ]]; then
+    $IDF_PATH/tools/idf_tools.py --non-interactive install esp-clang
+  fi
+
   source ./export.sh
 
   # Custom OpenOCD

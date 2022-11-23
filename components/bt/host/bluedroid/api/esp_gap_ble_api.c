@@ -550,7 +550,7 @@ esp_err_t esp_ble_gap_set_security_param(esp_ble_sm_param_t param_type,
     if((param_type != ESP_BLE_SM_CLEAR_STATIC_PASSKEY) && ( value == NULL || len < sizeof(uint8_t) || len > sizeof(uint32_t))) {
         return ESP_ERR_INVALID_ARG;
     }
-    if((param_type == ESP_BLE_SM_SET_STATIC_PASSKEY)) {
+    if(param_type == ESP_BLE_SM_SET_STATIC_PASSKEY) {
         uint32_t passkey = 0;
         for(uint8_t i = 0; i < len; i++)
         {

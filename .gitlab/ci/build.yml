@@ -81,6 +81,24 @@
         examples/bluetooth/hci/controller_hci_uart_esp32
         examples/wifi/iperf
 
+.build_cmake_clang_template:
+  extends:
+    - .build_cmake_template
+  variables:
+    IDF_TOOLCHAIN: clang
+    TEST_BUILD_OPTS_EXTRA: ""
+    TEST_DIR: tools/test_apps/system/cxx_pthread_bluetooth
+  script:
+    # CI specific options start from "--collect-size-info xxx". could ignore when running locally
+    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
+      -t $IDF_TARGET
+      --copy-sdkconfig
+      --collect-size-info size_info.txt
+      --collect-app-info list_job_${CI_NODE_INDEX:-1}.json
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      $TEST_BUILD_OPTS_EXTRA
+
 .build_pytest_template:
   extends:
     - .build_cmake_template
@@ -594,6 +612,70 @@ build_test_apps_esp32c6:
   variables:
     IDF_TARGET: esp32c6
     TEST_DIR: tools/test_apps
+
+build_clang_test_apps_esp32:
+  extends:
+    - .build_cmake_clang_template
+    - .rules:build:custom_test-esp32
+  variables:
+    IDF_TARGET: esp32
+
+build_clang_test_apps_esp32s2:
+  extends:
+    - .build_cmake_clang_template
+    - .rules:build:custom_test-esp32s2
+  variables:
+    IDF_TARGET: esp32s2
+
+build_clang_test_apps_esp32s3:
+  extends:
+    - .build_cmake_clang_template
+    - .rules:build:custom_test-esp32s3
+  variables:
+    IDF_TARGET: esp32s3
+
+.build_clang_test_apps_riscv:
+  extends:
+    - .build_cmake_clang_template
+  variables:
+    # For RISCV clang generates '.linker-options' sections of type 'llvm_linker_options' in asm files.
+    # See (https://llvm.org/docs/Extensions.html#linker-options-section-linker-options).
+    # Binutils gas ignores them with warning.
+    # TODO: LLVM-112, Use integrated assembler.
+    TEST_BUILD_OPTS_EXTRA: "--ignore-warning-str 'Warning: unrecognized section type'"
+
+build_clang_test_apps_esp32c3:
+  extends:
+    - .build_clang_test_apps_riscv
+    - .rules:build:custom_test-esp32c3
+  variables:
+    IDF_TARGET: esp32c3
+
+build_clang_test_apps_esp32c2:
+  extends:
+    - .build_clang_test_apps_riscv
+    - .rules:build:custom_test-esp32c2
+  # spec files and nano libc are not supported yet by esp-clang
+  # TODO: LLVM-197
+  allow_failure: true
+  variables:
+    IDF_TARGET: esp32c2
+
+build_clang_test_apps_esp32c6:
+  extends:
+    - .build_clang_test_apps_riscv
+    - .rules:build:custom_test-esp32c6
+  # TODO: c6 builds fail in master due to missing headers
+  allow_failure: true
+  variables:
+    IDF_TARGET: esp32c6
+
+build_clang_test_apps_esp32h4:
+  extends:
+    - .build_clang_test_apps_riscv
+    - .rules:build:custom_test-esp32h4
+  variables:
+    IDF_TARGET: esp32h4
 
 .test_build_system_template:
   stage: host_test

@@ -268,7 +268,7 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
         }
 
         ilen -= dma_chunk_len;
-        input += dma_chunk_len;
+        input = (uint8_t *)input + dma_chunk_len;
 
         // Only append buf to the first operation
         buf_len = 0;
