@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include "hal/systimer_types.h"
 #include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +38,11 @@ typedef struct {
     ticks_to_us_func_t ticks_to_us; /*!< function to convert ticks to microseconds */
     us_to_ticks_func_t us_to_ticks; /*!< function to convert microseconds to ticks */
 } systimer_hal_tick_rate_ops_t;
+
+/**
+ * @brief Systimer clock source
+ */
+typedef soc_periph_systimer_clk_src_t systimer_clock_source_t;
 
 /**
  * @brief initialize systimer in HAL layer
@@ -119,6 +125,16 @@ void systimer_hal_counter_can_stall_by_cpu(systimer_hal_context_t *hal, uint32_t
  */
 void systimer_hal_set_steps_per_tick(systimer_hal_context_t *hal, int clock_source, uint32_t steps);
 #endif
+
+/**
+ * @brief Set Systimer clock source
+ */
+void systimer_hal_set_clock_source(systimer_hal_context_t *hal, systimer_clock_source_t clk_src);
+
+/**
+ * @brief Get Systimer clock source
+ */
+systimer_clock_source_t systimer_hal_get_clock_source(systimer_hal_context_t *hal);
 
 #ifdef __cplusplus
 }

@@ -116,6 +116,17 @@ typedef enum {
     SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 40MHz crystal */
 } soc_module_clk_t;
 
+//////////////////////////////////////////////////SYSTIMER///////////////////////////////////////////////////////////////
+
+/**
+ * @brief Type of SYSTIMER clock source
+ */
+typedef enum {
+    SYSTIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< SYSTIMER source clock is XTAL */
+    SYSTIMER_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST, /*!< SYSTIMER source clock is RC_FAST */
+    SYSTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< SYSTIMER source clock default choice is XTAL */
+} soc_periph_systimer_clk_src_t;
+
 //////////////////////////////////////////////////GPTimer///////////////////////////////////////////////////////////////
 
 /**
