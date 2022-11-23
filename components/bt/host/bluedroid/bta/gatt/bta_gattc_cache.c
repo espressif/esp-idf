@@ -285,6 +285,12 @@ static tBTA_GATT_STATUS bta_gattc_add_srvc_to_cache(tBTA_GATTC_SERV *p_srvc_cb,
         p_srvc_cb->p_srvc_cache = list_new(service_free);
     }
 
+    if(!p_srvc_cb->p_srvc_cache) {
+        APPL_TRACE_WARNING("%s(), no resource.", __func__);
+        osi_free(p_new_srvc);
+        return BTA_GATT_NO_RESOURCES;
+    }
+
     if(is_primary) {
         list_append(p_srvc_cb->p_srvc_cache, p_new_srvc);
     } else {
@@ -549,7 +555,7 @@ void bta_gattc_update_include_service(const list_t *services) {
     }
     for (list_node_t *sn = list_begin(services); sn != list_end(services); sn = list_next(sn)) {
         tBTA_GATTC_SERVICE *service = list_node(sn);
-        if(!service && list_is_empty(service->included_svc)) break;
+        if(!service || !service->included_svc || list_is_empty(service->included_svc)) break;
         for (list_node_t *sn = list_begin(service->included_svc); sn != list_end(service->included_svc); sn = list_next(sn)) {
             tBTA_GATTC_INCLUDED_SVC *include_service = list_node(sn);
             if(include_service && !include_service->included_service) {
