@@ -94,6 +94,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_set_property(KCONFIG_PROJBUILDS "${kconfig_projbuilds}")
 
     idf_build_get_property(idf_target IDF_TARGET)
+    idf_build_get_property(idf_toolchain IDF_TOOLCHAIN)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(idf_env_fpga __IDF_ENV_FPGA)
 
@@ -209,6 +210,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         COMMAND ${prepare_kconfig_files_command}
         COMMAND ${kconfgen_basecommand}
         --env "IDF_TARGET=${idf_target}"
+        --env "IDF_TOOLCHAIN=${idf_toolchain}"
         --env "IDF_ENV_FPGA=${idf_env_fpga}"
         --dont-write-deprecated
         --output config ${sdkconfig}
@@ -218,6 +220,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
         "KCONFIG_CONFIG=${sdkconfig}"
         "IDF_TARGET=${idf_target}"
+        "IDF_TOOLCHAIN=${idf_toolchain}"
         "IDF_ENV_FPGA=${idf_env_fpga}"
         ${MENUCONFIG_CMD} ${root_kconfig}
         USES_TERMINAL
@@ -225,6 +228,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         # compatibility)
         COMMAND ${kconfgen_basecommand}
         --env "IDF_TARGET=${idf_target}"
+        --env "IDF_TOOLCHAIN=${idf_toolchain}"
         --env "IDF_ENV_FPGA=${idf_env_fpga}"
         --output config ${sdkconfig}
         )

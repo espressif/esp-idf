@@ -36,7 +36,7 @@ idf_component_register(SRCS "${srcs}"
 
 # Toolchain libraries require code defined in this component
 idf_component_get_property(newlib newlib COMPONENT_LIB)
-target_link_libraries(${COMPONENT_LIB} INTERFACE c m gcc "$<TARGET_FILE:${newlib}>")
+target_link_libraries(${COMPONENT_LIB} INTERFACE c m ${CONFIG_COMPILER_RT_LIB_NAME} "$<TARGET_FILE:${newlib}>")
 
 set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
 

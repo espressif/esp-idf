@@ -43,7 +43,7 @@ endif()
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     # libstdc++ depends on C library, so it should appear later in link order.
     # Otherwise we get undefined references for esp-clang toolchain.
-    target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++ c gcc)
+    target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++ c ${CONFIG_COMPILER_RT_LIB_NAME})
 else()
     target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++ gcc)
 endif()
@@ -63,7 +63,7 @@ else()
 endif()
 target_link_libraries(${COMPONENT_LIB} PUBLIC stdcpp_pthread)
 add_library(libgcc_cxx INTERFACE)
-target_link_libraries(libgcc_cxx INTERFACE gcc $<TARGET_FILE:${cxx}>)
+target_link_libraries(libgcc_cxx INTERFACE ${CONFIG_COMPILER_RT_LIB_NAME} $<TARGET_FILE:${cxx}>)
 target_link_libraries(${COMPONENT_LIB} PUBLIC libgcc_cxx)
 
 if(NOT CONFIG_COMPILER_CXX_EXCEPTIONS)
