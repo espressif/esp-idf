@@ -31,15 +31,15 @@ extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5045
 //Variables for test: Attributes place variables into correct sections
 static __NOINIT_ATTR uint32_t s_noinit;
+#if SOC_RTC_MEM_SUPPORTED
 static RTC_NOINIT_ATTR uint32_t s_rtc_noinit;
 static RTC_DATA_ATTR uint32_t s_rtc_data;
 static RTC_RODATA_ATTR uint32_t s_rtc_rodata;
 static RTC_FAST_ATTR uint32_t s_rtc_force_fast;
 static RTC_SLOW_ATTR uint32_t s_rtc_force_slow;
+#endif // SOC_RTC_MEM_SUPPORTED
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 static EXT_RAM_NOINIT_ATTR uint32_t s_noinit_ext;
 #endif
@@ -53,6 +53,8 @@ static bool data_in_segment(void *ptr, int *seg_start, int *seg_end)
 TEST_CASE("Attributes place variables into correct sections", "[ld]")
 {
     TEST_ASSERT(data_in_segment(&s_noinit, &_noinit_start, &_noinit_end));
+
+#if SOC_RTC_MEM_SUPPORTED
     TEST_ASSERT(data_in_segment(&s_rtc_noinit, &_rtc_noinit_start, &_rtc_noinit_end));
     TEST_ASSERT(data_in_segment(&s_rtc_data, &_rtc_data_start, &_rtc_data_end));
     TEST_ASSERT(data_in_segment(&s_rtc_rodata, &_rtc_data_start, &_rtc_data_end));
@@ -73,13 +75,12 @@ TEST_CASE("Attributes place variables into correct sections", "[ld]")
 
     TEST_ASSERT(data_in_segment(&s_rtc_force_fast, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
     TEST_ASSERT(data_in_segment(&s_rtc_force_slow, (int*) SOC_RTC_DATA_LOW, (int*) SOC_RTC_DATA_HIGH));
+#endif // SOC_RTC_MEM_SUPPORTED
 
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
     TEST_ASSERT(data_in_segment(&s_noinit_ext, &_ext_ram_noinit_start, &_ext_ram_noinit_end));
 #endif
 }
-
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 
