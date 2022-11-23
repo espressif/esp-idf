@@ -14,6 +14,7 @@
 #include "hal/timer_types.h"
 #include "soc/timer_group_struct.h"
 #include "soc/pcr_struct.h"
+#include "soc/soc_etm_source.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +23,32 @@ extern "C" {
 // Get timer group register base address with giving group number
 #define TIMER_LL_GET_HW(group_id) ((group_id == 0) ? (&TIMERG0) : (&TIMERG1))
 #define TIMER_LL_EVENT_ALARM(timer_id) (1 << (timer_id))
+
+#define TIMER_LL_ETM_TASK_TABLE(group, timer, task)                                        \
+    (uint32_t [2][1][GPTIMER_ETM_TASK_MAX]){{{                                             \
+                            [GPTIMER_ETM_TASK_START_COUNT] = TIMER0_TASK_CNT_START_TIMER0, \
+                            [GPTIMER_ETM_TASK_STOP_COUNT] = TIMER0_TASK_CNT_STOP_TIMER0,   \
+                            [GPTIMER_ETM_TASK_EN_ALARM] = TIMER0_TASK_ALARM_START_TIMER0,  \
+                            [GPTIMER_ETM_TASK_RELOAD] = TIMER0_TASK_CNT_RELOAD_TIMER0,     \
+                            [GPTIMER_ETM_TASK_CAPTURE] = TIMER0_TASK_CNT_CAP_TIMER0,       \
+                        }},                                                                \
+                        {{                                                                 \
+                            [GPTIMER_ETM_TASK_START_COUNT] = TIMER1_TASK_CNT_START_TIMER0, \
+                            [GPTIMER_ETM_TASK_STOP_COUNT] = TIMER1_TASK_CNT_STOP_TIMER0,   \
+                            [GPTIMER_ETM_TASK_EN_ALARM] = TIMER1_TASK_ALARM_START_TIMER0,  \
+                            [GPTIMER_ETM_TASK_RELOAD] = TIMER1_TASK_CNT_RELOAD_TIMER0,     \
+                            [GPTIMER_ETM_TASK_CAPTURE] = TIMER1_TASK_CNT_CAP_TIMER0,       \
+                        }},                                                                \
+    }[group][timer][task]
+
+#define TIMER_LL_ETM_EVENT_TABLE(group, timer, event)                                      \
+    (uint32_t [2][1][GPTIMER_ETM_EVENT_MAX]){{{                                            \
+                            [GPTIMER_ETM_EVENT_ALARM_MATCH] = TIMER0_EVT_CNT_CMP_TIMER0,   \
+                        }},                                                                \
+                        {{                                                                 \
+                            [GPTIMER_ETM_EVENT_ALARM_MATCH] = TIMER1_EVT_CNT_CMP_TIMER0,   \
+                        }},                                                                \
+    }[group][timer][event]
 
 /**
  * @brief Set clock source for timer

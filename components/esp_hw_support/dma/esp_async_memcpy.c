@@ -117,6 +117,12 @@ err:
     return ret;
 }
 
+esp_err_t esp_async_memcpy_new_etm_event(async_memcpy_t asmcp, async_memcpy_etm_event_t event_type, esp_etm_event_handle_t *out_event)
+{
+    ESP_RETURN_ON_FALSE(asmcp, ESP_ERR_INVALID_ARG, TAG, "mcp handle can't be null");
+    return async_memcpy_impl_new_etm_event(&asmcp->mcp_impl, event_type, out_event);
+}
+
 static int async_memcpy_prepare_receive(async_memcpy_t asmcp, void *buffer, size_t size, dma_descriptor_t **start_desc, dma_descriptor_t **end_desc)
 {
     uint32_t prepared_length = 0;

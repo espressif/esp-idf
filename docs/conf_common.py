@@ -80,6 +80,8 @@ RMT_DOCS = ['api-reference/peripherals/rmt.rst']
 
 DAC_DOCS = ['api-reference/peripherals/dac.rst']
 
+ETM_DOCS = ['api-reference/peripherals/etm.rst']
+
 TEMP_SENSOR_DOCS = ['api-reference/peripherals/temp_sensor.rst']
 
 TOUCH_SENSOR_DOCS = ['api-reference/peripherals/touch_pad.rst']
@@ -164,6 +166,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_PCNT_SUPPORTED':PCNT_DOCS,
                             'SOC_RMT_SUPPORTED':RMT_DOCS,
                             'SOC_DAC_SUPPORTED':DAC_DOCS,
+                            'SOC_ETM_SUPPORTED':ETM_DOCS,
                             'SOC_TOUCH_SENSOR_SUPPORTED':TOUCH_SENSOR_DOCS,
                             'SOC_ULP_SUPPORTED':ULP_DOCS,
                             'SOC_RISCV_COPROC_SUPPORTED':RISCV_COPROC_DOCS,

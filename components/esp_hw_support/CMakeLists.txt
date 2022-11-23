@@ -30,15 +30,19 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_GDMA_SUPPORTED)
-        list(APPEND srcs "gdma.c" "port/async_memcpy_impl_gdma.c")
+        list(APPEND srcs "dma/gdma.c" "dma/async_memcpy_impl_gdma.c")
     endif()
 
     if(CONFIG_SOC_CP_DMA_SUPPORTED)
-        list(APPEND srcs "port/async_memcpy_impl_cp_dma.c")
+        list(APPEND srcs "dma/async_memcpy_impl_cp_dma.c")
     endif()
 
     if(CONFIG_SOC_GDMA_SUPPORTED OR CONFIG_SOC_CP_DMA_SUPPORTED)
-        list(APPEND srcs "esp_async_memcpy.c")
+        list(APPEND srcs "dma/esp_async_memcpy.c")
+    endif()
+
+    if(CONFIG_SOC_GDMA_SUPPORT_ETM)
+        list(APPEND srcs "dma/gdma_etm.c")
     endif()
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED)
@@ -47,6 +51,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_HMAC_SUPPORTED)
         list(APPEND srcs "esp_hmac.c")
+    endif()
+
+    if(CONFIG_SOC_ETM_SUPPORTED)
+        list(APPEND srcs "esp_etm.c")
     endif()
 
     # ESP32C6-TODO

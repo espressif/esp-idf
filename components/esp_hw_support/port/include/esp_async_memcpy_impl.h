@@ -12,9 +12,11 @@ extern "C" {
 #include <stdbool.h>
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
+#include "esp_etm.h"
 #include "soc/soc_caps.h"
 #include "hal/dma_types.h"
 #include "freertos/FreeRTOS.h"
+#include "esp_async_memcpy.h"
 
 #if SOC_CP_DMA_SUPPORTED
 #include "hal/cp_dma_ll.h"
@@ -91,6 +93,16 @@ esp_err_t async_memcpy_impl_stop(async_memcpy_impl_t *impl);
  * @return Always return ESP_OK
  */
 esp_err_t async_memcpy_impl_restart(async_memcpy_impl_t *impl);
+
+/**
+ * @brief Get ETM Event handle
+ *
+ * @param impl async mcp implementation layer context pointer
+ * @param event_type ETM event type
+ * @param out_event Returned ETM event handle
+ * @return ESP_OK on success, ESP_ERR_NOT_SUPPORTED if not supported in hardware, otherwise failed
+ */
+esp_err_t async_memcpy_impl_new_etm_event(async_memcpy_impl_t *impl, async_memcpy_etm_event_t event_type, esp_etm_event_handle_t *out_event);
 
 /**
  * @brief check if buffer address is valid

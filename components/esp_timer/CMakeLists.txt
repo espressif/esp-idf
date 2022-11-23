@@ -10,6 +10,10 @@ elseif(CONFIG_ESP_TIMER_IMPL_SYSTIMER)
     list(APPEND srcs "src/esp_timer_impl_systimer.c")
 endif()
 
+if(CONFIG_SOC_SYSTIMER_SUPPORT_ETM)
+    list(APPEND srcs "src/esp_timer_etm.c")
+endif()
+
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS include
                     PRIV_INCLUDE_DIRS private_include

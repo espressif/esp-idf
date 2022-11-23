@@ -12,6 +12,7 @@
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "esp_err.h"
+#include "esp_etm.h"
 #include "esp_async_memcpy_impl.h"
 
 IRAM_ATTR static void async_memcpy_impl_default_isr_handler(void *args)
@@ -74,6 +75,14 @@ esp_err_t async_memcpy_impl_restart(async_memcpy_impl_t *impl)
     cp_dma_hal_restart_rx(&impl->hal);
     cp_dma_hal_restart_tx(&impl->hal);
     return ESP_OK;
+}
+
+esp_err_t async_memcpy_impl_new_etm_event(async_memcpy_impl_t *impl, async_memcpy_etm_event_t event_type, esp_etm_event_handle_t *out_event)
+{
+    (void)impl;
+    (void)event_type;
+    (void)out_event;
+    return ESP_ERR_NOT_SUPPORTED;
 }
 
 bool async_memcpy_impl_is_buffer_address_valid(async_memcpy_impl_t *impl, void *src, void *dst)

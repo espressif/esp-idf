@@ -42,6 +42,13 @@ static inline soc_periph_systimer_clk_src_t systimer_ll_get_clock_source(void)
     return (PCR.systimer_func_clk_conf.systimer_func_clk_sel == 1) ? SYSTIMER_CLK_SRC_RC_FAST : SYSTIMER_CLK_SRC_XTAL;
 }
 
+/********************** ETM *****************************/
+
+__attribute__((always_inline)) static inline void systimer_ll_enable_etm(systimer_dev_t *dev, bool en)
+{
+    dev->conf.etm_en = en;
+}
+
 /******************* Counter *************************/
 
 __attribute__((always_inline)) static inline void systimer_ll_enable_counter(systimer_dev_t *dev, uint32_t counter_id, bool en)

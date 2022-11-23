@@ -64,4 +64,20 @@ void systimer_hal_counter_value_advance(systimer_hal_context_t *hal, uint32_t co
 }
 #endif // CONFIG_IDF_TARGET_ESP32C2
 
+#if CONFIG_IDF_TARGET_ESP32C6
+void systimer_hal_init(systimer_hal_context_t *hal)
+{
+    hal->dev = &SYSTIMER;
+    systimer_ll_enable_clock(hal->dev, true);
+    systimer_ll_enable_etm(&SYSTIMER, true);
+}
+
+void systimer_hal_deinit(systimer_hal_context_t *hal)
+{
+    systimer_ll_enable_etm(&SYSTIMER, false);
+    systimer_ll_enable_clock(hal->dev, false);
+    hal->dev = NULL;
+}
+#endif // CONFIG_IDF_TARGET_ESP32C6
+
 #endif // CONFIG_HAL_SYSTIMER_USE_ROM_IMPL

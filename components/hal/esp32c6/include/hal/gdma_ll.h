@@ -8,8 +8,10 @@
 #include <stddef.h> /* Required for NULL constant */
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/gdma_types.h"
 #include "soc/gdma_struct.h"
 #include "soc/gdma_reg.h"
+#include "soc/soc_etm_source.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +36,50 @@ extern "C" {
 #define GDMA_LL_EVENT_RX_SUC_EOF    (1<<1)
 #define GDMA_LL_EVENT_RX_DONE       (1<<0)
 
+#define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                                     \
+    (uint32_t[1][3][GDMA_ETM_EVENT_MAX]){{{                                                \
+                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_OUT_EOF_CH0, \
+                                          },                                               \
+                                          {                                                \
+                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_OUT_EOF_CH1, \
+                                          },                                               \
+                                          {                                                \
+                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_OUT_EOF_CH2, \
+                                          }}}[group][chan][event]
+
+#define GDMA_LL_RX_ETM_EVENT_TABLE(group, chan, event)                                        \
+    (uint32_t[1][3][GDMA_ETM_EVENT_MAX]){{{                                                   \
+                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_IN_SUC_EOF_CH0, \
+                                          },                                                  \
+                                          {                                                   \
+                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_IN_SUC_EOF_CH1, \
+                                          },                                                  \
+                                          {                                                   \
+                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_IN_SUC_EOF_CH2, \
+                                          }}}[group][chan][event]
+
+#define GDMA_LL_TX_ETM_TASK_TABLE(group, chan, task)                                          \
+    (uint32_t[1][3][GDMA_ETM_TASK_MAX]){{{                                                    \
+                                             [GDMA_ETM_TASK_START] = GDMA_TASK_OUT_START_CH0, \
+                                         },                                                   \
+                                         {                                                    \
+                                             [GDMA_ETM_TASK_START] = GDMA_TASK_OUT_START_CH1, \
+                                         },                                                   \
+                                         {                                                    \
+                                             [GDMA_ETM_TASK_START] = GDMA_TASK_OUT_START_CH2, \
+                                         }}}[group][chan][task]
+
+#define GDMA_LL_RX_ETM_TASK_TABLE(group, chan, task)                                         \
+    (uint32_t[1][3][GDMA_ETM_TASK_MAX]){{{                                                   \
+                                             [GDMA_ETM_TASK_START] = GDMA_TASK_IN_START_CH0, \
+                                         },                                                  \
+                                         {                                                   \
+                                             [GDMA_ETM_TASK_START] = GDMA_TASK_IN_START_CH1, \
+                                         },                                                  \
+                                         {                                                   \
+                                             [GDMA_ETM_TASK_START] = GDMA_TASK_IN_START_CH2, \
+                                         }}}[group][chan][task]
+
 ///////////////////////////////////// Common /////////////////////////////////////////
 /**
  * @brief Enable DMA channel M2M mode (TX channel n forward data to RX channel n), disabled by default
@@ -42,9 +88,9 @@ static inline void gdma_ll_enable_m2m_mode(gdma_dev_t *dev, uint32_t channel, bo
 {
     dev->channel[channel].in.in_conf0.mem_trans_en = enable;
     if (enable) {
-        // to enable m2m mode, the tx chan has to be the same to rx chan, and set to a valid value
-        dev->channel[channel].in.in_peri_sel.peri_in_sel = 0;
-        dev->channel[channel].out.out_peri_sel.peri_out_sel = 0;
+        // to enable m2m mode, the tx chan has to be the same to rx chan, and set to a dummy value
+        dev->channel[channel].in.in_peri_sel.peri_in_sel = 1;
+        dev->channel[channel].out.out_peri_sel.peri_out_sel = 1;
     }
 }
 
@@ -260,6 +306,16 @@ static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channe
     dev->channel[channel].in.in_peri_sel.peri_in_sel = periph_id;
 }
 
+/**
+ * @brief Whether to enable the ETM subsystem for RX channel
+ *
+ * @note When ETM_EN is 1, only ETM tasks can be used to configure the transfer direction and enable the channel.
+ */
+static inline void gdma_ll_rx_enable_etm_task(gdma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->channel[channel].in.in_conf0.in_etm_en = enable;
+}
+
 ///////////////////////////////////// TX /////////////////////////////////////////
 /**
  * @brief Get DMA TX channel interrupt status word
@@ -461,6 +517,16 @@ static inline void gdma_ll_tx_set_priority(gdma_dev_t *dev, uint32_t channel, ui
 static inline void gdma_ll_tx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, int periph_id)
 {
     dev->channel[channel].out.out_peri_sel.peri_out_sel = periph_id;
+}
+
+/**
+ * @brief Whether to enable the ETM subsystem for TX channel
+ *
+ * @note When ETM_EN is 1, only ETM tasks can be used to configure the transfer direction and enable the channel.
+ */
+static inline void gdma_ll_tx_enable_etm_task(gdma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->channel[channel].out.out_conf0.out_etm_en = enable;
 }
 
 #ifdef __cplusplus

@@ -9,43 +9,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
-#include "hal/timer_types.h"
+#include "driver/gptimer_types.h"
+#include "driver/gptimer_etm.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Type of General Purpose Timer handle
- */
-typedef struct gptimer_t *gptimer_handle_t;
-
-/**
- * @brief GPTimer alarm event data
- */
-typedef struct {
-    uint64_t count_value; /*!< Current count value */
-    uint64_t alarm_value; /*!< Current alarm value */
-} gptimer_alarm_event_data_t;
-
-/**
- * @brief Timer alarm callback prototype
- *
- * @param[in] timer Timer handle created by `gptimer_new_timer`
- * @param[in] edata Alarm event data, fed by driver
- * @param[in] user_ctx User data, passed from `gptimer_register_event_callbacks`
- * @return Whether a high priority task has been waken up by this function
- */
-typedef bool (*gptimer_alarm_cb_t) (gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx);
-
-/**
- * @brief Group of supported GPTimer callbacks
- * @note The callbacks are all running under ISR environment
- * @note When CONFIG_GPTIMER_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
- */
-typedef struct {
-    gptimer_alarm_cb_t on_alarm; /*!< Timer alarm callback */
-} gptimer_event_callbacks_t;
 
 /**
  * @brief General Purpose Timer configuration
@@ -59,17 +28,6 @@ typedef struct {
         uint32_t intr_shared: 1;         /*!< Set true, the timer interrupt number can be shared with other peripherals */
     } flags;                             /*!< GPTimer config flags*/
 } gptimer_config_t;
-
-/**
- * @brief General Purpose Timer alarm configuration
- */
-typedef struct {
-    uint64_t alarm_count;  /*!< Alarm target count value */
-    uint64_t reload_count; /*!< Alarm reload count value, effect only when `auto_reload_on_alarm` is set to true */
-    struct {
-        uint32_t auto_reload_on_alarm: 1; /*!< Reload the count value by hardware, immediately at the alarm event */
-    } flags;                              /*!< Alarm config flags*/
-} gptimer_alarm_config_t;
 
 /**
  * @brief Create a new General Purpose Timer, and return the handle
@@ -136,6 +94,31 @@ esp_err_t gptimer_set_raw_count(gptimer_handle_t timer, uint64_t value);
 esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, uint64_t *value);
 
 /**
+ * @brief Get GPTimer captured count value
+ *
+ * @note The capture action can be issued either by external event or by software (see also `gptimer_get_raw_count`).
+ * @note This function is allowed to run within ISR context
+ * @note This function is allowed to be executed when Cache is disabled, by enabling `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM`
+ *
+ * @param[in] timer Timer handle created by `gptimer_new_timer`
+ * @param[out] value Returned captured count value
+ * @return
+ *      - ESP_OK: Get GPTimer captured count value successfully
+ *      - ESP_ERR_INVALID_ARG: Get GPTimer captured count value failed because of invalid argument
+ *      - ESP_FAIL: Get GPTimer captured count value failed because of other error
+ */
+esp_err_t gptimer_get_captured_count(gptimer_handle_t timer, uint64_t *value);
+
+/**
+ * @brief Group of supported GPTimer callbacks
+ * @note The callbacks are all running under ISR environment
+ * @note When CONFIG_GPTIMER_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ */
+typedef struct {
+    gptimer_alarm_cb_t on_alarm; /*!< Timer alarm callback */
+} gptimer_event_callbacks_t;
+
+/**
  * @brief Set callbacks for GPTimer
  *
  * @note User registered callbacks are expected to be runnable within ISR context
@@ -152,6 +135,17 @@ esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, uint64_t *value);
  *      - ESP_FAIL: Set event callbacks failed because of other error
  */
 esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer_event_callbacks_t *cbs, void *user_data);
+
+/**
+ * @brief General Purpose Timer alarm configuration
+ */
+typedef struct {
+    uint64_t alarm_count;  /*!< Alarm target count value */
+    uint64_t reload_count; /*!< Alarm reload count value, effect only when `auto_reload_on_alarm` is set to true */
+    struct {
+        uint32_t auto_reload_on_alarm: 1; /*!< Reload the count value by hardware, immediately at the alarm event */
+    } flags;                              /*!< Alarm config flags*/
+} gptimer_alarm_config_t;
 
 /**
  * @brief Set alarm event actions for GPTimer.

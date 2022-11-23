@@ -3,7 +3,7 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs
     "gpio/gpio.c"
     "gpio/rtc_io.c"
-    "gptimer.c"
+    "gptimer/gptimer.c"
     "sdspi_crc.c"
     "sdspi_host.c"
     "sdspi_transaction.c"
@@ -23,6 +23,10 @@ endif()
 
 if(CONFIG_SOC_LEDC_SUPPORTED)
     list(APPEND srcs "ledc.c")
+endif()
+
+if(CONFIG_SOC_TIMER_SUPPORT_ETM)
+    list(APPEND srcs "gptimer/gptimer_etm.c")
 endif()
 
 if(CONFIG_SOC_I2C_SUPPORTED)
@@ -63,6 +67,10 @@ endif()
 
 if(CONFIG_SOC_PCNT_SUPPORTED)
     list(APPEND srcs "pulse_cnt.c" "deprecated/pcnt_legacy.c")
+endif()
+
+if(CONFIG_SOC_GPIO_SUPPORT_ETM)
+    list(APPEND srcs "gpio/gpio_etm.c")
 endif()
 
 if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)

@@ -1,0 +1,22 @@
+blockdiag etm_channel {
+    default_fontsize = 12;
+    node_width = 200;
+    node_height = 40;
+
+    event_gpio [label = "GPIO Event", shape = "beginpoint", stacked];
+    other_events [shape = "dots"];
+    event_others [label = "Periph Event", shape = "beginpoint", stacked];
+    channels0 [label = "Channel-N", stacked];
+    channels1 [label = "Channel-M", stacked];
+    other_channels [shape = "dots"];
+    task_gpio [label = "GPIO Task", shape = "endpoint", stacked];
+    task_others [label = "Other Tasks", shape = "endpoint", stacked];
+    other_tasks [shape = "dots"];
+
+    event_gpio -> channels0;
+    event_others -> channels1;
+    other_events -> other_channels;
+    channels0 -> task_gpio;
+    channels1 -> task_others;
+    other_channels -> other_tasks;
+}
