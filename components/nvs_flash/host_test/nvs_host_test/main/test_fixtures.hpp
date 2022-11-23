@@ -23,7 +23,8 @@ public:
         esp_partition.size = sector_size * SPI_FLASH_SEC_SIZE;
         esp_partition.erase_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
         strncpy(esp_partition.label, partition_name, PART_NAME_MAX_SIZE);
-        p_part = new nvs::NVSPartition(&esp_partition);
+        p_part = new (std::nothrow) nvs::NVSPartition(&esp_partition);
+        CHECK(p_part != nullptr);
     }
 
     ~PartitionEmulationFixture()
