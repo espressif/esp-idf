@@ -349,6 +349,25 @@ err:
     return ret;
 }
 
+
+esp_err_t dedic_gpio_get_out_offset(dedic_gpio_bundle_handle_t bundle, uint32_t *offset)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE(bundle && offset, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    *offset = bundle->out_offset;
+err:
+    return ret;
+}
+
+esp_err_t dedic_gpio_get_in_offset(dedic_gpio_bundle_handle_t bundle, uint32_t *offset)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE(bundle && offset, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    *offset = bundle->in_offset;
+err:
+    return ret;
+}
+
 void dedic_gpio_bundle_write(dedic_gpio_bundle_handle_t bundle, uint32_t mask, uint32_t value)
 {
     // For performance reasons, we don't want to check the validation of parameters here

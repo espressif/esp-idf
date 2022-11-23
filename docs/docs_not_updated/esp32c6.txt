@@ -111,7 +111,6 @@ api-reference/peripherals/sdm
 api-reference/peripherals/touch_pad
 api-reference/peripherals/adc_calibration
 api-reference/peripherals/ds
-api-reference/peripherals/dedic_gpio
 api-reference/peripherals/sd_pullup_requirements
 api-reference/peripherals/index
 api-reference/peripherals/sdmmc_host
