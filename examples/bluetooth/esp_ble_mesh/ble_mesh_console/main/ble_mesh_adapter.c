@@ -167,7 +167,7 @@ int ble_mesh_node_statistics_init(uint16_t package_num)
     ble_mesh_node_statistics.total_package_num = package_num;
     if (ble_mesh_node_statistics.package_index == NULL) {
         ESP_LOGE(TAG, " %s, %d malloc fail\n", __func__, __LINE__);
-        return 1;
+        return ESP_ERR_NO_MEM;
     }
 
     ble_mesh_node_statistics.package_num = 0;
@@ -327,12 +327,13 @@ int ble_mesh_test_performance_client_model_init(uint16_t node_num, uint32_t test
     test_perf_statistics.time = malloc(test_num * sizeof(uint16_t));
     if (test_perf_statistics.time == NULL) {
         ESP_LOGE(TAG, " %s %d, malloc fail\n", __func__, __LINE__);
-        return 1;
+        return ESP_ERR_NO_MEM;
     }
 
     test_perf_statistics.package_index = malloc(test_num * sizeof(uint16_t));
     if (test_perf_statistics.package_index == NULL) {
         ESP_LOGE(TAG, " %s %d, malloc fail\n", __func__, __LINE__);
+        return ESP_ERR_NO_MEM;
     }
     for (i = 0; i < test_num; i++) {
         test_perf_statistics.time[i] = 0;
