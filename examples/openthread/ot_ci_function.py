@@ -30,20 +30,20 @@ def reset_thread(dut:IdfDut) -> None:
 def config_thread(dut:IdfDut, model:str, dataset:str='0') -> Union[str, None]:
     if model == 'random':
         dut.write('dataset init new')
-        dut.expect('Done', timeout=2)
+        dut.expect('Done', timeout=5)
         dut.write('dataset commit active')
-        dut.expect('Done', timeout=2)
+        dut.expect('Done', timeout=5)
         dut.write('ifconfig up')
-        dut.expect('Done', timeout=2)
+        dut.expect('Done', timeout=5)
         dut.write('dataset active -x')          # get dataset
         dut_data = dut.expect(r'\n(\w{212})\r', timeout=5)[1].decode()
         return str(dut_data)
     if model == 'appointed':
         tmp = 'dataset set active ' + str(dataset)
         dut.write(tmp)
-        dut.expect('Done', timeout=2)
+        dut.expect('Done', timeout=5)
         dut.write('ifconfig up')
-        dut.expect('Done', timeout=2)
+        dut.expect('Done', timeout=5)
         return None
     return None
 
@@ -121,9 +121,9 @@ def form_network_using_manual_configuration(leader:IdfDut, child:IdfDut, leader_
     reset_thread(child)
     clean_buffer(child)
     leader.write('channel 12')
-    leader.expect('Done', timeout=2)
+    leader.expect('Done', timeout=5)
     child.write('channel 12')
-    child.expect('Done', timeout=2)
+    child.expect('Done', timeout=5)
     res = '0000'
     if wifi_psk != '0000':
         res = connect_wifi(wifi, wifi_ssid, wifi_psk, 10)[0]
@@ -134,7 +134,7 @@ def form_network_using_manual_configuration(leader:IdfDut, child:IdfDut, leader_
         config_thread(leader, 'appointed', thread_dataset)
     if leader_name == 'br':
         leader.write('bbr enable')
-        leader.expect('Done', timeout=2)
+        leader.expect('Done', timeout=5)
     role = start_thread(leader)
     assert role == 'leader'
     if thread_dataset_model == 'random':
@@ -143,7 +143,7 @@ def form_network_using_manual_configuration(leader:IdfDut, child:IdfDut, leader_
         config_thread(child, 'appointed', thread_dataset)
     if leader_name != 'br':
         child.write('bbr enable')
-        child.expect('Done', timeout=2)
+        child.expect('Done', timeout=5)
     role = start_thread(child)
     assert role == 'child'
     wait(leader, 10)
@@ -168,10 +168,10 @@ def connect_wifi(dut:IdfDut, ssid:str, psk:str, nums:int) -> Tuple[str, int]:
     information = ''
     for order in range(1, nums):
         dut.write('wifi connect -s ' + str(ssid) + ' -p ' + str(psk))
-        tmp = dut.expect(pexpect.TIMEOUT, timeout=5)
+        tmp = dut.expect(pexpect.TIMEOUT, timeout=10)
         if 'sta ip' in str(tmp):
             ip_address = re.findall(r'sta ip: (\w+.\w+.\w+.\w+),', str(tmp))[0]
-        information = dut.expect(r'wifi sta (\w+ \w+ \w+)\W', timeout=5)[1].decode()
+        information = dut.expect(r'wifi sta (\w+ \w+ \w+)\W', timeout=20)[1].decode()
         if information == 'is connected successfully':
             break
     assert information == 'is connected successfully'
@@ -277,7 +277,7 @@ def check_ipmaddr(dut:IdfDut) -> bool:
 def thread_is_joined_group(dut:IdfDut) -> bool:
     command = 'mcast join ' + thread_ipv6_group
     dut.write(command)
-    dut.expect('Done', timeout=2)
+    dut.expect('Done', timeout=5)
     order = 0
     while order < 3:
         if check_ipmaddr(dut):
@@ -288,22 +288,22 @@ def thread_is_joined_group(dut:IdfDut) -> bool:
     return False
 
 
-host_ipv6_group = 'ff04::125'
-
-
-def host_joined_group() -> bool:
+def host_joined_group(group:str='') -> bool:
     interface_name = get_host_interface_name()
     command = 'netstat -g | grep ' + str(interface_name)
     out_str = subprocess.getoutput(command)
     print('groups:\n', str(out_str))
-    return host_ipv6_group in str(out_str)
+    return group in str(out_str)
 
 
 class udp_parameter:
 
-    def __init__(self, group:str='', try_join_udp_group:bool=False, timeout:float=15.0, udp_bytes:bytes=b''):
+    def __init__(self, udp_type:str='', addr:str='::', port:int=5090, group:str='', init_flag:bool=False, timeout:float=15.0, udp_bytes:bytes=b''):
+        self.udp_type = udp_type
+        self.addr = addr
+        self.port = port
         self.group = group
-        self.try_join_udp_group = try_join_udp_group
+        self.init_flag = init_flag
         self.timeout = timeout
         self.udp_bytes = udp_bytes
 
@@ -311,16 +311,22 @@ class udp_parameter:
 def create_host_udp_server(myudp:udp_parameter) -> None:
     interface_name = get_host_interface_name()
     try:
+        if myudp.udp_type == 'INET6':
+            AF_INET = socket.AF_INET6
+        else:
+            AF_INET = socket.AF_INET
         print('The host start to create udp server!')
         if_index = socket.if_nametoindex(interface_name)
-        sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        sock.bind(('::', 5090))
-        sock.setsockopt(
-            socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP,
-            struct.pack('16si', socket.inet_pton(socket.AF_INET6, myudp.group),
-                        if_index))
-        myudp.try_join_udp_group = True
+        sock = socket.socket(AF_INET, socket.SOCK_DGRAM)
+        sock.bind((myudp.addr, myudp.port))
+
+        if myudp.udp_type == 'INET6' and myudp.group != '':
+            sock.setsockopt(
+                socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP,
+                struct.pack('16si', socket.inet_pton(socket.AF_INET6, myudp.group),
+                            if_index))
         sock.settimeout(myudp.timeout)
+        myudp.init_flag = True
         print('The host start to receive message!')
         myudp.udp_bytes = (sock.recvfrom(1024))[0]
         print('The host has received message: ', myudp.udp_bytes)
@@ -333,3 +339,137 @@ def create_host_udp_server(myudp:udp_parameter) -> None:
 
 def wait(dut:IdfDut, wait_time:float) -> None:
     dut.expect(pexpect.TIMEOUT, timeout=wait_time)
+
+
+def get_host_ipv4_address() -> str:
+    interface_name = get_host_interface_name()
+    command = 'ifconfig ' + interface_name + " | grep -w 'inet' | awk '{print $2}'"
+    out_bytes = subprocess.check_output(command, shell=True, timeout=5)
+    out_str = out_bytes.decode('utf-8')
+    host_ipv4_address = ''
+    host_ipv4_address = re.findall(r'((?:\d+.){3}\d+)', str(out_str))[0]
+    return host_ipv4_address
+
+
+def start_avahi() -> None:
+    time.sleep(1)
+    command = '/etc/init.d/dbus start'
+    subprocess.Popen(command, shell=True)
+    time.sleep(5)
+    command = 'avahi-daemon'
+    subprocess.Popen(command, shell=True)
+    time.sleep(5)
+
+
+def host_publish_service() -> None:
+    command = 'avahi-publish-service testxxx _testxxx._udp 12347 test=1235 dn="for_ci_br_test"'
+    subprocess.Popen(command, shell=True)
+    time.sleep(2)
+
+
+def host_close_service() -> None:
+    command = "ps | grep avahi-publish-s | awk '{print $1}'"
+    out_bytes = subprocess.check_output(command, shell=True, timeout=5)
+    out_str = out_bytes.decode('utf-8')
+    the_pid = re.findall(r'(\d+)\n', str(out_str))
+    for pid in the_pid:
+        command = 'kill -9 ' + pid
+        subprocess.call(command, shell=True, timeout=5)
+        time.sleep(1)
+
+
+def close_host_interface() -> None:
+    interface_name = get_host_interface_name()
+    flag = False
+    try:
+        command = 'ifconfig ' + interface_name + ' down'
+        subprocess.call(command, shell=True, timeout=5)
+        time.sleep(1)
+        flag = True
+    finally:
+        time.sleep(1)
+        assert flag
+
+
+def open_host_interface() -> None:
+    interface_name = get_host_interface_name()
+    flag = False
+    try:
+        command = 'ifconfig ' + interface_name + ' up'
+        subprocess.call(command, shell=True, timeout=5)
+        time.sleep(1)
+        flag = True
+    finally:
+        time.sleep(1)
+        assert flag
+
+
+def get_domain() -> str:
+    hostname = socket.gethostname()
+    print('hostname is: ', hostname)
+    command = 'ps -aux | grep avahi-daemon | grep running'
+    out_str = subprocess.getoutput(command)
+    print('avahi status:\n', out_str)
+    role = re.findall(r'\[([\w\W]+)\.local\]', str(out_str))[0]
+    print('active host is: ', role)
+    return str(role)
+
+
+class tcp_parameter:
+
+    def __init__(self, tcp_type:str='', addr:str='::', port:int=12345, listen_flag:bool=False, recv_flag:bool=False, timeout:float=15.0, tcp_bytes:bytes=b''):
+        self.tcp_type = tcp_type
+        self.addr = addr
+        self.port = port
+        self.listen_flag = listen_flag
+        self.recv_flag = recv_flag
+        self.timeout = timeout
+        self.tcp_bytes = tcp_bytes
+
+
+def create_host_tcp_server(mytcp:tcp_parameter) -> None:
+    try:
+        if mytcp.tcp_type == 'INET6':
+            AF_INET = socket.AF_INET6
+        else:
+            AF_INET = socket.AF_INET
+        print('The host start to create a tcp server!')
+        sock = socket.socket(AF_INET, socket.SOCK_STREAM)
+        sock.bind((mytcp.addr, mytcp.port))
+        sock.listen(5)
+        mytcp.listen_flag = True
+
+        print('The tcp server is waiting for connection!')
+        sock.settimeout(mytcp.timeout)
+        connfd,addr = sock.accept()
+        print('The tcp server connected with ',addr)
+        mytcp.recv_flag = True
+
+        mytcp.tcp_bytes = connfd.recv(1024)
+        print('The tcp server has received message: ', mytcp.tcp_bytes)
+
+    except socket.error:
+        if mytcp.recv_flag:
+            print('The tcp server did not receive message!')
+        else:
+            print('The tcp server fail to connect!')
+    finally:
+        print('Close the socket.')
+        sock.close()
+
+
+def get_ipv6_from_ipv4(ipv4_address:str, br:IdfDut) -> str:
+    clean_buffer(br)
+    br.write('br nat64prefix')
+    omrprefix = br.expect(r'\n((?:\w+:){6}):/\d+', timeout=5)[1].decode()
+    ipv4_find = re.findall(r'\d+', ipv4_address)
+    ipv6_16_1 = decimal_to_hex(ipv4_find[0]) + decimal_to_hex(ipv4_find[1])
+    ipv6_16_2 = decimal_to_hex(ipv4_find[2]) + decimal_to_hex(ipv4_find[3])
+    ipv6_get_from_ipv4 = omrprefix + ':' + ipv6_16_1 + ':' + ipv6_16_2
+    return str(ipv6_get_from_ipv4)
+
+
+def decimal_to_hex(decimal_str:str) -> str:
+    decimal_int = int(decimal_str)
+    hex_str = hex(decimal_int)[2:]
+    return hex_str
