@@ -20,6 +20,10 @@
 #include "ble_mesh_console_decl.h"
 #include "ble_mesh_model.h"
 
+/* We include the internal header file mesh_bearer_adapt.h here
+   just for some specific test purpose, which is not recommended for the other applications. */
+#include "mesh_bearer_adapt.h"
+
 typedef struct {
     struct arg_str *static_val;
     struct arg_int *static_val_len;
@@ -144,6 +148,16 @@ typedef struct {
     struct arg_end *end;
 } ble_mesh_provisioner_heartbeat_t;
 static ble_mesh_provisioner_heartbeat_t heartbeat;
+
+#ifdef CONFIG_BLE_MESH_USE_DUPLICATE_SCAN
+typedef struct {
+    struct arg_str *action_type;
+    struct arg_int *type;
+    struct arg_str *info;
+    struct arg_end *end;
+} ble_mesh_exceptional_list_t;
+static ble_mesh_exceptional_list_t exceptional_list_test;
+#endif
 
 extern void ble_mesh_generic_onoff_client_model_cb(esp_ble_mesh_generic_client_cb_event_t event,
         esp_ble_mesh_generic_client_cb_param_t *param);
@@ -300,12 +314,12 @@ void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_p
         break;
 #if (CONFIG_BLE_MESH_PROVISIONER)
     case ESP_BLE_MESH_PROVISIONER_RECV_UNPROV_ADV_PKT_EVT:
-        ESP_LOGD(TAG, "Provisioner recv unprovisioned device beacon:");
-        ESP_LOG_BUFFER_HEX("Device UUID", param->provisioner_recv_unprov_adv_pkt.dev_uuid, 16);
-        ESP_LOG_BUFFER_HEX("Address", param->provisioner_recv_unprov_adv_pkt.addr, 6);
-        ESP_LOGD(TAG, "Address type 0x%x, oob_info 0x%04x, adv_type 0x%x, bearer 0x%x",
-            param->provisioner_recv_unprov_adv_pkt.addr_type, param->provisioner_recv_unprov_adv_pkt.oob_info,
-            param->provisioner_recv_unprov_adv_pkt.adv_type, param->provisioner_recv_unprov_adv_pkt.bearer);
+        ESP_LOGI(TAG, "Provisioner:%s,"MACSTR",0x%x,0x%04x,0x%x",
+            param->provisioner_recv_unprov_adv_pkt.bearer == ESP_BLE_MESH_PROV_ADV ? "PB-ADV" : "PB-GATT",
+            MAC2STR(param->provisioner_recv_unprov_adv_pkt.addr),
+            param->provisioner_recv_unprov_adv_pkt.addr_type,
+            param->provisioner_recv_unprov_adv_pkt.oob_info,
+            param->provisioner_recv_unprov_adv_pkt.adv_type);
         break;
     case ESP_BLE_MESH_PROVISIONER_PROV_LINK_OPEN_EVT:
         ESP_LOGI(TAG, "Provisioner:LinkOpen,OK,%d", param->provisioner_prov_link_open.bearer);
@@ -537,6 +551,7 @@ static int ble_mesh_load_oob(int argc, char **argv)
         static_val = malloc(oob.static_val_len->ival[0] + 1);
         if (static_val == NULL) {
             ESP_LOGE(TAG, "malloc fail,%s,%d\n", __func__, __LINE__);
+            return ESP_ERR_NO_MEM;
         }
         get_value_string((char *)oob.static_val->sval[0], (char *)static_val);
         prov.static_val = static_val;
@@ -554,6 +569,7 @@ static int ble_mesh_load_oob(int argc, char **argv)
         static_val = malloc(oob.static_val_len->ival[0] + 1);
         if (static_val == NULL) {
             ESP_LOGE(TAG, "malloc fail,%s,%d\n", __func__, __LINE__);
+            return ESP_ERR_NO_MEM;
         }
         get_value_string((char *)oob.static_val->sval[0], (char *)static_val);
         prov.prov_static_oob_val = static_val;
@@ -593,6 +609,7 @@ int ble_mesh_init(int argc, char **argv)
         device_uuid = malloc((ESP_BLE_MESH_OCTET16_LEN + 1) * sizeof(uint8_t));
         if (device_uuid == NULL) {
             ESP_LOGE(TAG, "ble mesh malloc failed, %d\n", __LINE__);
+            return ESP_ERR_NO_MEM;
         }
         err = get_value_string((char *)component.dev_uuid->sval[0], (char *)device_uuid);
         if (err == ESP_OK) {
@@ -681,6 +698,53 @@ int ble_mesh_node_enable_bearer(int argc, char **argv)
     ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
 }
+
+#ifdef CONFIG_BLE_MESH_USE_DUPLICATE_SCAN
+int ble_mesh_exceptional_list_test(int argc, char **argv)
+{
+    esp_err_t err = ESP_FAIL;
+    uint32_t type = BLE_MESH_EXCEP_INFO_MESH_BEACON;
+    uint8_t *info = NULL;
+
+    int nerrors = arg_parse(argc, argv, (void **) &exceptional_list_test);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, exceptional_list_test.end, argv[0]);
+        return 1;
+    }
+
+    arg_int_to_value(exceptional_list_test.type, type, "device info type");
+
+    if (exceptional_list_test.info->count != 0) {
+        info = malloc((BD_ADDR_LEN + 1) * sizeof(uint8_t));
+        if (info == NULL) {
+            ESP_LOGE(TAG, "ble mesh malloc failed, %d\n", __LINE__);
+            return ESP_ERR_NO_MEM;
+        } else {
+            get_value_string((char *)exceptional_list_test.info->sval[0], (char *)info);
+        }
+    }
+
+    if (strcmp(exceptional_list_test.action_type->sval[0], "add") == 0) {
+        err = bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD, type, info);
+    } else if (strcmp(exceptional_list_test.action_type->sval[0], "remove") == 0) {
+        err = bt_mesh_update_exceptional_list( BLE_MESH_EXCEP_LIST_REMOVE, type, info);
+    } else if (strcmp(exceptional_list_test.action_type->sval[0], "clean") == 0) {
+        err = bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_CLEAN, type, NULL);
+    }
+
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "Bm:UpdateExcepList,OK\n");
+    } else {
+        ESP_LOGE(TAG, "Bm:UpdateExcepList,Fail\n");
+    }
+
+    if (info != NULL) {
+        free(info);
+    }
+
+    return err;
+}
+#endif
 
 int ble_mesh_deinit(int argc, char **argv)
 {
@@ -1219,6 +1283,22 @@ void ble_mesh_register_cmd(void)
         .argtable = &heartbeat,
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&provisioner_heartbeat_cmd));
+
+#ifdef CONFIG_BLE_MESH_USE_DUPLICATE_SCAN
+    exceptional_list_test.action_type = arg_str1("z", NULL, "<action type>", "action type");
+    exceptional_list_test.type = arg_int1("t", NULL, "<type>", "device info type");
+    exceptional_list_test.info = arg_str0("a", NULL, "<info>", "info");
+    exceptional_list_test.end = arg_end(1);
+
+    const esp_console_cmd_t ble_mesh_exceptional_list_test_cmd = {
+        .command = "bmel",
+        .help = "ble mesh: duplicate scan exceptional list test",
+        .hint = NULL,
+        .func = &ble_mesh_exceptional_list_test,
+        .argtable = &exceptional_list_test,
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&ble_mesh_exceptional_list_test_cmd));
+#endif
 
     init_transactions();
 }

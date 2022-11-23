@@ -139,7 +139,7 @@ int ble_mesh_test_performance_client_model(int argc, char **argv)
         profile_data->model = model;
         if (profile_data == NULL) {
             ESP_LOGE(TAG, " %s, %d malloc fail\n", __func__, __LINE__);
-            return 1;
+            return ESP_ERR_NO_MEM;
         }
 
         arg_int_to_value(test_perf_client_model.playload_byte, profile_data->length, "length");
