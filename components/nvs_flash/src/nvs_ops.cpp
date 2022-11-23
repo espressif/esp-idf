@@ -14,9 +14,11 @@
 
 #include "esp_spi_flash.h"
 #include "nvs_ops.hpp"
+#include <cstddef>
 #ifdef CONFIG_NVS_ENCRYPTION
 #include "nvs_encr.hpp"
 #include <string.h>
+#include <cstdlib>
 #endif
 
 namespace nvs
@@ -39,7 +41,7 @@ esp_err_t nvs_flash_write(size_t destAddr, const void *srcAddr, size_t size) {
                 return err;
             }
             err = spi_flash_write(destAddr, buf, size);
-            delete buf;
+            free(buf);
             return err;
         }
     }

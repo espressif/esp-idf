@@ -24,12 +24,13 @@
 #include "compressed_enum_table.hpp"
 #include "intrusive_list.h"
 #include "nvs_item_hash_list.hpp"
+#include "nvs_memory_management.hpp"
 
 namespace nvs
 {
 
 
-class Page : public intrusive_list_node<Page>
+class Page : public intrusive_list_node<Page>, public ExceptionlessAllocatable
 {
 public:
     static const uint32_t PSB_INIT = 0x1;
@@ -87,7 +88,7 @@ public:
     esp_err_t getSeqNumber(uint32_t& seqNumber) const;
 
     esp_err_t setSeqNumber(uint32_t seqNumber);
- 
+
     esp_err_t setVersion(uint8_t version);
 
     esp_err_t writeItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize, uint8_t chunkIdx = CHUNK_ANY);
@@ -188,7 +189,7 @@ protected:
     esp_err_t readEntry(size_t index, Item& dst) const;
 
     esp_err_t writeEntry(const Item& item);
-    
+
     esp_err_t writeEntryData(const uint8_t* data, size_t size);
 
     esp_err_t eraseEntryAndSpan(size_t index);
@@ -205,7 +206,7 @@ protected:
         assert(entry < ENTRY_COUNT);
         return mBaseAddress + ENTRY_DATA_OFFSET + static_cast<uint32_t>(entry) * ENTRY_SIZE;
     }
-    
+
     static const char* pageStateToName(PageState ps);
 
 
