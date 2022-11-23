@@ -145,9 +145,9 @@
 
 /*-----------------------------------------------------------*/
 
-    #ifdef ESP_PLATFORM
+    #if ( configNUM_CORES > 1 )
         #define taskSELECT_HIGHEST_PRIORITY_TASK()    taskSelectHighestPriorityTaskSMP()
-    #else //ESP_PLATFORM
+    #else /* configNUM_CORES > 1 */
         #define taskSELECT_HIGHEST_PRIORITY_TASK()                            \
     {                                                                         \
         UBaseType_t uxTopPriority = uxTopReadyPriority;                       \
@@ -160,11 +160,11 @@
         }                                                                     \
                                                                               \
         /* listGET_OWNER_OF_NEXT_ENTRY indexes through the list, so the tasks of \
-         * the  same priority get an equal share of the processor time. */                                        \
-        listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB[ xPortGetCoreID() ], &( pxReadyTasksLists[ uxTopPriority ] ) ); \
-        uxTopReadyPriority = uxTopPriority;                                                                       \
+         * the  same priority get an equal share of the processor time. */                         \
+        listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB[ 0 ], &( pxReadyTasksLists[ uxTopPriority ] ) ); \
+        uxTopReadyPriority = uxTopPriority;                                                        \
     } /* taskSELECT_HIGHEST_PRIORITY_TASK */
-    #endif //ESP_PLATFORM
+    #endif /* configNUM_CORES > 1 */
 
 /*-----------------------------------------------------------*/
 
@@ -185,14 +185,14 @@
 
 /*-----------------------------------------------------------*/
 
-    #define taskSELECT_HIGHEST_PRIORITY_TASK()                                                                    \
-    {                                                                                                             \
-        UBaseType_t uxTopPriority;                                                                                \
-                                                                                                                  \
-        /* Find the highest priority list that contains ready tasks. */                                           \
-        portGET_HIGHEST_PRIORITY( uxTopPriority, uxTopReadyPriority );                                            \
-        configASSERT( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ uxTopPriority ] ) ) > 0 );                   \
-        listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB[ xPortGetCoreID() ], &( pxReadyTasksLists[ uxTopPriority ] ) ); \
+    #define taskSELECT_HIGHEST_PRIORITY_TASK()                                                     \
+    {                                                                                              \
+        UBaseType_t uxTopPriority;                                                                 \
+                                                                                                   \
+        /* Find the highest priority list that contains ready tasks. */                            \
+        portGET_HIGHEST_PRIORITY( uxTopPriority, uxTopReadyPriority );                             \
+        configASSERT( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ uxTopPriority ] ) ) > 0 );    \
+        listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB[ 0 ], &( pxReadyTasksLists[ uxTopPriority ] ) ); \
     } /* taskSELECT_HIGHEST_PRIORITY_TASK() */
 
 /*-----------------------------------------------------------*/
@@ -3509,95 +3509,93 @@ BaseType_t xTaskIncrementTick( void )
 #endif /* configUSE_APPLICATION_TASK_TAG */
 /*-----------------------------------------------------------*/
 
-#ifdef ESP_PLATFORM
-    #if ( configUSE_PORT_OPTIMISED_TASK_SELECTION == 0 )
-        static void taskSelectHighestPriorityTaskSMP( void )
+#if ( configNUM_CORES > 1 )
+    static void taskSelectHighestPriorityTaskSMP( void )
+    {
+        /* This function is called from a critical section. So some optimizations are made */
+        BaseType_t uxCurPriority;
+        BaseType_t xTaskScheduled = pdFALSE;
+        BaseType_t xNewTopPrioritySet = pdFALSE;
+        BaseType_t xCoreID = xPortGetCoreID(); /* Optimization: Read once */
+
+        /* Search for tasks, starting form the highest ready priority. If nothing is
+         * found, we eventually default to the IDLE tasks at priority 0 */
+
+        for( uxCurPriority = uxTopReadyPriority; uxCurPriority >= 0 && xTaskScheduled == pdFALSE; uxCurPriority-- )
         {
-            /* This function is called from a critical section. So some optimizations are made */
-            BaseType_t uxCurPriority;
-            BaseType_t xTaskScheduled = pdFALSE;
-            BaseType_t xNewTopPrioritySet = pdFALSE;
-            BaseType_t xCoreID = xPortGetCoreID(); /* Optimization: Read once */
-
-            /* Search for tasks, starting form the highest ready priority. If nothing is
-             * found, we eventually default to the IDLE tasks at priority 0 */
-
-            for( uxCurPriority = uxTopReadyPriority; uxCurPriority >= 0 && xTaskScheduled == pdFALSE; uxCurPriority-- )
+            /* Check if current priority has one or more ready tasks. Skip if none */
+            if( listLIST_IS_EMPTY( &( pxReadyTasksLists[ uxCurPriority ] ) ) )
             {
-                /* Check if current priority has one or more ready tasks. Skip if none */
-                if( listLIST_IS_EMPTY( &( pxReadyTasksLists[ uxCurPriority ] ) ) )
-                {
-                    continue;
-                }
-
-                /* Save a copy of highest priority that has a ready state task */
-                if( xNewTopPrioritySet == pdFALSE )
-                {
-                    xNewTopPrioritySet = pdTRUE;
-                    uxTopReadyPriority = uxCurPriority;
-                }
-
-                /* We now search this priority's ready task list for a runnable task.
-                 * We always start searching from the head of the list, so we reset
-                 * pxIndex to point to the tail so that we start walking the list from
-                 * the first item */
-                pxReadyTasksLists[ uxCurPriority ].pxIndex = ( ListItem_t * ) &( pxReadyTasksLists[ uxCurPriority ].xListEnd );
-
-                /* Get the first item on the list */
-                TCB_t * pxTCBCur;
-                TCB_t * pxTCBFirst;
-                listGET_OWNER_OF_NEXT_ENTRY( pxTCBCur, &( pxReadyTasksLists[ uxCurPriority ] ) );
-                pxTCBFirst = pxTCBCur;
-
-                do
-                {
-                    /* Check if the current task is currently being executed. However, if
-                     * it's being executed by the current core, we can still schedule it.
-                     * Todo: Each task can store a xTaskRunState, instead of needing to
-                     *       check each core */
-                    UBaseType_t ux;
-
-                    for( ux = 0; ux < ( UBaseType_t ) configNUM_CORES; ux++ )
-                    {
-                        if( ux == xCoreID )
-                        {
-                            continue;
-                        }
-                        else if( pxCurrentTCB[ ux ] == pxTCBCur )
-                        {
-                            /* Current task is already being executed. Get the next task */
-                            goto get_next_task;
-                        }
-                    }
-
-                    /* Check if the current task has a compatible affinity */
-                    if( ( pxTCBCur->xCoreID != xCoreID ) && ( pxTCBCur->xCoreID != tskNO_AFFINITY ) )
-                    {
-                        goto get_next_task;
-                    }
-
-                    /* The current task is runnable. Schedule it */
-                    pxCurrentTCB[ xCoreID ] = pxTCBCur;
-                    xTaskScheduled = pdTRUE;
-
-                    /* Move the current tasks list item to the back of the list in order
-                     * to implement best effort round robin. To do this, we need to reset
-                     * the pxIndex to point to the tail again. */
-                    pxReadyTasksLists[ uxCurPriority ].pxIndex = ( ListItem_t * ) &( pxReadyTasksLists[ uxCurPriority ].xListEnd );
-                    uxListRemove( &( pxTCBCur->xStateListItem ) );
-                    vListInsertEnd( &( pxReadyTasksLists[ uxCurPriority ] ), &( pxTCBCur->xStateListItem ) );
-                    break;
-
-get_next_task:
-                    /* The current task cannot be scheduled. Get the next task in the list */
-                    listGET_OWNER_OF_NEXT_ENTRY( pxTCBCur, &( pxReadyTasksLists[ uxCurPriority ] ) );
-                } while( pxTCBCur != pxTCBFirst ); /* Check to see if we've walked the entire list */
+                continue;
             }
 
-            assert( xTaskScheduled == pdTRUE ); /* At this point, a task MUST have been scheduled */
+            /* Save a copy of highest priority that has a ready state task */
+            if( xNewTopPrioritySet == pdFALSE )
+            {
+                xNewTopPrioritySet = pdTRUE;
+                uxTopReadyPriority = uxCurPriority;
+            }
+
+            /* We now search this priority's ready task list for a runnable task.
+             * We always start searching from the head of the list, so we reset
+             * pxIndex to point to the tail so that we start walking the list from
+             * the first item */
+            pxReadyTasksLists[ uxCurPriority ].pxIndex = ( ListItem_t * ) &( pxReadyTasksLists[ uxCurPriority ].xListEnd );
+
+            /* Get the first item on the list */
+            TCB_t * pxTCBCur;
+            TCB_t * pxTCBFirst;
+            listGET_OWNER_OF_NEXT_ENTRY( pxTCBCur, &( pxReadyTasksLists[ uxCurPriority ] ) );
+            pxTCBFirst = pxTCBCur;
+
+            do
+            {
+                /* Check if the current task is currently being executed. However, if
+                 * it's being executed by the current core, we can still schedule it.
+                 * Todo: Each task can store a xTaskRunState, instead of needing to
+                 *       check each core */
+                UBaseType_t ux;
+
+                for( ux = 0; ux < ( UBaseType_t ) configNUM_CORES; ux++ )
+                {
+                    if( ux == xCoreID )
+                    {
+                        continue;
+                    }
+                    else if( pxCurrentTCB[ ux ] == pxTCBCur )
+                    {
+                        /* Current task is already being executed. Get the next task */
+                        goto get_next_task;
+                    }
+                }
+
+                /* Check if the current task has a compatible affinity */
+                if( ( pxTCBCur->xCoreID != xCoreID ) && ( pxTCBCur->xCoreID != tskNO_AFFINITY ) )
+                {
+                    goto get_next_task;
+                }
+
+                /* The current task is runnable. Schedule it */
+                pxCurrentTCB[ xCoreID ] = pxTCBCur;
+                xTaskScheduled = pdTRUE;
+
+                /* Move the current tasks list item to the back of the list in order
+                 * to implement best effort round robin. To do this, we need to reset
+                 * the pxIndex to point to the tail again. */
+                pxReadyTasksLists[ uxCurPriority ].pxIndex = ( ListItem_t * ) &( pxReadyTasksLists[ uxCurPriority ].xListEnd );
+                uxListRemove( &( pxTCBCur->xStateListItem ) );
+                vListInsertEnd( &( pxReadyTasksLists[ uxCurPriority ] ), &( pxTCBCur->xStateListItem ) );
+                break;
+
+get_next_task:
+                /* The current task cannot be scheduled. Get the next task in the list */
+                listGET_OWNER_OF_NEXT_ENTRY( pxTCBCur, &( pxReadyTasksLists[ uxCurPriority ] ) );
+            } while( pxTCBCur != pxTCBFirst ); /* Check to see if we've walked the entire list */
         }
-    #endif /* configUSE_PORT_OPTIMISED_TASK_SELECTION */
-#endif //ESP_PLATFORM
+
+        assert( xTaskScheduled == pdTRUE ); /* At this point, a task MUST have been scheduled */
+    }
+#endif /* configNUM_CORES > 1 */
 
 void vTaskSwitchContext( void )
 {
