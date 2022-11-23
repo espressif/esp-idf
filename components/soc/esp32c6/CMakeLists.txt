@@ -21,7 +21,6 @@ set(srcs
 list(REMOVE_ITEM srcs
         "adc_periph.c"                  # TODO: IDF-5310
         "ledc_periph.c"                 # TODO: IDF-5328
-        "temperature_sensor_periph.c"   # TODO: IDF-5322
         )
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
