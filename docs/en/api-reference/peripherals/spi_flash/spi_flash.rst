@@ -5,13 +5,18 @@ SPI Flash API
 
 Overview
 --------
-The spi_flash component contains API functions related to reading, writing, erasing, memory mapping for data in the external flash. The spi_flash component also has higher-level API functions which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`.
+The spi_flash component contains API functions related to reading, writing, erasing, memory mapping for data in the external flash.
 
-Different from the API before IDF v4.0, the functionality of `esp_flash_*` APIs is not limited to the "main" SPI flash chip (the same SPI flash chip from which program runs). With different chip pointers, you can access external flash chips connected to not only SPI0/1 but also other SPI buses like SPI2.
+For higher-level API functions which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`, see :doc:`/api-reference/storage/partition`
+
+.. note::
+    ``esp_partition_*`` APIs are recommended to be used instead of the lower level ``esp_flash_*`` API functions when accessing the main SPI Flash chip, since they do bounds checking and are guaranteed to calculate correct offsets in flash based on the information in the partition table. ``esp_flash_*`` functions can still be used directly when accessing an external (secondary) SPI flash chip.
+
+Different from the API before IDF v4.0, the functionality of ``esp_flash_*`` APIs is not limited to the "main" SPI flash chip (the same SPI flash chip from which program runs). With different chip pointers, you can access external flash chips connected to not only SPI0/1 but also other SPI buses like SPI2.
 
 .. note::
 
-    Instead of going through the cache connected to the SPI0 peripheral, most `esp_flash_*` APIs go through other SPI peripherals like SPI1, SPI2, etc. This makes them able to access not only the main flash, but also external flash.
+    Instead of going through the cache connected to the SPI0 peripheral, most ``esp_flash_*`` APIs go through other SPI peripherals like SPI1, SPI2, etc. This makes them able to access not only the main flash, but also external (secondary) flash.
 
     However, due to limitations of the cache, operations through the cache are limited to the main flash. The address range limitation for these operations are also on the cache side. The cache is not able to access external flash chips or address range above its capabilities. These cache operations include: mmap, encrypted read/write, executing code or access to variables in the flash.
 
@@ -123,24 +128,6 @@ Concurrency Constraints for Flash on SPI1
 
    The SPI0/1 bus is shared between the instruction & data cache (for firmware execution) and the SPI1 peripheral (controlled by the drivers including this SPI flash driver). Hence, calling SPI Flash API on SPI1 bus (including the main flash) will cause significant influence to the whole system. See :doc:`spi_flash_concurrency` for more details.
 
-.. _flash-partition-apis:
-
-Partition Table API
--------------------
-
-ESP-IDF projects use a partition table to maintain information about various regions of SPI flash memory (bootloader, various application binaries, data, filesystems). More information can be found in :doc:`Partition Tables </api-guides/partition-tables>`.
-
-This component provides API functions to enumerate partitions found in the partition table and perform operations on them. These functions are declared in ``esp_partition.h``:
-
-- :cpp:func:`esp_partition_find` checks a partition table for entries with specific type, returns an opaque iterator.
-- :cpp:func:`esp_partition_get` returns a structure describing the partition for a given iterator.
-- :cpp:func:`esp_partition_next` shifts the iterator to the next found partition.
-- :cpp:func:`esp_partition_iterator_release` releases iterator returned by ``esp_partition_find``.
-- :cpp:func:`esp_partition_find_first` is a convenience function which returns the structure describing the first partition found by ``esp_partition_find``.
-- :cpp:func:`esp_partition_read`, :cpp:func:`esp_partition_write`, :cpp:func:`esp_partition_erase_range` are equivalent to :cpp:func:`esp_flash_read`, :cpp:func:`esp_flash_write`, :cpp:func:`esp_flash_erase_region`, but operate within partition boundaries.
-
-.. note::
-    Application code should mostly use these ``esp_partition_*`` API functions instead of lower level ``esp_flash_*`` API functions. Partition table API functions do bounds checking and calculate correct offsets in flash, based on data stored in a partition table.
 
 
 SPI Flash Encryption
@@ -240,14 +227,6 @@ It's pretty hard to totally eliminate this risk, because the erasing time varies
 
 3. During your development, please carefully review the actual flash operation according to the specific requirements and time limits on erasing flash memory of your projects. Always allow reasonable redundancy based on your specific product requirements when configuring the flash erasing timeout threshold, thus improving the reliability of your product.
 
-See Also
---------
-
-- :doc:`Partition Table documentation <../../api-guides/partition-tables>`
-- :doc:`Over The Air Update (OTA) API <../system/ota>` provides high-level API for updating app firmware stored in flash.
-- :doc:`Non-Volatile Storage (NVS) API <nvs_flash>` provides a structured API for storing small pieces of data in SPI flash.
-
-
 .. _spi-flash-implementation-details:
 
 Implementation Details
@@ -276,15 +255,7 @@ API Reference - SPI Flash
 .. include-build-file:: inc/spi_flash_types.inc
 .. include-build-file:: inc/esp_flash_err.inc
 
-.. _api-reference-partition-table:
-
-API Reference - Partition Table
--------------------------------
-
-.. include-build-file:: inc/esp_partition.inc
-
 API Reference - Flash Encrypt
 -----------------------------
 
 .. include-build-file:: inc/esp_flash_encrypt.inc
-    

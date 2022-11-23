@@ -29,8 +29,6 @@ mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-re
 Declaration is '.. cpp:enum:: esp_mqtt_transport_t'.
 mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
 Declaration is '.. cpp:enum:: esp_mqtt_protocol_ver_t'.
-esp_flash.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/spi_flash:line.
-Declaration is '.. cpp:type:: struct esp_flash_t esp_flash_t'.
 wear-levelling.rst:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/fatfs:line.
 Declaration is '.. cpp:struct:: esp_vfs_fat_mount_config_t'.
 wear-levelling.rst:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/fatfs:line.

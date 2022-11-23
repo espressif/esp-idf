@@ -23,6 +23,12 @@ api-reference/wifi/esp_smartconfig              api-reference/network/esp_smartc
 api-reference/wifi/esp_wifi                     api-reference/network/esp_wifi
 api-reference/system/tcpip_adapter              migration-guides/tcpip-adapter
 api-reference/system/esp_pthread                api-reference/system/pthread
+api-reference/storage/spi_flash                 api-reference/peripherals/spi_flash/spi_flash
+api-reference/storage/spi_flash_concurrency     api-reference/peripherals/spi_flash/spi_flash_concurrency
+api-reference/storage/spi_flash_override_driver api-reference/peripherals/spi_flash/spi_flash_override_driver
+api-reference/storage/spi_flash_optional_feature    api-reference/peripherals/spi_flash/spi_flash_optional_feature
+
+
 get-started/idf-monitor                         api-guides/tools/idf-monitor
 get-started-cmake/idf-monitor                   api-guides/tools/idf-monitor
 get-started/get-started-devkitc                 hw-reference/esp32/get-started-devkitc

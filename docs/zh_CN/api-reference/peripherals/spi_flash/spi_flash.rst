@@ -5,13 +5,18 @@ SPI Flash API
 
 概述
 --------
-spi_flash 组件提供外部 flash 数据读取、写入、擦除和内存映射相关的 API 函数，同时也提供了更高层级的、面向分区的 API 函数（定义在 :doc:`分区表 </api-guides/partition-tables>` 中）。
+spi_flash 组件提供外部 flash 数据读取、写入、擦除和内存映射相关的 API 函数。
 
-与 ESP-IDF V4.0 之前的 API 不同，这一版 `esp_flash_*` API 功能并不局限于主 SPI flash 芯片（即运行程序的 SPI flash 芯片）。使用不同的芯片指针，您可以访问连接到 SPI0/1 或 SPI2 总线的外部 flash 芯片。
+关于更多高层次的用于访问分区（分区表定义于 :doc:`分区表 </api-guides/partition-tables>`）的 API 函数，参见 :doc:`/api-reference/storage/partition` 。
+
+.. note::
+    访问主 flash 芯片时，建议使用上述 ``esp_partition_*`` API 函数，而非低层级的 ``esp_flash_*`` API 函数。分区表 API 函数根据存储在分区表中的数据，进行边界检查并计算在 flash 中的正确偏移量。不过，您仍可以使用 ``esp_flash_*`` 函数直接访问外部（额外）的 SPI flash 芯片。
+
+与 ESP-IDF V4.0 之前的 API 不同，这一版 ``esp_flash_*`` API 功能并不局限于主 SPI flash 芯片（即运行程序的 SPI flash 芯片）。使用不同的芯片指针，您可以访问连接到 SPI0/1 或 SPI2 总线的外部 flash 芯片。
 
 .. note::
 
-    大多数 `esp_flash_*` API 使用 SPI1，SPI2 等外设而非通过 SPI0 上的 cache。这使得它们不仅能访问主 flash，也能访问外部 flash 。
+    大多数 ``esp_flash_*`` API 使用 SPI1，SPI2 等外设而非通过 SPI0 上的 cache。这使得它们不仅能访问主 flash，也能访问外部 flash 。
 
     而由于 cache 的限制，所有经过 cache 的操作都只能对主 flash 进行。这些操作的地址同样受到 cache 能力的限制。Cache 无法访问外部 flash 或者高于它能力的地址段。这些 cache 操作包括：mmap ，加密读写，执行代码或者访问在 flash 中的变量。
 
@@ -123,26 +128,6 @@ SPI1 Flash 并发约束
 
     指令/数据 cache（用以执行固件）与 SPI1 外设（由像 SPI flash 驱动一样的驱动程序控制）共享 SPI0/1 总线。因此，在 SPI1 总线上调用 SPI flash API（包括访问主 flash）会对整个系统造成显著的影响。请参阅 :doc:`spi_flash_concurrency`，查看详细信息。
 
-.. _flash-partition-apis:
-
-分区表 API
--------------------
-
-ESP-IDF 工程使用分区表保存 SPI flash 各区信息，包括引导程序、各种应用程序二进制文件、数据及文件系统等。请参阅 :doc:`分区表 </api-guides/partition-tables>`，查看详细信息。
-
-该组件在 ``esp_partition.h`` 中声明了一些 API 函数，用以枚举在分区表中找到的分区，并对这些分区执行操作：
-
-- :cpp:func:`esp_partition_find`：在分区表中查找特定类型的条目，返回一个不透明迭代器；
-- :cpp:func:`esp_partition_get`：返回一个结构体，描述给定迭代器的分区；
-- :cpp:func:`esp_partition_next`：将迭代器移至下一个找到的分区；
-- :cpp:func:`esp_partition_iterator_release`：释放 ``esp_partition_find`` 中返回的迭代器；
-- :cpp:func:`esp_partition_find_first`：返回描述 ``esp_partition_find`` 中找到的第一个分区的结构；
-- :cpp:func:`esp_partition_read`、:cpp:func:`esp_partition_write` 和 :cpp:func:`esp_partition_erase_range` 等同于 :cpp:func:`esp_flash_read`、:cpp:func:`esp_flash_write` 和 :cpp:func:`esp_flash_erase_region`，但在分区边界内执行。
-
-.. note::
-    请在应用程序代码中使用上述 ``esp_partition_*`` API 函数，而非低层级的 ``esp_flash_*`` API 函数。分区表 API 函数根据存储在分区表中的数据，进行边界检查并计算在 flash 中的正确偏移量。
-
-
 SPI Flash 加密
 --------------------
 
@@ -240,14 +225,6 @@ OS 函数层目前支持访问锁和延迟的方法。
 
 3. 在开发过程中，请根据项目对擦除 flash 的具体要求和时间限制，谨慎进行 flash 操作。在配置 flash 擦除超时周期时，请在实际产品要求的基础上留出合理的冗余时间，从而提高产品的可靠性。
 
-另请参考
-------------
-
-- :doc:`分区表 <../../api-guides/partition-tables>`
-- :doc:`OTA API <../system/ota>` 提供了高层 API 用于更新存储在 flash 中的 app 固件。
-- :doc:`NVS API <nvs_flash>` 提供了结构化 API 用于存储 SPI flash 中的碎片数据。
-
-
 .. _spi-flash-implementation-details:
 
 实现细节
@@ -277,11 +254,6 @@ SPI Flash API 参考
 .. include-build-file:: inc/esp_flash_err.inc
 
 .. _api-reference-partition-table:
-
-分区表 API 参考
--------------------------------
-
-.. include-build-file:: inc/esp_partition.inc
 
 Flash 加密 API 参考
 -----------------------------
