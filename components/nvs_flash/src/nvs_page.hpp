@@ -16,13 +16,14 @@
 #include "compressed_enum_table.hpp"
 #include "intrusive_list.h"
 #include "nvs_item_hash_list.hpp"
+#include "nvs_memory_management.hpp"
 #include "partition.hpp"
 
 namespace nvs
 {
 
 
-class Page : public intrusive_list_node<Page>
+class Page : public intrusive_list_node<Page>, public ExceptionlessAllocatable
 {
 public:
     static const uint32_t PSB_INIT = 0x1;
