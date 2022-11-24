@@ -1008,6 +1008,18 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_fsm_status(uart_port_t uart_num)
     return REG_GET_FIELD(UART_FSM_STATUS_REG(uart_num), UART_ST_UTX_OUT);
 }
 
+/**
+ * @brief  Configure UART whether to discard when receiving wrong data
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  discard true: Receiver stops storing data into FIFO when data is wrong
+ *                false: Receiver continue storing data into FIFO when data is wrong
+ */
+FORCE_INLINE_ATTR void uart_ll_discard_error_data(uart_dev_t *hw, bool discard)
+{
+    hw->conf0.err_wr_mask = discard ? 1 : 0;
+}
+
 #ifdef __cplusplus
 }
 #endif
