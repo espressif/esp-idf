@@ -25,7 +25,9 @@ extern "C"
 #define SPI_SLAVE_BIT_LSBFIRST            (SPI_SLAVE_TXBIT_LSBFIRST|SPI_SLAVE_RXBIT_LSBFIRST) ///< Transmit and receive LSB first
 #define SPI_SLAVE_NO_RETURN_RESULT        (1<<2)  ///< Don't return the descriptor to the host on completion (use `post_trans_cb` to notify instead)
 
+/** @cond */
 typedef struct spi_slave_transaction_t spi_slave_transaction_t;
+/** @endcond */
 typedef void(*slave_transaction_cb_t)(spi_slave_transaction_t *trans);
 
 /**
