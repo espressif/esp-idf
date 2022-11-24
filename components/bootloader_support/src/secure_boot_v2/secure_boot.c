@@ -247,7 +247,7 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
 
     ESP_LOGI(TAG, "%d signature block(s) found appended to the app.", app_key_digests.num_digests);
     if (app_key_digests.num_digests > boot_key_digests.num_digests) {
-        ESP_LOGW(TAG, "App has %d signature blocks but bootloader only has %d. Some keys missing from bootloader?");
+        ESP_LOGW(TAG, "App has %d signature blocks but bootloader only has %d. Some keys missing from bootloader?", app_key_digests.num_digests, boot_key_digests.num_digests);
     }
 
     /* Confirm if at least one public key from the application matches a public key in the bootloader
