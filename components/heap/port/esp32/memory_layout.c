@@ -172,13 +172,18 @@ SOC_RESERVE_MEMORY_REGION(0x3fffc000, 0x40000000, trace_mem); //Reserve trace me
 SOC_RESERVE_MEMORY_REGION(SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, spi_ram);
 #endif
 
-extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_fast_end, _rtc_noinit_end;
+extern int _data_start, _heap_start, _heap_end, _iram_start, _iram_end, _rtc_force_fast_end, _rtc_noinit_end;
 // Static data region. DRAM used by data+bss and possibly rodata
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_data);
 
 // IRAM code region
 // ESP32 has an IRAM-only region 0x4008_0000 - 0x4009_FFFF, reserve the used part
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_code);
+
+// If IRAM spans into SRAM1 due to CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM, reserve the corresponding part of DRAM
+#ifdef CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM
+SOC_RESERVE_MEMORY_REGION((intptr_t) &_heap_end, 0x40000000, sram1_iram);
+#endif
 
 // RTC Fast RAM region
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
