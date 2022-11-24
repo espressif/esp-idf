@@ -978,20 +978,25 @@ static char *bta_hf_client_parse_clcc(char *buffer)
         return NULL;
     }
 
+    /* Abort in case offset not set because of format error */
+    if (offset == 0) {
+        APPL_TRACE_ERROR("%s: Format Error %s", __func__, buffer);
+        return NULL;
+    }
+
     buffer += offset;
+    offset = 0;
 
     /* check optional part */
     if (*buffer == ',') {
-        int res2;
-
-        res2 = sscanf(buffer, ",\"%32[^\"]\",%hu%n", numstr, &type, &offset);
+        int res2 = sscanf(buffer, ",\"%32[^\"]\",%hu%n", numstr, &type, &offset);
         if (res2 < 0) {
             return NULL;
         }
 
         if (res2 == 0) {
             res2 = sscanf(buffer, ",\"\",%hu%n", &type, &offset);
-            if (res < 0) {
+            if (res2 < 0) {
                 return NULL;
             }
 
@@ -1000,14 +1005,20 @@ static char *bta_hf_client_parse_clcc(char *buffer)
             numstr[0] = '\0';
         }
 
-        if (res2 < 2) {
-            return NULL;
-        }
+        if (res2 >= 2) {
+            res += res2;
+            /* Abort in case offset not set because of format error */
+            if (offset == 0) {
+                APPL_TRACE_ERROR("%s: Format Error %s", __func__, buffer);
+                return NULL;
+            }
 
-        res += res2;
-        buffer += offset;
+            buffer += offset;
+        }
     }
 
+    /* Skip any remaing param,as they are not defined by BT HFP spec */
+    AT_SKIP_REST(buffer);
     AT_CHECK_RN(buffer);
 
     if (res > 6) {
