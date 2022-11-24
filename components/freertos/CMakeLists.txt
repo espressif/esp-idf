@@ -50,6 +50,7 @@ if(CONFIG_FREERTOS_SMP)
     endif()
 
     list(APPEND srcs
+        "port_common.c"
         "FreeRTOS-Kernel-SMP/croutine.c"
         "FreeRTOS-Kernel-SMP/event_groups.c"
         "FreeRTOS-Kernel-SMP/list.c"
@@ -113,7 +114,7 @@ else()
     endif()
 
     list(APPEND srcs
-        "FreeRTOS-Kernel/portable/port_common.c"
+        "port_common.c"
         "FreeRTOS-Kernel/portable/port_systick.c"
         "FreeRTOS-Kernel/croutine.c"
         "FreeRTOS-Kernel/event_groups.c"

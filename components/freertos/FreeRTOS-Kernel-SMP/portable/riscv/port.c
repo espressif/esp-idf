@@ -385,52 +385,6 @@ void vPortFreeStack( void *pv )
 }
 #endif
 
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
-                                   StackType_t **ppxIdleTaskStackBuffer,
-                                   uint32_t *pulIdleTaskStackSize )
-{
-    StackType_t *pxStackBufferTemp;
-    StaticTask_t *pxTCBBufferTemp;
-    /* Stack always grows downwards (from high address to low address) on all
-     * ESP RISC-V targets. Given that the heap allocator likely allocates memory
-     * from low to high address, we allocate the stack first and then the TCB so
-     * that the stack does not grow downwards into the TCB.
-     *
-     * Allocate TCB and stack buffer in internal memory. */
-    pxStackBufferTemp = pvPortMalloc(CONFIG_FREERTOS_IDLE_TASK_STACKSIZE);
-    pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
-    assert(pxStackBufferTemp != NULL);
-    assert(pxTCBBufferTemp != NULL);
-    // Write back pointers
-    *ppxIdleTaskStackBuffer = pxStackBufferTemp;
-    *ppxIdleTaskTCBBuffer = pxTCBBufferTemp;
-    *pulIdleTaskStackSize = CONFIG_FREERTOS_IDLE_TASK_STACKSIZE;
-}
-
-void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
-                                    StackType_t **ppxTimerTaskStackBuffer,
-                                    uint32_t *pulTimerTaskStackSize )
-{
-    StackType_t *pxStackBufferTemp;
-    StaticTask_t *pxTCBBufferTemp;
-    /* Stack always grows downwards (from high address to low address) on all
-     * ESP RISC-V targets. Given that the heap allocator likely allocates memory
-     * from low to high address, we allocate the stack first and then the TCB so
-     * that the stack does not grow downwards into the TCB.
-     *
-     * Allocate TCB and stack buffer in internal memory. */
-    pxStackBufferTemp = pvPortMalloc(configTIMER_TASK_STACK_DEPTH);
-    pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
-    assert(pxStackBufferTemp != NULL);
-    assert(pxTCBBufferTemp != NULL);
-    // Write back pointers
-    *ppxTimerTaskStackBuffer = pxStackBufferTemp;
-    *ppxTimerTaskTCBBuffer = pxTCBBufferTemp;
-    *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
-}
-#endif //( configSUPPORT_STATIC_ALLOCATION == 1 )
-
 // ------------------------ Stack --------------------------
 #if CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
 /**

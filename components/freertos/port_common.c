@@ -11,8 +11,14 @@
 #include "esp_memory_utils.h"
 #include "sdkconfig.h"
 
+/* ----------------------------------------- Port Implementations (Common)  --------------------------------------------
+ * - Common FreeRTOS port function implementations
+ * - These functions are common to all FreeRTOS ports (i.e., on all architectures and all FreeRTOS implementations).
+ * ------------------------------------------------------------------------------------------------------------------ */
+
 // -------------------- Heap Related -----------------------
 
+#if !CONFIG_FREERTOS_SMP    // IDF-3997
 bool xPortCheckValidTCBMem(const void *ptr)
 {
     return esp_ptr_internal(ptr) && esp_ptr_byte_accessible(ptr);
@@ -26,16 +32,18 @@ bool xPortcheckValidStackMem(const void *ptr)
     return esp_ptr_internal(ptr) && esp_ptr_byte_accessible(ptr);
 #endif
 }
+#endif
 
 // ------------- FreeRTOS Static Allocation ----------------
 
 /*
-This function is required by FreeRTOS when configSUPPORT_STATIC_ALLOCATION is
-enabled and is used by FreeRTOS to obtain memory for its IDLE tasks.
+These function are required by FreeRTOS when configSUPPORT_STATIC_ALLOCATION is
+enabled and is used by FreeRTOS to obtain memory for its IDLE/Timer tasks.
 
 Like the pvPortMallocTcbMem() and pvPortMallocStackMem() macros, TCB and stack
 memory MUST be placed in internal RAM.
 */
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
                                    StackType_t **ppxIdleTaskStackBuffer,
                                    uint32_t *pulIdleTaskStackSize )
@@ -49,14 +57,24 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
     #if (portSTACK_GROWTH > 0)
     {
         //Allocate TCB and stack buffer in internal memory
-        pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
-        pxStackBufferTemp = pvPortMallocStackMem(configIDLE_TASK_STACK_SIZE);
+        #if CONFIG_FREERTOS_SMP     // IDF-3997
+            pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
+            pxStackBufferTemp = pvPortMalloc(configMINIMAL_STACK_SIZE);
+        #else
+            pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+            pxStackBufferTemp = pvPortMallocStackMem(configIDLE_TASK_STACK_SIZE);
+        #endif /* CONFIG_FREERTOS_SMP */
     }
     #else /* portSTACK_GROWTH */
     {
         //Allocate TCB and stack buffer in internal memory
-        pxStackBufferTemp = pvPortMallocStackMem(configIDLE_TASK_STACK_SIZE);
-        pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+        #if CONFIG_FREERTOS_SMP     // IDF-3997
+            pxStackBufferTemp = pvPortMalloc(configMINIMAL_STACK_SIZE);
+            pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
+        #else
+            pxStackBufferTemp = pvPortMallocStackMem(configIDLE_TASK_STACK_SIZE);
+            pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+        #endif /* CONFIG_FREERTOS_SMP */
     }
     #endif /* portSTACK_GROWTH */
 
@@ -65,17 +83,13 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
     //Write back pointers
     *ppxIdleTaskTCBBuffer = pxTCBBufferTemp;
     *ppxIdleTaskStackBuffer = pxStackBufferTemp;
+#if CONFIG_FREERTOS_SMP
+    *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+#else
     *pulIdleTaskStackSize = configIDLE_TASK_STACK_SIZE;
+#endif /* CONFIG_FREERTOS_SMP */
 }
 
-/*
-This function is required by FreeRTOS when configSUPPORT_STATIC_ALLOCATION is
-enabled and is used by the FreeRTOS Timer to obtain memory for its daemone task.
-
-
-Like the pvPortMallocTcbMem() and pvPortMallocStackMem() macros, TCB and stack
-memory MUST be placed in internal RAM.
-*/
 void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
                                     StackType_t **ppxTimerTaskStackBuffer,
                                     uint32_t *pulTimerTaskStackSize )
@@ -89,14 +103,24 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
     #if (portSTACK_GROWTH > 0)
     {
         //Allocate TCB and stack buffer in internal memory
-        pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
-        pxStackBufferTemp = pvPortMallocStackMem(configTIMER_TASK_STACK_DEPTH);
+        #if CONFIG_FREERTOS_SMP     // IDF-3997
+            pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
+            pxStackBufferTemp = pvPortMalloc(configTIMER_TASK_STACK_DEPTH);
+        #else
+            pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+            pxStackBufferTemp = pvPortMallocStackMem(configTIMER_TASK_STACK_DEPTH);
+        #endif /* CONFIG_FREERTOS_SMP */
     }
     #else /* portSTACK_GROWTH */
     {
         //Allocate TCB and stack buffer in internal memory
-        pxStackBufferTemp = pvPortMallocStackMem(configTIMER_TASK_STACK_DEPTH);
-        pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+        #if CONFIG_FREERTOS_SMP     // IDF-3997
+            pxStackBufferTemp = pvPortMalloc(configTIMER_TASK_STACK_DEPTH);
+            pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
+        #else
+            pxStackBufferTemp = pvPortMallocStackMem(configTIMER_TASK_STACK_DEPTH);
+            pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+        #endif /* CONFIG_FREERTOS_SMP */
     }
     #endif /* portSTACK_GROWTH */
 
@@ -107,3 +131,4 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
     *ppxTimerTaskStackBuffer = pxStackBufferTemp;
     *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
+#endif // configSUPPORT_STATIC_ALLOCATION == 1
