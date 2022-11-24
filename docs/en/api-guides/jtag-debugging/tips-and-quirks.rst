@@ -192,27 +192,37 @@ The board can be reset by entering ``mon reset`` or ``mon reset halt`` into GDB.
 
 .. _jtag-debugging-tip-jtag-pins-reconfigured:
 
-Do not use JTAG pins for something else
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Can JTAG pins be used for other purposes?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Operation of JTAG may be disturbed, if some other h/w is connected to JTAG pins besides {IDF_TARGET_NAME} module and JTAG adapter. {IDF_TARGET_NAME} JTAG is using the following pins:
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    {IDF_TARGET_NAME} contains a USB Serial/JTAG Controller which can be used for debugging. By default, {IDF_TARGET_NAME} JTAG interface is connected to the built-in USB SERIAL/JTAG peripheral. For details, please refer to :doc:`Configure {IDF_TARGET_NAME} built-in JTAG Interface <../jtag-debugging/configure-builtin-jtag>`.
+
+    When you use USB Serial/JTAG Controller for debugging, |jtag-gpio-list| can be used for other purposes.
+
+    However, if you switch the USB JTAG interface to the GPIOs by burning eFuses, |jtag-gpio-list| can be used for JTAG debugging. When they perform this function, they cannot be used for other purposes.
+
+Operation of JTAG may be disturbed, if some other hardware is connected to JTAG pins besides {IDF_TARGET_NAME} module and JTAG adapter. {IDF_TARGET_NAME} JTAG is using the following pins:
 
 .. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: jtag-pins
     :end-before: ---
 
-JTAG communication will likely fail, if configuration of JTAG pins is changed by user application. If OpenOCD initializes correctly (detects the two Tensilica cores), but loses sync and spews out a lot of DTR/DIR errors when the program is ran, it is likely that the application reconfigures the JTAG pins to something else, or the user forgot to connect Vtar to a JTAG adapter that needed it.
+JTAG communication will likely fail, if configuration of JTAG pins is changed by a user application. If OpenOCD initializes correctly (detects all the CPU cores in the SOC), but loses sync and spews out a lot of DTR/DIR errors when the program is running, it is likely that the application reconfigures the JTAG pins to something else, or the user forgot to connect Vtar to a JTAG adapter that requires it.
 
-.. highlight:: none
+.. only:: esp32
 
-Below is an excerpt from series of errors reported by GDB after the application stepped into the code that reconfigured MTDO pin to be an input::
+    .. highlight:: none
 
-    cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates target still busy!
-    cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an exception!
-    cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
-    cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates target still busy!
-    cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an exception!
-    cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
+    Below is an excerpt from series of errors on the dual-core {IDF_TARGET_NAME} reported by GDB after the application stepped into the code that reconfigured MTDO pin to be an input::
+
+        cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates target still busy!
+        cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an exception!
+        cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
+        cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates target still busy!
+        cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an exception!
+        cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
 
 .. _jtag-debugging-security-features:
 
