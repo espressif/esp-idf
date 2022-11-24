@@ -144,10 +144,12 @@ entries:
         # port
         port: pxPortInitialiseStack (default)
         port: xPortStartScheduler (default)
-        port: main_task (default)
-        port: esp_startup_start_app (default)
-        if ESP_SYSTEM_SINGLE_CORE_MODE = n:
-            port:esp_startup_start_app_other_cores (default)
+        # app_startup.c
+        app_startup: esp_startup_start_app (default)
+        if CONFIG_FREERTOS_UNICORE = n:
+            app_startup: esp_startup_start_app_other_cores (default)
+            app_startup: other_cpu_startup_idle_hook_cb (default)
+        app_startup: main_task (default)
         # timers.c
         timers: xTimerCreateTimerTask (default)
         timers: xTimerCreate (default)

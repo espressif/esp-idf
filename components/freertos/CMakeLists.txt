@@ -57,6 +57,7 @@ if(CONFIG_FREERTOS_SMP)
         "FreeRTOS-Kernel-SMP/tasks.c"
         "FreeRTOS-Kernel-SMP/timers.c"
         "FreeRTOS-Kernel-SMP/stream_buffer.c"
+        "app_startup.c"
         "FreeRTOS-openocd.c"
         )
 
@@ -121,6 +122,7 @@ else()
         "FreeRTOS-Kernel/tasks.c"
         "FreeRTOS-Kernel/timers.c"
         "FreeRTOS-Kernel/stream_buffer.c"
+        "app_startup.c"
         "FreeRTOS-openocd.c"
         "esp_additions/freertos_v8_compat.c")
 
