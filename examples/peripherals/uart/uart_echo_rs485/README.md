@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-H4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # UART RS485 Echo Example
 
@@ -36,8 +36,7 @@ ESP32 BOARD         |               |   RS-485 side |               |  SERIAL AD
 Connect a USB-to-RS485 adapter to a computer, then connect the adapter's A/B output lines with the corresponding A/B output lines of the RS485 line driver connected to the ESP32 chip (see figure above).
 ```
   ------------------------------------------------------------------------------------------------------------------------------
-  |  UART Interface       | #define            | Default ESP32 Pin     | Default pins for          | External RS485 Driver Pin |
-  |                       |                    |                       | ESP32-S2(S3, C3, C2, H4)  |                           |
+  |  UART Interface       | #define            | Default pin for ESP32 | Default pins for others   | External RS485 Driver Pin |
   | ----------------------|--------------------|-----------------------|---------------------------|---------------------------|
   | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO9                     | DI                        |
   | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO8                     | RO                        |
