@@ -76,7 +76,7 @@ static DRAM_ATTR portMUX_TYPE s_phy_int_mux = portMUX_INITIALIZER_UNLOCKED;
 
 /* Memory to store PHY digital registers */
 static uint32_t* s_phy_digital_regs_mem = NULL;
-static uint8_t s_phy_backup_mem_ref = 0;
+static uint8_t s_phy_modem_init_ref = 0;
 
 #if CONFIG_MAC_BB_PD
 uint32_t* s_mac_bb_pd_mem = NULL;
@@ -306,11 +306,11 @@ void esp_wifi_bt_power_domain_off(void)
 #endif
 }
 
-void esp_phy_pd_mem_init(void)
+void esp_phy_modem_init(void)
 {
     _lock_acquire(&s_phy_access_lock);
 
-    s_phy_backup_mem_ref++;
+    s_phy_modem_init_ref++;
     if (s_phy_digital_regs_mem == NULL) {
         s_phy_digital_regs_mem = (uint32_t *)heap_caps_malloc(SOC_PHY_DIG_REGS_MEM_SIZE, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
     }
@@ -319,15 +319,21 @@ void esp_phy_pd_mem_init(void)
 
 }
 
-void esp_phy_pd_mem_deinit(void)
+void esp_phy_modem_deinit(void)
 {
     _lock_acquire(&s_phy_access_lock);
 
-    s_phy_backup_mem_ref--;
-    if (s_phy_backup_mem_ref == 0) {
+    s_phy_modem_init_ref--;
+    if (s_phy_modem_init_ref == 0) {
         s_is_phy_reg_stored = false;
         free(s_phy_digital_regs_mem);
         s_phy_digital_regs_mem = NULL;
+        /* Fix the issue caused by the power domain off.
+        * This issue is only on ESP32C3.
+        */
+#if CONFIG_IDF_TARGET_ESP32C3
+        phy_init_flag();
+#endif
     }
 
     _lock_release(&s_phy_access_lock);
