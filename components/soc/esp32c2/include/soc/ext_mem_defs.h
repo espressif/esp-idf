@@ -26,7 +26,6 @@ extern "C" {
 #define DRAM0_CACHE_ADDRESS_LOW                0x3C000000
 #define DRAM0_CACHE_ADDRESS_HIGH(page_size)    (DRAM0_CACHE_ADDRESS_LOW + ((page_size) * 64)) // MMU has 64 pages
 #define DRAM0_CACHE_OPERATION_HIGH(page_size)  DRAM0_CACHE_ADDRESS_HIGH(page_size)
-#define ESP_CACHE_TEMP_ADDR                    0x3C000000
 
 #define BUS_SIZE(bus_name, page_size)                 (bus_name##_ADDRESS_HIGH(page_size) - bus_name##_ADDRESS_LOW)
 #define ADDRESS_IN_BUS(bus_name, vaddr, page_size)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH(page_size))
