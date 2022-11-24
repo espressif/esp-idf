@@ -584,12 +584,16 @@ class StructureForSummary(object):
         r = StructureForSummary()
 
         diram_filter = filter(in_diram, segments)
-        r.diram_total = int(get_size(diram_filter) / 2)
+        r.diram_total = get_size(diram_filter)
 
         dram_filter = filter(in_dram, segments)
         r.dram_total = get_size(dram_filter)
         iram_filter = filter(in_iram, segments)
         r.iram_total = get_size(iram_filter)
+
+        # This fixes counting the diram twice if the cache fills the iram entirely
+        if r.iram_total == 0:
+            r.diram_total //= 2
 
         def filter_in_section(sections: Iterable[MemRegions.Region], section_to_check: str) -> List[MemRegions.Region]:
             return list(filter(lambda x: LinkingSections.in_section(x.section, section_to_check), sections))  # type: ignore
