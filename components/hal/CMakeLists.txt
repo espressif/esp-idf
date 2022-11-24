@@ -141,7 +141,7 @@ if(NOT BOOTLOADER_BUILD)
             "xt_wdt_hal.c"
             "aes_hal.c"
             "esp32s3/brownout_hal.c"
-            "esp32s3/hmac_hal.c"
+            "hmac_hal.c"
             "esp32s3/touch_sensor_hal.c"
             "esp32s3/rtc_cntl_hal.c"
             "usb_dwc_hal.c")
@@ -155,7 +155,7 @@ if(NOT BOOTLOADER_BUILD)
               "xt_wdt_hal.c"
               "aes_hal.c"
               "esp32c3/brownout_hal.c"
-              "esp32c3/hmac_hal.c"
+              "hmac_hal.c"
               "esp32c3/rtc_cntl_hal.c")
     endif()
 
@@ -166,7 +166,7 @@ if(NOT BOOTLOADER_BUILD)
             "spi_slave_hd_hal.c"
             "aes_hal.c"
             "esp32h4/brownout_hal.c"
-            "esp32h4/hmac_hal.c"
+            "hmac_hal.c"
             "esp32h4/rtc_cntl_hal.c")
     endif()
 

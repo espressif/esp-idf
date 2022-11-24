@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,7 @@ void hmac_hal_start(void);
  * @note Writing out-of-range values is undefined behavior. The user has to ensure that the parameters are in range.
  *
  * @param config The target of the HMAC. Possible targets are described in \c hmac_hal_output_t.
- * See the ESP32S3 TRM for more details.
+ * See the TRM of your target chip for more details.
  * @param key_id The ID of the hardware key slot to be used.
  *
  * @return 0 if the configuration was successful, non-zero if not.
@@ -57,7 +57,7 @@ uint32_t hmac_hal_configure(hmac_hal_output_t config, uint32_t key_id);
  *
  * The message must not be longer than one block (512 bits) and the padding has to be applied by software before
  * writing. The padding has to be able to fit into the block after the message.
- * For more information on HMAC padding, see the ESP32S3 TRM.
+ * For more information on HMAC padding, see the TRM of your target chip.
  */
 void hmac_hal_write_one_block_512(const void *block);
 
@@ -72,7 +72,7 @@ void hmac_hal_write_one_block_512(const void *block);
  * Before writing the last block which contains the padding, a call to \c hmac_hal_next_block_padding() is necessary
  * to indicate to the hardware that a block with padding will be written.
  *
- * For more information on HMAC padding, see the ESP32S3 TRM.
+ * For more information on HMAC padding, see the TRM of your target chip for more details.
  */
 void hmac_hal_write_block_512(const void *block);
 
