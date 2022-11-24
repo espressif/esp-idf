@@ -87,7 +87,7 @@ static inline void hmac_ll_config_finish(void)
  *  - 1 or greater on error
  *  - 0 on success
  */
-static inline uint32_t hmac_ll_query_config_error(void)
+static inline uint32_t hmac_ll_config_error(void)
 {
     return REG_READ(HMAC_QUERY_ERROR_REG);
 }
