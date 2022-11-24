@@ -30,6 +30,7 @@ Build the project, flash it to the board, and start the monitor tool to view the
 As you run the example, you will see the following log:
 
 light switch:
+```
 I (318) gpio: GPIO[9]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:2
 I (328) system_api: Base MAC address is not set
 I (328) system_api: read default base MAC address from EFUSE
@@ -52,7 +53,7 @@ I (9458) ESP_ZB_ON_OFF_SWITCH: send move to on_off toggle command
 I (10088) ESP_ZB_ON_OFF_SWITCH: send move to on_off toggle command
 I (10588) ESP_ZB_ON_OFF_SWITCH: send move to on_off toggle command
 I (11098) ESP_ZB_ON_OFF_SWITCH: send move to on_off toggle command
-
+```
 
 ## Light Control Functions
 

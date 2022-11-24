@@ -46,38 +46,23 @@
 #endif
 static const char *TAG = "ESP_ZB_RCP";
 
-void zboss_signal_handler(uint8_t bufid)
+void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
 {
-    zb_zdo_app_signal_hdr_t *sg_p = NULL;
-    /* get application signal from the buffer */
-    zb_zdo_app_signal_type_t sig =  zb_get_app_signal(bufid, &sg_p);
-
-    if (ZB_GET_APP_SIGNAL_STATUS(bufid) == 0) {
-        switch (sig) {
-        case ZB_COMMON_SIGNAL_CAN_SLEEP:
-#if defined(ZB_USE_SLEEP)
-            zb_sleep_now();
-#endif
-            break;
-        default: break;
-        }
-    } else if (sig == ZB_ZDO_SIGNAL_PRODUCTION_CONFIG_READY) {
+    uint32_t *p_sg_p       = signal_struct->p_app_signal;
+    esp_err_t err_status = signal_struct->esp_err_status;
+    esp_zb_app_signal_type_t sig_type = *p_sg_p;
+    if (err_status == ESP_OK) {
+    } else if (sig_type == ESP_ZB_ZDO_SIGNAL_PRODUCTION_CONFIG_READY) {
         ESP_LOGI(TAG, "Production config is not present or invalid");
     } else {
-        ESP_LOGI(TAG, "Device started FAILED status %d", ZB_GET_APP_SIGNAL_STATUS(bufid));
-    }
-
-    if (bufid) {
-        zb_buf_free(bufid);
+        ESP_LOGI(TAG, "Device started FAILED status %d", err_status);
     }
 }
 
-static void esp_zb_task(void * pvParameters)
+static void esp_zb_task(void *pvParameters)
 {
-    ZB_INIT("esp_zigbee_rcp");
-    while (1) {
-        zb_sched_loop_iteration();
-    }
+    esp_zb_rcp_init();
+    esp_zb_rcp_main_loop_iteration();
 }
 
 void app_main(void)

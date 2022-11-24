@@ -30,6 +30,7 @@ Build the project, flash it to the board, and start the monitor tool to view the
 As you run the example, you will see the following log:
 
 light bulb:
+```
 I (918) ESP_ZB_LIGHT: status: 255
 I (901) ESP_ZB_LIGHT: Zigbee stack initialized
 I (901) ESP_ZB_LIGHT: Start network steering
@@ -40,6 +41,7 @@ I (7331) ESP_ZB_LIGHT: on/off light set to 1
 I (8251) ESP_ZB_LIGHT: on/off light set to 0
 I (9111) ESP_ZB_LIGHT: on/off light set to 1
 I (9671) ESP_ZB_LIGHT: on/off light set to 0
+```
 
 ## Light Control Functions
 
