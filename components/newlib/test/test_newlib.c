@@ -122,6 +122,7 @@ TEST_CASE("test asctime", "[newlib]")
     TEST_ASSERT_EQUAL_STRING(buf, time_str);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 static bool fn_in_rom(void *fn)
 {
     const int fnaddr = (int)fn;
@@ -157,6 +158,7 @@ TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
     TEST_ASSERT_FALSE(fn_in_rom(strtol));
 #endif // defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 
 #ifndef CONFIG_NEWLIB_NANO_FORMAT
 TEST_CASE("test 64bit int formats", "[newlib]")

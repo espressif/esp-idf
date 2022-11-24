@@ -144,6 +144,7 @@ TEST_CASE("Test spi_flash_read", "[spi_flash][esp_flash]")
 
 extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
 extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 static void IRAM_ATTR fix_rom_func(void)
 {
     uint32_t freqdiv = 0;
@@ -304,6 +305,7 @@ TEST_CASE("Test esp_flash_write", "[spi_flash][esp_flash]")
     ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40080000, start, 16));
 #endif
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 
 #ifdef CONFIG_SPIRAM
 

@@ -160,6 +160,9 @@ examples/system/select:
     - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       temporary: true
       reason: lack of runners
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
 
 examples/system/sysview_tracing:
   disable_test:

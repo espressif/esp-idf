@@ -19,6 +19,7 @@
 
 #include "esp_private/cache_utils.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 static QueueHandle_t result_queue;
 
 static IRAM_ATTR void cache_test_task(void *arg)
@@ -106,3 +107,4 @@ TEST_CASE("invalid access to cache raises panic (APP CPU)", "[spi_flash][reset="
 
 #endif // !CONFIG_FREERTOS_UNICORE
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

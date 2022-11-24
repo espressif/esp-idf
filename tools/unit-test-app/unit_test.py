@@ -49,6 +49,7 @@ def reset_reason_matches(reported_str, expected_str):
         '_RESET': '_RST',
         'POWERON_RESET': 'POWERON',
         'DEEPSLEEP_RESET': 'DSLEEP',
+        'SW_CPU_RESET': 'SW_CPU',
     }
 
     if expected_str in reported_str:

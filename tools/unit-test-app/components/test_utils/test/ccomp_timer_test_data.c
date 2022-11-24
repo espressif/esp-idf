@@ -48,7 +48,7 @@ typedef struct {
 /* No performance monitor in RISCV for now
  */
 #if !DISABLED_FOR_TARGETS(ESP32C3)
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C6)
 //IDF-5052
 
 static const char* TAG = "test_ccomp_timer";
@@ -178,5 +178,5 @@ TEST_CASE("data cache hit rate sweep", "[test_utils][ccomp_timer]")
     free(flash_mem);
 #endif
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
 #endif // !DISABLED_FOR_TARGETS(ESP32C3)

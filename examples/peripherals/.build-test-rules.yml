@@ -43,6 +43,10 @@ examples/peripherals/i2s/i2s_adc_dac:
 examples/peripherals/i2s/i2s_basic/i2s_pdm:
   disable:
     - if: SOC_I2S_SUPPORTS_PDM != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
 
 examples/peripherals/i2s/i2s_basic/i2s_std:
   disable:
@@ -149,6 +153,10 @@ examples/peripherals/rmt/onewire_ds18b20:
 examples/peripherals/rmt/stepper_motor:
   disable:
     - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
 
 examples/peripherals/sdio/host:
   enable:
@@ -196,6 +204,12 @@ examples/peripherals/temp_sensor:
 examples/peripherals/timer_group/gptimer_capture_hc_sr04:
   disable:
     - if: SOC_TIMER_SUPPORT_ETM != 1
+
+examples/peripherals/timer_group/legacy_driver:
+  disable_test:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target esp32c6 is not supported yet
 
 examples/peripherals/touch_sensor:
   disable:
