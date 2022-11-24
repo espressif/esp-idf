@@ -736,14 +736,8 @@ TEST_CASE("test_slave_isr_pin_to_core","[spi]")
     slave_expect = 0;
     for (int i = 0; i < TEST_ISR_CNT; i++) {
         TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
-
         TEST_ESP_OK(spi_slave_queue_trans(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY));
-        // This two delay used for hardware to activate a interrupt after invoke
-        vTaskDelay(1);
-        // to invoke a trans_done intr for spi slave without a master
-        spi_ll_set_int_stat(SPI_LL_GET_HW(TEST_SPI_HOST));
-        vTaskDelay(1);
-
+        vTaskDelay(1);  // Waiting ISR on core 1 to be done.
         TEST_ESP_OK(spi_slave_free(TEST_SPI_HOST));
     }
     printf("Test Slave ISR Assign CPU1: %d : %ld\n", TEST_ISR_CNT, slave_expect);
