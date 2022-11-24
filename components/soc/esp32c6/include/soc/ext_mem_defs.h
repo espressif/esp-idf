@@ -23,7 +23,6 @@ extern "C" {
 #define DRAM0_CACHE_ADDRESS_LOW                  IRAM0_CACHE_ADDRESS_LOW                //I/D share the same vaddr range
 #define DRAM0_CACHE_ADDRESS_HIGH(page_size)      IRAM0_CACHE_ADDRESS_HIGH(page_size)    //I/D share the same vaddr range
 #define DRAM0_CACHE_OPERATION_HIGH(page_size)    DRAM0_CACHE_ADDRESS_HIGH(page_size)
-#define ESP_CACHE_TEMP_ADDR                      0x42000000
 
 #define BUS_SIZE(bus_name, page_size)                 (bus_name##_ADDRESS_HIGH(page_size) - bus_name##_ADDRESS_LOW)
 #define ADDRESS_IN_BUS(bus_name, vaddr, page_size)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH(page_size))
