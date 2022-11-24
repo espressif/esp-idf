@@ -1550,8 +1550,8 @@ void bt_mesh_net_start(void)
 
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Add Mesh beacon type (Secure Network Beacon) to the exceptional list */
-    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-                                    BLE_MESH_EXCEP_INFO_MESH_BEACON, NULL);
+    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_ADD,
+                                    BLE_MESH_EXCEP_LIST_TYPE_MESH_BEACON, NULL);
 #endif
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
