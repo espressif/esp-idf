@@ -598,6 +598,7 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
             for (count = 0; count < WPS_MAX_DIS_AP_NUM; count++) {
                 if (os_memcmp(sm->dis_ap_list[count].bssid, scan->bssid, ETH_ALEN) == 0) {
                     wpa_printf(MSG_INFO, "discard ap bssid "MACSTR, MAC2STR(scan->bssid));
+                    wpabuf_free(buf);
                     return false;
                 }
             }
@@ -606,6 +607,9 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
 
         if (ap_found || sm->wps_pin_war) {
             wpabuf_free(buf);
+            if (scan->ssid[1] > SSID_MAX_LEN) {
+                return false;
+            }
             esp_wifi_enable_sta_privacy_internal();
             os_memset(sm->config.ssid, 0, sizeof(sm->config.ssid));
             strncpy((char *)sm->config.ssid, (char *)&scan->ssid[2], (int)scan->ssid[1]);
@@ -1686,6 +1690,9 @@ _err:
         sm->dev = NULL;
     }
     if (sm->wps_ctx) {
+        if (sm->wps_ctx->dh_privkey) {
+            wpabuf_free(sm->wps_ctx->dh_privkey);
+        }
         os_free(sm->wps_ctx);
         sm->wps_ctx = NULL;
     }
@@ -1740,6 +1747,9 @@ wifi_station_wps_deinit(void)
         sm->dev = NULL;
     }
     if (sm->wps_ctx) {
+        if (sm->wps_ctx->dh_privkey) {
+            wpabuf_free(sm->wps_ctx->dh_privkey);
+        }
         os_free(sm->wps_ctx);
         sm->wps_ctx = NULL;
     }
@@ -1902,12 +1912,8 @@ int wifi_station_wps_start(void)
     switch (wps_get_status()) {
     case WPS_STATUS_DISABLE: {
         sm->is_wps_scan = true;
-
         wps_build_public_key(sm->wps, NULL, WPS_CALC_KEY_PRE_CALC);
-
         wifi_wps_scan();
-
-
         break;
     }
     case WPS_STATUS_SCANNING:
