@@ -1339,6 +1339,15 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #endif
 
 /**
+ * NAPT_DEBUG: Enable debugging for NAPT.
+ */
+#ifdef CONFIG_LWIP_NAPT_DEBUG
+#define NAPT_DEBUG                      LWIP_DBG_ON
+#else
+#define NAPT_DEBUG                      LWIP_DBG_OFF
+#endif
+
+/**
  * MEMP_DEBUG: Enable debugging in memp.c.
  */
 #define MEMP_DEBUG                      LWIP_DBG_OFF

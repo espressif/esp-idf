@@ -944,7 +944,7 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
                     return ESP_ERR_ESP_NETIF_DHCPS_START_FAILED;
                 }
                 esp_netif->dhcps_status = ESP_NETIF_DHCP_STARTED;
-                ESP_LOGD(TAG, "DHCP server started successfully");
+                ESP_LOGI(TAG, "DHCP server started on interface %s with IP: " IPSTR, esp_netif->if_key, IP2STR(&lwip_ip));
                 esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
                 return ESP_OK;
             } else {
