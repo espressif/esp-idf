@@ -664,30 +664,28 @@ static void emac_w5500_task(void *arg)
                 /* define max expected frame len */
                 frame_len = ETH_MAX_PACKET_SIZE;
                 emac_w5500_alloc_recv_buf(emac, &buffer, &frame_len);
-                /* there is a waiting frame */
-                if (frame_len) {
-                    /* we have memory to receive the frame of maximal size previously defined */
-                    if (buffer != NULL) {
-                        buf_len = W5500_ETH_MAC_RX_BUF_SIZE_AUTO;
-                        if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
-                            if (buf_len == 0) {
-                                free(buffer);
-                            } else if (frame_len > buf_len) {
-                                ESP_LOGE(TAG, "received frame was truncated");
-                                free(buffer);
-                            } else {
-                                ESP_LOGD(TAG, "receive len=%u", buf_len);
-                                /* pass the buffer to stack (e.g. TCP/IP layer) */
-                                emac->eth->stack_input(emac->eth, buffer, buf_len);
-                            }
-                        } else {
-                            ESP_LOGE(TAG, "frame read from module failed");
+                /* we have memory to receive the frame of maximal size previously defined */
+                if (buffer != NULL) {
+                    buf_len = W5500_ETH_MAC_RX_BUF_SIZE_AUTO;
+                    if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
+                        if (buf_len == 0) {
                             free(buffer);
+                        } else if (frame_len > buf_len) {
+                            ESP_LOGE(TAG, "received frame was truncated");
+                            free(buffer);
+                        } else {
+                            ESP_LOGD(TAG, "receive len=%u", buf_len);
+                            /* pass the buffer to stack (e.g. TCP/IP layer) */
+                            emac->eth->stack_input(emac->eth, buffer, buf_len);
                         }
                     } else {
-                        ESP_LOGE(TAG, "no mem for receive buffer");
-                        emac_w5500_flush_recv_frame(emac);
+                        ESP_LOGE(TAG, "frame read from module failed");
+                        free(buffer);
                     }
+                /* if allocation failed and there is a waiting frame */
+                } else if (frame_len) {
+                    ESP_LOGE(TAG, "no mem for receive buffer");
+                    emac_w5500_flush_recv_frame(emac);
                 }
             } while (emac->packets_remain);
         }
