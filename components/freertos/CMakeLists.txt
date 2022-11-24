@@ -53,6 +53,7 @@ else()
     list(APPEND srcs
         "app_startup.c"
         "FreeRTOS-openocd.c"
+        "port_common.c"
         "${kernel_dir}/portable/${arch}/portasm.S")
 
     list(APPEND private_include_dirs
@@ -63,7 +64,6 @@ else()
         list(APPEND include_dirs "${kernel_dir}/portable/${arch}/include/freertos") # Xtensa headers via #include "xx.h"
     else()
         list(APPEND srcs
-            "${kernel_dir}/portable/port_common.c"
             "${kernel_dir}/portable/port_systick.c"
             "esp_additions/freertos_v8_compat.c")
 
