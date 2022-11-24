@@ -51,6 +51,7 @@ if(${target} STREQUAL "linux")
         "${kernel_dir}/portable/${arch}/utils/wait_for_event.c")
 else()
     list(APPEND srcs
+        "app_startup.c"
         "FreeRTOS-openocd.c"
         "${kernel_dir}/portable/${arch}/portasm.S")
 
@@ -130,13 +131,14 @@ else()
         # FreeRTOS headers have a dependency on app_trace when SystemView tracing is enabled
         idf_component_optional_requires(PUBLIC app_trace)
     elseif(CONFIG_APPTRACE_ENABLE)
-        # [refactor-todo]: port.c has a dependency on esp_apptrace_init, for running it on APP CPU.
-        # this should be resolved when link-time registration of startup functions is added.
+        # [refactor-todo]: app_startup.c esp_startup_start_app_other_cores() has a dependency on esp_apptrace_init()
+        # (called on CPU1). This should be resolved when link-time registration of startup functions is added.
         idf_component_optional_requires(PRIVATE app_trace)
     endif()
 
     if(CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME)
-        # [refactor-todo]: port.c esp_startup_start_app_common() calls esp_gdbstub_init()
+        # [refactor-todo]: app_startup.c esp_startup_start_app_other_cores() calls esp_gdbstub_init() (called on CPU0).
+        # This should be resolved when link-time registration of startup functions is added.
         idf_component_optional_requires(PRIVATE esp_gdbstub)
     endif()
 
