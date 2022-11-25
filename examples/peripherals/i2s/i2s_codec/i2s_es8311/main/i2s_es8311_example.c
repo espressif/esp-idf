@@ -6,44 +6,15 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/i2s_std.h"
 #include "esp_system.h"
 #include "esp_check.h"
 #include "es8311.h"
+#include "example_config.h"
 
-/* I2C port and GPIOs */
-#define I2C_NUM         (0)
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-#define I2C_SCL_IO      (GPIO_NUM_16)
-#define I2C_SDA_IO      (GPIO_NUM_17)
-#else
-#define I2C_SCL_IO      (GPIO_NUM_6)
-#define I2C_SDA_IO      (GPIO_NUM_7)
-#endif
-
-/* I2S port and GPIOs */
-#define I2S_NUM         (0)
-#define I2S_MCK_IO      (GPIO_NUM_0)
-#define I2S_BCK_IO      (GPIO_NUM_4)
-#define I2S_WS_IO       (GPIO_NUM_5)
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-#define I2S_DO_IO       (GPIO_NUM_18)
-#define I2S_DI_IO       (GPIO_NUM_19)
-#else
-#define I2S_DO_IO       (GPIO_NUM_2)
-#define I2S_DI_IO       (GPIO_NUM_3)
-#endif
-/* Example configurations */
-#define EXAMPLE_RECV_BUF_SIZE   (2400)
-#define EXAMPLE_SAMPLE_RATE     (16000)
-#define EXAMPLE_MCLK_MULTIPLE   (384) // If not using 24-bit data width, 256 should be enough
-#define EXAMPLE_MCLK_FREQ_HZ    (EXAMPLE_SAMPLE_RATE * EXAMPLE_MCLK_MULTIPLE)
-#define EXAMPLE_VOICE_VOLUME    CONFIG_EXAMPLE_VOICE_VOLUME
-#if CONFIG_EXAMPLE_MODE_ECHO
-#define EXAMPLE_MIC_GAIN        CONFIG_EXAMPLE_MIC_GAIN
-#endif
 
 static const char *TAG = "i2s_es8311";
 static const char err_reason[][30] = {"input param is invalid",
@@ -61,7 +32,8 @@ extern const uint8_t music_pcm_end[]   asm("_binary_canon_pcm_end");
 static esp_err_t es8311_codec_init(void)
 {
     /* Initialize I2C peripheral */
-    i2c_config_t es_i2c_cfg = {
+#if !defined(CONFIG_EXAMPLE_BSP)
+    const i2c_config_t es_i2c_cfg = {
         .sda_io_num = I2C_SDA_IO,
         .scl_io_num = I2C_SCL_IO,
         .mode = I2C_MODE_MASTER,
@@ -71,11 +43,14 @@ static esp_err_t es8311_codec_init(void)
     };
     ESP_RETURN_ON_ERROR(i2c_param_config(I2C_NUM, &es_i2c_cfg), TAG, "config i2c failed");
     ESP_RETURN_ON_ERROR(i2c_driver_install(I2C_NUM, I2C_MODE_MASTER,  0, 0, 0), TAG, "install i2c driver failed");
+#else
+    ESP_ERROR_CHECK(bsp_i2c_init());
+#endif
 
     /* Initialize es8311 codec */
     es8311_handle_t es_handle = es8311_create(I2C_NUM, ES8311_ADDRRES_0);
     ESP_RETURN_ON_FALSE(es_handle, ESP_FAIL, TAG, "es8311 create failed");
-    es8311_clock_config_t es_clk = {
+    const es8311_clock_config_t es_clk = {
         .mclk_inverted = false,
         .sclk_inverted = false,
         .mclk_from_mclk_pin = true,
@@ -95,6 +70,7 @@ static esp_err_t es8311_codec_init(void)
 
 static esp_err_t i2s_driver_init(void)
 {
+#if !defined(CONFIG_EXAMPLE_BSP)
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM, I2S_ROLE_MASTER);
     chan_cfg.auto_clear = true; // Auto clear the legacy data in the DMA buffer
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
@@ -120,6 +96,17 @@ static esp_err_t i2s_driver_init(void)
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
     ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+#else
+    ESP_LOGI(TAG, "Using BSP for HW configuration");
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(EXAMPLE_SAMPLE_RATE),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = BSP_I2S_GPIO_CFG,
+    };
+    std_cfg.clk_cfg.mclk_multiple = EXAMPLE_MCLK_MULTIPLE;
+    ESP_ERROR_CHECK(bsp_audio_init(&std_cfg, &tx_handle, &rx_handle));
+    ESP_ERROR_CHECK(bsp_audio_poweramp_enable(true));
+#endif
     return ESP_OK;
 }
 

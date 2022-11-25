@@ -26,6 +26,7 @@ For more details, see [ES8311 datasheet](http://www.everest-semi.com/pdf/ES8311%
 ### Hardware Required
 
 * A development board with any supported Espressif SOC chip (see `Supported Targets` table above)
+    * The example can be preconfigured for [ESP-BOX](https://components.espressif.com/components/espressif/esp-box), [ESP32-S2-Kaluga-kit](https://components.espressif.com/components/espressif/esp32_s2_kaluga_kit) and [ESP32-S3-LCD-EV-board](https://components.espressif.com/components/espressif/esp32_s3_lcd_ev_board). More information is in 'Configure the Project' section.
 * A USB cable for power supply and programming.
 * A board with ES8311 codec, mic and earphone interface(e.g. ESP-LyraT-8311A extension board).
 
@@ -60,12 +61,12 @@ Note: Since ESP32-C3 & ESP32-H4 board does not have GPIO 16/17, you can use othe
 
 This example is based on [es8311 component](https://components.espressif.com/component/espressif/es8311)
 
-The component can be installed by esp component manager. Since this example already installed it, no need to re-installed it again, but if you want to install this component in your own project, you can input the following command:
+The component can be installed by [IDF Component Manager](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html). This example already includes it. If you want to install [es8311 component](https://components.espressif.com/components/espressif/es8311) separately in your project, you can input the following command:
 ```
-idf.py add-dependency espressif/es8311^1.0.0
+idf.py add-dependency "espressif/es8311^1.0.0"
 ```
 
-If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_componets` folder.
+If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_components` folder.
 
 ### Configure the Project
 
@@ -79,6 +80,8 @@ You can find configurations for this example in 'Example Configutation' tag.
 * In 'Set MIC gain' subtag, you can set the mic gain for echo mode.
 
 * In 'Voice volume', you can set the volum between 0 to 100.
+
+* In 'Enable Board Support Package (BSP) support' you can enable support for BSP. You can pick specific BSP in [idf_component.yml](main/idf_component.yml).
 
 ### Build and Flash
 

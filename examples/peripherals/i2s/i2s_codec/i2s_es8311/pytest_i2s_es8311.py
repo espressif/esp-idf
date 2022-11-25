@@ -15,3 +15,19 @@ def test_i2s_es8311_example_generic(dut: Dut) -> None:
     dut.expect('i2s es8311 codec example start')
     dut.expect('-----------------------------')
     dut.expect('I \\(([0-9]+)\\) i2s_es8311: i2s driver init success')
+
+
+@pytest.mark.esp32s3
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'bsp',
+    ],
+    indirect=True,
+)
+def test_i2s_es8311_example_bsp(dut: Dut) -> None:
+    dut.expect('i2s es8311 codec example start')
+    dut.expect('-----------------------------')
+    dut.expect('Using BSP for HW configuration')
+    dut.expect('I \\(([0-9]+)\\) i2s_es8311: i2s driver init success')
