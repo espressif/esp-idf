@@ -1364,7 +1364,6 @@ r_get_max_skip = 0x40001950;
 r_get_peer_id_offset = 0x40001954;
 r_get_peer_irk_offset = 0x40001958;
 r_get_peer_rpa_offset = 0x4000195c;
-r_hal_rtc_irq_handler = 0x40001964;
 r_hal_timer_disable_irq = 0x4000196c;
 r_hal_timer_process = 0x40001978;
 r_hal_timer_read = 0x4000197c;
