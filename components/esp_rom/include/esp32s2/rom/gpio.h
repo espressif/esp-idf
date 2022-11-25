@@ -1,24 +1,13 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-#ifndef _ROM_GPIO_H_
-#define _ROM_GPIO_H_
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
-
-#include "esp_attr.h"
 #include "soc/gpio_reg.h"
 
 #ifdef __cplusplus
@@ -61,20 +50,6 @@ typedef enum {
                          gpio_output_set_high(bit_value<<(gpio_no - 32), (bit_value ? 0 : 1)<<(gpio_no - 32), 1<<(gpio_no -32),0))
 #define GPIO_DIS_OUTPUT(gpio_no)    ((gpio_no < 32) ? gpio_output_set(0,0,0, 1<<gpio_no) : gpio_output_set_high(0,0,0, 1<<(gpio_no - 32)))
 #define GPIO_INPUT_GET(gpio_no)     ((gpio_no < 32) ? ((gpio_input_get()>>gpio_no)&BIT0) : ((gpio_input_get_high()>>(gpio_no - 32))&BIT0))
-
-/* GPIO interrupt handler, registered through gpio_intr_handler_register */
-typedef void (* gpio_intr_handler_fn_t)(uint32_t intr_mask, bool high, void *arg);
-
-/**
-  * @brief Initialize GPIO. This includes reading the GPIO Configuration DataSet
-  *        to initialize "output enables" and pin configurations for each gpio pin.
-  *        Please do not call this function in SDK.
-  *
-  * @param  None
-  *
-  * @return None
-  */
-void gpio_init(void);
 
 /**
   * @brief Change GPIO(0-31) pin output by setting, clearing, or disabling pins, GPIO0<->BIT(0).
@@ -127,59 +102,6 @@ uint32_t gpio_input_get(void);
   * @return uint32_t : bitmask for GPIO input pins, BIT(0) for GPIO32.
   */
 uint32_t gpio_input_get_high(void);
-
-/**
-  * @brief Register an application-specific interrupt handler for GPIO pin interrupts.
-  *        Once the interrupt handler is called, it will not be called again until after a call to gpio_intr_ack.
-  *        Please do not call this function in SDK.
-  *
-  * @param gpio_intr_handler_fn_t fn : gpio application-specific interrupt handler
-  *
-  * @param void *arg : gpio application-specific interrupt handler argument.
-  *
-  * @return None
-  */
-void gpio_intr_handler_register(gpio_intr_handler_fn_t fn, void *arg);
-
-/**
-  * @brief Get gpio interrupts which happens but not processed.
-  *        Please do not call this function in SDK.
-  *
-  * @param None
-  *
-  * @return uint32_t : bitmask for GPIO pending interrupts, BIT(0) for GPIO0.
-  */
-uint32_t gpio_intr_pending(void);
-
-/**
-  * @brief Get gpio interrupts which happens but not processed.
-  *        Please do not call this function in SDK.
-  *
-  * @param None
-  *
-  * @return uint32_t : bitmask for GPIO pending interrupts, BIT(0) for GPIO32.
-  */
-uint32_t gpio_intr_pending_high(void);
-
-/**
-  * @brief Ack gpio interrupts to process pending interrupts.
-  *        Please do not call this function in SDK.
-  *
-  * @param uint32_t ack_mask: bitmask for GPIO ack interrupts, BIT(0) for GPIO0.
-  *
-  * @return None
-  */
-void gpio_intr_ack(uint32_t ack_mask);
-
-/**
-  * @brief Ack gpio interrupts to process pending interrupts.
-  *        Please do not call this function in SDK.
-  *
-  * @param uint32_t ack_mask: bitmask for GPIO ack interrupts, BIT(0) for GPIO32.
-  *
-  * @return None
-  */
-void gpio_intr_ack_high(uint32_t ack_mask);
 
 /**
   * @brief Set GPIO to wakeup the ESP32.
@@ -316,5 +238,3 @@ void gpio_pad_input_disable(uint32_t gpio_num);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _ROM_GPIO_H_ */
