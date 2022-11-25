@@ -205,5 +205,6 @@ api-reference/protocols/esp_tls
 api-reference/protocols/index
 security
 security/flash-encryption
+security/security
 security/secure-boot-v2
 security/secure-boot-v1

@@ -31,6 +31,7 @@ API 指南
    partition-tables
    performance/index
    :not esp32c6: RF_calibration
+   ../security/security
    :esp32: ../security/secure-boot-v1
    ../security/secure-boot-v2
    :SOC_SPIRAM_SUPPORTED: external-ram

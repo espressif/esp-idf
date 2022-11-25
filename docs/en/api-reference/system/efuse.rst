@@ -247,6 +247,8 @@ To write some fields into one block, or different blocks in one time, you need t
 
     FOR TESTING ONLY (NOT RECOMMENDED): You can ignore or suppress errors that violate encoding scheme data in order to burn the necessary bits in the eFuse block.
 
+.. _efuse_API:
+
 eFuse API
 ---------
 

@@ -97,6 +97,8 @@ It relies on the base layer called :doc:`protocomm` (Protocol Communication) whi
 
 Application creates a protocomm instance which is mapped to a specific transport and specific security scheme. Each transport in the protocomm has a concept of an "end-point" which corresponds to logical channel for communication for specific type of information. For example security handshake happens on a different endpoint than the Wi-Fi configuration endpoint. Each end-point is identified using a string and depending on the transport internal representation of the end-point changes. In case of SoftAP+HTTP transport the end-point corresponds to URI whereas in case of BLE the end-point corresponds to GATT characteristic with specific UUID. Developers can create custom end-points and implement handler for the data that is received or sent over the same end-point.
 
+.. _provisioning_security_schemes:
+
 Security Schemes
 >>>>>>>>>>>>>>>>
 At present, unified provisioning supports the following security schemes:

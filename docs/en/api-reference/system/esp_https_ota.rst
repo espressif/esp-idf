@@ -61,6 +61,8 @@ Advanced APIs
 Example that uses advanced ESP_HTTPS_OTA APIs: :example:`system/ota/advanced_https_ota`.
 
 
+.. _ota_updates_pre-encrypted-firmware:
+
 OTA Upgrades with Pre-Encrypted Firmware
 ----------------------------------------
 
