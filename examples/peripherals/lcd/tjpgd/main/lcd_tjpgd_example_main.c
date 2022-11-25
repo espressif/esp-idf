@@ -16,7 +16,7 @@
 #include "driver/gpio.h"
 #include "pretty_effect.h"
 
-// Using SPI2 in the example, as it aslo supports octal modes on some targets
+// Using SPI2 in the example, as it also supports octal modes on some targets
 #define LCD_HOST       SPI2_HOST
 // To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many.
 // More means more memory use, but less overhead for setting up / finishing transfers. Make sure 240
@@ -31,7 +31,7 @@
 #define EXAMPLE_LCD_PIXEL_CLOCK_HZ (20 * 1000 * 1000)
 #define EXAMPLE_LCD_BK_LIGHT_ON_LEVEL  0
 #define EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL !EXAMPLE_LCD_BK_LIGHT_ON_LEVEL
-#define EXAMPLE_PIN_NUM_DATA0          23  /*!< for 1-line SPI, this also refered as MOSI */
+#define EXAMPLE_PIN_NUM_DATA0          23  /*!< for 1-line SPI, this also refereed as MOSI */
 #define EXAMPLE_PIN_NUM_PCLK           19
 #define EXAMPLE_PIN_NUM_CS             22
 #define EXAMPLE_PIN_NUM_DC             21
