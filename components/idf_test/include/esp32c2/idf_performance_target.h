@@ -6,6 +6,14 @@
 
 #pragma once
 
+#include "sdkconfig.h"
+
+#ifdef CONFIG_XTAL_FREQ_26
+#define IDF_PERFORMANCE_MAX_ESP_TIMER_GET_TIME_PER_CALL                         1900
+#else
+#define IDF_PERFORMANCE_MAX_ESP_TIMER_GET_TIME_PER_CALL                         1200
+#endif
+
 // SHA256 hardware throughput at 160 MHz, threshold set lower than worst case
 #define IDF_PERFORMANCE_MIN_SHA256_THROUGHPUT_MBSEC                             14
 // esp_sha() time to process 32KB of input data from RAM
