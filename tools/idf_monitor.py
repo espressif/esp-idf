@@ -267,6 +267,7 @@ class LinuxMonitor(Monitor):
 
     def serial_write(self, *args, **kwargs):  # type: ignore
         self.serial.stdin.write(*args, **kwargs)
+        self.serial.stdin.flush()
 
     def check_gdb_stub_and_run(self, line: bytes) -> None:
         return  # fake function for linux target
