@@ -215,6 +215,9 @@
 #define SOC_LEDC_TIMER_BIT_WIDE_NUM  (14)
 #define SOC_LEDC_SUPPORT_FADE_STOP   (1)
 
+/*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_MMU_DI_VADDR_SHARED               (1) /*!< D/I vaddr are shared */
+
 // TODO: IDF-5684 (Copy from esp32c3, need check)
 /*-------------------------- MPU CAPS ----------------------------------------*/
 #define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0
