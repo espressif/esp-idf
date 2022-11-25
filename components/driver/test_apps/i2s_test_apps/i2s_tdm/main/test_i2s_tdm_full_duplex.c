@@ -16,8 +16,9 @@
 
 static const char *TAG = "i2s_tdm_full_duplex_test";
 
-#define TEST_I2S_FRAME_SIZE     (128)
-#define TEST_I2S_PACKET_COUNT   (512)
+#define TEST_I2S_FRAME_SIZE             (128)
+#define TEST_I2S_PACKET_COUNT           (512)
+#define TEST_I2S_BAD_PACKET_THRESHOLD   (10)
 
 #define TEST_I2S_NUM            (I2S_NUM_0) // ESP32-C3 has only I2S0
 #define TEST_I2S_BCK_IO         (GPIO_NUM_4)
@@ -99,6 +100,7 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
             .din = TEST_I2S_DI_IO
         },
     };
+    i2s_tdm_config.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_384;
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_tx_handle, &i2s_tdm_config));
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_rx_handle, &i2s_tdm_config));
 
@@ -171,11 +173,13 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
     TEST_ESP_OK(i2s_del_channel(i2s_tdm_rx_handle));
     TEST_ESP_OK(i2s_del_channel(i2s_tdm_tx_handle));
 
-    if (good_packet_cnt < TEST_I2S_PACKET_COUNT-4) { // if there are enough good packets
-        ESP_LOGE(TAG, "Good packet count(%"PRIu32") less than threshold", good_packet_cnt);
+    uint32_t bad_packet_cnt = TEST_I2S_PACKET_COUNT - good_packet_cnt;
+    ESP_LOGI(TAG, "Total Packet: %d Good Packet: %"PRIu32" Bad Packet %"PRIu32,
+             TEST_I2S_PACKET_COUNT, good_packet_cnt, bad_packet_cnt);
+    /* if the bad packet count exceed the threshold, test failed */
+    if (bad_packet_cnt > TEST_I2S_BAD_PACKET_THRESHOLD) {
+        ESP_LOGE(TAG, "Bad Packet count exceed the threshold %d, test failed", TEST_I2S_BAD_PACKET_THRESHOLD);
         TEST_FAIL();
-    } else {
-        ESP_LOGI(TAG, "Good packet count: %"PRIu32, good_packet_cnt);
     }
 }
 
@@ -264,7 +268,7 @@ static void test_i2s_tdm_slave_48k_32bits_4slots(void)
     test_i2s_tdm_slave(48000, I2S_DATA_BIT_WIDTH_32BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("I2S TDM full duplex multiple device test (48k, 32bits, 4slots)", "[I2S_TDM]",
+TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_32bits_4slots", "[I2S_TDM]",
                           test_i2s_tdm_master_48k_32bits_4slots, test_i2s_tdm_slave_48k_32bits_4slots);
 
 
@@ -278,7 +282,7 @@ static void test_i2s_tdm_slave_48k_16bits_4slots(void)
     test_i2s_tdm_slave(48000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("I2S TDM full duplex multiple device test (48k, 16bits, 4slots)", "[I2S_TDM]",
+TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_16bits_4slots", "[I2S_TDM]",
                           test_i2s_tdm_master_48k_16bits_4slots, test_i2s_tdm_slave_48k_16bits_4slots);
 
 
@@ -292,7 +296,7 @@ static void test_i2s_tdm_slave_48k_8bits_4slots(void)
     test_i2s_tdm_slave(48000, I2S_DATA_BIT_WIDTH_8BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("I2S TDM full duplex multiple device test (48k, 8bits, 4slots)", "[I2S_TDM]",
+TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_8bits_4slots", "[I2S_TDM]",
                           test_i2s_tdm_master_48k_8bits_4slots, test_i2s_tdm_slave_48k_8bits_4slots);
 
 
@@ -308,7 +312,7 @@ static void test_i2s_tdm_slave_48k_16bits_8slots(void)
                         I2S_TDM_SLOT4 | I2S_TDM_SLOT5 | I2S_TDM_SLOT6 | I2S_TDM_SLOT7);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("I2S TDM full duplex multiple device test (48k, 16bits, 8slots)", "[I2S_TDM]",
+TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_16bits_8slots", "[I2S_TDM]",
                           test_i2s_tdm_master_48k_16bits_8slots, test_i2s_tdm_slave_48k_16bits_8slots);
 
 
@@ -317,10 +321,10 @@ static void test_i2s_tdm_master_96k_16bits_4slots(void)
     test_i2s_tdm_master(96000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
-static void test_i2s_tdm_slave_96k_16bits_8slots(void)
+static void test_i2s_tdm_slave_96k_16bits_4slots(void)
 {
     test_i2s_tdm_slave(96000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("I2S TDM full duplex multiple device test (96k, 16bits, 4slots)", "[I2S_TDM]",
-                          test_i2s_tdm_master_96k_16bits_4slots, test_i2s_tdm_slave_96k_16bits_8slots);
+TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_96k_16bits_4slots", "[I2S_TDM]",
+                          test_i2s_tdm_master_96k_16bits_4slots, test_i2s_tdm_slave_96k_16bits_4slots);
