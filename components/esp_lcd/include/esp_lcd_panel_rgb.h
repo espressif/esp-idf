@@ -118,6 +118,7 @@ typedef struct {
     size_t data_width;            /*!< Number of data lines */
     size_t bits_per_pixel;        /*!< Frame buffer color depth, in bpp, specially, if set to zero, it will default to `data_width`.
                                        When using a Serial RGB interface, this value could be different from `data_width` */
+    size_t num_fbs;               /*!< Number of screen-sized frame buffers that allocated by the driver. By default (set to either 0 or 1) only one frame buffer will be used. Maximum number of buffers are 3 */
     size_t bounce_buffer_size_px; /*!< If it's non-zero, the driver allocates two DRAM bounce buffers for DMA use.
                                        DMA fetching from DRAM bounce buffer is much faster than PSRAM frame buffer. */
     size_t sram_trans_align;      /*!< Alignment of buffers (frame buffer or bounce buffer) that allocated in SRAM */
@@ -133,7 +134,7 @@ typedef struct {
         uint32_t refresh_on_demand: 1;   /*!< If this flag is enabled, the host only refresh the frame buffer when `esp_lcd_panel_draw_bitmap` is called.
                                               This is useful when the LCD screen has a GRAM and can refresh the LCD by itself. */
         uint32_t fb_in_psram: 1;         /*!< If this flag is enabled, the frame buffer will be allocated from PSRAM, preferentially */
-        uint32_t double_fb: 1;           /*!< If this flag is enabled, the driver will allocate two screen sized frame buffer */
+        uint32_t double_fb: 1;           /*!< If this flag is enabled, the driver will allocate two screen sized frame buffer, same as num_fbs=2 */
         uint32_t no_fb: 1;               /*!< If this flag is enabled, the driver won't allocate frame buffer.
                                               Instead, user should fill in the bounce buffer manually in the `on_bounce_empty` callback */
         uint32_t bb_invalidate_cache: 1; /*!< If this flag is enabled, in bounce back mode we'll do a cache invalidate on the read data, freeing the cache.

@@ -52,6 +52,12 @@ static const char *TAG = "example";
 #define EXAMPLE_LCD_H_RES              800
 #define EXAMPLE_LCD_V_RES              480
 
+#if CONFIG_EXAMPLE_DOUBLE_FB
+#define EXAMPLE_LCD_NUM_FB             2
+#else
+#define EXAMPLE_LCD_NUM_FB             1
+#endif // CONFIG_EXAMPLE_DOUBLE_FB
+
 #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
 
 // we use two semaphores to sync the VSYNC event and the LVGL task, to avoid potential tearing effect
@@ -122,6 +128,7 @@ void app_main(void)
     esp_lcd_rgb_panel_config_t panel_config = {
         .data_width = 16, // RGB565 in parallel mode, thus 16bit in width
         .psram_trans_align = 64,
+        .num_fbs = EXAMPLE_LCD_NUM_FB,
 #if CONFIG_EXAMPLE_USE_BOUNCE_BUFFER
         .bounce_buffer_size_px = 10 * EXAMPLE_LCD_H_RES,
 #endif
@@ -163,9 +170,6 @@ void app_main(void)
             .flags.pclk_active_neg = true,
         },
         .flags.fb_in_psram = true, // allocate frame buffer in PSRAM
-#if CONFIG_EXAMPLE_DOUBLE_FB
-        .flags.double_fb = true,   // allocate double frame buffer
-#endif // CONFIG_EXAMPLE_DOUBLE_FB
     };
     ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
 
