@@ -55,7 +55,12 @@ int ble_mesh_module_publish_message(int argc, char **argv)
     }
 
     data = malloc(strlen(msg_publish.data->sval[0]));
-    get_value_string((char *)msg_publish.data->sval[0], (char *) data);
+    if (data == NULL) {
+        ESP_LOGE(TAG, "ble mesh malloc failed, %d\n", __LINE__);
+        return ESP_ERR_NO_MEM;
+    } else {
+        get_value_string((char *)msg_publish.data->sval[0], (char *) data);
+    }
 
     arg_int_to_value(msg_publish.role, device_role, "device role");
 
@@ -90,8 +95,11 @@ int ble_mesh_module_publish_message(int argc, char **argv)
     if (msg_publish.data->count != 0) {
         length = strlen(msg_publish.data->sval[0]);
         data = malloc((length + 1) * sizeof(uint8_t));
-        if (data != NULL) {
-            err = get_value_string((char *)msg_publish.data->sval[0], (char *) data);
+        if (data == NULL) {
+            ESP_LOGE(TAG, "ble mesh malloc failed, %d\n", __LINE__);
+            return ESP_ERR_NO_MEM;
+        } else {
+            get_value_string((char *)msg_publish.data->sval[0], (char *) data);
         }
     }
 
