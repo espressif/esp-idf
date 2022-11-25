@@ -728,7 +728,7 @@ loop_start:
             continue;                                                // -> just continue to check again
         }
         // the host controller should clear the global enable bit for the interrupt pin before servicing the interrupt
-        MAC_CHECK_NO_RET(enc28j60_do_bitwise_clr(emac, ENC28J60_EIR, EIE_INTIE) == ESP_OK,
+        MAC_CHECK_NO_RET(enc28j60_do_bitwise_clr(emac, ENC28J60_EIE, EIE_INTIE) == ESP_OK,
                         "clear EIE_INTIE failed", loop_start);
         // read interrupt status
         MAC_CHECK_NO_RET(enc28j60_do_register_read(emac, true, ENC28J60_EIR, &status) == ESP_OK,
