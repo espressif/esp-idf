@@ -10,7 +10,7 @@
 OLDEST_PYTHON_SUPPORTED_MAJOR=3
 OLDEST_PYTHON_SUPPORTED_MINOR=7
 
-ESP_PYTHON=python
+ESP_PYTHON=""
 
 for p_cmd in python3 python python3.7 python3.8 python3.9 python3.10 python3.11 python3.12; do
     $p_cmd --version >/dev/null 2>&1 || continue
@@ -23,7 +23,7 @@ for p_cmd in python3 python python3.7 python3.8 python3.9 python3.10 python3.11 
     break
 done
 
-$ESP_PYTHON --version 2>/dev/null || {
+if [ -n "$ESP_PYTHON" ] || {
     echo "Python ${OLDEST_PYTHON_SUPPORTED_MAJOR}.${OLDEST_PYTHON_SUPPORTED_MINOR}+ is not installed! Please see the documentation for how to install it."
     exit 1
 }
