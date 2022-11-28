@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -227,10 +227,16 @@ float IRAM_ATTR test_fp_benchmark_fp_divide(int counts, unsigned *cycles)
     return f;
 }
 
+
+extern void set_leak_threshold(int threshold);
+
 TEST_CASE("floating point division performance", "[fp]")
 {
     const unsigned COUNTS = 1000;
     unsigned cycles = 0;
+
+    /*From lazy allocating resources when printing floats*/
+    set_leak_threshold(-850);
 
     // initialize fpu
     volatile __attribute__((unused)) float dummy = sqrtf(rand());
@@ -264,6 +270,9 @@ TEST_CASE("floating point square root performance", "[fp]")
 {
     const unsigned COUNTS = 200;
     unsigned cycles = 0;
+
+    /*From lazy allocating resources when printing floats*/
+    set_leak_threshold(-850);
 
     // initialize fpu
     volatile float __attribute__((unused)) dummy = sqrtf(rand());
