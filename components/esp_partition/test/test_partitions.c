@@ -118,25 +118,63 @@ TEST_CASE("Test esp_partition_get_sha256() with app", "[spi_flash]")
 
 TEST_CASE("Test esp_partition_get_sha256() that it can handle a big partition", "[spi_flash]")
 {
-    esp_partition_t partition;
-    const void *ptr;
-    spi_flash_mmap_handle_t handle;
+    /* This test verifies the function 'esp_partition_get_sha256()' working correctly under the following conditions:
+     * - there is only 1 MMU page left for memory mapping (ideal case)
+     * - the partition to hash is significantly larger than a common use-case partition size
+     * The test case is implemented as follows:
+     *      1. SPI Flash space is mmapped by MMU page size chunks, one by one
+     *      2. the iteration stops when either whole SPI Flash range is exhausted or the MMU page pool is fully occupied (ESP_ERR_NO_MEM)
+     *      3. the last successfully mmaped MMU page is released, all the rest remains occupied
+     *      4. pseudo partition of DATA type is created over all the SPI Flash capacity
+     *      5. esp_partition_get_sha256() is calculated for the partition defined in 4. (printed to standard output on successful completion)
+     *      6. all the resources allocated directly by the test are released
+     * NOTE: the test is chip-agnostic
+     * */
 
-    uint8_t sha256[32] = { 0 };
     uint32_t size_flash_chip;
-    esp_flash_get_size(NULL, &size_flash_chip);
+    TEST_ESP_OK(esp_flash_get_size(NULL, &size_flash_chip));
+    printf("flash size = %d bytes\n", size_flash_chip);
 
-    printf("size_flash_chip = %d bytes\n", size_flash_chip);
+    uint32_t page_reservation_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
+    printf("available page pool = %d pages\n", page_reservation_count);
 
-    ESP_ERROR_CHECK(spi_flash_mmap(0x00000000, size_flash_chip * 7 / 10, SPI_FLASH_MMAP_DATA, &ptr, &handle));
-    TEST_ASSERT_NOT_NULL(ptr);
+    spi_flash_mmap_handle_t* handles = malloc(page_reservation_count * sizeof(spi_flash_mmap_handle_t));
+    TEST_ASSERT_NOT_NULL(handles);
 
-    partition.address   = 0x00000000;
-    partition.size      = size_flash_chip;
-    partition.type      = ESP_PARTITION_TYPE_DATA;
+    const void *ptr = NULL;
+    size_t flash_offset = 0;
+    size_t mapped_pages_count = 0;
 
-    ESP_ERROR_CHECK(esp_partition_get_sha256(&partition, sha256));
+    esp_err_t err = ESP_FAIL;
+    for (; mapped_pages_count<page_reservation_count && flash_offset<size_flash_chip; mapped_pages_count++, flash_offset+=SPI_FLASH_MMU_PAGE_SIZE) {
+        err = spi_flash_mmap(flash_offset, SPI_FLASH_MMU_PAGE_SIZE, SPI_FLASH_MMAP_DATA, &ptr, &handles[mapped_pages_count]);
+        if (err != ESP_OK) break;
+        TEST_ASSERT_NOT_NULL(ptr);
+        ptr = NULL;
+    }
+
+    if (err == ESP_OK || err == ESP_ERR_NO_MEM) {
+        TEST_ASSERT(mapped_pages_count>0);
+        mapped_pages_count--;
+        spi_flash_munmap(handles[mapped_pages_count]);
+    }
+    else {
+        TEST_ESP_OK(err);
+    }
+
+    esp_partition_t partition = {
+            .address = 0x00000000,
+            .size = size_flash_chip,
+            .type = ESP_PARTITION_TYPE_DATA
+    };
+
+    uint8_t sha256[32] = {0};
+    TEST_ESP_OK(esp_partition_get_sha256(&partition, sha256));
     ESP_LOG_BUFFER_HEX("sha", sha256, sizeof(sha256));
 
-    spi_flash_munmap(handle);
+    for(size_t y=0; y<mapped_pages_count; y++) {
+        spi_flash_munmap(handles[y]);
+    }
+
+    free(handles);
 }
