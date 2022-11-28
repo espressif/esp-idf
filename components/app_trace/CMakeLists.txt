@@ -28,12 +28,12 @@ if(CONFIG_APPTRACE_SV_ENABLE)
     list(APPEND include_dirs
         sys_view/Config
         sys_view/SEGGER
-        sys_view/Sample/OS)
+        sys_view/Sample/FreeRTOSV10.4)
 
     list(APPEND srcs
         "sys_view/SEGGER/SEGGER_SYSVIEW.c"
-        "sys_view/Sample/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c"
-        "sys_view/Sample/OS/SEGGER_SYSVIEW_FreeRTOS.c"
+        "sys_view/Sample/FreeRTOSV10.4/Config/esp/SEGGER_SYSVIEW_Config_FreeRTOS.c"
+        "sys_view/Sample/FreeRTOSV10.4/SEGGER_SYSVIEW_FreeRTOS.c"
         "sys_view/esp/SEGGER_RTT_esp.c"
         "sys_view/ext/heap_trace_module.c"
         "sys_view/ext/logging.c")

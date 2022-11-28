@@ -102,6 +102,13 @@
 60       xEventGroupGetBitsFromISR           xEventGroup=%u
 199       vEventGroupDelete                   xEventGroup=%u
 200       uxEventGroupGetNumber               xEventGroup=%u
+201       xStreamBufferCreate                 xIsMessageBuffer=%u pxStreamBuffer=%p
+202       vStreamBufferDelete                 xStreamBuffer=%p
+203       xStreamBufferReset                  xStreamBuffer=%p
+204       xStreamBufferSend                   xStreamBuffer=%p xBytesSent=%u
+205       xStreamBufferSendFromISR            xStreamBuffer=%p xBytesSent=%u
+206       xStreamBufferReceive                xStreamBuffer=%p xReceivedLength=%u
+207       xStreamBufferReceiveFromISR         xStreamBuffer=%p xReceivedLength=%u
 
 512       esp_sysview_heap_trace_alloc        addr=%p size=%u callers=%x
 513       esp_sysview_heap_trace_free        addr=%p callers=%x
