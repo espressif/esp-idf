@@ -91,17 +91,6 @@ enum sbuf_mask_s  {
 
 #define LLDESC_ADDR_MASK                    0x000fffff
 
-void lldesc_build_chain(uint8_t *descptr, uint32_t desclen, uint8_t *mblkptr, uint32_t buflen, uint32_t blksz, uint8_t owner,
-                        lldesc_t **head,
-#ifdef TO_HOST_RESTART
-                        lldesc_t **one_before_tail,
-#endif
-                        lldesc_t **tail);
-
-lldesc_t *lldesc_num2link(lldesc_t *head, uint16_t nblks);
-
-lldesc_t *lldesc_set_owner(lldesc_t *head, uint16_t nblks, uint8_t owner);
-
 static inline uint32_t lldesc_get_chain_length(lldesc_t *head)
 {
     lldesc_t *ds = head;
