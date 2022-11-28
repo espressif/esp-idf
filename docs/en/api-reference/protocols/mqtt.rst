@@ -26,18 +26,31 @@ Application Examples
     * :example:`protocols/mqtt/ws`: MQTT over WebSocket, default port 80
     * :example:`protocols/mqtt/wss`: MQTT over WebSocket Secure, default port 443
 
+MQTT message retransmission
+---------------------------
+
+A new mqtt message is created by calling :cpp:func:`esp_mqtt_client_publish <esp_mqtt_client_publish()>` or its non blocking
+counterpart :cpp:func:`esp_mqtt_client_enqueue <esp_mqtt_client_enqueue()>`. 
+
+Messages with QoS 0 will be sent only once, QoS 1 and 2 have a different behavior since the protocol requires extra steps to complete the process. 
+
+The ESP-MQTT library opts to always retransmit unacknowledged QoS 1 and 2 PUBLISH messages to avoid losses in faulty connections, even though the MQTT specification 
+requires the re-transmission only on reconnect with Clean Session flag been set to 0 (set :cpp:member:`disable_clean_session <esp_mqtt_client_config_t::session_t::disable_clean_session>` to true for this behavior).
+
+
+Messages that could need retransmission, QoS 1 and 2, are always enqueued, but first transmission try occurs immediately if :cpp:func:`esp_mqtt_client_publish <esp_mqtt_client_publish>` is used. A transmission retry for unacknowledged messages will occur after :cpp:member:`message_retransmit_timeout <esp_mqtt_client_config_t::session_t::message_retransmit_timeout>`. After :ref:`CONFIG_MQTT_OUTBOX_EXPIRED_TIMEOUT_MS` messages will expire and deleted. If :ref:`CONFIG_MQTT_REPORT_DELETED_MESSAGES` is set an event is sent to notify the user.
 
 Configuration
 -------------
 
-The configuration is made by setting fields in ``esp_mqtt_client_config_t`` struct. The configuration struct has the following sub structs to configure different aspects of the client operation.
+The configuration is made by setting fields in :cpp:class:`esp_mqtt_client_config_t` struct. The configuration struct has the following sub structs to configure different aspects of the client operation.
 
-  * :cpp:member:`broker<esp_mqtt_client_config::broker>` - Allow to set address and security verification.
-  * :cpp:member:`credentials<esp_mqtt_client_config::credentials>` - Client credentials for authentication.
-  * :cpp:member:`session<esp_mqtt_client_config::session>` - Configuration for MQTT session aspects.
-  * :cpp:member:`network<esp_mqtt_client_config::network>` - Networking related configuration.
-  * :cpp:member:`task<esp_mqtt_client_config::task>` - Allow to configure FreeRTOS task.
-  * :cpp:member:`buffer<esp_mqtt_client_config::buffer>` - Buffer size for input and output.
+  * :cpp:class:`esp_mqtt_client_config_t::broker_t` - Allow to set address and security verification.
+  * :cpp:class:`esp_mqtt_client_config_t::credentials_t` - Client credentials for authentication.
+  * :cpp:class:`esp_mqtt_client_config_t::session_t` - Configuration for MQTT session aspects.
+  * :cpp:class:`esp_mqtt_client_config_t::network_t` - Networking related configuration. 
+  * :cpp:class:`esp_mqtt_client_config_t::task_t` - Allow to configure FreeRTOS task.
+  * :cpp:class:`esp_mqtt_client_config_t::buffer_t` - Buffer size for input and output.
 
 In the following sections, the most common aspects are detailed.
 
@@ -48,9 +61,9 @@ Broker
 Address
 ===========
 
-Broker address can be set by usage of ``broker.address`` struct. The configuration can be made by usage of ``uri`` field or the combination of ``hostname``, ``transport`` and ``port``. Optionally, ``path`` could be set, this field is useful in WebSocket connections.
+Broker address can be set by usage of :cpp:class:`address <esp_mqtt_client_config_t::broker_t::address_t>` struct. The configuration can be made by usage of :cpp:member:`uri <esp_mqtt_client_config_t::broker_t::address_t::uri>` field or the combination of :cpp:member:`hostname <esp_mqtt_client_config_t::broker_t::address_t::hostname>`, :cpp:member:`transport <esp_mqtt_client_config_t::broker_t::address_t::transport>` and :cpp:member:`port <esp_mqtt_client_config_t::broker_t::address_t::port>`. Optionally, :cpp:member:`path <esp_mqtt_client_config_t::broker_t::address_t::path>` could be set, this field is useful in WebSocket connections.
 
-The ``uri`` field is used in the format ``scheme://hostname:port/path``.
+The :cpp:member:`uri <esp_mqtt_client_config_t::broker_t::address_t::uri>` field is used in the format ``scheme://hostname:port/path``.
 
 -  Curently support ``mqtt``, ``mqtts``, ``ws``, ``wss`` schemes
 -  MQTT over TCP samples:
@@ -90,12 +103,16 @@ The ``uri`` field is used in the format ``scheme://hostname:port/path``.
 Verification
 ============
 
-For secure connections with TLS used, and to guarantee Broker's identity, the ``broker.verification`` struct must be set.
-The broker certificate may be set in PEM or DER format. To select DER, the equivalent ``_len`` field must be set. Otherwise, a null-terminated string in PEM format should be provided to ``certificate`` field.
+For secure connections with TLS used, and to guarantee Broker's identity, the :cpp:class:`verification <esp_mqtt_client_config_t::broker_t::verification_t>` struct must be set.
+The broker certificate may be set in PEM or DER format. To select DER, the equivalent :cpp:member:`certificate_len <esp_mqtt_client_config_t::broker_t::verification_t::certificate_len>` field must be set. Otherwise, a null-terminated string in PEM format should be provided to :cpp:member:`certificate <esp_mqtt_client_config_t::broker_t::verification_t::certificate>` field.
 
 -  Get certificate from server, example: ``mqtt.eclipseprojects.io``
-   ``openssl s_client -showcerts -connect mqtt.eclipseprojects.io:8883 </dev/null 2>/dev/null|openssl x509 -outform PEM >mqtt_eclipse_org.pem``
--  Check the sample application: ``examples/mqtt_ssl``
+    .. code::
+
+       openssl s_client -showcerts -connect mqtt.eclipseprojects.io:8883 < /dev/null \
+       2> /dev/null | openssl x509 -outform PEM > mqtt_eclipse_org.pem
+
+-  Check the sample application: :example:`protocols/mqtt/ssl`
 -  Configuration:
 
 .. code:: c
@@ -112,43 +129,43 @@ For details about other fields, please check the `API Reference`_ and :ref:`esp_
 Client Credentials
 ^^^^^^^^^^^^^^^^^^
 
-All client related credentials are under the ``credentials`` field.
+All client related credentials are under the :cpp:class:`credentials <esp_mqtt_client_config_t::credentials_t>` field.
 
- * ``username``: pointer to the username used for connecting to the broker, can also be set by URI
- * ``client_id``: pointer to the client ID, defaults to ``ESP32_%CHIPID%`` where ``%CHIPID%`` are the last 3 bytes of MAC address in hex format
+ * :cpp:member:`username <esp_mqtt_client_config_t::credentials_t::username>` pointer to the username used for connecting to the broker, can also be set by URI
+ * :cpp:member:`client_id <esp_mqtt_client_config_t::credentials_t::client_id>`: pointer to the client ID, defaults to ``ESP32_%CHIPID%`` where ``%CHIPID%`` are the last 3 bytes of MAC address in hex format
 
 ==============
 Authentication
 ==============
 
-It's possible to set authentication parameters through the ``authentication`` field. The client supports the following authentication methods:
+It's possible to set authentication parameters through the :cpp:class:`authentication <esp_mqtt_client_config_t::credentials_t::authentication_t>` field. The client supports the following authentication methods:
 
- * ``authentication.password``: use a password by setting
- * ``authentication.certificate`` and ``authentication.key``: mutual authentication with TLS, and both can be provided in PEM or DER format
- * ``authentication.use_secure_element``: use secure element available in ESP32-WROOM-32SE
- * ``authentication.ds_data``: use Digital Signature Peripheral available in some Espressif devices
+ * :cpp:member:`password <esp_mqtt_client_config_t::credentials_t::authentication_t::password>`: use a password by setting
+ * :cpp:member:`certificate <esp_mqtt_client_config_t::credentials_t::authentication_t::certificate>` and :cpp:member:`key <esp_mqtt_client_config_t::credentials_t::authentication_t::key>`: mutual authentication with TLS, and both can be provided in PEM or DER format
+ * :cpp:member:`use_secure_element <esp_mqtt_client_config_t::credentials_t::authentication_t::use_secure_element>`: use secure element available in ESP32-WROOM-32SE
+ * :cpp:member:`ds_data <esp_mqtt_client_config_t::credentials_t::authentication_t::ds_data>`: use Digital Signature Peripheral available in some Espressif devices
 
 Session
 ^^^^^^^^^^^
 
-For MQTT session related configurations, ``section`` fields should be used.
+For MQTT session related configurations, :cpp:class:`session <esp_mqtt_client_config_t::session_t>` fields should be used.
 
 =======================
 Last Will and Testament
 =======================
 
-MQTT allows for a last will and testament (LWT) message to notify other clients when a client ungracefully disconnects. This is configured by the following fields in the ``esp_mqtt_client_config_t.session.last_will`` struct.
+MQTT allows for a last will and testament (LWT) message to notify other clients when a client ungracefully disconnects. This is configured by the following fields in the :cpp:class:`last_will <esp_mqtt_client_config_t::session_t::last_will_t>` struct.
 
- * ``topic``: pointer to the LWT message topic
- * ``msg``: pointer to the LWT message
- * ``msg_len``: length of the LWT message, required if ``msg`` is not null-terminated
- * ``qos``: quality of service for the LWT message
- * ``retain``: specifies the retain flag of the LWT message
+ * :cpp:member:`topic <esp_mqtt_client_config_t::session_t::last_will_t::topic>`: pointer to the LWT message topic
+ * :cpp:member:`msg <esp_mqtt_client_config_t::session_t::last_will_t::msg>`: pointer to the LWT message
+ * :cpp:member:`msg_len <esp_mqtt_client_config_t::session_t::last_will_t::msg_len>`: length of the LWT message, required if :cpp:member:`msg <esp_mqtt_client_config_t::session_t::last_will_t::msg>` is not null-terminated
+ * :cpp:member:`qos <esp_mqtt_client_config_t::session_t::last_will_t::qos>`: quality of service for the LWT message
+ * :cpp:member:`retain <esp_mqtt_client_config_t::session_t::last_will_t::retain>`: specifies the retain flag of the LWT message
 
 Change Settings in Project Configuration Menu
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The settings for MQTT can be found using ``idf.py menuconfig``, under ``Component config`` > ``ESP-MQTT Configuration``.
+The settings for MQTT can be found using :code:`idf.py menuconfig`, under ``Component config`` > ``ESP-MQTT Configuration``.
 
 The following settings are available:
 
@@ -169,8 +186,8 @@ The following events may be posted by the MQTT client:
 * ``MQTT_EVENT_SUBSCRIBED``: The broker has acknowledged the client's subscribe request. The event data will contain the message ID of the subscribe message.
 * ``MQTT_EVENT_UNSUBSCRIBED``: The broker has acknowledged the client's unsubscribe request. The event data will contain the message ID of the unsubscribe message.
 * ``MQTT_EVENT_PUBLISHED``: The broker has acknowledged the client's publish message. This will only be posted for QoS level 1 and 2, as level 0 does not use acknowledgements. The event data will contain the message ID of the publish message.
-* ``MQTT_EVENT_DATA``: The client has received a publish message. The event data contains: message ID, name of the topic it was published to, received data and its length. For data that exceeds the internal buffer, multiple ``MQTT_EVENT_DATA`` will be posted and ``current_data_offset`` and ``total_data_len`` from event data updated to keep track of the fragmented message.
-* ``MQTT_EVENT_ERROR``: The client has encountered an error. ``esp_mqtt_error_type_t`` from ``error_handle`` in the event data can be used to further determine the type of the error. The type of error will determine which parts of the ``error_handle`` struct is filled.
+* ``MQTT_EVENT_DATA``: The client has received a publish message. The event data contains: message ID, name of the topic it was published to, received data and its length. For data that exceeds the internal buffer, multiple ``MQTT_EVENT_DATA`` will be posted and :cpp:member:`current_data_offset <esp_mqtt_event_t::current_data_offset>` and :cpp:member:`total_data_len<esp_mqtt_event_t::total_data_len>` from event data updated to keep track of the fragmented message.
+* ``MQTT_EVENT_ERROR``: The client has encountered an error. The field :cpp:type:`error_handle <esp_mqtt_error_codes_t>` in the event data contains :cpp:type:`error_type <esp_mqtt_error_type_t>` that  can be used to identify the error. The type of error will determine which parts of the :cpp:type:`error_handle <esp_mqtt_error_codes_t>` struct is filled.
 
 API Reference
 -------------
