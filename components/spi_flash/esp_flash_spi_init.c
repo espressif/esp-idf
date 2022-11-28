@@ -409,7 +409,7 @@ esp_err_t esp_flash_init_default_chip(void)
     if (default_chip.size > legacy_chip->chip_size) {
         ESP_EARLY_LOGW(TAG, "Detected size(%dk) larger than the size in the binary image header(%dk). Using the size in the binary image header.", default_chip.size/1024, legacy_chip->chip_size/1024);
     }
-    // Set chip->size equal to ROM flash size(also equal to menuconfig flash size), which means the available size that can be used
+    // Set chip->size equal to ROM flash size(also equal to the size in binary image header), which means the available size that can be used
     default_chip.size = legacy_chip->chip_size;
 
     esp_flash_default_chip = &default_chip;
