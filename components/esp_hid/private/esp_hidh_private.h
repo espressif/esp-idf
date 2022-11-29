@@ -131,7 +131,9 @@ esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_id_and_proto(esp_hidh_de
 esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_proto_and_data(esp_hidh_dev_t *dev, int protocol_mode,
                                                                        size_t len, const uint8_t *data, bool *has_report_id);
 esp_hidh_dev_report_t *esp_hidh_dev_get_report_by_handle(esp_hidh_dev_t *dev, uint16_t handle);  //BLE Only
-void esp_hidh_process_event_data_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+void esp_hidh_preprocess_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+                                       void *event_data);
+void esp_hidh_post_process_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
                                          void *event_data);
 void esp_hidh_dev_lock(esp_hidh_dev_t *dev);
 void esp_hidh_dev_unlock(esp_hidh_dev_t *dev);
