@@ -437,8 +437,8 @@ assign_err:
 hub_err:
     ESP_ERROR_CHECK(usbh_uninstall());
 usbh_err:
-    if (p_host_lib_obj->constant.phy_handle) {
-        ESP_ERROR_CHECK(usb_del_phy(p_host_lib_obj->constant.phy_handle));
+    if (host_lib_obj->constant.phy_handle) {
+        ESP_ERROR_CHECK(usb_del_phy(host_lib_obj->constant.phy_handle));
     }
 phy_err:
 alloc_err:
