@@ -24,9 +24,7 @@ except ImportError:
 if TYPE_CHECKING:
     from _pytest.python import Function
 
-IDF_PATH = os.path.abspath(
-    os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..'))
-)
+IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
 
 def get_submodule_dirs(full_path: bool = False) -> List:
@@ -66,11 +64,7 @@ def get_submodule_dirs(full_path: bool = False) -> List:
 
 def _check_git_filemode(full_path):  # type: (str) -> bool
     try:
-        stdout = (
-            subprocess.check_output(['git', 'ls-files', '--stage', full_path])
-            .strip()
-            .decode('utf-8')
-        )
+        stdout = subprocess.check_output(['git', 'ls-files', '--stage', full_path]).strip().decode('utf-8')
     except subprocess.CalledProcessError:
         return True
 
@@ -150,6 +144,7 @@ class PytestCase:
     path: str
     name: str
     apps: Set[PytestApp]
+
     nightly_run: bool
 
     def __hash__(self) -> int:
@@ -185,14 +180,8 @@ class PytestCollectPlugin:
                         self.get_param(item, 'app_path', os.path.dirname(case_path)),
                     )
                 )
-                configs = to_list(
-                    parse_multi_dut_args(
-                        count, self.get_param(item, 'config', 'default')
-                    )
-                )
-                targets = to_list(
-                    parse_multi_dut_args(count, self.get_param(item, 'target', target))
-                )
+                configs = to_list(parse_multi_dut_args(count, self.get_param(item, 'config', 'default')))
+                targets = to_list(parse_multi_dut_args(count, self.get_param(item, 'target', target)))
             else:
                 app_paths = [os.path.dirname(case_path)]
                 configs = ['default']
@@ -213,7 +202,10 @@ class PytestCollectPlugin:
 
 
 def get_pytest_cases(
-    paths: Union[str, List[str]], target: str = 'all', marker_expr: Optional[str] = None
+    paths: Union[str, List[str]],
+    target: str = 'all',
+    marker_expr: Optional[str] = None,
+    filter_expr: Optional[str] = None,
 ) -> List[PytestCase]:
     import pytest
     from _pytest.config import ExitCode
@@ -250,17 +242,15 @@ def get_pytest_cases(
             with io.StringIO() as buf:
                 with redirect_stdout(buf):
                     cmd = ['--collect-only', path, '-q', '-m', _marker_expr]
+                    if filter_expr:
+                        cmd.extend(['-k', filter_expr])
                     res = pytest.main(cmd, plugins=[collector])
                 if res.value != ExitCode.OK:
                     if res.value == ExitCode.NO_TESTS_COLLECTED:
-                        print(
-                            f'WARNING: no pytest app found for target {t} under path {path}'
-                        )
+                        print(f'WARNING: no pytest app found for target {t} under path {path}')
                     else:
                         print(buf.getvalue())
-                        raise RuntimeError(
-                            f'pytest collection failed at {path} with command \"{" ".join(cmd)}\"'
-                        )
+                        raise RuntimeError(f'pytest collection failed at {path} with command \"{" ".join(cmd)}\"')
 
         cases.extend(collector.cases)
 
@@ -296,9 +286,7 @@ def get_ttfw_cases(paths: Union[str, List[str]]) -> List[Any]:
 
     cases = []
     for path in to_list(paths):
-        assign = IDFAssignTest(
-            path, os.path.join(IDF_PATH, '.gitlab', 'ci', 'target-test.yml')
-        )
+        assign = IDFAssignTest(path, os.path.join(IDF_PATH, '.gitlab', 'ci', 'target-test.yml'))
         with contextlib.redirect_stdout(None):  # swallow stdout
             try:
                 cases += assign.search_cases()
@@ -308,9 +296,7 @@ def get_ttfw_cases(paths: Union[str, List[str]]) -> List[Any]:
     return cases
 
 
-def get_ttfw_app_paths(
-    paths: Union[str, List[str]], target: Optional[str] = None
-) -> Set[str]:
+def get_ttfw_app_paths(paths: Union[str, List[str]], target: Optional[str] = None) -> Set[str]:
     """
     Get the app paths from ttfw_idf under the given paths
     """

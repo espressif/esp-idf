@@ -23,10 +23,11 @@ def get_pytest_apps(
     target: str,
     config_rules_str: List[str],
     marker_expr: str,
+    filter_expr: str,
     preserve_all: bool = False,
     extra_default_build_targets: Optional[List[str]] = None,
 ) -> List[App]:
-    pytest_cases = get_pytest_cases(paths, target, marker_expr)
+    pytest_cases = get_pytest_cases(paths, target, marker_expr, filter_expr)
 
     _paths: Set[str] = set()
     test_related_app_configs = defaultdict(set)
@@ -126,6 +127,7 @@ def main(args: argparse.Namespace) -> None:
             args.target,
             args.config,
             args.marker_expr,
+            args.filter_expr,
             args.preserve_all,
             extra_default_build_targets,
         )
@@ -181,8 +183,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '-t',
         '--target',
-        required=True,
-        help='Build apps for given target. could pass "all" to get apps for all targets',
+        default='all',
+        help='Build apps for given target',
     )
     parser.add_argument(
         '--config',
@@ -261,6 +263,12 @@ if __name__ == '__main__':
         '--marker-expr',
         default='not host_test',  # host_test apps would be built and tested under the same job
         help='only build tests matching given mark expression. For example: -m "host_test and generic". Works only'
+        'for pytest',
+    )
+    parser.add_argument(
+        '-k',
+        '--filter-expr',
+        help='only build tests matching given filter expression. For example: -k "test_hello_world". Works only'
         'for pytest',
     )
     parser.add_argument(
