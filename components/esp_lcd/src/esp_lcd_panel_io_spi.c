@@ -66,14 +66,14 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     esp_err_t ret = ESP_OK;
     esp_lcd_panel_io_spi_t *spi_panel_io = NULL;
     ESP_GOTO_ON_FALSE(bus && io_config && ret_io, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    // at the moment, the hardware doesn't support 9-bit SPI LCD, but in the future, there will be such a feature
-    // so for now, we will force the user to use the GPIO to control the LCD's D/C line.
-    ESP_GOTO_ON_FALSE(io_config->dc_gpio_num >= 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid DC mode");
     spi_panel_io = calloc(1, sizeof(esp_lcd_panel_io_spi_t) + sizeof(lcd_spi_trans_descriptor_t) * io_config->trans_queue_depth);
     ESP_GOTO_ON_FALSE(spi_panel_io, ESP_ERR_NO_MEM, err, TAG, "no mem for spi panel io");
 
     spi_device_interface_config_t devcfg = {
-        .flags = SPI_DEVICE_HALFDUPLEX | (io_config->flags.lsb_first ? SPI_DEVICE_TXBIT_LSBFIRST : 0),
+        .flags = SPI_DEVICE_HALFDUPLEX |
+        (io_config->flags.lsb_first ? SPI_DEVICE_TXBIT_LSBFIRST : 0) |
+        (io_config->flags.sio_mode ? SPI_DEVICE_3WIRE : 0) |
+        (io_config->flags.cs_high_active ? SPI_DEVICE_POSITIVE_CS : 0),
         .clock_speed_hz = io_config->pclk_hz,
         .mode = io_config->spi_mode,
         .spics_io_num = io_config->cs_gpio_num,
@@ -191,15 +191,18 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     }
     lcd_trans = &spi_panel_io->trans_pool[0];
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
-    spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
+
     lcd_trans->base.user = spi_panel_io;
-    lcd_trans->base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
+    if (param && param_size) {
+        lcd_trans->base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
+    }
     if (spi_panel_io->flags.octal_mode) {
         // use 8 lines for transmitting command, address and data
         lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
     }
 
     if (send_cmd) {
+        spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
         lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
         lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
         lcd_trans->base.tx_buffer = &lcd_cmd;
@@ -244,7 +247,7 @@ static esp_err_t panel_io_spi_rx_param(esp_lcd_panel_io_t *io, int lcd_cmd, void
     }
     lcd_trans = &spi_panel_io->trans_pool[0];
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
-    spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
+
     lcd_trans->base.user = spi_panel_io;
     lcd_trans->base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
     if (spi_panel_io->flags.octal_mode) {
@@ -253,6 +256,7 @@ static esp_err_t panel_io_spi_rx_param(esp_lcd_panel_io_t *io, int lcd_cmd, void
     }
 
     if (send_cmd) {
+        spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
         lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
         lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
         lcd_trans->base.tx_buffer = &lcd_cmd;
@@ -285,6 +289,7 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     spi_transaction_t *spi_trans = NULL;
     lcd_spi_trans_descriptor_t *lcd_trans = NULL;
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
+    bool send_cmd = (lcd_cmd >= 0);
 
     // before issue a polling transaction, need to wait queued transactions finished
     size_t num_trans_inflight = spi_panel_io->num_trans_inflight;
@@ -295,18 +300,21 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     }
     lcd_trans = &spi_panel_io->trans_pool[0];
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
-    spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
-    lcd_trans->base.user = spi_panel_io;
-    lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
-    lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
-    lcd_trans->base.tx_buffer = &lcd_cmd;
-    if (spi_panel_io->flags.octal_mode) {
-        // use 8 lines for transmitting command, address and data
-        lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
+
+    if (send_cmd) {
+        spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
+        lcd_trans->base.user = spi_panel_io;
+        lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
+        lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
+        lcd_trans->base.tx_buffer = &lcd_cmd;
+        if (spi_panel_io->flags.octal_mode) {
+            // use 8 lines for transmitting command, address and data
+            lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
+        }
+        // command is short, using polling mode
+        ret = spi_device_polling_transmit(spi_panel_io->spi_dev, &lcd_trans->base);
+        ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (polling) command failed");
     }
-    // command is short, using polling mode
-    ret = spi_device_polling_transmit(spi_panel_io->spi_dev, &lcd_trans->base);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (polling) command failed");
 
     // split to chunks if required:
     // the SPI bus has a maximum transaction size determined by SPI_LL_DATA_MAX_BIT_LEN
