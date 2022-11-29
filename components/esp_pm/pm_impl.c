@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
 #include <sys/param.h>
 
 #include "esp_attr.h"
@@ -704,7 +705,7 @@ void esp_pm_impl_dump_stats(FILE* out)
             /* don't display light sleep mode if it's not enabled */
             continue;
         }
-        fprintf(out, "%-8s  %-3dM%-7s %-10lld  %-2d%%\n",
+        fprintf(out, "%-8s  %-3"PRIu32"M%-7s %-10lld  %-2d%%\n",
                 s_mode_names[i],
                 s_cpu_freq_by_mode[i].freq_mhz,
                 "",                                     //Empty space to align columns
