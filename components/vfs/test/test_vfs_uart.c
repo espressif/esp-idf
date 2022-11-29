@@ -16,7 +16,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "driver/uart.h"
-#include "soc/uart_struct.h"
+#include "hal/uart_ll.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs.h"
 #include "test_utils.h"
@@ -25,12 +25,12 @@
 static void fwrite_str_loopback(const char* str, size_t size)
 {
     esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
-    UART0.conf0.loopback = 1;
+    uart_ll_set_loop_back(&UART0, 1);
     fwrite(str, 1, size, stdout);
     fflush(stdout);
     esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     vTaskDelay(2 / portTICK_PERIOD_MS);
-    UART0.conf0.loopback = 0;
+    uart_ll_set_loop_back(&UART0, 0);
 }
 
 static void flush_stdin_stdout(void)

@@ -45,7 +45,6 @@ typedef struct {
 } task_context_t;
 
 #if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 
 const static char TAG[] = "test_spi";
 
@@ -349,5 +348,4 @@ TEST_CASE("spi master can be used on SPI1", "[spi]")
 
 //TODO: add a case when a non-polling transaction happened in the bus-acquiring time and then release the bus then queue a new trans
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 #endif //!(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)

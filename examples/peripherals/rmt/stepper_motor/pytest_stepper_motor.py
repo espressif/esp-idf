@@ -7,7 +7,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32s3
 @pytest.mark.generic
-def test_ir_nec_example(dut: Dut) -> None:
+def test_stepper_motor_example(dut: Dut) -> None:
     dut.expect_exact('example: Initialize EN + DIR GPIO')
     dut.expect_exact('example: Create RMT TX channel')
     dut.expect_exact('example: Set spin direction')

@@ -154,6 +154,7 @@ def test_examples_protocol_https_request_dynamic_buffers(dut: Dut) -> None:
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
 @pytest.mark.ethernet
 @pytest.mark.parametrize('erase_nvs', ['y'], indirect=True)
 def test_examples_protocol_https_request(dut: Dut) -> None:

@@ -14,7 +14,7 @@
 #include "esp_private/wifi.h"
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C6)
 //IDF-5046
 #include "esp_phy_init.h"
 
@@ -132,6 +132,6 @@ TEST_CASE("Test PHY/RTC functions called when cache is disabled", "[phy_rtc][cac
 
     vSemaphoreDelete(semphr_done);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)

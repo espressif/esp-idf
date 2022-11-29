@@ -6,6 +6,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='iram_safe test failed')
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

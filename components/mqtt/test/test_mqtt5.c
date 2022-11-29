@@ -19,6 +19,7 @@
 #include "esp_mac.h"
 #include "esp_partition.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 static esp_mqtt5_user_property_item_t user_property_arr[3] = {
     {"board", "esp32"},
     {"u", "user"},
@@ -150,3 +151,4 @@ TEST_CASE("mqtt5 broker tests", "[mqtt5][test_env=UT_T2_Ethernet]")
     connect_test_fixture_teardown();
 }
 #endif // SOC_EMAC_SUPPORTED
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

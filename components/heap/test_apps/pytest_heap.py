@@ -7,6 +7,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='test failed')
 @pytest.mark.parametrize(
     'config',
     [

@@ -18,6 +18,7 @@
 #include "memory_checks.h"
 #include <time.h>
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 uint32_t timeouts_usec[6] = { 10000, 1000, 10000, 5000, 15000, 1000 };
 uint32_t timeouts_sec[6] = { 10, 1, 10, 5, 15, 1 };
 int executed_order[6];
@@ -82,3 +83,4 @@ TEST_CASE("Test eloop timers run", "[eloop]")
 	TEST_ESP_OK(esp_wifi_deinit());
 	os_sleep(3, 0);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

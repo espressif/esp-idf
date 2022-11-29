@@ -7,6 +7,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32
 @pytest.mark.esp32s3
+@pytest.mark.esp32c6
 @pytest.mark.generic
 def test_servo_mg996r_example(dut: Dut) -> None:
     dut.expect_exact('example: Create timer and operator')
