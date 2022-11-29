@@ -485,8 +485,7 @@ extern "C" {
                                      DPORT_WIFIMAC_RST      | \
                                      DPORT_BTBB_RST         | \
                                      DPORT_BTMAC_RST        | \
-                                     DPORT_RW_BTMAC_RST     | \
-                                     DPORT_RW_BTLP_RST)
+                                     DPORT_RW_BTMAC_RST)
 
 #define SYSCON_FRONT_END_MEM_PD_REG          (DR_REG_SYSCON_BASE + 0x098)
 /* SYSCON_DC_MEM_FORCE_PD : R/W ;bitpos:[5] ;default: 1'b0 ; */
