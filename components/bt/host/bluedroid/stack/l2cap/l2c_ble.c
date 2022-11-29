@@ -116,6 +116,8 @@ BOOLEAN L2CA_UpdateBleConnParams (BD_ADDR rem_bda, UINT16 min_int, UINT16 max_in
 {
     tL2C_LCB            *p_lcb;
     tACL_CONN           *p_acl_cb = btm_bda_to_acl(rem_bda, BT_TRANSPORT_LE);
+    UINT8               status = HCI_SUCCESS;
+    BOOLEAN             need_cb = false;
 
     /* See if we have a link control block for the remote device */
     p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_LE);
@@ -135,19 +137,29 @@ BOOLEAN L2CA_UpdateBleConnParams (BD_ADDR rem_bda, UINT16 min_int, UINT16 max_in
         return (FALSE);
     }
 
+    /* Check whether the request conn params is already set */
+    if ((max_int == p_lcb->current_used_conn_interval) && (latency == p_lcb->current_used_conn_latency) &&
+        (timeout == p_lcb->current_used_conn_timeout)) {
+        status = HCI_SUCCESS;
+        need_cb = true;
+        L2CAP_TRACE_WARNING("%s connection parameter already set", __func__);
+    }
+
     if (p_lcb->conn_update_mask & L2C_BLE_UPDATE_PARAM_FULL){
-        UINT8 status = HCI_ERR_ILLEGAL_COMMAND;
+        status = HCI_ERR_ILLEGAL_COMMAND;
+        need_cb = true;
         L2CAP_TRACE_ERROR("There are two connection parameter requests that are being updated, please try later ");
-        if (conn_param_update_cb.update_conn_param_cb != NULL) {
-            tBTM_LE_UPDATE_CONN_PRAMS update_param;
-            update_param.max_conn_int = max_int;
-            update_param.min_conn_int = min_int;
-            update_param.conn_int = p_lcb->current_used_conn_interval;
-            update_param.slave_latency = p_lcb->current_used_conn_latency;
-            update_param.supervision_tout = p_lcb->current_used_conn_timeout;
-            (conn_param_update_cb.update_conn_param_cb)(status, p_lcb->remote_bd_addr, &update_param);
-        }
-        return (FALSE);
+    }
+
+    if ((need_cb == TRUE) && (conn_param_update_cb.update_conn_param_cb != NULL)) {
+        tBTM_LE_UPDATE_CONN_PRAMS update_param;
+        update_param.max_conn_int = max_int;
+        update_param.min_conn_int = min_int;
+        update_param.conn_int = p_lcb->current_used_conn_interval;
+        update_param.slave_latency = p_lcb->current_used_conn_latency;
+        update_param.supervision_tout = p_lcb->current_used_conn_timeout;
+        (conn_param_update_cb.update_conn_param_cb)(status, p_lcb->remote_bd_addr, &update_param);
+        return (status == HCI_SUCCESS);
     }
 
     p_lcb->waiting_update_conn_min_interval = min_int;
