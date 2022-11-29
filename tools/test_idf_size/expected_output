@@ -4421,7 +4421,7 @@ Total sizes:
 Used static IRAM:   46786 bytes ( 239934 remain, 16.3% used)
       .text size:   45759 bytes
    .vectors size:    1027 bytes
-Used stat D/IRAM:   11772 bytes ( 123396 remain, 8.7% used)
+Used stat D/IRAM:   11772 bytes ( 258564 remain, 4.4% used)
       .data size:    9252 bytes
       .bss  size:    2520 bytes
 Used Flash size :  114851 bytes
@@ -4430,12 +4430,25 @@ Used Flash size :  114851 bytes
 Total image size:  170889 bytes (.bin may be padded larger)
 
 ***
+Running idf_size.py for esp32s3 configured with 32KB of icache...
+Total sizes:
+Used stat D/IRAM:   71186 bytes ( 274670 remain, 20.6% used)
+      .data size:   11900 bytes
+      .bss  size:    3200 bytes
+      .text size:   55059 bytes
+   .vectors size:    1027 bytes
+Used Flash size :  132883 bytes
+           .text:   99451 bytes
+         .rodata:   33176 bytes
+Total image size:  200869 bytes (.bin may be padded larger)
+
+***
 Running idf_size.py for esp32s3 with overflow...
 Total sizes:
 Used static IRAM:  337906 bytes ( -51186 remain, 117.9% used) Overflow detected! You can run idf.py size-files for more information.
       .text size:  336879 bytes
    .vectors size:    1027 bytes
-Used stat D/IRAM:   94049 bytes (  41119 remain, 69.6% used)
+Used stat D/IRAM:   94049 bytes ( 176287 remain, 34.8% used)
       .data size:   68929 bytes
       .bss  size:   25120 bytes
 Used Flash size :  461714 bytes
@@ -4449,7 +4462,7 @@ Total sizes:
 Used static IRAM:   46786 bytes ( 239934 remain, 16.3% used)
       .text size:   45759 bytes
    .vectors size:    1027 bytes
-Used stat D/IRAM:   11772 bytes ( 123396 remain, 8.7% used)
+Used stat D/IRAM:   11772 bytes ( 258564 remain, 4.4% used)
       .data size:    9252 bytes
       .bss  size:    2520 bytes
 Used Flash size :  114851 bytes
@@ -4463,7 +4476,7 @@ Total sizes:
 Used static IRAM:   46786 bytes ( 239934 remain, 16.3% used)
       .text size:   45759 bytes
    .vectors size:    1027 bytes
-Used stat D/IRAM:   11772 bytes ( 123396 remain, 8.7% used)
+Used stat D/IRAM:   11772 bytes ( 258564 remain, 4.4% used)
       .data size:    9252 bytes
       .bss  size:    2520 bytes
 Used Flash size :  114851 bytes
@@ -4507,7 +4520,7 @@ Total sizes:
 Used static IRAM:   46786 bytes ( 239934 remain, 16.3% used)
       .text size:   45759 bytes
    .vectors size:    1027 bytes
-Used stat D/IRAM:   11772 bytes ( 123396 remain, 8.7% used)
+Used stat D/IRAM:   11772 bytes ( 258564 remain, 4.4% used)
       .data size:    9252 bytes
       .bss  size:    2520 bytes
 Used Flash size :  114851 bytes
@@ -4773,7 +4786,7 @@ Total sizes:
 Used static IRAM:   46786 bytes ( 239934 remain, 16.3% used)
       .text size:   45759 bytes
    .vectors size:    1027 bytes
-Used stat D/IRAM:   11772 bytes ( 123396 remain, 8.7% used)
+Used stat D/IRAM:   11772 bytes ( 258564 remain, 4.4% used)
       .data size:    9252 bytes
       .bss  size:    2520 bytes
 Used Flash size :  114851 bytes
@@ -16560,10 +16573,10 @@ Producing JSON output for esp32s3...
     "diram_vectors": 0,
     "diram_rodata": 0,
     "diram_other": 0,
-    "diram_total": 135168,
+    "diram_total": 270336,
     "used_diram": 11772,
-    "used_diram_ratio": 0.08709161931818182,
-    "diram_remain": 123396,
+    "used_diram_ratio": 0.04354580965909091,
+    "diram_remain": 258564,
     "flash_code": 87463,
     "flash_rodata": 27132,
     "flash_other": 256,
@@ -20334,7 +20347,7 @@ Total sizes:,,,
 Used static IRAM,46786 bytes (239934 remain 16.3% used),,,
 .text size,45759 bytes,,,
 .vectors size,1027 bytes,,,
-Used stat D/IRAM,11772 bytes (123396 remain 8.7% used),,,
+Used stat D/IRAM,11772 bytes (258564 remain 4.4% used),,,
 .data size,9252 bytes,,,
 .bss  size,2520 bytes,,,
 Used Flash size ,114851 bytes,,,
@@ -20345,7 +20358,7 @@ Total sizes:,,,
 Used static IRAM,46786 bytes (239934 remain 16.3% used),,,
 .text size,45759 bytes,,,
 .vectors size,1027 bytes,,,
-Used stat D/IRAM,11772 bytes (123396 remain 8.7% used),,,
+Used stat D/IRAM,11772 bytes (258564 remain 4.4% used),,,
 .data size,9252 bytes,,,
 .bss  size,2520 bytes,,,
 Used Flash size ,114851 bytes,,,
@@ -20386,7 +20399,7 @@ Total sizes:,,,
 Used static IRAM,46786 bytes (239934 remain 16.3% used),,,
 .text size,45759 bytes,,,
 .vectors size,1027 bytes,,,
-Used stat D/IRAM,11772 bytes (123396 remain 8.7% used),,,
+Used stat D/IRAM,11772 bytes (258564 remain 4.4% used),,,
 .data size,9252 bytes,,,
 .bss  size,2520 bytes,,,
 Used Flash size ,114851 bytes,,,
@@ -20649,7 +20662,7 @@ Total sizes:,,,
 Used static IRAM,46786 bytes (239934 remain 16.3% used),,,
 .text size,45759 bytes,,,
 .vectors size,1027 bytes,,,
-Used stat D/IRAM,11772 bytes (123396 remain 8.7% used),,,
+Used stat D/IRAM,11772 bytes (258564 remain 4.4% used),,,
 .data size,9252 bytes,,,
 .bss  size,2520 bytes,,,
 Used Flash size ,114851 bytes,,,
