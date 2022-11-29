@@ -82,6 +82,62 @@ static inline void *memprot_ll_get_split_addr_from_reg(const uint32_t regval, co
 }
 
 /* ******************************************************************************************************
+ * *** ICACHE ***
+ * ******************************************************************************************************/
+static inline uint32_t memprot_ll_icache_set_permissions(const bool r, const bool w, const bool x)
+{
+    uint32_t permissions = 0;
+    if (r) {
+        permissions |= SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_R;
+    }
+    if (w) {
+        permissions |= SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_W;
+    }
+    if (x) {
+        permissions |= SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_F;
+    }
+
+    return permissions;
+}
+
+static inline void memprot_ll_icache_set_pms_area_0(const bool r, const bool w, const bool x)
+{
+    REG_SET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_CACHEDATAARRAY_PMS_0, memprot_ll_icache_set_permissions(r, w, x));
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_CACHEDATAARRAY_PMS_0);
+    HAL_ASSERT((expected == memprot_ll_icache_set_permissions(r, w, x)) && "Value not stored to required register");
+#endif
+}
+
+static inline void memprot_ll_icache_set_pms_area_1(const bool r, const bool w, const bool x)
+{
+    REG_SET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_CACHEDATAARRAY_PMS_1, memprot_ll_icache_set_permissions(r, w, x));
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_CACHEDATAARRAY_PMS_1);
+    HAL_ASSERT((expected == memprot_ll_icache_set_permissions(r, w, x)) && "Value not stored to required register");
+#endif
+}
+
+static inline void memprot_ll_icache_get_permissions(const uint32_t perms, bool *r, bool *w, bool *x)
+{
+    *r = perms & SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_R;
+    *w = perms & SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_W;
+    *x = perms & SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_F;
+}
+
+static inline void memprot_ll_icache_get_pms_area_0(bool *r, bool *w, bool *x)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_CACHEDATAARRAY_PMS_0);
+    memprot_ll_icache_get_permissions(permissions, r, w, x);
+}
+
+static inline void memprot_ll_icache_get_pms_area_1(bool *r, bool *w, bool *x)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_CACHEDATAARRAY_PMS_1);
+    memprot_ll_icache_get_permissions(permissions, r, w, x);
+}
+
+/* ******************************************************************************************************
  * *** IRAM0 ***
  * ******************************************************************************************************/
 static inline memprot_hal_err_t memprot_ll_iram0_get_intr_source_num(const int core, uint32_t* src_num)
