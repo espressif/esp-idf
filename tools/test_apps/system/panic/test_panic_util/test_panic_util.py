@@ -3,15 +3,36 @@ import os
 import re
 import subprocess
 import sys
+from subprocess import Popen
 
 import ttfw_idf
-from pygdbmi.gdbcontroller import GdbController, GdbTimeoutError, NoGdbProcessError
+from pygdbmi.gdbcontroller import GdbController
 from tiny_test_fw import DUT, TinyFW, Utility
 from tiny_test_fw.Utility import CaseConfig, SearchCases
 
 # hard-coded to the path one level above - only intended to be used from the panic test app
 TEST_PATH = os.path.relpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'), os.getenv('IDF_PATH'))
 TEST_SUITE = 'Panic'
+
+
+class NoGdbProcessError(ValueError):
+    """Raise when trying to interact with gdb subprocess, but it does not exist.
+    It may have been killed and removed, or failed to initialize for some reason."""
+
+    pass
+
+
+def verify_valid_gdb_subprocess(gdb_process: Popen) -> None:
+    """Verify there is a process object, and that it is still running.
+    Raise NoGdbProcessError if either of the above are not true."""
+    if not gdb_process:
+        raise NoGdbProcessError('gdb process is not attached')
+
+    elif gdb_process.poll() is not None:
+        raise NoGdbProcessError(
+            'gdb process has already finished with return code: %s'
+            % str(gdb_process.poll())
+        )
 
 
 def ok(data):
@@ -160,14 +181,33 @@ class PanicTestMixin(object):
         self._port_close()
 
         Utility.console_log('Starting GDB...', 'orange')
-        self.gdb = GdbController(gdb_path=self.TOOLCHAIN_PREFIX + 'gdb')
-        Utility.console_log('Running command: {}'.format(self.gdb.get_subprocess_cmd()), 'orange')
+        gdb_path = self.TOOLCHAIN_PREFIX + 'gdb'
+        try:
+            from pygdbmi.constants import GdbTimeoutError
+            default_gdb_args = ['--nx', '--quiet', '--interpreter=mi2']
+            gdb_command = [gdb_path] + default_gdb_args
+            self.gdb = GdbController(command=gdb_command)
+        except ImportError:
+            # fallback for pygdbmi<0.10.0.0.
+            from pygdbmi.gdbcontroller import GdbTimeoutError
+            self.gdb = GdbController(gdb_path=gdb_path)
+
+        try:
+            gdb_command = self.gdb.command
+        except AttributeError:
+            # fallback for pygdbmi < 0.10
+            gdb_command = self.gdb.cmd
+
+        Utility.console_log('Running command: {}'.format(gdb_command), 'orange')
 
         for _ in range(10):
             try:
                 # GdbController creates a process with subprocess.Popen(). Is it really running? It is probable that
                 # an RPI under high load will get non-responsive during creating a lot of processes.
-                resp = self.gdb.get_gdb_response(timeout_sec=10)  # calls verify_valid_gdb_subprocess() internally
+                if not hasattr(self.gdb, 'verify_valid_gdb_subprocess'):
+                    # for pygdbmi >= 0.10.0.0
+                    verify_valid_gdb_subprocess(self.gdb.gdb_process)
+                resp = self.gdb.get_gdb_response(timeout_sec=10)  # calls verify_valid_gdb_subprocess() internally (pygdbmi < 0.10)
                 # it will be interesting to look up this response if the next GDB command fails (times out)
                 Utility.console_log('GDB response: {}'.format(resp), 'orange')
                 break  # success
