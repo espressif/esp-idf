@@ -174,7 +174,12 @@ void esp_flash_encryption_set_release_mode(void)
     ESP_LOGE(TAG, "Flash Encryption support not added, abort..");
     abort();
 #endif
+
+#if CONFIG_SOC_SUPPORTS_SECURE_DL_MODE
+    esp_efuse_enable_rom_secure_download_mode();
+#else
     esp_efuse_disable_rom_download_mode();
+#endif
     esp_efuse_batch_write_commit();
 
     if (esp_get_flash_encryption_mode() != ESP_FLASH_ENC_MODE_RELEASE) {
