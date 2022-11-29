@@ -419,9 +419,12 @@ finish:
  */
 static inline void i2s_ll_tx_start(i2s_dev_t *hw)
 {
-    hw->tx_conf.tx_update = 0;
+    // TODO: solve the bug that can't update
+    // hw->tx_conf.tx_update = 0;
+    while (hw->tx_conf.tx_update);
     hw->tx_conf.tx_update = 1;
     hw->tx_conf.tx_start = 1;
+    while (hw->tx_conf.tx_update);
 }
 
 /**
@@ -431,9 +434,12 @@ static inline void i2s_ll_tx_start(i2s_dev_t *hw)
  */
 static inline void i2s_ll_rx_start(i2s_dev_t *hw)
 {
-    hw->rx_conf.rx_update = 0;
+    // TODO: solve the bug that can't update
+    // hw->rx_conf.rx_update = 0;
+    while (hw->rx_conf.rx_update);
     hw->rx_conf.rx_update = 1;
     hw->rx_conf.rx_start = 1;
+    while (hw->rx_conf.rx_update);
 }
 
 /**

@@ -11,14 +11,16 @@
 #include "esp_log.h"
 #include "unity.h"
 #include "unity_test_utils.h"
+#include "test_utils.h"
 #include "driver/gpio.h"
 #include "driver/i2s_tdm.h"
 
 static const char *TAG = "i2s_tdm_full_duplex_test";
 
-#define TEST_I2S_FRAME_SIZE             (128)
-#define TEST_I2S_PACKET_COUNT           (512)
-#define TEST_I2S_BAD_PACKET_THRESHOLD   (10)
+#define TEST_I2S_FRAME_SIZE             (128)       // Frame numbers in every writing / reading
+#define TEST_I2S_ARRAY_LENGTH           (1024)      // The loop data length for verification
+#define TEST_I2S_MAX_FAIL_CNT           (3)         // Max broken packet count
+#define TEST_I2S_FRAME_TIMEOUT_SEC      (10.0f)     // Timeout seconds of waiting for a correct frame
 
 #define TEST_I2S_NUM            (I2S_NUM_0) // ESP32-C3 has only I2S0
 #define TEST_I2S_BCK_IO         (GPIO_NUM_4)
@@ -52,20 +54,22 @@ static void test_i2s_tdm_master_write_task(void *args)
 
     uint32_t data_cnt = 0;
     size_t bytes_written = 0;
+
+    /* Block here waiting for the main thread receiving Slave Ready signals */
+    xTaskNotifyWait(0, ULONG_MAX, NULL, portMAX_DELAY);
+
     ESP_LOGI(TAG, "I2S TDM master send start");
-    TEST_ESP_OK(i2s_channel_enable(task_args->tx_channel_handle));
     while (xTaskNotifyWait(0, ULONG_MAX, NULL, 0) == pdFALSE) { // if main task sends terminate signal, exit the loop
         /* Fill in the tx buffer */
         for (uint32_t i = 0; i < tx_buffer_size / sizeof(uint32_t); i ++) {
             tx_buffer[i] = data_cnt;
-            data_cnt ++;
+            data_cnt++;
+            data_cnt %= TEST_I2S_ARRAY_LENGTH;
         }
         TEST_ESP_OK(i2s_channel_write(task_args->tx_channel_handle, tx_buffer, tx_buffer_size,
-                                      &bytes_written, portMAX_DELAY));
-        TEST_ASSERT_EQUAL(tx_buffer_size, bytes_written);
+                                      &bytes_written, 1000));
     }
-    ESP_LOGI(TAG, "I2S TDM master send stop");
-    TEST_ESP_OK(i2s_channel_disable(task_args->tx_channel_handle));
+
     ESP_LOGI(TAG, "Freeing I2S TDM master tx buffer");
     free(tx_buffer);
 
@@ -106,12 +110,12 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
 
     /* Create TDM write task */
     TaskHandle_t subtask_handle = NULL;
-    test_i2s_tdm_write_task_args_t task_args = {
-        .tx_channel_handle = i2s_tdm_tx_handle,
-        .maintask_handle = xTaskGetCurrentTaskHandle(),
-        .tx_data_bit_width = bit_width,
-        .tdm_slot_mask = slot_mask
-    };
+    /* Make the variable static in case it become invalid in the write task */
+    static test_i2s_tdm_write_task_args_t task_args;
+    task_args.tx_channel_handle = i2s_tdm_tx_handle;
+    task_args.maintask_handle = xTaskGetCurrentTaskHandle();
+    task_args.tx_data_bit_width = bit_width;
+    task_args.tdm_slot_mask = slot_mask;
     xTaskCreate(test_i2s_tdm_master_write_task, "I2S TDM Write Task", 4096, &task_args, 5, &subtask_handle);
 
     /* Allocate I2S rx buffer */
@@ -121,42 +125,44 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
     uint32_t *rx_buffer = malloc(rx_buffer_size);
     TEST_ASSERT(rx_buffer);
 
-    uint8_t is_packet_valid = 0;
-    uint32_t good_packet_cnt = 0;
+    uint32_t count = 1;
+    bool is_start = false;
+    uint8_t fail_cnt = 0;
     size_t bytes_read = 0;
-    ESP_LOGI(TAG, "I2S TDM master receive start");
+    float time = 0;
     TEST_ESP_OK(i2s_channel_enable(i2s_tdm_rx_handle));
-    for(uint32_t packet_cnt = 0; packet_cnt < TEST_I2S_PACKET_COUNT; packet_cnt ++) {
-        TEST_ESP_OK(i2s_channel_read(i2s_tdm_rx_handle, rx_buffer, rx_buffer_size,
-                                         &bytes_read, portMAX_DELAY));
-        TEST_ASSERT_EQUAL(rx_buffer_size, bytes_read);
+    TEST_ESP_OK(i2s_channel_enable(i2s_tdm_tx_handle));
+    unity_send_signal("Master Ready");
+    unity_wait_for_signal("Slave Ready");
 
-        /* Check for empty packet */
-        if (rx_buffer[0] == 0) { // empty packet
-            if (is_packet_valid == 0) { // omit leading empty packets
-                packet_cnt = 0;
-            } else {
-                ESP_LOGW(TAG, "empty packet %"PRIu32, packet_cnt);
+    /* Slave is ready, start the writing task */
+    ESP_LOGI(TAG, "I2S TDM master receive & send start");
+    esp_err_t read_ret = ESP_OK;
+    xTaskNotifyGive(subtask_handle);
+    while (count < TEST_I2S_ARRAY_LENGTH && fail_cnt < TEST_I2S_MAX_FAIL_CNT && time < TEST_I2S_FRAME_TIMEOUT_SEC) {
+        read_ret = i2s_channel_read(i2s_tdm_rx_handle, rx_buffer, rx_buffer_size, &bytes_read, 1000);
+        if (read_ret != ESP_OK) {
+            break;
+        }
+        for (int i = 0; i < rx_buffer_size / sizeof(uint32_t); i++) {
+            if (rx_buffer[i] == count) {
+                count++;
+                if (count >= TEST_I2S_ARRAY_LENGTH) {
+                    break;
+                }
+                if (!is_start) {
+                    is_start = true;
+                }
+            } else if (is_start) {
+                ESP_LOGE(TAG, "Failed at index: %d real: %"PRIu32" expect: %"PRIu32"\n", i, rx_buffer[i], count);
+                is_start = false;
+                count = 1;
+                fail_cnt++;
             }
-            continue;
         }
-        is_packet_valid = 1;
-        /* Check received packet */
-        uint8_t is_good_packet = 1;
-        uint32_t last_value = rx_buffer[0];
-        for (uint32_t j = 1; j < rx_buffer_size / sizeof(uint32_t); j ++) {
-            if (rx_buffer[j] == last_value + 1) { // increased by 1
-                last_value = rx_buffer[j];
-            } else {
-                is_good_packet = 0;
-                ESP_LOGW(TAG, "corrupted packet %"PRIu32, packet_cnt);
-                break; // corrupted packet
-            }
-        }
-        if (is_good_packet) {
-            good_packet_cnt ++;
-        }
+        time += (float)TEST_I2S_MAX_FAIL_CNT / (float)sample_rate;
     }
+    unity_send_signal("Master Finished");
 
     ESP_LOGI(TAG, "Send signal to terminate subtask");
     xTaskNotifyGive(subtask_handle); // notify subtask to exit
@@ -164,6 +170,8 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
     ESP_LOGI(TAG, "Deleting subtask");
     unity_utils_task_delete(subtask_handle); // delete subtask
 
+    ESP_LOGI(TAG, "I2S TDM master send stop");
+    TEST_ESP_OK(i2s_channel_disable(i2s_tdm_tx_handle));
     ESP_LOGI(TAG, "I2S TDM master receive stop");
     TEST_ESP_OK(i2s_channel_disable(i2s_tdm_rx_handle));
 
@@ -172,15 +180,9 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
     ESP_LOGI(TAG, "Deleting i2s tx and rx channels");
     TEST_ESP_OK(i2s_del_channel(i2s_tdm_rx_handle));
     TEST_ESP_OK(i2s_del_channel(i2s_tdm_tx_handle));
-
-    uint32_t bad_packet_cnt = TEST_I2S_PACKET_COUNT - good_packet_cnt;
-    ESP_LOGI(TAG, "Total Packet: %d Good Packet: %"PRIu32" Bad Packet %"PRIu32,
-             TEST_I2S_PACKET_COUNT, good_packet_cnt, bad_packet_cnt);
-    /* if the bad packet count exceed the threshold, test failed */
-    if (bad_packet_cnt > TEST_I2S_BAD_PACKET_THRESHOLD) {
-        ESP_LOGE(TAG, "Bad Packet count exceed the threshold %d, test failed", TEST_I2S_BAD_PACKET_THRESHOLD);
-        TEST_FAIL();
-    }
+    TEST_ASSERT_TRUE_MESSAGE(read_ret == ESP_OK, "Master read timeout ");
+    TEST_ASSERT_TRUE_MESSAGE(fail_cnt < TEST_I2S_MAX_FAIL_CNT, "Broken data received ");
+    TEST_ASSERT_TRUE_MESSAGE(time < TEST_I2S_FRAME_TIMEOUT_SEC, "Waiting for valid data timeout ");
 }
 
 static void test_i2s_tdm_slave(uint32_t sample_rate, i2s_data_bit_width_t bit_width, i2s_tdm_slot_mask_t slot_mask)
@@ -223,28 +225,23 @@ static void test_i2s_tdm_slave(uint32_t sample_rate, i2s_data_bit_width_t bit_wi
     uint32_t *rx_buffer = malloc(rx_buffer_size);
     TEST_ASSERT(rx_buffer);
 
-    ESP_LOGI(TAG, "I2S TDM slave receive & send start");
     TEST_ESP_OK(i2s_channel_enable(i2s_tdm_rx_handle));
     TEST_ESP_OK(i2s_channel_enable(i2s_tdm_tx_handle));
-    uint32_t packet_cnt = 0;
-    size_t bytes_read = 0, bytes_written = 0;
-    while (packet_cnt < TEST_I2S_PACKET_COUNT) {
-        TEST_ESP_OK(i2s_channel_read(i2s_tdm_rx_handle, rx_buffer, rx_buffer_size,
-                                         &bytes_read, portMAX_DELAY));
-        TEST_ASSERT_EQUAL(rx_buffer_size, bytes_read);
+    unity_send_signal("Slave Ready");
+    unity_wait_for_signal("Master Ready");
 
-        TEST_ESP_OK(i2s_channel_write(i2s_tdm_tx_handle, rx_buffer, rx_buffer_size,
-                                      &bytes_written, portMAX_DELAY));
-        TEST_ASSERT_EQUAL(rx_buffer_size, bytes_written);
-        if (rx_buffer[0]) { // packet is not empty
-            packet_cnt ++;
+    ESP_LOGI(TAG, "I2S TDM slave receive & send start");
+    size_t bytes_read = 0, bytes_written = 0;
+    /* Loop until reading or writing failed, which indicates the master has finished and deleted the I2S peripheral */
+    while (true) {
+        if (i2s_channel_read(i2s_tdm_rx_handle, rx_buffer, rx_buffer_size, &bytes_read, 500) != ESP_OK) {
+            break;
+        }
+        if (i2s_channel_write(i2s_tdm_tx_handle, rx_buffer, rx_buffer_size, &bytes_written, 500) != ESP_OK) {
+            break;
         }
     }
-
-    /* Send empty buffers to flush DMA ringbuffer until timeout */
-    memset(rx_buffer, 0, rx_buffer_size);
-    while (i2s_channel_write(i2s_tdm_tx_handle, rx_buffer, rx_buffer_size,
-                             &bytes_written, pdMS_TO_TICKS(200)) != ESP_ERR_TIMEOUT);
+    unity_wait_for_signal("Master Finished");
 
     ESP_LOGI(TAG, "I2S TDM slave receive stop");
     TEST_ESP_OK(i2s_channel_disable(i2s_tdm_rx_handle));

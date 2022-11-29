@@ -11,4 +11,4 @@ import pytest
     2,
 ], indirect=True)
 def test_i2s_tdm_full_duplex(case_tester) -> None:  # type: ignore
-    case_tester.run_all_cases()
+    case_tester.run_all_cases(timeout=30)
