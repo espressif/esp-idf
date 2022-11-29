@@ -807,6 +807,19 @@ extern tBTA_JV_STATUS BTA_JvL2capWriteFixed(UINT16 channel, BD_ADDR *addr, UINT3
 #if BTA_JV_RFCOMM_INCLUDED
 /*******************************************************************************
 **
+** Function         BTA_JvRfcommConfig
+**
+** Description      This function is to configure RFCOMM.
+**
+**
+** Returns          BTA_JV_SUCCESS, if the request is being processed.
+**                  BTA_JV_FAILURE, otherwise.
+**
+*******************************************************************************/
+extern tBTA_JV_STATUS BTA_JvRfcommConfig(BOOLEAN enable_l2cap_ertm);
+
+/*******************************************************************************
+**
 ** Function         BTA_JvRfcommConnect
 **
 ** Description      This function makes an RFCOMM conection to a remote BD

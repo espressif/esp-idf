@@ -61,15 +61,6 @@ config BT_SPP_ENABLED
     help
         This enables the Serial Port Profile
 
-config BT_SPP_SEND_BUF_DEFAULT
-    int "SPP default send buffer size"
-    depends on BT_SPP_ENABLED
-    range 100 10000
-    default 4000
-    help
-        Sets the default send buffer size for new SPP channels. Setting a smaller
-        default SNDBUF size can save some memory, but may decrease performance.
-
 config BT_L2CAP_ENABLED
     bool "BT L2CAP"
     depends on BT_CLASSIC_ENABLED

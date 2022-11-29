@@ -351,10 +351,6 @@
 #define SBC_ENC_INCLUDED FALSE
 #endif
 
-#ifndef BTC_SPP_SEND_BUF_DEFAULT
-#define BTC_SPP_SEND_BUF_DEFAULT UC_BT_SPP_SEND_BUF_DEFAULT
-#endif
-
 /******************************************************************************
 **
 ** BTA-layer components

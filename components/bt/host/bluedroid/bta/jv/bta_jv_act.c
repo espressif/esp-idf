@@ -1766,6 +1766,22 @@ static void bta_jv_port_event_cl_cback(UINT32 code, UINT16 port_handle)
 
 /*******************************************************************************
 **
+** Function     bta_jv_rfcomm_config
+**
+** Description  Configure RFCOMM
+**
+** Returns      void
+**
+*******************************************************************************/
+void bta_jv_rfcomm_config(tBTA_JV_MSG *p_data)
+{
+    APPL_TRACE_DEBUG("%s enable_l2cap_ertm:%d", __func__, p_data->rfcomm_config.enable_l2cap_ertm);
+
+    PORT_SetL2capErtm(p_data->rfcomm_config.enable_l2cap_ertm);
+}
+
+/*******************************************************************************
+**
 ** Function     bta_jv_rfcomm_connect
 **
 ** Description  Client initiates an RFCOMM connection
