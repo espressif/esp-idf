@@ -1,10 +1,10 @@
 #include "sdkconfig.h"
 
 /*---------------------------------------------------------------------------/
-/  FatFs Functional Configurations
+/  Configurations of FatFs Module
 /---------------------------------------------------------------------------*/
 
-#define FFCONF_DEF	86631	/* Revision ID */
+#define FFCONF_DEF	80286	/* Revision ID */
 
 /*---------------------------------------------------------------------------/
 / Function Configurations
@@ -70,7 +70,7 @@
 /   2: Enable with LF-CRLF conversion.
 /
 /  FF_PRINT_LLI = 1 makes f_printf() support long long argument and FF_PRINT_FLOAT = 1/2
-   makes f_printf() support floating point argument. These features want C99 or later.
+/  makes f_printf() support floating point argument. These features want C99 or later.
 /  When FF_LFN_UNICODE >= 1 with LFN enabled, string functions convert the character
 /  encoding in it. FF_STRF_ENCODE selects assumption of character encoding ON THE FILE
 /  to be read/written via those functions.
@@ -194,7 +194,7 @@
 /  logical drives. Number of items must not be less than FF_VOLUMES. Valid
 /  characters for the volume ID strings are A-Z, a-z and 0-9, however, they are
 /  compared in case-insensitive. If FF_STR_VOLUME_ID >= 1 and FF_VOLUME_STRS is
-/  not defined, a user defined volume string table needs to be defined as:
+/  not defined, a user defined volume string table is needed as:
 /
 /  const char* VolumeStr[FF_VOLUMES] = {"ram","flash","sd","usb",...
 */
@@ -206,7 +206,7 @@
 /  number and only an FAT volume found on the physical drive will be mounted.
 /  When this function is enabled (1), each logical drive number can be bound to
 /  arbitrary physical drive and partition listed in the VolToPart[]. Also f_fdisk()
-/  funciton will be available. */
+/  function will be available. */
 
 /* SD card sector size */
 #define FF_SS_SDCARD      512
@@ -260,10 +260,10 @@
 #define FF_FS_NORTC		0
 #define FF_NORTC_MON	1
 #define FF_NORTC_MDAY	1
-#define FF_NORTC_YEAR	2020
-/* The option FF_FS_NORTC switches timestamp functiton. If the system does not have
-/  any RTC function or valid timestamp is not needed, set FF_FS_NORTC = 1 to disable
-/  the timestamp function. Every object modified by FatFs will have a fixed timestamp
+#define FF_NORTC_YEAR	2022
+/* The option FF_FS_NORTC switches timestamp feature. If the system does not have
+/  an RTC or valid timestamp is not needed, set FF_FS_NORTC = 1 to disable the
+/  timestamp feature. Every object modified by FatFs will have a fixed timestamp
 /  defined by FF_NORTC_MON, FF_NORTC_MDAY and FF_NORTC_YEAR in local time.
 /  To enable timestamp function (FF_FS_NORTC = 0), get_fattime() function need to be
 /  added to the project to read current time form real-time clock. FF_NORTC_MON,
@@ -273,7 +273,7 @@
 
 #define FF_FS_NOFSINFO	0
 /* If you need to know correct free space on the FAT32 volume, set bit 0 of this
-/  option, and f_getfree() function at first time after volume mount will force
+/  option, and f_getfree() function at the first time after volume mount will force
 /  a full FAT scan. Bit 1 controls the use of last allocated cluster number.
 /
 /  bit0=0: Use free cluster count in the FSINFO if available.
@@ -295,26 +295,21 @@
 /      lock control is independent of re-entrancy. */
 
 
-/* #include <somertos.h>	// O/S definitions */
 #define FF_FS_REENTRANT	1
 #define FF_FS_TIMEOUT	(CONFIG_FATFS_TIMEOUT_MS / portTICK_PERIOD_MS)
-#define FF_SYNC_t		SemaphoreHandle_t
 /* The option FF_FS_REENTRANT switches the re-entrancy (thread safe) of the FatFs
 /  module itself. Note that regardless of this option, file access to different
 /  volume is always re-entrant and volume control functions, f_mount(), f_mkfs()
 /  and f_fdisk() function, are always not re-entrant. Only file/directory access
-/  to the same volume is under control of this function.
+/  to the same volume is under control of this featuer.
 /
-/   0: Disable re-entrancy. FF_FS_TIMEOUT and FF_SYNC_t have no effect.
+/   0: Disable re-entrancy. FF_FS_TIMEOUT have no effect.
 /   1: Enable re-entrancy. Also user provided synchronization handlers,
-/      ff_req_grant(), ff_rel_grant(), ff_del_syncobj() and ff_cre_syncobj()
-/      function, must be added to the project. Samples are available in
-/      option/syscall.c.
+/      ff_mutex_create(), ff_mutex_delete(), ff_mutex_take() and ff_mutex_give()
+/      function, must be added to the project. Samples are available in ffsystem.c.
 /
-/  The FF_FS_TIMEOUT defines timeout period in unit of time tick.
-/  The FF_SYNC_t defines O/S dependent sync object type. e.g. HANDLE, ID, OS_EVENT*,
-/  SemaphoreHandle_t and etc. A header file for O/S definitions needs to be
-/  included somewhere in the scope of ff.h. */
+/  The FF_FS_TIMEOUT defines timeout period in unit of O/S time tick.
+*/
 
 #include <sys/param.h>
 #include "freertos/FreeRTOS.h"
