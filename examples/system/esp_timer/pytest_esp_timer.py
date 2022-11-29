@@ -29,6 +29,7 @@ ONE_SHOT_TIMER_PERIOD = 5000000
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
