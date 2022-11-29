@@ -12,6 +12,7 @@ import subprocess
 import sys
 from contextlib import redirect_stdout
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Set, Union
 
 try:
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
 
-def get_submodule_dirs(full_path: bool = False) -> List:
+def get_submodule_dirs(full_path: bool = False) -> List[str]:
     """
     To avoid issue could be introduced by multi-os or additional dependency,
     we use python and git to get this output
@@ -62,7 +63,7 @@ def get_submodule_dirs(full_path: bool = False) -> List:
     return dirs
 
 
-def _check_git_filemode(full_path):  # type: (str) -> bool
+def _check_git_filemode(full_path: str) -> bool:
     try:
         stdout = subprocess.check_output(['git', 'ls-files', '--stage', full_path]).strip().decode('utf-8')
     except subprocess.CalledProcessError:
@@ -201,6 +202,23 @@ class PytestCollectPlugin:
             )
 
 
+def get_pytest_files(paths: List[str]) -> List[str]:
+    # this is a workaround to solve pytest collector super slow issue
+    # benchmark with
+    # - time pytest -m esp32 --collect-only
+    #   user=15.57s system=1.35s cpu=95% total=17.741
+    # - time { find -name 'pytest_*.py'; } | xargs pytest -m esp32 --collect-only
+    #   user=0.11s system=0.63s cpu=36% total=2.044
+    #   user=1.76s system=0.22s cpu=43% total=4.539
+    # use glob.glob would also save a bunch of time
+    pytest_scripts: Set[str] = set()
+    for p in paths:
+        path = Path(p)
+        pytest_scripts.update(str(_p) for _p in path.glob('**/pytest_*.py'))
+
+    return list(pytest_scripts)
+
+
 def get_pytest_cases(
     paths: Union[str, List[str]],
     target: str = 'all',
@@ -231,26 +249,27 @@ def get_pytest_cases(
     os.environ['INCLUDE_NIGHTLY_RUN'] = '1'
 
     cases = []
-    for t in targets:
-        collector = PytestCollectPlugin(t)
+    for target in targets:
+        collector = PytestCollectPlugin(target)
         if marker_expr:
-            _marker_expr = f'{t} and ({marker_expr})'
+            _marker_expr = f'{target} and ({marker_expr})'
         else:
-            _marker_expr = t  # target is also a marker
+            _marker_expr = target  # target is also a marker
 
-        for path in to_list(paths):
-            with io.StringIO() as buf:
-                with redirect_stdout(buf):
-                    cmd = ['--collect-only', path, '-q', '-m', _marker_expr]
-                    if filter_expr:
-                        cmd.extend(['-k', filter_expr])
-                    res = pytest.main(cmd, plugins=[collector])
-                if res.value != ExitCode.OK:
-                    if res.value == ExitCode.NO_TESTS_COLLECTED:
-                        print(f'WARNING: no pytest app found for target {t} under path {path}')
-                    else:
-                        print(buf.getvalue())
-                        raise RuntimeError(f'pytest collection failed at {path} with command \"{" ".join(cmd)}\"')
+        with io.StringIO() as buf:
+            with redirect_stdout(buf):
+                cmd = ['--collect-only', *get_pytest_files(paths), '-q', '-m', _marker_expr]
+                if filter_expr:
+                    cmd.extend(['-k', filter_expr])
+                res = pytest.main(cmd, plugins=[collector])
+            if res.value != ExitCode.OK:
+                if res.value == ExitCode.NO_TESTS_COLLECTED:
+                    print(f'WARNING: no pytest app found for target {target} under paths {", ".join(paths)}')
+                else:
+                    print(buf.getvalue())
+                    raise RuntimeError(
+                        f'pytest collection failed at {", ".join(paths)} with command \"{" ".join(cmd)}\"'
+                    )
 
         cases.extend(collector.cases)
 
