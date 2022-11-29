@@ -98,6 +98,14 @@
     #error configMAX_PRIORITIES must be defined to be greater than or equal to 1.
 #endif
 
+#ifndef configNUM_CORES
+    #error Missing definition:  configNUM_CORES must be defined in FreeRTOSConfig.h
+#endif
+
+#if ( ( configNUM_CORES != 1 ) && ( configNUM_CORES != 2 ) )
+    #error configNUM_CORES must be defined to either 1 or 2.
+#endif
+
 #ifndef configUSE_PREEMPTION
     #error Missing definition:  configUSE_PREEMPTION must be defined in FreeRTOSConfig.h as either 1 or 0.  See the Configuration section of the FreeRTOS API documentation for details.
 #endif
@@ -970,6 +978,10 @@
 
 #if ( ( configUSE_RECURSIVE_MUTEXES == 1 ) && ( configUSE_MUTEXES != 1 ) )
     #error configUSE_MUTEXES must be set to 1 to use recursive mutexes
+#endif
+
+#if ( ( configNUM_CORES > 1 ) && ( configUSE_PORT_OPTIMISED_TASK_SELECTION == 1 ) )
+    #error configUSE_PORT_OPTIMISED_TASK_SELECTION is not supported if configNUM_CORES > 1
 #endif
 
 #ifndef configINITIAL_TICK_COUNT
