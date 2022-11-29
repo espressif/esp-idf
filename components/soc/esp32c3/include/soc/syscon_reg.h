@@ -216,9 +216,7 @@ extern "C" {
                                      SYSTEM_BTBB_RST         | \
                                      SYSTEM_BTMAC_RST        | \
                                      SYSTEM_RW_BTMAC_RST     | \
-                                     SYSTEM_RW_BTLP_RST      | \
                                      SYSTEM_RW_BTMAC_REG_RST | \
-                                     SYSTEM_RW_BTLP_REG_RST  | \
                                      SYSTEM_BTBB_REG_RST)
 
 #define SYSCON_HOST_INF_SEL_REG          (DR_REG_SYSCON_BASE + 0x01C)
