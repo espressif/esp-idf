@@ -64,6 +64,16 @@ def test_examples_protocol_http_server_persistence(dut: Dut) -> None:
     visitor = 0
     adder = 0
 
+    # Test login and logout
+    if client.getreq(conn, '/login').decode() != str(1):
+        raise RuntimeError
+    visitor += 1
+    dut.expect('/login visitor count = ' + str(visitor), timeout=30)
+    dut.expect('/login GET handler send ' + str(1), timeout=30)
+    if client.getreq(conn, '/logout').decode() != str(1):
+        raise RuntimeError
+    dut.expect('Logging out', timeout=30)
+
     # Test PUT request and initialize session context
     num = random.randint(0,100)
     client.putreq(conn, '/adder', str(num))
