@@ -16,7 +16,6 @@
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/efuse_periph.h"
 #include "esp_hw_log.h"
 #include "esp_cpu.h"
 #include "sdkconfig.h"

@@ -9,15 +9,14 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/dport_reg.h"
-#include "soc/efuse_periph.h"
 #include "soc/gpio_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/extmem_reg.h"
 #include "soc/regi2c_ulp.h"
+#include "hal/efuse_hal.h"
+#include "hal/efuse_ll.h"
 #include "regi2c_ctrl.h"
 #include "esp_hw_log.h"
-#include "esp_efuse.h"
-#include "esp_efuse_table.h"
 #ifndef BOOTLOADER_BUILD
 #include "esp_private/sar_periph_ctrl.h"
 #endif
@@ -154,8 +153,7 @@ void rtc_init(rtc_config_t cfg)
 
 #if !CONFIG_IDF_ENV_FPGA
     if (cfg.cali_ocode) {
-        uint32_t rtc_calib_version = 0;
-        esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MINOR, &rtc_calib_version, ESP_EFUSE_BLK_VERSION_MINOR[0]->bit_count); // IDF-5366
+        uint32_t rtc_calib_version = efuse_ll_get_blk_version_minor(); // IDF-5366
         if (rtc_calib_version == 2) {
             set_ocode_by_efuse(rtc_calib_version);
         } else {
@@ -222,13 +220,7 @@ void rtc_vddsdio_set_config(rtc_vddsdio_config_t config)
 static void set_ocode_by_efuse(int calib_version)
 {
     assert(calib_version == 2);
-    // use efuse ocode.
-    uint32_t ocode1 = 0;
-    uint32_t ocode2 = 0;
-    uint32_t ocode;
-    esp_efuse_read_block(2, &ocode1, 16*8, 4);
-    esp_efuse_read_block(2, &ocode2, 18*8, 3);
-    ocode = (ocode2 << 4) + ocode1;
+    uint32_t ocode = efuse_ll_get_ocode();
     if (ocode >> 6) {
         ocode = 93 - (ocode ^ (1 << 6));
     } else {

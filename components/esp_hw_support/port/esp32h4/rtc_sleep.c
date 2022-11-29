@@ -21,7 +21,6 @@
 #include "regi2c_ctrl.h"
 #include "soc/regi2c_bias.h"
 #include "soc/regi2c_ulp.h"
-#include "esp_efuse.h"
 #include "i2c_pmu.h"
 #include "esp_hw_log.h"
 #include "esp_rom_uart.h"

@@ -138,13 +138,24 @@ typedef volatile struct efuse_dev_s {
         };
         uint32_t val;
     } rd_mac_spi_sys_3;
-    uint32_t rd_mac_spi_sys_4;
     union {
         struct {
-            uint32_t reserved1:              23;
-            uint32_t wafer_version_minor_high:    1;
-            uint32_t wafer_version_major:    2;
-            uint32_t reserved2:              6;
+            uint32_t reserved1:                 13;
+            uint32_t k_rtc_ldo:                 7;
+            uint32_t k_dig_ldo:                 7;
+            uint32_t v_rtc_dbias20_low:         5;
+        };
+        uint32_t val;
+    } rd_mac_spi_sys_4;
+    union {
+        struct {
+            uint32_t v_rtc_dbias20_hi:          3;
+            uint32_t v_dig_dbias20:             8;
+            uint32_t dig_dbias_hvt:             5;
+            uint32_t reserved1:                 7;
+            uint32_t wafer_version_minor_high:  1;
+            uint32_t wafer_version_major:       2;
+            uint32_t reserved2:                 6;
         };
         uint32_t val;
     } rd_mac_spi_sys_5;
@@ -154,8 +165,10 @@ typedef volatile struct efuse_dev_s {
     uint32_t rd_sys_part1_data3;
     union {
         struct {
-            uint32_t blk_version_major :     2;
-            uint32_t reserved1:              30;
+            uint32_t blk_version_major:      2;
+            uint32_t reserved1:              11;
+            uint32_t ocode:                  8;  /*ADC OCode*/
+            uint32_t reserved2:              11;
         };
         uint32_t val;
     } rd_sys_part1_data4;

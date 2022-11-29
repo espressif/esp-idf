@@ -13,7 +13,6 @@
 #include "esp32c2/rom/uart.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
-#include "soc/efuse_periph.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "esp_hw_log.h"
 #include "esp_cpu.h"
