@@ -146,6 +146,7 @@
 /docs/**/api-reference/bluetooth/       @esp-idf-codeowners/bluetooth
 /docs/**/api-reference/network/         @esp-idf-codeowners/network
 /docs/**/api-reference/peripherals/     @esp-idf-codeowners/peripherals
+/docs/**/api-reference/peripherals/usb* @esp-idf-codeowners/peripherals @esp-idf-codeowners/peripherals/usb
 /docs/**/api-reference/protocols/       @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
 /docs/**/api-reference/provisioning/    @esp-idf-codeowners/app-utilities/provisioning
 /docs/**/api-reference/storage/         @esp-idf-codeowners/storage
