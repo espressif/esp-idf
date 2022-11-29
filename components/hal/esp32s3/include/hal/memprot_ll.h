@@ -25,16 +25,16 @@
 extern "C" {
 #endif
 
-    //highest address of each Level slot in the SRAM's 3rd memory region (I/D access, 416kB)
+//highest address of each Level slot in the SRAM's 3rd memory region (I/D access, 416kB)
 //quick resolver of split-address category bits
 static const intptr_t sram_rg3_level_hlimits[] = {
         0x4037FFFF, //level 2 (32KB)
         0x4038FFFF, //level 3 (64KB)
         0x4039FFFF, //level 4 (64KB)
-        0x403A0000, //level 5 (64KB)
-        0x403B0000, //level 6 (64KB)
-        0x403C0000, //level 7 (64KB)
-        0x403D0000  //level 8 (64KB)
+        0x403AFFFF, //level 5 (64KB)
+        0x403BFFFF, //level 6 (64KB)
+        0x403CFFFF, //level 7 (64KB)
+        0x403DFFFF  //level 8 (64KB)
 };
 
 /* ******************************************************************************************************
