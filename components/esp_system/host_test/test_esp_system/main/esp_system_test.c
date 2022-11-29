@@ -103,9 +103,9 @@ TEST_CASE("register_too_many_shutdown_handler_fails", "[esp_system]")
 
 TEST_CASE("heap_size_stubs", "[esp_system]")
 {
-    TEST_ASSERT_EQUAL(47000, esp_get_free_heap_size());
-    TEST_ASSERT_EQUAL(47000, esp_get_free_internal_heap_size());
-    TEST_ASSERT_EQUAL(47000, esp_get_minimum_free_heap_size());
+    TEST_ASSERT_EQUAL(UINT32_MAX, esp_get_free_heap_size());
+    TEST_ASSERT_EQUAL(UINT32_MAX, esp_get_free_internal_heap_size());
+    TEST_ASSERT_EQUAL(UINT32_MAX, esp_get_minimum_free_heap_size());
 }
 
 void app_main(void)

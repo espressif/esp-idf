@@ -1,3 +1,12 @@
+idf_build_get_property(target IDF_TARGET)
+
+# On Linux, we only support a few features, hence this simple component registration
+if(${target} STREQUAL "linux")
+    idf_component_register(SRCS "heap_caps_linux.c"
+                           INCLUDE_DIRS "include")
+    return()
+endif()
+
 set(srcs
     "heap_caps.c"
     "heap_caps_init.c"
