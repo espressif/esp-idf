@@ -39,7 +39,8 @@ typedef union {
 #define I_D_SRAM_SEGMENT_SIZE       0x10000
 #define I_D_SPLIT_LINE_ALIGN        0x100
 #define I_D_SPLIT_LINE_SHIFT        0x8
-#define I_D_FAULT_ADDR_SHIFT        0x2
+#define I_FAULT_ADDR_SHIFT          0x2
+#define D_FAULT_ADDR_SHIFT          0x4
 
 //Icache
 #define SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_R  0x1
