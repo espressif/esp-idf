@@ -35,9 +35,11 @@ from pytest_embedded.utils import find_by_suffix
 from pytest_embedded_idf.dut import IdfDut
 
 try:
+    from idf_ci_utils import to_list
     from idf_unity_tester import CaseTester
 except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci'))
+    from idf_ci_utils import to_list
     from idf_unity_tester import CaseTester
 
 try:
@@ -65,10 +67,11 @@ SPECIAL_MARKERS = {
     'supported_targets': "support all officially announced supported targets ('esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6')",
     'preview_targets': "support all preview targets ('esp32h4')",
     'all_targets': 'support all targets, including supported ones and preview ones',
-    'temp_skip_ci': 'temp skip ci tests for specified targets, can only work with `supported_targets`, `preview_targets`, `all_targets`',
+    'temp_skip_ci': 'temp skip tests for specified targets only in ci',
+    'temp_skip': 'temp skip tests for specified targets both in ci and locally',
     'nightly_run': 'tests should be executed as part of the nightly trigger pipeline',
-    'host_test': 'tests which should not be built at the build stage, and instead built in host_test stage.',
-    'qemu': 'build and test using qemu-system-xtensa, not real target.',
+    'host_test': 'tests which should not be built at the build stage, and instead built in host_test stage',
+    'qemu': 'build and test using qemu-system-xtensa, not real target',
 }
 
 ENV_MARKERS = {
@@ -133,9 +136,57 @@ def item_marker_names(item: Item) -> List[str]:
     return [marker.name for marker in item.iter_markers()]
 
 
-def get_target_marker(markexpr: str) -> str:
+def item_target_marker_names(item: Item) -> List[str]:
+    res = set()
+    for marker in item.iter_markers():
+        if marker.name in TARGET_MARKERS:
+            res.add(marker.name)
+
+    return sorted(res)
+
+
+def item_env_marker_names(item: Item) -> List[str]:
+    res = set()
+    for marker in item.iter_markers():
+        if marker.name in ENV_MARKERS:
+            res.add(marker.name)
+
+    return sorted(res)
+
+
+def item_skip_targets(item: Item) -> List[str]:
+    def _get_temp_markers_disabled_targets(marker_name: str) -> List[str]:
+        temp_marker = item.get_closest_marker(marker_name)
+
+        if not temp_marker:
+            return []
+
+        # temp markers should always use keyword arguments `targets` and `reason`
+        if not temp_marker.kwargs.get('targets') or not temp_marker.kwargs.get('reason'):
+            raise ValueError(
+                f'`{marker_name}` should always use keyword arguments `targets` and `reason`. '
+                f'For example: '
+                f'`@pytest.mark.{marker_name}(targets=["esp32"], reason="IDF-xxxx, will fix it ASAP")`'
+            )
+
+        return to_list(temp_marker.kwargs['targets'])  # type: ignore
+
+    temp_skip_ci_targets = _get_temp_markers_disabled_targets('temp_skip_ci')
+    temp_skip_targets = _get_temp_markers_disabled_targets('temp_skip')
+
+    # in CI we skip the union of `temp_skip` and `temp_skip_ci`
+    if os.getenv('CI_JOB_ID'):
+        skip_targets = list(set(temp_skip_ci_targets).union(set(temp_skip_targets)))
+    else:  # we use `temp_skip` locally
+        skip_targets = temp_skip_targets
+
+    return skip_targets
+
+
+def get_target_marker_from_expr(markexpr: str) -> str:
     candidates = set()
     # we use `-m "esp32 and generic"` in our CI to filter the test cases
+    # this doesn't cover all use cases, but fit what we do in CI.
     for marker in markexpr.split('and'):
         marker = marker.strip()
         if marker in TARGET_MARKERS:
@@ -283,7 +334,7 @@ def pytest_configure(config: Config) -> None:
             break
 
     if not target:  # also could specify through markexpr via "-m"
-        target = get_target_marker(config.getoption('markexpr') or '')
+        target = get_target_marker_from_expr(config.getoption('markexpr') or '')
 
     config.stash[_idf_pytest_embedded_key] = IdfPytestEmbedded(
         target=target,
@@ -292,7 +343,7 @@ def pytest_configure(config: Config) -> None:
     )
     config.pluginmanager.register(config.stash[_idf_pytest_embedded_key])
 
-    for name, description in (TARGET_MARKERS | ENV_MARKERS | SPECIAL_MARKERS).items():
+    for name, description in {**TARGET_MARKERS, **ENV_MARKERS, **SPECIAL_MARKERS}.items():
         config.addinivalue_line('markers', f'{name}: {description}')
 
 
@@ -306,12 +357,12 @@ def pytest_unconfigure(config: Config) -> None:
 class IdfPytestEmbedded:
     def __init__(
         self,
-        target: Optional[str] = None,
+        target: str,
         sdkconfig: Optional[str] = None,
         known_failure_cases_file: Optional[str] = None,
     ):
         # CLI options to filter the test cases
-        self.target = target
+        self.target = target.lower()
         self.sdkconfig = sdkconfig
         self.known_failure_patterns = self._parse_known_failure_cases_file(known_failure_cases_file)
 
@@ -351,9 +402,8 @@ class IdfPytestEmbedded:
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_sessionstart(self, session: Session) -> None:
-        if self.target:
-            self.target = self.target.lower()
-            session.config.option.target = self.target
+        # same behavior for vanilla pytest-embedded '--target'
+        session.config.option.target = self.target
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(self, items: List[Function]) -> None:
@@ -375,42 +425,17 @@ class IdfPytestEmbedded:
 
         # add markers for special markers
         for item in items:
-            skip_ci_marker = item.get_closest_marker('temp_skip_ci')
-            skip_ci_targets: List[str] = []
-            if skip_ci_marker:
-                # `temp_skip_ci` should always use keyword arguments `targets` and `reason`
-                if not skip_ci_marker.kwargs.get('targets') or not skip_ci_marker.kwargs.get('reason'):
-                    raise ValueError(
-                        f'`temp_skip_ci` should always use keyword arguments `targets` and `reason`. '
-                        f'For example: '
-                        f'`@pytest.mark.temp_skip_ci(targets=["esp32"], reason="IDF-xxxx, will fix it ASAP")`'
-                    )
-
-                skip_ci_targets = skip_ci_marker.kwargs['targets']
-
             if 'supported_targets' in item.keywords:
                 for _target in SUPPORTED_TARGETS:
-                    if _target not in skip_ci_targets:
-                        item.add_marker(_target)
+                    item.add_marker(_target)
             if 'preview_targets' in item.keywords:
                 for _target in PREVIEW_TARGETS:
-                    if _target not in skip_ci_targets:
-                        item.add_marker(_target)
+                    item.add_marker(_target)
             if 'all_targets' in item.keywords:
                 for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
-                    if _target not in skip_ci_targets:
-                        item.add_marker(_target)
+                    item.add_marker(_target)
 
-            # `temp_skip_ci(targets=...)` can't work with specified single target
-            for skip_ci_target in skip_ci_targets:
-                if skip_ci_target in item.keywords:
-                    raise ValueError(
-                        '`skip_ci_targets` can only work with '
-                        '`supported_targets`, `preview_targets`, `all_targets` markers'
-                    )
-
-        # add 'xtal_40mhz' tag as a default tag for esp32c2 target
-        for item in items:
+            # add 'xtal_40mhz' tag as a default tag for esp32c2 target
             # only add this marker for esp32c2 cases
             if (
                 self.target == 'esp32c2'
@@ -428,9 +453,12 @@ class IdfPytestEmbedded:
         else:
             items[:] = [item for item in items if 'nightly_run' not in item_marker_names(item)]
 
-        # filter all the test cases with "--target"
-        if self.target:
-            items[:] = [item for item in items if self.target in item_marker_names(item)]
+        # filter all the test cases with target and skip_targets
+        items[:] = [
+            item
+            for item in items
+            if self.target in item_marker_names(item) and self.target not in item_skip_targets(item)
+        ]
 
         # filter all the test cases with cli option "config"
         if self.sdkconfig:

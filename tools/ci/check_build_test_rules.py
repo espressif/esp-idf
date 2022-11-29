@@ -412,6 +412,9 @@ def sort_yaml(files: List[str]) -> None:
 
 
 if __name__ == '__main__':
+    if 'CI_JOB_ID' not in os.environ:
+        os.environ['CI_JOB_ID'] = 'fake'  # this is a CI script
+
     parser = argparse.ArgumentParser(description='ESP-IDF apps build/test checker')
     action = parser.add_subparsers(dest='action')
 

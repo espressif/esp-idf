@@ -251,14 +251,12 @@ def get_pytest_cases(
     cases = []
     for target in targets:
         collector = PytestCollectPlugin(target)
-        if marker_expr:
-            _marker_expr = f'{target} and ({marker_expr})'
-        else:
-            _marker_expr = target  # target is also a marker
 
         with io.StringIO() as buf:
             with redirect_stdout(buf):
-                cmd = ['--collect-only', *get_pytest_files(paths), '-q', '-m', _marker_expr]
+                cmd = ['--collect-only', *get_pytest_files(paths), '--target', target, '-q']
+                if marker_expr:
+                    cmd.extend(['-m', marker_expr])
                 if filter_expr:
                     cmd.extend(['-k', filter_expr])
                 res = pytest.main(cmd, plugins=[collector])
