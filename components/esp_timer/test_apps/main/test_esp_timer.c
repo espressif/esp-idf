@@ -386,9 +386,6 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
     TEST_ESP_OK(esp_timer_delete(timer2));
 }
 
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5052
 TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
 {
     int64_t begin = esp_timer_get_time();
@@ -400,7 +397,6 @@ TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
     int ns_per_call = (int) ((end - begin) * 1000 / iter_count);
     TEST_PERFORMANCE_LESS_THAN(ESP_TIMER_GET_TIME_PER_CALL, "%dns", ns_per_call);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 static int64_t IRAM_ATTR __attribute__((noinline)) get_clock_diff(void)
 {
