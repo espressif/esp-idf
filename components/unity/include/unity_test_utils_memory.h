@@ -69,7 +69,7 @@ void unity_utils_evaluate_leaks(void);
 /**
  * @brief Helper function to setup and initialize heap tracing.
  *
- * @param num_heap_records the size of the heap record butter,
+ * @param num_heap_records the size of the heap record buffer,
  *        counted in number of heap record elements (heap_trace_record_t).
  *        Use a default value of 80 if no special requirements need to be met.
  */
