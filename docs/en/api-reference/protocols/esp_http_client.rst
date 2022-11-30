@@ -36,7 +36,7 @@ Check out the example functions ``http_rest_with_url`` and ``http_rest_with_host
     Use Secure Element (ATECC608) for TLS
     _____________________________________
     
-    A secure element (ATECC608) can be also used for the underlying TLS connection in the HTTP client connection. Please refer to Secure Element with ESP-TLS section in the :doc:` ESP-TLS documentation</api-reference/protocols/esp_tls` for more details. The secure element support has to be first enabled in menuconfig through :ref:`CONFIG_ESP_TLS_USE_SECURE_ELEMENT`. Then the HTTP client can be configured to use secure element as follows:
+    A secure element (ATECC608) can be also used for the underlying TLS connection in the HTTP client connection. Please refer to Secure Element with ESP-TLS section in the :doc:`ESP-TLS documentation </api-reference/protocols/esp_tls>` for more details. The secure element support has to be first enabled in menuconfig through :ref:`CONFIG_ESP_TLS_USE_SECURE_ELEMENT`. Then the HTTP client can be configured to use secure element as follows:
     
     .. code-block:: c
     
