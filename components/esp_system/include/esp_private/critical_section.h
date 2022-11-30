@@ -20,14 +20,14 @@
 extern "C" {
 #endif
 
-#if CONFIG_FREERTOS_UNICORE && !CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
 /**
  * This macro also helps users switching between spinlock declarations/definitions for multi-/single core environments
  * if the macros below aren't sufficient.
  */
-#define OS_SPINLOCK 0
-#else
 #define OS_SPINLOCK 1
+#else
+#define OS_SPINLOCK 0
 #endif
 
 #if OS_SPINLOCK == 1
