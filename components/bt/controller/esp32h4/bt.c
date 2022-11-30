@@ -50,6 +50,9 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_sleep.h"
 
+#include "soc/syscon_reg.h"
+#include "soc/dport_access.h"
+
 /* Macro definition
  ************************************************************************
  */
@@ -216,7 +219,8 @@ struct ext_funcs_t ext_funcs_ro = {
 
 static int IRAM_ATTR esp_reset_rpa_moudle(void)
 {
-    periph_module_reset(PERIPH_MODEM_RPA_MODULE);
+    DPORT_SET_PERI_REG_MASK(SYSTEM_MODEM_RST_EN_REG, SYSTEM_BLE_SEC_AAR_RST);
+    DPORT_CLEAR_PERI_REG_MASK(SYSTEM_MODEM_RST_EN_REG, SYSTEM_BLE_SEC_AAR_RST);
     return 0;
 }
 
@@ -385,7 +389,7 @@ static int ble_hci_unregistered_hook(void*, void*)
 
 static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler, void *arg, void **ret_handle_in)
 {
-    int rc = esp_intr_alloc(source, flags, handler, arg, (intr_handle_t *)ret_handle_in);
+    int rc = esp_intr_alloc(source, flags | ESP_INTR_FLAG_IRAM, handler, arg, (intr_handle_t *)ret_handle_in);
     return rc;
 }
 

@@ -36,12 +36,12 @@ IRAM_ATTR void *bt_osi_mem_calloc(size_t n, size_t size)
 
 IRAM_ATTR void *bt_osi_mem_malloc_internal(size_t size)
 {
-    return heap_caps_malloc(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    return heap_caps_malloc(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT|MALLOC_CAP_DMA);
 }
 
 IRAM_ATTR void *bt_osi_mem_calloc_internal(size_t n, size_t size)
 {
-    return heap_caps_calloc(n, size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    return heap_caps_calloc(n, size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT|MALLOC_CAP_DMA);
 }
 
 IRAM_ATTR void bt_osi_mem_free(void *ptr)
