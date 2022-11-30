@@ -1094,7 +1094,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_pd_mem_init();
 #endif
-    esp_phy_pd_mem_init();
+    esp_phy_modem_init();
     esp_bt_power_domain_on();
 
     btdm_controller_mem_init();
@@ -1411,16 +1411,11 @@ esp_err_t esp_bt_controller_deinit(void)
     esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
 #endif
 
-    /* Fix the issue caused by the power off the bt power domain.
-     * This issue is only on ESP32C3.
-     */
-    phy_init_flag();
-
     esp_bt_power_domain_off();
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_pd_mem_deinit();
 #endif
-    esp_phy_pd_mem_deinit();
+    esp_phy_modem_deinit();
 
     free(osi_funcs_p);
     osi_funcs_p = NULL;
