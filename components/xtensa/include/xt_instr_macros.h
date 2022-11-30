@@ -84,11 +84,11 @@
     do { \
         uint32_t sp = (uint32_t)new_sp - SAVE_AREA_OFFSET; \
         *(uint32_t*)(sp - BASE_AREA_SP_OFFSET) = (uint32_t)new_sp; \
+        const uint32_t mask = ~(PS_WOE_MASK | PS_OWB_MASK | PS_CALLINC_MASK); \
         uint32_t tmp1 = 0, tmp2 = 0; \
         asm volatile ( \
           "rsr.ps %1 \n"\
-          "movi %2, ~" XTSTR( PS_WOE_MASK | PS_OWB_MASK | PS_CALLINC_MASK ) " \n"\
-          "and %1, %1, %2 \n"\
+          "and %1, %1, %3 \n"\
           "wsr.ps %1 \n"\
           "rsync \n"\
           " \n"\
@@ -99,6 +99,7 @@
           "wsr.windowstart %1 \n"\
           "rsync \n"\
           " \n"\
+          "movi a0, 0\n" \
           "mov sp, %0 \n"\
           "rsr.ps %1 \n"\
           " \n"\
@@ -107,6 +108,6 @@
           "or %1, %1, %2 \n"\
           "wsr.ps %1 \n"\
           "rsync \n"\
-          : "+r"(sp), "+r"(tmp1), "+r"(tmp2)); \
+          : "+r"(sp), "+r"(tmp1), "+r"(tmp2) : "r"(mask)); \
     } while (0);
 #endif // __ASSEMBLER__
