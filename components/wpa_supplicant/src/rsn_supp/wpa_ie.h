@@ -37,6 +37,8 @@ struct wpa_eapol_ie_parse {
 	const u8 *reassoc_deadline;
 	const u8 *key_lifetime;
 #endif /* CONFIG_IEEE80211R */
+	const u8 *transition_disable;
+	size_t transition_disable_len;
 	const u8 *rsnxe;
 	size_t rsnxe_len;
 };
