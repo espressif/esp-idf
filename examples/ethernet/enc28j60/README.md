@@ -4,6 +4,19 @@
 # ENC28J60 Example
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
+---
+
+## !!! Warning !!!
+
+Espressif doesn't recommend using ENC28J60 Ethernet controller in new designs based on ESP32 series of chips. This is due to the following facts:
+* ENC28J60 has low performance in half-duplex mode and various errata exist to the half-duplex mode.
+* ENC28J60 does not support automatic duplex negotiation when configured to full-duplex mode.
+* ENC28J60 has high current consumption - up to 180mA in comparison to e.g. 79mA of `W5500` or 75mA of `KSZ8851SNL` @ 10Mbps Tx.
+
+Therefore, we rather recommend using `W5500`, `KSZ8851SNL` or `DM9051`, which are also supported in ESP-IDF.
+
+---
+
 ## Overview
 
 ENC28J60 is a standalone Ethernet controller with a standard SPI interface. This example demonstrates how to drive this controller as an SPI device and then attach to TCP/IP stack.
