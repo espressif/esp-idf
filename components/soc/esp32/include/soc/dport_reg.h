@@ -1082,8 +1082,7 @@
                                      DPORT_WIFIMAC_RST      | \
                                      DPORT_BTBB_RST         | \
                                      DPORT_BTMAC_RST        | \
-                                     DPORT_RW_BTMAC_RST     | \
-                                     DPORT_RW_BTLP_RST)
+                                     DPORT_RW_BTMAC_RST)
 
 #define DPORT_BT_LPCK_DIV_INT_REG          (DR_REG_DPORT_BASE + 0x0D4)
 /* DPORT_BTEXTWAKEUP_REQ : R/W ;bitpos:[12] ;default: 1'b0 ; */
