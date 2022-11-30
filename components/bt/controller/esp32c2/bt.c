@@ -697,7 +697,7 @@ free_controller:
     controller_sleep_deinit();
     ble_controller_deinit();
     esp_phy_disable();
-    esp_phy_pd_mem_deinit();
+    esp_phy_modem_deinit();
 #if CONFIG_BT_NIMBLE_ENABLED
     ble_npl_eventq_deinit(nimble_port_get_dflt_eventq());
 #endif // CONFIG_BT_NIMBLE_ENABLED
