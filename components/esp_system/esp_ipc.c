@@ -144,8 +144,8 @@ static esp_err_t esp_ipc_call_and_wait(uint32_t cpu_id, esp_ipc_func_t func, voi
         return ESP_ERR_INVALID_STATE;
     }
 
-#ifdef CONFIG_ESP_IPC_USES_CALLERS_PRIORITY
     TaskHandle_t task_handler = xTaskGetCurrentTaskHandle();
+#ifdef CONFIG_ESP_IPC_USES_CALLERS_PRIORITY
     UBaseType_t priority_of_current_task = uxTaskPriorityGet(task_handler);
     UBaseType_t priority_of_running_ipc_task = uxTaskPriorityGet(s_ipc_task_handle[cpu_id]);
     if (priority_of_running_ipc_task < priority_of_current_task) {
