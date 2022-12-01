@@ -378,6 +378,9 @@ fast_template_app:
   extends:
     - .build_template
     - .rules:build:integration_test
+  needs:
+    - job: fast_template_app
+      artifacts: false
   artifacts:
     paths:
       - SSC/ssc_bin
