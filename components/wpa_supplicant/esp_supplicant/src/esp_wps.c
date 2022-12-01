@@ -1861,7 +1861,7 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
     ret = wifi_station_wps_init();
 
     if (ret != 0) {
-        wps_set_type(WPS_STATUS_DISABLE);
+        wps_set_type(WPS_TYPE_DISABLE);
         wps_set_status(WPS_STATUS_DISABLE);
         return ESP_FAIL;
     }
