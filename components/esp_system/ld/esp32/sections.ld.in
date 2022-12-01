@@ -404,7 +404,8 @@ SECTIONS
   .dram0.heap_start (NOLOAD) :
   {
     . = ALIGN (8);
-    _heap_start = ABSOLUTE(.);
+    /* Lowest possible start address for the heap */
+    _heap_low_start = ABSOLUTE(.);
   } > dram0_0_seg
 
   /** This section will be used by the debugger and disassembler to get more information
@@ -430,5 +431,5 @@ SECTIONS
 ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
           "IRAM0 segment data does not fit.")
 
-ASSERT(((_heap_start - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
+ASSERT(((_heap_low_start - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
           "DRAM segment data does not fit.")
