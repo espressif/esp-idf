@@ -587,13 +587,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #else
     // This assumes that DROM is the first segment in the application binary, i.e. that we can read
     // the binary header through cache by accessing SOC_DROM_LOW address.
-#pragma GCC diagnostic push
-#if     __GNUC__ >= 11
-#pragma GCC diagnostic ignored "-Wstringop-overread"
-#endif
-#pragma GCC diagnostic ignored "-Warray-bounds"
-    memcpy(&fhdr, (void *) SOC_DROM_LOW, sizeof(fhdr));
-#pragma GCC diagnostic pop
+    hal_memcpy(&fhdr, (void *) SOC_DROM_LOW, sizeof(fhdr));
 
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
 
