@@ -18,8 +18,8 @@ except ModuleNotFoundError:
 
 
 @pytest.mark.supported_targets
-@pytest.mark.test_jtag_arm
-def test_idf_gdb(dut: Dut) -> None:
+@pytest.mark.jtag
+def test_idf_gdb(dut: IdfDut) -> None:
     # Need to wait a moment to connect via OpenOCD after the hard reset happened.
     # Along with this check that app runs ok
     dut.expect('Hello world!')

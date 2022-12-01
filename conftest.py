@@ -109,7 +109,7 @@ ENV_MARKERS = {
     'MSPI_F8R8': 'runner with Octal Flash and Octal PSRAM',
     'MSPI_F4R8': 'runner with Quad Flash and Octal PSRAM',
     'MSPI_F4R4': 'runner with Quad Flash and Quad PSRAM',
-    'test_jtag_arm': 'runner where the chip is accessible through JTAG as well',
+    'jtag': 'runner where the chip is accessible through JTAG as well',
     'adc': 'ADC related tests should run on adc runners',
     'xtal32k': 'Runner with external 32k crystal connected',
     'no32kXtal': 'Runner with no external 32k crystal connected',
@@ -203,6 +203,11 @@ def get_target_marker_from_expr(markexpr: str) -> str:
 ############
 # Fixtures #
 ############
+@pytest.fixture(scope='session')
+def idf_path() -> str:
+    return os.path.dirname(__file__)
+
+
 @pytest.fixture(scope='session', autouse=True)
 def session_tempdir() -> str:
     _tmpdir = os.path.join(

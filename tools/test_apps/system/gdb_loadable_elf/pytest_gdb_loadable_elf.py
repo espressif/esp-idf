@@ -13,7 +13,7 @@ from pytest_embedded_idf import IdfDut
 @pytest.mark.parametrize('embedded_services, skip_autoflash, erase_all', [
     ('esp,idf,jtag', 'y', 'y'),
 ], indirect=True)
-@pytest.mark.test_jtag_arm
+@pytest.mark.jtag
 def test_loadable_elf(dut: IdfDut, offset: str) -> None:
     dut.gdb.write('mon reset halt')
     dut.gdb.write(f'thb *{offset}')

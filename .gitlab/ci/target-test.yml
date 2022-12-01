@@ -77,6 +77,17 @@ example_test_pytest_esp32_twai_network:
     - build_pytest_examples_esp32
   tags: [ esp32, twai_network ]
 
+example_test_pytest_esp32_jtag:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, jtag ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb openocd
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
+
 example_test_pytest_esp32s2_generic:
   extends:
     - .pytest_examples_dir_template
@@ -670,7 +681,7 @@ test_app_test_pytest_esp32_jtag:
     - .rules:test:custom_test-esp32
   needs:
     - build_pytest_test_apps_esp32
-  tags: [ esp32, test_jtag_arm]
+  tags: [ esp32, jtag]
   variables:
     SETUP_TOOLS: "1"  # need gdb
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
@@ -902,15 +913,6 @@ example_test_007:
     - ESP32
     - Example_I2C_CCS811_SENSOR
 
-example_test_009:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - test_jtag_arm
-  variables:
-    SETUP_TOOLS: "1"
-    PYTHON_VER: 3
-
 example_test_011:
   extends: .example_test_esp32_template
   tags:
@@ -985,14 +987,6 @@ example_test_C6_GENERIC:
   extends:
     - .test_app_template
     - .rules:test:custom_test-esp32s3
-
-test_app_test_001:
-  extends: .test_app_esp32_template
-  tags:
-    - ESP32
-    - test_jtag_arm
-  variables:
-    SETUP_TOOLS: "1"
 
 test_app_test_eth:
   extends: .test_app_esp32_template
