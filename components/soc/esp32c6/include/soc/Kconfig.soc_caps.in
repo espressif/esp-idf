@@ -3,6 +3,10 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
+config SOC_ADC_SUPPORTED
+    bool
+    default y
+
 config SOC_DEDICATED_GPIO_SUPPORTED
     bool
     default y
@@ -127,10 +131,6 @@ config SOC_ADC_DIG_CTRL_SUPPORTED
     bool
     default y
 
-config SOC_ADC_ARBITER_SUPPORTED
-    bool
-    default y
-
 config SOC_ADC_FILTER_SUPPORTED
     bool
     default y
@@ -141,11 +141,11 @@ config SOC_ADC_MONITOR_SUPPORTED
 
 config SOC_ADC_PERIPH_NUM
     int
-    default 2
+    default 1
 
 config SOC_ADC_MAX_CHANNEL_NUM
     int
-    default 5
+    default 7
 
 config SOC_ADC_ATTEN_NUM
     int

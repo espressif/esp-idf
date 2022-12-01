@@ -82,7 +82,7 @@ esp_err_t dac_digi_controller_config(const dac_digi_config_t *cfg)
     dac_ll_digi_set_convert_mode(cfg->mode == DAC_CONV_ALTER);
     dac_ll_digi_set_trigger_interval(cfg->interval);
     adc_ll_digi_controller_clk_div(cfg->dig_clk.div_num, cfg->dig_clk.div_b, cfg->dig_clk.div_a);
-    adc_ll_digi_clk_sel(cfg->dig_clk.use_apll);
+    adc_ll_digi_clk_sel(cfg->dig_clk.use_apll ? ADC_DIGI_CLK_SRC_APLL : ADC_DIGI_CLK_SRC_DEFAULT);
     DAC_EXIT_CRITICAL();
 
     return ESP_OK;

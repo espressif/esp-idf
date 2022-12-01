@@ -142,7 +142,7 @@ typedef struct {
     adc_channel_t channel;          /*!<Set adc channel number for monitor.
                                         For ESP32-S2, it's always `ADC_CHANNEL_MAX` */
     adc_digi_monitor_mode_t mode;   /*!<Set adc monitor mode. See ``adc_digi_monitor_mode_t``. */
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
     uint32_t h_threshold;             /*!<Set monitor threshold of adc digital controller. */
     uint32_t l_threshold;             /*!<Set monitor threshold of adc digital controller. */
 #else

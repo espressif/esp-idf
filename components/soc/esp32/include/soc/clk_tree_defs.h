@@ -332,6 +332,24 @@ typedef enum {
     TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
 } soc_periph_twai_clk_src_t;
 
+//////////////////////////////////////////////////ADC///////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of ADC digital controller
+ */
+#define SOC_ADC_DIGI_CLKS {SOC_MOD_CLK_APLL, SOC_MOD_CLK_PLL_D2}
+
+/**
+ * @brief ADC digital controller clock source
+ * @note  ADC digital controller is clocked from I2S on ESP32
+ *        Its clock source is same as I2S
+ */
+typedef enum {
+    ADC_DIGI_CLK_SRC_F160M = SOC_MOD_CLK_PLL_D2,
+    ADC_DIGI_CLK_SRC_APLL = SOC_MOD_CLK_APLL,
+    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_D2,
+} soc_periph_adc_digi_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif

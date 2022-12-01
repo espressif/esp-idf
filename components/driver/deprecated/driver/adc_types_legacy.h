@@ -61,13 +61,24 @@ typedef enum {
     ADC1_CHANNEL_9,     /*!< ADC1 channel 9 is GPIO10 */
     ADC1_CHANNEL_MAX,
 } adc1_channel_t;
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5310
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H4
 typedef enum {
     ADC1_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO0 */
     ADC1_CHANNEL_1,     /*!< ADC1 channel 1 is GPIO1 */
     ADC1_CHANNEL_2,     /*!< ADC1 channel 2 is GPIO2 */
     ADC1_CHANNEL_3,     /*!< ADC1 channel 3 is GPIO3 */
     ADC1_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO4 */
+    ADC1_CHANNEL_MAX,
+} adc1_channel_t;
+#elif CONFIG_IDF_TARGET_ESP32C6
+typedef enum {
+    ADC1_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO0 */
+    ADC1_CHANNEL_1,     /*!< ADC1 channel 1 is GPIO1 */
+    ADC1_CHANNEL_2,     /*!< ADC1 channel 2 is GPIO2 */
+    ADC1_CHANNEL_3,     /*!< ADC1 channel 3 is GPIO3 */
+    ADC1_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO4 */
+    ADC1_CHANNEL_5,     /*!< ADC1 channel 5 is GPIO5 */
+    ADC1_CHANNEL_6,     /*!< ADC1 channel 6 is GPIO6 */
     ADC1_CHANNEL_MAX,
 } adc1_channel_t;
 #endif // CONFIG_IDF_TARGET_*
@@ -86,7 +97,8 @@ typedef enum {
     ADC2_CHANNEL_9,     /*!< ADC2 channel 9 is GPIO26 (ESP32), GPIO20 (ESP32-S2) */
     ADC2_CHANNEL_MAX,
 } adc2_channel_t;
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5310
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H4
+// ESP32C6 has no ADC2
 typedef enum {
     ADC2_CHANNEL_0 = 0, /*!< ADC2 channel 0 is GPIO5 */
     ADC2_CHANNEL_MAX,

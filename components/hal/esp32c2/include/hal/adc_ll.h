@@ -14,6 +14,7 @@
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "hal/adc_types.h"
@@ -33,9 +34,9 @@ extern "C" {
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
 
 typedef enum {
-    ADC_POWER_BY_FSM,   /*!< ADC XPD controled by FSM. Used for polling mode */
-    ADC_POWER_SW_ON,    /*!< ADC XPD controled by SW. power on. Used for DMA mode */
-    ADC_POWER_SW_OFF,   /*!< ADC XPD controled by SW. power off. */
+    ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
+    ADC_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
+    ADC_POWER_SW_OFF,   /*!< ADC XPD controlled by SW. power off. */
     ADC_POWER_MAX,      /*!< For parameter check. */
 } adc_ll_power_t;
 
@@ -49,6 +50,12 @@ typedef enum {
 typedef enum {
     ADC_LL_CTRL_DIG = 0,    ///< For ADC1. Select DIG controller.
 } adc_ll_controller_t;
+
+/**
+ * @brief Clock source of ADC digital controller
+ * @note  Not public as it always uses a default value for now
+ */
+typedef soc_periph_adc_digi_clk_src_t     adc_ll_digi_clk_src_t;
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -93,7 +100,7 @@ static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
  */
 static inline void adc_ll_digi_set_clk_div(uint32_t div)
 {
-    /* ADC clock devided from digital controller clock clk */
+    /* ADC clock divided from digital controller clock clk */
     HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_ctrl, saradc_saradc_sar_clk_div, div);
 }
 
@@ -141,15 +148,11 @@ static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div
 /**
  * Enable clock and select clock source for ADC digital controller.
  *
- * @param use_apll true: use APLL clock; false: use APB clock.
+ * @param clk_src clock source for ADC digital controller.
  */
-static inline void adc_ll_digi_clk_sel(bool use_apll)
+static inline void adc_ll_digi_clk_sel(adc_ll_digi_clk_src_t clk_src)
 {
-    if (use_apll) {
-        APB_SARADC.saradc_apb_adc_clkm_conf.saradc_reg_clk_sel = 1;   // APLL clock
-    } else {
-        APB_SARADC.saradc_apb_adc_clkm_conf.saradc_reg_clk_sel = 2;   // APB clock
-    }
+    APB_SARADC.saradc_apb_adc_clkm_conf.saradc_reg_clk_sel = (clk_src == ADC_DIGI_CLK_SRC_XTAL);
     APB_SARADC.saradc_ctrl.saradc_saradc_sar_clk_gated = 1;
 }
 
