@@ -119,9 +119,9 @@ MEMORY
 
 #if CONFIG_ESP32S3_USE_FIXED_STATIC_RAM_SIZE
 /* static data ends at defined address */
-_static_data_end = 0x3FCA0000 + DRAM0_0_SEG_LEN;
+_heap_start = SRAM_DRAM_ORG + DRAM0_0_SEG_LEN;
 #else
-_static_data_end = _bss_end;
+_heap_start = _heap_low_start;
 #endif // CONFIG_ESP32S3_USE_FIXED_STATIC_RAM_SIZE
 
 /* Heap ends at top of dram0_0_seg */
