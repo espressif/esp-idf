@@ -149,24 +149,24 @@ typedef enum {
  * }
  * @endcode
  */
-#define SOC_GPTIMER_CLKS {SOC_MOD_CLK_APB, SOC_MOD_CLK_XTAL}
+#define SOC_GPTIMER_CLKS {SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_XTAL}
 
 /**
  * @brief Type of GPTimer clock source
  */
 typedef enum {
-    GPTIMER_CLK_SRC_APB = SOC_MOD_CLK_APB,         /*!< Select APB as the source clock */
-    GPTIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as the source clock */
-    GPTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,     /*!< Select APB as the default choice */
+    GPTIMER_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M,   /*!< Select PLL_F80M as the source clock */
+    GPTIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+    GPTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,    /*!< Select PLL_F80M as the default choice */
 } soc_periph_gptimer_clk_src_t;
 
 /**
  * @brief Type of Timer Group clock source, reserved for the legacy timer group driver
  */
 typedef enum {
-    TIMER_SRC_CLK_APB = SOC_MOD_CLK_APB,     /*!< Timer group clock source is APB */
-    TIMER_SRC_CLK_XTAL = SOC_MOD_CLK_XTAL,   /*!< Timer group clock source is XTAL */
-    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_APB, /*!< Timer group clock source default choice is APB */
+    TIMER_SRC_CLK_PLL_F80M = SOC_MOD_CLK_PLL_F80M,     /*!< Timer group clock source is PLL_F80M */
+    TIMER_SRC_CLK_XTAL = SOC_MOD_CLK_XTAL,             /*!< Timer group clock source is XTAL */
+    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_PLL_F80M,      /*!< Timer group clock source default choice is PLL_F80M */
 } soc_periph_tg_clk_src_legacy_t;
 
 //////////////////////////////////////////////////RMT///////////////////////////////////////////////////////////////////
