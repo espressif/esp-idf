@@ -2383,7 +2383,7 @@ BOOLEAN l2cu_create_conn_after_switch (tL2C_LCB *p_lcb)
         clock_offset = (UINT16)(p_inq_info->results.clock_offset);
     } else {
         /* No info known. Use default settings */
-        page_scan_rep_mode = HCI_PAGE_SCAN_REP_MODE_R1;
+        page_scan_rep_mode = HCI_PAGE_SCAN_REP_MODE_R2;
         page_scan_mode = HCI_MANDATARY_PAGE_SCAN_MODE;
 
         clock_offset = (p_dev_rec) ? p_dev_rec->clock_offset : 0;
