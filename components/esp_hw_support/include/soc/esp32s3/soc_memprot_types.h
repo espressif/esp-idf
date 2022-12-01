@@ -62,6 +62,8 @@ typedef enum {
     MEMPROT_PMS_AREA_DRAM0_3                    = 0x00000080,
     MEMPROT_PMS_AREA_IRAM0_RTCFAST_LO           = 0x00000100,
     MEMPROT_PMS_AREA_IRAM0_RTCFAST_HI           = 0x00000200,
+    MEMPROT_PMS_AREA_ICACHE_0                   = 0x00000400,
+    MEMPROT_PMS_AREA_ICACHE_1                   = 0x00000800,
     MEMPROT_PMS_AREA_ALL                        = 0x7FFFFFFF,
     MEMPROT_PMS_AREA_INVALID                    = 0x80000000
 } esp_mprot_pms_area_t;
@@ -195,6 +197,10 @@ static inline const char *esp_mprot_pms_area_to_str(const esp_mprot_pms_area_t a
         return "PMS_AREA_IRAM0_RTCFAST_LO";
     case MEMPROT_PMS_AREA_IRAM0_RTCFAST_HI:
         return "PMS_AREA_IRAM0_RTCFAST_HI";
+    case MEMPROT_PMS_AREA_ICACHE_0:
+        return "PMS_AREA_ICACHE_0";
+    case MEMPROT_PMS_AREA_ICACHE_1:
+        return "PMS_AREA_ICACHE_1";
     case MEMPROT_PMS_AREA_ALL:
         return "PMS_AREA_ALL";
     default:
