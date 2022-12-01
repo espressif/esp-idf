@@ -378,11 +378,9 @@ esp_err_t esp_netif_bridge_add_port(esp_netif_t *esp_netif_br, esp_netif_t *esp_
 
 esp_err_t esp_netif_bridge_fdb_add(esp_netif_t *esp_netif_br, uint8_t *addr, uint64_t ports_mask)
 {
-    bridgeif_portmask_t ports;
-    if (ports_mask == ESP_NETIF_BR_FDW_CPU) {
-        ports = 1 << BRIDGEIF_MAX_PORTS;
-    } else {
-        ports = (bridgeif_portmask_t)ports_mask;
+    bridgeif_portmask_t ports = (bridgeif_portmask_t)ports_mask;
+    if (ports_mask & ESP_NETIF_BR_FDW_CPU) {
+        ports |= 1 << BRIDGEIF_MAX_PORTS;
     }
 
     if (ERR_OK != bridgeif_fdb_add(esp_netif_br->lwip_netif, (const struct eth_addr *)addr, ports)) {
