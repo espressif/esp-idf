@@ -3356,7 +3356,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                                         _mdns_server->instance = new_instance;
                                     }
                                     _mdns_restart_all_pcbs_no_instance();
-                                } else {
+                                } else if (strcasecmp(name->host, _mdns_server->hostname) == 0) {
                                     char * new_host = _mdns_mangle_name((char *)_mdns_server->hostname);
                                     if (new_host) {
                                         _mdns_remap_self_service_hostname(_mdns_server->hostname, new_host);
@@ -3466,7 +3466,8 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                     } else if (col == 1) {
                         do_not_reply = true;
                         if (_mdns_server->interfaces[packet->tcpip_if].pcbs[packet->ip_protocol].probe_running) {
-                            if (col && (parsed_packet->probe || parsed_packet->authoritative)) {
+                            if (col && (parsed_packet->probe || parsed_packet->authoritative) &&
+                                strcasecmp(name->host, _mdns_server->hostname) == 0) {
                                 _mdns_server->interfaces[packet->tcpip_if].pcbs[packet->ip_protocol].failed_probes++;
                                 char * new_host = _mdns_mangle_name((char *)_mdns_server->hostname);
                                 if (new_host) {
@@ -3516,7 +3517,8 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                     } else if (col == 1) {
                         do_not_reply = true;
                         if (_mdns_server->interfaces[packet->tcpip_if].pcbs[packet->ip_protocol].probe_running) {
-                            if (col && (parsed_packet->probe || parsed_packet->authoritative)) {
+                            if (col && (parsed_packet->probe || parsed_packet->authoritative) &&
+                                strcasecmp(name->host, _mdns_server->hostname) == 0) {
                                 _mdns_server->interfaces[packet->tcpip_if].pcbs[packet->ip_protocol].failed_probes++;
                                 char * new_host = _mdns_mangle_name((char *)_mdns_server->hostname);
                                 if (new_host) {
