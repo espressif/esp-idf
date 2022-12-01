@@ -118,10 +118,6 @@ tools/test_apps/system/g0_components:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32h4", "esp32c6"] # preview targets
 
 tools/test_apps/system/g1_components:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
 
 tools/test_apps/system/gdb_loadable_elf:
   disable_test:
@@ -168,10 +164,6 @@ tools/test_apps/system/no_embedded_paths:
 tools/test_apps/system/panic:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "esp32h4"
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32s2"]
       temporary: true
