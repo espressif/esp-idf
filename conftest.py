@@ -411,7 +411,12 @@ class IdfPytestEmbedded:
 
         # add 'xtal_40mhz' tag as a default tag for esp32c2 target
         for item in items:
-            if 'esp32c2' in item_marker_names(item) and 'xtal_26mhz' not in item_marker_names(item):
+            # only add this marker for esp32c2 cases
+            if (
+                self.target == 'esp32c2'
+                and 'esp32c2' in item_marker_names(item)
+                and 'xtal_26mhz' not in item_marker_names(item)
+            ):
                 item.add_marker('xtal_40mhz')
 
         # filter all the test cases with "nightly_run" marker
