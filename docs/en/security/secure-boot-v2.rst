@@ -406,9 +406,12 @@ Remember that the strength of the Secure Boot system depends on keeping the sign
 Remote Signing of Images
 ------------------------
 
+Signing using espsecure.py
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 For production builds, it can be good practice to use a remote signing server rather than have the signing key on the build machine (which is the default esp-idf Secure Boot configuration). The espsecure.py command line program can be used to sign app images & partition table data for Secure Boot, on a remote system.
 
-To use remote signing, disable the option "Sign binaries during build". The private signing key does not need to be present on the build system.
+To use remote signing, disable the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` and build the firmware. The private signing key does not need to be present on the build system.
 
 After the app image and partition table are built, the build system will print signing steps using espsecure.py::
 
