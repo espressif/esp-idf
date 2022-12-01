@@ -46,22 +46,85 @@ except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages'))
     import common_test_methods  # noqa: F401
 
-
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6']
 PREVIEW_TARGETS = ['esp32h4']  # this PREVIEW_TARGETS excludes 'linux' target
 DEFAULT_SDKCONFIG = 'default'
+
+TARGET_MARKERS = {
+    'esp32': 'support esp32 target',
+    'esp32s2': 'support esp32s2 target',
+    'esp32s3': 'support esp32s3 target',
+    'esp32c3': 'support esp32c3 target',
+    'esp32c2': 'support esp32c2 target',
+    'esp32c6': 'support esp32c6 target',
+    'esp32h4': 'support esp32h4 target',
+    'linux': 'support linux target',
+}
+
+SPECIAL_MARKERS = {
+    'supported_targets': "support all officially announced supported targets ('esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6')",
+    'preview_targets': "support all preview targets ('esp32h4')",
+    'all_targets': 'support all targets, including supported ones and preview ones',
+    'temp_skip_ci': 'temp skip ci tests for specified targets, can only work with `supported_targets`, `preview_targets`, `all_targets`',
+    'nightly_run': 'tests should be executed as part of the nightly trigger pipeline',
+    'host_test': 'tests which should not be built at the build stage, and instead built in host_test stage.',
+    'qemu': 'build and test using qemu-system-xtensa, not real target.',
+}
+
+ENV_MARKERS = {
+    # single-dut markers
+    'generic': 'tests should be run on generic runners',
+    'flash_suspend': 'support flash suspend feature',
+    'ip101': 'connected via wired 10/100M ethernet',
+    'lan8720': 'connected via LAN8720 ethernet transceiver',
+    'quad_psram': 'runners with quad psram',
+    'octal_psram': 'runners with octal psram',
+    'usb_host': 'usb host runners',
+    'usb_host_flash_disk': 'usb host runners with USB flash disk attached',
+    'usb_device': 'usb device runners',
+    'ethernet_ota': 'ethernet OTA runners',
+    'flash_encryption': 'Flash Encryption runners',
+    'flash_encryption_f4r8': 'Flash Encryption runners with 4-line flash and 8-line psram',
+    'flash_encryption_f8r8': 'Flash Encryption runners with 8-line flash and 8-line psram',
+    'flash_mutli': 'Multiple flash chips tests',
+    'psram': 'Chip has 4-line psram',
+    'ir_transceiver': 'runners with a pair of IR transmitter and receiver',
+    'twai_transceiver': 'runners with a TWAI PHY transceiver',
+    'flash_encryption_wifi_high_traffic': 'Flash Encryption runners with wifi high traffic support',
+    'ethernet': 'ethernet runner',
+    'ethernet_flash_8m': 'ethernet runner with 8mb flash',
+    'ethernet_router': 'both the runner and dut connect to the same router through ethernet NIC',
+    'wifi_ap': 'a wifi AP in the environment',
+    'wifi_router': 'both the runner and dut connect to the same wifi router',
+    'wifi_high_traffic': 'wifi high traffic runners',
+    'wifi_wlan': 'wifi runner with a wireless NIC',
+    'xtal_26mhz': 'runner with 26MHz xtal on board',
+    'xtal_40mhz': 'runner with 40MHz xtal on board',
+    'external_flash': 'external flash memory connected via VSPI (FSPI)',
+    'sdcard_sdmode': 'sdcard running in SD mode',
+    'sdcard_spimode': 'sdcard running in SPI mode',
+    'MSPI_F8R8': 'runner with Octal Flash and Octal PSRAM',
+    'MSPI_F4R8': 'runner with Quad Flash and Octal PSRAM',
+    'MSPI_F4R4': 'runner with Quad Flash and Quad PSRAM',
+    'test_jtag_arm': 'runner where the chip is accessible through JTAG as well',
+    'adc': 'ADC related tests should run on adc runners',
+    'xtal32k': 'Runner with external 32k crystal connected',
+    'no32kXtal': 'Runner with no external 32k crystal connected',
+    'multi_dut_modbus_rs485': 'a pair of runners connected by RS485 bus',
+    'psramv0': 'Runner with PSRAM version 0',
+    # multi-dut markers
+    'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
+    'i154_multi_dut': 'tests should be used for i154, such as openthread.',
+    'wifi_two_dut': 'tests should be run on runners which has two wifi duts connected.',
+    'generic_multi_device': 'generic multiple devices whose corresponding gpio pins are connected to each other.',
+    'twai_network': 'multiple runners form a TWAI network.',
+    'sdio_master_slave': 'Test sdio multi board.',
+}
 
 
 ##################
 # Help Functions #
 ##################
-def is_target_marker(marker: str) -> bool:
-    if marker.startswith('esp32') or marker.startswith('esp8') or marker == 'linux':
-        return True
-
-    return False
-
-
 def format_case_id(target: Optional[str], config: Optional[str], case: str) -> str:
     return f'{target}.{config}.{case}'
 
@@ -75,19 +138,15 @@ def get_target_marker(markexpr: str) -> str:
     # we use `-m "esp32 and generic"` in our CI to filter the test cases
     for marker in markexpr.split('and'):
         marker = marker.strip()
-        if is_target_marker(marker):
+        if marker in TARGET_MARKERS:
             candidates.add(marker)
 
     if len(candidates) > 1:
-        raise ValueError(
-            f'Specified more than one target markers: {candidates}. Please specify no more than one.'
-        )
+        raise ValueError(f'Specified more than one target markers: {candidates}. Please specify no more than one.')
     elif len(candidates) == 1:
         return candidates.pop()
     else:
-        raise ValueError(
-            'Please specify one target marker via "--target [TARGET]" or via "-m [TARGET]"'
-        )
+        raise ValueError('Please specify one target marker via "--target [TARGET]" or via "-m [TARGET]"')
 
 
 ############
@@ -181,9 +240,7 @@ def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> st
             logging.info(f'find valid binary path: {binary_path}')
             return check_dir
 
-        logging.warning(
-            'checking binary path: %s... missing... try another place', binary_path
-        )
+        logging.warning('checking binary path: %s... missing... try another place', binary_path)
 
     recommend_place = check_dirs[0]
     raise ValueError(
@@ -193,9 +250,7 @@ def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> st
 
 @pytest.fixture(autouse=True)
 @multi_dut_fixture
-def junit_properties(
-    test_case_name: str, record_xml_attribute: Callable[[str, object], None]
-) -> None:
+def junit_properties(test_case_name: str, record_xml_attribute: Callable[[str, object], None]) -> None:
     """
     This fixture is autoused and will modify the junit report test case name to <target>.<config>.<case_name>
     """
@@ -211,9 +266,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         '--sdkconfig',
         help='sdkconfig postfix, like sdkconfig.ci.<config>. (Default: None, which would build all found apps)',
     )
-    base_group.addoption(
-        '--known-failure-cases-file', help='known failure cases file path'
-    )
+    base_group.addoption('--known-failure-cases-file', help='known failure cases file path')
 
 
 _idf_pytest_embedded_key = pytest.StashKey['IdfPytestEmbedded']
@@ -239,6 +292,9 @@ def pytest_configure(config: Config) -> None:
     )
     config.pluginmanager.register(config.stash[_idf_pytest_embedded_key])
 
+    for name, description in (TARGET_MARKERS | ENV_MARKERS | SPECIAL_MARKERS).items():
+        config.addinivalue_line('markers', f'{name}: {description}')
+
 
 def pytest_unconfigure(config: Config) -> None:
     _pytest_embedded = config.stash.get(_idf_pytest_embedded_key, None)
@@ -257,21 +313,13 @@ class IdfPytestEmbedded:
         # CLI options to filter the test cases
         self.target = target
         self.sdkconfig = sdkconfig
-        self.known_failure_patterns = self._parse_known_failure_cases_file(
-            known_failure_cases_file
-        )
+        self.known_failure_patterns = self._parse_known_failure_cases_file(known_failure_cases_file)
 
-        self._failed_cases: List[
-            Tuple[str, bool, bool]
-        ] = []  # (test_case_name, is_known_failure_cases, is_xfail)
+        self._failed_cases: List[Tuple[str, bool, bool]] = []  # (test_case_name, is_known_failure_cases, is_xfail)
 
     @property
     def failed_cases(self) -> List[str]:
-        return [
-            case
-            for case, is_known, is_xfail in self._failed_cases
-            if not is_known and not is_xfail
-        ]
+        return [case for case, is_known, is_xfail in self._failed_cases if not is_known and not is_xfail]
 
     @property
     def known_failure_cases(self) -> List[str]:
@@ -312,6 +360,7 @@ class IdfPytestEmbedded:
         # sort by file path and callspec.config
         # implement like this since this is a limitation of pytest, couldn't get fixture values while collecting
         # https://github.com/pytest-dev/pytest/discussions/9689
+        # after sort the test apps, the test may use the app cache to reduce the flash times.
         def _get_param_config(_item: Function) -> str:
             if hasattr(_item, 'callspec'):
                 return _item.callspec.params.get('config', DEFAULT_SDKCONFIG)  # type: ignore
@@ -370,29 +419,19 @@ class IdfPytestEmbedded:
             # Do not filter nightly_run cases
             pass
         elif os.getenv('NIGHTLY_RUN') == '1':
-            items[:] = [
-                item for item in items if 'nightly_run' in item_marker_names(item)
-            ]
+            items[:] = [item for item in items if 'nightly_run' in item_marker_names(item)]
         else:
-            items[:] = [
-                item for item in items if 'nightly_run' not in item_marker_names(item)
-            ]
+            items[:] = [item for item in items if 'nightly_run' not in item_marker_names(item)]
 
         # filter all the test cases with "--target"
         if self.target:
-            items[:] = [
-                item for item in items if self.target in item_marker_names(item)
-            ]
+            items[:] = [item for item in items if self.target in item_marker_names(item)]
 
         # filter all the test cases with cli option "config"
         if self.sdkconfig:
-            items[:] = [
-                item for item in items if _get_param_config(item) == self.sdkconfig
-            ]
+            items[:] = [item for item in items if _get_param_config(item) == self.sdkconfig]
 
-    def pytest_runtest_makereport(
-        self, item: Function, call: CallInfo[None]
-    ) -> Optional[TestReport]:
+    def pytest_runtest_makereport(self, item: Function, call: CallInfo[None]) -> Optional[TestReport]:
         report = TestReport.from_item_and_call(item, call)
         if report.outcome == 'failed':
             test_case_name = item.funcargs.get('test_case_name', '')
@@ -429,13 +468,9 @@ class IdfPytestEmbedded:
             xml = ET.parse(junit)
             testcases = xml.findall('.//testcase')
             for case in testcases:
-                case.attrib['name'] = format_case_id(
-                    target, config, case.attrib['name']
-                )
+                case.attrib['name'] = format_case_id(target, config, case.attrib['name'])
                 if 'file' in case.attrib:
-                    case.attrib['file'] = case.attrib['file'].replace(
-                        '/IDF/', ''
-                    )  # our unity test framework
+                    case.attrib['file'] = case.attrib['file'].replace('/IDF/', '')  # our unity test framework
             xml.write(junit)
 
     def pytest_sessionfinish(self, session: Session, exitstatus: int) -> None:
