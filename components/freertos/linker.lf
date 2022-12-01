@@ -3,12 +3,6 @@
 archive: libfreertos.a
 entries:
     * (noflash_text)
-    if FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH = y:
-        # vTaskGetSnapshot is omitted on purpose: as it is used to by the Task Watchdog (TWDT) interrupt
-        # handler, we want to always keep it in IRAM
-        tasks: pxTaskGetNext (default)
-        tasks: uxTaskGetSnapshotAll (default)
-        tasks: pxGetNextTaskList (default)
     if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
         port: pxPortInitialiseStack (default)
         port: xPortStartScheduler (default)
@@ -34,11 +28,7 @@ entries:
         tasks: vTaskRemoveFromUnorderedEventList (default)
         tasks: uxTaskPriorityGet (default)
         tasks: vTaskPrioritySet (default)
-        tasks: prvTaskPriorityRaise (default)
-        tasks: prvTaskPriorityRestore (default)
-        tasks: vTaskSetThreadLocalStoragePointerAndDelCallback (default)
         tasks: pvTaskGetThreadLocalStoragePointer (default)
-        tasks: xTaskGetCurrentTaskHandleForCPU (default)
         tasks: vTaskDelete (default)
         tasks: vTaskDelayUntil (default)
         tasks: xTaskDelayUntil (default)
@@ -57,8 +47,6 @@ entries:
         tasks: vTaskEndScheduler (default)
         tasks: vTaskMissedYield (default)
         tasks: vTaskSetThreadLocalStoragePointer (default)
-        tasks: xTaskGetAffinity (default)
-        tasks: xTaskGetIdleTaskHandleForCPU (default)
         if FREERTOS_USE_TRACE_FACILITY = y:
             tasks: uxTaskGetSystemState (default)
             tasks: uxTaskGetTaskNumber (default)
@@ -127,12 +115,3 @@ entries:
             queue: uxQueueGetQueueNumber (default)
             queue: vQueueSetQueueNumber (default)
             queue: ucQueueGetQueueType (default)
-    # app_startup.c
-    app_startup: esp_startup_start_app (default)
-    if CONFIG_FREERTOS_UNICORE = n:
-        app_startup: esp_startup_start_app_other_cores (default)
-        app_startup: other_cpu_startup_idle_hook_cb (default)
-    app_startup: main_task (default)
-    # port_common.c Functions
-    port_common:vApplicationGetIdleTaskMemory (default)
-    port_common:vApplicationGetTimerTaskMemory (default)

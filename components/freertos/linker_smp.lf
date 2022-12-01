@@ -76,8 +76,6 @@ entries:
         tasks: eTaskGetState (default)
         tasks: uxTaskPriorityGet (default)
         tasks: vTaskPrioritySet (default)
-        tasks: prvTaskPriorityRaise (default)
-        tasks: prvTaskPriorityRestore (default)
         tasks: vTaskSuspend (default)
         tasks: vTaskResume (default)
         tasks: prvCreateIdleTasks (default)
@@ -127,29 +125,9 @@ entries:
         tasks: xTaskGenericNotify (default)
         tasks: xTaskGenericNotifyStateClear (default)
         tasks: ulTaskGenericNotifyValueClear (default)
-        # tasks.c: Additions
-        if FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH = y:
-            tasks: non_ready_task_lists (default)
-            tasks: pxGetNextTaskList (default)
-            tasks: pxTaskGetNext (default)
-            tasks: vTaskGetSnapshot (default)
-            tasks: uxTaskGetSnapshotAll (default)
-        tasks: xTaskCreatePinnedToCore (default)
-        tasks: xTaskCreateStaticPinnedToCore (default)
-        tasks: xTaskGetCurrentTaskHandleForCPU (default)
-        tasks: xTaskGetIdleTaskHandleForCPU (default)
-        tasks: xTaskGetAffinity (default)
-        if FREERTOS_TLSP_DELETION_CALLBACKS = y:
-            tasks: vTaskSetThreadLocalStoragePointerAndDelCallback (default)
         # port
         port: pxPortInitialiseStack (default)
         port: xPortStartScheduler (default)
-        # app_startup.c
-        app_startup: esp_startup_start_app (default)
-        if CONFIG_FREERTOS_UNICORE = n:
-            app_startup: esp_startup_start_app_other_cores (default)
-            app_startup: other_cpu_startup_idle_hook_cb (default)
-        app_startup: main_task (default)
         # timers.c
         timers: xTimerCreateTimerTask (default)
         timers: xTimerCreate (default)

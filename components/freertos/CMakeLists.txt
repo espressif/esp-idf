@@ -7,7 +7,7 @@ endif()
 idf_build_get_property(target IDF_TARGET)
 
 if(CONFIG_FREERTOS_SMP)
-    set(ldfragments linker_smp.lf)
+    set(ldfragments linker_smp.lf linker_common.lf)
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)
         set(srcs
             "FreeRTOS-Kernel-SMP/portable/xtensa/port.c"
@@ -71,7 +71,7 @@ if(CONFIG_FREERTOS_SMP)
     endif()
 
 else()
-    set(ldfragments linker.lf)
+    set(ldfragments linker.lf linker_common.lf)
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)
         set(srcs
             "FreeRTOS-Kernel/portable/xtensa/port.c"

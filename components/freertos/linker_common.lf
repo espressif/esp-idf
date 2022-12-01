@@ -1,0 +1,62 @@
+# Linker fragment file for common FreeRTOS files (i.e., both "port_common.c" and "esp_additions/..."
+# Flash function placements are listed per source file, in the order that they appear in the source file.
+
+[mapping:freertos_common]
+archive: libfreertos.a
+entries:
+    # ------------------------------------------------------------------------------------------------------------------
+    # esp_additions/private_include/freertos_tasks_c_additions.h
+    # Placement Rules (Task Snapshot):
+    #   - Default: Place all functions in internal RAM.
+    #   - CONFIG_FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH: Place functions in flash
+    #   - vTaskGetSnapshot is omitted on purpose as it is used to by the Task Watchdog (TWDT) interrupt handler, we want
+    #     to always keep it in IRAM
+    # Placement Rules (FreeRTOS API Additions):
+    #   - Default: Place all functions in internal RAM.
+    #   - CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH: Place functions in flash if they are never called from an ISR
+    #     context (directly or indirectly).
+    # ------------------------------------------------------------------------------------------------------------------
+    # Task Snapshot
+    if FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH = y:
+        tasks:pxGetNextTaskList (default)
+        tasks:pxTaskGetNext (default)
+        tasks:uxTaskGetSnapshotAll (default)
+    # FreeRTOS API Additions
+    if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
+        if FREERTOS_SMP = y:
+            tasks:xTaskCreatePinnedToCore (default)
+            tasks:xTaskCreateStaticPinnedToCore (default)
+        tasks:xTaskGetCurrentTaskHandleForCPU (default)
+        tasks:xTaskGetIdleTaskHandleForCPU (default)
+        tasks:xTaskGetAffinity (default)
+        if FREERTOS_TLSP_DELETION_CALLBACKS = y:
+            tasks:vTaskSetThreadLocalStoragePointerAndDelCallback (default)
+        tasks:prvTaskPriorityRaise (default)
+        tasks:prvTaskPriorityRestore (default)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # app_startup.c
+    # Placement Rules: Functions always in flash as they are never called from an ISR
+    # ------------------------------------------------------------------------------------------------------------------
+    app_startup (default)           # Place functions (but not Data and BSS) to flash
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # FreeRTOS-openocd.c
+    # Placement Rules: All functions/data in internal RAM as they are called/used by OpenOCD
+    # ------------------------------------------------------------------------------------------------------------------
+    FreeRTOS-openocd (noflash)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # port_common.c
+    # Placement Rules:
+    #   - Default: Place all functions in internal RAM.
+    #   - CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH: Place functions in flash if they are never called from an ISR
+    #     context (directly or indirectly).
+    # ------------------------------------------------------------------------------------------------------------------
+    port_common (noflash_text)      # Default all functions to internal RAM
+    if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
+        if FREERTOS_SMP = n:
+            port_common:xPortCheckValidTCBMem (default)
+            port_common:xPortcheckValidStackMem (default)
+        port_common:vApplicationGetIdleTaskMemory (default)
+        port_common:vApplicationGetTimerTaskMemory (default)
