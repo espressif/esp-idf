@@ -181,6 +181,7 @@
 #define SOC_I2S_NUM                 (1U)
 #define SOC_I2S_HW_VERSION_1        (1)
 #define SOC_I2S_SUPPORTS_APLL       (1)
+#define SOC_I2S_SUPPORTS_PLL_F160M  (1)
 #define SOC_I2S_SUPPORTS_DMA_EQUAL  (1)
 #define SOC_I2S_SUPPORTS_LCD_CAMERA (1)
 #define SOC_I2S_APLL_MIN_FREQ       (250000000)
