@@ -1841,7 +1841,7 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
         return ret;
     }
 
-    wpa_printf(MSG_INFO, "wifi_wps_enable\n");
+    wpa_printf(MSG_INFO, "wifi_wps_enable");
 
     wps_set_type(config->wps_type);
     wps_set_status(WPS_STATUS_DISABLE);
