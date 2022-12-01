@@ -88,8 +88,6 @@ int  wpa_config_profile(uint8_t *bssid)
         wpa_set_profile(WPA_PROTO_RSN, esp_wifi_sta_get_prof_authmode_internal());
     } else if (esp_wifi_sta_prof_is_wapi_internal()) {
         wpa_set_profile(WPA_PROTO_WAPI, esp_wifi_sta_get_prof_authmode_internal());
-    } else if (esp_wifi_sta_get_prof_authmode_internal() == NONE_AUTH) {
-        esp_set_assoc_ie((uint8_t *)bssid, NULL, 0, false);
     } else {
         ret = -1;
     }
@@ -198,6 +196,8 @@ int wpa_sta_connect(uint8_t *bssid)
             wpa_printf(MSG_DEBUG, "Rejecting bss, validation failed");
             return ret;
         }
+    } else if (esp_wifi_sta_get_prof_authmode_internal() == NONE_AUTH) {
+        esp_set_assoc_ie((uint8_t *)bssid, NULL, 0, false);
     }
 
     return 0;
