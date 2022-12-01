@@ -3,26 +3,6 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
-config SOC_LEDC_SUPPORT_APB_CLOCK
-    bool
-    default y
-
-config SOC_LEDC_SUPPORT_XTAL_CLOCK
-    bool
-    default y
-
-config SOC_LEDC_CHANNEL_NUM
-    int
-    default 8
-
-config SOC_LEDC_TIMER_BIT_WIDE_NUM
-    int
-    default 14
-
-config SOC_LEDC_SUPPORT_FADE_STOP
-    bool
-    default y
-
 config SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
     bool
     default n
@@ -462,6 +442,30 @@ config SOC_I2S_PDM_MAX_RX_LINES
 config SOC_I2S_SUPPORTS_TDM
     bool
     default y
+
+config SOC_LEDC_SUPPORT_APB_CLOCK
+    bool
+    default y
+
+config SOC_LEDC_SUPPORT_XTAL_CLOCK
+    bool
+    default y
+
+config SOC_LEDC_CHANNEL_NUM
+    int
+    default 8
+
+config SOC_LEDC_TIMER_BIT_WIDTH
+    int
+    default 14
+
+config SOC_LEDC_SUPPORT_FADE_STOP
+    bool
+    default y
+
+config SOC_LEDC_GAMMA_FADE_RANGE_MAX
+    int
+    default 1
 
 config SOC_MCPWM_GROUPS
     int
@@ -968,6 +972,10 @@ config SOC_CLK_RC_FAST_D256_SUPPORTED
     default y
 
 config SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256
+    bool
+    default y
+
+config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y
 

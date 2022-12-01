@@ -24,7 +24,6 @@
 #include "soc/io_mux_reg.h"
 #include "esp_system.h"
 #include "esp_timer.h"
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 #include "driver/ledc.h"
 #include "hal/ledc_ll.h"
 #include "driver/gpio.h"
@@ -473,7 +472,7 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
         .duty_resolution = timer_bit,
         .timer_num = timer,
         .freq_hz = 5000,
-        .clk_cfg = LEDC_USE_APB_CLK,
+        .clk_cfg = TEST_DEFAULT_CLK_CFG,
     };
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
@@ -536,8 +535,10 @@ TEST_CASE("LEDC timer select specific clock source", "[ledc]")
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 
     if (test_speed_mode == LEDC_LOW_SPEED_MODE) {
+#if !CONFIG_IDF_TARGET_ESP32C6 // Temporary. RC_FAST not able to calibrate currently. Can be removed once IDF-5346 done.
         printf("Check LEDC_USE_RTC8M_CLK for a 100Hz signal\n");
         timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_RTC8M_CLK, 10, 100);
+#endif
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
         printf("Check LEDC_USE_XTAL_CLK for a 400Hz signal\n");
         timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_XTAL_CLK, 13, 400);
@@ -645,4 +646,3 @@ TEST_CASE_MULTIPLE_STAGES("LEDC continue work after software reset", "[ledc]",
                           ledc_cpu_reset_test_second_stage);
 
 #endif // SOC_PCNT_SUPPORTED
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

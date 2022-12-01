@@ -80,17 +80,9 @@ examples/peripherals/lcd/rgb_panel:
   disable:
     - if: SOC_LCD_RGB_SUPPORTED != 1
 
-examples/peripherals/ledc/ledc_basic:
+examples/peripherals/ledc:
   disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
-
-examples/peripherals/ledc/ledc_fade:
-  disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
+    - if: SOC_LEDC_SUPPORTED != 1
 
 examples/peripherals/mcpwm:
   disable:

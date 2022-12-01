@@ -17,6 +17,7 @@
 
 #include "hal/ledc_ll.h"
 #include "hal/ledc_types.h"
+#include "soc/soc_caps.h"
 
 /**
  * Context that should be maintained by both the driver and the HAL
@@ -336,6 +337,30 @@ void ledc_hal_set_duty_cycle(ledc_hal_context_t *hal, ledc_channel_t channel_num
  * @return None
  */
 void ledc_hal_set_duty_scale(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t duty_scale);
+
+#if SOC_LEDC_GAMMA_FADE_RANGE_MAX > 1
+/**
+ * @brief Set the range number of the specified duty configurations written to gamma_wr register
+ *
+ * @param hal Context of the HAL layer
+ * @param channel_num LEDC channel index, select from ledc_channel_t
+ * @param duty_range Range index (0-15), it specifies to which range the configurations in gamma_wr register apply
+ *
+ * @return None
+ */
+void ledc_hal_set_duty_range(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t duty_range);
+
+/**
+ * @brief Set the total number of ranges in one fading
+ *
+ * @param hal Context of the HAL layer
+ * @param channel_num LEDC channel index, select from ledc_channel_t
+ * @param range_num Total number of ranges (1-16) of the fading configured
+ *
+ * @return None
+ */
+void ledc_hal_set_range_number(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t range_num);
+#endif //SOC_LEDC_GAMMA_FADE_RANGE_MAX > 1
 
 /**
  * @brief Get interrupt status of the specified channel

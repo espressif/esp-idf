@@ -6,13 +6,13 @@
 
 #include <freertos/FreeRTOS.h>
 #include "clk_ctrl_os.h"
+#include "soc/rtc.h"
 #include "esp_check.h"
-#include "sdkconfig.h"
 
 static portMUX_TYPE periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 static uint8_t s_periph_ref_counts = 0;
-static uint32_t s_rtc_clk_freq = 0; // Frequency of the 8M/256 clock in Hz
+static uint32_t s_rc_fast_freq = 0; // Frequency of the RC_FAST clock in Hz
 #if SOC_CLK_APLL_SUPPORTED
 static const char *TAG = "clk_ctrl_os";
 // Current APLL frequency, in HZ. Zero if APLL is not enabled.
@@ -26,13 +26,19 @@ bool periph_rtc_dig_clk8m_enable(void)
     portENTER_CRITICAL(&periph_spinlock);
     if (s_periph_ref_counts == 0) {
         rtc_dig_clk8m_enable();
+#if SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
 #if SOC_CLK_RC_FAST_D256_SUPPORTED
-        s_rtc_clk_freq = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_8MD256, 100));
-        if (s_rtc_clk_freq == 0) {
+        // If RC_FAST_D256 clock exists, calibration on a slow freq clock is much faster (less slow clock cycles need to wait)
+        s_rc_fast_freq = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_8MD256, 100)) << 8; // f_[rc_fast] = f_[rc_fast_d256] * 256;
+#else
+        // Calibrate directly on the RC_FAST clock requires much more slow clock cycles to get an accurate freq value
+        s_rc_fast_freq = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_RC_FAST, 10000));
+#endif
+        if (s_rc_fast_freq == 0) {
             portEXIT_CRITICAL(&periph_spinlock);
             return false;
         }
-#endif
+#endif //SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     }
     s_periph_ref_counts++;
     portEXIT_CRITICAL(&periph_spinlock);
@@ -41,11 +47,11 @@ bool periph_rtc_dig_clk8m_enable(void)
 
 uint32_t periph_rtc_dig_clk8m_get_freq(void)
 {
-#if !SOC_CLK_RC_FAST_D256_SUPPORTED
-    /* Workaround: CLK8M calibration cannot be performed if there is no d256 div clk, we can only return its theoretic value */
+#if !SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
+    /* Workaround: CLK8M calibration cannot be performed, we can only return its theoretic value */
     return SOC_CLK_RC_FAST_FREQ_APPROX;
 #else
-    return s_rtc_clk_freq * 256;
+    return s_rc_fast_freq;
 #endif
 }
 
@@ -55,7 +61,7 @@ void periph_rtc_dig_clk8m_disable(void)
     assert(s_periph_ref_counts > 0);
     s_periph_ref_counts--;
     if (s_periph_ref_counts == 0) {
-        s_rtc_clk_freq = 0;
+        s_rc_fast_freq = 0;
         rtc_dig_clk8m_disable();
     }
     portEXIT_CRITICAL(&periph_spinlock);

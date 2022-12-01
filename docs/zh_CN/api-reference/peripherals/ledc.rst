@@ -1,6 +1,6 @@
 LED PWM 控制器
 ==============
-{IDF_TARGET_LEDC_CHAN_NUM:default="8", esp32="16", esp32s2="8", esp32c3="6", esp32s3="8", esp32c2="6", esp32h4="6"}
+{IDF_TARGET_LEDC_CHAN_NUM:default="6", esp32="16", esp32s2="8", esp32s3="8"}
 
 :link_to_translation:`en:[English]`
 
@@ -138,6 +138,25 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 时钟功能
        * - PLL_60M_CLK
          - 60 MHz
+         - /
+       * - RTC20M_CLK
+         - ~20 MHz
+         - 支持动态调频（DFS）功能，支持Light-sleep模式
+       * - XTAL_CLK
+         - 40 MHz
+         - 支持动态调频（DFS）功能
+
+.. only:: esp32c6
+
+    .. list-table:: {IDF_TARGET_NAME} LEDC 时钟源特性
+       :widths: 10 10 30
+       :header-rows: 1
+
+       * - 时钟名称
+         - 时钟频率
+         - 时钟功能
+       * - PLL_80M_CLK
+         - 80 MHz
          - /
        * - RTC20M_CLK
          - ~20 MHz

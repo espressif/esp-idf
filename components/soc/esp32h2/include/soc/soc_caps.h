@@ -198,11 +198,12 @@
 
 // TODO: IDF-6235 (Copy from esp32c6, need check)
 /*-------------------------- LEDC CAPS ---------------------------------------*/
-#define SOC_LEDC_SUPPORT_APB_CLOCK   (1)
-#define SOC_LEDC_SUPPORT_XTAL_CLOCK  (1)
-#define SOC_LEDC_CHANNEL_NUM         (6)
-#define SOC_LEDC_TIMER_BIT_WIDE_NUM  (14)
-#define SOC_LEDC_SUPPORT_FADE_STOP   (1)
+#define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
+#define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
+#define SOC_LEDC_CHANNEL_NUM                (6)
+#define SOC_LEDC_TIMER_BIT_WIDTH            (20)
+#define SOC_LEDC_SUPPORT_FADE_STOP          (1)
+#define SOC_LEDC_GAMMA_FADE_RANGE_MAX       (16)
 
 // TODO: IDF-6332 (Copy from esp32c6, need check)
 /*-------------------------- MPU CAPS ----------------------------------------*/

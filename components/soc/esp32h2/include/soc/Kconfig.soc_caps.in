@@ -271,7 +271,7 @@ config SOC_I2S_SUPPORTS_TDM
     bool
     default y
 
-config SOC_LEDC_SUPPORT_APB_CLOCK
+config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     bool
     default y
 
@@ -283,13 +283,17 @@ config SOC_LEDC_CHANNEL_NUM
     int
     default 6
 
-config SOC_LEDC_TIMER_BIT_WIDE_NUM
+config SOC_LEDC_TIMER_BIT_WIDTH
     int
-    default 14
+    default 20
 
 config SOC_LEDC_SUPPORT_FADE_STOP
     bool
     default y
+
+config SOC_LEDC_GAMMA_FADE_RANGE_MAX
+    int
+    default 16
 
 config SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
     bool

@@ -199,8 +199,9 @@
 #define SOC_LEDC_SUPPORT_REF_TICK        (1)
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK      (1)
 #define SOC_LEDC_CHANNEL_NUM             (8)
-#define SOC_LEDC_TIMER_BIT_WIDE_NUM      (14)
+#define SOC_LEDC_TIMER_BIT_WIDTH         (14)
 #define SOC_LEDC_SUPPORT_FADE_STOP       (1)
+#define SOC_LEDC_GAMMA_FADE_RANGE_MAX    (1U) // The target does not support gamma curve fading
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 //TODO: correct the caller and remove unsupported lines
@@ -408,6 +409,7 @@
 
 #define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
 #define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
+#define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

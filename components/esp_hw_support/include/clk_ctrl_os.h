@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/rtc.h"
+#include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "esp_err.h"
 
@@ -13,18 +13,18 @@ extern "C" {
 #endif
 
 /**
- * @brief This function is used to enable the digital 8m rtc clock,
+ * @brief This function is used to enable the digital RC_FAST clock,
  *        to support the peripherals.
  *
  * @note If this function is called a number of times, the `periph_rtc_dig_clk8m_disable`
  *       function needs to be called same times to disable.
  *
- * @return true: success for enable the rtc 8M clock, false: rtc 8M clock enable failed
+ * @return true: success for enable the RC_FAST clock, false: RC_FAST clock enable failed
  */
 bool periph_rtc_dig_clk8m_enable(void);
 
 /**
- * @brief This function is used to disable the rtc digital clock, which should be called
+ * @brief This function is used to disable the digital RC_FAST clock, which should be called
  *        with the `periph_rtc_dig_clk8m_enable` pairedly
  *
  * @note If this function is called a number of times, the `periph_rtc_dig_clk8m_disable`
@@ -33,9 +33,9 @@ bool periph_rtc_dig_clk8m_enable(void);
 void periph_rtc_dig_clk8m_disable(void);
 
 /**
- * @brief This function is used to get the real clock frequency value of the rtc clock
+ * @brief This function is used to get the real clock frequency value of RC_FAST clock
  *
- * @return The real clock value
+ * @return The real clock value, in Hz
  */
 uint32_t periph_rtc_dig_clk8m_get_freq(void);
 
