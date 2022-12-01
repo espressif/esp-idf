@@ -69,6 +69,7 @@ esp_err_t esp_ds_init_data_ctx(esp_ds_data_ctx_t *ds_data)
         return ESP_FAIL;
     }
     s_ds_data = ds_data->esp_ds_data;
+    ESP_LOGD(TAG, "Using DS with key block %u, RSA length %u", ds_data->efuse_key_id, ds_data->rsa_length_bits);
     s_esp_ds_hmac_key_id = (hmac_key_id_t) ds_data->efuse_key_id;
 
     const unsigned rsa_length_int = (ds_data->rsa_length_bits / 32) - 1;
@@ -251,7 +252,11 @@ int esp_ds_rsa_sign( void *ctx,
 
     ds_r = esp_ds_finish_sign((void *)signature, esp_ds_ctx);
     if (ds_r != ESP_OK) {
-        ESP_LOGE(TAG, "Error in esp_ds_finish sign, returned %d ", ds_r);
+        if (ds_r == ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST) {
+            ESP_LOGE(TAG, "Invalid digest in DS data reported by esp_ds_finish_sign");
+        } else {
+            ESP_LOGE(TAG, "Error in esp_ds_finish_sign, returned %d ", ds_r);
+        }
         heap_caps_free(signature);
         return -1;
     }
