@@ -10,6 +10,8 @@
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
 
+extern hcd_port_handle_t port_hdl;
+
 #define URB_CONTEXT_VAL ((void *)0xDEADBEEF)
 
 // ------------------------------------------------- HCD Event Test ----------------------------------------------------

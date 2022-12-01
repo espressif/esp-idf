@@ -1,0 +1,5 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/usb/test_apps:
+  enable:
+    - if: SOC_USB_OTG_SUPPORTED == 1
