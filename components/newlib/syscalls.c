@@ -73,6 +73,22 @@ static ssize_t _fstat_r_console(struct _reent *r, int fd, struct stat * st)
     return -1;
 }
 
+static int _fsync_console(int fd)
+{
+    if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
+#ifdef CONFIG_ESP_CONSOLE_UART
+        esp_rom_uart_flush_tx(CONFIG_ESP_CONSOLE_UART_NUM);
+#elif defined(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG)
+        esp_rom_uart_flush_tx(CONFIG_ESP_ROM_USB_SERIAL_DEVICE_NUM);
+#elif defined(CONFIG_ESP_CONSOLE_USB_CDC)
+        esp_rom_uart_flush_tx(CONFIG_ESP_ROM_USB_OTG_NUM);
+#endif
+        return 0;
+    }
+    errno = EBADF;
+    return -1;
+}
+
 
 /* The following weak definitions of syscalls will be used unless
  * another definition is provided. That definition may come from
@@ -84,6 +100,8 @@ ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size)
     __attribute__((weak,alias("_write_r_console")));
 int _fstat_r (struct _reent *r, int fd, struct stat *st)
     __attribute__((weak,alias("_fstat_r_console")));
+int fsync(int fd)
+    __attribute__((weak,alias("_fsync_console")));
 
 
 /* The aliases below are to "syscall_not_implemented", which

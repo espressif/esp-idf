@@ -27,6 +27,7 @@ void die(const char* msg)
 {
     printf("Test error: %s\n\n", msg);
     fflush(stdout);
+    fsync(fileno(stdout));
     usleep(1000);
     /* Don't use abort here as it would enter the panic handler */
     esp_restart_noos();
