@@ -23,16 +23,21 @@ Test FPU usage from a task context
 Purpose:
     - Test that the FPU can be used from a task context
     - Test that FPU context is properly saved and restored
+    - Test that FPU context is cleaned up on task deletion by running multiple iterations
 Procedure:
     - Create TEST_PINNED_NUM_TASKS tasks pinned to each core
     - Start each task
     - Each task updates a float variable and then blocks (to allow other tasks to run thus forcing the an FPU context
       save and restore).
+    - Delete each task
+    - Repeat test for TEST_PINNED_NUM_ITERS iterations
 Expected:
     - Correct float value calculated by each task
+    - Each task cleans up its FPU context on deletion
 */
 
 #define TEST_PINNED_NUM_TASKS       3
+#define TEST_PINNED_NUM_ITERS       5
 
 static void pinned_task(void *arg)
 {
@@ -62,35 +67,38 @@ TEST_CASE("FPU: Usage in task", "[freertos]")
     SemaphoreHandle_t done_sem = xSemaphoreCreateCounting(configNUM_CORES * TEST_PINNED_NUM_TASKS, 0);
     TEST_ASSERT_NOT_EQUAL(NULL, done_sem);
 
-    TaskHandle_t task_handles[configNUM_CORES][TEST_PINNED_NUM_TASKS];
+    for (int iter = 0; iter < TEST_PINNED_NUM_ITERS; iter++) {
+        TaskHandle_t task_handles[configNUM_CORES][TEST_PINNED_NUM_TASKS];
 
-    // Create test tasks for each core
-    for (int i = 0; i < configNUM_CORES; i++) {
-        for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
-            TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(pinned_task, "task", 4096, (void *)done_sem, UNITY_FREERTOS_PRIORITY + 1, &task_handles[i][j], i));
+        // Create test tasks for each core
+        for (int i = 0; i < configNUM_CORES; i++) {
+            for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
+                TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(pinned_task, "task", 4096, (void *)done_sem, UNITY_FREERTOS_PRIORITY + 1, &task_handles[i][j], i));
+            }
         }
-    }
 
-    // Start the created tasks simultaneously
-    for (int i = 0; i < configNUM_CORES; i++) {
-        for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
-            xTaskNotifyGive(task_handles[i][j]);
+        // Start the created tasks simultaneously
+        for (int i = 0; i < configNUM_CORES; i++) {
+            for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
+                xTaskNotifyGive(task_handles[i][j]);
+            }
         }
-    }
 
-    // Wait for the tasks to complete
-    for (int i = 0; i < configNUM_CORES * TEST_PINNED_NUM_TASKS; i++) {
-        xSemaphoreTake(done_sem, portMAX_DELAY);
-    }
-
-    // Delete the tasks
-    for (int i = 0; i < configNUM_CORES; i++) {
-        for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
-            vTaskDelete(task_handles[i][j]);
+        // Wait for the tasks to complete
+        for (int i = 0; i < configNUM_CORES * TEST_PINNED_NUM_TASKS; i++) {
+            xSemaphoreTake(done_sem, portMAX_DELAY);
         }
+
+        // Delete the tasks
+        for (int i = 0; i < configNUM_CORES; i++) {
+            for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
+                vTaskDelete(task_handles[i][j]);
+            }
+        }
+
+        vTaskDelay(10); // Short delay to allow idle task to be free task memory and FPU contexts
     }
 
-    vTaskDelay(10); // Short delay to allow idle task to be free task memory and FPU contexts
     vSemaphoreDelete(done_sem);
 }
 
@@ -101,17 +109,23 @@ Test FPU usage will pin an unpinned task
 
 Purpose:
     - Test that unpinned tasks are automatically pinned to the current core on the task's first use of the FPU
+    - Test that FPU context is cleaned up on task deletion by running multiple iterations
 Procedure:
     - Create an unpinned task
     - Task disables scheduling/preemption to ensure that it does not switch cores
     - Task uses the FPU
     - Task checks its core affinity after FPU usage
+    - Task deletes itself
+    - Repeat test for TEST_UNPINNED_NUM_ITERS iterations
 Expected:
     - Task remains unpinned until its first usage of the FPU
     - The task becomes pinned to the current core after first use of the FPU
+    - Each task cleans up its FPU context on deletion
 */
 
 #if configNUM_CORES > 1
+
+#define TEST_UNPINNED_NUM_ITERS     5
 
 static void unpinned_task(void *arg)
 {
@@ -162,11 +176,13 @@ static void unpinned_task(void *arg)
 TEST_CASE("FPU: Usage in unpinned task", "[freertos]")
 {
     TaskHandle_t unity_task_handle = xTaskGetCurrentTaskHandle();
-    // Create unpinned task
-    xTaskCreate(unpinned_task, "unpin", 4096, (void *)unity_task_handle, UNITY_FREERTOS_PRIORITY + 1, NULL);
-    // Wait for task to complete
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    vTaskDelay(10); // Short delay to allow task memory to be freed
+    for (int iter = 0; iter < TEST_UNPINNED_NUM_ITERS; iter++) {
+        // Create unpinned task
+        xTaskCreate(unpinned_task, "unpin", 4096, (void *)unity_task_handle, UNITY_FREERTOS_PRIORITY + 1, NULL);
+        // Wait for task to complete
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        vTaskDelay(10); // Short delay to allow task memory to be freed
+    }
 }
 
 #endif // configNUM_CORES > 1
