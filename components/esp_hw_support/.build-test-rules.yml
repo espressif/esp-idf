@@ -15,3 +15,7 @@ components/esp_hw_support/test_apps/rtc_clk:
     - if: IDF_TARGET in ["esp32c6"]
       temporary: true
       reason: Unsupported on C6 for now. TODO IDF-5645
+
+components/heap/host_test/host_test_linux:
+  enable:
+    - if: IDF_TARGET == "linux"
