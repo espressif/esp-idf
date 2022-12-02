@@ -15,9 +15,9 @@ endif()
 
 if(CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER)
     list(APPEND srcs "unity_runner.c")
-    # Note the following files are not compatible with the Linux target.
-    # On Linux, these are masked because we also don't use the IDF test runner there
-    list(APPEND srcs "unity_utils_freertos.c" "unity_utils_cache.c")
+    if(NOT "${target}" STREQUAL "linux")
+        list(APPEND srcs "unity_utils_freertos.c" "unity_utils_cache.c")
+    endif()
     list(APPEND requires "freertos")
 endif()
 

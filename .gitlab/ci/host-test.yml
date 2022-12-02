@@ -382,7 +382,7 @@ test_esp_system:
   script:
     - cd ${IDF_PATH}/components/esp_system/host_test/test_esp_system/
     - idf.py build
-    - timeout 5 build/test_esp_system.elf | tee log.txt || true
+    - echo "*" | timeout 5 build/test_esp_system.elf | tee log.txt || true
     - grep "6 Tests 0 Failures 0 Ignored" log.txt
 
 test_esp_timer_cxx:
