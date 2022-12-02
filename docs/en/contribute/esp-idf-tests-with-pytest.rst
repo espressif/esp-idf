@@ -213,7 +213,7 @@ This code example is taken from :idf_file:`pytest_console_basic.py <examples/sys
        'history',
        'nohistory',
    ], indirect=True)
-   def test_console_advanced(config: str, dut: Dut) -> None:
+   def test_console_advanced(config: str, dut: IdfDut) -> None:
        if config == 'history':
            dut.expect('Command history enabled')
        elif config == 'nohistory':
@@ -242,7 +242,7 @@ This code example is taken from :idf_file:`pytest_gptimer_example.py <examples/p
 
    @pytest.mark.supported_targets
    @pytest.mark.generic
-   def test_gptimer_example(dut: Dut) -> None:
+   def test_gptimer_example(dut: IdfDut) -> None:
        ...
 
 Use Params to Specify the sdkconfig Files
@@ -398,7 +398,7 @@ This code example is taken from :idf_file:`pytest_esp_eth.py <components/esp_eth
 .. code:: python
 
    @pytest.mark.flaky(reruns=3, reruns_delay=5)
-   def test_esp_eth_ip101(dut: Dut) -> None:
+   def test_esp_eth_ip101(dut: IdfDut) -> None:
        ...
 
 This flaky marker means that if the test function failed, the test case would rerun for a maximum of 3 times with 5 seconds delay.
@@ -425,13 +425,56 @@ This marker means that if the test would be a known failure one on esp32s2.
 Mark Nightly Run Test Cases
 """""""""""""""""""""""""""
 
-Some tests cases are only triggered in nightly run pipelines due to a lack of runners.
+Some test cases are only triggered in nightly run pipelines due to a lack of runners.
 
 .. code:: python
 
     @pytest.mark.nightly_run
 
 This marker means that the test case would only be run with env var ``NIGHTLY_RUN`` or ``INCLUDE_NIGHTLY_RUN``.
+
+Mark Temp Disabled in CI
+""""""""""""""""""""""""
+
+Some test cases which can pass locally may need to be temporarily disabled in CI due to a lack of runners.
+
+.. code:: python
+
+   @pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s2'], reason='lack of runners')
+
+This marker means that the test case could still be run locally with ``pytest --target esp32``, but will not run in CI.
+
+Run Unity Test Cases
+""""""""""""""""""""
+
+For component-based unit test apps, one line could do the trick to run all single-board test cases, including normal test cases and multi-stage test cases:
+
+.. code:: python
+
+   def test_component_ut(dut: IdfDut):
+       dut.run_all_single_board_cases()
+
+It would also skip all the test cases with ``[ignore]`` mark. 
+
+If you need to run a group of test cases, you may run:
+
+.. code:: python
+
+   def test_component_ut(dut: IdfDut):
+       dut.run_all_single_board_cases(group='psram')
+
+It would trigger all test cases with module name ``[psram]``.
+
+You may also see that there are some test scripts with the following statements, which are deprecated. Please use the suggested one as above.
+
+.. code:: python
+
+   def test_component_ut(dut: IdfDut):
+       dut.expect_exact('Press ENTER to see the list of tests')
+       dut.write('*')
+       dut.expect_unity_test_output()
+
+For further reading about our unit testing in ESP-IDF, please refer to :doc:`our unit testing guide <../api-guides/unit-tests>`.
 
 Run the Tests in CI
 -------------------
@@ -499,8 +542,8 @@ For example, if you want to run all the esp32 tests under the ``$IDF_PATH/exampl
 
 .. code:: shell
 
-   $ pip install pytest-embedded-serial-esp pytest-embedded-idf
    $ cd $IDF_PATH
+   $ bash install.sh --enable-pytest
    $ . ./export.sh
    $ cd examples/system/console/basic
    $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -vv --pytest-apps
@@ -527,7 +570,7 @@ Add New Markers
 
 We’re using two types of custom markers, target markers which indicate that the test cases should support this target, and env markers which indicate that the test case should be assigned to runners with these tags in CI.
 
-You can add new markers by adding one line under the ``${IDF_PATH}/pytest.ini`` ``markers =`` section. The grammar should be: ``<marker_name>: <marker_description>``
+You can add new markers by adding one line under the ``${IDF_PATH}/conftest.py``. If it's a target marker, it should be added into ``TARGET_MARKERS``. If it's a marker that specifies a type of test environment, it should be added into ``ENV_MARKERS``. The grammar should be: ``<marker_name>: <marker_description>``.
 
 Generate JUnit Report
 ^^^^^^^^^^^^^^^^^^^^^
