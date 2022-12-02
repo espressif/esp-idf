@@ -174,6 +174,13 @@ BaseType_t xPortSysTickHandler(void);
 extern void _frxt_tick_timer_init(void);
 extern void _xt_tick_divisor_init(void);
 
+#ifdef CONFIG_FREERTOS_CORETIMER_0
+    #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER0_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
+#endif
+#ifdef CONFIG_FREERTOS_CORETIMER_1
+    #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER1_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
+#endif
+
 /**
  * @brief Initialize CCONT timer to generate the tick interrupt
  *
