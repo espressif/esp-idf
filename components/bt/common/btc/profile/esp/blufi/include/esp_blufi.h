@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +40,7 @@ void esp_blufi_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *a
 /* Initialise gatt server */
 int esp_blufi_gatt_svr_init(void);
 void esp_blufi_btc_init(void);
+void esp_blufi_btc_deinit(void);
 #endif
 
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
