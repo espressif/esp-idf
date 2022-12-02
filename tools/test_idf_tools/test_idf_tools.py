@@ -337,9 +337,13 @@ class TestUsage(unittest.TestCase):
         output = self.run_idf_tools_with_action(['uninstall', '--dry-run'])
         self.assertEqual(output, '')
 
+        self.assertTrue(os.path.isfile(self.idf_env_json), 'File {} was not found. '.format(self.idf_env_json))
+        self.assertNotEqual(os.stat(self.idf_env_json).st_size, 0, 'File {} is empty. '.format(self.idf_env_json))
         with open(self.idf_env_json, 'r') as idf_env_file:
             idf_env_json = json.load(idf_env_file)
-        idf_env_json['idfInstalled'][idf_env_json['idfSelectedId']]['targets'].remove('esp32')
+        # outside idf_tools.py we dont know the active idf key, but can determine it since in new idf_env_file is only one record
+        active_idf_key = list(idf_env_json['idfInstalled'].keys())[0]
+        idf_env_json['idfInstalled'][active_idf_key]['targets'].remove('esp32')
         with open(self.idf_env_json, 'w') as w:
             json.dump(idf_env_json, w)
 
@@ -349,16 +353,13 @@ class TestUsage(unittest.TestCase):
         output = self.run_idf_tools_with_action(['uninstall', '--dry-run'])
         self.assertEqual(output, '')
 
-    def test_unset(self):
+    def test_deactivate(self):
         self.run_idf_tools_with_action(['install'])
-        self.run_idf_tools_with_action(['export'])
-        self.assertTrue(os.path.isfile(self.idf_env_json), 'File {} was not found. '.format(self.idf_env_json))
-        self.assertNotEqual(os.stat(self.idf_env_json).st_size, 0, 'File {} is empty. '.format(self.idf_env_json))
-        with open(self.idf_env_json, 'r') as idf_env_file:
-            idf_env_json = json.load(idf_env_file)
-            selected_idf = idf_env_json['idfSelectedId']
-            self.assertIn('unset', idf_env_json['idfInstalled'][selected_idf],
-                          'Unset was not created for active environment in {}.'.format(self.idf_env_json))
+        output = self.run_idf_tools_with_action(['export'])
+        self.assertIn('export IDF_DEACTIVATE_FILE_PATH=', output, 'No IDF_DEACTIVATE_FILE_PATH exported into environment')
+        deactivate_file = re.findall(r'(?:IDF_DEACTIVATE_FILE_PATH=")(.*)(?:")', output)[0]
+        self.assertTrue(os.path.isfile(deactivate_file), 'File {} was not found. '.format(deactivate_file))
+        self.assertNotEqual(os.stat(self.idf_env_json).st_size, 0, 'File {} is empty. '.format(deactivate_file))
 
 
 class TestMaintainer(unittest.TestCase):
