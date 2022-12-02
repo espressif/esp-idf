@@ -64,11 +64,6 @@ void i2c_hal_disable_intr_mask(i2c_hal_context_t *hal, uint32_t mask)
     i2c_ll_disable_intr_mask(hal->dev, mask);
 }
 
-void i2c_hal_get_intsts_mask(i2c_hal_context_t *hal, uint32_t *mask)
-{
-    *mask = i2c_ll_get_intsts_mask(hal->dev);
-}
-
 void i2c_hal_set_fifo_mode(i2c_hal_context_t *hal, bool fifo_mode_en)
 {
     i2c_ll_set_fifo_mode(hal->dev, fifo_mode_en);

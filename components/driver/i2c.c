@@ -1288,6 +1288,7 @@ esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t *data, size_t dat
     return ret;
 }
 
+__attribute__((always_inline))
 static inline bool i2c_cmd_is_single_byte(const i2c_cmd_t *cmd) {
     return cmd->total_bytes == 1;
 }
