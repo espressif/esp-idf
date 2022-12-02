@@ -64,7 +64,7 @@ void systimer_hal_counter_value_advance(systimer_hal_context_t *hal, uint32_t co
 }
 #endif // CONFIG_IDF_TARGET_ESP32C2
 
-#if CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
 void systimer_hal_init(systimer_hal_context_t *hal)
 {
     hal->dev = &SYSTIMER;
