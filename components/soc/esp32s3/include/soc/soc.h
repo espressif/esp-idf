@@ -25,7 +25,6 @@
 #define DR_REG_ITAG_TABLE                       0x600C6000
 #define DR_REG_DTAG_TABLE                       0x600C8000
 #define DR_REG_EXT_MEM_ENC                      0x600CC000
-#define DR_REG_DPORT_END                        0x600D3FFC
 
 
 #define REG_UHCI_BASE(i)         (DR_REG_UHCI0_BASE - (i) * 0x8000)
