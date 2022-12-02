@@ -163,6 +163,9 @@ class Platforms:
         if platform_alias is None:
             return None
 
+        if platform_alias == 'any' and CURRENT_PLATFORM:
+            platform_alias = CURRENT_PLATFORM
+
         platform_name = Platforms.PLATFORM_FROM_NAME.get(platform_alias, None)
 
         # ARM platform may run on armhf hardware but having armel installed packages.
@@ -467,7 +470,7 @@ def rename_with_retry(path_from, path_to):  # type: (str, str) -> None
             time.sleep(0.5)
 
 
-def strip_container_dirs(path, levels):  # type: (str, int) -> None
+def do_strip_container_dirs(path, levels):  # type: (str, int) -> None
     assert levels > 0
     # move the original directory out of the way (add a .tmp suffix)
     tmp_path = path + '.tmp'
@@ -560,6 +563,7 @@ IDFToolOptions = namedtuple('IDFToolOptions', [
     'version_cmd',
     'version_regex',
     'version_regex_replace',
+    'is_executable',
     'export_paths',
     'export_vars',
     'install',
@@ -576,8 +580,8 @@ class IDFTool(object):
     INSTALL_NEVER = 'never'
 
     def __init__(self, name, description, install, info_url, license, version_cmd, version_regex, supported_targets, version_regex_replace=None,
-                 strip_container_dirs=0):
-        # type: (str, str, str, str, str, List[str], str, List[str], Optional[str], int) -> None
+                 strip_container_dirs=0, is_executable=True):
+        # type: (str, str, str, str, str, List[str], str, List[str], Optional[str], int, bool) -> None
         self.name = name
         self.description = description
         self.drop_versions()
@@ -585,11 +589,12 @@ class IDFTool(object):
         self.versions_installed = []  # type: List[str]
         if version_regex_replace is None:
             version_regex_replace = VERSION_REGEX_REPLACE_DEFAULT
-        self.options = IDFToolOptions(version_cmd, version_regex, version_regex_replace,
+        self.options = IDFToolOptions(version_cmd, version_regex, version_regex_replace, is_executable,
                                       [], OrderedDict(), install, info_url, license, strip_container_dirs, supported_targets)  # type: ignore
         self.platform_overrides = []  # type: List[Dict[str, str]]
         self._platform = CURRENT_PLATFORM
         self._update_current_options()
+        self.is_executable = is_executable
 
     def copy_for_platform(self, platform):  # type: (str) -> IDFTool
         result = copy.deepcopy(self)
@@ -636,7 +641,9 @@ class IDFTool(object):
             v_repl = re.sub(SUBST_TOOL_PATH_REGEX, replace_path, v)
             if v_repl != v:
                 v_repl = to_shell_specific_paths([v_repl])[0]
-            result[k] = v_repl
+            old_v = os.environ.get(k)
+            if old_v is None or old_v != v_repl:
+                result[k] = v_repl
         return result
 
     def check_version(self, extra_paths=None):  # type: (Optional[List[str]]) -> str
@@ -727,6 +734,9 @@ class IDFTool(object):
             if not os.path.exists(tool_path):
                 # version not installed
                 continue
+            if not self.is_executable:
+                self.versions_installed.append(version)
+                continue
             try:
                 ver_str = self.check_version(self.get_export_paths(version))
             except ToolNotFound:
@@ -794,7 +804,7 @@ class IDFTool(object):
         mkdir_p(dest_dir)
         unpack(archive_path, dest_dir)
         if self._current_options.strip_container_dirs:  # type: ignore
-            strip_container_dirs(dest_dir, self._current_options.strip_container_dirs)  # type: ignore
+            do_strip_container_dirs(dest_dir, self._current_options.strip_container_dirs)  # type: ignore
 
     @staticmethod
     def check_download_file(download_obj, local_path):  # type: (IDFToolDownload, str) -> bool
@@ -811,28 +821,29 @@ class IDFTool(object):
 
     @classmethod
     def from_json(cls, tool_dict):  # type: (Dict[str, Union[str, List[str], Dict[str, str]]]) -> IDFTool
-        # json.load will return 'str' types in Python 3 and 'unicode' in Python 2
-        expected_str_type = type(u'')
-
         # Validate json fields
         tool_name = tool_dict.get('name')  # type: ignore
-        if type(tool_name) is not expected_str_type:
+        if not isinstance(tool_name, str):
             raise RuntimeError('tool_name is not a string')
 
         description = tool_dict.get('description')  # type: ignore
-        if type(description) is not expected_str_type:
+        if not isinstance(description, str):
             raise RuntimeError('description is not a string')
+
+        is_executable = tool_dict.get('is_executable', True)  # type: ignore
+        if not isinstance(is_executable, bool):
+            raise RuntimeError('is_executable for tool %s is not a bool' % tool_name)
 
         version_cmd = tool_dict.get('version_cmd')
         if type(version_cmd) is not list:
             raise RuntimeError('version_cmd for tool %s is not a list of strings' % tool_name)
 
         version_regex = tool_dict.get('version_regex')
-        if type(version_regex) is not expected_str_type or not version_regex:
+        if not isinstance(version_regex, str) or (not version_regex and is_executable):
             raise RuntimeError('version_regex for tool %s is not a non-empty string' % tool_name)
 
         version_regex_replace = tool_dict.get('version_regex_replace')
-        if version_regex_replace and type(version_regex_replace) is not expected_str_type:
+        if version_regex_replace and not isinstance(version_regex_replace, str):
             raise RuntimeError('version_regex_replace for tool %s is not a string' % tool_name)
 
         export_paths = tool_dict.get('export_paths')
@@ -848,15 +859,15 @@ class IDFTool(object):
             raise RuntimeError('versions for tool %s is not an array' % tool_name)
 
         install = tool_dict.get('install', False)  # type: ignore
-        if type(install) is not expected_str_type:
+        if not isinstance(install, str):
             raise RuntimeError('install for tool %s is not a string' % tool_name)
 
         info_url = tool_dict.get('info_url', False)  # type: ignore
-        if type(info_url) is not expected_str_type:
+        if not isinstance(info_url, str):
             raise RuntimeError('info_url for tool %s is not a string' % tool_name)
 
         license = tool_dict.get('license', False)  # type: ignore
-        if type(license) is not expected_str_type:
+        if not isinstance(license, str):
             raise RuntimeError('license for tool %s is not a string' % tool_name)
 
         strip_container_dirs = tool_dict.get('strip_container_dirs', 0)
@@ -874,7 +885,7 @@ class IDFTool(object):
         # Create the object
         tool_obj = cls(tool_name, description, install, info_url, license,  # type: ignore
                        version_cmd, version_regex, supported_targets, version_regex_replace,  # type: ignore
-                       strip_container_dirs)  # type: ignore
+                       strip_container_dirs, is_executable)  # type: ignore
 
         for path in export_paths:  # type: ignore
             tool_obj.options.export_paths.append(path)  # type: ignore
@@ -888,7 +899,7 @@ class IDFTool(object):
                 raise RuntimeError('platforms for override %d of tool %s is not a list' % (index, tool_name))
 
             install = override.get('install')  # type: ignore
-            if install is not None and type(install) is not expected_str_type:
+            if install is not None and not isinstance(install, str):
                 raise RuntimeError('install for override %d of tool %s is not a string' % (index, tool_name))
 
             version_cmd = override.get('version_cmd')  # type: ignore
@@ -897,12 +908,12 @@ class IDFTool(object):
                                    (index, tool_name))
 
             version_regex = override.get('version_regex')  # type: ignore
-            if version_regex is not None and (type(version_regex) is not expected_str_type or not version_regex):
+            if version_regex is not None and (not isinstance(version_regex, str) or not version_regex):
                 raise RuntimeError('version_regex for override %d of tool %s is not a non-empty string' %
                                    (index, tool_name))
 
             version_regex_replace = override.get('version_regex_replace')  # type: ignore
-            if version_regex_replace is not None and type(version_regex_replace) is not expected_str_type:
+            if version_regex_replace is not None and not isinstance(version_regex_replace, str):
                 raise RuntimeError('version_regex_replace for override %d of tool %s is not a string' %
                                    (index, tool_name))
 
@@ -918,11 +929,11 @@ class IDFTool(object):
         recommended_versions = {}  # type: dict[str, list[str]]
         for version_dict in versions:  # type: ignore
             version = version_dict.get('name')  # type: ignore
-            if type(version) is not expected_str_type:
+            if not isinstance(version, str):
                 raise RuntimeError('version name for tool {} is not a string'.format(tool_name))
 
             version_status = version_dict.get('status')  # type: ignore
-            if type(version_status) is not expected_str_type and version_status not in IDFToolVersion.STATUS_VALUES:
+            if not isinstance(version_status, str) and version_status not in IDFToolVersion.STATUS_VALUES:
                 raise RuntimeError('tool {} version {} status is not one of {}', tool_name, version,
                                    IDFToolVersion.STATUS_VALUES)
 
@@ -989,6 +1000,8 @@ class IDFTool(object):
             tool_json['platform_overrides'] = overrides_array
         if self.options.strip_container_dirs:
             tool_json['strip_container_dirs'] = self.options.strip_container_dirs
+        if self.options.is_executable is False:
+            tool_json['is_executable'] = self.options.is_executable
         return tool_json
 
 
@@ -1531,10 +1544,22 @@ def action_export(args):  # type: ignore
     all_tools_found = True
     export_vars = {}
     paths_to_export = []
+
+    self_restart_cmd = f'{sys.executable} {__file__}{(" --tools-json " + args.tools_json) if args.tools_json else ""}'
+    self_restart_cmd = to_shell_specific_paths([self_restart_cmd])[0]
+    prefer_system_hint = '' if IDF_TOOLS_EXPORT_CMD else f' To use it, run \'{self_restart_cmd} export --prefer-system\''
+    install_cmd = to_shell_specific_paths([IDF_TOOLS_INSTALL_CMD])[0] if IDF_TOOLS_INSTALL_CMD else self_restart_cmd + ' install'
+
     for name, tool in tools_info.items():
         if tool.get_install_type() == IDFTool.INSTALL_NEVER:
             continue
         tool.find_installed_versions()
+        version_to_use = tool.get_preferred_installed_version()
+
+        if not tool.is_executable and version_to_use:
+            tool_export_vars = tool.get_export_vars(version_to_use)
+            export_vars = {**export_vars, **tool_export_vars}
+            continue
 
         if tool.version_in_path:
             if tool.version_in_path not in tool.versions:
@@ -1558,20 +1583,6 @@ def action_export(args):  # type: ignore
                     warn('using a deprecated version of tool {} found in PATH: {}'.format(name, tool.version_in_path))
                 continue
 
-        self_restart_cmd = '{} {}{}'.format(sys.executable, __file__,
-                                            (' --tools-json ' + args.tools_json) if args.tools_json else '')
-        self_restart_cmd = to_shell_specific_paths([self_restart_cmd])[0]
-
-        if IDF_TOOLS_EXPORT_CMD:
-            prefer_system_hint = ''
-        else:
-            prefer_system_hint = ' To use it, run \'{} export --prefer-system\''.format(self_restart_cmd)
-
-        if IDF_TOOLS_INSTALL_CMD:
-            install_cmd = to_shell_specific_paths([IDF_TOOLS_INSTALL_CMD])[0]
-        else:
-            install_cmd = self_restart_cmd + ' install'
-
         if not tool.versions_installed:
             if tool.get_install_type() == IDFTool.INSTALL_ALWAYS:
                 all_tools_found = False
@@ -1590,15 +1601,11 @@ def action_export(args):  # type: ignore
             info('Not using an unsupported version of tool {} found in PATH: {}.'.format(
                  tool.name, tool.version_in_path) + prefer_system_hint, f=sys.stderr)
 
-        version_to_use = tool.get_preferred_installed_version()
         export_paths = tool.get_export_paths(version_to_use)
         if export_paths:
             paths_to_export += export_paths
         tool_export_vars = tool.get_export_vars(version_to_use)
-        for k, v in tool_export_vars.items():
-            old_v = os.environ.get(k)
-            if old_v is None or old_v != v:
-                export_vars[k] = v
+        export_vars = {**export_vars, **tool_export_vars}
 
     current_path = os.getenv('PATH')
     idf_python_env_path, idf_python_export_path, virtualenv_python, _ = get_python_env_path()

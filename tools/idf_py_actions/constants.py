@@ -34,3 +34,11 @@ URL_TO_DOC = 'https://docs.espressif.com/projects/esp-idf'
 
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2']
 PREVIEW_TARGETS = ['linux', 'esp32h2']
+
+OPENOCD_TAGET_CONFIG_DEFAULT = '-f interface/ftdi/esp32_devkitj_v1.cfg -f target/{target}.cfg'
+OPENOCD_TAGET_CONFIG: Dict[str, str] = {
+    'esp32': '-f board/esp32-wrover-kit-3.3v.cfg',
+    'esp32s2': '-f board/esp32s2-kaluga-1.cfg',
+    'esp32c3': '-f board/esp32c3-builtin.cfg',
+    'esp32s3': '-f board/esp32s3-builtin.cfg',
+}
