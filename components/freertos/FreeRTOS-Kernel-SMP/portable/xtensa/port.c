@@ -721,21 +721,21 @@ void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xCoreID);
 
 void vPortCleanUpCoprocArea( void *pxTCB )
 {
-    StackType_t *coproc_area;
+    UBaseType_t uxCoprocArea;
     BaseType_t xCoreID;
 
-    /* Calculate the coproc save area in the stack from the TCB base */
-    coproc_area = ( StackType_t * ) ( ( uint32_t ) ( pxTCB + offset_pxEndOfStack ));
-    coproc_area = ( StackType_t * ) ( ( ( portPOINTER_SIZE_TYPE ) coproc_area ) & ( ~( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) ) );
-    coproc_area = ( StackType_t * ) ( ( ( uint32_t ) coproc_area - XT_CP_SIZE ) & ~0xf );
+    /* Get pointer to the task's coprocessor save area from TCB->pxEndOfStack. See uxInitialiseStackCPSA() */
+    uxCoprocArea = ( UBaseType_t ) ( ( ( StaticTask_t * ) pxTCB )->pxDummy8 );  /* Get TCB_t.pxEndOfStack */
+    uxCoprocArea = STACKPTR_ALIGN_DOWN(16, uxCoprocArea - XT_CP_SIZE);
 
     /* Extract core ID from the affinity mask */
-    xCoreID = __builtin_ffs( * ( UBaseType_t * ) ( pxTCB + offset_uxCoreAffinityMask ) );
-    assert( xCoreID >= 1 );
+    xCoreID = ( ( StaticTask_t * ) pxTCB )->uxDummy25 ;
+    xCoreID = ( BaseType_t ) __builtin_ffs( ( int ) xCoreID );
+    assert( xCoreID >= 1 ); // __builtin_ffs always returns first set index + 1
     xCoreID -= 1;
 
     /* If task has live floating point registers somewhere, release them */
-    _xt_coproc_release( coproc_area, xCoreID );
+    _xt_coproc_release( (void *)uxCoprocArea, xCoreID );
 }
 #endif // ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 

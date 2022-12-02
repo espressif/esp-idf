@@ -449,7 +449,7 @@ _xt_coproc_release:
 
 1:  l32i    a8, a4, 0                       /* a8 = owner at a4 */
     bne     a2, a8, 2f                      /* if (coproc_sa_base == owner) */
-    s32i    a3, a4, 0                       /*   owner = unowned */
+    s32i    a6, a4, 0                       /*   owner = unowned */
 2:  addi    a4, a4, 1<<2                    /* a4 = next entry in owner array */
     bltu    a4, a5, 1b                      /* repeat until end of array */
 
