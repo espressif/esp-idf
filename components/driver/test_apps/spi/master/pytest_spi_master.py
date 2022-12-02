@@ -28,7 +28,6 @@ def test_master_esp_flash(case_tester) -> None:        # type: ignore
 
 # if `test_env` not defined, will run on `generic_multi_device` by default
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='no runner')
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count, config', [(2, 'defaults',), (2, 'release',), (2, 'freertos_compliance',), (2, 'freertos_flash',)], indirect=True)
 def test_master_multi_dev(case_tester) -> None:        # type: ignore
