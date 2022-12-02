@@ -7,7 +7,7 @@ Wi-Fi Driver
 ------------------------------------
 The following features are supported:
 
-.. only:: esp32 or esp32s2 or esp32c3 or esp32s3
+.. only:: esp32 or esp32s2 or esp32s3
 
     - 4 virtual Wi-Fi interfaces, which are STA, AP, Sniffer and reserved.
     - Station-only mode, AP-only mode, station/AP-coexistence mode
@@ -22,13 +22,28 @@ The following features are supported:
     - Multiple antennas
     - Channel state information
 
+.. only:: esp32c3
+
+    - 4 virtual Wi-Fi interfaces, which are STA, AP, Sniffer and reserved.
+    - Station-only mode, AP-only mode, station/AP-coexistence mode
+    - IEEE 802.11b, IEEE 802.11g, IEEE 802.11n, and APIs to configure the protocol mode
+    - WPA/WPA2/WPA3/WPA2-Enterprise/WPA3-Enterprise/WAPI/WPS and DPP
+    - AMPDU, HT40, QoS, and other key features
+    - Modem-sleep
+    - The Espressif-specific ESP-NOW protocol and Long Range mode, which supports up to **1 km** of data traffic
+    - Up to 20 MBit/s TCP throughput and 30 MBit/s UDP throughput over the air
+    - Sniffer
+    - Both fast scan and all-channel scan
+    - Multiple antennas
+    - Channel state information
+
 .. only:: esp32c2
 
     - 3 virtual Wi-Fi interfaces, which are STA, AP and Sniffer.
     - Station-only mode, AP-only mode, station/AP-coexistence mode
     - IEEE 802.11b, IEEE 802.11g, IEEE 802.11n, and APIs to configure the protocol mode
     - WPA/WPA2/WPA3/WPA2-Enterprise/WPA3-Enterprise/WPS and DPP
-    - AMSDU, AMPDU, QoS, and other key features
+    - AMPDU, QoS, and other key features
     - Modem-sleep
     - Up to 20 MBit/s TCP throughput and 30 MBit/s UDP throughput over the air
     - Sniffer
@@ -2164,10 +2179,12 @@ Theoretically, the higher priority AC has better performance than the lower prio
  - Avoid using more than two precedences supported by different AMPDUs, e.g., when socket A uses precedence 0, socket B uses precedence 1, and socket C uses precedence 2. This can be a bad design because it may need much more memory. To be specific, the Wi-Fi driver may generate a Block Ack session for each precedence and it needs more memory if the Block Ack session is set up.
 
 
-Wi-Fi AMSDU
--------------------------
+.. only:: SOC_SPIRAM_SUPPORTED
 
-{IDF_TARGET_NAME} supports receiving and transmitting AMSDU.
+    Wi-Fi AMSDU
+    -------------------------
+
+    {IDF_TARGET_NAME} supports receiving and transmitting AMSDU. AMSDU TX is disabled by default, since enable AMSDU TX need more internal memory. Select :ref:`CONFIG_ESP32_WIFI_AMSDU_TX_ENABLED` to enable AMSDU Tx feature, it depends on :ref:`CONFIG_SPIRAM`.
 
 Wi-Fi Fragment
 -------------------------
@@ -2849,7 +2866,7 @@ The parameters not mentioned in the following table should be set to the default
      - **Minimum rank**
         This is the minimum configuration rank of {IDF_TARGET_NAME}. The protocol stack only uses the necessary memory for running. It is suitable for scenarios where there is no requirement for performance and the application requires lots of space.
 
-.. only:: esp32 or esp32s2 or esp32s3
+.. only:: SOC_SPIRAM_SUPPORTED
 
     Using PSRAM
     ++++++++++++++++++++++++++++
