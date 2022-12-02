@@ -69,7 +69,7 @@ Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTE
 
   Start GDB server which can communicate with GDB over console UART port. This option allows the user to debug a program at run time and set break points, alter the execution, etc. See `GDB Stub`_ for more details.
 
-The behavior of the panic handler is affected by two other configuration options.
+The behavior of the panic handler is affected by three other configuration options.
 
 - If :ref:`CONFIG_ESP_DEBUG_OCDAWARE` is enabled (which is the default), the panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case, registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
 
@@ -78,6 +78,8 @@ The behavior of the panic handler is affected by two other configuration options
 - If :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` is disabled (disabled by default), the panic handler code is placed in flash memory, not IRAM. This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor risk, if the flash cache status is also corrupted during the crash.
 
   If this option is enabled, the panic handler code (including required UART functions) is placed in IRAM, and hence will decrease the usable memory space in SRAM. But this may be necessary to debug some complex issues with crashes while flash cache is disabled (for example, when writing to SPI flash) or when flash cache is corrupted when an exception is triggered.
+
+- If :ref:`CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS` is enabled (disabled by default) and set to a number higher than 0, the panic handler will delay the reboot for that amount of time in seconds. This can help if the tool used to monitor serial output does not provide a possibility to stop and examine the serial output. In that case, delaying the reboot will allow users to examine and debug the panic handler output (backtrace, etc.) for the duration of the delay. After the delay, the device will reboot. The reset reason is preserved.
 
 The following diagram illustrates the panic handler behavior:
 
