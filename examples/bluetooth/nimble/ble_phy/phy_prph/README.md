@@ -13,7 +13,7 @@ This example performs below functionalities:
 
 This example aims at understanding how to establish connections on preferred PHY and changing LE PHY once the connection is established.
 
-To test this demo, use any BLE GATT server app that advertises support for the LE PHY service (0xABF2) and includes it in the GATT database. Also make sure device supports extended advertising.
+To test this demo, use any BLE GATT client app that supports extended advertising.
 
 Note :
 
