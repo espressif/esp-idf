@@ -245,6 +245,25 @@ def info(text, f=None, *args):  # type: (str, Optional[IO[str]], str) -> None
         f.write(text + '\n', *args)
 
 
+def print_hints_on_download_error(err):  # type: (str) -> None
+    info('Please make sure you have a working Internet connection.')
+
+    if 'CERTIFICATE' in err:
+        info('Certificate issues are usually caused by an outdated certificate database on your computer.')
+        info('Please check the documentation of your operating system for how to upgrade it.')
+
+        if sys.platform == 'darwin':
+            info('Running "./Install\\ Certificates.command" might be able to fix this issue.')
+
+        info('Running "{} -m pip install --upgrade certifi" can also resolve this issue in some cases.'.format(sys.executable))
+
+    # Certificate issue on Windows can be hidden under different errors which might be even translated,
+    # e.g. "[WinError -2146881269] ASN1 valor de tag inválido encontrado"
+    if sys.platform == 'win32':
+        info('By downloading and using the offline installer from https://dl.espressif.com/dl/esp-idf '
+             'you might be able to work around this issue.')
+
+
 def run_cmd_check_output(cmd, input_text=None, extra_paths=None):
     # type: (List[str], Optional[str], Optional[List[str]]) -> bytes
     # If extra_paths is given, locate the executable in one of these directories.
@@ -401,7 +420,7 @@ def urlretrieve_ctx(url, filename, reporthook=None, data=None, context=None):
     return result
 
 
-def download(url, destination):  # type: (str, str) -> None
+def download(url, destination):  # type: (str, str) -> Optional[Exception]
     info(f'Downloading {url}')
     info(f'Destination: {destination}')
     try:
@@ -419,10 +438,10 @@ def download(url, destination):  # type: (str, str) -> None
 
         urlretrieve_ctx(url, destination, report_progress if not global_non_interactive else None, context=ctx)
         sys.stdout.write('\rDone\n')
+        return None
     except Exception as e:
         # urlretrieve could throw different exceptions, e.g. IOError when the server is down
-        # Errors are ignored because the downloaded file is checked a couple of lines later.
-        warn('Download failure {}'.format(e))
+        return e
     finally:
         sys.stdout.flush()
 
@@ -479,10 +498,6 @@ class ToolNotFound(RuntimeError):
 
 
 class ToolExecError(RuntimeError):
-    pass
-
-
-class DownloadError(RuntimeError):
     pass
 
 
@@ -732,7 +747,7 @@ class IDFTool(object):
         download_obj = self.versions[version].get_download_for_platform(self._platform)
         if not download_obj:
             fatal('No packages for tool {} platform {}!'.format(self.name, self._platform))
-            raise DownloadError()
+            raise SystemExit(1)
 
         url = download_obj.url
         archive_name = os.path.basename(url)
@@ -750,8 +765,9 @@ class IDFTool(object):
         downloaded = False
         local_temp_path = local_path + '.tmp'
         for retry in range(DOWNLOAD_RETRY_COUNT):
-            download(url, local_temp_path)
+            err = download(url, local_temp_path)
             if not os.path.isfile(local_temp_path) or not self.check_download_file(download_obj, local_temp_path):
+                warn('Download failure: {}'.format(err))
                 warn('Failed to download {} to {}'.format(url, local_temp_path))
                 continue
             rename_with_retry(local_temp_path, local_path)
@@ -759,7 +775,8 @@ class IDFTool(object):
             break
         if not downloaded:
             fatal('Failed to download, and retry count has expired')
-            raise DownloadError()
+            print_hints_on_download_error(str(err))
+            raise SystemExit(1)
 
     def install(self, version):  # type: (str) -> None
         # Currently this is called after calling 'download' method, so here are a few asserts
@@ -1881,8 +1898,9 @@ def get_constraints(idf_version, online=True):  # type: (str, bool) -> str
         pass
 
     for _ in range(DOWNLOAD_RETRY_COUNT):
-        download(constraint_url, temp_path)
+        err = download(constraint_url, temp_path)
         if not os.path.isfile(temp_path):
+            warn('Download failure: {}'.format(err))
             warn('Failed to download {} to {}'.format(constraint_url, temp_path))
             continue
         if os.path.isfile(constraint_path):
@@ -1896,8 +1914,9 @@ def get_constraints(idf_version, online=True):  # type: (str, bool) -> str
         return constraint_path
     else:
         fatal('Failed to download, and retry count has expired')
+        print_hints_on_download_error(str(err))
         info('See the help on how to disable constraints in order to work around this issue.')
-        raise DownloadError()
+        raise SystemExit(1)
 
 
 def install_legacy_python_virtualenv(path):  # type: (str) -> None
