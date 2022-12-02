@@ -597,18 +597,20 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_STATE;
     }
-    if (cfg == NULL) {
+
+    if (!cfg) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "cfg is NULL");
         return ESP_ERR_INVALID_ARG;
     }
 
     ble_rtc_clk_init();
 
-    if (esp_register_ext_funcs(&ext_funcs_ro) != 0) {
+    ret = esp_register_ext_funcs(&ext_funcs_ro);
+    if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "register extend functions failed");
-        return ESP_ERR_INVALID_ARG;
+        return ret;
     }
 
     /* Initialize the function pointers for OS porting */
@@ -619,9 +621,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (esp_register_npl_funcs(p_npl_funcs) != 0) {
+    ret = esp_register_npl_funcs(p_npl_funcs);
+    if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "npl functions register failed");
-        ret = ESP_ERR_INVALID_ARG;
         goto free_mem;
     }
 
@@ -632,9 +634,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 
     /* Initialize the global memory pool */
-    if (os_msys_buf_alloc() != 0) {
+    ret = os_msys_buf_alloc();
+    if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "os msys alloc failed");
-        ret = ESP_ERR_INVALID_ARG;
         goto free_mem;
     }
 
