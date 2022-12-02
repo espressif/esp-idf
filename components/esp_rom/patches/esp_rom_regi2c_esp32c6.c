@@ -118,9 +118,6 @@ static IRAM_ATTR void regi2c_disable_block(uint8_t block)
     default:
         return;
     }
-
-    REG_CLR_BIT(LP_I2C_ANA_MST_DATE_REG, LP_I2C_ANA_MST_I2C_MAT_CLK_EN);
-    REG_CLR_BIT(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
 }
 
 uint8_t IRAM_ATTR esp_rom_regi2c_read(uint8_t block, uint8_t host_id, uint8_t reg_add)
