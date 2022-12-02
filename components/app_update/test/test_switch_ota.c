@@ -49,11 +49,11 @@ static const char *TAG = "ota_test";
 static void copy_app_partition(esp_ota_handle_t update_handle, const esp_partition_t *curr_app)
 {
     const void *partition_bin = NULL;
-    spi_flash_mmap_handle_t  data_map;
+    esp_partition_mmap_handle_t data_map;
     ESP_LOGI(TAG, "start the copy process");
-    TEST_ESP_OK(esp_partition_mmap(curr_app, 0, curr_app->size, SPI_FLASH_MMAP_DATA, &partition_bin, &data_map));
+    TEST_ESP_OK(esp_partition_mmap(curr_app, 0, curr_app->size, ESP_PARTITION_MMAP_DATA, &partition_bin, &data_map));
     TEST_ESP_OK(esp_ota_write(update_handle, (const void *)partition_bin, curr_app->size));
-    spi_flash_munmap(data_map);
+    esp_partition_munmap(data_map);
     ESP_LOGI(TAG, "finish the copy process");
 }
 
@@ -65,15 +65,15 @@ static void copy_app_partition(esp_ota_handle_t update_handle, const esp_partiti
 static void copy_app_partition_with_offset(esp_ota_handle_t update_handle, const esp_partition_t *curr_app)
 {
     const void *partition_bin = NULL;
-    spi_flash_mmap_handle_t  data_map;
+    esp_partition_mmap_handle_t  data_map;
     ESP_LOGI(TAG, "start the copy process");
     uint32_t offset = 0, bytes_to_write = curr_app->size;
     uint32_t write_bytes;
     while (bytes_to_write > 0) {
         write_bytes = (bytes_to_write > (4 * 1024)) ? (4 * 1024) : bytes_to_write;
-        TEST_ESP_OK(esp_partition_mmap(curr_app, offset, write_bytes, SPI_FLASH_MMAP_DATA, &partition_bin, &data_map));
+        TEST_ESP_OK(esp_partition_mmap(curr_app, offset, write_bytes, ESP_PARTITION_MMAP_DATA, &partition_bin, &data_map));
         TEST_ESP_OK(esp_ota_write_with_offset(update_handle, (const void *)partition_bin, write_bytes, offset));
-        spi_flash_munmap(data_map);
+        esp_partition_munmap(data_map);
         bytes_to_write -= write_bytes;
         offset += write_bytes;
     }
@@ -90,11 +90,11 @@ static void copy_app_partition_with_offset(esp_ota_handle_t update_handle, const
 static void copy_partition(const esp_partition_t *dst_partition, const esp_partition_t *src_partition)
 {
     const void *partition_bin = NULL;
-    spi_flash_mmap_handle_t data_map;
-    TEST_ESP_OK(esp_partition_mmap(src_partition, 0, src_partition->size, SPI_FLASH_MMAP_DATA, &partition_bin, &data_map));
+    esp_partition_mmap_handle_t data_map;
+    TEST_ESP_OK(esp_partition_mmap(src_partition, 0, src_partition->size, ESP_PARTITION_MMAP_DATA, &partition_bin, &data_map));
     TEST_ESP_OK(esp_partition_erase_range(dst_partition, 0, dst_partition->size));
     TEST_ESP_OK(esp_partition_write(dst_partition, 0, (const void *)partition_bin, dst_partition->size));
-    spi_flash_munmap(data_map);
+    esp_partition_munmap(data_map);
 }
 #endif
 
