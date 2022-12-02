@@ -186,8 +186,8 @@ build:integration_test:
     - integration_test
     - target_test
   patterns:
-    - integration_test_{0}
-    - target_test_{0}
+    - integration_test-{0}
+    - target_test-{0}
     # - maybe others
   included_in:
     - test:integration_test

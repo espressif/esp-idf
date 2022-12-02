@@ -93,7 +93,14 @@
   - "examples/common_components/iperf/**/*"
   - "examples/openthread/**/*"
 
-.patterns-integration_test_ble: &patterns-integration_test_ble
+.patterns-target_test-wifi: &patterns-target_test-wifi
+  - "components/esp_netif/**/*"
+  - "components/lwip/**/*"
+  - "components/esp_wifi/**/*"
+  - "components/esp_phy/**/*"
+  - "components/wpa_supplicant/**/*"
+
+.patterns-integration_test-ble: &patterns-integration_test-ble
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/integration_test/**/*"
   - "components/bt/controller/lib_esp32"
@@ -102,11 +109,9 @@
   - "components/bt/host/nimble/nimble"
   - "components/esp_phy/lib"
 
-.patterns-integration_test_wifi: &patterns-integration_test_wifi
+.patterns-integration_test-wifi: &patterns-integration_test-wifi
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/integration_test/**/*"
-  - "components/esp_wifi/lib"
-  - "components/esp_phy/lib"
 
 .patterns-host_test: &patterns-host_test
   - ".gitlab/ci/host-test.yml"
@@ -226,12 +231,6 @@
   - "examples/system/ota/**/*"
   - "components/app_update/**/*"
   - "components/esp_https_ota/**/*"
-
-.patterns-target_test-wifi: &patterns-target_test-wifi
-  - "components/esp_phy/**/*"
-  - "components/esp_wifi/**/*"
-  - "components/esp_netif/**/*"
-  - "components/lwip/**/*"
 
 # for jobs: component_ut_pytest_esp32_sdio
 .patterns-unit_test-sdio: &patterns-unit_test-sdio
@@ -1250,9 +1249,11 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
-      changes: *patterns-integration_test_ble
+      changes: *patterns-integration_test-ble
     - <<: *if-dev-push
-      changes: *patterns-integration_test_wifi
+      changes: *patterns-integration_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:macos:
   rules:
@@ -1340,9 +1341,9 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
-      changes: *patterns-integration_test_ble
+      changes: *patterns-integration_test-ble
     - <<: *if-dev-push
-      changes: *patterns-integration_test_wifi
+      changes: *patterns-integration_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
     - <<: *if-dev-push
@@ -2042,9 +2043,11 @@
     - <<: *if-label-integration_test_wifi
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-integration_test_ble
+      changes: *patterns-integration_test-ble
     - <<: *if-dev-push
-      changes: *patterns-integration_test_wifi
+      changes: *patterns-integration_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:integration_test_ble:
   rules:
@@ -2057,7 +2060,7 @@
     - <<: *if-label-integration_test_ble
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-integration_test_ble
+      changes: *patterns-integration_test-ble
 
 .rules:test:integration_test_wifi:
   rules:
@@ -2070,7 +2073,9 @@
     - <<: *if-label-integration_test_wifi
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-integration_test_wifi
+      changes: *patterns-integration_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:submodule:
   rules:
