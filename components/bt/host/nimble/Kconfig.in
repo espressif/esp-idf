@@ -75,6 +75,7 @@ config BT_NIMBLE_MAX_CONNECTIONS
         is expected to configure BTDM_CTRL_BLE_MAX_CONN from controller menu
         along with this option. Similarly for ESP32-C3 or ESP32-S3, user is expected to
         configure BT_CTRL_BLE_MAX_ACT from controller menu.
+        For ESP32C2, ESP32C6 and ESP32H2, each connection will take about 1k DRAM.
 
 config BT_NIMBLE_MAX_BONDS
     int "Maximum number of bonds to save across reboots"
@@ -538,6 +539,8 @@ if BT_NIMBLE_EXT_ADV
             instances. Minimum there is always one instance of
             advertising. Enter how many more advertising instances you
             want.
+            For ESP32C2, ESP32C6 and ESP32H2, each extended advertising instance
+            will take about 0.5k DRAM.
 
     config BT_NIMBLE_EXT_ADV_MAX_SIZE
         int "Maximum length of the advertising data."
