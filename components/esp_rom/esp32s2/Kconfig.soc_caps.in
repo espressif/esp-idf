@@ -14,3 +14,7 @@ config ESP_ROM_HAS_MZ_CRC32
 config ESP_ROM_NEEDS_SWSETUP_WORKAROUND
     bool
     default y
+
+config ESP_ROM_HAS_REGI2C_BUG
+    bool
+    default y

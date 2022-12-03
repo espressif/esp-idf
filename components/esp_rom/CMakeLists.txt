@@ -21,10 +21,10 @@ else()
                         "patches/esp_rom_efuse.c")
 
 
-# Override regi2c implementation in ROM
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/patches/esp_rom_regi2c_${target}.c")
-    list(APPEND sources "patches/esp_rom_regi2c_${target}.c")
-endif()
+    # Override regi2c implementation in ROM
+    if(CONFIG_ESP_ROM_HAS_REGI2C_BUG)
+        list(APPEND sources "patches/esp_rom_regi2c_${target}.c")
+    endif()
 
     if(CONFIG_HEAP_TLSF_USE_ROM_IMPL AND CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
         # This file shall be included in the build if TLSF in ROM is activated
