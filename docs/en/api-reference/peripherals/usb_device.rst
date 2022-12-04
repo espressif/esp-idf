@@ -77,7 +77,7 @@ However, the driver also provides default descriptors. You can install the drive
 - bcdDevice
 - Manufacturer
 - Product name
-- Name of CDC device if it is On
+- Name of CDC or MSC device if it is On
 - Serial number
 
 If you want to use your own descriptors with extended modification, you can define them during the driver installation process.
@@ -141,6 +141,66 @@ USB Serial Console
 
 The driver allows to redirect all standard application streams (stdinm stdout, stderr) to the USB Serial Device and return them to UART using :cpp:func:`esp_tusb_init_console`/:cpp:func:`esp_tusb_deinit_console` functions.
 
+USB Mass Storage Device (MSC)
+-----------------------------
+
+If the MSC CONFIG_TINYUSB_MSC_ENABLED option is enabled and SPI Flash Wear Levelling WL_SECTOR_SIZE is set to 512 and WL_SECTOR_MODE is set to PERF in Menuconfig, the USB MSC Device can be initialized as shown below (see example below).
+
+.. code-block:: c
+
+    static uint8_t const desc_configuration[] = {
+        // Config number, interface count, string index, total length, attribute, power in mA
+        TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, TUSB_DESC_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+
+        // Interface number, string index, EP Out & EP In address, EP size
+        TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 0, EDPT_MSC_OUT, EDPT_MSC_IN, TUD_OPT_HIGH_SPEED ? 512 : 64),
+    };
+
+    static tusb_desc_device_t descriptor_config = {
+        .bLength = sizeof(descriptor_config),
+        .bDescriptorType = TUSB_DESC_DEVICE,
+        .bcdUSB = 0x0200,
+        .bDeviceClass = TUSB_CLASS_MISC,
+        .bDeviceSubClass = MISC_SUBCLASS_COMMON,
+        .bDeviceProtocol = MISC_PROTOCOL_IAD,
+        .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
+        .idVendor = 0x303A,
+        .idProduct = 0x4002,
+        .bcdDevice = 0x100,
+        .iManufacturer = 0x01,
+        .iProduct = 0x02,
+        .iSerialNumber = 0x03,
+        .bNumConfigurations = 0x01
+    };
+
+    static char const *string_desc_arr[] = {
+        (const char[]) { 0x09, 0x04 },  // 0: is supported language is English (0x0409)
+        "TinyUSB",                      // 1: Manufacturer
+        "TinyUSB Device",               // 2: Product
+        "123456",                       // 3: Serials
+        "Example MSC",                  // 4. MSC
+    };
+
+    const tinyusb_config_t tusb_cfg = {
+        .device_descriptor = &descriptor_config,
+        .string_descriptor = string_desc_arr,
+        .external_phy = false,
+        .configuration_descriptor = desc_configuration,
+    };
+    tinyusb_driver_install(&tusb_cfg);
+
+The mandatory callbacks that are required to be implemented are
+
+.. code-block:: c
+
+    void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16], uint8_t product_rev[4])
+    bool tud_msc_test_unit_ready_cb(uint8_t lun)
+    void tud_msc_capacity_cb(uint8_t lun, uint32_t *block_count, uint16_t *block_size)
+    bool tud_msc_start_stop_cb(uint8_t lun, uint8_t power_condition, bool start, bool load_eject)
+    int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void *buffer, uint32_t bufsize)
+    int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t bufsize)
+    int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void *buffer, uint16_t bufsize)
+
 Application Examples
 --------------------
 
@@ -160,3 +220,5 @@ The table below describes the code examples available in the directory :example:
      - How to set up {IDF_TARGET_NAME} chip to work as a USB MIDI Device
    * - :example:`peripherals/usb/device/tusb_hid`
      - How to set up {IDF_TARGET_NAME} chip to work as a USB Human Interface Device
+   * - :example:`peripherals/usb/device/tusb_msc`
+     - How to set up {IDF_TARGET_NAME} chip to work as a USB Mass Storage Device
