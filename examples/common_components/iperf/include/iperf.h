@@ -52,6 +52,10 @@ extern "C" {
 #define IPERF_SOCKET_RX_TIMEOUT 10
 #define IPERF_SOCKET_ACCEPT_TIMEOUT 5
 
+typedef enum {
+    MBITS_PER_SEC, KBITS_PER_SEC, BITS_PER_SEC
+} iperf_output_format;
+
 typedef struct {
     uint32_t flag;
     union {
@@ -69,6 +73,7 @@ typedef struct {
     uint32_t time;
     uint16_t len_send_buf;
     int32_t bw_lim;
+    iperf_output_format format;
 } iperf_cfg_t;
 
 esp_err_t iperf_start(iperf_cfg_t *cfg);
