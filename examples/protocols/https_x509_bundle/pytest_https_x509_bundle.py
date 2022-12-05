@@ -12,7 +12,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.wifi_ap
+@pytest.mark.ethernet
 def test_examples_protocol_https_x509_bundle(dut: Dut) -> None:
     """
     steps: |
@@ -42,7 +42,7 @@ def test_examples_protocol_https_x509_bundle(dut: Dut) -> None:
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.wifi_ap
+@pytest.mark.ethernet
 @pytest.mark.parametrize('config', ['ssldyn',], indirect=True)
 def test_examples_protocol_https_x509_bundle_dynamic_buffer(dut: Dut) -> None:
     # test mbedtls dynamic resource
