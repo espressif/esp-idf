@@ -317,7 +317,7 @@ typedef struct {
 } tBTA_GATTC_SERV;
 
 #ifndef BTA_GATTC_NOTIF_REG_MAX
-#define BTA_GATTC_NOTIF_REG_MAX     7//15
+#define BTA_GATTC_NOTIF_REG_MAX     BTA_GATTC_CONN_MAX
 #endif
 
 typedef struct {
