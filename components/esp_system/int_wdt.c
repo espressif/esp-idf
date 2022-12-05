@@ -20,15 +20,8 @@
 #include "esp_freertos_hooks.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_int_wdt.h"
-#include "esp_private/system_internal.h"
 
 #if CONFIG_ESP_INT_WDT
-
-#define WDT_INT_NUM             ETS_T1_WDT_INUM
-#define IWDT_INSTANCE           WDT_MWDT1
-#define IWDT_PRESCALER          MWDT1_TICK_PRESCALER   // Tick period of 500us if WDT source clock is 80MHz
-#define IWDT_TICKS_PER_US       MWDT1_TICKS_PER_US
-#define IWDT_INITIAL_TIMEOUT_S  5
 
 static wdt_hal_context_t iwdt_context;
 
@@ -131,7 +124,6 @@ void esp_int_wdt_init(void)
 
 void esp_int_wdt_cpu_init(void)
 {
-#if SOC_TIMER_GROUPS > 1
     assert((CONFIG_ESP_INT_WDT_TIMEOUT_MS >= (portTICK_PERIOD_MS << 1)) && "Interrupt watchdog timeout needs to be at least twice the RTOS tick period!");
     // Register tick hook for current CPU to feed the INT WDT
     esp_register_freertos_tick_hook_for_cpu(tick_hook, esp_cpu_get_core_id());
@@ -139,11 +131,11 @@ void esp_int_wdt_cpu_init(void)
      * Register INT WDT interrupt for current CPU. We do this manually as the timeout interrupt should call an assembly
      * panic handler (see riscv/vector.S and xtensa_vectors.S).
      */
-    esp_intr_disable_source(WDT_INT_NUM);
-    esp_rom_route_intr_matrix(esp_cpu_get_core_id(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
+    esp_intr_disable_source(ETS_INT_WDT_INUM);
+    esp_rom_route_intr_matrix(esp_cpu_get_core_id(), WDT_LEVEL_INTR_SOURCE, ETS_INT_WDT_INUM);
 #if SOC_CPU_HAS_FLEXIBLE_INTC
-    esp_cpu_intr_set_type(WDT_INT_NUM, INTR_TYPE_LEVEL);
-    esp_cpu_intr_set_priority(WDT_INT_NUM, SOC_INTERRUPT_LEVEL_MEDIUM);
+    esp_cpu_intr_set_type(ETS_INT_WDT_INUM, INTR_TYPE_LEVEL);
+    esp_cpu_intr_set_priority(ETS_INT_WDT_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 #endif
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     /*
@@ -157,11 +149,7 @@ void esp_int_wdt_cpu_init(void)
         _lx_intr_livelock_max = CONFIG_ESP_INT_WDT_TIMEOUT_MS / IWDT_LIVELOCK_TIMEOUT_MS - 1;
     }
 #endif
-    esp_intr_enable_source(WDT_INT_NUM);
-#else // SOC_TIMER_GROUPS > 1
-    // TODO: Clean up code for ESP32-C2, IDF-4114
-    ESP_EARLY_LOGW("INT_WDT", "ESP32-C2 only has one timer group");
-#endif // SOC_TIMER_GROUPS > 1
+    esp_intr_enable_source(ETS_INT_WDT_INUM);
 }
 
 #endif // CONFIG_ESP_INT_WDT

@@ -141,6 +141,51 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
     return ESP_OK;
 }
 
+esp_err_t esp_timer_restart(esp_timer_handle_t timer, uint64_t timeout_us)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!is_initialized() || !timer_armed(timer)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
+    timer_list_lock(dispatch_method);
+
+    const int64_t now = esp_timer_impl_get_time();
+    const uint64_t period = timer->period;
+
+    /* We need to remove the timer to the list of timers and reinsert it at
+     * the right position. In fact, the timers are sorted by their alarm value
+     * (earliest first) */
+    ret = timer_remove(timer);
+
+    if (ret == ESP_OK) {
+        /* Two cases here:
+         * - if the alarm was a periodic one, i.e. `period` is not 0, the given timeout_us becomes the new period
+         * - if the alarm was a one-shot one, i.e. `period` is 0, it remains non-periodic. */
+        if (period != 0) {
+            /* Remove function got rid of the alarm and period fields, restore them */
+            const uint64_t new_period = MAX(timeout_us, esp_timer_impl_get_min_period_us());
+            timer->alarm = now + new_period;
+            timer->period = new_period;
+        } else {
+            /* The new one-shot alarm shall be triggered timeout_us after the current time */
+            timer->alarm = now + timeout_us;
+            timer->period = 0;
+        }
+        ret = timer_insert(timer, false);
+    }
+
+    timer_list_unlock(dispatch_method);
+
+    return ret;
+}
+
 esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us)
 {
     if (timer == NULL) {

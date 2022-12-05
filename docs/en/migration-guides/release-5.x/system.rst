@@ -115,6 +115,8 @@ Task Watchdog Timers
     - Configuration is now passed as a configuration structure.
     - The function will now handle subscribing of the idle tasks if configured to do so.
 
+- The former ``CONFIG_ESP_TASK_WDT`` configuration option has been renamed to :ref:`CONFIG_ESP_TASK_WDT_INIT` and a new :ref:`CONFIG_ESP_TASK_WDT_EN` option has been introduced.
+
 FreeRTOS
 --------
 

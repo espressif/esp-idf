@@ -866,6 +866,89 @@ TEST_CASE("Test a latency between a call of callback and real event", "[esp_time
     TEST_ESP_OK(esp_timer_delete(periodic_timer));
 }
 
+static void test_timer_triggered(void* timer1_trig)
+{
+    int* timer = (int *)timer1_trig;
+    *timer = *timer + 1;
+}
+
+TEST_CASE("periodic esp_timer can be restarted", "[esp_timer]")
+{
+    const int delay_ms = 100;
+    int timer_trig = 0;
+    esp_timer_handle_t timer1;
+    esp_timer_create_args_t create_args = {
+            .callback = &test_timer_triggered,
+            .arg = &timer_trig,
+            .name = "timer1",
+    };
+    TEST_ESP_OK(esp_timer_create(&create_args, &timer1));
+    TEST_ESP_OK(esp_timer_start_periodic(timer1, delay_ms * 1000));
+    /* Sleep for delay_ms/2 and restart the timer */
+    vTaskDelay((delay_ms / 2) * portTICK_PERIOD_MS);
+    /* Check that the alarm was not triggered */
+    TEST_ASSERT_EQUAL(0, timer_trig);
+    /* Reaching this point, the timer will be triggered in delay_ms/2.
+     * Let's restart the timer now with the same period. */
+    TEST_ESP_OK(esp_timer_restart(timer1, delay_ms * 1000));
+    /* Sleep for a bit more than delay_ms/2 */
+    vTaskDelay(((delay_ms / 2) + 1) * portTICK_PERIOD_MS);
+    /* If the alarm was triggered, restart didn't work */
+    TEST_ASSERT_EQUAL(0, timer_trig);
+    /* Else, wait for another delay_ms/2, which should trigger the alarm */
+    vTaskDelay(((delay_ms / 2) + 2) * portTICK_PERIOD_MS);
+    TEST_ASSERT_EQUAL(1, timer_trig);
+    /* Now wait for another delay_ms to make sure the timer is still periodic */
+    timer_trig = 0;
+    vTaskDelay((delay_ms * portTICK_PERIOD_MS) + 1);
+    /* Make sure the timer was triggered */
+    TEST_ASSERT_EQUAL(1, timer_trig);
+    /* Reduce the period of the timer to delay/2 */
+    timer_trig = 0;
+    TEST_ESP_OK(esp_timer_restart(timer1, delay_ms / 2 * 1000));
+    vTaskDelay((delay_ms * portTICK_PERIOD_MS) + 1);
+    /* Check that the alarm was triggered twice */
+    TEST_ASSERT_EQUAL(2, timer_trig);
+
+    TEST_ESP_OK( esp_timer_stop(timer1) );
+    TEST_ESP_OK( esp_timer_delete(timer1) );
+}
+
+TEST_CASE("one-shot esp_timer can be restarted", "[esp_timer]")
+{
+    const int delay_ms = 100;
+    int timer_trig = 0;
+    esp_timer_handle_t timer1;
+    esp_timer_create_args_t create_args = {
+            .callback = &test_timer_triggered,
+            .arg = &timer_trig,
+            .name = "timer1",
+    };
+    TEST_ESP_OK(esp_timer_create(&create_args, &timer1));
+    TEST_ESP_OK(esp_timer_start_once(timer1, delay_ms * 1000));
+    vTaskDelay((delay_ms / 2) * portTICK_PERIOD_MS);
+    /* Check that the alarm was not triggered */
+    TEST_ASSERT_EQUAL(0, timer_trig);
+    /* Reaching this point, the timer will be triggered in delay_ms/2.
+     * Let's restart the timer now with the same timeout. */
+    TEST_ESP_OK(esp_timer_restart(timer1, delay_ms * 1000));
+    vTaskDelay(((delay_ms / 2) + 1) * portTICK_PERIOD_MS);
+    /* If the alarm was triggered, restart didn't work */
+    TEST_ASSERT_EQUAL(0, timer_trig);
+    /* Else, wait for another delay_ms/2, which should trigger the alarm */
+    vTaskDelay(((delay_ms / 2) + 2) * portTICK_PERIOD_MS);
+    TEST_ASSERT_EQUAL(1, timer_trig);
+    /* Make sure the timer is NOT periodic, wait for another delay and make sure
+     * our callback was not called */
+    timer_trig = 0;
+    vTaskDelay(delay_ms * 2 * portTICK_PERIOD_MS);
+    /* Make sure the timer was triggered */
+    TEST_ASSERT_EQUAL(0, timer_trig);
+
+    TEST_ESP_OK( esp_timer_delete(timer1) );
+}
+
+
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 static int64_t old_time[2];
 

@@ -32,17 +32,35 @@ typedef struct esp_task_wdt_user_handle_s * esp_task_wdt_user_handle_t;
 /**
  * @brief  Initialize the Task Watchdog Timer (TWDT)
  *
- * This function configures and initializes the TWDT. If the TWDT is already initialized when this function is called,
- * this function will update the TWDT's current configuration. This funciton will also subscribe the idle tasks if
+ * This function configures and initializes the TWDT. This function will subscribe the idle tasks if
  * configured to do so. For other tasks, users can subscribe them using esp_task_wdt_add() or esp_task_wdt_add_user().
+ * This function won't start the timer if no task have been registered yet.
  *
- * @note esp_task_wdt_init() must only be called after the scheduler is started
+ * @note esp_task_wdt_init() must only be called after the scheduler is started. Moreover, it must not be called by
+ *       multiple tasks simultaneously.
  * @param[in] config Configuration structure
  * @return
  *  - ESP_OK: Initialization was successful
+ *  - ESP_ERR_INVALID_STATE: Already initialized
  *  - Other: Failed to initialize TWDT
  */
 esp_err_t esp_task_wdt_init(const esp_task_wdt_config_t *config);
+
+/**
+ * @brief Reconfigure the Task Watchdog Timer (TWDT)
+ *
+ * The function reconfigures the running TWDT. It must already be initialized when this function is called.
+ *
+ * @note esp_task_wdt_reconfigure() must not be called by multiple tasks simultaneously.
+ *
+ * @param[in] config Configuration structure
+ *
+ * @return
+ *  - ESP_OK: Reconfiguring was successful
+ *  - ESP_ERR_INVALID_STATE: TWDT not initialized yet
+ *  - Other: Failed to initialize TWDT
+ */
+esp_err_t esp_task_wdt_reconfigure(const esp_task_wdt_config_t *config);
 
 /**
  * @brief   Deinitialize the Task Watchdog Timer (TWDT)
@@ -51,6 +69,7 @@ esp_err_t esp_task_wdt_init(const esp_task_wdt_config_t *config);
  * are still subscribed to the TWDT, or when the TWDT is already deinitialized, will result in an error code being
  * returned.
  *
+ * @note esp_task_wdt_deinit() must not be called by multiple tasks simultaneously.
  * @return
  *  - ESP_OK: TWDT successfully deinitialized
  *  - Other: Failed to deinitialize TWDT
@@ -149,6 +168,16 @@ esp_err_t esp_task_wdt_delete_user(esp_task_wdt_user_handle_t user_handle);
  *  - ESP_ERR_INVALID_STATE: TWDT was never initialized
  */
 esp_err_t esp_task_wdt_status(TaskHandle_t task_handle);
+
+/**
+ * @brief User ISR callback placeholder
+ *
+ * This function is called by task_wdt_isr function (ISR for when TWDT times out). It can be defined in user code to
+ * handle TWDT events.
+ *
+ * @note It has the same limitations as the interrupt function. Do not use ESP_LOGx functions inside.
+ */
+void __attribute__((weak)) esp_task_wdt_isr_user_handler(void);
 
 #ifdef __cplusplus
 }

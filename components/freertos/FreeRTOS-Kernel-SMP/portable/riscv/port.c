@@ -254,7 +254,7 @@ static void main_task(void *args)
 #endif
 
     //Initialize task wdt if configured to do so
-#if CONFIG_ESP_TASK_WDT
+#if CONFIG_ESP_TASK_WDT_INIT
     esp_task_wdt_config_t twdt_config = {
         .timeout_ms = CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000,
         .idle_core_mask = 0,
@@ -269,7 +269,7 @@ static void main_task(void *args)
     twdt_config.idle_core_mask |= (1 << 1);
 #endif
     ESP_ERROR_CHECK(esp_task_wdt_init(&twdt_config));
-#endif // CONFIG_ESP_TASK_WDT
+#endif // CONFIG_ESP_TASK_WDT_INIT
 
     app_main();
     vTaskDelete(NULL);
@@ -277,7 +277,7 @@ static void main_task(void *args)
 
 void esp_startup_start_app_common(void)
 {
-#if CONFIG_ESP_INT_WDT
+#if CONFIG_ESP_INT_WDT_INIT
     esp_int_wdt_init();
     //Initialize the interrupt watch dog for CPU0.
     esp_int_wdt_cpu_init();
