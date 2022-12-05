@@ -764,7 +764,7 @@ int adc1_get_raw(adc1_channel_t channel)
 #endif
 
     ADC_REG_LOCK_ENTER();
-    adc_oneshot_ll_set_atten(ADC_UNIT_2, channel, atten);
+    adc_oneshot_ll_set_atten(ADC_UNIT_1, channel, atten);
     adc_hal_convert(ADC_UNIT_1, channel, &raw_out);
     ADC_REG_LOCK_EXIT();
 

@@ -337,18 +337,31 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of ADC digital controller
  */
-#define SOC_ADC_DIGI_CLKS {SOC_MOD_CLK_APLL, SOC_MOD_CLK_PLL_D2}
+#define SOC_ADC_DIGI_CLKS {SOC_MOD_CLK_APLL, SOC_MOD_CLK_PLL_F160M}
 
 /**
  * @brief ADC digital controller clock source
- * @note  ADC digital controller is clocked from I2S on ESP32
+ * @note  ADC DMA mode is clocked from I2S on ESP32, using `ADC_DIGI_` here for compatibility
  *        Its clock source is same as I2S
  */
 typedef enum {
-    ADC_DIGI_CLK_SRC_F160M = SOC_MOD_CLK_PLL_D2,
-    ADC_DIGI_CLK_SRC_APLL = SOC_MOD_CLK_APLL,
-    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_D2,
+    ADC_DIGI_CLK_SRC_PLL_F160M = SOC_MOD_CLK_PLL_F160M, /*!< Select F160M as the source clock */
+    ADC_DIGI_CLK_SRC_APLL = SOC_MOD_CLK_APLL,           /*!< Select APLL as the source clock */
+    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,   /*!< Select F160M as the default clock choice */
 } soc_periph_adc_digi_clk_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of ADC RTC controller
+ */
+#define SOC_ADC_RTC_CLKS {SOC_MOD_CLK_RC_FAST}
+
+/**
+ * @brief ADC RTC controller clock source
+ */
+typedef enum {
+    ADC_RTC_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as the source clock */
+    ADC_RTC_CLK_SRC_DEFAULT = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as the default clock choice */
+} soc_periph_adc_rtc_clk_src_t;
 
 #ifdef __cplusplus
 }

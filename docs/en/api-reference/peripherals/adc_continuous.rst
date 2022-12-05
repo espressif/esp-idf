@@ -1,13 +1,14 @@
 Analog to Digital Converter (ADC) Continuous Mode Driver
 ========================================================
 
+{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h4="one"}
 
 Introduction
 ------------
 
 The Analog to Digital Converter is an on-chip sensor which is able to measure analog signals from specific analog IO pads.
 
-The ADC on {IDF_TARGET_NAME} can be used in scenario(s) like:
+{IDF_TARGET_NAME} has {IDF_TARGET_ADC_NUM} ADC unit(s), which can be used in scenario(s) like:
 
 - Generate one-shot ADC conversion result
 - Generate continuous ADC conversion results

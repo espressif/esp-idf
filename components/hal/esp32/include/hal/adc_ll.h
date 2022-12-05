@@ -13,6 +13,7 @@
 #include "soc/adc_periph.h"
 #include "soc/rtc_io_struct.h"
 #include "soc/sens_struct.h"
+#include "soc/sens_reg.h"
 #include "soc/syscon_struct.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/clk_tree_defs.h"
@@ -45,12 +46,6 @@ typedef enum {
     ADC_LL_CTRL_DIG   = 2,    ///< For ADC1 and ADC2. Select DIG controller.
     ADC_LL_CTRL_PWDET = 3,    ///< For ADC2. Select PWDET controller.
 } adc_ll_controller_t;
-
-/**
- * @brief Clock source of ADC digital controller
- * @note  Not public as it always uses a default value for now
- */
-typedef soc_periph_adc_digi_clk_src_t     adc_ll_digi_clk_src_t;
 
 /**
  * @brief ADC digital controller (DMA mode) work mode.

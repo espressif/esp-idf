@@ -55,20 +55,14 @@ typedef enum {
 } adc_ll_controller_t;
 
 /**
- * @brief Clock source of ADC digital controller
- * @note  Not public as it always uses a default value for now
- */
-typedef soc_periph_adc_digi_clk_src_t     adc_ll_digi_clk_src_t;
-
-/**
  * @brief ADC digital controller (DMA mode) work mode.
  *
  * @note  The conversion mode affects the sampling frequency:
- *        ESP32H4 only support ALTER_UNIT mode
- *        ALTER_UNIT   : When the measurement is triggered, ADC1 or ADC2 samples alternately.
+ *        ESP32H4 only support ONLY_ADC1 mode
+ *        SINGLE_UNIT_1: When the measurement is triggered, only ADC1 is sampled once.
  */
 typedef enum {
-    ADC_LL_DIGI_CONV_ALTER_UNIT = 0,     // Use both ADC1 and ADC2 for conversion by turn. e.g. ADC1 -> ADC2 -> ADC1 -> ADC2 .....
+    ADC_LL_DIGI_CONV_ONLY_ADC1 = 0,     // Only use ADC1 for conversion
 } adc_ll_digi_convert_mode_t;
 
 //These values should be set according to the HW
@@ -172,7 +166,7 @@ static inline void adc_ll_digi_convert_limit_enable(bool enable)
  */
 static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
 {
-    //ESP32H4 only supports ADC_CONV_ALTER_UNIT mode
+    //ESP32H4 only supports ADC_LL_DIGI_CONV_ONLY_ADC1 mode
 }
 
 /**
@@ -298,7 +292,7 @@ static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div
  *
  * @param clk_src clock source for ADC digital controller.
  */
-static inline void adc_ll_digi_clk_sel(adc_ll_digi_clk_src_t clk_src)
+static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
 {
     // TODO: temporary support
     APB_SARADC.apb_adc_clkm_conf.clk_sel = 0;

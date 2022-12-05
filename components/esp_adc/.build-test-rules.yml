@@ -2,6 +2,4 @@
 
 components/esp_adc/test_apps/adc:
   disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
+    - if: SOC_ADC_SUPPORTED != 1

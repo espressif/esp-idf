@@ -351,12 +351,12 @@ typedef enum {
  */
 // TODO: temporary support, need to check while supporting
 typedef enum {
-    ADC_DIGI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,
-    ADC_DIGI_CLK_SRC_F80M = SOC_MOD_CLK_PLL_F80M,
+    ADC_DIGI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+    ADC_DIGI_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M,   /*!< Select PLL_F80M as the source clock */
 #if CONFIG_IDF_ENV_FPGA
-    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,
+    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as the default clock choice */
 #else
-    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,
+    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,    /*!< Select PLL_F80M as the default clock choice */
 #endif
 } soc_periph_adc_digi_clk_src_t;
 

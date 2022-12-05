@@ -36,8 +36,8 @@ extern "C" {
 #define ADC_LL_EVENT_ADC1_ONESHOT_DONE    BIT(31)
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
 #define ADC_LL_EVENT_THRES0_HIGH          BIT(29)
-#define ADC_LL_event_THRES1_HIGH          BIT(28)
-#define ADC_LL_event_THRES0_LOW           BIT(27)
+#define ADC_LL_EVENT_THRES1_HIGH          BIT(28)
+#define ADC_LL_EVENT_THRES0_LOW           BIT(27)
 #define ADC_LL_EVENT_THRES1_LOW           BIT(26)
 
 typedef enum {
@@ -60,20 +60,14 @@ typedef enum {
 } adc_ll_controller_t;
 
 /**
- * @brief Clock source of ADC digital controller
- * @note  Not public as it always uses a default value for now
- */
-typedef soc_periph_adc_digi_clk_src_t     adc_ll_digi_clk_src_t;
-
-/**
  * @brief ADC digital controller (DMA mode) work mode.
  *
  * @note  The conversion mode affects the sampling frequency:
- *        ESP32C3 only support ALTER_UNIT mode
- *        ALTER_UNIT   : When the measurement is triggered, ADC1 or ADC2 samples alternately.
+ *        ESP32C3 only support ONLY_ADC1 mode
+ *        SINGLE_UNIT_1: When the measurement is triggered, only ADC1 is sampled once.
  */
 typedef enum {
-    ADC_LL_DIGI_CONV_ALTER_UNIT = 0,     // Use both ADC1 and ADC2 for conversion by turn. e.g. ADC1 -> ADC2 -> ADC1 -> ADC2 .....
+    ADC_LL_DIGI_CONV_ONLY_ADC1 = 0,     // Only use ADC1 for conversion
 } adc_ll_digi_convert_mode_t;
 
 typedef struct  {
@@ -166,7 +160,7 @@ static inline void adc_ll_digi_convert_limit_enable(bool enable)
  */
 static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
 {
-    //ESP32C3 only supports ADC_CONV_ALTER_UNIT mode
+    //ESP32C3 only supports ADC_LL_DIGI_CONV_ONLY_ADC1 mode
 }
 
 /**
@@ -292,10 +286,10 @@ static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div
  *
  * @param clk_src clock source for ADC digital controller.
  */
-static inline void adc_ll_digi_clk_sel(adc_ll_digi_clk_src_t clk_src)
+static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
 {
-    // Only support APB clock, should always set to 0
-    APB_SARADC.apb_adc_clkm_conf.clk_sel = 0;
+    // Only support APB clock, should always set to 1 or 2
+    APB_SARADC.apb_adc_clkm_conf.clk_sel = 2;
     APB_SARADC.ctrl.sar_clk_gated = 1;
 }
 
@@ -646,6 +640,60 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
     }
 }
 /* Temp code end. */
+
+/**
+ *  Output ADCn inter reference voltage to ADC2 channels.
+ *
+ *  This function routes the internal reference voltage of ADCn to one of
+ *  ADC1's channels. This reference voltage can then be manually measured
+ *  for calibration purposes.
+ *
+ *  @param[in]  adc ADC unit select
+ *  @param[in]  channel ADC1 channel number
+ *  @param[in]  en Enable/disable the reference voltage output
+ */
+static inline void adc_ll_vref_output(adc_unit_t adc, adc_channel_t channel, bool en)
+{
+    if (en) {
+        REG_SET_FIELD(RTC_CNTL_SENSOR_CTRL_REG, RTC_CNTL_FORCE_XPD_SAR, 3);
+        SET_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_REGULATOR_FORCE_PU);
+
+        REG_SET_FIELD(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_SEL, 2);
+        SET_PERI_REG_MASK(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_EN);
+        SET_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_GRANT_FORCE);
+        SET_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_APB_FORCE);
+        APB_SARADC.sar_patt_tab[0].sar_patt_tab1 = 0xFFFFFF;
+        APB_SARADC.sar_patt_tab[1].sar_patt_tab1 = 0xFFFFFF;
+        APB_SARADC.onetime_sample.adc1_onetime_sample = 1;
+        APB_SARADC.onetime_sample.onetime_channel = channel;
+        SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU);
+        if (adc == ADC_UNIT_1) {
+            /* Config test mux to route v_ref to ADC1 Channels */
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_ENCAL_REF_ADDR, 1);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 1);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 0);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 1);
+        } else {
+            /* Config test mux to route v_ref to ADC2 Channels */
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_ENCAL_REF_ADDR, 1);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_TSENS_ADDR, 0);
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
+        }
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_ENCAL_REF_ADDR, 0);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_ENCAL_REF_ADDR, 0);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
+        APB_SARADC.onetime_sample.adc1_onetime_sample = 0;
+        APB_SARADC.onetime_sample.onetime_channel = 0xf;
+        REG_SET_FIELD(RTC_CNTL_SENSOR_CTRL_REG, RTC_CNTL_FORCE_XPD_SAR, 0);
+        REG_SET_FIELD(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_SEL, 0);
+        CLEAR_PERI_REG_MASK(APB_SARADC_APB_ADC_CLKM_CONF_REG, APB_SARADC_CLK_EN);
+        CLEAR_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_GRANT_FORCE);
+        CLEAR_PERI_REG_MASK(APB_SARADC_APB_ADC_ARB_CTRL_REG, APB_SARADC_ADC_ARB_APB_FORCE);
+    }
+}
 
 /*---------------------------------------------------------------
                     Oneshot Read

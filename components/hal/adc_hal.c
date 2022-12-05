@@ -141,11 +141,8 @@ void adc_hal_digi_deinit(adc_hal_dma_ctx_t *hal)
 ---------------------------------------------------------------*/
 static adc_ll_digi_convert_mode_t get_convert_mode(adc_digi_convert_mode_t convert_mode)
 {
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32 || SOC_ADC_DIGI_CONTROLLER_NUM == 1
     return ADC_LL_DIGI_CONV_ONLY_ADC1;
-#endif
-#if (SOC_ADC_DIGI_CONTROLLER_NUM == 1)
-    return ADC_LL_DIGI_CONV_ALTER_UNIT;
 #elif (SOC_ADC_DIGI_CONTROLLER_NUM >= 2)
     switch (convert_mode) {
         case ADC_CONV_SINGLE_UNIT_1:

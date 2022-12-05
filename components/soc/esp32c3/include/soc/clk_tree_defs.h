@@ -284,8 +284,8 @@ typedef enum {
  * @brief ADC digital controller clock source
  */
 typedef enum {
-    ADC_DIGI_CLK_SRC_APB = SOC_MOD_CLK_APB,
-    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,
+    ADC_DIGI_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
+    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
 } soc_periph_adc_digi_clk_src_t;
 
 #ifdef __cplusplus

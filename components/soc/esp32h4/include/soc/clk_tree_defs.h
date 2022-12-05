@@ -112,6 +112,7 @@ typedef enum {
     // For digital domain: peripherals, WIFI, BLE
     SOC_MOD_CLK_AHB,                           /*< AHB_CLK sources from CPU with a configurable divider */
     SOC_MOD_CLK_APB,                           /*< APB_CLK source is derived from AHB clock */
+    SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from PLL, and has a fixed frequency of 80MHz */
     SOC_MOD_CLK_XTAL32K,                       /*< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST,                       /*< RC_FAST_CLK comes from the internal 8MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL,                          /*< XTAL_CLK comes from the external 32MHz crystal */
@@ -283,20 +284,16 @@ typedef enum {
  * @brief Array initializer for all supported clock sources of ADC digital controller
  */
 // TODO: temporary support, need to check while supporting
-#define SOC_ADC_DIGI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_APB}
+#define SOC_ADC_DIGI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F80M}
 
 /**
  * @brief ADC digital controller clock source
  */
 // TODO: temporary support, need to check while supporting
 typedef enum {
-    ADC_DIGI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,
-    ADC_DIGI_CLK_SRC_F80M = SOC_MOD_CLK_APB,
-#if CONFIG_IDF_ENV_FPGA
-    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,
-#else
-    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,
-#endif
+    ADC_DIGI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+    ADC_DIGI_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M,   /*!< Select PLL_F80M as the source clock */
+    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,    /*!< Select PLL_F80M as the default clock choice */
 } soc_periph_adc_digi_clk_src_t;
 
 #ifdef __cplusplus

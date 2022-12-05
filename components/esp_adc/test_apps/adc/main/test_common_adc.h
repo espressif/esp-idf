@@ -70,6 +70,14 @@ extern "C" {
 
 #define ADC_TEST_HIGH_VAL        3400
 #define ADC_TEST_HIGH_THRESH     200
+
+#elif CONFIG_IDF_TARGET_ESP32C6  // TODO: IDF-5312
+#define ADC_TEST_LOW_VAL         2144
+#define ADC_TEST_LOW_THRESH      200
+
+#define ADC_TEST_HIGH_VAL        4081
+#define ADC_TEST_HIGH_VAL_DMA    4081
+#define ADC_TEST_HIGH_THRESH     200
 #endif
 
 

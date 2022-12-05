@@ -194,9 +194,9 @@ typedef enum {
  * @brief Type of I2C clock source.
  */
 typedef enum {
-    I2C_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,
-    I2C_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,
-    I2C_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,
+    I2C_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select XTAL as the source clock */
+    I2C_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as the source clock */
+    I2C_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the default clock choice */
 } soc_periph_i2c_clk_src_t;
 
 //////////////////////////////////////////////////ADC///////////////////////////////////////////////////////////////////
@@ -210,9 +210,9 @@ typedef enum {
  * @brief ADC digital controller clock source
  */
 typedef enum {
-    ADC_DIGI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,
-    ADC_DIGI_CLK_SRC_F80M = SOC_MOD_CLK_PLL_F80M,
-    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,
+    ADC_DIGI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+    ADC_DIGI_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M,   /*!< Select PLL_F80M as the source clock */
+    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,    /*!< Select PLL_F80M as the default clock choice */
 } soc_periph_adc_digi_clk_src_t;
 
 #ifdef __cplusplus

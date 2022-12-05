@@ -14,6 +14,7 @@
 #include "hal/assert.h"
 #include "soc/apb_saradc_struct.h"
 #include "soc/sens_struct.h"
+#include "soc/sens_reg.h"
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
@@ -55,12 +56,6 @@ typedef enum {
     ADC_LL_CTRL_DIG = 2,    ///< For ADC1. Select DIG controller.
     ADC_LL_CTRL_ARB = 3,    ///< For ADC2. The controller is selected by the arbiter.
 } adc_ll_controller_t;
-
-/**
- * @brief Clock source of ADC digital controller
- * @note  Not public as it always uses a default value for now
- */
-typedef soc_periph_adc_digi_clk_src_t     adc_ll_digi_clk_src_t;
 
 /**
  * @brief ADC digital controller (DMA mode) work mode.
@@ -344,7 +339,7 @@ static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div
  *
  * @param clk_src clock source for ADC digital controller.
  */
-static inline void adc_ll_digi_clk_sel(adc_ll_digi_clk_src_t clk_src)
+static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
 {
     APB_SARADC.apb_adc_clkm_conf.clk_sel = (clk_src == ADC_DIGI_CLK_SRC_APLL) ? 1 : 2;
     APB_SARADC.ctrl.sar_clk_gated = 1;

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # ADC DMA Example
 
@@ -39,24 +39,25 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 Running this example, you will see the following log output on the serial monitor:
 ```
-I (338) ADC DMA: adc_pattern[0].atten is :0
-I (348) ADC DMA: adc_pattern[0].channel is :2
-I (348) ADC DMA: adc_pattern[0].unit is :0
-I (358) ADC DMA: adc_pattern[1].atten is :0
-I (358) ADC DMA: adc_pattern[1].channel is :3
-I (368) ADC DMA: adc_pattern[1].unit is :0
-I (368) ADC DMA: adc_pattern[2].atten is :0
-I (378) ADC DMA: adc_pattern[2].channel is :0
-I (378) ADC DMA: adc_pattern[2].unit is :1
-I (388) TASK: ret is 0, ret_num is 256
-I (388) ADC DMA: Unit: 1,_Channel: 2, Value: bec
-I (398) ADC DMA: Unit: 2,_Channel: 0, Value: 9cb
-I (398) ADC DMA: Unit: 1,_Channel: 3, Value: acb
-I (408) ADC DMA: Unit: 2,_Channel: 0, Value: 966
-I (408) ADC DMA: Unit: 1,_Channel: 2, Value: b63
-I (418) ADC DMA: Unit: 2,_Channel: 0, Value: 8ff
-I (418) ADC DMA: Unit: 1,_Channel: 3, Value: a6b
-I (428) ADC DMA: Unit: 2,_Channel: 0, Value: 8a2
+I (367) EXAMPLE: adc_pattern[0].atten is :0
+I (377) EXAMPLE: adc_pattern[0].channel is :2
+I (377) EXAMPLE: adc_pattern[0].unit is :0
+I (387) EXAMPLE: adc_pattern[1].atten is :0
+I (387) EXAMPLE: adc_pattern[1].channel is :3
+I (397) EXAMPLE: adc_pattern[1].unit is :0
+I (397) gpio: GPIO[3]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+I (407) gpio: GPIO[4]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+I (417) TASK: ret is 0, ret_num is 256
+I (427) EXAMPLE: Unit: ADC-1, Channel: 2, Value: 819
+I (427) EXAMPLE: Unit: ADC-1, Channel: 3, Value: 7b9
+I (437) EXAMPLE: Unit: ADC-1, Channel: 2, Value: 7ab
+I (437) EXAMPLE: Unit: ADC-1, Channel: 3, Value: 74b
+I (447) EXAMPLE: Unit: ADC-1, Channel: 2, Value: 74d
+I (447) EXAMPLE: Unit: ADC-1, Channel: 3, Value: 6e5
+I (457) EXAMPLE: Unit: ADC-1, Channel: 2, Value: 6ee
+I (467) EXAMPLE: Unit: ADC-1, Channel: 3, Value: 680
+I (467) EXAMPLE: Unit: ADC-1, Channel: 2, Value: 69a
+I (477) EXAMPLE: Unit: ADC-1, Channel: 3, Value: 62f
 ...
 ```
 

@@ -58,12 +58,6 @@ typedef enum {
 } adc_ll_controller_t;
 
 /**
- * @brief Clock source of ADC digital controller
- * @note  Not public as it always uses a default value for now
- */
-typedef soc_periph_adc_digi_clk_src_t     adc_ll_digi_clk_src_t;
-
-/**
  * @brief ADC digital controller (DMA mode) work mode.
  *
  * @note  The conversion mode affects the sampling frequency:
@@ -350,7 +344,7 @@ static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div
  *
  * @param clk_src clock source for ADC digital controller.
  */
-static inline void adc_ll_digi_clk_sel(adc_ll_digi_clk_src_t clk_src)
+static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
 {
     APB_SARADC.apb_adc_clkm_conf.clk_sel = (clk_src == ADC_DIGI_CLK_SRC_APB) ? 2 : 1;
     APB_SARADC.ctrl.sar_clk_gated = 1;
