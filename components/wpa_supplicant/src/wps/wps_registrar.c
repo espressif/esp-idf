@@ -852,7 +852,6 @@ static void wps_registrar_remove_pin(struct wps_registrar *reg,
 		addr = pin->enrollee_addr;
 	wps_registrar_remove_authorized_mac(reg, addr);
 	wps_remove_pin(pin);
-	wps_registrar_selected_registrar_changed(reg, 0);
 }
 
 
@@ -3485,6 +3484,7 @@ static void wps_registrar_set_selected_timeout(void *eloop_ctx,
 	reg->pbc = 0;
 	wps_registrar_expire_pins(reg);
 	wps_registrar_selected_registrar_changed(reg, 0);
+	wps_selected_registrar_timeout_event(reg->wps);
 }
 
 

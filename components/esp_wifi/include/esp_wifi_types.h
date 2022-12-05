@@ -646,6 +646,12 @@ typedef enum {
 
     WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START,   /**< ESP32 connectionless module wake interval start */
 
+    WIFI_EVENT_AP_WPS_RG_SUCCESS,       /**< Soft-AP wps succeeds in registrar mode */
+    WIFI_EVENT_AP_WPS_RG_FAILED,        /**< Soft-AP wps fails in registrar mode */
+    WIFI_EVENT_AP_WPS_RG_TIMEOUT,       /**< Soft-AP wps timeout in registrar mode */
+    WIFI_EVENT_AP_WPS_RG_PIN,           /**< Soft-AP wps pin code in registrar mode */
+    WIFI_EVENT_AP_WPS_RG_PBC_OVERLAP,   /**< Soft-AP wps overlap in registrar mode */
+
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;
 
@@ -788,6 +794,29 @@ typedef struct {
 typedef struct {
     uint32_t context;         /**< Context to identify the request */
 } wifi_event_roc_done_t;
+
+/** Argument structure for WIFI_EVENT_AP_WPS_RG_PIN event */
+typedef struct {
+    uint8_t pin_code[8];         /**< PIN code of station in enrollee mode */
+} wifi_event_ap_wps_rg_pin_t;
+
+typedef enum {
+    WPS_AP_FAIL_REASON_NORMAL = 0,     /**< WPS normal fail reason */
+    WPS_AP_FAIL_REASON_CONFIG,         /**< WPS failed due to incorrect config */
+    WPS_AP_FAIL_REASON_AUTH,           /**< WPS failed during auth */
+    WPS_AP_FAIL_REASON_MAX,
+} wps_fail_reason_t;
+
+/** Argument structure for WIFI_EVENT_AP_WPS_RG_FAILED event */
+typedef struct {
+    wps_fail_reason_t reason;          /**< WPS failure reason wps_fail_reason_t */
+    uint8_t peer_macaddr[6];           /**< Enrollee mac address */
+} wifi_event_ap_wps_rg_fail_reason_t;
+
+/** Argument structure for WIFI_EVENT_AP_WPS_RG_SUCCESS event */
+typedef struct {
+    uint8_t peer_macaddr[6];           /**< Enrollee mac address */
+} wifi_event_ap_wps_rg_success_t;
 
 #ifdef __cplusplus
 }
