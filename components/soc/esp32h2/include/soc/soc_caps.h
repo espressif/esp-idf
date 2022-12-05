@@ -26,16 +26,16 @@
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 // #define SOC_ADC_SUPPORTED               1 // TODO: IDF-6214
-#define SOC_DEDICATED_GPIO_SUPPORTED    1 // TODO: IDF-6241
-#define SOC_GDMA_SUPPORTED              1 // TODO: IDF-6222
+// #define SOC_DEDICATED_GPIO_SUPPORTED    1 // TODO: IDF-6241
+// #define SOC_GDMA_SUPPORTED              1 // TODO: IDF-6222
 // #define SOC_PCNT_SUPPORTED              1 // TODO: IDF-6221
 // #define SOC_MCPWM_SUPPORTED             1 // TODO: IDF-6237
 // #define SOC_TWAI_SUPPORTED              1 // TODO: IDF-6217
-#define SOC_BT_SUPPORTED                1
-#define SOC_ASYNC_MEMCPY_SUPPORTED      1
+// #define SOC_BT_SUPPORTED                1 // TODO: IDF-6416
+// #define SOC_ASYNC_MEMCPY_SUPPORTED      1 // TODO: IDF-6238
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1 // TODO: IDF-6239
 // #define SOC_TEMP_SENSOR_SUPPORTED       1 // TODO: IDF-6229
-#define SOC_SUPPORTS_SECURE_DL_MODE     1
+// #define SOC_SUPPORTS_SECURE_DL_MODE     1 // TODO: IDF-6281
 //#define SOC_RISCV_COPROC_SUPPORTED       1 // TODO: IDF-6272
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
 #define SOC_EFUSE_HAS_EFUSE_RST_BUG     1
@@ -45,14 +45,14 @@
 // #define SOC_RMT_SUPPORTED               1 // TODO: IDF-6224
 // #define SOC_SDM_SUPPORTED               1 // TODO: IDF-6220
 #define SOC_SYSTIMER_SUPPORTED          1
-#define SOC_SUPPORT_COEXISTENCE         1
+// #define SOC_SUPPORT_COEXISTENCE         1 // TODO: IDF-6416
 // #define SOC_AES_SUPPORTED               1 // TODO: IDF-6280
-#define SOC_MPI_SUPPORTED               1
+// #define SOC_MPI_SUPPORTED               1 // TODO: IDF-6415
 // #define SOC_SHA_SUPPORTED               1 // TODO: IDF-6275
-#define SOC_HMAC_SUPPORTED              1 // TODO: IDF-6279
+// #define SOC_HMAC_SUPPORTED              1 // TODO: IDF-6279
 // #define SOC_DIG_SIGN_SUPPORTED          1 // TODO: IDF-6285
 // #define SOC_FLASH_ENC_SUPPORTED         1 // TODO: IDF-6282
-#define SOC_SECURE_BOOT_SUPPORTED       1
+// #define SOC_SECURE_BOOT_SUPPORTED       1 // TODO: IDF-6281
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M            1

@@ -29,7 +29,7 @@ typedef struct {
     wdt_inst_t inst;                /**< Which WDT instance this HAL context is using (i.e. MWDT0, MWDT1, RWDT)*/
     union {
         timg_dev_t *mwdt_dev;       /**< Starting address of the MWDT */
-#if CONFIG_IDF_TARGET_ESP32C6       // TODO: IDF-5653
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-5653
         lp_wdt_dev_t *rwdt_dev;     /**< Starting address of the RWDT*/
 #else
         rtc_cntl_dev_t *rwdt_dev;   /**< Starting address of the RWDT*/

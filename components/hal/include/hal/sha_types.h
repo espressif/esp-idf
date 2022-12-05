@@ -23,6 +23,8 @@
 #include "esp32c2/rom/sha.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/sha.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/sha.h"
 #endif
 
 #ifdef __cplusplus
