@@ -115,6 +115,7 @@ struct esp_rgb_panel_t {
         uint32_t no_fb: 1;               // No frame buffer allocated in the driver
         uint32_t fb_in_psram: 1;         // Whether the frame buffer is in PSRAM
         uint32_t need_update_pclk: 1;    // Whether to update the PCLK before start a new transaction
+        uint32_t need_restart: 1;        // Whether to restart the LCD controller and the DMA
         uint32_t bb_invalidate_cache: 1; // Whether to do cache invalidation in bounce buffer mode
     } flags;
     dma_descriptor_t *dma_links[2];    // fbs[0] <-> dma_links[0], fbs[1] <-> dma_links[1]
@@ -358,6 +359,19 @@ esp_err_t esp_lcd_rgb_panel_set_pclk(esp_lcd_panel_handle_t panel, uint32_t freq
     portENTER_CRITICAL(&rgb_panel->spinlock);
     rgb_panel->flags.need_update_pclk = true;
     rgb_panel->timings.pclk_hz = freq_hz;
+    portEXIT_CRITICAL(&rgb_panel->spinlock);
+    return ESP_OK;
+}
+
+esp_err_t esp_lcd_rgb_panel_restart(esp_lcd_panel_handle_t panel)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+    ESP_RETURN_ON_FALSE(rgb_panel->flags.stream_mode, ESP_ERR_INVALID_STATE, TAG, "not in stream mode");
+
+    // the underlying restart job will be done in the `LCD_LL_EVENT_VSYNC_END` event handler
+    portENTER_CRITICAL(&rgb_panel->spinlock);
+    rgb_panel->flags.need_restart = true;
     portEXIT_CRITICAL(&rgb_panel->spinlock);
     return ESP_OK;
 }
@@ -996,16 +1010,15 @@ static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
         }
     }
 
-#if CONFIG_LCD_RGB_RESTART_IN_VSYNC
     // On restart, the data sent to the LCD peripheral needs to start LCD_FIFO_PRESERVE_SIZE_PX pixels after the FB start
     // so we use a dedicated DMA node to restart the DMA transaction
+    // see also `lcd_rgb_panel_try_restart_transmission`
     memcpy(&panel->dma_restart_node, &panel->dma_nodes[0], sizeof(panel->dma_restart_node));
     int restart_skip_bytes = LCD_FIFO_PRESERVE_SIZE_PX * sizeof(uint16_t);
     uint8_t *p = (uint8_t *)panel->dma_restart_node.buffer;
     panel->dma_restart_node.buffer = &p[restart_skip_bytes];
     panel->dma_restart_node.dw0.length -= restart_skip_bytes;
     panel->dma_restart_node.dw0.size -= restart_skip_bytes;
-#endif
 
     // alloc DMA channel and connect to LCD peripheral
     gdma_channel_alloc_config_t dma_chan_config = {
@@ -1030,9 +1043,31 @@ static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
     return ESP_OK;
 }
 
-#if CONFIG_LCD_RGB_RESTART_IN_VSYNC
-static IRAM_ATTR void lcd_rgb_panel_restart_transmission_in_isr(esp_rgb_panel_t *panel)
+// reset the GDMA channel every VBlank to stop permanent desyncs from happening.
+// Note that this fix can lead to single-frame desyncs itself, as in: if this interrupt
+// is late enough, the display will shift as the LCD controller already read out the
+// first data bytes, and resetting DMA will re-send those. However, the single-frame
+// desync this leads to is preferable to the permanent desync that could otherwise
+// happen. It's also not super-likely as this interrupt has the entirety of the VBlank
+// time to reset DMA.
+static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *panel)
 {
+    bool do_restart = false;
+#if CONFIG_LCD_RGB_RESTART_IN_VSYNC
+    do_restart = true;
+#else
+    portENTER_CRITICAL_ISR(&panel->spinlock);
+    if (panel->flags.need_restart) {
+        panel->flags.need_restart = false;
+        do_restart = true;
+    }
+    portEXIT_CRITICAL_ISR(&panel->spinlock);
+#endif // CONFIG_LCD_RGB_RESTART_IN_VSYNC
+
+    if (!do_restart) {
+        return;
+    }
+
     if (panel->bb_size) {
         // Catch de-synced frame buffer and reset if needed.
         if (panel->bounce_pos_px > panel->bb_size) {
@@ -1055,7 +1090,6 @@ static IRAM_ATTR void lcd_rgb_panel_restart_transmission_in_isr(esp_rgb_panel_t 
         }
     }
 }
-#endif
 
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
 {
@@ -1109,16 +1143,8 @@ IRAM_ATTR static void lcd_default_isr_handler(void *args)
         lcd_rgb_panel_try_update_pclk(rgb_panel);
 
         if (rgb_panel->flags.stream_mode) {
-#if CONFIG_LCD_RGB_RESTART_IN_VSYNC
-            // reset the GDMA channel every VBlank to stop permanent desyncs from happening.
-            // Note that this fix can lead to single-frame desyncs itself, as in: if this interrupt
-            // is late enough, the display will shift as the LCD controller already read out the
-            // first data bytes, and resetting DMA will re-send those. However, the single-frame
-            // desync this leads to is preferable to the permanent desync that could otherwise
-            // happen. It's also not super-likely as this interrupt has the entirety of the VBlank
-            // time to reset DMA.
-            lcd_rgb_panel_restart_transmission_in_isr(rgb_panel);
-#endif
+            // check whether to restart the transmission
+            lcd_rgb_panel_try_restart_transmission(rgb_panel);
         }
 
     }
