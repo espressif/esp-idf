@@ -265,6 +265,7 @@ typedef struct {
     uint32_t owe_enabled:1;       /**< Whether OWE is enabled for the connection */
     uint32_t reserved:27;         /**< Reserved for future feature set */
     wifi_sae_pwe_method_t sae_pwe_h2e;     /**< Whether SAE hash to element is enabled */
+    uint8_t failure_retry_cnt;    /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config. Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.
@@ -653,6 +654,7 @@ typedef struct {
     uint8_t ssid_len;         /**< SSID length of disconnected AP */
     uint8_t bssid[6];         /**< BSSID of disconnected AP */
     uint8_t reason;           /**< reason of disconnection */
+    int8_t  rssi;             /**< rssi of disconnection */
 } wifi_event_sta_disconnected_t;
 
 /** Argument structure for WIFI_EVENT_STA_AUTHMODE_CHANGE event */
