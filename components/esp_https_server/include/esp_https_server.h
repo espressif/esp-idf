@@ -134,6 +134,12 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
         .global_user_ctx_free_fn = NULL,          \
         .global_transport_ctx = NULL,             \
         .global_transport_ctx_free_fn = NULL,     \
+        .enable_so_linger = false,                \
+        .linger_timeout = 0,                      \
+        .keep_alive_enable = false,               \
+        .keep_alive_idle = 0,                     \
+        .keep_alive_interval = 0,                 \
+        .keep_alive_count = 0,                    \
         .open_fn = NULL,                          \
         .close_fn = NULL,                         \
         .uri_match_fn = NULL                      \
