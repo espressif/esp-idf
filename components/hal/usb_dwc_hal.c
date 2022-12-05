@@ -279,16 +279,21 @@ void usb_dwc_hal_chan_activate(usb_dwc_hal_chan_t *chan_obj, void *xfer_desc_lis
 
 bool usb_dwc_hal_chan_request_halt(usb_dwc_hal_chan_t *chan_obj)
 {
-    //Cannot request halt on a channel that is pending error handling
-    if (usb_dwc_ll_hcchar_chan_is_enabled(chan_obj->regs)) {
-        //If the register indicates that the channel is still active, the active flag must have been previously set
-        HAL_ASSERT(chan_obj->flags.active);
+    if (chan_obj->flags.active) {
+        /*
+        Request a halt so long as the channel's active flag is set.
+        - If the underlying hardware channel is already halted but the channel is pending interrupt handling,
+        disabling the channel will have no effect (i.e., no channel interrupt is generated).
+        - If the underlying channel is currently active, disabling the channel will trigger a channel interrupt.
+
+        Regardless, setting the "halt_requested" should cause "usb_dwc_hal_chan_decode_intr()" to report the
+        USB_DWC_HAL_CHAN_EVENT_HALT_REQ event when channel interrupt is handled (pending or triggered).
+        */
         usb_dwc_ll_hcchar_disable_chan(chan_obj->regs);
         chan_obj->flags.halt_requested = 1;
         return false;
     } else {
-        //We just clear the active flag here as it could still be set (if we have a pending channel interrupt)
-        chan_obj->flags.active = 0;
+        //Channel was never active to begin with, simply return true
         return true;
     }
 }
@@ -359,6 +364,10 @@ usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr(usb_dwc_hal_chan_t *chan_o
     usb_dwc_hal_chan_event_t chan_event;
     //Note: We don't assert on (chan_obj->flags.active) here as it could have been already cleared by usb_dwc_hal_chan_request_halt()
 
+    /*
+    Note: Do not change order of checks as some events take precedence over others.
+    Errors > Channel Halt Request > Transfer completed
+    */
     if (chan_intrs & CHAN_INTRS_ERROR_MSK) {    //Note: Errors are uncommon, so we check against the entire interrupt mask to reduce frequency of entering this call path
         HAL_ASSERT(chan_intrs & USB_DWC_LL_INTR_CHAN_CHHLTD);  //An error should have halted the channel
         //Store the error in hal context
