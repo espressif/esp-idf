@@ -10,7 +10,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32
 @pytest.mark.esp32s3
 @pytest.mark.generic
-def test_ulp_fsm_adc(dut: Dut) -> None:
+def test_example_ulp_fsm_adc(dut: Dut) -> None:
 
     dut.expect_exact('Not ULP wakeup')
     dut.expect_exact('Entering deep sleep')
