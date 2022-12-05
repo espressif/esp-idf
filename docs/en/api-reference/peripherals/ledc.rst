@@ -1,6 +1,5 @@
 LED Control (LEDC)
 ==================
-{IDF_TARGET_LEDC_CHAN_NUM: default="6", esp32="16", esp32s2="8", esp32s3="8"}
 
 {IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16"}
 
@@ -10,7 +9,7 @@ Introduction
 ------------
 
 The LED control (LEDC) peripheral is primarily designed to control the intensity of LEDs, although it can also be used to generate PWM signals for other purposes.
-It has {IDF_TARGET_LEDC_CHAN_NUM} channels which can generate independent waveforms that can be used, for example, to drive RGB LED devices.
+It has {IDF_TARGET_SOC_LEDC_CHANNEL_NUM} channels which can generate independent waveforms that can be used, for example, to drive RGB LED devices.
 
 .. only:: esp32
 

@@ -1,8 +1,6 @@
 Universal Asynchronous Receiver/Transmitter (UART)
 ==================================================
 
-{IDF_TARGET_UART_NUM:default="two", esp32="three", esp32s3="three"}
-
 {IDF_TARGET_UART_EXAMPLE_PORT:default = "UART_NUM_1", esp32 = "UART_NUM_2", esp32s3 = "UART_NUM_2"}
 
 Introduction
@@ -10,7 +8,7 @@ Introduction
 
 A Universal Asynchronous Receiver/Transmitter (UART) is a hardware feature that handles communication (i.e., timing requirements and data framing) using widely-adopted asynchronous serial communication interfaces, such as RS232, RS422, and RS485. A UART provides a widely adopted and cheap method to realize full-duplex or half-duplex data exchange among different devices.
 
-The {IDF_TARGET_NAME} chip has {IDF_TARGET_UART_NUM} UART controllers (also referred to as port), each featuring an identical set of registers to simplify programming and add flexibility.
+The {IDF_TARGET_NAME} chip has {IDF_TARGET_SOC_UART_NUM} UART controllers (also referred to as port), each featuring an identical set of registers to simplify programming and for more flexibility.
 
 Each UART controller is independently configurable with parameters such as baud rate, data bit length, bit ordering, number of stop bits, parity bit, etc. All the controllers are compatible with UART-enabled devices from various manufacturers and can also support Infrared Data Association (IrDA) protocols.
 

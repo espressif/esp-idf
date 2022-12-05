@@ -1,19 +1,17 @@
 Two-Wire Automotive Interface (TWAI)
 ====================================
 
-{IDF_TARGET_TWAI_NUM:default="1", esp32c6="2"}
-
 .. -------------------------------- Overview -----------------------------------
 
 .. only:: esp32c6
 
 	.. warning::
-		{IDF_TARGET_NAME} has {IDF_TARGET_TWAI_NUM} TWAI controllers, but at the moment, the driver can only support ``TWAI0`` due to the limitation of the driver structure.
+		{IDF_TARGET_NAME} has {IDF_TARGET_SOC_TWAI_CONTROLLER_NUM} TWAI controllers, but at the moment, the driver can only support ``TWAI0`` due to the limitation of the driver structure.
 
 Overview
 --------
 
-The Two-Wire Automotive Interface (TWAI) is a real-time serial communication protocol suited for automotive and industrial applications. It is compatible with ISO11898-1 Classical frames, thus can support Standard Frame Format (11-bit ID) and Extended Frame Format (29-bit ID). The {IDF_TARGET_NAME} contains {IDF_TARGET_TWAI_NUM} TWAI controller(s) that can be configured to communicate on a TWAI bus via an external transceiver.
+The Two-Wire Automotive Interface (TWAI) is a real-time serial communication protocol suited for automotive and industrial applications. It is compatible with ISO11898-1 Classical frames, thus can support Standard Frame Format (11-bit ID) and Extended Frame Format (29-bit ID). The {IDF_TARGET_NAME} contains {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} TWAI controller(s) that can be configured to communicate on a TWAI bus via an external transceiver.
 
 .. warning::
     The TWAI controller is not compatible with ISO11898-1 FD Format frames, and will interpret such frames as errors.
