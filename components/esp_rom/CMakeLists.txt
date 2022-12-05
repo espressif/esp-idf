@@ -255,27 +255,31 @@ else() # Regular app build
                 # Normal(Non-nano) formatting functions in ROM are also built for 64-bit time_t.
                 rom_linker_script("newlib-normal")
             endif()
-       endif()
+        endif()
 
     elseif(target STREQUAL "esp32h2")
-       rom_linker_script("newlib")
-       rom_linker_script("version")
-       rom_linker_script("phy")
-       rom_linker_script("coexist")
-       rom_linker_script("net80211")
-       rom_linker_script("pp")
+        rom_linker_script("newlib")
+        rom_linker_script("version")
+        rom_linker_script("phy")
+        rom_linker_script("coexist")
+        rom_linker_script("net80211")
+        rom_linker_script("pp")
 
-       if(time_t_size EQUAL 8)
-           # The ROM functions listed in this linker script depend on sizeof(time_t).
-           # Since ROM for ESP32-H2 was compiled for 64-bit time_t, only link these functions
-           # if the toolchain is also using 64-bit time_t.
-           rom_linker_script("newlib-time")
+        if(CONFIG_SPI_FLASH_ROM_IMPL)
+            rom_linker_script("spiflash")
+        endif()
 
-           if(CONFIG_NEWLIB_NANO_FORMAT)
-               # nano formatting functions in ROM are also built for 64-bit time_t.
-               rom_linker_script("newlib-nano")
-           endif()
-       endif()
+        if(time_t_size EQUAL 8)
+            # The ROM functions listed in this linker script depend on sizeof(time_t).
+            # Since ROM for ESP32-H2 was compiled for 64-bit time_t, only link these functions
+            # if the toolchain is also using 64-bit time_t.
+            rom_linker_script("newlib-time")
+
+            if(CONFIG_NEWLIB_NANO_FORMAT)
+                # nano formatting functions in ROM are also built for 64-bit time_t.
+                rom_linker_script("newlib-nano")
+            endif()
+        endif()
 
     endif()
 
