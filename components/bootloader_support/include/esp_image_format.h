@@ -53,8 +53,14 @@ typedef struct {
     uint32_t crc;                   /*!< Check sum crc32 */
 } rtc_retain_mem_t;
 
+
+_Static_assert(offsetof(rtc_retain_mem_t, crc) == sizeof(rtc_retain_mem_t) - sizeof(uint32_t), "CRC field must be the last field of rtc_retain_mem_t structure");
+
 #ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
 _Static_assert(CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE % 4 == 0, "CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE must be a multiple of 4 bytes");
+/* The custom field must be the penultimate field */
+_Static_assert(offsetof(rtc_retain_mem_t, custom) == sizeof(rtc_retain_mem_t) - sizeof(uint32_t) - CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE,
+               "custom field in rtc_retain_mem_t structure must be the field before the CRC one");
 #endif
 
 #if defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP) || defined(CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC)
