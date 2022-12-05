@@ -9,6 +9,7 @@ menu "Example Configuration"
         config EXAMPLE_MODE_MUSIC
             bool "music"
         config EXAMPLE_MODE_ECHO
+            depends on !EXAMPLE_BSP
             bool "echo"
     endchoice
 
@@ -55,4 +56,9 @@ menu "Example Configuration"
         help
             Set voice volume
 
+    config EXAMPLE_BSP
+        bool "Enable Board Support Package (BSP) support"
+        default n
+        help
+            Use BSP to setup all hardware settings. Specific board must be selected in main/idf_component.yml file.
 endmenu
