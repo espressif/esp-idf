@@ -78,7 +78,7 @@ int hostapd_send_eapol(const u8 *source, const u8 *sta_addr,
     struct l2_ethhdr *eth = buffer;
 
     if (!buffer){
-        wpa_printf( MSG_DEBUG, "send_eapol, buffer=%p\n", buffer);
+        wpa_printf( MSG_DEBUG, "send_eapol, buffer=%p", buffer);
         return -1;
     }
 

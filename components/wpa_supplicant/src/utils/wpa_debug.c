@@ -54,7 +54,7 @@ int  wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data, size_t len)
 void  wpa_dump_mem(char* desc, uint8_t *addr, uint16_t len)
 {
     char output[50];
-    wpa_printf(MSG_DEBUG, "%s\n", desc);
+    wpa_printf(MSG_DEBUG, "%s", desc);
     if (addr){
         uint16_t i=0;
         for (i = 0; i < len / 16; i++) {

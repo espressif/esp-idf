@@ -113,7 +113,7 @@ int esp_handle_beacon_probe(u8 type, u8 *frame, size_t len, u8 *sender,
 	u8 *ptr;
 
 	if (len < 12) {
-		wpa_printf(MSG_ERROR, "beacon/probe is having short len=%d\n", len);
+		wpa_printf(MSG_ERROR, "beacon/probe is having short len=%d", len);
 		return -1;
 	}
 
