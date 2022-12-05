@@ -68,6 +68,16 @@ lwip_component:
     - BSD-3-Clause
   license_for_new_files: Apache-2.0
 
+mqtt_component:
+  include:
+    - 'components/mqtt/**'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-3-Clause
+    - Unlicense
+    - CC0-1.0
+  license_for_new_files: Apache-2.0
+
 newlib_component:
   include:
     - 'components/newlib/platform_include/**'
