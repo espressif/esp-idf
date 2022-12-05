@@ -8,6 +8,7 @@
 
 #define ESP_ROM_HAS_CRC_LE                  (1) // ROM CRC library supports Little Endian
 #define ESP_ROM_HAS_CRC_BE                  (1) // ROM CRC library supports Big Endian
+#define ESP_ROM_HAS_MZ_CRC32                (1) // ROM has mz_crc32 function
 #define ESP_ROM_HAS_JPEG_DECODE             (1) // ROM has JPEG decode library
 #define ESP_ROM_UART_CLK_IS_XTAL            (1) // UART clock source is selected to XTAL in ROM
 #define ESP_ROM_HAS_RETARGETABLE_LOCKING    (1) // ROM was built with retargetable locking

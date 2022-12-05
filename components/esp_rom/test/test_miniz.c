@@ -12,10 +12,8 @@
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)
 // miniz unit test can't pass on ESP32 non-ECO3 version IDF-1807
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/miniz.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/miniz.h"
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#include "miniz.h"
 #else
 #error "unsupported target"
 #endif
