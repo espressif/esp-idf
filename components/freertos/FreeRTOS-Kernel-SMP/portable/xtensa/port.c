@@ -49,6 +49,8 @@
 #include "hal/systimer_ll.h"
 #endif // CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
 
+_Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
+
 /*
 OS state variables
 */
@@ -708,6 +710,7 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
     p[2] = (((uint32_t) p) + 12 + XCHAL_TOTAL_SA_ALIGN - 1) & -XCHAL_TOTAL_SA_ALIGN;
 #endif /* XCHAL_CP_NUM */
 
+    configASSERT(((uint32_t) sp & portBYTE_ALIGNMENT_MASK) == 0);
     return sp;
 }
 
