@@ -191,6 +191,27 @@ if(NOT BOOTLOADER_BUILD)
                 "adc_hal_common.c"
                 )
     endif()
+
+    if(${target} STREQUAL "esp32h2")
+        list(APPEND srcs
+              "spi_flash_hal_gpspi.c"
+            )
+
+        # TODO: IDF-5310
+        list(REMOVE_ITEM srcs
+                "adc_oneshot_hal.c"
+                "adc_hal_common.c"
+                "spi_slave_hd_hal.c"
+                "spi_hal.c"
+                "spi_hal_iram.c"
+                "spi_slave_hal.c"
+                "spi_slave_hal_iram.c"
+                "esp32h2/brownout_hal.c"
+                "esp32h2/rtc_cntl_hal.c"
+                "timer_hal.c"
+                "timer_hal_iram.c"
+                )
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}

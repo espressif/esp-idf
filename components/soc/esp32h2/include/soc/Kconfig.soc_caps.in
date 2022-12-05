@@ -3,26 +3,6 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
-config SOC_DEDICATED_GPIO_SUPPORTED
-    bool
-    default y
-
-config SOC_GDMA_SUPPORTED
-    bool
-    default y
-
-config SOC_BT_SUPPORTED
-    bool
-    default y
-
-config SOC_ASYNC_MEMCPY_SUPPORTED
-    bool
-    default y
-
-config SOC_SUPPORTS_SECURE_DL_MODE
-    bool
-    default y
-
 config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
@@ -40,22 +20,6 @@ config SOC_RTC_MEM_SUPPORTED
     default y
 
 config SOC_SYSTIMER_SUPPORTED
-    bool
-    default y
-
-config SOC_SUPPORT_COEXISTENCE
-    bool
-    default y
-
-config SOC_MPI_SUPPORTED
-    bool
-    default y
-
-config SOC_HMAC_SUPPORTED
-    bool
-    default y
-
-config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
