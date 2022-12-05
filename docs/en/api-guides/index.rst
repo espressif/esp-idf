@@ -13,6 +13,7 @@ API Guides
    :SOC_SUPPORT_COEXISTENCE: coexist
    core_dump
    cplusplus
+   current-consumption-measurement-modules
    :SOC_RTC_MEM_SUPPORTED: deep-sleep-stub
    :SOC_USB_OTG_SUPPORTED: dfu
    error-handling
