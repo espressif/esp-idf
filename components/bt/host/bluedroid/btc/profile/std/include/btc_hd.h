@@ -94,6 +94,7 @@ void btc_hd_cb_handler(btc_msg_t *msg);
 // extern void btc_hd_service_registration();
 
 void btc_hd_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+void btc_hd_cb_arg_deep_free(btc_msg_t *msg);
 
 #ifdef __cplusplus
 }

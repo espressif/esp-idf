@@ -75,7 +75,7 @@ void btc_ble_mesh_lighting_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, vo
     }
 }
 
-static void btc_ble_mesh_lighting_client_arg_deep_free(btc_msg_t *msg)
+void btc_ble_mesh_lighting_client_arg_deep_free(btc_msg_t *msg)
 {
     btc_ble_mesh_lighting_client_args_t *arg = NULL;
 
@@ -213,7 +213,7 @@ static void btc_ble_mesh_lighting_client_callback(esp_ble_mesh_light_client_cb_p
     msg.act = act;
 
     btc_transfer_context(&msg, cb_params, cb_params == NULL ? 0 : sizeof(esp_ble_mesh_light_client_cb_param_t),
-                         btc_ble_mesh_lighting_client_copy_req_data);
+                         btc_ble_mesh_lighting_client_copy_req_data, btc_ble_mesh_lighting_client_free_req_data);
 }
 
 void bt_mesh_lighting_client_cb_evt_to_btc(uint32_t opcode, uint8_t evt_type,
@@ -498,7 +498,7 @@ static void btc_ble_mesh_lighting_server_callback(esp_ble_mesh_lighting_server_c
     msg.act = act;
 
     btc_transfer_context(&msg, cb_params, cb_params == NULL ? 0 : sizeof(esp_ble_mesh_lighting_server_cb_param_t),
-                         btc_ble_mesh_lighting_server_copy_req_data);
+                         btc_ble_mesh_lighting_server_copy_req_data, btc_ble_mesh_lighting_server_free_req_data);
 }
 
 void bt_mesh_lighting_server_cb_evt_to_btc(uint8_t evt_type, struct bt_mesh_model *model,

@@ -196,7 +196,7 @@ static void bte_hd_evt(tBTA_HD_EVT event, tBTA_HD *p_data)
     msg.pid = BTC_PID_HD;
     msg.act = event;
 
-    status = btc_transfer_context(&msg, p_data, param_len, bte_hd_arg_deep_copy);
+    status = btc_transfer_context(&msg, p_data, param_len, bte_hd_arg_deep_copy, btc_hd_cb_arg_deep_free);
     if (status != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("context transfer failed");
     }
@@ -634,7 +634,7 @@ void btc_hd_call_handler(btc_msg_t *msg)
     btc_hd_call_arg_deep_free(msg);
 }
 
-static void btc_hd_cb_arg_deep_free(btc_msg_t *msg)
+void btc_hd_cb_arg_deep_free(btc_msg_t *msg)
 {
     tBTA_HD *arg = (tBTA_HD *)msg->arg;
 

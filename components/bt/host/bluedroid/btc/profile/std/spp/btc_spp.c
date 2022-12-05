@@ -254,7 +254,7 @@ static void close_timeout_handler(void *arg)
     msg.pid = BTC_PID_SPP;
     msg.act = BTA_JV_RFCOMM_CLOSE_EVT;
 
-    status = btc_transfer_context(&msg, arg, sizeof(tBTA_JV), NULL);
+    status = btc_transfer_context(&msg, arg, sizeof(tBTA_JV), NULL, NULL);
 
     if (arg) {
         osi_free(arg);
@@ -439,7 +439,7 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
 
 
     status = btc_transfer_context(&msg, p_data,
-                                  sizeof(tBTA_JV), NULL);
+                                  sizeof(tBTA_JV), NULL, NULL);
 
     if (status != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed", __func__);
@@ -507,7 +507,7 @@ static void btc_spp_dm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
         msg.pid = BTC_PID_SPP;
         msg.act = event;
 
-        status = btc_transfer_context(&msg, p_data, sizeof(tBTA_JV), NULL);
+        status = btc_transfer_context(&msg, p_data, sizeof(tBTA_JV), NULL, NULL);
 
         if (status != BT_STATUS_SUCCESS) {
             BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -1348,7 +1348,7 @@ int bta_co_rfc_data_incoming(void *user_data, BT_HDR *p_buf)
         fixed_queue_enqueue(slot->rx.queue, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
         if (rx_len == 0) {
             BTC_TRACE_DEBUG("%s data post! %d, %d", __func__, slot->rfc_handle, rx_len);
-            status = btc_transfer_context(&msg, &p_data, sizeof(tBTA_JV), NULL);
+            status = btc_transfer_context(&msg, &p_data, sizeof(tBTA_JV), NULL, NULL);
             assert(status == BT_STATUS_SUCCESS);
         }
     } else {
@@ -1394,8 +1394,8 @@ esp_err_t spp_send_data_to_btc(uint32_t handle, int len, uint8_t *p_data, esp_sp
     arg.write.len = len;
     arg.write.p_data = p_data;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), btc_spp_arg_deep_copy)
-                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), btc_spp_arg_deep_copy,
+                btc_spp_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 static ssize_t spp_vfs_write(int fd, const void * data, size_t size)

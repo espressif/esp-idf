@@ -32,7 +32,7 @@ esp_err_t esp_a2d_sink_init(void)
     msg.act = BTC_AV_SINK_API_INIT_EVT;
 
     /* Switch to BTC context */
-    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -53,7 +53,7 @@ esp_err_t esp_a2d_sink_deinit(void)
     msg.act = BTC_AV_SINK_API_DEINIT_EVT;
 
     /* Switch to BTC context */
-    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -77,7 +77,7 @@ esp_err_t esp_a2d_sink_register_data_callback(esp_a2d_sink_data_cb_t callback)
     arg.data_cb = callback;
 
     /* Switch to BTC context */
-    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -103,7 +103,7 @@ esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda)
 
     /* Switch to BTC context */
     memcpy(&(arg.connect), remote_bda, sizeof(bt_bdaddr_t));
-    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
+    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -127,7 +127,7 @@ esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda)
 
     /* Switch to BTC context */
     memcpy(&(arg.disconn), remote_bda, sizeof(bt_bdaddr_t));
-    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
+    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -153,7 +153,7 @@ esp_err_t esp_a2d_sink_set_delay_value(uint16_t delay_value)
     arg.delay_value = delay_value;
 
     /* Switch to BTC context */
-    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
+    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -175,7 +175,7 @@ esp_err_t esp_a2d_sink_get_delay_value(void)
     msg.act = BTC_AV_SINK_API_GET_DELAY_VALUE_EVT;
 
     /* Switch to BTC context */
-    stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 #endif /* BTC_AV_SINK_INCLUDED */
@@ -220,7 +220,7 @@ esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl)
 
     /* Switch to BTC context */
     arg.ctrl = ctrl;
-    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
+    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -242,7 +242,7 @@ esp_err_t esp_a2d_source_init(void)
     msg.act = BTC_AV_SRC_API_INIT_EVT;
 
     /* Switch to BTC context */
-    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -263,7 +263,7 @@ esp_err_t esp_a2d_source_deinit(void)
     msg.act = BTC_AV_SRC_API_DEINIT_EVT;
 
     /* Switch to BTC context */
-    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -289,7 +289,7 @@ esp_err_t esp_a2d_source_connect(esp_bd_addr_t remote_bda)
 
     /* Switch to BTC context */
     memcpy(&(arg.src_connect), remote_bda, sizeof(bt_bdaddr_t));
-    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
+    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -315,7 +315,7 @@ esp_err_t esp_a2d_source_disconnect(esp_bd_addr_t remote_bda)
 
     /* Switch to BTC context */
     memcpy(&(arg.src_disconn), remote_bda, sizeof(bt_bdaddr_t));
-    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
+    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -339,7 +339,7 @@ esp_err_t esp_a2d_source_register_data_callback(esp_a2d_source_data_cb_t callbac
     arg.src_data_cb = callback;
 
     /* Switch to BTC context */
-    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 

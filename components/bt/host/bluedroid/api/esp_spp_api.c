@@ -64,7 +64,7 @@ esp_err_t esp_spp_enhanced_init(const esp_spp_cfg_t *cfg)
     arg.init.enable_l2cap_ertm = cfg->enable_l2cap_ertm;
     arg.init.tx_buffer_size = cfg->tx_buffer_size;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_spp_deinit(void)
@@ -77,7 +77,7 @@ esp_err_t esp_spp_deinit(void)
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_UNINIT;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -98,7 +98,8 @@ esp_err_t esp_spp_start_discovery(esp_bd_addr_t bd_addr)
     arg.start_discovery.num_uuid = 1;
     arg.start_discovery.p_uuid_list = &sdp_uuid;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), btc_spp_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t),
+                btc_spp_arg_deep_copy, btc_spp_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_spp_connect(esp_spp_sec_t sec_mask,
@@ -121,7 +122,7 @@ esp_err_t esp_spp_connect(esp_spp_sec_t sec_mask,
     arg.connect.remote_scn = remote_scn;
     memcpy(arg.connect.peer_bd_addr, peer_bd_addr, ESP_BD_ADDR_LEN);
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_spp_disconnect(uint32_t handle)
@@ -136,7 +137,7 @@ esp_err_t esp_spp_disconnect(uint32_t handle)
 
     arg.disconnect.handle = handle;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask,
@@ -165,7 +166,7 @@ esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask,
     arg.start_srv.max_session = ESP_SPP_MAX_SESSION;
     strcpy(arg.start_srv.name, name);
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_spp_stop_srv(void)
@@ -179,7 +180,7 @@ esp_err_t esp_spp_stop_srv(void)
     msg.act = BTC_SPP_ACT_STOP_SRV;
     arg.stop_srv.scn = BTC_SPP_INVALID_SCN;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_spp_stop_srv_scn(uint8_t scn)
@@ -198,7 +199,7 @@ esp_err_t esp_spp_stop_srv_scn(uint8_t scn)
     msg.act = BTC_SPP_ACT_STOP_SRV;
     arg.stop_srv.scn = scn;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
