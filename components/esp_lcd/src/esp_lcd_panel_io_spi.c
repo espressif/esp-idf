@@ -143,7 +143,7 @@ static esp_err_t panel_io_spi_register_event_callbacks(esp_lcd_panel_io_handle_t
 {
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
 
-    if(spi_panel_io->on_color_trans_done != NULL) {
+    if (spi_panel_io->on_color_trans_done != NULL) {
         ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was owerwritten!");
     }
 
@@ -200,7 +200,7 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     }
     lcd_trans = &spi_panel_io->trans_pool[0];
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
-    spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
+
     lcd_trans->base.user = spi_panel_io;
     lcd_trans->base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
     if (spi_panel_io->flags.octal_mode) {
@@ -209,6 +209,7 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     }
 
     if (send_cmd) {
+        spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
         lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
         if (spi_panel_io->flags.dc_as_cmd_phase) { // encoding DC value to SPI command phase when necessary
             lcd_trans->base.cmd = !spi_panel_io->flags.dc_data_level;
@@ -259,7 +260,7 @@ static esp_err_t panel_io_spi_rx_param(esp_lcd_panel_io_t *io, int lcd_cmd, void
     }
     lcd_trans = &spi_panel_io->trans_pool[0];
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
-    spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
+
     lcd_trans->base.user = spi_panel_io;
     lcd_trans->base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
     if (spi_panel_io->flags.octal_mode) {
@@ -268,6 +269,7 @@ static esp_err_t panel_io_spi_rx_param(esp_lcd_panel_io_t *io, int lcd_cmd, void
     }
 
     if (send_cmd) {
+        spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
         lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
         if (spi_panel_io->flags.dc_as_cmd_phase) { // encoding DC value to SPI command phase when necessary
             lcd_trans->base.cmd = !spi_panel_io->flags.dc_data_level;
@@ -306,6 +308,7 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     spi_transaction_t *spi_trans = NULL;
     lcd_spi_trans_descriptor_t *lcd_trans = NULL;
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
+    bool send_cmd = (lcd_cmd >= 0);
 
     // before issue a polling transaction, need to wait queued transactions finished
     for (size_t i = 0; i < spi_panel_io->num_trans_inflight; i++) {
@@ -315,21 +318,24 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     spi_panel_io->num_trans_inflight = 0;
     lcd_trans = &spi_panel_io->trans_pool[0];
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
-    spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
-    lcd_trans->base.user = spi_panel_io;
-    lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
-    lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
-    lcd_trans->base.tx_buffer = &lcd_cmd;
-    if (spi_panel_io->flags.dc_as_cmd_phase) { // encoding DC value to SPI command phase when necessary
-        lcd_trans->base.cmd = !spi_panel_io->flags.dc_data_level;
+
+    if (send_cmd) {
+        spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
+        lcd_trans->base.user = spi_panel_io;
+        lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
+        lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
+        lcd_trans->base.tx_buffer = &lcd_cmd;
+        if (spi_panel_io->flags.dc_as_cmd_phase) { // encoding DC value to SPI command phase when necessary
+            lcd_trans->base.cmd = !spi_panel_io->flags.dc_data_level;
+        }
+        if (spi_panel_io->flags.octal_mode) {
+            // use 8 lines for transmitting command, address and data
+            lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
+        }
+        // command is short, using polling mode
+        ret = spi_device_polling_transmit(spi_panel_io->spi_dev, &lcd_trans->base);
+        ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (polling) command failed");
     }
-    if (spi_panel_io->flags.octal_mode) {
-        // use 8 lines for transmitting command, address and data
-        lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
-    }
-    // command is short, using polling mode
-    ret = spi_device_polling_transmit(spi_panel_io->spi_dev, &lcd_trans->base);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (polling) command failed");
 
     // split to chunks if required:
     // the SPI bus has a maximum transaction size determined by SPI_USR_MOSI_DBITLEN's bit width
