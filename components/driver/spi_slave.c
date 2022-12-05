@@ -60,6 +60,7 @@ typedef struct {
     QueueHandle_t trans_queue;
     QueueHandle_t ret_queue;
     bool dma_enabled;
+    bool cs_iomux;
     uint32_t tx_dma_chan;
     uint32_t rx_dma_chan;
 #ifdef CONFIG_PM_ENABLE
@@ -97,7 +98,7 @@ static void SPI_SLAVE_ISR_ATTR freeze_cs(spi_slave_t *host)
 // This is used in test by internal gpio matrix connections
 static inline void SPI_SLAVE_ISR_ATTR restore_cs(spi_slave_t *host)
 {
-    if (bus_is_iomux(host)) {
+    if (host->cs_iomux) {
         gpio_iomux_in(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in);
     } else {
         esp_rom_gpio_connect_in_signal(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in, false);
@@ -153,6 +154,8 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     }
     if (slave_config->spics_io_num >= 0) {
         spicommon_cs_initialize(host, slave_config->spics_io_num, 0, !bus_is_iomux(spihost[host]));
+        // check and save where cs line really route through
+        spihost[host]->cs_iomux = (slave_config->spics_io_num == spi_periph_signal[host].spics0_iomux_pin) && bus_is_iomux(spihost[host]);
     }
 
     // The slave DMA suffers from unexpected transactions. Forbid reading if DMA is enabled by disabling the CS line.
