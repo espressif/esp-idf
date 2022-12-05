@@ -118,9 +118,9 @@ static int pcnt_get_pulse_callback(void *args)
 static void motor_ctrl_default_init(void)
 {
     motor_ctrl.cfg.pid_enable = true;
-    motor_ctrl.pid_param.kp = 0.8;
-    motor_ctrl.pid_param.ki = 0.0;
-    motor_ctrl.pid_param.kd = 0.1;
+    motor_ctrl.pid_param.kp = 0.6;
+    motor_ctrl.pid_param.ki = 0.4;
+    motor_ctrl.pid_param.kd = 0.2;
     motor_ctrl.pid_param.cal_type = PID_CAL_TYPE_INCREMENTAL;
     motor_ctrl.pid_param.max_output   = 100;
     motor_ctrl.pid_param.min_output   = -100;
