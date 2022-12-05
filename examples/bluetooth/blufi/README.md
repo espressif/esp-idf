@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 |
-| ----------------- | ----- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- |
 
 # ESP-IDF Blufi Example
 
@@ -27,7 +27,7 @@ Blufi is completely open source, here is the download link:
 
 ### Hardware Required
 
-* A development board with ESP32/ESP32-C3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with ESP32/ESP32-C3/ESP32-S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for Power supply and programming
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
