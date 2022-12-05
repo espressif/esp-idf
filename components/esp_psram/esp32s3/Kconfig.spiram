@@ -71,7 +71,7 @@ menu "SPI RAM config"
         bool "Move Read-Only Data in Flash to PSRAM"
         default n
         help
-            If enabled, instructions in flash will be moved into PSRAM on startup.
+            If enabled, rodata in flash will be moved into PSRAM on startup.
             If SPIRAM_FETCH_INSTRUCTIONS is also enabled, code that requires execution during an SPI1 Flash operation
             can forgo being placed in IRAM, thus optimizing RAM usage (see External RAM documentation
             for more details).
