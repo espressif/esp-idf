@@ -64,6 +64,10 @@ components/driver/test_apps/mcpwm:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
 
+components/driver/test_apps/parlio:
+  disable:
+    - if: SOC_PARLIO_SUPPORTED != 1
+
 components/driver/test_apps/pulse_cnt:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1

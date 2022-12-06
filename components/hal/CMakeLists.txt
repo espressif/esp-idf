@@ -105,6 +105,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "etm_hal.c")
     endif()
 
+    if(CONFIG_SOC_PARLIO_SUPPORTED)
+        list(APPEND srcs "parlio_hal.c")
+    endif()
+
     if(CONFIG_SOC_ADC_DMA_SUPPORTED)
         list(APPEND srcs "adc_hal.c")
     endif()

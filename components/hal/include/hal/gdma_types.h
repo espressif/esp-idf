@@ -27,6 +27,7 @@ typedef enum {
     GDMA_TRIG_PERIPH_LCD,  /*!< GDMA trigger peripheral: LCD */
     GDMA_TRIG_PERIPH_CAM,  /*!< GDMA trigger peripheral: CAM */
     GDMA_TRIG_PERIPH_RMT,  /*!< GDMA trigger peripheral: RMT */
+    GDMA_TRIG_PERIPH_PARLIO, /*!< GDMA trigger peripheral: PARLIO */
 } gdma_trigger_peripheral_t;
 
 /**
