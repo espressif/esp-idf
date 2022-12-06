@@ -98,6 +98,19 @@ Config ESP-NOW Rate
 
 Call :cpp:func:`esp_wifi_config_espnow_rate()` to config ESPNOW rate of specified interface. Make sure that the interface is enabled before config rate. This API should be called after :cpp:func:`esp_wifi_start()`.
 
+Config ESP-NOW Power-saving Parameter
+--------------------------------------------
+
+Sleep is supported only when {IDF_TARGET_NAME} is configured as station.
+
+Call :cpp:func:`esp_now_set_wake_window()` to configure Window for ESP-NOW RX at sleep. The default value is the maximum, which allowing RX all the time.
+
+If Power-saving is needed for ESP-NOW, call :cpp:func:`esp_wifi_connectionless_module_set_wake_interval()` to configure Interval as well. 
+
+.. only:: SOC_WIFI_SUPPORTED
+
+    Please refer to :ref:`connectionless module power save <connectionless-module-power-save>` to get more detail.
+
 Application Examples
 --------------------
 

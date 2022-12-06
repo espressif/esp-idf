@@ -27,13 +27,13 @@ Supported Coexistence Scenario for {IDF_TARGET_NAME}
       +       +--------+-----------+-----+------------+-----------+----------+
       |       |SOFTAP  |TX Beacon  |Y    |Y           |Y          |Y         |
       +       +        +-----------+-----+------------+-----------+----------+
-      |       |        |Connecting |Y    |Y           |Y          |Y         |
+      |       |        |Connecting |C1   |C1          |C1         |C1        |
       +       +        +-----------+-----+------------+-----------+----------+
       |       |        |Connected  |C1   |C1          |C1         |C1        |
       +       +--------+-----------+-----+------------+-----------+----------+
-      |       |Sniffer |RX         |C2   |C2          |C2         |C2        |
+      |       |Sniffer |RX         |C1   |C1          |C1         |C1        |
       +       +--------+-----------+-----+------------+-----------+----------+
-      |       |ESP-NOW |RX         |X    |X           |X          |X         |
+      |       |ESP-NOW |RX         |S    |S           |S          |S         |
       +       +        +-----------+-----+------------+-----------+----------+
       |       |        |TX         |Y    |Y           |Y          |Y         |
       +-------+--------+-----------+-----+------------+-----------+----------+
@@ -56,13 +56,13 @@ Supported Coexistence Scenario for {IDF_TARGET_NAME}
       +       +--------+-----------+--------+-------------+-----+----------+-----------+
       |       |SOFTAP  |TX Beacon  |Y       |Y            |Y    |Y         |Y          |
       +       +        +-----------+--------+-------------+-----+----------+-----------+
-      |       |        |Connecting |Y       |Y            |Y    |Y         |Y          |
+      |       |        |Connecting |C1      |C1           |C1   |C1        |C1         |
       +       +        +-----------+--------+-------------+-----+----------+-----------+
       |       |        |Connected  |C1      |C1           |C1   |C1        |C1         |
       +       +--------+-----------+--------+-------------+-----+----------+-----------+
-      |       |Sniffer |RX         |C2      |C2           |C2   |C2        |C2         |
+      |       |Sniffer |RX         |C1      |C1           |C1   |C1        |C1         |
       +       +--------+-----------+--------+-------------+-----+----------+-----------+
-      |       |ESP-NOW |RX         |X       |X            |X    |X         |X          |
+      |       |ESP-NOW |RX         |S       |S            |S    |S         |S          |
       +       +        +-----------+--------+-------------+-----+----------+-----------+
       |       |        |TX         |Y       |Y            |Y    |Y         |Y          |
       +-------+--------+-----------+--------+-------------+-----+----------+-----------+
@@ -72,9 +72,8 @@ Supported Coexistence Scenario for {IDF_TARGET_NAME}
 
   Y: supported and performance is stable
   C1: supported but the performance is unstable
-  C2: supported but the packet loss rate of Sniffer is unstable
   X: not supported
-
+  S: supported and performance is stable in STA mode, otherwise not supported
 
 Coexistence Mechanism and Policy
 ------------------------------------------------
@@ -152,6 +151,16 @@ Dynamic Priority
 
 The coexistence module assigns different priorities to different status of Wi-Fi and Bluetooth. And the priority for each status is dynamic. For example, in every N BLE Advertising events, there is always one event with high priority. If a high-priority BLE Advertising event occurs within the Wi-Fi time slice, the right to use the RF may be preempted by BLE.
 
+.. only:: SOC_WIFI_SUPPORTED
+
+    Wi-Fi Connectionless Modules Coexistence
+    """"""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+    To some extent, some combinations of connectionless power-saving parameters `Window` and `Interval` would lead to extra Wi-Fi priority request out of Wi-Fi time slice. It`s for obtaining RF resources at coexistence for customized parameters, while leading to impact on Bluetooth performance.
+
+    If connectionless power-saving parameters are configured with default values, the coexistence module would perform in stable mode and the behaviour above would not happen. So please configure Wi-Fi connectionless power-saving parameters to default values unless you have plenty of coexistence performance tests for customized parameters.
+
+    Please refer to :ref:`connectionless module power save <connectionless-module-power-save>` to get more detail.
 
 How to Use the Coexistence Feature
 --------------------------------------
