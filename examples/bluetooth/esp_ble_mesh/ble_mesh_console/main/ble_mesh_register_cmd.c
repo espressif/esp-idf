@@ -703,7 +703,7 @@ int ble_mesh_node_enable_bearer(int argc, char **argv)
 int ble_mesh_exceptional_list_test(int argc, char **argv)
 {
     esp_err_t err = ESP_FAIL;
-    uint32_t type = BLE_MESH_EXCEP_INFO_MESH_BEACON;
+    uint32_t type = BLE_MESH_EXCEP_LIST_TYPE_MESH_BEACON;
     uint8_t *info = NULL;
 
     int nerrors = arg_parse(argc, argv, (void **) &exceptional_list_test);
@@ -725,11 +725,11 @@ int ble_mesh_exceptional_list_test(int argc, char **argv)
     }
 
     if (strcmp(exceptional_list_test.action_type->sval[0], "add") == 0) {
-        err = bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD, type, info);
+        err = bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_ADD, type, info);
     } else if (strcmp(exceptional_list_test.action_type->sval[0], "remove") == 0) {
-        err = bt_mesh_update_exceptional_list( BLE_MESH_EXCEP_LIST_REMOVE, type, info);
+        err = bt_mesh_update_exceptional_list( BLE_MESH_EXCEP_LIST_SUB_CODE_REMOVE, type, info);
     } else if (strcmp(exceptional_list_test.action_type->sval[0], "clean") == 0) {
-        err = bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_CLEAN, type, NULL);
+        err = bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN, type, NULL);
     }
 
     if (err == ESP_OK) {
