@@ -1335,7 +1335,7 @@ esp_err_t usb_host_transfer_submit_control(usb_host_client_handle_t client_hdl, 
     //Check that control transfer is valid
     HOST_CHECK(transfer->device_handle != NULL, ESP_ERR_INVALID_ARG);   //Target device must be set
     usb_device_handle_t dev_hdl = transfer->device_handle;
-    bool xfer_is_in = ((usb_setup_packet_t *)transfer->data_buffer)->bmRequestType & USB_BM_REQUEST_TYPE_DIR_OUT;
+    bool xfer_is_in = ((usb_setup_packet_t *)transfer->data_buffer)->bmRequestType & USB_BM_REQUEST_TYPE_DIR_IN;
     usb_device_info_t dev_info;
     ESP_ERROR_CHECK(usbh_dev_get_info(dev_hdl, &dev_info));
     HOST_CHECK(transfer_check(transfer, USB_TRANSFER_TYPE_CTRL, dev_info.bMaxPacketSize0, xfer_is_in), ESP_ERR_INVALID_ARG);
