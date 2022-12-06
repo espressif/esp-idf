@@ -23,10 +23,9 @@ __esp_stack_guard_setup (void)
     __stack_chk_guard = (void *)esp_random();
 }
 
-void __stack_chk_fail (void)
+IRAM_ATTR void __stack_chk_fail (void)
 {
-    esp_rom_printf("\r\nStack smashing protect failure!\r\n\r\n");
-    abort();
+    esp_system_abort(DRAM_STR("Stack smashing protect failure!"));
 }
 
 #endif
