@@ -62,6 +62,7 @@
 #include "esp_log.h"
 #include "esp_int_wdt.h"
 #include "esp_app_trace.h"    /* Required for esp_apptrace_init. [refactor-todo] */
+#include "esp_chip_info.h"
 #include "FreeRTOS.h"        /* This pulls in portmacro.h */
 #include "task.h"            /* Required for TaskHandle_t, tskNO_AFFINITY, and vTaskStartScheduler */
 #include "port_systick.h"
