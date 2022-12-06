@@ -111,7 +111,7 @@ class Reference(object):
 
 
 class IgnorePair():
-    def __init__(self, pair) -> None:  # type: (str)
+    def __init__(self, pair):  # type: (str) -> None
         self.symbol, self.function_call = pair.split('/')
 
 
