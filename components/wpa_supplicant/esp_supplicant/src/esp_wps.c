@@ -618,7 +618,7 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
             }
             esp_wifi_enable_sta_privacy_internal();
             os_memset(sm->config.ssid, 0, sizeof(sm->config.ssid));
-            strncpy((char *)sm->config.ssid, (char *)&scan->ssid[2], (int)scan->ssid[1]);
+            os_memcpy(sm->config.ssid, (char *)&scan->ssid[2], (int)scan->ssid[1]);
             if (scan->bssid && memcmp(sm->config.bssid, scan->bssid, ETH_ALEN) != 0) {
                 printf("sm BSSid: "MACSTR " scan BSSID " MACSTR "\n", MAC2STR(sm->config.bssid), MAC2STR(scan->bssid));
                 sm->discover_ssid_cnt++;
@@ -2145,7 +2145,7 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
     ret = wifi_station_wps_init();
 
     if (ret != 0) {
-        wps_set_type(WPS_STATUS_DISABLE);
+        wps_set_type(WPS_TYPE_DISABLE);
         wps_set_status(WPS_STATUS_DISABLE);
         return ESP_FAIL;
     }
