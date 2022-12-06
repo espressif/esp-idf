@@ -19,3 +19,4 @@
 #define ESP_ROM_HAS_HEAP_TLSF               (1) // ROM has the implementation of the tlsf and multi-heap library
 #define ESP_ROM_HAS_LAYOUT_TABLE            (1) // ROM has the layout table
 #define ESP_ROM_HAS_SPI_FLASH               (1) // ROM has the implementation of SPI Flash driver
+#define ESP_ROM_HAS_REGI2C_BUG              (1) // ROM has the regi2c bug
