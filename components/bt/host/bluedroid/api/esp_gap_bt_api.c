@@ -53,7 +53,7 @@ esp_err_t esp_bt_gap_set_scan_mode(esp_bt_connection_mode_t c_mode, esp_bt_disco
     arg.set_scan_mode.c_mode = c_mode;
     arg.set_scan_mode.d_mode = d_mode;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_gap_start_discovery(esp_bt_inq_mode_t mode, uint8_t inq_len, uint8_t num_rsps)
@@ -83,7 +83,7 @@ esp_err_t esp_bt_gap_start_discovery(esp_bt_inq_mode_t mode, uint8_t inq_len, ui
     arg.start_disc.inq_len = inq_len;
     arg.start_disc.num_rsps = num_rsps;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_gap_cancel_discovery(void)
@@ -98,7 +98,7 @@ esp_err_t esp_bt_gap_cancel_discovery(void)
     msg.pid = BTC_PID_GAP_BT;
     msg.act = BTC_GAP_BT_ACT_CANCEL_DISCOVERY;
 
-    return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_gap_get_remote_services(esp_bd_addr_t remote_bda)
@@ -115,7 +115,7 @@ esp_err_t esp_bt_gap_get_remote_services(esp_bd_addr_t remote_bda)
     msg.act = BTC_GAP_BT_ACT_GET_REMOTE_SERVICES;
 
     memcpy(&arg.bda, remote_bda, sizeof(bt_bdaddr_t));
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_gap_get_remote_service_record(esp_bd_addr_t remote_bda, esp_bt_uuid_t *uuid)
@@ -133,7 +133,7 @@ esp_err_t esp_bt_gap_get_remote_service_record(esp_bd_addr_t remote_bda, esp_bt_
 
     memcpy(&arg.get_rmt_srv_rcd.bda, remote_bda, sizeof(bt_bdaddr_t));
     memcpy(&arg.get_rmt_srv_rcd.uuid, uuid, sizeof(esp_bt_uuid_t));
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 uint8_t *esp_bt_gap_resolve_eir_data(uint8_t *eir, esp_bt_eir_type_t type, uint8_t *length)
@@ -174,7 +174,8 @@ esp_err_t esp_bt_gap_config_eir_data(esp_bt_eir_data_t *eir_data)
 
     memcpy(&arg.config_eir, eir_data, sizeof(esp_bt_eir_data_t));
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy,
+                btc_gap_bt_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_gap_set_cod(esp_bt_cod_t cod, esp_bt_cod_mode_t mode)
@@ -204,7 +205,7 @@ esp_err_t esp_bt_gap_set_cod(esp_bt_cod_t cod, esp_bt_cod_mode_t mode)
 
     arg.set_cod.mode = mode;
     memcpy(&arg.set_cod.cod, &cod, sizeof(esp_bt_cod_t));
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -223,7 +224,7 @@ esp_err_t esp_bt_gap_read_rssi_delta(esp_bd_addr_t remote_addr)
     msg.act = BTC_GAP_BT_ACT_READ_RSSI_DELTA;
     memcpy(arg.read_rssi_delta.bda.address, remote_addr, sizeof(esp_bd_addr_t));
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_gap_remove_bond_device(esp_bd_addr_t bd_addr)
@@ -240,7 +241,7 @@ esp_err_t esp_bt_gap_remove_bond_device(esp_bd_addr_t bd_addr)
     msg.act = BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE;
 
     memcpy(arg.rm_bond_device.bda.address, bd_addr, sizeof(esp_bd_addr_t));
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 int esp_bt_gap_get_bond_device_num(void)
@@ -289,8 +290,8 @@ esp_err_t esp_bt_gap_set_pin(esp_bt_pin_type_t pin_type, uint8_t pin_code_len, e
         memset(arg.set_pin_type.pin_code, 0, ESP_BT_PIN_CODE_LEN);
     }
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy,
+                btc_gap_bt_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_gap_pin_reply(esp_bd_addr_t bd_addr, bool accept, uint8_t pin_code_len, esp_bt_pin_code_t pin_code)
@@ -310,8 +311,8 @@ esp_err_t esp_bt_gap_pin_reply(esp_bd_addr_t bd_addr, bool accept, uint8_t pin_c
     memcpy(arg.pin_reply.bda.address, bd_addr, sizeof(esp_bd_addr_t));
     memcpy(arg.pin_reply.pin_code, pin_code, pin_code_len);
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy,
+                btc_gap_bt_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 #if (BT_SSP_INCLUDED == TRUE)
@@ -332,8 +333,8 @@ esp_err_t esp_bt_gap_set_security_param(esp_bt_sp_param_t param_type,
     arg.set_security_param.len = len;
     arg.set_security_param.value = value;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy,
+                btc_gap_bt_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_gap_ssp_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t passkey)
@@ -351,8 +352,8 @@ esp_err_t esp_bt_gap_ssp_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint3
     arg.passkey_reply.accept = accept;
     arg.passkey_reply.passkey = passkey;
     memcpy(arg.passkey_reply.bda.address, bd_addr, sizeof(esp_bd_addr_t));
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy,
+                btc_gap_bt_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept)
@@ -369,8 +370,8 @@ esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept)
     msg.act = BTC_GAP_BT_ACT_CONFIRM_REPLY;
     arg.confirm_reply.accept = accept;
     memcpy(arg.confirm_reply.bda.address, bd_addr, sizeof(esp_bd_addr_t));
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy,
+                btc_gap_bt_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 #endif /*(BT_SSP_INCLUDED == TRUE)*/
@@ -390,7 +391,7 @@ esp_err_t esp_bt_gap_set_afh_channels(esp_bt_gap_afh_channels channels)
 
     memcpy(&arg.set_afh_channels.channels, channels, ESP_BT_GAP_AFH_CHANNELS_LEN);
     arg.set_afh_channels.channels[ESP_BT_GAP_AFH_CHANNELS_LEN -1] &= 0x7F;
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_gap_read_remote_name(esp_bd_addr_t remote_bda)
@@ -407,7 +408,7 @@ esp_err_t esp_bt_gap_read_remote_name(esp_bd_addr_t remote_bda)
     msg.act = BTC_GAP_BT_ACT_READ_REMOTE_NAME;
 
     memcpy(&arg.rmt_name_bda, remote_bda, sizeof(bt_bdaddr_t));
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_gap_set_qos(esp_bd_addr_t remote_bda, uint32_t t_poll)
@@ -425,6 +426,6 @@ esp_err_t esp_bt_gap_set_qos(esp_bd_addr_t remote_bda, uint32_t t_poll)
 
     memcpy(&arg.set_qos.bda, remote_bda, sizeof(bt_bdaddr_t));
     arg.set_qos.t_poll = t_poll;
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif /* #if BTC_GAP_BT_INCLUDED == TRUE */
