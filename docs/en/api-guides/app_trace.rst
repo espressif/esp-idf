@@ -427,7 +427,7 @@ Good instructions on how to install, configure, and visualize data in Impulse fr
 
 .. note::
 
-    ESP-IDF uses its own mapping for SystemView FreeRTOS events IDs, so users need to replace the original file mapping ``$SYSVIEW_INSTALL_DIR/Description/SYSVIEW_FreeRTOS.txt`` with ``$IDF_PATH/docs/api-guides/SYSVIEW_FreeRTOS.txt``. Also, contents of that IDF-specific file should be used when configuring SystemView serializer using the above link.
+    ESP-IDF uses its own mapping for SystemView FreeRTOS events IDs, so users need to replace the original file mapping ``$SYSVIEW_INSTALL_DIR/Description/SYSVIEW_FreeRTOS.txt`` with ``$IDF_PATH/tools/esp_app_trace/SYSVIEW_FreeRTOS.txt``. Also, contents of that IDF-specific file should be used when configuring SystemView serializer using the above link.
 
 .. only:: not CONFIG_FREERTOS_UNICORE
 
