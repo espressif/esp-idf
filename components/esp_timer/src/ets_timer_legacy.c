@@ -36,6 +36,8 @@
 #include "esp32h4/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/ets_sys.h"
 #endif
 
 /* We abuse 'timer_arg' field of ETSTimer structure to hold a pointer to esp_timer */

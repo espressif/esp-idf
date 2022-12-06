@@ -76,7 +76,7 @@ void esp_brownout_init(void)
 
     brownout_hal_config(&cfg);
     brownout_hal_intr_clear();
-#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2// ESP32-C6, ESP32-H2 TODO: IDF-5645
     rtc_isr_register(rtc_brownout_isr_handler, NULL, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_ENA_M, RTC_INTR_FLAG_IRAM);
 #else
     rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M, RTC_INTR_FLAG_IRAM);

@@ -62,7 +62,7 @@
 bool g_panic_abort = false;
 static char *s_panic_abort_details = NULL;
 
-#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2// ESP32C6,ESP32H2-TODO: IDF-5653
 static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
 #else
 static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
