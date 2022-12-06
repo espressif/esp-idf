@@ -139,6 +139,7 @@ extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
 extern int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv);
 extern int ble_txpwr_set(esp_ble_enhanced_power_type_t power_type, uint16_t handle, int power_level);
 extern int ble_txpwr_get(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
+extern int ble_get_npl_element_info(esp_bt_controller_config_t *cfg, ble_npl_count_info_t * npl_info);
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
 extern uint32_t _nimble_bss_start;
@@ -590,10 +591,11 @@ void ble_rtc_clk_init(void)
 
 }
 
-
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     esp_err_t ret = ESP_OK;
+    ble_npl_count_info_t npl_info;
+    memset(&npl_info, 0, sizeof(ble_npl_count_info_t));
 
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
@@ -627,7 +629,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto free_mem;
     }
 
-    if (npl_freertos_mempool_init() != 0) {
+    ble_get_npl_element_info(cfg, &npl_info);
+
+    if (npl_freertos_mempool_init(&npl_info) != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "npl mempool init failed");
         ret = ESP_ERR_INVALID_ARG;
         goto free_mem;
