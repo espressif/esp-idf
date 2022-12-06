@@ -76,6 +76,7 @@
 #include "port_systick.h"
 #include "esp_cpu.h"
 #include "esp_memory_utils.h"
+#include "esp_chip_info.h"
 
 _Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
 
