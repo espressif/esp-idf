@@ -795,6 +795,7 @@ Wi-Fi 原因代码
        对于 ESP station，出现以下情况时报告该代码：
 
        - 从 AP 接收到该代码。
+
        对于 ESP AP，出现以下情况时将报告该代码：
 
        - 在过去五分钟之内， AP 未从 station 接收到任何数据包；
@@ -899,6 +900,7 @@ Wi-Fi 原因代码
      - 四次握手超时。由于某些历史原因，在 ESP 中该原因代码实为 WIFI_REASON_HANDSHAKE_TIMEOUT。
 
        对于 ESP station，出现以下情况时报告该代码：
+
        - 握手超时。
        - 从 AP 接收到该代码。
    * - GROUP_KEY_UPDATE_TIMEOUT
@@ -940,6 +942,7 @@ Wi-Fi 原因代码
      - 无效 AKMP。
 
        对于 ESP station，出现以下情况时报告该代码：
+
        - 从 AP 接收到该代码。
    * - UNSUPP_RSN_IE_VERSION
      - 21
@@ -1097,7 +1100,6 @@ Wi-Fi 原因代码
      - 205
      - 保留
      - 乐鑫特有的 Wi-Fi 原因代码： AP 连接失败。
-
 
 与密码错误有关的 Wi-Fi 原因代码
 +++++++++++++++++++++++++++++++++
