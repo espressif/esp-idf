@@ -311,8 +311,8 @@ static void reset_adv_link(void)
 
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Remove the link id from exceptional list */
-    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
+    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_REMOVE,
+                                    BLE_MESH_EXCEP_LIST_TYPE_MESH_LINK_ID, &link.id);
 #endif
 
     reset_state();
@@ -1380,8 +1380,8 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Add the link id into exceptional list */
-    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
+    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_ADD,
+                                    BLE_MESH_EXCEP_LIST_TYPE_MESH_LINK_ID, &link.id);
 #endif
 
     bearer_ctl_send(LINK_ACK, NULL, 0);
@@ -1837,8 +1837,8 @@ int bt_mesh_prov_deinit(void)
     k_delayed_work_free(&link.tx.retransmit);
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Remove the link id from exceptional list */
-    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
+    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_REMOVE,
+                                    BLE_MESH_EXCEP_LIST_TYPE_MESH_LINK_ID, &link.id);
 #endif /* CONFIG_BLE_MESH_USE_DUPLICATE_SCAN */
 #endif /* CONFIG_BLE_MESH_PB_ADV */
 
