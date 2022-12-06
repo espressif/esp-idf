@@ -128,6 +128,7 @@ if BT_LE_EXT_ADV
             instances. Minimum there is always one instance of
             advertising. Enter how many more advertising instances you
             want.
+            Each extended advertising instance will take about 0.5k DRAM.
 
     config BT_LE_EXT_ADV_MAX_SIZE
         int "Maximum length of the advertising data."
@@ -339,7 +340,7 @@ config BT_LE_MAX_CONNECTIONS
         is expected to configure BTDM_CTRL_BLE_MAX_CONN from controller menu
         along with this option. Similarly for ESP32-C3 or ESP32-S3, user is expected to
         configure BT_CTRL_BLE_MAX_ACT from controller menu.
-
+        Each connection will take about 1k DRAM.
 
 choice BT_LE_COEX_PHY_CODED_TX_RX_TLIM
     prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
