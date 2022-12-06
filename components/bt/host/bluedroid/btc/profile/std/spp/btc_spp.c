@@ -92,6 +92,9 @@ static spp_local_param_t *spp_local_param_ptr;
 #define spp_local_param (*spp_local_param_ptr)
 #endif
 
+static void btc_spp_vfs_register(void);
+static void btc_spp_vfs_unregister(void);
+
 static void spp_osi_free(void *p)
 {
     osi_free(p);
@@ -496,6 +499,7 @@ static void btc_spp_dm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
                 user_data->slot_id = slot->id;
             } else {
                 BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
+                assert(0);
             }
             BTA_JvFreeChannel(slot->scn, BTA_JV_CONN_TYPE_RFCOMM,
                               (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)user_data);
@@ -537,14 +541,25 @@ static void btc_spp_init(btc_spp_args_t *arg)
 
         if (osi_mutex_new(&spp_local_param.spp_slot_mutex) != 0) {
             BTC_TRACE_ERROR("%s osi_mutex_new failed\n", __func__);
+#if SPP_DYNAMIC_MEMORY == TRUE
+            osi_free(spp_local_param_ptr);
+            spp_local_param_ptr = NULL;
+#endif
             ret = ESP_SPP_NO_RESOURCE;
             break;
         }
         if ((spp_local_param.tx_event_group = xEventGroupCreate()) == NULL) {
             BTC_TRACE_ERROR("%s create tx_event_group failed\n", __func__);
             osi_mutex_free(&spp_local_param.spp_slot_mutex);
+#if SPP_DYNAMIC_MEMORY == TRUE
+            osi_free(spp_local_param_ptr);
+            spp_local_param_ptr = NULL;
+#endif
             ret = ESP_SPP_NO_RESOURCE;
             break;
+        }
+        if (arg->init.mode == ESP_SPP_MODE_VFS) {
+            spp_local_param.spp_vfs_id = -1;
         }
         spp_local_param.spp_mode = arg->init.mode;
         spp_local_param.spp_slot_id = 0;
@@ -594,11 +609,8 @@ static void btc_spp_uninit(void)
                     user_data->server_status = BTA_JV_SERVER_RUNNING;
                     user_data->slot_id = spp_local_param.spp_slots[i]->id;
                 } else {
-                    esp_spp_cb_param_t param;
                     BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
-                    param.srv_stop.status = ESP_SPP_NO_RESOURCE;
-                    param.srv_stop.scn = spp_local_param.spp_slots[i]->scn;
-                    btc_spp_cb_to_app(ESP_SPP_SRV_STOP_EVT, &param);
+                    assert(0);
                 }
                 BTA_JvFreeChannel(spp_local_param.spp_slots[i]->scn, BTA_JV_CONN_TYPE_RFCOMM,
                                   (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)user_data);
@@ -775,7 +787,7 @@ static void btc_spp_stop_srv(btc_spp_args_t *arg)
         }
 
         osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-        // [1] find all server
+        // [1] find all unconnected server
         for (i = 1; i <= MAX_RFC_PORTS; i++) {
             if (spp_local_param.spp_slots[i] != NULL && !spp_local_param.spp_slots[i]->connected &&
                 spp_local_param.spp_slots[i]->sdp_handle > 0) {
@@ -830,11 +842,8 @@ static void btc_spp_stop_srv(btc_spp_args_t *arg)
                         user_data->server_status = BTA_JV_SERVER_RUNNING;
                         user_data->slot_id = spp_local_param.spp_slots[i]->id;
                     } else {
-                        esp_spp_cb_param_t param;
                         BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
-                        param.srv_stop.status = ESP_SPP_NO_RESOURCE;
-                        param.srv_stop.scn = spp_local_param.spp_slots[i]->scn;
-                        btc_spp_cb_to_app(ESP_SPP_SRV_STOP_EVT, &param);
+                        assert(0);
                     }
                     BTA_JvFreeChannel(spp_local_param.spp_slots[i]->scn, BTA_JV_CONN_TYPE_RFCOMM,
                                       (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)user_data);
@@ -987,6 +996,12 @@ void btc_spp_call_handler(btc_msg_t *msg)
         break;
     case BTC_SPP_ACT_WRITE:
         btc_spp_write(arg);
+        break;
+    case BTC_SPP_ACT_VFS_REGISTER:
+        btc_spp_vfs_register();
+        break;
+    case BTC_SPP_ACT_VFS_UNREGISTER:
+        btc_spp_vfs_unregister();
         break;
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
@@ -1305,6 +1320,12 @@ void btc_spp_cb_handler(btc_msg_t *msg)
             vEventGroupDelete(spp_local_param.tx_event_group);
             spp_local_param.tx_event_group = NULL;
         }
+        if (spp_local_param.spp_mode == ESP_SPP_MODE_VFS) {
+            if (spp_local_param.spp_vfs_id != -1) {
+                esp_vfs_unregister_with_id(spp_local_param.spp_vfs_id);
+                spp_local_param.spp_vfs_id = -1;
+            }
+        }
 #if SPP_DYNAMIC_MEMORY == TRUE
         osi_free(spp_local_param_ptr);
         spp_local_param_ptr = NULL;
@@ -1598,30 +1619,65 @@ static ssize_t spp_vfs_read(int fd, void * dst, size_t size)
     return item_size;
 }
 
-esp_err_t btc_spp_vfs_register(void)
+static void btc_spp_vfs_register(void)
 {
-    if (!is_spp_init()) {
-        BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
-        return ESP_FAIL;
-    }
+    esp_spp_status_t ret = ESP_SPP_SUCCESS;
+    esp_spp_cb_param_t param;
 
-    esp_vfs_t vfs = {
-        .flags = ESP_VFS_FLAG_DEFAULT,
-        .write = spp_vfs_write,
-        .open = NULL,
-        .fstat = NULL,
-        .close = spp_vfs_close,
-        .read = spp_vfs_read,
-        .fcntl = NULL
-    };
+    do {
+        if (!is_spp_init()) {
+            BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
+            ret = ESP_SPP_NEED_INIT;
+            break;
+        }
 
-    // No FD range is registered here: spp_vfs_id is used to register/unregister
-    // file descriptors
-    if (esp_vfs_register_with_id(&vfs, NULL, &spp_local_param.spp_vfs_id) != ESP_OK) {
-        return ESP_FAIL;
-    }
+        esp_vfs_t vfs = {
+            .flags = ESP_VFS_FLAG_DEFAULT,
+            .write = spp_vfs_write,
+            .open = NULL,
+            .fstat = NULL,
+            .close = spp_vfs_close,
+            .read = spp_vfs_read,
+            .fcntl = NULL
+        };
 
-    return ESP_OK;
+        // No FD range is registered here: spp_vfs_id is used to register/unregister
+        // file descriptors
+        if (esp_vfs_register_with_id(&vfs, NULL, &spp_local_param.spp_vfs_id) != ESP_OK) {
+            ret = ESP_SPP_FAILURE;
+            break;
+        }
+    } while (0);
+
+    param.vfs_register.status = ret;
+    btc_spp_cb_to_app(ESP_SPP_VFS_REGISTER_EVT, &param);
+}
+
+static void btc_spp_vfs_unregister(void)
+{
+    esp_spp_status_t ret = ESP_SPP_SUCCESS;
+    esp_spp_cb_param_t param;
+
+    do {
+        if (!is_spp_init()) {
+            BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
+            ret = ESP_SPP_NEED_INIT;
+            break;
+        }
+
+        if (spp_local_param.spp_mode == ESP_SPP_MODE_VFS) {
+            if (spp_local_param.spp_vfs_id != -1) {
+                if (esp_vfs_unregister_with_id(spp_local_param.spp_vfs_id) != ESP_OK) {
+                    ret = ESP_SPP_FAILURE;
+                    break;
+                }
+                spp_local_param.spp_vfs_id = -1;
+            }
+        }
+    } while (0);
+
+    param.vfs_unregister.status = ret;
+    btc_spp_cb_to_app(ESP_SPP_VFS_UNREGISTER_EVT, &param);
 }
 
 #endif ///defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE
