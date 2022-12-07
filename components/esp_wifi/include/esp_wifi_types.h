@@ -306,7 +306,11 @@ typedef struct {
     uint32_t reserved:27;    /**< bit: 5..31 reserved */
 } wifi_sta_info_t;
 
-#define ESP_WIFI_MAX_CONN_NUM  (16)       /**< max number of stations which can connect to ESP32/ESP32S3/ESP32S2/ESP32C3 soft-AP */
+#if CONFIG_IDF_TARGET_ESP32C3
+#define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32C3 soft-AP */
+#else
+#define ESP_WIFI_MAX_CONN_NUM  (15)       /**< max number of stations which can connect to ESP32/ESP32S3/ESP32S2 soft-AP */
+#endif
 
 /** @brief List of stations associated with the ESP32 Soft-AP */
 typedef struct {
