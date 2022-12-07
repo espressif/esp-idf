@@ -82,7 +82,7 @@ example_test_pytest_esp32_jtag:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - build_pytest_examples_jtag
   tags: [ esp32, jtag ]
   variables:
     SETUP_TOOLS: "1"  # need gdb openocd
