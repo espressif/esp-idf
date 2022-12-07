@@ -1809,6 +1809,29 @@ void BTM_BleConfirmReply (BD_ADDR bd_addr, UINT8 res);
 //extern
 void BTM_BleOobDataReply(BD_ADDR bd_addr, UINT8 res, UINT8 len, UINT8 *p_data);
 
+/*******************************************************************************
+**
+** Function         BTM_BleSecureConnectionOobDataReply
+**
+** Description      This function is called to provide the OOB data for
+**                  SMP in response to BTM_LE_SC_OOB_REQ_EVT when secure connection
+**
+** Parameters:      bd_addr     - Address of the peer device
+**                  p_c         - pointer to Confirmation
+**                  p_r         - pointer to Randomizer
+**
+*******************************************************************************/
+void BTM_BleSecureConnectionOobDataReply(BD_ADDR bd_addr, UINT8 *p_c, UINT8 *p_r);
+
+/*******************************************************************************
+**
+** Function         BTM_BleSecureConnectionCreateOobData
+**
+** Description      This function is called to create the OOB data for
+**                  SMP when secure connection
+**
+*******************************************************************************/
+void BTM_BleSecureConnectionCreateOobData(void);
 
 /*******************************************************************************
 **

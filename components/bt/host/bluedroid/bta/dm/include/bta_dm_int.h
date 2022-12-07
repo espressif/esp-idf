@@ -92,6 +92,8 @@ enum {
 #if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
     BTA_DM_API_LOC_OOB_EVT,
     BTA_DM_API_OOB_REPLY_EVT,
+    BTA_DM_API_SC_OOB_REPLY_EVT,
+    BTA_DM_API_SC_CR_OOB_DATA_EVT,
     BTA_DM_CI_IO_REQ_EVT,
     BTA_DM_CI_RMT_OOB_EVT,
 #endif /* BTM_OOB_INCLUDED */
@@ -394,7 +396,22 @@ typedef struct {
     BD_ADDR bd_addr;
     UINT8       len;
     UINT8       value[BT_OCTET16_LEN];
+    UINT8       c[BT_OCTET16_LEN];
+    UINT8       r[BT_OCTET16_LEN];
 } tBTA_DM_API_OOB_REPLY;
+
+/* data type for BTA_DM_API_SC_OOB_REPLY_EVT */
+typedef struct {
+    BT_HDR      hdr;
+    BD_ADDR     bd_addr;
+    UINT8       c[BT_OCTET16_LEN];
+    UINT8       r[BT_OCTET16_LEN];
+} tBTA_DM_API_SC_OOB_REPLY;
+
+/* data type for BTA_DM_API_SC_CR_OOB_DATA_EVT */
+typedef struct {
+    BT_HDR      hdr;
+} tBTA_DM_API_SC_CR_OOB_DATA;
 
 /* data type for BTA_DM_API_CONFIRM_EVT */
 typedef struct {
@@ -1047,6 +1064,7 @@ typedef union {
 
     tBTA_DM_API_LOC_OOB     loc_oob;
     tBTA_DM_API_OOB_REPLY   oob_reply;
+    tBTA_DM_API_SC_OOB_REPLY sc_oob_reply;
     tBTA_DM_API_CONFIRM     confirm;
     tBTA_DM_API_KEY_REQ     key_req;
     tBTA_DM_CI_IO_REQ       ci_io_req;
@@ -1605,6 +1623,8 @@ extern BOOLEAN bta_dm_check_if_only_hd_connected(BD_ADDR peer_addr);
 #if (BTM_OOB_INCLUDED == TRUE)
 extern void bta_dm_loc_oob(tBTA_DM_MSG *p_data);
 extern void bta_dm_oob_reply(tBTA_DM_MSG *p_data);
+extern void bta_dm_sc_oob_reply(tBTA_DM_MSG *p_data);
+extern void bta_dm_sc_create_oob_data(tBTA_DM_MSG *p_data);
 extern void bta_dm_ci_io_req_act(tBTA_DM_MSG *p_data);
 extern void bta_dm_ci_rmt_oob_act(tBTA_DM_MSG *p_data);
 #endif /* BTM_OOB_INCLUDED */

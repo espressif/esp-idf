@@ -1307,6 +1307,27 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         }
         break;
     }
+    case BTC_GAP_BLE_SC_OOB_REQ_REPLY_EVT: {
+        btc_ble_gap_args_t *src = (btc_ble_gap_args_t *)p_src;
+        btc_ble_gap_args_t *dst = (btc_ble_gap_args_t *)p_dest;
+        if (src->sc_oob_req_reply.p_c) {
+            dst->sc_oob_req_reply.p_c = osi_malloc(BT_OCTET16_LEN);
+            if (dst->sc_oob_req_reply.p_c) {
+                memcpy(dst->sc_oob_req_reply.p_c, src->sc_oob_req_reply.p_c, BT_OCTET16_LEN);
+            } else {
+                BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
+            }
+        }
+        if (src->sc_oob_req_reply.p_r) {
+            dst->sc_oob_req_reply.p_r = osi_malloc(BT_OCTET16_LEN);
+            if (dst->sc_oob_req_reply.p_r) {
+                memcpy(dst->sc_oob_req_reply.p_r, src->sc_oob_req_reply.p_r, BT_OCTET16_LEN);
+            } else {
+                BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
+            }
+        }
+        break;
+    }
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     case BTC_GAP_BLE_CFG_EXT_ADV_DATA_RAW:
     case BTC_GAP_BLE_CFG_EXT_SCAN_RSP_DATA_RAW: {
@@ -1427,6 +1448,17 @@ void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
     }
     case BTC_GAP_BLE_OOB_REQ_REPLY_EVT: {
         uint8_t *value = ((btc_ble_gap_args_t *)msg->arg)->oob_req_reply.p_value;
+        if (value) {
+            osi_free(value);
+        }
+        break;
+    }
+    case BTC_GAP_BLE_SC_OOB_REQ_REPLY_EVT: {
+        uint8_t *value = ((btc_ble_gap_args_t *)msg->arg)->sc_oob_req_reply.p_c;
+        if (value) {
+            osi_free(value);
+        }
+        value = ((btc_ble_gap_args_t *)msg->arg)->sc_oob_req_reply.p_r;
         if (value) {
             osi_free(value);
         }
@@ -1689,6 +1721,12 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     }
     case BTC_GAP_BLE_OOB_REQ_REPLY_EVT:
         BTA_DmOobReply(arg->oob_req_reply.bd_addr, arg->oob_req_reply.len, arg->oob_req_reply.p_value);
+        break;
+    case BTC_GAP_BLE_SC_OOB_REQ_REPLY_EVT:
+        BTA_DmSecureConnectionOobReply(arg->sc_oob_req_reply.bd_addr, arg->sc_oob_req_reply.p_c, arg->sc_oob_req_reply.p_r);
+        break;
+    case BTC_GAP_BLE_SC_CR_OOB_DATA_EVT:
+        BTA_DmSecureConnectionCreateOobData();
         break;
 #endif  ///SMP_INCLUDED == TRUE
     case BTC_GAP_BLE_DISCONNECT_EVT:

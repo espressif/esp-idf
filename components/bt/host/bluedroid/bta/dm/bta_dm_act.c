@@ -1429,6 +1429,40 @@ void bta_dm_oob_reply(tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_sc_oob_reply
+**
+** Description      This function is called to provide the OOB data for
+**                  SMP in response to BLE secure connection OOB request.
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_sc_oob_reply(tBTA_DM_MSG *p_data)
+{
+#if (BLE_INCLUDED)
+    BTM_BleSecureConnectionOobDataReply(p_data->sc_oob_reply.bd_addr, p_data->sc_oob_reply.c, p_data->sc_oob_reply.r);
+#endif
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_sc_create_oob_data
+**
+** Description      This function is called to create the OOB data for
+**                  SMP when secure connection.
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_sc_create_oob_data(tBTA_DM_MSG *p_data)
+{
+#if (BLE_INCLUDED)
+    BTM_BleSecureConnectionCreateOobData();
+#endif
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_ci_io_req_act
 **
 ** Description      respond to the IO capabilities request from BTM
@@ -4709,6 +4743,17 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
     case BTM_LE_OOB_REQ_EVT:
         bdcpy(sec_event.ble_req.bd_addr, bda);
         bta_dm_cb.p_sec_cback(BTA_DM_BLE_OOB_REQ_EVT, &sec_event);
+        break;
+
+    case BTM_LE_SC_OOB_REQ_EVT:
+        bdcpy(sec_event.ble_req.bd_addr, bda);
+        bta_dm_cb.p_sec_cback(BTA_DM_BLE_SC_OOB_REQ_EVT, &sec_event);
+        break;
+
+    case BTM_LE_SC_LOC_OOB_EVT:
+        memcpy(sec_event.local_oob_data.local_oob_c, p_data->local_oob_data.commitment, BT_OCTET16_LEN);
+        memcpy(sec_event.local_oob_data.local_oob_r, p_data->local_oob_data.randomizer, BT_OCTET16_LEN);
+        bta_dm_cb.p_sec_cback(BTA_DM_BLE_SC_CR_LOC_OOB_EVT, &sec_event);
         break;
 
     case BTM_LE_NC_REQ_EVT:

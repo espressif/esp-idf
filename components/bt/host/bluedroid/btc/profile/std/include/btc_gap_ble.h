@@ -54,6 +54,8 @@ typedef enum {
     BTC_GAP_BLE_DISCONNECT_EVT,
     BTC_GAP_BLE_REMOVE_BOND_DEV_EVT,
     BTC_GAP_BLE_OOB_REQ_REPLY_EVT,
+    BTC_GAP_BLE_SC_OOB_REQ_REPLY_EVT,
+    BTC_GAP_BLE_SC_CR_OOB_DATA_EVT,
     BTC_GAP_BLE_UPDATE_DUPLICATE_SCAN_EXCEPTIONAL_LIST,
     BTC_GAP_BLE_SET_AFH_CHANNELS,
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -200,6 +202,11 @@ typedef union {
         uint8_t len;
         uint8_t *p_value;
     } oob_req_reply;
+    struct sc_oob_req_reply_args {
+        esp_bd_addr_t bd_addr;
+        uint8_t *p_c;
+        uint8_t *p_r;
+    } sc_oob_req_reply;
     //BTC_GAP_BLE_DISCONNECT_EVT
     struct disconnect_args {
         esp_bd_addr_t remote_device;

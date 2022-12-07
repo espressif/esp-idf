@@ -96,6 +96,8 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
     bta_dm_loc_oob,                         /* BTA_DM_API_LOC_OOB_EVT */
     bta_dm_oob_reply,                       /* BTA_DM_API_OOB_REPLY_EVT */
+    bta_dm_sc_oob_reply,                    /* BTA_DM_API_SC_OOB_REPLY_EVT */
+    bta_dm_sc_create_oob_data,              /* BTA_DM_API_SC_CR_OOB_DATA_EVT */
     bta_dm_ci_io_req_act,                   /* BTA_DM_CI_IO_REQ_EVT */
     bta_dm_ci_rmt_oob_act,                  /* BTA_DM_CI_RMT_OOB_EVT */
 #endif /* BTM_OOB_INCLUDED */

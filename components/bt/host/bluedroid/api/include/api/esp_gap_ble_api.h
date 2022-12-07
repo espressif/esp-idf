@@ -163,6 +163,8 @@ typedef enum {
     ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT,  /*!< When update duplicate exceptional list complete, the event comes */
 #endif //#if (BLE_42_FEATURE_SUPPORT == TRUE)
     ESP_GAP_BLE_SET_CHANNELS_EVT = 29,                           /*!< When setting BLE channels complete, the event comes */
+    ESP_GAP_BLE_SC_OOB_REQ_EVT,                                 /*!< Secure Connection OOB request event */
+    ESP_GAP_BLE_SC_CR_LOC_OOB_EVT,                              /*!< Secure Connection create OOB data complete event */
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     ESP_GAP_BLE_READ_PHY_COMPLETE_EVT,                           /*!< when reading phy complete, this event comes */
     ESP_GAP_BLE_SET_PREFERRED_DEFAULT_PHY_COMPLETE_EVT,          /*!< when preferred default phy complete, this event comes */
@@ -583,6 +585,13 @@ typedef struct {
     esp_bt_octet16_t       dhk;                 /*!< the 16 bits of the dh key value */
 } esp_ble_local_id_keys_t;                      /*!< the structure of the ble local id keys value type*/
 
+/**
+* @brief  structure type of the ble local oob data value
+*/
+typedef struct {
+    esp_bt_octet16_t        oob_c;              /*!< the 128 bits of confirmation value */
+    esp_bt_octet16_t        oob_r;              /*!< the 128 bits of randomizer value */
+} esp_ble_local_oob_data_t;
 
 /**
   * @brief Structure associated with ESP_AUTH_CMPL_EVT
@@ -609,6 +618,7 @@ typedef union
     esp_ble_sec_req_t          ble_req;        /*!< BLE SMP related request */
     esp_ble_key_t              ble_key;        /*!< BLE SMP keys used when pairing */
     esp_ble_local_id_keys_t    ble_id_keys;    /*!< BLE IR event */
+    esp_ble_local_oob_data_t   oob_data;       /*!< BLE SMP secure connection OOB data */
     esp_ble_auth_cmpl_t        auth_cmpl;      /*!< Authentication complete indication. */
 } esp_ble_sec_t;                               /*!< BLE security type */
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
@@ -1769,6 +1779,29 @@ esp_err_t esp_ble_get_bond_device_list(int *dev_num, esp_ble_bond_dev_t *dev_lis
 */
 esp_err_t esp_ble_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t *TK, uint8_t len);
 
+/**
+* @brief           This function is called to provide the OOB data for
+*                  SMP in response to ESP_GAP_BLE_SC_OOB_REQ_EVT
+*
+* @param[in]       bd_addr: BD address of the peer device.
+* @param[in]       p_c: Confirmation value, it shall be a 128-bit random number
+* @param[in]       p_r: Randomizer value, it should be a 128-bit random number
+*
+* @return          - ESP_OK : success
+*                  - other  : failed
+*
+*/
+esp_err_t esp_ble_sc_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t p_c[16], uint8_t p_r[16]);
+
+/**
+* @brief           This function is called to create the OOB data for
+*                  SMP when secure connection
+*
+* @return          - ESP_OK : success
+*                  - other  : failed
+*
+*/
+esp_err_t esp_ble_create_sc_oob_data(void);
 #endif /* #if (SMP_INCLUDED == TRUE) */
 
 /**
