@@ -1563,6 +1563,9 @@ static BOOLEAN gatts_proc_ind_ack(tGATT_TCB *p_tcb, UINT16 ack_handle)
         gatts_proc_srv_chg_ind_ack(p_tcb);
         /* there is no need to inform the application since srv chg is handled internally by GATT */
         continue_processing = FALSE;
+
+        /* after receiving ack of svc_chg_ind, reset client status */
+        gatt_sr_update_cl_status(p_tcb, true);
     }
 
     gatts_chk_pending_ind(p_tcb);
@@ -1609,6 +1612,85 @@ void gatts_process_value_conf(tGATT_TCB *p_tcb, UINT8 op_code)
     }
 }
 
+static BOOLEAN gatts_handle_db_out_of_sync(tGATT_TCB *p_tcb, UINT8 op_code,
+                                    UINT16 len, UINT8 *p_data)
+{
+    if (gatt_sr_is_cl_change_aware(p_tcb)) {
+        return false;
+    }
+
+    bool should_ignore = true;
+    bool should_rsp = true;
+
+    switch (op_code) {
+        case GATT_REQ_READ_BY_TYPE:
+        {
+            tBT_UUID uuid;
+            UINT16 s_hdl = 0;
+            UINT16 e_hdl = 0;
+            UINT16 db_hash_handle = gatt_cb.handle_of_database_hash;
+            tGATT_STATUS reason = gatts_validate_packet_format(op_code, &len, &p_data, &uuid, &s_hdl, &e_hdl);
+            if (reason == GATT_SUCCESS &&
+                    (s_hdl <= db_hash_handle && db_hash_handle <= e_hdl) &&
+                    (uuid.uu.uuid16 == GATT_UUID_GATT_DATABASE_HASH)) {
+                should_ignore = false;
+            }
+            break;
+        }
+        case GATT_REQ_READ:
+        // for pts don't process read request
+        #if 0
+        {
+            UINT16 handle = 0;
+            UINT8 *p = p_data;
+            tGATT_STATUS status = GATT_SUCCESS;
+
+            if (len < 2) {
+                status = GATT_INVALID_PDU;
+            } else {
+                STREAM_TO_UINT16(handle, p);
+                len -= 2;
+            }
+
+            if (status == GATT_SUCCESS && handle == gatt_cb.handle_of_database_hash) {
+                should_ignore = false;
+            }
+            break;
+        }
+        #endif
+        case GATT_REQ_READ_BY_GRP_TYPE:
+        case GATT_REQ_FIND_TYPE_VALUE:
+        case GATT_REQ_FIND_INFO:
+        case GATT_REQ_READ_BLOB:
+        case GATT_REQ_READ_MULTI:
+        case GATT_REQ_READ_MULTI_VAR:
+        case GATT_REQ_WRITE:
+        case GATT_REQ_PREPARE_WRITE:
+            break;
+        case GATT_CMD_WRITE:
+        case GATT_SIGN_CMD_WRITE:
+            should_rsp = false;
+            break;
+        case GATT_REQ_MTU:
+        case GATT_REQ_EXEC_WRITE:
+        case GATT_HANDLE_VALUE_CONF:
+        default:
+            should_ignore = false;
+            break;
+    }
+
+    if (should_ignore) {
+        if (should_rsp) {
+            gatt_send_error_rsp(p_tcb, GATT_DATABASE_OUT_OF_SYNC, op_code, 0x0000, false);
+        }
+
+        GATT_TRACE_ERROR("database out of sync op_code %x, should_rsp %d", op_code, should_rsp);
+        gatt_sr_update_cl_status(p_tcb, should_rsp);
+    }
+
+    return should_ignore;
+}
+
 /*******************************************************************************
 **
 ** Function         gatt_server_handle_client_req
@@ -1640,6 +1722,11 @@ void gatt_server_handle_client_req (tGATT_TCB *p_tcb, UINT8 op_code,
         }
         /* otherwise, ignore the pkt */
     } else {
+        // handle database out of sync
+        if (gatts_handle_db_out_of_sync(p_tcb, op_code, len, p_data)) {
+            return;
+        }
+
         switch (op_code) {
         case GATT_REQ_READ_BY_GRP_TYPE:         /* discover primary services */
         case GATT_REQ_FIND_TYPE_VALUE:          /* discover service by UUID */
