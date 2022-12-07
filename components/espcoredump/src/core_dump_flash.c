@@ -83,6 +83,10 @@ void esp_core_dump_flash_init(void)
     s_core_flash_config.partition.size       = core_part->size;
     s_core_flash_config.partition.encrypted  = core_part->encrypted;
     s_core_flash_config.partition_config_crc = esp_core_dump_calc_flash_config_crc();
+
+    if (esp_flash_encryption_enabled() && !core_part->encrypted) {
+        ESP_COREDUMP_LOGW("core dump partition is plain text, consider enabling `encrypted` flag");
+    }
 }
 
 static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* priv, uint8_t* data, uint32_t data_size)

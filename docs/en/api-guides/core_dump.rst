@@ -84,6 +84,11 @@ as it is shown below::
    factory,  app,  factory, 0x10000, 1M
    coredump, data, coredump,,        64K
 
+.. important::
+    If :doc:`Flash Encryption <../security/flash-encryption>` is enabled on the device then please add `encrypted` flag to the coredump partition::
+
+        coredump, data, coredump,,       64K, encrypted
+
 There are no special requirements for partition name. It can be chosen according to the user application needs, but partition type should be 'data' and
 sub-type should be 'coredump'. Also when choosing partition size note that core dump data structure introduces constant overhead of 20 bytes and per-task overhead of 12 bytes.
 This overhead does not include size of TCB and stack for every task. So partition size should be at least 20 + max tasks number x (12 + TCB size + max task stack size) bytes.
