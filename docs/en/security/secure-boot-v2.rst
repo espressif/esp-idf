@@ -284,7 +284,7 @@ To use remote signing, disable the option "Sign binaries during build". The priv
 
 After the app image and partition table are built, the build system will print signing steps using espsecure.py::
 
-  espsecure.py sign_data --version 2 --keyfile PRIVATE_SIGNING_KEY BINARY_FILE
+  espsecure.py sign_data BINARY_FILE --version 2 --keyfile PRIVATE_SIGNING_KEY
 
 The above command appends the image signature to the existing binary. You can use the `--output` argument to write the signed binary to a separate file::
 
