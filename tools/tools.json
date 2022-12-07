@@ -401,36 +401,36 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "30379631cc1cdf6526940494964371a90aa7a940c4ff7333d9ffab35e6c0f978",
-            "size": 198800680,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221014/llvm-esp-15.0.0-20221014-linux-amd64.tar.xz"
+            "sha256": "839e5adfa7f44982e8a2d828680f6e4aa435dcd3d1df765e02f015b04286056f",
+            "size": 209731340,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221201/llvm-esp-15.0.0-20221201-linux-amd64.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "c40c1c1d7ee94fc5967641aaffcbca263018b2df4f1d4249636c1adff0e35542",
-            "size": 204969304,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221014/llvm-esp-15.0.0-20221014-linux-arm64.tar.xz"
+            "sha256": "614c44ab7305d65dde54a884c5614516777038027dc61bcc125d02171c248c53",
+            "size": 220076792,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221201/llvm-esp-15.0.0-20221201-linux-arm64.tar.xz"
           },
           "linux-armhf": {
-            "sha256": "3931c81cdaa44a47739663b647e68778d3ed9532d67096618d6901ae3adfb3c1",
-            "size": 196967420,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221014/llvm-esp-15.0.0-20221014-linux-armhf.tar.xz"
+            "sha256": "158076696e4fc608e6e2b54bf739223b78949e0492ad4aa5119632ebfbea0499",
+            "size": 209791724,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221201/llvm-esp-15.0.0-20221201-linux-armhf.tar.xz"
           },
           "macos": {
-            "sha256": "e7066b1dd74cbd42c3e5d140013b0b357c190b5361a1c2fd92e29efa34305cff",
-            "size": 164130904,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221014/llvm-esp-15.0.0-20221014-macos.tar.xz"
+            "sha256": "46f0f0368b5aa8d7e81558796c3acd67d943c9071b9619f2b487136c8e59c97c",
+            "size": 177703432,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221201/llvm-esp-15.0.0-20221201-macos.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "02b8af2bd934d4352da3743fc86c00d9258309d307c5af7f2be0cf85551535d3",
-            "size": 154036240,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221014/llvm-esp-15.0.0-20221014-macos-arm64.tar.xz"
+            "sha256": "dc5a99186f9f532a5076d6900828310e4673cf01e8071a3d041456e8aab2cc4a",
+            "size": 167630856,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221201/llvm-esp-15.0.0-20221201-macos-arm64.tar.xz"
           },
-          "name": "15.0.0-32e64117af",
+          "name": "15.0.0-23786128ae",
           "status": "recommended",
           "win64": {
-            "sha256": "eba58ea6f9018c43748e938986f32c039a6dc49a384d994e9e515502b04c83f0",
-            "size": 230488412,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221014/llvm-esp-15.0.0-20221014-win64.tar.xz"
+            "sha256": "87c9b2c2b8837535f102ae3fd5789defecbffa80b317f86055f3e9d6292aaa05",
+            "size": 241235020,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-15.0.0-20221201/llvm-esp-15.0.0-20221201-win64.tar.xz"
           }
         }
       ]

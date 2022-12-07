@@ -658,9 +658,6 @@ build_clang_test_apps_esp32c2:
   extends:
     - .build_clang_test_apps_riscv
     - .rules:build:custom_test-esp32c2
-  # spec files and nano libc are not supported yet by esp-clang
-  # TODO: LLVM-197
-  allow_failure: true
   variables:
     IDF_TARGET: esp32c2
 
