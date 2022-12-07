@@ -28,6 +28,7 @@
 #include "esp_heap_caps.h"
 #include "soc/soc_memory_layout.h"
 
+#include "mbedtls/error.h"
 #include <string.h>
 
 #define ESP_PUT_BE64(a, val)                                    \
@@ -245,6 +246,11 @@ int esp_aes_gcm_setkey( esp_gcm_context *ctx,
                         const unsigned char *key,
                         unsigned int keybits )
 {
+#if !SOC_AES_SUPPORT_AES_192
+    if (keybits == 192) {
+        return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
+    }
+#endif
     if (keybits != 128 && keybits != 192 && keybits != 256) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
     }
