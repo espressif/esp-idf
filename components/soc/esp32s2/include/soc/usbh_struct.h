@@ -1153,7 +1153,9 @@ typedef struct {
 } usbh_dev_t;
 
 
-_Static_assert(sizeof(usbh_dev_t) == 0xe08, "USB new struct should be 0xe08 large");
+#ifndef __cplusplus
+_Static_assert(sizeof(usbh_dev_t) == 0xe08, "Invalid size of usb_dwc_dev_t structure");
+#endif
 
 extern usbh_dev_t USBH;
 

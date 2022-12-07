@@ -238,7 +238,8 @@ PREDEFINED             = \
     $(ENV_DOXYGEN_DEFINES) \
     __DOXYGEN__=1 \
     __attribute__(x)= \
-	_Static_assert()= \
+    _Static_assert()= \
+    ESP_STATIC_ASSERT()= \
     IDF_DEPRECATED(X)= \
     IRAM_ATTR= \
     configSUPPORT_DYNAMIC_ALLOCATION=1 \

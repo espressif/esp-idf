@@ -206,7 +206,9 @@ typedef volatile struct twai_dev_s {
     } clock_divider_reg;                        /* Address 0x007C */
 } twai_dev_t;
 
+#ifndef __cplusplus
 _Static_assert(sizeof(twai_dev_t) == 128, "TWAI registers should be 32 * 4 bytes");
+#endif
 
 extern twai_dev_t TWAI;
 

@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_SDMMC_STRUCT_H_
 #define _SOC_SDMMC_STRUCT_H_
 
@@ -48,7 +40,9 @@ typedef struct sdmmc_desc_s {
 
 #define SDMMC_DMA_MAX_BUF_LEN 4096
 
+#ifndef __cplusplus
 _Static_assert(sizeof(sdmmc_desc_t) == 16, "invalid size of sdmmc_desc_t structure");
+#endif
 
 
 typedef struct sdmmc_hw_cmd_s {
@@ -77,7 +71,9 @@ typedef struct sdmmc_hw_cmd_s {
     uint32_t start_command: 1;      ///< Start command; once command is sent to the card, bit is cleared.
 } sdmmc_hw_cmd_t;  ///< command format used in cmd register; this structure is defined to make it easier to build command values
 
+#ifndef __cplusplus
 _Static_assert(sizeof(sdmmc_hw_cmd_t) == 4, "invalid size of sdmmc_cmd_t structure");
+#endif
 
 
 typedef volatile struct sdmmc_dev_s {
@@ -393,7 +389,9 @@ typedef volatile struct sdmmc_dev_s {
 } sdmmc_dev_t;
 extern sdmmc_dev_t SDMMC;
 
+#ifndef __cplusplus
 _Static_assert(sizeof(sdmmc_dev_t) == 0x804, "invalid size of sdmmc_dev_t structure");
+#endif
 
 #ifdef __cplusplus
 }

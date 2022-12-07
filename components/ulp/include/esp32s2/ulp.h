@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include "esp_assert.h"
 #include "esp_err.h"
 #include "soc/soc.h"
 #include "ulp_common.h"
@@ -265,7 +266,7 @@ union ulp_insn {
 
 };
 
-_Static_assert(sizeof(ulp_insn_t) == 4, "ULP coprocessor instruction size should be 4 bytes");
+ESP_STATIC_ASSERT(sizeof(ulp_insn_t) == 4, "ULP coprocessor instruction size should be 4 bytes");
 
 /**
  * Delay (nop) for a given number of cycles

@@ -42,8 +42,8 @@ typedef enum {
 #define LOG_COLOR_V
 #define LOG_RESET_COLOR
 
-#undef _Static_assert
-#define _Static_assert(cond, message)
+#undef ESP_STATIC_ASSERT
+#define ESP_STATIC_ASSERT(cond, message)
 
 uint32_t esp_log_timestamp(void);
 void esp_log_write(esp_log_level_t level, const char* tag, const char* format, ...) __attribute__ ((format (printf, 3, 4)));
