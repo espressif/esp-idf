@@ -425,6 +425,12 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
     uint8_t nonce_counter[AES_BLOCK_BYTES] = {0};
     uint8_t stream[AES_BLOCK_BYTES] = {0};
 
+    if (!output_length) {
+        ESP_LOGE(TAG, "No output length supplied");
+        return -1;
+    }
+    *output_length = input_length;
+
     if (!ctx) {
         ESP_LOGE(TAG, "No GCM context supplied");
         return -1;
@@ -543,6 +549,7 @@ static int esp_aes_gcm_crypt_and_tag_partial_hw( esp_gcm_context *ctx,
         unsigned char *tag )
 {
     int ret = 0;
+    size_t olen;
 
     if ( ( ret = esp_aes_gcm_starts( ctx, mode, iv, iv_len ) ) != 0 ) {
         return ( ret );
@@ -552,11 +559,11 @@ static int esp_aes_gcm_crypt_and_tag_partial_hw( esp_gcm_context *ctx,
         return ( ret );
     }
 
-    if ( ( ret = esp_aes_gcm_update( ctx, input, length, output, 0, NULL ) ) != 0 ) {
+    if ( ( ret = esp_aes_gcm_update( ctx, input, length, output, 0, &olen ) ) != 0 ) {
         return ( ret );
     }
 
-    if ( ( ret = esp_aes_gcm_finish( ctx, output, 0, NULL, tag, tag_len ) ) != 0 ) {
+    if ( ( ret = esp_aes_gcm_finish( ctx, output, 0, &olen, tag, tag_len ) ) != 0 ) {
         return ( ret );
     }
 
