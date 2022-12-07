@@ -10,6 +10,10 @@
 #include "tcp_transport_fixtures.h"
 #include "unity_test_utils.h"
 
+#define LISTENER_TASK_PRIORITY (UNITY_FREERTOS_PRIORITY+1)
+#define CONNECT_TASK_PRIORITY  (LISTENER_TASK_PRIORITY+1)
+#define CONNECT_TASK_PRIORITY_LOWER (LISTENER_TASK_PRIORITY-2)
+
 // This is a private API of the tcp transport, but needed for socket operation tests
 int esp_transport_get_socket(esp_transport_handle_t t);
 
@@ -34,7 +38,7 @@ struct tcp_connect_test_config {
     bool connect_async;
     int timeout_ms;
     int port;
-    bool listener_task_prio_higher;
+    bool connect_task_prio_lower;
 };
 
 /**
@@ -200,12 +204,12 @@ static tcp_connect_test_t connect_test_setup(struct tcp_connect_test_config *con
     test_case_uses_tcpip();
 
     // Create listener task
-    xTaskCreatePinnedToCore(localhost_listener, "localhost_listener", 4096, t, 5, &t->listener_task, 0);
+    xTaskCreatePinnedToCore(localhost_listener, "localhost_listener", 4096, t, LISTENER_TASK_PRIORITY, &t->listener_task, 0);
     xEventGroupWaitBits(t->tcp_connect_done, TCP_LISTENER_READY, true, true, t->max_wait);
 
     // Perform tcp-connect in a separate task to check asynchronously for the timeout or to connect (depends on the test config)
     xTaskCreatePinnedToCore(tcp_connect_task, "tcp_connect_task", 4096, t,
-                            config->listener_task_prio_higher? 4 : 6, &t->tcp_connect_task, 0);
+                            config->connect_task_prio_lower? CONNECT_TASK_PRIORITY_LOWER : CONNECT_TASK_PRIORITY, &t->tcp_connect_task, 0);
 
     return t;
 }
@@ -246,7 +250,7 @@ void tcp_transport_test_connection_timeout(esp_transport_handle_t transport_unde
             .consume_sock_backlog = true,
             .connect_async = false,
             .transport_under_test = transport_under_test,
-            .listener_task_prio_higher = true
+            .connect_task_prio_lower = true
     };
 
     tcp_connect_test_t test = connect_test_setup(&params);
@@ -288,7 +292,7 @@ void tcp_transport_test_socket_options(esp_transport_handle_t transport_under_te
             .consume_sock_backlog = false,
             .transport_under_test = transport_under_test,
             .connect_async = async,
-            .listener_task_prio_higher = false
+            .connect_task_prio_lower = false
     };
 
     tcp_connect_test_t test = connect_test_setup(&params);
