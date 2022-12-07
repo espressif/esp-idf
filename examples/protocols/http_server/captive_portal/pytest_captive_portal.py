@@ -69,9 +69,6 @@ def test_captive_page(ip: str, port: str, uri: str) -> bool:
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.wifi_wlan
 @pytest.mark.xfail(reason='Runner unable to connect to target over WiFi', run=False)
 def test_example_captive_portal(dut: Dut) -> None:

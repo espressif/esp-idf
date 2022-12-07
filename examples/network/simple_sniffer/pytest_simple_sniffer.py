@@ -38,6 +38,8 @@ def _sniffer_packets_check(dut: Dut, channel: int, packet_num: int) -> None:
 
 
 @pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.esp32s3
 @pytest.mark.wifi_ap
 @pytest.mark.parametrize('config', [
     'mem',

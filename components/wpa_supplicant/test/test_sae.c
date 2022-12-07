@@ -20,8 +20,6 @@
 #include "utils/wpabuf.h"
 #include "test_utils.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5046
 typedef struct crypto_bignum crypto_bignum;
 
 
@@ -261,6 +259,4 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
     ESP_LOGI("SAE Test", "=========== Complete ============");
 
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-
 #endif /* CONFIG_WPA3_SAE */

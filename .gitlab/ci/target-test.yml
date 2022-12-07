@@ -200,6 +200,22 @@ example_test_pytest_esp32_wifi_ap:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_ap ]
 
+example_test_pytest_esp32c3_wifi_ap:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3-wifi
+  needs:
+    - build_pytest_examples_esp32c3
+  tags: [ esp32c3, wifi_ap ]
+
+example_test_pytest_esp32s3_wifi_ap:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3-wifi
+  needs:
+    - build_pytest_examples_esp32s3
+  tags: [ esp32s3, wifi_ap ]
+
 example_test_pytest_esp32_wifi_router:
   extends:
     - .pytest_examples_dir_template
@@ -207,6 +223,22 @@ example_test_pytest_esp32_wifi_router:
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_router ]
+
+example_test_pytest_esp32c3_wifi_router:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3-wifi
+  needs:
+    - build_pytest_examples_esp32c3
+  tags: [ esp32c3, wifi_router ]
+
+example_test_pytest_esp32s3_wifi_router:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3-wifi
+  needs:
+    - build_pytest_examples_esp32s3
+  tags: [ esp32s3, wifi_router ]
 
 example_test_pytest_esp32_wifi_wlan:
   extends:
@@ -239,6 +271,30 @@ example_test_pytest_esp32_wifi_two_dut:
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_two_dut ]
+
+example_test_pytest_esp32c3_wifi_two_dut:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3-wifi
+  needs:
+    - build_pytest_examples_esp32c3
+  tags: [ esp32c3, wifi_two_dut ]
+
+example_test_pytest_esp32s3_wifi_two_dut:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3-wifi
+  needs:
+    - build_pytest_examples_esp32s3
+  tags: [ esp32s3, wifi_two_dut ]
+
+example_test_pytest_esp32c2_wifi_two_dut:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2-wifi
+  needs:
+    - build_pytest_examples_esp32c2
+  tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
 
 example_test_pytest_esp32c3_flash_encryption:
   extends:
@@ -608,6 +664,22 @@ component_ut_pytest_esp32c3_wifi_two_dut:
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, wifi_two_dut ]
+
+component_ut_pytest_esp32s3_wifi_two_dut:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3-wifi
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, wifi_two_dut ]
+
+component_ut_pytest_esp32c2_wifi_two_dut:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c2-wifi
+  needs:
+    - build_pytest_components_esp32c2
+  tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
 
 component_ut_pytest_esp32c3_adc:
   extends:

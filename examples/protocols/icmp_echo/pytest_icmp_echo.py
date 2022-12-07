@@ -10,7 +10,6 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32
 @pytest.mark.esp32c3
-@pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.wifi_ap
 def test_protocols_icmp_echo(dut: Dut) -> None:
