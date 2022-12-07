@@ -181,6 +181,8 @@ static void btc_dm_remove_ble_bonding_keys(void)
 
     bdcpy(bd_addr.address, btc_dm_cb.pairing_cb.bd_addr);
 
+    btc_storage_remove_gatt_cl_supp_feat(&bd_addr);
+    btc_storage_remove_gatt_db_hash(&bd_addr);
     btc_storage_remove_remote_addr_type(&bd_addr, false);
     btc_storage_remove_ble_dev_auth_mode(&bd_addr, false);
     btc_storage_remove_ble_dev_type(&bd_addr, false);
@@ -817,6 +819,8 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
 
         if (p_data->link_down.status == HCI_SUCCESS) {
             //remove the bonded key in the config and nvs flash.
+            btc_storage_remove_gatt_cl_supp_feat(&bd_addr);
+            btc_storage_remove_gatt_db_hash(&bd_addr);
             btc_storage_remove_ble_dev_type(&bd_addr, false);
             btc_storage_remove_remote_addr_type(&bd_addr, false);
             btc_storage_remove_ble_dev_auth_mode(&bd_addr, false);
