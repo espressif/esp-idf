@@ -1016,6 +1016,33 @@ void BTM_BleSetPreferExtenedConnParams (BD_ADDR bd_addr, tBTM_EXT_CONN_PARAMS *p
     return;
 }
 
+void BTM_BlePeriodicAdvSetInfoTrans(BD_ADDR bd_addr, UINT16 service_data, UINT8 adv_handle)
+{
+    tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
+
+    if (!p_lcb) {
+        BTM_TRACE_ERROR("%s, invalid parameters", __func__);
+        return;
+    }
+
+    if (!btsnd_hcic_ble_periodic_adv_set_info_trans(p_lcb->handle, service_data, adv_handle)) {
+        BTM_TRACE_ERROR("%s, hci cmd error", __func__);
+    }
+}
+
+void BTM_BleSetPeriodicAdvSyncTransParams(BD_ADDR bd_addr, UINT8 mode, UINT16 skip, UINT16 sync_timeout, UINT8 cte_type)
+{
+    tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
+
+    if (!p_lcb) {
+        BTM_TRACE_ERROR("%s, invalid parameters", __func__);
+        return;
+    }
+
+    if (!btsnd_hcic_ble_set_periodic_adv_sync_trans_params(p_lcb->handle, mode, skip, sync_timeout, cte_type)) {
+        BTM_TRACE_ERROR("%s, hci cmd error", __func__);
+    }
+}
 
 void btm_ble_extended_init(void)
 {

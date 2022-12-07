@@ -149,7 +149,7 @@ static void btu_ble_periodic_adv_sync_lost_evt(UINT8 *p);
 static void btu_ble_scan_timeout_evt(UINT8 *p);
 static void btu_ble_adv_set_terminate_evt(UINT8 *p);
 static void btu_ble_scan_req_received_evt(UINT8 *p);
-
+static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 extern osi_sem_t adv_enable_sem;
@@ -419,6 +419,9 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_scan_req_received_evt(p);
             break;
         case HCI_BLE_CHANNEL_SELECT_ALG:
+            break;
+        case HCI_BLE_PERIOD_ADV_SYNC_TRANS_RECV_EVT:
+            btu_ble_periodic_adv_sync_trans_recv(p);
             break;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
         }
@@ -2312,6 +2315,24 @@ static void btu_ble_scan_req_received_evt(UINT8 *p)
     STREAM_TO_BDADDR(req_received.scan_addr, p);
 
     btm_ble_scan_req_received_evt(&req_received);
+}
+
+static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p)
+{
+    tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV recv = {0};
+
+    STREAM_TO_UINT8(recv.status, p);
+    STREAM_TO_UINT16(recv.conn_handle, p);
+    STREAM_TO_UINT16(recv.service_data, p);
+    STREAM_TO_UINT16(recv.sync_handle, p);
+    STREAM_TO_UINT8(recv.adv_sid, p);
+    STREAM_TO_UINT8(recv.adv_addr_type, p);
+    STREAM_TO_BDADDR(recv.adv_addr, p);
+    STREAM_TO_UINT8(recv.adv_phy, p);
+    STREAM_TO_UINT16(recv.period_adv_interval, p);
+    STREAM_TO_UINT8(recv.adv_clk_accuracy, p);
+
+    HCI_TRACE_DEBUG("%s status %x, conn handle %x, sync handle %x", recv.status, recv.conn_handle, recv.sync_handle);
 }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 /**********************************************

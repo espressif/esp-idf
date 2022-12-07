@@ -3136,6 +3136,18 @@ void BTA_DmBleGapExtConnect(tBLE_ADDR_TYPE own_addr_type, const BD_ADDR peer_add
 
 }
 
+uint8_t BTA_DmBlePeriodicAdvSetInfoTrans(uint8_t addr[6], uint16_t service_data, uint8_t adv_handle)
+{
+    BTM_BlePeriodicAdvSetInfoTrans(addr, service_data, adv_handle);
+    return 0;
+}
+
+uint8_t BTA_DmBleSetPeriodicAdvSyncTransParams(uint8_t addr[6], uint8_t mode, uint16_t skip, uint16_t sync_timeout)
+{
+    BTM_BleSetPeriodicAdvSyncTransParams(addr, mode, skip, sync_timeout, 0);
+    return 0;
+}
+
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #endif
