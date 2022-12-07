@@ -39,6 +39,47 @@ extern "C" {
 #include "esp_assert.h"
 
 /********************************************************
+ Physical Memory Attributes (PMA) register fields
+ (privileged spec)
+ ********************************************************/
+
+/********************************************************
+   PMA CSR and TOR & NAPOT macros
+ ********************************************************/
+#define CSR_PMACFG0  0xBC0
+#define CSR_PMAADDR0 0xBD0
+
+#define PMA_EN    BIT(0)
+#define PMA_R     BIT(4)
+#define PMA_W     BIT(3)
+#define PMA_X     BIT(2)
+#define PMA_L     BIT(29)
+#define PMA_SHIFT 2
+
+#define PMA_TOR   0x40000000
+#define PMA_NA4   0x80000000
+#define PMA_NAPOT 0xC0000000
+
+#define PMA_NONCACHEABLE     BIT(27)
+#define PMA_WRITETHROUGH     BIT(26)
+#define PMA_WRITEMISSNOALLOC BIT(25)
+#define PMA_READMISSNOALLOC  BIT(24)
+
+#define PMA_ENTRY_SET_TOR(ENTRY, ADDR, CFG)                            \
+    do {                                                               \
+        RV_WRITE_CSR((CSR_PMAADDR0) + (ENTRY), (ADDR) >> (PMA_SHIFT)); \
+        RV_WRITE_CSR((CSR_PMACFG0) + (ENTRY), CFG);                    \
+    } while (0)
+
+#define PMA_ENTRY_SET_NAPOT(ENTRY, ADDR, SIZE, CFG)                                \
+    do {                                                                           \
+        ESP_STATIC_ASSERT(__builtin_popcount((SIZE)) == 1, "Size must be a power of 2"); \
+        ESP_STATIC_ASSERT((ADDR) % ((SIZE)) == 0, "Addr must be aligned to size"); \
+        RV_WRITE_CSR((CSR_PMAADDR0) + (ENTRY), ((ADDR) | ((SIZE >> 1) - 1)) >> 2); \
+        RV_WRITE_CSR((CSR_PMACFG0) + (ENTRY), CFG);                                \
+    } while (0)
+
+/********************************************************
  Physical Memory Protection (PMP) register fields
  (privileged spec)
  ********************************************************/
