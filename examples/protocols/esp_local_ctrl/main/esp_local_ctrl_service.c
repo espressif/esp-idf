@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <sys/param.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -125,7 +126,7 @@ static esp_err_t set_property_values(size_t props_count,
                 break;
             case PROP_TYPE_INT32: {
                     const int32_t *new_value = (const int32_t *) prop_values[i].data;
-                    ESP_LOGI(TAG, "Setting %s value to %d", props[i].name, *new_value);
+                    ESP_LOGI(TAG, "Setting %s value to %" PRId32, props[i].name, *new_value);
                     memcpy(props[i].ctx, new_value, sizeof(int32_t));
                 }
                 break;
