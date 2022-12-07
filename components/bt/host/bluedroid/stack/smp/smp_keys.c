@@ -71,6 +71,32 @@ static const tSMP_ACT smp_encrypt_action[] = {
     smp_generate_rand_cont         /* SMP_GEN_SRAND_MRAND_CONT */
 };
 
+/* If there is data saved here, then use its info instead
+ * This needs to be cleared on a successful pairing using the oob data
+ */
+static tSMP_LOC_OOB_DATA saved_local_oob_data = {};
+
+void smp_save_local_oob_data(tSMP_CB *p_cb)
+{
+    memcpy(&saved_local_oob_data, &p_cb->sc_oob_data.loc_oob_data, sizeof(tSMP_LOC_OOB_DATA));
+}
+
+void smp_clear_local_oob_data(void)
+{
+    memset(&saved_local_oob_data, 0, sizeof(tSMP_LOC_OOB_DATA));
+}
+
+static BOOLEAN oob_data_is_empty(tSMP_LOC_OOB_DATA *data)
+{
+    tSMP_LOC_OOB_DATA empty_data = {0};
+    return (memcmp(data, &empty_data, sizeof(tSMP_LOC_OOB_DATA)) == 0);
+}
+
+tSMP_LOC_OOB_DATA *smp_get_local_oob_data(void)
+{
+    return &saved_local_oob_data;
+}
+
 void smp_debug_print_nbyte_little_endian(UINT8 *p, const UINT8 *key_name, UINT8 len)
 {
 #if SMP_DEBUG == TRUE
@@ -973,7 +999,19 @@ BOOLEAN smp_calculate_legacy_short_term_key(tSMP_CB *p_cb, tSMP_ENC *output)
 *******************************************************************************/
 void smp_create_private_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    SMP_TRACE_DEBUG ("%s", __FUNCTION__);
+    SMP_TRACE_DEBUG("%s", __func__);
+
+    if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB) {
+        SMP_TRACE_EVENT("OOB Association Model");
+        if (!oob_data_is_empty(&saved_local_oob_data)) {
+            SMP_TRACE_EVENT("Found OOB data, loading keys");
+            memcpy(&p_cb->sc_oob_data.loc_oob_data, &saved_local_oob_data, sizeof(tSMP_LOC_OOB_DATA));
+            smp_process_private_key(p_cb);
+            return;
+        }
+        SMP_TRACE_EVENT("OOB Association Model with no saved data");
+    }
+
     p_cb->rand_enc_proc_state = SMP_GENERATE_PRIVATE_KEY_0_7;
     if (!btsnd_hcic_ble_rand((void *)smp_rand_back)) {
         smp_rand_back(NULL);
@@ -1005,7 +1043,7 @@ void smp_use_oob_private_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     case SMP_OOB_BOTH:
     case SMP_OOB_LOCAL:
         SMP_TRACE_DEBUG("%s restore secret key\n", __func__);
-        memcpy(p_cb->private_key, p_cb->sc_oob_data.loc_oob_data.private_key_used, BT_OCTET32_LEN);
+        // copy private key in smp_process_private_key
         smp_process_private_key(p_cb);
         break;
     default:
@@ -1082,13 +1120,22 @@ void smp_process_private_key(tSMP_CB *p_cb)
 {
     Point       public_key;
     BT_OCTET32  private_key;
+    tSMP_LOC_OOB_DATA *p_loc_oob = &p_cb->sc_oob_data.loc_oob_data;
 
     SMP_TRACE_DEBUG ("%s", __FUNCTION__);
 
-    memcpy(private_key, p_cb->private_key, BT_OCTET32_LEN);
-    ECC_PointMult(&public_key, &(curve_p256.G), (DWORD *) private_key, KEY_LENGTH_DWORDS_P256);
-    memcpy(p_cb->loc_publ_key.x, public_key.x, BT_OCTET32_LEN);
-    memcpy(p_cb->loc_publ_key.y, public_key.y, BT_OCTET32_LEN);
+    /* if local oob data present, then restore oob private and public key */
+    if (p_loc_oob->present) {
+        memcpy(p_cb->private_key, p_loc_oob->private_key_used, BT_OCTET32_LEN);
+        memcpy(p_cb->loc_publ_key.x, p_loc_oob->publ_key_used.x, BT_OCTET32_LEN);
+        memcpy(p_cb->loc_publ_key.y, p_loc_oob->publ_key_used.y, BT_OCTET32_LEN);
+        memcpy(p_cb->local_random, p_loc_oob->randomizer, BT_OCTET16_LEN);
+    } else {
+        memcpy(private_key, p_cb->private_key, BT_OCTET32_LEN);
+        ECC_PointMult(&public_key, &(curve_p256.G), (DWORD *) private_key, KEY_LENGTH_DWORDS_P256);
+        memcpy(p_cb->loc_publ_key.x, public_key.x, BT_OCTET32_LEN);
+        memcpy(p_cb->loc_publ_key.y, public_key.y, BT_OCTET32_LEN);
+    }
 
     smp_debug_print_nbyte_little_endian (p_cb->private_key, (const UINT8 *)"private",
                                          BT_OCTET32_LEN);

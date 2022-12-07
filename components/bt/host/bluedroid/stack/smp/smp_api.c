@@ -471,6 +471,9 @@ void SMP_SecureConnectionOobDataReply(UINT8 *p_data)
         return;
     }
 
+    /* Set local oob data when req_oob_type = SMP_OOB_BOTH */
+    memcpy(&p_oob->loc_oob_data, smp_get_local_oob_data(), sizeof(tSMP_LOC_OOB_DATA));
+
     SMP_TRACE_EVENT ("%s req_oob_type: %d, loc_oob_data.present: %d, "
                      "peer_oob_data.present: %d",
                      __FUNCTION__, p_cb->req_oob_type, p_oob->loc_oob_data.present,
@@ -504,6 +507,7 @@ void SMP_SecureConnectionOobDataReply(UINT8 *p_data)
     }
 
     if (data_missing) {
+        SMP_TRACE_ERROR("%s data missing", __func__);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &failure);
         return;
     }
@@ -589,32 +593,13 @@ void SMP_KeypressNotification (BD_ADDR bd_addr, UINT8 value)
 ** Description      This function is called to start creation of local SC OOB
 **                  data set (tSMP_LOC_OOB_DATA).
 **
-** Parameters:      bd_addr      - Address of the device to send OOB data block to
-**
 **  Returns         Boolean - TRUE: creation of local SC OOB data set started.
 *******************************************************************************/
-BOOLEAN SMP_CreateLocalSecureConnectionsOobData (tBLE_BD_ADDR *addr_to_send_to)
+BOOLEAN SMP_CreateLocalSecureConnectionsOobData (void)
 {
     tSMP_CB *p_cb = &smp_cb;
-#if (!CONFIG_BT_STACK_NO_LOG)
-    UINT8   *bd_addr;
-#endif
 
-    if (addr_to_send_to == NULL) {
-        SMP_TRACE_ERROR ("%s addr_to_send_to is not provided", __FUNCTION__);
-        return FALSE;
-    }
-
-#if (!CONFIG_BT_STACK_NO_LOG)
-    bd_addr = addr_to_send_to->bda;
-#endif
-
-    SMP_TRACE_EVENT ("%s addr type: %u,  BDA: %08x%04x,  state: %u, br_state: %u",
-                     __FUNCTION__, addr_to_send_to->type,
-                     (bd_addr[0] << 24) + (bd_addr[1] << 16) + (bd_addr[2] << 8) + bd_addr[3],
-                     (bd_addr[4] << 8) + bd_addr[5],
-                     p_cb->state,
-                     p_cb->br_state);
+    SMP_TRACE_EVENT ("%s state: %u, br_state: %u", __FUNCTION__, p_cb->state, p_cb->br_state);
 
     if ((p_cb->state != SMP_STATE_IDLE) || (p_cb->smp_over_br)) {
         SMP_TRACE_WARNING ("%s creation of local OOB data set "\
@@ -622,7 +607,6 @@ BOOLEAN SMP_CreateLocalSecureConnectionsOobData (tBLE_BD_ADDR *addr_to_send_to)
         return FALSE;
     }
 
-    p_cb->sc_oob_data.loc_oob_data.addr_sent_to = *addr_to_send_to;
     smp_sm_event(p_cb, SMP_CR_LOC_SC_OOB_DATA_EVT, NULL);
 
     return TRUE;
