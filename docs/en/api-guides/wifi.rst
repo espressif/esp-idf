@@ -778,254 +778,401 @@ Four-way Handshake Phase
 Wi-Fi Reason Code
 +++++++++++++++++++++
 
-The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first column is the macro name defined in esp_wifi_types.h. The common prefix *WIFI_REASON* is removed, which means that *UNSPECIFIED* actually stands for *WIFI_REASON_UNSPECIFIED* and so on. The second column is the value of the reason. The third column is the standard value to which this reason is mapped in section 8.4.1.7 of IEEE 802.11-2012. (For more information, refer to the standard mentioned above.) The last column is a description of the reason.
+The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first column is the macro name defined in esp_wifi_types.h. The common prefix *WIFI_REASON* is removed, which means that *UNSPECIFIED* actually stands for *WIFI_REASON_UNSPECIFIED* and so on. The second column is the value of the reason. The third column is the standard value to which this reason is mapped in section 9.4.1.7 of IEEE 802.11-2020. (For more information, refer to the standard mentioned above.) The last column describes the reason.
 
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| Reason code               | Value |Mapped To| Description                                                 |
-+===========================+=======+=========+=============================================================+
-| UNSPECIFIED               |   1   |    1    | Generally, it means an internal failure, e.g., the memory   |
-|                           |       |         | runs out, the internal TX fails, or the reason is received  |
-|                           |       |         | from the remote side, etc.                                  |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| AUTH_EXPIRE               |   2   |    2    | The previous authentication is no longer valid.             |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - auth is timed out.                                       |
-|                           |       |         |  - the reason is received from the AP.                      |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the AP has not received any packets from the station     |
-|                           |       |         |    in the past five minutes.                                |
-|                           |       |         |  - the AP is stopped by calling :cpp:func:`esp_wifi_stop()`.|
-|                           |       |         |  - the station is de-authed by calling                      |
-|                           |       |         |    :cpp:func:`esp_wifi_deauth_sta()`.                       |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| AUTH_LEAVE                |   3   |    3    | De-authenticated, because the sending STA is                |
-|                           |       |         | leaving (or has left).                                      |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| ASSOC_EXPIRE              |   4   |    4    | Disassociated due to inactivity.                            |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the AP has not received any packets from the             |
-|                           |       |         |    station in the past five minutes.                        |
-|                           |       |         |  - the AP is stopped by calling :cpp:func:`esp_wifi_stop()` |
-|                           |       |         |  - the station is de-authed by calling                      |
-|                           |       |         |    :cpp:func:`esp_wifi_deauth_sta()`                        |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| ASSOC_TOOMANY             |   5   |    5    | Disassociated, because the AP is unable to handle           |
-|                           |       |         | all currently associated STAs at the same time.             |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the stations associated with the AP reach the            |
-|                           |       |         |    maximum number that the AP can support.                  |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| NOT_AUTHED                |   6   |    6    | Class-2 frame received from a non-authenticated STA.        |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the AP receives a packet with data from a                |
-|                           |       |         |    non-authenticated station.                               |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| NOT_ASSOCED               |   7   |    7    | Class-3 frame received from a non-associated STA.           |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the AP receives a packet with data from a                |
-|                           |       |         |    non-associated station.                                  |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| ASSOC_LEAVE               |   8   |    8    | Disassociated, because the sending STA is leaving (or has   |
-|                           |       |         | left) BSS.                                                  |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |  - the station is disconnected by                           |
-|                           |       |         |    :cpp:func:`esp_wifi_disconnect()` and other APIs.        |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| ASSOC_NOT_AUTHED          |   9   |    9    | STA requesting (re)association is not authenticated by the  |
-|                           |       |         | responding STA.                                             |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the AP receives packets with data from an                |
-|                           |       |         |    associated, yet not authenticated, station.              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| DISASSOC_PWRCAP_BAD       |   10  |    10   | Disassociated, because the information in the Power         |
-|                           |       |         | Capability element is unacceptable.                         |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| DISASSOC_SUPCHAN_BAD      |   11  |    11   | Disassociated, because the information in the Supported     |
-|                           |       |         | Channels element is unacceptable.                           |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| IE_INVALID                |   13  |    13   | Invalid element, i.e. an element whose content does not meet|
-|                           |       |         | the specifications of the Standard in frame formats clause. |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - the AP parses a wrong WPA or RSN IE.                     |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| MIC_FAILURE               |   14  |    14   | Message integrity code (MIC) failure.                       |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| 4WAY_HANDSHAKE_TIMEOUT    |   15  |    15   | Four-way handshake times out. For legacy reasons, in ESP    |
-|                           |       |         | this reason-code is replaced with                           |
-|                           |       |         | WIFI_REASON_HANDSHAKE_TIMEOUT.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - the handshake times out.                                 |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| GROUP_KEY_UPDATE_TIMEOUT  |   16  |    16   | Group-Key Handshake times out.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| IE_IN_4WAY_DIFFERS        |   17  |    17   | The element in the four-way handshake is different from the |
-|                           |       |         | (Re-)Association Request/Probe and Response/Beacon frame.   |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |  - the station finds that the four-way handshake IE differs |
-|                           |       |         |    from the IE in the (Re-)Association Request/Probe and    |
-|                           |       |         |    Response/Beacon frame.                                   |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| GROUP_CIPHER_INVALID      |   18  |    18   | Invalid group cipher.                                       |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| PAIRWISE_CIPHER_INVALID   |   19  |    19   | Invalid pairwise cipher.                                    |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| AKMP_INVALID              |   20  |    20   | Invalid AKMP.                                               |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| UNSUPP_RSN_IE_VERSION     |   21  |    21   | Unsupported RSNE version.                                   |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| INVALID_RSN_IE_CAP        |   22  |    22   | Invalid RSNE capabilities.                                  |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| 802_1X_AUTH_FAILED        |   23  |    23   | IEEE 802.1X. authentication failed.                         |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP AP, this reason is reported when:               |
-|                           |       |         |                                                             |
-|                           |       |         |  - 802.1 x authentication fails.                            |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| CIPHER_SUITE_REJECTED     |   24  |    24   | Cipher suite rejected due to security policies.             |
-|                           |       |         |                                                             |
-|                           |       |         | For the ESP Station, this reason is reported when:          |
-|                           |       |         |                                                             |
-|                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| BEACON_TIMEOUT            |  200  |reserved | Espressif-specific Wi-Fi reason-code: when the station      |
-|                           |       |         | loses N beacons continuously, it will disrupt the connection|
-|                           |       |         | and report this reason.                                     |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| NO_AP_FOUND               |  201  |reserved | Espressif-specific Wi-Fi reason-code: when the station      |
-|                           |       |         | fails to scan the target AP, this reason code will be       |
-|                           |       |         | reported.                                                   |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| AUTH_FAIL                 |  202  |reserved | Espressif-specific Wi-Fi reason-code: the                   |
-|                           |       |         | authentication fails, but not because of a timeout.         |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| ASSOC_FAIL                |  203  |reserved | Espressif-specific Wi-Fi reason-code: the association       |
-|                           |       |         | fails, but not because of ASSOC_EXPIRE or ASSOC_TOOMANY.    |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| HANDSHAKE_TIMEOUT         |  204  |reserved | Espressif-specific Wi-Fi reason-code: the                   |
-|                           |       |         | handshake fails for the same reason as that in              |
-|                           |       |         | WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT.                         |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
-| CONNECTION_FAIL           |  205  |reserved | Espressif-specific Wi-Fi reason-code: the                   |
-|                           |       |         | connection to the AP has failed.                            |
-|                           |       |         |                                                             |
-+---------------------------+-------+---------+-------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 10 12 40
+
+   * - Reason code
+     - Value
+     - Mapped To
+     - Description
+   * - UNSPECIFIED
+     - 1
+     - 1
+     - Generally, it means an internal failure, e.g., the memory runs out, the internal TX fails, or the reason is received from the remote side.
+   * - AUTH_EXPIRE
+     - 2
+     - 2
+     - The previous authentication is no longer valid.
+
+       For the ESP station, this reason is reported when:
+
+       - auth is timed out.
+       - the reason is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the AP has not received any packets from the station in the past five minutes.
+       - the AP is stopped by calling :cpp:func:`esp_wifi_stop()`.
+       - the station is de-authed by calling :cpp:func:`esp_wifi_deauth_sta()`.
+   * - AUTH_LEAVE
+     - 3
+     - 3
+     - De-authenticated, because the sending station is leaving (or has left).
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - ASSOC_EXPIRE
+     - 4
+     - 4
+     - Disassociated due to inactivity.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the AP has not received any packets from the station in the past five minutes.
+       - the AP is stopped by calling :cpp:func:`esp_wifi_stop()`.
+       - the station is de-authed by calling :cpp:func:`esp_wifi_deauth_sta()`.
+   * - ASSOC_TOOMANY
+     - 5
+     - 5
+     - Disassociated, because the AP is unable to handle all currently associated STAs at the same time.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the stations associated with the AP reach the maximum number that the AP can support.
+   * - NOT_AUTHED
+     - 6
+     - 6
+     - Class-2 frame received from a non-authenticated STA.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the AP receives a packet with data from a non-authenticated station.
+   * - NOT_ASSOCED
+     - 7
+     - 7
+     - Class-3 frame received from a non-associated STA.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the AP receives a packet with data from a non-associated station.
+   * - ASSOC_LEAVE
+     - 8
+     - 8
+     - Disassociated, because the sending station is leaving (or has left) BSS.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+       - the station is disconnected by :cpp:func:`esp_wifi_disconnect()` and other APIs.
+   * - ASSOC_NOT_AUTHED
+     - 9
+     - 9
+     - station requesting (re)association is not authenticated by the responding STA.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the AP receives packets with data from an associated, yet not authenticated, station.
+   * - DISASSOC_PWRCAP_BAD
+     - 10
+     - 10
+     - Disassociated, because the information in the Power Capability element is unacceptable.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - DISASSOC_SUPCHAN_BAD
+     - 11
+     - 11
+     - Disassociated, because the information in the Supported Channels element is unacceptable.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - IE_INVALID
+     - 13
+     - 13
+     - Invalid element, i.e., an element whose content does not meet the specifications of the Standard in frame formats clause.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - the AP parses a wrong WPA or RSN IE.
+   * - MIC_FAILURE
+     - 14
+     - 14
+     - Message integrity code (MIC) failure.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - 4WAY_HANDSHAKE_TIMEOUT
+     - 15
+     - 15
+     - Four-way handshake times out. For legacy reasons, in ESP this reason code is replaced with WIFI_REASON_HANDSHAKE_TIMEOUT.
+
+       For the ESP station, this reason is reported when:
+
+       - the handshake times out.
+       - it is received from the AP.
+   * - GROUP_KEY_UPDATE_TIMEOUT
+     - 16
+     - 16
+     - Group-Key Handshake times out.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - IE_IN_4WAY_DIFFERS
+     - 17
+     - 17
+     - The element in the four-way handshake is different from the (Re-)Association Request/Probe and Response/Beacon frame.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+       - the station finds that the four-way handshake IE differs from the IE in the (Re-)Association Request/Probe and Response/Beacon frame.
+   * - GROUP_CIPHER_INVALID
+     - 18
+     - 18
+     - Invalid group cipher.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - PAIRWISE_CIPHER_INVALID
+     - 19
+     - 19
+     - Invalid pairwise cipher.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - AKMP_INVALID
+     - 20
+     - 20
+     - Invalid AKMP.
+
+       For the ESP station, this reason is reported when:
+       - it is received from the AP.
+   * - UNSUPP_RSN_IE_VERSION
+     - 21
+     - 21
+     - Unsupported RSNE version.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - INVALID_RSN_IE_CAP
+     - 22
+     - 22
+     - Invalid RSNE capabilities.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - 802_1X_AUTH_FAILED
+     - 23
+     - 23
+     - IEEE 802.1X. authentication failed.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+
+       For the ESP AP, this reason is reported when:
+
+       - IEEE 802.1X. authentication fails.
+   * - CIPHER_SUITE_REJECTED
+     - 24
+     - 24
+     - Cipher suite rejected due to security policies.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
+   * - TDLS_PEER_UNREACHABLE
+     - 25
+     - 25
+     - TDLS direct-link teardown due to TDLS peer STA unreachable via the TDLS direct link.
+   * - TDLS_UNSPECIFIED
+     - 26
+     - 26
+     - TDLS direct-link teardown for unspecified reason.
+   * - SSP_REQUESTED_DISASSOC
+     - 27
+     - 27
+     - Disassociated because session terminated by SSP request.
+   * - NO_SSP_ROAMING_AGREEMENT
+     - 28
+     - 28
+     - Disassociated because of lack of SSP roaming agreement.
+   * - BAD_CIPHER_OR_AKM
+     - 29
+     - 29
+     - Requested service rejected because of SSP cipher suite or AKM requirement.
+   * - NOT_AUTHORIZED_THIS_LOCATION
+     - 30
+     - 30
+     - Requested service not authorized in this location.
+   * - SERVICE_CHANGE_PRECLUDES_TS
+     - 31
+     - 31
+     - TS deleted because QoS AP lacks sufficient bandwidth for this QoS STA due to a change in BSS service characteristics or operational mode (e.g., an HT BSS change from 40 MHz channel to 20 MHz channel).
+   * - UNSPECIFIED_QOS
+     - 32
+     - 32
+     - Disassociated for unspecified, QoS-related reason.
+   * - NOT_ENOUGH_BANDWIDTH
+     - 33
+     - 33
+     - Disassociated because QoS AP lacks sufficient bandwidth for this QoS STA.
+   * - MISSING_ACKS
+     - 34
+     - 34
+     - Disassociated because excessive number of frames need to be acknowledged, but are not acknowledged due to AP transmissions and/or poor channel conditions.
+   * - EXCEEDED_TXOP
+     - 35
+     - 35
+     - Disassociated because STA is transmitting outside the limits of its TXOPs.
+   * - STA_LEAVING
+     - 36
+     - 36
+     - Requesting STA is leaving the BSS (or resetting).
+   * - END_BA
+     - 37
+     - 37
+     - Requesting STA is no longer using the stream or session.
+   * - UNKNOWN_BA
+     - 38
+     - 38
+     - Requesting STA received frames using a mechanism for which a setup has not been completed.
+   * - TIMEOUT
+     - 39
+     - 39
+     - Requested from peer STA due to timeout
+   * - Reserved
+     - 40 ~ 45
+     - 40 ~ 45
+     - 
+   * - PEER_INITIATED
+     - 46
+     - 46
+     - In a Disassociation frame: Disassociated because authorized access limit reached.
+   * - AP_INITIATED
+     - 47
+     - 47
+     - In a Disassociation frame: Disassociated due to external service requirements.
+   * - INVALID_FT_ACTION_FRAME_COUNT
+     - 48
+     - 48
+     - Invalid FT Action frame count.
+   * - INVALID_PMKID
+     - 49
+     - 49
+     - Invalid pairwise master key identifier (PMKID).
+   * - INVALID_MDE
+     - 50
+     - 50
+     - Invalid MDE.
+   * - INVALID_FTE
+     - 51
+     - 51
+     - Invalid FTE
+   * - TRANSMISSION_LINK_ESTABLISHMENT_FAILED
+     - 67
+     - 67
+     - Transmission link establishment in alternative channel failed.
+   * - ALTERATIVE_CHANNEL_OCCUPIED
+     - 68
+     - 68
+     - The alternative channel is occupied.
+   * - BEACON_TIMEOUT
+     - 200
+     - reserved
+     - Espressif-specific Wi-Fi reason code: when the station loses N beacons continuously, it will disrupt the connection and report this reason.
+   * - NO_AP_FOUND
+     - 201
+     - reserved
+     - Espressif-specific Wi-Fi reason code: when the station fails to scan the target AP, this reason code will be reported.
+   * - AUTH_FAIL
+     - 202
+     - reserved
+     - Espressif-specific Wi-Fi reason code: the authentication fails, but not because of a timeout.
+   * - ASSOC_FAIL
+     - 203
+     - reserved
+     - Espressif-specific Wi-Fi reason code: the association fails, but not because of ASSOC_EXPIRE or ASSOC_TOOMANY.
+   * - HANDSHAKE_TIMEOUT
+     - 204
+     - reserved
+     - Espressif-specific Wi-Fi reason code: the handshake fails for the same reason as that in WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT.
+   * - CONNECTION_FAIL
+     - 205
+     - reserved
+     - Espressif-specific Wi-Fi reason code: the connection to the AP has failed.
+
+
+Wi-Fi Reason code related to wrong password
+++++++++++++++++++++++++++++++++++++++++++++++
+
+The table below shows the Wi-Fi reason-code may related to wrong password.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 10 40
+
+   * - Reason code
+     - Value
+     - Description
+   * - 4WAY_HANDSHAKE_TIMEOUT
+     - 15
+     - Four-way handshake times out. Setting wrong password when STA connecting to an encrpyted AP.
+   * - NO_AP_FOUND
+     - 201
+     - This may related to wrong password in the two scenarios:
+
+       - Setting password when STA connecting to an unencrypted AP.
+       - Doesn't setting password when STA connecting to an encrypted AP.
+   * - HANDSHAKE_TIMEOUT
+     - 204
+     - Four-way handshake fails.
+
+Wi-Fi Reason code related to low RSSI
+++++++++++++++++++++++++++++++++++++++++++++++
+
+The table below shows the Wi-Fi reason-code may related to low RSSI.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 10 40
+
+   * - Reason code
+     - Value
+     - Description
+   * - NO_AP_FOUND
+     - 201
+     - The station fails to scan the target AP due to low RSSI
+   * - HANDSHAKE_TIMEOUT
+     - 204
+     - Four-way handshake fails.
+
 
 {IDF_TARGET_NAME} Wi-Fi Station Connecting When Multiple APs Are Found
 ----------------------------------------------------------------------
@@ -1097,7 +1244,7 @@ Call :cpp:func:`esp_wifi_set_mode()` to set the Wi-Fi mode.
 Station Basic Configuration
 +++++++++++++++++++++++++++++++++++++
 
-API esp_wifi_set_config() can be used to configure the station. The table below describes the fields in detail.
+API :cpp:func:`esp_wifi_set_config()` can be used to configure the station. And the configuration will be stored in NVS. The table below describes the fields in detail.
 
 +------------------+--------------------------------------------------------------+
 | Field            | Description                                                  |
@@ -1165,7 +1312,7 @@ API esp_wifi_set_config() can be used to configure the station. The table below 
 AP Basic Configuration
 +++++++++++++++++++++++++++++++++++++
 
-API esp_wifi_set_config() can be used to configure the AP. The table below describes the fields in detail.
+API :cpp:func:`esp_wifi_set_config()` can be used to configure the AP. And the configuration will be stored in NVS. The table below describes the fields in detail.
 
 +------------------+--------------------------------------------------------------+
 | Field            | Description                                                  |
