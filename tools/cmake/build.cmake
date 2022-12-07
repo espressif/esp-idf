@@ -226,7 +226,7 @@ function(__build_init idf_path)
     endforeach()
 
     if("${target}" STREQUAL "linux")
-        set(requires_common freertos log esp_rom esp_common esp_system linux)
+        set(requires_common freertos heap log esp_rom esp_common esp_system linux)
         idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${requires_common}")
     else()
         # Set components required by all other components in the build
