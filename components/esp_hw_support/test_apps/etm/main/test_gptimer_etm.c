@@ -55,7 +55,10 @@ TEST_CASE("gptimer_etm_alarm_event_with_interrupt_enabled", "[etm]")
 
     printf("get gptimer etm event handle\r\n");
     esp_etm_event_handle_t gptimer_event = NULL;
-    TEST_ESP_OK(gptimer_new_etm_event(gptimer, GPTIMER_ETM_EVENT_ALARM_MATCH, &gptimer_event));
+    gptimer_etm_event_config_t gptimer_etm_event_conf = {
+        .event_type = GPTIMER_ETM_EVENT_ALARM_MATCH,
+    };
+    TEST_ESP_OK(gptimer_new_etm_event(gptimer, &gptimer_etm_event_conf, &gptimer_event));
 
     printf("connect event and task to the channel\r\n");
     TEST_ESP_OK(esp_etm_channel_connect(etm_channel_a, gptimer_event, gpio_task));
@@ -136,9 +139,15 @@ TEST_CASE("gptimer_etm_alarm_event_without_interrupt", "[etm]")
 
     printf("get gptimer etm event and task handle\r\n");
     esp_etm_event_handle_t gptimer_event = NULL;
-    TEST_ESP_OK(gptimer_new_etm_event(gptimer, GPTIMER_ETM_EVENT_ALARM_MATCH, &gptimer_event));
+    gptimer_etm_event_config_t gptimer_etm_event_conf = {
+        .event_type = GPTIMER_ETM_EVENT_ALARM_MATCH,
+    };
+    TEST_ESP_OK(gptimer_new_etm_event(gptimer, &gptimer_etm_event_conf, &gptimer_event));
     esp_etm_task_handle_t gptimer_task = NULL;
-    TEST_ESP_OK(gptimer_new_etm_task(gptimer, GPTIMER_ETM_TASK_EN_ALARM, &gptimer_task));
+    gptimer_etm_task_config_t gptimer_etm_task_conf = {
+        .task_type = GPTIMER_ETM_TASK_EN_ALARM,
+    };
+    TEST_ESP_OK(gptimer_new_etm_task(gptimer, &gptimer_etm_task_conf, & gptimer_task));
 
     printf("connect event and task to the channel\r\n");
     TEST_ESP_OK(esp_etm_channel_connect(etm_channel_a, gptimer_event, gpio_task));
@@ -220,11 +229,18 @@ TEST_CASE("gptimer_auto_reload_by_etm", "[etm]")
 
     printf("get gptimer etm event and task handle\r\n");
     esp_etm_event_handle_t gptimer_event_alarm = NULL;
-    TEST_ESP_OK(gptimer_new_etm_event(gptimer, GPTIMER_ETM_EVENT_ALARM_MATCH, &gptimer_event_alarm));
+    gptimer_etm_event_config_t gptimer_etm_event_conf = {
+        .event_type = GPTIMER_ETM_EVENT_ALARM_MATCH,
+    };
+    TEST_ESP_OK(gptimer_new_etm_event(gptimer, &gptimer_etm_event_conf, &gptimer_event_alarm));
     esp_etm_task_handle_t gptimer_task_en_alarm = NULL;
-    TEST_ESP_OK(gptimer_new_etm_task(gptimer, GPTIMER_ETM_TASK_EN_ALARM, &gptimer_task_en_alarm));
+    gptimer_etm_task_config_t gptimer_etm_task_conf = {
+        .task_type = GPTIMER_ETM_TASK_EN_ALARM,
+    };
+    TEST_ESP_OK(gptimer_new_etm_task(gptimer, &gptimer_etm_task_conf, &gptimer_task_en_alarm));
     esp_etm_task_handle_t gptimer_task_reload = NULL;
-    TEST_ESP_OK(gptimer_new_etm_task(gptimer, GPTIMER_ETM_TASK_RELOAD, &gptimer_task_reload));
+    gptimer_etm_task_conf.task_type = GPTIMER_ETM_TASK_RELOAD;
+    TEST_ESP_OK(gptimer_new_etm_task(gptimer, &gptimer_etm_task_conf, &gptimer_task_reload));
 
     printf("connect event and task to the channel\r\n");
     TEST_ESP_OK(esp_etm_channel_connect(etm_channel_a, gptimer_event_alarm, gpio_task));
@@ -311,7 +327,10 @@ TEST_CASE("gptimer_etm_task_capture", "[etm]")
 
     printf("get gptimer etm task handle\r\n");
     esp_etm_task_handle_t gptimer_task = NULL;
-    TEST_ESP_OK(gptimer_new_etm_task(gptimer, GPTIMER_ETM_TASK_CAPTURE, &gptimer_task));
+    gptimer_etm_task_config_t gptimer_etm_task_conf = {
+        .task_type = GPTIMER_ETM_TASK_CAPTURE,
+    };
+    TEST_ESP_OK(gptimer_new_etm_task(gptimer, &gptimer_etm_task_conf, &gptimer_task));
 
     printf("connect event and task to the channel\r\n");
     TEST_ESP_OK(esp_etm_channel_connect(etm_channel_a, gpio_event, gptimer_task));
@@ -393,8 +412,12 @@ TEST_CASE("gptimer_start_stop_by_etm_task", "[etm]")
 
     printf("get gptimer etm task handle\r\n");
     esp_etm_task_handle_t gptimer_task_start, gptimer_task_stop;
-    TEST_ESP_OK(gptimer_new_etm_task(gptimer, GPTIMER_ETM_TASK_START_COUNT, &gptimer_task_start));
-    TEST_ESP_OK(gptimer_new_etm_task(gptimer, GPTIMER_ETM_TASK_STOP_COUNT, &gptimer_task_stop));
+    gptimer_etm_task_config_t gptimer_etm_task_conf = {
+        .task_type = GPTIMER_ETM_TASK_START_COUNT,
+    };
+    TEST_ESP_OK(gptimer_new_etm_task(gptimer, &gptimer_etm_task_conf, &gptimer_task_start));
+    gptimer_etm_task_conf.task_type = GPTIMER_ETM_TASK_STOP_COUNT;
+    TEST_ESP_OK(gptimer_new_etm_task(gptimer, &gptimer_etm_task_conf, &gptimer_task_stop));
 
     printf("connect event and task to the channel\r\n");
     TEST_ESP_OK(esp_etm_channel_connect(etm_channel_a, gpio_event_pos, gptimer_task_start));

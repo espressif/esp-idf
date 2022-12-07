@@ -104,7 +104,10 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Get gptimer etm task handle (capture)");
     esp_etm_task_handle_t gptimer_capture_task = NULL;
-    ESP_ERROR_CHECK(gptimer_new_etm_task(gptimer, GPTIMER_ETM_TASK_CAPTURE, &gptimer_capture_task));
+    gptimer_etm_task_config_t gptimer_etm_task_conf = {
+        .task_type = GPTIMER_ETM_TASK_CAPTURE,
+    };
+    ESP_ERROR_CHECK(gptimer_new_etm_task(gptimer, &gptimer_etm_task_conf, &gptimer_capture_task));
 
     ESP_LOGI(TAG, "Create ETM channel then connect gpio event and gptimer task");
     esp_etm_channel_handle_t etm_chan = NULL;

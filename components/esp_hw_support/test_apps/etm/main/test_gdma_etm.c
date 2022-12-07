@@ -69,6 +69,7 @@ TEST_CASE("async_memcpy_eof_event", "[etm]")
     printf("start memcpy\r\n");
     for (int j = 0; j < 19; j++) {
         TEST_ESP_OK(esp_async_memcpy(mcp_ctx, dst_buf, src_buf, buffer_size, NULL, NULL));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
     // simply wait for the last memcpy to finish
     vTaskDelay(pdMS_TO_TICKS(1000));

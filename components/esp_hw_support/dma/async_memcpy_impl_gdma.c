@@ -114,7 +114,10 @@ esp_err_t async_memcpy_impl_new_etm_event(async_memcpy_impl_t *impl, async_memcp
 {
     if (event_type == ASYNC_MEMCPY_ETM_EVENT_COPY_DONE) {
         // use the RX EOF to indicate the async memcpy done event
-        return gdma_new_etm_event(impl->rx_channel, GDMA_ETM_EVENT_EOF, out_event);
+        gdma_etm_event_config_t etm_event_conf = {
+            .event_type = GDMA_ETM_EVENT_EOF,
+        };
+        return gdma_new_etm_event(impl->rx_channel, &etm_event_conf, out_event);
     } else {
         return ESP_ERR_NOT_SUPPORTED;
     }
