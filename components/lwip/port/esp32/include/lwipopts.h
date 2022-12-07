@@ -254,6 +254,14 @@
  */
 #define ESP_DHCP_DISABLE_VENDOR_CLASS_IDENTIFIER       CONFIG_LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
 
+#define DHCP_DEFINE_CUSTOM_TIMEOUTS     1
+/* Since for embedded devices it's not that hard to miss a discover packet, so lower
+ * the discover retry backoff time from (2,4,8,16,32,60,60)s to (500m,1,2,4,8,15,15)s.
+ */
+ #define DHCP_REQUEST_TIMEOUT_SEQUENCE(state, tries)   (state == DHCP_STATE_REQUESTING ? \
+                                                       (uint16_t)(1 * 1000) : \
+                                                       (uint16_t)(((tries) < 6 ? 1 << (tries) : 60) * 250))
+
 /*
    ------------------------------------
    ---------- AUTOIP options ----------
