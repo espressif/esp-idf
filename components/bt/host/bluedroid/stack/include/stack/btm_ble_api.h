@@ -1231,6 +1231,19 @@ typedef struct {
 } tBTM_BLE_PERIOD_ADV_SYNC_ESTAB;
 
 typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT16 service_data;
+    UINT16 sync_handle;
+    UINT8 adv_sid;
+    UINT8 adv_addr_type;
+    BD_ADDR adv_addr;
+    UINT8 adv_phy;
+    UINT16 period_adv_interval;
+    UINT8 adv_clk_accuracy;
+} tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV;
+
+typedef struct {
     UINT16 scan_interval;
     UINT16 scan_window;
     UINT16 interval_min;
@@ -2638,6 +2651,9 @@ tBTM_STATUS BTM_BleExtendedScan(BOOLEAN enable, UINT16 duration, UINT16 period);
 
 void BTM_BleSetPreferExtenedConnParams(BD_ADDR bd_addr, tBTM_EXT_CONN_PARAMS *params);
 
+void BTM_BlePeriodicAdvSetInfoTrans(BD_ADDR bd_addr, UINT16 service_data, UINT8 adv_handle);
+
+void BTM_BleSetPeriodicAdvSyncTransParams(BD_ADDR bd_addr, UINT8 mode, UINT16 skip, UINT16 sync_timeout, UINT8 cte_type);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #endif

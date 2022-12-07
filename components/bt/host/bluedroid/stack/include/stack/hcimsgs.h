@@ -1031,6 +1031,14 @@ UINT8 btsnd_hcic_ble_read_trans_power(void);
 UINT8 btsnd_hcic_ble_read_rf_path_compensation(void);
 
 UINT8 btsnd_hcic_ble_write_rf_path_compensation(UINT16 rf_tx_path, UINT16 rf_rx_path);
+
+UINT8 btsnd_hcic_ble_set_periodic_adv_recv_enable(UINT16 sync_handle, UINT8 enable);
+
+UINT8 btsnd_hcic_ble_periodic_adv_sync_trans(UINT16 conn_handle, UINT16 service_data, UINT16 sync_handle);
+
+UINT8 btsnd_hcic_ble_periodic_adv_set_info_trans(UINT16 conn_handle, UINT16 service_data, UINT8 adv_handle);
+
+UINT8 btsnd_hcic_ble_set_periodic_adv_sync_trans_params(UINT16 conn_handle, UINT8 mode, UINT16 skip, UINT16 sync_timeout, UINT8 cte_type);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define HCIC_PARAM_SIZE_WRITE_AUTHENT_PAYLOAD_TOUT  4
 
