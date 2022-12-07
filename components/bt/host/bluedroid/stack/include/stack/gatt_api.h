@@ -44,6 +44,8 @@
 #define  GATT_INSUF_ENCRYPTION               0x0f
 #define  GATT_UNSUPPORT_GRP_TYPE             0x10
 #define  GATT_INSUF_RESOURCE                 0x11
+#define  GATT_DATABASE_OUT_OF_SYNC           0x12
+#define  GATT_VALUE_NOT_ALLOWED              0x13
 
 
 #define  GATT_NO_RESOURCES                   0x80
