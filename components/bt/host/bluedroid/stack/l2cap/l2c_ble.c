@@ -757,6 +757,69 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         }
         break;
     }
+    case L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ: {
+        tL2C_CCB *p_ccb = NULL;
+        tL2C_RCB *p_rcb = NULL;
+        UINT16 spsm;
+        UINT16 scid;
+        UINT16 mtu;
+        UINT16 mps;
+        UINT16 credits;
+        STREAM_TO_UINT16(spsm, p);
+        STREAM_TO_UINT16(scid, p);
+        STREAM_TO_UINT16(mtu, p);
+        STREAM_TO_UINT16(mps, p);
+        STREAM_TO_UINT16(credits, p);
+        L2CAP_TRACE_DEBUG("%s spsm %x, scid %x", __func__, spsm, scid);
+
+        p_ccb = l2cu_find_ccb_by_remote_cid(p_lcb, scid);
+        if (p_ccb) {
+            l2cu_reject_ble_connection(p_lcb, id, L2CAP_LE_RESULT_SOURCE_CID_ALREADY_ALLOCATED);
+            break;
+        }
+
+        #if 0
+        p_rcb = l2cu_find_ble_rcb_by_psm(spsm);
+        if (p_rcb == NULL) {
+            break;
+        }
+        #endif
+
+        p_ccb = l2cu_allocate_ccb(p_lcb, 0);
+        if (p_ccb == NULL) {
+            l2cu_reject_ble_connection(p_lcb, id, L2CAP_LE_RESULT_NO_RESOURCES);
+            break;
+        }
+
+        p_ccb->remote_id = id;
+        p_ccb->p_rcb = p_rcb;
+        p_ccb->remote_cid = scid;
+        p_ccb->local_conn_cfg.mtu = mtu;
+        p_ccb->local_conn_cfg.mps = controller_get_interface()->get_acl_data_size_ble();
+        p_ccb->local_conn_cfg.credits = credits;
+        p_ccb->peer_conn_cfg.mtu = mtu;
+        p_ccb->peer_conn_cfg.mps = mps;
+        p_ccb->peer_conn_cfg.credits = credits;
+
+        l2cu_send_peer_ble_credit_based_conn_res(p_ccb, L2CAP_LE_RESULT_CONN_OK);
+        break;
+    }
+    case L2CAP_CMD_DISC_REQ: {
+        tL2C_CCB *p_ccb = NULL;
+        UINT16 lcid;
+        UINT16 rcid;
+        STREAM_TO_UINT16(lcid, p);
+        STREAM_TO_UINT16(rcid, p);
+
+        p_ccb = l2cu_find_ccb_by_cid(p_lcb, lcid);
+        if (p_ccb) {
+            p_ccb->remote_id = id;
+            // TODO
+        }
+
+        l2cu_send_peer_disc_rsp(p_lcb, id, lcid, rcid);
+        break;
+    }
     default:
         L2CAP_TRACE_WARNING ("L2CAP - LE - unknown cmd code: %d", cmd_code);
         l2cu_send_peer_cmd_reject (p_lcb, L2CAP_CMD_REJ_NOT_UNDERSTOOD, id, 0, 0);
