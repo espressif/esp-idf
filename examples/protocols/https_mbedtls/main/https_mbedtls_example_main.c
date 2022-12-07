@@ -13,6 +13,7 @@
  */
 #include <string.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_wifi.h"
@@ -243,7 +244,7 @@ static void https_get_task(void *pvParameters)
 
         static int request_count;
         ESP_LOGI(TAG, "Completed %d requests", ++request_count);
-        printf("Minimum free heap size: %d bytes\n", esp_get_minimum_free_heap_size());
+        printf("Minimum free heap size: %" PRIu32 " bytes\n", esp_get_minimum_free_heap_size());
 
         for(int countdown = 10; countdown >= 0; countdown--) {
             ESP_LOGI(TAG, "%d...", countdown);
