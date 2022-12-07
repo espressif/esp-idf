@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -942,6 +942,19 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         rsp_app = true;
         ble_msg->act = ESP_GAP_BLE_OOB_REQ_EVT;
         memcpy(param.ble_security.ble_req.bd_addr, p_data->ble_req.bd_addr, BD_ADDR_LEN);
+        break;
+    }
+    case BTA_DM_BLE_SC_OOB_REQ_EVT: {
+        rsp_app = true;
+        ble_msg->act = ESP_GAP_BLE_SC_OOB_REQ_EVT;
+        memcpy(param.ble_security.ble_req.bd_addr, p_data->ble_req.bd_addr, BD_ADDR_LEN);
+        break;
+    }
+    case BTA_DM_BLE_SC_CR_LOC_OOB_EVT: {
+        rsp_app = true;
+        ble_msg->act = ESP_GAP_BLE_SC_CR_LOC_OOB_EVT;
+        memcpy(param.ble_security.oob_data.oob_c, p_data->local_oob_data.local_oob_c, BT_OCTET16_LEN);
+        memcpy(param.ble_security.oob_data.oob_r, p_data->local_oob_data.local_oob_r, BT_OCTET16_LEN);
         break;
     }
     case BTA_DM_BLE_LOCAL_IR_EVT: {
