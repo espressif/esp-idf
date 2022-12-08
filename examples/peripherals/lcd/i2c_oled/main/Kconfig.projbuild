@@ -1,0 +1,16 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_LCD_CONTROLLER
+        prompt "LCD controller model"
+        default EXAMPLE_LCD_CONTROLLER_SSD1306
+        help
+            Select LCD controller model
+
+        config EXAMPLE_LCD_CONTROLLER_SSD1306
+            bool "SSD1306"
+
+        config EXAMPLE_LCD_CONTROLLER_SH1107
+            bool "SH1107"
+    endchoice
+
+endmenu

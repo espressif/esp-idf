@@ -9,12 +9,18 @@
 #include "freertos/task.h"
 #include "esp_timer.h"
 #include "esp_lcd_panel_io.h"
-#include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
 #include "driver/i2c.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "lvgl.h"
+#include "esp_lvgl_port.h"
+
+#if CONFIG_EXAMPLE_LCD_CONTROLLER_SH1107
+#include "esp_lcd_sh1107.h"
+#else
+#include "esp_lcd_panel_vendor.h"
+#endif
 
 static const char *TAG = "example";
 
@@ -30,64 +36,31 @@ static const char *TAG = "example";
 #define EXAMPLE_I2C_HW_ADDR           0x3C
 
 // The pixel number in horizontal and vertical
+#if CONFIG_EXAMPLE_LCD_CONTROLLER_SSD1306
 #define EXAMPLE_LCD_H_RES              128
 #define EXAMPLE_LCD_V_RES              64
+#elif CONFIG_EXAMPLE_LCD_CONTROLLER_SH1107
+#define EXAMPLE_LCD_H_RES              64
+#define EXAMPLE_LCD_V_RES              128
+#endif
 // Bit number used to represent command and parameter
 #define EXAMPLE_LCD_CMD_BITS           8
 #define EXAMPLE_LCD_PARAM_BITS         8
 
-#define EXAMPLE_LVGL_TICK_PERIOD_MS    2
-
 extern void example_lvgl_demo_ui(lv_disp_t *disp);
 
-static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
+/* The LVGL port component calls esp_lcd_panel_draw_bitmap API for send data to the screen. There must be called
+lvgl_port_flush_ready(disp) after each transaction to display. The best way is to use on_color_trans_done
+callback from esp_lcd IO config structure. In IDF 5.1 and higher, it is solved inside LVGL port component. */
+static bool notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
-    lv_disp_drv_t *disp_driver = (lv_disp_drv_t *)user_ctx;
-    lv_disp_flush_ready(disp_driver);
+    lv_disp_t * disp = (lv_disp_t *)user_ctx;
+    lvgl_port_flush_ready(disp);
     return false;
-}
-
-static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
-{
-    esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data;
-    int offsetx1 = area->x1;
-    int offsetx2 = area->x2;
-    int offsety1 = area->y1;
-    int offsety2 = area->y2;
-    // copy a buffer's content to a specific area of the display
-    esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
-}
-
-static void example_lvgl_set_px_cb(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
-                                   lv_color_t color, lv_opa_t opa)
-{
-    uint16_t byte_index = x + (( y >> 3 ) * buf_w);
-    uint8_t  bit_index  = y & 0x7;
-
-    if ((color.full == 0) && (LV_OPA_TRANSP != opa)) {
-        buf[byte_index] |= (1 << bit_index);
-    } else {
-        buf[byte_index] &= ~(1 << bit_index);
-    }
-}
-
-static void example_lvgl_rounder(lv_disp_drv_t *disp_drv, lv_area_t *area)
-{
-    area->y1 = area->y1 & (~0x7);
-    area->y2 = area->y2 | 0x7;
-}
-
-static void example_increase_lvgl_tick(void *arg)
-{
-    /* Tell LVGL how many milliseconds has elapsed */
-    lv_tick_inc(EXAMPLE_LVGL_TICK_PERIOD_MS);
 }
 
 void app_main(void)
 {
-    static lv_disp_draw_buf_t disp_buf; // contains internal graphic buffer(s) called draw buffer(s)
-    static lv_disp_drv_t disp_drv;      // contains callback functions
-
     ESP_LOGI(TAG, "Initialize I2C bus");
     i2c_config_t i2c_conf = {
         .mode = I2C_MODE_MASTER,
@@ -105,11 +78,17 @@ void app_main(void)
     esp_lcd_panel_io_i2c_config_t io_config = {
         .dev_addr = EXAMPLE_I2C_HW_ADDR,
         .control_phase_bytes = 1,               // According to SSD1306 datasheet
-        .dc_bit_offset = 6,                     // According to SSD1306 datasheet
         .lcd_cmd_bits = EXAMPLE_LCD_CMD_BITS,   // According to SSD1306 datasheet
         .lcd_param_bits = EXAMPLE_LCD_CMD_BITS, // According to SSD1306 datasheet
-        .on_color_trans_done = example_notify_lvgl_flush_ready,
-        .user_ctx = &disp_drv,
+#if CONFIG_EXAMPLE_LCD_CONTROLLER_SSD1306
+        .dc_bit_offset = 6,                     // According to SSD1306 datasheet
+#elif CONFIG_EXAMPLE_LCD_CONTROLLER_SH1107
+        .dc_bit_offset = 0,                     // According to SH1107 datasheet
+        .flags =
+        {
+            .disable_control_phase = 1,
+        }
+#endif
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)I2C_HOST, &io_config, &io_handle));
 
@@ -119,51 +98,48 @@ void app_main(void)
         .bits_per_pixel = 1,
         .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
     };
+#if CONFIG_EXAMPLE_LCD_CONTROLLER_SSD1306
     ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));
+#elif CONFIG_EXAMPLE_LCD_CONTROLLER_SH1107
+    ESP_ERROR_CHECK(esp_lcd_new_panel_sh1107(io_handle, &panel_config, &panel_handle));
+#endif
 
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle));
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
-    ESP_LOGI(TAG, "Initialize LVGL library");
-    lv_init();
-    // alloc draw buffers used by LVGL
-    // it's recommended to choose the size of the draw buffer(s) to be at least 1/10 screen sized
-    lv_color_t *buf1 = malloc(EXAMPLE_LCD_H_RES * 20 * sizeof(lv_color_t));
-    assert(buf1);
-    lv_color_t *buf2 = malloc(EXAMPLE_LCD_H_RES * 20 * sizeof(lv_color_t));
-    assert(buf2);
-    // initialize LVGL draw buffers
-    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, EXAMPLE_LCD_H_RES * 20);
+#if CONFIG_EXAMPLE_LCD_CONTROLLER_SH1107
+    ESP_ERROR_CHECK(esp_lcd_panel_invert_color(panel_handle, true));
+#endif
 
-    ESP_LOGI(TAG, "Register display driver to LVGL");
-    lv_disp_drv_init(&disp_drv);
-    disp_drv.hor_res = EXAMPLE_LCD_H_RES;
-    disp_drv.ver_res = EXAMPLE_LCD_V_RES;
-    disp_drv.flush_cb = example_lvgl_flush_cb;
-    disp_drv.draw_buf = &disp_buf;
-    disp_drv.user_data = panel_handle;
-    disp_drv.rounder_cb = example_lvgl_rounder;
-    disp_drv.set_px_cb = example_lvgl_set_px_cb;
-    lv_disp_t *disp = lv_disp_drv_register(&disp_drv);
+    ESP_LOGI(TAG, "Initialize LVGL");
+    const lvgl_port_cfg_t lvgl_cfg = ESP_LVGL_PORT_INIT_CONFIG();
+    lvgl_port_init(&lvgl_cfg);
 
-    ESP_LOGI(TAG, "Install LVGL tick timer");
-    // Tick interface for LVGL (using esp_timer to generate 2ms periodic event)
-    const esp_timer_create_args_t lvgl_tick_timer_args = {
-        .callback = &example_increase_lvgl_tick,
-        .name = "lvgl_tick"
+    const lvgl_port_display_cfg_t disp_cfg = {
+        .io_handle = io_handle,
+        .panel_handle = panel_handle,
+        .buffer_size = EXAMPLE_LCD_H_RES * EXAMPLE_LCD_V_RES,
+        .double_buffer = true,
+        .hres = EXAMPLE_LCD_H_RES,
+        .vres = EXAMPLE_LCD_V_RES,
+        .monochrome = true,
+        .rotation = {
+            .swap_xy = false,
+            .mirror_x = false,
+            .mirror_y = false,
+        }
     };
-    esp_timer_handle_t lvgl_tick_timer = NULL;
-    ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
+    lv_disp_t * disp = lvgl_port_add_disp(&disp_cfg);
+    /* Register done callback for IO */
+    const esp_lcd_panel_io_callbacks_t cbs = {
+        .on_color_trans_done = notify_lvgl_flush_ready,
+    };
+    esp_lcd_panel_io_register_event_callbacks(io_handle, &cbs, disp);
+
+    /* Rotation of the screen */
+    lv_disp_set_rotation(disp, LV_DISP_ROT_NONE);
 
     ESP_LOGI(TAG, "Display LVGL Scroll Text");
     example_lvgl_demo_ui(disp);
-
-    while (1) {
-        // raise the task priority of LVGL and/or reduce the handler period can improve the performance
-        vTaskDelay(pdMS_TO_TICKS(10));
-        // The task running lv_timer_handler should have lower priority than that running `lv_tick_inc`
-        lv_timer_handler();
-    }
 }
