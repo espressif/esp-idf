@@ -15,6 +15,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <time.h>
 #include <sys/time.h>
 #include "freertos/FreeRTOS.h"
@@ -255,7 +256,7 @@ static void https_request_task(void *pvparameters)
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     https_get_request_using_crt_bundle();
 #endif
-    ESP_LOGI(TAG, "Minimum free heap size: %d bytes", esp_get_minimum_free_heap_size());
+    ESP_LOGI(TAG, "Minimum free heap size: %" PRIu32 " bytes", esp_get_minimum_free_heap_size());
     https_get_request_using_cacert_buf();
     https_get_request_using_global_ca_store();
     ESP_LOGI(TAG, "Finish https_request example");
