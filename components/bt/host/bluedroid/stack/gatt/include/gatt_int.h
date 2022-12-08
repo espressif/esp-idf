@@ -553,6 +553,9 @@ typedef struct {
     tGATT_HDL_CFG           hdl_cfg;
     tGATT_BG_CONN_DEV       bgconn_dev[GATT_MAX_BG_CONN_DEV];
 
+    BOOLEAN             auto_disc;      /* internal use: true for auto discovering after connected */
+    UINT8               srv_chg_mode;   /* internal use: service change mode */
+    tGATTS_RSP          rsp;            /* use to read internal service attribute */
 } tGATT_CB;
 
 typedef struct{
