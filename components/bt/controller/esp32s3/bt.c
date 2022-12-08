@@ -318,6 +318,8 @@ static void btdm_slp_tmr_callback(void *arg);
 
 static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end);
 
+static void bt_controller_deinit_internal(void);
+
 /* Local variable definition
  ***************************************************************************
  */
@@ -1318,73 +1320,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     return ESP_OK;
 
 error:
-    if (s_lp_stat.phy_enabled) {
-        esp_phy_disable();
-        s_lp_stat.phy_enabled = 0;
-    }
 
-    do {
-        // deinit low power control resources
-#ifdef CONFIG_PM_ENABLE
-        if (s_lp_cntl.no_light_sleep) {
-            if (s_light_sleep_pm_lock != NULL) {
-                esp_pm_lock_delete(s_light_sleep_pm_lock);
-                s_light_sleep_pm_lock = NULL;
-            }
-        }
-        if (s_pm_lock != NULL) {
-            esp_pm_lock_delete(s_pm_lock);
-            s_pm_lock = NULL;
-            s_lp_stat.pm_lock_released = 0;
-        }
+    bt_controller_deinit_internal();
 
-#endif
-        if (s_lp_cntl.wakeup_timer_required && s_btdm_slp_tmr != NULL) {
-            esp_timer_delete(s_btdm_slp_tmr);
-            s_btdm_slp_tmr = NULL;
-        }
-
-#if CONFIG_MAC_BB_PD
-        if (s_lp_cntl.mac_bb_pd) {
-            btdm_deep_sleep_mem_deinit();
-            s_lp_cntl.mac_bb_pd = 0;
-        }
-#endif
-        if (s_lp_cntl.enable) {
-            btdm_vnd_offload_task_deregister(BTDM_VND_OL_SIG_WAKEUP_TMR);
-            if (s_wakeup_req_sem != NULL) {
-                semphr_delete_wrapper(s_wakeup_req_sem);
-                s_wakeup_req_sem = NULL;
-            }
-        }
-
-        if (s_lp_cntl.lpclk_sel == BTDM_LPCLK_SEL_XTAL) {
-#ifdef CONFIG_BT_CTRL_MAIN_XTAL_PU_DURING_LIGHT_SLEEP
-            if (s_lp_cntl.main_xtal_pu) {
-                ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF));
-                s_lp_cntl.main_xtal_pu = 0;
-            }
-#endif
-            btdm_lpclk_select_src(BTDM_LPCLK_SEL_RTC_SLOW);
-            btdm_lpclk_set_div(0);
-#if CONFIG_SW_COEXIST_ENABLE
-            coex_update_lpclk_interval();
-#endif
-        }
-
-        btdm_lpcycle_us = 0;
-    } while (0);
-
-#if CONFIG_MAC_BB_PD
-    esp_unregister_mac_bb_pd_callback(btdm_mac_bb_power_down_cb);
-
-    esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
-#endif
-
-    if (osi_funcs_p != NULL) {
-        free(osi_funcs_p);
-        osi_funcs_p = NULL;
-    }
     return err;
 }
 
@@ -1395,31 +1333,47 @@ esp_err_t esp_bt_controller_deinit(void)
     }
 
     btdm_controller_deinit();
+
+    bt_controller_deinit_internal();
+
+    return ESP_OK;
+}
+
+static void bt_controller_deinit_internal(void)
+{
     periph_module_disable(PERIPH_BT_MODULE);
 
     if (s_lp_stat.phy_enabled) {
         esp_phy_disable();
         s_lp_stat.phy_enabled = 0;
-    } else {
-        assert(0);
     }
 
     // deinit low power control resources
     do {
+
 #if CONFIG_MAC_BB_PD
-        btdm_deep_sleep_mem_deinit();
+        if (s_lp_cntl.mac_bb_pd) {
+            btdm_deep_sleep_mem_deinit();
+            s_lp_cntl.mac_bb_pd = 0;
+        }
 #endif
 
 #ifdef CONFIG_PM_ENABLE
         if (s_lp_cntl.no_light_sleep) {
-            esp_pm_lock_delete(s_light_sleep_pm_lock);
-            s_light_sleep_pm_lock = NULL;
+            if (s_light_sleep_pm_lock != NULL) {
+                esp_pm_lock_delete(s_light_sleep_pm_lock);
+                s_light_sleep_pm_lock = NULL;
+            }
         }
 
-        esp_pm_lock_delete(s_pm_lock);
-        s_pm_lock = NULL;
-        s_lp_stat.pm_lock_released = 0;
+        if (s_pm_lock != NULL) {
+            esp_pm_lock_delete(s_pm_lock);
+            s_pm_lock = NULL;
+            s_lp_stat.pm_lock_released = 0;
+        }
+
 #endif
+
         if (s_lp_cntl.wakeup_timer_required) {
             if (s_lp_stat.wakeup_timer_started) {
                 esp_timer_stop(s_btdm_slp_tmr);
@@ -1431,9 +1385,10 @@ esp_err_t esp_bt_controller_deinit(void)
 
         if (s_lp_cntl.enable) {
             btdm_vnd_offload_task_deregister(BTDM_VND_OL_SIG_WAKEUP_TMR);
-
-            semphr_delete_wrapper(s_wakeup_req_sem);
-            s_wakeup_req_sem = NULL;
+            if (s_wakeup_req_sem != NULL) {
+                semphr_delete_wrapper(s_wakeup_req_sem);
+                s_wakeup_req_sem = NULL;
+            }
         }
 
         if (s_lp_cntl.lpclk_sel == BTDM_LPCLK_SEL_XTAL) {
@@ -1464,11 +1419,12 @@ esp_err_t esp_bt_controller_deinit(void)
 #endif
     esp_phy_modem_deinit();
 
-    free(osi_funcs_p);
-    osi_funcs_p = NULL;
+    if (osi_funcs_p != NULL) {
+        free(osi_funcs_p);
+        osi_funcs_p = NULL;
+    }
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
-    return ESP_OK;
 }
 
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
