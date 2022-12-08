@@ -61,7 +61,7 @@ typedef enum {
 #if SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     LEDC_USE_PLL_DIV_CLK, /*!< LEDC timer select the PLL_DIV clock available to LEDC peripheral as source clock*/
 #endif
-    LEDC_USE_RTC8M_CLK,   /*!< LEDC timer select RTC8M_CLK as source clock. Only for low speed channels and this parameter must be the same for all low speed channels*/
+    LEDC_USE_RTC8M_CLK,   /*!< LEDC timer select RTC8M_CLK (i.e. RC_FAST) as source clock. Only for low speed channels and this parameter must be the same for all low speed channels*/
 #if SOC_LEDC_SUPPORT_REF_TICK
     LEDC_USE_REF_TICK,    /*!< LEDC timer select REF_TICK clock as source clock*/
 #endif
@@ -122,7 +122,7 @@ typedef enum {
     LEDC_TIMER_12_BIT,      /*!< LEDC PWM duty resolution of 12 bits */
     LEDC_TIMER_13_BIT,      /*!< LEDC PWM duty resolution of 13 bits */
     LEDC_TIMER_14_BIT,      /*!< LEDC PWM duty resolution of 14 bits */
-#if SOC_LEDC_TIMER_BIT_WIDE_NUM > 14
+#if SOC_LEDC_TIMER_BIT_WIDTH > 14
     LEDC_TIMER_15_BIT,      /*!< LEDC PWM duty resolution of 15 bits */
     LEDC_TIMER_16_BIT,      /*!< LEDC PWM duty resolution of 16 bits */
     LEDC_TIMER_17_BIT,      /*!< LEDC PWM duty resolution of 17 bits */

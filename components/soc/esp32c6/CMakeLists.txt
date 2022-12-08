@@ -20,7 +20,6 @@ set(srcs
 # ESP32C6-TODO
 list(REMOVE_ITEM srcs
         "adc_periph.c"                  # TODO: IDF-5310
-        "ledc_periph.c"                 # TODO: IDF-5328
         )
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

@@ -45,7 +45,7 @@
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_SDM_SUPPORTED               1
-// #define SOC_LEDC_SUPPORTED              1 // TODO: IDF-5328
+#define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_SUPPORT_COEXISTENCE         1
@@ -209,13 +209,13 @@
 #define SOC_I2S_PDM_MAX_TX_LINES    (2)
 #define SOC_I2S_SUPPORTS_TDM        (1)
 
-// TODO: IDF-5328 (Copy from esp32c3, need check)
 /*-------------------------- LEDC CAPS ---------------------------------------*/
-#define SOC_LEDC_SUPPORT_APB_CLOCK   (1)
-#define SOC_LEDC_SUPPORT_XTAL_CLOCK  (1)
-#define SOC_LEDC_CHANNEL_NUM         (6)
-#define SOC_LEDC_TIMER_BIT_WIDE_NUM  (14)
-#define SOC_LEDC_SUPPORT_FADE_STOP   (1)
+#define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
+#define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
+#define SOC_LEDC_CHANNEL_NUM                (6)
+#define SOC_LEDC_TIMER_BIT_WIDTH            (20)
+#define SOC_LEDC_SUPPORT_FADE_STOP          (1)
+#define SOC_LEDC_GAMMA_FADE_RANGE_MAX       (16)
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
 #define SOC_MMU_DI_VADDR_SHARED               (1) /*!< D/I vaddr are shared */
@@ -426,6 +426,9 @@
 #define SOC_PM_SUPPORT_WIFI_PD          (1)
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
+
+/*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
+#define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

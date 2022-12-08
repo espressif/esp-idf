@@ -101,8 +101,8 @@ static bool ledc_slow_clk_calibrate(void)
 {
     if (periph_rtc_dig_clk8m_enable()) {
         s_ledc_slow_clk_8M = periph_rtc_dig_clk8m_get_freq();
-#if !SOC_CLK_RC_FAST_D256_SUPPORTED
-        /* Workaround: CLK8M calibration cannot be performed if there is no d256 div clk, we can only use its theoretic freq */
+#if !SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
+        /* Workaround: CLK8M calibration cannot be performed, we can only use its theoretic freq */
         ESP_LOGD(LEDC_TAG, "Calibration cannot be performed, approximate CLK8M_CLK : %"PRIu32" Hz", s_ledc_slow_clk_8M);
 #else
         ESP_LOGD(LEDC_TAG, "Calibrate CLK8M_CLK : %"PRIu32" Hz", s_ledc_slow_clk_8M);
@@ -253,6 +253,10 @@ int duty_val, ledc_duty_direction_t duty_direction, uint32_t duty_num, uint32_t 
     ledc_hal_set_duty_num(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_num);
     ledc_hal_set_duty_cycle(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_cycle);
     ledc_hal_set_duty_scale(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_scale);
+#if SOC_LEDC_GAMMA_FADE_RANGE_MAX > 1
+    ledc_hal_set_duty_range(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 0);
+    ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 1);
+#endif
     ledc_ls_channel_update(speed_mode, channel);
     return ESP_OK;
 }

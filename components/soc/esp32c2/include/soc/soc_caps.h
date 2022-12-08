@@ -144,8 +144,9 @@
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK  (1)
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK     (1)
 #define SOC_LEDC_CHANNEL_NUM            (6)
-#define SOC_LEDC_TIMER_BIT_WIDE_NUM     (14)
+#define SOC_LEDC_TIMER_BIT_WIDTH        (14)
 #define SOC_LEDC_SUPPORT_FADE_STOP      (1)
+#define SOC_LEDC_GAMMA_FADE_RANGE_MAX   (1U) // The target does not support gamma curve fading
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 #define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0
@@ -281,6 +282,7 @@
 /*--------------------------- CLOCK SUBSYSTEM CAPS -------------------------- */
 #define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
 #define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
+#define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)    /*!< Support hardware TSF */
