@@ -394,6 +394,7 @@ enum {
 
 typedef struct {
     UINT8               state;
+    BOOLEAN             auto_disc;  /* internal use: true for auto discovering after connected */
     tBTA_GATTC_CONN     conn_track[BTA_GATTC_CONN_MAX];
     tBTA_GATTC_BG_TCK   bg_track[BTA_GATTC_KNOWN_SR_MAX];
     tBTA_GATTC_RCB      cl_rcb[BTA_GATTC_CL_MAX];
