@@ -347,26 +347,57 @@ Vanilla FreeRTOS implements critical sections by disabling interrupts, This prev
 However, in an SMP system, merely disabling interrupts does not constitute a critical section as the presence of other cores means that a shared resource can still be concurrently accessed. Therefore, critical sections in ESP-IDF FreeRTOS are implemented using spinlocks. To accommodate the spinlocks, the ESP-IDF FreeRTOS critical section APIs contain an additional spinlock parameter as shown below:
 
 - Spinlocks are of ``portMUX_TYPE`` (**not to be confused to FreeRTOS mutexes**)
-- ``taskENTER_CRITICAL(&mux)`` enters a critical from a task context
-- ``taskEXIT_CRITICAL(&mux)`` exits a critical section from a task context
-- ``taskENTER_CRITICAL_ISR(&mux)`` enters a critical section from an interrupt context
-- ``taskEXIT_CRITICAL_ISR(&mux)`` exits a critical section from an interrupt context
+- ``taskENTER_CRITICAL(&spinlock)`` enters a critical from a task context
+- ``taskEXIT_CRITICAL(&spinlock)`` exits a critical section from a task context
+- ``taskENTER_CRITICAL_ISR(&spinlock)`` enters a critical section from an interrupt context
+- ``taskEXIT_CRITICAL_ISR(&spinlock)`` exits a critical section from an interrupt context
 
 .. note::
   The critical section API can be called recursively (i.e., nested critical sections). Entering a critical section multiple times recursively is valid so long as the critical section is exited the same number of times it was entered. However, given that critical sections can target different spinlocks, users should take care to avoid dead locking when entering critical sections recursively.
+
+Spinlocks can be allocated statically or dynamically. As such, macros are provided for both static and dynamic initialization of spinlocks, as demonstrated by the following code snippets.
+
+- Allocating a static spinlock and initializing it using ``portMUX_INITIALIZER_UNLOCKED``
+
+  .. code:: c
+
+    // Statically allocate and initialize the spinlock
+    static portMUX_TYPE my_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+    void some_function(void)
+    {
+        taskENTER_CRITICAL(&my_spinlock);
+        // We are now in a critical section
+        taskEXIT_CRITICAL(&my_spinlock);
+    }
+
+- Allocating a dynamic spinlock and initializing it using ``portMUX_INITIALIZE()``
+
+  .. code:: c
+
+    // Allocate the spinlock dynamically
+    portMUX_TYPE *my_spinlock = malloc(sizeof(portMUX_TYPE));
+    // Initialize the spinlock dynamically
+    portMUX_INITIALIZE(my_spinlock);
+
+    ...
+
+    taskENTER_CRITICAL(my_spinlock);
+    // Access the resource
+    taskEXIT_CRITICAL(my_spinlock);
 
 Implementation
 ^^^^^^^^^^^^^^
 
 In ESP-IDF FreeRTOS, the process of a particular core entering and exiting a critical section is as follows:
 
-- For ``taskENTER_CRITICAL(&mux)`` (or ``taskENTER_CRITICAL_ISR(&mux)``)
+- For ``taskENTER_CRITICAL(&spinlock)`` (or ``taskENTER_CRITICAL_ISR(&spinlock)``)
 
   #. The core disables its interrupts (or interrupt nesting) up to ``configMAX_SYSCALL_INTERRUPT_PRIORITY``
   #. The core then spins on the spinlock using an atomic compare-and-set instruction until it acquires the lock. A lock is acquired when the core is able to set the lock's owner value to the core's ID.
   #. Once the spinlock is acquired, the function returns. The remainder of the critical section runs with interrupts (or interrupt nesting) disabled.
 
-- For ``taskEXIT_CRITICAL(&mux)`` (or ``taskEXIT_CRITICAL_ISR(&mux)``)
+- For ``taskEXIT_CRITICAL(&spinlock)`` (or ``taskEXIT_CRITICAL_ISR(&spinlock)``)
 
   #. The core releases the spinlock by clearing the spinlock's owner value
   #. The core re-enables interrupts (or interrupt nesting)
