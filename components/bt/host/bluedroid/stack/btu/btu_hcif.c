@@ -149,8 +149,10 @@ static void btu_ble_periodic_adv_sync_lost_evt(UINT8 *p);
 static void btu_ble_scan_timeout_evt(UINT8 *p);
 static void btu_ble_adv_set_terminate_evt(UINT8 *p);
 static void btu_ble_scan_req_received_evt(UINT8 *p);
-static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p);
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 extern osi_sem_t adv_enable_sem;
 extern osi_sem_t adv_data_sem;
@@ -420,10 +422,12 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             break;
         case HCI_BLE_CHANNEL_SELECT_ALG:
             break;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
         case HCI_BLE_PERIOD_ADV_SYNC_TRANS_RECV_EVT:
             btu_ble_periodic_adv_sync_trans_recv(p);
             break;
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
         }
         break;
 #endif /* BLE_INCLUDED */
@@ -2316,7 +2320,9 @@ static void btu_ble_scan_req_received_evt(UINT8 *p)
 
     btm_ble_scan_req_received_evt(&req_received);
 }
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p)
 {
     tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV recv = {0};
@@ -2334,7 +2340,8 @@ static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p)
 
     HCI_TRACE_DEBUG("%s status %x, conn handle %x, sync handle %x", recv.status, recv.conn_handle, recv.sync_handle);
 }
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+
 /**********************************************
 ** End of BLE Events Handler
 ***********************************************/

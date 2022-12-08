@@ -215,6 +215,20 @@ config BT_GATTS_ROBUST_CACHING_ENABLED
     help
         This option enable gatt robust caching feature on server
 
+config BT_GATTS_DEVICE_NAME_WRITABLE
+    bool "Allow to write device name by GATT clients"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        Enabling this option allows remote GATT clients to write device name
+
+config BT_GATTS_APPEARANCE_WRITABLE
+    bool "Allow to write appearance by GATT clients"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        Enabling this option allows remote GATT clients to write appearance
+
 config BT_GATTC_ENABLE
     bool "Include GATT client module(GATTC)"
     depends on BT_BLE_ENABLED
@@ -1102,7 +1116,7 @@ config BT_BLE_RPA_SUPPORTED
         users can switch the two modes according to their own needs. So this option is enabled by default.
 
 config BT_BLE_RPA_TIMEOUT
-    int "timeout of resolvable private address"
+    int "Timeout of resolvable private address"
     depends on BT_BLUEDROID_ENABLED
     range 1 3600
     default 900

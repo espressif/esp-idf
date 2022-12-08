@@ -1781,7 +1781,9 @@ UINT8 btsnd_hcic_ble_write_rf_path_compensation(UINT16 rf_tx_path, UINT16 rf_rx_
 
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 UINT8 btsnd_hcic_ble_set_periodic_adv_recv_enable(UINT16 sync_handle, UINT8 enable)
 {
     BT_HDR *p;
@@ -1862,5 +1864,5 @@ UINT8 btsnd_hcic_ble_set_periodic_adv_sync_trans_params(UINT16 conn_handle, UINT
 
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 #endif
