@@ -404,7 +404,8 @@ static int usbjtag_rx_char_via_driver(int fd)
 static void usbjtag_tx_char_via_driver(int fd, int c)
 {
     char ch = (char) c;
-    usb_serial_jtag_write_bytes(&ch, 1, portMAX_DELAY);
+    TickType_t ticks = (TX_FLUSH_TIMEOUT_US / 1000) / portTICK_PERIOD_MS;
+    usb_serial_jtag_write_bytes(&ch, 1, ticks);
 }
 
 void esp_vfs_usb_serial_jtag_use_nonblocking(void)

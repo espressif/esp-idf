@@ -32,6 +32,7 @@ typedef struct{
     // TX parameters
     uint32_t tx_buf_size;               /*!< TX buffer size */
     RingbufHandle_t tx_ring_buf;        /*!< TX ring buffer handler */
+    bool tx_has_tried_blocking;         /*!< TX have we tried a blocking send already? */
 } usb_serial_jtag_obj_t;
 
 static usb_serial_jtag_obj_t *p_usb_serial_jtag_obj = NULL;
@@ -161,12 +162,32 @@ int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_t
     ESP_RETURN_ON_FALSE(src != NULL, ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "Invalid buffer pointer.");
     ESP_RETURN_ON_FALSE(p_usb_serial_jtag_obj != NULL, ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "The driver hasn't been initialized");
 
-    const uint8_t *buff = (const uint8_t *)src;
-    // Blocking method, Sending data to ringbuffer, and handle the data in ISR.
-    xRingbufferSend(p_usb_serial_jtag_obj->tx_ring_buf, (void*) (buff), size, ticks_to_wait);
-    // Now trigger the ISR to read data from the ring buffer.
-    usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
-    return size;
+    usb_serial_jtag_obj_t* sjtag = p_usb_serial_jtag_obj;
+
+    // try to send without blocking
+    if (xRingbufferSend(sjtag->tx_ring_buf, (void*) (src), size, 0)) {
+        goto success;
+    }
+
+    // If the ring buffer is full, try to send again with a short
+    // blocking delay, hoping for the buffer to become available soon.
+    // If we still fail, dont ever block again until the buffer has space again.
+    if (sjtag->tx_has_tried_blocking == false) {
+        if (xRingbufferSend(sjtag->tx_ring_buf, (void*) (src), size, ticks_to_wait)) {
+            goto success;
+        } else {
+            sjtag->tx_has_tried_blocking = true;
+        }
+    }
+
+   // tx failure
+   return 0;
+
+success:
+   // Now trigger the ISR to read more data from the ring buffer.
+   usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+   sjtag->tx_has_tried_blocking = false; // clear
+   return size;
 }
 
 esp_err_t usb_serial_jtag_driver_uninstall(void)
