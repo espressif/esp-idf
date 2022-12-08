@@ -344,7 +344,11 @@ typedef union {
 
 void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
+void btc_ble_mesh_prov_arg_deep_free(btc_msg_t *msg);
+
 void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+
+void btc_ble_mesh_model_arg_deep_free(btc_msg_t *msg);
 
 const uint8_t *btc_ble_mesh_node_get_local_net_key(uint16_t net_idx);
 

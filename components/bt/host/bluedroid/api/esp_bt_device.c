@@ -53,5 +53,5 @@ esp_err_t esp_bt_dev_set_device_name(const char *name)
 
     strcpy(arg.set_dev_name.device_name, name);
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_dev_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_dev_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }

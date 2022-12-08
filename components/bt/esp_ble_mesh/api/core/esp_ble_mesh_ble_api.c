@@ -51,7 +51,7 @@ esp_err_t esp_ble_mesh_start_ble_advertising(const esp_ble_mesh_ble_adv_param_t 
         memcpy(&arg.start_ble_adv.data, data, sizeof(esp_ble_mesh_ble_adv_data_t));
     }
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_ble_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_ble_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
@@ -72,7 +72,7 @@ esp_err_t esp_ble_mesh_stop_ble_advertising(uint8_t index)
 
     arg.stop_ble_adv.index = index;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_ble_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_ble_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
@@ -89,7 +89,7 @@ esp_err_t esp_ble_mesh_start_ble_scanning(esp_ble_mesh_ble_scan_param_t *param)
     msg.pid = BTC_PID_BLE_MESH_BLE_COEX;
     msg.act = BTC_BLE_MESH_ACT_START_BLE_SCAN;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_ble_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_ble_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
@@ -104,7 +104,7 @@ esp_err_t esp_ble_mesh_stop_ble_scanning(void)
     msg.pid = BTC_PID_BLE_MESH_BLE_COEX;
     msg.act = BTC_BLE_MESH_ACT_STOP_BLE_SCAN;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_ble_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_ble_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_SCAN */

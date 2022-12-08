@@ -62,7 +62,7 @@ esp_err_t esp_bluedroid_enable(void)
     msg.pid = BTC_PID_MAIN_INIT;
     msg.act = BTC_MAIN_ACT_ENABLE;
 
-    if (btc_transfer_context(&msg, NULL, 0, NULL) != BT_STATUS_SUCCESS) {
+    if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid enable failed\n");
         return ESP_FAIL;
     }
@@ -98,7 +98,7 @@ esp_err_t esp_bluedroid_disable(void)
     msg.pid = BTC_PID_MAIN_INIT;
     msg.act = BTC_MAIN_ACT_DISABLE;
 
-    if (btc_transfer_context(&msg, NULL, 0, NULL) != BT_STATUS_SUCCESS) {
+    if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid disable failed\n");
         return ESP_FAIL;
     }
@@ -153,7 +153,7 @@ esp_err_t esp_bluedroid_init(void)
     msg.pid = BTC_PID_MAIN_INIT;
     msg.act = BTC_MAIN_ACT_INIT;
 
-    if (btc_transfer_context(&msg, NULL, 0, NULL) != BT_STATUS_SUCCESS) {
+    if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid Initialize Fail");
         return ESP_FAIL;
     }
@@ -195,7 +195,7 @@ esp_err_t esp_bluedroid_deinit(void)
     msg.pid = BTC_PID_MAIN_INIT;
     msg.act = BTC_MAIN_ACT_DEINIT;
 
-    if (btc_transfer_context(&msg, NULL, 0, NULL) != BT_STATUS_SUCCESS) {
+    if (btc_transfer_context(&msg, NULL, 0, NULL, NULL) != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid de-initialise failed\n");
         return ESP_FAIL;
     }
