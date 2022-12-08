@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -258,8 +250,7 @@ int spi_slave_hd_hal_get_rxlen(spi_slave_hd_hal_context_t *hal);
  */
 int spi_slave_hd_hal_get_last_addr(spi_slave_hd_hal_context_t *hal);
 
-#if CONFIG_IDF_TARGET_ESP32S2
-//Append mode is only supported on ESP32S2 now
+
 ////////////////////////////////////////////////////////////////////////////////
 // Append Mode
 ////////////////////////////////////////////////////////////////////////////////
@@ -315,4 +306,3 @@ esp_err_t spi_slave_hd_hal_txdma_append(spi_slave_hd_hal_context_t *hal, uint8_t
  *        - ESP_ERR_INVALID_STATE: Function called in invalid state.
  */
 esp_err_t spi_slave_hd_hal_rxdma_append(spi_slave_hd_hal_context_t *hal, uint8_t *data, size_t len, void *arg);
-#endif  //#if CONFIG_IDF_TARGET_ESP32S2

@@ -163,6 +163,7 @@ void app_main(void)
 
     ESP_ERROR_CHECK(receiver(essl));
     ESP_ERROR_CHECK(sender(essl));
+    ESP_LOGI("Append", "Example done.");
 
     ESP_ERROR_CHECK(essl_spi_deinit_dev(essl));
     ESP_ERROR_CHECK(spi_bus_remove_device(spi));
