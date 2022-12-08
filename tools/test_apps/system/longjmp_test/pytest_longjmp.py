@@ -8,5 +8,5 @@ from pytest_embedded import Dut
 @pytest.mark.esp32
 @pytest.mark.esp32s2
 @pytest.mark.generic
-def test_sys_memprot(dut: Dut) -> None:
+def test_sys_longjmp(dut: Dut) -> None:
     dut.expect_exact('Test successful')
