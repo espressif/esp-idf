@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include "sdkconfig.h"
@@ -46,14 +38,27 @@ typedef struct {
 } heap_trace_record_t;
 
 /**
+ * @brief Stores information about the result of a heap trace.
+ */
+typedef struct {
+    heap_trace_mode_t mode;          ///< The heap trace mode we just completed / are running
+    size_t total_allocations;        ///< The total number of allocations made during tracing
+    size_t total_frees;              ///< The total number of frees made during tracing
+    size_t count;                    ///< The number of records in the internal buffer
+    size_t capacity;                 ///< The capacity of the internal buffer
+    size_t high_water_mark;          ///< The maximum value that 'count' got to
+    size_t has_overflowed;           ///< True if the internal buffer overflowed at some point
+} heap_trace_summary_t;
+
+/**
  * @brief Initialise heap tracing in standalone mode.
  *
  * This function must be called before any other heap tracing functions.
  *
  * To disable heap tracing and allow the buffer to be freed, stop tracing and then call heap_trace_init_standalone(NULL, 0);
  *
- * @param record_buffer Provide a buffer to use for heap trace data. Must remain valid any time heap tracing is enabled, meaning
- * it must be allocated from internal memory not in PSRAM.
+ * @param record_buffer Provide a buffer to use for heap trace data.
+ * Note: External RAM is allowed, but it prevents recording allocations made from ISR's.
  * @param num_records Size of the heap trace buffer, as number of record structures.
  * @return
  *  - ESP_ERR_NOT_SUPPORTED Project was compiled without heap tracing enabled in menuconfig.
@@ -126,7 +131,8 @@ size_t heap_trace_get_count(void);
 /**
  * @brief Return a raw record from the heap trace buffer
  *
- * @note It is safe to call this function while heap tracing is running, however in HEAP_TRACE_LEAK mode record indexing may
+ * @note It is safe to call this function while heap tracing is
+ * running, however in HEAP_TRACE_LEAK mode record indexing may
  * skip entries unless heap tracing is stopped first.
  *
  * @param index Index (zero-based) of the record to return.
@@ -142,12 +148,37 @@ esp_err_t heap_trace_get(size_t index, heap_trace_record_t *record);
 /**
  * @brief Dump heap trace record data to stdout
  *
- * @note It is safe to call this function while heap tracing is running, however in HEAP_TRACE_LEAK mode the dump may skip
+ * @note It is safe to call this function while heap tracing is
+ * running, however in HEAP_TRACE_LEAK mode the dump may skip
  * entries unless heap tracing is stopped first.
- *
- *
  */
 void heap_trace_dump(void);
+
+/**
+ * @brief Same as heap_trace_dump() but will only log allocations in Internal-RAM
+ *
+ * @note It is safe to call this function while heap tracing is
+ * running, however in HEAP_TRACE_LEAK mode the dump may skip
+ * entries unless heap tracing is stopped first.
+ */
+void heap_trace_dump_internal_ram(void);
+
+/**
+ * @brief Same as heap_trace_dump() but will only log allocations in PSRAM
+ *
+ * @note It is safe to call this function while heap tracing is
+ * running, however in HEAP_TRACE_LEAK mode the dump may skip
+ * entries unless heap tracing is stopped first.
+ */
+void heap_trace_dump_psram(void);
+
+
+/**
+ * @brief Get summary information about the result of a heap trace
+ *
+ *  @note It is safe to call this function while heap tracing is running.
+ */
+esp_err_t heap_trace_summary(heap_trace_summary_t *summary);
 
 #ifdef __cplusplus
 }

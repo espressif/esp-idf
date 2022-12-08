@@ -253,6 +253,7 @@ In ``HEAP_TRACE_LEAKS`` mode, for each traced memory allocation which has not al
 
     - ``XX bytes`` is the number of bytes allocated
     - ``@ 0x...`` is the heap address returned from malloc/calloc.
+    - ``Internal`` or ``PSRAM`` is the general location of the allocated memory.
     - ``CPU x`` is the CPU (0 or 1) running when the allocation was made.
     - ``ccount 0x...`` is the CCOUNT (CPU cycle count) register value when the allocation was mode. Is different for CPU 0 vs CPU 1.
     :CONFIG_IDF_TARGET_ARCH_XTENSA: - ``caller 0x...`` gives the call stack of the call to malloc()/free(), as a list of PC addresses. These can be decoded to source files and line numbers, as shown above.
