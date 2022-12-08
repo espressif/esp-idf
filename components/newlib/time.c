@@ -139,6 +139,7 @@ int adjtime(const struct timeval *delta, struct timeval *outdelta)
     }
     return 0;
 #else
+    errno = ENOSYS;
     return -1;
 #endif
 }
