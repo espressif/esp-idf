@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "esp_bt.h"
 #include "nvs_flash.h"
@@ -67,8 +68,8 @@ static void esp_eddystone_show_inform(const esp_eddystone_result_t* res)
             ESP_LOGI(DEMO_TAG, "version: %d", res->inform.tlm.version);
             ESP_LOGI(DEMO_TAG, "battery voltage: %d mV", res->inform.tlm.battery_voltage);
             ESP_LOGI(DEMO_TAG, "beacon temperature in degrees Celsius: %6.1f", res->inform.tlm.temperature);
-            ESP_LOGI(DEMO_TAG, "adv pdu count since power-up: %d", res->inform.tlm.adv_count);
-            ESP_LOGI(DEMO_TAG, "time since power-up: %d s", (res->inform.tlm.time)/10);
+            ESP_LOGI(DEMO_TAG, "adv pdu count since power-up: %" PRIu32, res->inform.tlm.adv_count);
+            ESP_LOGI(DEMO_TAG, "time since power-up: %" PRIu32 " s", (res->inform.tlm.time)/10);
             break;
         }
         default:
