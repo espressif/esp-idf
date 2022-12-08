@@ -496,6 +496,7 @@ int esp_aes_gcm_finish( esp_gcm_context *ctx,
 {
     size_t nc_off = 0;
     uint8_t len_block[AES_BLOCK_BYTES] = {0};
+    uint8_t stream[AES_BLOCK_BYTES] = {0};
 
     if ( tag_len > 16 || tag_len < 4 ) {
         return ( MBEDTLS_ERR_GCM_BAD_INPUT );
@@ -507,7 +508,7 @@ int esp_aes_gcm_finish( esp_gcm_context *ctx,
     esp_gcm_ghash(ctx, len_block, AES_BLOCK_BYTES, ctx->ghash);
 
     /* Tag T = GCTR(J0, ) where T is truncated to tag_len */
-    esp_aes_crypt_ctr(&ctx->aes_ctx, tag_len, &nc_off, ctx->ori_j0, 0, ctx->ghash, tag);
+    esp_aes_crypt_ctr(&ctx->aes_ctx, tag_len, &nc_off, ctx->ori_j0, stream, ctx->ghash, tag);
 
     return 0;
 }
