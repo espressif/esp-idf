@@ -24,10 +24,19 @@ void IRAM_ATTR esp_restart_noos_dig(void)
     // switch to XTAL (otherwise we will keep running from the PLL)
     rtc_clk_cpu_freq_set_xtal();
 
-#if CONFIG_IDF_TARGET_ESP32
-    esp_cpu_unstall(PRO_CPU_NUM);
+    // esp_restart_noos_dig() will generates a core reset, which does not reset the
+    // registers of the RTC domain, so the CPU's stall state remains after the reset,
+    // we need to release them here
+#if !CONFIG_FREERTOS_UNICORE
+    // unstall all other cores
+    int core_id = esp_cpu_get_core_id();
+    for (uint32_t i = 0; i < SOC_CPU_CORES_NUM; i++) {
+        if (i != core_id) {
+            esp_cpu_unstall(i);
+        }
+    }
 #endif
-    // reset the digital part
+    // generate core reset
     esp_rom_software_reset_system();
     while (true) {
         ;
