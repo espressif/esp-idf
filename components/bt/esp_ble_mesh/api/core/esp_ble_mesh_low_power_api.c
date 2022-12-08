@@ -29,7 +29,7 @@ esp_err_t esp_ble_mesh_lpn_enable(void)
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_LPN_ENABLE;
 
-    return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_mesh_lpn_disable(bool force)
@@ -45,7 +45,7 @@ esp_err_t esp_ble_mesh_lpn_disable(bool force)
 
     arg.lpn_disable.force = force;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
@@ -59,5 +59,5 @@ esp_err_t esp_ble_mesh_lpn_poll(void)
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_LPN_POLL;
 
-    return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }

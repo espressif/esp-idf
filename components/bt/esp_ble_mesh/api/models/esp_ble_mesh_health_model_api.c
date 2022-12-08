@@ -49,8 +49,8 @@ esp_err_t esp_ble_mesh_health_client_get_state(esp_ble_mesh_client_common_param_
     arg.health_client_get_state.params = params;
     arg.health_client_get_state.get_state = get_state;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_health_client_args_t), btc_ble_mesh_health_client_arg_deep_copy)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_health_client_args_t), btc_ble_mesh_health_client_arg_deep_copy,
+                btc_ble_mesh_health_client_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_mesh_health_client_set_state(esp_ble_mesh_client_common_param_t *params,
@@ -74,8 +74,8 @@ esp_err_t esp_ble_mesh_health_client_set_state(esp_ble_mesh_client_common_param_
     arg.health_client_set_state.params = params;
     arg.health_client_set_state.set_state = set_state;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_health_client_args_t), btc_ble_mesh_health_client_arg_deep_copy)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_health_client_args_t), btc_ble_mesh_health_client_arg_deep_copy,
+                btc_ble_mesh_health_client_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif /* CONFIG_BLE_MESH_HEALTH_CLI */
 
@@ -103,7 +103,7 @@ esp_err_t esp_ble_mesh_health_server_fault_update(esp_ble_mesh_elem_t *element)
     msg.act = BTC_BLE_MESH_ACT_HEALTH_SERVER_FAULT_UPDATE;
     arg.health_fault_update.element = element;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_health_server_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_health_server_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif /* CONFIG_BLE_MESH_HEALTH_SRV */

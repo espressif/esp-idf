@@ -62,8 +62,8 @@ esp_err_t esp_ble_mesh_generic_client_get_state(esp_ble_mesh_client_common_param
     arg.generic_client_get_state.params = params;
     arg.generic_client_get_state.get_state = get_state;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_generic_client_args_t), btc_ble_mesh_generic_client_arg_deep_copy)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_generic_client_args_t), btc_ble_mesh_generic_client_arg_deep_copy,
+                btc_ble_mesh_generic_client_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_mesh_generic_client_set_state(esp_ble_mesh_client_common_param_t *params,
@@ -87,8 +87,8 @@ esp_err_t esp_ble_mesh_generic_client_set_state(esp_ble_mesh_client_common_param
     arg.generic_client_set_state.params = params;
     arg.generic_client_set_state.set_state = set_state;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_generic_client_args_t), btc_ble_mesh_generic_client_arg_deep_copy)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_generic_client_args_t), btc_ble_mesh_generic_client_arg_deep_copy,
+                btc_ble_mesh_generic_client_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif /* CONFIG_BLE_MESH_GENERIC_CLIENT */
 
