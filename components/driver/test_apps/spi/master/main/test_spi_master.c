@@ -1085,7 +1085,6 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
 }
 #endif  //#if (TEST_SPI_PERIPH_NUM >= 2)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)    //TODO: IDF-3494
 #define FD_TEST_BUF_SIZE    32
 #define TEST_NUM            4
@@ -1261,7 +1260,7 @@ static void fd_slave(void)
 
 TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", "[spi_ms][test_env=generic_multi_device]", fd_master, fd_slave);
 #endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)    //TODO: IDF-3494
-#endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)    //TODO: IDF-3494
+
 
 //NOTE: Explained in IDF-1445 | MR !14996
 #if !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
@@ -1270,8 +1269,6 @@ TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", 
  ********************************************************************************/
 //Disabled since the check in portENTER_CRITICAL in esp_intr_enable/disable increase the delay
 #ifndef CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5146
 
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
 #define RECORD_TIME_START()   do {__t1 = esp_cpu_get_cycle_count();}while(0)
@@ -1412,7 +1409,6 @@ TEST_CASE("spi_speed", "[spi]")
     spi_device_release_bus(spi);
     master_free_device_bus(spi);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #endif // CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
 #endif // !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)

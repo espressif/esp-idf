@@ -16,7 +16,6 @@ def test_slave_hd_single_dev(case_tester) -> None:       # type: ignore
 
 # if `test_env` not defined, will run on `generic_multi_device` by default
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='no runner')
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2,], indirect=True)
 def test_slave_hd_multi_dev(case_tester) -> None:        # type: ignore
