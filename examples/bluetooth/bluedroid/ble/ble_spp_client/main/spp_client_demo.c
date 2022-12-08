@@ -218,7 +218,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         }
         //the unit of the duration is second
         uint32_t duration = 0xFFFF;
-        ESP_LOGI(GATTC_TAG, "Enable Ble Scan:during time 0x%04X minutes.",duration);
+        ESP_LOGI(GATTC_TAG, "Enable Ble Scan:during time %04" PRIx32 " minutes.",duration);
         esp_ble_gap_start_scanning(duration);
         break;
     }
