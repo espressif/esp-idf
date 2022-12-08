@@ -72,7 +72,7 @@ Call :cpp:func:`esp_now_add_peer()` to add the device to the paired device list 
 
 .. only:: esp32 or esp32s2 or esp32s3
 
-    The maximum number of paired devices is 20, and the paired encryption devices are no more than 15, the default is 6. If you want to change the number of paired encryption devices, set :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` in WiFi component configuration menu.
+    The maximum number of paired devices is 20, and the paired encryption devices are no more than 17, the default is 7. If you want to change the number of paired encryption devices, set :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` in WiFi component configuration menu.
 
 A device with a broadcast MAC address must be added before sending broadcast data. The range of the channel of paired devices is from 0 to 14. If the channel is set to 0, data will be sent on the current channel. Otherwise, the channel must be set as the channel that the local device is on.
 
