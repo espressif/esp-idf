@@ -123,6 +123,7 @@ int adjtime(const struct timeval *delta, struct timeval *outdelta)
         int64_t sec  = delta->tv_sec;
         int64_t usec = delta->tv_usec;
         if(llabs(sec) > ((INT_MAX / 1000000L) - 1L)) {
+            errno = EINVAL;
             return -1;
         }
         /*
