@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -14,6 +14,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs.h"
@@ -70,7 +71,7 @@ static char *uuid2str(esp_bt_uuid_t *uuid, char *str, size_t size)
     if (uuid->len == 2 && size >= 5) {
         sprintf(str, "%04x", uuid->uuid.uuid16);
     } else if (uuid->len == 4 && size >= 9) {
-        sprintf(str, "%08x", uuid->uuid.uuid32);
+        sprintf(str, "%08"PRIx32, uuid->uuid.uuid32);
     } else if (uuid->len == 16 && size >= 37) {
         uint8_t *p = uuid->uuid.uuid128;
         sprintf(str, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
@@ -132,11 +133,11 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
         switch (p->type) {
         case ESP_BT_GAP_DEV_PROP_COD:
             cod = *(uint32_t *)(p->val);
-            ESP_LOGI(GAP_TAG, "--Class of Device: 0x%x", cod);
+            ESP_LOGI(GAP_TAG, "--Class of Device: 0x%"PRIx32, cod);
             break;
         case ESP_BT_GAP_DEV_PROP_RSSI:
             rssi = *(int8_t *)(p->val);
-            ESP_LOGI(GAP_TAG, "--RSSI: %d", rssi);
+            ESP_LOGI(GAP_TAG, "--RSSI: %"PRId32, rssi);
             break;
         case ESP_BT_GAP_DEV_PROP_BDNAME:
             bdname_len = (p->len > ESP_BT_GAP_MAX_BDNAME_LEN) ? ESP_BT_GAP_MAX_BDNAME_LEN :

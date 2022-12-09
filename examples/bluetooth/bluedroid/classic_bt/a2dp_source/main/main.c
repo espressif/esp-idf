@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
@@ -174,11 +175,11 @@ static void filter_inquiry_scan_result(esp_bt_gap_cb_param_t *param)
         switch (p->type) {
         case ESP_BT_GAP_DEV_PROP_COD:
             cod = *(uint32_t *)(p->val);
-            ESP_LOGI(BT_AV_TAG, "--Class of Device: 0x%x", cod);
+            ESP_LOGI(BT_AV_TAG, "--Class of Device: 0x%"PRIx32, cod);
             break;
         case ESP_BT_GAP_DEV_PROP_RSSI:
             rssi = *(int8_t *)(p->val);
-            ESP_LOGI(BT_AV_TAG, "--RSSI: %d", rssi);
+            ESP_LOGI(BT_AV_TAG, "--RSSI: %"PRId32, rssi);
             break;
         case ESP_BT_GAP_DEV_PROP_EIR:
             eir = (uint8_t *)(p->val);
@@ -269,12 +270,12 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 #if (CONFIG_BT_SSP_ENABLED == true)
     /* when Security Simple Pairing user confirmation requested, this event comes */
     case ESP_BT_GAP_CFM_REQ_EVT:
-        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %d", param->cfm_req.num_val);
+        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %"PRIu32, param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
         break;
     /* when Security Simple Pairing passkey notified, this event comes */
     case ESP_BT_GAP_KEY_NOTIF_EVT:
-        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey: %d", param->key_notif.passkey);
+        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey: %"PRIu32, param->key_notif.passkey);
         break;
     /* when Security Simple Pairing passkey requested, this event comes */
     case ESP_BT_GAP_KEY_REQ_EVT:
@@ -696,7 +697,7 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
     }
     /* when indicate feature of remote device, this event comes */
     case ESP_AVRC_CT_REMOTE_FEATURES_EVT: {
-        ESP_LOGI(BT_RC_CT_TAG, "AVRC remote features %x, TG features %x", rc->rmt_feats.feat_mask, rc->rmt_feats.tg_feat_flag);
+        ESP_LOGI(BT_RC_CT_TAG, "AVRC remote features %"PRIx32", TG features %x", rc->rmt_feats.feat_mask, rc->rmt_feats.tg_feat_flag);
         break;
     }
     /* when get supported notification events capability of peer device, this event comes */
