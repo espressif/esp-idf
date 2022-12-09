@@ -13,7 +13,7 @@ upload-pip-cache:
     - .rules:patterns:python-cache
   tags:
     - $GEO
-    - build
+    - cache
   cache:
     key: pip-cache
     paths:
@@ -33,7 +33,7 @@ upload-submodules-cache:
     - .rules:patterns:submodule
   tags:
     - $GEO
-    - build
+    - cache
   cache:
     key: submodule-cache
     paths:
