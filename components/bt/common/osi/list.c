@@ -181,20 +181,19 @@ bool list_remove(list_t *list, void *data)
     }
 
     if (list->head->data == data) {
-        list_node_t *next = list_free_node(list, list->head);
         if (list->tail == list->head) {
-            list->tail = next;
+            list->tail = NULL;
         }
-        list->head = next;
+        list->head = list_free_node(list, list->head);
         return true;
     }
 
     for (list_node_t *prev = list->head, *node = list->head->next; node; prev = node, node = node->next)
         if (node->data == data) {
-            prev->next = list_free_node(list, node);
             if (list->tail == node) {
                 list->tail = prev;
             }
+            prev->next = list_free_node(list, node);
             return true;
         }
 
@@ -211,20 +210,19 @@ bool list_delete(list_t *list, void *data)
     }
 
     if (list->head->data == data) {
-        list_node_t *next = list_delete_node(list, list->head);
         if (list->tail == list->head) {
-            list->tail = next;
+            list->tail = NULL;
         }
-        list->head = next;
+        list->head = list_delete_node(list, list->head);
         return true;
     }
 
     for (list_node_t *prev = list->head, *node = list->head->next; node; prev = node, node = node->next)
         if (node->data == data) {
-            prev->next = list_delete_node(list, node);
             if (list->tail == node) {
                 list->tail = prev;
             }
+            prev->next = list_delete_node(list, node);
             return true;
         }
 
