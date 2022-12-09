@@ -16,7 +16,7 @@ def test_plugins(dut: Dut) -> None:
         Successfully registered plugin 'Nihao'
         Hello plugin performing self-registration...
         Successfully registered plugin 'Hello'
-        cpu_start: Starting scheduler
+        main_task: Calling app_main()
         List of plugins:
         - Plugin 'Hello'
         - Plugin 'Nihao'
