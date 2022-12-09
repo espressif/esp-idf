@@ -13,6 +13,7 @@
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_memory_utils.h"
 
 
 #define STACK_DEPTH CONFIG_HEAP_TRACING_STACK_DEPTH
@@ -156,16 +157,12 @@ esp_err_t heap_trace_summary(heap_trace_summary_t *summary)
     return ESP_OK;
 }
 
-void heap_trace_dump_internal_ram(void) {
-    heap_trace_dump_base(true, false);
-}
-
-void heap_trace_dump_psram(void) {
-    heap_trace_dump_base(false, true);
-}
-
 void heap_trace_dump(void) {
-    heap_trace_dump_base(true, true);
+    heap_trace_dump_caps(MALLOC_CAP_INTERNAL | MALLOC_CAP_SPIRAM);
+}
+
+void heap_trace_dump_caps(const uint32_t caps) {
+    heap_trace_dump_base(caps & MALLOC_CAP_INTERNAL, caps & MALLOC_CAP_SPIRAM);
 }
 
 static void heap_trace_dump_base(bool internal_ram, bool psram)
@@ -309,11 +306,9 @@ static IRAM_ATTR void record_free(void *p, void **callers)
 
         /* search backwards for the allocation record matching this free */
         int i = -1;
-        if (records.count > 0) {
-            for (i = records.count - 1; i >= 0; i--) {
-                if (records.buffer[i].address == p) {
-                    break;
-                }
+        for (i = records.count - 1; i >= 0; i--) {
+            if (records.buffer[i].address == p) {
+                break;
             }
         }
 

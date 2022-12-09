@@ -79,12 +79,7 @@ void heap_trace_dump(void)
     return;
 }
 
-void heap_trace_dump_internal_ram(void)
-{
-    return;
-}
-
-void heap_trace_dump_psram(void)
+void heap_trace_dump_caps(__attribute__((unused)) const uint32_t caps)
 {
     return;
 }

@@ -155,23 +155,14 @@ esp_err_t heap_trace_get(size_t index, heap_trace_record_t *record);
 void heap_trace_dump(void);
 
 /**
- * @brief Same as heap_trace_dump() but will only log allocations in Internal-RAM
+ * @brief Dump heap trace from the memory of the capabilities passed as parameter.
  *
- * @note It is safe to call this function while heap tracing is
- * running, however in HEAP_TRACE_LEAK mode the dump may skip
- * entries unless heap tracing is stopped first.
+ * @param caps Capability(ies) of the memory from which to dump the trace.
+ * Set MALLOC_CAP_INTERNAL to dump heap trace data from internal memory.
+ * Set MALLOC_CAP_SPIRAM to dump heap trace data from PSRAM.
+ * Set both to dump both heap trace data.
  */
-void heap_trace_dump_internal_ram(void);
-
-/**
- * @brief Same as heap_trace_dump() but will only log allocations in PSRAM
- *
- * @note It is safe to call this function while heap tracing is
- * running, however in HEAP_TRACE_LEAK mode the dump may skip
- * entries unless heap tracing is stopped first.
- */
-void heap_trace_dump_psram(void);
-
+void heap_trace_dump_caps(const uint32_t caps);
 
 /**
  * @brief Get summary information about the result of a heap trace
