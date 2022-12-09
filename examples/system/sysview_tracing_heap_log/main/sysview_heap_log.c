@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+#include <inttypes.h>
 #include "esp_sysview_trace.h"
 #include "esp_heap_trace.h"
 #include "esp_log.h"
@@ -57,7 +58,7 @@ static void alloc_task(void *p)
         void *p = malloc(sz/2);
         // WARNING: the previous allocated memory is intentionally not deallocated in order to cause memory leak!
         p = malloc(sz);
-        ESP_LOGI(TAG, "Task[%p]: allocated %d bytes @ %p", xTaskGetCurrentTaskHandle(), sz, p);
+        ESP_LOGI(TAG, "Task[%p]: allocated %"PRIu32" bytes @ %p", xTaskGetCurrentTaskHandle(), sz, p);
         if (xQueueSend(queue, ( void * )&p, portMAX_DELAY) != pdPASS) {
             ESP_LOGE(TAG, "Failed to send to queue!");
         }
@@ -96,7 +97,7 @@ void app_main(void)
     for (int i = 0; i < num_allocers; i++) {
         ESP_LOGI(TAG, "Wait notify %d", i);
         uint32_t val = ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-        ESP_LOGI(TAG, "Got notify val %d", val);
+        ESP_LOGI(TAG, "Got notify val %"PRIu32, val);
     }
     // here GDB will stop at brekpoint and execute OpenOCD command to stop tracing
     heap_trace_stop();

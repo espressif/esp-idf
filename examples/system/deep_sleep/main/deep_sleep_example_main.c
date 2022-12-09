@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+#include <inttypes.h>
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
@@ -203,7 +204,7 @@ void app_main(void)
     touch_pad_sleep_channel_read_smooth(TOUCH_PAD_NUM9, &touch_value);
     wake_threshold = touch_value * 0.1; // wakeup when touch sensor crosses 10% of background level
     touch_pad_sleep_set_threshold(TOUCH_PAD_NUM9, wake_threshold);
-    printf("Touch pad #%d average: %d, wakeup threshold set to %d\n",
+    printf("Touch pad #%d average: %"PRIu32", wakeup threshold set to %"PRIu32"\n",
         TOUCH_PAD_NUM9, touch_value, (uint32_t)(touch_value * 0.1));
 #endif
     printf("Enabling touch pad wakeup\n");

@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <string.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
@@ -87,11 +88,11 @@ static void ota_example_task(void *pvParameter)
     const esp_partition_t *running = esp_ota_get_running_partition();
 
     if (configured != running) {
-        ESP_LOGW(TAG, "Configured OTA boot partition at offset 0x%08x, but running from offset 0x%08x",
+        ESP_LOGW(TAG, "Configured OTA boot partition at offset 0x%08"PRIx32", but running from offset 0x%08"PRIx32,
                  configured->address, running->address);
         ESP_LOGW(TAG, "(This can happen if either the OTA boot data or preferred boot image become corrupted somehow.)");
     }
-    ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08x)",
+    ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08"PRIx32")",
              running->type, running->subtype, running->address);
 
     esp_http_client_config_t config = {
@@ -134,7 +135,7 @@ static void ota_example_task(void *pvParameter)
 
     update_partition = esp_ota_get_next_update_partition(NULL);
     assert(update_partition != NULL);
-    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%x",
+    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%"PRIx32,
              update_partition->subtype, update_partition->address);
 
     int binary_file_length = 0;

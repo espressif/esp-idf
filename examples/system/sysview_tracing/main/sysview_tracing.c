@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -126,7 +127,7 @@ static void example_task(void *p)
         SYSVIEW_EXAMPLE_WAIT_EVENT_START();
         xTaskNotifyWait(0, 0, &event_val, portMAX_DELAY);
         SYSVIEW_EXAMPLE_WAIT_EVENT_END(event_val);
-        ESP_LOGI(TAG, "Task[%p]: received event %d", xTaskGetCurrentTaskHandle(), event_val);
+        ESP_LOGI(TAG, "Task[%p]: received event %"PRIu32, xTaskGetCurrentTaskHandle(), event_val);
     }
 }
 

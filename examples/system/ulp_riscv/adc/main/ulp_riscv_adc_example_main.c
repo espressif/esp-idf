@@ -13,6 +13,7 @@
 */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "esp_sleep.h"
 #include "ulp_riscv.h"
 #include "ulp_riscv_adc.h"
@@ -39,8 +40,8 @@ void app_main(void)
     /* ULP Risc-V read and detected a temperature above the limit */
     if (cause == ESP_SLEEP_WAKEUP_ULP) {
         printf("ULP-RISC-V woke up the main CPU\n");
-        printf("Threshold: high = %d\n", ulp_adc_threshold);
-        printf("Value = %d was above threshold\n", ulp_wakeup_result);
+        printf("Threshold: high = %"PRIu32"\n", ulp_adc_threshold);
+        printf("Value = %"PRIu32" was above threshold\n", ulp_wakeup_result);
     }
 
     /* Go back to sleep, only the ULP Risc-V will run */
