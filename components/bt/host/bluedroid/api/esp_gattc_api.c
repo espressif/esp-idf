@@ -350,6 +350,39 @@ esp_err_t esp_ble_gattc_read_char (esp_gatt_if_t gattc_if,
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_gattc_read_by_type (esp_gatt_if_t gattc_if,
+                                      uint16_t conn_id,
+                                      uint16_t start_handle,
+                                      uint16_t end_handle,
+                                      esp_bt_uuid_t *uuid,
+                                      esp_gatt_auth_req_t auth_req)
+{
+    btc_msg_t msg;
+    btc_ble_gattc_args_t arg;
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (uuid == NULL) {
+        return ESP_GATT_ILLEGAL_PARAMETER;
+    }
+
+    if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
+        LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
+        return ESP_FAIL;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GATTC;
+    msg.act = BTC_GATTC_ACT_READ_BY_TYPE;
+    arg.read_by_type.conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn_id);
+    arg.read_by_type.s_handle = start_handle;
+    arg.read_by_type.e_handle = end_handle;
+    arg.read_by_type.auth_req = auth_req;
+    memcpy(&(arg.read_by_type.uuid), uuid, sizeof(esp_bt_uuid_t));
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 esp_err_t esp_ble_gattc_read_multiple(esp_gatt_if_t gattc_if,
                                       uint16_t conn_id, esp_gattc_multi_t *read_multi,
                                       esp_gatt_auth_req_t auth_req)
@@ -431,7 +464,9 @@ esp_err_t esp_ble_gattc_write_char(esp_gatt_if_t gattc_if,
     arg.write_char.value = value;
     arg.write_char.write_type = write_type;
     arg.write_char.auth_req = auth_req;
-
+    if(write_type == ESP_GATT_WRITE_TYPE_NO_RSP){
+        l2ble_update_att_acl_pkt_num(L2CA_ADD_BTC_NUM, NULL);
+    }
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), btc_gattc_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
@@ -461,7 +496,9 @@ esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if,
     arg.write_descr.value = value;
     arg.write_descr.write_type = write_type;
     arg.write_descr.auth_req = auth_req;
-
+    if(write_type == ESP_GATT_WRITE_TYPE_NO_RSP){
+        l2ble_update_att_acl_pkt_num(L2CA_ADD_BTC_NUM, NULL);
+    }
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), btc_gattc_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 

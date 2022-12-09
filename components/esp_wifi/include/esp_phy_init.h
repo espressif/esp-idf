@@ -63,6 +63,30 @@ typedef enum{
     MODEM_MODULE_COUNT             //!< Number of items
 }modem_sleep_module_t;
 
+#if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+/**
+ * @brief PHY init data type
+ */
+typedef enum {
+    ESP_PHY_INIT_DATA_TYPE_DEFAULT = 0,
+    ESP_PHY_INIT_DATA_TYPE_SRRC,
+    ESP_PHY_INIT_DATA_TYPE_FCC,
+    ESP_PHY_INIT_DATA_TYPE_CE,
+    ESP_PHY_INIT_DATA_TYPE_NCC,
+    ESP_PHY_INIT_DATA_TYPE_KCC,
+    ESP_PHY_INIT_DATA_TYPE_MIC,
+    ESP_PHY_INIT_DATA_TYPE_IC,
+    ESP_PHY_INIT_DATA_TYPE_ACMA,
+    ESP_PHY_INIT_DATA_TYPE_ANATEL,
+    ESP_PHY_INIT_DATA_TYPE_ISED,
+    ESP_PHY_INIT_DATA_TYPE_WPC,
+    ESP_PHY_INIT_DATA_TYPE_OFCA,
+    ESP_PHY_INIT_DATA_TYPE_IFETEL,
+    ESP_PHY_INIT_DATA_TYPE_RCM,
+    ESP_PHY_INIT_DATA_TYPE_NUMBER,
+} phy_init_data_type_t;
+#endif
+
 /**
  * @brief Module WIFI mask for medem sleep
  */
@@ -203,6 +227,18 @@ esp_err_t esp_phy_rf_deinit(phy_rf_module_t module);
 void esp_phy_load_cal_and_init(phy_rf_module_t module);
 
 /**
+ * @brief Enable WiFi/BT common clock
+ *
+ */
+void esp_phy_common_clock_enable(void);
+
+/**
+ * @brief Disable WiFi/BT common clock
+ *
+ */
+void esp_phy_common_clock_disable(void);
+
+/**
  * @brief Module requires to enter modem sleep
  */
 esp_err_t esp_modem_sleep_enter(modem_sleep_module_t module);
@@ -232,6 +268,21 @@ esp_err_t esp_modem_sleep_deregister(modem_sleep_module_t module);
  *                   microsecond since boot when phy/rf was last switched on
 */
 int64_t esp_phy_rf_get_on_ts(void);
+
+/**
+ * @brief Update the corresponding PHY init type according to the country code of Wi-Fi.
+ */
+esp_err_t esp_phy_update_country_info(const char *country);
+
+#if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+/** 
+ * @brief Apply PHY init bin to PHY
+ * @return ESP_OK on success.
+ * @return ESP_FAIL on fail.
+ */
+esp_err_t esp_phy_apply_phy_init_data(uint8_t *init_data);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

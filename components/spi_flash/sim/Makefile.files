@@ -17,6 +17,7 @@ INCLUDE_DIRS := \
 	app_update/include \
 	driver/include \
 	esp32/include \
+	esp_timer/include \
 	freertos/include \
 	log/include \
 	newlib/include \
@@ -28,9 +29,11 @@ INCLUDE_DIRS := \
 	esp_common/include \
 	xtensa/include \
 	xtensa/esp32/include \
-	soc/esp32/include \
+	soc/soc/esp32/include \
 	soc/include \
+	soc/soc/include \
 	esp32/include \
+	esp_timer/include \
 	bootloader_support/include \
 	app_update/include \
 	spi_flash/include \

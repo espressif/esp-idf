@@ -46,6 +46,7 @@ enum WiFiConfigMsgType {
 
 message WiFiConfigPayload {
     WiFiConfigMsgType msg = 1;
+    bytes auth_token = 9;
     oneof payload {
         CmdGetStatus cmd_get_status = 10;
         RespGetStatus resp_get_status = 11;

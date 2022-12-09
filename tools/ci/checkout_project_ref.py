@@ -35,7 +35,7 @@ def target_branch_candidates(proj_name):
         pass
     # branch name read from IDF
     try:
-        git_describe = subprocess.check_output(["git", "describe", "--tags", "HEAD"])
+        git_describe = subprocess.check_output(["git", "describe", "HEAD"])
         match = IDF_GIT_DESCRIBE_PATTERN.search(git_describe.decode())
         if match:
             major_revision = match.group(1)
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     for candidate in candidate_branches:
         try:
-            subprocess.check_call(["git", "checkout", candidate])
+            subprocess.check_call(["git", "checkout", "-f", candidate], stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # not print the stdout nor stderr
             print("CI using ref {} for project {}".format(candidate, args.project))
             break
         except subprocess.CalledProcessError:

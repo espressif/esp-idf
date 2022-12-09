@@ -101,6 +101,14 @@ typedef struct protocomm_security {
                          uint32_t session_id,
                          const uint8_t *inbuf, ssize_t inlen,
                          uint8_t *outbuf, ssize_t *outlen);
+
+    /**
+     * Function which checks whether or not a secure connection has
+     * been established
+     *
+     * note: only relevant to security1
+     */
+    bool (*secure_session_established)(protocomm_security_handle_t handle);
 } protocomm_security_t;
 
 #ifdef __cplusplus

@@ -19,7 +19,7 @@
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-
+#include "driver/sdspi_host.h"
 
 /// Control tokens used to frame data transfers
 /// (see section 7.3.3 of SD simplified spec)
@@ -105,5 +105,5 @@ typedef struct {
 
 void make_hw_cmd(uint32_t opcode, uint32_t arg, int timeout_ms, sdspi_hw_cmd_t *hw_cmd);
 
-esp_err_t sdspi_host_start_command(int slot, sdspi_hw_cmd_t *cmd,
+esp_err_t sdspi_host_start_command(sdspi_dev_handle_t handle, sdspi_hw_cmd_t *cmd,
                                    void *data, uint32_t data_size, int flags);

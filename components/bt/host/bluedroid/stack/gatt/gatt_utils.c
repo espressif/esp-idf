@@ -1423,7 +1423,7 @@ void gatt_sr_get_sec_info(BD_ADDR rem_bda, tBT_TRANSPORT transport, UINT8 *p_sec
 
     BTM_GetSecurityFlagsByTransport(rem_bda, &sec_flag, transport);
 
-    sec_flag &= (GATT_SEC_FLAG_LKEY_UNAUTHED | GATT_SEC_FLAG_LKEY_AUTHED | GATT_SEC_FLAG_ENCRYPTED);
+    sec_flag &= (GATT_SEC_FLAG_LKEY_UNAUTHED | GATT_SEC_FLAG_LKEY_AUTHED | GATT_SEC_FLAG_ENCRYPTED | GATT_SEC_FLAG_AUTHORIZATION);
 #if (SMP_INCLUDED == TRUE)
     *p_key_size = btm_ble_read_sec_key_size(rem_bda);
 #endif  ///SMP_INCLUDED == TRUE
@@ -1887,7 +1887,7 @@ void gatt_sr_reset_prep_cnt(tGATT_TCB *p_tcb )
 **
 ** Function         gatt_sr_update_cback_cnt
 **
-** Description    Update the teh applicaiton callback count
+** Description    Update the teh application callback count
 **
 ** Returns           None
 **
@@ -1977,7 +1977,7 @@ BOOLEAN gatt_cancel_open(tGATT_IF gatt_if, BD_ADDR bda)
 **
 ** Function         gatt_find_app_hold_link
 **
-** Description      find the applicaiton that is holding the specified link
+** Description      find the application that is holding the specified link
 **
 ** Returns         Boolean
 **
@@ -2002,7 +2002,7 @@ BOOLEAN gatt_find_app_hold_link(tGATT_TCB *p_tcb, UINT8 start_idx, UINT8 *p_foun
 **
 ** Function         gatt_find_specific_app_in_hold_link
 **
-** Description      find the specific applicaiton that is holding the specified link
+** Description      find the specific application that is holding the specified link
 **
 ** Returns         Boolean
 **
@@ -2325,7 +2325,7 @@ void gatt_dbg_display_uuid(tBT_UUID bt_uuid)
                 bt_uuid.uu.uuid128[3], bt_uuid.uu.uuid128[2],
                 bt_uuid.uu.uuid128[1], bt_uuid.uu.uuid128[0]);
     } else {
-        BCM_STRNCPY_S(str_buf, sizeof(str_buf), "Unknown UUID 0", 15);
+        BCM_STRNCPY_S(str_buf, "Unknown UUID 0", 15);
     }
 
     GATT_TRACE_DEBUG ("UUID=[%s]", str_buf);

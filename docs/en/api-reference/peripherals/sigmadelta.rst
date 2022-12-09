@@ -4,9 +4,9 @@ Sigma-delta Modulation
 Introduction
 ------------
 
-ESP32 has a second-order sigma-delta modulation module. This driver configures the channels of the sigma-delta module.
+{IDF_TARGET_NAME} has a second-order sigma-delta modulation module. This driver configures the channels of the sigma-delta module.
 
-Functionality Overview 
+Functionality Overview
 ----------------------
 
 There are eight independent sigma-delta modulation channels identified with :cpp:type:`sigmadelta_channel_t`. Each channel is capable to output the binary, hardware generated signal with the sigma-delta modulation.
@@ -29,4 +29,5 @@ Sigma-delta Modulation example: :example:`peripherals/sigmadelta`.
 API Reference
 -------------
 
-.. include:: /_build/inc/sigmadelta.inc
+.. include-build-file:: inc/sigmadelta.inc
+.. include-build-file:: inc/sigmadelta_types.inc

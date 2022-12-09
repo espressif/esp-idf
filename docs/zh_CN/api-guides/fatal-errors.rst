@@ -39,27 +39,28 @@
 
 不管哪种情况，错误原因都会被打印在括号中。请参阅 :ref:`Guru-Meditation-Errors` 以查看所有可能的出错原因。
 
-紧急处理程序接下来的行为将取决于 :ref:`CONFIG_ESP32_PANIC` 的设置，支持的选项包括：
+紧急处理程序接下来的行为将取决于 :ref:`CONFIG_ESP_SYSTEM_PANIC` 的设置，支持的选项包括：
 
-- 打印 CPU 寄存器，然后重启（``CONFIG_ESP32_PANIC_PRINT_REBOOT``）- 默认选项
+- 打印 CPU 寄存器，然后重启（``CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT``）- 默认选项
 
   打印系统发生异常时 CPU 寄存器的值，打印回溯，最后重启芯片。
 
-- 打印 CPU 寄存器，然后暂停（``CONFIG_ESP32_PANIC_PRINT_HALT``）
+- 打印 CPU 寄存器，然后暂停（``CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT``）
 
   与上一个选项类似，但不会重启，而是选择暂停程序的运行。重启程序需要外部执行复位操作。
 
-- 静默重启（``CONFIG_ESP32_PANIC_SILENT_REBOOT``）
+- 静默重启（``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT``）
 
   不打印 CPU 寄存器的值，也不打印回溯，立即重启芯片。
 
-- 调用 GDB Stub（``CONFIG_ESP32_PANIC_GDBSTUB``）
+- 调用 GDB Stub（``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB``）
 
   启动 GDB 服务器，通过控制台 UART 接口与 GDB 进行通信。详细信息请参阅 :ref:`GDB-Stub`。
 
 紧急处理程序的行为还受到另外两个配置项的影响：
 
-- 如果 :ref:`CONFIG_ESP32_DEBUG_OCDAWARE` 被使能了（默认），紧急处理程序会检测 ESP32 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
+
+- 如果 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEBUG_OCDAWARE` 被使能了（默认），紧急处理程序会检测 {IDF_TARGET_NAME} 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
 
 - 如果使能了 :doc:`Core Dump <core_dump>` 功能（``CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH`` 或者 ``CONFIG_ESP32_ENABLE_COREDUMP_TO_UART`` 选项），系统状态（任务堆栈和寄存器）会被转储到 Flash 或者 UART 以供后续分析。
 
@@ -69,7 +70,7 @@
     :scale: 100%
     :caption: 紧急处理程序流程图（点击放大）
     :align: center
-    
+
     blockdiag panic-handler {
         orientation = portrait;
         edge_layout = flowchart;
@@ -111,15 +112,15 @@
 寄存器转储与回溯
 ----------------
 
-除非启用了 ``CONFIG_ESP32_PANIC_SILENT_REBOOT`` 否则紧急处理程序会将 CPU 寄存器和回溯打印到控制台::
+除非启用了 ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` 否则紧急处理程序会将 CPU 寄存器和回溯打印到控制台::
 
     Core 0 register dump:
-    PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030  
-    A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x3ffb50dc  
-    A6      : 0x00000000  A7      : 0x00000001  A8      : 0x00000000  A9      : 0x3ffb5000  
-    A10     : 0x00000000  A11     : 0x3ffb2bac  A12     : 0x40082d1c  A13     : 0x06ff1ff8  
-    A14     : 0x3ffb7078  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d  
-    EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff  
+    PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
+    A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x3ffb50dc
+    A6      : 0x00000000  A7      : 0x00000001  A8      : 0x00000000  A9      : 0x3ffb5000
+    A10     : 0x00000000  A11     : 0x3ffb2bac  A12     : 0x40082d1c  A13     : 0x06ff1ff8
+    A14     : 0x3ffb7078  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d
+    EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff
 
     Backtrace: 0x400e14ed:0x3ffb5030 0x400d0802:0x3ffb5050
 
@@ -134,21 +135,21 @@
 如果使用了 :doc:`IDF 监视器 <tools/idf-monitor>`，该工具会将程序计数器的值转换为对应的代码位置（函数名，文件名，行号），并加以注释::
 
     Core 0 register dump:
-    PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030  
+    PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
     0x400e14ed: app_main at /Users/user/esp/example/main/main.cpp:36
 
-    A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x3ffb50dc  
-    A6      : 0x00000000  A7      : 0x00000001  A8      : 0x00000000  A9      : 0x3ffb5000  
-    A10     : 0x00000000  A11     : 0x3ffb2bac  A12     : 0x40082d1c  A13     : 0x06ff1ff8  
+    A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x3ffb50dc
+    A6      : 0x00000000  A7      : 0x00000001  A8      : 0x00000000  A9      : 0x3ffb5000
+    A10     : 0x00000000  A11     : 0x3ffb2bac  A12     : 0x40082d1c  A13     : 0x06ff1ff8
     0x40082d1c: _calloc_r at /Users/user/esp/esp-idf/components/newlib/syscalls.c:51
 
-    A14     : 0x3ffb7078  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d  
-    EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff  
+    A14     : 0x3ffb7078  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d
+    EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff
 
     Backtrace: 0x400e14ed:0x3ffb5030 0x400d0802:0x3ffb5050
     0x400e14ed: app_main at /Users/user/esp/example/main/main.cpp:36
 
-    0x400d0802: main_task at /Users/user/esp/esp-idf/components/esp32/cpu_start.c:470
+    0x400d0802: main_task at /Users/user/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/cpu_start.c:470
 
 若要查找发生严重错误的代码位置，请查看 "Backtrace" 的后面几行，发生严重错误的代码显示在顶行，后续几行显示的是调用堆栈。
 
@@ -157,7 +158,7 @@
 GDB Stub
 --------
 
-如果启用了 ``CONFIG_ESP32_PANIC_GDBSTUB`` 选项，在发生严重错误时，紧急处理程序不会复位芯片，相反，它将启动 GDB 远程协议服务器，通常称为 GDB Stub。发生这种情况时，可以让主机上运行的 GDB 实例通过 UART 端口连接到 ESP32。
+如果启用了 ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` 选项，在发生严重错误时，紧急处理程序不会复位芯片，相反，它将启动 GDB 远程协议服务器，通常称为 GDB Stub。发生这种情况时，可以让主机上运行的 GDB 实例通过 UART 端口连接到 ESP32。
 
 如果使用了 :doc:`IDF 监视器 <tools/idf-monitor>`，该工具会在 UART 端口检测到 GDB Stub 提示符后自动启动 GDB，输出会类似于::
 
@@ -168,7 +169,7 @@ GDB Stub
     This is free software: you are free to change and redistribute it.
     There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
     and "show warranty" for details.
-    This GDB was configured as "--host=x86_64-build_apple-darwin16.3.0 --target=xtensa-esp32-elf".
+    This GDB was configured as "--host=x86_64-build_apple-darwin16.3.0 --target=xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf".
     Type "show configuration" for configuration details.
     For bug reporting instructions, please see:
     <http://www.gnu.org/software/gdb/bugs/>.
@@ -181,7 +182,7 @@ GDB Stub
     0x400e1b41 in app_main ()
         at /Users/user/esp/example/main/main.cpp:36
     36      *((int*) 0) = 0;
-    (gdb) 
+    (gdb)
 
 在 GDB 会话中，我们可以检查 CPU 寄存器，本地和静态变量以及内存中任意位置的值。但是不支持设置断点，改变 PC 值或者恢复程序的运行。若要复位程序，请退出 GDB 会话，在 IDF 监视器 中连续输入 Ctrl-T Ctrl-R，或者按下开发板上的复位按键也可以重新运行程序。
 
@@ -207,10 +208,10 @@ IllegalInstruction
 - FreeRTOS 中的任务函数已返回。在 FreeRTOS 中，如果想终止任务函数，需要调用 :cpp:func:`vTaskDelete` 函数释放当前任务的资源，而不是直接返回。
 
 - 无法从 SPI Flash 中加载下一条指令，这通常发生在：
-  
+
   - 应用程序将 SPI Flash 的引脚重新配置为其它功能（如 GPIO，UART 等等）。有关 SPI Flash 引脚的详细信息，请参阅硬件设计指南和芯片/模组的数据手册。
-  
-  - 某些外部设备意外连接到 SPI Flash 的引脚上，干扰了 ESP32 和 SPI Flash 之间的通信。
+
+  - 某些外部设备意外连接到 SPI Flash 的引脚上，干扰了 {IDF_TARGET_NAME} 和 SPI Flash 之间的通信。
 
 
 InstrFetchProhibited
@@ -265,7 +266,8 @@ Cache disabled but cached memory region accessed
 欠压
 ^^^^
 
-ESP32 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_ESP32_BROWNOUT_DET` 和 :ref:`CONFIG_ESP32_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
+{IDF_TARGET_NAME} 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET` 和 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
+
 当掉电检测器被触发时，会打印如下信息::
 
     Brownout detector was triggered

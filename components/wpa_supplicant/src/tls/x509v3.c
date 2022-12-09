@@ -1365,7 +1365,6 @@ static int x509_digest_oid(struct asn1_oid *oid)
 		oid->oid[4] == 2 /* digestAlgorithm */;
 }
 
-
 static int x509_sha1_oid(struct asn1_oid *oid)
 {
 	return oid->len == 6 &&
@@ -1376,7 +1375,6 @@ static int x509_sha1_oid(struct asn1_oid *oid)
 		oid->oid[4] == 2 /* algorithms */ &&
 		oid->oid[5] == 26 /* id-sha1 */;
 }
-
 
 static int x509_sha256_oid(struct asn1_oid *oid)
 {
@@ -1785,7 +1783,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 		     (unsigned long) cert->not_after)) {
 			wpa_printf(MSG_INFO, "X509: Certificate not valid "
 				   "(now=%lu not_before=%lu not_after=%lu)",
-				   now.sec, cert->not_before, cert->not_after);
+				   (unsigned long)now.sec, (unsigned long)cert->not_before, (unsigned long)cert->not_after);
 			*reason = X509_VALIDATE_CERTIFICATE_EXPIRED;
 			return -1;
 		}

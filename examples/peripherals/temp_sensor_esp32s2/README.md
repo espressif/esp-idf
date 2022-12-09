@@ -4,13 +4,13 @@ The ESP32-S2 has a built-in temperature sensor. The temperature sensor module co
 
 The conversion relationship is the first two columns of the table below. Among them, `offset = 0`(default) is the main measurement option, and other values are extended measurement options.  
 
-DAC level | offset | measure range(℃) | measure error(℃)
-    :-:   |   :-:  |        :-:        |       :-:
-     0    |   -2   |      50 ~ 125     |       < 3
-     1    |   -1   |      20 ~ 100     |       < 2
-     2    |    0   |     -10 ~ 80      |       < 1
-     3    |    1   |     -30 ~ 50      |       < 2
-     4    |    2   |     -40 ~ 20      |       < 3
+| DAC level | offset | measure range(℃) | measure error(℃) |
+| :-------: | :----: | :--------------: | :--------------: |
+|     0     |   -2   |     50 ~ 125     |       < 3        |
+|     1     |   -1   |     20 ~ 100     |       < 2        |
+|     2     |   0    |     -10 ~ 80     |       < 1        |
+|     3     |   1    |     -30 ~ 50     |       < 2        |
+|     4     |   2    |     -40 ~ 20     |       < 3        |
 
 * Log output :
 

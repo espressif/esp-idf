@@ -143,3 +143,4 @@ Various modules of the Bluetooth stack deliver events to applications via dedica
 * A2DP: :cpp:func:`esp_a2d_register_callback`, :cpp:type:`esp_a2d_cb_event_t`, :cpp:type:`esp_a2d_cb_param_t`.
 * AVRC: :cpp:func:`esp_avrc_ct_register_callback`, :cpp:type:`esp_avrc_ct_cb_event_t`, :cpp:type:`esp_avrc_ct_cb_param_t`.
 * HFP Client: :cpp:func:`esp_hf_client_register_callback`, :cpp:type:`esp_hf_client_cb_event_t`, :cpp:type:`esp_hf_client_cb_param_t`.
+* HFP AG: :cpp:func:`esp_hf_ag_register_callback`, :cpp:type:`esp_hf_ag_cb_event_t`, :cpp:type:`esp_hf_ag_cb_param_t`.

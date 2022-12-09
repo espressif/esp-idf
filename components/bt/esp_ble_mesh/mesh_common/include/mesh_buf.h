@@ -11,12 +11,10 @@
 #ifndef _BLE_MESH_BUF_H_
 #define _BLE_MESH_BUF_H_
 
-#include <stddef.h>
-#include "sys/cdefs.h"
+#include "mesh_config.h"
 #include "mesh_types.h"
 #include "mesh_slist.h"
-#include "mesh_kernel.h"
-#include "mesh_util.h"
+#include "mesh_compiler.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,7 +52,7 @@ __extension__ ({                            \
  *  @param _size Maximum data storage for the buffer.
  */
 #define NET_BUF_SIMPLE_DEFINE(_name, _size) \
-    u8_t net_buf_data_##_name[_size];       \
+    uint8_t net_buf_data_##_name[_size];    \
     struct net_buf_simple _name = {         \
         .data  = net_buf_data_##_name,      \
         .len   = 0,                         \
@@ -73,7 +71,7 @@ __extension__ ({                            \
  * @param _size Maximum data storage for the buffer.
  */
 #define NET_BUF_SIMPLE_DEFINE_STATIC(_name, _size)  \
-    static u8_t net_buf_data_##_name[_size];        \
+    static uint8_t net_buf_data_##_name[_size];     \
     static struct net_buf_simple _name = {          \
         .data  = net_buf_data_##_name,              \
         .len   = 0,                                 \
@@ -96,18 +94,18 @@ __extension__ ({                            \
  */
 struct net_buf_simple {
     /** Pointer to the start of data in the buffer. */
-    u8_t *data;
+    uint8_t *data;
 
     /** Length of the data behind the data pointer. */
-    u16_t len;
+    uint16_t len;
 
     /** Amount of data that this buffer can store. */
-    u16_t size;
+    uint16_t size;
 
     /** Start of the data storage. Not to be accessed directly
      *  (the data pointer should be used instead).
      */
-    u8_t *__buf;
+    uint8_t *__buf;
 };
 
 /**
@@ -126,13 +124,13 @@ struct net_buf_simple {
  *
  * @return Pointer to stack-allocated net_buf_simple object.
  */
-#define NET_BUF_SIMPLE(_size)               \
-    ((struct net_buf_simple *)(&(struct {   \
-        struct net_buf_simple buf;          \
-        u8_t data[_size] __net_buf_align;   \
-    }) {                                    \
-        .buf.size = _size,                  \
-        .buf.__buf = NULL,                  \
+#define NET_BUF_SIMPLE(_size)                   \
+    ((struct net_buf_simple *)(&(struct {       \
+        struct net_buf_simple buf;              \
+        uint8_t data[_size] __net_buf_align;    \
+    }) {                                        \
+        .buf.size = _size,                      \
+        .buf.__buf = NULL,                      \
     }))
 
 /**
@@ -148,12 +146,24 @@ static inline void net_buf_simple_init(struct net_buf_simple *buf,
                                        size_t reserve_head)
 {
     if (!buf->__buf) {
-        buf->__buf = (u8_t *)buf + sizeof(*buf);
+        buf->__buf = (uint8_t *)buf + sizeof(*buf);
     }
 
     buf->data = buf->__buf + reserve_head;
     buf->len = 0;
 }
+
+/**
+ * @brief Initialize a net_buf_simple object with data.
+ *
+ * Initialized buffer object with external data.
+ *
+ * @param buf Buffer to initialize.
+ * @param data External data pointer
+ * @param size Amount of data the pointed data buffer if able to fit.
+ */
+void net_buf_simple_init_with_data(struct net_buf_simple *buf,
+                                   void *data, size_t size);
 
 /**
  * @brief Reset buffer
@@ -167,6 +177,19 @@ static inline void net_buf_simple_reset(struct net_buf_simple *buf)
     buf->len  = 0;
     buf->data = buf->__buf;
 }
+
+/**
+ * Clone buffer state, using the same data buffer.
+ *
+ * Initializes a buffer to point to the same data as an existing buffer.
+ * Allows operations on the same data without altering the length and
+ * offset of the original.
+ *
+ * @param original Buffer to clone.
+ * @param clone The new clone.
+ */
+void net_buf_simple_clone(const struct net_buf_simple *original,
+                          struct net_buf_simple *clone);
 
 /**
  * @brief Prepare data to be added at the end of the buffer
@@ -207,7 +230,7 @@ void *net_buf_simple_add_mem(struct net_buf_simple *buf, const void *mem,
  *
  * @return Pointer to the value added
  */
-u8_t *net_buf_simple_add_u8(struct net_buf_simple *buf, u8_t val);
+uint8_t *net_buf_simple_add_u8(struct net_buf_simple *buf, uint8_t val);
 
 /**
  * @brief Add 16-bit value at the end of the buffer
@@ -219,7 +242,7 @@ u8_t *net_buf_simple_add_u8(struct net_buf_simple *buf, u8_t val);
  * @param buf Buffer to update.
  * @param val 16-bit value to be added.
  */
-void net_buf_simple_add_le16(struct net_buf_simple *buf, u16_t val);
+void net_buf_simple_add_le16(struct net_buf_simple *buf, uint16_t val);
 
 /**
  * @brief Add 16-bit value at the end of the buffer
@@ -231,7 +254,31 @@ void net_buf_simple_add_le16(struct net_buf_simple *buf, u16_t val);
  * @param buf Buffer to update.
  * @param val 16-bit value to be added.
  */
-void net_buf_simple_add_be16(struct net_buf_simple *buf, u16_t val);
+void net_buf_simple_add_be16(struct net_buf_simple *buf, uint16_t val);
+
+/**
+ * @brief Add 24-bit value at the end of the buffer
+ *
+ * Adds 24-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be added.
+ */
+void net_buf_simple_add_le24(struct net_buf_simple *buf, uint32_t val);
+
+/**
+ * @brief Add 24-bit value at the end of the buffer
+ *
+ * Adds 24-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be added.
+ */
+void net_buf_simple_add_be24(struct net_buf_simple *buf, uint32_t val);
 
 /**
  * @brief Add 32-bit value at the end of the buffer
@@ -243,7 +290,7 @@ void net_buf_simple_add_be16(struct net_buf_simple *buf, u16_t val);
  * @param buf Buffer to update.
  * @param val 32-bit value to be added.
  */
-void net_buf_simple_add_le32(struct net_buf_simple *buf, u32_t val);
+void net_buf_simple_add_le32(struct net_buf_simple *buf, uint32_t val);
 
 /**
  * @brief Add 32-bit value at the end of the buffer
@@ -255,7 +302,55 @@ void net_buf_simple_add_le32(struct net_buf_simple *buf, u32_t val);
  * @param buf Buffer to update.
  * @param val 32-bit value to be added.
  */
-void net_buf_simple_add_be32(struct net_buf_simple *buf, u32_t val);
+void net_buf_simple_add_be32(struct net_buf_simple *buf, uint32_t val);
+
+/**
+ * @brief Add 48-bit value at the end of the buffer
+ *
+ * Adds 48-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be added.
+ */
+void net_buf_simple_add_le48(struct net_buf_simple *buf, uint64_t val);
+
+/**
+ * @brief Add 48-bit value at the end of the buffer
+ *
+ * Adds 48-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be added.
+ */
+void net_buf_simple_add_be48(struct net_buf_simple *buf, uint64_t val);
+
+/**
+ * @brief Add 64-bit value at the end of the buffer
+ *
+ * Adds 64-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be added.
+ */
+void net_buf_simple_add_le64(struct net_buf_simple *buf, uint64_t val);
+
+/**
+ * @brief Add 64-bit value at the end of the buffer
+ *
+ * Adds 64-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be added.
+ */
+void net_buf_simple_add_be64(struct net_buf_simple *buf, uint64_t val);
 
 /**
  * @brief Push data to the beginning of the buffer.
@@ -279,7 +374,7 @@ void *net_buf_simple_push(struct net_buf_simple *buf, size_t len);
  * @param buf Buffer to update.
  * @param val 16-bit value to be pushed to the buffer.
  */
-void net_buf_simple_push_le16(struct net_buf_simple *buf, u16_t val);
+void net_buf_simple_push_le16(struct net_buf_simple *buf, uint16_t val);
 
 /**
  * @brief Push 16-bit value to the beginning of the buffer
@@ -290,7 +385,7 @@ void net_buf_simple_push_le16(struct net_buf_simple *buf, u16_t val);
  * @param buf Buffer to update.
  * @param val 16-bit value to be pushed to the buffer.
  */
-void net_buf_simple_push_be16(struct net_buf_simple *buf, u16_t val);
+void net_buf_simple_push_be16(struct net_buf_simple *buf, uint16_t val);
 
 /**
  * @brief Push 8-bit value to the beginning of the buffer
@@ -300,7 +395,95 @@ void net_buf_simple_push_be16(struct net_buf_simple *buf, u16_t val);
  * @param buf Buffer to update.
  * @param val 8-bit value to be pushed to the buffer.
  */
-void net_buf_simple_push_u8(struct net_buf_simple *buf, u8_t val);
+void net_buf_simple_push_u8(struct net_buf_simple *buf, uint8_t val);
+
+/**
+ * @brief Push 24-bit value to the beginning of the buffer
+ *
+ * Adds 24-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_le24(struct net_buf_simple *buf, uint32_t val);
+
+/**
+ * @brief Push 24-bit value to the beginning of the buffer
+ *
+ * Adds 24-bit value in big endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_be24(struct net_buf_simple *buf, uint32_t val);
+
+/**
+ * @brief Push 32-bit value to the beginning of the buffer
+ *
+ * Adds 32-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 32-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_le32(struct net_buf_simple *buf, uint32_t val);
+
+/**
+ * @brief Push 32-bit value to the beginning of the buffer
+ *
+ * Adds 32-bit value in big endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 32-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_be32(struct net_buf_simple *buf, uint32_t val);
+
+/**
+ * @brief Push 48-bit value to the beginning of the buffer
+ *
+ * Adds 48-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_le48(struct net_buf_simple *buf, uint64_t val);
+
+/**
+ * @brief Push 48-bit value to the beginning of the buffer
+ *
+ * Adds 48-bit value in big endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_be48(struct net_buf_simple *buf, uint64_t val);
+
+/**
+ * @brief Push 64-bit value to the beginning of the buffer
+ *
+ * Adds 64-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_le64(struct net_buf_simple *buf, uint64_t val);
+
+/**
+ * @brief Push 64-bit value to the beginning of the buffer
+ *
+ * Adds 64-bit value in big endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be pushed to the buffer.
+ */
+void net_buf_simple_push_be64(struct net_buf_simple *buf, uint64_t val);
 
 /**
  * @brief Remove data from the beginning of the buffer.
@@ -338,7 +521,7 @@ void *net_buf_simple_pull_mem(struct net_buf_simple *buf, size_t len);
  *
  * @return The 8-bit removed value
  */
-u8_t net_buf_simple_pull_u8(struct net_buf_simple *buf);
+uint8_t net_buf_simple_pull_u8(struct net_buf_simple *buf);
 
 /**
  * @brief Remove and convert 16 bits from the beginning of the buffer.
@@ -350,7 +533,7 @@ u8_t net_buf_simple_pull_u8(struct net_buf_simple *buf);
  *
  * @return 16-bit value converted from little endian to host endian.
  */
-u16_t net_buf_simple_pull_le16(struct net_buf_simple *buf);
+uint16_t net_buf_simple_pull_le16(struct net_buf_simple *buf);
 
 /**
  * @brief Remove and convert 16 bits from the beginning of the buffer.
@@ -362,7 +545,31 @@ u16_t net_buf_simple_pull_le16(struct net_buf_simple *buf);
  *
  * @return 16-bit value converted from big endian to host endian.
  */
-u16_t net_buf_simple_pull_be16(struct net_buf_simple *buf);
+uint16_t net_buf_simple_pull_be16(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 24 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 24-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from little endian to host endian.
+ */
+uint32_t net_buf_simple_pull_le24(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 24 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 24-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from big endian to host endian.
+ */
+uint32_t net_buf_simple_pull_be24(struct net_buf_simple *buf);
 
 /**
  * @brief Remove and convert 32 bits from the beginning of the buffer.
@@ -374,7 +581,7 @@ u16_t net_buf_simple_pull_be16(struct net_buf_simple *buf);
  *
  * @return 32-bit value converted from little endian to host endian.
  */
-u32_t net_buf_simple_pull_le32(struct net_buf_simple *buf);
+uint32_t net_buf_simple_pull_le32(struct net_buf_simple *buf);
 
 /**
  * @brief Remove and convert 32 bits from the beginning of the buffer.
@@ -386,7 +593,55 @@ u32_t net_buf_simple_pull_le32(struct net_buf_simple *buf);
  *
  * @return 32-bit value converted from big endian to host endian.
  */
-u32_t net_buf_simple_pull_be32(struct net_buf_simple *buf);
+uint32_t net_buf_simple_pull_be32(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 48 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 48-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 48-bit value converted from little endian to host endian.
+ */
+uint64_t net_buf_simple_pull_le48(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 48 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 48-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 48-bit value converted from big endian to host endian.
+ */
+uint64_t net_buf_simple_pull_be48(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 64 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 64-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 64-bit value converted from little endian to host endian.
+ */
+uint64_t net_buf_simple_pull_le64(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 64 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 64-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 64-bit value converted from big endian to host endian.
+ */
+uint64_t net_buf_simple_pull_be64(struct net_buf_simple *buf);
 
 /**
  * @brief Get the tail pointer for a buffer.
@@ -397,7 +652,7 @@ u32_t net_buf_simple_pull_be32(struct net_buf_simple *buf);
  *
  * @return Tail pointer for the buffer.
  */
-static inline u8_t *net_buf_simple_tail(struct net_buf_simple *buf)
+static inline uint8_t *net_buf_simple_tail(struct net_buf_simple *buf)
 {
     return buf->data + buf->len;
 }
@@ -433,9 +688,9 @@ size_t net_buf_simple_tailroom(struct net_buf_simple *buf);
  */
 struct net_buf_simple_state {
     /** Offset of the data pointer from the beginning of the storage */
-    u16_t offset;
+    uint16_t offset;
     /** Length of data */
-    u16_t len;
+    uint16_t len;
 };
 
 /**
@@ -463,7 +718,7 @@ static inline void net_buf_simple_save(struct net_buf_simple *buf,
  * @param state Stored state.
  */
 static inline void net_buf_simple_restore(struct net_buf_simple *buf,
-        struct net_buf_simple_state *state)
+                                          struct net_buf_simple_state *state)
 {
     buf->data = buf->__buf + state->offset;
     buf->len = state->len;
@@ -506,10 +761,10 @@ struct net_buf {
     };
 
     /** Reference count. */
-    u8_t ref;
+    uint8_t ref;
 
     /** Bit-field of buffer flags. */
-    u8_t flags;
+    uint8_t flags;
 
     /** Where the buffer should go when freed up. */
     struct net_buf_pool *pool;
@@ -521,32 +776,32 @@ struct net_buf {
         /* The ABI of this struct must match net_buf_simple */
         struct {
             /** Pointer to the start of data in the buffer. */
-            u8_t *data;
+            uint8_t *data;
 
             /** Length of the data behind the data pointer. */
-            u16_t len;
+            uint16_t len;
 
             /** Amount of data that this buffer can store. */
-            u16_t size;
+            uint16_t size;
 
             /** Start of the data storage. Not to be accessed
              *  directly (the data pointer should be used
              *  instead).
              */
-            u8_t *__buf;
+            uint8_t *__buf;
         };
 
         struct net_buf_simple b;
     };
 
     /** System metadata for this buffer. */
-    u8_t user_data[BLE_MESH_NET_BUF_USER_DATA_SIZE] __net_buf_align;
+    uint8_t user_data[BLE_MESH_NET_BUF_USER_DATA_SIZE] __net_buf_align;
 };
 
 struct net_buf_data_cb {
-    u8_t *(*alloc)(struct net_buf *buf, size_t *size, s32_t timeout);
-    u8_t *(*ref)(struct net_buf *buf, u8_t *data);
-    void   (*unref)(struct net_buf *buf, u8_t *data);
+    uint8_t *(*alloc)(struct net_buf *buf, size_t *size, int32_t timeout);
+    uint8_t *(*ref)(struct net_buf *buf, uint8_t *data);
+    void   (*unref)(struct net_buf *buf, uint8_t *data);
 };
 
 struct net_buf_data_alloc {
@@ -556,17 +811,17 @@ struct net_buf_data_alloc {
 
 struct net_buf_pool {
     /** Number of buffers in pool */
-    const u16_t buf_count;
+    const uint16_t buf_count;
 
     /** Number of uninitialized buffers */
-    u16_t uninit_count;
+    uint16_t uninit_count;
 
 #if defined(CONFIG_BLE_MESH_NET_BUF_POOL_USAGE)
     /** Amount of available buffers in the pool. */
-    s16_t avail_count;
+    int16_t avail_count;
 
     /** Total size of the pool. */
-    const u16_t pool_size;
+    const uint16_t pool_size;
 
     /** Name of the pool. Used when printing pool information. */
     const char *name;
@@ -606,7 +861,7 @@ struct net_buf_pool {
 
 struct net_buf_pool_fixed {
     size_t data_size;
-    u8_t  *data_pool;
+    uint8_t *data_pool;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -641,10 +896,10 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
  */
 #define NET_BUF_POOL_FIXED_DEFINE(_name, _count, _data_size, _destroy)      \
     static struct net_buf net_buf_##_name[_count];                          \
-    static u8_t net_buf_data_##_name[_count][_data_size];                   \
+    static uint8_t net_buf_data_##_name[_count][_data_size];                \
     static const struct net_buf_pool_fixed net_buf_fixed_##_name = {        \
         .data_size = _data_size,                                            \
-        .data_pool = (u8_t *)net_buf_data_##_name,                          \
+        .data_pool = (uint8_t *)net_buf_data_##_name,                       \
     };                                                                      \
     static const struct net_buf_data_alloc net_buf_fixed_alloc_##_name = {  \
         .cb = &net_buf_fixed_cb,                                            \
@@ -708,12 +963,12 @@ int net_buf_id(struct net_buf *buf);
  * @return New buffer or NULL if out of buffers.
  */
 #if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
-struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool, s32_t timeout,
-        const char *func, int line);
+struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool, int32_t timeout,
+                                          const char *func, int line);
 #define net_buf_alloc_fixed(_pool, _timeout) \
     net_buf_alloc_fixed_debug(_pool, _timeout, __func__, __LINE__)
 #else
-struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool, s32_t timeout);
+struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool, int32_t timeout);
 #endif
 
 /**
@@ -875,6 +1130,32 @@ static inline void *net_buf_user_data(struct net_buf *buf)
 #define net_buf_add_be16(buf, val) net_buf_simple_add_be16(&(buf)->b, val)
 
 /**
+ * @def net_buf_add_le24
+ * @brief Add 24-bit value at the end of the buffer
+ *
+ * Adds 24-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be added.
+ */
+#define net_buf_add_le24(buf, val) net_buf_simple_add_le24(&(buf)->b, val)
+
+/**
+ * @def net_buf_add_be24
+ * @brief Add 24-bit value at the end of the buffer
+ *
+ * Adds 24-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be added.
+ */
+#define net_buf_add_be24(buf, val) net_buf_simple_add_be24(&(buf)->b, val)
+
+/**
  *  @def net_buf_add_le32
  *  @brief Add 32-bit value at the end of the buffer
  *
@@ -899,6 +1180,58 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @param val 32-bit value to be added.
  */
 #define net_buf_add_be32(buf, val) net_buf_simple_add_be32(&(buf)->b, val)
+
+/**
+ * @def net_buf_add_le48
+ * @brief Add 48-bit value at the end of the buffer
+ *
+ * Adds 48-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be added.
+ */
+#define net_buf_add_le48(buf, val) net_buf_simple_add_le48(&(buf)->b, val)
+
+/**
+ * @def net_buf_add_be48
+ * @brief Add 48-bit value at the end of the buffer
+ *
+ * Adds 48-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be added.
+ */
+#define net_buf_add_be48(buf, val) net_buf_simple_add_be48(&(buf)->b, val)
+
+/**
+ * @def net_buf_add_le64
+ * @brief Add 64-bit value at the end of the buffer
+ *
+ * Adds 64-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be added.
+ */
+#define net_buf_add_le64(buf, val) net_buf_simple_add_le64(&(buf)->b, val)
+
+/**
+ * @def net_buf_add_be64
+ * @brief Add 64-bit value at the end of the buffer
+ *
+ * Adds 64-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be added.
+ */
+#define net_buf_add_be64(buf, val) net_buf_simple_add_be64(&(buf)->b, val)
 
 /**
  *  @def net_buf_push
@@ -950,6 +1283,102 @@ static inline void *net_buf_user_data(struct net_buf *buf)
 #define net_buf_push_u8(buf, val) net_buf_simple_push_u8(&(buf)->b, val)
 
 /**
+ * @def net_buf_push_le24
+ * @brief Push 24-bit value to the beginning of the buffer
+ *
+ * Adds 24-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_le24(buf, val) net_buf_simple_push_le24(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_be24
+ * @brief Push 24-bit value to the beginning of the buffer
+ *
+ * Adds 24-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_be24(buf, val) net_buf_simple_push_be24(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_le32
+ * @brief Push 32-bit value to the beginning of the buffer
+ *
+ * Adds 32-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 32-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_le32(buf, val) net_buf_simple_push_le32(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_be32
+ * @brief Push 32-bit value to the beginning of the buffer
+ *
+ * Adds 32-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 32-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_be32(buf, val) net_buf_simple_push_be32(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_le48
+ * @brief Push 48-bit value to the beginning of the buffer
+ *
+ * Adds 48-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_le48(buf, val) net_buf_simple_push_le48(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_be48
+ * @brief Push 48-bit value to the beginning of the buffer
+ *
+ * Adds 48-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 48-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_be48(buf, val) net_buf_simple_push_be48(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_le64
+ * @brief Push 64-bit value to the beginning of the buffer
+ *
+ * Adds 64-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_le64(buf, val) net_buf_simple_push_le64(&(buf)->b, val)
+
+/**
+ * @def net_buf_push_be64
+ * @brief Push 64-bit value to the beginning of the buffer
+ *
+ * Adds 64-bit value in little endian format to the beginning of the
+ * buffer.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be pushed to the buffer.
+ */
+#define net_buf_push_be64(buf, val) net_buf_simple_push_be64(&(buf)->b, val)
+
+/**
  *  @def net_buf_pull
  *  @brief Remove data from the beginning of the buffer.
  *
@@ -962,6 +1391,20 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @return New beginning of the buffer data.
  */
 #define net_buf_pull(buf, len) net_buf_simple_pull(&(buf)->b, len)
+
+/**
+ * @def net_buf_pull_mem
+ * @brief Remove data from the beginning of the buffer.
+ *
+ * Removes data from the beginning of the buffer by modifying the data
+ * pointer and buffer length.
+ *
+ * @param buf Buffer to update.
+ * @param len Number of bytes to remove.
+ *
+ * @return Pointer to the old beginning of the buffer data.
+ */
+#define net_buf_pull_mem(buf, len) net_buf_simple_pull_mem(&(buf)->b, len)
 
 /**
  *  @def net_buf_pull_u8
@@ -1003,6 +1446,32 @@ static inline void *net_buf_user_data(struct net_buf *buf)
 #define net_buf_pull_be16(buf) net_buf_simple_pull_be16(&(buf)->b)
 
 /**
+ * @def net_buf_pull_le24
+ * @brief Remove and convert 24 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 24-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from little endian to host endian.
+ */
+#define net_buf_pull_le24(buf) net_buf_simple_pull_le24(&(buf)->b)
+
+/**
+ * @def net_buf_pull_be24
+ * @brief Remove and convert 24 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 24-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from big endian to host endian.
+ */
+#define net_buf_pull_be24(buf) net_buf_simple_pull_be24(&(buf)->b)
+
+/**
  *  @def net_buf_pull_le32
  *  @brief Remove and convert 32 bits from the beginning of the buffer.
  *
@@ -1029,6 +1498,58 @@ static inline void *net_buf_user_data(struct net_buf *buf)
 #define net_buf_pull_be32(buf) net_buf_simple_pull_be32(&(buf)->b)
 
 /**
+ * @def net_buf_pull_le48
+ * @brief Remove and convert 48 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 48-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 48-bit value converted from little endian to host endian.
+ */
+#define net_buf_pull_le48(buf) net_buf_simple_pull_le48(&(buf)->b)
+
+/**
+ * @def net_buf_pull_be48
+ * @brief Remove and convert 48 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 48-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer
+ *
+ * @return 48-bit value converted from big endian to host endian.
+ */
+#define net_buf_pull_be48(buf) net_buf_simple_pull_be48(&(buf)->b)
+
+/**
+ * @def net_buf_pull_le64
+ * @brief Remove and convert 64 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 64-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 64-bit value converted from little endian to host endian.
+ */
+#define net_buf_pull_le64(buf) net_buf_simple_pull_le64(&(buf)->b)
+
+/**
+ * @def net_buf_pull_be64
+ * @brief Remove and convert 64 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 64-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer
+ *
+ * @return 64-bit value converted from big endian to host endian.
+ */
+#define net_buf_pull_be64(buf) net_buf_simple_pull_be64(&(buf)->b)
+
+/**
  *  @def net_buf_tailroom
  *  @brief Check buffer tailroom.
  *
@@ -1051,6 +1572,180 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @return Number of bytes available in the beginning of the buffer.
  */
 #define net_buf_headroom(buf) net_buf_simple_headroom(&(buf)->b)
+
+/**
+ * @def net_buf_tail
+ * @brief Get the tail pointer for a buffer.
+ *
+ * Get a pointer to the end of the data in a buffer.
+ *
+ * @param buf Buffer.
+ *
+ * @return Tail pointer for the buffer.
+ */
+#define net_buf_tail(buf) net_buf_simple_tail(&(buf)->b)
+
+/**
+ * @brief Find the last fragment in the fragment list.
+ *
+ * @return Pointer to last fragment in the list.
+ */
+struct net_buf *net_buf_frag_last(struct net_buf *frags);
+
+/**
+ * @brief Insert a new fragment to a chain of bufs.
+ *
+ * Insert a new fragment into the buffer fragments list after the parent.
+ *
+ * Note: This function takes ownership of the fragment reference so the
+ * caller is not required to unref.
+ *
+ * @param parent Parent buffer/fragment.
+ * @param frag Fragment to insert.
+ */
+void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag);
+
+/**
+ * @brief Add a new fragment to the end of a chain of bufs.
+ *
+ * Append a new fragment into the buffer fragments list.
+ *
+ * Note: This function takes ownership of the fragment reference so the
+ * caller is not required to unref.
+ *
+ * @param head Head of the fragment chain.
+ * @param frag Fragment to add.
+ *
+ * @return New head of the fragment chain. Either head (if head
+ *         was non-NULL) or frag (if head was NULL).
+ */
+struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag);
+
+/**
+ * @brief Delete existing fragment from a chain of bufs.
+ *
+ * @param parent Parent buffer/fragment, or NULL if there is no parent.
+ * @param frag Fragment to delete.
+ *
+ * @return Pointer to the buffer following the fragment, or NULL if it
+ *         had no further fragments.
+ */
+#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+struct net_buf *net_buf_frag_del_debug(struct net_buf *parent,
+                                       struct net_buf *frag,
+                                       const char *func, int line);
+#define net_buf_frag_del(_parent, _frag) \
+    net_buf_frag_del_debug(_parent, _frag, __func__, __LINE__)
+#else
+struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
+#endif
+
+/**
+ * @brief Copy bytes from net_buf chain starting at offset to linear buffer
+ *
+ * Copy (extract) @a len bytes from @a src net_buf chain, starting from @a
+ * offset in it, to a linear buffer @a dst. Return number of bytes actually
+ * copied, which may be less than requested, if net_buf chain doesn't have
+ * enough data, or destination buffer is too small.
+ *
+ * @param dst Destination buffer
+ * @param dst_len Destination buffer length
+ * @param src Source net_buf chain
+ * @param offset Starting offset to copy from
+ * @param len Number of bytes to copy
+ * @return number of bytes actually copied
+ */
+size_t net_buf_linearize(void *dst, size_t dst_len,
+                         struct net_buf *src, size_t offset, size_t len);
+
+/**
+ * @typedef net_buf_allocator_cb
+ * @brief Network buffer allocator callback.
+ *
+ * @details The allocator callback is called when net_buf_append_bytes
+ * needs to allocate a new net_buf.
+ *
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
+ * @param user_data The user data given in net_buf_append_bytes call.
+ * @return pointer to allocated net_buf or NULL on error.
+ */
+typedef struct net_buf *(*net_buf_allocator_cb)(int32_t timeout, void *user_data);
+
+/**
+ * @brief Append data to a list of net_buf
+ *
+ * @details Append data to a net_buf. If there is not enough space in the
+ * net_buf then more net_buf will be added, unless there are no free net_buf
+ * and timeout occurs.
+ *
+ * @param buf Network buffer.
+ * @param len Total length of input data
+ * @param value Data to be added
+ * @param timeout Timeout is passed to the net_buf allocator callback.
+ * @param allocate_cb When a new net_buf is required, use this callback.
+ * @param user_data A user data pointer to be supplied to the allocate_cb.
+ *        This pointer is can be anything from a mem_pool or a net_pkt, the
+ *        logic is left up to the allocate_cb function.
+ *
+ * @return Length of data actually added. This may be less than input
+ *         length if other timeout than K_FOREVER was used, and there
+ *         were no free fragments in a pool to accommodate all data.
+ */
+size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
+                            const void *value, int32_t timeout,
+                            net_buf_allocator_cb allocate_cb, void *user_data);
+
+/**
+ * @brief Skip N number of bytes in a net_buf
+ *
+ * @details Skip N number of bytes starting from fragment's offset. If the total
+ * length of data is placed in multiple fragments, this function will skip from
+ * all fragments until it reaches N number of bytes.  Any fully skipped buffers
+ * are removed from the net_buf list.
+ *
+ * @param buf Network buffer.
+ * @param len Total length of data to be skipped.
+ *
+ * @return Pointer to the fragment or
+ *         NULL and pos is 0 after successful skip,
+ *         NULL and pos is 0xffff otherwise.
+ */
+static inline struct net_buf *net_buf_skip(struct net_buf *buf, size_t len)
+{
+    while (buf && len--) {
+        net_buf_pull_u8(buf);
+        if (!buf->len) {
+            buf = net_buf_frag_del(NULL, buf);
+        }
+    }
+
+    return buf;
+}
+
+/**
+ * @brief Calculate amount of bytes stored in fragments.
+ *
+ * Calculates the total amount of data stored in the given buffer and the
+ * fragments linked to it.
+ *
+ * @param buf Buffer to start off with.
+ *
+ * @return Number of bytes in the buffer and its fragments.
+ */
+static inline size_t net_buf_frags_len(struct net_buf *buf)
+{
+    size_t bytes = 0;
+
+    while (buf) {
+        bytes += buf->len;
+        buf = buf->frags;
+    }
+
+    return bytes;
+}
 
 /**
  * @}

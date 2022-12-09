@@ -22,6 +22,7 @@
 #include "nvs_flash.h"
 
 static const char* TAG = "example";
+#define PROMPT_STR CONFIG_IDF_TARGET
 
 /* Console command history can be stored to and loaded from a file.
  * The easiest way to do this is to use FATFS filesystem on top of
@@ -59,13 +60,17 @@ static void initialize_nvs(void)
 
 static void initialize_console(void)
 {
+    /* Drain stdout before reconfiguring it */
+    fflush(stdout);
+    fsync(fileno(stdout));
+
     /* Disable buffering on stdin */
     setvbuf(stdin, NULL, _IONBF, 0);
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
-    esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
-    esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
 
     /* Configure UART. Note that REF_TICK is used so that the baud rate remains
      * correct while APB frequency is changing in light sleep mode.
@@ -75,13 +80,12 @@ static void initialize_console(void)
             .data_bits = UART_DATA_8_BITS,
             .parity = UART_PARITY_DISABLE,
             .stop_bits = UART_STOP_BITS_1,
-            .use_ref_tick = true
+            .source_clk = UART_SCLK_REF_TICK,
     };
-    ESP_ERROR_CHECK( uart_param_config(CONFIG_ESP_CONSOLE_UART_NUM, &uart_config) );
-
     /* Install UART driver for interrupt-driven reads and writes */
     ESP_ERROR_CHECK( uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM,
             256, 0, 0, NULL, 0) );
+    ESP_ERROR_CHECK( uart_param_config(CONFIG_ESP_CONSOLE_UART_NUM, &uart_config) );
 
     /* Tell VFS to use UART driver */
     esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
@@ -109,6 +113,9 @@ static void initialize_console(void)
     /* Set command history size */
     linenoiseHistorySetMaxLen(100);
 
+    /* Don't return empty lines */
+    linenoiseAllowEmpty(false);
+
 #if CONFIG_STORE_HISTORY
     /* Load command history from filesystem */
     linenoiseHistoryLoad(HISTORY_PATH);
@@ -121,6 +128,9 @@ void app_main(void)
 
 #if CONFIG_STORE_HISTORY
     initialize_filesystem();
+    ESP_LOGI(TAG, "Command history enabled");
+#else
+    ESP_LOGI(TAG, "Command history disabled");
 #endif
 
     initialize_console();
@@ -134,13 +144,14 @@ void app_main(void)
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
-    const char* prompt = LOG_COLOR_I "esp32> " LOG_RESET_COLOR;
+    const char* prompt = LOG_COLOR_I PROMPT_STR "> " LOG_RESET_COLOR;
 
     printf("\n"
            "This is an example of ESP-IDF console component.\n"
            "Type 'help' to get the list of commands.\n"
            "Use UP/DOWN arrows to navigate through command history.\n"
-           "Press TAB when typing command name to auto-complete.\n");
+           "Press TAB when typing command name to auto-complete.\n"
+           "Press Enter or Ctrl+C will terminate the console environment.\n");
 
     /* Figure out if the terminal supports escape sequences */
     int probe_status = linenoiseProbe();
@@ -154,7 +165,7 @@ void app_main(void)
         /* Since the terminal doesn't support escape sequences,
          * don't use color codes in the prompt.
          */
-        prompt = "esp32> ";
+        prompt = PROMPT_STR "> ";
 #endif //CONFIG_LOG_COLORS
     }
 
@@ -164,15 +175,17 @@ void app_main(void)
          * The line is returned when ENTER is pressed.
          */
         char* line = linenoise(prompt);
-        if (line == NULL) { /* Ignore empty lines */
-            continue;
+        if (line == NULL) { /* Break on EOF or error */
+            break;
         }
-        /* Add the command to the history */
-        linenoiseHistoryAdd(line);
+        /* Add the command to the history if not empty*/
+        if (strlen(line) > 0) {
+            linenoiseHistoryAdd(line);
 #if CONFIG_STORE_HISTORY
-        /* Save command history to filesystem */
-        linenoiseHistorySave(HISTORY_PATH);
+            /* Save command history to filesystem */
+            linenoiseHistorySave(HISTORY_PATH);
 #endif
+        }
 
         /* Try to run the command */
         int ret;
@@ -189,4 +202,7 @@ void app_main(void)
         /* linenoise allocates line buffer on the heap, so need to free it */
         linenoiseFree(line);
     }
+
+    ESP_LOGE(TAG, "Error or end-of-input, terminating console");
+    esp_console_deinit();
 }

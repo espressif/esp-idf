@@ -23,7 +23,7 @@
 static const char *TAG = "efuse";
 
 #ifdef CONFIG_EFUSE_VIRTUAL
-extern uint32_t virt_blocks[COUNT_EFUSE_BLOCKS][COUNT_EFUSE_REG_PER_BLOCK];
+extern uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
 #endif // CONFIG_EFUSE_VIRTUAL
 
 /*Range addresses to read blocks*/
@@ -84,7 +84,7 @@ void esp_efuse_utility_burn_efuses(void)
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "Virtual efuses enabled: Not really burning eFuses");
-    for (int num_block = 0; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
+    for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
         esp_efuse_coding_scheme_t scheme = esp_efuse_get_coding_scheme(num_block);
         if (scheme == EFUSE_CODING_SCHEME_3_4) {
             uint8_t buf[COUNT_EFUSE_REG_PER_BLOCK * 4] = { 0 };
@@ -178,7 +178,7 @@ esp_err_t esp_efuse_utility_apply_new_coding_scheme()
     uint8_t buf_r_data[COUNT_EFUSE_REG_PER_BLOCK * 4];
     uint32_t reg[COUNT_EFUSE_REG_PER_BLOCK];
     // start with EFUSE_BLK1. EFUSE_BLK0 - always uses EFUSE_CODING_SCHEME_NONE.
-    for (int num_block = 1; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
+    for (int num_block = EFUSE_BLK1; num_block < EFUSE_BLK_MAX; num_block++) {
         esp_efuse_coding_scheme_t scheme = esp_efuse_get_coding_scheme(num_block);
         // check and apply a new coding scheme.
         if (scheme != EFUSE_CODING_SCHEME_NONE) {

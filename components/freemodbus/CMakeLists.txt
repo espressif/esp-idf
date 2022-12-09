@@ -6,6 +6,7 @@ set(srcs
     "modbus/mb.c"
     "modbus/mb_m.c"
     "modbus/ascii/mbascii.c"
+    "modbus/ascii/mbascii_m.c"
     "modbus/rtu/mbrtu_m.c"
     "modbus/rtu/mbrtu.c"
     "modbus/rtu/mbcrc.c"

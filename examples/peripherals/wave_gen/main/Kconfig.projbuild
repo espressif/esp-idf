@@ -1,0 +1,103 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_DAC_CHANNEL
+        bool "DAC Channel Num"
+        default EXAMPLE_DAC_CHANNEL_1
+        help
+            Select DAC channel used by the wave generator.
+
+        config EXAMPLE_DAC_CHANNEL_1
+            bool "DAC Channel 1 (GPIO25)"
+        config EXAMPLE_DAC_CHANNEL_2
+            bool "DAC Channel 2 (GPIO26)"
+    endchoice
+
+    config EXAMPLE_DAC_CHANNEL
+        int
+        default 0 if EXAMPLE_DAC_CHANNEL_1
+        default 1 if EXAMPLE_DAC_CHANNEL_2
+
+    choice EXAMPLE_WAVEFORM
+        bool "Waveform"
+        default EXAMPLE_WAVEFORM_SINE
+        help
+            Select waveform
+        config EXAMPLE_WAVEFORM_SINE
+            bool "Sine selected"
+        config EXAMPLE_WAVEFORM_TRIANGLE
+            bool "Triangle selected"
+        config EXAMPLE_WAVEFORM_SAWTOOTH
+            bool "Sawtooth selected"
+        config EXAMPLE_WAVEFORM_SQUARE
+            bool "Square selected"
+    endchoice
+
+    choice EXAMPLE_WAVE_FREQUENCY
+        bool "Wave frequency"
+        default EXAMPLE_WAVE_FREQ_3000
+        help
+            Select output wave frequency.
+
+        config EXAMPLE_WAVE_FREQ_1000
+            bool "1000 Hz"
+        config EXAMPLE_WAVE_FREQ_2000
+            bool "2000 Hz"
+        config EXAMPLE_WAVE_FREQ_3000
+            bool "3000 Hz"
+        config EXAMPLE_WAVE_FREQ_4000
+            bool "4000 Hz"
+        config EXAMPLE_WAVE_FREQ_5000
+            bool "5000 Hz"
+        config EXAMPLE_WAVE_FREQ_6000
+            bool "6000 Hz"
+        config EXAMPLE_WAVE_FREQ_7000
+            bool "7000 Hz"
+        config EXAMPLE_WAVE_FREQ_8000
+            bool "8000 Hz"
+        config EXAMPLE_WAVE_FREQ_9000
+            bool "9000 Hz"
+        config EXAMPLE_WAVE_FREQ_10000
+            bool "10000 Hz"
+        config EXAMPLE_WAVE_FREQ_11000
+            bool "11000 Hz"
+        config EXAMPLE_WAVE_FREQ_12000
+            bool "12000 Hz"
+        config EXAMPLE_WAVE_FREQ_13000
+            bool "13000 Hz"
+        config EXAMPLE_WAVE_FREQ_14000
+            bool "14000 Hz"
+        config EXAMPLE_WAVE_FREQ_15000
+            bool "15000 Hz"
+        config EXAMPLE_WAVE_FREQ_16000
+            bool "16000 Hz"
+        config EXAMPLE_WAVE_FREQ_17000
+            bool "17000 Hz"
+    endchoice
+
+    config EXAMPLE_WAVE_FREQUENCY
+        int
+        default 1000 if EXAMPLE_WAVE_FREQ_1000
+        default 2000 if EXAMPLE_WAVE_FREQ_2000
+        default 3000 if EXAMPLE_WAVE_FREQ_3000
+        default 4000 if EXAMPLE_WAVE_FREQ_4000
+        default 5000 if EXAMPLE_WAVE_FREQ_5000
+        default 6000 if EXAMPLE_WAVE_FREQ_6000
+        default 7000 if EXAMPLE_WAVE_FREQ_7000
+        default 8000 if EXAMPLE_WAVE_FREQ_8000
+        default 9000 if EXAMPLE_WAVE_FREQ_9000
+        default 10000 if EXAMPLE_WAVE_FREQ_10000
+        default 11000 if EXAMPLE_WAVE_FREQ_11000
+        default 12000 if EXAMPLE_WAVE_FREQ_12000
+        default 13000 if EXAMPLE_WAVE_FREQ_13000
+        default 14000 if EXAMPLE_WAVE_FREQ_14000
+        default 15000 if EXAMPLE_WAVE_FREQ_15000
+        default 16000 if EXAMPLE_WAVE_FREQ_16000
+        default 17000 if EXAMPLE_WAVE_FREQ_17000
+
+    config EXAMPLE_LOG_VOLTAGE
+        bool "Enable output voltage log"
+        default n
+        help
+            If enabled, the output voltage(in mV) will show in log.
+
+endmenu

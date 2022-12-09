@@ -252,7 +252,7 @@ esp_err_t esp_now_mod_peer(const esp_now_peer_info_t *peer);
 esp_err_t esp_now_get_peer(const uint8_t *peer_addr, esp_now_peer_info_t *peer);
 
 /**
-  * @brief     Fetch a peer from peer list
+  * @brief     Fetch a peer from peer list. Only return the peer which address is unicast, for the multicast/broadcast address, the function will ignore and try to find the next in the peer list.
   *
   * @param     from_head  fetch from head of list or not
   * @param     peer  peer information

@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Generator: Adobe Illustrator 24.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   id="图层_1"
+   x="0px"
+   y="0px"
+   viewBox="0 0 194 256"
+   style="enable-background:new 0 0 194 256;"
+   xml:space="preserve"
+   sodipodi:docname="ESP32-S2.svg"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"><metadata
+   id="metadata4574"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><defs
+   id="defs4572" /><sodipodi:namedview
+   pagecolor="#ffffff"
+   bordercolor="#666666"
+   borderopacity="1"
+   objecttolerance="10"
+   gridtolerance="10"
+   guidetolerance="10"
+   inkscape:pageopacity="0"
+   inkscape:pageshadow="2"
+   inkscape:window-width="1280"
+   inkscape:window-height="996"
+   id="namedview4570"
+   showgrid="false"
+   inkscape:zoom="3.0585938"
+   inkscape:cx="106.22534"
+   inkscape:cy="128"
+   inkscape:window-x="640"
+   inkscape:window-y="0"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="g4567" />
+<style
+   type="text/css"
+   id="style4481">
+	.st0{fill:#FFFFFF;stroke:#000000;stroke-width:1.1382;stroke-miterlimit:10;}
+	.st1{font-family:'HelveticaNeue-Bold';}
+	.st2{font-size:20px;}
+</style>
+<g
+   id="g4567">
+	<g
+   id="g4564"
+   transform="translate(0,-0.32694764)">
+		<path
+   id="XMLID_290_"
+   class="st0"
+   d="m 35.4,194.6 h 126.8 c 1.9,0 3.4,-1.5 3.4,-3.4 V 64.8 c 0,-1.9 -1.5,-3.4 -3.4,-3.4 H 35.4 c -1.9,0 -3.4,1.5 -3.4,3.4 v 126.4 c 0,1.9 1.5,3.4 3.4,3.4 z"
+   inkscape:connector-curvature="0"
+   style="fill:#ffffff;stroke:#000000;stroke-width:1.13820004;stroke-miterlimit:10" />
+		<circle
+   id="XMLID_245_"
+   cx="52.299999"
+   cy="84.900002"
+   r="2.5999999" />
+		<g
+   id="g4562">
+			<g
+   id="ESP32_3_">
+				<g
+   id="XMLID_202_">
+					<g
+   id="XMLID_234_">
+						<rect
+   id="XMLID_238_"
+   x="32"
+   y="74.900002"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_237_"
+   x="32"
+   y="83"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_236_"
+   x="32"
+   y="91.099998"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_235_"
+   x="32"
+   y="99"
+   width="6.0999999"
+   height="4" />
+					</g>
+					<g
+   id="XMLID_229_">
+						<rect
+   id="XMLID_233_"
+   x="31.9"
+   y="107.3"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_232_"
+   x="32"
+   y="115.3"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_231_"
+   x="32"
+   y="123.4"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_230_"
+   x="31.9"
+   y="131.39999"
+   width="6.0999999"
+   height="4" />
+					</g>
+					<g
+   id="XMLID_224_">
+						<rect
+   id="XMLID_228_"
+   x="159.60001"
+   y="138.7"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_227_"
+   x="159.60001"
+   y="146.8"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_226_"
+   x="159.60001"
+   y="154.89999"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_225_"
+   x="159.60001"
+   y="162.8"
+   width="6.0999999"
+   height="4" />
+					</g>
+					<g
+   id="XMLID_219_">
+						<rect
+   id="XMLID_223_"
+   x="32.099998"
+   y="138.89999"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_222_"
+   x="32.200001"
+   y="147"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_221_"
+   x="32.200001"
+   y="155.10001"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_220_"
+   x="32.099998"
+   y="163"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_5_"
+   x="159.5"
+   y="170.8"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_4_"
+   x="159.39999"
+   y="178.7"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_3_"
+   x="32"
+   y="171"
+   width="6.0999999"
+   height="4" />
+						<rect
+   id="XMLID_2_"
+   x="32"
+   y="178.89999"
+   width="6.0999999"
+   height="4" />
+					</g>
+					<g
+   id="XMLID_203_">
+						<g
+   id="XMLID_214_">
+							<rect
+   id="XMLID_218_"
+   x="159.39999"
+   y="74.699997"
+   width="6.0999999"
+   height="4" />
+							<rect
+   id="XMLID_217_"
+   x="159.5"
+   y="82.800003"
+   width="6.0999999"
+   height="4" />
+							<rect
+   id="XMLID_216_"
+   x="159.5"
+   y="90.900002"
+   width="6.0999999"
+   height="4" />
+							<rect
+   id="XMLID_215_"
+   x="159.39999"
+   y="98.800003"
+   width="6.0999999"
+   height="4" />
+						</g>
+						<g
+   id="XMLID_204_">
+							<rect
+   id="XMLID_208_"
+   x="159.39999"
+   y="107.1"
+   width="6.0999999"
+   height="4" />
+							<rect
+   id="XMLID_207_"
+   x="159.39999"
+   y="115.2"
+   width="6.0999999"
+   height="4" />
+							<rect
+   id="XMLID_206_"
+   x="159.39999"
+   y="123.3"
+   width="6.0999999"
+   height="4" />
+							<rect
+   id="XMLID_205_"
+   x="159.39999"
+   y="131.2"
+   width="6.0999999"
+   height="4" />
+						</g>
+					</g>
+				</g>
+				<g
+   id="XMLID_1_">
+					<g
+   id="g4538">
+						<g
+   id="XMLID_197_">
+							
+								<rect
+   id="XMLID_201_"
+   x="131.7"
+   y="63"
+   transform="matrix(0.0020298,-1,1,0.0020298,69.5107,199.5732)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_200_"
+   x="123.6"
+   y="63"
+   transform="matrix(0.0020298,-1,1,0.0020298,61.4343,191.5587)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_8_"
+   x="148.2"
+   y="63"
+   transform="matrix(0.0020298,-1,1,0.0020298,85.934,216.1473)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_6_"
+   x="140.10001"
+   y="63.099998"
+   transform="matrix(0.0020298,-1,1,0.0020298,77.8577,208.133)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_199_"
+   x="115.6"
+   y="63"
+   transform="matrix(0.0020298,-1,1,0.0020298,53.4375,183.5322)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_198_"
+   x="107.6"
+   y="62.900002"
+   transform="matrix(0.0020298,-1,1,0.0020298,45.5019,175.4751)"
+   width="6.0999999"
+   height="4" />
+						</g>
+						<g
+   id="XMLID_192_">
+							
+								<rect
+   id="XMLID_196_"
+   x="99.400002"
+   y="63"
+   transform="matrix(0.0020298,-1,1,0.0020298,37.341,167.3362)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_195_"
+   x="91.199997"
+   y="63.099998"
+   transform="matrix(0.0020298,-1,1,0.0020298,28.9647,159.1487)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_194_"
+   x="83.199997"
+   y="62.900002"
+   transform="matrix(0.0020298,-1,1,0.0020298,21.1498,151.1043)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_193_"
+   x="75.300003"
+   y="63"
+   transform="matrix(0.0020298,-1,1,0.0020298,13.1321,143.22)"
+   width="6.0999999"
+   height="4" />
+						</g>
+						<g
+   id="XMLID_187_">
+							
+								<rect
+   id="XMLID_191_"
+   x="67.699997"
+   y="62.900002"
+   transform="matrix(0.0020298,-1,1,0.0020298,5.6547,135.5718)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_190_"
+   x="59.599998"
+   y="63"
+   transform="matrix(0.0020298,-1,1,0.0020298,-2.4758,127.4483)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_189_"
+   x="51.5"
+   y="63"
+   transform="matrix(0.0020298,-1,1,0.0020298,-10.4995,119.3949)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_188_"
+   x="43.700001"
+   y="63"
+   transform="matrix(0.0020298,-1,1,0.0020298,-18.4261,111.6195)"
+   width="6.0999999"
+   height="4" />
+						</g>
+					</g>
+					<g
+   id="g4558">
+						<g
+   id="XMLID_182_">
+							
+								<rect
+   id="XMLID_186_"
+   x="69"
+   y="189.5"
+   transform="matrix(0.00164156,-1,1,0.00164156,-119.5973,263.2231)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_185_"
+   x="61"
+   y="189.5"
+   transform="matrix(0.00164156,-1,1,0.00164156,-127.5915,255.2397)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_184_"
+   x="52.799999"
+   y="189.5"
+   transform="matrix(0.00164156,-1,1,0.00164156,-135.7702,247.0334)"
+   width="6.0999999"
+   height="4" />
+							
+								<rect
+   id="XMLID_183_"
+   x="45"
+   y="189.5"
+   transform="matrix(0.00164156,-1,1,0.00164156,-143.534,239.2068)"
+   width="6.0999999"
+   height="4" />
+						</g>
+						<g
+   id="XMLID_80_">
+							<g
+   id="XMLID_113_">
+								
+									<rect
+   id="XMLID_181_"
+   x="132.89999"
+   y="189.39999"
+   transform="matrix(0.00164156,-1,1,0.00164156,-55.6492,327.0911)"
+   width="6.0999999"
+   height="4" />
+								
+									<rect
+   id="XMLID_180_"
+   x="124.9"
+   y="189.39999"
+   transform="matrix(0.00164156,-1,1,0.00164156,-63.6435,319.1077)"
+   width="6.0999999"
+   height="4" />
+								
+									<rect
+   id="XMLID_10_"
+   x="149"
+   y="189.5"
+   transform="matrix(0.00164156,-1,1,0.00164156,-39.6368,343.2227)"
+   width="6.0999999"
+   height="4" />
+								
+									<rect
+   id="XMLID_9_"
+   x="140.89999"
+   y="189.5"
+   transform="matrix(0.00164156,-1,1,0.00164156,-47.731,335.1388)"
+   width="6.0999999"
+   height="4" />
+								
+									<rect
+   id="XMLID_179_"
+   x="116.9"
+   y="189.39999"
+   transform="matrix(0.00164156,-1,1,0.00164156,-71.6223,311.1023)"
+   width="6.0999999"
+   height="4" />
+								
+									<rect
+   id="XMLID_178_"
+   x="108.9"
+   y="189.39999"
+   transform="matrix(0.00164156,-1,1,0.00164156,-79.5859,303.0748)"
+   width="6.0999999"
+   height="4" />
+							</g>
+							<g
+   id="XMLID_101_">
+								
+									<rect
+   id="XMLID_112_"
+   x="100.6"
+   y="189.3"
+   transform="matrix(0.00164156,-1,1,0.00164156,-87.7842,294.6831)"
+   width="6.0999999"
+   height="4" />
+								
+									<rect
+   id="XMLID_111_"
+   x="92.5"
+   y="189.3"
+   transform="matrix(0.00164156,-1,1,0.00164156,-95.8785,286.5992)"
+   width="6.0999999"
+   height="4" />
+								
+									<rect
+   id="XMLID_109_"
+   x="84.5"
+   y="189.3"
+   transform="matrix(0.00164156,-1,1,0.00164156,-103.8574,278.5938)"
+   width="6.0999999"
+   height="4" />
+								
+									<rect
+   id="XMLID_102_"
+   x="76.5"
+   y="189.3"
+   transform="matrix(0.00164156,-1,1,0.00164156,-111.8207,270.5662)"
+   width="6.0999999"
+   height="4" />
+							</g>
+						</g>
+					</g>
+				</g>
+			</g>
+		</g>
+	</g>
+	<text
+   id="XMLID_244_"
+   transform="scale(0.98853428,1.0115987)"
+   class="st1 st2"
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:28px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;stroke-width:1.35401452"
+   x="57.908363"
+   y="125.96835">ESP32</text>
+
+
+
+<text
+   id="XMLID_244_-5"
+   transform="scale(0.98853428,1.0115987)"
+   class="st1 st2"
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:28px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;stroke-width:1.33264875"
+   x="83.82917"
+   y="154.2957">S2</text>
+
+
+</g>
+</svg>

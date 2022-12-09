@@ -9,7 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
-#if CONFIG_ESP32_APPTRACE_ENABLE == 1
+#if CONFIG_APPTRACE_ENABLE == 1
 #include "esp_app_trace.h"
 #include "esp_app_trace_util.h"
 
@@ -145,7 +145,7 @@ static void esp_apptrace_test_timer_isr(void *arg)
     }
 
     tim_arg->data.wr_cnt++;
-    timer_group_intr_clr_in_isr(tim_arg->group, tim_arg->id);
+    timer_group_clr_intr_status_in_isr(tim_arg->group, tim_arg->id);
     timer_group_enable_alarm_in_isr(tim_arg->group, tim_arg->id);
 }
 
@@ -153,7 +153,7 @@ static void esp_apptrace_test_timer_isr_crash(void *arg)
 {
     esp_apptrace_test_timer_arg_t *tim_arg = (esp_apptrace_test_timer_arg_t *)arg;
 
-    timer_group_intr_clr_in_isr(tim_arg->group, tim_arg->id);
+    timer_group_clr_intr_status_in_isr(tim_arg->group, tim_arg->id);
     timer_group_enable_alarm_in_isr(tim_arg->group, tim_arg->id);
     if (tim_arg->data.wr_cnt < ESP_APPTRACE_TEST_BLOCKS_BEFORE_CRASH) {
         uint32_t *ts = (uint32_t *)(tim_arg->data.buf + sizeof(uint32_t));
@@ -810,7 +810,7 @@ static void esp_sysview_test_timer_isr(void *arg)
 
     //ESP_APPTRACE_TEST_LOGI("tim-%d: IRQ %d/%d\n", tim_arg->id, tim_arg->group, tim_arg->timer);
 
-    timer_group_intr_clr_in_isr(tim_arg->group, tim_arg->id);
+    timer_group_clr_intr_status_in_isr(tim_arg->group, tim_arg->id);
     timer_group_enable_alarm_in_isr(tim_arg->group, tim_arg->id);
 }
 

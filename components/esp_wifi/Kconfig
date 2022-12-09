@@ -12,41 +12,9 @@ menu "Wi-Fi"
             If only Bluetooth is used, it is recommended to disable this option to reduce binary file
             size.
 
-    choice ESP32_WIFI_SW_COEXIST_PREFERENCE
-        prompt "WiFi/Bluetooth coexistence performance preference"
-        depends on ESP32_WIFI_SW_COEXIST_ENABLE
-        default ESP32_WIFI_SW_COEXIST_PREFERENCE_BALANCE
-        help
-            Choose Bluetooth/WiFi/Balance for different preference.
-            If choose WiFi, it will make WiFi performance better. Such, keep WiFi Audio more fluent.
-            If choose Bluetooth, it will make Bluetooth performance better. Such, keep Bluetooth(A2DP) Audio more
-            fluent.
-            If choose Balance, the performance of WiFi and bluetooth will be balance. It's default. Normally, just
-            choose balance, the A2DP audio can play fluently, too.
-            Except config preference in menuconfig, you can also call esp_coex_preference_set() dynamically.
-
-        config ESP32_WIFI_SW_COEXIST_PREFERENCE_WIFI
-            bool "WiFi"
-
-        config ESP32_WIFI_SW_COEXIST_PREFERENCE_BT
-            bool "Bluetooth(include BR/EDR and BLE)"
-
-        config ESP32_WIFI_SW_COEXIST_PREFERENCE_BALANCE
-            bool "Balance"
-
-    endchoice
-
-    config ESP32_WIFI_SW_COEXIST_PREFERENCE_VALUE
-        int
-        depends on ESP32_WIFI_SW_COEXIST_ENABLE
-        default 0 if ESP32_WIFI_SW_COEXIST_PREFERENCE_WIFI
-        default 1 if ESP32_WIFI_SW_COEXIST_PREFERENCE_BT
-        default 2 if ESP32_WIFI_SW_COEXIST_PREFERENCE_BALANCE
-
     config ESP32_WIFI_STATIC_RX_BUFFER_NUM
         int "Max number of WiFi static RX buffers"
-        range 2 25 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-        range 8 25 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        range 2 25
         default 10 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         help
@@ -110,7 +78,7 @@ menu "Wi-Fi"
     config ESP32_WIFI_STATIC_TX_BUFFER_NUM
         int "Max number of WiFi static TX buffers"
         depends on ESP32_WIFI_STATIC_TX_BUFFER
-        range 6 64
+        range 1 64
         default 16
         help
             Set the number of WiFi static TX buffers. Each buffer takes approximately 1.6KB of RAM.
@@ -122,10 +90,23 @@ menu "Wi-Fi"
             layer can deliver frames faster than WiFi layer can transmit. In these cases, we may run out
             of TX buffers.
 
+    config ESP32_WIFI_CACHE_TX_BUFFER_NUM
+        int "Max number of WiFi cache TX buffers"
+        depends on (ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT)
+        range 16 128
+        default 32
+        help
+            Set the number of WiFi cache TX buffer number.
+
+            For each TX packet from uplayer, such as LWIP etc, WiFi driver needs to allocate a static TX
+            buffer and makes a copy of uplayer packet. If WiFi driver fails to allocate the static TX buffer,
+            it caches the uplayer packets to a dedicated buffer queue, this option is used to configure the
+            size of the cached TX queue.
+
     config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
         int "Max number of WiFi dynamic TX buffers"
         depends on ESP32_WIFI_DYNAMIC_TX_BUFFER
-        range 16 128
+        range 1 128
         default 32
         help
             Set the number of WiFi dynamic TX buffers. The size of each dynamic TX buffer is not fixed,
@@ -171,8 +152,7 @@ menu "Wi-Fi"
     config ESP32_WIFI_RX_BA_WIN
         int "WiFi AMPDU RX BA window size"
         depends on ESP32_WIFI_AMPDU_RX_ENABLED
-        range 2 32 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-        range 16 32 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        range 2 32
         default 6 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         help
@@ -326,12 +306,21 @@ menu "Wi-Fi"
             When this option is disabled, more than 17Kbytes of IRAM memory will be saved
             but Wi-Fi performance will be reduced.
 
+    config ESP32_WIFI_ENABLE_WPA3_SAE
+        bool "Enable WPA3-Personal"
+        default y
+        help
+            Select this option to allow the device to establish a WPA3-Personal connection with eligible AP's.
+            PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
+            explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide for details.
+
 endmenu  # Wi-Fi
 
 menu "PHY"
 
     config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
-        # ToDo: remove once NVS and PHY partial calibration are supported
+        # ToDo: remove target dependency once NVS and PHY partial calibration are supported
+        # also re-enable the <RF_calibration> entry in docs/../api-guides/index.rst
         depends on IDF_TARGET_ESP32
         bool "Store phy calibration data in NVS"
         default y
@@ -347,7 +336,7 @@ menu "PHY"
             2.Because of your board design, each time when you do calibration, the result are too unstable.
             If unsure, choose 'y'.
 
-    config ESP32_PHY_INIT_DATA_IN_PARTITION
+    menuconfig ESP32_PHY_INIT_DATA_IN_PARTITION
         bool "Use a partition to store PHY init data"
         default n
         help
@@ -362,6 +351,32 @@ menu "PHY"
             into the application binary.
 
             If unsure, choose 'n'.
+
+    if ESP32_PHY_INIT_DATA_IN_PARTITION
+        config ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+            bool "Support multiple PHY init data bin"
+            depends on ESP32_PHY_INIT_DATA_IN_PARTITION
+            default n
+            help
+                If enabled, the corresponding PHY init data type can be automatically switched
+                according to the country code. China's PHY init data bin is used by default.
+                Can be modified by country information in API esp_wifi_set_country().
+                The priority of switching the PHY init data type is:
+                1. Country configured by API esp_wifi_set_country()
+                and the parameter policy is WIFI_COUNTRY_POLICY_MANUAL.
+                2. Country notified by the connected AP.
+                3. Country configured by API esp_wifi_set_country()
+                and the parameter policy is WIFI_COUNTRY_POLICY_AUTO.
+
+        config ESP32_PHY_INIT_DATA_ERROR
+            bool "Terminate operation when PHY init data error"
+            depends on ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+            default n
+            help
+                If enabled, when an error occurs while the PHY init data is updated,
+                the program will terminate and restart.
+                If not enabled, the PHY init data will not be updated when an error occurs.
+    endif
 
     config ESP32_PHY_MAX_WIFI_TX_POWER
         int "Max WiFi TX power (dBm)"

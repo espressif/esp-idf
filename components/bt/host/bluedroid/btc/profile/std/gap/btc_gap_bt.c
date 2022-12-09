@@ -639,7 +639,7 @@ static void btc_gap_bt_read_rssi_delta_cmpl_callback(void *p_data)
 
 static void btc_gap_bt_read_rssi_delta(btc_gap_bt_args_t *arg)
 {
-    BTA_DmBleReadRSSI(arg->read_rssi_delta.bda.address, BTA_TRANSPORT_BR_EDR, btc_gap_bt_read_rssi_delta_cmpl_callback);
+    BTA_DmReadRSSI(arg->read_rssi_delta.bda.address, BTA_TRANSPORT_BR_EDR, btc_gap_bt_read_rssi_delta_cmpl_callback);
 }
 
 static esp_err_t btc_gap_bt_remove_bond_device(btc_gap_bt_args_t *arg)
@@ -950,10 +950,13 @@ void btc_gap_bt_busy_level_updated(uint8_t bl_flags)
         param.disc_st_chg.state = ESP_BT_GAP_DISCOVERY_STARTED;
         btc_gap_bt_cb_to_app(ESP_BT_GAP_DISC_STATE_CHANGED_EVT, &param);
         btc_gap_bt_inquiry_in_progress = true;
-    } else if (bl_flags == BTM_BL_INQUIRY_CANCELLED ||
-               bl_flags == BTM_BL_INQUIRY_COMPLETE) {
+    } else if (bl_flags == BTM_BL_INQUIRY_CANCELLED) {
         param.disc_st_chg.state = ESP_BT_GAP_DISCOVERY_STOPPED;
         btc_gap_bt_cb_to_app(ESP_BT_GAP_DISC_STATE_CHANGED_EVT, &param);
+        btc_gap_bt_inquiry_in_progress = false;
+    } else if (bl_flags == BTM_BL_INQUIRY_COMPLETE) {
+        /* The Inquiry Complete event is not transported to app layer,
+        since the app only cares about the Name Discovery Complete event */
         btc_gap_bt_inquiry_in_progress = false;
     }
 }
@@ -972,6 +975,7 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
     case BTC_GAP_BT_PIN_REQ_EVT:
     case BTC_GAP_BT_SET_AFH_CHANNELS_EVT:
     case BTC_GAP_BT_READ_REMOTE_NAME_EVT:
+    case BTC_GAP_BT_REMOVE_BOND_DEV_COMPLETE_EVT:
 #if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_CFM_REQ_EVT:
     case BTC_GAP_BT_KEY_NOTIF_EVT:
@@ -1039,6 +1043,10 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
         break;
     }
 #endif
+    case BTC_GAP_BT_REMOVE_BOND_DEV_COMPLETE_EVT:{
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT,(esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
         break;

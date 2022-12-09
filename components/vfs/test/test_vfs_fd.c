@@ -24,6 +24,7 @@
 #include "unity.h"
 #include "esp_log.h"
 #include "test_utils.h"
+#include "ccomp_timer.h"
 
 #define VFS_PREF1       "/vfs1"
 #define VFS_PREF2       "/vfs2"
@@ -243,7 +244,7 @@ TEST_CASE("Open & write & close through VFS passes performance test", "[vfs]")
 
     TEST_ESP_OK( esp_vfs_register(VFS_PREF1, &desc, NULL) );
 
-    const int64_t begin = esp_timer_get_time();
+    ccomp_timer_start();
     const int iter_count = 5000;
 
     for (int i = 0; i < iter_count; ++i) {
@@ -255,9 +256,7 @@ TEST_CASE("Open & write & close through VFS passes performance test", "[vfs]")
         TEST_ASSERT_NOT_EQUAL(close(fd), -1);
     }
 
-    // esp_vfs_open, esp_vfs_write and esp_vfs_close need to be in IRAM for performance test to pass
-
-    const int64_t time_diff_us = esp_timer_get_time() - begin;
+    const int64_t time_diff_us = ccomp_timer_stop();
     const int ns_per_iter = (int) (time_diff_us * 1000 / iter_count);
     TEST_ESP_OK( esp_vfs_unregister(VFS_PREF1) );
 #ifdef CONFIG_SPIRAM

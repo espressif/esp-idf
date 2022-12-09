@@ -23,6 +23,9 @@ endif()
 
 if(CONFIG_HEAP_TRACING_TOHOST)
     list(APPEND srcs "heap_trace_tohost.c")
+    set_source_files_properties(heap_trace_tohost.c
+        PROPERTIES COMPILE_FLAGS
+        -Wno-frame-address)
 endif()
 
 idf_component_register(SRCS "${srcs}"
@@ -33,4 +36,7 @@ idf_component_register(SRCS "${srcs}"
 # disable --coverage for this component, as it is used as transport
 # for gcov
 target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-profile-arcs" "-fno-test-coverage")
-target_link_libraries(${COMPONENT_LIB} PUBLIC gcov ${LIBC} ${LIBM} gcc)
+
+# Force app_trace to also appear later than gcov in link line
+idf_component_get_property(app_trace app_trace COMPONENT_LIB)
+target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${app_trace}> gcov $<TARGET_FILE:${app_trace}> c)

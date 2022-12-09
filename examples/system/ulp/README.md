@@ -1,8 +1,11 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # ULP Pulse Counting Example
 
 This example demonstrates how to program the ULP coprocessor to count pulses on an IO while the main CPUs are either running some other code or are in deep sleep. See the README.md file in the upper level 'examples' directory for more information about examples.
 
-ULP program written in assembly can be found in `ulp/pulse_cnt.S`. The build system assembles and links this program, converts it into binary format, and embeds it into the .rodata section of the ESP-IDF application.
+ULP program written in assembly can be found across `ulp/pulse_cnt.S` and `ulp/wake_up.S` (demonstrating multiple ULP source files). The build system assembles and links this program, converts it into binary format, and embeds it into the .rodata section of the ESP-IDF application.
  
 At runtime, the main code running on the ESP32 (found in main.c) loads ULP program into the `RTC_SLOW_MEM` memory region using `ulp_load_binary` function. Main code configures the ULP program by setting up values of some variables and then starts it using `ulp_run`. Once the ULP program is started, it runs periodically, with the period set by the main program. The main program enables ULP wakeup source and puts the chip into deep sleep mode.
 

@@ -69,9 +69,9 @@ esp_err_t mbc_master_destroy(void)
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->destroy();
     MB_MASTER_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
+                    error, 
                     "SERIAL master destroy failure error=(0x%x).", 
-                    (uint16_t)error);
+                    error);
     return error;
 }
 
@@ -86,9 +86,9 @@ esp_err_t mbc_master_get_cid_info(uint16_t cid, const mb_parameter_descriptor_t*
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->get_cid_info(cid, param_info);
     MB_MASTER_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
+                    error, 
                     "SERIAL master get cid info failure error=(0x%x).", 
-                    (uint16_t)error);
+                    error);
     return error;
 }
 

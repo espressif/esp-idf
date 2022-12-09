@@ -23,7 +23,8 @@
 #include "osi/future.h"
 #include "btc_gatts.h"
 #include "btc_gatt_util.h"
-
+#include "common/bt_target.h"
+#if (BLUFI_INCLUDED == TRUE)
 esp_err_t esp_blufi_register_callbacks(esp_blufi_callbacks_t *callbacks)
 {
     if (esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
@@ -162,3 +163,4 @@ esp_err_t esp_blufi_send_custom_data(uint8_t *data, uint32_t data_len)
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), btc_blufi_call_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+#endif  ///BLUFI_INCLUDED == TRUE

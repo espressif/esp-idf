@@ -1,6 +1,8 @@
 MCPWM
 =====
 
+.. This peripheral is ESP32 only
+
 ESP32 has two MCPWM units which can be used to control different types of motors. Each unit has three pairs of PWM outputs.
 
 .. figure:: ../../../_static/mcpwm-overview.png
@@ -23,7 +25,7 @@ More detailed block diagram of the MCPWM unit is shown below. Each A/B pair may 
 
     MCPWM Block Diagram
 
-Description of this API starts with configuration of MCPWM's **Timer** and **Operator** submodules to provide the basic motor control functionality. Then it discusses more advanced submodules and functionalities of a **Fault Handler**, signal **Capture**, **Carrier** and **Interrupts**. 
+Description of this API starts with configuration of MCPWM's **Timer** and **Generator** submodules to provide the basic motor control functionality. Then it discusses more advanced submodules and functionalities of a **Fault Handler**, signal **Capture**, **Carrier** and **Interrupts**.
 
 Contents
 --------
@@ -51,9 +53,9 @@ In this case we will describe a simple configuration to control a brushed DC mot
 
     Example of Brushed DC Motor Control with MCPWM
 
-Configuration covers the following steps: 
+Configuration covers the following steps:
 
-1. Selection of a MPWN unit that will be used to drive the motor. There are two units available on-board of ESP32 and enumerated in :cpp:type:`mcpwm_unit_t`.
+1. Selection of a MPWn unit that will be used to drive the motor. There are two units available on-board of {IDF_TARGET_NAME} and enumerated in :cpp:type:`mcpwm_unit_t`.
 2. Initialization of two GPIOs as output signals within selected unit by calling :cpp:func:`mcpwm_gpio_init`. The two output signals are typically used to command the motor to rotate right or left. All available signal options are listed in :cpp:type:`mcpwm_io_signals_t`. To set more than a single pin at a time, use function :cpp:func:`mcpwm_set_pin` together with :cpp:type:`mcpwm_pin_config_t`.
 3. Selection of a timer. There are three timers available within the unit. The timers are listed in :cpp:type:`mcpwm_timer_t`.
 4. Setting of the timer frequency and initial duty within :cpp:type:`mcpwm_config_t` structure.
@@ -63,13 +65,13 @@ Configuration covers the following steps:
 Operate
 -------
 
-To operate a motor connected to the MCPWM unit, e.g. turn it left or right, or vary the speed, we should apply some control signals to the unit's outputs. The outputs are organized into three pairs. Within a pair they are labeled "A" and "B" and driven by a submodule called an "Operator". To provide a PWM signal, the Operator itself should be clocked by one of three available Timers. To make the API simpler, each Timer is automatically associated by the API to drive an Operator of the same index, e.g. Timer 0 is associated with Operator 0. 
+To operate a motor connected to the MCPWM unit, e.g. turn it left or right, or vary the speed, we should apply some control signals to the unit's outputs. The outputs are organized into three pairs. Within a pair they are labeled "A" and "B" and each driven by a submodule called an "Generator". To provide a PWM signal, the Operator itself, which contains two Generator, should be clocked by one of three available Timers. To make the API simpler, each Timer is automatically associated by the API to drive an Operator of the same index, e.g. Timer 0 is associated with Operator 0.
 
-There are the following basic ways to control the outputs: 
+There are the following basic ways to control the outputs:
 
 * We can drive particular signal steady high or steady low with function :cpp:func:`mcpwm_set_signal_high` or :cpp:func:`mcpwm_set_signal_low`. This will make the motor to turn with a maximum speed or stop. Depending on selected output A or B the motor will rotate either right or left.
-* Another option is to drive the outputs with the PWM signal by calling :cpp:func:`mcpwm_start` or :cpp:func:`mcpwm_stop`. The motor speed will be proportional to the PWM duty. 
-* To vary PWM's duty call :cpp:func:`mcpwm_set_duty` and provide the duty value in %. Optionally, you may call :cpp:func:`mcpwm_set_duty_in_us`, if you prefer to set the duty in microseconds. Checking of currently set value is possible by calling :cpp:func:`mcpwm_get_duty`. Phase of the PWM signal may be altered by calling :cpp:func:`mcpwm_set_duty_type`. The duty is set individually for each A and B output using :cpp:type:`mcpwm_operator_t` in specific function calls. The duty value refers either to high or low output signal duration. This is configured when calling :cpp:func:`mcpwm_init`, as discussed in section `Configure`_, and selecting one of options from :cpp:type:`mcpwm_duty_type_t`.
+* Another option is to drive the outputs with the PWM signal by calling :cpp:func:`mcpwm_start` or :cpp:func:`mcpwm_stop`. The motor speed will be proportional to the PWM duty.
+* To vary PWM's duty call :cpp:func:`mcpwm_set_duty` and provide the duty value in %. Optionally, you may call :cpp:func:`mcpwm_set_duty_in_us`, if you prefer to set the duty in microseconds. Checking of currently set value is possible by calling :cpp:func:`mcpwm_get_duty`. Phase of the PWM signal may be altered by calling :cpp:func:`mcpwm_set_duty_type`. The duty is set individually for each A and B output using :cpp:type:`mcpwm_generator_t` in specific function calls. The duty value refers either to high or low output signal duration. This is configured when calling :cpp:func:`mcpwm_init`, as discussed in section `Configure`_, and selecting one of options from :cpp:type:`mcpwm_duty_type_t`.
 
 .. note::
 
@@ -89,8 +91,8 @@ There are couple of ways to adjust a signal on the outputs and changing how the 
 
     Synchronization signals are referred to using two different enumerations. First one :cpp:type:`mcpwm_io_signals_t` is used together with function :cpp:func:`mcpwm_gpio_init` when selecting a GPIO as the signal input source. The second one :cpp:type:`mcpwm_sync_signal_t` is used when enabling or disabling synchronization with :cpp:func:`mcpwm_sync_enable` or :cpp:func:`mcpwm_sync_disable`.
 
-* Vary the pattern of the A/B output signals by getting MCPWM counters to count up, down and up/down (automatically changing the count direction). Respective configuration is done when calling :cpp:func:`mcpwm_init`, as discussed in section `Configure`_, and selecting one of counter types from :cpp:type:`mcpwm_counter_type_t`. For explanation of how A/B PWM output signals are generated please refer to `ESP32 Technical Reference Manual`_.
 
+* Vary the pattern of the A/B output signals by getting MCPWM counters to count up, down and up/down (automatically changing the count direction). Respective configuration is done when calling :cpp:func:`mcpwm_init`, as discussed in section `Configure`_, and selecting one of counter types from :cpp:type:`mcpwm_counter_type_t`. For explanation of how A/B PWM output signals are generated please refer to `{IDF_TARGET_NAME} Technical Reference Manual`_.
 
 Capture
 -------
@@ -107,9 +109,9 @@ One of requirements of BLDC (Brushless DC, see figure below) motor control is se
 The capture functionality may be used for other types of motors or tasks. The functionality is enabled in two steps:
 
 1. Configuration of GPIOs to act as the capture signal inputs by calling functions :cpp:func:`mcpwm_gpio_init` or :cpp:func:`mcpwm_set_pin`, that were described in section `Configure`_.
-2. Enabling of the functionality itself by invoking :cpp:func:`mcpwm_capture_enable`, selecting desired signal input from :cpp:type:`mcpwm_capture_signal_t`, setting the signal edge with :cpp:type:`mcpwm_capture_on_edge_t` and the signal count prescaler. 
+2. Enabling of the functionality itself by invoking :cpp:func:`mcpwm_capture_enable`, selecting desired signal input from :cpp:type:`mcpwm_capture_signal_t`, setting the signal edge with :cpp:type:`mcpwm_capture_on_edge_t` and the signal count prescaler.
 
-Within the second step above a 32-bit capture timer is enabled. The timer runs continuously driven by the APB clock. The clock frequency is typically 80 MHz. On each capture event the capture timer’s value is stored in time-stamp register that may be then checked by calling :cpp:func:`mcpwm_capture_signal_get_value`. The edge of the last signal may be checked with :cpp:func:`mcpwm_capture_signal_get_edge`. 
+Within the second step above a 32-bit capture timer is enabled. The timer runs continuously driven by the APB clock. The clock frequency is typically 80 MHz. On each capture event the capture timer’s value is stored in time-stamp register that may be then checked by calling :cpp:func:`mcpwm_capture_signal_get_value`. The edge of the last signal may be checked with :cpp:func:`mcpwm_capture_signal_get_edge`.
 
 If not required anymore, the capture functionality may be disabled with :cpp:func:`mcpwm_capture_disable`.
 
@@ -131,12 +133,12 @@ The fault handler functionality is enabled in two steps:
 1. Configuration of GPIOs to act as fault signal inputs. This is done in analogous way as described for capture signals in section above. It includes setting the signal level to trigger the fault as defined in :cpp:type:`mcpwm_fault_input_level_t`.
 2. Initialization of the fault handler by calling either :cpp:func:`mcpwm_fault_set_oneshot_mode` or :cpp:func:`mcpwm_fault_set_cyc_mode`. These functions set the mode that MCPWM should operate once fault signal becomes inactive. There are two modes possible:
 
-  * State of MCPWM unit will be locked until reset - :cpp:func:`mcpwm_fault_set_oneshot_mode`. 
-  * The MCPWM will resume operation once fault signal becoming inactive - :cpp:func:`mcpwm_fault_set_cyc_mode`. 
+  * State of MCPWM unit will be locked until reset - :cpp:func:`mcpwm_fault_set_oneshot_mode`.
+  * The MCPWM will resume operation once fault signal becoming inactive - :cpp:func:`mcpwm_fault_set_cyc_mode`.
 
   The function call parameters include selection of one of three fault inputs defined in :cpp:type:`mcpwm_fault_signal_t` and specific action on outputs A and B defined in :cpp:type:`mcpwm_action_on_pwmxa_t` and :cpp:type:`mcpwm_action_on_pwmxb_t`.
 
-Particular fault signal may be disabled at the runtime by calling :cpp:func:`mcpwm_fault_deinit`. 
+Particular fault signal may be disabled at the runtime by calling :cpp:func:`mcpwm_fault_deinit`.
 
 
 Carrier
@@ -148,7 +150,7 @@ To use the carrier submodule, it should be first initialized by calling :cpp:fun
 
 The carrier parameters may be then alerted at a runtime by calling dedicated functions to change individual fields of the :cpp:type:`mcpwm_carrier_config_t` structure, like :cpp:func:`mcpwm_carrier_set_period`, :cpp:func:`mcpwm_carrier_set_duty_cycle`, :cpp:func:`mcpwm_carrier_output_invert`, etc.
 
-This includes enabling and setting duration of the first pulse of the career with :cpp:func:`mcpwm_carrier_oneshot_mode_enable`. For more details please refer to "PWM Carrier Submodule" section of the `ESP32 Technical Reference Manual`_.
+This includes enabling and setting duration of the first pulse of the career with :cpp:func:`mcpwm_carrier_oneshot_mode_enable`. For more details please refer to "PWM Carrier Submodule" section of the `{IDF_TARGET_NAME} Technical Reference Manual`_.
 
 To disable carrier functionality call :cpp:func:`mcpwm_carrier_disable`.
 
@@ -158,7 +160,7 @@ Interrupts
 
 Registering of the MCPWM interrupt handler is possible by calling :cpp:func:`mcpwm_isr_register`.
 
-              
+
 Application Example
 -------------------
 
@@ -169,11 +171,13 @@ Examples of using MCPWM for motor control: :example:`peripherals/mcpwm`:
 * Brushed DC motor control - :example:`peripherals/mcpwm/mcpwm_brushed_dc_control`
 * Servo motor control - :example:`peripherals/mcpwm/mcpwm_servo_control`
 
-.. _ESP32 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
+.. _{IDF_TARGET_NAME} Technical Reference Manual: {IDF_TARGET_TRM_EN_URL}
 
 
 API Reference
 -------------
 
-.. include:: /_build/inc/mcpwm.inc
+.. include-build-file:: inc/mcpwm_types.inc
+.. include-build-file:: inc/mcpwm.inc
+
 

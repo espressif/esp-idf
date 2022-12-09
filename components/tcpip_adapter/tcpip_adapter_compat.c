@@ -58,7 +58,7 @@ static void wifi_create_and_start_ap(void *esp_netif, esp_event_base_t base, int
         esp_netif_t *ap_netif = esp_netif_new(&cfg);
 
         esp_netif_attach_wifi_ap(ap_netif);
-        esp_wifi_set_default_wifi_sta_handlers();
+        esp_wifi_set_default_wifi_ap_handlers();
         s_esp_netifs[TCPIP_ADAPTER_IF_AP] = ap_netif;
     }
 }
@@ -106,15 +106,9 @@ void tcpip_adapter_init(void)
 }
 
 #if CONFIG_ETH_ENABLED
-static void tcpip_adapter_attach_eth_to_netif(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
-{
-    esp_eth_handle_t eth_handle = *(esp_eth_handle_t*)data;
-    esp_netif_attach(esp_netif, eth_handle);
-}
 
 esp_err_t tcpip_adapter_clear_default_eth_handlers(void)
 {
-    ESP_ERROR_CHECK(esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_START, tcpip_adapter_attach_eth_to_netif));
     return esp_eth_clear_default_handlers(netif_from_if(TCPIP_ADAPTER_IF_ETH));
 }
 
@@ -125,18 +119,24 @@ esp_err_t tcpip_adapter_set_default_eth_handlers(void)
         esp_netif_t *eth_netif = esp_netif_new(&cfg);
 
         s_esp_netifs[TCPIP_ADAPTER_IF_ETH] = eth_netif;
-        // provide a separate "after driver start" hook to attach
-        esp_err_t ret = esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_START, tcpip_adapter_attach_eth_to_netif, eth_netif);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to register ");
-            return ret;
-        }
 
         return esp_eth_set_default_handlers(eth_netif);
     }
     return ESP_OK;
 
 }
+
+esp_err_t tcpip_adapter_compat_start_eth(void *eth_driver)
+{
+    if (s_tcpip_adapter_compat) {
+        esp_netif_t *esp_netif = netif_from_if(TCPIP_ADAPTER_IF_ETH);
+        if (esp_netif) {
+            esp_netif_attach(esp_netif, esp_eth_new_netif_glue(eth_driver));
+        }
+    }
+    return ESP_OK;
+}
+
 #endif
 
 esp_err_t tcpip_adapter_eth_input(void *buffer, uint16_t len, void *eb)
@@ -152,15 +152,6 @@ esp_err_t tcpip_adapter_sta_input(void *buffer, uint16_t len, void *eb)
 esp_err_t tcpip_adapter_ap_input(void *buffer, uint16_t len, void *eb)
 {
     return esp_netif_receive(netif_from_if(TCPIP_ADAPTER_IF_AP), buffer, len, eb);
-}
-
-esp_err_t tcpip_adapter_compat_start_eth(void* eth_driver)
-{
-    if (s_tcpip_adapter_compat) {
-        esp_netif_t *esp_netif = netif_from_if(TCPIP_ADAPTER_IF_ETH);
-        esp_netif_attach(esp_netif, eth_driver);
-    }
-    return ESP_OK;
 }
 
 esp_err_t tcpip_adapter_set_default_wifi_handlers(void)
@@ -187,7 +178,12 @@ esp_err_t tcpip_adapter_set_default_wifi_handlers(void)
 
 esp_err_t tcpip_adapter_clear_default_wifi_handlers(void)
 {
-    return _esp_wifi_clear_default_wifi_handlers();
+    if (s_tcpip_adapter_compat) {
+        // Clear default handlers only if tcpip-adapter mode used
+        return _esp_wifi_clear_default_wifi_handlers();
+    }
+    // No action if tcpip-adapter compatibility enabled, but interfaces created/configured with esp-netif
+    return ESP_OK;
 }
 
 tcpip_adapter_if_t tcpip_adapter_if_from_esp_netif(esp_netif_t *esp_netif)
@@ -207,6 +203,11 @@ esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
 esp_err_t tcpip_adapter_get_ip6_linklocal(tcpip_adapter_if_t tcpip_if, ip6_addr_t *if_ip6)
 {
     return esp_netif_get_ip6_linklocal(netif_from_if(tcpip_if), (esp_ip6_addr_t*)if_ip6);
+}
+
+esp_err_t tcpip_adapter_get_ip6_global(tcpip_adapter_if_t tcpip_if, ip6_addr_t *if_ip6)
+{
+    return esp_netif_get_ip6_global(netif_from_if(tcpip_if), (esp_ip6_addr_t*)if_ip6);
 }
 
 esp_err_t tcpip_adapter_dhcpc_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status)
@@ -267,7 +268,7 @@ esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_dhcp_option_mode_t opt_op, tc
 
 esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_dhcp_option_mode_t opt_op, tcpip_adapter_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len)
 {
-    return esp_netif_dhcpc_option(NULL, opt_op, opt_id, opt_val, opt_len);
+    return esp_netif_dhcpc_option(netif_from_if(TCPIP_ADAPTER_IF_STA), opt_op, opt_id, opt_val, opt_len);
 }
 
 esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, const tcpip_adapter_ip_info_t *ip_info)

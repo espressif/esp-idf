@@ -52,7 +52,7 @@ static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_e
     uint32_t flash_crypt_cnt;
 #if CONFIG_IDF_TARGET_ESP32
     flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_FLASH_CRYPT_CNT);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     flash_crypt_cnt = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_SPI_BOOT_CRYPT_CNT);
 #endif
     /* __builtin_parity is in flash, so we calculate parity inline */
@@ -127,6 +127,10 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length);
  * Intended to be called as a part of boot process if flash encryption
  * is enabled but secure boot is not used. This should protect against
  * serial re-flashing of an unauthorised code in absence of secure boot.
+ *
+ * @note On ESP32 V3 only, write protecting FLASH_CRYPT_CNT will also prevent
+ * disabling UART Download Mode. If both are wanted, call
+ * esp_efuse_disable_rom_download_mode() before calling this function.
  *
  */
 void esp_flash_write_protect_crypt_cnt(void);

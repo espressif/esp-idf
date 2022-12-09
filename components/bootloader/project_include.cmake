@@ -19,8 +19,8 @@ set(bootloader_binary_files
 
 idf_build_get_property(project_dir PROJECT_DIR)
 
-# There are some additional processing when CONFIG_CONFIG_SECURE_SIGNED_APPS. This happens
-# when either CONFIG_SECURE_BOOT_ENABLED or SECURE_BOOT_BUILD_SIGNED_BINARIES.
+# There are some additional processing when CONFIG_SECURE_SIGNED_APPS. This happens
+# when either CONFIG_SECURE_BOOT_V1_ENABLED or CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES.
 # For both cases, the user either sets binaries to be signed during build or not
 # using CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES.
 #
@@ -29,7 +29,13 @@ idf_build_get_property(project_dir PROJECT_DIR)
 if(CONFIG_SECURE_SIGNED_APPS)
     add_custom_target(gen_secure_boot_keys)
 
-    if(CONFIG_SECURE_BOOT_ENABLED)
+    if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+        set(secure_apps_signing_scheme "1")
+    elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+        set(secure_apps_signing_scheme "2")
+    endif()
+
+    if(CONFIG_SECURE_BOOT_V1_ENABLED)
         # Check that the configuration is sane
         if((CONFIG_SECURE_BOOTLOADER_REFLASHABLE AND CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH) OR
             (NOT CONFIG_SECURE_BOOTLOADER_REFLASHABLE AND NOT CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH))
@@ -60,7 +66,8 @@ if(CONFIG_SECURE_SIGNED_APPS)
             # (to pick up a new signing key if one exists, etc.)
             fail_at_build_time(gen_secure_boot_signing_key
                 "Secure Boot Signing Key ${CONFIG_SECURE_BOOT_SIGNING_KEY} does not exist. Generate using:"
-                "\tespsecure.py generate_signing_key ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
+                "\tespsecure.py generate_signing_key --version ${secure_apps_signing_scheme} \
+                ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
         else()
             add_custom_target(gen_secure_boot_signing_key)
         endif()
@@ -70,7 +77,7 @@ if(CONFIG_SECURE_SIGNED_APPS)
         set(ver_key_arg)
 
         add_dependencies(gen_secure_boot_keys gen_secure_boot_signing_key)
-    else()
+    elseif(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
 
         get_filename_component(secure_boot_verification_key
             ${CONFIG_SECURE_BOOT_VERIFICATION_KEY}
@@ -83,7 +90,7 @@ if(CONFIG_SECURE_SIGNED_APPS)
             fail_at_build_time(gen_secure_boot_verification_key
                 "Secure Boot Verification Public Key ${CONFIG_SECURE_BOOT_VERIFICATION_KEY} does not exist."
                 "\tThis can be extracted from the private signing key."
-                "\tSee docs/security/secure-boot.rst for details.")
+                "\tSee docs/security/secure-boot-v1.rst for details.")
         else()
             add_custom_target(gen_secure_boot_verification_key)
         endif()

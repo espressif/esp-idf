@@ -31,7 +31,7 @@ void Storage::clearNamespaces()
     mNamespaces.clearAndFreeNodes();
 }
 
-void Storage::populateBlobIndices(TBlobIndexList& blobIdxList)
+esp_err_t Storage::populateBlobIndices(TBlobIndexList& blobIdxList)
 {
     for (auto it = mPageManager.begin(); it != mPageManager.end(); ++it) {
         Page& p = *it;
@@ -43,7 +43,9 @@ void Storage::populateBlobIndices(TBlobIndexList& blobIdxList)
          * duplicate index at this point */
 
         while (p.findItem(Page::NS_ANY, ItemType::BLOB_IDX, nullptr, itemIndex, item) == ESP_OK) {
-            BlobIndexNode* entry = new BlobIndexNode;
+            BlobIndexNode* entry = new (std::nothrow) BlobIndexNode;
+
+            if (!entry) return ESP_ERR_NO_MEM;
 
             item.getKey(entry->key, sizeof(entry->key));
             entry->nsIndex = item.nsIndex;
@@ -54,6 +56,8 @@ void Storage::populateBlobIndices(TBlobIndexList& blobIdxList)
             itemIndex += item.span;
         }
     }
+
+    return ESP_OK;
 }
 
 void Storage::eraseOrphanDataBlobs(TBlobIndexList& blobIdxList)
@@ -100,7 +104,13 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
         size_t itemIndex = 0;
         Item item;
         while (p.findItem(Page::NS_INDEX, ItemType::U8, nullptr, itemIndex, item) == ESP_OK) {
-            NamespaceEntry* entry = new NamespaceEntry;
+            NamespaceEntry* entry = new (std::nothrow) NamespaceEntry;
+
+            if (!entry) {
+                mState = StorageState::INVALID;
+                return ESP_ERR_NO_MEM;
+            }
+
             item.getKey(entry->mName, sizeof(entry->mName));
             item.getValue(entry->mIndex);
             mNamespaces.push_back(entry);
@@ -114,7 +124,11 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
 
     // Populate list of multi-page index entries.
     TBlobIndexList blobIdxList;
-    populateBlobIndices(blobIdxList);
+    err = populateBlobIndices(blobIdxList);
+    if (err != ESP_OK) {
+        mState = StorageState::INVALID;
+        return ESP_ERR_NO_MEM;
+    }
 
     // Remove the entries for which there is no parent multi-page index.
     eraseOrphanDataBlobs(blobIdxList);
@@ -203,7 +217,11 @@ esp_err_t Storage::writeMultiPageBlob(uint8_t nsIndex, const char* key, const vo
         if (err != ESP_OK) {
             break;
         } else {
-            UsedPageNode* node = new UsedPageNode();
+            UsedPageNode* node = new (std::nothrow) UsedPageNode();
+            if (!node) {
+                err = ESP_ERR_NO_MEM;
+                break;
+            }
             node->mPage = &page;
             usedPages.push_back(node);
             if (remainingSize || (tailroom - chunkSize) < Page::ENTRY_SIZE) {
@@ -395,6 +413,11 @@ esp_err_t Storage::createOrOpenNamespace(const char* nsName, bool canCreate, uin
             return ESP_ERR_NVS_NOT_ENOUGH_SPACE;
         }
 
+        NamespaceEntry* entry = new (std::nothrow) NamespaceEntry;
+        if (!entry) {
+            return ESP_ERR_NO_MEM;
+        }
+
         auto err = writeItem(Page::NS_INDEX, ItemType::U8, nsName, &ns, sizeof(ns));
         if (err != ESP_OK) {
             return err;
@@ -402,7 +425,6 @@ esp_err_t Storage::createOrOpenNamespace(const char* nsName, bool canCreate, uin
         mNamespaceUsage.set(ns, true);
         nsIndex = ns;
 
-        NamespaceEntry* entry = new NamespaceEntry;
         entry->mIndex = ns;
         strncpy(entry->mName, nsName, sizeof(entry->mName) - 1);
         entry->mName[sizeof(entry->mName) - 1] = 0;
@@ -741,7 +763,9 @@ inline bool isIterableItem(Item& item)
 
 inline bool isMultipageBlob(Item& item)
 {
-    return (item.datatype == ItemType::BLOB_DATA && item.chunkIndex != 0);
+    return (item.datatype == ItemType::BLOB_DATA &&
+            !(item.chunkIndex == static_cast<uint8_t>(VerOffset::VER_0_OFFSET)
+                    || item.chunkIndex == static_cast<uint8_t>(VerOffset::VER_1_OFFSET)));
 }
 
 bool Storage::nextEntry(nvs_opaque_iterator_t* it)

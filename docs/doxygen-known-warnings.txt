@@ -1,0 +1,1 @@
+semphr.h:line: warning: argument 'pxStaticSemaphore' of command @param is not found in the argument list of xSemaphoreCreateCounting(uxMaxCount, uxInitialCount)

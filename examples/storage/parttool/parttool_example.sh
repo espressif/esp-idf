@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Demonstrates command-line interface of Partition Tool, parttool.py
 #

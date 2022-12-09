@@ -5,13 +5,15 @@
 概述
 ----
 
-每片 ESP32 的 flash 可以包含多个应用程序，以及多种不同类型的数据（例如校准数据、文件系统数据、参数存储器数据等）。因此，我们需要引入分区表的概念。
+每片 {IDF_TARGET_NAME} 的 flash 可以包含多个应用程序，以及多种不同类型的数据（例如校准数据、文件系统数据、参数存储器数据等）。因此，我们需要引入分区表的概念。
 
-具体来说，ESP32 在 flash 的 :ref:`默认偏移地址 <CONFIG_PARTITION_TABLE_OFFSET>` 0x8000 处烧写一张分区表。该分区表的长度为 0xC00 字节（最多可以保存 95 条分区表条目）。分区表数据后还保存着该表的 MD5 校验和，用于验证分区表的完整性。此外，如果芯片使能了 :doc:`安全启动 </security/secure-boot>` 功能，则该分区表后还会保存签名信息。
+.. only:: esp32
+
+   具体来说，{IDF_TARGET_NAME} 在 flash 的 :ref:`默认偏移地址 <CONFIG_PARTITION_TABLE_OFFSET>` 0x8000 处烧写一张分区表。该分区表的长度为 0xC00 字节（最多可以保存 95 条分区表条目）。分区表数据后还保存着该表的 MD5 校验和，用于验证分区表的完整性。此外，如果芯片使能了 :doc:`安全启动 </security/secure-boot-v2>` 功能，则该分区表后还会保存签名信息。
 
 分区表中的每个条目都包括以下几个部分：Name（标签）、Type（app、data 等）、SubType 以及在 flash 中的偏移量（分区的加载地址）。
 
-在使用分区表时，最简单的方法就是用 `idf.py menuconfig` 选择一张预定义的分区表：
+在使用分区表时，最简单的方法就是打开项目配置菜单（``idf.py menuconfig``），并在 :ref:`CONFIG_PARTITION_TABLE_TYPE` 下选择一个预定义的分区表：
 
 -  "Single factory app, no OTA"
 -  "Factory app, two OTA definitions"
@@ -24,18 +26,18 @@
 以下是 "Single factory app, no OTA" 选项的分区表信息摘要：
 
 
-   # Espressif ESP32 Partition Table
+   # ESP-IDF Partition Table
    # Name,   Type, SubType, Offset,  Size,   Flags
    nvs,      data, nvs,     0x9000,  0x6000,
    phy_init, data, phy,     0xf000,  0x1000,
    factory,  app,  factory, 0x10000, 1M,
 
--  flash 的 0x10000 (64KB) 偏移地址处存放一个标记为 "factory" 的二进制应用程序，且 Bootloader 将默认加载这个应用程序。
+-  flash 的 0x10000 (64KB) 偏移地址处存放一个标记为 "factory" 的二进制应用程序，且启动加载器将默认加载这个应用程序。
 -  分区表中还定义了两个数据区域，分别用于存储 NVS 库专用分区和 PHY 初始化数据。
 
 以下是 "Factory app, two OTA definitions" 选项的分区表信息摘要：
 
-   # Espressif ESP32 Partition Table
+   # ESP-IDF Partition Table
    # Name,   Type, SubType, Offset,   Size,   Flags
    nvs,      data, nvs,     0x9000,   0x4000,
    otadata,  data, ota,     0xd000,   0x2000,
@@ -45,7 +47,7 @@
    ota_1,    app,  ota_1,   0x210000, 1M,
 
 -  分区表中定义了三个应用程序分区，这三个分区的类型都被设置为 “app”，但具体 app 类型不同。其中，位于 0x10000 偏移地址处的为出厂应用程序（factory），其余两个为 OTA 应用程序（ota_0，ota_1）。
--  新增了一个名为 “otadata” 的数据分区，用于保存 OTA 升级时候需要的数据。Bootloader 会查询该分区的数据，以判断该从哪个 OTA 应用程序分区加载程序。如果 “otadata” 分区为空，则会执行出厂程序。
+-  新增了一个名为 “otadata” 的数据分区，用于保存 OTA 升级时需要的数据。启动加载器会查询该分区的数据，以判断该从哪个 OTA 应用程序分区加载程序。如果 “otadata” 分区为空，则会执行出厂程序。
 
 创建自定义分区表
 ----------------
@@ -70,7 +72,7 @@ CSV 文件的格式与上面摘要中打印的格式相同，但是在 CSV 文�
 Name 字段
 ~~~~~~~~~
 
-Name 字段可以是任何有意义的名称，但不能超过 16 个字符（之后的内容将被截断）。该字段对 ESP32 并不是特别重要。
+Name 字段可以是任何有意义的名称，但不能超过 16 个字符（之后的内容将被截断）。该字段对 {IDF_TARGET_NAME} 并不是特别重要。
 
 Type 字段
 ~~~~~~~~~
@@ -79,30 +81,30 @@ Type 字段可以指定为 app (0) 或者 data (1)，也可以直接使用数字
 
 如果您的应用程序需要保存数据，请在 0x40-0xFE 内添加一个自定义分区类型。
 
-注意，bootloader 将忽略 app (0) 和 data (1) 以外的其他分区类型。
+注意，启动加载器将忽略 app (0) 和 data (1) 以外的其他分区类型。
 
 
 SubType 字段
 ~~~~~~~~~~~~
 
 SubType 字段长度为 8 bit，内容与具体 Type 有关。目前，esp-idf 仅仅规定了 “app” 和 “data” 两种子类型。
-   
+
 * 当 Type 定义为 ``app`` 时，SubType 字段可以指定为 factory (0)，ota_0 (0x10) ... ota_15 (0x1F) 或者 test (0x20)。
 
-   -  factory (0) 是默认的 app 分区。Bootloader 将默认加在该应用程序。但如果存在类型为 data/ota 分区，则 Bootloader 将加载 data/ota 分区中的数据，进而判断启动哪个 OTA 镜像文件。
+   -  factory (0) 是默认的 app 分区。启动加载器将默认加载该应用程序。但如果存在类型为 data/ota 分区，则启动加载器将加载 data/ota 分区中的数据，进而判断启动哪个 OTA 镜像文件。
       -  OTA 升级永远都不会更新 factory 分区中的内容。
       -  如果您希望在 OTA 项目中预留更多 flash，可以删除 factory 分区，转而使用 ota_0 分区。
 
-   -  ota_0 (0x10) ... ota_15 (0x1F) 为 OTA 应用程序分区，Bootloader 将根据 OTA 数据分区中的数据来决定加载哪个 OTA 应用程序分区中的程序。在使用 OTA 功能时，应用程序应至少拥有 2 个 OTA 应用程序分区（ota_0 和 ota_1）。更多详细信息，请参考 :doc:`OTA 文档 </api-reference/system/ota>` 。
-   -  test (0x2) 为预留 app 子类型，用于工厂测试过程。注意，目前，esp-idf 并不支持这种子类型。
-   
+   -  ota_0 (0x10) ... ota_15 (0x1F) 为 OTA 应用程序分区，启动加载器将根据 OTA 数据分区中的数据来决定加载哪个 OTA 应用程序分区中的程序。在使用 OTA 功能时，应用程序应至少拥有 2 个 OTA 应用程序分区（ota_0 和 ota_1）。更多详细信息，请参考 :doc:`OTA 文档 </api-reference/system/ota>` 。
+   -  test (0x2) 为预留 app 子类型，用于工厂测试流程。如果没有其他有效 app 分区，test 将作为备选启动分区使用。也可以在每次启动时配置启动加载器读取 GPIO，如果 GPIO 被拉低则启动该分区。详细信息请查阅 :ref:`bootloader_boot_from_test_firmware`。
+
 * 当 Type 定义为 ``data`` 时，SubType 字段可以指定为 ota (0)，phy (1)，nvs (2) 或者 nvs_keys (4)。
 
    -  ota (0) 即 :ref:`OTA 数据分区 <ota_data_partition>` ，用于存储当前所选的 OTA 应用程序的信息。这个分区的大小需要设定为 0x2000。更多详细信息，请参考 :doc:`OTA 文档 <../api-reference/system/ota>` 。
    -  phy (1) 分区用于存放 PHY 初始化数据，从而保证可以为每个设备单独配置 PHY，而非必须采用固件中的统一 PHY 初始化数据。
- 
+
       -  默认配置下，phy 分区并不启用，而是直接将 phy 初始化数据编译至应用程序中，从而节省分区表空间（直接将此分区删掉）。
-      -  如果需要从此分区加载 phy 初始化数据，请运行 ``idf.py menuconfig``，并且使能 :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` 选项。此时，您还需要手动将 phy 初始化数据烧至设备 flash（esp-idf 编译系统并不会自动完成该操作）。
+      -  如果需要从此分区加载 phy 初始化数据，请打开项目配置菜单（``idf.py menuconfig``），并且使能 :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` 选项。此时，您还需要手动将 phy 初始化数据烧至设备 flash（esp-idf 编译系统并不会自动完成该操作）。
    -  nvs (2) 是专门给 :doc:`非易失性存储 (NVS) API <../api-reference/storage/nvs_flash>` 使用的分区。
 
       -  用于存储每台设备的 PHY 校准数据（注意，并不是 PHY 初始化数据）。
@@ -115,12 +117,12 @@ SubType 字段长度为 8 bit，内容与具体 Type 有关。目前，esp-idf �
       -  用于存储加密密钥（如果启用了 `NVS 加密` 功能）。
       -  此分区应至少设定为 4096 字节。
 
-其它数据子类型已预留给 esp-idf 的未来使用。
+其它数据子类型已预留给 esp-idf 未来使用。
 
 Offset 和 Size 字段
 ~~~~~~~~~~~~~~~~~~~
 
-分区若为指定偏移地址，则会紧跟着前一个分区之后开始。若此分区为首个分区，则将紧跟着分区表开始。
+分区若偏移地址为空，则会紧跟着前一个分区之后开始；若为首个分区，则将紧跟着分区表开始。
 
 app 分区的偏移地址必须要与 0x10000 (64K) 对齐，如果将偏移字段留空，``gen_esp32part.py`` 工具会自动计算得到一个满足对齐要求的偏移地址。如果 app 分区的偏移地址没有与 0x10000 (64K) 对齐，则该工具会报错。
 
@@ -133,7 +135,7 @@ Flags 字段
 
 当前仅支持 ``encrypted`` 标记。如果 Flags 字段设置为 ``encrypted``，且已启用 :doc:`Flash Encryption </security/flash-encryption>` 功能，则该分区将会被加密。
 
-.. note:: 
+.. note::
 
    ``app`` 分区始终会被加密，不管 Flags 字段是否设置。
 
@@ -142,7 +144,7 @@ Flags 字段
 
 烧写到 ESP32 中的分区表采用二进制格式，而不是 CSV 文件本身。此时，:component_file:`partition_table/gen_esp32part.py` 工具可以实现 CSV 和二进制文件之间的转换。
 
-如果您在 ``idf.py menuconfig`` 指定了分区表 CSV 文件的名称，然后执行 ``idf.py partition_table``。这时，转换将在编译过程中自动完成。
+如果您在项目配置菜单（``idf.py menuconfig``）中设置了分区表 CSV 文件的名称，然后构建项目或执行 ``idf.py partition_table``。这时，转换将在编译过程中自动完成。
 
 手动将 CSV 文件转换为二进制文件:
 
@@ -161,7 +163,7 @@ MD5 校验和
 
 二进制格式的分区表中含有一个 MD5 校验和。这个 MD5 校验和是根据分区表内容计算的，可在设备启动阶段，用于验证分区表的完整性。
 
-注意，一些版本较老的 bootloader 无法支持 MD5 校验，如果发现 MD5 校验和则将报错 ``invalid magic number 0xebeb``。此时，用户可通过 ``gen_esp32part.py`` 的 ``--disable-md5sum`` 选项或者 ``menuconfig`` 的 :ref:`CONFIG_PARTITION_TABLE_MD5` 选项关闭 MD5 校验。
+注意，一些版本较老的启动加载器无法支持 MD5 校验，如果发现 MD5 校验和则将报错 ``invalid magic number 0xebeb``。此时，用户可通过 ``gen_esp32part.py`` 的 ``--disable-md5sum`` 选项或者 ``menuconfig`` 的 :ref:`CONFIG_PARTITION_TABLE_MD5` 选项关闭 MD5 校验。
 
 烧写分区表
 ----------
@@ -171,8 +173,104 @@ MD5 校验和
 
 在执行 ``idf.py partition_table`` 命令时，手动烧写分区表的命令也将打印在终端上。
 
-.. note:: 
+.. note::
 
    分区表的更新并不会擦除根据之前分区表存储的数据。此时，您可以使用 ``idf.py erase_flash`` 命令或者 ``esptool.py erase_flash`` 命令来擦除 flash 中的所有内容。
 
-.. _secure boot: security/secure-boot.rst
+
+分区工具 (parttool.py)
+----------------------
+
+`partition_table` 组件中有分区工具 :component_file:`parttool.py<partition_table/parttool.py>`，可以在目标设备上完成分区相关操作。该工具有如下用途：
+
+  - 读取分区，将内容存储到文件中 (read_partition)
+  - 将文件中的内容写至分区 (write_partition)
+  - 擦除分区 (erase_partition)
+  - 检索特定分区的偏移和大小等信息 (get_partition_info)
+
+用户若想通过编程方式完成相关操作，可从另一个 Python 脚本导入并使用分区工具，或者从 Shell 脚本调用分区工具。前者可使用工具的 Python API，后者可使用命令行界面。
+
+Python API
+~~~~~~~~~~~
+
+首先请确保已导入 `parttool` 模块。
+
+.. code-block:: python
+
+  import sys
+  import os
+
+  idf_path = os.environ["IDF_PATH"]  # 从环境中获取 IDF_PATH 的值
+  parttool_dir = os.path.join(idf_path, "components", "partition_table")  # parttool.py 位于 $IDF_PATH/components/partition_table 下
+
+  sys.path.append(parttool_dir)  # 使能 Python 寻找 parttool 模块
+  from parttool import *  # 导入 parttool 模块内的所有名称
+
+要使用分区工具的 Python API，第一步是创建 `ParttoolTarget`：
+
+.. code-block:: python
+
+  # 创建 partool.py 的目标设备，并将目标设备连接到串行端口 /dev/ttyUSB1
+  target = ParttoolTarget("/dev/ttyUSB1")
+
+现在，可使用创建的 `ParttoolTarget` 在目标设备上完成操作：
+
+.. code-block:: python
+
+  # 擦除名为 'storage' 的分区
+  target.erase_partition(PartitionName("storage"))
+
+  # 读取类型为 'data'、子类型为 'spiffs' 的分区，保存至文件 'spiffs.bin'
+  target.read_partition(PartitionType("data", "spiffs"), "spiffs.bin")
+
+  # 将 'factory.bin' 文件的内容写至 'factory' 分区
+  target.write_partition(PartitionName("factory"), "factory.bin")
+
+  # 打印默认启动分区的大小
+  storage = target.get_partition_info(PARTITION_BOOT_DEFAULT)
+  print(storage.size)
+
+使用 `PartitionName`、`PartitionType` 或 PARTITION_BOOT_DEFAULT 指定要操作的分区。顾名思义，这三个参数可以指向拥有特定名称的分区、特定类型和子类型的分区或默认启动分区。
+
+更多关于 Python API 的信息，请查看分区工具的代码注释。
+
+命令行界面
+~~~~~~~~~~
+
+`parttool.py` 的命令行界面具有如下结构：
+
+.. code-block:: bash
+
+  parttool.py [command-args] [subcommand] [subcommand-args]
+
+  - command-args - 执行主命令 (parttool.py) 所需的实际参数，多与目标设备有关
+  - subcommand - 要执行的操作
+  - subcommand-args - 所选操作的实际参数
+
+.. code-block:: bash
+
+  # 擦除名为 'storage' 的分区
+  parttool.py --port "/dev/ttyUSB1" erase_partition --partition-name=storage
+
+  # 读取类型为 'data'、子类型为 'spiffs' 的分区，保存到 'spiffs.bin' 文件
+  parttool.py --port "/dev/ttyUSB1" read_partition --partition-type=data --partition-subtype=spiffs "spiffs.bin"
+
+  # 将 'factory.bin' 文件中的内容写入到 'factory' 分区
+  parttool.py --port "/dev/ttyUSB1" write_partition --partition-name=factory "factory.bin"
+
+  # 打印默认启动分区的大小
+  parttool.py --port "/dev/ttyUSB1" get_partition_info --partition-boot-default --info size
+
+更多信息可用 `--help` 指令查看：
+
+.. code-block:: bash
+
+  # 显示可用的子命令和主命令描述
+  parttool.py --help
+
+  # 显示子命令的描述
+  parttool.py [subcommand] --help
+
+
+.. _secure boot: security/secure-boot-v1.rst
+

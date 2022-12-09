@@ -29,9 +29,7 @@ Another place to find documentation for all releases is the documentation page, 
 Which Version Should I Start With?
 ----------------------------------
 
-- For production purposes, use the `current stable version`_. Stable versions have been manually tested, and are updated with "bugfix releases" which fix bugs without changing other functionality (see `Versioning Scheme`_ for more details).
-
-  In order to maximize the time between updates to new ESP-IDF versions, use the latest stable Long Term Support release version. This version can be found on the `Releases page`_.
+- For production purposes, use the `current stable version`_. Stable versions have been manually tested, and are updated with "bugfix releases" which fix bugs without changing other functionality (see `Versioning Scheme`_ for more details). Every stable release version can be found on the `Releases page`_.
 
 - For prototyping, experimentation or for developing new ESP-IDF features, use the `latest version (master branch in Git) <https://docs.espressif.com/projects/esp-idf/en/latest/>`_. The latest version in the master branch has all the latest features and has passed automated testing, but has not been completely manually tested ("bleeding edge").
 
@@ -59,7 +57,7 @@ ESP-IDF uses `Semantic Versioning <http://semver.org/>`_. This means that:
 Support Periods
 ---------------
 
-Each ESP-IDF major and minor release version has an associated support period. After this period, the release is End of Life and no longer supported. Some releases are designated Long Term Support, which means the support period is longer than for other releases.
+Each ESP-IDF major and minor release version has an associated support period. After this period, the release is End of Life and no longer supported.
 
 The `ESP-IDF Support Period Policy`_ explains this in detail, and describes how the support periods for each release are determined.
 
@@ -67,10 +65,10 @@ Each release on the `Releases page`_ includes information about the support peri
 
 As a general guideline:
 
-- Using Long Term Support releases will maximize the amount of time between required ESP-IDF major or minor upgrades.
-- Using standard stable releases will require more frequent upgrades to new ESP-IDF versions. However, this means that new features and major improvements will be available more frequently.
-
-It is also possible to upgrade from a Long Term Support release to a standard release, and vice versa.
+- If starting a new project, use the latest stable release.
+- If you have a GitHub account, click the "Watch" button in the top-right of the `Releases page`_ and choose "Releases only". GitHub will notify you whenever a new release is available. Whenever a bug fix release is available for the version you are using, plan to update to it.
+- If possible, periodically update the project to a new major or minor ESP-IDF version (for example, once a year.) The update process should be straightforward for Minor updates, but may require some planning and checking of the release notes for Major updates.
+- Always plan to update to a newer release before the release you are using becomes End of Life.
 
 
 Checking the Current Version
@@ -80,7 +78,7 @@ The local ESP-IDF version can be checked by using idf.py::
 
   idf.py --version
 
-The ESP-IDF version is also compiled into the firmware and can be accessed (as a string) via the macro ``IDF_VER``. The default ESP-IDF bootloader will print the version on boot (the version information is not always updated in code, it only changes if that particular source file is recompiled).
+The ESP-IDF version is also compiled into the firmware and can be accessed (as a string) via the macro ``IDF_VER``. The default ESP-IDF bootloader will print the version on boot (the version information is not always updated if the code in the GitHub repo is updated, it only changes if there is a clean build or if that particular source file is recompiled).
 
 If writing code that needs to support multiple ESP-IDF versions, the version can be checked at compile time using :ref:`compile-time macros<idf-version-h>`.
 
@@ -93,7 +91,7 @@ Version String               Meaning
                              | - ``v3.2-dev`` - in development for version 3.2.
                              | - ``306`` - number of commits after v3.2 development started.
                              | - ``beb3611ca`` - commit identifier.
-``v3.0.2``                   Stable release, tagged ``v3.0.2``.
+``v3.0.2``                   | Stable release, tagged ``v3.0.2``.
 ``v3.1-beta1-75-g346d6b0ea`` | Beta version in development (on a :ref:`release branch <updating-release-branch>`).
                              | - ``v3.1-beta1`` - pre-release tag.
                              | - ``75`` - number of commits after the pre-release beta tag was assigned.

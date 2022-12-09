@@ -17,7 +17,7 @@
 #include <sys/param.h>
 #include "esp_attr.h"
 #include "esp_sleep.h"
-#include "esp_private/esp_timer_impl.h"
+#include "esp_private/esp_timer_private.h"
 #include "esp_log.h"
 #include "esp32/clk.h"
 #include "esp_newlib.h"
@@ -29,8 +29,8 @@
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
 #include "soc/dport_reg.h"
-#include "soc/rtc_wdt.h"
 #include "soc/soc_memory_layout.h"
+#include "hal/wdt_hal.h"
 #include "driver/rtc_io.h"
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
@@ -281,11 +281,11 @@ esp_err_t esp_light_sleep_start(void)
 {
     static portMUX_TYPE light_sleep_lock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL(&light_sleep_lock);
-    /* We will be calling esp_timer_impl_advance inside DPORT access critical
+    /* We will be calling esp_timer_private_advance inside DPORT access critical
      * section. Make sure the code on the other CPU is not holding esp_timer
      * lock, otherwise there will be deadlock.
      */
-    esp_timer_impl_lock();
+    esp_timer_private_lock();
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
     uint64_t frc_time_at_start = esp_timer_get_time();
     DPORT_STALL_OTHER_CPU_START();
@@ -315,16 +315,15 @@ esp_err_t esp_light_sleep_start(void)
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
     // Safety net: enable WDT in case exit from light sleep fails
-    bool wdt_was_enabled = rtc_wdt_is_on(); // If WDT was enabled in the user code, then do not change it here.
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+    bool wdt_was_enabled = wdt_hal_is_enabled(&rtc_wdt_ctx);    // If WDT was enabled in the user code, then do not change it here.
     if (!wdt_was_enabled) {
-        rtc_wdt_protect_off();
-        rtc_wdt_disable();
-        rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_3_2us);
-        rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_3_2us);
-        rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
-        rtc_wdt_set_time(RTC_WDT_STAGE0, 1000);
-        rtc_wdt_enable();
-        rtc_wdt_protect_on();
+        wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
+        uint32_t stage_timeout_ticks = (uint32_t)(1000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
+        wdt_hal_enable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
 
     // Enter sleep, then wait for flash to be ready on wakeup
@@ -347,14 +346,16 @@ esp_err_t esp_light_sleep_start(void)
      * monotonic.
      */
     if (time_diff > 0) {
-        esp_timer_impl_advance(time_diff);
+        esp_timer_private_advance(time_diff);
     }
     esp_set_time_from_rtc();
 
-    esp_timer_impl_unlock();
+    esp_timer_private_unlock();
     DPORT_STALL_OTHER_CPU_END();
     if (!wdt_was_enabled) {
-        rtc_wdt_disable();
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_disable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
     portEXIT_CRITICAL(&light_sleep_lock);
     return err;
@@ -469,7 +470,7 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
         ESP_LOGE(TAG, "Conflicting wake-up triggers: touch / ULP");
         return ESP_ERR_INVALID_STATE;
     }
-    s_config.ext0_rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
+    s_config.ext0_rtc_gpio_num = rtc_io_number_get(gpio_num);
     s_config.ext0_trigger_level = level;
     s_config.wakeup_triggers |= RTC_EXT0_TRIG_EN;
     return ESP_OK;
@@ -483,16 +484,11 @@ static void ext0_wakeup_prepare(void)
     // Set level which will trigger wakeup
     SET_PERI_REG_BITS(RTC_CNTL_EXT_WAKEUP_CONF_REG, 0x1,
             s_config.ext0_trigger_level, RTC_CNTL_EXT_WAKEUP0_LV_S);
-    // Find GPIO descriptor in the rtc_gpio_desc table and configure the pad
-    for (size_t gpio_num = 0; gpio_num < GPIO_PIN_COUNT; ++gpio_num) {
-        const rtc_gpio_desc_t* desc = &rtc_gpio_desc[gpio_num];
-        if (desc->rtc_num == rtc_gpio_num) {
-            REG_SET_BIT(desc->reg, desc->mux);
-            SET_PERI_REG_BITS(desc->reg, 0x3, 0, desc->func);
-            REG_SET_BIT(desc->reg, desc->ie);
-            break;
-        }
-    }
+    // Find GPIO descriptor in the rtc_io_desc table and configure the pad
+    const rtc_io_desc_t* desc = &rtc_io_desc[rtc_gpio_num];
+    REG_SET_BIT(desc->reg, desc->mux);
+    SET_PERI_REG_BITS(desc->reg, 0x3, 0, desc->func);
+    REG_SET_BIT(desc->reg, desc->ie);
 }
 
 esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode_t mode)
@@ -510,7 +506,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode
             ESP_LOGE(TAG, "Not an RTC IO: GPIO%d", gpio);
             return ESP_ERR_INVALID_ARG;
         }
-        rtc_gpio_mask |= BIT(rtc_gpio_desc[gpio].rtc_num);
+        rtc_gpio_mask |= BIT(rtc_io_number_get(gpio));
     }
     s_config.ext1_rtc_gpio_mask = rtc_gpio_mask;
     s_config.ext1_trigger_mode = mode;
@@ -523,11 +519,11 @@ static void ext1_wakeup_prepare(void)
     // Configure all RTC IOs selected as ext1 wakeup inputs
     uint32_t rtc_gpio_mask = s_config.ext1_rtc_gpio_mask;
     for (int gpio = 0; gpio < GPIO_PIN_COUNT && rtc_gpio_mask != 0; ++gpio) {
-        int rtc_pin = rtc_gpio_desc[gpio].rtc_num;
+        int rtc_pin = rtc_io_number_get(gpio);
         if ((rtc_gpio_mask & BIT(rtc_pin)) == 0) {
             continue;
         }
-        const rtc_gpio_desc_t* desc = &rtc_gpio_desc[gpio];
+        const rtc_io_desc_t* desc = &rtc_io_desc[rtc_pin];
         // Route pad to RTC
         REG_SET_BIT(desc->reg, desc->mux);
         SET_PERI_REG_BITS(desc->reg, 0x3, 0, desc->func);
@@ -566,7 +562,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
         if (!RTC_GPIO_IS_VALID_GPIO(gpio)) {
             continue;
         }
-        int rtc_pin = rtc_gpio_desc[gpio].rtc_num;
+        int rtc_pin = rtc_io_number_get(gpio);
         if ((status & BIT(rtc_pin)) == 0) {
             continue;
         }

@@ -104,7 +104,7 @@ void app_main(void)
         while (sntp_get_sync_status() == SNTP_SYNC_STATUS_IN_PROGRESS) {
             adjtime(NULL, &outdelta);
             ESP_LOGI(TAG, "Waiting for adjusting time ... outdelta = %li sec: %li ms: %li us",
-                        outdelta.tv_sec,
+                        (long)outdelta.tv_sec,
                         outdelta.tv_usec/1000,
                         outdelta.tv_usec%1000);
             vTaskDelay(2000 / portTICK_PERIOD_MS);
@@ -119,7 +119,7 @@ void app_main(void)
 static void obtain_time(void)
 {
     ESP_ERROR_CHECK( nvs_flash_init() );
-    esp_netif_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK( esp_event_loop_create_default() );
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.

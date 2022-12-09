@@ -604,10 +604,10 @@ typedef struct {
 
 typedef union {
     tBLE_BD_ADDR                            target_addr;
-    tBTA_DM_BLE_PF_LOCAL_NAME_COND             local_name; /* lcoal name filtering */
-    tBTA_DM_BLE_PF_MANU_COND                   manu_data;  /* manufactuer data filtering */
+    tBTA_DM_BLE_PF_LOCAL_NAME_COND             local_name; /* local name filtering */
+    tBTA_DM_BLE_PF_MANU_COND                   manu_data;  /* manufacturer data filtering */
     tBTA_DM_BLE_PF_UUID_COND                   srvc_uuid;  /* service UUID filtering */
-    tBTA_DM_BLE_PF_UUID_COND                   solicitate_uuid;   /* solicitated service UUID filtering */
+    tBTA_DM_BLE_PF_UUID_COND                   solicitate_uuid;   /* solicited service UUID filtering */
     tBTA_DM_BLE_PF_SRVC_PATTERN_COND           srvc_data;      /* service data pattern */
 } tBTA_DM_BLE_PF_COND_PARAM;
 
@@ -784,6 +784,7 @@ typedef struct {
     tBLE_ADDR_TYPE  addr_type;          /* Peer device address type */
     tBT_DEVICE_TYPE dev_type;
     UINT8           auth_mode;
+    BOOLEAN           sc_support;         /* Denotes if peer device supported secure connection while bonding. */
 } tBTA_DM_AUTH_CMPL;
 
 
@@ -799,6 +800,7 @@ typedef struct {
 
 /* Structure associated with BTA_DM_LINK_UP_EVT */
 typedef struct {
+    BOOLEAN         sc_downgrade;       /* Security downgrade state. */
     BD_ADDR         bd_addr;            /* BD address peer device. */
 #if BLE_INCLUDED == TRUE
     tBTA_TRANSPORT  link_type;
@@ -939,7 +941,7 @@ typedef union {
     tBTA_DM_PIN_REQ             pin_req;            /* PIN request. */
     tBTA_DM_AUTH_CMPL           auth_cmpl;          /* Authentication complete indication. */
     tBTA_DM_AUTHORIZE           authorize;          /* Authorization request. */
-    tBTA_DM_LINK_UP             link_up;            /* ACL connection down event */
+    tBTA_DM_LINK_UP             link_up;            /* ACL connection up event */
     tBTA_DM_LINK_DOWN           link_down;          /* ACL connection down event */
     tBTA_DM_BUSY_LEVEL          busy_level;         /* System busy level */
     tBTA_DM_SP_CFM_REQ          cfm_req;            /* user confirm request */
@@ -1226,7 +1228,7 @@ typedef UINT16 tBTA_DM_LP_MASK;
 #define BTA_DM_PM_ACTIVE       0x40       /* prefers active mode */
 #define BTA_DM_PM_RETRY        0x80       /* retry power mode based on current settings */
 #define BTA_DM_PM_SUSPEND      0x04       /* prefers suspend mode */
-#define BTA_DM_PM_NO_PREF      0x01       /* service has no prefernce on power mode setting. eg. connection to service got closed */
+#define BTA_DM_PM_NO_PREF      0x01       /* service has no preference on power mode setting. eg. connection to service got closed */
 
 typedef UINT8 tBTA_DM_PM_ACTION;
 
@@ -1526,7 +1528,7 @@ extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE
 extern void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb);
 #endif  ///BLE_INCLUDED == TRUE
 
-extern void BTA_DmBleReadRSSI(BD_ADDR remote_addr, tBTA_TRANSPORT transport, tBTA_CMPL_CB *cmpl_cb);
+extern void BTA_DmReadRSSI(BD_ADDR remote_addr, tBTA_TRANSPORT transport, tBTA_CMPL_CB *cmpl_cb);
 
 /*******************************************************************************
 **
@@ -1755,7 +1757,8 @@ extern void BTA_DmPasskeyReqReply(BOOLEAN accept, BD_ADDR bd_addr, UINT32 passke
 extern void BTA_DmAddDevice(BD_ADDR bd_addr, DEV_CLASS dev_class,
                             LINK_KEY link_key, tBTA_SERVICE_MASK trusted_mask,
                             BOOLEAN is_trusted, UINT8 key_type,
-                            tBTA_IO_CAP io_cap, UINT8 pin_length);
+                            tBTA_IO_CAP io_cap, UINT8 pin_length,
+                            UINT8 sc_support);
 
 /*******************************************************************************
 **
@@ -1804,7 +1807,7 @@ extern UINT16 BTA_DmGetConnectionState( BD_ADDR bd_addr );
 **
 ** Description      This function adds a DI record to the local SDP database.
 **
-** Returns          BTA_SUCCESS if record set sucessfully, otherwise error code.
+** Returns          BTA_SUCCESS if record set successfully, otherwise error code.
 **
 *******************************************************************************/
 extern tBTA_STATUS BTA_DmSetLocalDiRecord( tBTA_DI_RECORD *p_device_info,
@@ -2683,8 +2686,22 @@ extern void BTA_VendorInit  (void);
 **
 *******************************************************************************/
 extern void BTA_VendorCleanup (void);
-
 #endif
+
+enum {
+    BTA_COEX_EVT_SCAN_STARTED = 1,
+    BTA_COEX_EVT_SCAN_STOPPED,
+    BTA_COEX_EVT_ACL_CONNECTED,
+    BTA_COEX_EVT_ACL_DISCONNECTED,
+    BTA_COEX_EVT_STREAMING_STARTED,
+    BTA_COEX_EVT_STREAMING_STOPPED,
+    BTA_COEX_EVT_SNIFF_ENTER,
+    BTA_COEX_EVT_SNIFF_EXIT,
+    BTA_COEX_EVT_A2DP_PAUSED_ENTER,
+    BTA_COEX_EVT_A2DP_PAUSED_EXIT,
+};
+
+extern void BTA_DmCoexEventTrigger(uint32_t event);
 
 #ifdef __cplusplus
 }

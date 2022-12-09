@@ -87,6 +87,13 @@ static ip4_addr_t server_address;
 static ip4_addr_t dns_server = {0};
 static ip4_addr_t client_address;        //added
 static ip4_addr_t client_address_plus;
+static ip4_addr_t s_dhcps_mask = {
+#ifdef USE_CLASS_B_NET
+        .addr = PP_HTONL(LWIP_MAKEU32(255, 240, 0, 0))
+#else
+        .addr = PP_HTONL(LWIP_MAKEU32(255, 255, 255, 0))
+#endif
+    };
 
 static list_node *plist = NULL;
 static bool renew = false;
@@ -136,7 +143,12 @@ void *dhcps_option_info(u8_t op_id, u32_t opt_len)
             }
 
             break;
+        case SUBNET_MASK:
+            if (opt_len == sizeof(s_dhcps_mask)) {
+                option_arg = &s_dhcps_mask;
+            }
 
+            break;
         default:
             break;
     }
@@ -184,6 +196,12 @@ void dhcps_set_option_info(u8_t op_id, void *opt_info, u32_t opt_len)
                 dhcps_dns = *(dhcps_offer_t *)opt_info;
             }
             break;
+
+        case SUBNET_MASK:
+            if (opt_len == sizeof(s_dhcps_mask)) {
+                s_dhcps_mask = *(ip4_addr_t *)opt_info;
+            }
+
 
         default:
             break;
@@ -253,11 +271,13 @@ void node_remove_from_list(list_node **phead, list_node *pdelete)
         *phead = NULL;
     } else {
         if (plist == pdelete) {
-            *phead = plist->pnext;
+            // Note: Ignoring the "use after free" warnings, as it could only happen
+            // if the linked list contains loops
+            *phead = plist->pnext; // NOLINT(clang-analyzer-unix.Malloc)
             pdelete->pnext = NULL;
         } else {
             while (plist != NULL) {
-                if (plist->pnext == pdelete) {
+                if (plist->pnext == pdelete) { // NOLINT(clang-analyzer-unix.Malloc)
                     plist->pnext = pdelete->pnext;
                     pdelete->pnext = NULL;
                 }
@@ -294,21 +314,12 @@ static u8_t *add_offer_options(u8_t *optptr)
 
     ipadd.addr = *((u32_t *) &server_address);
 
-#ifdef USE_CLASS_B_NET
-    *optptr++ = DHCP_OPTION_SUBNET_MASK;
-    *optptr++ = 4;  //length
-    *optptr++ = 255;
-    *optptr++ = 240;
-    *optptr++ = 0;
-    *optptr++ = 0;
-#else
     *optptr++ = DHCP_OPTION_SUBNET_MASK;
     *optptr++ = 4;
-    *optptr++ = 255;
-    *optptr++ = 255;
-    *optptr++ = 255;
-    *optptr++ = 0;
-#endif
+    *optptr++ = ip4_addr1(&s_dhcps_mask);
+    *optptr++ = ip4_addr2(&s_dhcps_mask);
+    *optptr++ = ip4_addr3(&s_dhcps_mask);
+    *optptr++ = ip4_addr4(&s_dhcps_mask);
 
     *optptr++ = DHCP_OPTION_LEASE_TIME;
     *optptr++ = 4;
@@ -355,21 +366,13 @@ static u8_t *add_offer_options(u8_t *optptr)
         *optptr++ = ip4_addr4(&ipadd);
     }
 
-#ifdef CLASS_B_NET
+    ip4_addr_t broadcast_addr = { .addr = (ipadd.addr & s_dhcps_mask.addr) | ~s_dhcps_mask.addr };
     *optptr++ = DHCP_OPTION_BROADCAST_ADDRESS;
     *optptr++ = 4;
-    *optptr++ = ip4_addr1(&ipadd);
-    *optptr++ = 255;
-    *optptr++ = 255;
-    *optptr++ = 255;
-#else
-    *optptr++ = DHCP_OPTION_BROADCAST_ADDRESS;
-    *optptr++ = 4;
-    *optptr++ = ip4_addr1(&ipadd);
-    *optptr++ = ip4_addr2(&ipadd);
-    *optptr++ = ip4_addr3(&ipadd);
-    *optptr++ = 255;
-#endif
+    *optptr++ = ip4_addr1(&broadcast_addr);
+    *optptr++ = ip4_addr2(&broadcast_addr);
+    *optptr++ = ip4_addr3(&broadcast_addr);
+    *optptr++ = ip4_addr4(&broadcast_addr);
 
     *optptr++ = DHCP_OPTION_INTERFACE_MTU;
     *optptr++ = 2;
@@ -1216,6 +1219,7 @@ static void kill_oldest_dhcps_pool(void)
     list_node *minpre = NULL, *minp = NULL;
     struct dhcps_pool *pdhcps_pool = NULL, *pmin_pool = NULL;
     pre = plist;
+    assert(pre != NULL && pre->pnext != NULL); // Expect the list to have at least 2 nodes
     p = pre->pnext;
     minpre = pre;
     minp = p;

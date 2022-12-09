@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # ADC1 Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -18,8 +21,6 @@ In this example, we use `ADC_UNIT_1` by default, we need to connect a voltage so
 ```
 idf.py menuconfig
 ```
-
-* Set serial port under Serial Flasher Options.
 
 ### Build and Flash
 

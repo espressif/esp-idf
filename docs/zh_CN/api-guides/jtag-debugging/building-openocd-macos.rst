@@ -10,7 +10,7 @@ MacOS 环境下从源码编译 OpenOCD
 下载 OpenOCD 源码
 =================
 
-支持 ESP32 的 OpenOCD 源代码可以从乐鑫官方的 GitHub 获得，网址为 https://github.com/espressif/openocd-esp32。请使用以下命令来下载源代码::
+支持 {IDF_TARGET_NAME} 的 OpenOCD 源代码可以从乐鑫官方的 GitHub 获得，网址为 https://github.com/espressif/openocd-esp32。请使用以下命令来下载源代码::
 
     cd ~/esp
     git clone --recursive https://github.com/espressif/openocd-esp32.git
@@ -50,5 +50,4 @@ MacOS 环境下从源码编译 OpenOCD
 下一步
 ======
 
-想要进一步配置调试环境，请前往 :ref:`jtag-debugging-configuring-esp32-target` 章节。
-    
+想要进一步配置调试环境，请前往 :ref:`jtag-debugging-configuring-target` 章节。

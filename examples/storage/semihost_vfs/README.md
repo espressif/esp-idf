@@ -21,7 +21,7 @@ NOTE: In order to run this example you need OpenOCD version `v0.10.0-esp32-20190
 
 Run OpenOCD using command:
 ```
-bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -c 'set ESP_SEMIHOST_BASEDIR '$IDF_PATH/examples/storage/semihost_vfs/data -f board/esp-wroom-32.cfg
+bin/openocd -s share/openocd/scripts -c 'set ESP_SEMIHOST_BASEDIR '$IDF_PATH/examples/storage/semihost_vfs/data -f board/esp32-wrover-kit-3.3v.cfg
 ```
 This command also configures OpenOCD to expose example project `data` subdirectory to the target's semihosting VFS driver.
 

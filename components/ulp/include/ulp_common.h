@@ -14,7 +14,7 @@
 #pragma once
 
 /* This file contains definitions that are common between esp32/ulp.h
-   and esp32s2beta/ulp.h
+   and esp32s2/ulp.h
 */
 
 #ifdef __cplusplus

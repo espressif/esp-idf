@@ -527,7 +527,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 3.2 Why is the Wi-Fi throughput so low when Wi-Fi and ESP-BLE-MESH coexist?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The `ESP32-DevKitC <../../hw-reference/get-started-devkitc>`_ board without PSRAM can run properly but the throughput of it is low since it has no PSRAM. When Bluetooth and Wi-Fi coexist, the throughput of ESP32-DevKitC with PSRAM can be stabilized to more than 1Mbps.
+    The `ESP32-DevKitC <../../hw-reference/esp32/get-started-devkitc>`_ board without PSRAM can run properly but the throughput of it is low since it has no PSRAM. When Bluetooth and Wi-Fi coexist, the throughput of ESP32-DevKitC with PSRAM can be stabilized to more than 1Mbps.
 
     And some configurations in menuconfig shall be enabled to support PSRAM.
 
@@ -548,7 +548,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     Normally when they are several unprovisioned devices, users can provision them one by one. But when it comes to a large number of unprovisioned devices (e.g. 100), provisioning them one by one will take huge amount of time. With fast provisioning, users can provision 100 unprovisioned devices in about 50 seconds.
 
-4.2 Why EspBleMesh App would wait for a long time or keep waiting during fast provisioning?
+4.2 Why EspBleMesh App would wait for a long time during fast provisioning?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     After the App provisioned one Proxy node, it will disconnect from the App during fast provisioning, and reconnect with the App when all the nodes are provisioned.
@@ -563,7 +563,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     The **count** value is provided to the Proxy node which is provisioned by the App so as to determine when to start Proxy advertising in advance.
 
-4.5 When will Configuration Client Model of the node running :example:`ble_mesh_fast_prov_server <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server>` example start to work?
+4.5 When will Configuration Client Model of the node running :example:`fast_prov_server <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_server>` example start to work?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Configuration Client Model will start to work after the Temporary Provisioner functionality is enabled.
@@ -647,8 +647,8 @@ You can find meaning of errors or warnings when they appear at the bottom of ESP
 
     The examples use :cpp:func:`ESP_LOG_BUFFER_HEX` to print the message context while the ESP-BLE-MESH protocol stack uses :cpp:func:`bt_hex`.
 
-7.2 Which API can be used to restart ESP32?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7.2 Which API can be used to restart {IDF_TARGET_NAME}?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The API :cpp:func:`esp_restart`.
 

@@ -1,0 +1,4 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+
+CONFIG_TIMER_TASK_STACK_SIZE                            CONFIG_ESP_TIMER_TASK_STACK_SIZE

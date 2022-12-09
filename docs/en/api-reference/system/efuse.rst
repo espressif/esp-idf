@@ -5,21 +5,33 @@ eFuse Manager
 Introduction
 ------------
 
-The eFuse Manager library is designed to structure access to eFuse bits and make using these easy. This library operates eFuse bits by a structure name wich assigned in eFuse table. This sections introduces some concepts used by eFuse Manager.
+The eFuse Manager library is designed to structure access to eFuse bits and make using these easy. This library operates eFuse bits by a structure name which is assigned in eFuse table. This sections introduces some concepts used by eFuse Manager.
 
 
 Hardware description
 --------------------
 
-The ESP32 has a number of eFuses which can store system and user parameters. Each eFuse is a one-bit field which can be programmed to 1 after which it cannot be reverted back to 0. 
-Some of system parameters are using these eFuse bits directly by hardware modules and have special place (for example EFUSE_BLK0). For more details see `ESP32 Technical Reference Manual <https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`_ in part 20 eFuse controller. Some eFuse bits are available for user applications. 
+The {IDF_TARGET_NAME} has a number of eFuses which can store system and user parameters. Each eFuse is a one-bit field which can be programmed to 1 after which it cannot be reverted back to 0.
+Some of system parameters are using these eFuse bits directly by hardware modules and have special place (for example EFUSE_BLK0).
 
-ESP32 has 4 eFuse blocks each of the size of 256 bits (not all bits are available):
+.. only:: esp32
 
-* EFUSE_BLK0 is used entirely for system purposes;
-* EFUSE_BLK1 is used for flash encrypt key. If not using that Flash Encryption feature, they can be used for another purpose;
-* EFUSE_BLK2 is used for security boot key. If not using that Secure Boot feature, they can be used for another purpose;
-* EFUSE_BLK3 can be partially reserved for the custom MAC address, or used entirely for user application. Note that some bits are already used in IDF.
+	For more details see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ in part 20 eFuse controller. Some eFuse bits are available for user applications.
+
+	ESP32 has 4 eFuse blocks each of the size of 256 bits (not all bits are available):
+
+	* EFUSE_BLK0 is used entirely for system purposes;
+	* EFUSE_BLK1 is used for flash encrypt key. If not using that Flash Encryption feature, they can be used for another purpose;
+	* EFUSE_BLK2 is used for security boot key. If not using that Secure Boot feature, they can be used for another purpose;
+	* EFUSE_BLK3 can be partially reserved for the custom MAC address, or used entirely for user application. Note that some bits are already used in IDF.
+
+.. only:: esp32s2
+
+	For more details see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_. Some eFuse bits are available for user applications.
+
+	{IDF_TARGET_NAME} has 11 eFuse blocks each of the size of 256 bits (not all bits are available):
+
+
 
 Each block is divided into 8 32-bits registers.
 
@@ -62,7 +74,7 @@ bit_count
 
 comment
     This param is using for comment field, it also move to C-header file. The comment field can be omitted.
-    
+
 If a non-sequential bit order is required to describe a field, then the field description in the following lines should be continued without specifying a name, this will indicate that it belongs to one field. For example two fields MAC_FACTORY and MAC_FACTORY_CRC:
 
 ::
@@ -76,7 +88,7 @@ If a non-sequential bit order is required to describe a field, then the field de
 	,                       EFUSE_BLK0,    40,    8,    Factory MAC addr [4]
 	,                       EFUSE_BLK0,    32,    8,    Factory MAC addr [5]
 	MAC_FACTORY_CRC,        EFUSE_BLK0,    80,    8,    CRC8 for factory MAC address
-	
+
 This field will available in code as ESP_EFUSE_MAC_FACTORY and ESP_EFUSE_MAC_FACTORY_CRC.
 
 efuse_table_gen.py tool
@@ -87,11 +99,11 @@ The tool is designed to generate C-source files from CSV file and validate field
 To generate a `common` files, use the following command ``idf.py efuse_common_table`` or:
 
 ::
-	
-	cd $IDF_PATH/components/efuse/
-	./efuse_table_gen.py esp32/esp_efuse_table.csv
 
-After generation in the folder `esp32` create:
+	cd $IDF_PATH/components/efuse/
+	./efuse_table_gen.py {IDF_TARGET_PATH_NAME}/esp_efuse_table.csv
+
+After generation in the folder `{IDF_TARGET_PATH_NAME}` create:
 
 * `esp_efuse_table.c` file.
 * In `include` folder `esp_efuse_table.c` file.
@@ -101,7 +113,7 @@ To generate a `custom` files, use the following command ``idf.py efuse_custom_ta
 ::
 
 	cd $IDF_PATH/components/efuse/
-	./efuse_table_gen.py esp32/esp_efuse_table.csv PROJECT_PATH/main/esp_efuse_custom_table.csv
+	./efuse_table_gen.py {IDF_TARGET_PATH_NAME}/esp_efuse_table.csv PROJECT_PATH/main/esp_efuse_custom_table.csv
 
 After generation in the folder PROJECT_PATH/main create:
 
@@ -124,7 +136,7 @@ eFuse have three coding schemes:
 * ``3/4`` (value 1).
 * ``Repeat`` (value 2).
 
-The coding scheme affects only EFUSE_BLK1, EFUSE_BLK2 and EFUSE_BLK3 blocks. EUSE_BLK0 block always has a coding scheme ``None``. 
+The coding scheme affects only EFUSE_BLK1, EFUSE_BLK2 and EFUSE_BLK3 blocks. EUSE_BLK0 block always has a coding scheme ``None``.
 Coding changes the number of bits that can be written into a block, the block length is constant 256, some of these bits are used for encoding and are not used.
 
 When using a coding scheme, the length of the payload that can be written is limited (for more details ``20.3.1.3 System Parameter coding_scheme``):
@@ -136,7 +148,7 @@ When using a coding scheme, the length of the payload that can be written is lim
 You can find out the coding scheme of your chip:
 
 * run a ``espefuse.py -p COM4 summary`` command.
-* from ``esptool`` utility logs (during flashing). 
+* from ``esptool`` utility logs (during flashing).
 * calling the function in the code :cpp:func:`esp_efuse_get_coding_scheme` for the EFUSE_BLK3 block.
 
 eFuse tables must always comply with the coding scheme in the chip. There is an :envvar:`EFUSE_CODE_SCHEME_SELECTOR` option to select the coding type for tables in a Kconfig. When generating source files, if your tables do not follow the coding scheme, an error message will be displayed. Adjust the length or offset fields.
@@ -181,7 +193,7 @@ How add a new field
 
 ::
 
-	$ ./efuse_table_gen.py esp32/esp_efuse_table.csv --info
+	$ ./efuse_table_gen.py {IDF_TARGET_PATH_NAME}/esp_efuse_table.csv --info
 	eFuse coding scheme: NONE
 	#       field_name                      efuse_block     bit_start       bit_count
 	1       WR_DIS_FLASH_CRYPT_CNT          EFUSE_BLK0         2               1
@@ -226,23 +238,23 @@ How add a new field
 	40      ADC2_TP_HIGH                    EFUSE_BLK3        119              9
 	41      SECURE_VERSION                  EFUSE_BLK3        128              32
 	42      MAC_CUSTOM_VER                  EFUSE_BLK3        184              8
-	
+
 	Used bits in eFuse table:
 	EFUSE_BLK0
 	[2 2] [7 9] [16 18] [20 27] [32 87] [96 97] [105 109] [111 111] [136 144] [188 191] [194 194] [196 196] [198 201]
-	
+
 	EFUSE_BLK1
 	[0 255]
-	
+
 	EFUSE_BLK2
 	[0 255]
-	
+
 	EFUSE_BLK3
 	[0 55] [96 159] [184 191]
-	
+
 	Note: Not printed ranges are free for using. (bits in EFUSE_BLK0 are reserved for Espressif)
-	
-	Parsing eFuse CSV input file $IDF_PATH/components/efuse/esp32/esp_efuse_table.csv ...
+
+	Parsing eFuse CSV input file $IDF_PATH/components/efuse/{IDF_TARGET_PATH_NAME}/esp_efuse_table.csv ...
 	Verifying eFuse table...
 
 
@@ -263,12 +275,12 @@ The Kconfig option :envvar:`CONFIG_EFUSE_VIRTUAL` will virtualize eFuse values i
 espefuse.py
 ^^^^^^^^^^^
 
-esptool includes a useful tool for reading/writing ESP32 eFuse bits - `espefuse.py <https://github.com/espressif/esptool/wiki/espefuse>`_.
+esptool includes a useful tool for reading/writing {IDF_TARGET_NAME} eFuse bits - `espefuse.py <https://github.com/espressif/esptool/wiki/espefuse>`_.
 
 ::
 
 	espefuse.py -p COM4 summary
-	
+
 	espefuse.py v2.3.1
 	Connecting........_
 	Security fuses:
@@ -287,13 +299,13 @@ esptool includes a useful tool for reading/writing ESP32 eFuse bits - `espefuse.
 	  = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 R/W
 	BLK3                   Variable Block 3
 	  = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 fa 87 02 91 00 00 00 00 00 00 00 00 00 00 00 00 R/W
-	
+
 	Efuse fuses:
 	WR_DIS                 Efuse write disable mask                          = 0 R/W (0x0)
 	RD_DIS                 Efuse read disablemask                            = 0 R/W (0x0)
 	CODING_SCHEME          Efuse variable block length scheme                = 1 R/W (0x1) (3/4)
 	KEY_STATUS             Usage of efuse block 3 (reserved)                 = 0 R/W (0x0)
-	
+
 	Config fuses:
 	XPD_SDIO_FORCE         Ignore MTDI pin (GPIO12) for VDD_SDIO on reset    = 0 R/W (0x0)
 	XPD_SDIO_REG           If XPD_SDIO_FORCE, enable VDD_SDIO reg on reset   = 0 R/W (0x0)
@@ -304,14 +316,14 @@ esptool includes a useful tool for reading/writing ESP32 eFuse bits - `espefuse.
 	SPI_PAD_CONFIG_HD      Override SD_DATA_2 pad (GPIO9/SPIHD)              = 0 R/W (0x0)
 	SPI_PAD_CONFIG_CS0     Override SD_CMD pad (GPIO11/SPICS0)               = 0 R/W (0x0)
 	DISABLE_SDIO_HOST      Disable SDIO host                                 = 0 R/W (0x0)
-	
+
 	Identity fuses:
 	MAC                    MAC Address
 	  = 84:0d:8e:18:8e:44 (CRC ad OK) R/W
 	CHIP_VER_REV1          Silicon Revision 1                                = 1 R/W (0x1)
 	CHIP_VERSION           Reserved for future chip versions                 = 2 R/W (0x2)
 	CHIP_PACKAGE           Chip package identifier                           = 0 R/W (0x0)
-	
+
 	Calibration fuses:
 	BLK3_PART_RESERVE      BLOCK3 partially served for ADC calibration data  = 1 R/W (0x1)
 	ADC_VREF               Voltage reference calibration                     = 1114 R/W (0x2)
@@ -319,13 +331,13 @@ esptool includes a useful tool for reading/writing ESP32 eFuse bits - `espefuse.
 	ADC1_TP_HIGH           ADC1 850mV reading                                = 3285 R/W (0x5)
 	ADC2_TP_LOW            ADC2 150mV reading                                = 449 R/W (0x7)
 	ADC2_TP_HIGH           ADC2 850mV reading                                = 3362 R/W (0x1f5)
-	
+
 	Flash voltage (VDD_SDIO) determined by GPIO12 on reset (High for 1.8V, Low/NC for 3.3V).
 
 To get a dump for all eFuse registers.
 
 ::
-	
+
 	espefuse.py -p COM4 dump
 
 	$ espefuse.py -p COM4 dump
@@ -341,4 +353,4 @@ To get a dump for all eFuse registers.
 	00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
 
 
-.. include:: /_build/inc/esp_efuse.inc
+.. include-build-file:: inc/esp_efuse.inc

@@ -2,7 +2,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "unity.h"
-#include "esp_ipc.h"
 #include "test_utils.h"
 
 static void mutex_release_task(void* arg)

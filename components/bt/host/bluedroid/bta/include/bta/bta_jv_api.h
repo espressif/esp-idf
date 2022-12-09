@@ -129,11 +129,14 @@ typedef UINT8 tBTA_JV_CONN_STATE;
 /* Java I/F callback events */
 /* events received by tBTA_JV_DM_CBACK */
 #define BTA_JV_ENABLE_EVT           0  /* JV enabled */
+#define BTA_JV_DISABLE_EVT          1  /* JV disabled */
 #define BTA_JV_GET_SCN_EVT          6  /* Reserved an SCN */
 #define BTA_JV_GET_PSM_EVT          7  /* Reserved a PSM */
 #define BTA_JV_DISCOVERY_COMP_EVT   8  /* SDP discovery complete */
 #define BTA_JV_CREATE_RECORD_EVT    11 /* the result for BTA_JvCreateRecord */
+
 /* events received by tBTA_JV_L2CAP_CBACK */
+#if BTA_JV_L2CAP_INCLUDED
 #define BTA_JV_L2CAP_OPEN_EVT       16 /* open status of L2CAP connection */
 #define BTA_JV_L2CAP_CLOSE_EVT      17 /* L2CAP connection closed */
 #define BTA_JV_L2CAP_START_EVT      18 /* L2CAP server started */
@@ -144,6 +147,7 @@ typedef UINT8 tBTA_JV_CONN_STATE;
 #define BTA_JV_L2CAP_RECEIVE_EVT    23 /* the result for BTA_JvL2capReceive*/
 #define BTA_JV_L2CAP_WRITE_EVT      24 /* the result for BTA_JvL2capWrite*/
 #define BTA_JV_L2CAP_WRITE_FIXED_EVT 25 /* the result for BTA_JvL2capWriteFixed */
+#endif /* BTA_JV_L2CAP_INCLUDED */
 
 /* events received by tBTA_JV_RFCOMM_CBACK */
 #define BTA_JV_RFCOMM_OPEN_EVT      26 /* open status of RFCOMM Client connection */
@@ -155,7 +159,8 @@ typedef UINT8 tBTA_JV_CONN_STATE;
 #define BTA_JV_RFCOMM_READ_EVT      32 /* the result for BTA_JvRfcommRead */
 #define BTA_JV_RFCOMM_WRITE_EVT     33 /* the result for BTA_JvRfcommWrite*/
 #define BTA_JV_RFCOMM_SRV_OPEN_EVT  34 /* open status of Server RFCOMM connection */
-#define BTA_JV_MAX_EVT              35 /* max number of JV events */
+#define BTA_JV_FREE_SCN_EVT         35 /* FREE an SCN */
+#define BTA_JV_MAX_EVT              36 /* max number of JV events */
 
 typedef UINT16 tBTA_JV_EVT;
 
@@ -178,6 +183,7 @@ typedef struct {
     UINT32          handle;     /* The SDP handle */
 } tBTA_JV_CREATE_RECORD;
 
+#if BTA_JV_L2CAP_INCLUDED
 /* data associated with BTA_JV_L2CAP_OPEN_EVT */
 typedef struct {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
@@ -185,18 +191,6 @@ typedef struct {
     BD_ADDR         rem_bda;    /* The peer address */
     INT32           tx_mtu;     /* The transmit MTU */
 } tBTA_JV_L2CAP_OPEN;
-
-/* data associated with BTA_JV_L2CAP_OPEN_EVT for LE sockets */
-typedef struct {
-    tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
-    UINT32          handle;     /* The connection handle */
-    BD_ADDR         rem_bda;    /* The peer address */
-    INT32           tx_mtu;     /* The transmit MTU */
-    void          **p_p_cback;  /* set them for new socket */
-    void          **p_user_data;/* set them for new socket */
-
-} tBTA_JV_L2CAP_LE_OPEN;
-
 
 /* data associated with BTA_JV_L2CAP_CLOSE_EVT */
 typedef struct {
@@ -255,6 +249,22 @@ typedef struct {
     BOOLEAN         cong;       /* congestion status */
 } tBTA_JV_L2CAP_WRITE;
 
+/* data associated with BTA_JV_L2CAP_OPEN_EVT for LE sockets */
+typedef struct {
+    tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
+    UINT32          handle;     /* The connection handle */
+    BD_ADDR         rem_bda;    /* The peer address */
+    INT32           tx_mtu;     /* The transmit MTU */
+    void          **p_p_cback;  /* set them for new socket */
+    void          **p_user_data;/* set them for new socket */
+
+} tBTA_JV_L2CAP_LE_OPEN;
+
+/*data associated with BTA_JV_L2CAP_DATA_IND_EVT if used for LE */
+typedef struct {
+    UINT32          handle;     /* The connection handle */
+    BT_HDR         *p_buf;      /* The incoming data */
+} tBTA_JV_LE_DATA_IND;
 
 /* data associated with BTA_JV_L2CAP_WRITE_FIXED_EVT */
 typedef struct {
@@ -265,6 +275,7 @@ typedef struct {
     UINT16          len;        /* The length of the data written. */
     BOOLEAN         cong;       /* congestion status */
 } tBTA_JV_L2CAP_WRITE_FIXED;
+#endif /* BTA_JV_L2CAP_INCLUDED */
 
 /* data associated with BTA_JV_RFCOMM_OPEN_EVT */
 typedef struct {
@@ -272,6 +283,7 @@ typedef struct {
     UINT32          handle;     /* The connection handle */
     BD_ADDR         rem_bda;    /* The peer address */
 } tBTA_JV_RFCOMM_OPEN;
+
 /* data associated with BTA_JV_RFCOMM_SRV_OPEN_EVT */
 typedef struct {
     tBTA_JV_STATUS  status;             /* Whether the operation succeeded or failed. */
@@ -279,7 +291,6 @@ typedef struct {
     UINT32          new_listen_handle;  /* The new listen handle */
     BD_ADDR         rem_bda;            /* The peer address */
 } tBTA_JV_RFCOMM_SRV_OPEN;
-
 
 /* data associated with BTA_JV_RFCOMM_CLOSE_EVT */
 typedef struct {
@@ -304,18 +315,12 @@ typedef struct {
     UINT8           sec_id;     /* security ID used by this client */
     BOOLEAN         use_co;     /* TRUE to use co_rfc_data */
 } tBTA_JV_RFCOMM_CL_INIT;
+
 /*data associated with BTA_JV_L2CAP_DATA_IND_EVT & BTA_JV_RFCOMM_DATA_IND_EVT */
 typedef struct {
     UINT32          handle;     /* The connection handle */
     BT_HDR         *p_buf;      /* The incoming data */
 } tBTA_JV_DATA_IND;
-
-/*data associated with BTA_JV_L2CAP_DATA_IND_EVT if used for LE */
-typedef struct {
-    UINT32          handle;     /* The connection handle */
-    BT_HDR         *p_buf;      /* The incoming data */
-} tBTA_JV_LE_DATA_IND;
-
 
 /* data associated with BTA_JV_RFCOMM_CONG_EVT */
 typedef struct {
@@ -341,6 +346,7 @@ typedef struct {
     UINT32          req_id;     /* The req_id in the associated BTA_JvRfcommWrite() */
     int             len;        /* The length of the data written. */
     BOOLEAN         cong;       /* congestion status */
+    BOOLEAN         old_cong;   /* congestion status */
 } tBTA_JV_RFCOMM_WRITE;
 
 /* data associated with BTA_JV_API_SET_PM_PROFILE_EVT */
@@ -356,6 +362,24 @@ typedef struct {
     tBTA_JV_CONN_STATE  state;  /* JV connection stata */
 } tBTA_JV_NOTIFY_PM_STATE_CHANGE;
 
+/* indicate server at which status */
+typedef enum {
+    BTA_JV_SERVER_START_FAILED,
+    BTA_JV_SERVER_RUNNING,
+    BTA_JV_SERVER_STATUS_MAX,
+} tBTA_JV_SERVER_STATUS;
+
+typedef struct {
+    tBTA_JV_SERVER_STATUS   server_status;
+    UINT32                  slot_id;
+}tBTA_JV_FREE_SCN_USER_DATA;
+
+/* data associated with BTA_JV_FREE_SCN_EVT  */
+typedef struct {
+    tBTA_JV_STATUS          status; /* Status of the operation */
+    tBTA_JV_SERVER_STATUS   server_status;
+} tBTA_JV_FREE_SCN;
+
 
 /* union of data associated with JV callback */
 typedef union {
@@ -365,6 +389,7 @@ typedef union {
     UINT8                   scn;            /* BTA_JV_GET_SCN_EVT */
     UINT16                  psm;            /* BTA_JV_GET_PSM_EVT */
     tBTA_JV_CREATE_RECORD   create_rec;     /* BTA_JV_CREATE_RECORD_EVT */
+#if BTA_JV_L2CAP_INCLUDED
     tBTA_JV_L2CAP_OPEN      l2c_open;       /* BTA_JV_L2CAP_OPEN_EVT */
     tBTA_JV_L2CAP_CLOSE     l2c_close;      /* BTA_JV_L2CAP_CLOSE_EVT */
     tBTA_JV_L2CAP_START     l2c_start;      /* BTA_JV_L2CAP_START_EVT */
@@ -372,6 +397,7 @@ typedef union {
     tBTA_JV_L2CAP_CONG      l2c_cong;       /* BTA_JV_L2CAP_CONG_EVT */
     tBTA_JV_L2CAP_READ      l2c_read;       /* BTA_JV_L2CAP_READ_EVT */
     tBTA_JV_L2CAP_WRITE     l2c_write;      /* BTA_JV_L2CAP_WRITE_EVT */
+#endif /* BTA_JV_L2CAP_INCLUDED */
     tBTA_JV_RFCOMM_OPEN     rfc_open;       /* BTA_JV_RFCOMM_OPEN_EVT */
     tBTA_JV_RFCOMM_SRV_OPEN rfc_srv_open;   /* BTA_JV_RFCOMM_SRV_OPEN_EVT */
     tBTA_JV_RFCOMM_CLOSE    rfc_close;      /* BTA_JV_RFCOMM_CLOSE_EVT */
@@ -382,9 +408,12 @@ typedef union {
     tBTA_JV_RFCOMM_WRITE    rfc_write;      /* BTA_JV_RFCOMM_WRITE_EVT */
     tBTA_JV_DATA_IND        data_ind;       /* BTA_JV_L2CAP_DATA_IND_EVT
                                                BTA_JV_RFCOMM_DATA_IND_EVT */
-    tBTA_JV_LE_DATA_IND      le_data_ind;   /* BTA_JV_L2CAP_LE_DATA_IND_EVT */
-    tBTA_JV_L2CAP_LE_OPEN      l2c_le_open;       /* BTA_JV_L2CAP_OPEN_EVT */
-    tBTA_JV_L2CAP_WRITE_FIXED  l2c_write_fixed;      /* BTA_JV_L2CAP_WRITE_FIXED_EVT */
+    tBTA_JV_FREE_SCN        free_scn;       /* BTA_JV_FREE_SCN_EVT */
+#if BTA_JV_L2CAP_INCLUDED
+    tBTA_JV_L2CAP_LE_OPEN      l2c_le_open;     /* BTA_JV_L2CAP_OPEN_EVT */
+    tBTA_JV_LE_DATA_IND        le_data_ind;     /* BTA_JV_L2CAP_LE_DATA_IND_EVT */
+    tBTA_JV_L2CAP_WRITE_FIXED  l2c_write_fixed; /* BTA_JV_L2CAP_WRITE_FIXED_EVT */
+#endif /* BTA_JV_L2CAP_INCLUDED */
 } tBTA_JV;
 
 /* JAVA DM Interface callback */
@@ -393,8 +422,10 @@ typedef void (tBTA_JV_DM_CBACK)(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
 /* JAVA RFCOMM interface callback */
 typedef void *(tBTA_JV_RFCOMM_CBACK)(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_data);
 
+#if BTA_JV_L2CAP_INCLUDED
 /* JAVA L2CAP interface callback */
 typedef void (tBTA_JV_L2CAP_CBACK)(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_Data);
+#endif /* BTA_JV_L2CAP_INCLUDED */
 
 /* JV configuration structure */
 typedef struct {
@@ -424,12 +455,25 @@ extern tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK *p_cback);
 **
 ** Function         BTA_JvDisable
 **
-** Description      Disable the Java I/F
+** Description      Disable the Java I/F. When the enable
+**                  operation is complete the callback function will be
+**                  called with a BTA_JV_DISABLE_EVT.
 **
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_JvDisable(void);
+extern void BTA_JvDisable(tBTA_JV_RFCOMM_CBACK *p_cback);
+
+/*******************************************************************************
+**
+** Function         BTA_JvFree
+**
+** Description      Free JV configuration
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_JvFree(void);
 
 /*******************************************************************************
 **
@@ -484,12 +528,17 @@ extern tBTA_JV_STATUS BTA_JvGetChannelId(int conn_type, void *user_data,
 **
 ** Description      This function frees a SCN/PSM that was used
 **                  by an application running over RFCOMM or L2CAP.
+** Parameters
+**   channel        The channel to free
+**   conn_type      one of BTA_JV_CONN_TYPE_
+**   p_cback        tBTA_JV_RFCOMM_CBACK is called with BTA_JV_FREE_SCN_EVT when server frees a SCN/PSM
+**   user_data      indicate the RFCOMM server status
 **
 ** Returns          BTA_JV_SUCCESS, if the request is being processed.
 **                  BTA_JV_FAILURE, otherwise.
 **
 *******************************************************************************/
-extern tBTA_JV_STATUS BTA_JvFreeChannel(UINT16 channel, int conn_type);
+extern tBTA_JV_STATUS BTA_JvFreeChannel(UINT16 channel, int conn_type, tBTA_JV_RFCOMM_CBACK *p_cback, void *user_data);
 
 /*******************************************************************************
 **
@@ -532,6 +581,7 @@ extern tBTA_JV_STATUS BTA_JvCreateRecordByUser(const char *name, UINT32 channel,
 *******************************************************************************/
 extern tBTA_JV_STATUS BTA_JvDeleteRecord(UINT32 handle);
 
+#if BTA_JV_L2CAP_INCLUDED
 /*******************************************************************************
 **
 ** Function         BTA_JvL2capConnectLE
@@ -739,6 +789,7 @@ extern tBTA_JV_STATUS BTA_JvL2capWrite(UINT32 handle, UINT32 req_id,
 extern tBTA_JV_STATUS BTA_JvL2capWriteFixed(UINT16 channel, BD_ADDR *addr, UINT32 req_id,
         tBTA_JV_L2CAP_CBACK *p_cback,
         UINT8 *p_data, UINT16 len, void *user_data);
+#endif /* BTA_JV_L2CAP_INCLUDED */
 
 /*******************************************************************************
 **
@@ -769,7 +820,7 @@ extern tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask,
 **                  BTA_JV_FAILURE, otherwise.
 **
 *******************************************************************************/
-extern tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, void *user_data);
+extern tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, tBTA_JV_RFCOMM_CBACK *p_cback, void *user_data);
 
 /*******************************************************************************
 **
@@ -786,9 +837,9 @@ extern tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, void *user_data);
 **                  BTA_JV_FAILURE, otherwise.
 **
 *******************************************************************************/
-extern tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask,
-        tBTA_JV_ROLE role, UINT8 local_scn, UINT8 max_session,
-        tBTA_JV_RFCOMM_CBACK *p_cback, void *user_data);
+extern tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+                                              UINT8 local_scn, UINT8 max_session,
+                                              tBTA_JV_RFCOMM_CBACK *p_cback, void *user_data);
 
 /*******************************************************************************
 **
@@ -815,8 +866,7 @@ extern tBTA_JV_STATUS BTA_JvRfcommStopServer(UINT32 handle, void *user_data);
 **                  BTA_JV_FAILURE, otherwise.
 **
 *******************************************************************************/
-extern tBTA_JV_STATUS BTA_JvRfcommRead(UINT32 handle, UINT32 req_id,
-                                       UINT8 *p_data, UINT16 len);
+extern tBTA_JV_STATUS BTA_JvRfcommRead(UINT32 handle, UINT32 req_id, UINT8 *p_data, UINT16 len);
 
 /*******************************************************************************
 **
@@ -843,8 +893,19 @@ extern tBTA_JV_STATUS BTA_JvRfcommReady(UINT32 handle, UINT32 *p_data_size);
 **                  BTA_JV_FAILURE, otherwise.
 **
 *******************************************************************************/
-// extern tBTA_JV_STATUS BTA_JvRfcommWrite(UINT32 handle, UINT32 req_id);
 extern tBTA_JV_STATUS BTA_JvRfcommWrite(UINT32 handle, UINT32 req_id, int len, UINT8 *p_data);
+
+/*******************************************************************************
+**
+** Function         BTA_JvRfcommFlowControl
+**
+** Description      This function gives the credit to the peer
+**
+** Returns          BTA_JV_SUCCESS, if the request is being processed.
+**                  BTA_JV_FAILURE, otherwise.
+**
+*******************************************************************************/
+extern tBTA_JV_STATUS BTA_JvRfcommFlowControl(UINT32 handle, UINT16 credits_given);
 
 /*******************************************************************************
  **
@@ -865,8 +926,7 @@ extern tBTA_JV_STATUS BTA_JvRfcommWrite(UINT32 handle, UINT32 req_id, int len, U
  **              BTA_JV_CONN_CLOSE to remove in case of connection close!
  **
  *******************************************************************************/
-extern tBTA_JV_STATUS BTA_JvSetPmProfile(UINT32 handle, tBTA_JV_PM_ID app_id,
-        tBTA_JV_CONN_STATE init_st);
+extern tBTA_JV_STATUS BTA_JvSetPmProfile(UINT32 handle, tBTA_JV_PM_ID app_id, tBTA_JV_CONN_STATE init_st);
 
 /*******************************************************************************
 **

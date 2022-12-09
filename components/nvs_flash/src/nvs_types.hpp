@@ -15,11 +15,11 @@
 #define nvs_types_h
 
 #include <cstdint>
-#include <type_traits>
 #include <cstring>
 #include <cassert>
 #include <algorithm>
 #include "nvs.h"
+#include "nvs_handle.hpp"
 #include "compressed_enum_table.hpp"
 #include "string.h"
 
@@ -28,39 +28,17 @@ using namespace std;
 namespace nvs
 {
 
-enum class ItemType : uint8_t {
-    U8   = NVS_TYPE_U8,
-    I8   = NVS_TYPE_I8,
-    U16  = NVS_TYPE_U16,
-    I16  = NVS_TYPE_I16,
-    U32  = NVS_TYPE_U32,
-    I32  = NVS_TYPE_I32,
-    U64  = NVS_TYPE_U64,
-    I64  = NVS_TYPE_I64,
-    SZ   = NVS_TYPE_STR,
-    BLOB = 0x41,
-    BLOB_DATA = NVS_TYPE_BLOB,
-    BLOB_IDX  = 0x48,
-    ANY  = NVS_TYPE_ANY
-};
-
+/**
+ * Used to recognize transient states of a blob. Once a blob is modified, new chunks with the new data are written
+ * with a new version. The version is saved in the highest bit of Item::chunkIndex as well as in
+ * Item::blobIndex::chunkStart.
+ * If a chunk is modified and hence re-written, the version swaps: 0x0 -> 0x80 or 0x80 -> 0x0.
+ */
 enum class VerOffset: uint8_t {
     VER_0_OFFSET = 0x0,
     VER_1_OFFSET = 0x80,
     VER_ANY = 0xff,
 };
-
-template<typename T, typename std::enable_if<std::is_integral<T>::value, void*>::type = nullptr>
-constexpr ItemType itemTypeOf()
-{
-    return static_cast<ItemType>(((std::is_signed<T>::value)?0x10:0x00) | sizeof(T));
-}
-
-template<typename T>
-constexpr ItemType itemTypeOf(const T&)
-{
-    return itemTypeOf<T>();
-}
 
 inline bool isVariableLengthType(ItemType type)
 {

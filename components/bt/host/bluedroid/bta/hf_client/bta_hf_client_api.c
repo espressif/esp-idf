@@ -141,7 +141,7 @@ void BTA_HfClientRegister(tBTA_SEC sec_mask, tBTA_HF_CLIENT_FEAT features,
         p_buf->features = features;
         p_buf->sec_mask = sec_mask;
         if (p_service_name) {
-            BCM_STRNCPY_S(p_buf->name, BTA_SERVICE_NAME_LEN + 1, p_service_name, BTA_SERVICE_NAME_LEN);
+            BCM_STRNCPY_S(p_buf->name, p_service_name, BTA_SERVICE_NAME_LEN);
             p_buf->name[BTA_SERVICE_NAME_LEN] = 0;
         } else {
             p_buf->name[0] = '\0';

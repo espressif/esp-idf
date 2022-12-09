@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Script to sign the IDF Tools installer for Windows, built with build_installer.sh.
 #

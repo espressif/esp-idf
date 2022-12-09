@@ -94,6 +94,8 @@ To avoid reading flash cache accidentally, when one CPU initiates a flash write 
 
 If one CPU initiates a flash write or erase operation, the other CPU is put into a blocked state to avoid reading flash cache accidentally. All interrupts not safe for IRAM are disabled on both CPUs until the flash operation completes.
 
+Please also see :ref:`esp_flash_os_func`, :ref:`spi_bus_lock`.
+
 .. _iram-safe-interrupt-handlers:
 
 IRAM-Safe Interrupt Handlers
@@ -219,21 +221,28 @@ chip.
 
 The chip driver relies on the host driver.
 
+.. _esp_flash_os_func:
+
 OS functions
 ^^^^^^^^^^^^
 
-Currently the OS function layer provides a lock and a delay entries.
+Currently the OS function layer provides entries of a lock and delay.
 
-The lock is used to resolve the conflicts between the SPI chip access and
-other functions. E.g. the cache (used for the code and PSRAM data fetch)
-should be disabled when the flash chip on the SPI0/1 is being accessed. Also,
-some devices which don't have CS wire, or the wire is controlled by the
-software (e.g. SD card via SPI interface), requires the bus to be monopolized
-during a period.
+The lock (see :ref:`spi_bus_lock`) is used to resolve the conflicts among the access of devices
+on the same SPI bus, and the SPI Flash chip access. E.g.
+
+1. On SPI1 bus, the cache (used to fetch the data (code) in the Flash and PSRAM) should be
+   disabled when the flash chip on the SPI0/1 is being accessed.
+
+2. On the other buses, the flash driver needs to disable the ISR registered by SPI Master driver,
+   to avoid conflicts.
+
+3. Some devices of SPI Master driver may requires to use the bus monopolized during a period.
+   (especially when the device doesn't have CS wire, or the wire is controlled by the software
+   like SDSPI driver).
 
 The delay is used by some long operations which requires the master to wait
 or polling periodically.
-
 
 The top API wraps these the chip driver and OS functions into an entire
 component, and also provides some argument checking.

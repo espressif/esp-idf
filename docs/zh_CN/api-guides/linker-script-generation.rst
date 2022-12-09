@@ -5,226 +5,322 @@
 概述
 ----
 
-ESP32 的代码和数据可以存放在多个 :ref:`内存区域 <memory-layout>`。通常，代码和只读数据存放在 flash 区域，可写数据存放在内存中。我们经常需要更改代码或者数据的默认映射区域，例如为了提高性能，将关键部分的代码和只读数据放置到内存中，或者将代码、数据和只读数据存放到 RTC 内存中以便在 :doc:`唤醒桩 <deep-sleep-stub>` 和 :doc:`ULP 协处理器 <ulp>` 中使用。
+用于存放代码和数据的 :ref:` 内存区域 <memory-layout>`有多个。代码和只读数据默认存放在 flash 中，可写数据存放在 RAM 中。不过有时，我们必须更改默认存放区域，例如为了提高性能，将关键代码存放到 RAM 中，或者将代码存放到 RTC 存储器中以便在 :doc:`唤醒桩 <deep-sleep-stub>` 和 :doc:`ULP 协处理器 <ulp>` 中使用。
 
-IDF 的链接脚本生成机制允许用户在组件级别定义代码和数据的存放区域。组件通过 :ref:`链接片段文件 <ldgen-fragment-files>` 描述如何映射目标文件的输入段（甚至可以是某个具体的函数或者数据）。在构建应用程序时，链接片段文件会被收集、解析并处理，然后扩充到 :ref:`链接脚本模板 <ldgen-script-templates>` 中形成最终的链接脚本文件，该链接脚本会被用于链接最终的二进制应用程序。
+链接脚本生成机制可以让用户指定代码和数据在 ESP-IDF 组件中的存放区域。组件包含如何存放符号、目标或完整库的信息。在构建应用程序时，组件中的这些信息会被收集、解析并处理；生成的存放规则用于链接应用程序。
 
 快速上手
 --------
 
-本节将指导如何快速将代码和数据放入 RAM 和 RTC 内存中，并演示如何使这些放置规则依赖于项目的配置。本节内容重在指导快速入门，因此并未在使用前详细介绍所有涉及的术语和概念，但在首次提及此类术语或概念时，均提供了相应链接，以帮助您的理解。
+本段将指导如何使用 ESP-IDF 的即用方案，快速将代码和数据放入 RAM 和 RTC 存储器中。
 
-.. _ldgen-add-fragment-file :
+假设我们有::
 
-准备工作
-^^^^^^^^
+    - components/
+                    - my_component/
+                                    - CMakeLists.txt
+                                    - component.mk
+                                    - Kconfig
+                                    - src/
+                                          - my_src1.c
+                                          - my_src2.c
+                                          - my_src3.c
+                                    - my_linker_fragment_file.lf
+
+- 名为 ``my_component`` 的组件，在构建过程中存储为 ``libmy_component.a`` 库文件
+- 库文件包含的三个源文件：``my_src1.c``、``my_src2.c`` 和 ``my_src3.c``，编译后分别为 ``my_src1.o``、``my_src2.o`` 和 ``my_src3.o``,
+- 在 ``my_src1.o`` 定义的 ``my_function1`` 功能；在 ``my_src2.o`` 定义的 ``my_function2`` 功能
+- 存储在 ``my_component`` 下 Kconfig 中的布尔类型配置 ``PERFORMANCE_MODE`` (y/n) 和整数类型配置 ``PERFORMANCE_LEVEL`` （范围是 0-3）                                    
+
+创建和指定链接片段文件
+^^^^^^^^^^^^^^^^^^^^^^
+
+首先，我们需要创建链接片段文件。链接片段文件是一个拓展名为 ``.lf`` 的文本文件，文件内写有想要存放的位置。文件创建成功后，需要将其呈现在构建系统中。ESP-IDF 支持的构建系统指南如下：
 
 Make
 """"
 
-在组件目录中新建一个链接片段文件，该文件是一个扩展名为 ``.lf`` 的文本文件。为了能够让构建系统收集到此片段文件，需要为组件添加一个条目，在调用 ``register_component`` 之前设置 ``COMPONENT_ADD_LDFRAGMENTS`` 变量的值，使其指向刚才的链接片段文件。
+在组件目录的 ``component.mk`` 文件中设置 ``COMPONENT_ADD_LDFRAGMENTS`` 变量的值，使其指向已创建的链接片段文件。路径可以为绝对路径，也可以为组件目录的相对路径。
 
 .. code-block:: make
 
-    # 文件路径相对于组件的 Makefile
-    COMPONENT_ADD_LDFRAGMENTS += "path/to/linker_fragment_file.lf" "path/to/another_linker_fragment_file.lf"
+    COMPONENT_ADD_LDFRAGMENTS += my_linker_fragment_file.lf
 
 CMake
 """""
 
-对于 CMake 构建系统来说，需要在调用 ``register_component`` 之前设置 ``COMPONENT_ADD_LDFRAGMENTS`` 变量的值，使其指向链接片段文件。
+在组件目录的 ``CMakeLists.txt`` 文件中，指定 ``idf_component_register`` 调用引数 ``LDFRAGMENTS`` 的值。``LDFRAGMENTS`` 可以为绝对路径，也可为组件目录的相对路径，指向刚才创建的链接片段文件。
 
 .. code-block:: cmake
 
-    # 文件路径相对于组件的 CMakeLists.txt
-    set(COMPONENT_ADD_LDFRAGMENTS "path/to/linker_fragment_file.lf" "path/to/another_linker_fragment_file.lf")
-
-    register_component()
-
-也可以使用函数 ``ldgen_add_fragment_files`` 在项目的 CMakeLists.txt 文件或者组件的 project_include.cmake 文件中指定该片段文件 ::
-
-    ldgen_add_fragment_files(target files ...)
+    # 相对于组件的 CMakeLists.txt 的文件路径
+    idf_component_register(...
+                           LDFRAGMENTS "path/to/linker_fragment_file.lf" "path/to/another_linker_fragment_file.lf"
+                           ...
+                           )
 
 
-指定放置区域
+指定存放区域
 ^^^^^^^^^^^^
 
-链接脚本生成机制允许指定以下条目的存放位置：
+可以按照下列粒度指定存放区域：
 
-    - 组件中的一个或多个目标文件
-    - 一个或多个函数/变量（使用它们的名字来指定）
-    - 整个组件库
-
-在继续讲解之前，假设我们的组件包含以下内容：
-
-    - 一个名为 ``component`` 的组件，在构建期间被归档为 ``libcomponent.a`` 库文件
-    - 该库中有三个存档的目标文件： ``object1.o``，``object2.o`` 和 ``object3.o``
-    - ``object1.o`` 中定义了 ``function1`` 函数，``object2.o`` 中定义了 ``function2`` 函数
-    - 在其中的一个 IDF KConfig 文件中存在 ``PERFORMANCE_MODE`` 和 ``PERFORMANCE_LEVEL`` 两个配置，相应地，项目的 sdkconfig 文件会通过 ``CONFIG_PERFORMANCE_MODE`` 和 ``CONFIG_PERFORMANCE_LEVEL`` 这两个宏来指示当前设置的值
-
-在新建的链接片段文件中输入以下内容：
-
-.. code-block:: none
-
-    [mapping]
-    archive: libcomponent.a
-    entries:
-
-这会创建一个空的 :ref:`mapping 片段 <ldgen-mapping-fragment>`，它并不会执行任何操作。在链接期间，会使用 :ref:`默认的存放规则 <ldgen-default-placements>` 来映射 ``libcomponent.a``，除非填充了 ``entries`` 字段。
+    - 目标文件（``.obj`` 或 ``.o`` 文件）
+    - 符号（函数/变量）
+    - 库（``.a`` 文件）
 
 .. _ldgen-placing-object-files :
 
-放置目标文件
+存放目标文件
 """"""""""""
 
-假设整个 ``object1.o`` 目标文件对性能至关重要，所以最好把它放在 RAM 中。另一方面，假设``object2.o`` 目标文件包含有从深度睡眠唤醒所需的数据，因此需要将它存放到 RTC 内存中。可以在链接片段文件中写入以下内容：
+假设整个 ``my_src1.o`` 目标文件对性能至关重要，所以最好把该文件放在 RAM 中。另外，``my_src2.o`` 目标文件包含从深度睡眠唤醒所需的符号，因此需要将其存放到 RTC 存储器中。
+在链接片段文件中可以写入以下内容：
 
 .. code-block:: none
 
-    [mapping]
-    archive: libcomponent.a
+    [mapping:my_component]
+    archive: libmy_component.a
     entries:
-        object1 (noflash)     # 将所有代码和只读数据放置在 IRAM 和 DRAM 中
-        object2 (rtc)         # 将所有代码、数据和只读数据放置到 RTC 快速内存和 RTC 慢速内存中
+        my_src1 (noflash)     # 将所有 my_src1 代码和只读数据存放在 IRAM 和 DRAM 中
+        my_src2 (rtc)         # 将所有 my_src2 代码、数据和只读数据存放到 RTC 快速 RAM 和 RTC 慢速 RAM 中
 
-那么 ``object3.o`` 放在哪里呢？由于未指定放置规则，它会被存放到默认区域。
+那么 ``my_src3.o`` 放在哪里呢？由于未指定存放区域，``my_src3.o`` 会存放到默认区域。更多关于默认存放区域的信息，请查看 :ref:`这里<ldgen-default-placements>`。
 
-放置函数和数据
-""""""""""""""
 
-假设在 ``object1.o`` 目标文件中只有 ``function1`` 是与性能密切相关，且在 ``object2.o`` 目标文件中只有 ``function2`` 需要在深度睡眠唤醒后执行。可以在链接片段文件中写入以下内容：
+存放符号
+""""""""
+
+继续上文的例子，假设 ``object1.o`` 目标文件定义的功能中，只有 ``function1`` 影响到性能；``object2.o`` 目标文件中只有 ``function2`` 需要在芯片从深度睡眠中唤醒后运行。可以在链接片段文件中写入以下内容实现：
 
 .. code-block:: none
 
-    [mapping]
-    archive: libcomponent.a
+    [mapping:my_component]
+    archive: libmy_component.a
     entries:
-        object1:function1 (noflash) 
-        object2:function2 (rtc) 
+        my_src1:my_function1 (noflash)
+        my_src2:my_function2 (rtc)
 
-``object1.o`` 和 ``object2.o`` 的剩余函数以及整个 ``object3.o`` 目标文件会被存放到默认区域。指定数据存放区域的方法很类似，仅需将 ``：`` 之后的函数名，替换为变量名即可。
+``my_src1.o`` 和 ``my_src2.o`` 中的其他函数以及整个 ``object3.o`` 目标文件会存放到默认区域。
+要指定数据的存放区域，仅需将上文的函数名替换为变量名即可，如::
 
-.. warning::
+       my_src1:my_variable (noflash)
 
-    使用符号名来指定放置区域有一定的 :ref:`局限 <ldgen-type1-limitations>`。因此，您也可以将相关代码和数据集中在源文件中，然后根据 :ref:`使用目标文件的放置规则 <ldgen-placing-object-files>` 进行放置。
+.. 注意::
 
-放置整个组件
-""""""""""""
+    按照符号粒度存放代码和数据有一定的 :ref:`局限 <ldgen-symbol-granularity-placements>`。为确保存放区域合适，您也可以将相关代码和数据集中在源文件中，参考 :ref:`使用目标文件的存放规则 <ldgen-placing-object-files>`。
 
-在这个例子中，假设我们需要将整个组件存放到 RAM 中，可以这样写：
+存放整个库
+""""""""""
+
+在这个例子中，假设整个组件库都需存放到 RAM 中，可以写入以下内容实现：
 
 .. code-block:: none
 
-    [mapping]
-    archive: libcomponent.a
+    [mapping:my_component]
+    archive: libmy_component.a
     entries:
         * (noflash)
 
-类似的，下面的写法可以将整个组件存放到 RTC 内存中：
+类似的，写入以下内容可以将整个组件存放到 RTC 存储器中：
 
 .. code-block:: none
 
-    [mapping]
-    archive: libcomponent.a
+    [mapping:my_component]
+    archive: libmy_component.a
     entries:
         * (rtc)
 
-依赖于具体配置的存放方式
-""""""""""""""""""""""""
+根据具体配置存放
+""""""""""""""""""""
 
-假设只有当 sdkconfig 文件中存在 ``CONFIG_PERFORMANCE_MODE == y`` 时，整个组件才会被放置到指定区域，可以这样写：
+假设只有在某个条件为真时，比如 ``CONFIG_PERFORMANCE_MODE == y`` 时，整个组件库才有特定存放区域，可以写入以下内容实现：
 
 .. code-block:: none
 
-    [mapping]
-    archive: libcomponent.a
+    [mapping:my_component]
+    archive: libmy_component.a
     entries:
-        : PERFORMANCE_MODE = y
-        * (noflash)
+        if PERFORMANCE_MODE = y:
+            * (noflash)
+        else:
+            * (default)
 
-其含义可以通过如下伪代码来表述：
-
-.. code-block:: none
-
-    if PERFORMANCE_MODE = y
-        place entire libcomponent.a in RAM
-    else
-        use default placements
-
-此外，您还可以设置多个判断条件。假设有如下需求：当 ``CONFIG_PERFORMANCE_LEVEL == 1`` 时，只有 ``object1.o`` 存放到 RAM 中；当 ``CONFIG_PERFORMANCE_LEVEL == 2`` 时，``object1.o`` 和 ``object2.o`` 会被存放到 RAM 中；当 ``CONFIG_PERFORMANCE_LEVEL == 3`` 时，归档中的所有目标文件都会被存放到 RAM 中；当这三个条件都不满足时，将整个组件库存放到 RTC 内存中。虽然这种使用场景很罕见，不过，还是可以通过以下方式实现：
+来看一种更复杂的情况。假设``CONFIG_PERFORMANCE_LEVEL == 1`` 时，只有 ``object1.o`` 存放到 RAM 中；``CONFIG_PERFORMANCE_LEVEL == 2`` 时，``object1.o`` 和 ``object2.o`` 会存放到 RAM 中；``CONFIG_PERFORMANCE_LEVEL == 3`` 时，库中的所有目标文件都会存放到 RAM 中。以上三个条件为假时，整个库会存放到 RTC 存储器中。虽然这种使用场景很罕见，不过，还是可以通过以下方式实现：
 
 .. code-block:: none
 
-    [mapping]
-    archive: libcomponent.a
+    [mapping:my_component]
+    archive: libmy_component.a
     entries:
-        : PERFORMANCE_LEVEL = 3
-        * (noflash)
-        : PERFORMANCE_LEVEL = 2
-        object1 (noflash)
-        object2 (noflash)
-        : PERFORMANCE_LEVEL = 1
-        object1 (noflash)
-        : default
-        * (rtc)
+        if PERFORMANCE_LEVEL = 1:
+            my_src1 (noflash)
+        elif PERFORMANCE_LEVEL = 2:
+            my_src1 (noflash)
+            my_src2 (noflash)
+        elif PERFORMANCE_LEVEL = 3:
+            my_src1 (noflash)
+            my_src2 (noflash)
+            my_src3 (noflash)
+        else:
+            * (rtc)
 
-用伪代码可以表述为：
+也可以嵌套条件检查。以下内容与上述片段等效：
 
 .. code-block:: none
 
-    if CONFIG_PERFORMANCE_LEVEL == 3
-        place entire libcomponent.a in RAM
-    else if CONFIG_PERFORMANCE_LEVEL == 2
-        only place object1.o and object2.o in RAM
-    else if CONFIG_PERFORMANCE_LEVEL == 1
-        only place object1.o in RAM
-    else
-        place entire libcomponent.a in RTC memory 
-
-条件测试还支持 :ref:`其他操作 <ldgen-condition-entries>`。
+    [mapping:my_component]
+    archive: libmy_component.a
+    entries:
+        if PERFORMANCE_LEVEL <= 3 && PERFORMANCE_LEVEL > 0:
+            if PERFORMANCE_LEVEL >= 1:
+                object1 (noflash)
+                if PERFORMANCE_LEVEL >= 2:
+                    object2 (noflash)
+                    if PERFORMANCE_LEVEL >= 3:
+                        object2 (noflash)
+        else:
+            * (rtc)
 
 .. _ldgen-default-placements:
 
-默认的存放规则
-^^^^^^^^^^^^^^
+默认存放区域
+^^^^^^^^^^^^
 
-到目前为止，“默认存放规则”一直作为未指定 ``rtc`` 和 ``noflash`` 存放规则时的备选放置方式。``noflash`` 或者 ``rtc`` 标记不仅仅是链接脚本生成机制中的关键字，实际上还是由用户指定且被称为 :ref:`scheme 片段 <ldgen-scheme-fragment>` 的对象。由于这些存放规则非常常用，所以 IDF 中已经预定义了这些规则。
+到目前为止，“默认存放区域”在未指定 ``rtc`` 和 ``noflash`` 存放规则时才会使用，作为备选方案。需要注意的是，``noflash`` 或者 ``rtc`` 标记不仅仅是关键字，实际上还是被称作片段的实体，确切地说是 :ref:`协议 <ldgen-scheme-fragment>`。
 
-类似地，还有一个名为 ``default`` 的 scheme 片段，它定义了默认的存放规则，详情请见 :ref:`默认 scheme <ldgen-default-scheme>`。
+与 ``rtc`` 和 ``noflash`` 类似，还有一个 ``默认`` 协议，定义了默认存放规则。顾名思义，该协议规定了代码和数据通常存放的区域，即代码和恒量存放在 flash 中，变量存放在 RAM 中。更多关于默认协议的信息，请见 :ref:`这里<ldgen-default-scheme>`。
 
 .. note::
-    有关使用此功能的 IDF 组件的示例，请参阅 :component_file:`freertos/CMakeLists.txt`。为了提高性能，``freertos`` 组件通过该机制将所有目标文件中的代码、字面量和只读数据存放到 IRAM 中。
+    使用链接脚本生成机制的 IDF 组件示例，请参阅 :component_file:`freertos/CMakeLists.txt`。为了提高性能，``freertos`` 使用链接脚本生成机制，将其目标文件存放到 RAM 中。
 
-快速入门指南到此结束，下面的文章将进一步详细讨论这个机制，例如它的组件、基本概念、语法、如何集成到构建系统中等等。以下部分有助于创建自定义的映射或者修改默认行为。
+快速入门指南到此结束，下文将详述这个机制的内核，有助于创建自定义存放区域或修改默认方式。
 
-组件
-----
+链接脚本生成机制内核
+--------------------
 
-.. _ldgen-fragment-files :
+链接是将 C/C++ 源文件转换成可执行文件的最后一步。链接由工具链的链接器完成，接受指定代码和数据存放区域等信息的链接脚本。链接脚本生成机制的转换过程类似，区别在于传输给链接器的链接脚本根据(1) 收集的 :ref:`链接片段文件<ldgen-linker-fragment-files>` 和 (2) :ref:`链接脚本模板<ldgen-linker-script-template>` 动态生成。
+
+.. note::
+
+    执行链接脚本生成机制的工具存放在 :idf:`tools/ldgen` 之下。
+
+.. _ldgen-linker-fragment-files :
 
 链接片段文件
 ^^^^^^^^^^^^
 
-“链接片段文件”包含称为“片段”的对象，每个片段含有多条信息，放在一起时即可形成寻访规则，共同描述目标文件各个段在二进制输出文件中的存放位置。
+如快速入门指南所述，片段文件是拓展名为 ``.lf`` 的简单文本文件，内含想要存放区域的信息。不过，这是对片段文件所包含内容的简化版描述。实际上，片段文件内包含的是“片段”。片段是实体，包含多条信息，这些信息放在一起组成了存放规则，说明目标文件各个段在二进制输出文件中的存放位置。片段一共有三种，分别是 :ref:`段<ldgen-sections-fragment>`、
+:ref:`协议<ldgen-scheme-fragment>` 和 :ref:`映射<ldgen-mapping-fragment>`。
 
-换言之，处理“链接片段文件”也就是在 GNU LD 的 ``SECTIONS`` 命令中，创建段的存放规则，并将其放在一个内部 ``target`` token 中。
+语法
+""""
 
-下面讨论三种类型的片段。
+三种片段类型使用同一种语法：
+
+.. code-block:: none
+
+    [type:name]
+    key: value
+    key:
+        value
+        value
+        value
+        ...
+
+- 类型：片段类型，可以为 ``段``、``协议`` 或 ``映射``。
+- 名称：片段名称，指定片段类型的片段名称应唯一。 
+- 键值：片段内容。每个片段类型可支持不同的键值和不同的键值语法。
 
 .. note::
 
-    片段具有名称属性（mapping 片段除外）并且是全局可见的。片段的命名遵循 C 语言的基本变量命名规则，即区分大小写；必须以字母或者下划线开头；允许非初始字符使用字母、数字和下划线；不能使用空格等特殊字符。此外，每种片段都有自己的独立命名空间，如果多个片段的类型和名称相同，就会引发异常。
+    多个片段的类型和名称相同时会引发异常。
+
+.. note::
+
+    片段名称和键值只能使用字母、数字和下划线。
+
+.. _ldgen-condition-checking :
+
+**条件检查**
+
+条件检查使得链接脚本生成机制可以感知配置。含有配置值的表达式是否为真，决定了使用哪些特定键值。检查使用的是 :idf_file:`tools/kconfig_new/kconfiglib.py` 脚本的 ``eval_string``，遵循该脚本要求的语法和局限性，支持：
+
+    - 比较
+        - 小于 ``<``
+        - 小于等于 ``<=``
+        - 大于 ``>``
+        - 大于等于 ``>=``
+        - 等于 ``=``
+        - 不等于 ``!=``
+    - 逻辑
+        - 或 ``||``
+        - 和 ``&&``
+        - 否定？取反？ ``!``
+    - 分组
+        - 圆括号 ``()``
+
+条件检查和其他语言中的 ``if...elseif/elif...else`` 块作用一样。键值和完整片段都可以进行条件检查。以下两个示例效果相同：
+
+.. code-block:: none
+
+    # 键值取决于配置
+    [type:name]
+    key_1:
+        if CONDITION = y:
+            value_1
+        else:
+            value_2
+    key_2:
+        if CONDITION = y:
+            value_a
+        else:
+            value_b
+
+.. code-block:: none
+
+    # 完整片段的定义取决于配置
+    if CONDITION = y:
+        [type:name]
+        key_1:
+            value_1
+        key_2:
+            value_b
+    else:
+        [type:name]
+        key_1:
+            value_2
+        key_2:
+            value_b
+
+
+**注释**
+
+链接片段文件中的注释以 ``#`` 开头。和在其他语言中一样，注释提供了有用的描述和资料，在处理过程中会被忽略。
+
+与 ESP-IDF v3.x 链接脚本片段文件兼容
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+ESP-IDF v4.0 变更了链接脚本片段文件使用的一些语法：
+
+- 必须缩进，缩进不当的文件会产生解析异常；旧版本不强制缩进，但之前的文档和示例均遵循了正确的缩进语法
+- 条件改用 ``if...elif...else`` 结构，可以嵌套检查，将完整片段置于条件内
+- 映射片段和其他片段类型一样，需有名称
+
+链接脚本生成器可解析 ESP-IDF v3.x 版本中缩进正确的链接片段文件（如 ESP-IDF v3.x 版本中的本文件所示），依然可以向后兼容此前的映射片段语法（可选名称和条件的旧语法），但是会有弃用警告。用户应换成本文档介绍的新语法，因为旧语法将在未来停用。
+
+请注意，ESP-IDF v3.x 不支持使用 ESP-IDF v4.0 新语法的链接片段文件。
+
+类型
+""""
 
 .. _ldgen-sections-fragment :
 
-I. sections 片段
-""""""""""""""""
+**段**
 
-sections 片段定义了 GCC 编译器输出的目标文件段的列表，可以是默认的段（比如 ``.text`` 段、``.data`` 段），也可以是用户通过 ``__attribute__`` 关键字自定义的段。 
+段定义了 GCC 编译器输出的一系列目标文件段，可以是默认段（如 ``.text``、``.data``），也可以是用户通过 ``__attribute__`` 关键字定义的段。
 
-此外，用户还可以在某类段后增加一个 ``+``，表示囊括列表中的“所有这类段”和“所有以这类段开头的段”。相较于显式地罗列所有的段，我们更推荐使用这种方式。
-
-**语法**
+'+' 表示段列表开始，且当前段为列表中的第一个段。这种表达方式更加推荐。
 
 .. code-block:: none
 
@@ -234,7 +330,7 @@ sections 片段定义了 GCC 编译器输出的目标文件段的列表，可以
         .section
         ...
 
-**示例**
+示例：
 
 .. code-block:: none
 
@@ -254,12 +350,9 @@ sections 片段定义了 GCC 编译器输出的目标文件段的列表，可以
 
 .. _ldgen-scheme-fragment :
 
-II. scheme 片段
-"""""""""""""""
+**协议**
 
-scheme 片段定义了为每个 sections 指定的 ``target``。 
-
-**语法**
+协议定义了每个段对应的 ``目标``。
 
 .. code-block:: none
 
@@ -269,163 +362,124 @@ scheme 片段定义了为每个 sections 指定的 ``target``。
         sections -> target
         ...
 
-**示例**
+示例：
 
 .. code-block:: none
 
     [scheme:noflash]
     entries:
-        text -> iram0_text          # 名为 text 的 sections 片段下的所有条目均归入 iram0_text
-        rodata -> dram0_data        # 名为 rodata 的 sections 片段下的所有条目均归入 dram0_data
+        text -> iram0_text          # text 段下的所有条目均归入 iram0_text
+        rodata -> dram0_data        # rodata 段下的所有条目均归入 dram0_data
 
 .. _ldgen-default-scheme:
 
-**default scheme**
+``默认`` 协议
 
-注意，有一个名为 ``default`` 的 scheme 很特殊，特殊在于 catch-all 存放规则都是从这个 scheme 中的条目生成的。这意味着，如果该 scheme 有一条 ``text -> flash_text`` 条目，则将为目标 ``flash_text`` 生成如下的存放规则 :
+注意，有一个 ``默认`` 的协议很特殊，特殊在于包罗存放规则都是根据这个协议中的条目生成的。这意味着，如果该协议有一条条目是 ``text -> flash_text``，则将为目标 ``flash_text`` 生成如下的存放规则:
 
 .. code-block:: none
 
     *(.literal .literal.* .text .text.*)
 
-此后，这些生成的 catch-all 规则将用于未指定映射规则的情况。 
+这些生成的包罗规则将用于未指定映射规则的情况。
 
-.. note::
-
-    ``default`` scheme 是在 :component:`esp32/ld/esp32_fragments.lf` 文件中定义的，此外，快速上手指南中提到的内置 ``noflash`` scheme 片段和 ``rtc`` scheme 片段也是在这个文件中定义的。
+``默认`` 协议在 :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}_fragments.lf` 文件中定义，快速上手指南中提到的内置 ``noflash`` 协议和 ``rtc`` 协议也在该文件中定义。
 
 .. _ldgen-mapping-fragment :
 
-III. mapping 片段
-"""""""""""""""""
+**映射**
 
-mapping 片段定义了可映射实体（即目标文件、函数名、变量名）对应的 scheme 片段。具体来说，mapping 片段有两种类型的条目，分别为映射条目和条件条目。
-
-.. note::
-
-    mapping 片段没有具体的名称属性，内部会根据归档条目的值构造其名称。
-
-**语法**
+映射定义了可映射实体（即目标文件、函数名、变量名和库）对应的协议。
 
 .. code-block:: none
 
     [mapping]
-    archive: archive                # 构建后输出的存档文件的名称（即 libxxx.a）
+    archive: archive                # 构建后输出的库文件名称（即 libxxx.a）
     entries:
-        : condition                 # 条件条目，非默认
-        object:symbol (scheme)      # 映射条目，Type I
-        object (scheme)             # 映射条目，Type II
-        * (scheme)                  # 映射条目，Type III
+        object:symbol (scheme)      # 符号
+        object (scheme)             # 目标
+        * (scheme)                  # 库
 
-        # 为了提高可读性，可以适当增加分隔行或注释，非必须
+有三种存放粒度：
 
-        : default                   # 条件条目，默认
-        * (scheme)                  # 映射条目，Type III
+    - 符号：指定了目标文件名称和符号名称。符号名称可以是函数名或变量名。
+    - 目标：只指定目标文件名称。
+    - 库：指定 ``*``，即某个库下面所有目标文件的简化表达法。
 
-.. _ldgen-mapping-entries :
-
-**映射条目**
-
-mapping 片段的映射条目共有三种类型，分别为：
-
-    ``Type I``
-        同时指定了目标文件名和符号名。其中，符号名可以是函数名或者变量名。
-
-    ``Type II``
-        仅指定了目标文件名。
-
-    ``Type III``
-        指定了 ``*``，也就是指定了归档文件中所有目标文件。
-
-接下来，让我们通过展开一个 ``Type II`` 映射条目，更好地理解映射条目的含义。最初： 
+为了更好地理解条目的含义，我们看一个按目标存放的例子。
 
 .. code-block:: none
 
     object (scheme)
 
-接着，让我们根据条目定义，将这个 scheme 片段展开：
+根据条目定义，将这个协议展开：
 
 .. code-block:: none
 
-    object (sections -> target, 
-            sections -> target, 
+    object (sections -> target,
+            sections -> target,
             ...)
 
-然后再根据条目定义，将这个 sections 片段展开：
+再根据条目定义，将这个段展开：
 
 .. code-block:: none
+
 
     object (.section,
             .section,
             ... -> target, # 根据目标文件将这里所列出的所有段放在该目标位置
-            
+
             .section,
             .section,
-            ... -> target, # 同样的方法指定其他段 
-            
+            ... -> target, # 同样的方法指定其他段
+
             ...)           # 直至所有段均已展开
 
-.. _ldgen-type1-limitations :
-
-**有关 Type I 映射条目的局限性**
-
-``Type I`` 映射条目可以工作的大前提是编译器必须支持 ``-ffunction-sections`` 和 ``-ffdata-sections`` 选项。因此，如果用户主动禁用了这两个选项，``Type I`` 映射条目就无法工作。此外，值得注意的是，``Type I`` 映射条目的实现还与输出段有关。因此，有时及时用户在编译时没有选择禁用这两个选项，也有可能无法使用 ``Type I`` 映射条目。
-
-例如，当使用 ``-ffunction-sections`` 选项时，编译器会给每个函数都输出一个单独的段，根据段名的构造规则，这些段的名称应该类似 ``.text.{func_name}`` 或 ``.literal.{func_name}``。然而，对于函数中的字符串文字，情况并非如此，因为它们会使用池化后或者新创建的段名。
-
-当使用 ``-fdata-sections`` 选项时，编译器会给每一个全局可见的数据输出一个单独的段，名字类似于 ``.data.{var_name}``、 ``.rodata.{var_name}`` 或者 ``.bss.{var_name}``。这种情况下，``Type I`` 映射条目可以使用。然而，对于在函数作用域中声明的静态数据，编译器在为其生成段名时会同时使用其变量名和其他信息，因此当涉及在函数作用域中定义的静态数据时就会出现问题。
-
-.. _ldgen-condition-entries :
-
-**条件条目**
-
-条件条目允许根据具体项目配置生成不同的链接脚本。也就是说，可以根据一些配置表达式的值，选择使用一套不同的映射条目。由于检查配置的过程是通过 :idf_file:`tools/kconfig_new/kconfiglib.py` 文件中的 ``eval_string`` 完成的，因此条件表达式也必须遵循 ``eval_string`` 的语法和限制。
-
-在一个 mapping 片段中，跟着一个条件条目后定义的所有映射条目均属于该条件条目，直至下一个条件条目的出现或者是该 mapping 片段的结束。在检查配置时，编译器将逐条检查这个 mapping 片段中的所有条件条目，直至找到一个满足条件的条件条目（即表达式为 ``TRUE``），然后使用该条件条目下定义的映射条目。另外，尽管每个映射都已包含一个隐式的空映射，但用户还是可以自定义一个默认条件，即所有条件条目均不满足时（即没有表达式为 ``TRUE``）使用的映射条目。
-
-**示例**
+示例：
 
 .. code-block:: none
 
-    [scheme:noflash]
+    [mapping:map]
+    archive: libfreertos.a
     entries:
-        text -> iram0_text
-        rodata -> dram0_data
+        * (noflash)
 
-    [mapping:lwip]
-    archive: liblwip.a
-    entries:
-        : LWIP_IRAM_OPTIMIZATION = y         # 如果 CONFIG_LWIP_IRAM_OPTIMIZATION 在 sdkconfig 中被定义为 'y' 
-        ip4:ip4_route_src_hook (noflash)     # 将 ip4.o:ip4_route_src_hook，ip4.o:ip4_route_src 和
-        ip4:ip4_route_src (noflash)          # ip4.o:ip4_route 映射到 noflash scheme
-        ip4:ip4_route (noflash)              # 该 scheme 会将他们存放到 RAM 中
-        
-        : default                            # 否则不使用特殊的映射规则
+.. _ldgen-symbol-granularity-placements :
 
-.. _ldgen-script-templates :
+按符号存放
+""""""""""
+
+按符号存放可通过编译器标志 ``-ffunction-sections`` 和 ``-ffdata-sections`` 实现。ESP-IDF 默认用这些标志编译。
+用户若选择移除标志，便不能按符号存放。另外，即便有标志，也会其他限制，具体取决于编译器输出的段。
+
+比如，使用 ``-ffunction-sections``，针对每个功能会输出单独的段。段的名称可以预测，即 ``.text.{func_name}``
+和 ``.literal.{func_name}``。但是功能内的字符串并非如此，因为字符串会进入字符串池，或者使用生成的段名称。
+
+使用 ``-fdata-sections``，对全局数据来说编译器可输出 ``.data.{var_name}``、``.rodata.{var_name}`` 或 ``.bss.{var_name}``；因此 ``类型 I`` 映射词条可以适用。
+但是，功能中声明的静态数据并非如此，生成的段名称是将变量名称和其他信息混合。
+
+.. _ldgen-linker-script-template :
 
 链接脚本模板
 ^^^^^^^^^^^^
 
-链接脚本模板与其他链接脚本没有本质区别，但带有特定的标记语法，可以指示放置生成的存放规则的位置，是指定存放规则的放置位置的框架。
+链接脚本模板是指定存放规则的存放位置的框架，与其他链接脚本没有本质区别，但带有特定的标记语法，可以指示存放生成的存放规则的位置。
 
-**语法**
-
-如需引用一个 ``target`` token 下的所有存放规则，请使用以下语法：
+如需引用一个 ``目标`` 标记下的所有存放规则，请使用以下语法：
 
 .. code-block:: none
 
     mapping[target]
 
-**示例**
+示例：
 
-以下示例是某个链接脚本模板的摘录。该链接脚定义了一个输出段 ``.iram0.text``，里面包含一个引用目标 ``iram0_text`` 的标记。
+以下示例是某个链接脚本模板的摘录，定义了输出段 ``.iram0.text``，该输出段包含一个引用目标 ``iram0_text`` 的标记。
 
 .. code-block:: none
 
     .iram0.text :
     {
-        /* 标记 IRAM 的边界 */
+        /* 标记 IRAM 空间不足 */
         _iram_text_start = ABSOLUTE(.);
 
         /* 引用 iram0_text */
@@ -434,7 +488,7 @@ mapping 片段的映射条目共有三种类型，分别为：
         _iram_text_end = ABSOLUTE(.);
     } > iram0_0_seg
 
-下面，让我们更具体一点。假设某个链接脚本生成器收集到了以下片段：
+假设链接脚本生成器收集到了以下片段定义：
 
 .. code-block:: none
 
@@ -465,10 +519,10 @@ mapping 片段的映射条目共有三种类型，分别为：
 
     .iram0.text :
     {
-        /* 标记 IRAM 的边界 */
+        /* 标记 IRAM 空间不足 */
         _iram_text_start = ABSOLUTE(.);
 
-        /* 将链接片段处理生成的存放规则放置在模板标记的位置处 */
+        /* 处理片段生成的存放规则，存放在模板标记的位置处 */
         *(.iram1 .iram1.*)
         *libfreertos.a:(.literal .text .literal.* .text.*)
 
@@ -477,22 +531,11 @@ mapping 片段的映射条目共有三种类型，分别为：
 
 ``*libfreertos.a:(.literal .text .literal.* .text.*)``
 
-    这是从 ``freertos`` mapping 片段的 ``* (noflash)`` 条目中生成的规则。``libfreertos.a`` 归档文件下的所有目标文件的 ``text`` 段会被收集到 ``iram0_text`` 目标下（假设采用 ``noflash`` scheme），并放在模板中被 ``iram0_text`` 标记的地方。
+    这是根据 ``freertos`` 映射的 ``* (noflash)`` 条目生成的规则。``libfreertos.a`` 库下所有目标文件的所有 ``text`` 段会收集到 ``iram0_text`` 目标下（按照 ``noflash`` 协议），并放在模板中被 ``iram0_text`` 标记的地方。
 
 ``*(.iram1 .iram1.*)``
 
-    这是从 ``default`` scheme 的 ``iram -> iram0_text`` 条目生成的规则，因为 ``default`` scheme 指定了一个 ``iram -> iram0_text`` 条目，因此生成的规则也将放在被 ``iram0_text`` 标记的地方。值得注意的是，由于该规则是从 ``default`` scheme 中生成的，因此在同一目标下收集的所有规则下排在第一位。
+    这是根据默认协议条目 ``iram -> iram0_text`` 生成的规则。默认协议指定了 ``iram -> iram0_text`` 条目，因此生成的规则同样也放在被 ``iram0_text`` 标记的地方。由于该规则是根据默认协议生成的，因此在同一目标下收集的所有规则下排在第一位。
 
-
-与构建系统的集成
-----------------
-
-链接脚本是在应用程序的构建过程中生成的，此时尚未链接形成最终的二进制文件。实现该机制的工具位于 ``$(IDF_PATH)/tools/ldgen`` 目录下。
-
-链接脚本模板
-^^^^^^^^^^^^
-目前使用的链接脚本模板是 :component:`esp32/ld/esp32.project.ld.in`，仅用于应用程序的构建，生成的链接脚本文件将放在同一组件的构建目录下。值得注意的是，修改此链接描述文件模板会触发应用程序的二进制文件的重新链接。
-
-链接片段文件
-^^^^^^^^^^^^
-任何组件都可以将片段文件添加到构建系统中，方法有两种：设置 ``COMPONENT_ADD_LDFRAGMENTS`` 变量或者使用 ``ldgen_add_fragment_files`` 函数（仅限 CMake），具体可以参考 :ref:`添加片段文件 <ldgen-add-fragment-file>` 小节中的介绍。值得注意的是，修改构建系统中的任何片段文件都会触发应用程序的二进制文件的重新链接。
+    目前使用的链接脚本模板是 :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}.project.ld.in`，由 ``{IDF_TARGET_PATH_NAME}`` 组件指定，生成的脚本存放在构建目录下。
+    

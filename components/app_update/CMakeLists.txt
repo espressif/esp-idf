@@ -7,11 +7,18 @@ idf_component_register(SRCS "esp_ota_ops.c"
 # linker will ignore this structure as it has no other files depending on it.
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_app_desc")
 
+if(CONFIG_APP_PROJECT_VER_FROM_CONFIG)
+    # Ignore current PROJECT_VER (which was set in __project_get_revision()).
+    # Gets the version from the CONFIG_APP_PROJECT_VER.
+    idf_build_set_property(PROJECT_VER "${CONFIG_APP_PROJECT_VER}")
+endif()
+
 # cut PROJECT_VER and PROJECT_NAME to required 32 characters.
 idf_build_get_property(project_ver PROJECT_VER)
 idf_build_get_property(project_name PROJECT_NAME)
 string(SUBSTRING "${project_ver}" 0 31 PROJECT_VER_CUT)
 string(SUBSTRING "${project_name}" 0 31 PROJECT_NAME_CUT)
+message(STATUS "App \"${PROJECT_NAME_CUT}\" version: ${PROJECT_VER_CUT}")
 
 set_source_files_properties(
     SOURCE "esp_app_desc.c"
@@ -55,6 +62,11 @@ if(NOT BOOTLOADER_BUILD)
                         --partition-table-offset ${PARTITION_TABLE_OFFSET}
                         erase_otadata)
 
-        esptool_py_flash_project_args(otadata ${otadata_offset} "${blank_otadata_file}" FLASH_IN_PROJECT)
+        idf_component_get_property(main_args esptool_py FLASH_ARGS)
+        idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
+        esptool_py_flash_target(otadata-flash "${main_args}" "${sub_args}")
+        esptool_py_flash_target_image(otadata-flash otadata "${otadata_offset}" "${blank_otadata_file}")
+
+        esptool_py_flash_target_image(flash otadata "${otadata_offset}" "${blank_otadata_file}")
     endif()
 endif()

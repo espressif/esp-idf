@@ -1,3 +1,5 @@
+# This config is for ESP32 only (no ESP32-S2 flash encryption support yet)
+CONFIG_IDF_TARGET="esp32"
 TEST_COMPONENTS=spi_flash
 TEST_GROUPS=flash_encryption
 CONFIG_SECURE_FLASH_ENC_ENABLED=y

@@ -256,15 +256,17 @@ static esp_err_t download_get_handler(httpd_req_t *req)
         /* Read file in chunks into the scratch buffer */
         chunksize = fread(chunk, 1, SCRATCH_BUFSIZE, fd);
 
-        /* Send the buffer contents as HTTP response chunk */
-        if (httpd_resp_send_chunk(req, chunk, chunksize) != ESP_OK) {
-            fclose(fd);
-            ESP_LOGE(TAG, "File sending failed!");
-            /* Abort sending file */
-            httpd_resp_sendstr_chunk(req, NULL);
-            /* Respond with 500 Internal Server Error */
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
-            return ESP_FAIL;
+        if (chunksize > 0) {
+            /* Send the buffer contents as HTTP response chunk */
+            if (httpd_resp_send_chunk(req, chunk, chunksize) != ESP_OK) {
+                fclose(fd);
+                ESP_LOGE(TAG, "File sending failed!");
+                /* Abort sending file */
+                httpd_resp_sendstr_chunk(req, NULL);
+                /* Respond with 500 Internal Server Error */
+                httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
+               return ESP_FAIL;
+           }
         }
 
         /* Keep looping till the whole file is sent */

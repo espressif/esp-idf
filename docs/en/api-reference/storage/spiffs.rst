@@ -75,11 +75,11 @@ in CMake::
 If FLASH_IN_PROJECT/SPIFFS_IMAGE_FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool.py``, ``parttool.py``, or a custom build system target.
 
 There are cases where the contents of the base directory itself is generated at build time. Users can use DEPENDS/SPIFFS_IMAGE_DEPENDS to specify targets
-that should be executed before generating the image. 
+that should be executed before generating the image.
 
 in Make::
 
-    dep: 
+    dep:
         ...
 
     SPIFFS_IMAGE_DEPENDS := dep
@@ -91,7 +91,7 @@ in CMake::
 
     spiffs_create_partition_image(my_spiffs_partition my_folder DEPENDS dep)
 
-+For an example, see :example:`examples/storage/spiffsgen>`.
++For an example, see :example:`storage/spiffsgen`.
 
 
 mkspiffs
@@ -111,9 +111,9 @@ To pack a folder into a 1-Megabyte image, run::
 
     mkspiffs -c [src_folder] -b 4096 -p 256 -s 0x100000 spiffs.bin
 
-To flash the image onto ESP32 at offset 0x110000, run::
+To flash the image onto {IDF_TARGET_NAME} at offset 0x110000, run::
 
-    python esptool.py --chip esp32 --port [port] --baud [baud] write_flash -z 0x110000 spiffs.bin
+    python esptool.py --chip {IDF_TARGET_PATH_NAME} --port [port] --baud [baud] write_flash -z 0x110000 spiffs.bin
 
 
 Notes on which SPIFFS tool to use
@@ -145,4 +145,4 @@ An example of using SPIFFS is provided in the :example:`storage/spiffs` director
 High-level API Reference
 ------------------------
 
-.. include:: /_build/inc/esp_spiffs.inc
+.. include-build-file:: inc/esp_spiffs.inc

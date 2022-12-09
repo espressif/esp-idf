@@ -3,7 +3,7 @@
 #
 
 COMPONENT_ADD_INCLUDEDIRS := include $(IDF_TARGET)/include
-COMPONENT_SRCDIRS := src
+COMPONENT_SRCDIRS := src $(IDF_TARGET)
 
 ifndef CONFIG_ESP32_NO_BLOBS
     LIBS := core rtc net80211 pp smartconfig coexist espnow phy mesh

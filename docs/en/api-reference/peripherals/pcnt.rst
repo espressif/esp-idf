@@ -13,17 +13,22 @@ Functionality Overview
 Description of functionality of this API has been broken down into four sections:
 
 * :ref:`pcnt-api-configuration` - describes counter's configuration parameters and how to setup the counter.
-* :ref:`pcnt-api-operating-the-counter` - provides information on control functions to pause, measure and clear the counter. 
+* :ref:`pcnt-api-operating-the-counter` - provides information on control functions to pause, measure and clear the counter.
 * :ref:`pcnt-api-filtering-pulses` - describes options to filtering pulses and the counter control signals.
-* :ref:`pcnt-api-using-interrupts` - presents how to trigger interrupts on specific states of the counter. 
+* :ref:`pcnt-api-using-interrupts` - presents how to trigger interrupts on specific states of the counter.
 
 
 .. _pcnt-api-configuration:
 
 Configuration
 -------------
+.. only:: esp32
 
-The PCNT module has eight independent counting "units" numbered from 0 to 7. In the API they are referred to using :cpp:type:`pcnt_unit_t`. Each unit has two independent channels numbered as 0 and 1 and specified with :cpp:type:`pcnt_channel_t`.
+    The PCNT module has eight independent counting "units" numbered from 0 to 7. In the API they are referred to using :cpp:type:`pcnt_unit_t`. Each unit has two independent channels numbered as 0 and 1 and specified with :cpp:type:`pcnt_channel_t`.
+
+.. only:: esp32s2
+
+    The PCNT module has four independent counting "units" numbered from 0 to 3. In the API they are referred to using :cpp:type:`pcnt_unit_t`. Each unit has two independent channels numbered as 0 and 1 and specified with :cpp:type:`pcnt_channel_t`.
 
 The configuration is provided separately per unit's channel using :cpp:type:`pcnt_config_t` and covers:
 
@@ -78,7 +83,7 @@ There are five counter state watch events, defined in :cpp:type:`pcnt_evt_type_t
     * Threshold 0 or Threshold 1 values set using function :cpp:func:`pcnt_set_event_value`.
     * Pulse count = 0
 
-To register, enable or disable an interrupt to service the above events, call :cpp:func:`pcnt_isr_register`, :cpp:func:`pcnt_intr_enable`. and :cpp:func:`pcnt_intr_disable`. To enable or disable events on reaching threshold values, you will also need to call functions :cpp:func:`pcnt_event_enable` and :cpp:func:`pcnt_event_disable`. 
+To register, enable or disable an interrupt to service the above events, call :cpp:func:`pcnt_isr_register`, :cpp:func:`pcnt_intr_enable`. and :cpp:func:`pcnt_intr_disable`. To enable or disable events on reaching threshold values, you will also need to call functions :cpp:func:`pcnt_event_enable` and :cpp:func:`pcnt_event_disable`.
 
 In order to check what are the threshold values currently set, use function :cpp:func:`pcnt_get_event_value`.
 
@@ -92,5 +97,6 @@ Pulse counter with control signal and event interrupt example: :example:`periphe
 API Reference
 -------------
 
-.. include:: /_build/inc/pcnt.inc
+.. include-build-file:: inc/pcnt.inc
+.. include-build-file:: inc/pcnt_types.inc
 

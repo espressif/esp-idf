@@ -1,0 +1,9 @@
+menu "SD Card Example menu"
+
+    config EXAMPLE_FORMAT_IF_MOUNT_FAILED
+        bool "Format the card if mount failed"
+        default n
+        help
+            If this config item is set, format_if_mount_failed will be set to true and the card will be formatted if
+            the mount has failed.
+endmenu

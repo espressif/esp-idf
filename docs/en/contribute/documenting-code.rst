@@ -1,13 +1,15 @@
 Documenting Code
 ================
 
-The purpose of this description is to provide quick summary on documentation style used in `espressif/esp-idf`_ repository and how to add new documentation. 
+:link_to_translation:`zh_CN:[中文]`
+
+The purpose of this description is to provide quick summary on documentation style used in `espressif/esp-idf`_ repository and how to add new documentation.
 
 
 Introduction
 ------------
 
-When documenting code for this repository, please follow `Doxygen style <https://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#specialblock>`_. You are doing it by inserting special commands, for instance ``@param``, into standard comments blocks, for example: ::
+When documenting code for this repository, please follow `Doxygen style <http://doxygen.nl/manual/docblocks.html#specialblock>`_. You are doing it by inserting special commands, for instance ``@param``, into standard comments blocks, for example: ::
 
     /**
      * @param ratio this is oxygen to air ratio
@@ -20,14 +22,14 @@ Typical comment block, that contains documentation of a function, looks like bel
 .. image:: ../../_static/doc-code-documentation-inline.png
     :align: center
     :alt: Sample inline code documentation
- 
-Doxygen supports couple of formatting styles. It also gives you great flexibility on level of details to include in documentation. To get familiar with available features, please check data reach and very well organized `Doxygen Manual <https://www.stack.nl/~dimitri/doxygen/manual/index.html>`_.
+
+Doxygen supports couple of formatting styles. It also gives you great flexibility on level of details to include in documentation. To get familiar with available features, please check data rich and very well organized `Doxygen Manual <http://doxygen.nl/manual/index.html>`_.
 
 
 Why we need it?
 ---------------
 
-The ultimate goal is to ensure that all the code is consistently documented, so we can use tools like `Sphinx <http://www.sphinx-doc.org/>`_ and `Breathe <https://breathe.readthedocs.io/>`_ to aid preparation and automatic updates of API documentation when the code changes. 
+The ultimate goal is to ensure that all the code is consistently documented, so we can use tools like `Sphinx`_ and `Breathe`_ to aid preparation and automatic updates of API documentation when the code changes.
 
 With these tools the above piece of code renders like below:
 
@@ -56,7 +58,7 @@ When writing code for this repository, please follow guidelines below.
     .. image:: ../../_static/doc-code-void-function.png
         :align: center
         :alt: Sample void function documented inline and after rendering
- 
+
 5. When documenting a ``define`` as well as members of a ``struct`` or ``enum``, place specific comment like below after each member.
 
     .. image:: ../../_static/doc-code-member.png
@@ -73,7 +75,7 @@ When writing code for this repository, please follow guidelines below.
     *    - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
     *    - other error codes from the underlying storage driver
     *
- 
+
 7. Overview of functionality of documented header file, or group of files that make a library, should be placed in the same directory in a separate ``README.rst`` file. If directory contains header files for different APIs, then the file name should be ``apiname-readme.rst``.
 
 
@@ -116,7 +118,7 @@ There is couple of tips, how you can make your documentation even better and mor
      */
     void  first_similar_function (void);
     void second_similar_function (void);
-    /**@}*/ 
+    /**@}*/
 
    For practical example see :component_file:`nvs_flash/include/nvs.h`.
 
@@ -125,21 +127,21 @@ There is couple of tips, how you can make your documentation even better and mor
 5. Use markdown to make your documentation even more readable. You will add headers, links, tables and more. ::
 
     *
-    * [ESP32 Technical Reference](https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf)
+    * [{IDF_TARGET_NAME} Technical Reference Manual]({IDF_TARGET_TRM_EN_URL})
     *
 
 .. note::
 
     Code snippets, notes, links, etc. will not make it to the documentation, if not enclosed in a comment block associated with one of documented objects.
 
-6. Prepare one or more complete code examples together with description. Place description in a separate file ``README.md`` in specific folder of :idf:`examples` directory. 
+6. Prepare one or more complete code examples together with description. Place description in a separate file ``README.md`` in specific folder of :idf:`examples` directory.
 
 .. _link-custom-roles:
 
 Linking Examples
 ----------------
 
-When linking to examples on GitHub do not use absolute / hadcoded URLs. Instead, use docutils custom roles that will generate links for you. These auto-generated links point to the tree or blob for the git commit ID (or tag) of the repository. This is needed to ensure that links do not get broken when files in master branch are moved around or deleted.
+When linking to examples on GitHub do not use absolute / hardcoded URLs. Instead, use docutils custom roles that will generate links for you. These auto-generated links point to the tree or blob for the git commit ID (or tag) of the repository. This is needed to ensure that links do not get broken when files in master branch are moved around or deleted. The roles will transparently handle files that are located in submodules and will link to the submodule's repository with the correct commit ID.
 
 The following roles are provided:
 
@@ -197,9 +199,9 @@ The following types of diagrams are supported:
 * `Activity diagram <http://blockdiag.com/en/actdiag/index.html>`_
 * `Logical network diagram <http://blockdiag.com/en/nwdiag/index.html>`_
 
-With this suite of tools it is possible to generate beautiful diagram images from simple text format (similar to graphviz’s DOT format). The diagram elements are laid out automatically. The diagram code is then converted into ".png" graphics and integrated "behind the scenes" into **Sphinx** documents. 
+With this suite of tools it is possible to generate beautiful diagram images from simple text format (similar to graphviz’s DOT format). The diagram elements are laid out automatically. The diagram code is then converted into ".png" graphics and integrated "behind the scenes" into **Sphinx** documents.
 
-For the diagram preparation you can use an on-line `interactive shell`_ that instantly shows the rendered image. 
+For the diagram preparation you can use an on-line `interactive shell`_ that instantly shows the rendered image.
 
 Below are couple of diagram examples:
 
@@ -241,7 +243,127 @@ By default, the directives ``.. todo::`` and ``.. todolist::`` are ignored by do
 
 Before pushing your changes to origin, please set the value of ``todo_include_todos`` back to ``False``.
 
-For more details about the extension, see `sphinx.ext.todo <https://www.sphinx-doc.org/en/master/usage/extensions/todo.html#directive-todolist>`_ documenation.
+For more details about the extension, see `sphinx.ext.todo <https://www.sphinx-doc.org/en/master/usage/extensions/todo.html#directive-todolist>`_ documentation.
+
+Writing generic documentation for multiple chips
+------------------------------------------------
+
+The documentation for all of Espressif's chips is built from the same files. To faciliate the writing of documents that can be re-used for multiple different chips (called below "targets"), we provide you with the following functionality:
+
+Exclusion of content based on chip-target
+"""""""""""""""""""""""""""""""""""""""""
+Occasionally there will be content that is only relevant for one of targets. When this is the case, you can exclude that content by using the ''.. only:: TAG'' directive, where you replace 'TAG' with one of the following names:
+
+Chip name:
+
+* esp32
+* esp32s2
+
+Define identifiers from 'sdkconfig.h', generated by the default menuconfig settings for the target, e.g:
+
+* CONFIG_FREERTOS_UNICORE
+
+Define identifiers from the soc '\*_caps' headers, e.g:
+
+* SOC_BT_SUPPORTED
+* SOC_CAN_SUPPORTED
+
+Example:
+
+.. code-block:: none
+
+    .. only:: esp32
+
+        ESP32 specific content.
+
+This directive also supports the boolean operators 'and', 'or' and 'not'. Example:
+
+.. code-block:: none
+
+    .. only:: SOC_BT_SUPPORTED and CONFIG_FREERTOS_UNICORE
+
+        BT specific content only relevant for single-core targets.
+
+This functionality is provided by the `Sphinx selective exclude <https://github.com/pfalcon/sphinx_selective_exclude>`_ extension.
+
+A weakness in this extension is that it does not correctly handle the case were you exclude a section, and that is directly followed by a labeled new section. In these cases everything will render correctly, but the label will not correctly link to the section that follows. A temporary work-around for the cases were this can't be avoided is the following:
+
+.. code-block:: none
+
+    .. only:: esp32
+
+        .. _section_1_label:
+
+        Section 1
+        ^^^^^^^^^
+
+        Section one content
+
+        .. _section_2_label:
+
+    .. only:: esp32s2
+
+        _section_2_label:
+
+    Section 2
+    ^^^^^^^^^
+    Section 2 content
+
+The :TAG: role is used for excluding content from a table of content tree. For example:
+
+.. code-block:: none
+
+    .. toctree::
+        :maxdepth: 1
+
+        :esp32: configure-wrover
+        configure-other-jtag
+
+When building the documents, Sphinx will use the above mentioned directive and role to include or exclude content based on the target tag it was called with.
+
+.. note::
+
+    If excluding an entire document from the toctree based on targets, it's necessary to also update the ``exclude_patterns`` list in :idf_file:`docs/conf_common.py` to exclude the file for other targets, or a Sphinx warning "WARNING: document isn't included in any toctree" will be generated..
+
+    The recommended way of doing it is adding the document to one of the list that gets included in ``conditional_include_dict`` in :idf_file:`docs/conf_common.py`, e.g. a document which should only be shown for BT capable targets should be added to ``BT_DOCS``. :idf_file:`docs/idf_extensions/exclude_docs.py` will then take care of adding it to ``exclude_patterns`` if the corresponding tag is not set.
+
+If you need to exclude content inside a list or bullet points then this should be done by using the '':TAG:'' role inside the ''.. list:: '' directive.
+
+.. code-block:: none
+
+    .. list::
+
+        :esp32: - ESP32 specific content
+        :SOC_BT_SUPPORTED: - BT specific content
+        - Common bullet point
+        - Also common bullet point
+
+
+Substitution macros
+"""""""""""""""""""
+When you need to refer to the chip's name, toolchain name, path or other common names that depend on the target type you can consider using the substitution macros supplied by :idf_file:`docs/idf_extensions/format_idf_target.py`.
+
+For example, the following reStructuredText content:
+
+    This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC`
+
+Would render in the documentation as:
+
+    This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
+
+This extension also supports markup for defining local (within a single source file) substitutions. Place a definition like the following into a single line of the RST file::
+
+    {\IDF_TARGET_SUFFIX:default="DEFAULT_VALUE", esp32="ESP32_VALUE", esp32s2="ESP32S2_VALUE"}
+
+This will define a target-dependent substitution of the tag {\IDF_TARGET_SUFFIX} in the current RST file. For example::
+
+    {\IDF_TARGET_TX_PIN:default="IO3", esp32="IO4", esp32s2="IO5"}
+
+Will define a substitution for the tag {\IDF_TARGET_TX_PIN}, which would be replaced by the text IO5 if sphinx was called with the tag esp32s2.
+
+.. note::
+
+   These single-file definitions can be placed anywhere in the .rst file (on their own line), but the name of the directive must start with ``IDF_TARGET_``.
 
 
 Put it all together
@@ -253,17 +375,17 @@ Once documentation is ready, follow instruction in :doc:`../api-reference/templa
 OK, but I am new to Sphinx!
 ---------------------------
 
-1. No worries. All the software you need is well documented. It is also open source and free. Start by checking `Sphinx <http://www.sphinx-doc.org/>`_ documentation. If you are not clear how to write using rst markup language, see `reStructuredText Primer <http://www.sphinx-doc.org/en/stable/rest.html>`_. You can also use markdown (.md) files, and find out about more about the specific markdown syntax that we use on`Recommonmark parser's documentation page <https://recommonmark.readthedocs.io/en/latest/>`_.
+1. No worries. All the software you need is well documented. It is also open source and free. Start by checking `Sphinx`_ documentation. If you are not clear how to write using rst markup language, see `reStructuredText Primer <https://www.sphinx-doc.org/en/stable/rest.html>`_. You can also use markdown (.md) files, and find out about more about the specific markdown syntax that we use on `Recommonmark parser's documentation page <https://recommonmark.readthedocs.io/en/latest/>`_.
 
 2. Check the source files of this documentation to understand what is behind of what you see now on the screen. Sources are maintained on GitHub in `espressif/esp-idf`_ repository in :idf:`docs` folder. You can go directly to the source file of this page by scrolling up and clicking the link in the top right corner. When on GitHub, see what's really inside, open source files by clicking ``Raw`` button.
 
 3. You will likely want to see how documentation builds and looks like before posting it on the GitHub. There are two options to do so:
 
-    * Install `Sphinx <http://www.sphinx-doc.org/>`_, `Breathe <https://breathe.readthedocs.io/>`_, `Blockdiag <http://blockdiag.com/en/index.html>`_ and `Doxygen <https://www.stack.nl/~dimitri/doxygen/>`_ to build it locally, see chapter below.
-   
+    * Install `Sphinx`_, `Breathe`_, `Blockdiag <http://blockdiag.com/en/index.html>`_ and `Doxygen <http://doxygen.nl/>`_ to build it locally, see chapter below.
+
     * Set up an account on `Read the Docs <https://readthedocs.org/>`_ and build documentation in the cloud. Read the Docs provides document building and hosting for free and their service works really quick and great.
 
-4. To preview documentation before building, use `Sublime Text <https://www.sublimetext.com/>`_ editor together with `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ plugin. 
+4. To preview documentation before building, use `Sublime Text <https://www.sublimetext.com/>`_ editor together with `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ plugin.
 
 
 .. _setup-for-building-documentation:
@@ -271,19 +393,28 @@ OK, but I am new to Sphinx!
 Setup for building documentation locally
 ----------------------------------------
 
+Install Dependencies
+""""""""""""""""""""
+
 You can setup environment to build documentation locally on your PC by installing:
 
-1. Doxygen - https://www.stack.nl/~dimitri/doxygen/
+1. Doxygen - http://doxygen.nl/
 2. Sphinx - https://github.com/sphinx-doc/sphinx/#readme-for-sphinx
 3. Breathe - https://github.com/michaeljones/breathe#breathe
-4. Document theme "sphinx_rtd_theme" - https://github.com/rtfd/sphinx_rtd_theme
-5. Custom 404 page "sphinx-notfound-page" - https://github.com/rtfd/sphinx-notfound-page
+4. Document theme "sphinx_idf_theme" - https://github.com/espressif/sphinx_idf_theme
+5. Custom 404 page "sphinx-notfound-page" - https://github.com/readthedocs/sphinx-notfound-page
 6. Blockdiag - http://blockdiag.com/en/index.html
 7. Recommonmark - https://github.com/rtfd/recommonmark
 
-The package "sphinx_rtd_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_ documentation like on the "Read the Docs" hosting site.
 
-Do not worry about being confronted with several packages to install. Besides Doxygen, all remaining packages are written in Python. Therefore installation of all of them is combined into one simple step.
+The package "sphinx_idf_theme" is added to have the same "look and feel" of `ESP-IDF Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_.
+
+Do not worry about being confronted with several packages to install. Besides Doxygen, all remaining packages are written in pure Python. Therefore installation of all of them is combined into one simple step.
+
+.. important:: Docs building now supports Python 3 only. Python 2 installations will not work.
+
+Doxygen
+@@@@@@@
 
 Installation of Doxygen is OS dependent:
 
@@ -307,7 +438,7 @@ Installation of Doxygen is OS dependent:
 
 .. note::
 
-    If you are installing on Windows system (Linux and MacOS users should skip this note), **before** going further, execute two extra steps below. These steps are required to install dependencies of "blockdiag" discussed under :ref:`add-illustrations`.
+    If you are installing on Windows MSYS2 system (Linux and MacOS users should skip this note, Windows users who don't use MSYS2 will need to find other alternatives), **before** going further, execute two extra steps below. These steps are required to install dependencies of "blockdiag" discussed under :ref:`add-illustrations`.
 
     1.  Update all the system packages:
 
@@ -321,11 +452,16 @@ Installation of Doxygen is OS dependent:
 
         ::
 
-            $ pacman -S mingw32/mingw-w64-i686-python2-pillow
+            $ pacman -S mingw32/mingw-w64-i686-python-pillow
 
-        Check the log on the screen that ``mingw-w64-i686-python2-pillow-4.3.0-1`` is installed. Previous versions of *pillow* will not work.
+        Check the log on the screen that ``mingw-w64-i686-python-pillow-4.3.0-1`` or newer is installed. Previous versions of *pillow* will not work.
 
     A downside of Windows installation is that fonts of the `blockdiag pictures <add-illustrations>` do not render correctly, you will see some random characters instead. Until this issue is fixed, you can use the `interactive shell`_ to see how the complete picture looks like.
+
+
+Remaining applications
+@@@@@@@@@@@@@@@@@@@@@@
+
 
 All remaining applications are `Python <https://www.python.org/>`_ packages and you can install them in one step as follows:
 
@@ -338,21 +474,75 @@ All remaining applications are `Python <https://www.python.org/>`_ packages and 
 
 	Installation steps assume that ESP-IDF is placed in ``~/esp/esp-idf`` directory, that is default location of ESP-IDF used in documentation.
 
-Change to directory with files for specific language::
+Building Documentation
+""""""""""""""""""""""
 
-    cd en
+::
+
+    cd ~/esp/esp-idf/docs
 
 Now you should be ready to build documentation by invoking::
 
-    make html
+    ./build_docs.py build
 
-This may take couple of minutes. After completion, documentation will be placed in ``~/esp/esp-idf/docs/en/_build/html`` folder. To see it, open ``index.html`` in a web browser.  
+This will build docs for all supported ESP-IDF languages & targets. This can take some time, although jobs will run in parallel up to the number of CPU cores you have (can modify this with the ``--sphinx-parallel-builds`` option, see ``./build_docs.py --help`` for details).
 
+To build for a single language and target combination only::
+
+    ./build_docs.py -l en -t esp32 build
+
+Choices for language (``-l``) are ``en`` and ``zh_CN``. Choices for target (``-t``) are any supported ESP-IDF build system target (for example ``esp32`` and ``esp32s2``).
+
+Build documentation will be placed in ``_build/<language>/<target>/html`` folder. To see it, open the ``index.html`` inside this directory in a web browser.
+
+Building a subset of the documentation
+""""""""""""""""""""""""""""""""""""""
+Since building the full documentation can be quite slow, it might be useful to just build just the subset of the documentation you are interested in.
+
+This can be achieved by listing the document you want to build::
+
+    ./build_docs.py -l en -t esp32 -i api-reference/peripherals/can.rst build
+
+Building multiple documents is also possible::
+
+    ./build_docs.py -l en -t esp32 -i api-reference/peripherals/can.rst api-reference/peripherals/adc.rst build
+
+As well as wildcards::
+
+    ./build_docs.py -l en -t esp32 -i api-reference/peripherals/* build
+
+Note that this is a feature intended to simply testing and debugging during writing of documentation. The HTML output won't be perfect, i.e. it will not build a proper index that lists all the documents, and any references to documents that are not built will result in warnings.
+
+Building PDF
+""""""""""""
+
+It is also possible to build latex files and a PDF of the documentation using ``build_docs.py``. To do this the following Latex packages are required to be installed:
+
+ * latexmk
+ * texlive-latex-recommended
+ * texlive-fonts-recommended
+ * texlive-xetex
+
+The following fonts are also required to be installed:
+
+ * Freefont Serif, Sans and Mono OpenType fonts, available as the package ``fonts-freefont-otf`` on Ubuntu
+ * Lmodern, available as the package ``fonts-lmodern`` on Ubuntu
+ * Fandol, can be downloaded from `here <https://ctan.org/tex-archive/fonts/fandol>`_
+
+Now you can build the PDF for a target by invoking::
+
+    ./build_docs.py -bs latex -l en -t esp32 build
+
+Or alternatively build both html and PDF::
+
+    ./build_docs.py -bs html latex -l en -t esp32 build
+
+Latex files and the PDF will be placed in ``_build/<language>/<target>/latex`` folder.
 
 Wrap up
 -------
 
-We love good code that is doing cool things. 
+We love good code that is doing cool things.
 We love it even better, if it is well documented, so we can quickly make it run and also do the cool things.
 
 Go ahead, contribute your code and documentation!
@@ -369,3 +559,5 @@ Related Documents
 
 .. _interactive shell: http://interactive.blockdiag.com/?compression=deflate&src=eJxlUMFOwzAMvecrrO3aITYQQirlAIIzEseJQ5q4TUSIq8TVGIh_J2m7jbKc7Ge_5_dSO1Lv2soWvoVYgieNoMh7VGzJR9FJtugZ7lYQ0UcKEbYNOY36rRQHZHUPT68vV5tceGLbWCUzPfeaFFMoBZzecVc56vWwJFnWMmJ59CCZg617xpOFbTSyw0pmvT_HJ7hxtFNGBr6wvuu5SCkchcrZ1vAeXZomznh5YgTqfcpR02cBO6vZVDeXBRjMjKEcFRbLh8f18-Z2UUBDnqP9wmp9ncRmSSfND2ldGo2h_zse407g0Mxc1q7HzJ3-4jzYYTJjtQH3iSV-fgFzx50J
 
+.. _Sphinx:  https://www.sphinx-doc.org/
+.. _Breathe: https://breathe.readthedocs.io

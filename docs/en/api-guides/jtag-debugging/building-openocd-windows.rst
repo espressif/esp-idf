@@ -29,7 +29,7 @@ Install packages that are required to compile OpenOCD::
 Download Sources of OpenOCD
 ===========================
 
-The sources for the ESP32-enabled variant of OpenOCD are available from Espressif GitHub under https://github.com/espressif/openocd-esp32. To download the sources, use the following commands::
+The sources for the {IDF_TARGET_NAME}-enabled variant of OpenOCD are available from Espressif GitHub under https://github.com/espressif/openocd-esp32. To download the sources, use the following commands::
 
     cd ~/esp
     git clone --recursive https://github.com/espressif/openocd-esp32.git
@@ -62,18 +62,18 @@ Proceed with configuring and building OpenOCD::
     make
     cp ../libusb/MinGW32/dll/libusb-1.0.dll ./src
     cp /opt/i686-w64-mingw32/bin/libwinpthread-1.dll ./src
-    
+
 
 Optionally you can add ``make install`` step at the end. Skip it, if you have an existing OpenOCD (from e.g. another development platform), as it may get overwritten. Also you could use ``export DESTDIR="/custom/install/dir"; make install``.
 
 .. note::
 
-    * Should an error occur, resolve it and try again until the command ``make`` works. 
+    * Should an error occur, resolve it and try again until the command ``make`` works.
     * If there is a submodule problem from OpenOCD, please ``cd`` to the ``openocd-esp32`` directory and input ``git submodule update --init``.
-    * If the ``./configure`` is successfully run, information of enabled JTAG will be printed under ``OpenOCD configuration summary``. 
+    * If the ``./configure`` is successfully run, information of enabled JTAG will be printed under ``OpenOCD configuration summary``.
     * If the information of your device is not shown in the log, use ``./configure`` to enable it as described in  ``../openocd-esp32/doc/INSTALL.txt``.
     * For details concerning compiling OpenOCD, please refer to ``openocd-esp32/README.Windows``.
-    * Don't forget to copy `libusb-1.0.dll` and `libwinpthread-1.dll` into `OOCD_INSTALLDIR/bin` from ``~/esp/openocd-esp32/src``. 
+    * Don't forget to copy `libusb-1.0.dll` and `libwinpthread-1.dll` into `OOCD_INSTALLDIR/bin` from ``~/esp/openocd-esp32/src``.
 
 Once ``make`` process is successfully completed, the executable of OpenOCD will be saved in ``~/esp/openocd-esp32/src`` directory.
 
@@ -110,4 +110,4 @@ A complete described previously process is provided below for the faster executi
 Next Steps
 ==========
 
-To carry on with debugging environment setup, proceed to section :ref:`jtag-debugging-configuring-esp32-target`.
+To carry on with debugging environment setup, proceed to section :ref:`jtag-debugging-configuring-target`.

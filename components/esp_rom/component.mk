@@ -10,18 +10,27 @@ LINKER_SCRIPTS += esp32.rom.ld \
 #workaround is not enabled.
 ifndef CONFIG_SPIRAM_CACHE_WORKAROUND
 LINKER_SCRIPTS += esp32.rom.newlib-funcs.ld
+
+ifdef CONFIG_ESP32_REV_MIN_3
+LINKER_SCRIPTS += esp32.rom.eco3.ld
 endif
 
+# Include in newlib nano from ROM only if SPIRAM cache workaround is disabled
 ifdef CONFIG_NEWLIB_NANO_FORMAT
 LINKER_SCRIPTS += esp32.rom.newlib-nano.ld
 endif
 
-ifneq ($(GCC_NOT_5_2_0), 1)
-LINKER_SCRIPTS += esp32.rom.newlib-locale.ld
-endif
+endif #CONFIG_SPIRAM_CACHE_WORKAROUND
 
 ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
 LINKER_SCRIPTS += esp32.rom.spiflash.ld
+endif
+
+ifndef CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
+# If SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS option is defined
+# then all time functions from the ROM memory will not be linked.
+# Instead, those functions can be used from the toolchain by ESP-IDF.
+LINKER_SCRIPTS += esp32.rom.newlib-time.ld
 endif
 
 COMPONENT_ADD_LDFLAGS += -L $(COMPONENT_PATH)/esp32/ld \

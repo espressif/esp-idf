@@ -99,6 +99,13 @@ config BT_HFP_WBS_ENABLE
         This enables Wide Band Speech. Should disable it when SCO data path is PCM.
         Otherwise there will be no data transmited via GPIOs.
 
+config BT_HID_HOST_ENABLED
+    bool "Classic BT HID Host"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables the BT HID Host
+
 config BT_SSP_ENABLED
     bool "Secure Simple Pairing"
     depends on BT_CLASSIC_ENABLED
@@ -120,6 +127,21 @@ config BT_GATTS_ENABLE
     default y
     help
         This option can be disabled when the app work only on gatt client mode
+
+config BT_GATTS_PPCP_CHAR_GAP
+    bool "Enable Peripheral Preferred Connection Parameters characteristic in GAP service"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        This enables "Peripheral Preferred Connection Parameters" characteristic (UUID: 0x2A04) in GAP service that has
+        connection parameters like min/max connection interval, slave latency and supervision timeout multiplier
+
+config BT_BLE_BLUFI_ENABLE
+    bool "Include blufi function"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        This option can be close when the app does not require blufi function.
 
 choice BT_GATTS_SEND_SERVICE_CHANGE_MODE
     prompt "GATTS Service Change Mode"

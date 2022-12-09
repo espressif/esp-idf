@@ -63,7 +63,7 @@ The `set` key is optional. If present, its value must be a dictionary of new val
 
 Additional optional keys:
 
-* `load`: If this key is set, sdkconfig file will be reloaded from filesystem before any values are set applied. The value of this key can be a filename, in which case configuration will be loaded from this file. If the value of this key is `null`, configuration will be loaded from the last used file.
+* `load`: If this key is set, sdkconfig file will be reloaded from filesystem before any values are set applied. The value of this key can be a filename, in which case configuration will be loaded from this file. If the value of this key is `null`, configuration will be loaded from the last used file. The response to a "load" command is always the full set of config values and ranges, the same as when the server is initially started.
 
 * `save`: If this key is set, sdkconfig file will be saved after any values are set. Similar to `load`, the value of this key can be a filename to save to a particular file, or `null` to reuse the last used file.
 
@@ -81,6 +81,26 @@ After a request is processed, a response is printed to stdout similar to this:
 * `ranges` contains any changed ranges, where the new range of the config symbol has changed (due to some other configuration change or because a new sdkconfig has been loaded).
 * `visible` contains any visibility changes, where the visible config symbols have changed.
 * `values` contains any value changes, where a config symbol value has changed. This may be due to an explicit change (ie the client `set` this value), or a change caused by some other change in the config system. Note that a change which is set by the client may not be reflected exactly the same in the response, due to restrictions on allowed values which are enforced by the config server. Invalid changes are ignored by the config server.
+
+If setting a value also changes the possible range of values that an item can have, this is also represented with a dictionary `ranges` that contains key/value pairs of config items to their new ranges:
+
+```
+{ "version": 2,
+  "values": {"OTHER_NAME": true },
+  "visible": { },
+  "ranges" : { "HAS_RANGE" : [ 3, 4 ] } }
+```
+
+Note: The configuration server does not automatically load any changes which are applied externally to the `sdkconfig` file. Send a "load" command or restart the server if the file is externally edited.
+
+Note: The configuration server does not re-run CMake to regenerate other build files or metadata files after `sdkconfig` is updated. This will happen automatically the next time ``CMake`` or ``idf.py`` is run.
+
+### KConfig Item Types
+
+* `string` types are represented as JSON strings.
+* `bool` and `tristate` types are represented as JSON Booleans, the third `tristate` state is not supported.
+* `int` types are represented as JSON integers
+* `hex` types are also represented as JSON integers, clients should read the separate metadata file to know if the UI representation is `int` or `hex`. It is possible to set a `hex` item by sending the server a JSON string of hex digits (no prefix) as the value, but the server always sends `hex` values as JSON integers.
 
 ### Error Responses
 

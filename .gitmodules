@@ -78,3 +78,11 @@
 [submodule "components/esp_wifi/lib"]
 	path = components/esp_wifi/lib
 	url = ../../espressif/esp32-wifi-lib.git
+
+[submodule "components/tinyusb/tinyusb"]
+	path = components/tinyusb/tinyusb
+	url = ../../espressif/tinyusb.git
+
+[submodule "examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib"]
+	path = examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib
+	url = ../../espressif/esp-cryptoauthlib.git

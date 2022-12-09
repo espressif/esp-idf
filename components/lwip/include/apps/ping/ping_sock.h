@@ -71,6 +71,7 @@ typedef struct {
     ip_addr_t target_addr;    /*!< Target IP address, either IPv4 or IPv6 */
     uint32_t task_stack_size; /*!< Stack size of internal ping task */
     uint32_t task_prio;       /*!< Priority of internal ping task */
+    uint32_t interface;       /*!< Netif index, interface=0 means NETIF_NO_INDEX*/
 } esp_ping_config_t;
 
 /**
@@ -82,11 +83,12 @@ typedef struct {
         .count = 5,                      \
         .interval_ms = 1000,             \
         .timeout_ms = 1000,              \
-        .data_size = 56,                 \
+        .data_size = 64,                 \
         .tos = 0,                        \
         .target_addr = ip_addr_any_type, \
         .task_stack_size = 2048,         \
         .task_prio = 2,                  \
+        .interface = 0,\
     }
 
 #define ESP_PING_COUNT_INFINITE (0) /*!< Set ping count to zero will ping target infinitely */

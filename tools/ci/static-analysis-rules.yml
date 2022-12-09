@@ -1,6 +1,6 @@
 limits:
-  "clang-analyzer-core.NullDereference" : 9
-  "clang-analyzer-unix.Malloc" : 9
+  "clang-analyzer-core.NullDereference" : 0
+  "clang-analyzer-unix.Malloc" : 0
 
 ignore:
   - "llvm-header-guard"
@@ -12,7 +12,7 @@ skip:
   - "components/asio/asio"
   - "components/bootloader/subproject/components/micro-ecc/micro-ecc"
   - "components/bt/lib"
-  - "components/coap/libcoap"
+  - "components/coap"
   - "components/esp_wifi/lib_esp32"
   - "components/expat/expat"
   - "components/json/cJSON"

@@ -24,13 +24,13 @@ Get ESP-IDF
 
 Open Command Prompt and run the following commands:
 
-.. include:: /_build/inc/git-clone-windows.inc
+.. include-build-file:: inc/git-clone-windows.inc
 
 ESP-IDF will be downloaded into ``%userprofile%\esp\esp-idf``.
 
 Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
 
-.. include:: /_build/inc/git-clone-notes.inc
+.. include-build-file:: inc/git-clone-notes.inc
 
 .. note::
 
@@ -61,10 +61,10 @@ Download the ninja_ latest stable Windows release from the (`download page <ninj
 The Ninja for Windows download is a .zip file containing a single ``ninja.exe`` file which needs to be unzipped to a directory which is then :ref:`added to your Path <add-directory-windows-path>` (or you can choose a directory which is already on your Path).
 
 
-Python 2.x
-^^^^^^^^^^
+Python
+^^^^^^
 
-Download the latest Python_ 2.7 for Windows installer, and run it.
+Download the latest Python_ for Windows installer, and run it.
 
 The "Customise" step of the Python installer gives a list of options. The last option is "Add python.exe to Path". Change this option to select "Will be installed".
 
@@ -72,28 +72,21 @@ Once Python is installed, open a Windows Command Prompt from the Start menu and 
 
   pip install --user pyserial
 
-MConf for IDF
-^^^^^^^^^^^^^
-
-Download the configuration tool mconf-idf from the `kconfig-frontends releases page`_. This is the ``mconf`` configuration tool with some minor customizations for ESP-IDF.
-
-This tool will also need to be unzipped to a directory which is then :ref:`added to your Path <add-directory-windows-path>`.
-
 Toolchain Setup
 ===============
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 Download the precompiled Windows toolchain:
 
 |download_link_win32|
 
-Unzip the zip file to ``C:\Program Files`` (or some other location). The zip file contains a single directory ``xtensa-esp32-elf``.
+Unzip the zip file to ``C:\Program Files`` (or some other location). The zip file contains a single directory ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf``.
 
-Next, the ``bin`` subdirectory of this directory must be :ref:`added to your Path <add-directory-windows-path>`. For example, the directory to add may be ``C:\Program Files\xtensa-esp32-elf\bin``.
+Next, the ``bin`` subdirectory of this directory must be :ref:`added to your Path <add-directory-windows-path>`. For example, the directory to add may be ``C:\Program Files\xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf\bin``.
 
 .. note::
-   If you already have the MSYS2 environment (for use with the "GNU Make" build system) installed, you can skip the separate download and add the directory ``C:\msys32\opt\xtensa-esp32-elf\bin`` to the Path instead, as the toolchain is included in the MSYS2 environment.
+   If you already have the MSYS2 environment (for use with the "GNU Make" build system) installed, you can skip the separate download and add the directory ``C:\msys32\opt\xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf\bin`` to the Path instead, as the toolchain is included in the MSYS2 environment.
 
 
 .. _add-directory-windows-path:
@@ -111,13 +104,15 @@ Double-click the ``Path`` variable (either User or System Path, depending if you
 Next Steps
 ==========
 
-To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf`.
+To carry on with development environment setup, proceed to :ref:`get-started-set-up-tools`.
 
 .. _CMake: https://cmake.org/download/
 .. _ninja: https://ninja-build.org/
 .. _ninja-dl: https://github.com/ninja-build/ninja/releases
 .. _Python: https://www.python.org/downloads/windows/
-.. _MSYS2: https://msys2.github.io/
+.. _MSYS2: https://www.msys2.org/
 .. _kconfig-frontends releases page: https://github.com/espressif/kconfig-frontends/releases
+.. Note: These two targets may be used from git-clone-notes.inc depending on version, don't remove
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
+.. _Releases page: https://github.com/espressif/esp-idf/releases
 

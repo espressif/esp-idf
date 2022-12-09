@@ -1,7 +1,56 @@
 menu "Virtual file system"
 
+    config VFS_SUPPORT_IO
+        bool "Provide basic I/O functions"
+        default y
+        help
+            If enabled, the following functions are provided by the VFS component.
+
+            open, close, read, write, pread, pwrite, lseek, fstat, fsync, ioctl, fcntl
+
+            Filesystem drivers can then be registered to handle these functions
+            for specific paths.
+
+            Disabling this option can save memory when the support for these functions
+            is not required.
+
+    config VFS_SUPPORT_DIR
+        bool "Provide directory related functions"
+        default y
+        # If some filesystem is used, adding I/O support is probably needed and
+        # is not a big overhead, compared to code size of the filesystem,
+        # so make this depend on IO.
+        depends on VFS_SUPPORT_IO
+        help
+            If enabled, the following functions are provided by the VFS component.
+
+            stat, link, unlink, rename, utime, access, truncate, rmdir, mkdir,
+            opendir, closedir, readdir, readdir_r, seekdir, telldir, rewinddir
+
+            Filesystem drivers can then be registered to handle these functions
+            for specific paths.
+
+            Disabling this option can save memory when the support for these functions
+            is not required.
+
+    config VFS_SUPPORT_SELECT
+        bool "Provide select function"
+        default y
+        # Dependency on !LWIP_USE_ONLY_LWIP_SELECT is for compatibility
+        depends on VFS_SUPPORT_IO && !LWIP_USE_ONLY_LWIP_SELECT
+        help
+            If enabled, select function is provided by the VFS component, and can be used
+            on peripheral file descriptors (such as UART) and sockets at the same time.
+
+            If disabled, the default select implementation will be provided by LWIP for
+            sockets only.
+
+            Disabling this option can reduce code size if support for "select" on UART file
+            descriptors is not required.
+
     config VFS_SUPPRESS_SELECT_DEBUG_OUTPUT
         bool "Suppress select() related debug outputs"
+        depends on VFS_SUPPORT_SELECT
         default y
         help
             Select() related functions might produce an unconveniently lot of
@@ -10,25 +59,31 @@ menu "Virtual file system"
             option.
 
     config VFS_SUPPORT_TERMIOS
-        bool "Add support for termios.h"
+        bool "Provide termios.h functions"
         default y
+        # Very likely, only makes sense for UART VFS driver, which itself depends on VFS_SUPPORT_IO
+        depends on VFS_SUPPORT_IO
         help
             Disabling this option can save memory when the support for termios.h is not required.
 
+
     menu "Host File System I/O (Semihosting)"
-        config SEMIHOSTFS_MAX_MOUNT_POINTS
-            int "Maximum number of the host filesystem mount points"
+        depends on VFS_SUPPORT_IO
+
+        config VFS_SEMIHOSTFS_MAX_MOUNT_POINTS
+            int "Host FS: Maximum number of the host filesystem mount points"
             default 1
             help
                 Define maximum number of host filesystem mount points.
 
-        config SEMIHOSTFS_HOST_PATH_MAX_LEN
-            int "Maximum path length for the host base directory"
+        config VFS_SEMIHOSTFS_HOST_PATH_MAX_LEN
+            int "Host FS: Maximum path length for the host base directory"
             default 128
             help
                 Define maximum path length for the host base directory which is to be mounted.
                 If host path passed to esp_vfs_semihost_register() is longer than this value
                 it will be truncated.
+
     endmenu
 
 endmenu

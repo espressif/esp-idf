@@ -745,6 +745,8 @@ void bta_gattc_conncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
 void bta_gattc_disconncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
 {
     if (p_rcb) {
+        // Clear up the notification registration information by BD_ADDR
+        bta_gattc_clear_notif_registration_by_bda(p_rcb, p_data->int_conn.remote_bda);
         bta_gattc_send_disconnect_cback(p_rcb,
                                      p_data->int_conn.reason,
                                      p_data->int_conn.remote_bda,
@@ -1102,6 +1104,41 @@ void bta_gattc_read(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 }
 /*******************************************************************************
 **
+** Function         bta_gattc_read_by_type
+**
+** Description      Read an attribute
+**
+** Returns          None.
+**
+*******************************************************************************/
+void bta_gattc_read_by_type(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
+{
+    if (!bta_gattc_enqueue(p_clcb, p_data)) {
+        return;
+    }
+
+    tGATT_READ_PARAM    read_param;
+    memset (&read_param, 0 ,sizeof(tGATT_READ_PARAM));
+    read_param.service.auth_req = p_data->api_read.auth_req;
+    read_param.service.s_handle = p_data->api_read.s_handle;
+    read_param.service.e_handle = p_data->api_read.e_handle;
+    memcpy(&(read_param.service.uuid), &(p_data->api_read.uuid), sizeof(tBT_UUID));
+
+    tBTA_GATT_STATUS status = GATTC_Read(p_clcb->bta_conn_id, GATT_READ_BY_TYPE, &read_param);
+
+    /* read fail */
+    if (status != BTA_GATT_OK) {
+        /* Dequeue the data, if it was enqueued */
+        if (p_clcb->p_q_cmd == p_data) {
+            p_clcb->p_q_cmd = NULL;
+            bta_gattc_pop_command_to_send(p_clcb);
+        }
+
+        bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_READ, status, NULL);
+    }
+}
+/*******************************************************************************
+**
 ** Function         bta_gattc_read_multi
 **
 ** Description      read multiple
@@ -1395,7 +1432,7 @@ void  bta_gattc_op_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             return;
         }
         if (p_clcb->p_q_cmd->hdr.event != bta_gattc_opcode_to_int_evt[op - GATTC_OPTYPE_READ]) {
-            if (p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_EVT) {
+            if ((p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_MULTI_EVT)&&(p_clcb->p_q_cmd->hdr.event != BTA_GATTC_API_READ_BY_TYPE_EVT)) {
                 mapped_op = p_clcb->p_q_cmd->hdr.event - BTA_GATTC_API_READ_EVT + GATTC_OPTYPE_READ;
                 if ( mapped_op > GATTC_OPTYPE_INDICATION) {
                     mapped_op = 0;

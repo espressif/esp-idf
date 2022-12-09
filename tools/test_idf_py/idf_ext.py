@@ -2,6 +2,11 @@ def action_extensions(base_actions, project_path=None):
     def echo(name, *args, **kwargs):
         print(name, args, kwargs)
 
+    def verbose(name, ctx, args):
+        print("Output from test-verbose")
+        if args.verbose:
+            print("Verbose mode on")
+
     # Add global options
     extensions = {
         "global_options": [
@@ -29,19 +34,30 @@ def action_extensions(base_actions, project_path=None):
             },
             {
                 "names": ["--test-4"],
-                "help": "Deprecated option 3.",
+                "help": "Deprecated option 4.",
                 "deprecated": {
                     "since": "v4.0",
                     "removed": "v5.0"
                 }
             },
+            {
+                "names": ["--test-5"],
+                "help": "Deprecated option 5.",
+                "deprecated": {
+                    "since": "v2.0",
+                    "removed": "v3.0",
+                    "exit_with_error": True
+                }
+            },
         ],
         "actions": {
+            "test-verbose": {
+                "callback": verbose,
+                "help": "Command that have some verbosity",
+            },
             "test-0": {
-                "callback":
-                echo,
-                "help":
-                "Non-deprecated command 0",
+                "callback": echo,
+                "help": "Non-deprecated command 0",
                 "options": [
                     {
                         "names": ["--test-sub-0"],
@@ -63,6 +79,13 @@ def action_extensions(base_actions, project_path=None):
                 "callback": echo,
                 "help": "Deprecated command 1",
                 "deprecated": "Please use alternative command."
+            },
+            "test-2": {
+                "callback": echo,
+                "help": "Deprecated command 2",
+                "deprecated": {
+                    "exit_with_error": True
+                }
             },
         },
     }

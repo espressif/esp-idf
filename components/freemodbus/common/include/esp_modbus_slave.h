@@ -24,6 +24,10 @@
 #include "freertos/event_groups.h"  // for event groups
 #include "esp_modbus_common.h"      // for common types
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Parameter access event information type
  */
@@ -119,5 +123,9 @@ esp_err_t mbc_slave_get_param_info(mb_param_info_t* reg_info, uint32_t timeout);
  *     - ESP_ERR_INVALID_ARG: The argument is incorrect
  */
 esp_err_t mbc_slave_set_descriptor(mb_register_area_descriptor_t descr_data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

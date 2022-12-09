@@ -1,0 +1,24 @@
+# This example supports running on the SPI1 bus, which is shared with SPI flash accessed by the
+# cache. When doing transaction on SPI1 bus, data cannot be fetched from the flash, so all the data
+# used during this time should be put into the internal RAM.
+
+[mapping:eeprom]
+archive: libeeprom.a
+entries:
+    * (noflash)
+
+[mapping:ext_driver]
+archive: libdriver.a
+entries:
+    # gpio_set_level, gpio_get_level, gpio_context, _gpio_hal, etc...
+    gpio (noflash)
+
+[mapping:ext_soc]
+archive: libsoc.a
+entries:
+    gpio_hal (noflash)
+
+[mapping:ext_newlib]
+archive: libnewlib.a
+entries:
+    time:usleep (noflash)

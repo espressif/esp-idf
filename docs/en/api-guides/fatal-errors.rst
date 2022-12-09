@@ -38,32 +38,32 @@ For some of the system level checks (interrupt watchdog, cache access error), th
 
 In all cases, error cause will be printed in parens. See `Guru Meditation Errors`_ for a list of possible error causes.
 
-Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP32_PANIC` configuration choice. The available options are:
+Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTEM_PANIC` configuration choice. The available options are:
 
-- Print registers and reboot (``CONFIG_ESP32_PANIC_PRINT_REBOOT``) — default option.
+- Print registers and reboot (``CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT``) — default option.
   
   This will print register values at the point of the exception, print the backtrace, and restart the chip.
 
-- Print registers and halt (``CONFIG_ESP32_PANIC_PRINT_HALT``)
+- Print registers and halt (``CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT``)
 
   Similar to the above option, but halt instead of rebooting. External reset is required to restart the program.
 
-- Silent reboot (``CONFIG_ESP32_PANIC_SILENT_REBOOT``)
+- Silent reboot (``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT``)
 
   Don't print registers or backtrace, restart the chip immediately.
 
-- Invoke GDB Stub (``CONFIG_ESP32_PANIC_GDBSTUB``)
+- Invoke GDB Stub (``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB``)
 
   Start GDB server which can communicate with GDB over console UART port. See `GDB Stub`_ for more details.
 
 Behavior of panic handler is affected by two other configuration options.
 
-- If :ref:`CONFIG_ESP32_DEBUG_OCDAWARE` is enabled (which is the default), panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
+- If :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEBUG_OCDAWARE` is enabled (which is the default), panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
 
-- If :doc:`Core Dump <core_dump>` feature is enabled (``CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH`` or ``CONFIG_ESP32_ENABLE_COREDUMP_TO_UART`` options), then system state (task stacks and registers) will be dumped either to Flash or UART, for later analysis.
+- If :doc:`Core Dump <core_dump>` feature is enabled, then system state (task stacks and registers) will be dumped either to Flash or UART, for later analysis.
 
 - If :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` is disabled (disabled by default), the panic handler code is placed in flash memory not IRAM. This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor risk, if the flash cache status is also corrupted during the crash.
-  
+
   If this option is enabled, the panic handler code is placed in IRAM. This allows the panic handler to run without needing to re-enable cache first. This may be necessary to debug some complex issues with crashes while flash cache is disabled (for example, when writing to SPI flash).
 
 The following diagram illustrates panic handler behavior:
@@ -72,7 +72,7 @@ The following diagram illustrates panic handler behavior:
     :scale: 100%
     :caption: Panic Handler Flowchart (click to enlarge)
     :align: center
-    
+
     blockdiag panic-handler {
         orientation = portrait;
         edge_layout = flowchart;
@@ -114,15 +114,15 @@ The following diagram illustrates panic handler behavior:
 Register Dump and Backtrace
 ---------------------------
 
-Unless ``CONFIG_ESP32_PANIC_SILENT_REBOOT`` option is enabled, panic handler prints some of the CPU registers, and the backtrace, to the console::
+Unless ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` option is enabled, panic handler prints some of the CPU registers, and the backtrace, to the console::
 
     Core 0 register dump:
-    PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030  
-    A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x3ffb50dc  
-    A6      : 0x00000000  A7      : 0x00000001  A8      : 0x00000000  A9      : 0x3ffb5000  
-    A10     : 0x00000000  A11     : 0x3ffb2bac  A12     : 0x40082d1c  A13     : 0x06ff1ff8  
-    A14     : 0x3ffb7078  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d  
-    EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff  
+    PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
+    A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x3ffb50dc
+    A6      : 0x00000000  A7      : 0x00000001  A8      : 0x00000000  A9      : 0x3ffb5000
+    A10     : 0x00000000  A11     : 0x3ffb2bac  A12     : 0x40082d1c  A13     : 0x06ff1ff8
+    A14     : 0x3ffb7078  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d
+    EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff
 
     Backtrace: 0x400e14ed:0x3ffb5030 0x400d0802:0x3ffb5050
 
@@ -137,28 +137,28 @@ Backtrace line contains PC:SP pairs, where PC is the Program Counter and SP is S
 If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will be converted to code locations (function name, file name, and line number), and the output will be annotated with additional lines::
 
     Core 0 register dump:
-    PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030  
+    PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
     0x400e14ed: app_main at /Users/user/esp/example/main/main.cpp:36
 
-    A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x3ffb50dc  
-    A6      : 0x00000000  A7      : 0x00000001  A8      : 0x00000000  A9      : 0x3ffb5000  
-    A10     : 0x00000000  A11     : 0x3ffb2bac  A12     : 0x40082d1c  A13     : 0x06ff1ff8  
+    A2      : 0x00000000  A3      : 0x00000001  A4      : 0x00000001  A5      : 0x3ffb50dc
+    A6      : 0x00000000  A7      : 0x00000001  A8      : 0x00000000  A9      : 0x3ffb5000
+    A10     : 0x00000000  A11     : 0x3ffb2bac  A12     : 0x40082d1c  A13     : 0x06ff1ff8
     0x40082d1c: _calloc_r at /Users/user/esp/esp-idf/components/newlib/syscalls.c:51
 
-    A14     : 0x3ffb7078  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d  
-    EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff  
+    A14     : 0x3ffb7078  A15     : 0x00000000  SAR     : 0x00000014  EXCCAUSE: 0x0000001d
+    EXCVADDR: 0x00000000  LBEG    : 0x4000c46c  LEND    : 0x4000c477  LCOUNT  : 0xffffffff
 
     Backtrace: 0x400e14ed:0x3ffb5030 0x400d0802:0x3ffb5050
     0x400e14ed: app_main at /Users/user/esp/example/main/main.cpp:36
 
-    0x400d0802: main_task at /Users/user/esp/esp-idf/components/esp32/cpu_start.c:470
+    0x400d0802: main_task at /Users/user/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/cpu_start.c:470
 
 To find the location where a fatal error has happened, look at the lines which follow the "Backtrace" line. Fatal error location is the top line, and subsequent lines show the call stack.
 
 GDB Stub
 --------
 
-If ``CONFIG_ESP32_PANIC_GDBSTUB`` option is enabled, panic handler will not reset the chip when fatal error happens. Instead, it will start GDB remote protocol server, commonly referred to as GDB Stub. When this happens, GDB instance running on the host computer can be instructed to connect to the ESP32 UART port.
+If ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` option is enabled, panic handler will not reset the chip when fatal error happens. Instead, it will start GDB remote protocol server, commonly referred to as GDB Stub. When this happens, GDB instance running on the host computer can be instructed to connect to the ESP32 UART port.
 
 If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically when GDB Stub prompt is detected on the UART. The output would look like this::
 
@@ -169,7 +169,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically 
     This is free software: you are free to change and redistribute it.
     There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
     and "show warranty" for details.
-    This GDB was configured as "--host=x86_64-build_apple-darwin16.3.0 --target=xtensa-esp32-elf".
+    This GDB was configured as "--host=x86_64-build_apple-darwin16.3.0 --target=xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf".
     Type "show configuration" for configuration details.
     For bug reporting instructions, please see:
     <http://www.gnu.org/software/gdb/bugs/>.
@@ -182,7 +182,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically 
     0x400e1b41 in app_main ()
         at /Users/user/esp/example/main/main.cpp:36
     36      *((int*) 0) = 0;
-    (gdb) 
+    (gdb)
 
 GDB prompt can be used to inspect CPU registers, local and static variables, and arbitrary locations in memory. It is not possible to set breakpoints, change PC, or continue execution. To reset the program, exit GDB and perform external reset: Ctrl-T Ctrl-R in IDF Monitor, or using external reset button on the development board.
 
@@ -207,10 +207,10 @@ Most common reasons for this error include:
 - FreeRTOS task function has returned. In FreeRTOS, if task function needs to terminate, it should call :cpp:func:`vTaskDelete` function and delete itself, instead of returning.
 
 - Failure to load next instruction from SPI flash. This usually happens if:
-  
+
   - Application has reconfigured SPI flash pins as some other function (GPIO, UART, etc.). Consult Hardware Design Guidelines and the Datasheet for the chip or module for details about SPI flash pins.
-  
-  - Some external device was accidentally connected to SPI flash pins, and has interfered with communication between ESP32 and SPI flash.
+
+  - Some external device was accidentally connected to SPI flash pins, and has interfered with communication between {IDF_TARGET_NAME} and SPI flash.
 
 
 InstrFetchProhibited
@@ -265,7 +265,8 @@ Other Fatal Errors
 Brownout
 ^^^^^^^^
 
-ESP32 has a built-in brownout detector, which is enabled by default. Brownout detector can trigger system reset if supply voltage goes below safe level. Brownout detector can be configured using :ref:`CONFIG_ESP32_BROWNOUT_DET` and :ref:`CONFIG_ESP32_BROWNOUT_DET_LVL_SEL` options.
+{IDF_TARGET_NAME} has a built-in brownout detector, which is enabled by default. Brownout detector can trigger system reset if supply voltage goes below safe level. Brownout detector can be configured using :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET` and :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET_LVL_SEL` options.
+
 When brownout detector triggers, the following message is printed::
 
     Brownout detector was triggered

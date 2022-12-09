@@ -188,7 +188,9 @@ static int bta_ag_data_cback(UINT16 port_handle, void *p_data, UINT16 len, UINT1
     UNUSED(port_handle);
 
     /* call data call-out directly */
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
     bta_ag_co_tx_write(handle, (UINT8 *) p_data, len);
+#endif
     return 0;
 }
 

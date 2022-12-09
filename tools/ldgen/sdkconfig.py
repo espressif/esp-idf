@@ -26,8 +26,6 @@ except Exception:
     sys.path.insert(0, kconfig_new_dir)
     import kconfiglib
 
-import confgen
-
 
 class SDKConfig:
     """
@@ -49,7 +47,6 @@ class SDKConfig:
     OPERATOR = oneOf(["=", "!=", ">", "<", "<=", ">="])
 
     def __init__(self, kconfig_file, sdkconfig_file):
-        confgen.prepare_source_files()
         self.config = kconfiglib.Kconfig(kconfig_file)
         self.config.load_config(sdkconfig_file)
 

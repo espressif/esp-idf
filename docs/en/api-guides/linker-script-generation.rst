@@ -21,21 +21,21 @@ This section presents a guide for quickly placing code/data to RAM and RTC memor
 For this guide, suppose we have the following::
 
     - components/
-                    - my_component/                              
+                    - my_component/
                                     - CMakeLists.txt
                                     - component.mk
-                                    - Kconfig                                
+                                    - Kconfig
                                     - src/
-                                          - my_src1.c                          
-                                          - my_src2.c                          
-                                          - my_src3.c                       
-                                    - my_linker_fragment_file.lf          
+                                          - my_src1.c
+                                          - my_src2.c
+                                          - my_src3.c
+                                    - my_linker_fragment_file.lf
 
 
 - a component named ``my_component`` that is archived as library ``libmy_component.a`` during build
 - three source files archived under the library, ``my_src1.c``, ``my_src2.c`` and ``my_src3.c`` which are compiled as ``my_src1.o``, ``my_src2.o`` and ``my_src3.o``, respectively
 - under ``my_src1.o``, the function ``my_function1`` is defined; under ``my_src2.o``, the function ``my_function2`` is defined
-- there exist bool-type config ``PERFORMANCE_MODE`` (y/n) and int type config ``PERFORMANCE_LEVEL`` (with range 0-3) in my_component's Kconfig
+- there exist bool-type config ``PERFORMANCE_MODE`` (y/n) and int type config ``PERFORMANCE_LEVEL`` (with range 0-3) in ``my_component``'s Kconfig
 
 
 Creating and Specifying a Linker Fragment File
@@ -54,7 +54,7 @@ fragment file. The path can either be an absolute path or a relative path from t
 
 .. code-block:: make
 
-    COMPONENT_ADD_LDFRAGMENTS += "my_linker_fragment_file.lf"
+    COMPONENT_ADD_LDFRAGMENTS += my_linker_fragment_file.lf
 
 CMake
 """""
@@ -65,7 +65,7 @@ created linker fragment file.
 
 .. code-block:: cmake
 
-    # file paths relative to CMakeLists.txt  
+    # file paths relative to CMakeLists.txt
     idf_component_register(...
                            LDFRAGMENTS "path/to/linker_fragment_file.lf" "path/to/another_linker_fragment_file.lf"
                            ...
@@ -86,7 +86,7 @@ It is possible to specify placements at the following levels of granularity:
 Placing object files
 """"""""""""""""""""
 
-Suppose the entirety of ``my_src1.o`` is performance-critical, so it is desirable to place it in RAM. 
+Suppose the entirety of ``my_src1.o`` is performance-critical, so it is desirable to place it in RAM.
 On the other hand, the entirety of ``my_src2.o`` contains symbols needed coming out of deep sleep, so it needs to be put under RTC memory.
 In the the linker fragment file, we can write:
 
@@ -99,7 +99,7 @@ In the the linker fragment file, we can write:
         my_src2 (rtc)         # places all my_src2 code/ data and read-only data under RTC fast memory/RTC slow memory
 
 What happens to ``my_src3.o``? Since it is not specified, default placements are used for ``my_src3.o``. More on default placements
-:ref:`here<ldgen-default-placements>`. 
+:ref:`here<ldgen-default-placements>`.
 
 Placing symbols
 """"""""""""""""
@@ -206,7 +206,7 @@ Nesting condition-checking is also possible. The following is equivalent to the 
 The 'default' placements
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Up until this point, the term  'default placements' has been mentioned as fallback placements for when the
+Up until this point, the term  'default placements' has been mentioned as fallback placements when the
 placement rules ``rtc`` and ``noflash`` are not specified. It is important to note that the tokens ``noflash`` or ``rtc`` are not merely keywords, but are actually
 entities called fragments, specifically :ref:`schemes<ldgen-scheme-fragment>`.
 
@@ -215,7 +215,7 @@ As the name suggests, it is where code and data are usually placed, i.e. code/co
 placed in RAM, etc.  More on the default scheme :ref:`here<ldgen-default-scheme>`.
 
 .. note::
-    For an example of an ESP-IDF component using the linker script generation mechanism, see :component_file:`freertos/CMakeLists.txt`. 
+    For an example of an ESP-IDF component using the linker script generation mechanism, see :component_file:`freertos/CMakeLists.txt`.
     ``freertos`` uses this to place its object files to the instruction RAM for performance reasons.
 
 This marks the end of the quick start guide. The following text discusses the internals of the mechanism in a little bit more detail.
@@ -226,7 +226,7 @@ Linker Script Generation Internals
 
 Linking is the last step in the process of turning C/C++ source files into an executable. It is performed by the toolchain's linker, and accepts
 linker scripts which specify code/data placements, among other things. With the linker script generation mechanism, this process is no different, except
-that the linker script passed to the linker is dynamically generated from: (1) the collected :ref:`linker fragment files<ldgen-linker-fragment-files>` and 
+that the linker script passed to the linker is dynamically generated from: (1) the collected :ref:`linker fragment files<ldgen-linker-fragment-files>` and
 (2) :ref:`linker script template<ldgen-linker-script-template>`.
 
 .. note::
@@ -240,7 +240,7 @@ Linker Fragment Files
 
 As mentioned in the quick start guide, fragment files are simple text files with the ``.lf`` extension containing the desired placements. This is a simplified
 description of what fragment files contain, however. What fragment files actually contain are 'fragments'. Fragments are entities which contain pieces of information which, when put together, form
-placement rules that tell where to place sections of object files in the output binary. There are three types of fragments: :ref:`sections<ldgen-sections-fragment>`, 
+placement rules that tell where to place sections of object files in the output binary. There are three types of fragments: :ref:`sections<ldgen-sections-fragment>`,
 :ref:`scheme<ldgen-scheme-fragment>` and :ref:`mapping<ldgen-mapping-fragment>`.
 
 Grammar
@@ -276,7 +276,7 @@ The three fragment types share a common grammar:
 **Condition Checking**
 
 Condition checking enable the linker script generation to be configuration-aware. Depending on whether expressions involving configuration values
-are true or not, a particular set of values for a key can be used. The evaluation uses ``eval_string`` from :idf_file:`tools/kconfig_new/kconfiglib.py` 
+are true or not, a particular set of values for a key can be used. The evaluation uses ``eval_string`` from :idf_file:`tools/kconfig_new/kconfiglib.py`
 and adheres to its required syntax and limitations. Supported operators are as follows:
 
     - comparison
@@ -331,15 +331,14 @@ for both key values and entire fragments. The two sample fragments below are equ
 **Comments**
 
 Comment in linker fragment files begin with ``#``. Like in other languages, comment are used to provide helpful descriptions and documentation
-and are ignored during processing. 
+and are ignored during processing.
 
 Compatibility with ESP-IDF v3.x Linker Script Fragment Files
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 ESP-IDF v4.0 brings some changes to the linker script fragment file grammar:
 
-- indentation is enforced and improperly indented fragment files generate a parse exception; this was not enforced in the old version but previous documentation
-    and examples demonstrates properly indented grammar
+- indentation is enforced and improperly indented fragment files generate a parse exception; this was not enforced in the old version but previous documentation and examples demonstrates properly indented grammar
 - move to ``if...elif...else`` structure for conditionals, with the ability to nest checks and place entire fragments themselves inside conditionals
 - mapping fragments now requires a name like other fragment types
 
@@ -426,10 +425,10 @@ will be generated for the target ``flash_text``.
 
 These catch-all rules then effectively serve as fallback rules for those whose mappings were not specified.
 
-.. note::
 
-    The ``default scheme`` is defined in :component:`esp32/ld/esp32_fragments.lf`. The ``noflash`` and ``rtc`` scheme fragments which are
-    built-in schemes referenced in the quick start guide are also defined in this file.
+The ``default scheme`` is defined in :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}_fragments.lf`. The ``noflash`` and ``rtc`` scheme fragments which are
+built-in schemes referenced in the quick start guide are also defined in this file.
+
 
 .. _ldgen-mapping-fragment :
 
@@ -589,9 +588,5 @@ Then the corresponding excerpt from the generated linker script will be as follo
     it too is placed wherever ``iram0_text`` is referenced by a marker. Since it is a rule generated from the default scheme, it comes first
     among all other rules collected under the same target name.
 
-.. note::
-
-    The linker script template currently used is :component:`esp32/ld/esp32.project.ld.in`, specified by the ``esp32`` component; the
+    The linker script template currently used is :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}.project.ld.in`, specified by the ``{IDF_TARGET_PATH_NAME}`` component; the
     generated output script is put under its build directory.
-
-

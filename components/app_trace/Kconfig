@@ -1,54 +1,56 @@
 menu "Application Level Tracing"
 
-    choice ESP32_APPTRACE_DESTINATION
+    choice APPTRACE_DESTINATION
         prompt "Data Destination"
-        default ESP32_APPTRACE_DEST_NONE
+        default APPTRACE_DEST_NONE
         help
             Select destination for application trace: trace memory or none (to disable).
 
-        config ESP32_APPTRACE_DEST_TRAX
+        config APPTRACE_DEST_TRAX
             bool "Trace memory"
-            select ESP32_APPTRACE_ENABLE
-        config ESP32_APPTRACE_DEST_NONE
+            select APPTRACE_ENABLE
+        config APPTRACE_DEST_NONE
             bool "None"
     endchoice
 
-    config ESP32_APPTRACE_ENABLE
+    config APPTRACE_ENABLE
         bool
-        depends on !ESP32_TRAX
+        depends on !ESP32_TRAX && !ESP32S2_TRAX
         select ESP32_MEMMAP_TRACEMEM
+        select ESP32S2_MEMMAP_TRACEMEM
         select ESP32_MEMMAP_TRACEMEM_TWOBANKS
+        select ESP32S2_MEMMAP_TRACEMEM_TWOBANKS
         default n
         help
             Enables/disable application tracing module.
 
-    config ESP32_APPTRACE_LOCK_ENABLE
+    config APPTRACE_LOCK_ENABLE
         bool
         default !SYSVIEW_ENABLE
         help
             Enables/disable application tracing module internal sync lock.
 
-    config ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO
+    config APPTRACE_ONPANIC_HOST_FLUSH_TMO
         int "Timeout for flushing last trace data to host on panic"
-        depends on ESP32_APPTRACE_ENABLE
+        depends on APPTRACE_ENABLE
         range -1 5000
         default -1
         help
             Timeout for flushing last trace data to host in case of panic. In ms.
             Use -1 to disable timeout and wait forever.
 
-    config ESP32_APPTRACE_POSTMORTEM_FLUSH_THRESH
+    config APPTRACE_POSTMORTEM_FLUSH_THRESH
         int "Threshold for flushing last trace data to host on panic"
-        depends on ESP32_APPTRACE_DEST_TRAX
+        depends on APPTRACE_DEST_TRAX
         range 0 16384
         default 0
         help
             Threshold for flushing last trace data to host on panic in post-mortem mode.
             This is minimal amount of data needed to perform flush. In bytes.
 
-    config ESP32_APPTRACE_PENDING_DATA_SIZE_MAX
+    config APPTRACE_PENDING_DATA_SIZE_MAX
         int "Size of the pending data buffer"
-        depends on ESP32_APPTRACE_DEST_TRAX
+        depends on APPTRACE_DEST_TRAX
         default 0
         help
             Size of the buffer for events in bytes. It is useful for buffering events from
@@ -56,10 +58,10 @@ menu "Application Level Tracing"
             events will be discarded when main HW buffer is full.
 
     menu "FreeRTOS SystemView Tracing"
-        depends on ESP32_APPTRACE_ENABLE
+        depends on APPTRACE_ENABLE
         config SYSVIEW_ENABLE
             bool "SystemView Tracing Enable"
-            depends on ESP32_APPTRACE_ENABLE
+            depends on APPTRACE_ENABLE
             default n
             help
                 Enables supporrt for SEGGER SystemView tracing functionality.
@@ -208,10 +210,11 @@ menu "Application Level Tracing"
 
     endmenu
 
-    config ESP32_GCOV_ENABLE
+    config APPTRACE_GCOV_ENABLE
         bool "GCOV to Host Enable"
-        depends on ESP32_DEBUG_STUBS_ENABLE && ESP32_APPTRACE_ENABLE && !SYSVIEW_ENABLE
-        default y
+        depends on APPTRACE_ENABLE && !SYSVIEW_ENABLE
+        select ESP_DEBUG_STUBS_ENABLE
+        default n
         help
             Enables support for GCOV data transfer to host.
 

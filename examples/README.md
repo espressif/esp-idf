@@ -9,6 +9,7 @@ The examples are grouped into subdirectories by category. Each category director
 * `bluetooth/bluedroid` contains Classic BT, BLE and coex examples using default Bluedroid host stack.
 * `bluetooth/nimble` contains BLE examples using NimBLE host stack.
 * `bluetooth/esp_ble_mesh` contains ESP BLE Mesh examples.
+* `bluetooth/hci` contains HCI transport (VHCI and HCI UART) examples
 * `ethernet` contains Ethernet examples.
 * `get-started` contains some very simple examples with minimal functionality.
 * `mesh` contains Wi-Fi Mesh examples.

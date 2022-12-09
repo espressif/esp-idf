@@ -53,7 +53,9 @@ typedef enum {
     BTC_PID_GAP_BLE,
     BTC_PID_BLE_HID,
     BTC_PID_SPPLIKE,
+#if (BLUFI_INCLUDED == TRUE)
     BTC_PID_BLUFI,
+#endif  ///BLUFI_INCLUDED == TRUE
     BTC_PID_DM_SEC,
     BTC_PID_ALARM,
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -85,6 +87,7 @@ typedef enum {
     BTC_PID_LIGHTING_SERVER,
     BTC_PID_SENSOR_SERVER,
     BTC_PID_TIME_SCENE_SERVER,
+    BTC_PID_BLE_MESH_BLE_COEX,
 #endif /* CONFIG_BLE_MESH */
     BTC_PID_NUM,
 } btc_pid_t; //btc profile id
@@ -96,10 +99,29 @@ typedef struct {
 
 typedef void (* btc_arg_deep_copy_t)(btc_msg_t *msg, void *dst, void *src);
 
+/**
+ * transfer an message to another module in the different task.
+ * @param  msg       message
+ * @param  arg       paramter
+ * @param  arg_len   length of paramter
+ * @param  copy_func deep copy function
+ * @return           BT_STATUS_SUCCESS: success
+ *                   others: fail
+ */
 bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func);
 
-int btc_init(void);
+/**
+ * transfer an message to another module in tha same task.
+ * @param  msg       message
+ * @param  arg       paramter
+ * @return           BT_STATUS_SUCCESS: success
+ *                   others: fail
+ */
+bt_status_t btc_inter_profile_call(btc_msg_t *msg, void *arg);
+
+bt_status_t btc_init(void);
 void btc_deinit(void);
 bool btc_check_queue_is_congest(void);
+int get_btc_work_queue_size(void);
 
 #endif /* __BTC_TASK_H__ */

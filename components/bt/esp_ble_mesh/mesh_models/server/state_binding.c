@@ -6,28 +6,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-#include <stdint.h>
 #include <errno.h>
-#include <stdbool.h>
 
-#include "mesh_types.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
-#include "mesh.h"
-
+#include "mesh_config.h"
+#include "mesh_common.h"
 #include "model_opcode.h"
-#include "server_common.h"
 #include "state_binding.h"
 #include "state_transition.h"
-#include "generic_server.h"
-#include "lighting_server.h"
+
+#if CONFIG_BLE_MESH_SERVER_MODEL
 
 #define MINDIFF (2.25e-308)
 
 static float bt_mesh_sqrt(float square)
 {
-    float root, last, diff;
+    float root = 0.0, last = 0.0, diff = 0.0;
 
     root = square / 3.0;
     diff = 1;
@@ -45,9 +38,9 @@ static float bt_mesh_sqrt(float square)
     return root;
 }
 
-static s32_t bt_mesh_ceiling(float num)
+static int32_t bt_mesh_ceiling(float num)
 {
-    s32_t inum = (s32_t)num;
+    int32_t inum = (int32_t)num;
 
     if (num == (float)inum) {
         return inum;
@@ -56,49 +49,49 @@ static s32_t bt_mesh_ceiling(float num)
     return inum + 1;
 }
 
-u16_t bt_mesh_convert_lightness_actual_to_linear(u16_t actual)
+uint16_t bt_mesh_convert_lightness_actual_to_linear(uint16_t actual)
 {
     float tmp = ((float) actual / UINT16_MAX);
 
     return bt_mesh_ceiling(UINT16_MAX * tmp * tmp);
 }
 
-u16_t bt_mesh_convert_lightness_linear_to_actual(u16_t linear)
+uint16_t bt_mesh_convert_lightness_linear_to_actual(uint16_t linear)
 {
-    return (u16_t) (UINT16_MAX * bt_mesh_sqrt(((float) linear / UINT16_MAX)));
+    return (uint16_t) (UINT16_MAX * bt_mesh_sqrt(((float) linear / UINT16_MAX)));
 }
 
-s16_t bt_mesh_convert_temperature_to_gen_level(u16_t temp, u16_t min, u16_t max)
+int16_t bt_mesh_convert_temperature_to_gen_level(uint16_t temp, uint16_t min, uint16_t max)
 {
     float tmp = (temp - min) * UINT16_MAX / (max - min);
-    return (s16_t) (tmp + INT16_MIN);
+    return (int16_t) (tmp + INT16_MIN);
 }
 
-u16_t bt_mesh_covert_gen_level_to_temperature(s16_t level, u16_t min, u16_t max)
+uint16_t bt_mesh_covert_gen_level_to_temperature(int16_t level, uint16_t min, uint16_t max)
 {
     float diff = (float) (max - min) / UINT16_MAX;
-    u16_t tmp = (u16_t) ((level - INT16_MIN) * diff);
-    return (u16_t) (min + tmp);
+    uint16_t tmp = (uint16_t) ((level - INT16_MIN) * diff);
+    return (uint16_t) (min + tmp);
 }
 
-s16_t bt_mesh_convert_hue_to_level(u16_t hue)
+int16_t bt_mesh_convert_hue_to_level(uint16_t hue)
 {
-    return (s16_t) (hue + INT16_MIN);
+    return (int16_t) (hue + INT16_MIN);
 }
 
-u16_t bt_mesh_convert_level_to_hue(s16_t level)
+uint16_t bt_mesh_convert_level_to_hue(int16_t level)
 {
-    return (u16_t) (level - INT16_MIN);
+    return (uint16_t) (level - INT16_MIN);
 }
 
-s16_t bt_mesh_convert_saturation_to_level(u16_t saturation)
+int16_t bt_mesh_convert_saturation_to_level(uint16_t saturation)
 {
-    return (s16_t) (saturation + INT16_MIN);
+    return (int16_t) (saturation + INT16_MIN);
 }
 
-u16_t bt_mesh_convert_level_to_saturation(s16_t level)
+uint16_t bt_mesh_convert_level_to_saturation(int16_t level)
 {
-    return (u16_t) (level - INT16_MIN);
+    return (uint16_t) (level - INT16_MIN);
 }
 
 int bt_mesh_update_binding_state(struct bt_mesh_model *model,
@@ -112,9 +105,10 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     }
 
     switch (type) {
+#if CONFIG_BLE_MESH_GENERIC_SERVER
     case GENERIC_ONOFF_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_GEN_ONOFF_SRV) {
-            BT_ERR("%s, Not a Generic OnOff Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Generic OnOff Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
@@ -126,7 +120,7 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     }
     case GENERIC_LEVEL_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_GEN_LEVEL_SRV) {
-            BT_ERR("%s, Not a Generic Level Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Generic Level Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
@@ -138,13 +132,13 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     }
     case GENERIC_ONPOWERUP_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SRV) {
-            BT_ERR("%s, Not a Generic Power OnOff Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Generic Power OnOff Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
         struct bt_mesh_gen_power_onoff_srv *srv = model->user_data;
         if (srv->state == NULL) {
-            BT_ERR("%s, Invalid Generic Power OnOff Server state", __func__);
+            BT_ERR("Invalid Generic Power OnOff Server state");
             return -EINVAL;
         }
 
@@ -154,13 +148,13 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     }
     case GENERIC_POWER_ACTUAL_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SRV) {
-            BT_ERR("%s, Not a Generic Power Level Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Generic Power Level Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
         struct bt_mesh_gen_power_level_srv *srv = model->user_data;
         if (srv->state == NULL) {
-            BT_ERR("%s, Invalid Generic Power Level Server state", __func__);
+            BT_ERR("Invalid Generic Power Level Server state");
             return -EINVAL;
         }
 
@@ -178,32 +172,43 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
         gen_power_level_publish(model, BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_STATUS);
         break;
     }
+#endif /* CONFIG_BLE_MESH_GENERIC_SERVER */
+#if CONFIG_BLE_MESH_LIGHTING_SERVER
     case LIGHT_LIGHTNESS_ACTUAL_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV) {
-            BT_ERR("%s, Not a Light Lightness Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Light Lightness Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
         struct bt_mesh_light_lightness_srv *srv = model->user_data;
         if (srv->state == NULL) {
-            BT_ERR("%s, Invalid Light Lightness Server state", __func__);
+            BT_ERR("Invalid Light Lightness Server state");
             return -EINVAL;
         }
 
         bt_mesh_server_stop_transition(&srv->actual_transition);
         srv->state->lightness_actual = value->light_lightness_actual.lightness;
+        /**
+         * Whenever the Light Lightness Actual state is changed with a non-transactional
+         * message or a completed sequence of transactional messages to a non-zero value,
+         * the value of the Light Lightness Last shall be set to the value of the Light
+         * Lightness Actual.
+         */
+        if (srv->state->lightness_actual) {
+            srv->state->lightness_last = srv->state->lightness_actual;
+        }
         light_lightness_publish(model, BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_STATUS);
         break;
     }
     case LIGHT_LIGHTNESS_LINEAR_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV) {
-            BT_ERR("%s, Not a Light Lightness Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Light Lightness Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
         struct bt_mesh_light_lightness_srv *srv = model->user_data;
         if (srv->state == NULL) {
-            BT_ERR("%s, Invalid Light Lightness Server state", __func__);
+            BT_ERR("Invalid Light Lightness Server state");
             return -EINVAL;
         }
 
@@ -214,13 +219,13 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     }
     case LIGHT_CTL_LIGHTNESS_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_LIGHT_CTL_SRV) {
-            BT_ERR("%s, Not a Light CTL Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Light CTL Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
         struct bt_mesh_light_ctl_srv *srv = model->user_data;
         if (srv->state == NULL) {
-            BT_ERR("%s, Invalid Light CTL Server state", __func__);
+            BT_ERR("Invalid Light CTL Server state");
             return -EINVAL;
         }
 
@@ -231,13 +236,13 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     }
     case LIGHT_CTL_TEMP_DELTA_UV_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_LIGHT_CTL_TEMP_SRV) {
-            BT_ERR("%s, Not a Light CTL Temperature Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Light CTL Temperature Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
         struct bt_mesh_light_ctl_temp_srv *srv = model->user_data;
         if (srv->state == NULL) {
-            BT_ERR("%s, Invalid Light CTL Temperature Server state", __func__);
+            BT_ERR("Invalid Light CTL Temperature Server state");
             return -EINVAL;
         }
 
@@ -247,15 +252,34 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
         light_ctl_publish(model, BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_STATUS);
         break;
     }
-    case LIGHT_HSL_LIGHTNESS_STATE: {
+    case LIGHT_HSL_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_LIGHT_HSL_SRV) {
-            BT_ERR("%s, Not a Light HSL Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Light HSL Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
         struct bt_mesh_light_hsl_srv *srv = model->user_data;
         if (srv->state == NULL) {
-            BT_ERR("%s, Invalid Light HSL Server state", __func__);
+            BT_ERR("Invalid Light HSL Server state");
+            return -EINVAL;
+        }
+
+        bt_mesh_server_stop_transition(&srv->transition);
+        srv->state->lightness = value->light_hsl.lightness;
+        srv->state->hue = value->light_hsl.hue;
+        srv->state->saturation = value->light_hsl.saturation;
+        light_hsl_publish(model, BLE_MESH_MODEL_OP_LIGHT_HSL_STATUS);
+        break;
+    }
+    case LIGHT_HSL_LIGHTNESS_STATE: {
+        if (model->id != BLE_MESH_MODEL_ID_LIGHT_HSL_SRV) {
+            BT_ERR("Invalid Light HSL Server, model id 0x%04x", model->id);
+            return -EINVAL;
+        }
+
+        struct bt_mesh_light_hsl_srv *srv = model->user_data;
+        if (srv->state == NULL) {
+            BT_ERR("Invalid Light HSL Server state");
             return -EINVAL;
         }
 
@@ -266,13 +290,13 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     }
     case LIGHT_HSL_HUE_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_LIGHT_HSL_HUE_SRV) {
-            BT_ERR("%s, Not a Light HSL Hue Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Light HSL Hue Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
         struct bt_mesh_light_hsl_hue_srv *srv = model->user_data;
         if (srv->state == NULL) {
-            BT_ERR("%s, Invalid Light HSL Hue Server state", __func__);
+            BT_ERR("Invalid Light HSL Hue Server state");
             return -EINVAL;
         }
 
@@ -283,13 +307,13 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     }
     case LIGHT_HSL_SATURATION_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_LIGHT_HSL_SAT_SRV) {
-            BT_ERR("%s, Not a Light HSL Saturation Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Light HSL Saturation Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
         struct bt_mesh_light_hsl_sat_srv *srv = model->user_data;
         if (srv->state == NULL) {
-            BT_ERR("%s, Invalid Light HSL Saturation Server state", __func__);
+            BT_ERR("Invalid Light HSL Saturation Server state");
             return -EINVAL;
         }
 
@@ -300,13 +324,13 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     }
     case LIGHT_XYL_LIGHTNESS_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_LIGHT_XYL_SRV) {
-            BT_ERR("%s, Not a Light xyL Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Light xyL Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
         struct bt_mesh_light_xyl_srv *srv = model->user_data;
         if (srv->state == NULL) {
-            BT_ERR("%s, Invalid Light xyL Server state", __func__);
+            BT_ERR("Invalid Light xyL Server state");
             return -EINVAL;
         }
 
@@ -317,13 +341,13 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
     }
     case LIGHT_LC_LIGHT_ONOFF_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_LIGHT_LC_SRV) {
-            BT_ERR("%s, Not a Light LC Server Model, id 0x%04x", __func__, model->id);
+            BT_ERR("Invalid Light LC Server, model id 0x%04x", model->id);
             return -EINVAL;
         }
 
         struct bt_mesh_light_lc_srv *srv = model->user_data;
         if (srv->lc == NULL) {
-            BT_ERR("%s, Invalid Light LC Server state", __func__);
+            BT_ERR("Invalid Light LC Server state");
             return -EINVAL;
         }
 
@@ -332,11 +356,13 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
         light_lc_publish(model, BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_STATUS);
         break;
     }
+#endif /* CONFIG_BLE_MESH_LIGHTING_SERVER */
     default:
-        BT_WARN("%s, Unknown binding state type 0x%02x", __func__, type);
+        BT_WARN("Unknown binding state type 0x%02x", type);
         return -EINVAL;
     }
 
     return 0;
 }
 
+#endif /* CONFIG_BLE_MESH_SERVER_MODEL */

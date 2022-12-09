@@ -6,18 +6,46 @@ menu "Core dump"
         help
             Select place to store core dump: flash, uart or none (to disable core dumps generation).
 
+            Core dumps to Flash are not available if PSRAM is used for task stacks.
+
             If core dump is configured to be stored in flash and custom partition table is used add
             corresponding entry to your CSV. For examples, please see predefined partition table CSV descriptions
             in the components/partition_table directory.
 
         config ESP32_ENABLE_COREDUMP_TO_FLASH
             bool "Flash"
+            depends on !SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
             select ESP32_ENABLE_COREDUMP
         config ESP32_ENABLE_COREDUMP_TO_UART
             bool "UART"
             select ESP32_ENABLE_COREDUMP
         config ESP32_ENABLE_COREDUMP_TO_NONE
             bool "None"
+    endchoice
+
+    choice ESP32_COREDUMP_DATA_FORMAT
+        prompt "Core dump data format"
+        default ESP32_COREDUMP_DATA_FORMAT_ELF
+        depends on !ESP32_ENABLE_COREDUMP_TO_NONE
+        help
+            Select the data format for core dump.
+        config ESP32_COREDUMP_DATA_FORMAT_BIN
+            bool "Binary format"
+        config ESP32_COREDUMP_DATA_FORMAT_ELF
+            bool "ELF format"
+    endchoice
+
+    choice ESP32_COREDUMP_CHECKSUM
+        prompt "Core dump data integrity check"
+        default ESP32_COREDUMP_CHECKSUM_CRC32
+        depends on !ESP32_ENABLE_COREDUMP_TO_NONE
+        help
+            Select the integrity check for the core dump.
+        config ESP32_COREDUMP_CHECKSUM_CRC32
+            bool "Use CRC32 for integrity verification"
+        config ESP32_COREDUMP_CHECKSUM_SHA256
+            bool "Use SHA256 for integrity verification"
+            depends on ESP32_COREDUMP_DATA_FORMAT_ELF
     endchoice
 
     config ESP32_ENABLE_COREDUMP
@@ -40,6 +68,30 @@ menu "Core dump"
         help
             Config delay (in ms) before printing core dump to UART.
             Delay can be interrupted by pressing Enter key.
+
+    config ESP32_CORE_DUMP_STACK_SIZE
+        int "Reserved stack size"
+        depends on ESP32_ENABLE_COREDUMP
+        default 0
+        help
+            Size of the memory to be reserved for core dump stack. If 0 core dump process will run on
+            the stack of crashed task/ISR, otherwise special stack will be allocated.
+            To ensure that core dump itself will not overflow task/ISR stack set this to the value above 800.
+            NOTE: It eats DRAM.
+
+    choice ESP32_CORE_DUMP_DECODE
+        prompt "Handling of UART core dumps in IDF Monitor"
+        depends on ESP32_ENABLE_COREDUMP_TO_UART
+        config ESP32_CORE_DUMP_DECODE_INFO
+            bool "Decode and show summary (info_corefile)"
+        config ESP32_CORE_DUMP_DECODE_DISABLE
+            bool "Don't decode"
+    endchoice
+
+    config ESP32_CORE_DUMP_DECODE
+        string
+        default "disable" if ESP32_CORE_DUMP_DECODE_DISABLE
+        default "info" if ESP32_CORE_DUMP_DECODE_INFO
 
 endmenu
 

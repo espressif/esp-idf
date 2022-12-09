@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test the build system for basic consistency
 #
@@ -183,7 +183,7 @@ function run_tests()
     # and therefore should rebuild
     assert_rebuilt newlib/syscall_table.o
     assert_rebuilt nvs_flash/src/nvs_api.o
-    assert_rebuilt freertos/xtensa_vectors.o
+    assert_rebuilt freertos/xtensa/xtensa_vectors.o
 
     print_status "Updating project Makefile triggers full recompile"
     make
@@ -193,7 +193,7 @@ function run_tests()
     # similar to previous test
     assert_rebuilt newlib/syscall_table.o
     assert_rebuilt nvs_flash/src/nvs_api.o
-    assert_rebuilt freertos/xtensa_vectors.o
+    assert_rebuilt freertos/xtensa/xtensa_vectors.o
 
     print_status "print_flash_cmd target should produce one line of output"
     make
@@ -265,12 +265,47 @@ function run_tests()
     version+=$(git describe --always --tags --dirty)
     grep "${version}" log.log || failure "Project version should have a hash commit"
 
+    print_status "Get the version of app from Kconfig option"
+    make clean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    echo "project_version_from_txt" > ${TESTDIR}/template/version.txt
+    echo "CONFIG_APP_PROJECT_VER_FROM_CONFIG=y" >> sdkconfig.defaults
+    echo 'CONFIG_APP_PROJECT_VER="project_version_from_Kconfig"' >> sdkconfig.defaults
+    make defconfig > /dev/null
+    make >> log.log || failure "Failed to build"
+    version="App \"app-template\" version: "
+    version+="project_version_from_Kconfig"
+    grep "${version}" log.log || failure "Project version should be from Kconfig"
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    rm -f ${TESTDIR}/template/version.txt
+
     print_status "Build fails if partitions don't fit in flash"
     sed -i.bak "s/CONFIG_ESPTOOLPY_FLASHSIZE.\+//" sdkconfig  # remove all flashsize config
     echo "CONFIG_ESPTOOLPY_FLASHSIZE_1MB=y" >> sdkconfig     # introduce undersize flash
     make defconfig || failure "Failed to reconfigure with smaller flash"
     ( make 2>&1 | grep "does not fit in configured flash size 1MB" ) || failure "Build didn't fail with expected flash size failure message"
     mv sdkconfig.bak sdkconfig
+
+    print_status "Flash size is correctly set in the bootloader image header"
+    # Build with the default 2MB setting
+    rm sdkconfig
+    make defconfig && make bootloader || failure "Failed to build bootloader"
+    bin_header_match build/bootloader/bootloader.bin "0210"
+    # Change to 4MB
+    echo "CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y" > sdkconfig
+    make defconfig && make bootloader || failure "Failed to build bootloader"
+    bin_header_match build/bootloader/bootloader.bin "0220"
+    # Change to QIO, bootloader should still be DIO (will change to QIO in 2nd stage bootloader)
+    echo "CONFIG_FLASHMODE_QIO=y" > sdkconfig
+    make defconfig && make bootloader || failure "Failed to build bootloader"
+    bin_header_match build/bootloader/bootloader.bin "0210"
+    # Change to 80 MHz
+    echo "CONFIG_ESPTOOLPY_FLASHFREQ_80M=y" > sdkconfig
+    make defconfig && make bootloader || failure "Failed to build bootloader"
+    bin_header_match build/bootloader/bootloader.bin "021f"
+    rm sdkconfig
 
     print_status "sdkconfig should have contents of all files: sdkconfig, sdkconfig.defaults, sdkconfig.defaults.IDF_TARGET"
     make clean > /dev/null;
@@ -473,6 +508,18 @@ function assert_not_rebuilt()
 function clean_build_dir()
 {
     rm -rf --preserve-root ${BUILD}/*
+}
+
+# check the bytes 3-4 of the binary image header. e.g.:
+#   bin_header_match app.bin 0210
+function bin_header_match()
+{
+    expected=$2
+    filename=$1
+    actual=$(xxd -s 2 -l 2 -ps $1)
+    if [ ! "$expected" = "$actual" ]; then
+        failure "Incorrect binary image header, expected $expected got $actual"
+    fi
 }
 
 cd ${TESTDIR}

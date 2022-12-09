@@ -17,6 +17,10 @@
 
 #include "esp_netif_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief station list info element
  */
@@ -59,4 +63,9 @@ esp_err_t esp_netif_get_sta_list(const wifi_sta_list_t *wifi_sta_list, esp_netif
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //_ESP_NETIF_STA_LIST_H_

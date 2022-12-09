@@ -1,4 +1,4 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -101,140 +101,144 @@ typedef struct
 {
     int flags;      /*!< ESP_VFS_FLAG_CONTEXT_PTR or ESP_VFS_FLAG_DEFAULT */
     union {
-        ssize_t (*write_p)(void* p, int fd, const void * data, size_t size);
-        ssize_t (*write)(int fd, const void * data, size_t size);
+        ssize_t (*write_p)(void* p, int fd, const void * data, size_t size);                         /*!< Write with context pointer */
+        ssize_t (*write)(int fd, const void * data, size_t size);                                    /*!< Write without context pointer */
     };
     union {
-        off_t (*lseek_p)(void* p, int fd, off_t size, int mode);
-        off_t (*lseek)(int fd, off_t size, int mode);
+        off_t (*lseek_p)(void* p, int fd, off_t size, int mode);                                     /*!< Seek with context pointer */
+        off_t (*lseek)(int fd, off_t size, int mode);                                                /*!< Seek without context pointer */
     };
     union {
-        ssize_t (*read_p)(void* ctx, int fd, void * dst, size_t size);
-        ssize_t (*read)(int fd, void * dst, size_t size);
+        ssize_t (*read_p)(void* ctx, int fd, void * dst, size_t size);                               /*!< Read with context pointer */
+        ssize_t (*read)(int fd, void * dst, size_t size);                                            /*!< Read without context pointer */
     };
     union {
-        ssize_t (*pread_p)(void *ctx, int fd, void * dst, size_t size, off_t offset);
-        ssize_t (*pread)(int fd, void * dst, size_t size, off_t offset);
+        ssize_t (*pread_p)(void *ctx, int fd, void * dst, size_t size, off_t offset);                /*!< pread with context pointer */
+        ssize_t (*pread)(int fd, void * dst, size_t size, off_t offset);                             /*!< pread without context pointer */
     };
     union {
-        ssize_t (*pwrite_p)(void *ctx, int fd, const void *src, size_t size, off_t offset);
-        ssize_t (*pwrite)(int fd, const void *src, size_t size, off_t offset);
+        ssize_t (*pwrite_p)(void *ctx, int fd, const void *src, size_t size, off_t offset);          /*!< pwrite with context pointer */
+        ssize_t (*pwrite)(int fd, const void *src, size_t size, off_t offset);                       /*!< pwrite without context pointer */
     };
     union {
-        int (*open_p)(void* ctx, const char * path, int flags, int mode);
-        int (*open)(const char * path, int flags, int mode);
+        int (*open_p)(void* ctx, const char * path, int flags, int mode);                            /*!< open with context pointer */
+        int (*open)(const char * path, int flags, int mode);                                         /*!< open without context pointer */
     };
     union {
-        int (*close_p)(void* ctx, int fd);
-        int (*close)(int fd);
+        int (*close_p)(void* ctx, int fd);                                                           /*!< close with context pointer */
+        int (*close)(int fd);                                                                        /*!< close without context pointer */
     };
     union {
-        int (*fstat_p)(void* ctx, int fd, struct stat * st);
-        int (*fstat)(int fd, struct stat * st);
+        int (*fstat_p)(void* ctx, int fd, struct stat * st);                                         /*!< fstat with context pointer */
+        int (*fstat)(int fd, struct stat * st);                                                      /*!< fstat without context pointer */
+    };
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    union {
+        int (*stat_p)(void* ctx, const char * path, struct stat * st);                               /*!< stat with context pointer */
+        int (*stat)(const char * path, struct stat * st);                                            /*!< stat without context pointer */
     };
     union {
-        int (*stat_p)(void* ctx, const char * path, struct stat * st);
-        int (*stat)(const char * path, struct stat * st);
+        int (*link_p)(void* ctx, const char* n1, const char* n2);                                    /*!< link with context pointer */
+        int (*link)(const char* n1, const char* n2);                                                 /*!< link without context pointer */
     };
     union {
-        int (*link_p)(void* ctx, const char* n1, const char* n2);
-        int (*link)(const char* n1, const char* n2);
+        int (*unlink_p)(void* ctx, const char *path);                                                /*!< unlink with context pointer */
+        int (*unlink)(const char *path);                                                             /*!< unlink without context pointer */
     };
     union {
-        int (*unlink_p)(void* ctx, const char *path);
-        int (*unlink)(const char *path);
+        int (*rename_p)(void* ctx, const char *src, const char *dst);                               /*!< rename with context pointer */
+        int (*rename)(const char *src, const char *dst);                                            /*!< rename without context pointer */
     };
     union {
-        int (*rename_p)(void* ctx, const char *src, const char *dst);
-        int (*rename)(const char *src, const char *dst);
+        DIR* (*opendir_p)(void* ctx, const char* name);                                             /*!< opendir with context pointer */
+        DIR* (*opendir)(const char* name);                                                          /*!< opendir without context pointer */
     };
     union {
-        DIR* (*opendir_p)(void* ctx, const char* name);
-        DIR* (*opendir)(const char* name);
+        struct dirent* (*readdir_p)(void* ctx, DIR* pdir);                                          /*!< readdir with context pointer */
+        struct dirent* (*readdir)(DIR* pdir);                                                       /*!< readdir without context pointer */
     };
     union {
-        struct dirent* (*readdir_p)(void* ctx, DIR* pdir);
-        struct dirent* (*readdir)(DIR* pdir);
+        int (*readdir_r_p)(void* ctx, DIR* pdir, struct dirent* entry, struct dirent** out_dirent); /*!< readdir_r with context pointer */
+        int (*readdir_r)(DIR* pdir, struct dirent* entry, struct dirent** out_dirent);              /*!< readdir_r without context pointer */
     };
     union {
-        int (*readdir_r_p)(void* ctx, DIR* pdir, struct dirent* entry, struct dirent** out_dirent);
-        int (*readdir_r)(DIR* pdir, struct dirent* entry, struct dirent** out_dirent);
+        long (*telldir_p)(void* ctx, DIR* pdir);                                                    /*!< telldir with context pointer */
+        long (*telldir)(DIR* pdir);                                                                 /*!< telldir without context pointer */
     };
     union {
-        long (*telldir_p)(void* ctx, DIR* pdir);
-        long (*telldir)(DIR* pdir);
+        void (*seekdir_p)(void* ctx, DIR* pdir, long offset);                                       /*!< seekdir with context pointer */
+        void (*seekdir)(DIR* pdir, long offset);                                                    /*!< seekdir without context pointer */
     };
     union {
-        void (*seekdir_p)(void* ctx, DIR* pdir, long offset);
-        void (*seekdir)(DIR* pdir, long offset);
+        int (*closedir_p)(void* ctx, DIR* pdir);                                                    /*!< closedir with context pointer */
+        int (*closedir)(DIR* pdir);                                                                 /*!< closedir without context pointer */
     };
     union {
-        int (*closedir_p)(void* ctx, DIR* pdir);
-        int (*closedir)(DIR* pdir);
+        int (*mkdir_p)(void* ctx, const char* name, mode_t mode);                                   /*!< mkdir with context pointer */
+        int (*mkdir)(const char* name, mode_t mode);                                                /*!< mkdir without context pointer */
     };
     union {
-        int (*mkdir_p)(void* ctx, const char* name, mode_t mode);
-        int (*mkdir)(const char* name, mode_t mode);
+        int (*rmdir_p)(void* ctx, const char* name);                                                /*!< rmdir with context pointer */
+        int (*rmdir)(const char* name);                                                             /*!< rmdir without context pointer */
+    };
+#endif // CONFIG_VFS_SUPPORT_DIR
+    union {
+        int (*fcntl_p)(void* ctx, int fd, int cmd, int arg);                                        /*!< fcntl with context pointer */
+        int (*fcntl)(int fd, int cmd, int arg);                                                     /*!< fcntl without context pointer */
     };
     union {
-        int (*rmdir_p)(void* ctx, const char* name);
-        int (*rmdir)(const char* name);
+        int (*ioctl_p)(void* ctx, int fd, int cmd, va_list args);                                   /*!< ioctl with context pointer */
+        int (*ioctl)(int fd, int cmd, va_list args);                                                /*!< ioctl without context pointer */
     };
     union {
-        int (*fcntl_p)(void* ctx, int fd, int cmd, int arg);
-        int (*fcntl)(int fd, int cmd, int arg);
+        int (*fsync_p)(void* ctx, int fd);                                                          /*!< fsync with context pointer */
+        int (*fsync)(int fd);                                                                       /*!< fsync without context pointer */
+    };
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    union {
+        int (*access_p)(void* ctx, const char *path, int amode);                                    /*!< access with context pointer */
+        int (*access)(const char *path, int amode);                                                 /*!< access without context pointer */
     };
     union {
-        int (*ioctl_p)(void* ctx, int fd, int cmd, va_list args);
-        int (*ioctl)(int fd, int cmd, va_list args);
+        int (*truncate_p)(void* ctx, const char *path, off_t length);                               /*!< truncate with context pointer */
+        int (*truncate)(const char *path, off_t length);                                            /*!< truncate without context pointer */
     };
     union {
-        int (*fsync_p)(void* ctx, int fd);
-        int (*fsync)(int fd);
+        int (*utime_p)(void* ctx, const char *path, const struct utimbuf *times);                   /*!< utime with context pointer */
+        int (*utime)(const char *path, const struct utimbuf *times);                                /*!< utime without context pointer */
     };
-    union {
-        int (*access_p)(void* ctx, const char *path, int amode);
-        int (*access)(const char *path, int amode);
-    };
-    union {
-        int (*truncate_p)(void* ctx, const char *path, off_t length);
-        int (*truncate)(const char *path, off_t length);
-    };
-    union {
-        int (*utime_p)(void* ctx, const char *path, const struct utimbuf *times);
-        int (*utime)(const char *path, const struct utimbuf *times);
-    };
+#endif // CONFIG_VFS_SUPPORT_DIR
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
     union {
-        int (*tcsetattr_p)(void *ctx, int fd, int optional_actions, const struct termios *p);
-        int (*tcsetattr)(int fd, int optional_actions, const struct termios *p);
+        int (*tcsetattr_p)(void *ctx, int fd, int optional_actions, const struct termios *p);       /*!< tcsetattr with context pointer */
+        int (*tcsetattr)(int fd, int optional_actions, const struct termios *p);                    /*!< tcsetattr without context pointer */
     };
     union {
-        int (*tcgetattr_p)(void *ctx, int fd, struct termios *p);
-        int (*tcgetattr)(int fd, struct termios *p);
+        int (*tcgetattr_p)(void *ctx, int fd, struct termios *p);                                   /*!< tcgetattr with context pointer */
+        int (*tcgetattr)(int fd, struct termios *p);                                                /*!< tcgetattr without context pointer */
     };
     union {
-        int (*tcdrain_p)(void *ctx, int fd);
-        int (*tcdrain)(int fd);
+        int (*tcdrain_p)(void *ctx, int fd);                                                        /*!< tcdrain with context pointer */
+        int (*tcdrain)(int fd);                                                                     /*!< tcdrain without context pointer */
     };
     union {
-        int (*tcflush_p)(void *ctx, int fd, int select);
-        int (*tcflush)(int fd, int select);
+        int (*tcflush_p)(void *ctx, int fd, int select);                                            /*!< tcflush with context pointer */
+        int (*tcflush)(int fd, int select);                                                         /*!< tcflush without context pointer */
     };
     union {
-        int (*tcflow_p)(void *ctx, int fd, int action);
-        int (*tcflow)(int fd, int action);
+        int (*tcflow_p)(void *ctx, int fd, int action);                                             /*!< tcflow with context pointer */
+        int (*tcflow)(int fd, int action);                                                          /*!< tcflow without context pointer */
     };
     union {
-        pid_t (*tcgetsid_p)(void *ctx, int fd);
-        pid_t (*tcgetsid)(int fd);
+        pid_t (*tcgetsid_p)(void *ctx, int fd);                                                     /*!< tcgetsid with context pointer */
+        pid_t (*tcgetsid)(int fd);                                                                  /*!< tcgetsid without context pointer */
     };
     union {
-        int (*tcsendbreak_p)(void *ctx, int fd, int duration);
-        int (*tcsendbreak)(int fd, int duration);
+        int (*tcsendbreak_p)(void *ctx, int fd, int duration);                                      /*!< tcsendbreak with context pointer */
+        int (*tcsendbreak)(int fd, int duration);                                                   /*!< tcsendbreak without context pointer */
     };
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
-
+#ifdef CONFIG_VFS_SUPPORT_SELECT
     /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
     esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t sem, void **end_select_args);
     /** socket select function for socket FDs with the functionality of POSIX select(); this should be set only for the socket VFS */
@@ -247,6 +251,7 @@ typedef struct
     void* (*get_socket_select_semaphore)(void);
     /** get_socket_select_semaphore returns semaphore allocated in the socket driver; set only for the socket driver */
     esp_err_t (*end_select)(void *end_select_args);
+#endif // CONFIG_VFS_SUPPORT_SELECT
 } esp_vfs_t;
 
 
@@ -405,23 +410,6 @@ void esp_vfs_select_triggered(esp_vfs_select_sem_t sem);
  * @param woken is set to pdTRUE if the function wakes up a task with higher priority
  */
 void esp_vfs_select_triggered_isr(esp_vfs_select_sem_t sem, BaseType_t *woken);
-
-/**
- * @brief Implements the VFS layer for synchronous I/O multiplexing by poll()
- *
- * The implementation is based on esp_vfs_select. The parameters and return values are compatible with POSIX poll().
- *
- * @param fds         Pointer to the array containing file descriptors and events poll() should consider.
- * @param nfds        Number of items in the array fds.
- * @param timeout     Poll() should wait at least timeout milliseconds. If the value is 0 then it should return
- *                    immediately. If the value is -1 then it should wait (block) until the event occurs.
- *
- * @return            A positive return value indicates the number of file descriptors that have been selected. The 0
- *                    return value indicates a timed-out poll. -1 is return on failure and errno is set accordingly.
- *
- */
-int esp_vfs_poll(struct pollfd *fds, nfds_t nfds, int timeout);
-
 
 /**
  *

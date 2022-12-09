@@ -12,7 +12,7 @@ The logging library is commonly used by most esp-idf components and examples. Fo
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_log.inc
+.. include-build-file:: inc/esp_log.inc
 
 
 

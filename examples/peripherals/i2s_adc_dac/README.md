@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # I2S Built-in ADC/DAC Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -38,7 +41,7 @@ The following is the hardware connection:
 idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options, the flash size should be set to 4 MB.
+* Set the flash size to 4 MB under Serial Flasher Options.
 * Select "Custom partition table CSV" and rename "Custom partition CSV file" to "partitions_adc_dac_example.csv".
 
 (Note that you can use `sdkconfig.defaults`)

@@ -18,6 +18,10 @@
 #include "esp_err.h"
 #include "esp_app_trace_util.h" // ESP_APPTRACE_TMO_INFINITE
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Application trace data destinations bits.
  */
@@ -261,5 +265,9 @@ int esp_apptrace_fstop(esp_apptrace_dest_t dest);
  *		  This function waits for the host to connect to target before dumping data.
  */
 void esp_gcov_dump(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

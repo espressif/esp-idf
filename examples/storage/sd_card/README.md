@@ -2,7 +2,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example demonstrates how to use an SD card with ESP32. Example does the following steps:
+This example demonstrates how to use an SD card with ESP32 or ESP32-S2. Example does the following steps:
 
 1. Use an "all-in-one" `esp_vfs_fat_sdmmc_mount` function to:
     - initialize SDMMC peripheral,
@@ -17,6 +17,8 @@ This example demonstrates how to use an SD card with ESP32. Example does the fol
 This example support SD (SDSC, SDHC, SDXC) cards and eMMC chips.
 
 ## Hardware
+
+### Connections for ESP32
 
 This example runs on ESP-WROVER-KIT boards without any extra modifications required, only the SD card needs to be inserted into the slot.
 
@@ -38,15 +40,30 @@ This example doesn't utilize card detect (CD) and write protect (WP) signals fro
 With the given pinout for SPI mode, same connections between the SD card and ESP32 can be used to test both SD and SPI modes, provided that the appropriate pullups are in place. 
 See [the document about pullup requirements](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/sd_pullup_requirements.html) for more details about pullup support and compatibility of modules and development boards.
 
-In SPI mode, pins can be customized. See the initialization of ``sdspi_slot_config_t`` structure in the example code.
+In SPI mode, pins can be customized. See the initialization of ``spi_bus_config_t`` and ``sdspi_slot_config_t`` structures in the example code.
 
-### Note about GPIO2
+### Connections for ESP32-S2
+
+Note that ESP32-S2 doesn't include SD Host peripheral and only supports SD over SPI. Therefore only SCK, MOSI, MISO, CS and ground pins need to be connected.
+
+ESP32-S2 pin  | SD card pin | SPI pin | Notes
+--------------|-------------|---------|------------
+GPIO14        | CLK         | SCK     | 10k pullup
+GPIO15        | CMD         | MOSI    | 10k pullup
+GPIO2         | D0          | MISO    | 10k pullup
+GPIO13        | D3          | CS      | 10k pullup
+N/C           | CD          |         | optional, not used in the example
+N/C           | WP          |         | optional, not used in the example
+
+In SPI mode, pins can be customized. See the initialization of ``spi_bus_config_t`` and ``sdspi_slot_config_t`` structures in the example code.
+
+### Note about GPIO2 (ESP32 only)
 
 GPIO2 pin is used as a bootstrapping pin, and should be low to enter UART download mode. One way to do this is to connect GPIO0 and GPIO2 using a jumper, and then the auto-reset circuit on most development boards will pull GPIO2 low along with GPIO0, when entering download mode.
 
 - Some boards have pulldown and/or LED on GPIO2. LED is usually ok, but pulldown will interfere with D0 signals and must be removed. Check the schematic of your development board for anything connected to GPIO2. 
 
-### Note about GPIO12
+### Note about GPIO12 (ESP32 only)
 
 GPIO12 is used as a bootstrapping pin to select output voltage of an internal regulator which powers the flash chip (VDD_SDIO). This pin has an internal pulldown so if left unconnected it will read low at reset (selecting default 3.3V operation). When adding a pullup to this pin for SD card operation, consider the following:
 
@@ -103,7 +120,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example output
 
-Here is an example console output. In this case a 128MB SDSC card was connected, and `format_if_mount_failed` parameter was set to `true` in the source code. Card was unformatted, so the initial mount has failed. Card was then partitioned, formatted, and mounted again.
+Here is an example console output. In this case a 128MB SDSC card was connected, and `EXAMPLE_FORMAT_IF_MOUNT_FAILED` menuconfig option enabled. Card was unformatted, so the initial mount has failed. Card was then partitioned, formatted, and mounted again.
 
 ```
 I (336) example: Initializing SD card
@@ -148,6 +165,6 @@ Connections between the card and the ESP32 are too long for the frequency used. 
 ### Failure to mount filesystem
 
 ```
-example: Failed to mount filesystem. If you want the card to be formatted, set format_if_mount_failed = true.
+example: Failed to mount filesystem. If you want the card to be formatted, set the EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.
 ```
-The example will be able to mount only cards formatted using FAT32 filesystem. If the card is formatted as exFAT or some other filesystem, you have an option to format it in the example code. Modify `format_if_mount_failed = false` to `format_if_mount_failed = true` in the example code, then build and flash the example.
+The example will be able to mount only cards formatted using FAT32 filesystem. If the card is formatted as exFAT or some other filesystem, you have an option to format it in the example code. Enable the `EXAMPLE_FORMAT_IF_MOUNT_FAILED` menuconfig option, then build and flash the example.

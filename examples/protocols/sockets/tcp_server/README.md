@@ -21,14 +21,14 @@ nc 192.168.0.167 3333
 ```
 
 ### Python scripts
-Script tcpclient.py contains configuration for port number, IP version (IPv4 or IPv6) and IP address that has to be altered to match the values used by the application. Example:
+Script example_test.py could be used as a counter part to the tcp-server application,
+IP address and the message to be send to the server shall be stated as arguments. Example:
 
 ```
-PORT = 3333;
-IP_VERSION = 'IPv4'
-IPV4 = '192.168.0.167'
-IPV6 = 'FE80::32AE:A4FF:FE80:5288'
+python example_test.py 192.168.0.167 Message
 ```
+Note that this script is used in automated tests, as well, so the IDF test framework packages need to be imported;
+please add `$IDF_PATH/tools/ci/python_packages` to `PYTHONPATH`.
 
 ## Hardware Required
 
@@ -39,10 +39,6 @@ This example can be run on any commonly available ESP32 development board.
 ```
 idf.py menuconfig
 ```
-
-Set following parameter under Serial Flasher Options:
-
-* Set `Default serial port`.
 
 Set following parameters under Example Configuration Options:
 

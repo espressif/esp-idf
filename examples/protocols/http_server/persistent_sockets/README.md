@@ -8,7 +8,7 @@ This sort of persistency enables the server to have independent sessions/context
 * In order to test the HTTPD server persistent sockets demo :
     1. compile and burn the firmware `idf.py -p PORT flash`
     2. run `idf.py -p PORT monitor` and note down the IP assigned to your ESP module. The default port is 80
-    3. run the test script "python2 scripts/adder.py \<IP\> \<port\> \<N\>"
+    3. run the test script "python scripts/adder.py \<IP\> \<port\> \<N\>"
         * the provided test script sends (POST) numbers from 1 to N to the server which has a URI POST handler for adding these numbers into an accumulator that is valid throughout the lifetime of the connection socket, hence persistent
         * the script does a GET before closing and displays the final value of the accumulator
 

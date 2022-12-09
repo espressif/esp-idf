@@ -87,7 +87,7 @@ foreach(__component_target ${__component_targets})
         list(REMOVE_ITEM __component_requires ${__component_alias} ${__component_name})
     endif()
 
-    if(__component_requires)
+    if(__component_priv_requires)
         list(REMOVE_DUPLICATES __component_priv_requires)
         list(REMOVE_ITEM __component_priv_requires ${__component_alias} ${__component_name})
     endif()

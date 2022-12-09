@@ -11,9 +11,7 @@
 
 struct tls_connection;
 
-struct tls_keys {
-	const u8 *master_key; /* TLS master secret */
-	size_t master_key_len;
+struct tls_random {
 	const u8 *client_random;
 	size_t client_random_len;
 	const u8 *server_random;
@@ -287,41 +285,31 @@ int __must_check tls_connection_set_verify(void *tls_ctx,
 					   int verify_peer);
 
 /**
- * tls_connection_get_keys - Get master key and random data from TLS connection
+ * tls_connection_get_random - Get random data from TLS connection
  * @tls_ctx: TLS context data from tls_init()
  * @conn: Connection context data from tls_connection_init()
  * @keys: Structure of key/random data (filled on success)
  * Returns: 0 on success, -1 on failure
  */
-int __must_check tls_connection_get_keys(void *tls_ctx,
+int __must_check tls_connection_get_random(void *tls_ctx,
 					 struct tls_connection *conn,
-					 struct tls_keys *keys);
+					 struct tls_random *data);
 
 /**
- * tls_connection_prf - Use TLS-PRF to derive keying material
+ * tls_connection_export_key - Derive keying material from a TLS connection
  * @tls_ctx: TLS context data from tls_init()
  * @conn: Connection context data from tls_connection_init()
  * @label: Label (e.g., description of the key) for PRF
- * @server_random_first: seed is 0 = client_random|server_random,
- * 1 = server_random|client_random
  * @out: Buffer for output data from TLS-PRF
  * @out_len: Length of the output buffer
  * Returns: 0 on success, -1 on failure
  *
- * This function is optional to implement if tls_connection_get_keys() provides
- * access to master secret and server/client random values. If these values are
- * not exported from the TLS library, tls_connection_prf() is required so that
- * further keying material can be derived from the master secret. If not
- * implemented, the function will still need to be defined, but it can just
- * return -1. Example implementation of this function is in tls_prf_sha1_md5()
- * when it is called with seed set to client_random|server_random (or
- * server_random|client_random).
+ * Exports keying material using the mechanism described in RFC 5705.
  */
-int __must_check  tls_connection_prf(void *tls_ctx,
-				     struct tls_connection *conn,
-				     const char *label,
-				     int server_random_first,
-				     u8 *out, size_t out_len);
+int __must_check tls_connection_export_key(void *tls_ctx,
+					   struct tls_connection *conn,
+					   const char *label,
+					   u8 *out, size_t out_len);
 
 /**
  * tls_connection_handshake - Process TLS handshake (client side)
@@ -505,16 +493,6 @@ int tls_connection_get_read_alerts(void *tls_ctx, struct tls_connection *conn);
  */
 int tls_connection_get_write_alerts(void *tls_ctx,
 				    struct tls_connection *conn);
-
-/**
- * tls_connection_get_keyblock_size - Get TLS key_block size
- * @tls_ctx: TLS context data from tls_init()
- * @conn: Connection context data from tls_connection_init()
- * Returns: Size of the key_block for the negotiated cipher suite or -1 on
- * failure
- */
-int tls_connection_get_keyblock_size(void *tls_ctx,
-				     struct tls_connection *conn);
 
 /**
  * tls_capabilities - Get supported TLS capabilities

@@ -2,11 +2,12 @@ Timer
 =====
 
 :link_to_translation:`zh_CN:[中文]`
+{IDF_TARGET_INT_CLR_REG: default="int_clr", esp32="int_clr_timers"}
 
 Introduction
 ------------
 
-The ESP32 chip contains two hardware timer groups. Each group has two general-purpose hardware timers. They are all 64-bit generic timers based on 16-bit prescalers and 64-bit up / down counters which are capable of being auto-reloaded.
+The {IDF_TARGET_NAME} chip contains two hardware timer groups. Each group has two general-purpose hardware timers. They are all 64-bit generic timers based on 16-bit prescalers and 64-bit up / down counters which are capable of being auto-reloaded.
 
 
 Functional Overview
@@ -25,7 +26,7 @@ The following sections of this document cover the typical steps to configure and
 Timer Initialization
 ^^^^^^^^^^^^^^^^^^^^
 
-The two ESP32 timer groups, with two timers in each, provide the total of four individual timers for use. An ESP32 timer group should be identified using :cpp:type:`timer_group_t`. An individual timer in a group should be identified with :cpp:type:`timer_idx_t`.
+The two {IDF_TARGET_NAME} timer groups, with two timers in each, provide the total of four individual timers for use. An {IDF_TARGET_NAME} timer group should be identified using :cpp:type:`timer_group_t`. An individual timer in a group should be identified with :cpp:type:`timer_idx_t`.
 
 First of all, the timer should be initialized by calling the function :cpp:func:`timer_init` and passing a structure :cpp:type:`timer_config_t` to it to define how the timer should operate. In particular, the following timer parameters can be set:
 
@@ -85,14 +86,14 @@ To check the specified alarm value, call :cpp:func:`timer_get_alarm_value`.
 Interrupts
 ^^^^^^^^^^
 
-Registration of the interrupt handler for a specific timer or a timer group can be done by calling :cpp:func:`timer_isr_register`. 
+Registration of the interrupt handler for a specific timer or a timer group can be done by calling :cpp:func:`timer_isr_register`.
 
 To enable interrupts for a timer group, call :cpp:func:`timer_group_intr_enable`, for a specific timer call :cpp:func:`timer_enable_intr`.
 To disable interrupts for a timer group, call :cpp:func:`timer_group_intr_disable`, for a specified timer, call :cpp:func:`timer_disable_intr`.
 
-When handling an interrupt within an interrupt serivce routine (ISR), the interrupt status bit needs to be explicitly cleared. To do that, set the ``TIMERGN.int_clr_timers.tM`` structure, defined in :component_file:`soc/esp32/include/soc/timer_group_struct.h`. In this structure, ``N`` is the timer group number [0, 1], ``M`` is the timer number [0, 1]. For example, to clear an interrupt status bit for the timer 1 in the timer group 0, call the following::
+When handling an interrupt within an interrupt serivce routine (ISR), the interrupt status bit needs to be explicitly cleared. To do that, set the ``TIMERGN.{IDF_TARGET_INT_CLR_REG}.tM`` structure, defined in :component_file:`soc/soc/{IDF_TARGET_PATH_NAME}/include/soc/timer_group_struct.h`. In this structure, ``N`` is the timer group number [0, 1], ``M`` is the timer number [0, 1]. For example, to clear an interrupt status bit for the timer 1 in the timer group 0, call the following::
 
-    TIMERG0.int_clr_timers.t1 = 1
+    TIMERG0.{IDF_TARGET_INT_CLR_REG}.t1 = 1
 
 For more information on how to use interrupts, please see the application example below.
 
@@ -106,4 +107,5 @@ The 64-bit hardware timer example: :example:`peripherals/timer_group`.
 API Reference
 -------------
 
-.. include:: /_build/inc/timer.inc
+.. include-build-file:: inc/timer.inc
+.. include-build-file:: inc/timer_types.inc

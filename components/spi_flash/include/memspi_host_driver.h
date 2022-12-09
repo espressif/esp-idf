@@ -99,3 +99,44 @@ esp_err_t memspi_host_read_status_hs(spi_flash_host_driver_t *driver, uint8_t *o
  * @return always ESP_OK.
  */
 esp_err_t memspi_host_flush_cache(spi_flash_host_driver_t* driver, uint32_t addr, uint32_t size);
+
+/**
+ *  Erase contents of entire chip.
+ *
+ * @param driver The driver context.
+ */
+void memspi_host_erase_chip(spi_flash_host_driver_t *driver);
+
+/**
+ *  Erase a sector starting from a given address.
+ *
+ * @param driver The driver context.
+ * @param start_address Starting address of the sector.
+ */
+void memspi_host_erase_sector(spi_flash_host_driver_t *driver, uint32_t start_address);
+
+/**
+ *  Erase a block starting from a given address.
+ *
+ * @param driver The driver context.
+ * @param start_address Starting address of the block.
+ */
+void memspi_host_erase_block(spi_flash_host_driver_t *driver, uint32_t start_address);
+
+/**
+ * Program a page with contents of a buffer.
+ *
+ * @param driver The driver context.
+ * @param buffer Buffer which contains the data to be flashed.
+ * @param address Starting address of where to flash the data.
+ * @param length The number of bytes to flash.
+ */
+void memspi_host_program_page(spi_flash_host_driver_t *driver, const void *buffer, uint32_t address, uint32_t length);
+
+/**
+ * Set ability to write to chip.
+ *
+ * @param driver The driver context.
+ * @param wp Enable or disable write protect (true - enable, false - disable).
+ */
+esp_err_t memspi_host_set_write_protect(spi_flash_host_driver_t *driver, bool wp);

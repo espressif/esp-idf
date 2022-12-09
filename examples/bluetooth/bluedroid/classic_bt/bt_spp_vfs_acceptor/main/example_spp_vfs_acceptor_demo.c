@@ -53,6 +53,9 @@ static void spp_read_handle(void * param)
     int size = 0;
     int fd = (int)param;
     do {
+        /* controll the log frequency, retry after 1s */
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
         size = read (fd, spp_data, SPP_DATA_LEN);
         ESP_LOGI(SPP_TAG, "fd = %d data_len = %d", fd, size);
         if (size == -1) {
@@ -74,10 +77,13 @@ static void esp_spp_cb(uint16_t e, void *p)
 
     switch (event) {
     case ESP_SPP_INIT_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT");
-        esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
-        esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
-        esp_spp_start_srv(sec_mask,role_slave, 0, SPP_SERVER_NAME);
+        ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT status=%d", param->init.status);
+        if (param->init.status == ESP_SPP_SUCCESS) {
+            esp_spp_vfs_register();
+            esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
+            esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+            esp_spp_start_srv(sec_mask, role_slave, 0, SPP_SERVER_NAME);
+        }
         break;
     case ESP_SPP_DISCOVERY_COMP_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_DISCOVERY_COMP_EVT");
@@ -95,8 +101,10 @@ static void esp_spp_cb(uint16_t e, void *p)
         ESP_LOGI(SPP_TAG, "ESP_SPP_CL_INIT_EVT");
         break;
     case ESP_SPP_SRV_OPEN_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_SRV_OPEN_EVT");
-        spp_wr_task_start_up(spp_read_handle, param->srv_open.fd);
+        ESP_LOGI(SPP_TAG, "ESP_SPP_SRV_OPEN_EVT status=%d", param->srv_open.status);
+        if (param->srv_open.status == ESP_SPP_SUCCESS) {
+            spp_wr_task_start_up(spp_read_handle, param->srv_open.fd);
+        }
         break;
     default:
         break;
@@ -200,7 +208,7 @@ void app_main(void)
         ESP_LOGE(SPP_TAG, "%s spp register failed", __func__);
         return;
     }
-    esp_spp_vfs_register();
+
     spp_task_task_start_up();
 
     if (esp_spp_init(esp_spp_mode) != ESP_OK) {

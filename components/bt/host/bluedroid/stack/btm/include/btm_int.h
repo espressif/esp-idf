@@ -41,6 +41,8 @@
 #include "stack/smp_api.h"
 #endif
 
+#define ESP_VS_REM_LEGACY_AUTH_CMP 0x03
+
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
 typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 #endif
@@ -93,6 +95,13 @@ UINT8           lmp_version;
 BOOLEAN         in_use;
 UINT8           link_role;
 BOOLEAN         link_up_issued;     /* True if busy_level link up has been issued */
+BOOLEAN         sc_downgrade;       /* Store if security is downgraded or not. */
+
+#define BTM_ACL_LEGACY_AUTH_NONE                (0)
+#define BTM_ACL_LEGACY_AUTH_SELF                (1<<0)
+#define BTM_ACL_LEGACY_AUTH_REMOTE              (1<<1)
+#define BTM_ACL_LEGACY_AUTH_MUTUAL              (1<<2)
+UINT8           legacy_auth_state;
 
 #define BTM_ACL_SWKEY_STATE_IDLE                0
 #define BTM_ACL_SWKEY_STATE_MODE_CHANGE         1
@@ -380,7 +389,8 @@ typedef struct {
 typedef struct {
     tBTM_ESCO_INFO   esco;              /* Current settings             */
 #if BTM_SCO_HCI_INCLUDED == TRUE
-#define BTM_SCO_XMIT_QUEUE_THRS         20
+#define BTM_SCO_XMIT_QUEUE_THRS     30
+#define BTM_SCO_XMIT_QUEUE_HIGH_WM  20
     fixed_queue_t   *xmit_data_q;       /* SCO data transmitting queue  */
     INT16           sent_not_acked;
 #endif
@@ -390,7 +400,6 @@ typedef struct {
     UINT16           hci_handle;        /* HCI Handle                   */
     BOOLEAN          is_orig;           /* TRUE if the originator       */
     BOOLEAN          rem_bd_known;      /* TRUE if remote BD addr known */
-
 } tSCO_CONN;
 
 /* SCO Management control block */
@@ -552,6 +561,7 @@ typedef struct {
 #define BTM_SEC_ROLE_SWITCHED   0x40
 #define BTM_SEC_IN_USE          0x80
     /* LE link security flag */
+#define BTM_SEC_LE_AUTHORIZATION   0x0100   /* LE link is authorized */
 #define BTM_SEC_LE_AUTHENTICATED   0x0200   /* LE link is encrypted after pairing with MITM */
 #define BTM_SEC_LE_ENCRYPTED       0x0400   /* LE link is encrypted */
 #define BTM_SEC_LE_NAME_KNOWN      0x0800   /* not used */
@@ -607,6 +617,8 @@ typedef struct {
     /* "Secure Connections Only" mode and it receives */
     /* HCI_IO_CAPABILITY_REQUEST_EVT from the peer before */
     /* it knows peer's support for Secure Connections */
+    BOOLEAN     remote_secure_connection_previous_state;     /* Stores if peer ever supported
+    secure connection. This will be helpful to know when peer device downgrades it's security. */
 
     UINT16              ble_hci_handle;         /* use in DUMO connection */
     UINT8               enc_key_size;           /* current link encryption key size */
@@ -738,7 +750,7 @@ enum {
     BTM_PAIR_STATE_WAIT_LOCAL_OOB_RSP,          /* Waiting for local response to peer OOB data  */
     BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS,           /* Waiting for local IO capabilities and OOB data */
     BTM_PAIR_STATE_INCOMING_SSP,                /* Incoming SSP (got peer IO caps when idle)    */
-    BTM_PAIR_STATE_WAIT_AUTH_COMPLETE,          /* All done, waiting authentication cpmplete    */
+    BTM_PAIR_STATE_WAIT_AUTH_COMPLETE,          /* All done, waiting authentication complete    */
     BTM_PAIR_STATE_WAIT_DISCONNECT              /* Waiting to disconnect the ACL                */
 };
 typedef UINT8 tBTM_PAIRING_STATE;
@@ -1127,7 +1139,7 @@ void  btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_
 void  btm_sec_link_key_request (UINT8 *p_bda);
 void  btm_sec_pin_code_request (UINT8 *p_bda);
 void  btm_sec_update_clock_offset (UINT16 handle, UINT16 clock_offset);
-void  btm_sec_dev_rec_cback_event (tBTM_SEC_DEV_REC *p_dev_rec, UINT8 res, BOOLEAN is_le_trasnport);
+void  btm_sec_dev_rec_cback_event (tBTM_SEC_DEV_REC *p_dev_rec, UINT8 res, BOOLEAN is_le_transport);
 void btm_sec_set_peer_sec_caps (tACL_CONN *p_acl_cb, tBTM_SEC_DEV_REC *p_dev_rec);
 
 #if BLE_INCLUDED == TRUE
@@ -1166,6 +1178,12 @@ void btm_ble_sem_init(void);
 void btm_ble_sem_free(void);
 
 void btm_ble_lock_free(void);
+
+void btm_sec_handle_remote_legacy_auth_cmp(UINT16 handle);
+void btm_sec_update_legacy_auth_state(tACL_CONN *p_acl_cb, UINT8 legacy_auth_state);
+BOOLEAN btm_sec_legacy_authentication_mutual (tBTM_SEC_DEV_REC *p_dev_rec);
+
+BOOLEAN btm_sec_dev_authorization(BD_ADDR bd_addr, BOOLEAN authorized);
 
 /*
 #ifdef __cplusplus

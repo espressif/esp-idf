@@ -1,7 +1,7 @@
-set(COMPONENT_SRCS "main.c"
-                   "gatt_svr.c"
-                   "misc.c"
-                   "scli.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
+set(srcs "main.c"
+        "gatt_svr.c"
+        "misc.c"
+        "scli.c")
 
-register_component()
+idf_component_register(SRCS "${srcs}"
+                    INCLUDE_DIRS ".")

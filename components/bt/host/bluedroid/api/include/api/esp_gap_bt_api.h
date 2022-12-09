@@ -83,21 +83,23 @@ typedef struct {
 } esp_bt_gap_dev_prop_t;
 
 /// Extended Inquiry Response data type
-typedef enum {
-    ESP_BT_EIR_TYPE_FLAGS                    = 0x01,     /*!< Flag with information such as BR/EDR and LE support */
-    ESP_BT_EIR_TYPE_INCMPL_16BITS_UUID       = 0x02,     /*!< Incomplete list of 16-bit service UUIDs */
-    ESP_BT_EIR_TYPE_CMPL_16BITS_UUID         = 0x03,     /*!< Complete list of 16-bit service UUIDs */
-    ESP_BT_EIR_TYPE_INCMPL_32BITS_UUID       = 0x04,     /*!< Incomplete list of 32-bit service UUIDs */
-    ESP_BT_EIR_TYPE_CMPL_32BITS_UUID         = 0x05,     /*!< Complete list of 32-bit service UUIDs */
-    ESP_BT_EIR_TYPE_INCMPL_128BITS_UUID      = 0x06,     /*!< Incomplete list of 128-bit service UUIDs */
-    ESP_BT_EIR_TYPE_CMPL_128BITS_UUID        = 0x07,     /*!< Complete list of 128-bit service UUIDs */
-    ESP_BT_EIR_TYPE_SHORT_LOCAL_NAME         = 0x08,     /*!< Shortened Local Name */
-    ESP_BT_EIR_TYPE_CMPL_LOCAL_NAME          = 0x09,     /*!< Complete Local Name */
-    ESP_BT_EIR_TYPE_TX_POWER_LEVEL           = 0x0a,     /*!< Tx power level, value is 1 octet ranging from  -127 to 127, unit is dBm*/
-    ESP_BT_EIR_TYPE_URL                      = 0x24,     /*!< Uniform resource identifier */
-    ESP_BT_EIR_TYPE_MANU_SPECIFIC            = 0xff,     /*!< Manufacturer specific data */
-} esp_bt_eir_type_t;
-#define  ESP_BT_EIR_TYPE_MAX_NUM             12          /*!< MAX number of EIR type */
+#define ESP_BT_EIR_TYPE_FLAGS                   0x01      /*!< Flag with information such as BR/EDR and LE support */
+#define ESP_BT_EIR_TYPE_INCMPL_16BITS_UUID      0x02      /*!< Incomplete list of 16-bit service UUIDs */
+#define ESP_BT_EIR_TYPE_CMPL_16BITS_UUID        0x03      /*!< Complete list of 16-bit service UUIDs */
+#define ESP_BT_EIR_TYPE_INCMPL_32BITS_UUID      0x04      /*!< Incomplete list of 32-bit service UUIDs */
+#define ESP_BT_EIR_TYPE_CMPL_32BITS_UUID        0x05      /*!< Complete list of 32-bit service UUIDs */
+#define ESP_BT_EIR_TYPE_INCMPL_128BITS_UUID     0x06      /*!< Incomplete list of 128-bit service UUIDs */
+#define ESP_BT_EIR_TYPE_CMPL_128BITS_UUID       0x07      /*!< Complete list of 128-bit service UUIDs */
+#define ESP_BT_EIR_TYPE_SHORT_LOCAL_NAME        0x08      /*!< Shortened Local Name */
+#define ESP_BT_EIR_TYPE_CMPL_LOCAL_NAME         0x09      /*!< Complete Local Name */
+#define ESP_BT_EIR_TYPE_TX_POWER_LEVEL          0x0a      /*!< Tx power level, value is 1 octet ranging from  -127 to 127, unit is dBm*/
+#define ESP_BT_EIR_TYPE_URL                     0x24      /*!< Uniform resource identifier */
+#define ESP_BT_EIR_TYPE_MANU_SPECIFIC           0xff      /*!< Manufacturer specific data */
+#define  ESP_BT_EIR_TYPE_MAX_NUM                12        /*!< MAX number of EIR type */
+
+typedef uint8_t esp_bt_eir_type_t;
+
+
 
 /* ESP_BT_EIR_FLAG bit definition */
 #define ESP_BT_EIR_FLAG_LIMIT_DISC         (0x01 << 0)
@@ -208,6 +210,7 @@ typedef enum {
     ESP_BT_GAP_CONFIG_EIR_DATA_EVT,                 /*!< config EIR data event */
     ESP_BT_GAP_SET_AFH_CHANNELS_EVT,                /*!< set AFH channels event */
     ESP_BT_GAP_READ_REMOTE_NAME_EVT,                /*!< read Remote Name event */
+    ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT,        /*!< remove bond device complete event */
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
@@ -334,6 +337,14 @@ typedef union {
         uint8_t rmt_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1]; /*!< Remote device name */
     } read_rmt_name;                        /*!< read Remote Name parameter struct */
 
+    /**
+     * @brief ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT
+     */
+    struct bt_remove_bond_dev_cmpl_evt_param {
+        esp_bd_addr_t bda;                          /*!< remote bluetooth device address*/
+        esp_bt_status_t status;                     /*!< Indicate the remove bond device operation success status */
+    }remove_bond_dev_cmpl;                           /*!< Event parameter of ESP_BT_GAP_REMOVE_BOND_DEV_COMPLETE_EVT */
+
 } esp_bt_gap_cb_param_t;
 
 /**
@@ -425,13 +436,15 @@ esp_err_t esp_bt_gap_register_callback(esp_bt_gap_cb_t callback);
 esp_err_t esp_bt_gap_set_scan_mode(esp_bt_connection_mode_t c_mode, esp_bt_discovery_mode_t d_mode);
 
 /**
- * @brief           Start device discovery. This function should be called after esp_bluedroid_enable() completes successfully.
- *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_DISC_STATE_CHANGED_EVT if discovery is started or halted.
- *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_DISC_RES_EVT if discovery result is got.
+ * @brief           This function starts Inquiry and Name Discovery. It should be called after esp_bluedroid_enable() completes successfully.
+ *                  When Inquiry is halted and cached results do not contain device name, then Name Discovery will connect to the peer target to get the device name.
+ *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_DISC_STATE_CHANGED_EVT when Inquriry is started or Name Discovery is completed.
+ *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_DISC_RES_EVT each time the two types of discovery results are got.
  *
- * @param[in]       mode - inquiry mode
- * @param[in]       inq_len - inquiry duration in 1.28 sec units, ranging from 0x01 to 0x30
- * @param[in]       num_rsps - number of inquiry responses that can be received, value 0 indicates an unlimited number of responses
+ * @param[in]       mode - Inquiry mode
+ * @param[in]       inq_len - Inquiry duration in 1.28 sec units, ranging from 0x01 to 0x30. This parameter only specifies the total duration of the Inquiry process,
+ *                          - when this time expires, Inquiry will be halted.
+ * @param[in]       num_rsps - Number of responses that can be received before the Inquiry is halted, value 0 indicates an unlimited number of responses.
  *
  * @return
  *                  - ESP_OK : Succeed
@@ -442,8 +455,9 @@ esp_err_t esp_bt_gap_set_scan_mode(esp_bt_connection_mode_t c_mode, esp_bt_disco
 esp_err_t esp_bt_gap_start_discovery(esp_bt_inq_mode_t mode, uint8_t inq_len, uint8_t num_rsps);
 
 /**
- * @brief           Cancel device discovery. This function should be called after esp_bluedroid_enable() completes successfully
- *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_DISC_STATE_CHANGED_EVT if discovery is stopped.
+ * @brief           Cancel Inquiry and Name Discovery. This function should be called after esp_bluedroid_enable() completes successfully.
+ *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_DISC_STATE_CHANGED_EVT if Inquiry or Name Discovery is cancelled by
+ *                  calling this function.
  *
  * @return
  *                  - ESP_OK : Succeed

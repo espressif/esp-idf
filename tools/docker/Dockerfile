@@ -2,13 +2,13 @@ FROM ubuntu:18.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
+# We need libpython2.7 due to GDB tools
 RUN apt-get update && apt-get install -y \
     apt-utils \
     bison \
     ca-certificates \
     ccache \
     check \
-    cmake \
     curl \
     flex \
     git \
@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     libusb-1.0-0-dev \
     make \
     ninja-build \
+    libpython2.7 \
     python3 \
     python3-pip \
     unzip \
@@ -53,8 +54,14 @@ RUN echo IDF_CHECKOUT_REF=$IDF_CHECKOUT_REF IDF_CLONE_BRANCH_OR_TAG=$IDF_CLONE_B
       git submodule update --init --recursive; \
     fi
 
-RUN $IDF_PATH/install.sh && \
-  rm -rf $IDF_TOOLS_PATH/dist
+# Install all the required tools, plus CMake
+RUN $IDF_PATH/tools/idf_tools.py --non-interactive install required \
+  && $IDF_PATH/tools/idf_tools.py --non-interactive install cmake \
+  && $IDF_PATH/tools/idf_tools.py --non-interactive install-python-env \
+  && rm -rf $IDF_TOOLS_PATH/dist
+
+# Ccache is installed, enable it by default
+ENV IDF_CCACHE_ENABLE=1
 
 COPY entrypoint.sh /opt/esp/entrypoint.sh
 

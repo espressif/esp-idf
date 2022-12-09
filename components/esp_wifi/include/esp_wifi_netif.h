@@ -15,6 +15,10 @@
 #ifndef _ESP_WIFI_NETIF_H
 #define _ESP_WIFI_NETIF_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Number of WiFi interfaces used by wifi-netif abstraction
  */
@@ -80,5 +84,8 @@ bool esp_wifi_is_if_ready_when_started(wifi_netif_driver_t ifx);
  */
 esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t fn, void * arg);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_ESP_WIFI_NETIF_H

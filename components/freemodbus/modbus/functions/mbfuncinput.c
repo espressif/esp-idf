@@ -53,7 +53,9 @@
 eMBException    prveMBError2Exception( eMBErrorCode eErrorCode );
 
 /* ----------------------- Start implementation -----------------------------*/
-#if MB_FUNC_READ_INPUT_ENABLED > 0
+#if MB_SLAVE_RTU_ENABLED || MB_SLAVE_ASCII_ENABLED
+
+#if MB_FUNC_READ_INPUT_ENABLED
 
 eMBException
 eMBFuncReadInputRegister( UCHAR * pucFrame, USHORT * usLen )
@@ -118,5 +120,7 @@ eMBFuncReadInputRegister( UCHAR * pucFrame, USHORT * usLen )
     }
     return eStatus;
 }
+
+#endif
 
 #endif

@@ -3,6 +3,8 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
+#include "esp_wifi_netif.h"
+#include <string.h>
 
 TEST_CASE("esp_netif: init and destroy", "[esp_netif]")
 {
@@ -82,8 +84,20 @@ TEST_CASE("esp_netif: test dhcp client state transitions for wifi station", "[es
     TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_INIT, state);
     esp_netif_action_connected(sta, NULL, 0, NULL);
     TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_get_status(sta, &state));
-
     TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STARTED, state);
+
+    // test manual DHCP state transitions using dhcpc-start/stop API
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_stop(sta));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_get_status(sta, &state));
+    TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STOPPED, state);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_start(sta));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_get_status(sta, &state));
+    TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STARTED, state);
+    TEST_ASSERT_EQUAL(ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED, esp_netif_dhcpc_start(sta));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_get_status(sta, &state));
+    TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STARTED, state);
+
+    // stop the netif and test dhcp state update
     esp_netif_action_stop(sta, NULL, 0, NULL);
     TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcpc_get_status(sta, &state));
 
@@ -115,6 +129,18 @@ TEST_CASE("esp_netif: test dhcp server state transitions for wifi soft AP", "[es
     TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_get_status(ap, &state));
     TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STARTED, state);
 
+    // test manual DHCP state transitions using dhcps-start/stop API
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_stop(ap));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_get_status(ap, &state));
+    TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STOPPED, state);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_start(ap));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_get_status(ap, &state));
+    TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STARTED, state);
+    TEST_ASSERT_EQUAL(ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED, esp_netif_dhcps_start(ap));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_get_status(ap, &state));
+    TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_STARTED, state);
+
+    // stop the netif and test dhcp state update
     esp_netif_action_stop(ap, NULL, 0, NULL);
     TEST_ASSERT_EQUAL(ESP_OK, esp_netif_dhcps_get_status(ap, &state));
     TEST_ASSERT_EQUAL(ESP_NETIF_DHCP_INIT, state);
@@ -186,4 +212,68 @@ TEST_CASE("esp_netif: test dhcp state transitions for mesh netifs", "[esp_netif]
     TEST_ASSERT(esp_wifi_stop() == ESP_OK);
     TEST_ASSERT(esp_wifi_deinit() == ESP_OK);
     nvs_flash_deinit();
+}
+
+TEST_CASE("esp_netif: create custom wifi interfaces", "[esp_netif][leaks=0]")
+{
+    esp_netif_t *ap = NULL;
+    esp_netif_t *sta = NULL;
+    uint8_t configured_mac[6] = {1, 2, 3, 4, 5, 6};
+    uint8_t actual_mac[6] = { 0 };
+
+    // create customized station
+    esp_netif_inherent_config_t esp_netif_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
+    esp_netif_config.if_desc = "custom wifi station";
+    esp_netif_config.route_prio = 1;
+    sta = esp_netif_create_wifi(WIFI_IF_STA, &esp_netif_config);
+    TEST_ASSERT_NOT_NULL(sta);
+    TEST_ASSERT_EQUAL_STRING("custom wifi station", esp_netif_get_desc(sta));
+    TEST_ASSERT_EQUAL(1, esp_netif_get_route_prio(sta));
+
+    // create customized access point
+    esp_netif_inherent_config_t esp_netif_config2 = ESP_NETIF_INHERENT_DEFAULT_WIFI_AP();
+    esp_netif_config2.if_desc = "custom wifi ap";
+    esp_netif_config2.route_prio = 10;
+    memcpy(esp_netif_config2.mac, configured_mac, 6);
+
+    ap = esp_netif_create_wifi(WIFI_IF_AP, &esp_netif_config2);
+    TEST_ASSERT_NOT_NULL(ap);
+    TEST_ASSERT_EQUAL_STRING( "custom wifi ap", esp_netif_get_desc(ap));
+    TEST_ASSERT_EQUAL(10, esp_netif_get_route_prio(ap));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_mac(ap, actual_mac));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(configured_mac, actual_mac, 6);
+
+    esp_wifi_destroy_if_driver(esp_netif_get_io_driver(ap));
+    esp_wifi_destroy_if_driver(esp_netif_get_io_driver(sta));
+    esp_netif_destroy(ap);
+    esp_netif_destroy(sta);
+}
+
+
+TEST_CASE("esp_netif: get/set hostname", "[esp_netif]")
+{
+    const char *hostname;
+    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_STA();
+
+    test_case_uses_tcpip();
+    esp_netif_t *esp_netif = esp_netif_new(&cfg);
+
+    // specific hostname not set yet, get_hostname should fail
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_get_hostname(esp_netif, &hostname));
+
+    TEST_ASSERT_NOT_NULL(esp_netif);
+    esp_netif_attach_wifi_station(esp_netif);
+
+    esp_netif_action_start(esp_netif, NULL, 0, NULL);
+
+    // specific hostname not set yet, but if started, get_hostname to return default config value
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_hostname(esp_netif, &hostname));
+    TEST_ASSERT_EQUAL_STRING(hostname, CONFIG_LWIP_LOCAL_HOSTNAME);
+
+    // specific hostname set and get
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_set_hostname(esp_netif, "new_name"));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_hostname(esp_netif, &hostname));
+    TEST_ASSERT_EQUAL_STRING(hostname, "new_name");
+
+    esp_netif_destroy(esp_netif);
 }

@@ -101,11 +101,11 @@ Application Example
 -------------------
 
 
-The examples below use the FreeModbus library port for slave and master implementation accordingly. The selection of stack is performed through KConfig menu "Selection of Modbus stack support mode" and related configuration keys.
+The examples below use the FreeModbus library port for serial slave and master implementation accordingly. The selection of stack is performed through KConfig menu "Selection of Modbus stack support mode" and related configuration keys.
 
-:example:`protocols/modbus_slave`
+:example:`protocols/modbus/serial/mb_slave`
 
-:example:`protocols/modbus_master`
+:example:`protocols/modbus/serial/mb_master`
 
 Please refer to the specific example README.md for details.
 

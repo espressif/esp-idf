@@ -4,18 +4,18 @@ Flash 加密
 
 :link_to_translation:`en:[English]`
 
-本文档将介绍 ESP32 的 Flash 加密功能，并通过示例展示用户如何在开发及生产过程中使用此功能。本文档旨在引导用户快速入门如何测试及验证 Flash 加密的相关操作。有关 Flash 加密块的详细信息可参见 `ESP32 技术参考手册`_。
+本文档将介绍 {IDF_TARGET_NAME} 的 Flash 加密功能，并通过示例展示用户如何在开发及生产过程中使用此功能。本文档旨在引导用户快速入门如何测试及验证 Flash 加密的相关操作。有关 Flash 加密块的详细信息可参见 `{IDF_TARGET_NAME} 技术参考手册`_。
 
-.. _ESP32 技术参考手册: https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf
+.. _{IDF_TARGET_NAME} 技术参考手册: {IDF_TARGET_TRM_CN_URL}
 
 概述
 ------
 
-Flash 加密功能用于加密与 ESP32 搭载使用的 SPI Flash 中的内容。启用 Flash 加密功能后，物理读取 SPI Flash 便无法恢复大部分 Flash 内容。通过明文数据烧录 ESP32 可应用加密功能，（若已启用加密功能）引导加载程序会在首次启动时对数据进行加密。
+Flash 加密功能用于加密与 {IDF_TARGET_NAME} 搭载使用的 SPI Flash 中的内容。启用 Flash 加密功能后，物理读取 SPI Flash 便无法恢复大部分 Flash 内容。通过明文数据烧录 {IDF_TARGET_NAME} 可应用加密功能，（若已启用加密功能）引导加载程序会在首次启动时对数据进行加密。
 
 启用 Flash 加密后，系统将默认加密下列类型的 Flash 数据：
 
-  - 引导加载程序 
+  - 引导加载程序
   - 分区表
   - 所有 “app” 类型的分区
 
@@ -24,16 +24,18 @@ Flash 加密功能用于加密与 ESP32 搭载使用的 SPI Flash 中的内容�
   - 安全启动引导加载程序摘要（如果已启用安全启动）
   - 分区表中标有“加密”标记的分区
 
-Flash 加密与 :doc:`安全启动<secure-boot>` 功能各自独立，您可以在关闭安全启动的状态下使用 Flash 加密。但是，为了安全的计算机环境，二者应同时使用。在关闭安全启动的状态下，需运行其他配置来确保 Flash 加密的有效性。详细信息可参见 :ref:`flash-encryption-without-secure-boot`。 
+.. only:: esp32
+
+    Flash 加密与 :doc:`安全启动<secure-boot-v2>` 功能各自独立，您可以在关闭安全启动的状态下使用 Flash 加密。但是，为了安全的计算机环境，二者应同时使用。在关闭安全启动的状态下，需运行其他配置来确保 Flash 加密的有效性。详细信息可参见 :ref:`flash-encryption-without-secure-boot`。
 
 .. important::
-  启用 Flash 加密将限制后续 ESP32 更新。请务必阅读本文档（包括 :ref:`flash-encryption-limitations`）了解启用 Flash 加密的影响。
+  启用 Flash 加密将限制后续 {IDF_TARGET_NAME} 更新。请务必阅读本文档（包括 :ref:`flash-encryption-limitations`）了解启用 Flash 加密的影响。
 
 .. _flash-encryption-efuse:
 
 Flash 加密过程中使用的 eFuse
 ------------------------------
-Flash 加密操作由 ESP32 上的多个 eFuse 控制。以下是这些 eFuse 列表及其描述：                                   
+Flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制。以下是这些 eFuse 列表及其描述：
 
  ::
 
@@ -48,27 +50,27 @@ Flash 加密操作由 ESP32 上的多个 eFuse 控制。以下是这些 eFuse �
                               0: 256 bits
                               1: 192 bits
                               2: 128 bits
-                              最终的 AES 密钥根据 FLASH_CRYPT_CONFIG 的                                            
+                              最终的 AES 密钥根据 FLASH_CRYPT_CONFIG 的
                               值产生。
 
         BLOCK1                存储 AES 密钥的 256 位宽 eFuse 块                是              x
-                                                         
+
         FLASH_CRYPT_CONFIG    4 位宽 eFuse，控制 AES 加密进程                  是              0xF
 
         download_dis_encrypt  设置后，在 UART 下载模式运行时关闭 Flash 加        是              0
                               密操作
-                              
+
         download_dis_decrypt  设置后，在 UART 下载模式运行时关闭 Flash 解        是              0
                               密操作
-                              
+
         FLASH_CRYPT_CNT       7 位 eFuse，在启动时启用/关闭加密功能              是              0
-                              
+
                               偶数位（0，2，4，6）：
                               启动时加密 Flash
                               奇数位（1，3，5，7）：
                               启动时不加密 Flash
 
-对上述位的读写访问由 ``efuse_wr_disable`` 和 ``efuse_rd_disable`` 寄存器中的相应位控制。有关 ESP32 eFuse 的详细信息可参见 :doc:`eFuse 管理器 <../api-reference/system/efuse>`。
+对上述位的读写访问由 ``efuse_wr_disable`` 和 ``efuse_rd_disable`` 寄存器中的相应位控制。有关 {IDF_TARGET_NAME} eFuse 的详细信息可参见 :doc:`eFuse 管理器 <../api-reference/system/efuse>`。
 
 Flash 的加密过程
 ------------------
@@ -84,7 +86,7 @@ Flash 的加密过程
 - 在 :ref:`flash_enc_development_mode` 下，第二阶段引导加载程序将仅改写 ``download_dis_decrypt`` 和 ``download_dis_cache`` 的 eFuse 位，从而允许 UART 引导加载程序重新烧录加密的二进制文件。同时将不会写保护 ``FLASH_CRYPT_CNT`` 的 eFuse 位。
 - 然后，第二阶段引导加载程序重启设备并开始执行加密映像，同时将透明解密 Flash 的内容并将其加载至 IRAM。
 
-在开发阶段常需编写不同的明文 Flash 映像，以及测试 Flash 的加密过程。这要求 UART 下载模式能够根据需求不断加载新的明文映像。但是，在量产和生产过程中，出于安全考虑，UART 下载模式不应有权限访问 Flash 内容。因此需要有两种不同的 ESP32 配置：一种用于开发，另一种用于生产。以下章节介绍了 Flash 加密的 :ref:`flash_enc_development_mode` 和 :ref:`flash_enc_release_mode` 及其使用指南。
+在开发阶段常需编写不同的明文 Flash 映像，以及测试 Flash 的加密过程。这要求 UART 下载模式能够根据需求不断加载新的明文映像。但是，在量产和生产过程中，出于安全考虑，UART 下载模式不应有权限访问 Flash 内容。因此需要有两种不同的 {IDF_TARGET_NAME} 配置：一种用于开发，另一种用于生产。以下章节介绍了 Flash 加密的 :ref:`flash_enc_development_mode` 和 :ref:`flash_enc_release_mode` 及其使用指南。
 
 .. important::
   顾名思义，开发模式应 **仅开发过程** 使用，因为该模式可以修改和回读加密的 Flash 内容。
@@ -97,14 +99,14 @@ Flash 的加密过程
 开发模式
 ^^^^^^^^^^
 
-可使用 ESP32 内部生成的密钥或外部主机生成的密钥在开发中运行 Flash 加密。
+可使用 {IDF_TARGET_NAME} 内部生成的密钥或外部主机生成的密钥在开发中运行 Flash 加密。
 
-使用 ESP32 生成的 Flash 加密密钥
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+使用 {IDF_TARGET_NAME} 生成的 Flash 加密密钥
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-正如上文所说，:ref:`flash_enc_development_mode` 允许用户使用 UART 下载模式多次下载明文映像。需完成以下步骤测试 Flash 加密过程： 
+正如上文所说，:ref:`flash_enc_development_mode` 允许用户使用 UART 下载模式多次下载明文映像。需完成以下步骤测试 Flash 加密过程：
 
-- 确保您的 ESP32 设备有 :ref:`flash-encryption-efuse` 中所示的 Flash 加密 eFuse 的默认设置。
+- 确保您的 {IDF_TARGET_NAME} 设备有 :ref:`flash-encryption-efuse` 中所示的 Flash 加密 eFuse 的默认设置。
 
 - 可在 ``$IDF_PATH/examples/security/flash_encryption`` 文件夹中找到 Flash 加密的示例应用程序。该示例应用程序中有显示 Flash 加密的状态（启用或关闭）以及 ``FLASH_CRYPT_CNT`` eFuse 值。
 
@@ -116,8 +118,10 @@ Flash 的加密过程
 
 - 在引导加载程序 config 下选择适当详细程度的日志。
 
-- 启用 Flash 加密将增大引导加载程序，因而可能需更新分区表偏移。请参见 :ref:`secure-boot-bootloader-size`。
-	
+.. only:: esp32
+
+    - 启用 Flash 加密将增大引导加载程序，因而可能需更新分区表偏移。请参见 :ref:`secure-boot-bootloader-size`。
+
 - 保存配置并退出。
 
 构建并烧录完整的映像包括：引导加载程序、分区表和 app。这些分区最初以未加密形式写入 Flash。
@@ -126,7 +130,7 @@ Flash 的加密过程
 
 	idf.py flash monitor
 
-一旦烧录完成，设备将重置，在下次启动时，第二阶段引导加载程序将加密 Flash 的 app 分区，然后重置该分区。现在，示例应用程序将在运行时解密并执行命令。以下是首次启用 Flash 加密后 ESP32 启动时的样例输出。
+一旦烧录完成，设备将重置，在下次启动时，第二阶段引导加载程序将加密 Flash 的 app 分区，然后重置该分区。现在，示例应用程序将在运行时解密并执行命令。以下是首次启用 Flash 加密后 {IDF_TARGET_NAME} 启动时的样例输出。
 
  ::
 
@@ -177,20 +181,20 @@ Flash 的加密过程
     I (201) flash_encrypt: Disable UART bootloader MMU cache...
     I (208) flash_encrypt: Disable JTAG...
     I (212) flash_encrypt: Disable ROM BASIC interpreter fallback...
-    I (219) esp_image: segment 0: paddr=0x00001020 vaddr=0x3fff0018 size=0x00004 (     4) 
-    I (227) esp_image: segment 1: paddr=0x0000102c vaddr=0x3fff001c size=0x02104 (  8452) 
-    I (239) esp_image: segment 2: paddr=0x00003138 vaddr=0x40078000 size=0x03528 ( 13608) 
-    I (249) esp_image: segment 3: paddr=0x00006668 vaddr=0x40080400 size=0x01a08 (  6664) 
+    I (219) esp_image: segment 0: paddr=0x00001020 vaddr=0x3fff0018 size=0x00004 (     4)
+    I (227) esp_image: segment 1: paddr=0x0000102c vaddr=0x3fff001c size=0x02104 (  8452)
+    I (239) esp_image: segment 2: paddr=0x00003138 vaddr=0x40078000 size=0x03528 ( 13608)
+    I (249) esp_image: segment 3: paddr=0x00006668 vaddr=0x40080400 size=0x01a08 (  6664)
     I (657) esp_image: segment 0: paddr=0x00020020 vaddr=0x3f400020 size=0x0808c ( 32908) map
-    I (669) esp_image: segment 1: paddr=0x000280b4 vaddr=0x3ffb0000 size=0x01ea4 (  7844) 
-    I (672) esp_image: segment 2: paddr=0x00029f60 vaddr=0x40080000 size=0x00400 (  1024) 
+    I (669) esp_image: segment 1: paddr=0x000280b4 vaddr=0x3ffb0000 size=0x01ea4 (  7844)
+    I (672) esp_image: segment 2: paddr=0x00029f60 vaddr=0x40080000 size=0x00400 (  1024)
     0x40080000: _WindowOverflow4 at esp-idf/esp-idf/components/freertos/xtensa_vectors.S:1778
 
-    I (676) esp_image: segment 3: paddr=0x0002a368 vaddr=0x40080400 size=0x05ca8 ( 23720) 
+    I (676) esp_image: segment 3: paddr=0x0002a368 vaddr=0x40080400 size=0x05ca8 ( 23720)
     I (692) esp_image: segment 4: paddr=0x00030018 vaddr=0x400d0018 size=0x126a8 ( 75432) map
     0x400d0018: _flash_cache_start at ??:?
 
-    I (719) esp_image: segment 5: paddr=0x000426c8 vaddr=0x400860a8 size=0x01f4c (  8012) 
+    I (719) esp_image: segment 5: paddr=0x000426c8 vaddr=0x400860a8 size=0x01f4c (  8012)
     0x400860a8: prvAddNewTaskToReadyList at esp-idf/esp-idf/components/freertos/tasks.c:4561
 
     I (722) flash_encrypt: Encrypting partition 2 at offset 0x20000...
@@ -248,7 +252,7 @@ Flash 的加密过程
   I (211) cpu_start: ELF file SHA256:  8770c886bdf561a7...
   I (217) cpu_start: ESP-IDF:          v4.0-dev-850-gc4447462d-dirty
   I (224) cpu_start: Starting app cpu, entry point is 0x40080e4c
-  0x40080e4c: call_start_cpu1 at esp-idf/esp-idf/components/esp32/cpu_start.c:265
+  0x40080e4c: call_start_cpu1 at esp-idf/esp-idf/components/{IDF_TARGET_PATH_NAME}/cpu_start.c:265
 
   I (0) cpu_start: App cpu up.
   I (235) heap_init: Initializing. RAM available for dynamic allocation:
@@ -262,7 +266,7 @@ Flash 的加密过程
   I (0) cpu_start: Starting scheduler on APP CPU.
 
   Sample program to check Flash Encryption
-  This is ESP32 chip with 2 CPU cores, WiFi/BT/BLE, silicon revision 1, 4MB external flash
+  This is {IDF_TARGET_NAME} chip with 2 CPU cores, WiFi/BT/BLE, silicon revision 1, 4MB external flash
   Flash encryption feature is enabled
   Flash encryption mode is DEVELOPMENT
   Flash in encrypted mode with flash_crypt_cnt = 1
@@ -290,15 +294,15 @@ Flash 的加密过程
 使用主机生成的 Flash 加密密钥
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-可在主机中预生成 Flash 加密密钥，并将其烧录到 ESP32 的 eFuse 密钥块中。这样，无需明文 Flash 更新便可以在主机上预加密数据并将其烧录到 ESP32 中。该功能允许在 :ref:`flash_enc_development_mode` 和 :ref:`flash_enc_release_mode` modes 两模式下加密烧录。
+可在主机中预生成 Flash 加密密钥，并将其烧录到 {IDF_TARGET_NAME} 的 eFuse 密钥块中。这样，无需明文 Flash 更新便可以在主机上预加密数据并将其烧录到 {IDF_TARGET_NAME} 中。该功能允许在 :ref:`flash_enc_development_mode` 和 :ref:`flash_enc_release_mode` modes 两模式下加密烧录。
 
-- 确保您的 ESP32 设备有 :ref:`flash-encryption-efuse` 中所示 Flash 加密 eFuse 的默认设置。
+- 确保您的 {IDF_TARGET_NAME} 设备有 :ref:`flash-encryption-efuse` 中所示 Flash 加密 eFuse 的默认设置。
 
 - 使用 espsecure.py 随机生成一个密钥::
 
       espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
 
-- 将该密钥烧录到设备上（一次性）。 **该步骤须在第一次加密启动前完成**，否则 ESP32 将随机生成一个软件无权限访问或修改的密钥::
+- 将该密钥烧录到设备上（一次性）。 **该步骤须在第一次加密启动前完成**，否则 {IDF_TARGET_NAME} 将随机生成一个软件无权限访问或修改的密钥::
 
       espefuse.py --port PORT burn_key flash_encryption my_flash_encryption_key.bin
 
@@ -310,10 +314,12 @@ Flash 的加密过程
 
 - 在引导加载程序 config 下选择适当详细程度的日志。
 
-- 启用 Flash 加密将增大引导加载程序，因而可能需要更新分区表偏移。可参见 See :ref:`secure-boot-bootloader-size`。
+.. only:: esp32
+
+    - 启用 Flash 加密将增大引导加载程序，因而可能需要更新分区表偏移。可参见 See :ref:`secure-boot-bootloader-size`。
 
 - 保存配置并退出。
-	
+
 构建并烧录完整的映像包括：引导加载程序、分区表和 app。这些分区最初以未加密形式写入 Flash
 
   ::
@@ -337,7 +343,7 @@ Flash 的加密过程
 
 在释放模式下，UART 引导加载程序无法执行 Flash 加密操作，**只能** 使用 OTA 方案下载新的明文映像，该方案将在写入 Flash 前加密明文映像。
 
-- 确保您的 ESP32 设备有 :ref:`flash-encryption-efuse` 中所示 Flash 加密 eFuse 的默认设置。
+- 确保您的 {IDF_TARGET_NAME} 设备有 :ref:`flash-encryption-efuse` 中所示 Flash 加密 eFuse 的默认设置。
 
 - 在第二阶段引导加载程序中启用 Flash 加密支持。请前往 :ref:`project-configuration-menu`，选择 “Security Features”。
 
@@ -347,7 +353,9 @@ Flash 的加密过程
 
 - 在引导加载程序 config 下选择适当详细程度的日志。
 
-- 启用 Flash 加密将增大引导加载程序，因而可能需要更新分区表偏移。可参见 See :ref:`secure-boot-bootloader-size`。
+.. only:: esp32
+
+    - 启用 Flash 加密将增大引导加载程序，因而可能需要更新分区表偏移。可参见 See :ref:`secure-boot-bootloader-size`。
 
 - 保存配置并退出。
 
@@ -366,7 +374,7 @@ Flash 的加密过程
 可能出现的错误
 ^^^^^^^^^^^^^^^^
 
-启用 Flash 加密后，如果 ``FLASH_CRYPT_CNT`` eFuse 值中有奇数位，则所有（标有加密标志的）分区都应包含加密密文。以下为 ESP32 加载明文数据会产生的三种典型错误情况：
+启用 Flash 加密后，如果 ``FLASH_CRYPT_CNT`` eFuse 值中有奇数位，则所有（标有加密标志的）分区都应包含加密密文。以下为 {IDF_TARGET_NAME} 加载明文数据会产生的三种典型错误情况：
 
 1. 如果通过明文引导加载程序映像重新更新了引导加载程序分区，则 ROM 加载器将无法加载 引导加载程序，并会显示以下错误类型：
 
@@ -374,27 +382,27 @@ Flash 的加密过程
 
     rst:0x3 (SW_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
     flash read err, 1000
-    ets_main.c 371 
+    ets_main.c 371
     ets Jun  8 2016 00:22:57
 
     rst:0x7 (TG0WDT_SYS_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
     flash read err, 1000
-    ets_main.c 371 
+    ets_main.c 371
     ets Jun  8 2016 00:22:57
 
     rst:0x7 (TG0WDT_SYS_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
     flash read err, 1000
-    ets_main.c 371 
+    ets_main.c 371
     ets Jun  8 2016 00:22:57
 
     rst:0x7 (TG0WDT_SYS_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
     flash read err, 1000
-    ets_main.c 371 
+    ets_main.c 371
     ets Jun  8 2016 00:22:57
 
     rst:0x7 (TG0WDT_SYS_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
     flash read err, 1000
-    ets_main.c 371 
+    ets_main.c 371
     ets Jun  8 2016 00:22:57
 
 2. 如果引导加载程序已加密，但使用明文分区表映像重新更新了分区表，则引导加载程序将无法读取分区表，并会显示以下错误类型：
@@ -459,7 +467,7 @@ Flash 加密的要点
 
 - `flash 加密算法` 采用的是 AES-256，其中密钥随着 Flash 的每个 32 字节块的偏移地址“调整”。这意味着，每个 32 字节块（2 个连续的 16 字节 AES 块）使用从 Flash 加密密钥中产生的一个特殊密钥进行加密。
 
-- 通过 ESP32 的 Flash 缓存映射功能，Flash 可支持透明访问——读取任何映射到地址空间的 Flash 区域时，都将透明解密该区域。
+- 通过 {IDF_TARGET_NAME} 的 Flash 缓存映射功能，Flash 可支持透明访问——读取任何映射到地址空间的 Flash 区域时，都将透明解密该区域。
 
 	为便于访问，某些数据分区最好保持未加密状态，或者也可使用对已加密数据无效的 Flash 友好型更新算法。由于 NVS 库无法与 Flash 加密直接兼容，因此无法加密非易失性存储器的 NVS 分区。详情可参见 :ref:`NVS 加密 <nvs_encryption>`。
 
@@ -467,17 +475,19 @@ Flash 加密的要点
 
 - 如果已启用安全启动，则重新烧录加密设备的引导加载程序则需要“可重新烧录”的安全启动摘要（可参见 :ref:`flash-encryption-and-secure-boot`）。
 
-.. note:: 同时启用安全启动和 Flash 加密后，引导加载程序 app 二进制文件 ``bootloader.bin`` 可能会过大。参见 :ref:`secure-boot-bootloader-size`。
+.. only:: esp32
+
+    .. note:: 同时启用安全启动和 Flash 加密后，引导加载程序 app 二进制文件 ``bootloader.bin`` 可能会过大。参见 :ref:`secure-boot-bootloader-size`。
 
 .. important::
-   在首次启动加密过程中，请勿中断 ESP32 的电源。如果电源中断，Flash 的内容将受到破坏，并需要重新烧录未加密数据。而这类重新烧录将不计入烧录限制次数。
+   在首次启动加密过程中，请勿中断 {IDF_TARGET_NAME} 的电源。如果电源中断，Flash 的内容将受到破坏，并需要重新烧录未加密数据。而这类重新烧录将不计入烧录限制次数。
 
 .. _using-encrypted-flash:
 
 使用加密的 Flash
 -------------------
 
-ESP32 app 代码可通过调用函数 :cpp:func:`esp_flash_encryption_enabled` 来确认当前是否已启用 Flash 加密。同时，设备可通过调用函数 :cpp:func:`esp_get_flash_encryption_mode` 来识别使用的 Flash 加密模式。
+{IDF_TARGET_NAME} app 代码可通过调用函数 :cpp:func:`esp_flash_encryption_enabled` 来确认当前是否已启用 Flash 加密。同时，设备可通过调用函数 :cpp:func:`esp_get_flash_encryption_mode` 来识别使用的 Flash 加密模式。
 
 启用 Flash 加密后，使用代码访问 Flash 内容时需加注意。
 
@@ -526,14 +536,14 @@ ROM 函数 ``esp_rom_spiflash_write_encrypted`` 将在 Flash 中写入加密数�
 OTA 更新
 ^^^^^^^^^^
 
-只要使用了函数 ``esp_partition_write``，则加密分区的 OTA 更新将自动以加密形式写入。 
+只要使用了函数 ``esp_partition_write``，则加密分区的 OTA 更新将自动以加密形式写入。
 
 .. _updating-encrypted-flash-serial:
 
 关闭 Flash 加密
 -----------------
 
-若因某些原因意外启用了 Flash 加密，则接下来烧录明文数据时将使 ESP32 软砖（设备不断重启，并报错 ``flash read err, 1000``）。
+若因某些原因意外启用了 Flash 加密，则接下来烧录明文数据时将使 {IDF_TARGET_NAME} 软砖（设备不断重启，并报错 ``flash read err, 1000``）。
 
 可通过写入 ``FLASH_CRYPT_CNT`` eFuse 再次关闭 Flash 加密（仅适用于开发模式下）：
 
@@ -545,7 +555,7 @@ OTA 更新
 
     espefuse.py burn_efuse FLASH_CRYPT_CNT
 
-重置 ESP32，Flash 加密应处于关闭状态，引导加载程序将正常启动。
+重置 {IDF_TARGET_NAME}，Flash 加密应处于关闭状态，引导加载程序将正常启动。
 
 .. _flash-encryption-limitations:
 
@@ -562,7 +572,9 @@ Flash 加密可防止从加密 Flash 中读取明文，从而保护固件防止�
 
 - 出于相同原因，攻击者始终可获知一对相邻的 16 字节块（32 字节对齐）何时包含相同内容。因此，在 Flash 上存储敏感数据时应牢记这点，并进行相关设置避免该情况发生（可使用计数器字节或每 16 字节设置不同的值即可）。
 
-- 单独使用 Flash 加密可能无法防止攻击者修改本设备的固件。为防止设备上运行未经授权的固件，可搭配 Flash 加密使用 :doc:`安全启动 <secure-boot>`。
+.. only:: esp32
+
+    - 单独使用 Flash 加密可能无法防止攻击者修改本设备的固件。为防止设备上运行未经授权的固件，可搭配 Flash 加密使用 :doc:`安全启动 <secure-boot-v2>`。
 
 .. _flash-encryption-and-secure-boot:
 
@@ -572,8 +584,12 @@ Flash 加密与安全启动
 推荐搭配使用 Flash 加密与安全启动。但是，如果已启用安全启动，则重新烧录设备时会受到其他限制：
 
 - :ref:`updating-encrypted-flash-ota` 不受限制（如果新的 app 已使用安全启动签名密钥进行正确签名）。
-- 只有当选择 :ref:`可再次烧录 <CONFIG_SECURE_BOOTLOADER_MODE>` 安全启动模式，且安全启动密钥已预生成并烧录至 ESP32（可参见 :ref:`安全启动 <secure-boot-reflashable>`），则 :ref:`明文串行 flash 更新 <updating-encrypted-flash-serial>` 可实现。在该配置下，``idf.py bootloader`` 将生成简化的引导加载程序和安全启动摘要文件，用于在偏移量 0x0 处进行烧录。当进行明文串行重新烧录步骤时，须在烧录其他明文数据前重新烧录此文件。
-- 假设未重新烧录引导加载程序，:ref:`使用预生成的 Flash 加密密钥重新烧录 <pregenerated-flash-encryption-key>` 仍可实现。重新烧录引导加载程序时，需在安全启动配置中启用相同的 :ref:`可重新烧录 <CONFIG_SECURE_BOOTLOADER_MODE>` 选项。
+
+.. only:: esp32
+
+    - 只有当选择 :ref:`可再次烧录 <CONFIG_SECURE_BOOTLOADER_MODE>` 安全启动模式，且安全启动密钥已预生成并烧录至 {IDF_TARGET_NAME}（可参见 :ref:`安全启动 <secure-boot-reflashable>`），则 :ref:`明文串行 flash 更新 <updating-encrypted-flash-serial>` 可实现。在该配置下，``idf.py bootloader`` 将生成简化的引导加载程序和安全启动摘要文件，用于在偏移量 0x0 处进行烧录。当进行明文串行重新烧录步骤时，须在烧录其他明文数据前重新烧录此文件。
+
+    - 假设未重新烧录引导加载程序，:ref:`使用预生成的 Flash 加密密钥重新烧录 <pregenerated-flash-encryption-key>` 仍可实现。重新烧录引导加载程序时，需在安全启动配置中启用相同的 :ref:`可重新烧录 <CONFIG_SECURE_BOOTLOADER_MODE>` 选项。
 
 .. _flash-encryption-without-secure-boot:
 

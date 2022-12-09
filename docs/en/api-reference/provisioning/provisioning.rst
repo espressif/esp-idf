@@ -144,15 +144,21 @@ Sample Code
 >>>>>>>>>>>
 Please refer to :doc:`protocomm` and :doc:`wifi_provisioning` for API guides and code snippets on example usage.
 
-Various use case implementations can be found as examples under :example:`provisioning`.
+Application implementation can be found as an example under :example:`provisioning`.
 
 Provisioning Tools
 >>>>>>>>>>>>>>>>>>
 
 Provisioning applications are available for various platforms, along with source code:
 
-* Android : `esp-idf-provisioning-android <https://github.com/espressif/esp-idf-provisioning-android>`_
-* iOS : `esp-idf-provisioning-ios <https://github.com/espressif/esp-idf-provisioning-ios>`_
+* Android:
+    * `BLE Provisioning app on Play Store <https://play.google.com/store/apps/details?id=com.espressif.provble>`_.
+    * `SoftAP Provisioning app on Play Store <https://play.google.com/store/apps/details?id=com.espressif.provsoftap>`_.
+    * Source code on GitHub: `esp-idf-provisioning-android <https://github.com/espressif/esp-idf-provisioning-android>`_.
+* iOS:
+    * `BLE Provisioning app on app store <https://apps.apple.com/in/app/esp-ble-provisioning/id1473590141>`_.
+    * `SoftAP Provisioning app on app Store <https://apps.apple.com/in/app/esp-softap-provisioning/id1474040630>`_.
+    * Source code on GitHub: `esp-idf-provisioning-ios <https://github.com/espressif/esp-idf-provisioning-ios>`_.
 * Linux/MacOS/Windows : :idf:`tools/esp_prov` (a python based command line tool for provisioning)
 
 The phone applications offer simple UI and thus more user centric, while the command line application is useful as a debugging tool for developers.

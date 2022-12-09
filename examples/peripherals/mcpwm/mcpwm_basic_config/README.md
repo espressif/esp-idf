@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # MCPWM basic config Example
 
 This example will show you how to use each submodule of MCPWM unit

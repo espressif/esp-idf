@@ -16,6 +16,6 @@ Application Example
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_gatt_defs.inc
+.. include-build-file:: inc/esp_gatt_defs.inc
 
 

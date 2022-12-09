@@ -231,7 +231,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
     UINT8             xx;
 
     BTM_TRACE_DEBUG ("btm_acl_created hci_handle=%d link_role=%d  transport=%d\n",
-                     hci_handle, link_role, transport);
+            hci_handle, link_role, transport);
     /* Ensure we don't have duplicates */
     p = btm_bda_to_acl(bda, transport);
     if (p != (tACL_CONN *)NULL) {
@@ -241,7 +241,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
         p->transport = transport;
 #endif
         BTM_TRACE_DEBUG ("Duplicate btm_acl_created: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
-                         bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+                bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
         BTM_SetLinkPolicy(p->remote_addr, &btm_cb.btm_def_link_policy);
         return;
     }
@@ -269,13 +269,16 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
             p->conn_addr_type = BLE_ADDR_PUBLIC;
             memcpy(p->conn_addr, &controller_get_interface()->get_address()->address, BD_ADDR_LEN);
             BTM_TRACE_DEBUG ("conn_addr: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
-                         p->conn_addr[0], p->conn_addr[1], p->conn_addr[2], p->conn_addr[3], p->conn_addr[4], p->conn_addr[5]);
+                    p->conn_addr[0], p->conn_addr[1], p->conn_addr[2], p->conn_addr[3], p->conn_addr[4], p->conn_addr[5]);
 #endif
 #endif
             p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
 
             btm_pm_sm_alloc(xx);
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+            btm_sec_update_legacy_auth_state(p, BTM_ACL_LEGACY_AUTH_NONE);
+#endif
 
             if (dc) {
                 memcpy (p->remote_dc, dc, DEV_CLASS_LEN);
@@ -299,28 +302,34 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
 #endif
 
             if (p_dev_rec && !(transport == BT_TRANSPORT_LE)) {
-                /* If remote features already known, copy them and continue connection setup */
-                if ((p_dev_rec->num_read_pages) &&
-                        (p_dev_rec->num_read_pages <= (HCI_EXT_FEATURES_PAGE_MAX + 1))) {
-                    memcpy (p->peer_lmp_features, p_dev_rec->features,
-                            (HCI_FEATURE_BYTES_PER_PAGE * p_dev_rec->num_read_pages));
-                    p->num_read_pages = p_dev_rec->num_read_pages;
+                if (!p_dev_rec->remote_secure_connection_previous_state) {
+                    /* If remote features already known, copy them and continue connection setup */
+                    if ((p_dev_rec->num_read_pages) &&
+                            (p_dev_rec->num_read_pages <= (HCI_EXT_FEATURES_PAGE_MAX + 1))) {
+                        memcpy (p->peer_lmp_features, p_dev_rec->features,
+                                (HCI_FEATURE_BYTES_PER_PAGE * p_dev_rec->num_read_pages));
+                        p->num_read_pages = p_dev_rec->num_read_pages;
 #if (CLASSIC_BT_INCLUDED == TRUE)
-                    const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
+                        const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
-                    /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
+                        /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
 #if (SMP_INCLUDED == TRUE)
-                    btm_sec_set_peer_sec_caps(p, p_dev_rec);
+                        btm_sec_set_peer_sec_caps(p, p_dev_rec);
 #endif  ///SMP_INCLUDED == TRUE
 #if (CLASSIC_BT_INCLUDED == TRUE)
-                    BTM_TRACE_API("%s: pend:%d\n", __FUNCTION__, req_pend);
-                    if (req_pend) {
-                        /* Request for remaining Security Features (if any) */
-                        l2cu_resubmit_pending_sec_req (p_dev_rec->bd_addr);
-                    }
+                        BTM_TRACE_API("%s: pend:%d\n", __FUNCTION__, req_pend);
+                        if (req_pend) {
+                            /* Request for remaining Security Features (if any) */
+                            l2cu_resubmit_pending_sec_req (p_dev_rec->bd_addr);
+                        }
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
-                    btm_establish_continue (p);
-                    return;
+                        btm_establish_continue (p);
+                        return;
+                    }
+                } else {
+                    /* If remote features indicated secure connection (SC) mode, check the remote feautres again*/
+                    /* this is to prevent from BIAS attack where attacker can downgrade SC mode*/
+                    btm_read_remote_features (p->hci_handle);
                 }
             }
 
@@ -329,13 +338,13 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
             if (p_dev_rec && transport == BT_TRANSPORT_LE) {
 #if BLE_PRIVACY_SPT == TRUE
                 btm_ble_get_acl_remote_addr (p_dev_rec, p->active_remote_addr,
-                                             &p->active_remote_addr_type);
+                        &p->active_remote_addr_type);
 #endif
 
                 if (link_role == HCI_ROLE_MASTER) {
                     btsnd_hcic_ble_read_remote_feat(p->hci_handle);
                 } else if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)
-                         && link_role == HCI_ROLE_SLAVE) {
+                        && link_role == HCI_ROLE_SLAVE) {
                     btsnd_hcic_rmt_ver_req (p->hci_handle);
                 } else {
                     btm_establish_continue(p);
@@ -785,12 +794,28 @@ void btm_acl_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
                 BTM_TRACE_WARNING("btm_acl_encrypt_change -> Issuing delayed HCI_Disconnect!!!\n");
                 btsnd_hcic_disconnect(p_dev_rec->hci_handle, HCI_ERR_PEER_USER);
             }
-            BTM_TRACE_ERROR("btm_acl_encrypt_change: tBTM_SEC_DEV:0x%x rs_disc_pending=%d\n",
+            BTM_TRACE_WARNING("btm_acl_encrypt_change: tBTM_SEC_DEV:0x%x rs_disc_pending=%d\n",
                             (UINT32)p_dev_rec, p_dev_rec->rs_disc_pending);
             p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING;     /* reset flag */
         }
 #endif
     }
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    /* If authentication is done through legacy authentication and esp32 has
+     * not authenticated peer deivce yet, do not proceed for encrytion and
+     * first authenticate it. */
+    else if ((BTM_BothEndsSupportSecureConnections(p->remote_addr) == 0) &&
+            ((p->legacy_auth_state & BTM_ACL_LEGACY_AUTH_SELF) == 0)) {
+        if ((p_dev_rec = btm_find_dev (p->remote_addr)) != NULL) {
+            if (btm_sec_legacy_authentication_mutual(p_dev_rec)) {
+                btm_sec_update_legacy_auth_state(btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR), BTM_ACL_LEGACY_AUTH_SELF);
+            } else {
+                BTM_TRACE_ERROR("%s failed, Resources not available for Authentication procedure", __FUNCTION__);
+            }
+        }
+    }
+#endif
+
 }
 /*******************************************************************************
 **
@@ -1115,7 +1140,6 @@ void btm_read_remote_ext_features_complete (UINT8 *p)
 
     if (max_page > HCI_EXT_FEATURES_PAGE_MAX) {
         BTM_TRACE_ERROR("btm_read_remote_ext_features_complete page=%d unknown", max_page);
-        return;
     }
 
     p_acl_cb = &btm_cb.acl_db[acl_idx];
@@ -1212,6 +1236,7 @@ void btm_establish_continue (tACL_CONN *p_acl_cb)
         evt_data.conn.p_bdn = p_acl_cb->remote_name;
         evt_data.conn.p_dc  = p_acl_cb->remote_dc;
         evt_data.conn.p_features = p_acl_cb->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0];
+        evt_data.conn.sc_downgrade = p_acl_cb->sc_downgrade;
 #if BLE_INCLUDED == TRUE
         evt_data.conn.handle = p_acl_cb->hci_handle;
         evt_data.conn.transport = p_acl_cb->transport;
@@ -2071,7 +2096,7 @@ void BTM_BleGetWhiteListSize(uint16_t *length)
 {
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
     if (p_cb->white_list_avail_size == 0) {
-        BTM_TRACE_DEBUG("%s Whitelist full.", __func__);
+        BTM_TRACE_WARNING("%s Whitelist full.", __func__);
     }
     *length = p_cb->white_list_avail_size;
     return;

@@ -31,6 +31,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "hal/cpu_hal.h"
 #include "openeth.h"
 
 static const char *TAG = "emac_opencores";
@@ -66,7 +67,7 @@ static esp_err_t emac_opencores_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32
 
 static IRAM_ATTR void emac_opencores_isr_handler(void *args)
 {
-    emac_opencores_t *emac = (emac_opencores_t*) args;
+    emac_opencores_t *emac = (emac_opencores_t *) args;
     BaseType_t high_task_wakeup;
 
     uint32_t status = REG_READ(OPENETH_INT_SOURCE_REG);
@@ -94,10 +95,12 @@ static void emac_opencores_rx_task(void *arg)
     uint32_t length = 0;
     while (1) {
         if (ulTaskNotifyTake(pdFALSE, portMAX_DELAY)) {
-            while(true) {
-                buffer = (uint8_t *)malloc(ETH_MAX_PACKET_SIZE);
+            while (true) {
                 length = ETH_MAX_PACKET_SIZE;
-                if (emac_opencores_receive(&emac->parent, buffer, &length) == ESP_OK) {
+                buffer = malloc(length);
+                if (!buffer) {
+                    ESP_LOGE(TAG, "no mem for receive buffer");
+                } else if (emac_opencores_receive(&emac->parent, buffer, &length) == ESP_OK) {
                     // pass the buffer to the upper layer
                     if (length) {
                         emac->eth->stack_input(emac->eth, buffer, length);
@@ -232,8 +235,6 @@ static esp_err_t emac_opencores_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint3
 {
     esp_err_t ret = ESP_OK;
     emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
-    MAC_CHECK(buf, "can't set buf to null", err, ESP_ERR_INVALID_ARG);
-    MAC_CHECK(length, "buf length can't be zero", err, ESP_ERR_INVALID_ARG);
     MAC_CHECK(length < DMA_BUF_SIZE * TX_BUF_COUNT, "insufficient TX buffer size", err, ESP_ERR_INVALID_SIZE);
 
     uint32_t bytes_remaining = length;
@@ -243,7 +244,7 @@ static esp_err_t emac_opencores_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint3
     while (bytes_remaining > 0) {
         uint32_t will_write = MIN(bytes_remaining, DMA_BUF_SIZE);
         memcpy(emac->tx_buf[emac->cur_tx_desc], buf, will_write);
-        openeth_tx_desc_t* desc_ptr = openeth_tx_desc(emac->cur_tx_desc);
+        openeth_tx_desc_t *desc_ptr = openeth_tx_desc(emac->cur_tx_desc);
         openeth_tx_desc_t desc_val = *desc_ptr;
         desc_val.wr = (emac->cur_tx_desc == TX_BUF_COUNT - 1);
         desc_val.len = will_write;
@@ -265,7 +266,6 @@ static esp_err_t emac_opencores_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32
 {
     esp_err_t ret = ESP_OK;
     emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
-    MAC_CHECK(buf && length, "can't set buf and length to null", err, ESP_ERR_INVALID_ARG);
 
     openeth_rx_desc_t *desc_ptr = openeth_rx_desc(emac->cur_rx_desc);
     openeth_rx_desc_t desc_val = *desc_ptr;
@@ -294,7 +294,7 @@ static esp_err_t emac_opencores_init(esp_eth_mac_t *mac)
     esp_eth_mediator_t *eth = emac->eth;
     MAC_CHECK(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL) == ESP_OK, "lowlevel init failed", err, ESP_FAIL);
     MAC_CHECK(esp_read_mac(emac->addr, ESP_MAC_ETH) == ESP_OK, "fetch ethernet mac address failed", err, ESP_FAIL);
-    
+
     // Sanity check
     if (REG_READ(OPENETH_MODER_REG) != OPENETH_MODER_DEFAULT) {
         ESP_LOGE(TAG, "CONFIG_ETH_USE_OPENETH should only be used when running in QEMU.");
@@ -317,6 +317,18 @@ static esp_err_t emac_opencores_deinit(esp_eth_mac_t *mac)
     emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
+    return ESP_OK;
+}
+
+static esp_err_t emac_opencores_start(esp_eth_mac_t *mac)
+{
+    openeth_enable();
+    return ESP_OK;
+}
+
+static esp_err_t emac_opencores_stop(esp_eth_mac_t *mac)
+{
+    openeth_disable();
     return ESP_OK;
 }
 
@@ -367,6 +379,8 @@ esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config)
     emac->parent.set_mediator = emac_opencores_set_mediator;
     emac->parent.init = emac_opencores_init;
     emac->parent.deinit = emac_opencores_deinit;
+    emac->parent.start = emac_opencores_start;
+    emac->parent.stop = emac_opencores_stop;
     emac->parent.del = emac_opencores_del;
     emac->parent.write_phy_reg = emac_opencores_write_phy_reg;
     emac->parent.read_phy_reg = emac_opencores_read_phy_reg;
@@ -378,15 +392,19 @@ esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config)
     emac->parent.set_promiscuous = emac_opencores_set_promiscuous;
     emac->parent.transmit = emac_opencores_transmit;
     emac->parent.receive = emac_opencores_receive;
-    
+
     // Initialize the interrupt
     MAC_CHECK(esp_intr_alloc(OPENETH_INTR_SOURCE, ESP_INTR_FLAG_IRAM, emac_opencores_isr_handler,
                              emac, &(emac->intr_hdl)) == ESP_OK,
               "alloc emac interrupt failed", out, NULL);
 
     // Create the RX task
-    BaseType_t xReturned = xTaskCreate(emac_opencores_rx_task, "emac_rx", config->rx_task_stack_size, emac,
-                                       config->rx_task_prio, &emac->rx_task_hdl);
+    BaseType_t core_num = tskNO_AFFINITY;
+    if (config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
+        core_num = cpu_hal_get_core_id();
+    }
+    BaseType_t xReturned = xTaskCreatePinnedToCore(emac_opencores_rx_task, "emac_rx", config->rx_task_stack_size, emac,
+                           config->rx_task_prio, &emac->rx_task_hdl, core_num);
     MAC_CHECK(xReturned == pdPASS, "create emac_rx task failed", out, NULL);
     return &(emac->parent);
 

@@ -11,6 +11,14 @@ if(NOT GIT_FOUND)
 else()
 
     function(git_submodule_check root_path)
+        # for internal use:
+        # skip submodule check if running on Gitlab CI and job is configured as not clone submodules
+        if($ENV{IDF_SKIP_CHECK_SUBMODULES})
+            if($ENV{IDF_SKIP_CHECK_SUBMODULES} EQUAL 1)
+                message("skip submodule check on internal CI")
+                return()
+            endif()
+        endif()
 
         execute_process(
             COMMAND ${GIT_EXECUTABLE} submodule status

@@ -27,13 +27,7 @@ examples/**/sdkconfig.old
 examples/**/build
 
 # Doc build artifacts
-docs/*/_build/
-docs/*/doxygen-warning-log.txt
-docs/*/sphinx-warning-log.txt
-docs/*/sphinx-warning-log-sanitized.txt
-docs/*/xml/
-docs/*/xml_in/
-docs/*/man/
+docs/_build/
 docs/doxygen_sqlite3.db
 
 # Downloaded font files
@@ -46,6 +40,15 @@ tools/unit-test-app/sdkconfig.old
 tools/unit-test-app/build
 tools/unit-test-app/builds
 tools/unit-test-app/output
+tools/unit-test-app/test_configs
+
+# Unit Test CMake compile log folder
+log_ut_cmake
+
+# test application build files
+tools/test_apps/**/build
+tools/test_apps/**/sdkconfig
+tools/test_apps/**/sdkconfig.old
 
 # IDF monitor test
 tools/test_idf_monitor/outputs
@@ -71,8 +74,12 @@ test_multi_heap_host
 .idea/
 cmake-build-*/
 
-# Results for the checking of the Python coding style
+# Results for the checking of the Python coding style and static analysis
+.mypy_cache
 flake8_output.txt
 
 # ESP-IDF default build directory name
 build
+
+# lock files for examples and components
+dependencies.lock

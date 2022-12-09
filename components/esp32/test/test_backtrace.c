@@ -69,3 +69,15 @@ TEST_CASE("Test backtrace from interrupt watchdog timeout", "[reset_reason][rese
     backtrace_trigger_source = ACTION_INT_WDT;
     recursive_func(RECUR_DEPTH, SW_ISR_LEVEL_1);    //Trigger lvl 1 SW interrupt at max recursive depth
 }
+
+static void write_char_crash(char c)
+{
+    ets_write_char_uart(c);
+    *(char*) 0x00000001 = 0;
+}
+
+TEST_CASE("Test backtrace with a ROM function", "[reset_reason][reset=StoreProhibited,SW_CPU_RESET]")
+{
+    ets_install_putc1(&write_char_crash);
+    ets_printf("foo");
+}

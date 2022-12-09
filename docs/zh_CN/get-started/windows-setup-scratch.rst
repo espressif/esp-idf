@@ -24,18 +24,18 @@
 
 打开命令提示符，运行以下命令：
 
-.. include:: /_build/inc/git-clone-windows.inc
+.. include-build-file:: inc/git-clone-windows.inc
 
 ESP-IDF 将下载至 ``%userprofile%\esp\esp-idf``。
 
 请前往 :doc:`/versions`，查看 ESP-IDF 不同版本的具体适用场景。
 
-.. include:: /_build/inc/git-clone-notes.inc
+.. include-build-file:: inc/git-clone-notes.inc
 
 .. note::
 
     在克隆远程仓库时，不要忘记加上 ``--recursive`` 选项。否则，请接着运行以下命令，获取所有子模块 ::
-    
+
         cd esp-idf
         git submodule update --init
 
@@ -56,15 +56,15 @@ Ninja 编译工具
 .. note::
     目前，Ninja 仅提供支持 64 位 Windows 版本的 bin 文件。您也可以配合其他编译工具在 32 位 Windows 版本中使用 CMake 和 ``idf.py`` ，比如 mingw-make。但是目前暂无关于此工具的说明文档。
 
-从（`下载页面 <ninja-dl_>`_）下载最新发布的 Windows 平台稳定版 ninja_。 
+从（`下载页面 <ninja-dl_>`_）下载最新发布的 Windows 平台稳定版 ninja_。
 
 适用于 Windows 平台的 Ninja 下载文件是一个 .zip 文件，包含一个 ``ninja.exe`` 文件。您需要将该文件解压到目录，并 :ref:`添加到您的路径 <add-directory-windows-path>` （或者选择您路径中的已有目录）。
 
 
-Python 2.x
-^^^^^^^^^^
+Python
+^^^^^^
 
-下载并运行适用于 Windows 安装器的最新版 Python_ 2.7。
+下载并运行适用于 Windows 安装器的最新版 Python_。
 
 Python 安装器的“自定义”菜单可为您提供一系列选项，最后一项为 "Add python.exe to Path"（添加 python.exe 到路径中）。请将该选项更改到 "Will be installed"（将会安装）。
 
@@ -82,18 +82,18 @@ Python 安装完成后，从 Windows 开始菜单中打开“命令提示符”�
 工具链设置
 ===============
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 下载预编译的 Windows 工具链：
 
 |download_link_win32|
 
-解压压缩包文件到 ``C:\Program Files`` （或其他位置）。压缩包文件包含一个 ``xtensa-esp32-elf`` 目录。
+解压压缩包文件到 ``C:\Program Files`` （或其他位置）。压缩包文件包含一个 ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf`` 目录。
 
-然后，请将该目录下的 ``bin`` 子目录 :ref:`添加到您的路径 <add-directory-windows-path>`。例如，``C:\Program Files\xtensa-esp32-elf\bin``。
+然后，请将该目录下的 ``bin`` 子目录 :ref:`添加到您的路径 <add-directory-windows-path>`。例如，``C:\Program Files\xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf\bin``。
 
 .. note::
-    如果您已安装 MSYS2 环境（适用 "GNU Make" 编译系统），则可以跳过下载那一步，直接添加目录 ``C:\msys32\opt\xtensa-esp32-elf\bin`` 到路径，因为 MSYS2 环境已包含工具链。
+    如果您已安装 MSYS2 环境（适用 "GNU Make" 编译系统），则可以跳过下载那一步，直接添加目录 ``C:\msys32\opt\xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf\bin`` 到路径，因为 MSYS2 环境已包含工具链。
 
 
 .. _add-directory-windows-path:
@@ -111,14 +111,15 @@ Python 安装完成后，从 Windows 开始菜单中打开“命令提示符”�
 后续步骤
 ==========
 
-继续设置开发环境，请前往 :ref:`get-started-get-esp-idf` 章节。
+继续设置开发环境，请前往 :ref:`get-started-set-up-tools` 章节。
 
 .. _cmake: https://cmake.org/download/
 .. _ninja: https://ninja-build.org/
 .. _ninja-dl: https://github.com/ninja-build/ninja/releases
 .. _Python: https://www.python.org/downloads/windows/
-.. _MSYS2: https://msys2.github.io/
+.. _MSYS2: https://www.msys2.org/
 .. _kconfig-frontends releases page: https://github.com/espressif/kconfig-frontends/releases
+.. Note: These two targets may be used from git-clone-notes.inc depending on version, don't remove
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/
-
+.. _Releases page: https://github.com/espressif/esp-idf/releases
 

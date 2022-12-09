@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script finds and fixes up empty prototypes, to satisfy `-Wstrict-prototypes` and to сomply the C Standard
 

@@ -2,10 +2,7 @@
 
 ESP-MESH provides the function of self-organized networking, but if users disable this function on one node, users must designate a parent for this node.
 
-
 This example demonstrates how to scan a list of parent candidates, choose an appropriate parent and set as the parent of this node.
-
-If no parent is found through this scan, enable the self-organized function to let the ESP-MESH handle it by itself.
 
 Open project configuration menu (`idf.py menuconfig`) to configure the mesh network channel, router SSID, router password and mesh softAP settings.
 

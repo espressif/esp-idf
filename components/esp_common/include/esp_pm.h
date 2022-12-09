@@ -19,8 +19,8 @@
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/pm.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/pm.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/pm.h"
 #endif
 
 #ifdef __cplusplus

@@ -38,7 +38,7 @@
 浏览代码，查看堆栈和线程
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-当目标暂停时，调试器会在 “Debug” 窗口中显示线程的列表，程序暂停的代码行在下面的另一个窗口中被高亮显示，如下图所示。此时板子上的 LED 停止了闪烁。 
+当目标暂停时，调试器会在 “Debug” 窗口中显示线程的列表，程序暂停的代码行在下面的另一个窗口中被高亮显示，如下图所示。此时板子上的 LED 停止了闪烁。
 
 .. figure:: ../../../_static/debugging-target-halted.jpg
     :align: center
@@ -47,7 +47,7 @@
 
     调试时目标停止
 
-暂停的程序所在线程也会被展开，显示函数调用的堆栈，它表示直到目标暂停所在代码行（下图高亮处）为止的相关函数的调用关系。1 号线程下函数调用堆栈的第一行包含了最后一个调用的函数 ``app_main()``，根据下一行显示，它又是在函数 ``main_task()`` 中被调用的。堆栈的每一行还包含调用函数的文件名和行号。通过单击每个堆栈的条目，在下面的窗口中，你将看到此文件的内容。 
+暂停的程序所在线程也会被展开，显示函数调用的堆栈，它表示直到目标暂停所在代码行（下图高亮处）为止的相关函数的调用关系。1 号线程下函数调用堆栈的第一行包含了最后一个调用的函数 ``app_main()``，根据下一行显示，它又是在函数 ``main_task()`` 中被调用的。堆栈的每一行还包含调用函数的文件名和行号。通过单击每个堆栈的条目，在下面的窗口中，你将看到此文件的内容。
 
 通过展开线程，你可以浏览整个应用程序。展开 5 号线程，它包含了更长的函数调用堆栈，你可以看到函数调用旁边的数字，比如 ``0x4000000c``，它们代表未以源码形式提供的二进制代码所在的内存地址。
 
@@ -153,7 +153,9 @@
 
 要显示或者设置内存的内容，请使用“调试”视图中位于底部的 “Memory” 选项卡。
 
-在 “Memory” 选项卡下，我们将在内存地址 ``0x3FF44004`` 处读取和写入内容。该地址也是 ``GPIO_OUT_REG`` 寄存器的地址，可以用来控制（设置或者清除）某个 GPIO 的电平。关于该寄存器的更多详细信息，请参阅 `ESP32 技术参考手册 <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf>`_ 中的 IO_MUX 和 GPIO Matrix 章节。
+在 “Memory” 选项卡下，我们将在内存地址 ``0x3FF44004`` 处读取和写入内容。该地址也是 ``GPIO_OUT_REG`` 寄存器的地址，可以用来控制（设置或者清除）某个 GPIO 的电平。
+
+关于该寄存器的更多详细信息，请参阅 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_ 中的 IO_MUX 和 GPIO Matrix 章节。
 
 同样在 ``blink.c`` 项目文件中，在两个 ``gpio_set_level`` 语句的后面各设置一个断点，单击 “Memory” 选项卡，然后单击 “Add Memory Monitor” 按钮，在弹出的对话框中输入 ``0x3FF44004``。
 
@@ -184,7 +186,7 @@
 
 常见的调试任务是在程序运行期间检查程序中某个变量的值，为了演示这个功能，更新 ``blink.c`` 文件，在 ``blink_task`` 函数的上面添加一个全局变量的声明 ``int i``，然后在 ``while(1)`` 里添加 ``i++``，这样每次 LED 改变状态的时候，变量 ``i`` 都会增加 1。
 
-退出调试器，这样就不会与新代码混淆，然后重新构建并烧写代码到 ESP32 中，接着重启调试器。注意，这里不需要我们重启 OpenOCD。
+退出调试器，这样就不会与新代码混淆，然后重新构建并烧写代码到 {IDF_TARGET_NAME} 中，接着重启调试器。注意，这里不需要我们重启 OpenOCD。
 
 一旦程序停止运行，在代码 ``i++`` 处添加一个断点。
 
@@ -229,7 +231,7 @@
 
 	Temporary breakpoint 1, app_main () at /home/user-name/esp/blink/main/./blink.c:43
 	43	    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
-	(gdb) 
+	(gdb)
 
 
 
@@ -250,19 +252,19 @@
 浏览代码，查看堆栈和线程
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-当看到 ``(gdb)`` 提示符的时候，应用程序已停止运行，LED 也停止闪烁。 
+当看到 ``(gdb)`` 提示符的时候，应用程序已停止运行，LED 也停止闪烁。
 
 要找到代码暂停的位置，输入 ``l`` 或者 ``list`` 命令，调试器会打印出停止点（``blink.c`` 代码文件的第 43 行）附近的几行代码 ::
 
 	(gdb) l
 	38	    }
 	39	}
-	40	
+	40
 	41	void app_main()
 	42	{
 	43	    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 	44	}
-	(gdb) 
+	(gdb)
 
 
 也可以通过输入 ``l 30, 40`` 等命令来查看特定行号范围内的代码。
@@ -271,15 +273,15 @@
 
 	(gdb) bt
 	#0  app_main () at /home/user-name/esp/blink/main/./blink.c:43
-	#1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/esp32/./cpu_start.c:339
-	(gdb) 
+	#1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./cpu_start.c:339
+	(gdb)
 
-输出的第 0 行表示应用程序暂停之前调用的最后一个函数，即我们之前列出的 ``app_main ()``。``app_main ()`` 又被位于 ``cpu_start.c`` 文件第 339 行的 ``main_task`` 函数调用。 
+输出的第 0 行表示应用程序暂停之前调用的最后一个函数，即我们之前列出的 ``app_main ()``。``app_main ()`` 又被位于 ``cpu_start.c`` 文件第 339 行的 ``main_task`` 函数调用。
 
 想查看 ``cpu_start.c`` 文件中 ``main_task`` 函数的上下文，需要输入 ``frame  N``，其中 N = 1，因为根据前面的输出，``main_task`` 位于 #1 下::
 
 	(gdb) frame 1
-	#1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/esp32/./cpu_start.c:339
+	#1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./cpu_start.c:339
 	339	    app_main();
 	(gdb)
 
@@ -294,8 +296,8 @@
 	339	    app_main();
 	340	    vTaskDelete(NULL);
 	341	}
-	342	
-	(gdb) 
+	342
+	(gdb)
 
 通过打印前面的一些行，你会看到我们一直在寻找的 ``main_task`` 函数::
 
@@ -316,27 +318,27 @@
 	339	    app_main();
 	340	    vTaskDelete(NULL);
 	341	}
-	(gdb) 
+	(gdb)
 
 如果要查看其他代码，可以输入 ``i threads`` 命令，则会输出目标板上运行的线程列表::
 
 	(gdb) i threads
-	  Id   Target Id         Frame 
+	  Id   Target Id         Frame
 	  8    Thread 1073411336 (dport) 0x400d0848 in dport_access_init_core (arg=<optimized out>)
-	    at /home/user-name/esp/esp-idf/components/esp32/./dport_access.c:170
-	  7    Thread 1073408744 (ipc0) xQueueGenericReceive (xQueue=0x3ffae694, pvBuffer=0x0, xTicksToWait=1644638200, 
+	    at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./dport_access.c:170
+	  7    Thread 1073408744 (ipc0) xQueueGenericReceive (xQueue=0x3ffae694, pvBuffer=0x0, xTicksToWait=1644638200,
 	    xJustPeeking=0) at /home/user-name/esp/esp-idf/components/freertos/./queue.c:1452
 	  6    Thread 1073431096 (Tmr Svc) prvTimerTask (pvParameters=0x0)
 	    at /home/user-name/esp/esp-idf/components/freertos/./timers.c:445
 	  5    Thread 1073410208 (ipc1 : Running) 0x4000bfea in ?? ()
 	  4    Thread 1073432224 (dport) dport_access_init_core (arg=0x0)
-	    at /home/user-name/esp/esp-idf/components/esp32/./dport_access.c:150
+	    at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./dport_access.c:150
 	  3    Thread 1073413156 (IDLE) prvIdleTask (pvParameters=0x0)
 	    at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:3282
 	  2    Thread 1073413512 (IDLE) prvIdleTask (pvParameters=0x0)
 	    at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:3282
 	* 1    Thread 1073411772 (main : Running) app_main () at /home/user-name/esp/blink/main/./blink.c:43
-	(gdb) 
+	(gdb)
 
 线程列表显示了每个线程最后一个被调用的函数以及所在的 C 源文件名（如果存在的话）。
 
@@ -359,7 +361,7 @@
 	#6  0x4000000c in ?? ()
 	#7  0x4000000c in ?? ()
 	#8  0x4000000c in ?? ()
-	(gdb) 
+	(gdb)
 
 如上所示，回溯可能会包含多个条目，方便查看直至目标停止运行的函数调用顺序。如果找不到某个函数的源码文件，将会使用问号 ``??`` 替代，这表示该函数是以二进制格式提供的。像 ``0x4000bfea`` 这样的值是被调用函数所在的内存地址。
 
@@ -384,18 +386,18 @@
 
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB6F6 (active)    APP_CPU: PC=0x400D10D8 
+    Target halted. PRO_CPU: PC=0x400DB6F6 (active)    APP_CPU: PC=0x400D10D8
 
     Breakpoint 2, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:33
     33          gpio_set_level(BLINK_GPIO, 0);
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB6F8 (active)    APP_CPU: PC=0x400D10D8 
-    Target halted. PRO_CPU: PC=0x400DB704 (active)    APP_CPU: PC=0x400D10D8 
+    Target halted. PRO_CPU: PC=0x400DB6F8 (active)    APP_CPU: PC=0x400D10D8
+    Target halted. PRO_CPU: PC=0x400DB704 (active)    APP_CPU: PC=0x400D10D8
 
     Breakpoint 3, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:36
     36          gpio_set_level(BLINK_GPIO, 1);
-    (gdb) 
+    (gdb)
 
 只有在输入命令 ``c`` 恢复程序运行后才能看到 LED 改变状态。
 
@@ -407,16 +409,16 @@
         breakpoint already hit 1 time
     3       breakpoint     keep y   0x400db704 in blink_task at /home/user-name/esp/blink/main/./blink.c:36
         breakpoint already hit 1 time
-    (gdb) 
+    (gdb)
 
 请注意，断点序号（在 ``Num`` 栏列出）从 2 开始，这是因为在调试器启动时执行 ``thb app_main`` 命令已经在 ``app_main()`` 函数处建立了第一个断点。由于它是一个临时断点，已经被自动删除，所以没有被列出。
 
-要删除一个断点，请输入 ``delete N`` 命令（或者简写成 ``d N``），其中 ``N`` 代表断点序号:: 
+要删除一个断点，请输入 ``delete N`` 命令（或者简写成 ``d N``），其中 ``N`` 代表断点序号::
 
     (gdb) delete 1
     No breakpoint number 1.
     (gdb) delete 2
-    (gdb) 
+    (gdb)
 
 更多关于断点的信息，请参阅 :ref:`jtag-debugging-tip-breakpoints` 和 :ref:`jtag-debugging-tip-where-breakpoints`。
 
@@ -437,9 +439,9 @@
 
 	Program received signal SIGINT, Interrupt.
 	[Switching to Thread 1073413512]
-	0x400d0c00 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/esp32/./freertos_hooks.c:52
+	0x400d0c00 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./freertos_hooks.c:52
 	52	        asm("waiti 0");
-	(gdb) 
+	(gdb)
 
 在上图所示的情况下，应用程序已经在 ``freertos_hooks.c`` 文件的第 52 行暂停运行，现在您可以通过输入 ``c`` 再次将其恢复运行或者进行如下所述的一些调试工作。
 
@@ -461,44 +463,44 @@
     Num     Type           Disp Enb Address    What
     3       breakpoint     keep y   0x400db704 in blink_task at /home/user-name/esp/blink/main/./blink.c:36
         breakpoint already hit 1 time
-    (gdb) 
+    (gdb)
 
 输入 ``c`` 恢复程序运行然后等它在断点处停止运行::
 
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB754 (active)    APP_CPU: PC=0x400D1128 
+    Target halted. PRO_CPU: PC=0x400DB754 (active)    APP_CPU: PC=0x400D1128
 
     Breakpoint 3, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:36
     36          gpio_set_level(BLINK_GPIO, 1);
-    (gdb) 
+    (gdb)
 
 然后输入 ``n`` 多次，观察调试器是如何单步执行一行代码的::
 
     (gdb) n
-    Target halted. PRO_CPU: PC=0x400DB756 (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB758 (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DC04C (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB75B (active)    APP_CPU: PC=0x400D1128 
+    Target halted. PRO_CPU: PC=0x400DB756 (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB758 (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DC04C (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB75B (active)    APP_CPU: PC=0x400D1128
     37          vTaskDelay(1000 / portTICK_PERIOD_MS);
     (gdb) n
-    Target halted. PRO_CPU: PC=0x400DB75E (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400846FC (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB761 (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB746 (active)    APP_CPU: PC=0x400D1128 
+    Target halted. PRO_CPU: PC=0x400DB75E (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400846FC (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB761 (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB746 (active)    APP_CPU: PC=0x400D1128
     33          gpio_set_level(BLINK_GPIO, 0);
-    (gdb) 
+    (gdb)
 
 如果你输入 ``s``，那么调试器将进入子程序::
 
     (gdb) s
-    Target halted. PRO_CPU: PC=0x400DB748 (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB74B (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DC04C (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DC04F (active)    APP_CPU: PC=0x400D1128 
+    Target halted. PRO_CPU: PC=0x400DB748 (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB74B (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DC04C (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DC04F (active)    APP_CPU: PC=0x400D1128
     gpio_set_level (gpio_num=GPIO_NUM_4, level=0) at /home/user-name/esp/esp-idf/components/driver/./gpio.c:183
     183     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
-    (gdb) 
+    (gdb)
 
 上述例子中，调试器进入 ``gpio_set_level(BLINK_GPIO, 0)`` 代码内部，同时代码窗口快速切换到 ``gpio.c`` 驱动文件。
 
@@ -512,14 +514,14 @@
 
 使用命令 ``x`` 可以显示内存的内容，配合其余参数还可以调整所显示内存位置的格式和数量。运行 ``help x`` 可以查看更多相关细节。与 ``x`` 命令配合使用的命令是 ``set``，它允许你将值写入内存。
 
-为了演示 ``x`` 和 ``set`` 的使用，我们将在内存地址 ``0x3FF44004`` 处读取和写入内容。该地址也是 ``GPIO_OUT_REG`` 寄存器的地址，可以用来控制（设置或者清除）某个 GPIO 的电平。关于该寄存器的更多详细信息，请参阅 `ESP32 技术参考手册 <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf>`_ 中的 IO_MUX 和 GPIO Matrix章节。
+为了演示 ``x`` 和 ``set`` 的使用，我们将在内存地址 ``0x3FF44004`` 处读取和写入内容。该地址也是 ``GPIO_OUT_REG`` 寄存器的地址，可以用来控制（设置或者清除）某个 GPIO 的电平。关于该寄存器的更多详细信息，请参阅 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_ 中的 IO_MUX 和 GPIO Matrix章节。
 
 同样在 ``blink.c`` 项目文件中，在两个 ``gpio_set_level`` 语句的后面各设置一个断点。输入两次 ``c`` 命令后停止在断点处，然后输入 ``x /1wx 0x3FF44004`` 来显示 ``GPIO_OUT_REG`` 寄存器的值::
 
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB75E (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB74E (active)    APP_CPU: PC=0x400D1128 
+    Target halted. PRO_CPU: PC=0x400DB75E (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB74E (active)    APP_CPU: PC=0x400D1128
 
     Breakpoint 2, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:34
     34          vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -527,14 +529,14 @@
     0x3ff44004: 0x00000000
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB751 (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB75B (active)    APP_CPU: PC=0x400D1128 
+    Target halted. PRO_CPU: PC=0x400DB751 (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB75B (active)    APP_CPU: PC=0x400D1128
 
     Breakpoint 3, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:37
     37          vTaskDelay(1000 / portTICK_PERIOD_MS);
     (gdb) x /1wx 0x3FF44004
     0x3ff44004: 0x00000010
-    (gdb) 
+    (gdb)
 
 如果闪烁的 LED 连接到了 GPIO4，那么每次 LED 改变状态时你会看到第 4 比特被翻转::
 
@@ -558,7 +560,7 @@
 
 常见的调试任务是在程序运行期间检查程序中某个变量的值，为了能够演示这个功能，更新 ``blink.c`` 文件，在 ``blink_task`` 函数的上面添加一个全局变量的声明 ``int i``，然后在 ``while(1)`` 里添加 ``i++``，这样每次 LED 改变状态的时候，变量 ``i`` 都会增加 1。
 
-退出调试器，这样就不会与新代码混淆，然后重新构建并烧写代码到 ESP32 中，接着重启调试器。注意，这里不需要我们重启 OpenOCD。
+退出调试器，这样就不会与新代码混淆，然后重新构建并烧写代码到 {IDF_TARGET_NAME} 中，接着重启调试器。注意，这里不需要我们重启 OpenOCD。
 
 一旦程序停止运行，输入命令 ``watch i``::
 
@@ -570,7 +572,7 @@
 
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB751 (active)    APP_CPU: PC=0x400D0811 
+    Target halted. PRO_CPU: PC=0x400DB751 (active)    APP_CPU: PC=0x400D0811
     [New Thread 1073432196]
 
     Program received signal SIGTRAP, Trace/breakpoint trap.
@@ -583,14 +585,14 @@
 
     (gdb) p i
     $1 = 3
-    (gdb) 
+    (gdb)
 
 要修改 ``i`` 的值，请使用 ``set`` 命令，如下所示（可以将其打印输出来查看是否确已修改）::
 
     (gdb) set var i = 0
     (gdb) p i
     $3 = 0
-    (gdb) 
+    (gdb)
 
 最多可以使用两个观察点，详细信息请参阅 :ref:`jtag-debugging-tip-breakpoints`。
 
@@ -613,14 +615,14 @@
     (gdb) set var i = 0
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB755 (active)    APP_CPU: PC=0x400D112C 
-    Target halted. PRO_CPU: PC=0x400DB753 (active)    APP_CPU: PC=0x400D112C 
-    Target halted. PRO_CPU: PC=0x400DB755 (active)    APP_CPU: PC=0x400D112C 
-    Target halted. PRO_CPU: PC=0x400DB753 (active)    APP_CPU: PC=0x400D112C 
+    Target halted. PRO_CPU: PC=0x400DB755 (active)    APP_CPU: PC=0x400D112C
+    Target halted. PRO_CPU: PC=0x400DB753 (active)    APP_CPU: PC=0x400D112C
+    Target halted. PRO_CPU: PC=0x400DB755 (active)    APP_CPU: PC=0x400D112C
+    Target halted. PRO_CPU: PC=0x400DB753 (active)    APP_CPU: PC=0x400D112C
 
     Breakpoint 3, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:34
     34          gpio_set_level(BLINK_GPIO, 0);
-    (gdb) 
+    (gdb)
 
 
 获得命令的帮助信息
@@ -634,15 +636,15 @@
     Unlike "step", if the current source line calls a subroutine,
     this command does not enter the subroutine, but instead steps over
     the call, in effect treating it as a single source line.
-    (gdb) 
+    (gdb)
 
-只需输入 ``help`` 命令，即可获得高级命令列表，帮助你了解更多详细信息。此外，还可以参考一些 GDB 命令速查表，比如 http://darkdust.net/files/GDB%20Cheat%20Sheet.pdf。虽然不是所有命令都适用于嵌入式环境，但还是会有所裨益。
+只需输入 ``help`` 命令，即可获得高级命令列表，帮助你了解更多详细信息。此外，还可以参考一些 GDB 命令速查表，比如 https://darkdust.net/files/GDB%20Cheat%20Sheet.pdf。虽然不是所有命令都适用于嵌入式环境，但还是会有所裨益。
 
 
 结束调试会话
 ^^^^^^^^^^^^
 
-输入命令 ``q`` 可以退出调试器:: 
+输入命令 ``q`` 可以退出调试器::
 
     (gdb) q
     A debugging session is active.
@@ -652,4 +654,4 @@
     Quit anyway? (y or n) y
     Detaching from program: /home/user-name/esp/blink/build/blink.elf, Remote target
     Ending remote debugging.
-    user-name@computer-name:~/esp/blink$ 
+    user-name@computer-name:~/esp/blink$

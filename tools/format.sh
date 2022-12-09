@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Runs astyle with the full set of formatting options
 astyle \
 	--style=otbs \

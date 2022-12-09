@@ -14,6 +14,37 @@
 #pragma once
 
 #include "esp_err.h"
+#include "esp_image_format.h"
+
+/**@{*/
+/**
+ * @brief labels from bootloader linker script: bootloader.ld
+ *
+ */
+extern int _bss_start;
+extern int _bss_end;
+extern int _data_start;
+extern int _data_end;
+/**@}*/
+
+/**
+ * @brief bootloader image header
+ *
+ */
+extern esp_image_header_t bootloader_image_hdr;
+
+/**@{*/
+/**
+ * @brief Common initialization steps that are applied to all targets.
+ *
+ */
+esp_err_t bootloader_read_bootloader_header(void);
+esp_err_t bootloader_check_bootloader_validity(void);
+void bootloader_clear_bss_section(void);
+void bootloader_config_wdt(void);
+void bootloader_enable_random(void);
+void bootloader_print_banner(void);
+/**@}*/
 
 /* @brief Prepares hardware for work.
  *

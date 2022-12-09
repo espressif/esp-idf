@@ -7,7 +7,7 @@
 # Used internally by the ESP-IDF build system. But designed to be
 # non-IDF-specific.
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2018-2020 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -112,10 +112,19 @@ class DeprecatedOptions(object):
                         print('{}:{} {} was replaced with {}'.format(sdkconfig_in, line_num, depr_opt, new_opt))
                 f_out.write(line)
 
-    def append_doc(self, config, path_output):
+    def append_doc(self, config, visibility, path_output):
 
         def option_was_written(opt):
-            return any(gen_kconfig_doc.node_should_write(node) for node in config.syms[opt].nodes)
+            # named choices were written if any of the symbols in the choice were visible
+            if new_opt in config.named_choices:
+                syms = config.named_choices[new_opt].syms
+                for s in syms:
+                    if any(visibility.visible(node) for node in s.nodes):
+                        return True
+                return False
+            else:
+                # otherwise if any of the nodes associated with the option was visible
+                return any(visibility.visible(node) for node in config.syms[opt].nodes)
 
         if len(self.r_dic) > 0:
             with open(path_output, 'a') as f_o:
@@ -123,7 +132,7 @@ class DeprecatedOptions(object):
                 f_o.write('.. _configuration-deprecated-options:\n\n{}\n{}\n\n'.format(header, '-' * len(header)))
                 for dep_opt in sorted(self.r_dic):
                     new_opt = self.r_dic[dep_opt]
-                    if new_opt not in config.syms or (config.syms[new_opt].choice is None and option_was_written(new_opt)):
+                    if option_was_written(new_opt) and (new_opt not in config.syms or config.syms[new_opt].choice is None):
                         # everything except config for a choice (no link reference for those in the docs)
                         f_o.write('- {}{} (:ref:`{}{}`)\n'.format(config.config_prefix, dep_opt,
                                                                   config.config_prefix, new_opt))
@@ -175,27 +184,6 @@ class DeprecatedOptions(object):
                         f_o.write('#define {}{} {}{}\n'.format(self.config_prefix, dep_opt, self.config_prefix, new_opt))
 
 
-def prepare_source_files():
-    """
-    Prepares source files which are sourced from the main Kconfig because upstream kconfiglib doesn't support sourcing
-    a file list.
-    """
-
-    def _dequote(var):
-        return var[1:-1] if len(var) > 0 and (var[0], var[-1]) == ('"',) * 2 else var
-
-    def _write_source_file(config_var, config_file):
-        with open(config_file, "w") as f:
-            f.write('\n'.join(['source "{}"'.format(path) for path in _dequote(config_var).split()]))
-
-    try:
-        _write_source_file(os.environ['COMPONENT_KCONFIGS'], os.environ['COMPONENT_KCONFIGS_SOURCE_FILE'])
-        _write_source_file(os.environ['COMPONENT_KCONFIGS_PROJBUILD'], os.environ['COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE'])
-    except KeyError as e:
-        print('Error:', e, 'is not defined!')
-        raise
-
-
 def dict_enc_for_env(dic, encoding=sys.getfilesystemencoding() or 'utf-8'):
     """
     This function can be deleted after dropping support for Python 2.
@@ -234,6 +222,10 @@ def main():
                         help='File with deprecated Kconfig options',
                         required=False)
 
+    parser.add_argument('--dont-write-deprecated',
+                        help='Do not write compatibility statements for deprecated values',
+                        action='store_true')
+
     parser.add_argument('--output', nargs=2, action='append',
                         help='Write output file (format and output filename)',
                         metavar=('FORMAT', 'FILENAME'),
@@ -266,14 +258,9 @@ def main():
         env = json.load(args.env_file)
         os.environ.update(dict_enc_for_env(env))
 
-    prepare_source_files()
     config = kconfiglib.Kconfig(args.kconfig)
     config.warn_assign_redun = False
     config.warn_assign_override = False
-
-    sdkconfig_renames = [args.sdkconfig_rename] if args.sdkconfig_rename else []
-    sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()
-    deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=sdkconfig_renames)
 
     sdkconfig_renames = [args.sdkconfig_rename] if args.sdkconfig_rename else []
     sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()
@@ -326,6 +313,11 @@ def main():
             except OSError:
                 pass
 
+    if args.dont_write_deprecated:
+        # The deprecated object was useful until now for replacements. Now it will be redefined with no configurations
+        # and as the consequence, it won't generate output with deprecated statements.
+        deprecated_options = DeprecatedOptions('', path_rename_files=[])
+
     # Output the files specified in the arguments
     for output_type, filename in args.output:
         with tempfile.NamedTemporaryFile(prefix="confgen_tmp", delete=False) as f:
@@ -363,13 +355,23 @@ def write_makefile(deprecated_options, config, filename):
 
         def get_makefile_config_string(name, value, orig_type):
             if orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE):
-                return "{}{}={}\n".format(config.config_prefix, name, '' if value == 'n' else value)
-            elif orig_type in (kconfiglib.INT, kconfiglib.HEX):
-                return "{}{}={}\n".format(config.config_prefix, name, value)
+                value = '' if value == 'n' else value
+            elif orig_type == kconfiglib.INT:
+                try:
+                    value = int(value)
+                except ValueError:
+                    value = ""
+            elif orig_type == kconfiglib.HEX:
+                try:
+                    value = hex(int(value, 16))  # ensure 0x prefix
+                except ValueError:
+                    value = ""
             elif orig_type == kconfiglib.STRING:
-                return '{}{}="{}"\n'.format(config.config_prefix, name, kconfiglib.escape(value))
+                value = '"{}"'.format(kconfiglib.escape(value))
             else:
                 raise RuntimeError('{}{}: unknown type {}'.format(config.config_prefix, name, orig_type))
+
+            return '{}{}={}\n'.format(config.config_prefix, name, value)
 
         def write_makefile_node(node):
             item = node.item
@@ -425,13 +427,16 @@ def write_cmake(deprecated_options, config, filename):
                 val = sym.str_value
                 if sym.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE) and val == "n":
                     val = ""  # write unset values as empty variables
-                write("set({}{} \"{}\")\n".format(
-                    prefix, sym.name, val))
+                elif sym.orig_type == kconfiglib.STRING:
+                    val = kconfiglib.escape(val)
+                elif sym.orig_type == kconfiglib.HEX:
+                    val = hex(int(val, 16))  # ensure 0x prefix
+                write('set({}{} "{}")\n'.format(prefix, sym.name, val))
 
                 configs_list.append(prefix + sym.name)
                 dep_opt = deprecated_options.get_deprecated_option(sym.name)
                 if dep_opt:
-                    tmp_dep_list.append("set({}{} \"{}\")\n".format(prefix, dep_opt, val))
+                    tmp_dep_list.append('set({}{} "{}")\n'.format(prefix, dep_opt, val))
                     configs_list.append(prefix + dep_opt)
 
         for n in config.node_iter():
@@ -589,8 +594,15 @@ def write_json_menus(deprecated_options, config, filename):
 
 
 def write_docs(deprecated_options, config, filename):
-    gen_kconfig_doc.write_docs(config, filename)
-    deprecated_options.append_doc(config, filename)
+    try:
+        target = os.environ['IDF_TARGET']
+    except KeyError:
+        print('IDF_TARGET environment variable must be defined!')
+        sys.exit(1)
+
+    visibility = gen_kconfig_doc.ConfigTargetVisibility(config, target)
+    gen_kconfig_doc.write_docs(config, visibility, filename)
+    deprecated_options.append_doc(config, visibility, filename)
 
 
 def update_if_changed(source, destination):

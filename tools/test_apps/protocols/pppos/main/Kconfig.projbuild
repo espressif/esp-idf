@@ -1,0 +1,24 @@
+menu "Test App Configuration"
+
+    config TEST_APP_PPP_SERVER_IP
+        string "IP address of PPP server"
+        default "10.0.0.1"
+        help
+            IP address of PPP server. Note: this is also the address
+            where the TCP server is started to test the connection
+
+    config TEST_APP_PPP_CLIENT_IP
+        string "IP address of PPP client"
+        default "10.0.0.2"
+        help
+            IP address that PPP server assigns to PPP client.
+
+    config TEST_APP_TCP_PORT
+        int "Port of test"
+        range 0 65535
+        default 2222
+        help
+            The remote port to which the client will connects to
+            once the PPP connection established
+
+endmenu

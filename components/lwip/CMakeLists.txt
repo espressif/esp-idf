@@ -4,6 +4,7 @@ set(include_dirs
     lwip/src/include
     port/esp32/include
     port/esp32/include/arch
+    port/esp32/tcp_isn
     )
 
 set(srcs
@@ -46,6 +47,7 @@ set(srcs
     "lwip/src/core/ipv4/icmp.c"
     "lwip/src/core/ipv4/igmp.c"
     "lwip/src/core/ipv4/ip4.c"
+    "lwip/src/core/ipv4/ip4_napt.c"
     "lwip/src/core/ipv4/ip4_addr.c"
     "lwip/src/core/ipv4/ip4_frag.c"
     "lwip/src/core/ipv6/dhcp6.c"
@@ -85,7 +87,6 @@ set(srcs
     "lwip/src/netif/ppp/upap.c"
     "lwip/src/netif/ppp/utils.c"
     "lwip/src/netif/ppp/vj.c"
-    "port/esp32/vfs_lwip.c"
     "port/esp32/debug/lwip_debug.c"
     "port/esp32/freertos/sys_arch.c"
     "port/esp32/netif/dhcp_state.c"
@@ -129,6 +130,16 @@ if(CONFIG_ETH_ENABLED)
     list(APPEND srcs "port/esp32/netif/ethernetif.c")
 endif()
 
+if(CONFIG_VFS_SUPPORT_IO)
+    list(APPEND srcs "port/esp32/vfs_lwip.c")
+else()
+    list(APPEND srcs "port/esp32/no_vfs_syscalls.c")
+endif()
+
+if(CONFIG_LWIP_TCP_ISN_HOOK)
+    list(APPEND srcs "port/esp32/tcp_isn/tcp_isn.c")
+endif()
+
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     LDFRAGMENTS linker.lf
@@ -138,15 +149,20 @@ idf_component_register(SRCS "${srcs}"
 # lots of LWIP source files evaluate macros that check address of stack variables
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)
 
-if(GCC_NOT_5_2_0)
-    set_source_files_properties(
-        lwip/src/netif/ppp/ppp.c
-        PROPERTIES COMPILE_FLAGS
-        -Wno-uninitialized
-        )
-    set_source_files_properties(
-        lwip/src/netif/ppp/pppos.c
-        PROPERTIES COMPILE_FLAGS
-        -Wno-implicit-fallthrough
-        )
-endif()
+set_source_files_properties(
+    lwip/src/netif/ppp/ppp.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-uninitialized
+    )
+set_source_files_properties(
+    lwip/src/netif/ppp/pppos.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-implicit-fallthrough
+    )
+# "comparison is always false due to limited range of data type" warning
+# when setting CONFIG_LWIP_TCP_WND_DEFAULT to 65535
+set_source_files_properties(
+    lwip/src/core/tcp.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-type-limits
+)

@@ -4,9 +4,17 @@ Interrupt allocation
 Overview
 --------
 
-The ESP32 has two cores, with 32 interrupts each. Each interrupt has a certain priority level, most (but not all) interrupts are connected
-to the interrupt mux. Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in
-multiple drivers. The esp_intr_alloc abstraction exists to hide all these implementation details.
+.. only:: esp32
+
+  The {IDF_TARGET_NAME} has two cores, with 32 interrupts each. Each interrupt has a certain priority level, most (but not all) interrupts are connected
+  to the interrupt mux. Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in
+  multiple drivers. The esp_intr_alloc abstraction exists to hide all these implementation details.
+
+.. only:: esp32s2
+
+  The {IDF_TARGET_NAME} has one core, with 32 interrupts. Each interrupt has a certain priority level, most (but not all) interrupts are connected
+  to the interrupt mux. Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in
+  multiple drivers. The esp_intr_alloc abstraction exists to hide all these implementation details.
 
 A driver can allocate an interrupt for a certain peripheral by calling esp_intr_alloc (or esp_intr_alloc_sintrstatus). It can use
 the flags passed to this function to set the type of interrupt allocated, specifying a specific level or trigger method. The
@@ -15,7 +23,7 @@ install the given interrupt handler and ISR to it.
 
 This code has two different types of interrupts it handles differently: Shared interrupts and non-shared interrupts. The simplest
 of the two are non-shared interrupts: a separate interrupt is allocated per esp_intr_alloc call and this interrupt is solely used for
-the peripheral attached to it, with only one ISR that will get called. Shared interrupts can have multiple peripherals triggering 
+the peripheral attached to it, with only one ISR that will get called. Shared interrupts can have multiple peripherals triggering
 it, with multiple ISRs being called when one of the peripherals attached signals an interrupt. Thus, ISRs that are intended for shared
 interrupts should check the interrupt status of the peripheral they service in order to see if any action is required.
 
@@ -24,7 +32,7 @@ only be level interrupts (because of the chance of missed interrupts when edge i
 used.)
 (The logic behind this: DevA and DevB share an int. DevB signals an int. Int line goes high. ISR handler
 calls code for DevA -> does nothing. ISR handler calls code for DevB, but while doing that,
-DevA signals an int. ISR DevB is done, clears int for DevB, exits interrupt code. Now an 
+DevA signals an int. ISR DevB is done, clears int for DevB, exits interrupt code. Now an
 interrupt for DevA is still pending, but because the int line never went low (DevA kept it high
 even when the int for DevB was cleared) the interrupt is never serviced.)
 
@@ -34,7 +42,7 @@ Multicore issues
 
 Peripherals that can generate interrupts can be divided in two types:
 
-  - External peripherals, within the ESP32 but outside the Xtensa cores themselves. Most ESP32 peripherals are of this type.
+  - External peripherals, within the {IDF_TARGET_NAME} but outside the Xtensa cores themselves. Most {IDF_TARGET_NAME} peripherals are of this type.
   - Internal peripherals, part of the Xtensa CPU cores themselves.
 
 Interrupt handling differs slightly between these two types of peripherals.
@@ -89,7 +97,7 @@ Multiple Handlers Sharing A Source
 Several handlers can be assigned to a same source, given that all handlers are allocated using the ``ESP_INTR_FLAG_SHARED`` flag.
 They'll be all allocated to the interrupt, which the source is attached to, and called sequentially when the source is active.
 The handlers can be disabled and freed individually. The source is attached to the interrupt (enabled), if one or more handlers are enabled, otherwise detached.
-A handler will never be called when disabled, while **its source may still be triggered** if any one of its handler enabled. 
+A handler will never be called when disabled, while **its source may still be triggered** if any one of its handler enabled.
 
 Sources attached to non-shared interrupt do not support this feature.
 
@@ -100,6 +108,6 @@ or the status should be handled in other enabled interrupt properly**. You may l
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_intr_alloc.inc
+.. include-build-file:: inc/esp_intr_alloc.inc
 
 

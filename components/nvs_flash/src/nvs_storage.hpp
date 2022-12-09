@@ -15,7 +15,6 @@
 #define nvs_storage_hpp
 
 #include <memory>
-#include <string>
 #include <unordered_map>
 #include "nvs.hpp"
 #include "nvs_types.hpp"
@@ -52,8 +51,8 @@ class Storage : public intrusive_list_node<Storage>
         public:
             char key[Item::MAX_KEY_LENGTH + 1];
             uint8_t nsIndex;
-            uint8_t chunkCount; 
-            VerOffset chunkStart; 
+            uint8_t chunkCount;
+            VerOffset chunkStart;
     };
 
     typedef intrusive_list<BlobIndexNode> TBlobIndexList;
@@ -61,7 +60,10 @@ class Storage : public intrusive_list_node<Storage>
 public:
     ~Storage();
 
-    Storage(const char *pName = NVS_DEFAULT_PART_NAME) : mPartitionName(pName) { };
+    Storage(const char *pName = NVS_DEFAULT_PART_NAME)
+    {
+        strncpy(mPartitionName, pName, NVS_PART_NAME_MAX_SIZE);
+    };
 
     esp_err_t init(uint32_t baseSector, uint32_t sectorCount);
 
@@ -93,7 +95,7 @@ public:
     {
         return eraseItem(nsIndex, ItemType::ANY, key);
     }
-    
+
     esp_err_t eraseNamespace(uint8_t nsIndex);
 
     const char *getPartName() const
@@ -114,7 +116,7 @@ public:
     esp_err_t eraseMultiPageBlob(uint8_t nsIndex, const char* key, VerOffset chunkStart = VerOffset::VER_ANY);
 
     void debugDump();
-    
+
     void debugCheck();
 
     esp_err_t fillStats(nvs_stats_t& nvsStats);
@@ -134,7 +136,7 @@ protected:
 
     void clearNamespaces();
 
-    void populateBlobIndices(TBlobIndexList&);
+    esp_err_t populateBlobIndices(TBlobIndexList&);
 
     void eraseOrphanDataBlobs(TBlobIndexList&);
 
@@ -143,7 +145,7 @@ protected:
     esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item, uint8_t chunkIdx = Page::CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
 protected:
-    const char *mPartitionName;
+    char mPartitionName [NVS_PART_NAME_MAX_SIZE + 1];
     size_t mPageCount;
     PageManager mPageManager;
     TNamespaces mNamespaces;

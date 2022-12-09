@@ -127,7 +127,18 @@
 #define BT_SSP_INCLUDED             TRUE
 #endif /* UC_BT_SSP_ENABLED */
 
+#if UC_BT_HID_HOST_ENABLED
+#define HID_HOST_INCLUDED           TRUE
+#define BTA_HH_INCLUDED             TRUE
+#endif /* UC_BT_HID_HOST_ENABLED */
+
 #endif /* UC_BT_CLASSIC_ENABLED */
+
+/* This is set to enable use of GAP L2CAP connections. */
+#if (VND_BT_JV_BTA_L2CAP == TRUE)
+#define BTA_JV_L2CAP_INCLUDED       TRUE
+#define GAP_CONN_INCLUDED           TRUE
+#endif /* VND_BT_JV_BTA_L2CAP */
 
 #ifndef CLASSIC_BT_INCLUDED
 #define CLASSIC_BT_INCLUDED         FALSE
@@ -158,6 +169,12 @@
 #else
 #define GATTC_INCLUDED              FALSE
 #endif  /* UC_BT_GATTC_ENABLE */
+
+#if (UC_BT_BLUFI_ENABLE)
+#define BLUFI_INCLUDED              TRUE
+#else
+#define BLUFI_INCLUDED              FALSE
+#endif  /* UC_BT_BLUFI_ENABLE */
 
 #if (UC_BT_GATTC_ENABLE && UC_BT_GATTC_CACHE_NVS_FLASH_ENABLED)
 #define GATTC_CACHE_NVS             TRUE
@@ -319,6 +336,19 @@
 #define BTA_SDP_INCLUDED FALSE
 #endif
 
+/* This is set to enable use of GAP L2CAP connections. */
+#ifndef VND_BT_JV_BTA_L2CAP
+#define VND_BT_JV_BTA_L2CAP        FALSE
+#endif
+
+#ifndef BTA_JV_L2CAP_INCLUDED
+#define BTA_JV_L2CAP_INCLUDED       FALSE
+#endif
+
+#ifndef GAP_CONN_INCLUDED
+#define GAP_CONN_INCLUDED           FALSE
+#endif
+
 /******************************************************************************
 **
 ** Stack-layer components
@@ -381,6 +411,10 @@
 #define SCAN_QUEUE_CONGEST_CHECK  TRUE
 #else
 #define SCAN_QUEUE_CONGEST_CHECK  FALSE
+#endif
+
+#ifdef UC_CONFIG_BT_GATTS_PPCP_CHAR_GAP
+#define BTM_PERIPHERAL_ENABLED   UC_CONFIG_BT_GATTS_PPCP_CHAR_GAP
 #endif
 
 #ifdef UC_BT_GATTS_SEND_SERVICE_CHANGE_MODE
@@ -1371,7 +1405,7 @@
 
 /* The maximum number of ports supported. */
 #ifndef MAX_RFC_PORTS
-#define MAX_RFC_PORTS               16 /*max is 30*/
+#define MAX_RFC_PORTS               8 /*max is 30*/
 #endif
 
 /* The maximum simultaneous links to different devices. */
@@ -1738,15 +1772,6 @@ Range: 2 octets
 
 #ifndef GAP_INCLUDED
 #define GAP_INCLUDED                TRUE
-#endif
-
-/* This is set to enable use of GAP L2CAP connections. */
-#ifndef GAP_CONN_INCLUDED
-#if (GAP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
-#define GAP_CONN_INCLUDED           TRUE
-#else
-#define GAP_CONN_INCLUDED           FALSE
-#endif
 #endif
 
 /* This is set to enable posting event for data write */

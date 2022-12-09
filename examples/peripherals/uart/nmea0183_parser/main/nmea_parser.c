@@ -682,8 +682,14 @@ nmea_parser_handle_t nmea_parser_init(const nmea_parser_config_t *config)
         .data_bits = config->uart.data_bits,
         .parity = config->uart.parity,
         .stop_bits = config->uart.stop_bits,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_APB,
     };
+    if (uart_driver_install(esp_gps->uart_port, CONFIG_NMEA_PARSER_RING_BUFFER_SIZE, 0,
+                            config->uart.event_queue_size, &esp_gps->event_queue, 0) != ESP_OK) {
+        ESP_LOGE(GPS_TAG, "install uart driver failed");
+        goto err_uart_install;
+    }
     if (uart_param_config(esp_gps->uart_port, &uart_config) != ESP_OK) {
         ESP_LOGE(GPS_TAG, "config uart parameter failed");
         goto err_uart_config;
@@ -692,11 +698,6 @@ nmea_parser_handle_t nmea_parser_init(const nmea_parser_config_t *config)
                      UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE) != ESP_OK) {
         ESP_LOGE(GPS_TAG, "config uart gpio failed");
         goto err_uart_config;
-    }
-    if (uart_driver_install(esp_gps->uart_port, CONFIG_NMEA_PARSER_RING_BUFFER_SIZE, 0,
-                            config->uart.event_queue_size, &esp_gps->event_queue, 0) != ESP_OK) {
-        ESP_LOGE(GPS_TAG, "install uart driver failed");
-        goto err_uart_install;
     }
     /* Set pattern interrupt, used to detect the end of a line */
     uart_enable_pattern_det_baud_intr(esp_gps->uart_port, '\n', 1, 9, 0, 0);

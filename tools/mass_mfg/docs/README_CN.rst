@@ -24,7 +24,7 @@
     -   Linux、MacOS 或 Windows（标准版） 
 
 * 安装依赖包：
-    -   Python：最低版本要求为 2.7。下载地址：https://www.python.org/downloads/。 
+    -   Python： https://www.python.org/downloads/。 
 
 .. note:: 
 
@@ -200,7 +200,7 @@ CSV 配置文件示例如下::
 
 请运行以下命令为每个设备生成工厂映像，量产程序同时提供了一个 CSV 示例文件::
 
-    python mfg_gen.py generate samples/sample_config.csmples/sample_values_singlepage_blob.csv Sample 0x3000
+    python mfg_gen.py generate samples/sample_config.csv samples/sample_values_singlepage_blob.csv Sample 0x3000
 
 主 CSV 文件应在 ``file`` 类型下设置一个相对路径，指向运行该程序的当前目录。
 

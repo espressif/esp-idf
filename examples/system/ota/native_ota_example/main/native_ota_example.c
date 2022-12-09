@@ -20,6 +20,7 @@
 #include "nvs_flash.h"
 #include "driver/gpio.h"
 #include "protocol_examples_common.h"
+#include "errno.h"
 
 #if CONFIG_EXAMPLE_CONNECT_WIFI
 #include "esp_wifi.h"
@@ -33,6 +34,8 @@ static const char *TAG = "native_ota_example";
 static char ota_write_data[BUFFSIZE + 1] = { 0 };
 extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
 extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
+
+#define OTA_URL_SIZE 256
 
 static void http_cleanup(esp_http_client_handle_t client)
 {
@@ -93,7 +96,27 @@ static void ota_example_task(void *pvParameter)
     esp_http_client_config_t config = {
         .url = CONFIG_EXAMPLE_FIRMWARE_UPG_URL,
         .cert_pem = (char *)server_cert_pem_start,
+        .timeout_ms = CONFIG_EXAMPLE_OTA_RECV_TIMEOUT,
     };
+
+#ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
+    char url_buf[OTA_URL_SIZE];
+    if (strcmp(config.url, "FROM_STDIN") == 0) {
+        example_configure_stdin_stdout();
+        fgets(url_buf, OTA_URL_SIZE, stdin);
+        int len = strlen(url_buf);
+        url_buf[len - 1] = '\0';
+        config.url = url_buf;
+    } else {
+        ESP_LOGE(TAG, "Configuration mismatch: wrong firmware upgrade image url");
+        abort();
+    }
+#endif
+
+#ifdef CONFIG_EXAMPLE_SKIP_COMMON_NAME_CHECK
+    config.skip_cert_common_name_check = true;
+#endif
+
     esp_http_client_handle_t client = esp_http_client_init(&config);
     if (client == NULL) {
         ESP_LOGE(TAG, "Failed to initialise HTTP connection");
@@ -150,12 +173,13 @@ static void ota_example_task(void *pvParameter)
                             infinite_loop();
                         }
                     }
-
+#ifndef CONFIG_EXAMPLE_SKIP_VERSION_CHECK
                     if (memcmp(new_app_info.version, running_app_info.version, sizeof(new_app_info.version)) == 0) {
                         ESP_LOGW(TAG, "Current running version is the same as a new. We will not continue the update.");
                         http_cleanup(client);
                         infinite_loop();
                     }
+#endif
 
                     image_header_was_checked = true;
 
@@ -180,8 +204,18 @@ static void ota_example_task(void *pvParameter)
             binary_file_length += data_read;
             ESP_LOGD(TAG, "Written image length %d", binary_file_length);
         } else if (data_read == 0) {
-            ESP_LOGI(TAG, "Connection closed");
-            break;
+           /*
+            * As esp_http_client_read never returns negative error code, we rely on
+            * `errno` to check for underlying transport connectivity closure if any
+            */
+            if (errno == ECONNRESET || errno == ENOTCONN) {
+                ESP_LOGE(TAG, "Connection closed, errno = %d", errno);
+                break;
+            }
+            if (esp_http_client_is_complete_data_received(client) == true) {
+                ESP_LOGI(TAG, "Connection closed");
+                break;
+            }
         }
     }
     ESP_LOGI(TAG, "Total Write binary data length: %d", binary_file_length);
@@ -193,6 +227,9 @@ static void ota_example_task(void *pvParameter)
 
     err = esp_ota_end(update_handle);
     if (err != ESP_OK) {
+        if (err == ESP_ERR_OTA_VALIDATE_FAILED) {
+            ESP_LOGE(TAG, "Image validation failed, image is corrupted");
+        }
         ESP_LOGE(TAG, "esp_ota_end failed (%s)!", esp_err_to_name(err));
         http_cleanup(client);
         task_fatal_error();
@@ -278,7 +315,7 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( err );
 
-    esp_netif_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.

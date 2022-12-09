@@ -39,7 +39,7 @@ Most applications use the following workflow when working with ``esp_vfs_fat_`` 
 
 9. Call :cpp:func:`esp_vfs_fat_unregister_path` with the path where the file system is mounted to remove FatFs from VFS, and free the ``FATFS`` structure allocated in Step 1.
 
-The convenience functions ``esp_vfs_fat_sdmmc_mount`` and ``esp_vfs_fat_sdmmc_unmount`` wrap the steps described above and also handle SD card initialization. These two functions are described in the next section. 
+The convenience functions ``esp_vfs_fat_sdmmc_mount``, ``esp_vfs_fat_sdspi_mount`` and ``esp_vfs_fat_sdcard_unmount`` wrap the steps described above and also handle SD card initialization. These two functions are described in the next section.
 
 .. doxygenfunction:: esp_vfs_fat_register
 .. doxygenfunction:: esp_vfs_fat_unregister_path
@@ -48,14 +48,15 @@ The convenience functions ``esp_vfs_fat_sdmmc_mount`` and ``esp_vfs_fat_sdmmc_un
 Using FatFs with VFS and SD cards
 ---------------------------------
 
-The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` defines convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount` and :cpp:func:`esp_vfs_fat_sdmmc_unmount`. These function perform Steps 1–3 and 7–9 respectively and handle SD card initialization, but provide only limited error handling. Developers are encouraged to check its source code and incorporate more advanced features into production applications.
+The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` defines convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount`, :cpp:func:`esp_vfs_fat_sdspi_mount` and :cpp:func:`esp_vfs_fat_sdcard_unmount`. These function perform Steps 1–3 and 7–9 respectively and handle SD card initialization, but provide only limited error handling. Developers are encouraged to check its source code and incorporate more advanced features into production applications.
 
 The convenience function :cpp:func:`esp_vfs_fat_sdmmc_unmount` unmounts the filesystem and releases the resources acquired by :cpp:func:`esp_vfs_fat_sdmmc_mount`.
 
 .. doxygenfunction:: esp_vfs_fat_sdmmc_mount
+.. doxygenfunction:: esp_vfs_fat_sdspi_mount
 .. doxygenstruct:: esp_vfs_fat_mount_config_t
     :members:
-.. doxygenfunction:: esp_vfs_fat_sdmmc_unmount
+.. doxygenfunction:: esp_vfs_fat_sdcard_unmount
 
 
 Using FatFs with VFS in read-only mode

@@ -203,4 +203,4 @@ The various protocomm endpoints provided by **esp_local_ctrl** are listed below:
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_local_ctrl.inc
+.. include-build-file:: inc/esp_local_ctrl.inc

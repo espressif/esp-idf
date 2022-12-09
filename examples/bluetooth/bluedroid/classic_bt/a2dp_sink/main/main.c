@@ -61,7 +61,7 @@ void app_main(void)
         .sample_rate = 44100,
         .bits_per_sample = 16,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
-        .communication_format = I2S_COMM_FORMAT_I2S_MSB,
+        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
         .dma_buf_count = 6,
         .dma_buf_len = 60,
         .intr_alloc_flags = 0,                                                  //Default interrupt priority

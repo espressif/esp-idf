@@ -84,7 +84,7 @@ class TestDependencyManagement(unittest.TestCase):
             args=['--dry-run', 'flash'],
             standalone_mode=False,
         )
-        self.assertEqual(['all', 'flash'], list(result.keys()))
+        self.assertEqual(['flash'], list(result.keys()))
 
     def test_order_only_dependencies(self):
         result = idf.init_cli()(
@@ -105,7 +105,7 @@ class TestDependencyManagement(unittest.TestCase):
             args=['--dry-run', 'clean', 'monitor', 'clean', 'fullclean', 'flash'],
             standalone_mode=False,
         )
-        self.assertEqual(['fullclean', 'clean', 'all', 'flash', 'monitor'], list(result.keys()))
+        self.assertEqual(['fullclean', 'clean', 'flash', 'monitor'], list(result.keys()))
 
     def test_dupplicated_commands_warning(self):
         capturedOutput = StringIO()
@@ -115,8 +115,9 @@ class TestDependencyManagement(unittest.TestCase):
             standalone_mode=False,
         )
         sys.stdout = sys.__stdout__
-        self.assertIn('WARNING: Commands "all", "clean" are found in the list of commands more than once.',
-                      capturedOutput.getvalue())
+        self.assertIn(
+            'WARNING: Commands "all", "clean" are found in the list of commands more than once.',
+            capturedOutput.getvalue())
 
         sys.stdout = capturedOutput
         idf.init_cli()(
@@ -124,8 +125,34 @@ class TestDependencyManagement(unittest.TestCase):
             standalone_mode=False,
         )
         sys.stdout = sys.__stdout__
-        self.assertIn('WARNING: Command "clean" is found in the list of commands more than once.',
-                      capturedOutput.getvalue())
+        self.assertIn(
+            'WARNING: Command "clean" is found in the list of commands more than once.', capturedOutput.getvalue())
+
+
+class TestVerboseFlag(unittest.TestCase):
+    def test_verbose_messages(self):
+        output = subprocess.check_output(
+            [
+                sys.executable,
+                idf_py_path,
+                "-C%s" % current_dir,
+                "-v",
+                "test-verbose",
+            ], env=os.environ).decode('utf-8', 'ignore')
+
+        self.assertIn('Verbose mode on', output)
+
+    def test_verbose_messages_not_shown_by_default(self):
+        output = subprocess.check_output(
+            [
+                sys.executable,
+                idf_py_path,
+                "-C%s" % current_dir,
+                "test-verbose",
+            ], env=os.environ).decode('utf-8', 'ignore')
+
+        self.assertIn('Output from test-verbose', output)
+        self.assertNotIn('Verbose mode on', output)
 
 
 class TestGlobalAndSubcommandParameters(unittest.TestCase):
@@ -145,6 +172,53 @@ class TestGlobalAndSubcommandParameters(unittest.TestCase):
                 args=['--dry-run', '-DAAA=BBB', 'build', '-DAAA=EEE', '-DCCC=EEE'],
                 standalone_mode=False,
             )
+
+
+class TestDeprecations(unittest.TestCase):
+    def test_exit_with_error_for_subcommand(self):
+        try:
+            subprocess.check_output([sys.executable, idf_py_path, "-C%s" % current_dir, "test-2"], env=os.environ)
+        except subprocess.CalledProcessError as e:
+            self.assertIn('Error: Command "test-2" is deprecated and was removed.', e.output.decode('utf-8', 'ignore'))
+
+    def test_exit_with_error_for_option(self):
+        try:
+            subprocess.check_output(
+                [sys.executable, idf_py_path, "-C%s" % current_dir, "--test-5=asdf"], env=os.environ)
+        except subprocess.CalledProcessError as e:
+            self.assertIn(
+                'Error: Option "test_5" is deprecated since v2.0 and was removed in v3.0.',
+                e.output.decode('utf-8', 'ignore'))
+
+    def test_deprecation_messages(self):
+        output = subprocess.check_output(
+            [
+                sys.executable,
+                idf_py_path,
+                "-C%s" % current_dir,
+                "--test-0=a",
+                "--test-1=b",
+                "--test-2=c",
+                "--test-3=d",
+                "test-0",
+                "--test-sub-0=sa",
+                "--test-sub-1=sb",
+                "ta",
+                "test-1",
+            ],
+            env=os.environ).decode('utf-8', 'ignore')
+
+        self.assertIn('Warning: Option "test_sub_1" is deprecated and will be removed in future versions.', output)
+        self.assertIn(
+            'Warning: Command "test-1" is deprecated and will be removed in future versions. '
+            'Please use alternative command.', output)
+        self.assertIn('Warning: Option "test_1" is deprecated and will be removed in future versions.', output)
+        self.assertIn(
+            'Warning: Option "test_2" is deprecated and will be removed in future versions. '
+            'Please update your parameters.', output)
+        self.assertIn('Warning: Option "test_3" is deprecated and will be removed in future versions.', output)
+        self.assertNotIn('"test-0" is deprecated', output)
+        self.assertNotIn('"test_0" is deprecated', output)
 
 
 if __name__ == '__main__':

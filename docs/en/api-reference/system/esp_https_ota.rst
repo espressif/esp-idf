@@ -29,12 +29,14 @@ Application Example
             return ESP_OK;
         }
 
-Signature Verification
-----------------------
+.. only:: esp32
 
-For additional security, signature of OTA firmware images can be verified. For that, refer :ref:`secure-ota-updates`
+    Signature Verification
+    ----------------------
+
+    For additional security, signature of OTA firmware images can be verified. For that, refer :ref:`secure-ota-updates`
 
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_https_ota.inc
+.. include-build-file:: inc/esp_https_ota.inc

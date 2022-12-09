@@ -15,6 +15,10 @@
 #ifndef _ESP_WIFI_DEFAULT_H
 #define _ESP_WIFI_DEFAULT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Attaches wifi station interface to supplied netif
  *
@@ -78,6 +82,18 @@ esp_netif_t* esp_netif_create_default_wifi_ap(void);
 esp_netif_t* esp_netif_create_default_wifi_sta(void);
 
 /**
+ * @brief Creates esp_netif WiFi object based on the custom configuration.
+ *
+ * @attention This API DOES NOT register default handlers!
+ *
+ * @param[in] wifi_if type of wifi interface
+ * @param[in] esp_netif_config inherent esp-netif configuration pointer
+ *
+ * @return pointer to esp-netif instance
+ */
+esp_netif_t* esp_netif_create_wifi(wifi_interface_t wifi_if, esp_netif_inherent_config_t *esp_netif_config);
+
+/**
  * @brief Creates default STA and AP network interfaces for esp-mesh.
  *
  * Both netifs are almost identical to the default station and softAP, but with
@@ -94,5 +110,9 @@ esp_netif_t* esp_netif_create_default_wifi_sta(void);
  * @return ESP_OK on success
  */
 esp_err_t esp_netif_create_default_wifi_mesh_netifs(esp_netif_t **p_netif_sta, esp_netif_t **p_netif_ap);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_ESP_WIFI_DEFAULT_H

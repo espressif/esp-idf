@@ -87,7 +87,7 @@ void spitest_slave_task(void* arg)
         } while ( t.trans_len <= 2 );
         memcpy(recvbuf, &t.trans_len, sizeof(uint32_t));
         *(uint8_t**)(recvbuf+4) = (uint8_t*)txdata.start;
-        ESP_LOGI( SLAVE_TAG, "received: %d", t.trans_len );
+        ESP_LOGD( SLAVE_TAG, "received: %d", t.trans_len );
         xRingbufferSend( ringbuf, recvbuf, 8+(t.trans_len+7)/8, portMAX_DELAY );
     }
 }
@@ -161,19 +161,35 @@ void spitest_slave_print_data(slave_rxdata_t *t, bool print_rxdata)
 
 esp_err_t spitest_check_data(int len, spi_transaction_t *master_t, slave_rxdata_t *slave_t, bool check_master_data, bool check_slave_len, bool check_slave_data)
 {
+    esp_err_t ret = ESP_OK;
+    uint32_t rcv_len = slave_t->len;
     //currently the rcv_len can be in range of [t->length-1, t->length+3]
-    if (check_slave_len) {
-        uint32_t rcv_len = slave_t->len;
-        TEST_ASSERT(rcv_len >= len - 1 && rcv_len <= len + 4);
+    if (check_slave_len &&
+        (rcv_len < len - 1 || rcv_len > len + 4)) {
+            ret = ESP_FAIL;
     }
 
-    if (check_master_data) {
+    if (check_master_data &&
+        memcmp(slave_t->tx_start, master_t->rx_buffer, (len + 7) / 8) != 0 ) {
+            ret = ESP_FAIL;
+    }
+
+    if (check_slave_data &&
+        memcmp(master_t->tx_buffer, slave_t->data, (len + 7) / 8) != 0 ) {
+            ret = ESP_FAIL;
+    }
+    if (ret != ESP_OK) {
+        ESP_LOGI(SLAVE_TAG, "slave_recv_len: %d", rcv_len);
+        spitest_master_print_data(master_t, len);
+        spitest_slave_print_data(slave_t, true);
+        //already failed, try to use the TEST_ASSERT to output the reason...
+        if (check_slave_len) {
+            TEST_ASSERT(rcv_len >= len - 1 && rcv_len <= len + 4);
+        }
         TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_t->tx_start, master_t->rx_buffer, (len + 7) / 8);
-    }
-
-    if (check_slave_data) {
         TEST_ASSERT_EQUAL_HEX8_ARRAY(master_t->tx_buffer, slave_t->data, (len + 7) / 8);
     }
+
     return ESP_OK;
 }
 

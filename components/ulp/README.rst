@@ -1,5 +1,5 @@
-Programming ULP coprocessor using C macros
-==========================================
+Programming ULP coprocessor using C macros (legacy)
+===================================================
 
 In addition to the existing binutils port for the ESP32 ULP coprocessor, it is possible to generate programs for the ULP by embedding assembly-like macros into an ESP32 application. Here is an example how this can be done::
 
@@ -50,6 +50,23 @@ Here is an example of using labels and branches::
     ulp_process_macros_and_load(load_addr, program, &size);
     ulp_run(load_addr);
 
+
+Application Example
+-------------------
+
+Demonstration of entering into deep sleep mode and waking up using several wake up sources: :example:`system/deep_sleep`.
+
+
+API Reference
+-------------
+
+Header File
+^^^^^^^^^^^
+
+.. list::
+
+    :esp32: - :component_file:`ulp/include/esp32/ulp.h`
+    :esp32s2: - :component_file:`ulp/include/esp32s2/ulp.h`
 
 Functions
 ^^^^^^^^^

@@ -89,7 +89,7 @@ ESP32 芯片提供两组硬件定时器，每组包含两个通用硬件定时�
 
 调用 :cpp:func:`timer_group_intr_enable` 使能定时器组的中断程序，调用 :cpp:func:`timer_enable_intr` 使能某定时器的中断程序。调用 :cpp:func:`timer_group_intr_disable` 关闭定时器组的中断程序，调用 :cpp:func:`timer_disable_intr` 关闭某定时器的中断程序。
 
-在中断服务程序（ISR）中处理中断时，需要明确地清除中断状态位。为此，请设置定义在 :component_file:`soc/esp32/include/soc/timer_group_struct.h` 中的 ``TIMERGN.int_clr_timers.tM`` 结构。该结构中 ``N`` 是定时器组别编号 [0, 1]，``M`` 是定时器编号 [0, 1]。例如，要清除定时器组别 0 中定时器 1 的中断状态位，请调用以下命令:: 
+在中断服务程序（ISR）中处理中断时，需要明确地清除中断状态位。为此，请设置定义在 :component_file:`soc/soc/esp32/include/soc/timer_group_struct.h` 中的 ``TIMERGN.int_clr_timers.tM`` 结构。该结构中 ``N`` 是定时器组别编号 [0, 1]，``M`` 是定时器编号 [0, 1]。例如，要清除定时器组别 0 中定时器 1 的中断状态位，请调用以下命令:: 
 
     TIMERG0.int_clr_timers.t1 = 1
 
@@ -104,4 +104,5 @@ ESP32 芯片提供两组硬件定时器，每组包含两个通用硬件定时�
 API 参考
 -------------
 
-.. include:: /_build/inc/timer.inc
+.. include-build-file:: inc/timer.inc
+.. include-build-file:: inc/timer_types.inc

@@ -40,19 +40,20 @@ import textwrap
 import functools
 
 # list files here which should not be parsed
-ignore_files = ['components/mdns/test_afl_fuzz_host/esp32_compat.h',        # used only for host tests (redefines some err codes)
-                'components/tcpip_adapter/include/tcpip_adapter_types.h'    # tcpip_adapter in compatibility mode from 4.1 (errors reused in esp-netif)
+ignore_files = [os.path.join('components', 'mdns', 'test_afl_fuzz_host', 'esp32_compat.h'),
+                # tcpip_adapter in compatibility mode from 4.1 (errors reused in esp-netif)
+                os.path.join('components', 'tcpip_adapter', 'include', 'tcpip_adapter_types.h')
                 ]
 
-# add directories here which should not be parsed
-ignore_dirs = ('examples')
+# add directories here which should not be parsed,
+ignore_dirs = os.path.join('examples')
 
 # macros from here have higher priorities in case of collisions
-priority_headers = ['components/esp_common/include/esp_err.h']
+priority_headers = [os.path.join('components', 'esp_common', 'include', 'esp_err.h')]
 
 # The following headers won't be included. This is useful if they are permanently included from esp_err_to_name.c.in.
-dont_include = ['soc/soc.h',
-                'esp_err.h']
+dont_include = [os.path.join('soc', 'soc.h'),
+                os.path.join('esp_err.h')]
 
 err_dict = collections.defaultdict(list)  # identified errors are stored here; mapped by the error code
 rev_err_dict = dict()  # map of error string to error code

@@ -19,6 +19,7 @@
 #include "eth_phy_regs_struct.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "dm9051";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -83,6 +84,7 @@ typedef struct {
     uint32_t reset_timeout_ms;
     uint32_t autonego_timeout_ms;
     eth_link_t link_status;
+    int reset_gpio_num;
 } phy_dm9051_t;
 
 static esp_err_t dm9051_update_link_duplex_speed(phy_dm9051_t *dm9051)
@@ -92,6 +94,11 @@ static esp_err_t dm9051_update_link_duplex_speed(phy_dm9051_t *dm9051)
     eth_duplex_t duplex = ETH_DUPLEX_HALF;
     bmsr_reg_t bmsr;
     dscsr_reg_t dscsr;
+    // BMSR is a latch low register
+    // after power up, the first latched value must be 0, which means down
+    // to speed up power up link speed, double read this register as a workaround
+    PHY_CHECK(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,
+              "read BMSR failed", err);
     PHY_CHECK(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,
               "read BMSR failed", err);
     eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
@@ -148,6 +155,7 @@ err:
 static esp_err_t dm9051_reset(esp_eth_phy_t *phy)
 {
     phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
+    dm9051->link_status = ETH_LINK_DOWN;
     esp_eth_mediator_t *eth = dm9051->eth;
     dscr_reg_t dscr;
     PHY_CHECK(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_DSCR_REG_ADDR, &(dscr.val)) == ESP_OK,
@@ -174,6 +182,20 @@ static esp_err_t dm9051_reset(esp_eth_phy_t *phy)
     return ESP_OK;
 err:
     return ESP_FAIL;
+}
+
+static esp_err_t dm9051_reset_hw(esp_eth_phy_t *phy)
+{
+    phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
+    // set reset_gpio_num minus zero can skip hardware reset phy chip
+    if (dm9051->reset_gpio_num >= 0) {
+        gpio_pad_select_gpio(dm9051->reset_gpio_num);
+        gpio_set_direction(dm9051->reset_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_set_level(dm9051->reset_gpio_num, 0);
+        ets_delay_us(100); // insert min input assert time
+        gpio_set_level(dm9051->reset_gpio_num, 1);
+    }
+    return ESP_OK;
 }
 
 static esp_err_t dm9051_negotiate(esp_eth_phy_t *phy)
@@ -229,12 +251,22 @@ static esp_err_t dm9051_pwrctl(esp_eth_phy_t *phy, bool enable)
     }
     PHY_CHECK(eth->phy_reg_write(eth, dm9051->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
               "write BMCR failed", err);
-    PHY_CHECK(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
-              "read BMCR failed", err);
     if (!enable) {
+        PHY_CHECK(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
+                  "read BMCR failed", err);
         PHY_CHECK(bmcr.power_down == 1, "power down failed", err);
     } else {
-        PHY_CHECK(bmcr.power_down == 0, "power up failed", err);
+        /* wait for power up complete */
+        uint32_t to = 0;
+        for (to = 0; to < dm9051->reset_timeout_ms / 10; to++) {
+            vTaskDelay(pdMS_TO_TICKS(10));
+            PHY_CHECK(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
+                      "read BMCR failed", err);
+            if (bmcr.power_down == 0) {
+                break;
+            }
+        }
+        PHY_CHECK(to < dm9051->reset_timeout_ms / 10, "power up timeout", err);
     }
     return ESP_OK;
 err:
@@ -269,6 +301,10 @@ static esp_err_t dm9051_init(esp_eth_phy_t *phy)
 {
     phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
     esp_eth_mediator_t *eth = dm9051->eth;
+    // Detect PHY address
+    if (dm9051->addr == ESP_ETH_PHY_ADDR_AUTO) {
+        PHY_CHECK(esp_eth_detect_phy_addr(eth, &dm9051->addr) == ESP_OK, "Detect PHY address failed", err);
+    }
     /* Power on Ethernet PHY */
     PHY_CHECK(dm9051_pwrctl(phy, true) == ESP_OK, "power control failed", err);
     /* Reset Ethernet PHY */
@@ -299,14 +335,15 @@ err:
 esp_eth_phy_t *esp_eth_phy_new_dm9051(const eth_phy_config_t *config)
 {
     PHY_CHECK(config, "can't set phy config to null", err);
-    PHY_CHECK(config->phy_addr == 1, "dm9051's phy address can only set to 1", err);
     phy_dm9051_t *dm9051 = calloc(1, sizeof(phy_dm9051_t));
     PHY_CHECK(dm9051, "calloc dm9051 failed", err);
     dm9051->addr = config->phy_addr;
     dm9051->reset_timeout_ms = config->reset_timeout_ms;
+    dm9051->reset_gpio_num = config->reset_gpio_num;
     dm9051->link_status = ETH_LINK_DOWN;
     dm9051->autonego_timeout_ms = config->autonego_timeout_ms;
     dm9051->parent.reset = dm9051_reset;
+    dm9051->parent.reset_hw = dm9051_reset_hw;
     dm9051->parent.init = dm9051_init;
     dm9051->parent.deinit = dm9051_deinit;
     dm9051->parent.set_mediator = dm9051_set_mediator;

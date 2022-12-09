@@ -22,16 +22,14 @@ import os
 import sys
 import struct
 import argparse
+import ssl
 
 import proto
 
-try:
-    import esp_prov
-
-except ImportError:
-    idf_path = os.environ['IDF_PATH']
-    sys.path.insert(1, idf_path + "/tools/esp_prov")
-    import esp_prov
+# The tools directory is already in the PATH in environment prepared by install.sh which would allow to import
+# esp_prov as file but not as complete module.
+sys.path.insert(0, os.path.join(os.environ['IDF_PATH'], 'tools/esp_prov'))
+import esp_prov  # noqa: E402
 
 
 # Set this to true to allow exceptions to be thrown
@@ -110,7 +108,7 @@ def str_to_prop_value(prop, strval):
 
 
 def prop_is_readonly(prop):
-    return (prop["flags"] & PROP_FLAG_READONLY) is not 0
+    return (prop["flags"] & PROP_FLAG_READONLY) != 0
 
 
 def on_except(err):
@@ -120,13 +118,15 @@ def on_except(err):
         print(err)
 
 
-def get_transport(sel_transport, service_name):
+def get_transport(sel_transport, service_name, check_hostname):
     try:
         tp = None
         if (sel_transport == 'http'):
             example_path = os.environ['IDF_PATH'] + "/examples/protocols/esp_local_ctrl"
             cert_path = example_path + "/main/certs/rootCA.pem"
-            tp = esp_prov.transport.Transport_HTTP(service_name, cert_path)
+            ssl_ctx = ssl.create_default_context(cafile=cert_path)
+            ssl_ctx.check_hostname = check_hostname
+            tp = esp_prov.transport.Transport_HTTP(service_name, ssl_ctx)
         elif (sel_transport == 'ble'):
             tp = esp_prov.transport.Transport_BLE(
                 devname=service_name, service_uuid='0000ffff-0000-1000-8000-00805f9b34fb',
@@ -199,6 +199,11 @@ if __name__ == '__main__':
     parser.add_argument("--name", dest='service_name', type=str,
                         help="BLE Device Name / HTTP Server hostname or IP", default='')
 
+    parser.add_argument("--dont-check-hostname", action="store_true",
+                        # If enabled, the certificate won't be rejected for hostname mismatch.
+                        # This option is hidden because it should be used only for testing purposes.
+                        help=argparse.SUPPRESS)
+
     parser.add_argument("-v", "--verbose", dest='verbose', help="increase output verbosity", action="store_true")
     args = parser.parse_args()
 
@@ -210,7 +215,7 @@ if __name__ == '__main__':
         if args.transport == 'http':
             args.service_name += '.local'
 
-    obj_transport = get_transport(args.transport, args.service_name)
+    obj_transport = get_transport(args.transport, args.service_name, not args.dont_check_hostname)
     if obj_transport is None:
         print("---- Invalid transport ----")
         exit(1)

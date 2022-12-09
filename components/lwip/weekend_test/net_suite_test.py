@@ -1,27 +1,13 @@
 import re
 import os
-import sys
 import socket
 from threading import Thread, Event
 import subprocess
 import time
 from shutil import copyfile
 
-try:
-    import IDF
-    from IDF.IDFDUT import ESP32DUT
-except ImportError:
-    # this is a test case write with tiny-test-fw.
-    # to run test cases outside tiny-test-fw,
-    # we need to set environment variable `TEST_FW_PATH`,
-    # then get and insert `TEST_FW_PATH` to sys path before import FW module
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
-
-import DUT
-import Utility
+from tiny_test_fw import Utility, DUT
+import ttfw_idf
 
 stop_sock_listener = Event()
 stop_io_listener = Event()
@@ -73,7 +59,7 @@ def sock_listener(dut1):
         sock = None
 
 
-@IDF.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
 def lwip_test_suite(env, extra_data):
     global stop_io_listener
     global stop_sock_listener
@@ -84,12 +70,12 @@ def lwip_test_suite(env, extra_data):
       3. Execute ttcn3 test suite
       4. Collect result from ttcn3
     """
-    dut1 = env.get_dut("net_suite", "examples/system/network_tests", dut_class=ESP32DUT)
+    dut1 = env.get_dut("net_suite", "examples/system/network_tests", dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "net_suite.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("net_suite", "{}KB".format(bin_size // 1024))
-    IDF.check_performance("net_suite", bin_size // 1024)
+    ttfw_idf.log_performance("net_suite", "{}KB".format(bin_size // 1024))
+    ttfw_idf.check_performance("net_suite", bin_size // 1024, dut1.TARGET)
     dut1.start_app()
     thread1 = Thread(target=sock_listener, args=(dut1, ))
     thread2 = Thread(target=io_listener, args=(dut1, ))

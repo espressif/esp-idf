@@ -54,7 +54,7 @@ In code, the flow above may look like as follows:
 
         esp_event_loop_handle_t loop_handle;
 
-        esp_event_loop_create(&loop_args, &loop_handle)
+        esp_event_loop_create(&loop_args, &loop_handle);
 
         // 3. Register event handler defined in (1). MY_EVENT_BASE and MY_EVENT_ID specifies a hypothetical
         // event that handler run_on_event should execute on when it gets posted to the loop.
@@ -216,8 +216,8 @@ Other examples which also adopt esp_event library:
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_event.inc
-.. include:: /_build/inc/esp_event_base.inc
+.. include-build-file:: inc/esp_event.inc
+.. include-build-file:: inc/esp_event_base.inc
 
 Related Documents
 -----------------

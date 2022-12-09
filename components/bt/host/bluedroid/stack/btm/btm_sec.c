@@ -36,6 +36,7 @@
 #include "osi/fixed_queue.h"
 #include "osi/alarm.h"
 #include "stack/btm_ble_api.h"
+#include "esp_bt.h"
 
 #if (BT_USE_TRACES == TRUE && BT_TRACE_VERBOSE == FALSE)
 /* needed for sprintf() */
@@ -585,7 +586,7 @@ static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, const char
     if (is_originator) {
         p_srec->orig_mx_chan_id = mx_chan_id;
 #if BTM_SEC_SERVICE_NAME_LEN > 0
-        BCM_STRNCPY_S ((char *)p_srec->orig_service_name, sizeof(p_srec->orig_service_name), p_name, BTM_SEC_SERVICE_NAME_LEN);
+        BCM_STRNCPY_S ((char *)p_srec->orig_service_name, p_name, BTM_SEC_SERVICE_NAME_LEN);
 #endif
         /* clear out the old setting, just in case it exists */
 #if (L2CAP_UCD_INCLUDED == TRUE)
@@ -630,7 +631,7 @@ static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, const char
     } else {
         p_srec->term_mx_chan_id = mx_chan_id;
 #if BTM_SEC_SERVICE_NAME_LEN > 0
-        BCM_STRNCPY_S ((char *)p_srec->term_service_name, sizeof(p_srec->term_service_name), p_name, BTM_SEC_SERVICE_NAME_LEN);
+        BCM_STRNCPY_S ((char *)p_srec->term_service_name, p_name, BTM_SEC_SERVICE_NAME_LEN);
 #endif
         /* clear out the old setting, just in case it exists */
 #if (L2CAP_UCD_INCLUDED == TRUE)
@@ -2271,7 +2272,7 @@ tBTM_STATUS btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle
             }
         } else if (!(BTM_SM4_KNOWN & p_dev_rec->sm4)) {
             /* the remote features are not known yet */
-            BTM_TRACE_DEBUG("%s: (%s) remote features unknown!!sec_flags:0x%02x\n", __FUNCTION__,
+            BTM_TRACE_ERROR("%s: (%s) remote features unknown!!sec_flags:0x%02x\n", __FUNCTION__,
                             (is_originator) ? "initiator" : "acceptor", p_dev_rec->sec_flags);
 
             p_dev_rec->sm4 |= BTM_SM4_REQ_PEND;
@@ -2626,6 +2627,15 @@ void btm_sec_conn_req (UINT8 *bda, UINT8 *dc)
     /* Some device may request a connection before we are done with the HCI_Reset sequence */
     if (!controller_get_interface()->get_is_ready()) {
         BTM_TRACE_ERROR ("Security Manager: connect request when device not ready\n");
+        btsnd_hcic_reject_conn (bda, HCI_ERR_HOST_REJECT_DEVICE);
+        return;
+    }
+
+    /* Check if peer device's and our BD_ADDR is same or not. It
+       should be different to avoid 'Impersonation in the Pin Pairing
+       Protocol' (CVE-2020-26555) vulnerability. */
+    if (memcmp(bda, esp_bt_get_mac(), sizeof (BD_ADDR)) == 0) {
+        BTM_TRACE_ERROR ("Security Manager: connect request from device with same BD_ADDR\n");
         btsnd_hcic_reject_conn (bda, HCI_ERR_HOST_REJECT_DEVICE);
         return;
     }
@@ -3024,7 +3034,7 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
     if (p_dev_rec) {
         old_sec_state = p_dev_rec->sec_state;
         if (status == HCI_SUCCESS) {
-            BCM_STRNCPY_S ((char *)p_dev_rec->sec_bd_name, sizeof (p_dev_rec->sec_bd_name), (char *)p_bd_name, BTM_MAX_REM_BD_NAME_LEN);
+            BCM_STRNCPY_S ((char *)p_dev_rec->sec_bd_name, (char *)p_bd_name, BTM_MAX_REM_BD_NAME_LEN);
             p_dev_rec->sec_flags |= BTM_SEC_NAME_KNOWN;
             BTM_TRACE_EVENT ("setting BTM_SEC_NAME_KNOWN sec_flags:0x%x\n", p_dev_rec->sec_flags);
         } else {
@@ -3520,7 +3530,7 @@ void btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p)
         memcpy (evt_data.cfm_req.bd_addr, p_dev_rec->bd_addr, BD_ADDR_LEN);
         memcpy (evt_data.cfm_req.dev_class, p_dev_rec->dev_class, DEV_CLASS_LEN);
 
-        BCM_STRNCPY_S ((char *)evt_data.cfm_req.bd_name, sizeof(evt_data.cfm_req.bd_name), (char *)p_dev_rec->sec_bd_name, BTM_MAX_REM_BD_NAME_LEN);
+        BCM_STRCPY_S ((char *)evt_data.cfm_req.bd_name,(char *)p_dev_rec->sec_bd_name);
 
         switch (event) {
         case BTM_SP_CFM_REQ_EVT:
@@ -3745,7 +3755,7 @@ void btm_rem_oob_req (UINT8 *p)
             btm_cb.api.p_sp_callback) {
         memcpy (evt_data.bd_addr, p_dev_rec->bd_addr, BD_ADDR_LEN);
         memcpy (evt_data.dev_class, p_dev_rec->dev_class, DEV_CLASS_LEN);
-        BCM_STRNCPY_S((char *)evt_data.bd_name, sizeof(evt_data.bd_name), (char *)p_dev_rec->sec_bd_name, BTM_MAX_REM_BD_NAME_LEN + 1);
+        BCM_STRNCPY_S((char *)evt_data.bd_name, (char *)p_dev_rec->sec_bd_name, BTM_MAX_REM_BD_NAME_LEN);
         evt_data.bd_name[BTM_MAX_REM_BD_NAME_LEN] = 0;
 
         btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_LOCAL_OOB_RSP);
@@ -3931,10 +3941,11 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
                 (BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED))) {
         status = HCI_SUCCESS;
     }
+
     /* Currently we do not notify user if it is a keyboard which connects */
-    /* User probably Disabled the keyboard while it was asleap.  Let her try */
+    /* User probably Disabled the keyboard while it was asleep.  Let her try */
     if (btm_cb.api.p_auth_complete_callback) {
-        /* report the suthentication status */
+        /* report the authentication status */
         if (old_state != BTM_PAIR_STATE_IDLE) {
             (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,
                                                     p_dev_rec->dev_class,
@@ -3944,6 +3955,9 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
 
     p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    btm_sec_update_legacy_auth_state(btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR), BTM_ACL_LEGACY_AUTH_SELF);
+#endif
     /* If this is a bonding procedure can disconnect the link now */
     if (are_bonding) {
         p_dev_rec->security_required &= ~BTM_SEC_OUT_AUTHENTICATE;
@@ -4075,7 +4089,7 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
                 p_dev_rec->sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
             }
         } else {
-            p_dev_rec->sec_flags |= (BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED);
+            p_dev_rec->sec_flags |= BTM_SEC_LE_ENCRYPTED;
         }
     }
 
@@ -4673,12 +4687,24 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
     /* If connection was made to do bonding restore link security if changed */
     btm_restore_mode();
 
+    /* Store the previous state of secure connection as current state. Since
+     * this is the first encounter with the remote device, whatever the remote
+     * device's SC state is, it cannot lower the SC level from this. */
+    p_dev_rec->remote_secure_connection_previous_state = p_dev_rec->remote_supports_secure_connections;
+    if (p_dev_rec->remote_supports_secure_connections) {
+        BTM_TRACE_EVENT ("Remote device supports Secure Connection");
+    } else {
+        BTM_TRACE_EVENT ("Remote device does not support Secure Connection");
+    }
     if (key_type != BTM_LKEY_TYPE_CHANGED_COMB) {
         p_dev_rec->link_key_type = key_type;
     }
 
     p_dev_rec->sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    btm_sec_update_legacy_auth_state(btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR), BTM_ACL_LEGACY_AUTH_NONE);
+#endif
     /*
      * Until this point in time, we do not know if MITM was enabled, hence we
      * add the extended security flag here.
@@ -4711,7 +4737,8 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
                              __FUNCTION__, p_dev_rec->link_key_type);
             (*btm_cb.api.p_link_key_callback) (p_bda, p_dev_rec->dev_class,
                                                p_dev_rec->sec_bd_name,
-                                               p_link_key, p_dev_rec->link_key_type);
+                                               p_link_key, p_dev_rec->link_key_type,
+                                               p_dev_rec->remote_supports_secure_connections);
         }
     } else {
         if ((p_dev_rec->link_key_type == BTM_LKEY_TYPE_UNAUTH_COMB_P_256) ||
@@ -4768,7 +4795,8 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
             } else {
                 (*btm_cb.api.p_link_key_callback) (p_bda, p_dev_rec->dev_class,
                                                    p_dev_rec->sec_bd_name,
-                                                   p_link_key, p_dev_rec->link_key_type);
+                                                   p_link_key, p_dev_rec->link_key_type,
+                                                   p_dev_rec->remote_supports_secure_connections);
             }
         }
     }
@@ -5561,7 +5589,9 @@ static void btm_send_link_key_notif (tBTM_SEC_DEV_REC *p_dev_rec)
     if (btm_cb.api.p_link_key_callback) {
         (*btm_cb.api.p_link_key_callback) (p_dev_rec->bd_addr, p_dev_rec->dev_class,
                                            p_dev_rec->sec_bd_name, p_dev_rec->link_key,
-                                           p_dev_rec->link_key_type);
+                                           p_dev_rec->link_key_type,
+                                           p_dev_rec->remote_supports_secure_connections);
+
     }
 }
 #endif  ///SMP_INCLUDED == TRUE
@@ -5919,6 +5949,29 @@ void btm_sec_set_peer_sec_caps(tACL_CONN *p_acl_cb, tBTM_SEC_DEV_REC *p_dev_rec)
     BTM_TRACE_API("%s: sm4: 0x%02x, rmt_support_for_secure_connections %d\n", __FUNCTION__,
                   p_dev_rec->sm4, p_dev_rec->remote_supports_secure_connections);
 
+    /* Store previous state of remote device to check if peer device downgraded
+     * it's secure connection state. */
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    if (p_dev_rec->remote_supports_secure_connections >= p_dev_rec->remote_secure_connection_previous_state) {
+        p_dev_rec->remote_secure_connection_previous_state = p_dev_rec->remote_supports_secure_connections;
+    } else {
+        BTM_TRACE_ERROR("Remote Device downgraded security from SC, deleting Link Key");
+
+        /* Mark in ACL packet that secure connection is downgraded. */
+        p_acl_cb->sc_downgrade = 1;
+        p_dev_rec->remote_secure_connection_previous_state = 0;
+
+        /* As peer device downgraded it's security, peer device is a suspicious
+         * device. Hence remove pairing information by removing link key
+         * information. */
+        memset(p_dev_rec->link_key, 0, LINK_KEY_LEN);
+        p_dev_rec->sec_flags &= ~(BTM_SEC_AUTHORIZED | BTM_SEC_AUTHENTICATED
+                                | BTM_SEC_ENCRYPTED | BTM_SEC_NAME_KNOWN
+                                | BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LINK_KEY_AUTHED
+                                | BTM_SEC_ROLE_SWITCHED | BTM_SEC_16_DIGIT_PIN_AUTHED);
+        return;
+    }
+#endif
 
     if (p_dev_rec->remote_features_needed) {
         BTM_TRACE_EVENT("%s: Now device in SC Only mode, waiting for peer remote features!\n",
@@ -6184,5 +6237,98 @@ static BOOLEAN btm_sec_is_master(tBTM_SEC_DEV_REC *p_dev_rec)
     tACL_CONN *p = btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR);
     return (p && (p->link_role == BTM_ROLE_MASTER));
 }
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         btm_sec_legacy_authentication_mutual
+**
+** Description      This function is called when legacy authentication is used
+**                  and only remote device has completed the authentication
+**
+** Returns          TRUE if aunthentication command sent successfully
+**
+*******************************************************************************/
+BOOLEAN btm_sec_legacy_authentication_mutual (tBTM_SEC_DEV_REC *p_dev_rec)
+{
+    return (btm_sec_start_authentication (p_dev_rec));
+}
+
+/*******************************************************************************
+**
+** Function         btm_sec_update_legacy_auth_state
+**
+** Description      This function updates the legacy authentication state
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_sec_update_legacy_auth_state(tACL_CONN *p_acl_cb, UINT8 legacy_auth_state)
+{
+    if (p_acl_cb) {
+        tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (p_acl_cb->hci_handle);
+        if (p_dev_rec) {
+            if ((BTM_BothEndsSupportSecureConnections(p_dev_rec->bd_addr) == 0) &&
+                 (legacy_auth_state != BTM_ACL_LEGACY_AUTH_NONE)) {
+                p_acl_cb->legacy_auth_state |= legacy_auth_state;
+            } else {
+                p_acl_cb->legacy_auth_state = BTM_ACL_LEGACY_AUTH_NONE;
+            }
+        }
+    }
+}
+
+/*******************************************************************************
+**
+** Function         btm_sec_handle_remote_legacy_auth_cmp
+**
+** Description      This function updates the legacy authneticaiton state
+**                  to indicate that remote device has completed the authentication
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_sec_handle_remote_legacy_auth_cmp(UINT16 handle)
+{
+    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (handle);
+    tACL_CONN         *p_acl_cb  = btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR);
+    btm_sec_update_legacy_auth_state(p_acl_cb, BTM_ACL_LEGACY_AUTH_REMOTE);
+}
+#endif /// (CLASSIC_BT_INCLUDED == TRUE)
 #endif  ///SMP_INCLUDED == TRUE
 
+/******************************************************************************
+ **
+ ** Function         btm_sec_dev_authorization
+ **
+ ** Description      This function is used to authorize a specified device(BLE)
+ **
+ ******************************************************************************
+ */
+#if (BLE_INCLUDED == TRUE)
+BOOLEAN btm_sec_dev_authorization(BD_ADDR bd_addr, BOOLEAN authorized)
+{
+#if (SMP_INCLUDED == TRUE)
+    UINT8  sec_flag = 0;
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bd_addr);
+    if (p_dev_rec) {
+        sec_flag = (UINT8)(p_dev_rec->sec_flags >> 8);
+        if (!(sec_flag & BTM_SEC_LINK_KEY_AUTHED)) {
+            BTM_TRACE_ERROR("Authorized should after successful Authentication(MITM protection)\n");
+            return FALSE;
+        }
+
+        if (authorized) {
+            p_dev_rec->sec_flags |= BTM_SEC_LE_AUTHORIZATION;
+        } else {
+            p_dev_rec->sec_flags &= ~(BTM_SEC_LE_AUTHORIZATION);
+        }
+    } else {
+        BTM_TRACE_ERROR("%s, can't find device\n", __func__);
+        return FALSE;
+    }
+    return TRUE;
+#endif  ///SMP_INCLUDED == TRUE
+    return FALSE;
+}
+#endif  /// BLE_INCLUDE == TRUE

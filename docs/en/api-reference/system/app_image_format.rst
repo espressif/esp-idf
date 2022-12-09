@@ -4,7 +4,7 @@ App Image Format
 An application image consists of the following structures:
 
 1. The :cpp:type:`esp_image_header_t` structure describes the mode of SPI flash and the count of memory segments.
-2. The :cpp:type:`esp_image_segment_header_t` structure describes each segment, its length, and its location in ESP32's memory, followed by the data with a length of ``data_len``. The data offset for each segment in the image is calculated in the following way:
+2. The :cpp:type:`esp_image_segment_header_t` structure describes each segment, its length, and its location in {IDF_TARGET_NAME}'s memory, followed by the data with a length of ``data_len``. The data offset for each segment in the image is calculated in the following way:
 
  * offset for 0 Segment = sizeof(:cpp:type:`esp_image_header_t`) + sizeof(:cpp:type:`esp_image_segment_header_t`).
  * offset for 1 Segment = offset for 0 Segment + length of 0 Segment + sizeof(:cpp:type:`esp_image_segment_header_t`).
@@ -17,7 +17,7 @@ To get the list of your image segments, please run the following command:
 
 ::
 
-   esptool.py --chip esp32 image_info build/app.bin
+   esptool.py --chip {IDF_TARGET_PATH_NAME} image_info build/app.bin
 
 ::
 
@@ -58,11 +58,11 @@ You can also see the information on segments in the IDF logs while your applicat
 	I (971) esp_image: segment 11: paddr=0x000a9b74 vaddr=0x50000004 size=0x00000 ( 0) load
 	I (1012) esp_image: segment 12: paddr=0x000a9b7c vaddr=0x50000004 size=0x00000 ( 0) load
 
-For more details on the type of memory segments and their address ranges, see the ESP32 Technical Reference Manual, Section 1.3.2 *Embedded Memory*.
- 
+For more details on the type of memory segments and their address ranges, see the {IDF_TARGET_NAME} Technical Reference Manual, Section 1.3.2 *Embedded Memory*.
+
 3. The image has a single checksum byte after the last segment. This byte is written on a sixteen byte padded boundary, so the application image might need padding.
 4. If the ``hash_appended`` field from :cpp:type:`esp_image_header_t` is set then a SHA256 checksum will be appended. The value of SHA256 is calculated on the range from first byte and up to this field. The length of this field is 32 bytes.
-5. If the options :ref:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT` or :ref:`CONFIG_SECURE_BOOT_ENABLED` are enabled then the application image will have additional 68 bytes for an ECDSA signature, which includes:
+5. If the options :ref:`CONFIG_SECURE_SIGNED_APPS_SCHEME` is set to ECDSA then the application image will have additional 68 bytes for an ECDSA signature, which includes:
 
  * version word (4 bytes),
  * signature data (64 bytes).
@@ -103,6 +103,6 @@ To guarantee that the custom structure is located in the image even if it is not
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_app_format.inc
+.. include-build-file:: inc/esp_app_format.inc
 
 

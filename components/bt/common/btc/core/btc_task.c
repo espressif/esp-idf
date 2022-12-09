@@ -57,6 +57,7 @@
 #endif
 
 #if CONFIG_BLE_MESH
+#include "btc_ble_mesh_ble.h"
 #include "btc_ble_mesh_prov.h"
 #include "btc_ble_mesh_health_model.h"
 #include "btc_ble_mesh_config_model.h"
@@ -68,7 +69,7 @@
 
 #define BTC_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
 #define BTC_TASK_STACK_SIZE             (BT_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
-#define BTC_TASK_NAME                   "btcT"
+#define BTC_TASK_NAME                   "BTC_TASK"
 #define BTC_TASK_PRIO                   (BT_TASK_MAX_PRIORITIES - 6)
 
 osi_thread_t *btc_thread;
@@ -93,9 +94,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #endif  ///BLE_INCLUDED == TRUE
     [BTC_PID_BLE_HID]     = {NULL, NULL},
     [BTC_PID_SPPLIKE]     = {NULL, NULL},
-#if (GATTS_INCLUDED == TRUE)
+#if (BLUFI_INCLUDED == TRUE)
     [BTC_PID_BLUFI]       = {btc_blufi_call_handler,      btc_blufi_cb_handler    },
-#endif  ///GATTS_INCLUDED == TRUE
+#endif  ///BLUFI_INCLUDED == TRUE
     [BTC_PID_DM_SEC]      = {NULL,                        btc_dm_sec_cb_handler   },
 #endif
     [BTC_PID_ALARM]       = {btc_alarm_handler,           NULL                    },
@@ -124,18 +125,43 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #if CONFIG_BLE_MESH
     [BTC_PID_PROV]              = {btc_ble_mesh_prov_call_handler,              btc_ble_mesh_prov_cb_handler             },
     [BTC_PID_MODEL]             = {btc_ble_mesh_model_call_handler,             btc_ble_mesh_model_cb_handler            },
+#if CONFIG_BLE_MESH_HEALTH_CLI
     [BTC_PID_HEALTH_CLIENT]     = {btc_ble_mesh_health_client_call_handler,     btc_ble_mesh_health_client_cb_handler    },
+#endif /* CONFIG_BLE_MESH_HEALTH_CLI */
+#if CONFIG_BLE_MESH_HEALTH_SRV
     [BTC_PID_HEALTH_SERVER]     = {btc_ble_mesh_health_server_call_handler,     btc_ble_mesh_health_server_cb_handler    },
+#endif /* CONFIG_BLE_MESH_HEALTH_SRV */
+#if CONFIG_BLE_MESH_CFG_CLI
     [BTC_PID_CONFIG_CLIENT]     = {btc_ble_mesh_config_client_call_handler,     btc_ble_mesh_config_client_cb_handler    },
+#endif /* CONFIG_BLE_MESH_CFG_CLI */
     [BTC_PID_CONFIG_SERVER]     = {NULL,                                        btc_ble_mesh_config_server_cb_handler    },
+#if CONFIG_BLE_MESH_GENERIC_CLIENT
     [BTC_PID_GENERIC_CLIENT]    = {btc_ble_mesh_generic_client_call_handler,    btc_ble_mesh_generic_client_cb_handler   },
+#endif /* CONFIG_BLE_MESH_GENERIC_CLIENT */
+#if CONFIG_BLE_MESH_LIGHTING_CLIENT
     [BTC_PID_LIGHTING_CLIENT]   = {btc_ble_mesh_lighting_client_call_handler,   btc_ble_mesh_lighting_client_cb_handler  },
+#endif /* CONFIG_BLE_MESH_LIGHTING_CLIENT */
+#if CONFIG_BLE_MESH_SENSOR_CLI
     [BTC_PID_SENSOR_CLIENT]     = {btc_ble_mesh_sensor_client_call_handler,     btc_ble_mesh_sensor_client_cb_handler    },
+#endif /* CONFIG_BLE_MESH_SENSOR_CLI */
+#if CONFIG_BLE_MESH_TIME_SCENE_CLIENT
     [BTC_PID_TIME_SCENE_CLIENT] = {btc_ble_mesh_time_scene_client_call_handler, btc_ble_mesh_time_scene_client_cb_handler},
+#endif /* CONFIG_BLE_MESH_TIME_SCENE_CLIENT */
+#if CONFIG_BLE_MESH_GENERIC_SERVER
     [BTC_PID_GENERIC_SERVER]    = {NULL,                                        btc_ble_mesh_generic_server_cb_handler   },
+#endif /* CONFIG_BLE_MESH_GENERIC_SERVER */
+#if CONFIG_BLE_MESH_LIGHTING_SERVER
     [BTC_PID_LIGHTING_SERVER]   = {NULL,                                        btc_ble_mesh_lighting_server_cb_handler  },
+#endif /* CONFIG_BLE_MESH_LIGHTING_SERVER */
+#if CONFIG_BLE_MESH_SENSOR_SERVER
     [BTC_PID_SENSOR_SERVER]     = {NULL,                                        btc_ble_mesh_sensor_server_cb_handler    },
+#endif /* CONFIG_BLE_MESH_SENSOR_SERVER */
+#if CONFIG_BLE_MESH_TIME_SCENE_SERVER
     [BTC_PID_TIME_SCENE_SERVER] = {NULL,                                        btc_ble_mesh_time_scene_server_cb_handler},
+#endif /* CONFIG_BLE_MESH_TIME_SCENE_SERVER */
+#if CONFIG_BLE_MESH_BLE_COEX_SUPPORT
+    [BTC_PID_BLE_MESH_BLE_COEX] = {btc_ble_mesh_ble_call_handler,               btc_ble_mesh_ble_cb_handler              },
+#endif /* CONFIG_BLE_MESH_BLE_COEX_SUPPORT */
 #endif /* #if CONFIG_BLE_MESH */
 };
 
@@ -185,6 +211,15 @@ static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
     return BT_STATUS_SUCCESS;
 }
 
+/**
+ * transfer an message to another module in the different task.
+ * @param  msg       message
+ * @param  arg       paramter
+ * @param  arg_len   length of paramter
+ * @param  copy_func deep copy function
+ * @return           BT_STATUS_SUCCESS: success
+ *                   others: fail
+ */
 bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func)
 {
     btc_msg_t lmsg;
@@ -213,6 +248,34 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
     return btc_task_post(&lmsg, OSI_THREAD_MAX_TIMEOUT);
 
 }
+
+/**
+ * transfer an message to another module in tha same task.
+ * @param  msg       message
+ * @param  arg       paramter
+ * @return           BT_STATUS_SUCCESS: success
+ *                   others: fail
+ */
+bt_status_t btc_inter_profile_call(btc_msg_t *msg, void *arg)
+{
+    if (msg == NULL) {
+        return BT_STATUS_PARM_INVALID;
+    }
+
+    msg->arg = arg;
+    switch (msg->sig) {
+    case BTC_SIG_API_CALL:
+        profile_tab[msg->pid].btc_call(msg);
+        break;
+    case BTC_SIG_API_CB:
+        profile_tab[msg->pid].btc_cb(msg);
+        break;
+    default:
+        break;
+    }
+    return BT_STATUS_SUCCESS;
+}
+
 
 #if BTC_DYNAMIC_MEMORY
 
@@ -244,11 +307,12 @@ static void btc_deinit_mem(void) {
         osi_free(btc_creat_tab_env_ptr);
         btc_creat_tab_env_ptr = NULL;
     }
-
+#if (BLUFI_INCLUDED == TRUE)
     if (blufi_env_ptr) {
         osi_free(blufi_env_ptr);
         blufi_env_ptr = NULL;
     }
+#endif
 #endif
 
 #if BTC_HF_CLIENT_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
@@ -298,11 +362,12 @@ static bt_status_t btc_init_mem(void) {
         goto error_exit;
     }
     memset((void *)btc_creat_tab_env_ptr, 0, sizeof(esp_btc_creat_tab_t));
-
+#if (BLUFI_INCLUDED == TRUE)
     if ((blufi_env_ptr = (tBLUFI_ENV *)osi_malloc(sizeof(tBLUFI_ENV))) == NULL) {
         goto error_exit;
     }
     memset((void *)blufi_env_ptr, 0, sizeof(tBLUFI_ENV));
+#endif
 #endif
 
 #if BTC_HF_CLIENT_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
@@ -331,9 +396,9 @@ error_exit:;
 }
 #endif ///BTC_DYNAMIC_MEMORY
 
-int btc_init(void)
+bt_status_t btc_init(void)
 {
-    btc_thread = osi_thread_create("BTC_TASK", BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE, 2);
+    btc_thread = osi_thread_create(BTC_TASK_NAME, BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE, 2);
     if (btc_thread == NULL) {
         return BT_STATUS_NOMEM;
     }
@@ -376,5 +441,10 @@ bool btc_check_queue_is_congest(void)
     }
 
     return false;
+}
+
+int get_btc_work_queue_size(void)
+{
+    return osi_thread_queue_wait_size(btc_thread, 0);
 }
 

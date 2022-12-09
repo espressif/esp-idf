@@ -1,32 +1,16 @@
 import re
 import os
-import sys
 import socket
 import time
 import struct
 import dpkt
 import dpkt.dns
 from threading import Thread, Event
+import subprocess
 
+from tiny_test_fw import DUT
+import ttfw_idf
 
-# this is a test case write with tiny-test-fw.
-# to run test cases outside tiny-test-fw,
-# we need to set environment variable `TEST_FW_PATH`,
-# then get and insert `TEST_FW_PATH` to sys path before import FW module
-
-try:
-    import IDF
-    from IDF.IDFDUT import ESP32DUT
-except ImportError:
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
-
-import DUT
-
-# g_run_server = True
-# g_done = False
 stop_mdns_server = Event()
 esp_answered = Event()
 
@@ -103,7 +87,7 @@ def mdns_server(esp_host):
             continue
 
 
-@IDF.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
 def test_examples_protocol_mdns(env, extra_data):
     global stop_mdns_server
     """
@@ -113,12 +97,12 @@ def test_examples_protocol_mdns(env, extra_data):
       3. check the mdns name is accessible
       4. check DUT output if mdns advertized host is resolved
     """
-    dut1 = env.get_dut("mdns-test", "examples/protocols/mdns", dut_class=ESP32DUT)
+    dut1 = env.get_dut("mdns-test", "examples/protocols/mdns", dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "mdns-test.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("mdns-test_bin_size", "{}KB".format(bin_size // 1024))
-    IDF.check_performance("mdns-test_bin_size", bin_size // 1024)
+    ttfw_idf.log_performance("mdns-test_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.check_performance("mdns-test_bin_size", bin_size // 1024, dut1.TARGET)
     # 1. start mdns application
     dut1.start_app()
     # 2. get the dut host name (and IP address)
@@ -127,19 +111,27 @@ def test_examples_protocol_mdns(env, extra_data):
     thread1 = Thread(target=mdns_server, args=(specific_host,))
     thread1.start()
     try:
-        dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)
+        ip_address = dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)[0]
+        print("Connected to AP with IP: {}".format(ip_address))
     except DUT.ExpectTimeout:
         stop_mdns_server.set()
         thread1.join()
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    # 3. check the mdns name is accessible
-    if not esp_answered.wait(timeout=30):
-        raise ValueError('Test has failed: did not receive mdns answer within timeout')
-    # 4. check DUT output if mdns advertized host is resolved
     try:
+        # 3. check the mdns name is accessible
+        if not esp_answered.wait(timeout=30):
+            raise ValueError('Test has failed: did not receive mdns answer within timeout')
+        # 4. check DUT output if mdns advertized host is resolved
         dut1.expect(re.compile(r"mdns-test: Query A: tinytester.local resolved to: 127.0.0.1"), timeout=30)
         dut1.expect(re.compile(r"mdns-test: gethostbyname: tinytester-lwip.local resolved to: 127.0.0.1"), timeout=30)
         dut1.expect(re.compile(r"mdns-test: getaddrinfo: tinytester-lwip.local resolved to: 127.0.0.1"), timeout=30)
+        # 5. check the DUT answers to `dig` command
+        dig_output = subprocess.check_output(['dig', '+short', '-p', '5353', '@224.0.0.251',
+                                              '{}.local'.format(specific_host)])
+        print('Resolving {} using "dig" succeeded with:\n{}'.format(specific_host, dig_output))
+        if not ip_address.encode('utf-8') in dig_output:
+            raise ValueError("Test has failed: Incorrectly resolved DUT hostname using dig"
+                             "Output should've contained DUT's IP address:{}".format(ip_address))
     finally:
         stop_mdns_server.set()
         thread1.join()

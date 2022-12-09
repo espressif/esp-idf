@@ -62,24 +62,6 @@ esp_err_t wifi_prov_mgr_wifi_scan_start(bool blocking, bool passive,
 bool wifi_prov_mgr_wifi_scan_finished(void);
 
 /**
- * @brief   Get the count of results in the scan list
- *
- * @return
- *  - count  : Number of Wi-Fi Access Points detected while scanning
- */
-uint16_t wifi_prov_mgr_wifi_scan_result_count(void);
-
-/**
- * @brief   Get AP record for a particular index in the scan list result
- *
- * @param[out] index  Index of the result to fetch
- *
- * @return
- *  - result : Pointer to Access Point record
- */
-const wifi_ap_record_t *wifi_prov_mgr_wifi_scan_result(uint16_t index);
-
-/**
  * @brief   Get protocomm handlers for wifi_config provisioning endpoint
  *
  * @param[out] ptr   pointer to structure to be set

@@ -212,7 +212,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 
 static void initialise_wifi(void)
 {
-    esp_netif_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
@@ -371,7 +371,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
             .channel = 0,
             .show_hidden = false
         };
-        ESP_ERROR_CHECK(esp_wifi_scan_start(&scanConf, true));
+        esp_wifi_scan_start(&scanConf, true);
         break;
     }
     case ESP_BLUFI_EVENT_RECV_CUSTOM_DATA:

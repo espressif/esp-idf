@@ -883,6 +883,9 @@ void l2c_init (void)
     if (l2cb.rcv_pending_q == NULL) {
         L2CAP_TRACE_ERROR("%s unable to allocate memory for link layer control block", __func__);
     }
+#if BLE_INCLUDED == TRUE
+    l2ble_update_att_acl_pkt_num(L2CA_BUFF_INI, NULL);
+#endif
 }
 
 void l2c_free(void)
@@ -891,6 +894,9 @@ void l2c_free(void)
     l2cb.rcv_pending_q = NULL;
 #if L2C_DYNAMIC_MEMORY
     FREE_AND_RESET(l2c_cb_ptr);
+#endif
+#if BLE_INCLUDED == TRUE
+    l2ble_update_att_acl_pkt_num(L2CA_BUFF_DEINIT, NULL);
 #endif
 }
 

@@ -20,6 +20,7 @@
 #include "sha1.h"
 #include "aes.h"
 #include "esp_wpa.h"
+#include "ccmp.h"
 
 /* 
  * This structure is used to set the cyrpto callback function for station to connect when in security mode.
@@ -48,7 +49,10 @@ const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs = {
     .aes_encrypt_deinit = (esp_aes_encrypt_deinit_t)aes_encrypt_deinit,
     .aes_decrypt = (esp_aes_decrypt_t)aes_decrypt,
     .aes_decrypt_init = (esp_aes_decrypt_init_t)aes_decrypt_init,
-    .aes_decrypt_deinit = (esp_aes_decrypt_deinit_t)aes_decrypt_deinit
+    .aes_decrypt_deinit = (esp_aes_decrypt_deinit_t)aes_decrypt_deinit,
+    .omac1_aes_128 = (esp_omac1_aes_128_t)omac1_aes_128,
+    .ccmp_decrypt = (esp_ccmp_decrypt_t)ccmp_decrypt,
+    .ccmp_encrypt = (esp_ccmp_encrypt_t)ccmp_encrypt
 };
 
 const mesh_crypto_funcs_t g_wifi_default_mesh_crypto_funcs = {

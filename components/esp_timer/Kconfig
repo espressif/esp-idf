@@ -1,0 +1,54 @@
+menu "High resolution timer (esp_timer)"
+
+    config ESP_TIMER_PROFILING
+        bool "Enable esp_timer profiling features"
+        default n
+        help
+            If enabled, esp_timer_dump will dump information such as number of times the timer was started,
+            number of times the timer has triggered, and the total time it took for the callback to run.
+            This option has some effect on timer performance and the amount of memory used for timer
+            storage, and should only be used for debugging/testing purposes.
+
+    config ESP_TIMER_TASK_STACK_SIZE
+        int "High-resolution timer task stack size"
+        default 3584
+        range 2048 65536
+        help
+            Configure the stack size of "timer_task" task. This task is used
+            to dispatch callbacks of timers created using ets_timer and esp_timer
+            APIs. If you are seing stack overflow errors in timer task, increase
+            this value.
+
+            Note that this is not the same as FreeRTOS timer task. To configure
+            FreeRTOS timer task size, see "FreeRTOS timer task stack size" option
+            in "FreeRTOS" menu.
+
+    choice ESP_TIMER_IMPL
+        prompt "Hardware timer to use for esp_timer"
+        default ESP_TIMER_IMPL_TG0_LAC if IDF_TARGET_ESP32
+        default ESP_TIMER_IMPL_SYSTIMER if IDF_TARGET_ESP32S2
+        help
+            esp_timer APIs can be implemented using different hardware timers.
+
+            - "FRC2 (legacy)" implementation has been used in ESP-IDF v2.x - v4.1.
+
+            - "LAC timer of Timer Group 0" implementation is simpler, and has smaller
+              run time overhead because software handling of timer overflow is not needed.
+
+            - "SYSTIMER" implementation is similar to "LAC timer of Timer Group 0" but for ESP32-S2 chip.
+
+        config ESP_TIMER_IMPL_FRC2
+            bool "FRC2 (legacy) timer"
+            depends on IDF_TARGET_ESP32
+
+        config ESP_TIMER_IMPL_TG0_LAC
+            bool "LAC timer of Timer Group 0"
+            depends on IDF_TARGET_ESP32
+
+        config ESP_TIMER_IMPL_SYSTIMER
+            bool "SYSTIMER"
+            depends on IDF_TARGET_ESP32S2
+
+    endchoice
+
+endmenu # esp_timer

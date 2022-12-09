@@ -18,18 +18,18 @@ static char* check_calloc(int size)
 
 TEST_CASE("Check for leaks (no leak)", "[heap]")
 {
-    char *arr = check_calloc(7000);
+    char *arr = check_calloc(1000);
     free(arr);
 }
 
 TEST_CASE("Check for leaks (leak)", "[heap][ignore]")
 {
-    check_calloc(7000);
+    check_calloc(1000);
 }
 
 TEST_CASE("Not check for leaks", "[heap][leaks]")
 {
-    check_calloc(7000);
+    check_calloc(1000);
 }
 
 TEST_CASE("Set a leak level = 7016", "[heap][leaks=7016]")
@@ -39,7 +39,7 @@ TEST_CASE("Set a leak level = 7016", "[heap][leaks=7016]")
 
 static void test_fn(void)
 {
-    check_calloc(7000);
+    check_calloc(1000);
 }
 
 TEST_CASE_MULTIPLE_STAGES("Not check for leaks in MULTIPLE_STAGES mode", "[heap][leaks]", test_fn, test_fn, test_fn);
@@ -48,13 +48,13 @@ TEST_CASE_MULTIPLE_STAGES("Check for leaks in MULTIPLE_STAGES mode (leak)", "[he
 
 static void test_fn2(void)
 {
-    check_calloc(7000);
+    check_calloc(1000);
     esp_restart();
 }
 
 static void test_fn3(void)
 {
-    check_calloc(7000);
+    check_calloc(1000);
 }
 
-TEST_CASE_MULTIPLE_STAGES_ESP32("Check for leaks in MULTIPLE_STAGES mode (manual reset)", "[heap][leaks][reset=SW_CPU_RESET, SW_CPU_RESET]", test_fn2, test_fn2, test_fn3);
+TEST_CASE_MULTIPLE_STAGES("Check for leaks in MULTIPLE_STAGES mode (manual reset)", "[heap][leaks][reset=SW_CPU_RESET, SW_CPU_RESET]", test_fn2, test_fn2, test_fn3);

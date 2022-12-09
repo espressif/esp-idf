@@ -1,0 +1,570 @@
+menu "ESP32S2-specific"
+    # TODO: this component simply shouldn't be included
+    # in the build at the CMake level, but this is currently
+    # not working so we just hide all items here
+    visible if IDF_TARGET_ESP32S2
+
+    choice ESP32S2_DEFAULT_CPU_FREQ_MHZ
+        prompt "CPU frequency"
+        default ESP32S2_DEFAULT_CPU_FREQ_160 if !IDF_ENV_FPGA
+        default ESP32S2_DEFAULT_CPU_FREQ_FPGA if IDF_ENV_FPGA
+        help
+            CPU frequency to be set on application startup.
+
+        config ESP32S2_DEFAULT_CPU_FREQ_FPGA
+            depends on IDF_ENV_FPGA
+            bool "FPGA"
+        config ESP32S2_DEFAULT_CPU_FREQ_80
+            bool "80 MHz"
+        config ESP32S2_DEFAULT_CPU_FREQ_160
+            bool "160 MHz"
+        config ESP32S2_DEFAULT_CPU_FREQ_240
+            bool "240 MHz"
+    endchoice
+
+    config ESP32S2_DEFAULT_CPU_FREQ_MHZ
+        int
+        default 40 if IDF_ENV_FPGA
+        default 80 if ESP32S2_DEFAULT_CPU_FREQ_80
+        default 160 if ESP32S2_DEFAULT_CPU_FREQ_160
+        default 240 if ESP32S2_DEFAULT_CPU_FREQ_240
+
+    menu "Memory protection"
+
+        config ESP32S2_MEMPROT_FEATURE
+            bool "Enable memory protection"
+            default "y"
+            help
+                If enabled, permission control module watches all memory access and fires panic handler
+                if permission violation is detected. This feature automatically splits
+                memory into data and instruction segments and sets Read/Execute permissions
+                for instruction part (below splitting address) and Read/Write permissions
+                for data part (above splitting address). The memory protection is effective
+                on all access through IRAM0 and DRAM0 buses.
+
+        config ESP32S2_MEMPROT_FEATURE_LOCK
+            depends on ESP32S2_MEMPROT_FEATURE
+            bool "Lock memory protection settings"
+            default "y"
+            help
+                Once locked, memory protection settings cannot be changed anymore.
+                The lock is reset only on the chip startup.
+
+    endmenu  # Memory protection
+
+    menu "Cache config"
+
+        choice ESP32S2_INSTRUCTION_CACHE_SIZE
+            prompt "Instruction cache size"
+            default ESP32S2_INSTRUCTION_CACHE_8KB
+            help
+                Instruction cache size to be set on application startup.
+                If you use 8KB instruction cache rather than 16KB instruction cache,
+                then the other 8KB will be added to the heap.
+
+            config ESP32S2_INSTRUCTION_CACHE_8KB
+                bool "8KB"
+            config ESP32S2_INSTRUCTION_CACHE_16KB
+                bool "16KB"
+        endchoice
+
+        choice ESP32S2_INSTRUCTION_CACHE_LINE_SIZE
+            prompt "Instruction cache line size"
+            default ESP32S2_INSTRUCTION_CACHE_LINE_32B
+            help
+                Instruction cache line size to be set on application startup.
+
+            config ESP32S2_INSTRUCTION_CACHE_LINE_16B
+                bool "16 Bytes"
+            config ESP32S2_INSTRUCTION_CACHE_LINE_32B
+                bool "32 Bytes"
+        endchoice
+
+        choice ESP32S2_DATA_CACHE_SIZE
+            prompt "Data cache size"
+            default ESP32S2_DATA_CACHE_8KB
+            help
+                Data cache size to be set on application startup.
+                If you use 8KB data cache rather than 16KB data cache, the other 8KB will be added to the heap.
+
+            config ESP32S2_DATA_CACHE_0KB
+                depends on !ESP32S2_SPIRAM_SUPPORT
+                bool "0KB"
+            config ESP32S2_DATA_CACHE_8KB
+                bool "8KB"
+            config ESP32S2_DATA_CACHE_16KB
+                bool "16KB"
+        endchoice
+
+        choice ESP32S2_DATA_CACHE_LINE_SIZE
+            prompt "Data cache line size"
+            default ESP32S2_DATA_CACHE_LINE_32B
+            help
+                Data cache line size to be set on application startup.
+
+            config ESP32S2_DATA_CACHE_LINE_16B
+                bool "16 Bytes"
+            config ESP32S2_DATA_CACHE_LINE_32B
+                bool "32 Bytes"
+        endchoice
+
+        config ESP32S2_INSTRUCTION_CACHE_WRAP
+            bool "Enable instruction cache wrap"
+            default "n"
+            help
+                If enabled, instruction cache will use wrap mode to read spi flash (maybe spiram).
+                The wrap length equals to INSTRUCTION_CACHE_LINE_SIZE.
+                However, it depends on complex conditions.
+
+        config ESP32S2_DATA_CACHE_WRAP
+            bool "Enable data cache wrap"
+            default "n"
+            help
+                If enabled, data cache will use wrap mode to read spiram (maybe spi flash).
+                The wrap length equals to DATA_CACHE_LINE_SIZE.
+                However, it depends on complex conditions.
+
+    endmenu  # Cache config
+
+    # Note: to support SPIRAM across multiple chips, check CONFIG_SPIRAM
+    # instead
+    config ESP32S2_SPIRAM_SUPPORT
+        bool "Support for external, SPI-connected RAM"
+        default "n"
+        select SPIRAM
+        help
+            This enables support for an external SPI RAM chip, connected in parallel with the
+            main SPI flash chip.
+
+    menu "SPI RAM config"
+        depends on ESP32S2_SPIRAM_SUPPORT
+
+        choice SPIRAM_TYPE
+            prompt "Type of SPI RAM chip in use"
+            default SPIRAM_TYPE_AUTO
+
+            config SPIRAM_TYPE_AUTO
+                bool "Auto-detect"
+
+            config SPIRAM_TYPE_ESPPSRAM16
+                bool "ESP-PSRAM16 or APS1604"
+
+            config SPIRAM_TYPE_ESPPSRAM32
+                bool "ESP-PSRAM32 or IS25WP032"
+
+            config SPIRAM_TYPE_ESPPSRAM64
+                bool "ESP-PSRAM64 or LY68L6400"
+        endchoice
+
+        config SPIRAM_SIZE
+            int
+            default -1 if SPIRAM_TYPE_AUTO
+            default 2097152 if SPIRAM_TYPE_ESPPSRAM16
+            default 4194304 if SPIRAM_TYPE_ESPPSRAM32
+            default 8388608 if SPIRAM_TYPE_ESPPSRAM64
+            default 0
+
+        menu "PSRAM clock and cs IO for ESP32S2"
+            depends on ESP32S2_SPIRAM_SUPPORT
+            config DEFAULT_PSRAM_CLK_IO
+                int "PSRAM CLK IO number"
+                range 0 33
+                default 30
+                help
+                    The PSRAM CLOCK IO can be any unused GPIO, user can config it based on hardware design.
+
+            config DEFAULT_PSRAM_CS_IO
+                int "PSRAM CS IO number"
+                range 0 33
+                default 26
+                help
+                    The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design.
+        endmenu
+        config SPIRAM_FETCH_INSTRUCTIONS
+            bool "Cache fetch instructions from SPI RAM"
+            default n
+            help
+                If enabled, instruction in flash will be copied into SPIRAM.
+                If SPIRAM_RODATA also enabled,
+                you can run the instruction when erasing or programming the flash.
+
+        config SPIRAM_RODATA
+            bool "Cache load read only data from SPI RAM"
+            default n
+            help
+                If enabled, radata in flash will be copied into SPIRAM.
+                If SPIRAM_FETCH_INSTRUCTIONS also enabled,
+                you can run the instruction when erasing or programming the flash.
+
+        config SPIRAM_USE_AHB_DBUS3
+            bool "Enable AHB DBUS3 to access SPIRAM"
+            default n
+            help
+                If Enabled, if SPI_CONFIG_SIZE is bigger then 10MB+576KB,
+                then you can have 4MB more space to map the SPIRAM.
+                However, the AHB bus is slower than other data cache buses.
+
+        choice SPIRAM_SPEED
+            prompt "Set RAM clock speed"
+            default SPIRAM_SPEED_40M
+            help
+                Select the speed for the SPI RAM chip.
+                If SPI RAM is enabled, we only support three combinations of SPI speed mode we supported now:
+
+                1. Flash SPI running at 40Mhz and RAM SPI running at 40Mhz
+                2. Flash SPI running at 80Mhz and RAM SPI running at 40Mhz
+                3. Flash SPI running at 80Mhz and RAM SPI running at 80Mhz
+
+                Note: If the third mode(80Mhz+80Mhz) is enabled for SPI RAM of type 32MBit, one of the HSPI/VSPI host
+                will be occupied by the system. Which SPI host to use can be selected by the config item
+                SPIRAM_OCCUPY_SPI_HOST. Application code should never touch HSPI/VSPI hardware in this case. The
+                option to select 80MHz will only be visible if the flash SPI speed is also 80MHz.
+                (ESPTOOLPY_FLASHFREQ_80M is true)
+
+            config SPIRAM_SPEED_80M
+                bool "80MHz clock speed"
+            config SPIRAM_SPEED_40M
+                bool "40Mhz clock speed"
+            config SPIRAM_SPEED_26M
+                bool "26Mhz clock speed"
+            config SPIRAM_SPEED_20M
+                bool "20Mhz clock speed"
+        endchoice
+
+        # insert non-chip-specific items here
+        source "$IDF_PATH/components/esp_common/Kconfig.spiram.common"
+
+    endmenu
+
+    config ESP32S2_MEMMAP_TRACEMEM
+        bool
+        default "n"
+
+    config ESP32S2_MEMMAP_TRACEMEM_TWOBANKS
+        bool
+        default "n"
+
+    config ESP32S2_TRAX
+        bool "Use TRAX tracing feature"
+        default "n"
+        select ESP32S2_MEMMAP_TRACEMEM
+        help
+            The ESP32S2 contains a feature which allows you to trace the execution path the processor
+            has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
+            of memory that can't be used for general purposes anymore. Disable this if you do not know
+            what this is.
+
+    config ESP32S2_TRACEMEM_RESERVE_DRAM
+        hex
+        default 0x8000 if ESP32S2_MEMMAP_TRACEMEM && ESP32S2_MEMMAP_TRACEMEM_TWOBANKS
+        default 0x4000 if ESP32S2_MEMMAP_TRACEMEM && !ESP32S2_MEMMAP_TRACEMEM_TWOBANKS
+        default 0x0
+
+
+    choice ESP32S2_UNIVERSAL_MAC_ADDRESSES
+        bool "Number of universally administered (by IEEE) MAC address"
+        default ESP32S2_UNIVERSAL_MAC_ADDRESSES_TWO
+        help
+            Configure the number of universally administered (by IEEE) MAC addresses.
+            During initialization, MAC addresses for each network interface are generated or derived from a
+            single base MAC address.
+            If the number of universal MAC addresses is Two, all interfaces (WiFi station, WiFi softap) receive a
+            universally administered MAC address. They are generated sequentially by adding 0, and 1 (respectively)
+            to the final octet of the base MAC address. If the number of universal MAC addresses is one,
+            only WiFi station receives a universally administered MAC address.
+            It's generated by adding 0 to the base MAC address.
+            The WiFi softap receives local MAC addresses. It's derived from the universal WiFi station MAC addresses.
+            When using the default (Espressif-assigned) base MAC address, either setting can be used. When using
+            a custom universal MAC address range, the correct setting will depend on the allocation of MAC
+            addresses in this range (either 1 or 2 per device.)
+
+        config ESP32S2_UNIVERSAL_MAC_ADDRESSES_ONE
+            bool "One"
+            select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+        config ESP32S2_UNIVERSAL_MAC_ADDRESSES_TWO
+            bool "Two"
+            select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+            select ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+    endchoice
+
+    config ESP32S2_UNIVERSAL_MAC_ADDRESSES
+        int
+        default 1 if ESP32S2_UNIVERSAL_MAC_ADDRESSES_ONE
+        default 2 if ESP32S2_UNIVERSAL_MAC_ADDRESSES_TWO
+
+    config ESP32S2_ULP_COPROC_ENABLED
+        bool "Enable Ultra Low Power (ULP) Coprocessor"
+        default "n"
+        help
+            Set to 'y' if you plan to load a firmware for the coprocessor.
+
+            If this option is enabled, further coprocessor configuration will appear in the Components menu.
+
+    config ESP32S2_ULP_COPROC_RESERVE_MEM
+        int
+        prompt "RTC slow memory reserved for coprocessor" if ESP32S2_ULP_COPROC_ENABLED
+        default 512 if ESP32S2_ULP_COPROC_ENABLED
+        range 32 8192 if ESP32S2_ULP_COPROC_ENABLED
+        default 0 if !ESP32S2_ULP_COPROC_ENABLED
+        range 0 0 if !ESP32S2_ULP_COPROC_ENABLED
+        help
+            Bytes of memory to reserve for ULP coprocessor firmware & data.
+
+            Data is reserved at the beginning of RTC slow memory.
+
+    config ESP32S2_DEBUG_OCDAWARE
+        bool "Make exception and panic handlers JTAG/OCD aware"
+        default y
+        select FREERTOS_DEBUG_OCDAWARE
+        help
+            The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
+            instead of panicking, have the debugger stop on the offending instruction.
+
+    config ESP32S2_DEBUG_STUBS_ENABLE
+        bool "OpenOCD debug stubs"
+        default COMPILER_OPTIMIZATION_LEVEL_DEBUG
+        depends on !ESP32S2_TRAX
+        help
+            Debug stubs are used by OpenOCD to execute pre-compiled onboard code which does some useful debugging,
+            e.g. GCOV data dump.
+
+    config ESP32S2_BROWNOUT_DET
+        bool "Hardware brownout detect & reset"
+        default y
+        help
+            The ESP32-S2 has a built-in brownout detector which can detect if the voltage is lower than
+            a specific value. If this happens, it will reset the chip in order to prevent unintended
+            behaviour.
+
+    choice ESP32S2_BROWNOUT_DET_LVL_SEL
+        prompt "Brownout voltage level"
+        depends on ESP32S2_BROWNOUT_DET
+        default ESP32S2_BROWNOUT_DET_LVL_SEL_7
+        help
+            The brownout detector will reset the chip when the supply voltage is approximately
+            below this level. Note that there may be some variation of brownout voltage level
+            between each ESP3-S2 chip.
+
+            #The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
+            #of the brownout threshold levels.
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_7
+            bool "2.44V"
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_6
+            bool "2.56V"
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_5
+            bool "2.67V"
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_4
+            bool "2.84V"
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_3
+            bool "2.98V"
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_2
+            bool "3.19V"
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_1
+            bool "3.30V"
+    endchoice
+
+    config ESP32S2_BROWNOUT_DET_LVL
+        int
+        default 1 if ESP32S2_BROWNOUT_DET_LVL_SEL_1
+        default 2 if ESP32S2_BROWNOUT_DET_LVL_SEL_2
+        default 3 if ESP32S2_BROWNOUT_DET_LVL_SEL_3
+        default 4 if ESP32S2_BROWNOUT_DET_LVL_SEL_4
+        default 5 if ESP32S2_BROWNOUT_DET_LVL_SEL_5
+        default 6 if ESP32S2_BROWNOUT_DET_LVL_SEL_6
+        default 7 if ESP32S2_BROWNOUT_DET_LVL_SEL_7
+
+
+        # Note about the use of "FRC1" name: currently FRC1 timer is not used for
+        # high resolution timekeeping anymore. Instead the esp_timer API, implemented
+        # using FRC2 timer, is used.
+        # FRC1 name in the option name is kept for compatibility.
+    choice ESP32S2_TIME_SYSCALL
+        prompt "Timers used for gettimeofday function"
+        default ESP32S2_TIME_SYSCALL_USE_RTC_FRC1
+        help
+            This setting defines which hardware timers are used to
+            implement 'gettimeofday' and 'time' functions in C library.
+
+            - If both high-resolution and RTC timers are used, timekeeping will
+              continue in deep sleep. Time will be reported at 1 microsecond
+              resolution. This is the default, and the recommended option.
+            - If only high-resolution timer is used, gettimeofday will
+              provide time at microsecond resolution.
+              Time will not be preserved when going into deep sleep mode.
+            - If only RTC timer is used, timekeeping will continue in
+              deep sleep, but time will be measured at 6.(6) microsecond
+              resolution. Also the gettimeofday function itself may take
+              longer to run.
+            - If no timers are used, gettimeofday and time functions
+              return -1 and set errno to ENOSYS.
+            - When RTC is used for timekeeping, two RTC_STORE registers are
+              used to keep time in deep sleep mode.
+
+        config ESP32S2_TIME_SYSCALL_USE_RTC_FRC1
+            bool "RTC and high-resolution timer"
+        config ESP32S2_TIME_SYSCALL_USE_RTC
+            bool "RTC"
+        config ESP32S2_TIME_SYSCALL_USE_FRC1
+            bool "High-resolution timer"
+        config ESP32S2_TIME_SYSCALL_USE_NONE
+            bool "None"
+    endchoice
+
+    choice ESP32S2_RTC_CLK_SRC
+        prompt "RTC clock source"
+        default ESP32S2_RTC_CLK_SRC_INT_RC
+        help
+            Choose which clock is used as RTC clock source.
+
+            - "Internal 90kHz oscillator" option provides lowest deep sleep current
+              consumption, and does not require extra external components. However
+              frequency stability with respect to temperature is poor, so time may
+              drift in deep/light sleep modes.
+            - "External 32kHz crystal" provides better frequency stability, at the
+              expense of slightly higher (1uA) deep sleep current consumption.
+            - "External 32kHz oscillator" allows using 32kHz clock generated by an
+              external circuit. In this case, external clock signal must be connected
+              to 32K_XN pin. Amplitude should be <1.2V in case of sine wave signal,
+              and <1V in case of square wave signal. Common mode voltage should be
+              0.1 < Vcm < 0.5Vamp, where Vamp is the signal amplitude.
+              Additionally, 1nF capacitor must be connected between 32K_XP pin and
+              ground. 32K_XP pin can not be used as a GPIO in this case.
+            - "Internal 8MHz oscillator divided by 256" option results in higher
+              deep sleep current (by 5uA) but has better frequency stability than
+              the internal 90kHz oscillator. It does not require external components.
+
+        config ESP32S2_RTC_CLK_SRC_INT_RC
+            bool "Internal 90kHz RC oscillator"
+        config ESP32S2_RTC_CLK_SRC_EXT_CRYS
+            bool "External 32kHz crystal"
+        config ESP32S2_RTC_CLK_SRC_EXT_OSC
+            bool "External 32kHz oscillator at 32K_XN pin"
+        config ESP32S2_RTC_CLK_SRC_INT_8MD256
+            bool "Internal 8MHz oscillator, divided by 256 (~32kHz)"
+    endchoice
+
+    config ESP32S2_RTC_CLK_CAL_CYCLES
+        int "Number of cycles for RTC_SLOW_CLK calibration"
+        default 3000 if ESP32S2_RTC_CLK_SRC_EXT_CRYS || ESP32S2_RTC_CLK_SRC_EXT_OSC || ESP32S2_RTC_CLK_SRC_INT_8MD256
+        default 576 if ESP32S2_RTC_CLK_SRC_INT_RC
+        range 0 125000
+        help
+            When the startup code initializes RTC_SLOW_CLK, it can perform
+            calibration by comparing the RTC_SLOW_CLK frequency with main XTAL
+            frequency. This option sets the number of RTC_SLOW_CLK cycles measured
+            by the calibration routine. Higher numbers increase calibration
+            precision, which may be important for applications which spend a lot of
+            time in deep sleep. Lower numbers reduce startup time.
+
+            When this option is set to 0, clock calibration will not be performed at
+            startup, and approximate clock frequencies will be assumed:
+
+            - 90000 Hz if internal RC oscillator is used as clock source. For this use value 1024.
+            - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
+              In case more value will help improve the definition of the launch of the crystal.
+              If the crystal could not start, it will be switched to internal RC.
+
+    config ESP32S2_RTC_XTAL_CAL_RETRY
+        int "Number of attempts to repeat 32k XTAL calibration"
+        default 3
+        depends on ESP32S2_RTC_CLK_SRC_EXT_CRYS
+        help
+            Number of attempts to repeat 32k XTAL calibration
+            before giving up and switching to the internal RC.
+            Increase this option if the 32k crystal oscillator
+            does not start and switches to internal RC.
+
+    config ESP32S2_NO_BLOBS
+        bool "No Binary Blobs"
+        depends on !BT_ENABLED
+        default n
+        help
+            If enabled, this disables the linking of binary libraries in the application build. Note
+            that after enabling this Wi-Fi/Bluetooth will not work.
+
+    config ESP32S2_RTCDATA_IN_FAST_MEM
+        bool "Place RTC_DATA_ATTR and RTC_RODATA_ATTR variables into RTC fast memory segment"
+        default n
+        help
+            This option allows to place .rtc_data and .rtc_rodata sections into
+            RTC fast memory segment to free the slow memory region for ULP programs.
+
+    config ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP
+        bool "Enable RTC fast memory for dynamic allocations"
+        depends on !ESP32S2_MEMPROT_FEATURE
+        default y
+        help
+            This config option allows to add RTC fast memory region to system heap with capability
+            similar to that of DRAM region but without DMA. This memory will be consumed first per
+            heap initialization order by early startup services and scheduler related code. Speed
+            wise RTC fast memory operates on APB clock and hence does not have much performance impact.
+
+endmenu  # ESP32S2-Specific
+
+menu "Power Management"
+    # TODO: this component simply shouldn't be included
+    # in the build at the CMake level, but this is currently
+    # not working so we just hide all items here
+    visible if IDF_TARGET_ESP32S2
+
+    config PM_ENABLE
+        bool "Support for power management"
+        default n
+        help
+            If enabled, application is compiled with support for power management.
+            This option has run-time overhead (increased interrupt latency,
+            longer time to enter idle state), and it also reduces accuracy of
+            RTOS ticks and timers used for timekeeping.
+            Enable this option if application uses power management APIs.
+
+    config PM_DFS_INIT_AUTO
+        bool "Enable dynamic frequency scaling (DFS) at startup"
+        depends on PM_ENABLE
+        default n
+        help
+            If enabled, startup code configures dynamic frequency scaling.
+            Max CPU frequency is set to CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ setting,
+            min frequency is set to XTAL frequency.
+            If disabled, DFS will not be active until the application
+            configures it using esp_pm_configure function.
+
+    config PM_USE_RTC_TIMER_REF
+        bool "Use RTC timer to prevent time drift (EXPERIMENTAL)"
+        depends on PM_ENABLE && (ESP32S2_TIME_SYSCALL_USE_RTC || ESP32S2_TIME_SYSCALL_USE_RTC_FRC1)
+        default n
+        help
+            When APB clock frequency changes, high-resolution timer (esp_timer)
+            scale and base value need to be adjusted. Each adjustment may cause
+            small error, and over time such small errors may cause time drift.
+            If this option is enabled, RTC timer will be used as a reference to
+            compensate for the drift.
+            It is recommended that this option is only used if 32k XTAL is selected
+            as RTC clock source.
+
+    config PM_PROFILING
+        bool "Enable profiling counters for PM locks"
+        depends on PM_ENABLE
+        default n
+        help
+            If enabled, esp_pm_* functions will keep track of the amount of time
+            each of the power management locks has been held, and esp_pm_dump_locks
+            function will print this information.
+            This feature can be used to analyze which locks are preventing the chip
+            from going into a lower power state, and see what time the chip spends
+            in each power saving mode. This feature does incur some run-time
+            overhead, so should typically be disabled in production builds.
+
+    config PM_TRACE
+        bool "Enable debug tracing of PM using GPIOs"
+        depends on PM_ENABLE
+        default n
+        help
+            If enabled, some GPIOs will be used to signal events such as RTOS ticks,
+            frequency switching, entry/exit from idle state. Refer to pm_trace.c
+            file for the list of GPIOs.
+            This feature is intended to be used when analyzing/debugging behavior
+            of power management implementation, and should be kept disabled in
+            applications.
+
+
+endmenu # "Power Management"

@@ -93,10 +93,14 @@ class ParttoolTarget():
         self.esptool_erase_args = parse_esptool_args(esptool_erase_args)
 
         if partition_table_file:
-            try:
-                with open(partition_table_file, "rb") as f:
+            partition_table = None
+            with open(partition_table_file, "rb") as f:
+                input_is_binary = (f.read(2) == gen.PartitionDefinition.MAGIC_BYTES)
+                f.seek(0)
+                if input_is_binary:
                     partition_table = gen.PartitionTable.from_binary(f.read())
-            except (gen.InputError, IOError, TypeError):
+
+            if partition_table is None:
                 with open(partition_table_file, "r") as f:
                     f.seek(0)
                     partition_table = gen.PartitionTable.from_csv(f.read())
@@ -113,6 +117,9 @@ class ParttoolTarget():
 
         self.partition_table = partition_table
 
+    # set `out` to None to redirect the output to the STDOUT
+    # otherwise set `out` to file descriptor
+    # beware that the method does not close the file descriptor
     def _call_esptool(self, args, out=None):
         esptool_args = [sys.executable, ESPTOOL_PY] + self.esptool_args
 
@@ -124,8 +131,12 @@ class ParttoolTarget():
 
         esptool_args += args
 
-        with open(os.devnull, "w") as null_file:
-            subprocess.check_call(esptool_args, stdout=null_file, stderr=null_file)
+        print("Running %s..." % (" ".join(esptool_args)))
+        try:
+            subprocess.check_call(esptool_args, stdout=out, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            print("An exception: **", str(e), "** occurred in _call_esptool.", file=out)
+            raise e
 
     def get_partition_info(self, partition_id):
         partition = None
@@ -257,7 +268,8 @@ def main():
     subparsers.add_parser("erase_partition", help="erase the contents of a partition on the device", parents=[partition_selection_parser])
 
     print_partition_info_subparser = subparsers.add_parser("get_partition_info", help="get partition information", parents=[partition_selection_parser])
-    print_partition_info_subparser.add_argument("--info", help="type of partition information to get", nargs="+")
+    print_partition_info_subparser.add_argument("--info", help="type of partition information to get",
+                                                choices=["offset", "size"], default=["offset", "size"], nargs="+")
 
     args = parser.parse_args()
     quiet = args.quiet
@@ -331,7 +343,11 @@ def main():
         except Exception:
             sys.exit(2)
     else:
-        op(**common_args)
+        try:
+            op(**common_args)
+        except gen.InputError as e:
+            print(e, file=sys.stderr)
+            sys.exit(2)
 
 
 if __name__ == '__main__':

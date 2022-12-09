@@ -10,7 +10,7 @@ The Example consists of HTTPD server demo with demostration of URI handling :
     1. compile and burn the firmware `idf.py -p PORT flash`
     2. run `idf.py -p PORT monitor` and note down the IP assigned to your ESP module. The default port is 80
     3. test the example :
-        * run the test script : "python2 scripts/client.py \<IP\> \<port\> \<MSG\>"
+        * run the test script : "python scripts/client.py \<IP\> \<port\> \<MSG\>"
             * the provided test script first does a GET \hello and displays the response
             * the script does a POST to \echo with the user input \<MSG\> and displays the response
         * or use curl (asssuming IP is 192.168.43.130):

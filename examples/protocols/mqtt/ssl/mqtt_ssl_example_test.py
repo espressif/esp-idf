@@ -8,21 +8,8 @@ import ssl
 import paho.mqtt.client as mqtt
 from threading import Thread, Event
 
-
-try:
-    import IDF
-    from IDF.IDFDUT import ESP32DUT
-except ImportError:
-    # this is a test case write with tiny-test-fw.
-    # to run test cases outside tiny-test-fw,
-    # we need to set environment variable `TEST_FW_PATH`,
-    # then get and insert `TEST_FW_PATH` to sys path before import FW module
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
-
-import DUT
+from tiny_test_fw import DUT
+import ttfw_idf
 
 
 event_client_connected = Event()
@@ -73,7 +60,7 @@ def on_message(client, userdata, msg):
     message_log += "Received data:" + msg.topic + " " + payload + "\n"
 
 
-@IDF.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
 def test_examples_protocol_mqtt_ssl(env, extra_data):
     broker_url = ""
     broker_port = 0
@@ -85,13 +72,13 @@ def test_examples_protocol_mqtt_ssl(env, extra_data):
       4. Test ESP32 client received correct qos0 message
       5. Test python client receives binary data from running partition and compares it with the binary
     """
-    dut1 = env.get_dut("mqtt_ssl", "examples/protocols/mqtt/ssl", dut_class=ESP32DUT)
+    dut1 = env.get_dut("mqtt_ssl", "examples/protocols/mqtt/ssl", dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "mqtt_ssl.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("mqtt_ssl_bin_size", "{}KB"
-                        .format(bin_size // 1024))
-    IDF.check_performance("mqtt_ssl_size", bin_size // 1024)
+    ttfw_idf.log_performance("mqtt_ssl_bin_size", "{}KB"
+                             .format(bin_size // 1024))
+    ttfw_idf.check_performance("mqtt_ssl_size", bin_size // 1024, dut1.TARGET)
     # Look for host:port in sdkconfig
     try:
         value = re.search(r'\:\/\/([^:]+)\:([0-9]+)', dut1.app.get_sdkconfig()["CONFIG_BROKER_URI"])

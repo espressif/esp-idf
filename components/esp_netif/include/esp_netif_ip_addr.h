@@ -16,6 +16,11 @@
 #define _ESP_NETIF_IP_ADDR_H_
 
 #include <machine/endian.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if BYTE_ORDER == BIG_ENDIAN
 #define esp_netif_htonl(x) ((uint32_t)(x))
 #else
@@ -73,6 +78,12 @@
 #define ESP_IPADDR_TYPE_V6                6U
 #define ESP_IPADDR_TYPE_ANY               46U
 
+#define ESP_IP4TOUINT32(a,b,c,d) (((uint32_t)((a) & 0xffU) << 24) | \
+                               ((uint32_t)((b) & 0xffU) << 16) | \
+                               ((uint32_t)((c) & 0xffU) << 8)  | \
+                                (uint32_t)((d) & 0xffU))
+
+#define ESP_IP4TOADDR(a,b,c,d) esp_netif_htonl(ESP_IP4TOUINT32(a, b, c, d))
 
 struct esp_ip6_addr {
     uint32_t addr[4];
@@ -94,5 +105,27 @@ typedef struct _ip_addr {
     } u_addr;
     uint8_t type;
 } esp_ip_addr_t;
+ 
+typedef enum {
+    ESP_IP6_ADDR_IS_UNKNOWN,
+    ESP_IP6_ADDR_IS_GLOBAL,
+    ESP_IP6_ADDR_IS_LINK_LOCAL,
+    ESP_IP6_ADDR_IS_SITE_LOCAL,
+    ESP_IP6_ADDR_IS_UNIQUE_LOCAL,
+    ESP_IP6_ADDR_IS_IPV4_MAPPED_IPV6
+} esp_ip6_addr_type_t;
+
+/**
+ * @brief  Get the IPv6 address type
+ *
+ * @param[in]  ip6_addr IPv6 type
+ *
+ * @return IPv6 type in form of enum esp_ip6_addr_type_t
+ */
+esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(esp_ip6_addr_t* ip6_addr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_ESP_NETIF_IP_ADDR_H_

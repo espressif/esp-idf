@@ -850,7 +850,7 @@ void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB *p_dev_cb, UINT8 srvc_inst,
 **
 ** Function         bta_hh_le_open_cmpl
 **
-** Description      HID over GATT connection sucessfully opened
+** Description      HID over GATT connection successfully opened
 **
 *******************************************************************************/
 void bta_hh_le_open_cmpl(tBTA_HH_DEV_CB *p_cb)
@@ -1556,7 +1556,7 @@ void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL *p_data)
         /* close the connection and report service discovery complete with error */
         bta_hh_le_api_disc_act(p_dev_cb);
     }
-    /* GATT service discovery sucessfully finished */
+    /* GATT service discovery successfully finished */
     else {
         if (p_dev_cb->disc_active  & BTA_HH_LE_DISC_SCPS) {
             p_dev_cb->disc_active  &= ~BTA_HH_LE_DISC_SCPS;

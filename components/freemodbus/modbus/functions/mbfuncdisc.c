@@ -17,8 +17,6 @@
   * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   */
 
-
-
 /* ----------------------- System includes ----------------------------------*/
 #include "stdlib.h"
 #include "string.h"
@@ -42,8 +40,9 @@
 eMBException    prveMBError2Exception( eMBErrorCode eErrorCode );
 
 /* ----------------------- Start implementation -----------------------------*/
+#if MB_SLAVE_RTU_ENABLED || MB_SLAVE_ASCII_ENABLED
 
-#if MB_FUNC_READ_COILS_ENABLED > 0
+#if MB_FUNC_READ_COILS_ENABLED
 
 eMBException
 eMBFuncReadDiscreteInputs( UCHAR * pucFrame, USHORT * usLen )
@@ -123,3 +122,6 @@ eMBFuncReadDiscreteInputs( UCHAR * pucFrame, USHORT * usLen )
 }
 
 #endif
+
+#endif
+

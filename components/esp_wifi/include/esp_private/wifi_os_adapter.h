@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#define ESP_WIFI_OS_ADAPTER_VERSION  0x00000004
+#define ESP_WIFI_OS_ADAPTER_VERSION  0x00000008
 #define ESP_WIFI_OS_ADAPTER_MAGIC    0xDEADBEAF
 
 #define OSI_FUNCS_TIME_BLOCKING      0xffffffff
@@ -35,6 +35,7 @@ typedef struct {
     void (*_set_isr)(int32_t n, void *f, void *arg);
     void (*_ints_on)(uint32_t mask);
     void (*_ints_off)(uint32_t mask);
+    bool (* _is_from_isr)(void);
     void *(* _spin_lock_create)(void);
     void (* _spin_lock_delete)(void *lock);
     uint32_t (*_wifi_int_disable)(void *wifi_int_mux);
@@ -79,14 +80,20 @@ typedef struct {
     void (* _dport_access_stall_other_cpu_end_wrap)(void);
     int32_t (* _phy_rf_deinit)(uint32_t module);
     void (* _phy_load_cal_and_init)(uint32_t module);
+#if CONFIG_IDF_TARGET_ESP32
+    void (* _phy_common_clock_enable)(void);
+    void (* _phy_common_clock_disable)(void);
+#endif
+    int32_t (* _phy_update_country_info)(const char* country);
     int32_t (* _read_mac)(uint8_t* mac, uint32_t type);
     void (* _timer_arm)(void *timer, uint32_t tmout, bool repeat);
     void (* _timer_disarm)(void *timer);
     void (* _timer_done)(void *ptimer);
     void (* _timer_setfn)(void *ptimer, void *pfunction, void *parg);
     void (* _timer_arm_us)(void *ptimer, uint32_t us, bool repeat);
-    void (* _periph_module_enable)(uint32_t periph);
-    void (* _periph_module_disable)(uint32_t periph);
+    void (* _wifi_reset_mac)(void);
+    void (* _wifi_clock_enable)(void);
+    void (* _wifi_clock_disable)(void);
     int64_t (* _esp_timer_get_time)(void);
     int32_t (* _nvs_set_i8)(uint32_t handle, const char* key, int8_t value);
     int32_t (* _nvs_get_i8)(uint32_t handle, const char* key, int8_t* out_value);
@@ -103,10 +110,11 @@ typedef struct {
     int32_t (* _get_random)(uint8_t *buf, size_t len);
     int32_t (* _get_time)(void *t);
     unsigned long (* _random)(void);
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
     uint32_t (* _slowclk_cal_get)(void);
 #endif
     void (* _log_write)(uint32_t level, const char* tag, const char* format, ...);
+    void (* _log_writev)(uint32_t level, const char* tag, const char* format, va_list args);
     uint32_t (* _log_timestamp)(void);
     void * (* _malloc_internal)(size_t size);
     void * (* _realloc_internal)(void *ptr, size_t size);
@@ -126,6 +134,15 @@ typedef struct {
     void (* _coex_condition_set)(uint32_t type, bool dissatisfy);
     int32_t (* _coex_wifi_request)(uint32_t event, uint32_t latency, uint32_t duration);
     int32_t (* _coex_wifi_release)(uint32_t event);
+    int (* _coex_wifi_channel_set)(uint8_t primary, uint8_t secondary);
+    void (* _coex_schm_status_bit_clear)(uint32_t type, uint32_t status);
+    void (* _coex_schm_status_bit_set)(uint32_t type, uint32_t status);
+    int (* _coex_schm_interval_set)(uint32_t interval);
+    uint32_t (* _coex_schm_interval_get)(void);
+    uint8_t (* _coex_schm_curr_period_get)(void);
+    void * (* _coex_schm_curr_phase_get)(void);
+    int (* _coex_schm_curr_phase_idx_set)(int idx);
+    int (* _coex_schm_curr_phase_idx_get)(void);
     int32_t _magic;
 } wifi_osi_funcs_t;
 

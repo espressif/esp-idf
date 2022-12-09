@@ -507,6 +507,52 @@ int esp_vfs_fstat(struct _reent *r, int fd, struct stat * st)
     return ret;
 }
 
+int esp_vfs_fcntl_r(struct _reent *r, int fd, int cmd, int arg)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
+    if (vfs == NULL || local_fd < 0) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    int ret;
+    CHECK_AND_CALL(ret, r, vfs, fcntl, local_fd, cmd, arg);
+    return ret;
+}
+
+int esp_vfs_ioctl(int fd, int cmd, ...)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
+    struct _reent* r = __getreent();
+    if (vfs == NULL || local_fd < 0) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    int ret;
+    va_list args;
+    va_start(args, cmd);
+    CHECK_AND_CALL(ret, r, vfs, ioctl, local_fd, cmd, args);
+    va_end(args);
+    return ret;
+}
+
+int esp_vfs_fsync(int fd)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
+    struct _reent* r = __getreent();
+    if (vfs == NULL || local_fd < 0) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    int ret;
+    CHECK_AND_CALL(ret, r, vfs, fsync, local_fd);
+    return ret;
+}
+
+#ifdef CONFIG_VFS_SUPPORT_DIR
+
 int esp_vfs_stat(struct _reent *r, const char * path, struct stat * st)
 {
     const vfs_entry_t* vfs = get_vfs_for_path(path);
@@ -517,6 +563,20 @@ int esp_vfs_stat(struct _reent *r, const char * path, struct stat * st)
     const char* path_within_vfs = translate_path(vfs, path);
     int ret;
     CHECK_AND_CALL(ret, r, vfs, stat, path_within_vfs, st);
+    return ret;
+}
+
+int esp_vfs_utime(const char *path, const struct utimbuf *times)
+{
+    int ret;
+    const vfs_entry_t* vfs = get_vfs_for_path(path);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        __errno_r(r) = ENOENT;
+        return -1;
+    }
+    const char* path_within_vfs = translate_path(vfs, path);
+    CHECK_AND_CALL(ret, r, vfs, utime, path_within_vfs, times);
     return ret;
 }
 
@@ -571,35 +631,7 @@ int esp_vfs_rename(struct _reent *r, const char *src, const char *dst)
     return ret;
 }
 
-/* Create aliases for newlib syscalls
-
-   These functions are also available in ROM as stubs which use the syscall table, but linking them
-   directly here saves an additional function call when a software function is linked to one, and
-   makes linking with -stdlib easier.
- */
-int _open_r(struct _reent *r, const char * path, int flags, int mode)
-    __attribute__((alias("esp_vfs_open")));
-ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size)
-    __attribute__((alias("esp_vfs_write")));
-off_t _lseek_r(struct _reent *r, int fd, off_t size, int mode)
-    __attribute__((alias("esp_vfs_lseek")));
-ssize_t _read_r(struct _reent *r, int fd, void * dst, size_t size)
-    __attribute__((alias("esp_vfs_read")));
-int _close_r(struct _reent *r, int fd)
-    __attribute__((alias("esp_vfs_close")));
-int _fstat_r(struct _reent *r, int fd, struct stat * st)
-    __attribute__((alias("esp_vfs_fstat")));
-int _stat_r(struct _reent *r, const char * path, struct stat * st)
-    __attribute__((alias("esp_vfs_stat")));
-int _link_r(struct _reent *r, const char* n1, const char* n2)
-    __attribute__((alias("esp_vfs_link")));
-int _unlink_r(struct _reent *r, const char *path)
-    __attribute__((alias("esp_vfs_unlink")));
-int _rename_r(struct _reent *r, const char *src, const char *dst)
-    __attribute__((alias("esp_vfs_rename")));
-
-
-DIR* opendir(const char* name)
+DIR* esp_vfs_opendir(const char* name)
 {
     const vfs_entry_t* vfs = get_vfs_for_path(name);
     struct _reent* r = __getreent();
@@ -616,7 +648,7 @@ DIR* opendir(const char* name)
     return ret;
 }
 
-struct dirent* readdir(DIR* pdir)
+struct dirent* esp_vfs_readdir(DIR* pdir)
 {
     const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     struct _reent* r = __getreent();
@@ -629,7 +661,7 @@ struct dirent* readdir(DIR* pdir)
     return ret;
 }
 
-int readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_dirent)
+int esp_vfs_readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_dirent)
 {
     const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     struct _reent* r = __getreent();
@@ -642,7 +674,7 @@ int readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_dirent)
     return ret;
 }
 
-long telldir(DIR* pdir)
+long esp_vfs_telldir(DIR* pdir)
 {
     const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     struct _reent* r = __getreent();
@@ -655,7 +687,7 @@ long telldir(DIR* pdir)
     return ret;
 }
 
-void seekdir(DIR* pdir, long loc)
+void esp_vfs_seekdir(DIR* pdir, long loc)
 {
     const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     struct _reent* r = __getreent();
@@ -666,12 +698,12 @@ void seekdir(DIR* pdir, long loc)
     CHECK_AND_CALLV(r, vfs, seekdir, pdir, loc);
 }
 
-void rewinddir(DIR* pdir)
+void esp_vfs_rewinddir(DIR* pdir)
 {
     seekdir(pdir, 0);
 }
 
-int closedir(DIR* pdir)
+int esp_vfs_closedir(DIR* pdir)
 {
     const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
     struct _reent* r = __getreent();
@@ -684,7 +716,7 @@ int closedir(DIR* pdir)
     return ret;
 }
 
-int mkdir(const char* name, mode_t mode)
+int esp_vfs_mkdir(const char* name, mode_t mode)
 {
     const vfs_entry_t* vfs = get_vfs_for_path(name);
     struct _reent* r = __getreent();
@@ -698,7 +730,7 @@ int mkdir(const char* name, mode_t mode)
     return ret;
 }
 
-int rmdir(const char* name)
+int esp_vfs_rmdir(const char* name)
 {
     const vfs_entry_t* vfs = get_vfs_for_path(name);
     struct _reent* r = __getreent();
@@ -712,61 +744,7 @@ int rmdir(const char* name)
     return ret;
 }
 
-int _fcntl_r(struct _reent *r, int fd, int cmd, int arg)
-{
-    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
-    const int local_fd = get_local_fd(vfs, fd);
-    if (vfs == NULL || local_fd < 0) {
-        __errno_r(r) = EBADF;
-        return -1;
-    }
-    int ret;
-    CHECK_AND_CALL(ret, r, vfs, fcntl, local_fd, cmd, arg);
-    return ret;
-}
-
-int __attribute__((weak)) fcntl(int fd, int cmd, ...)
-{
-    va_list args;
-    va_start(args, cmd);
-    int arg = va_arg(args, int);
-    va_end(args);
-    struct _reent* r = __getreent();
-    return _fcntl_r(r, fd, cmd, arg);
-}
-
-int ioctl(int fd, int cmd, ...)
-{
-    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
-    const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
-    if (vfs == NULL || local_fd < 0) {
-        __errno_r(r) = EBADF;
-        return -1;
-    }
-    int ret;
-    va_list args;
-    va_start(args, cmd);
-    CHECK_AND_CALL(ret, r, vfs, ioctl, local_fd, cmd, args);
-    va_end(args);
-    return ret;
-}
-
-int fsync(int fd)
-{
-    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
-    const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
-    if (vfs == NULL || local_fd < 0) {
-        __errno_r(r) = EBADF;
-        return -1;
-    }
-    int ret;
-    CHECK_AND_CALL(ret, r, vfs, fsync, local_fd);
-    return ret;
-}
-
-int access(const char *path, int amode)
+int esp_vfs_access(const char *path, int amode)
 {
     int ret;
     const vfs_entry_t* vfs = get_vfs_for_path(path);
@@ -780,7 +758,7 @@ int access(const char *path, int amode)
     return ret;
 }
 
-int truncate(const char *path, off_t length)
+int esp_vfs_truncate(const char *path, off_t length)
 {
     int ret;
     const vfs_entry_t* vfs = get_vfs_for_path(path);
@@ -793,6 +771,10 @@ int truncate(const char *path, off_t length)
     CHECK_AND_CALL(ret, r, vfs, truncate, path_within_vfs, length);
     return ret;
 }
+
+#endif // CONFIG_VFS_SUPPORT_DIR
+
+#ifdef CONFIG_VFS_SUPPORT_SELECT
 
 static void call_end_selects(int end_index, const fds_triple_t *vfs_fds_triple, void **driver_args)
 {
@@ -865,7 +847,7 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
 
     ESP_LOGD(TAG, "esp_vfs_select starts with nfds = %d", nfds);
     if (timeout) {
-        ESP_LOGD(TAG, "timeout is %lds + %ldus", timeout->tv_sec, timeout->tv_usec);
+        ESP_LOGD(TAG, "timeout is %lds + %ldus", (long)timeout->tv_sec, timeout->tv_usec);
     }
     esp_vfs_log_fd_set("readfds", readfds);
     esp_vfs_log_fd_set("writefds", writefds);
@@ -1084,7 +1066,10 @@ void esp_vfs_select_triggered_isr(esp_vfs_select_sem_t sem, BaseType_t *woken)
     }
 }
 
+#endif // CONFIG_VFS_SUPPORT_SELECT
+
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
+
 int tcgetattr(int fd, struct termios *p)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
@@ -1184,95 +1169,77 @@ int tcsendbreak(int fd, int duration)
 }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
-int esp_vfs_utime(const char *path, const struct utimbuf *times)
-{
-    int ret;
-    const vfs_entry_t* vfs = get_vfs_for_path(path);
-    struct _reent* r = __getreent();
-    if (vfs == NULL) {
-        __errno_r(r) = ENOENT;
-        return -1;
-    }
-    const char* path_within_vfs = translate_path(vfs, path);
-    CHECK_AND_CALL(ret, r, vfs, utime, path_within_vfs, times);
-    return ret;
-}
 
-int esp_vfs_poll(struct pollfd *fds, nfds_t nfds, int timeout)
-{
-    struct timeval tv = {
-        // timeout is in milliseconds
-        .tv_sec = timeout / 1000,
-        .tv_usec = (timeout % 1000) * 1000,
-    };
-    int max_fd = -1;
-    fd_set readfds;
-    fd_set writefds;
-    fd_set errorfds;
-    struct _reent* r = __getreent();
-    int ret = 0;
+/* Create aliases for newlib syscalls
 
-    if (fds == NULL) {
-        __errno_r(r) = ENOENT;
-        return -1;
-    }
+   These functions are also available in ROM as stubs which use the syscall table, but linking them
+   directly here saves an additional function call when a software function is linked to one, and
+   makes linking with -stdlib easier.
+ */
+#ifdef CONFIG_VFS_SUPPORT_IO
+int _open_r(struct _reent *r, const char * path, int flags, int mode)
+    __attribute__((alias("esp_vfs_open")));
+int _close_r(struct _reent *r, int fd)
+    __attribute__((alias("esp_vfs_close")));
+ssize_t _read_r(struct _reent *r, int fd, void * dst, size_t size)
+    __attribute__((alias("esp_vfs_read")));
+ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size)
+    __attribute__((alias("esp_vfs_write")));
+ssize_t pread(int fd, void *dst, size_t size, off_t offset)
+    __attribute__((alias("esp_vfs_pread")));
+ssize_t pwrite(int fd, const void *src, size_t size, off_t offset)
+    __attribute__((alias("esp_vfs_pwrite")));
+off_t _lseek_r(struct _reent *r, int fd, off_t size, int mode)
+    __attribute__((alias("esp_vfs_lseek")));
+int _fcntl_r(struct _reent *r, int fd, int cmd, int arg)
+    __attribute__((alias("esp_vfs_fcntl_r")));
+int _fstat_r(struct _reent *r, int fd, struct stat * st)
+    __attribute__((alias("esp_vfs_fstat")));
+int fsync(int fd)
+    __attribute__((alias("esp_vfs_fsync")));
+int ioctl(int fd, int cmd, ...)
+    __attribute__((alias("esp_vfs_ioctl")));
+#endif // CONFIG_VFS_SUPPORT_IO
 
-    FD_ZERO(&readfds);
-    FD_ZERO(&writefds);
-    FD_ZERO(&errorfds);
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout)
+    __attribute__((alias("esp_vfs_select")));
+#endif // CONFIG_VFS_SUPPORT_SELECT
 
-    for (int i = 0; i < nfds; ++i) {
-        fds[i].revents = 0;
-
-        if (fds[i].fd < 0) {
-            // revents should remain 0 and events ignored (according to the documentation of poll()).
-            continue;
-        }
-
-        if (fds[i].fd >= MAX_FDS) {
-            fds[i].revents |= POLLNVAL;
-            ++ret;
-            continue;
-        }
-
-        if (fds[i].events & (POLLIN | POLLRDNORM | POLLRDBAND | POLLPRI)) {
-            FD_SET(fds[i].fd, &readfds);
-            FD_SET(fds[i].fd, &errorfds);
-            max_fd = MAX(max_fd, fds[i].fd);
-        }
-
-        if (fds[i].events & (POLLOUT | POLLWRNORM | POLLWRBAND)) {
-            FD_SET(fds[i].fd, &writefds);
-            FD_SET(fds[i].fd, &errorfds);
-            max_fd = MAX(max_fd, fds[i].fd);
-        }
-    }
-
-    const int select_ret = esp_vfs_select(max_fd + 1, &readfds, &writefds, &errorfds, timeout < 0 ? NULL: &tv);
-
-    if (select_ret > 0) {
-        ret += select_ret;
-
-        for (int i = 0; i < nfds; ++i) {
-            if (FD_ISSET(fds[i].fd, &readfds)) {
-                fds[i].revents |= POLLIN;
-            }
-
-            if (FD_ISSET(fds[i].fd, &writefds)) {
-                fds[i].revents |= POLLOUT;
-            }
-
-            if (FD_ISSET(fds[i].fd, &errorfds)) {
-                fds[i].revents |= POLLERR;
-            }
-        }
-    } else {
-        ret = select_ret;
-        // keeping the errno from select()
-    }
-
-    return ret;
-}
+#ifdef CONFIG_VFS_SUPPORT_DIR
+int _stat_r(struct _reent *r, const char * path, struct stat * st)
+    __attribute__((alias("esp_vfs_stat")));
+int _link_r(struct _reent *r, const char* n1, const char* n2)
+    __attribute__((alias("esp_vfs_link")));
+int _unlink_r(struct _reent *r, const char *path)
+    __attribute__((alias("esp_vfs_unlink")));
+int _rename_r(struct _reent *r, const char *src, const char *dst)
+    __attribute__((alias("esp_vfs_rename")));
+int truncate(const char *path, off_t length)
+    __attribute__((alias("esp_vfs_truncate")));
+int access(const char *path, int amode)
+    __attribute__((alias("esp_vfs_access")));
+int utime(const char *path, const struct utimbuf *times)
+    __attribute__((alias("esp_vfs_utime")));
+int rmdir(const char* name)
+    __attribute__((alias("esp_vfs_rmdir")));
+int mkdir(const char* name, mode_t mode)
+    __attribute__((alias("esp_vfs_mkdir")));
+DIR* opendir(const char* name)
+    __attribute__((alias("esp_vfs_opendir")));
+int closedir(DIR* pdir)
+    __attribute__((alias("esp_vfs_closedir")));
+int readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_dirent)
+    __attribute__((alias("esp_vfs_readdir_r")));
+struct dirent* readdir(DIR* pdir)
+    __attribute__((alias("esp_vfs_readdir")));
+long telldir(DIR* pdir)
+    __attribute__((alias("esp_vfs_telldir")));
+void seekdir(DIR* pdir, long loc)
+    __attribute__((alias("esp_vfs_seekdir")));
+void rewinddir(DIR* pdir)
+    __attribute__((alias("esp_vfs_rewinddir")));
+#endif // CONFIG_VFS_SUPPORT_DIR
 
 void vfs_include_syscalls_impl(void)
 {

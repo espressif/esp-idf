@@ -782,7 +782,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 								mtCOVERAGE_TEST_MARKER();
 							}
 						}
-						else if( xYieldRequired != pdFALSE )
+						else if(xYieldRequired != pdFALSE)
 						{
 							/* This path is a special case that will only get
 							executed if the task was holding multiple mutexes
@@ -815,7 +815,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 							mtCOVERAGE_TEST_MARKER();
 						}
 					}
-					else if( xYieldRequired != pdFALSE )
+					else if(xYieldRequired != pdFALSE)
 					{
 						/* This path is a special case that will only get
 						executed if the task was holding multiple mutexes and
@@ -868,7 +868,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		taskENTER_CRITICAL(&pxQueue->mux);
 
 		/* Update the timeout state to see if it has expired yet. */
-		if( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE )
+		if(xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE )
 		{
 			if( prvIsQueueFull( pxQueue ) != pdFALSE )
 			{
@@ -1573,7 +1573,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		taskENTER_CRITICAL(&pxQueue->mux);
 
 		/* Update the timeout state to see if it has expired yet. */
-		if( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE )
+		if(xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE)
 		{
 			if( prvIsQueueEmpty( pxQueue ) != pdFALSE )
 			{
@@ -1888,7 +1888,7 @@ BaseType_t xReturn = pdFALSE;
 		}
 		#endif /* configUSE_MUTEXES */
 	}
-	else if( xPosition == queueSEND_TO_BACK )
+	else if(xPosition == queueSEND_TO_BACK)
 	{
 		( void ) memcpy( ( void * ) pxQueue->pcWriteTo, pvItemToQueue, ( size_t ) pxQueue->uxItemSize ); /*lint !e961 !e418 MISRA exception as the casts are only redundant for some ports, plus previous logic ensures a null pointer can only be passed to memcpy() if the copy size is 0. */
 		pxQueue->pcWriteTo += pxQueue->uxItemSize;

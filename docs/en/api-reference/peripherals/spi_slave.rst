@@ -1,13 +1,13 @@
 SPI Slave Driver
 ================
 
-SPI Slave driver is a program that controls ESP32's SPI peripherals while they function as slaves.
+SPI Slave driver is a program that controls {IDF_TARGET_NAME}'s SPI peripherals while they function as slaves.
 
 
-Overview of ESP32's SPI peripherals
------------------------------------
+Overview of {IDF_TARGET_NAME}'s SPI peripherals
+-----------------------------------------------
 
-ESP32 integrates two general purpose SPI controllers which can be used as slave nodes driven by an off-chip SPI master
+{IDF_TARGET_NAME} integrates two general purpose SPI controllers which can be used as slave nodes driven by an off-chip SPI master
 
 - SPI2, sometimes referred to as HSPI
 - SPI3, sometimes referred to as VSPI
@@ -23,7 +23,7 @@ The terms used in relation to the SPI slave driver are given in the table below.
 =================  =========================================================================================
 Term               Definition
 =================  =========================================================================================
-**Host**           The SPI controller peripheral external to ESP32 that initiates SPI transmissions over the bus, and acts as an SPI Master.
+**Host**           The SPI controller peripheral external to {IDF_TARGET_NAME} that initiates SPI transmissions over the bus, and acts as an SPI Master.
 **Device**         SPI slave device, in this case the SPI2 and SPI3 controllers. Each Device shares the MOSI, MISO and SCLK signals but is only active on the bus when the Host asserts the Device's individual CS line.
 **Bus**            A signal bus, common to all Devices connected to one Host. In general, a bus includes the following lines: MISO, MOSI, SCLK, one or more CS lines, and, optionally, QUADWP and QUADHD. So Devices are connected to the same lines, with the exception that each Device has its own CS line. Several Devices can also share one CS line if connected in the daisy-chain manner.
 - **MISO**         Master In, Slave Out, a.k.a. Q. Data transmission from a Device to Host.
@@ -63,7 +63,15 @@ As not every transaction requires both writing and reading data, you have a choi
 Driver Usage
 ------------
 
-- Initialize an SPI peripheral as a Device by calling the function cpp:func:`spi_slave_initialize`. Make sure to set the correct I/O pins in the struct :cpp:type:`bus_config`. Set the unused signals to ``-1``. If transactions will be longer than 32 bytes, allow a DMA channel 1 or 2 by setting the parameter ``dma_chan`` to ``1`` or ``2`` respectively. Otherwise, set ``dma_chan`` to ``0``.
+- Initialize an SPI peripheral as a Device by calling the function cpp:func:`spi_slave_initialize`. Make sure to set the correct I/O pins in the struct :cpp:type:`bus_config`. Set the unused signals to ``-1``.
+
+.. only:: esp32
+
+    If transactions will be longer than 32 bytes, allow a DMA channel 1 or 2 by setting the parameter ``dma_chan`` to ``1`` or ``2`` respectively. Otherwise, set ``dma_chan`` to ``0``.
+
+.. only:: esp32s2
+
+    If transactions will be longer than 32 bytes, allow a DMA channel by setting the parameter ``dma_chan`` to the host device. Otherwise, set ``dma_chan`` to ``0``.
 
 - Before initiating transactions, fill one or more :cpp:type:`spi_slave_transaction_t` structs with the transaction parameters required. Either queue all transactions by calling the function :cpp:func:`spi_slave_queue_trans` and, at a later time, query the result by using the function :cpp:func:`spi_slave_get_trans_result`, or handle all requests individually by feeding them into :cpp:func:`spi_slave_transmit`. The latter two functions will be blocked until the Host has initiated and finished a transaction, causing the queued data to be sent and received.
 
@@ -79,47 +87,54 @@ The amount of data that the driver can read or write to the buffers is limited b
 
 If the length of the transmission is greater than the buffer length, only the initial number of bits specified in the :cpp:member:`length` member will be sent and received. In this case, :cpp:member:`trans_len` is set to :cpp:member:`length` instead of the actual transaction length. To meet the actual transaction length requirements, set :cpp:member:`length` to a value greater than the maximum :cpp:member:`trans_len` expected. If the transmission length is shorter than the buffer length, only the data equal to the length of the buffer will be transmitted.
 
-.. Warning::
+.. only:: esp32
 
-    The ESP32 DMA hardware has a limit to the number of bytes sent by a Host and received by a Device. The transaction length must be longer than 8 bytes and a multiple of 4 bytes; otherwise, the SPI hardware might fail to receive the last 1 to 7 bytes.
+    .. Warning::
+
+        The ESP32 DMA hardware has a limit to the number of bytes sent by a Host and received by a Device. The transaction length must be longer than 8 bytes and a multiple of 4 bytes; otherwise, the SPI hardware might fail to receive the last 1 to 7 bytes.
 
 
-GPIO Matrix and IO_MUX
-----------------------
+.. only:: esp32
 
-Most of ESP32's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix.
+    GPIO Matrix and IO_MUX
+    ----------------------
 
-If at least one signal is routed through the GPIO matrix, then all signals will be routed through it. The GPIO matrix samples all signals at 80 MHz and transmits them between the GPIO and the peripheral.
+    Most of {IDF_TARGET_NAME}'s peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix.
 
-If the driver is configured so that all SPI signals are either routed to their dedicated IO_MUX pins or are not connected at all, the GPIO matrix will be bypassed.
+    If at least one signal is routed through the GPIO matrix, then all signals will be routed through it. The GPIO matrix samples all signals at 80 MHz and transmits them between the GPIO and the peripheral.
 
-The GPIO matrix introduces flexibility of routing but also increases the input delay of the MISO signal, which makes MISO setup time violations more likely. If SPI needs to operate at high speeds, use dedicated IO_MUX pins.
+    If the driver is configured so that all SPI signals are either routed to their dedicated IO_MUX pins or are not connected at all, the GPIO matrix will be bypassed.
 
-.. note::
+    The GPIO matrix introduces flexibility of routing but also increases the input delay of the MISO signal, which makes MISO setup time violations more likely. If SPI needs to operate at high speeds, use dedicated IO_MUX pins.
 
-    For more details about the influence of the MISO input delay on the maximum clock frequency, see :ref:`timing_considerations`.
+    .. note::
 
-The IO_MUX pins for SPI buses are given below.
+        For more details about the influence of the MISO input delay on the maximum clock frequency, see :ref:`timing_considerations`.
 
-+----------+------+------+
-| Pin Name | SPI2 | SPI3 |
-+          +------+------+
-|          | GPIO Number |
-+==========+======+======+
-| CS0*     | 15   | 5    |
-+----------+------+------+
-| SCLK     | 14   | 18   |
-+----------+------+------+
-| MISO     | 12   | 19   |
-+----------+------+------+
-| MOSI     | 13   | 23   |
-+----------+------+------+
-| QUADWP   | 2    | 22   |
-+----------+------+------+
-| QUADHD   | 4    | 21   |
-+----------+------+------+
+    The IO_MUX pins for SPI buses are given below.
 
-* Only the first Device attached to the bus can use the CS0 pin.
+    .. only:: esp32
+
+        +----------+------+------+
+        | Pin Name | SPI2 | SPI3 |
+        +          +------+------+
+        |          | GPIO Number |
+        +==========+======+======+
+        | CS0*     | 15   | 5    |
+        +----------+------+------+
+        | SCLK     | 14   | 18   |
+        +----------+------+------+
+        | MISO     | 12   | 19   |
+        +----------+------+------+
+        | MOSI     | 13   | 23   |
+        +----------+------+------+
+        | QUADWP   | 2    | 22   |
+        +----------+------+------+
+        | QUADHD   | 4    | 21   |
+        +----------+------+------+
+
+
+    * Only the first Device attached to the bus can use the CS0 pin.
 
 
 Speed and Timing Considerations
@@ -130,7 +145,7 @@ Speed and Timing Considerations
 Transaction Interval
 ^^^^^^^^^^^^^^^^^^^^
 
-The ESP32 SPI slave peripherals are designed as general purpose Devices controlled by a CPU. As opposed to dedicated slaves, CPU-based SPI Devices have a limited number of pre-defined registers. All transactions must be handled by the CPU, which means that the transfers and responses are not real-time, and there might be noticeable latency.
+The {IDF_TARGET_NAME} SPI slave peripherals are designed as general purpose Devices controlled by a CPU. As opposed to dedicated slaves, CPU-based SPI Devices have a limited number of pre-defined registers. All transactions must be handled by the CPU, which means that the transfers and responses are not real-time, and there might be noticeable latency.
 
 As a solution, a Device's response rate can be doubled by using the functions :cpp:func:`spi_slave_queue_trans` and then :cpp:func:`spi_slave_get_trans_result` instead of using :cpp:func:`spi_slave_transmit`.
 
@@ -191,5 +206,5 @@ The code example for Device/Host communication can be found in the :example:`per
 API Reference
 -------------
 
-.. include:: /_build/inc/spi_slave.inc
+.. include-build-file:: inc/spi_slave.inc
 

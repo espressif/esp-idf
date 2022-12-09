@@ -15,21 +15,55 @@
 #include <string.h>
 #include <errno.h>
 
+#include "esp_system.h"
+
+#include "mesh_main.h"
 #include "client_common.h"
 #include "mesh_common.h"
 
-struct net_buf_simple *bt_mesh_alloc_buf(u16_t size)
+IRAM_ATTR void *bt_mesh_malloc(size_t size)
+{
+#ifdef CONFIG_BLE_MESH_MEM_ALLOC_MODE_INTERNAL
+    return heap_caps_malloc(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_MEM_ALLOC_MODE_EXTERNAL
+    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_MEM_ALLOC_MODE_IRAM_8BIT
+    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_INTERNAL|MALLOC_CAP_IRAM_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#else
+    return malloc(size);
+#endif
+}
+
+IRAM_ATTR void *bt_mesh_calloc(size_t size)
+{
+#ifdef CONFIG_BLE_MESH_MEM_ALLOC_MODE_INTERNAL
+    return heap_caps_calloc(1, size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_MEM_ALLOC_MODE_EXTERNAL
+    return heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_MEM_ALLOC_MODE_IRAM_8BIT
+    return heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_INTERNAL|MALLOC_CAP_IRAM_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#else
+    return calloc(1, size);
+#endif
+}
+
+IRAM_ATTR void bt_mesh_free(void *ptr)
+{
+    heap_caps_free(ptr);
+}
+
+struct net_buf_simple *bt_mesh_alloc_buf(uint16_t size)
 {
     struct net_buf_simple *buf = NULL;
-    u8_t *data = NULL;
+    uint8_t *data = NULL;
 
-    buf = (struct net_buf_simple *)osi_calloc(sizeof(struct net_buf_simple) + size);
+    buf = (struct net_buf_simple *)bt_mesh_calloc(sizeof(struct net_buf_simple) + size);
     if (!buf) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
+        BT_ERR("%s, Out of memory", __func__);
         return NULL;
     }
 
-    data = (u8_t *)buf + sizeof(struct net_buf_simple);
+    data = (uint8_t *)buf + sizeof(struct net_buf_simple);
 
     buf->data = data;
     buf->len = 0;
@@ -42,16 +76,16 @@ struct net_buf_simple *bt_mesh_alloc_buf(u16_t size)
 void bt_mesh_free_buf(struct net_buf_simple *buf)
 {
     if (buf) {
-        osi_free(buf);
+        bt_mesh_free(buf);
     }
 }
 
-u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send)
+uint8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send)
 {
     bt_mesh_client_user_data_t *client = NULL;
 
     if (srv_send) {
-        BT_DBG("%s, Message is sent by a server model", __func__);
+        BT_DBG("Message is sent by a server model");
         return NODE;
     }
 
@@ -63,4 +97,18 @@ u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send)
     client = (bt_mesh_client_user_data_t *)model->user_data;
 
     return client->msg_role;
+}
+
+int bt_mesh_rand(void *buf, size_t len)
+{
+    if (buf == NULL || len == 0) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    esp_fill_random(buf, len);
+
+    BT_DBG("Random %s", bt_hex(buf, len));
+
+    return 0;
 }

@@ -38,7 +38,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 
 错误代码并不直观，因此 ESP-IDF 还可以使用 :cpp:func:`esp_err_to_name` 或者 :cpp:func:`esp_err_to_name_r` 函数，将错误代码转换为具体的错误消息。例如，我们可以向 :cpp:func:`esp_err_to_name` 函数传递错误代码 ``0x101``，可以得到返回字符串 “ESP_ERR_NO_MEM”。这样一来，我们可以在日志中输出更加直观的错误消息，而不是简单的错误码，从而帮助研发人员更快理解发生了何种错误。
 
-此外，如果出现找不到匹配的 ``ESP_ERR_`` 值的情况，函数 :cpp:func:`esp_err_to_name_r` 则会尝试将错误码作为一种 `标准 POSIX 错误代码 <http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html>`_ 进行解释。具体过程为：POSIX 错误代码（例如 ``ENOENT``， ``ENOMEM``）定义在 ``errno.h`` 文件中，可以通过 ``errno`` 变量获得，进而调用 ``strerror_r`` 函数实现。在 ESP-IDF 中，``errno`` 是一个基于线程的局部变量，即每个 FreeRTOS 任务都有自己的 ``errno`` 副本，通过函数修改 ``errno`` 也只会作用于当前任务中的 ``errno`` 变量值。
+此外，如果出现找不到匹配的 ``ESP_ERR_`` 值的情况，函数 :cpp:func:`esp_err_to_name_r` 则会尝试将错误码作为一种 `标准 POSIX 错误代码 <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html>`_ 进行解释。具体过程为：POSIX 错误代码（例如 ``ENOENT``， ``ENOMEM``）定义在 ``errno.h`` 文件中，可以通过 ``errno`` 变量获得，进而调用 ``strerror_r`` 函数实现。在 ESP-IDF 中，``errno`` 是一个基于线程的局部变量，即每个 FreeRTOS 任务都有自己的 ``errno`` 副本，通过函数修改 ``errno`` 也只会作用于当前任务中的 ``errno`` 变量值。
 
 该功能（即在无法匹配 ``ESP_ERR_`` 值时，尝试用标准 POSIX 解释错误码）默认启用。用户也可以禁用该功能，从而减小应用程序的二进制文件大小，详情可见 :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`。注意，该功能对禁用并不影响 :cpp:func:`esp_err_to_name` 和 :cpp:func:`esp_err_to_name_r` 函数的定义，用户仍可调用这两个函数转化错误码。在这种情况下， :cpp:func:`esp_err_to_name` 函数在遇到无法匹配错误码的情况会返回 ``UNKNOWN ERROR``，而 :cpp:func:`esp_err_to_name_r` 函数会返回 ``Unknown error 0xXXXX(YYYYY)``，其中 ``0xXXXX`` 和 ``YYYYY`` 分别代表错误代码的十六进制和十进制表示。
 

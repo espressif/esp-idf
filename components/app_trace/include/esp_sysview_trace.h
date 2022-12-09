@@ -14,6 +14,10 @@
 #ifndef ESP_SYSVIEW_TRACE_H_
 #define ESP_SYSVIEW_TRACE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdarg.h>
 #include "esp_err.h"
 #include "SEGGER_RTT.h" // SEGGER_RTT_ESP32_Flush
@@ -76,5 +80,9 @@ void esp_sysview_heap_trace_alloc(void *addr, uint32_t size, const void *callers
  *                  Array size must be CONFIG_HEAP_TRACING_STACK_DEPTH.
  */
 void esp_sysview_heap_trace_free(void *addr, const void *callers);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //ESP_SYSVIEW_TRACE_H_

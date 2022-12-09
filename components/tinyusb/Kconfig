@@ -1,0 +1,79 @@
+menu "TinyUSB"
+
+    config USB_ENABLED
+        bool "Enable TinyUSB driver"
+        default n
+        depends on IDF_TARGET_ESP32S2
+        select FREERTOS_SUPPORT_STATIC_ALLOCATION
+        select FREERTOS_USE_AUTHENTIC_INCLUDE_PATHS
+        help
+            Adds support for TinyUSB
+
+    config USB_DEBUG
+        bool "Debug mode"
+        default n
+        depends on USB_ENABLED
+        help
+            Debug mode
+
+    menu "Descriptor configuration"
+
+        config USB_DESC_USE_ESPRESSIF_VID
+            bool "VID: Use an Espressif's default value"
+            default y
+            depends on USB_ENABLED
+            help
+                Long description
+
+        config USB_DESC_CUSTOM_VID
+            hex "Custom VID value"
+            default 0x1234
+            depends on !USB_DESC_USE_ESPRESSIF_VID
+            help
+                Custom Vendor ID
+
+        config USB_DESC_USE_DEFAULT_PID
+            bool "PID: Use a default PID assigning"
+            default y
+            depends on USB_ENABLED
+            help
+                Default TinyUSB PID assigning uses values 0x4000...0x4007
+
+        config USB_DESC_CUSTOM_PID
+            hex "Custom PID value"
+            default 0x5678
+            depends on !USB_DESC_USE_DEFAULT_PID
+            help
+                Custom Product ID
+
+        config USB_DESC_BCDDEVICE
+            hex "bcdDevice"
+            default 0x0100
+            depends on USB_ENABLED
+            help
+                Version of the firmware of the USB device
+
+        config USB_DESC_MANUFACTURER_STRING
+            string "Manufacturer"
+            default "Espressif Systems"
+            depends on USB_ENABLED
+            help
+                Name of the manufacturer of the USB device
+
+        config USB_DESC_PRODUCT_STRING
+            string "Product"
+            default "Espressif Device"
+            depends on USB_ENABLED
+            help
+                Name of the USB device
+
+        config USB_DESC_SERIAL_STRING
+            string "Serial string"
+            default "123456"
+            depends on USB_ENABLED
+            help
+                Specify serial number of the USB device
+
+    endmenu
+
+endmenu

@@ -67,7 +67,7 @@ static void IRAM_ATTR vTimerGroupIsr(void *param)
 {
     assert((int)param == usTimerIndex);
     // Retrieve the the counter value from the timer that reported the interrupt
-    timer_group_intr_clr_in_isr(usTimerGroupIndex, usTimerIndex);
+    timer_group_clr_intr_status_in_isr(usTimerGroupIndex, usTimerIndex);
     (void)pxMBMasterPortCBTimerExpired(); // Timer expired callback function
     // Enable alarm
     timer_group_enable_alarm_in_isr(usTimerGroupIndex, usTimerIndex);
@@ -145,7 +145,6 @@ static BOOL xMBMasterPortTimersEnable(USHORT usTimerTics50us)
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
                             "timer start failure, timer_start() returned (0x%x).",
                             (uint32_t)xErr);
-    ESP_LOGD(MB_PORT_TAG,"%s Init timer.", __func__);
     return TRUE;
 }
 

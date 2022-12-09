@@ -65,7 +65,7 @@ static void example_task(void *p)
 
 Potential problem can arise in such program because task and timer has no any mechanism to acknowledge the events transfer. Task needs some time to process an event before waiting for the next one. In this case call to `ESP_LOGI` will be the most time consuming part of event processing. Therefore when timer's ISR is called at some rate it can happen that `xTaskNotifyFromISR` gets called several times before task calls `xTaskNotifyWait`. In these conditions some events will be lost. Possible solution for this is to increase timer's tick period or to use some events acknowledgement mechanism.
 
-Check the full example code [sysview_tracing](main/sysview_tracing.c) that when compiled in dual core mode reproduces the described problem on both cores. Below is the output of example compiled in signle core mode. It shows that task misses several events:
+Check the full example code [sysview_tracing](main/sysview_tracing.c) that when compiled in dual core mode reproduces the described problem on both cores. Below is the output of example compiled in single core mode. It shows that task misses several events:
 
 ```
 I (295) example: 0x3ffb6c10: run task
@@ -94,7 +94,7 @@ To run the example and find out the reason of the problem:
 
     ```
     cd ~/esp/openocd-esp32
-    bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    bin/openocd -s share/openocd/scripts -f board/esp32-wrover-kit-3.3v.cfg
     ```
 NOTE: In order to run this example you need OpenOCD version `v0.10.0-esp32-20181105` or later.
 
@@ -104,14 +104,14 @@ NOTE: In order to run this example you need OpenOCD version `v0.10.0-esp32-20181
 
 5.  It is useful to use GDB to start and/or stop tracing automatically. To do this you need to prepare special `gdbinit` file:
 
-    ```  
+    ```
     target remote :3333
     mon reset halt
     b app_main
     commands
-    mon esp32 sysview start file:///tmp/sysview_example.svdat
+    mon esp sysview start file:///tmp/sysview_example.svdat
     # For dual-core mode uncomment the line below and comment the line above
-    # mon esp32 sysview start file:///tmp/sysview_example0.svdat file:///tmp/sysview_example1.svdat
+    # mon esp sysview start file:///tmp/sysview_example0.svdat file:///tmp/sysview_example1.svdat
     c
     end
     c
@@ -123,12 +123,14 @@ NOTE: In order to run this example you need OpenOCD version `v0.10.0-esp32-20181
 
     ```
     xtensa-esp32-elf-gdb -x gdbinit build/sysview_tracing.elf
-    ``` 
+    ```
+
+    **Note:** Replace `xtensa-esp32-elf-gdb` with `xtensa-esp32s2-elf-gdb` if running the example on ESP32-S2.
 
 7.  When program prints the last message, interrupt its execution (e.g. by pressing `CTRL+C`) and type the following command in GDB console to stop tracing:
 
     ```
-    mon esp32 sysview stop
+    mon esp sysview stop
     ```
 
     You can also use another breakpoint to stop tracing and add respective lines to `gdbinit`  at step 5.

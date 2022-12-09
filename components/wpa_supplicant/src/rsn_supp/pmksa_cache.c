@@ -18,7 +18,7 @@
 #ifdef IEEE8021X_EAPOL
 
 static const int pmksa_cache_max_entries = 10;
-static const int dot11RSNAConfigPMKLifetime = 43200;
+static const int dot11RSNAConfigPMKLifetime = 8640000; // 100 days = 3600 x 24 x 100 Seconds
 static const int dot11RSNAConfigPMKReauthThreshold = 70;
 
 struct rsn_pmksa_cache {
@@ -103,7 +103,7 @@ static void pmksa_cache_set_expiration(struct rsn_pmksa_cache *pmksa)
  */
 struct rsn_pmksa_cache_entry *
 pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
-        const u8 *kck, size_t kck_len,
+        const u8 *pmkid, const u8 *kck, size_t kck_len,
         const u8 *aa, const u8 *spa, void *network_ctx, int akmp)
 {
     struct rsn_pmksa_cache_entry *entry, *pos, *prev;
@@ -120,8 +120,11 @@ pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
         return NULL;
     os_memcpy(entry->pmk, pmk, pmk_len);
     entry->pmk_len = pmk_len;
-    rsn_pmkid(pmk, pmk_len, aa, spa, entry->pmkid,
-            wpa_key_mgmt_sha256(akmp));
+    if (pmkid)
+        os_memcpy(entry->pmkid, pmkid, PMKID_LEN);
+    else
+        rsn_pmkid(pmk, pmk_len, aa, spa, entry->pmkid,
+                  wpa_key_mgmt_sha256(akmp));
     entry->expiration = now_sec + dot11RSNAConfigPMKLifetime;
     entry->reauth_time = now_sec + dot11RSNAConfigPMKLifetime *
         dot11RSNAConfigPMKReauthThreshold / 100;
@@ -279,8 +282,9 @@ void pmksa_cache_deinit(struct rsn_pmksa_cache *pmksa)
         os_free(prev);
     }
     pmksa_cache_set_expiration(pmksa);
-    os_free(pmksa);
     esp_timer_stop(pmksa->cache_timeout_timer);
+    esp_timer_delete(pmksa->cache_timeout_timer);
+    os_free(pmksa);
 }
 
 
@@ -317,7 +321,7 @@ pmksa_cache_clone_entry(struct rsn_pmksa_cache *pmksa,
     struct rsn_pmksa_cache_entry *new_entry;
 
     new_entry = pmksa_cache_add(pmksa, old_entry->pmk, old_entry->pmk_len,
-            NULL, 0,
+            NULL, NULL, 0,
             aa, pmksa->sm->own_addr,
             old_entry->network_ctx, old_entry->akmp);
     if (new_entry == NULL)
@@ -427,7 +431,7 @@ int pmksa_cache_set_current(struct wpa_sm *sm, const u8 *pmkid,
                 network_ctx,
                 bssid);
     if (sm->cur_pmksa) {
-        wpa_hexdump(MSG_DEBUG, "RSN: PMKSA cache entry found - PMKID",
+        wpa_hexdump(MSG_ERROR, "RSN: PMKSA cache entry found - PMKID",
                 sm->cur_pmksa->pmkid, PMKID_LEN);
         return 0;
     }

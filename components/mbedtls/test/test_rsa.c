@@ -18,6 +18,9 @@
 #include "unity.h"
 #include "sdkconfig.h"
 #include "test_utils.h"
+#include "ccomp_timer.h"
+
+#define PRINT_DEBUG_INFO
 
 /* Taken from openssl s_client -connect api.gigafive.com:443 -showcerts
  */
@@ -182,10 +185,47 @@ static const uint8_t pki_rsa2048_output[] = {
     0xf9, 0xe9, 0x50, 0x29, 0x5d, 0x4f, 0xcc, 0xc9,
 };
 
+#ifdef CONFIG_MBEDTLS_HARDWARE_MPI
+/* Pregenerated RSA 4096 size keys using openssl */
+static const char privkey_4096_buf[] = "-----BEGIN RSA PRIVATE KEY-----\n"
+                                  "MIIJKAIBAAKCAgEA1blr9wfIzTylroJHxcoq+YFA765gF5vj9b6tfaPG0XQExSkjndHv5sra4ar7T+k2sBB4OcKKeGHkNk6wk8tGmOS79r2L74XZs1eB0UruG+huV7Sd+YiWzwN8y9jGImA9hIkf1qxIvkco5WTmT7cVwUnCQ7qiiVadD/LgyeGD04yKZpzv9UJzfjXz5ITTn/ejcn7423M9qz41nhRWwK4zw1jv7IB57d1dWOCbN3RO4dvfVndCz8DOmLzJrZAkLsz39vppbIwbMqTXKFxWqzZY2xrYmnMx9p3v4hLeju7ls3fsekESonoP0C76u50wJfZWO2XcIUo4pue/jHi2o9KouhLXW/vyasplXvE6FFrBjSpsm1Nar4KQMUolEkUbO9baGcQvH9G5WOH0kwPt7AOSqM2EUPvBd7Jv0tbMI/BRZVVltC/t6WhannCM/I6nZrlNe5tie/qYlFu474jp5/tpa8RykkDxwl9whejIqd4iQbvDiP/GXgBYtDJ9VU/S2KqHJhQFLDi+F3+ewOcF391fgt1e1J2vNYLKZOfxTOl/1vJbU/2IjRWTRQ7cXnmpR/GNCRfgH2as6Z/0oknBSVephguDnO5QlveP4Cx2EOVY/A/KgDpu8PumSrlIk+YQgLxdKsXaVI6eDY4rY7q2uCJH3yIAfZJXEeD+ResUuSZltvECAwEAAQKCAgBwR89+oipOGHR6b5tBP+q/1bXFtXhqLs3eBuSiQu5qj2cKJYi+mtJMD3paYDdTThQa/ywKPDf+8n6wQTrnCj32iQRupjnkBg/O9kQPLixVoRCHJy5vL+D6tLxVY3cEDEeFX3zIjQ5SWJQVn6KXcnoNZ7CVYHGPcV9mR5TsuntFImp7aituUBDY14NgJKABRFosBqS6tZpKYo5MlCbXZy1ujUTOnNhxrIAj9yvUQFhIs/hrNpB1ELf46gWSF03LAIesyvWjvx9yxcL7QzeNDyozQbFVwvsWsvaZcIxXzw4B8RjdSV5+2V2BY4z6D6SB7R50ahjxrEqC9PFe3PQmsL9OvFjV9idYwFOhxiWXGjIm3wwFFLOj3e0TShscj2Iw+Ghd3wApvSdBZxzdjap1NHC+Q6yYU+BnivxUHcopVPPM3rsLndyRC6zfrQw/OkOlAP3bNL1hRedPRmRDOz0V1ihEpgC1VfXx6XOu4eg8xWiJgWX+BGvT5GWjfQg2hB1Jm344r3l0eLhr25dO80GIac2QGT2+WmYkXcsQ3AiqAn2VF8UB5mU+Iyh96jmSFVVltGZgfp98yFYN63/7wB++lhVQmJZwbglutng1qjQBFslIULddIHiYvF+AVvkrO3Hc2zg8rT91tbE13k06A1zlNGcQuQKLax8e+2/BNjsZU2E4uQKCAQEA7L4obKWYRHgG6j1VEDRrQU8Vkm4L11B+ZD/rsEh3q7LbzViOPv+1dZ40jX2qYScWyaefI46bukJlk/mlNv4Dh3EnSFvHPCInDM3oImCYImwUx0hkbSRyRNwlwRwx81LJzIR84cCqpNWrXXcplomUSM62ea1E1vtNSZs9Bg2OLoWvFOTPgk/xDi6ezdb6JFiId6cARup/bmZ363mg8jCq0wpTLVdUGrezfMj4GpB1uQET5xqXleumQu/04cHPOfXwpV0ikIOId/ldY/PetiRd86B32aB2Xd4fHUpxHMY+63MFmL6SsqMQJMPubv+eIrOId4HhT+nXNFBZXolT5XG5NwKCAQEA5xvvccHNyCTL0AebxD6EihWnp0/Dd0DwXWxZw0Yhhc9xa/W/QtygB6kPb35oKGvCKdm4dWCIGln03dU5D6CMNkJlbkxpo8gybz34SJ/6OvU836rBLHZXE3Xiqbe5XkdMdarA7kTEhEUqekDXPxhws9dWh0YjtAnBPpm1GQppiykI2edkiIhRgju5ghe+/UjAjxrEgCKZeAODh46hwZHERRKQN2MFUOFcOVDq+2wTJem9r3h1uBQAiZn8PDyx0rlRkwH2dZSSauVW+I713N0JGucOV7FeMO0ebioqqckh0i91ZJNH//Io8Sp8WuBsU/vcP9jT+5BDkCbc71BRO/AFFwKCAQBj4a6oeA0QBhvUw9+ZoKQHv9f4GZnBU+KfZSCJFWn39NQrhMsu5S+n2gGOGJDDwHwqxB+uHsKxCMZWciM0WmMex6ytKJucUURscIsZxespyrPRiEdmjNPxHXiISt8AK9OcB+GwVVsphERygI35Rz5aoWv3VhUPJqNrBKXwYdO06Q3/ILIz5oprU1wIuER9BSU+ZiUFxnXRHEZIAN7Yj5Piyh5hqNCBHTQK17dlbcFdNokxHdUKmYth/l8wyFYnvA21lt+4XOY8x+aQ/xjde+ZvnSozlTGbVNWHxBqI61MsfzDDStQVrhpniIqWJh6PwXM4CIII9z2mgqfR7NqKmTptAoIBAQDTYQOigmZbFvyrayoXVi8XtTLAnv3jByxR5pY7OtvSbagJ3J1w5CYim4iYq39M6TKP4KkMApy5rWl/tFQabPeRcS0gsxc0TBmFEaMTme7fGgrxcFZ6+koubHZCUN5k0sWmIeWQiKlNaY2uf7vf49TBSMXFuGtTclCjlybCnnlmZMPJuhCDqFsUyNelm15+f5pPyWXM5NiFooEc7WIZj996Zb4uSo1EKruVWONzzqe814s9AOp60SCkuoiv97uVRxbLZNItPRSmXNktQmSx/CEl0AuYPYwvJ9HbZQncfTBH9ExlDyidernjyr4uyHGMZyJN614ICy0gncsZv9ZtAd1FAoIBAA4toGPU/VcKFmK92zgO05jsg5vJzw5xeoxRWKrLg7iby6Su6BuNgaVwfYWeZuOhnXakid7FvFXKH6x44o9gyFm5bKqFhaXDzAnxzqcLeM5V+gititOsstpZCbVOoKQOhgTHyxpFNVX3E/nB8EunydWyhQMxKme//NsRroFm1vWljQKyL3zER82AzyseEpEYZoB/6g0n5uF2lR7KllxeBlINsceQ8g3JkmJTdS1hoXcyUSsZ+EgrRbCykNB5aVC5G3/W1OSZsFHbbMrYHCMnaYKwMqLmOkb11o6nOrJJ4pgHj8CVcp2TNjfy3y0Ru6RZ42b0Q+3LktJBGu9r5d04FgI=\n"
+                                  "-----END RSA PRIVATE KEY-----";
+
+static const char privkey_2048_buf[] = "-----BEGIN RSA PRIVATE KEY-----\r\n"
+    "MIIEowIBAAKCAQEA8N8hdkemvj6Tpk975/OWhv9BrTsCBCu+ZYfDb5VI7U2meKBg\r\n"
+    "3dAkyyhRlY3fNwSRzBUMCzsHjpgnsB40wxOgiwlB9n6PMhq0qUVKAdCpKwFztsKd\r\n"
+    "JJAsCUC+Zlwxn4RpH6ZnMl3a/njRYjuDyI32kucMP/lBRo7ks1798Gy/j+x1h5xA\r\n"
+    "vZSlFoEXKjCC6S1DWhALePuZnk4m/jGP6g+YfyJXSTqsenKa/DcWndfn/JoElZ0J\r\n"
+    "nhud8lBXwVe6mMheE1yqfL+VTU1nwg/TPNZrZsFz2sXig/RQCKt6LuSuzhRpsLp+\r\n"
+    "BdwqEs9xrwlhZnp7j4kQBomISd6kAxQfYVROHQIDAQABAoIBAHgtO4rB8QWWPyCJ\r\n"
+    "I670r7OnA2OkvzrJgHMzq2SuvPX4+gfRLMM+qDzcXugZIrdWhk+maJ3p07lnXNXY\r\n"
+    "HEcAMedstQaA2n0LKfwSX/xL2TtlvBABRVoKvI3ZSaXUdcW60KBD69ULUsoICZ/T\r\n"
+    "Rcr4WX+t20TH3bOQc7ayvEwKVgE95xIUpTH9asw8uOPvKxW2j5OLQgZuWrWyUDg0\r\n"
+    "MFh92PhWtw3i5zq6OpTTsFJeceKYV/VstIYjZ+FslmhjQxJbr+2DJRbpHXKceqy6\r\n"
+    "9yWlSV0EM7neFCHlDa2WPhK8we+6IvMiNVQKj46fHGYNBaW/ZSX7TiG5J0Uqj2e9\r\n"
+    "0MUGJ8ECgYEA+frJabhfzW5+JfGjTObeznJZE6fAOjFzaBIwFu8Kz2mIjYpQlwVK\r\n"
+    "EepMkv2KkrJuqS4GnI+Nkq7G0BAUyUj9tTJ3HQzvtJrxsnxVi99Yofx1s1P4YAnu\r\n"
+    "c8t3ElJoQ4BRoQIs/hIvyYn22IxllBHiGESrnPQ38D82xyXQgd6S8JkCgYEA9qww\r\n"
+    "j7jx6Xpy/D1Dq8Dvalm7pz3J+yHnti4w2cqZ67grUoyGnNPtciNDdfi4JzLiKkUu\r\n"
+    "SDS3DacvFpFyND0m8sbpMjnR8Rvhj+bfH8KcOAowD+YR/+6vSb/P/aBt6gYXcaBn\r\n"
+    "cjepx+sE81mnC7UrHb4TjG4hO5t3ZTc6X28gyCUCgYAMZn9lSisecrO5SCJUp0M4\r\n"
+    "NH3stq6XdGqIKBbQnG0J2u9WLh1PUIjbGKdRx1f/bPCGXe0gCRL5yse7/IA7d+51\r\n"
+    "9ZnpDAI8EE+bDgXkWWD5MB/alHjGstdsURSICSR47L2f4g6/T8GlGr3vAg/r53My\r\n"
+    "xv1IXOkFdu1NtbeBKbxaSQKBgENDmw5mAVmIcXiFAEICn4ahp4EoYT6g9T2BhQKu\r\n"
+    "s6BKnU2qUj7Lr5ETOp8dzqGpx3B9Yux/q3cGotmFmd3S2x8SzJ5MlAoqbyy9aRSR\r\n"
+    "DeZeKNL9CuV+YcA7lOz1ZWOOe7AZbHwB38NLPBNb3CheI769iTkfAuLtNvabw8go\r\n"
+    "VokdAoGBALyvBhW+Squ5tx8NOEgAisakhAVOnT6jcoeKy6FyjcvKaWagmCOCC7Gz\r\n"
+    "QB9Yf1tJ+3di+aLtWWdmU494iKJHBtPMhfrYltCpxHHQGlUc/GLPY3Z5bBYYYWpb\r\n"
+    "Wzw4ZvDraKlAs7a9CRwS5cpktk5ptK4rc5noSXkvV+yOT75zXat2\r\n"
+    "-----END RSA PRIVATE KEY-----\r\n";
+
+#endif
+
 _Static_assert(sizeof(pki_rsa2048_output) == 2048/8, "rsa2048 output is wrong size");
 _Static_assert(sizeof(pki_rsa4096_output) == 4096/8, "rsa4096 output is wrong size");
 
 static void test_cert(const char *cert, const uint8_t *expected_output, size_t output_len);
+void mbedtls_mpi_printf(const char *name, const mbedtls_mpi *X);
 
 TEST_CASE("mbedtls RSA4096 cert", "[mbedtls]")
 {
@@ -242,6 +282,7 @@ static void test_cert(const char *cert, const uint8_t *expected_output, size_t o
 }
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_MPI
+static void rsa_key_operations(int keysize, bool check_performance, bool use_blinding, bool generate_new_rsa);
 
 static int myrand(void *rng_state, unsigned char *output, size_t len)
 {
@@ -249,47 +290,92 @@ static int myrand(void *rng_state, unsigned char *output, size_t len)
     return mbedtls_hardware_poll(rng_state, output, len, &olen);
 }
 
-TEST_CASE("test performance RSA key operations", "[bignum][ignore]")
+#ifdef PRINT_DEBUG_INFO
+static void print_rsa_details(mbedtls_rsa_context *rsa)
+{
+    mbedtls_mpi X[5];
+    for (int i=0; i<5; ++i) {
+        mbedtls_mpi_init( &X[i] );
+    }
+
+    if (0 == mbedtls_rsa_export(rsa, &X[0], &X[1], &X[2], &X[3], &X[4])) {
+        for (int i=0; i<5; ++i) {
+            mbedtls_mpi_printf((char*)"N\0P\0Q\0D\0E" + 2*i, &X[i]);
+            mbedtls_mpi_free( &X[i] );
+        }
+    }
+}
+#endif
+
+TEST_CASE("test performance RSA key operations", "[bignum]")
+{
+    for (int keysize = 2048; keysize <= 4096; keysize += 2048) {
+        rsa_key_operations(keysize, true, false, false);
+    }
+}
+
+TEST_CASE("test RSA-4096 calculations", "[bignum]")
+{
+    // use pre-genrated keys to make the test run a bit faster
+    rsa_key_operations(4096, false, true, false);
+}
+
+static void rsa_key_operations(int keysize, bool check_performance, bool use_blinding, bool generate_new_rsa)
 {
     mbedtls_rsa_context rsa;
     unsigned char orig_buf[4096 / 8];
     unsigned char encrypted_buf[4096 / 8];
     unsigned char decrypted_buf[4096 / 8];
-    int64_t start;
     int public_perf, private_perf;
 
     printf("First, orig_buf is encrypted by the public key, and then decrypted by the private key\n");
+    printf("keysize=%d check_performance=%d use_blinding=%d generate_new_rsa=%d\n", keysize, check_performance, use_blinding, generate_new_rsa);
 
-    for (int keysize = 2048; keysize <= 4096; keysize += 2048) {
-        memset(orig_buf, 0xAA, sizeof(orig_buf));
-        orig_buf[0] = 0; // Ensure that orig_buf is smaller than rsa.N
-
+    memset(orig_buf, 0xAA, sizeof(orig_buf));
+    orig_buf[0] = 0; // Ensure that orig_buf is smaller than rsa.N
+    if (generate_new_rsa) {
         mbedtls_rsa_init(&rsa, MBEDTLS_RSA_PRIVATE, 0);
         TEST_ASSERT_EQUAL(0, mbedtls_rsa_gen_key(&rsa, myrand, NULL, keysize, 65537));
-
-        TEST_ASSERT_EQUAL(keysize, (int)rsa.len * 8);
-        TEST_ASSERT_EQUAL(keysize, (int)rsa.D.n * sizeof(mbedtls_mpi_uint) * 8); // The private exponent
-
-        start = esp_timer_get_time();
-        TEST_ASSERT_EQUAL(0, mbedtls_rsa_public(&rsa, orig_buf, encrypted_buf));
-        public_perf = esp_timer_get_time() - start;
-
-        start = esp_timer_get_time();
-        TEST_ASSERT_EQUAL(0, mbedtls_rsa_private(&rsa, NULL, NULL, encrypted_buf, decrypted_buf));
-        private_perf = esp_timer_get_time() - start;
-
-        if (keysize == 2048) {
-            TEST_PERFORMANCE_LESS_THAN(RSA_2048KEY_PUBLIC_OP, "public operations %d us", public_perf);
-            TEST_PERFORMANCE_LESS_THAN(RSA_2048KEY_PRIVATE_OP, "private operations %d us", private_perf);
-        } else {
-            TEST_PERFORMANCE_LESS_THAN(RSA_4096KEY_PUBLIC_OP, "public operations %d us", public_perf);
-            TEST_PERFORMANCE_LESS_THAN(RSA_4096KEY_PRIVATE_OP, "private operations %d us", private_perf);
-        }
-
-        TEST_ASSERT_EQUAL_MEMORY_MESSAGE(orig_buf, decrypted_buf, keysize / 8, "RSA operation");
-
-        mbedtls_rsa_free(&rsa);
+    } else if (keysize==4096) {
+        mbedtls_pk_context clientkey;
+        mbedtls_pk_init(&clientkey);
+        TEST_ASSERT_EQUAL(0, mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_4096_buf, sizeof(privkey_4096_buf), NULL, 0));
+        memcpy(&rsa, mbedtls_pk_rsa(clientkey), sizeof(mbedtls_rsa_context));
+    } else if (keysize==2048) {
+        mbedtls_pk_context clientkey;
+        mbedtls_pk_init(&clientkey);
+        TEST_ASSERT_EQUAL(0, mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_2048_buf, sizeof(privkey_2048_buf), NULL, 0));
+        memcpy(&rsa, mbedtls_pk_rsa(clientkey), sizeof(mbedtls_rsa_context));
+    } else { // pre-generated private key only available for keysize=4096 and 2048
+        printf("Not supported keysize, please use generate_new_rsa=true\n");
+        abort();
     }
+#ifdef PRINT_DEBUG_INFO
+    print_rsa_details(&rsa);
+#endif
+
+    TEST_ASSERT_EQUAL(keysize, (int)rsa.len * 8);
+    TEST_ASSERT_EQUAL(keysize, (int)rsa.D.n * sizeof(mbedtls_mpi_uint) * 8); // The private exponent
+
+    ccomp_timer_start();;
+    TEST_ASSERT_EQUAL(0, mbedtls_rsa_public(&rsa, orig_buf, encrypted_buf));
+    public_perf = ccomp_timer_stop();
+
+    ccomp_timer_start();;
+    TEST_ASSERT_EQUAL(0, mbedtls_rsa_private(&rsa, use_blinding?myrand:NULL, NULL, encrypted_buf, decrypted_buf));
+    private_perf = ccomp_timer_stop();
+
+    if (check_performance && keysize == 2048) {
+        TEST_PERFORMANCE_LESS_THAN(RSA_2048KEY_PUBLIC_OP, "public operations %d us", public_perf);
+        TEST_PERFORMANCE_LESS_THAN(RSA_2048KEY_PRIVATE_OP, "private operations %d us", private_perf);
+    } else if (check_performance && keysize == 4096) {
+        TEST_PERFORMANCE_LESS_THAN(RSA_4096KEY_PUBLIC_OP, "public operations %d us", public_perf);
+        TEST_PERFORMANCE_LESS_THAN(RSA_4096KEY_PRIVATE_OP, "private operations %d us", private_perf);
+    }
+
+    TEST_ASSERT_EQUAL_MEMORY_MESSAGE(orig_buf, decrypted_buf, keysize / 8, "RSA operation");
+
+    mbedtls_rsa_free(&rsa);
 }
 
 #endif // CONFIG_MBEDTLS_HARDWARE_MPI

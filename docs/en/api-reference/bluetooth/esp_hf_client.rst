@@ -11,4 +11,4 @@ Overview
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_hf_client_api.inc
+.. include-build-file:: inc/esp_hf_client_api.inc

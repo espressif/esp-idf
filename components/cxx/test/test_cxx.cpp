@@ -9,8 +9,6 @@
 #include "freertos/semphr.h"
 #include "soc/soc.h"
 
-static const char* TAG = "cxx";
-
 TEST_CASE("can use new and delete", "[cxx]")
 {
     int* int_p = new int(10);
@@ -39,27 +37,6 @@ TEST_CASE("can call virtual functions", "[cxx]")
     b.foo();
 }
 
-class NonPOD
-{
-public:
-    NonPOD(int a_) : a(a_) { }
-    int a;
-};
-
-static int non_pod_test_helper(int new_val)
-{
-    static NonPOD non_pod(42);
-    int ret = non_pod.a;
-    non_pod.a = new_val;
-    return ret;
-}
-
-TEST_CASE("can use static initializers for non-POD types", "[cxx]")
-{
-    TEST_ASSERT_EQUAL(42, non_pod_test_helper(1));
-    TEST_ASSERT_EQUAL(1, non_pod_test_helper(0));
-}
-
 TEST_CASE("can use std::vector", "[cxx]")
 {
     std::vector<int> v(10, 1);
@@ -67,145 +44,23 @@ TEST_CASE("can use std::vector", "[cxx]")
     TEST_ASSERT_EQUAL(51, std::accumulate(std::begin(v), std::end(v), 0));
 }
 
-/*
- * This test exercises static initialization guards for two objects.
- * For each object, 4 tasks are created which attempt to perform static initialization.
- * We check that constructor runs only once for each object.
- */
-
-static SemaphoreHandle_t s_slow_init_sem = NULL;
-
-template<int obj>
-class SlowInit
-{
-public:
-    SlowInit(int arg) {
-        ESP_LOGD(TAG, "init obj=%d start, arg=%d\n", obj, arg);
-        vTaskDelay(300/portTICK_PERIOD_MS);
-        TEST_ASSERT_EQUAL(-1, mInitBy);
-        TEST_ASSERT_EQUAL(0, mInitCount);
-        mInitBy = arg;
-        ++mInitCount;
-        ESP_LOGD(TAG, "init obj=%d done\n", obj);
-    }
-
-    static void task(void* arg) {
-        int taskId = reinterpret_cast<int>(arg);
-        ESP_LOGD(TAG, "obj=%d before static init, task=%d\n", obj, taskId);
-        static SlowInit slowinit(taskId);
-        ESP_LOGD(TAG, "obj=%d after static init, task=%d\n", obj, taskId);
-        xSemaphoreGive(s_slow_init_sem);
-        vTaskDelete(NULL);
-    }
-private:
-    static int mInitBy;
-    static int mInitCount;
-};
-
-template<> int SlowInit<1>::mInitBy = -1;
-template<> int SlowInit<1>::mInitCount = 0;
-template<> int SlowInit<2>::mInitBy = -1;
-template<> int SlowInit<2>::mInitCount = 0;
-
-template<int obj>
-static int start_slow_init_task(int id, int affinity)
-{
-    return xTaskCreatePinnedToCore(&SlowInit<obj>::task, "slow_init", 2048,
-            reinterpret_cast<void*>(id), 3, NULL, affinity) ? 1 : 0;
-}
-
-TEST_CASE("static initialization guards work as expected", "[cxx]")
-{
-    s_slow_init_sem = xSemaphoreCreateCounting(10, 0);
-    TEST_ASSERT_NOT_NULL(s_slow_init_sem);
-    int task_count = 0;
-    // four tasks competing for static initialization of one object
-    task_count += start_slow_init_task<1>(0, PRO_CPU_NUM);
-#if portNUM_PROCESSORS == 2
-    task_count += start_slow_init_task<1>(1, APP_CPU_NUM);
-#endif
-    task_count += start_slow_init_task<1>(2, PRO_CPU_NUM);
-    task_count += start_slow_init_task<1>(3, tskNO_AFFINITY);
-
-    // four tasks competing for static initialization of another object
-    task_count += start_slow_init_task<2>(0, PRO_CPU_NUM);
-#if portNUM_PROCESSORS == 2
-    task_count += start_slow_init_task<2>(1, APP_CPU_NUM);
-#endif
-    task_count += start_slow_init_task<2>(2, PRO_CPU_NUM);
-    task_count += start_slow_init_task<2>(3, tskNO_AFFINITY);
-
-    // All tasks should
-    for (int i = 0; i < task_count; ++i) {
-        TEST_ASSERT_TRUE(xSemaphoreTake(s_slow_init_sem, 500/portTICK_PERIOD_MS));
-    }
-    vSemaphoreDelete(s_slow_init_sem);
-
-    vTaskDelay(10); // Allow tasks to clean up, avoids race with leak detector
-}
-
-struct GlobalInitTest
-{
-    GlobalInitTest() : index(order++) {
-    }
-    int index;
-    static int order;
-};
-
-int GlobalInitTest::order = 0;
-
-GlobalInitTest g_init_test1;
-GlobalInitTest g_init_test2;
-GlobalInitTest g_init_test3;
-
-TEST_CASE("global initializers run in the correct order", "[cxx]")
-{
-    TEST_ASSERT_EQUAL(0, g_init_test1.index);
-    TEST_ASSERT_EQUAL(1, g_init_test2.index);
-    TEST_ASSERT_EQUAL(2, g_init_test3.index);
-}
-
-struct StaticInitTestBeforeScheduler
-{
-    StaticInitTestBeforeScheduler()
-    {
-        static int first_init_order = getOrder();
-        index = first_init_order;
-    }
-
-    int getOrder()
-    {
-        return order++;
-    }
-
-    int index;
-    static int order;
-};
-
-int StaticInitTestBeforeScheduler::order = 1;
-
-StaticInitTestBeforeScheduler g_static_init_test1;
-StaticInitTestBeforeScheduler g_static_init_test2;
-StaticInitTestBeforeScheduler g_static_init_test3;
-
-TEST_CASE("before scheduler has started, static initializers work correctly", "[cxx]")
-{
-    TEST_ASSERT_EQUAL(1, g_static_init_test1.index);
-    TEST_ASSERT_EQUAL(1, g_static_init_test2.index);
-    TEST_ASSERT_EQUAL(1, g_static_init_test3.index);
-    TEST_ASSERT_EQUAL(2, StaticInitTestBeforeScheduler::order);
-}
-
-/* Note: When first exception (in system) is thrown this test produces memory leaks report (~500 bytes):
-   - 392 bytes (can vary) as libunwind allocates memory to keep stack frames info to handle exceptions.
-     This info is kept until global destructors are called by __do_global_dtors_aux()
+/* Note: When first exception (in system) is thrown this test produces memory leaks report (~300 bytes):
    - 8 bytes are allocated by __cxa_get_globals() to keep __cxa_eh_globals
    - 16 bytes are allocated by pthread_setspecific() which is called by __cxa_get_globals() to init TLS var for __cxa_eh_globals
    - 88 bytes are allocated by pthread_setspecific() to init internal lock
+   - some more memory...
    */
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 
-TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=800]")
+#if CONFIG_IDF_TARGET_ESP32
+#define LEAKS "300"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define LEAKS "800"
+#else
+#error "unknown target in CXX tests, can't set leaks threshold"
+#endif
+
+TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     int thrown_value;
     try {
@@ -217,7 +72,7 @@ TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     bool thrown_value = false;
     try {
@@ -229,7 +84,7 @@ TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     void* thrown_value = 0;
     try {
@@ -241,7 +96,7 @@ TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     uint64_t thrown_value = 0;
     try {
@@ -253,7 +108,7 @@ TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     char thrown_value = '0';
     try {
@@ -265,7 +120,7 @@ TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     wchar_t thrown_value = 0;
     try {
@@ -277,7 +132,7 @@ TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     float thrown_value = 0;
     try {
@@ -289,7 +144,7 @@ TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     double thrown_value = 0;
     try {
@@ -301,7 +156,7 @@ TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ const char* exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ const char* exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     const char *thrown_value = 0;
     try {
@@ -319,7 +174,7 @@ public:
     NonExcTypeThrowee(int value) : value(value) { }
 };
 
-TEST_CASE("c++ any class exception", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ any class exception", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     int thrown_value = 0;
     try {
@@ -337,7 +192,7 @@ public:
     ExcTypeThrowee(int value) : value(value) { }
 };
 
-TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=800]")
+TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=" LEAKS "]")
 {
     int thrown_value = 0;
     try {
@@ -349,7 +204,7 @@ TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=800]")
     printf("OK?\n");
 }
 
-TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore]")
+TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore] [leaks=" LEAKS "]")
 {
     void **p, **pprev = NULL;
     int thrown_value = 0;
@@ -396,16 +251,70 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore]")
 #endif
 }
 
+
+#define TIMEOUT 19
+
+#define RECURSION 19
+
+static esp_timer_handle_t crash_timer;
+
+static uint32_t result = 0;
+
+uint32_t calc_fac(uint32_t n) {
+    if (n == 1 || n == 0) {
+        return 1;
+    } else {
+        return n * calc_fac(n - 1);
+    }
+}
+
+static void timer_cb(void *arg) {
+    result = calc_fac(RECURSION);
+}
+
+// TODO: Not a unit test, refactor to integration test/system test, etc.
+TEST_CASE("frequent interrupts don't interfere with c++ exceptions", "[cxx] [exceptions] [leaks=816]")
+{// if exception workaround is disabled, this is almost guaranteed to fail
+    const esp_timer_create_args_t timer_args {
+        timer_cb,
+        NULL,
+        ESP_TIMER_TASK,
+        "crash_timer"
+    };
+
+    TEST_ESP_OK(esp_timer_create(&timer_args, &crash_timer));
+    TEST_ESP_OK(esp_timer_start_periodic(crash_timer, TIMEOUT));
+
+    for (int i = 0; i < 500; i++) {
+        bool thrown_value = false;
+        try {
+            throw true;
+        } catch (bool e) {
+            thrown_value = e;
+        }
+
+        if (thrown_value) {
+            printf("ex thrown %d\n", i);
+        } else {
+            printf("ex not thrown\n");
+            TEST_ASSERT(false);
+        }
+    }
+
+    TEST_ESP_OK(esp_timer_stop(crash_timer));
+    TEST_ESP_OK(esp_timer_delete(crash_timer));
+}
+
 #else // !CONFIG_COMPILER_CXX_EXCEPTIONS
 
-TEST_CASE_ESP32("std::out_of_range exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
+TEST_CASE("std::out_of_range exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
 {
     std::vector<int> v(10);
     v.at(20) = 42;
     TEST_FAIL_MESSAGE("Unreachable because we are aborted on the line above");
 }
 
-TEST_CASE_ESP32("std::bad_alloc exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
+TEST_CASE("std::bad_alloc exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
 {
     std::string s = std::string(2000000000, 'a');
     (void)s;

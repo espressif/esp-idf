@@ -1,5 +1,5 @@
 BinPath: 
-    path: SSC/ssc_bin/ESP32_IDF/SSC_BLE_WIFI
+    path: SSC/ssc_bin/ESP32/SSC_BLE_WIFI
     test app: SSC_BLE_WIFI
 
 DUT: [SSC1]

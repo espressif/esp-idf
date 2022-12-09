@@ -63,14 +63,35 @@ nc -l 192.168.0.167 -p 3333
 ```
 
 ### Python scripts
-Each script contains port number, IP version (IPv4 or IPv6) and IP address (only clients) that has to be altered to match the values used by the application. Example:
+Each script in the application directory could be used to exercise the socket communication. 
+Command line arguments such as IP version (IPv4 or IPv6) and IP address and payload data (only clients) shall be supplied.
+In addition to that, port number and interface id are hardcoded in the scripts and might need to be altered to match the values used by the application. Example:
 
 ```
-PORT = 3333;
-IP_VERSION = 'IPv4'
-IPV4 = '192.168.0.167'
-IPV6 = 'FE80::32AE:A4FF:FE80:5288'
+PORT = 3333
+INTERFACE = 'en0'
 ```
+
+### Note about IPv6 addresses
+
+Examples are configured to obtain multiple IPv6 addresses. The actual behavior may differ depending on the local network, typically the ESP gets assigned these two addresses
+
+* Local Link address
+
+* Unique Local address
+
+The value and type of the IPv6 address is displayed in the terminal, for example:
+
+Please make sure that when using the Local Link address, an interface id is included in the configuration:
+
+* In the embedded code
+```
+    dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(esp_netif_instance);
+```
+* On the host
+
+   - Interface name suffix is present when passing the address as a string, for example `fe80::260a:XXX:XXX:XXX%en0`
+   - The interface id is present when passing the endpoint as tupple, for example `socket.connect(('fd00::260a:XXXX:XXXX:XXXX', 3333, 0, 3))`
 
 ## Hardware Required
 
@@ -81,8 +102,6 @@ This example can be run on any commonly available ESP32 development board.
 ```
 idf.py menuconfig
 ```
-
-* Set serial port under Serial Flasher Options.
 
 * Specific configuration for each example can be found in its README.md file.
 

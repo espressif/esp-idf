@@ -18,6 +18,10 @@
 
 #include "driver/uart.h"                    // for UART types
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define MB_CONTROLLER_STACK_SIZE            (CONFIG_FMB_CONTROLLER_STACK_SIZE)   // Stack size for Modbus controller
 #define MB_CONTROLLER_PRIORITY              (CONFIG_FMB_SERIAL_TASK_PRIO - 1)    // priority of MB controller task
 
@@ -114,7 +118,7 @@ typedef union {
         uart_port_t port;                       /*!< Modbus communication port (UART) number */
         uint32_t baudrate;                      /*!< Modbus baudrate */
         uart_parity_t parity;                   /*!< Modbus UART parity settings */
-        uint16_t dummy_port;
+        uint16_t dummy_port;                    /*!< Dummy field, unused */
     };
     // Tcp communication structure
     struct {
@@ -134,5 +138,9 @@ typedef esp_err_t (*iface_init)(mb_port_type_t, void**);  /*!< Interface method 
 typedef esp_err_t (*iface_destroy)(void);                 /*!< Interface method destroy */
 typedef esp_err_t (*iface_setup)(void*);                  /*!< Interface method setup */
 typedef esp_err_t (*iface_start)(void);                   /*!< Interface method start */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _MB_IFACE_COMMON_H

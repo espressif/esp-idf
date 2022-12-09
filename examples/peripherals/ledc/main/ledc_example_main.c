@@ -43,7 +43,7 @@
 #endif
 #define LEDC_LS_TIMER          LEDC_TIMER_1
 #define LEDC_LS_MODE           LEDC_LOW_SPEED_MODE
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 #define LEDC_LS_CH0_GPIO       (18)
 #define LEDC_LS_CH0_CHANNEL    LEDC_CHANNEL_0
 #define LEDC_LS_CH1_GPIO       (19)
@@ -112,7 +112,7 @@ void app_main(void)
             .hpoint     = 0,
             .timer_sel  = LEDC_HS_TIMER
         },
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
         {
             .channel    = LEDC_LS_CH0_CHANNEL,
             .duty       = 0,

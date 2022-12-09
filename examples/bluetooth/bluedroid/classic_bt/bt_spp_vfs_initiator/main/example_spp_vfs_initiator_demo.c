@@ -61,6 +61,9 @@ static void spp_write_handle(void * param)
     int fd = (int)param;
     printf("%s %d  %p\n", __func__,fd,param);
     do {
+        /*Controll the log frequency, retry after 1s*/
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
         size = write (fd, spp_data, SPP_DATA_LEN);
         ESP_LOGI(SPP_TAG, "fd = %d  data_len = %d",fd, size);
         if (size == -1) {
@@ -112,11 +115,13 @@ static void esp_spp_cb(uint16_t e, void *p)
 
     switch (event) {
     case ESP_SPP_INIT_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT");
-        esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
-        esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
-        esp_bt_gap_start_discovery(inq_mode, inq_len, inq_num_rsps);
-
+        ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT status=%d", param->init.status);
+        if (param->init.status == ESP_SPP_SUCCESS) {
+            esp_spp_vfs_register();
+            esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
+            esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+            esp_bt_gap_start_discovery(inq_mode, inq_len, inq_num_rsps);
+        }
         break;
     case ESP_SPP_DISCOVERY_COMP_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_DISCOVERY_COMP_EVT status=%d scn_num=%d",param->disc_comp.status, param->disc_comp.scn_num);
@@ -125,8 +130,10 @@ static void esp_spp_cb(uint16_t e, void *p)
         }
         break;
     case ESP_SPP_OPEN_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_OPEN_EVT");
-        spp_wr_task_start_up(spp_write_handle, param->open.fd);
+        ESP_LOGI(SPP_TAG, "ESP_SPP_OPEN_EVT status=%d", param->open.status);
+        if (param->open.status == ESP_SPP_SUCCESS) {
+            spp_wr_task_start_up(spp_write_handle, param->open.fd);
+        }
         break;
     case ESP_SPP_CLOSE_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_CLOSE_EVT");
@@ -268,7 +275,7 @@ void app_main(void)
         ESP_LOGE(SPP_TAG, "%s spp register failed", __func__);
         return;
     }
-    esp_spp_vfs_register();
+
     spp_task_task_start_up();
     if (esp_spp_init(esp_spp_mode) != ESP_OK) {
         ESP_LOGE(SPP_TAG, "%s spp init failed", __func__);

@@ -219,6 +219,7 @@ void gatt_act_write (tGATT_CLCB *p_clcb, UINT8 sec_act)
     if (p_attr) {
         switch (p_clcb->op_subtype) {
         case GATT_WRITE_NO_RSP:
+            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, NULL);
             p_clcb->s_handle = p_attr->handle;
             op_code = (sec_act == GATT_SEC_SIGN_DATA) ? GATT_SIGN_CMD_WRITE : GATT_CMD_WRITE;
             rt = gatt_send_write_msg(p_tcb,

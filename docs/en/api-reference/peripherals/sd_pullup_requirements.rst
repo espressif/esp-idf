@@ -3,7 +3,7 @@ SD Pull-up Requirements
 
 Espressif hardware products are designed for multiple use cases which may require different pull states on pins. For this reason, the pull state of particular pins on certain products will need to be adjusted to provide the pull-ups required in the SD bus.
 
-SD pull-up requirements apply to cases where ESP32 uses the SPI controller to communicate with SD cards. When an SD card is operating in SPI mode or 1-bit SD mode, the CMD and DATA (DAT0 - DAT3) lines of the SD bus must be pulled up by 10 kOhm resistors. Slaves should also have pull-ups on all above-mentioned lines (regardless of whether these lines are connected to the host) in order to prevent SD cards from entering a wrong state.
+SD pull-up requirements apply to cases where {IDF_TARGET_NAME} uses the SPI controller to communicate with SD cards. When an SD card is operating in SPI mode or 1-bit SD mode, the CMD and DATA (DAT0 - DAT3) lines of the SD bus must be pulled up by 10 kOhm resistors. Slaves should also have pull-ups on all above-mentioned lines (regardless of whether these lines are connected to the host) in order to prevent SD cards from entering a wrong state.
 
 By default, the MTDI bootstrapping pin is incompatible with the DAT2 line pull-up if the flash voltage is 3.3 V. For more information, see :ref:`mtdi_strapping_pin` below.
 
@@ -29,42 +29,67 @@ This section provides an overview of compatibility issues that might occur when 
 Systems on a Chip (SoCs)
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-- ESP32 (except for D2WD versions, see `ESP32 datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_):
+.. only:: esp32
 
-    - :ref:`sd_pull-up_no_pull-ups`
-    - :ref:`strapping_conflicts_dat2` for models with 3.3 V flash chip
+    - ESP32 (except for D2WD versions, see `ESP32 datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_):
 
-- ESP32-D2WD:
+        - :ref:`sd_pull-up_no_pull-ups`
+        - :ref:`strapping_conflicts_dat2` for models with 3.3 V flash chip
 
-    - :ref:`sd_pull-up_no_pull-ups`
-    - :ref:`no_pull-up_on_gpio12`
+    - ESP32-D2WD:
+
+        - :ref:`sd_pull-up_no_pull-ups`
+        - :ref:`no_pull-up_on_gpio12`
+
+    .. only:: esp32s2
+
+        .. note::
+
+            No chips listed for ESP32-S2 yet.
 
 
 Systems in Packages (SIP)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- ESP32-PICO-D4:
+.. only:: esp32
 
-    - :ref:`sd_pull-up_no_pull-ups`
-    - :ref:`strapping_conflicts_dat2`
+    - ESP32-PICO-D4:
+
+        - :ref:`sd_pull-up_no_pull-ups`
+        - :ref:`strapping_conflicts_dat2`
+
+
+.. only:: esp32s2
+
+    .. note::
+
+        No chips listed for ESP32-S2 yet.
 
 
 Modules
 ^^^^^^^
 
-- ESP32-WROOM-32 Series, including ESP32-WROOM-32, ESP32-WROOM-32D, ESP32-WROOM-32U, and ESP32-SOLO-1
+.. only:: esp32
 
-    - :ref:`sd_pull-up_no_pull-ups`
-    - :ref:`strapping_conflicts_dat2`
+    - ESP32-WROOM-32 Series, including ESP32-WROOM-32, ESP32-WROOM-32D, ESP32-WROOM-32U, and ESP32-SOLO-1
 
-- ESP32-WROVER Series, including ESP32-WROVER and ESP32-WROVER-I
+        - :ref:`sd_pull-up_no_pull-ups`
+        - :ref:`strapping_conflicts_dat2`
 
-    - :ref:`sd_pull-up_no_pull-ups`
+    - ESP32-WROVER Series, including ESP32-WROVER and ESP32-WROVER-I
 
-- ESP32-WROVER-B Series, including ESP32-WROVER-B and ESP32-WROVER-IB
+        - :ref:`sd_pull-up_no_pull-ups`
 
-    - :ref:`sd_pull-up_no_pull-ups`
-    - :ref:`strapping_conflicts_dat2`
+    - ESP32-WROVER-B Series, including ESP32-WROVER-B and ESP32-WROVER-IB
+
+        - :ref:`sd_pull-up_no_pull-ups`
+        - :ref:`strapping_conflicts_dat2`
+
+.. only:: esp32s2
+
+    .. note::
+
+        No chips listed for ESP32-S2 yet.
 
 
 .. _sdio_dev_kits:
@@ -72,40 +97,48 @@ Modules
 Development Boards
 ^^^^^^^^^^^^^^^^^^
 
-- ESP32-PICO-KIT, including PICO-KIT v4.1, v4.0, and v3
+.. only:: esp32
 
-    - :ref:`sd_pull-up_no_pull-ups`
-    - :ref:`strapping_conflicts_dat2`
-    - :ref:`gpio2_strapping_pin`
+    - ESP32-PICO-KIT, including PICO-KIT v4.1, v4.0, and v3
 
-- ESP32-DevKitC, including ESP32-DevKitC v4 and v2
+        - :ref:`sd_pull-up_no_pull-ups`
+        - :ref:`strapping_conflicts_dat2`
+        - :ref:`gpio2_strapping_pin`
 
-    - :ref:`sd_pull-up_no_pull-ups`
-    - :ref:`strapping_conflicts_dat2`
-    - :ref:`gpio2_strapping_pin`
+    - ESP32-DevKitC, including ESP32-DevKitC v4 and v2
 
-- ESP-WROVER-KIT
+        - :ref:`sd_pull-up_no_pull-ups`
+        - :ref:`strapping_conflicts_dat2`
+        - :ref:`gpio2_strapping_pin`
 
-    - Required pull-ups are provided
-    - :ref:`pull-up_conflicts_on_gpio13` (v4.1, v3, v2, and v1)
-    - :ref:`strapping_conflicts_dat2` (v4.1, v2, and v1)
-    - :ref:`gpio2_strapping_pin` (v2, v1)
+    - ESP-WROVER-KIT
 
-    You can determine the version of your ESP23-WROVER-KIT by checking which module is mounted on it:
+        - Required pull-ups are provided
+        - :ref:`pull-up_conflicts_on_gpio13` (v4.1, v3, v2, and v1)
+        - :ref:`strapping_conflicts_dat2` (v4.1, v2, and v1)
+        - :ref:`gpio2_strapping_pin` (v2, v1)
 
-    - ESP32-WROVER-B on v4.1
-    - ESP32-WROVER on v3
-    - ESP32-WROOM-32 on v1 and v2
+        You can determine the version of your ESP23-WROVER-KIT by checking which module is mounted on it:
 
-- ESP32-LyraTD-MSC
+        - ESP32-WROVER-B on v4.1
+        - ESP32-WROVER on v3
+        - ESP32-WROOM-32 on v1 and v2
 
-    - Required pull-ups are provided
-    - :ref:`strapping_conflicts_dat2`
+    - ESP32-LyraTD-MSC
 
-- ESP32-LyraT
+        - Required pull-ups are provided
+        - :ref:`strapping_conflicts_dat2`
 
-    - Required pull-ups are provided
-    - :ref:`pull-up_conflicts_on_gpio13`
+    - ESP32-LyraT
+
+        - Required pull-ups are provided
+        - :ref:`pull-up_conflicts_on_gpio13`
+
+.. only:: esp32s2
+
+    .. note::
+
+        No chips listed for ESP32-S2 yet.
 
 
 Non-Espressif Hosts
@@ -159,7 +192,7 @@ To resolve the conflict, you have the following options:
       Burning eFuses is irreversible! The issue list above might be out of date, so please make sure that the module you are burning has a 3.3 V flash chip by checking the information on http://www.espressif.com/. If you burn the 3.3 V eFuses on a module with a 1.8 V flash chip, the module will stop functioning.
 
    If you are sure that you need to irreversibly burn eFuses, go to your ESP-IDF directory and run the following command:
-   
+
    .. code-block:: bash
 
        components/esptool_py/esptool/espefuse.py set_flash_voltage 3.3V
@@ -178,13 +211,13 @@ To resolve the conflict, you have the following options:
        BURN
        VDD_SDIO setting complete.
 
-   To check the status of the eFuses, run:: 
+   To check the status of the eFuses, run::
 
        ``components/esptool_py/esptool/espefuse.py summary``
 
    If running from an automated flashing script, ``espefuse.py`` has an option ``--do-not-confirm``.
 
-   For more details, see the `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`_ (PDF).
+   For more details, see the `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ (PDF).
 
 2. **If using 1-bit SD mode or SPI mode**, disconnect the DAT2 pin and make sure it is pulled high. For this, do one the following:
 
@@ -230,7 +263,9 @@ MTDI Strapping Pin
 
 MTDI (GPIO12) is used as a bootstrapping pin to select the output voltage of an internal regulator (VDD_SDIO) which powers the flash chip. This pin has an internal pull-down, so, if left unconnected, it will read low at startup, which will lead to selecting the default 3.3 V operation.
 
-All ESP32-WROVER modules, excluding ESP32-WROVER-B, use 1.8 V flash and have internal pull-ups on GPIO12. Other modules that use 3.3 V flash have no pull-ups on the GPIO12 pin, and this pin is slightly pulled down internally.
+.. only:: esp32
+
+    All ESP32-WROVER modules, excluding ESP32-WROVER-B, use 1.8 V flash and have internal pull-ups on GPIO12. Other modules that use 3.3 V flash have no pull-ups on the GPIO12 pin, and this pin is slightly pulled down internally.
 
 When adding a pull-up to this pin for SD card operation, consider the following:
 
@@ -263,7 +298,7 @@ The following abbreviations are used in the table:
    * - **15**
      - CMD
      - WPU
-     - 
+     -
    * - **2**
      - DAT0
      - WPD
@@ -271,7 +306,7 @@ The following abbreviations are used in the table:
    * - **4**
      - DAT1
      - WPD
-     - 
+     -
    * - **12**
      - DAT2
      - PU for 1.8 V flash; WPD for 3.3 V flash
@@ -279,4 +314,4 @@ The following abbreviations are used in the table:
    * - **13**
      - DAT3
      - WPU
-     - 
+     -

@@ -258,7 +258,7 @@ TEST_CASE("Page validates blob size", "[nvs]")
     Page page;
     TEST_ESP_OK(page.load(0));
 
-    char buf[2048] = { 0 };
+    char buf[4096] = { 0 };
     // There are two potential errors here:
     // - not enough space in the page (because one value has been written already)
     // - value is too long
@@ -527,6 +527,35 @@ TEST_CASE("can modify an item on a page which will be erased", "[nvs]")
     }
 }
 
+TEST_CASE("erase operations are distributed among sectors", "[nvs]")
+{
+    const size_t sectors = 6;
+    SpiFlashEmulator emu(sectors);
+    Storage storage;
+    CHECK(storage.init(0, sectors) == ESP_OK);
+    
+    /* Fill some part of storage with static values */
+    const size_t static_sectors = 2;
+    for (size_t i = 0; i < static_sectors * Page::ENTRY_COUNT; ++i) {
+        char name[Item::MAX_KEY_LENGTH];
+        snprintf(name, sizeof(name), "static%d", (int) i);
+        REQUIRE(storage.writeItem(1, name, i) == ESP_OK);
+    }
+
+    /* Now perform many write operations */
+    const size_t write_ops = 2000;
+    for (size_t i = 0; i < write_ops; ++i) {
+        REQUIRE(storage.writeItem(1, "value", i) == ESP_OK);
+    }
+
+    /* Check that erase counts are distributed between the remaining sectors */
+    const size_t max_erase_cnt = write_ops / Page::ENTRY_COUNT / (sectors - static_sectors) + 1;
+    for (size_t i = 0; i < sectors; ++i) {
+        auto erase_cnt = emu.getSectorEraseCount(i);
+        INFO("Sector " << i << " erased " << erase_cnt);
+        CHECK(erase_cnt <= max_erase_cnt);
+    }
+}
 
 TEST_CASE("can erase items", "[nvs]")
 {
@@ -547,6 +576,100 @@ TEST_CASE("can erase items", "[nvs]")
     CHECK(storage.eraseNamespace(3) == ESP_OK);
     CHECK(storage.readItem(2, "foo", val) == ESP_ERR_NVS_NOT_FOUND);
     CHECK(storage.readItem(3, "key00222", val) == ESP_ERR_NVS_NOT_FOUND);
+}
+
+TEST_CASE("partition name is deep copy", "[nvs]")
+{
+    SpiFlashEmulator emu(10);
+    char partition_name[16];
+    strcpy(partition_name, "const_name");
+
+    nvs_handle_t handle_1;
+    nvs_handle_t handle_2;
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    TEST_ESP_OK(nvs_flash_init_custom(partition_name, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+
+    strcpy(partition_name, "just_kidding");
+
+    TEST_ESP_OK(nvs_open_from_partition("const_name", "test", NVS_READWRITE, &handle_1));
+    CHECK(nvs_open_from_partition("just_kidding", "test", NVS_READWRITE, &handle_2) == ESP_ERR_NVS_PART_NOT_FOUND);
+
+    nvs_close(handle_1);
+    nvs_close(handle_2);
+
+    nvs_flash_deinit_partition("const_name");
+    nvs_flash_deinit_partition("just_kidding"); // just in case, try not to affect other tests
+}
+
+TEST_CASE("namespace name is deep copy", "[nvs]")
+{
+    SpiFlashEmulator emu(10);
+    char ns_name[16];
+    strcpy(ns_name, "const_name");
+
+    nvs_handle_t handle_1;
+    nvs_handle_t handle_2;
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+
+    TEST_ESP_OK(nvs_open("const_name", NVS_READWRITE, &handle_1));
+    strcpy(ns_name, "just_kidding");
+
+    CHECK(nvs_open("just_kidding", NVS_READONLY, &handle_2) == ESP_ERR_NVS_NOT_FOUND);
+
+    nvs_close(handle_1);
+    nvs_close(handle_2);
+
+    nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME);
+}
+
+TEST_CASE("Partition name no longer than 16 characters", "[nvs]")
+{
+    SpiFlashEmulator emu(10);
+    const char *TOO_LONG_NAME = "0123456789abcdefg";
+
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    CHECK(nvs_flash_init_custom(TOO_LONG_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+            == ESP_ERR_INVALID_ARG);
+
+    nvs_flash_deinit_partition(TOO_LONG_NAME); // just in case
+}
+
+TEST_CASE("readonly handle fails on writing", "[nvs]")
+{
+    SpiFlashEmulator emu(10);
+    const char* str = "value 0123456789abcdef0123456789abcdef";
+    const uint8_t blob[8] = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7};
+
+    nvs_handle_t handle_1;
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+
+    // first, creating namespace...
+    TEST_ESP_OK(nvs_open("ro_ns", NVS_READWRITE, &handle_1));
+    nvs_close(handle_1);
+
+    TEST_ESP_OK(nvs_open("ro_ns", NVS_READONLY, &handle_1));
+    TEST_ESP_ERR(nvs_set_i32(handle_1, "key", 47), ESP_ERR_NVS_READ_ONLY);
+    TEST_ESP_ERR(nvs_set_str(handle_1, "key", str), ESP_ERR_NVS_READ_ONLY);
+    TEST_ESP_ERR(nvs_set_blob(handle_1, "key", blob, 8), ESP_ERR_NVS_READ_ONLY);
+
+    nvs_close(handle_1);
+
+    // without deinit it affects "nvs api tests"
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("nvs api tests", "[nvs]")
@@ -772,6 +895,39 @@ TEST_CASE("nvs iterators tests", "[nvs]")
     nvs_close(handle_2);
 }
 
+TEST_CASE("Iterator with not matching type iterates correctly", "[nvs]")
+{
+    SpiFlashEmulator emu(5);
+    nvs_iterator_t it;
+    nvs_handle_t my_handle;
+    const char* NAMESPACE = "test_ns_4";
+
+    const uint32_t NVS_FLASH_SECTOR = 0;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 5;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    for (uint16_t i = NVS_FLASH_SECTOR; i < NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN; ++i) {
+        spi_flash_erase_sector(i);
+    }
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+
+    // writing string to namespace (a type which spans multiple entries)
+    TEST_ESP_OK(nvs_open(NAMESPACE, NVS_READWRITE, &my_handle));
+    TEST_ESP_OK(nvs_set_str(my_handle, "test-string", "InitString0"));
+    TEST_ESP_OK(nvs_commit(my_handle));
+    nvs_close(my_handle);
+
+    it = nvs_entry_find(NVS_DEFAULT_PART_NAME, NAMESPACE, NVS_TYPE_I32);
+    CHECK(it == NULL);
+
+    // re-init to trigger cleaning up of broken items -> a corrupted string will be erased
+    nvs_flash_deinit();
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+
+    it = nvs_entry_find(NVS_DEFAULT_PART_NAME, NAMESPACE, NVS_TYPE_STR);
+    CHECK(it != NULL);
+    nvs_release_iterator(it);
+}
 
 TEST_CASE("wifi test", "[nvs]")
 {
@@ -1955,7 +2111,7 @@ TEST_CASE("Multi-page blob erased using nvs_erase_key should not be found when p
     TEST_ESP_OK(nvs_open("Test", NVS_READWRITE, &handle));
     TEST_ESP_OK(nvs_set_blob(handle, "abc", blob, blob_size));
     TEST_ESP_OK(nvs_erase_key(handle, "abc"));
-    TEST_ESP_ERR(nvs_get_blob(handle, "abc", NULL, &read_size), ESP_ERR_NVS_NOT_FOUND); 
+    TEST_ESP_ERR(nvs_get_blob(handle, "abc", NULL, &read_size), ESP_ERR_NVS_NOT_FOUND);
     TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
 }
@@ -2054,7 +2210,7 @@ TEST_CASE("Check that NVS supports old blob format without blob index", "[nvs]")
     nvs_handle_t handle;
 
     TEST_ESP_OK( nvs_flash_init_custom("test", 0, 2) );
-    TEST_ESP_OK( nvs_open_from_partition("test", "dummyNamespace", NVS_READONLY, &handle));
+    TEST_ESP_OK( nvs_open_from_partition("test", "dummyNamespace", NVS_READWRITE, &handle));
 
     char buf[64] = {0};
     size_t buflen = 64;
@@ -2817,6 +2973,36 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
         CHECK(WEXITSTATUS(status) != -1);
 
     }
+
+}
+
+TEST_CASE("test decrypt functionality for encrypted data", "[nvs_part_gen]")
+{
+
+    //retrieving the temporary test data
+    int status = system("cp -rf ../nvs_partition_generator/testdata .");
+    CHECK(status == 0);
+
+    //encoding data from sample_multipage_blob.csv
+    status = system("python ../nvs_partition_generator/nvs_partition_gen.py generate ../nvs_partition_generator/sample_multipage_blob.csv partition_encoded.bin 0x5000 --outdir ../nvs_partition_generator");
+    CHECK(status == 0);
+
+    //encrypting data from sample_multipage_blob.csv
+    status = system("python ../nvs_partition_generator/nvs_partition_gen.py encrypt ../nvs_partition_generator/sample_multipage_blob.csv partition_encrypted.bin 0x5000 --inputkey ../nvs_partition_generator/testdata/sample_encryption_keys.bin --outdir ../nvs_partition_generator");
+    CHECK(status == 0);
+
+    //decrypting data from partition_encrypted.bin
+    status = system("python ../nvs_partition_generator/nvs_partition_gen.py decrypt ../nvs_partition_generator/partition_encrypted.bin ../nvs_partition_generator/testdata/sample_encryption_keys.bin ../nvs_partition_generator/partition_decrypted.bin");
+    CHECK(status == 0);
+
+    status = system("diff ../nvs_partition_generator/partition_decrypted.bin ../nvs_partition_generator/partition_encoded.bin");
+    CHECK(status == 0);
+    CHECK(WEXITSTATUS(status) == 0);
+
+
+    //cleaning up the temporary test data
+    status = system("rm -rf testdata");
+    CHECK(status == 0);
 
 }
 

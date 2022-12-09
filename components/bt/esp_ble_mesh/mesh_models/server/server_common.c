@@ -12,22 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
 #include <errno.h>
-#include <stdbool.h>
 
-#include "osi/allocator.h"
-
-#include "mesh_types.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
 #include "mesh.h"
+#include "mesh_config.h"
 #include "access.h"
-#include "model_opcode.h"
+#include "mesh_common.h"
+#include "generic_server.h"
+#include "lighting_server.h"
 
-#include "server_common.h"
-#include "state_binding.h"
-#include "state_transition.h"
+#if CONFIG_BLE_MESH_SERVER_MODEL
 
 /**
  * According to Mesh Model Spec:
@@ -37,7 +31,7 @@
  */
 #define INSTANTANEOUS_TRANS_TIME      0
 
-u8_t bt_mesh_get_default_trans_time(struct bt_mesh_model *model)
+uint8_t bt_mesh_get_default_trans_time(struct bt_mesh_model *model)
 {
     /**
      * 1. If a Generic Default Transition Time Server model is present on the
@@ -52,10 +46,10 @@ u8_t bt_mesh_get_default_trans_time(struct bt_mesh_model *model)
      */
     struct bt_mesh_elem *element = bt_mesh_model_elem(model);
     struct bt_mesh_gen_def_trans_time_srv *state = NULL;
-    u16_t primary_addr = bt_mesh_primary_addr();
+    uint16_t primary_addr = bt_mesh_primary_addr();
     struct bt_mesh_model *srv = NULL;
 
-    for (u16_t addr = element->addr; addr >= primary_addr; addr--) {
+    for (uint16_t addr = element->addr; addr >= primary_addr; addr--) {
         element = bt_mesh_elem_find(addr);
         if (element) {
             srv = bt_mesh_model_find(element, BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV);
@@ -71,10 +65,10 @@ u8_t bt_mesh_get_default_trans_time(struct bt_mesh_model *model)
     return INSTANTANEOUS_TRANS_TIME;
 }
 
-int bt_mesh_get_light_lc_trans_time(struct bt_mesh_model *model, u8_t *trans_time)
+int bt_mesh_get_light_lc_trans_time(struct bt_mesh_model *model, uint8_t *trans_time)
 {
     struct bt_mesh_light_lc_srv *srv = NULL;
-    u32_t value;
+    uint32_t value = 0U;
 
     if (model == NULL || trans_time == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -82,13 +76,13 @@ int bt_mesh_get_light_lc_trans_time(struct bt_mesh_model *model, u8_t *trans_tim
     }
 
     if (model->id != BLE_MESH_MODEL_ID_LIGHT_LC_SRV) {
-        BT_ERR("%s, Not a Light LC Server", __func__);
+        BT_ERR("Invalid a Light LC Server 0x%04x", model->id);
         return -EINVAL;
     }
 
     srv = (struct bt_mesh_light_lc_srv *)model->user_data;
     if (srv == NULL) {
-        BT_ERR("%s, Invalid Light LC Server user_data", __func__);
+        BT_ERR("Invalid Light LC Server user data");
         return -EINVAL;
     }
 
@@ -129,7 +123,7 @@ int bt_mesh_get_light_lc_trans_time(struct bt_mesh_model *model, u8_t *trans_tim
 int bt_mesh_server_get_optional(struct bt_mesh_model *model,
                                 struct bt_mesh_msg_ctx *ctx,
                                 struct net_buf_simple *buf,
-                                u8_t *trans_time, u8_t *delay,
+                                uint8_t *trans_time, uint8_t *delay,
                                 bool *optional)
 {
     if (model == NULL || buf == NULL || trans_time == NULL ||
@@ -139,7 +133,7 @@ int bt_mesh_server_get_optional(struct bt_mesh_model *model,
     }
 
     if (buf->len != 0x00 && buf->len != 0x02) {
-        BT_ERR("%s, Invalid optional message length %d", __func__, buf->len);
+        BT_ERR("Invalid optional message length %d", buf->len);
         return -EINVAL;
     }
 
@@ -161,7 +155,7 @@ int bt_mesh_server_get_optional(struct bt_mesh_model *model,
              * its appropriate transition times defined by the Light LC Property states.
              */
             if (bt_mesh_get_light_lc_trans_time(model, trans_time)) {
-                BT_ERR("%s, Failed to get Light LC transition time", __func__);
+                BT_ERR("Failed to get Light LC transition time");
                 return -EIO;
             }
         } else {
@@ -175,7 +169,7 @@ int bt_mesh_server_get_optional(struct bt_mesh_model *model,
     /* Optional fields are available */
     *trans_time = net_buf_simple_pull_u8(buf);
     if ((*trans_time & 0x3F) == 0x3F) {
-        BT_ERR("%s, Invalid Transaction Number of Steps 0x3F", __func__);
+        BT_ERR("Invalid Transaction Number of Steps 0x3f");
         return -EINVAL;
     }
 
@@ -192,13 +186,26 @@ void bt_mesh_server_alloc_ctx(struct k_work *work)
      * bt_mesh_msg_ctx" info to the application layer after a certain delay.
      * Here we use the allocated heap memory to store the "struct bt_mesh_msg_ctx".
      */
-    __ASSERT(work, "%s, Invalid parameter", __func__);
-    work->_reserved = osi_calloc(sizeof(struct bt_mesh_msg_ctx));
-    __ASSERT(work->_reserved, "%s, Failed to allocate memory", __func__);
+    __ASSERT(work, "Invalid parameter");
+    if (!work->_reserved) {
+        work->_reserved = bt_mesh_calloc(sizeof(struct bt_mesh_msg_ctx));
+        __ASSERT(work->_reserved, "Out of memory");
+    }
 }
 
+#if CONFIG_BLE_MESH_DEINIT
+void bt_mesh_server_free_ctx(struct k_work *work)
+{
+    __ASSERT(work, "Invalid parameter");
+    if (work->_reserved) {
+        bt_mesh_free(work->_reserved);
+        work->_reserved = NULL;
+    }
+}
+#endif /* CONFIG_BLE_MESH_DEINIT */
+
 bool bt_mesh_is_server_recv_last_msg(struct bt_mesh_last_msg_info *last,
-                                     u8_t tid, u16_t src, u16_t dst, s64_t *now)
+                                     uint8_t tid, uint16_t src, uint16_t dst, int64_t *now)
 {
     *now = k_uptime_get();
 
@@ -216,7 +223,7 @@ bool bt_mesh_is_server_recv_last_msg(struct bt_mesh_last_msg_info *last,
 }
 
 void bt_mesh_server_update_last_msg(struct bt_mesh_last_msg_info *last,
-                                    u8_t tid, u16_t src, u16_t dst, s64_t *now)
+                                    uint8_t tid, uint16_t src, uint16_t dst, int64_t *now)
 {
     /* Currently we only update msg info which dst is set to a unicast address */
     if (!BLE_MESH_ADDR_IS_UNICAST(dst)) {
@@ -230,7 +237,7 @@ void bt_mesh_server_update_last_msg(struct bt_mesh_last_msg_info *last,
     return;
 }
 
-struct net_buf_simple *bt_mesh_server_get_pub_msg(struct bt_mesh_model *model, u16_t msg_len)
+struct net_buf_simple *bt_mesh_server_get_pub_msg(struct bt_mesh_model *model, uint16_t msg_len)
 {
     struct net_buf_simple *buf = NULL;
 
@@ -241,16 +248,18 @@ struct net_buf_simple *bt_mesh_server_get_pub_msg(struct bt_mesh_model *model, u
 
     if (model->pub == NULL || model->pub->msg == NULL ||
             model->pub->addr == BLE_MESH_ADDR_UNASSIGNED) {
-        BT_DBG("%s, Model 0x%04x has no publication support", __func__, model->id);
+        BT_DBG("No publication support, model id 0x%04x", model->id);
         return NULL;
     }
 
     buf = model->pub->msg;
     if (buf->size < msg_len) {
-        BT_ERR("%s, Too small publication msg size %d, model 0x%04x",
-               __func__, buf->size, model->id);
+        BT_ERR("Too small publication msg size %d, model id 0x%04x",
+                buf->size, model->id);
         return NULL;
     }
 
     return buf;
 }
+
+#endif /* CONFIG_BLE_MESH_SERVER_MODEL */

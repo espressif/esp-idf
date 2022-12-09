@@ -23,6 +23,10 @@
 
 #include "tcpip_adapter_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief tcpip adapter legacy init. It is used only to set the compatibility mode of esp-netif, which
  * will enable backward compatibility of esp-netif.
@@ -55,6 +59,15 @@ esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
  * @return See esp_netif_get_ip6_linklocal
  */
 esp_err_t tcpip_adapter_get_ip6_linklocal(tcpip_adapter_if_t tcpip_if, ip6_addr_t *if_ip6);
+
+/**
+ * @brief Translates to esp_netif_get_ip6_global
+ *
+ * @param tcpip_if  Interface type corresponding to appropriate instance of esp-netif
+ * @param if_ip6 See esp_netif_get_ip6_global
+ * @return See esp_netif_get_ip6_global
+ */
+esp_err_t tcpip_adapter_get_ip6_global(tcpip_adapter_if_t tcpip_if, ip6_addr_t *if_ip6);
 
 /**
  * @brief`Translates to esp_netif_dhcpc_get_status
@@ -244,5 +257,9 @@ esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **h
  * @return ESP_OK on success
  */
 esp_err_t tcpip_adapter_set_default_wifi_handlers(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //_TCPIP_ADAPTER_H_

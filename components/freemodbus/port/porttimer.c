@@ -52,7 +52,7 @@
 #include "port_serial_slave.h"
 #include "sdkconfig.h"
 
-#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
+#if CONFIG_FMB_TIMER_PORT_ENABLED
 
 #define MB_US50_FREQ            (20000) // 20kHz 1/20000 = 50mks
 #define MB_DISCR_TIME_US        (50)    // 50uS = one discreet for timer
@@ -71,7 +71,7 @@ static void IRAM_ATTR vTimerGroupIsr(void *param)
 {
     assert((int)param == usTimerIndex);
     // Retrieve the counter value from the timer that reported the interrupt
-    timer_group_intr_clr_in_isr(usTimerGroupIndex, usTimerIndex);
+    timer_group_clr_intr_status_in_isr(usTimerGroupIndex, usTimerIndex);
     (void)pxMBPortCBTimerExpired(); // Timer callback function
     // Enable alarm
     timer_group_enable_alarm_in_isr(usTimerGroupIndex, usTimerIndex);
@@ -80,7 +80,7 @@ static void IRAM_ATTR vTimerGroupIsr(void *param)
 
 BOOL xMBPortTimersInit(USHORT usTim1Timerout50us)
 {
-#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
+#if CONFIG_FMB_TIMER_PORT_ENABLED
     MB_PORT_CHECK((usTim1Timerout50us > 0), FALSE,
             "Modbus timeout discreet is incorrect.");
     esp_err_t xErr;
@@ -94,16 +94,15 @@ BOOL xMBPortTimersInit(USHORT usTim1Timerout50us)
     // Configure timer
     xErr = timer_init(usTimerGroupIndex, usTimerIndex, &config);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
-            "timer init failure, timer_init() returned (0x%x).", (uint32_t)xErr);
+            "timer init failure, timer_init() returned (0x%x).", xErr);
     // Stop timer counter
     xErr = timer_pause(usTimerGroupIndex, usTimerIndex);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
-                    "stop timer failure, timer_pause() returned (0x%x).", (uint32_t)xErr);
+                    "stop timer failure, timer_pause() returned (0x%x).", xErr);
     // Reset counter value
     xErr = timer_set_counter_value(usTimerGroupIndex, usTimerIndex, 0x00000000ULL);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
-                    "timer set value failure, timer_set_counter_value() returned (0x%x).",
-                    (uint32_t)xErr);
+                    "timer set value failure, timer_set_counter_value() returned (0x%x).", xErr);
     // wait3T5_us = 35 * 11 * 100000 / baud; // the 3.5T symbol time for baudrate
     // Set alarm value for usTim1Timerout50us * 50uS
     xErr = timer_set_alarm_value(usTimerGroupIndex, usTimerIndex, (uint32_t)(usTim1Timerout50us));
@@ -122,7 +121,7 @@ BOOL xMBPortTimersInit(USHORT usTim1Timerout50us)
 
 void vMBPortTimersEnable(void)
 {
-#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
+#if CONFIG_FMB_TIMER_PORT_ENABLED
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
     ESP_ERROR_CHECK(timer_set_counter_value(usTimerGroupIndex, usTimerIndex, 0ULL));
     ESP_ERROR_CHECK(timer_enable_intr(usTimerGroupIndex, usTimerIndex));
@@ -133,9 +132,9 @@ void vMBPortTimersEnable(void)
 void MB_PORT_ISR_ATTR
 vMBPortTimersDisable(void)
 {
-#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
+#if CONFIG_FMB_TIMER_PORT_ENABLED
     if( (BOOL)xPortInIsrContext() ) {
-            timer_group_set_counter_enable_in_isr(usTimerGroupIndex, usTimerIndex, TIMER_PAUSE);
+        timer_group_set_counter_enable_in_isr(usTimerGroupIndex, usTimerIndex, TIMER_PAUSE);
     } else {
         ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
         ESP_ERROR_CHECK(timer_set_counter_value(usTimerGroupIndex, usTimerIndex, 0ULL));

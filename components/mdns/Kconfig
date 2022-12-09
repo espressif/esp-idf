@@ -19,6 +19,12 @@ menu "mDNS"
             higher than priorities of system tasks. Compile time warning/error
             would be emitted if the chosen task priority were too high.
 
+    config MDNS_TASK_STACK_SIZE
+        int "mDNS task stack size"
+        default 4096
+        help
+            Allows setting mDNS task stacksize.
+
     choice MDNS_TASK_AFFINITY
         prompt "mDNS task affinity"
         default MDNS_TASK_AFFINITY_CPU0

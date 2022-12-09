@@ -31,6 +31,6 @@ ESP-IDF :example:`storage` 目录下提供了两个代码示例：
 API 参考
 -------------
 
-.. include:: /_build/inc/nvs_flash.inc
+.. include-build-file:: inc/nvs_flash.inc
 
-.. include:: /_build/inc/nvs.inc
+.. include-build-file:: inc/nvs.inc

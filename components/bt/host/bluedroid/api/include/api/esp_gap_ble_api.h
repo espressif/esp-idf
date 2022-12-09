@@ -292,6 +292,8 @@ typedef enum {
     ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH,
     /* Enable/Disable OOB support */
     ESP_BLE_SM_OOB_SUPPORT,
+    /* Appl encryption key size */
+    ESP_BLE_APP_ENC_KEY_SIZE,
     ESP_BLE_SM_MAX_PARAM,
 } esp_ble_sm_param_t;
 
@@ -915,7 +917,7 @@ esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params);
 esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_data_length);
 
 /**
- * @brief           This function sets the random address for the application
+ * @brief           This function sets the static Random Address and Non-Resolvable Private Address for the application
  *
  * @param[in]       rand_addr: the random address which should be setting
  *
@@ -1127,6 +1129,20 @@ esp_err_t esp_ble_gap_clean_duplicate_scan_exceptional_list(esp_duplicate_scan_e
 /**
 * @brief             Set a GAP security parameter value. Overrides the default value.
 *
+*                    Secure connection is highly recommended to avoid some major
+*                    vulnerabilities like 'Impersonation in the Pin Pairing Protocol'
+*                    (CVE-2020-26555) and 'Authentication of the LE Legacy Pairing
+*                    Protocol'.
+*
+*                    To accept only `secure connection mode`, it is necessary do as following:
+*
+*                    1. Set bit `ESP_LE_AUTH_REQ_SC_ONLY` (`param_type` is
+*                    `ESP_BLE_SM_AUTHEN_REQ_MODE`), bit `ESP_LE_AUTH_BOND` and bit
+*                    `ESP_LE_AUTH_REQ_MITM` is optional as required.
+*
+*                    2. Set to `ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_ENABLE` (`param_type` is
+*                    `ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH`).
+*
 * @param[in]       param_type : the type of the param which to be set
 * @param[in]       value  : the param value
 * @param[in]       len : the length of the param value
@@ -1293,6 +1309,17 @@ esp_err_t esp_ble_get_current_conn_params(esp_bd_addr_t bd_addr, esp_gap_conn_pa
 */
 esp_err_t esp_gap_ble_set_channels(esp_gap_ble_channels channels);
 
+/**
+* @brief           This function is called to authorized a link after Authentication(MITM protection)
+*
+* @param[in]       bd_addr: BD address of the peer device.
+* @param[out]      authorize: Authorized the link or not.
+*
+* @return          - ESP_OK : success
+*                  - other  : failed
+*
+*/
+esp_err_t esp_gap_ble_set_authorization(esp_bd_addr_t bd_addr, bool authorize);
 #ifdef __cplusplus
 }
 #endif

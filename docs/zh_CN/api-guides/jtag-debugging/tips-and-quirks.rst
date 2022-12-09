@@ -9,7 +9,7 @@
 可用的断点和观察点
 ^^^^^^^^^^^^^^^^^^
 
-ESP32 调试器支持 2 个硬件断点和 64 个软件断点。硬件断点是由 ESP32 芯片内部的逻辑电路实现的，能够设置在代码的任何位置：闪存或者 IRAM 的代码区域。除此以外，OpenOCD 实现了两种软件断点：闪存断点（最多 32 个）和 IRAM 断点（最多 32 个）。目前 GDB 无法在闪存中设置软件断点，因此除非解决此限制，否则这些断点只能由 OpenOCD 模拟为硬件断点。（详细信息可以参阅 :ref:`下面 <jtag-debugging-tip-where-breakpoints>`）。ESP32 还支持 2 个观察点，所以可以观察两个变量的变化或者通过 GDB 命令 ``watch myVariable`` 来读取变量的值。请注意 menuconfig 中的 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项会使用第二个观察点，如果你想在 OpenOCD 或者 GDB 中再次尝试使用这个观察点，可能不会得到预期的结果。详情请查看 menuconfig 中的帮助文档。
+{IDF_TARGET_NAME} 调试器支持 2 个硬件断点和 64 个软件断点。硬件断点是由 {IDF_TARGET_NAME} 芯片内部的逻辑电路实现的，能够设置在代码的任何位置：闪存或者 IRAM 的代码区域。除此以外，OpenOCD 实现了两种软件断点：闪存断点（最多 32 个）和 IRAM 断点（最多 32 个）。目前 GDB 无法在闪存中设置软件断点，因此除非解决此限制，否则这些断点只能由 OpenOCD 模拟为硬件断点。（详细信息可以参阅 :ref:`下面 <jtag-debugging-tip-where-breakpoints>`）。{IDF_TARGET_NAME} 还支持 2 个观察点，所以可以观察两个变量的变化或者通过 GDB 命令 ``watch myVariable`` 来读取变量的值。请注意 menuconfig 中的 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项会使用第二个观察点，如果你想在 OpenOCD 或者 GDB 中再次尝试使用这个观察点，可能不会得到预期的结果。详情请查看 menuconfig 中的帮助文档。
 
 
 .. _jtag-debugging-tip-where-breakpoints:
@@ -25,9 +25,9 @@ ESP32 调试器支持 2 个硬件断点和 64 个软件断点。硬件断点是�
 闪存映射 vs 软件闪存断点
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-为了在闪存中设置或者清除软件断点，OpenOCD 需要知道它们在闪存中的地址。为了完成从 ESP32 的地址空间到闪存地址的转换，OpenOCD 使用闪存中程序代码区域的映射。这些映射被保存在程序映像的头部，位于二进制数据（代码段和数据段）之前，并且特定于写入闪存的每一个应用程序的映像。因此，为了支持软件闪存断点，OpenOCD 需要知道待调试的应用程序映像在闪存中的位置。默认情况下，OpenOCD 会在 0x8000 处读取分区表并使用第一个找到的应用程序映像的映射，但是也可能会存在无法工作的情况，比如分区表不在标准的闪存位置，甚至可能有多个映像：一个出厂映像和两个 OTA 映像，你可能想要调试其中的任意一个。为了涵盖所有可能的调试情况，OpenOCD 支持特殊的命令，用于指定待调试的应用程序映像在闪存中的具体位置。该命令具有以下格式： 
+为了在闪存中设置或者清除软件断点，OpenOCD 需要知道它们在闪存中的地址。为了完成从 {IDF_TARGET_NAME} 的地址空间到闪存地址的转换，OpenOCD 使用闪存中程序代码区域的映射。这些映射被保存在程序映像的头部，位于二进制数据（代码段和数据段）之前，并且特定于写入闪存的每一个应用程序的映像。因此，为了支持软件闪存断点，OpenOCD 需要知道待调试的应用程序映像在闪存中的位置。默认情况下，OpenOCD 会在 0x8000 处读取分区表并使用第一个找到的应用程序映像的映射，但是也可能会存在无法工作的情况，比如分区表不在标准的闪存位置，甚至可能有多个映像：一个出厂映像和两个 OTA 映像，你可能想要调试其中的任意一个。为了涵盖所有可能的调试情况，OpenOCD 支持特殊的命令，用于指定待调试的应用程序映像在闪存中的具体位置。该命令具有以下格式：
 
-``esp32 appimage_offset <offset>`` 
+``esp appimage_offset <offset>``
 
 偏移量应为十六进制格式，如果要恢复默认行为，可以将偏移地址设置为 ``-1`` 。
 
@@ -35,7 +35,9 @@ ESP32 调试器支持 2 个硬件断点和 64 个软件断点。硬件断点是�
 
     由于 GDB 在连接 OpenOCD 时仅仅请求一次内存映射，所以可以在 TCL 配置文件中指定该命令，或者通过命令行传递给 OpenOCD。对于后者，命令行示例如下：
 
-    ``openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "init; halt; esp32 appimage_offset 0x210000"``
+    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+        :start-after: run-openocd-appimage-offset
+        :end-before: ---
 
     另外还可以通过 OpenOCD 的 telnet 会话执行该命令，然后再连接 GDB， 不过这种方式似乎没有那么便捷。
 
@@ -54,10 +56,11 @@ OpenOCD 支持的编译时的选项
 
 ESP-IDF 有一些针对 OpenOCD 调试功能的选项可以在编译时进行设置：
 
-* :ref:`CONFIG_ESP32_DEBUG_OCDAWARE` 默认会被使能。如果程序抛出了不可修复或者未处理的异常，并且此时已经连接上了 JTAG 调试器（即 OpenOCD 正在运行），那么 ESP-IDF 将会进入调试器工作模式。
+* :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEBUG_OCDAWARE` 默认会被使能。如果程序抛出了不可修复或者未处理的异常，并且此时已经连接上了 JTAG 调试器（即 OpenOCD 正在运行），那么 ESP-IDF 将会进入调试器工作模式。
+
 * :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 默认没有使能。在所有任务堆栈的末尾设置观察点，从 1 号开始索引。这是调试任务堆栈溢出的最准确的方式。
 
-更多有关设置编译时的选项的信息，请参阅 :ref:`idf.py menuconfig <get-started-configure>`。
+更多有关设置编译时的选项的信息，请参阅 :ref:`项目配置菜单 <get-started-configure>`。
 
 .. _jtag-debugging-tip-freertos-support:
 
@@ -66,20 +69,24 @@ ESP-IDF 有一些针对 OpenOCD 调试功能的选项可以在编译时进行设
 
 OpenOCD 完全支持 ESP-IDF 自带的 FreeRTOS 操作系统，GDB 会将 FreeRTOS 中的任务当做线程。使用 GDB 命令 ``i threads`` 可以查看所有的线程，使用命令 ``thread n`` 可以切换到某个具体任务的堆栈，其中 ``n`` 是线程的编号。检测 FreeRTOS 的功能可以在配置目标时被禁用。更多详细信息，请参阅 :ref:`jtag-debugging-tip-openocd-configure-target`.
 
+.. only:: esp32
 
-.. _jtag-debugging-tip-code-flash-voltage:
+    .. _jtag-debugging-tip-code-flash-voltage:
 
-在 OpenOCD 的配置文件中设置 SPI 闪存的工作电压
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    在 OpenOCD 的配置文件中设置 SPI 闪存的工作电压
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-ESP32 的 MTDI 引脚是用于 JTAG 通信的四个引脚之一，同时也是 ESP32 的 bootstrapping 引脚。上电时，ESP32 会在 MTDI 引脚上采样二进制电平，据此来设置内部的稳压器，用于给外部的 SPI 闪存芯片供电。如果上电时 MTDI 引脚上的二进制电平为低电平，则稳压器会被设置为 3.3 V；如果 MTDI 引脚为高电平，则稳压器会被设置为 1.8 V。MTDI 引脚通常需要一个上拉电阻或者直接使能内部的弱下拉电阻（详见 `ESP32 系列芯片技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ ），具体取决于所使用的 SPI 芯片的类型。但是一旦连接上 JTAG 后，原来用于实现 bootstrapping 功能的上拉或者下拉电阻都会被覆盖掉。 
+    ESP32 的 MTDI 引脚是用于 JTAG 通信的四个引脚之一，同时也是 ESP32 的 bootstrapping 引脚。上电时，ESP32 会在 MTDI 引脚上采样二进制电平，据此来设置内部的稳压器，用于给外部的 SPI 闪存芯片供电。如果上电时 MTDI 引脚上的二进制电平为低电平，则稳压器会被设置为 3.3 V；如果 MTDI 引脚为高电平，则稳压器会被设置为 1.8 V。MTDI 引脚通常需要一个上拉电阻或者直接使能内部的弱下拉电阻（详见 `ESP32 系列芯片技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ ），具体取决于所使用的 SPI 芯片的类型。但是一旦连接上 JTAG 后，原来用于实现 bootstrapping 功能的上拉或者下拉电阻都会被覆盖掉。
 
-为了解决这个问题，OpenOCD 的板级配置文件（例如 ESP32-WROOM-32 模组的 ``boards\esp-wroom-32.cfg``）提供了 ``ESP32_FLASH_VOLTAGE`` 参数来设置 ``TDO`` 信号线在空闲状态下的二进制电平，这样就可以减少由于闪存电压不正确而导致的应用程序启动不良的几率。
+    为了解决这个问题，OpenOCD 的板级配置文件（例如 ESP-WROVER-KIT 开发板的 ``board\esp32-wrover-kit-3.3v.cfg``）提供了 ``ESP32_FLASH_VOLTAGE`` 参数来设置 ``TDO`` 信号线在空闲状态下的二进制电平，这样就可以减少由于闪存电压不正确而导致的应用程序启动不良的几率。
 
-查看 JTAG 连接的 ESP32 模组的规格书，检查其 SPI 闪存芯片的供电电压值，然后再相应的设置 ``ESP32_FLASH_VOLTAGE``。大多数的 WROOM 模组使用 3.3 V 的闪存芯片，但是 WROVER 模组使用 1.8 V 的闪存芯片。 
+    查看 JTAG 连接的 ESP32 模组的规格书，检查其 SPI 闪存芯片的供电电压值，然后再相应的设置 ``ESP32_FLASH_VOLTAGE``。大多数WROOM模块使用 3.3 V 的闪存芯片。 早于 ESP32-WROVER-B 的 WROVER 模块使用 1.8 V 闪存芯片，而ESP32-WROVER-B和-E模块使用 3.3 V 闪存芯片。
 
+    .. _jtag-debugging-tip-optimize-jtag-speed:
 
-.. _jtag-debugging-tip-optimize-jtag-speed:
+.. only:: esp32s2
+
+    .. _jtag-debugging-tip-optimize-jtag-speed:
 
 优化 JTAG 的速度
 ^^^^^^^^^^^^^^^^
@@ -99,7 +106,7 @@ ESP32 的 MTDI 引脚是用于 JTAG 通信的四个引脚之一，同时也是 E
 
 在启动时，调试器发出一系列命令来复位芯片并使其在特定的代码行停止运行。这个命令序列（如下所示）支持自定义，用户可以选择在最方便合适的代码行开始调试工作。
 
-* ``set remote hardware-watchpoint-limit 2`` — 限制 GDB 仅使用 ESP32 支持的两个硬件观察点。更多详细信息，请查阅 `GDB 配置远程目标 <https://sourceware.org/gdb/onlinedocs/gdb/Remote-Configuration.html>`_ 。
+* ``set remote hardware-watchpoint-limit 2`` — 限制 GDB 仅使用 {IDF_TARGET_NAME} 支持的两个硬件观察点。更多详细信息，请查阅 `GDB 配置远程目标 <https://sourceware.org/gdb/onlinedocs/gdb/Remote-Configuration.html>`_ 。
 * ``mon reset halt`` — 复位芯片并使 CPU 停止运行。
 * ``flushregs`` — monitor (``mon``) 命令无法通知 GDB 目标状态已经更改，GDB 会假设在 ``mon reset halt`` 之前所有的任务堆栈仍然有效。实际上，复位后目标状态将发生变化。执行 ``flushregs`` 是一种强制 GDB 从目标获取最新状态的方法。
 * ``thb app_main`` — 在 ``app_main`` 处插入一个临时的硬件断点，如果有需要，可以将其替换为其他函数名。
@@ -108,95 +115,74 @@ ESP32 的 MTDI 引脚是用于 JTAG 通信的四个引脚之一，同时也是 E
 
 .. _jtag-debugging-tip-openocd-configure-target:
 
-针对特定目标的 OpenOCD 配置
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Configuration of OpenOCD for specific target
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-OpenOCD 需要知道当前使用的 JTAG 适配器的类型，以及其连接的目标板和处理器的类型。为此，请使用位于 OpenOCD 安装目录下 ``share/openocd/scripts/interface`` 和 ``share/openocd/scripts/board`` 文件夹中现有的配置文件。
+There are several kinds of OpenOCD configuration files (``*.cfg``). All configuration files are located in subdirectories of ``share/openocd/scripts`` directory of OpenOCD distribution (or ``tcl/scripts`` directory of the source repository). For the purposes of this guide, the most important ones are ``board``, ``interface`` and ``target``.
 
-例如，如果使用板载 ESP-WROOM-32 模组的 ESP-WROVER-KIT 开发板（详见 :ref:`esp-modules-and-boards-esp-wrover-kit-v1`），请使用以下配置文件：
+* ``interface`` configuration files describe the JTAG adapter. Examples of JTAG adapters are ESP-Prog and J-Link.
+* ``target`` configuration files describe specific chips, or in some cases, modules.
+* ``board`` configuration files are provided for development boards with a built-in JTAG adapter. Such files include an ``interface`` configuration file to choose the adapter, and ``target`` configuration file to choose the chip/module.
 
-* ``interface/ftdi/esp32_devkitj_v1.cfg``
-* ``board/esp-wroom-32.cfg``
+The following configuration files are available for {IDF_TARGET_NAME}:
 
-当然也可以使用自定义的配置文件，建议在已有配置文件的基础上进行修改，以匹配你的硬件。下面列举一些常用的板级配置参数。
-
-
-.. highlight:: none
-
-适配器的时钟速度
-""""""""""""""""
-
-::
-
-    adapter_khz 20000
-
-请参阅 :ref:`jtag-debugging-tip-optimize-jtag-speed` 以获取有关如何设置此值的指导。
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    :start-after: openocd-cfg-files
+    :end-before: ---
 
 
-单核调试
-""""""""
+If you are using one of the boards which have a pre-defined configuration file, you only need to pass one ``-f`` argument to OpenOCD, specifying that file.
 
-::
+If you are using a board not listed here, you need to specify both the interface configuration file and target configuration file.
 
-    set ESP32_ONLYCPU 1
+Custom configuration files
+""""""""""""""""""""""""""
 
-如果是双核调试，请注释掉这一行。
+OpenOCD configuration files are written in TCL, and include a variety of choices for customization and scripting. This can be useful for non-standard debugging situations. Please refer to `OpenOCD Manual`_ for the TCL scripting reference.
 
+.. _jtag-debugging-tip-openocd-config-vars:
 
-禁用 RTOS 支持
-""""""""""""""
-
-::
-
-    set ESP32_RTOS none
-
-如果要支持 RTOS， 请注释掉这一行。
-
-
-ESP32 的 SPI 闪存芯片的电源电压
+OpenOCD configuration variables
 """""""""""""""""""""""""""""""
 
-::
+The following variables can be optionally set before including the ESP-specific target configuration file. This can be done either in a custom configuration file, or from the command line.
 
-    set ESP32_FLASH_VOLTAGE 1.8
+The syntax for setting a variable in TCL is:
 
-如果 SPI 闪存芯片的电源电压为 3.3 V， 请注释掉这一行，更多信息请参阅： :ref:`jtag-debugging-tip-code-flash-voltage`。
+.. code-block:: tcl
 
+    set VARIABLE_NAME value
 
-ESP32 的目标配置文件
-""""""""""""""""""""
+To set a variable from the command line (replace the name of .cfg file with the correct file for your board):
 
-::
+.. code-block:: bash
 
-    source [find target/esp32.cfg]
+    openocd -c 'set VARIABLE_NAME value' -f board/esp-xxxxx-kit.cfg
 
-.. note::
+It is important to set the variable before including the ESP-specific configuration file, otherwise the variable will not have effect. You can set multiple variables by repeating the ``-c`` option.
 
-    除非你熟悉 OpenOCD 内部的工作原理，否则请不要更改 ``source [find target/esp32.cfg]`` 这一行。
+.. list-table:: Common ESP-related OpenOCD variables
+    :widths: 25 75
+    :header-rows: 1
 
-目前 ``target/esp32.cfg`` 仍然是 ESP32 目标（esp108 和 esp32）的唯一配置文件。支持的配置矩阵如下所示：
+    * - Variable
+      - Description
+    * - ``ESP_RTOS``
+      - Set to ``none`` to disable RTOS support. In this case, thread list will not be available in GDB. Can be useful when debugging FreeRTOS itself, and stepping through the scheduler code.
+    * - ``ESP_FLASH_SIZE``
+      - Set to ``0`` to disable Flash breakpoints support.
+    * - ``ESP_SEMIHOST_BASEDIR``
+      - Set to the path (on the host) which will be the default directory for semihosting functions.
 
-    +---------------+---------------+---------------+
-    | Dual/single   | RTOS          | Target used   |
-    +===============+===============+===============+
-    | dual          | FreeRTOS      | esp32         |
-    +---------------+---------------+---------------+
-    | single        | FreeRTOS      | esp108 (*)    |
-    +---------------+---------------+---------------+
-    | dual          | none          | esp108        |
-    +---------------+---------------+---------------+
-    | single        | none          | esp108        |
-    +---------------+---------------+---------------+
-
-    (*) — 我们计划修复此问题，并在后续提交中添加对 esp32 目标的单核调试的支持。
-
-更多信息，请查看 ``board/esp-wroom-32.cfg`` 配置文件的注释部分。
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    :start-after: openocd-target-specific-config-vars
+    :end-before: ---
 
 
 .. _jtag-debugging-tip-reset-by-debugger:
 
-复位 ESP32
-^^^^^^^^^^
+复位 {IDF_TARGET_NAME}
+^^^^^^^^^^^^^^^^^^^^^
 
 通过在 GDB 中输入 ``mon reset`` 或者 ``mon reset halt`` 来复位板子。
 
@@ -206,21 +192,15 @@ ESP32 的目标配置文件
 不要将 JTAG 引脚用于其他功能
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-如果除了 ESP32 模组和 JTAG 适配器之外的其他硬件也连接到了 JTAG 引脚，那么 JTAG 的操作可能会受到干扰。ESP32 JTAG 使用以下引脚：
+如果除了 {IDF_TARGET_NAME} 模组和 JTAG 适配器之外的其他硬件也连接到了 JTAG 引脚，那么 JTAG 的操作可能会受到干扰。{IDF_TARGET_NAME} JTAG 使用以下引脚：
 
-    +---+----------------+-------------+
-    |   | ESP32 JTAG Pin | JTAG Signal |
-    +===+================+=============+
-    | 1 | MTDO / GPIO15  | TDO         |
-    +---+----------------+-------------+
-    | 2 | MTDI / GPIO12  | TDI         |
-    +---+----------------+-------------+
-    | 3 | MTCK / GPIO13  | TCK         |
-    +---+----------------+-------------+
-    | 4 | MTMS / GPIO14  | TMS         |
-    +---+----------------+-------------+
 
-如果用户应用程序更改了 JTAG 引脚的配置，JTAG 通信可能会失败。如果 OpenOCD 正确初始化（检测到两个 Tensilica 内核），但在程序运行期间失去了同步并报出大量 DTR/DIR 错误，则应用程序可能将 JTAG 引脚重新配置为其他功能或者用户忘记将 Vtar 连接到 JTAG 适配器。 
+
+如果用户应用程序更改了 JTAG 引脚的配置，JTAG 通信可能会失败。如果 OpenOCD 正确初始化（检测到两个 Tensilica 内核），但在程序运行期间失去了同步并报出大量 DTR/DIR 错误，则应用程序可能将 JTAG 引脚重新配置为其他功能或者用户忘记将 Vtar 连接到 JTAG 适配器。
+
+.. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+    :start-after: jtag-pins
+    :end-before: ---
 
 .. highlight:: none
 
@@ -233,6 +213,27 @@ ESP32 的目标配置文件
     cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an exception!
     cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
 
+.. _jtag-debugging-security-features:
+
+JTAG with Flash Encryption or Secure Boot
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, enabling Flash Encryption and/or Secure Boot will disable JTAG debugging. On first boot, the bootloader will burn an eFuse bit to permanently disable JTAG at the same time it enables the other features.
+
+The project configuration option :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` will keep JTAG enabled at this time, removing all physical security but allowing debugging. (Although the name suggests Secure Boot, this option can be applied even when only Flash Encryption is enabled).
+
+However, OpenOCD may attempt to automatically read and write the flash in order to set :ref:`software breakpoints <jtag-debugging-tip-where-breakpoints>`. This has two problems:
+
+- Software breakpoints are incompatible with Flash Encryption, OpenOCD currently has no support for encrypting or decrypting flash contents.
+- If Secure Boot is enabled, setting a software breakpoint will change the digest of a signed app and make the signature invalid. This means if a software breakpoint is set and then a reset occurs, the signature verification will fail on boot.
+
+To disable software breakpoints while using JTAG, add an extra argument ``-c 'set ESP_FLASH_SIZE 0'`` to the start of the OpenOCD command line. For example::
+
+    openocd -c 'set ESP_FLASH_SIZE 0' -f board/esp32-wrover-kit-3.3v.cfg
+
+.. note::
+
+   For the same reason, the ESP-IDF app may fail bootloader verification of app signatures, when this option is enabled and a software breakpoint is set.
 
 .. _jtag-debugging-tip-reporting-issues:
 
@@ -256,23 +257,26 @@ ESP32 的目标配置文件
 
     OpenOCD 端：
 
-        ::
+    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+        :start-after: run-openocd-d3
+        :end-before: ---
 
-            openocd -l openocd_log.txt -d 3 -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    这种方式会将日志输出到文件，但是它会阻止调试信息打印在终端上。当有大量信息需要输出的时候（比如调试等级提高到 ``-d3``）这是个不错的选择。如果你仍然希望在屏幕上看到调试日志，请改用以下命令：
 
-        这种方式会将日志输出到文件，但是它会阻止调试信息打印在终端上。当有大量信息需要输出的时候（比如调试等级提高到 ``-d 3``）这是个不错的选择。如果你仍然希望在屏幕上看到调试日志，请改用以下命令：
-
-        ::
-
-            openocd -d 3 -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg 2>&1 | tee openocd.log
+    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+        :start-after: run-openocd-d3-tee
+        :end-before: ---
 
     Debugger 端：
 
-        ::
+    .. include:: {IDF_TARGET_TOOLCHAIN_NAME}.inc
+        :start-after: run-gdb-remotelog
+        :end-before: ---
 
-           xtensa-esp32-elf-gdb -ex "set remotelogfile gdb_log.txt" <all other options>
-
-        也可以将命令 ``remotelogfile gdb_log.txt`` 添加到 ``gdbinit`` 文件中。
+    也可以将命令 ``remotelogfile gdb_log.txt`` 添加到 ``gdbinit`` 文件中。
 
 
 4.  请将 ``openocd_log.txt`` 和 ``gdb_log.txt`` 文件附在你的问题报告中。
+
+
+.. _OpenOCD Manual: http://openocd.org/doc/html/index.html

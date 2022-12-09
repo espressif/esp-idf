@@ -17,11 +17,11 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component:`Newlib <newlib>` is licensed under the BSD License and is Copyright of various parties, as described in :component_file:`COPYING.NEWLIB<newlib/COPYING.NEWLIB>`.
 
-* :component:`Xtensa header files<esp32/include/xtensa>` are Copyright (C) 2013 Tensilica Inc and are licensed under the MIT License as reproduced in the individual header files.
+* :component:`Xtensa header files<xtensa/include/xtensa>` are Copyright (C) 2013 Tensilica Inc and are licensed under the MIT License as reproduced in the individual header files.
 
 * Original parts of FreeRTOS_ (components/freertos) are Copyright (C) 2015 Real Time Engineers Ltd and is licensed under the GNU General Public License V2 with the FreeRTOS Linking Exception, as described in :component_file:`license.txt<freertos/license.txt>`.
 
-* Original parts of LWIP_ (components/lwip) are Copyright (C) 2001, 2002 Swedish Institute of Computer Science and are licensed under the BSD License as described in :component_file:`COPYING file<lwip/COPYING>`.
+* Original parts of LWIP_ (components/lwip) are Copyright (C) 2001, 2002 Swedish Institute of Computer Science and are licensed under the BSD License as described in :component_file:`COPYING file<lwip/lwip/COPYING>`.
 
 * `wpa_supplicant`_ Copyright (c) 2003-2005 Jouni Malinen and licensed under the BSD license.
 
@@ -33,35 +33,37 @@ These third party libraries can be included into the application (firmware) prod
 
 * `linenoise`_ line editing library Copyright (c) 2010-2014 Salvatore Sanfilippo, Copyright (c) 2010-2013 Pieter Noordhuis, licensed under 2-clause BSD license.
 
-* `libcoap`_ COAP library Copyright (c) 2010-2017 Olaf Bergmann and others, is licensed under 2-clause BSD license.
+* `libcoap`_ COAP library Copyright (c) 2010-2017 Olaf Bergmann and others, is licensed under 2-clause BSD license as described in :component_file:`LICENSE file <coap/libcoap/LICENSE>` and :component_file:`COPYING file <coap/libcoap/COPYING>` .
 
-* `libexpat`_ XML parsing library Copyright (c) 1998-2000 Thai Open Source Software Center Ltd and Clark Cooper, Copyright (c) 2001-2017 Expat maintainers, is licensed under MIT license.
+* `libexpat`_ XML parsing library Copyright (c) 1998-2000 Thai Open Source Software Center Ltd and Clark Cooper, Copyright (c) 2001-2017 Expat maintainers, is licensed under MIT license as described in :component_file:`COPYING file <expat/expat/expat/COPYING>`.
 
 * `FatFS`_ library, Copyright (C) 2017 ChaN, is licensed under :component_file:`a BSD-style license <fatfs/src/ff.h#L1-L18>`.
 
-* `cJSON`_ library, Copyright (c) 2009-2017 Dave Gamble and cJSON contributors, is licensed under MIT license.
+* `cJSON`_ library, Copyright (c) 2009-2017 Dave Gamble and cJSON contributors, is licensed under MIT license as described in :component_file:`LICENSE file <json/cJSON/LICENSE>`.
 
-* `libsodium`_ library, Copyright (c) 2013-2018 Frank Denis, is licensed under ISC license.
+* `libsodium`_ library, Copyright (c) 2013-2018 Frank Denis, is licensed under ISC license as described in :component_file:`LICENSE file <libsodium/libsodium/LICENSE>`.
 
 * `micro-ecc`_ library, Copyright (c) 2014 Kenneth MacKay, is licensed under 2-clause BSD license.
 
-* `nghttp2`_ library, Copyright (c) 2012, 2014, 2015, 2016 Tatsuhiro Tsujikawa, Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors, is licensed under MIT license.
+* `nghttp2`_ library, Copyright (c) 2012, 2014, 2015, 2016 Tatsuhiro Tsujikawa, Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors, is licensed under MIT license as described in :component_file:`COPYING file <nghttp/nghttp2/COPYING>`.
 
-* `Mbed TLS`_ library, Copyright (C) 2006-2018 ARM Limited, is licensed under Apache License 2.0.
+* `Mbed TLS`_ library, Copyright (C) 2006-2018 ARM Limited, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <mbedtls/mbedtls/LICENSE>`.
 
-* `SPIFFS`_ library, Copyright (c) 2013-2017 Peter Andersson, is licensed under MIT license.
+* `SPIFFS`_ library, Copyright (c) 2013-2017 Peter Andersson, is licensed under MIT license as described in :component_file:`LICENSE file <spiffs/spiffs/LICENSE>`.
 
-* `TinyCBOR`_ library, Copyright (c) 2017 Intel Corporation, is licensed under MIT License.
+* `TinyCBOR`_ library, Copyright (c) 2017 Intel Corporation, is licensed under MIT License as described in :component_file:`LICENSE file <cbor/tinycbor/LICENSE>`.
 
 * :component_file:`SD/MMC driver <sdmmc/sdmmc_cmd.c>` is derived from `OpenBSD SD/MMC driver`_, Copyright (c) 2006 Uwe Stuehler, and is licensed under BSD license.
 
-* :component:`Asio <asio>`, Copyright (c) 2003-2018 Christopher M. Kohlhoff is licensed under the Boost Software License.
+* :component:`Asio <asio>`, Copyright (c) 2003-2018 Christopher M. Kohlhoff is licensed under the Boost Software License as described in :component_file:`COPYING file<asio/asio/asio/COPYING>`.
 
-* :component:`ESP-MQTT <mqtt>` MQTT Package (contiki-mqtt) - Copyright (c) 2014, Stephen Robinson, MQTT-ESP - Tuan PM <tuanpm at live dot com> is licensed under Apache License 2.0.
-* :component:`BLE Mesh <bt/ble_mesh>` is adapted from Zephyr Project, Copyright (c) 2017-2018 Intel Corporation and licensed under Apache License 2.0
+* :component:`ESP-MQTT <mqtt>` MQTT Package (contiki-mqtt) - Copyright (c) 2014, Stephen Robinson, MQTT-ESP - Tuan PM <tuanpm at live dot com> is licensed under Apache License 2,0 as described in :component_file:`LICENSE file <mqtt/esp-mqtt/LICENSE>`.
 
-* `mynewt-nimble`_ Apache Mynewt NimBLE, Copyright 2015-2018, The Apache Software Foundation, is licensed under Apache License 2.0.
+* :component:`BLE Mesh <bt/esp_ble_mesh>` is adapted from Zephyr Project, Copyright (c) 2017-2018 Intel Corporation and licensed under Apache License 2.0
 
+* `mynewt-nimble`_ Apache Mynewt NimBLE, Copyright 2015-2018, The Apache Software Foundation, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file<bt/host/nimble/nimble/LICENSE>`.
+
+* `cryptoauthlib`_ Microchip CryptoAuthentication Library - Copyright (c) 2015 - 2018 Microchip Technology Inc, is licensed under common Microchip software License as described in :example_file:`LICENSE file <peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib/cryptoauthlib/LICENSE>`
 
 Build Tools
 -----------
@@ -72,10 +74,15 @@ This is the list of licenses for tools included in this repository, which are us
 
 * :idf:`KConfig <tools/kconfig>` is Copyright (C) 2002 Roman Zippel and others, and is licensed under the GNU General Public License V2.
 
-* :idf:`Kconfiglib <tools/kconfig_new/kconfiglib.py>` is Copyright (C) 2011-2019, Ulf Magnusson, and is licensed under the ISC License.
+* :idf_file:`Kconfiglib <tools/kconfig_new/kconfiglib.py>` is Copyright (C) 2011-2019, Ulf Magnusson, and is licensed under the ISC License.
 
-* :idf:`Menuconfig of Kconfiglib <tools/kconfig_new/menuconfig.py>` is Copyright (C) 2018-2019, Nordic Semiconductor ASA and Ulf Magnusson, and is licensed under the ISC License.
+* :idf_file:`Menuconfig of Kconfiglib <tools/kconfig_new/menuconfig.py>` is Copyright (C) 2018-2019, Nordic Semiconductor ASA and Ulf Magnusson, and is licensed under the ISC License.
 
+
+Documentation
+-------------
+
+* HTML version of the `ESP-IDF Programming Guide`_ uses the Sphinx theme `sphinx_idf_theme`_, which is Copyright (c) 2013-2020 Dave Snider, Read the Docs, Inc. & contributors, and Espressif Systems (Shanghai) CO., LTD. It is based on `sphinx_rtd_theme`_. Both are licensed under MIT license.
 
 ROM Source Code Copyrights
 ==========================
@@ -145,7 +152,7 @@ Copyright (C) 2011, ChaN, all right reserved.
 
 
 .. _Newlib: https://sourceware.org/newlib/
-.. _FreeRTOS: http://freertos.org/
+.. _FreeRTOS: https://freertos.org/
 .. _esptool.py: https://github.com/espressif/esptool
 .. _LWIP: https://savannah.nongnu.org/projects/lwip/
 .. _TinyBasic: https://github.com/BleuLlama/TinyBasicPlus
@@ -153,7 +160,7 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _wpa_supplicant: https://w1.fi/wpa_supplicant/
 .. _FreeBSD net80211: https://github.com/freebsd/freebsd/tree/master/sys/net80211
 .. _TJpgDec: http://elm-chan.org/fsw/tjpgd/00index.html
-.. _JSMN: http://zserge.com/jsmn.html
+.. _JSMN: https://zserge.com/jsmn.html
 .. _argtable3: https://github.com/argtable/argtable3
 .. _linenoise: https://github.com/antirez/linenoise
 .. _libcoap: https://github.com/obgm/libcoap
@@ -171,3 +178,7 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _zephyr: https://github.com/zephyrproject-rtos/zephyr
 .. _mynewt-nimble: https://github.com/apache/mynewt-nimble
 .. _TinyCBOR: https://github.com/intel/tinycbor
+.. _ESP-IDF Programming Guide: https://docs.espressif.com/projects/esp-idf/en/latest/
+.. _sphinx_idf_theme: https://github.com/espressif/sphinx_idf_theme
+.. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme
+.. _cryptoauthlib: https://github.com/MicrochipTech/cryptoauthlib

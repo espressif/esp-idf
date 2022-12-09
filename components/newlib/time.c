@@ -37,10 +37,16 @@
 #include "esp32/rom/ets_sys.h"
 #include "esp32/clk.h"
 #include "esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/clk.h"
-#include "esp32s2beta/rom/rtc.h"
-#include "esp32s2beta/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/clk.h"
+#include "esp32s2/rom/rtc.h"
+#include "esp32s2/rom/ets_sys.h"
+#endif
+
+#ifdef CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
+_Static_assert(sizeof(time_t) == 8, "The toolchain does not support time_t wide 64-bits");
+#else
+_Static_assert(sizeof(time_t) == 4, "The toolchain supports time_t wide 64-bits. Please enable CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS.");
 #endif
 
 #if defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC ) || defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC_FRC1 ) || defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_RTC ) || defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_RTC_FRC1 )
@@ -187,6 +193,18 @@ static void adjtime_corr_stop (void)
 int adjtime(const struct timeval *delta, struct timeval *outdelta)
 {
 #if defined( WITH_FRC ) || defined( WITH_RTC )
+    if(outdelta != NULL){
+        _lock_acquire(&s_adjust_time_lock);
+        adjust_boot_time();
+        if (adjtime_start != 0) {
+            outdelta->tv_sec    = adjtime_total_correction / 1000000L;
+            outdelta->tv_usec   = adjtime_total_correction % 1000000L;
+        } else {
+            outdelta->tv_sec    = 0;
+            outdelta->tv_usec   = 0;
+        }
+        _lock_release(&s_adjust_time_lock);
+    }
     if(delta != NULL){
         int64_t sec  = delta->tv_sec;
         int64_t usec = delta->tv_usec;
@@ -203,18 +221,6 @@ int adjtime(const struct timeval *delta, struct timeval *outdelta)
         adjust_boot_time();
         adjtime_start = get_time_since_boot();
         adjtime_total_correction = sec * 1000000L + usec;
-        _lock_release(&s_adjust_time_lock);
-    }
-    if(outdelta != NULL){
-        _lock_acquire(&s_adjust_time_lock);
-        adjust_boot_time();
-        if (adjtime_start != 0) {
-            outdelta->tv_sec    = adjtime_total_correction / 1000000L;
-            outdelta->tv_usec   = adjtime_total_correction % 1000000L;
-        } else {
-            outdelta->tv_sec    = 0;
-            outdelta->tv_usec   = 0;
-        }
         _lock_release(&s_adjust_time_lock);
     }
   return 0;

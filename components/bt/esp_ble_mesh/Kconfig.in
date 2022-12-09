@@ -9,14 +9,127 @@ if BLE_MESH
     config BLE_MESH_USE_DUPLICATE_SCAN
         bool "Support Duplicate Scan in BLE Mesh"
         depends on BT_BLUEDROID_ENABLED
-        select BLE_SCAN_DUPLICATE
-        select BLE_MESH_SCAN_DUPLICATE_EN
+        select BTDM_BLE_SCAN_DUPL
+        select BTDM_BLE_MESH_SCAN_DUPL_EN
         default y
         help
             Enable this option to allow using specific duplicate scan filter
             in BLE Mesh, and Scan Duplicate Type must be set by choosing the
             option in the Bluetooth Controller section in menuconfig, which is
             "Scan Duplicate By Device Address and Advertising Data".
+
+    choice BLE_MESH_MEM_ALLOC_MODE
+        prompt "Memory allocation strategy"
+        default BLE_MESH_MEM_ALLOC_MODE_INTERNAL
+        help
+            Allocation strategy for BLE Mesh stack, essentially provides ability to
+            allocate all required dynamic allocations from,
+
+            - Internal DRAM memory only
+            - External SPIRAM memory only
+            - Either internal or external memory based on default malloc()
+              behavior in ESP-IDF
+            - Internal IRAM memory wherever applicable else internal DRAM
+
+            Recommended mode here is always internal, since that is most preferred
+            from security perspective. But if application requirement does not allow
+            sufficient free internal memory then alternate mode can be selected.
+
+        config BLE_MESH_MEM_ALLOC_MODE_INTERNAL
+            bool "Internal DRAM"
+
+        config BLE_MESH_MEM_ALLOC_MODE_EXTERNAL
+            bool "External SPIRAM"
+            depends on ESP32_SPIRAM_SUPPORT
+
+        config BLE_MESH_MEM_ALLOC_MODE_DEFAULT
+            bool "Default alloc mode"
+            depends on ESP32_SPIRAM_SUPPORT
+            help
+                Enable this option to use the default memory allocation strategy when
+                external SPIRAM is enabled. See the SPIRAM options for more details.
+
+        config BLE_MESH_MEM_ALLOC_MODE_IRAM_8BIT
+            bool "Internal IRAM"
+            depends on ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+            help
+                Allows to use IRAM memory region as 8bit accessible region. Every
+                unaligned (8bit or 16bit) access will result in an exception and
+                incur penalty of certain clock cycles per unaligned read/write.
+
+    endchoice # BLE_MESH_MEM_ALLOC_MODE
+
+    config BLE_MESH_FREERTOS_STATIC_ALLOC
+        bool "Enable FreeRTOS static allocation"
+        depends on FREERTOS_SUPPORT_STATIC_ALLOCATION && (ESP32_SPIRAM_SUPPORT || ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
+        default n
+        help
+            Enable this option to use FreeRTOS static allocation APIs for BLE Mesh,
+            which provides the ability to use different dynamic memory (i.e. SPIRAM
+            or IRAM) for FreeRTOS objects.
+            If this option is disabled, the FreeRTOS static allocation APIs will not
+            be used, and internal DRAM will be allocated for FreeRTOS objects.
+
+    choice BLE_MESH_FREERTOS_STATIC_ALLOC_MODE
+        prompt "Memory allocation for FreeRTOS objects"
+        depends on BLE_MESH_FREERTOS_STATIC_ALLOC
+        help
+            Choose the memory to be used for FreeRTOS objects.
+
+        config BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL
+            bool "External SPIRAM"
+            depends on ESP32_SPIRAM_SUPPORT
+            help
+                If enabled, BLE Mesh allocates dynamic memory from external SPIRAM for
+                FreeRTOS objects, i.e. mutex, queue, and task stack. External SPIRAM
+                can only be used for task stack when SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+                is enabled. See the SPIRAM options for more details.
+
+        config BLE_MESH_FREERTOS_STATIC_ALLOC_IRAM_8BIT
+            bool "Internal IRAM"
+            depends on ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+            help
+                If enabled, BLE Mesh allocates dynamic memory from internal IRAM for
+                FreeRTOS objects, i.e. mutex, queue. Note: IRAM region cannot be used
+                as task stack.
+
+    endchoice # BLE_MESH_FREERTOS_STATIC_ALLOC_MODE
+
+    config BLE_MESH_DEINIT
+        bool "Support de-initialize BLE Mesh stack"
+        default y
+        help
+            If enabled, users can use the function esp_ble_mesh_deinit() to de-initialize
+            the whole BLE Mesh stack.
+
+    menu "BLE Mesh and BLE coexistence support"
+
+        config BLE_MESH_SUPPORT_BLE_ADV
+            bool "Support sending normal BLE advertising packets"
+            default n
+            help
+                When selected, users can send normal BLE advertising packets
+                with specific API.
+
+        if BLE_MESH_SUPPORT_BLE_ADV
+
+            config BLE_MESH_BLE_ADV_BUF_COUNT
+                int "Number of advertising buffers for BLE advertising packets"
+                default 3
+                range 1 255
+                help
+                    Number of advertising buffers for BLE packets available.
+
+        endif # BLE_MESH_SUPPORT_BLE_ADV
+
+        config BLE_MESH_SUPPORT_BLE_SCAN
+            bool "Support scanning normal BLE advertising packets"
+            default n
+            help
+                When selected, users can register a callback and receive normal BLE
+                advertising packets in the application layer.
+
+    endmenu # BLE Mesh and BLE coexistence support
 
     config BLE_MESH_FAST_PROV
         bool "Enable BLE Mesh Fast Provisioning"
@@ -49,7 +162,7 @@ if BLE_MESH
 
         config BLE_MESH_WAIT_FOR_PROV_MAX_DEV_NUM
             int "Maximum number of unprovisioned devices that can be added to device queue"
-            default 20
+            default 10
             range 1 100
             help
                 This option specifies how many unprovisioned devices can be added to device
@@ -57,25 +170,14 @@ if BLE_MESH
                 queue in the bottom layer which is used to store unprovisioned device
                 information (e.g. Device UUID, address).
 
-        config BLE_MESH_MAX_STORED_NODES
-            int "Maximum number of nodes whose information can be stored"
-            default 20
-            range BLE_MESH_MAX_PROV_NODES 1000
-            help
-                This option specifies the maximum number of nodes whose information can be
-                stored by a Provisioner in its upper layer.
-                Users can change this value according to the number of nodes whose information
-                (e.g. Device UUID, unicast address, element number) are going to be stored by
-                a Provisioner. And the nodes include the provisioned ones and user-added ones.
-
         config BLE_MESH_MAX_PROV_NODES
             int "Maximum number of devices that can be provisioned by Provisioner"
-            default 20
+            default 10
             range 1 1000
             help
                 This option specifies how many devices can be provisioned by a Provisioner.
                 This value indicates the maximum number of unprovisioned devices which can be
-                provisioned by a Provisioner. For instance，if the value is 6, it means the
+                provisioned by a Provisioner. For instance, if the value is 6, it means the
                 Provisioner can provision up to 6 unprovisioned devices.
                 Theoretically a Provisioner without the limitation of its memory can provision
                 up to 32766 unprovisioned devices, here we limit the maximum number to 100
@@ -116,11 +218,33 @@ if BLE_MESH
 
         config BLE_MESH_PROVISIONER_APP_KEY_COUNT
             int "Maximum number of application keys that can be owned by Provisioner"
-            default 9
+            default 3
             range 1 4096
             help
                 This option specifies how many application keys the Provisioner can have.
                 Indeed, this value decides the number of the application keys which can be added by a Provisioner.
+
+        config BLE_MESH_PROVISIONER_RECV_HB
+            bool "Support receiving Heartbeat messages"
+            default n
+            help
+                When this option is enabled, Provisioner can call specific functions to enable
+                or disable receiving Heartbeat messages and notify them to the application layer.
+
+        if BLE_MESH_PROVISIONER_RECV_HB
+
+            config BLE_MESH_PROVISIONER_RECV_HB_FILTER_SIZE
+                int "Maximum number of filter entries for receiving Heartbeat messages"
+                default 3
+                range 1 1000
+                help
+                    This option specifies how many heartbeat filter entries Provisioner supports.
+                    The heartbeat filter (acceptlist or rejectlist) entries are used to store a
+                    list of SRC and DST which can be used to decide if a heartbeat message will
+                    be processed and notified to the application layer by Provisioner.
+                    Note: The filter is an empty rejectlist by default.
+
+        endif # BLE_MESH_PROVISIONER_RECV_HB
 
     endif # BLE_MESH_PROVISIONER
 
@@ -168,15 +292,6 @@ if BLE_MESH
             ability to act as a proxy between a Mesh GATT Client and a Mesh network.
             This option should be enabled if a node is going to be a Proxy Server.
 
-    config BLE_MESH_GATT_PROXY_CLIENT
-        bool "BLE Mesh GATT Proxy Client"
-        select BLE_MESH_PROXY
-        default n
-        help
-            This option enables support for Mesh GATT Proxy Client. The Proxy Client
-            can use the GATT bearer to send mesh messages to a node that supports the
-            advertising bearer.
-
     config BLE_MESH_NODE_ID_TIMEOUT
         int "Node Identity advertising timeout"
         depends on BLE_MESH_GATT_PROXY_SERVER
@@ -191,23 +306,28 @@ if BLE_MESH
             node, it will start to advertise using Node Identity during the time
             set by this option. And after that, Network ID will be advertised.
 
-    if BLE_MESH_PROXY
+    config BLE_MESH_PROXY_FILTER_SIZE
+        int "Maximum number of filter entries per Proxy Client"
+        depends on BLE_MESH_GATT_PROXY_SERVER
+        default 4
+        range 1 32767
+        help
+            This option specifies how many Proxy Filter entries the local node supports.
+            The entries of Proxy filter (whitelist or blacklist) are used to store a
+            list of addresses which can be used to decide which messages will be forwarded
+            to the Proxy Client by the Proxy Server.
 
-        config BLE_MESH_PROXY_FILTER_SIZE
-            int "Maximum number of filter entries per Proxy Client"
-            default 1
-            default 3 if BLE_MESH_GATT_PROXY_SERVER
-            range 1 32767
-            help
-                This option specifies how many Proxy Filter entries the local node supports.
-                The entries of Proxy filter (whitelist or blacklist) are used to store a
-                list of addresses which can be used to decide which messages will be forwarded
-                to the Proxy Client by the Proxy Server.
-
-    endif # BLE_MESH_PROXY
+    config BLE_MESH_GATT_PROXY_CLIENT
+        bool "BLE Mesh GATT Proxy Client"
+        select BLE_MESH_PROXY
+        default n
+        help
+            This option enables support for Mesh GATT Proxy Client. The Proxy Client
+            can use the GATT bearer to send mesh messages to a node that supports the
+            advertising bearer.
 
     config BLE_MESH_NET_BUF_POOL_USAGE
-        bool "BLE Mesh net buffer pool usage tracking"
+        bool
         default y
         help
             Enable BLE Mesh net buffer pool tracking. This option is used to introduce another
@@ -215,16 +335,20 @@ if BLE_MESH
             devices. Recommend to enable this option as default.
 
     config BLE_MESH_SETTINGS
-        bool "Store BLE Mesh Node configuration persistently"
+        bool "Store BLE Mesh configuration persistently"
         default n
         help
-            When selected, the BLE Mesh stack will take care of storing/restoring the
-            BLE Mesh configuration persistently in flash. Currently this only supports
-            storing BLE Mesh node configuration.
-            Currently enabling this option will only store BLE Mesh nodes' information
-            in the flash.
+            When selected, the BLE Mesh stack will take care of storing/restoring the BLE
+            Mesh configuration persistently in flash.
+            If the device is a BLE Mesh node, when this option is enabled, the configuration
+            of the device will be stored persistently, including unicast address, NetKey,
+            AppKey, etc.
+            And if the device is a BLE Mesh Provisioner, the information of the device will
+            be stored persistently, including the information of provisioned nodes, NetKey,
+            AppKey, etc.
 
     if BLE_MESH_SETTINGS
+
         config BLE_MESH_STORE_TIMEOUT
             int "Delay (in seconds) before storing anything persistently"
             range 0 1000000
@@ -239,7 +363,7 @@ if BLE_MESH
         config BLE_MESH_SEQ_STORE_RATE
             int "How often the sequence number gets updated in storage"
             range 0 1000000
-            default 128
+            default 0
             help
                 This value defines how often the local sequence number gets updated in
                 persistent storage (i.e. flash). e.g. a value of 100 means that the
@@ -254,7 +378,7 @@ if BLE_MESH
         config BLE_MESH_RPL_STORE_TIMEOUT
             int "Minimum frequency that the RPL gets updated in storage"
             range 0 1000000
-            default 5
+            default 0
             help
                 This value defines in seconds how soon the RPL (Replay Protection List)
                 gets written to persistent storage after a change occurs. If the node
@@ -266,6 +390,73 @@ if BLE_MESH
                 Otherwise, a power loss before RPL being written into the storage may
                 introduce message replay attacks and system security will be in a
                 vulnerable state.
+
+        config BLE_MESH_SETTINGS_BACKWARD_COMPATIBILITY
+            bool "A specific option for settings backward compatibility"
+            depends on BLE_MESH_NODE
+            default n
+            help
+                This option is created to solve the issue of failure in recovering
+                node information after mesh stack updates. In the old version mesh
+                stack, there is no key of "mesh/role" in nvs. In the new version
+                mesh stack, key of "mesh/role" is added in nvs, recovering node
+                information needs to check "mesh/role" key in nvs and implements
+                selective recovery of mesh node information. Therefore, there may
+                be failure in recovering node information during node restarting
+                after OTA.
+
+                The new version mesh stack adds the option of "mesh/role" because
+                we have added the support of storing Provisioner information, while
+                the old version only supports storing node information.
+
+                If users are updating their nodes from old version to new version,
+                we recommend enabling this option, so that system could set the flag
+                in advance before recovering node information and make sure the node
+                information recovering could work as expected.
+
+        config BLE_MESH_SPECIFIC_PARTITION
+            bool "Use a specific NVS partition for BLE Mesh"
+            default n
+            help
+                When selected, the mesh stack will use a specified NVS partition instead of
+                default NVS partition. Note that the specified partition must be registered
+                with NVS using nvs_flash_init_partition() API, and the partition must exists
+                in the csv file.
+                When Provisioner needs to store a large amount of nodes' information in the
+                flash (e.g. more than 20), this option is recommended to be enabled.
+
+        config BLE_MESH_PARTITION_NAME
+            string "Name of the NVS partition for BLE Mesh"
+            depends on BLE_MESH_SPECIFIC_PARTITION
+            default "ble_mesh"
+            help
+                This value defines the name of the specified NVS partition used by the
+                mesh stack.
+
+        config BLE_MESH_USE_MULTIPLE_NAMESPACE
+            bool "Support using multiple NVS namespaces by Provisioner"
+            depends on BLE_MESH_PROVISIONER
+            default n
+            help
+                When selected, Provisioner can use different NVS namespaces to store
+                different instances of mesh information.
+                For example, if in the first room, Provisioner uses NetKey A, AppKey
+                A and provisions three devices, these information will be treated as
+                mesh information instance A. When the Provisioner moves to the second
+                room, it uses NetKey B, AppKey B and provisions two devices, then the
+                information will be treated as mesh information instance B.
+                Here instance A and instance B will be stored in different namespaces.
+                With this option enabled, Provisioner needs to use specific functions
+                to open the corresponding NVS namespace, restore the mesh information,
+                release the mesh information or erase the mesh information.
+
+        config BLE_MESH_MAX_NVS_NAMESPACE
+            int "Maximum number of NVS namespaces"
+            depends on BLE_MESH_USE_MULTIPLE_NAMESPACE
+            default 2
+            range 1 255
+            help
+                This option specifies the maximum NVS namespaces supported by Provisioner.
 
     endif  # if BLE_MESH_SETTINGS
 
@@ -319,6 +510,11 @@ if BLE_MESH
             The replay protection list is used to prevent a node from replay attack,
             which will store the source address and sequence number of the received
             mesh messages.
+            For Provisioner, the replay protection list size should not be smaller than
+            the maximum number of nodes whose information can be stored. And the element
+            number of each node should also be taken into consideration. For example, if
+            Provisioner can provision up to 20 nodes and each node contains two elements,
+            then the replay protection list size of Provisioner should be at least 40.
 
     config BLE_MESH_MSG_CACHE_SIZE
         int "Network message cache size"
@@ -403,7 +599,7 @@ if BLE_MESH
 
     config BLE_MESH_TX_SEG_MAX
         int "Maximum number of segments in outgoing messages"
-        default 20
+        default 32
         range 2 32
         help
             Maximum number of segments supported for outgoing messages.
@@ -590,8 +786,7 @@ if BLE_MESH
     endif # BLE_MESH_LOW_POWER
 
     config BLE_MESH_FRIEND
-        bool "Support for acting as a Friend Node"
-        depends on BLE_MESH_NODE
+        bool "Support for Friend feature"
         help
             Enable this option to be able to act as a Friend Node.
 
@@ -738,104 +933,138 @@ if BLE_MESH
             uses 0 as the timeout value when sending acknowledged messages, then
             the default value will be used which is four seconds.
 
-    menu "Support for BLE Mesh Client Models"
+    menu "Support for BLE Mesh Foundation models"
 
         config BLE_MESH_CFG_CLI
-            bool "Configuration Client Model"
+            bool "Configuration Client model"
             help
-                Enable support for Configuration client model.
+                Enable support for Configuration Client model.
 
         config BLE_MESH_HEALTH_CLI
-            bool "Health Client Model"
+            bool "Health Client model"
             help
-                Enable support for Health client model.
+                Enable support for Health Client model.
+
+        config BLE_MESH_HEALTH_SRV
+            bool "Health Server model"
+            default y
+            help
+                Enable support for Health Server model.
+
+    endmenu #Support for BLE Mesh Foundation models
+
+    menu "Support for BLE Mesh Client/Server models"
 
         config BLE_MESH_GENERIC_ONOFF_CLI
-            bool "Generic OnOff Client Model"
+            bool "Generic OnOff Client model"
             help
-                Enable support for Generic OnOff client model.
+                Enable support for Generic OnOff Client model.
 
         config BLE_MESH_GENERIC_LEVEL_CLI
-            bool "Generic Level Client Model"
+            bool "Generic Level Client model"
             help
-                Enable support for Generic Level client model.
+                Enable support for Generic Level Client model.
 
         config BLE_MESH_GENERIC_DEF_TRANS_TIME_CLI
-            bool "Generic Default Transition Time Client Model"
+            bool "Generic Default Transition Time Client model"
             help
-                Enable support for Generic Default Transition Time client model.
+                Enable support for Generic Default Transition Time Client model.
 
         config BLE_MESH_GENERIC_POWER_ONOFF_CLI
-            bool "Generic Power Onoff Client Model"
+            bool "Generic Power OnOff Client model"
             help
-                Enable support for Generic Power Onoff client model.
+                Enable support for Generic Power OnOff Client model.
 
         config BLE_MESH_GENERIC_POWER_LEVEL_CLI
-            bool "Generic Power Level Client Model"
+            bool "Generic Power Level Client model"
             help
-                Enable support for Generic Power Level client model.
+                Enable support for Generic Power Level Client model.
 
         config BLE_MESH_GENERIC_BATTERY_CLI
-            bool "Generic Battery Client Model"
+            bool "Generic Battery Client model"
             help
-                Enable support for Generic Battery client model.
+                Enable support for Generic Battery Client model.
 
         config BLE_MESH_GENERIC_LOCATION_CLI
-            bool "Generic Location Client Model"
+            bool "Generic Location Client model"
             help
-                Enable support for Generic Location client model.
+                Enable support for Generic Location Client model.
 
         config BLE_MESH_GENERIC_PROPERTY_CLI
-            bool "Generic Property Client Model"
+            bool "Generic Property Client model"
             help
-                Enable support for Generic Property client model.
+                Enable support for Generic Property Client model.
 
         config BLE_MESH_SENSOR_CLI
-            bool "Sensor Client Model"
+            bool "Sensor Client model"
             help
-                Enable support for Sensor client model.
+                Enable support for Sensor Client model.
 
         config BLE_MESH_TIME_CLI
-            bool "Time Client Model"
+            bool "Time Client model"
             help
-                Enable support for Time client model.
+                Enable support for Time Client model.
 
         config BLE_MESH_SCENE_CLI
-            bool "Scene Client Model"
+            bool "Scene Client model"
             help
-                Enable support for Scene client model.
+                Enable support for Scene Client model.
 
         config BLE_MESH_SCHEDULER_CLI
-            bool "Scheduler Client Model"
+            bool "Scheduler Client model"
             help
-                Enable support for Scheduler client model.
+                Enable support for Scheduler Client model.
 
         config BLE_MESH_LIGHT_LIGHTNESS_CLI
-            bool "Light Lightness Client Model"
+            bool "Light Lightness Client model"
             help
-                Enable support for Light Lightness client model.
+                Enable support for Light Lightness Client model.
 
         config BLE_MESH_LIGHT_CTL_CLI
-            bool "Light CTL Client Model"
+            bool "Light CTL Client model"
             help
-                Enable support for Light CTL client model.
+                Enable support for Light CTL Client model.
 
         config BLE_MESH_LIGHT_HSL_CLI
-            bool "Light HSL Client Model"
+            bool "Light HSL Client model"
             help
-                Enable support for Light HSL client model.
+                Enable support for Light HSL Client model.
 
         config BLE_MESH_LIGHT_XYL_CLI
-            bool "Light XYL Client Model"
+            bool "Light XYL Client model"
             help
-                Enable support for Light XYL client model.
+                Enable support for Light XYL Client model.
 
         config BLE_MESH_LIGHT_LC_CLI
-            bool "Light LC Client Model"
+            bool "Light LC Client model"
             help
-                Enable support for Light LC client model.
+                Enable support for Light LC Client model.
 
-    endmenu
+        config BLE_MESH_GENERIC_SERVER
+            bool "Generic server models"
+            default y
+            help
+                Enable support for Generic server models.
+
+        config BLE_MESH_SENSOR_SERVER
+            bool "Sensor server models"
+            default y
+            help
+                Enable support for Sensor server models.
+
+        config BLE_MESH_TIME_SCENE_SERVER
+            bool "Time and Scenes server models"
+            default y
+            help
+                Enable support for Time and Scenes server models.
+
+        config BLE_MESH_LIGHTING_SERVER
+            bool "Lighting server models"
+            default y
+            help
+                Enable support for Lighting server models.
+
+    endmenu #Support for BLE Mesh Client/Server models
 
     config BLE_MESH_IV_UPDATE_TEST
         bool "Test the IV Update Procedure"
@@ -853,6 +1082,26 @@ if BLE_MESH
             help
                 This option adds extra self-tests which are run every time BLE Mesh
                 networking is initialized.
+
+        if BLE_MESH_SELF_TEST
+
+            config BLE_MESH_TEST_AUTO_ENTER_NETWORK
+                bool "Unprovisioned device enters mesh network automatically"
+                default y
+                help
+                    With this option enabled, an unprovisioned device can automatically
+                    enters mesh network using a specific test function without the pro-
+                    visioning procedure. And on the Provisioner side, a test function
+                    needs to be invoked to add the node information into the mesh stack.
+
+            config BLE_MESH_TEST_USE_WHITE_LIST
+                bool "Use white list to filter mesh advertising packets"
+                default n
+                help
+                    With this option enabled, users can use white list to filter mesh
+                    advertising packets while scanning.
+
+        endif # BLE_MESH_SELF_TEST
 
         config BLE_MESH_SHELL
             bool "Enable BLE Mesh shell"

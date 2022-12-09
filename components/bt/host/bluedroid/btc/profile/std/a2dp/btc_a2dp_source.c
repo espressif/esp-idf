@@ -393,11 +393,6 @@ void btc_a2dp_source_on_suspended(tBTA_AV_SUSPEND *p_av)
     btc_a2dp_source_stop_audio_req();
 }
 
-static void btc_a2dp_source_data_post(void)
-{
-    osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_handle_timer, NULL, 1, OSI_THREAD_MAX_TIMEOUT);
-}
-
 static UINT64 time_now_us(void)
 {
 #if _POSIX_TIMERS
@@ -1216,8 +1211,6 @@ BOOLEAN btc_media_aa_read_feeding(void)
     /* Read Data from data channel */
     nb_byte_read = btc_aa_src_data_read((uint8_t *)read_buffer, read_size);
 
-    //tput_mon(TRUE, nb_byte_read, FALSE);
-
     if (nb_byte_read < read_size) {
         APPL_TRACE_WARNING("### UNDERRUN :: ONLY READ %d BYTES OUT OF %d ###",
                            nb_byte_read, read_size);
@@ -1440,11 +1433,6 @@ static void btc_a2dp_source_handle_timer(UNUSED_ATTR void *context)
 #endif
 }
 
-static void btc_a2dp_source_alarm_cb(UNUSED_ATTR void *context)
-{
-    btc_a2dp_source_data_post();
-}
-
 /*******************************************************************************
  **
  ** Function         btc_a2dp_source_feeding_state_reset
@@ -1469,40 +1457,6 @@ static void btc_a2dp_source_feeding_state_reset(void)
         APPL_TRACE_EVENT("pcm bytes per tick %d",
                            (int)a2dp_source_local_param.btc_aa_src_cb.media_feeding_state.pcm.bytes_per_tick);
     }
-}
-
-/*******************************************************************************
- **
- ** Function         btc_a2dp_source_aa_start_tx
- **
- ** Description      Start media task encoding
- **
- ** Returns          void
- **
- *******************************************************************************/
-static void btc_a2dp_source_aa_start_tx(void)
-{
-    APPL_TRACE_DEBUG("btc_a2dp_source_aa_start_tx is timer %d, feeding mode %d",
-                     a2dp_source_local_param.btc_aa_src_cb.is_tx_timer, a2dp_source_local_param.btc_aa_src_cb.feeding_mode);
-
-    a2dp_source_local_param.btc_aa_src_cb.is_tx_timer = TRUE;
-    a2dp_source_local_param.last_frame_us = 0;
-
-    /* Reset the media feeding state */
-    btc_a2dp_source_feeding_state_reset();
-
-    APPL_TRACE_EVENT("starting timer %dms", BTC_MEDIA_TIME_TICK_MS);
-
-    assert(a2dp_source_local_param.btc_aa_src_cb.media_alarm == NULL);
-
-    a2dp_source_local_param.btc_aa_src_cb.media_alarm = osi_alarm_new("aaTx", btc_a2dp_source_alarm_cb, NULL, BTC_MEDIA_TIME_TICK_MS);
-
-    if (!a2dp_source_local_param.btc_aa_src_cb.media_alarm) {
-        BTC_TRACE_ERROR("%s unable to allocate media alarm.", __func__);
-        return;
-    }
-
-    osi_alarm_set_periodic(a2dp_source_local_param.btc_aa_src_cb.media_alarm, BTC_MEDIA_TIME_TICK_MS);
 }
 
 /*******************************************************************************
@@ -1549,6 +1503,50 @@ static void btc_a2dp_source_aa_stop_tx(void)
 
     /* Reset the feeding state */
     btc_a2dp_source_feeding_state_reset();
+}
+
+/*******************************************************************************
+ **
+ ** Function         btc_a2dp_source_aa_start_tx
+ **
+ ** Description      Start media task encoding
+ **
+ ** Returns          void
+ **
+ *******************************************************************************/
+static void btc_a2dp_source_alarm_cb(UNUSED_ATTR void *context)
+{
+    if (a2dp_source_local_param.btc_aa_src_task_hdl) {
+        osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_handle_timer, NULL, 1, OSI_THREAD_MAX_TIMEOUT);
+    } else {
+        APPL_TRACE_DEBUG("[%s] A2DP ALREADY FREED", __func__);
+        btc_a2dp_source_aa_stop_tx();
+    }
+}
+
+static void btc_a2dp_source_aa_start_tx(void)
+{
+    APPL_TRACE_DEBUG("btc_a2dp_source_aa_start_tx is timer %d, feeding mode %d",
+                     a2dp_source_local_param.btc_aa_src_cb.is_tx_timer, a2dp_source_local_param.btc_aa_src_cb.feeding_mode);
+
+    a2dp_source_local_param.btc_aa_src_cb.is_tx_timer = TRUE;
+    a2dp_source_local_param.last_frame_us = 0;
+
+    /* Reset the media feeding state */
+    btc_a2dp_source_feeding_state_reset();
+
+    APPL_TRACE_EVENT("starting timer %dms", BTC_MEDIA_TIME_TICK_MS);
+
+    assert(a2dp_source_local_param.btc_aa_src_cb.media_alarm == NULL);
+
+    a2dp_source_local_param.btc_aa_src_cb.media_alarm = osi_alarm_new("aaTx", btc_a2dp_source_alarm_cb, NULL, BTC_MEDIA_TIME_TICK_MS);
+
+    if (!a2dp_source_local_param.btc_aa_src_cb.media_alarm) {
+        BTC_TRACE_ERROR("%s unable to allocate media alarm.", __func__);
+        return;
+    }
+
+    osi_alarm_set_periodic(a2dp_source_local_param.btc_aa_src_cb.media_alarm, BTC_MEDIA_TIME_TICK_MS);
 }
 
 /*******************************************************************************

@@ -18,10 +18,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <esp_err.h>
-#include "esp_spi_flash.h"
+#include <esp_spi_flash.h> /* including in bootloader for error values */
 
 #define FLASH_SECTOR_SIZE 0x1000
 #define FLASH_BLOCK_SIZE 0x10000
+#define MMAP_ALIGNED_MASK 0x0000FFFF
 
 /* Provide a Flash API for bootloader_support code,
    that can be used from bootloader or app code.

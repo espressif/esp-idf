@@ -4,7 +4,8 @@ menu "LWIP"
         string "Local netif hostname"
         default 'espressif'
         help
-            The name this device will report to other devices on the network
+            The default name this device will report to other devices on the network.
+            Could be updated at runtime with esp_netif_set_hostname()
 
     config LWIP_DNS_SUPPORT_MDNS_QUERIES
         bool "Enable mDNS queries in resolving host name"
@@ -62,14 +63,31 @@ menu "LWIP"
             to 16.
 
     config LWIP_USE_ONLY_LWIP_SELECT
-        bool "Support LWIP socket select() only"
+        bool "Support LWIP socket select() only (DEPRECATED)"
         default n
         help
+            This option is deprecated. Use VFS_SUPPORT_SELECT instead, which is
+            the inverse of this option.
+
             The virtual filesystem layer of select() redirects sockets to
             lwip_select() and non-socket file descriptors to their respective driver
             implementations. If this option is enabled then all calls of select()
             will be redirected to lwip_select(), therefore, select can be used
             for sockets only.
+
+    config LWIP_SO_LINGER
+        bool "Enable SO_LINGER processing"
+        default n
+        help
+            Enabling this option allows SO_LINGER processing.
+            l_onoff = 1,l_linger can set the timeout.
+
+            If l_linger=0, When a connection is closed, TCP will terminate the connection.
+            This means that TCP will discard any data packets stored in the socket send buffer
+            and send an RST to the peer.
+
+            If l_linger!=0,Then closesocket() calls to block the process until
+            the remaining data packets has been sent or timed out.
 
     config LWIP_SO_REUSE
         bool "Enable SO_REUSEADDR option"
@@ -105,18 +123,45 @@ menu "LWIP"
             Enabling this option allows checking for the destination address
             of a received IPv4 Packet.
 
-    config LWIP_IP_FRAG
-        bool "Enable fragment outgoing IP packets"
-        default n
+    config LWIP_IP4_FRAG
+        bool "Enable fragment outgoing IP4 packets"
+        default y
         help
-            Enabling this option allows fragmenting outgoing IP packets if their size
+            Enabling this option allows fragmenting outgoing IP4 packets if their size
             exceeds MTU.
 
-    config LWIP_IP_REASSEMBLY
-        bool "Enable reassembly incoming fragmented IP packets"
+    config LWIP_IP6_FRAG
+        bool "Enable fragment outgoing IP6 packets"
+        default y
+        help
+            Enabling this option allows fragmenting outgoing IP6 packets if their size
+            exceeds MTU.
+
+    config LWIP_IP4_REASSEMBLY
+        bool "Enable reassembly incoming fragmented IP4 packets"
         default n
         help
-            Enabling this option allows reassemblying incoming fragmented IP packets.
+            Enabling this option allows reassemblying incoming fragmented IP4 packets.
+
+    config LWIP_IP6_REASSEMBLY
+        bool "Enable reassembly incoming fragmented IP6 packets"
+        default n
+        help
+            Enabling this option allows reassemblying incoming fragmented IP6 packets.
+
+    config LWIP_IP_FORWARD
+        bool "Enable IP forwarding"
+        default n
+        help
+            Enabling this option allows packets forwarding across multiple interfaces.
+
+    config LWIP_IPV4_NAPT
+        bool "Enable NAT (new/experimental)"
+        depends on LWIP_IP_FORWARD
+        select LWIP_L2_TO_L3_COPY
+        default n
+        help
+            Enabling this option allows Network Address and Port Translation.
 
     config LWIP_STATS
         bool "Enable LWIP statistics"
@@ -254,6 +299,14 @@ menu "LWIP"
             If rate limiting self-assignment requests, wait this long between
             each request.
 
+    config LWIP_IPV6_AUTOCONFIG
+        bool "Enable IPV6 stateless address autoconfiguration"
+        default n
+        help
+            Enabling this option allows the devices to IPV6 stateless address autoconfiguration.
+
+            See RFC 4862.
+
     menuconfig LWIP_NETIF_LOOPBACK
         bool "Support per-interface loopback"
         default y
@@ -273,6 +326,17 @@ menu "LWIP"
             to be dropped, but will avoid filling memory with queued packet data.
 
     menu "TCP"
+
+        config LWIP_TCP_ISN_HOOK
+            bool "Enable TCP ISN Hook"
+            default y
+            help
+                Enables custom TCP ISN hook to randomize initial sequence
+                number in TCP connection. This is recommended as default
+                lwIP implementation (`tcp_next_iss`) is not very strong,
+                as it does not take into consideration any platform
+                specific entropy source.
+
 
         config LWIP_MAX_ACTIVE_TCP
             int "Maximum active TCP Connections"
@@ -300,6 +364,13 @@ menu "LWIP"
                 change the memory usage of LWIP, except for preventing
                 new listening TCP connections after the limit is reached.
 
+        config LWIP_TCP_HIGH_SPEED_RETRANSMISSION
+            bool "TCP high speed retransmissions"
+            default y
+            help
+                Speed up the TCP retransmission interval. If disabled,
+                it is recommended to change the number of SYN retransmissions to 6,
+                and TCP initial rto time to 3000.
 
         config LWIP_TCP_MAXRTX
             int "Maximum number of retransmissions of data segments"
@@ -310,7 +381,8 @@ menu "LWIP"
 
         config LWIP_TCP_SYNMAXRTX
             int "Maximum number of retransmissions of SYN segments"
-            default 6
+            default 6 if !LWIP_TCP_HIGH_SPEED_RETRANSMISSION
+            default 12 if LWIP_TCP_HIGH_SPEED_RETRANSMISSION
             range 3 12
             help
                 Set maximum number of retransmissions of SYN segments.
@@ -344,7 +416,8 @@ menu "LWIP"
         config LWIP_TCP_SND_BUF_DEFAULT
             int "Default send buffer size"
             default 5744  # 4 * default MSS
-            range 2440 65535
+            range 2440 65535 if !LWIP_WND_SCALE
+            range 2440 1024000 if LWIP_WND_SCALE
             help
                 Set default send buffer size for new TCP sockets.
 
@@ -360,7 +433,8 @@ menu "LWIP"
         config LWIP_TCP_WND_DEFAULT
             int "Default receive window size"
             default 5744 # 4 * default MSS
-            range 2440 65535
+            range 2440 65535 if !LWIP_WND_SCALE
+            range 2440 1024000 if LWIP_WND_SCALE
             help
                 Set default TCP receive window size for new TCP sockets.
 
@@ -399,6 +473,12 @@ menu "LWIP"
 
                 Disable this option to save some RAM during TCP sessions, at the expense
                 of increased retransmissions if segments arrive out of order.
+
+        config LWIP_TCP_SACK_OUT
+            bool "Support sending selective acknowledgements"
+            default n
+            help
+                TCP will support sending selective acknowledgements (SACKs).
 
         config LWIP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
             bool "Keep TCP connections when IP changed"
@@ -448,6 +528,14 @@ menu "LWIP"
             default 0
             help
                 Enable this feature to support TCP window scaling.
+
+        config LWIP_TCP_RTO_TIME
+            int "Default TCP rto time"
+            default 3000 if !LWIP_TCP_HIGH_SPEED_RETRANSMISSION
+            default 1500 if LWIP_TCP_HIGH_SPEED_RETRANSMISSION
+            help
+                Set default TCP rto time for a reasonable initial rto.
+                In bad network environment, recommend set value of rto time to 1500.
 
     endmenu # TCP
 
@@ -525,6 +613,31 @@ menu "LWIP"
             Enable PPP stack. Now only PPP over serial is possible.
 
             PPP over serial support is experimental and unsupported.
+
+    config LWIP_PPP_ENABLE_IPV6
+        bool "Enable IPV6 support for PPP connections (IPV6CP)"
+        depends on LWIP_PPP_SUPPORT
+        default y
+        help
+            Enable IPV6 support in PPP for the local link between the DTE (processor) and DCE (modem).
+            There are some modems which do not support the IPV6 addressing in the local link.
+            If they are requested for IPV6CP negotiation, they may time out.
+            This would in turn fail the configuration for the whole link.
+            If your modem is not responding correctly to PPP Phase Network, try to disable IPV6 support.
+
+    config LWIP_IPV6_MEMP_NUM_ND6_QUEUE
+        int "Max number of IPv6 packets to queue during MAC resolution"
+        range 3 20
+        default 3
+        help
+            Config max number of IPv6 packets to queue during MAC resolution.
+
+    config LWIP_IPV6_ND6_NUM_NEIGHBORS
+        int "Max number of entries in IPv6 neighbor cache"
+        range 3 10
+        default 5
+        help
+            Config max number of entries in IPv6 neighbor cache
 
     config LWIP_PPP_NOTIFY_PHASE_SUPPORT
         bool "Enable Notify Phase Callback"
@@ -614,5 +727,12 @@ menu "LWIP"
                 (SNTPv4 RFC 4330 enforces a minimum update time of 15 seconds).
 
     endmenu # SNTP
+
+    config LWIP_ESP_LWIP_ASSERT
+        bool "Enable LWIP ASSERT checks"
+        default y
+        help
+            Enable this option allows lwip to check assert.
+            It is recommended to keep it open, do not close it.
 
 endmenu

@@ -154,7 +154,7 @@ void *fixed_queue_dequeue(fixed_queue_t *queue, uint32_t timeout)
 
     assert(queue != NULL);
 
-    if (osi_sem_take(queue->dequeue_sem, timeout) != 0) {
+    if (osi_sem_take(&queue->dequeue_sem, timeout) != 0) {
         return NULL;
     }
 
@@ -208,14 +208,14 @@ void *fixed_queue_try_remove_from_queue(fixed_queue_t *queue, void *data)
 
     osi_mutex_lock(&queue->lock, OSI_MUTEX_MAX_TIMEOUT);
     if (list_contains(queue->list, data) &&
-            osi_sem_take(queue->dequeue_sem, 0) == 0) {
+            osi_sem_take(&queue->dequeue_sem, 0) == 0) {
         removed = list_remove(queue->list, data);
         assert(removed);
     }
     osi_mutex_unlock(&queue->lock);
 
     if (removed) {
-        osi_sem_give(queue->enqueue_sem);
+        osi_sem_give(&queue->enqueue_sem);
         return data;
     }
 

@@ -18,16 +18,51 @@
 
 static const char* TAG = "test_nvs";
 
+TEST_CASE("flash erase deinitializes initialized partition", "[nvs]")
+{
+    nvs_handle_t handle;
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        nvs_flash_erase();
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
+    TEST_ESP_OK(nvs_flash_init());
+    TEST_ESP_OK(nvs_open("uninit_ns", NVS_READWRITE, &handle));
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_erase());
+
+    // exptected: no partition is initialized since nvs_flash_erase() deinitialized the partition again
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_INITIALIZED, nvs_open("uninit_ns", NVS_READWRITE, &handle));
+
+    // just to be sure it's deinitialized in case of error and not affecting other tests
+    nvs_flash_deinit();
+}
+
+// test could have different output on host tests
+TEST_CASE("nvs deinit with open handle", "[nvs]")
+{
+    nvs_handle_t handle_1;
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGW(TAG, "nvs_flash_init failed (0x%x), erasing partition and retrying", err);
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
+    TEST_ESP_OK(nvs_open("deinit_ns", NVS_READWRITE, &handle_1));
+    nvs_flash_deinit();
+}
+
 TEST_CASE("various nvs tests", "[nvs]")
 {
     nvs_handle_t handle_1;
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_LOGW(TAG, "nvs_flash_init failed (0x%x), erasing partition and retrying", err);
-        const esp_partition_t* nvs_partition = esp_partition_find_first(
-                ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
-        assert(nvs_partition && "partition table must have an NVS partition");
-        ESP_ERROR_CHECK( esp_partition_erase_range(nvs_partition, 0, nvs_partition->size) );
+        ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK( err );
@@ -94,7 +129,7 @@ TEST_CASE("calculate used and free space", "[nvs]")
         const esp_partition_t* nvs_partition = esp_partition_find_first(
                 ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
         assert(nvs_partition && "partition table must have an NVS partition");
-        ESP_ERROR_CHECK( esp_partition_erase_range(nvs_partition, 0, nvs_partition->size) );
+        ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK( err );
@@ -102,8 +137,8 @@ TEST_CASE("calculate used and free space", "[nvs]")
     // erase if have any namespace
     TEST_ESP_OK(nvs_get_stats(NULL, &stat1));
     if(stat1.namespace_count != 0) {
-        TEST_ESP_OK(nvs_flash_erase());
         TEST_ESP_OK(nvs_flash_deinit());
+        TEST_ESP_OK(nvs_flash_erase());
         TEST_ESP_OK(nvs_flash_init());
     }
 
@@ -216,8 +251,8 @@ TEST_CASE("calculate used and free space", "[nvs]")
 
     nvs_close(handle_3);
 
-    TEST_ESP_OK(nvs_flash_erase());
     TEST_ESP_OK(nvs_flash_deinit());
+    TEST_ESP_OK(nvs_flash_erase());
 }
 
 TEST_CASE("check for memory leaks in nvs_set_blob", "[nvs]")

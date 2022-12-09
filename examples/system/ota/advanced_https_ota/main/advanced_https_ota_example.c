@@ -28,6 +28,8 @@ static const char *TAG = "advanced_https_ota_example";
 extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
 extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
 
+#define OTA_URL_SIZE 256
+
 static esp_err_t validate_image_header(esp_app_desc_t *new_app_info)
 {
     if (new_app_info == NULL) {
@@ -40,10 +42,13 @@ static esp_err_t validate_image_header(esp_app_desc_t *new_app_info)
         ESP_LOGI(TAG, "Running firmware version: %s", running_app_info.version);
     }
 
+#ifndef CONFIG_EXAMPLE_SKIP_VERSION_CHECK
     if (memcmp(new_app_info->version, running_app_info.version, sizeof(new_app_info->version)) == 0) {
         ESP_LOGW(TAG, "Current running version is the same as a new. We will not continue the update.");
         return ESP_FAIL;
     }
+#endif
+
     return ESP_OK;
 }
 
@@ -55,7 +60,26 @@ void advanced_ota_example_task(void *pvParameter)
     esp_http_client_config_t config = {
         .url = CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL,
         .cert_pem = (char *)server_cert_pem_start,
+        .timeout_ms = CONFIG_EXAMPLE_OTA_RECV_TIMEOUT,
     };
+
+#ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
+    char url_buf[OTA_URL_SIZE];
+    if (strcmp(config.url, "FROM_STDIN") == 0) {
+        example_configure_stdin_stdout();
+        fgets(url_buf, OTA_URL_SIZE, stdin);
+        int len = strlen(url_buf);
+        url_buf[len - 1] = '\0';
+        config.url = url_buf;
+    } else {
+        ESP_LOGE(TAG, "Configuration mismatch: wrong firmware upgrade image url");
+        abort();
+    }
+#endif
+
+#ifdef CONFIG_EXAMPLE_SKIP_COMMON_NAME_CHECK
+    config.skip_cert_common_name_check = true;
+#endif
 
     esp_https_ota_config_t ota_config = {
         .http_config = &config,
@@ -103,11 +127,11 @@ ota_end:
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         esp_restart();
     } else {
+        if (ota_finish_err == ESP_ERR_OTA_VALIDATE_FAILED) {
+            ESP_LOGE(TAG, "Image validation failed, image is corrupted");
+        }
         ESP_LOGE(TAG, "ESP_HTTPS_OTA upgrade failed %d", ota_finish_err);
-    }
-
-    while (1) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelete(NULL);
     }
 }
 
@@ -125,7 +149,7 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( err );
 
-    esp_netif_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.

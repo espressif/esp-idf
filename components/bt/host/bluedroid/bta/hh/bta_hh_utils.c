@@ -20,7 +20,7 @@
 #include "common/bt_target.h"
 #if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
 
-
+#include "osi/allocator.h"
 #include "bta_hh_int.h"
 
 /* if SSR max latency is not defined by remote device, set the default value

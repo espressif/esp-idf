@@ -2,7 +2,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from builtins import str
 import re
-import os
 import sys
 import ssl
 import paho.mqtt.client as mqtt
@@ -11,20 +10,8 @@ import time
 import string
 import random
 
-try:
-    import IDF
-    from IDF.IDFDUT import ESP32DUT
-except ImportError:
-    # this is a test case write with tiny-test-fw.
-    # to run test cases outside tiny-test-fw,
-    # we need to set environment variable `TEST_FW_PATH`,
-    # then get and insert `TEST_FW_PATH` to sys path before import FW module
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
-
-import DUT
+from tiny_test_fw import DUT
+import ttfw_idf
 
 
 event_client_connected = Event()
@@ -53,6 +40,8 @@ def mqtt_client_task(client):
 
 def get_host_port_from_dut(dut1, config_option):
     value = re.search(r'\:\/\/([^:]+)\:([0-9]+)', dut1.app.get_sdkconfig()[config_option])
+    if value is None:
+        return None, None
     return value.group(1), int(value.group(2))
 
 
@@ -124,7 +113,7 @@ def test_single_config(dut, transport, qos, repeat, published):
     event_stop_client.clear()
 
 
-@IDF.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_custom_test(env_tag="Example_WIFI")
 def test_weekend_mqtt_publish(env, extra_data):
     # Using broker url dictionary for different transport
     global broker_host
@@ -138,13 +127,7 @@ def test_weekend_mqtt_publish(env, extra_data):
       3. Test evaluates python client received correct qos0 message
       4. Test ESP32 client received correct qos0 message
     """
-    dut1 = env.get_dut("mqtt_publish", "examples/protocols/mqtt/publish_test", dut_class=ESP32DUT)
-    # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, "mqtt_publish.bin")
-    bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("mqtt_publish_bin_size", "{}KB"
-                        .format(bin_size // 1024))
-    IDF.check_performance("mqtt_publish_size", bin_size // 1024)
+    dut1 = env.get_dut("mqtt_publish_connect_test", "tools/test_apps/protocols/mqtt/publish_connect_test")
     # Look for host:port in sdkconfig
     try:
         # python client subscribes to the topic to which esp client publishes and vice versa
@@ -159,13 +142,16 @@ def test_weekend_mqtt_publish(env, extra_data):
         raise
     dut1.start_app()
     try:
-        ip_address = dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)
+        ip_address = dut1.expect(re.compile(r" IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"), timeout=30)
         print("Connected to AP with IP: {}".format(ip_address))
     except DUT.ExpectTimeout:
         print('ENV_TEST_FAILURE: Cannot connect to AP')
         raise
     for qos in [0, 1, 2]:
         for transport in ["tcp", "ssl", "ws", "wss"]:
+            if broker_host[transport] is None:
+                print('Skipping transport: {}...'.format(transport))
+                continue
             # simple test with empty message
             test_single_config(dut1, transport, qos, 0, 5)
             # decide on broker what level of test will pass (local broker works the best)
@@ -189,4 +175,4 @@ def test_weekend_mqtt_publish(env, extra_data):
 
 
 if __name__ == '__main__':
-    test_weekend_mqtt_publish()
+    test_weekend_mqtt_publish(dut=ttfw_idf.ESP32QEMUDUT if sys.argv[1:] == ['qemu'] else ttfw_idf.ESP32DUT)

@@ -31,11 +31,11 @@ Install Prerequisites
 
   - If you have HomeBrew, you can run::
 
-      brew install cmake ninja
+      brew install cmake ninja dfu-util
 
   - If you have MacPorts, you can run::
 
-      sudo port install cmake ninja
+      sudo port install cmake ninja dfu-util
 
 Compile the Toolchain from Source
 =================================
@@ -69,16 +69,20 @@ Go into the newly created directory::
 
 Download ``crosstool-NG`` and build it:
 
-.. include:: /_build/inc/scratch-build-code.inc
+.. include-build-file:: inc/scratch-build-code.inc
 
 Build the toolchain::
 
-    ./ct-ng xtensa-esp32-elf
+    ./ct-ng xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf
     ./ct-ng build
-    chmod -R u+w builds/xtensa-esp32-elf
+    chmod -R u+w builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf
 
-Toolchain will be built in ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf``. To use it, you need to add ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf/bin`` to ``PATH`` environment variable.
+Toolchain will be built in ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf``. To use it, you need to add ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf/bin`` to ``PATH`` environment variable.
 
+Python 2 deprecation
+====================
+
+Python 2 reached its `end of life <https://www.python.org/doc/sunset-python-2/>`_ and support for it in ESP-IDF will be removed soon. Please install Python 3.6 or higher. Instructions for macOS are listed above.
 
 Next Steps
 ==========

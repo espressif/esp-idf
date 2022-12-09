@@ -21,6 +21,10 @@
 #include "soc/soc.h"                // for BITN definitions
 #include "esp_modbus_common.h"      // for common types
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*!
  * \brief Modbus descriptor table parameter type defines.
  */
@@ -237,5 +241,9 @@ esp_err_t mbc_master_get_parameter(uint16_t cid, char* name, uint8_t* value, uin
  *     - esp_err_t ESP_FAIL - slave returned an exception or other failure
 */
 esp_err_t mbc_master_set_parameter(uint16_t cid, char* name, uint8_t* value, uint8_t *type);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ESP_MB_MASTER_INTERFACE_H

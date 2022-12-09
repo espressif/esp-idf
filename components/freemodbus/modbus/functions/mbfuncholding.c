@@ -70,8 +70,9 @@
 eMBException    prveMBError2Exception( eMBErrorCode eErrorCode );
 
 /* ----------------------- Start implementation -----------------------------*/
+#if MB_SLAVE_RTU_ENABLED || MB_SLAVE_ASCII_ENABLED
 
-#if MB_FUNC_WRITE_HOLDING_ENABLED > 0
+#if MB_FUNC_WRITE_HOLDING_ENABLED
 
 eMBException
 eMBFuncWriteHoldingRegister( UCHAR * pucFrame, USHORT * usLen )
@@ -304,5 +305,7 @@ eMBFuncReadWriteMultipleHoldingRegister( UCHAR * pucFrame, USHORT * usLen )
     }
     return eStatus;
 }
+
+#endif
 
 #endif

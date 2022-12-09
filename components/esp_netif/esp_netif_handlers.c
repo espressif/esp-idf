@@ -47,7 +47,12 @@ void esp_netif_action_connected(void *esp_netif, esp_event_base_t base, int32_t 
     ESP_LOGD(TAG, "esp_netif action connected with netif%p from event_id=%d", esp_netif, event_id);
     esp_netif_up(esp_netif);
 
-    esp_netif_dhcpc_get_status(esp_netif, &status);
+    if (!(esp_netif_get_flags(esp_netif) & ESP_NETIF_DHCP_CLIENT)) {
+        // No more actions for interfaces without DHCP client flag
+        return;
+    }
+
+    ESP_NETIF_CALL_CHECK("connected action: dhcpc failed", esp_netif_dhcpc_get_status(esp_netif, &status), ESP_OK);
     if (status == ESP_NETIF_DHCP_INIT) {
         esp_netif_dhcpc_start(esp_netif);
     } else if (status == ESP_NETIF_DHCP_STOPPED) {

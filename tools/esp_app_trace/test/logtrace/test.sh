@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 { coverage debug sys \
     && coverage erase &> output \

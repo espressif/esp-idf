@@ -18,6 +18,8 @@
 #include <stdint.h>
 #include <esp_partition.h>
 #include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 /* include performance pass standards header file */
 #include "idf_performance.h"
@@ -26,16 +28,22 @@
 /* These macros should only be used with ESP-IDF.
  * To use performance check, we need to first define pass standard in idf_performance.h.
  */
+
+//macros call this to expand an argument instead of directly converting into str
+#define PERFORMANCE_STR(s)   #s
+//macros call this to contact strings after expanding them
+#define PERFORMANCE_CON(a, b) _PERFORMANCE_CON(a, b)
+#define _PERFORMANCE_CON(a, b) a##b
+
 #define TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value)  do { \
-    printf("[Performance]["#name"]: "value_fmt"\n", value); \
-    TEST_ASSERT(value < IDF_PERFORMANCE_MAX_##name); \
+    printf("[Performance]["PERFORMANCE_STR(name)"]: "value_fmt"\n", value); \
+    TEST_ASSERT(value < PERFORMANCE_CON(IDF_PERFORMANCE_MAX_, name)); \
 } while(0)
 
 #define TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value)  do { \
-    printf("[Performance]["#name"]: "value_fmt"\n", value); \
-    TEST_ASSERT(value > IDF_PERFORMANCE_MIN_##name); \
+    printf("[Performance]["PERFORMANCE_STR(name)"]: "value_fmt"\n", value); \
+    TEST_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name)); \
 } while(0)
-
 
 /* @brief macro to print IDF performance
  * @param mode :        performance item name. a string pointer.
@@ -236,3 +244,36 @@ esp_err_t test_utils_set_leak_level(size_t leak_level, esp_type_leak_t type, esp
  * return Leak level
  */
 size_t test_utils_get_leak_level(esp_type_leak_t type, esp_comp_leak_t component);
+
+
+typedef struct test_utils_exhaust_memory_record_s *test_utils_exhaust_memory_rec;
+
+/**
+ * Limit the largest free block of memory with a particular capability set to
+ * 'limit' bytes (meaning an allocation of 'limit' should succeed at least once,
+ * but any allocation of more bytes will fail.)
+ *
+ * Returns a record pointer which needs to be passed back in to test_utils_free_exhausted_memory
+ * before the test completes, to avoid a major memory leak.
+ *
+ * @param caps Capabilities of memory to exhause
+ * @param limit The size to limit largest free block to
+ * @return Record pointer to pass to test_utils_free_exhausted_memory() once done
+ */
+test_utils_exhaust_memory_rec test_utils_exhaust_memory(uint32_t caps, size_t limit);
+
+
+/**
+ * Call to free memory which was taken up by test_utils_exhaust_memory() call
+ *
+ * @param rec Result previously returned from test_utils_exhaust_memory()
+ */
+void test_utils_free_exhausted_memory(test_utils_exhaust_memory_rec rec);
+
+
+/**
+ * @brief Delete task ensuring dynamic memory (for stack, tcb etc.) gets freed up immediately
+ *
+ * @param[in] thandle    Handle of task to be deleted (should not be NULL or self handle)
+ */
+void test_utils_task_delete(TaskHandle_t thandle);

@@ -208,11 +208,8 @@ static void bta_av_rc_ctrl_cback(UINT8 handle, UINT8 event, UINT16 result, BD_AD
     UINT16 msg_event = 0;
     UNUSED(result);
 
-#if (defined(BTA_AV_MIN_DEBUG_TRACES) && BTA_AV_MIN_DEBUG_TRACES == TRUE)
-    APPL_TRACE_EVENT("rc_ctrl handle: %d event=0x%x", handle, event);
-#else
-    APPL_TRACE_EVENT("bta_av_rc_ctrl_cback handle: %d event=0x%x", handle, event);
-#endif
+    APPL_TRACE_EVENT("%s handle: %d event: 0x%x",__func__, handle, event);
+
     if (event == AVRC_OPEN_IND_EVT) {
         /* save handle of opened connection
         bta_av_cb.rc_handle = handle;*/

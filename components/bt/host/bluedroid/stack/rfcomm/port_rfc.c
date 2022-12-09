@@ -826,7 +826,8 @@ void PORT_DataInd (tRFC_MCB *p_mcb, UINT8 dlci, BT_HDR *p_buf)
         /* Another packet is delivered to user.  Send credits to peer if required */
 
         if (p_port->p_data_co_callback(p_port->inx, (UINT8 *)p_buf, -1, DATA_CO_CALLBACK_TYPE_INCOMING)) {
-            port_flow_control_peer(p_port, TRUE, 1);
+            // do nothing, flow control credits will be given upon upper-layer request;
+            // port_flow_control_peer(p_port, TRUE, 1);
         } else {
             port_flow_control_peer(p_port, FALSE, 0);
         }

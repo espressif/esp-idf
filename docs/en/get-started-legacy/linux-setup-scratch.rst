@@ -16,11 +16,11 @@ To compile with ESP-IDF you need to get the following packages:
 
 - Ubuntu and Debian::
 
-    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing python-pyelftools
+    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing python-pyelftools libffi-dev libssl-dev
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing python2-pyelftools
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python-pyserial python-cryptography python-future python-pyparsing python-pyelftools
 
 .. note::
 
@@ -60,7 +60,7 @@ Create the working directory and go into it::
 
 Download ``crosstool-NG`` and build it:
 
-.. include:: /_build/inc/scratch-build-code.inc
+.. include-build-file:: inc/scratch-build-code.inc
 
 Build the toolchain::
 

@@ -107,7 +107,7 @@ esp_err_t esp_event_send_to_default_loop(system_event_t *event)
         HANDLE_SYS_EVENT_ARG(IP, ETH_GOT_IP, got_ip);
         HANDLE_SYS_EVENT(IP, STA_LOST_IP);
         HANDLE_SYS_EVENT_ARG(IP, GOT_IP6, got_ip6);
-        HANDLE_SYS_EVENT(IP, AP_STAIPASSIGNED);
+        HANDLE_SYS_EVENT_ARG(IP, AP_STAIPASSIGNED,ap_staipassigned);
         default:
             return ESP_ERR_NOT_SUPPORTED;
     }

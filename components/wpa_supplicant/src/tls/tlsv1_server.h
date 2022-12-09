@@ -32,7 +32,7 @@ int tlsv1_server_get_cipher(struct tlsv1_server *conn, char *buf,
 			    size_t buflen);
 int tlsv1_server_shutdown(struct tlsv1_server *conn);
 int tlsv1_server_resumed(struct tlsv1_server *conn);
-int tlsv1_server_get_keys(struct tlsv1_server *conn, struct tls_keys *keys);
+int tlsv1_server_get_random(struct tlsv1_server *conn, struct tls_random *data);
 int tlsv1_server_get_keyblock_size(struct tlsv1_server *conn);
 int tlsv1_server_set_cipher_list(struct tlsv1_server *conn, u8 *ciphers);
 int tlsv1_server_set_verify(struct tlsv1_server *conn, int verify_peer);

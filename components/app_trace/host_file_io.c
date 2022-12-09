@@ -25,7 +25,7 @@
 #include <string.h>
 #include "esp_app_trace.h"
 
-#if CONFIG_ESP32_APPTRACE_ENABLE
+#if CONFIG_APPTRACE_ENABLE
 
 #define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"

@@ -73,8 +73,9 @@ static ssize_t vfs_fat_pwrite(void *ctx, int fd, const void *src, size_t size, o
 static int vfs_fat_open(void* ctx, const char * path, int flags, int mode);
 static int vfs_fat_close(void* ctx, int fd);
 static int vfs_fat_fstat(void* ctx, int fd, struct stat * st);
-static int vfs_fat_stat(void* ctx, const char * path, struct stat * st);
 static int vfs_fat_fsync(void* ctx, int fd);
+#ifdef CONFIG_VFS_SUPPORT_DIR
+static int vfs_fat_stat(void* ctx, const char * path, struct stat * st);
 static int vfs_fat_link(void* ctx, const char* n1, const char* n2);
 static int vfs_fat_unlink(void* ctx, const char *path);
 static int vfs_fat_rename(void* ctx, const char *src, const char *dst);
@@ -89,6 +90,7 @@ static int vfs_fat_rmdir(void* ctx, const char* name);
 static int vfs_fat_access(void* ctx, const char *path, int amode);
 static int vfs_fat_truncate(void* ctx, const char *path, off_t length);
 static int vfs_fat_utime(void* ctx, const char *path, const struct utimbuf *times);
+#endif // CONFIG_VFS_SUPPORT_DIR
 
 static vfs_fat_ctx_t* s_fat_ctxs[FF_VOLUMES] = { NULL, NULL };
 //backwards-compatibility with esp_vfs_fat_unregister()
@@ -136,8 +138,9 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
         .open_p = &vfs_fat_open,
         .close_p = &vfs_fat_close,
         .fstat_p = &vfs_fat_fstat,
-        .stat_p = &vfs_fat_stat,
         .fsync_p = &vfs_fat_fsync,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+        .stat_p = &vfs_fat_stat,
         .link_p = &vfs_fat_link,
         .unlink_p = &vfs_fat_unlink,
         .rename_p = &vfs_fat_rename,
@@ -152,6 +155,7 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
         .access_p = &vfs_fat_access,
         .truncate_p = &vfs_fat_truncate,
         .utime_p = &vfs_fat_utime,
+#endif // CONFIG_VFS_SUPPORT_DIR
     };
     size_t ctx_size = sizeof(vfs_fat_ctx_t) + max_files * sizeof(FIL);
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ff_memalloc(ctx_size);
@@ -242,9 +246,7 @@ static int fresult_to_errno(FRESULT fr)
 {
     switch(fr) {
         case FR_DISK_ERR:       return EIO;
-        case FR_INT_ERR:
-            assert(0 && "fatfs internal error");
-            return EIO;
+        case FR_INT_ERR:        return EIO;
         case FR_NOT_READY:      return ENODEV;
         case FR_NO_FILE:        return ENOENT;
         case FR_NO_PATH:        return ENOENT;
@@ -512,6 +514,8 @@ static int vfs_fat_fstat(void* ctx, int fd, struct stat * st)
     st->st_ctime = 0;
     return 0;
 }
+
+#ifdef CONFIG_VFS_SUPPORT_DIR
 
 static inline mode_t get_stat_mode(bool is_dir)
 {
@@ -956,3 +960,5 @@ static int vfs_fat_utime(void *ctx, const char *path, const struct utimbuf *time
 
     return 0;
 }
+
+#endif // CONFIG_VFS_SUPPORT_DIR

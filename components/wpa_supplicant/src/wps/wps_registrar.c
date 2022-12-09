@@ -1640,15 +1640,16 @@ int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 		if (random_get_bytes(r, sizeof(r)) < 0)
 			return -1;
 		os_free(wps->new_psk);
+		wps->new_psk = (u8 *)base64_encode(r, sizeof(r), &wps->new_psk_len);
 		if (wps->new_psk == NULL)
 			return -1;
 		wps->new_psk_len--; /* remove newline */
 		while (wps->new_psk_len &&
-		       wps->new_psk[wps->new_psk_len - 1] == '=')
+		       wps->new_psk[wps->new_psk_len - 1] == '=')	// NOLINT(clang-analyzer-unix.Malloc)
 			wps->new_psk_len--;
 		wpa_hexdump_ascii_key(MSG_DEBUG, "WPS: Generated passphrase",
 				      wps->new_psk, wps->new_psk_len);
-		os_memcpy(wps->cred.key, wps->new_psk, wps->new_psk_len);
+		os_memcpy(wps->cred.key, wps->new_psk, wps->new_psk_len);	// NOLINT(clang-analyzer-unix.Malloc)
 		wps->cred.key_len = wps->new_psk_len;
 	} else if (wps->use_psk_key && wps->wps->psk_set) {
 		char hex[65];
@@ -2422,14 +2423,18 @@ static int wps_process_wps_state(struct wps_data *wps, const u8 *state)
 
 static int wps_process_assoc_state(struct wps_data *wps, const u8 *assoc)
 {
-	u16 a;
+#ifdef DEBUG_PRINT
+    u16 a;
+#endif
 
 	if (assoc == NULL) {
 		wpa_printf(MSG_DEBUG,  "WPS: No Association State received");
 		return -1;
 	}
 
+#ifdef DEBUG_PRINT
 	a = WPA_GET_BE16(assoc);
+#endif
 	wpa_printf(MSG_DEBUG,  "WPS: Enrollee Association State %d", a);
 
 	return 0;
@@ -2438,14 +2443,18 @@ static int wps_process_assoc_state(struct wps_data *wps, const u8 *assoc)
 
 static int wps_process_config_error(struct wps_data *wps, const u8 *err)
 {
-	u16 e;
+#ifdef DEBUG_PRINT
+    u16 e;
+#endif
 
 	if (err == NULL) {
 		wpa_printf(MSG_DEBUG,  "WPS: No Configuration Error received");
 		return -1;
 	}
 
+#ifdef DEBUG_PRINT
 	e = WPA_GET_BE16(err);
+#endif
 	wpa_printf(MSG_DEBUG,  "WPS: Enrollee Configuration Error %d", e);
 
 	return 0;

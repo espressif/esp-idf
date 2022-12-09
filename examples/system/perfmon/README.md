@@ -18,14 +18,14 @@ Example should be able to run on any commonly available ESP32 development board.
 ### Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
-
-* Set serial port under Serial Flasher Options.
 
 ### Build and Flash
 
-Enter `make -j4 flash monitor` if you are using GNU Make based build system or enter `idf.py build flash monitor` if you' are using CMake based build system.
+```
+idf.py build flash monitor
+```
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

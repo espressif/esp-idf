@@ -1,0 +1,17 @@
+{
+    "dram_data": 9324,
+    "dram_bss": 8296,
+    "dram_other": 0,
+    "used_dram": 17620,
+    "available_dram": 163116,
+    "used_dram_ratio": 0.09749026203966006,
+    "used_iram": 38932,
+    "available_iram": 92140,
+    "used_iram_ratio": 0.297027587890625,
+    "used_diram": 0,
+    "available_diram": 0,
+    "used_diram_ratio": 0,
+    "flash_code": 146944,
+    "flash_rodata": 39580,
+    "total_size": 243076
+}

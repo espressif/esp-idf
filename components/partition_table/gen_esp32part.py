@@ -160,7 +160,7 @@ class PartitionTable(list):
             subtype = SUBTYPES[int(ptype)][subtype]
         except KeyError:
             try:
-                ptype = int(ptype, 0)
+                subtype = int(subtype, 0)
             except TypeError:
                 pass
 
@@ -241,7 +241,7 @@ class PartitionTable(list):
         return result
 
     def to_csv(self, simple_formatting=False):
-        rows = ["# Espressif ESP32 Partition Table",
+        rows = ["# ESP-IDF Partition Table",
                 "# Name, Type, SubType, Offset, Size, Flags"]
         rows += [x.to_csv(simple_formatting) for x in self]
         return "\n".join(rows) + "\n"

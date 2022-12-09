@@ -27,9 +27,6 @@ By default the GPIO output is 4. To change it, edit the line with `GPIO_NUM_4` i
 idf.py menuconfig
 ```
 
-Set serial port under Serial Flasher Options and save the configuration.
-
-
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:

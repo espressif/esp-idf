@@ -81,7 +81,7 @@ typedef struct mdns_result_s {
     mdns_txt_item_t * txt;                  /*!< txt record */
     size_t txt_count;                       /*!< number of txt items */
     // A and AAAA
-    mdns_ip_addr_t * addr;                  /*!< linked list of IP addreses found */
+    mdns_ip_addr_t * addr;                  /*!< linked list of IP addresses found */
 } mdns_result_t;
 
 /**
@@ -141,7 +141,7 @@ esp_err_t mdns_instance_name_set(const char * instance_name);
  *     - ESP_OK success
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_ERR_NO_MEM memory error
- *     - ESP_FAIL failed to add serivce
+ *     - ESP_FAIL failed to add service
  */
 esp_err_t mdns_service_add(const char * instance_name, const char * service_type, const char * proto, uint16_t port, mdns_txt_item_t txt[], size_t num_items);
 

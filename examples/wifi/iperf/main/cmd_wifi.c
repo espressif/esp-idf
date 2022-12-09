@@ -108,7 +108,7 @@ void initialise_wifi(void)
         return;
     }
 
-    esp_netif_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK( esp_event_loop_create_default() );
     netif_ap = esp_netif_create_default_wifi_ap();
@@ -116,13 +116,25 @@ void initialise_wifi(void)
     netif_sta = esp_netif_create_default_wifi_sta();
     assert(netif_sta);
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-    ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_SCAN_DONE, &scan_done_handler, NULL) );
-    ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, NULL) );
-    ESP_ERROR_CHECK( esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &got_ip_handler, NULL) );
-    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
-    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_NULL) );
-    ESP_ERROR_CHECK( esp_wifi_start() );
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+                                                        WIFI_EVENT_SCAN_DONE,
+                                                        &scan_done_handler,
+                                                        NULL,
+                                                        NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+                                                        WIFI_EVENT_STA_DISCONNECTED,
+                                                        &disconnect_handler,
+                                                        NULL,
+                                                        NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
+                                                        IP_EVENT_STA_GOT_IP,
+                                                        &got_ip_handler,
+                                                        NULL,
+                                                        NULL));
+    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_NULL) );
+    ESP_ERROR_CHECK(esp_wifi_start() );
     initialized = true;
 }
 
@@ -147,7 +159,7 @@ static bool wifi_cmd_sta_join(const char* ssid, const char* pass)
     reconnect = true;
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
-    ESP_ERROR_CHECK( esp_wifi_connect() );
+    esp_wifi_connect();
 
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 5000/portTICK_RATE_MS);
 
@@ -174,7 +186,7 @@ static bool wifi_cmd_sta_scan(const char* ssid)
     scan_config.ssid = (uint8_t *) ssid;
 
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK( esp_wifi_scan_start(&scan_config, false) );
+    esp_wifi_scan_start(&scan_config, false);
 
     return true;
 }

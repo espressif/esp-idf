@@ -1,0 +1,5 @@
+gdb_log.txt
+openocd.log
+*.bin
+*.elf
+*.o

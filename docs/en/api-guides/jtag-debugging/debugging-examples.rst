@@ -38,7 +38,7 @@ Examples in this section
 Navigating through the code, call stack and threads
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When the target is halted, debugger shows the list of threads in "Debug" window. The line of code where program halted is highlighted in another window below, as shown on the following picture. The LED stops blinking. 
+When the target is halted, debugger shows the list of threads in "Debug" window. The line of code where program halted is highlighted in another window below, as shown on the following picture. The LED stops blinking.
 
 .. figure:: ../../../_static/debugging-target-halted.jpg
     :align: center
@@ -47,7 +47,7 @@ When the target is halted, debugger shows the list of threads in "Debug" window.
 
     Target halted during debugging
 
-Specific thread where the program halted is expanded showing the call stack. It represents function calls that lead up to the highlighted line of code, where the target halted. The first line of call stack under Thread #1 contains the last called function ``app_main()``, that in turn was called from function ``main_task()`` shown in a line below. Each line of the stack also contains the file name and line number where the function was called. By clicking / highlighting the stack entries, in window below, you will see contents of this file. 
+Specific thread where the program halted is expanded showing the call stack. It represents function calls that lead up to the highlighted line of code, where the target halted. The first line of call stack under Thread #1 contains the last called function ``app_main()``, that in turn was called from function ``main_task()`` shown in a line below. Each line of the stack also contains the file name and line number where the function was called. By clicking / highlighting the stack entries, in window below, you will see contents of this file.
 
 By expanding threads you can navigate throughout the application. Expand Thread #5 that contains much longer call stack. You will see there, besides function calls, numbers like ``0x4000000c``. They represent addresses of binary code not provided in source form.
 
@@ -70,7 +70,7 @@ Setting and clearing breakpoints
 
 When debugging, we would like to be able to stop the application at critical lines of code and then examine the state of specific variables, memory and registers / peripherals. To do so we are using breakpoints. They provide a convenient way to quickly get to and halt the application at specific line.
 
-Let's establish two breakpoints when the state of LED changes. Basing on code listing above, this happens at lines 33 and 36. To do so, hold the "Control" on the keyboard and double clink on number ``33`` in file ``blink.c`` file. A dialog will open where you can confirm your selection by pressing "OK" button. If you do not like to see the dialog just double click the line number. Set another breakpoint in line 36. 
+Let's establish two breakpoints when the state of LED changes. Basing on code listing above, this happens at lines 33 and 36. To do so, hold the "Control" on the keyboard and double clink on number ``33`` in file ``blink.c`` file. A dialog will open where you can confirm your selection by pressing "OK" button. If you do not like to see the dialog just double click the line number. Set another breakpoint in line 36.
 
 .. figure:: ../../../_static/debugging-setting-breakpoint.jpg
     :align: center
@@ -141,7 +141,7 @@ If you press "Step Into (F5)" instead, then debugger will step inside subroutine
 
     Stepping through the code with "Step Into (F5)"
 
-In this particular case debugger stepped inside ``gpio_set_level(BLINK_GPIO, 0)`` and effectively moved to ``gpio.c`` driver code. 
+In this particular case debugger stepped inside ``gpio_set_level(BLINK_GPIO, 0)`` and effectively moved to ``gpio.c`` driver code.
 
 See :ref:`jtag-debugging-tip-why-next-works-as-step` for potential limitation of using ``next`` command.
 
@@ -150,10 +150,11 @@ See :ref:`jtag-debugging-tip-why-next-works-as-step` for potential limitation of
 
 Checking and setting memory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 To display or set contents of memory use "Memory" tab at the bottom of "Debug" perspective.
 
-With the "Memory" tab, we will read from and write to the memory location ``0x3FF44004`` labeled as ``GPIO_OUT_REG`` used to set and clear individual GPIO's. For more information please refer to `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`__, chapter IO_MUX and GPIO Matrix.
+With the "Memory" tab, we will read from and write to the memory location ``0x3FF44004`` labeled as ``GPIO_OUT_REG`` used to set and clear individual GPIO's.
+
+For more information please refer to `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`__, chapter IO_MUX and GPIO Matrix.
 
 Being in the same ``blink.c`` project as before, set two breakpoints right after ``gpio_set_level`` instruction. Click "Memory" tab and then "Add Memory Monitor" button. Enter ``0x3FF44004`` in provided dialog.
 
@@ -175,7 +176,7 @@ You should see one bit being flipped over at memory location ``0x3FF44004`` (and
 
     Observing memory location 0x3FF44004 changing one bit to "OFF"
 
-To set memory use the same "Monitor" tab and the same memory location. Type in alternate bit pattern as previously observed. Immediately after pressing enter you will see LED changing the state. 
+To set memory use the same "Monitor" tab and the same memory location. Type in alternate bit pattern as previously observed. Immediately after pressing enter you will see LED changing the state.
 
 
 .. _jtag-debugging-examples-eclipse-06:
@@ -209,7 +210,7 @@ To modify ``i`` enter a new number in "Value" column. After pressing "Resume (F8
 Setting conditional breakpoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Here comes more interesting part. You may set a breakpoint to halt the program execution, if certain condition is satisfied. Right click on the breakpoint to open a context menu and select "Breakpoint Properties". Change the selection under "Type:" to "Hardware" and enter a "Condition:" like ``i == 2``. 
+Here comes more interesting part. You may set a breakpoint to halt the program execution, if certain condition is satisfied. Right click on the breakpoint to open a context menu and select "Breakpoint Properties". Change the selection under "Type:" to "Hardware" and enter a "Condition:" like ``i == 2``.
 
 .. figure:: ../../../_static/debugging-setting-conditional-breakpoint.jpg
     :align: center
@@ -230,7 +231,7 @@ Verify if your target is ready and loaded with :example:`get-started/blink` exam
 
     Temporary breakpoint 1, app_main () at /home/user-name/esp/blink/main/./blink.c:43
     43      xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
-    (gdb) 
+    (gdb)
 
 
 
@@ -251,19 +252,19 @@ Examples in this section
 Navigating through the code, call stack and threads
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When you see the ``(gdb)`` prompt, the application is halted. LED should not be blinking. 
+When you see the ``(gdb)`` prompt, the application is halted. LED should not be blinking.
 
 To find out where exactly the code is halted, enter ``l`` or ``list``, and debugger will show couple of lines of code around the halt point (line 43 of code in file ``blink.c``) ::
 
     (gdb) l
     38      }
     39  }
-    40  
+    40
     41  void app_main()
     42  {
     43      xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
     44  }
-    (gdb) 
+    (gdb)
 
 
 Check how code listing works by entering, e.g. ``l 30, 40`` to see particular range of lines of code.
@@ -272,15 +273,15 @@ You can use ``bt`` or ``backtrace`` to see what function calls lead up to this c
 
     (gdb) bt
     #0  app_main () at /home/user-name/esp/blink/main/./blink.c:43
-    #1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/esp32/./cpu_start.c:339
-    (gdb) 
+    #1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./cpu_start.c:339
+    (gdb)
 
-Line #0 of output provides the last function call before the application halted, i.e. ``app_main ()`` we have listed previously. The ``app_main ()`` was in turn called by function ``main_task`` from line 339 of code located in file ``cpu_start.c``. 
+Line #0 of output provides the last function call before the application halted, i.e. ``app_main ()`` we have listed previously. The ``app_main ()`` was in turn called by function ``main_task`` from line 339 of code located in file ``cpu_start.c``.
 
 To get to the context of ``main_task`` in file ``cpu_start.c``, enter ``frame  N``, where N = 1, because the ``main_task`` is listed under #1)::
 
     (gdb) frame 1
-    #1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/esp32/./cpu_start.c:339
+    #1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./cpu_start.c:339
     339     app_main();
     (gdb)
 
@@ -295,8 +296,8 @@ Enter ``l`` and this will reveal the piece of code that called ``app_main()`` (i
     339     app_main();
     340     vTaskDelete(NULL);
     341 }
-    342 
-    (gdb) 
+    342
+    (gdb)
 
 By listing some lines before, you will see the function name ``main_task`` we have been looking for::
 
@@ -317,27 +318,27 @@ By listing some lines before, you will see the function name ``main_task`` we ha
     339     app_main();
     340     vTaskDelete(NULL);
     341 }
-    (gdb) 
+    (gdb)
 
 To see the other code, enter ``i threads``. This will show the list of threads running on target::
 
     (gdb) i threads
-      Id   Target Id         Frame 
+      Id   Target Id         Frame
       8    Thread 1073411336 (dport) 0x400d0848 in dport_access_init_core (arg=<optimized out>)
-        at /home/user-name/esp/esp-idf/components/esp32/./dport_access.c:170
-      7    Thread 1073408744 (ipc0) xQueueGenericReceive (xQueue=0x3ffae694, pvBuffer=0x0, xTicksToWait=1644638200, 
+        at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./dport_access.c:170
+      7    Thread 1073408744 (ipc0) xQueueGenericReceive (xQueue=0x3ffae694, pvBuffer=0x0, xTicksToWait=1644638200,
         xJustPeeking=0) at /home/user-name/esp/esp-idf/components/freertos/./queue.c:1452
       6    Thread 1073431096 (Tmr Svc) prvTimerTask (pvParameters=0x0)
         at /home/user-name/esp/esp-idf/components/freertos/./timers.c:445
       5    Thread 1073410208 (ipc1 : Running) 0x4000bfea in ?? ()
       4    Thread 1073432224 (dport) dport_access_init_core (arg=0x0)
-        at /home/user-name/esp/esp-idf/components/esp32/./dport_access.c:150
+        at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./dport_access.c:150
       3    Thread 1073413156 (IDLE) prvIdleTask (pvParameters=0x0)
         at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:3282
       2    Thread 1073413512 (IDLE) prvIdleTask (pvParameters=0x0)
         at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:3282
     * 1    Thread 1073411772 (main : Running) app_main () at /home/user-name/esp/blink/main/./blink.c:43
-    (gdb) 
+    (gdb)
 
 The thread list shows the last function calls per each thread together with the name of C source file if available.
 
@@ -360,7 +361,7 @@ Then check the backtrace::
     #6  0x4000000c in ?? ()
     #7  0x4000000c in ?? ()
     #8  0x4000000c in ?? ()
-    (gdb) 
+    (gdb)
 
 As you see, the backtrace  may contain several entries. This will let you check what exact sequence of function calls lead to the code where the target halted. Question marks ``??`` instead of a function name indicate that application is available only in binary format, without any source file in C language. The value like ``0x4000bfea`` is the memory address of the function call.
 
@@ -385,18 +386,18 @@ If you new enter ``c``, the processor will run and halt at a breakpoint. Enterin
 
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB6F6 (active)    APP_CPU: PC=0x400D10D8 
+    Target halted. PRO_CPU: PC=0x400DB6F6 (active)    APP_CPU: PC=0x400D10D8
 
     Breakpoint 2, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:33
     33          gpio_set_level(BLINK_GPIO, 0);
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB6F8 (active)    APP_CPU: PC=0x400D10D8 
-    Target halted. PRO_CPU: PC=0x400DB704 (active)    APP_CPU: PC=0x400D10D8 
+    Target halted. PRO_CPU: PC=0x400DB6F8 (active)    APP_CPU: PC=0x400D10D8
+    Target halted. PRO_CPU: PC=0x400DB704 (active)    APP_CPU: PC=0x400D10D8
 
     Breakpoint 3, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:36
     36          gpio_set_level(BLINK_GPIO, 1);
-    (gdb) 
+    (gdb)
 
 You will be also able to see that LED is changing the state only if you resume program execution by entering ``c``.
 
@@ -408,16 +409,16 @@ To examine how many breakpoints are set and where, use command ``info break``::
         breakpoint already hit 1 time
     3       breakpoint     keep y   0x400db704 in blink_task at /home/user-name/esp/blink/main/./blink.c:36
         breakpoint already hit 1 time
-    (gdb) 
+    (gdb)
 
 Please note that breakpoint numbers (listed under ``Num``) start with ``2``. This is because first breakpoint has been already established at function ``app_main()`` by running command ``thb app_main`` on debugger launch. As it was a temporary breakpoint, it has been automatically deleted and now is not listed anymore.
 
-To remove breakpoints enter ``delete N`` command (in short ``d N``), where ``N`` is the breakpoint number:: 
+To remove breakpoints enter ``delete N`` command (in short ``d N``), where ``N`` is the breakpoint number::
 
     (gdb) delete 1
     No breakpoint number 1.
     (gdb) delete 2
-    (gdb) 
+    (gdb)
 
 Read more about breakpoints under :ref:`jtag-debugging-tip-breakpoints` and :ref:`jtag-debugging-tip-where-breakpoints`
 
@@ -438,9 +439,9 @@ To check it delete all breakpoints and enter ``c`` to resume application. Then e
 
     Program received signal SIGINT, Interrupt.
     [Switching to Thread 1073413512]
-    0x400d0c00 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/esp32/./freertos_hooks.c:52
+    0x400d0c00 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./freertos_hooks.c:52
     52          asm("waiti 0");
-    (gdb) 
+    (gdb)
 
 In particular case above, the application has been halted in line 52 of code in file ``freertos_hooks.c``. Now you can resume it again by enter ``c`` or do some debugging as discussed below.
 
@@ -462,46 +463,46 @@ To demonstrate this functionality, using command ``break`` and ``delete`` discus
     Num     Type           Disp Enb Address    What
     3       breakpoint     keep y   0x400db704 in blink_task at /home/user-name/esp/blink/main/./blink.c:36
         breakpoint already hit 1 time
-    (gdb) 
+    (gdb)
 
 Resume program by entering ``c`` and let it halt::
 
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB754 (active)    APP_CPU: PC=0x400D1128 
+    Target halted. PRO_CPU: PC=0x400DB754 (active)    APP_CPU: PC=0x400D1128
 
     Breakpoint 3, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:36
     36          gpio_set_level(BLINK_GPIO, 1);
-    (gdb) 
+    (gdb)
 
 Then enter ``n`` couple of times to see how debugger is stepping one program line at a time::
 
     (gdb) n
-    Target halted. PRO_CPU: PC=0x400DB756 (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB758 (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DC04C (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB75B (active)    APP_CPU: PC=0x400D1128 
+    Target halted. PRO_CPU: PC=0x400DB756 (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB758 (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DC04C (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB75B (active)    APP_CPU: PC=0x400D1128
     37          vTaskDelay(1000 / portTICK_PERIOD_MS);
     (gdb) n
-    Target halted. PRO_CPU: PC=0x400DB75E (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400846FC (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB761 (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB746 (active)    APP_CPU: PC=0x400D1128 
+    Target halted. PRO_CPU: PC=0x400DB75E (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400846FC (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB761 (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB746 (active)    APP_CPU: PC=0x400D1128
     33          gpio_set_level(BLINK_GPIO, 0);
-    (gdb) 
+    (gdb)
 
 If you enter ``s`` instead, then debugger will step inside subroutine calls::
 
     (gdb) s
-    Target halted. PRO_CPU: PC=0x400DB748 (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB74B (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DC04C (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DC04F (active)    APP_CPU: PC=0x400D1128 
+    Target halted. PRO_CPU: PC=0x400DB748 (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB74B (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DC04C (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DC04F (active)    APP_CPU: PC=0x400D1128
     gpio_set_level (gpio_num=GPIO_NUM_4, level=0) at /home/user-name/esp/esp-idf/components/driver/./gpio.c:183
     183     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
-    (gdb) 
+    (gdb)
 
-In this particular case debugger stepped inside ``gpio_set_level(BLINK_GPIO, 0)`` and effectively moved to ``gpio.c`` driver code. 
+In this particular case debugger stepped inside ``gpio_set_level(BLINK_GPIO, 0)`` and effectively moved to ``gpio.c`` driver code.
 
 See :ref:`jtag-debugging-tip-why-next-works-as-step` for potential limitation of using ``next`` command.
 
@@ -513,14 +514,16 @@ Checking and setting memory
 
 Displaying the contents of memory is done with command ``x``. With additional parameters you may vary the format and count of memory locations displayed. Run ``help x`` to see more details. Companion command to ``x`` is ``set`` that let you write values to the memory.
 
-We will demonstrate how ``x`` and ``set`` work by reading from and writing to the memory location ``0x3FF44004`` labeled as ``GPIO_OUT_REG`` used to set and clear individual GPIO's. For more information please refer to `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`__, chapter IO_MUX and GPIO Matrix.
+We will demonstrate how ``x`` and ``set`` work by reading from and writing to the memory location ``0x3FF44004`` labeled as ``GPIO_OUT_REG`` used to set and clear individual GPIO's.
+
+For more information please refer to `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`__, chapter IO_MUX and GPIO Matrix.
 
 Being in the same ``blink.c`` project as before, set two breakpoints right after ``gpio_set_level`` instruction. Enter two times ``c`` to get to the break point followed by ``x /1wx 0x3FF44004`` to display contents of ``GPIO_OUT_REG`` memory location::
 
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB75E (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB74E (active)    APP_CPU: PC=0x400D1128 
+    Target halted. PRO_CPU: PC=0x400DB75E (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB74E (active)    APP_CPU: PC=0x400D1128
 
     Breakpoint 2, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:34
     34          vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -528,14 +531,14 @@ Being in the same ``blink.c`` project as before, set two breakpoints right after
     0x3ff44004: 0x00000000
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB751 (active)    APP_CPU: PC=0x400D1128 
-    Target halted. PRO_CPU: PC=0x400DB75B (active)    APP_CPU: PC=0x400D1128 
+    Target halted. PRO_CPU: PC=0x400DB751 (active)    APP_CPU: PC=0x400D1128
+    Target halted. PRO_CPU: PC=0x400DB75B (active)    APP_CPU: PC=0x400D1128
 
     Breakpoint 3, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:37
     37          vTaskDelay(1000 / portTICK_PERIOD_MS);
     (gdb) x /1wx 0x3FF44004
     0x3ff44004: 0x00000010
-    (gdb) 
+    (gdb)
 
 If your are blinking LED connected to GPIO4, then you should see fourth bit being flipped each time the LED changes the state::
 
@@ -571,7 +574,7 @@ This will insert so called "watchpoint" in each place of code where variable ``i
 
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB751 (active)    APP_CPU: PC=0x400D0811 
+    Target halted. PRO_CPU: PC=0x400DB751 (active)    APP_CPU: PC=0x400D0811
     [New Thread 1073432196]
 
     Program received signal SIGTRAP, Trace/breakpoint trap.
@@ -584,14 +587,14 @@ Resume application couple more times so ``i`` gets incremented. Now you can ente
 
     (gdb) p i
     $1 = 3
-    (gdb) 
+    (gdb)
 
 To modify the value of ``i`` use ``set`` command as below (you can then print it out to check if it has been indeed changed)::
 
     (gdb) set var i = 0
     (gdb) p i
     $3 = 0
-    (gdb) 
+    (gdb)
 
 You may have up to two watchpoints, see :ref:`jtag-debugging-tip-breakpoints`.
 
@@ -607,21 +610,21 @@ Here comes more interesting part. You may set a breakpoint to halt the program e
     Breakpoint 3 at 0x400db753: file /home/user-name/esp/blink/main/./blink.c, line 34.
     (gdb)
 
-Above command sets conditional breakpoint to halt program execution in line ``34`` of ``blink.c`` if ``i == 2``. 
+Above command sets conditional breakpoint to halt program execution in line ``34`` of ``blink.c`` if ``i == 2``.
 
 If current value of ``i`` is less than ``2`` and program is resumed, it will blink LED in a loop until condition ``i == 2`` gets true and then finally halt::
 
     (gdb) set var i = 0
     (gdb) c
     Continuing.
-    Target halted. PRO_CPU: PC=0x400DB755 (active)    APP_CPU: PC=0x400D112C 
-    Target halted. PRO_CPU: PC=0x400DB753 (active)    APP_CPU: PC=0x400D112C 
-    Target halted. PRO_CPU: PC=0x400DB755 (active)    APP_CPU: PC=0x400D112C 
-    Target halted. PRO_CPU: PC=0x400DB753 (active)    APP_CPU: PC=0x400D112C 
+    Target halted. PRO_CPU: PC=0x400DB755 (active)    APP_CPU: PC=0x400D112C
+    Target halted. PRO_CPU: PC=0x400DB753 (active)    APP_CPU: PC=0x400D112C
+    Target halted. PRO_CPU: PC=0x400DB755 (active)    APP_CPU: PC=0x400D112C
+    Target halted. PRO_CPU: PC=0x400DB753 (active)    APP_CPU: PC=0x400D112C
 
     Breakpoint 3, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:34
     34          gpio_set_level(BLINK_GPIO, 0);
-    (gdb) 
+    (gdb)
 
 
 Obtaining help on commands
@@ -635,15 +638,15 @@ Commands presented so for should provide are very basis and intended to let you 
     Unlike "step", if the current source line calls a subroutine,
     this command does not enter the subroutine, but instead steps over
     the call, in effect treating it as a single source line.
-    (gdb) 
+    (gdb)
 
-By typing just ``help``, you will get top level list of command classes, to aid you drilling down to more details. Optionally refer to available GDB cheat sheets, for instance http://darkdust.net/files/GDB%20Cheat%20Sheet.pdf. Good to have as a reference (even if not all commands are applicable in an embedded environment).
+By typing just ``help``, you will get top level list of command classes, to aid you drilling down to more details. Optionally refer to available GDB cheat sheets, for instance https://darkdust.net/files/GDB%20Cheat%20Sheet.pdf. Good to have as a reference (even if not all commands are applicable in an embedded environment).
 
 
 Ending debugger session
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-To quit debugger enter ``q``:: 
+To quit debugger enter ``q``::
 
     (gdb) q
     A debugging session is active.
@@ -653,4 +656,4 @@ To quit debugger enter ``q``::
     Quit anyway? (y or n) y
     Detaching from program: /home/user-name/esp/blink/build/blink.elf, Remote target
     Ending remote debugging.
-    user-name@computer-name:~/esp/blink$ 
+    user-name@computer-name:~/esp/blink$

@@ -1,5 +1,6 @@
 Over The Air Updates (OTA)
 ==========================
+:link_to_translation:`zh_CN:[中文]`
 
 OTA Process Overview
 --------------------
@@ -139,7 +140,7 @@ This function works if set :ref:`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` option. In
 A typical anti-rollback scheme is
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- New firmware released with the elimination of vulnerabilities with the previous version of security. 
+- New firmware released with the elimination of vulnerabilities with the previous version of security.
 - After the developer makes sure that this firmware is working. He can increase the security version and release a new firmware.
 - Download new application.
 - To make it bootable, run the function :cpp:func:`esp_ota_set_boot_partition`. If the security version of the new application is smaller than the version in the chip, the new application will be erased. Update to new firmware is not possible.
@@ -148,7 +149,7 @@ A typical anti-rollback scheme is
 - New application booted. Then the application should perform diagnostics of the operation and if it is completed successfully, you should call :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` function to mark the running application with the ``ESP_OTA_IMG_VALID`` state and update the secure version on chip. Note that if was called :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` function a rollback may not happend due to the device may not have any bootable apps then it will return ``ESP_ERR_OTA_ROLLBACK_FAILED`` error and stay in the ``ESP_OTA_IMG_PENDING_VERIFY`` state.
 - The next update of app is possible if a running app is in the ``ESP_OTA_IMG_VALID`` state.
 
-Recommendation: 
+Recommendation:
 
 If you want to avoid the download/erase overhead in case of the app from the server has security version lower then running app you have to get ``new_app_info.secure_version`` from the first package of an image and compare it with the secure version of efuse. Use ``esp_efuse_check_secure_version(new_app_info.secure_version)`` function if it is true then continue downloading otherwise abort.
 
@@ -169,7 +170,7 @@ If you want to avoid the download/erase overhead in case of the app from the ser
                     	http_cleanup(client);
                     	task_fatal_error();
                     }
-                    
+
                     image_header_was_checked = true;
 
                     esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &update_handle);
@@ -189,16 +190,21 @@ Restrictions:
 ``security_version``:
 
 - In application image it is stored in ``esp_app_desc`` structure. The number is set :ref:`CONFIG_BOOTLOADER_APP_SECURE_VERSION`.
-- In ESP32 it is stored in efuse ``EFUSE_BLK3_RDATA4_REG``. (when a eFuse bit is programmed to 1, it can never be reverted to 0). The number of bits set in this register is the ``security_version`` from app.
 
-.. _secure-ota-updates:
+.. only:: esp32
 
-Secure OTA Updates Without Secure boot
---------------------------------------
+  - In ESP32 it is stored in efuse ``EFUSE_BLK3_RDATA4_REG``. (when a eFuse bit is programmed to 1, it can never be reverted to 0). The number of bits set in this register is the ``security_version`` from app.
 
-The verification of signed OTA updates can be performed even without enabling hardware secure boot. For doing so, refer :ref:`signed-app-verify`
+.. only:: esp32
 
+  .. _secure-ota-updates:
 
+  Secure OTA Updates Without Secure boot
+  --------------------------------------
+
+  The verification of signed OTA updates can be performed even without enabling hardware secure boot. For doing so, refer :ref:`signed-app-verify`
+
+    
 OTA Tool (otatool.py)
 ---------------------
 
@@ -267,13 +273,13 @@ The command-line interface of `otatool.py` has the following structure:
   otatool.py [command-args] [subcommand] [subcommand-args]
 
   - command-args - these are arguments that are needed for executing the main command (parttool.py), mostly pertaining to the target device
-  - subcommand - this is the operation to be performed 
+  - subcommand - this is the operation to be performed
   - subcommand-args - these are arguments that are specific to the chosen operation
 
 .. code-block:: bash
 
   # Erase otadata, resetting the device to factory app
-  otatool.py --port "/dev/ttyUSB1" erase_otadata 
+  otatool.py --port "/dev/ttyUSB1" erase_otadata
 
   # Erase contents of OTA app slot 0
   otatool.py --port "/dev/ttyUSB1" erase_ota_partition --slot 0
@@ -311,7 +317,7 @@ End-to-end example of OTA firmware update workflow: :example:`system/ota`.
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_ota_ops.inc
+.. include-build-file:: inc/esp_ota_ops.inc
 
 
 

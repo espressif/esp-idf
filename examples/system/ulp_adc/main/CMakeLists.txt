@@ -18,4 +18,4 @@ set(ulp_exp_dep_srcs "ulp_adc_example_main.c")
 #
 # 4. Call function to build ULP binary and embed in project using the argument
 #    values above.
-ulp_embed_binary(${ulp_app_name} ${ulp_s_sources} ${ulp_exp_dep_srcs})
+ulp_embed_binary(${ulp_app_name} "${ulp_s_sources}" "${ulp_exp_dep_srcs}")

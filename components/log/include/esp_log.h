@@ -20,8 +20,8 @@
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/ets_sys.h"
 #endif
 
 #ifdef __cplusplus
@@ -124,6 +124,15 @@ uint32_t esp_log_early_timestamp(void);
  * This function or these macros should not be used from an interrupt.
  */
 void esp_log_write(esp_log_level_t level, const char* tag, const char* format, ...) __attribute__ ((format (printf, 3, 4)));
+
+/**
+ * @brief Write message into the log, va_list variant
+ * @see esp_log_write()
+ *
+ * This function is provided to ease integration toward other logging framework,
+ * so that esp_log can be used as a log sink.
+ */
+void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, va_list args);
 
 /** @cond */
 
@@ -340,6 +349,38 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 #define ESP_LOG_LEVEL_LOCAL(level, tag, format, ...) do {               \
         if ( LOG_LOCAL_LEVEL >= level ) ESP_LOG_LEVEL(level, tag, format, ##__VA_ARGS__); \
     } while(0)
+
+
+/**
+ * @brief Macro to output logs when the cache is disabled. log at ``ESP_LOG_ERROR`` level.
+ *
+ * Similar to `ESP_EARLY_LOGE`, the log level cannot be changed by `esp_log_level_set`.
+ *
+ * Usage: `ESP_DRAM_LOGE(DRAM_STR("my_tag"), "format", or `ESP_DRAM_LOGE(TAG, "format", ...)`,
+ * where TAG is a char* that points to a str in the DRAM.
+ *
+ * @note Placing log strings in DRAM reduces available DRAM, so only use when absolutely essential.
+ *
+ * @see ``ets_printf``,``ESP_LOGE``
+ */
+#define ESP_DRAM_LOGE( tag, format, ... ) ESP_DRAM_LOG_IMPL(tag, format, ESP_LOG_ERROR,   E, ##__VA_ARGS__)
+/// macro to output logs when the cache is disabled at ``ESP_LOG_WARN`` level.  @see ``ESP_DRAM_LOGW``,``ESP_LOGW``, ``ets_printf``
+#define ESP_DRAM_LOGW( tag, format, ... ) ESP_DRAM_LOG_IMPL(tag, format, ESP_LOG_WARN,    W, ##__VA_ARGS__)
+/// macro to output logs when the cache is disabled at ``ESP_LOG_INFO`` level.  @see ``ESP_DRAM_LOGI``,``ESP_LOGI``, ``ets_printf``
+#define ESP_DRAM_LOGI( tag, format, ... ) ESP_DRAM_LOG_IMPL(tag, format, ESP_LOG_INFO,    I, ##__VA_ARGS__)
+/// macro to output logs when the cache is disabled at ``ESP_LOG_DEBUG`` level.  @see ``ESP_DRAM_LOGD``,``ESP_LOGD``, ``ets_printf``
+#define ESP_DRAM_LOGD( tag, format, ... ) ESP_DRAM_LOG_IMPL(tag, format, ESP_LOG_DEBUG,   D, ##__VA_ARGS__)
+/// macro to output logs when the cache is disabled at ``ESP_LOG_VERBOSE`` level.  @see ``ESP_DRAM_LOGV``,``ESP_LOGV``, ``ets_printf``
+#define ESP_DRAM_LOGV( tag, format, ... ) ESP_DRAM_LOG_IMPL(tag, format, ESP_LOG_VERBOSE, V, ##__VA_ARGS__)
+
+/** @cond */
+#define _ESP_LOG_DRAM_LOG_FORMAT(letter, format)  DRAM_STR(#letter " %s: " format "\n")
+
+#define ESP_DRAM_LOG_IMPL(tag, format, log_level, log_tag_letter, ...) do {                         \
+        if (LOG_LOCAL_LEVEL >= log_level) {                                                          \
+            ets_printf(_ESP_LOG_DRAM_LOG_FORMAT(log_tag_letter, format), tag, ##__VA_ARGS__); \
+        }} while(0)
+/** @endcond */
 
 #ifdef __cplusplus
 }

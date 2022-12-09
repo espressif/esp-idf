@@ -9,7 +9,7 @@ define ldgen_process_template
 $(BUILD_DIR_BASE)/ldgen_libraries: $(LDGEN_LIBRARIES) $(IDF_PATH)/make/ldgen.mk
 	printf "$(foreach info,$(LDGEN_LIBRARIES),$(subst \,/,$(shell cygpath -m $(info)))\n)" > $(BUILD_DIR_BASE)/ldgen_libraries
 
-$(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen_libraries
+$(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen_libraries | prepare_kconfig_files
 	@echo 'Generating $(notdir $(2))'
 	$(PYTHON) $(IDF_PATH)/tools/ldgen/ldgen.py \
 		--input         $(1) \
@@ -30,7 +30,7 @@ define ldgen_process_template
 $(BUILD_DIR_BASE)/ldgen_libraries: $(LDGEN_LIBRARIES) $(IDF_PATH)/make/ldgen.mk
 	printf "$(foreach library,$(LDGEN_LIBRARIES),$(library)\n)" > $(BUILD_DIR_BASE)/ldgen_libraries
 
-$(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen_libraries
+$(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen_libraries | prepare_kconfig_files
 	@echo 'Generating $(notdir $(2))'
 	$(PYTHON) $(IDF_PATH)/tools/ldgen/ldgen.py \
 		--input         $(1) \

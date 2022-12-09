@@ -1,6 +1,25 @@
 # Provisioning Application Examples
 
-These consist of the following examples :
+This primarily consists of a single unified example wifi_prov_mgr
+
+* wifi_prov_mgr
+    Abstracts out most of the complexity of Wi-Fi provisioning and allows easy switching between the SoftAP (using HTTP) and BLE transports. It also demonstrates how applications can register and use additional custom data endpoints.
+
+Provisioning applications are available for various platforms:
+
+* Android:
+    - [BLE Provisioning app on Play Store](https://play.google.com/store/apps/details?id=com.espressif.provble).
+    - [SoftAP Provisioning app on Play Store](https://play.google.com/store/apps/details?id=com.espressif.provsoftap).
+    - Source code on GitHub: [esp-idf-provisioning-android](https://github.com/espressif/esp-idf-provisioning-android).
+* iOS:
+    - [BLE Provisioning app on app store](https://apps.apple.com/in/app/esp-ble-provisioning/id1473590141)
+    - [SoftAP Provisioning app on app Store](https://apps.apple.com/in/app/esp-softap-provisioning/id1474040630)
+    - Source code on GitHub: [esp-idf-provisioning-ios](https://github.com/espressif/esp-idf-provisioning-ios)
+* For all other platforms a python based command line tool is provided under "$IDF_PATH/tools/esp_prov"
+
+## Legacy Examples
+
+The legacy examples require own implementation of provisioning functions and handlers. The Wi-Fi provisioning component abstracts out most of this complexity and provides a simpler interface and so, that is recommended for use. However, if you want to use lower level provisioning and protocomm APIs, you can check the these examples under legacy/ folder:
 
 * softap_prov
     Provisioning involves Wi-Fi station configuration via an HTTP server running on the device, which is initially configured to be in SoftAP mode. After provisioning, device runs in Wi-Fi station mode only and connects to the AP whose credentials were provided during provisioning.
@@ -13,11 +32,5 @@ These consist of the following examples :
 
 * custom_config
     Similar to softap_prov examples, but allows for configuration of custom (device-local) information during provisioning. This is intended as an example for implementing custom provisioning schemes.
-
-Provisioning applications are available for various platforms:
-
-* For Android, a provisioning application along with source code is available on GitHub : [esp-idf-provisioning-android](https://github.com/espressif/esp-idf-provisioning-android)
-* For iOS, a provisioning application along with source code is available on GitHub : [esp-idf-provisioning-ios](https://github.com/espressif/esp-idf-provisioning-ios)
-* For all other platforms a python based command line tool is provided under "$IDF_PATH/tools/esp_prov"
 
 Refer to the README.md files in each example directory for more information.

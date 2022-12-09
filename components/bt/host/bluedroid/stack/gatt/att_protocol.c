@@ -455,7 +455,7 @@ BT_HDR *attp_build_sr_msg(tGATT_TCB *p_tcb, UINT8 op_code, tGATT_SR_MSG *p_msg)
 ** Parameter        p_tcb: pointer to the connecton control block.
 **                  p_msg: pointer to message parameters structure.
 **
-** Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
 **
 **
 *******************************************************************************/
@@ -526,7 +526,7 @@ tGATT_STATUS attp_cl_send_cmd(tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 cmd_code,
 **                  op_code: message op code.
 **                  p_msg: pointer to message parameters structure.
 **
-** Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
 **
 **
 *******************************************************************************/

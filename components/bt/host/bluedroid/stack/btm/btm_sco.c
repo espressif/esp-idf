@@ -441,6 +441,9 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
             p_buf->len += HCI_SCO_PREAMBLE_SIZE;
 
             if (fixed_queue_length(p_ccb->xmit_data_q) < BTM_SCO_XMIT_QUEUE_THRS) {
+                if (fixed_queue_length(p_ccb->xmit_data_q) >= BTM_SCO_XMIT_QUEUE_HIGH_WM) {
+                    status = BTM_NO_RESOURCES;
+                }
                 fixed_queue_enqueue(p_ccb->xmit_data_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
                 btm_sco_check_send_pkts (sco_inx);
             } else {
@@ -454,7 +457,7 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
         status = BTM_UNKNOWN_ADDR;
     }
 
-    if (status != BTM_SUCCESS) {
+    if (status != BTM_SUCCESS && status!= BTM_NO_RESOURCES) {
         BTM_TRACE_WARNING ("stat %d", status);
         osi_free(p_buf);
     }
@@ -525,18 +528,16 @@ static tBTM_STATUS btm_send_connect_request(UINT16 acl_handle,
 
                 /* Return error if no packet types left */
                 if (temp_pkt_types == 0) {
-                    BTM_TRACE_ERROR("%s: SCO Conn (BR/EDR SC): No packet types available",
-                                    __FUNCTION__);
+                    BTM_TRACE_ERROR("%s: SCO Conn (BR/EDR SC): No packet types available",__FUNCTION__);
                     return (BTM_WRONG_MODE);
                 }
             } else {
-                BTM_TRACE_DEBUG("%s: SCO Conn(BR/EDR SC):local or peer does not support BR/EDR SC",
-                                __FUNCTION__);
+                BTM_TRACE_DEBUG("%s: SCO Conn(BR/EDR SC):local or peer does not support BR/EDR SC",__FUNCTION__);
             }
         }
 
 
-        BTM_TRACE_API("      txbw 0x%x, rxbw 0x%x, lat 0x%x, voice 0x%x, retrans 0x%02x, pkt 0x%04x",
+        BTM_TRACE_API("txbw 0x%x, rxbw 0x%x, lat 0x%x, voice 0x%x, retrans 0x%02x, pkt 0x%04x",
                       p_setup->tx_bw, p_setup->rx_bw,
                       p_setup->max_latency, p_setup->voice_contfmt,
                       p_setup->retrans_effort, temp_pkt_types);

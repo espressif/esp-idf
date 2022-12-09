@@ -2,7 +2,7 @@
  *  xtensa-libdb-macros.h
  */
 
-/* $Id: //depot/rel/Eaglenest/Xtensa/Software/libdb/xtensa-libdb-macros.h#1 $ */
+/* $Id: //depot/rel/Foxhill/dot.9/Xtensa/Software/libdb/xtensa-libdb-macros.h#1 $ */
 
 /* Copyright (c) 2004-2008 Tensilica Inc.
 
@@ -156,6 +156,6 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-      
+
 #endif /* __H_LIBDB_MACROS */
 

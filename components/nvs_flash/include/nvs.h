@@ -62,7 +62,9 @@ typedef nvs_handle_t nvs_handle IDF_DEPRECATED("Replace with nvs_handle_t");
 
 #define ESP_ERR_NVS_CONTENT_DIFFERS         (ESP_ERR_NVS_BASE + 0x18)  /*!< Internal error; never returned by nvs API functions.  NVS key is different in comparison */
 
-#define NVS_DEFAULT_PART_NAME           "nvs"   /*!< Default partition name of the NVS partition in the partition table */
+#define NVS_DEFAULT_PART_NAME               "nvs"   /*!< Default partition name of the NVS partition in the partition table */
+
+#define NVS_PART_NAME_MAX_SIZE              16   /*!< maximum length of partition name (excluding null terminator) */
 
 /**
  * @brief Mode of opening the non-volatile storage
@@ -287,7 +289,7 @@ esp_err_t nvs_get_u64 (nvs_handle_t handle, const char* key, uint64_t* out_value
 /**
  * @brief      get value for given key
  *
- * These functions retrieve value for the key, given its name. If key does not
+ * These functions retrieve the data of an entry, given its key. If key does not
  * exist, or the requested variable type doesn't match the type which was used
  * when setting a value, an error is returned.
  *
@@ -489,7 +491,7 @@ esp_err_t nvs_get_stats(const char *part_name, nvs_stats_t *nvs_stats);
  *               Return param used_entries will be filled 0.
  *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL.
  *               Return param used_entries will be filled 0.
- *             - ESP_ERR_INVALID_ARG if nvs_stats equal to NULL.
+ *             - ESP_ERR_INVALID_ARG if used_entries equal to NULL.
  *             - Other error codes from the underlying storage driver.
  *               Return param used_entries will be filled 0.
  */

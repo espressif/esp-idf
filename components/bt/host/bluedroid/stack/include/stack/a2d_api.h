@@ -236,10 +236,6 @@ extern UINT8 A2D_SetTraceLevel (UINT8 new_level);
 ******************************************************************************/
 extern UINT8 A2D_BitsSet(UINT8 num);
 
-#ifdef __cplusplus
-}
-#endif
-
 /*******************************************************************************
 **
 ** Function         A2D_Init
@@ -252,6 +248,23 @@ extern UINT8 A2D_BitsSet(UINT8 num);
 **
 *******************************************************************************/
 extern bt_status_t A2D_Init(void);
+
+/*******************************************************************************
+**
+** Function         A2D_Deinit
+**
+** Description      This function is called at stack startup to free the
+**                  control block (if using dynamic memory), and free the
+**                  control block and tracing level.
+**
+** Returns          void
+**
+*******************************************************************************/
 extern void A2D_Deinit(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  ///A2D_INCLUDED
 #endif /* A2D_API_H */

@@ -50,7 +50,7 @@
       - $IDF_PATH/examples/get-started/hello_world/tidybuild/report/*
     expire_in: 1 day
   script:
-    - git clone $IDF_ANALYSIS_UTILS static_analysis_utils && cd static_analysis_utils
+    - ./tools/ci/retry_failed.sh git clone $IDF_ANALYSIS_UTILS static_analysis_utils && cd static_analysis_utils
     # Setup parameters of triggered/regular job
     - export TRIGGERED_RELATIVE=${BOT_LABEL_STATIC_ANALYSIS-} && export TRIGGERED_ABSOLUTE=${BOT_LABEL_STATIC_ANALYSIS_ALL-} && export TARGET_BRANCH=${BOT_CUSTOMIZED_REVISION-}
     - ./analyze.sh $IDF_PATH/examples/get-started/hello_world/ $IDF_PATH/tools/ci/static-analysis-rules.yml $IDF_PATH/output.xml
@@ -59,7 +59,7 @@ test_nvs_on_host:
   extends: .host_test_template
   script:
     - cd components/nvs_flash/test_nvs_host
-    - make test
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh make test
 
 test_nvs_coverage:
   extends: .host_test_template
@@ -157,11 +157,31 @@ test_multi_heap_on_host:
     - cd components/heap/test_multi_heap_host
     - ./test_all_configs.sh
 
+test_certificate_bundle_on_host:
+  extends: .host_test_template
+  tags:
+    - build
+  script:
+    - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_gen_crt_bundle.py
+
 test_confserver:
   extends: .host_test_template
   script:
-    - cd tools/kconfig_new/test
+    - cd tools/kconfig_new/test/confserver
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_confserver.py
+
+test_gen_kconfig_doc:
+  extends: .host_test_template
+  script:
+    - cd tools/kconfig_new/test/gen_kconfig_doc/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_target_visibility.py
+
+test_confgen:
+  extends: .host_test_template
+  script:
+    - cd tools/kconfig_new/test/confgen/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_confgen.py
 
 test_idf_monitor:
   extends: .host_test_template
@@ -199,7 +219,7 @@ test_idf_tools:
   extends: .host_test_template
   script:
     # Remove Xtensa and ULP toolchains from the PATH, tests will expect a clean environment
-    - export PATH=$(p=$(echo $PATH | tr ":" "\n" | grep -v "/root/.espressif/tools\|/opt/espressif${CUSTOM_TOOLCHAIN_PATH:+\|${CUSTOM_TOOLCHAIN_PATH}}" | tr "\n" ":"); echo ${p%:})
+    - export PATH=$(p=$(echo $PATH | tr ":" "\n" | grep -v "/root/.espressif/tools\|/opt/espressif" | tr "\n" ":"); echo ${p%:})
     - cd ${IDF_PATH}/tools/test_idf_tools
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_idf_tools.py
 
@@ -233,19 +253,19 @@ test_esp32_efuse_table_on_host:
     - cd ${IDF_PATH}/components/efuse/test_efuse_host
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
 
-test_esp32s2beta_efuse_table_on_host:
+test_esp32s2_efuse_table_on_host:
   extends: .host_test_template
   artifacts:
     when: on_failure
     paths:
-      - components/efuse/esp32s2beta/esp_efuse_table.c
+      - components/efuse/esp32s2/esp_efuse_table.c
     expire_in: 1 week
   script:
     - cd ${IDF_PATH}/components/efuse/
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py -t "esp32s2beta" ${IDF_PATH}/components/efuse/esp32s2beta/esp_efuse_table.csv
-    - git diff --exit-code -- esp32s2beta/esp_efuse_table.c || { echo 'Differences found for esp32s2beta target. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py -t "esp32s2beta" ${IDF_PATH}/components/efuse/esp32s2beta/esp_efuse_table.csv
-    - git diff --exit-code -- esp32s2beta/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py -t "esp32s2" ${IDF_PATH}/components/efuse/esp32s2/esp_efuse_table.csv
+    - git diff --exit-code -- esp32s2/esp_efuse_table.c || { echo 'Differences found for esp32s2 target. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py -t "esp32s2" ${IDF_PATH}/components/efuse/esp32s2/esp_efuse_table.csv
+    - git diff --exit-code -- esp32s2/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
     - cd ${IDF_PATH}/components/efuse/test_efuse_host
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
 
@@ -285,26 +305,10 @@ test_sysviewtrace_proc:
     - cd ${IDF_PATH}/tools/esp_app_trace/test/sysview
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
 
-check_doc_links:
-  stage: host_test
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - check_doc_links
-  only:
-    refs:
-      # can only be triggered
-      - triggers
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD_DOCS
-  artifacts:
-    paths:
-      - docs/_build/linkcheck
-    expire_in: 1 week
+test_mkdfu:
+  extends: .host_test_template
+  variables:
+    LC_ALL: C.UTF-8
   script:
-    # must be triggered with CHECK_LINKS=Yes, otherwise exit without test
-    - test "$CHECK_LINKS" = "Yes" || exit 0
-    # can only run on master branch (otherwise the commit is not on Github yet)
-    - test "${CI_COMMIT_REF_NAME}" = "master" || exit 0
-    - cd docs
-    - make linkcheck
+    - cd ${IDF_PATH}/tools/test_mkdfu
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_mkdfu.py

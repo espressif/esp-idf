@@ -148,7 +148,7 @@
  *                  if all sets affected by cainst,
  *                  or 1 if only one set (or not all sets) of the cache
  *                  is affected by cainst (eg. DIWB or DIWBI [not yet ISA defined]).
- *	aa, ab      unique address registers (temporaries). 
+ *	aa, ab      unique address registers (temporaries).
  *	awb         set to other than a0 if wb type of instruction
  *	loopokay    1 allows use of zero-overhead loops, 0 does not
  *	immrange    range (max value) of cainst's immediate offset parameter, in bytes
@@ -841,7 +841,7 @@
 #if XCHAL_ICACHE_SIZE > 0
 #if XCHAL_HAVE_ICACHE_DYN_WAYS
 	// Read from MEMCTL and shift/mask
-	rsr	\aa, MEMCTL
+	rsr.memctl	\aa
 	extui	\aa, \aa, MEMCTL_ICWU_SHIFT, MEMCTL_ICWU_BITS
 	blti	\aa, XCHAL_ICACHE_WAYS, .Licgw
 	movi	\aa, XCHAL_ICACHE_WAYS
@@ -869,13 +869,13 @@
 #if XCHAL_ICACHE_SIZE > 0
 #if XCHAL_HAVE_ICACHE_DYN_WAYS
 	movi	\ac, MEMCTL_ICWU_CLR_MASK	// set up to clear bits 18-22
-	rsr	\ab, MEMCTL
+	rsr.memctl	\ab
 	and	\ab, \ab, \ac
 	movi	\ac, MEMCTL_INV_EN		// set bit 23
 	slli	\aa, \aa, MEMCTL_ICWU_SHIFT	// move to right spot
 	or	\ab, \ab, \aa
 	or	\ab, \ab, \ac
-	wsr	\ab, MEMCTL
+	wsr.memctl	\ab
 	isync
 #else
 	// All ways are always enabled
@@ -898,13 +898,13 @@
 #if XCHAL_DCACHE_SIZE > 0
 #if XCHAL_HAVE_DCACHE_DYN_WAYS
 	// Read from MEMCTL and shift/mask
-	rsr	\aa, MEMCTL
+	rsr.memctl	\aa
 	extui	\aa, \aa, MEMCTL_DCWU_SHIFT, MEMCTL_DCWU_BITS
 	blti	\aa, XCHAL_DCACHE_WAYS, .Ldcgw
 	movi	\aa, XCHAL_DCACHE_WAYS
 .Ldcgw:
 #else
-	// All ways are always enabled  
+	// All ways are always enabled
 	movi	\aa, XCHAL_DCACHE_WAYS
 #endif
 #else
@@ -925,11 +925,11 @@
 	.macro	dcache_set_ways		aa, ab, ac
 #if (XCHAL_DCACHE_SIZE > 0) && XCHAL_HAVE_DCACHE_DYN_WAYS
 	movi	\ac, MEMCTL_DCWA_CLR_MASK	// set up to clear bits 13-17
-	rsr	\ab, MEMCTL
+	rsr.memctl	\ab
 	and	\ab, \ab, \ac			// clear ways allocatable
 	slli	\ac, \aa, MEMCTL_DCWA_SHIFT
 	or	\ab, \ab, \ac			// set ways allocatable
-	wsr	\ab, MEMCTL
+	wsr.memctl	\ab
 #if XCHAL_DCACHE_IS_WRITEBACK
 	// Check if the way count is increasing or decreasing
 	extui	\ac, \ab, MEMCTL_DCWU_SHIFT, MEMCTL_DCWU_BITS			// bits 8-12 - ways in use
@@ -942,7 +942,7 @@
 	beqz	\ab, .Ldsw2
 	j	.Ldsw1
 .Ldsw2:
-	rsr	\ab, MEMCTL
+	rsr.memctl	\ab
 #endif
 .Ldsw3:
 	// No dirty data to write back, just set the new number of ways
@@ -952,7 +952,7 @@
 	or	\ab, \ab, \ac				// set bit 23
 	slli	\aa, \aa, MEMCTL_DCWU_SHIFT
 	or	\ab, \ab, \aa				// set ways in use
-	wsr	\ab, MEMCTL
+	wsr.memctl	\ab
 #else
 	// No dcache or no way disable support
 #endif

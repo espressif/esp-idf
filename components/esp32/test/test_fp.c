@@ -3,6 +3,7 @@
 #include "soc/cpu.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "unity.h"
 #include "test_utils.h"
 
@@ -155,7 +156,7 @@ TEST_CASE("test FP sqrt", "[fp]")
 
 struct TestFPState {
     int fail;
-    int done;
+    SemaphoreHandle_t done;
 };
 
 static const int testFpIter = 100000;
@@ -175,22 +176,25 @@ static void tskTestFP(void *pvParameters)
             printf("%s: i=%d y=%f eps=%f\r\n", __func__, i, y, eps);
         }
     }
-    state->done++;
+    TEST_ASSERT(xSemaphoreGive(state->done));
     vTaskDelete(NULL);
 }
 
 TEST_CASE("context switch saves FP registers", "[fp]")
 {
-    struct TestFPState state;
-    state.done = 0;
-    state.fail = 0;
-    xTaskCreatePinnedToCore(tskTestFP, "tsk1", 2048, &state, 3, NULL, 0);
-    xTaskCreatePinnedToCore(tskTestFP, "tsk2", 2048, &state, 3, NULL, 0);
-    xTaskCreatePinnedToCore(tskTestFP, "tsk3", 2048, &state, 3, NULL, portNUM_PROCESSORS - 1);
-    xTaskCreatePinnedToCore(tskTestFP, "tsk4", 2048, &state, 3, NULL, 0);
-    while (state.done != 4) {
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+    struct TestFPState state = {
+        .done = xSemaphoreCreateCounting(4, 0)
+    };
+    TEST_ASSERT_NOT_NULL(state.done);
+    const int prio = UNITY_FREERTOS_PRIORITY + 1;
+    TEST_ASSERT(xTaskCreatePinnedToCore(tskTestFP, "tsk1", 2048, &state, prio, NULL, 0));
+    TEST_ASSERT(xTaskCreatePinnedToCore(tskTestFP, "tsk2", 2048, &state, prio, NULL, 0));
+    TEST_ASSERT(xTaskCreatePinnedToCore(tskTestFP, "tsk3", 2048, &state, prio, NULL, portNUM_PROCESSORS - 1));
+    TEST_ASSERT(xTaskCreatePinnedToCore(tskTestFP, "tsk4", 2048, &state, prio, NULL, 0));
+    for (int i = 0; i < 4; ++i) {
+        TEST_ASSERT(xSemaphoreTake(state.done, pdMS_TO_TICKS(5000)));
     }
+    vSemaphoreDelete(state.done);
     if (state.fail) {
         const int total = testFpIter * 4;
         printf("Failed: %d, total: %d\r\n", state.fail, total);
@@ -228,7 +232,7 @@ TEST_CASE("floating point division performance", "[fp]")
     printf("%d divisions from %f = %f\n", COUNTS, MAXFLOAT, f);
     printf("Per division = %d cycles\n", cycles);
 
-    TEST_PERFORMANCE_LESS_THAN(ESP32_CYCLES_PER_DIV, "%d cycles", cycles);
+    TEST_PERFORMANCE_LESS_THAN(CYCLES_PER_DIV, "%d cycles", cycles);
 }
 
 /* Note: not static, to avoid optimisation of const result */
@@ -261,6 +265,6 @@ TEST_CASE("floating point square root performance", "[fp]")
     printf("%d square roots from %f = %f\n", COUNTS, MAXFLOAT, f);
     printf("Per sqrt = %d cycles\n", cycles);
 
-    TEST_PERFORMANCE_LESS_THAN(ESP32_CYCLES_PER_SQRT, "%d cycles", cycles);
+    TEST_PERFORMANCE_LESS_THAN(CYCLES_PER_SQRT, "%d cycles", cycles);
 }
 

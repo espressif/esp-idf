@@ -1028,7 +1028,7 @@ void gatt_add_a_bonded_dev_for_srv_chg (BD_ADDR bda)
 ** Description      This function is called to send a service changed indication to
 **                  the specified bd address
 **
-** Returns          GATT_SUCCESS if sucessfully sent; otherwise error code
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code
 **
 *******************************************************************************/
 #if (GATTS_INCLUDED == TRUE)

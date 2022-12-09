@@ -1,3 +1,7 @@
+================= =====
+Supported Targets ESP32
+================= =====
+
 ESP-IDF BT-SPP-VFS-INITATOR demo
 ======================
 

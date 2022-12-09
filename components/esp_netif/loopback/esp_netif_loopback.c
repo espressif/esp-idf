@@ -412,6 +412,11 @@ esp_err_t esp_netif_get_ip6_linklocal(esp_netif_t *esp_netif, esp_ip6_addr_t *if
     return ESP_ERR_NOT_SUPPORTED;
 }
 
+esp_err_t esp_netif_get_ip6_global(esp_netif_t *esp_netif, esp_ip6_addr_t *if_ip6)
+{
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
 esp_netif_flags_t esp_netif_get_flags(esp_netif_t *esp_netif)
 {
     return esp_netif->flags;

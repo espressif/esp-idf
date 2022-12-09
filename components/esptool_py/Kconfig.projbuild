@@ -54,6 +54,12 @@ menu "Serial flasher config"
             decompress it on the fly before flashing it. For most payloads, this should result in a
             speed increase.
 
+    config ESPTOOLPY_WITH_STUB
+        # Only real reason to disable this is when ESP32-S2 Secure Download Mode is set
+        bool
+        default "y"
+        depends on !SECURE_ENABLE_SECURE_ROM_DL_MODE
+
     choice ESPTOOLPY_FLASHMODE
         prompt "Flash SPI mode"
         default ESPTOOLPY_FLASHMODE_DIO
@@ -83,7 +89,8 @@ menu "Serial flasher config"
 
     choice ESPTOOLPY_FLASHFREQ
         prompt "Flash SPI speed"
-        default ESPTOOLPY_FLASHFREQ_40M
+        default ESPTOOLPY_FLASHFREQ_40M if IDF_TARGET_ESP32
+        default ESPTOOLPY_FLASHFREQ_80M
         help
             The SPI flash frequency to be used.
 

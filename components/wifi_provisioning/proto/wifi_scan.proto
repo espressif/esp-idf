@@ -52,6 +52,7 @@ enum WiFiScanMsgType {
 message WiFiScanPayload {
     WiFiScanMsgType msg = 1;
     Status status = 2;
+    bytes auth_token = 9;
     oneof payload {
         CmdScanStart cmd_scan_start = 10;
         RespScanStart resp_scan_start = 11;

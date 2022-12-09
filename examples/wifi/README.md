@@ -30,13 +30,13 @@ See the [README.md](./espnow/README.md) file in the project [espnow](./espnow/).
 
 Show how to use fast scan while connecting to an AP.
 
-See the [README.md](./fast_scan/README.md) file in the project [espnow](./espnow/).
+See the [README.md](./fast_scan/README.md) file in the project [fast_scan](./fast_scan/).
 
 ## scan
 
 Show how to scan for all the available APs.
 
-See the [README.md](./scan/README.md) file in the project [espnow](./espnow/).
+See the [README.md](./scan/README.md) file in the project [scan](./scan/).
 
 # More
 

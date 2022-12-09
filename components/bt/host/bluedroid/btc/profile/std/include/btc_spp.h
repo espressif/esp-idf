@@ -35,6 +35,7 @@ typedef enum {
     BTC_SPP_ACT_CONNECT,
     BTC_SPP_ACT_DISCONNECT,
     BTC_SPP_ACT_START_SRV,
+    BTC_SPP_ACT_STOP_SRV,
     BTC_SPP_ACT_WRITE,
 } btc_spp_act_t;
 

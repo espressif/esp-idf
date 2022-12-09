@@ -18,6 +18,11 @@
 #include "lwip/ip_addr.h"
 #include "dhcpserver/dhcpserver.h"
 #include "esp_netif_sta_list.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // Define compatible types if tcpip_adapter interface used
 //
@@ -69,5 +74,9 @@ typedef esp_netif_dns_type_t tcpip_adapter_dns_type_t;
 typedef esp_netif_dns_info_t tcpip_adapter_dns_info_t;
 typedef esp_netif_sta_list_t tcpip_adapter_sta_list_t;
 typedef esp_netif_sta_info_t tcpip_adapter_sta_info_t;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // _TCPIP_ADAPTER_TYPES_H_

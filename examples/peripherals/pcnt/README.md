@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # PCNT Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -22,8 +25,6 @@ Pin connection:
 ```
 idf.py menuconfig
 ```
-
-* Set serial port under Serial Flasher Options.
 
 ### Build and Flash
 

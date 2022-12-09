@@ -15,11 +15,16 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
-
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/sha.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/sha.h"
+#endif
+
 #include <mbedtls/sha1.h>
 #include <mbedtls/sha256.h>
 #include <mbedtls/sha512.h>
+
 
 void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output)
 {

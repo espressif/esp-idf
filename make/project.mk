@@ -144,7 +144,7 @@ EXTRA_COMPONENT_DIRS ?=
 COMPONENT_DIRS := $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components $(PROJECT_PATH)/main
 endif
 # Make sure that every directory in the list is an absolute path without trailing slash.
-# This is necessary to split COMPONENT_DIRS into SINGLE_COMPONENT_DIRS and MULTI_COMPONENT_DIRS below. 
+# This is necessary to split COMPONENT_DIRS into SINGLE_COMPONENT_DIRS and MULTI_COMPONENT_DIRS below.
 COMPONENT_DIRS := $(foreach cd,$(COMPONENT_DIRS),$(abspath $(cd)))
 export COMPONENT_DIRS
 
@@ -153,11 +153,11 @@ $(warning SRCDIRS variable is deprecated. These paths can be added to EXTRA_COMP
 COMPONENT_DIRS += $(abspath $(SRCDIRS))
 endif
 
-# List of component directories, i.e. directories which contain a component.mk file 
+# List of component directories, i.e. directories which contain a component.mk file
 SINGLE_COMPONENT_DIRS := $(abspath $(dir $(dir $(foreach cd,$(COMPONENT_DIRS),\
                              $(wildcard $(cd)/component.mk)))))
 
-# List of components directories, i.e. directories which may contain components 
+# List of components directories, i.e. directories which may contain components
 MULTI_COMPONENT_DIRS := $(filter-out $(SINGLE_COMPONENT_DIRS),$(COMPONENT_DIRS))
 
 # The project Makefile can define a list of components, but if it does not do this
@@ -311,12 +311,17 @@ COMPONENT_INCLUDES += $(abspath $(BUILD_DIR_BASE)/include/)
 export COMPONENT_INCLUDES
 
 all:
-ifdef CONFIG_SECURE_BOOT_ENABLED
+ifdef CONFIG_SECURE_BOOT
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
 ifndef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
+ifdef SECURE_SIGNED_APPS_ECDSA_SCHEME
 	@echo "App built but not signed. Sign app & partition data before flashing, via espsecure.py:"
-	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
-	@echo "espsecure.py sign_data --keyfile KEYFILE $(PARTITION_TABLE_BIN)"
+	@echo "espsecure.py sign_data --version 1 --keyfile KEYFILE $(APP_BIN)"
+	@echo "espsecure.py sign_data --version 1 --keyfile KEYFILE $(PARTITION_TABLE_BIN)"
+else 
+	@echo "App built but not signed. Sign app & partition data before flashing, via espsecure.py:"
+	@echo "espsecure.py sign_data --version 2 --keyfile KEYFILE $(APP_BIN)"
+endif
 endif
 	@echo "To flash app & partition table, run 'make flash' or:"
 else
@@ -333,7 +338,7 @@ endif
 
 # If we have `version.txt` then prefer that for extracting IDF version
 ifeq ("$(wildcard ${IDF_PATH}/version.txt)","")
-IDF_VER_T := $(shell cd ${IDF_PATH} && git describe --always --tags --dirty)
+IDF_VER_T := $(shell cd ${IDF_PATH} && git describe --always --dirty)
 else
 IDF_VER_T := $(shell cat ${IDF_PATH}/version.txt)
 endif
@@ -420,7 +425,6 @@ endif
 ifdef CONFIG_COMPILER_STACK_CHECK_MODE_ALL
 COMMON_FLAGS += -fstack-protector-all
 endif
-endif
 
 # Optimization flags are set based on menuconfig choice
 ifdef CONFIG_COMPILER_OPTIMIZATION_SIZE
@@ -442,6 +446,27 @@ endif
 ifdef CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
 CPPFLAGS += -DNDEBUG
 endif
+
+else # IS_BOOTLOADER_BUILD
+
+ifdef CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE
+OPTIMIZATION_FLAGS = -Os -freorder-blocks
+endif
+
+ifdef CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG
+OPTIMIZATION_FLAGS = -Og
+endif
+
+ifdef CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_NONE
+OPTIMIZATION_FLAGS = -O0
+endif
+
+ifdef CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF
+OPTIMIZATION_FLAGS = -O2
+endif
+
+endif # IS_BOOTLOADER_BUILD
+
 
 # IDF uses some GNU extension from libc
 CPPFLAGS += -D_GNU_SOURCE
@@ -504,12 +529,6 @@ export CC CXX LD AR OBJCOPY OBJDUMP SIZE
 
 COMPILER_VERSION_STR := $(shell $(CC) -dumpversion)
 COMPILER_VERSION_NUM := $(subst .,,$(COMPILER_VERSION_STR))
-GCC_NOT_5_2_0 := $(shell expr $(COMPILER_VERSION_STR) != "5.2.0")
-export COMPILER_VERSION_STR COMPILER_VERSION_NUM GCC_NOT_5_2_0
-
-CPPFLAGS += -DGCC_NOT_5_2_0=$(GCC_NOT_5_2_0)
-export CPPFLAGS
-
 
 # the app is the main executable built by the project
 APP_ELF:=$(BUILD_DIR_BASE)/$(PROJECT_NAME).elf
@@ -544,11 +563,17 @@ $(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp
 	$(summary) LD $(patsubst $(PWD)/%,%,$@)
 	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
+ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
+SECURE_APPS_SIGNING_SCHEME = "1"
+else ifdef CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+SECURE_APPS_SIGNING_SCHEME = "2"
+endif
+
 app: $(APP_BIN) partition_table_get_info
 ifeq ("$(CONFIG_APP_BUILD_GENERATE_BINARIES)","y")
-ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","y") # secure boot enabled, but remote sign app image
+ifeq ("$(CONFIG_SECURE_BOOT)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","y") # secure boot enabled, but remote sign app image
 	@echo "App built but not signed. Signing step via espsecure.py:"
-	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
+	@echo "espsecure.py sign_data --version $(SECURE_APPS_SIGNING_SCHEME) --keyfile KEYFILE $(APP_BIN)"
 	@echo "Then flash app command is:"
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
 else
@@ -640,7 +665,16 @@ clean: app-clean bootloader-clean config-clean ldgen-clean
 # or out of date, and exit if so. Components can add paths to this variable.
 #
 # This only works for components inside IDF_PATH
+#
+# For internal use:
+# IDF_SKIP_CHECK_SUBMODULES may be set in the environment to skip the submodule check.
+# This can be used e.g. in CI when submodules are checked out by different means.
+IDF_SKIP_CHECK_SUBMODULES ?= 0
+
 check-submodules:
+ifeq ($(IDF_SKIP_CHECK_SUBMODULES),1)
+	@echo "skip submodule check on internal CI"
+else
 # Check if .gitmodules exists, otherwise skip submodule check, assuming flattened structure
 ifneq ("$(wildcard ${IDF_PATH}/.gitmodules)","")
 
@@ -668,7 +702,7 @@ endef
 # so the argument is suitable for use with 'git submodule' commands
 $(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUBMODULES))),$(eval $(call GenerateSubmoduleCheckTarget,$(submodule))))
 endif # End check for .gitmodules existence
-
+endif # End check for IDF_SKIP_CHECK_SUBMODULES
 
 # PHONY target to list components in the build and their paths
 list-components:

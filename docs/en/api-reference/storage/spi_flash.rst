@@ -31,18 +31,20 @@ In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need 
 API Reference - SPI Flash
 -------------------------
 
-.. include:: /_build/inc/esp_flash_spi_init.inc
-.. include:: /_build/inc/esp_flash.inc
-.. include:: /_build/inc/spi_flash_types.inc
+.. include-build-file:: inc/esp_flash_spi_init.inc
+.. include-build-file:: inc/esp_flash.inc
+.. include-build-file:: inc/spi_flash_types.inc
+
+.. _api-reference-partition-table:
 
 API Reference - Partition Table
 -------------------------------
 
-.. include:: /_build/inc/esp_partition.inc
+.. include-build-file:: inc/esp_partition.inc
 
 API Reference - Flash Encrypt
 -----------------------------
 
-.. include:: /_build/inc/esp_flash_encrypt.inc
+.. include-build-file:: inc/esp_flash_encrypt.inc
 
 

@@ -31,17 +31,25 @@
  */
 
 #include "test_utils.h"
-#include "soc/rmt_periph.h"
-#include "soc/pcnt_periph.h"
+#include "soc/soc.h"
+#include "hal/rmt_hal.h"
+#include "hal/rmt_ll.h"
+#include "soc/pcnt_caps.h"
+#include "hal/pcnt_hal.h"
 #include "soc/gpio_periph.h"
 #include "soc/dport_reg.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/periph_ctrl.h"
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/gpio.h"
+#endif
 #include "sdkconfig.h"
 
 /* Select which RMT and PCNT channels, and GPIO to use */
+#define REF_CLOCK_RMT_CHANNEL   SOC_RMT_CHANNELS_NUM - 1
 #define REF_CLOCK_PCNT_UNIT     0
 #define REF_CLOCK_GPIO          21
 
@@ -53,23 +61,20 @@ static intr_handle_t s_intr_handle;
 static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t s_milliseconds;
 
-#if CONFIG_IDF_TARGET_ESP32
-#define REF_CLOCK_RMT_CHANNEL   7
 
 static int get_pcnt_sig(void)
 {
+#if CONFIG_IDF_TARGET_ESP32
     return (REF_CLOCK_PCNT_UNIT < 5) ?
             PCNT_SIG_CH0_IN0_IDX + 4 * REF_CLOCK_PCNT_UNIT :
             PCNT_SIG_CH0_IN5_IDX + 4 * (REF_CLOCK_PCNT_UNIT - 5);
-}
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#define REF_CLOCK_RMT_CHANNEL   3
-
-static int get_pcnt_sig(void)
-{
+#elif CONFIG_IDF_TARGET_ESP32S2
     return PCNT_SIG_CH0_IN0_IDX + 4 * REF_CLOCK_PCNT_UNIT;
-}
 #endif
+}
+
+static rmt_hal_context_t  s_rmt;
+static pcnt_hal_context_t s_pcnt;
 
 void ref_clock_init()
 {
@@ -78,31 +83,26 @@ void ref_clock_init()
     // Route RMT output to GPIO matrix
     gpio_matrix_out(REF_CLOCK_GPIO, RMT_SIG_OUT0_IDX + REF_CLOCK_RMT_CHANNEL, false, false);
 
-
     // Initialize RMT
     periph_module_enable(PERIPH_RMT_MODULE);
-    RMT.apb_conf.fifo_mask = 1;
+    rmt_hal_init(&s_rmt);
+    rmt_ll_enable_mem_access(s_rmt.regs, true);
     rmt_item32_t data = {
             .duration0 = 1,
             .level0 = 1,
             .duration1 = 0,
             .level1 = 0
     };
-    RMTMEM.chan[REF_CLOCK_RMT_CHANNEL].data32[0] = data;
-    RMTMEM.chan[REF_CLOCK_RMT_CHANNEL].data32[1].val = 0;
-
-
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf0.clk_en = 1;
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf1.tx_start = 0;
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf1.mem_owner = 0;
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf1.mem_rd_rst = 1;
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf1.apb_mem_rst = 1;
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf0.carrier_en = 0;
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf0.div_cnt = 1;
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf0.mem_size = 1;
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf1.ref_always_on = 0;
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf1.tx_conti_mode = 1;
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf1.tx_start = 1;
+    rmt_hal_transmit(&s_rmt, REF_CLOCK_RMT_CHANNEL, &data, 1, 0);
+    rmt_ll_start_tx(s_rmt.regs, REF_CLOCK_RMT_CHANNEL);
+    rmt_ll_set_mem_owner(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, 0);
+    rmt_ll_reset_tx_pointer(s_rmt.regs, REF_CLOCK_RMT_CHANNEL);
+    rmt_ll_enable_carrier(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, false);
+    rmt_ll_set_counter_clock_div(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, 1);
+    rmt_ll_set_mem_blocks(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, 1);
+    rmt_ll_set_counter_clock_src(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, 0);
+    rmt_ll_enable_tx_loop(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, true);
+    rmt_ll_start_tx(s_rmt.regs, REF_CLOCK_RMT_CHANNEL);
 
     // Route signal to PCNT
     int pcnt_sig_idx = get_pcnt_sig();
@@ -115,36 +115,35 @@ void ref_clock_init()
 
     // Initialize PCNT
     periph_module_enable(PERIPH_PCNT_MODULE);
+    pcnt_hal_init(&s_pcnt, REF_CLOCK_PCNT_UNIT);
 
-    PCNT.conf_unit[REF_CLOCK_PCNT_UNIT].conf0.ch0_hctrl_mode = 0;
-    PCNT.conf_unit[REF_CLOCK_PCNT_UNIT].conf0.ch0_lctrl_mode = 0;
-    PCNT.conf_unit[REF_CLOCK_PCNT_UNIT].conf0.ch0_pos_mode = 1;
-    PCNT.conf_unit[REF_CLOCK_PCNT_UNIT].conf0.ch0_neg_mode = 1;
-    PCNT.conf_unit[REF_CLOCK_PCNT_UNIT].conf0.thr_l_lim_en = 0;
-    PCNT.conf_unit[REF_CLOCK_PCNT_UNIT].conf0.thr_h_lim_en = 1;
-    PCNT.conf_unit[REF_CLOCK_PCNT_UNIT].conf0.thr_zero_en = 0;
-    PCNT.conf_unit[REF_CLOCK_PCNT_UNIT].conf0.thr_thres0_en = 0;
-    PCNT.conf_unit[REF_CLOCK_PCNT_UNIT].conf0.thr_thres1_en = 0;
-    PCNT.conf_unit[REF_CLOCK_PCNT_UNIT].conf2.cnt_h_lim = REF_CLOCK_PRESCALER_MS * 1000;
+    pcnt_ll_set_mode(s_pcnt.dev, REF_CLOCK_PCNT_UNIT, PCNT_CHANNEL_0,
+                        PCNT_COUNT_INC, PCNT_COUNT_INC,
+                        PCNT_MODE_KEEP, PCNT_MODE_KEEP);
+    pcnt_ll_event_disable(s_pcnt.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_L_LIM);
+    pcnt_ll_event_enable(s_pcnt.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_H_LIM);
+    pcnt_ll_event_disable(s_pcnt.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_ZERO);
+    pcnt_ll_event_disable(s_pcnt.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_THRES_0);
+    pcnt_ll_event_disable(s_pcnt.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_THRES_1);
+    pcnt_ll_set_event_value(s_pcnt.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_H_LIM, REF_CLOCK_PRESCALER_MS * 1000);
 
     // Enable PCNT and wait for it to start counting
-    PCNT.ctrl.val &= ~(BIT(REF_CLOCK_PCNT_UNIT * 2 + 1));
-    PCNT.ctrl.val |= BIT(REF_CLOCK_PCNT_UNIT * 2);
-    PCNT.ctrl.val &= ~BIT(REF_CLOCK_PCNT_UNIT * 2);
+    pcnt_ll_counter_resume(s_pcnt.dev, REF_CLOCK_PCNT_UNIT);
+    pcnt_ll_counter_clear(s_pcnt.dev, REF_CLOCK_PCNT_UNIT);
 
     ets_delay_us(10000);
 
     // Enable interrupt
     s_milliseconds = 0;
     ESP_ERROR_CHECK(esp_intr_alloc(ETS_PCNT_INTR_SOURCE, ESP_INTR_FLAG_IRAM, pcnt_isr, NULL, &s_intr_handle));
-    PCNT.int_clr.val = BIT(REF_CLOCK_PCNT_UNIT);
-    PCNT.int_ena.val = BIT(REF_CLOCK_PCNT_UNIT);
+    pcnt_ll_clear_intr_status(s_pcnt.dev, BIT(REF_CLOCK_PCNT_UNIT));
+    pcnt_ll_intr_enable(s_pcnt.dev, REF_CLOCK_PCNT_UNIT);
 }
 
 static void IRAM_ATTR pcnt_isr(void* arg)
 {
     portENTER_CRITICAL_ISR(&s_lock);
-    PCNT.int_clr.val = BIT(REF_CLOCK_PCNT_UNIT);
+    pcnt_ll_clear_intr_status(s_pcnt.dev, BIT(REF_CLOCK_PCNT_UNIT));
     s_milliseconds += REF_CLOCK_PRESCALER_MS;
     portEXIT_CRITICAL_ISR(&s_lock);
 }
@@ -154,28 +153,30 @@ void ref_clock_deinit()
     assert(s_intr_handle && "deinit called without init");
 
     // Disable interrupt
-    PCNT.int_ena.val &= ~BIT(REF_CLOCK_PCNT_UNIT);
+    pcnt_ll_intr_disable(s_pcnt.dev, REF_CLOCK_PCNT_UNIT);
     esp_intr_free(s_intr_handle);
     s_intr_handle = NULL;
 
     // Disable RMT
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf1.tx_start = 0;
-    RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf0.clk_en = 0;
+    rmt_ll_stop_tx(s_rmt.regs, REF_CLOCK_RMT_CHANNEL);
     periph_module_disable(PERIPH_RMT_MODULE);
 
     // Disable PCNT
-    PCNT.ctrl.val |= ~(BIT(REF_CLOCK_PCNT_UNIT * 2 + 1));
+    pcnt_ll_counter_pause(s_pcnt.dev, REF_CLOCK_PCNT_UNIT);
     periph_module_disable(PERIPH_PCNT_MODULE);
 }
 
 uint64_t ref_clock_get()
 {
     portENTER_CRITICAL(&s_lock);
-    uint32_t microseconds = PCNT.cnt_unit[REF_CLOCK_PCNT_UNIT].cnt_val;
+    int16_t microseconds = 0;
+    pcnt_ll_get_counter_value(s_pcnt.dev, REF_CLOCK_PCNT_UNIT, &microseconds);
     uint32_t milliseconds = s_milliseconds;
-    if (PCNT.int_st.val & BIT(REF_CLOCK_PCNT_UNIT)) {
+    uint32_t intr_status = 0;
+    pcnt_ll_get_intr_status(s_pcnt.dev, &intr_status);
+    if (intr_status & BIT(REF_CLOCK_PCNT_UNIT)) {
         // refresh counter value, in case the overflow has happened after reading cnt_val
-        microseconds = PCNT.cnt_unit[REF_CLOCK_PCNT_UNIT].cnt_val;
+        pcnt_ll_get_counter_value(s_pcnt.dev, REF_CLOCK_PCNT_UNIT, &microseconds);
         milliseconds += REF_CLOCK_PRESCALER_MS;
     }
     portEXIT_CRITICAL(&s_lock);

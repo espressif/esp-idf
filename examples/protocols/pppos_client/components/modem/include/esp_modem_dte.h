@@ -30,7 +30,9 @@ typedef struct modem_dce modem_dce_t;
  */
 typedef enum {
     MODEM_COMMAND_MODE = 0, /*!< Command Mode */
-    MODEM_PPP_MODE          /*!< PPP Mode */
+    MODEM_PPP_MODE,         /*!< PPP Mode */
+    MODEM_TRANSITION_MODE   /*!< Transition Mode between data and command mode indicating that
+                                 the modem is not yet ready for sending commands nor data */
 } modem_mode_t;
 
 /**

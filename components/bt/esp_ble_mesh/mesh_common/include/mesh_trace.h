@@ -10,7 +10,11 @@
 #define _BLE_MESH_TRACE_H_
 
 #include "esp_log.h"
-#include "sdkconfig.h"
+#include "mesh_util.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Define common tracing for all */
 #ifndef LOG_LEVEL_ERROR
@@ -47,21 +51,11 @@
 
 #define MESH_TRACE_TAG      "BLE_MESH"
 
-#define LOG_ERROR(format, ... )             {if (LOG_LOCAL_LEVEL >= ESP_LOG_ERROR)    esp_log_write(ESP_LOG_ERROR,   "BT_LOG", LOG_FORMAT(E, format), esp_log_timestamp(), "BT_LOG", ##__VA_ARGS__); }
-#define LOG_WARN(format, ... )              {if (LOG_LOCAL_LEVEL >= ESP_LOG_WARN)     esp_log_write(ESP_LOG_WARN,    "BT_LOG", LOG_FORMAT(W, format), esp_log_timestamp(), "BT_LOG", ##__VA_ARGS__); }
-#define LOG_INFO(format, ... )              {if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO)     esp_log_write(ESP_LOG_INFO,    "BT_LOG", LOG_FORMAT(I, format), esp_log_timestamp(), "BT_LOG", ##__VA_ARGS__); }
-#define LOG_DEBUG(format, ... )             {if (LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG)    esp_log_write(ESP_LOG_DEBUG,   "BT_LOG", LOG_FORMAT(D, format), esp_log_timestamp(), "BT_LOG", ##__VA_ARGS__); }
-#define LOG_VERBOSE(format, ... )           {if (LOG_LOCAL_LEVEL >= ESP_LOG_VERBOSE)  esp_log_write(ESP_LOG_VERBOSE, "BT_LOG", LOG_FORMAT(V, format), esp_log_timestamp(), "BT_LOG", ##__VA_ARGS__); }
-
 #if (LOG_LOCAL_LEVEL >= 4)
 #define BLE_MESH_LOG_LOCAL_LEVEL_MAPPING    (LOG_LOCAL_LEVEL + 1)
 #else
 #define BLE_MESH_LOG_LOCAL_LEVEL_MAPPING    LOG_LOCAL_LEVEL
 #endif
-
-#ifndef MAX
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif /* MAX(a, b) */
 
 #define BLE_MESH_LOG_LEVEL_CHECK(LAYER, LEVEL) (MAX(LAYER##_LOG_LEVEL, BLE_MESH_LOG_LOCAL_LEVEL_MAPPING) >= LOG_LEVEL_##LEVEL)
 
@@ -132,6 +126,10 @@
 #define NET_BUF_SIMPLE_INFO(fmt, args...)
 #define NET_BUF_SIMPLE_DBG(fmt, args...)
 #define NET_BUF_SIMPLE_ASSERT(cond)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* _BLE_MESH_TRACE_H_ */

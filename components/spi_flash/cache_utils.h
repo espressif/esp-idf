@@ -50,17 +50,23 @@ void spi_flash_disable_interrupts_caches_and_other_cpu_no_os(void);
 // This function is implied to be called when other CPU is not running or running code from IRAM.
 void spi_flash_enable_interrupts_caches_no_os(void);
 
-// Flushes cache if address range has corresponding valid cache mappings
-// Recommended to use post flash program operation (erase or write)
+// Mark the pages containing a flash region as having been
+// erased or written to. This means the flash cache needs
+// to be evicted before these pages can be flash_mmap()ed again,
+// as they may contain stale data
+//
 // Only call this while holding spi_flash_op_lock()
 // Returns true if cache was flushed, false otherwise
 bool spi_flash_check_and_flush_cache(uint32_t start_addr, uint32_t length);
 
 //config cache mode
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+//config instrcutin cache size and cache block size by menuconfig
 void esp_config_instruction_cache_mode(void);
+//config data cache size and cache block size by menuconfig
 void esp_config_data_cache_mode(void);
-void esp_switch_rodata_to_dcache(void);
+//enable cache wrap mode for instruction cache and data cache
+esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable);
 #endif
 
 

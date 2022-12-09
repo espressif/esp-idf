@@ -17,6 +17,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @def    ESP_BLE_MESH_MODEL_CFG_SRV
  *
  *  @brief  Define a new Config Server Model.
@@ -752,7 +756,7 @@ typedef enum {
  * @param   param: Pointer to callback parameter
  */
 typedef void (* esp_ble_mesh_cfg_client_cb_t)(esp_ble_mesh_cfg_client_cb_event_t event,
-        esp_ble_mesh_cfg_client_cb_param_t *param);
+                                              esp_ble_mesh_cfg_client_cb_param_t *param);
 
 /**
  * @brief   Configuration Server Model callback function type
@@ -760,7 +764,7 @@ typedef void (* esp_ble_mesh_cfg_client_cb_t)(esp_ble_mesh_cfg_client_cb_event_t
  * @param   param: Pointer to callback parameter
  */
 typedef void (* esp_ble_mesh_cfg_server_cb_t)(esp_ble_mesh_cfg_server_cb_event_t event,
-        esp_ble_mesh_cfg_server_cb_param_t *param);
+                                              esp_ble_mesh_cfg_server_cb_param_t *param);
 
 /**
  * @brief         Register BLE Mesh Config Client Model callback.
@@ -796,7 +800,7 @@ esp_err_t esp_ble_mesh_register_config_server_callback(esp_ble_mesh_cfg_server_c
  *
  */
 esp_err_t esp_ble_mesh_config_client_get_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_cfg_client_get_state_t *get_state);
+                                               esp_ble_mesh_cfg_client_get_state_t *get_state);
 
 /**
  * @brief         Set the value of the Configuration Server Model states using the Config Client Model set messages.
@@ -812,7 +816,11 @@ esp_err_t esp_ble_mesh_config_client_get_state(esp_ble_mesh_client_common_param_
  *
  */
 esp_err_t esp_ble_mesh_config_client_set_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_cfg_client_set_state_t *set_state);
+                                               esp_ble_mesh_cfg_client_set_state_t *set_state);
 
-#endif /** _ESP_BLE_MESH_CONFIG_MODEL_API_H_ */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _ESP_BLE_MESH_CONFIG_MODEL_API_H_ */
 

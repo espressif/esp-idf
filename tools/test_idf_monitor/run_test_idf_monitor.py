@@ -38,6 +38,7 @@ test_list = (
     ('in1.txt',             '*:N',                                                      'in1f3.txt',                60),
     ('in2.txt',             'boot mdf_device_handle:I mesh:E vfs:I',                    'in2f1.txt',               420),
     ('in2.txt',             'vfs',                                                      'in2f2.txt',               420),
+    ('core1.txt',           '',                                                         'core1_out.txt',            60),
 )
 
 IN_DIR = 'tests/'       # tests are in this directory

@@ -483,8 +483,7 @@ static void bta_av_api_sink_enable(tBTA_AV_DATA *p_data)
     activate_sink = p_data->hdr.layer_specific;
     APPL_TRACE_DEBUG("bta_av_api_sink_enable %d \n", activate_sink)
     char p_service_name[BTA_SERVICE_NAME_LEN + 1];
-    BCM_STRNCPY_S(p_service_name, sizeof(p_service_name),
-                  BTIF_AVK_SERVICE_NAME, BTA_SERVICE_NAME_LEN);
+    BCM_STRNCPY_S(p_service_name, BTIF_AVK_SERVICE_NAME, BTA_SERVICE_NAME_LEN);
 
     if (activate_sink) {
         AVDT_SINK_Activate();
@@ -526,7 +525,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
     tBTA_UTL_COD    cod;
     UINT8           index = 0;
     char p_avk_service_name[BTA_SERVICE_NAME_LEN + 1];
-    BCM_STRNCPY_S(p_avk_service_name, sizeof(p_avk_service_name), BTIF_AVK_SERVICE_NAME, BTA_SERVICE_NAME_LEN);
+    BCM_STRNCPY_S(p_avk_service_name, BTIF_AVK_SERVICE_NAME, BTA_SERVICE_NAME_LEN);
 
     memset(&cs, 0, sizeof(tAVDT_CS));
 
@@ -569,13 +568,8 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
             if (bta_av_cb.features & (BTA_AV_FEAT_RCTG)) {
                 /* register with no authorization; let AVDTP use authorization instead */
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
-#if (BTA_AV_WITH_AVCTP_AUTHORIZATION == TRUE)
-                bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-                                bta_av_cb.sec_mask, BTA_ID_AV);
-#else
                 bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
                                 (UINT8)(bta_av_cb.sec_mask & (~BTA_SEC_AUTHORIZE)), BTA_ID_AV);
-#endif
                 if (p_data->api_reg.tsep == AVDT_TSEP_SRC) {
                     bta_ar_reg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target\n", NULL,
                                 p_bta_av_cfg->avrc_src_tg_cat, BTA_ID_AV);
@@ -704,13 +698,8 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
                     /* if TG is not supported, we need to register to AVCT now */
                     if ((bta_av_cb.features & (BTA_AV_FEAT_RCTG)) == 0) {
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
-#if (BTA_AV_WITH_AVCTP_AUTHORIZATION == TRUE)
-                        bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-                                        bta_av_cb.sec_mask, BTA_ID_AV);
-#else
                         bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
                                         (UINT8)(bta_av_cb.sec_mask & (~BTA_SEC_AUTHORIZE)), BTA_ID_AV);
-#endif
 #endif
                     }
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)

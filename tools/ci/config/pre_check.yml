@@ -1,0 +1,204 @@
+check_line_endings:
+  extends: .check_job_template
+  script:
+    - tools/ci/check-line-endings.sh ${IDF_PATH}
+
+check_permissions:
+  extends: .check_job_template
+  script:
+    - tools/ci/check-executable.sh
+
+check_docs_lang_sync:
+  extends: .check_job_template
+  stage: pre_check
+  variables:
+    SUBMODULES_TO_FETCH: "none"
+  script:
+    - cd docs
+    - ./check_lang_folder_sync.sh
+
+check_docs_gh_links:
+  extends: .build_docs_template
+  stage: pre_check
+  variables:
+    SUBMODULES_TO_FETCH: "none"
+  script:
+    - cd docs
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py gh-linkcheck
+
+check_version:
+  extends: .check_job_template
+  # Don't run this for feature/bugfix branches, so that it is possible to modify
+  # esp_idf_version.h in a branch before tagging the next version.
+  only:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  script:
+    - export IDF_PATH=$PWD
+    - tools/ci/check_idf_version.sh
+
+check_examples_cmake_make:
+  extends: .check_job_template_with_filter
+  except:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  script:
+    - tools/ci/check_examples_cmake_make.sh
+
+check_examples_rom_header:
+  extends: .check_job_template_with_filter
+  script:
+    - tools/ci/check_examples_rom_header.sh
+
+check_python_style:
+  extends: .python_lint_template
+  artifacts:
+    when: on_failure
+    paths:
+      - flake8_output.txt
+    expire_in: 1 week
+  script:
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh python -m flake8 --config=$IDF_PATH/.flake8 --output-file=flake8_output.txt --tee --benchmark $IDF_PATH
+
+check_kconfigs:
+  extends: .check_job_template_with_filter
+  artifacts:
+    when: on_failure
+    paths:
+      - components/*/Kconfig*.new
+      - examples/*/*/*/Kconfig*.new
+      - examples/*/*/*/*/Kconfig*.new
+      - tools/*/Kconfig*.new
+      - tools/*/*/Kconfig*.new
+      - tools/*/*/*/Kconfig*.new
+    expire_in: 1 week
+  script:
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ${IDF_PATH}/tools/test_check_kconfigs.py
+    - ${IDF_PATH}/tools/check_kconfigs.py
+
+check_deprecated_kconfig_options:
+  extends: .check_job_template_with_filter
+  script:
+    - ${IDF_PATH}/tools/ci/check_deprecated_kconfigs.py
+
+check_cmake_style:
+  extends: .check_job_template
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    tools/cmake/run_cmake_lint.sh
+
+check_wifi_lib_md5:
+  stage: pre_check
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  variables:
+    SUBMODULES_TO_FETCH: "components/esp_wifi/lib"
+  dependencies: []
+  script:
+    - IDF_TARGET=esp32 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+
+.build_with_make_and_cmake: &build_with_make_and_cmake |
+  echo -e "section_end:"`date +%s`":build_script\r\e[0Ksection_start:"`date +%s`":build_make\r\e[0KBuild with Make"
+  make defconfig
+  make all
+  make clean
+  echo -e "section_end:"`date +%s`":build_make\r\e[0Ksection_start:"`date +%s`":build_cmake\r\e[0KBuild with CMake"
+  rm -rf build sdkconfig
+  idf.py build
+  echo -e "section_end:"`date +%s`":build_cmake\r\e[0Ksection_start:"`date +%s`":build_script\r\e[0K"
+
+build_template_app:
+  stage: pre_check
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  variables:
+    BATCH_BUILD: "1"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    # Set the variable for 'esp-idf-template' testing
+    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
+    - ./tools/ci/retry_failed.sh git clone ${ESP_IDF_TEMPLATE_GIT}
+    # Try to use the same branch name for esp-idf-template that we're
+    # using on esp-idf. If it doesn't exist then just stick to the default branch
+    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
+    - cd esp-idf-template
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+
+    # CONFIG_COMPILER_OPTIMIZATION_DEFAULT with flag -Og
+    - echo "CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y" > sdkconfig.defaults
+    - echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG=y" >> sdkconfig.defaults
+    - *build_with_make_and_cmake
+
+    # CONFIG_COMPILER_OPTIMIZATION_NONE with flag -O0
+    - echo "CONFIG_COMPILER_OPTIMIZATION_NONE=y" > sdkconfig.defaults
+    - echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_NONE=y" >> sdkconfig.defaults
+    - *build_with_make_and_cmake
+
+    # CONFIG_COMPILER_OPTIMIZATION_SIZE with flag -Os
+    - echo "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" > sdkconfig.defaults
+    - echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE=y" >> sdkconfig.defaults
+    - *build_with_make_and_cmake
+
+    # CONFIG_COMPILER_OPTIMIZATION_PERF with flag -O2
+    - echo "CONFIG_COMPILER_OPTIMIZATION_PERF=y" > sdkconfig.defaults
+    - echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF=y" >> sdkconfig.defaults
+    - *build_with_make_and_cmake
+
+    # Same as above, but also disable assertions.
+    - echo "CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE=y" >> sdkconfig.defaults
+    # Don't error out on -Wunused, when assertions are disabled
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
+    - *build_with_make_and_cmake
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+
+    # Check if there are any stray printf/ets_printf references in WiFi libs
+    - pushd ../components/esp_wifi/lib
+    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w printf | wc -l) -eq 0; done;
+    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w ets_printf | wc -l) -eq 0; done;
+    - popd
+
+check_public_headers:
+  stage: pre_check
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  variables:
+    BATCH_BUILD: "1"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    - python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
+
+# For release tag pipelines only, make sure the tag was created with 'git tag -a' so it will update
+# the version returned by 'git describe'
+check_version_tag:
+  extends: .check_job_template
+  only:
+    refs:
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+  script:
+    - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || (echo "ESP-IDF versions must be annotated tags." && exit 1)
+

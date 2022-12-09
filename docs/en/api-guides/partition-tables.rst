@@ -5,9 +5,9 @@ Partition Tables
 Overview
 --------
 
-A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) 0x8000 in the flash.
+A single {IDF_TARGET_NAME}'s flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) 0x8000 in the flash.
 
-Partition table length is 0xC00 bytes (maximum 95 partition table entries). An MD5 checksum, which is used for checking the integrity of the partition table, is appended after the table data. If the partition table is signed due to `secure boot`, the signature is appended after the partition table.
+Partition table length is 0xC00 bytes (maximum 95 partition table entries). An MD5 checksum, which is used for checking the integrity of the partition table, is appended after the table data.
 
 Each entry in the partition table has a name (label), type (app, data, or something else), subtype and the offset in flash where the partition is loaded.
 
@@ -23,7 +23,7 @@ Built-in Partition Tables
 
 Here is the summary printed for the "Single factory app, no OTA" configuration::
 
-  # Espressif ESP32 Partition Table
+  # ESP-IDF Partition Table
   # Name,   Type, SubType, Offset,  Size, Flags
   nvs,      data, nvs,     0x9000,  0x6000,
   phy_init, data, phy,     0xf000,  0x1000,
@@ -34,7 +34,7 @@ Here is the summary printed for the "Single factory app, no OTA" configuration::
 
 Here is the summary printed for the "Factory app, two OTA definitions" configuration::
 
-  # Espressif ESP32 Partition Table
+  # ESP-IDF Partition Table
   # Name,   Type, SubType, Offset,  Size, Flags
   nvs,      data, nvs,     0x9000,  0x4000,
   otadata,  data, ota,     0xd000,  0x2000,
@@ -69,62 +69,76 @@ The CSV format is the same format as printed in the summaries shown above. Howev
 Name field
 ~~~~~~~~~~
 
-Name field can be any meaningful name. It is not significant to the ESP32. Names longer than 16 characters will be truncated.
+Name field can be any meaningful name. It is not significant to the {IDF_TARGET_NAME}. Names longer than 16 characters will be truncated.
 
 Type field
 ~~~~~~~~~~
 
-Partition type field can be specified as app (0) or data (1). Or it can be a number 0-254 (or as hex 0x00-0xFE). Types 0x00-0x3F are reserved for esp-idf core functions.
+Partition type field can be specified as ``app`` (0x00) or ``data`` (0x01). Or it can be a number 0-254 (or as hex 0x00-0xFE). Types 0x00-0x3F are reserved for ESP-IDF core functions.
 
-If your application needs to store data, please add a custom partition type in the range 0x40-0xFE.
+If your app needs to store data in a format not already supported by ESP-IDF, then please add a custom partition type value in the range 0x40-0xFE.
 
-The bootloader ignores any partition types other than app (0) & data (1).
+See :cpp:type:`esp_partition_type_t` for the enum definitions for ``app`` and ``data`` partitions.
+
+If writing in C++ then specifying a application-defined partition type requires casting an integer to :cpp:type:`esp_partition_type_t` in order to use it with the :ref:`partition API <api-reference-partition-table>`. For example::
+
+    static const esp_partition_type_t APP_PARTITION_TYPE_A = (esp_partition_type_t)0x40;
+
+The ESP-IDF bootloader ignores any partition types other than ``app`` (0x00) and ``data`` (0x01).
 
 SubType
 ~~~~~~~
 
-The 8-bit subtype field is specific to a given partition type. esp-idf currently only specifies the meaning of the subtype field for "app" and "data" partition types.
+The 8-bit subtype field is specific to a given partition type. ESP-IDF currently only specifies the meaning of the subtype field for ``app`` and ``data`` partition types.
 
-* When type is "app", the subtype field can be specified as factory (0), ota_0 (0x10) ... ota_15 (0x1F) or test (0x20).
+See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defined by ESP-IDF, including the following:
 
-  - factory (0) is the default app partition. The bootloader will execute the factory app unless there it sees a partition of type data/ota, in which case it reads this partition to determine which OTA image to boot.
+* When type is ``app``, the subtype field can be specified as ``factory`` (0x00), ``ota_0`` (0x10) ... ``ota_15`` (0x1F) or ``test`` (0x20).
+
+  - ``factory`` (0x00) is the default app partition. The bootloader will execute the factory app unless there it sees a partition of type data/ota, in which case it reads this partition to determine which OTA image to boot.
 
     - OTA never updates the factory partition.
-    - If you want to conserve flash usage in an OTA project, you can remove the factory partition and use ota_0 instead.
-  - ota_0 (0x10) ... ota_15 (0x1F) are the OTA app slots. Refer to the :doc:`OTA documentation <../api-reference/system/ota>` for more details, which then use the OTA data partition to configure which app slot the bootloader should boot. If using OTA, an application should have at least two OTA application slots (ota_0 & ota_1). Refer to the :doc:`OTA documentation <../api-reference/system/ota>` for more details.
-  - test (0x20) is a reserved subtype for factory test procedures. It will be used as the fallback boot partition if no other valid app partition is found. It is also possible to configure the bootloader to read a GPIO input during each boot, and boot this partition if the GPIO is held low, see :ref:`bootloader_boot_from_test_firmware`.
+    - If you want to conserve flash usage in an OTA project, you can remove the factory partition and use ``ota_0`` instead.
+  - ``ota_0`` (0x10) ... ``ota_15`` (0x1F) are the OTA app slots. When :doc:`OTA <../api-reference/system/ota>` is in use, the OTA data partition configures which app slot the bootloader should boot. When using OTA, an application should have at least two OTA application slots (``ota_0`` & ``ota_1``). Refer to the :doc:`OTA documentation <../api-reference/system/ota>` for more details.
+  - ``test`` (0x20) is a reserved subtype for factory test procedures. It will be used as the fallback boot partition if no other valid app partition is found. It is also possible to configure the bootloader to read a GPIO input during each boot, and boot this partition if the GPIO is held low, see :ref:`bootloader_boot_from_test_firmware`.
 
-* When type is "data", the subtype field can be specified as ota (0), phy (1), nvs (2), or nvs_keys (4).
+* When type is ``data``, the subtype field can be specified as ``ota`` (0x00), ``phy`` (0x01), ``nvs`` (0x02), nvs_keys (0x04), or a range of other component-specific subtypes (see :cpp:type:`subtype enum <esp_partition_subtype_t>`).
 
-  - ota (0) is the :ref:`OTA data partition <ota_data_partition>` which stores information about the currently selected OTA application. This partition should be 0x2000 bytes in size. Refer to the :ref:`OTA documentation <ota_data_partition>` for more details.
-  - phy (1) is for storing PHY initialisation data. This allows PHY to be configured per-device, instead of in firmware.
+  - ``ota`` (0) is the :ref:`OTA data partition <ota_data_partition>` which stores information about the currently selected OTA app slot. This partition should be 0x2000 bytes in size. Refer to the :ref:`OTA documentation <ota_data_partition>` for more details.
+  - ``phy`` (1) is for storing PHY initialisation data. This allows PHY to be configured per-device, instead of in firmware.
 
     - In the default configuration, the phy partition is not used and PHY initialisation data is compiled into the app itself. As such, this partition can be removed from the partition table to save space.
     - To load PHY data from this partition, open the project configuration menu (``idf.py menuconfig``) and enable :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` option. You will also need to flash your devices with phy init data as the esp-idf build system does not do this automatically.
-  - nvs (2) is for the :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>`.
+  - ``nvs`` (2) is for the :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>`.
 
     - NVS is used to store per-device PHY calibration data (different to initialisation data).
     - NVS is used to store WiFi data if the :doc:`esp_wifi_set_storage(WIFI_STORAGE_FLASH) <../api-reference/network/esp_wifi>` initialisation function is used.
     - The NVS API can also be used for other application data.
     - It is strongly recommended that you include an NVS partition of at least 0x3000 bytes in your project.
     - If using NVS API to store a lot of data, increase the NVS partition size from the default 0x6000 bytes.
-  - nvs_keys (4) is for the NVS key partition. See :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>` for more details.
+  - ``nvs_keys`` (4) is for the NVS key partition. See :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>` for more details.
 
     - It is used to store NVS encryption keys when `NVS Encryption` feature is enabled.
     - The size of this partition should be 4096 bytes (minimum partition size).
 
-Other data subtypes are reserved for future esp-idf uses.
+  - There are other predefined data subtypes for data storage supported by ESP-IDF. These include :doc:`FAT filesystem </api-reference/storage/fatfs>` (:cpp:enumerator:`ESP_PARTITION_SUBTYPE_DATA_FAT`), :doc:`SPIFFS </api-reference/storage/spiffs>` (:cpp:enumerator:`ESP_PARTITION_SUBTYPE_DATA_SPIFFS`), etc.
+
+  Other subtypes of ``data`` type are reserved for future ESP-IDF uses.
+
+* If the partition type is any application-defined value (range 0x40-0xFE), then ``subtype`` field can be any value chosen by the application (range 0x00-0xFE).
+
+  Note that when writing in C++, an application-defined subtype value requires casting to type :cpp:type:`esp_partition_subtype_t` in order to use it with the :ref:`partition API <api-reference-partition-table>`.
 
 Offset & Size
 ~~~~~~~~~~~~~
 
-Partitions with blank offsets will start after the previous partition, or after the partition table in the case of the first partition.
+Partitions with blank offsets in the CSV file will start after the previous partition, or after the partition table in the case of the first partition.
 
-App partitions have to be at offsets aligned to 0x10000 (64K). If you leave the offset field blank,  ``gen_esp32part.py`` will automatically align the partition. If you specify an unaligned offset for an app partition, the tool will return an error.
+Partitions of type ``app`` have to be placed at offsets aligned to 0x10000 (64K). If you leave the offset field blank,  ``gen_esp32part.py`` will automatically align the partition. If you specify an unaligned offset for an app partition, the tool will return an error.
 
 Sizes and offsets can be specified as decimal numbers, hex numbers with the prefix 0x, or size multipliers K or M (1024 and 1024*1024 bytes).
 
-If you want the partitions in the partition table to work with any starting offset (:ref:`CONFIG_PARTITION_TABLE_OFFSET`) of the table itself, leave the offset field (in CSV file) for all partitions blank. Similarly, if changing the partition table offset then be aware that all blank partition offsets may change to match, and that any fixed offsets may now collide with the partition table (causing an error).
+If you want the partitions in the partition table to work relative to any placement (:ref:`CONFIG_PARTITION_TABLE_OFFSET`) of the table itself, leave the offset field (in CSV file) for all partitions blank. Similarly, if changing the partition table offset then be aware that all blank partition offsets may change to match, and that any fixed offsets may now collide with the partition table (causing an error).
 
 Flags
 ~~~~~
@@ -136,7 +150,7 @@ Only one flag is currently supported, ``encrypted``. If this field is set to ``e
 Generating Binary Partition Table
 ---------------------------------
 
-The partition table which is flashed to the ESP32 is in a binary format, not CSV. The tool :component_file:`partition_table/gen_esp32part.py` is used to convert between CSV and binary formats.
+The partition table which is flashed to the {IDF_TARGET_NAME} is in a binary format, not CSV. The tool :component_file:`partition_table/gen_esp32part.py` is used to convert between CSV and binary formats.
 
 If you configure the partition table CSV name in the project configuration (``idf.py menuconfig``) and then build the project or run ``idf.py partition_table``, this conversion is done as part of the build process.
 
@@ -265,4 +279,4 @@ More information can be obtained by specifying `--help` as argument:
   parttool.py [subcommand] --help
 
 
-.. _secure boot: security/secure-boot.rst
+.. _secure boot: security/secure-boot-v1.rst

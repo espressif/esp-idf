@@ -15,60 +15,39 @@
 
 #include "bootloader_flash.h"
 #include "bootloader_sha.h"
+#include "bootloader_utility.h"
 #include "esp_log.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
+#include "esp_spi_flash.h"
+#include "esp_fault.h"
 #include "esp32/rom/sha.h"
-#include "uECC.h"
+#include "uECC_verify_antifault.h"
 
 #include <sys/param.h>
+#include <string.h>
 
 static const char *TAG = "secure_boot";
+#define DIGEST_LEN 32
 
+#ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
 extern const uint8_t signature_verification_key_start[] asm("_binary_signature_verification_key_bin_start");
 extern const uint8_t signature_verification_key_end[] asm("_binary_signature_verification_key_bin_end");
 
 #define SIGNATURE_VERIFICATION_KEYLEN 64
 
-#define DIGEST_LEN 32
-
-/* Mmap source address mask */
-#define MMAP_ALIGNED_MASK 0x0000FFFF
-
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
     uint8_t digest[DIGEST_LEN];
-    const uint8_t *data;
+    uint8_t verified_digest[DIGEST_LEN] = { 0 }; /* ignored in this function */
     const esp_secure_boot_sig_block_t *sigblock;
 
     ESP_LOGD(TAG, "verifying signature src_addr 0x%x length 0x%x", src_addr, length);
 
-    bootloader_sha256_handle_t handle = bootloader_sha256_start();
-
-    uint32_t free_page_count = bootloader_mmap_get_free_pages();
-    ESP_LOGD(TAG, "free data page_count 0x%08x", free_page_count);
-
-    int32_t data_len_remain = length;
-    uint32_t data_addr = src_addr;
-    while (data_len_remain > 0) {
-        uint32_t offset_page = ((data_addr & MMAP_ALIGNED_MASK) != 0) ? 1 : 0;
-        /* Data we could map in case we are not aligned to PAGE boundary is one page size lesser. */
-        uint32_t data_len = MIN(data_len_remain, ((free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE));
-        data = (const uint8_t *) bootloader_mmap(data_addr, data_len);
-        if(!data) {
-            ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", data_addr, data_len);
-            bootloader_sha256_finish(handle, NULL);
-            return ESP_FAIL;
-        }
-        bootloader_sha256_data(handle, data, data_len);
-        bootloader_munmap(data);
-
-        data_addr += data_len;
-        data_len_remain -= data_len;
+    esp_err_t err = bootloader_sha256_flash_contents(src_addr, length, digest);
+    if (err != ESP_OK) {
+        return err;
     }
-
-    /* Done! Get the digest */
-    bootloader_sha256_finish(handle, digest);
 
     // Map the signature block
     sigblock = (const esp_secure_boot_sig_block_t *) bootloader_mmap(src_addr + length, sizeof(esp_secure_boot_sig_block_t));
@@ -77,7 +56,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
         return ESP_FAIL;
     }
     // Verify the signature
-    esp_err_t err = esp_secure_boot_verify_signature_block(sigblock, digest);
+    err = esp_secure_boot_verify_ecdsa_signature_block(sigblock, digest, verified_digest);
     // Unmap
     bootloader_munmap(sigblock);
 
@@ -85,6 +64,12 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 }
 
 esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest)
+{
+    uint8_t verified_digest[DIGEST_LEN] = { 0 };
+    return esp_secure_boot_verify_ecdsa_signature_block(sig_block, image_digest, verified_digest);
+}
+
+esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {
     ptrdiff_t keylen;
 
@@ -102,11 +87,98 @@ esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block
     ESP_LOGD(TAG, "Verifying secure boot signature");
 
     bool is_valid;
-    is_valid = uECC_verify(signature_verification_key_start,
+    is_valid = uECC_verify_antifault(signature_verification_key_start,
                            image_digest,
                            DIGEST_LEN,
                            sig_block->signature,
-                           uECC_secp256r1());
+                           uECC_secp256r1(),
+                           verified_digest);
     ESP_LOGD(TAG, "Verification result %d", is_valid);
+
     return is_valid ? ESP_OK : ESP_ERR_IMAGE_INVALID;
 }
+
+#elif CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+
+esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
+{
+    uint8_t digest[DIGEST_LEN] = {0};
+    uint8_t verified_digest[DIGEST_LEN] = {0}; // ignored in this function
+    const uint8_t *data;
+
+    /* Padding to round off the input to the nearest 4k boundary */
+    int padded_length = ALIGN_UP(length, FLASH_SECTOR_SIZE);
+    ESP_LOGD(TAG, "verifying src_addr 0x%x length", src_addr, padded_length);
+
+    data = bootloader_mmap(src_addr, padded_length + sizeof(ets_secure_boot_signature_t));
+    if (data == NULL) {
+        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", src_addr, padded_length);
+        return ESP_FAIL;
+    }
+
+    /* Calculate digest of main image */
+    esp_err_t err = bootloader_sha256_flash_contents(src_addr, padded_length, digest);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Digest calculation failed 0x%x, 0x%x", src_addr, padded_length);
+        bootloader_munmap(data);
+        return err;
+    }
+
+    const ets_secure_boot_signature_t *sig_block = (const ets_secure_boot_signature_t *)(data + padded_length);
+    err = esp_secure_boot_verify_rsa_signature_block(sig_block, digest, verified_digest);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Secure Boot V2 verification failed.");
+    }
+
+    bootloader_munmap(data);
+    return err;
+}
+
+esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
+{
+    secure_boot_v2_status_t r;
+    uint8_t efuse_trusted_digest[DIGEST_LEN] = {0}, sig_block_trusted_digest[DIGEST_LEN] = {0};
+
+    memcpy(efuse_trusted_digest, (uint8_t *)EFUSE_BLK2_RDATA0_REG, DIGEST_LEN); /* EFUSE_BLK2_RDATA0_REG - Stores the Secure Boot Public Key Digest */
+
+    if (!ets_use_secure_boot_v2()) {
+        ESP_LOGI(TAG, "Secure Boot eFuse bit(ABS_DONE_1) not yet programmed.");
+
+        /* Generating the SHA of the public key components in the signature block */
+        bootloader_sha256_handle_t sig_block_sha;
+        sig_block_sha = bootloader_sha256_start();
+        bootloader_sha256_data(sig_block_sha, &sig_block->block[0].key, sizeof(sig_block->block[0].key));
+        bootloader_sha256_finish(sig_block_sha, (unsigned char *)sig_block_trusted_digest);
+
+#if CONFIG_SECURE_BOOT_V2_ENABLED
+        if (memcmp(efuse_trusted_digest, sig_block_trusted_digest, DIGEST_LEN) != 0) {
+            /* Most likely explanation for this is that BLK2 is empty, and we're going to burn it
+               after we verify that the signature is valid. However, if BLK2 is not empty then we need to
+               fail here.
+            */
+            bool all_zeroes = true;
+            for (int i = 0; i < DIGEST_LEN; i++) {
+                all_zeroes = all_zeroes && (efuse_trusted_digest[i] == 0);
+            }
+            if (!all_zeroes) {
+                ESP_LOGE(TAG, "Different public key digest burned to eFuse BLK2");
+                return ESP_ERR_INVALID_STATE;
+            }
+        }
+
+        ESP_FAULT_ASSERT(!ets_use_secure_boot_v2());
+#endif
+
+        memcpy(efuse_trusted_digest, sig_block_trusted_digest, DIGEST_LEN);
+    }
+
+    ESP_LOGI(TAG, "Verifying with RSA-PSS...");
+    r = ets_secure_boot_verify_signature(sig_block, image_digest, efuse_trusted_digest, verified_digest);
+    if (r != SBV2_SUCCESS) {
+        ESP_LOGE(TAG, "Secure Boot V2 verification failed.");
+    }
+
+    return (r == SBV2_SUCCESS) ? ESP_OK : ESP_ERR_IMAGE_INVALID;
+}
+#endif

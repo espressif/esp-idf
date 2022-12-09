@@ -6,6 +6,7 @@ entries:
         core_dump_flash (noflash_text)
         core_dump_common (noflash_text)
         core_dump_port (noflash_text)
+        core_dump_elf (noflash_text)
     else:
         * (default)
 
@@ -15,5 +16,16 @@ entries:
     if ESP_PANIC_HANDLER_IRAM = y && ESP32_ENABLE_COREDUMP_TO_FLASH = y:
         esp_flash_api (noflash_text)
         esp_flash_spi_init (noflash_text)
+    else:
+        * (default)
+
+[mapping:mbedtls]
+archive: libmbedtls.a
+entries:
+    if ESP32_COREDUMP_CHECKSUM_SHA256 = y :
+        if MBEDTLS_HARDWARE_SHA = n:
+            sha256 (noflash_text)
+        else:
+            esp_sha256 (noflash_text)
     else:
         * (default)

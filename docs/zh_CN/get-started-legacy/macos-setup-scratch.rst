@@ -57,7 +57,7 @@
 
 - 下载并编译 ``crosstool-NG`` ：
 
-    .. include:: /_build/inc/scratch-build-code.inc
+    .. include-build-file:: inc/scratch-build-code.inc
 
 - 编译工具链::
 

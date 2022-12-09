@@ -16,12 +16,12 @@
 #include "esp_ping.h"
 
 #include "lwip/ip_addr.h"
-
 typedef struct _ping_option {
-    ip4_addr_t ping_target;
+    ip_addr_t ping_target;
     uint32_t ping_count;
     uint32_t ping_rcv_timeout;
     uint32_t ping_delay;
+    uint32_t interface;
     size_t ping_data_len;
     uint16_t ping_id;
     u8_t ping_tos;
@@ -42,12 +42,15 @@ esp_err_t esp_ping_set_target(ping_target_id_t opt_id, void *opt_val, uint32_t o
 
     switch (opt_id) {
     case PING_TARGET_IP_ADDRESS:
-        ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
-        ping_option_info->ping_target.addr = *(uint32_t *)opt_val;
+        ipaddr_aton(opt_val, &(ping_option_info->ping_target));
         break;
     case PING_TARGET_IP_ADDRESS_COUNT:
         ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
         ping_option_info->ping_count = *(uint32_t *)opt_val;
+        break;
+    case PING_TARGET_IF_INDEX:
+        ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
+        ping_option_info->interface = *(uint32_t *)opt_val;
         break;
     case PING_TARGET_RCV_TIMEO:
         ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
@@ -93,12 +96,15 @@ esp_err_t esp_ping_get_target(ping_target_id_t opt_id, void *opt_val, uint32_t o
 
     switch (opt_id) {
     case PING_TARGET_IP_ADDRESS:
-        ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
-        *(uint32_t *)opt_val = ping_option_info->ping_target.addr;
+        ip_addr_copy(*(ip_addr_t*)opt_val, ping_option_info->ping_target);
         break;
     case PING_TARGET_IP_ADDRESS_COUNT:
         ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
         *(uint32_t *)opt_val = ping_option_info->ping_count;
+        break;
+    case PING_TARGET_IF_INDEX:
+        ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);
+        *(uint32_t *)opt_val = ping_option_info->interface;
         break;
     case PING_TARGET_RCV_TIMEO:
         ESP_PING_CHECK_OPTLEN(opt_len, uint32_t);

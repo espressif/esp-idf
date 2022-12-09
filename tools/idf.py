@@ -37,8 +37,12 @@ from collections import Counter, OrderedDict
 from importlib import import_module
 from pkgutil import iter_modules
 
-from idf_py_actions.errors import FatalError
-from idf_py_actions.tools import (executable_exists, idf_version, merge_action_lists, realpath)
+# pyc files remain in the filesystem when switching between branches which might raise errors for incompatible
+# idf.py extentions. Therefore, pyc file generation is turned off:
+sys.dont_write_bytecode = True
+
+from idf_py_actions.errors import FatalError  # noqa: E402
+from idf_py_actions.tools import (executable_exists, idf_version, merge_action_lists, realpath)  # noqa: E402
 
 # Use this Python interpreter for any subprocesses we launch
 PYTHON = sys.executable
@@ -70,12 +74,19 @@ def check_environment():
     if "IDF_PATH" in os.environ:
         set_idf_path = realpath(os.environ["IDF_PATH"])
         if set_idf_path != detected_idf_path:
-            print("WARNING: IDF_PATH environment variable is set to %s but %s path indicates IDF directory %s. "
-                  "Using the environment variable directory, but results may be unexpected..." %
-                  (set_idf_path, PROG, detected_idf_path))
+            print(
+                "WARNING: IDF_PATH environment variable is set to %s but %s path indicates IDF directory %s. "
+                "Using the environment variable directory, but results may be unexpected..." %
+                (set_idf_path, PROG, detected_idf_path))
     else:
         print("Setting IDF_PATH environment variable: %s" % detected_idf_path)
         os.environ["IDF_PATH"] = detected_idf_path
+
+    # check Python version
+    if sys.version_info[0] < 3:
+        print("WARNING: Support for Python 2 is deprecated and will be removed in future versions.")
+    elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
+        print("WARNING: Python 3 versions older than 3.6 are not supported.")
 
     # check Python dependencies
     checks_output.append("Checking Python dependencies...")
@@ -137,26 +148,39 @@ def init_cli(verbose_output=None):
     # Click is imported here to run it after check_environment()
     import click
 
-    class DeprecationMessage(object):
+    class Deprecation(object):
         """Construct deprecation notice for help messages"""
 
         def __init__(self, deprecated=False):
             self.deprecated = deprecated
             self.since = None
             self.removed = None
+            self.exit_with_error = None
             self.custom_message = ""
 
             if isinstance(deprecated, dict):
                 self.custom_message = deprecated.get("message", "")
                 self.since = deprecated.get("since", None)
                 self.removed = deprecated.get("removed", None)
+                self.exit_with_error = deprecated.get("exit_with_error", None)
             elif isinstance(deprecated, str):
                 self.custom_message = deprecated
 
         def full_message(self, type="Option"):
-            return "%s is deprecated %sand will be removed in%s.%s" % (
-                type, "since %s " % self.since if self.since else "", " %s" % self.removed
-                if self.removed else " future versions", " %s" % self.custom_message if self.custom_message else "")
+            if self.exit_with_error:
+                return "%s is deprecated %sand was removed%s.%s" % (
+                    type,
+                    "since %s " % self.since if self.since else "",
+                    " in %s" % self.removed if self.removed else "",
+                    " %s" % self.custom_message if self.custom_message else "",
+                )
+            else:
+                return "%s is deprecated %sand will be removed in%s.%s" % (
+                    type,
+                    "since %s " % self.since if self.since else "",
+                    " %s" % self.removed if self.removed else " future versions",
+                    " %s" % self.custom_message if self.custom_message else "",
+                )
 
         def help(self, text, type="Option", separator=" "):
             text = text or ""
@@ -166,12 +190,16 @@ def init_cli(verbose_output=None):
             text = text or ""
             return ("Deprecated! " + text) if self.deprecated else text
 
-    def print_deprecation_warning(ctx):
+    def check_deprecation(ctx):
         """Prints deprectation warnings for arguments in given context"""
         for option in ctx.command.params:
             default = () if option.multiple else option.default
             if isinstance(option, Option) and option.deprecated and ctx.params[option.name] != default:
-                print("Warning: %s" % DeprecationMessage(option.deprecated).full_message('Option "%s"' % option.name))
+                deprecation = Deprecation(option.deprecated)
+                if deprecation.exit_with_error:
+                    raise FatalError("Error: %s" % deprecation.full_message('Option "%s"' % option.name))
+                else:
+                    print("Warning: %s" % deprecation.full_message('Option "%s"' % option.name))
 
     class Task(object):
         def __init__(self, callback, name, aliases, dependencies, order_dependencies, action_args):
@@ -182,21 +210,22 @@ def init_cli(verbose_output=None):
             self.action_args = action_args
             self.aliases = aliases
 
-        def run(self, context, global_args, action_args=None):
+        def __call__(self, context, global_args, action_args=None):
             if action_args is None:
                 action_args = self.action_args
 
             self.callback(self.name, context, global_args, **action_args)
 
     class Action(click.Command):
-        def __init__(self,
-                     name=None,
-                     aliases=None,
-                     deprecated=False,
-                     dependencies=None,
-                     order_dependencies=None,
-                     hidden=False,
-                     **kwargs):
+        def __init__(
+                self,
+                name=None,
+                aliases=None,
+                deprecated=False,
+                dependencies=None,
+                order_dependencies=None,
+                hidden=False,
+                **kwargs):
             super(Action, self).__init__(name, **kwargs)
 
             self.name = self.name or self.callback.__name__
@@ -221,7 +250,7 @@ def init_cli(verbose_output=None):
             self.short_help = self.short_help or self.help.split("\n")[0]
 
             if deprecated:
-                deprecation = DeprecationMessage(deprecated)
+                deprecation = Deprecation(deprecated)
                 self.short_help = deprecation.short_help(self.short_help)
                 self.help = deprecation.help(self.help, type="Command", separator="\n")
 
@@ -232,12 +261,12 @@ def init_cli(verbose_output=None):
                 self.help = "\n".join([self.help, aliases_help])
                 self.short_help = " ".join([aliases_help, self.short_help])
 
+            self.unwrapped_callback = self.callback
             if self.callback is not None:
-                callback = self.callback
 
                 def wrapped_callback(**action_args):
                     return Task(
-                        callback=callback,
+                        callback=self.unwrapped_callback,
                         name=self.name,
                         dependencies=dependencies,
                         order_dependencies=order_dependencies,
@@ -249,11 +278,18 @@ def init_cli(verbose_output=None):
 
         def invoke(self, ctx):
             if self.deprecated:
-                print("Warning: %s" % DeprecationMessage(self.deprecated).full_message('Command "%s"' % self.name))
+                deprecation = Deprecation(self.deprecated)
+                message = deprecation.full_message('Command "%s"' % self.name)
+
+                if deprecation.exit_with_error:
+                    raise FatalError("Error: %s" % message)
+                else:
+                    print("Warning: %s" % message)
+
                 self.deprecated = False  # disable Click's built-in deprecation handling
 
             # Print warnings for options
-            print_deprecation_warning(ctx)
+            check_deprecation(ctx)
             return super(Action, self).invoke(ctx)
 
     class Argument(click.Argument):
@@ -322,7 +358,7 @@ def init_cli(verbose_output=None):
             self.hidden = hidden
 
             if deprecated:
-                deprecation = DeprecationMessage(deprecated)
+                deprecation = Deprecation(deprecated)
                 self.help = deprecation.help(self.help)
 
             if self.scope.is_global:
@@ -397,8 +433,9 @@ def init_cli(verbose_output=None):
                     option = Option(**option_args)
 
                     if option.scope.is_shared:
-                        raise FatalError('"%s" is defined for action "%s". '
-                                         ' "shared" options can be declared only on global level' % (option.name, name))
+                        raise FatalError(
+                            '"%s" is defined for action "%s". '
+                            ' "shared" options can be declared only on global level' % (option.name, name))
 
                     # Promote options to global if see for the first time
                     if option.scope.is_global and option.name not in [o.name for o in self.params]:
@@ -410,12 +447,17 @@ def init_cli(verbose_output=None):
             return sorted(filter(lambda name: not self._actions[name].hidden, self._actions))
 
         def get_command(self, ctx, name):
-            return self._actions.get(self.commands_with_aliases.get(name))
+            if name in self.commands_with_aliases:
+                return self._actions.get(self.commands_with_aliases.get(name))
+
+            # Trying fallback to build target (from "all" action) if command is not known
+            else:
+                return Action(name=name, callback=self._actions.get('fallback').unwrapped_callback)
 
         def _print_closing_message(self, args, actions):
             # print a closing message of some kind
             #
-            if "flash" in str(actions):
+            if "flash" in str(actions) or "dfu" in str(actions):
                 print("Done")
                 return
 
@@ -426,8 +468,6 @@ def init_cli(verbose_output=None):
             # Otherwise, if we built any binaries print a message about
             # how to flash them
             def print_flashing_message(title, key):
-                print("\n%s build complete. To flash, run this command:" % title)
-
                 with open(os.path.join(args.build_dir, "flasher_args.json")) as f:
                     flasher_args = json.load(f)
 
@@ -435,6 +475,10 @@ def init_cli(verbose_output=None):
                     return _safe_relpath(os.path.join(args.build_dir, f))
 
                 if key != "project":  # flashing a single item
+                    if key not in flasher_args:
+                        # This is the case for 'idf.py bootloader' if Secure Boot is on, need to follow manual flashing steps
+                        print("\n%s build complete." % title)
+                        return
                     cmd = ""
                     if (key == "bootloader"):  # bootloader needs --flash-mode, etc to be passed in
                         cmd = " ".join(flasher_args["write_flash_args"]) + " "
@@ -450,19 +494,25 @@ def init_cli(verbose_output=None):
                     for o, f in flash_items:
                         cmd += o + " " + flasher_path(f) + " "
 
-                print("%s %s -p %s -b %s --before %s --after %s write_flash %s" % (
-                    PYTHON,
-                    _safe_relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
-                    args.port or "(PORT)",
-                    args.baud,
-                    flasher_args["extra_esptool_args"]["before"],
-                    flasher_args["extra_esptool_args"]["after"],
-                    cmd.strip(),
-                ))
-                print("or run 'idf.py -p %s %s'" % (
-                    args.port or "(PORT)",
-                    key + "-flash" if key != "project" else "flash",
-                ))
+                print("\n%s build complete. To flash, run this command:" % title)
+
+                print(
+                    "%s %s -p %s -b %s --before %s --after %s --chip %s %s write_flash %s" % (
+                        PYTHON,
+                        _safe_relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
+                        args.port or "(PORT)",
+                        args.baud,
+                        flasher_args["extra_esptool_args"]["before"],
+                        flasher_args["extra_esptool_args"]["after"],
+                        flasher_args["extra_esptool_args"]["chip"],
+                        "--no-stub" if not flasher_args["extra_esptool_args"]["stub"] else "",
+                        cmd.strip(),
+                    ))
+                print(
+                    "or run 'idf.py -p %s %s'" % (
+                        args.port or "(PORT)",
+                        key + "-flash" if key != "project" else "flash",
+                    ))
 
             if "all" in actions or "build" in actions:
                 print_flashing_message("Project", "project")
@@ -483,9 +533,10 @@ def init_cli(verbose_output=None):
                 [item for item, count in Counter(task.name for task in tasks).items() if count > 1])
             if dupplicated_tasks:
                 dupes = ", ".join('"%s"' % t for t in dupplicated_tasks)
-                print("WARNING: Command%s found in the list of commands more than once. " %
-                      ("s %s are" % dupes if len(dupplicated_tasks) > 1 else " %s is" % dupes) +
-                      "Only first occurence will be executed.")
+                print(
+                    "WARNING: Command%s found in the list of commands more than once. " %
+                    ("s %s are" % dupes if len(dupplicated_tasks) > 1 else " %s is" % dupes) +
+                    "Only first occurence will be executed.")
 
             # Set propagated global options.
             # These options may be set on one subcommand, but available in the list of global arguments
@@ -499,14 +550,14 @@ def init_cli(verbose_output=None):
                         default = () if option.multiple else option.default
 
                         if global_value != default and local_value != default and global_value != local_value:
-                            raise FatalError('Option "%s" provided for "%s" is already defined to a different value. '
-                                             "This option can appear at most once in the command line." %
-                                             (key, task.name))
+                            raise FatalError(
+                                'Option "%s" provided for "%s" is already defined to a different value. '
+                                "This option can appear at most once in the command line." % (key, task.name))
                         if local_value != default:
                             global_args[key] = local_value
 
             # Show warnings about global arguments
-            print_deprecation_warning(ctx)
+            check_deprecation(ctx)
 
             # Make sure that define_cache_entry is mutable list and can be modified in callbacks
             global_args.define_cache_entry = list(global_args.define_cache_entry)
@@ -537,8 +588,9 @@ def init_cli(verbose_output=None):
                         # Otherwise invoke it with default set of options
                         # and put to the front of the list of unprocessed tasks
                         else:
-                            print('Adding "%s"\'s dependency "%s" to list of commands with default set of options.' %
-                                  (task.name, dep))
+                            print(
+                                'Adding "%s"\'s dependency "%s" to list of commands with default set of options.' %
+                                (task.name, dep))
                             dep_task = ctx.invoke(ctx.command.get_command(ctx, dep))
 
                             # Remove options with global scope from invoke tasks because they are alread in global_args
@@ -573,7 +625,7 @@ def init_cli(verbose_output=None):
                         name_with_aliases += " (aliases: %s)" % ", ".join(task.aliases)
 
                     print("Executing action: %s" % name_with_aliases)
-                    task.run(ctx, global_args, task.action_args)
+                    task(ctx, global_args, task.action_args)
 
                 self._print_closing_message(global_args, tasks_to_run.keys())
 
@@ -597,10 +649,15 @@ def init_cli(verbose_output=None):
     all_actions = {}
     # Load extensions from components dir
     idf_py_extensions_path = os.path.join(os.environ["IDF_PATH"], "tools", "idf_py_actions")
-    extra_paths = os.environ.get("IDF_EXTRA_ACTIONS_PATH", "").split(';')
-    extension_dirs = [idf_py_extensions_path] + extra_paths
-    extensions = {}
+    extension_dirs = [realpath(idf_py_extensions_path)]
+    extra_paths = os.environ.get("IDF_EXTRA_ACTIONS_PATH")
+    if extra_paths is not None:
+        for path in extra_paths.split(';'):
+            path = realpath(path)
+            if path not in extension_dirs:
+                extension_dirs.append(path)
 
+    extensions = {}
     for directory in extension_dirs:
         if directory and not os.path.exists(directory):
             print('WARNING: Directroy with idf.py extensions doesn\'t exist:\n    %s' % directory)
@@ -610,6 +667,17 @@ def init_cli(verbose_output=None):
         for _finder, name, _ispkg in sorted(iter_modules([directory])):
             if name.endswith('_ext'):
                 extensions[name] = import_module(name)
+
+    # Load component manager if available and not explicitly disabled
+    if os.getenv('IDF_COMPONENT_MANAGER', None) != '0':
+        try:
+            from idf_component_manager import idf_extensions
+
+            extensions['component_manager_ext'] = idf_extensions
+            os.environ['IDF_COMPONENT_MANAGER'] = '1'
+
+        except ImportError:
+            pass
 
     for name, extension in extensions.items():
         try:
@@ -631,13 +699,17 @@ def init_cli(verbose_output=None):
         except NameError:
             pass
 
-    return CLI(help="ESP-IDF build management", verbose_output=verbose_output, all_actions=all_actions)
+    cli_help = (
+        "ESP-IDF CLI build management tool. "
+        "For commands that are not known to idf.py an attempt to execute it as a build system target will be made.")
+
+    return CLI(help=cli_help, verbose_output=verbose_output, all_actions=all_actions)
 
 
 def main():
     checks_output = check_environment()
     cli = init_cli(verbose_output=checks_output)
-    cli(prog_name=PROG)
+    cli(sys.argv[1:], prog_name=PROG)
 
 
 def _valid_unicode_config():
@@ -709,8 +781,9 @@ if __name__ == "__main__":
             # Trying to find best utf-8 locale available on the system and restart python with it
             best_locale = _find_usable_locale()
 
-            print("Your environment is not configured to handle unicode filenames outside of ASCII range."
-                  " Environment variable LC_ALL is temporary set to %s for unicode support." % best_locale)
+            print(
+                "Your environment is not configured to handle unicode filenames outside of ASCII range."
+                " Environment variable LC_ALL is temporary set to %s for unicode support." % best_locale)
 
             os.environ["LC_ALL"] = best_locale
             ret = subprocess.call([sys.executable] + sys.argv, env=os.environ)

@@ -20,6 +20,7 @@
 #include <sys/queue.h>
 
 #include <protocomm.h>
+#include <protocomm_ble.h>
 #include <protocomm_security.h>
 
 #include "protocomm_priv.h"
@@ -285,11 +286,18 @@ static int protocomm_common_security_handler(uint32_t session_id,
     protocomm_t *pc = (protocomm_t *) priv_data;
 
     if (pc->sec && pc->sec->security_req_handler) {
-        return pc->sec->security_req_handler(pc->sec_inst,
-                                             pc->pop, session_id,
-                                             inbuf, inlen,
-                                             outbuf, outlen,
-                                             priv_data);
+        esp_err_t ret = pc->sec->security_req_handler(pc->sec_inst,
+                                              pc->pop, session_id,
+                                              inbuf, inlen,
+                                              outbuf, outlen,
+                                              priv_data);
+        if (ESP_OK == ret && NULL != pc->sec->secure_session_established) {
+            protocomm_ble_event_fn fn = protocomm_ble_get_ble_event_fn();
+
+            if (NULL != fn && pc->sec->secure_session_established(pc->sec_inst)) {
+                fn(PROTOCOMM_BLE_PEER_CONNECTED_SECURE);
+            }
+        }
     }
 
     return ESP_OK;

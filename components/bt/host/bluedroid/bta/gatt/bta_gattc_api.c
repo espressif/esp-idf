@@ -31,7 +31,7 @@
 #include "bta/bta_sys.h"
 #include "bta/bta_gatt_api.h"
 #include "bta_gattc_int.h"
-
+#include "stack/l2c_api.h"
 /*****************************************************************************
 **  Constants
 *****************************************************************************/
@@ -76,7 +76,7 @@ void BTA_GATTC_Disable(void)
 ** Description      This function is called to register application callbacks
 **                    with BTA GATTC module.
 **
-** Parameters       p_app_uuid - applicaiton UUID
+** Parameters       p_app_uuid - application UUID
 **                  p_client_cb - pointer to the application callback function.
 **
 ** Returns          None
@@ -338,13 +338,13 @@ const tBTA_GATTC_DESCRIPTOR* BTA_GATTC_GetDescriptor(UINT16 conn_id, UINT16 hand
 }
 
 void BTA_GATTC_GetServiceWithUUID(UINT16 conn_id, tBT_UUID *svc_uuid,
-                                  btgatt_db_element_t **db, int *count)
+                                  btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_service_with_uuid(conn_id, svc_uuid, db, count);
 }
 
 void BTA_GATTC_GetAllChar(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle,
-                          btgatt_db_element_t **db, int *count)
+                          btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_db_with_opration(conn_id,
                                    GATT_OP_GET_ALL_CHAR,
@@ -359,7 +359,7 @@ void BTA_GATTC_GetAllChar(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle
 }
 
 void BTA_GATTC_GetAllDescriptor(UINT16 conn_id, UINT16 char_handle,
-                                btgatt_db_element_t **db, int *count)
+                                btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_db_with_opration(conn_id,
                                    GATT_OP_GET_ALL_DESCRI,
@@ -374,7 +374,7 @@ void BTA_GATTC_GetAllDescriptor(UINT16 conn_id, UINT16 char_handle,
 }
 
 void BTA_GATTC_GetCharByUUID(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, tBT_UUID char_uuid,
-                             btgatt_db_element_t **db, int *count)
+                             btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_db_with_opration(conn_id,
                                    GATT_OP_GET_CHAR_BY_UUID,
@@ -390,7 +390,7 @@ void BTA_GATTC_GetCharByUUID(UINT16 conn_id, UINT16 start_handle, UINT16 end_han
 
 void BTA_GATTC_GetDescrByUUID(UINT16 conn_id, uint16_t start_handle, uint16_t end_handle,
                               tBT_UUID char_uuid, tBT_UUID descr_uuid,
-                              btgatt_db_element_t **db, int *count)
+                              btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_db_with_opration(conn_id,
                                    GATT_OP_GET_DESCRI_BY_UUID,
@@ -405,7 +405,7 @@ void BTA_GATTC_GetDescrByUUID(UINT16 conn_id, uint16_t start_handle, uint16_t en
 }
 
 void BTA_GATTC_GetDescrByCharHandle(UINT16 conn_id, UINT16 char_handle, tBT_UUID descr_uuid,
-                                    btgatt_db_element_t **db, int *count)
+                                    btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_db_with_opration(conn_id,
                                    GATT_OP_GET_DESCRI_BY_HANDLE,
@@ -420,7 +420,7 @@ void BTA_GATTC_GetDescrByCharHandle(UINT16 conn_id, UINT16 char_handle, tBT_UUID
 }
 
 void BTA_GATTC_GetIncludeService(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle,
-                                 tBT_UUID *incl_uuid, btgatt_db_element_t **db, int *count)
+                                 tBT_UUID *incl_uuid, btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_db_with_opration(conn_id,
                                    GATT_OP_GET_INCLUDE_SVC,
@@ -434,13 +434,13 @@ void BTA_GATTC_GetIncludeService(UINT16 conn_id, UINT16 start_handle, UINT16 end
                                    count);
 }
 
-void BTA_GATTC_GetDBSize(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, int *count)
+void BTA_GATTC_GetDBSize(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, UINT16 *count)
 {
     bta_gattc_get_db_size_handle(conn_id, start_handle, end_handle, count);
 }
 
 void BTA_GATTC_GetDBSizeByType(UINT16 conn_id, bt_gatt_db_attribute_type_t type,
-                               UINT16 start_handle, UINT16 end_handle, UINT16 char_handle, int *count)
+                               UINT16 start_handle, UINT16 end_handle, UINT16 char_handle, UINT16 *count)
 {
     bta_gattc_get_db_size_with_type_handle(conn_id, type, start_handle, end_handle, char_handle, count);
 }
@@ -459,7 +459,7 @@ void BTA_GATTC_GetDBSizeByType(UINT16 conn_id, bt_gatt_db_attribute_type_t type,
 **
 *******************************************************************************/
 void  BTA_GATTC_GetGattDb(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle,
-                          btgatt_db_element_t **db, int *count)
+                          btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_gatt_db(conn_id, start_handle, end_handle, db, count);
 }
@@ -562,6 +562,39 @@ void BTA_GATTC_ReadMultiple(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_multi,
     return;
 }
 
+/*******************************************************************************
+**
+** Function         BTA_GATTC_Read_by_type
+**
+** Description      This function is called to read a attribute value by uuid
+**
+** Parameters       conn_id - connection ID.
+**                  s_handle - start handle.
+**                  e_handle - end hanle
+**                  uuid - The attribute UUID.
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTA_GATTC_Read_by_type(UINT16 conn_id, UINT16 s_handle,UINT16 e_handle, tBT_UUID *uuid, tBTA_GATT_AUTH_REQ auth_req)
+{
+    tBTA_GATTC_API_READ  *p_buf;
+
+    if ((p_buf = (tBTA_GATTC_API_READ *) osi_malloc(sizeof(tBTA_GATTC_API_READ))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_GATTC_API_READ));
+
+        p_buf->hdr.event = BTA_GATTC_API_READ_BY_TYPE_EVT;
+        p_buf->hdr.layer_specific = conn_id;
+        p_buf->auth_req = auth_req;
+        p_buf->s_handle = s_handle;
+        p_buf->e_handle = e_handle;
+        memcpy(&(p_buf->uuid), uuid, sizeof(tBT_UUID));
+        p_buf->cmpl_evt = BTA_GATTC_READ_CHAR_EVT;
+
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
 
 /*******************************************************************************
 **
@@ -602,7 +635,10 @@ void BTA_GATTC_WriteCharValue ( UINT16 conn_id,
             p_buf->p_value = (UINT8 *)(p_buf + 1);
             memcpy(p_buf->p_value, p_value, len);
         }
-
+        if(write_type == BTA_GATTC_TYPE_WRITE_NO_RSP){
+            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, NULL);
+            l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, NULL);
+        }
         bta_sys_sendmsg(p_buf);
     }
     return;
@@ -649,7 +685,10 @@ void BTA_GATTC_WriteCharDescr (UINT16 conn_id,
             /* pack the descr data */
             memcpy(p_buf->p_value, p_data->p_value, p_data->len);
         }
-
+        if(write_type == BTA_GATTC_TYPE_WRITE_NO_RSP){
+            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, NULL);
+            l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, NULL);
+        }
         bta_sys_sendmsg(p_buf);
     }
     return;

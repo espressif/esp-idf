@@ -133,7 +133,7 @@ esp_err_t esp_transport_set_default_port(esp_transport_handle_t t, int port);
  * @param      t           The transport handle
  * @param[in]  host        Hostname
  * @param[in]  port        Port
- * @param[in]  timeout_ms  The timeout milliseconds
+ * @param[in]  timeout_ms  The timeout milliseconds (-1 indicates wait forever)
  *
  * @return
  * - socket for will use by this transport
@@ -147,7 +147,7 @@ int esp_transport_connect(esp_transport_handle_t t, const char *host, int port, 
  * @param      t           The transport handle
  * @param[in]  host        Hostname
  * @param[in]  port        Port
- * @param[in]  timeout_ms  The timeout milliseconds
+ * @param[in]  timeout_ms  The timeout milliseconds (-1 indicates wait forever)
  *
  * @return
  * - socket for will use by this transport
@@ -161,7 +161,7 @@ int esp_transport_connect_async(esp_transport_handle_t t, const char *host, int 
  * @param      t           The transport handle
  * @param      buffer      The buffer
  * @param[in]  len         The length
- * @param[in]  timeout_ms  The timeout milliseconds
+ * @param[in]  timeout_ms  The timeout milliseconds (-1 indicates wait forever)
  *
  * @return
  *  - Number of bytes was read
@@ -173,7 +173,7 @@ int esp_transport_read(esp_transport_handle_t t, char *buffer, int len, int time
  * @brief      Poll the transport until readable or timeout
  *
  * @param[in]  t           The transport handle
- * @param[in]  timeout_ms  The timeout milliseconds
+ * @param[in]  timeout_ms  The timeout milliseconds (-1 indicates wait forever)
  *
  * @return
  *     - 0      Timeout
@@ -188,7 +188,7 @@ int esp_transport_poll_read(esp_transport_handle_t t, int timeout_ms);
  * @param      t           The transport handle
  * @param      buffer      The buffer
  * @param[in]  len         The length
- * @param[in]  timeout_ms  The timeout milliseconds
+ * @param[in]  timeout_ms  The timeout milliseconds (-1 indicates wait forever)
  *
  * @return
  *  - Number of bytes was written
@@ -200,7 +200,7 @@ int esp_transport_write(esp_transport_handle_t t, const char *buffer, int len, i
  * @brief      Poll the transport until writeable or timeout
  *
  * @param[in]  t           The transport handle
- * @param[in]  timeout_ms  The timeout milliseconds
+ * @param[in]  timeout_ms  The timeout milliseconds (-1 indicates wait forever)
  *
  * @return
  *     - 0      Timeout

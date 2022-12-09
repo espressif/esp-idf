@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "bootloader_sha.h"
+#include "bootloader_flash.h"
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
@@ -50,4 +51,5 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
     }
     mbedtls_sha256_free(ctx);
     free(handle);
+    handle = NULL;
 }

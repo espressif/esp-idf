@@ -21,6 +21,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @def    ESP_BLE_MESH_MODEL_GEN_ONOFF_CLI
  *
  *  @brief  Define a new Generic OnOff Client Model.
@@ -256,7 +260,7 @@ typedef struct {
 /** Parameters of Generic Admin Property Set. */
 typedef struct {
     uint16_t property_id;   /*!< Property ID identifying a Generic Admin Property */
-    uint8_t  user_access;   /*!< Enumeration indicating user accessn */
+    uint8_t  user_access;   /*!< Enumeration indicating user access */
     struct net_buf_simple *property_value;  /*!< Raw value for the Admin Property */
 } esp_ble_mesh_gen_admin_property_set_t;
 
@@ -363,10 +367,10 @@ typedef struct {
 
 /** Parameters of Generic Battery Status. */
 typedef struct {
-    u32_t battery_level     : 8;  /*!< Value of Generic Battery Level state */
-    u32_t time_to_discharge : 24; /*!< Value of Generic Battery Time to Discharge state */
-    u32_t time_to_charge    : 24; /*!< Value of Generic Battery Time to Charge state */
-    u32_t flags             : 8;  /*!< Value of Generic Battery Flags state */
+    uint32_t battery_level     : 8;  /*!< Value of Generic Battery Level state */
+    uint32_t time_to_discharge : 24; /*!< Value of Generic Battery Time to Discharge state */
+    uint32_t time_to_charge    : 24; /*!< Value of Generic Battery Time to Charge state */
+    uint32_t flags             : 8;  /*!< Value of Generic Battery Flags state */
 } esp_ble_mesh_gen_battery_status_cb_t;
 
 /** Parameters of Generic Location Global Status. */
@@ -479,7 +483,7 @@ typedef enum {
  * @param   param: Pointer to callback parameter
  */
 typedef void (* esp_ble_mesh_generic_client_cb_t)(esp_ble_mesh_generic_client_cb_event_t event,
-        esp_ble_mesh_generic_client_cb_param_t *param);
+                                                  esp_ble_mesh_generic_client_cb_param_t *param);
 
 /**
  * @brief       Register BLE Mesh Generic Client Model callback.
@@ -505,7 +509,7 @@ esp_err_t esp_ble_mesh_register_generic_client_callback(esp_ble_mesh_generic_cli
  *
  */
 esp_err_t esp_ble_mesh_generic_client_get_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_generic_client_get_state_t *get_state);
+                                                esp_ble_mesh_generic_client_get_state_t *get_state);
 
 /**
  * @brief       Set the value of Generic Server Model states using the Generic Client Model set messages.
@@ -521,7 +525,7 @@ esp_err_t esp_ble_mesh_generic_client_get_state(esp_ble_mesh_client_common_param
  *
  */
 esp_err_t esp_ble_mesh_generic_client_set_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_generic_client_set_state_t *set_state);
+                                                esp_ble_mesh_generic_client_set_state_t *set_state);
 
 /**
  * @brief Generic Server Models related context.
@@ -891,7 +895,7 @@ typedef struct {
 /** Parameters of Generic Location state */
 typedef struct {
     int32_t  global_latitude;   /*!< The value of the Global Latitude field */
-    int32_t  global_longitude;  /*!< The value of the Global Longtitude field */
+    int32_t  global_longitude;  /*!< The value of the Global Longitude field */
     int16_t  global_altitude;   /*!< The value of the Global Altitude field */
     int16_t  local_north;       /*!< The value of the Local North field */
     int16_t  local_east;        /*!< The value of the Local East field */
@@ -914,7 +918,7 @@ typedef struct {
     esp_ble_mesh_gen_location_state_t *state;   /*!< Parameters of the Generic Location state */
 } esp_ble_mesh_gen_location_setup_srv_t;
 
-/** This enum value is the access vlue of Generic User Property */
+/** This enum value is the access value of Generic User Property */
 typedef enum {
     ESP_BLE_MESH_GEN_USER_ACCESS_PROHIBIT,
     ESP_BLE_MESH_GEN_USER_ACCESS_READ,
@@ -1078,7 +1082,7 @@ typedef union {
     esp_ble_mesh_state_change_gen_loc_local_set_t      loc_local_set;       /*!< Generic Location Local Set */
     esp_ble_mesh_state_change_gen_user_property_set_t  user_property_set;   /*!< Generic User Property Set */
     esp_ble_mesh_state_change_gen_admin_property_set_t admin_property_set;  /*!< Generic Admin Property Set */
-    esp_ble_mesh_state_change_gen_manu_property_set_t  manu_property_set;   /*!< Generic Manufactuer Property Set */
+    esp_ble_mesh_state_change_gen_manu_property_set_t  manu_property_set;   /*!< Generic Manufacturer Property Set */
 } esp_ble_mesh_generic_server_state_change_t;
 
 /** Context of the received Generic User Property Get message */
@@ -1202,7 +1206,7 @@ typedef struct {
 /** Context of the received Generic Admin Property Set message */
 typedef struct {
     uint16_t property_id;   /*!< Property ID identifying a Generic Admin Property */
-    uint8_t  user_access;   /*!< Enumeration indicating user accessn */
+    uint8_t  user_access;   /*!< Enumeration indicating user access */
     struct net_buf_simple *property_value;  /*!< Raw value for the Admin Property */
 } esp_ble_mesh_server_recv_gen_admin_property_set_t;
 
@@ -1281,7 +1285,7 @@ typedef enum {
  * @param   param: Pointer to callback parameter
  */
 typedef void (* esp_ble_mesh_generic_server_cb_t)(esp_ble_mesh_generic_server_cb_event_t event,
-        esp_ble_mesh_generic_server_cb_param_t *param);
+                                                  esp_ble_mesh_generic_server_cb_param_t *param);
 
 /**
  * @brief       Register BLE Mesh Generic Server Model callback.
@@ -1292,6 +1296,10 @@ typedef void (* esp_ble_mesh_generic_server_cb_t)(esp_ble_mesh_generic_server_cb
  *
  */
 esp_err_t esp_ble_mesh_register_generic_server_callback(esp_ble_mesh_generic_server_cb_t callback);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_GENERIC_MODEL_API_H_ */
 

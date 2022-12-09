@@ -44,6 +44,11 @@ extern "C" {
  */
 extern esp_err_t esp_ble_gatt_set_local_mtu (uint16_t mtu);
 
+#if (BLE_INCLUDED == TRUE)
+extern uint16_t esp_ble_get_sendable_packets_num (void);
+extern uint16_t esp_ble_get_cur_sendable_packets_num (uint16_t connid);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

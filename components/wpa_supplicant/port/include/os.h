@@ -21,7 +21,7 @@
 #include "esp_err.h"
 // #include "esp32/rom/ets_sys.h"
 
-typedef long os_time_t;
+typedef time_t os_time_t;
 
 /**
  * os_sleep - Sleep (sec, usec)
@@ -32,7 +32,16 @@ void os_sleep(os_time_t sec, os_time_t usec);
 
 struct os_time {
 	os_time_t sec;
-	os_time_t usec;
+	suseconds_t usec;
+};
+
+struct os_tm {
+    int sec; /* 0..59 or 60 for leap seconds */
+    int min; /* 0..59 */
+    int hour; /* 0..23 */
+    int day; /* 1..31 */
+    int month; /* 1..12 */
+    int year; /* Four digit year */
 };
 
 /**
@@ -76,6 +85,7 @@ int os_get_time(struct os_time *t);
 int os_mktime(int year, int month, int day, int hour, int min, int sec,
 	      os_time_t *t);
 
+int os_gmtime(os_time_t t, struct os_tm *tm);
 
 /**
  * os_daemonize - Run in the background (detach from the controlling terminal)
@@ -263,11 +273,13 @@ char * ets_strdup(const char *s);
 #define os_strncpy(d, s, n) strncpy((d), (s), (n))
 #endif
 #ifndef os_strrchr
-//hard cold
-#define os_strrchr(s, c)  NULL
+#define os_strrchr(s, c)  strrchr((s), (c))
 #endif
 #ifndef os_strstr
 #define os_strstr(h, n) strstr((h), (n))
+#endif
+#ifndef os_strlcpy
+#define os_strlcpy(d, s, n) strlcpy((d), (s), (n))
 #endif
 
 #ifndef os_snprintf
@@ -282,19 +294,4 @@ static inline int os_snprintf_error(size_t size, int res)
 {
         return res < 0 || (unsigned int) res >= size;
 }
-
-/**
- * os_strlcpy - Copy a string with size bound and NUL-termination
- * @dest: Destination
- * @src: Source
- * @siz: Size of the target buffer
- * Returns: Total length of the target string (length of src) (not including
- * NUL-termination)
- *
- * This function matches in behavior with the strlcpy(3) function in OpenBSD.
- */
-size_t os_strlcpy(char *dest, const char *src, size_t siz);
-
-
-
 #endif /* OS_H */

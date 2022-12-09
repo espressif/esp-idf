@@ -29,7 +29,7 @@
 #define MB_ID_BYTE3(id) ((uint8_t)(((uint32_t)(id) >> 24) & 0xFF))
 
 #define MB_CONTROLLER_SLAVE_ID (CONFIG_FMB_CONTROLLER_SLAVE_ID)
-#define MB_SLAVE_ID_SHORT      (MB_ID_BYTE3(MB_CONTROLLER_SLAVE_ID))
+#define MB_SLAVE_ID_SHORT      (MB_ID_BYTE3(CONFIG_FMB_CONTROLLER_SLAVE_ID))
 
 // Slave ID constant
 static uint8_t mb_slave_id[] = { MB_ID_BYTE0(MB_CONTROLLER_SLAVE_ID),
@@ -134,8 +134,7 @@ esp_err_t mbc_slave_start(void)
 #endif
     error = slave_interface_ptr->start();
     MB_SLAVE_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
-                    "SERIAL slave start failure error=(0x%x).", error);
+                    error, "SERIAL slave start failure error=(0x%x).", error);
     return error;
 } 
 
@@ -168,8 +167,7 @@ esp_err_t mbc_slave_get_param_info(mb_param_info_t* reg_info, uint32_t timeout)
                     "Slave interface is not correctly initialized.");
     error = slave_interface_ptr->get_param_info(reg_info, timeout);
     MB_SLAVE_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
-                    "SERIAL slave get parameter info failure error=(0x%x).", error);
+                    error, "SERIAL slave get parameter info failure error=(0x%x).", error);
     return error;
 }
 
@@ -187,8 +185,7 @@ esp_err_t mbc_slave_set_descriptor(mb_register_area_descriptor_t descr_data)
                     "Slave interface is not correctly initialized.");
     error = slave_interface_ptr->set_descriptor(descr_data);
     MB_SLAVE_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
-                    "SERIAL slave set descriptor failure error=(0x%x).", error);
+                    error, "SERIAL slave set descriptor failure error=(0x%x).", error);
     return error;
 }
 
@@ -203,7 +200,7 @@ eMBErrorCode eMBRegDiscreteCB(UCHAR * pucRegBuffer, USHORT usAddress,
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
     MB_SLAVE_CHECK((slave_interface_ptr->slave_reg_cb_discrete != NULL), 
-                    ESP_ERR_INVALID_STATE,
+                    error,
                     "Slave interface is not correctly initialized.");
     error = slave_interface_ptr->slave_reg_cb_discrete(pucRegBuffer, usAddress, usNDiscrete);
     

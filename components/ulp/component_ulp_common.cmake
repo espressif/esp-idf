@@ -15,4 +15,4 @@ foreach(ulp_exp_dep_src ${ULP_EXP_DEP_SRCS})
     list(APPEND ulp_dep_srcs ${ulp_dep_src})
 endforeach()
 
-ulp_embed_binary(${ULP_APP_NAME} ${ulp_srcs} ${ulp_dep_srcs})
+ulp_embed_binary(${ULP_APP_NAME} "${ulp_srcs}" "${ulp_dep_srcs}")

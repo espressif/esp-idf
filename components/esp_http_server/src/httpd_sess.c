@@ -202,7 +202,7 @@ static int fd_is_valid(int fd)
 static inline uint64_t httpd_sess_get_lru_counter(void)
 {
     static uint64_t lru_counter = 0;
-    return lru_counter++;
+    return ++lru_counter;
 }
 
 void httpd_sess_delete_invalid(struct httpd_data *hd)
@@ -281,7 +281,9 @@ bool httpd_sess_pending(struct httpd_data *hd, int fd)
     if (sd->pending_fn) {
         // test if there's any data to be read (besides read() function, which is handled by select() in the main httpd loop)
         // this should check e.g. for the SSL data buffer
-        if (sd->pending_fn(hd, fd) > 0) return true;
+        if (sd->pending_fn(hd, fd) > 0) {
+            return true;
+        }
     }
 
     return (sd->pending_len != 0);

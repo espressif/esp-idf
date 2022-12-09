@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20190506
+#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20200622
 
 /**
  * @brief Bluetooth mode for controller enable/disable
@@ -111,6 +111,18 @@ the adv packet will be discarded until the memory is restored. */
 #define BTDM_CONTROLLER_MODE_EFF                    ESP_BT_MODE_BTDM
 #endif
 
+#ifdef CONFIG_BTDM_CTRL_AUTO_LATENCY_EFF
+#define BTDM_CTRL_AUTO_LATENCY_EFF CONFIG_BTDM_CTRL_AUTO_LATENCY_EFF
+#else
+#define BTDM_CTRL_AUTO_LATENCY_EFF false
+#endif
+
+#ifdef CONFIG_BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
+#define BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF CONFIG_BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
+#else
+#define BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF false
+#endif
+
 #define BTDM_CONTROLLER_BLE_MAX_CONN_LIMIT          9   //Maximum BLE connection limitation
 #define BTDM_CONTROLLER_BR_EDR_MAX_ACL_CONN_LIMIT   7   //Maximum ACL connection limitation
 #define BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN_LIMIT  3   //Maximum SCO/eSCO connection limitation
@@ -133,8 +145,12 @@ the adv packet will be discarded until the memory is restored. */
     .ble_max_conn = CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF,                     \
     .bt_max_acl_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF,           \
     .bt_sco_datapath = CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_EFF,          \
+    .auto_latency = BTDM_CTRL_AUTO_LATENCY_EFF,                            \
+    .bt_legacy_auth_vs_evt = BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF,         \
     .bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF,         \
     .ble_sca = CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF,             \
+    .pcm_role = CONFIG_BTDM_CTRL_PCM_ROLE_EFF,                             \
+    .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 };
 
@@ -165,6 +181,8 @@ typedef struct {
     uint8_t ble_max_conn;                   /*!< BLE maximum connection numbers */
     uint8_t bt_max_acl_conn;                /*!< BR/EDR maximum ACL connection numbers */
     uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module */
+    bool auto_latency;                      /*!< BLE auto latency, used to enhance classic BT performance */
+    bool bt_legacy_auth_vs_evt;             /*!< BR/EDR Legacy auth complete event required to  protect from BIAS attack */
     /*
      * Following parameters can not be configured runtime when call esp_bt_controller_init()
      * It will be overwrite with a constant value which in menuconfig or from a macro.
@@ -172,6 +190,8 @@ typedef struct {
      */
     uint8_t bt_max_sync_conn;               /*!< BR/EDR maximum ACL connection numbers. Effective in menuconfig */
     uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index */
+    uint8_t pcm_role;                       /*!< PCM role (master & slave)*/
+    uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge) */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
@@ -331,6 +351,12 @@ esp_err_t esp_bt_controller_disable(void);
  */
 esp_bt_controller_status_t esp_bt_controller_get_status(void);
 
+/**
+ * @brief  Get BT MAC address.
+ * @return Array pointer of length 6 storing MAC address value.
+ */
+uint8_t* esp_bt_get_mac(void);
+
 /** @brief esp_vhci_host_callback
  *  used for vhci call host function to notify what host need to do
  */
@@ -455,28 +481,6 @@ esp_err_t esp_bt_sleep_enable(void);
  *                  - other  : failed
  */
 esp_err_t esp_bt_sleep_disable(void);
-
-/**
- * @brief to check whether bluetooth controller is sleeping at the instant, if modem sleep is enabled
- *
- * Note that this function shall not be invoked before esp_bt_controller_enable()
- * This function is supposed to be used ORIG mode of modem sleep
- *
- * @return  true if in modem sleep state, false otherwise
- */
-bool esp_bt_controller_is_sleeping(void);
-
-/**
- * @brief request controller to wakeup from sleeping state during sleep mode
- *
- * Note that this function shall not be invoked before esp_bt_controller_enable()
- * Note that this function is supposed to be used ORIG mode of modem sleep
- * Note that after this request, bluetooth controller may again enter sleep as long as the modem sleep is enabled
- *
- * Profiling shows that it takes several milliseconds to wakeup from modem sleep after this request.
- * Generally it takes longer if 32kHz XTAL is used than the main XTAL, due to the lower frequency of the former as the bluetooth low power clock source.
- */
-void esp_bt_controller_wakeup_request(void);
 
 /**
  * @brief Manually clear scan duplicate list

@@ -1,0 +1,1 @@
+.. include:: ../../../en/hw-reference/esp32s2/user-guide-esp-lyrat-8311a_v1.3.rst

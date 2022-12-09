@@ -41,7 +41,7 @@ xQueueHandle timer_queue;
 static void inline print_timer_counter(uint64_t counter_value)
 {
     printf("Counter: 0x%08x%08x\n", (uint32_t) (counter_value >> 32),
-                                    (uint32_t) (counter_value));
+           (uint32_t) (counter_value));
     printf("Time   : %.8f s\n", (double) counter_value / TIMER_SCALE);
 }
 
@@ -55,11 +55,12 @@ static void inline print_timer_counter(uint64_t counter_value)
  */
 void IRAM_ATTR timer_group0_isr(void *para)
 {
+    timer_spinlock_take(TIMER_GROUP_0);
     int timer_idx = (int) para;
 
     /* Retrieve the interrupt status and the counter value
        from the timer that reported the interrupt */
-    timer_intr_t timer_intr = timer_group_intr_get_in_isr(TIMER_GROUP_0);
+    uint32_t timer_intr = timer_group_get_intr_status_in_isr(TIMER_GROUP_0);
     uint64_t timer_counter_value = timer_group_get_counter_value_in_isr(TIMER_GROUP_0, timer_idx);
 
     /* Prepare basic event data
@@ -73,12 +74,12 @@ void IRAM_ATTR timer_group0_isr(void *para)
        and update the alarm time for the timer with without reload */
     if (timer_intr & TIMER_INTR_T0) {
         evt.type = TEST_WITHOUT_RELOAD;
-        timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
+        timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
         timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
         timer_group_set_alarm_value_in_isr(TIMER_GROUP_0, timer_idx, timer_counter_value);
     } else if (timer_intr & TIMER_INTR_T1) {
         evt.type = TEST_WITH_RELOAD;
-        timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_1);
+        timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_1);
     } else {
         evt.type = -1; // not supported even type
     }
@@ -89,6 +90,7 @@ void IRAM_ATTR timer_group0_isr(void *para)
 
     /* Now just send the event data back to the main program task */
     xQueueSendFromISR(timer_queue, &evt, NULL);
+    timer_spinlock_give(TIMER_GROUP_0);
 }
 
 /*
@@ -99,19 +101,16 @@ void IRAM_ATTR timer_group0_isr(void *para)
  * timer_interval_sec - the interval of alarm to set
  */
 static void example_tg0_timer_init(int timer_idx,
-    bool auto_reload, double timer_interval_sec)
+                                   bool auto_reload, double timer_interval_sec)
 {
     /* Select and initialize basic parameters of the timer */
-    timer_config_t config;
-    config.divider = TIMER_DIVIDER;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.counter_en = TIMER_PAUSE;
-    config.alarm_en = TIMER_ALARM_EN;
-    config.intr_type = TIMER_INTR_LEVEL;
-    config.auto_reload = auto_reload;
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
-    config.clk_sel = TIMER_SRC_CLK_APB;
-#endif
+    timer_config_t config = {
+        .divider = TIMER_DIVIDER,
+        .counter_dir = TIMER_COUNT_UP,
+        .counter_en = TIMER_PAUSE,
+        .alarm_en = TIMER_ALARM_EN,
+        .auto_reload = auto_reload,
+    }; // default clock source is APB
     timer_init(TIMER_GROUP_0, timer_idx, &config);
 
     /* Timer's counter will initially start from value below.
@@ -122,7 +121,7 @@ static void example_tg0_timer_init(int timer_idx,
     timer_set_alarm_value(TIMER_GROUP_0, timer_idx, timer_interval_sec * TIMER_SCALE);
     timer_enable_intr(TIMER_GROUP_0, timer_idx);
     timer_isr_register(TIMER_GROUP_0, timer_idx, timer_group0_isr,
-        (void *) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
+                       (void *) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
 
     timer_start(TIMER_GROUP_0, timer_idx);
 }

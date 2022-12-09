@@ -99,7 +99,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 We need to run the latest version of OpenOCD which should support semihost feature when we test this deploy mode:
 
 ```bash
-openocd-esp32/bin/openocd -s openocd-esp32/share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+openocd-esp32/bin/openocd -s openocd-esp32/share/openocd/scripts -f board/esp32-wrover-kit-3.3v.cfg
 ```
 
 ## Example Output

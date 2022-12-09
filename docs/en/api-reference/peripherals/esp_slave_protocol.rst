@@ -1,17 +1,17 @@
 Communication with ESP SDIO Slave
-====================================
+=================================
+
+This document describes the process of initialization of an ESP SDIO Slave device and then provides details on the ESP SDIO Slave protocol - a non-standard protocol that allows an SDIO Host to communicate with an ESP SDIO slave.
+
+The ESP SDIO Slave protocol was created to implement the communication between SDIO host and slave, because the SDIO specification only shows how to access the custom region of a card (by sending CMD52 and CMD53 to Functions 1-7) without any details regarding the underlying hardware implementation.
+
 
 .. _esp_slave_init:
 
-ESP SDIO slave initialization
-------------------------------
+ESP SDIO Slave Initialization
+-----------------------------
 
-The host should initialize the ESP32 SDIO slave according to the standard
-SDIO initialization process (Sector 3.1.2 of `SDIO Simplified
-Specification <https://www.sdcard.org/downloads/pls/>`_). In this specification
-and below, the SDIO slave is also called an (SD)IO card. All the
-initialization CMD52 and CMD53 are sent to Func 0 (CIA region). Here is an
-brief example on how to do this:
+The host should initialize the ESP32 SDIO slave according to the standard SDIO initialization process (Section 3.1.2 of `SDIO Simplified Specification <https://www.sdcard.org/downloads/pls/>`_). In this specification as well as below, the SDIO slave is called an (SD)IO card. Here is a brief example of an ESP SDIO Slave initialization process:
 
 1. SDIO reset
     CMD52 (Write 0x6=0x8)
@@ -70,30 +70,41 @@ brief example on how to do this:
 
      CMD52/53 (Read 0x110~0x111, read to check the final value)
 
+
 .. _esp_slave_protocol_layer:
 
-ESP SDIO slave protocol
+ESP SDIO Slave Protocol
 -----------------------
 
-The protocol is based on Function 1 access by CMD52 and CMD53, offering 3 services: (1) sending and receiving FIFO, (2) 52 8-bit R/W
-register shared by host and slave, (3) 8 general purpose interrupt sources from host to slave and 8 in the oppsite direction.
+The ESP SDIO Slave protocol is based on the SDIO Specification's I/O Read/Write commands, i.e., CMD52 and CMD53. The protocol offers the following services:
 
-The host should access the registers below as described to communicate with slave.
+- Sending FIFO and receiving FIFO
+- 52 8-bit R/W registers shared by host and slave (For details, see Section 8.4 Register summary (table SDIO SLC Host registers) in `{IDF_TARGET_NAME} Technical reference manual`_
+- 16 general purpose interrupt sources, 8 from host to slave and 8 from slave to host
+
+To begin communication, the host needs to enable the I/O Function 1 in the slave and access its registers as described below.
+
+Check the code example :example:`peripherals/sdio`.
+
+The :doc:`ESP Serial Slave Link </api-reference/protocols/esp_serial_slave_link>` component implements the logic of this protocol for ESP32 SDIO Host when communicating with an ESP32 SDIO slave.
+
+.. _{IDF_TARGET_NAME} Technical Reference Manual: {IDF_TARGET_TRM_EN_URL}
+
 
 Slave register table
 ^^^^^^^^^^^^^^^^^^^^
 
 32-bit
-#######
+""""""
 
-- 0x044 (TOKEN_RDATA): in which bit 27-16 holds the receiving buffer number.
+- 0x044 (TOKEN_RDATA): in which bit 27-16 holds the number of the receiving buffer.
 - 0x058 (INT_ST): holds the interrupt source bits from slave to host.
-- 0x060 (PKT_LEN): holds the accumulated length (by byte) to be sent from slave to host.
+- 0x060 (PKT_LEN): holds the accumulated data length (in bytes) already read by host plus the data copied to the buffer but yet to be read.
 - 0x0D4 (INT_CLR): write 1 to clear interrupt bits corresponding to INT_ST.
 - 0x0DC (INT_ENA): mask bits for interrupts from slave to host.
 
 8-bit
-#####
+"""""
 
 Shared general purpose registers:
 
@@ -107,71 +118,55 @@ Interrupt Registers:
 - 0x08D (SLAVE_INT): bits for host to interrupt slave. auto clear.
 
 FIFO (sending and receiving)
-############################
+""""""""""""""""""""""""""""
 
 0x090 - 0x1F7FF are reserved for FIFOs.
 
-The address of CMD53 is related to the length requested to read from/write to
-the slave in a single transfer:
+The address of CMD53 is related to the length requested to read from or write to the slave in a single transfer, as demonstrated by the equation below:
 
     *requested length = 0x1F800-address*
 
-The slave will respond with the length according to the length field in
-CMD53, with the data longer than *requested length* filled with 0 (sending)
-or discard (receiving).
+The slave will respond with data that has a length equal to the length field of CMD53. In cases where the data is longer than the *requested length*, the data will be zero filled (when sending) or discarded (when receiving). This includes both the block and the byte mode of CMD53.
 
-.. note:: This includes both the block and the byte mode of CMD53.
+.. note::
 
     The function number should be set to 1, OP Code should be set to 1 (for CMD53).
 
-    It is allowed to use CMD53 mode combination of block+byte to get higher
-    effeciency when accessing the FIFO by arbitrary length. E.g. The block
-    size is set to 512 by default, you can write/get 1031 bytes of data
-    to/from the FIFO by:
+    In order to achieve higher efficiency when accessing the FIFO by an arbitrary length, the block and byte modes of CMD53 can be used in combination. For example, given that the block size is set to 512 by default, you can write/get 1031 bytes of data from the FIFO by doing the following:
 
-    1. Send CMD53 in block mode, block count=2 (1024 bytes) to address
-       0x1F3F9=0x1F800-**1031**.
-    2. Then send CMD53 in byte mode, byte count=8 (or 7 if your controller
-       supports that) to address 0x1F7F9=0x1F800-**7**.
+    1. Send CMD53 in block mode, block count=2 (1024 bytes) to address 0x1F3F9=0x1F800-**1031**.
+    2. Then send CMD53 in byte mode, byte count=8 (or 7 if your controller supports that) to address 0x1F7F9=0x1F800-**7**.
+
 
 Interrupts
 ^^^^^^^^^^
 
-For the host interrupts, the slave raise the interrupt by pulling DAT1 line down at a proper time (level sensitive).
-The host detect this and read the INT_ST register to see the source. Then the host can clear it by writing the INT_CLR
-register and do something with the interrupt. The host can also mask unneeded sources by clearing the bits in INT_ENA
-register corresponding to the sources. If all the sources are cleared (or masked), the DAT1 line goes inactive.
+SDIO interrupts are "level sensitive". For host interrupts, the slave sends an interrupt by pulling the DAT1 line down at a proper time. The host detects when the interrupt line is pulled down and reads the INT_ST register to determine the source of the interrupt. After that, the host can clear the interrupt bits by writing the INT_CLR register and process the interrupt. The host can also mask unneeded sources by clearing the bits in the INT_ENA register corresponding to the sources. If all the sources are cleared (or masked), the DAT1 line goes inactive.
 
-``sdio_slave_hostint_t`` (:doc:`sdio_slave`) shows the bit definition corresponding to host interrupt sources.
+:cpp:type:`sdio_slave_hostint_t` (:doc:`sdio_slave`) shows the bit definition corresponding to host interrupt sources.
 
-For the slave interrupts, the host send transfers to write the SLAVE_INT register. Once a bit is written from 0 to 1,
-the slave hardware and driver will detect it and inform the app.
+For slave interrupts, the host sends a transfer to write the SLAVE_INT register. Once a bit is set to 1, the slave hardware and the driver will detect it and inform the application.
+
 
 Receiving FIFO
 ^^^^^^^^^^^^^^
 
-To write the receiving FIFO in the slave, host should work in the following steps:
+To write to the slave's receiving FIFO, the host should complete the following steps:
 
-1. Read the TOKEN1 field (bits 27-16) of TOKEN_RDATA (0x044) register. The buffer number remaining is TOKEN1 minus
-   the number of buffers used by host.
-2. Make sure the buffer number is sufficient (*buffer_size* * *buffer_num* is greater than data to write, *buffer_size*
-   is pre-defined between the host and the slave before the communication starts). Or go back to step 1 until the buffer
-   is enough.
-3. Write to the FIFO address with CMD53. Note that the *requested length* should not be larger than calculated in step 2,
-   and the FIFO address is related to *rquested length*.
-4. Calculate used buffers, note that non-full buffer at the tail should be seen as one that is used.
+1. **Read the TOKEN1 field (bits 27-16) of the register TOKEN_RDATA (0x044)**. The buffer number remaining is TOKEN1 minus the number of buffers used by host.
+2. **Make sure the buffer number is sufficient** (*buffer_size* x *buffer_num* is greater than the data to write, *buffer_size* is pre-defined between the host and the slave before the communication starts). Otherwise, keep returning to Step 1 until the buffer size is sufficient.
+3. **Write to the FIFO address with CMD53**. Note that the *requested length* should not exceed the length calculated at Step 2, and the FIFO address is related to *requested length*.
+4. **Calculate used buffers**. Note that a partially used buffer at the tail is counted as used.
+
 
 Sending FIFO
 ^^^^^^^^^^^^
 
-To read the sending FIFO in the slave, host should work in the following steps:
+To read the slave's sending FIFO, the host should complete the following steps:
 
-1. Wait for the interrupt line to be active (optional, low by default).
-2. Read (poll) the interrupt bits in INT_ST register to see whether new packets exists.
-3. If new packets are ready, reads the PKT_LEN reg. The data length to read from slave is PKT_LEN minuses the length
-   that has been read from the host. If the PKT_LEN is not larger than used, wait and poll until the slave is ready and
-   update the PKT_LEN.
-4. Read from the FIFO with CMD53. Note that the *requested length* should not be larger than calculated in step3, and
-   the FIFO address is related to *requested length*.
-5. Recored read length.
+1. **Wait for the interrupt line to become active** (optional, low by default).
+2. **Read (poll) the interrupt bits in the INT_ST register** to monitor if new packets exist.
+3. **If new packets are ready, read the PKT_LEN register**. Before reading the packets, determine the length of data to be read. As the host keeps the length of data already read from the slave, subtract this value from PKT_LEN, the result will be the maximum length of data available for reading. If no data has been added to the sending FIFO yet, wait and poll until the slave is ready and update PKT_LEN.
+4. **Read from the FIFO using CMD53**. Note that the *requested length* should not be greater than calculated at Step 3, and the FIFO address is related to *requested length*.
+5. **Update the read length**.
 

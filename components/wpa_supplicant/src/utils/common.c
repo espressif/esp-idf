@@ -9,6 +9,7 @@
 #include "utils/includes.h"
 
 #include "utils/common.h"
+#include <time.h>
 
 /**
  * inc_byte_array - Increment arbitrary length byte array by one
@@ -269,8 +270,21 @@ char * wpa_config_parse_string(const char *value, size_t *len)
 	} else {
 		u8 *str;
 		size_t tlen, hlen = os_strlen(value);
+#ifndef ESP_SUPPLICANT
 		if (hlen & 1)
 			return NULL;
+#else
+		if (hlen == 5 || hlen == 13) {
+			*len = hlen;
+			str = (u8 *)os_malloc(*len + 1);
+			if (str == NULL) {
+				return NULL;
+			}
+			memcpy(str, value, *len);
+			str[*len] = '\0';
+			return (char *) str;
+	        }
+#endif
 		tlen = hlen / 2;
 		str = os_malloc(tlen + 1);
 		if (str == NULL)
@@ -352,4 +366,128 @@ void wpa_bin_clear_free(void *bin, size_t len)
 	}
 }
 
+int int_array_len(const int *a)
+{
+	int i;
+	for (i = 0; a && a[i]; i++)
+		;
+	return i;
+}
 
+void bin_clear_free(void *bin, size_t len)
+{
+	if (bin) {
+		os_memset(bin, 0, len);
+		os_free(bin);
+	}
+}
+
+void str_clear_free(char *str)
+{
+	if (str) {
+		size_t len = os_strlen(str);
+		os_memset(str, 0, len);
+		os_free(str);
+	}
+}
+
+int os_gmtime(os_time_t t, struct os_tm *tm)
+{
+	struct tm *tm2;
+	time_t t2 = t;
+
+	tm2 = gmtime(&t2);
+	if (tm2 == NULL)
+		return -1;
+	tm->sec = tm2->tm_sec;
+	tm->min = tm2->tm_min;
+	tm->hour = tm2->tm_hour;
+	tm->day = tm2->tm_mday;
+	tm->month = tm2->tm_mon + 1;
+	tm->year = tm2->tm_year + 1900;
+	return 0;
+}
+
+int os_mktime(int year, int month, int day, int hour, int min, int sec,
+		os_time_t *t)
+{
+	struct tm tm;
+
+	if (year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 ||
+			hour < 0 || hour > 23 || min < 0 || min > 59 || sec < 0 ||
+			sec > 60)
+		return -1;
+
+	os_memset(&tm, 0, sizeof(tm));
+	tm.tm_year = year - 1900;
+	tm.tm_mon = month - 1;
+	tm.tm_mday = day;
+	tm.tm_hour = hour;
+	tm.tm_min = min;
+	tm.tm_sec = sec;
+
+	*t = (os_time_t) mktime(&tm);
+	return 0;
+}
+
+char * get_param(const char *cmd, const char *param)
+{
+	const char *pos, *end;
+	char *val;
+	size_t len;
+
+	pos = os_strstr(cmd, param);
+	if (!pos)
+		return NULL;
+
+	pos += os_strlen(param);
+	end = os_strchr(pos, ' ');
+	if (end)
+		len = end - pos;
+	else
+		len = os_strlen(pos);
+	val = os_malloc(len + 1);
+	if (!val)
+		return NULL;
+	os_memcpy(val, pos, len);
+	val[len] = '\0';
+	return val;
+}
+
+void * os_memdup(const void *src, size_t len)
+{
+	void *r = os_malloc(len);
+
+	if (r && src)
+		os_memcpy(r, src, len);
+	return r;
+}
+
+/**
+ * hwaddr_aton2 - Convert ASCII string to MAC address (in any known format)
+ * @txt: MAC address as a string (e.g., 00:11:22:33:44:55 or 0011.2233.4455)
+ * @addr: Buffer for the MAC address (ETH_ALEN = 6 bytes)
+ * Returns: Characters used (> 0) on success, -1 on failure
+ */
+int hwaddr_aton2(const char *txt, u8 *addr)
+{
+	int i;
+	const char *pos = txt;
+
+	for (i = 0; i < 6; i++) {
+		int a, b;
+
+		while (*pos == ':' || *pos == '.' || *pos == '-')
+			pos++;
+
+		a = hex2num(*pos++);
+		if (a < 0)
+			return -1;
+		b = hex2num(*pos++);
+		if (b < 0)
+			return -1;
+		*addr++ = (a << 4) | b;
+	}
+
+	return pos - txt;
+}

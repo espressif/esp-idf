@@ -901,6 +901,77 @@ int PORT_FlowControl_MaxCredit (UINT16 handle, BOOLEAN enable)
 
 /*******************************************************************************
 **
+** Function         PORT_FlowControl_GiveCredit
+**
+** Description      This function gives specified credits to the peer
+**
+** Parameters:      handle        - Handle returned in the RFCOMM_CreateConnection
+**                  enable        - enables data flow
+**                  credits_given - credits to give
+**
+*******************************************************************************/
+int PORT_FlowControl_GiveCredit (UINT16 handle, BOOLEAN enable, UINT16 credits_given)
+{
+    tPORT      *p_port;
+    BOOLEAN    old_fc;
+    UINT32     events;
+
+    RFCOMM_TRACE_DEBUG("%s handle:%d enable: %d, cred %d", __func__, handle, enable, credits_given);
+
+    /* Check if handle is valid to avoid crashing */
+    if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
+        return (PORT_BAD_HANDLE);
+    }
+
+    p_port = &rfc_cb.port.port[handle - 1];
+
+    if (!p_port->in_use || (p_port->state == PORT_STATE_CLOSED)) {
+        return (PORT_NOT_OPENED);
+    }
+
+    if (!p_port->rfc.p_mcb) {
+        return (PORT_NOT_OPENED);
+    }
+
+    p_port->rx.user_fc = !enable;
+
+    if (p_port->rfc.p_mcb->flow == PORT_FC_CREDIT) {
+        if (!p_port->rx.user_fc) {
+            port_flow_control_peer(p_port, TRUE, credits_given);
+        }
+    } else {
+        assert(0); // karl: temporarily not allowed
+        old_fc = p_port->local_ctrl.fc;
+
+        /* FC is set if user is set or peer is set */
+        p_port->local_ctrl.fc = (p_port->rx.user_fc | p_port->rx.peer_fc);
+
+        if (p_port->local_ctrl.fc != old_fc) {
+            port_start_control (p_port);
+        }
+    }
+
+    /* Need to take care of the case when we could not deliver events */
+    /* to the application because we were flow controlled */
+    if (enable && (p_port->rx.queue_size != 0)) {
+        assert(0); // karl: temporarily not allowed
+        events = PORT_EV_RXCHAR;
+        if (p_port->rx_flag_ev_pending) {
+            p_port->rx_flag_ev_pending = FALSE;
+            events |= PORT_EV_RXFLAG;
+        }
+
+        events &= p_port->ev_mask;
+        if (p_port->p_callback && events) {
+            p_port->p_callback (events, p_port->inx);
+        }
+    }
+    return (PORT_SUCCESS);
+}
+
+
+/*******************************************************************************
+**
 ** Function         PORT_GetModemStatus
 **
 ** Description      This function retrieves modem control signals.  Normally

@@ -16,15 +16,30 @@
  *  @brief Bluetooth Mesh Model Common APIs.
  */
 
-#ifndef _MESH_COMMON_H_
-#define _MESH_COMMON_H_
+#ifndef _BLE_MESH_COMMON_H_
+#define _BLE_MESH_COMMON_H_
 
-#include "osi/allocator.h"
+#include <stddef.h>
+#include <stdlib.h>
 
-#include "mesh_types.h"
-#include "mesh_buf.h"
+#include "esp_attr.h"
+#include "esp_heap_caps.h"
+
+#include "mesh_byteorder.h"
+#include "mesh_ffs.h"
 #include "mesh_trace.h"
+#include "mesh_mutex.h"
 #include "mesh_access.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+IRAM_ATTR void *bt_mesh_malloc(size_t size);
+
+IRAM_ATTR void *bt_mesh_calloc(size_t size);
+
+IRAM_ATTR void bt_mesh_free(void *ptr);
 
 /**
  * @brief This function allocates memory to store outgoing message.
@@ -33,7 +48,7 @@
  *
  * @return NULL-fail, pointer of a net_buf_simple structure-success
  */
-struct net_buf_simple *bt_mesh_alloc_buf(u16_t size);
+struct net_buf_simple *bt_mesh_alloc_buf(uint16_t size);
 
 /**
  * @brief This function releases the memory allocated for the outgoing message.
@@ -56,6 +71,12 @@ void bt_mesh_free_buf(struct net_buf_simple *buf);
  *
  * @return 0 - Node, 1 - Provisioner
  */
-u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send);
+uint8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send);
 
-#endif /* _MESH_COMMON_H_ */
+int bt_mesh_rand(void *buf, size_t len);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _BLE_MESH_COMMON_H_ */

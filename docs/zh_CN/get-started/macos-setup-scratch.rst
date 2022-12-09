@@ -1,5 +1,5 @@
 ***********************************************
-从零开始设置 MacOS 环境下的工具链
+从零开始设置 macOS 环境下的工具链
 ***********************************************
 
 :link_to_translation:`en:[English]`
@@ -31,11 +31,11 @@ MacPorts 需要完整的 XCode 软件，而 homebrew 只需要安装 XCode 命�
 
 	- 若有 HomeBrew，您可以运行::
 
-		brew install cmake ninja
+		brew install cmake ninja dfu-util
 
 	- 若有 MacPorts，您可以运行::
 
-		sudo port install cmake ninja
+		sudo port install cmake ninja dfu-util
 
 从源代码编译工具链
 =================================
@@ -67,17 +67,23 @@ MacPorts 需要完整的 XCode 软件，而 homebrew 只需要安装 XCode 命�
 
 	cd ~/esp/ctng-volume
 
-下载并编译 ``crosstool-NG`` 
+下载并编译 ``crosstool-NG``
 
-.. include:: /_build/inc/scratch-build-code.inc
+.. include-build-file:: inc/scratch-build-code.inc
 
 编译工具链::
 
-	./ct-ng xtensa-esp32-elf
+	./ct-ng xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf
 	./ct-ng build
-	chmod -R u+w builds/xtensa-esp32-elf
+	chmod -R u+w builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf
 
-编译得到的工具链会被保存到 ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf``。使用工具链前，请将 ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf/bin`` 添加至 ``PATH`` 环境变量。
+编译得到的工具链会被保存到 ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf``。使用工具链前，请将 ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf/bin`` 添加至 ``PATH`` 环境变量。
+
+
+停用 Python 2 
+====================
+
+Python 2 已经 `结束生命周期 <https://www.python.org/doc/sunset-python-2/>`_，ESP-IDF 很快将不再支持 Python 2。请安装 Python 3.6 或以上版本。可参考上面列出的 macOS 安装说明。
 
 
 后续步骤

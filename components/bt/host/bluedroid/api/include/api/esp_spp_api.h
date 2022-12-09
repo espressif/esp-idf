@@ -27,10 +27,13 @@ typedef enum {
     ESP_SPP_FAILURE,                /*!< Generic failure. */
     ESP_SPP_BUSY,                   /*!< Temporarily can not handle this request. */
     ESP_SPP_NO_DATA,                /*!< no data. */
-    ESP_SPP_NO_RESOURCE             /*!< No more set pm control block */
+    ESP_SPP_NO_RESOURCE,            /*!< No more resource */
+    ESP_SPP_NEED_INIT,              /*!< SPP module shall init first */
+    ESP_SPP_NEED_DEINIT,            /*!< SPP module shall deinit first */
+    ESP_SPP_NO_CONNECTION,          /*!< connection may have been closed */
 } esp_spp_status_t;
 
-/* Security Setting Mask */
+/* Security Setting Mask, Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHORIZE or ESP_SPP_SEC_AUTHENTICATE only.*/
 #define ESP_SPP_SEC_NONE            0x0000    /*!< No security. relate to BTA_SEC_NONE in bta/bta_api.h */
 #define ESP_SPP_SEC_AUTHORIZE       0x0001    /*!< Authorization required (only needed for out going connection ) relate to BTA_SEC_AUTHORIZE in bta/bta_api.h*/
 #define ESP_SPP_SEC_AUTHENTICATE    0x0012    /*!< Authentication required.  relate to BTA_SEC_AUTHENTICATE in bta/bta_api.h*/
@@ -57,6 +60,7 @@ typedef enum {
  */
 typedef enum {
     ESP_SPP_INIT_EVT                    = 0,                /*!< When SPP is inited, the event comes */
+    ESP_SPP_UNINIT_EVT                  = 1,                /*!< When SPP is uninited, the event comes */
     ESP_SPP_DISCOVERY_COMP_EVT          = 8,                /*!< When SDP discovery complete, the event comes */
     ESP_SPP_OPEN_EVT                    = 26,               /*!< When SPP Client connection open, the event comes */
     ESP_SPP_CLOSE_EVT                   = 27,               /*!< When SPP connection closed, the event comes */
@@ -66,6 +70,7 @@ typedef enum {
     ESP_SPP_CONG_EVT                    = 31,               /*!< When SPP connection congestion status changed, the event comes, only for ESP_SPP_MODE_CB */
     ESP_SPP_WRITE_EVT                   = 33,               /*!< When SPP write operation completes, the event comes, only for ESP_SPP_MODE_CB */
     ESP_SPP_SRV_OPEN_EVT                = 34,               /*!< When SPP Server connection open, the event comes */
+    ESP_SPP_SRV_STOP_EVT                = 35,               /*!< When SPP server stopped, the event comes */
 } esp_spp_cb_event_t;
 
 
@@ -79,6 +84,13 @@ typedef union {
     struct spp_init_evt_param {
         esp_spp_status_t    status;         /*!< status */
     } init;                                 /*!< SPP callback param of SPP_INIT_EVT */
+
+    /**
+     * @brief SPP_UNINIT_EVT
+     */
+    struct spp_uninit_evt_param {
+        esp_spp_status_t    status;         /*!< status */
+    } uninit;                                 /*!< SPP callback param of SPP_UNINIT_EVT */
 
     /**
      * @brief SPP_DISCOVERY_COMP_EVT
@@ -128,6 +140,14 @@ typedef union {
         uint8_t             sec_id;         /*!< security ID used by this server */
         bool                use_co;         /*!< TRUE to use co_rfc_data */
     } start;                                /*!< SPP callback param of ESP_SPP_START_EVT */
+
+    /**
+     * @brief ESP_SPP_SRV_STOP_EVT
+     */
+    struct spp_srv_stop_evt_param {
+        esp_spp_status_t    status;         /*!< status */
+    } srv_stop;                                 /*!< SPP callback param of ESP_SPP_SRV_STOP_EVT */
+
     /**
      * @brief ESP_SPP_CL_INIT_EVT
      */
@@ -229,7 +249,7 @@ esp_err_t esp_spp_start_discovery(esp_bd_addr_t bd_addr);
  *              When the connection is established or failed,
  *              the callback is called with ESP_SPP_OPEN_EVT.
  *
- * @param[in]   sec_mask:     Security Setting Mask .
+ * @param[in]   sec_mask:     Security Setting Mask. Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHORIZE or ESP_SPP_SEC_AUTHENTICATE only.
  * @param[in]   role:         Master or slave.
  * @param[in]   remote_scn:   Remote device bluetooth device SCN.
  * @param[in]   peer_bd_addr: Remote device bluetooth device address.
@@ -260,7 +280,7 @@ esp_err_t esp_spp_disconnect(uint32_t handle);
  *              When the connection is established, the callback is called
  *              with ESP_SPP_SRV_OPEN_EVT.
  *
- * @param[in]   sec_mask:     Security Setting Mask .
+ * @param[in]   sec_mask:     Security Setting Mask. Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHORIZE or ESP_SPP_SEC_AUTHENTICATE only.
  * @param[in]   role:         Master or slave.
  * @param[in]   local_scn:    The specific channel you want to get.
  *                            If channel is 0, means get any channel.
@@ -273,6 +293,16 @@ esp_err_t esp_spp_disconnect(uint32_t handle);
 esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask,
                             esp_spp_role_t role, uint8_t local_scn, const char *name);
 
+/**
+ * @brief       This function stops a SPP server
+ *              When the server is stopped successfully, the callback is called
+ *              with ESP_SPP_SRV_STOP_EVT.
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_spp_stop_srv(void);
 
 /**
  * @brief       This function is used to write data, only for ESP_SPP_MODE_CB.

@@ -124,7 +124,7 @@ static int tlsv1_add_cert(struct x509_certificate **chain,
 			return -1;
 		}
 
-		der = base64_decode(pos, end - pos, &der_len);
+		der = (unsigned char *)base64_decode((const char *)pos, end - pos, &der_len);
 		if (der == NULL) {
 			wpa_printf(MSG_INFO, "TLSv1: Could not decode PEM "
 				   "certificate");
@@ -249,7 +249,7 @@ static struct crypto_private_key * tlsv1_set_key_pem(const u8 *key, size_t len)
 		}
 	}
 
-	der = base64_decode(pos, end - pos, &der_len);
+	der = (unsigned char *)base64_decode((const char *)pos, end - pos, &der_len);
 	if (!der)
 		return NULL;
 	pkey = crypto_private_key_import(der, der_len, NULL);
@@ -277,7 +277,7 @@ static struct crypto_private_key * tlsv1_set_key_enc_pem(const u8 *key,
 	if (!end)
 		return NULL;
 
-	der = base64_decode(pos, end - pos, &der_len);
+	der = (unsigned char *)base64_decode((const char *)pos, end - pos, &der_len);
 	if (!der)
 		return NULL;
 	pkey = crypto_private_key_import(der, der_len, passwd);
@@ -449,7 +449,7 @@ static int tlsv1_set_dhparams_blob(struct tlsv1_credentials *cred,
 		return -1;
 	}
 
-	der = base64_decode(pos, end - pos, &der_len);
+	der = (unsigned char *)base64_decode((const char *)pos, end - pos, &der_len);
 	if (der == NULL) {
 		wpa_printf(MSG_INFO, "TLSv1: Could not decode PEM dhparams");
 		return -1;

@@ -13,7 +13,7 @@
  * limitations under the License.
 */
 //  mbcontroller.h
-//  mbcontroller common header
+//  mbcontroller - common Modbus controller header file
 
 #ifndef _MODBUS_CONTROLLER_COMMON
 #define _MODBUS_CONTROLLER_COMMON
@@ -28,5 +28,6 @@
 
 #include "esp_modbus_master.h"
 #include "esp_modbus_slave.h"
+
 #endif
 

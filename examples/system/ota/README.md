@@ -109,10 +109,11 @@ If GPIO is not pulled low then the operable of the app will be confirmed.
 
 For ``native_ota_example``, code has been added to demonstrate how to check the version of the application and prevent infinite firmware updates. Only the application with the new version can be downloaded. Version checking is performed after the very first firmware image package has been received, which contains data about the firmware version. The application version can be taken from three places:
 
-1. If ``PROJECT_VER`` variable set in project Cmake/Makefile file, its value will be used.
-2. Else, if the ``$PROJECT_PATH/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
-3. Else, if the project is located inside a Git repository, the output of ``git describe`` will be used.
-4. Otherwise, ``PROJECT_VER`` will be "1".
+1. If `CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of `CONFIG_APP_PROJECT_VER` will be used.
+2. Else, if ``PROJECT_VER`` variable set in project Cmake/Makefile file, its value will be used.
+3. Else, if the ``$PROJECT_PATH/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
+4. Else, if the project is located inside a Git repository, the output of ``git describe`` will be used.
+5. Otherwise, ``PROJECT_VER`` will be "1".
 
 In ``native_ota_example``, ``$PROJECT_PATH/version.txt`` is used to define the version of app. Change the version in the file to compile the new firmware.
 

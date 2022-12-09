@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # I2S Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -16,8 +19,6 @@ In this example, we generate a 100Hz triangle and sine wave and send it out from
 ```
 idf.py menuconfig
 ```
-
-* Set serial port under Serial Flasher Options.
 
 ### Build and Flash
 

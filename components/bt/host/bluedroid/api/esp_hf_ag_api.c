@@ -179,7 +179,7 @@ esp_err_t esp_bt_hf_vra(esp_bd_addr_t remote_addr, esp_hf_vr_state_t value)
     
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
-    return (status = BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_bt_hf_volume_control(esp_bd_addr_t remote_addr, esp_hf_volume_control_target_t type, int volume)
@@ -200,7 +200,7 @@ esp_err_t esp_bt_hf_volume_control(esp_bd_addr_t remote_addr, esp_hf_volume_cont
     
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
-    return (status = BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_hf_unat_response(esp_bd_addr_t remote_addr, char *unat)
@@ -220,7 +220,7 @@ esp_err_t esp_hf_unat_response(esp_bd_addr_t remote_addr, char *unat)
     
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), btc_hf_arg_deep_copy);
-    return (status = BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_bt_hf_cmee_response(esp_bd_addr_t remote_addr, esp_hf_at_response_code_t response_code, esp_hf_cme_err_t error_code)
@@ -241,7 +241,7 @@ esp_err_t esp_bt_hf_cmee_response(esp_bd_addr_t remote_addr, esp_hf_at_response_
     
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
-    return (status = BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr, 
@@ -368,7 +368,7 @@ esp_err_t esp_bt_hf_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_h
 
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), btc_hf_arg_deep_copy);
-    return (status = BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_bt_hf_bsir(esp_bd_addr_t remote_addr, esp_hf_in_band_ring_state_t state)
@@ -388,7 +388,7 @@ esp_err_t esp_bt_hf_bsir(esp_bd_addr_t remote_addr, esp_hf_in_band_ring_state_t 
 
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
-    return (status = BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_bt_hf_answer_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
@@ -415,7 +415,7 @@ esp_err_t esp_bt_hf_answer_call(esp_bd_addr_t remote_addr, int num_active, int n
 
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), btc_hf_arg_deep_copy);
-    return (status = BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_bt_hf_reject_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
@@ -442,7 +442,7 @@ esp_err_t esp_bt_hf_reject_call(esp_bd_addr_t remote_addr, int num_active, int n
 
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), btc_hf_arg_deep_copy);
-    return (status = BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_bt_hf_end_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
@@ -469,7 +469,7 @@ esp_err_t esp_bt_hf_end_call(esp_bd_addr_t remote_addr, int num_active, int num_
 
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), btc_hf_arg_deep_copy);
-    return (status = BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_bt_hf_out_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
@@ -496,7 +496,7 @@ esp_err_t esp_bt_hf_out_call(esp_bd_addr_t remote_addr, int num_active, int num_
 
     /* Switch to BTC context */
     bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), btc_hf_arg_deep_copy);
-    return (status = BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_bt_hf_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_hf_outgoing_data_cb_t send)
@@ -522,7 +522,7 @@ esp_err_t esp_bt_hf_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_h
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
 void esp_hf_outgoing_data_ready(void)
 {
-    BTA_AgCiData();
+    btc_hf_ci_sco_data();
 }
 #endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE ) */
 

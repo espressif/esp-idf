@@ -62,31 +62,31 @@ I (317) uart: queue free spaces: 16
 I (317) nmea_parser: NMEA Parser init OK
 I (1067) gps_demo: 2018/12/4 13:59:34 => 
 						latitude   = 31.20177°N
-						longtitude = 121.57933°E
+						longitude = 121.57933°E
 						altitude   = 17.30m
 						speed      = 0.370400m/s
 W (1177) gps_demo: Unknown statement:$GPTXT,01,01,01,ANTENNA OK*35
 I (2067) gps_demo: 2018/12/4 13:59:35 => 
 						latitude   = 31.20177°N
-						longtitude = 121.57933°E
+						longitude  = 121.57933°E
 						altitude   = 17.30m
 						speed      = 0.000000m/s
 W (2177) gps_demo: Unknown statement:$GPTXT,01,01,01,ANTENNA OK*35
 I (3067) gps_demo: 2018/12/4 13:59:36 => 
 						latitude   = 31.20178°N
-						longtitude = 121.57933°E
+						longitude  = 121.57933°E
 						altitude   = 17.30m
 						speed      = 0.000000m/s
 W (3177) gps_demo: Unknown statement:$GPTXT,01,01,01,ANTENNA OK*35
 I (4067) gps_demo: 2018/12/4 13:59:37 => 
 						latitude   = 31.20178°N
-						longtitude = 121.57933°E
+						longitude  = 121.57933°E
 						altitude   = 17.30m
 						speed      = 0.000000m/s
 W (4177) gps_demo: Unknown statement:$GPTXT,01,01,01,ANTENNA OK*35
 I (5067) gps_demo: 2018/12/4 13:59:38 => 
 						latitude   = 31.20178°N
-						longtitude = 121.57933°E
+						longitude  = 121.57933°E
 						altitude   = 17.30m
 						speed      = 0.685240m/s
 W (5177) gps_demo: Unknown statement:$GPTXT,01,01,01,ANTENNA OK*35

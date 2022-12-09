@@ -1,5 +1,5 @@
 /*  xtruntime-core-state.h  -  core state save area (used eg. by PSO) */
-/* $Id: //depot/rel/Eaglenest/Xtensa/OS/include/xtensa/xtruntime-core-state.h#1 $ */
+/* $Id: //depot/rel/Foxhill/dot.9/Xtensa/OS/include/xtensa/xtruntime-core-state.h#1 $ */
 
 /*
  * Copyright (c) 2012-2013 Tensilica Inc.
@@ -31,6 +31,9 @@
 #include <xtensa/xtruntime-frames.h>
 #include <xtensa/config/core.h>
 #include <xtensa/config/tie.h>
+#if XCHAL_HAVE_IDMA
+#include <xtensa/idma.h>
+#endif
 
 //#define XTOS_PSO_TEST	1		// uncommented for internal PSO testing only
 
@@ -155,6 +158,15 @@ STRUCT_AFIELD(long,4,CS_SA_,tlbs,((4*ARF_ENTRIES+4)*2+3)*2)
 STRUCT_AFIELD(long,4,CS_SA_,tlbs_ways56,(4+8)*2*2)
 # endif
 #endif
+/* MPU state */
+#if XCHAL_HAVE_MPU
+STRUCT_AFIELD(long,4,CS_SA_,mpuentry,8*XCHAL_MPU_ENTRIES)
+STRUCT_FIELD (long,4,CS_SA_,cacheadrdis)
+#endif
+
+#if XCHAL_HAVE_IDMA
+STRUCT_AFIELD(long,4,CS_SA_,idmaregs, IDMA_PSO_SAVE_SIZE)
+#endif
 
 /*  TIE state  */
 /*  NOTE: NCP area is aligned to XCHAL_TOTAL_SA_ALIGN not XCHAL_NCP_SA_ALIGN,
@@ -162,14 +174,30 @@ STRUCT_AFIELD(long,4,CS_SA_,tlbs_ways56,(4+8)*2*2)
     to the NCP save area.  */
 STRUCT_AFIELD_A(char,1,XCHAL_TOTAL_SA_ALIGN,CS_SA_,ncp,XCHAL_NCP_SA_SIZE)
 #if XCHAL_HAVE_CP
+#if XCHAL_CP0_SA_SIZE > 0
 STRUCT_AFIELD_A(char,1,XCHAL_CP0_SA_ALIGN,CS_SA_,cp0,XCHAL_CP0_SA_SIZE)
+#endif
+#if XCHAL_CP1_SA_SIZE > 0
 STRUCT_AFIELD_A(char,1,XCHAL_CP1_SA_ALIGN,CS_SA_,cp1,XCHAL_CP1_SA_SIZE)
+#endif
+#if XCHAL_CP2_SA_SIZE > 0
 STRUCT_AFIELD_A(char,1,XCHAL_CP2_SA_ALIGN,CS_SA_,cp2,XCHAL_CP2_SA_SIZE)
+#endif
+#if XCHAL_CP3_SA_SIZE > 0
 STRUCT_AFIELD_A(char,1,XCHAL_CP3_SA_ALIGN,CS_SA_,cp3,XCHAL_CP3_SA_SIZE)
+#endif
+#if XCHAL_CP4_SA_SIZE > 0
 STRUCT_AFIELD_A(char,1,XCHAL_CP4_SA_ALIGN,CS_SA_,cp4,XCHAL_CP4_SA_SIZE)
+#endif
+#if XCHAL_CP5_SA_SIZE > 0
 STRUCT_AFIELD_A(char,1,XCHAL_CP5_SA_ALIGN,CS_SA_,cp5,XCHAL_CP5_SA_SIZE)
+#endif
+#if XCHAL_CP6_SA_SIZE > 0
 STRUCT_AFIELD_A(char,1,XCHAL_CP6_SA_ALIGN,CS_SA_,cp6,XCHAL_CP6_SA_SIZE)
+#endif
+#if XCHAL_CP7_SA_SIZE > 0
 STRUCT_AFIELD_A(char,1,XCHAL_CP7_SA_ALIGN,CS_SA_,cp7,XCHAL_CP7_SA_SIZE)
+#endif
 //STRUCT_AFIELD_A(char,1,XCHAL_CP8_SA_ALIGN,CS_SA_,cp8,XCHAL_CP8_SA_SIZE)
 //STRUCT_AFIELD_A(char,1,XCHAL_CP9_SA_ALIGN,CS_SA_,cp9,XCHAL_CP9_SA_SIZE)
 //STRUCT_AFIELD_A(char,1,XCHAL_CP10_SA_ALIGN,CS_SA_,cp10,XCHAL_CP10_SA_SIZE)

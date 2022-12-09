@@ -39,7 +39,7 @@ Converting error codes to error messages
 
 For each error code defined in ESP-IDF components, :cpp:type:`esp_err_t` value can be converted to an error code name using :cpp:func:`esp_err_to_name` or :cpp:func:`esp_err_to_name_r` functions. For example, passing ``0x101`` to :cpp:func:`esp_err_to_name` will return "ESP_ERR_NO_MEM" string. Such strings can be used in log output to make it easier to understand which error has happened.
 
-Additionally, :cpp:func:`esp_err_to_name_r` function will attempt to interpret the error code as a `standard POSIX error code <http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html>`_, if no matching ``ESP_ERR_`` value is found. This is done using ``strerror_r`` function. POSIX error codes (such as ``ENOENT``, ``ENOMEM``) are defined in ``errno.h`` and are typically obtained from ``errno`` variable. In ESP-IDF this variable is thread-local: multiple FreeRTOS tasks have their own copies of ``errno``. Functions which set ``errno`` only modify its value for the task they run in.
+Additionally, :cpp:func:`esp_err_to_name_r` function will attempt to interpret the error code as a `standard POSIX error code <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html>`_, if no matching ``ESP_ERR_`` value is found. This is done using ``strerror_r`` function. POSIX error codes (such as ``ENOENT``, ``ENOMEM``) are defined in ``errno.h`` and are typically obtained from ``errno`` variable. In ESP-IDF this variable is thread-local: multiple FreeRTOS tasks have their own copies of ``errno``. Functions which set ``errno`` only modify its value for the task they run in.
 
 This feature is enabled by default, but can be disabled to reduce application binary size. See :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`. When this feature is disabled, :cpp:func:`esp_err_to_name` and :cpp:func:`esp_err_to_name_r` are still defined and can be called. In this case, :cpp:func:`esp_err_to_name` will return ``UNKNOWN ERROR``, and :cpp:func:`esp_err_to_name_r` will return ``Unknown error 0xXXXX(YYYYY)``, where ``0xXXXX`` and ``YYYYY`` are the hexadecimal and decimal representations of the error code, respectively.
 
@@ -120,5 +120,5 @@ Enabling exception handling normally increases application binary size by a few 
 
 If an exception is thrown, but there is no ``catch`` block, the program will be terminated by ``abort`` function, and backtrace will be printed. See :doc:`Fatal Errors <fatal-errors>` for more information about backtraces.
 
-See :example:`system/cpp_exceptions` for an example of C++ exception handling.
+See :example:`cxx/exceptions` for an example of C++ exception handling.
 

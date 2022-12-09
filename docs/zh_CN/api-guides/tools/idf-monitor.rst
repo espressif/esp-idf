@@ -78,11 +78,11 @@ IDF 监视器为寄存器转储补充如下信息::
     0x400dbf56: still_dont_crash at /home/gus/esp/32/idf/examples/get-started/hello_world/main/./hello_world_main.c:47
     0x400dbf5e: dont_crash at /home/gus/esp/32/idf/examples/get-started/hello_world/main/./hello_world_main.c:42
     0x400dbf82: app_main at /home/gus/esp/32/idf/examples/get-started/hello_world/main/./hello_world_main.c:33
-    0x400d071d: main_task at /home/gus/esp/32/idf/components/esp32/./cpu_start.c:254
+    0x400d071d: main_task at /home/gus/esp/32/idf/components/{IDF_TARGET_PATH_NAME}/./cpu_start.c:254
 
 IDF 监视器在后台运行以下命令，解码各地址::
 
-  xtensa-esp32-elf-addr2line -pfiaC -e build/PROJECT.elf ADDRESS
+  xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-addr2line -pfiaC -e build/PROJECT.elf ADDRESS
 
 
 配置 GDBStub 以启用 GDB
@@ -92,13 +92,13 @@ IDF 监视器在后台运行以下命令，解码各地址::
 
 或者选择配置 panic 处理器以运行 GDBStub，GDBStub 工具可以与 GDB_ 项目调试器进行通信，允许读取内存、检查调用堆栈帧和变量等。GDBStub 虽然没有 JTAG 通用，但不需要使用特殊硬件。
 
-如需启用 GDBStub，请运行 ``idf.py menuconfig`` （适用于 CMake 编译系统），并将 :ref:`CONFIG_ESP32_PANIC` 选项设置为 ``Invoke GDBStub``。
+如需启用 GDBStub，请运行 ``idf.py menuconfig`` （适用于 CMake 编译系统），并将 :ref:`CONFIG_ESP_SYSTEM_PANIC` 选项设置为 ``Invoke GDBStub``。
 
 在这种情况下，如果 panic 处理器被触发，只要 IDF 监视器监控到 GDBStub 已经加载，panic 处理器就会自动暂停串行监控并使用必要的参数运行 GDB。GDB 退出后，通过 RTS 串口线复位开发板。如果未连接 RTS 串口线，请按复位键，手动复位开发板。
 
 IDF 监控器在后台运行如下命令::
 
-  xtensa-esp32-elf-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf
+  xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf
 
 
 输出筛选

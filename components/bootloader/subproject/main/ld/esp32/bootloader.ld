@@ -11,8 +11,6 @@ Linker file used to link the bootloader.
 
 MEMORY
 {
-  /* I/O */
-  dport0_seg (RW) :                 	org = 0x3FF00000, len = 0x10
   /* IRAM POOL1, used for APP CPU cache. Bootloader runs from here during the final stage of loading the app because APP CPU is still held in reset, the main app enables APP CPU cache */
   iram_loader_seg (RWX) :           org = 0x40078000, len = 0x8000  /* 32KB, APP CPU cache */
   /* 63kB, IRAM. We skip the first 1k to prevent the entry point being
@@ -44,6 +42,8 @@ SECTIONS
     *libbootloader_support.a:bootloader_common.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_flash.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_random.*(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:bootloader_random*.*(.literal.bootloader_random_disable .text.bootloader_random_disable)
+    *libbootloader_support.a:bootloader_efuse_esp32.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_utility.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_sha.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:esp_image_format.*(.literal .text .literal.* .text.*)
@@ -53,7 +53,7 @@ SECTIONS
     *libbootloader_support.a:secure_boot_signatures.*(.literal .text .literal.* .text.*)
     *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*)
     *libspi_flash.a:*.*(.literal .text .literal.* .text.*)
-    *libsoc.a:rtc_wdt.*(.literal .text .literal.* .text.*)
+    *libsoc.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
     *libsoc.a:rtc_clk.*(.literal .text .literal.* .text.*)
     *libefuse.a:*.*(.literal .text .literal.* .text.*)
     *(.fini.literal)
@@ -75,6 +75,7 @@ SECTIONS
   .dram0.bss (NOLOAD) :
   {
     . = ALIGN (8);
+    _dram_start = ABSOLUTE(.);
     _bss_start = ABSOLUTE(.);
     *(.dynsbss)
     *(.sbss)
@@ -151,6 +152,7 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
     . = ALIGN(4);
+    _dram_end = ABSOLUTE(.);
   } >dram_seg
 
   .iram.text :

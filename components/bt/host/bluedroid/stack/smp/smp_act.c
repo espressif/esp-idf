@@ -760,6 +760,19 @@ void smp_process_pairing_public_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     STREAM_TO_ARRAY(p_cb->peer_publ_key.x, p, BT_OCTET32_LEN);
     STREAM_TO_ARRAY(p_cb->peer_publ_key.y, p, BT_OCTET32_LEN);
+
+    /* Check if the peer device's and own public key are not same. If they are same then
+     * return pairing fail. This check is needed to avoid 'Impersonation in Passkey entry
+     * protocol' vulnerability (CVE-2020-26558).*/
+    if ((memcmp(p_cb->loc_publ_key.x, p_cb->peer_publ_key.x, sizeof(BT_OCTET32)) == 0) &&
+        (memcmp(p_cb->loc_publ_key.y, p_cb->peer_publ_key.y, sizeof(BT_OCTET32)) == 0)) {
+        p_cb->status = SMP_PAIR_AUTH_FAIL;
+        p_cb->failure = SMP_PAIR_AUTH_FAIL;
+        reason = SMP_PAIR_AUTH_FAIL;
+        SMP_TRACE_ERROR("%s, Peer and own device cannot have same public key.", __func__);
+        smp_sm_event(p_cb, SMP_PAIRING_FAILED_EVT, &reason);
+        return ;
+    }
     /* In order to prevent the x and y coordinates of the public key from being modified,
        we need to check whether the x and y coordinates are on the given elliptic curve. */
     if (!ECC_CheckPointIsInElliCur_P256((Point *)&p_cb->peer_publ_key)) {
@@ -1760,13 +1773,13 @@ void smp_match_dhkey_checks(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     SMP_TRACE_DEBUG("%s\n", __func__);
 
     if (memcmp(p_data->key.p_data, p_cb->remote_dhkey_check, BT_OCTET16_LEN)) {
-        SMP_TRACE_WARNING ("dhkey chcks do no match\n");
+        SMP_TRACE_WARNING ("dhkey checks do no match\n");
         p_cb->failure = reason;
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         return;
     }
 
-    SMP_TRACE_EVENT ("dhkey chcks match\n");
+    SMP_TRACE_EVENT ("dhkey checks match\n");
 
     /* compare the max encryption key size, and save the smaller one for the link */
     if (p_cb->peer_enc_size < p_cb->loc_enc_size) {
@@ -1990,9 +2003,7 @@ void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable)
         }
 
         smp_sm_event(&smp_cb, SMP_ENCRYPTED_EVT, &encr_enable);
-    }
-    else if(p_dev_rec && !p_dev_rec->enc_init_by_we){
-
+    } else if (p_dev_rec && !p_dev_rec->role_master && !p_dev_rec->enc_init_by_we ){
         /*
         if enc_init_by_we is false, it means that client initiates encryption before slave calls esp_ble_set_encryption()
         we need initiate pairing_bda and p_cb->role then encryption, for example iPhones
@@ -2000,6 +2011,12 @@ void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable)
         memcpy(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN);
         p_cb->state = SMP_STATE_ENCRYPTION_PENDING;
         p_cb->role = HCI_ROLE_SLAVE;
+        p_dev_rec->enc_init_by_we = FALSE;
+        smp_sm_event(&smp_cb, SMP_ENCRYPTED_EVT, &encr_enable);
+    } else if (p_dev_rec && p_dev_rec->role_master && p_dev_rec->enc_init_by_we){
+        memcpy(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN);
+        p_cb->state = SMP_STATE_ENCRYPTION_PENDING;
+        p_cb->role = HCI_ROLE_MASTER;
         p_dev_rec->enc_init_by_we = FALSE;
         smp_sm_event(&smp_cb, SMP_ENCRYPTED_EVT, &encr_enable);
     }

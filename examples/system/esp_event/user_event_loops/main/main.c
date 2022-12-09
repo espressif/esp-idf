@@ -109,8 +109,8 @@ void app_main(void)
 
     // Register the handler for task iteration event. Notice that the same handler is used for handling event on different loops.
     // The loop handle is provided as an argument in order for this example to display the loop the handler is being run on.
-    ESP_ERROR_CHECK(esp_event_handler_register_with(loop_with_task, TASK_EVENTS, TASK_ITERATION_EVENT, task_iteration_handler, loop_with_task));
-    ESP_ERROR_CHECK(esp_event_handler_register_with(loop_without_task, TASK_EVENTS, TASK_ITERATION_EVENT, task_iteration_handler, loop_without_task));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register_with(loop_with_task, TASK_EVENTS, TASK_ITERATION_EVENT, task_iteration_handler, loop_with_task, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register_with(loop_without_task, TASK_EVENTS, TASK_ITERATION_EVENT, task_iteration_handler, loop_without_task, NULL));
 
     ESP_LOGI(TAG, "starting event source");
 

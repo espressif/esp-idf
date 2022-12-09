@@ -77,7 +77,7 @@ def get_transport(sel_transport, service_name):
             # will fallback to using the provided UUIDs instead
             nu_lookup = {'prov-session': 'ff51', 'prov-config': 'ff52', 'proto-ver': 'ff53'}
             tp = transport.Transport_BLE(devname=service_name,
-                                         service_uuid='0000ffff-0000-1000-8000-00805f9b34fb',
+                                         service_uuid='021a9004-0382-4aea-bff4-6b3f1c5adfb4',
                                          nu_lookup=nu_lookup)
         elif (sel_transport == 'console'):
             tp = transport.Transport_Console()
@@ -186,6 +186,16 @@ def custom_config(tp, sec, custom_info, custom_ver):
         return None
 
 
+def custom_data(tp, sec, custom_data):
+    try:
+        message = prov.custom_data_request(sec, custom_data)
+        response = tp.send_data('custom-data', message)
+        return (prov.custom_data_response(sec, response) == 0)
+    except RuntimeError as e:
+        on_except(e)
+        return None
+
+
 def scan_wifi_APs(sel_transport, tp, sec):
     APs = []
     group_channels = 0
@@ -266,6 +276,32 @@ def get_wifi_config(tp, sec):
         return None
 
 
+def wait_wifi_connected(tp, sec):
+    """
+    Wait for provisioning to report Wi-Fi is connected
+
+    Returns True if Wi-Fi connection succeeded, False if connection consistently failed
+    """
+    TIME_PER_POLL = 5
+    retry = 3
+
+    while True:
+        time.sleep(TIME_PER_POLL)
+        print("\n==== Wi-Fi connection state  ====")
+        ret = get_wifi_config(tp, sec)
+        if ret == "connecting":
+            continue
+        elif ret == "connected":
+            print("==== Provisioning was successful ====")
+            return True
+        elif retry > 0:
+            retry -= 1
+            print("Waiting to poll status again (status %s, %d tries left)..." % (ret, retry))
+        else:
+            print("---- Provisioning failed ----")
+            return False
+
+
 def desc_format(*args):
     desc = ''
     for arg in args:
@@ -327,6 +363,11 @@ if __name__ == '__main__':
                             'we would like it to connect to permanently, once provisioning is complete. '
                             'If Wi-Fi scanning is supported by the provisioning service, this need not '
                             'be specified'))
+
+    parser.add_argument("--custom_data", dest='custom_data', type=str, default='',
+                        help=desc_format(
+                            'This is an optional parameter, only intended for use with '
+                            '"examples/provisioning/wifi_prov_mgr_custom_data"'))
 
     parser.add_argument("--custom_config", action="store_true",
                         help=desc_format(
@@ -394,6 +435,13 @@ if __name__ == '__main__':
             exit(5)
         print("==== Custom config sent successfully ====")
 
+    if args.custom_data != '':
+        print("\n==== Sending Custom data to esp32 ====")
+        if not custom_data(obj_transport, obj_security, args.custom_data):
+            print("---- Error in custom data ----")
+            exit(5)
+        print("==== Custom data sent successfully ====")
+
     if args.ssid == '':
         if not has_capability(obj_transport, 'wifi_scan'):
             print("---- Wi-Fi Scan List is not supported by provisioning service ----")
@@ -449,14 +497,4 @@ if __name__ == '__main__':
         exit(7)
     print("==== Apply config sent successfully ====")
 
-    while True:
-        time.sleep(5)
-        print("\n==== Wi-Fi connection state  ====")
-        ret = get_wifi_config(obj_transport, obj_security)
-        if (ret == 1):
-            continue
-        elif (ret == 0):
-            print("==== Provisioning was successful ====")
-        else:
-            print("---- Provisioning failed ----")
-        break
+    wait_wifi_connected(obj_transport, obj_security)

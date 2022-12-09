@@ -17,6 +17,10 @@
 
 #include "esp_ble_mesh_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** @brief: event, event code of provisioning events; param, parameters of provisioning events */
 typedef void (* esp_ble_mesh_prov_cb_t)(esp_ble_mesh_prov_cb_event_t event,
                                         esp_ble_mesh_prov_cb_param_t *param);
@@ -72,7 +76,7 @@ esp_err_t esp_ble_mesh_node_prov_disable(esp_ble_mesh_prov_bearer_t bearers);
  * @return       ESP_OK on success or error code otherwise.
  */
 esp_err_t esp_ble_mesh_node_set_oob_pub_key(uint8_t pub_key_x[32], uint8_t pub_key_y[32],
-        uint8_t private_key[32]);
+                                            uint8_t private_key[32]);
 
 /**
  * @brief        Provide provisioning input OOB number.
@@ -124,7 +128,7 @@ esp_err_t esp_ble_mesh_set_unprovisioned_device_name(const char *name);
  * @return       ESP_OK on success or error code otherwise.
  */
 esp_err_t esp_ble_mesh_provisioner_read_oob_pub_key(uint8_t link_idx, uint8_t pub_key_x[32],
-        uint8_t pub_key_y[32]);
+                                                    uint8_t pub_key_y[32]);
 
 /**
  * @brief        Provide provisioning input OOB string.
@@ -228,15 +232,42 @@ esp_err_t esp_ble_mesh_provisioner_prov_disable(esp_ble_mesh_prov_bearer_t beare
  *
  */
 esp_err_t esp_ble_mesh_provisioner_add_unprov_dev(esp_ble_mesh_unprov_dev_add_t *add_dev,
-        esp_ble_mesh_dev_add_flag_t flags);
+                                                  esp_ble_mesh_dev_add_flag_t flags);
+
+/** @brief Provision an unprovisioned device and assign a fixed unicast address for it in advance.
+ *
+ *  @param[in] uuid:         Device UUID of the unprovisioned device
+ *  @param[in] addr:         Device address of the unprovisioned device
+ *  @param[in] addr_type:    Device address type of the unprovisioned device
+ *  @param[in] bearer:       Provisioning bearer going to be used by Provisioner
+ *  @param[in] oob_info:     OOB info of the unprovisioned device
+ *  @param[in] unicast_addr: Unicast address going to be allocated for the unprovisioned device
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ *
+ *  @note: 1. Currently address type only supports public address and static random address.
+ *         2. Bearer must be equal to ESP_BLE_MESH_PROV_ADV or ESP_BLE_MESH_PROV_GATT, since
+ *            Provisioner will start to provision a device immediately once this function is
+ *            invoked. And the input bearer must be identical with the one within the parameters
+ *            of the ESP_BLE_MESH_PROVISIONER_RECV_UNPROV_ADV_PKT_EVT event.
+ *         3. If this function is used by a Provisioner to provision devices, the application
+ *            should take care of the assigned unicast address and avoid overlap of the unicast
+ *            addresses of different nodes.
+ *         4. Recommend to use only one of the functions "esp_ble_mesh_provisioner_add_unprov_dev"
+ *            and "esp_ble_mesh_provisioner_prov_device_with_addr" by a Provisioner.
+ */
+esp_err_t esp_ble_mesh_provisioner_prov_device_with_addr(const uint8_t uuid[16],
+                                                         esp_ble_mesh_bd_addr_t addr,
+                                                         esp_ble_mesh_addr_type_t addr_type,
+                                                         esp_ble_mesh_prov_bearer_t bearer,
+                                                         uint16_t oob_info, uint16_t unicast_addr);
 
 /**
- * @brief        Delete device from queue, reset current provisioning link and reset the node.
+ * @brief        Delete device from queue, and reset current provisioning link with the device.
  *
- * @note         If the device is in the queue, remove it from the queue; if the device is being
- *               provisioned, terminate the provisioning procedure; if the device has already
- *               been provisioned, reset the device. And either one of the addr or device UUID
- *               can be input.
+ * @note         If the device is in the queue, remove it from the queue; if the device is
+ *               being provisioned, terminate the provisioning procedure. Either one of the
+ *               device address or device UUID can be used as input.
  *
  * @param[in]    del_dev: Pointer to a struct containing the device information.
  *
@@ -260,8 +291,8 @@ esp_err_t esp_ble_mesh_provisioner_delete_dev(esp_ble_mesh_device_delete_t *del_
  *
  */
 typedef void (*esp_ble_mesh_prov_adv_cb_t)(const esp_ble_mesh_bd_addr_t addr, const esp_ble_mesh_addr_type_t addr_type,
-        const uint8_t adv_type, const uint8_t *dev_uuid,
-        uint16_t oob_info, esp_ble_mesh_prov_bearer_t bearer);
+                                           const uint8_t adv_type, const uint8_t *dev_uuid,
+                                           uint16_t oob_info, esp_ble_mesh_prov_bearer_t bearer);
 
 /**
  * @brief         This function is called by Provisioner to set the part of the device UUID
@@ -277,7 +308,7 @@ typedef void (*esp_ble_mesh_prov_adv_cb_t)(const esp_ble_mesh_bd_addr_t addr, co
  *
  */
 esp_err_t esp_ble_mesh_provisioner_set_dev_uuid_match(const uint8_t *match_val, uint8_t match_len,
-        uint8_t offset, bool prov_after_match);
+                                                      uint8_t offset, bool prov_after_match);
 
 /**
  * @brief         This function is called by Provisioner to set provisioning data information
@@ -289,6 +320,36 @@ esp_err_t esp_ble_mesh_provisioner_set_dev_uuid_match(const uint8_t *match_val, 
  *
  */
 esp_err_t esp_ble_mesh_provisioner_set_prov_data_info(esp_ble_mesh_prov_data_info_t *prov_data_info);
+
+/**
+ * @brief         This function is called by Provisioner to set static oob value used for provisioning.
+ *
+ * @param[in]     value:  Pointer to the static oob value.
+ * @param[in]     length: Length of the static oob value.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_set_static_oob_value(const uint8_t *value, uint8_t length);
+
+/**
+ * @brief         This function is called by Provisioner to set own Primary element address.
+ *
+ * @note          This API must be invoked when BLE Mesh initialization is completed successfully,
+ *                and can be invoked before Provisioner functionality is enabled.
+ *                Once this API is invoked successfully, the prov_unicast_addr value in the struct
+ *                esp_ble_mesh_prov_t will be ignored, and Provisioner will use this address as its
+ *                own primary element address.
+ *                And if the unicast address going to assigned for the next unprovisioned device is
+ *                smaller than the input address + element number of Provisioner, then the address
+ *                for the next unprovisioned device will be recalculated internally.
+ *
+ * @param[in]     addr: Unicast address of the Primary element of Provisioner.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_set_primary_elem_addr(uint16_t addr);
 
 /**
  * @brief         This function is called to set provisioning data information before starting
@@ -310,5 +371,9 @@ esp_err_t esp_ble_mesh_set_fast_prov_info(esp_ble_mesh_fast_prov_info_t *fast_pr
  *
  */
 esp_err_t esp_ble_mesh_set_fast_prov_action(esp_ble_mesh_fast_prov_action_t action);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ESP_BLE_MESH_PROVISIONING_API_H_ */

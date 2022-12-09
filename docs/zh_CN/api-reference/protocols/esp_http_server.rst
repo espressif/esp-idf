@@ -33,7 +33,7 @@ HTTP Server 组件提供了在 ESP32 上运行轻量级 Web 服务器的功能�
             /* 定义 HTTP POST 请求数据的目标缓存区
              * httpd_req_recv() 只接收 char* 数据，但也可以是任意二进制数据（需要类型转换）
              * 对于字符串数据，null 终止符会被省略，content_len 会给出字符串的长度 */
-            char[100] content;
+            char content[100];
 
             /* 如果内容长度大于缓冲区则截断 */
             size_t recv_size = MIN(req->content_len, sizeof(content));
@@ -151,4 +151,4 @@ HTTP 服务器具有长连接的功能，允许重复使用同一个连接（会
 API 参考
 --------
 
-.. include:: /_build/inc/esp_http_server.inc
+.. include-build-file:: inc/esp_http_server.inc

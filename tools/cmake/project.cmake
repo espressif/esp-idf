@@ -55,7 +55,6 @@ function(__project_get_revision var)
             endif()
         endif()
     endif()
-    message(STATUS "Project version: ${PROJECT_VER}")
     set(${var} "${PROJECT_VER}" PARENT_SCOPE)
 endfunction()
 
@@ -169,6 +168,8 @@ function(__project_init components_var test_components_var)
         endif()
     endfunction()
 
+    idf_build_set_property(IDF_COMPONENT_MANAGER "$ENV{IDF_COMPONENT_MANAGER}")
+
     # Add component directories to the build, given the component filters, exclusions
     # extra directories, etc. passed from the root CMakeLists.txt.
     if(COMPONENT_DIRS)
@@ -179,6 +180,43 @@ function(__project_init components_var test_components_var)
             __project_component_dir(${component_dir})
         endforeach()
     else()
+        # Add project manifest and lock file to the list of dependencies
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/idf_project.yml")
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/dependencies.lock")
+
+        idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
+        if(idf_component_manager)
+            if(idf_component_manager EQUAL "0")
+                message(VERBOSE "IDF Component manager was explicitly disabled by setting IDF_COMPONENT_MANAGER=0")
+            elseif(idf_component_manager EQUAL "1")
+                set(managed_components_list_file ${CMAKE_BINARY_DIR}/managed_components_list.temp.cmake)
+
+                # Call for package manager to prepare remote dependencies
+                execute_process(COMMAND ${PYTHON}
+                    "-m"
+                    "idf_component_manager.prepare_components"
+                    "--project_dir=${CMAKE_CURRENT_LIST_DIR}"
+                    "prepare_dependencies"
+                    "--managed_components_list_file=${managed_components_list_file}"
+                    RESULT_VARIABLE result
+                    ERROR_VARIABLE error)
+
+                if(NOT result EQUAL 0)
+                    message(FATAL_ERROR "${error}")
+                endif()
+
+                # Include managed components
+                include(${managed_components_list_file})
+                file(REMOVE ${managed_components_list_file})
+            else()
+                message(WARNING "IDF_COMPONENT_MANAGER environment variable is set to unknown value "
+                        "\"${idf_component_manager}\". If you want to use component manager set it to 1.")
+            endif()
+        elseif(EXISTS "${CMAKE_CURRENT_LIST_DIR}/idf_project.yml")
+            message(WARNING "\"idf_project.yml\" file is found in project directory, "
+                    "but component manager is not enabled. Please set IDF_COMPONENT_MANAGER environment variable.")
+        endif()
+
         # Look for components in the usual places: CMAKE_CURRENT_LIST_DIR/main,
         # CMAKE_CURRENT_LIST_DIR/components, and the extra component dirs
         if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/main")
@@ -427,7 +465,7 @@ macro(project project_name)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(python PYTHON)
 
-    set(idf_size ${python} ${idf_path}/tools/idf_size.py)
+    set(idf_size ${python} ${idf_path}/tools/idf_size.py --target ${IDF_TARGET})
     if(DEFINED OUTPUT_JSON AND OUTPUT_JSON)
         list(APPEND idf_size "--json")
     endif()
@@ -447,6 +485,9 @@ macro(project project_name)
         )
 
     unset(idf_size)
+
+    # Add DFU build and flash targets
+    __add_dfu_targets()
 
     idf_build_executable(${project_elf})
 

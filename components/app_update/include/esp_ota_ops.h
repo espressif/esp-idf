@@ -118,6 +118,29 @@ esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp
 esp_err_t esp_ota_write(esp_ota_handle_t handle, const void* data, size_t size);
 
 /**
+ * @brief   Write OTA update data to partition
+ *
+ * This function can write data in non contiguous manner.
+ * If flash encryption is enabled, data should be 16 byte aligned.
+ *
+ * @param handle  Handle obtained from esp_ota_begin
+ * @param data    Data buffer to write
+ * @param size    Size of data buffer in bytes
+ * @param offset  Offset in flash partition
+ *
+ * @note While performing OTA, if the packets arrive out of order, esp_ota_write_with_offset() can be used to write data in non contiguous manner.
+ *       Use of esp_ota_write_with_offset() in combination with esp_ota_write() is not recommended.
+ *
+ * @return
+ *    - ESP_OK: Data was written to flash successfully.
+ *    - ESP_ERR_INVALID_ARG: handle is invalid.
+ *    - ESP_ERR_OTA_VALIDATE_FAILED: First byte of image contains invalid app image magic byte.
+ *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
+ *    - ESP_ERR_OTA_SELECT_INFO_INVALID: OTA data partition has invalid contents
+ */
+esp_err_t esp_ota_write_with_offset(esp_ota_handle_t handle, const void *data, size_t size, uint32_t offset);
+
+/**
  * @brief Finish OTA update and validate newly written app image.
  *
  * @param handle  Handle obtained from esp_ota_begin().
@@ -275,6 +298,34 @@ esp_err_t esp_ota_erase_last_boot_app_partition(void);
  *        - False: The rollback is not possible.
  */
 bool esp_ota_check_rollback_is_possible(void);
+
+#if CONFIG_IDF_TARGET_ESP32S2 && (CONFIG_SECURE_BOOT_V2_ENABLED || __DOXYGEN__)
+
+/**
+ * Secure Boot V2 public key indexes.
+ */
+typedef enum {
+    SECURE_BOOT_PUBLIC_KEY_INDEX_0,     /*!< Points to the 0th index of the Secure Boot v2 public key */
+    SECURE_BOOT_PUBLIC_KEY_INDEX_1,     /*!< Points to the 1st index of the Secure Boot v2 public key */
+    SECURE_BOOT_PUBLIC_KEY_INDEX_2      /*!< Points to the 2nd index of the Secure Boot v2 public key */
+} esp_ota_secure_boot_public_key_index_t;
+
+/**
+ * @brief Revokes the old signature digest. To be called in the application after the rollback logic.
+ *
+ * Relevant for Secure boot v2 on ESP32-S2 where upto 3 key digests can be stored (Key #N-1, Key #N, Key #N+1).
+ * When key #N-1 used to sign an app is invalidated, an OTA update is to be sent with an app signed with key #N-1 & Key #N.
+ * After successfully booting the OTA app should call this function to revoke Key #N-1.
+ *
+ * @param index - The index of the signature block to be revoked
+ *
+ * @return
+ *        - ESP_OK: If revocation is successful.
+ *        - ESP_ERR_INVALID_ARG: If the index of the public key to be revoked is incorrect.
+ *        - ESP_FAIL: If secure boot v2 has not been enabled.
+ */
+esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_index_t index);
+#endif /* CONFIG_IDF_TARGET_ESP32S2 */
 
 #ifdef __cplusplus
 }

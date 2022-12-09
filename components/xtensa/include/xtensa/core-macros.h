@@ -38,13 +38,13 @@
 
 /***************************   CACHE   ***************************/
 
-/* All the macros are in the lower case now and some of them 
+/* All the macros are in the lower case now and some of them
  * share the name with the existing functions from hal.h.
- * Including this header file will define XTHAL_USE_CACHE_MACROS 
+ * Including this header file will define XTHAL_USE_CACHE_MACROS
  * which directs hal.h not to use the functions.
- */
+ *
 
-/*
+ *
  *  Single-cache-line operations in C-callable inline assembly.
  *  Essentially macro versions (uppercase) of:
  *
@@ -72,7 +72,7 @@
  *
  *  NOTE:  All the block block cache ops and line prefetches are implemented
  *  using intrinsics so they are better optimized regarding memory barriers etc.
- *  
+ *
  * All block downgrade functions exist in two forms: with and without
  * the 'max' parameter: This parameter allows compiler to optimize
  * the functions whenever the parameter is smaller than the cache size.
@@ -199,7 +199,7 @@
 
 # define _XTHAL_DCACHE_BLOCK_DOWNGRADE(addr, size, type)	\
 	unsigned _s = size;					\
-	unsigned _a = addr;					\
+	unsigned _a = (unsigned) addr;					\
 	do {							\
 		unsigned __s = (_s > XCHAL_DCACHE_SIZE) ? 	\
 				XCHAL_DCACHE_SIZE : _s; 	\
@@ -211,7 +211,7 @@
 # define _XTHAL_DCACHE_BLOCK_DOWNGRADE_MAX(addr, size, type, max)	\
 	if (max <= XCHAL_DCACHE_SIZE) {					\
 		unsigned _s = size;					\
-		unsigned _a = addr;					\
+		unsigned _a = (unsigned) addr;					\
 		type((const int*)_a, _s);				\
 	}								\
 	else {								\
@@ -369,6 +369,33 @@
 # define XTHAL_SET_CCOMPARE(n,v)	do {/*nothing*/} while(0)
 #endif
 
+/*  New functions added to accomodate XEA3 and allow deprecation of older
+    functions. For this release they just map to the older ones.  */
+
+/*  Enables the specified interrupt.  */
+static inline void xthal_interrupt_enable(unsigned intnum)
+{
+    xthal_int_enable(1 << intnum);
+}
+
+/*  Disables the specified interrupt.  */
+static inline void xthal_interrupt_disable(unsigned intnum)
+{
+    xthal_int_disable(1 << intnum);
+}
+
+/*  Triggers the specified interrupt.  */
+static inline void xthal_interrupt_trigger(unsigned intnum)
+{
+    xthal_set_intset(1 << intnum);
+}
+
+/*  Clears the specified interrupt.  */
+static inline void xthal_interrupt_clear(unsigned intnum)
+{
+    xthal_set_intclear(1 << intnum);
+}
+
 
 /***************************   MISC   ***************************/
 
@@ -413,7 +440,7 @@ static inline unsigned  XTHAL_COMPARE_AND_SET( int *addr, int testval, int setva
         "   bne    %2, %0, 9f \n"	// test
         "   s32i   %1, %3, 0 \n"	// write the new value
 	"9: wsr.ps %4 ; rsync \n"	// restore the PS
-	: "=a"(result) 
+	: "=a"(result)
 	: "0" (setval), "a" (testval), "a" (addr), "a" (tmp)
 	: "memory");
 #else
@@ -449,6 +476,29 @@ static inline void XTHAL_WER (unsigned reg, unsigned value)
 }
 
 #endif /* XCHAL_HAVE_EXTERN_REGS */
+
+/*
+ * Sets a single entry at 'index' within the MPU
+ *
+ * The caller must ensure that the resulting MPU map is ordered.
+ */
+static inline void xthal_mpu_set_entry (xthal_MPU_entry entry)
+{
+#if XCHAL_HAVE_MPU
+  __asm__ __volatile__("j 1f\n\t.align 8\n\t1: memw\n\twptlb %0, %1\n\t" : : "a" (entry.at), "a"(entry.as));
+#endif
+}
+
+/* Same as xthal_mpu_set_entry except that this function must not be used to change the MPU entry
+ * for the currently executing instruction ... use xthal_mpu_set_entry instead. */
+static inline void xthal_mpu_set_entry_ (xthal_MPU_entry entry)
+{
+#if XCHAL_HAVE_MPU
+  __asm__ __volatile__("wptlb %0, %1\n\t" : : "a" (entry.at), "a"(entry.as));
+#endif
+}
+
+
 
 #endif /* C code */
 

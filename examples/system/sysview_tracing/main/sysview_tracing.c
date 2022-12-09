@@ -126,7 +126,7 @@ static void example_timer_isr(void *arg)
         }
     }
     // re-start timer
-    timer_group_intr_clr_in_isr(tim_arg->group, tim_arg->timer);
+    timer_group_clr_intr_status_in_isr(tim_arg->group, tim_arg->timer);
     timer_group_enable_alarm_in_isr(tim_arg->group, tim_arg->timer);
 }
 

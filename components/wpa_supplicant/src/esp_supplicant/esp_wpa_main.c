@@ -26,12 +26,15 @@
 #include "esp_wpas_glue.h"
 #include "esp_hostap.h"
 
+#include "esp_system.h"
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"
 #include "crypto/aes_wrap.h"
 
 #include "esp_wifi_driver.h"
 #include "esp_private/wifi.h"
+#include "esp_wpa3_i.h"
+#include "esp_wpa2.h"
 
 void  wpa_install_key(enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
                       u8 *seq, size_t seq_len, u8 *key, size_t key_len, int key_entry_valid)
@@ -74,7 +77,7 @@ void  wpa_config_profile(void)
 {
     if (esp_wifi_sta_prof_is_wpa_internal()) {
         wpa_set_profile(WPA_PROTO_WPA, esp_wifi_sta_get_prof_authmode_internal());
-    } else if (esp_wifi_sta_prof_is_wpa2_internal()) {
+    } else if (esp_wifi_sta_prof_is_wpa2_internal() || esp_wifi_sta_prof_is_wpa3_internal()) {
         wpa_set_profile(WPA_PROTO_RSN, esp_wifi_sta_get_prof_authmode_internal());
     } else {
         WPA_ASSERT(0);
@@ -146,6 +149,7 @@ bool  wpa_ap_rx_eapol(void *hapd_data, void *sm_data, u8 *data, size_t data_len)
 
 bool  wpa_deattach(void)
 {
+    esp_wifi_sta_wpa2_ent_disable();
     wpa_sm_deinit();
     return true;
 }
@@ -158,32 +162,6 @@ void  wpa_sta_connect(uint8_t *bssid)
     WPA_ASSERT(ret == 0);
 }
 
-int cipher_type_map(int wpa_cipher)
-{
-    switch (wpa_cipher) {
-    case WPA_CIPHER_NONE:
-        return WIFI_CIPHER_TYPE_NONE;
-
-    case WPA_CIPHER_WEP40:
-        return WIFI_CIPHER_TYPE_WEP40;
-
-    case WPA_CIPHER_WEP104:
-        return WIFI_CIPHER_TYPE_WEP104;
-
-    case WPA_CIPHER_TKIP:
-        return WIFI_CIPHER_TYPE_TKIP;
-
-    case WPA_CIPHER_CCMP:
-        return WIFI_CIPHER_TYPE_CCMP;
-
-    case WPA_CIPHER_CCMP|WPA_CIPHER_TKIP:
-        return WIFI_CIPHER_TYPE_TKIP_CCMP;
-
-    default:
-        return WIFI_CIPHER_TYPE_UNKNOWN;
-    }
-}
-
 int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data)
 {
     struct wpa_ie_data ie;
@@ -191,14 +169,35 @@ int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t 
 
     ret = wpa_parse_wpa_ie(wpa_ie, wpa_ie_len, &ie);
     data->proto = ie.proto;
-    data->pairwise_cipher = cipher_type_map(ie.pairwise_cipher);
-    data->group_cipher = cipher_type_map(ie.group_cipher);
+    data->pairwise_cipher = cipher_type_map_supp_to_public(ie.pairwise_cipher);
+    data->group_cipher = cipher_type_map_supp_to_public(ie.group_cipher);
     data->key_mgmt = ie.key_mgmt;
     data->capabilities = ie.capabilities;
     data->pmkid = ie.pmkid;
-    data->mgmt_group_cipher = cipher_type_map(ie.mgmt_group_cipher);
+    data->mgmt_group_cipher = cipher_type_map_supp_to_public(ie.mgmt_group_cipher);
 
     return ret;
+}
+
+static void wpa_sta_disconnected_cb(uint8_t reason_code)
+{
+    switch (reason_code) {
+        case WIFI_REASON_UNSPECIFIED:
+        case WIFI_REASON_AUTH_EXPIRE:
+        case WIFI_REASON_NOT_AUTHED:
+        case WIFI_REASON_NOT_ASSOCED:
+        case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+        case WIFI_REASON_INVALID_PMKID:
+        case WIFI_REASON_AUTH_FAIL:
+        case WIFI_REASON_ASSOC_FAIL:
+        case WIFI_REASON_CONNECTION_FAIL:
+        case WIFI_REASON_HANDSHAKE_TIMEOUT:
+            esp_wpa3_free_sae_data();
+            wpa_sta_clear_curr_pmksa();
+            break;
+        default:
+            break;
+    }
 }
 
 int esp_supplicant_init(void)
@@ -214,6 +213,7 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_sta_deinit     = wpa_deattach;
     wpa_cb->wpa_sta_rx_eapol   = wpa_sm_rx_eapol;
     wpa_cb->wpa_sta_connect    = wpa_sta_connect;
+    wpa_cb->wpa_sta_disconnected_cb = wpa_sta_disconnected_cb;
     wpa_cb->wpa_sta_in_4way_handshake = wpa_sta_in_4way_handshake;
 
     wpa_cb->wpa_ap_join       = wpa_ap_join;
@@ -227,6 +227,7 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_parse_wpa_ie  = wpa_parse_wpa_ie_wrapper;
     wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
+    esp_wifi_register_wpa3_cb(wpa_cb);
 
     esp_wifi_register_wpa_cb_internal(wpa_cb);
 

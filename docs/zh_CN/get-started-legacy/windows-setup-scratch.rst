@@ -80,7 +80,7 @@ HTTP 代理
 其他设置：下载工具链
 ============================================
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 如果您已经安装了 MSYS2，或者想要以不同的方式执行操作，您可以在此处下载工具链：
 
@@ -116,7 +116,7 @@ HTTP 代理
 
 如需要同时支持多个 IDF 版本，您可以在不同的目录下配置独立的 MSYS2 环境。或者，您还可以下载多个工具链，并将其解压缩到不同的目录下，然后使用 PATH 环境变量指定默认工具链。
 
-.. _MSYS2: https://msys2.github.io/
+.. _MSYS2: https://www.msys2.org/
 .. _MSYS2-packages 问题列表: https://github.com/Alexpux/MSYS2-packages/issues/
 .. _提交一个 IDF Issue: https://github.com/espressif/esp-idf/issues/new
 

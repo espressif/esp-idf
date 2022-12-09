@@ -6,7 +6,7 @@ We welcome contributions to the esp-idf project!
 How to Contribute
 -----------------
 
-Contributions to esp-idf - fixing bugs, adding features, adding documentation - are welcome. We accept contributions via `Github Pull Requests <https://help.github.com/articles/about-pull-requests/>`_.
+Contributions to esp-idf - fixing bugs, adding features, adding documentation - are welcome. We accept contributions via `Github Pull Requests <https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests>`_.
 
 Before Contributing
 -------------------
@@ -27,7 +27,7 @@ Before sending us a Pull Request, please consider this list of points:
 
 * Example contributions are also welcome. Please check the :doc:`creating-examples` guide for these.
 
-* If the contribution contains multiple commits, are they grouped together into logical changes (one major change per pull request)? Are any commits with names like "fixed typo" `squashed into previous commits <http://eli.thegreenplace.net/2014/02/19/squashing-github-pull-requests-into-a-single-commit/>`_?
+* If the contribution contains multiple commits, are they grouped together into logical changes (one major change per pull request)? Are any commits with names like "fixed typo" `squashed into previous commits <https://eli.thegreenplace.net/2014/02/19/squashing-github-pull-requests-into-a-single-commit/>`_?
 
 * If you're unsure about any of these points, please open the Pull Request anyhow and then ask us for feedback.
 

@@ -265,6 +265,19 @@ esp_err_t wifi_prov_scan_handler(uint32_t session_id, const uint8_t *inbuf, ssiz
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* Authorize before dispatching command */
+    const wifi_prov_scan_handlers_t *h = (const wifi_prov_scan_handlers_t *)priv_data;
+    esp_err_t auth_status = ESP_OK;
+    if (h->scan_auth) {
+        auth_status = h->scan_auth(
+                (const char*)req->auth_token.data,
+                req->auth_token.len);
+    }
+    if (ESP_OK != auth_status) {
+        ESP_LOGE(TAG, "Proto command dispatch not authorized");
+        return ESP_FAIL;
+    }
+
     wi_fi_scan_payload__init(&resp);
     ret = wifi_prov_scan_cmd_dispatcher(req, &resp, priv_data);
     if (ret != ESP_OK) {

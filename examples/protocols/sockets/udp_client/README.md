@@ -27,16 +27,18 @@ echo "Hello from PC" | nc -w1 -u 192.168.0.167 3333
 
 ### UDP server using netcat
 ```
-nc -u -l 192.168.0.167 -p 3333
+nc -u -l 192.168.0.167 3333
 ```
 
 ### Python scripts
-Script udpserver.py contains configuration for port number and IP version (IPv4 or IPv6) that has to be altered to match the values used by the application. Example:
+Script example_test.py could be used as a counter part to the udp-client application, ip protocol name (IPv4 or IPv6) shall be stated as argument. Example:
 
 ```
-IP_VERSION = 'IPv4'
-PORT = 3333;
+python example_test.py IPv4
 ```
+Note that this script is used in automated tests, as well, so the IDF test framework packages need to be imported;
+please add `$IDF_PATH/tools/ci/python_packages` to `PYTHONPATH`.
+
 
 ## Hardware Required
 
@@ -47,10 +49,6 @@ This example can be run on any commonly available ESP32 development board.
 ```
 idf.py menuconfig
 ```
-
-Set following parameter under Serial Flasher Options:
-
-* Set `Default serial port`.
 
 Set following parameters under Example Configuration Options:
 

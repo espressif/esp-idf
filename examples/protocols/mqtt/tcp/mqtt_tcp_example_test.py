@@ -6,21 +6,8 @@ from threading import Thread
 import struct
 import time
 
-
-try:
-    import IDF
-    from IDF.IDFDUT import ESP32DUT
-except ImportError:
-    # this is a test case write with tiny-test-fw.
-    # to run test cases outside tiny-test-fw,
-    # we need to set environment variable `TEST_FW_PATH`,
-    # then get and insert `TEST_FW_PATH` to sys path before import FW module
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
-
-import DUT
+from tiny_test_fw import DUT
+import ttfw_idf
 
 msgid = -1
 
@@ -66,7 +53,7 @@ def mqqt_server_sketch(my_ip, port):
     print("server closed")
 
 
-@IDF.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
 def test_examples_protocol_mqtt_qos1(env, extra_data):
     global msgid
     """
@@ -76,12 +63,12 @@ def test_examples_protocol_mqtt_qos1(env, extra_data):
       3. Test evaluates that qos1 message is queued and removed from queued after ACK received
       4. Test the broker received the same message id evaluated in step 3
     """
-    dut1 = env.get_dut("mqtt_tcp", "examples/protocols/mqtt/tcp", dut_class=ESP32DUT)
+    dut1 = env.get_dut("mqtt_tcp", "examples/protocols/mqtt/tcp", dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "mqtt_tcp.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("mqtt_tcp_bin_size", "{}KB".format(bin_size // 1024))
-    IDF.check_performance("mqtt_tcp_size", bin_size // 1024)
+    ttfw_idf.log_performance("mqtt_tcp_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.check_performance("mqtt_tcp_size", bin_size // 1024, dut1.TARGET)
     # 1. start mqtt broker sketch
     host_ip = get_my_ip()
     thread1 = Thread(target=mqqt_server_sketch, args=(host_ip,1883))

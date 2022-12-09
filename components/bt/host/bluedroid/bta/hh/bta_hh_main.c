@@ -30,6 +30,7 @@
 
 #include "bta/bta_hh_api.h"
 #include "bta_hh_int.h"
+#include "osi/allocator.h"
 
 /*****************************************************************************
 ** Constants and types

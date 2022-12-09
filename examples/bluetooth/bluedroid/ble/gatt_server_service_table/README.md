@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 ESP-IDF Gatt Server Service Table Demo
 ===============================================
 

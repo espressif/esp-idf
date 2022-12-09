@@ -1,0 +1,12 @@
+# Flash DOUT mode (QEMU limitation)
+CONFIG_ESPTOOLPY_FLASHMODE_DOUT=y
+
+# Less noisy output
+CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y
+CONFIG_LOG_DEFAULT_LEVEL_WARN=y
+
+# To check for stack overflows
+CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK=y
+
+# To panic on task WDT
+CONFIG_ESP_TASK_WDT_PANIC=y

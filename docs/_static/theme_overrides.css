@@ -41,6 +41,16 @@ a:hover {
   width: 240px !important;
 }
 
-a.internal::after{
+/* For space between the return type and function name */
+a.internal + code.descname::before {
   content: ' ';
+}
+
+/* For space between the arguments of the function */
+a.internal + em::before {
+  content: ' ';
+}
+
+.tool-sha256 {
+  word-break: break-all;
 }

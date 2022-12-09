@@ -94,8 +94,11 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK *p_cback)
             bta_sys_sendmsg(p_buf);
             status = BTA_JV_SUCCESS;
         }
+    } else if (p_cback == NULL) {
+        APPL_TRACE_ERROR("No p_cback.");
     } else {
-        APPL_TRACE_ERROR("JVenable fails");
+        APPL_TRACE_WARNING("No need to Init again.");
+        // status = BTA_JV_SUCCESS;
     }
     return (status);
 }
@@ -109,17 +112,30 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK *p_cback)
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_JvDisable(void)
+void BTA_JvDisable(tBTA_JV_RFCOMM_CBACK *p_cback)
 {
-    BT_HDR  *p_buf;
+    tBTA_JV_API_DISABLE *p_buf;
 
     APPL_TRACE_API( "BTA_JvDisable");
     bta_sys_deregister(BTA_ID_JV);
-    if ((p_buf = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
-        p_buf->event = BTA_JV_API_DISABLE_EVT;
+    if ((p_buf = (tBTA_JV_API_DISABLE *) osi_malloc(sizeof(tBTA_JV_API_DISABLE))) != NULL) {
+        p_buf->hdr.event = BTA_JV_API_DISABLE_EVT;
+        p_buf->p_cback = p_cback;
         bta_sys_sendmsg(p_buf);
     }
+}
 
+/*******************************************************************************
+**
+** Function         BTA_JvFree
+**
+** Description      Free JV configuration
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_JvFree(void)
+{
 #if BTA_DYNAMIC_MEMORY == TRUE
     /* Free buffer for JV configuration structure */
     osi_free(p_bta_jv_cfg->p_sdp_raw_data);
@@ -216,12 +232,14 @@ tBTA_JV_STATUS BTA_JvGetChannelId(int conn_type, void *user_data, INT32 channel)
 ** Parameters
 **   channel        The channel to free
 **   conn_type      one of BTA_JV_CONN_TYPE_
+**   p_cback        tBTA_JV_RFCOMM_CBACK is called with when server
+**   user_data      indicate the RFCOMM server status
 **
 ** Returns          BTA_JV_SUCCESS, if the request is being processed.
 **                  BTA_JV_FAILURE, otherwise.
 **
 *******************************************************************************/
-tBTA_JV_STATUS BTA_JvFreeChannel(UINT16 channel, int conn_type)
+tBTA_JV_STATUS BTA_JvFreeChannel(UINT16 channel, int conn_type, tBTA_JV_RFCOMM_CBACK *p_cback, void *user_data)
 {
     tBTA_JV_STATUS status = BTA_JV_FAILURE;
     tBTA_JV_API_FREE_CHANNEL *p_msg;
@@ -231,6 +249,8 @@ tBTA_JV_STATUS BTA_JvFreeChannel(UINT16 channel, int conn_type)
         p_msg->hdr.event = BTA_JV_API_FREE_SCN_EVT;
         p_msg->scn       = channel;
         p_msg->type      = conn_type;
+        p_msg->p_cback   = p_cback;
+        p_msg->user_data = user_data;
         bta_sys_sendmsg(p_msg);
         status = BTA_JV_SUCCESS;
     }
@@ -327,6 +347,7 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(UINT32 handle)
     return (status);
 }
 
+#if BTA_JV_L2CAP_INCLUDED
 /*******************************************************************************
 **
 ** Function         BTA_JvL2capConnectLE
@@ -840,6 +861,7 @@ tBTA_JV_STATUS BTA_JvL2capWriteFixed(UINT16 channel, BD_ADDR *addr, UINT32 req_i
 
     return (status);
 }
+#endif /* BTA_JV_L2CAP_INCLUDED */
 
 /*******************************************************************************
 **
@@ -885,19 +907,20 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask,
 ** Function         BTA_JvRfcommClose
 **
 ** Description      This function closes an RFCOMM connection
-**
+**                  When the connection is established or failed,
+**                  tBTA_JV_RFCOMM_CBACK is called with BTA_JV_RFCOMM_CLOSE_EVT
 ** Returns          BTA_JV_SUCCESS, if the request is being processed.
 **                  BTA_JV_FAILURE, otherwise.
 **
 *******************************************************************************/
-tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, void *user_data)
+tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, tBTA_JV_RFCOMM_CBACK *p_cback, void *user_data)
 {
     tBTA_JV_STATUS status = BTA_JV_FAILURE;
     tBTA_JV_API_RFCOMM_CLOSE *p_msg;
     UINT32  hi = ((handle & BTA_JV_RFC_HDL_MASK) & ~BTA_JV_RFCOMM_MASK) - 1;
     UINT32  si = BTA_JV_RFC_HDL_TO_SIDX(handle);
 
-    APPL_TRACE_API( "BTA_JvRfcommClose");
+    APPL_TRACE_API( "%s", __func__);
     if (hi < BTA_JV_MAX_RFC_CONN && bta_jv_cb.rfc_cb[hi].p_cback &&
             si < BTA_JV_MAX_RFC_SR_SESSION && bta_jv_cb.rfc_cb[hi].rfc_hdl[si] &&
             (p_msg = (tBTA_JV_API_RFCOMM_CLOSE *)osi_malloc(sizeof(tBTA_JV_API_RFCOMM_CLOSE))) != NULL) {
@@ -905,6 +928,7 @@ tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, void *user_data)
         p_msg->handle = handle;
         p_msg->p_cb = &bta_jv_cb.rfc_cb[hi];
         p_msg->p_pcb = &bta_jv_cb.port_cb[p_msg->p_cb->rfc_hdl[si] - 1];
+        p_msg->p_cback = p_cback;
         p_msg->user_data = user_data;
         bta_sys_sendmsg(p_msg);
         status = BTA_JV_SUCCESS;
@@ -1112,6 +1136,38 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(UINT32 handle, UINT32 req_id, int len, UINT8 *p
     return (status);
 }
 
+/*******************************************************************************
+**
+** Function         BTA_JvRfcommFlowControl
+**
+** Description      This function gives credits to the peer
+**
+** Returns          BTA_JV_SUCCESS, if the request is being processed.
+**                  BTA_JV_FAILURE, otherwise.
+**
+*******************************************************************************/
+tBTA_JV_STATUS BTA_JvRfcommFlowControl(UINT32 handle, UINT16 credits_given)
+{
+    tBTA_JV_STATUS status = BTA_JV_FAILURE;
+    tBTA_JV_API_RFCOMM_FLOW_CONTROL *p_msg;
+    UINT32  hi = ((handle & BTA_JV_RFC_HDL_MASK) & ~BTA_JV_RFCOMM_MASK) - 1;
+    UINT32  si = BTA_JV_RFC_HDL_TO_SIDX(handle);
+
+    APPL_TRACE_API( "BTA_JvRfcommFlowControl");
+    APPL_TRACE_DEBUG( "handle:0x%x, hi:%d, si:%d", handle, hi, si);
+    if (hi < BTA_JV_MAX_RFC_CONN && bta_jv_cb.rfc_cb[hi].p_cback &&
+            si < BTA_JV_MAX_RFC_SR_SESSION && bta_jv_cb.rfc_cb[hi].rfc_hdl[si] &&
+            (p_msg = (tBTA_JV_API_RFCOMM_FLOW_CONTROL *)osi_malloc(sizeof(tBTA_JV_API_RFCOMM_FLOW_CONTROL))) != NULL) {
+        p_msg->hdr.event = BTA_JV_API_RFCOMM_FLOW_CONTROL_EVT;
+        p_msg->p_cb = &bta_jv_cb.rfc_cb[hi];
+        p_msg->p_pcb = &bta_jv_cb.port_cb[p_msg->p_cb->rfc_hdl[si] - 1];
+        p_msg->credits_given = credits_given;
+        APPL_TRACE_API( "credits given %d", credits_given);
+        bta_sys_sendmsg(p_msg);
+        status = BTA_JV_SUCCESS;
+    }
+    return (status);
+}
 
 /*******************************************************************************
  **

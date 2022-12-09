@@ -77,6 +77,7 @@ all the API functions to use the MPU wrappers.  That should only be done when
 task.h is included from an application file. */
 #define MPU_WRAPPERS_INCLUDED_FROM_API_FILE
 #include "esp_newlib.h"
+#include "esp_compiler.h"
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
@@ -367,7 +368,7 @@ PRIVILEGED_DATA static volatile BaseType_t xSwitchingContext[ portNUM_PROCESSORS
 																										\
 		/* listGET_OWNER_OF_NEXT_ENTRY indexes through the list, so the tasks of						\
 		the	same priority get an equal share of the processor time. */									\
-		listGET_OWNER_OF_NEXT_ENTRY( xTaskGetCurrentTaskHandle(), &( pxReadyTasksLists[ uxTopReadyPriority ] ) );		\
+		listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB[xPortGetCoreID()], &( pxReadyTasksLists[ uxTopReadyPriority ] ) );		\
 	} /* taskSELECT_HIGHEST_PRIORITY_TASK */
 
 	/*-----------------------------------------------------------*/
@@ -396,7 +397,7 @@ PRIVILEGED_DATA static volatile BaseType_t xSwitchingContext[ portNUM_PROCESSORS
 		/* Find the highest priority queue that contains ready tasks. */							\
 		portGET_HIGHEST_PRIORITY( uxTopPriority, uxTopReadyPriority );								\
 		configASSERT( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ uxTopPriority ] ) ) > 0 );		\
-		listGET_OWNER_OF_NEXT_ENTRY( xTaskGetCurrentTaskHandle(), &( pxReadyTasksLists[ uxTopPriority ] ) );		\
+		listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB[xPortGetCoreID()], &( pxReadyTasksLists[ uxTopPriority ] ) );		\
 	} /* taskSELECT_HIGHEST_PRIORITY_TASK() */
 
 	/*-----------------------------------------------------------*/
@@ -644,11 +645,12 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 */
 void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 {
-	TCB_t *curTCB = pxCurrentTCB[xCoreID];
+	TCB_t *curTCB;
 	BaseType_t i;
 
 	if (xCoreID != tskNO_AFFINITY) {
-		if ( curTCB->uxPriority < uxPriority ) {
+		curTCB = pxCurrentTCB[xCoreID];
+		if ( curTCB->uxPriority < uxPriority ) {	// NOLINT(clang-analyzer-core.NullDereference) IDF-685
 			vPortYieldOtherCore( xCoreID );
 		}
 	}
@@ -2466,7 +2468,7 @@ BaseType_t xSwitchRequired = pdFALSE;
 	/* Only allow core 0 increase the tick count in the case of xPortSysTickHandler processing. */
 	/* And allow core 0 and core 1 to unwind uxPendedTicks during xTaskResumeAll. */
 
-	if ( xPortInIsrContext() )
+	if (xPortInIsrContext())
 	{
 		#if ( configUSE_TICK_HOOK == 1 )
 		vApplicationTickHook();
@@ -2722,7 +2724,7 @@ void vTaskSwitchContext( void )
 	//Theoretically, this is only called from either the tick interrupt or the crosscore interrupt, so disabling
 	//interrupts shouldn't be necessary anymore. Still, for safety we'll leave it in for now.
 	int irqstate=portENTER_CRITICAL_NESTED();
-	tskTCB * pxTCB;
+
 	if( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE )
 	{
 		/* The scheduler is currently suspended - do not allow a context
@@ -2775,16 +2777,14 @@ void vTaskSwitchContext( void )
 		 swapping that out here. Instead, we're going to do the work here ourselves. Because interrupts are already disabled, we only
 		 need to acquire the mutex.
 		*/
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-		vPortCPUAcquireMutex( &xTaskQueueMutex, __FUNCTION__, __LINE__ );
-#else
 		vPortCPUAcquireMutex( &xTaskQueueMutex );
-#endif
 
+#if !configUSE_PORT_OPTIMISED_TASK_SELECTION
 		unsigned portBASE_TYPE foundNonExecutingWaiter = pdFALSE, ableToSchedule = pdFALSE, resetListHead;
-		portBASE_TYPE uxDynamicTopReady = uxTopReadyPriority;
 		unsigned portBASE_TYPE holdTop=pdFALSE;
+		tskTCB * pxTCB;
 
+		portBASE_TYPE uxDynamicTopReady = uxTopReadyPriority;
 		/*
 		 *  ToDo: This scheduler doesn't correctly implement the round-robin scheduling as done in the single-core
 		 *  FreeRTOS stack when multiple tasks have the same priority and are all ready; it just keeps grabbing the
@@ -2865,16 +2865,21 @@ void vTaskSwitchContext( void )
 			--uxDynamicTopReady;
 		}
 
+#else 
+		//For Unicore targets we can keep the current FreeRTOS O(1)
+		//Scheduler. I hope to optimize better the scheduler for 
+		//Multicore settings -- This will involve to create a per
+		//affinity ready task list which will impact hugely on 
+		//tasks module
+		taskSELECT_HIGHEST_PRIORITY_TASK();
+#endif
 		traceTASK_SWITCHED_IN();
         xSwitchingContext[ xPortGetCoreID() ] = pdFALSE;
 
 		//Exit critical region manually as well: release the mux now, interrupts will be re-enabled when we
 		//exit the function.
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-		vPortCPUReleaseMutex( &xTaskQueueMutex, __FUNCTION__, __LINE__ );
-#else
 		vPortCPUReleaseMutex( &xTaskQueueMutex );
-#endif
+
 
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
 		vPortSetStackWatchpoint(pxCurrentTCB[xPortGetCoreID()]->pxStack);
@@ -4177,29 +4182,19 @@ For ESP32 FreeRTOS, vTaskEnterCritical implements both portENTER_CRITICAL and po
 
 #if ( portCRITICAL_NESTING_IN_TCB == 1 )
 
-#include "portmux_impl.h"
-
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	void vTaskEnterCritical( portMUX_TYPE *mux, const char *function, int line )
-#else
 	void vTaskEnterCritical( portMUX_TYPE *mux )
-#endif
 	{
 		BaseType_t oldInterruptLevel=0;
 		BaseType_t schedulerRunning = xSchedulerRunning;
-		if( schedulerRunning != pdFALSE )
+		if(schedulerRunning != pdFALSE)
 		{
 			//Interrupts may already be disabled (because we're doing this recursively) but we can't get the interrupt level after
 			//vPortCPUAquireMutex, because it also may mess with interrupts. Get it here first, then later figure out if we're nesting
 			//and save for real there.
 			oldInterruptLevel=portENTER_CRITICAL_NESTED();
 		}
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-		vPortCPUAcquireMutexIntsDisabled( mux, portMUX_NO_TIMEOUT, function, line );
-#else
-		vPortCPUAcquireMutexIntsDisabled( mux, portMUX_NO_TIMEOUT );
-#endif
 
+		vPortCPUAcquireMutex( mux );
 		if( schedulerRunning != pdFALSE )
 		{
 			TCB_t *tcb = pxCurrentTCB[xPortGetCoreID()];
@@ -4241,29 +4236,20 @@ For ESP32 FreeRTOS, vTaskEnterCritical implements both portENTER_CRITICAL and po
 
 #endif /* portCRITICAL_NESTING_IN_TCB */
 /*-----------------------------------------------------------*/
-
-
 /*
 For ESP32 FreeRTOS, vTaskExitCritical implements both portEXIT_CRITICAL and portEXIT_CRITICAL_ISR.
 */
 #if ( portCRITICAL_NESTING_IN_TCB == 1 )
 
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	void vTaskExitCritical( portMUX_TYPE *mux, const char *function, int line )
-#else
 	void vTaskExitCritical( portMUX_TYPE *mux )
-#endif
 	{
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-		vPortCPUReleaseMutexIntsDisabled( mux, function, line );
-#else
-		vPortCPUReleaseMutexIntsDisabled( mux );
-#endif
+
+		vPortCPUReleaseMutex( mux );
 		if( xSchedulerRunning != pdFALSE )
 		{
 			TCB_t *tcb = pxCurrentTCB[xPortGetCoreID()];
 			BaseType_t nesting = tcb->uxCriticalNesting;
-			if( nesting	 > 0U )
+			if(nesting > 0U)
 			{
 				nesting--;
 				tcb->uxCriticalNesting = nesting;

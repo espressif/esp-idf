@@ -1,6 +1,6 @@
 # Component support for esptool.py. Doesn't do much by itself,
 # components have their own flash targets that can use these variables.
-ESPPORT ?= $(CONFIG_ESPTOOLPY_PORT)
+ESPPORT ?= $(call dequote,$(CONFIG_ESPTOOLPY_PORT))
 ESPBAUD ?= $(CONFIG_ESPTOOLPY_BAUD)
 ESPFLASHMODE ?= $(CONFIG_ESPTOOLPY_FLASHMODE)
 ESPFLASHFREQ ?= $(CONFIG_ESPTOOLPY_FLASHFREQ)
@@ -15,7 +15,7 @@ PYTHON ?= $(call dequote,$(CONFIG_SDK_PYTHON))
 #
 ESPTOOLPY_SRC := $(COMPONENT_PATH)/esptool/esptool.py
 ESPTOOLPY := $(PYTHON) $(ESPTOOLPY_SRC) --chip esp32
-ESPTOOLPY_SERIAL := $(ESPTOOLPY) --port $(ESPPORT) --baud $(ESPBAUD) --before $(CONFIG_ESPTOOLPY_BEFORE) --after $(CONFIG_ESPTOOLPY_AFTER)
+ESPTOOLPY_SERIAL := $(ESPTOOLPY) --port '$(ESPPORT)' --baud $(ESPBAUD) --before $(CONFIG_ESPTOOLPY_BEFORE) --after $(CONFIG_ESPTOOLPY_AFTER)
 
 # Supporting esptool command line tools
 ESPEFUSEPY := $(PYTHON) $(COMPONENT_PATH)/esptool/espefuse.py
@@ -29,22 +29,34 @@ else
 ESPTOOL_WRITE_FLASH_OPTIONS := $(ESPTOOL_FLASH_OPTIONS)
 endif
 
+ifdef CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+ESPTOOL_WRITE_FLASH_OPTIONS := --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ) --flash_size keep
+endif
+
 ESPTOOL_ELF2IMAGE_OPTIONS :=
 
 ifdef CONFIG_ESP32_REV_MIN
 ESPTOOL_ELF2IMAGE_OPTIONS += --min-rev $(CONFIG_ESP32_REV_MIN)
 endif
 
-ifdef CONFIG_SECURE_BOOT_ENABLED
 ifndef CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
 ifndef IS_BOOTLOADER_BUILD
+ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
 ESPTOOL_ELF2IMAGE_OPTIONS += --secure-pad
+else ifdef CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+ESPTOOL_ELF2IMAGE_OPTIONS += --secure-pad-v2
 endif
 endif
 endif
 
 ifndef IS_BOOTLOADER_BUILD
 ESPTOOL_ELF2IMAGE_OPTIONS += --elf-sha256-offset 0xb0
+endif
+
+ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
+SECURE_APPS_SIGNING_SCHEME = "1"
+else ifdef CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+SECURE_APPS_SIGNING_SCHEME = "2"
 endif
 
 ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z,-u) $(ESPTOOL_WRITE_FLASH_OPTIONS)
@@ -61,7 +73,7 @@ ifndef IS_BOOTLOADER_BUILD
 APP_BIN_UNSIGNED := $(APP_BIN:.bin=-unsigned.bin)
 
 $(APP_BIN): $(APP_BIN_UNSIGNED) $(SECURE_BOOT_SIGNING_KEY) $(SDKCONFIG_MAKEFILE)
-	$(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
+	$(ESPSECUREPY) sign_data --version $(SECURE_APPS_SIGNING_SCHEME) --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
 endif
 endif
 # non-secure boot (or bootloader), both these files are the same
@@ -76,8 +88,9 @@ endif
 
 ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
 encrypted-flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
-	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
-ifdef CONFIG_SECURE_BOOT_ENABLED
+	$(eval MONITOR_OPTS += --encrypted)
+	@echo "Flashing binaries to serial port '$(ESPPORT)' (app at offset $(APP_OFFSET))..."
+ifdef CONFIG_SECURE_BOOT
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
 endif
 	$(ESPTOOLPY_WRITE_FLASH_ENCRYPT) $(ESPTOOL_ALL_FLASH_ARGS)
@@ -88,19 +101,20 @@ encrypted-flash:
 endif
 
 flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
-	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
-ifdef CONFIG_SECURE_BOOT_ENABLED
+	@echo "Flashing binaries to serial port '$(ESPPORT)' (app at offset $(APP_OFFSET))..."
+ifdef CONFIG_SECURE_BOOT
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
 endif
 	$(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
 
 app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
-	@echo "Flashing app to serial port $(ESPPORT), offset $(APP_OFFSET)..."
+	@echo "Flashing app to serial port '$(ESPPORT)', offset $(APP_OFFSET)..."
 	$(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
 
 ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
 encrypted-app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
-	@echo "Flashing encrypted app binary to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
+	$(eval MONITOR_OPTS += --encrypted)
+	@echo "Flashing encrypted app binary to serial port '$(ESPPORT)' (app at offset $(APP_OFFSET))..."
 	$(ESPTOOLPY_WRITE_FLASH_ENCRYPT) $(APP_OFFSET) $(APP_BIN)
 else
 encrypted-app-flash:
@@ -130,11 +144,17 @@ endif
 # miniterm.py on the console. The '$(PYTHON) -m serial.tools.miniterm'
 # is to allow for the $(PYTHON) variable overriding the python path.
 simple_monitor: $(call prereq_if_explicit,%flash) | check_python_dependencies
-	$(MONITOR_PYTHON) -m serial.tools.miniterm --rts 0 --dtr 0 --raw $(ESPPORT) $(MONITORBAUD)
+	$(MONITOR_PYTHON) -m serial.tools.miniterm --rts 0 --dtr 0 --raw '$(ESPPORT)' $(MONITORBAUD)
 
 PRINT_FILTER ?=
 
-MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_SDK_TOOLPREFIX) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)"
+MONITOR_CORE_DUMP_DECODE_ARG ?=
+MONITOR_CORE_DUMP_DECODE = $(call dequote,$(CONFIG_ESP32_CORE_DUMP_DECODE))
+ifneq ("$(MONITOR_CORE_DUMP_DECODE)","")
+MONITOR_CORE_DUMP_DECODE_ARG = --decode-coredumps $(MONITOR_CORE_DUMP_DECODE)
+endif
+
+MONITOR_OPTS := --baud $(MONITORBAUD) --port '$(ESPPORT)' --toolchain-prefix $(CONFIG_SDK_TOOLPREFIX) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)" $(MONITOR_CORE_DUMP_DECODE_ARG)
 
 monitor: $(call prereq_if_explicit,%flash) | check_python_dependencies
 	$(summary) MONITOR

@@ -30,6 +30,7 @@ typedef enum {
     BTC_GATTC_ACT_READ_CHAR,
     BTC_GATTC_ACT_READ_MULTIPLE_CHAR,
     BTC_GATTC_ACT_READ_CHAR_DESCR,
+    BTC_GATTC_ACT_READ_BY_TYPE,
     BTC_GATTC_ACT_WRITE_CHAR,
     BTC_GATTC_ACT_WRITE_CHAR_DESCR,
     BTC_GATTC_ACT_PREPARE_WRITE,
@@ -113,6 +114,14 @@ typedef union {
         uint16_t handle;
         esp_gatt_auth_req_t auth_req;
     } read_descr;
+    // BTC_GATTC_ACT_READ_BY_TYPE
+    struct read_by_type_arg {
+        uint16_t conn_id;
+        uint16_t s_handle;
+        uint16_t e_handle;
+        esp_bt_uuid_t uuid;
+        esp_gatt_auth_req_t auth_req;
+    } read_by_type;
     //BTC_GATTC_ACT_WRITE_CHAR,
     struct write_char_arg {
         uint16_t conn_id;

@@ -60,6 +60,10 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_read                       esp_wolfssl_read
 #define _esp_tls_write                      esp_wolfssl_write
 #define _esp_tls_conn_delete                esp_wolfssl_conn_delete
+#ifdef CONFIG_ESP_TLS_SERVER
+#define _esp_tls_server_session_create      esp_wolfssl_server_session_create
+#define _esp_tls_server_session_delete      esp_wolfssl_server_session_delete
+#endif  /* CONFIG_ESP_TLS_SERVER */
 #define _esp_tls_get_bytes_avail            esp_wolfssl_get_bytes_avail
 #define _esp_tls_init_global_ca_store       esp_wolfssl_init_global_ca_store
 #define _esp_tls_set_global_ca_store        esp_wolfssl_set_global_ca_store                 /*!< Callback function for setting global CA store data for TLS/SSL */
@@ -93,14 +97,22 @@ static ssize_t tcp_write(esp_tls_t *tls, const char *data, size_t datalen)
  */
 void esp_tls_conn_delete(esp_tls_t *tls)
 {
+    esp_tls_conn_destroy(tls);
+}
+
+int esp_tls_conn_destroy(esp_tls_t *tls)
+{
     if (tls != NULL) {
+        int ret = 0;
         _esp_tls_conn_delete(tls);
         if (tls->sockfd >= 0) {
-            close(tls->sockfd);
+            ret = close(tls->sockfd);
         }
-    free(tls->error_handle);
-    free(tls);
+        free(tls->error_handle);
+        free(tls);
+        return ret;
     }
+    return -1; // invalid argument
 }
 
 esp_tls_t *esp_tls_init(void)
@@ -115,8 +127,9 @@ esp_tls_t *esp_tls_init(void)
         return NULL;
     }
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
-    tls->server_fd.fd = tls->sockfd = -1;
+    tls->server_fd.fd = -1;
 #endif
+    tls->sockfd = -1;
     return tls;
 }
 
@@ -189,7 +202,11 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
         }
         if (cfg->non_block) {
             int flags = fcntl(fd, F_GETFL, 0);
-            fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+            ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+            if (ret < 0) {
+                ESP_LOGE(TAG, "Failed to configure the socket as non-blocking (errno %d)", errno);
+                goto err_freesocket;
+            }
         }
     }
 
@@ -255,9 +272,9 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
             ms_to_timeval(cfg->timeout_ms, &tv);
 
             /* In case of non-blocking I/O, we use the select() API to check whether
-               connection has been estbalished or not*/
+               connection has been established or not*/
             if (select(tls->sockfd + 1, &tls->rset, &tls->wset, NULL,
-                       cfg->timeout_ms ? &tv : NULL) == 0) {
+                       cfg->timeout_ms>0 ? &tv : NULL) == 0) {
                 ESP_LOGD(TAG, "select() timed out");
                 return 0;
             }
@@ -305,12 +322,13 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
  */
 esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg)
 {
-    esp_tls_t *tls = (esp_tls_t *)calloc(1, sizeof(esp_tls_t));
+    esp_tls_t *tls = esp_tls_init();
     if (!tls) {
         return NULL;
     }
     /* esp_tls_conn_new() API establishes connection in a blocking manner thus this loop ensures that esp_tls_conn_new()
        API returns only after connection is established unless there is an error*/
+    size_t start = xTaskGetTickCount();
     while (1) {
         int ret = esp_tls_low_level_conn(hostname, hostlen, port, cfg, tls);
         if (ret == 1) {
@@ -319,6 +337,14 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
             esp_tls_conn_delete(tls);
             ESP_LOGE(TAG, "Failed to open new connection");
             return NULL;
+        } else if (ret == 0 && cfg->timeout_ms >= 0) {
+            size_t timeout_ticks = pdMS_TO_TICKS(cfg->timeout_ms);
+            uint32_t expired = xTaskGetTickCount() - start;
+            if (expired >= timeout_ticks) {
+                esp_tls_conn_delete(tls);
+                ESP_LOGE(TAG, "Failed to open new connection in specified timeout");
+                return NULL;
+            }
         }
     }
     return NULL;
@@ -326,8 +352,9 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
 
 int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
 {
-    /* esp_tls_conn_new_sync() is a sync alternative to esp_tls_conn_new_async() with symetric function prototype
+    /* esp_tls_conn_new_sync() is a sync alternative to esp_tls_conn_new_async() with symmetric function prototype
     it is an alternative to esp_tls_conn_new() which is left for compatibility reasons */
+    size_t start = xTaskGetTickCount();
     while (1) {
         int ret = esp_tls_low_level_conn(hostname, hostlen, port, cfg, tls);
         if (ret == 1) {
@@ -335,6 +362,14 @@ int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp
         } else if (ret == -1) {
             ESP_LOGE(TAG, "Failed to open new connection");
             return -1;
+        } else if (ret == 0 && cfg->timeout_ms >= 0) {
+            size_t timeout_ticks = pdMS_TO_TICKS(cfg->timeout_ms);
+            uint32_t expired = xTaskGetTickCount() - start;
+            if (expired >= timeout_ticks) {
+                ESP_LOGW(TAG, "Failed to open new connection in specified timeout");
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT);
+                return 0;
+            }
         }
     }
     return 0;
@@ -380,6 +415,7 @@ esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg)
                               get_port(url, &u), cfg, tls) == 1) {
         return tls;
     }
+    esp_tls_conn_delete(tls);
     return NULL;
 }
 
@@ -405,6 +441,7 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void)
     return _esp_tls_get_global_ca_store();
 }
 
+#endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 #ifdef CONFIG_ESP_TLS_SERVER
 /**
  * @brief      Create a server side TLS/SSL connection
@@ -421,11 +458,20 @@ void esp_tls_server_session_delete(esp_tls_t *tls)
     return _esp_tls_server_session_delete(tls);
 }
 #endif /* CONFIG_ESP_TLS_SERVER */
-#endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 
 ssize_t esp_tls_get_bytes_avail(esp_tls_t *tls)
 {
     return _esp_tls_get_bytes_avail(tls);
+}
+
+esp_err_t esp_tls_get_conn_sockfd(esp_tls_t *tls, int *sockfd)
+{
+    if (!tls || !sockfd) {
+        ESP_LOGE(TAG, "Invalid arguments passed");
+        return ESP_ERR_INVALID_ARG;
+    }
+    *sockfd = tls->sockfd;
+    return ESP_OK;
 }
 
 esp_err_t esp_tls_get_and_clear_last_error(esp_tls_error_handle_t h, int *esp_tls_code, int *esp_tls_flags)

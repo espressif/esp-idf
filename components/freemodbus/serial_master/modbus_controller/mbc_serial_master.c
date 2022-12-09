@@ -36,17 +36,8 @@
 extern BOOL xMBMasterPortSerialTxPoll(void);
 
 /*-----------------------Master mode use these variables----------------------*/
-#define MODE_RTU
-#ifdef MODE_RTU
-#define MB_DT_SIZE(size) ((size << 1) + 8)
-#else
-#define MB_DT_SIZE(size) ((size << 2) + 20)
-#endif
+#define MB_RESPONSE_TICS pdMS_TO_TICKS(CONFIG_FMB_MASTER_TIMEOUT_MS_RESPOND + 10)
 
-// The response time is average processing time + data transmission (higher on lower speeds)
-// ~resp_time_ms = min_pcocessing_time_ms + ((2 packets * (header_size + packet_bytes)) * 11 bits in byte * 1000 ms_in_sec) / transmit_speed))
-#define MB_RESPONSE_TIMEOUT(mb_speed, size) pdMS_TO_TICKS( 30 + (2 * MB_DT_SIZE(size) * 11 * 1000 / mb_speed))
-#define MB_RESPONSE_TICS                    pdMS_TO_TICKS(CONFIG_FMB_MASTER_TIMEOUT_MS_RESPOND)
 
 static mb_master_interface_t* mbm_interface_ptr = NULL; //&default_interface_inst;
 
@@ -71,7 +62,7 @@ static void modbus_master_task(void *pvParameters)
             BOOL xSentState = xMBMasterPortSerialTxPoll();
             if (xSentState) {
                 // Let state machine know that response was transmitted out
-                (void)xMBMasterPortEventPost(EV_MASTER_FRAME_TRANSMITTED);
+                (void)xMBMasterPortEventPost(EV_MASTER_FRAME_SENT);
             }
         }
     }
@@ -195,11 +186,6 @@ static esp_err_t mbc_serial_master_send_request(mb_param_request_t* request, voi
     uint8_t mb_command = request->command;
     uint16_t mb_offset = request->reg_start;
     uint16_t mb_size = request->reg_size;
-    uint32_t mb_speed = mbm_opts->mbm_comm.baudrate;
-
-    // Timeout value for last processed packet
-    static uint32_t timeout = MB_RESPONSE_TICS;
-    size_t pack_length = 0;
 
     // Set the buffer for callback function processing of received data
     mbm_opts->mbm_reg_buffer_ptr = (uint8_t*)data_ptr;
@@ -209,56 +195,44 @@ static esp_err_t mbc_serial_master_send_request(mb_param_request_t* request, voi
     switch(mb_command)
     {
         case MB_FUNC_READ_COILS:
-            pack_length = (mb_size >= 8) ? (mb_size >> 3) : 1;
-            timeout = MB_RESPONSE_TIMEOUT(mb_speed, pack_length);
             mb_error = eMBMasterReqReadCoils((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                               (USHORT)mb_size , (LONG)timeout );
+                                               (USHORT)mb_size , (LONG)MB_RESPONSE_TICS );
             break;
         case MB_FUNC_WRITE_SINGLE_COIL:
-            timeout = MB_RESPONSE_TIMEOUT(mb_speed, 1);
             mb_error = eMBMasterReqWriteCoil((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                *(USHORT*)data_ptr, (LONG)timeout );
+                                                *(USHORT*)data_ptr, (LONG)MB_RESPONSE_TICS );
             break;
         case MB_FUNC_WRITE_MULTIPLE_COILS:
-            pack_length = (mb_size >= 8) ? (mb_size >> 3) : 1;
-            timeout = MB_RESPONSE_TIMEOUT(mb_speed, pack_length);
             mb_error = eMBMasterReqWriteMultipleCoils((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                            (USHORT)mb_size, (UCHAR*)data_ptr, (LONG)timeout);
+                                                            (USHORT)mb_size, (UCHAR*)data_ptr, (LONG)MB_RESPONSE_TICS);
             break;
         case MB_FUNC_READ_DISCRETE_INPUTS:
-            pack_length = (mb_size >= 8) ? (mb_size >> 3) : 1;
-            timeout = MB_RESPONSE_TIMEOUT(mb_speed, pack_length);
             mb_error = eMBMasterReqReadDiscreteInputs((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                        (USHORT)mb_size, (LONG)timeout );
+                                                        (USHORT)mb_size, (LONG)MB_RESPONSE_TICS );
             break;
         case MB_FUNC_READ_HOLDING_REGISTER:
-            timeout = MB_RESPONSE_TIMEOUT(mb_speed, mb_size);
             mb_error = eMBMasterReqReadHoldingRegister((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                            (USHORT)mb_size, (LONG)timeout );
+                                                            (USHORT)mb_size, (LONG)MB_RESPONSE_TICS );
             break;
         case MB_FUNC_WRITE_REGISTER:
-            timeout = MB_RESPONSE_TIMEOUT(mb_speed, 1);
             mb_error = eMBMasterReqWriteHoldingRegister( (UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                            *(USHORT*)data_ptr, (LONG)timeout );
+                                                            *(USHORT*)data_ptr, (LONG)MB_RESPONSE_TICS );
             break;
 
         case MB_FUNC_WRITE_MULTIPLE_REGISTERS:
-            timeout = MB_RESPONSE_TIMEOUT(mb_speed, mb_size);
             mb_error = eMBMasterReqWriteMultipleHoldingRegister( (UCHAR)mb_slave_addr,
                                                                     (USHORT)mb_offset, (USHORT)mb_size,
-                                                                    (USHORT*)data_ptr, (LONG)timeout );
+                                                                    (USHORT*)data_ptr, (LONG)MB_RESPONSE_TICS );
             break;
         case MB_FUNC_READWRITE_MULTIPLE_REGISTERS:
-            timeout = MB_RESPONSE_TIMEOUT(mb_speed, mb_size << 1);
             mb_error = eMBMasterReqReadWriteMultipleHoldingRegister( (UCHAR)mb_slave_addr, (USHORT)mb_offset,
                                                                        (USHORT)mb_size, (USHORT*)data_ptr,
                                                                        (USHORT)mb_offset, (USHORT)mb_size,
-                                                                       (LONG)timeout );
+                                                                       (LONG)MB_RESPONSE_TICS );
             break;
         case MB_FUNC_READ_INPUT_REGISTER:
-            timeout = MB_RESPONSE_TIMEOUT(mb_speed, mb_size);
             mb_error = eMBMasterReqReadInputRegister( (UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                        (USHORT)mb_size, (LONG) timeout );
+                                                        (USHORT)mb_size, (LONG) MB_RESPONSE_TICS );
             break;
         default:
             ESP_LOGE(MB_MASTER_TAG, "%s: Incorrect function in request (%u) ",
@@ -288,7 +262,7 @@ static esp_err_t mbc_serial_master_send_request(mb_param_request_t* request, voi
             break;
 
         case MB_MRE_MASTER_BUSY:
-            error = ESP_ERR_INVALID_STATE; // Master is busy (previous request is pending
+            error = ESP_ERR_INVALID_STATE; // Master is busy (previous request is pending)
             break;
 
         default:
@@ -359,41 +333,6 @@ static uint8_t mbc_serial_master_get_command(mb_param_type_t param_type, mb_para
     return command;
 }
 
-// Helper function to set parameter buffer according to its type
-static esp_err_t mbc_serial_master_set_param_data(void* dest, void* src, mb_descr_type_t param_type, size_t param_size)
-{
-    esp_err_t err = ESP_OK;
-    MB_MASTER_CHECK((dest != NULL), 
-                        ESP_ERR_INVALID_ARG, "incorrect parameter pointer.");
-    MB_MASTER_CHECK((src != NULL), 
-                        ESP_ERR_INVALID_ARG, "incorrect parameter pointer.");
-    // Transfer parameter data into value of characteristic
-    switch(param_type)
-    {
-        case PARAM_TYPE_U8:
-            *((uint8_t*)dest) = *((uint8_t*)src);
-            break;
-        case PARAM_TYPE_U16:
-            *((uint16_t*)dest) = *((uint16_t*)src);
-            break;
-        case PARAM_TYPE_U32:
-            *((uint32_t*)dest) = *((uint32_t*)src);
-            break;
-        case PARAM_TYPE_FLOAT:
-            *((float*)dest) = *(float*)src;
-            break;
-        case PARAM_TYPE_ASCII:
-            memcpy((void*)dest, (void*)src, (size_t)param_size);
-            break;
-        default:
-            ESP_LOGE(MB_MASTER_TAG, "%s: Incorrect param type (%u).",
-                        __FUNCTION__, (uint16_t)param_type);
-            err = ESP_ERR_NOT_SUPPORTED;
-            break;
-    }
-    return err;
-}
-
 // Helper to search parameter by name in the parameter description table 
 // and fills Modbus request fields accordingly
 static esp_err_t mbc_serial_master_set_request(char* name, mb_param_mode_t mode, 
@@ -444,7 +383,7 @@ static esp_err_t mbc_serial_master_set_request(char* name, mb_param_mode_t mode,
 
 // Get parameter data for corresponding characteristic
 static esp_err_t mbc_serial_master_get_parameter(uint16_t cid, char* name, 
-                                                    uint8_t* value, uint8_t *type)
+                                                    uint8_t* value_ptr, uint8_t *type)
 {
     MB_MASTER_CHECK((name != NULL), 
                         ESP_ERR_INVALID_ARG, "mb incorrect descriptor.");
@@ -453,19 +392,12 @@ static esp_err_t mbc_serial_master_get_parameter(uint16_t cid, char* name,
     esp_err_t error = ESP_ERR_INVALID_RESPONSE;
     mb_param_request_t request ;
     mb_parameter_descriptor_t reg_info = { 0 };
-    uint8_t param_buffer[PARAM_MAX_SIZE] = { 0 };
 
     error = mbc_serial_master_set_request(name, MB_PARAM_READ, &request, &reg_info);
     if ((error == ESP_OK) && (cid == reg_info.cid)) {
-        error = mbc_serial_master_send_request(&request, &param_buffer[0]);
+        // Send request to read characteristic data
+        error = mbc_serial_master_send_request(&request, value_ptr);
         if (error == ESP_OK) {
-            // If data pointer is NULL then we don't need to set value 
-            // (it is still in the cache of cid)
-            if (value != NULL) {
-                error = mbc_serial_master_set_param_data((void*)value, (void*)&param_buffer[0],
-                                                    reg_info.param_type, reg_info.param_size);
-                MB_MASTER_CHECK((error == ESP_OK), ESP_ERR_INVALID_STATE, "fail to set parameter data.");
-            }
             ESP_LOGD(MB_MASTER_TAG, "%s: Good response for get cid(%u) = %s",
                                     __FUNCTION__, (int)reg_info.cid, (char*)esp_err_to_name(error));
         } else {
@@ -483,28 +415,22 @@ static esp_err_t mbc_serial_master_get_parameter(uint16_t cid, char* name,
 
 // Set parameter value for characteristic selected by name and cid
 static esp_err_t mbc_serial_master_set_parameter(uint16_t cid, char* name, 
-                                                    uint8_t* value, uint8_t *type)
+                                                    uint8_t* value_ptr, uint8_t *type)
 {
     MB_MASTER_CHECK((name != NULL), 
                         ESP_ERR_INVALID_ARG, "mb incorrect descriptor.");
-    MB_MASTER_CHECK((value != NULL), 
+    MB_MASTER_CHECK((value_ptr != NULL),
                         ESP_ERR_INVALID_ARG, "value pointer is incorrect.");
     MB_MASTER_CHECK((type != NULL), 
                         ESP_ERR_INVALID_ARG, "type pointer is incorrect.");
     esp_err_t error = ESP_ERR_INVALID_RESPONSE;
     mb_param_request_t request ;
     mb_parameter_descriptor_t reg_info = { 0 };
-    uint8_t param_buffer[PARAM_MAX_SIZE] = { 0 };
 
     error = mbc_serial_master_set_request(name, MB_PARAM_WRITE, &request, &reg_info);
     if ((error == ESP_OK) && (cid == reg_info.cid)) {
-        // Transfer value of characteristic into parameter buffer
-        error = mbc_serial_master_set_param_data((void*)&param_buffer[0], (void*)value,
-                                                reg_info.param_type, reg_info.param_size);
-        MB_MASTER_CHECK((error == ESP_OK), 
-                            ESP_ERR_INVALID_STATE, "failure to set parameter data.");
         // Send request to write characteristic data
-        error = mbc_serial_master_send_request(&request, &param_buffer[0]);
+        error = mbc_serial_master_send_request(&request, value_ptr);
         if (error == ESP_OK) {
             ESP_LOGD(MB_MASTER_TAG, "%s: Good response for set cid(%u) = %s",
                                     __FUNCTION__, (int)reg_info.cid, (char*)esp_err_to_name(error));

@@ -24,7 +24,7 @@ static const char *TAG = "efuse";
 
 // Array for emulate efuse registers.
 #ifdef CONFIG_EFUSE_VIRTUAL
-uint32_t virt_blocks[COUNT_EFUSE_BLOCKS][COUNT_EFUSE_REG_PER_BLOCK];
+uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
 
 /* Call the update function to seed virtual efuses during initialization */
 __attribute__((constructor)) void esp_efuse_utility_update_virt_blocks(void);
@@ -145,7 +145,7 @@ esp_err_t esp_efuse_utility_write_cnt(unsigned int num_reg, esp_efuse_block_t ef
 void esp_efuse_utility_reset(void)
 {
     esp_efuse_utility_clear_program_registers();
-    for (int num_block = 0; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
+    for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
         for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
             REG_WRITE(addr_wr_block, 0);
         }
@@ -165,7 +165,7 @@ void esp_efuse_utility_update_virt_blocks(void)
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGI(TAG, "Loading virtual efuse blocks from real efuses");
-    for (int num_block = 0; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
+    for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
         int subblock = 0;
         for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4) {
             virt_blocks[num_block][subblock++] = REG_READ(addr_rd_block);
@@ -178,11 +178,12 @@ void esp_efuse_utility_update_virt_blocks(void)
 }
 
 // Prints efuse values for all registers.
+#ifndef BOOTLOADER_BUILD
 void esp_efuse_utility_debug_dump_blocks(void)
 {
     printf("EFUSE_BLKx:\n");
 #ifdef CONFIG_EFUSE_VIRTUAL
-    for (int num_block = 0; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
+    for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
         int num_reg = 0;
         printf("%d) ", num_block);
         for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4, num_reg++) {
@@ -191,7 +192,7 @@ void esp_efuse_utility_debug_dump_blocks(void)
         printf("\n");
     }
 #else
-    for (int num_block = 0; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
+    for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
         printf("%d) ", num_block);
         for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4) {
             printf("0x%08x ", REG_READ(addr_rd_block));
@@ -201,6 +202,7 @@ void esp_efuse_utility_debug_dump_blocks(void)
 #endif
     printf("\n");
 }
+#endif // BOOTLOADER_BUILD
 
 // returns the number of array elements for placing these bits in an array with the length of each element equal to size_of_base.
 int esp_efuse_utility_get_number_of_items(int bits, int size_of_base)

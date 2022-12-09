@@ -15,6 +15,10 @@
 #ifndef _ESP_NETIF_TYPES_H_
 #define _ESP_NETIF_TYPES_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Definition of ESP-NETIF based errors
  */
@@ -27,6 +31,8 @@
 #define ESP_ERR_ESP_NETIF_NO_MEM                ESP_ERR_ESP_NETIF_BASE + 0x06
 #define ESP_ERR_ESP_NETIF_DHCP_NOT_STOPPED      ESP_ERR_ESP_NETIF_BASE + 0x07
 #define ESP_ERR_ESP_NETIF_DRIVER_ATTACH_FAILED   ESP_ERR_ESP_NETIF_BASE + 0x08
+#define ESP_ERR_ESP_NETIF_INIT_FAILED           ESP_ERR_ESP_NETIF_BASE + 0x09
+#define ESP_ERR_ESP_NETIF_DNS_NOT_CONFIGURED    ESP_ERR_ESP_NETIF_BASE + 0x0A
 
 
 /** @brief Type of esp_netif_object server */
@@ -67,6 +73,7 @@ typedef enum{
 
 /** @brief Supported options for DHCP client or DHCP server */
 typedef enum{
+    ESP_NETIF_SUBNET_MASK                   = 1,    /**< Network mask */
     ESP_NETIF_DOMAIN_NAME_SERVER            = 6,    /**< Domain name server */
     ESP_NETIF_ROUTER_SOLICITATION_ADDRESS   = 32,   /**< Solicitation router address */
     ESP_NETIF_REQUESTED_IP_ADDRESS          = 50,   /**< Request specific IP address */
@@ -76,11 +83,13 @@ typedef enum{
 
 /** IP event declarations */
 typedef enum {
-    IP_EVENT_STA_GOT_IP,               /*!< ESP32 station got IP from connected AP */
-    IP_EVENT_STA_LOST_IP,              /*!< ESP32 station lost IP and the IP is reset to 0 */
-    IP_EVENT_AP_STAIPASSIGNED,         /*!< ESP32 soft-AP assign an IP to a connected station */
-    IP_EVENT_GOT_IP6,                  /*!< ESP32 station or ap or ethernet interface v6IP addr is preferred */
-    IP_EVENT_ETH_GOT_IP,               /*!< ESP32 ethernet got IP from connected AP */
+    IP_EVENT_STA_GOT_IP,               /*!< station got IP from connected AP */
+    IP_EVENT_STA_LOST_IP,              /*!< station lost IP and the IP is reset to 0 */
+    IP_EVENT_AP_STAIPASSIGNED,         /*!< soft-AP assign an IP to a connected station */
+    IP_EVENT_GOT_IP6,                  /*!< station or ap or ethernet interface v6IP addr is preferred */
+    IP_EVENT_ETH_GOT_IP,               /*!< ethernet got IP from connected AP */
+    IP_EVENT_PPP_GOT_IP,               /*!< PPP interface got IP */
+    IP_EVENT_PPP_LOST_IP,              /*!< PPP interface lost IP */
 } ip_event_t;
 
 /** @brief IP event base declaration */
@@ -112,6 +121,7 @@ typedef struct {
     int if_index;                    /*!< Interface index for which the event is received (left for legacy compilation) */
     esp_netif_t *esp_netif;          /*!< Pointer to corresponding esp-netif object */
     esp_netif_ip6_info_t ip6_info;   /*!< IPv6 address of the interface */
+    int ip_index;                    /*!< IPv6 address index */
 } ip_event_got_ip6_t;
 
 /** Event structure for IP_EVENT_AP_STAIPASSIGNED event */
@@ -127,7 +137,8 @@ typedef enum esp_netif_flags {
     ESP_NETIF_DHCP_SERVER = 1 << 1,
     ESP_NETIF_FLAG_AUTOUP = 1 << 2,
     ESP_NETIF_FLAG_GARP   = 1 << 3,
-    ESP_NETIF_FLAG_EVENT_IP_MODIFIED = 1 << 4
+    ESP_NETIF_FLAG_EVENT_IP_MODIFIED = 1 << 4,
+    ESP_NETIF_FLAG_IS_PPP = 1 << 5
 } esp_netif_flags_t;
 
 typedef enum esp_netif_ip_event_type {
@@ -146,7 +157,7 @@ typedef enum esp_netif_ip_event_type {
 typedef struct esp_netif_inherent_config {
     esp_netif_flags_t flags;         /*!< flags that define esp-netif behavior */
     uint8_t mac[6];                  /*!< initial mac address for this interface */
-    esp_netif_ip_info_t* ip_info;    /*!< initial ip address for this interface */
+    const esp_netif_ip_info_t* ip_info;    /*!< initial ip address for this interface */
     uint32_t get_ip_event;           /*!< event id to be raised when interface gets an IP */
     uint32_t lost_ip_event;          /*!< event id to be raised when interface losts its IP */
     const char * if_key;             /*!< string identifier of the interface */
@@ -173,6 +184,7 @@ typedef struct esp_netif_driver_base_s {
 struct esp_netif_driver_ifconfig {
     esp_netif_iodriver_handle handle;
     esp_err_t (*transmit)(void *h, void *buffer, size_t len);
+    esp_err_t (*transmit_wrap)(void *h, void *buffer, size_t len, void *netstack_buffer);
     void (*driver_free_rx_buffer)(void *h, void* buffer);
 };
 
@@ -197,5 +209,9 @@ struct esp_netif_config {
  * @brief  ESP-NETIF Receive function type
  */
 typedef esp_err_t (*esp_netif_receive_t)(esp_netif_t *esp_netif, void *buffer, size_t len, void *eb);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ESP_NETIF_TYPES_H_

@@ -47,7 +47,7 @@ Data type check is also performed when reading a value. An error is returned if 
 Namespaces
 ^^^^^^^^^^
 
-To mitigate potential conflicts in key names between different components, NVS assigns each key-value pair to one of namespaces. Namespace names follow the same rules as key names, i.e., the maximum length is 15 characters. Namespace name is specified in the ``nvs_open`` or ``nvs_open_from_part`` call. This call returns an opaque handle, which is used in subsequent calls to the ``nvs_read_*``, ``nvs_write_*``, and ``nvs_commit`` functions. This way, a handle is associated with a namespace, and key names will not collide with same names in other namespaces.
+To mitigate potential conflicts in key names between different components, NVS assigns each key-value pair to one of namespaces. Namespace names follow the same rules as key names, i.e., the maximum length is 15 characters. Namespace name is specified in the ``nvs_open`` or ``nvs_open_from_part`` call. This call returns an opaque handle, which is used in subsequent calls to the ``nvs_get_*``, ``nvs_set_*``, and ``nvs_commit`` functions. This way, a handle is associated with a namespace, and key names will not collide with same names in other namespaces.
 Please note that the namespaces with the same name in different NVS partitions are considered as separate namespaces.
 
 
@@ -282,7 +282,7 @@ It is possible for an application to use different keys for different NVS partit
 Encrypted Read/Write
 ^^^^^^^^^^^^^^^^^^^^
 
-The same NVS API functions ``nvs_read_*`` or ``nvs_write_*`` can be used for reading of, and writing to an encrypted nvs partition as well. However, the API functions for initialising NVS partitions are different: ``nvs_flash_secure_init`` and ``nvs_flash_secure_init_partition`` instead of ``nvs_flash_init`` and ``nvs_flash_init_partition`` respectively. The ``nvs_sec_cfg_t`` structure required for these API functions can be populated using ``nvs_flash_generate_keys`` or ``nvs_flash_read_security_cfg``.
+The same NVS API functions ``nvs_get_*`` or ``nvs_set_*`` can be used for reading of, and writing to an encrypted nvs partition as well. However, the API functions for initialising NVS partitions are different: ``nvs_flash_secure_init`` and ``nvs_flash_secure_init_partition`` instead of ``nvs_flash_init`` and ``nvs_flash_init_partition`` respectively. The ``nvs_sec_cfg_t`` structure required for these API functions can be populated using ``nvs_flash_generate_keys`` or ``nvs_flash_read_security_cfg``.
 
 Applications are expected to follow the steps below in order to perform NVS read/write operations with encryption enabled.
 
@@ -290,7 +290,7 @@ Applications are expected to follow the steps below in order to perform NVS read
     2. Populate the ``nvs_sec_cfg_t`` struct using the ``nvs_flash_read_security_cfg`` or ``nvs_flash_generate_keys`` API functions.
     3. Initialise NVS flash partition using the ``nvs_flash_secure_init`` or ``nvs_flash_secure_init_partition`` API functions.
     4. Open a namespace using the ``nvs_open`` or ``nvs_open_from_part`` API functions.
-    5. Perform NVS read/write operations using ``nvs_read_*`` or ``nvs_write_*``.
+    5. Perform NVS read/write operations using ``nvs_get_*`` or ``nvs_set_*``.
     6. Deinitialise an NVS partition using ``nvs_flash_deinit``.
 
 NVS iterators

@@ -19,7 +19,6 @@
 #include "soc/cpu.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "freertos/portmacro.h"
 #include "freertos/task.h"
 #include "freertos/portable.h"
 

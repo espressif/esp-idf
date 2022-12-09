@@ -50,8 +50,7 @@ esp_err_t nvs_flash_init(void);
 /**
  * @brief Initialize NVS flash storage for the specified partition.
  *
- * @param[in]  partition_label   Label of the partition. Note that internally a reference to
- *                               passed value is kept and it should be accessible for future operations
+ * @param[in]  partition_label   Label of the partition. Must be no longer than 16 characters.
  *
  * @return
  *      - ESP_OK if storage was successfully initialized.
@@ -61,6 +60,20 @@ esp_err_t nvs_flash_init(void);
  *      - one of the error codes from the underlying flash storage driver
  */
 esp_err_t nvs_flash_init_partition(const char *partition_label);
+
+/**
+ * @brief Initialize NVS flash storage for the partition specified by partition pointer.
+ *
+ * @param[in] partition pointer to a partition obtained by the ESP partition API.
+ *
+ * @return
+ *      - ESP_OK if storage was successfully initialized
+ *      - ESP_ERR_NVS_NO_FREE_PAGES if the NVS storage contains no empty pages
+ *        (which may happen if NVS partition was truncated)
+ *      - ESP_ERR_INVALID_ARG in case partition is NULL
+ *      - one of the error codes from the underlying flash storage driver
+ */
+esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partition);
 
 /**
  * @brief Deinitialize NVS storage for the default NVS partition
@@ -88,29 +101,56 @@ esp_err_t nvs_flash_deinit_partition(const char* partition_label);
 /**
  * @brief Erase the default NVS partition
  *
- * This function erases all contents of the default NVS partition (one with label "nvs")
+ * Erases all contents of the default NVS partition (one with label "nvs").
+ *
+ * @note If the partition is initialized, this function first de-initializes it. Afterwards, the partition has to
+ *       be initialized again to be used.
  *
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NOT_FOUND if there is no NVS partition labeled "nvs" in the
  *        partition table
+ *      - different error in case de-initialization fails (shouldn't happen)
  */
 esp_err_t nvs_flash_erase(void);
 
 /**
  * @brief Erase specified NVS partition
  *
- * This function erases all contents of specified NVS partition
+ * Erase all content of a specified NVS partition
  *
- * @param[in]  part_name    Name (label) of the partition to be erased
+ * @note If the partition is initialized, this function first de-initializes it. Afterwards, the partition has to
+ *       be initialized again to be used.
+ *
+ * @param[in]  part_name    Name (label) of the partition which should be erased
  *
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NOT_FOUND if there is no NVS partition with the specified name
  *        in the partition table
+ *      - different error in case de-initialization fails (shouldn't happen)
  */
 esp_err_t nvs_flash_erase_partition(const char *part_name);
 
+/**
+ * @brief Erase custom partition.
+ *
+ * Erase all content of specified custom partition.
+ *
+ * @note
+ *  If the partition is initialized, this function first de-initializes it.
+ *  Afterwards, the partition has to be initialized again to be used.
+ *
+ * @param[in] partition pointer to a partition obtained by the ESP partition API.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_FOUND if there is no partition with the specified
+ *        parameters in the partition table
+ *      - ESP_ERR_INVALID_ARG in case partition is NULL
+ *      - one of the error codes from the underlying flash storage driver
+ */
+esp_err_t nvs_flash_erase_partition_ptr(const esp_partition_t *partition);
 
 /**
  * @brief Initialize the default NVS partition.
@@ -118,8 +158,8 @@ esp_err_t nvs_flash_erase_partition(const char *part_name);
  * This API initialises the default NVS partition. The default NVS partition
  * is the one that is labeled "nvs" in the partition table.
  *
- * @param[in]  cfg Security configuration (keys) to be used for NVS encryption/decryption. 
- *                              If cfg is NULL, no encryption is used. 
+ * @param[in]  cfg Security configuration (keys) to be used for NVS encryption/decryption.
+ *                              If cfg is NULL, no encryption is used.
  *
  * @return
  *      - ESP_OK if storage was successfully initialized.
@@ -136,8 +176,8 @@ esp_err_t nvs_flash_secure_init(nvs_sec_cfg_t* cfg);
  * @param[in]  partition_label   Label of the partition. Note that internally a reference to
  *                               passed value is kept and it should be accessible for future operations
  *
- * @param[in]  cfg Security configuration (keys) to be used for NVS encryption/decryption. 
- *                              If cfg is null, no encryption/decryption is used. 
+ * @param[in]  cfg Security configuration (keys) to be used for NVS encryption/decryption.
+ *                              If cfg is null, no encryption/decryption is used.
  * @return
  *      - ESP_OK if storage was successfully initialized.
  *      - ESP_ERR_NVS_NO_FREE_PAGES if the NVS storage contains no empty pages
@@ -149,16 +189,16 @@ esp_err_t nvs_flash_secure_init_partition(const char *partition_label, nvs_sec_c
 
 /**
  * @brief Generate and store NVS keys in the provided esp partition
- * 
+ *
  * @param[in]  partition Pointer to partition structure obtained using
  *                       esp_partition_find_first or esp_partition_get.
  *                       Must be non-NULL.
  * @param[out] cfg       Pointer to nvs security configuration structure.
- *                       Pointer must be non-NULL. 
+ *                       Pointer must be non-NULL.
  *                       Generated keys will be populated in this structure.
  *
  *
- * @return 
+ * @return
  *      -ESP_OK, if cfg was read successfully;
  *      -or error codes from esp_partition_write/erase APIs.
  */
@@ -167,8 +207,8 @@ esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, nvs_sec_cfg_
 
 
 /**
- * @brief Read NVS security configuration from a partition. 
- * 
+ * @brief Read NVS security configuration from a partition.
+ *
  * @param[in]  partition Pointer to partition structure obtained using
  *                       esp_partition_find_first or esp_partition_get.
  *                       Must be non-NULL.
@@ -177,7 +217,7 @@ esp_err_t nvs_flash_generate_keys(const esp_partition_t* partition, nvs_sec_cfg_
  *
  * @note  Provided parition is assumed to be marked 'encrypted'.
  *
- * @return 
+ * @return
  *      -ESP_OK, if cfg was read successfully;
  *      -ESP_ERR_NVS_KEYS_NOT_INITIALIZED, if the partition is not yet written with keys.
  *      -ESP_ERR_NVS_CORRUPT_KEY_PART, if the partition containing keys is found to be corrupt

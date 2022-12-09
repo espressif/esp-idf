@@ -26,21 +26,11 @@ order to receive back the same data which were sent out.
 ```
 idf.py menuconfig
 ```
-or
-```
-idf.py menuconfig
-```
-
-* Set serial port under Serial Flasher Options.
 
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
-```
-idf.py -p PORT flash monitor
-```
-or
 ```
 idf.py -p PORT flash monitor
 ```

@@ -194,7 +194,7 @@ The same rules as for C apply. Where they are not enough, apply the following ru
 
 File Naming
 ^^^^^^^^^^^^
-C++ Header files have the extension ``.h``. C++ source files have the extension ``.cpp``, which is important for the compiler to distiguish them from normal C source files.
+C++ Header files have the extension ``.hpp``. C++ source files have the extension ``.cpp``. The latter is important for the compiler to distiguish them from normal C source files.
 
 Naming
 ^^^^^^
@@ -202,11 +202,39 @@ Naming
 * **Class and struct** names shall be written in ``CamelCase`` with a capital letter as beginning. Member variables and methods shall be in ``snake_case``.
 * **Namespaces** shall be in lower ``snake_case``.
 * **Templates** are specified in the line above the function declaration.
+* Interfaces in terms of Object-Oriented Programming shall be named without the suffix ``...Interface``. Later, this makes it easier to extract interfaces from normal classes and vice versa without making a breaking change.
 
 Member Order in Classes
 ^^^^^^^^^^^^^^^^^^^^^^^
+In order of precedence:
 
-First put the public members, then the protected, then private ones. Omit public, protected or private sections without any members.
+* First put the public members, then the protected, then private ones. Omit public, protected or private sections without any members.
+* First put constructors/destructors, then member functions, then member variables.
+
+For example:
+
+::
+
+    class ForExample {
+    public:
+        // first constructors, then default constructor, then destructor
+        ForExample(double example_factor_arg);
+        ForExample();
+        ~ForExample();
+
+        // then remaining pubic methods
+        set_example_factor(double example_factor_arg);
+
+        // then public member variables
+        uint32_t public_data_member;
+
+    private:
+        // first private methods
+        void internal_method();
+
+        // then private member variables
+        double example_factor;
+    };
 
 Spacing
 ^^^^^^^
@@ -305,7 +333,7 @@ Configuring the Code Style for a Project Using EditorConfig
 
 EditorConfig helps developers define and maintain consistent coding styles between different editors and IDEs. The EditorConfig project consists of a file format for defining coding styles and a collection of text editor plugins that enable editors to read the file format and adhere to defined styles. EditorConfig files are easily readable and they work nicely with version control systems.
 
-For more information, see `EditorConfig <http://editorconfig.org>`_ Website.
+For more information, see `EditorConfig <https://editorconfig.org>`_ Website.
 
 
 Documenting Code

@@ -306,8 +306,11 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
                 p_srcb->p_srvc_cache = NULL;
             }
         }
-        osi_free(p_clcb->p_q_cmd);
-        p_clcb->p_q_cmd = NULL;
+
+        if ( p_clcb->p_q_cmd != NULL && !list_contains(p_clcb->p_cmd_list, p_clcb->p_q_cmd)){
+            osi_free(p_clcb->p_q_cmd);
+            p_clcb->p_q_cmd = NULL;
+        }
         // don't forget to clear the command queue before dealloc the clcb.
         list_clear(p_clcb->p_cmd_list);
         osi_free((void *)p_clcb->p_cmd_list);
@@ -594,6 +597,30 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV *p_srcb, UINT16 conn_id,
         APPL_TRACE_ERROR("can not clear indication/notif registration for unknown app");
     }
     return;
+}
+
+/*******************************************************************************
+**
+** Function         bta_gattc_clear_notif_registration_by_bda
+**
+** Description      Clear up the notification registration information by BD_ADDR.
+**
+**
+** Returns          None.
+**
+*******************************************************************************/
+void bta_gattc_clear_notif_registration_by_bda(tBTA_GATTC_RCB *p_clrcb, BD_ADDR remote_bda)
+{
+    if(p_clrcb == NULL) {
+        return;
+    }
+    for (uint8_t i = 0 ; i < BTA_GATTC_NOTIF_REG_MAX; i ++) {
+        if (p_clrcb->notif_reg[i].in_use &&
+            !bdcmp(p_clrcb->notif_reg[i].remote_bda, remote_bda))
+        {
+            memset(&p_clrcb->notif_reg[i], 0, sizeof(tBTA_GATTC_NOTIF_REG));
+        }
+    }
 }
 
 /*******************************************************************************

@@ -33,7 +33,7 @@ static void test_read_blob(void)
     TEST_ASSERT_EQUAL_INT(sizeof(mac) * 8, esp_efuse_get_field_size(ESP_EFUSE_MAC_FACTORY));
     ESP_LOGI(TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-#if CONFIG_IDF_TARGET_ESP32
+#ifdef CONFIG_IDF_TARGET_ESP32
     ESP_LOGI(TAG, "2. Check CRC by MAC");
     uint8_t crc;
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY_CRC, &crc, 8));
@@ -265,6 +265,32 @@ static void test_write_cnt(void)
 TEST_CASE("efuse test write_field_cnt", "[efuse]")
 {
     test_write_cnt();
+}
+
+TEST_CASE("efuse test single bit functions", "[efuse]")
+{
+    esp_efuse_utility_erase_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
+
+    uint8_t test_bit;
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_TEST5_LEN_1, &test_bit, 1));
+    TEST_ASSERT_EQUAL_HEX8(0, test_bit);
+
+    test_bit = esp_efuse_read_field_bit(ESP_EFUSE_TEST5_LEN_1);
+    TEST_ASSERT_EQUAL_HEX8(0, test_bit);
+
+    TEST_ESP_OK(esp_efuse_write_field_bit(ESP_EFUSE_TEST5_LEN_1));
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_TEST5_LEN_1, &test_bit, 1));
+    TEST_ASSERT_EQUAL_HEX8(1, test_bit);
+
+    test_bit = esp_efuse_read_field_bit(ESP_EFUSE_TEST5_LEN_1);
+    TEST_ASSERT_EQUAL_HEX8(1, test_bit);
+
+    // Can write the bit again and it's a no-op
+    TEST_ESP_OK(esp_efuse_write_field_bit(ESP_EFUSE_TEST5_LEN_1));
+    TEST_ASSERT_EQUAL_HEX8(1, esp_efuse_read_field_bit(ESP_EFUSE_TEST5_LEN_1));
+
+    esp_efuse_utility_debug_dump_blocks();
 }
 
 void cut_tail_arr(uint8_t *arr, int num_used_bits, size_t count_bits)
@@ -509,7 +535,7 @@ TEST_CASE("Test esp_efuse_read_block esp_efuse_write_block functions", "[efuse]"
         printf("EFUSE_CODING_SCHEME_REPEAT\n");
         count_useful_reg = 4;
     }
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     if (coding_scheme == EFUSE_CODING_SCHEME_RS) {
         printf("EFUSE_CODING_SCHEME_RS\n");
         count_useful_reg = 8;
@@ -572,7 +598,7 @@ TEST_CASE("Test Bits are not empty. Write operation is forbidden", "[efuse]")
             printf("EFUSE_CODING_SCHEME_REPEAT\n");
             count_useful_reg = 4;
         }
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
         if (coding_scheme == EFUSE_CODING_SCHEME_RS) {
             printf("EFUSE_CODING_SCHEME_RS\n");
             if (num_block == EFUSE_BLK1) {
@@ -669,8 +695,8 @@ TEST_CASE("Batch mode is thread-safe", "[efuse]")
     sema = xSemaphoreCreateBinary();
 
     printf("\n");
-    xTaskCreatePinnedToCore(task1, "task1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
-    xTaskCreatePinnedToCore(task2, "task2", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    xTaskCreatePinnedToCore(task1, "task1", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
+    xTaskCreatePinnedToCore(task2, "task2", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     xSemaphoreTake(sema, portMAX_DELAY);
 
@@ -678,8 +704,8 @@ TEST_CASE("Batch mode is thread-safe", "[efuse]")
     esp_efuse_utility_erase_virt_blocks();
 
     printf("\n");
-    xTaskCreatePinnedToCore(task1, "task1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
-    xTaskCreatePinnedToCore(task3, "task3", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    xTaskCreatePinnedToCore(task1, "task1", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
+    xTaskCreatePinnedToCore(task3, "task3", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     xSemaphoreTake(sema, portMAX_DELAY);
 
@@ -690,4 +716,164 @@ TEST_CASE("Batch mode is thread-safe", "[efuse]")
 }
 #endif // #ifndef CONFIG_FREERTOS_UNICORE
 
+static void test_wp(esp_efuse_block_t blk, const esp_efuse_desc_t* field[])
+{
+    size_t out_cnt;
+    TEST_ESP_OK(esp_efuse_set_write_protect(blk));
+    esp_efuse_read_field_cnt(field, &out_cnt);
+    TEST_ASSERT_EQUAL_INT(1, out_cnt);
+}
+
+static void test_rp(esp_efuse_block_t blk, const esp_efuse_desc_t* field[], bool read_first)
+{
+    size_t out_cnt;
+    if (read_first) {
+        esp_efuse_read_field_cnt(field, &out_cnt);
+        TEST_ASSERT_EQUAL_INT(0, out_cnt);
+    }
+    TEST_ESP_OK(esp_efuse_set_read_protect(blk));
+    esp_efuse_read_field_cnt(field, &out_cnt);
+    TEST_ASSERT_EQUAL_INT(1, out_cnt);
+    if (read_first) {
+        TEST_ESP_ERR(ESP_ERR_EFUSE_CNT_IS_FULL, esp_efuse_set_read_protect(blk));
+    }
+}
+
+TEST_CASE("Test a write/read protection", "[efuse]")
+{
+    esp_efuse_utility_reset();
+    esp_efuse_utility_erase_virt_blocks();
+
+    esp_efuse_utility_debug_dump_blocks();
+
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_set_write_protect(EFUSE_BLK0));
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_set_read_protect(EFUSE_BLK0));
+
+    size_t out_cnt;
+    esp_efuse_read_field_cnt(ESP_EFUSE_WR_DIS_BLK1, &out_cnt);
+    TEST_ASSERT_EQUAL_INT(0, out_cnt);
+    TEST_ESP_OK(esp_efuse_set_write_protect(EFUSE_BLK1));
+    esp_efuse_read_field_cnt(ESP_EFUSE_WR_DIS_BLK1, &out_cnt);
+    TEST_ASSERT_EQUAL_INT(1, out_cnt);
+    TEST_ESP_ERR(ESP_ERR_EFUSE_CNT_IS_FULL, esp_efuse_set_write_protect(EFUSE_BLK1));
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+    test_wp(EFUSE_BLK2, ESP_EFUSE_WR_DIS_BLK2);
+    test_wp(EFUSE_BLK3, ESP_EFUSE_WR_DIS_BLK3);
+
+    esp_efuse_utility_debug_dump_blocks();
+
+    test_rp(EFUSE_BLK1, ESP_EFUSE_RD_DIS_BLK1, true);
+    test_rp(EFUSE_BLK2, ESP_EFUSE_RD_DIS_BLK2, false);
+    test_rp(EFUSE_BLK3, ESP_EFUSE_RD_DIS_BLK3, false);
+#elif defined(CONFIG_IDF_TARGET_ESP32S2)
+    test_wp(EFUSE_BLK2, ESP_EFUSE_WR_DIS_SYS_DATA_PART1);
+    test_wp(EFUSE_BLK3, ESP_EFUSE_WR_DIS_USER_DATA);
+
+    esp_efuse_utility_debug_dump_blocks();
+
+    test_rp(EFUSE_BLK4, ESP_EFUSE_RD_DIS_KEY0, true);
+    test_rp(EFUSE_BLK5, ESP_EFUSE_RD_DIS_KEY1, false);
+    test_rp(EFUSE_BLK6, ESP_EFUSE_RD_DIS_KEY2, false);
+#else
+#error New chip not supported!
+#endif
+
+    esp_efuse_utility_debug_dump_blocks();
+    esp_efuse_utility_reset();
+    esp_efuse_utility_erase_virt_blocks();
+}
+
 #endif // #ifdef CONFIG_EFUSE_VIRTUAL
+
+#ifdef CONFIG_IDF_ENV_FPGA
+TEST_CASE("Test a real write (FPGA)", "[efuse]")
+{
+    ESP_LOGI(TAG, "1. Write MAC address");
+    esp_efuse_utility_debug_dump_blocks();
+    uint8_t mac[6];
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, &mac, sizeof(mac) * 8));
+    ESP_LOGI(TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    uint8_t new_mac[6];
+    if (mac[0] == 0) {
+        new_mac[0] = 0x71;
+        new_mac[1] = 0x62;
+        new_mac[2] = 0x53;
+        new_mac[3] = 0x44;
+        new_mac[4] = 0x35;
+        new_mac[5] = 0x26;
+        TEST_ESP_OK(esp_efuse_write_field_blob(ESP_EFUSE_MAC_FACTORY, &new_mac, sizeof(new_mac) * 8));
+        ESP_LOGI(TAG, "new MAC: %02x:%02x:%02x:%02x:%02x:%02x", new_mac[0], new_mac[1], new_mac[2], new_mac[3], new_mac[4], new_mac[5]);
+        TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, &mac, sizeof(mac) * 8));
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(new_mac, mac, sizeof(new_mac));
+        esp_efuse_utility_debug_dump_blocks();
+    }
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+    ESP_LOGI(TAG, "2. Write KEY3");
+    uint8_t key[32] = {0};
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY3, &key, 256));
+    for (int i = 0; i < sizeof(key); ++i) {
+        TEST_ASSERT_EQUAL_INT(0, key[i]);
+    }
+    uint8_t new_key[32] = { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
+                           10, 11, 12, 12, 14, 15, 16, 17, 18, 19,
+                           20, 21, 22, 22, 24, 25, 26, 27, 28, 29,
+                           30, 31};
+    TEST_ESP_OK(esp_efuse_write_field_blob(ESP_EFUSE_KEY3, &new_key, 256));
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY3, &key, 256));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(new_key, key, sizeof(key));
+    esp_efuse_utility_debug_dump_blocks();
+
+    ESP_LOGI(TAG, "3. Set a read protection for KEY3");
+    TEST_ESP_OK(esp_efuse_set_read_protect(EFUSE_BLK7));
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY3, &key, 256));
+#ifndef CONFIG_EFUSE_VIRTUAL
+    TEST_ASSERT_EACH_EQUAL_HEX8(0, key, sizeof(key));
+#else
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(new_key, key, sizeof(key));
+#endif // CONFIG_EFUSE_VIRTUAL
+    esp_efuse_utility_debug_dump_blocks();
+#endif // CONFIG_IDF_TARGET_ESP32S2
+    ESP_LOGI(TAG, "4. Write SECURE_VERSION");
+    int max_bits = esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION);
+    size_t read_sec_version;
+    esp_efuse_utility_debug_dump_blocks();
+    for (int i = 0; i < max_bits; ++i) {
+        ESP_LOGI(TAG, "# %d", i);
+        TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_SECURE_VERSION, 1));
+        TEST_ESP_OK(esp_efuse_read_field_cnt(ESP_EFUSE_SECURE_VERSION, &read_sec_version));
+        esp_efuse_utility_debug_dump_blocks();
+        TEST_ASSERT_EQUAL_INT(i + 1, read_sec_version);
+    }
+}
+#endif  // CONFIG_IDF_ENV_FPGA
+
+
+#ifndef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_ENV_FPGA || CONFIG_EFUSE_VIRTUAL
+TEST_CASE("Test writing order is BLK_MAX->BLK0", "[efuse]")
+{
+    uint8_t new_key[32] = {33,  1,  2,  3,  4,  5,  6,  7,  8,  9,
+                           10, 11, 12, 12, 14, 15, 16, 17, 18, 19,
+                           20, 21, 22, 22, 24, 25, 26, 27, 28, 29,
+                           30, 31};
+    esp_efuse_utility_erase_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
+
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+
+    TEST_ESP_OK(esp_efuse_write_field_blob(ESP_EFUSE_KEY4, &new_key, 256));
+    // If the order of writing blocks is wrong (ex. BLK0 -> BLK_MAX)
+    // then the write protection bit will be set early and the key was left un-updated.
+    TEST_ESP_OK(esp_efuse_set_write_protect(EFUSE_BLK_KEY4));
+
+    TEST_ESP_OK(esp_efuse_batch_write_commit());
+    esp_efuse_utility_debug_dump_blocks();
+
+    uint8_t key[32] = { 0xEE };
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY4, &key, 256));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(new_key, key, sizeof(key));
+}
+
+#endif  // CONFIG_IDF_ENV_FPGA || CONFIG_EFUSE_VIRTUAL
+#endif  // not CONFIG_IDF_TARGET_ESP32

@@ -16,6 +16,7 @@
 #define __ESP_MESH_INTERNAL_H__
 
 #include "esp_err.h"
+#include "esp_mesh.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
 #include "esp_private/wifi.h"
@@ -95,6 +96,19 @@ typedef struct {
     uint8_t child[6];        /**< child address */
     uint8_t toDS;            /**< toDS state */
 } __attribute__((packed)) mesh_assoc_t;
+
+/**
+ * @brief Mesh PS duties
+ */
+typedef struct {
+    uint8_t device;
+    uint8_t parent;
+    struct {
+        bool used;
+        uint8_t duty;
+        uint8_t mac[6];
+    } child[ESP_WIFI_MAX_CONN_NUM];
+} esp_mesh_ps_duties_t;
 
 /*******************************************************
  *                Function Definitions
@@ -263,6 +277,23 @@ esp_err_t esp_mesh_set_announce_interval(int short_ms, int long_ms);
  */
 esp_err_t esp_mesh_get_announce_interval(int *short_ms, int *long_ms);
 
+/**
+  * @brief      Get the running duties of device, parent and children
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_ps_get_duties(esp_mesh_ps_duties_t* ps_duties);
+
+/**
+ * @brief      Enable mesh print scan result
+ *
+ * @param[in]  enable  enable or not
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_print_scan_result(bool enable);
 #ifdef __cplusplus
 }
 #endif

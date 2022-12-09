@@ -8,9 +8,9 @@ Get Started (Legacy GNU Make)
 
 This document is intended to help you set up the software development environment for the hardware based on Espressif ESP32.
 
-After that, a simple example will show you how to use ESP-IDF (Espressif IoT Development Framework) for menu configuration, then how to build and flash firmware onto an ESP32 board.
+After that, a simple example will show you how to use ESP-IDF (Espressif IoT Development Framework) for menu configuration, then for building and flashing firmware onto an ESP32 board.
 
-.. include:: /_build/inc/version-note.inc
+.. include-build-file:: inc/version-note.inc
 
 Introduction
 ============
@@ -18,7 +18,7 @@ Introduction
 ESP32 is a system on a chip that integrates the following features:
 
 * Wi-Fi (2.4 GHz band)
-* Bluetooth 4.2
+* Bluetooth
 * Dual high performance cores
 * Ultra Low Power co-processor
 * Several peripherals
@@ -59,11 +59,11 @@ If you have one of ESP32 development boards listed below, you can click on the l
 .. toctree::
     :maxdepth: 1
 
-    ESP32-DevKitC <../hw-reference/get-started-devkitc>
-    ESP-WROVER-KIT <../hw-reference/get-started-wrover-kit>
-    ESP32-PICO-KIT <../hw-reference/get-started-pico-kit>
-    ESP32-Ethernet-Kit <../hw-reference/get-started-ethernet-kit>
-
+    ESP32-DevKitC <../hw-reference/esp32/get-started-devkitc>
+    ESP-WROVER-KIT <../hw-reference/esp32/get-started-wrover-kit>
+    ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
+    ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
+    ESP32-DevKit-S(-R) <../hw-reference/esp32/user-guide-devkits-r-v1.1>
 .. _get-started-step-by-step-legacy:
 
 Installation Step by Step
@@ -96,7 +96,7 @@ Step 1. Set up the Toolchain
 
 The toolchain is a set of programs for compiling code and building applications.
 
-The quickest way to start development with ESP32 is by installing a prebuilt toolchain. Pick up your OS below and follow the provided instructions. 
+The quickest way to start development with ESP32 is by installing a prebuilt toolchain. Pick up your OS below and follow the provided instructions.
 
 .. toctree::
     :hidden:
@@ -142,13 +142,13 @@ To get a local copy of ESP-IDF, navigate to your installation directory and clon
 
 Open Terminal, and run the following commands:
 
-.. include:: /_build/inc/git-clone-bash.inc
+.. include-build-file:: inc/git-clone-bash.inc
 
 ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 
 Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
 
-.. include:: /_build/inc/git-clone-notes.inc
+.. include-build-file:: inc/git-clone-notes.inc
 
 .. note::
 
@@ -179,11 +179,11 @@ The python packages required by ESP-IDF are located in ``IDF_PATH/requirements.t
 
 .. note::
 
-    Please check the version of the Python interpreter that you will be using with ESP-IDF. For this, run 
-    the command ``python --version`` and depending on the result, you might want to use ``python2``, ``python2.7``
+    Please check the version of the Python interpreter that you will be using with ESP-IDF. For this, run
+    the command ``python --version`` and depending on the result, you might want to use ``python3``, ``python3.7``
     or similar instead of just ``python``, e.g.::
 
-        python2.7 -m pip install --user -r $IDF_PATH/requirements.txt
+        python3 -m pip install --user -r $IDF_PATH/requirements.txt
 
 
 .. _get-started-start-project-legacy:
@@ -226,7 +226,7 @@ Step 6. Connect Your Device
 
 Now connect your ESP32 board to the computer and check under what serial port the board is visible.
 
-Serial ports have the following patterns in their names: 
+Serial ports have the following patterns in their names:
 
 - **Windows**: names like ``COM1``
 - **Linux**: starting with ``/dev/tty``
@@ -283,10 +283,6 @@ To navigate and use ``menuconfig``, press the following keys:
 * ``?`` while highlighting a configuration item to display help about that item
 * ``/`` to find configuration items
 
-.. note::
-
-    If you are **Arch Linux** user, navigate to ``SDK tool configuration`` and change the name of ``Python 2 interpreter`` from ``python`` to ``python2``.
-
 .. attention::
 
     If you use ESP32-DevKitC board with the **ESP32-SOLO-1** module, enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in menuconfig before flashing examples.
@@ -302,37 +298,60 @@ Build and flash the project by running::
 
 This command will compile the application and all ESP-IDF components, then it will generate the bootloader, partition table, and application binaries. After that, these binaries will be flashed onto your ESP32 board.
 
-If there are no issues by the end of the flash process, you will see messages (below) describing progress of the loading process. Then the board will be reset and the "hello_world" application will start up.
 
-.. highlight:: none
+Encountered Issues While Flashing?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-::
+If you run the given command and see errors such as "Failed to connect", there might be several reasons for this. One of the reasons might be issues encountered by ``esptool.py``, the utility that is called by the build system to reset the chip, interact with the ROM bootloader, and flash firmware. One simple solution to try is manual reset described below, and if it does not help you can find more details about possible issues in `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_.
 
-    esptool.py v2.0-beta2
+``esptool.py`` resets {IDF_TARGET_NAME} automatically by asserting DTR and RTS control lines of the USB to serial converter chip, i.e., FTDI or CP210x (for more information, see :doc:`establish-serial-connection`). The DTR and RTS control lines are in turn connected to ``GPIO0`` and ``CHIP_PU`` (EN) pins of {IDF_TARGET_NAME}, thus changes in the voltage levels of DTR and RTS will boot {IDF_TARGET_NAME} into Firmware Download mode. As an example, check the schematic for :ref:`esp-modules-and-boards-esp32-devkitc` development board.
+
+In general, you should have no problems with the official esp-idf development boards. However, ``esptool.py`` is not able to reset your hardware automatically in the following cases:
+
+- Your hardware does not have the DTR and RTS lines connected to ``GPIO0`` and ``CIHP_PU``
+- The DTR and RTS lines are configured differently
+- There are no such serial control lines at all
+
+Depending on the kind of hardware you have, it may also be possible to manually put your {IDF_TARGET_NAME} board into Firmware Download mode (reset).
+
+- For development boards produced by Espressif, this information can be found in the respective getting started guides or user guides. For example, to manually reset an esp-idf development board, hold down the **Boot** button (``GPIO0``) and press the **EN** button (``CHIP_PU``).
+- For other types of hardware, try pulling ``GPIO0`` down.
+
+
+Normal Operation
+~~~~~~~~~~~~~~~~
+
+If there are no issues by the end of the flash process, you will see the output log similar to the one given below. Then the board will reboot and start up the "hello_world" application.
+
+.. code-block:: bash
+
+    esptool.py v3.0-dev
     Flashing binaries to serial port /dev/ttyUSB0 (app at offset 0x10000)...
-    esptool.py v2.0-beta2
-    Connecting........___
+    esptool.py v3.0-dev
+    Serial port /dev/cu.SLAB_USBtoUART
+    Connecting........____
+    Chip is ESP32D0WDQ6 (revision 1)
+    Features: WiFi, BT, Dual Core, Coding Scheme None
+    Crystal is 40MHz
+    MAC: 30:ae:a4:15:21:b4
     Uploading stub...
     Running stub...
     Stub running...
-    Changing baud rate to 921600
-    Changed.
-    Attaching SPI flash...
     Configuring flash size...
     Auto-detected Flash size: 4MB
     Flash params set to 0x0220
-    Compressed 11616 bytes to 6695...
-    Wrote 11616 bytes (6695 compressed) at 0x00001000 in 0.1 seconds (effective 920.5 kbit/s)...
+    Compressed 26704 bytes to 15930...
+    Wrote 26704 bytes (15930 compressed) at 0x00001000 in 1.4 seconds (effective 151.9 kbit/s)...
     Hash of data verified.
-    Compressed 408096 bytes to 171625...
-    Wrote 408096 bytes (171625 compressed) at 0x00010000 in 3.9 seconds (effective 847.3 kbit/s)...
+    Compressed 147984 bytes to 77738...
+    Wrote 147984 bytes (77738 compressed) at 0x00010000 in 6.9 seconds (effective 172.7 kbit/s)...
     Hash of data verified.
-    Compressed 3072 bytes to 82...
-    Wrote 3072 bytes (82 compressed) at 0x00008000 in 0.0 seconds (effective 8297.4 kbit/s)...
+    Compressed 3072 bytes to 103...
+    Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.0 seconds (effective 1607.9 kbit/s)...
     Hash of data verified.
 
     Leaving...
-    Hard resetting...
+    Hard resetting via RTS pin...
 
 
 If you'd like to use the Eclipse IDE instead of running ``make``, check out the :doc:`Eclipse guide <eclipse-setup>`.
@@ -359,12 +378,12 @@ This command launches the :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` a
 
 After startup and diagnostic logs scroll up, you should see "Hello world!" printed out by the application.
 
-.. code-block:: none
+.. code-block:: bash
 
     ...
     Hello world!
+    This is esp32 chip with 2 CPU cores, WiFi/BT/BLE, silicon revision 1, 4MB external flash
     Restarting in 10 seconds...
-    I (211) cpu_start: Starting scheduler on APP CPU.
     Restarting in 9 seconds...
     Restarting in 8 seconds...
     Restarting in 7 seconds...
@@ -421,9 +440,9 @@ Some environment variables can be specified whilst calling ``make`` allowing use
 +-----------------+--------------------------------------------------------------+
 
 .. note::
-    
+
     You can export environment variables (e.g. ``export ESPPORT=/dev/ttyUSB1``).
-    All subsequent calls of ``make`` within the same terminal session will use 
+    All subsequent calls of ``make`` within the same terminal session will use
     the exported value given that the variable is not simultaneously overridden.
 
 
@@ -449,5 +468,6 @@ Related Documents
     ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
 
+.. Note: These two targets may be used from git-clone-notes.inc depending on version, don't remove
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
 .. _Releases page: https://github.com/espressif/esp-idf/releases

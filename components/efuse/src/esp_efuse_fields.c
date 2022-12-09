@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdlib.h>
+#include "sdkconfig.h"
 #include "esp_efuse.h"
 #include "esp_efuse_utility.h"
 #include "esp_efuse_table.h"
-#include "stdlib.h"
 #include "esp_types.h"
-#include "esp32/rom/efuse.h"
 #include "assert.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -26,6 +26,13 @@
 #include "soc/apb_ctrl_reg.h"
 #include "sys/param.h"
 
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/efuse.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/efuse.h"
+#endif
+
+static __attribute__((unused)) const char *TAG = "efuse";
 // Permanently update values written to the efuse write registers
 void esp_efuse_burn_new_values(void)
 {
@@ -43,7 +50,6 @@ void esp_efuse_reset(void)
 #include "../include_bootloader/bootloader_flash.h"
 #include "esp_flash_encrypt.h"
 
-const static char *TAG = "efuse";
 static uint32_t esp_efuse_flash_offset = 0;
 static uint32_t esp_efuse_flash_size = 0;
 

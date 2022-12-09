@@ -2314,7 +2314,7 @@ UINT8 l2cu_get_num_hi_priority (void)
 ** Description      This function initiates an acl connection via HCI
 **                  If switch required to create connection it is already done.
 **
-** Returns          TRUE if successful, FALSE if gki get buffer fails.
+** Returns          TRUE if successful, FALSE if osi get buffer fails.
 **
 *******************************************************************************/
 
@@ -3493,13 +3493,12 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
                     L2CAP_TRACE_ERROR("l2cu_get_buffer_to_send: No data to be sent");
                     return (NULL);
                 }
+                l2cu_check_channel_congestion (p_ccb);
+                l2cu_set_acl_hci_header (p_buf, p_ccb);
                 /* send tx complete */
                 if (l2cb.fixed_reg[xx].pL2CA_FixedTxComplete_Cb) {
                     (*l2cb.fixed_reg[xx].pL2CA_FixedTxComplete_Cb)(p_ccb->local_cid, 1);
                 }
-
-                l2cu_check_channel_congestion (p_ccb);
-                l2cu_set_acl_hci_header (p_buf, p_ccb);
                 return (p_buf);
             }
         }
@@ -3660,8 +3659,9 @@ void l2cu_check_channel_congestion (tL2C_CCB *p_ccb)
 #endif
             }
         } else {
+            tL2C_LCB *p_lcb = p_ccb->p_lcb;
             /* If this channel was not congested but it is congested now, tell the app */
-            if (q_count > p_ccb->buff_quota) {
+            if (q_count > p_ccb->buff_quota || (p_lcb && (p_lcb->link_xmit_data_q) && (list_length(p_lcb->link_xmit_data_q) + q_count) > p_ccb->buff_quota)) {
                 p_ccb->cong_sent = TRUE;
                 if (p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb) {
                     L2CAP_TRACE_DEBUG ("L2CAP - Calling CongestionStatus_Cb (TRUE),CID:0x%04x,XmitQ:%u,Quota:%u",

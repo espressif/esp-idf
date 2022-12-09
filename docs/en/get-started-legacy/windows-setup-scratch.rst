@@ -78,7 +78,7 @@ Add this line to ``/etc/profile`` in the MSYS directory in order to permanently 
 Alternative Setup: Just download a toolchain
 ============================================
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 If you already have an MSYS2 install or want to do things differently, you can download just the toolchain here:
 
@@ -114,6 +114,6 @@ The script to update MSYS2 may also fail with the same errors mentioned under Tr
 
 If you need to support multiple IDF versions concurrently, you can have different independent MSYS2 environments in different directories. Alternatively you can download multiple toolchains and unzip these to different directories, then use the PATH environment variable to set which one is the default.
 
-.. _MSYS2: https://msys2.github.io/
+.. _MSYS2: https://www.msys2.org/
 .. _MSYS2-packages issues list: https://github.com/Alexpux/MSYS2-packages/issues/
 .. _raise an IDF issue: https://github.com/espressif/esp-idf/issues/new

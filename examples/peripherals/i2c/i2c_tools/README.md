@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 |
+| ----------------- | ----- |
+
 # I2C Tools Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -36,8 +39,6 @@ To run this example, you should have one ESP32 dev board (e.g. ESP32-WROVER Kit)
 Open the project configuration menu (`idf.py menuconfig`). Then go into `Example Configuration` menu.
 
 - You can choose whether or not to save command history into flash in `Store command history in flash` option.
-- You can set the maximum number of command line arguments under `Maximum number of command line arguments` option.
-- You can set the command line buffer length under `Command line buffer length` option.
 
 ### Build and Flash
 
@@ -161,7 +162,7 @@ esp32> i2cget -c 0x5b -r 0x00 -l 1
 0x10 
 ```
 
-* `-c` option to specify the address of I2C device (acquired from `i2cetect` command).
+* `-c` option to specify the address of I2C device (acquired from `i2cdetect` command).
 * `-r` option to specify the register address you want to inspect.
 * `-l` option to specify the length of the content.
 * Here the returned value 0x10 means that the sensor is just in the boot mode and is ready to go into application mode. For more information about CCS811 you should consult the [official website](http://ams.com/ccs811).
@@ -197,9 +198,6 @@ esp32> i2cget -c 0x5b -r 0x02 -l 8
   * Reset you I2C device, and then run `i2cdetect` again.
 * I can’t get the right content when running `i2cdump` command.
   * Currently the `i2cdump` only support those who have the same content length of registers inside the I2C device. For example, if a device have three register addresses, and the content length at these address are 1 byte, 2 bytes and 4 bytes. In this case you should not expect this command to dump the register correctly.
-* I really input argument correctly, but the command line “discard” the last few arguements from time to time.
-  * Enlarge the maximum number of arguments in the menuconfig.
-
 
 
 (For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you as soon as possible.)

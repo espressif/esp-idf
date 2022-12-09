@@ -75,11 +75,11 @@
  * 4. Declare the group by PARAM_GROUP_DECLARE right after the param group:
  *      PARAM_GROUP_DECLARE(MODE, mode_pgroup)
  *
- * 5. Declare the test function by TEST_LOCAL (for single board test), or TEST_MASTER_SLAVE(for multiboard test)
+ * 5. Declare the test function by TEST_SINGLE_BOARD (for single board test), or TEST_MASTER_SLAVE(for multiboard test)
  *      TEST_MASTER_SLAVE(MODE, mode_pgroup, "[spi][timeout=120]", &master_test_func, &slave_test_func)
  *
  *      or
- *      TEST_LOCAL(TIMING, timing_pgroup, "[spi][timeout=120]", &local_test_func)
+ *      TEST_SINGLE_BOARD(TIMING, timing_pgroup, "[spi][timeout=120]", &local_test_func)
  *
  * NOTE: suggest to define your own macro to wrap 4 and 5 if your tag and test functions are the same. E.g.:
  *      #define TEST_SPI_MASTER_SLAVE(name, pgroup) (backslash)
@@ -146,8 +146,8 @@ void test_serializer(const param_group_t *param_group, const ptest_func_t* test_
  * @param tag Tag for environment, etc. e.g. [spi][timeout=120]
  * @param test_func ``ptest_func_t`` to be executed.
  */
-#define TEST_LOCAL(name, param_group, tag, test_func) \
-    TEST_CASE("local test: "#name, tag) { test_serializer(&PGROUP_NAME(param_group), test_func); }
+#define TEST_SINGLE_BOARD(name, param_group, tag, test_func) \
+    TEST_CASE("single board test: "#name, tag) { test_serializer(&PGROUP_NAME(param_group), test_func); }
 
 /**
  * Test parameter group for master-slave framework

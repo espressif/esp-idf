@@ -63,4 +63,10 @@ menu "Heap memory debugging"
             This function depends on heap poisoning being enabled and adds four more bytes of overhead for each block
             allocated.
 
+    config HEAP_ABORT_WHEN_ALLOCATION_FAILS
+        bool "Abort if memory allocation fails"
+        default n
+        help
+            When enabled, if a memory allocation operation fails it will cause a system abort.
+
 endmenu

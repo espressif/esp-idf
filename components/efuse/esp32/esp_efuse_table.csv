@@ -39,13 +39,16 @@ ENCRYPT_CONFIG,         EFUSE_BLK0,    188,   4,    Flash encrypt. EFUSE_FLASH_C
 DISABLE_DL_ENCRYPT,     EFUSE_BLK0,    199,   1,    Flash encrypt. Disable UART bootloader encryption. EFUSE_DISABLE_DL_ENCRYPT.
 DISABLE_DL_DECRYPT,     EFUSE_BLK0,    200,   1,    Flash encrypt. Disable UART bootloader decryption. EFUSE_DISABLE_DL_DECRYPT.
 DISABLE_DL_CACHE,       EFUSE_BLK0,    201,   1,    Flash encrypt. Disable UART bootloader MMU cache. EFUSE_DISABLE_DL_CACHE.
-DISABLE_JTAG,           EFUSE_BLK0,    198,   1,    Flash encrypt. Disable JTAG. EFUSE_RD_DISABLE_JTAG.
-CONSOLE_DEBUG_DISABLE,  EFUSE_BLK0,    194,   1,    Flash encrypt. Disable ROM BASIC interpreter fallback. EFUSE_RD_CONSOLE_DEBUG_DISABLE.
 FLASH_CRYPT_CNT,        EFUSE_BLK0,    20,    7,    Flash encrypt. Flash encryption is enabled if this field has an odd number of bits set. EFUSE_FLASH_CRYPT_CNT.
+
+# Misc Security #
+DISABLE_JTAG,           EFUSE_BLK0,    198,   1,    Disable JTAG. EFUSE_RD_DISABLE_JTAG.
+CONSOLE_DEBUG_DISABLE,  EFUSE_BLK0,    194,   1,    Disable ROM BASIC interpreter fallback. EFUSE_RD_CONSOLE_DEBUG_DISABLE.
+UART_DOWNLOAD_DIS,      EFUSE_BLK0,    27,    1,    Disable UART download mode. Valid for ESP32 V3 and newer, only.
 
 # Write protection #
 ####################
-WR_DIS_FLASH_CRYPT_CNT, EFUSE_BLK0,    2,     1,    Flash encrypt. Write protection FLASH_CRYPT_CNT. EFUSE_WR_DIS_FLASH_CRYPT_CNT
+WR_DIS_FLASH_CRYPT_CNT, EFUSE_BLK0,    2,     1,    Flash encrypt. Write protection FLASH_CRYPT_CNT, UART_DOWNLOAD_DIS. EFUSE_WR_DIS_FLASH_CRYPT_CNT
 WR_DIS_BLK1,            EFUSE_BLK0,    7,     1,    Flash encrypt. Write protection encryption key. EFUSE_WR_DIS_BLK1
 WR_DIS_BLK2,            EFUSE_BLK0,    8,     1,    Security boot. Write protection security key. EFUSE_WR_DIS_BLK2
 WR_DIS_BLK3,            EFUSE_BLK0,    9,     1,    Write protection for EFUSE_BLK3. EFUSE_WR_DIS_BLK3

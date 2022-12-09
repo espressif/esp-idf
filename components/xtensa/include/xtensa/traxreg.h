@@ -65,8 +65,7 @@
 #define TRAX_ID_PRODNO          0xf0000000	/* product number (0=TRAX) */
 #define TRAX_ID_PRODOPT         0x0f000000	/* product options */
 #define TRAX_ID_MIW64		0x08000000	/* opt: instruction width */
-#define TRAX_ID_AMTRAX		0x04000000	/* opt: collection of options,
-						   internal (VER_2_0 or later)*/
+#define TRAX_ID_AMTRAX		0x04000000	/* opt: collection of options, internal (VER_2_0 or later)*/
 #define TRAX_ID_MAJVER(id)	(((id) >> 20) & 0x0f)
 #define TRAX_ID_MINVER(id)	(((id) >> 17) & 0x07)
 #define TRAX_ID_VER(id)		((TRAX_ID_MAJVER(id)<<4)|TRAX_ID_MINVER(id))
@@ -78,14 +77,11 @@
 /*  TRAX versions of interest (TRAX_ID_VER(), ie. MAJVER*16 + MINVER):  */
 #define TRAX_VER_1_0		0x10		/* RA */
 #define TRAX_VER_1_1		0x11		/* RB thru RC-2010.1 */
-#define TRAX_VER_2_0		0x20		/* RC-2010.2, RD-2010.0, 
-						   RD-2011.1 */
-#define TRAX_VER_2_1		0x21		/* RC-2011.3 / RD-2011.2 and 
-						   later */
+#define TRAX_VER_2_0		0x20		/* RC-2010.2, RD-2010.0, RD-2011.1 */
+#define TRAX_VER_2_1		0x21		/* RC-2011.3 / RD-2011.2 and later */
 #define TRAX_VER_3_0		0x30		/* RE-2012.0 */
 #define	TRAX_VER_3_1		0x31		/* RE-2012.1 */
-#define TRAX_VER_HUAWEI_3	TRAX_VER_3_0	/* For Huawei, PRs: 25223, 25224
-						   , 24880 */
+#define TRAX_VER_HUAWEI_3	TRAX_VER_3_0	/* For Huawei, PRs: 25223, 25224, 24880 */
 
 
 /*  TRAX version 1.0 requires a couple software workarounds:  */
@@ -181,7 +177,8 @@ typedef struct {
 
 
 extern const trax_regdef_t	trax_reglist[];
-extern const signed char	trax_readable_regs[];
+extern const signed int 	trax_readable_regs[];
+extern const signed int 	trax_unamed_header_regs[];
 
 #ifdef  __cplusplus
 extern "C" {

@@ -71,10 +71,11 @@ static size_t blockEraseTime = 37142;
 
 static size_t timeInterp(uint32_t bytes, size_t* lut)
 {
+    const int lut_size = sizeof(readTimes)/sizeof(readTimes[0]);
     int lz = __builtin_clz(bytes / 4);
     int log_size = 32 - lz;
     size_t x2 = 1 << (log_size + 2);
-    size_t y2 = lut[log_size];
+    size_t y2 = lut[std::min(log_size, lut_size - 1)];
     size_t x1 = 1 << (log_size + 1);
     size_t y1 = lut[log_size - 1];
     return (bytes - x1) * (y2 - y1) / (x2 - x1) + y1;

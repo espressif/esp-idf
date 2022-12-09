@@ -70,11 +70,18 @@ static void btc_init_bluetooth(void)
     btc_dm_load_ble_local_keys();
 #endif  ///BLE_INCLUDED == TRUE
 #endif /* #if (SMP_INCLUDED) */
+#if BTA_DYNAMIC_MEMORY
+    deinit_semaphore = xSemaphoreCreateBinary();
+#endif /* #if BTA_DYNAMIC_MEMORY */
 }
 
 
 static void btc_deinit_bluetooth(void)
 {
+    /* Wait for the disable operation to complete */
+#if BTA_DYNAMIC_MEMORY
+    xSemaphoreTake(deinit_semaphore, BTA_DISABLE_DELAY / portTICK_PERIOD_MS);
+#endif /* #if BTA_DYNAMIC_MEMORY */
 #if (BLE_INCLUDED == TRUE)
     btc_gap_ble_deinit();
 #endif  ///BLE_INCLUDED == TRUE
@@ -92,6 +99,10 @@ static void btc_deinit_bluetooth(void)
     osi_alarm_deinit();
     osi_alarm_delete_mux();
     future_ready(*btc_main_get_future_p(BTC_MAIN_DEINIT_FUTURE), FUTURE_SUCCESS);
+#if BTA_DYNAMIC_MEMORY
+    vSemaphoreDelete(deinit_semaphore);
+    deinit_semaphore = NULL;
+#endif /* #if BTA_DYNAMIC_MEMORY */
 }
 
 void btc_main_call_handler(btc_msg_t *msg)

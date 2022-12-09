@@ -356,7 +356,7 @@ static int iterations;
 static void ringbuffer_isr(void *arg)
 {
     //Clear timer interrupt
-    timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
     timer_group_enable_alarm_in_isr(TIMER_GROUP_0, xPortGetCoreID());
 
     //Test sending to buffer from ISR from ISR
@@ -673,9 +673,9 @@ static IRAM_ATTR __attribute__((noinline)) bool iram_ringbuf_test(void)
 {
     bool result = true;
 
-    spi_flash_guard_get()->start(); // Disables flash cache
     RingbufHandle_t handle = xRingbufferCreate(CONT_DATA_TEST_BUFF_LEN, RINGBUF_TYPE_NOSPLIT);
     result = result && (handle != NULL);
+    spi_flash_guard_get()->start(); // Disables flash cache
     xRingbufferGetMaxItemSize(handle);
     vRingbufferDelete(handle);
     spi_flash_guard_get()->end(); // Re-enables flash cache

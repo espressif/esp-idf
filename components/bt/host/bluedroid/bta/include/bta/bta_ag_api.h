@@ -582,7 +582,7 @@ void BTA_AgSetCodec(UINT16 handle, tBTA_AG_PEER_CODEC codec);
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_AgCiData(void);
+void BTA_AgCiData(UINT16 handle);
 #endif /*#if (BTM_SCO_HCI_INCLUDED == TRUE ) */
 
 #ifdef __cplusplus

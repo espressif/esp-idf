@@ -9,7 +9,8 @@ menu "Example Configuration"
 
     choice SNIFFER_PCAP_DESTINATION
         prompt "Select destination to store pcap file"
-        default SNIFFER_PCAP_DESTINATION_SD
+        default SNIFFER_PCAP_DESTINATION_SD if IDF_TARGET_ESP32
+        default SNIFFER_PCAP_DESTINATION_JTAG if IDF_TARGET_ESP32S2
         help
             Select where to store the pcap file.
             Currently support storing files to SD card or to host via JTAG interface.

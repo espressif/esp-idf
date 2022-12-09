@@ -31,6 +31,17 @@ static uint32_t session_id = PROTOCOMM_NO_SESSION_ID;
 
 #define MAX_REQ_BODY_LEN 4096
 
+static void protocomm_httpd_session_close(void *ctx)
+{
+    if (pc_httpd->sec && pc_httpd->sec->close_transport_session) {
+        ESP_LOGW(TAG, "Closing session as socket %d was closed", session_id);
+        if (pc_httpd->sec->close_transport_session((protocomm_security_handle_t)ctx, session_id) != ESP_OK) {
+            ESP_LOGW(TAG, "Error closing session with ID: %d", session_id);
+        }
+    }
+    session_id = PROTOCOMM_NO_SESSION_ID;
+}
+
 static esp_err_t common_post_handler(httpd_req_t *req)
 {
     esp_err_t ret;
@@ -42,6 +53,7 @@ static esp_err_t common_post_handler(httpd_req_t *req)
     int cur_session_id = httpd_req_to_sockfd(req);
 
     if (cur_session_id != session_id) {
+        ESP_LOGI(TAG, "Creating new session: %d", cur_session_id);
         /* Initialize new security session */
         if (session_id != PROTOCOMM_NO_SESSION_ID) {
             ESP_LOGD(TAG, "Closing session with ID: %d", session_id);
@@ -62,6 +74,9 @@ static esp_err_t common_post_handler(httpd_req_t *req)
                 ret = ESP_FAIL;
                 goto out;
             }
+            req->sess_ctx = pc_httpd->sec_inst;
+            req->free_ctx = protocomm_httpd_session_close;
+
         }
         session_id = cur_session_id;
         ESP_LOGD(TAG, "New session with ID: %d", cur_session_id);

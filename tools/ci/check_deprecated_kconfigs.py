@@ -31,7 +31,7 @@ IGNORE_DIRS = (
 )
 
 
-def _parse_path(path, sep=' '):
+def _parse_path(path, sep=None):
     ret = set()
     with open(path, 'r', encoding='utf-8') as f:
         for line in f:

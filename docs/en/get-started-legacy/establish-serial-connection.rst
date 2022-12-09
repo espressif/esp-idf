@@ -3,7 +3,7 @@ Establish Serial Connection with ESP32 (Legacy GNU Make)
 :link_to_translation:`zh_CN:[中文]`
 
 .. include:: ../gnu-make-legacy.rst
-                     
+
 This section provides guidance how to establish serial connection between ESP32 and PC.
 
 
@@ -30,11 +30,11 @@ Below are the links to drivers for ESP32 and other boards produced by Espressif:
     `ESP32-Sense Kit <https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/esp32_sense_kit_guide_en.md#guide-for-esp32-sense-development-kit>`_, n/a, Use with `ESP-Prog`_
 
 .. _CP210x: https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers
-.. _FTDI: http://www.ftdichip.com/Drivers/VCP.htm 
+.. _FTDI: https://www.ftdichip.com/Drivers/VCP.htm
 .. _ESP-Prog: https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP-Prog_guide_en.md#introduction-to-the-esp-prog-board
 
-* CP210x: `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_ 
-* FTDI: `FTDI Virtual COM Port Drivers <http://www.ftdichip.com/Drivers/VCP.htm>`_
+* CP210x: `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
+* FTDI: `FTDI Virtual COM Port Drivers <https://www.ftdichip.com/Drivers/VCP.htm>`_
 
 The drivers above are primarily for reference. Under normal circumstances, the drivers should be bundled with and operating system and automatically installed upon connecting one of the listed boards to the PC.
 
@@ -88,7 +88,7 @@ on Arch Linux this is done by adding the user to ``uucp`` group with the followi
 
     sudo usermod -a -G uucp $USER
 
-Make sure you re-login to enable read and write permissions for the serial port. 
+Make sure you re-login to enable read and write permissions for the serial port.
 
 
 Verify serial connection

@@ -16,6 +16,7 @@
 #include "spi_flash_chip_driver.h"
 #include "spi_flash_chip_generic.h"
 #include "spi_flash_chip_issi.h"
+#include "spi_flash_chip_mxic.h"
 #include "spi_flash_chip_gd.h"
 #include "sdkconfig.h"
 
@@ -35,6 +36,11 @@ static const spi_flash_chip_t *default_registered_chips[] = {
 #ifdef CONFIG_SPI_FLASH_SUPPORT_GD_CHIP
     &esp_flash_chip_gd,
 #endif
+#ifdef CONFIG_SPI_FLASH_SUPPORT_MXIC_CHIP
+    &esp_flash_chip_mxic,
+#endif
+    // Default chip drivers that will accept all chip ID.
+    // FM, Winbond and XMC chips are supposed to be supported by this chip driver.
     &esp_flash_chip_generic,
     NULL,
 };

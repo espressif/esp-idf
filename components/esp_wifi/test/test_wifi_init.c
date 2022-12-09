@@ -66,11 +66,18 @@ static esp_err_t event_init(void)
     return ESP_OK;
 }
 
+static esp_err_t event_deinit(void)
+{
+    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT,ESP_EVENT_ANY_ID,&wifi_event_handler));
+    ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT,ESP_EVENT_ANY_ID,&ip_event_handler));
+    ESP_ERROR_CHECK(esp_event_loop_delete_default());
+    return ESP_OK;
+}
+
 static void wifi_driver_can_start_on_APP_CPU_task(void* arg)
 {
     SemaphoreHandle_t *sema = (SemaphoreHandle_t *) arg;
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    //init nvs
     ESP_LOGI(TAG, EMPH_STR("nvs_flash_init"));
     esp_err_t r = nvs_flash_init();
     if (r == ESP_ERR_NVS_NO_FREE_PAGES || r == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -79,42 +86,43 @@ static void wifi_driver_can_start_on_APP_CPU_task(void* arg)
         r = nvs_flash_init();
     }
     TEST_ESP_OK(r);
-    //init event loop
     ESP_LOGI(TAG, EMPH_STR("event_init"));
-    event_init();
-    unity_reset_leak_checks();
+    TEST_ESP_OK(event_init());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_init"));
     TEST_ESP_OK(esp_wifi_init(&cfg));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit..."));
     TEST_ESP_OK(esp_wifi_deinit());
+    ESP_LOGI(TAG, EMPH_STR("event_deinit"));
+    TEST_ESP_OK(event_deinit());
     ESP_LOGI(TAG, EMPH_STR("nvs_flash_deinit..."));
-    nvs_flash_deinit();
-    ESP_LOGI(TAG, "test passed...");
+    TEST_ESP_OK(nvs_flash_deinit());
+    ESP_LOGI(TAG, "exit task...");
     xSemaphoreGive(*sema);
-    vTaskDelete(NULL);
+    vTaskSuspend(NULL);
 }
 
 TEST_CASE("wifi driver can start on APP CPU", "[wifi_init]")
 {
-    TaskHandle_t th;
+    TaskHandle_t th = NULL;
     SemaphoreHandle_t sema = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(sema);
     printf("Creating tasks\n");
 #ifndef CONFIG_FREERTOS_UNICORE
     xTaskCreatePinnedToCore(wifi_driver_can_start_on_APP_CPU_task, "wifi_driver_can_start_on_APP_CPU_task", 2048*2, &sema, 3, &th, 1);
 #else
     xTaskCreate(wifi_driver_can_start_on_APP_CPU_task, "wifi_driver_can_start_on_APP_CPU_task", 2048*2, &sema, 3, &th);
 #endif
+    TEST_ASSERT_NOT_NULL(th);
     xSemaphoreTake(sema, portMAX_DELAY);
     vSemaphoreDelete(sema);
     sema = NULL;
-    TEST_IGNORE_MESSAGE("this test case is ignored due to the event_loop.");
+    test_utils_task_delete(th);
 }
 
 static void wifi_start_stop_task(void* arg)
 {
     SemaphoreHandle_t *sema = (SemaphoreHandle_t *) arg;
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    //init nvs
     ESP_LOGI(TAG, EMPH_STR("nvs_flash_init"));
     esp_err_t r = nvs_flash_init();
     if (r == ESP_ERR_NVS_NO_FREE_PAGES || r == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -124,50 +132,50 @@ static void wifi_start_stop_task(void* arg)
     }
     TEST_ESP_OK(r);
     //init tcpip stack
-    ESP_LOGI(TAG, EMPH_STR("esp_netif_init"));
-    esp_netif_init();
-    //init event loop
+    test_case_uses_tcpip();
     ESP_LOGI(TAG, EMPH_STR("event_init"));
-    event_init();
-    unity_reset_leak_checks();
+    TEST_ESP_OK(event_init());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_init"));
-    TEST_ASSERT(esp_wifi_init(&cfg) == ESP_OK);
+    TEST_ESP_OK(esp_wifi_init(&cfg));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_start"));
-    TEST_ASSERT(esp_wifi_start() == ESP_OK);
+    TEST_ESP_OK(esp_wifi_start());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_stop"));
-    TEST_ASSERT(esp_wifi_stop() == ESP_OK);
+    TEST_ESP_OK(esp_wifi_stop());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_stop"));
-    TEST_ASSERT(esp_wifi_stop() == ESP_OK);
+    TEST_ESP_OK(esp_wifi_stop());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
-    TEST_ASSERT(esp_wifi_deinit() == ESP_OK);
+    TEST_ESP_OK(esp_wifi_deinit());
+    ESP_LOGI(TAG, EMPH_STR("event_deinit"));
+    TEST_ESP_OK(event_deinit());
     ESP_LOGI(TAG, EMPH_STR("nvs_flash_deinit..."));
     nvs_flash_deinit();
     ESP_LOGI(TAG, "test passed...");
     xSemaphoreGive(*sema);
-    vTaskDelete(NULL);
+    vTaskSuspend(NULL);
 }
 
 TEST_CASE("Calling esp_wifi_stop() with start", "[wifi_init]")
 {
-    TaskHandle_t th;
+    TaskHandle_t th = NULL;
     SemaphoreHandle_t sema = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(sema);
     printf("Creating tasks\n");
 #ifndef CONFIG_FREERTOS_UNICORE
     xTaskCreatePinnedToCore(wifi_start_stop_task, "wifi_start_stop_task", 2048*2, &sema, 3, &th, 0);
 #else
     xTaskCreate(wifi_start_stop_task, "wifi_start_stop_task", 2048*2, &sema, 3, &th);
 #endif
+    TEST_ASSERT_NOT_NULL(th);
     xSemaphoreTake(sema, portMAX_DELAY);
     vSemaphoreDelete(sema);
     sema = NULL;
-    TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of tcpip_adapter and event_loop.");
+    test_utils_task_delete(th);
 }
 
 static void wifi_stop_task(void* arg)
 {
     SemaphoreHandle_t *sema = (SemaphoreHandle_t *) arg;
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    //init nvs
     ESP_LOGI(TAG, EMPH_STR("nvs_flash_init"));
     esp_err_t r = nvs_flash_init();
     if (r == ESP_ERR_NVS_NO_FREE_PAGES || r == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -176,37 +184,39 @@ static void wifi_stop_task(void* arg)
         r = nvs_flash_init();
     }
     TEST_ESP_OK(r);
-    //init event loop
     ESP_LOGI(TAG, EMPH_STR("event_init"));
-    event_init();
-    unity_reset_leak_checks();
+    TEST_ESP_OK(event_init());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_init"));
-    TEST_ASSERT(esp_wifi_init(&cfg) == ESP_OK);
+    TEST_ESP_OK(esp_wifi_init(&cfg));
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_stop"));
-    TEST_ASSERT(esp_wifi_stop() == ESP_OK);
+    TEST_ESP_OK(esp_wifi_stop());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_stop"));
-    TEST_ASSERT(esp_wifi_stop() == ESP_OK);
+    TEST_ESP_OK(esp_wifi_stop());
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
-    TEST_ASSERT(esp_wifi_deinit() == ESP_OK);
+    TEST_ESP_OK(esp_wifi_deinit());
+    ESP_LOGI(TAG, EMPH_STR("event_deinit"));
+    TEST_ESP_OK(event_deinit());
     ESP_LOGI(TAG, EMPH_STR("nvs_flash_deinit..."));
     nvs_flash_deinit();
     ESP_LOGI(TAG, "test passed...");
     xSemaphoreGive(*sema);
-    vTaskDelete(NULL);
+    vTaskSuspend(NULL);
 }
 
 TEST_CASE("Calling esp_wifi_stop() without start", "[wifi_init]")
 {
-    TaskHandle_t th;
+    TaskHandle_t th = NULL;
     SemaphoreHandle_t sema = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(sema);
     printf("Creating tasks\n");
 #ifndef CONFIG_FREERTOS_UNICORE
     xTaskCreatePinnedToCore(wifi_stop_task, "wifi_stop_task", 2048*2, &sema, 3, &th, 0);
 #else
     xTaskCreate(wifi_stop_task, "wifi_stop_task", 2048*2, &sema, 3, &th);
 #endif
+    TEST_ASSERT_NOT_NULL(th);
     xSemaphoreTake(sema, portMAX_DELAY);
     vSemaphoreDelete(sema);
     sema = NULL;
-    TEST_IGNORE_MESSAGE("this test case is ignored due to the event_loop.");
+    test_utils_task_delete(th);
 }

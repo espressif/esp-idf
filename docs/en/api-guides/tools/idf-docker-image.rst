@@ -57,13 +57,11 @@ The above command explained:
 - ``espressif/idf``: uses Docker image ``espressif/idf`` with tag ``latest`` (implicitly added by Docker when no tag is specified)
 - ``idf.py build``: runs this command inside the container
 
-To build with a specific docker image tag, specify it as ``espressif/idf:TAG``::
+To build with a specific docker image tag, specify it as ``espressif/idf:TAG``, for example::
 
-    docker run --rm -v $PWD:/project -w /project espressif/idf:v4.0 idf.py build
+    docker run --rm -v $PWD:/project -w /project espressif/idf:release-v4.0 idf.py build
 
-.. note::
-
-    At the time of writing, v4.0 release of ESP-IDF does not exist, yet, so the above command will not work. You can check the up-to-date list of available tags at https://hub.docker.com/r/espressif/idf/tags.
+You can check the up-to-date list of available tags at https://hub.docker.com/r/espressif/idf/tags.
 
 
 Building a project with GNU Make
@@ -77,6 +75,14 @@ Same as for CMake, except that the build command is different::
 .. note::
 
     If the ``sdkconfig`` file does not exist, the default behavior of GNU Make build system is to open the menuconfig UI. This may be not desired in automated build environments. To ensure that the ``sdkconfig`` file exists, ``defconfig`` target is added before ``all``.
+
+If you intend to build the same project repeatedly, you may bind the ``tools/kconfig`` directory of ESP-IDF to a named volume. This will prevent Kconfig tools, located in ESP-IDF directory, from being rebuilt, causing a rebuild of the rest of the project::
+
+    docker run --rm -v $PWD:/project -v kconfig:/opt/esp/idf/tools/kconfig -w /project espressif/idf make defconfig all -j4
+
+If you need clean up the ``kconfig`` volume, run ``docker volume rm kconfig``.
+
+Binding the ``tools/kconfig`` directory to a volume is not necessary when using the CMake build system.
 
 Using the image interactively
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

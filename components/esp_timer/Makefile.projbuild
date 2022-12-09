@@ -1,0 +1,6 @@
+ifdef CONFIG_ESP_TIMER_IMPL_FRC2
+    # Enable dynamic esp_timer overflow value if building unit tests
+    ifneq ("$(filter esp_timer,$(TEST_COMPONENTS_LIST))","")
+        CPPFLAGS += -DESP_TIMER_DYNAMIC_OVERFLOW_VAL
+    endif
+endif
