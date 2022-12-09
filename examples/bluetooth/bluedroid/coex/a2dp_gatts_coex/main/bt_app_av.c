@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include "esp_log.h"
 
 #include "bt_app_core.h"
@@ -156,7 +157,7 @@ static void bt_av_notify_evt_handler(uint8_t event_id, esp_avrc_rn_param_t *even
         break;
     /* when track playing position changed, this event comes */
     case ESP_AVRC_RN_PLAY_POS_CHANGED:
-        ESP_LOGI(BT_AV_TAG, "Play position changed: %d-ms", event_parameter->play_pos);
+        ESP_LOGI(BT_AV_TAG, "Play position changed: %"PRIu32"-ms", event_parameter->play_pos);
         bt_av_play_pos_changed();
         break;
     /* others */
@@ -224,7 +225,7 @@ void bt_i2s_driver_uninstall(void)
 
 static void volume_set_by_controller(uint8_t volume)
 {
-    ESP_LOGI(BT_RC_TG_TAG, "Volume is set by remote controller to: %d%%", (uint32_t)volume * 100 / 0x7f);
+    ESP_LOGI(BT_RC_TG_TAG, "Volume is set by remote controller to: %"PRIu32"%%", (uint32_t)volume * 100 / 0x7f);
     /* set the volume in protection of lock */
     _lock_acquire(&s_volume_lock);
     s_volume = volume;
@@ -233,7 +234,7 @@ static void volume_set_by_controller(uint8_t volume)
 
 static void volume_set_by_local_host(uint8_t volume)
 {
-    ESP_LOGI(BT_RC_TG_TAG, "Volume is set locally to: %d%%", (uint32_t)volume * 100 / 0x7f);
+    ESP_LOGI(BT_RC_TG_TAG, "Volume is set locally to: %"PRIu32"%%", (uint32_t)volume * 100 / 0x7f);
     /* set the volume in protection of lock */
     _lock_acquire(&s_volume_lock);
     s_volume = volume;
@@ -421,7 +422,7 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
     }
     /* when feature of remote device indicated, this event comes */
     case ESP_AVRC_CT_REMOTE_FEATURES_EVT: {
-        ESP_LOGI(BT_RC_CT_TAG, "AVRC remote features %x, TG features %x", rc->rmt_feats.feat_mask, rc->rmt_feats.tg_feat_flag);
+        ESP_LOGI(BT_RC_CT_TAG, "AVRC remote features %"PRIx32", TG features %x", rc->rmt_feats.feat_mask, rc->rmt_feats.tg_feat_flag);
         break;
     }
     /* when notification capability of peer device got, this event comes */
@@ -475,7 +476,7 @@ static void bt_av_hdl_avrc_tg_evt(uint16_t event, void *p_param)
     }
     /* when notification registered, this event comes */
     case ESP_AVRC_TG_REGISTER_NOTIFICATION_EVT: {
-        ESP_LOGI(BT_RC_TG_TAG, "AVRC register event notification: %d, param: 0x%x", rc->reg_ntf.event_id, rc->reg_ntf.event_parameter);
+        ESP_LOGI(BT_RC_TG_TAG, "AVRC register event notification: %d, param: 0x%"PRIx32, rc->reg_ntf.event_id, rc->reg_ntf.event_parameter);
         if (rc->reg_ntf.event_id == ESP_AVRC_RN_VOLUME_CHANGE) {
             s_volume_notify = true;
             esp_avrc_rn_param_t rn_param;
@@ -486,7 +487,7 @@ static void bt_av_hdl_avrc_tg_evt(uint16_t event, void *p_param)
     }
     /* when feature of remote device indicated, this event comes */
     case ESP_AVRC_TG_REMOTE_FEATURES_EVT: {
-        ESP_LOGI(BT_RC_TG_TAG, "AVRC remote features: %x, CT features: %x", rc->rmt_feats.feat_mask, rc->rmt_feats.ct_feat_flag);
+        ESP_LOGI(BT_RC_TG_TAG, "AVRC remote features: %"PRIx32", CT features: %x", rc->rmt_feats.feat_mask, rc->rmt_feats.ct_feat_flag);
         break;
     }
     /* others */
@@ -525,7 +526,7 @@ void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 
     /* log the number every 100 packets */
     if (++s_pkt_cnt % 100 == 0) {
-        ESP_LOGI(BT_AV_TAG, "Audio packet count: %u", s_pkt_cnt);
+        ESP_LOGI(BT_AV_TAG, "Audio packet count: %"PRIu32, s_pkt_cnt);
     }
 }
 

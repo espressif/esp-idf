@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp_log.h"
@@ -619,7 +620,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         esp_ble_gatts_create_service(gatts_if, &gatts_profile_tab[GATTS_PROFILE_A_APP_ID].service_id, GATTS_NUM_HANDLE_TEST_A);
         break;
     case ESP_GATTS_READ_EVT: {
-        ESP_LOGI(COEX_TAG, "GATT_READ_EVT, conn_id %d, trans_id %d, handle %d\n", param->read.conn_id, param->read.trans_id, param->read.handle);
+        ESP_LOGI(COEX_TAG, "GATT_READ_EVT, conn_id %d, trans_id %"PRIu32", handle %d\n", param->read.conn_id, param->read.trans_id, param->read.handle);
         esp_gatt_rsp_t rsp;
         memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
         rsp.attr_value.handle = param->read.handle;
@@ -633,7 +634,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         break;
     }
     case ESP_GATTS_WRITE_EVT: {
-        ESP_LOGI(COEX_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %d, handle %d\n", param->write.conn_id, param->write.trans_id, param->write.handle);
+        ESP_LOGI(COEX_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %"PRIu32", handle %d\n", param->write.conn_id, param->write.trans_id, param->write.handle);
         if (!param->write.is_prep) {
             ESP_LOGI(COEX_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
             esp_log_buffer_hex(COEX_TAG, param->write.value, param->write.len);
@@ -757,7 +758,7 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         esp_ble_gatts_create_service(gatts_if, &gatts_profile_tab[GATTS_PROFILE_B_APP_ID].service_id, GATTS_NUM_HANDLE_TEST_B);
         break;
     case ESP_GATTS_READ_EVT: {
-        ESP_LOGI(COEX_TAG, "GATT_READ_EVT, conn_id %d, trans_id %d, handle %d\n", param->read.conn_id, param->read.trans_id, param->read.handle);
+        ESP_LOGI(COEX_TAG, "GATT_READ_EVT, conn_id %d, trans_id %"PRIu32", handle %d\n", param->read.conn_id, param->read.trans_id, param->read.handle);
         esp_gatt_rsp_t rsp;
         memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
         rsp.attr_value.handle = param->read.handle;
@@ -771,7 +772,7 @@ static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         break;
     }
     case ESP_GATTS_WRITE_EVT: {
-        ESP_LOGI(COEX_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %d, handle %d\n", param->write.conn_id, param->write.trans_id, param->write.handle);
+        ESP_LOGI(COEX_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %"PRIu32", handle %d\n", param->write.conn_id, param->write.trans_id, param->write.handle);
         if (!param->write.is_prep) {
             ESP_LOGI(COEX_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
             esp_log_buffer_hex(COEX_TAG, param->write.value, param->write.len);

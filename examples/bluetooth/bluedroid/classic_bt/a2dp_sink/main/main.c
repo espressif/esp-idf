@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs.h"
@@ -64,12 +65,12 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 #if (CONFIG_BT_SSP_ENABLED == true)
     /* when Security Simple Pairing user confirmation requested, this event comes */
     case ESP_BT_GAP_CFM_REQ_EVT:
-        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %d", param->cfm_req.num_val);
+        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %"PRIu32, param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
         break;
     /* when Security Simple Pairing passkey notified, this event comes */
     case ESP_BT_GAP_KEY_NOTIF_EVT:
-        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey: %d", param->key_notif.passkey);
+        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey: %"PRIu32, param->key_notif.passkey);
         break;
     /* when Security Simple Pairing passkey requested, this event comes */
     case ESP_BT_GAP_KEY_REQ_EVT:

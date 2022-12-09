@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs.h"
@@ -117,11 +118,11 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 
 #if (CONFIG_BT_SSP_ENABLED == true)
     case ESP_BT_GAP_CFM_REQ_EVT:
-        ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %d", param->cfm_req.num_val);
+        ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %"PRIu32, param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
         break;
     case ESP_BT_GAP_KEY_NOTIF_EVT:
-        ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey:%d", param->key_notif.passkey);
+        ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey:%"PRIu32, param->key_notif.passkey);
         break;
     case ESP_BT_GAP_KEY_REQ_EVT:
         ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_KEY_REQ_EVT Please enter passkey!");
