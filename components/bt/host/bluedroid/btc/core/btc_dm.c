@@ -677,6 +677,40 @@ bt_status_t btc_dm_disable_service(tBTA_SERVICE_ID service_id)
     return BT_STATUS_SUCCESS;
 }
 
+static void btc_dm_acl_link_stat(tBTA_DM_ACL_LINK_STAT *p_acl_link_stat)
+{
+#if (BTC_GAP_BT_INCLUDED == TRUE)
+    esp_bt_gap_cb_param_t param;
+    esp_bt_gap_cb_event_t event = ESP_BT_GAP_EVT_MAX;
+
+    switch (p_acl_link_stat->event) {
+    case BTA_ACL_LINK_STAT_CONN_CMPL: {
+        event = ESP_BT_GAP_ACL_CONN_CMPL_STAT_EVT;
+        param.acl_conn_cmpl_stat.stat = p_acl_link_stat->link_act.conn_cmpl.status | ESP_BT_STATUS_BASE_FOR_HCI_ERR;
+        param.acl_conn_cmpl_stat.handle = p_acl_link_stat->link_act.conn_cmpl.handle;
+        memcpy(param.acl_conn_cmpl_stat.bda, p_acl_link_stat->link_act.conn_cmpl.bd_addr, ESP_BD_ADDR_LEN);
+        break;
+    }
+    case BTA_ACL_LINK_STAT_DISCONN_CMPL: {
+        event = ESP_BT_GAP_ACL_DISCONN_CMPL_STAT_EVT;
+        param.acl_disconn_cmpl_stat.reason = p_acl_link_stat->link_act.disconn_cmpl.reason | ESP_BT_STATUS_BASE_FOR_HCI_ERR;
+        param.acl_disconn_cmpl_stat.handle = p_acl_link_stat->link_act.disconn_cmpl.handle;
+        memcpy(param.acl_disconn_cmpl_stat.bda, p_acl_link_stat->link_act.disconn_cmpl.bd_addr, ESP_BD_ADDR_LEN);
+        break;
+    }
+    default: {
+        BTC_TRACE_WARNING("%s: invalid event %x", __FUNCTION__, event);
+        return;
+    }
+    }
+
+    esp_bt_gap_cb_t cb = (esp_bt_gap_cb_t)btc_profile_cb_get(BTC_PID_GAP_BT);
+    if (cb) {
+        cb(event, &param);
+    }
+#endif
+}
+
 void btc_dm_sec_cb_handler(btc_msg_t *msg)
 {
     btc_dm_sec_args_t *arg = (btc_dm_sec_args_t *)(msg->arg);
@@ -755,6 +789,10 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         break;
 #endif ///BT_SSP_INCLUDED == TRUE
 
+    case BTA_DM_ACL_LINK_STAT_EVT: {
+        btc_dm_acl_link_stat(&p_data->acl_link_stat);
+        break;
+    }
     case BTA_DM_DEV_UNPAIRED_EVT: {
         btc_dm_dev_unpaired_evt(&p_data->link_down);
         break;

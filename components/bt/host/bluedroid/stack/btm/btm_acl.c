@@ -43,7 +43,9 @@
 #include "stack/btu.h"
 #include "stack/btm_api.h"
 #include "btm_int.h"
+#include "stack/acl_hci_link_interface.h"
 #include "l2c_int.h"
+#include "stack/l2cap_hci_link_interface.h"
 #include "stack/hcidefs.h"
 //#include "bt_utils.h"
 #include "osi/list.h"
@@ -578,6 +580,26 @@ void btm_acl_update_busy_level (tBTM_BLI_EVENT event)
         if (btm_cb.p_bl_changed_cb && (btm_cb.bl_evt_mask & BTM_BL_UPDATE_MASK)) {
             (*btm_cb.p_bl_changed_cb)((tBTM_BL_EVENT_DATA *)&evt);
         }
+    }
+}
+
+/*******************************************************************************
+**
+** Function         btm_acl_link_stat_report
+**
+** Description      This function is called when the ACL link related
+                    events are received from controller. It reports the ACL
+                    link status to upper layer.
+
+** Returns          void
+**
+*******************************************************************************/
+void btm_acl_link_stat_report(tBTM_ACL_LINK_STAT_EVENT_DATA *p_data)
+{
+    BTM_TRACE_DEBUG ("btm_acl_link_stat_report\n");
+
+    if (btm_cb.p_acl_link_stat_cb) {
+        (*btm_cb.p_acl_link_stat_cb)(p_data);
     }
 }
 
@@ -1830,6 +1852,22 @@ tBTM_STATUS BTM_RegBusyLevelNotif (tBTM_BL_CHANGE_CB *p_cb, UINT8 *p_level,
     return (BTM_SUCCESS);
 }
 
+
+tBTM_STATUS BTM_RegAclLinkStatNotif(tBTM_ACL_LINK_STAT_CB *p_cb)
+{
+    BTM_TRACE_DEBUG ("BTM_RegAclLinkStatNotif\n");
+
+    if (!p_cb) {
+        btm_cb.p_acl_link_stat_cb = NULL;
+    } else if (btm_cb.p_acl_link_stat_cb) {
+        return BTM_BUSY;
+    } else {
+        btm_cb.p_acl_link_stat_cb = p_cb;
+    }
+
+    return BTM_SUCCESS;
+}
+
 /*******************************************************************************
 **
 ** Function         BTM_SetQoS
@@ -2568,4 +2606,82 @@ void btm_acl_free(void)
 {
     list_free(btm_cb.p_acl_db_list);
     list_free(btm_cb.p_pm_mode_db_list);
+}
+
+/*******************************************************************************
+**
+** Function         btm_acl_connected
+**
+** Description      Handle ACL connection complete event
+**
+*******************************************************************************/
+void btm_acl_connected(BD_ADDR bda, UINT16 handle, UINT8 link_type, UINT8 enc_mode, UINT8 status)
+{
+#if BTM_SCO_INCLUDED == TRUE
+    tBTM_ESCO_DATA  esco_data;
+#endif
+
+    if (link_type == HCI_LINK_TYPE_ACL) {
+#if SMP_INCLUDED == TRUE
+        btm_sec_connected (bda, handle, status, enc_mode);
+#endif  /* SMP_INCLUDED == TRUE */
+        /* report acl connection result to upper layer */
+        do {
+            tBTM_ACL_LINK_STAT_EVENT_DATA evt_data = {
+                .event = BTM_ACL_CONN_CMPL_EVT,
+                .link_act.conn_cmpl.status = status,
+                .link_act.conn_cmpl.handle = handle,
+            };
+            bdcpy(evt_data.link_act.conn_cmpl.bd_addr, bda);
+            btm_acl_link_stat_report(&evt_data);
+        } while (0);
+
+        l2c_link_hci_conn_comp(status, handle, bda);
+    }
+#if BTM_SCO_INCLUDED == TRUE
+    else {
+        memset(&esco_data, 0, sizeof(tBTM_ESCO_DATA));
+        esco_data.link_type = HCI_LINK_TYPE_SCO;
+        memcpy (esco_data.bd_addr, bda, BD_ADDR_LEN);
+        btm_sco_connected(status, bda, handle, &esco_data);
+    }
+#endif /* BTM_SCO_INCLUDED == TRUE */
+}
+
+/*******************************************************************************
+**
+** Function         btm_acl_disconnected
+**
+** Description      Handle ACL disconnection complete event
+**
+*******************************************************************************/
+void btm_acl_disconnected(UINT16 handle, UINT8 reason)
+{
+#if BTM_SCO_INCLUDED == TRUE
+    /* If L2CAP doesn't know about it, send it to SCO */
+    if (!l2c_link_hci_disc_comp (handle, reason)) {
+        btm_sco_removed (handle, reason);
+    }
+#else
+    /* Report BR/EDR ACL disconnection result to upper layer */
+    tACL_CONN *conn = btm_handle_to_acl(handle);
+#if BLE_INCLUDED == TRUE
+    if (conn->transport == BT_TRANSPORT_BR_EDR)
+#endif
+    {
+        tBTM_ACL_LINK_STAT_EVENT_DATA evt_data = {
+            .event = BTM_ACL_DISCONN_CMPL_EVT,
+            .link_act.disconn_cmpl.reason = reason,
+            .link_act.disconn_cmpl.handle = handle,
+        };
+        bdcpy(evt_data.link_act.disconn_cmpl.bd_addr, conn->remote_addr);
+        btm_acl_link_stat_report(&evt_data);
+    }
+
+    l2c_link_hci_disc_comp(handle, reason);
+#endif /* BTM_SCO_INCLUDED */
+#if (SMP_INCLUDED == TRUE)
+    /* Notify security manager */
+    btm_sec_disconnected(handle, reason);
+#endif  /* SMP_INCLUDED == TRUE */
 }
