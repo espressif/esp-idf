@@ -194,6 +194,28 @@ static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
+ * @brief Enable GPIO pin filter
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param gpio_num GPIO number of the pad.
+ */
+static inline void gpio_ll_pin_filter_enable(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    PIN_FILTER_EN(GPIO_PIN_MUX_REG[gpio_num]);
+}
+
+/**
+ * @brief Disable GPIO pin filter
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param gpio_num GPIO number of the pad.
+ */
+static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    PIN_FILTER_DIS(GPIO_PIN_MUX_REG[gpio_num]);
+}
+
+/**
   * @brief Disable output mode on GPIO.
   *
   * @param hw Peripheral GPIO hardware instance address.
@@ -558,7 +580,7 @@ static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num
 static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, uint32_t gpio_num, gpio_int_type_t intr_type)
 {
     HAL_ASSERT((gpio_num >= GPIO_NUM_7 && gpio_num <= GPIO_NUM_12) &&
-                "only gpio7~12 support deep sleep wake-up function");
+               "only gpio7~12 support deep sleep wake-up function");
 
     REG_SET_BIT(RTC_CNTL_GPIO_WAKEUP_REG, RTC_CNTL_GPIO_PIN_CLK_GATE);
     REG_SET_BIT(RTC_CNTL_EXT_WAKEUP_CONF_REG, RTC_CNTL_GPIO_WAKEUP_FILTER);
@@ -578,7 +600,7 @@ static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, uint32_t gpio
 static inline void gpio_ll_deepsleep_wakeup_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     HAL_ASSERT((gpio_num >= GPIO_NUM_7 && gpio_num <= GPIO_NUM_12) &&
-                "only gpio7~12 support deep sleep wake-up function");
+               "only gpio7~12 support deep sleep wake-up function");
 
     CLEAR_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, 1 << (RTC_CNTL_GPIO_PIN0_WAKEUP_ENABLE_S - (gpio_num - 7)));
     CLEAR_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, RTC_CNTL_GPIO_PIN0_INT_TYPE_S - (gpio_num - 7) * 3);

@@ -3,6 +3,7 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs
     "gpio/gpio.c"
     "gpio/rtc_io.c"
+    "gpio/gpio_glitch_filter_ops.c"
     "gptimer/gptimer.c"
     "sdspi_crc.c"
     "sdspi_host.c"
@@ -55,6 +56,14 @@ endif()
 
 if(CONFIG_SOC_DEDICATED_GPIO_SUPPORTED)
     list(APPEND srcs "gpio/dedic_gpio.c")
+endif()
+
+if(CONFIG_SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER)
+    list(APPEND srcs "gpio/gpio_pin_glitch_filter.c")
+endif()
+
+if(CONFIG_SOC_GPIO_FLEX_GLITCH_FILTER_NUM GREATER 0)
+    list(APPEND srcs "gpio/gpio_flex_glitch_filter.c")
 endif()
 
 if(CONFIG_SOC_SDM_SUPPORTED)

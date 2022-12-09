@@ -70,22 +70,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** filter_ch0_en : R/W; bitpos: [0]; default: 0;
+        /** filter_chn_en : R/W; bitpos: [0]; default: 0;
          *  Glitch Filter channel enable bit.
          */
-        uint32_t filter_ch0_en:1;
-        /** filter_ch0_input_io_num : R/W; bitpos: [6:1]; default: 0;
+        uint32_t filter_chn_en:1;
+        /** filter_chn_input_io_num : R/W; bitpos: [6:1]; default: 0;
          *  Glitch Filter input io number.
          */
-        uint32_t filter_ch0_input_io_num:6;
-        /** filter_ch0_window_thres : R/W; bitpos: [12:7]; default: 0;
+        uint32_t filter_chn_input_io_num:6;
+        /** filter_chn_window_thres : R/W; bitpos: [12:7]; default: 0;
          *  Glitch Filter window threshold.
          */
-        uint32_t filter_ch0_window_thres:6;
-        /** filter_ch0_window_width : R/W; bitpos: [18:13]; default: 0;
+        uint32_t filter_chn_window_thres:6;
+        /** filter_chn_window_width : R/W; bitpos: [18:13]; default: 0;
          *  Glitch Filter window width.
          */
-        uint32_t filter_ch0_window_width:6;
+        uint32_t filter_chn_window_width:6;
         uint32_t reserved_19:13;
     };
     uint32_t val;

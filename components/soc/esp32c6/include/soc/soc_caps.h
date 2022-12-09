@@ -150,8 +150,10 @@
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C6 has 1 GPIO peripheral
-#define SOC_GPIO_PORT               (1U)
-#define SOC_GPIO_PIN_COUNT          (31)
+#define SOC_GPIO_PORT                      1U
+#define SOC_GPIO_PIN_COUNT                 31
+#define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
+#define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8
 
 // GPIO peripheral has the ETM extension
 #define SOC_GPIO_SUPPORT_ETM          1

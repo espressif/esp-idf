@@ -194,6 +194,28 @@ static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
+ * @brief Enable GPIO pin filter
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param gpio_num GPIO number of the pad.
+ */
+static inline void gpio_ll_pin_filter_enable(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    PIN_FILTER_EN(GPIO_PIN_MUX_REG[gpio_num]);
+}
+
+/**
+ * @brief Disable GPIO pin filter
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param gpio_num GPIO number of the pad.
+ */
+static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    PIN_FILTER_DIS(GPIO_PIN_MUX_REG[gpio_num]);
+}
+
+/**
   * @brief Disable output mode on GPIO.
   *
   * @param hw Peripheral GPIO hardware instance address.

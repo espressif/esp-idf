@@ -68,6 +68,7 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/include/driver/dedic_gpio.h \
     $(PROJECT_PATH)/components/driver/include/driver/gpio.h \
     $(PROJECT_PATH)/components/driver/include/driver/gpio_etm.h \
+    $(PROJECT_PATH)/components/driver/include/driver/gpio_filter.h \
     $(PROJECT_PATH)/components/driver/include/driver/gptimer.h \
     $(PROJECT_PATH)/components/driver/include/driver/gptimer_etm.h \
     $(PROJECT_PATH)/components/driver/include/driver/gptimer_types.h \

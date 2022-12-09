@@ -137,7 +137,9 @@
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-H4 has 1 GPIO peripheral
-#define SOC_GPIO_PORT               (1U)
+#define SOC_GPIO_PORT                      1U
+#define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
+
 #if CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1
 #define SOC_GPIO_PIN_COUNT          (41)
 #elif CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2
