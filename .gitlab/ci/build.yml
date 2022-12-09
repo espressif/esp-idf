@@ -129,9 +129,52 @@
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
 
+.build_pytest_no_jtag_template:
+  extends: .build_pytest_template
+  script:
+    # CI specific options start from "--collect-size-info xxx". could ignore when running locally
+    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
+      -t $IDF_TARGET
+      -m \"not host_test and not jtag\"
+      --pytest-apps
+      --collect-size-info size_info.txt
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+
+.build_pytest_jtag_template:
+  extends:
+    - .build_cmake_template
+    - .before_script_build_jobs
+  artifacts:
+    paths:
+      - "**/build*/size.json"
+      - "**/build*/build_log.txt"
+      - "**/build*/*.bin"
+      # upload to s3 server to save the artifacts size
+      # - "**/build*/*.map"
+      - "**/build*/*.elf"  # need elf for gdb
+      - "**/build*/flasher_args.json"
+      - "**/build*/flash_project_args"
+      - "**/build*/config/sdkconfig.json"
+      - "**/build*/bootloader/*.bin"
+      - "**/build*/partition_table/*.bin"
+      - list_job_*.json
+      - size_info.txt
+    when: always
+    expire_in: 4 days
+  script:
+    # CI specific options start from "--collect-size-info xxx". could ignore when running locally
+    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
+      -t $IDF_TARGET
+      -m \"not host_test and jtag\"
+      --pytest-apps
+      --collect-size-info size_info.txt
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+
 build_pytest_examples_esp32:
   extends:
-    - .build_pytest_template
+    - .build_pytest_no_jtag_template
     - .rules:build:example_test-esp32
   parallel: 4
   variables:
@@ -140,7 +183,7 @@ build_pytest_examples_esp32:
 
 build_pytest_examples_esp32s2:
   extends:
-    - .build_pytest_template
+    - .build_pytest_no_jtag_template
     - .rules:build:example_test-esp32s2
   parallel: 3
   variables:
@@ -149,7 +192,7 @@ build_pytest_examples_esp32s2:
 
 build_pytest_examples_esp32s3:
   extends:
-    - .build_pytest_template
+    - .build_pytest_no_jtag_template
     - .rules:build:example_test-esp32s3
   parallel: 4
   variables:
@@ -158,7 +201,7 @@ build_pytest_examples_esp32s3:
 
 build_pytest_examples_esp32c3:
   extends:
-    - .build_pytest_template
+    - .build_pytest_no_jtag_template
     - .rules:build:example_test-esp32c3
   parallel: 3
   variables:
@@ -167,7 +210,7 @@ build_pytest_examples_esp32c3:
 
 build_pytest_examples_esp32c2:
   extends:
-    - .build_pytest_template
+    - .build_pytest_no_jtag_template
     - .rules:build:example_test-esp32c2
   variables:
     IDF_TARGET: esp32c2
@@ -175,10 +218,18 @@ build_pytest_examples_esp32c2:
 
 build_pytest_examples_esp32h4:
   extends:
-    - .build_pytest_template
+    - .build_pytest_no_jtag_template
     - .rules:build:example_test-esp32h4
   variables:
     IDF_TARGET: esp32h4
+    TEST_DIR: examples
+
+build_pytest_examples_jtag:  # for all targets
+  extends:
+    - .build_pytest_jtag_template
+    - .rules:build:example_test-esp32
+  variables:
+    IDF_TARGET: all
     TEST_DIR: examples
 
 build_pytest_components_esp32h4:

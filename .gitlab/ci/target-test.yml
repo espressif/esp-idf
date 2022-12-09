@@ -38,6 +38,7 @@
       --known-failure-cases-file known_failure_cases/known_failure_cases.txt
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
+      ${PYTEST_EXTRA_FLAGS}
 
 .pytest_examples_dir_template:
   extends: .pytest_template
@@ -75,6 +76,17 @@ example_test_pytest_esp32_twai_network:
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, twai_network ]
+
+example_test_pytest_esp32_jtag:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_jtag
+  tags: [ esp32, jtag ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb openocd
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 example_test_pytest_esp32s2_generic:
   extends:
@@ -677,9 +689,10 @@ test_app_test_pytest_esp32_jtag:
     - .rules:test:custom_test-esp32
   needs:
     - build_pytest_test_apps_esp32
-  tags: [ esp32, test_jtag_arm]
+  tags: [ esp32, jtag]
   variables:
     SETUP_TOOLS: "1"  # need gdb
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 test_app_test_pytest_esp32s2_generic:
   extends:
@@ -908,15 +921,6 @@ example_test_007:
     - ESP32
     - Example_I2C_CCS811_SENSOR
 
-example_test_009:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - test_jtag_arm
-  variables:
-    SETUP_TOOLS: "1"
-    PYTHON_VER: 3
-
 example_test_011:
   extends: .example_test_esp32_template
   tags:
@@ -991,14 +995,6 @@ example_test_C6_GENERIC:
   extends:
     - .test_app_template
     - .rules:test:custom_test-esp32s3
-
-test_app_test_001:
-  extends: .test_app_esp32_template
-  tags:
-    - ESP32
-    - test_jtag_arm
-  variables:
-    SETUP_TOOLS: "1"
 
 test_app_test_eth:
   extends: .test_app_esp32_template
