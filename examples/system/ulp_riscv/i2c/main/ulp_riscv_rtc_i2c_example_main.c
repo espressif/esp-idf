@@ -13,6 +13,7 @@
 */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <math.h>
 #include "esp_sleep.h"
 #include "ulp_riscv.h"
@@ -90,7 +91,7 @@ void app_main(void)
         bmp180_read_ut_data(&ut_data);
         bmp180_read_up_data(&up_data, oss_mode);
         printf("Uncompensated Temperature = %d\n", ut_data);
-        printf("Uncompensated Pressure = %d\n", up_data);
+        printf("Uncompensated Pressure = %"PRIu32"\n", up_data);
         printf("\n");
 
         /* Calculate real temperature value */
@@ -119,8 +120,8 @@ void app_main(void)
         ulp_timer_stop();
         ulp_riscv_halt();
 
-        printf("Uncompensated Temperature = %d\n", ulp_ut_data);
-        printf("Uncompensated Pressure = %d\n", ulp_up_data);
+        printf("Uncompensated Temperature = %"PRIu32"\n", ulp_ut_data);
+        printf("Uncompensated Pressure = %"PRIu32"\n", ulp_up_data);
 
         /* Read the calibration data again */
         printf("Reading calibration data from BMP180 ...\n");
