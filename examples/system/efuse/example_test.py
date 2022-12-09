@@ -286,8 +286,8 @@ def test_examples_efuse_with_virt_secure_boot_v1(env, _):  # type: (ttfw_idf.Tin
     dut.expect('Disable ROM BASIC interpreter fallback...')
     dut.expect('secure_boot_v1: secure boot is now enabled for bootloader image')
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -312,8 +312,8 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(env, _):  # type: (t
     dut.bootloader_flash()
     dut.start_app()
     dut.expect('Loading virtual efuse blocks from real efuses')
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -339,8 +339,8 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(env, _):  # type: (t
     dut.expect('Disable ROM BASIC interpreter fallback...')
     dut.expect('secure_boot_v1: secure boot is now enabled for bootloader image')
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -527,8 +527,8 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(env, _):  # type: (ttfw
     dut.expect('Disable hardware & software JTAG...')
     dut.expect('secure_boot_v2: Secure boot permanently enabled')
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -554,8 +554,8 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(env, _):  # 
     dut.bootloader_flash()
     dut.start_app()
     dut.expect('Loading virtual efuse blocks from real efuses')
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -595,8 +595,8 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(env, _):  # 
     dut.expect('Disable hardware & software JTAG...')
     dut.expect('secure_boot_v2: Secure boot permanently enabled')
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -665,7 +665,6 @@ def test_examples_efuse_with_virt_sb_v1_and_fe(env, _):  # type: (ttfw_idf.TinyF
     dut.expect('Checking secure boot...')
     dut.expect('secure_boot_v1: bootloader secure boot is already enabled, continuing..')
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
     dut.expect('flash_encrypt: Flash encryption mode is DEVELOPMENT (not secure)')
     dut.expect('Start eFuse example')

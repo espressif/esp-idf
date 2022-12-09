@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 import os
@@ -25,7 +25,7 @@ def get_uart_msgs(i: int) -> List[str]:
 @pytest.mark.generic
 def test_examples_select(dut: Dut) -> None:
 
-    dut.expect_exact('cpu_start: Starting scheduler', timeout=30)
+    dut.expect_exact('main_task: Calling app_main()', timeout=30)
 
     exp_list = []
     for i in range(1, 10):
