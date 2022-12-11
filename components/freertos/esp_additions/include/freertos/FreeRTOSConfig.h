@@ -236,10 +236,20 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 
 // -------------------- Trace Macros -----------------------
 
-/*
-For trace macros.
-Note: Include trace macros here and not above as trace macros are dependent on some of the FreeRTOS configs
-*/
+/* For trace macros.
+Note: Include trace macros here and not above as trace macros are dependent on some of the FreeRTOS configs*/
+
+#define traceTASK_INCREMENT_TICK(xTickCount)\
+extern int taskList[100][2];\
+extern int taskList_size;\
+extern int idx_gl;\
+if(idx_gl < taskList_size)\
+{\
+taskList[idx_gl][0] = pxCurrentTCB[0]->uxTCBNumber;\
+taskList[idx_gl][1] = xTickCount;\
+idx_gl++;\
+}
+
 #ifndef __ASSEMBLER__
 #if CONFIG_SYSVIEW_ENABLE
 #include "SEGGER_SYSVIEW_FreeRTOS.h"
