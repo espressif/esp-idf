@@ -506,7 +506,7 @@ esp_err_t httpd_start(httpd_handle_t *handle, const httpd_config_t *config)
         return ESP_ERR_HTTPD_TASK;
     }
 
-    *handle = (httpd_handle_t *)hd;
+    *handle = (httpd_handle_t)hd;
     return ESP_OK;
 }
 
