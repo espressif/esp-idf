@@ -282,11 +282,12 @@ TEST_CASE("ADC1 Calibration Speed", "[adc][ignore][manual]")
     s_adc_cali_speed(ADC_UNIT_1, ADC1_CALI_SPEED_TEST_CHAN0);
 }
 
-#if (SOC_ADC_PERIPH_NUM >= 2)
+#if (SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3
+//ESP32C3 ADC2 oneshot mode is not supported anymore
 TEST_CASE("ADC2 Calibration Speed", "[adc][ignore][manual]")
 {
     s_adc_cali_speed(ADC_UNIT_2, ADC2_CALI_SPEED_TEST_CHAN0);
 }
-#endif  //#if (SOC_ADC_PERIPH_NUM >= 2)
+#endif  //#if (SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3
 
 #endif  //#if CONFIG_IDF_TARGET_ESP32 ||  SOC_ADC_CALIBRATION_V1_SUPPORTED

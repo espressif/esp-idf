@@ -35,6 +35,9 @@ static const char *TAG_CH[2][10] = {{"ADC1_CH2", "ADC1_CH3"}, {"ADC2_CH0"}};
 /*---------------------------------------------------------------
         ADC Oneshot High / Low test
 ---------------------------------------------------------------*/
+//ESP32C3 ADC2 oneshot mode is not supported anymore
+#define ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2    ((SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3)
+
 TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
 {
     static int adc_raw[2][10];
@@ -47,7 +50,7 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
     };
     TEST_ESP_OK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
 
-#if (SOC_ADC_PERIPH_NUM >= 2)
+#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     //-------------ADC2 Init---------------//
     adc_oneshot_unit_handle_t adc2_handle;
     adc_oneshot_unit_init_cfg_t init_config2 = {
@@ -55,7 +58,7 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
         .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
     TEST_ESP_OK(adc_oneshot_new_unit(&init_config2, &adc2_handle));
-#endif //#if (SOC_ADC_PERIPH_NUM >= 2)
+#endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 
     //-------------ADC1 TEST Channel 0 Config---------------//
     adc_oneshot_chan_cfg_t config = {
@@ -67,10 +70,10 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
     //-------------ADC1 TEST Channel 1 Config---------------//
     TEST_ESP_OK(adc_oneshot_config_channel(adc1_handle, ADC1_TEST_CHAN1, &config));
 
-#if (SOC_ADC_PERIPH_NUM >= 2)
+#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     //-------------ADC2 TEST Channel 0 Config---------------//
     TEST_ESP_OK(adc_oneshot_config_channel(adc2_handle, ADC2_TEST_CHAN0, &config));
-#endif //#if (SOC_ADC_PERIPH_NUM >= 2)
+#endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 0);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN0, &adc_raw[0][0]));
@@ -82,12 +85,12 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
     ESP_LOGI(TAG_CH[0][1], "raw  data: %d", adc_raw[0][1]);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[0][1]);
 
-#if (SOC_ADC_PERIPH_NUM >= 2)
+#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, ADC2_TEST_CHAN0, 0);
     TEST_ESP_OK(adc_oneshot_read(adc2_handle, ADC2_TEST_CHAN0, &adc_raw[1][0]));
     ESP_LOGI(TAG_CH[1][0], "raw  data: %d", adc_raw[1][0]);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[1][0]);
-#endif //#if (SOC_ADC_PERIPH_NUM >= 2)
+#endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 
 
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 1);
@@ -100,18 +103,18 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
     ESP_LOGI(TAG_CH[0][1], "raw  data: %d", adc_raw[0][1]);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[0][1]);
 
-#if (SOC_ADC_PERIPH_NUM >= 2)
+#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, ADC2_TEST_CHAN0, 1);
     TEST_ESP_OK(adc_oneshot_read(adc2_handle, ADC2_TEST_CHAN0, &adc_raw[1][0]));
     ESP_LOGI(TAG_CH[1][0], "raw  data: %d", adc_raw[1][0]);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[1][0]);
-#endif //#if (SOC_ADC_PERIPH_NUM >= 2)
+#endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 
 
     TEST_ESP_OK(adc_oneshot_del_unit(adc1_handle));
-#if (SOC_ADC_PERIPH_NUM >= 2)
+#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     TEST_ESP_OK(adc_oneshot_del_unit(adc2_handle));
-#endif //#if (SOC_ADC_PERIPH_NUM >= 2)
+#endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 }
 
 
@@ -251,11 +254,12 @@ TEST_CASE("test ADC1 Single Read with Light Sleep", "[adc][manul][ignore]")
     s_adc_oneshot_with_sleep(ADC_UNIT_1, ADC1_SLEEP_TEST_CHAN);
 }
 
-#if (SOC_ADC_PERIPH_NUM >= 2)
+#if (SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3
+//ESP32C3 ADC2 oneshot mode is not supported anymore
 TEST_CASE("test ADC2 Single Read with Light Sleep", "[adc][manul][ignore]")
 {
     s_adc_oneshot_with_sleep(ADC_UNIT_2, ADC2_SLEEP_TEST_CHAN);
 }
-#endif  //#if (SOC_ADC_PERIPH_NUM >= 2)
+#endif  //#if (SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3
 
 #endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED

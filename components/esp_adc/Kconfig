@@ -66,4 +66,14 @@ menu "ADC and ADC Calibration"
             If you stick to this, you can enable this option to force use ADC2 under above conditions.
             For more details, you can search for errata on espressif website.
 
+    config ADC_ONESHOT_FORCE_USE_ADC2_ON_C3
+        depends on IDF_TARGET_ESP32C3
+        bool "Force use ADC2 oneshot mode on ESP32C3"
+        default n
+        help
+            On ESP32C3, ADC2 Digital Controller is not stable. Therefore,
+            ADC2 oneshot mode is not suggested on ESP32C3
+
+            If you stick to this, you can enable this option to force use ADC2 under above conditions.
+            For more details, you can search for errata on espressif website.
 endmenu
