@@ -95,7 +95,7 @@ GPIO 捆绑包操作
         - 清除 GPIO 位：``clr_bit_gpio_out imm[7:0]``
         - 注意：立即数宽度取决于专用 GPIO 通道的数量
 
-    .. only:: esp32c2 or esp32c3
+    .. only:: esp32c2 or esp32c3 or esp32c6
 
         - 设置 GPIO 位：``csrrsi rd, csr, imm[4:0]``
         - 清除 GPIO 位：``csrrci rd, csr, imm[4:0]``
@@ -109,9 +109,11 @@ GPIO 捆绑包操作
 
     有关支持的专用 GPIO 指令的详细信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *处理器指令拓展 (PIE)（稍后发布）* [`PDF <{IDF_TARGET_TRM_CN_URL}#pie>`__].
 
-.. only:: esp32c2 or esp32c3
+.. only:: esp32c2 or esp32c3 or esp32c6
 
-    有关支持的专用 GPIO 指令的详细信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *ESP-RISC-V CPU* [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__].
+    通过汇编操作专用 GPIO 的示例代码存放在 ESP-IDF 示例项目的 :example:`peripherals/dedicated_gpio` 目录下。示例演示了如何通过汇编操作专用 GPIO 来模拟 UART、I2C 和 SPI 总线。
+
+    有关支持的专用 GPIO 指令的详细信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *ESP-RISC-V CPU* [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
 一些专用的 CPU 指令也包含在 `hal/dedic_gpio_cpu_ll.h` 中，作为辅助内联函数。
 
