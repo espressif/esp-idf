@@ -34,7 +34,6 @@
 #include "gatt_int.h"
 #include "stack/l2c_api.h"
 #include "btm_int.h"
-#include "common/bte_appl.h"
 
 extern tGATT_STATUS gap_proc_read(tGATTS_REQ_TYPE type, tGATT_READ_REQ *p_data, tGATTS_RSP *p_rsp);
 extern tGATT_STATUS gatt_proc_read(UINT16 conn_id, tGATTS_REQ_TYPE type, tGATT_READ_REQ *p_data, tGATTS_RSP *p_rsp);
@@ -128,14 +127,10 @@ static tGATT_STATUS gatts_check_attr_readability(tGATT_ATTR16 *p_attr,
     tGATT_PERM      perm = p_attr->permission;
 
     UNUSED(offset);
-#if SMP_INCLUDED == TRUE
-    min_key_size = bte_appl_cfg.ble_appl_enc_key_size;
-#else
     min_key_size = (((perm & GATT_ENCRYPT_KEY_SIZE_MASK) >> 12));
     if (min_key_size != 0 ) {
         min_key_size += 6;
     }
-#endif
 
     if (!(perm & GATT_READ_ALLOWED)) {
         GATT_TRACE_ERROR( "GATT_READ_NOT_PERMIT\n");
@@ -1144,14 +1139,10 @@ tGATT_STATUS gatts_write_attr_perm_check (tGATT_SVC_DB *p_db, UINT8 op_code,
         while (p_attr != NULL) {
             if (p_attr->handle == handle) {
                 perm = p_attr->permission;
-            #if SMP_INCLUDED == TRUE
-                min_key_size = bte_appl_cfg.ble_appl_enc_key_size;
-            #else
                 min_key_size = (((perm & GATT_ENCRYPT_KEY_SIZE_MASK) >> 12));
                 if (min_key_size != 0 ) {
                     min_key_size += 6;
                 }
-            #endif
                 GATT_TRACE_DEBUG( "gatts_write_attr_perm_check p_attr->permission =0x%04x min_key_size==0x%04x",
                                   p_attr->permission,
                                   min_key_size);
