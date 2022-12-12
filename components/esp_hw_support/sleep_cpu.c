@@ -11,6 +11,7 @@
 #include <sys/param.h>
 
 #include "esp_attr.h"
+#include "esp_check.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -640,6 +641,18 @@ bool cpu_domain_pd_allowed(void)
 #else
     return false;
 #endif
+}
+
+esp_err_t sleep_cpu_configure(bool light_sleep_enable)
+{
+#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+    if (light_sleep_enable) {
+        ESP_RETURN_ON_ERROR(esp_sleep_cpu_retention_init(), TAG, "Failed to enable CPU power down during light sleep.");
+    } else {
+        ESP_RETURN_ON_ERROR(esp_sleep_cpu_retention_deinit(), TAG, "Failed to release CPU retention memory");
+    }
+#endif
+    return ESP_OK;
 }
 
 #endif

@@ -30,6 +30,10 @@
 
 static __attribute__((unused)) const char *TAG = "sleep_modem";
 
+#if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
+static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_freq_mhz);
+#endif
+
 #if CONFIG_MAC_BB_PD
 #define MAC_BB_POWER_DOWN_CB_NO     (2)
 #define MAC_BB_POWER_UP_CB_NO       (2)
@@ -257,7 +261,6 @@ bool IRAM_ATTR modem_domain_pd_allowed(void)
 #endif
 }
 
-
 uint32_t IRAM_ATTR sleep_modem_reject_triggers(void)
 {
     uint32_t reject_triggers = 0;
@@ -266,3 +269,87 @@ uint32_t IRAM_ATTR sleep_modem_reject_triggers(void)
 #endif
     return reject_triggers;
 }
+
+esp_err_t sleep_modem_configure(int max_freq_mhz, int min_freq_mhz, bool light_sleep_enable)
+{
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    extern int esp_wifi_internal_mac_sleep_configure(bool, bool);
+    if (light_sleep_enable) {
+        if (sleep_modem_wifi_modem_state_init() == ESP_OK) {
+            esp_wifi_internal_mac_sleep_configure(light_sleep_enable, true); /* require WiFi to enable automatically receives the beacon */
+        }
+    } else {
+        esp_wifi_internal_mac_sleep_configure(light_sleep_enable, false); /* require WiFi to disable automatically receives the beacon */
+        sleep_modem_wifi_modem_state_deinit();
+    }
+#endif
+#if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
+    if (light_sleep_enable) {
+        esp_pm_light_sleep_default_params_config(min_freq_mhz, max_freq_mhz);
+    }
+#endif
+    return ESP_OK;
+}
+
+#define PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO 1
+
+/* Inform peripherals of light sleep wakeup overhead time */
+static inform_out_light_sleep_overhead_cb_t s_periph_inform_out_light_sleep_overhead_cb[PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO];
+
+esp_err_t esp_pm_register_inform_out_light_sleep_overhead_callback(inform_out_light_sleep_overhead_cb_t cb)
+{
+    for (int i = 0; i < PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO; i++) {
+        if (s_periph_inform_out_light_sleep_overhead_cb[i] == cb) {
+            return ESP_OK;
+        } else if (s_periph_inform_out_light_sleep_overhead_cb[i] == NULL) {
+            s_periph_inform_out_light_sleep_overhead_cb[i] = cb;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_NO_MEM;
+}
+
+esp_err_t esp_pm_unregister_inform_out_light_sleep_overhead_callback(inform_out_light_sleep_overhead_cb_t cb)
+{
+    for (int i = 0; i < PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO; i++) {
+        if (s_periph_inform_out_light_sleep_overhead_cb[i] == cb) {
+            s_periph_inform_out_light_sleep_overhead_cb[i] = NULL;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_INVALID_STATE;
+}
+
+void periph_inform_out_light_sleep_overhead(uint32_t out_light_sleep_time)
+{
+    for (int i = 0; i < PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO; i++) {
+        if (s_periph_inform_out_light_sleep_overhead_cb[i]) {
+            s_periph_inform_out_light_sleep_overhead_cb[i](out_light_sleep_time);
+        }
+    }
+}
+
+static update_light_sleep_default_params_config_cb_t s_light_sleep_default_params_config_cb = NULL;
+
+void esp_pm_register_light_sleep_default_params_config_callback(update_light_sleep_default_params_config_cb_t cb)
+{
+    if (s_light_sleep_default_params_config_cb == NULL) {
+        s_light_sleep_default_params_config_cb = cb;
+    }
+}
+
+void esp_pm_unregister_light_sleep_default_params_config_callback(void)
+{
+    if (s_light_sleep_default_params_config_cb) {
+        s_light_sleep_default_params_config_cb = NULL;
+    }
+}
+
+#if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
+static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_freq_mhz)
+{
+    if (s_light_sleep_default_params_config_cb) {
+        (*s_light_sleep_default_params_config_cb)(min_freq_mhz, max_freq_mhz);
+    }
+}
+#endif

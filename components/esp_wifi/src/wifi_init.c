@@ -9,6 +9,7 @@
 #include "esp_log.h"
 #include "esp_private/wifi.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/sleep_modem.h"
 #include "esp_pm.h"
 #include "esp_sleep.h"
 #include "esp_private/pm_impl.h"

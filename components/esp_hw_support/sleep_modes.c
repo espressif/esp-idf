@@ -139,8 +139,6 @@
 #define DEEP_SLEEP_WAKEUP_DELAY     0
 #endif
 
-extern void periph_inform_out_light_sleep_overhead(uint32_t out_light_sleep_time);
-
 // Minimal amount of time we can sleep for
 #define LIGHT_SLEEP_MIN_TIME_US     200
 
