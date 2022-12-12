@@ -8,6 +8,7 @@
 */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "esp_sleep.h"
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -106,18 +107,18 @@ static void update_pulse_count(void)
     uint32_t pulse_count = 0;
     esp_err_t err = nvs_get_u32(handle, count_key, &pulse_count);
     assert(err == ESP_OK || err == ESP_ERR_NVS_NOT_FOUND);
-    printf("Read pulse count from NVS: %5d\n", pulse_count);
+    printf("Read pulse count from NVS: %5"PRIu32"\n", pulse_count);
 
     /* ULP program counts signal edges, convert that to the number of pulses */
     uint32_t pulse_count_from_ulp = (ulp_edge_count & UINT16_MAX) / 2;
     /* In case of an odd number of edges, keep one until next time */
     ulp_edge_count = ulp_edge_count % 2;
-    printf("Pulse count from ULP: %5d\n", pulse_count_from_ulp);
+    printf("Pulse count from ULP: %5"PRIu32"\n", pulse_count_from_ulp);
 
     /* Save the new pulse count to NVS */
     pulse_count += pulse_count_from_ulp;
     ESP_ERROR_CHECK(nvs_set_u32(handle, count_key, pulse_count));
     ESP_ERROR_CHECK(nvs_commit(handle));
     nvs_close(handle);
-    printf("Wrote updated pulse count to NVS: %5d\n", pulse_count);
+    printf("Wrote updated pulse count to NVS: %5"PRIu32"\n", pulse_count);
 }

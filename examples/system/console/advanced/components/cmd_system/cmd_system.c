@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <inttypes.h>
 #include <unistd.h>
 #include "esp_log.h"
 #include "esp_console.h"
@@ -105,7 +106,7 @@ static int get_version(int argc, char **argv)
     printf("Chip info:\r\n");
     printf("\tmodel:%s\r\n", model);
     printf("\tcores:%d\r\n", info.cores);
-    printf("\tfeature:%s%s%s%s%d%s\r\n",
+    printf("\tfeature:%s%s%s%s%"PRIu32"%s\r\n",
            info.features & CHIP_FEATURE_WIFI_BGN ? "/802.11bgn" : "",
            info.features & CHIP_FEATURE_BLE ? "/BLE" : "",
            info.features & CHIP_FEATURE_BT ? "/BT" : "",
@@ -149,7 +150,7 @@ static void register_restart(void)
 
 static int free_mem(int argc, char **argv)
 {
-    printf("%d\n", esp_get_free_heap_size());
+    printf("%"PRIu32"\n", esp_get_free_heap_size());
     return 0;
 }
 
@@ -168,7 +169,7 @@ static void register_free(void)
 static int heap_size(int argc, char **argv)
 {
     uint32_t heap_size = heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
-    printf("min heap size: %u\n", heap_size);
+    printf("min heap size: %"PRIu32"\n", heap_size);
     return 0;
 }
 

@@ -1,8 +1,6 @@
 idf_component_register(SRCS "ulp_riscv_rtc_i2c_example_main.c"
                     INCLUDE_DIRS ""
                     REQUIRES soc ulp)
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
-
 #
 # ULP support additions to component CMakeLists.txt.
 #

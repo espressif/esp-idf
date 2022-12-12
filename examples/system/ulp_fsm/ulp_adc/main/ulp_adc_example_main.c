@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "esp_sleep.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
@@ -44,10 +45,10 @@ void app_main(void)
         init_ulp_program();
     } else {
         printf("Deep sleep wakeup\n");
-        printf("ULP did %d measurements since last reset\n", ulp_sample_counter & UINT16_MAX);
-        printf("Thresholds:  low=%d  high=%d\n", ulp_low_thr, ulp_high_thr);
+        printf("ULP did %"PRIu32" measurements since last reset\n", ulp_sample_counter & UINT16_MAX);
+        printf("Thresholds:  low=%"PRIu32"  high=%"PRIu32"\n", ulp_low_thr, ulp_high_thr);
         ulp_last_result &= UINT16_MAX;
-        printf("Value=%d was %s threshold\n", ulp_last_result,
+        printf("Value=%"PRIu32" was %s threshold\n", ulp_last_result,
                 ulp_last_result < ulp_low_thr ? "below" : "above");
     }
     printf("Entering deep sleep\n\n");

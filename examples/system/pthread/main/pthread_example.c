@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_pthread.h"
@@ -25,7 +26,7 @@ void app_main(void)
     // Create a pthread with the default parameters
     res = pthread_create(&thread1, NULL, example_thread, NULL);
     assert(res == 0);
-    printf("Created thread 0x%x\n", thread1);
+    printf("Created thread 0x%"PRIx32"\n", thread1);
 
     // Create a pthread with a larger stack size using the standard API
     res = pthread_attr_init(&attr);
@@ -33,7 +34,7 @@ void app_main(void)
     pthread_attr_setstacksize(&attr, 16384);
     res = pthread_create(&thread2, &attr, example_thread, NULL);
     assert(res == 0);
-    printf("Created larger stack thread 0x%x\n", thread2);
+    printf("Created larger stack thread 0x%"PRIx32"\n", thread2);
 
     res = pthread_join(thread1, NULL);
     assert(res == 0);
@@ -49,7 +50,7 @@ void app_main(void)
 
     res = pthread_create(&thread1, NULL, example_thread, NULL);
     assert(res == 0);
-    printf("Created thread 0x%x with new default config\n", thread1);
+    printf("Created thread 0x%"PRIx32" with new default config\n", thread1);
     res = pthread_join(thread1, NULL);
     assert(res == 0);
     printf("Thread has exited\n\n");
@@ -58,10 +59,10 @@ void app_main(void)
 static void *example_thread(void * arg)
 {
     usleep(250 * 1000);
-    printf("This thread has ID 0x%x and %u bytes free stack\n", pthread_self(), uxTaskGetStackHighWaterMark(NULL));
+    printf("This thread has ID 0x%"PRIx32" and %u bytes free stack\n", pthread_self(), uxTaskGetStackHighWaterMark(NULL));
 
     sleep(1);
-    printf("Thread 0x%x exiting\n", pthread_self());
+    printf("Thread 0x%"PRIx32" exiting\n", pthread_self());
 
     return NULL;
 }
