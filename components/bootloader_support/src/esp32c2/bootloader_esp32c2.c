@@ -263,6 +263,8 @@ esp_err_t bootloader_init(void)
     cache_hal_init();
     //reset mmu
     mmu_hal_init();
+    // config mmu page size
+    mmu_ll_set_page_size(0, SPI_FLASH_MMU_PAGE_SIZE);
     // config clock
     bootloader_clock_configure();
     // initialize console, from now on, we can use esp_log

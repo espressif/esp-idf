@@ -12,6 +12,7 @@
 #include "esp_log.h"
 #include "unity.h"
 #include "unity_test_utils.h"
+#include "soc/soc.h"
 
 extern "C" void setUp()
 {

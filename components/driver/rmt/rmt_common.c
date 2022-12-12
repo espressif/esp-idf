@@ -49,9 +49,10 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
             // initial occupy_mask: 1111...100...0
             group->occupy_mask = UINT32_MAX & ~((1 << SOC_RMT_CHANNELS_PER_GROUP) - 1);
             // group clock won't be configured at this stage, it will be set when allocate the first channel
-            group->clk_src = RMT_CLK_SRC_NONE;
+            group->clk_src = 0;
             // enable APB access RMT registers
             periph_module_enable(rmt_periph_signals.groups[group_id].module);
+            periph_module_reset(rmt_periph_signals.groups[group_id].module);
             // hal layer initialize
             rmt_hal_init(&group->hal);
         }
@@ -65,7 +66,7 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
     _lock_release(&s_platform.mutex);
 
     if (new_group) {
-        ESP_LOGD(TAG, "new group(%d) at %p, occupy=%x", group_id, group, group->occupy_mask);
+        ESP_LOGD(TAG, "new group(%d) at %p, occupy=%"PRIx32, group_id, group, group->occupy_mask);
     }
     return group;
 }
@@ -73,6 +74,7 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
 void rmt_release_group_handle(rmt_group_t *group)
 {
     int group_id = group->group_id;
+    rmt_clock_source_t clk_src = group->clk_src;
     bool do_deinitialize = false;
 
     _lock_acquire(&s_platform.mutex);
@@ -86,6 +88,16 @@ void rmt_release_group_handle(rmt_group_t *group)
         free(group);
     }
     _lock_release(&s_platform.mutex);
+
+    switch (clk_src) {
+#if SOC_RMT_SUPPORT_RC_FAST
+    case RMT_CLK_SRC_RC_FAST:
+        periph_rtc_dig_clk8m_disable();
+        break;
+#endif // SOC_RMT_SUPPORT_RC_FAST
+    default:
+        break;
+    }
 
     if (do_deinitialize) {
         ESP_LOGD(TAG, "del group(%d)", group_id);
@@ -101,7 +113,7 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     bool clock_selection_conflict = false;
     // check if we need to update the group clock source, group clock source is shared by all channels
     portENTER_CRITICAL(&group->spinlock);
-    if (group->clk_src == RMT_CLK_SRC_NONE) {
+    if (group->clk_src == 0) {
         group->clk_src = clk_src;
     } else {
         clock_selection_conflict = (group->clk_src != clk_src);
@@ -152,7 +164,7 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     // no division for group clock source, to achieve highest resolution
     rmt_ll_set_group_clock_src(group->hal.regs, channel_id, clk_src, 1, 1, 0);
     group->resolution_hz = periph_src_clk_hz;
-    ESP_LOGD(TAG, "group clock resolution:%u", group->resolution_hz);
+    ESP_LOGD(TAG, "group clock resolution:%"PRIu32, group->resolution_hz);
     return ret;
 }
 

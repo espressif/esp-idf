@@ -72,6 +72,14 @@
     #include <reent.h>
 #endif
 
+#ifdef configNEWLIB_REENTRANT_IS_DYNAMIC
+    #if ( configUSE_NEWLIB_REENTRANT != 1 )
+        #error configUSE_NEWLIB_REENTRANT must be defined to 1 to enable configNEWLIB_REENTRANT_IS_DYNAMIC
+    #endif
+#else /* configNEWLIB_REENTRANT_IS_DYNAMIC */
+    #define configNEWLIB_REENTRANT_IS_DYNAMIC   0
+#endif /* configNEWLIB_REENTRANT_IS_DYNAMIC */
+
 /*
  * Check all the required application specific macros have been defined.
  * These macros are application specific and (as downloaded) are defined

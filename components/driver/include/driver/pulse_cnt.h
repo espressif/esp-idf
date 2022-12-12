@@ -44,7 +44,7 @@ typedef struct {
  * @param[in] user_ctx User data, passed from `pcnt_unit_register_event_callbacks()`
  * @return Whether a high priority task has been woken up by this function
  */
-typedef bool (*pcnt_watch_cb_t)(pcnt_unit_handle_t unit, pcnt_watch_event_data_t *edata, void *user_ctx);
+typedef bool (*pcnt_watch_cb_t)(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx);
 
 /**
  * @brief Group of supported PCNT callbacks
@@ -61,6 +61,9 @@ typedef struct {
 typedef struct {
     int low_limit;  /*!< Low limitation of the count unit, should be lower than 0 */
     int high_limit; /*!< High limitation of the count unit, should be higher than 0 */
+    struct {
+        uint32_t accum_count: 1; /*!< Whether to accumulate the count value when overflows at the high/low limit */
+    } flags;       /*!< Extra flags */
 } pcnt_unit_config_t;
 
 /**
@@ -70,10 +73,12 @@ typedef struct {
     int edge_gpio_num;  /*!< GPIO number used by the edge signal, input mode with pull up enabled. Set to -1 if unused */
     int level_gpio_num; /*!< GPIO number used by the level signal, input mode with pull up enabled. Set to -1 if unused */
     struct {
-        uint32_t invert_edge_input: 1;  /*!< Invert the input edge signal */
-        uint32_t invert_level_input: 1; /*!< Invert the input level signal */
-        uint32_t io_loop_back: 1;       /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-    } flags;                            /*!< Channel config flags */
+        uint32_t invert_edge_input: 1;   /*!< Invert the input edge signal */
+        uint32_t invert_level_input: 1;  /*!< Invert the input level signal */
+        uint32_t virt_edge_io_level: 1;  /*!< Virtual edge IO level, 0: low, 1: high. Only valid when edge_gpio_num is set to -1 */
+        uint32_t virt_level_io_level: 1; /*!< Virtual level IO level, 0: low, 1: high. Only valid when level_gpio_num is set to -1 */
+        uint32_t io_loop_back: 1;        /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
+    } flags;                             /*!< Channel config flags */
 } pcnt_chan_config_t;
 
 /**
@@ -231,7 +236,8 @@ esp_err_t pcnt_unit_get_count(pcnt_unit_handle_t unit, int *value);
  * @brief Set event callbacks for PCNT unit
  *
  * @note User registered callbacks are expected to be runnable within ISR context
- * @note This function is only allowed to be called when the unit is in the init state (i.e. before calling `pcnt_unit_enable()`)
+ * @note The first call to this function needs to be before the call to `pcnt_unit_enable`
+ * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `cbs` structure to NULL.
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
  * @param[in] cbs Group of callback functions

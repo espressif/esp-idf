@@ -134,8 +134,10 @@ BT_HDR *attp_build_browse_cmd(UINT8 op_code, UINT16 s_hdl, UINT16 e_hdl, tBT_UUI
 {
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
+    /* length of ATT_READ_BY_TYPE_REQ PDU: opcode(1) + start_handle (2) + end_handle (2) + uuid (2 or 16) */
+    const UINT8 payload_size = 1 + 2 + 2 + ((uuid.len == LEN_UUID_16) ? LEN_UUID_16 : LEN_UUID_128);
 
-    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + 8 + L2CAP_MIN_OFFSET)) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
         /* Describe the built message location and size */
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -310,6 +312,12 @@ BT_HDR *attp_build_value_cmd (UINT16 payload_size, UINT8 op_code, UINT16 handle,
         if (op_code == GATT_REQ_PREPARE_WRITE || op_code == GATT_RSP_PREPARE_WRITE ) {
             UINT16_TO_STREAM (p, offset);
             p_buf->len += 2;
+        }
+
+        if(payload_size < GATT_DEF_BLE_MTU_SIZE || payload_size > GATT_MAX_MTU_SIZE) {
+            GATT_TRACE_ERROR("invalid payload_size %d", payload_size);
+            osi_free(p_buf);
+            return NULL;
         }
 
         if (len > 0 && p_data != NULL) {

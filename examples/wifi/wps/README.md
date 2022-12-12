@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Wi-Fi WPS Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -10,12 +13,12 @@ Before project configuration and build, be sure to set the correct chip target u
 
 ### Hardware Required
 
-* A development board with ESP32/ESP32-S2/ESP32-C3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with ESP32/ESP32-S2/ESP32-C3/ESP32-S3/ESP32-C2 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for Power supply and programming
 
 ### Configure the project
 
-Open the project configuration menu (`idf.py menuconfig`). 
+Open the project configuration menu (`idf.py menuconfig`).
 
 In the `Example Configuration` menu:
 
@@ -41,6 +44,8 @@ See the Getting Started Guide for all the steps to configure and use the ESP-IDF
 * [ESP-IDF Getting Started Guide on ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html)
 * [ESP-IDF Getting Started Guide on ESP32-S2](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
 * [ESP-IDF Getting Started Guide on ESP32-C3](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/get-started/index.html)
+* [ESP-IDF Getting Started Guide on ESP32-S3](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html)
+* [ESP-IDF Getting Started Guide on ESP32-C2](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c2/get-started/index.html)
 
 
 ## Example Output

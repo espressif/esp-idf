@@ -3,10 +3,10 @@ SOURCE_FILES := \
     flash_mock.cpp \
     flash_mock_util.c \
     $(addprefix ../, \
-    partition.c \
-    ../spi_flash/partition_target.c \
+    ../esp_partition/partition.c \
+    ../esp_partition/partition_target.c \
     flash_ops.c \
-    esp32/flash_ops_esp32.c \
+    ../esp_rom/linux/esp_rom_efuse.c \
     ) \
 
 INCLUDE_DIRS := \
@@ -16,7 +16,9 @@ INCLUDE_DIRS := \
     ../private_include \
     $(addprefix stubs/, \
     app_update/include \
+    bsd/include \
     driver/include \
+    esp_app_format/include \
     esp_timer/include \
     freertos/include \
     log/include \
@@ -33,7 +35,7 @@ INCLUDE_DIRS := \
     xtensa/include \
     xtensa/esp32/include \
     soc/esp32/include \
-        heap/include \
+    heap/include \
     soc/include \
     esp32/include \
     esp_timer/include \
@@ -44,4 +46,5 @@ INCLUDE_DIRS := \
     hal/esp32/include \
     hal/platform_port/include \
     spi_flash/include \
+    esp_partition/include \
     )

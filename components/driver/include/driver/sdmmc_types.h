@@ -21,13 +21,16 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _SDMMC_TYPES_H_
-#define _SDMMC_TYPES_H_
+#pragma once
 
 #include <stdint.h>
 #include <stddef.h>
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Decoded values from SD card Card Specific Data register
@@ -71,10 +74,14 @@ typedef struct {
  * Note: When new member is added, update reserved bits accordingly
  */
 typedef struct {
+    uint32_t alloc_unit_kb: 16;     /*!< Allocation unit of the card, in multiples of kB (1024 bytes) */
+    uint32_t erase_size_au: 16;     /*!< Erase size for the purpose of timeout calculation, in multiples of allocation unit */
     uint32_t cur_bus_width: 2;      /*!< SD current bus width */
     uint32_t discard_support: 1;    /*!< SD discard feature support */
     uint32_t fule_support: 1;       /*!< SD FULE (Full User Area Logical Erase) feature support */
-    uint32_t reserved: 28;          /*!< reserved for future expansion */
+    uint32_t erase_timeout: 6;      /*!< Timeout (in seconds) for erase of a single allocation unit */
+    uint32_t erase_offset: 2;       /*!< Constant timeout offset (in seconds) for any erase operation */
+    uint32_t reserved: 20;          /*!< reserved for future expansion */
 } sdmmc_ssr_t;
 
 /**
@@ -176,6 +183,7 @@ typedef struct {
     esp_err_t (*io_int_enable)(int slot); /*!< Host function to enable SDIO interrupt line */
     esp_err_t (*io_int_wait)(int slot, TickType_t timeout_ticks); /*!< Host function to wait for SDIO interrupt line to be active */
     int command_timeout_ms;     /*!< timeout, in milliseconds, of a single command. Set to 0 to use the default value. */
+    esp_err_t (*get_real_freq)(int slot, int* real_freq); /*!< Host function to provide real working freq, based on SDMMC controller setup */
 } sdmmc_host_t;
 
 /**
@@ -195,6 +203,7 @@ typedef struct {
     sdmmc_ext_csd_t ext_csd;    /*!< decoded EXT_CSD (Extended Card Specific Data) register value */
     uint16_t rca;               /*!< RCA (Relative Card Address) */
     uint16_t max_freq_khz;      /*!< Maximum frequency, in kHz, supported by the card */
+    int real_freq_khz;          /*!< Real working frequency, in kHz, configured on the host controller */
     uint32_t is_mem : 1;        /*!< Bit indicates if the card is a memory card */
     uint32_t is_sdio : 1;       /*!< Bit indicates if the card is an IO card */
     uint32_t is_mmc : 1;        /*!< Bit indicates if the card is MMC */
@@ -228,4 +237,6 @@ typedef enum {
     SDMMC_DISCARD_ARG = 1,    /*!< Discard operation for SD/MMC */
 } sdmmc_erase_arg_t;
 
-#endif // _SDMMC_TYPES_H_
+#ifdef __cplusplus
+}
+#endif

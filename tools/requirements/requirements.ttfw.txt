@@ -1,0 +1,39 @@
+# Python package requirements for CI in ESP-IDF.
+# This feature can be enabled by running "install.{sh,bat,ps1,fish} --enable-ttfw"
+
+# build
+idf-build-apps
+
+# ttfw
+pyserial
+pyyaml
+junit_xml
+netifaces
+
+# ttfw-idf
+pexpect
+python-gitlab
+pygdbmi
+
+# ble
+future
+dbus-python; sys_platform == 'linux'
+pygobject; sys_platform != 'win32'
+
+# iperf_test_util
+pyecharts
+
+# esp_prov
+bleak
+# future  # addressed before under ble
+protobuf
+
+# tools/test_apps/system/monitor_ide_integration
+SimpleWebSocketServer
+
+# py_debug_backend
+debug_backend
+
+# examples/protocols/mqtt
+# tools/test_apps/protocols/mqtt
+paho-mqtt

@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 
 # CoAP client example
 
@@ -15,10 +18,8 @@ CoAP server needs to know about.
 
 If the URI is prefixed with coap+tcp://, then the CoAP will try to use TCP for the communication.
 
-NOTE: coaps+tcp:// is not currently supported, even though both libcoap and MbedTLS support it.
-
 The Constrained Application Protocol (CoAP) is a specialized web transfer protocol for use with
-constrained nodes and constrained networks in the Internet of Things.   
+constrained nodes and constrained networks in the Internet of Things.
 The protocol is designed for machine-to-machine (M2M) applications such as smart energy and
 building automation.
 
@@ -33,18 +34,18 @@ idf.py menuconfig
 ```
 
 Example Connection Configuration  --->
- * Set WiFi SSID under Example Configuration
- * Set WiFi Password under Example Configuration
-Example CoAP Client Configuration  --->
- * Set CoAP Target Uri
- * If PSK, Set CoAP Preshared Key to use in connection to the server
- * If PSK, Set CoAP PSK Client identity (username)
+ * Set WiFi SSID
+ * Set WiFi Password
 Component config  --->
   CoAP Configuration  --->
     * Set encryption method definition, PSK (default) or PKI
     * Enable CoAP debugging if required
-  High resolution timer (esp_timer)  --->
-    * Hardware timer to use for esp_timer - change if required (FRC2 for QEMU)
+    * Disable CoAP using TCP if this is not required (TCP needed for TLS)
+    * Disable CoAP server functionality to reduce code size
+Example CoAP Client Configuration  --->
+ * Set CoAP Target Uri
+ * If PSK, Set CoAP Preshared Key to use in connection to the server
+ * If PSK, Set CoAP PSK Client identity (username)
 
 ### Build and Flash
 
@@ -61,9 +62,9 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 Prerequisite: we startup a CoAP server on coap server example,
-or use the default of coap://californium.eclipseprojects.io.  
+or use the default of coap://californium.eclipseprojects.io.
 
-and you could receive data from CoAP server if succeed,  
+and you could receive data from CoAP server if succeed,
 such as the following log:
 
 ```
@@ -100,8 +101,9 @@ These can be raised at [libcoap Issues](https://github.com/obgm/libcoap/issues).
 
 ## Troubleshooting
 * Please make sure Target Url includes valid `host`, optional `port`,
-optional `path`, and begins with `coap://`, `coaps://` or `coap+tcp://`
-for a coap server that supports TCP
-(not all do including coap+tcp://californium.eclipseprojects.io).
+optional `path`, and begins with `coap://`, `coaps://`, `coap+tcp://` or `coaps+tcp://`
+(not all hosts support TCP/TLS including coap+tcp://californium.eclipseprojects.io).
 
-* CoAP logging can be enabled by running 'idf.py menuconfig -> Component config -> CoAP Configuration' and setting appropriate log level
+* CoAP logging can be enabled by running 'idf.py menuconfig -> Component config -> CoAP Configuration -> Enable CoAP debugging'
+and setting appropriate log level.  If Mbed TLS logging is required, this needs to be configured separately under mbedTLS
+Component Configuration and the CoAP logging level set to mbedTLS.

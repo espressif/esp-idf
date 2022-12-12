@@ -140,6 +140,8 @@ esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
         if (cmdinfo->arg & SD_ARG_CMD53_WRITE) flags |= SDSPI_CMD_FLAG_WRITE;
         // The CMD53 can assign block mode in the arg when the length is exactly 512 bytes
         if (cmdinfo->arg & SD_ARG_CMD53_BLOCK_MODE) flags |= SDSPI_CMD_FLAG_MULTI_BLK;
+    } else if (!s_app_cmd && (cmdinfo->opcode == MMC_ERASE || cmdinfo->opcode == MMC_STOP_TRANSMISSION)) {
+        flags |= SDSPI_CMD_FLAG_RSP_R1B;
     } else {
         flags |= SDSPI_CMD_FLAG_RSP_R1;
     }
@@ -150,13 +152,13 @@ esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
 
     // Extract response bytes and store them into cmdinfo structure
     if (ret == ESP_OK) {
-        ESP_LOGV(TAG, "r1 = 0x%02x hw_cmd.r[0]=0x%08x", hw_cmd.r1, hw_cmd.response[0]);
+        ESP_LOGV(TAG, "r1 = 0x%02x hw_cmd.r[0]=0x%08"PRIx32, hw_cmd.r1, hw_cmd.response[0]);
         // Some errors should be reported using return code
-        if (flags & SDSPI_CMD_FLAG_RSP_R1) {
+        if (flags & (SDSPI_CMD_FLAG_RSP_R1 | SDSPI_CMD_FLAG_RSP_R1B)) {
             cmdinfo->response[0] = hw_cmd.r1;
             r1_response_to_err(hw_cmd.r1, cmdinfo->opcode, &ret);
         } else if (flags & SDSPI_CMD_FLAG_RSP_R2) {
-            cmdinfo->response[0] = (((uint32_t)hw_cmd.r1) << 8) | (hw_cmd.response[0] >> 24);
+            cmdinfo->response[0] = ((uint32_t)hw_cmd.r1) | ((hw_cmd.response[0] & 0xff) << 8);
         } else if (flags & (SDSPI_CMD_FLAG_RSP_R3 | SDSPI_CMD_FLAG_RSP_R7)) {
             r1_response_to_err(hw_cmd.r1, cmdinfo->opcode, &ret);
             cmdinfo->response[0] = __builtin_bswap32(hw_cmd.response[0]);

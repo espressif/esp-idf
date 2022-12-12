@@ -25,11 +25,7 @@ logging.basicConfig(level=logging.INFO)
 esp_prov.config_throw_except = True
 
 
-@pytest.mark.supported_targets
-@pytest.mark.generic
-@pytest.mark.xfail(reason='Runner unable to connect to target over Bluetooth', run=False)
-def test_examples_wifi_prov_mgr(dut: Dut) -> None:
-
+def test_wifi_prov_mgr(dut: Dut,  sec_ver: int) -> None:
     # Check if BT memory is released before provisioning starts
     dut.expect('wifi_prov_scheme_ble: BT memory released', timeout=60)
 
@@ -40,14 +36,22 @@ def test_examples_wifi_prov_mgr(dut: Dut) -> None:
     logging.info('Starting Provisioning')
     verbose = False
     protover = 'v1.1'
-    secver = 1
-    pop = 'abcd1234'
     provmode = 'ble'
     ap_ssid = 'myssid'
     ap_password = 'mypassword'
 
     logging.info('Getting security')
-    security = esp_prov.get_security(secver, pop, verbose)
+    if (sec_ver == 1):
+        pop = 'abcd1234'
+        sec2_username = None
+        sec2_password = None
+        security = esp_prov.get_security(sec_ver, sec2_username, sec2_password, pop, verbose)
+    elif (sec_ver == 2):
+        pop = None
+        sec2_username = 'wifiprov'
+        sec2_password = 'abcd1234'
+        security = esp_prov.get_security(sec_ver, sec2_username, sec2_password, pop, verbose)
+
     if security is None:
         raise RuntimeError('Failed to get security')
 
@@ -85,3 +89,20 @@ def test_examples_wifi_prov_mgr(dut: Dut) -> None:
 
     # Check if BTDM memory is released after provisioning finishes
     dut.expect('wifi_prov_scheme_ble: BTDM memory released', timeout=30)
+
+
+@pytest.mark.esp32
+@pytest.mark.generic
+@pytest.mark.parametrize('config', ['security1',], indirect=True)
+@pytest.mark.xfail(reason='Runner unable to connect to target over Bluetooth', run=False)
+def test_examples_wifi_prov_mgr_sec1(dut: Dut) -> None:
+
+    test_wifi_prov_mgr(dut, 1)
+
+
+@pytest.mark.esp32
+@pytest.mark.generic
+@pytest.mark.xfail(reason='Runner unable to connect to target over Bluetooth', run=False)
+def test_examples_wifi_prov_mgr_sec2(dut: Dut) -> None:
+
+    test_wifi_prov_mgr(dut, 2)

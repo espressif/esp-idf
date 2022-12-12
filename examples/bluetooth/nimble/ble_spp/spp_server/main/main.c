@@ -7,7 +7,6 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
-#include "esp_nimble_hci.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
@@ -22,8 +21,7 @@ static int ble_spp_server_gap_event(struct ble_gap_event *event, void *arg);
 static uint8_t own_addr_type;
 int gatt_svr_register(void);
 QueueHandle_t spp_common_uart_queue = NULL;
-static bool is_connect = false;
-uint16_t connection_handle;
+uint16_t connection_handle[CONFIG_BT_NIMBLE_MAX_CONNECTIONS];
 static uint16_t ble_svc_gatt_read_val_handle,ble_spp_svc_gatt_read_val_handle;
 
 /* 16 Bit Alert Notification Service UUID */
@@ -164,12 +162,11 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             ble_spp_server_print_conn_desc(&desc);
-	    is_connect=true;
-	    connection_handle = event->connect.conn_handle;
+	    connection_handle[event->connect.conn_handle - 1] = event->connect.conn_handle;
         }
         MODLOG_DFLT(INFO, "\n");
-        if (event->connect.status != 0) {
-            /* Connection failed; resume advertising. */
+	if (event->connect.status != 0 || CONFIG_BT_NIMBLE_MAX_CONNECTIONS > 1) {
+            /* Connection failed or if multiple connection allowed; resume advertising. */
             ble_spp_server_advertise();
         }
         return 0;
@@ -339,17 +336,23 @@ void ble_server_uart_task(void *pvParameters){
 	     switch (event.type) {
              //Event of UART receving data
              case UART_DATA:
-		if (event.size && (is_connect == true)) {
+		if (event.size) {
 			static uint8_t ntf[1];
                         ntf[0] = 90;
-                        struct os_mbuf *txom;
-                        txom = ble_hs_mbuf_from_flat(ntf, sizeof(ntf));
-			rc = ble_gattc_notify_custom(connection_handle,ble_spp_svc_gatt_read_val_handle,txom);
-			if( rc == 0){
-				ESP_LOGI(tag,"Notification sent successfully");
-			}
-			else {
-				ESP_LOGI(tag,"Error in sending notification");
+			for ( int i = 0; i < CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+			    if (connection_handle[i] != 0) {
+				struct os_mbuf *txom;
+				txom = ble_hs_mbuf_from_flat(ntf, sizeof(ntf));
+				rc = ble_gatts_notify_custom(connection_handle[i],
+							     ble_spp_svc_gatt_read_val_handle,
+							     txom);
+				if ( rc == 0 ) {
+				    ESP_LOGI(tag,"Notification sent successfully");
+				}
+				else {
+				    ESP_LOGI(tag,"Error in sending notification rc = %d", rc);
+				}
+			    }
 			}
 		}
              	break;
@@ -393,8 +396,6 @@ app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
-    ESP_ERROR_CHECK(esp_nimble_hci_and_controller_init());
 
     nimble_port_init();
 

@@ -25,13 +25,14 @@
 #include "hal/gpio_hal.h"
 #include "hal/uart_ll.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 #if SOC_I2C_SUPPORT_SLAVE // i2c test can't work without slave
 
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
 #define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
 #define DELAY_TIME_BETWEEN_ITEMS_MS   1234 /*!< delay time between different test items */
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H4
 #define I2C_SLAVE_SCL_IO     5     /*!<gpio number for i2c slave clock  */
 #define I2C_SLAVE_SDA_IO     6     /*!<gpio number for i2c slave data */
 #else
@@ -43,7 +44,7 @@
 #define I2C_SLAVE_TX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave tx buffer size */
 #define I2C_SLAVE_RX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave rx buffer size */
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4
 #define I2C_MASTER_SCL_IO     5     /*!<gpio number for i2c master clock  */
 #define I2C_MASTER_SDA_IO     6     /*!<gpio number for i2c master data */
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -730,3 +731,4 @@ TEST_CASE("I2C SCL freq test (local test)", "[i2c][ignore]")
 }
 
 #endif // SOC_I2C_SUPPORT_SLAVE
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

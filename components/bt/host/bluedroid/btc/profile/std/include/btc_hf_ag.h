@@ -61,12 +61,6 @@ typedef enum
 /* btc_hf_args_t */
 typedef union
 {
-    // BTC_HF_INIT_EVT
-    bt_bdaddr_t init;
-
-    //BTC_HF_DEINIT_EVT
-    bt_bdaddr_t deinit;
-
     // BTC_HF_CONNECT_EVT
     bt_bdaddr_t connect;
 

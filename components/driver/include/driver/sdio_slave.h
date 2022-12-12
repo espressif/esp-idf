@@ -48,6 +48,9 @@ typedef struct {
         the internal pull-ups are not sufficient for stable communication, please do connect external pull-ups on the
         bus. This is only for example and debug use.
         */
+#define SDIO_SLAVE_FLAG_DEFAULT_SPEED       BIT(3)      /**< Disable the highspeed support of the hardware. */
+#define SDIO_SLAVE_FLAG_HIGH_SPEED          0           /**< Enable the highspeed support of the hardware. This is the
+        default option. The host will see highspeed capability, but the mode actually used is determined by the host. */
 } sdio_slave_config_t;
 
 /** Handle of a receive buffer, register a handle by calling ``sdio_slave_recv_register_buf``. Use the handle to load the buffer to the

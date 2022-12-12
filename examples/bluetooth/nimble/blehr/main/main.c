@@ -21,7 +21,6 @@
 #include "nvs_flash.h"
 #include "freertos/FreeRTOSConfig.h"
 /* BLE */
-#include "esp_nimble_hci.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
@@ -174,7 +173,7 @@ blehr_tx_hrate(TimerHandle_t ev)
     }
 
     om = ble_hs_mbuf_from_flat(hrm, sizeof(hrm));
-    rc = ble_gattc_notify_custom(conn_handle, hrs_hrm_handle, om);
+    rc = ble_gatts_notify_custom(conn_handle, hrs_hrm_handle, om);
 
     assert(rc == 0);
 
@@ -280,8 +279,6 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
-    ESP_ERROR_CHECK(esp_nimble_hci_and_controller_init());
 
     nimble_port_init();
     /* Initialize the NimBLE host configuration */

@@ -72,10 +72,11 @@
 #include <xtensa/xtruntime.h>       /* required for XTOS_SET_INTLEVEL. [refactor-todo] add common intr functions to esp_hw_support */
 #include "xt_instr_macros.h"
 #include "spinlock.h"
-#include "hal/cpu_hal.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_macros.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
+#include "esp_memory_utils.h"
 #include "esp_newlib.h"             /* required for esp_reent_init() in tasks.c */
 #include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
@@ -138,7 +139,8 @@ typedef uint32_t TickType_t;
 #define portCRITICAL_NESTING_IN_TCB     0
 #define portSTACK_GROWTH                ( -1 )
 #define portTICK_PERIOD_MS              ( ( TickType_t ) 1000 / configTICK_RATE_HZ )
-#define portBYTE_ALIGNMENT              4
+#define portBYTE_ALIGNMENT              16    // Xtensa Windowed ABI requires the stack pointer to always be 16-byte aligned. See "isa_rm.pdf 8.1.1 Windowed Register Usage and Stack Layout"
+#define portTICK_TYPE_IS_ATOMIC         1
 #define portNOP()                       XT_NOP()
 
 
@@ -363,7 +365,7 @@ void vPortYieldOtherCore(BaseType_t coreid);
  * @return true Core can yield
  * @return false Core cannot yield
  */
-static inline bool xPortCanYield(void);
+FORCE_INLINE_ATTR bool xPortCanYield(void);
 
 // ------------------- Hook Functions ----------------------
 
@@ -402,39 +404,7 @@ void vPortSetStackWatchpoint( void *pxStackStart );
  * @note [refactor-todo] IDF should call a FreeRTOS like macro instead of port function directly
  * @return BaseType_t Core ID
  */
-static inline BaseType_t xPortGetCoreID(void);
-
-/**
- * @brief Wrapper for atomic compare-and-set instruction
- *
- * This subroutine will atomically compare *addr to 'compare'. If *addr == compare, *addr is set to *set. *set is
- * updated with the previous value of *addr (either 'compare' or some other value.)
- *
- * @warning From the ISA docs: in some (unspecified) cases, the s32c1i instruction may return the "bitwise inverse" of
- *          the old mem if the mem wasn't written. This doesn't seem to happen on the ESP32 (portMUX assertions would
- *          fail).
- *
- * @note [refactor-todo] Check if this can be deprecated
- * @note [refactor-todo] Check if this function should be renamed (due to void return type)
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
-
-/**
- * @brief Wrapper for atomic compare-and-set instruction in external RAM
- *
- * Atomic compare-and-set but the target address is placed in external RAM
- *
- * @note [refactor-todo] Check if this can be deprecated
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void __attribute__((always_inline)) uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
+FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void);
 
 
 
@@ -476,6 +446,13 @@ static inline void __attribute__((always_inline)) uxPortCompareSetExtram(volatil
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(prev_level)       vPortClearInterruptMaskFromISR(prev_level)
 
 #define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
+
+/**
+ * @brief Used by FreeRTOS functions to call the correct version of critical section API
+ */
+#if ( configNUM_CORES > 1 )
+#define portCHECK_IF_IN_ISR()   xPortInIsrContext()
+#endif
 
 // ------------------ Critical Sections --------------------
 
@@ -636,7 +613,7 @@ static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_
 
 // ---------------------- Yielding -------------------------
 
-static inline bool IRAM_ATTR xPortCanYield(void)
+FORCE_INLINE_ATTR bool xPortCanYield(void)
 {
     uint32_t ps_reg = 0;
 
@@ -655,21 +632,9 @@ static inline bool IRAM_ATTR xPortCanYield(void)
 
 // ----------------------- System --------------------------
 
-static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
+FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 {
-    return (BaseType_t) cpu_hal_get_core_id();
-}
-
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-    compare_and_set_native(addr, compare, set);
-}
-
-static inline void __attribute__((always_inline)) uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-#ifdef CONFIG_SPIRAM
-    compare_and_set_extram(addr, compare, set);
-#endif
+    return (BaseType_t) esp_cpu_get_core_id();
 }
 
 
@@ -751,18 +716,10 @@ bool xPortcheckValidStackMem(const void *ptr);
 // --------------------- App-Trace -------------------------
 
 #if CONFIG_APPTRACE_SV_ENABLE
-extern uint32_t port_switch_flag[];
+extern volatile uint32_t port_switch_flag[portNUM_PROCESSORS];
 #define os_task_switch_is_pended(_cpu_) (port_switch_flag[_cpu_])
 #else
 #define os_task_switch_is_pended(_cpu_) (false)
-#endif
-
-// --------------------- Debugging -------------------------
-
-#if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
-#define UNTESTED_FUNCTION() { esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
-#else
-#define UNTESTED_FUNCTION()
 #endif
 
 #ifdef __cplusplus

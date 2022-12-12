@@ -7,161 +7,150 @@ endif()
 idf_build_get_property(target IDF_TARGET)
 
 if(CONFIG_FREERTOS_SMP)
-    if(CONFIG_IDF_TARGET_ARCH_XTENSA)
-        set(srcs
-            "FreeRTOS-Kernel-SMP/portable/xtensa/port.c"
-            "FreeRTOS-Kernel-SMP/portable/xtensa/portasm.S"
-            "FreeRTOS-Kernel-SMP/portable/xtensa/xtensa_context.S"
-            "FreeRTOS-Kernel-SMP/portable/xtensa/xtensa_init.c"
-            "FreeRTOS-Kernel-SMP/portable/xtensa/xtensa_overlay_os_hook.c"
-            "FreeRTOS-Kernel-SMP/portable/xtensa/xtensa_vector_defaults.S"
-            "FreeRTOS-Kernel-SMP/portable/xtensa/xtensa_vectors.S")
-
-        set(include_dirs
-            "FreeRTOS-Kernel-SMP/include" # FreeRTOS headers via #include "freertos/xxx.h"
-            "esp_additions/include/freertos" # For config via #include "FreeRTOSConfig.h"
-            "FreeRTOS-Kernel-SMP/portable/xtensa/include" # Xtensa/Arch Config headers via #include "freertos/xxx.h"
-            "esp_additions/include" # For #include "freertos/task_snapshot.h" and #include "freertos/FreeRTOSConfig.h"
-            "FreeRTOS-Kernel-SMP/portable/xtensa/include/freertos") # Xtensa headers via #include "xxx.h"
-
-        set(private_include_dirs
-            "FreeRTOS-Kernel-SMP/portable/xtensa/include/freertos"
-            "FreeRTOS-Kernel-SMP/portable/xtensa"
-            .)
-    endif()
-
-    list(APPEND srcs
-        "FreeRTOS-Kernel-SMP/croutine.c"
-        "FreeRTOS-Kernel-SMP/event_groups.c"
-        "FreeRTOS-Kernel-SMP/list.c"
-        "FreeRTOS-Kernel-SMP/queue.c"
-        "FreeRTOS-Kernel-SMP/tasks.c"
-        "FreeRTOS-Kernel-SMP/timers.c"
-        "FreeRTOS-Kernel-SMP/stream_buffer.c"
-        "FreeRTOS-openocd.c"
-        )
-
-    list(APPEND private_include_dirs
-        "FreeRTOS-Kernel-SMP/include/freertos"   # FreeRTOS headers via #include "xxx.h"
-        "esp_additions/private_include")    # For include "freertos_tasks_c_additions.h"
-
-    if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
-        list(APPEND srcs "FreeRTOS-Kernel-SMP/portable/xtensa/xtensa_loadstore_handler.S")
-    endif()
-
+    set(kernel_dir "FreeRTOS-Kernel-SMP")
 else()
-    if(CONFIG_IDF_TARGET_ARCH_XTENSA)
-        set(srcs
-            "FreeRTOS-Kernel/portable/xtensa/port.c"
-            "FreeRTOS-Kernel/portable/xtensa/portasm.S"
-            "FreeRTOS-Kernel/portable/xtensa/xtensa_context.S"
-            "FreeRTOS-Kernel/portable/xtensa/xtensa_init.c"
-            "FreeRTOS-Kernel/portable/xtensa/xtensa_overlay_os_hook.c"
-            "FreeRTOS-Kernel/portable/xtensa/xtensa_vector_defaults.S"
-            "FreeRTOS-Kernel/portable/xtensa/xtensa_vectors.S")
+    set(kernel_dir "FreeRTOS-Kernel")
+endif()
 
-        set(include_dirs
-            FreeRTOS-Kernel/include
-            esp_additions/include/freertos          # For files with #include "FreeRTOSConfig.h"
-            FreeRTOS-Kernel/portable/xtensa/include # For arch-specific FreeRTOSConfig_arch.h in portable/<arch>/include
-            esp_additions/include)                  # For files with #include "freertos/FreeRTOSConfig.h"
+if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+set(arch "xtensa")
+elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
+set(arch "riscv")
+elseif(${target} STREQUAL "linux")
+set(arch "linux")
+endif()
 
-        set(private_include_dirs
-            FreeRTOS-Kernel/portable/xtensa/include/freertos
-            FreeRTOS-Kernel/portable/xtensa
-            FreeRTOS-Kernel/portable/priv_include
-            .)
+set(srcs
+    "${kernel_dir}/list.c"
+    "${kernel_dir}/queue.c"
+    "${kernel_dir}/tasks.c"
+    "${kernel_dir}/timers.c"
+    "${kernel_dir}/croutine.c"
+    "${kernel_dir}/event_groups.c"
+    "${kernel_dir}/stream_buffer.c"
+    "${kernel_dir}/portable/${arch}/port.c")
 
-    elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
-        set(srcs
-            "FreeRTOS-Kernel/portable/riscv/port.c"
-            "FreeRTOS-Kernel/portable/riscv/portasm.S")
+set(include_dirs
+    "${kernel_dir}/include" # FreeRTOS headers via #include "freertos/xxx.h"
+    "${kernel_dir}/portable/${arch}/include" # For arch-specific FreeRTOSConfig_arch.h in portable/<arch>/include
+    "esp_additions/include/freertos"         # For files with #include "FreeRTOSConfig.h"
+    "esp_additions/include")                 # For files with #include "freertos/FreeRTOSConfig.h"
+                                             #      or #include "freertos/task_snapshot.h"
 
-        set(include_dirs
-            FreeRTOS-Kernel/include
-            esp_additions/include/freertos          # For files with #include "FreeRTOSConfig.h"
-            FreeRTOS-Kernel/portable/riscv/include  # For arch-specific FreeRTOSConfig_arch.h in portable/<arch>/include
-            esp_additions/include)                  # For files with #include "freertos/FreeRTOSConfig.h"
+set(private_include_dirs
+    "${kernel_dir}/portable/${arch}/include/freertos"
+    "${kernel_dir}/portable/${arch}"
+    "${kernel_dir}/include/freertos"   # FreeRTOS headers via #include "xxx.h"
+    .)
 
-        set(private_include_dirs
-            FreeRTOS-Kernel/portable/riscv/include/freertos
-            FreeRTOS-Kernel/portable/riscv
-            FreeRTOS-Kernel/portable/priv_include
-            .)
+set(private_requirements "")
 
-    endif()
-
+if(${target} STREQUAL "linux")
     list(APPEND srcs
-        "FreeRTOS-Kernel/portable/port_common.c"
-        "FreeRTOS-Kernel/portable/port_systick.c"
-        "FreeRTOS-Kernel/croutine.c"
-        "FreeRTOS-Kernel/event_groups.c"
-        "FreeRTOS-Kernel/list.c"
-        "FreeRTOS-Kernel/queue.c"
-        "FreeRTOS-Kernel/tasks.c"
-        "FreeRTOS-Kernel/timers.c"
-        "FreeRTOS-Kernel/stream_buffer.c"
+        "${kernel_dir}/portable/${arch}/port_idf.c"
+        "${kernel_dir}/portable/${arch}/utils/wait_for_event.c")
+else()
+    list(APPEND srcs
         "FreeRTOS-openocd.c"
-        "esp_additions/freertos_v8_compat.c")
+        "${kernel_dir}/portable/${arch}/portasm.S")
 
     list(APPEND private_include_dirs
-        "FreeRTOS-Kernel/include/freertos"
         "esp_additions/private_include")    # For include "freertos_tasks_c_additions.h"
 
-    if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
-        list(APPEND srcs "FreeRTOS-Kernel/portable/xtensa/xtensa_loadstore_handler.S")
+    if(CONFIG_FREERTOS_SMP)
+        set(ldfragments linker_smp.lf)
+        list(APPEND include_dirs "${kernel_dir}/portable/${arch}/include/freertos") # Xtensa headers via #include "xx.h"
+    else()
+        list(APPEND srcs
+            "${kernel_dir}/portable/port_common.c"
+            "${kernel_dir}/portable/port_systick.c"
+            "esp_additions/freertos_v8_compat.c")
+
+        list(APPEND private_include_dirs "${kernel_dir}/portable/priv_include") # For port_systick.h on normal FreeRTOS
+
+        set(ldfragments linker.lf)
     endif()
+
+    list(APPEND private_requirements soc esp_pm)
+endif()
+
+if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+    list(APPEND srcs
+        "${kernel_dir}/portable/${arch}/xtensa_context.S"
+        "${kernel_dir}/portable/${arch}/xtensa_init.c"
+        "${kernel_dir}/portable/${arch}/xtensa_overlay_os_hook.c"
+        "${kernel_dir}/portable/${arch}/xtensa_vector_defaults.S"
+        "${kernel_dir}/portable/${arch}/xtensa_vectors.S")
+endif()
+
+
+if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
+    list(APPEND srcs "${kernel_dir}/portable/xtensa/xtensa_loadstore_handler.S")
 endif()
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${include_dirs}
                     PRIV_INCLUDE_DIRS  ${private_include_dirs}
-                    LDFRAGMENTS linker.lf
-                    PRIV_REQUIRES soc esp_pm)
+                    LDFRAGMENTS "${ldfragments}"
+                    PRIV_REQUIRES "${private_requirements}")
 
-idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
-idf_component_set_property(freertos ORIG_INCLUDE_PATH "${COMPONENT_DIR}/include/freertos/")
+if(${target} STREQUAL "linux")
+    target_compile_definitions(${COMPONENT_LIB} PUBLIC "projCOVERAGE_TEST=0")
+    target_link_libraries(${COMPONENT_LIB} PUBLIC pthread)
+else()
+    idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
 
-if(CONFIG_FREERTOS_DEBUG_OCDAWARE)
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--undefined=uxTopUsedPriority") #will be removed
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--undefined=FreeRTOS_openocd_params")
-    idf_build_set_property(COMPILE_OPTIONS "-DconfigENABLE_FREERTOS_DEBUG_OCDAWARE=1" APPEND)
-endif()
+    idf_component_set_property(freertos ORIG_INCLUDE_PATH "${COMPONENT_DIR}/${kernel_dir}/include/freertos/")
 
-set_source_files_properties(
-    tasks.c
-    event_groups.c
-    timers.c
-    queue.c
-    stream_buffer.c
-    PROPERTIES COMPILE_DEFINITIONS
-    _ESP_FREERTOS_INTERNAL
-    )
+    if(CONFIG_FREERTOS_DEBUG_OCDAWARE)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--undefined=uxTopUsedPriority") #will be removed
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--undefined=FreeRTOS_openocd_params")
+        idf_build_set_property(COMPILE_OPTIONS "-DconfigENABLE_FREERTOS_DEBUG_OCDAWARE=1" APPEND)
+    endif()
 
-# The freertos component provides the `start_app` and `start_app_other_cores`
-# if it is included in the build. It then calls `app_main`
-# from the main task created, which must be provided by the user.
-# Like for `start_app` and `start_app_other_cores`,
-# we can't establish dependency on what we don't yet know, so we force the
-# linker to not drop this symbol.
-target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_main")
+    set_source_files_properties(
+        tasks.c
+        event_groups.c
+        timers.c
+        queue.c
+        stream_buffer.c
+        PROPERTIES COMPILE_DEFINITIONS
+        _ESP_FREERTOS_INTERNAL
+        )
 
-if(CONFIG_APPTRACE_SV_ENABLE)
-    # FreeRTOS headers have a dependency on app_trace when SystemView tracing is enabled
-    idf_component_optional_requires(PUBLIC app_trace)
-elseif(CONFIG_APPTRACE_ENABLE)
-    # [refactor-todo]: port.c has a dependency on esp_apptrace_init, for running it on APP CPU.
-    # this should be resolved when link-time registration of startup functions is added.
-    idf_component_optional_requires(PRIVATE app_trace)
-endif()
+    # The freertos component provides the `start_app` and `start_app_other_cores`
+    # if it is included in the build. It then calls `app_main`
+    # from the main task created, which must be provided by the user.
+    # Like for `start_app` and `start_app_other_cores`,
+    # we can't establish dependency on what we don't yet know, so we force the
+    # linker to not drop this symbol.
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_main")
 
-if(CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME)
-    # [refactor-todo]: port.c esp_startup_start_app_common() calls esp_gdbstub_init()
-    idf_component_optional_requires(PRIVATE esp_gdbstub)
-endif()
+    if(CONFIG_APPTRACE_SV_ENABLE)
+        # FreeRTOS headers have a dependency on app_trace when SystemView tracing is enabled
+        idf_component_optional_requires(PUBLIC app_trace)
+    elseif(CONFIG_APPTRACE_ENABLE)
+        # [refactor-todo]: port.c has a dependency on esp_apptrace_init, for running it on APP CPU.
+        # this should be resolved when link-time registration of startup functions is added.
+        idf_component_optional_requires(PRIVATE app_trace)
+    endif()
 
-if(CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER)
-    # [refactor-todo]: esp_timer is required by FreeRTOS when we use esp_timer_get_time() to do profiling
-    # Introduce a port wrapper function to avoid including esp_timer.h into the public header
-    idf_component_optional_requires(PUBLIC esp_timer)
+    if(CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME)
+        # [refactor-todo]: port.c esp_startup_start_app_common() calls esp_gdbstub_init()
+        idf_component_optional_requires(PRIVATE esp_gdbstub)
+    endif()
+
+    if(CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER)
+        # [refactor-todo]: esp_timer is required by FreeRTOS when we use esp_timer_get_time() to do profiling
+        # Introduce a port wrapper function to avoid including esp_timer.h into the public header
+        idf_component_optional_requires(PUBLIC esp_timer)
+    endif()
+
+    if(CONFIG_SPIRAM)
+        idf_component_optional_requires(PRIVATE esp_psram)
+    endif()
+
+    if(CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP AND CONFIG_FREERTOS_SMP)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=vPortCleanUpTCB")
+    endif()
 endif()

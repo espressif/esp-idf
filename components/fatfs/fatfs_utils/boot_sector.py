@@ -3,7 +3,7 @@
 from inspect import getmembers, isroutine
 from typing import Optional
 
-from construct import Const, Int8ul, Int16ul, Int32ul, PaddedString, Struct
+from construct import Const, Int8ul, Int16ul, Int32ul, PaddedString, Struct, core
 
 from .exceptions import InconsistentFATAttributes, NotInitialized
 from .fatfs_state import BootSectorState
@@ -56,7 +56,7 @@ class BootSector:
     assert BOOT_SECTOR_HEADER.sizeof() == BOOT_HEADER_SIZE
 
     def __init__(self, boot_sector_state: Optional[BootSectorState] = None) -> None:
-        self._parsed_header = None
+        self._parsed_header: dict = {}
         self.boot_sector_state: BootSectorState = boot_sector_state
 
     def generate_boot_sector(self) -> None:
@@ -97,8 +97,12 @@ class BootSector:
         )
 
     def parse_boot_sector(self, binary_data: bytes) -> None:
-        self._parsed_header = BootSector.BOOT_SECTOR_HEADER.parse(binary_data)
-        if self._parsed_header is None:
+        """
+        Checks the validity of the boot sector and derives the metadata from boot sector to the structured shape.
+        """
+        try:
+            self._parsed_header = BootSector.BOOT_SECTOR_HEADER.parse(binary_data)
+        except core.StreamError:
             raise NotInitialized('The boot sector header is not parsed successfully!')
 
         if self._parsed_header['BPB_TotSec16'] != 0x00:
@@ -107,14 +111,11 @@ class BootSector:
             # uncomment for FAT32 implementation
             # sectors_count_ = self._parsed_header['BPB_TotSec32']
             # possible_fat_types = [FAT32]
-            assert self._parsed_header['BPB_FATSz16'] == 0
+            assert self._parsed_header['BPB_TotSec16'] == 0
             raise NotImplementedError('FAT32 not implemented!')
         else:
             raise InconsistentFATAttributes('The number of FS sectors cannot be zero!')
 
-        # in the current code assigning self._parsed_header['BPB_TotSec32'] is not reachable
-        # the option to assign it is kept for possibility to implement FAT32
-        sectors_per_fat_cnt_ = self._parsed_header['BPB_FATSz16'] or self._parsed_header['BPB_TotSec32']
         if self._parsed_header['BPB_BytsPerSec'] not in ALLOWED_SECTOR_SIZES:
             raise InconsistentFATAttributes(f'The number of bytes '
                                             f"per sector is {self._parsed_header['BPB_BytsPerSec']}! "
@@ -134,7 +135,6 @@ class BootSector:
                                                  root_dir_sectors_cnt=root_dir_sectors_cnt_,
                                                  sectors_count=sectors_count_,
                                                  media_type=self._parsed_header['BPB_Media'],
-                                                 sectors_per_fat_cnt=sectors_per_fat_cnt_,
                                                  sec_per_track=self._parsed_header['BPB_SecPerTrk'],
                                                  num_heads=self._parsed_header['BPB_NumHeads'],
                                                  hidden_sectors=self._parsed_header['BPB_HiddSec'],
@@ -145,9 +145,14 @@ class BootSector:
         assert self.boot_sector_state.file_sys_type in (f'FAT{self.boot_sector_state.fatfs_type}   ', 'FAT     ')
 
     def __str__(self) -> str:
-        if self._parsed_header is None:
+        """
+        FATFS properties parser (internal helper tool for fatfsgen.py/fatfsparse.py)
+        Provides all the properties of given FATFS instance by parsing its boot sector (returns formatted string)
+        """
+
+        if self._parsed_header == {}:
             return 'Boot sector is not initialized!'
-        res: str = 'Properties of the FATFS:\n'
+        res: str = 'FATFS properties:\n'
         for member in getmembers(self.boot_sector_state, lambda a: not (isroutine(a))):
             prop_ = getattr(self.boot_sector_state, member[0])
             if isinstance(prop_, int) or isinstance(prop_, str) and not member[0].startswith('_'):
@@ -156,7 +161,8 @@ class BootSector:
 
     @property
     def binary_image(self) -> bytes:
-        if len(self.boot_sector_state.binary_image) == 0:
-            raise NotInitialized('Boot sector is not generated nor initialized!')
+        # when BootSector is not instantiated, self.boot_sector_state might be None
+        if self.boot_sector_state is None or len(self.boot_sector_state.binary_image) == 0:
+            raise NotInitialized('Boot sector is not initialized!')
         bin_image_: bytes = self.boot_sector_state.binary_image
         return bin_image_

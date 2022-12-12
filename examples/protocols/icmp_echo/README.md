@@ -1,12 +1,15 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # ICMP Echo-Reply (Ping) example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-Ping is a useful network utility used to test if a remote host is reachable on the IP network. It measures the round-trip time for messages sent from the source host to a destination target that are echoed back to the source. 
+Ping is a useful network utility used to test if a remote host is reachable on the IP network. It measures the round-trip time for messages sent from the source host to a destination target that are echoed back to the source.
 
 Ping operates by sending Internet Control Message Protocol (ICMP) echo request packets to the target host and waiting for an ICMP echo reply.
 
-This example implements a simple ping command line util based on the [console component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/console.html). 
+This example implements a simple ping command line util based on the [console component](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/console.html).
 
 **Notes:** Currently this example only supports IPv4.
 

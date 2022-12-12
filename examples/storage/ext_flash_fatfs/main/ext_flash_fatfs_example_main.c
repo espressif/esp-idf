@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "esp_flash.h"
 #include "esp_flash_spi_init.h"
 #include "esp_partition.h"
@@ -21,7 +22,7 @@
 #include "esp_system.h"
 #include "soc/spi_pins.h"
 
-// h2 and c2 will not support external flash
+// h4 and c2 will not support external flash
 #define EXAMPLE_FLASH_FREQ_MHZ      40
 
 static const char *TAG = "example";
@@ -82,7 +83,7 @@ void app_main(void)
     // Print FAT FS size information
     uint64_t bytes_total, bytes_free;
     esp_vfs_fat_info(base_path, &bytes_total, &bytes_free);
-    ESP_LOGI(TAG, "FAT FS: %lld kB total, %lld kB free", bytes_total / 1024, bytes_free / 1024);
+    ESP_LOGI(TAG, "FAT FS: %" PRIu64 " kB total, %" PRIu64 " kB free", bytes_total / 1024, bytes_free / 1024);
 
     // Create a file in FAT FS
     ESP_LOGI(TAG, "Opening file");
@@ -156,16 +157,21 @@ static esp_flash_t* example_init_ext_flash(void)
     // Print out the ID and size
     uint32_t id;
     ESP_ERROR_CHECK(esp_flash_read_id(ext_flash, &id));
-    ESP_LOGI(TAG, "Initialized external Flash, size=%d KB, ID=0x%x", ext_flash->size / 1024, id);
+    ESP_LOGI(TAG, "Initialized external Flash, size=%" PRIu32 " KB, ID=0x%" PRIx32, ext_flash->size / 1024, id);
 
     return ext_flash;
 }
 
 static const esp_partition_t* example_add_partition(esp_flash_t* ext_flash, const char* partition_label)
 {
-    ESP_LOGI(TAG, "Adding external Flash as a partition, label=\"%s\", size=%d KB", partition_label, ext_flash->size / 1024);
+    ESP_LOGI(TAG, "Adding external Flash as a partition, label=\"%s\", size=%" PRIu32 " KB", partition_label, ext_flash->size / 1024);
     const esp_partition_t* fat_partition;
-    ESP_ERROR_CHECK(esp_partition_register_external(ext_flash, 0, ext_flash->size, partition_label, ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, &fat_partition));
+    const size_t offset = 0;
+    ESP_ERROR_CHECK(esp_partition_register_external(ext_flash, offset, ext_flash->size, partition_label, ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, &fat_partition));
+
+    // Erase space of partition on the external flash chip
+    ESP_LOGI(TAG, "Erasing partition range, offset=%u size=%" PRIu32 " KB", offset, ext_flash->size / 1024);
+    ESP_ERROR_CHECK(esp_partition_erase_range(fat_partition, offset, ext_flash->size));
     return fat_partition;
 }
 
@@ -176,7 +182,7 @@ static void example_list_data_partitions(void)
 
     for (; it != NULL; it = esp_partition_next(it)) {
         const esp_partition_t *part = esp_partition_get(it);
-        ESP_LOGI(TAG, "- partition '%s', subtype %d, offset 0x%x, size %d kB",
+        ESP_LOGI(TAG, "- partition '%s', subtype %d, offset 0x%" PRIx32 ", size %" PRIu32 " kB",
         part->label, part->subtype, part->address, part->size / 1024);
     }
 

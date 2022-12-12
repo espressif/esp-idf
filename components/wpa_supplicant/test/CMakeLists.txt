@@ -1,7 +1,8 @@
 idf_component_register(SRC_DIRS "."
                     PRIV_INCLUDE_DIRS "." "${CMAKE_CURRENT_BINARY_DIR}"
                     PRIV_INCLUDE_DIRS "../src" "../esp_supplicant/src"
-                    PRIV_REQUIRES cmock esp_common test_utils wpa_supplicant mbedtls)
+                    PRIV_REQUIRES cmock esp_common test_utils wpa_supplicant mbedtls esp_wifi esp_event)
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 
 idf_component_get_property(esp_supplicant_dir wpa_supplicant COMPONENT_DIR)
 

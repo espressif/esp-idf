@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/mesh:
+  disable:
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: target(s) not supported yet

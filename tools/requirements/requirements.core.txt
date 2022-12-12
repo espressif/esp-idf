@@ -3,17 +3,13 @@
 setuptools
 click
 pyserial
-future
 cryptography
 pyparsing
 pyelftools
 idf-component-manager
 esp-coredump
 esptool
-
-# kconfig and menuconfig dependencies
-kconfiglib
-windows-curses; sys_platform == 'win32'
+esp-idf-kconfig
 
 # gdb extensions dependencies
 freertos_gdb

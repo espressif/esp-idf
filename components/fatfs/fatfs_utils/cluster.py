@@ -30,7 +30,14 @@ class Cluster:
                  cluster_id: int,
                  boot_sector_state: BootSectorState,
                  init_: bool) -> None:
-
+        """
+        Initially, if init_ is False, the cluster is virtual and is not allocated (doesn't do changes in the FAT).
+        :param cluster_id: the cluster ID - a key value linking the file's cluster,
+          the corresponding physical cluster (data region) and the FAT table cluster.
+        :param boot_sector_state: auxiliary structure holding the file-system's metadata
+        :param init_: True for allocation the cluster on instantiation, otherwise False.
+        :returns: None
+        """
         self.id: int = cluster_id
         self.boot_sector_state: BootSectorState = boot_sector_state
 
@@ -40,7 +47,6 @@ class Cluster:
         if self.id == Cluster.RESERVED_BLOCK_ID and init_:
             self.set_in_fat(self.INITIAL_BLOCK_SWITCH[self.boot_sector_state.fatfs_type])
             return
-
         self.cluster_data_address: int = self._compute_cluster_data_address()
         assert self.cluster_data_address
 
@@ -52,8 +58,19 @@ class Cluster:
     def next_cluster(self, value):  # type: (Optional[Cluster]) -> None
         self._next_cluster = value
 
-    def _cluster_id_to_logical_position_in_bits(self, _id: int) -> int:
-        # computes address of the cluster in fat table
+    def _cluster_id_to_fat_position_in_bits(self, _id: int) -> int:
+        """
+        This private method calculates the position of the memory block (cluster) in the FAT table.
+
+        :param _id: the cluster ID - a key value linking the file's cluster,
+          the corresponding physical cluster (data region) and the FAT table cluster.
+        :returns: bit offset of the cluster in FAT
+          e.g.:
+          00003000: 42 65 00 2E 00 74 00 78 00 74 00 0F 00 43 FF FF
+
+          For FAT12 the third cluster has value = 0x02E and ID = 2.
+          Its bit-address is 24 (24 bits preceding, 0-indexed), because 0x2E starts at the bit-offset 24.
+        """
         logical_position_: int = self.boot_sector_state.fatfs_type * _id
         return logical_position_
 
@@ -75,18 +92,10 @@ class Cluster:
     def _compute_cluster_data_address(self) -> int:
         return self.compute_cluster_data_address(self.boot_sector_state, self.id)
 
-    def _set_left_half_byte(self, address: int, value: int) -> None:
-        self.boot_sector_state.binary_image[address] &= 0x0f
-        self.boot_sector_state.binary_image[address] |= value << 4
-
-    def _set_right_half_byte(self, address: int, value: int) -> None:
-        self.boot_sector_state.binary_image[address] &= 0xf0
-        self.boot_sector_state.binary_image[address] |= value
-
     @property
     def fat_cluster_address(self) -> int:
         """Determines how many bits precede the first bit of the cluster in FAT"""
-        return self._cluster_id_to_logical_position_in_bits(self.id)
+        return self._cluster_id_to_fat_position_in_bits(self.id)
 
     @property
     def real_cluster_address(self) -> int:
@@ -144,6 +153,26 @@ class Cluster:
         Order of half bytes is 1, 3, 2.
         """
 
+        def _set_msb_half_byte(address: int, value_: int) -> None:
+            """
+            Sets 4 most significant bits (msb half-byte) of 'boot_sector_state.binary_image' at given
+            'address' to 'value_' (size of variable 'value_' is half byte)
+
+            If a byte contents is 0b11110000, the msb half-byte would be 0b1111
+            """
+            self.boot_sector_state.binary_image[address] &= 0x0f
+            self.boot_sector_state.binary_image[address] |= value_ << 4
+
+        def _set_lsb_half_byte(address: int, value_: int) -> None:
+            """
+            Sets 4 least significant bits (lsb half-byte) of 'boot_sector_state.binary_image' at given
+            'address' to 'value_' (size of variable 'value_' is half byte)
+
+            If a byte contents is 0b11110000, the lsb half-byte would be 0b0000
+            """
+            self.boot_sector_state.binary_image[address] &= 0xf0
+            self.boot_sector_state.binary_image[address] |= value_
+
         # value must fit into number of bits of the fat (12, 16 or 32)
         assert value <= (1 << self.boot_sector_state.fatfs_type) - 1
         half_bytes = split_by_half_byte_12_bit_little_endian(value)
@@ -154,10 +183,10 @@ class Cluster:
             if self.fat_cluster_address % 8 == 0:
                 # even block
                 bin_img_[self.real_cluster_address] = build_byte(half_bytes[1], half_bytes[0])
-                self._set_right_half_byte(self.real_cluster_address + 1, half_bytes[2])
+                _set_lsb_half_byte(self.real_cluster_address + 1, half_bytes[2])
             elif self.fat_cluster_address % 8 != 0:
                 # odd block
-                self._set_left_half_byte(self.real_cluster_address, half_bytes[0])
+                _set_msb_half_byte(self.real_cluster_address, half_bytes[0])
                 bin_img_[self.real_cluster_address + 1] = build_byte(half_bytes[2], half_bytes[1])
         elif self.boot_sector_state.fatfs_type == FAT16:
             bin_img_[self.real_cluster_address:self.real_cluster_address + 2] = Int16ul.build(value)
@@ -165,6 +194,11 @@ class Cluster:
 
     @property
     def is_root(self) -> bool:
+        """
+        The FAT12/FAT16 contains only one root directory,
+        the root directory allocates the first cluster with the ID `ROOT_BLOCK_ID`.
+        The method checks if the cluster belongs to the root directory.
+        """
         return self.id == Cluster.ROOT_BLOCK_ID
 
     def allocate_cluster(self) -> None:

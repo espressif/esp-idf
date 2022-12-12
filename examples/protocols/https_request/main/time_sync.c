@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,14 +34,15 @@ void initialize_sntp(void)
 {
     ESP_LOGI(TAG, "Initializing SNTP");
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "pool.ntp.org");
+    sntp_setservername(0, "time.windows.com");
+    sntp_setservername(1, "pool.ntp.org");
 #ifdef CONFIG_SNTP_TIME_SYNC_METHOD_SMOOTH
     sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
 #endif
     sntp_init();
 }
 
-static void obtain_time(void)
+static esp_err_t obtain_time(void)
 {
     /**
      * NTP server address could be aquired via DHCP,
@@ -58,12 +59,18 @@ static void obtain_time(void)
         ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
+    if (retry == retry_count) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
-void fetch_and_store_time_in_nvs(void *args)
+esp_err_t fetch_and_store_time_in_nvs(void *args)
 {
     initialize_sntp();
-    obtain_time();
+    if (obtain_time() != ESP_OK) {
+        return ESP_FAIL;
+    }
 
     nvs_handle_t my_handle;
     esp_err_t err;
@@ -97,6 +104,7 @@ exit:
     } else {
         ESP_LOGI(TAG, "Updated time in NVS");
     }
+    return err;
 }
 
 esp_err_t update_time_from_nvs(void)
@@ -114,8 +122,12 @@ esp_err_t update_time_from_nvs(void)
 
     err = nvs_get_i64(my_handle, "timestamp", &timestamp);
     if (err == ESP_ERR_NVS_NOT_FOUND) {
-        fetch_and_store_time_in_nvs(NULL);
-        err = ESP_OK;
+        ESP_LOGI(TAG, "Time not found in NVS. Syncing time from SNTP server.");
+        if (fetch_and_store_time_in_nvs(NULL) != ESP_OK) {
+            err = ESP_FAIL;
+        } else {
+            err = ESP_OK;
+        }
     } else if (err == ESP_OK) {
         struct timeval get_nvs_time;
         get_nvs_time.tv_sec = timestamp;

@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Semihosting VFS driver example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -70,7 +73,7 @@ openocd -c "set ESP_SEMIHOST_BASEDIR %IDF_PATH%/examples/storage/semihost_vfs/da
 
 The above command will set `ESP_SEMIHOST_BASEDIR` variable to `examples/storage/semihost_vfs/data` subdirectory of ESP-IDF. With that, it is not necessary to run OpenOCD from that specific directory.
 
-> Note: This feature is not available for RISC-V based SoCs (ESP32-C3, ESP32-H2). To set the semihosting base directory, change into the required directory before running `openocd` command.
+> Note: This feature is not available for RISC-V based SoCs (ESP32-C3, ESP32-H4). To set the semihosting base directory, change into the required directory before running `openocd` command.
 
 ## Example output
 
@@ -101,9 +104,9 @@ There are two outputs produced by example:
    but they're the best we can do in text.  A graphics file illustrating
    the character set should be available from the same archive as this
    file.
-   
+
    Hex Description                 Hex Description
-   
+
    20  SPACE
    ...
    7D  RIGHT CURLY BRACKET         FD  SMALL LETTER Y WITH ACUTE

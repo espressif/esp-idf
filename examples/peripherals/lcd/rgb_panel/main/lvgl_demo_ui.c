@@ -39,8 +39,9 @@ static void add_data(lv_timer_t *timer)
     lv_chart_set_next_value2(chart, lv_chart_get_series_next(chart, NULL), lv_rand(0, 200), lv_rand(0, 1000));
 }
 
-void example_lvgl_demo_ui(lv_obj_t *scr)
+void example_lvgl_demo_ui(lv_disp_t *disp)
 {
+    lv_obj_t *scr = lv_disp_get_scr_act(disp);
     lv_obj_t *chart = lv_chart_create(scr);
     lv_obj_set_size(chart, 200, 150);
     lv_obj_align(chart, LV_ALIGN_CENTER, 0, 0);

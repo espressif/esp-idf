@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "soc/soc.h"
+#include "freertos/FreeRTOSConfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,8 +24,12 @@ extern "C" {
  */
 typedef enum {
     MEMPROT_TYPE_NONE                           = 0x00000000,
+    MEMPROT_TYPE_IRAM0_SRAM                     = 0x00000001,
+    MEMPROT_TYPE_DRAM0_SRAM                     = 0x00000002,
+    MEMPROT_TYPE_IRAM0_RTCFAST                  = 0x00000004,
     MEMPROT_TYPE_ALL                            = 0x7FFFFFFF,
-    MEMPROT_TYPE_INVALID                        = 0x80000000
+    MEMPROT_TYPE_INVALID                        = 0x80000000,
+    MEMPROT_TYPE_IRAM0_ANY                      = MEMPROT_TYPE_IRAM0_SRAM | MEMPROT_TYPE_IRAM0_RTCFAST
 } esp_mprot_mem_t;
 
 /**
@@ -31,8 +37,14 @@ typedef enum {
  */
 typedef enum {
     MEMPROT_SPLIT_ADDR_NONE                     = 0x00000000,
+    MEMPROT_SPLIT_ADDR_IRAM0_DRAM0              = 0x00000001,
+    MEMPROT_SPLIT_ADDR_IRAM0_LINE_0             = 0x00000002,
+    MEMPROT_SPLIT_ADDR_IRAM0_LINE_1             = 0x00000004,
+    MEMPROT_SPLIT_ADDR_DRAM0_DMA_LINE_0         = 0x00000008,
+    MEMPROT_SPLIT_ADDR_DRAM0_DMA_LINE_1         = 0x00000010,
     MEMPROT_SPLIT_ADDR_ALL                      = 0x7FFFFFFF,
-    MEMPROT_SPLIT_ADDR_INVALID                  = 0x80000000
+    MEMPROT_SPLIT_ADDR_INVALID                  = 0x80000000,
+    MEMPROT_SPLIT_ADDR_MAIN                     = MEMPROT_SPLIT_ADDR_IRAM0_DRAM0
 } esp_mprot_split_addr_t;
 
 /**
@@ -40,6 +52,18 @@ typedef enum {
  */
 typedef enum {
     MEMPROT_PMS_AREA_NONE                       = 0x00000000,
+    MEMPROT_PMS_AREA_IRAM0_0                    = 0x00000001,
+    MEMPROT_PMS_AREA_IRAM0_1                    = 0x00000002,
+    MEMPROT_PMS_AREA_IRAM0_2                    = 0x00000004,
+    MEMPROT_PMS_AREA_IRAM0_3                    = 0x00000008,
+    MEMPROT_PMS_AREA_DRAM0_0                    = 0x00000010,
+    MEMPROT_PMS_AREA_DRAM0_1                    = 0x00000020,
+    MEMPROT_PMS_AREA_DRAM0_2                    = 0x00000040,
+    MEMPROT_PMS_AREA_DRAM0_3                    = 0x00000080,
+    MEMPROT_PMS_AREA_IRAM0_RTCFAST_LO           = 0x00000100,
+    MEMPROT_PMS_AREA_IRAM0_RTCFAST_HI           = 0x00000200,
+    MEMPROT_PMS_AREA_ICACHE_0                   = 0x00000400,
+    MEMPROT_PMS_AREA_ICACHE_1                   = 0x00000800,
     MEMPROT_PMS_AREA_ALL                        = 0x7FFFFFFF,
     MEMPROT_PMS_AREA_INVALID                    = 0x80000000
 } esp_mprot_pms_area_t;
@@ -48,20 +72,48 @@ typedef enum {
 * @brief Memory protection configuration
 */
 typedef struct {
-    bool invoke_panic_handler;  /*!< Register PMS violation interrupt for panic-handling */
-    bool lock_feature;          /*!< Lock all PMS settings */
-    void *split_addr;           /*!< Main I/D splitting address */
-    uint32_t mem_type_mask;     /*!< Memory types required to protect. See esp_mprot_mem_t enum */
-    int target_cpu[];           /*!< Array of CPU/core IDs required to receive given PMS protection */
+    bool invoke_panic_handler;          /*!< Register PMS violation interrupt for panic-handling */
+    bool lock_feature;                  /*!< Lock all PMS settings */
+    void *split_addr;                   /*!< Main I/D splitting address */
+    uint32_t mem_type_mask;             /*!< Memory types required to protect. See esp_mprot_mem_t enum */
+    size_t target_cpu_count;            /*!< Real CPU/core count (max 2) */
+    int target_cpu[portNUM_PROCESSORS];  /*!< Array of CPU/core IDs required to receive given PMS protection */
 } esp_memp_config_t;
+
+//2-CPU configuration
+#if portNUM_PROCESSORS > 1
+
+//default IDF configuration (basic memory regions, split line detection, locked, panic mode on)
+#define ESP_MEMPROT_DEFAULT_CONFIG() { \
+    .invoke_panic_handler = true, \
+    .lock_feature = true, \
+    .split_addr = NULL, \
+    .mem_type_mask = MEMPROT_TYPE_ALL, \
+    .target_cpu_count = 2, \
+    .target_cpu = {PRO_CPU_NUM, APP_CPU_NUM} \
+}
+//zero (no-go) configuration
+#define ESP_MEMPROT_ZERO_CONFIG() { \
+    .target_cpu_count = 2, \
+    .target_cpu = {PRO_CPU_NUM, APP_CPU_NUM} \
+}
+
+#else //1-CPU configuration
 
 #define ESP_MEMPROT_DEFAULT_CONFIG() { \
     .invoke_panic_handler = true, \
     .lock_feature = true, \
     .split_addr = NULL, \
-    .mem_type_mask = MEMPROT_TYPE_ALL,\
-    .target_cpu[] = {PRO_CPU_NUM, APP_CPU_NUM} \
+    .mem_type_mask = MEMPROT_TYPE_ALL, \
+    .target_cpu_count = 1, \
+    .target_cpu = {PRO_CPU_NUM} \
 }
+#define ESP_MEMPROT_ZERO_CONFIG() { \
+    .target_cpu_count = 1, \
+    .target_cpu = {PRO_CPU_NUM} \
+}
+
+#endif //end of CPU-count based defines
 
 /**
  * @brief Converts Memory protection type to string
@@ -72,11 +124,19 @@ static inline const char *esp_mprot_mem_type_to_str(const esp_mprot_mem_t mem_ty
 {
     switch (mem_type) {
     case MEMPROT_TYPE_NONE:
-        return "MEMPROT_TYPE_NONE";
+        return "NONE";
+    case MEMPROT_TYPE_IRAM0_SRAM:
+        return "IRAM0_SRAM";
+    case MEMPROT_TYPE_DRAM0_SRAM:
+        return "DRAM0_SRAM";
+    case MEMPROT_TYPE_IRAM0_RTCFAST:
+        return "IRAM0_RTCFAST";
+    case MEMPROT_TYPE_IRAM0_ANY:
+        return "IRAM0_ANY";
     case MEMPROT_TYPE_ALL:
-        return "MEMPROT_TYPE_ALL";
+        return "ALL";
     default:
-        return "MEMPROT_TYPE_INVALID";
+        return "INVALID";
     }
 }
 
@@ -89,11 +149,21 @@ static inline const char *esp_mprot_split_addr_to_str(const esp_mprot_split_addr
 {
     switch (line_type) {
     case MEMPROT_SPLIT_ADDR_NONE:
-        return "MEMPROT_SPLIT_ADDR_NONE";
+        return "SPLIT_ADDR_NONE";
+    case MEMPROT_SPLIT_ADDR_IRAM0_DRAM0:
+        return "SPLIT_ADDR_IRAM0_DRAM0";
+    case MEMPROT_SPLIT_ADDR_IRAM0_LINE_0:
+        return "SPLIT_ADDR_IRAM0_LINE_0";
+    case MEMPROT_SPLIT_ADDR_IRAM0_LINE_1:
+        return "SPLIT_ADDR_IRAM0_LINE_1";
+    case MEMPROT_SPLIT_ADDR_DRAM0_DMA_LINE_0:
+        return "SPLIT_ADDR_DRAM0_DMA_LINE_0";
+    case MEMPROT_SPLIT_ADDR_DRAM0_DMA_LINE_1:
+        return "SPLIT_ADDR_DRAM0_DMA_LINE_1";
     case MEMPROT_SPLIT_ADDR_ALL:
-        return "MEMPROT_SPLIT_ADDR_ALL";
+        return "SPLIT_ADDR_ALL";
     default:
-        return "MEMPROT_SPLIT_ADDR_INVALID";
+        return "SPLIT_ADDR_INVALID";
     }
 }
 
@@ -106,11 +176,35 @@ static inline const char *esp_mprot_pms_area_to_str(const esp_mprot_pms_area_t a
 {
     switch (area_type) {
     case MEMPROT_PMS_AREA_NONE:
-        return "MEMPROT_PMS_AREA_NONE";
+        return "PMS_AREA_NONE";
+    case MEMPROT_PMS_AREA_IRAM0_0:
+        return "PMS_AREA_IRAM0_0";
+    case MEMPROT_PMS_AREA_IRAM0_1:
+        return "PMS_AREA_IRAM0_1";
+    case MEMPROT_PMS_AREA_IRAM0_2:
+        return "PMS_AREA_IRAM0_2";
+    case MEMPROT_PMS_AREA_IRAM0_3:
+        return "PMS_AREA_IRAM0_3";
+    case MEMPROT_PMS_AREA_DRAM0_0:
+        return "PMS_AREA_DRAM0_0";
+    case MEMPROT_PMS_AREA_DRAM0_1:
+        return "PMS_AREA_DRAM0_1";
+    case MEMPROT_PMS_AREA_DRAM0_2:
+        return "PMS_AREA_DRAM0_2";
+    case MEMPROT_PMS_AREA_DRAM0_3:
+        return "PMS_AREA_DRAM0_3";
+    case MEMPROT_PMS_AREA_IRAM0_RTCFAST_LO:
+        return "PMS_AREA_IRAM0_RTCFAST_LO";
+    case MEMPROT_PMS_AREA_IRAM0_RTCFAST_HI:
+        return "PMS_AREA_IRAM0_RTCFAST_HI";
+    case MEMPROT_PMS_AREA_ICACHE_0:
+        return "PMS_AREA_ICACHE_0";
+    case MEMPROT_PMS_AREA_ICACHE_1:
+        return "PMS_AREA_ICACHE_1";
     case MEMPROT_PMS_AREA_ALL:
-        return "MEMPROT_PMS_AREA_ALL";
+        return "PMS_AREA_ALL";
     default:
-        return "MEMPROT_PMS_AREA_INVALID";
+        return "PMS_AREA_INVALID";
     }
 }
 

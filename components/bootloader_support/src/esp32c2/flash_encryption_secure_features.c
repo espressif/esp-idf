@@ -23,7 +23,12 @@ esp_err_t esp_flash_encryption_enable_secure_features(void)
     ESP_LOGW(TAG, "Not disabling UART bootloader encryption");
 #endif
 
+#ifndef CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE
     ESP_LOGI(TAG, "Disable UART bootloader cache...");
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
+#else
+    ESP_LOGW(TAG, "Not disabling UART bootloader cache - SECURITY COMPROMISED");
+#endif
 
 #ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
     ESP_LOGI(TAG, "Disable JTAG...");

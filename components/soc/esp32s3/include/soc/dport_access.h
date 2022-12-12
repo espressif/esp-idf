@@ -1,28 +1,30 @@
-// Copyright 2010-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
 #include <stdint.h>
-
-#include "esp32s3/dport_access.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // ESP32S3 does not have DPORT bus, so these macros are all same as the non-DPORT versions
+
+#define DPORT_INTERRUPT_DISABLE()
+#define DPORT_INTERRUPT_RESTORE()
+
+/**
+ * @brief Read a sequence of DPORT registers to the buffer.
+ *
+ * @param[out] buff_out  Contains the read data.
+ * @param[in]  address   Initial address for reading registers.
+ * @param[in]  num_words The number of words.
+ */
+void esp_dport_access_read_buffer(uint32_t *buff_out, uint32_t address, uint32_t num_words);
 
 // _DPORT_REG_WRITE & DPORT_REG_WRITE are equivalent.
 #define _DPORT_REG_READ(_r)        (*(volatile uint32_t *)(_r))

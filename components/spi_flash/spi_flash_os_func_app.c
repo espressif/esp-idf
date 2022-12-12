@@ -8,7 +8,6 @@
 #include <sys/param.h>  //For max/min
 #include "esp_attr.h"
 #include "esp_private/system_internal.h"
-#include "esp_spi_flash.h"   //for ``g_flash_guard_default_ops``
 #include "esp_flash.h"
 #include "esp_flash_partitions.h"
 #include "freertos/FreeRTOS.h"
@@ -18,9 +17,12 @@
 #include "esp_log.h"
 #include "esp_compiler.h"
 #include "esp_rom_sys.h"
+#include "esp_private/spi_flash_os.h"
+#include "esp_private/cache_utils.h"
 
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 
+#define SPI_FLASH_CACHE_NO_DISABLE  (CONFIG_SPI_FLASH_AUTO_SUSPEND || (CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA))
 static const char TAG[] = "spi_flash";
 
 /*
@@ -59,15 +61,15 @@ static inline bool on_spi1_check_yield(spi1_app_func_arg_t* ctx);
 
 IRAM_ATTR static void cache_enable(void* arg)
 {
-#ifndef CONFIG_SPI_FLASH_AUTO_SUSPEND
-    g_flash_guard_default_ops.end();
+#if !SPI_FLASH_CACHE_NO_DISABLE
+    spi_flash_enable_interrupts_caches_and_other_cpu();
 #endif
 }
 
 IRAM_ATTR static void cache_disable(void* arg)
 {
-#ifndef CONFIG_SPI_FLASH_AUTO_SUSPEND
-    g_flash_guard_default_ops.start();
+#if !SPI_FLASH_CACHE_NO_DISABLE
+    spi_flash_disable_interrupts_caches_and_other_cpu();
 #endif
 }
 
@@ -185,6 +187,13 @@ static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_a
     }
 }
 
+
+static IRAM_ATTR void main_flash_op_status(uint32_t op_status)
+{
+    bool is_erasing = op_status & SPI_FLASH_OS_IS_ERASING_STATUS_FLAG;
+    spi_flash_set_erasing_flag(is_erasing);
+}
+
 static DRAM_ATTR spi1_app_func_arg_t main_flash_arg = {};
 
 //for SPI1, we have to disable the cache and interrupts before using the SPI bus
@@ -197,6 +206,11 @@ static const DRAM_ATTR esp_flash_os_functions_t esp_flash_spi1_default_os_functi
     .release_temp_buffer = release_buffer_malloc,
     .check_yield = spi1_flash_os_check_yield,
     .yield = spi1_flash_os_yield,
+#if CONFIG_SPI_FLASH_BROWNOUT_RESET
+    .set_flash_op_status = main_flash_op_status,
+#else
+    .set_flash_op_status = NULL,
+#endif
 };
 
 static const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
@@ -208,6 +222,7 @@ static const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
     .region_protected = NULL,
     .check_yield = NULL,
     .yield = NULL,
+    .set_flash_op_status = NULL,
 };
 
 static bool use_bus_lock(int host_id)

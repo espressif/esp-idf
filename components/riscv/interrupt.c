@@ -1,19 +1,12 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdint.h>
 #include <stddef.h>
 #include <assert.h>
+#include "soc/soc.h"
 #include "riscv/interrupt.h"
 #include "soc/interrupt_reg.h"
 #include "riscv/csr.h"
@@ -74,19 +67,23 @@ void intr_matrix_route(int intr_src, int intr_num)
     REG_WRITE(DR_REG_INTERRUPT_BASE + 4 * intr_src, intr_num);
 }
 
-void riscv_global_interrupts_enable(void)
-{
-    RV_SET_CSR(mstatus, MSTATUS_MIE);
-}
-
-void riscv_global_interrupts_disable(void)
-{
-    RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-}
-
 uint32_t esprv_intc_get_interrupt_unmask(void)
 {
     return REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG);
+}
+
+/*************************** ESP-RV Interrupt Controller ***************************/
+
+enum intr_type esprv_intc_int_get_type(int intr_num)
+{
+    uint32_t intr_type_reg = REG_READ(INTERRUPT_CORE0_CPU_INT_TYPE_REG);
+    return (intr_type_reg & (1 << intr_num)) ? INTR_TYPE_EDGE : INTR_TYPE_LEVEL;
+}
+
+int esprv_intc_int_get_priority(int rv_int_num)
+{
+    uint32_t intr_priority_reg = REG_READ(INTC_INT_PRIO_REG(rv_int_num));
+    return intr_priority_reg;
 }
 
 /*************************** Exception names. Used in .gdbinit file. ***************************/

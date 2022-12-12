@@ -1,12 +1,12 @@
 idf_build_get_property(target IDF_TARGET)
 
 set(requires soc)
+# only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
 set(priv_requires efuse spi_flash bootloader_support)
 
-set(srcs "compare_set.c" "cpu_util.c" "esp_memory_utils.c")
+set(srcs "cpu.c" "esp_memory_utils.c")
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "esp_async_memcpy.c"
-                     "esp_clk.c"
+    list(APPEND srcs "esp_clk.c"
                      "clk_ctrl_os.c"
                      "hw_random.c"
                      "intr_alloc.c"
@@ -16,7 +16,9 @@ if(NOT BOOTLOADER_BUILD)
                      "sleep_modes.c"
                      "sleep_gpio.c"
                      "sleep_mac_bb.c"
-                     "regi2c_ctrl.c")
+                     "regi2c_ctrl.c"
+                     "adc_share_hw_ctrl.c")
+
     if(NOT CONFIG_IDF_TARGET_ESP32 AND NOT CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "sleep_retention.c")
     endif()
@@ -26,6 +28,45 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_IDF_TARGET_ESP32 OR CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "rtc_wdt.c")
+    endif()
+
+    if(CONFIG_SOC_GDMA_SUPPORTED)
+        list(APPEND srcs "dma/gdma.c" "dma/async_memcpy_impl_gdma.c")
+    endif()
+
+    if(CONFIG_SOC_CP_DMA_SUPPORTED)
+        list(APPEND srcs "dma/async_memcpy_impl_cp_dma.c")
+    endif()
+
+    if(CONFIG_SOC_GDMA_SUPPORTED OR CONFIG_SOC_CP_DMA_SUPPORTED)
+        list(APPEND srcs "dma/esp_async_memcpy.c")
+    endif()
+
+    if(CONFIG_SOC_GDMA_SUPPORT_ETM)
+        list(APPEND srcs "dma/gdma_etm.c")
+    endif()
+
+    if(CONFIG_SOC_SYSTIMER_SUPPORTED)
+        list(APPEND srcs "port/${target}/systimer.c")
+    endif()
+
+    if(CONFIG_SOC_HMAC_SUPPORTED)
+        list(APPEND srcs "esp_hmac.c")
+    endif()
+
+    if(CONFIG_SOC_ETM_SUPPORTED)
+        list(APPEND srcs "esp_etm.c")
+    endif()
+
+    if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
+        list(APPEND srcs "esp_ds.c")
+    endif()
+
+    # ESP32C6-TODO
+    if(CONFIG_IDF_TARGET_ESP32C6)
+        list(REMOVE_ITEM srcs
+                "adc_share_hw_ctrl.c" # TODO: IDF-5312
+            )
     endif()
 
 else()
@@ -43,26 +84,10 @@ idf_component_register(SRCS ${srcs}
 idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})
 
-if(CONFIG_IDF_TARGET_ESP32 AND CONFIG_SPIRAM_CACHE_WORKAROUND AND NOT BOOTLOADER_BUILD)
-    # Note: Adding as a PUBLIC compile option here causes this option to propagate to all
-    # components that depend on esp32.
-    #
-    # To handle some corner cases, the same flag is set in project_include.cmake
-    target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-issue)
-    # also, make sure we link with this option so correct toolchain libs are pulled in
-    target_link_libraries(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-issue)
-    # set strategy selected
-    # note that we don't need to set link options as the library linked is independent of this
-    if(CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST)
-        target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=dupldst)
-        target_link_libraries(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=dupldst)
-    endif()
-    if(CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_MEMW)
-        target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=memw)
-        target_link_libraries(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=memw)
-    endif()
-    if(CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_NOPS)
-        target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=nops)
-        target_link_libraries(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=nops)
+if(NOT BOOTLOADER_BUILD)
+    if(CONFIG_SPIRAM)
+        idf_component_optional_requires(PRIVATE esp_psram)
     endif()
 endif()
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

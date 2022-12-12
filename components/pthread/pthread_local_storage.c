@@ -1,16 +1,8 @@
-// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <errno.h>
 #include <pthread.h>
 #include <string.h>
@@ -22,6 +14,11 @@
 #include "sys/queue.h"
 
 #include "pthread_internal.h"
+
+/* Sanity check to ensure that the number of FreeRTOS TLSPs is at least 1 */
+#if (CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS < 1)
+    #error "CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS cannot be 0 for pthread TLS"
+#endif
 
 #define PTHREAD_TLS_INDEX 0
 
@@ -125,7 +122,7 @@ int pthread_key_delete(pthread_key_t key)
    - The destructor is always called in the context of the thread itself - which is important if the task then calls
      pthread_getspecific() or pthread_setspecific() to update the state further, as allowed for in the spec.
 */
-static void pthread_local_storage_thread_deleted_callback(int index, void *v_tls)
+static void pthread_cleanup_thread_specific_data_callback(int index, void *v_tls)
 {
     values_list_t *tls = (values_list_t *)v_tls;
     assert(tls != NULL);
@@ -150,46 +147,23 @@ static void pthread_local_storage_thread_deleted_callback(int index, void *v_tls
     free(tls);
 }
 
-#if defined(CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP)
-/* Called from FreeRTOS task delete hook */
-void pthread_local_storage_cleanup(TaskHandle_t task)
-{
-    void *tls = pvTaskGetThreadLocalStoragePointer(task, PTHREAD_TLS_INDEX);
-    if (tls != NULL) {
-        pthread_local_storage_thread_deleted_callback(PTHREAD_TLS_INDEX, tls);
-        vTaskSetThreadLocalStoragePointer(task, PTHREAD_TLS_INDEX, NULL);
-    }
-}
-
-void __real_vPortCleanUpTCB(void *tcb);
-
-/* If static task cleanup hook is defined then its applications responsibility to define `vPortCleanUpTCB`.
-   Here we are wrapping it, so that we can do pthread specific TLS cleanup and then invoke application
-   real specific `vPortCleanUpTCB` */
-void __wrap_vPortCleanUpTCB(void *tcb)
-{
-    pthread_local_storage_cleanup(tcb);
-    __real_vPortCleanUpTCB(tcb);
-}
-#endif
-
 /* this function called from pthread_task_func for "early" cleanup of TLS in a pthread */
-void pthread_internal_local_storage_destructor_callback(void)
+void pthread_internal_local_storage_destructor_callback(TaskHandle_t handle)
 {
-    void *tls = pvTaskGetThreadLocalStoragePointer(NULL, PTHREAD_TLS_INDEX);
+    void *tls = pvTaskGetThreadLocalStoragePointer(handle, PTHREAD_TLS_INDEX);
     if (tls != NULL) {
-        pthread_local_storage_thread_deleted_callback(PTHREAD_TLS_INDEX, tls);
+        pthread_cleanup_thread_specific_data_callback(PTHREAD_TLS_INDEX, tls);
         /* remove the thread-local-storage pointer to avoid the idle task cleanup
            calling it again...
         */
-#if defined(CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP)
+#if !defined(CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS)
         vTaskSetThreadLocalStoragePointer(NULL, PTHREAD_TLS_INDEX, NULL);
 #else
         vTaskSetThreadLocalStoragePointerAndDelCallback(NULL,
                                                         PTHREAD_TLS_INDEX,
                                                         NULL,
                                                         NULL);
-#endif
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
     }
 }
 
@@ -231,14 +205,14 @@ int pthread_setspecific(pthread_key_t key, const void *value)
         if (tls == NULL) {
             return ENOMEM;
         }
-#if defined(CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP)
+#if !defined(CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS)
         vTaskSetThreadLocalStoragePointer(NULL, PTHREAD_TLS_INDEX, tls);
 #else
         vTaskSetThreadLocalStoragePointerAndDelCallback(NULL,
                                                         PTHREAD_TLS_INDEX,
                                                         tls,
-                                                        pthread_local_storage_thread_deleted_callback);
-#endif
+                                                        pthread_cleanup_thread_specific_data_callback);
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
     }
 
     value_entry_t *entry = find_value(tls, key);
@@ -263,7 +237,7 @@ int pthread_setspecific(pthread_key_t key, const void *value)
         // a destructor may call pthread_setspecific() to add a new non-NULL value
         // to the list, and this should be processed after all other entries.
         //
-        // See pthread_local_storage_thread_deleted_callback()
+        // See pthread_cleanup_thread_specific_data_callback()
         value_entry_t *last_entry = NULL;
         value_entry_t *it;
         SLIST_FOREACH(it, tls, next) {

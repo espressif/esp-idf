@@ -5764,7 +5764,6 @@ LOAD esp-idf/esp_http_server/libesp_http_server.a
 LOAD esp-idf/esp_https_ota/libesp_https_ota.a
 LOAD esp-idf/protobuf-c/libprotobuf-c.a
 LOAD esp-idf/protocomm/libprotocomm.a
-LOAD esp-idf/mdns/libmdns.a
 LOAD esp-idf/esp_local_ctrl/libesp_local_ctrl.a
 LOAD esp-idf/sdmmc/libsdmmc.a
 LOAD esp-idf/esp_serial_slave_link/libesp_serial_slave_link.a
@@ -5807,7 +5806,6 @@ LOAD esp-idf/unity/libunity.a
 LOAD esp-idf/wifi_provisioning/libwifi_provisioning.a
 LOAD esp-idf/protocomm/libprotocomm.a
 LOAD esp-idf/protobuf-c/libprotobuf-c.a
-LOAD esp-idf/mdns/libmdns.a
 LOAD esp-idf/console/libconsole.a
 LOAD esp-idf/json/libjson.a
 LOAD esp-idf/xtensa/libxtensa.a

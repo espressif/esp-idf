@@ -37,7 +37,7 @@ esp_err_t esp_bt_hid_device_init(void)
     msg.act = BTC_HD_INIT_EVT;
 
     /* Switch to BTC context */
-    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -50,7 +50,7 @@ esp_err_t esp_bt_hid_device_deinit(void)
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_DEINIT_EVT;
 
-    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -69,7 +69,7 @@ esp_err_t esp_bt_hid_device_register_app(esp_hidd_app_param_t* app_param, esp_hi
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_REGISTER_APP_EVT;
 
-    bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t), NULL);
+    bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -82,7 +82,7 @@ esp_err_t esp_bt_hid_device_unregister_app(void)
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_UNREGISTER_APP_EVT;
 
-    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -99,7 +99,7 @@ esp_err_t esp_bt_hid_device_connect(esp_bd_addr_t bd_addr)
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_CONNECT_EVT;
 
-    bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t), NULL);
+    bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -112,7 +112,7 @@ esp_err_t esp_bt_hid_device_disconnect(void)
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_DISCONNECT_EVT;
 
-    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -132,7 +132,8 @@ esp_err_t esp_bt_hid_device_send_report(esp_hidd_report_type_t type, uint8_t id,
     args.send_report.len = len;
     args.send_report.data = data;
 
-    bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t), btc_hd_arg_deep_copy);
+    bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t),
+                                                btc_hd_arg_deep_copy, btc_hd_cb_arg_deep_free);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -149,7 +150,7 @@ esp_err_t esp_bt_hid_device_report_error(esp_hidd_handshake_error_t error)
     memset(&args, 0, sizeof(btc_hidd_args_t));
     args.error = error;
 
-    bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t), NULL);
+    bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -162,7 +163,7 @@ esp_err_t esp_bt_hid_device_virtual_cable_unplug(void)
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_UNPLUG_EVT;
 
-    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 

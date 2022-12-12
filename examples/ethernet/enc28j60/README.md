@@ -1,5 +1,21 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # ENC28J60 Example
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
+
+---
+
+## !!! Warning !!!
+
+Espressif doesn't recommend using ENC28J60 Ethernet controller in new designs based on ESP32 series of chips. This is due to the following facts:
+* ENC28J60 has low performance in half-duplex mode and various errata exist to the half-duplex mode.
+* ENC28J60 does not support automatic duplex negotiation when configured to full-duplex mode.
+* ENC28J60 has high current consumption - up to 180mA in comparison to e.g. 79mA of `W5500` or 75mA of `KSZ8851SNL` @ 10Mbps Tx.
+
+Therefore, we rather recommend using `W5500`, `KSZ8851SNL` or `DM9051`, which are also supported in ESP-IDF.
+
+---
 
 ## Overview
 
@@ -14,7 +30,7 @@ If you have a more complicated application to go (for example, connect to some I
 ### Hardware Required
 
 To run this example, you need to prepare following hardwares:
-* [ESP32 dev board](https://www.espressif.com/en/products/devkits?id=ESP32) (e.g. ESP32-PICO, ESP32 DevKitC, etc)
+* [ESP32 dev board](https://www.espressif.com/en/products/devkits) (e.g. ESP32-PICO, ESP32 DevKitC, etc)
 * ENC28J60 Ethernet module (the latest revision should be 6)
 * **!! IMPORTANT !!** Proper input power source since ENC28J60 is quite power consuming device (it consumes more than 200 mA in peaks when transmitting). If improper power source is used, input voltage may drop and ENC28J60 may either provide nonsense response to host controller via SPI (fail to read registers properly) or it may enter to some strange state in the worst case. There are several options how to resolve it:
   * Power ESP32 dev board from `USB 3.0`, if the dev board is used as source of power to the ENC28J60 module.

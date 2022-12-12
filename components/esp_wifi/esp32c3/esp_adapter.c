@@ -18,7 +18,6 @@
 #include "freertos/event_groups.h"
 #include "freertos/portmacro.h"
 #include "riscv/interrupt.h"
-#include "riscv/riscv_interrupts.h"
 #include "esp_types.h"
 #include "esp_random.h"
 #include "esp_mac.h"
@@ -35,6 +34,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc.h"
 #include "soc/syscon_reg.h"
+#include "soc/system_reg.h"
 #include "phy_init_data.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
@@ -46,6 +46,8 @@
 #include "esp32c3/rom/ets_sys.h"
 
 #define TAG "esp_adapter"
+
+#define MHZ (1000000)
 
 #ifdef CONFIG_PM_ENABLE
 extern void wifi_apb80m_request(void);
@@ -393,15 +395,13 @@ static void IRAM_ATTR timer_arm_us_wrapper(void *ptimer, uint32_t us, bool repea
 
 static void wifi_reset_mac_wrapper(void)
 {
-    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
-    CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
+    periph_module_reset(PERIPH_WIFI_MODULE);
 }
 
 static void IRAM_ATTR wifi_rtc_enable_iso_wrapper(void)
 {
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_power_down();
-    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
 #endif
 }
 
@@ -409,8 +409,6 @@ static void IRAM_ATTR wifi_rtc_disable_iso_wrapper(void)
 {
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_power_up();
-    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
-    CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
 #endif
 }
 
@@ -434,7 +432,12 @@ static uint32_t esp_clk_slowclk_cal_get_wrapper(void)
     /* The bit width of WiFi light sleep clock calibration is 12 while the one of
      * system is 19. It should shift 19 - 12 = 7.
     */
-    return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
+    if (GET_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_XTAL)) {
+        uint64_t time_per_us = 1000000ULL;
+        return (((time_per_us << RTC_CLK_CAL_FRACT) / (MHZ)) >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
+    } else {
+        return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
+    }
 }
 
 static void * IRAM_ATTR malloc_internal_wrapper(size_t size)
@@ -458,17 +461,17 @@ static void * IRAM_ATTR zalloc_internal_wrapper(size_t size)
     return ptr;
 }
 
-static esp_err_t nvs_open_wrapper(const char* name, uint32_t open_mode, nvs_handle_t *out_handle)
+static esp_err_t nvs_open_wrapper(const char* name, unsigned int open_mode, nvs_handle_t *out_handle)
 {
     return nvs_open(name,(nvs_open_mode_t)open_mode, out_handle);
 }
 
-static void esp_log_writev_wrapper(uint32_t level, const char *tag, const char *format, va_list args)
+static void esp_log_writev_wrapper(unsigned int level, const char *tag, const char *format, va_list args)
 {
     return esp_log_writev((esp_log_level_t)level,tag,format,args);
 }
 
-static void esp_log_write_wrapper(uint32_t level,const char *tag,const char *format, ...)
+static void esp_log_write_wrapper(unsigned int level,const char *tag,const char *format, ...)
 {
     va_list list;
     va_start(list, format);
@@ -476,7 +479,7 @@ static void esp_log_write_wrapper(uint32_t level,const char *tag,const char *for
     va_end(list);
 }
 
-static esp_err_t esp_read_mac_wrapper(uint8_t* mac, uint32_t type)
+static esp_err_t esp_read_mac_wrapper(uint8_t* mac, unsigned int type)
 {
     return esp_read_mac(mac, (esp_mac_type_t)type);
 }

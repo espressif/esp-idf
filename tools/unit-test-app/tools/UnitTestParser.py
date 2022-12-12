@@ -134,7 +134,7 @@ class Parser(object):
             * first tag is always group of test cases, it's mandatory
             * the rest tags should be [type=value].
                 * if the type have default value, then [type] equal to [type=default_value].
-                * if the type don't don't exist, then equal to [type=omitted_value]
+                * if the type don't exist, then equal to [type=omitted_value]
             default_value and omitted_value are defined in TagDefinition.yml
         :param tags_raw: raw tag string
         :return: tag dict
@@ -287,12 +287,15 @@ class Parser(object):
         """ parse test cases from multiple built unit test apps """
         test_cases = []
 
-        output_folder = os.path.join(self.idf_path, self.ut_bin_folder, self.idf_target)
         configs_folder = os.path.join(self.idf_path, self.UT_CONFIG_FOLDER)
-        test_configs = [item for item in os.listdir(output_folder)
-                        if os.path.isdir(os.path.join(output_folder, item))]
+        config_output_prefix = f'build_{self.idf_target}_'
+        test_configs = []
+        for item in os.listdir(self.ut_bin_folder):
+            if os.path.isdir(os.path.join(self.ut_bin_folder, item)) and item.startswith(config_output_prefix):
+                test_configs.append(item.split(config_output_prefix)[1])
+
         for config in test_configs:
-            config_output_folder = os.path.join(output_folder, config)
+            config_output_folder = os.path.join(self.ut_bin_folder, f'{config_output_prefix}{config}')
             if os.path.exists(config_output_folder):
                 test_cases.extend(self.parse_test_cases_for_one_config(configs_folder, config_output_folder, config))
         test_cases.sort(key=lambda x: x['config'] + x['summary'])

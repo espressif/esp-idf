@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef compressed_enum_table_h
 #define compressed_enum_table_h
@@ -18,6 +10,8 @@
 #include <cstdint>
 #include <cassert>
 #include <type_traits>
+#include "nvs_internal.h"
+#include "esp_err.h"
 
 template<typename Tenum, size_t Nbits, size_t Nitems>
 class CompressedEnumTable
@@ -33,23 +27,25 @@ public:
         return mData;
     }
 
-    Tenum get(size_t index) const
+    esp_err_t get(size_t index, Tenum *retval) const
     {
-        assert(index < Nitems);
+        NVS_ASSERT_OR_RETURN(index < Nitems, ESP_FAIL);
         size_t wordIndex = index / ITEMS_PER_WORD;
         size_t offset = (index % ITEMS_PER_WORD) * Nbits;
 
-        return static_cast<Tenum>((mData[wordIndex] >> offset) & VALUE_MASK);
+        *retval = static_cast<Tenum>((mData[wordIndex] >> offset) & VALUE_MASK);
+        return ESP_OK;
     }
 
-    void set(size_t index, Tenum val)
+    esp_err_t set(size_t index, Tenum val)
     {
-        assert(index < Nitems);
+        NVS_ASSERT_OR_RETURN(index < Nitems, ESP_FAIL);
         size_t wordIndex = index / ITEMS_PER_WORD;
         size_t offset = (index % ITEMS_PER_WORD) * Nbits;
 
         uint32_t v = static_cast<uint32_t>(val) << offset;
         mData[wordIndex] = (mData[wordIndex] & ~(VALUE_MASK << offset)) | v;
+        return ESP_OK;
     }
 
     static constexpr size_t getWordIndex(size_t index)

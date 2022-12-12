@@ -46,6 +46,7 @@ static esp_err_t rmt_bytes_encoder_reset(rmt_encoder_t *encoder)
     return ESP_OK;
 }
 
+__attribute__((always_inline))
 static inline uint8_t _bitwise_reverse(uint8_t n)
 {
     n = ((n & 0xf0) >> 4) | ((n & 0x0f) << 4);

@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+
 # Example: GPIO
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -22,7 +25,7 @@ This test code shows how to configure GPIO and how to use it with interruption.
 
 |                 | CONFIG_GPIO_OUTPUT_0 | CONFIG_GPIO_OUTPUT_1 | CONFIG_GPIO_INPUT_0 | CONFIG_GPIO_INPUT_1 |
 | --------------- | -------------------- | -------------------- | ------------------- | ------------------- |
-| ESP32-C2/ESP32H2| 8                    | 9                    | 4                   | 5                   |
+| ESP32-C2/ESP32H4| 8                    | 9                    | 4                   | 5                   |
 | All other chips | 18                   | 19                   | 4                   | 5                   |
 
 ## How to use example

@@ -82,7 +82,8 @@ To install an RMT TX channel, there's a configuration structure that needs to be
 -  :cpp:member:`rmt_tx_channel_config_t::trans_queue_depth` sets the depth of internal transaction queue, the deeper the queue, the more transactions can be prepared in the backlog.
 -  :cpp:member:`rmt_tx_channel_config_t::invert_out` is used to decide whether to invert the RMT signal before sending it to the GPIO pad.
 -  :cpp:member:`rmt_tx_channel_config_t::with_dma` is used to indicate if the channel needs a DMA backend. A channel with DMA attached can offload the CPU by a lot. However, DMA backend is not available on all ESP chips, please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] before you enable this option. Or you might encounter :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
--  :cpp:member:`rmt_tx_channel_config_t::io_loop_back` is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral. Meanwhile, if both TX and RX channels are bound to the same GPIO, then monitoring of the data transmission line can be realized.
+-  :cpp:member:`rmt_tx_channel_config_t::io_loop_back` enables both the GPIO's input and output ability through the GPIO matrix peripheral. Meanwhile, if both TX and RX channels are bound to the same GPIO, then monitoring of the data transmission line can be realized.
+-  :cpp:member:`rmt_tx_channel_config_t::io_od_mode` configures the GPIO as open-drain mode. It is useful for simulating bi-directional buses, sucn as 1-wire bus, combined with :cpp:member:`rmt_tx_channel_config_t::io_loop_back`.
 
 Once the :cpp:type:`rmt_tx_channel_config_t` structure is populated with mandatory parameters, users can call :cpp:func:`rmt_new_tx_channel` to allocate and initialize a TX channel. This function will return an RMT channel handle if it runs correctly. Specifically, when there are no more free channels in the RMT resource pool, this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. If some feature (e.g. DMA backend) is not supported by hardware, it will return :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
 
@@ -303,21 +304,21 @@ The receiver will be stopped by the driver when it finishes working (i.e. receiv
 
 .. code:: c
 
-    static bool example_rmt_rx_done_callback(rmt_channel_handle_t channel, rmt_rx_done_event_data_t *edata, void *user_data)
+    static bool example_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data)
     {
         BaseType_t high_task_wakeup = pdFALSE;
-        TaskHandle_t task_to_notify = (TaskHandle_t)user_data;
+        QueueHandle_t receive_queue = (QueueHandle_t)user_data;
         // send the received RMT symbols to the parser task
-        xTaskNotifyFromISR(task_to_notify, (uint32_t)edata, eSetValueWithOverwrite, &high_task_wakeup);
+        xQueueSendFromISR(receive_queue, edata, &high_task_wakeup);
         // return whether any task is woken up
         return high_task_wakeup == pdTRUE;
     }
 
-    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
+    QueueHandle_t receive_queue = xQueueCreate(1, sizeof(rmt_rx_done_event_data_t));
     rmt_rx_event_callbacks_t cbs = {
         .on_recv_done = example_rmt_rx_done_callback,
     };
-    ESP_ERROR_CHECK(rmt_rx_register_event_callbacks(rx_channel, &cbs, cur_task));
+    ESP_ERROR_CHECK(rmt_rx_register_event_callbacks(rx_channel, &cbs, receive_queue));
 
     // the following timing requirement is based on NEC protocol
     rmt_receive_config_t receive_config = {
@@ -329,10 +330,10 @@ The receiver will be stopped by the driver when it finishes working (i.e. receiv
     // ready to receive
     ESP_ERROR_CHECK(rmt_receive(rx_channel, raw_symbols, sizeof(raw_symbols), &receive_config));
     // wait for RX done signal
-    rmt_rx_done_event_data_t *rx_data = NULL;
-    xTaskNotifyWait(0x00, ULONG_MAX, (uint32_t *)&rx_data, portMAX_DELAY);
+    rmt_rx_done_event_data_t rx_data;
+    xQueueReceive(receive_queue, &rx_data, portMAX_DELAY);
     // parse the receive symbols
-    example_parse_nec_frame(rx_data->received_symbols, rx_data->num_symbols);
+    example_parse_nec_frame(rx_data.received_symbols, rx_data.num_symbols);
 
 RMT Encoder
 ^^^^^^^^^^^
@@ -517,6 +518,7 @@ Application Examples
 * RMT transactions in queue: :example:`peripherals/rmt/musical_buzzer`
 * RMT based stepper motor with S-curve algorithm: : :example:`peripherals/rmt/stepper_motor`
 * RMT infinite loop for driving DShot ESC: :example:`peripherals/rmt/dshot_esc`
+* RMT simulate 1-wire protocol (take DS18B20 as example): :example:`peripherals/rmt/onewire_ds18b20`
 
 API Reference
 -------------

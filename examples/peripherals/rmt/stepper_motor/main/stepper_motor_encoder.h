@@ -17,7 +17,7 @@ extern "C" {
  */
 typedef struct {
     uint32_t resolution;    // Encoder resolution, in Hz
-    uint32_t sample_points; // Sample points used for deceleration phase
+    uint32_t sample_points; // Sample points used for deceleration phase. Note: |end_freq_hz - start_freq_hz| >= sample_points
     uint32_t start_freq_hz; // Start frequency on the curve, in Hz
     uint32_t end_freq_hz;   // End frequency on the curve, in Hz
 } stepper_motor_curve_encoder_config_t;

@@ -432,7 +432,6 @@
 #define RTC_CNTL_MIN_SLP_VAL_M  ((RTC_CNTL_MIN_SLP_VAL_V)<<(RTC_CNTL_MIN_SLP_VAL_S))
 #define RTC_CNTL_MIN_SLP_VAL_V  0xFF
 #define RTC_CNTL_MIN_SLP_VAL_S  8
-#define RTC_CNTL_MIN_SLP_VAL_MIN 2
 /* RTC_CNTL_ULP_CP_SUBTIMER_PREDIV : R/W ;bitpos:[7:0] ;default: 8'd1 ; */
 /*description: */
 #define RTC_CNTL_ULP_CP_SUBTIMER_PREDIV  0x000000FF
@@ -893,10 +892,6 @@
 #define RTC_CNTL_SOC_CLK_SEL_M  ((RTC_CNTL_SOC_CLK_SEL_V)<<(RTC_CNTL_SOC_CLK_SEL_S))
 #define RTC_CNTL_SOC_CLK_SEL_V  0x3
 #define RTC_CNTL_SOC_CLK_SEL_S  27
-#define RTC_CNTL_SOC_CLK_SEL_XTL    0
-#define RTC_CNTL_SOC_CLK_SEL_PLL    1
-#define RTC_CNTL_SOC_CLK_SEL_8M     2
-#define RTC_CNTL_SOC_CLK_SEL_APLL   3
 /* RTC_CNTL_CK8M_FORCE_PU : R/W ;bitpos:[26] ;default: 1'd0 ; */
 /*description: CK8M force power up*/
 #define RTC_CNTL_CK8M_FORCE_PU  (BIT(26))

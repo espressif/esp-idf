@@ -24,12 +24,6 @@ extern "C" {
 
 #define I2C_APB_CLK_FREQ  APB_CLK_FREQ /*!< I2C source clock is APB clock, 80MHz */
 
-#define I2C_NUM_MAX            (SOC_I2C_NUM) /*!< I2C port max */
-#define I2C_NUM_0              (0) /*!< I2C port 0 */
-#if SOC_I2C_NUM >= 2
-#define I2C_NUM_1              (1) /*!< I2C port 1 */
-#endif
-
 // I2C clk flags for users to use, can be expanded in the future.
 #define I2C_SCLK_SRC_FLAG_FOR_NOMAL       (0)         /*!< Any one clock source that is available for the specified frequency may be choosen*/
 #define I2C_SCLK_SRC_FLAG_AWARE_DFS       (1 << 0)    /*!< For REF tick clock, it won't change with APB.*/

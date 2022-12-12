@@ -3,8 +3,11 @@ set(srcs
     "heap_caps_init.c"
     "multi_heap.c")
 
+set(includes "include")
+
 if(NOT CONFIG_HEAP_TLSF_USE_ROM_IMPL)
-    list(APPEND srcs "heap_tlsf.c")
+    set(priv_includes "tlsf")
+    list(APPEND srcs "tlsf/tlsf.c")
 endif()
 
 if(NOT CONFIG_HEAP_POISONING_DISABLED)
@@ -31,7 +34,8 @@ endif()
 
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS include
+                    INCLUDE_DIRS ${includes}
+                    PRIV_INCLUDE_DIRS ${priv_includes}
                     LDFRAGMENTS linker.lf
                     PRIV_REQUIRES soc)
 
@@ -58,3 +62,5 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         target_compile_options(${COMPONENT_TARGET} PRIVATE "-DMULTI_HEAP_FREERTOS")
     endif()
 endif()
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

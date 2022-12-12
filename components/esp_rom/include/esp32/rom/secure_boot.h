@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include "ets_sys.h"
+#include "esp_assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +34,7 @@ bool ets_secure_boot_check_start(uint8_t abs_index, uint32_t iv_addr);
 
 int ets_secure_boot_check_finish(uint32_t *abstract);
 
-#ifdef CONFIG_ESP32_REV_MIN_3
+#if CONFIG_ESP32_REV_MIN_FULL >= 300
 #include "rsa_pss.h"
 
 #define SECURE_BOOT_NUM_BLOCKS 1
@@ -62,7 +63,7 @@ typedef struct {
     uint32_t block_crc;
     uint8_t _padding[16];
 } ets_secure_boot_sig_block_t;
-_Static_assert(sizeof(ets_secure_boot_sig_block_t) == 1216, "invalid sig block size");
+ESP_STATIC_ASSERT(sizeof(ets_secure_boot_sig_block_t) == 1216, "invalid sig block size");
 
 /* ROM supports up to 3, but IDF only checks the first one (SECURE_BOOT_NUM_BLOCKS) */
 #define SECURE_BOOT_MAX_APPENDED_SIGN_BLOCKS_TO_IMAGE 3
@@ -73,7 +74,7 @@ typedef struct {
     uint8_t _padding[4096 - (sizeof(ets_secure_boot_sig_block_t) * SECURE_BOOT_MAX_APPENDED_SIGN_BLOCKS_TO_IMAGE)];
 } ets_secure_boot_signature_t;
 
-_Static_assert(sizeof(ets_secure_boot_signature_t) == 4096, "invalid sig sector size");
+ESP_STATIC_ASSERT(sizeof(ets_secure_boot_signature_t) == 4096, "invalid sig sector size");
 
 typedef struct {
     const void *key_digests[SECURE_BOOT_NUM_BLOCKS];
@@ -114,7 +115,7 @@ bool ets_use_secure_boot_v2(void);
 #else
 #define SECURE_BOOT_NUM_BLOCKS 0
 
-#endif /* CONFIG_ESP32_REV_MIN_3 */
+#endif /* CONFIG_ESP32_REV_MIN_FULL >= 300 */
 
 #ifdef __cplusplus
 }

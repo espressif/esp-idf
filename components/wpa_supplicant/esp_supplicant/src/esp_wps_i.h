@@ -61,11 +61,6 @@ struct wps_sm {
     u8 ap_cred_cnt;
     struct wps_device_data *dev;
     u8 uuid[16];
-    ETSTimer wps_timeout_timer;
-    ETSTimer wps_msg_timeout_timer;
-    ETSTimer wps_scan_timer;
-    ETSTimer wps_success_cb_timer;
-    ETSTimer wps_eapol_start_timer;
     u8 current_identifier;
     bool is_wps_scan;
     u8 channel;
@@ -81,18 +76,18 @@ struct wps_sm {
 
 #define API_MUTEX_TAKE() do {\
     if (!s_wps_api_lock) {\
-        s_wps_api_lock = xSemaphoreCreateRecursiveMutex();\
+        s_wps_api_lock = os_recursive_mutex_create();\
         if (!s_wps_api_lock) {\
             wpa_printf(MSG_ERROR, "wps api lock create failed");\
             return ESP_ERR_NO_MEM;\
         }\
     }\
-    xSemaphoreTakeRecursive(s_wps_api_lock, portMAX_DELAY);\
+    os_mutex_lock(s_wps_api_lock);\
 } while(0)
 
-#define API_MUTEX_GIVE() xSemaphoreGiveRecursive(s_wps_api_lock)
-#define DATA_MUTEX_TAKE() xSemaphoreTakeRecursive(s_wps_data_lock, portMAX_DELAY)
-#define DATA_MUTEX_GIVE() xSemaphoreGiveRecursive(s_wps_data_lock)
+#define API_MUTEX_GIVE() os_mutex_unlock(s_wps_api_lock)
+#define DATA_MUTEX_TAKE() os_mutex_lock(s_wps_data_lock)
+#define DATA_MUTEX_GIVE() os_mutex_unlock(s_wps_data_lock)
 
 struct wps_sm *wps_sm_get(void);
 int wps_station_wps_unregister_cb(void);
@@ -123,3 +118,4 @@ static inline int wps_set_status(uint32_t status)
     return esp_wifi_set_wps_status_internal(status);
 }
 int wps_init_cfg_pin(struct wps_config *cfg);
+void wifi_station_wps_eapol_start_handle(void *data, void *user_ctx);

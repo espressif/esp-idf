@@ -11,9 +11,9 @@
 #include "hal/assert.h"
 #include "hal/efuse_hal.h"
 #include "soc/syscon_reg.h"
+#include "esp_attr.h"
 
-
-uint32_t efuse_hal_get_chip_revision(void)
+IRAM_ATTR uint32_t efuse_hal_get_major_chip_version(void)
 {
     uint8_t eco_bit0 = efuse_ll_get_chip_ver_rev1();
     uint8_t eco_bit1 = efuse_ll_get_chip_ver_rev2();
@@ -43,6 +43,11 @@ uint32_t efuse_hal_get_chip_revision(void)
         break;
     }
     return chip_ver;
+}
+
+IRAM_ATTR uint32_t efuse_hal_get_minor_chip_version(void)
+{
+    return efuse_ll_get_chip_wafer_version_minor();
 }
 
 uint32_t efuse_hal_get_rated_freq_mhz(void)

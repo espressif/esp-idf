@@ -111,12 +111,16 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 static void mqtt_app_start(void)
 {
-    const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "mqtts://test.mosquitto.org:8884",
-        .client_cert_pem = (const char *)client_cert_pem_start,
-        .client_key_pem = (const char *)client_key_pem_start,
-        .cert_pem = (const char *)server_cert_pem_start,
-    };
+  const esp_mqtt_client_config_t mqtt_cfg = {
+    .broker.address.uri = "mqtts://test.mosquitto.org:8884",
+    .broker.verification.certificate = (const char *)server_cert_pem_start,
+    .credentials = {
+      .authentication = {
+        .certificate = (const char *)client_cert_pem_start,
+        .key = (const char *)client_key_pem_start,
+      },
+    }
+  };
 
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);

@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <time.h>
@@ -120,6 +112,17 @@ bool sntp_restart(void)
 
 void sntp_set_system_time(uint32_t sec, uint32_t us)
 {
+    // Note: SNTP/NTP timestamp is defined as 64-bit fixed point int
+    // in seconds from 1900 (integer part is the first 32 bits)
+    // which overflows in 2036.
+    // The lifetime of the NTP timestamps has been extended by convention
+    // of the MSB bit 0 to span between 1968 and 2104. This is implemented
+    // in lwip sntp module, so this API returns number of seconds/milliseconds
+    // representing dates range from 1968 to 2104.
+    // (see: RFC-4330#section-3 and https://github.com/lwip-tcpip/lwip/blob/239918cc/src/apps/sntp/sntp.c#L129-L134)
+    // Warning: Here, we convert the 32 bit NTP timestamp to 64 bit representation
+    // of system time (time_t). This won't work for timestamps in future
+    // after some time in 2104
     struct timeval tv = { .tv_sec = sec, .tv_usec = us };
     sntp_sync_time(&tv);
 }
@@ -128,6 +131,9 @@ void sntp_get_system_time(uint32_t *sec, uint32_t *us)
 {
     struct timeval tv = { .tv_sec = 0, .tv_usec = 0 };
     gettimeofday(&tv, NULL);
+    // Warning: Here, we convert 64 bit representation of system time (time_t) to
+    // 32 bit NTP timestamp. This won't work for future timestamps after some time in 2104
+    // (see: RFC-4330#section-3)
     *(sec) = tv.tv_sec;
     *(us) = tv.tv_usec;
     sntp_set_sync_status(SNTP_SYNC_STATUS_RESET);

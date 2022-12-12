@@ -28,10 +28,12 @@ extern int _coredump_dram_start;
 extern int _coredump_dram_end;
 extern int _coredump_iram_start;
 extern int _coredump_iram_end;
+#if SOC_RTC_MEM_SUPPORTED
 extern int _coredump_rtc_start;
 extern int _coredump_rtc_end;
 extern int _coredump_rtc_fast_start;
 extern int _coredump_rtc_fast_end;
+#endif
 
 /**
  * @brief In the menconfig, it is possible to specify a specific stack size for
@@ -201,7 +203,7 @@ bool esp_core_dump_get_task_snapshot(void *handle, core_dump_task_header_t *task
     task->stack_start = (uint32_t)rtos_snapshot.pxTopOfStack;
     task->stack_end = (uint32_t)rtos_snapshot.pxEndOfStack;
 
-    if (!xPortInterruptedFromISRContext() && handle == esp_core_dump_get_current_task_handle()) {
+    if (!esp_core_dump_in_isr_context() && handle == esp_core_dump_get_current_task_handle()) {
         // Set correct stack top for current task; only modify if we came from the task,
         // and not an ISR that crashed.
         task->stack_start = (uint32_t) s_exc_frame;
@@ -213,7 +215,7 @@ bool esp_core_dump_get_task_snapshot(void *handle, core_dump_task_header_t *task
     if (handle == esp_core_dump_get_current_task_handle()) {
         ESP_COREDUMP_LOG_PROCESS("Crashed task %x", handle);
         esp_core_dump_port_set_crashed_tcb((uint32_t)handle);
-        if (xPortInterruptedFromISRContext()) {
+        if (esp_core_dump_in_isr_context()) {
             esp_core_dump_switch_task_stack_to_isr(task, interrupted_stack);
         }
     }
@@ -226,8 +228,10 @@ uint32_t esp_core_dump_get_user_ram_segments(void)
 
     // count number of memory segments to insert into ELF structure
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_dram_end, &_coredump_dram_start) > 0 ? 1 : 0;
+#if SOC_RTC_MEM_SUPPORTED
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_end, &_coredump_rtc_start) > 0 ? 1 : 0;
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_fast_end, &_coredump_rtc_fast_start) > 0 ? 1 : 0;
+#endif
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_iram_end, &_coredump_iram_start) > 0 ? 1 : 0;
 
     return total_sz;
@@ -238,8 +242,10 @@ uint32_t esp_core_dump_get_user_ram_size(void)
     uint32_t total_sz = 0;
 
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_dram_end, &_coredump_dram_start);
+#if SOC_RTC_MEM_SUPPORTED
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_end, &_coredump_rtc_start);
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_fast_end, &_coredump_rtc_fast_start);
+#endif
     total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_iram_end, &_coredump_iram_start);
 
     return total_sz;
@@ -262,6 +268,7 @@ int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start)
             total_sz = (uint8_t *)&_coredump_iram_end - (uint8_t *)&_coredump_iram_start;
             break;
 
+#if SOC_RTC_MEM_SUPPORTED
         case COREDUMP_MEMORY_RTC:
             *start = (uint32_t)&_coredump_rtc_start;
             total_sz = (uint8_t *)&_coredump_rtc_end - (uint8_t *)&_coredump_rtc_start;
@@ -271,6 +278,7 @@ int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start)
             *start = (uint32_t)&_coredump_rtc_fast_start;
             total_sz = (uint8_t *)&_coredump_rtc_fast_end - (uint8_t *)&_coredump_rtc_fast_start;
             break;
+#endif
 
         default:
             break;
@@ -286,7 +294,19 @@ inline bool esp_core_dump_tcb_addr_is_sane(uint32_t addr)
 
 inline bool esp_core_dump_in_isr_context(void)
 {
+#if CONFIG_ESP_TASK_WDT_EN
+    /* This function will be used to check whether a panic occurred in an ISR.
+     * In that case, the execution frame must be switch to the interrupt stack.
+     * However, in case where the task watchdog ISR calls the panic handler,
+     * `xPortInterruptedFromISRContext` returns true, BUT, we don't want to
+     * switch the frame to the ISR context. Thus, check that we are not
+     * coming from TWDT ISR. This should be refactored.
+     * TODO: IDF-5694. */
+    extern bool g_twdt_isr;
+    return xPortInterruptedFromISRContext() && !g_twdt_isr;
+#else // CONFIG_ESP_TASK_WDT_EN
     return xPortInterruptedFromISRContext();
+#endif // CONFIG_ESP_TASK_WDT_EN
 }
 
 inline core_dump_task_handle_t esp_core_dump_get_current_task_handle()

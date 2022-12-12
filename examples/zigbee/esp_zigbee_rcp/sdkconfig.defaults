@@ -1,5 +1,4 @@
-CONFIG_IDF_TARGET="esp32h2"
-
+CONFIG_IDF_TARGET="esp32h4"
 #
 # Partition Table
 #
@@ -15,6 +14,5 @@ CONFIG_PARTITION_TABLE_MD5=y
 #
 CONFIG_ZB_ENABLED=y
 CONFIG_ZB_RCP=y
-CONFIG_ZB_CONSOLE_UART_BAUDRATE=115200
 # end of ZBOSS Source
 # end of Component config

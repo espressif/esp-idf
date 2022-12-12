@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -20,6 +12,7 @@
 #include <protocomm.h>
 #include <protocomm_security0.h>
 #include <protocomm_security1.h>
+#include <protocomm_security2.h>
 
 #include <esp_local_ctrl.h>
 #include "esp_local_ctrl_priv.h"
@@ -150,21 +143,39 @@ esp_err_t esp_local_ctrl_start(const esp_local_ctrl_config_t *config)
         return ret;
     }
 
-    protocomm_security_t *proto_sec_handle;
+    protocomm_security_t *proto_sec_handle = NULL;
     switch (local_ctrl_inst_ctx->config.proto_sec.version) {
         case PROTOCOM_SEC_CUSTOM:
             proto_sec_handle = local_ctrl_inst_ctx->config.proto_sec.custom_handle;
             break;
         case PROTOCOM_SEC1:
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
             proto_sec_handle = (protocomm_security_t *) &protocomm_security1;
+#else
+            // Enable SECURITY_VERSION_1 in Protocomm configuration menu
+            return ESP_ERR_NOT_SUPPORTED;
+#endif
             break;
+        case PROTOCOM_SEC2:
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+            proto_sec_handle = (protocomm_security_t *) &protocomm_security2;
+            break;
+#else
+            // Enable SECURITY_VERSION_2 in Protocomm configuration menu
+            return ESP_ERR_NOT_SUPPORTED;
+#endif
         case PROTOCOM_SEC0:
         default:
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
             proto_sec_handle = (protocomm_security_t *) &protocomm_security0;
+#else
+            // Enable SECURITY_VERSION_0 in Protocomm configuration menu
+            return ESP_ERR_NOT_SUPPORTED;
+#endif
             break;
     }
     ret = protocomm_set_security(local_ctrl_inst_ctx->pc, "esp_local_ctrl/session",
-                                 proto_sec_handle, local_ctrl_inst_ctx->config.proto_sec.pop);
+                                 proto_sec_handle, local_ctrl_inst_ctx->config.proto_sec.sec_params);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set session endpoint");
         esp_local_ctrl_stop();

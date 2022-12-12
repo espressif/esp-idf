@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,8 +14,6 @@
 #define SYSTIMER_LL_COUNTER_OS_TICK     (1) // Counter used for OS tick
 #define SYSTIMER_LL_ALARM_OS_TICK_CORE0 (0) // Alarm used for OS tick of CPU core 0
 #define SYSTIMER_LL_ALARM_CLOCK         (2) // Alarm used for "wallclock" time
-
-#define SYSTIMER_LL_TICKS_PER_US        (16) // 16 systimer ticks == 1us
 
 #ifdef __cplusplus
 extern "C" {

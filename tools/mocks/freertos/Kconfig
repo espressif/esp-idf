@@ -1,13 +1,32 @@
 menu "FreeRTOS"
-    config FREERTOS_MAX_TASK_NAME_LEN
-        int "Maximum task name length"
-        range 1 256
-        default 16
-        help
-            Changes the maximum task name length. Each task allocated will
-            include this many bytes for a task name. Using a shorter value
-            saves a small amount of RAM, a longer value allows more complex
-            names.
 
-            For most uses, the default of 16 is OK.
+    menu "Kernel"
+        config FREERTOS_HZ
+            int "configTICK_RATE_HZ"
+            range 1 1000
+            default 1000
+            help
+                Sets the FreeRTOS tick interrupt frequency in Hz (see configTICK_RATE_HZ documentation for more
+                details).
+
+        config FREERTOS_MAX_TASK_NAME_LEN
+            int "configMAX_TASK_NAME_LEN"
+            range 1 256
+            default 16
+            help
+                Sets the maximum number of characters for task names (see configMAX_TASK_NAME_LEN documentation for
+                more details).
+
+                Note: For most uses, the default of 16 characters is sufficient.
+
+        config FREERTOS_TASK_NOTIFICATION_ARRAY_ENTRIES
+            int "configTASK_NOTIFICATION_ARRAY_ENTRIES"
+            range 1 32
+            default 1
+            help
+                Set the size of the task notification array of each task. When increasing this value, keep in
+                mind that this means additional memory for each and every task on the system.
+                However, task notifications in general are more light weight compared to alternatives
+                such as semaphores.
+    endmenu
 endmenu

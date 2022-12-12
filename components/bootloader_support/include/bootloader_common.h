@@ -7,28 +7,12 @@
 #pragma once
 #include "esp_flash_partitions.h"
 #include "esp_image_format.h"
-#include "esp_app_format.h"
-// [refactor-todo]: we shouldn't expose ROM header files in a public API header, remove them in v5.0
-// Tracked in IDF-1968
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/rtc.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/// Type of hold a GPIO in low state
+// Type of hold a GPIO in low state
 typedef enum {
     GPIO_LONG_HOLD  = 1,    /*!< The long hold GPIO */
     GPIO_SHORT_HOLD = -1,   /*!< The short hold GPIO */
@@ -122,15 +106,6 @@ bool bootloader_common_label_search(const char *list, char *label);
 void bootloader_configure_spi_pins(int drv);
 
 /**
- * @brief Get flash CS IO
- *
- * Can be determined by eFuse values, or the default value
- *
- * @return Flash CS IO
- */
-uint8_t bootloader_flash_get_cs_io(void);
-
-/**
  * @brief Calculates a sha-256 for a given partition or returns a appended digest.
  *
  * This function can be used to return the SHA-256 digest of application, bootloader and data partitions.
@@ -176,40 +151,11 @@ int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata);
 int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, bool *valid_two_otadata, bool max);
 
 /**
- * @brief Returns esp_app_desc structure for app partition. This structure includes app version.
- *
- * Returns a description for the requested app partition.
- * @param[in] partition      App partition description.
- * @param[out] app_desc      Structure of info about app.
- * @return
- *  - ESP_OK:                Successful.
- *  - ESP_ERR_INVALID_ARG:   The arguments passed are not valid.
- *  - ESP_ERR_NOT_FOUND:     app_desc structure is not found. Magic word is incorrect.
- *  - ESP_FAIL:              mapping is fail.
- */
-esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc);
-
-/**
- * @brief Get chip revision
- *
- * @return Chip revision number
- */
-uint8_t bootloader_common_get_chip_revision(void);
-
-/**
  * @brief Get chip package
  *
  * @return Chip package number
  */
 uint32_t bootloader_common_get_chip_ver_pkg(void);
-
-/**
- * @brief Query reset reason
- *
- * @param cpu_no CPU number
- * @return reset reason enumeration
- */
-RESET_REASON bootloader_common_get_reset_reason(int cpu_no);
 
 /**
  * @brief Check if the image (bootloader and application) has valid chip ID and revision

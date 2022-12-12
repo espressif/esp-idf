@@ -16,9 +16,8 @@ In Deep-sleep mode, the CPUs, most of the RAM, and all digital peripherals that 
     .. list::
 
         - RTC controller
-        - RTC peripherals
         :SOC_ULP_SUPPORTED: - ULP coprocessor
-        - RTC fast memory
+        :SOC_RTC_FAST_MEM_SUPPORTED: - RTC fast memory
         :SOC_RTC_SLOW_MEM_SUPPORTED: - RTC slow memory
 
 There are several wakeup sources in Deep-sleep and Light-sleep modes. These sources can also be combined so that the chip will wake up when any of the sources are triggered. Wakeup sources can be enabled using ``esp_sleep_enable_X_wakeup`` APIs and can be disabled using :cpp:func:`esp_sleep_disable_wakeup_source` API. Next section describes these APIs in detail. Wakeup sources can be configured at any moment before entering Light-sleep or Deep-sleep mode.
@@ -100,10 +99,13 @@ RTC peripherals or RTC memories don't need to be powered on during sleep in this
     This wakeup source is implemented by the RTC controller. As such, RTC peripherals and RTC memories can be powered down in this mode. However, if RTC peripherals are powered down, internal pullup and pulldown resistors will be disabled. To use internal pullup or pulldown resistors, request the RTC peripherals power domain to be kept on during sleep, and configure pullup/pulldown resistors using ``rtc_gpio_`` functions before entering sleep::
 
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
-        gpio_pullup_dis(gpio_num);
-        gpio_pulldown_en(gpio_num);
+        rtc_gpio_pullup_dis(gpio_num);
+        rtc_gpio_pulldown_en(gpio_num);
 
-    .. warning:: After waking up from sleep, IO pad(s) used for wakeup will be configured as RTC IO. Before using these pads as digital GPIOs, reconfigure them using :cpp:func:`rtc_gpio_deinit` function.
+    .. warning:: 
+        - To use the EXT1 wakeup, the IO pad(s) are configured as RTC IO. Thus if these pads want to be used as digital GPIOs after waking up from sleep, :cpp:func:`rtc_gpio_deinit` needs to be called first.
+
+        - If the RTC peripherals are configured to be powered down (which is by default), the wakeup IOs will be set to holding state before entering sleep. Therefore, after waking up from Light-sleep, please call `rtc_gpio_hold_dis` to disable the hold function to perform any pin re-configuration. For Deep-sleep wakeup, this is already being handled at the application startup stage.
 
     :cpp:func:`esp_sleep_enable_ext1_wakeup` function can be used to enable this wakeup source.
 
@@ -142,6 +144,14 @@ RTC peripherals or RTC memories don't need to be powered on during sleep in this
 
             esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_ON);
 
+.. only:: not SOC_RTCIO_WAKE_SUPPORTED
+
+    GPIO Wakeup
+    ^^^^^^^^^^^
+
+    Any IO can be used as the external input to wakeup the chip from Light-sleep. Each pin can be individually configured to trigger wakeup on high or low level using :cpp:func:`gpio_wakeup_enable` function. Then :cpp:func:`esp_sleep_enable_gpio_wakeup` function should be called to enable this wakeup source.
+
+    Additionally, IOs that are powered by the VDD3P3_RTC power domain can be used to wakeup the chip from Deep-sleep. The wakeup pin and wakeup trigger level can be configured by calling :cpp:func:`esp_deep_sleep_enable_gpio_wakeup`. The function will enable the Deep-sleep wakeup for the selected pin.
 
 UART Wakeup (Light-sleep Only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -164,9 +174,39 @@ By default, :cpp:func:`esp_deep_sleep_start` and :cpp:func:`esp_light_sleep_star
 
     If some variables in the program are placed into RTC slow memory (for example, using ``RTC_DATA_ATTR`` attribute), RTC slow memory will be kept powered on by default. This can be overridden using :cpp:func:`esp_sleep_pd_config` function, if desired.
 
-.. only:: not SOC_RTC_SLOW_MEM_SUPPORTED
+.. only:: not SOC_RTC_SLOW_MEM_SUPPORTED and SOC_RTC_FAST_MEM_SUPPORTED
 
     In {IDF_TARGET_NAME}, there is only RTC fast memory, so if some variables in the program are marked by ``RTC_DATA_ATTR``, ``RTC_SLOW_ATTR`` or ``RTC_FAST_ATTR`` attributes, all of them go to RTC fast memory. It will be kept powered on by default. This can be overridden using :cpp:func:`esp_sleep_pd_config` function, if desired.
+
+Power-down of Flash
+-------------------
+
+By default, to avoid potential issues, :cpp:func:`esp_light_sleep_start` function will **not** power down flash. To be more specific, it takes time to power down the flash and during this period the system may be woken up, which then actually powers up the flash before this flash could be powered down completely. As a result, there is a chance that the flash may not work properly.
+
+So, in theory, it's ok if you only wake up the system after the flash is completely powered down. However, in reality, the flash power-down period can be hard to predict (for example, this period can be much longer when you add filter capacitors to the flash's power supply circuit) and uncontrollable (for example, the asynchronous wake-up signals make the actual sleep time uncontrollable).
+
+.. warning::
+    If a filter capacitor is added to your flash power supply circuit, please do everything possible to avoid powering down flash.
+
+Therefore, it's recommended not to power down flash when using ESP-IDF. For power-sensitive applications, it's recommended to use Kconfig option :ref:`CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND` to reduce the power consumption of the flash during light sleep, instead of powering down the flash.
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    It is worth mentioning that PSRAM has a similar Kconfig option :ref:`CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND`.
+
+However, for those who have fully understood the risk and are still willing to power down the flash to further reduce the power consumption, please check the following mechanisms:
+
+    .. list::
+
+        - Setting Kconfig option :ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` only powers down the flash when the RTC timer is the only wake-up source **and** the sleep time is longer than the flash power-down period.
+        - Calling ``esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_OFF)`` powers down flash when the RTC timer is not enabled as a wakeup source **or** the sleep time is longer than the flash power-down period.
+
+.. note::
+
+    .. list::
+
+        - ESP-IDF does not provide any mechanism that can power down the flash in all conditions when light sleep.
+        - :cpp:func:`esp_deep_sleep_start` function will force power down flash regardless of user configuration.
 
 Entering Light-sleep
 --------------------
@@ -183,7 +223,7 @@ Configuring IOs
 
 Some {IDF_TARGET_NAME} IOs have internal pullups or pulldowns, which are enabled by default. If an external circuit drives this pin in Deep-sleep mode, current consumption may increase due to current flowing through these pullups and pulldowns.
 
-.. only:: not esp32c3
+.. only:: SOC_RTCIO_HOLD_SUPPORTED
 
     To isolate a pin to prevent extra current draw, call :cpp:func:`rtc_gpio_isolate` function.
 
@@ -193,7 +233,7 @@ Some {IDF_TARGET_NAME} IOs have internal pullups or pulldowns, which are enabled
 
 	rtc_gpio_isolate(GPIO_NUM_12);
 
-.. only:: esp32c3
+.. only:: esp32c2 or esp32c3
 
     In Deep-sleep mode:
         - digital GPIOs (GPIO6 ~ 21) are in a high impedance state.
@@ -213,7 +253,7 @@ Checking Sleep Wakeup Cause
 
 :cpp:func:`esp_sleep_get_wakeup_cause` function can be used to check which wakeup source has triggered wakeup from sleep mode.
 
-.. only:: SOC_TOUCH_SENSOR_NUM
+.. only:: SOC_TOUCH_SENSOR_SUPPORTED
 
     For touchpad, it is possible to identify which touch pin has caused wakeup using :cpp:func:`esp_sleep_get_touchpad_wakeup_status` functions.
 
@@ -237,7 +277,7 @@ Application Example
 
     - :example:`system/deep_sleep`: the usage of various Deep-sleep wakeup triggers and ULP coprocessor programming.
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp32c2
 
     - :example:`system/deep_sleep`: the usage of Deep-sleep wakeup triggered by timer.
 

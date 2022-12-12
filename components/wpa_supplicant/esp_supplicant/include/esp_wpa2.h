@@ -32,7 +32,7 @@ extern "C" {
 /**
   * @brief  Enable wpa2 enterprise authentication.
   *
-  * @attention 1. wpa2 enterprise authentication can only be used when ESP32 station is enabled.
+  * @attention 1. wpa2 enterprise authentication can only be used when station mode is enabled.
   * @attention 2. wpa2 enterprise authentication can only support TLS, PEAP-MSCHAPv2 and TTLS-MSCHAPv2 method.
   *
   * @return
@@ -44,7 +44,7 @@ esp_err_t esp_wifi_sta_wpa2_ent_enable(void);
 /**
   * @brief  Disable wpa2 enterprise authentication.
   *
-  * @attention 1. wpa2 enterprise authentication can only be used when ESP32 station is enabled.
+  * @attention 1. wpa2 enterprise authentication can only be used when station mode is enabled.
   * @attention 2. wpa2 enterprise authentication can only support TLS, PEAP-MSCHAPv2 and TTLS-MSCHAPv2 method.
   *
   * @return

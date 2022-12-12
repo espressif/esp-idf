@@ -1,655 +1,1687 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
+#include "soc/ext_mem_defs.h"
+#include "soc/memprot_defs.h"
+#include "hal/memprot_types.h"
+#include "soc/sensitive_reg.h"
+
+/* Uncomment to enable MPS debug assertions on false register writes.
+ * It irregularly happens the PMS registers cannot be written which causes unpredictable malfunction of the Memprot feature
+ * Once the issue is found & resolved, the assertions can be removed
+ */
+//#define PMS_DEBUG_ASSERTIONS
+
+#ifdef PMS_DEBUG_ASSERTIONS
 #include "hal/assert.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// not implemented for esp32s3 yet
-#if 0
-/**
- * === IRAM0 ====
- */
+//highest address of each Level slot in the SRAM's 3rd memory region (I/D access, 416kB)
+//quick resolver of split-address category bits
+static const intptr_t sram_rg3_level_hlimits[] = {
+        0x4037FFFF, //level 2 (32KB)
+        0x4038FFFF, //level 3 (64KB)
+        0x4039FFFF, //level 4 (64KB)
+        0x403AFFFF, //level 5 (64KB)
+        0x403BFFFF, //level 6 (64KB)
+        0x403CFFFF, //level 7 (64KB)
+        0x403DFFFF  //level 8 (64KB)
+};
 
-#define IRAM0_TOTAL_UNI_BLOCKS          4
-#define IRAM0_UNI_BLOCK_0               0
-#define IRAM0_UNI_BLOCK_1               1
-#define IRAM0_UNI_BLOCK_2               2
-#define IRAM0_UNI_BLOCK_3               3
-
-#define IRAM0_SPL_BLOCK_BASE            0x40000000
-
-//unified management (SRAM blocks 0-3)
-#define IRAM0_UNI_BLOCK_0_LOW           0x40020000
-#define IRAM0_UNI_BLOCK_0_HIGH          0x40021FFF
-#define IRAM0_UNI_BLOCK_1_LOW           0x40022000
-#define IRAM0_UNI_BLOCK_1_HIGH          0x40023FFF
-#define IRAM0_UNI_BLOCK_2_LOW           0x40024000
-#define IRAM0_UNI_BLOCK_2_HIGH          0x40025FFF
-#define IRAM0_UNI_BLOCK_3_LOW           0x40026000
-#define IRAM0_UNI_BLOCK_3_HIGH          0x40027FFF
-
-//split management (SRAM blocks 4-21)
-#define IRAM0_SPL_BLOCK_LOW             0x40028000 //block 4 low
-#define IRAM0_SPL_BLOCK_HIGH            0x4006FFFF //block 21 high
-#define IRAM0_SPLTADDR_MIN              0x40030000 //block 6 low - minimum splitting address
-
-//IRAM0 interrupt status bitmasks
-#define IRAM0_INTR_ST_FAULTADDR_M       0x003FFFFC  //(bits 21:6 in the reg, as well as in real address)
-#define IRAM0_INTR_ST_FAULTADDR_HI      0x40000000  //(high nonsignificant bits 31:22 of the faulting address - constant)
-#define IRAM0_INTR_ST_OP_TYPE_BIT       BIT(1)      //instruction: 0, data: 1
-#define IRAM0_INTR_ST_OP_RW_BIT         BIT(0)      //read: 0, write: 1
-
-
-static inline uint32_t esp_memprot_iram0_get_intr_source_num(void)
+/* ******************************************************************************************************
+ * *** COMMON ***
+ * ******************************************************************************************************/
+static inline void memprot_ll_set_iram0_dram0_split_line_lock(void)
 {
-    return ETS_PMS_PRO_IRAM0_ILG_INTR_SOURCE;
-}
-
-static inline void esp_memprot_iram0_intr_ena(bool enable)
-{
-    if ( enable ) {
-        DPORT_SET_PERI_REG_MASK( DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_EN );
-    } else {
-        DPORT_CLEAR_PERI_REG_MASK( DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_EN );
-    }
-}
-
-static inline uint32_t esp_memprot_iram0_get_ena_reg(void)
-{
-    return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_4_REG);
-}
-
-static inline uint32_t esp_memprot_iram0_get_fault_reg(void)
-{
-    return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_5_REG);
-}
-
-static inline void esp_memprot_iram0_get_fault_status(uint32_t **faulting_address, uint32_t *op_type, uint32_t *op_subtype)
-{
-    uint32_t status_bits = esp_memprot_iram0_get_fault_reg();
-
-    uint32_t fault_addr = (status_bits & IRAM0_INTR_ST_FAULTADDR_M);
-    *faulting_address = (uint32_t *)(fault_addr | IRAM0_INTR_ST_FAULTADDR_HI);
-
-    *op_type = (uint32_t)status_bits & IRAM0_INTR_ST_OP_RW_BIT;
-    *op_subtype = (uint32_t)status_bits & IRAM0_INTR_ST_OP_TYPE_BIT;
-}
-
-static inline bool esp_memprot_iram0_is_assoc_intr(void)
-{
-    return DPORT_GET_PERI_REG_MASK(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_INTR) > 0;
-}
-
-static inline void esp_memprot_iram0_clear_intr(void)
-{
-    DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_CLR);
-}
-
-static inline uint32_t esp_memprot_iram0_get_intr_ena_bit(void)
-{
-    return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_EN);
-}
-
-static inline uint32_t esp_memprot_iram0_get_intr_on_bit(void)
-{
-    return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_INTR);
-}
-
-static inline uint32_t esp_memprot_iram0_get_intr_clr_bit(void)
-{
-    return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_4_REG, DPORT_PMS_PRO_IRAM0_ILG_CLR);
-}
-
-//resets automatically on CPU restart
-static inline void esp_memprot_iram0_set_lock(void)
-{
-    DPORT_WRITE_PERI_REG( DPORT_PMS_PRO_IRAM0_0_REG, DPORT_PMS_PRO_IRAM0_LOCK);
-}
-
-static inline uint32_t esp_memprot_iram0_get_lock_reg(void)
-{
-    return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_0_REG);
-}
-
-static inline uint32_t esp_memprot_iram0_get_lock_bit(void)
-{
-    return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_IRAM0_0_REG, DPORT_PMS_PRO_IRAM0_LOCK);
-}
-
-//block 0-3
-static inline void esp_memprot_iram0_set_uni_block_perm(uint32_t block, bool write_perm, bool read_perm, bool exec_perm)
-{
-    HAL_ASSERT(block < IRAM0_TOTAL_UNI_BLOCKS);
-
-    uint32_t write_bit, read_bit, exec_bit;
-    switch ( block ) {
-    case IRAM0_UNI_BLOCK_0:
-        write_bit = DPORT_PMS_PRO_IRAM0_SRAM_0_W;
-        read_bit = DPORT_PMS_PRO_IRAM0_SRAM_0_R;
-        exec_bit = DPORT_PMS_PRO_IRAM0_SRAM_0_F;
-        break;
-    case IRAM0_UNI_BLOCK_1:
-        write_bit = DPORT_PMS_PRO_IRAM0_SRAM_1_W;
-        read_bit = DPORT_PMS_PRO_IRAM0_SRAM_1_R;
-        exec_bit = DPORT_PMS_PRO_IRAM0_SRAM_1_F;
-        break;
-    case IRAM0_UNI_BLOCK_2:
-        write_bit = DPORT_PMS_PRO_IRAM0_SRAM_2_W;
-        read_bit = DPORT_PMS_PRO_IRAM0_SRAM_2_R;
-        exec_bit = DPORT_PMS_PRO_IRAM0_SRAM_2_F;
-        break;
-    case IRAM0_UNI_BLOCK_3:
-        write_bit = DPORT_PMS_PRO_IRAM0_SRAM_3_W;
-        read_bit = DPORT_PMS_PRO_IRAM0_SRAM_3_R;
-        exec_bit = DPORT_PMS_PRO_IRAM0_SRAM_3_F;
-        break;
-    default:
-        abort();
-    }
-
-    if ( write_perm ) {
-        DPORT_SET_PERI_REG_MASK( DPORT_PMS_PRO_IRAM0_1_REG, write_bit );
-    } else {
-        DPORT_CLEAR_PERI_REG_MASK( DPORT_PMS_PRO_IRAM0_1_REG, write_bit );
-    }
-
-    if ( read_perm ) {
-        DPORT_SET_PERI_REG_MASK( DPORT_PMS_PRO_IRAM0_1_REG, read_bit );
-    } else {
-        DPORT_CLEAR_PERI_REG_MASK( DPORT_PMS_PRO_IRAM0_1_REG, read_bit );
-    }
-
-    if ( exec_perm ) {
-        DPORT_SET_PERI_REG_MASK( DPORT_PMS_PRO_IRAM0_1_REG, exec_bit );
-    } else {
-        DPORT_CLEAR_PERI_REG_MASK( DPORT_PMS_PRO_IRAM0_1_REG, exec_bit );
-    }
-}
-
-static inline uint32_t esp_memprot_iram0_get_uni_block_read_bit(uint32_t block)
-{
-    HAL_ASSERT(block < IRAM0_TOTAL_UNI_BLOCKS);
-
-    switch ( block ) {
-    case IRAM0_UNI_BLOCK_0:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_0_R );
-    case IRAM0_UNI_BLOCK_1:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_1_R );
-    case IRAM0_UNI_BLOCK_2:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_2_R );
-    case IRAM0_UNI_BLOCK_3:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_3_R );
-    default:
-        abort();
-    }
-}
-
-static inline uint32_t esp_memprot_iram0_get_uni_block_write_bit(uint32_t block)
-{
-    HAL_ASSERT(block < IRAM0_TOTAL_UNI_BLOCKS);
-
-    switch ( block ) {
-    case IRAM0_UNI_BLOCK_0:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_0_W );
-    case IRAM0_UNI_BLOCK_1:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_1_W );
-    case IRAM0_UNI_BLOCK_2:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_2_W );
-    case IRAM0_UNI_BLOCK_3:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_3_W );
-    default:
-        abort();
-    }
-}
-
-static inline uint32_t esp_memprot_iram0_get_uni_block_exec_bit(uint32_t block)
-{
-    HAL_ASSERT(block < IRAM0_TOTAL_UNI_BLOCKS);
-
-    switch ( block ) {
-    case IRAM0_UNI_BLOCK_0:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_0_F );
-    case IRAM0_UNI_BLOCK_1:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_1_F );
-    case IRAM0_UNI_BLOCK_2:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_2_F );
-    case IRAM0_UNI_BLOCK_3:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_1_REG, DPORT_PMS_PRO_IRAM0_SRAM_3_F );
-    default:
-        abort();
-    }
-}
-
-static inline void esp_memprot_iram0_get_uni_block_sgnf_bits(uint32_t block, uint32_t *write_bit, uint32_t *read_bit, uint32_t *exec_bit)
-{
-    HAL_ASSERT(block < IRAM0_TOTAL_UNI_BLOCKS);
-
-    switch ( block ) {
-    case IRAM0_UNI_BLOCK_0:
-        *write_bit = DPORT_PMS_PRO_IRAM0_SRAM_0_W;
-        *read_bit = DPORT_PMS_PRO_IRAM0_SRAM_0_R;
-        *exec_bit = DPORT_PMS_PRO_IRAM0_SRAM_0_F;
-        break;
-    case IRAM0_UNI_BLOCK_1:
-        *write_bit = DPORT_PMS_PRO_IRAM0_SRAM_1_W;
-        *read_bit = DPORT_PMS_PRO_IRAM0_SRAM_1_R;
-        *exec_bit = DPORT_PMS_PRO_IRAM0_SRAM_1_F;
-        break;
-    case IRAM0_UNI_BLOCK_2:
-        *write_bit = DPORT_PMS_PRO_IRAM0_SRAM_2_W;
-        *read_bit = DPORT_PMS_PRO_IRAM0_SRAM_2_R;
-        *exec_bit = DPORT_PMS_PRO_IRAM0_SRAM_2_F;
-        break;
-    case IRAM0_UNI_BLOCK_3:
-        *write_bit = DPORT_PMS_PRO_IRAM0_SRAM_3_W;
-        *read_bit = DPORT_PMS_PRO_IRAM0_SRAM_3_R;
-        *exec_bit = DPORT_PMS_PRO_IRAM0_SRAM_3_F;
-        break;
-    default:
-        abort();
-    }
-}
-
-static inline uint32_t esp_memprot_iram0_get_perm_uni_reg(void)
-{
-    return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_1_REG);
-}
-
-static inline uint32_t esp_memprot_iram0_get_perm_split_reg(void)
-{
-    return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_2_REG);
-}
-
-static inline void esp_memprot_iram0_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
-{
-    uint32_t addr = (uint32_t)split_addr;
-    HAL_ASSERT(addr <= IRAM0_SPL_BLOCK_HIGH);
-
-    //find possible split.address in low region blocks
-    int uni_blocks_low = -1;
-    if ( addr >= IRAM0_UNI_BLOCK_0_LOW ) {
-        uni_blocks_low++;
-    }
-    if ( addr >= IRAM0_UNI_BLOCK_1_LOW ) {
-        uni_blocks_low++;
-    }
-    if ( addr >= IRAM0_UNI_BLOCK_2_LOW ) {
-        uni_blocks_low++;
-    }
-    if ( addr >= IRAM0_UNI_BLOCK_3_LOW ) {
-        uni_blocks_low++;
-    }
-
-    //unified mgmt settings per block (bits W/R/X: [11:9] bl3, [8:6] bl2, [5:3] bl1, [2:0] bl0)
-    uint32_t write_bit, read_bit, exec_bit;
-    uint32_t uni_block_perm = 0;
-
-    for ( size_t x = 0; x < IRAM0_TOTAL_UNI_BLOCKS; x++ ) {
-        esp_memprot_iram0_get_uni_block_sgnf_bits(x, &write_bit, &read_bit, &exec_bit);
-        if ( x <= uni_blocks_low ) {
-            if (lw) {
-                uni_block_perm |= write_bit;
-            }
-            if (lr) {
-                uni_block_perm |= read_bit;
-            }
-            if (lx) {
-                uni_block_perm |= exec_bit;
-            }
-        } else {
-            if (hw) {
-                uni_block_perm |= write_bit;
-            }
-            if (hr) {
-                uni_block_perm |= read_bit;
-            }
-            if (hx) {
-                uni_block_perm |= exec_bit;
-            }
-        }
-    }
-
-    //if splt.ddr not set yet, do required normalization to make the addr writeble into splt.mgmt cfg register
-    uint32_t reg_split_addr = 0;
-
-    if ( addr >= IRAM0_SPL_BLOCK_LOW ) {
-
-        //split Address must be WORD aligned
-        reg_split_addr = addr >> 2;
-        HAL_ASSERT(addr == (reg_split_addr << 2));
-
-        //use only 17 signf.bits as the cropped parts are constant for whole section (bits [16:0])
-        reg_split_addr = (reg_split_addr << DPORT_PMS_PRO_IRAM0_SRAM_4_SPLTADDR_S) & DPORT_PMS_PRO_IRAM0_SRAM_4_SPLTADDR_M;
-    }
-
-    //prepare high & low permission mask (bits: [22:20] high range, [19:17] low range)
-    uint32_t permission_mask = 0;
-    if ( lw ) {
-        permission_mask |= DPORT_PMS_PRO_IRAM0_SRAM_4_L_W;
-    }
-    if ( lr ) {
-        permission_mask |= DPORT_PMS_PRO_IRAM0_SRAM_4_L_R;
-    }
-    if ( lx ) {
-        permission_mask |= DPORT_PMS_PRO_IRAM0_SRAM_4_L_F;
-    }
-    if ( hw ) {
-        permission_mask |= DPORT_PMS_PRO_IRAM0_SRAM_4_H_W;
-    }
-    if ( hr ) {
-        permission_mask |= DPORT_PMS_PRO_IRAM0_SRAM_4_H_R;
-    }
-    if ( hx ) {
-        permission_mask |= DPORT_PMS_PRO_IRAM0_SRAM_4_H_F;
-    }
-
-    //write both cfg. registers
-    DPORT_WRITE_PERI_REG( DPORT_PMS_PRO_IRAM0_1_REG, uni_block_perm );
-    DPORT_WRITE_PERI_REG( DPORT_PMS_PRO_IRAM0_2_REG, reg_split_addr | permission_mask );
-}
-
-static inline void esp_memprot_iram0_get_split_sgnf_bits(bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx)
-{
-    *lw = DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_L_W );
-    *lr = DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_L_R );
-    *lx = DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_L_F );
-    *hw = DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_H_W );
-    *hr = DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_H_R );
-    *hx = DPORT_REG_GET_FIELD( DPORT_PMS_PRO_IRAM0_2_REG, DPORT_PMS_PRO_IRAM0_SRAM_4_H_F );
-}
-
-/**
- * === DRAM0 ====
- */
-
-#define DRAM0_TOTAL_UNI_BLOCKS          4
-#define DRAM0_UNI_BLOCK_0               0
-#define DRAM0_UNI_BLOCK_1               1
-#define DRAM0_UNI_BLOCK_2               2
-#define DRAM0_UNI_BLOCK_3               3
-
-#define DRAM0_SPL_BLOCK_BASE            0x3FFB0000
-
-//unified management (SRAM blocks 0-3)
-#define DRAM0_UNI_BLOCK_0_LOW           0x3FFB0000
-#define DRAM0_UNI_BLOCK_0_HIGH          0x3FFB1FFF
-#define DRAM0_UNI_BLOCK_1_LOW           0x3FFB2000
-#define DRAM0_UNI_BLOCK_1_HIGH          0x3FFB3FFF
-#define DRAM0_UNI_BLOCK_2_LOW           0x3FFB4000
-#define DRAM0_UNI_BLOCK_2_HIGH          0x3FFB5FFF
-#define DRAM0_UNI_BLOCK_3_LOW           0x3FFB6000
-#define DRAM0_UNI_BLOCK_3_HIGH          0x3FFB7FFF
-
-//split management (SRAM blocks 4-21)
-#define DRAM0_SPL_BLOCK_LOW             0x3FFB8000  //block 4 low
-#define DRAM0_SPL_BLOCK_HIGH            0x3FFFFFFF  //block 21 high
-#define DRAM0_SPLTADDR_MIN              0x3FFC0000  //block 6 low - minimum splitting address
-
-//DRAM0 interrupt status bitmasks
-#define DRAM0_INTR_ST_FAULTADDR_M       0x03FFFFC0  //(bits 25:6 in the reg)
-#define DRAM0_INTR_ST_FAULTADDR_S       0x4         //(bits 21:2 of real address)
-#define DRAM0_INTR_ST_FAULTADDR_HI      0x3FF00000  //(high nonsignificant bits 31:22 of the faulting address - constant)
-#define DRAM0_INTR_ST_OP_RW_BIT         BIT(4)      //read: 0, write: 1
-#define DRAM0_INTR_ST_OP_ATOMIC_BIT     BIT(5)      //non-atomic: 0, atomic: 1
-
-
-static inline uint32_t esp_memprot_dram0_get_intr_source_num(void)
-{
-    return ETS_PMS_PRO_DRAM0_ILG_INTR_SOURCE;
-}
-
-static inline void esp_memprot_dram0_intr_ena(bool enable)
-{
-    if ( enable ) {
-        DPORT_SET_PERI_REG_MASK( DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_EN );
-    } else {
-        DPORT_CLEAR_PERI_REG_MASK( DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_EN );
-    }
-}
-
-static inline bool esp_memprot_dram0_is_assoc_intr(void)
-{
-    return DPORT_GET_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_INTR) > 0;
-}
-
-static inline void esp_memprot_dram0_clear_intr(void)
-{
-    DPORT_SET_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_CLR);
-}
-
-static inline uint32_t esp_memprot_dram0_get_intr_ena_bit(void)
-{
-    return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_EN);
-}
-
-static inline uint32_t esp_memprot_dram0_get_intr_on_bit(void)
-{
-    return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_INTR);
-}
-
-static inline uint32_t esp_memprot_dram0_get_intr_clr_bit(void)
-{
-    return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_3_REG, DPORT_PMS_PRO_DRAM0_ILG_CLR);
-}
-
-static inline uint32_t esp_memprot_dram0_get_lock_bit(void)
-{
-    return DPORT_REG_GET_FIELD(DPORT_PMS_PRO_DRAM0_0_REG, DPORT_PMS_PRO_DRAM0_LOCK);
-}
-
-static inline void esp_memprot_dram0_get_uni_block_sgnf_bits(uint32_t block, uint32_t *write_bit, uint32_t *read_bit)
-{
-    HAL_ASSERT(block < DRAM0_TOTAL_UNI_BLOCKS);
-
-    switch ( block ) {
-    case DRAM0_UNI_BLOCK_0:
-        *write_bit = DPORT_PMS_PRO_DRAM0_SRAM_0_W;
-        *read_bit = DPORT_PMS_PRO_DRAM0_SRAM_0_R;
-        break;
-    case DRAM0_UNI_BLOCK_1:
-        *write_bit = DPORT_PMS_PRO_DRAM0_SRAM_1_W;
-        *read_bit = DPORT_PMS_PRO_DRAM0_SRAM_1_R;
-        break;
-    case DRAM0_UNI_BLOCK_2:
-        *write_bit = DPORT_PMS_PRO_DRAM0_SRAM_2_W;
-        *read_bit = DPORT_PMS_PRO_DRAM0_SRAM_2_R;
-        break;
-    case DRAM0_UNI_BLOCK_3:
-        *write_bit = DPORT_PMS_PRO_DRAM0_SRAM_3_W;
-        *read_bit = DPORT_PMS_PRO_DRAM0_SRAM_3_R;
-        break;
-    default:
-        abort();
-    }
-}
-
-static inline void esp_memprot_dram0_set_uni_block_perm(uint32_t block, bool write_perm, bool read_perm)
-{
-    HAL_ASSERT(block < DRAM0_TOTAL_UNI_BLOCKS);
-
-    uint32_t write_bit, read_bit;
-    esp_memprot_dram0_get_uni_block_sgnf_bits(block, &write_bit, &read_bit);
-
-    if ( write_perm ) {
-        DPORT_SET_PERI_REG_MASK( DPORT_PMS_PRO_DRAM0_1_REG, write_bit );
-    } else {
-        DPORT_CLEAR_PERI_REG_MASK( DPORT_PMS_PRO_DRAM0_1_REG, write_bit );
-    }
-
-    if ( read_perm ) {
-        DPORT_SET_PERI_REG_MASK( DPORT_PMS_PRO_DRAM0_1_REG, read_bit );
-    } else {
-        DPORT_CLEAR_PERI_REG_MASK( DPORT_PMS_PRO_DRAM0_1_REG, read_bit );
-    }
-}
-
-static inline uint32_t esp_memprot_dram0_get_uni_block_read_bit(uint32_t block)
-{
-    HAL_ASSERT(block < DRAM0_TOTAL_UNI_BLOCKS);
-
-    switch ( block ) {
-    case DRAM0_UNI_BLOCK_0:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_0_R );
-    case DRAM0_UNI_BLOCK_1:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_1_R );
-    case DRAM0_UNI_BLOCK_2:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_2_R );
-    case DRAM0_UNI_BLOCK_3:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_3_R );
-    default:
-        abort();
-    }
-}
-
-static inline uint32_t esp_memprot_dram0_get_uni_block_write_bit(uint32_t block)
-{
-    HAL_ASSERT(block < DRAM0_TOTAL_UNI_BLOCKS);
-
-    switch ( block ) {
-    case DRAM0_UNI_BLOCK_0:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_0_W );
-    case DRAM0_UNI_BLOCK_1:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_1_W );
-    case DRAM0_UNI_BLOCK_2:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_2_W );
-    case DRAM0_UNI_BLOCK_3:
-        return DPORT_REG_GET_FIELD( DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_3_W );
-    default:
-        abort();
-    }
-}
-
-static inline uint32_t esp_memprot_dram0_get_lock_reg(void)
-{
-    return DPORT_READ_PERI_REG(DPORT_PMS_PRO_DRAM0_0_REG);
-}
-
-//lock resets automatically on CPU restart
-static inline void esp_memprot_dram0_set_lock(void)
-{
-    DPORT_WRITE_PERI_REG( DPORT_PMS_PRO_DRAM0_0_REG, DPORT_PMS_PRO_DRAM0_LOCK);
-}
-
-static inline uint32_t esp_memprot_dram0_get_perm_reg(void)
-{
-    return DPORT_READ_PERI_REG(DPORT_PMS_PRO_DRAM0_1_REG);
-}
-
-static inline uint32_t esp_memprot_dram0_get_ena_reg(void)
-{
-    return DPORT_READ_PERI_REG(DPORT_PMS_PRO_DRAM0_3_REG);
-}
-
-static inline uint32_t esp_memprot_dram0_get_fault_reg(void)
-{
-    return DPORT_READ_PERI_REG(DPORT_PMS_PRO_DRAM0_4_REG);
-}
-
-static inline void esp_memprot_dram0_get_fault_status(uint32_t **faulting_address, uint32_t *op_type, uint32_t *op_subtype)
-{
-    uint32_t status_bits = esp_memprot_dram0_get_fault_reg();
-
-    uint32_t fault_addr = (status_bits & DRAM0_INTR_ST_FAULTADDR_M) >> DRAM0_INTR_ST_FAULTADDR_S;
-    *faulting_address = (uint32_t *)(fault_addr | DRAM0_INTR_ST_FAULTADDR_HI);
-
-    *op_type = (uint32_t)status_bits & DRAM0_INTR_ST_OP_RW_BIT;
-    *op_subtype = (uint32_t)status_bits & DRAM0_INTR_ST_OP_ATOMIC_BIT;
-}
-
-static inline void esp_memprot_dram0_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
-{
-    uint32_t addr = (uint32_t)split_addr;
-
-    //low boundary check provided by LD script. see comment in esp_memprot_iram0_set_prot()
-    HAL_ASSERT(addr <= DRAM0_SPL_BLOCK_HIGH);
-
-    //set low region
-    int uni_blocks_low = -1;
-    if ( addr >= DRAM0_UNI_BLOCK_0_LOW ) {
-        uni_blocks_low++;
-    }
-    if ( addr >= DRAM0_UNI_BLOCK_1_LOW ) {
-        uni_blocks_low++;
-    }
-    if ( addr >= DRAM0_UNI_BLOCK_2_LOW ) {
-        uni_blocks_low++;
-    }
-    if ( addr >= DRAM0_UNI_BLOCK_3_LOW ) {
-        uni_blocks_low++;
-    }
-
-    //set unified mgmt region
-    uint32_t write_bit, read_bit, uni_block_perm = 0;
-    for ( size_t x = 0; x < DRAM0_TOTAL_UNI_BLOCKS; x++ ) {
-        esp_memprot_dram0_get_uni_block_sgnf_bits(x, &write_bit, &read_bit);
-        if ( x <= uni_blocks_low ) {
-            if (lw) {
-                uni_block_perm |= write_bit;
-            }
-            if (lr) {
-                uni_block_perm |= read_bit;
-            }
-        } else {
-            if (hw) {
-                uni_block_perm |= write_bit;
-            }
-            if (hr) {
-                uni_block_perm |= read_bit;
-            }
-        }
-    }
-
-    //check split address is WORD aligned
-    uint32_t reg_split_addr = addr >> 2;
-    HAL_ASSERT(addr == (reg_split_addr << 2));
-
-    //shift aligned split address to proper bit offset
-    reg_split_addr = (reg_split_addr << DPORT_PMS_PRO_DRAM0_SRAM_4_SPLTADDR_S) & DPORT_PMS_PRO_DRAM0_SRAM_4_SPLTADDR_M;
-
-    //prepare high & low permission mask
-    uint32_t permission_mask = 0;
-    if (lw) {
-        permission_mask |= DPORT_PMS_PRO_DRAM0_SRAM_4_L_W;
-    }
-    if (lr) {
-        permission_mask |= DPORT_PMS_PRO_DRAM0_SRAM_4_L_R;
-    }
-    if (hw) {
-        permission_mask |= DPORT_PMS_PRO_DRAM0_SRAM_4_H_W;
-    }
-    if (hr) {
-        permission_mask |= DPORT_PMS_PRO_DRAM0_SRAM_4_H_R;
-    }
-
-    //write configuration to DPORT_PMS_PRO_DRAM0_1_REG
-    DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_DRAM0_1_REG, reg_split_addr | permission_mask | uni_block_perm);
-}
-
-static inline void esp_memprot_dram0_get_split_sgnf_bits(bool *lw, bool *lr, bool *hw, bool *hr)
-{
-    *lw = DPORT_REG_GET_FIELD( DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_L_W );
-    *lr = DPORT_REG_GET_FIELD( DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_L_R );
-    *hw = DPORT_REG_GET_FIELD( DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_H_W );
-    *hr = DPORT_REG_GET_FIELD( DPORT_PMS_PRO_DRAM0_1_REG, DPORT_PMS_PRO_DRAM0_SRAM_4_H_R );
-}
-
+    REG_WRITE(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_0_REG, 1);
+#ifdef PMS_DEBUG_ASSERTIONS
+    HAL_ASSERT((REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_0_REG) == 1) && "Value not stored to required register");
 #endif
+}
+
+static inline bool memprot_ll_get_iram0_dram0_split_line_lock(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_0_REG) == 1;
+}
+
+static inline void *memprot_ll_get_split_addr_from_reg(const uint32_t regval, const uint32_t base)
+{
+    constrain_reg_fields_t reg_val;
+    reg_val.val = regval;
+
+    uint32_t off = reg_val.splitaddr << I_D_SPLIT_LINE_SHIFT;
+    uint32_t level_off = 0;
+
+    do {
+        if (reg_val.cat0 == MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA) break;
+        level_off += I_D_SRAM_SEGMENT_SIZE/2;
+        if (reg_val.cat1 == MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA) break;
+        level_off += I_D_SRAM_SEGMENT_SIZE;
+        if (reg_val.cat2 == MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA) break;
+        level_off += I_D_SRAM_SEGMENT_SIZE;
+        if (reg_val.cat3 == MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA) break;
+        level_off += I_D_SRAM_SEGMENT_SIZE;
+        if (reg_val.cat4 == MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA) break;
+        level_off += I_D_SRAM_SEGMENT_SIZE;
+        if (reg_val.cat5 == MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA) break;
+        level_off += I_D_SRAM_SEGMENT_SIZE;
+        if (reg_val.cat6 == MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA) break;
+        return NULL; //wrong configuration
+    } while(0);
+
+    return (void *)(base + level_off + off);
+}
+
+/* ******************************************************************************************************
+ * *** ICACHE ***
+ * ******************************************************************************************************/
+static inline uint32_t memprot_ll_icache_set_permissions(const bool r, const bool w, const bool x)
+{
+    uint32_t permissions = 0;
+    if (r) {
+        permissions |= SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_R;
+    }
+    if (w) {
+        permissions |= SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_W;
+    }
+    if (x) {
+        permissions |= SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_F;
+    }
+
+    return permissions;
+}
+
+static inline void memprot_ll_icache_set_pms_area_0(const bool r, const bool w, const bool x)
+{
+    REG_SET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_CACHEDATAARRAY_PMS_0, memprot_ll_icache_set_permissions(r, w, x));
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_CACHEDATAARRAY_PMS_0);
+    HAL_ASSERT((expected == memprot_ll_icache_set_permissions(r, w, x)) && "Value not stored to required register");
+#endif
+}
+
+static inline void memprot_ll_icache_set_pms_area_1(const bool r, const bool w, const bool x)
+{
+    REG_SET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_CACHEDATAARRAY_PMS_1, memprot_ll_icache_set_permissions(r, w, x));
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_CACHEDATAARRAY_PMS_1);
+    HAL_ASSERT((expected == memprot_ll_icache_set_permissions(r, w, x)) && "Value not stored to required register");
+#endif
+}
+
+static inline void memprot_ll_icache_get_permissions(const uint32_t perms, bool *r, bool *w, bool *x)
+{
+    *r = perms & SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_R;
+    *w = perms & SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_W;
+    *x = perms & SENSITIVE_CORE_X_ICACHE_PMS_CONSTRAIN_SRAM_WORLD_X_F;
+}
+
+static inline void memprot_ll_icache_get_pms_area_0(bool *r, bool *w, bool *x)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_CACHEDATAARRAY_PMS_0);
+    memprot_ll_icache_get_permissions(permissions, r, w, x);
+}
+
+static inline void memprot_ll_icache_get_pms_area_1(bool *r, bool *w, bool *x)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_CACHEDATAARRAY_PMS_1);
+    memprot_ll_icache_get_permissions(permissions, r, w, x);
+}
+
+/* ******************************************************************************************************
+ * *** IRAM0 ***
+ * ******************************************************************************************************/
+static inline memprot_hal_err_t memprot_ll_iram0_get_intr_source_num(const int core, uint32_t* src_num)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *src_num = ETS_CORE0_IRAM0_PMS_INTR_SOURCE;
+            break;
+        case APP_CPU_NUM:
+            *src_num = ETS_CORE1_IRAM0_PMS_INTR_SOURCE;
+            break;
+        default:
+            return MEMP_HAL_FAIL;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+///////////////////////////////////
+// IRAM0 - SPLIT LINES
+static inline uint32_t memprot_ll_get_iram0_split_line_main_I_D_regval(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_1_REG);
+}
+
+static inline uint32_t memprot_ll_get_iram0_split_line_main_I_0_regval(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_2_REG);
+}
+
+static inline uint32_t memprot_ll_get_iram0_split_line_main_I_1_regval(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG);
+}
+
+static inline void memprot_ll_prepare_iram0_split_line_regval(const uint32_t addr, uint32_t* regval)
+{
+    //set category bits for given split line
+    uint32_t cat[7] = {[0 ... 6]=MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA};
+    for (size_t x=0; x<7; x++) {
+        if (addr <= sram_rg3_level_hlimits[x]) {
+            cat[x] = MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA;
+            break;
+        } else {
+            cat[x] = MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_BELOW_SA;
+        }
+    }
+
+    //resolve split address' significant bits
+    uint32_t conf_add = ((addr >> I_D_SPLIT_LINE_SHIFT) & SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SRAM_SPLITADDR_V);
+
+    //write values to required configuration-register
+    constrain_reg_fields_t cfg_reg_val = {
+            .cat0 = cat[0],
+            .cat1 = cat[1],
+            .cat2 = cat[2],
+            .cat3 = cat[3],
+            .cat4 = cat[4],
+            .cat5 = cat[5],
+            .cat6 = cat[6],
+            .splitaddr = conf_add,
+            .reserved = 0
+    };
+
+    *regval = cfg_reg_val.val;
+}
+
+// all the split lines registers have the same layout
+static inline memprot_hal_err_t memprot_ll_set_iram0_split_line(const void *line_addr, const uint32_t sensitive_reg)
+{
+    uint32_t addr = (uint32_t)line_addr;
+
+    //sanity check
+    MEMP_HAL_CHECK_IRAM_ADDR_IN_RANGE(addr)
+    MEMP_HAL_CHECK_SPLIT_ADDR_ALIGNED(addr)
+
+    uint32_t regval;
+    memprot_ll_prepare_iram0_split_line_regval(addr, &regval);
+
+    REG_WRITE(sensitive_reg, regval);
+#ifdef PMS_DEBUG_ASSERTIONS
+    HAL_ASSERT((REG_READ(sensitive_reg) == regval) && "Value not stored to required register");
+#endif
+
+    return MEMP_HAL_OK;
+}
+
+// set the main I/D splitting address - can be defined within either IRAM0 or DRAM0 range (IRAM0 preferred as the Memprot API stereotype)
+static inline memprot_hal_err_t memprot_ll_set_iram0_split_line_main_I_D(const void *line_addr)
+{
+    return memprot_ll_set_iram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_1_REG);
+}
+
+// set auxiliary split lines (IRAM0 range address required)
+static inline memprot_hal_err_t memprot_ll_set_iram0_split_line_I_0(const void *line_addr)
+{
+    return memprot_ll_set_iram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_2_REG);
+}
+
+static inline memprot_hal_err_t memprot_ll_set_iram0_split_line_I_1(const void *line_addr)
+{
+    return memprot_ll_set_iram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG);
+}
+
+// get configured category bits
+static inline uint32_t memprot_ll_get_iram0_split_line_main_I_D_cat(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_1_REG) & 0x3FFF;
+}
+
+static inline uint32_t memprot_ll_get_iram0_split_line_I_0_cat(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_2_REG) & 0x3FFF;
+}
+
+static inline uint32_t memprot_ll_get_iram0_split_line_I_1_cat(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG) & 0x3FFF;
+}
+
+// get configured splitting address (IRAM0-based)
+static inline void *memprot_ll_get_iram0_split_line_main_I_D(void)
+{
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_1_REG), SOC_DIRAM_IRAM_LOW);
+}
+
+static inline void *memprot_ll_get_iram0_split_line_I_0(void)
+{
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_2_REG), SOC_DIRAM_IRAM_LOW);
+}
+
+static inline void *memprot_ll_get_iram0_split_line_I_1(void)
+{
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG), SOC_DIRAM_IRAM_LOW);
+}
+
+///////////////////////////////////
+// IRAM0 - PMS CONFIGURATION
+
+// lock
+static inline void memprot_ll_iram0_set_pms_lock(void)
+{
+    REG_WRITE(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_0_REG, 1);
+#ifdef PMS_DEBUG_ASSERTIONS
+    HAL_ASSERT((REG_READ(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_0_REG) == 1) && "Value not stored to required register");
+#endif
+}
+
+static inline bool memprot_ll_iram0_get_pms_lock(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_0_REG) == 1;
+}
+
+// permission settings
+static inline uint32_t memprot_ll_iram0_set_permissions(const bool r, const bool w, const bool x)
+{
+    uint32_t permissions = 0;
+    if (r) {
+        permissions |= SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_X_R;
+    }
+    if (w) {
+        permissions |= SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_X_W;
+    }
+    if (x) {
+        permissions |= SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_X_F;
+    }
+
+    return permissions;
+}
+
+static inline void memprot_ll_iram0_set_pms_area_0(const bool r, const bool w, const bool x)
+{
+    REG_SET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_0, memprot_ll_iram0_set_permissions(r, w, x));
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_0);
+    HAL_ASSERT((expected == memprot_ll_iram0_set_permissions(r, w, x)) && "Value not stored to required register");
+#endif
+}
+
+static inline void memprot_ll_iram0_set_pms_area_1(const bool r, const bool w, const bool x)
+{
+    REG_SET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_1, memprot_ll_iram0_set_permissions(r, w, x));
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_1);
+    HAL_ASSERT((expected == memprot_ll_iram0_set_permissions(r, w, x)) && "Value not stored to required register");
+#endif
+}
+
+static inline void memprot_ll_iram0_set_pms_area_2(const bool r, const bool w, const bool x)
+{
+    REG_SET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_2, memprot_ll_iram0_set_permissions(r, w, x));
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_2);
+    HAL_ASSERT((expected == memprot_ll_iram0_set_permissions(r, w, x)) && "Value not stored to required register");
+#endif
+}
+
+static inline void memprot_ll_iram0_set_pms_area_3(const bool r, const bool w, const bool x)
+{
+    REG_SET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_3, memprot_ll_iram0_set_permissions(r, w, x));
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_3);
+    HAL_ASSERT((expected == memprot_ll_iram0_set_permissions(r, w, x)) && "Value not stored to required register");
+#endif
+}
+
+static inline void memprot_ll_iram0_get_permissions(const uint32_t perms, bool *r, bool *w, bool *x)
+{
+    *r = perms & SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_X_R;
+    *w = perms & SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_X_W;
+    *x = perms & SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_X_F;
+}
+
+static inline void memprot_ll_iram0_get_pms_area_0(bool *r, bool *w, bool *x)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_0);
+    memprot_ll_iram0_get_permissions(permissions, r, w, x);
+}
+
+static inline void memprot_ll_iram0_get_pms_area_1(bool *r, bool *w, bool *x)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_1);
+    memprot_ll_iram0_get_permissions(permissions, r, w, x);
+}
+
+static inline void memprot_ll_iram0_get_pms_area_2(bool *r, bool *w, bool *x)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_2);
+    memprot_ll_iram0_get_permissions(permissions, r, w, x);
+}
+
+static inline void memprot_ll_iram0_get_pms_area_3(bool *r, bool *w, bool *x)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_2_REG, SENSITIVE_CORE_X_IRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_3);
+    memprot_ll_iram0_get_permissions(permissions, r, w, x);
+}
+
+
+///////////////////////////////////
+// IRAM0 - MONITOR
+
+// lock
+static inline memprot_hal_err_t memprot_ll_iram0_set_monitor_lock(const int core)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            REG_WRITE(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_0_REG, 1);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_READ(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_0_REG) == 1) && "Value not stored to required register");
+#endif
+            break;
+        case APP_CPU_NUM:
+            REG_WRITE(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_0_REG, 1);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_READ(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_0_REG) == 1) && "Value not stored to required register");
+#endif
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_iram0_get_monitor_lock(const int core, bool* locked)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *locked = REG_READ(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_0_REG) == 1;
+            break;
+        case APP_CPU_NUM:
+            *locked = REG_READ(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_0_REG) == 1;
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+// interrupt enable/clear
+static inline memprot_hal_err_t memprot_ll_iram0_set_monitor_en(const int core, const bool enable)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            if (enable) {
+                REG_SET_BIT(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_EN);
+#ifdef PMS_DEBUG_ASSERTIONS
+                HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_EN) > 0) && "Value not stored to required register");
+#endif
+            } else {
+                REG_CLR_BIT(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_EN);
+#ifdef PMS_DEBUG_ASSERTIONS
+                HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_EN) == 0) && "Value not stored to required register");
+#endif
+            }
+            break;
+        case APP_CPU_NUM:
+            if (enable) {
+                REG_SET_BIT(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_EN);
+#ifdef PMS_DEBUG_ASSERTIONS
+                HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_EN) > 0) && "Value not stored to required register");
+#endif
+            } else {
+                REG_CLR_BIT(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_EN);
+#ifdef PMS_DEBUG_ASSERTIONS
+                HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_EN) == 0) && "Value not stored to required register");
+#endif
+            }
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_iram0_get_monitor_en(const int core, bool* enabled)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *enabled = REG_GET_FIELD(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_EN) == 1;
+            break;
+        case APP_CPU_NUM:
+            *enabled = REG_GET_FIELD(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_EN) == 1;
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_iram0_set_monitor_intrclr(const int core)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            REG_SET_BIT(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_CLR);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_CLR) > 0) && "Value not stored to required register");
+#endif
+            break;
+        case APP_CPU_NUM:
+            REG_SET_BIT(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_CLR);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_CLR) > 0) && "Value not stored to required register");
+#endif
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_iram0_reset_monitor_intrclr(const int core)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            REG_CLR_BIT(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_CLR);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_CLR) == 0) && "Value not stored to required register");
+#endif
+            break;
+        case APP_CPU_NUM:
+            REG_CLR_BIT(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_CLR);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_CLR) == 0) && "Value not stored to required register");
+#endif
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_iram0_get_monitor_intrclr(const int core, bool* cleared)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *cleared = REG_GET_BIT(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_CLR) > 0;
+            break;
+        case APP_CPU_NUM:
+            *cleared = REG_GET_BIT(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_CLR) > 0;
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_iram0_get_monitor_enable_register(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_READ(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_1_REG);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_READ(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_1_REG);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+// permission violation status
+static inline memprot_hal_err_t memprot_ll_iram0_get_monitor_status_intr(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_INTR);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_INTR);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_iram0_get_monitor_status_fault_wr(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_STATUS_WR);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_STATUS_WR);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_iram0_get_monitor_status_fault_loadstore(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_STATUS_LOADSTORE);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_STATUS_LOADSTORE);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_iram0_get_monitor_status_fault_world(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_STATUS_WORLD);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_STATUS_WORLD);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_iram0_get_monitor_status_fault_addr(const int core, void** addr)
+{
+    uint32_t reg_off;
+
+    switch (core) {
+        case PRO_CPU_NUM:
+            reg_off = REG_GET_FIELD(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_STATUS_ADDR);
+            break;
+        case APP_CPU_NUM:
+            reg_off = REG_GET_FIELD(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_VIOLATE_STATUS_ADDR);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    *addr = (void*)(reg_off > 0 ? (reg_off << I_FAULT_ADDR_SHIFT) + IRAM0_ADDRESS_LOW : 0);
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_iram0_get_monitor_status_register(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_READ(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_READ(SENSITIVE_CORE_1_IRAM0_PMS_MONITOR_2_REG);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+
+/* ******************************************************************************************************
+ * *** RTC_FAST ***
+ */
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_intr_source_num(const int core, uint32_t* src_num)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *src_num = ETS_CORE0_PIF_PMS_INTR_SOURCE;
+            break;
+        case APP_CPU_NUM:
+            *src_num = ETS_CORE1_PIF_PMS_INTR_SOURCE;
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+//shared PIF PMS lock
+//!!!: use after ALL the constraints have been set
+static inline memprot_hal_err_t memprot_ll_set_pif_constraint_lock(const int core)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            REG_WRITE(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_0_REG, 1);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_READ(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_0_REG) == 1) && "Value not stored to required register");
+#endif
+            break;
+        case APP_CPU_NUM:
+            REG_WRITE(SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_0_REG, 1);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_READ(SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_0_REG) == 1) && "Value not stored to required register");
+#endif
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_get_pif_constraint_lock(const int core, bool* locked)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *locked = REG_READ(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_0_REG) == 1;
+            break;
+        case APP_CPU_NUM:
+            *locked = REG_READ(SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_0_REG) == 1;
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_splitaddr_register(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_READ(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_9_REG);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_READ(SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_9_REG);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+/* ********************************
+ * IRAM0 RTCFAST - SPLIT LINES
+ */
+
+static inline memprot_hal_err_t memprot_ll_set_rtcfast_split_line(const int core, const void *line_addr, const memprot_hal_world_t world)
+{
+    uint32_t addr = (uint32_t)line_addr;
+
+    if (addr < SOC_RTC_IRAM_LOW || addr >= SOC_RTC_IRAM_HIGH) {
+        return MEMP_HAL_ERR_SPLIT_ADDR_OUT_OF_RANGE;
+    }
+
+    if (addr % 0x4 != 0) {
+        return MEMP_HAL_ERR_SPLIT_ADDR_UNALIGNED;
+    }
+
+    if (core != PRO_CPU_NUM && core != APP_CPU_NUM) {
+        return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    uint32_t mask;
+    uint32_t val;
+
+    switch (world) {
+    case MEMP_HAL_WORLD_0:
+        mask = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_M : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_M;
+        val = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_V : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_V;
+        break;
+    case MEMP_HAL_WORLD_1:
+        mask = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_1_M : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_1_M;
+        val = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_1_V : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_1_V;
+        break;
+    default:
+        return MEMP_HAL_ERR_WORLD_INVALID;
+    }
+
+    uint32_t reg = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_9_REG : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_9_REG;
+
+    CLEAR_PERI_REG_MASK(reg, mask);
+#ifdef PMS_DEBUG_ASSERTIONS
+    HAL_ASSERT((GET_PERI_REG_MASK(reg, mask) == 0) && "Value not stored to required register");
+#endif
+    REG_SET_BITS(reg, mask, (addr >> 2) & val);
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_READ(reg) & mask;
+    HAL_ASSERT((expected == ((addr >> 2) & val)) && "Value not stored to required register");
+#endif
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_get_rtcfast_split_line(const int core, const memprot_hal_world_t world, void **line_addr)
+{
+    if (core != PRO_CPU_NUM && core != APP_CPU_NUM) {
+        return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    uint32_t mask;
+    uint32_t shift;
+
+    switch (world) {
+    case MEMP_HAL_WORLD_0:
+        mask = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_M : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_M;
+        shift = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_S : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_S;
+        break;
+    case MEMP_HAL_WORLD_1:
+        mask = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_1_M : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_1_M;
+        shift = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_1_S : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_1_S;
+        break;
+    default:
+        return MEMP_HAL_ERR_WORLD_INVALID;
+    }
+
+    uint32_t reg_addr = REG_READ(core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_9_REG : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_9_REG);
+
+    *line_addr = (void *)((((reg_addr & mask) >> shift) << 2) + SOC_RTC_IRAM_LOW);
+
+    return MEMP_HAL_OK;
+}
+
+///////////////////////////////////
+// RTC_FAST - PMS CONFIGURATION
+
+// permission settings
+static inline uint32_t memprot_ll_rtcfast_set_permissions(const bool r, const bool w, const bool x)
+{
+    uint32_t permissions = 0;
+    if (r) {
+        permissions |= SENSITIVE_CORE_X_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_X_R;
+    }
+    if (w) {
+        permissions |= SENSITIVE_CORE_X_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_X_W;
+    }
+    if (x) {
+        permissions |= SENSITIVE_CORE_X_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_X_F;
+    }
+
+    return permissions;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_set_pms_area(const int core, const bool r, const bool w, const bool x, const memprot_hal_world_t world, const memprot_hal_area_t area)
+{
+    if (core != PRO_CPU_NUM && core != APP_CPU_NUM) {
+        return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    uint32_t bits;
+    uint32_t mask;
+
+    switch (world) {
+    case MEMP_HAL_WORLD_0: {
+        switch (area) {
+        case MEMP_HAL_AREA_LOW:
+            bits = memprot_ll_rtcfast_set_permissions(r, w, x) << (core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_L_S : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_L_S);
+            mask = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_L_M : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_L_M;
+            break;
+        case MEMP_HAL_AREA_HIGH:
+            bits = memprot_ll_rtcfast_set_permissions(r, w, x) << (core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_H_S : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_H_S);
+            mask = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_H_M : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_H_M;
+            break;
+        default:
+            return MEMP_HAL_ERR_AREA_INVALID;
+        }
+    } break;
+    case MEMP_HAL_WORLD_1: {
+        switch (area) {
+        case MEMP_HAL_AREA_LOW:
+            bits = memprot_ll_rtcfast_set_permissions(r, w, x) << (core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_L_S : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_L_S);
+            mask = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_L_M : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_L_M;
+            break;
+        case MEMP_HAL_AREA_HIGH:
+            bits = memprot_ll_rtcfast_set_permissions(r, w, x) << (core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_H_S : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_H_S);
+            mask = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_H_M : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_H_M;
+            break;
+        default:
+            return MEMP_HAL_ERR_AREA_INVALID;
+        }
+    } break;
+    default:
+        return MEMP_HAL_ERR_WORLD_INVALID;
+    }
+
+    uint32_t reg = core == PRO_CPU_NUM ? SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_10_REG : SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_10_REG;
+
+    CLEAR_PERI_REG_MASK(reg, mask);
+#ifdef PMS_DEBUG_ASSERTIONS
+    HAL_ASSERT((GET_PERI_REG_MASK(reg, mask) == 0) && "Value not stored to required register");
+#endif
+    REG_SET_BITS(reg, bits, mask);
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_READ(reg) & mask;
+    HAL_ASSERT((expected == bits) && "Value not stored to required register");
+#endif
+
+    return MEMP_HAL_OK;
+}
+
+static inline void memprot_ll_rtcfast_get_permissions(const uint32_t perms, bool *r, bool *w, bool *x)
+{
+    *r = perms & SENSITIVE_CORE_X_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_X_R;
+    *w = perms & SENSITIVE_CORE_X_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_X_W;
+    *x = perms & SENSITIVE_CORE_X_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_X_F;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_pms_area(const int core, bool *r, bool *w, bool *x, const memprot_hal_world_t world, const memprot_hal_area_t area)
+{
+    if (core != PRO_CPU_NUM && core != APP_CPU_NUM) {
+        return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    uint32_t permissions = 0;
+
+    switch (world) {
+    case MEMP_HAL_WORLD_0: {
+        switch (area) {
+        case MEMP_HAL_AREA_LOW:
+            if (core == PRO_CPU_NUM) {
+                permissions = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_10_REG, SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_L);
+            } else {
+                permissions = REG_GET_FIELD(SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_10_REG, SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_L);
+            }
+            break;
+        case MEMP_HAL_AREA_HIGH:
+            if (core == PRO_CPU_NUM) {
+                permissions = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_10_REG, SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_H);
+            } else {
+                permissions = REG_GET_FIELD(SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_10_REG, SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_H);
+            }
+            break;
+        default:
+            return MEMP_HAL_ERR_AREA_INVALID;
+        }
+    } break;
+    case MEMP_HAL_WORLD_1: {
+        switch (area) {
+        case MEMP_HAL_AREA_LOW:
+            if (core == PRO_CPU_NUM) {
+                permissions = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_10_REG, SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_L);
+            } else {
+                permissions = REG_GET_FIELD(SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_10_REG, SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_L);
+            }
+            break;
+        case MEMP_HAL_AREA_HIGH:
+            if (core == PRO_CPU_NUM) {
+                permissions = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_10_REG, SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_H);
+            } else {
+                permissions = REG_GET_FIELD(SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_10_REG, SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_H);
+            }
+            break;
+        default:
+            return MEMP_HAL_ERR_AREA_INVALID;
+        }
+    } break;
+    default:
+        return MEMP_HAL_ERR_WORLD_INVALID;
+    }
+
+    memprot_ll_rtcfast_get_permissions(permissions, r, w, x);
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_permission_register(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_READ(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_10_REG);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_READ(SENSITIVE_CORE_1_PIF_PMS_CONSTRAIN_10_REG);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+///////////////////////////////////
+// RTC_FAST - MONITOR
+
+// lock
+static inline memprot_hal_err_t memprot_ll_rtcfast_set_monitor_lock(const int core)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            REG_WRITE(SENSITIVE_CORE_0_PIF_PMS_MONITOR_0_REG, 1);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_READ(SENSITIVE_CORE_0_PIF_PMS_MONITOR_0_REG) == 1) && "Value not stored to required register");
+#endif
+            break;
+        case APP_CPU_NUM:
+            REG_WRITE(SENSITIVE_CORE_1_PIF_PMS_MONITOR_0_REG, 1);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_READ(SENSITIVE_CORE_1_PIF_PMS_MONITOR_0_REG) == 1) && "Value not stored to required register");
+#endif
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_monitor_lock(const int core, bool* locked)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *locked = REG_READ(SENSITIVE_CORE_0_PIF_PMS_MONITOR_0_REG) == 1;
+            break;
+        case APP_CPU_NUM:
+            *locked = REG_READ(SENSITIVE_CORE_1_PIF_PMS_MONITOR_0_REG) == 1;
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+// interrupt enable/clear
+static inline memprot_hal_err_t memprot_ll_rtcfast_set_monitor_en(const int core, const bool enable)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            if (enable) {
+                REG_SET_BIT(SENSITIVE_CORE_0_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_EN);
+#ifdef PMS_DEBUG_ASSERTIONS
+                HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_0_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_EN) > 0) && "Value not stored to required register");
+#endif
+            } else {
+                REG_CLR_BIT(SENSITIVE_CORE_0_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_EN);
+#ifdef PMS_DEBUG_ASSERTIONS
+                HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_0_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_EN) == 0) && "Value not stored to required register");
+#endif
+            }
+            break;
+        case APP_CPU_NUM:
+            if (enable) {
+                REG_SET_BIT(SENSITIVE_CORE_1_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_EN);
+#ifdef PMS_DEBUG_ASSERTIONS
+                HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_1_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_EN) > 0) && "Value not stored to required register");
+#endif
+            } else {
+                REG_CLR_BIT(SENSITIVE_CORE_1_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_EN);
+#ifdef PMS_DEBUG_ASSERTIONS
+                HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_1_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_EN) == 0) && "Value not stored to required register");
+#endif
+            }
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_monitor_en(const int core, bool* enabled)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *enabled = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_EN) > 0;
+            break;
+        case APP_CPU_NUM:
+            *enabled = REG_GET_FIELD(SENSITIVE_CORE_1_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_EN) > 0;
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_monitor_intrclr(const int core, bool* cleared)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *cleared = REG_GET_BIT(SENSITIVE_CORE_0_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_CLR) > 0;
+            break;
+        case APP_CPU_NUM:
+            *cleared = REG_GET_BIT(SENSITIVE_CORE_1_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_CLR) > 0;
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_set_monitor_intrclr(const int core)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            REG_SET_BIT(SENSITIVE_CORE_0_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_CLR);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_0_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_CLR) > 0) && "Value not stored to required register");
+#endif
+            break;
+        case APP_CPU_NUM:
+            REG_SET_BIT(SENSITIVE_CORE_1_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_CLR);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_1_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_CLR) > 0) && "Value not stored to required register");
+#endif
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_reset_monitor_intrclr(const int core)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            REG_CLR_BIT(SENSITIVE_CORE_0_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_CLR);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_0_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_CLR) == 0) && "Value not stored to required register");
+#endif
+            break;
+        case APP_CPU_NUM:
+            REG_CLR_BIT(SENSITIVE_CORE_1_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_CLR);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_1_PIF_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_CLR) == 0) && "Value not stored to required register");
+#endif
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_monitor_register(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_READ(SENSITIVE_CORE_0_PIF_PMS_MONITOR_1_REG);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_READ(SENSITIVE_CORE_1_PIF_PMS_MONITOR_1_REG);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+// permission violation status
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_monitor_status_intr(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_INTR);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_1_PIF_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_INTR);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_monitor_status_fault_addr(const int core, void** addr)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *addr = (void*)REG_READ(SENSITIVE_CORE_0_PIF_PMS_MONITOR_3_REG);
+            break;
+        case APP_CPU_NUM:
+            *addr = (void*)REG_READ(SENSITIVE_CORE_1_PIF_PMS_MONITOR_3_REG);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_monitor_status_fault_world(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_STATUS_HWORLD);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_1_PIF_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_STATUS_HWORLD);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_monitor_status_fault_loadstore(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_STATUS_HPORT_0);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_1_PIF_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_STATUS_HPORT_0);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_monitor_status_fault_wr(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_PIF_PMS_MONITOR_VIOLATE_STATUS_HWRITE);
+            break;
+        case APP_CPU_NUM:
+            *regval =  REG_GET_FIELD(SENSITIVE_CORE_1_PIF_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_PIF_PMS_MONITOR_VIOLATE_STATUS_HWRITE);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+
+/* ******************************************************************************************************
+ * *** DRAM0 ***
+ * ******************************************************************************************************/
+
+static inline memprot_hal_err_t memprot_ll_dram0_get_intr_source_num(const int core, uint32_t* src_num)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *src_num = ETS_CORE0_DRAM0_PMS_INTR_SOURCE;
+            break;
+        case APP_CPU_NUM:
+            *src_num = ETS_CORE1_DRAM0_PMS_INTR_SOURCE;
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+///////////////////////////////////
+// DRAM0 - SPLIT LINES
+static inline uint32_t memprot_ll_get_dram0_split_line_main_D_0_regval(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_4_REG);
+}
+
+static inline uint32_t memprot_ll_get_dram0_split_line_main_D_1_regval(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_5_REG);
+}
+
+static inline void memprot_ll_prepare_dram0_split_line_regval(const uint32_t addr, uint32_t* regval)
+{
+    //set category bits for given split line
+    uint32_t cat[7] = {[0 ... 6]=MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA};
+    for (size_t x=0; x<7; x++) {
+        if (addr <= MAP_IRAM_TO_DRAM(sram_rg3_level_hlimits[x])) {
+            cat[x] = MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA;
+            break;
+        } else {
+            cat[x] = MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_BELOW_SA;
+        }
+    }
+
+    //resolve split address' significant bits
+    uint32_t conf_add = ((addr >> I_D_SPLIT_LINE_SHIFT) & SENSITIVE_CORE_X_DRAM0_DMA_SRAM_LINE_0_SPLITADDR_V);
+
+    //write values to required configuration-register
+    constrain_reg_fields_t cfg_reg_val = {
+            .cat0 = cat[0],
+            .cat1 = cat[1],
+            .cat2 = cat[2],
+            .cat3 = cat[3],
+            .cat4 = cat[4],
+            .cat5 = cat[5],
+            .cat6 = cat[6],
+            .splitaddr = conf_add,
+            .reserved = 0
+    };
+
+
+    *regval = cfg_reg_val.val;
+}
+
+static inline memprot_hal_err_t memprot_ll_set_dram0_split_line(const void *line_addr, const uint32_t sensitive_reg)
+{
+    uint32_t addr = (uint32_t)line_addr;
+
+    //sanity check
+    MEMP_HAL_CHECK_DRAM_ADDR_IN_RANGE(addr)
+    MEMP_HAL_CHECK_SPLIT_ADDR_ALIGNED(addr)
+
+    uint32_t regval;
+    memprot_ll_prepare_dram0_split_line_regval(addr, &regval);
+
+    REG_WRITE(sensitive_reg, regval);
+#ifdef PMS_DEBUG_ASSERTIONS
+    HAL_ASSERT((REG_READ(sensitive_reg) == regval) && "Value not stored to required register");
+#endif
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_set_dram0_split_line_D_0(const void *line_addr)
+{
+    return memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_4_REG);
+}
+
+static inline memprot_hal_err_t memprot_ll_set_dram0_split_line_D_1(const void *line_addr)
+{
+    return memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_5_REG);
+}
+
+static inline void *memprot_ll_get_dram0_split_line_D_0(void)
+{
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_4_REG), SOC_DIRAM_DRAM_LOW);
+}
+
+static inline void *memprot_ll_get_dram0_split_line_D_1(void)
+{
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_5_REG), SOC_DIRAM_DRAM_LOW);
+}
+
+static inline uint32_t memprot_ll_get_dram0_split_line_D_0_cat(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_4_REG) & 0x3FFF;
+}
+
+static inline uint32_t memprot_ll_get_dram0_split_line_D_1_cat(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_5_REG) & 0x3FFF;
+}
+
+///////////////////////////////////
+// DRAM0 - PMS CONFIGURATION
+
+// lock
+static inline void memprot_ll_dram0_set_pms_lock(void)
+{
+    REG_WRITE(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_0_REG, 1);
+#ifdef PMS_DEBUG_ASSERTIONS
+    HAL_ASSERT((REG_READ(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_0_REG) == 1) && "Value not stored to required register");
+#endif
+}
+
+static inline bool memprot_ll_dram0_get_pms_lock(void)
+{
+    return REG_READ(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_0_REG) == 1;
+}
+
+// permission settings
+static inline uint32_t memprot_ll_dram0_set_permissions(const bool r, const bool w)
+{
+    uint32_t permissions = 0;
+    if (r) {
+        permissions |= SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_X_R;
+    }
+    if (w) {
+        permissions |= SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_X_W;
+    }
+
+    return permissions;
+}
+
+static inline void memprot_ll_dram0_set_pms_area_0(const bool r, const bool w)
+{
+    REG_SET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_0, memprot_ll_dram0_set_permissions(r, w));
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_GET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_0);
+    HAL_ASSERT((expected == memprot_ll_dram0_set_permissions(r, w)) && "Value not stored to required register");
+#endif
+}
+
+static inline void memprot_ll_dram0_set_pms_area_1(const bool r, const bool w)
+{
+    REG_SET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_1, memprot_ll_dram0_set_permissions(r, w));
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_GET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_1);
+    HAL_ASSERT((expected == memprot_ll_dram0_set_permissions(r, w)) && "Value not stored to required register");
+#endif
+}
+
+static inline void memprot_ll_dram0_set_pms_area_2(const bool r, const bool w)
+{
+    REG_SET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_2, memprot_ll_dram0_set_permissions(r, w));
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_GET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_2);
+    HAL_ASSERT((expected == memprot_ll_dram0_set_permissions(r, w)) && "Value not stored to required register");
+#endif
+}
+
+static inline void memprot_ll_dram0_set_pms_area_3(const bool r, const bool w)
+{
+    REG_SET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_3, memprot_ll_dram0_set_permissions(r, w));
+#ifdef PMS_DEBUG_ASSERTIONS
+    uint32_t expected = REG_GET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_3);
+    HAL_ASSERT((expected == memprot_ll_dram0_set_permissions(r, w)) && "Value not stored to required register");
+#endif
+}
+
+static inline void memprot_ll_dram0_get_permissions(const uint32_t perms, bool *r, bool *w )
+{
+    *r = perms & SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_X_R;
+    *w = perms & SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_X_W;
+}
+
+static inline void memprot_ll_dram0_get_pms_area_0(bool *r, bool *w)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_0);
+    memprot_ll_dram0_get_permissions(permissions, r, w);
+}
+
+static inline void memprot_ll_dram0_get_pms_area_1(bool *r, bool *w)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_1);
+    memprot_ll_dram0_get_permissions(permissions, r, w);
+}
+
+static inline void memprot_ll_dram0_get_pms_area_2(bool *r, bool *w)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_2);
+    memprot_ll_dram0_get_permissions(permissions, r, w);
+}
+
+static inline void memprot_ll_dram0_get_pms_area_3(bool *r, bool *w)
+{
+    uint32_t permissions = REG_GET_FIELD(SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_1_REG, SENSITIVE_CORE_X_DRAM0_PMS_CONSTRAIN_SRAM_WORLD_0_PMS_3);
+    memprot_ll_dram0_get_permissions(permissions, r, w);
+}
+
+
+///////////////////////////////////
+// DRAM0 - MONITOR
+
+// lock
+static inline memprot_hal_err_t memprot_ll_dram0_set_monitor_lock(const int core)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            REG_WRITE(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_0_REG, 1);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_READ(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_0_REG) == 1) && "Value not stored to required register");
+#endif
+            break;
+        case APP_CPU_NUM:
+            REG_WRITE(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_0_REG, 1);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_READ(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_0_REG) == 1) && "Value not stored to required register");
+#endif
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_dram0_get_monitor_lock(const int core, bool* locked)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *locked = REG_READ(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_0_REG) == 1;
+            break;
+        case APP_CPU_NUM:
+            *locked = REG_READ(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_0_REG) == 1;
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+// interrupt enable/clear
+static inline memprot_hal_err_t memprot_ll_dram0_set_monitor_en(const int core, const bool enable)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            if (enable) {
+                REG_SET_BIT(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_EN);
+#ifdef PMS_DEBUG_ASSERTIONS
+                HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_EN) > 0) && "Value not stored to required register");
+#endif
+            } else {
+                REG_CLR_BIT(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_EN);
+#ifdef PMS_DEBUG_ASSERTIONS
+                HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_EN) == 0) && "Value not stored to required register");
+#endif
+            }
+            break;
+        case APP_CPU_NUM:
+            if (enable) {
+                REG_SET_BIT(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_EN);
+#ifdef PMS_DEBUG_ASSERTIONS
+                HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_EN) > 0) && "Value not stored to required register");
+#endif
+            } else {
+                REG_CLR_BIT(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_EN);
+#ifdef PMS_DEBUG_ASSERTIONS
+                HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_EN) == 0) && "Value not stored to required register");
+#endif
+            }
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_dram0_get_monitor_en(const int core, bool* enabled)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *enabled = REG_GET_BIT(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_EN) > 0;
+            break;
+        case APP_CPU_NUM:
+            *enabled = REG_GET_BIT(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_EN) > 0;
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_dram0_set_monitor_intrclr(const int core)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            REG_SET_BIT(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_CLR);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_CLR) > 0) && "Value not stored to required register");
+#endif
+            break;
+        case APP_CPU_NUM:
+            REG_SET_BIT(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_CLR);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_CLR) > 0) && "Value not stored to required register");
+#endif
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_dram0_reset_monitor_intrclr(const int core)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            REG_CLR_BIT(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_CLR);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_CLR) == 0) && "Value not stored to required register");
+#endif
+            break;
+        case APP_CPU_NUM:
+            REG_CLR_BIT(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_CLR);
+#ifdef PMS_DEBUG_ASSERTIONS
+            HAL_ASSERT((REG_GET_BIT(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_CLR) == 0) && "Value not stored to required register");
+#endif
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_dram0_get_monitor_intrclr(const int core, bool* cleared)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *cleared = REG_GET_BIT(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_CLR) > 0;
+            break;
+        case APP_CPU_NUM:
+            *cleared = REG_GET_BIT(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_1_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_CLR) > 0;
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_dram0_get_monitor_enable_register(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_READ(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_1_REG);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_READ(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_1_REG);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+// permission violation status
+static inline memprot_hal_err_t memprot_ll_dram0_get_monitor_status_intr(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_INTR);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_INTR);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_dram0_get_monitor_status_fault_world(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_WORLD);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_STATUS_WORLD);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_dram0_get_monitor_status_fault_addr(const int core, void** addr)
+{
+    uint32_t reg_off;
+
+    switch (core) {
+        case PRO_CPU_NUM:
+            reg_off = REG_GET_FIELD(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_ADDR);
+            break;
+        case APP_CPU_NUM:
+            reg_off = REG_GET_FIELD(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_STATUS_ADDR);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    *addr = (void*)(reg_off > 0 ? (reg_off << D_FAULT_ADDR_SHIFT) + DRAM0_ADDRESS_LOW : 0);
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_dram0_get_monitor_status_fault_wr(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_3_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_WR);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_3_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_STATUS_WR);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
+
+static inline memprot_hal_err_t memprot_ll_dram0_get_monitor_status_fault_byte_en(const int core, uint32_t* regval)
+{
+    switch (core) {
+        case PRO_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_BYTEEN);
+            break;
+        case APP_CPU_NUM:
+            *regval = REG_GET_FIELD(SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_1_DRAM0_PMS_MONITOR_VIOLATE_STATUS_BYTEEN);
+            break;
+        default:
+            return MEMP_HAL_ERR_CORE_INVALID;
+    }
+
+    return MEMP_HAL_OK;
+}
 
 #ifdef __cplusplus
 }

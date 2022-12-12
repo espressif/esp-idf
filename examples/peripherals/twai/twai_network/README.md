@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # TWAI Network Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -15,7 +18,7 @@ This example requires at least two targets (e.g., an ESP32 or ESP32-S2) to act a
 
 The following diagram illustrates an example network:
 
-```
+```text
     ----------   ----------   --------------
    |  Master  | |  Slave   | | Listen Only  |
    |          | |          | |              |
@@ -44,26 +47,23 @@ Note: If you don't have an external transceiver, you can still run the [TWAI Sel
 
 For each node in the TWAI network (i.e., Master, Slave, Listen Only)...
 
-* Set the target of the build (where `{IDF_TARGET}` stands for the target chip such as `eszp32` or `esp32s2`).
+* Set the target of the build (where `{IDF_TARGET}` stands for the target chip such as `esp32` or `esp32s2`).
 * Then run `menuconfig` to configure the example.
 
-```
+```sh
 idf.py set-target {IDF_TARGET}
 idf.py menuconfig
 ```
 
 * Under `Example Configuration`, configure the pin assignments using the options `TX GPIO Number` and `RX GPIO Number` according to how the target was connected to the transceiver. By default, `TX GPIO Number` and `RX GPIO Number` are set to the following values:
-    * On the ESP32, `TX GPIO Number` and `RX GPIO Number` default to `21` and `22` respectively
-    * On the ESP32-S2, `TX GPIO Number` and `RX GPIO Number` default to `20` and `21` respectively
-    * On the ESP32-S3, `TX GPIO Number` and `RX GPIO Number` default to `4` and `5` respectively
-    * On the ESP32-C3, `TX GPIO Number` and `RX GPIO Number` default to `2` and `3` respectively
-
+  * On the ESP32, `TX GPIO Number` and `RX GPIO Number` default to `21` and `22` respectively
+  * On other chips, `TX GPIO Number` and `RX GPIO Number` default to `0` and `2` respectively
 
 ### Build and Flash
 
 For each node, build the project and flash it to the board, then run monitor tool to view serial output:
 
-```
+```sh
 idf.py -p PORT flash monitor
 ```
 
@@ -76,7 +76,8 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 ## Example Output
 
 Network Master
-```
+
+```text
 I (345) TWAI Master: Driver installed
 I (345) TWAI Master: Driver started
 I (345) TWAI Master: Transmitting ping
@@ -106,7 +107,8 @@ I (14575) TWAI Master: Driver uninstalled
 ```
 
 Network Slave
-```
+
+```text
 Slave starting in 3
 Slave starting in 2
 Slave starting in 1
@@ -139,7 +141,8 @@ I (18292) TWAI Slave: Driver uninstalled
 ```
 
 Network Listen Only
-```
+
+```text
 I (326) TWAI Listen Only: Driver installed
 I (326) TWAI Listen Only: Driver started
 I (366) TWAI Listen Only: Received master ping

@@ -1,25 +1,14 @@
-// Copyright 2010-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _DPORT_ACCESS_H_
 #define _DPORT_ACCESS_H_
 
 #include <stdint.h>
-
-#include "esp_attr.h"
-#include "esp32/dport_access.h"
-
+#include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -36,11 +25,11 @@ extern "C" {
 //    This method uses the pre-read APB implementation(*) without stall other CPU.
 //    This is beneficial for single readings.
 // 2) If you want to make a sequence of DPORT reads to buffer,
-//    use dport_read_buffer(buff_out, address, num_words),
+//    use esp_dport_access_read_buffer(buff_out, address, num_words),
 //    it is the faster method and it doesn't stop other CPU.
 // 3) If you want to make a sequence of DPORT reads, but you don't want to stop other CPU
 //    and you want to do it faster then you need use DPORT_SEQUENCE_REG_READ().
-//    The difference from the first is that the user himself must disable interrupts while DPORT reading.
+//    The difference from (2) is that the user himself must disable interrupts while DPORT reading.
 //    Note that disable interrupt need only if the chip has two cores.
 // 4) If you want to make a sequence of DPORT reads,
 //    use DPORT_STALL_OTHER_CPU_START() macro explicitly
@@ -68,17 +57,12 @@ extern "C" {
  * This implementation is useful for reading DORT registers for single reading without stall other CPU.
  * There is disable/enable interrupt.
  *
+ * @note Should be placed in IRAM.
+ *
  * @param reg Register address
  * @return Value
  */
-static inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
-{
-#if defined(BOOTLOADER_BUILD) || !defined(CONFIG_ESP32_DPORT_WORKAROUND) || !defined(ESP_PLATFORM)
-    return _DPORT_REG_READ(reg);
-#else
-    return esp_dport_access_reg_read(reg);
-#endif
-}
+uint32_t esp_dport_access_reg_read(uint32_t reg);
 
 /**
  * @brief Read value from register, NOT SMP-safe version.
@@ -90,12 +74,14 @@ static inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
  * The recommended way to read registers sequentially without stall other CPU
  * is to use the method esp_dport_read_buffer(buff_out, address, num_words). It allows you to read registers in the buffer.
  *
+ * @note Should be placed in IRAM.
+ *
  * \code{c}
  * // This example shows how to use it.
  * { // Use curly brackets to limit the visibility of variables in macros DPORT_INTERRUPT_DISABLE/RESTORE.
  *     DPORT_INTERRUPT_DISABLE(); // Disable interrupt only on current CPU.
  *     for (i = 0; i < max; ++i) {
- *        array[i] = DPORT_SEQUENCE_REG_READ(Address + i * 4); // reading DPORT registers
+ *        array[i] = esp_dport_access_sequence_reg_read(Address + i * 4); // reading DPORT registers
  *     }
  *     DPORT_INTERRUPT_RESTORE(); // restore the previous interrupt level
  * }
@@ -104,14 +90,45 @@ static inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
  * @param reg Register address
  * @return Value
  */
-static inline uint32_t IRAM_ATTR DPORT_SEQUENCE_REG_READ(uint32_t reg)
-{
-#if defined(BOOTLOADER_BUILD) || !defined(CONFIG_ESP32_DPORT_WORKAROUND) || !defined(ESP_PLATFORM)
-    return _DPORT_REG_READ(reg);
+uint32_t esp_dport_access_sequence_reg_read(uint32_t reg);
+
+/**
+ * @brief Read a sequence of DPORT registers to the buffer, SMP-safe version.
+ *
+ * This implementation uses a method of the pre-reading of the APB register
+ * before reading the register of the DPORT, without stall other CPU.
+ * There is disable/enable interrupt.
+ *
+ * @note Should be placed in IRAM.
+ *
+ * @param[out] buff_out  Contains the read data.
+ * @param[in]  address   Initial address for reading registers.
+ * @param[in]  num_words The number of words.
+ */
+void esp_dport_access_read_buffer(uint32_t *buff_out, uint32_t address, uint32_t num_words);
+
+#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !SOC_DPORT_WORKAROUND
+    #define DPORT_INTERRUPT_DISABLE()
+    #define DPORT_INTERRUPT_RESTORE()
+    #define DPORT_REG_READ(reg)          _DPORT_REG_READ(reg)
+    #define DPORT_SEQUENCE_REG_READ(reg) _DPORT_REG_READ(reg)
 #else
-    return esp_dport_access_sequence_reg_read(reg);
-#endif
-}
+    #define DPORT_REG_READ(reg)          esp_dport_access_reg_read(reg)
+    #define DPORT_SEQUENCE_REG_READ(reg) esp_dport_access_sequence_reg_read(reg)
+    #ifndef XTSTR
+    #define _XTSTR(x) # x
+    #define XTSTR(x)  _XTSTR(x)
+    #endif
+
+    #define DPORT_INTERRUPT_DISABLE() unsigned intLvl = __extension__({ unsigned __tmp; \
+                __asm__ __volatile__("rsil %0, " XTSTR(SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL) "\n" \
+                                    : "=a" (__tmp) : : "memory" ); \
+                __tmp;})
+    #define DPORT_INTERRUPT_RESTORE() do{ unsigned __tmp = (intLvl); \
+                __asm__ __volatile__("wsr.ps %0 ; rsync\n" \
+                                    : : "a" (__tmp) : "memory" ); \
+                }while(0)
+#endif // defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !SOC_DPORT_WORKAROUND
 
 //get bit or get bits from register
 #define DPORT_REG_GET_BIT(_r, _b)  (DPORT_REG_READ(_r) & (_b))
@@ -155,23 +172,7 @@ static inline uint32_t IRAM_ATTR DPORT_SEQUENCE_REG_READ(uint32_t reg)
 #define _DPORT_REG_SET_BIT(_r, _b)  _DPORT_REG_WRITE((_r), (_DPORT_REG_READ(_r)|(_b)))
 #define _DPORT_REG_CLR_BIT(_r, _b)  _DPORT_REG_WRITE((_r), (_DPORT_REG_READ(_r) & (~(_b))))
 
-/**
- * @brief Read value from register, SMP-safe version.
- *
- * This method uses the pre-reading of the APB register before reading the register of the DPORT.
- * This implementation is useful for reading DORT registers for single reading without stall other CPU.
- *
- * @param reg Register address
- * @return Value
- */
-static inline uint32_t IRAM_ATTR DPORT_READ_PERI_REG(uint32_t reg)
-{
-#if defined(BOOTLOADER_BUILD) || !defined(CONFIG_ESP32_DPORT_WORKAROUND) || !defined(ESP_PLATFORM)
-    return _DPORT_REG_READ(reg);
-#else
-    return esp_dport_access_reg_read(reg);
-#endif
-}
+#define DPORT_READ_PERI_REG(reg)  DPORT_REG_READ(reg)
 
 //write value to register
 #define DPORT_WRITE_PERI_REG(addr, val) _DPORT_WRITE_PERI_REG((addr), (val))

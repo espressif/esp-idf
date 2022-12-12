@@ -6,10 +6,20 @@
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
+#include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
+
+#if !CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
 #include "soc/rtc_cntl_reg.h"
+#else
+#include "soc/lp_wdt_reg.h"
+#include "soc/lp_timer_reg.h"
+#include "soc/lp_analog_peri_reg.h"
+#include "soc/pmu_reg.h"
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32
-#include "soc/dport_reg.h"
+#include "hal/clk_tree_ll.h"
 #endif
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
@@ -32,23 +42,25 @@ __attribute__((weak)) void bootloader_clock_configure(void)
      * document). For rev. 0, switch to 240 instead if it has been enabled
      * previously.
      */
-    if (efuse_hal_get_chip_revision() == 0 &&
-            DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL) == DPORT_CPUPERIOD_SEL_240) {
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100) &&
+            clk_ll_cpu_get_freq_mhz_from_pll() == CLK_LL_PLL_240M_FREQ_MHZ) {
         cpu_freq_mhz = 240;
     }
-#elif CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32H4
     cpu_freq_mhz = 64;
 #endif
 
-    if (rtc_clk_apb_freq_get() < APB_CLK_FREQ || esp_rom_get_reset_reason(0) != RESET_REASON_CPU0_SW) {
+    if (esp_rom_get_reset_reason(0) != RESET_REASON_CPU0_SW || rtc_clk_apb_freq_get() < APB_CLK_FREQ) {
         rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
-#if CONFIG_IDF_TARGET_ESP32
-        clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
-#endif
-        /* ESP32-S2 doesn't have XTAL_FREQ choice, always 40MHz */
         clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
         clk_cfg.slow_clk_src = rtc_clk_slow_src_get();
+        if (clk_cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_INVALID) {
+            clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+        }
         clk_cfg.fast_clk_src = rtc_clk_fast_src_get();
+        if (clk_cfg.fast_clk_src == SOC_RTC_FAST_CLK_SRC_INVALID) {
+            clk_cfg.fast_clk_src = SOC_RTC_FAST_CLK_SRC_XTAL_DIV;
+        }
         rtc_clk_init(clk_cfg);
     }
 
@@ -63,6 +75,24 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     }
 #endif // CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
 
+// TODO: IDF-5645
+#if CONFIG_IDF_TARGET_ESP32C6
+    // CLR ENA
+    CLEAR_PERI_REG_MASK(LP_WDT_INT_ENA_REG, LP_WDT_SUPER_WDT_INT_ENA);                                      /* SWD */
+    CLEAR_PERI_REG_MASK(LP_TIMER_LP_INT_ENA_REG, LP_TIMER_MAIN_TIMER_LP_INT_ENA);                           /* MAIN_TIMER */
+    CLEAR_PERI_REG_MASK(LP_ANALOG_PERI_LP_ANA_LP_INT_ENA_REG, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_ENA);  /* BROWN_OUT */
+    CLEAR_PERI_REG_MASK(LP_WDT_INT_ENA_REG, LP_WDT_LP_WDT_INT_ENA);                                         /* WDT */
+    CLEAR_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SOC_WAKEUP_INT_ENA);                                        /* SLP_REJECT */
+    CLEAR_PERI_REG_MASK(PMU_SOC_SLEEP_REJECT_INT_ENA, PMU_SOC_SLEEP_REJECT_INT_ENA);                        /* SLP_WAKEUP */
+    // SET CLR
+    SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_SUPER_WDT_INT_CLR);                                        /* SWD */
+    SET_PERI_REG_MASK(LP_TIMER_LP_INT_CLR_REG, LP_TIMER_MAIN_TIMER_LP_INT_CLR);                             /* MAIN_TIMER */
+    SET_PERI_REG_MASK(LP_ANALOG_PERI_LP_ANA_LP_INT_CLR_REG, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_CLR);    /* BROWN_OUT */
+    SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_LP_WDT_INT_CLR);                                           /* WDT */
+    SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_WAKEUP_INT_CLR);                                          /* SLP_REJECT */
+    SET_PERI_REG_MASK(PMU_SOC_SLEEP_REJECT_INT_CLR, PMU_SOC_SLEEP_REJECT_INT_CLR);                          /* SLP_WAKEUP */
+#else
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
+#endif
 }

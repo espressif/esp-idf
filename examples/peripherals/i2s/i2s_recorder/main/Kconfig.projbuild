@@ -1,0 +1,65 @@
+menu "Example Configuration"
+
+    menu "SDCard Configuration"
+
+        config EXAMPLE_SPI_MISO_GPIO
+            int "SPI MISO GPIO"
+            default 15
+            help
+                Set the GPIO number used for MISO from SPI.
+
+        config EXAMPLE_SPI_MOSI_GPIO
+            int "SPI MOSI GPIO"
+            default 14
+            help
+                Set the GPIO number used for MOSI from SPI.
+
+        config EXAMPLE_SPI_SCLK_GPIO
+            int "SPI SCLK GPIO"
+            default 18
+            help
+                Set the GPIO number used for SCLK from SPI.
+
+        config EXAMPLE_SPI_CS_GPIO
+            int "SPI CS GPIO"
+            default 19
+            help
+                Set the GPIO number used for CS from SPI.
+
+    endmenu
+
+    menu "I2S MEMS MIC Configuration"
+
+        config EXAMPLE_SAMPLE_RATE
+            int "Audio Sample Rate"
+            default 44100
+            help
+                Set the audio sample rate frequency. Usually 16000 or 44100 Hz.
+
+        config EXAMPLE_BIT_SAMPLE
+            int "Audio Bit Sample"
+            default 16
+            help
+                Define the number of bits for each sample. Default 16 bits per sample.
+
+        config EXAMPLE_I2S_DATA_GPIO
+            int "I2S Data GPIO"
+            default 5
+            help
+                Set the GPIO number used for transmitting/receiving data from I2S.
+
+        config EXAMPLE_I2S_CLK_GPIO
+            int "I2S Clock GPIO"
+            default 4
+            help
+                Set the GPIO number used for the clock line from I2S.
+
+    endmenu
+
+    config EXAMPLE_REC_TIME
+        int "Example Recording Time in Seconds"
+        default 15
+        help
+            Set the time for recording audio in seconds.
+
+endmenu

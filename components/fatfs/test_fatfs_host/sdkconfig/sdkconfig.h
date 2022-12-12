@@ -9,7 +9,6 @@
 
 #define CONFIG_PARTITION_TABLE_OFFSET 0x8000
 #define CONFIG_ESPTOOLPY_FLASHSIZE "8MB"
-//currently use the legacy implementation, since the stubs for new HAL are not done yet
-#define CONFIG_SPI_FLASH_USE_LEGACY_IMPL 1
 
 #define CONFIG_FATFS_VOLUME_COUNT 2
+#define CONFIG_MMU_PAGE_SIZE 0X10000 // 64KB

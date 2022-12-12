@@ -64,7 +64,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 static void create_client(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "mqtts://127.0.0.1:1234"
+        .broker.address.uri = "mqtts://127.0.0.1:1234"
     };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
@@ -88,7 +88,7 @@ static void connect_no_certs(const char *host, const int port)
     char uri[64];
     sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = uri
+        .broker.address.uri = uri
     };
     esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
     esp_mqtt_client_disconnect(mqtt_client);
@@ -100,12 +100,12 @@ static void connect_with_client_key_password(const char *host, const int port)
     char uri[64];
     sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = uri,
-        .cert_pem = (const char *)ca_local_crt,
-        .client_cert_pem = (const char *)client_pwd_crt,
-        .client_key_pem = (const char *)client_pwd_key,
-        .clientkey_password = "esp32",
-        .clientkey_password_len = 5
+        .broker.address.uri = uri,
+        .broker.verification.certificate = (const char *)ca_local_crt,
+        .credentials.authentication.certificate = (const char *)client_pwd_crt,
+        .credentials.authentication.key = (const char *)client_pwd_key,
+        .credentials.authentication.key_password = "esp32",
+        .credentials.authentication.key_password_len = 5
     };
     esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
     esp_mqtt_client_disconnect(mqtt_client);
@@ -117,11 +117,11 @@ static void connect_with_server_der_cert(const char *host, const int port)
     char uri[64];
     sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = uri,
-        .cert_pem = (const char *)ca_der_start,
-        .cert_len = ca_der_end - ca_der_start,
-        .client_cert_pem = "NULL",
-        .client_key_pem = "NULL"
+        .broker.address.uri = uri,
+        .broker.verification.certificate = (const char *)ca_der_start,
+        .broker.verification.certificate_len = ca_der_end - ca_der_start,
+        .credentials.authentication.certificate = "NULL",
+        .credentials.authentication.key = "NULL"
     };
     esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
     esp_mqtt_client_disconnect(mqtt_client);
@@ -133,10 +133,10 @@ static void connect_with_wrong_server_cert(const char *host, const int port)
     char uri[64];
     sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = uri,
-        .cert_pem = (const char *)client_pwd_crt,
-        .client_cert_pem = "NULL",
-        .client_key_pem = "NULL"
+        .broker.address.uri = uri,
+        .broker.verification.certificate = (const char *)client_pwd_crt,
+        .credentials.authentication.certificate = "NULL",
+        .credentials.authentication.key = "NULL"
     };
     esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
     esp_mqtt_client_disconnect(mqtt_client);
@@ -148,8 +148,8 @@ static void connect_with_server_cert(const char *host, const int port)
     char uri[64];
     sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = uri,
-        .cert_pem = (const char *)ca_local_crt,
+        .broker.address.uri = uri,
+        .broker.verification.certificate = (const char *)ca_local_crt,
     };
     esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
     esp_mqtt_client_disconnect(mqtt_client);
@@ -161,10 +161,10 @@ static void connect_with_server_client_certs(const char *host, const int port)
     char uri[64];
     sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = uri,
-        .cert_pem = (const char *)ca_local_crt,
-        .client_cert_pem = (const char *)client_pwd_crt,
-        .client_key_pem = (const char *)client_no_pwd_key
+        .broker.address.uri = uri,
+        .broker.verification.certificate = (const char *)ca_local_crt,
+        .credentials.authentication.certificate = (const char *)client_pwd_crt,
+        .credentials.authentication.key = (const char *)client_no_pwd_key
     };
     esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
     esp_mqtt_client_disconnect(mqtt_client);
@@ -176,10 +176,10 @@ static void connect_with_invalid_client_certs(const char *host, const int port)
     char uri[64];
     sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = uri,
-        .cert_pem = (const char *)ca_local_crt,
-        .client_cert_pem = (const char *)client_inv_crt,
-        .client_key_pem = (const char *)client_no_pwd_key
+        .broker.address.uri = uri,
+        .broker.verification.certificate = (const char *)ca_local_crt,
+        .credentials.authentication.certificate = (const char *)client_inv_crt,
+        .credentials.authentication.key = (const char *)client_no_pwd_key
     };
     esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
     esp_mqtt_client_disconnect(mqtt_client);
@@ -192,8 +192,8 @@ static void connect_with_alpn(const char *host, const int port)
     const char *alpn_protos[] = { "mymqtt", NULL };
     sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = uri,
-        .alpn_protos = alpn_protos
+        .broker.address.uri = uri,
+        .broker.verification.alpn_protos = alpn_protos
     };
     esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
     esp_mqtt_client_disconnect(mqtt_client);

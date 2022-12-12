@@ -7,13 +7,14 @@ Overview
 
 There are several :ref:`memory regions<memory-layout>` where code and data can be placed. Code and read-only data are placed by default in flash, writable data in RAM, etc. However, it is sometimes necessary to change these default placements.
 
-.. only:: SOC_ULP_SUPPORTED
+For example, it may be necessary to place:
 
-    For example, it may be necessary to place critical code in RAM for performance reasons or to place code in RTC memory for use in a wake stub or the ULP coprocessor.
+.. list::
 
-.. only:: not SOC_ULP_SUPPORTED
-
-    For example, it may be necessary to place critical code in RAM for performance reasons or to place code in RTC memory for use in a wake stub.
+    * critical code in RAM for performance reasons.
+    * executable code in IRAM so that it can be ran while cache is disabled.
+    :SOC_RTC_MEM_SUPPORTED: * code in RTC memory for use in a wake stub.
+    :SOC_ULP_SUPPORTED: * code in RTC memory for use by the ULP coprocessor.
 
 With the linker script generation mechanism, it is possible to specify these placements at the component level within ESP-IDF. The component presents information on how it would like to place its symbols, objects or the entire archive. During build, the information presented by the components are collected, parsed and processed; and the placement rules generated is used to link the app.
 
@@ -284,7 +285,7 @@ Condition checking behaves as you would expect an ``if...elseif/elif...else`` bl
         key_1:
             value_1
         key_2:
-            value_b
+            value_a
     else:
         [type:name]
         key_1:

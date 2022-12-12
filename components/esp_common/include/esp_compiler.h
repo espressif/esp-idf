@@ -3,8 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __ESP_COMPILER_H
-#define __ESP_COMPILER_H
+
+#pragma once
+
+#include "sdkconfig.h"
 
 /*
  * The likely and unlikely macro pairs:
@@ -40,12 +42,13 @@
  *              ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(arr, "Value")
  *          };
  */
-#ifdef __cplusplus
+#if defined(__cplusplus) && __cplusplus >= 202002L
+#define ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(member, value)  .member = value,
+#define ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(member) .member = { },
+#elif defined(__cplusplus) && __cplusplus < 202002L
 #define ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(member, value)  { .member = value },
 #define ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(member) .member = { },
 #else
 #define ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(member, value)  .member = value,
 #define ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(member)
-#endif
-
 #endif

@@ -8,17 +8,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_private/esp_clk.h"
+#include "test_utils.h"
 
 #include "unity.h"
 
 #include "sdkconfig.h"
 
-
-/* No performance monitor in RISCV for now
- */
-#if !DISABLED_FOR_TARGETS(ESP32C3)
-
-static const char* TAG = "test_ccomp_timer";
 
 #if CONFIG_IDF_TARGET_ESP32
 #define CACHE_WAYS              2
@@ -33,7 +28,7 @@ static const char* TAG = "test_ccomp_timer";
 #define CACHE_LINE_SIZE         32
 #define CACHE_SIZE              (1 << 13)
 #define TEST_SIZE               (CACHE_SIZE)
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
 #define CACHE_WAYS              8
 #define CACHE_LINE_SIZE         32
 #define CACHE_SIZE              (1 << 14)
@@ -49,6 +44,14 @@ typedef struct {
     int64_t wall;
     int64_t ccomp;
 } ccomp_test_time_t;
+
+/* No performance monitor in RISCV for now
+ */
+#if !DISABLED_FOR_TARGETS(ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C6)
+//IDF-5052
+
+static const char* TAG = "test_ccomp_timer";
 
 #if CONFIG_SPIRAM
 static uint8_t *flash_mem;
@@ -175,5 +178,5 @@ TEST_CASE("data cache hit rate sweep", "[test_utils][ccomp_timer]")
     free(flash_mem);
 #endif
 }
-
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
 #endif // !DISABLED_FOR_TARGETS(ESP32C3)

@@ -13,6 +13,14 @@ menu "TCP Transport"
             depends on WS_TRANSPORT
             help
                 Size of the buffer used for constructing the HTTP Upgrade request during connect
+
+        config WS_DYNAMIC_BUFFER
+            bool "Using dynamic websocket transport buffer"
+            default n
+            depends on WS_TRANSPORT
+            help
+                If enable this option, websocket transport buffer will be freed after connection
+                succeed to save more heap.
     endmenu
 
 endmenu

@@ -42,7 +42,7 @@
 #ifdef __has_include
 #  if __has_include("sdkconfig.h")
 #    include "sdkconfig.h"
-#    define SOC_CAPS_ECO_VER    CONFIG_ESP32_REV_MIN
+#    define SOC_CAPS_ECO_VER    CONFIG_ESP32_REV_MIN_FULL
 #  endif
 #endif
 
@@ -58,50 +58,55 @@
 // defined correctly
 #define SOC_BROWNOUT_RESET_SUPPORTED    "Not determined"
 #define SOC_TWAI_BRP_DIV_SUPPORTED      "Not determined"
+#define SOC_DPORT_WORKAROUND            "Not determined"
 #endif
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
-#define SOC_CAPS_ECO_VER_MAX        3
+#define SOC_CAPS_ECO_VER_MAX        301
 
 #define SOC_ADC_SUPPORTED           1
 #define SOC_DAC_SUPPORTED           1
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_SDMMC_HOST_SUPPORTED    1
 #define SOC_BT_SUPPORTED            1
-#define SOC_BLUEDROID_SUPPORTED     1
-#define SOC_CLASSIC_BT_SUPPORTED    1
 #define SOC_PCNT_SUPPORTED          1
 #define SOC_WIFI_SUPPORTED          1
 #define SOC_SDIO_SLAVE_SUPPORTED    1
 #define SOC_TWAI_SUPPORTED          1
 #define SOC_EMAC_SUPPORTED          1
-#define SOC_CPU_CORES_NUM           2
 #define SOC_ULP_SUPPORTED           1
 #define SOC_CCOMP_TIMER_SUPPORTED   1
-#define SOC_RTC_FAST_MEM_SUPPORTED        1
-#define SOC_RTC_SLOW_MEM_SUPPORTED        1
+#define SOC_RTC_FAST_MEM_SUPPORTED  1
+#define SOC_RTC_SLOW_MEM_SUPPORTED  1
+#define SOC_RTC_MEM_SUPPORTED       1
 #define SOC_I2S_SUPPORTED           1
 #define SOC_RMT_SUPPORTED           1
-#define SOC_SIGMADELTA_SUPPORTED    1
+#define SOC_SDM_SUPPORTED           1
+#define SOC_LEDC_SUPPORTED          1
+#define SOC_I2C_SUPPORTED           1
 #define SOC_SUPPORT_COEXISTENCE     1
 #define SOC_AES_SUPPORTED           1
 #define SOC_MPI_SUPPORTED           1
 #define SOC_SHA_SUPPORTED           1
 #define SOC_FLASH_ENC_SUPPORTED     1
 #define SOC_SECURE_BOOT_SUPPORTED   1
+#define SOC_TOUCH_SENSOR_SUPPORTED  1
+
+#if SOC_CAPS_ECO_VER < 200
+#define SOC_DPORT_WORKAROUND                   1
+#endif // SOC_CAPS_ECO_VER < 200
+#define SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL (5U)
+
+/*-------------------------- XTAL CAPS ---------------------------------------*/
+#define SOC_XTAL_SUPPORT_26M            1
+#define SOC_XTAL_SUPPORT_40M            1
+#define SOC_XTAL_SUPPORT_AUTO_DETECT    1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
-/**
- * TO BE REMOVED
- * Check if adc support digital controller (DMA) mode.
- *      - 1 : support;
- *      - 0 : not support;
- */
-#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) ((PERIPH_NUM==0)? 1: 0)
-
 /*!< SAR ADC Module*/
 #define SOC_ADC_RTC_CTRL_SUPPORTED              1
 #define SOC_ADC_DIG_CTRL_SUPPORTED              1
+#define SOC_ADC_DMA_SUPPORTED                   1
 #define SOC_ADC_PERIPH_NUM                      (2)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 8: 10)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (10)
@@ -112,35 +117,39 @@
 #define SOC_ADC_PATT_LEN_MAX                    (16) //Two pattern table, each contains 16 items. Each item takes 1 byte. But only support ADC1 using DMA mode
 #define SOC_ADC_DIGI_MIN_BITWIDTH               (9)
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
-/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
+#define SOC_ADC_DIGI_RESULT_BYTES               (2)
+#define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (4)
 #define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          (2*1000*1000)
-#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (2000)
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (20*1000)
 
 /*!< RTC */
 #define SOC_ADC_RTC_MIN_BITWIDTH                (9)
 #define SOC_ADC_RTC_MAX_BITWIDTH                (12)
-#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
-
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
-#if SOC_CAPS_ECO_VER >= 1
+#if SOC_CAPS_ECO_VER >= 100
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 #endif
 
-/*-------------------------- CACHE CAPS --------------------------------------*/
+
+/*-------------------------- CACHE/MMU CAPS ----------------------------------*/
 #define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
+#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM       5
+
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
+#define SOC_CPU_CORES_NUM               2
+#define SOC_CPU_INTR_NUM                32
+#define SOC_CPU_HAS_FPU                 1
+
 #define SOC_CPU_BREAKPOINTS_NUM         2
 #define SOC_CPU_WATCHPOINTS_NUM         2
-
 #define SOC_CPU_WATCHPOINT_SIZE         64 // bytes
 
-#define SOC_CPU_HAS_FPU             1
-
 /*-------------------------- DAC CAPS ----------------------------------------*/
-#define SOC_DAC_PERIPH_NUM      2
-#define SOC_DAC_RESOLUTION      8 // DAC resolution ratio 8 bit
+#define SOC_DAC_CHAN_NUM              2
+#define SOC_DAC_RESOLUTION              8 // DAC resolution ratio 8 bit
+#define SOC_DAC_DMA_16BIT_ALIGN         1 // The DMA data should left shift 8 bit to be aligned with 16 bit
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32 has 1 GPIO peripheral
@@ -151,10 +160,13 @@
 // set pullup/down/capability via RTC register. On ESP32-S2, Digital IOs have their own registers to
 // control pullup/down/capability, independent with RTC registers.
 
-// 0~39 except from 24, 28~31 are valid
+// 0~39 valid except 24, 28~31
 #define SOC_GPIO_VALID_GPIO_MASK        (0xFFFFFFFFFFULL & ~(0ULL | BIT24 | BIT28 | BIT29 | BIT30 | BIT31))
 // GPIO >= 34 are input only
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT34 | BIT35 | BIT36 | BIT37 | BIT38 | BIT39))
+
+// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM: 1, 3, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 21, 22, 23)
+#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0xEF0FEAULL
 
 // Support to configure slept status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
@@ -168,14 +180,6 @@
 
 #define SOC_I2C_SUPPORT_APB     (1)
 
-/*-------------------------- APLL CAPS ----------------------------------------*/
-#define SOC_CLK_APLL_SUPPORTED       (1)
-// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
-#define SOC_APLL_MULTIPLIER_OUT_MIN_HZ (350000000) // 350 MHz
-#define SOC_APLL_MULTIPLIER_OUT_MAX_HZ (500000000) // 500 MHz
-#define SOC_APLL_MIN_HZ    (5303031)   // 5.303031 MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
-#define SOC_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
-
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32 has 2 I2S
 #define SOC_I2S_NUM                 (2U)
@@ -183,7 +187,9 @@
 #define SOC_I2S_SUPPORTS_APLL       (1)
 #define SOC_I2S_SUPPORTS_PDM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
+#define SOC_I2S_PDM_MAX_TX_LINES    (1U)
 #define SOC_I2S_SUPPORTS_PDM_RX     (1)
+#define SOC_I2S_PDM_MAX_RX_LINES    (1U)
 #define SOC_I2S_SUPPORTS_ADC_DAC    (1)
 #define SOC_I2S_SUPPORTS_ADC        (1)
 #define SOC_I2S_SUPPORTS_DAC        (1)
@@ -217,7 +223,7 @@
 #define SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP   (1)    ///< The number of capture timers that each group has
 #define SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER (3)    ///< The number of capture channels that each capture timer has
 #define SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP    (3)    ///< The number of GPIO synchros that each group has
-#define SOC_MCPWM_BASE_CLK_HZ       (160000000ULL)  ///< Base Clock frequency of 160MHz
+#define SOC_MCPWM_CLK_SUPPORT_PLL160M        (1)    ///< Support PLL160M as clock source
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 //TODO: correct the caller and remove unsupported lines
@@ -249,9 +255,9 @@
 #define SOC_RTCIO_HOLD_SUPPORTED 1
 #define SOC_RTCIO_WAKE_SUPPORTED 1
 
-/*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#define SOC_SIGMADELTA_NUM            1U
-#define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
+/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
+#define SOC_SDM_GROUPS             1U
+#define SOC_SDM_CHANNELS_PER_GROUP 8
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_HD_BOTH_INOUT_SUPPORTED 1  //Support enabling MOSI and MISO phases together under Halfduplex mode
@@ -260,6 +266,7 @@
 #define SOC_SPI_DMA_CHAN_NUM            2
 
 #define SOC_SPI_PERIPH_CS_NUM(i)        3
+#define SOC_SPI_MAX_CS_NUM              3
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 #define SOC_SPI_MAX_PRE_DIVIDER         8192
@@ -289,19 +296,21 @@
 #define SOC_TOUCH_PAD_THRESHOLD_MAX         (0)     /*!<If set touch threshold max value, The touch sensor can't be in touched status */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
-#define SOC_TWAI_BRP_MIN                        2
-#if SOC_CAPS_ECO_VER >= 2
+#define SOC_TWAI_CONTROLLER_NUM         1UL
+#define SOC_TWAI_BRP_MIN                2
+#if SOC_CAPS_ECO_VER >= 200
 #  define SOC_TWAI_BRP_MAX              256
 #  define SOC_TWAI_BRP_DIV_SUPPORTED    1
-#  define SOC_TWAI_BRP_DIV_THRESH       128
 #else
 #  define SOC_TWAI_BRP_MAX              128
 #endif
+#define SOC_TWAI_CLK_SUPPORT_APB        1
 #define SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT   1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32 have 3 UART.
 #define SOC_UART_NUM                (3)
+#define SOC_UART_SUPPORT_APB_CLK    (1)         /*!< Support APB as the clock source */
 #define SOC_UART_SUPPORT_REF_TICK   (1)         /*!< Support REF_TICK as the clock source */
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)   /*!< Max bit rate supported by UART */
@@ -309,6 +318,9 @@
 
 /*-------------------------- SPIRAM CAPS -------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED    1
+
+/*-------------------------- SPI MEM CAPS ---------------------------------------*/
+#define SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE         (1)
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
 /* ESP32 style SHA engine, where multiple states can be stored in parallel */
@@ -346,19 +358,22 @@
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
 /*-------------------------- Power Management CAPS ---------------------------*/
-#define SOC_PM_SUPPORT_EXT_WAKEUP       (1)
+#define SOC_PM_SUPPORT_EXT_WAKEUP                 (1)
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP        (1)     /*!<Supports waking up from touch pad trigger */
-#define SOC_PM_SUPPORT_RTC_PERIPH_PD        (1)
+#define SOC_PM_SUPPORT_RTC_PERIPH_PD              (1)
+#define SOC_PM_SUPPORT_RTC_FAST_MEM_PD            (1)
+#define SOC_PM_SUPPORT_RTC_SLOW_MEM_PD            (1)
 
-/* ---------------------------- Compatibility ------------------------------- */
-#define SOC_CAN_SUPPORTED                   SOC_TWAI_SUPPORTED
-#define CAN_BRP_MIN                         SOC_TWAI_BRP_MIN
-#define CAN_BRP_MAX                         SOC_TWAI_BRP_MAX
-#define CAN_SUPPORT_MULTI_ADDRESS_LAYOUT    SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT
-#if SOC_CAPS_ECO_VER >= 2
-#  define CAN_BRP_DIV_SUPPORTED             SOC_TWAI_BRP_DIV_SUPPORTED
-#  define CAN_BRP_DIV_THRESH                SOC_TWAI_BRP_DIV_THRESH
-#endif
+/*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
+#define SOC_CLK_APLL_SUPPORTED                    (1)
+// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
+#define SOC_APLL_MULTIPLIER_OUT_MIN_HZ (350000000) // 350 MHz
+#define SOC_APLL_MULTIPLIER_OUT_MAX_HZ (500000000) // 500 MHz
+#define SOC_APLL_MIN_HZ    (5303031)   // 5.303031 MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+#define SOC_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+
+#define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
+#define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
 
 /*-------------------------- SDMMC CAPS -----------------------------------------*/
 
@@ -368,10 +383,14 @@
 #define SOC_SDMMC_USE_IOMUX  1
 #define SOC_SDMMC_NUM_SLOTS  2
 
-/*------------------------------ BLE --------------------------------------------*/
-#define SOC_BLE_DONT_UPDATE_OWN_RPA  (1)
-
 /*-------------------------- WI-FI HARDWARE CAPS -------------------------------*/
-#define SOC_WIFI_HW_TSF                 (0)    /*!< Support hardware TSF */
-#define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM Support */
-#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP Support(GCMP128 and GCMP256) */
+#define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM is not supported */
+#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP is not supported(GCMP128 and GCMP256) */
+#define SOC_WIFI_WAPI_SUPPORT           (1)    /*!< Support WAPI */
+#define SOC_WIFI_CSI_SUPPORT            (1)    /*!< Support CSI */
+#define SOC_WIFI_MESH_SUPPORT           (1)    /*!< Support WIFI MESH */
+
+/*---------------------------------- Bluetooth CAPS ----------------------------------*/
+#define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_BLE_MESH_SUPPORTED          (1)    /*!< Support BLE MESH */
+#define SOC_BT_CLASSIC_SUPPORTED        (1)    /*!< Support Bluetooth Classic hardware */

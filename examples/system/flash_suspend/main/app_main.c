@@ -19,14 +19,15 @@
 #include "esp_cpu.h"
 #include "esp_partition.h"
 #include "driver/gptimer.h"
+#include "esp_flash.h"
 
 
 #define TIMER_RESOLUTION_HZ     (1 * 1000 * 1000) // 1MHz resolution
 #define TIMER_ALARM_PERIOD_S    1                 // Alarm period 1s
 
 #define RECORD_TIME_PREPARE()   uint32_t __t1, __t2
-#define RECORD_TIME_START()     do {__t1 = esp_cpu_get_ccount();} while(0)
-#define RECORD_TIME_END(p_time) do{__t2 = esp_cpu_get_ccount(); p_time = (__t2 - __t1);} while(0)
+#define RECORD_TIME_START()     do {__t1 = esp_cpu_get_cycle_count();} while(0)
+#define RECORD_TIME_END(p_time) do{__t2 = esp_cpu_get_cycle_count(); p_time = (__t2 - __t1);} while(0)
 #define GET_US_BY_CCOUNT(t)     ((double)(t)/CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
 
 const static char *TAG = "Example";
@@ -46,7 +47,7 @@ static NOINLINE_ATTR void s_function_in_flash(void)
         asm volatile("nop");
     }
 
-    s_flash_func_t2 = esp_cpu_get_ccount();
+    s_flash_func_t2 = esp_cpu_get_cycle_count();
 }
 
 static IRAM_ATTR NOINLINE_ATTR void s_funtion_in_iram(void)
@@ -59,13 +60,13 @@ static IRAM_ATTR NOINLINE_ATTR void s_funtion_in_iram(void)
         asm volatile("nop");
     }
 
-    s_iram_func_t2 = esp_cpu_get_ccount();
+    s_iram_func_t2 = esp_cpu_get_cycle_count();
 }
 
 static bool IRAM_ATTR on_gptimer_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
     bool is_flash = *(bool *)user_ctx;
-    s_t1 = esp_cpu_get_ccount();
+    s_t1 = esp_cpu_get_cycle_count();
 
     if (is_flash) {
         s_function_in_flash();

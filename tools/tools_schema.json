@@ -47,6 +47,10 @@
           "$ref": "#/definitions/installRequirementInfo",
           "description": "If 'always', the tool will be installed by default. If 'on_request', tool will be installed when specifically requested. If 'never', tool will not be considered for installation."
         },
+        "is_executable": {
+          "description": "If false - tool does not contain executables. The version will not be checked but export_vars applied.",
+          "type": "boolean"
+        },
         "license": {
           "description": "License name. Use SPDX license identifier if it exists, short name of the license otherwise.",
           "type": "string"

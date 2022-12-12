@@ -13,6 +13,8 @@
 #include <errno.h>
 #include <sys/param.h>
 
+ESP_EVENT_DEFINE_BASE(ESP_HTTPS_OTA_EVENT);
+
 #define IMAGE_HEADER_SIZE (1024)
 
 /* This is kept sufficiently large enough to cover image format headers
@@ -168,9 +170,31 @@ static void _http_cleanup(esp_http_client_handle_t client)
     esp_http_client_cleanup(client);
 }
 
+// Table to lookup ota event name
+static const char* ota_event_name_table[] = {
+    "ESP_HTTPS_OTA_START",
+    "ESP_HTTPS_OTA_CONNECTED",
+    "ESP_HTTPS_OTA_GET_IMG_DESC",
+    "ESP_HTTPS_OTA_VERIFY_CHIP_ID",
+    "ESP_HTTPS_OTA_DECRYPT_CB",
+    "ESP_HTTPS_OTA_WRITE_FLASH",
+    "ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION",
+    "ESP_HTTPS_OTA_FINISH",
+    "ESP_HTTPS_OTA_ABORT",
+};
+
+static void esp_https_ota_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size)
+{
+    if (esp_event_post(ESP_HTTPS_OTA_EVENT, event_id, event_data, event_data_size, portMAX_DELAY) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to post https_ota event: %s", ota_event_name_table[event_id]);
+    }
+}
+
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
 static esp_err_t esp_https_ota_decrypt_cb(esp_https_ota_t *handle, decrypt_cb_arg_t *args)
 {
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_DECRYPT_CB, NULL, 0);
+
     esp_err_t ret = handle->decrypt_cb(args, handle->decrypt_user_ctx);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Decrypt callback failed %d", ret);
@@ -202,6 +226,8 @@ static esp_err_t _ota_write(esp_https_ota_t *https_ota_handle, const void *buffe
         ESP_LOGD(TAG, "Written image length %d", https_ota_handle->binary_file_len);
         err = ESP_ERR_HTTPS_OTA_IN_PROGRESS;
     }
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_WRITE_FLASH, (void *)(&https_ota_handle->binary_file_len), sizeof(int));
+
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     esp_https_ota_decrypt_cb_free_buf((void *) buffer);
 #endif
@@ -216,6 +242,8 @@ static bool is_server_verification_enabled(const esp_https_ota_config_t *ota_con
 
 esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle)
 {
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_START, NULL, 0);
+
     esp_err_t err;
 
     if (handle == NULL || ota_config == NULL || ota_config->http_config == NULL) {
@@ -254,6 +282,14 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         goto failure;
     }
 
+    if (ota_config->http_client_init_cb) {
+        err = ota_config->http_client_init_cb(https_ota_handle->http_client);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "http_client_init_cb returned 0x%x", err);
+            goto http_cleanup;
+        }
+    }
+
     if (https_ota_handle->partial_http_download) {
         esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_HEAD);
         err = esp_http_client_perform(https_ota_handle->http_client);
@@ -286,18 +322,12 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_GET);
     }
 
-    if (ota_config->http_client_init_cb) {
-        err = ota_config->http_client_init_cb(https_ota_handle->http_client);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "http_client_init_cb returned 0x%x", err);
-            goto http_cleanup;
-        }
-    }
-
     err = _http_connect(https_ota_handle->http_client);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to establish HTTP connection");
         goto http_cleanup;
+    } else {
+        esp_https_ota_dispatch_event(ESP_HTTPS_OTA_CONNECTED, NULL, 0);
     }
 
     if (!https_ota_handle->partial_http_download) {
@@ -361,11 +391,11 @@ static esp_err_t read_header(esp_https_ota_t *handle)
         data_read = esp_http_client_read(handle->http_client,
                                           (handle->ota_upgrade_buf + bytes_read),
                                           data_read_size);
-        /*
-         * As esp_http_client_read doesn't return negative error code if select fails, we rely on
-         * `errno` to check for underlying transport connectivity closure if any
-         */
-        if (errno == ENOTCONN || errno == ECONNRESET || errno == ECONNABORTED || data_read < 0) {
+        if (data_read < 0) {
+            if (data_read == -ESP_ERR_HTTP_EAGAIN) {
+                ESP_LOGD(TAG, "ESP_ERR_HTTP_EAGAIN invoked: Call timed out before data was ready");
+                continue;
+            }
             ESP_LOGE(TAG, "Connection closed, errno = %d", errno);
             break;
         }
@@ -382,6 +412,8 @@ static esp_err_t read_header(esp_https_ota_t *handle)
 
 esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, esp_app_desc_t *new_app_info)
 {
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_GET_IMG_DESC, NULL, 0);
+
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     // This API is not supported in case firmware image is encrypted in nature.
     // It is recommended to retrieve image description through decryption callback in application layer.
@@ -415,6 +447,8 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
 static esp_err_t esp_ota_verify_chip_id(const void *arg)
 {
     esp_image_header_t *data = (esp_image_header_t *)(arg);
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_VERIFY_CHIP_ID, (void *)(&data->chip_id), sizeof(esp_chip_id_t));
+
     if (data->chip_id != CONFIG_IDF_FIRMWARE_CHIP_ID) {
         ESP_LOGE(TAG, "Mismatch chip id, expected %d, found %d", CONFIG_IDF_FIRMWARE_CHIP_ID, data->chip_id);
         return ESP_ERR_INVALID_VERSION;
@@ -491,19 +525,9 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                  *  esp_http_client_is_complete_data_received is added to check whether
                  *  complete image is received.
                  */
-                bool is_recv_complete = esp_http_client_is_complete_data_received(handle->http_client);
-                /*
-                 * As esp_http_client_read doesn't return negative error code if select fails, we rely on
-                 * `errno` to check for underlying transport connectivity closure if any.
-                 * Incase the complete data has not been received but the server has sent
-                 * an ENOTCONN or ECONNRESET, failure is returned. We close with success
-                 * if complete data has been received.
-                 */
-                if ((errno == ENOTCONN || errno == ECONNRESET || errno == ECONNABORTED) && !is_recv_complete) {
-                    ESP_LOGE(TAG, "Connection closed, errno = %d", errno);
+                if (!esp_http_client_is_complete_data_received(handle->http_client)) {
+                    ESP_LOGE(TAG, "Connection closed before complete data was received!");
                     return ESP_FAIL;
-                } else if (!is_recv_complete) {
-                    return ESP_ERR_HTTPS_OTA_IN_PROGRESS;
                 }
                 ESP_LOGD(TAG, "Connection closed");
             } else if (data_read > 0) {
@@ -523,6 +547,10 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
 #endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
                 return _ota_write(handle, data_buf, data_len);
             } else {
+                if (data_read == -ESP_ERR_HTTP_EAGAIN) {
+                    ESP_LOGD(TAG, "ESP_ERR_HTTP_EAGAIN invoked: Call timed out before data was ready");
+                    return ESP_ERR_HTTPS_OTA_IN_PROGRESS;
+                }
                 ESP_LOGE(TAG, "data read %d, errno %d", data_read, errno);
                 return ESP_FAIL;
             }
@@ -607,14 +635,20 @@ esp_err_t esp_https_ota_finish(esp_https_ota_handle_t https_ota_handle)
         esp_err_t err = esp_ota_set_boot_partition(handle->update_partition);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
+        } else {
+            esp_https_ota_dispatch_event(ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION, (void *)(&handle->update_partition->subtype), sizeof(esp_partition_subtype_t));
         }
     }
     free(handle);
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_FINISH, NULL, 0);
+
     return err;
 }
 
 esp_err_t esp_https_ota_abort(esp_https_ota_handle_t https_ota_handle)
 {
+    esp_https_ota_dispatch_event(ESP_HTTPS_OTA_ABORT, NULL, 0);
+
     esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
     if (handle == NULL) {
         return ESP_ERR_INVALID_ARG;

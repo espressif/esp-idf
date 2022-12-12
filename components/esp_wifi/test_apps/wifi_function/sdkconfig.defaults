@@ -1,0 +1,3 @@
+
+# ignore task watchdog triggered by unity_run_menu
+CONFIG_ESP_TASK_WDT=n

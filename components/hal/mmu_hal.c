@@ -24,8 +24,10 @@
 #include "esp32c3/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/cache.h"
 #endif
 
 void mmu_hal_init(void)
@@ -83,7 +85,7 @@ void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, 
     uint32_t page_size_in_bytes = mmu_hal_pages_to_bytes(mmu_id, 1);
     HAL_ASSERT(vaddr % page_size_in_bytes == 0);
     HAL_ASSERT(paddr % page_size_in_bytes == 0);
-    HAL_ASSERT((paddr + len) <= mmu_hal_pages_to_bytes(mmu_id, MMU_MAX_PADDR_PAGE_NUM));
+    HAL_ASSERT((paddr + len - 1) < mmu_hal_pages_to_bytes(mmu_id, MMU_MAX_PADDR_PAGE_NUM));
     HAL_ASSERT(mmu_ll_check_valid_ext_vaddr_region(mmu_id, vaddr, len));
 
     uint32_t page_num = (len + page_size_in_bytes - 1) / page_size_in_bytes;
@@ -91,12 +93,12 @@ void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, 
     uint32_t mmu_val;     //This is the physical address in the format that MMU supported
 
     *out_len = mmu_hal_pages_to_bytes(mmu_id, page_num);
-    entry_id = mmu_ll_get_entry_id(mmu_id, vaddr);
     mmu_val = mmu_ll_format_paddr(mmu_id, paddr);
 
     while (page_num) {
+        entry_id = mmu_ll_get_entry_id(mmu_id, vaddr);
         mmu_ll_write_entry(mmu_id, entry_id, mmu_val, mem_type);
-        entry_id++;
+        vaddr += page_size_in_bytes;
         mmu_val++;
         page_num--;
     }

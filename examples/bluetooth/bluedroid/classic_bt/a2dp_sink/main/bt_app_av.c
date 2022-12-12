@@ -20,7 +20,11 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/i2s.h"
+#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+#include "driver/dac_continuous.h"
+#else
+#include "driver/i2s_std.h"
+#endif
 
 #include "sys/lock.h"
 
@@ -82,6 +86,11 @@ static _lock_t s_volume_lock;
 static TaskHandle_t s_vcs_task_hdl = NULL;    /* handle for volume change simulation task */
 static uint8_t s_volume = 0;                 /* local volume value */
 static bool s_volume_notify;                 /* notify volume change or not */
+#ifndef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+i2s_chan_handle_t tx_chan = NULL;
+#else
+dac_continuous_handle_t tx_chan;
+#endif
 
 /********************************
  * STATIC FUNCTION DEFINITIONS
@@ -160,42 +169,55 @@ static void bt_av_notify_evt_handler(uint8_t event_id, esp_avrc_rn_param_t *even
 
 void bt_i2s_driver_install(void)
 {
-    /* I2S configuration parameters */
-    i2s_config_t i2s_config = {
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
-#else
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX,              /* only TX */
-#endif
-        .sample_rate = 44100,
-        .bits_per_sample = 16,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,       /* 2-channels */
-        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
-        .dma_buf_count = 6,
-        .dma_buf_len = 60,
-        .intr_alloc_flags = 0,                              /* default interrupt priority */
-        .tx_desc_auto_clear = true                          /* auto clear tx descriptor on underflow */
+    dac_continuous_config_t cont_cfg = {
+        .chan_mask = DAC_CHANNEL_MASK_ALL,
+        .desc_num = 8,
+        .buf_size = 2048,
+        .freq_hz = 44100,
+        .offset = 127,
+        .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,   // Using APLL as clock source to get a wider frequency range
+        .chan_mode = DAC_CHANNEL_MODE_ALTER,
     };
-
+    /* Allocate continuous channels */
+    ESP_ERROR_CHECK(dac_continuous_new_channels(&cont_cfg, &tx_chan));
+    /* Enable the continuous channels */
+    ESP_ERROR_CHECK(dac_continuous_enable(tx_chan));
+#else
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    chan_cfg.auto_clear = true;
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(44100),
+        .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = {
+            .mclk = I2S_GPIO_UNUSED,
+            .bclk = CONFIG_EXAMPLE_I2S_BCK_PIN,
+            .ws = CONFIG_EXAMPLE_I2S_LRCK_PIN,
+            .dout = CONFIG_EXAMPLE_I2S_DATA_PIN,
+            .din = I2S_GPIO_UNUSED,
+            .invert_flags = {
+                .mclk_inv = false,
+                .bclk_inv = false,
+                .ws_inv = false,
+            },
+        },
+    };
     /* enable I2S */
-    i2s_driver_install(0, &i2s_config, 0, NULL);
-#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-    i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
-    i2s_set_pin(0, NULL);
-#else
-    i2s_pin_config_t pin_config = {
-        .bck_io_num = CONFIG_EXAMPLE_I2S_BCK_PIN,
-        .ws_io_num = CONFIG_EXAMPLE_I2S_LRCK_PIN,
-        .data_out_num = CONFIG_EXAMPLE_I2S_DATA_PIN,
-        .data_in_num = -1                                   /* not used */
-    };
-    i2s_set_pin(0, &pin_config);
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_chan, NULL));
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_chan, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(tx_chan));
 #endif
 }
 
 void bt_i2s_driver_uninstall(void)
 {
-    i2s_driver_uninstall(0);
+#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+    ESP_ERROR_CHECK(dac_continuous_disable(tx_chan));
+    ESP_ERROR_CHECK(dac_continuous_del_channels(tx_chan));
+#else
+    ESP_ERROR_CHECK(i2s_channel_disable(tx_chan));
+    ESP_ERROR_CHECK(i2s_del_channel(tx_chan));
+#endif
 }
 
 static void volume_set_by_controller(uint8_t volume)
@@ -251,8 +273,8 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
             s_a2d_conn_state_str[a2d->conn_stat.state], bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
         if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
-            bt_i2s_task_shut_down();
             bt_i2s_driver_uninstall();
+            bt_i2s_task_shut_down();
         } else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_CONNECTED){
             esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
             bt_i2s_task_start_up();
@@ -278,6 +300,7 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         /* for now only SBC stream is supported */
         if (a2d->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
             int sample_rate = 16000;
+            int ch_count = 2;
             char oct0 = a2d->audio_cfg.mcc.cie.sbc[0];
             if (oct0 & (0x01 << 6)) {
                 sample_rate = 32000;
@@ -286,8 +309,34 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
             } else if (oct0 & (0x01 << 4)) {
                 sample_rate = 48000;
             }
-            i2s_set_clk(0, sample_rate, 16, 2);
 
+            if (oct0 & (0x01 << 3)) {
+                ch_count = 1;
+            }
+        #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+            dac_continuous_disable(tx_chan);
+            dac_continuous_del_channels(tx_chan);
+            dac_continuous_config_t cont_cfg = {
+                .chan_mask = DAC_CHANNEL_MASK_ALL,
+                .desc_num = 8,
+                .buf_size = 2048,
+                .freq_hz = sample_rate,
+                .offset = 127,
+                .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,   // Using APLL as clock source to get a wider frequency range
+                .chan_mode = (ch_count == 1) ? DAC_CHANNEL_MODE_SIMUL : DAC_CHANNEL_MODE_ALTER,
+            };
+            /* Allocate continuous channels */
+            dac_continuous_new_channels(&cont_cfg, &tx_chan);
+            /* Enable the continuous channels */
+            dac_continuous_enable(tx_chan);
+        #else
+            i2s_channel_disable(tx_chan);
+            i2s_std_clk_config_t clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(sample_rate);
+            i2s_std_slot_config_t slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, ch_count);
+            i2s_channel_reconfig_std_clock(tx_chan, &clk_cfg);
+            i2s_channel_reconfig_std_slot(tx_chan, &slot_cfg);
+            i2s_channel_enable(tx_chan);
+        #endif
             ESP_LOGI(BT_AV_TAG, "Configure audio player: %x-%x-%x-%x",
                      a2d->audio_cfg.mcc.cie.sbc[0],
                      a2d->audio_cfg.mcc.cie.sbc[1],

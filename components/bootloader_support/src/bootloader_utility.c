@@ -28,12 +28,12 @@
 #include "esp32c3/rom/uart.h"
 #include "esp32c3/rom/gpio.h"
 #include "esp32c3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/efuse.h"
-#include "esp32h2/rom/crc.h"
-#include "esp32h2/rom/uart.h"
-#include "esp32h2/rom/gpio.h"
-#include "esp32h2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/efuse.h"
+#include "esp32h4/rom/crc.h"
+#include "esp32h4/rom/uart.h"
+#include "esp32h4/rom/gpio.h"
+#include "esp32h4/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/efuse.h"
 #include "esp32c2/rom/crc.h"
@@ -41,6 +41,13 @@
 #include "esp32c2/rom/uart.h"
 #include "esp32c2/rom/gpio.h"
 #include "esp32c2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/efuse.h"
+#include "esp32c6/rom/crc.h"
+#include "esp32c6/rom/rtc.h"
+#include "esp32c6/rom/uart.h"
+#include "esp32c6/rom/gpio.h"
+#include "esp32c6/rom/secure_boot.h"
 
 #else // CONFIG_IDF_TARGET_*
 #error "Unsupported IDF_TARGET"
@@ -60,6 +67,7 @@
 
 #include "esp_cpu.h"
 #include "esp_image_format.h"
+#include "esp_app_desc.h"
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
 #include "esp_flash_partitions.h"
@@ -118,6 +126,31 @@ static esp_err_t read_otadata(const esp_partition_pos_t *ota_info, esp_ota_selec
 
     return ESP_OK;
 }
+
+esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc)
+{
+    if (partition == NULL || app_desc == NULL || partition->offset == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const uint32_t app_desc_offset = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
+    const uint32_t mmap_size = app_desc_offset + sizeof(esp_app_desc_t);
+    const uint8_t *image = bootloader_mmap(partition->offset, mmap_size);
+    if (image == NULL) {
+        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", partition->offset, mmap_size);
+        return ESP_FAIL;
+    }
+
+    memcpy(app_desc, image + app_desc_offset, sizeof(esp_app_desc_t));
+    bootloader_munmap(image);
+
+    if (app_desc->magic_word != ESP_APP_DESC_MAGIC_WORD) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    return ESP_OK;
+}
+
 
 bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
 {
@@ -478,7 +511,7 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
 {
     int index = start_index;
     esp_partition_pos_t part;
-    esp_image_metadata_t image_data;
+    esp_image_metadata_t image_data = {0};
 
     if (start_index == TEST_APP_INDEX) {
         if (check_anti_rollback(&bs->test) && try_load_partition(&bs->test, &image_data)) {
@@ -577,6 +610,17 @@ static void load_image(const esp_image_metadata_t *image_data)
     esp_err_t err;
 #endif
 
+#ifdef CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+    if (esp_secure_boot_enabled() ^ esp_flash_encrypt_initialized_once()) {
+        ESP_LOGE(TAG, "Secure Boot and Flash Encryption cannot be enabled separately, only together (their keys go into one eFuse key block)");
+        return;
+    }
+
+    if (!esp_secure_boot_enabled() || !esp_flash_encryption_enabled()) {
+        esp_efuse_batch_write_begin();
+    }
+#endif // CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+
 #ifdef CONFIG_SECURE_BOOT_V2_ENABLED
     err = esp_secure_boot_v2_permanently_enable(image_data);
     if (err != ESP_OK) {
@@ -604,13 +648,50 @@ static void load_image(const esp_image_metadata_t *image_data)
      *   5) Burn EFUSE to enable flash encryption
      */
     ESP_LOGI(TAG, "Checking flash encryption...");
-    bool flash_encryption_enabled = esp_flash_encryption_enabled();
-    err = esp_flash_encrypt_check_and_update();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Flash encryption check failed (%d).", err);
+    bool flash_encryption_enabled = esp_flash_encrypt_state();
+    if (!flash_encryption_enabled) {
+#ifdef CONFIG_SECURE_FLASH_REQUIRE_ALREADY_ENABLED
+        ESP_LOGE(TAG, "flash encryption is not enabled, and SECURE_FLASH_REQUIRE_ALREADY_ENABLED is set, refusing to boot.");
         return;
+#endif // CONFIG_SECURE_FLASH_REQUIRE_ALREADY_ENABLED
+
+        if (esp_flash_encrypt_is_write_protected(true)) {
+            return;
+        }
+
+        err = esp_flash_encrypt_init();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Initialization of Flash Encryption key failed (%d)", err);
+            return;
+        }
     }
-#endif
+
+#ifdef CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+    if (!esp_secure_boot_enabled() || !flash_encryption_enabled) {
+        err = esp_efuse_batch_write_commit();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Error programming eFuses (err=0x%x).", err);
+            return;
+        }
+        assert(esp_secure_boot_enabled());
+        ESP_LOGI(TAG, "Secure boot permanently enabled");
+    }
+#endif // CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+
+    if (!flash_encryption_enabled) {
+        err = esp_flash_encrypt_contents();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Encryption flash contents failed (%d)", err);
+            return;
+        }
+
+        err = esp_flash_encrypt_enable();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Enabling of Flash encryption failed (%d)", err);
+            return;
+        }
+    }
+#endif // CONFIG_SECURE_FLASH_ENC_ENABLED
 
 #ifdef CONFIG_SECURE_BOOT_V1_ENABLED
     /* Step 6 (see above for full description):
@@ -651,6 +732,48 @@ static void load_image(const esp_image_metadata_t *image_data)
     unpack_load_app(image_data);
 }
 
+#if SOC_MMU_DI_VADDR_SHARED
+static void unpack_load_app(const esp_image_metadata_t *data)
+{
+    /**
+     * note:
+     * On chips with shared D/I external vaddr, we don't divide them into either D or I,
+     * as essentially they are the same.
+     * We integrate all the hardware difference into this `unpack_load_app` function.
+     */
+    uint32_t rom_addr[2] = {};
+    uint32_t rom_load_addr[2] = {};
+    uint32_t rom_size[2] = {};
+    int rom_index = 0;  //shall not exceed 2
+
+    // Find DROM & IROM addresses, to configure MMU mappings
+    for (int i = 0; i < data->image.segment_count; i++) {
+        const esp_image_segment_header_t *header = &data->segments[i];
+        //`SOC_DROM_LOW` and `SOC_DROM_HIGH` are the same as `SOC_IROM_LOW` and `SOC_IROM_HIGH`, reasons are in above `note`
+        if (header->load_addr >= SOC_DROM_LOW && header->load_addr < SOC_DROM_HIGH) {
+            /**
+             * D/I are shared, but there should not be a third segment on flash
+             */
+            assert(rom_index < 2);
+            rom_addr[rom_index] = data->segment_data[i];
+            rom_load_addr[rom_index] = header->load_addr;
+            rom_size[rom_index] = header->data_len;
+            rom_index++;
+        }
+    }
+    assert(rom_index == 2);
+
+    ESP_EARLY_LOGD(TAG, "calling set_cache_and_start_app");
+    set_cache_and_start_app(rom_addr[0],
+                            rom_load_addr[0],
+                            rom_size[0],
+                            rom_addr[1],
+                            rom_load_addr[1],
+                            rom_size[1],
+                            data->image.entry_addr);
+}
+
+#else  //!SOC_MMU_DI_VADDR_SHARED
 static void unpack_load_app(const esp_image_metadata_t *data)
 {
     uint32_t drom_addr = 0;
@@ -660,14 +783,14 @@ static void unpack_load_app(const esp_image_metadata_t *data)
     uint32_t irom_load_addr = 0;
     uint32_t irom_size = 0;
 
-    // Find DROM & IROM addresses, to configure cache mappings
+    // Find DROM & IROM addresses, to configure MMU mappings
     for (int i = 0; i < data->image.segment_count; i++) {
         const esp_image_segment_header_t *header = &data->segments[i];
         if (header->load_addr >= SOC_DROM_LOW && header->load_addr < SOC_DROM_HIGH) {
             if (drom_addr != 0) {
-                ESP_LOGE(TAG, MAP_ERR_MSG, "DROM");
+                ESP_EARLY_LOGE(TAG, MAP_ERR_MSG, "DROM");
             } else {
-                ESP_LOGD(TAG, "Mapping segment %d as %s", i, "DROM");
+                ESP_EARLY_LOGD(TAG, "Mapping segment %d as %s", i, "DROM");
             }
             drom_addr = data->segment_data[i];
             drom_load_addr = header->load_addr;
@@ -675,9 +798,9 @@ static void unpack_load_app(const esp_image_metadata_t *data)
         }
         if (header->load_addr >= SOC_IROM_LOW && header->load_addr < SOC_IROM_HIGH) {
             if (irom_addr != 0) {
-                ESP_LOGE(TAG, MAP_ERR_MSG, "IROM");
+                ESP_EARLY_LOGE(TAG, MAP_ERR_MSG, "IROM");
             } else {
-                ESP_LOGD(TAG, "Mapping segment %d as %s", i, "IROM");
+                ESP_EARLY_LOGD(TAG, "Mapping segment %d as %s", i, "IROM");
             }
             irom_addr = data->segment_data[i];
             irom_load_addr = header->load_addr;
@@ -685,7 +808,7 @@ static void unpack_load_app(const esp_image_metadata_t *data)
         }
     }
 
-    ESP_LOGD(TAG, "calling set_cache_and_start_app");
+    ESP_EARLY_LOGD(TAG, "calling set_cache_and_start_app");
     set_cache_and_start_app(drom_addr,
                             drom_load_addr,
                             drom_size,
@@ -694,6 +817,7 @@ static void unpack_load_app(const esp_image_metadata_t *data)
                             irom_size,
                             data->image.entry_addr);
 }
+#endif  //#if SOC_MMU_DI_VADDR_SHARED
 
 static void set_cache_and_start_app(
     uint32_t drom_addr,
@@ -724,12 +848,12 @@ static void set_cache_and_start_app(
     //The addr is aligned, so we add the mask off length to the size, to make sure the corresponding buses are enabled.
     drom_size = (drom_load_addr - drom_load_addr_aligned) + drom_size;
 #if CONFIG_IDF_TARGET_ESP32
-    uint32_t drom_page_count = (drom_size + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
+    uint32_t drom_page_count = (drom_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE;
     rc = cache_flash_mmu_set(0, 0, drom_load_addr_aligned, drom_addr_aligned, 64, drom_page_count);
     ESP_EARLY_LOGV(TAG, "rc=%d", rc);
     rc = cache_flash_mmu_set(1, 0, drom_load_addr_aligned, drom_addr_aligned, 64, drom_page_count);
     ESP_EARLY_LOGV(TAG, "rc=%d", rc);
-    ESP_EARLY_LOGV(TAG, "after mapping rodata, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", drom_addr_aligned, drom_load_addr_aligned, drom_page_count * MMU_PAGE_SIZE);
+    ESP_EARLY_LOGV(TAG, "after mapping rodata, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", drom_addr_aligned, drom_load_addr_aligned, drom_page_count * SPI_FLASH_MMU_PAGE_SIZE);
 #else
     uint32_t actual_mapped_len = 0;
     mmu_hal_map_region(0, MMU_TARGET_FLASH0, drom_load_addr_aligned, drom_addr_aligned, drom_size, &actual_mapped_len);
@@ -743,12 +867,12 @@ static void set_cache_and_start_app(
     //The addr is aligned, so we add the mask off length to the size, to make sure the corresponding buses are enabled.
     irom_size = (irom_load_addr - irom_load_addr_aligned) + irom_size;
 #if CONFIG_IDF_TARGET_ESP32
-    uint32_t irom_page_count = (irom_size + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
+    uint32_t irom_page_count = (irom_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE;
     rc = cache_flash_mmu_set(0, 0, irom_load_addr_aligned, irom_addr_aligned, 64, irom_page_count);
     ESP_EARLY_LOGV(TAG, "rc=%d", rc);
     rc = cache_flash_mmu_set(1, 0, irom_load_addr_aligned, irom_addr_aligned, 64, irom_page_count);
     ESP_LOGV(TAG, "rc=%d", rc);
-    ESP_EARLY_LOGV(TAG, "after mapping text, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", irom_addr_aligned, irom_load_addr_aligned, irom_page_count * MMU_PAGE_SIZE);
+    ESP_EARLY_LOGV(TAG, "after mapping text, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", irom_addr_aligned, irom_load_addr_aligned, irom_page_count * SPI_FLASH_MMU_PAGE_SIZE);
 #else
     mmu_hal_map_region(0, MMU_TARGET_FLASH0, irom_load_addr_aligned, irom_addr_aligned, irom_size, &actual_mapped_len);
     ESP_EARLY_LOGV(TAG, "after mapping text, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", irom_addr_aligned, irom_load_addr_aligned, actual_mapped_len);
@@ -790,7 +914,7 @@ void bootloader_reset(void)
 #ifdef BOOTLOADER_BUILD
     bootloader_atexit();
     esp_rom_delay_us(1000); /* Allow last byte to leave FIFO */
-    REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
+    esp_rom_software_reset_system();
     while (1) { }       /* This line will never be reached, used to keep gcc happy */
 #else
     abort();            /* This function should really not be called from application code */

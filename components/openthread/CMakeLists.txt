@@ -33,16 +33,21 @@ if(CONFIG_OPENTHREAD_ENABLED)
 
     if(CONFIG_OPENTHREAD_FTD OR CONFIG_OPENTHREAD_MTD)
         list(APPEND src_dirs
-            "openthread/examples/apps/cli"
+            "src"
             "openthread/src/core/backbone_router"
             "openthread/src/core/coap"
             "openthread/src/core/meshcop"
             "openthread/src/core/net"
-            "openthread/src/cli"
             "openthread/src/lib/platform")
 
-        list(APPEND exclude_srcs
-            "openthread/examples/apps/cli/main.c")
+        if(CONFIG_OPENTHREAD_CLI)
+            list(APPEND src_dirs
+                "openthread/examples/apps/cli"
+                "openthread/src/cli")
+
+            list(APPEND exclude_srcs
+                "openthread/examples/apps/cli/main.c")
+        endif()
 
     elseif(CONFIG_OPENTHREAD_RADIO)
         list(APPEND src_dirs
@@ -60,6 +65,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/api/ip6_api.cpp"
             "openthread/src/core/api/link_api.cpp"
             "openthread/src/core/api/message_api.cpp"
+            "openthread/src/core/api/nat64_api.cpp"
             "openthread/src/core/api/netdata_api.cpp"
             "openthread/src/core/api/random_crypto_api.cpp"
             "openthread/src/core/api/tcp_api.cpp"
@@ -77,6 +83,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/mac/mac_links.cpp"
             "openthread/src/core/thread/announce_begin_server.cpp"
             "openthread/src/core/thread/announce_sender.cpp"
+            "openthread/src/core/thread/address_resolver.cpp"
             "openthread/src/core/thread/discover_scanner.cpp"
             "openthread/src/core/thread/energy_scan_server.cpp"
             "openthread/src/core/thread/key_manager.cpp"
@@ -141,7 +148,7 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        EXCLUDE_SRCS "${exclude_srcs}"
                        INCLUDE_DIRS "${public_include_dirs}"
                        PRIV_INCLUDE_DIRS "${private_include_dirs}"
-                       REQUIRES mbedtls ieee802154 console lwip)
+                       REQUIRES esp_event mbedtls ieee802154 console lwip)
 
 if(CONFIG_OPENTHREAD_ENABLED)
     if(CONFIG_OPENTHREAD_RADIO)
@@ -165,7 +172,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
         file(WRITE ${CMAKE_BINARY_DIR}/rcp_version ${OT_FULL_VERSION_STRING})
     endif()
 
-    if(CONFIG_OPENTHREAD_ESP_LIB_FROM_INTERNAL_SRC)
+    if($ENV{OPENTHREAD_ESP_LIB_FROM_INTERNAL_SRC})
         idf_component_get_property(openthread_port_lib openthread_port COMPONENT_LIB)
         idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
         idf_component_get_property(esp_netif_lib esp_netif COMPONENT_LIB)
@@ -185,13 +192,13 @@ if(CONFIG_OPENTHREAD_ENABLED)
         endif()
 
     else()
-        if(IDF_TARGET STREQUAL "esp32h2")
-            if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+        if(IDF_TARGET STREQUAL "esp32h4")
+        if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
                 add_prebuilt_library(openthread_port
                     "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev1/libopenthread_port.a"
                     REQUIRES openthread)
             endif()
-            if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+            if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
                 add_prebuilt_library(openthread_port
                     "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev2/libopenthread_port.a"
                     REQUIRES openthread)

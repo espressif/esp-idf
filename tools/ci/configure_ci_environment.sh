@@ -16,8 +16,13 @@ DEBUG_SHELL=${DEBUG_SHELL:-"0"}
 # Compiler flags to thoroughly check the IDF code in some CI jobs
 # (Depends on default options '-Wno-error=XXX' used in the IDF build system)
 
-PEDANTIC_FLAGS="-DIDF_CI_BUILD -Werror -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function"
-export PEDANTIC_CFLAGS="${PEDANTIC_FLAGS} -Wstrict-prototypes"
+if [ "$IDF_TOOLCHAIN" != "clang" ]; then
+    PEDANTIC_FLAGS="-Werror -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function"
+    export PEDANTIC_CFLAGS="${PEDANTIC_FLAGS} -Wstrict-prototypes"
+else
+    export PEDANTIC_CFLAGS="-Werror"
+fi
+
 export PEDANTIC_CXXFLAGS="${PEDANTIC_FLAGS}"
 
 # ccache related settings.
@@ -31,12 +36,6 @@ fi
 # Set ccache base directory to the project checkout path, to cancel out differences between runners
 export CCACHE_BASEDIR="${CI_PROJECT_DIR}"
 
-# In tools/ci/find_apps_build_apps.sh, we use --work-dir argument to copy apps to a separate location
-# before building them. This results in cache misses, even though the same code is compiled.
-# To solve this issue, we can disable 'hash_dir' option of ccache by setting CCACHE_NOHASHDIR env variable.
-# Note, this can result in issues with debug information, see:
-#   https://ccache.dev/manual/4.5.html#_compiling_in_different_directories
-#
 # 'CI_CCACHE_DISABLE_NOHASHDIR' variable can be used at project level to revert to hash_dir=true, in
 # case we start seeing failures due to false cache hits.
 if [ "${CI_CCACHE_DISABLE_NOHASHDIR}" != "1" ]; then
@@ -50,3 +49,5 @@ if [ "${CI_CCACHE_DISABLE_SECONDARY}" != "1" ] && [ -n "${REDIS_CACHE}" ]; then
     export CCACHE_SECONDARY_STORAGE="redis://${REDIS_CACHE}"
     echo "INFO: Using CCACHE_SECONDARY_STORAGE=${CCACHE_SECONDARY_STORAGE}"
 fi
+
+export LDGEN_CHECK_MAPPING="1"

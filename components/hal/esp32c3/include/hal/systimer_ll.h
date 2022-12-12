@@ -1,29 +1,20 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/systimer_struct.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/assert.h"
 
-#define SYSTIMER_LL_COUNTER_CLOCK       (0) // Counter used for "wallclock" time
-#define SYSTIMER_LL_COUNTER_OS_TICK     (1) // Counter used for OS tick
-#define SYSTIMER_LL_ALARM_OS_TICK_CORE0 (0) // Alarm used for OS tick of CPU core 0
-#define SYSTIMER_LL_ALARM_CLOCK         (2) // Alarm used for "wallclock" time
-
-#define SYSTIMER_LL_TICKS_PER_US        (16) // 16 systimer ticks == 1us
+#define SYSTIMER_LL_COUNTER_CLOCK       0 // Counter used by esptimer, to generate the system level wall clock
+#define SYSTIMER_LL_COUNTER_OS_TICK     1 // Counter used by RTOS porting layer, to generate the OS tick
+#define SYSTIMER_LL_ALARM_OS_TICK_CORE0 0 // Alarm used by OS tick, dedicated for core 0
+#define SYSTIMER_LL_ALARM_CLOCK         2 // Alarm used by esptimer
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +28,16 @@ extern "C" {
 __attribute__((always_inline)) static inline void systimer_ll_enable_clock(systimer_dev_t *dev, bool en)
 {
     dev->conf.clk_en = en;
+}
+
+static inline void systimer_ll_set_clock_source(soc_periph_systimer_clk_src_t clk_src)
+{
+    (void)clk_src;
+}
+
+static inline soc_periph_systimer_clk_src_t systimer_ll_get_clock_source(void)
+{
+    return SYSTIMER_CLK_SRC_XTAL;
 }
 
 /******************* Counter *************************/

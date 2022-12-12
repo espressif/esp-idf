@@ -1,0 +1,52 @@
+{
+    "head": {
+        "text": "TDM PCM (short) Timing Diagram"
+    },
+    "signal": [
+        {
+            "node": ".TE.........G",
+            "phase": -0.35
+        },
+        {
+            "name": "BCLK",
+            "wave": "p..d.p.d.pd.pd"
+        },
+        {
+            "name": "WS",
+            "wave": "010d......010d",
+            "node": ".NH",
+            "phase": -0.35
+        },
+        {
+            "name": "DIN / DOUT",
+            "wave": "xx2x|2x|2x|22x",
+            "data": [
+                "MSB",
+                "LSB",
+                "MSB",
+                "LSB",
+                "MSB"
+            ],
+            "node": "..H..FK.I...M",
+            "phase": -0.35
+        },
+        {
+            "node": ".UA...B.C...D...J",
+            "phase": -0.35
+        }
+    ],
+    "edge": [
+        "T<->E pulse",
+        "E<->G Frame",
+        "U<->A bit shift",
+        "A<->B Slot 1",
+        "B<->C ...",
+        "C<->D Slot n",
+        "T-U",
+        "A-E",
+        "K-B",
+        "C-I",
+        "D-M",
+        "D-G"
+    ]
+}

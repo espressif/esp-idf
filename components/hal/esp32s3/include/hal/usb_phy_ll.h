@@ -59,6 +59,8 @@ static inline void usb_phy_ll_int_jtag_enable(usb_serial_jtag_dev_t *hw)
     hw->conf0.phy_sel = 0;
     // Disable software control USB D+ D- pullup pulldown (Device FS: dp_pullup = 1)
     hw->conf0.pad_pull_override = 0;
+    // Enable USB D+ pullup
+    hw->conf0.dp_pullup = 1;
     // Enable USB pad function
     hw->conf0.usb_pad_enable = 1;
     // phy_sel is controlled by the following register value

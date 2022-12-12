@@ -1,0 +1,15 @@
+{
+  "signal": [
+    {
+      "name": "pwm_A",
+      "wave": "01..0...1..0"
+    },
+    {
+      "name": "pwm_B",
+      "wave": "1.01.....01."
+    }
+  ],
+  "head": {
+    "text": "Dual Edge Symmetric Waveform, Complementary"
+  }
+}

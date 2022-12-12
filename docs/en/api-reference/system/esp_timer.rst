@@ -1,5 +1,5 @@
-High Resolution Timer
-=====================
+High Resolution Timer (ESP Timer)
+=================================
 
 {IDF_TARGET_HR_TIMER:default = "SYSTIMER", esp32 = "LAC timer"}
 
@@ -60,6 +60,15 @@ Callback functions
 
 Timer callbacks which are processed by ``ESP_TIMER_ISR`` method should not call the context switch call - ``portYIELD_FROM_ISR()``, instead of this you should use the :cpp:func:`esp_timer_isr_dispatch_need_yield` function.
 The context switch will be done after all ISR dispatch timers have been processed, if required by the system.
+
+.. only:: SOC_SYSTIMER_SUPPORT_ETM
+
+    ETM Event
+    ---------
+
+    The esp_timer is constructed based on a hardware timer called *systimer*, which is able to generate the alarm event and interact with the :doc:`ETM </api-reference/peripherals/etm>` module. You can call :cpp:func:`esp_timer_new_etm_alarm_event` to get the corresponding ETM event handle.
+
+    For how to connect the event to an ETM channel, please refer to the :doc:`ETM </api-reference/peripherals/etm>` documentation.
 
 esp_timer during the light sleep
 --------------------------------

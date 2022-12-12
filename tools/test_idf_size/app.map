@@ -16720,7 +16720,6 @@ LOAD /home/user/esp/esp-idf/tools/unit-test-app/build/log/liblog.a
 LOAD /home/user/esp/esp-idf/tools/unit-test-app/build/lwip/liblwip.a
 LOAD /home/user/esp/esp-idf/tools/unit-test-app/build/main/libmain.a
 LOAD /home/user/esp/esp-idf/tools/unit-test-app/build/mbedtls/libmbedtls.a
-LOAD /home/user/esp/esp-idf/tools/unit-test-app/build/mdns/libmdns.a
 LOAD /home/user/esp/esp-idf/tools/unit-test-app/build/micro-ecc/libmicro-ecc.a
 LOAD /home/user/esp/esp-idf/components/newlib/lib/libc.a
 LOAD /home/user/esp/esp-idf/components/newlib/lib/libm.a

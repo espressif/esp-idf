@@ -18,7 +18,7 @@ const static char *TAG = "esp_dbg_stubs";
 /* Advertises apptrace control block address to host */
 static int esp_dbg_stubs_advertise_table(void *stub_table_addr)
 {
-    if (!esp_cpu_in_ocd_debug_mode()) {
+    if (!esp_cpu_dbgr_is_attached()) {
         return 0;
     }
     return (int) semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_DBG_STUBS_INIT, (long*)stub_table_addr);

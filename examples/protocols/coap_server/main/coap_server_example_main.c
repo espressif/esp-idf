@@ -31,6 +31,10 @@
 
 #include "coap3/coap.h"
 
+#ifndef CONFIG_COAP_SERVER_SUPPORT
+#error COAP_SERVER_SUPPORT needs to be enabled
+#endif /* COAP_SERVER_SUPPORT */
+
 /* The examples use simple Pre-Shared-Key configuration that you can set via
    'idf.py menuconfig'.
 
@@ -187,6 +191,7 @@ static void coap_example_server(void *p)
     while (1) {
         coap_endpoint_t *ep = NULL;
         unsigned wait_ms;
+        int have_dtls = 0;
 
         /* Prepare the CoAP server socket */
         coap_address_init(&serv_addr);
@@ -258,16 +263,18 @@ static void coap_example_server(void *p)
             ESP_LOGE(TAG, "udp: coap_new_endpoint() failed");
             goto clean_up;
         }
-        ep = coap_new_endpoint(ctx, &serv_addr, COAP_PROTO_TCP);
-        if (!ep) {
-            ESP_LOGE(TAG, "tcp: coap_new_endpoint() failed");
-            goto clean_up;
+        if (coap_tcp_is_supported()) {
+            ep = coap_new_endpoint(ctx, &serv_addr, COAP_PROTO_TCP);
+            if (!ep) {
+                ESP_LOGE(TAG, "tcp: coap_new_endpoint() failed");
+                goto clean_up;
+            }
         }
 #if defined(CONFIG_COAP_MBEDTLS_PSK) || defined(CONFIG_COAP_MBEDTLS_PKI)
         if (coap_dtls_is_supported()) {
 #ifndef CONFIG_MBEDTLS_TLS_SERVER
             /* This is not critical as unencrypted support is still available */
-            ESP_LOGI(TAG, "MbedTLS (D)TLS Server Mode not configured");
+            ESP_LOGI(TAG, "MbedTLS DTLS Server Mode not configured");
 #else /* CONFIG_MBEDTLS_TLS_SERVER */
             serv_addr.addr.sin6.sin6_port = htons(COAPS_DEFAULT_PORT);
             ep = coap_new_endpoint(ctx, &serv_addr, COAP_PROTO_DTLS);
@@ -275,8 +282,23 @@ static void coap_example_server(void *p)
                 ESP_LOGE(TAG, "dtls: coap_new_endpoint() failed");
                 goto clean_up;
             }
+            have_dtls = 1;
 #endif /* CONFIG_MBEDTLS_TLS_SERVER */
-        } else {
+        }
+        if (coap_tls_is_supported()) {
+#ifndef CONFIG_MBEDTLS_TLS_SERVER
+            /* This is not critical as unencrypted support is still available */
+            ESP_LOGI(TAG, "MbedTLS TLS Server Mode not configured");
+#else /* CONFIG_MBEDTLS_TLS_SERVER */
+            serv_addr.addr.sin6.sin6_port = htons(COAPS_DEFAULT_PORT);
+            ep = coap_new_endpoint(ctx, &serv_addr, COAP_PROTO_TLS);
+            if (!ep) {
+                ESP_LOGE(TAG, "tls: coap_new_endpoint() failed");
+                goto clean_up;
+            }
+#endif /* CONFIG_MBEDTLS_TLS_SERVER */
+        }
+        if (!have_dtls) {
             /* This is not critical as unencrypted support is still available */
             ESP_LOGI(TAG, "MbedTLS (D)TLS Server Mode not configured");
         }

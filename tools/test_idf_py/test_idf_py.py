@@ -3,10 +3,15 @@
 # SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 import os
 import subprocess
 import sys
 from unittest import TestCase, main, mock
+
+import elftools.common.utils as ecu
+import jsonschema
+from elftools.elf.elffile import ELFFile
 
 try:
     from StringIO import StringIO
@@ -22,7 +27,8 @@ except ImportError:
 current_dir = os.path.dirname(os.path.realpath(__file__))
 idf_py_path = os.path.join(current_dir, '..', 'idf.py')
 extension_path = os.path.join(current_dir, 'test_idf_extensions', 'test_ext')
-link_path = os.path.join(current_dir, '..', 'idf_py_actions', 'test_ext')
+py_actions_path = os.path.join(current_dir, '..', 'idf_py_actions')
+link_path = os.path.join(py_actions_path, 'test_ext')
 
 
 class TestWithoutExtensions(TestCase):
@@ -225,6 +231,64 @@ class TestDeprecations(TestWithoutExtensions):
         self.assertIn('Warning: Option "test_3" is deprecated and will be removed in future versions.', output)
         self.assertNotIn('"test-0" is deprecated', output)
         self.assertNotIn('"test_0" is deprecated', output)
+
+
+class TestHelpOutput(TestWithoutExtensions):
+    def test_output(self):
+        def action_test(commands, schema):
+            output_file = 'idf_py_help_output.json'
+            with open(output_file, 'w') as outfile:
+                subprocess.run(commands, env=os.environ, stdout=outfile)
+            with open(output_file, 'r') as outfile:
+                help_obj = json.load(outfile)
+            self.assertIsNone(jsonschema.validate(help_obj, schema))
+
+        with open(os.path.join(current_dir, 'idf_py_help_schema.json'), 'r') as schema_file:
+            schema_json = json.load(schema_file)
+        action_test(['idf.py', 'help', '--json'], schema_json)
+        action_test(['idf.py', 'help', '--json', '--add-options'], schema_json)
+
+
+class TestROMs(TestWithoutExtensions):
+    def get_string_from_elf_by_addr(self, filename: str, address: int) -> str:
+        result = ''
+        with open(filename, 'rb') as stream:
+            elf_file = ELFFile(stream)
+            ro = elf_file.get_section_by_name('.rodata')
+            ro_addr_delta = ro['sh_addr'] - ro['sh_offset']
+            cstring = ecu.parse_cstring_from_stream(ro.stream, address - ro_addr_delta)
+            if cstring:
+                result = str(cstring.decode('utf-8'))
+        return result
+
+    def test_roms_validate_json(self):
+        with open(os.path.join(py_actions_path, 'roms.json'), 'r') as f:
+            roms_json = json.load(f)
+
+        with open(os.path.join(py_actions_path, 'roms_schema.json'), 'r') as f:
+            schema_json = json.load(f)
+        jsonschema.validate(roms_json, schema_json)
+
+    def test_roms_check_supported_chips(self):
+        from idf_py_actions.constants import SUPPORTED_TARGETS
+        with open(os.path.join(py_actions_path, 'roms.json'), 'r') as f:
+            roms_json = json.load(f)
+        for chip in SUPPORTED_TARGETS:
+            self.assertTrue(chip in roms_json, msg=f'Have no ROM data for chip {chip}')
+
+    def test_roms_validate_build_date(self):
+        sys.path.append(py_actions_path)
+
+        rom_elfs_dir = os.getenv('ESP_ROM_ELF_DIR')
+        with open(os.path.join(py_actions_path, 'roms.json'), 'r') as f:
+            roms_json = json.load(f)
+
+        for chip in roms_json:
+            for k in roms_json[chip]:
+                rom_file = os.path.join(rom_elfs_dir, f'{chip}_rev{k["rev"]}_rom.elf')
+                build_date_str = self.get_string_from_elf_by_addr(rom_file, int(k['build_date_str_addr'], base=16))
+                self.assertTrue(len(build_date_str) == 11)
+                self.assertTrue(build_date_str == k['build_date_str'])
 
 
 if __name__ == '__main__':

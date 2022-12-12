@@ -20,7 +20,6 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
-#include "esp_nimble_hci.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
@@ -578,8 +577,10 @@ blecent_on_sync(void)
     rc = ble_hs_util_ensure_addr(0);
     assert(rc == 0);
 
+#if !CONFIG_EXAMPLE_INIT_DEINIT_LOOP
     /* Begin scanning for a peripheral to connect to. */
     blecent_scan();
+#endif
 }
 
 void blecent_host_task(void *param)
@@ -590,6 +591,37 @@ void blecent_host_task(void *param)
 
     nimble_port_freertos_deinit();
 }
+
+#if CONFIG_EXAMPLE_INIT_DEINIT_LOOP
+/* This function showcases stack init and deinit procedure. */
+static void stack_init_deinit(void)
+{
+    int rc;
+    while(1) {
+
+        vTaskDelay(1000);
+
+        ESP_LOGI(tag, "Deinit host");
+
+        rc = nimble_port_stop();
+        if (rc == 0) {
+            nimble_port_deinit();
+        } else {
+            ESP_LOGI(tag, "Nimble port stop failed, rc = %d", rc);
+            break;
+        }
+
+        vTaskDelay(1000);
+
+        ESP_LOGI(tag, "Init host");
+
+        nimble_port_init();
+        nimble_port_freertos_init(blecent_host_task);
+
+        ESP_LOGI(tag, "Waiting for 1 second");
+    }
+}
+#endif
 
 void
 app_main(void)
@@ -602,8 +634,6 @@ app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
-    ESP_ERROR_CHECK(esp_nimble_hci_and_controller_init());
 
     nimble_port_init();
     /* Configure the host. */
@@ -623,5 +653,9 @@ app_main(void)
     ble_store_config_init();
 
     nimble_port_freertos_init(blecent_host_task);
+
+#if CONFIG_EXAMPLE_INIT_DEINIT_LOOP
+    stack_init_deinit();
+#endif
 
 }

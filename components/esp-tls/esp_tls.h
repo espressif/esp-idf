@@ -146,7 +146,10 @@ typedef struct esp_tls_cfg {
     bool use_secure_element;                /*!< Enable this option to use secure element or
                                                  atecc608a chip ( Integrated with ESP32-WROOM-32SE ) */
 
-    int timeout_ms;                         /*!< Network timeout in milliseconds */
+    int timeout_ms;                         /*!< Network timeout in milliseconds.
+                                                 Note: If this value is not set, by default the timeout is
+                                                 set to 10 seconds. If you wish that the session should wait
+                                                 indefinitely then please use a larger value e.g., INT32_MAX */
 
     bool use_global_ca_store;               /*!< Use a global ca_store for all the connections in which
                                                  this bool is set. */
@@ -193,6 +196,18 @@ typedef struct esp_tls_server_session_ticket_ctx {
     mbedtls_ssl_ticket_context ticket_ctx;                                     /*!< Session ticket generation context */
 } esp_tls_server_session_ticket_ctx_t;
 #endif
+
+
+/**
+ * @brief tls handshake callback
+ * Can be used to configure per-handshake attributes for the TLS connection.
+ * E.g. Client certificate / Key, Authmode, Client CA verification, etc.
+ *
+ * @param ssl mbedtls_ssl_context that can be used for changing settings
+ * @return The reutn value of the callback must be 0 if successful,
+ *         or a specific MBEDTLS_ERR_XXX code, which will cause the handhsake to abort
+ */
+typedef mbedtls_ssl_hs_cb_t esp_tls_handshake_callback;
 
 typedef struct esp_tls_cfg_server {
     const char **alpn_protos;                   /*!< Application protocols required for HTTP2.
@@ -256,6 +271,15 @@ typedef struct esp_tls_cfg_server {
                                                     Call esp_tls_cfg_server_session_tickets_free
                                                     to free the data associated with this context. */
 #endif
+
+    void *userdata;                             /*!< User data to be added to the ssl context.
+                                                  Can be retrieved by callbacks */
+#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
+    esp_tls_handshake_callback cert_select_cb;  /*!< Certificate selection callback that gets called after ClientHello is processed.
+                                                     Can be used as an SNI callback, but also has access to other
+                                                     TLS extensions, such as ALPN and server_certificate_type . */
+#endif
+
 } esp_tls_cfg_server_t;
 
 /**

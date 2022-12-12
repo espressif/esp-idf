@@ -17,10 +17,10 @@
 /**
  * @brief WiFi netif driver structure
  */
-typedef struct wifi_netif_driver {
+struct wifi_netif_driver {
     esp_netif_driver_base_t base;
     wifi_interface_t wifi_if;
-}* wifi_netif_driver_t;
+};
 
 static const char* TAG = "wifi_netif";
 
@@ -155,6 +155,7 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
         return ESP_ERR_NOT_SUPPORTED;
     }
 
+    /* Interface must be set before registering Wi-Fi RX callback */
     s_wifi_netifs[wifi_interface] = ifx->base.netif;
     if ((ret = esp_wifi_internal_reg_rxcb(wifi_interface,  rxcb)) != ESP_OK) {
         ESP_LOGE(TAG, "esp_wifi_internal_reg_rxcb for if=%d failed with %d", wifi_interface, ret);

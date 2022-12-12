@@ -151,9 +151,9 @@ void unity_testcase_register(test_desc_t* desc);
 
 /*
   Test case macro to be ignored in CI.
-  Tests will still be built (to check for compile error) but not linked if IDF_CI_BUILD.
+  Tests will still be built (to check for compile error) but not linked if CONFIG_IDF_CI_BUILD.
  */
-#if IDF_CI_BUILD
+#ifdef CONFIG_IDF_CI_BUILD
 #define TEST_CASE_CI_IGNORE(name_, desc_) \
     __attribute__((unused)) static void UNITY_TEST_UID(test_func_) (void)
 #else
@@ -171,11 +171,17 @@ void unity_testcase_register(test_desc_t* desc);
 
 void unity_run_test_by_name(const char *name);
 
+void unity_run_test_by_index(int test_index);
+
 void unity_run_tests_by_tag(const char *tag, bool invert);
 
 void unity_run_all_tests(void);
 
 void unity_run_menu(void);
+
+int unity_get_test_count(void);
+
+bool unity_get_test_info(int test_index, test_desc_t* out_info);
 
 #include "sdkconfig.h" //to get IDF_TARGET_xxx
 

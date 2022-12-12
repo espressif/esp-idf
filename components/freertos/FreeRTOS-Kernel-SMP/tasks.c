@@ -369,7 +369,15 @@ PRIVILEGED_DATA static List_t xPendingReadyList;                         /*< Tas
 PRIVILEGED_DATA static volatile UBaseType_t uxCurrentNumberOfTasks = ( UBaseType_t ) 0U;
 PRIVILEGED_DATA static volatile TickType_t xTickCount = ( TickType_t ) configINITIAL_TICK_COUNT;
 PRIVILEGED_DATA static volatile UBaseType_t uxTopReadyPriority = tskIDLE_PRIORITY;
+#if ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
+/*
+Workaround for non-thread safe multi-core OS startup (see IDF-4524)
+*/
+PRIVILEGED_DATA static volatile BaseType_t xSchedulerRunningPerCore[ configNUM_CORES ] = { pdFALSE };
+#define xSchedulerRunning xSchedulerRunningPerCore[ portGET_CORE_ID() ]
+#else // ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 )
 PRIVILEGED_DATA static volatile BaseType_t xSchedulerRunning = pdFALSE;
+#endif // ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 )
 PRIVILEGED_DATA static volatile TickType_t xPendedTicks = ( TickType_t ) 0U;
 PRIVILEGED_DATA static volatile BaseType_t xYieldPendings[ configNUM_CORES ] = { pdFALSE };
 PRIVILEGED_DATA static volatile BaseType_t xNumOfOverflows = ( BaseType_t ) 0;
@@ -709,11 +717,13 @@ static void prvYieldCore( BaseType_t xCoreID )
         {
             xYieldPendings[ xCoreID ] = pdTRUE;
         }
-        else
-        {
-            portYIELD_CORE( xCoreID );
-            pxCurrentTCBs[ xCoreID ]->xTaskRunState = taskTASK_YIELDING;
-        }
+        #if ( configNUM_CORES > 1 )
+            else
+            {
+                portYIELD_CORE( xCoreID );
+                pxCurrentTCBs[ xCoreID ]->xTaskRunState = taskTASK_YIELDING;
+            }
+        #endif
     }
 }
 
@@ -2860,17 +2870,18 @@ void vTaskStartScheduler( void )
          * starts to run. */
         portDISABLE_INTERRUPTS();
 
-        #if ( configUSE_NEWLIB_REENTRANT == 1 )
+        #if ( ( configUSE_NEWLIB_REENTRANT == 1 ) && ( configNEWLIB_REENTRANT_IS_DYNAMIC == 0 ) )
             {
                 /* Switch Newlib's _impure_ptr variable to point to the _reent
                  * structure specific to the task that will run first.
                  * See the third party link http://www.nadler.com/embedded/newlibAndFreeRTOS.html
-                 * for additional information. */
-#ifndef ESP_PLATFORM
+                 * for additional information.
+                 *
+                 * Note: Updating the _impure_ptr is not required when Newlib is compiled with
+                 * __DYNAMIC_REENT__ enabled. The port should provide __getreent() instead. */
                 _impure_ptr = &( pxCurrentTCB->xNewLib_reent );
-#endif
             }
-        #endif /* configUSE_NEWLIB_REENTRANT */
+        #endif /* ( configUSE_NEWLIB_REENTRANT == 1 ) && ( configNEWLIB_REENTRANT_IS_DYNAMIC == 0 ) */
 
         xNextTaskUnblockTime = portMAX_DELAY;
         xSchedulerRunning = pdTRUE;
@@ -3953,17 +3964,18 @@ void vTaskSwitchContext( BaseType_t xCoreID )
                 }
             #endif
 
-            #if ( configUSE_NEWLIB_REENTRANT == 1 )
+            #if ( ( configUSE_NEWLIB_REENTRANT == 1 ) && ( configNEWLIB_REENTRANT_IS_DYNAMIC == 0 ) )
                 {
                     /* Switch Newlib's _impure_ptr variable to point to the _reent
                      * structure specific to this task.
                      * See the third party link http://www.nadler.com/embedded/newlibAndFreeRTOS.html
-                     * for additional information. */
-#ifndef ESP_PLATFORM
+                     * for additional information.
+                     *
+                     * Note: Updating the _impure_ptr is not required when Newlib is compiled with
+                     * __DYNAMIC_REENT__ enabled. The the port should provide __getreent() instead. */
                     _impure_ptr = &( pxCurrentTCB->xNewLib_reent );
-#endif
                 }
-            #endif /* configUSE_NEWLIB_REENTRANT */
+            #endif /* ( configUSE_NEWLIB_REENTRANT == 1 ) && ( configNEWLIB_REENTRANT_IS_DYNAMIC == 0 ) */
         }
     }
     portRELEASE_ISR_LOCK();
@@ -4710,6 +4722,12 @@ static void prvCheckTasksWaitingTermination( void )
         pxTaskStatus->pxStackBase = pxTCB->pxStack;
         pxTaskStatus->xTaskNumber = pxTCB->uxTCBNumber;
 
+        #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) )
+            {
+                pxTaskStatus->uxCoreAffinityMask = pxTCB->uxCoreAffinityMask;
+            }
+        #endif
+
         #if ( configUSE_MUTEXES == 1 )
             {
                 pxTaskStatus->uxBasePriority = pxTCB->uxBasePriority;
@@ -4918,7 +4936,6 @@ static void prvCheckTasksWaitingTermination( void )
 
     static void prvDeleteTCB( TCB_t * pxTCB )
     {
-
         /* This call is required specifically for the TriCore port.  It must be
          * above the vPortFree() calls.  The call is also used by ports/demos that
          * want to allocate and clean RAM statically. */
@@ -5008,7 +5025,7 @@ static void prvResetNextTaskUnblockTime( void )
         return xReturn;
     }
 
-    TaskHandle_t xTaskGetCurrentTaskHandleCPU( BaseType_t xCoreID )
+    TaskHandle_t xTaskGetCurrentTaskHandleCPU( UBaseType_t xCoreID )
     {
         TaskHandle_t xReturn = NULL;
 
@@ -6441,23 +6458,13 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
 
 #endif /* if ( configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H == 1 ) */
 
-/* ------------------------------------------------ IDF Compatibility --------------------------------------------------
- *
- * ------------------------------------------------------------------------------------------------------------------ */
-
-#ifdef ESP_PLATFORM
-#if ( configUSE_NEWLIB_REENTRANT == 1 )
-//Return global reent struct if FreeRTOS isn't running,
-struct _reent* __getreent(void) {
-    //No lock needed because if this changes, we won't be running anymore.
-    TCB_t *currTask=xTaskGetCurrentTaskHandle();
-    if (currTask==NULL) {
-        //No task running. Return global struct.
-        return _GLOBAL_REENT;
-    } else {
-        //We have a task; return its reentrant struct.
-        return &currTask->xNewLib_reent;
-    }
+#if ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
+/*
+Workaround for non-thread safe multi-core OS startup (see IDF-4524)
+*/
+void vTaskStartSchedulerOtherCores( void )
+{
+    /* This function is always called with interrupts disabled*/
+    xSchedulerRunning = pdTRUE;
 }
-#endif
-#endif //ESP_PLATFORM
+#endif // ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1

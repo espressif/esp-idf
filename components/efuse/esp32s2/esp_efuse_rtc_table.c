@@ -10,6 +10,7 @@
 #include "esp_efuse_table.h"
 #include "esp_log.h"
 #include "hal/adc_types.h"
+#include "hal/efuse_ll.h"
 #include "soc/soc_caps.h"
 
 #define RTC_TBL_LOG_TAG "efuse_rtc_table"
@@ -90,13 +91,12 @@ static const efuse_map_info_t adc_efuse_raw_map[] = {
 
 int esp_efuse_rtc_table_read_calib_version(void)
 {
-    uint32_t result = 0;
-    esp_efuse_read_field_blob(ESP_EFUSE_BLOCK2_VERSION, &result, 32);
-    return result;
+    return efuse_ll_get_blk_version_minor();
 }
 
 int esp_efuse_rtc_table_get_tag(int version, int adc_num, int atten, int extra_params)
 {
+    assert(adc_num <= ADC_UNIT_2);
     int index = (adc_num == ADC_UNIT_1) ? 0 : 1;
     int param_offset; // used to index which (adc_num, atten) array to use.
     if (version == 1 && extra_params == RTCCALIB_V1_PARAM_VLOW) { // Volage LOW, Version 1

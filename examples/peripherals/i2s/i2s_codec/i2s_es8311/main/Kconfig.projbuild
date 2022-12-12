@@ -1,0 +1,64 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_MODE
+        prompt "Example mode"
+        default EXAMPLE_MODE_MUSIC
+        help
+            Select example work mode
+
+        config EXAMPLE_MODE_MUSIC
+            bool "music"
+        config EXAMPLE_MODE_ECHO
+            depends on !EXAMPLE_BSP
+            bool "echo"
+    endchoice
+
+    choice EXAMPLE_SELECT_MIC_GAIN
+        prompt "Set MIC gain"
+        depends on EXAMPLE_MODE_ECHO
+        default MIC_GAIN_18DB
+        help
+            Select mic gain for echo mode
+
+        config MIC_GAIN_0DB
+            bool "0dB"
+        config MIC_GAIN_6DB
+            bool "6dB"
+        config MIC_GAIN_12DB
+            bool "12dB"
+        config MIC_GAIN_18DB
+            bool "18dB"
+        config MIC_GAIN_24DB
+            bool "24dB"
+        config MIC_GAIN_30DB
+            bool "30dB"
+        config MIC_GAIN_36DB
+            bool "36dB"
+        config MIC_GAIN_42DB
+            bool "42dB"
+    endchoice
+
+    config EXAMPLE_MIC_GAIN
+        int
+        default 0 if MIC_GAIN_0DB
+        default 1 if MIC_GAIN_6DB
+        default 2 if MIC_GAIN_12DB
+        default 3 if MIC_GAIN_18DB
+        default 4 if MIC_GAIN_24DB
+        default 5 if MIC_GAIN_30DB
+        default 6 if MIC_GAIN_36DB
+        default 7 if MIC_GAIN_42DB
+
+    config EXAMPLE_VOICE_VOLUME
+        int "Voice volume"
+        range 0 100
+        default 60
+        help
+            Set voice volume
+
+    config EXAMPLE_BSP
+        bool "Enable Board Support Package (BSP) support"
+        default n
+        help
+            Use BSP to setup all hardware settings. Specific board must be selected in main/idf_component.yml file.
+endmenu

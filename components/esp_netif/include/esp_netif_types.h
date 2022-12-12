@@ -28,12 +28,20 @@ extern "C" {
 #define ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED  ESP_ERR_ESP_NETIF_BASE + 0x05
 #define ESP_ERR_ESP_NETIF_NO_MEM                ESP_ERR_ESP_NETIF_BASE + 0x06
 #define ESP_ERR_ESP_NETIF_DHCP_NOT_STOPPED      ESP_ERR_ESP_NETIF_BASE + 0x07
-#define ESP_ERR_ESP_NETIF_DRIVER_ATTACH_FAILED   ESP_ERR_ESP_NETIF_BASE + 0x08
+#define ESP_ERR_ESP_NETIF_DRIVER_ATTACH_FAILED  ESP_ERR_ESP_NETIF_BASE + 0x08
 #define ESP_ERR_ESP_NETIF_INIT_FAILED           ESP_ERR_ESP_NETIF_BASE + 0x09
 #define ESP_ERR_ESP_NETIF_DNS_NOT_CONFIGURED    ESP_ERR_ESP_NETIF_BASE + 0x0A
 #define ESP_ERR_ESP_NETIF_MLD6_FAILED           ESP_ERR_ESP_NETIF_BASE + 0x0B
 #define ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED       ESP_ERR_ESP_NETIF_BASE + 0x0C
+#define ESP_ERR_ESP_NETIF_DHCPS_START_FAILED    ESP_ERR_ESP_NETIF_BASE + 0x0D
 
+
+/**
+ * @brief Definition of ESP-NETIF bridge controll
+ */
+#define ESP_NETIF_BR_FLOOD      -1
+#define ESP_NETIF_BR_DROP        0
+#define ESP_NETIF_BR_FDW_CPU    (1ULL << 63)
 
 /** @brief Type of esp_netif_object server */
 struct esp_netif_obj;
@@ -118,7 +126,6 @@ typedef struct {
  *
  */
 typedef struct {
-    int if_index;                    /*!< Interface index for which the event is received (left for legacy compilation) */
     esp_netif_t *esp_netif;          /*!< Pointer to corresponding esp-netif object */
     esp_netif_ip_info_t ip_info;     /*!< IP address, netmask, gatway IP address */
     bool ip_changed;                 /*!< Whether the assigned IP has changed or not */
@@ -126,7 +133,6 @@ typedef struct {
 
 /** Event structure for IP_EVENT_GOT_IP6 event */
 typedef struct {
-    int if_index;                    /*!< Interface index for which the event is received (left for legacy compilation) */
     esp_netif_t *esp_netif;          /*!< Pointer to corresponding esp-netif object */
     esp_netif_ip6_info_t ip6_info;   /*!< IPv6 address of the interface */
     int ip_index;                    /*!< IPv6 address index */
@@ -146,8 +152,6 @@ typedef struct {
 } ip_event_ap_staipassigned_t;
 
 
-
-
 typedef enum esp_netif_flags {
     ESP_NETIF_DHCP_CLIENT = 1 << 0,
     ESP_NETIF_DHCP_SERVER = 1 << 1,
@@ -155,7 +159,7 @@ typedef enum esp_netif_flags {
     ESP_NETIF_FLAG_GARP   = 1 << 3,
     ESP_NETIF_FLAG_EVENT_IP_MODIFIED = 1 << 4,
     ESP_NETIF_FLAG_IS_PPP = 1 << 5,
-    ESP_NETIF_FLAG_IS_SLIP = 1 << 6,
+    ESP_NETIF_FLAG_IS_BRIDGE = 1 << 6,
 } esp_netif_flags_t;
 
 typedef enum esp_netif_ip_event_type {
@@ -163,6 +167,13 @@ typedef enum esp_netif_ip_event_type {
     ESP_NETIF_IP_EVENT_LOST_IP = 2,
 } esp_netif_ip_event_type_t;
 
+
+/** LwIP bridge configuration */
+typedef struct bridgeif_config {
+    uint16_t max_fdb_dyn_entries; /*!< maximum number of entries in dynamic forwarding database */
+    uint16_t max_fdb_sta_entries; /*!< maximum number of entries in static forwarding database */
+    uint8_t max_ports;            /*!< maximum number of ports the bridge can consist of */
+} bridgeif_config_t;
 
 //
 //    ESP-NETIF interface configuration:
@@ -187,6 +198,7 @@ typedef struct esp_netif_inherent_config {
                                           routing if (if other netifs are up).
                                           A higher value of route_prio indicates
                                           a higher priority */
+    bridgeif_config_t *bridge_info;  /*!< LwIP bridge configuration */
 } esp_netif_inherent_config_t;
 
 typedef struct esp_netif_config esp_netif_config_t;
@@ -231,6 +243,14 @@ struct esp_netif_config {
     const esp_netif_driver_ifconfig_t *driver; /*!< driver config */
     const esp_netif_netstack_config_t *stack; /*!< stack config */
 };
+
+/**
+ * @brief DHCP client's addr info (pair of MAC and IP address)
+ */
+typedef struct {
+    uint8_t mac[6];         /**< Clients MAC address */
+    esp_ip4_addr_t ip;      /**< Clients IP address */
+} esp_netif_pair_mac_ip_t;
 
 /**
  * @brief  ESP-NETIF Receive function type

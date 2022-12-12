@@ -18,9 +18,8 @@
 #include "esp32c2/rom/ets_sys.h"
 #include "esp32c2/rom/rtc.h"
 #include "regi2c_ctrl.h"
-#include "regi2c_lp_bias.h"
-#include "regi2c_dig_reg.h"
-#include "esp_efuse.h"
+#include "soc/regi2c_lp_bias.h"
+#include "soc/regi2c_dig_reg.h"
 
 /**
  * Configure whether certain peripherals are powered down in deep sleep

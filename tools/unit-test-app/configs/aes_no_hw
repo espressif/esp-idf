@@ -1,5 +1,0 @@
-# This config is for all targets
-TEST_EXCLUDE_COMPONENTS=bt app_update test_utils
-TEST_COMPONENTS=mbedtls
-CONFIG_MBEDTLS_HARDWARE_AES=n
-CONFIG_MBEDTLS_MPI_USE_INTERRUPT=n

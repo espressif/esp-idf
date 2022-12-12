@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 
 int spi_flash_get_chip_size(void)
 {

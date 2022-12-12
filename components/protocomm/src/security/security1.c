@@ -10,23 +10,18 @@
 #include <esp_err.h>
 #include <esp_log.h>
 
-/* ToDo - Remove this once appropriate solution is available.
-We need to define this for the file as ssl_misc.h uses private structures from mbedtls,
-which are undefined if the following flag is not defined */
-/* Many APIs in the file make use of this flag instead of `MBEDTLS_PRIVATE` */
-/* ToDo - Replace them with proper getter-setter once they are added */
-#define MBEDTLS_ALLOW_PRIVATE_ACCESS
-
-/* ToDo - Remove this once appropriate solution is available.
- * Currently MBEDTLS_LEGACY_CONTEXT is enabled by default for MBEDTLS_ECP_RESTARTABLE
+/* TODO: Currently MBEDTLS_ECDH_LEGACY_CONTEXT is enabled by default
+ * when MBEDTLS_ECP_RESTARTABLE is enabled.
  * This is a temporary workaround to allow that.
- * The LEGACY option is soon going to be removed in future mbedtls
- * once it is removed we can remove the workaround.
+ *
+ * The legacy option is soon going to be removed in future mbedtls
+ * versions and this workaround will be removed once the appropriate
+ * solution is available.
  */
 #ifdef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
-#define ACCESS_ECDH(S, var) S->var
+#define ACCESS_ECDH(S, var) S->MBEDTLS_PRIVATE(var)
 #else
-#define ACCESS_ECDH(S, var) S->ctx.mbed_ecdh.var
+#define ACCESS_ECDH(S, var) S->MBEDTLS_PRIVATE(ctx).MBEDTLS_PRIVATE(mbed_ecdh).MBEDTLS_PRIVATE(var)
 #endif
 
 #include <mbedtls/aes.h>
@@ -35,8 +30,6 @@ which are undefined if the following flag is not defined */
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/ecdh.h>
 #include <mbedtls/error.h>
-#include <mbedtls/constant_time.h>
-#include <ssl_misc.h>
 #include <mbedtls/constant_time.h>
 
 #include <protocomm_security.h>
@@ -193,7 +186,7 @@ static esp_err_t sec1_new_session(protocomm_security_handle_t handle, uint32_t s
 static esp_err_t handle_session_command0(session_t *cur_session,
                                          uint32_t session_id,
                                          SessionData *req, SessionData *resp,
-                                         const protocomm_security_pop_t *pop)
+                                         const protocomm_security1_params_t *pop)
 {
     ESP_LOGD(TAG, "Request to handle setup0_command");
     Sec1Payload *in = (Sec1Payload *) req->sec1;
@@ -250,7 +243,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
         goto exit_cmd0;
     }
 
-    mbed_err = mbedtls_mpi_write_binary(ACCESS_ECDH(&ctx_server, Q).X,
+    mbed_err = mbedtls_mpi_write_binary(ACCESS_ECDH(&ctx_server, Q).MBEDTLS_PRIVATE(X),
                                         cur_session->device_pubkey,
                                         PUBLIC_KEY_LEN);
     if (mbed_err != 0) {
@@ -267,7 +260,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     hexdump("Device pubkey", dev_pubkey, PUBLIC_KEY_LEN);
     hexdump("Client pubkey", cli_pubkey, PUBLIC_KEY_LEN);
 
-    mbed_err = mbedtls_mpi_lset(ACCESS_ECDH(&ctx_server, Qp).Z, 1);
+    mbed_err = mbedtls_mpi_lset(ACCESS_ECDH(&ctx_server, Qp).MBEDTLS_PRIVATE(Z), 1);
     if (mbed_err != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_lset with error code : -0x%x", -mbed_err);
         ret = ESP_FAIL;
@@ -275,7 +268,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     }
 
     flip_endian(cur_session->client_pubkey, PUBLIC_KEY_LEN);
-    mbed_err = mbedtls_mpi_read_binary(ACCESS_ECDH(&ctx_server, Qp).X, cli_pubkey, PUBLIC_KEY_LEN);
+    mbed_err = mbedtls_mpi_read_binary(ACCESS_ECDH(&ctx_server, Qp).MBEDTLS_PRIVATE(X), cli_pubkey, PUBLIC_KEY_LEN);
     flip_endian(cur_session->client_pubkey, PUBLIC_KEY_LEN);
     if (mbed_err != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_read_binary with error code : -0x%x", -mbed_err);
@@ -375,7 +368,7 @@ exit_cmd0:
 static esp_err_t sec1_session_setup(session_t *cur_session,
                                     uint32_t session_id,
                                     SessionData *req, SessionData *resp,
-                                    const protocomm_security_pop_t *pop)
+                                    const protocomm_security1_params_t *pop)
 {
     Sec1Payload *in = (Sec1Payload *) req->sec1;
     esp_err_t ret;
@@ -502,14 +495,10 @@ static esp_err_t sec1_cleanup(protocomm_security_handle_t handle)
 static esp_err_t sec1_decrypt(protocomm_security_handle_t handle,
                               uint32_t session_id,
                               const uint8_t *inbuf, ssize_t inlen,
-                              uint8_t *outbuf, ssize_t *outlen)
+                              uint8_t **outbuf, ssize_t *outlen)
 {
     session_t *cur_session = (session_t *) handle;
     if (!cur_session) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (*outlen < inlen) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -524,8 +513,14 @@ static esp_err_t sec1_decrypt(protocomm_security_handle_t handle,
     }
 
     *outlen = inlen;
+    *outbuf = (uint8_t *) malloc(*outlen);
+    if (!*outbuf) {
+        ESP_LOGE(TAG, "Failed to allocate encrypt/decrypt buf len %d", *outlen);
+        return ESP_ERR_NO_MEM;
+    }
+
     int ret = mbedtls_aes_crypt_ctr(&cur_session->ctx_aes, inlen, &cur_session->nc_off,
-                                    cur_session->rand, cur_session->stb, inbuf, outbuf);
+                                    cur_session->rand, cur_session->stb, inbuf, *outbuf);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_aes_crypt_ctr with error code : %d", ret);
         return ESP_FAIL;
@@ -534,7 +529,7 @@ static esp_err_t sec1_decrypt(protocomm_security_handle_t handle,
 }
 
 static esp_err_t sec1_req_handler(protocomm_security_handle_t handle,
-                                  const protocomm_security_pop_t *pop,
+                                  const void *sec_params,
                                   uint32_t session_id,
                                   const uint8_t *inbuf, ssize_t inlen,
                                   uint8_t **outbuf, ssize_t *outlen,
@@ -567,7 +562,7 @@ static esp_err_t sec1_req_handler(protocomm_security_handle_t handle,
     }
 
     session_data__init(&resp);
-    ret = sec1_session_setup(cur_session, session_id, req, &resp, pop);
+    ret = sec1_session_setup(cur_session, session_id, req, &resp, (protocomm_security1_params_t *) sec_params);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Session setup error %d", ret);
         session_data__free_unpacked(req, NULL);

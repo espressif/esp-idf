@@ -5,6 +5,7 @@
  *
  * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
+
 /*
  * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
@@ -46,12 +47,13 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define semSEMAPHORE_QUEUE_ITEM_LENGTH      ( ( uint8_t ) 0U )
 #define semGIVE_BLOCK_TIME                  ( ( TickType_t ) 0U )
 
-/** @cond !DOC_EXCLUDE_HEADER_SECTION */
 /**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr. h
  * @code{c}
  * vSemaphoreCreateBinary( SemaphoreHandle_t xSemaphore );
  * @endcode
+ * @endcond
  *
  * In many usage scenarios it is faster and more memory efficient to use a
  * direct to task notification in place of a binary semaphore!
@@ -110,7 +112,6 @@ typedef QueueHandle_t SemaphoreHandle_t;
         }                                                                                                                            \
     }
 #endif
-/** @endcond */
 
 /**
  * @cond !DOC_EXCLUDE_HEADER_SECTION
@@ -159,7 +160,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *
  * void vATask( void * pvParameters )
  * {
- *  // Semaphore cannot be used before a call to vSemaphoreCreateBinary().
+ *  // Semaphore cannot be used before a call to xSemaphoreCreateBinary().
  *  // This is a macro so pass the variable in directly.
  *  xSemaphore = xSemaphoreCreateBinary();
  *
@@ -224,8 +225,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *
  * void vATask( void * pvParameters )
  * {
- *  // Semaphore cannot be used before a call to xSemaphoreCreateBinary() or
- *  // xSemaphoreCreateBinaryStatic().
+ *  // Semaphore cannot be used before a call to xSemaphoreCreateBinaryStatic().
  *  // The semaphore's data structures will be placed in the xSemaphoreBuffer
  *  // variable, the address of which is passed into the function.  The
  *  // function's parameter is not NULL, so the function will not attempt any
@@ -260,10 +260,10 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * created with a call to xSemaphoreCreateBinary(), xSemaphoreCreateMutex() or
  * xSemaphoreCreateCounting().
  *
- * param xSemaphore A handle to the semaphore being taken - obtained when
+ * @param xSemaphore A handle to the semaphore being taken - obtained when
  * the semaphore was created.
  *
- * param xBlockTime The time in ticks to wait for the semaphore to become
+ * @param xBlockTime The time in ticks to wait for the semaphore to become
  * available.  The macro portTICK_PERIOD_MS can be used to convert this to a
  * real time.  A block time of zero can be used to poll the semaphore.  A block
  * time of portMAX_DELAY can be used to block indefinitely (provided
@@ -280,7 +280,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * void vATask( void * pvParameters )
  * {
  *  // Create the semaphore to guard a shared resource.
- *  vSemaphoreCreateBinary( xSemaphore );
+ *  xSemaphore = xSemaphoreCreateBinary();
  * }
  *
  * // A task that uses the semaphore.
@@ -415,9 +415,18 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * @endcond
  * \ingroup Semaphores
  */
-#define xSemaphoreTakeRecursive( xMutex, xBlockTime )   xQueueTakeMutexRecursive( ( xMutex ), ( xBlockTime ) )
+#if ( configUSE_RECURSIVE_MUTEXES == 1 )
+    #define xSemaphoreTakeRecursive( xMutex, xBlockTime )    xQueueTakeMutexRecursive( ( xMutex ), ( xBlockTime ) )
+#endif
 
 /**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * semphr. h
+ * @code{c}
+ * xSemaphoreGive( SemaphoreHandle_t xSemaphore );
+ * @endcode
+ * @endcond
+ *
  * <i>Macro</i> to release a semaphore.  The semaphore must have previously been
  * created with a call to xSemaphoreCreateBinary(), xSemaphoreCreateMutex() or
  * xSemaphoreCreateCounting(). and obtained using sSemaphoreTake().
@@ -443,7 +452,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * void vATask( void * pvParameters )
  * {
  *  // Create the semaphore to guard a shared resource.
- *  vSemaphoreCreateBinary( xSemaphore );
+ *  xSemaphore = vSemaphoreCreateBinary();
  *
  *  if( xSemaphore != NULL )
  *  {
@@ -567,9 +576,20 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * @endcond
  * \ingroup Semaphores
  */
-#define xSemaphoreGiveRecursive( xMutex )   xQueueGiveMutexRecursive( ( xMutex ) )
+#if ( configUSE_RECURSIVE_MUTEXES == 1 )
+    #define xSemaphoreGiveRecursive( xMutex )    xQueueGiveMutexRecursive( ( xMutex ) )
+#endif
 
 /**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * semphr. h
+ * @code{c}
+ * xSemaphoreGiveFromISR(
+ *                        SemaphoreHandle_t xSemaphore,
+ *                        BaseType_t *pxHigherPriorityTaskWoken
+ *                    );
+ * @endcode
+ * @endcond
  * <i>Macro</i> to  release a semaphore.  The semaphore must have previously been
  * created with a call to xSemaphoreCreateBinary() or xSemaphoreCreateCounting().
  *
@@ -826,6 +846,13 @@ typedef QueueHandle_t SemaphoreHandle_t;
 
 
 /**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * semphr. h
+ * @code{c}
+ * SemaphoreHandle_t xSemaphoreCreateRecursiveMutex( void );
+ * @endcode
+ * @endcond
+ *
  * Creates a new recursive mutex type semaphore instance, and returns a handle
  * by which the new recursive mutex can be referenced.
  *
@@ -834,7 +861,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * created using xSemaphoreCreateRecursiveMutex() then the required memory is
  * automatically dynamically allocated inside the
  * xSemaphoreCreateRecursiveMutex() function.  (see
- * http://www.freertos.org/a00111.html).  If a recursive mutex is created using
+ * https://www.FreeRTOS.org/a00111.html).  If a recursive mutex is created using
  * xSemaphoreCreateRecursiveMutexStatic() then the application writer must
  * provide the memory that will get used by the mutex.
  * xSemaphoreCreateRecursiveMutexStatic() therefore allows a recursive mutex to
@@ -857,38 +884,48 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *
  * Mutex type semaphores cannot be used from within interrupt service routines.
  *
- * See vSemaphoreCreateBinary() for an alternative implementation that can be
+ * See xSemaphoreCreateBinary() for an alternative implementation that can be
  * used for pure synchronisation (where one task or interrupt always 'gives' the
  * semaphore and another always 'takes' the semaphore) and from within interrupt
  * service routines.
  *
  * @return xSemaphore Handle to the created mutex semaphore.  Should be of type
- *      SemaphoreHandle_t.
+ * SemaphoreHandle_t.
  *
  * Example usage:
  * @code{c}
- *  SemaphoreHandle_t xSemaphore;
+ * SemaphoreHandle_t xSemaphore;
  *
- *  void vATask( void * pvParameters )
+ * void vATask( void * pvParameters )
+ * {
+ *  // Semaphore cannot be used before a call to xSemaphoreCreateMutex().
+ *  // This is a macro so pass the variable in directly.
+ *  xSemaphore = xSemaphoreCreateRecursiveMutex();
+ *
+ *  if( xSemaphore != NULL )
  *  {
- *     // Semaphore cannot be used before a call to xSemaphoreCreateMutex().
- *     // This is a macro so pass the variable in directly.
- *     xSemaphore = xSemaphoreCreateRecursiveMutex();
- *
- *     if( xSemaphore != NULL )
- *     {
- *         // The semaphore was created successfully.
- *         // The semaphore can now be used.
- *     }
+ *      // The semaphore was created successfully.
+ *      // The semaphore can now be used.
  *  }
+ * }
  * @endcode
+ * @cond !DOC_SINGLE_GROUP
+ * \defgroup xSemaphoreCreateRecursiveMutex xSemaphoreCreateRecursiveMutex
+ * @endcond
  * \ingroup Semaphores
  */
-#if( ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) && ( configUSE_RECURSIVE_MUTEXES == 1 ) )
-    #define xSemaphoreCreateRecursiveMutex() xQueueCreateMutex( queueQUEUE_TYPE_RECURSIVE_MUTEX )
+#if ( ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) && ( configUSE_RECURSIVE_MUTEXES == 1 ) )
+    #define xSemaphoreCreateRecursiveMutex()    xQueueCreateMutex( queueQUEUE_TYPE_RECURSIVE_MUTEX )
 #endif
 
 /**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * semphr. h
+ * @code{c}
+ * SemaphoreHandle_t xSemaphoreCreateRecursiveMutexStatic( StaticSemaphore_t *pxMutexBuffer );
+ * @endcode
+ * @endcond
+ *
  * Creates a new recursive mutex type semaphore instance, and returns a handle
  * by which the new recursive mutex can be referenced.
  *
@@ -935,22 +972,25 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *
  * Example usage:
  * @code{c}
- *  SemaphoreHandle_t xSemaphore;
- *  StaticSemaphore_t xMutexBuffer;
+ * SemaphoreHandle_t xSemaphore;
+ * StaticSemaphore_t xMutexBuffer;
  *
- *  void vATask( void * pvParameters )
- *  {
- *     // A recursive semaphore cannot be used before it is created.  Here a
- *     // recursive mutex is created using xSemaphoreCreateRecursiveMutexStatic().
- *     // The address of xMutexBuffer is passed into the function, and will hold
- *     // the mutexes data structures - so no dynamic memory allocation will be
- *     // attempted.
- *     xSemaphore = xSemaphoreCreateRecursiveMutexStatic( &xMutexBuffer );
+ * void vATask( void * pvParameters )
+ * {
+ *  // A recursive semaphore cannot be used before it is created.  Here a
+ *  // recursive mutex is created using xSemaphoreCreateRecursiveMutexStatic().
+ *  // The address of xMutexBuffer is passed into the function, and will hold
+ *  // the mutexes data structures - so no dynamic memory allocation will be
+ *  // attempted.
+ *  xSemaphore = xSemaphoreCreateRecursiveMutexStatic( &xMutexBuffer );
  *
- *     // As no dynamic memory allocation was performed, xSemaphore cannot be NULL,
- *     // so there is no need to check it.
- *  }
+ *  // As no dynamic memory allocation was performed, xSemaphore cannot be NULL,
+ *  // so there is no need to check it.
+ * }
  * @endcode
+ * @cond !DOC_SINGLE_GROUP
+ * \defgroup xSemaphoreCreateRecursiveMutexStatic xSemaphoreCreateRecursiveMutexStatic
+ * @endcond
  * \ingroup Semaphores
  */
 #if ( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configUSE_RECURSIVE_MUTEXES == 1 ) )
@@ -1147,7 +1187,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *
  * @param xSemaphore A handle to the semaphore to be deleted.
  *
- * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup vSemaphoreDelete vSemaphoreDelete
  * @endcond
  * \ingroup Semaphores

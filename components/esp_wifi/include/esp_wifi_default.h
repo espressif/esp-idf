@@ -101,7 +101,7 @@ void esp_netif_destroy_default_wifi(void *esp_netif);
  *
  * @return pointer to esp-netif instance
  */
-esp_netif_t* esp_netif_create_wifi(wifi_interface_t wifi_if, esp_netif_inherent_config_t *esp_netif_config);
+esp_netif_t* esp_netif_create_wifi(wifi_interface_t wifi_if, const esp_netif_inherent_config_t *esp_netif_config);
 
 /**
  * @brief Creates default STA and AP network interfaces for esp-mesh.

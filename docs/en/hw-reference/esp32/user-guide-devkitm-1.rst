@@ -123,7 +123,7 @@ Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-starte
 
 .. attention::
 
-    ESP32-DevKitM-1 is a board with a single core module, please enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in :ref:`menuconfig <get-started-configure>` before flashing your applications.
+    ESP32-DevKitM-1 boards manufactured before December 2, 2021 have a single core module installed. To verify what module you have, please check module marking information in `PCN-2021-021 <https://www.espressif.com/sites/default/files/pcn_downloads/PCN-2021-021%20ESP32-U4WDH%20%E5%8D%87%E7%BA%A7%E4%B8%BA%E5%8F%8C%E6%A0%B8%E5%A4%84%E7%90%86%E5%99%A8%E4%BA%A7%E5%93%81.pdf>`_ . If your board has a single core module installed, please enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in :ref:`menuconfig <get-started-configure>` before flashing your applications.
 
 Hardware Reference
 ======================
@@ -168,7 +168,7 @@ The table below provides the Name and Function of pins on both sides of the boar
 
    * - No.
      - Name
-     - Type
+     - Type [1]_
      - Function
    * - 1
      - GND
@@ -237,7 +237,7 @@ The table below provides the Name and Function of pins on both sides of the boar
    * - 17
      - IO12
      - I/O
-     - GPIO12, ADC2_CH5, TOUCH5, RTC_GPIO15, MTDI, HSPIQ, HS2_DATA2, SD_DATA2, EMAC_TXD3
+     - GPIO12, ADC2_CH5, TOUCH5, RTC_GPIO15, MTDI [2]_, HSPIQ, HS2_DATA2, SD_DATA2, EMAC_TXD3
    * - 18
      - IO13
      - I/O
@@ -245,15 +245,15 @@ The table below provides the Name and Function of pins on both sides of the boar
    * - 19
      - IO15
      - I/O
-     - GPIO15, ADC2_CH3, TOUCH3, RTC_GPIO13, MTDO, HSPICS0, HS2_CMD, SD_CMD, EMAC_RXD3
+     - GPIO15, ADC2_CH3, TOUCH3, RTC_GPIO13, MTDO [2]_, HSPICS0, HS2_CMD, SD_CMD, EMAC_RXD3
    * - 20
      - IO2
      - I/O
-     - GPIO2, ADC2_CH2, TOUCH2, RTC_GPIO12, HSPIWP, HS2_DATA0, SD_DATA0
+     - GPIO2 [2]_, ADC2_CH2, TOUCH2, RTC_GPIO12, HSPIWP, HS2_DATA0, SD_DATA0
    * - 21
      - IO0
      - I/O
-     - GPIO0, ADC2_CH1, TOUCH1, RTC_GPIO11, CLK_OUT1, EMAC_TX_CLK
+     - GPIO0 [2]_, ADC2_CH1, TOUCH1, RTC_GPIO11, CLK_OUT1, EMAC_TX_CLK
    * - 22
      - IO4
      - I/O
@@ -269,7 +269,7 @@ The table below provides the Name and Function of pins on both sides of the boar
    * - 25
      - IO5
      - I/O
-     - GPIO5, HS1_DATA6, VSPICS0, EMAC_RX_CLK
+     - GPIO5 [2]_, HS1_DATA6, VSPICS0, EMAC_RX_CLK
    * - 26
      - IO18
      - I/O
@@ -299,6 +299,19 @@ The table below provides the Name and Function of pins on both sides of the boar
      - I/O
      - GPIO3, U0RXD, CLK_OUT2
 
+.. [1] P: Power supply; I: Input; O: Output.
+.. [2] MTDI, GPIO0, GPIO2, MTDO, and GPIO5 are strapping pins. These pins are used to control several chip functions depending on binary voltage values applied to the pins during chip power-up or system reset. For description and application of the strapping pins, please refer to `ESP32 Datasheet`_ > Section *Strapping Pins*.
+
+Pin Layout
+^^^^^^^^^^^
+
+.. figure:: ../../../_static/ESP32_DevKitM-1_pinlayout.png
+    :align: center
+    :scale: 43%
+    :alt: ESP32-DevKitM-1 (click to enlarge)
+    :figclass: align-center
+
+    ESP32-DevKitM-1 (click to enlarge)
 
 Hardware Revision Details
 ============================

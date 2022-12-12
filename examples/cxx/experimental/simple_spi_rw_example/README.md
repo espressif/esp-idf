@@ -1,10 +1,13 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Example: C++ SPI sensor read for MCU9250 inertial/giroscope sensor
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example demonstrates usage of C++ SPI classes in ESP-IDF to read the `WHO_AM_I` register of the sensor.
 
-In this example, the `sdkconfig.defaults` file sets the `CONFIG_COMPILER_CXX_EXCEPTIONS` option. 
+In this example, the `sdkconfig.defaults` file sets the `CONFIG_COMPILER_CXX_EXCEPTIONS` option.
 This enables both compile time support (`-fexceptions` compiler flag) and run-time support for C++ exception handling.
 This is necessary for the C++ SPI API.
 

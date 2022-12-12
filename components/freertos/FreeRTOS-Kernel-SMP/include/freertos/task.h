@@ -153,6 +153,9 @@ typedef struct xTASK_STATUS
     uint32_t ulRunTimeCounter;                       /* The total run time allocated to the task so far, as defined by the run time stats clock.  See https://www.FreeRTOS.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
     StackType_t * pxStackBase;                       /* Points to the lowest address of the task's stack area. */
     configSTACK_DEPTH_TYPE usStackHighWaterMark;     /* The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
+#if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) )
+    UBaseType_t uxCoreAffinityMask;                  /* The core affinity mask for the task */
+#endif
 } TaskStatus_t;
 
 /* Possible return values for eTaskConfirmSleepModeStatus(). */
@@ -271,7 +274,7 @@ typedef enum
 #define taskSCHEDULER_RUNNING        ( ( BaseType_t ) 2 )
 
 /* Check if core value is valid */
-#define taskVALID_CORE_ID( xCoreID ) ( ( BaseType_t ) ( ( 0 <= xCoreID ) && ( xCoreID < configNUM_CORES ) ) )
+#define taskVALID_CORE_ID( xCoreID ) ( ( BaseType_t ) ( ( 0 <= (BaseType_t) xCoreID ) && ( (BaseType_t) xCoreID < configNUM_CORES ) ) )
 
 /*-----------------------------------------------------------
 * TASK CREATION API
@@ -3180,7 +3183,7 @@ TaskHandle_t xTaskGetCurrentTaskHandle( void ) PRIVILEGED_FUNCTION;
 /*
  * Return the handle of the task running on specified core.
  */
-TaskHandle_t xTaskGetCurrentTaskHandleCPU( BaseType_t xCoreID ) PRIVILEGED_FUNCTION;
+TaskHandle_t xTaskGetCurrentTaskHandleCPU( UBaseType_t xCoreID ) PRIVILEGED_FUNCTION;
 
 /*
  * Shortcut used by the queue implementation to prevent unnecessary call to
@@ -3278,6 +3281,15 @@ void vTaskYieldWithinAPI( void );
  * ------------------------------------------------------------------------------------------------------------------ */
 
 #ifdef ESP_PLATFORM
+
+#if ( configNUM_CORES > 1 )
+/*
+Workaround for non-thread safe multi-core OS startup (see IDF-4524)
+This function must be called with interrupts disabled on all cores other than
+core 0 during startup.
+*/
+void vTaskStartSchedulerOtherCores( void );
+#endif // configNUM_CORES > 1
 
 #include "idf_additions.h"
 

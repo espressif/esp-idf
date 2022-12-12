@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "esp_log.h"
+#include "esp_cpu.h"
 #include "esp_app_trace_membufs_proto.h"
 
 /** Trace data header. Every user data chunk is prepended with this header.
@@ -259,8 +260,8 @@ static inline uint8_t *esp_apptrace_membufs_wait4buf(esp_apptrace_membufs_proto_
 
 static inline uint8_t *esp_apptrace_membufs_pkt_start(uint8_t *ptr, uint16_t size)
 {
-    // it is safe to use cpu_hal_get_core_id() in macro call because arg is used only once inside it
-    ((esp_tracedata_hdr_t *)ptr)->block_sz = ESP_APPTRACE_USR_BLOCK_CORE(cpu_hal_get_core_id()) | size;
+    // it is safe to use esp_cpu_get_core_id() in macro call because arg is used only once inside it
+    ((esp_tracedata_hdr_t *)ptr)->block_sz = ESP_APPTRACE_USR_BLOCK_CORE(esp_cpu_get_core_id()) | size;
     ((esp_tracedata_hdr_t *)ptr)->wr_sz = 0;
     return ptr + sizeof(esp_tracedata_hdr_t);
 }

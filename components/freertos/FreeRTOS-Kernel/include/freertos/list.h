@@ -59,12 +59,13 @@
  * \ingroup FreeRTOSIntro
  */
 
-#ifndef INC_FREERTOS_H
-    #error "FreeRTOS.h must be included before list.h"
-#endif
 
 #ifndef LIST_H
 #define LIST_H
+
+#ifndef INC_FREERTOS_H
+    #error "FreeRTOS.h must be included before list.h"
+#endif
 
 /*
  * The list structure members are modified from within interrupts, and therefore

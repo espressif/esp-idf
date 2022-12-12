@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # TWAI Self Test Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -14,25 +17,23 @@ Note: If you don't have an external transceiver, this example can still be run b
 
 ### Configure the project
 
-* Set the target of the build (where `{IDF_TARGET}` stands for the target chip such as `eszp32` or `esp32s2`).
+* Set the target of the build (where `{IDF_TARGET}` stands for the target chip such as `esp32` or `esp32s2`).
 * Then run `menuconfig` to configure the example.
 
-```
+```sh
 idf.py set-target {IDF_TARGET}
 idf.py menuconfig
 ```
 
 * Under `Example Configuration`, configure the pin assignments using the options `TX GPIO Number` and `RX GPIO Number` according to how the target was connected to the transceiver. By default, `TX GPIO Number` and `RX GPIO Number` are set to the following values:
-    * On the ESP32, `TX GPIO Number` and `RX GPIO Number` default to `21` and `22` respectively
-    * On the ESP32-S2, `TX GPIO Number` and `RX GPIO Number` default to `20` and `21` respectively
-    * On the ESP32-S3, `TX GPIO Number` and `RX GPIO Number` default to `4` and `5` respectively
-    * On the ESP32-C3, `TX GPIO Number` and `RX GPIO Number` default to `2` and `3` respectively
+  * On the ESP32, `TX GPIO Number` and `RX GPIO Number` default to `21` and `22` respectively
+  * On other chips, `TX GPIO Number` and `RX GPIO Number` default to `0` and `2` respectively
 
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
-```
+```sh
 idf.py -p PORT flash monitor
 ```
 
@@ -44,7 +45,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
-```
+```text
 I (345) TWAI Self Test: Driver installed
 I (345) TWAI Self Test: Driver started
 I (355) TWAI Self Test: Msg received - Data = 0
@@ -66,7 +67,7 @@ I (3615) TWAI Self Test: Driver uninstalled
 
 ## Troubleshooting
 
-```
+```text
 I (345) TWAI Self Test: Driver installed
 I (345) TWAI Self Test: Driver started
 ```

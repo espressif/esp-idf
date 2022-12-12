@@ -24,7 +24,6 @@
 #include "hal/wdt_hal.h"
 #include "freertos/xtensa_api.h"
 #include "soc/soc_memory_layout.h"
-#include "hal/cpu_hal.h"
 
 #include "esp32s2/rom/rtc.h"
 
@@ -56,7 +55,7 @@ void IRAM_ATTR esp_restart_noos(void)
     // CPU must be reset before stalling, in case it was running a s32c1i
     // instruction. This would cause memory pool to be locked by arbiter
     // to the stalled CPU, preventing current CPU from accessing this pool.
-    const uint32_t core_id = cpu_hal_get_core_id();
+    const uint32_t core_id = esp_cpu_get_core_id();
 
     //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     // Disable TG0/TG1 watchdogs
@@ -98,11 +97,16 @@ void IRAM_ATTR esp_restart_noos(void)
     WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,
-                            DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
-                            DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
-                            DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST |
-                            DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
+    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_WIFIBB_RST   | \
+                                                   DPORT_FE_RST       | \
+                                                   DPORT_WIFIMAC_RST  | \
+                                                   DPORT_BTBB_RST     | \
+                                                   DPORT_BTMAC_RST    | \
+                                                   DPORT_SDIO_RST     | \
+                                                   DPORT_EMAC_RST     | \
+                                                   DPORT_MACPWR_RST   | \
+                                                   DPORT_RW_BTMAC_RST | \
+                                                   DPORT_RW_BTLP_RST);
     DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart

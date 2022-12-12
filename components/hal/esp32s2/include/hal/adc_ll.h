@@ -17,8 +17,9 @@
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
-#include "esp_private/regi2c_ctrl.h"
-#include "regi2c_saradc.h"
+#include "soc/regi2c_defs.h"
+#include "hal/regi2c_ctrl.h"
+#include "soc/regi2c_saradc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +28,8 @@ extern "C" {
 #define ADC_LL_CLKM_DIV_NUM_DEFAULT       15
 #define ADC_LL_CLKM_DIV_B_DEFAULT         1
 #define ADC_LL_CLKM_DIV_A_DEFAULT         0
+#define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
+#define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
 #define ADC_LL_EVENT_ADC1_ONESHOT_DONE    (1 << 0)
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
@@ -160,19 +163,12 @@ static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
 /**
  * Enable max conversion number detection for digital controller.
  * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
+ *
+ * @param enable  true: enable; false: disable
  */
-static inline void adc_ll_digi_convert_limit_enable(void)
+static inline void adc_ll_digi_convert_limit_enable(bool enable)
 {
-    APB_SARADC.ctrl2.meas_num_limit = 1;
-}
-
-/**
- * Disable max conversion number detection for digital controller.
- * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
- */
-static inline void adc_ll_digi_convert_limit_disable(void)
-{
-    APB_SARADC.ctrl2.meas_num_limit = 0;
+    APB_SARADC.ctrl2.meas_num_limit = enable;
 }
 
 /**
@@ -595,7 +591,7 @@ static inline void adc_ll_set_sar_clk_div(adc_unit_t adc_n, uint32_t div)
 static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth_t bits)
 {
     //ESP32S2 only supports 13bit, leave here for compatibility
-    HAL_ASSERT(bits == ADC_BITWIDTH_13);
+    HAL_ASSERT(bits == ADC_BITWIDTH_13 || bits == ADC_BITWIDTH_DEFAULT);
 }
 
 /**
@@ -841,6 +837,7 @@ static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t chan
  * @param channel ADCn channel number.
  * @return atten The attenuation option.
  */
+__attribute__((always_inline))
 static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t channel)
 {
     if (adc_n == ADC_UNIT_1) {
@@ -903,6 +900,7 @@ static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
  * @param adc_n ADC unit.
  * @param ctrl ADC controller.
  */
+__attribute__((always_inline))
 static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t ctrl)
 {
     if (adc_n == ADC_UNIT_1) {
@@ -952,6 +950,7 @@ static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t c
  *
  * @param mode Refer to ``adc_arbiter_mode_t``.
  */
+__attribute__((always_inline))
 static inline void adc_ll_set_arbiter_work_mode(adc_arbiter_mode_t mode)
 {
     SENS.sar_meas2_mux.sar2_rtc_force = 0;  // Enable arbiter in wakeup mode
@@ -979,6 +978,7 @@ static inline void adc_ll_set_arbiter_work_mode(adc_arbiter_mode_t mode)
  * @param pri_dig Digital controller priority. Range: 0 ~ 2.
  * @param pri_pwdet Wi-Fi controller priority. Range: 0 ~ 2.
  */
+__attribute__((always_inline))
 static inline void adc_ll_set_arbiter_priority(uint8_t pri_rtc, uint8_t pri_dig, uint8_t pri_pwdet)
 {
     if (pri_rtc != pri_dig && pri_rtc != pri_pwdet && pri_dig != pri_pwdet) {
@@ -1042,6 +1042,7 @@ static inline void adc_ll_disable_sleep_controller(void)
 /**
  * @brief Set common calibration configuration. Should be shared with other parts (PWDET).
  */
+__attribute__((always_inline))
 static inline void adc_ll_calibration_init(adc_unit_t adc_n)
 {
     if (adc_n == ADC_UNIT_1) {
@@ -1105,6 +1106,7 @@ static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
  *
  * @param adc_n ADC index number.
  */
+__attribute__((always_inline))
 static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param)
 {
     uint8_t msb = param >> 8;

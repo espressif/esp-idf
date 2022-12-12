@@ -10,8 +10,12 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.supported_targets
-@pytest.mark.wifi
+@pytest.mark.esp32
+@pytest.mark.esp32s2
+@pytest.mark.esp32c3
+@pytest.mark.esp32s3
+@pytest.mark.esp32c6
+@pytest.mark.generic
 def test_otatool_example(dut: Dut) -> None:
     # Verify factory firmware
     dut.expect('OTA Tool Example')

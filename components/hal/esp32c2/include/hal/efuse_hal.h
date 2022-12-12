@@ -16,16 +16,10 @@
 extern "C" {
 #endif
 
-
-/**
- * @brief get chip version
- */
-uint32_t efuse_hal_get_chip_revision(void);
-
 /**
  * @brief set eFuse timings
  *
- * @param apb_freq_hz APB frequency in Hz
+ * @param apb_freq_hz APB frequency in Hz (not used, kept for API compatibility)
  */
 void efuse_hal_set_timing(uint32_t apb_freq_hz);
 

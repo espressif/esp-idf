@@ -76,7 +76,7 @@ It performs three GATT operations against the specified peer:
 
 Note :
 
-* Make sure to run `python -m pip install --user -r $IDF_PATH/requirements.txt -r $IDF_PATH/tools/ble/requirements.txt` to install the dependency packages needed.
+* To install the dependency packages needed, please refer to the top level [README file](../../../../README.md#running-test-python-script-ttfw).
 * Currently this Python utility is only supported on Linux (BLE communication is via BLuez + DBus).
 
 ## How to use example

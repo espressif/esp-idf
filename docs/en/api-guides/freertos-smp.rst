@@ -175,7 +175,7 @@ The resulting schedule will have Task A running on CPU0 and Task C preempting Ta
 Time Slicing
 ^^^^^^^^^^^^
 
-The Vanilla FreeRTOS scheduler implements time slicing meaning that if current highest ready priority contains multiple ready tasks, the scheduler will switch between those tasks periodically in a round robin fashion. 
+The Vanilla FreeRTOS scheduler implements time slicing meaning that if current highest ready priority contains multiple ready tasks, the scheduler will switch between those tasks periodically in a round robin fashion.
 
 However, in ESP-IDF FreeRTOS, it is not possible to implement perfect Round Robin time slicing due to the fact that a particular task may not be able to run on a particular core due to the following reasons:
 
@@ -267,7 +267,7 @@ Vanilla FreeRTOS requires that a periodic tick interrupt occurs. The tick interr
 - Checking if time slicing is required (i.e., triggering a context switch)
 - Executing the application tick hook
 
-In ESP-IDF FreeRTOS, each core will receive a periodic interrupt and independently run the tick interrupt. The tick interrupts on each core are of the same period but can be out of phase. Furthermore, the tick interrupt responsibilities listed above are not run by all cores:
+In ESP-IDF FreeRTOS, each core will receive a periodic interrupt and independently run the tick interrupt. The tick interrupts on each core are of the same period but can be out of phase. However, the tick responsibilities listed above are not run by all cores:
 
 - CPU0 will execute all of the tick interrupt responsibilities listed above
 - CPU1 will only check for time slicing and execute the application tick hook
@@ -296,13 +296,17 @@ Vanilla FreeRTOS allows the scheduler to be suspended/resumed by calling :cpp:fu
 
 On scheduler resumption, :cpp:func:`xTaskResumeAll` will catch up all of the lost ticks and unblock any timed out tasks.
 
-In ESP-IDF FreeRTOS, suspending the scheduler across multiple cores is not possible. Therefore when :cpp:func:`vTaskSuspendAll` is called:
+In ESP-IDF FreeRTOS, suspending the scheduler across multiple cores is not possible. Therefore when :cpp:func:`vTaskSuspendAll` is called on a particular core (e.g., core A):
 
-- Task switching is disabled only on the current core but interrupts for the current core are left enabled
-- Calling any blocking/yielding function on the current core is forbidden. Time slicing is disabled on the current core.
-- If suspending on CPU0, the tick count is frozen. The tick interrupt will still occur to execute the application tick hook.
+- Task switching is disabled only on core A but interrupts for core A are left enabled
+- Calling any blocking/yielding function on core A is forbidden. Time slicing is disabled on core A.
+- If an interrupt on core A unblocks any tasks, those tasks will go into core A's own pending ready task list
+- If core A is CPU0, the tick count is frozen and a pended tick count is incremented instead. However, the tick interrupt will still occur in order to execute the application tick hook.
 
-When resuming the scheduler on CPU0, :cpp:func:`xTaskResumeAll` will catch up all of the lost ticks and unblock any timed out tasks.
+When :cpp:func:`xTaskResumeAll` is called on a particular core (e.g., core A):
+
+- Any tasks added to core A's pending ready task list will be resumed
+- If core A is CPU0, the pended tick count is unwound to catch up the lost ticks.
 
 .. warning::
   Given that scheduler suspension on ESP-IDF FreeRTOS will only suspend scheduling on a particular core, scheduler suspension is **NOT** a valid method ensuring mutual exclusion between tasks when accessing shared data. Users should use proper locking primitives such as mutexes or spinlocks if they require mutual exclusion.

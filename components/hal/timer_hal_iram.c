@@ -22,3 +22,9 @@ void timer_hal_set_counter_value(timer_hal_context_t *hal, uint64_t load_val)
     // restore the previous reload value
     timer_ll_set_reload_value(hal->dev, hal->timer_id, old_reload);
 }
+
+uint64_t timer_hal_capture_and_get_counter_value(timer_hal_context_t *hal)
+{
+    timer_ll_trigger_soft_capture(hal->dev, hal->timer_id);
+    return timer_ll_get_counter_value(hal->dev, hal->timer_id);
+}

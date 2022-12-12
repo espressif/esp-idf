@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
 
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "touch_element/touch_matrix.h"
@@ -58,11 +59,14 @@ static void matrix_handler_task(void *arg)
         /* Decode message */
         const touch_matrix_message_t *matrix_message = touch_matrix_get_message(&element_message);
         if (matrix_message->event == TOUCH_MATRIX_EVT_ON_PRESS) {
-            ESP_LOGI(TAG, "Matrix Press, axis: (%d, %d) index: %d", matrix_message->position.x_axis, matrix_message->position.y_axis, matrix_message->position.index);
+            ESP_LOGI(TAG, "Matrix Press, axis: (%"PRIu8", %"PRIu8") index: %"PRIu8, matrix_message->position.x_axis,
+                            matrix_message->position.y_axis, matrix_message->position.index);
         } else if (matrix_message->event == TOUCH_MATRIX_EVT_ON_RELEASE) {
-            ESP_LOGI(TAG, "Matrix Release, axis: (%d, %d) index: %d", matrix_message->position.x_axis, matrix_message->position.y_axis, matrix_message->position.index);
+            ESP_LOGI(TAG, "Matrix Release, axis: (%"PRIu8", %"PRIu8") index: %"PRIu8, matrix_message->position.x_axis,
+                            matrix_message->position.y_axis, matrix_message->position.index);
         } else if (matrix_message->event == TOUCH_MATRIX_EVT_ON_LONGPRESS) {
-            ESP_LOGI(TAG, "Matrix LongPress, axis: (%d, %d) index: %d", matrix_message->position.x_axis, matrix_message->position.y_axis, matrix_message->position.index);
+            ESP_LOGI(TAG, "Matrix LongPress, axis: (%"PRIu8", %"PRIu8") index: %"PRIu8, matrix_message->position.x_axis,
+                            matrix_message->position.y_axis, matrix_message->position.index);
         }
     }
 }
@@ -75,11 +79,14 @@ void matrix_handler(touch_matrix_handle_t out_handle, touch_matrix_message_t *ou
         return;
     }
     if (out_message->event == TOUCH_MATRIX_EVT_ON_PRESS) {
-        ESP_LOGI(TAG, "Matrix Press, axis: (%d, %d) index: %d", out_message->position.x_axis, out_message->position.y_axis, out_message->position.index);
+        ESP_LOGI(TAG, "Matrix Press, axis: (%"PRIu8", %"PRIu8") index: %"PRIu8, out_message->position.x_axis,
+                        out_message->position.y_axis, out_message->position.index);
     } else if (out_message->event == TOUCH_MATRIX_EVT_ON_RELEASE) {
-        ESP_LOGI(TAG, "Matrix Release, axis: (%d, %d) index: %d", out_message->position.x_axis, out_message->position.y_axis, out_message->position.index);
+        ESP_LOGI(TAG, "Matrix Release, axis: (%"PRIu8", %"PRIu8") index: %"PRIu8, out_message->position.x_axis,
+                        out_message->position.y_axis, out_message->position.index);
     } else if (out_message->event == TOUCH_MATRIX_EVT_ON_LONGPRESS) {
-        ESP_LOGI(TAG, "Matrix LongPress, axis: (%d, %d) index: %d", out_message->position.x_axis, out_message->position.y_axis, out_message->position.index);
+        ESP_LOGI(TAG, "Matrix LongPress, axis: (%"PRIu8", %"PRIu8") index: %"PRIu8, out_message->position.x_axis,
+                        out_message->position.y_axis, out_message->position.index);
     }
 }
 #endif
@@ -105,7 +112,8 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(touch_matrix_create(&matrix_config, &matrix_handle));
     /* Subscribe touch matrix events (On Press, On Release, On LongPress) */
-    ESP_ERROR_CHECK(touch_matrix_subscribe_event(matrix_handle, TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS, NULL));
+    ESP_ERROR_CHECK(touch_matrix_subscribe_event(matrix_handle,
+                    TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS, NULL));
 #ifdef CONFIG_TOUCH_ELEM_EVENT
     /* Set EVENT as the dispatch method */
     ESP_ERROR_CHECK(touch_matrix_set_dispatch_method(matrix_handle, TOUCH_ELEM_DISP_EVENT));

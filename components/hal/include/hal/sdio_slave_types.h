@@ -25,9 +25,14 @@ typedef enum {
 /// Timing of SDIO slave
 typedef enum {
     SDIO_SLAVE_TIMING_PSEND_PSAMPLE = 0,/**< Send at posedge, and sample at posedge. Default value for HS mode.
+                                         *   If :c:macro:`SDIO_SLAVE_FLAG_HIGH_SPEED` is specified in
+                                         *   :cpp:class:`sdio_slave_config_t`, this should be selected.
                                          *   Normally there's no problem using this to work in DS mode.
                                          */
-    SDIO_SLAVE_TIMING_NSEND_PSAMPLE    ,///< Send at negedge, and sample at posedge. Default value for DS mode and below.
+    SDIO_SLAVE_TIMING_NSEND_PSAMPLE,    /**< Send at negedge, and sample at posedge. Default value for DS mode and
+                                         *   below. If :c:macro:`SDIO_SLAVE_FLAG_DEFAULT_SPEED` is specified in
+                                         *   :cpp:class:`sdio_slave_config_t`, this should be selected.
+                                         */
     SDIO_SLAVE_TIMING_PSEND_NSAMPLE,    ///< Send at posedge, and sample at negedge
     SDIO_SLAVE_TIMING_NSEND_NSAMPLE,    ///< Send at negedge, and sample at negedge
 } sdio_slave_timing_t;

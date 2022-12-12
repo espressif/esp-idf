@@ -25,36 +25,42 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
-#define SOC_CPU_CORES_NUM               1
 #define SOC_ADC_SUPPORTED               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
-#define SOC_BT_SUPPORTED                0 // Enable during bringup, IDF-4357
+#define SOC_BT_SUPPORTED                1
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     0
 #define SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK 1
-
-#define SOC_SHA_SUPPORTED               0 // This will be enabled with IDF-3830
+#define SOC_TEMP_SENSOR_SUPPORTED       1
+#define SOC_LEDC_SUPPORTED              1
+#define SOC_I2C_SUPPORTED               1
+#define SOC_SHA_SUPPORTED               1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
+#define SOC_SYSTIMER_SUPPORTED          1
+
+/*-------------------------- XTAL CAPS ---------------------------------------*/
+#define SOC_XTAL_SUPPORT_26M            1
+#define SOC_XTAL_SUPPORT_40M            1
 
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
 #define SOC_ADC_DIG_CTRL_SUPPORTED              1
-#define SOC_ADC_ARBITER_SUPPORTED               1
 #define SOC_ADC_FILTER_SUPPORTED                1
 #define SOC_ADC_MONITOR_SUPPORTED               1
 #define SOC_ADC_PERIPH_NUM                      (1U)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 5 : 0)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (5)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (5)
-#define SOC_ADC_ATTEN_NUM                       (2)
+#define SOC_ADC_ATTEN_NUM                       (4)
 
 /*!< Digital */
 #define SOC_ADC_DIGI_CONTROLLER_NUM             (1U)
 #define SOC_ADC_PATT_LEN_MAX                    (8) /*!< One pattern table, each contains 8 items. Each item takes 1 byte */
+#define SOC_ADC_DIGI_MIN_BITWIDTH               (12)
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
 #define SOC_ADC_DIGI_FILTER_NUM                 (2)
 #define SOC_ADC_DIGI_MONITOR_NUM                (2)
@@ -65,7 +71,9 @@
 /*!< RTC */
 #define SOC_ADC_RTC_MIN_BITWIDTH                (12)
 #define SOC_ADC_RTC_MAX_BITWIDTH                (12)
-#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
+
+/*!< Calibration */
+#define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
@@ -74,13 +82,18 @@
 #define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
-#define SOC_CPU_BREAKPOINTS_NUM         2
-#define SOC_CPU_WATCHPOINTS_NUM         2
+#define SOC_CPU_CORES_NUM               (1U)
+#define SOC_CPU_INTR_NUM                32
 #define SOC_CPU_HAS_FLEXIBLE_INTC       1
 
+#define SOC_CPU_BREAKPOINTS_NUM         2
+#define SOC_CPU_WATCHPOINTS_NUM         2
 #define SOC_CPU_WATCHPOINT_SIZE         0x80000000 // bytes
 
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
+
+/*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_MMU_PAGE_SIZE_CONFIGURABLE  (1)
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
@@ -104,6 +117,9 @@
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
 #define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)
 
+// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_6~GPIO_NUM_20)
+#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x00000000001FFFC0ULL
+
 // Support to configure sleep status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
 
@@ -116,7 +132,7 @@
 // ESP32-C2 has 1 I2C
 #define SOC_I2C_NUM                 (1U)
 
-#define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
+#define SOC_I2C_FIFO_LEN            (16) /*!< I2C hardware FIFO depth */
 
 // FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
 #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
@@ -156,18 +172,9 @@
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
 
-/* Max amount of bytes in a single DMA operation is 4095,
-   for SHA this means that the biggest safe amount of bytes is
-   31 blocks of 128 bytes = 3968
-*/
-#define SOC_SHA_DMA_MAX_BUFFER_SIZE     (3968)
-#define SOC_SHA_SUPPORT_DMA             (1)
-
 /* The SHA engine is able to resume hashing from a user */
 #define SOC_SHA_SUPPORT_RESUME          (1)
 
-/* Has a centralized DMA, which is shared with all peripherals */
-#define SOC_SHA_GDMA             (1)
 
 /* Supported HW algorithms */
 #define SOC_SHA_SUPPORT_SHA1            (1)
@@ -177,6 +184,7 @@
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2
 #define SOC_SPI_PERIPH_CS_NUM(i)    6
+#define SOC_SPI_MAX_CS_NUM          6
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 
@@ -210,14 +218,13 @@
 #define SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED         1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
-#define SOC_SYSTIMER_SUPPORTED             1
-#define SOC_SYSTIMER_COUNTER_NUM           (2)  // Number of counter units
-#define SOC_SYSTIMER_ALARM_NUM             (3)  // Number of alarm units
-#define SOC_SYSTIMER_BIT_WIDTH_LO          (32) // Bit width of systimer low part
-#define SOC_SYSTIMER_BIT_WIDTH_HI          (20) // Bit width of systimer high part
-#define SOC_SYSTIMER_FIXED_TICKS_US        (16) // Number of ticks per microsecond is fixed
-#define SOC_SYSTIMER_INT_LEVEL             (1)  // Systimer peripheral uses level interrupt
-#define SOC_SYSTIMER_ALARM_MISS_COMPENSATE (1)  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
+#define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units
+#define SOC_SYSTIMER_ALARM_NUM              3  // Number of alarm units
+#define SOC_SYSTIMER_BIT_WIDTH_LO           32 // Bit width of systimer low part
+#define SOC_SYSTIMER_BIT_WIDTH_HI           20 // Bit width of systimer high part
+#define SOC_SYSTIMER_FIXED_DIVIDER          1  // Clock source divider is fixed: 2.5
+#define SOC_SYSTIMER_INT_LEVEL              1  // Systimer peripheral uses level interrupt
+#define SOC_SYSTIMER_ALARM_MISS_COMPENSATE  1  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 #define SOC_TIMER_GROUPS                  (1U)
@@ -227,17 +234,16 @@
 #define SOC_TIMER_GROUP_SUPPORT_PLL_F40M  (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (1U)
 
-/*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
-#define SOC_TOUCH_SENSOR_NUM            (0U)    /*! No touch sensors on ESP32-C2 */
-
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_ECC              1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   (1U)
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
-#define SOC_FLASH_ENCRYPTION_XTS_AES            1
-#define SOC_FLASH_ENCRYPTION_XTS_AES_128        0        // This will be enabled with IDF-3899
+#define SOC_FLASH_ENCRYPTION_XTS_AES             1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS     1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_128         1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED 1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C2 has 2 UARTs
@@ -245,14 +251,18 @@
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
 #define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */
-#define SOC_UART_SUPPORT_RTC_CLK    (1)
-#define SOC_UART_SUPPORT_XTAL_CLK   (1)
+#define SOC_UART_SUPPORT_PLL_F40M_CLK (1)   /*!< Support APB as the clock source */
+#define SOC_UART_SUPPORT_RTC_CLK    (1)     /*!< Support RTC clock as the clock source */
+#define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
+
+/*-------------------------- HARDWARE ADVANCED EXTERNAL COEXISTENCE CAPS -------------------*/
+#define SOC_EXTERNAL_COEX_ADVANCE       (1)
 
 /*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
@@ -263,16 +273,24 @@
 
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
-
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-
 #define SOC_PM_SUPPORT_CPU_PD           (0)
-
 #define SOC_PM_SUPPORT_WIFI_PD          (0)
-
 #define SOC_PM_SUPPORT_BT_PD            (0)
+
+/*--------------------------- CLOCK SUBSYSTEM CAPS -------------------------- */
+#define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
+#define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)    /*!< Support hardware TSF */
-#define SOC_WIFI_FTM_SUPPORT            (1)    /*!< FTM Support */
-#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP Support(GCMP128 and GCMP256) */
+#define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM is not supported */
+#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP is not supported(GCMP128 and GCMP256) */
+#define SOC_WIFI_WAPI_SUPPORT           (0)    /*!< WAPI is not supported */
+#define SOC_WIFI_CSI_SUPPORT            (0)    /*!< CSI is not supported */
+#define SOC_WIFI_MESH_SUPPORT           (0)    /*!< WIFI MESH is not supported */
+
+/*---------------------------------- Bluetooth CAPS ----------------------------------*/
+#define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_BLE_MESH_SUPPORTED          (0)    /*!< Support BLE MESH */
+#define SOC_ESP_NIMBLE_CONTROLLER       (1)    /*!< Support BLE EMBEDDED controller V1 */

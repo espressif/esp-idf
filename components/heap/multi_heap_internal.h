@@ -5,6 +5,14 @@
  */
 #pragma once
 
+/* Define a noclone attribute when compiled with GCC as certain functions
+ * in the heap component should not be cloned by the compiler */
+#if defined __has_attribute && __has_attribute(noclone)
+#define NOCLONE_ATTR __attribute((noclone))
+#else
+#define NOCLONE_ATTR
+#endif
+
 /* Define a structure that contains some function pointers that point to OS-related functions.
    An instance of this structure will be provided to the heap in ROM for use if needed.
 */

@@ -44,11 +44,11 @@ def test_app_loadable_elf(env, extra_data):
     idf_path = app.get_sdk_path()
     proj_path = os.path.join(idf_path, rel_project_path)
     elf_path = os.path.join(app.binary_path, 'gdb_loadable_elf.elf')
-    esp_log_path = os.path.join(proj_path, 'esp.log')
+    esp_log_path = os.path.join(proj_path, 'esp.txt')
 
     with SerialThread(esp_log_path):
-        openocd_log = os.path.join(proj_path, 'openocd.log')
-        gdb_log = os.path.join(proj_path, 'gdb.log')
+        openocd_log = os.path.join(proj_path, 'openocd.txt')
+        gdb_log = os.path.join(proj_path, 'gdb.txt')
         gdb_init = os.path.join(proj_path, 'gdbinit_' + target)
         gdb_dir = os.path.join(proj_path, 'main')
 

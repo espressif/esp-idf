@@ -116,8 +116,8 @@ typedef struct {
  * @brief HID device callback function events
  */
 typedef enum {
-    ESP_HIDD_INIT_EVT = 0,       /*!< When HID device is inited, the event comes */
-    ESP_HIDD_DEINIT_EVT,         /*!< When HID device is deinited, the event comes */
+    ESP_HIDD_INIT_EVT = 0,       /*!< When HID device is initialized, the event comes */
+    ESP_HIDD_DEINIT_EVT,         /*!< When HID device is deinitialized, the event comes */
     ESP_HIDD_REGISTER_APP_EVT,   /*!< When HID device application registered, the event comes */
     ESP_HIDD_UNREGISTER_APP_EVT, /*!< When HID device application unregistered, the event comes */
     ESP_HIDD_OPEN_EVT,           /*!< When HID device connection to host opened, the event comes */
@@ -278,7 +278,7 @@ esp_err_t esp_bt_hid_device_register_callback(esp_hd_cb_t callback);
 
 /**
  * @brief       This function initializes HIDD. This function should be called after esp_bluedroid_enable and
- *              esp_blueroid_init success, and should be called after esp_bt_hid_device_register_callback.
+ *              esp_bluedroid_init success, and should be called after esp_bt_hid_device_register_callback.
  *              When the operation is complete the callback function will be called with ESP_HIDD_INIT_EVT.
  *
  * @return
@@ -289,7 +289,7 @@ esp_err_t esp_bt_hid_device_init(void);
 
 /**
  * @brief       This function de-initializes HIDD interface. This function should be called after esp_bluedroid_enable() and
- *              esp_blueroid_init() success, and should be called after esp_bt_hid_device_init(). When the operation is complete the callback
+ *              esp_bluedroid_init() success, and should be called after esp_bt_hid_device_init(). When the operation is complete the callback
  *              function will be called with ESP_HIDD_DEINIT_EVT.
  *
  * @return    - ESP_OK: success
@@ -299,7 +299,7 @@ esp_err_t esp_bt_hid_device_deinit(void);
 
 /**
  * @brief     Registers HIDD parameters with SDP and sets l2cap Quality of Service. This function should be called after
- *            esp_bluedroid_enable and esp_blueroid_init success, and must be done after esp_bt_hid_device_init. When the operation is complete the callback
+ *            esp_bluedroid_enable and esp_bluedroid_init success, and must be done after esp_bt_hid_device_init. When the operation is complete the callback
  *            function will be called with ESP_HIDD_REGISTER_APP_EVT.
  *
  * @param[in] app_param:  HIDD parameters
@@ -314,7 +314,7 @@ esp_err_t esp_bt_hid_device_register_app(esp_hidd_app_param_t *app_param, esp_hi
 
 /**
  * @brief   Removes HIDD parameters from SDP and resets l2cap Quality of Service. This function should be called after esp_bluedroid_enable and
- *          esp_blueroid_init success, and should be called after esp_bt_hid_device_init. When the operation is complete the callback
+ *          esp_bluedroid_init success, and should be called after esp_bt_hid_device_init. When the operation is complete the callback
  *          function will be called with ESP_HIDD_UNREGISTER_APP_EVT.
  *
  * @return  - ESP_OK: success

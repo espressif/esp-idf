@@ -8,7 +8,6 @@
 #include "esp_log.h"
 #include "esp_partition.h"
 #include "esp_spiffs.h"
-#include "esp_vfs.h"
 #include "spiffs_api.h"
 
 static const char* TAG = "SPIFFS";
@@ -28,7 +27,7 @@ s32_t spiffs_api_read(spiffs *fs, uint32_t addr, uint32_t size, uint8_t *dst)
     esp_err_t err = esp_partition_read(((esp_spiffs_t *)(fs->user_data))->partition,
                                         addr, dst, size);
     if (unlikely(err)) {
-        ESP_LOGE(TAG, "failed to read addr %08x, size %08x, err %d", addr, size, err);
+        ESP_LOGE(TAG, "failed to read addr 0x%08" PRIx32 ", size 0x%08" PRIx32 ", err %d", addr, size, err);
         return -1;
     }
     return 0;
@@ -39,7 +38,7 @@ s32_t spiffs_api_write(spiffs *fs, uint32_t addr, uint32_t size, uint8_t *src)
     esp_err_t err = esp_partition_write(((esp_spiffs_t *)(fs->user_data))->partition,
                                         addr, src, size);
     if (unlikely(err)) {
-        ESP_LOGE(TAG, "failed to write addr %08x, size %08x, err %d", addr, size, err);
+        ESP_LOGE(TAG, "failed to write addr 0x%08" PRIx32 ", size 0x%08" PRIx32 ", err %d", addr, size, err);
         return -1;
     }
     return 0;
@@ -50,7 +49,7 @@ s32_t spiffs_api_erase(spiffs *fs, uint32_t addr, uint32_t size)
     esp_err_t err = esp_partition_erase_range(((esp_spiffs_t *)(fs->user_data))->partition,
                                         addr, size);
     if (err) {
-        ESP_LOGE(TAG, "failed to erase addr %08x, size %08x, err %d", addr, size, err);
+        ESP_LOGE(TAG, "failed to erase addr 0x%08" PRIx32 ", size 0x%08" PRIx32 ", err %d", addr, size, err);
         return -1;
     }
     return 0;
@@ -76,10 +75,10 @@ void spiffs_api_check(spiffs *fs, spiffs_check_type type,
     };
 
     if (report != SPIFFS_CHECK_PROGRESS) {
-        ESP_LOGE(TAG, "CHECK: type:%s, report:%s, %x:%x", spiffs_check_type_str[type],
+        ESP_LOGE(TAG, "CHECK: type:%s, report:%s, %" PRIx32 ":%" PRIx32, spiffs_check_type_str[type],
                               spiffs_check_report_str[report], arg1, arg2);
     } else {
-        ESP_LOGV(TAG, "CHECK PROGRESS: report:%s, %x:%x",
+        ESP_LOGV(TAG, "CHECK PROGRESS: report:%s, %" PRIx32 ":%" PRIx32,
                               spiffs_check_report_str[report], arg1, arg2);
     }
 }

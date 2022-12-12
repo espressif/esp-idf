@@ -56,6 +56,7 @@ static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const 
 static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_i80_t *next_device);
 static void lcd_start_transaction(esp_lcd_i80_bus_t *bus, lcd_i80_trans_descriptor_t *trans_desc);
 static void lcd_default_isr_handler(void *args);
+static esp_err_t panel_io_i80_register_event_callbacks(esp_lcd_panel_io_handle_t io, const esp_lcd_panel_io_callbacks_t *cbs, void *user_ctx);
 
 struct esp_lcd_i80_bus_t {
     int bus_id;            // Bus ID, index from 0
@@ -153,7 +154,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     ESP_GOTO_ON_ERROR(ret, err, TAG, "select periph clock %d failed", bus_config->clk_src);
     // install interrupt service, (LCD peripheral shares the same interrupt source with Camera peripheral with different mask)
     // interrupt is disabled by default
-    int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
+    int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.buses[bus_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(bus->hal.dev),
                                     LCD_LL_EVENT_TRANS_DONE, lcd_default_isr_handler, bus, &bus->intr);
@@ -248,8 +249,8 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     ESP_GOTO_ON_FALSE(!bus_exclusive, ESP_ERR_INVALID_STATE, err, TAG, "bus has been exclusively owned by device");
     // check if pixel clock setting is valid
     uint32_t pclk_prescale = bus->resolution_hz / io_config->pclk_hz;
-    ESP_GOTO_ON_FALSE(pclk_prescale > 0 && pclk_prescale <= LCD_LL_CLOCK_PRESCALE_MAX, ESP_ERR_NOT_SUPPORTED, err, TAG,
-                      "prescaler can't satisfy PCLK clock %u", io_config->pclk_hz);
+    ESP_GOTO_ON_FALSE(pclk_prescale > 0 && pclk_prescale <= LCD_LL_PCLK_DIV_MAX, ESP_ERR_NOT_SUPPORTED, err, TAG,
+                      "prescaler can't satisfy PCLK clock %"PRIu32"Hz", io_config->pclk_hz);
     i80_device = heap_caps_calloc(1, sizeof(lcd_panel_io_i80_t) + io_config->trans_queue_depth * sizeof(lcd_i80_trans_descriptor_t), LCD_I80_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(i80_device, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 panel io");
     // create two queues for i80 device
@@ -285,6 +286,7 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     i80_device->base.del = panel_io_i80_del;
     i80_device->base.tx_param = panel_io_i80_tx_param;
     i80_device->base.tx_color = panel_io_i80_tx_color;
+    i80_device->base.register_event_callbacks = panel_io_i80_register_event_callbacks;
     // we only configure the CS GPIO as output, don't connect to the peripheral signal at the moment
     // we will connect the CS GPIO to peripheral signal when switching devices in lcd_i80_switch_devices()
     if (io_config->cs_gpio_num >= 0) {
@@ -330,6 +332,20 @@ static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io)
     vQueueDelete(i80_device->trans_queue);
     vQueueDelete(i80_device->done_queue);
     free(i80_device);
+    return ESP_OK;
+}
+
+static esp_err_t panel_io_i80_register_event_callbacks(esp_lcd_panel_io_handle_t io, const esp_lcd_panel_io_callbacks_t *cbs, void *user_ctx)
+{
+    lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
+
+    if(i80_device->on_color_trans_done != NULL) {
+        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was owerwritten!");
+    }
+
+    i80_device->on_color_trans_done = cbs->on_color_trans_done;
+    i80_device->user_ctx = user_ctx;
+
     return ESP_OK;
 }
 
@@ -472,7 +488,8 @@ static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
 {
     esp_err_t ret = ESP_OK;
     // force to use integer division, as fractional division might lead to clock jitter
-    lcd_ll_set_group_clock_src(bus->hal.dev, clk_src, LCD_PERIPH_CLOCK_PRE_SCALE, 0, 0);
+    lcd_ll_select_clk_src(bus->hal.dev, clk_src);
+    lcd_ll_set_group_clock_coeff(bus->hal.dev, LCD_PERIPH_CLOCK_PRE_SCALE, 0, 0);
     switch (clk_src) {
     case LCD_CLK_SRC_PLL160M:
         bus->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;

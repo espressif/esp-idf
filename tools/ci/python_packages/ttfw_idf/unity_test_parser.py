@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 """
 Modification version of https://github.com/ETCLabs/unity-test-parser/blob/develop/unity_test_parser.py
 since only python 3.6 or higher version have ``enum.auto()``

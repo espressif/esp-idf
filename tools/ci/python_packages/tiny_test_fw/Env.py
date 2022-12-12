@@ -1,16 +1,5 @@
-# Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 """ Test Env, manages DUT, App and EnvConfig, interface for test cases to access these components """
 import functools
@@ -118,7 +107,7 @@ class Env(object):
                     dut_config = dict()
                 dut_config.update(dut_init_args)
                 dut = dut_class(dut_name, port,
-                                os.path.join(self.log_path, dut_name + '.log'),
+                                os.path.join(self.log_path, dut_name + '.txt'),
                                 app_inst,
                                 **dut_config)
                 self.allocated_duts[dut_name] = {'port': port, 'dut': dut}

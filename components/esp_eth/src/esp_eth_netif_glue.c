@@ -1,12 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdlib.h>
 #include "esp_netif.h"
-#include "esp_eth.h"
+#include "esp_eth_driver.h"
 #include "esp_eth_netif_glue.h"
+#include "esp_netif_net_stack.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -40,6 +41,11 @@ static esp_err_t eth_input_to_netif(esp_eth_handle_t eth_handle, uint8_t *buffer
     return esp_netif_receive((esp_netif_t *)priv, buffer, length, NULL);
 }
 
+static void eth_l2_free(void *h, void* buffer)
+{
+    free(buffer);
+}
+
 static esp_err_t esp_eth_post_attach(esp_netif_t *esp_netif, void *args)
 {
     uint8_t eth_mac[6];
@@ -52,7 +58,7 @@ static esp_err_t esp_eth_post_attach(esp_netif_t *esp_netif, void *args)
     esp_netif_driver_ifconfig_t driver_ifconfig = {
         .handle =  netif_glue->eth_driver,
         .transmit = esp_eth_transmit,
-        .driver_free_rx_buffer = NULL
+        .driver_free_rx_buffer = eth_l2_free
     };
 
     ESP_ERROR_CHECK(esp_netif_set_driver_config(esp_netif, &driver_ifconfig));
@@ -72,7 +78,10 @@ static void eth_action_start(void *handler_args, esp_event_base_t base, int32_t 
     esp_eth_netif_glue_t *netif_glue = handler_args;
     ESP_LOGD(TAG, "eth_action_start: %p, %p, %d, %p, %p", netif_glue, base, event_id, event_data, *(esp_eth_handle_t *)event_data);
     if (netif_glue->eth_driver == eth_handle) {
+        eth_speed_t speed;
+        esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &speed);
         esp_netif_action_start(netif_glue->base.netif, base, event_id, event_data);
+        esp_netif_set_link_speed(netif_glue->base.netif, speed == ETH_SPEED_100M ? 100000000 : 10000000);
     }
 }
 

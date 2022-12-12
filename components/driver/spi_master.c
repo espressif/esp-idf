@@ -111,7 +111,7 @@ We have two bits to control the interrupt:
 */
 
 #include <string.h>
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "driver/spi_master.h"
 
 #include "esp_log.h"
@@ -329,6 +329,12 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     SPI_CHECK(dev_config->cs_ena_pretrans <= 1 || (dev_config->address_bits == 0 && dev_config->command_bits == 0) ||
         (dev_config->flags & SPI_DEVICE_HALFDUPLEX), "In full-duplex mode, only support cs pretrans delay = 1 and without address_bits and command_bits", ESP_ERR_INVALID_ARG);
 #endif
+
+    //Check post_cb status when `SPI_DEVICE_NO_RETURN_RESULT` flag is set.
+    if (dev_config->flags & SPI_DEVICE_NO_RETURN_RESULT) {
+        SPI_CHECK(dev_config->post_cb != NULL, "use feature flag 'SPI_DEVICE_NO_RETURN_RESULT' but no post callback function sets", ESP_ERR_INVALID_ARG);
+    }
+
     uint32_t lock_flag = ((dev_config->spics_io_num != -1)? SPI_BUS_LOCK_DEV_FLAG_CS_REQUIRED: 0);
 
     spi_bus_lock_dev_config_t lock_config = {
@@ -375,9 +381,15 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
 
     //Allocate queues, set defaults
     dev->trans_queue = xQueueCreate(dev_config->queue_size, sizeof(spi_trans_priv_t));
-    dev->ret_queue = xQueueCreate(dev_config->queue_size, sizeof(spi_trans_priv_t));
-    if (!dev->trans_queue || !dev->ret_queue) {
+    if (!dev->trans_queue) {
         goto nomem;
+    }
+    //ret_queue nolonger needed if use flag SPI_DEVICE_NO_RETURN_RESULT
+    if (!(dev_config->flags & SPI_DEVICE_NO_RETURN_RESULT)) {
+        dev->ret_queue = xQueueCreate(dev_config->queue_size, sizeof(spi_trans_priv_t));
+        if (!dev->ret_queue) {
+            goto nomem;
+        }
     }
 
     //We want to save a copy of the dev config in the dev struct.
@@ -439,20 +451,35 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     //catch design errors and aren't meant to be triggered during normal operation.
     SPI_CHECK(uxQueueMessagesWaiting(handle->trans_queue)==0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
     SPI_CHECK(handle->host->cur_cs == DEV_NUM_MAX || handle->host->device[handle->host->cur_cs] != handle, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
-    SPI_CHECK(uxQueueMessagesWaiting(handle->ret_queue)==0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
+    if (handle->ret_queue) {
+        SPI_CHECK(uxQueueMessagesWaiting(handle->ret_queue)==0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
+    }
 
     //return
     int spics_io_num = handle->cfg.spics_io_num;
     if (spics_io_num >= 0) spicommon_cs_free_io(spics_io_num);
 
     //Kill queues
-    vQueueDelete(handle->trans_queue);
-    vQueueDelete(handle->ret_queue);
+    if (handle->trans_queue) vQueueDelete(handle->trans_queue);
+    if (handle->ret_queue) vQueueDelete(handle->ret_queue);
     spi_bus_lock_unregister_dev(handle->dev_lock);
 
     assert(handle->host->device[handle->id] == handle);
     handle->host->device[handle->id] = NULL;
     free(handle);
+    return ESP_OK;
+}
+
+esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int* freq_khz)
+{
+    if ((spi_device_t*)handle == NULL || freq_khz == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    int dev_required_freq = ((spi_device_t*)handle)->cfg.clock_speed_hz;
+    int dev_duty_cycle = ((spi_device_t*)handle)->cfg.duty_cycle_pos;
+    *freq_khz = spi_get_actual_clock(esp_clk_apb_freq(), dev_required_freq, dev_duty_cycle);
+
     return ESP_OK;
 }
 
@@ -606,16 +633,23 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         //Okay, transaction is done.
         const int cs = host->cur_cs;
         //Tell common code DMA workaround that our DMA channel is idle. If needed, the code will do a DMA reset.
+
+#if CONFIG_IDF_TARGET_ESP32
         if (bus_attr->dma_enabled && (host->cur_trans_buf.trans->flags & SPI_TRANS_DONT_DMA) == 0) {
             //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
             spicommon_dmaworkaround_idle(bus_attr->tx_dma_chan);
         }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
 
         //cur_cs is changed to DEV_NUM_MAX here
         spi_post_trans(host);
+
+        if (!(host->device[cs]->cfg.flags & SPI_DEVICE_NO_RETURN_RESULT)) {
+            //Return transaction descriptor.
+            xQueueSendFromISR(host->device[cs]->ret_queue, &host->cur_trans_buf, &do_yield);
+        }
+
         // spi_bus_lock_bg_pause(bus_attr->lock);
-        //Return transaction descriptor.
-        xQueueSendFromISR(host->device[cs]->ret_queue, &host->cur_trans_buf, &do_yield);
 #ifdef CONFIG_PM_ENABLE
         //Release APB frequency lock
         esp_pm_lock_release(bus_attr->pm_lock);
@@ -661,11 +695,13 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
 
         if (trans_found) {
             spi_trans_priv_t *const cur_trans_buf = &host->cur_trans_buf;
+#if CONFIG_IDF_TARGET_ESP32
             if (bus_attr->dma_enabled && (cur_trans_buf->buffer_to_rcv || cur_trans_buf->buffer_to_send) && (cur_trans_buf->trans->flags & SPI_TRANS_DONT_DMA) == 0) {
                 //mark channel as active, so that the DMA will not be reset by the slave
                 //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
                 spicommon_dmaworkaround_transfer_active(bus_attr->tx_dma_chan);
             }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
             spi_new_trans(device_to_send, cur_trans_buf);
         }
         // Exit of the ISR, handle interrupt re-enable (if sending transaction), retry (if there's coming BG),
@@ -707,7 +743,9 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
     SPI_CHECK(!is_half_duplex || !(bus_attr->dma_enabled && (trans_desc->flags & SPI_TRANS_DONT_DMA)==0) || !rx_enabled || !tx_enabled, "SPI half duplex mode does not support using DMA with both MOSI and MISO phases.", ESP_ERR_INVALID_ARG );
 #endif
 #if !SOC_SPI_HD_BOTH_INOUT_SUPPORTED
+    //On these chips, HW doesn't support using both TX and RX phases when in halfduplex mode
     SPI_CHECK(!is_half_duplex || !tx_enabled || !rx_enabled, "SPI half duplex mode is not supported when both MOSI and MISO phases are enabled.", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(!is_half_duplex || !trans_desc->length || !trans_desc->rxlength, "SPI half duplex mode is not supported when both MOSI and MISO phases are enabled.", ESP_ERR_INVALID_ARG);
 #endif
     //MOSI phase is skipped only when both tx_buffer and SPI_TRANS_USE_TXDATA are not set.
     SPI_CHECK(trans_desc->length != 0 || !tx_enabled, "trans tx_buffer should be NULL and SPI_TRANS_USE_TXDATA should be cleared to skip MOSI phase.", ESP_ERR_INVALID_ARG);
@@ -760,7 +798,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_transaction_t *trans_de
     if (rcv_ptr && isdma && (!esp_ptr_dma_capable(rcv_ptr) || ((int)rcv_ptr % 4 != 0))) {
         //if rxbuf in the desc not DMA-capable, malloc a new one. The rx buffer need to be length of multiples of 32 bits to avoid heap corruption.
         ESP_LOGD(SPI_TAG, "Allocate RX buffer for DMA" );
-        rcv_ptr = heap_caps_malloc((trans_desc->rxlength + 31) / 8, MALLOC_CAP_DMA);
+        rcv_ptr = heap_caps_malloc(((trans_desc->rxlength + 31) / 32) * 4, MALLOC_CAP_DMA);
         if (rcv_ptr == NULL) goto clean_up;
     }
     new_desc->buffer_to_rcv = rcv_ptr;
@@ -843,6 +881,9 @@ esp_err_t SPI_MASTER_ATTR spi_device_get_trans_result(spi_device_handle_t handle
     spi_trans_priv_t trans_buf;
     SPI_CHECK(handle!=NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
 
+    //if SPI_DEVICE_NO_RETURN_RESULT is set, ret_queue will always be empty
+    SPI_CHECK(!(handle->cfg.flags & SPI_DEVICE_NO_RETURN_RESULT), "API not Supported!", ESP_ERR_NOT_SUPPORTED);
+
     //use the interrupt, block until return
     r=xQueueReceive(handle->ret_queue, (void*)&trans_buf, ticks_to_wait);
     if (!r) {
@@ -896,10 +937,14 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_acquire_bus(spi_device_t *device, TickT
     //configure the device ahead so that we don't need to do it again in the following transactions
     spi_setup_device(host->device[device->id]);
     //the DMA is also occupied by the device, all the slave devices that using DMA should wait until bus released.
+
+#if CONFIG_IDF_TARGET_ESP32
     if (host->bus_attr->dma_enabled) {
         //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
         spicommon_dmaworkaround_transfer_active(host->bus_attr->tx_dma_chan);
     }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
+
     return ESP_OK;
 }
 
@@ -913,11 +958,13 @@ void SPI_MASTER_ISR_ATTR spi_device_release_bus(spi_device_t *dev)
         assert(0);
     }
 
+#if CONFIG_IDF_TARGET_ESP32
     if (host->bus_attr->dma_enabled) {
         //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
         spicommon_dmaworkaround_idle(host->bus_attr->tx_dma_chan);
     }
     //Tell common code DMA workaround that our DMA channel is idle. If needed, the code will do a DMA reset.
+#endif  //#if CONFIG_IDF_TARGET_ESP32
 
     //allow clock to be lower than 80MHz when all tasks blocked
 #ifdef CONFIG_PM_ENABLE

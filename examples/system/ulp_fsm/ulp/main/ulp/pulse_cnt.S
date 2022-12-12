@@ -80,6 +80,9 @@ entry:
 #if CONFIG_IDF_TARGET_ESP32S2
     /* ESP32S2 powers down RTC periph when entering deep sleep and thus by association SENS_SAR_IO_MUX_CONF_REG */
 	WRITE_RTC_FIELD(SENS_SAR_IO_MUX_CONF_REG, SENS_IOMUX_CLK_GATE_EN, 1)
+#elif CONFIG_IDF_TARGET_ESP32S3
+    /* ESP32S3 powers down RTC periph when entering deep sleep and thus by association SENS_SAR_PERI_CLK_GATE_CONF_REG */
+    WRITE_RTC_FIELD(SENS_SAR_PERI_CLK_GATE_CONF_REG, SENS_IOMUX_CLK_EN, 1);
 #endif
 
 	/* Lower 16 IOs and higher need to be handled separately,

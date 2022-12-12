@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <string.h>
 #include "esp_system.h"
+#include "esp_partition.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_netif.h"
@@ -39,12 +40,12 @@ extern const uint8_t mqtt_eclipseprojects_io_pem_end[]   asm("_binary_mqtt_eclip
 //
 static void send_binary(esp_mqtt_client_handle_t client)
 {
-    spi_flash_mmap_handle_t out_handle;
+    esp_partition_mmap_handle_t out_handle;
     const void *binary_address;
     const esp_partition_t *partition = esp_ota_get_running_partition();
-    esp_partition_mmap(partition, 0, partition->size, SPI_FLASH_MMAP_DATA, &binary_address, &out_handle);
+    esp_partition_mmap(partition, 0, partition->size, ESP_PARTITION_MMAP_DATA, &binary_address, &out_handle);
     // sending only the configured portion of the partition (if it's less than the partition size)
-    int binary_size = MIN(CONFIG_BROKER_BIN_SIZE_TO_SEND,partition->size);
+    int binary_size = MIN(CONFIG_BROKER_BIN_SIZE_TO_SEND, partition->size);
     int msg_id = esp_mqtt_client_publish(client, "/topic/binary", binary_address, binary_size, 0, 0);
     ESP_LOGI(TAG, "binary sent with msg_id=%d", msg_id);
 }
@@ -123,8 +124,10 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 static void mqtt_app_start(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = CONFIG_BROKER_URI,
-        .cert_pem = (const char *)mqtt_eclipseprojects_io_pem_start,
+        .broker = {
+            .address.uri = CONFIG_BROKER_URI,
+            .verification.certificate = (const char *)mqtt_eclipseprojects_io_pem_start
+        },
     };
 
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());

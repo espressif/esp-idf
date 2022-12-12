@@ -1,6 +1,6 @@
 LED Control (LEDC)
 ==================
-{IDF_TARGET_LEDC_CHAN_NUM:default="8", esp32="16", esp32s2="8", esp32c3="6", esp32s3="8", esp32c2="6", esp32h2="6"}
+{IDF_TARGET_LEDC_CHAN_NUM:default="8", esp32="16", esp32s2="8", esp32c3="6", esp32s3="8", esp32c2="6", esp32h4="6"}
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -146,7 +146,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 40 MHz
          - Dynamic Frequency Scaling compatible
 
-.. only:: esp32h2
+.. only:: esp32h4
 
     .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
        :widths: 15 15 30
@@ -167,11 +167,11 @@ The source clock can also limit the PWM frequency. The higher the source clock f
 
 .. note::
 
-    .. only:: not esp32h2
+    .. only:: not esp32h4
 
         1. On {IDF_TARGET_NAME}, if RTCxM_CLK is chosen as the LEDC clock source, an internal calibration will be performed to get the exact frequency of the clock. This ensures the accuracy of output PWM signal frequency.
 
-    .. only:: esp32h2
+    .. only:: esp32h4
 
         1. On {IDF_TARGET_NAME}, if RTC8M_CLK is chosen as the LEDC clock source, you may see the frequency of output PWM signal is not very accurate. This is because no internal calibration is performed to get the exact frequency of the clock due to hardware limitation, a theoretic frequency value is used.
 
@@ -235,7 +235,7 @@ The LEDC hardware provides the means to gradually transition from one duty cycle
 
     Start fading with :cpp:func:`ledc_fade_start`. A fade can be operated in blocking or non-blocking mode, please check :cpp:enum:`ledc_fade_mode_t` for the difference between the two available fade modes. Note that with either fade mode, the next fade or fixed-duty update will not take effect until the last fade finishes or is stopped. :cpp:func:`ledc_fade_stop` has to be called to stop a fade that is in progress.
 
-To get a notification about the completion of a fade operation, a fade end callback function can be registered for each channel by calling :cpp:func:`ledc_cb_register` after the fade service being installed.
+To get a notification about the completion of a fade operation, a fade end callback function can be registered for each channel by calling :cpp:func:`ledc_cb_register` after the fade service being installed. The fade end callback prototype is defined in :cpp:type:`ledc_cb_t`, where you should return a boolean value from the callback function, indicating whether a high priority task is woken up by this callback function.
 
 If not required anymore, fading and an associated interrupt can be disabled with :cpp:func:`ledc_fade_func_uninstall`.
 

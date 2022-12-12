@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,8 @@
 #include "esp_system.h"
 #include "esp_check.h"
 #include "esp_attr.h"
+#include "esp_flash.h"
+#include "esp_partition.h"
 #if CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/opi_flash.h"
@@ -72,33 +74,38 @@ static esp_err_t spi0_psram_test(void)
 #define SPI1_FLASH_TEST_LEN     512
 #define SECTOR_LEN              4096
 #define SPI1_FLASH_TEST_NUM     (SECTOR_LEN / SPI1_FLASH_TEST_LEN)
-#define SPI1_FLASH_TEST_ADDR    0x200000
+#define SPI1_FLASH_TEST_ADDR    0x2a0000
 
 extern void spi_flash_disable_interrupts_caches_and_other_cpu(void);
 extern void spi_flash_enable_interrupts_caches_and_other_cpu(void);
-static DRAM_ATTR uint8_t rd_buf[SPI1_FLASH_TEST_LEN];
-static DRAM_ATTR uint8_t wr_buf[SPI1_FLASH_TEST_LEN];
+static uint8_t rd_buf[SPI1_FLASH_TEST_LEN];
+static uint8_t wr_buf[SPI1_FLASH_TEST_LEN];
+
+static const esp_partition_t *get_test_flash_partition(void)
+{
+    /* This finds "flash_test" partition defined in partition_table_unit_test_app.csv */
+    const esp_partition_t *result = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+            ESP_PARTITION_SUBTYPE_ANY, "flash_test");
+    assert(result != NULL); /* means partition table set wrong */
+    return result;
+}
 
 static NOINLINE_ATTR IRAM_ATTR esp_err_t spi1_flash_test(void)
 {
     printf(DRAM_STR("----------SPI1 Flash Test----------\n"));
 
     //We need to use SPI1
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    uint32_t sector_num = SPI1_FLASH_TEST_ADDR / SECTOR_LEN;
-    esp_rom_spiflash_erase_sector(sector_num);
-    spi_flash_enable_interrupts_caches_and_other_cpu();
+    const esp_partition_t* part = get_test_flash_partition();
+    esp_flash_erase_region(part->flash_chip, part->address, part->size);
 
     for (int i = 0; i < SPI1_FLASH_TEST_NUM; i++) {
         for (int j = i + 10; j < SPI1_FLASH_TEST_LEN; j++) {
             wr_buf[j] = j;
         }
 
-        spi_flash_disable_interrupts_caches_and_other_cpu();
-        uint32_t test_flash_addr = SPI1_FLASH_TEST_ADDR + i * SPI1_FLASH_TEST_LEN;
-        esp_rom_spiflash_write(test_flash_addr, (uint32_t*)wr_buf, SPI1_FLASH_TEST_LEN);
-        esp_rom_spiflash_read(test_flash_addr, (uint32_t*)rd_buf, SPI1_FLASH_TEST_LEN);
-        spi_flash_enable_interrupts_caches_and_other_cpu();
+        uint32_t test_flash_addr = SPI1_FLASH_TEST_ADDR;
+        esp_flash_write(part->flash_chip, wr_buf, part->address, sizeof(wr_buf));
+        esp_flash_read(part->flash_chip, rd_buf, part->address, sizeof(rd_buf));
 
         if (memcmp(wr_buf, rd_buf, SPI1_FLASH_TEST_LEN) != 0) {
             printf(DRAM_STR("error happened between 0x%x and 0x%x!!!!\n"), test_flash_addr, test_flash_addr + SPI1_FLASH_TEST_LEN);

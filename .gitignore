@@ -21,15 +21,20 @@ GPATH
 # MacOS directory files
 .DS_Store
 
+# cache dir
+.cache/
+
 # Components Unit Test Apps files
-components/**/build
+components/**/build/
+components/**/build_*_*/
 components/**/sdkconfig
 components/**/sdkconfig.old
 
 # Example project files
+examples/**/build/
+examples/**/build_esp*_*/
 examples/**/sdkconfig
 examples/**/sdkconfig.old
-examples/**/build
 
 # Doc build artifacts
 docs/_build/
@@ -43,7 +48,7 @@ docs/_static/NotoSansSC-Regular.otf
 tools/unit-test-app/sdkconfig
 tools/unit-test-app/sdkconfig.old
 tools/unit-test-app/build
-tools/unit-test-app/builds
+tools/unit-test-app/build_*_*/
 tools/unit-test-app/output
 tools/unit-test-app/test_configs
 
@@ -51,7 +56,8 @@ tools/unit-test-app/test_configs
 log_ut_cmake
 
 # test application build files
-tools/test_apps/**/build
+tools/test_apps/**/build/
+tools/test_apps/**/build_*_*/
 tools/test_apps/**/sdkconfig
 tools/test_apps/**/sdkconfig.old
 

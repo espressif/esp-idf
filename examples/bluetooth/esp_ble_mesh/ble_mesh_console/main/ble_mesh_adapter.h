@@ -11,7 +11,8 @@
 #include "freertos/semphr.h"
 
 #include "ble_mesh_console_lib.h"
-#include "ble_mesh_cfg_srv_model.h"
+#include "ble_mesh_model.h"
+#include "esp_ble_mesh_local_data_operation_api.h"
 
 #define TAG "ble_mesh_console"
 
@@ -107,9 +108,9 @@ extern SemaphoreHandle_t ble_mesh_node_sema;
     } \
 }while(0) \
 
-void ble_mesh_node_init(void);
+int ble_mesh_init_node_prestore_params(void);
+void ble_mesh_deinit_node_prestore_params(void);
 void ble_mesh_set_node_prestore_params(uint16_t netkey_index, uint16_t unicast_addr);
-esp_ble_mesh_model_t *ble_mesh_get_model(uint16_t model_id);
 esp_ble_mesh_comp_t *ble_mesh_get_component(uint16_t model_id);
 void ble_mesh_node_statistics_get(void);
 int ble_mesh_node_statistics_accumulate(uint8_t *data, uint32_t value, uint16_t type);

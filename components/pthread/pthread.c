@@ -10,6 +10,7 @@
 #include <string.h>
 #include "esp_err.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
 #include "sys/queue.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -364,6 +365,8 @@ int pthread_join(pthread_t thread, void **retval)
             pthread_delete(pthread);
             xSemaphoreGive(s_threads_mux);
         }
+        /* clean up thread local storage before task deletion */
+        pthread_internal_local_storage_destructor_callback(handle);
         vTaskDelete(handle);
     }
 
@@ -398,6 +401,8 @@ int pthread_detach(pthread_t thread)
     } else {
         // pthread already stopped
         pthread_delete(pthread);
+        /* clean up thread local storage before task deletion */
+        pthread_internal_local_storage_destructor_callback(handle);
         vTaskDelete(handle);
     }
     xSemaphoreGive(s_threads_mux);
@@ -408,9 +413,8 @@ int pthread_detach(pthread_t thread)
 void pthread_exit(void *value_ptr)
 {
     bool detached = false;
-    /* preemptively clean up thread local storage, rather than
-       waiting for the idle task to clean up the thread */
-    pthread_internal_local_storage_destructor_callback();
+    /* clean up thread local storage before task deletion */
+    pthread_internal_local_storage_destructor_callback(NULL);
 
     if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
         assert(false && "Failed to lock threads list!");
@@ -493,18 +497,8 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
         return EINVAL;
     }
 
-    uint32_t res = 1;
-#if defined(CONFIG_SPIRAM)
-    if (esp_ptr_external_ram(once_control)) {
-        uxPortCompareSetExtram((uint32_t *) &once_control->init_executed, 0, &res);
-    } else {
-#endif
-        uxPortCompareSet((uint32_t *) &once_control->init_executed, 0, &res);
-#if defined(CONFIG_SPIRAM)
-    }
-#endif
     // Check if compare and set was successful
-    if (res == 0) {
+    if (esp_cpu_compare_and_set((volatile uint32_t *)&once_control->init_executed, 0, 1)) {
         ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
         init_routine();
     }

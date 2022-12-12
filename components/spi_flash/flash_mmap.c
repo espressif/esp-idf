@@ -12,45 +12,39 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
+#include "soc/mmu.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
-#include "esp_spi_flash.h"
+#include "esp_memory_utils.h"
+#include "spi_flash_mmap.h"
 #include "esp_flash_encrypt.h"
 #include "esp_log.h"
-#include "cache_utils.h"
+#include "esp_private/cache_utils.h"
 #include "hal/mmu_ll.h"
+#include "esp_rom_spiflash.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
 #include "esp32/rom/cache.h"
-#include "esp32/spiram.h"
-#include "soc/mmu.h"
-// TODO: IDF-3821
-#define INVALID_PHY_PAGE 0xffff
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
-#include "esp_private/mmu_psram.h"
 #include "soc/extmem_reg.h"
-#include "soc/ext_mem_defs.h"
-#include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
-#include "esp32s3/spiram.h"
 #include "soc/extmem_reg.h"
-#include "soc/ext_mem_defs.h"
-#include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/cache.h"
-#include "soc/ext_mem_defs.h"
-#include "soc/mmu.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/cache.h"
-#include "soc/ext_mem_defs.h"
-#include "soc/mmu.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/cache.h"
-#include "soc/ext_mem_defs.h"
-#include "soc/mmu.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/cache.h"
+#endif
+
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_extram.h"
+#include "esp_private/mmu_psram_flash.h"
 #endif
 
 #ifndef NDEBUG
@@ -62,6 +56,17 @@
 #define IROM0_PAGES_NUM (SOC_MMU_IROM0_PAGES_END - SOC_MMU_IROM0_PAGES_START)
 #define DROM0_PAGES_NUM (SOC_MMU_DROM0_PAGES_END - SOC_MMU_DROM0_PAGES_START)
 #define PAGES_LIMIT ((SOC_MMU_IROM0_PAGES_END > SOC_MMU_DROM0_PAGES_END) ? SOC_MMU_IROM0_PAGES_END:SOC_MMU_DROM0_PAGES_END)
+#define INVALID_PHY_PAGE(page_size)                ((page_size) - 1)
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+extern int _instruction_reserved_start;
+extern int _instruction_reserved_end;
+#endif
+
+#if CONFIG_SPIRAM_RODATA
+extern int _rodata_reserved_start;
+extern int _rodata_reserved_end;
+#endif
 
 #if !CONFIG_SPI_FLASH_ROM_IMPL
 
@@ -125,10 +130,10 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
     esp_err_t ret;
-    if (src_addr & INVALID_PHY_PAGE) {
+    if (src_addr & INVALID_PHY_PAGE(CONFIG_MMU_PAGE_SIZE)) {
         return ESP_ERR_INVALID_ARG;
     }
-    if ((src_addr + size) > spi_flash_get_chip_size()) {
+    if ((src_addr + size) > g_rom_flashchip.chip_size) {
         return ESP_ERR_INVALID_ARG;
     }
     // region which should be mapped
@@ -161,7 +166,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
         return ESP_ERR_INVALID_ARG;
     }
     for (int i = 0; i < page_count; i++) {
-        if (pages[i] < 0 || pages[i]*SPI_FLASH_MMU_PAGE_SIZE >= spi_flash_get_chip_size()) {
+        if (pages[i] < 0 || pages[i]*SPI_FLASH_MMU_PAGE_SIZE >= g_rom_flashchip.chip_size) {
             return ESP_ERR_INVALID_ARG;
         }
     }
@@ -259,7 +264,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
     if (need_flush) {
 #if CONFIG_IDF_TARGET_ESP32
 #if CONFIG_SPIRAM
-        esp_spiram_writeback_cache();
+        esp_psram_extram_writeback_cache();
 #endif // CONFIG_SPIRAM
         Cache_Flush(0);
 #if !CONFIG_FREERTOS_UNICORE
@@ -497,7 +502,7 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
         if (is_page_mapped_in_cache(page, &vaddr)) {
 #if CONFIG_IDF_TARGET_ESP32
 #if CONFIG_SPIRAM
-            esp_spiram_writeback_cache();
+            esp_psram_extram_writeback_cache();
 #endif
             Cache_Flush(0);
 #ifndef CONFIG_FREERTOS_UNICORE

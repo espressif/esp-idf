@@ -6,9 +6,7 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.app import IdfApp
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32c3
+@pytest.mark.supported_targets
 @pytest.mark.generic
 def test_custom_bootloader_impl_example(app: IdfApp, dut: Dut) -> None:
     # Expect to read a message from the custom bootloader

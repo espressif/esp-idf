@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@ typedef enum {
 } coex_prefer_t;
 
 typedef void (* coex_func_cb_t)(uint32_t event, int sched_cnt);
+typedef esp_err_t (* coex_set_lpclk_source_callback_t)(void);
 
 /**
  * @brief Pre-Init software coexist
@@ -114,6 +115,18 @@ int coex_wifi_release(uint32_t event);
  *  @return : 0 - success, other - failed
  */
 int coex_wifi_channel_set(uint8_t primary, uint8_t secondary);
+
+/**
+ * @brief Register application callback function to Wi-Fi update low power clock module.
+ *
+ * @param callback : Wi-Fi update low power clock callback function
+ */
+void coex_wifi_register_update_lpclk_callback(coex_set_lpclk_source_callback_t callback);
+
+/**
+ * @brief Update low power clock interval
+ */
+void coex_update_lpclk_interval(void);
 
 /**
  * @brief Get coexistence event duration.
@@ -212,6 +225,28 @@ int coex_register_start_cb(int (* cb)(void));
 esp_err_t esp_coex_adapter_register(coex_adapter_funcs_t *funcs);
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
+/**
+  * @brief     Force RX Anttena only in external coex situation.
+  */
+extern void phy_coex_force_rx_ant(void);
+
+/**
+  * @brief     Dismiss RX Anttena only in external coex situation.
+  */
+extern void phy_coex_dismiss_rx_ant(void);
+
+/**
+  * @brief     Set external coexistence advanced informations, like working mode and grant mode in which level.
+  *
+  * @param     outpti1    Only for slave mode, external coex output priority in level1.
+  * @param     output2    Only for slave mode, external coex output priority in level2.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_coex_external_params(esp_external_coex_advance_t coex_info,
+         uint32_t out_pti1, uint32_t out_pti2);
+
 /**
   * @brief     Set external coexistence pti level and enable it.
   *

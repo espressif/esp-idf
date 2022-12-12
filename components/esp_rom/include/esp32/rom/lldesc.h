@@ -1,16 +1,8 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ROM_LLDESC_H_
 #define _ROM_LLDESC_H_
@@ -18,6 +10,7 @@
 #include <stdint.h>
 
 #include "sys/queue.h"
+#include "esp_rom_lldesc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,32 +44,6 @@ extern "C" {
 #define LLDESC_RX_AMPDU_ENTRY_MBLK_NUM  4
 #define LLDESC_RX_AMPDU_LEN_MLBK_NUM    8
 #endif /* !ESP_MAC_5 */
-/*
- *  SLC2 DMA Desc struct, aka lldesc_t
- *
- * --------------------------------------------------------------
- * | own | EoF | sub_sof | 5'b0   | length [11:0] | size [11:0] |
- * --------------------------------------------------------------
- * |            buf_ptr [31:0]                                  |
- * --------------------------------------------------------------
- * |            next_desc_ptr [31:0]                            |
- * --------------------------------------------------------------
- */
-
-/* this bitfield is start from the LSB!!! */
-typedef struct lldesc_s {
-    volatile uint32_t size  :12,
-                        length:12,
-                        offset: 5, /* h/w reserved 5bit, s/w use it as offset in buffer */
-                        sosf  : 1, /* start of sub-frame */
-                        eof   : 1, /* end of frame */
-                        owner : 1; /* hw or sw */
-    volatile uint8_t *buf;       /* point to buffer data */
-    union{
-        volatile uint32_t empty;
-        STAILQ_ENTRY(lldesc_s) qe;  /* pointing to the next desc */
-    };
-} lldesc_t;
 
 typedef struct tx_ampdu_entry_s{
     uint32_t sub_len  :12,

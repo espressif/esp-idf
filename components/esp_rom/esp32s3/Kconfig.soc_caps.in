@@ -11,11 +11,11 @@ config ESP_ROM_HAS_CRC_BE
     bool
     default y
 
-config ESP_ROM_HAS_JPEG_DECODE
+config ESP_ROM_HAS_MZ_CRC32
     bool
     default y
 
-config ESP_ROM_SUPPORT_MULTIPLE_UART
+config ESP_ROM_HAS_JPEG_DECODE
     bool
     default y
 
@@ -40,5 +40,21 @@ config ESP_ROM_GET_CLK_FREQ
     default y
 
 config ESP_ROM_HAS_HAL_WDT
+    bool
+    default y
+
+config ESP_ROM_NEEDS_SWSETUP_WORKAROUND
+    bool
+    default y
+
+config ESP_ROM_HAS_LAYOUT_TABLE
+    bool
+    default y
+
+config ESP_ROM_HAS_SPI_FLASH
+    bool
+    default y
+
+config ESP_ROM_HAS_ETS_PRINTF_BUG
     bool
     default y

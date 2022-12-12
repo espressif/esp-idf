@@ -11,6 +11,7 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "esp_cpu.h"
 #include "esp_rom_sys.h"
 #include "esp_ipc_isr.h"
 
@@ -46,7 +47,7 @@ TEST_CASE("Test ipc_isr blocking IPC function calls get_cycle_count_other_cpu", 
 {
     int val = 0x5a5a;
     esp_ipc_isr_asm_call_blocking(esp_test_ipc_isr_get_cycle_count_other_cpu, &val);
-    esp_rom_printf("CCOUNT CPU0 = %d\n", cpu_ll_get_cycle_count());
+    esp_rom_printf("CCOUNT CPU0 = %d\n", esp_cpu_get_cycle_count());
     esp_rom_printf("CCOUNT CPU1 = %d\n", val);
 }
 

@@ -1552,7 +1552,8 @@ int PORT_WriteDataCO (UINT16 handle, int *p_len, int len, UINT8 *p_data)
             length = (UINT16)available;
         }
 
-        UINT16 alloc_size = (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD+length);
+        UINT16 alloc_size = (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD
+                                + length + L2CAP_FCS_LEN);
         p_buf = (BT_HDR *)osi_malloc(alloc_size);
         if (!p_buf) {
             RFCOMM_TRACE_EVENT ("PORT_WriteDataCO: out of heap.");
@@ -1863,6 +1864,20 @@ const char *PORT_GetResultString (const uint8_t result_code)
     }
 
     return result_code_strings[result_code];
+}
+
+/*******************************************************************************
+**
+** Function         PORT_SetL2capErtm
+**
+** Description      This function sets whether RFCOMM uses L2CAP ERTM.
+**
+** Returns          void
+**
+*******************************************************************************/
+void PORT_SetL2capErtm (BOOLEAN enable_l2cap_ertm)
+{
+    rfc_cb.port.enable_l2cap_ertm = enable_l2cap_ertm;
 }
 
 #endif ///(defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)

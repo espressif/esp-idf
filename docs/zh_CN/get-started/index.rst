@@ -51,6 +51,23 @@
     * 多种外设
     * 内置安全硬件
 
+.. only:: esp32c2
+
+    * 2.4 GHz Wi-Fi
+    * 低功耗蓝牙
+    * 高性能 32 位 RISC-V 单核处理器
+    * 多种外设
+    * 适用于较简单、大批量生产的物联网应用
+
+.. only:: esp32c6
+
+    * 2.4 GHz Wi-Fi 6
+    * 低功耗蓝牙
+    * 802.15.4，支持 Thread 和 Zigbee 协议
+    * 高性能 32 位 RISC-V 单核处理器
+    * 多种外设
+    * 内置安全硬件
+
 {IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。
 
 乐鑫为用户提供完整的软、硬件资源，进行 {IDF_TARGET_NAME} 硬件设备的开发。其中，乐鑫的软件开发环境 ESP-IDF 旨在协助用户快速开发物联网 (IoT) 应用，可满足用户对 Wi-Fi、蓝牙、低功耗等方面的要求。
@@ -89,7 +106,7 @@
         :maxdepth: 1
 
         ESP32-S2-Saola-1 <../hw-reference/esp32s2/user-guide-saola-1-v1.2>
-        ESP32-S2-DevKitM-1(U) <../hw-reference/esp32s2/user-guide-devkitm-1-v1>
+        ESP32-S2-DevKitM-1 <../hw-reference/esp32s2/user-guide-devkitm-1-v1>
         ESP32-S2-DevKitC-1 <../hw-reference/esp32s2/user-guide-s2-devkitc-1>
         ESP32-S2-Kaluga-Kit <../hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit>
 
@@ -109,6 +126,13 @@
 
         ESP32-S3-DevKitC-1 <../hw-reference/esp32s3/user-guide-devkitc-1>
         ESP32-S3-DevKitM-1 <../hw-reference/esp32s3/user-guide-devkitm-1>
+
+.. only:: esp32c2
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP8684-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp8684/esp8684-devkitm-1/index.html>
 
 .. _get-started-get-prerequisites:
 
@@ -139,11 +163,8 @@ IDE
 
 .. note:: 建议您通过自己喜欢的集成开发环境 (IDE) 安装 ESP-IDF。
 
-.. toctree::
-    :maxdepth: 1
-
-    Eclipse Plugin <eclipse-setup>
-    VSCode Extension <vscode-setup>
+* `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_
+* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
 
 手动安装
 ~~~~~~~~~~~~~~~~~~~

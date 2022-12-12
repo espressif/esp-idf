@@ -4,14 +4,20 @@
 import argparse
 import binascii
 import os
+import re
 import uuid
 from datetime import datetime
 from typing import List, Optional, Tuple
 
 from construct import BitsInteger, BitStruct, Int16ul
 
+# the regex pattern defines symbols that are allowed by long file names but not by short file names
+INVALID_SFN_CHARS_PATTERN = re.compile(r'[.+,;=\[\]]')
+
+FATFS_MIN_ALLOC_UNIT: int = 128
 FAT12_MAX_CLUSTERS: int = 4085
 FAT16_MAX_CLUSTERS: int = 65525
+RESERVED_CLUSTERS_COUNT: int = 2
 PAD_CHAR: int = 0x20
 FAT12: int = 12
 FAT16: int = 16
@@ -42,7 +48,11 @@ FATFS_SECONDS_GRANULARITY: int = 2
 LONG_NAMES_ENCODING: str = 'utf-16'
 SHORT_NAMES_ENCODING: str = 'utf-8'
 
+# compatible with WL_SECTOR_SIZE
+# choices for WL are WL_SECTOR_SIZE_512 and WL_SECTOR_SIZE_4096
+ALLOWED_WL_SECTOR_SIZES: List[int] = [512, 4096]
 ALLOWED_SECTOR_SIZES: List[int] = [512, 1024, 2048, 4096]
+
 ALLOWED_SECTORS_PER_CLUSTER: List[int] = [1, 2, 4, 8, 16, 32, 64, 128]
 
 
@@ -68,6 +78,17 @@ def get_fatfs_type(clusters_count: int) -> int:
     if clusters_count <= FAT16_MAX_CLUSTERS:
         return FAT16
     return FAT32
+
+
+def get_fat_sectors_count(clusters_count: int, sector_size: int) -> int:
+    fatfs_type_ = get_fatfs_type(clusters_count)
+    if fatfs_type_ == FAT32:
+        raise NotImplementedError('FAT32 is not supported!')
+    # number of byte halves
+    cluster_s: int = fatfs_type_ // 4
+    fat_size_bytes: int = (
+        clusters_count * 2 + cluster_s) if fatfs_type_ == FAT16 else (clusters_count * 3 + 1) // 2 + cluster_s
+    return (fat_size_bytes + sector_size - 1) // sector_size
 
 
 def required_clusters_count(cluster_size: int, content: bytes) -> int:
@@ -107,14 +128,11 @@ def lfn_checksum(short_entry_name: str) -> int:
 
 def convert_to_utf16_and_pad(content: str,
                              expected_size: int,
-                             pad: bytes = FULL_BYTE,
-                             terminator: bytes = b'\x00\x00') -> bytes:
+                             pad: bytes = FULL_BYTE) -> bytes:
     # we need to get rid of the Byte order mark 0xfeff or 0xfffe, fatfs does not use it
     bom_utf16: bytes = b'\xfe\xff'
     encoded_content_utf16: bytes = content.encode(LONG_NAMES_ENCODING)[len(bom_utf16):]
-    terminated_encoded_content_utf16: bytes = (encoded_content_utf16 + terminator) if (2 * expected_size > len(
-        encoded_content_utf16) > 0) else encoded_content_utf16
-    return terminated_encoded_content_utf16.ljust(2 * expected_size, pad)
+    return encoded_content_utf16.ljust(2 * expected_size, pad)
 
 
 def split_to_name_and_extension(full_name: str) -> Tuple[str, str]:
@@ -148,7 +166,7 @@ def split_content_into_sectors(content: bytes, sector_size: int) -> List[bytes]:
     return result
 
 
-def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
+def get_args_for_partition_generator(desc: str, wl: bool) -> argparse.Namespace:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_directory',
                         help='Path to the directory that will be encoded into fatfs image')
@@ -157,11 +175,13 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
                         help='Filename of the generated fatfs image')
     parser.add_argument('--partition_size',
                         default=FATDefaults.SIZE,
-                        help='Size of the partition in bytes')
+                        help='Size of the partition in bytes.' +
+                             ('' if wl else ' Use `--partition_size detect` for detecting the minimal partition size.')
+                        )
     parser.add_argument('--sector_size',
                         default=FATDefaults.SECTOR_SIZE,
                         type=int,
-                        choices=ALLOWED_SECTOR_SIZES,
+                        choices=ALLOWED_WL_SECTOR_SIZES if wl else ALLOWED_SECTOR_SIZES,
                         help='Size of the partition in bytes')
     parser.add_argument('--sectors_per_cluster',
                         default=1,
@@ -181,7 +201,7 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
     parser.add_argument('--fat_type',
                         default=0,
                         type=int,
-                        choices=[12, 16, 0],
+                        choices=[FAT12, FAT16, 0],
                         help="""
                         Type of fat. Select 12 for fat12, 16 for fat16. Don't set, or set to 0 for automatic
                         calculation using cluster size and partition size.
@@ -190,6 +210,8 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
     args = parser.parse_args()
     if args.fat_type == 0:
         args.fat_type = None
+    if args.partition_size == 'detect' and not wl:
+        args.partition_size = -1
     args.partition_size = int(str(args.partition_size), 0)
     if not os.path.isdir(args.input_directory):
         raise NotADirectoryError(f'The target directory `{args.input_directory}` does not exist!')
@@ -211,6 +233,10 @@ TIME_ENTRY = BitStruct(
     'minute' / BitsInteger(6),
     'second' / BitsInteger(5),
 )
+
+
+def build_name(name: str, extension: str) -> str:
+    return f'{name}.{extension}' if len(extension) > 0 else name
 
 
 def build_date_entry(year: int, mon: int, mday: int) -> int:
@@ -253,7 +279,6 @@ class FATDefaults:
     FAT_TABLES_COUNT: int = 1
     SECTORS_PER_CLUSTER: int = 1
     SECTOR_SIZE: int = 0x1000
-    SECTORS_PER_FAT: int = 1
     HIDDEN_SECTORS: int = 0
     ENTRY_SIZE: int = 32
     NUM_HEADS: int = 0xff
@@ -261,7 +286,7 @@ class FATDefaults:
     SEC_PER_TRACK: int = 0x3f
     VOLUME_LABEL: str = 'Espressif'
     FILE_SYS_TYPE: str = 'FAT'
-    ROOT_ENTRIES_COUNT: int = 512  # number of entries in the root directory
+    ROOT_ENTRIES_COUNT: int = 512  # number of entries in the root directory, recommended 512
     MEDIA_TYPE: int = 0xf8
     SIGNATURE_WORD: bytes = b'\x55\xAA'
 
@@ -269,3 +294,6 @@ class FATDefaults:
     VERSION: int = 2
     TEMP_BUFFER_SIZE: int = 32
     UPDATE_RATE: int = 16
+    WR_SIZE: int = 16
+    # wear leveling metadata (config sector) contains always sector size 4096
+    WL_SECTOR_SIZE: int = 4096

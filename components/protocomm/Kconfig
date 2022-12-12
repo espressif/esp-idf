@@ -1,0 +1,29 @@
+menu "Protocomm"
+
+    config ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
+        bool "Support protocomm security version 0 (no security)"
+        default y
+        help
+            Enable support of security version 0.
+            Disabling this option saves some code size.
+            Consult the Enabling protocomm security version section of the
+            Protocomm documentation in ESP-IDF Programming guide for more details.
+
+    config ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
+        bool "Support protocomm security version 1 (Curve25519 key exchange + AES-CTR encryption/decryption)"
+        default y
+        help
+            Enable support of security version 1.
+            Disabling this option saves some code size.
+            Consult the Enabling protocomm security version section of the
+            Protocomm documentation in ESP-IDF Programming guide for more details.
+
+    config ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+        bool "Support protocomm security version 2 (SRP6a-based key exchange + AES-GCM encryption/decryption)"
+        default y
+        help
+            Enable support of security version 2.
+            Disabling this option saves some code size.
+            Consult the Enabling protocomm security version section of the
+            Protocomm documentation in ESP-IDF Programming guide for more details.
+endmenu

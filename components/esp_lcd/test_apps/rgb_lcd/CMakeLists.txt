@@ -1,8 +1,11 @@
 # This is the project CMakeLists.txt file for the test subproject
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(rgb_lcd_panel_test)
+
+target_add_binary_data(rgb_lcd_panel_test.elf "resources/pictures/hello.yuv" BINARY)
+target_add_binary_data(rgb_lcd_panel_test.elf "resources/pictures/world.yuv" BINARY)
 
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
     add_custom_target(check_test_app_sections ALL

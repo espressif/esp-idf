@@ -120,7 +120,7 @@ void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     }
 }
 
-static void btc_ble_mesh_prov_arg_deep_free(btc_msg_t *msg)
+void btc_ble_mesh_prov_arg_deep_free(btc_msg_t *msg)
 {
     btc_ble_mesh_prov_args_t *arg = NULL;
 
@@ -196,7 +196,7 @@ void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     }
 }
 
-static void btc_ble_mesh_model_arg_deep_free(btc_msg_t *msg)
+void btc_ble_mesh_model_arg_deep_free(btc_msg_t *msg)
 {
     btc_ble_mesh_model_args_t *arg = NULL;
 
@@ -368,8 +368,8 @@ static bt_status_t btc_ble_mesh_model_callback(esp_ble_mesh_model_cb_param_t *pa
     msg.pid = BTC_PID_MODEL;
     msg.act = act;
 
-    ret = btc_transfer_context(&msg, param, sizeof(esp_ble_mesh_model_cb_param_t),
-                               btc_ble_mesh_model_copy_req_data);
+    ret = btc_transfer_context(&msg, param, param == NULL ? 0 : sizeof(esp_ble_mesh_model_cb_param_t),
+                               btc_ble_mesh_model_copy_req_data, btc_ble_mesh_model_free_req_data);
     if (ret != BT_STATUS_SUCCESS) {
         BT_ERR("btc_transfer_context failed");
     }
@@ -528,7 +528,7 @@ static bt_status_t btc_ble_mesh_prov_callback(esp_ble_mesh_prov_cb_param_t *para
     msg.pid = BTC_PID_PROV;
     msg.act = act;
 
-    ret = btc_transfer_context(&msg, param, sizeof(esp_ble_mesh_prov_cb_param_t), NULL);
+    ret = btc_transfer_context(&msg, param, param == NULL ? 0 : sizeof(esp_ble_mesh_prov_cb_param_t), NULL, NULL);
     if (ret != BT_STATUS_SUCCESS) {
         BT_ERR("btc_transfer_context failed");
     }
@@ -2095,7 +2095,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
 #endif /* CONFIG_BLE_MESH_PROVISIONER_RECV_HB */
 #if CONFIG_BLE_MESH_SETTINGS
     case BTC_BLE_MESH_ACT_PROVISIONER_DIRECT_ERASE_SETTINGS:
-        act = ESP_BLE_MESH_PROVISIONER_DRIECT_ERASE_SETTINGS_COMP_EVT;
+        act = ESP_BLE_MESH_PROVISIONER_DIRECT_ERASE_SETTINGS_COMP_EVT;
         param.provisioner_direct_erase_settings_comp.err_code = bt_mesh_provisioner_direct_erase_settings();
         break;
 #endif /* CONFIG_BLE_MESH_SETTINGS */

@@ -1,0 +1,5 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/esp_ot_cli_extension: "~0.2.0"
+  idf:
+    version: ">=4.1.0"

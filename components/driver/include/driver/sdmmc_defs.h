@@ -21,11 +21,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _SDMMC_DEFS_H_
-#define _SDMMC_DEFS_H_
+#pragma once
 
 #include <stdint.h>
 #include <limits.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* MMC commands */                              /* response type */
 #define MMC_GO_IDLE_STATE               0       /* R0 */
@@ -118,6 +121,20 @@
 #define SD_SPI_R1_NO_RESPONSE           (1<<7)
 
 #define SDIO_R1_FUNC_NUM_ERR            (1<<4)
+
+/* SPI mode R2 response type bits.
+ * The first byte is the same as for R1.
+ * The bits below belong to the second byte.
+ * Bits 10, 11, 12, 15 can also be reported in data error token of a read command response.
+ */
+#define SD_SPI_R2_CARD_LOCKED           (1<<8)  /* Set when the card is locked by the user */
+#define SD_SPI_R2_UNLOCK_FAILED         (1<<9)  /* Host attempts to erase a write-protected sector or makes an error during card lock/unlock operation */
+#define SD_SPI_R2_ERROR                 (1<<10) /* A general or an unknown error occurred during the operation */
+#define SD_SPI_R2_CC_ERROR              (1<<11) /* Internal card controller error */
+#define SD_SPI_R2_ECC_FAILED            (1<<12) /* Card internal ECC was applied but failed to correct the data */
+#define SD_SPI_R2_WP_VIOLATION          (1<<13) /* The command tried to write a write-protected block */
+#define SD_SPI_R2_ERASE_PARAM           (1<<14) /* An invalid selection for erase, sectors or groups */
+#define SD_SPI_R2_OUT_OF_RANGE          (1<<15) /* The command argument was out of the allowed range for this card */
 
 /* 48-bit response decoding (32 bits w/o CRC) */
 #define MMC_R1(resp)                    ((resp)[0])
@@ -358,6 +375,9 @@
 /* SSR (SD Status Register) */
 #define SSR_DAT_BUS_WIDTH(ssr)          MMC_RSP_BITS((ssr), 510, 2)
 #define SSR_AU_SIZE(ssr)                MMC_RSP_BITS((ssr), 428, 4)
+#define SSR_ERASE_SIZE(ssr)             MMC_RSP_BITS((ssr), 408, 16)
+#define SSR_ERASE_TIMEOUT(ssr)          MMC_RSP_BITS((ssr), 402, 6)
+#define SSR_ERASE_OFFSET(ssr)           MMC_RSP_BITS((ssr), 400, 2)
 #define SSR_DISCARD_SUPPORT(ssr)        MMC_RSP_BITS((ssr), 313, 1)
 #define SSR_FULE_SUPPORT(ssr)           MMC_RSP_BITS((ssr), 312, 1)
 
@@ -514,4 +534,6 @@ static inline uint32_t MMC_RSP_BITS(uint32_t *src, int start, int len)
 #define SDMMC_TIMING_HIGHSPEED 1
 #define SDMMC_TIMING_MMC_DDR52 2
 
-#endif //_SDMMC_DEFS_H_
+#ifdef __cplusplus
+}
+#endif

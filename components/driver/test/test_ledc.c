@@ -24,6 +24,7 @@
 #include "soc/io_mux_reg.h"
 #include "esp_system.h"
 #include "esp_timer.h"
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 #include "driver/ledc.h"
 #include "hal/ledc_ll.h"
 #include "driver/gpio.h"
@@ -398,7 +399,7 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
 }
 #endif // SOC_LEDC_SUPPORT_FADE_STOP
 
-#if SOC_PCNT_SUPPORTED // Note. C3, C2, H2 do not have PCNT peripheral, the following test cases cannot be tested
+#if SOC_PCNT_SUPPORTED // Note. C3, C2, H4 do not have PCNT peripheral, the following test cases cannot be tested
 
 #include "driver/pulse_cnt.h"
 
@@ -611,6 +612,7 @@ TEST_CASE("LEDC timer pause and resume", "[ledc]")
     printf("reset ledc timer\n");
     TEST_ESP_OK(ledc_timer_rst(test_speed_mode, LEDC_TIMER_0));
     vTaskDelay(100 / portTICK_PERIOD_MS);
+    count = wave_count(1000);
     TEST_ASSERT_UINT32_WITHIN(5, count, 5000);
     tear_testbench();
 }
@@ -643,3 +645,4 @@ TEST_CASE_MULTIPLE_STAGES("LEDC continue work after software reset", "[ledc]",
                           ledc_cpu_reset_test_second_stage);
 
 #endif // SOC_PCNT_SUPPORTED
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

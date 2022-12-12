@@ -384,7 +384,8 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
             .target = USB_PHY_TARGET_INT,
             .otg_mode = USB_OTG_MODE_HOST,
             .otg_speed = USB_PHY_SPEED_UNDEFINED,   //In Host mode, the speed is determined by the connected device
-            .gpio_conf = NULL,
+            .ext_io_conf = NULL,
+            .otg_io_conf = NULL,
         };
         ret = usb_new_phy(&phy_config, &host_lib_obj->constant.phy_handle);
          if (ret != ESP_OK) {
@@ -437,8 +438,8 @@ assign_err:
 hub_err:
     ESP_ERROR_CHECK(usbh_uninstall());
 usbh_err:
-    if (p_host_lib_obj->constant.phy_handle) {
-        ESP_ERROR_CHECK(usb_del_phy(p_host_lib_obj->constant.phy_handle));
+    if (host_lib_obj->constant.phy_handle) {
+        ESP_ERROR_CHECK(usb_del_phy(host_lib_obj->constant.phy_handle));
     }
 phy_err:
 alloc_err:
@@ -590,6 +591,8 @@ static void _handle_pending_ep(client_t *client_obj)
                 //Dequeue all URBs and run their transfer callback
                 urb_t *urb = hcd_urb_dequeue(ep_obj->constant.pipe_hdl);
                 while (urb != NULL) {
+                    //Clear the transfer's inflight flag to indicate the transfer is no longer inflight
+                    urb->usb_host_inflight = false;
                     urb->transfer.callback(&urb->transfer);
                     num_urb_dequeued++;
                     urb = hcd_urb_dequeue(ep_obj->constant.pipe_hdl);
@@ -747,6 +750,8 @@ esp_err_t usb_host_client_handle_events(usb_host_client_handle_t client_hdl, Tic
             TAILQ_REMOVE(&client_obj->dynamic.done_ctrl_xfer_tailq, urb, tailq_entry);
             client_obj->dynamic.num_done_ctrl_xfer--;
             HOST_EXIT_CRITICAL();
+            //Clear the transfer's inflight flag to indicate the transfer is no longer inflight
+            urb->usb_host_inflight = false;
             //Call the transfer's callback
             urb->transfer.callback(&urb->transfer);
             HOST_ENTER_CRITICAL();
@@ -1297,6 +1302,9 @@ esp_err_t usb_host_transfer_submit(usb_transfer_t *transfer)
                               USB_EP_DESC_GET_XFERTYPE(ep_obj->constant.ep_desc),
                               USB_EP_DESC_GET_MPS(ep_obj->constant.ep_desc),
                               transfer->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK), ESP_ERR_INVALID_ARG);
+    //Check that we are not submitting a transfer already inflight
+    HOST_CHECK(!urb_obj->usb_host_inflight, ESP_ERR_NOT_FINISHED);
+    urb_obj->usb_host_inflight = true;
     HOST_ENTER_CRITICAL();
     ep_obj->dynamic.num_urb_inflight++;
     HOST_EXIT_CRITICAL();
@@ -1316,6 +1324,7 @@ hcd_err:
     HOST_ENTER_CRITICAL();
     ep_obj->dynamic.num_urb_inflight--;
     HOST_EXIT_CRITICAL();
+    urb_obj->usb_host_inflight = false;
 err:
     return ret;
 }
@@ -1323,6 +1332,7 @@ err:
 esp_err_t usb_host_transfer_submit_control(usb_host_client_handle_t client_hdl, usb_transfer_t *transfer)
 {
     HOST_CHECK(client_hdl != NULL && transfer != NULL, ESP_ERR_INVALID_ARG);
+
     //Check that control transfer is valid
     HOST_CHECK(transfer->device_handle != NULL, ESP_ERR_INVALID_ARG);   //Target device must be set
     usb_device_handle_t dev_hdl = transfer->device_handle;
@@ -1332,8 +1342,18 @@ esp_err_t usb_host_transfer_submit_control(usb_host_client_handle_t client_hdl, 
     HOST_CHECK(transfer_check(transfer, USB_TRANSFER_TYPE_CTRL, dev_info.bMaxPacketSize0, xfer_is_in), ESP_ERR_INVALID_ARG);
     //Control transfers must be targeted at EP 0
     HOST_CHECK((transfer->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK) == 0, ESP_ERR_INVALID_ARG);
-    //Save client handle into URB
+
     urb_t *urb_obj = __containerof(transfer, urb_t, transfer);
+    //Check that we are not submitting a transfer already inflight
+    HOST_CHECK(!urb_obj->usb_host_inflight, ESP_ERR_NOT_FINISHED);
+    urb_obj->usb_host_inflight = true;
+    //Save client handle into URB
     urb_obj->usb_host_client = (void *)client_hdl;
-    return usbh_dev_submit_ctrl_urb(dev_hdl, urb_obj);
+
+    esp_err_t ret;
+    ret = usbh_dev_submit_ctrl_urb(dev_hdl, urb_obj);
+    if (ret != ESP_OK) {
+        urb_obj->usb_host_inflight = false;
+    }
+    return ret;
 }

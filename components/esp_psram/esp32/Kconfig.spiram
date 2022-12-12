@@ -1,0 +1,397 @@
+config SPIRAM
+    bool "Support for external, SPI-connected RAM"
+    default "n"
+    help
+        This enables support for an external SPI RAM chip, connected in parallel with the
+        main SPI flash chip.
+
+menu "SPI RAM config"
+    depends on SPIRAM
+
+    config SPIRAM_MODE_QUAD
+        bool
+        default "y"
+
+    choice SPIRAM_TYPE
+        prompt "Type of SPI RAM chip in use"
+        default SPIRAM_TYPE_AUTO
+
+        config SPIRAM_TYPE_AUTO
+            bool "Auto-detect"
+
+        config SPIRAM_TYPE_ESPPSRAM16
+            bool "ESP-PSRAM16 or APS1604"
+
+        config SPIRAM_TYPE_ESPPSRAM32
+            bool "ESP-PSRAM32"
+
+        config SPIRAM_TYPE_ESPPSRAM64
+            bool "ESP-PSRAM64 or LY68L6400"
+
+    endchoice
+
+    choice SPIRAM_SPEED
+        prompt "Set RAM clock speed"
+        default SPIRAM_SPEED_40M
+        help
+            Select the speed for the SPI RAM chip.
+            If SPI RAM is enabled, we only support three combinations of SPI speed mode we supported now:
+
+            1. Flash SPI running at 40Mhz and RAM SPI running at 40Mhz
+            2. Flash SPI running at 80Mhz and RAM SPI running at 40Mhz
+            3. Flash SPI running at 80Mhz and RAM SPI running at 80Mhz
+
+            Note: If the third mode(80Mhz+80Mhz) is enabled for SPI RAM of type 32MBit, one of the HSPI/VSPI host
+            will be occupied by the system. Which SPI host to use can be selected by the config item
+            SPIRAM_OCCUPY_SPI_HOST. Application code should never touch HSPI/VSPI hardware in this case. The
+            option to select 80MHz will only be visible if the flash SPI speed is also 80MHz.
+            (ESPTOOLPY_FLASHFREQ_80M is true)
+
+        config SPIRAM_SPEED_40M
+            bool "40MHz clock speed"
+        config SPIRAM_SPEED_80M
+            depends on ESPTOOLPY_FLASHFREQ_80M
+            bool "80MHz clock speed"
+    endchoice
+
+    config SPIRAM_SPEED
+        int
+        default 80 if SPIRAM_SPEED_80M
+        default 40 if SPIRAM_SPEED_40M
+
+    source "$IDF_PATH/components/esp_psram/Kconfig.spiram.common"    # insert non-chip-specific items here
+
+    config SPIRAM_CACHE_WORKAROUND
+        bool "Enable workaround for bug in SPI RAM cache for Rev1 ESP32s"
+        depends on (SPIRAM_USE_MEMMAP || SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC) && (ESP32_REV_MIN_FULL < 300)
+        default "y"
+        help
+            Revision 1 of the ESP32 has a bug that can cause a write to PSRAM not to take place in some situations
+            when the cache line needs to be fetched from external RAM and an interrupt occurs. This enables a
+            fix in the compiler (-mfix-esp32-psram-cache-issue) that makes sure the specific code that is
+            vulnerable to this will not be emitted.
+
+            This will also not use any bits of newlib that are located in ROM, opting for a version that is
+            compiled with the workaround and located in flash instead.
+
+            The workaround is not required for ESP32 revision 3 and above.
+
+    menu "SPIRAM cache workaround debugging"
+
+        choice SPIRAM_CACHE_WORKAROUND_STRATEGY
+            prompt "Workaround strategy"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default SPIRAM_CACHE_WORKAROUND_STRATEGY_MEMW
+            help
+                Select the workaround strategy. Note that the strategy for precompiled
+                libraries (libgcc, newlib, bt, wifi) is not affected by this selection.
+
+                Unless you know you need a different strategy, it's suggested you stay
+                with the default MEMW strategy. Note that DUPLDST can interfere with hardware
+                encryption and this will be automatically disabled if this workaround is selected.
+                'Insert nops' is the workaround that was used in older esp-idf versions. This workaround
+                still can cause faulty data transfers from/to SPI RAM in some situation.
+
+            config SPIRAM_CACHE_WORKAROUND_STRATEGY_MEMW
+                bool "Insert memw after vulnerable instructions (default)"
+
+            config SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
+                bool "Duplicate LD/ST for 32-bit, memw for 8/16 bit"
+
+            config SPIRAM_CACHE_WORKAROUND_STRATEGY_NOPS
+                bool "Insert nops between vulnerable loads/stores (old strategy, obsolete)"
+        endchoice
+
+        #This needs to be Y only for the dupldst workaround
+        config SPIRAM_WORKAROUND_NEED_VOLATILE_SPINLOCK
+            bool
+            default "y" if SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
+    endmenu
+
+    menu "SPIRAM workaround libraries placement"
+        visible if SPIRAM_CACHE_WORKAROUND
+
+        config SPIRAM_CACHE_LIBJMP_IN_IRAM
+            bool "Put libc's jump related functions in IRAM"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default "y"
+            help
+                The functions affected by this option are: longjmp and setjmp.
+                Putting these function in IRAM will allow them to be called when flash cache is disabled
+                but it will also reduce the available size of free IRAM for the user application.
+
+        config SPIRAM_CACHE_LIBMATH_IN_IRAM
+            bool "Put libc's math related functions in IRAM"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default "y"
+            help
+                The functions affected by this option are: abs, div, labs, ldiv, quorem, fpclassify,
+                and nan.
+                Putting these function in IRAM will allow them to be called when flash cache is disabled
+                but it will also reduce the available size of free IRAM for the user application.
+
+        config SPIRAM_CACHE_LIBNUMPARSER_IN_IRAM
+            bool "Put libc's number parsing related functions in IRAM"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default "y"
+            help
+                The functions affected by this option are: utoa, itoa, atoi, atol, strtol, and strtoul.
+                Putting these function in IRAM will allow them to be called when flash cache is disabled
+                but it will also reduce the available size of free IRAM for the user application.
+
+        config SPIRAM_CACHE_LIBIO_IN_IRAM
+            bool "Put libc's I/O related functions in IRAM"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default "y"
+            help
+                The functions affected by this option are: wcrtomb, fvwrite, wbuf, wsetup, fputwc, wctomb_r,
+                ungetc, makebuf, fflush, refill, and sccl.
+                Putting these function in IRAM will allow them to be called when flash cache is disabled
+                but it will also reduce the available size of free IRAM for the user application.
+
+        config SPIRAM_CACHE_LIBTIME_IN_IRAM
+            bool "Put libc's time related functions in IRAM"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default "y"
+            help
+                The functions affected by this option are: asctime, asctime_r, ctime, ctime_r, lcltime, lcltime_r,
+                gmtime, gmtime_r, strftime, mktime, tzset_r, tzset, time, gettzinfo, systimes, month_lengths,
+                timelocal, tzvars, tzlock, tzcalc_limits, and strptime.
+                Putting these function in IRAM will allow them to be called when flash cache is disabled
+                but it will also reduce the available size of free IRAM for the user application.
+
+        config SPIRAM_CACHE_LIBCHAR_IN_IRAM
+            bool "Put libc's characters related functions in IRAM"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default "y"
+            help
+                The functions affected by this option are: ctype_, toupper, tolower, toascii, strupr, bzero,
+                isalnum, isalpha, isascii, isblank, iscntrl, isdigit, isgraph, islower, isprint, ispunct,
+                isspace, and isupper.
+                Putting these function in IRAM will allow them to be called when flash cache is disabled
+                but it will also reduce the available size of free IRAM for the user application.
+
+        config SPIRAM_CACHE_LIBMEM_IN_IRAM
+            bool "Put libc's memory related functions in IRAM"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default "y"
+            help
+                The functions affected by this option are: memccpy, memchr memmove, and memrchr.
+                Putting these function in IRAM will allow them to be called when flash cache is disabled
+                but it will also reduce the available size of free IRAM for the user application.
+
+        config SPIRAM_CACHE_LIBSTR_IN_IRAM
+            bool "Put libc's string related functions in IRAM"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default "y"
+            help
+                The functions affected by this option are: strcasecmp, strcasestr, strchr, strcoll,
+                strcpy, strcspn, strdup, strdup_r, strlcat, strlcpy, strlen, strlwr, strncasecmp,
+                strncat, strncmp, strncpy, strndup, strndup_r, strrchr, strsep, strspn, strstr,
+                strtok_r, and strupr.
+                Putting these function in IRAM will allow them to be called when flash cache is disabled
+                but it will also reduce the available size of free IRAM for the user application.
+
+        config SPIRAM_CACHE_LIBRAND_IN_IRAM
+            bool "Put libc's random related functions in IRAM"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default "y"
+            help
+                The functions affected by this option are: srand, rand, and rand_r.
+                Putting these function in IRAM will allow them to be called when flash cache is disabled
+                but it will also reduce the available size of free IRAM for the user application.
+
+        config SPIRAM_CACHE_LIBENV_IN_IRAM
+            bool "Put libc's environment related functions in IRAM"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default "y"
+            help
+                The functions affected by this option are: environ, envlock, and getenv_r.
+                Putting these function in IRAM will allow them to be called when flash cache is disabled
+                but it will also reduce the available size of free IRAM for the user application.
+
+        config SPIRAM_CACHE_LIBFILE_IN_IRAM
+            bool "Put libc's file related functions in IRAM"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default "y"
+            help
+                The functions affected by this option are: lock, isatty, fclose, open, close, creat, read,
+                rshift, sbrk, stdio, syssbrk, sysclose, sysopen, creat, sysread, syswrite, impure, fwalk,
+                and findfp.
+                Putting these function in IRAM will allow them to be called when flash cache is disabled
+                but it will also reduce the available size of free IRAM for the user application.
+
+        config SPIRAM_CACHE_LIBMISC_IN_IRAM
+            bool "Put libc's miscellaneous functions in IRAM, see help"
+            depends on SPIRAM_CACHE_WORKAROUND
+            default "y"
+            help
+                The functions affected by this option are: raise and system
+                Putting these function in IRAM will allow them to be called when flash cache is disabled
+                but it will also reduce the available size of free IRAM for the user application.
+    endmenu
+
+    config SPIRAM_BANKSWITCH_ENABLE
+        bool "Enable bank switching for >4MiB external RAM"
+        default y
+        depends on SPIRAM_USE_MEMMAP || SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
+        help
+            The ESP32 only supports 4MiB of external RAM in its address space. The hardware does support larger
+            memories, but these have to be bank-switched in and out of this address space. Enabling this allows you
+            to reserve some MMU pages for this, which allows the use of the esp_himem api to manage these banks.
+
+            #Note that this is limited to 62 banks, as esp_psram_extram_writeback_cache needs some kind of mapping of
+            #some banks below that mark to work. We cannot at this moment guarantee this to exist when himem is
+            #enabled.
+
+            If spiram 2T mode is enabled, the size of 64Mbit psram will be changed as 32Mbit, so himem will be
+            unusable.
+    config SPIRAM_BANKSWITCH_RESERVE
+        int "Amount of 32K pages to reserve for bank switching"
+        depends on SPIRAM_BANKSWITCH_ENABLE
+        default 8
+        range 1 62
+        help
+            Select the amount of banks reserved for bank switching. Note that the amount of RAM allocatable with
+            malloc/esp_heap_alloc_caps will decrease by 32K for each page reserved here.
+
+            Note that this reservation is only actually done if your program actually uses the himem API. Without
+            any himem calls, the reservation is not done and the original amount of memory will be available
+            to malloc/esp_heap_alloc_caps.
+
+    config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+        bool "Allow external memory as an argument to xTaskCreateStatic"
+        default n
+        depends on SPIRAM_USE_MALLOC
+        help
+            Because some bits of the ESP32 code environment cannot be recompiled with the cache workaround,
+            normally tasks cannot be safely run with their stack residing in external memory; for this reason
+            xTaskCreate (and related task creaton functions) always allocate stack in internal memory and
+            xTaskCreateStatic will check if the memory passed to it is in internal memory. If you have a task that
+            needs a large amount of stack and does not call on ROM code in any way (no direct calls, but also no
+            Bluetooth/WiFi), you can try enable this to cause xTaskCreateStatic to allow tasks stack in external
+            memory.
+
+    choice SPIRAM_OCCUPY_SPI_HOST
+        prompt "SPI host to use for 32MBit PSRAM"
+        default SPIRAM_OCCUPY_VSPI_HOST
+        depends on SPIRAM_SPEED_80M
+        help
+            When both flash and PSRAM is working under 80MHz, and the PSRAM is of type 32MBit, one of the HSPI/VSPI
+            host will be used to output the clock. Select which one to use here.
+
+        config SPIRAM_OCCUPY_HSPI_HOST
+            bool "HSPI host (SPI2)"
+        config SPIRAM_OCCUPY_VSPI_HOST
+            bool "VSPI host (SPI3)"
+        config SPIRAM_OCCUPY_NO_HOST
+            bool "Will not try to use any host, will abort if not able to use the PSRAM"
+
+    endchoice
+
+    menu "PSRAM clock and cs IO for ESP32-DOWD"
+
+        config D0WD_PSRAM_CLK_IO
+            int "PSRAM CLK IO number"
+            depends on SPIRAM
+            range 0 33
+            default 17
+            help
+                The PSRAM CLOCK IO can be any unused GPIO, user can config it based on hardware design. If user use
+                1.8V flash and 1.8V psram, this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+        config D0WD_PSRAM_CS_IO
+            int "PSRAM CS IO number"
+            depends on SPIRAM
+            range 0 33
+            default 16
+            help
+                The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design. If user use
+                1.8V flash and 1.8V psram, this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+    endmenu
+
+    menu "PSRAM clock and cs IO for ESP32-D2WD"
+
+        config D2WD_PSRAM_CLK_IO
+            int "PSRAM CLK IO number"
+            depends on SPIRAM
+            range 0 33
+            default 9
+            help
+                User can config it based on hardware design. For ESP32-D2WD chip, the psram can only be 1.8V psram,
+                so this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+        config D2WD_PSRAM_CS_IO
+            int "PSRAM CS IO number"
+            depends on SPIRAM
+            range 0 33
+            default 10
+            help
+                User can config it based on hardware design. For ESP32-D2WD chip, the psram can only be 1.8V psram,
+                so this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+    endmenu
+
+    menu "PSRAM clock and cs IO for ESP32-PICO"
+
+        config PICO_PSRAM_CS_IO
+            int "PSRAM CS IO number"
+            depends on SPIRAM
+            range 0 33
+            default 10
+            help
+                The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design.
+
+                For ESP32-PICO chip, the psram share clock with flash, so user do not need to configure the clock
+                IO.
+                For the reference hardware design, please refer to
+                https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf
+
+    endmenu
+
+    config SPIRAM_CUSTOM_SPIWP_SD3_PIN
+        bool "Use custom SPI PSRAM WP(SD3) Pin when flash pins set in eFuse (read help)"
+        depends on IDF_TARGET_ESP32 && (ESPTOOLPY_FLASHMODE_DIO || ESPTOOLPY_FLASHMODE_DOUT)
+        default y if SPIRAM_SPIWP_SD3_PIN != 7  # backwards compatibility, can remove in IDF 5
+        default n
+        help
+            This setting is only used if the SPI flash pins have been overridden by setting the eFuses
+            SPI_PAD_CONFIG_xxx, and the SPI flash mode is DIO or DOUT.
+
+            When this is the case, the eFuse config only defines 3 of the 4 Quad I/O data pins. The WP pin (aka
+            ESP32 pin "SD_DATA_3" or SPI flash pin "IO2") is not specified in eFuse. The psram only has QPI
+            mode, so a WP pin setting is necessary.
+
+            If this config item is set to N (default), the correct WP pin will be automatically used for any
+            Espressif chip or module with integrated flash. If a custom setting is needed, set this config item
+            to Y and specify the GPIO number connected to the WP pin.
+
+            When flash mode is set to QIO or QOUT, the PSRAM WP pin will be set the same as the SPI Flash WP pin
+            configured in the bootloader.
+
+    config SPIRAM_SPIWP_SD3_PIN
+        int "Custom SPI PSRAM WP(SD3) Pin"
+        depends on IDF_TARGET_ESP32 && (ESPTOOLPY_FLASHMODE_DIO || ESPTOOLPY_FLASHMODE_DOUT)
+        #depends on SPIRAM_CUSTOM_SPIWP_SD3_PIN  # backwards compatibility, can uncomment in IDF 5
+        range 0 33
+        default 7
+        help
+            The option "Use custom SPI PSRAM WP(SD3) pin" must be set or this value is ignored
+
+            If burning a customized set of SPI flash pins in eFuse and using DIO or DOUT mode for flash, set this
+            value to the GPIO number of the SPIRAM WP pin.
+
+    config SPIRAM_2T_MODE
+        bool "Enable SPI PSRAM 2T mode"
+        depends on SPIRAM
+        default "n"
+        help
+            Enable this option to fix single bit errors inside 64Mbit PSRAM.
+
+            Some 64Mbit PSRAM chips have a hardware issue in the RAM which causes bit errors at multiple
+            fixed bit positions.
+
+            Note: If this option is enabled, the 64Mbit PSRAM chip will appear to be 32Mbit in size.
+            Applications will not be affected unless the use the esp_himem APIs, which are not supported
+            in 2T mode.
+
+endmenu # "SPI RAM config"

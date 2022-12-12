@@ -20,10 +20,12 @@
 #include "soc/assist_debug_reg.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
+#include "soc/rtc_cntl_reg.h"
 #include "soc/spi_periph.h"
 #include "soc/extmem_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/system_reg.h"
+#include "soc/chip_revision.h"
 #include "esp32c3/rom/efuse.h"
 #include "esp32c3/rom/ets_sys.h"
 #include "bootloader_common.h"
@@ -32,14 +34,15 @@
 #include "bootloader_flash_config.h"
 #include "bootloader_mem.h"
 #include "esp_private/regi2c_ctrl.h"
-#include "regi2c_lp_bias.h"
-#include "regi2c_bias.h"
+#include "soc/regi2c_lp_bias.h"
+#include "soc/regi2c_bias.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
 #include "bootloader_soc.h"
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
+#include "hal/efuse_hal.h"
 
 static const char *TAG = "boot.esp32c3";
 
@@ -250,7 +253,7 @@ static inline void bootloader_hardware_init(void)
 {
     // This check is always included in the bootloader so it can
     // print the minimum revision error message later in the boot
-    if (bootloader_common_get_chip_revision() < 3) {
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 3)) {
         REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_XPD_IPH, 1);
         REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 12);
     }
@@ -263,8 +266,7 @@ static inline void bootloader_ana_reset_config(void)
       For ECO2: fix brownout reset bug, support swt & brownout reset;
       For ECO3: fix clock glitch reset bug, support all reset, include: swt & brownout & clock glitch reset.
     */
-    uint8_t chip_version = bootloader_common_get_chip_revision();
-    switch (chip_version) {
+    switch (efuse_hal_chip_revision()) {
         case 0:
         case 1:
             //Enable WDT reset. Disable BOR and GLITCH reset

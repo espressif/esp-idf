@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef nvs_page_hpp
 #define nvs_page_hpp
 
@@ -20,7 +12,7 @@
 #include <type_traits>
 #include <cstring>
 #include <algorithm>
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "compressed_enum_table.hpp"
 #include "intrusive_list.h"
 #include "nvs_item_hash_list.hpp"
@@ -197,17 +189,18 @@ protected:
 
     esp_err_t eraseEntryAndSpan(size_t index);
 
-    void updateFirstUsedEntry(size_t index, size_t span);
+    esp_err_t updateFirstUsedEntry(size_t index, size_t span);
 
     static constexpr size_t getAlignmentForType(ItemType type)
     {
         return static_cast<uint8_t>(type) & 0x0f;
     }
 
-    uint32_t getEntryAddress(size_t entry) const
+    esp_err_t getEntryAddress(size_t entry, uint32_t *address) const
     {
-        assert(entry < ENTRY_COUNT);
-        return mBaseAddress + ENTRY_DATA_OFFSET + static_cast<uint32_t>(entry) * ENTRY_SIZE;
+        NVS_ASSERT_OR_RETURN(entry < ENTRY_COUNT, ESP_FAIL);
+        *address =  mBaseAddress + ENTRY_DATA_OFFSET + static_cast<uint32_t>(entry) * ENTRY_SIZE;
+        return ESP_OK;
     }
 
     static const char* pageStateToName(PageState ps);

@@ -10,6 +10,7 @@
 #include <esp_flash_encrypt.h>
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "hal/efuse_ll.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #   include "soc/spi_struct.h"
@@ -22,6 +23,9 @@
     /* SPI flash controller */
 #   define SPIFLASH SPIMEM1
 #endif
+
+// This dependency will be removed in the future.  IDF-5025
+#include "esp_flash.h"
 
 #include "esp_rom_spiflash.h"
 
@@ -43,7 +47,7 @@
 #define ESP_BOOTLOADER_SPIFLASH_QE_SR1_2BYTE     BIT9   // QE position when you write 16 bits at one time.
 
 #ifndef BOOTLOADER_BUILD
-/* Normal app version maps to esp_spi_flash.h operations...
+/* Normal app version maps to spi_flash_mmap.h operations...
  */
 static const char *TAG = "bootloader_mmap";
 
@@ -82,33 +86,31 @@ void bootloader_munmap(const void *mapping)
 esp_err_t bootloader_flash_read(size_t src, void *dest, size_t size, bool allow_decrypt)
 {
     if (allow_decrypt && esp_flash_encryption_enabled()) {
-        return spi_flash_read_encrypted(src, dest, size);
+        return esp_flash_read_encrypted(NULL, src, dest, size);
     } else {
-        return spi_flash_read(src, dest, size);
+        return esp_flash_read(NULL, dest, src, size);
     }
 }
 
 esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool write_encrypted)
 {
     if (write_encrypted && !ENCRYPTION_IS_VIRTUAL) {
-#if CONFIG_IDF_TARGET_ESP32
-        return spi_flash_write_encrypted(dest_addr, src, size);
-#else
-        return esp_rom_spiflash_write_encrypted(dest_addr, src, size);
-#endif
+        return esp_flash_write_encrypted(NULL, dest_addr, src, size);
     } else {
-        return spi_flash_write(dest_addr, src, size);
+        return esp_flash_write(NULL, src, dest_addr, size);
     }
 }
 
 esp_err_t bootloader_flash_erase_sector(size_t sector)
 {
-    return spi_flash_erase_sector(sector);
+    // Will de-dependency IDF-5025
+    return esp_flash_erase_region(NULL, sector * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
 }
 
 esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 {
-    return spi_flash_erase_range(start_addr, size);
+    // Will de-dependency IDF-5025
+    return esp_flash_erase_region(NULL, start_addr, size);
 }
 
 #else //BOOTLOADER_BUILD
@@ -127,9 +129,9 @@ static const char *TAG = "bootloader_flash";
    50th block for bootloader_flash_read
 */
 #define MMU_BLOCK0_VADDR  SOC_DROM_LOW
-#define MMU_SIZE          (0x320000)
-#define MMU_BLOCK50_VADDR (MMU_BLOCK0_VADDR + MMU_SIZE)
-#define FLASH_READ_VADDR MMU_BLOCK50_VADDR
+#define MMAP_MMU_SIZE     (0x320000)
+#define MMU_BLOCK50_VADDR (MMU_BLOCK0_VADDR + MMAP_MMU_SIZE)
+#define FLASH_READ_VADDR  MMU_BLOCK50_VADDR
 
 #else // !CONFIG_IDF_TARGET_ESP32
 
@@ -137,12 +139,16 @@ static const char *TAG = "bootloader_flash";
    63th block for bootloader_flash_read
 */
 #define MMU_BLOCK0_VADDR  SOC_DROM_LOW
-#define MMU_SIZE          (0x3f0000)
-#define MMU_BLOCK63_VADDR (MMU_BLOCK0_VADDR + MMU_SIZE)
+#ifdef SOC_MMU_PAGE_SIZE_CONFIGURABLE
+#define MMAP_MMU_SIZE     (DRAM0_CACHE_ADDRESS_HIGH(SPI_FLASH_MMU_PAGE_SIZE) - DRAM0_CACHE_ADDRESS_LOW - SPI_FLASH_MMU_PAGE_SIZE) // This mmu size means that the mmu size to be mapped
+#else
+#define MMAP_MMU_SIZE     (DRAM0_CACHE_ADDRESS_HIGH - DRAM0_CACHE_ADDRESS_LOW - SPI_FLASH_MMU_PAGE_SIZE) // This mmu size means that the mmu size to be mapped
+#endif
+#define MMU_BLOCK63_VADDR (MMU_BLOCK0_VADDR + MMAP_MMU_SIZE)
 #define FLASH_READ_VADDR MMU_BLOCK63_VADDR
 #endif
 
-#define MMU_FREE_PAGES    (MMU_SIZE / FLASH_BLOCK_SIZE)
+#define MMU_FREE_PAGES    (MMAP_MMU_SIZE / CONFIG_MMU_PAGE_SIZE)
 
 static bool mapped;
 
@@ -164,7 +170,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
         ESP_EARLY_LOGE(TAG, "tried to bootloader_mmap twice");
         return NULL; /* can't map twice */
     }
-    if (size > MMU_SIZE) {
+    if (size > MMAP_MMU_SIZE) {
         ESP_EARLY_LOGE(TAG, "bootloader_mmap excess size %x", size);
         return NULL;
     }
@@ -196,7 +202,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
 #if CONFIG_IDF_TARGET_ESP32
     uint32_t count = GET_REQUIRED_MMU_PAGES(size, src_paddr);
     int e = cache_flash_mmu_set(0, 0, MMU_BLOCK0_VADDR, src_paddr_aligned, 64, count);
-    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", src_paddr_aligned, MMU_BLOCK0_VADDR, count * MMU_PAGE_SIZE);
+    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", src_paddr_aligned, MMU_BLOCK0_VADDR, count * SPI_FLASH_MMU_PAGE_SIZE);
     if (e != 0) {
         ESP_EARLY_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
         Cache_Read_Enable(0);
@@ -303,12 +309,12 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
             //---------------Do mapping------------------------
             ESP_EARLY_LOGD(TAG, "mmu set block paddr=0x%08x (was 0x%08x)", map_at, current_read_mapping);
 #if CONFIG_IDF_TARGET_ESP32
-            //Should never fail if we only map a MMU_PAGE_SIZE to the vaddr starting from FLASH_READ_VADDR
+            //Should never fail if we only map a SPI_FLASH_MMU_PAGE_SIZE to the vaddr starting from FLASH_READ_VADDR
             int e = cache_flash_mmu_set(0, 0, FLASH_READ_VADDR, map_at, 64, 1);
             assert(e == 0);
 #else
             uint32_t actual_mapped_len = 0;
-            mmu_hal_map_region(0, MMU_TARGET_FLASH0, FLASH_READ_VADDR, map_at, MMU_PAGE_SIZE - 1, &actual_mapped_len);
+            mmu_hal_map_region(0, MMU_TARGET_FLASH0, FLASH_READ_VADDR, map_at, SPI_FLASH_MMU_PAGE_SIZE - 1, &actual_mapped_len);
 #endif
             current_read_mapping = map_at;
 
@@ -598,6 +604,12 @@ uint32_t IRAM_ATTR bootloader_read_flash_id(void)
     return id;
 }
 
+void bootloader_spi_flash_reset(void)
+{
+    bootloader_execute_flash_command(CMD_RESETEN, 0, 0, 0);
+    bootloader_execute_flash_command(CMD_RESET, 0, 0, 0);
+}
+
 #if SOC_CACHE_SUPPORT_WRAP
 esp_err_t bootloader_flash_wrap_set(spi_flash_wrap_mode_t mode)
 {
@@ -730,3 +742,51 @@ esp_err_t IRAM_ATTR bootloader_flash_xmc_startup(void)
 }
 
 #endif //XMC_SUPPORT
+
+FORCE_INLINE_ATTR void bootloader_mspi_reset(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    SPI1.slave.sync_reset = 0;
+    SPI0.slave.sync_reset = 0;
+    SPI1.slave.sync_reset = 1;
+    SPI0.slave.sync_reset = 1;
+    SPI1.slave.sync_reset = 0;
+    SPI0.slave.sync_reset = 0;
+#else
+    SPIMEM1.ctrl2.sync_reset = 0;
+    SPIMEM0.ctrl2.sync_reset = 0;
+    SPIMEM1.ctrl2.sync_reset = 1;
+    SPIMEM0.ctrl2.sync_reset = 1;
+    SPIMEM1.ctrl2.sync_reset = 0;
+    SPIMEM0.ctrl2.sync_reset = 0;
+#endif
+}
+
+esp_err_t IRAM_ATTR bootloader_flash_reset_chip(void)
+{
+    bootloader_mspi_reset();
+    // Seems that sync_reset cannot make host totally idle.'
+    // Sending an extra(useless) command to make the host idle in order to send reset command.
+    bootloader_execute_flash_command(0x05, 0, 0, 0);
+#if CONFIG_IDF_TARGET_ESP32
+    if (SPI1.ext2.st != 0)
+#else
+    if (!spimem_flash_ll_host_idle(&SPIMEM1))
+#endif
+    {
+        return ESP_FAIL;
+    }
+    bootloader_execute_flash_command(0x66, 0, 0, 0);
+    bootloader_execute_flash_command(0x99, 0, 0, 0);
+
+    return ESP_OK;
+}
+
+bool bootloader_flash_is_octal_mode_enabled(void)
+{
+#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+    return efuse_ll_get_flash_type();
+#else
+    return false;
+#endif
+}

@@ -147,9 +147,9 @@ typedef void (* PendedFunction_t)( void *,
  * which is "void vCallbackFunction( TimerHandle_t xTimer );".
  *
  * @return If the timer is successfully created then a handle to the newly
- * created timer is returned.  If the timer cannot be created (because either
- * there is insufficient FreeRTOS heap remaining to allocate the timer
- * structures, or the timer period was set to 0) then NULL is returned.
+ * created timer is returned.  If the timer cannot be created because there is
+ * insufficient FreeRTOS heap remaining to allocate the timer
+ * structures then NULL is returned.
  *
  * Example usage:
  * @verbatim

@@ -19,8 +19,8 @@ class Entry:
     ATTR_HIDDEN: int = 0x02
     ATTR_SYSTEM: int = 0x04
     ATTR_VOLUME_ID: int = 0x08
-    ATTR_DIRECTORY: int = 0x10
-    ATTR_ARCHIVE: int = 0x20
+    ATTR_DIRECTORY: int = 0x10  # directory
+    ATTR_ARCHIVE: int = 0x20  # file
     ATTR_LONG_NAME: int = ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID
 
     # indexes in the entry structure and sizes in bytes, not in characters (encoded using 2 bytes for lfn)
@@ -31,10 +31,15 @@ class Entry:
     LDIR_Name3_IDX: int = 28
     LDIR_Name3_SIZE: int = 2
 
+    # short entry in long file names
+    LDIR_DIR_NTRES: int = 0x18
     # one entry can hold 13 characters with size 2 bytes distributed in three regions of the 32 bytes entry
     CHARS_PER_ENTRY: int = LDIR_Name1_SIZE + LDIR_Name2_SIZE + LDIR_Name3_SIZE
 
+    # the last 16 bytes record in the LFN entry has first byte masked with the following value
+    LAST_RECORD_LFN_ENTRY: int = 0x40
     SHORT_ENTRY: int = -1
+    # this value is used for short-like entry but with accepted lower case
     SHORT_ENTRY_LN: int = 0
 
     # The 1st January 1980 00:00:00
@@ -45,7 +50,7 @@ class Entry:
         'DIR_Name' / PaddedString(MAX_NAME_SIZE, SHORT_NAMES_ENCODING),
         'DIR_Name_ext' / PaddedString(MAX_EXT_SIZE, SHORT_NAMES_ENCODING),
         'DIR_Attr' / Int8ul,
-        'DIR_NTRes' / Const(EMPTY_BYTE),
+        'DIR_NTRes' / Int8ul,  # this tagged for lfn (0x00 for lfn prefix, 0x18 for short name in lfn)
         'DIR_CrtTimeTenth' / Const(EMPTY_BYTE),  # ignored by esp-idf fatfs library
         'DIR_CrtTime' / Int16ul,  # ignored by esp-idf fatfs library
         'DIR_CrtDate' / Int16ul,  # ignored by esp-idf fatfs library
@@ -67,6 +72,11 @@ class Entry:
         self._is_alias: bool = False
         self._is_empty: bool = True
 
+    @staticmethod
+    def get_cluster_id(obj_: dict) -> int:
+        cluster_id_: int = obj_['DIR_FstClusLO']
+        return cluster_id_
+
     @property
     def is_empty(self) -> bool:
         return self._is_empty
@@ -82,7 +92,7 @@ class Entry:
         return entry_
 
     @staticmethod
-    def _build_entry_long(names: List[bytes], checksum: int, order: int, is_last: bool, entity_type: int) -> bytes:
+    def _build_entry_long(names: List[bytes], checksum: int, order: int, is_last: bool) -> bytes:
         """
         Long entry starts with 1 bytes of the order, if the entry is the last in the chain it is or-masked with 0x40,
         otherwise is without change (or masked with 0x00). The following example shows 3 entries:
@@ -96,16 +106,34 @@ class Entry:
         00002040: 54 48 49 53 49 53 7E 31 54 58 54 20 00 00 00 00    THISIS~1TXT.....
         00002050: 21 00 00 00 00 00 00 00 21 00 02 00 15 00 00 00    !.......!.......
         """
-        order |= (0x40 if is_last else 0x00)
+        order |= (Entry.LAST_RECORD_LFN_ENTRY if is_last else 0x00)
         long_entry: bytes = (Int8ul.build(order) +  # order of the long name entry (possibly masked with 0x40)
                              names[0] +  # first 5 characters (10 bytes) of the name part
-                             Int8ul.build(entity_type) +  # one byte entity type ATTR_LONG_NAME
+                             Int8ul.build(Entry.ATTR_LONG_NAME) +  # one byte entity type ATTR_LONG_NAME
                              Int8ul.build(0) +  # one byte of zeros
                              Int8ul.build(checksum) +  # lfn_checksum defined in utils.py
                              names[1] +  # next 6 characters (12 bytes) of the name part
                              Int16ul.build(0) +  # 2 bytes of zeros
                              names[2])  # last 2 characters (4 bytes) of the name part
         return long_entry
+
+    @staticmethod
+    def parse_entry_long(entry_bytes_: bytes, my_check: int) -> dict:
+        order_ = Int8ul.parse(entry_bytes_[0:1])
+        names0 = entry_bytes_[1:11]
+        if Int8ul.parse(entry_bytes_[12:13]) != 0 or Int16ul.parse(entry_bytes_[26:28]) != 0 or Int8ul.parse(entry_bytes_[11:12]) != 15:
+            return {}
+        if Int8ul.parse(entry_bytes_[13:14]) != my_check:
+            return {}
+        names1 = entry_bytes_[14:26]
+        names2 = entry_bytes_[28:32]
+        return {
+            'order': order_,
+            'name1': names0,
+            'name2': names1,
+            'name3': names2,
+            'is_last': bool(order_ & Entry.LAST_RECORD_LFN_ENTRY == Entry.LAST_RECORD_LFN_ENTRY)
+        }
 
     @property
     def entry_bytes(self) -> bytes:
@@ -140,6 +168,7 @@ class Entry:
                        lfn_order: int = SHORT_ENTRY,
                        lfn_names: Optional[List[bytes]] = None,
                        lfn_checksum_: int = 0,
+                       fits_short: bool = False,
                        lfn_is_last: bool = False) -> None:
         """
         :param first_cluster_id: id of the first data cluster for given entry
@@ -153,6 +182,7 @@ class Entry:
         :param lfn_names: if the entry is dedicated for long names the lfn_names contains
             LDIR_Name1, LDIR_Name2 and LDIR_Name3 in this order
         :param lfn_checksum_: use only for long file names, checksum calculated lfn_checksum function
+        :param fits_short: determines if the name fits in 8.3 filename
         :param lfn_is_last: determines if the long file name entry is holds last part of the name,
             thus its address is first in the physical order
         :returns: None
@@ -194,6 +224,7 @@ class Entry:
                 DIR_Name=pad_string(object_name, size=MAX_NAME_SIZE),
                 DIR_Name_ext=pad_string(object_extension, size=MAX_EXT_SIZE),
                 DIR_Attr=entity_type,
+                DIR_NTRes=0x00 if (not self.fatfs_state.long_names_enabled) or (not fits_short) else 0x18,
                 DIR_FstClusLO=first_cluster_id,
                 DIR_FileSize=size,
                 DIR_CrtDate=date_entry_,  # ignored by esp-idf fatfs library
@@ -207,8 +238,7 @@ class Entry:
             self.fatfs_state.binary_image[start_address: end_address] = self._build_entry_long(lfn_names,
                                                                                                lfn_checksum_,
                                                                                                lfn_order,
-                                                                                               lfn_is_last,
-                                                                                               self.ATTR_LONG_NAME)
+                                                                                               lfn_is_last)
 
     def update_content_size(self, content_size: int) -> None:
         """

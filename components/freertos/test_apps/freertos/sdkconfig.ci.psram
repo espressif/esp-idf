@@ -1,0 +1,12 @@
+# Test configuration for using FreeRTOS with PSRAM enabled. Only tested on the ESP32
+
+CONFIG_IDF_TARGET="esp32"
+
+# Enable SPIRAM
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_OCCUPY_NO_HOST=y
+
+# Disable encrypted flash reads/writes to save IRAM in this build configuration
+CONFIG_SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE=n
+CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY=y
+CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY=y

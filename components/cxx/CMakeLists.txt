@@ -40,7 +40,13 @@ if(NOT CONFIG_CXX_EXCEPTIONS)
     endforeach()
 endif()
 
-target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++ gcc)
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    # libstdc++ depends on C library, so it should appear later in link order.
+    # Otherwise we get undefined references for esp-clang toolchain.
+    target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++ c gcc)
+else()
+    target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++ gcc)
+endif()
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __cxa_guard_dummy")
 
 # Force libpthread to appear later than libstdc++ in link line since libstdc++ depends on libpthread.
@@ -50,7 +56,11 @@ target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __cxa_guard_dummy")
 idf_component_get_property(pthread pthread COMPONENT_LIB)
 idf_component_get_property(cxx cxx COMPONENT_LIB)
 add_library(stdcpp_pthread INTERFACE)
-target_link_libraries(stdcpp_pthread INTERFACE stdc++ $<TARGET_FILE:${pthread}>)
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    target_link_libraries(stdcpp_pthread INTERFACE stdc++ c $<TARGET_FILE:${pthread}>)
+else()
+    target_link_libraries(stdcpp_pthread INTERFACE stdc++ $<TARGET_FILE:${pthread}>)
+endif()
 target_link_libraries(${COMPONENT_LIB} PUBLIC stdcpp_pthread)
 add_library(libgcc_cxx INTERFACE)
 target_link_libraries(libgcc_cxx INTERFACE gcc $<TARGET_FILE:${cxx}>)

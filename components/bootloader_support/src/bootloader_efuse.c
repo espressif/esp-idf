@@ -9,13 +9,9 @@
 #include "bootloader_common.h"
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
+#include "esp_attr.h"
 
-uint8_t bootloader_common_get_chip_revision(void)
-{
-    return efuse_hal_get_chip_revision();
-}
-
-uint32_t bootloader_common_get_chip_ver_pkg(void)
+IRAM_ATTR uint32_t bootloader_common_get_chip_ver_pkg(void)
 {
     return efuse_ll_get_chip_ver_pkg();
 }
@@ -31,8 +27,11 @@ int bootloader_clock_get_rated_freq_mhz(void)
 #elif CONFIG_IDF_TARGET_ESP32C3
     return 160;
 
-#elif CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32H4
     return 96;
+
+#elif CONFIG_IDF_TARGET_ESP32C6
+    return 160;
 
 #elif CONFIG_IDF_TARGET_ESP32S2
     return 240;

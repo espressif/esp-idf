@@ -29,9 +29,11 @@
 #include "crypto/sha1.h"
 #include "crypto/aes_wrap.h"
 #include "crypto/ccmp.h"
+#include "crypto/sha256.h"
 #include "esp_rom_sys.h"
 #include "common/bss.h"
 #include "esp_common_i.h"
+#include "esp_owe_i.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger
@@ -63,6 +65,7 @@ void wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len);
 
 void wpa_sm_set_pmk_from_pmksa(struct wpa_sm *sm);
 static bool wpa_supplicant_gtk_in_use(struct wpa_sm *sm, struct wpa_gtk_data *gd);
+void wpa_supplicant_stop_countermeasures(void *data, void *user_ctx);
 static inline enum wpa_states   wpa_sm_get_state(struct wpa_sm *sm)
 {
     return sm->wpa_state;;
@@ -283,7 +286,7 @@ static void wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
         ver = WPA_KEY_INFO_TYPE_AES_128_CMAC;
     else if (sm->pairwise_cipher != WPA_CIPHER_TKIP)
         ver = WPA_KEY_INFO_TYPE_HMAC_SHA1_AES;
-    else if (sm->key_mgmt == WPA_KEY_MGMT_SAE)
+    else if (sm->key_mgmt == WPA_KEY_MGMT_SAE || sm->key_mgmt == WPA_KEY_MGMT_OWE)
         ver = 0;
     else
         ver = WPA_KEY_INFO_TYPE_HMAC_MD5_RC4;
@@ -647,6 +650,8 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     struct wpa_eapol_ie_parse ie;
     struct wpa_ptk *ptk;
     int res;
+    u8 *kde, *kde_buf = NULL;
+    size_t kde_len;
 
     wpa_sm_set_state(WPA_FIRST_HALF_4WAY_HANDSHAKE);
 
@@ -702,16 +707,30 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     sm->tptk_set = 1;
     sm->ptk_set = 0;
     sm->key_install = true;
+    kde = sm->assoc_wpa_ie;
+    kde_len = sm->assoc_wpa_ie_len;
+    kde_buf = os_malloc(kde_len +
+                sm->assoc_rsnxe_len);
+    if (!kde_buf)
+        goto failed;
+    os_memcpy(kde_buf, kde, kde_len);
+    kde = kde_buf;
+
+    if (sm->assoc_rsnxe && sm->assoc_rsnxe_len) {
+        os_memcpy(kde + kde_len, sm->assoc_rsnxe, sm->assoc_rsnxe_len);
+        kde_len += sm->assoc_rsnxe_len;
+    }
 
     if (wpa_supplicant_send_2_of_4(sm, sm->bssid, key, ver, sm->snonce,
-                       sm->assoc_wpa_ie, sm->assoc_wpa_ie_len,
-                       ptk))
+                       kde, kde_len, ptk))
         goto failed;
 
+    os_free(kde_buf);
     memcpy(sm->anonce, key->key_nonce, WPA_NONCE_LEN);
     return;
 
 failed:
+    os_free(kde_buf);
     wpa_sm_deauthenticate(sm, WLAN_REASON_UNSPECIFIED);
 }
 
@@ -799,14 +818,16 @@ void   wpa_supplicant_key_neg_complete(struct wpa_sm *sm,
     wpa_sm_cancel_auth_timeout(sm);
     wpa_sm_set_state(WPA_COMPLETED);
 
-    sm->wpa_neg_complete();
+    wpa_neg_complete();
+    sm->eapol1_count = 0;
+    sm->use_ext_key_id = 0;
 
     if (secure) {
         wpa_sm_mlme_setprotection(
             sm, addr, MLME_SETPROTECTION_PROTECT_TYPE_RX_TX,
             MLME_SETPROTECTION_KEY_TYPE_PAIRWISE);
 
-        if (wpa_key_mgmt_wpa_psk(sm->key_mgmt))
+        if (wpa_key_mgmt_wpa_psk(sm->key_mgmt) || sm->key_mgmt == WPA_KEY_MGMT_OWE)
             eapol_sm_notify_eap_success(TRUE);
         /*
          * Start preauthentication after a short wait to avoid a
@@ -1101,6 +1122,22 @@ static int wpa_supplicant_validate_ie(struct wpa_sm *sm,
         return -1;
     }
 
+    if (sm->proto == WPA_PROTO_RSN &&
+        ((sm->ap_rsnxe && !ie->rsnxe) ||
+         (!sm->ap_rsnxe && ie->rsnxe) ||
+         (sm->ap_rsnxe && ie->rsnxe &&
+          (sm->ap_rsnxe_len != ie->rsnxe_len ||
+           os_memcmp(sm->ap_rsnxe, ie->rsnxe, sm->ap_rsnxe_len) != 0)))) {
+        wpa_printf(MSG_INFO,
+            "WPA: RSNXE mismatch between Beacon/ProbeResp and EAPOL-Key msg 3/4");
+        wpa_hexdump(MSG_INFO, "RSNXE in Beacon/ProbeResp",
+                sm->ap_rsnxe, sm->ap_rsnxe_len);
+        wpa_hexdump(MSG_INFO, "RSNXE in EAPOL-Key msg 3/4",
+                ie->rsnxe, ie->rsnxe_len);
+        wpa_sm_deauthenticate(sm, WLAN_REASON_IE_IN_4WAY_DIFFERS);
+        return -1;
+    }
+
     return 0;
 }
 
@@ -1268,7 +1305,11 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
         goto failed;
     }
 
-    if (sm->key_install && sm->key_info & WPA_KEY_INFO_INSTALL) {
+    if (ie.transition_disable) {
+        wpa_supplicant_transition_disable(sm, ie.transition_disable[0]);
+    }
+
+    if (sm->key_install && sm->key_info & WPA_KEY_INFO_INSTALL && sm->use_ext_key_id) {
         wpa_supplicant_install_ptk(sm, KEY_FLAG_RX);
     }
     /*after txover, callback will continue run remain task*/
@@ -1317,8 +1358,13 @@ static int wpa_supplicant_send_4_of_4_txcallback(struct wpa_sm *sm)
        u16 key_info=sm->key_info;
 
     if (sm->key_install && key_info & WPA_KEY_INFO_INSTALL) {
-        if (wpa_supplicant_activate_ptk(sm))
-            goto failed;
+        if (sm->use_ext_key_id) {
+            if (wpa_supplicant_activate_ptk(sm))
+                goto failed;
+        } else {
+            if (wpa_supplicant_install_ptk(sm, KEY_FLAG_TX | KEY_FLAG_RX))
+                goto failed;
+        }
     }
     else if (sm->key_install == false) {
         wpa_printf(MSG_DEBUG, "PTK has been installed, it may be an attack, ignor it.");
@@ -1590,20 +1636,7 @@ static void wpa_supplicant_process_1_of_2(struct wpa_sm *sm,
     wpa_sm_set_seq(sm, key, 0);
     sm->key_info=key_info;
 
-    if (wpa_supplicant_send_2_of_2(sm, key, ver, key_info))
-        goto failed;
-
-    return;
-
-failed:
-    wpa_sm_deauthenticate(sm, WLAN_REASON_UNSPECIFIED);
-}
-
-static int wpa_supplicant_send_2_of_2_txcallback(struct wpa_sm *sm)
-{
-    u16 key_info=sm->key_info;
-    u16 rekey= (WPA_SM_STATE(sm) == WPA_COMPLETED);
-
+    /*install gtk before send 2 of 2*/
     if((sm->gd).gtk_len) {
         if (wpa_supplicant_install_gtk(sm, &(sm->gd)))
             goto failed;
@@ -1611,7 +1644,10 @@ static int wpa_supplicant_send_2_of_2_txcallback(struct wpa_sm *sm)
         goto failed;
     }
 
-    if (rekey) {
+    if (wpa_supplicant_send_2_of_2(sm, key, ver, key_info))
+        goto failed;
+
+    if (WPA_SM_STATE(sm) == WPA_COMPLETED) {
 #ifdef MSG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: Group rekeying "
             "completed with " MACSTR " [GTK=%s]",
@@ -1619,13 +1655,15 @@ static int wpa_supplicant_send_2_of_2_txcallback(struct wpa_sm *sm)
 #endif
         wpa_sm_cancel_auth_timeout(sm);
         wpa_sm_set_state(WPA_COMPLETED);
-    } else
+    } else {
         wpa_supplicant_key_neg_complete(sm, sm->bssid,
-                        key_info &WPA_KEY_INFO_SECURE);
-    return 0;
+                        sm->key_info &WPA_KEY_INFO_SECURE);
+    }
+
+    return;
 
 failed:
-    return WLAN_REASON_UNSPECIFIED;
+    wpa_sm_deauthenticate(sm, WLAN_REASON_UNSPECIFIED);
 }
 
 static int wpa_supplicant_verify_eapol_key_mic(struct wpa_sm *sm,
@@ -1718,7 +1756,8 @@ static int wpa_supplicant_decrypt_key_data(struct wpa_sm *sm,
                ver == WPA_KEY_INFO_TYPE_AES_128_CMAC ||
                sm->key_mgmt == WPA_KEY_MGMT_OSEN ||
                wpa_key_mgmt_suite_b(sm->key_mgmt) ||
-               sm->key_mgmt == WPA_KEY_MGMT_SAE) {
+               sm->key_mgmt == WPA_KEY_MGMT_SAE ||
+               sm->key_mgmt == WPA_KEY_MGMT_OWE) {
         u8 *buf;
         if (*key_data_len < 8 || *key_data_len % 8) {
             #ifdef DEBUG_PRINT
@@ -1911,6 +1950,9 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
         sm->key_mgmt != WPA_KEY_MGMT_SAE &&
 #endif
         !wpa_key_mgmt_suite_b(sm->key_mgmt) &&
+#ifdef CONFIG_OWE_STA
+        sm->key_mgmt != WPA_KEY_MGMT_OWE &&
+#endif /* CONFIG_OWE_STA */
 #endif
         ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES) {
 #ifdef DEBUG_PRINT
@@ -1932,7 +1974,8 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
         if (ver != WPA_KEY_INFO_TYPE_AES_128_CMAC &&
             sm->key_mgmt != WPA_KEY_MGMT_OSEN &&
             !wpa_key_mgmt_suite_b(sm->key_mgmt) &&
-            sm->key_mgmt != WPA_KEY_MGMT_SAE) {
+            sm->key_mgmt != WPA_KEY_MGMT_SAE &&
+            sm->key_mgmt != WPA_KEY_MGMT_OWE) {
             goto out;
         }
     } else
@@ -1941,7 +1984,8 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
     if (sm->pairwise_cipher == WPA_CIPHER_CCMP &&
         !wpa_key_mgmt_suite_b(sm->key_mgmt) &&
         ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES &&
-        sm->key_mgmt != WPA_KEY_MGMT_SAE) {
+        sm->key_mgmt != WPA_KEY_MGMT_SAE &&
+        sm->key_mgmt != WPA_KEY_MGMT_OWE) {
 #ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: CCMP is used, but EAPOL-Key "
                "descriptor version (%d) is not 2.", ver);
@@ -2098,9 +2142,9 @@ out:
  */
 void wpa_sm_set_state(enum wpa_states state)
 {
-       struct wpa_sm *sm = &gWpaSm;
+    struct wpa_sm *sm = &gWpaSm;
     if(WPA_MIC_FAILURE==WPA_SM_STATE(sm))
-        ets_timer_disarm(&(sm->cm_timer));
+    eloop_cancel_timeout(wpa_supplicant_stop_countermeasures, NULL, NULL);
     sm->wpa_state= state;
 }
 
@@ -2159,24 +2203,14 @@ void wpa_sm_set_pmk_from_pmksa(struct wpa_sm *sm)
 }
 
 
-
-
-#ifdef ESP_SUPPLICANT
-bool wpa_sm_init(char * payload, WPA_SEND_FUNC snd_func,
-                   WPA_SET_ASSOC_IE set_assoc_ie_func, WPA_INSTALL_KEY ppinstallkey, WPA_GET_KEY ppgetkey, WPA_DEAUTH_FUNC wpa_deauth,
-                   WPA_NEG_COMPLETE wpa_neg_complete)
+bool wpa_sm_init(void)
 {
     struct wpa_sm *sm = &gWpaSm;
     u16 spp_attrubute = 0;
 
+    os_memset(sm, 0, sizeof(struct wpa_sm));
+
     sm->eapol_version = DEFAULT_EAPOL_VERSION;   /* DEFAULT_EAPOL_VERSION */
-    sm->sendto = snd_func;
-    sm->config_assoc_ie = set_assoc_ie_func;
-    sm->install_ppkey = ppinstallkey;
-    sm->get_ppkey = ppgetkey;
-    sm->wpa_deauthenticate = wpa_deauth;
-    sm->wpa_neg_complete = wpa_neg_complete;
-    sm->key_install = false;
 
     spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_STA);
     sm->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);
@@ -2200,9 +2234,14 @@ void wpa_sm_deinit(void)
 {
     struct wpa_sm *sm = &gWpaSm;
     pmksa_cache_deinit(sm->pmksa);
+    os_free(sm->ap_rsnxe);
+    sm->ap_rsnxe = NULL;
+    os_free(sm->assoc_rsnxe);
+    sm->assoc_rsnxe = NULL;
 }
 
 
+#ifdef ESP_SUPPLICANT
 void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
 {
     struct wpa_sm *sm = &gWpaSm;
@@ -2222,6 +2261,8 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
          sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
     } else if (auth_mode == WPA2_AUTH_FT_PSK) {
          sm->key_mgmt = WPA_KEY_MGMT_FT_PSK;
+    } else if (auth_mode == WPA3_AUTH_OWE) {
+         sm->key_mgmt = WPA_KEY_MGMT_OWE;
     } else {
         sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     }
@@ -2252,6 +2293,8 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     int res = 0;
     struct wpa_sm *sm = &gWpaSm;
     bool use_pmk_cache = true;
+    u8 assoc_rsnxe[20];
+    size_t assoc_rsnxe_len = sizeof(assoc_rsnxe);
 
     /* Incase AP has changed it's SSID, don't try with PMK caching for SAE connection */
     /* Ideally we should use network_ctx for this purpose however currently network profile block
@@ -2271,12 +2314,21 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     memcpy(sm->own_addr, macddr, ETH_ALEN);
     memcpy(sm->bssid, bssid, ETH_ALEN);
     sm->ap_notify_completed_rsne = esp_wifi_sta_is_ap_notify_completed_rsne_internal();
+    sm->use_ext_key_id = (sm->proto == WPA_PROTO_WPA);
 
     if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
+        sm->key_mgmt == WPA_KEY_MGMT_OWE ||
         is_wpa2_enterprise_connection()) {
-        if (!esp_wifi_skip_supp_pmkcaching() || use_pmk_cache) {
-            pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
-            wpa_sm_set_pmk_from_pmksa(sm);
+        if (!esp_wifi_skip_supp_pmkcaching() && use_pmk_cache) {
+            if (pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0) == 0) {
+                struct rsn_pmksa_cache_entry *pmksa = pmksa_cache_get_current(sm);
+                if (pmksa && (pmksa->akmp != sm->key_mgmt)) {
+                    pmksa_cache_clear_current(sm);
+                    pmksa_cache_flush(sm->pmksa, NULL, pmksa->pmk, pmksa->pmk_len);
+                }
+            } else {
+                wpa_sm_set_pmk_from_pmksa(sm);
+            }
         } else {
             struct rsn_pmksa_cache_entry *entry = NULL;
 
@@ -2345,7 +2397,14 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     if (res < 0)
         return -1;
     sm->assoc_wpa_ie_len = res;
-    esp_set_assoc_ie((uint8_t *)bssid, NULL, 0, true);
+    res = wpa_gen_rsnxe(sm ,assoc_rsnxe, assoc_rsnxe_len);
+    if (res < 0)
+        return -1;
+    assoc_rsnxe_len = res;
+    res = wpa_sm_set_assoc_rsnxe(sm, assoc_rsnxe, assoc_rsnxe_len);
+    if (res < 0)
+        return -1;
+    esp_set_assoc_ie((uint8_t *)bssid, assoc_rsnxe, assoc_rsnxe_len, true);
     os_memset(sm->ssid, 0, sizeof(sm->ssid));
     os_memcpy(sm->ssid, ssid, ssid_len);
     sm->ssid_len = ssid_len;
@@ -2373,7 +2432,7 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
      *  Here only handle passphrase string.  Need extra step to handle 32B, 64Hex raw
      *    PMK.
      */
-    if (sm->key_mgmt == WPA_KEY_MGMT_SAE)
+    if (sm->key_mgmt == WPA_KEY_MGMT_SAE || sm->key_mgmt == WPA_KEY_MGMT_OWE)
         return;
 
     /* This is really SLOW, so just re cacl while reset param */
@@ -2417,7 +2476,7 @@ set_assoc_ie(u8 * assoc_buf)
     else
          sm->assoc_wpa_ie_len = ASSOC_IE_LEN - 2;
 
-    sm->config_assoc_ie(sm->proto, assoc_buf, sm->assoc_wpa_ie_len);
+    wpa_config_assoc_ie(sm->proto, assoc_buf, sm->assoc_wpa_ie_len);
 }
 
 int wpa_sm_set_key(struct install_key *key_sm, enum wpa_alg alg,
@@ -2441,41 +2500,39 @@ int wpa_sm_set_key(struct install_key *key_sm, enum wpa_alg alg,
     key_sm->set_tx = set_tx;
     memcpy(key_sm->key, key, key_len);
 
-    sm->install_ppkey(alg, addr, key_idx, set_tx, seq, seq_len, key, key_len, key_flag);
+    wpa_install_key(alg, addr, key_idx, set_tx, seq, seq_len, key, key_len, key_flag);
     return 0;
 }
 
 static int
 wpa_sm_get_key(uint8_t *ifx, int *alg, u8 *addr, int *key_idx, u8 *key, size_t key_len, enum key_flag key_flag)
 {
-    struct wpa_sm *sm = &gWpaSm;
-    return sm->get_ppkey(ifx, alg, addr, key_idx, key, key_len, key_flag);
+    return wpa_get_key(ifx, alg, addr, key_idx, key, key_len, key_flag);
 }
 
 void wpa_supplicant_clr_countermeasures(u16 *pisunicast)
 {
     struct wpa_sm *sm = &gWpaSm;
     sm->mic_errors_seen = 0;
-    ets_timer_done(&(sm->cm_timer));
     wpa_printf(MSG_DEBUG, "WPA: TKIP countermeasures clean\n");
 }
 
 /*recovery from countermeasures state, countermeasures state is period that stop connection with ap
   also used in wpa_init after connecting with ap
 */
-void wpa_supplicant_stop_countermeasures(u16 *pisunicast)
+void wpa_supplicant_stop_countermeasures(void *data, void *user_ctx)
 {
-       struct wpa_sm *sm = &gWpaSm;
+    struct wpa_sm *sm = &gWpaSm;
 
-       ets_timer_done(&(sm->cm_timer));
     if (sm->countermeasures) {
         sm->countermeasures = 0;
-              wpa_supplicant_clr_countermeasures(NULL);
+        wpa_supplicant_clr_countermeasures(NULL);
+        eloop_cancel_timeout(wpa_supplicant_stop_countermeasures, NULL, NULL);
 
         wpa_printf(MSG_DEBUG, "WPA: TKIP countermeasures stopped\n");
-              /*renew scan preocess, this isn't done now*/
+        /*renew scan preocess, this isn't done now*/
     }
-       wpa_sm_set_state(WPA_DISCONNECTED);
+    wpa_sm_set_state(WPA_DISCONNECTED);
 }
 
 int wpa_michael_mic_failure(u16 isunicast)
@@ -2504,10 +2561,8 @@ int wpa_michael_mic_failure(u16 isunicast)
         /*deauthenticate AP*/
 
         /*stop monitor next mic_failure timer,disconnect for 60sec, then stop contermeasures*/
-        ets_timer_disarm(&(sm->cm_timer));
-        ets_timer_done(&(sm->cm_timer));
-        ets_timer_setfn(&(sm->cm_timer), (ETSTimerFunc *)wpa_supplicant_stop_countermeasures, NULL);
-        ets_timer_arm(&(sm->cm_timer), 60*1000, false);
+        eloop_cancel_timeout(wpa_supplicant_stop_countermeasures, NULL, NULL);
+        eloop_register_timeout(60, 0, wpa_supplicant_stop_countermeasures, NULL, NULL);
 
         /* TODO: mark the AP rejected for 60 second. STA is
          * allowed to associate with another AP.. */
@@ -2516,10 +2571,8 @@ int wpa_michael_mic_failure(u16 isunicast)
         wpa_sm_set_state(WPA_MIC_FAILURE);
         wpa_sm_key_request(sm, 1, isunicast);
         /*start 60sec counter to monitor whether next mic_failure occur in this period, or clear mic_errors_seen*/
-        ets_timer_disarm(&(sm->cm_timer));
-        ets_timer_done(&(sm->cm_timer));
-        ets_timer_setfn(&(sm->cm_timer), (ETSTimerFunc *)wpa_supplicant_clr_countermeasures, NULL);
-        ets_timer_arm(&(sm->cm_timer), 60*1000, false);
+        eloop_cancel_timeout(wpa_supplicant_stop_countermeasures, NULL, NULL);
+        eloop_register_timeout(60, 0, wpa_supplicant_stop_countermeasures, NULL, NULL);
     }
 
     return 0;
@@ -2552,7 +2605,6 @@ void eapol_txcb(void *eb)
         case WPA_GROUP_HANDSHAKE:
             if (sm->txcb_flags & WPA_GROUP_HANDSHAKE_BIT) {
                 sm->txcb_flags &= ~WPA_GROUP_HANDSHAKE_BIT;
-                isdeauth = wpa_supplicant_send_2_of_2_txcallback(sm);
             } else {
                 wpa_printf(MSG_DEBUG, "2/2 txcb, flags=%d\n", sm->txcb_flags);
             }
@@ -2599,4 +2651,244 @@ void wpa_sta_clear_curr_pmksa(void) {
     pmksa_cache_clear_current(sm);
 }
 
+struct wpa_sm * get_wpa_sm(void)
+{
+    return &gWpaSm;
+}
+
+int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len)
+{
+    struct wpa_sm *sm = &gWpaSm;
+    if (!sm)
+        return -1;
+
+    os_free(sm->ap_rsnxe);
+    if (!ie || len == 0) {
+        wpa_hexdump(MSG_DEBUG, "WPA: set AP RSNXE", ie, len);
+        sm->ap_rsnxe = NULL;
+        sm->ap_rsnxe_len = 0;
+    } else {
+        wpa_hexdump(MSG_DEBUG, "WPA: set AP RSNXE", ie, len);
+        sm->ap_rsnxe = os_memdup(ie, len);
+        if (!sm->ap_rsnxe)
+            return -1;
+
+        sm->ap_rsnxe_len = len;
+    }
+
+    sm->sae_pwe = esp_wifi_sta_get_config_sae_pwe_h2e_internal();
+    return 0;
+}
+
+
+int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len)
+{
+    if (!sm)
+        return -1;
+
+    os_free(sm->assoc_rsnxe);
+    if (!ie || len == 0) {
+        sm->assoc_rsnxe = NULL;
+        sm->assoc_rsnxe_len = 0;
+    } else {
+        wpa_hexdump(MSG_DEBUG, "RSN: set own RSNXE", ie, len);
+        sm->assoc_rsnxe = os_memdup(ie, len);
+        if (!sm->assoc_rsnxe)
+            return -1;
+
+        sm->assoc_rsnxe_len = len;
+    }
+
+    return 0;
+}
+
+#ifdef CONFIG_OWE_STA
+struct wpabuf *owe_build_assoc_req(struct wpa_sm *sm, u16 group)
+{
+    struct wpabuf *pub = NULL;
+    size_t prime_len;
+
+    if (group == OWE_DH_GRP19) {
+        prime_len = OWE_PRIME_LEN;
+    } else {
+        wpa_printf(MSG_ERROR, "OWE: Unsupported Diffie-Hellman group");
+        return NULL;
+    }
+
+    sm->owe_ecdh = crypto_ecdh_init(group);
+
+    if (!sm->owe_ecdh) {
+        wpa_printf(MSG_ERROR, "Initialization of ecdh failed");
+        return NULL;
+    }
+
+    sm->owe_group = group;
+    /* Get own public key */
+    pub = crypto_ecdh_get_pubkey(sm->owe_ecdh, 0);
+    pub = wpabuf_zeropad(pub, prime_len);
+
+    if (!pub) {
+        wpa_printf(MSG_ERROR, "Own public key is NULL");
+        goto fail;
+    }
+
+    wpa_hexdump_buf(MSG_DEBUG, "Own public key", pub);
+
+    if (sm->owe_ie) {
+        wpabuf_free(sm->owe_ie);
+    }
+    sm->owe_ie = wpabuf_alloc(5 + wpabuf_len(pub));
+
+    if (!sm->owe_ie) {
+        wpa_printf(MSG_ERROR, "OWE IE allocation failed");
+        goto fail;
+    }
+
+    /* Constructing the DH IE */
+    wpabuf_put_u8(sm->owe_ie, WLAN_EID_EXTENSION);
+    wpabuf_put_u8(sm->owe_ie, 1 + 2 + wpabuf_len(pub));
+    wpabuf_put_u8(sm->owe_ie, WLAN_EID_EXT_OWE_DH_PARAM);
+    wpabuf_put_le16(sm->owe_ie, group);
+    wpabuf_put_buf(sm->owe_ie, pub);
+    wpabuf_free(pub);
+
+    wpa_hexdump_buf(MSG_DEBUG, "OWE: Diffie-Hellman Parameter element", sm->owe_ie);
+
+    return (struct wpabuf *)wpabuf_head(sm->owe_ie);
+
+fail:
+    wpabuf_free(pub);
+    crypto_ecdh_deinit(sm->owe_ecdh);
+    return NULL;
+}
+
+int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_ie, size_t dh_len)
+{
+    size_t prime_len=0,hash_len=0;
+    struct wpabuf * sh_secret = NULL, *pub = NULL, *hkey = NULL;
+    int res;
+    const char *info = "OWE Key Generation";
+    u8 pmkid[SHA256_MAC_LEN], prk[SHA256_MAC_LEN], pmk[SHA256_MAC_LEN];
+    const u8 *addr[2];
+    size_t len[2];
+    u16 group;
+
+    struct wpa_sm *sm;
+    sm = get_wpa_sm();
+
+    (void)res;
+
+    wpabuf_free(sm->owe_ie); //free the dh ie constructed in owe_build_assoc_req
+    sm->owe_ie = NULL;
+
+    struct wpa_ie_data *parsed_rsn_data;
+    parsed_rsn_data = os_zalloc(sizeof(struct wpa_ie_data));
+    if (!parsed_rsn_data) {
+        wpa_printf(MSG_ERROR, "Memory allocation failed");
+        goto fail;
+    }
+
+    if (rsn_ie && rsn_len && wpa_parse_wpa_ie_rsn(rsn_ie, rsn_len + 2, parsed_rsn_data) != 0) {
+        goto fail;
+    }
+    if (!dh_ie && !dh_len && parsed_rsn_data->num_pmkid == 0) {
+        wpa_printf(MSG_ERROR, "OWE: No diffie hellman parameter in response");
+        goto fail;
+    }
+
+    if (!sm->cur_pmksa) { /* No PMK caching */
+        dh_len += 2;
+
+        dh_ie += 3;
+        dh_len -=3;
+        group = WPA_GET_LE16(dh_ie);
+
+        /* Only group 19 is supported */
+        if ((group != sm->owe_group) || (group != OWE_DH_GRP19)) {
+            wpa_printf(MSG_ERROR, "OWE: Unexpected Diffie-Hellman group in response");
+            goto fail;
+        }
+
+        prime_len = OWE_PRIME_LEN;
+
+        /* Set peer's public key point and calculate shared secret */
+        sh_secret = crypto_ecdh_set_peerkey(sm->owe_ecdh, 0, dh_ie+2, dh_len-2);
+        sh_secret = wpabuf_zeropad(sh_secret, prime_len);
+        if (!sh_secret) {
+            wpa_printf(MSG_ERROR, "OWE: Invalid peer DH public key");
+            goto fail;
+        }
+
+        wpa_hexdump_buf_key(MSG_DEBUG, "OWE: DH shared secret", sh_secret);
+        pub = crypto_ecdh_get_pubkey(sm->owe_ecdh, 0);
+        if (!pub) {
+            wpa_printf(MSG_ERROR, "No own public key");
+            wpabuf_free(sh_secret);
+            goto fail;
+        }
+
+        /* PMKID = Truncate-128(Hash(C | A)) */
+        addr[0] = wpabuf_head(pub);
+        len[0] = wpabuf_len(pub);
+        addr[1] = dh_ie + 2;
+        len[1] = dh_len - 2;
+
+        res = sha256_vector(2, addr, len, pmkid);
+        hash_len = SHA256_MAC_LEN;
+
+        pub = wpabuf_zeropad(pub, prime_len);
+
+        /* prk = HKDF-extract(C | A | group, z) */
+        hkey = wpabuf_alloc(wpabuf_len(pub) + dh_len - 2 + 2);
+
+        wpabuf_put_buf(hkey, pub); /* C */
+        wpabuf_free(pub);
+
+        wpabuf_put_data(hkey, dh_ie + 2, dh_len - 2); /* A */
+        wpabuf_put_le16(hkey, sm->owe_group); /* group */
+
+        res = hmac_sha256(wpabuf_head(hkey), wpabuf_len(hkey), wpabuf_head(sh_secret), wpabuf_len(sh_secret), prk);
+        hash_len = SHA256_MAC_LEN;
+
+        wpabuf_free(hkey);
+        wpabuf_free(sh_secret);
+
+        wpa_hexdump_key(MSG_DEBUG, "OWE: prk", prk, hash_len);
+
+        /* PMK = HKDF-expand(prk, "OWE Key Generation", n) */
+        res = hmac_sha256_kdf(prk, hash_len, NULL, (const u8 *)info,
+        os_strlen(info), pmk, hash_len);
+
+        forced_memzero(prk, SHA256_MAC_LEN);
+        wpa_hexdump(MSG_DEBUG, "OWE: PMKID", pmkid, OWE_PMKID_LEN);
+
+        os_memcpy(sm->pmk,pmk,hash_len);
+        sm->pmk_len = hash_len;
+        wpa_hexdump_key(MSG_DEBUG, "OWE: PMK", sm->pmk, sm->pmk_len);
+
+        pmksa_cache_add(sm->pmksa, sm->pmk, sm->pmk_len, pmkid, NULL, 0,
+                            sm->bssid, sm->own_addr, sm->network_ctx, sm->key_mgmt);
+        goto done;
+    } else { /* PMK caching */
+        if (parsed_rsn_data && sm->cur_pmksa) {
+            if (parsed_rsn_data->num_pmkid == 1 && parsed_rsn_data->pmkid) {
+                if (os_memcmp(parsed_rsn_data->pmkid, sm->cur_pmksa->pmkid, OWE_PMKID_LEN) == 0) {
+                    wpa_printf(MSG_DEBUG, "OWE: Using PMK caching");
+                    wpa_sm_set_pmk_from_pmksa(sm);
+                    goto done;
+                } else {
+                    wpa_printf(MSG_DEBUG, "OWE : Invalid PMKID in response");
+                    goto fail;
+                }
+            }
+        }
+     }
+done:
+    os_free(parsed_rsn_data);
+    return 0;
+fail:
+    os_free(parsed_rsn_data);
+    return -1;
+}
+#endif // CONFIG_OWE_STA
 #endif // ESP_SUPPLICANT

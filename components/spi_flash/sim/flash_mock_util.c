@@ -1,6 +1,3 @@
-#include "esp_spi_flash.h"
-#include "esp_partition.h"
-
 #include "esp_err.h"
 #include "esp_rom_spiflash.h"
 

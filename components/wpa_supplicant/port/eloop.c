@@ -16,7 +16,7 @@
 #include "common.h"
 #include "list.h"
 #include "eloop.h"
-#include "esp_wifi.h"
+#include "esp_wifi_driver.h"
 
 struct eloop_timeout {
 	struct dl_list list;
@@ -24,6 +24,10 @@ struct eloop_timeout {
 	void *eloop_data;
 	void *user_data;
 	eloop_timeout_handler handler;
+#ifdef ELOOP_DEBUG
+	char func_name[100];
+	int line;
+#endif
 };
 
 struct eloop_data {
@@ -32,21 +36,38 @@ struct eloop_data {
 	bool eloop_started;
 };
 
-#define ELOOP_LOCK() xSemaphoreTakeRecursive(eloop_data_lock, portMAX_DELAY)
-#define ELOOP_UNLOCK() xSemaphoreGiveRecursive(eloop_data_lock)
+#define ELOOP_LOCK() os_mutex_lock(eloop_data_lock)
+#define ELOOP_UNLOCK() os_mutex_unlock(eloop_data_lock)
 
 static void *eloop_data_lock = NULL;
 
 static struct eloop_data eloop;
 
+static int eloop_run_wrapper(void *data)
+{
+	eloop_run();
+	return 0;
+}
+
+static void eloop_run_timer(void)
+{
+	/* Execute timers in pptask context to make it thread safe */
+	wifi_ipc_config_t cfg;
+
+	cfg.fn = eloop_run_wrapper;
+	cfg.arg = NULL;
+	cfg.arg_size = 0;
+	esp_wifi_ipc_internal(&cfg, false);
+}
+
 int eloop_init(void)
 {
 	os_memset(&eloop, 0, sizeof(eloop));
 	dl_list_init(&eloop.timeout);
-	ets_timer_disarm(&eloop.eloop_timer);
-	ets_timer_setfn(&eloop.eloop_timer, (ETSTimerFunc *)eloop_run, NULL);
+	os_timer_disarm(&eloop.eloop_timer);
+	os_timer_setfn(&eloop.eloop_timer, (ETSTimerFunc *)eloop_run_timer, NULL);
 
-	eloop_data_lock = xSemaphoreCreateRecursiveMutex();
+	eloop_data_lock = os_recursive_mutex_create();
 
 	if (!eloop_data_lock) {
 		wpa_printf(MSG_ERROR, "failed to create eloop data loop");
@@ -57,12 +78,21 @@ int eloop_init(void)
 	return 0;
 }
 
+#ifdef ELOOP_DEBUG
+int eloop_register_timeout_debug(unsigned int secs, unsigned int usecs,
+				 eloop_timeout_handler handler, void *eloop_data,
+				 void *user_data, const char *func, int line)
+#else
 int eloop_register_timeout(unsigned int secs, unsigned int usecs,
 			   eloop_timeout_handler handler,
 			   void *eloop_data, void *user_data)
+#endif
 {
 	struct eloop_timeout *timeout, *tmp;
 	os_time_t now_sec;
+#ifdef ELOOP_DEBUG
+	int count = 0;
+#endif
 
 	timeout = os_zalloc(sizeof(*timeout));
 	if (timeout == NULL)
@@ -85,6 +115,10 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
 	timeout->eloop_data = eloop_data;
 	timeout->user_data = user_data;
 	timeout->handler = handler;
+#ifdef ELOOP_DEBUG
+	os_strlcpy(timeout->func_name, func, 100);
+	timeout->line = line;
+#endif
 
 	/* Maintain timeouts in order of increasing time */
 	dl_list_for_each(tmp, &eloop.timeout, struct eloop_timeout, list) {
@@ -94,14 +128,21 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
 			ELOOP_UNLOCK();
 			goto run;
 		}
+#ifdef ELOOP_DEBUG
+		count++;
+#endif
 	}
 	ELOOP_LOCK();
 	dl_list_add_tail(&eloop.timeout, &timeout->list);
 	ELOOP_UNLOCK();
 
 run:
-	ets_timer_disarm(&eloop.eloop_timer);
-	ets_timer_arm(&eloop.eloop_timer, 0, 0);
+#ifdef ELOOP_DEBUG
+	wpa_printf(MSG_DEBUG, "ELOOP: Added one timer from %s:%d to call %p, current order=%d",
+			timeout->func_name, line, timeout->handler, count);
+#endif
+	os_timer_disarm(&eloop.eloop_timer);
+	os_timer_arm(&eloop.eloop_timer, 0, 0);
 
 	return 0;
 
@@ -117,18 +158,38 @@ overflow:
 	return 0;
 }
 
+static bool timeout_exists(struct eloop_timeout *old)
+{
+	struct eloop_timeout *timeout, *prev;
+	dl_list_for_each_safe(timeout, prev, &eloop.timeout,
+			      struct eloop_timeout, list) {
+		if (old == timeout)
+			return true;
+	}
+
+	return false;
+}
 
 static void eloop_remove_timeout(struct eloop_timeout *timeout)
 {
+	bool timeout_present = false;
 	ELOOP_LOCK();
-	dl_list_del(&timeout->list);
+	/* Make sure timeout still exists(Another context may have deleted this) */
+	timeout_present = timeout_exists(timeout);
+	if (timeout_present)
+		dl_list_del(&timeout->list);
 	ELOOP_UNLOCK();
-	os_free(timeout);
+	if (timeout_present)
+		os_free(timeout);
 }
 
-
+#ifdef ELOOP_DEBUG
+int eloop_cancel_timeout_debug(eloop_timeout_handler handler, void *eloop_data,
+			       void *user_data, const char *func, int line)
+#else
 int eloop_cancel_timeout(eloop_timeout_handler handler,
 			 void *eloop_data, void *user_data)
+#endif
 {
 	struct eloop_timeout *timeout, *prev;
 	int removed = 0;
@@ -144,6 +205,10 @@ int eloop_cancel_timeout(eloop_timeout_handler handler,
 			removed++;
 		}
 	}
+#ifdef ELOOP_DEBUG
+	wpa_printf(MSG_DEBUG, "ELOOP: %s:%d called to remove timer handler=%p, removed count=%d",
+			func, line, handler, removed);
+#endif
 
 	return removed;
 }
@@ -271,8 +336,8 @@ void eloop_run(void)
 				uint32_t ms;
 				os_reltime_sub(&timeout->time, &now, &tv);
 				ms = tv.sec * 1000 + tv.usec / 1000;
-				ets_timer_disarm(&eloop.eloop_timer);
-				ets_timer_arm(&eloop.eloop_timer, ms, 0);
+				os_timer_disarm(&eloop.eloop_timer);
+				os_timer_arm(&eloop.eloop_timer, ms, 0);
 				goto out;
 			}
 		}
@@ -287,7 +352,16 @@ void eloop_run(void)
 				void *user_data = timeout->user_data;
 				eloop_timeout_handler handler =
 					timeout->handler;
+#ifdef ELOOP_DEBUG
+				char fn_name[100] = {0};
+				int line = timeout->line;
+				os_strlcpy(fn_name, timeout->func_name, 100);
+#endif
 				eloop_remove_timeout(timeout);
+#ifdef ELOOP_DEBUG
+				wpa_printf(MSG_DEBUG, "ELOOP: Running timer fn:%p scheduled by %s:%d ",
+						handler, fn_name, line);
+#endif
 				handler(eloop_data, user_data);
 			}
 		}
@@ -321,9 +395,10 @@ void eloop_destroy(void)
 		eloop_remove_timeout(timeout);
 	}
 	if (eloop_data_lock) {
-		vSemaphoreDelete(eloop_data_lock);
+		os_semphr_delete(eloop_data_lock);
 		eloop_data_lock = NULL;
 	}
-	ets_timer_disarm(&eloop.eloop_timer);
+	os_timer_disarm(&eloop.eloop_timer);
+	os_timer_done(&eloop.eloop_timer);
 	os_memset(&eloop, 0, sizeof(eloop));
 }

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
 import re
@@ -175,7 +177,7 @@ class Gitlab(object):
         return job_id_list
 
     @retry
-    def download_archive(self, ref: str, destination: str, project_id: Optional[int] = None) -> str:
+    def download_archive(self, ref: str, destination: str, project_id: Optional[int] = None, cache_dir: Optional[str] = None) -> str:
         """
         Download archive of certain commit of a repository and extract to destination path
 
@@ -189,6 +191,23 @@ class Gitlab(object):
         else:
             project = self.gitlab_inst.projects.get(project_id)
 
+        if cache_dir:
+            local_archive_file = os.path.join(cache_dir, f'{ref}.tar.gz')
+            os.makedirs(os.path.dirname(local_archive_file), exist_ok=True)
+            if os.path.isfile(local_archive_file):
+                print('Use cached archive file. Skipping download...')
+            else:
+                with open(local_archive_file, 'wb') as fw:
+                    try:
+                        project.repository_archive(sha=ref, streamed=True, action=fw.write)
+                    except gitlab.GitlabGetError as e:
+                        print('Failed to archive from project {}'.format(project_id))
+                        raise e
+                print('Downloaded archive size: {:.03f}MB'.format(float(os.path.getsize(local_archive_file)) / (1024 * 1024)))
+
+            return self.decompress_archive(local_archive_file, destination)
+
+        # no cache
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             try:
                 project.repository_archive(sha=ref, streamed=True, action=temp_file.write)
@@ -196,13 +215,27 @@ class Gitlab(object):
                 print('Failed to archive from project {}'.format(project_id))
                 raise e
 
-        print('archive size: {:.03f}MB'.format(float(os.path.getsize(temp_file.name)) / (1024 * 1024)))
+        print('Downloaded archive size: {:.03f}MB'.format(float(os.path.getsize(temp_file.name)) / (1024 * 1024)))
 
-        with tarfile.open(temp_file.name, 'r') as archive_file:
+        return self.decompress_archive(temp_file.name, destination)
+
+    @staticmethod
+    def decompress_archive(path: str, destination: str) -> str:
+        with tarfile.open(path, 'r') as archive_file:
             root_name = archive_file.getnames()[0]
             archive_file.extractall(destination)
 
         return os.path.join(os.path.realpath(destination), root_name)
+
+    def get_job_tags(self, job_id: int) -> str:
+        """
+        Get tags of a job
+
+        :param job_id: job id
+        :return: comma-separated tags of the job
+        """
+        job = self.project.jobs.get(job_id)
+        return ','.join(job.tag_list)
 
 
 def main() -> None:
@@ -231,6 +264,9 @@ def main() -> None:
     elif args.action == 'get_project_id':
         ret = gitlab_inst.get_project_id(args.project_name)
         print('project id: {}'.format(ret))
+    elif args.action == 'get_job_tags':
+        ret = gitlab_inst.get_job_tags(args.job_id)
+        print(ret)
 
 
 if __name__ == '__main__':

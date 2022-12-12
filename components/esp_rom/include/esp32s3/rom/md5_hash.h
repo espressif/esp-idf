@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2003-2005, Jouni Malinen <j@w1.fi>
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+/*
  * MD5 internal definitions
  * Copyright (c) 2003-2005, Jouni Malinen <j@w1.fi>
  *

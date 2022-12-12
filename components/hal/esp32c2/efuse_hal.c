@@ -10,12 +10,19 @@
 #include "hal/assert.h"
 #include "hal/efuse_hal.h"
 #include "hal/efuse_ll.h"
+#include "hal/clk_tree_ll.h"
+#include "esp_attr.h"
 
 #define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x0F << (4 * (block))))
 
-uint32_t efuse_hal_get_chip_revision(void)
+IRAM_ATTR uint32_t efuse_hal_get_major_chip_version(void)
 {
-    return efuse_ll_get_chip_revision();
+    return efuse_ll_get_chip_wafer_version_major();
+}
+
+IRAM_ATTR uint32_t efuse_hal_get_minor_chip_version(void)
+{
+    return efuse_ll_get_chip_wafer_version_minor();
 }
 
 /******************* eFuse control functions *************************/
@@ -24,6 +31,11 @@ void efuse_hal_set_timing(uint32_t apb_freq_hz)
 {
     (void) apb_freq_hz;
     efuse_ll_set_pwr_off_num(0x190);
+    int xtal = clk_ll_xtal_load_freq_mhz();
+    HAL_ASSERT(xtal == 40 || xtal == 26);
+    // for the XTAL = 40 MHz we use the default value = 200.
+    // XTAL = 26 MHz the value = 130.
+    efuse_ll_set_tpgm_inactive(xtal * 5);
 }
 
 void efuse_hal_read(void)

@@ -84,7 +84,7 @@ The driver of FIFOs works as below:
 #include "freertos/FreeRTOS.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/gpio_periph.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 #include "freertos/semphr.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/gpio.h"
@@ -230,6 +230,7 @@ static esp_err_t init_context(const sdio_slave_config_t *config)
 
     context.hal->sending_mode = config->sending_mode;
     context.hal->timing = config->timing;
+    context.hal->no_highspeed = (config->flags & SDIO_SLAVE_FLAG_DEFAULT_SPEED) == SDIO_SLAVE_FLAG_DEFAULT_SPEED;
     context.hal->send_queue_size = config->send_queue_size;
     context.hal->recv_buffer_size = config->recv_buffer_size;
     //initialize ringbuffer resources
@@ -312,7 +313,6 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
     periph_module_enable(PERIPH_SDIO_SLAVE_MODULE);
 
     sdio_slave_hal_hw_init(context.hal);
-
     return ESP_OK;
 }
 
@@ -616,7 +616,7 @@ esp_err_t sdio_slave_send_get_finished(void **out_arg, TickType_t wait)
 
 esp_err_t sdio_slave_transmit(uint8_t *addr, size_t len)
 {
-    uint32_t timestamp = cpu_hal_get_cycle_count();
+    uint32_t timestamp = esp_cpu_get_cycle_count();
     uint32_t ret_stamp;
 
     esp_err_t err = sdio_slave_send_queue(addr, len, (void *)timestamp, portMAX_DELAY);

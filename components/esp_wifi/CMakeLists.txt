@@ -24,13 +24,14 @@ if(CONFIG_ESP32_WIFI_ENABLED)
         "src/wifi_init.c"
         "src/wifi_default.c"
         "src/wifi_netif.c"
+        "src/wifi_default_ap.c"
         "${idf_target}/esp_adapter.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include"
-                    REQUIRES esp_event esp_phy
-                    PRIV_REQUIRES driver esptool_py esp_netif esp_pm esp_timer nvs_flash
+                    REQUIRES esp_event esp_phy esp_netif
+                    PRIV_REQUIRES driver esptool_py esp_pm esp_timer nvs_flash
                                   wpa_supplicant hal lwip ${extra_priv_requires}
                     LDFRAGMENTS "${ldfragments}")
 
@@ -38,7 +39,7 @@ if(CONFIG_ESP32_WIFI_ENABLED)
     idf_build_get_property(build_dir BUILD_DIR)
 
     set(target_name "${idf_target}")
-    target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}\"")
+    target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
 
     if(link_binary_libs)
         if(CONFIG_IDF_TARGET_ESP32C2)
@@ -56,4 +57,6 @@ if(CONFIG_ESP32_WIFI_ENABLED)
             target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
         endforeach()
     endif()
+
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 endif()

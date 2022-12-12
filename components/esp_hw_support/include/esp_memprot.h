@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,9 @@
 // - not intended for public use.
 
 #pragma once
+
+#include "sdkconfig.h"
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_MEMPROT_TEST
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -22,6 +25,7 @@
 extern "C" {
 #endif
 
+#define DEFAULT_CPU_NUM -1
 #define ESP_MEMPROT_ERR_CHECK(retval, fnc) if ((retval=fnc) != ESP_OK) { return retval; }
 
 /**
@@ -47,7 +51,7 @@ typedef struct {
  *         ESP_ERR_INVALID_ARG on passing invalid pointer
  *         ESP_ERR_MEMPROT_MEMORY_TYPE_INVALID on invalid mem_type
  */
-esp_err_t esp_mprot_monitor_clear_intr(const esp_mprot_mem_t mem_type, int const *const core);
+esp_err_t esp_mprot_monitor_clear_intr(const esp_mprot_mem_t mem_type, const int core);
 
 /**
  * @brief Checks whether any of the PMS settings is locked
@@ -100,7 +104,7 @@ esp_err_t esp_mprot_get_active_intr(esp_memp_intr_source_t *active_memp_intr);
  *         ESP_ERR_MEMPROT_MEMORY_TYPE_INVALID on invalid mem_type
  *         ESP_ERR_INVALID_ARG on invalid fault_addr pointer
  */
-esp_err_t esp_mprot_get_violate_addr(const esp_mprot_mem_t mem_type, void **fault_addr, int const *const core);
+esp_err_t esp_mprot_get_violate_addr(const esp_mprot_mem_t mem_type, void **fault_addr, const int core);
 
 /**
  * @brief Returns PMS World identifier of the code causing the violation interrupt
@@ -116,7 +120,7 @@ esp_err_t esp_mprot_get_violate_addr(const esp_mprot_mem_t mem_type, void **faul
  *         ESP_ERR_INVALID_ARG on passing invalid pointer(s)
  *         ESP_ERR_MEMPROT_WORLD_INVALID on invalid World identifier fetched from the register
  */
-esp_err_t esp_mprot_get_violate_world(const esp_mprot_mem_t mem_type, esp_mprot_pms_world_t *world, int const *const core);
+esp_err_t esp_mprot_get_violate_world(const esp_mprot_mem_t mem_type, esp_mprot_pms_world_t *world, const int core);
 
 /**
  * @brief Returns an operation type which caused the violation interrupt
@@ -132,7 +136,7 @@ esp_err_t esp_mprot_get_violate_world(const esp_mprot_mem_t mem_type, esp_mprot_
  *         ESP_ERR_MEMPROT_MEMORY_TYPE_INVALID on invalid mem_type
  *         ESP_ERR_INVALID_ARG on invalid oper pointer
  */
-esp_err_t esp_mprot_get_violate_operation(const esp_mprot_mem_t mem_type, uint32_t *oper, int const *const core);
+esp_err_t esp_mprot_get_violate_operation(const esp_mprot_mem_t mem_type, uint32_t *oper, const int core);
 
 /**
  * @brief Checks whether given memory type supports byte-enables info
@@ -158,7 +162,7 @@ bool esp_mprot_has_byte_enables(const esp_mprot_mem_t mem_type);
  *         ESP_ERR_MEMPROT_MEMORY_TYPE_INVALID on invalid mem_type
  *         ESP_ERR_INVALID_ARGUMENT on invalid byte_en pointer
  */
-esp_err_t esp_mprot_get_violate_byte_enables(const esp_mprot_mem_t mem_type, uint32_t *byte_en, int const *const core);
+esp_err_t esp_mprot_get_violate_byte_enables(const esp_mprot_mem_t mem_type, uint32_t *byte_en, const int core);
 
 /**
  * @brief Convenient routine for setting the PMS defaults
@@ -192,3 +196,5 @@ esp_err_t esp_mprot_dump_configuration(char **dump_info_string);
 #ifdef __cplusplus
 }
 #endif
+
+#endif //CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_MEMPROT_TEST

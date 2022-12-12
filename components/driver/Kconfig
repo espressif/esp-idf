@@ -1,16 +1,9 @@
-menu "Driver configurations"
+menu "Driver Configurations"
 
-    menu "ADC configuration"
-
-        config ADC_FORCE_XPD_FSM
-            bool "Use the FSM to control ADC power"
-            default n
-            help
-                ADC power can be controlled by the FSM instead of software. This allows the ADC to
-                be shut off when it is not working leading to lower power consumption. However
-                using the FSM control ADC power will increase the noise of ADC.
+    menu "Legacy ADC Configuration"
 
         config ADC_DISABLE_DAC
+            depends on SOC_DAC_SUPPORTED
             bool "Disable DAC when ADC2 is used on GPIO 25 and 26"
             default y
             help
@@ -19,22 +12,57 @@ menu "Driver configurations"
 
                 For testing, disable this option so that we can measure the output of DAC by internal ADC.
 
-    endmenu  # ADC Configuration
-
-    menu "MCPWM configuration"
-        depends on SOC_MCPWM_SUPPORTED
-        config MCPWM_ISR_IN_IRAM
-            bool "Place MCPWM ISR function into IRAM"
+        config ADC_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
             default n
             help
-                If this option is not selected, the MCPWM interrupt will be deferred when the Cache
-                is in a disabled state (e.g. Flash write/erase operation).
+                Wether to suppress the deprecation warnings when using legacy adc driver (driver/adc.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
 
-                Note that if this option is selected, all user registered ISR callbacks should never
-                try to use cache as well. (with IRAM_ATTR)
-    endmenu # MCPWM Configuration
+        menu "Legacy ADC Calibration Configuration"
 
-    menu "SPI configuration"
+            config ADC_CAL_EFUSE_TP_ENABLE
+                depends on IDF_TARGET_ESP32
+                bool "Use Two Point Values"
+                default "y"
+                help
+                    Some ESP32s have Two Point calibration values burned into eFuse BLOCK3.
+                    This option will allow the ADC calibration component to characterize the
+                    ADC-Voltage curve using Two Point values if they are available.
+
+            config ADC_CAL_EFUSE_VREF_ENABLE
+                depends on IDF_TARGET_ESP32
+                bool "Use eFuse Vref"
+                default "y"
+                help
+                    Some ESP32s have Vref burned into eFuse BLOCK0. This option will allow
+                    the ADC calibration component to characterize the ADC-Voltage curve using
+                    eFuse Vref if it is available.
+
+            config ADC_CAL_LUT_ENABLE
+                depends on IDF_TARGET_ESP32
+                bool "Use Lookup Tables"
+                default "y"
+                help
+                    This option will allow the ADC calibration component to use Lookup Tables
+                    to correct for non-linear behavior in 11db attenuation. Other attenuations
+                    do not exhibit non-linear behavior hence will not be affected by this option.
+
+            config ADC_CALI_SUPPRESS_DEPRECATE_WARN
+                bool "Suppress legacy driver deprecated warning"
+                default n
+                help
+                    Wether to suppress the deprecation warnings when using legacy adc calibration
+                    driver (esp_adc_cal.h).
+                    If you want to continue using the legacy driver, and don't want to see related
+                    deprecation warnings, you can enable this option.
+
+        endmenu
+
+    endmenu  # ADC Configuration
+
+    menu "SPI Configuration"
 
         config SPI_MASTER_IN_IRAM
             bool "Place transmitting functions of SPI master into IRAM"
@@ -84,7 +112,7 @@ menu "Driver configurations"
 
     endmenu # SPI Configuration
 
-    menu "TWAI configuration"
+    menu "TWAI Configuration"
         depends on SOC_TWAI_SUPPORTED
 
         config TWAI_ISR_IN_IRAM
@@ -166,10 +194,11 @@ menu "Driver configurations"
 
     endmenu # TEMP_SENSOR Configuration
 
-    menu "UART configuration"
+    menu "UART Configuration"
 
         config UART_ISR_IN_IRAM
             bool "Place UART ISR function into IRAM"
+            depends on !RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
             default n
             help
                 If this option is not selected, UART interrupt will be disabled for a long time and
@@ -195,24 +224,31 @@ menu "Driver configurations"
                 so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
     endmenu # GPIO Configuration
 
-    menu "GDMA Configuration"
-        depends on SOC_GDMA_SUPPORTED
-        config GDMA_CTRL_FUNC_IN_IRAM
-            bool "Place GDMA control functions into IRAM"
+    menu "Sigma Delta Modulator Configuration"
+        depends on SOC_SDM_SUPPORTED
+        config SDM_CTRL_FUNC_IN_IRAM
+            bool "Place SDM control functions into IRAM"
             default n
             help
-                Place GDMA control functions (like start/stop/append/reset) into IRAM,
+                Place SDM control functions (like set_duty) into IRAM,
                 so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
                 Enabling this option can improve driver performance as well.
 
-        config GDMA_ISR_IRAM_SAFE
-            bool "GDMA ISR IRAM-Safe"
+        config SDM_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
             default n
             help
-                This will ensure the GDMA interrupt handler is IRAM-Safe, allow to avoid flash
-                cache misses, and also be able to run whilst the cache is disabled.
-                (e.g. SPI Flash write).
-    endmenu # GDMA Configuration
+                Wether to suppress the deprecation warnings when using legacy sigma delta driver.
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+
+        config SDM_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for SDM driver.
+                Note that, this option only controls the SDM driver log, won't affect other drivers.
+    endmenu # Sigma Delta Modulator Configuration
 
     menu "GPTimer Configuration"
         config GPTIMER_CTRL_FUNC_IN_IRAM
@@ -305,5 +341,108 @@ menu "Driver configurations"
                 Wether to enable the debug log message for RMT driver.
                 Note that, this option only controls the RMT driver log, won't affect other drivers.
     endmenu # RMT Configuration
+
+    menu "MCPWM Configuration"
+        depends on SOC_MCPWM_SUPPORTED
+        config MCPWM_ISR_IRAM_SAFE
+            bool "Place MCPWM ISR function into IRAM"
+            default n
+            help
+                This will ensure the MCPWM interrupt handle is IRAM-Safe, allow to avoid flash
+                cache misses, and also be able to run whilst the cache is disabled.
+                (e.g. SPI Flash write)
+
+        config MCPWM_CTRL_FUNC_IN_IRAM
+            bool "Place MCPWM control functions into IRAM"
+            default n
+            help
+                Place MCPWM control functions (like set_compare_value) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+                Enabling this option can improve driver performance as well.
+
+        config MCPWM_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress leagcy driver deprecated warning"
+            default n
+            help
+                Wether to suppress the deprecation warnings when using legacy MCPWM driver (driver/mcpwm.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+
+        config MCPWM_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for MCPWM driver.
+                Note that, this option only controls the MCPWM driver log, won't affect other drivers.
+    endmenu # MCPWM Configuration
+
+    menu "I2S Configuration"
+        depends on SOC_I2S_SUPPORTED
+        config I2S_ISR_IRAM_SAFE
+            bool "I2S ISR IRAM-Safe"
+            default n
+            help
+                Ensure the I2S interrupt is IRAM-Safe by allowing the interrupt handler to be
+                executable when the cache is disabled (e.g. SPI Flash write).
+
+        config I2S_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress leagcy driver deprecated warning"
+            default n
+            help
+                Enable this option will suppress the deprecation warnings of using APIs in legacy I2S driver.
+
+        config I2S_ENABLE_DEBUG_LOG
+            bool "Enable I2S debug log"
+            default n
+            help
+                Wether to enable the debug log message for I2S driver.
+                Note that, this option only controls the I2S driver log, will not affect other drivers.
+    endmenu # I2S Configuration
+
+    menu "DAC Configuration"
+        depends on SOC_DAC_SUPPORTED
+        config DAC_CTRL_FUNC_IN_IRAM
+            bool "Place DAC control functions into IRAM"
+            default n
+            help
+                Place DAC control functions (e.g. 'dac_oneshot_output_voltage') into IRAM,
+                so that this function can be IRAM-safe and able to be called in the other IRAM interrupt context.
+                Enabling this option can improve driver performance as well.
+
+        config DAC_ISR_IRAM_SAFE
+            bool "DAC ISR IRAM-Safe"
+            default n
+            help
+                Ensure the DAC interrupt is IRAM-Safe by allowing the interrupt handler to be
+                executable when the cache is disabled (e.g. SPI Flash write).
+
+        config DAC_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Wether to suppress the deprecation warnings when using legacy DAC driver (driver/dac.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+
+        config DAC_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for DAC driver.
+                Note that, this option only controls the DAC driver log, won't affect other drivers.
+
+        config DAC_DMA_AUTO_16BIT_ALIGN
+            bool "Align the continuous data to 16 bit automatically"
+            depends on SOC_DAC_DMA_16BIT_ALIGN
+            default y
+            help
+                Whether to left shift the continuous data to align every bytes to 16 bits in the driver.
+                On ESP32, although the DAC resolution is only 8 bits,
+                the hardware requires 16 bits data in continuous mode.
+                By enabling this option, the driver will left shift 8 bits for the input data automatically.
+                Only disable this option when you decide to do this step by yourself.
+                Note that the driver will allocate a new piece of memory to save the converted data.
+
+    endmenu # DAC Configuration
 
 endmenu  # Driver configurations

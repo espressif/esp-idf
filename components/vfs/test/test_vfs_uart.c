@@ -16,20 +16,21 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "driver/uart.h"
-#include "soc/uart_struct.h"
+#include "hal/uart_ll.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs.h"
+#include "test_utils.h"
 #include "sdkconfig.h"
 
 static void fwrite_str_loopback(const char* str, size_t size)
 {
     esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
-    UART0.conf0.loopback = 1;
+    uart_ll_set_loop_back(&UART0, 1);
     fwrite(str, 1, size, stdout);
     fflush(stdout);
     esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     vTaskDelay(2 / portTICK_PERIOD_MS);
-    UART0.conf0.loopback = 0;
+    uart_ll_set_loop_back(&UART0, 0);
 }
 
 static void flush_stdin_stdout(void)
@@ -300,31 +301,41 @@ TEST_CASE("Can use termios for UART", "[vfs]")
         TEST_ASSERT_EQUAL(0, tcsetattr(uart_fd, TCSANOW, &tios));
         TEST_ASSERT_EQUAL(0, tcgetattr(uart_fd, &tios_result));
         TEST_ASSERT_EQUAL(CBAUD, tios_result.c_cflag & CBAUD);
-        TEST_ASSERT_EQUAL(B38400, tios_result.c_ispeed);
-        TEST_ASSERT_EQUAL(B38400, tios_result.c_ospeed);
         TEST_ASSERT_EQUAL(ESP_OK, uart_get_baudrate(UART_NUM_1, &baudrate));
-        TEST_ASSERT_EQUAL(38400, baudrate);
+        TEST_ASSERT_INT32_WITHIN(2, 38400, baudrate);
+        if (APB_CLK_FREQ == 40000000) {
+            // Setting the speed to 38400 will set it actually to 38401
+            // Note: can't use TEST_ASSERT_INT32_WITHIN here because B38400 == 15
+            TEST_ASSERT_EQUAL(38401, tios_result.c_ispeed);
+            TEST_ASSERT_EQUAL(38401, tios_result.c_ospeed);
+        } else {
+            TEST_ASSERT_EQUAL(B38400, tios_result.c_ispeed);
+            TEST_ASSERT_EQUAL(B38400, tios_result.c_ospeed);
+        }
 
         tios.c_cflag |= CBAUDEX;
         tios.c_ispeed = tios.c_ospeed = B230400;
         TEST_ASSERT_EQUAL(0, tcsetattr(uart_fd, TCSANOW, &tios));
         TEST_ASSERT_EQUAL(0, tcgetattr(uart_fd, &tios_result));
         TEST_ASSERT_EQUAL(BOTHER, tios_result.c_cflag & BOTHER);
-        // Setting the speed to 230400 will set it actually to 230423
-        TEST_ASSERT_EQUAL(230423, tios_result.c_ispeed);
-        TEST_ASSERT_EQUAL(230423, tios_result.c_ospeed);
         TEST_ASSERT_EQUAL(ESP_OK, uart_get_baudrate(UART_NUM_1, &baudrate));
-        TEST_ASSERT_EQUAL(230423, baudrate);
+        // Setting the speed to 230400 will set it actually to something else,
+        // depending on the APB clock
+        TEST_ASSERT_INT32_WITHIN(100, 230400, tios_result.c_ispeed);
+        TEST_ASSERT_INT32_WITHIN(100, 230400, tios_result.c_ospeed);
+        TEST_ASSERT_INT32_WITHIN(100, 230400, baudrate);
 
         tios.c_cflag |= BOTHER;
         tios.c_ispeed = tios.c_ospeed = 42321;
         TEST_ASSERT_EQUAL(0, tcsetattr(uart_fd, TCSANOW, &tios));
         TEST_ASSERT_EQUAL(0, tcgetattr(uart_fd, &tios_result));
         TEST_ASSERT_EQUAL(BOTHER, tios_result.c_cflag & BOTHER);
-        TEST_ASSERT_EQUAL(42321, tios_result.c_ispeed);
-        TEST_ASSERT_EQUAL(42321, tios_result.c_ospeed);
         TEST_ASSERT_EQUAL(ESP_OK, uart_get_baudrate(UART_NUM_1, &baudrate));
-        TEST_ASSERT_EQUAL(42321, baudrate);
+        // Setting the speed to 230400 will set it actually to something else,
+        // depending on the APB clock
+        TEST_ASSERT_INT32_WITHIN(10, 42321, tios_result.c_ispeed);
+        TEST_ASSERT_INT32_WITHIN(10, 42321, tios_result.c_ospeed);
+        TEST_ASSERT_INT32_WITHIN(10, 42321, baudrate);
 
         memset(&tios_result, 0xFF, sizeof(struct termios));
     }

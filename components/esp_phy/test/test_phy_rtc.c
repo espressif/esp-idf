@@ -7,12 +7,16 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "test_utils.h"
-#include "esp_phy_init.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 #include "soc/soc_caps.h"
 #include "esp_private/wifi.h"
+
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C6)
+//IDF-5046
+#include "esp_phy_init.h"
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 
@@ -77,12 +81,15 @@ static IRAM_ATTR void test_phy_rtc_cache_task(void *arg)
 
 #if SOC_BT_SUPPORTED
 
+#if CONFIG_IDF_TARGET_ESP32
+    /* Only esp32 will call bt_track_pll_cap() in the interrupt
+        handler, other chips will call this function in the task
+     */
     ESP_LOGI(TAG, "Test bt_track_pll_cap()...");
     spi_flash_disable_interrupts_caches_and_other_cpu();
     bt_track_pll_cap();
     spi_flash_enable_interrupts_caches_and_other_cpu();
 
-#if CONFIG_IDF_TARGET_ESP32
     extern void bt_bb_init_cmplx_reg(void);
     ESP_LOGI(TAG, "Test bt_bb_init_cmplx_reg()...");
     spi_flash_disable_interrupts_caches_and_other_cpu();
@@ -125,4 +132,6 @@ TEST_CASE("Test PHY/RTC functions called when cache is disabled", "[phy_rtc][cac
 
     vSemaphoreDelete(semphr_done);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)

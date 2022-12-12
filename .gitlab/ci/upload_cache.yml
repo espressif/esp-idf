@@ -1,0 +1,50 @@
+# pull only for most of the use cases for cache
+# only set "push" policy for the jobs under this file.
+# The cache would be updated when files matched specified patterns changes.
+
+.upload_cache_template:
+  stage: upload_cache
+  image: $ESP_ENV_IMAGE
+
+upload-pip-cache:
+  extends:
+    - .upload_cache_template
+    - .before_script_minimal
+    - .rules:patterns:python-cache
+  tags:
+    - $GEO
+    - build
+  cache:
+    key: pip-cache
+    paths:
+      - .cache/pip
+    policy: push
+  script:
+    - rm -rf .cache/pip  # clear old packages
+    - bash install.sh --enable-ci --enable-pytest
+  parallel:
+    matrix:
+      - GEO: [ 'shiny',  'brew' ]
+
+upload-submodules-cache:
+  extends:
+    - .upload_cache_template
+    - .before_script_minimal
+    - .rules:patterns:submodule
+  tags:
+    - $GEO
+    - build
+  cache:
+    key: submodule-cache
+    paths:
+      - .cache/submodule_archives
+    policy: push
+  script:
+    # use the default gitlab server
+    - unset LOCAL_GITLAB_HTTPS_HOST
+    - rm -rf .cache/submodule_archives  # clear old submodule archives
+    - add_gitlab_ssh_keys
+    - fetch_submodules
+  parallel:
+    matrix:
+      - GEO: [ 'shiny',  'brew' ]

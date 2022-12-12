@@ -41,13 +41,17 @@ ESP-IDF fully supports the use of external RAM in applications. Once the externa
     * :ref:`external_ram_config_memory_map`
     * :ref:`external_ram_config_capability_allocator`
     * :ref:`external_ram_config_malloc` (default)
-    :esp32 or esp32s2: * :ref:`external_ram_config_bss`
+    * :ref:`external_ram_config_bss`
     :esp32: * :ref:`external_ram_config_noinit`
+    :esp32s2 or esp32s3: * :ref:`external_ram_config_instructions`
+    :esp32s2 or esp32s3: * :ref:`external_ram_config_rodata`
 
 .. _external_ram_config_memory_map:
 
+
 Integrate RAM into the {IDF_TARGET_NAME} Memory Map
 ---------------------------------------------------
+
 {IDF_TARGET_PSRAM_ADDR_START:default="Value not updated", esp32="0x3F800000", esp32s2="0x3F500000", esp32s3="0x3D000000"}
 
 Select this option by choosing "Integrate RAM into memory map" from :ref:`CONFIG_SPIRAM_USE`.
@@ -91,25 +95,22 @@ If a suitable block of preferred internal/external memory is not available, the 
 
 Because some buffers can only be allocated in internal memory, a second configuration item :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` defines a pool of internal memory which is reserved for *only* explicitly internal allocations (such as memory for DMA use). Regular ``malloc()`` will not allocate from this pool. The :ref:`MALLOC_CAP_DMA <dma-capable-memory>` and ``MALLOC_CAP_INTERNAL`` flags can be used to allocate memory from this pool.
 
-.. only:: SOC_SPIRAM_SUPPORTED
+.. _external_ram_config_bss:
 
-    .. _external_ram_config_bss:
+Allow .bss Segment to be Placed in External Memory
+--------------------------------------------------
 
-    Allow .bss Segment to be Placed in External Memory
-    -------------------------------------------------------
+Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`.
 
-    Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`. This configuration setting is independent of the other three.
+If enabled, a region of the address space starting from {IDF_TARGET_PSRAM_ADDR_START} will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
 
-    If enabled, a region of the address space starting from {IDF_TARGET_PSRAM_ADDR_START} will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
+Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_BSS_ATTR`` to any static declaration (which is not initialized to a non-zero value).
 
-    Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_BSS_ATTR`` to any static declaration (which is not initialized to a non-zero value).
+It is also possible to place the BSS section of a component or a library to external RAM using linker fragment scheme ``extram_bss``.
 
-    It is also possible to place the BSS section of a component or a library to external RAM using linker fragment scheme ``extram_bss``.
+This option reduces the internal static memory used by the BSS segment.
 
-    This option reduces the internal static memory used by the BSS segment.
-
-    Remaining external RAM can also be added to the capability heap allocator using the method shown above.
-
+Remaining external RAM can also be added to the capability heap allocator using the method shown above.
 
 .. only:: esp32
 
@@ -121,6 +122,38 @@ Because some buffers can only be allocated in internal memory, a second configur
     Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`. If enabled, a region of the address space provided in external RAM will be used to store non-initialized data. The values placed in this segment will not be initialized or modified even during startup or restart.
 
     By applying the macro ``EXT_RAM_NOINIT_ATTR``, data could be moved from the internal NOINIT segment to external RAM. Remaining external RAM can still be added to the capability heap allocator using the method shown above, :ref:`external_ram_config_capability_allocator`.
+
+.. only:: SOC_SPIRAM_XIP_SUPPORTED
+
+    .. _external_ram_config_instructions:
+
+    Move Instructions in Flash to PSRAM
+    -----------------------------------
+
+    The :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` option allows the flash ``.text`` sections (use for instructions) to be placed in PSRAM.
+
+    By enabling the :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` option
+
+    - Instructions from the ``.text`` sections of flash are moved into PSRAM on system startup.
+
+    - The corresponding virtual memory range of those instructions will also be re-mapped to PSRAM.
+
+    If :ref:`CONFIG_SPIRAM_RODATA` is also enabled, the cache won't be disabled during an SPI1 flash operation. You don't need to make sure ISRs, ISR callbacks and involved data are placed in internal RAM, thus internal RAM usage can be optimized.
+
+    .. _external_ram_config_rodata:
+
+    Move Read-Only Data in Flash to PSRAM
+    ---------------------------------------
+
+    The :ref:`CONFIG_SPIRAM_RODATA` option allows the flash ``.rodata`` sections (use for read only data) to be placed in PSRAM.
+
+    By enabling the :ref:`CONFIG_SPIRAM_RODATA` option
+
+    - Instructions from the ``.rodata`` sections of flash are moved into PSRAM on system startup.
+
+    - The corresponding virtual memory range of those rodata will also be re-mapped to PSRAM.
+
+    If :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` is also enabled, the cache won't be disabled during an SPI1 flash operation. You don't need to make sure ISRs, ISR callbacks and involved data are placed in internal RAM, thus internal RAM usage can be optimized.
 
 Restrictions
 ============
@@ -139,14 +172,7 @@ External RAM use has the following restrictions:
 
  * In general, external RAM will not be used as task stack memory. :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs.
 
-.. only:: esp32
-
-    The option :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` can be used to place task stacks into external memory. In these cases :cpp:func:`xTaskCreateStatic` must be used to specify a task stack buffer allocated from external memory, otherwise task stacks will still be allocated from internal memory.
-
-
-.. only:: not esp32
-
-    :cpp:func:`xTaskCreateStatic` can be used to explicitly place task stacks into external memory.
+The option :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` can be used to allow placing task stacks into external memory. In these cases :cpp:func:`xTaskCreateStatic` must be used to specify a task stack buffer allocated from external memory, otherwise task stacks will still be allocated from internal memory.
 
 
 Failure to initialize

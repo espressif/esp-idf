@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+
 # Task Watchdog Example
 
 The following example demonstrates how to use the following features of the task watchdog timer (TWDT):
@@ -18,7 +21,7 @@ Before project configuration and build, be sure to set the correct chip target u
 
 ### Configure the project
 
-Program should run correctly without needing any special configuration. However, users can disable `CONFIG_ESP_TASK_WDT` which will prevent the TWDT from being automatically initialized on startup. If disabled, the example will manually initialize the TWDT.
+Program should run correctly without needing any special configuration. However, users can disable `CONFIG_ESP_TASK_WDT_INIT` which will prevent the TWDT from being automatically initialized on startup. If disabled, the example will manually initialize the TWDT.
 
 ### Build and Flash
 

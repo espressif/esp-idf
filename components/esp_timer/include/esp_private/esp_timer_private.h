@@ -1,16 +1,8 @@
-// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -43,20 +35,27 @@ extern "C" {
 void esp_timer_private_update_apb_freq(uint32_t apb_ticks_per_us);
 
 /**
- * @brief Adjust current esp_timer time by a certain value
+ * @brief Set esp_timer time to a certain value
  *
  * Called from light sleep code to synchronize esp_timer time with RTC time.
  *
- * @param time_us  adjustment to apply to esp_timer time, in microseconds
+ * @param new_us  the value to be set to esp_timer time, in microseconds
  */
-void esp_timer_private_advance(int64_t time_us);
+void esp_timer_private_set(uint64_t new_us);
 
 /**
- * @brief obtain internal critical section used esp_timer implementation
+ * @brief Adjust current esp_timer time by a certain value
+ *
+ * @param time_diff_us  adjustment to apply to esp_timer time, in microseconds
+ */
+void esp_timer_private_advance(int64_t time_diff_us);
+
+/**
+ * @brief obtain internal critical section used in the esp_timer implementation
  * This can be used when a sequence of calls to esp_timer has to be made,
  * and it is necessary that the state of the timer is consistent between
  * the calls. Should be treated in the same way as a spinlock.
- * Call esp_timer_unlock to release the lock
+ * Call esp_timer_private_unlock to release the lock
  */
 void esp_timer_private_lock(void);
 

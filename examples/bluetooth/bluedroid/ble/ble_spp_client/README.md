@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 |
-| ----------------- | ----- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-H4 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # ESP-IDF SPP GATT CLIENT demo
 
@@ -41,7 +41,7 @@ idf.py set-target <chip_name>
 
   Queues:
 
-  * spp_uart_queue       - Uart data messages received from the Uart 
+  * spp_uart_queue       - Uart data messages received from the Uart
   * cmd_cmd_queue        - commands received from the client
   * cmd_heartbeat_queue  - heartbeat received, if supported
 
@@ -55,13 +55,13 @@ idf.py set-target <chip_name>
 
   After the Uart received data, the data will be posted to Uart task. Then, in the UART_DATA event, the raw data may be retrieved. The max length is 120 bytes every time.
   If you run the ble spp demo with two ESP32 chips, the MTU size will be exchanged for 200 bytes after the ble connection is established, so every packet can be send directly.
-  If you only run the ble_spp_server demo, and it was connected by a phone, the MTU size may be less than 123 bytes. In such a case the data will be split into fragments and send in turn. 
+  If you only run the ble_spp_server demo, and it was connected by a phone, the MTU size may be less than 123 bytes. In such a case the data will be split into fragments and send in turn.
   In every packet, we add 4 bytes to indicate that this is a fragment packet. The first two bytes contain "##" if this is a fragment packet, the third byte is the total number of the packets, the fourth byte is the current number of this packet.
   The phone APP need to check the structure of the packet if it want to communicate with the ble_spp_server demo.
-  
+
 ### Sending Data Wirelessly
 
-  The client will be sending WriteNoRsp packets to the server. The server side sends data through notifications. When the Uart receives data, the Uart task places it in the buffer. If the size of the data is larger than (MTU size - 3), the data will be split into packets and send in turn. 
+  The client will be sending WriteNoRsp packets to the server. The server side sends data through notifications. When the Uart receives data, the Uart task places it in the buffer. If the size of the data is larger than (MTU size - 3), the data will be split into packets and send in turn.
 
 ### Receiving Data Wirelessly
 
@@ -77,13 +77,13 @@ idf.py set-target <chip_name>
 
 ### GATT Server Attribute Table
 
-  charactertistic|UUID|Permissions  
-  :-:|:-:|:-:  
-  SPP_DATA_RECV_CHAR|0xABF1|READ&WRITE_NR      
-  SPP_DATA_NOTIFY_CHAR|0xABF2|READ&NOTIFY  
-  SPP_COMMAND_CHAR|0xABF3|READ&WRITE_NR  
-  SPP_STATUS_CHAR|0xABF4|READ & NOTIFY  
-  SPP_HEARTBEAT_CHAR|0xABF5|READ&WRITE_NR&NOTIFY  
+  charactertistic|UUID|Permissions
+  :-:|:-:|:-:
+  SPP_DATA_RECV_CHAR|0xABF1|READ&WRITE_NR
+  SPP_DATA_NOTIFY_CHAR|0xABF2|READ&NOTIFY
+  SPP_COMMAND_CHAR|0xABF3|READ&WRITE_NR
+  SPP_STATUS_CHAR|0xABF4|READ & NOTIFY
+  SPP_HEARTBEAT_CHAR|0xABF5|READ&WRITE_NR&NOTIFY
 
 ### Build and Flash
 
@@ -95,14 +95,14 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 
 ## Example Output
 
-The spp cilent will auto connect to the spp server, do service search, exchange MTU size and register notification. 
+The spp cilent will auto connect to the spp server, do service search, exchange MTU size and register notification.
 
 ### Client
 
 ```
 I (2894) GATTC_SPP_DEMO: ESP_GATTC_CONNECT_EVT: conn_id=0, gatt_if = 3
 I (2894) GATTC_SPP_DEMO: REMOTE BDA:
-I (2904) GATTC_SPP_DEMO: 00 00 00 00 00 00 
+I (2904) GATTC_SPP_DEMO: 00 00 00 00 00 00
 I (2904) GATTC_SPP_DEMO: EVT 2, gattc if 3
 I (3414) GATTC_SPP_DEMO: EVT 7, gattc if 3
 I (3414) GATTC_SPP_DEMO: ESP_GATTC_SEARCH_RES_EVT: start_handle = 40, end_handle = 65535, UUID:0xabf0
@@ -118,16 +118,16 @@ I (3494) GATTC_SPP_DEMO: attr_type = DESCRIPTOR,attribute_handle=45,start_handle
 I (3504) GATTC_SPP_DEMO: attr_type = CHARACTERISTIC,attribute_handle=47,start_handle=0,end_handle=0,properties=0x6,uuid=0xabf3
 I (3524) GATTC_SPP_DEMO: attr_type = CHARACTERISTIC,attribute_handle=49,start_handle=0,end_handle=0,properties=0x12,uuid=0xabf4
 I (3534) GATTC_SPP_DEMO: attr_type = DESCRIPTOR,attribute_handle=50,start_handle=0,end_handle=0,properties=0x0,uuid=0x2902
-I (3544) GATTC_SPP_DEMO: Index = 2,UUID = 0xabf2, handle = 44 
+I (3544) GATTC_SPP_DEMO: Index = 2,UUID = 0xabf2, handle = 44
 I (3554) GATTC_SPP_DEMO: EVT 38, gattc if 3
 I (3554) GATTC_SPP_DEMO: Index = 2,status = 0,handle = 44
 I (3594) GATTC_SPP_DEMO: EVT 9, gattc if 3
-I (3594) GATTC_SPP_DEMO: ESP_GATTC_WRITE_DESCR_EVT: status =0,handle = 45 
-I (3654) GATTC_SPP_DEMO: Index = 5,UUID = 0xabf4, handle = 49 
+I (3594) GATTC_SPP_DEMO: ESP_GATTC_WRITE_DESCR_EVT: status =0,handle = 45
+I (3654) GATTC_SPP_DEMO: Index = 5,UUID = 0xabf4, handle = 49
 I (3654) GATTC_SPP_DEMO: EVT 38, gattc if 3
 I (3654) GATTC_SPP_DEMO: Index = 5,status = 0,handle = 49
 I (3684) GATTC_SPP_DEMO: EVT 9, gattc if 3
-I (3684) GATTC_SPP_DEMO: ESP_GATTC_WRITE_DESCR_EVT: status =0,handle = 50 
+I (3684) GATTC_SPP_DEMO: ESP_GATTC_WRITE_DESCR_EVT: status =0,handle = 50
 I (16904) GATTC_SPP_DEMO: EVT 10, gattc if 3
 I (16904) GATTC_SPP_DEMO: ESP_GATTC_NOTIFY_EVT
 I (16904) GATTC_SPP_DEMO: +NOTIFY:handle = 44,length = 22

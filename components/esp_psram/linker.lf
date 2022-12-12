@@ -1,0 +1,17 @@
+[mapping:esp_psram]
+archive: libesp_psram.a
+entries:
+
+    if SPIRAM = y:
+        mmu (noflash)
+
+        if SPIRAM_MODE_QUAD = y:
+            if IDF_TARGET_ESP32S3 = y:
+                esp_psram_impl_quad (noflash)
+
+        if IDF_TARGET_ESP32S3 = y:
+            if SPIRAM_MODE_OCT = y:
+                esp_psram_impl_octal (noflash)
+
+        if IDF_TARGET_ESP32S2 = y || IDF_TARGET_ESP32S3 = y:
+            mmu_psram_flash (noflash)

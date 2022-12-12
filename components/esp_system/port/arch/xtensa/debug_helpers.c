@@ -36,12 +36,12 @@ bool IRAM_ATTR esp_backtrace_get_next_frame(esp_backtrace_frame_t *frame)
 static void IRAM_ATTR print_entry(uint32_t pc, uint32_t sp, bool panic)
 {
     if (panic) {
-        panic_print_str("0x");
+        panic_print_str(" 0x");
         panic_print_hex(pc);
         panic_print_str(":0x");
         panic_print_hex(sp);
     } else {
-        esp_rom_printf("0x%08X:0x%08X", pc, sp);
+        esp_rom_printf(" 0x%08X:0x%08X", pc, sp);
     }
 }
 
@@ -80,7 +80,6 @@ esp_err_t IRAM_ATTR esp_backtrace_print_from_frame(int depth, const esp_backtrac
             corrupted = true;
         }
         print_entry(esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp, panic);
-        print_str(" ", panic);
     }
 
     //Print backtrace termination marker

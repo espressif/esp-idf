@@ -119,24 +119,14 @@ IRAM（指令 RAM）
 IROM（代码从 flash 中运行）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-如果一个函数没有被显式地声明放在 IRAM 或者 RTC 存储器中，则它会放在 flash 中。允许从 flash 中执行代码的 Flash MMU 机制可参考 {IDF_TARGET_NAME} 技术参考手册* > *存储器管理和保护单元 (MMU, MPU)* [`PDF <{IDF_TARGET_TRM_CN_URL}#mpummu>`__]。由于 IRAM 空间有限，应用程序的大部分二进制代码都需要放入 IROM 中。
-
-在 :doc:`启动 <startup>` 过程中，从 IRAM 中运行的引导加载程序配置 MMU flash 缓存，将应用程序的指令代码区域映射到指令空间。通过 MMU 访问的 flash 使用一些内部 SRAM 进行缓存，访问缓存的 flash 数据与访问其他类型的内部存储器一样快。
-
-RTC FAST memory（RTC 快速存储器）
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-RTC FAST memory 的同一区域既可以作为指令存储器也可以作为数据存储器进行访问。从深度睡眠模式唤醒后必须要运行的代码要放在 RTC 存储器中，更多信息请查阅文档 :doc:`深度睡眠 <deep-sleep-stub>`。
+如果一个函数没有被显式地声明放在 IRAM 或者 RTC 存储器中，则它会放在 flash 中。由于 IRAM 空间有限，应用程序的大部分二进制代码都需要放入 IROM 中。
 
 .. only:: esp32
 
-     RTC FAST memory 只可以被 PRO CPU 访问。
+    允许从 flash 中执行代码的 Flash MMU 机制可参考 {IDF_TARGET_NAME} 技术参考手册* > *存储器管理和保护单元 (MMU, MPU)* [`PDF <{IDF_TARGET_TRM_CN_URL}#mpummu>`__]。
 
-     在单核模式下，除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢，且不具备 DMA 功能。
+在 :doc:`启动 <startup>` 过程中，从 IRAM 中运行的引导加载程序配置 MMU flash 缓存，将应用程序的指令代码区域映射到指令空间。通过 MMU 访问的 flash 使用一些内部 SRAM 进行缓存，访问缓存的 flash 数据与访问其他类型的内部存储器一样快。
 
-.. only:: not esp32 and not esp32c2
-
-     除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢一点。
 
 .. _drom:
 
@@ -163,6 +153,24 @@ DROM（数据存储在 flash 中）
     示例::
 
             RTC_NOINIT_ATTR uint32_t rtc_noinit_data;
+
+
+.. only:: SOC_RTC_FAST_MEM_SUPPORTED
+
+    RTC FAST memory（RTC 快速存储器）
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    RTC FAST memory 的同一区域既可以作为指令存储器也可以作为数据存储器进行访问。从深度睡眠模式唤醒后必须要运行的代码要放在 RTC 存储器中，更多信息请查阅文档 :doc:`深度睡眠 <deep-sleep-stub>`。
+
+    .. only:: esp32
+
+        RTC FAST memory 只可以被 PRO CPU 访问。
+
+        在单核模式下，除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢，且不具备 DMA 功能。
+
+    .. only:: not esp32
+
+        除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢一点。
 
 
 具备 DMA 功能

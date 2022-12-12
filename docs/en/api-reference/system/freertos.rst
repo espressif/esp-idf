@@ -21,8 +21,6 @@ ESP-IDF FreeRTOS can be configured in the project configuration menu (``idf.py m
 
 - :ref:`CONFIG_FREERTOS_UNICORE` will run ESP-IDF FreeRTOS only on CPU0. Note that this is **not equivalent to running Vanilla FreeRTOS**. Futhermore, this option may affect behavior of components other than :component:`freertos`. For more details regarding the effects of running ESP-IDF FreeRTOS on a single core, refer to :ref:`freertos-smp-single-core`. Alternatively, users can also search for occurrences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
 
-- :ref:`CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION` will trigger a halt in functions in ESP-IDF FreeRTOS that have not been fully tested in an SMP context.
-
 - :ref:`CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER` will enclose all task functions within a wrapper function. In the case that a task function mistakenly returns (i.e. does not call :cpp:func:`vTaskDelete`), the call flow will return to the wrapper function. The wrapper function will then log an error and abort the application, as illustrated below::
 
     E (25) FreeRTOS: FreeRTOS task should not return. Aborting now!

@@ -159,8 +159,58 @@ TEST_CASE("pcnt_channel_install_uninstall", "[pcnt]")
     }
 }
 
+TEST_CASE("pcnt_multiple_units_pulse_count", "[pcnt]")
+{
+    printf("install pcnt units\r\n");
+    pcnt_unit_config_t unit_config = {
+        .low_limit = -100,
+        .high_limit = 100,
+    };
+    pcnt_unit_handle_t units[2];
+    for (int i = 0; i < 2; i++) {
+        TEST_ESP_OK(pcnt_new_unit(&unit_config, &units[i]));
+    }
+
+    printf("install pcnt channels\r\n");
+    const int channel_gpios[] = {TEST_PCNT_GPIO_A, TEST_PCNT_GPIO_B};
+    pcnt_chan_config_t chan_config = {
+        .level_gpio_num = -1,
+        .flags.io_loop_back = true,
+    };
+    pcnt_channel_handle_t chans[2];
+    for (int i = 0; i < 2; i++) {
+        chan_config.edge_gpio_num = channel_gpios[i];
+        TEST_ESP_OK(pcnt_new_channel(units[i], &chan_config, &chans[i]));
+        TEST_ESP_OK(pcnt_channel_set_edge_action(chans[i], PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
+        TEST_ESP_OK(pcnt_channel_set_level_action(chans[i], PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
+    }
+
+    printf("enable and start unit\r\n");
+    for (int i = 0; i < 2; i++) {
+        TEST_ESP_OK(pcnt_unit_enable(units[i]));
+        TEST_ESP_OK(pcnt_unit_start(units[i]));
+    }
+
+    // trigger 10 rising edge on GPIO
+    test_gpio_simulate_rising_edge(TEST_PCNT_GPIO_A, 10);
+    test_gpio_simulate_rising_edge(TEST_PCNT_GPIO_B, 10);
+
+    int count_value = 0;
+    for (int i = 0; i < 2; i++) {
+        TEST_ESP_OK(pcnt_unit_get_count(units[i], &count_value));
+        TEST_ASSERT_EQUAL(10, count_value);
+    }
+
+    for (int i = 0; i < 2; i++) {
+        TEST_ESP_OK(pcnt_unit_stop(units[i]));
+        TEST_ESP_OK(pcnt_unit_disable(units[i]));
+        TEST_ESP_OK(pcnt_del_channel(chans[i]));
+        TEST_ESP_OK(pcnt_del_unit(units[i]));
+    }
+}
+
 /**
- * @brief Using this context to save the triggered watchpoints in sequence
+ * @brief Using this context to save the triggered watch-points in sequence
  */
 typedef struct {
     uint32_t index;
@@ -168,7 +218,7 @@ typedef struct {
 } test_pcnt_quadrature_context_t;
 
 TEST_PCNT_CALLBACK_ATTR
-static bool test_pcnt_quadrature_reach_watch_point(pcnt_unit_handle_t handle, pcnt_watch_event_data_t *event_data, void *user_data)
+static bool test_pcnt_quadrature_reach_watch_point(pcnt_unit_handle_t handle, const pcnt_watch_event_data_t *event_data, void *user_data)
 {
     test_pcnt_quadrature_context_t *user_ctx = (test_pcnt_quadrature_context_t *)user_data;
     user_ctx->triggered_watch_values[user_ctx->index++] = event_data->watch_point_value;
@@ -231,8 +281,11 @@ TEST_CASE("pcnt_quadrature_decode_event", "[pcnt]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, pcnt_unit_add_watch_point(unit, 50));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, pcnt_unit_add_watch_point(unit, 100));
 
-    // Clear internal counter, and make the watch points take effect
+#if !SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE
+    // the above added watch point won't take effect at once, unless we clear the internal counter manually
     TEST_ESP_OK(pcnt_unit_clear_count(unit));
+#endif
+
     // start unit should fail if it's not enabled yet
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, pcnt_unit_start(unit));
     TEST_ESP_OK(pcnt_unit_enable(unit));
@@ -288,7 +341,7 @@ typedef struct {
 } test_pcnt_zero_cross_context_t;
 
 TEST_PCNT_CALLBACK_ATTR
-static bool test_pcnt_on_zero_cross(pcnt_unit_handle_t handle, pcnt_watch_event_data_t *event_data, void *user_data)
+static bool test_pcnt_on_zero_cross(pcnt_unit_handle_t handle, const pcnt_watch_event_data_t *event_data, void *user_data)
 {
     test_pcnt_zero_cross_context_t *user_ctx = (test_pcnt_zero_cross_context_t *)user_data;
     user_ctx->mode = event_data->zero_cross_mode;
@@ -384,5 +437,56 @@ TEST_CASE("pcnt_zero_cross_mode", "[pcnt]")
     TEST_ESP_OK(pcnt_unit_remove_watch_point(unit, 0));
     TEST_ESP_OK(pcnt_del_channel(channelA));
     TEST_ESP_OK(pcnt_del_channel(channelB));
+    TEST_ESP_OK(pcnt_del_unit(unit));
+}
+
+TEST_CASE("pcnt_virtual_io", "[pcnt]")
+{
+    pcnt_unit_config_t unit_config = {
+        .low_limit = -100,
+        .high_limit = 100,
+    };
+    pcnt_chan_config_t chan_config = {
+        .edge_gpio_num = TEST_PCNT_GPIO_A, // only detect edge signal in this case
+        .level_gpio_num = -1,              // level signal is connected to a virtual IO internally
+        .flags.io_loop_back = true,
+        .flags.virt_level_io_level = 1,    // the level input is connected to high level, internally
+    };
+    pcnt_unit_handle_t unit = NULL;
+    pcnt_channel_handle_t chan = NULL;
+
+    printf("install pcnt unit\r\n");
+    TEST_ESP_OK(pcnt_new_unit(&unit_config, &unit));
+
+    printf("install pcnt channel\r\n");
+    TEST_ESP_OK(pcnt_new_channel(unit, &chan_config, &chan));
+    TEST_ESP_OK(pcnt_channel_set_edge_action(chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
+    TEST_ESP_OK(pcnt_channel_set_level_action(chan, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
+    TEST_ESP_OK(pcnt_unit_enable(unit));
+
+    int count_value = 0;
+    printf("start units\r\n");
+    // start unit
+    TEST_ESP_OK(pcnt_unit_start(unit));
+
+    // trigger 10 rising edge on GPIO
+    test_gpio_simulate_rising_edge(TEST_PCNT_GPIO_A, 10);
+    TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
+    TEST_ASSERT_EQUAL(10, count_value);
+
+    printf("update level action\r\n");
+    // the counter will hold-on (i.e. freeze) if the level input is high level (which is obviously yes in this case)
+    TEST_ESP_OK(pcnt_channel_set_level_action(chan, PCNT_CHANNEL_LEVEL_ACTION_HOLD, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
+    TEST_ESP_OK(pcnt_unit_clear_count(unit));
+
+    // trigger 10 rising edge on GPIO
+    test_gpio_simulate_rising_edge(TEST_PCNT_GPIO_A, 10);
+    TEST_ESP_OK(pcnt_unit_get_count(unit, &count_value));
+    // the count value should still be zero, because the level signal is high level, and the high level action is to hold-on the count value
+    TEST_ASSERT_EQUAL(0, count_value);
+
+    TEST_ESP_OK(pcnt_unit_stop(unit));
+    TEST_ESP_OK(pcnt_unit_disable(unit));
+    TEST_ESP_OK(pcnt_del_channel(chan));
     TEST_ESP_OK(pcnt_del_unit(unit));
 }

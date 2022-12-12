@@ -27,6 +27,8 @@
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
 #include "hal/gpio_hal.h"
+#include "xtensa/config/core.h"
+#include "xt_instr_macros.h"
 
 #include "esp32/rom/cache.h"
 #include "esp_rom_gpio.h"
@@ -349,6 +351,11 @@ static void bootloader_check_wdt_reset(void)
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
+
+#if XCHAL_ERRATUM_572
+    uint32_t memctl = XCHAL_CACHE_MEMCTL_DEFAULT;
+    WSR(MEMCTL, memctl);
+#endif // XCHAL_ERRATUM_572
 
     bootloader_init_mem();
 

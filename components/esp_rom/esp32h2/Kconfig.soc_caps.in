@@ -11,10 +11,6 @@ config ESP_ROM_HAS_CRC_BE
     bool
     default y
 
-config ESP_ROM_HAS_JPEG_DECODE
-    bool
-    default y
-
 config ESP_ROM_UART_CLK_IS_XTAL
     bool
     default y
@@ -27,10 +23,30 @@ config ESP_ROM_HAS_RETARGETABLE_LOCKING
     bool
     default y
 
-config ESP_ROM_HAS_ERASE_0_REGION_BUG
+config ESP_ROM_GET_CLK_FREQ
     bool
     default y
 
-config ESP_ROM_GET_CLK_FREQ
+config ESP_ROM_HAS_RVFPLIB
+    bool
+    default y
+
+config ESP_ROM_HAS_HAL_WDT
+    bool
+    default y
+
+config ESP_ROM_HAS_HAL_SYSTIMER
+    bool
+    default y
+
+config ESP_ROM_HAS_HEAP_TLSF
+    bool
+    default y
+
+config ESP_ROM_HAS_LAYOUT_TABLE
+    bool
+    default y
+
+config ESP_ROM_HAS_SPI_FLASH
     bool
     default y

@@ -1,4 +1,4 @@
-﻿********************************************
+********************************************
 Standard Toolchain Setup for Linux and macOS
 ********************************************
 
@@ -47,7 +47,7 @@ CentOS 7 is still supported but CentOS version 8 is recommended for a better use
     sudo pacman -S --needed gcc git make flex bison gperf python cmake ninja ccache dfu-util libusb
 
 .. note::
-    - CMake version 3.5 or newer is required for use with ESP-IDF. Older Linux distributions may require updating, enabling of a "backports" repository, or installing of a "cmake3" package rather than "cmake".
+    - CMake version 3.16 or newer is required for use with ESP-IDF. Run "tools/idf_tools.py install cmake" to install a suitable version if your OS versions doesn't have one.
     - If you do not see your Linux distribution in the above list then please check its documentation to find out which command to use for package installation.
 
 For macOS Users
@@ -75,6 +75,25 @@ ESP-IDF will use the version of Python installed by default on macOS.
      xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at: /Library/Developer/CommandLineTools/usr/bin/xcrun
 
    Then you will need to install the XCode command line tools to continue. You can install these by running ``xcode-select --install``.
+
+Apple M1 Users
+~~~~~~~~~~~~~~
+
+If you use Apple M1 platform and see an error like this::
+
+      WARNING: directory for tool xtensa-esp32-elf version esp-2021r2-patch3-8.4.0 is present, but tool was not found
+      ERROR: tool xtensa-esp32-elf has no installed versions. Please run 'install.sh' to install it.
+
+or::
+
+      zsh: bad CPU type in executable: ~/.espressif/tools/xtensa-esp32-elf/esp-2021r2-patch3-8.4.0/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc
+
+Then you will need to install Apple Rosetta 2 by running
+
+.. code-block:: bash
+
+    /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+
 
 Installing Python 3
 ~~~~~~~~~~~~~~~~~~~
@@ -163,6 +182,12 @@ or with Fish shell
     cd ~/esp/esp-idf
     ./install.fish all
 
+.. note::
+   For macOS users, if an error like this is shown during any step::
+
+     <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:xxx)
+
+   You may run ``Install Certificates.command`` in the Python folder of your computer to install certificates. For details, see `Download Error While Installing ESP-IDF Tools <https://github.com/espressif/esp-idf/issues/4775>`_.
 
 Alternative File Downloads
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -249,12 +274,17 @@ Once the new tools are installed, update the environment using the Export script
 Related Documents
 =================
 
+    * :doc:`establish-serial-connection`
+    * `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_
+    * `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
+    * :doc:`../api-guides/tools/idf-monitor`
+
 .. toctree::
+    :hidden:
     :maxdepth: 1
 
     establish-serial-connection
-    eclipse-setup
-    vscode-setup
+    flashing-troubleshooting
     ../api-guides/tools/idf-monitor
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository

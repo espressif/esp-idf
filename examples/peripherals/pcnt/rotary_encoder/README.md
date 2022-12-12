@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
 
 # Rotary Encoder Example
 
@@ -52,6 +52,8 @@ Connection :
 The GPIO used by the example can be changed according to your board by `EXAMPLE_EC11_GPIO_A` and `EXAMPLE_EC11_GPIO_B` in [source file](main/rotary_encoder_example_main.c);
 
 ### Build and Flash
+
+By configuring one of the EC11 GPIO (e.g. `EXAMPLE_EC11_GPIO_A`) as a wake up source, we can make the rotary encoder wake the system from light sleep. This example can illustrate this feature if you enable the `EXAMPLE_WAKE_UP_LIGHT_SLEEP` from the menuconfig.
 
 Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 

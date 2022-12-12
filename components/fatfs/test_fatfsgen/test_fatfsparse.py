@@ -12,6 +12,7 @@ from test_utils import compare_folders, fill_sector, generate_local_folder_struc
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import fatfsgen  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.entry import Entry  # noqa E402  # pylint: disable=C0413
 
 
 class FatFSGen(unittest.TestCase):
@@ -23,6 +24,7 @@ class FatFSGen(unittest.TestCase):
         shutil.rmtree('output_data', ignore_errors=True)
         shutil.rmtree('Espressif', ignore_errors=True)
         shutil.rmtree('testf', ignore_errors=True)
+        shutil.rmtree('testf_wl', ignore_errors=True)
 
         if os.path.exists('fatfs_image.img'):
             os.remove('fatfs_image.img')
@@ -138,6 +140,15 @@ class FatFSGen(unittest.TestCase):
         ], stderr=STDOUT)
         run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
         assert compare_folders('testf', 'Espressif')
+        shutil.rmtree('Espressif', ignore_errors=True)
+
+        run([
+            'python',
+            f'{os.path.join(os.path.dirname(__file__), "..", "wl_fatfsgen.py")}',
+            'testf'
+        ], stderr=STDOUT)
+        run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
+        assert compare_folders('testf', 'Espressif')
 
     def test_e2e_deeper(self) -> None:
         folder_ = {
@@ -159,10 +170,20 @@ class FatFSGen(unittest.TestCase):
                 folder_
             ]
         }
+
         generate_local_folder_structure(struct_, path_='.')
         run([
             'python',
             f'{os.path.join(os.path.dirname(__file__), "..", "fatfsgen.py")}',
+            'testf'
+        ], stderr=STDOUT)
+        run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
+        assert compare_folders('testf', 'Espressif')
+        shutil.rmtree('Espressif', ignore_errors=True)
+
+        run([
+            'python',
+            f'{os.path.join(os.path.dirname(__file__), "..", "wl_fatfsgen.py")}',
             'testf'
         ], stderr=STDOUT)
         run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
@@ -194,9 +215,7 @@ class FatFSGen(unittest.TestCase):
         folder3_ = {
             'type': 'folder',
             'name': 'XYZ2',
-            'content': [
-                self.file_(f'A{i}') for i in range(50)
-            ]
+            'content': [self.file_(f'A{i}') for i in range(50)]
         }
         struct_: dict = {
             'type': 'folder',
@@ -212,6 +231,15 @@ class FatFSGen(unittest.TestCase):
         run([
             'python',
             f'{os.path.join(os.path.dirname(__file__), "..", "fatfsgen.py")}',
+            'testf'
+        ], stderr=STDOUT)
+        run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
+        assert compare_folders('testf', 'Espressif')
+        shutil.rmtree('Espressif', ignore_errors=True)
+
+        run([
+            'python',
+            f'{os.path.join(os.path.dirname(__file__), "..", "wl_fatfsgen.py")}',
             'testf'
         ], stderr=STDOUT)
         run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
@@ -244,9 +272,7 @@ class FatFSGen(unittest.TestCase):
         folder3_ = {
             'type': 'folder',
             'name': 'XYZ2',
-            'content': [
-                self.file_(f'A{i}') for i in range(50)
-            ] + [folder2_]
+            'content': [self.file_(f'A{i}') for i in range(50)] + [folder2_]
         }
 
         struct_: dict = {
@@ -267,6 +293,61 @@ class FatFSGen(unittest.TestCase):
         ], stderr=STDOUT)
         run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
         assert compare_folders('testf', 'Espressif')
+
+    def test_e2e_very_deep_long(self) -> None:
+        folder_ = {
+            'type': 'folder',
+            'name': 'veryveryverylong111',
+            'content': [
+                self.file_('myndewveryverylongfile1.txt', content_=4097 * 'a'),
+                self.file_('mynewveryverylongfile22.txt', content_=2 * 4097 * 'a'),
+                self.file_('mynewveryverylongfile333.txt' * 8),
+                self.file_('mynewveryverylongfile4444.txt' * 8),
+                self.file_('mynewveryverylongfile5555.txt'),
+                self.file_('SHORT.TXT'),
+            ]
+        }
+        struct_: dict = {
+            'type': 'folder',
+            'name': 'testf',
+            'content': [
+                self.file_('mynewveryverylongfile.txt' * 5),
+                folder_,
+            ]
+        }
+        generate_local_folder_structure(struct_, path_='.')
+        run([
+            'python',
+            f'{os.path.join(os.path.dirname(__file__), "..", "fatfsgen.py")}',
+            'testf', '--long_name_support'
+        ], stderr=STDOUT)
+        run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
+        assert compare_folders('testf', 'Espressif')
+
+    def test_parse_long_name(self) -> None:
+        self.assertEqual(
+            Entry.parse_entry_long(
+                b'\x01t\x00h\x00i\x00s\x00_\x00\x0f\x00\xfbi\x00s\x00_\x00l\x00o\x00n\x00\x00\x00g\x00_\x00', 251),
+            {
+                'order': 1,
+                'name1': b't\x00h\x00i\x00s\x00_\x00',
+                'name2': b'i\x00s\x00_\x00l\x00o\x00n\x00',
+                'name3': b'g\x00_\x00',
+                'is_last': False
+            }
+        )
+        self.assertEqual(
+            Entry.parse_entry_long(
+                b'\x01t\x00h\x00i\x00s\x00_\x00\x0f\x00\xfbi\x00s\x00_\x00l\x00o\x00n\x00\x00\x00g\x00_\x00', 252
+            ),
+            {}
+        )
+        self.assertEqual(
+            Entry.parse_entry_long(
+                b'\x01t\x00h\x00i\x00s\x00_\x00\x0f\x01\xfbi\x00s\x00_\x00l\x00o\x00n\x00\x00\x00g\x00_\x00', 251
+            ),
+            {}
+        )
 
 
 if __name__ == '__main__':

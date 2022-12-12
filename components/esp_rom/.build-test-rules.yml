@@ -1,0 +1,12 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_rom/host_test/rom_test:
+  enable:
+    - if: IDF_TARGET == "linux"
+      reason: only test on linux
+
+components/esp_rom/test_apps:
+  disable_test:
+    - if: IDF_TARGET in ["esp32", "esp32c2"]
+      temporary: false
+      reason: lack of memory for testing miniz compressing

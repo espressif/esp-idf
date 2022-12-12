@@ -44,7 +44,7 @@
 #include "hal/systimer_hal.h"
 #include "hal/systimer_ll.h"
 #include "riscv/rvruntime-frames.h"
-#include "riscv/riscv_interrupts.h"
+#include "riscv/rv_utils.h"
 #include "riscv/interrupt.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_attr.h"
@@ -55,8 +55,9 @@
 #include "task.h"
 #include "portmacro.h"
 #include "port_systick.h"
+#include "esp_memory_utils.h"
 
-
+_Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
 
 /* ---------------------------------------------------- Variables ------------------------------------------------------
  *
@@ -87,7 +88,6 @@ StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOIN
 
 // ----------------- Scheduler Start/End -------------------
 
-extern void esprv_intc_int_set_threshold(int); // FIXME, this function is in ROM only
 BaseType_t xPortStartScheduler(void)
 {
     uxInterruptNesting = 0;
@@ -98,7 +98,7 @@ BaseType_t xPortStartScheduler(void)
     vPortSetupTimer();
 
     esprv_intc_int_set_threshold(1); /* set global INTC masking level */
-    riscv_global_interrupts_enable();
+    rv_utils_intr_global_enable();
 
     vPortYield();
 
@@ -114,103 +114,200 @@ void vPortEndScheduler(void)
 
 // ------------------------ Stack --------------------------
 
-__attribute__((noreturn)) static void _prvTaskExitError(void)
-{
-    /* A function that implements a task must not exit or attempt to return to
-    its caller as there is nothing to return to.  If a task wants to exit it
-    should instead call vTaskDelete( NULL ).
+/**
+ * @brief Align stack pointer in a downward growing stack
+ *
+ * This macro is used to round a stack pointer downwards to the nearest n-byte boundary, where n is a power of 2.
+ * This macro is generally used when allocating aligned areas on a downward growing stack.
+ */
+#define STACKPTR_ALIGN_DOWN(n, ptr)     ((ptr) & (~((n)-1)))
 
-    Artificially force an assert() to be triggered if configASSERT() is
-    defined, then stop here so application writers can catch the error. */
-    configASSERT(uxCriticalNesting == ~0UL);
-    portDISABLE_INTERRUPTS();
-    abort();
+/**
+ * @brief Allocate and initialize GCC TLS area
+ *
+ * This function allocates and initializes the area on the stack used to store GCC TLS (Thread Local Storage) variables.
+ * - The area's size is derived from the TLS section's linker variables, and rounded up to a multiple of 16 bytes
+ * - The allocated area is aligned to a 16-byte aligned address
+ * - The TLS variables in the area are then initialized
+ *
+ * Each task access the TLS variables using the THREADPTR register plus an offset to obtain the address of the variable.
+ * The value for the THREADPTR register is also calculated by this function, and that value should be use to initialize
+ * the THREADPTR register.
+ *
+ * @param[in] uxStackPointer Current stack pointer address
+ * @param[out] ret_threadptr_reg_init Calculated THREADPTR register initialization value
+ * @return Stack pointer that points to the TLS area
+ */
+FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, uint32_t *ret_threadptr_reg_init)
+{
+    /*
+    TLS layout at link-time, where 0xNNN is the offset that the linker calculates to a particular TLS variable.
+
+    LOW ADDRESS
+            |---------------------------|   Linker Symbols
+            | Section                   |   --------------
+            | .flash.rodata             |
+         0x0|---------------------------| <- _flash_rodata_start
+          ^ | Other Data                |
+          | |---------------------------| <- _thread_local_start
+          | | .tbss                     | ^
+          V |                           | |
+      0xNNN | int example;              | | tls_area_size
+            |                           | |
+            | .tdata                    | V
+            |---------------------------| <- _thread_local_end
+            | Other data                |
+            | ...                       |
+            |---------------------------|
+    HIGH ADDRESS
+    */
+    // Calculate TLS area size and round up to multiple of 16 bytes.
+    extern char _thread_local_start, _thread_local_end, _flash_rodata_start;
+    const uint32_t tls_area_size = ALIGNUP(16, (uint32_t)&_thread_local_end - (uint32_t)&_thread_local_start);
+    // TODO: check that TLS area fits the stack
+
+    // Allocate space for the TLS area on the stack. The area must be aligned to 16-bytes
+    uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - (UBaseType_t)tls_area_size);
+    // Initialize the TLS area with the initialization values of each TLS variable
+    memcpy((void *)uxStackPointer, &_thread_local_start, tls_area_size);
+
+    /*
+    Calculate the THREADPTR register's initialization value based on the link-time offset and the TLS area allocated on
+    the stack.
+
+    HIGH ADDRESS
+            |---------------------------|
+            | .tdata (*)                |
+          ^ | int example;              |
+          | |                           |
+          | | .tbss (*)                 |
+          | |---------------------------| <- uxStackPointer (start of TLS area)
+    0xNNN | |                           | ^
+          | |                           | |
+          |             ...               | _thread_local_start - _rodata_start
+          | |                           | |
+          | |                           | V
+          V |                           | <- threadptr register's value
+
+    LOW ADDRESS
+    */
+    *ret_threadptr_reg_init = (uint32_t)uxStackPointer - ((uint32_t)&_thread_local_start - (uint32_t)&_flash_rodata_start);
+    return uxStackPointer;
 }
 
-__attribute__((naked)) static void prvTaskExitError(void)
+#if CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
+/**
+ * Wrapper to allow task functions to return. Force the optimization option -O1 on that function to make sure there
+ * is no tail-call. Indeed, we need the compiler to keep the return address to this function when calling `panic_abort`.
+ *
+ * Thanks to `naked` attribute, the compiler won't generate a prologue and epilogue for the function, which saves time
+ * and stack space.
+ */
+static void __attribute__((optimize("O1"), naked)) vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 {
-    asm volatile(".option push\n" \
-                ".option norvc\n" \
-                "nop\n" \
-                ".option pop");
-    /* Task entry's RA will point here. Shifting RA into prvTaskExitError is necessary
-       to make GDB backtrace ending inside that function.
-       Otherwise backtrace will end in the function laying just before prvTaskExitError in address space. */
-    _prvTaskExitError();
+#ifdef __clang__
+    // clang generates error "error: non-ASM statement in naked function is not supported"
+    // The reason for it is described at
+    // https://stackoverflow.com/questions/47316611/clang-error-non-asm-statement-in-naked-function-is-not-supported.
+    // GCC docs say that there is no guarantee that non-ASM statement in naked function will work:
+    // "Only basic asm statements can safely be included in naked functions (see Basic Asm).
+    //  While using extended asm or a mixture of basic asm and C code may appear to work, they cannot be
+    //  depended upon to work reliably and are not supported."
+    // TODO: IDF-6347
+    #error CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER not supported yet when building with Clang!
+#else
+    asm volatile(".cfi_undefined ra\n");
+    extern void __attribute__((noreturn)) panic_abort(const char *details);
+    static char DRAM_ATTR msg[80] = "FreeRTOS: FreeRTOS Task \"\0";
+    pxCode(pvParameters);
+    //FreeRTOS tasks should not return. Log the task name and abort.
+    char *pcTaskName = pcTaskGetName(NULL);
+    /* We cannot use s(n)printf because it is in flash */
+    strcat(msg, pcTaskName);
+    strcat(msg, "\" should not return, Aborting now!");
+    panic_abort(msg);
+#endif
+}
+#endif // CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
+
+/**
+ * @brief Initialize the task's starting interrupt stack frame
+ *
+ * This function initializes the task's starting interrupt stack frame. The dispatcher will use this stack frame in a
+ * context restore routine. Therefore, the starting stack frame must be initialized as if the task was interrupted right
+ * before its first instruction is called.
+ *
+ * - The stack frame is allocated to a 16-byte aligned address
+ *
+ * @param[in] uxStackPointer Current stack pointer address
+ * @param[in] pxCode Task function
+ * @param[in] pvParameters Task function's parameter
+ * @param[in] threadptr_reg_init THREADPTR register initialization value
+ * @return Stack pointer that points to the stack frame
+ */
+FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackFrame(UBaseType_t uxStackPointer, TaskFunction_t pxCode, void *pvParameters, uint32_t threadptr_reg_init)
+{
+    /*
+    Allocate space for the task's starting interrupt stack frame.
+    - The stack frame must be allocated to a 16-byte aligned address.
+    - We use XT_STK_FRMSZ (instead of sizeof(XtExcFrame)) as it rounds up the total size to a multiple of 16.
+    */
+    uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - RV_STK_FRMSZ);
+
+    // Clear the entire interrupt stack frame
+    RvExcFrame *frame = (RvExcFrame *)uxStackPointer;
+    memset(frame, 0, sizeof(RvExcFrame));
+
+    /* Initialize the stack frame. */
+    extern uint32_t __global_pointer$;
+    #if CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
+        frame->mepc = (UBaseType_t)vPortTaskWrapper;
+        frame->a0 = (UBaseType_t)pxCode;
+        frame->a1 = (UBaseType_t)pvParameters;
+    #else
+        frame->mepc = (UBaseType_t)pxCode;
+        frame->a0 = (UBaseType_t)pvParameters;
+    #endif // CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
+    frame->gp = (UBaseType_t)&__global_pointer$;
+    frame->tp = (UBaseType_t)threadptr_reg_init;
+
+    return uxStackPointer;
 }
 
 StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters)
 {
-    extern uint32_t __global_pointer$;
-    uint8_t *task_thread_local_start;
-    uint8_t *threadptr;
-    extern char _thread_local_start, _thread_local_end, _flash_rodata_start;
+    /*
+    HIGH ADDRESS
+    |---------------------------| <- pxTopOfStack on entry
+    | TLS Variables             |
+    | ------------------------- | <- Start of useable stack
+    | Starting stack frame      |
+    | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
+    |             |             |
+    |             |             |
+    |             V             |
+    ----------------------------- <- Bottom of stack
+    LOW ADDRESS
 
-    /* Byte pointer, so that subsequent calculations don't depend on sizeof(StackType_t). */
-    uint8_t *sp = (uint8_t *) pxTopOfStack;
+    - All stack areas are aligned to 16 byte boundary
+    - We use UBaseType_t for all of stack area initialization functions for more convenient pointer arithmetic
+    */
 
-    /* Set up TLS area.
-     * The following diagram illustrates the layout of link-time and run-time
-     * TLS sections.
-     *
-     *          +-------------+
-     *          |Section:     |      Linker symbols:
-     *          |.flash.rodata|      ---------------
-     *       0x0+-------------+ <-- _flash_rodata_start
-     *        ^ |             |
-     *        | | Other data  |
-     *        | |     ...     |
-     *        | +-------------+ <-- _thread_local_start
-     *        | |.tbss        | ^
-     *        v |             | |
-     *    0xNNNN|int example; | | (thread_local_size)
-     *          |.tdata       | v
-     *          +-------------+ <-- _thread_local_end
-     *          | Other data  |
-     *          |     ...     |
-     *          |             |
-     *          +-------------+
-     *
-     *                                Local variables of
-     *                              pxPortInitialiseStack
-     *                             -----------------------
-     *          +-------------+ <-- pxTopOfStack
-     *          |.tdata (*)   |  ^
-     *        ^ |int example; |  |(thread_local_size
-     *        | |             |  |
-     *        | |.tbss (*)    |  v
-     *        | +-------------+ <-- task_thread_local_start
-     * 0xNNNN | |             |  ^
-     *        | |             |  |
-     *        | |             |  |_thread_local_start - _rodata_start
-     *        | |             |  |
-     *        | |             |  v
-     *        v +-------------+ <-- threadptr
-     *
-     *   (*) The stack grows downward!
-     */
+    UBaseType_t uxStackPointer = (UBaseType_t)pxTopOfStack;
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 
-    uint32_t thread_local_sz = (uint32_t) (&_thread_local_end - &_thread_local_start);
-    thread_local_sz = ALIGNUP(0x10, thread_local_sz);
-    sp -= thread_local_sz;
-    task_thread_local_start = sp;
-    memcpy(task_thread_local_start, &_thread_local_start, thread_local_sz);
-    threadptr = task_thread_local_start - (&_thread_local_start - &_flash_rodata_start);
+    // Initialize GCC TLS area
+    uint32_t threadptr_reg_init;
+    uxStackPointer = uxInitialiseStackTLS(uxStackPointer, &threadptr_reg_init);
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 
-    /* Simulate the stack frame as it would be created by a context switch interrupt. */
-    sp -= RV_STK_FRMSZ;
-    RvExcFrame *frame = (RvExcFrame *)sp;
-    memset(frame, 0, sizeof(*frame));
-    /* Shifting RA into prvTaskExitError is necessary to make GDB backtrace ending inside that function.
-       Otherwise backtrace will end in the function laying just before prvTaskExitError in address space. */
-    frame->ra = (UBaseType_t)prvTaskExitError + 4/*size of the nop insruction at the beginning of prvTaskExitError*/;
-    frame->mepc = (UBaseType_t)pxCode;
-    frame->a0 = (UBaseType_t)pvParameters;
-    frame->gp = (UBaseType_t)&__global_pointer$;
-    frame->tp = (UBaseType_t)threadptr;
+    // Initialize the starting interrupt stack frame
+    uxStackPointer = uxInitialiseStackFrame(uxStackPointer, pxCode, pvParameters, threadptr_reg_init);
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 
+    // Return the task's current stack pointer address which should point to the starting interrupt stack frame
+    return (StackType_t *)uxStackPointer;
     //TODO: IDF-2393
-    return (StackType_t *)frame;
 }
 
 

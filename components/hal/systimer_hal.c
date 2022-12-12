@@ -4,19 +4,48 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
 #include <sys/param.h>
 #include "soc/soc_caps.h"
 #include "hal/systimer_hal.h"
 #include "hal/systimer_ll.h"
 #include "hal/systimer_types.h"
-#include "hal/clk_gate_ll.h"
 #include "hal/assert.h"
 
 void systimer_hal_init(systimer_hal_context_t *hal)
 {
     hal->dev = &SYSTIMER;
-    periph_ll_enable_clk_clear_rst(PERIPH_SYSTIMER_MODULE);
     systimer_ll_enable_clock(hal->dev, true);
+#if SOC_SYSTIMER_SUPPORT_ETM
+    systimer_ll_enable_etm(&SYSTIMER, true);
+#endif
+}
+
+void systimer_hal_deinit(systimer_hal_context_t *hal)
+{
+#if SOC_SYSTIMER_SUPPORT_ETM
+    systimer_ll_enable_etm(&SYSTIMER, false);
+#endif
+    systimer_ll_enable_clock(hal->dev, false);
+    hal->dev = NULL;
+}
+
+void systimer_hal_set_clock_source(systimer_hal_context_t *hal, systimer_clock_source_t clk_src)
+{
+    (void)hal;
+    systimer_ll_set_clock_source(clk_src);
+}
+
+systimer_clock_source_t systimer_hal_get_clock_source(systimer_hal_context_t *hal)
+{
+    (void)hal;
+    return systimer_ll_get_clock_source();
+}
+
+void systimer_hal_set_tick_rate_ops(systimer_hal_context_t *hal, systimer_hal_tick_rate_ops_t *ops)
+{
+    hal->ticks_to_us = ops->ticks_to_us;
+    hal->us_to_ticks = ops->us_to_ticks;
 }
 
 uint64_t systimer_hal_get_counter_value(systimer_hal_context_t *hal, uint32_t counter_id)
@@ -47,24 +76,28 @@ uint64_t systimer_hal_get_counter_value(systimer_hal_context_t *hal, uint32_t co
 
 uint64_t systimer_hal_get_time(systimer_hal_context_t *hal, uint32_t counter_id)
 {
-    return systimer_hal_get_counter_value(hal, counter_id) / SYSTIMER_LL_TICKS_PER_US;
+    return hal->ticks_to_us(systimer_hal_get_counter_value(hal, counter_id));
 }
 
 #if SOC_SYSTIMER_ALARM_MISS_COMPENSATE
 void systimer_hal_set_alarm_target(systimer_hal_context_t *hal, uint32_t alarm_id, uint64_t target)
 {
-    systimer_counter_value_t alarm = { .val = target * SYSTIMER_LL_TICKS_PER_US};
+    systimer_counter_value_t alarm = {
+        .val = hal->us_to_ticks(target),
+    };
     systimer_ll_enable_alarm(hal->dev, alarm_id, false);
     systimer_ll_set_alarm_target(hal->dev, alarm_id, alarm.val);
     systimer_ll_apply_alarm_value(hal->dev, alarm_id);
     systimer_ll_enable_alarm(hal->dev, alarm_id, true);
 }
-#else
+
+#else // SOC_SYSTIMER_ALARM_MISS_COMPENSATE
+
 void systimer_hal_set_alarm_target(systimer_hal_context_t *hal, uint32_t alarm_id, uint64_t timestamp)
 {
-    int64_t offset = SYSTIMER_LL_TICKS_PER_US * 2;
+    int64_t offset = hal->us_to_ticks(1) * 2;
     uint64_t now_time = systimer_hal_get_counter_value(hal, 0);
-    systimer_counter_value_t alarm = { .val = MAX(timestamp * SYSTIMER_LL_TICKS_PER_US, now_time + offset) };
+    systimer_counter_value_t alarm = { .val = MAX(hal->us_to_ticks(timestamp), now_time + offset) };
     do {
         systimer_ll_enable_alarm(hal->dev, alarm_id, false);
         systimer_ll_set_alarm_target(hal->dev, alarm_id, alarm.val);
@@ -73,7 +106,7 @@ void systimer_hal_set_alarm_target(systimer_hal_context_t *hal, uint32_t alarm_i
         int64_t delta = (int64_t)alarm.val - (int64_t)now_time;
         if (delta <= 0 && !systimer_ll_is_alarm_int_fired(hal->dev, alarm_id)) {
             // new alarm is less than the counter and the interrupt flag is not set
-            offset += -1 * delta + SYSTIMER_LL_TICKS_PER_US * 2;
+            offset += -1 * delta + hal->us_to_ticks(1) * 2;
             alarm.val = now_time + offset;
         } else {
             // finish if either (alarm > counter) or the interrupt flag is already set.
@@ -81,12 +114,12 @@ void systimer_hal_set_alarm_target(systimer_hal_context_t *hal, uint32_t alarm_i
         }
     } while (1);
 }
-#endif
+#endif // SOC_SYSTIMER_ALARM_MISS_COMPENSATE
 
 void systimer_hal_set_alarm_period(systimer_hal_context_t *hal, uint32_t alarm_id, uint32_t period)
 {
     systimer_ll_enable_alarm(hal->dev, alarm_id, false);
-    systimer_ll_set_alarm_period(hal->dev, alarm_id, period * SYSTIMER_LL_TICKS_PER_US);
+    systimer_ll_set_alarm_period(hal->dev, alarm_id, hal->us_to_ticks(period));
     systimer_ll_apply_alarm_value(hal->dev, alarm_id);
     systimer_ll_enable_alarm(hal->dev, alarm_id, true);
 }
@@ -103,7 +136,9 @@ void systimer_hal_enable_alarm_int(systimer_hal_context_t *hal, uint32_t alarm_i
 
 void systimer_hal_counter_value_advance(systimer_hal_context_t *hal, uint32_t counter_id, int64_t time_us)
 {
-    systimer_counter_value_t new_count = { .val = systimer_hal_get_counter_value(hal, counter_id) + time_us * SYSTIMER_LL_TICKS_PER_US };
+    systimer_counter_value_t new_count = {
+        .val = systimer_hal_get_counter_value(hal, counter_id) + hal->us_to_ticks(time_us),
+    };
     systimer_ll_set_counter_value(hal->dev, counter_id, new_count.val);
     systimer_ll_apply_counter_value(hal->dev, counter_id);
 }
@@ -137,7 +172,8 @@ void systimer_hal_counter_can_stall_by_cpu(systimer_hal_context_t *hal, uint32_t
     systimer_ll_counter_can_stall_by_cpu(hal->dev, counter_id, cpu_id, can);
 }
 
-#if !SOC_SYSTIMER_FIXED_TICKS_US
+#if !SOC_SYSTIMER_FIXED_DIVIDER
+
 void systimer_hal_set_steps_per_tick(systimer_hal_context_t *hal, int clock_source, uint32_t steps)
 {
     /* Configure the counter:
@@ -166,9 +202,9 @@ void systimer_hal_on_apb_freq_update(systimer_hal_context_t *hal, uint32_t apb_t
     * If this was called when switching APB clock to XTAL, need to adjust
     * XTAL_STEP value accordingly.
     */
-    if (apb_ticks_per_us != SYSTIMER_LL_TICKS_PER_US) {
-        HAL_ASSERT((SYSTIMER_LL_TICKS_PER_US % apb_ticks_per_us) == 0 && "TICK_PER_US should be divisible by APB frequency (in MHz)");
-        systimer_ll_set_step_for_xtal(hal->dev, SYSTIMER_LL_TICKS_PER_US / apb_ticks_per_us);
+    if (apb_ticks_per_us != hal->us_to_ticks(1)) {
+        HAL_ASSERT((hal->us_to_ticks(1) % apb_ticks_per_us) == 0 && "TICK_PER_US should be divisible by APB frequency (in MHz)");
+        systimer_ll_set_step_for_xtal(hal->dev, hal->us_to_ticks(1) / apb_ticks_per_us);
     }
 }
-#endif
+#endif // !SOC_SYSTIMER_FIXED_DIVIDER

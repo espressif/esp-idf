@@ -1,20 +1,25 @@
 .. _concurrency-constraints-flash:
 
-SPI1 Flash 并发约束
+SPI1 flash 并发约束
 =========================================
 
-指令/数据 cache （用以执行固件）与 SPI1 外设（由像 SPI Flash 驱动一样的驱动程序控制）共享 SPI0/1 总线。因此，对 SPI1 外设的操作会对整个系统造成显著的影响。这类操作包括调用 SPI Flash API 或者其他 SPI1 总线上的驱动，任何 flash 操作（如读取、写入、擦除）或者其他用户定义的 SPI 操作，无论是对主 flash 或者其他各类的 SPI 从机。
+指令/数据 cache（用以执行固件）与 SPI1 外设（由像 SPI flash 驱动一样的驱动程序控制）共享 SPI0/1 总线。因此，SPI1 外设上的操作会对整个系统造成显著的影响。这类操作包括调用 SPI flash API 或者 SPI1 总线上的其他驱动、任何 flash 操作（如读取、写入、擦除）或是由其他用户定义的 SPI 操作（对主 flash 或是其他 SPI 从机）。
 
-.. only:: not esp32c3
+.. only:: not (esp32c3 or SOC_SPIRAM_XIP_SUPPORTED)
 
-   在 {IDF_TARGET_NAME} 上，flash 读取/写入/擦除时 cache 必须被禁用。
+    在 {IDF_TARGET_NAME} 上，flash 读取/写入/擦除时，cache 必须被禁用。
 
 .. only:: esp32c3
 
-    在 {IDF_TARGET_NAME} 上，默认启用的配置选项 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 允许 flash/PSRAM 的 cache 访问和 SPI1 的操作存并发地执行。请参阅 :ref:`auto-suspend`，查看详细信息。
+    在 {IDF_TARGET_NAME} 上，默认启用的配置选项 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 允许 flash/PSRAM 的 cache 访问和 SPI1 的操作并发执行。请参阅 :ref:`auto-suspend`，查看详细信息。
 
     在该选项被禁用的情况下，读取/写入/擦除 flash 时，cache 必须被禁用。使用驱动访问 SPI1 的相关约束参见 :ref:`impact_disabled_cache`。这些约束会带来更多的 IRAM/DRAM 消耗。
 
+.. only:: SOC_SPIRAM_XIP_SUPPORTED
+
+    在 {IDF_TARGET_NAME} 上，启用配置选项 :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` （默认禁用）和 :ref:`CONFIG_SPIRAM_RODATA` （默认禁用）后将允许 flash/PSRAM 的 cache 访问和 SPI1 的操作并发执行。请参阅 :ref:`xip_from_psram`，查看详细信息。
+
+    在上述选项被禁用的情况下，读取/写入/擦除 flash 时，cache 必须被禁用。使用驱动访问 SPI1 的相关约束参见 :ref:`impact_disabled_cache`。这些约束会带来更多的 IRAM/DRAM 消耗。
 
 .. _impact_disabled_cache:
 
@@ -25,7 +30,15 @@ SPI1 Flash 并发约束
 
 .. only:: esp32c3
 
-    然而，启用 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 时，cache 不会被禁用，其中的操作将通过硬件来协调。
+    .. note::
+
+        启用 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 时，cache 不会被禁用，其中的操作将通过硬件仲裁器来协调。
+
+.. only:: SOC_SPIRAM_XIP_SUPPORTED
+
+    .. note::
+
+        同时启用 :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` 和 :ref:`CONFIG_SPIRAM_RODATA` 选项后，cache 不会被禁用。
 
 .. only:: not CONFIG_FREERTOS_UNICORE
 
@@ -37,7 +50,7 @@ SPI1 Flash 并发约束
 
 另请参阅 :ref:`esp_flash_os_func` 和 :ref:`spi_bus_lock`。
 
-除 SPI0/1 以外，SPI 总线上的其它 flash 芯片则不受这种限制。
+除 SPI0/1 以外，SPI 总线上的其他 flash 芯片则不受这种限制。
 
 请参阅 :ref:`应用程序内存分布 <memory-layout>`，查看内部 RAM（如 IRAM、DRAM）和 flash cache 的区别。
 
@@ -66,3 +79,7 @@ IRAM 安全中断处理程序
 .. only:: esp32c3
 
    .. include:: auto_suspend.inc
+
+.. only:: SOC_SPIRAM_XIP_SUPPORTED
+
+   .. include:: xip_from_psram.inc

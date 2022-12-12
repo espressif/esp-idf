@@ -928,6 +928,9 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
                 full_sdus_xmitted++;
             }
             osi_free(p_tmp);
+            if (p_ccb->cong_sent) {
+                l2cu_check_channel_congestion(p_ccb);
+            }
         }
 
         /* If we are still in a wait_ack state, do not mess with the timer */

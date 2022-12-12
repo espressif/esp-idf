@@ -240,8 +240,8 @@ err_exit:
     return err;
 }
 
-#if CONFIG_ESP32_REV_MIN_3
-esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trusted_keys)
+#if CONFIG_ESP32_REV_MIN_FULL >= 300
+esp_err_t esp_secure_boot_read_key_digests(esp_secure_boot_key_digests_t *trusted_keys)
 {
     if (trusted_keys == NULL) {
         return ESP_FAIL;
@@ -249,4 +249,4 @@ esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *truste
     trusted_keys->key_digests[0] = (const void *)esp_efuse_utility_get_read_register_address(EFUSE_BLK_SECURE_BOOT);
     return ESP_OK;
 }
-#endif // CONFIG_ESP32_REV_MIN_3
+#endif // CONFIG_ESP32_REV_MIN_FULL >= 300

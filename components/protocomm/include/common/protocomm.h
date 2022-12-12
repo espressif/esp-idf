@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -189,13 +181,19 @@ esp_err_t protocomm_req_handle(protocomm_t *pc, const char *ep_name, uint32_t se
  *  - An endpoint must be bound to a valid protocomm instance,
  *    created using `protocomm_new()`.
  *  - The choice of security can be any `protocomm_security_t` instance.
- *    Choices `protocomm_security0` and `protocomm_security1` are readily available.
+ *    Choices `protocomm_security0` and `protocomm_security1` and `protocomm_security2` are readily available.
  *
- * @param[in] pc        Pointer to the protocomm instance
- * @param[in] ep_name   Endpoint identifier(name) string
- * @param[in] sec       Pointer to endpoint security instance
- * @param[in] pop       Pointer to proof of possession for authenticating a client
- *
+ * @param[in] pc            Pointer to the protocomm instance
+ * @param[in] ep_name       Endpoint identifier(name) string
+ * @param[in] sec           Pointer to endpoint security instance
+ * @param[in] sec_params    Pointer to security params (NULL if not needed)
+ *                          The pointer should contain the security params struct
+ *                          of appropriate security version.
+ *                          For protocomm security version 1 and 2
+ *                          sec_params should contain pointer to struct of type
+ *                          protocomm_security1_params_t and protocmm_security2_params_t respectively.
+ *                          The contents of this pointer must be valid till the security session
+ *                          has been running and is not closed.
  * @return
  *  - ESP_OK : Success
  *  - ESP_FAIL : Error adding endpoint / Endpoint with this name already exists
@@ -205,8 +203,7 @@ esp_err_t protocomm_req_handle(protocomm_t *pc, const char *ep_name, uint32_t se
  */
 esp_err_t protocomm_set_security(protocomm_t *pc, const char *ep_name,
                                  const protocomm_security_t *sec,
-                                 const protocomm_security_pop_t *pop);
-
+                                 const void *sec_params);
 /**
  * @brief   Remove endpoint security for a protocomm instance
  *

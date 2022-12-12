@@ -6,5 +6,5 @@
 
 #pragma once
 
-#warning "ulp_riscv_gpio.h has been moved one level up. Please include the file without the ulp_riscv prefix."
-#include "../ulp_riscv_gpio.h"
+#warning "ulp_riscv_gpio.h has been moved. Please include the file without the ulp_riscv prefix."
+#include "../../ulp_core/include/ulp_riscv_gpio.h"

@@ -280,7 +280,7 @@ void app_main(void)
     }
 
     const esp_timer_create_args_t nvs_update_timer_args = {
-            .callback = &fetch_and_store_time_in_nvs,
+            .callback = (void *)&fetch_and_store_time_in_nvs,
     };
 
     esp_timer_handle_t nvs_update_timer;

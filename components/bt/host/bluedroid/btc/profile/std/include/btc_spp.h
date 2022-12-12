@@ -18,8 +18,6 @@
 #define ESP_SPP_MAX_SESSION     BTA_JV_MAX_RFC_SR_SESSION
 #define ESP_SPP_SERVER_NAME_MAX 32
 
-#define ESP_SPP_RINGBUF_SIZE 1000
-
 #define BTC_SPP_INVALID_SCN 0x00
 
 typedef enum {
@@ -38,6 +36,8 @@ typedef union {
     //BTC_SPP_ACT_INIT
     struct init_arg {
         esp_spp_mode_t mode;
+        bool enable_l2cap_ertm;
+        UINT16 tx_buffer_size;
     } init;
     //BTC_SPP_ACT_UNINIT
     struct uninit_arg {
@@ -50,14 +50,14 @@ typedef union {
         tSDP_UUID *p_uuid_list;
     } start_discovery;
     //BTC_SPP_ACT_CONNECT
-    struct connect_arg {
+    struct conn_arg {
         esp_spp_sec_t sec_mask;
         esp_spp_role_t role;
         UINT8 remote_scn;
         esp_bd_addr_t peer_bd_addr;
     } connect;
     //BTC_SPP_ACT_DISCONNECT
-    struct disconnect_arg {
+    struct disconn_arg {
         UINT32 handle;
     } disconnect;
     //BTC_SPP_ACT_START_SRV
@@ -85,7 +85,9 @@ typedef union {
 void btc_spp_call_handler(btc_msg_t *msg);
 void btc_spp_cb_handler(btc_msg_t *msg);
 void btc_spp_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+void btc_spp_arg_deep_free(btc_msg_t *msg);
 
+esp_err_t spp_send_data_to_btc(uint32_t handle, int len, uint8_t *p_data, esp_spp_mode_t spp_mode);
 esp_err_t btc_spp_vfs_register(void);
 #endif ///defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE
 #endif ///__BTC_SPP_H__

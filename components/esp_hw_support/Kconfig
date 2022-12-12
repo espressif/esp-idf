@@ -1,4 +1,10 @@
 menu "Hardware Settings"
+
+    menu "Chip revision"
+        # Insert chip-specific HW config
+        orsource "./port/$IDF_TARGET/Kconfig.hw_support"
+    endmenu
+
     orsource "./port/$IDF_TARGET/Kconfig.spiram"
 
     menu "MAC Config"
@@ -14,6 +20,18 @@ menu "Hardware Settings"
         config ESP_MAC_ADDR_UNIVERSE_ETH
             bool
 
+        config ESP_MAC_ADDR_UNIVERSE_IEEE802154
+            bool
+
+        config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_ONE
+            bool
+
+        config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_TWO
+            bool
+
+        config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_FOUR
+            bool
+
             # Insert chip-specific MAC config
         rsource "./port/$IDF_TARGET/Kconfig.mac"
     endmenu
@@ -24,13 +42,15 @@ menu "Hardware Settings"
         config ESP_SLEEP_POWER_DOWN_FLASH
             bool "Power down flash in light sleep when there is no SPIRAM"
             depends on !SPIRAM
-            default y
+            default n
             help
                 If enabled, chip will try to power down flash as part of esp_light_sleep_start(), which costs
                 more time when chip wakes up. Can only be enabled if there is no SPIRAM configured.
-                This option will in fact consider VDD_SDIO auto power value (ESP_PD_OPTION_AUTO) as OFF. Also, it is
-                possible to force a power domain to stay ON during light sleep by using esp_sleep_pd_config()
-                function.
+
+                This option will power down flash under a strict but relatively safe condition. Also, it is possible to
+                power down flash under a relaxed condition by using esp_sleep_pd_config() to set ESP_PD_DOMAIN_VDDSDIO
+                to ESP_PD_OPTION_OFF. It should be noted that there is a risk in powering down flash, you can refer
+                `ESP-IDF Programming Guide/API Reference/System API/Sleep Modes/Power-down of Flash` for more details.
 
         config ESP_SLEEP_RTC_BUS_ISO_WORKAROUND
             bool
@@ -38,7 +58,7 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_GPIO_RESET_WORKAROUND
             bool "light sleep GPIO reset workaround"
-            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 # TODO: IDF-5641 (esp32c6)
             select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
             help
                 esp32c2, esp32c3 and esp32s3 will reset at wake-up if GPIO is received a small electrostatic
@@ -58,6 +78,7 @@ menu "Hardware Settings"
         config ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND
             bool "PSRAM leakage current workaround in light sleep"
             depends on SPIRAM
+            default y
             help
                 When the CS pin of SPIRAM is not pulled up, the sleep current will
                 increase during light sleep. If the CS pin of SPIRAM has an external
@@ -66,11 +87,21 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
             bool "Flash leakage current workaround in light sleep"
+            default y
             help
                 When the CS pin of Flash is not pulled up, the sleep current will
                 increase during light sleep. If the CS pin of Flash has an external
                 pull-up, you do not need to select this option, otherwise, you
                 should enable this option.
+
+        config ESP_SLEEP_MSPI_NEED_ALL_IO_PU
+            bool "All pins of mspi need pull up"
+            depends on ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND || ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
+            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32S3
+            help
+                To reduce leakage current, some types of SPI Flash/RAM only need to pull up the CS pin
+                during light sleep. But there are also some kinds of SPI Flash/RAM that need to pull up
+                all pins. It depends on the SPI Flash/RAM chip used.
 
         config ESP_SLEEP_DEEP_SLEEP_WAKEUP_DELAY
             int "Extra delay in deep sleep wake stub (in us)"
@@ -90,7 +121,6 @@ menu "Hardware Settings"
 
                 If you are seeing "flash read err, 1000" message printed to the
                 console after deep sleep reset, try increasing this value.
-
     endmenu
 
     menu "RTC Clock Config"
@@ -102,12 +132,24 @@ menu "Hardware Settings"
             depends on ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
             default y
             help
-                When the chip goes sleep or software reset, the clock source would change to XTAL
-                and switch off the BBPLL clock for saving power. However, this might make the
-                USB_SERIAL_JTAG down which depends on BBPLL as its unique clock source.
-                Therefore, this is used for keeping bbpll clock always on when USB_SERIAL_JTAG PORT is using.
-                If you want to use USB_SERIAL_JTAG under sw_reset case or sleep-wakeup case, you shoule select
-                this option. But be aware that this might increase the power consumption.
+                When software switches the CPU clock source from BBPLL clock to XTAL, usually the BBPLL will be
+                switched off. This helps to save some power consumption in sleep modes. However this may also happen
+                during the software reset, resulting in the inactive (disconnected from host) of the USB_SERIAL_JTAG
+                device during software reset.
+
+                When USB_SERIAL_JTAG is being used, whether to turn off the clock source during software reset and in
+                sleep modes is determined by RTC_CLOCK_BBPLL_POWER_ON_WITH_USB.
+
+                  - When RTC_CLOCK_BBPLL_POWER_ON_WITH_USB is enabled, the clock will be kept, so that the
+                    USB_SERIAL_JTAG will keep alive during software reset. The side-effect is the increasing of power
+                    consumption during sleep modes, even though USB_SERIAL_JTAG will not work in sleep modes.
+
+                  - When RTC_CLOCK_BBPLL_POWER_ON_WITH_USB is disabled, the clock will be turned off. USB_SERIAL_JTAG
+                    will be inactive during software reset and in sleep modes. This saves some power consumption in
+                    sleep modes.
+
+                When USB_SERIAL_JTAG is not being used, software will always turn off BBPLL regardless of
+                RTC_CLOCK_BBPLL_POWER_ON_WITH_USB is set or not.
     endmenu
 
     menu "Peripheral Control"
@@ -119,7 +161,114 @@ menu "Hardware Settings"
                 so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
     endmenu
 
-    # Insert chip-specific HW config
-    orsource "./port/$IDF_TARGET/Kconfig.hw_support"
+    menu "ETM Configuration"
+        depends on SOC_ETM_SUPPORTED
+        config ETM_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for ETM core driver.
+                Note that, this option only controls the ETM related driver log, won't affect other drivers.
+    endmenu # ETM Configuration
 
+    menu "MMU Config"
+        # This Config is used for configure the MMU.
+        # Be configured based on flash size selection.
+        # Invisible to users.
+
+        config MMU_PAGE_SIZE_16KB
+            bool
+            default y if IDF_TARGET_ESP32C2 && ESPTOOLPY_FLASHSIZE_1MB
+            default n
+
+        config MMU_PAGE_SIZE_32KB
+            bool
+            default y if IDF_TARGET_ESP32C2 && ESPTOOLPY_FLASHSIZE_2MB
+            default n
+
+        config MMU_PAGE_SIZE_64KB
+            bool
+            default y if !MMU_PAGE_SIZE_32KB && !MMU_PAGE_SIZE_16KB
+            default n
+
+        config MMU_PAGE_MODE
+            string
+            default "8KB" if MMU_PAGE_SIZE_8KB
+            default "16KB" if MMU_PAGE_SIZE_16KB
+            default "32KB" if MMU_PAGE_SIZE_32KB
+            default "64KB" if MMU_PAGE_SIZE_64KB
+
+        config MMU_PAGE_SIZE
+            # Some chips support different flash MMU page sizes: 64k, 32k, 16k.
+            # Since the number of MMU pages is limited, the maximum flash size supported
+            # for each page size is reduced proportionally: 4 MB, 2MB, 1MB. To make best
+            # use of small flash sizes (reducing the wasted space due to alignment), we
+            # need to use the smallest possible MMU page size for the given flash size.
+            hex
+            default 0x2000 if MMU_PAGE_SIZE_8KB
+            default 0x4000 if MMU_PAGE_SIZE_16KB
+            default 0x8000 if MMU_PAGE_SIZE_32KB
+            default 0x10000 if MMU_PAGE_SIZE_64KB
+    endmenu
+
+    menu "GDMA Configuration"
+        depends on SOC_GDMA_SUPPORTED
+        config GDMA_CTRL_FUNC_IN_IRAM
+            bool "Place GDMA control functions into IRAM"
+            default n
+            help
+                Place GDMA control functions (like start/stop/append/reset) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+                Enabling this option can improve driver performance as well.
+
+        config GDMA_ISR_IRAM_SAFE
+            bool "GDMA ISR IRAM-Safe"
+            default n
+            help
+                This will ensure the GDMA interrupt handler is IRAM-Safe, allow to avoid flash
+                cache misses, and also be able to run whilst the cache is disabled.
+                (e.g. SPI Flash write).
+    endmenu # GDMA Configuration
+
+    menu "Main XTAL Config"
+        choice XTAL_FREQ_SEL
+            prompt "Main XTAL frequency"
+            default XTAL_FREQ_40 if SOC_XTAL_SUPPORT_40M
+            help
+                This option selects the operating frequency of the XTAL (crystal) clock used to drive the ESP target.
+                The selected value MUST reflect the frequency of the given hardware.
+
+                Note: The XTAL_FREQ_AUTO option allows the ESP target to automatically estimating XTAL clock's
+                operating frequency. However, this feature is only supported on the ESP32. The ESP32 uses the
+                internal 8MHZ as a reference when estimating. Due to the internal oscillator's frequency being
+                temperature dependent, usage of the XTAL_FREQ_AUTO is not recommended in applications that operate
+                in high ambient temperatures or use high-temperature qualified chips and modules.
+
+            config XTAL_FREQ_24
+                depends on SOC_XTAL_SUPPORT_24M
+                bool "24 MHz"
+            config XTAL_FREQ_26
+                depends on SOC_XTAL_SUPPORT_26M
+                bool "26 MHz"
+            config XTAL_FREQ_32
+                depends on SOC_XTAL_SUPPORT_32M
+                bool "32 MHz"
+            config XTAL_FREQ_40
+                depends on SOC_XTAL_SUPPORT_40M
+                bool "40 MHz"
+            config XTAL_FREQ_AUTO
+                depends on SOC_XTAL_SUPPORT_AUTO_DETECT
+                bool "Autodetect"
+        endchoice
+
+        # rtc_xtal_freq_t enum in soc/rtc.h lists the XTAL frequencies can be supported
+        # SOC_XTAL_SUPPORT_XXX in soc_caps.h lists the XTAL frequencies already supported
+        config XTAL_FREQ
+            int
+            default 24 if XTAL_FREQ_24
+            default 26 if XTAL_FREQ_26
+            default 32 if XTAL_FREQ_32
+            default 40 if XTAL_FREQ_40
+            default 0  if XTAL_FREQ_AUTO
+    endmenu
 endmenu

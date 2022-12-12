@@ -12,15 +12,15 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stddef.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
 #include "hal/twai_types.h"
 #include "hal/twai_ll.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* ------------------------- Defines and Typedefs --------------------------- */
 
@@ -59,6 +59,7 @@ typedef twai_ll_frame_buffer_t twai_hal_frame_t;
 typedef struct {
     twai_dev_t *dev;
     uint32_t state_flags;
+    uint32_t clock_source_hz;
 #if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
     twai_hal_frame_t tx_frame_save;
     twai_ll_reg_save_t reg_save;
@@ -68,6 +69,11 @@ typedef struct {
 
 /* ---------------------------- Init and Config ----------------------------- */
 
+typedef struct {
+    int controller_id;
+    uint32_t clock_source_hz;
+} twai_hal_config_t;
+
 /**
  * @brief Initialize TWAI peripheral and HAL context
  *
@@ -75,9 +81,10 @@ typedef struct {
  * registers with default values.
  *
  * @param hal_ctx Context of the HAL layer
+ * @param config HAL driver configuration
  * @return True if successfully initialized, false otherwise.
  */
-bool twai_hal_init(twai_hal_context_t *hal_ctx);
+bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config);
 
 /**
  * @brief Deinitialize the TWAI peripheral and HAL context
@@ -161,6 +168,7 @@ static inline uint32_t twai_hal_get_rec(twai_hal_context_t *hal_ctx)
  * @param hal_ctx Context of the HAL layer
  * @return RX message count
  */
+__attribute__((always_inline))
 static inline uint32_t twai_hal_get_rx_msg_count(twai_hal_context_t *hal_ctx)
 {
     return twai_ll_get_rx_msg_count((hal_ctx)->dev);
@@ -172,6 +180,7 @@ static inline uint32_t twai_hal_get_rx_msg_count(twai_hal_context_t *hal_ctx)
  * @param hal_ctx Context of the HAL layer
  * @return True if successful
  */
+__attribute__((always_inline))
 static inline bool twai_hal_check_last_tx_successful(twai_hal_context_t *hal_ctx)
 {
     return twai_ll_is_last_tx_successful((hal_ctx)->dev);
@@ -230,7 +239,7 @@ static inline void twai_hal_format_frame(const twai_message_t *message, twai_hal
 {
     //Direct call to ll function
     twai_ll_format_frame_buffer(message->identifier, message->data_length_code, message->data,
-                               message->flags, frame);
+                                message->flags, frame);
 }
 
 /**
@@ -246,7 +255,7 @@ static inline void twai_hal_parse_frame(twai_hal_frame_t *frame, twai_message_t 
 {
     //Direct call to ll function
     twai_ll_parse_frame_buffer(frame, &message->identifier, &message->data_length_code,
-                              message->data, &message->flags);
+                               message->data, &message->flags);
 }
 
 /**
@@ -275,6 +284,7 @@ void twai_hal_set_tx_buffer_and_transmit(twai_hal_context_t *hal_ctx, twai_hal_f
  * @param rx_frame Pointer to structure to store RX frame
  * @return True if a valid frame was copied and released. False if overrun.
  */
+__attribute__((always_inline))
 static inline bool twai_hal_read_rx_buffer_and_clear(twai_hal_context_t *hal_ctx, twai_hal_frame_t *rx_frame)
 {
 #ifdef SOC_TWAI_SUPPORTS_RX_STATUS
@@ -304,6 +314,7 @@ static inline bool twai_hal_read_rx_buffer_and_clear(twai_hal_context_t *hal_ctx
  * @param hal_ctx Context of the HAL layer
  * @return Number of overrun messages cleared from RX FIFO
  */
+__attribute__((always_inline))
 static inline uint32_t twai_hal_clear_rx_fifo_overrun(twai_hal_context_t *hal_ctx)
 {
     uint32_t msg_cnt = 0;
@@ -359,6 +370,7 @@ void twai_hal_recover_from_reset(twai_hal_context_t *hal_ctx);
  * @param hal_ctx Context of the HAL layer
  * @return uint32_t Number of RX messages lost due to HW reset
  */
+__attribute__((always_inline))
 static inline uint32_t twai_hal_get_reset_lost_rx_cnt(twai_hal_context_t *hal_ctx)
 {
     return hal_ctx->rx_msg_cnt_save;

@@ -432,19 +432,6 @@ esp_rom_spiflash_result_t esp_rom_spiflash_write_enable(esp_rom_spiflash_chip_t 
 void esp_rom_spiflash_fix_dummylen(uint8_t spi, uint8_t freqdiv);
 
 /**
-  * @brief Select SPI Flash to QIO mode when WP pad is read from Flash.
-  *    Please do not call this function in SDK.
-  *
-  * @param  uint8_t wp_gpio_num: WP gpio number.
-  *
-  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
-  *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
-  *
-  * @return None
-  */
-void esp_rom_spiflash_select_qiomode(uint8_t wp_gpio_num, uint32_t ishspi);
-
-/**
   * @brief Set SPI Flash pad drivers.
   *    Please do not call this function in SDK.
   *

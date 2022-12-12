@@ -1,0 +1,59 @@
+blockdiag mcpwm_overview {
+    default_fontsize = 18;
+    node_width = 130;
+    node_height = 100;
+    default_group_color = lightgrey;
+
+    mcpwm_timers [label = "MCPWM\nTimer", stacked];
+    timer_sync [label = "Timer Sync", stacked];
+    timer_sync <-> mcpwm_timers;
+
+    mcpwm_capture_timer [label = "MCPWM\nCapture Timer"];
+    mcpwm_capture_channels [label = "MCPWM\nCapture Chan", stacked];
+    mcpwm_capture_gpio [label = "Cap\nGPIO", shape = minidiamond];
+    mcpwm_capture_timer -> mcpwm_capture_channels;
+    mcpwm_capture_channels <- mcpwm_capture_gpio;
+
+    timer_sync -> mcpwm_capture_timer;
+    gpio_sync [label = "Sync\nGPIO", shape = minidiamond];
+    gpio_sync -> mcpwm_timers;
+    gpio_sync -> mcpwm_capture_timer;
+
+    mcpwm_compares [label = "MCPWM\nComparators", stacked];
+    mcpwm_generators [label = "MCPWM\nGenerators", stacked];
+    mcpwm_dead_time [label = "Dead Time"];
+    mcpwm_carrier [label = "Carrier\nModulation"];
+    mcpwm_brake [label = "Brake"];
+    pwma [label = "PWM_A", shape = minidiamond];
+    pwmb [label = "PWM_B", shape = minidiamond];
+    stub [shape = none];
+    mcpwm_timers -> mcpwm_generators;
+    mcpwm_timers -> mcpwm_compares;
+    mcpwm_compares -> mcpwm_generators [folded];
+    mcpwm_generators -> mcpwm_dead_time;
+    mcpwm_dead_time -> mcpwm_carrier;
+    mcpwm_carrier -> mcpwm_brake;
+    mcpwm_brake -> stub;
+    stub -> pwma, pwmb;
+    mcpwm_generators -> mcpwm_carrier;
+    mcpwm_generators -> mcpwm_brake;
+    mcpwm_generators -> stub;
+
+    gpio_faults [label = "Fault\nGPIO", shape = minidiamond];
+    mcpwm_brake <- gpio_faults [folded];
+
+    group {
+        label = "MCPWM Operators";
+        mcpwm_compares, mcpwm_generators, mcpwm_dead_time, mcpwm_carrier, mcpwm_brake;
+    }
+
+    group {
+        label = "MCPWM Capture";
+        mcpwm_capture_timer, mcpwm_capture_channels, mcpwm_capture_gpio;
+    }
+
+    group {
+        label = "MCPWM Sync";
+        gpio_sync, timer_sync;
+    }
+}

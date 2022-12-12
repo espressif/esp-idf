@@ -62,17 +62,21 @@ function warning() {
 }
 
 function run_cmd() {
+  local cmd="$*"
   local start=$(date +%s)
-  eval "$@"
+
+  info "\$ ${cmd}"
+  eval "${cmd}"
+
   local ret=$?
   local end=$(date +%s)
-  local duration=$((end - start))
+  local runtime=$((end-start))
 
   if [[ $ret -eq 0 ]]; then
-    info "(\$ $*) succeeded in ${duration} seconds."
+    info "==> '\$ ${cmd}' succeeded in ${runtime} seconds."
     return 0
   else
-    error "(\$ $*) failed in ${duration} seconds."
+    error "==> '\$ ${cmd}' failed (${ret}) in ${runtime} seconds."
     return $ret
   fi
 }

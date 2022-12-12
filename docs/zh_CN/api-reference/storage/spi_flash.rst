@@ -19,10 +19,9 @@ spi_flash 组件提供外部 flash 数据读取、写入、擦除和内存映射
 
     ESP-IDF V4.0 之后的 flash API 不再是 *原子* 的。因此，如果读操作执行过程中发生写操作，且读操作和写操作的 flash 地址出现重叠，读操作返回的数据可能会包含旧数据和新数据 (新数据为写操作更新产生的数据)。
 
+.. note::
 
-Kconfig 选项 :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` 可将 ``spi_flash_*`` 函数切换至 ESP-IDF V4.0 之前的实现。但是，如果同时使用新旧 API，代码量可能会增多。
-
-即使未启用 :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL`，加密读取和加密写入操作也均使用旧实现。因此，仅有主 flash 芯片支持加密操作，外接（经 SPI1 使用其他不同片选访问，或经其它 SPI 总线访问）的 flash 芯片则不支持加密操作。硬件的限制也决定了仅有主 flash 支持从 cache 当中读取。
+    仅有主 flash 芯片支持加密操作，外接（经 SPI1 使用其他不同片选访问，或经其它 SPI 总线访问）的 flash 芯片则不支持加密操作。硬件的限制也决定了仅有主 flash 支持从 cache 当中读取。
 
 Flash 功能支持情况
 -----------------------------------
@@ -138,7 +137,7 @@ ESP-IDF 工程使用分区表保存 SPI flash 各区信息，包括引导程序�
 - :cpp:func:`esp_partition_next`：将迭代器移至下一个找到的分区；
 - :cpp:func:`esp_partition_iterator_release`：释放 ``esp_partition_find`` 中返回的迭代器；
 - :cpp:func:`esp_partition_find_first`：返回描述 ``esp_partition_find`` 中找到的第一个分区的结构；
-- :cpp:func:`esp_partition_read`、:cpp:func:`esp_partition_write` 和 :cpp:func:`esp_partition_erase_range` 等同于 :cpp:func:`spi_flash_read`、:cpp:func:`spi_flash_write` 和 :cpp:func:`spi_flash_erase_range`，但在分区边界内执行。
+- :cpp:func:`esp_partition_read`、:cpp:func:`esp_partition_write` 和 :cpp:func:`esp_partition_erase_range` 等同于 :cpp:func:`esp_flash_read`、:cpp:func:`esp_flash_write` 和 :cpp:func:`esp_flash_erase_region`，但在分区边界内执行。
 
 .. note::
     请在应用程序代码中使用上述 ``esp_partition_*`` API 函数，而非低层级的 ``esp_flash_*`` API 函数。分区表 API 函数根据存储在分区表中的数据，进行边界检查并计算在 flash 中的正确偏移量。
@@ -154,7 +153,7 @@ SPI Flash 加密
 内存映射 API
 ------------------
 
-{IDF_TARGET_CACHE_SIZE:default="64 KB"}
+{IDF_TARGET_CACHE_SIZE:default="64 KB",esp32c2=16~64 KB}
 
 {IDF_TARGET_NAME} 的内存硬件可以将 flash 部分区域映射到指令地址空间和数据地址空间。此映射仅用于读操作，不能通过写入 flash 映射的存储区域来改变 flash 中的内容。
 
@@ -164,7 +163,7 @@ Flash 在 {IDF_TARGET_CACHE_SIZE} 页进行映射。内存映射硬件既可将 
 
 启用 :doc:`Flash 加密 </security/flash-encryption>` 时，使用内存映射区域从 flash 读取数据是解密 flash 的唯一方法，解密需在硬件层进行。
 
-内存映射 API 在 ``esp_spi_flash.h`` 和 ``esp_partition.h`` 中声明：
+内存映射 API 在 ``spi_flash_mmap.h`` 和 ``esp_partition.h`` 中声明：
 
 - :cpp:func:`spi_flash_mmap`：将 flash 物理地址区域映射到 CPU 指令空间或数据空间；
 - :cpp:func:`spi_flash_munmap`：取消上述区域的映射；
@@ -273,7 +272,7 @@ SPI Flash API 参考
 
 .. include-build-file:: inc/esp_flash_spi_init.inc
 .. include-build-file:: inc/esp_flash.inc
-.. include-build-file:: inc/esp_spi_flash.inc
+.. include-build-file:: inc/spi_flash_mmap.inc
 .. include-build-file:: inc/spi_flash_types.inc
 .. include-build-file:: inc/esp_flash_err.inc
 

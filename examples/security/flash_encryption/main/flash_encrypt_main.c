@@ -12,7 +12,7 @@
 #include "soc/efuse_reg.h"
 #include "esp_efuse.h"
 #include "esp_chip_info.h"
-#include "esp_spi_flash.h"
+#include "esp_flash.h"
 #include "esp_partition.h"
 #include "esp_flash_encrypt.h"
 #include "esp_efuse_table.h"
@@ -21,6 +21,8 @@
 static void example_print_chip_info(void);
 static void example_print_flash_encryption_status(void);
 static void example_read_write_flash(void);
+
+#define CUSTOM_NVS_PART_NAME "custom_nvs"
 
 static const char* TAG = "example";
 
@@ -31,6 +33,35 @@ static const char* TAG = "example";
 #define TARGET_CRYPT_CNT_EFUSE ESP_EFUSE_SPI_BOOT_CRYPT_CNT
 #define TARGET_CRYPT_CNT_WIDTH  3
 #endif
+
+static esp_err_t example_custom_nvs_part_init(const char *name)
+{
+#if CONFIG_NVS_ENCRYPTION
+    esp_err_t ret = ESP_FAIL;
+    const esp_partition_t *key_part = esp_partition_find_first(
+                                          ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
+    if (key_part == NULL) {
+        ESP_LOGE(TAG, "CONFIG_NVS_ENCRYPTION is enabled, but no partition with subtype nvs_keys found in the partition table.");
+        return ret;
+    }
+
+    nvs_sec_cfg_t cfg = {};
+    ret = nvs_flash_read_security_cfg(key_part, &cfg);
+    if (ret != ESP_OK) {
+        /* We shall not generate keys here as that must have been done in default NVS partition initialization case */
+        ESP_LOGE(TAG, "Failed to read NVS security cfg: [0x%02X] (%s)", ret, esp_err_to_name(ret));
+        return ret;
+    }
+
+    ret = nvs_flash_secure_init_partition(name, &cfg);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "NVS partition \"%s\" is encrypted.", name);
+    }
+    return ret;
+#else
+    return nvs_flash_init_partition(name);
+#endif
+}
 
 void app_main(void)
 {
@@ -46,13 +77,21 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-}
 
+    /* Initialize the custom NVS partition */
+    ret = example_custom_nvs_part_init(CUSTOM_NVS_PART_NAME);
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase_partition(CUSTOM_NVS_PART_NAME));
+        ret = example_custom_nvs_part_init(CUSTOM_NVS_PART_NAME);
+    }
+    ESP_ERROR_CHECK(ret);
+}
 
 static void example_print_chip_info(void)
 {
     /* Print chip information */
     esp_chip_info_t chip_info;
+    uint32_t flash_size;
     esp_chip_info(&chip_info);
     printf("This is %s chip with %d CPU core(s), WiFi%s%s, ",
             CONFIG_IDF_TARGET,
@@ -60,9 +99,15 @@ static void example_print_chip_info(void)
             (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
             (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
 
-    printf("silicon revision %d, ", chip_info.revision);
+    unsigned major_rev = chip_info.revision / 100;
+    unsigned minor_rev = chip_info.revision % 100;
+    printf("silicon revision v%d.%d, ", major_rev, minor_rev);
+    if(esp_flash_get_size(NULL, &flash_size) != ESP_OK) {
+        printf("Get flash size failed");
+        return;
+    }
 
-    printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
+    printf("%dMB %s flash\n", flash_size / (1024 * 1024),
             (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
 }
 
@@ -109,7 +154,7 @@ static void example_read_write_flash(void)
     ESP_ERROR_CHECK(esp_partition_read(partition, 0, read_data, data_size));
     ESP_LOG_BUFFER_HEXDUMP(TAG, read_data, data_size, ESP_LOG_INFO);
 
-    printf("Reading with spi_flash_read:\n");
-    ESP_ERROR_CHECK(spi_flash_read(partition->address, read_data, data_size));
+    printf("Reading with esp_flash_read:\n");
+    ESP_ERROR_CHECK(esp_flash_read(NULL, read_data, partition->address, data_size));
     ESP_LOG_BUFFER_HEXDUMP(TAG, read_data, data_size, ESP_LOG_INFO);
 }

@@ -41,7 +41,7 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
     HAL_ASSERT(cache_id == 0);
 
     cache_bus_mask_t mask = 0;
-    uint32_t vaddr_end = vaddr_start + len;
+    uint32_t vaddr_end = vaddr_start + len - 1;
     if (vaddr_start >= IRAM1_ADDRESS_LOW) {
         mask |= CACHE_BUS_IBUS1;
     } else if (vaddr_start >= IRAM0_CACHE_ADDRESS_LOW) {

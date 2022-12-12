@@ -45,9 +45,36 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
     return EFUSE.rd_repeat_data2.secure_boot_en;
 }
 
-__attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_revision(void)
+// use efuse_hal_get_major_chip_version() to get major chip version
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_major(void)
 {
-    return EFUSE.rd_mac_spi_8m_3.wafer_version;
+    return EFUSE.rd_mac_spi_8m_3.wafer_version_major;
+}
+
+// use efuse_hal_get_minor_chip_version() to get minor chip version
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
+{
+    return (EFUSE.rd_mac_spi_8m_3.wafer_version_minor_high << 3) + EFUSE.rd_mac_spi_8m_4.wafer_version_minor_low;
+}
+
+__attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
+{
+    return EFUSE.rd_repeat_data4.disable_wafer_version_major;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
+{
+    return EFUSE.rd_mac_spi_8m_3.blk_version_major;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_minor(void)
+{
+    return EFUSE.rd_sys_data4.blk_version_minor;
+}
+
+__attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_version_major(void)
+{
+    return EFUSE.rd_repeat_data4.disable_blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)
@@ -83,6 +110,14 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_sdio_drefm(vo
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_sdio_drefh(void)
 {
     return EFUSE.rd_repeat_data0.sdio_drefh;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
+{
+    // OCODE1,  BLOCK2, 128, 4,   (#4 reg, pos 0)
+    // OCODE2,  BLOCK2, 144, 3,   (#4 reg, pos 16)
+    // OCODE = (ocode2 << 4) + ocode1
+    return (EFUSE.rd_sys_data4.ocode_hi << 4) + EFUSE.rd_sys_data4.ocode_low;
 }
 
 /******************* eFuse control functions *************************/

@@ -6,6 +6,7 @@ tools/ci/check_*.txt
 tools/ci/check_*.sh
 tools/ci/check_copyright_config.yaml
 tools/ci/get_all_test_results.py
+tools/ci/idf_unity_tester.py
 tools/gdb_panic_server.py
 tools/check_term.py
 tools/check_python_dependencies.py
@@ -15,6 +16,7 @@ tools/ci/checkout_project_ref.py
 tools/ci/ci_fetch_submodule.py
 tools/ci/ci_get_mr_info.py
 tools/ci/configure_ci_environment.sh
+tools/ci/generate_rules.py
 tools/ci/deploy_docs.py
 tools/ci/envsubst.py
 tools/ci/*exclude*.txt
@@ -22,13 +24,13 @@ tools/ci/executable-list.txt
 tools/ci/fix_empty_prototypes.sh
 tools/ci/get-full-sources.sh
 tools/ci/idf_ci_utils.py
+tools/ci/ignore_build_warnings.txt
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/mypy_ignore_list.txt
 tools/ci/normalize_clangtidy_path.py
 tools/ci/push_to_github.sh
 tools/ci/python_packages/wifi_tools.py
-tools/ci/setup_python.sh
 tools/ci/utils.sh
 tools/eclipse-code-style.xml
 tools/format-minimal.sh
@@ -39,4 +41,3 @@ tools/set-submodules-to-github.sh
 tools/templates/sample_component/CMakeLists.txt
 tools/templates/sample_component/include/main.h
 tools/templates/sample_component/main.c
-tools/toolchain_versions.mk

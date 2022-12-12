@@ -38,6 +38,14 @@ export PATH="$IDF_PATH/tools:$PATH"  # for idf.py
 # Some tests assume that ccache is not enabled
 unset IDF_CCACHE_ENABLE
 
+function get_file_size() {
+  if [[ $OSTYPE == 'darwin'* ]]; then
+    BINSIZE=$(stat -f "%z" ${1})
+  else
+    BINSIZE=$(stat -c "%s" ${1})
+  fi
+}
+
 function run_tests()
 {
     FAILURES=
@@ -505,7 +513,7 @@ function run_tests()
     print_status "Test build ESP-IDF as a library to a custom CMake projects for all targets"
     IDF_AS_LIB=$IDF_PATH/examples/build_system/cmake/idf_as_lib
     # note: we just need to run cmake
-    for TARGET in "esp32" "esp32s2" "esp32s3" "esp32c3" "esp32h2" "esp32c2"
+    for TARGET in "esp32" "esp32s2" "esp32s3" "esp32c3" "esp32h4" "esp32c2" "esp32c6"
     do
       echo "Build idf_as_lib for $TARGET target"
       rm -rf build
@@ -529,12 +537,9 @@ function run_tests()
     print_status "Test for external libraries in custom CMake projects with ESP-IDF components linked"
     mkdir build
     IDF_AS_LIB=$IDF_PATH/examples/build_system/cmake/idf_as_lib
-    echo "CONFIG_SPIRAM=y" > $IDF_AS_LIB/sdkconfig
-    echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> $IDF_AS_LIB/sdkconfig
     # note: we just need to run cmake
     (cd build && cmake $IDF_AS_LIB -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32.cmake -DTARGET=esp32)
     grep -q '"command"' build/compile_commands.json || failure "compile_commands.json missing or has no no 'commands' in it"
-    (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-issue) && failure "All commands in compile_commands.json should use PSRAM cache workaround"
 
     for strat in MEMW NOPS DUPLDST; do
         print_status "Test for external libraries in custom CMake projects with PSRAM strategy $strat"
@@ -686,7 +691,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     popd
 
 
-    print_status "Confserver can be invoked by idf.py"
+    print_status "Kconfserver can be invoked by idf.py"
     echo '{"version": 1}' | idf.py confserver || failure "Couldn't load confserver"
 
     print_status "Check ccache is used to build"
@@ -816,12 +821,20 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
 
     print_status "Warning is given if smallest partition is nearly full"
     clean_build_dir
+    # Build a first time to get the binary size and to check that no warning is issued.
+    ( idf.py build 2>&1 | grep "partition is nearly full" ) && failure "Warning for nearly full smallest partition was given when the condition is not fulfilled"
+    # Get the size of the binary, in KB. Add 1 to the total.
+    # The goal is to create an app partition which is slightly bigger than the binary itself
+    get_file_size "build/app-template.bin"
+    # Put the returned size ($BINSIZE) in a new variable, convert it to KB and add 1
+    let size=${BINSIZE}/1024+1
     cp ${IDF_PATH}/components/partition_table/partitions_singleapp.csv partitions.csv
-    ${SED} -i "s/factory,  app,  factory, ,        1M/factory,  app,  factory, ,        170K/" partitions.csv
+    ${SED} -i "s/factory,  app,  factory, ,        1M/factory,  app,  factory, ,        ${size}K/" partitions.csv
     echo "CONFIG_PARTITION_TABLE_CUSTOM=y" > sdkconfig
+    # don't use FreeRTOS SMP build for this test - follow up ticket: IDF-5386
+    echo "CONFIG_FREERTOS_SMP=n" >> sdkconfig
     ( idf.py build 2>&1 | grep "partition is nearly full" ) || failure "No warning for nearly full smallest partition was given when the condition is fulfilled"
     rm -f partitions.csv sdkconfig
-    ( idf.py build 2>&1 | grep "partition is nearly full" ) && failure "Warning for nearly full smallest partition was given when the condition is not fulfilled"
 
     print_status "Flash size is correctly set in the bootloader image header"
     # Build with the default 2MB setting
@@ -922,6 +935,14 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     (idf.py reconfigure | grep "$PWD/components/my_component") || failure  "Project components should be prioritized over EXTRA_COMPONENT_DIRS"
     mv CMakeLists.bak CMakeLists.txt # revert previous modifications
     rm -rf extra_dir components
+
+    print_status "Components in EXCLUDE_COMPONENTS not passed to idf_component_manager"
+    clean_build_dir
+    idf.py create-component -C components/ to_be_excluded || failure "Failed to create a component"
+    echo "invalid syntax..." > components/to_be_excluded/idf_component.yml
+    ! idf.py reconfigure || failure "Build should have failed due to invalid syntax in idf_component.yml"
+    idf.py -DEXCLUDE_COMPONENTS=to_be_excluded reconfigure || failure "Build should have succeeded when the component is excluded"
+    rm -rf components/to_be_excluded
 
     print_status "Create project using idf.py and build it"
     echo "Trying to create project."

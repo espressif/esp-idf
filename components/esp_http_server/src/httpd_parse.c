@@ -63,8 +63,9 @@ static esp_err_t verify_url (http_parser *parser)
     const char *at = parser_data->last.at;
     size_t  length = parser_data->last.length;
 
-    if ((r->method = parser->method) < 0) {
-        ESP_LOGW(TAG, LOG_FMT("HTTP Operation not supported"));
+    r->method = parser->method;
+    if (r->method < 0) {
+        ESP_LOGW(TAG, LOG_FMT("HTTP method not supported (%d)"), r->method);
         parser_data->error = HTTPD_501_METHOD_NOT_IMPLEMENTED;
         return ESP_FAIL;
     }
@@ -618,8 +619,8 @@ static esp_err_t httpd_parse_req(struct httpd_data *hd)
 {
     httpd_req_t *r = &hd->hd_req;
     int blk_len,  offset;
-    http_parser   parser;
-    parser_data_t parser_data;
+    http_parser   parser = {};
+    parser_data_t parser_data = {};
 
     /* Initialize parser */
     parse_init(r, &parser, &parser_data);

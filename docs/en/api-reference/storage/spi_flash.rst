@@ -19,10 +19,9 @@ Different from the API before IDF v4.0, the functionality of `esp_flash_*` APIs 
 
     Flash APIs after ESP-IDF v4.0 are no longer *atomic*. If a write operation occurs during another on-going read operation, and the flash addresses of both operations overlap, the data returned from the read operation may contain both old data and new data (that was updated written by the write operation).
 
+.. note::
 
-Kconfig option :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` can be used to switch ``spi_flash_*`` functions back to the implementation before ESP-IDF v4.0. However, the code size may get bigger if you use the new API and the old API at the same time.
-
-Encrypted reads and writes use the old implementation, even if :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` is not enabled. As such, encrypted flash operations are only supported with the main flash chip (and not with other flash chips, that is on SPI1 with different CS, or on other SPI buses). Reading through cache is only supported on the main flash, which is determined by the HW.
+    Encrypted flash operations are only supported with the main flash chip (and not with other flash chips, that is on SPI1 with different CS, or on other SPI buses). Reading through cache is only supported on the main flash, which is determined by the HW.
 
 Support for Features of Flash Chips
 -----------------------------------
@@ -138,7 +137,7 @@ This component provides API functions to enumerate partitions found in the parti
 - :cpp:func:`esp_partition_next` shifts the iterator to the next found partition.
 - :cpp:func:`esp_partition_iterator_release` releases iterator returned by ``esp_partition_find``.
 - :cpp:func:`esp_partition_find_first` is a convenience function which returns the structure describing the first partition found by ``esp_partition_find``.
-- :cpp:func:`esp_partition_read`, :cpp:func:`esp_partition_write`, :cpp:func:`esp_partition_erase_range` are equivalent to :cpp:func:`spi_flash_read`, :cpp:func:`spi_flash_write`, :cpp:func:`spi_flash_erase_range`, but operate within partition boundaries.
+- :cpp:func:`esp_partition_read`, :cpp:func:`esp_partition_write`, :cpp:func:`esp_partition_erase_range` are equivalent to :cpp:func:`esp_flash_read`, :cpp:func:`esp_flash_write`, :cpp:func:`esp_flash_erase_region`, but operate within partition boundaries.
 
 .. note::
     Application code should mostly use these ``esp_partition_*`` API functions instead of lower level ``esp_flash_*`` API functions. Partition table API functions do bounds checking and calculate correct offsets in flash, based on data stored in a partition table.
@@ -154,7 +153,7 @@ Refer to the :doc:`Flash Encryption documentation </security/flash-encryption>` 
 Memory Mapping API
 ------------------
 
-{IDF_TARGET_CACHE_SIZE:default="64 KB"}
+{IDF_TARGET_CACHE_SIZE:default="64 KB",esp32c2=16~64 KB}
 
 {IDF_TARGET_NAME} features memory hardware which allows regions of flash memory to be mapped into instruction and data address spaces. This mapping works only for read operations. It is not possible to modify contents of flash memory by writing to a mapped memory region.
 
@@ -164,7 +163,7 @@ Note that some pages are used to map the application itself into memory, so the 
 
 Reading data from flash using a memory mapped region is the only way to decrypt contents of flash when :doc:`flash encryption </security/flash-encryption>` is enabled. Decryption is performed at the hardware level.
 
-Memory mapping API are declared in ``esp_spi_flash.h`` and ``esp_partition.h``:
+Memory mapping API are declared in ``spi_flash_mmap.h`` and ``esp_partition.h``:
 
 - :cpp:func:`spi_flash_mmap` maps a region of physical flash addresses into instruction space or data space of the CPU.
 - :cpp:func:`spi_flash_munmap` unmaps previously mapped region.
@@ -273,7 +272,7 @@ API Reference - SPI Flash
 
 .. include-build-file:: inc/esp_flash_spi_init.inc
 .. include-build-file:: inc/esp_flash.inc
-.. include-build-file:: inc/esp_spi_flash.inc
+.. include-build-file:: inc/spi_flash_mmap.inc
 .. include-build-file:: inc/spi_flash_types.inc
 .. include-build-file:: inc/esp_flash_err.inc
 
@@ -288,3 +287,4 @@ API Reference - Flash Encrypt
 -----------------------------
 
 .. include-build-file:: inc/esp_flash_encrypt.inc
+    

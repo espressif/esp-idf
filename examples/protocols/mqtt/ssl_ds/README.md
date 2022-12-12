@@ -1,4 +1,6 @@
-| Supported Targets | ESP32-S2 | ESP32-C3 | ESP32-S3 |
+| Supported Targets | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- |
+
 # ESP-MQTT SSL Mutual Authentication with Digital Signature
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -38,21 +40,26 @@ openssl genrsa -out client.key
 openssl req -out client.csr -key client.key -new
 ```
 
-Paste the generated CSR in the [Mosquitto test certificate signer](https://test.mosquitto.org/ssl/index.php), click Submit and copy the downloaded `client.crt` in the `main` directory.
-
-Please note, that the supplied file `client.crt` in the `main` directory is only a placeholder for your client certificate (i.e. the example "as is" would compile but would not connect to the broker)
+Paste the generated CSR in the [Mosquitto test certificate signer](https://test.mosquitto.org/ssl/index.php), click Submit and downloaded the `client.crt`. This `client.crt` file shall be used as the device certificate.
 
 #### 3) Configure the DS peripheral
 
-*  The DS peripheral can be configured with the python script [configure_ds.py](README.md#configure_ds-py) by executing the following command
+* i) Install the [esp_secure_cert configuration utility](https://github.com/espressif/esp_secure_cert_mgr/tree/main/tools#esp_secure_cert-configuration-tool) with following command:
+```
+pip install esp-secure-cert-tool
+```
+* ii) The DS peripheral can be configured by executing the following command:
 
 ```
-    python configure_ds.py --port /* USB COM port */ --private-key /* RSA priv key */
+configure_esp_secure_cert.py -p /* Serial port */ --device-cert /* Device cert */ --private-key /* RSA priv key */ --target_chip /* target chip */ --configure_ds  --skip_flash
 ```
+This command shall generate a partition named `esp_secure_cert.bin` in the `esp_secure_cert_data` directory. This partition would be aumatically detected by the build system and flashed at appropriate offset when `idf.py flash` command is used. For this process, the command must be executed in the current folder only.
 
 In the command USB COM port is nothing but the serial port to which the ESP chip is connected. see
 [check serial port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/establish-serial-connection.html#check-port-on-windows) for more details.
 RSA private key is nothing but the client private key ( RSA ) generated in Step 2.
+
+> Note: More details about the `esp-secure-cert-tool` utility can be found [here](https://github.com/espressif/esp_secure_cert_mgr/tree/main/tools).
 
 #### 4) Connection cofiguration
 * Open the project configuration menu (`idf.py menuconfig`)
@@ -95,49 +102,3 @@ I (5194) MQTTS_EXAMPLE: MQTT_EVENT_DATA
 TOPIC=/topic/qos0
 DATA=data
 ```
-
-
-### configure_ds.py
-The script [configure_ds.py](./configure_ds.py) is used for configuring the DS peripheral on the ESP32-S2/ESP32-S3/ESP32-C3 SoC. The steps in the script are based on technical details of certain operations in the Digital Signature calculation, which can be found at Digital Signature Section of [ESP32-S2 TRM](https://www.espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf)
-
-The configuration script performs the following steps -
-
-1. Take the client private key ( RSA key ) as input.
-    (*required parameter for the script)
-can be provided with
-```
-    python configure_ds.py --private-key /* path to client (rsa) prv key */
-```
-
-2.  Randomly Calculate the `HMAC_KEY` and the `initialization vector`(IV). Then calculate the encrypted private key parameters from client private key (step i) and newly generated parameters. These encrypted private key parameters are required for the DS peripheral to perform the Digital Signature operation.
-
-3.  Store the `HMAC_KEY` in one of the efuse key blocks (in the hardware).
-    The ID of the efuse key block ( should be in range 1-5) can be provided with the following option. (default value of 1 is used if not provided),
-```
-    python configure_ds.py --efuse_key_id /* key id in range 1-5 */
-```
-
-Currently for development purposes, the `HMAC_KEY` is stored in the efuse key block  without read protection so that read operation can be performed on the same key block.
-> You can burn (write) a key on an efuse key block only once. Please use a different key block ID if you want to use a different `HMAC_KEY` for the DS operation.
-
-4. Create an NVS partition of the name `pre_prov.csv` (in `esp_ds_data` folder) which contains the required encrypted private key parameters. A bin file of the nvs partition (`pre_prov.bin`) is also created. As we have added a custom partition, the example is set to use the custom partition table by adding the required option in `sdkconfig.defaults`.
-
-5. (optional) The script can be made to print the summary of the efuse on the chip by providing the following option. When this option is enabled, no other operations in the script are performed.
-```
-    python configure_ds.py --summary
-```
-
-6. (optional) If the user wants to keep the encrypted private key data and the randomly generated `HMAC_KEY` on the host machine for testing purpose. The following option may be used.
-```
-    python configure_ds.py --keep_ds_data_on_host
-```
- The respective files will be stored in the `esp_ds_data` folder which is generated by the script in the same directory. The contents of the `esp_ds_data` folder may be overwritten when the `configure_ds.py` script is executed again.
-
-7. (optional) If the user wants to use the script for production usecase then this option can be used.
-Currently for development purpose, the script disables the read protection on the efuse key block by default.
-In case of a production usecase it is recommeneded to enable the read protection for the efuse key block. It can be done by providing following option along with other required options:
-```
-    python configure_ds.py --production
-```
-
-> A list of all the supported options in the script can be obtained by executing `python configure_ds.py --help`.

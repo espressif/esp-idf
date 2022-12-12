@@ -1,0 +1,22 @@
+menu "I2S PDM Example Configuration"
+
+    choice EXAMPLE_PDM_DIR
+        prompt "I2S PDM direction"
+        default EXAMPLE_PDM_TX
+        help
+            Select example PDM direction
+
+        config EXAMPLE_PDM_TX
+            bool "PDM TX"
+            depends on SOC_I2S_SUPPORTS_PDM_TX
+            help
+                PDM TX example will play 'twinkle twinkle little star' in three tones.
+
+        config EXAMPLE_PDM_RX
+            bool "PDM RX"
+            depends on SOC_I2S_SUPPORTS_PDM_RX
+            help
+                PDM RX example will show the received data from a PDM microphone.
+    endchoice
+
+endmenu

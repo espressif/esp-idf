@@ -24,6 +24,7 @@ The examples are grouped into subdirectories by category. Each category director
 - `storage` Examples showing data storage methods using SPI flash, external storage like the SD/MMC interface and flash partitioning.
 - `system` Demonstrates some internal chip features, or debugging & development tools.
 - `wifi` Advanced Wi-Fi features (For network protocol examples, see `protocols` instead.)
+- `Zigbee` Zigbee network and device examples.
 
 In addition to these examples, `commmon_components` directory contains code shared by several examples.
 
@@ -41,14 +42,15 @@ Building an example is the same as building any other project:
 
 ## Running Test Python Script (ttfw)
 
-Some of the examples have `..._test.py` scripts that are used to test that the example works as expected. These scripts run automatically in the internal test queue. They are not intended to be run by ESP-IDF users but sometimes you may want to run them locally. The following requirements must be met in the IDF python virtual environment.
+Some of the examples have `..._test.py` scripts that are used to test that the example works as expected. These scripts run automatically in the internal test queue. They are not intended to be run by ESP-IDF users but sometimes you may want to run them locally.
 
-- ttfw needs to be in the `PYTHONPATH`. Add it like this: `export PYTHONPATH=$PYTHONPATH:$IDF_PATH/tools/ci/python_packages`
-- Install all requirements from `tools/ci/python_packages/ttfw_idf/requirements.txt`: `python -m pip install -r $IDF_PATH/tools/ci/python_packages/ttfw_idf/requirements.txt`
+Install Python dependencies and export the Python path where the IDF CI Python modules are found with the following commands:
 
-These commands help solve the issue with `ModuleNotFoundError: No module named 'ttfw_idf'` and `ModuleNotFoundError: No module named 'tiny_test_fw'`.
-
-Some examples might fail due to other missing packages. You might need to install them manually: `pip install websocket`.
+```bash
+bash install.sh --enable-ttfw
+source export.sh
+export PYTHONPATH=$IDF_PATH/tools/ci/python_packages:$IDF_PATH/tools:$PYTHONPATH
+```
 
 ## Running Test Python Script (pytest)
 

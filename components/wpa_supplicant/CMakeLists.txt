@@ -6,6 +6,7 @@ set(srcs "port/os_xtensa.c"
     "src/ap/wpa_auth_ie.c"
     "src/ap/sta_info.c"
     "src/common/sae.c"
+    "src/common/dragonfly.c"
     "src/common/wpa_common.c"
     "src/utils/bitfield.c"
     "src/crypto/aes-siv.c"
@@ -62,7 +63,8 @@ set(esp_srcs "esp_supplicant/src/esp_wpa2.c"
     "esp_supplicant/src/esp_wpas_glue.c"
     "esp_supplicant/src/esp_common.c"
     "esp_supplicant/src/esp_wps.c"
-    "esp_supplicant/src/esp_wpa3.c")
+    "esp_supplicant/src/esp_wpa3.c"
+    "esp_supplicant/src/esp_owe.c")
 if(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
     set(esp_srcs ${esp_srcs} "esp_supplicant/src/esp_hostap.c")
 endif()
@@ -95,10 +97,8 @@ if(CONFIG_WPA_MBEDTLS_CRYPTO)
     "esp_supplicant/src/crypto/crypto_mbedtls-bignum.c"
     "esp_supplicant/src/crypto/crypto_mbedtls-rsa.c"
     "esp_supplicant/src/crypto/crypto_mbedtls-ec.c")
-    # Add internal RC4 if RC4 is disabled in mbedtls
-    if(CONFIG_MBEDTLS_RC4_DISABLED)
-        set(crypto_src ${crypto_src} "src/crypto/rc4.c")
-    endif()
+    # Add internal RC4 as RC4 has been removed from mbedtls
+    set(crypto_src ${crypto_src} "src/crypto/rc4.c")
     if(NOT CONFIG_MBEDTLS_DES_C)
         set(crypto_src ${crypto_src} "src/crypto/des-internal.c")
     endif()
@@ -143,6 +143,7 @@ else()
     "src/crypto/sha1-pbkdf2.c"
     "src/crypto/sha1.c"
     "src/crypto/sha256-internal.c"
+    "src/crypto/sha256.c"
     "src/crypto/sha384-internal.c"
     "src/crypto/sha512-internal.c"
     "src/crypto/sha256.c")
@@ -196,7 +197,7 @@ idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}
                             "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
                     PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src src/crypto
-                    PRIV_REQUIRES mbedtls esp_timer)
+                    PRIV_REQUIRES mbedtls esp_timer esp_wifi)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing -Wno-write-strings -Werror)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE
@@ -251,7 +252,7 @@ if(CONFIG_WPA_11R_SUPPORT)
 endif()
 if(NOT CONFIG_WPA_MBEDTLS_TLS_CLIENT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_TLS_INTERNAL_CLIENT
-                CONFIG_TLSV11 CONFIG_TLSV12 CONFIG_INTERNAL_SHA384 CONFIG_INTERNAL_SHA512 EAP_FAST)
+                CONFIG_TLSV11 CONFIG_TLSV12 EAP_FAST)
 endif()
 if(CONFIG_WPA_MBEDTLS_CRYPTO)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_CRYPTO_MBEDTLS)
@@ -261,4 +262,9 @@ endif()
 if(CONFIG_WPA_WPS_SOFTAP_REGISTRAR)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPS_REGISTRAR)
 endif()
+if(CONFIG_ESP32_WIFI_ENABLE_WPA3_OWE_STA)
+        target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_OWE_STA)
+endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

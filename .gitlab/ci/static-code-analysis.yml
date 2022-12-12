@@ -1,7 +1,7 @@
 # pre_check stage
 clang_tidy_check:
   extends:
-    - .pre_check_base_template
+    - .pre_check_template
     - .rules:patterns:clang_tidy
   image: ${CLANG_STATIC_ANALYSIS_IMAGE}
   artifacts:
@@ -10,12 +10,10 @@ clang_tidy_check:
     when: always
     expire_in: 1 day
   variables:
-    CLANG_TIDY_RUNNER_PROJ: 2107  # idf/clang-tidy-runner
     CLANG_TIDY_DIRS_TXT: ${CI_PROJECT_DIR}/tools/ci/clang_tidy_dirs.txt
     RULES_FILE: ${CI_PROJECT_DIR}/tools/ci/static-analysis-rules.yml
     OUTPUT_DIR: ${CI_PROJECT_DIR}/clang_tidy_reports
   script:
-    - python -m pip install -U pip
     - internal_pip_install $CLANG_TIDY_RUNNER_PROJ pyclang
     - export PATH=$PATH:$(python -c "import sys; print(sys.executable.rsplit('/', 1)[0])")
     - dirs=$(cat ${CLANG_TIDY_DIRS_TXT} | while read line; do echo ${CI_PROJECT_DIR}/${line}; done | xargs)
@@ -27,7 +25,7 @@ clang_tidy_check:
 
 check_pylint:
   extends:
-    - .pre_check_base_template
+    - .pre_check_template
     - .rules:patterns:python-files
     - .before_script_minimal
   image: $SONARQUBE_SCANNER_IMAGE

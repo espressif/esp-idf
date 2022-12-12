@@ -28,11 +28,17 @@ void app_main(void)
     /* Setting TinyUSB up */
     ESP_LOGI(TAG, "USB initialization");
 
-    tinyusb_config_t tusb_cfg = { 0 }; // the configuration uses default values
+    const tinyusb_config_t tusb_cfg = {
+        .device_descriptor = NULL,
+        .string_descriptor = NULL,
+        .external_phy = false, // In the most cases you need to use a `false` value
+        .configuration_descriptor = NULL,
+    };
+
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
-    tinyusb_config_cdcacm_t amc_cfg = { 0 }; // the configuration uses default values
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
+    tinyusb_config_cdcacm_t acm_cfg = { 0 }; // the configuration uses default values
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
 
     ESP_LOGI(TAG, "USB initialization DONE");
     while (1) {

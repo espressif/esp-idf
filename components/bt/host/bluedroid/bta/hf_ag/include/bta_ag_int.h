@@ -48,6 +48,7 @@
 #define HFP_VERSION_1_1         0x0101
 #define HFP_VERSION_1_5         0x0105
 #define HFP_VERSION_1_6         0x0106
+#define HFP_VERSION_1_7         0x0107
 
 #define HSP_VERSION_1_0         0x0100
 #define HSP_VERSION_1_2         0x0102
@@ -75,12 +76,12 @@
 #define BTA_AG_INT              1       /* initiating connection */
 
 /* feature mask that matches spec */
-#define BTA_AG_BSRF_FEAT_SPEC        (BTA_AG_FEAT_3WAY | BTA_AG_FEAT_ECNR    | \
-                                      BTA_AG_FEAT_VREC | BTA_AG_FEAT_INBAND  | \
-                                      BTA_AG_FEAT_VTAG | BTA_AG_FEAT_REJECT  | \
-                                      BTA_AG_FEAT_ECS  | BTA_AG_FEAT_ECC     | \
-                                      BTA_AG_FEAT_EXTERR | BTA_AG_FEAT_CODEC | \
-                                      BTA_AG_FEAT_VOIP)
+#define BTA_AG_BSRF_FEAT_SPEC        (BTA_AG_FEAT_3WAY   | BTA_AG_FEAT_ECNR    | \
+                                      BTA_AG_FEAT_VREC   | BTA_AG_FEAT_INBAND  | \
+                                      BTA_AG_FEAT_VTAG   | BTA_AG_FEAT_REJECT  | \
+                                      BTA_AG_FEAT_ECS    | BTA_AG_FEAT_ECC     | \
+                                      BTA_AG_FEAT_EXTERR | BTA_AG_FEAT_CODEC   | \
+                                      BTA_AG_FEAT_ESCO_S4| BTA_AG_FEAT_VOIP)
 
 #define BTA_AG_SDP_FEAT_SPEC         (BTA_AG_FEAT_3WAY | BTA_AG_FEAT_ECNR    | \
                                       BTA_AG_FEAT_VREC | BTA_AG_FEAT_INBAND  | \

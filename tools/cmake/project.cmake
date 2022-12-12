@@ -1,5 +1,5 @@
 # Designed to be included from an IDF app's CMakeLists.txt file
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 
 include(${CMAKE_CURRENT_LIST_DIR}/targets.cmake)
 # Initialize build target for this build using the environment variable or
@@ -43,6 +43,8 @@ endif()
 if(NOT "$ENV{IDF_COMPONENT_MANAGER}" EQUAL "0")
     idf_build_set_property(IDF_COMPONENT_MANAGER 1)
 endif()
+# Set component manager interface version
+idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 1)
 
 #
 # Get the project version from either a version file or the Git revision. This is passed
@@ -342,6 +344,12 @@ macro(project project_name)
     # Generate compile_commands.json (needs to come after project call).
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+    # If CMAKE_COLOR_DIAGNOSTICS not set in project CMakeLists.txt or in the environment,
+    # enable it by default.
+    if(NOT DEFINED CMAKE_COLOR_DIAGNOSTICS AND NOT DEFINED ENV{CMAKE_COLOR_DIAGNOSTICS})
+        set(CMAKE_COLOR_DIAGNOSTICS ON)
+    endif()
+
     # Since components can import third-party libraries, the original definition of project() should be restored
     # before the call to add components to the build.
     function(project)
@@ -351,7 +359,7 @@ macro(project project_name)
         # Set the variables that project() normally sets, documented in the
         # command's docs.
         #
-        # https://cmake.org/cmake/help/v3.5/command/project.html
+        # https://cmake.org/cmake/help/v3.16/command/project.html
         #
         # There is some nuance when it comes to setting version variables in terms of whether
         # CMP0048 is set to OLD or NEW. However, the proper behavior should have bee already handled by the original
@@ -364,6 +372,8 @@ macro(project project_name)
         set(PROJECT_VERSION_MINOR "${PROJECT_VERSION_MINOR}" PARENT_SCOPE)
         set(PROJECT_VERSION_PATCH "${PROJECT_VERSION_PATCH}" PARENT_SCOPE)
         set(PROJECT_VERSION_TWEAK "${PROJECT_VERSION_TWEAK}" PARENT_SCOPE)
+        set(PROJECT_DESCRIPTION "${PROJECT_DESCRIPTION}" PARENT_SCOPE)
+        set(PROJECT_HOMEPAGE_URL "${PROJECT_HOMEPAGE_URL}" PARENT_SCOPE)
 
         set(${PROJECT_NAME}_BINARY_DIR "${${PROJECT_NAME}_BINARY_DIR}" PARENT_SCOPE)
         set(${PROJECT_NAME}_SOURCE_DIR "${${PROJECT_NAME}_SOURCE_DIR}" PARENT_SCOPE)
@@ -372,6 +382,8 @@ macro(project project_name)
         set(${PROJECT_NAME}_VERSION_MINOR "${${PROJECT_NAME}_VERSION_MINOR}" PARENT_SCOPE)
         set(${PROJECT_NAME}_VERSION_PATCH "${${PROJECT_NAME}_VERSION_PATCH}" PARENT_SCOPE)
         set(${PROJECT_NAME}_VERSION_TWEAK "${${PROJECT_NAME}_VERSION_TWEAK}" PARENT_SCOPE)
+        set(${PROJECT_NAME}_DESCRIPTION "${${PROJECT_NAME}_DESCRIPTION}" PARENT_SCOPE)
+        set(${PROJECT_NAME}_HOMEPAGE_URL "${${PROJECT_NAME}_HOMEPAGE_URL}" PARENT_SCOPE)
     endfunction()
 
     # Prepare the following arguments for the idf_build_process() call using external
@@ -384,7 +396,14 @@ macro(project project_name)
     # PROJECT_NAME is taken from the passed name from project() call
     # PROJECT_DIR is set to the current directory
     # PROJECT_VER is from the version text or git revision of the current repo
-    set(_sdkconfig_defaults "$ENV{SDKCONFIG_DEFAULTS}")
+
+    # SDKCONFIG_DEFAULTS environment variable may specify a file name relative to the root of the project.
+    # When building the bootloader, ignore this variable, since:
+    # 1. The bootloader project uses an existing SDKCONFIG file from the top-level project
+    # 2. File specified by SDKCONFIG_DEFAULTS will not be found relative to the root of the bootloader project
+    if(NOT BOOTLOADER_BUILD)
+        set(_sdkconfig_defaults "$ENV{SDKCONFIG_DEFAULTS}")
+    endif()
 
     if(NOT _sdkconfig_defaults)
         if(EXISTS "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
@@ -445,8 +464,10 @@ macro(project project_name)
         __component_get_target(main_target idf::main)
         __component_get_property(reqs ${main_target} REQUIRES)
         __component_get_property(priv_reqs ${main_target} PRIV_REQUIRES)
-        idf_build_get_property(common_reqs __COMPONENT_REQUIRES_COMMON)
-        if(reqs STREQUAL common_reqs AND NOT priv_reqs) #if user has not set any requirements
+        __component_get_property(managed_reqs ${main_target} MANAGED_REQUIRES)
+        __component_get_property(managed_priv_reqs ${main_target} MANAGED_PRIV_REQUIRES)
+        #if user has not set any requirements, except ones added with the component manager
+        if((NOT reqs OR reqs STREQUAL managed_reqs) AND (NOT priv_reqs OR priv_reqs STREQUAL managed_priv_reqs))
             if(test_components)
                 list(REMOVE_ITEM build_components ${test_components})
             endif()
@@ -491,27 +512,47 @@ macro(project project_name)
         list(REMOVE_ITEM build_components ${test_components})
     endif()
 
+    if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        # Compiling for the host, and the host is macOS, so the linker is Darwin LD.
+        # Note, when adding support for Clang and LLD based toolchain this check will
+        # need to be modified.
+        set(linker_type "Darwin")
+    else()
+        set(linker_type "GNU")
+    endif()
+
     foreach(build_component ${build_components})
         __component_get_target(build_component_target ${build_component})
         __component_get_property(whole_archive ${build_component_target} WHOLE_ARCHIVE)
         if(whole_archive)
-            message(STATUS "Component ${build_component} will be linked with -Wl,--whole-archive")
-            target_link_libraries(${project_elf} PRIVATE
-                                  "-Wl,--whole-archive"
-                                   ${build_component}
-                                   "-Wl,--no-whole-archive")
+            if(linker_type STREQUAL "GNU")
+                message(STATUS "Component ${build_component} will be linked with -Wl,--whole-archive")
+                target_link_libraries(${project_elf} PRIVATE
+                                       "-Wl,--whole-archive"
+                                       ${build_component}
+                                       "-Wl,--no-whole-archive")
+            elseif(linker_type STREQUAL "Darwin")
+                message(STATUS "Component ${build_component} will be linked with -Wl,-force_load")
+                target_link_libraries(${project_elf} PRIVATE
+                                       "-Wl,-force_load"
+                                       ${build_component})
+            endif()
         else()
             target_link_libraries(${project_elf} PRIVATE ${build_component})
         endif()
     endforeach()
 
 
-    if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    if(linker_type STREQUAL "GNU")
         set(mapfile "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.map")
         set(idf_target "${IDF_TARGET}")
         string(TOUPPER ${idf_target} idf_target)
-        target_link_libraries(${project_elf} PRIVATE "-Wl,--cref" "-Wl,--defsym=IDF_TARGET_${idf_target}=0"
-        "-Wl,--Map=\"${mapfile}\"")
+        # Add cross-reference table to the map file
+        target_link_options(${project_elf} PRIVATE "-Wl,--cref")
+        # Add this symbol as a hint for idf_size.py to guess the target name
+        target_link_options(${project_elf} PRIVATE "-Wl,--defsym=IDF_TARGET_${idf_target}=0")
+        # Enable map file output
+        target_link_options(${project_elf} PRIVATE "-Wl,--Map=${mapfile}")
         unset(idf_target)
     endif()
 
@@ -523,23 +564,44 @@ macro(project project_name)
     idf_build_get_property(python PYTHON)
 
     set(idf_size ${python} ${idf_path}/tools/idf_size.py)
-    if(DEFINED OUTPUT_JSON AND OUTPUT_JSON)
-        list(APPEND idf_size "--json")
-    endif()
 
     # Add size targets, depend on map file, run idf_size.py
+    # OUTPUT_JSON is passed for compatibility reasons, SIZE_OUTPUT_FORMAT
+    # environment variable is recommended and has higher priority
     add_custom_target(size
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_SIZE_TOOL=${idf_size}"
+        -D "MAP_FILE=${mapfile}"
+        -D "OUTPUT_JSON=${OUTPUT_JSON}"
+        -P "${idf_path}/tools/cmake/run_size_tool.cmake"
         DEPENDS ${mapfile}
-        COMMAND ${idf_size} ${mapfile}
-        )
+        USES_TERMINAL
+        VERBATIM
+    )
+
     add_custom_target(size-files
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_SIZE_TOOL=${idf_size}"
+        -D "IDF_SIZE_MODE=--files"
+        -D "MAP_FILE=${mapfile}"
+        -D "OUTPUT_JSON=${OUTPUT_JSON}"
+        -P "${idf_path}/tools/cmake/run_size_tool.cmake"
         DEPENDS ${mapfile}
-        COMMAND ${idf_size} --files ${mapfile}
-        )
+        USES_TERMINAL
+        VERBATIM
+    )
+
     add_custom_target(size-components
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_SIZE_TOOL=${idf_size}"
+        -D "IDF_SIZE_MODE=--archives"
+        -D "MAP_FILE=${mapfile}"
+        -D "OUTPUT_JSON=${OUTPUT_JSON}"
+        -P "${idf_path}/tools/cmake/run_size_tool.cmake"
         DEPENDS ${mapfile}
-        COMMAND ${idf_size} --archives ${mapfile}
-        )
+        USES_TERMINAL
+        VERBATIM
+    )
 
     unset(idf_size)
 

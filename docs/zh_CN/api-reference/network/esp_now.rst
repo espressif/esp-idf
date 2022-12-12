@@ -68,15 +68,11 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 
 .. only:: esp32c2
 
-    配对设备的最大数量是 20，其中加密设备的数量不超过 4，默认值是 2。
+    配对设备的最大数量是 20，其中加密设备的数量不超过 4，默认值是 2。如果想要修改加密设备的数量，在 WiFi menuconfig 设置 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`。
 
-.. only:: esp32c3
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3
 
-    配对设备的最大数量是 20，其中加密设备的数量不超过 10，默认值是 6。
-
-.. only:: esp32 or esp32s2 or esp32s3
-
-    配对设备的最大数量是 20，其中加密设备的数量不超过 16，默认值是 6。
+    配对设备的最大数量是 20，其中加密设备的数量不超过 16，默认值是 6。如果想要修改加密设备的数量，在 WiFi menuconfig 设置 :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`。
 
 在发送广播数据之前必须添加具有广播 MAC 地址的设备。配对设备的信道范围是从 0 ～14。如果信道设置为 0，数据将在当前信道上发送。否则，必须使用本地设备所在的通道。
 
@@ -97,6 +93,19 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 ----------------------
 
 调用 :cpp:func:`esp_wifi_config_espnow_rate()` 配置指定接口的 ESPNOW 速率。确保在配置速率之前使能接口。这个 API 应该在 :cpp:func:`esp_wifi_start()` 之后调用。
+
+配置 ESP-NOW 功耗参数
+----------------------
+
+当且仅当 {IDF_TARGET_NAME} 配置为 STA 模式时，允许其进行休眠。
+
+进行休眠时，调用 :cpp:func:`esp_now_set_wake_window()` 为 ESP-NOW 收包配置 Window。默认情况下 Window 为最大值，将允许一直收包。
+
+如果对 ESP-NOW 进功耗管理，也需要调用 :cpp:func:`esp_wifi_connectionless_module_set_wake_interval()`。
+
+.. only:: SOC_WIFI_SUPPORTED
+
+    请参考 :ref:`非连接模块功耗管理 <connectionless-module-power-save-cn>` 获取更多信息。
 
 应用示例
 ----------

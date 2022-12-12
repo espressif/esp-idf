@@ -4,18 +4,36 @@
 import json
 import os
 import sys
+from typing import Any, Dict, List
 
 import click
 from idf_monitor_base.output_helpers import yellow_print
-from idf_py_actions.errors import FatalError, NoSerialPortFoundError
 from idf_py_actions.global_options import global_options
-from idf_py_actions.tools import ensure_build_directory, get_sdkconfig_value, run_target, run_tool
+from idf_py_actions.tools import (PropertyDict, RunTool, ensure_build_directory, get_default_serial_port,
+                                  get_sdkconfig_value, run_target)
 
 PYTHON = sys.executable
 
 
-def action_extensions(base_actions, project_path):
-    def _get_project_desc(ctx, args):
+BAUD_RATE = {
+    'names': ['-b', '--baud'],
+    'help': 'Baud rate for flashing. It can imply monitor baud rate as well if it hasn\'t been defined locally.',
+    'scope': 'global',
+    'envvar': 'ESPBAUD',
+    'default': 460800,
+}
+
+PORT = {
+    'names': ['-p', '--port'],
+    'help': 'Serial port.',
+    'scope': 'global',
+    'envvar': 'ESPPORT',
+    'default': None,
+}
+
+
+def action_extensions(base_actions: Dict, project_path: str) -> Dict:
+    def _get_project_desc(ctx: click.core.Context, args: PropertyDict) -> Any:
         desc_path = os.path.join(args.build_dir, 'project_description.json')
         if not os.path.exists(desc_path):
             ensure_build_directory(args, ctx.info_name)
@@ -23,33 +41,11 @@ def action_extensions(base_actions, project_path):
             project_desc = json.load(f)
         return project_desc
 
-    def _get_default_serial_port(args):
-        # Import is done here in order to move it after the check_environment() ensured that pyserial has been installed
-        try:
-            import esptool
-            import serial.tools.list_ports
-            ports = list(sorted(p.device for p in serial.tools.list_ports.comports()))
-            # high baud rate could cause the failure of creation of the connection
-            esp = esptool.get_default_connected_device(serial_list=ports, port=None, connect_attempts=4,
-                                                       initial_baud=115200)
-            if esp is None:
-                raise NoSerialPortFoundError(
-                    "No serial ports found. Connect a device, or use '-p PORT' option to set a specific port.")
-
-            serial_port = esp.serial_port
-            esp._port.close()
-
-            return serial_port
-        except NoSerialPortFoundError:
-            raise
-        except Exception as e:
-            raise FatalError('An exception occurred during detection of the serial port: {}'.format(e))
-
-    def _get_esptool_args(args):
+    def _get_esptool_args(args: PropertyDict) -> List:
         esptool_path = os.path.join(os.environ['IDF_PATH'], 'components/esptool_py/esptool/esptool.py')
         esptool_wrapper_path = os.environ.get('ESPTOOL_WRAPPER', '')
         if args.port is None:
-            args.port = _get_default_serial_port(args)
+            args.port = get_default_serial_port()
         result = [PYTHON]
         if os.path.exists(esptool_wrapper_path):
             result += [esptool_wrapper_path]
@@ -68,7 +64,7 @@ def action_extensions(base_actions, project_path):
             result += ['--no-stub']
         return result
 
-    def _get_commandline_options(ctx):
+    def _get_commandline_options(ctx: click.core.Context) -> List:
         """ Return all the command line options up to first action """
         # This approach ignores argument parsing done Click
         result = []
@@ -81,7 +77,8 @@ def action_extensions(base_actions, project_path):
 
         return result
 
-    def monitor(action, ctx, args, print_filter, monitor_baud, encrypted, no_reset, timestamps, timestamp_format):
+    def monitor(action: str, ctx: click.core.Context, args: PropertyDict, print_filter: str, monitor_baud: str, encrypted: bool,
+                no_reset: bool, timestamps: bool, timestamp_format: str, force_color: bool) -> None:
         """
         Run idf_monitor.py to watch build output
         """
@@ -98,7 +95,7 @@ def action_extensions(base_actions, project_path):
                 yellow_print(msg)
                 no_reset = False
 
-            esp_port = args.port or _get_default_serial_port(args)
+            esp_port = args.port or get_default_serial_port()
             monitor_args += ['-p', esp_port]
 
             baud = monitor_baud or os.getenv('IDF_MONITOR_BAUD') or os.getenv('MONITORBAUD')
@@ -147,12 +144,16 @@ def action_extensions(base_actions, project_path):
         if timestamp_format:
             monitor_args += ['--timestamp-format', timestamp_format]
 
+        if force_color or os.name == 'nt':
+            monitor_args += ['--force-color']
+
         idf_py = [PYTHON] + _get_commandline_options(ctx)  # commands to re-run idf.py
         monitor_args += ['-m', ' '.join("'%s'" % a for a in idf_py)]
+        hints = False  # Temporarily disabled because of https://github.com/espressif/esp-idf/issues/9610
 
-        run_tool('idf_monitor', monitor_args, args.project_dir)
+        RunTool('idf_monitor', monitor_args, args.project_dir, build_dir=args.build_dir, hints=hints, interactive=True)()
 
-    def flash(action, ctx, args):
+    def flash(action: str, ctx: click.core.Context, args: PropertyDict) -> None:
         """
         Run esptool to flash the entire project, from an argfile generated by the build system
         """
@@ -162,16 +163,16 @@ def action_extensions(base_actions, project_path):
             yellow_print('skipping flash since running on linux...')
             return
 
-        esp_port = args.port or _get_default_serial_port(args)
+        esp_port = args.port or get_default_serial_port()
         run_target(action, args, {'ESPBAUD': str(args.baud), 'ESPPORT': esp_port})
 
-    def erase_flash(action, ctx, args):
+    def erase_flash(action: str, ctx: click.core.Context, args: PropertyDict) -> None:
         ensure_build_directory(args, ctx.info_name)
         esptool_args = _get_esptool_args(args)
         esptool_args += ['erase_flash']
-        run_tool('esptool.py', esptool_args, args.build_dir)
+        RunTool('esptool.py', esptool_args, args.build_dir, hints=not args.no_hints)()
 
-    def global_callback(ctx, global_args, tasks):
+    def global_callback(ctx: click.core.Context, global_args: Dict, tasks: PropertyDict) -> None:
         encryption = any([task.name in ('encrypted-flash', 'encrypted-app-flash') for task in tasks])
         if encryption:
             for task in tasks:
@@ -179,34 +180,18 @@ def action_extensions(base_actions, project_path):
                     task.action_args['encrypted'] = True
                     break
 
-    def ota_targets(target_name, ctx, args):
+    def ota_targets(target_name: str, ctx: click.core.Context, args: PropertyDict) -> None:
         """
         Execute the target build system to build target 'target_name'.
         Additionally set global variables for baud and port.
         Calls ensure_build_directory() which will run cmake to generate a build
         directory (with the specified generator) as needed.
         """
-        args.port = args.port or _get_default_serial_port(args)
+        args.port = args.port or get_default_serial_port()
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args, {'ESPBAUD': str(args.baud), 'ESPPORT': args.port})
 
-    baud_rate = {
-        'names': ['-b', '--baud'],
-        'help': 'Baud rate for flashing. It can imply monitor baud rate as well if it hasn\'t been defined locally.',
-        'scope': 'global',
-        'envvar': 'ESPBAUD',
-        'default': 460800,
-    }
-
-    port = {
-        'names': ['-p', '--port'],
-        'help': 'Serial port.',
-        'scope': 'global',
-        'envvar': 'ESPPORT',
-        'default': None,
-    }
-
-    BAUD_AND_PORT = [baud_rate, port]
+    BAUD_AND_PORT = [BAUD_RATE, PORT]
     serial_actions = {
         'global_action_callbacks': [global_callback],
         'actions': {
@@ -238,7 +223,7 @@ def action_extensions(base_actions, project_path):
                 'help':
                 'Display serial output.',
                 'options': [
-                    port, {
+                    PORT, {
                         'names': ['--print-filter', '--print_filter'],
                         'help':
                         ('Filter monitor output. '
@@ -283,6 +268,10 @@ def action_extensions(base_actions, project_path):
                         'help': ('Set the formatting of timestamps compatible with strftime(). '
                                  'For example, "%Y-%m-%d %H:%M:%S".'),
                         'default': None
+                    }, {
+                        'names': ['--force-color'],
+                        'is_flag': True,
+                        'help': 'Always print ANSI for colors',
                     }
 
                 ],

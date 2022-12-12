@@ -1,11 +1,8 @@
-/* TWAI Self Test Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: CC0-1.0
+ */
 
 /*
  * The following example demonstrates the self testing capabilities of the TWAI
@@ -43,8 +40,9 @@
 static const twai_timing_config_t t_config = TWAI_TIMING_CONFIG_25KBITS();
 //Filter all other IDs except MSG_ID
 static const twai_filter_config_t f_config = {.acceptance_code = (MSG_ID << 21),
-                                             .acceptance_mask = ~(TWAI_STD_ID_MASK << 21),
-                                             .single_filter = true};
+                                              .acceptance_mask = ~(TWAI_STD_ID_MASK << 21),
+                                              .single_filter = true
+                                             };
 //Set to NO_ACK mode due to self testing with single module
 static const twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(TX_GPIO_NUM, RX_GPIO_NUM, TWAI_MODE_NO_ACK);
 

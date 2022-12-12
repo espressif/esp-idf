@@ -33,7 +33,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#define HCI_GET_CMD_BUF(paramlen)       ((BT_HDR *)osi_malloc(HCIC_PREAMBLE_SIZE + sizeof(BT_HDR) + paramlen))
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 static BlE_SYNC ble_sync_info;
 
@@ -557,19 +556,17 @@ BOOLEAN btsnd_hcic_ble_encrypt (UINT8 *key, UINT8 key_len,
     BT_HDR *p;
     UINT8 *pp;
 
-    if ((p = HCI_GET_CMD_BUF(sizeof (void *) +
-                             HCIC_PARAM_SIZE_BLE_ENCRYPT)) == NULL) {
+    if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_BLE_ENCRYPT)) == NULL) {
         return (FALSE);
     }
 
     pp = (UINT8 *)(p + 1);
 
     p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_ENCRYPT;
-    p->offset = sizeof(void *);
+    p->offset = 0;
 
-    *((void **)pp) = p_cmd_cplt_cback;  /* Store command complete callback in buffer */
-    pp += sizeof(void *);               /* Skip over callback pointer */
-
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(p);
+    metadata->context = p_cmd_cplt_cback;
 
     UINT16_TO_STREAM (pp, HCI_BLE_ENCRYPT);
     UINT8_TO_STREAM  (pp, HCIC_PARAM_SIZE_BLE_ENCRYPT);
@@ -596,18 +593,17 @@ BOOLEAN btsnd_hcic_ble_rand (void *p_cmd_cplt_cback)
     BT_HDR *p;
     UINT8 *pp;
 
-    if ((p = HCI_GET_CMD_BUF(sizeof (void *) +
-                             HCIC_PARAM_SIZE_BLE_RAND)) == NULL) {
+    if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_BLE_RAND)) == NULL) {
         return (FALSE);
     }
 
     pp = (UINT8 *)(p + 1);
 
     p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_RAND;
-    p->offset = sizeof(void *);
+    p->offset = 0;
 
-    *((void **)pp) = p_cmd_cplt_cback;  /* Store command complete callback in buffer */
-    pp += sizeof(void *);               /* Skip over callback pointer */
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(p);
+    metadata->context = p_cmd_cplt_cback;
 
     UINT16_TO_STREAM (pp, HCI_BLE_RAND);
     UINT8_TO_STREAM  (pp, HCIC_PARAM_SIZE_BLE_RAND);
@@ -1032,14 +1028,25 @@ BOOLEAN btsnd_hcic_ble_set_data_length(UINT16 conn_handle, UINT16 tx_octets, UIN
     return TRUE;
 }
 
-BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num)
+BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num, BT_HDR *static_buf)
 {
     BT_HDR *p;
     UINT8 *pp;
 
-    if ((p = HCI_GET_CMD_BUF (HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL)) == NULL) {
-        return (FALSE);
+    if (static_buf != NULL) {
+        p = static_buf;
+    } else {
+        if ((p = HCI_GET_CMD_BUF (HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL)) == NULL) {
+            return (FALSE);
+        }
     }
+
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(p);
+    metadata->flags_src = HCI_CMD_MSG_F_SRC_NOACK;
+    if (static_buf == p) {
+        assert(metadata->command_free_cb != NULL);
+    }
+    p->layer_specific = HCI_CMD_BUF_TYPE_METADATA;
 
     pp = (UINT8 *)(p + 1);
 
@@ -1207,7 +1214,7 @@ UINT8 btsnd_hcic_ble_set_extend_rand_address(UINT8 adv_handle, BD_ADDR rand_addr
 UINT8 btsnd_hcic_ble_set_ext_adv_params(UINT8 adv_handle, UINT16 properties, UINT32 interval_min,
                                           UINT32 interval_max, UINT8 channel_map, UINT8 own_addr_type,
                                           UINT8 peer_addr_type, BD_ADDR peer_addr,
-                                          UINT8 adv_filter_policy, UINT8 adv_tx_power,
+                                          UINT8 adv_filter_policy, INT8 adv_tx_power,
                                           UINT8 primary_adv_phy, UINT8 secondary_adv_max_skip,
                                           UINT8 secondary_adv_phy,
                                           UINT8 adv_sid, UINT8 scan_req_ntf_enable)
@@ -1237,7 +1244,7 @@ UINT8 btsnd_hcic_ble_set_ext_adv_params(UINT8 adv_handle, UINT16 properties, UIN
     UINT8_TO_STREAM(pp, peer_addr_type);
     BDADDR_TO_STREAM (pp, peer_addr);
     UINT8_TO_STREAM(pp, adv_filter_policy);
-    UINT8_TO_STREAM(pp, adv_tx_power);
+    INT8_TO_STREAM(pp, adv_tx_power);
     UINT8_TO_STREAM(pp, primary_adv_phy);
     UINT8_TO_STREAM(pp, secondary_adv_max_skip);
     UINT8_TO_STREAM(pp, secondary_adv_phy);
@@ -1759,7 +1766,7 @@ UINT8 btsnd_hcic_ble_write_rf_path_compensation(UINT16 rf_tx_path, UINT16 rf_rx_
     UINT8 *pp;
     HCI_TRACE_EVENT("%s, rf_tx_path = %d, rf_rx_path = %d", __func__, rf_tx_path, rf_rx_path);
 
-    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_READ_RF_PATH_COMPENSATION);
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_WRITE_RF_PATH_COMPENSATION);
 
     pp = (UINT8 *)(p + 1);
 

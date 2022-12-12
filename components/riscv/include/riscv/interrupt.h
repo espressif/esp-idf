@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -77,23 +69,45 @@ void esprv_intc_int_enable(uint32_t unmask);
 void esprv_intc_int_disable(uint32_t mask);
 
 /**
-  * @brief Set interrupt type, level or edge
-  *
-  * @param int intr_num, interrupt number
-  *
-  * @param enum intr_type type, interrupt type, the level interrupt
- can be cleared automatically once the interrupt source cleared, the edge interrupt should be clear by software after handled
-  *
-  * return none
-  */
+ * @brief Set interrupt type
+ *
+ * Set the type of a particular interrupt (level or edge).
+ * - Level interrupts are cleared automatically once their interrupt source has
+ *   been cleared
+ * - Edge interrupts must be cleared by software when they are handled.
+ *
+ * @param intr_num Interrupt number
+ * @param type Interrupt type
+ */
 void esprv_intc_int_set_type(int intr_num, enum intr_type type);
 
 /**
+ * @brief Get the current type of an interrupt
+ *
+ * Get the current type of a particular interrupt (level or edge). An interrupt's
+ * type can be set by calling esprv_intc_int_set_type().
+ *
+ * @param intr_num Interrupt number
+ * @return Interrupt type
+ */
+enum intr_type esprv_intc_int_get_type(int intr_num);
+
+/**
  * Set interrupt priority in the interrupt controller
- * @param rv_int_num  CPU interrupt number
- * @param priority  Interrupt priority level, 1 to 7
+ * @param rv_int_num CPU interrupt number
+ * @param priority Interrupt priority level, 1 to 7
  */
 void esprv_intc_int_set_priority(int rv_int_num, int priority);
+
+/**
+ * @brief Get the current priority of an interrupt
+ *
+ * Get the current priority of an interrupt.
+ *
+ * @param rv_int_num CPU interrupt number
+ * @return Interrupt priority level, 1 to 7
+ */
+int esprv_intc_int_get_priority(int rv_int_num);
 
 /**
  * Set interrupt priority threshold.
@@ -101,7 +115,7 @@ void esprv_intc_int_set_priority(int rv_int_num, int priority);
  *
  * @param priority_threshold  Interrupt priority threshold, 0 to 7
  */
-void esprv_intc_set_threshold(int priority_threshold);
+void esprv_intc_int_set_threshold(int priority_threshold);
 
 /**
  * @brief Get interrupt unmask

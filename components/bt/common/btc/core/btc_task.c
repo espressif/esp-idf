@@ -60,6 +60,10 @@
 #endif /* #if CLASSIC_BT_INCLUDED */
 #endif
 
+#if (BLE_INCLUDED == TRUE)
+#include "btc_gap_ble.h"
+#endif
+
 #if CONFIG_BLE_MESH
 #include "btc_ble_mesh_ble.h"
 #include "btc_ble_mesh_prov.h"
@@ -75,6 +79,9 @@
 #define BTC_TASK_STACK_SIZE             (BT_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
 #define BTC_TASK_NAME                   "BTC_TASK"
 #define BTC_TASK_PRIO                   (BT_TASK_MAX_PRIORITIES - 6)
+#define BTC_TASK_WORKQUEUE_NUM          (2)
+#define BTC_TASK_WORKQUEUE0_LEN         (0)
+#define BTC_TASK_WORKQUEUE1_LEN         (5)
 
 osi_thread_t *btc_thread;
 
@@ -203,24 +210,12 @@ static void btc_thread_handler(void *arg)
         break;
     }
 
-    if (msg->arg) {
-        osi_free(msg->arg);
-    }
     osi_free(msg);
 }
 
 static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
 {
-    btc_msg_t *lmsg;
-
-    lmsg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t));
-    if (lmsg == NULL) {
-        return BT_STATUS_NOMEM;
-    }
-
-    memcpy(lmsg, msg, sizeof(btc_msg_t));
-
-    if (osi_thread_post(btc_thread, btc_thread_handler, lmsg, 0, timeout) == false) {
+    if (osi_thread_post(btc_thread, btc_thread_handler, msg, 0, timeout) == false) {
         return BT_STATUS_BUSY;
     }
 
@@ -233,52 +228,61 @@ static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
  * @param  arg       paramter
  * @param  arg_len   length of paramter
  * @param  copy_func deep copy function
+ * @param  free_func deep free function
  * @return           BT_STATUS_SUCCESS: success
  *                   others: fail
  */
-bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func)
+bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func,
+                                    btc_arg_deep_free_t free_func)
 {
-    btc_msg_t lmsg;
-
-    if (msg == NULL) {
+    btc_msg_t* lmsg;
+    bt_status_t ret;
+    //                              arg XOR arg_len
+    if ((msg == NULL) || ((arg == NULL) == !(arg_len == 0))) {
+        BTC_TRACE_WARNING("%s Invalid parameters\n", __func__);
         return BT_STATUS_PARM_INVALID;
     }
 
     BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, arg);
 
-    memcpy(&lmsg, msg, sizeof(btc_msg_t));
-    if (arg) {
-        lmsg.arg = (void *)osi_malloc(arg_len);
-        if (lmsg.arg == NULL) {
-            return BT_STATUS_NOMEM;
-        }
-        memset(lmsg.arg, 0x00, arg_len);    //important, avoid arg which have no length
-        memcpy(lmsg.arg, arg, arg_len);
-        if (copy_func) {
-            copy_func(&lmsg, lmsg.arg, arg);
-        }
-    } else {
-        lmsg.arg = NULL;
+    lmsg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + arg_len);
+    if (lmsg == NULL) {
+        BTC_TRACE_WARNING("%s No memory\n", __func__);
+        return BT_STATUS_NOMEM;
     }
 
-    return btc_task_post(&lmsg, OSI_THREAD_MAX_TIMEOUT);
+    memcpy(lmsg, msg, sizeof(btc_msg_t));
+    if (arg) {
+        memset(lmsg->arg, 0x00, arg_len);    //important, avoid arg which have no length
+        memcpy(lmsg->arg, arg, arg_len);
+        if (copy_func) {
+            copy_func(lmsg, lmsg->arg, arg);
+        }
+    }
 
+    ret = btc_task_post(lmsg, OSI_THREAD_MAX_TIMEOUT);
+    if (ret != BT_STATUS_SUCCESS) {
+        if (copy_func && free_func) {
+            free_func(lmsg);
+        }
+        osi_free(lmsg);
+    }
+
+    return ret;
 }
 
 /**
  * transfer an message to another module in tha same task.
  * @param  msg       message
- * @param  arg       paramter
  * @return           BT_STATUS_SUCCESS: success
  *                   others: fail
  */
-bt_status_t btc_inter_profile_call(btc_msg_t *msg, void *arg)
+bt_status_t btc_inter_profile_call(btc_msg_t *msg)
 {
     if (msg == NULL) {
         return BT_STATUS_PARM_INVALID;
     }
 
-    msg->arg = arg;
     switch (msg->sig) {
     case BTC_SIG_API_CALL:
         profile_tab[msg->pid].btc_call(msg);
@@ -414,7 +418,9 @@ error_exit:;
 
 bt_status_t btc_init(void)
 {
-    btc_thread = osi_thread_create(BTC_TASK_NAME, BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE, 2);
+    const size_t workqueue_len[] = {BTC_TASK_WORKQUEUE0_LEN, BTC_TASK_WORKQUEUE1_LEN};
+    btc_thread = osi_thread_create(BTC_TASK_NAME, BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE,
+                                   BTC_TASK_WORKQUEUE_NUM, workqueue_len);
     if (btc_thread == NULL) {
         return BT_STATUS_NOMEM;
     }
@@ -427,6 +433,7 @@ bt_status_t btc_init(void)
 
 #if (BLE_INCLUDED == TRUE)
     btc_gap_callback_init();
+    btc_gap_ble_init();
 #endif  ///BLE_INCLUDED == TRUE
 
 #if SCAN_QUEUE_CONGEST_CHECK
@@ -444,7 +451,9 @@ void btc_deinit(void)
 
     osi_thread_free(btc_thread);
     btc_thread = NULL;
-
+#if (BLE_INCLUDED == TRUE)
+    btc_gap_ble_deinit();
+#endif  ///BLE_INCLUDED == TRUE
 #if SCAN_QUEUE_CONGEST_CHECK
     btc_adv_list_deinit();
 #endif
@@ -462,4 +471,9 @@ bool btc_check_queue_is_congest(void)
 int get_btc_work_queue_size(void)
 {
     return osi_thread_queue_wait_size(btc_thread, 0);
+}
+
+osi_thread_t *btc_get_current_thread(void)
+{
+    return btc_thread;
 }

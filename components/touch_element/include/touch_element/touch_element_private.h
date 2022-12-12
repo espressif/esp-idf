@@ -1,16 +1,8 @@
-// Copyright 2016-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -18,6 +10,8 @@
 #include "touch_element/touch_button.h"
 #include "touch_element/touch_slider.h"
 #include "touch_element/touch_matrix.h"
+#include "esp_pm.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,6 +56,7 @@ typedef struct {
     touch_pad_t channel;          //!< Touch channel number(index)
     te_dev_type_t type;           //!< Touch channel type  TODO: need to refactor as te_class_type_t
     te_dev_state_t state;         //!< Touch channel current state
+    bool is_use_last_threshold;
 } te_dev_t;
 
 typedef enum {
@@ -87,6 +82,16 @@ struct te_waterproof_s {
     bool is_shield_level_set;                   //Waterproof shield level setting bit
 };
 typedef struct te_waterproof_s* te_waterproof_handle_t;
+/* -------------------------------------------- Sleep basic type --------------------------------------------- */
+struct te_sleep_s {
+    touch_elem_handle_t wakeup_handle;
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;
+#endif
+    uint32_t *non_volatile_threshold;
+};
+
+typedef struct te_sleep_s* te_sleep_handle_t;
 /* -------------------------------------------- Button basic type --------------------------------------------- */
 typedef struct {
     touch_elem_dispatch_t dispatch_method;      //Button dispatch method
@@ -178,6 +183,16 @@ void te_object_method_register(te_object_methods_t *object_methods, te_class_typ
 void te_object_method_unregister(te_class_type_t object_type);
 bool te_object_check_channel(const touch_pad_t *channel_array, uint8_t channel_sum);
 bool waterproof_check_mask_handle(touch_elem_handle_t te_handle);
+bool te_is_touch_dsleep_wakeup(void);
+touch_pad_t te_get_sleep_channel(void);
+
+bool is_button_object_handle(touch_elem_handle_t element_handle);
+bool is_slider_object_handle(touch_elem_handle_t element_handle);
+bool is_matrix_object_handle(touch_elem_handle_t element_handle);
+
+void button_enable_wakeup_calibration(te_button_handle_t button_handle, bool en);
+void slider_enable_wakeup_calibration(te_slider_handle_t slider_handle, bool en);
+void matrix_enable_wakeup_calibration(te_matrix_handle_t matrix_handle, bool en);
 /* ------------------------------------------------------------------------------------------------------------------ */
 
 #ifdef __cplusplus

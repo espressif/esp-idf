@@ -30,6 +30,7 @@
 #include <sys/lock.h>
 
 #include "esp_log.h"
+#include "esp_memory_utils.h"
 #include "esp_crypto_lock.h"
 #include "esp_attr.h"
 #include "soc/lldesc.h"
@@ -53,8 +54,8 @@
 #include "esp32s3/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32s3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/cache.h"
 #endif
@@ -267,7 +268,7 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
         }
 
         ilen -= dma_chunk_len;
-        input += dma_chunk_len;
+        input = (uint8_t *)input + dma_chunk_len;
 
         // Only append buf to the first operation
         buf_len = 0;

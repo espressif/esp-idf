@@ -9,6 +9,7 @@ import sys
 
 import pexpect
 import pytest
+from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
 
 
@@ -39,19 +40,26 @@ class CustomProcess(object):
 
 
 @pytest.mark.supported_targets
-@pytest.mark.wifi
+@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
+@pytest.mark.wifi_router
 def test_examples_esp_local_ctrl(dut: Dut) -> None:
 
     rel_project_path = os.path.join('examples', 'protocols', 'esp_local_ctrl')
     idf_path = get_sdk_path()
 
-    dut_ip = dut.expect(r'esp_netif_handlers: sta ip: (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')[1].decode()
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        dut.expect('Please input ssid password:')
+        env_name = 'wifi_router'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
+    dut_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]')[1].decode()
     dut.expect('esp_https_server: Starting server')
     dut.expect('esp_https_server: Server listening on port 443')
     dut.expect('control: esp_local_ctrl service started with name : my_esp_ctrl_device')
 
     def dut_expect_read() -> None:
-        dut.expect_exact('control: Reading property : timestamp (us)')
+        dut.expect_exact('control: Reading property : timestamp (us)', timeout=20)
         dut.expect_exact('control: Reading property : property1')
         dut.expect_exact('control: Reading property : property2')
         dut.expect_exact('control: Reading property : property3')
@@ -59,7 +67,9 @@ def test_examples_esp_local_ctrl(dut: Dut) -> None:
     # Running mDNS services in docker is not a trivial task. Therefore, the script won't connect to the host name but
     # to IP address. However, the certificates were generated for the host name and will be rejected.
     cmd = ' '.join([sys.executable, os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
-                    '--sec_ver 0',
+                    '--sec_ver 2',
+                    '--sec2_username wifiprov',
+                    '--sec2_pwd abcd1234',
                     '--name', dut_ip,
                     '--dont-check-hostname'])  # don't reject the certificate because of the hostname
     esp_local_ctrl_log = os.path.join(idf_path, rel_project_path, 'esp_local_ctrl.log')

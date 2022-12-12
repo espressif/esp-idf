@@ -5,13 +5,16 @@ SOURCE_FILES := \
 	esp32/crc.cpp \
 	esp32/esp_random.c \
 	esp_timer/src/esp_timer.c \
+	bsd/strlcpy.c\
 	bootloader_support/src/bootloader_common.c
 
 INCLUDE_DIRS := \
 	../include \
 	../private_include \
 	app_update/include \
+	bsd/include \
 	driver/include \
+	esp_app_format/include \
 	esp_timer/include \
 	freertos/include \
 	log/include \
@@ -24,7 +27,7 @@ INCLUDE_DIRS := \
 	esp_hw_support/include/soc \
 	esp_system/include \
 	soc/esp32/include \
-        heap/include \
+	heap/include \
 	soc/include \
 	xtensa/include \
 	xtensa/esp32/include \
@@ -34,5 +37,6 @@ INCLUDE_DIRS := \
 	bootloader_support/bootloader_flash/include \
 	app_update/include \
 	hal/include \
+	esp_partition/include \
 	spi_flash/include \
 	)

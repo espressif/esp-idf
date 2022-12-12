@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Mesh IP Internal Networking example
 
 This example demonstrates how to use mesh to create a IP capable sub-network.
@@ -6,11 +9,11 @@ and uses internal communication at the same time
 
 ## Functionality
 
-This example uses experimental NAT feature to translate addresses/ports from an internal subnet, that is created 
+This example uses experimental NAT feature to translate addresses/ports from an internal subnet, that is created
 by the root node running a DHCP server. At the same time, the nodes communicate using low level mesh send/receive
 API to exchange data, such as routing table from root to all nodes and an event notification from one node
 to all other nodes in the mesh. As a demonstration, the same event is also published at the mqtt broker
-on a subscribed topic, so both internal mesh_recv() notification as well as mqtt data event are to be received. 
+on a subscribed topic, so both internal mesh_recv() notification as well as mqtt data event are to be received.
 
 ### Hardware Required
 

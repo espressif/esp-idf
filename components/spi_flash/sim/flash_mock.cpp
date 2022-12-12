@@ -1,13 +1,12 @@
-#include "SpiFlash.h"
-
 #include <string.h>
 #include <stdlib.h>
 
-#include "esp_spi_flash.h"
-#include "esp_partition.h"
-
+#include "SpiFlash.h"
+#include "spi_flash_mmap.h"
 #include "esp_err.h"
 #include "esp_rom_spiflash.h"
+#include "esp_flash.h"
+#include "bsd_strings.h"
 
 SpiFlash spiflash = SpiFlash();
 
@@ -85,6 +84,11 @@ esp_rom_spiflash_result_t esp_rom_spiflash_read(uint32_t target, uint32_t *dest,
     return spiflash.read(target, dest, len);
 }
 
+extern "C" esp_err_t esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t address, uint32_t length)
+{
+    return spiflash.read(address, buffer, length);
+}
+
 esp_rom_spiflash_result_t esp_rom_spiflash_erase_block(uint32_t block)
 {
     return spiflash.erase_block(block);
@@ -100,9 +104,27 @@ esp_rom_spiflash_result_t esp_rom_spiflash_erase_page(uint32_t page)
     return spiflash.erase_page(page);
 }
 
+extern "C" esp_err_t esp_flash_erase_region(esp_flash_t *chip, uint32_t start_addr, uint32_t size)
+{
+    size_t start = start_addr / SPI_FLASH_SEC_SIZE;
+    size_t end = start + size / SPI_FLASH_SEC_SIZE;
+    const size_t sectors_per_block = 65536 / SPI_FLASH_SEC_SIZE;
+    esp_rom_spiflash_result_t rc = ESP_ROM_SPIFLASH_RESULT_OK;
+    for (size_t sector = start; sector != end && rc == ESP_ROM_SPIFLASH_RESULT_OK; ) {
+        rc = spiflash.erase_sector(sector);
+        ++sector;
+    }
+    return rc;
+}
+
 esp_rom_spiflash_result_t esp_rom_spiflash_write(uint32_t target, const uint32_t *src, int32_t len)
 {
     return spiflash.write(target, src, len);
+}
+
+extern "C" esp_err_t esp_flash_write(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length)
+{
+    return spiflash.write(address, buffer, length);
 }
 
 esp_rom_spiflash_result_t esp_rom_spiflash_write_encrypted(uint32_t flash_addr, uint32_t *data, uint32_t len)

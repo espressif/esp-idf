@@ -3,10 +3,6 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
-config SOC_CPU_CORES_NUM
-    bool
-    default y
-
 config SOC_ADC_SUPPORTED
     bool
     default y
@@ -21,7 +17,7 @@ config SOC_GDMA_SUPPORTED
 
 config SOC_BT_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_WIFI_SUPPORTED
     bool
@@ -43,9 +39,21 @@ config SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
     bool
     default y
 
+config SOC_TEMP_SENSOR_SUPPORTED
+    bool
+    default y
+
+config SOC_LEDC_SUPPORTED
+    bool
+    default y
+
+config SOC_I2C_SUPPORTED
+    bool
+    default y
+
 config SOC_SHA_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_ECC_SUPPORTED
     bool
@@ -59,11 +67,19 @@ config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
-config SOC_ADC_DIG_CTRL_SUPPORTED
+config SOC_SYSTIMER_SUPPORTED
     bool
     default y
 
-config SOC_ADC_ARBITER_SUPPORTED
+config SOC_XTAL_SUPPORT_26M
+    bool
+    default y
+
+config SOC_XTAL_SUPPORT_40M
+    bool
+    default y
+
+config SOC_ADC_DIG_CTRL_SUPPORTED
     bool
     default y
 
@@ -85,7 +101,7 @@ config SOC_ADC_MAX_CHANNEL_NUM
 
 config SOC_ADC_ATTEN_NUM
     int
-    default 2
+    default 4
 
 config SOC_ADC_DIGI_CONTROLLER_NUM
     int
@@ -94,6 +110,10 @@ config SOC_ADC_DIGI_CONTROLLER_NUM
 config SOC_ADC_PATT_LEN_MAX
     int
     default 8
+
+config SOC_ADC_DIGI_MIN_BITWIDTH
+    int
+    default 12
 
 config SOC_ADC_DIGI_MAX_BITWIDTH
     int
@@ -123,7 +143,7 @@ config SOC_ADC_RTC_MAX_BITWIDTH
     int
     default 12
 
-config SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256
+config SOC_ADC_CALIBRATION_V1_SUPPORTED
     bool
     default y
 
@@ -135,6 +155,18 @@ config SOC_SHARED_IDCACHE_SUPPORTED
     bool
     default y
 
+config SOC_CPU_CORES_NUM
+    int
+    default 1
+
+config SOC_CPU_INTR_NUM
+    int
+    default 32
+
+config SOC_CPU_HAS_FLEXIBLE_INTC
+    bool
+    default y
+
 config SOC_CPU_BREAKPOINTS_NUM
     int
     default 2
@@ -143,15 +175,15 @@ config SOC_CPU_WATCHPOINTS_NUM
     int
     default 2
 
-config SOC_CPU_HAS_FLEXIBLE_INTC
-    bool
-    default y
-
 config SOC_CPU_WATCHPOINT_SIZE
     hex
     default 0x80000000
 
 config SOC_CPU_IDRAM_SPLIT_USING_PMP
+    bool
+    default y
+
+config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool
     default y
 
@@ -191,6 +223,10 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
     int
     default 0
 
+config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
+    hex
+    default 0x00000000001FFFC0
+
 config SOC_GPIO_SUPPORT_SLP_SWITCH
     bool
     default y
@@ -213,7 +249,7 @@ config SOC_I2C_NUM
 
 config SOC_I2C_FIFO_LEN
     int
-    default 32
+    default 16
 
 config SOC_I2C_SUPPORT_HW_CLR_BUS
     bool
@@ -283,19 +319,7 @@ config SOC_RSA_MAX_BIT_LEN
     int
     default 3072
 
-config SOC_SHA_DMA_MAX_BUFFER_SIZE
-    int
-    default 3968
-
-config SOC_SHA_SUPPORT_DMA
-    bool
-    default y
-
 config SOC_SHA_SUPPORT_RESUME
-    bool
-    default y
-
-config SOC_SHA_GDMA
     bool
     default y
 
@@ -314,6 +338,10 @@ config SOC_SHA_SUPPORT_SHA256
 config SOC_SPI_PERIPH_NUM
     int
     default 2
+
+config SOC_SPI_MAX_CS_NUM
+    int
+    default 6
 
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
@@ -391,10 +419,6 @@ config SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED
     bool
     default y
 
-config SOC_SYSTIMER_SUPPORTED
-    bool
-    default y
-
 config SOC_SYSTIMER_COUNTER_NUM
     int
     default 2
@@ -411,9 +435,9 @@ config SOC_SYSTIMER_BIT_WIDTH_HI
     int
     default 20
 
-config SOC_SYSTIMER_FIXED_TICKS_US
-    int
-    default 16
+config SOC_SYSTIMER_FIXED_DIVIDER
+    bool
+    default y
 
 config SOC_SYSTIMER_INT_LEVEL
     bool
@@ -447,10 +471,6 @@ config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 1
 
-config SOC_TOUCH_SENSOR_NUM
-    int
-    default 0
-
 config SOC_SECURE_BOOT_V2_ECC
     bool
     default y
@@ -467,9 +487,17 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     bool
     default y
 
+config SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS
+    bool
+    default y
+
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
     bool
-    default n
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
+    bool
+    default y
 
 config SOC_UART_NUM
     int
@@ -487,6 +515,10 @@ config SOC_UART_SUPPORT_WAKEUP_INT
     bool
     default y
 
+config SOC_UART_SUPPORT_PLL_F40M_CLK
+    bool
+    default y
+
 config SOC_UART_SUPPORT_RTC_CLK
     bool
     default y
@@ -500,6 +532,10 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     default y
 
 config SOC_COEX_HW_PTI
+    bool
+    default y
+
+config SOC_EXTERNAL_COEX_ADVANCE
     bool
     default y
 
@@ -535,14 +571,46 @@ config SOC_PM_SUPPORT_BT_PD
     bool
     default n
 
+config SOC_CLK_RC_FAST_D256_SUPPORTED
+    bool
+    default y
+
+config SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256
+    bool
+    default y
+
 config SOC_WIFI_HW_TSF
     bool
     default y
 
 config SOC_WIFI_FTM_SUPPORT
     bool
-    default y
+    default n
 
 config SOC_WIFI_GCMP_SUPPORT
     bool
     default n
+
+config SOC_WIFI_WAPI_SUPPORT
+    bool
+    default n
+
+config SOC_WIFI_CSI_SUPPORT
+    bool
+    default n
+
+config SOC_WIFI_MESH_SUPPORT
+    bool
+    default n
+
+config SOC_BLE_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_MESH_SUPPORTED
+    bool
+    default n
+
+config SOC_ESP_NIMBLE_CONTROLLER
+    bool
+    default y

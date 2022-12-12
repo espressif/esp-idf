@@ -16,6 +16,17 @@
 #include "esp_log.h"
 #include "lvgl.h"
 
+#if CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
+#include "driver/i2c.h"
+#if CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_GT911
+#include "esp_lcd_touch_gt911.h"
+#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_TT21100
+#include "esp_lcd_touch_tt21100.h"
+#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_FT5X06
+#include "esp_lcd_touch_ft5x06.h"
+#endif
+#endif
+
 static const char *TAG = "example";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -64,6 +75,15 @@ static const char *TAG = "example";
 #elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_NT35510
 #define EXAMPLE_LCD_CMD_BITS           16
 #define EXAMPLE_LCD_PARAM_BITS         16
+#elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ILI9341
+#define EXAMPLE_LCD_CMD_BITS           8
+#define EXAMPLE_LCD_PARAM_BITS         8
+#endif
+
+#if CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
+#define EXAMPLE_I2C_NUM                 0   // I2C number
+#define EXAMPLE_I2C_SCL                 39
+#define EXAMPLE_I2C_SDA                 40
 #endif
 
 #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
@@ -71,7 +91,7 @@ static const char *TAG = "example";
 // Supported alignment: 16, 32, 64. A higher alignment can enables higher burst transfer size, thus a higher i80 bus throughput.
 #define EXAMPLE_PSRAM_DATA_ALIGNMENT   64
 
-extern void example_lvgl_demo_ui(lv_obj_t *scr);
+extern void example_lvgl_demo_ui(lv_disp_t *disp);
 
 static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
@@ -90,6 +110,29 @@ static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_
     // copy a buffer's content to a specific area of the display
     esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
 }
+
+#if CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
+static void example_lvgl_touch_cb(lv_indev_drv_t * drv, lv_indev_data_t * data)
+{
+    uint16_t touchpad_x[1] = {0};
+    uint16_t touchpad_y[1] = {0};
+    uint8_t touchpad_cnt = 0;
+
+    /* Read touch controller data */
+    esp_lcd_touch_read_data(drv->user_data);
+
+    /* Get coordinates */
+    bool touchpad_pressed = esp_lcd_touch_get_coordinates(drv->user_data, touchpad_x, touchpad_y, NULL, &touchpad_cnt, 1);
+
+    if (touchpad_pressed && touchpad_cnt > 0) {
+        data->point.x = touchpad_x[0];
+        data->point.y = touchpad_y[0];
+        data->state = LV_INDEV_STATE_PRESSED;
+    } else {
+        data->state = LV_INDEV_STATE_RELEASED;
+    }
+}
+#endif
 
 static void example_increase_lvgl_tick(void *arg)
 {
@@ -153,6 +196,9 @@ void app_main(void)
             .dc_dummy_level = 0,
             .dc_data_level = 1,
         },
+        .flags = {
+            .swap_color_bytes = !LV_COLOR_16_SWAP, // Swap can be done in LvGL (default) or DMA
+        },
         .on_color_trans_done = example_notify_lvgl_flush_ready,
         .user_ctx = &disp_drv,
         .lcd_cmd_bits = EXAMPLE_LCD_CMD_BITS,
@@ -165,37 +211,124 @@ void app_main(void)
     ESP_LOGI(TAG, "Install LCD driver of st7789");
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
-        .color_space = ESP_LCD_COLOR_SPACE_RGB,
+        .rgb_endian = LCD_RGB_ENDIAN_RGB,
         .bits_per_pixel = 16,
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
-#elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_NT35510
-    ESP_LOGI(TAG, "Install LCD driver of nt35510");
-    esp_lcd_panel_dev_config_t panel_config = {
-        .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
-        .color_space = ESP_LCD_COLOR_SPACE_BGR,
-        .bits_per_pixel = 16,
-    };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_nt35510(io_handle, &panel_config, &panel_handle));
-#endif
 
     esp_lcd_panel_reset(panel_handle);
     esp_lcd_panel_init(panel_handle);
     // Set inversion, x/y coordinate order, x/y mirror according to your LCD module spec
-#if CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ST7789
+    // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
     esp_lcd_panel_invert_color(panel_handle, true);
+    esp_lcd_panel_set_gap(panel_handle, 0, 20);
 #elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_NT35510
+    ESP_LOGI(TAG, "Install LCD driver of nt35510");
+    esp_lcd_panel_dev_config_t panel_config = {
+        .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
+        .rgb_endian = LCD_RGB_ENDIAN_BGR,
+        .bits_per_pixel = 16,
+    };
+    ESP_ERROR_CHECK(esp_lcd_new_panel_nt35510(io_handle, &panel_config, &panel_handle));
+
+    esp_lcd_panel_reset(panel_handle);
+    esp_lcd_panel_init(panel_handle);
+    // Set inversion, x/y coordinate order, x/y mirror according to your LCD module spec
+    // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
     esp_lcd_panel_swap_xy(panel_handle, true);
     esp_lcd_panel_mirror(panel_handle, true, false);
-#endif
+#elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ILI9341
+    // ILI9341 is NOT a distinct driver, but a special case of ST7789
+    // (essential registers are identical). A few lines further down in this code,
+    // it's shown how to issue additional device-specific commands.
+    ESP_LOGI(TAG, "Install LCD driver of ili9341 (st7789 compatible)");
+    esp_lcd_panel_dev_config_t panel_config = {
+        .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
+        .rgb_endian = LCD_RGB_ENDIAN_BGR,
+        .bits_per_pixel = 16,
+    };
+    ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
+
+    esp_lcd_panel_reset(panel_handle);
+    esp_lcd_panel_init(panel_handle);
+    // Set inversion, x/y coordinate order, x/y mirror according to your LCD module spec
     // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
-    esp_lcd_panel_set_gap(panel_handle, 0, 20);
+    esp_lcd_panel_swap_xy(panel_handle, true);
+    esp_lcd_panel_invert_color(panel_handle, false);
+    // ILI9341 is very similar to ST7789 and shares the same driver.
+    // Anything unconventional (such as this custom gamma table) can
+    // be issued here in user code and need not modify the driver.
+    esp_lcd_panel_io_tx_param(io_handle, 0xF2, (uint8_t[]) { 0 }, 1); // 3Gamma function disable
+    esp_lcd_panel_io_tx_param(io_handle, 0x26, (uint8_t[]) { 1 }, 1); // Gamma curve 1 selected
+    esp_lcd_panel_io_tx_param(io_handle, 0xE0, (uint8_t[]) {          // Set positive gamma
+        0x0F, 0x31, 0x2B, 0x0C, 0x0E, 0x08, 0x4E, 0xF1, 0x37, 0x07, 0x10, 0x03, 0x0E, 0x09, 0x00 }, 15);
+    esp_lcd_panel_io_tx_param(io_handle, 0xE1, (uint8_t[]) {          // Set negative gamma
+        0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F }, 15);
+#endif
 
     // user can flush pre-defined pattern to the screen before we turn on the screen or backlight
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
     ESP_LOGI(TAG, "Turn on LCD backlight");
     gpio_set_level(EXAMPLE_PIN_NUM_BK_LIGHT, EXAMPLE_LCD_BK_LIGHT_ON_LEVEL);
+
+#if CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
+    esp_lcd_touch_handle_t tp = NULL;
+    esp_lcd_panel_io_handle_t tp_io_handle = NULL;
+
+    ESP_LOGI(TAG, "Initialize I2C");
+
+    const i2c_config_t i2c_conf = {
+        .mode = I2C_MODE_MASTER,
+        .sda_io_num = EXAMPLE_I2C_SDA,
+        .scl_io_num = EXAMPLE_I2C_SCL,
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .master.clk_speed = 400000,
+    };
+    /* Initialize I2C */
+    ESP_ERROR_CHECK(i2c_param_config(EXAMPLE_I2C_NUM, &i2c_conf));
+    ESP_ERROR_CHECK(i2c_driver_install(EXAMPLE_I2C_NUM, i2c_conf.mode, 0, 0, 0));
+
+#if CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_GT911
+    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
+#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_TT21100
+    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_TT21100_CONFIG();
+#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_FT5X06
+    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_FT5x06_CONFIG();
+#endif
+
+    ESP_LOGI(TAG, "Initialize touch IO (I2C)");
+
+    /* Touch IO handle */
+    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)EXAMPLE_I2C_NUM, &tp_io_config, &tp_io_handle));
+
+    esp_lcd_touch_config_t tp_cfg = {
+        .x_max = EXAMPLE_LCD_V_RES,
+        .y_max = EXAMPLE_LCD_H_RES,
+        .rst_gpio_num = -1,
+        .int_gpio_num = -1,
+        .flags = {
+            .swap_xy = 1,
+            .mirror_x = 1,
+            .mirror_y = 0,
+        },
+    };
+
+
+    /* Initialize touch */
+#if CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_GT911
+    ESP_LOGI(TAG, "Initialize touch controller GT911");
+    ESP_ERROR_CHECK(esp_lcd_touch_new_i2c_gt911(tp_io_handle, &tp_cfg, &tp));
+#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_TT21100
+    ESP_LOGI(TAG, "Initialize touch controller TT21100");
+    ESP_ERROR_CHECK(esp_lcd_touch_new_i2c_tt21100(tp_io_handle, &tp_cfg, &tp));
+#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_FT5X06
+    ESP_LOGI(TAG, "Initialize touch controller FT5X06");
+    ESP_ERROR_CHECK(esp_lcd_touch_new_i2c_ft5x06(tp_io_handle, &tp_cfg, &tp));
+#endif
+
+#endif
 
     ESP_LOGI(TAG, "Initialize LVGL library");
     lv_init();
@@ -238,9 +371,19 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
 
+#if CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
+    static lv_indev_drv_t indev_drv;    // Input device driver (Touch)
+    lv_indev_drv_init(&indev_drv);
+    indev_drv.type = LV_INDEV_TYPE_POINTER;
+    indev_drv.disp = disp;
+    indev_drv.read_cb = example_lvgl_touch_cb;
+    indev_drv.user_data = tp;
+
+    lv_indev_drv_register(&indev_drv);
+#endif
+
     ESP_LOGI(TAG, "Display LVGL animation");
-    lv_obj_t *scr = lv_disp_get_scr_act(disp);
-    example_lvgl_demo_ui(scr);
+    example_lvgl_demo_ui(disp);
 
     while (1) {
         // raise the task priority of LVGL and/or reduce the handler period can improve the performance

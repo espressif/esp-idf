@@ -7,13 +7,14 @@
 
 {IDF_TARGET_NAME} 中有多个用于存放代码和数据的 :ref:`内存区域<memory-layout>` 。代码和只读数据默认存放在 flash 中，可写数据存放在 RAM 中。不过有时，用户必须更改默认存放区域。
 
-.. only:: SOC_ULP_SUPPORTED
+例如：
 
-    例如为了提高性能，将关键代码存放到 RAM 中，或者将代码存放到 RTC 存储器中以便在 :doc:`唤醒桩 <deep-sleep-stub>` 和 ULP 协处理器中使用。
+.. list::
 
-.. only:: not SOC_ULP_SUPPORTED
-
-    例如为了提高性能，将关键代码存放到 RAM 中，或者将代码存放到 RTC 存储器中以便在 :doc:`唤醒桩 <deep-sleep-stub>` 中使用。
+    * 将关键代码存放到 RAM 中以提高性能；
+    * 将可执行代码存放到 IRAM 中，以便在缓存被禁用时运行这些代码；
+    :SOC_RTC_MEM_SUPPORTED: * 将代码存放到 RTC 存储器中，以便在 wake stub 中使用；
+    :SOC_ULP_SUPPORTED: * 将代码存放到 RTC 内存中，以便 ULP 协处理器使用。
 
 链接器脚本生成机制可以让用户指定代码和数据在 ESP-IDF 组件中的存放区域。组件包含如何存放符号、目标或完整库的信息。在构建应用程序时，组件中的这些信息会被收集、解析并处理；生成的存放规则用于链接应用程序。
 
@@ -284,7 +285,7 @@
         key_1:
             value_1
         key_2:
-            value_b
+            value_a
     else:
         [type:name]
         key_1:

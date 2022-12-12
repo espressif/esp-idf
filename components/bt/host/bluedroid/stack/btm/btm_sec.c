@@ -240,12 +240,6 @@ BOOLEAN BTM_SecRegister(tBTM_APPL_INFO *p_cb_info)
         if (memcmp(btm_cb.devcb.id_keys.ir, &temp_value, sizeof(BT_OCTET16)) == 0) {
             btm_ble_reset_id();
         }
-#if (!BLE_UPDATE_BLE_ADDR_TYPE_RPA)
-        BD_ADDR peer_addr = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
-        BT_OCTET16 peer_irk = {0x0};
-        /* add local irk to controller */
-        btsnd_hcic_ble_add_device_resolving_list (0, peer_addr, peer_irk, btm_cb.devcb.id_keys.irk);
-#endif
     } else {
         BTM_TRACE_WARNING("%s p_cb_info->p_le_callback == NULL\n", __func__);
     }
@@ -592,6 +586,7 @@ static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, const char
         p_srec->orig_mx_chan_id = mx_chan_id;
 #if BTM_SEC_SERVICE_NAME_LEN > 0
         BCM_STRNCPY_S ((char *)p_srec->orig_service_name, p_name, BTM_SEC_SERVICE_NAME_LEN);
+        p_srec->orig_service_name[BTM_SEC_SERVICE_NAME_LEN] = '\0';
 #endif
         /* clear out the old setting, just in case it exists */
 #if (L2CAP_UCD_INCLUDED == TRUE)
@@ -637,6 +632,7 @@ static BOOLEAN btm_sec_set_security_level (CONNECTION_TYPE conn_type, const char
         p_srec->term_mx_chan_id = mx_chan_id;
 #if BTM_SEC_SERVICE_NAME_LEN > 0
         BCM_STRNCPY_S ((char *)p_srec->term_service_name, p_name, BTM_SEC_SERVICE_NAME_LEN);
+        p_srec->term_service_name[BTM_SEC_SERVICE_NAME_LEN] = '\0';
 #endif
         /* clear out the old setting, just in case it exists */
 #if (L2CAP_UCD_INCLUDED == TRUE)
@@ -3031,11 +3027,12 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
         old_sec_state = p_dev_rec->sec_state;
         if (status == HCI_SUCCESS) {
             BCM_STRNCPY_S ((char *)p_dev_rec->sec_bd_name, (char *)p_bd_name, BTM_MAX_REM_BD_NAME_LEN);
+            p_dev_rec->sec_bd_name[BTM_MAX_REM_BD_NAME_LEN] = '\0';
             p_dev_rec->sec_flags |= BTM_SEC_NAME_KNOWN;
             BTM_TRACE_EVENT ("setting BTM_SEC_NAME_KNOWN sec_flags:0x%x\n", p_dev_rec->sec_flags);
         } else {
             /* Notify all clients waiting for name to be resolved even if it failed so clients can continue */
-            p_dev_rec->sec_bd_name[0] = 0;
+            p_dev_rec->sec_bd_name[0] = '\0';
         }
 
         if (p_dev_rec->sec_state == BTM_SEC_STATE_GETTING_NAME) {
@@ -3171,6 +3168,10 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
             }
 
         }
+    }
+
+    if(!p_dev_rec) {
+        return;
     }
 
     /* If this is a bonding procedure can disconnect the link now */
@@ -3755,7 +3756,7 @@ void btm_rem_oob_req (UINT8 *p)
         memcpy (evt_data.bd_addr, p_dev_rec->bd_addr, BD_ADDR_LEN);
         memcpy (evt_data.dev_class, p_dev_rec->dev_class, DEV_CLASS_LEN);
         BCM_STRNCPY_S((char *)evt_data.bd_name, (char *)p_dev_rec->sec_bd_name, BTM_MAX_REM_BD_NAME_LEN);
-        evt_data.bd_name[BTM_MAX_REM_BD_NAME_LEN] = 0;
+        evt_data.bd_name[BTM_MAX_REM_BD_NAME_LEN] = '\0';
 
         btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_LOCAL_OOB_RSP);
         if ((*btm_cb.api.p_sp_callback) (BTM_SP_RMT_OOB_EVT, (tBTM_SP_EVT_DATA *)&evt_data) == BTM_NOT_AUTHORIZED) {
@@ -3954,6 +3955,10 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
                 p_dev_rec = NULL;
             }
         }
+    }
+
+    if(!p_dev_rec) {
+        return;
     }
 
     p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
@@ -4799,6 +4804,10 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
         }
     }
 
+    if(!p_dev_rec) {
+        return;
+    }
+
     /* We will save link key only if the user authorized it - BTE report link key in all cases */
 #ifdef BRCM_NONE_BTE
     if (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED)
@@ -4903,7 +4912,7 @@ static void btm_sec_pairing_timeout (TIMER_LIST_ENT *p_tle)
         /* We need to notify the UI that no longer need the PIN */
         if (btm_cb.api.p_auth_complete_callback) {
             if (p_dev_rec == NULL) {
-                name[0] = 0;
+                name[0] = '\0';
                 (*btm_cb.api.p_auth_complete_callback) (p_cb->pairing_bda,
                                                         NULL,
                                                         name, HCI_ERR_CONNECTION_TOUT);
@@ -4963,7 +4972,7 @@ static void btm_sec_pairing_timeout (TIMER_LIST_ENT *p_tle)
         btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
         if (btm_cb.api.p_auth_complete_callback) {
             if (p_dev_rec == NULL) {
-                name[0] = 0;
+                name[0] = '\0';
                 (*btm_cb.api.p_auth_complete_callback) (p_cb->pairing_bda,
                                                         NULL,
                                                         name, HCI_ERR_CONNECTION_TOUT);
@@ -5193,6 +5202,22 @@ static tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec)
         }
         return (BTM_CMD_STARTED);
     }
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    tACL_CONN *p_acl_cb = btm_handle_to_acl(p_dev_rec->hci_handle);
+    /*
+     * To prevent a remote device from doing a Bluetooth Impersonation Attack, a suggested fix by SIG is:
+     *
+     * "Hosts performing legacy (non-mutual) authentication must ensure a remote device is authenticated
+     *  prior to proceeding with encryption establishment, regardless of role."
+     *
+     * As an implementation, we enforce mutual authentication when devices use Legacy Authentication.
+     */
+    if ((p_acl_cb != NULL) && (BTM_BothEndsSupportSecureConnections(p_acl_cb->remote_addr) == 0) &&
+        ((p_acl_cb->legacy_auth_state & BTM_ACL_LEGACY_AUTH_SELF) == 0)) {
+        p_dev_rec->sec_flags &= ~BTM_SEC_AUTHENTICATED;
+    }
+#endif
 
     /* If connection is not authenticated and authentication is required */
     /* start authentication and return PENDING to the caller */

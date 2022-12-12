@@ -1,17 +1,10 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
+#include <assert.h>
 #include "esp_gdbstub_common.h"
 
 // GDB command input buffer
@@ -53,6 +46,8 @@ void esp_gdbstub_send_str(const char *c)
 // 'bits'/4 dictates the number of hex chars sent.
 void esp_gdbstub_send_hex(int val, int bits)
 {
+    // sanity check, in case the following (i - 4) is a negative value
+    assert(bits >= 4);
     const char *hex_chars = "0123456789abcdef";
     for (int i = bits; i > 0; i -= 4) {
         esp_gdbstub_send_char(hex_chars[(val >> (i - 4)) & 0xf]);

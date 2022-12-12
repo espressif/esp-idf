@@ -1,17 +1,11 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
+
+#include <string.h>
 
 #define HAL_SWAP16(d) __builtin_bswap16((d))
 #define HAL_SWAP32(d) __builtin_bswap32((d))
@@ -57,3 +51,35 @@
 })
 
 /** @endcond */
+
+/**
+ * @brief Copy data from memory array to another memory
+ *
+ * This helps bypass the -Warray-bounds, -Wstringop-overread and -Wstringop-overflow bugs.
+ *
+ * @param dst_mem Pointer to the destination of data
+ * @param src_mem Pointer to the source of data to be copied
+ * @param len The number of bytes to be copied
+ * @return a pointer to destination
+ */
+__attribute__((always_inline)) static inline void *hal_memcpy(void *dst_mem, const void *src_mem, size_t len)
+{
+    asm("" : "+r"(dst_mem), "+r"(src_mem));
+    return memcpy(dst_mem, src_mem, len);
+}
+
+/**
+ * @brief Sets the first num bytes of the block of memory pointed by ptr to the specified value
+ *
+ * This helps bypass the -Warray-bounds, -Wstringop-overread and -Wstringop-overflow bugs.
+ *
+ * @param dst_reg Pointer to the block of memory to fill
+ * @param value The value to be set.
+ * @param len The number of bytes to be copied
+ * @return a pointer to the memory area
+ */
+__attribute__((always_inline)) static inline void *hal_memset(void *dst_mem, int value, size_t len)
+{
+    asm("" : "+r"(dst_mem));
+    return memset(dst_mem, value, len);
+}

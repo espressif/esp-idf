@@ -1,25 +1,26 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
 import os
 import sys
 from pathlib import Path
+from typing import Set, Tuple
 
 import yaml
 from idf_ci_utils import IDF_PATH, get_git_files
 
 
-def check(pattern_yml, exclude_list):
+def check(pattern_yml: str, exclude_list: str) -> Tuple[Set, Set]:
     rules_dict = yaml.load(open(pattern_yml), Loader=yaml.FullLoader)
     rules_patterns_set = set()
     for k, v in rules_dict.items():
         if k.startswith('.pattern') and k != '.patterns-python-files' and isinstance(v, list):
             rules_patterns_set.update(v)
 
-    rules_files_set = set()
+    rules_files_set: Set = set()
     idf_path = Path(IDF_PATH)
     for pat in rules_patterns_set:
         rules_files_set.update(idf_path.glob(pat))
@@ -30,7 +31,7 @@ def check(pattern_yml, exclude_list):
         if pat:
             exclude_patterns_set.add(pat)
 
-    exclude_files_set = set()
+    exclude_files_set: Set = set()
     for pat in exclude_patterns_set:
         exclude_files_set.update(idf_path.glob(pat))
 

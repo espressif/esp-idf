@@ -13,7 +13,7 @@ fi
 
 COREDUMP_VERSION="espcoredump.py v$(python -c "import pkg_resources; print(pkg_resources.get_distribution('esp-coredump').version)")"
 COREDUMP_VERSION_REGEX="espcoredump.py v([0-9])+.([0-9a-z-])+(.[0-9a-z-])?"
-SUPPORTED_TARGETS=("esp32" "esp32s2" "esp32c3" "esp32s3" )
+SUPPORTED_TARGETS=("esp32" "esp32s2" "esp32c3" "esp32s3" "esp32c2")
 res=0
 for chip in "${SUPPORTED_TARGETS[@]}"; do
   {

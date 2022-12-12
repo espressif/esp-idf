@@ -5,8 +5,9 @@ from textwrap import dedent
 from typing import Optional
 
 from .exceptions import InconsistentFATAttributes
-from .utils import (ALLOWED_SECTOR_SIZES, FAT12, FAT12_MAX_CLUSTERS, FAT16, FAT16_MAX_CLUSTERS, FATDefaults,
-                    get_fatfs_type, get_non_data_sectors_cnt, number_of_clusters)
+from .utils import (ALLOWED_SECTOR_SIZES, FAT12, FAT12_MAX_CLUSTERS, FAT16, FAT16_MAX_CLUSTERS,
+                    RESERVED_CLUSTERS_COUNT, FATDefaults, get_fat_sectors_count, get_fatfs_type,
+                    get_non_data_sectors_cnt, number_of_clusters)
 
 
 class FATFSState:
@@ -20,7 +21,6 @@ class FATFSState:
                  root_dir_sectors_cnt: int,
                  size: int,
                  media_type: int,
-                 sectors_per_fat: int,
                  sectors_per_cluster: int,
                  volume_label: str,
                  oem_name: str,
@@ -40,18 +40,18 @@ class FATFSState:
                                                  root_dir_sectors_cnt=root_dir_sectors_cnt,
                                                  sectors_count=size // sector_size,
                                                  media_type=media_type,
-                                                 sectors_per_fat_cnt=sectors_per_fat,
                                                  sec_per_track=sec_per_track,
                                                  num_heads=num_heads,
                                                  hidden_sectors=hidden_sectors,
                                                  volume_label=volume_label,
                                                  file_sys_type=file_sys_type,
                                                  volume_uuid=-1)
+
         self._explicit_fat_type: Optional[int] = explicit_fat_type
         self.long_names_enabled: bool = long_names_enabled
         self.use_default_datetime: bool = use_default_datetime
 
-        if self.boot_sector_state.clusters in (FAT12_MAX_CLUSTERS, FAT16_MAX_CLUSTERS):
+        if (size // sector_size) * sectors_per_cluster in (FAT12_MAX_CLUSTERS, FAT16_MAX_CLUSTERS):
             print('WARNING: It is not recommended to create FATFS with bounding '
                   f'count of clusters: {FAT12_MAX_CLUSTERS} or {FAT16_MAX_CLUSTERS}')
         self.check_fat_type()
@@ -86,7 +86,6 @@ class BootSectorState:
                  root_dir_sectors_cnt: int,
                  sectors_count: int,
                  media_type: int,
-                 sectors_per_fat_cnt: int,
                  sec_per_track: int,
                  num_heads: int,
                  hidden_sectors: int,
@@ -102,7 +101,7 @@ class BootSectorState:
         self.root_dir_sectors_cnt: int = root_dir_sectors_cnt
         self.sectors_count: int = sectors_count
         self.media_type: int = media_type
-        self.sectors_per_fat_cnt: int = sectors_per_fat_cnt
+        self.sectors_per_fat_cnt = get_fat_sectors_count(self.size // self.sector_size, self.sector_size)
         self.sec_per_track: int = sec_per_track
         self.num_heads: int = num_heads
         self.hidden_sectors: int = hidden_sectors
@@ -135,7 +134,13 @@ class BootSectorState:
 
     @property
     def clusters(self) -> int:
-        clusters_cnt_: int = number_of_clusters(self.data_sectors, self.sectors_per_cluster)
+        """
+        The actual number of clusters is calculated by `number_of_clusters`,
+        however, the initial two blocks of FAT are reserved (device type and root directory),
+        despite they don't refer to the data region.
+        Since that, two clusters are added to use the full potential of the FAT file system partition.
+        """
+        clusters_cnt_: int = number_of_clusters(self.data_sectors, self.sectors_per_cluster) + RESERVED_CLUSTERS_COUNT
         return clusters_cnt_
 
     @property
@@ -161,4 +166,5 @@ class BootSectorState:
 
     @property
     def root_directory_start(self) -> int:
-        return (self.reserved_sectors_cnt + self.sectors_per_fat_cnt) * self.sector_size
+        root_dir_start: int = (self.reserved_sectors_cnt + self.sectors_per_fat_cnt) * self.sector_size
+        return root_dir_start

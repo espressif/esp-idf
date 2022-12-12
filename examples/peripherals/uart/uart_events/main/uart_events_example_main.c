@@ -69,7 +69,7 @@ static void uart_event_task(void *pvParameters)
                 //Event of UART ring buffer full
                 case UART_BUFFER_FULL:
                     ESP_LOGI(TAG, "ring buffer full");
-                    // If buffer full happened, you should consider encreasing your buffer size
+                    // If buffer full happened, you should consider increasing your buffer size
                     // As an example, we directly flush the rx buffer here in order to read more data.
                     uart_flush_input(EX_UART_NUM);
                     xQueueReset(uart0_queue);

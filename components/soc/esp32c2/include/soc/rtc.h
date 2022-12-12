@@ -67,18 +67,17 @@ extern "C" {
 #define RTC_CNTL_DBIAS_1V25 30
 #define RTC_CNTL_DBIAS_1V30 31 //voltage is about 1.34v in fact
 
-#define DELAY_FAST_CLK_SWITCH           3
-#define DELAY_SLOW_CLK_SWITCH           300
-#define DELAY_8M_ENABLE                 50
-
-/* Number of 8M/256 clock cycles to use for XTAL frequency estimation.
- * 10 cycles will take approximately 300 microseconds.
+/* Delays for various clock sources to be enabled/switched.
+ * All values are in microseconds.
  */
-#define XTAL_FREQ_EST_CYCLES            10
+#define SOC_DELAY_RTC_FAST_CLK_SWITCH       3
+#define SOC_DELAY_RTC_SLOW_CLK_SWITCH       300
+#define SOC_DELAY_RC_FAST_ENABLE            50
+#define SOC_DELAY_RC_FAST_DIGI_SWITCH       5
 
-#define DIG_DBIAS_80M   RTC_CNTL_DBIAS_1V20
-#define DIG_DBIAS_160M  RTC_CNTL_DBIAS_1V20
-
+/* Core voltage (to be supported) */
+#define DIG_DBIAS_80M       RTC_CNTL_DBIAS_1V20
+#define DIG_DBIAS_120M      RTC_CNTL_DBIAS_1V20
 #define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
 #define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
 
@@ -91,12 +90,13 @@ extern "C" {
 #define RTC_CNTL_SCK_DCAP_DEFAULT   255
 
 /* Various delays to be programmed into power control state machines */
-#define RTC_CNTL_XTL_BUF_WAIT_SLP_US            (250)
+#define RTC_CNTL_XTL_BUF_WAIT_SLP_US            (1000)
 #define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES        (1)
 #define RTC_CNTL_CK8M_WAIT_SLP_CYCLES           (4)
 #define RTC_CNTL_WAKEUP_DELAY_CYCLES            (5)
 #define RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES    (1)
 #define RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES       (1)
+#define RTC_CNTL_MIN_SLP_VAL_MIN                (2)
 
 /*
 set sleep_init default param
@@ -128,6 +128,8 @@ storing in efuse (based on ATE 5k ECO3 chips)
  * Enum values should be equal to frequency in MHz.
  */
 typedef enum {
+    RTC_XTAL_FREQ_26M = 26,     //!< 26 MHz XTAL
+    RTC_XTAL_FREQ_32M = 32,     //!< 32 MHz XTAL
     RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
 } rtc_xtal_freq_t;
 
@@ -152,7 +154,7 @@ typedef struct rtc_cpu_freq_config_s {
 typedef enum {
     RTC_CAL_RTC_MUX = 0,       //!< Currently selected RTC SLOW_CLK
     RTC_CAL_8MD256 = 1,        //!< Internal 8 MHz RC oscillator, divided by 256
-    RTC_CAL_EXT_CLK = 2        //!< External CLK
+    RTC_CAL_EXT_32K = 2        //!< External 32.768 KHz CLK
 } rtc_cal_sel_t;
 
 /**
@@ -161,7 +163,7 @@ typedef enum {
 typedef struct {
     rtc_xtal_freq_t xtal_freq : 8;             //!< Main XTAL frequency
     uint32_t cpu_freq_mhz : 10;                //!< CPU frequency to set, in MHz
-    soc_rtc_fast_clk_src_t fast_clk_src : 1;   //!< RTC_FAST_CLK clock source to choose
+    soc_rtc_fast_clk_src_t fast_clk_src : 2;   //!< RTC_FAST_CLK clock source to choose
     soc_rtc_slow_clk_src_t slow_clk_src : 2;   //!< RTC_SLOW_CLK clock source to choose
     uint32_t clk_rtc_clk_div : 8;
     uint32_t clk_8m_clk_div : 3;               //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
@@ -173,12 +175,12 @@ typedef struct {
  * Default initializer for rtc_clk_config_t
  */
 #define RTC_CLK_CONFIG_DEFAULT() { \
-    .xtal_freq = RTC_XTAL_FREQ_40M, \
+    .xtal_freq = CONFIG_XTAL_FREQ, \
     .cpu_freq_mhz = 80, \
     .fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST, \
     .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, \
     .clk_rtc_clk_div = 0, \
-    .clk_8m_clk_div = 0, \
+    .clk_8m_clk_div = 1, \
     .slow_clk_dcap = RTC_CNTL_SCK_DCAP_DEFAULT, \
     .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \
 }
@@ -241,6 +243,11 @@ rtc_xtal_freq_t rtc_clk_xtal_freq_get(void);
 void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq);
 
 /**
+ * @brief Enable 32KHz external oscillator
+ */
+void rtc_clk_32k_enable_external(void);
+
+/**
  * @brief Enable or disable 8 MHz internal oscillator
  *
  * Output from 8 MHz internal oscillator is passed into a configurable
@@ -272,9 +279,9 @@ bool rtc_clk_8md256_enabled(void);
 
 /**
  * @brief Select source for RTC_SLOW_CLK
- * @param slow_freq clock source (one of soc_rtc_slow_clk_src_t values)
+ * @param clk_src clock source (one of soc_rtc_slow_clk_src_t values)
  */
-void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t slow_freq);
+void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src);
 
 /**
  * @brief Get the RTC_SLOW_CLK source
@@ -298,9 +305,9 @@ uint32_t rtc_clk_slow_freq_get_hz(void);
 
 /**
  * @brief Select source for RTC_FAST_CLK
- * @param fast_freq clock source (one of soc_rtc_fast_clk_src_t values)
+ * @param clk_src clock source (one of soc_rtc_fast_clk_src_t values)
  */
-void rtc_clk_fast_src_set(soc_rtc_fast_clk_src_t fast_freq);
+void rtc_clk_fast_src_set(soc_rtc_fast_clk_src_t clk_src);
 
 /**
  * @brief Get the RTC_FAST_CLK source
@@ -396,6 +403,11 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
  * of cycles to be counted exceeds the expected time twice. This may happen if
  * 32k XTAL is being calibrated, but the oscillator has not started up (due to
  * incorrect loading capacitance, board design issue, or lack of 32 XTAL on board).
+ *
+ * @note When 32k CLK is being calibrated, this function will check the accuracy
+ * of the clock. Since the xtal 32k or ext osc 32k is generally very stable, if
+ * the check fails, then consider this an invalid 32k clock and return 0. This
+ * check can filter some jamming signal.
  *
  * @param cal_clk  clock to be measured
  * @param slow_clk_cycles  number of slow clock cycles to average

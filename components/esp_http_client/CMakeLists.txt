@@ -5,5 +5,7 @@ idf_component_register(SRCS "esp_http_client.c"
                     INCLUDE_DIRS "include"
                     PRIV_INCLUDE_DIRS "lib/include"
                     # lwip is a public requirement because esp_http_client.h includes sys/socket.h
-                    REQUIRES http_parser lwip
-                    PRIV_REQUIRES tcp_transport)
+                    REQUIRES lwip
+                    PRIV_REQUIRES tcp_transport http_parser)
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

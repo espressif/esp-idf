@@ -6,6 +6,7 @@
 #include "esp_partition.h"
 #include "nvs_partition_manager.hpp"
 #include "nvs_partition_lookup.hpp"
+#include "nvs_internal.h"
 
 #ifdef CONFIG_NVS_ENCRYPTION
 #include "nvs_encrypted_partition.hpp"
@@ -39,7 +40,7 @@ esp_err_t NVSPartitionManager::init_partition(const char *partition_label)
         return ESP_OK;
     }
 
-    assert(SPI_FLASH_SEC_SIZE != 0);
+    NVS_ASSERT_OR_RETURN(SPI_FLASH_SEC_SIZE != 0, ESP_FAIL);
 
     NVSPartition *p = nullptr;
     esp_err_t result = partition_lookup::lookup_nvs_partition(partition_label, &p);

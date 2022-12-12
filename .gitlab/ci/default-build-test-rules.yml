@@ -1,0 +1,18 @@
+# this file support two keywords:
+# - extra_default_build_targets:
+#     besides of the SUPPORTED_TARGETS in IDF,
+#     enable build for the specified targets by default as well.
+# - bypass_check_test_targets:
+#     suppress the check_build_test_rules check-test-script warnings for the specified targets
+#
+# This file should ONLY be used during bringup. Should be reset to empty after the bringup process
+extra_default_build_targets:
+ - esp32c6
+
+# bypass_check_test_targets:
+#  - esp32c6
+#
+# These lines would
+# - enable the README.md check for esp32c6. Don't forget to add the build jobs in .gitlab/ci/build.yml
+# - disable the test script check with the manifest file.
+#

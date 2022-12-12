@@ -323,7 +323,7 @@ menu "Bootloader config"
         # options, allowing to turn on "allow insecure options" and have secure boot with
         # "skip validation when existing deep sleep". Keeping this to avoid a breaking change,
         # but - as noted in help - it invalidates the integrity of Secure Boot checks
-        depends on (SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT
+        depends on SOC_RTC_FAST_MEM_SUPPORTED && ((SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT)
         default n
         help
             This option disables the normal validation of an image coming out of
@@ -366,7 +366,7 @@ menu "Bootloader config"
         # only available if both Secure Boot and Check Signature on Boot are disabled
         depends on !SECURE_SIGNED_ON_BOOT
         default n
-        select BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
+        select BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP if SOC_RTC_FAST_MEM_SUPPORTED
         select BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON
         help
             Selecting this option prevents the bootloader from ever validating the app image before
@@ -379,6 +379,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_RESERVE_RTC_SIZE
         hex
+        depends on SOC_RTC_FAST_MEM_SUPPORTED
         default 0x10 if BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP || BOOTLOADER_CUSTOM_RESERVE_RTC
         default 0
         help
@@ -390,6 +391,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_CUSTOM_RESERVE_RTC
         bool "Reserve RTC FAST memory for custom purposes"
+        depends on SOC_RTC_FAST_MEM_SUPPORTED
         default n
         help
             This option allows the customer to place data in the RTC FAST memory,
@@ -401,7 +403,6 @@ menu "Bootloader config"
 
     config BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE
         hex "Size in bytes for custom purposes"
-        range 0 0x10
         default 0
         depends on BOOTLOADER_CUSTOM_RESERVE_RTC
         help
@@ -448,8 +449,8 @@ menu "Security features"
     config SECURE_BOOT_V2_RSA_SUPPORTED
         bool
         default y
-        # RSA secure boot is supported in ESP32 revision >= ECO3
-        depends on (IDF_TARGET_ESP32 && ESP32_REV_MIN >= 3) || SOC_SECURE_BOOT_V2_RSA
+        # RSA secure boot is supported in ESP32 revision >= v3.0
+        depends on (IDF_TARGET_ESP32 && ESP32_REV_MIN_FULL >= 300) || SOC_SECURE_BOOT_V2_RSA
 
     config SECURE_BOOT_V2_ECC_SUPPORTED
         bool
@@ -464,7 +465,7 @@ menu "Security features"
     config SECURE_BOOT_V2_PREFERRED
         bool
         default y
-        depends on ESP32_REV_MIN >= 3
+        depends on ESP32_REV_MIN_FULL >= 300
 
     config SECURE_BOOT_V2_ECDSA_ENABLED
         bool
@@ -473,6 +474,11 @@ menu "Security features"
     config SECURE_BOOT_V2_RSA_ENABLED
         bool
         default y if SECURE_BOOT_V2_ENABLED && SECURE_BOOT_V2_RSA_SUPPORTED
+
+    config SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+        bool
+        default y if SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK && SECURE_BOOT && SECURE_FLASH_ENC_ENABLED
+        # ESP32-C2 has one key block for SB and FE keys. These keys must be burned at the same time.
 
     config SECURE_SIGNED_APPS_NO_SECURE_BOOT
         bool "Require signed app images"
@@ -580,8 +586,8 @@ menu "Security features"
     config SECURE_BOOT
         bool "Enable hardware Secure Boot in bootloader (READ DOCS FIRST)"
         default n
-        # Secure boot is not supported for ESP32-C3 revision < ECO3
-        depends on SOC_SECURE_BOOT_SUPPORTED && !(IDF_TARGET_ESP32C3 && ESP32C3_REV_MIN < 3)
+        # Secure boot is not supported for ESP32-C3 revision < v0.3
+        depends on SOC_SECURE_BOOT_SUPPORTED && !(IDF_TARGET_ESP32C3 && ESP32C3_REV_MIN_FULL < 3)
         select ESPTOOLPY_NO_STUB if !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32S2
         help
             Build a bootloader which enables Secure Boot on first boot.
@@ -767,21 +773,29 @@ menu "Security features"
     choice SECURE_FLASH_ENCRYPTION_KEYSIZE
         bool "Size of generated AES-XTS key"
         default SECURE_FLASH_ENCRYPTION_AES128
-        depends on SOC_FLASH_ENCRYPTION_XTS_AES_256 && SECURE_FLASH_ENC_ENABLED
+        depends on SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS && SECURE_FLASH_ENC_ENABLED
         help
             Size of generated AES-XTS key.
 
-            AES-128 uses a 256-bit key (32 bytes) which occupies one Efuse key block.
-            AES-256 uses a 512-bit key (64 bytes) which occupies two Efuse key blocks.
+            - AES-128 uses a 256-bit key (32 bytes) derived from 128 bits (16 bytes) burned in half Efuse key block.
+              Internally, it calculates SHA256(128 bits)
+            - AES-128 uses a 256-bit key (32 bytes) which occupies one Efuse key block.
+            - AES-256 uses a 512-bit key (64 bytes) which occupies two Efuse key blocks.
 
             This setting is ignored if either type of key is already burned to Efuse before the first boot.
             In this case, the pre-burned key is used and no new key is generated.
 
+        config SECURE_FLASH_ENCRYPTION_AES128_DERIVED
+            bool "AES-128 key derived from 128 bits (SHA256(128 bits))"
+            depends on SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
+
         config SECURE_FLASH_ENCRYPTION_AES128
             bool "AES-128 (256-bit key)"
+            depends on SOC_FLASH_ENCRYPTION_XTS_AES_128 && !(IDF_TARGET_ESP32C2 && SECURE_BOOT)
 
         config SECURE_FLASH_ENCRYPTION_AES256
             bool "AES-256 (512-bit key)"
+            depends on SOC_FLASH_ENCRYPTION_XTS_AES_256
     endchoice
 
     choice SECURE_FLASH_ENCRYPTION_MODE
@@ -810,7 +824,7 @@ menu "Security features"
     endchoice
 
     menu "Potentially insecure options"
-        visible if SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT || SECURE_BOOT_INSECURE
+        visible if SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT || SECURE_BOOT_INSECURE || SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT # NOERROR
 
         # NOTE: Options in this menu NEED to have SECURE_BOOT_INSECURE
         # and/or SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT in "depends on", as the menu
@@ -847,7 +861,7 @@ menu "Security features"
 
         config SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
             bool "Allow app partition length not 64KB aligned"
-            depends on SECURE_BOOT_INSECURE
+            depends on SECURE_BOOT_INSECURE || SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
             help
                 If not set (default), app partition size must be a multiple of 64KB. App images are padded to 64KB
                 length, and the bootloader checks any trailing bytes after the signature (before the next 64KB
@@ -957,7 +971,7 @@ menu "Security features"
         default SECURE_ENABLE_SECURE_ROM_DL_MODE if SECURE_ROM_DL_MODE_ENABLED # NOERROR
         default SECURE_INSECURE_ALLOW_DL_MODE
         depends on SECURE_BOOT_V2_ENABLED || SECURE_FLASH_ENC_ENABLED
-        depends on !IDF_TARGET_ESP32 || ESP32_REV_MIN_3
+        depends on !(IDF_TARGET_ESP32 && ESP32_REV_MIN_FULL < 300)
 
         config SECURE_DISABLE_ROM_DL_MODE
             bool "UART ROM download mode (Permanently disabled (recommended))"

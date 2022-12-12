@@ -19,7 +19,7 @@ This example uses the [esp_timer](https://docs.espressif.com/projects/esp-idf/en
 ### Hardware Required
 
 * An ESP development board
-* An Intel 8080 interfaced (so called MCU interface or parallel interface) LCD (this example can use ST7789 or NT35510)
+* An Intel 8080 interfaced (so called MCU interface or parallel interface) LCD (this example can use ST7789, NT35510 or ILI9341)
 * An USB cable for power supply and programming
 
 ### Hardware Connection
@@ -46,7 +46,16 @@ The connection between ESP Board and the LCD is as follows:
 │             │              │                │
 │    BK_LIGHT ├─────────────►│ BCKL           │
 │             │              │                │
+│             │              └────────────────┘
+│             │                   LCD TOUCH
+│             │              ┌────────────────┐
+│             │              │                │
+│     I2C SCL ├─────────────►│ I2C SCL        │
+│             │              │                │
+│     I2C SDA │◄────────────►│ I2C SDA        │
+│             │              │                │
 └─────────────┘              └────────────────┘
+
 ```
 
 The GPIO number used by this example can be changed in [i80_controller_example_main.c](main/i80_controller_example_main.c).
@@ -84,6 +93,15 @@ I (558) example: Register display driver to LVGL
 I (558) example: Install LVGL tick timer
 I (558) example: Display LVGL animation
 ```
+
+## Touch Screen Support
+
+This example supports touch screen connected via I2C. You can enable it by running `idf.py menuconfig` and navigating to `Example Configuration -> Enable LCD touch`. When touch is enabled, there will be a new button in the GUI that can restart the animation.
+
+These touch controllers are supported:
+* [GT911](https://github.com/espressif/esp-bsp/tree/master/components/lcd_touch/esp_lcd_touch_gt911)
+* [TT21100](https://github.com/espressif/esp-bsp/tree/master/components/lcd_touch/esp_lcd_touch_tt21100)
+* [FT5X06](https://github.com/espressif/esp-bsp/tree/master/components/lcd_touch/esp_lcd_touch_ft5x06)
 
 
 ## Troubleshooting

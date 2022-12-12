@@ -1,0 +1,4 @@
+# Test configuration for using FreeRTOS with under single core on a multicore target. Only tested on the ESP32
+
+CONFIG_IDF_TARGET="esp32"
+CONFIG_FREERTOS_UNICORE=y

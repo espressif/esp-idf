@@ -1,6 +1,8 @@
 #ifndef XTENSA_DEBUG_MODULE_H
 #define XTENSA_DEBUG_MODULE_H
 
+#include <xtensa/config/core-isa.h>
+
 /*
 ERI registers / OCD offsets and field definitions
 */

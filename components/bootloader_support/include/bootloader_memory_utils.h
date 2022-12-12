@@ -69,7 +69,12 @@ inline static bool esp_ptr_in_diram_dram(const void *p) {
  */
 __attribute__((always_inline))
 inline static bool esp_ptr_in_diram_iram(const void *p) {
+// TODO: IDF-5980 esp32c6 D/I RAM share the same address
+#if SOC_DIRAM_IRAM_LOW == SOC_DIRAM_DRAM_LOW
+    return false;
+#else
     return ((intptr_t)p >= SOC_DIRAM_IRAM_LOW && (intptr_t)p < SOC_DIRAM_IRAM_HIGH);
+#endif
 }
 
 /**

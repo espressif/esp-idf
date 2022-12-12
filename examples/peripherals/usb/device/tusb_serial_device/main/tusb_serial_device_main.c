@@ -44,10 +44,16 @@ void tinyusb_cdc_line_state_changed_callback(int itf, cdcacm_event_t *event)
 void app_main(void)
 {
     ESP_LOGI(TAG, "USB initialization");
-    tinyusb_config_t tusb_cfg = {}; // the configuration using default values
+    const tinyusb_config_t tusb_cfg = {
+        .device_descriptor = NULL,
+        .string_descriptor = NULL,
+        .external_phy = false,
+        .configuration_descriptor = NULL,
+    };
+
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
-    tinyusb_config_cdcacm_t amc_cfg = {
+    tinyusb_config_cdcacm_t acm_cfg = {
         .usb_dev = TINYUSB_USBDEV_0,
         .cdc_port = TINYUSB_CDC_ACM_0,
         .rx_unread_buf_sz = 64,
@@ -57,7 +63,7 @@ void app_main(void)
         .callback_line_coding_changed = NULL
     };
 
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
     /* the second way to register a callback */
     ESP_ERROR_CHECK(tinyusb_cdcacm_register_callback(
                         TINYUSB_CDC_ACM_0,
@@ -65,8 +71,8 @@ void app_main(void)
                         &tinyusb_cdc_line_state_changed_callback));
 
 #if (CONFIG_TINYUSB_CDC_COUNT > 1)
-    amc_cfg.cdc_port = TINYUSB_CDC_ACM_1;
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
+    acm_cfg.cdc_port = TINYUSB_CDC_ACM_1;
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
     ESP_ERROR_CHECK(tinyusb_cdcacm_register_callback(
                         TINYUSB_CDC_ACM_1,
                         CDC_EVENT_LINE_STATE_CHANGED,

@@ -1,20 +1,13 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stddef.h>
 #include "sdkconfig.h"
 #include "hal/twai_hal.h"
+#include "hal/efuse_hal.h"
 #include "soc/soc_caps.h"
 
 //Default values written to various registers on initialization
@@ -24,11 +17,14 @@
 
 /* ---------------------------- Init and Config ----------------------------- */
 
-bool twai_hal_init(twai_hal_context_t *hal_ctx)
+bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
 {
     //Initialize HAL context
-    hal_ctx->dev = &TWAI;
+    hal_ctx->dev = TWAI_LL_GET_HW(config->controller_id);
     hal_ctx->state_flags = 0;
+    hal_ctx->clock_source_hz = config->clock_source_hz;
+    //Enable functional clock
+    twai_ll_enable_clock(hal_ctx->dev, true);
     //Initialize TWAI controller, and set default values to registers
     twai_ll_enter_reset_mode(hal_ctx->dev);
     if (!twai_ll_is_in_reset_mode(hal_ctx->dev)) {    //Must enter reset mode to write to config registers
@@ -52,13 +48,30 @@ void twai_hal_deinit(twai_hal_context_t *hal_ctx)
     twai_ll_set_enabled_intrs(hal_ctx->dev, 0);
     twai_ll_clear_arb_lost_cap(hal_ctx->dev);
     twai_ll_clear_err_code_cap(hal_ctx->dev);
+    //Disable functional clock
+    twai_ll_enable_clock(hal_ctx->dev, false);
     hal_ctx->dev = NULL;
 }
 
 void twai_hal_configure(twai_hal_context_t *hal_ctx, const twai_timing_config_t *t_config, const twai_filter_config_t *f_config, uint32_t intr_mask, uint32_t clkout_divider)
 {
+    uint32_t brp = t_config->brp;
+    // both quanta_resolution_hz and brp can affect the baud rate
+    // but a non-zero quanta_resolution_hz takes higher priority
+    if (t_config->quanta_resolution_hz) {
+        brp = hal_ctx->clock_source_hz / t_config->quanta_resolution_hz;
+    }
+
+    // set clock source
+    twai_clock_source_t clk_src = t_config->clk_src;
+    //for backward compatible, zero value means default a default clock source
+    if (t_config->clk_src == 0) {
+        clk_src = TWAI_CLK_SRC_DEFAULT;
+    }
+    twai_ll_set_clock_source(hal_ctx->dev, clk_src);
+
     //Configure bus timing, acceptance filter, CLKOUT, and interrupts
-    twai_ll_set_bus_timing(hal_ctx->dev, t_config->brp, t_config->sjw, t_config->tseg_1, t_config->tseg_2, t_config->triple_sampling);
+    twai_ll_set_bus_timing(hal_ctx->dev, brp, t_config->sjw, t_config->tseg_1, t_config->tseg_2, t_config->triple_sampling);
     twai_ll_set_acc_filter(hal_ctx->dev, f_config->acceptance_code, f_config->acceptance_mask, f_config->single_filter);
     twai_ll_set_clkout(hal_ctx->dev, clkout_divider);
     twai_ll_set_enabled_intrs(hal_ctx->dev, intr_mask);

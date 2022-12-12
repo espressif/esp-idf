@@ -585,6 +585,21 @@ if BLE_MESH
             stored to flash. E.g. the default value of 4 means that the
             state is saved every 24 hours (96 / 4).
 
+    config BLE_MESH_IVU_RECOVERY_IVI
+        bool "Recovery the IV index when the latest whole IV update procedure is missed"
+        default n
+        help
+            According to Section 3.10.5 of Mesh Specification v1.0.1.
+            If a node in Normal Operation receives a Secure Network beacon with an IV index
+            equal to the last known IV index+1 and the IV Update Flag set to 0, the node may
+            update its IV without going to the IV Update in Progress state, or it may initiate
+            an IV Index Recovery procedure (Section 3.10.6), or it may ignore the Secure
+            Network beacon. The node makes the choice depending on the time since last IV
+            update and the likelihood that the node has missed the Secure Network beacons
+            with the IV update Flag.
+            When the above situation is encountered, this option can be used to decide whether
+            to perform the IV index recovery procedure.
+
     config BLE_MESH_TX_SEG_MSG_COUNT
         int "Maximum number of simultaneous outgoing segmented messages"
         default 1
@@ -802,6 +817,13 @@ if BLE_MESH
             default 8
             help
                 Maximum number of groups to which the LPN can subscribe.
+
+        config BLE_MESH_LPN_SUB_ALL_NODES_ADDR
+            bool "Automatically subscribe all nodes address"
+            default n
+            help
+                Automatically subscribe all nodes address when friendship
+                established.
 
     endif # BLE_MESH_LOW_POWER
 
@@ -1093,6 +1115,13 @@ if BLE_MESH
             This option removes the 96 hour limit of the IV Update Procedure and
             lets the state to be changed at any time.
             If IV Update test mode is going to be used, this option should be enabled.
+
+    config BLE_MESH_DISCARD_OLD_SEQ_AUTH
+        bool
+        default y
+        help
+            This option is used to decide whether discarding the old SeqAuth when
+            receiving a segmented message.
 
     menu "BLE Mesh specific test option"
 

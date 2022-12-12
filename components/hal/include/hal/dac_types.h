@@ -1,67 +1,37 @@
 #pragma once
 
-#include "soc/soc_caps.h"
-#include "hal/adc_types.h"
-#include "sdkconfig.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum {
-    DAC_CHANNEL_1 = 0,    /*!< DAC channel 1 is GPIO25(ESP32) / GPIO17(ESP32S2) */
-    DAC_CHANNEL_2 = 1,    /*!< DAC channel 2 is GPIO26(ESP32) / GPIO18(ESP32S2) */
-    DAC_CHANNEL_MAX,
+    DAC_CHAN_0 = 0,     /*!< DAC channel 0 is GPIO25(ESP32) / GPIO17(ESP32S2) */
+    DAC_CHAN_1 = 1,     /*!< DAC channel 1 is GPIO26(ESP32) / GPIO18(ESP32S2) */
+    DAC_CHANNEL_1 __attribute__((deprecated("please use 'DAC_CHAN_0' instead"))) = 0,    /*!< Alias of 'DAC_CHAN_0', now the channel index start from '0' */
+    DAC_CHANNEL_2 __attribute__((deprecated("please use 'DAC_CHAN_1' instead"))) = 1,    /*!< Alias of 'DAC_CHAN_1', now the channel index start from '0' */
 } dac_channel_t;
 
 /**
- * @brief The multiple of the amplitude of the cosine wave generator. The max amplitude is VDD3P3_RTC.
+ * @brief The attenuation of the amplitude of the cosine wave generator. The max amplitude is VDD3P3_RTC.
  */
 typedef enum {
-    DAC_CW_SCALE_1 = 0x0,   /*!< 1/1. Default. */
-    DAC_CW_SCALE_2 = 0x1,   /*!< 1/2. */
-    DAC_CW_SCALE_4 = 0x2,   /*!< 1/4. */
-    DAC_CW_SCALE_8 = 0x3,   /*!< 1/8. */
-} dac_cw_scale_t;
+    DAC_COSINE_ATTEN_DEFAULT    = 0x0,      /*!< No attenuation to the DAC cosine wave amplitude. Default. */
+    DAC_COSINE_ATTEN_DB_0       = 0x0,      /*!< Original amplitude of the DAC cosine wave, equals to DAC_COSINE_ATTEN_DEFAULT */
+    DAC_COSINE_ATTEN_DB_6       = 0x1,      /*!< 1/2 amplitude of the DAC cosine wave */
+    DAC_COSINE_ATTEN_DB_12      = 0x2,      /*!< 1/4 amplitude of the DAC cosine wave */
+    DAC_COSINE_ATTEN_DB_18      = 0x3,      /*!< 1/8 amplitude of the DAC cosine wave */
+} dac_cosine_atten_t;
 
 /**
  * @brief Set the phase of the cosine wave generator output.
+ * @note  Only 0 or 180 are supported,
+ *        it will be set to 0 as default if configured to an unsupported phase.
  */
 typedef enum {
-    DAC_CW_PHASE_0   = 0x2, /*!< Phase shift +0° */
-    DAC_CW_PHASE_180 = 0x3, /*!< Phase shift +180° */
-} dac_cw_phase_t;
+    DAC_COSINE_PHASE_0   = 0x02,   /*!< Phase shift +0° */
+    DAC_COSINE_PHASE_180 = 0x03, /*!< Phase shift +180° */
+} dac_cosine_phase_t;
 
-/**
- * @brief Config the cosine wave generator function in DAC module.
- */
-typedef struct {
-    dac_channel_t en_ch;    /*!< Enable the cosine wave generator of DAC channel. */
-    dac_cw_scale_t scale;   /*!< Set the amplitude of the cosine wave generator output. */
-    dac_cw_phase_t phase;   /*!< Set the phase of the cosine wave generator output. */
-    uint32_t freq;          /*!< Set frequency of cosine wave generator output. Range: 130(130Hz) ~ 55000(100KHz). */
-    int8_t offset;          /*!< Set the voltage value of the DC component of the cosine wave generator output.
-                                 Note: Unreasonable settings can cause waveform to be oversaturated. Range: -128 ~ 127. */
-} dac_cw_config_t;
-
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-
-/**
- * @brief DAC digital controller (DMA mode) work mode.
- */
-typedef enum {
-    DAC_CONV_NORMAL,        /*!< The data in the DMA buffer is simultaneously output to the enable channel of the DAC. */
-    DAC_CONV_ALTER,         /*!< The data in the DMA buffer is alternately output to the enable channel of the DAC. */
-    DAC_CONV_MAX
-} dac_digi_convert_mode_t;
-
-/**
- * @brief DAC digital controller (DMA mode) configuration parameters.
- */
-typedef struct {
-    dac_digi_convert_mode_t mode;   /*!<DAC digital controller (DMA mode) work mode. See ``dac_digi_convert_mode_t``. */
-    uint32_t interval;          /*!<The number of interval clock cycles for the DAC digital controller to output voltage.
-                                    The unit is the divided clock. Range: 1 ~ 4095.
-                                    Expression: `dac_output_freq` = `controller_clk` / interval. Refer to ``adc_digi_clk_t``.
-                                    Note: The sampling rate of each channel is also related to the conversion mode (See ``dac_digi_convert_mode_t``) and pattern table settings. */
-    adc_digi_clk_t dig_clk;     /*!<DAC digital controller clock divider settings. Refer to ``adc_digi_clk_t``.
-                                    Note: The clocks of the DAC digital controller use the ADC digital controller clock divider. */
-} dac_digi_config_t;
-
-#endif //CONFIG_IDF_TARGET_ESP32S2
+#ifdef __cplusplus
+}
+#endif

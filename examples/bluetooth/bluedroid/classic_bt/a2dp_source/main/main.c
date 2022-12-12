@@ -213,7 +213,9 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     switch (event) {
     /* when device discovered a result, this event comes */
     case ESP_BT_GAP_DISC_RES_EVT: {
-        filter_inquiry_scan_result(param);
+        if (s_a2d_state == APP_AV_STATE_DISCOVERING) {
+            filter_inquiry_scan_result(param);
+        }
         break;
     }
     /* when discovery state changed, this event comes */
@@ -351,7 +353,7 @@ static int32_t bt_app_a2d_data_cb(uint8_t *data, int32_t len)
         return 0;
     }
 
-    int *p_buf = (int *)data;
+    int16_t *p_buf = (int16_t *)data;
     for (int i = 0; i < (len >> 1); i++) {
         p_buf[i] = rand() % (1 << 16);
     }

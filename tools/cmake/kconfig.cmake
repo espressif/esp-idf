@@ -112,11 +112,6 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     if(sdkconfig_defaults)
         foreach(sdkconfig_default ${sdkconfig_defaults})
             list(APPEND defaults_arg --defaults "${sdkconfig_default}")
-        endforeach()
-    endif()
-
-    if(sdkconfig_defaults)
-        foreach(sdkconfig_default ${sdkconfig_defaults})
             if(EXISTS "${sdkconfig_default}.${idf_target}")
                 list(APPEND defaults_arg --defaults "${sdkconfig_default}.${idf_target}")
             endif()
@@ -132,8 +127,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         --list-separator=semicolon
         --env-file ${config_env_path})
 
-    set(confgen_basecommand
-        ${python} ${idf_path}/tools/kconfig_new/confgen.py
+    set(kconfgen_basecommand
+        ${python} -m kconfgen
         --list-separator=semicolon
         --kconfig ${root_kconfig}
         --sdkconfig-rename ${root_sdkconfig_rename}
@@ -158,7 +153,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         execute_process(
             COMMAND ${prepare_kconfig_files_command})
         execute_process(
-            COMMAND ${confgen_basecommand}
+            COMMAND ${kconfgen_basecommand}
             --output header ${sdkconfig_header}
             --output cmake ${sdkconfig_cmake}
             --output json ${sdkconfig_json}
@@ -169,7 +164,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         execute_process(
             COMMAND ${prepare_kconfig_files_command})
         execute_process(
-            COMMAND ${confgen_basecommand}
+            COMMAND ${kconfgen_basecommand}
             --output header ${sdkconfig_header}
             --output cmake ${sdkconfig_cmake}
             --output json ${sdkconfig_json}
@@ -178,7 +173,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     endif()
 
     if(config_result)
-        message(FATAL_ERROR "Failed to run confgen.py (${confgen_basecommand}). Error ${config_result}")
+        message(FATAL_ERROR "Failed to run kconfgen (${kconfgen_basecommand}). Error ${config_result}")
     endif()
 
     # Add the generated config header to build specifications.
@@ -212,7 +207,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         ${menuconfig_depends}
         # create any missing config file, with defaults if necessary
         COMMAND ${prepare_kconfig_files_command}
-        COMMAND ${confgen_basecommand}
+        COMMAND ${kconfgen_basecommand}
         --env "IDF_TARGET=${idf_target}"
         --env "IDF_ENV_FPGA=${idf_env_fpga}"
         --dont-write-deprecated
@@ -226,18 +221,18 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         "IDF_ENV_FPGA=${idf_env_fpga}"
         ${MENUCONFIG_CMD} ${root_kconfig}
         USES_TERMINAL
-        # additional run of confgen esures that the deprecated options will be inserted into sdkconfig (for backward
+        # additional run of kconfgen esures that the deprecated options will be inserted into sdkconfig (for backward
         # compatibility)
-        COMMAND ${confgen_basecommand}
+        COMMAND ${kconfgen_basecommand}
         --env "IDF_TARGET=${idf_target}"
         --env "IDF_ENV_FPGA=${idf_env_fpga}"
         --output config ${sdkconfig}
         )
 
-    # Custom target to run confserver.py from the build tool
+    # Custom target to run kconfserver from the build tool
     add_custom_target(confserver
         COMMAND ${prepare_kconfig_files_command}
-        COMMAND ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confserver.py
+        COMMAND ${python} -m kconfserver
         --env-file ${config_env_path}
         --kconfig ${IDF_PATH}/Kconfig
         --sdkconfig-rename ${root_sdkconfig_rename}
@@ -247,7 +242,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
     add_custom_target(save-defconfig
         COMMAND ${prepare_kconfig_files_command}
-        COMMAND ${confgen_basecommand}
+        COMMAND ${kconfgen_basecommand}
         --dont-write-deprecated
         --output savedefconfig ${CMAKE_SOURCE_DIR}/sdkconfig.defaults
         USES_TERMINAL

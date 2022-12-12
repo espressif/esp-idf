@@ -15,10 +15,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"
+#include "esp_private/critical_section.h"
 #include "hal/uart_hal.h"
 #include "hal/gpio_hal.h"
+#include "hal/clk_tree_ll.h"
 #include "soc/uart_periph.h"
-#include "soc/rtc_cntl_reg.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/uart_select.h"
@@ -65,12 +66,12 @@ static const char *UART_TAG = "uart";
 #endif
 
 
-#define UART_ENTER_CRITICAL_SAFE(mux)   portENTER_CRITICAL_SAFE(mux)
-#define UART_EXIT_CRITICAL_SAFE(mux)    portEXIT_CRITICAL_SAFE(mux)
-#define UART_ENTER_CRITICAL_ISR(mux)    portENTER_CRITICAL_ISR(mux)
-#define UART_EXIT_CRITICAL_ISR(mux)     portEXIT_CRITICAL_ISR(mux)
-#define UART_ENTER_CRITICAL(mux)    portENTER_CRITICAL(mux)
-#define UART_EXIT_CRITICAL(mux)     portEXIT_CRITICAL(mux)
+#define UART_ENTER_CRITICAL_SAFE(spinlock)   esp_os_enter_critical_safe(spinlock)
+#define UART_EXIT_CRITICAL_SAFE(spinlock)    esp_os_exit_critical_safe(spinlock)
+#define UART_ENTER_CRITICAL_ISR(spinlock)    esp_os_enter_critical_isr(spinlock)
+#define UART_EXIT_CRITICAL_ISR(spinlock)     esp_os_exit_critical_isr(spinlock)
+#define UART_ENTER_CRITICAL(spinlock)        esp_os_enter_critical(spinlock)
+#define UART_EXIT_CRITICAL(spinlock)         esp_os_exit_critical(spinlock)
 
 
 // Check actual UART mode set
@@ -78,7 +79,7 @@ static const char *UART_TAG = "uart";
 
 #define UART_CONTEX_INIT_DEF(uart_num) {\
     .hal.dev = UART_LL_GET_HW(uart_num),\
-    .spinlock = portMUX_INITIALIZER_UNLOCKED,\
+    INIT_CRIT_SECTION_LOCK_IN_STRUCT(spinlock)\
     .hw_enabled = false,\
 }
 
@@ -150,7 +151,7 @@ typedef struct {
 
 typedef struct {
     uart_hal_context_t hal;        /*!< UART hal context*/
-    portMUX_TYPE spinlock;
+    DECLARE_CRIT_SECTION_LOCK_IN_STRUCT(spinlock)
     bool hw_enabled;
 } uart_context_t;
 
@@ -197,6 +198,52 @@ static void uart_module_disable(uart_port_t uart_num)
         uart_context[uart_num].hw_enabled = false;
     }
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+}
+
+esp_err_t uart_get_sclk_freq(uart_sclk_t sclk, uint32_t* out_freq_hz)
+{
+    uint32_t freq;
+    switch (sclk) {
+#if SOC_UART_SUPPORT_APB_CLK
+    case UART_SCLK_APB:
+        freq = esp_clk_apb_freq();
+        break;
+#endif
+#if SOC_UART_SUPPORT_AHB_CLK
+    case UART_SCLK_AHB:
+        freq = APB_CLK_FREQ;    //This only exist on H4. Fix this when H2 MP is supported.
+        break;
+#endif
+#if SOC_UART_SUPPORT_PLL_F40M_CLK
+    case UART_SCLK_PLL_F40M:
+        freq = 40 * MHZ;
+        break;
+#endif
+#if SOC_UART_SUPPORT_REF_TICK
+    case UART_SCLK_REF_TICK:
+        freq = REF_CLK_FREQ;
+        break;
+#endif
+#if SOC_UART_SUPPORT_RTC_CLK
+    case UART_SCLK_RTC:
+        freq = RTC_CLK_FREQ;
+        break;
+#endif
+#if SOC_UART_SUPPORT_XTAL_CLK
+    case UART_SCLK_XTAL:
+        freq = esp_clk_xtal_freq();
+        break;
+#endif
+#if SOC_UART_SUPPORT_PLL_F80M_CLK
+    case UART_SCLK_PLL_F80M:
+        freq = UART_LL_PLL_DIV_FREQ;
+        break;
+#endif
+    default:
+        return ESP_ERR_INVALID_ARG;
+    }
+    *out_freq_hz = freq;
+    return ESP_OK;
 }
 
 esp_err_t uart_set_word_length(uart_port_t uart_num, uart_word_length_t data_bit)
@@ -256,8 +303,15 @@ esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t *parity_mode)
 esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
+
+    uart_sclk_t src_clk;
+    uint32_t sclk_freq;
+
+    uart_hal_get_sclk(&(uart_context[uart_num].hal), &src_clk);
+    ESP_RETURN_ON_ERROR(uart_get_sclk_freq(src_clk, &sclk_freq), UART_TAG, "Invalid src_clk");
+
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    uart_hal_set_baudrate(&(uart_context[uart_num].hal), baud_rate);
+    uart_hal_set_baudrate(&(uart_context[uart_num].hal), baud_rate, sclk_freq);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
@@ -265,8 +319,15 @@ esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
 esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t *baudrate)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
+
+    uart_sclk_t src_clk;
+    uint32_t sclk_freq;
+
+    uart_hal_get_sclk(&(uart_context[uart_num].hal), &src_clk);
+    ESP_RETURN_ON_ERROR(uart_get_sclk_freq(src_clk, &sclk_freq), UART_TAG, "Invalid src_clk");
+
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    uart_hal_get_baudrate(&(uart_context[uart_num].hal), baudrate);
+    uart_hal_get_baudrate(&(uart_context[uart_num].hal), baudrate, sclk_freq);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
@@ -688,10 +749,13 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
         periph_rtc_dig_clk8m_enable();
     }
 #endif
+    uint32_t sclk_freq;
+    ESP_RETURN_ON_ERROR(uart_get_sclk_freq(uart_config->source_clk, &sclk_freq), UART_TAG, "Invalid src_clk");
+
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
     uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_config->source_clk);
-    uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate);
+    uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate, sclk_freq);
     uart_hal_set_parity(&(uart_context[uart_num].hal), uart_config->parity);
     uart_hal_set_data_bit_num(&(uart_context[uart_num].hal), uart_config->data_bits);
     uart_hal_set_stop_bits(&(uart_context[uart_num].hal), uart_config->stop_bits);
@@ -1084,6 +1148,9 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
         xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
         return ESP_OK;
     }
+    if (!UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
+        uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
+    }
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
@@ -1278,6 +1345,15 @@ esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t *size)
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     *size = p_uart_obj[uart_num]->rx_buffered_len;
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    return ESP_OK;
+}
+
+esp_err_t uart_get_tx_buffer_free_size(uart_port_t uart_num, size_t *size)
+{
+    ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_ERR_INVALID_ARG, UART_TAG, "uart_num error");
+    ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), ESP_ERR_INVALID_ARG, UART_TAG, "uart driver error");
+    ESP_RETURN_ON_FALSE((size != NULL), ESP_ERR_INVALID_ARG, UART_TAG, "arg pointer is NULL");
+    *size = p_uart_obj[uart_num]->tx_buf_size - p_uart_obj[uart_num]->tx_len_tot;
     return ESP_OK;
 }
 

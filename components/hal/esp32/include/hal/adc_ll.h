@@ -23,6 +23,10 @@ extern "C" {
 #define ADC_LL_EVENT_ADC1_ONESHOT_DONE    (1 << 0)
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
 
+//On esp32, ADC can only be continuously triggered when `ADC_LL_DEFAULT_CONV_LIMIT_EN == 1`, `ADC_LL_DEFAULT_CONV_LIMIT_NUM != 0`
+#define ADC_LL_DEFAULT_CONV_LIMIT_EN      1
+#define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
+
 typedef enum {
     ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
     ADC_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
@@ -131,19 +135,13 @@ static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
 /**
  * Enable max conversion number detection for digital controller.
  * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
+ * @note On esp32, this should always be 1 to trigger the ADC continuously
+ *
+ * @param enable  true: enable; false: disable
  */
-static inline void adc_ll_digi_convert_limit_enable(void)
+static inline void adc_ll_digi_convert_limit_enable(bool enable)
 {
-    SYSCON.saradc_ctrl2.meas_num_limit = 1;
-}
-
-/**
- * Disable max conversion number detection for digital controller.
- * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
- */
-static inline void adc_ll_digi_convert_limit_disable(void)
-{
-    SYSCON.saradc_ctrl2.meas_num_limit = 0;
+    SYSCON.saradc_ctrl2.meas_num_limit = enable;
 }
 
 /**
@@ -339,7 +337,7 @@ static inline void adc_ll_set_sar_clk_div(adc_unit_t adc_n, uint32_t div)
  * Set adc output data format for RTC controller.
  *
  * @param adc_n ADC unit.
- * @param bits Output data bits width option, see ``adc_bits_width_t``.
+ * @param bits Output data bits width option
  */
 static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth_t bits)
 {
@@ -355,6 +353,9 @@ static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth
             reg_val = 2;
             break;
         case ADC_BITWIDTH_12:
+            reg_val = 3;
+            break;
+        case ADC_BITWIDTH_DEFAULT:
             reg_val = 3;
             break;
         default:
@@ -518,6 +519,7 @@ static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t chan
  * @param channel ADCn channel number.
  * @return atten The attenuation option.
  */
+__attribute__((always_inline))
 static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t channel)
 {
     if (adc_n == ADC_UNIT_1) {
@@ -577,6 +579,7 @@ static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
  * @param adc_n ADC unit.
  * @param ctrl ADC controller.
  */
+__attribute__((always_inline))
 static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t ctrl)
 {
     if (adc_n == ADC_UNIT_1) {

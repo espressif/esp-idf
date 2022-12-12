@@ -13,13 +13,20 @@ from itertools import chain
 
 def action_extract_features(args: str) -> None:
     """
-    Command line arguments starting with "--enable-" are features. This function selects those and prints them.
+    Command line arguments starting with "--enable-" or "--disable" are features. This function selects those, add them signs '+' or '-' and prints them.
     """
-    features = ['core']  # "core" features should be always installed
+    features = ['+core']  # "core" features should be always installed
 
     if args:
-        arg_prefix = '--enable-'
-        features += [arg[len(arg_prefix):] for arg in args.split() if arg.startswith(arg_prefix)]
+        arg_enable_prefix = '--enable-'
+        arg_disable_prefix = '--disable-'
+        # features to be enabled has prefix '+', disabled has prefix '-'
+        for arg in args.split():
+            if arg.startswith(arg_enable_prefix):
+                features.append('+' + arg[len(arg_enable_prefix):])
+            elif arg.startswith(arg_disable_prefix):
+                features.append('-' + arg[len(arg_disable_prefix):])
+        features = list(set(features))
 
     print(','.join(features))
 

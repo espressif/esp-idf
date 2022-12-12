@@ -96,6 +96,11 @@ struct httpd_ssl_config {
 
     /** User callback for esp_https_server */
     esp_https_server_user_cb *user_cb;
+
+    void *ssl_userdata; /*!< user data to add to the ssl context  */
+    esp_tls_handshake_callback cert_select_cb; /*!< Certificate selection callback to use */
+
+    const char** alpn_protos; /*!< Application protocols the server supports in order of prefernece. Used for negotiating during the TLS handshake, first one the client supports is selected. The data structure must live as long as the https server itself! */
 };
 
 typedef struct httpd_ssl_config httpd_ssl_config_t;
@@ -117,7 +122,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
         .stack_size         = 10240,              \
         .core_id            = tskNO_AFFINITY,     \
         .server_port        = 0,                  \
-        .ctrl_port          = 32768,              \
+        .ctrl_port   = ESP_HTTPD_DEF_CTRL_PORT+1, \
         .max_open_sockets   = 4,                  \
         .max_uri_handlers   = 8,                  \
         .max_resp_headers   = 8,                  \
@@ -143,7 +148,11 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .port_secure = 443,                           \
     .port_insecure = 80,                          \
     .session_tickets = false,                     \
+    .use_secure_element = false,                  \
     .user_cb = NULL,                              \
+    .ssl_userdata = NULL,                         \
+    .cert_select_cb = NULL,                       \
+    .alpn_protos = NULL,                          \
 }
 
 /**

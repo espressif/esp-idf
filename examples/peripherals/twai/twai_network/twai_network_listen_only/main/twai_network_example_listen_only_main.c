@@ -1,11 +1,8 @@
-/* TWAI Network Listen Only Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: CC0-1.0
+ */
 
 /*
  * The following example demonstrates a Listen Only node in a TWAI network. The
@@ -78,7 +75,7 @@ static void twai_receive_task(void *arg)
             for (int i = 0; i < rx_msg.data_length_code; i++) {
                 data |= (rx_msg.data[i] << (i * 8));
             }
-            ESP_LOGI(EXAMPLE_TAG, "Received data value %d", data);
+            ESP_LOGI(EXAMPLE_TAG, "Received data value %"PRIu32, data);
         } else if (rx_msg.identifier == ID_MASTER_STOP_CMD) {
             ESP_LOGI(EXAMPLE_TAG, "Received master stop command");
         } else if (rx_msg.identifier == ID_SLAVE_STOP_RESP) {

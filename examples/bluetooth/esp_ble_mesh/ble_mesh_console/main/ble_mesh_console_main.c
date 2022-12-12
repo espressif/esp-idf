@@ -62,14 +62,14 @@ void app_main(void)
     repl_config.prompt = "esp32c3>";
 #elif CONFIG_IDF_TARGET_ESP32S3
     repl_config.prompt = "esp32s3>";
-#elif CONFIG_IDF_TARGET_ESP32H2
-    repl_config.prompt = "esp32h2>";
+#elif CONFIG_IDF_TARGET_ESP32H4
+    repl_config.prompt = "esp32h4>";
 #else
     repl_config.prompt = "esp32>";
 #endif
-    printf("!!!ready!!!\n");
 
     // init console REPL environment
+    repl_config.max_history_len = 1;
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
 
     /* Register commands */
@@ -84,7 +84,7 @@ void app_main(void)
 #if (CONFIG_BLE_MESH_CFG_CLI)
     ble_mesh_register_configuration_client_model();
 #endif
-
+    printf("!!!ready!!!\n");
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }

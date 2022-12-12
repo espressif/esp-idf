@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,12 +12,14 @@
 #include <freertos/semphr.h>
 
 #include <unity.h>
-#include <esp_spi_flash.h>
+#include <spi_flash_mmap.h>
 #include <esp_attr.h>
 #include <esp_flash_encrypt.h>
+#include "esp_memory_utils.h"
 
-#include "../cache_utils.h"
+#include "esp_private/cache_utils.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 static QueueHandle_t result_queue;
 
 static IRAM_ATTR void cache_test_task(void *arg)
@@ -79,12 +81,12 @@ static void IRAM_ATTR cache_access_test_func(void* arg)
     vTaskDelete(NULL);
 }
 
-#ifdef CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32
+#define CACHE_ERROR_REASON "Cache disabled,SW_RESET"
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C6
 #define CACHE_ERROR_REASON "Cache error,RTC_SW_CPU_RST"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #define CACHE_ERROR_REASON "Cache disabled,RTC_SW_CPU_RST"
-#else
-#define CACHE_ERROR_REASON "Cache disabled,SW_RESET"
 #endif
 
 // These tests works properly if they resets the chip with the
@@ -105,3 +107,4 @@ TEST_CASE("invalid access to cache raises panic (APP CPU)", "[spi_flash][reset="
 
 #endif // !CONFIG_FREERTOS_UNICORE
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

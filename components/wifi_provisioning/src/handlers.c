@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -22,6 +14,7 @@
 
 #include "wifi_provisioning/wifi_config.h"
 #include "wifi_provisioning/wifi_scan.h"
+#include "wifi_ctrl.h"
 #include "wifi_provisioning/manager.h"
 #include "wifi_provisioning_priv.h"
 
@@ -200,5 +193,27 @@ esp_err_t get_wifi_scan_handlers(wifi_prov_scan_handlers_t *ptr)
     ptr->scan_status = scan_status;
     ptr->scan_result = scan_result;
     ptr->ctx = NULL;
+    return ESP_OK;
+}
+
+/*************************************************************************/
+
+static esp_err_t ctrl_reset(void)
+{
+    return wifi_prov_mgr_reset_sm_state_on_failure();
+}
+
+static esp_err_t ctrl_reprov(void)
+{
+    return wifi_prov_mgr_reset_sm_state_for_reprovision();
+}
+
+esp_err_t get_wifi_ctrl_handlers(wifi_ctrl_handlers_t *ptr)
+{
+    if (!ptr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ptr->ctrl_reset  = ctrl_reset;
+    ptr->ctrl_reprov  = ctrl_reprov;
     return ESP_OK;
 }

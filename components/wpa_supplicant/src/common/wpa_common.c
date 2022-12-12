@@ -324,6 +324,11 @@ static int rsn_key_mgmt_to_bitfield(const u8 *s)
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_SAE)
 		return WPA_KEY_MGMT_SAE;
 #endif /* CONFIG_WPA3_SAE */
+#ifdef CONFIG_OWE_STA
+	if(RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_OWE)
+		return WPA_KEY_MGMT_OWE;
+#endif /* CONFIG_OWE_STA */
+
 	return 0;
 }
 
@@ -358,6 +363,25 @@ int wpa_cipher_valid_mgmt_group(int cipher)
 	return cipher == WPA_CIPHER_AES_128_CMAC ||
 		cipher == WPA_CIPHER_BIP_GMAC_128 ||
 		cipher == WPA_CIPHER_BIP_GMAC_256;
+}
+
+int wpa_parse_wpa_ie_rsnxe(const u8 *rsnxe_ie, size_t rsnxe_ie_len,
+             struct wpa_ie_data *data)
+{
+	uint8_t rsnxe_capa = 0;
+	uint8_t sae_pwe = esp_wifi_sta_get_config_sae_pwe_h2e_internal();
+	memset(data, 0, sizeof(*data));
+
+	if (rsnxe_ie_len < 1) {
+		return -1;
+	}
+	rsnxe_capa = rsnxe_ie[2];
+	if (sae_pwe == 1 && !(rsnxe_capa & BIT(WLAN_RSNX_CAPAB_SAE_H2E))){
+		wpa_printf(MSG_ERROR, "SAE H2E required, but not supported by the AP");
+		return -1;
+	}
+	data->rsnxe_capa = rsnxe_capa;
+	return 0;
 }
 
 /**
@@ -853,7 +877,7 @@ int wpa_eapol_key_mic(const u8 *key, size_t key_len, int akmp, int ver,
 	case WPA_KEY_INFO_TYPE_HMAC_SHA1_AES:
 		if (hmac_sha1(key, key_len, buf, len, hash))
 			return -1;
-		memcpy(mic, hash, MD5_MAC_LEN);
+		os_memcpy(mic, hash, MD5_MAC_LEN);
 		break;
 	case WPA_KEY_INFO_TYPE_AES_128_CMAC:
 		return omac1_aes_128(key, buf, len, mic);
@@ -878,7 +902,23 @@ int wpa_eapol_key_mic(const u8 *key, size_t key_len, int akmp, int ver,
 			os_memcpy(mic, hash, 24);
 			break;
 #endif /* CONFIG_SUITEB192 */
+#ifdef CONFIG_OWE_STA
+		case WPA_KEY_MGMT_OWE:
+			wpa_printf(MSG_DEBUG,
+			"WPA: EAPOL-Key MIC using HMAC-SHA%u (AKM-defined - OWE)",
+			(unsigned int) key_len * 8 * 2);
+			if (key_len == 128 / 8) {
+				if (hmac_sha256(key, key_len, buf, len, hash))
+					return -1;
+			} else {
+				wpa_printf(MSG_INFO,"OWE: Unsupported KCK length: %u",
+				(unsigned int) key_len);
+				return -1;
+                        }
+                        os_memcpy(mic, hash, key_len);
+                        break;
 
+#endif /* CONFIG_OWE_STA */
 #endif /* CONFIG_IEEE80211W */
 		default:
 			return -1;
@@ -920,7 +960,8 @@ int wpa_compare_rsn_ie(int ft_initial_assoc,
 		    ie1d.group_cipher == ie2d.group_cipher &&
 		    ie1d.key_mgmt == ie2d.key_mgmt &&
 		    ie1d.capabilities == ie2d.capabilities &&
-		    ie1d.mgmt_group_cipher == ie2d.mgmt_group_cipher)
+		    ie1d.mgmt_group_cipher == ie2d.mgmt_group_cipher &&
+		    ie1d.rsnxe_capa == ie2d.rsnxe_capa)
 			return 0;
 	}
 #endif /* CONFIG_IEEE80211R */
@@ -1051,6 +1092,10 @@ int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 		   const u8 *nonce1, const u8 *nonce2,
 		   struct wpa_ptk *ptk, int akmp, int cipher)
 {
+	if (pmk_len == 0) {
+		wpa_printf(MSG_ERROR, "WPA: No PMK set for PTK derivation");
+		return -1;
+	}
 	u8 data[2 * ETH_ALEN + 2 * WPA_NONCE_LEN];
 	u8 tmp[WPA_KCK_MAX_LEN + WPA_KEK_MAX_LEN + WPA_TK_MAX_LEN];
 	size_t ptk_len;

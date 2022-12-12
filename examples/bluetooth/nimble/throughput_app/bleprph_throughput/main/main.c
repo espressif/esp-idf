@@ -8,7 +8,6 @@
 #include "nvs_flash.h"
 #include "freertos/FreeRTOSConfig.h"
 /* BLE */
-#include "esp_nimble_hci.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
@@ -195,7 +194,7 @@ notify_task(void *arg)
                         assert(om != NULL);
                     }
 
-                    rc = ble_gattc_notify_custom(conn_handle, notify_handle, om);
+                    rc = ble_gatts_notify_custom(conn_handle, notify_handle, om);
                     if (rc != 0) {
                         ESP_LOGE(tag, "Error while sending notification; rc = %d", rc);
                         notify_count -= 1;
@@ -371,7 +370,6 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    ESP_ERROR_CHECK(esp_nimble_hci_and_controller_init());
 
     nimble_port_init();
     /* Initialize the NimBLE host configuration */

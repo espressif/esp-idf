@@ -2,7 +2,7 @@
 #       On Espressif chips, too many dependencies are missing at the moment.
 #       Furthermore, this component can only mock the interfaces of
 #       spi_master.h and gpio.h.
-message(STATUS "building SPI FLASH MOCKS (only esp_partition* API)")
+message(STATUS "building SPI FLASH MOCKS (only esp_partition support)")
 
 idf_component_get_property(original_spi_flash_dir spi_flash COMPONENT_OVERRIDEN_DIR)
 
@@ -19,6 +19,5 @@ endif()
 idf_component_mock(INCLUDE_DIRS ${include_dirs}
     REQUIRES esp_common
     MOCK_HEADER_FILES
-    ${original_spi_flash_dir}/include/esp_partition.h
     ${original_spi_flash_dir}/include/esp_flash.h
-    ${original_spi_flash_dir}/include/esp_spi_flash.h)
+    ${original_spi_flash_dir}/include/spi_flash_mmap.h)

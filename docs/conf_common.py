@@ -20,7 +20,6 @@ if os.environ.get('IDF_PATH') is None:
     raise RuntimeError('IDF_PATH should be set, run export.sh before building docs')
 
 BT_DOCS = ['api-guides/blufi.rst',
-           'api-guides/esp-ble-mesh/**',
            'api-reference/bluetooth/bt_le.rst',
            'api-reference/bluetooth/esp_bt_defs.rst',
            'api-reference/bluetooth/esp_bt_device.rst',
@@ -32,9 +31,16 @@ BT_DOCS = ['api-guides/blufi.rst',
            'api-reference/bluetooth/esp_gatts.rst',
            'api-reference/bluetooth/esp_gattc.rst',
            'api-reference/bluetooth/esp_blufi.rst',
-           'api-reference/bluetooth/esp-ble-mesh.rst',
            'api-reference/bluetooth/index.rst',
-           'api-reference/bluetooth/nimble/index.rst']
+           'api-reference/bluetooth/nimble/index.rst',
+           'migration-guides/release-5.x/5.0/bluetooth-low-energy.rst']
+
+BLE_MESH_DOCS = ['api-guides/esp-ble-mesh/ble-mesh-index.rst',
+                 'api-guides/esp-ble-mesh/ble-mesh-feature-list.rst',
+                 'api-guides/esp-ble-mesh/ble-mesh-terminology.rst',
+                 'api-guides/esp-ble-mesh/ble-mesh-architecture.rst',
+                 'api-guides/esp-ble-mesh/ble-mesh-faq.rst',
+                 'api-reference/bluetooth/esp-ble-mesh.rst']
 
 CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_a2dp.rst',
@@ -46,11 +52,15 @@ CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_hf_client.rst',
                    'api-reference/bluetooth/esp_hf_ag.rst',
                    'api-reference/bluetooth/esp_spp.rst',
-                   'api-reference/bluetooth/esp_gap_bt.rst']
+                   'api-reference/bluetooth/esp_gap_bt.rst',
+                   'migration-guides/release-5.x/5.0/bluetooth-classic.rst']
 
 WIFI_DOCS = ['api-guides/wifi.rst',
              'api-guides/wifi-security.rst',
              'api-guides/wireshark-user-guide.rst']
+
+WIFI_MESH_DOCS = ['api-guides/esp-wifi-mesh.rst',
+                  'api-reference/network/esp-wifi-mesh.rst']
 
 COEXISTENCE_DOCS = ['api-guides/coexist.rst']
 
@@ -69,6 +79,8 @@ PCNT_DOCS = ['api-reference/peripherals/pcnt.rst']
 RMT_DOCS = ['api-reference/peripherals/rmt.rst']
 
 DAC_DOCS = ['api-reference/peripherals/dac.rst']
+
+ETM_DOCS = ['api-reference/peripherals/etm.rst']
 
 TEMP_SENSOR_DOCS = ['api-reference/peripherals/temp_sensor.rst']
 
@@ -99,9 +111,15 @@ RISCV_DOCS = []  # type: list[str]
 
 TWAI_DOCS = ['api-reference/peripherals/twai.rst']
 
-SIGMADELTA_DOCS = ['api-reference/peripherals/sigmadelta.rst']
+SDM_DOCS = ['api-reference/peripherals/sdm.rst']
 
 I2S_DOCS = ['api-reference/peripherals/i2s.rst']
+
+RTC_MEM_DOCS = ['api-guides/deep-sleep-stub.rst']
+
+ADC_DOCS = ['api-reference/peripherals/adc_oneshot.rst',
+            'api-reference/peripherals/adc_calibration.rst']
+ADC_DMA_DOCS = ['api-reference/peripherals/adc_continuous.rst']
 
 ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
@@ -130,10 +148,13 @@ ESP32S3_DOCS = ['hw-reference/esp32s3/**',
 ESP32C3_DOCS = ['hw-reference/esp32c3/**',
                 'api-guides/RF_calibration.rst']
 
+ESP32C2_DOCS = ['api-guides/RF_calibration.rst']
+
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
+                            'SOC_BLE_MESH_SUPPORTED':BLE_MESH_DOCS,
                             'SOC_WIFI_SUPPORTED':WIFI_DOCS,
-                            'SOC_CLASSIC_BT_SUPPORTED':CLASSIC_BT_DOCS,
+                            'SOC_BT_CLASSIC_SUPPORTED':CLASSIC_BT_DOCS,
                             'SOC_SUPPORT_COEXISTENCE':COEXISTENCE_DOCS,
                             'SOC_SDMMC_HOST_SUPPORTED':SDMMC_DOCS,
                             'SOC_SDIO_SLAVE_SUPPORTED':SDIO_SLAVE_DOCS,
@@ -145,7 +166,8 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_PCNT_SUPPORTED':PCNT_DOCS,
                             'SOC_RMT_SUPPORTED':RMT_DOCS,
                             'SOC_DAC_SUPPORTED':DAC_DOCS,
-                            'SOC_TOUCH_SENSOR_NUM':TOUCH_SENSOR_DOCS,
+                            'SOC_ETM_SUPPORTED':ETM_DOCS,
+                            'SOC_TOUCH_SENSOR_SUPPORTED':TOUCH_SENSOR_DOCS,
                             'SOC_ULP_SUPPORTED':ULP_DOCS,
                             'SOC_RISCV_COPROC_SUPPORTED':RISCV_COPROC_DOCS,
                             'SOC_DIG_SIGN_SUPPORTED':['api-reference/peripherals/ds.rst'],
@@ -156,10 +178,15 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_TEMP_SENSOR_SUPPORTED':TEMP_SENSOR_DOCS,
                             'SOC_TWAI_SUPPORTED':TWAI_DOCS,
                             'SOC_I2S_SUPPORTED':I2S_DOCS,
-                            'SOC_SIGMADELTA_SUPPORTED':SIGMADELTA_DOCS,
+                            'SOC_RTC_MEM_SUPPORTED': RTC_MEM_DOCS,
+                            'SOC_ADC_SUPPORTED':ADC_DOCS,
+                            'SOC_ADC_DMA_SUPPORTED':ADC_DMA_DOCS,
+                            'SOC_SDM_SUPPORTED':SDM_DOCS,
+                            'SOC_WIFI_MESH_SUPPORT':WIFI_MESH_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,
+                            'esp32c2':ESP32C2_DOCS,
                             'esp32c3':ESP32C3_DOCS}
 
 extensions += ['sphinx_copybutton',
@@ -169,7 +196,6 @@ extensions += ['sphinx_copybutton',
                # connected to another extension
                'esp_docs.idf_extensions.build_system',
                'esp_docs.idf_extensions.esp_err_definitions',
-               'esp_docs.idf_extensions.gen_toolchain_links',
                'esp_docs.idf_extensions.gen_defines',
                'esp_docs.idf_extensions.gen_version_specific_includes',
                'esp_docs.idf_extensions.kconfig_reference',
@@ -207,9 +233,7 @@ linkcheck_exclude_documents = ['index',  # several false positives due to the wa
 
 
 linkcheck_ignore = ['https://webhome.phy.duke.edu/~rgb/General/dieharder.php',  # Certificate error
-                    'https://dl.espressif.com/dl/esp32s3_rom.elf',  # Not published
                     'https://docs.espressif.com/projects/esptool/en/latest/esp32c2/espefuse/index.html',  # Not published
-                    'https://www.espressif.com/sites/default/files/documentation/esp32-c2_datasheet_en.pdf',  # Not published
                     ]
 
 

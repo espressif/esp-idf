@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +45,22 @@ static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num,
 }
 
 /**
+ * @brief Enable Timer Group (GPTimer) module clock
+ *
+ * @note This function is not optional, created for backward compatible.
+ *
+ * @param hw Timer Group register base address
+ * @param timer_num Timer index in the group
+ * @param en true to enable, false to disable
+ */
+static inline void timer_ll_enable_clock(timg_dev_t *hw, uint32_t timer_num, bool en)
+{
+    (void)hw;
+    (void)timer_num;
+    (void)en;
+}
+
+/**
  * @brief Enable alarm event
  *
  * @param hw Timer Group register base address
@@ -83,6 +99,7 @@ static inline void timer_ll_set_clock_prescale(timg_dev_t *hw, uint32_t timer_nu
  * @param en True: enable auto reload mode
  *           False: disable auto reload mode
  */
+__attribute__((always_inline))
 static inline void timer_ll_enable_auto_reload(timg_dev_t *hw, uint32_t timer_num, bool en)
 {
     hw->hw_timer[timer_num].config.tn_autoreload = en;
@@ -115,6 +132,22 @@ static inline void timer_ll_enable_counter(timg_dev_t *hw, uint32_t timer_num, b
 }
 
 /**
+ * @brief Trigger software capture event
+ *
+ * @param hw Timer Group register base address
+ * @param timer_num Timer number in the group
+ */
+__attribute__((always_inline))
+static inline void timer_ll_trigger_soft_capture(timg_dev_t *hw, uint32_t timer_num)
+{
+    hw->hw_timer[timer_num].update.tn_update = 1;
+    // Timer register is in a different clock domain from Timer hardware logic
+    // We need to wait for the update to take effect before fetching the count value
+    while (hw->hw_timer[timer_num].update.tn_update) {
+    }
+}
+
+/**
  * @brief Get counter value
  *
  * @param hw Timer Group register base address
@@ -125,11 +158,6 @@ static inline void timer_ll_enable_counter(timg_dev_t *hw, uint32_t timer_num, b
 __attribute__((always_inline))
 static inline uint64_t timer_ll_get_counter_value(timg_dev_t *hw, uint32_t timer_num)
 {
-    hw->hw_timer[timer_num].update.tn_update = 1;
-    // Timer register is in a different clock domain from Timer hardware logic
-    // We need to wait for the update to take effect before fetching the count value
-    while (hw->hw_timer[timer_num].update.tn_update) {
-    }
     return ((uint64_t)hw->hw_timer[timer_num].hi.tn_hi << 32) | (hw->hw_timer[timer_num].lo.tn_lo);
 }
 
@@ -154,6 +182,7 @@ static inline void timer_ll_set_alarm_value(timg_dev_t *hw, uint32_t timer_num, 
  * @param timer_num Timer number in the group
  * @param reload_val Reload counter value
  */
+__attribute__((always_inline))
 static inline void timer_ll_set_reload_value(timg_dev_t *hw, uint32_t timer_num, uint64_t reload_val)
 {
     hw->hw_timer[timer_num].loadhi.tn_load_hi = (uint32_t)(reload_val >> 32);

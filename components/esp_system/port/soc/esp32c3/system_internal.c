@@ -11,8 +11,7 @@
 #include "esp_attr.h"
 #include "esp_efuse.h"
 #include "esp_log.h"
-#include "riscv/riscv_interrupts.h"
-#include "riscv/interrupt.h"
+#include "riscv/rv_utils.h"
 #include "esp_rom_uart.h"
 #include "soc/gpio_reg.h"
 #include "soc/rtc_cntl_reg.h"
@@ -36,7 +35,7 @@
 void IRAM_ATTR esp_restart_noos(void)
 {
     // Disable interrupts
-    riscv_global_interrupts_disable();
+    rv_utils_intr_global_disable();
     // Enable RTC watchdog for 1 second
     wdt_hal_context_t rtc_wdt_ctx;
     wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
@@ -52,7 +51,7 @@ void IRAM_ATTR esp_restart_noos(void)
     // CPU must be reset before stalling, in case it was running a s32c1i
     // instruction. This would cause memory pool to be locked by arbiter
     // to the stalled CPU, preventing current CPU from accessing this pool.
-    const uint32_t core_id = cpu_hal_get_core_id();
+    const uint32_t core_id = esp_cpu_get_core_id();
 #if !CONFIG_FREERTOS_UNICORE
     const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
     esp_cpu_reset(other_core_id);
@@ -87,13 +86,10 @@ void IRAM_ATTR esp_restart_noos(void)
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-                      SYSTEM_BB_RST | SYSTEM_FE_RST | SYSTEM_MAC_RST |
-                      SYSTEM_BT_RST | SYSTEM_BTMAC_RST | SYSTEM_SDIO_RST |
-                      SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
-                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | BLE_REG_REST_BIT
-                      |BLE_PWR_REG_REST_BIT | BLE_BB_REG_REST_BIT);
-
-
+                      SYSTEM_WIFIBB_RST | SYSTEM_FE_RST | SYSTEM_WIFIMAC_RST |
+                      SYSTEM_SDIO_RST | SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
+                      SYSTEM_BTBB_RST | SYSTEM_BTBB_REG_RST |
+                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | SYSTEM_RW_BTMAC_REG_RST | SYSTEM_RW_BTLP_REG_RST);
     REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
 
     // Reset uart0 core first, then reset apb side.

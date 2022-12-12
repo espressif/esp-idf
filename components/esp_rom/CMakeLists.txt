@@ -11,14 +11,26 @@ if(target STREQUAL "linux")
                         "${target}/esp_rom_crc.c"
                         "${target}/esp_rom_md5.c"
                         "${target}/esp_rom_efuse.c")
+    list(APPEND include_dirs "${IDF_PATH}/tools/mocks/soc/include")
 else()
     list(APPEND include_dirs "${target}")
     list(APPEND sources "patches/esp_rom_crc.c"
                         "patches/esp_rom_sys.c"
                         "patches/esp_rom_uart.c"
                         "patches/esp_rom_spiflash.c"
-                        "patches/esp_rom_tjpgd.c"
-                        "patches/esp_rom_regi2c.c")
+                        "patches/esp_rom_efuse.c")
+
+
+    # Override regi2c implementation in ROM
+    if(CONFIG_ESP_ROM_HAS_REGI2C_BUG)
+        list(APPEND sources "patches/esp_rom_regi2c_${target}.c")
+    endif()
+
+    if(CONFIG_HEAP_TLSF_USE_ROM_IMPL AND CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
+        # This file shall be included in the build if TLSF in ROM is activated
+        list(APPEND sources "patches/esp_rom_tlsf.c")
+    endif()
+
     list(APPEND private_required_comp soc hal)
 endif()
 
@@ -26,15 +38,19 @@ if(CONFIG_IDF_TARGET_ARCH_XTENSA)
     list(APPEND sources "patches/esp_rom_longjmp.S")
 endif()
 
+if(CONFIG_SOC_SYSTIMER_SUPPORTED)
+    list(APPEND sources "patches/esp_rom_systimer.c")
+endif()
+
 idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS ${include_dirs}
                        PRIV_REQUIRES ${private_required_comp}
                        LDFRAGMENTS linker.lf)
 
-if(target STREQUAL "esp32h2")
-    if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+if(target STREQUAL "esp32h4")
+    if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
         set(ld_folder "ld/rev1")
-    elseif(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+    elseif(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
         set(ld_folder "ld/rev2")
     endif()
 else()
@@ -58,6 +74,7 @@ if(target STREQUAL "linux")
 else()
     target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/${ld_folder}/${target}.rom.ld")
     rom_linker_script("api")
+
     if(CONFIG_COMPILER_FLOAT_LIB_FROM_GCCLIB)
         rom_linker_script("libgcc")
     else()
@@ -73,7 +90,7 @@ if(BOOTLOADER_BUILD)
         if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
             rom_linker_script("spiflash")
         endif()
-        if(CONFIG_ESP32_REV_MIN_3)
+        if(CONFIG_ESP32_REV_MIN_FULL GREATER_EQUAL 300)
             rom_linker_script("eco3")
         endif()
 
@@ -87,12 +104,20 @@ if(BOOTLOADER_BUILD)
     elseif(target STREQUAL "esp32c3")
         rom_linker_script("newlib")
 
-    elseif(target STREQUAL "esp32h2")
+    elseif(target STREQUAL "esp32h4")
         rom_linker_script("newlib")
 
     elseif(target STREQUAL "esp32c2")
         rom_linker_script("newlib")
         rom_linker_script("mbedtls")
+
+    elseif(target STREQUAL "esp32c6")
+        rom_linker_script("newlib")
+        # The linking of the bootloader needs to use the rom_i2c_writeReg_Mask in esp32c6.rom.phy.ld
+        rom_linker_script("phy")
+
+    elseif(target STREQUAL "esp32h2")
+        rom_linker_script("newlib")
     endif()
 
 else() # Regular app build
@@ -122,7 +147,7 @@ else() # Regular app build
             rom_linker_script("spiflash")
         endif()
 
-        if(CONFIG_ESP32_REV_MIN_3)
+        if(CONFIG_ESP32_REV_MIN_FULL GREATER_EQUAL 300)
             rom_linker_script("eco3")
         endif()
 
@@ -175,11 +200,11 @@ else() # Regular app build
             endif()
         endif()
 
-        if(CONFIG_ESP32C3_REV_MIN_3 OR CONFIG_ESP32C3_REV_MIN_4)
+        if(CONFIG_ESP32C3_REV_MIN_FULL GREATER_EQUAL 3)
             rom_linker_script("eco3")
         endif()
 
-    elseif(target STREQUAL "esp32h2")
+    elseif(target STREQUAL "esp32h4")
         rom_linker_script("newlib")
         rom_linker_script("version")
 
@@ -194,15 +219,80 @@ else() # Regular app build
         rom_linker_script("version")
         rom_linker_script("mbedtls")
 
-        if(CONFIG_NEWLIB_NANO_FORMAT AND time_t_size EQUAL 4)
-            # nano formatting functions in ROM are built for 32-bit time_t,
-            # only link them if the toolchain is also using 32-bit time_t and nano formatting was requested.
-            rom_linker_script("newlib-nano")
+        if(time_t_size EQUAL 8)
+            # The ROM functions listed in this linker script depend on sizeof(time_t).
+            # Since ROM for ESP32-C2 was compiled for 64-bit time_t, only link these functions
+            # if the toolchain is also using 64-bit time_t.
+            rom_linker_script("newlib-time")
+
+            if(CONFIG_NEWLIB_NANO_FORMAT)
+                # nano formatting functions in ROM are also built for 64-bit time_t.
+                rom_linker_script("newlib-nano")
+            endif()
         endif()
 
-        if(CONFIG_HEAP_TLSF_USE_ROM_IMPL)
-            rom_linker_script("heap")
+    elseif(target STREQUAL "esp32c6")
+        rom_linker_script("newlib")
+        rom_linker_script("version")
+
+        # esp32c6.rom.api.ld has been split to several lds by components.
+        rom_linker_script("phy")
+        rom_linker_script("coexist")
+        rom_linker_script("net80211")
+        rom_linker_script("pp")
+
+        if(CONFIG_SPI_FLASH_ROM_IMPL)
+            rom_linker_script("spiflash")
         endif()
+
+        if(time_t_size EQUAL 8)
+            # The ROM functions listed in this linker script depend on sizeof(time_t).
+            # ESP32-C6 ROM was compiled for 64-bit time_t, only link these functions
+            # if the toolchain is also using 64-bit time_t.
+            rom_linker_script("newlib-time")
+
+            if(NOT CONFIG_NEWLIB_NANO_FORMAT)
+                # Normal(Non-nano) formatting functions in ROM are also built for 64-bit time_t.
+                rom_linker_script("newlib-normal")
+            endif()
+        endif()
+
+    elseif(target STREQUAL "esp32h2")
+        rom_linker_script("newlib")
+        rom_linker_script("version")
+        rom_linker_script("phy")
+        rom_linker_script("coexist")
+        rom_linker_script("net80211")
+        rom_linker_script("pp")
+
+        if(CONFIG_SPI_FLASH_ROM_IMPL)
+            rom_linker_script("spiflash")
+        endif()
+
+        if(time_t_size EQUAL 8)
+            # The ROM functions listed in this linker script depend on sizeof(time_t).
+            # Since ROM for ESP32-H2 was compiled for 64-bit time_t, only link these functions
+            # if the toolchain is also using 64-bit time_t.
+            rom_linker_script("newlib-time")
+
+            if(CONFIG_NEWLIB_NANO_FORMAT)
+                # nano formatting functions in ROM are also built for 64-bit time_t.
+                rom_linker_script("newlib-nano")
+            endif()
+        endif()
+
+    endif()
+
+    if(CONFIG_HEAP_TLSF_USE_ROM_IMPL)
+        # After registering the component, set the tlsf_set_rom_patches symbol as undefined
+        # to force the linker to integrate the whole `esp_rom_tlsf.c` object file inside the
+        # final binary. This is necessary because tlsf_set_rom_patches is a constructor, thus,
+        # there as no explicit reference/call to it in IDF.
+        if(CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
+            target_link_libraries(${COMPONENT_LIB} PRIVATE "-u tlsf_set_rom_patches")
+        endif()
+
+        rom_linker_script("heap")
     endif()
 
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)

@@ -19,23 +19,38 @@
 #include "common/bt_defs.h"
 #include "common/bt_trace.h"
 #include "stack/bt_types.h"
-#include "osi/fixed_queue.h"
 #include "hci/hci_hal.h"
 #include "hci/hci_internals.h"
 #include "hci/hci_layer.h"
 #include "osi/thread.h"
+#include "osi/pkt_queue.h"
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+#include "osi/mutex.h"
+#include "osi/alarm.h"
+#endif
 #include "esp_bt.h"
 #include "stack/hcimsgs.h"
+
+#if SOC_ESP_NIMBLE_CONTROLLER
+#include "nimble/ble_hci_trans.h"
+#endif
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
 #include "l2c_int.h"
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 #include "stack/hcimsgs.h"
 
-#define HCI_HAL_SERIAL_BUFFER_SIZE 1026
 #define HCI_BLE_EVENT 0x3e
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
 #define PACKET_TYPE_TO_INDEX(type) ((type) - 1)
+#define HCI_UPSTREAM_DATA_QUEUE_IDX   (1)
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+#define HCI_BLE_ADV_MIN_CREDITS_TO_RELEASE     (10)
+#define HCI_ADV_FLOW_MONITOR_PERIOD_MS         (500)
+#else
+#define HCI_HAL_BLE_ADV_RPT_QUEUE_LEN_MAX      (200)
+#endif
+
 extern bool BTU_check_queue_is_congest(void);
 
 
@@ -54,64 +69,102 @@ static const uint16_t outbound_event_types[] = {
 };
 
 typedef struct {
-    size_t buffer_size;
     fixed_queue_t *rx_q;
-    uint16_t adv_free_num;
+    struct pkt_queue *adv_rpt_q;
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    osi_mutex_t adv_flow_lock;
+    osi_alarm_t *adv_flow_monitor;
+    int adv_credits;
+    int adv_credits_to_release;
+    pkt_linked_item_t *adv_fc_cmd_buf;
+    bool cmd_buf_in_use;
+#endif
+    hci_hal_callbacks_t *callbacks;
+    osi_thread_t *hci_h4_thread;
+    struct osi_event *upstream_data_ready;
 } hci_hal_env_t;
 
 
 static hci_hal_env_t hci_hal_env;
 static const hci_hal_t interface;
-static const hci_hal_callbacks_t *callbacks;
 static const esp_vhci_host_callback_t vhci_host_cb;
-static osi_thread_t *hci_h4_thread;
 
 static void host_send_pkt_available_cb(void);
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len);
+static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet);
+static void hci_hal_h4_hdl_rx_adv_rpt(pkt_linked_item_t *linked_pkt);
+static void hci_upstream_data_handler(void *arg);
+static bool hci_upstream_data_post(uint32_t timeout);
 
-static void hci_hal_h4_rx_handler(void *arg);
-static void event_uart_has_bytes(fixed_queue_t *queue);
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+static void hci_adv_flow_monitor(void *context);
+static void hci_adv_flow_cmd_free_cb(pkt_linked_item_t *linked_pkt);
+#endif
 
-
-static void hci_hal_env_init(
-    size_t buffer_size,
-    size_t max_buffer_count)
+static bool hci_hal_env_init(const hci_hal_callbacks_t *upper_callbacks, osi_thread_t *task_thread)
 {
-    assert(buffer_size > 0);
-    assert(max_buffer_count > 0);
+    assert(upper_callbacks != NULL);
+    assert(task_thread != NULL);
 
-    hci_hal_env.buffer_size = buffer_size;
-    hci_hal_env.adv_free_num = 0;
+    hci_hal_env.hci_h4_thread = task_thread;
+    hci_hal_env.callbacks = (hci_hal_callbacks_t *)upper_callbacks;
 
-    hci_hal_env.rx_q = fixed_queue_new(max_buffer_count);
-    if (hci_hal_env.rx_q) {
-        fixed_queue_register_dequeue(hci_hal_env.rx_q, event_uart_has_bytes);
-    } else {
-        HCI_TRACE_ERROR("%s unable to create rx queue.\n", __func__);
-    }
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    hci_hal_env.adv_fc_cmd_buf = osi_calloc(HCI_CMD_LINKED_BUF_SIZE(HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL));
+    assert(hci_hal_env.adv_fc_cmd_buf != NULL);
+    osi_mutex_new(&hci_hal_env.adv_flow_lock);
+    osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    hci_hal_env.adv_credits = BLE_ADV_REPORT_FLOW_CONTROL_NUM;
+    hci_hal_env.adv_credits_to_release = 0;
+    hci_hal_env.cmd_buf_in_use = false;
+    osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+    hci_hal_env.adv_flow_monitor = osi_alarm_new("adv_fc_mon", hci_adv_flow_monitor, NULL, HCI_ADV_FLOW_MONITOR_PERIOD_MS);
+    assert (hci_hal_env.adv_flow_monitor != NULL);
+#endif
 
-    return;
+    hci_hal_env.rx_q = fixed_queue_new(QUEUE_SIZE_MAX);
+    assert(hci_hal_env.rx_q != NULL);
+
+    hci_hal_env.adv_rpt_q = pkt_queue_create();
+    assert(hci_hal_env.adv_rpt_q != NULL);
+
+    struct osi_event *event = osi_event_create(hci_upstream_data_handler, NULL);
+    assert(event != NULL);
+    hci_hal_env.upstream_data_ready = event;
+    osi_event_bind(hci_hal_env.upstream_data_ready, hci_hal_env.hci_h4_thread, HCI_UPSTREAM_DATA_QUEUE_IDX);
+
+    return true;
 }
 
 static void hci_hal_env_deinit(void)
 {
     fixed_queue_free(hci_hal_env.rx_q, osi_free_func);
     hci_hal_env.rx_q = NULL;
+
+    pkt_queue_destroy(hci_hal_env.adv_rpt_q, NULL);
+    hci_hal_env.adv_rpt_q = NULL;
+
+    osi_event_delete(hci_hal_env.upstream_data_ready);
+    hci_hal_env.upstream_data_ready = NULL;
+
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    hci_hal_env.cmd_buf_in_use = true;
+    osi_alarm_cancel(hci_hal_env.adv_flow_monitor);
+    osi_alarm_free(hci_hal_env.adv_flow_monitor);
+    hci_hal_env.adv_flow_monitor = NULL;
+    osi_mutex_free(&hci_hal_env.adv_flow_lock);
+    osi_free(hci_hal_env.adv_fc_cmd_buf);
+    hci_hal_env.adv_fc_cmd_buf = NULL;
+#endif
+
+    hci_hal_env.hci_h4_thread = NULL;
+
+    memset(&hci_hal_env, 0, sizeof(hci_hal_env_t));
 }
 
 static bool hal_open(const hci_hal_callbacks_t *upper_callbacks, void *task_thread)
 {
-    assert(upper_callbacks != NULL);
-    assert(task_thread != NULL);
-
-    callbacks = upper_callbacks;
-#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
-    hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, BLE_ADV_REPORT_FLOW_CONTROL_NUM + L2CAP_HOST_FC_ACL_BUFS + QUEUE_SIZE_MAX); // adv flow control num + ACL flow control num + hci cmd numeber
-#else
-    hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, QUEUE_SIZE_MAX);
-#endif
-
-    hci_h4_thread = (osi_thread_t *)task_thread;
+    hci_hal_env_init(upper_callbacks, (osi_thread_t *)task_thread);
 
     //register vhci host cb
     if (esp_vhci_host_register_callback(&vhci_host_cb) != ESP_OK) {
@@ -124,8 +177,6 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks, void *task_thre
 static void hal_close(void)
 {
     hci_hal_env_deinit();
-
-    hci_h4_thread = NULL;
 }
 
 /**
@@ -165,14 +216,40 @@ static uint16_t transmit_data(serial_data_type_t type,
 }
 
 // Internal functions
-static void hci_hal_h4_rx_handler(void *arg)
+static void hci_upstream_data_handler(void *arg)
 {
-    fixed_queue_process(hci_hal_env.rx_q);
+    fixed_queue_t *rx_q = hci_hal_env.rx_q;
+    struct pkt_queue *adv_rpt_q = hci_hal_env.adv_rpt_q;
+    size_t pkts_to_process;
+
+    do {
+        pkts_to_process = fixed_queue_length(rx_q);
+        for (size_t i = 0; i < pkts_to_process; i++) {
+            BT_HDR *packet = fixed_queue_dequeue(rx_q, 0);
+            if (packet != NULL) {
+                hci_hal_h4_hdl_rx_packet(packet);
+            }
+        }
+    } while (0);
+
+    do {
+        pkts_to_process = pkt_queue_length(adv_rpt_q);
+        for (size_t i = 0; i < pkts_to_process; i++) {
+            pkt_linked_item_t *linked_pkt = pkt_queue_dequeue(adv_rpt_q);
+            if (linked_pkt != NULL) {
+                hci_hal_h4_hdl_rx_adv_rpt(linked_pkt);
+            }
+        }
+    } while (0);
+
+    if (!fixed_queue_is_empty(rx_q) || pkt_queue_length(adv_rpt_q) > 0) {
+        hci_upstream_data_post(OSI_THREAD_MAX_TIMEOUT);
+    }
 }
 
-bool hci_hal_h4_task_post(uint32_t timeout)
+static bool hci_upstream_data_post(uint32_t timeout)
 {
-    return osi_thread_post(hci_h4_thread, hci_hal_h4_rx_handler, NULL, 1, timeout);
+    return osi_thread_post_event(hci_hal_env.upstream_data_ready, timeout);
 }
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
@@ -191,13 +268,13 @@ static void hci_packet_complete(BT_HDR *packet){
 }
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 
-bool host_recv_adv_packet(BT_HDR *packet)
+bool host_recv_adv_packet(uint8_t *packet)
 {
     assert(packet);
-    if(packet->data[0] == DATA_TYPE_EVENT && packet->data[1] == HCI_BLE_EVENT) {
-        if(packet->data[3] ==  HCI_BLE_ADV_PKT_RPT_EVT
+    if(packet[0] == DATA_TYPE_EVENT && packet[1] == HCI_BLE_EVENT) {
+        if(packet[3] ==  HCI_BLE_ADV_PKT_RPT_EVT || packet[3] == HCI_BLE_DIRECT_ADV_EVT
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
-        || packet->data[3] ==  HCI_BLE_ADV_DISCARD_REPORT_EVT
+        || packet[3] ==  HCI_BLE_ADV_DISCARD_REPORT_EVT
 #endif
         ) {
             return true;
@@ -207,21 +284,128 @@ bool host_recv_adv_packet(BT_HDR *packet)
 }
 
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
-static void hci_update_adv_report_flow_control(BT_HDR *packet)
+static void hci_adv_flow_monitor(void *context)
 {
-    // this is adv packet
-    if(host_recv_adv_packet(packet)) {
-        // update adv free number
-        hci_hal_env.adv_free_num ++;
-        if (esp_vhci_host_check_send_available()){
-            // send hci cmd
-            btsnd_hcic_ble_update_adv_report_flow_control(hci_hal_env.adv_free_num);
-            hci_hal_env.adv_free_num = 0;
+    hci_adv_credits_force_release(0);
+}
+
+static void hci_adv_credits_consumed(uint16_t num)
+{
+    osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    assert(hci_hal_env.adv_credits >= num);
+    hci_hal_env.adv_credits -= num;
+    osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+}
+
+int hci_adv_credits_prep_to_release(uint16_t num)
+{
+    if (num == 0) {
+        return hci_hal_env.adv_credits_to_release;
+    }
+
+    osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    int credits_to_release = hci_hal_env.adv_credits_to_release + num;
+    assert(hci_hal_env.adv_credits_to_release <= BLE_ADV_REPORT_FLOW_CONTROL_NUM);
+    hci_hal_env.adv_credits_to_release = credits_to_release;
+    osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+
+    if (credits_to_release == num && num != 0) {
+        osi_alarm_cancel(hci_hal_env.adv_flow_monitor);
+        osi_alarm_set(hci_hal_env.adv_flow_monitor, HCI_ADV_FLOW_MONITOR_PERIOD_MS);
+    }
+    return credits_to_release;
+}
+
+static int hci_adv_credits_release(void)
+{
+    osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    int credits_released = hci_hal_env.adv_credits_to_release;
+    hci_hal_env.adv_credits += credits_released;
+    hci_hal_env.adv_credits_to_release -= credits_released;
+    assert(hci_hal_env.adv_credits <= BLE_ADV_REPORT_FLOW_CONTROL_NUM);
+    assert(hci_hal_env.adv_credits_to_release >= 0);
+    osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+
+    if (hci_hal_env.adv_credits_to_release == 0) {
+        osi_alarm_cancel(hci_hal_env.adv_flow_monitor);
+    }
+    return credits_released;
+}
+
+static int hci_adv_credits_release_rollback(uint16_t num)
+{
+    osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    hci_hal_env.adv_credits -= num;
+    hci_hal_env.adv_credits_to_release += num;
+    assert(hci_hal_env.adv_credits >=0);
+    assert(hci_hal_env.adv_credits_to_release <= BLE_ADV_REPORT_FLOW_CONTROL_NUM);
+    osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+
+    return num;
+}
+
+static void hci_adv_flow_cmd_free_cb(pkt_linked_item_t *linked_pkt)
+{
+    osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    hci_hal_env.cmd_buf_in_use = false;
+    osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+    hci_adv_credits_try_release(0);
+}
+
+bool hci_adv_flow_try_send_command(uint16_t credits_released)
+{
+    bool sent = false;
+    bool use_static_buffer = false;
+
+    /* first try using static buffer, then dynamic buffer */
+    if (!hci_hal_env.cmd_buf_in_use) {
+        osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+        if (!hci_hal_env.cmd_buf_in_use) {
+            hci_hal_env.cmd_buf_in_use = true;
+            use_static_buffer = true;
+        }
+        osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+    }
+
+    if (use_static_buffer) {
+        hci_cmd_metadata_t *metadata = (hci_cmd_metadata_t *)(hci_hal_env.adv_fc_cmd_buf->data);
+        BT_HDR *static_buffer = &metadata->command;
+        metadata->command_free_cb = hci_adv_flow_cmd_free_cb;
+        sent = btsnd_hcic_ble_update_adv_report_flow_control(credits_released, static_buffer);
+    } else {
+        sent = btsnd_hcic_ble_update_adv_report_flow_control(credits_released, NULL);
+    }
+
+    return sent;
+}
+
+int hci_adv_credits_try_release(uint16_t num)
+{
+    int credits_released = 0;
+    if (hci_adv_credits_prep_to_release(num) >= HCI_BLE_ADV_MIN_CREDITS_TO_RELEASE) {
+        credits_released = hci_adv_credits_release();
+        if (credits_released > 0) {
+            if (!hci_adv_flow_try_send_command(credits_released)) {
+                hci_adv_credits_release_rollback(credits_released);
+            }
         } else {
-            //do nothing
+            assert (credits_released == 0);
+        }
+    }
+    return credits_released;
+}
+
+int hci_adv_credits_force_release(uint16_t num)
+{
+    hci_adv_credits_prep_to_release(num);
+    int credits_released = hci_adv_credits_release();
+    if (credits_released > 0) {
+        if (!hci_adv_flow_try_send_command(credits_released)) {
+            hci_adv_credits_release_rollback(credits_released);
         }
     }
 
+    return credits_released;
 }
 #endif
 
@@ -282,67 +466,163 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
         return;
     }
 
-#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
-    hci_update_adv_report_flow_control(packet);
-#endif
-
-#if SCAN_QUEUE_CONGEST_CHECK
-    if(BTU_check_queue_is_congest() && host_recv_adv_packet(packet)) {
-        HCI_TRACE_DEBUG("BtuQueue is congested");
-        osi_free(packet);
-        return;
-    }
-#endif
     packet->event = outbound_event_types[PACKET_TYPE_TO_INDEX(type)];
-    callbacks->packet_ready(packet);
+    hci_hal_env.callbacks->packet_ready(packet);
 }
 
-static void event_uart_has_bytes(fixed_queue_t *queue)
+static void hci_hal_h4_hdl_rx_adv_rpt(pkt_linked_item_t *linked_pkt)
 {
-    BT_HDR *packet;
-    while (!fixed_queue_is_empty(queue)) {
-        packet = fixed_queue_dequeue(queue, FIXED_QUEUE_MAX_TIMEOUT);
-        hci_hal_h4_hdl_rx_packet(packet);
+    uint8_t type;
+    uint8_t hdr_size;
+    uint16_t length;
+    uint8_t *stream = NULL;
+
+    if (!linked_pkt) {
+        return;
     }
+
+    BT_HDR* packet = (BT_HDR *)linked_pkt->data;
+    stream = packet->data + packet->offset;
+
+    assert(host_recv_adv_packet(stream) == true);
+
+    STREAM_TO_UINT8(type, stream);
+    packet->offset++;
+    packet->len--;
+    hdr_size = preamble_sizes[type - 1];
+
+    if (packet->len < hdr_size) {
+        HCI_TRACE_ERROR("Wrong packet length type=%d pkt_len=%d hdr_len=%d",
+                  type, packet->len, hdr_size);
+        goto _discard_packet;
+    }
+
+    stream += hdr_size - 1;
+    STREAM_TO_UINT8(length, stream);
+    if ((length + hdr_size) != packet->len) {
+        HCI_TRACE_ERROR("Wrong packet length type=%d hdr_len=%d pd_len=%d "
+                  "pkt_len=%d", type, hdr_size, length, packet->len);
+        goto _discard_packet;
+    }
+
+#if SCAN_QUEUE_CONGEST_CHECK
+    if(BTU_check_queue_is_congest()) {
+        HCI_TRACE_DEBUG("BtuQueue is congested");
+        goto _discard_packet;
+    }
+#endif
+
+    packet->event = outbound_event_types[PACKET_TYPE_TO_INDEX(type)];
+    hci_hal_env.callbacks->adv_rpt_ready(linked_pkt);
+
+    return;
+
+_discard_packet:
+    osi_free(linked_pkt);
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    hci_adv_credits_prep_to_release(1);
+#endif
 }
 
 static void host_send_pkt_available_cb(void)
 {
     //Controller rx cache buffer is ready for receiving new host packet
     //Just Call Host main thread task to process pending packets.
-    hci_host_task_post(OSI_THREAD_MAX_TIMEOUT);
+    hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
 }
 
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 {
     //Target has packet to host, malloc new buffer for packet
-    BT_HDR *pkt;
+    BT_HDR *pkt = NULL;
+    pkt_linked_item_t *linked_pkt = NULL;
     size_t pkt_size;
 
     if (hci_hal_env.rx_q == NULL) {
         return 0;
     }
 
-    pkt_size = BT_HDR_SIZE + len;
-    pkt = (BT_HDR *) osi_calloc(pkt_size);
+    bool is_adv_rpt = host_recv_adv_packet(data);
 
-    if (!pkt) {
-        HCI_TRACE_ERROR("%s couldn't aquire memory for inbound data buffer.\n", __func__);
-        return -1;
+    if (!is_adv_rpt) {
+        pkt_size = BT_HDR_SIZE + len;
+        pkt = (BT_HDR *) osi_calloc(pkt_size);
+        if (!pkt) {
+            HCI_TRACE_ERROR("%s couldn't aquire memory for inbound data buffer.\n", __func__);
+            assert(0);
+        }
+
+        pkt->offset = 0;
+        pkt->len = len;
+        pkt->layer_specific = 0;
+        memcpy(pkt->data, data, len);
+        fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
+    } else {
+#if !BLE_ADV_REPORT_FLOW_CONTROL
+        // drop the packets if pkt_queue length goes beyond upper limit
+        if (pkt_queue_length(hci_hal_env.adv_rpt_q) > HCI_HAL_BLE_ADV_RPT_QUEUE_LEN_MAX) {
+            return 0;
+        }
+#endif
+        pkt_size = BT_PKT_LINKED_HDR_SIZE + BT_HDR_SIZE + len;
+        linked_pkt = (pkt_linked_item_t *) osi_calloc(pkt_size);
+        if (!linked_pkt) {
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+            hci_adv_credits_consumed(1);
+            hci_adv_credits_prep_to_release(1);
+#endif
+            return 0;
+        }
+        pkt = (BT_HDR *)linked_pkt->data;
+        pkt->offset = 0;
+        pkt->len = len;
+        pkt->layer_specific = 0;
+        memcpy(pkt->data, data, len);
+        pkt_queue_enqueue(hci_hal_env.adv_rpt_q, linked_pkt);
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+        hci_adv_credits_consumed(1);
+#endif
     }
-    pkt->offset = 0;
-    pkt->len = len;
-    pkt->layer_specific = 0;
-    memcpy(pkt->data, data, len);
-    fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
-    hci_hal_h4_task_post(0);
 
+    hci_upstream_data_post(OSI_THREAD_MAX_TIMEOUT);
 
     BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);
 
     return 0;
 }
+#if SOC_ESP_NIMBLE_CONTROLLER
 
+int
+ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
+{
+    if(esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
+	return 0;
+    }
+    uint16_t len = hci_ev[1] + 3;
+    uint8_t *data = (uint8_t *)malloc(len);
+    data[0] = 0x04;
+    memcpy(&data[1], hci_ev, len - 1);
+    ble_hci_trans_buf_free(hci_ev);
+    host_recv_pkt_cb(data, len);
+    free(data);
+    return 0;
+}
+
+
+int
+ble_hs_rx_data(struct os_mbuf *om, void *arg)
+{
+    uint16_t len = om->om_len + 1;
+    uint8_t *data = (uint8_t *)malloc(len);
+    data[0] = 0x02;
+    os_mbuf_copydata(om, 0, len - 1, &data[1]);
+    host_recv_pkt_cb(data, len);
+    free(data);
+    os_mbuf_free_chain(om);
+    return 0;
+}
+
+#endif
 static const esp_vhci_host_callback_t vhci_host_cb = {
     .notify_host_send_available = host_send_pkt_available_cb,
     .notify_host_recv = host_recv_pkt_cb,

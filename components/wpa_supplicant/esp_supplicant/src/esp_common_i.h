@@ -21,15 +21,13 @@ struct ieee_mgmt_frame {
 	u8 payload[0];
 };
 
+int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data);
+
 typedef struct {
     uint32_t id;
     uint32_t data;
 } supplicant_event_t;
 
-#define SUPPLICANT_API_LOCK() xSemaphoreTakeRecursive(s_supplicant_api_lock, portMAX_DELAY)
-#define SUPPLICANT_API_UNLOCK() xSemaphoreGiveRecursive(s_supplicant_api_lock)
-
-#define SUPPLICANT_TASK_STACK_SIZE (6144 + TASK_STACK_SIZE_ADD)
 enum SIG_SUPPLICANT {
 	SIG_SUPPLICANT_RX_ACTION,
 	SIG_SUPPLICANT_SCAN_DONE,
@@ -37,7 +35,6 @@ enum SIG_SUPPLICANT {
 	SIG_SUPPLICANT_MAX,
 };
 
-int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data);
 void esp_get_tx_power(uint8_t *tx_power);
 #ifdef CONFIG_MBO
 bool mbo_bss_profile_match(u8 *bssid);

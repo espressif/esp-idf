@@ -55,4 +55,9 @@ menu "Example Configuration"
         help
             Use this option to enable extended advertising in the example
 
+    config EXAMPLE_RANDOM_ADDR
+        bool
+        prompt "Advertise RANDOM Address"
+        help
+            Use this option to advertise a random address instead of public address
 endmenu

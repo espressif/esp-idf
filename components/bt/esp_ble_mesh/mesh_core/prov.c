@@ -311,8 +311,8 @@ static void reset_adv_link(void)
 
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Remove the link id from exceptional list */
-    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
+    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_REMOVE,
+                                    BLE_MESH_EXCEP_LIST_TYPE_MESH_LINK_ID, &link.id);
 #endif
 
     reset_state();
@@ -1380,8 +1380,8 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Add the link id into exceptional list */
-    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
+    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_ADD,
+                                    BLE_MESH_EXCEP_LIST_TYPE_MESH_LINK_ID, &link.id);
 #endif
 
     bearer_ctl_send(LINK_ACK, NULL, 0);
@@ -1450,15 +1450,19 @@ static void prov_msg_recv(void)
         return;
     }
 
-    if (type != PROV_FAILED && type != link.expect) {
-        BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
-        prov_send_fail_msg(PROV_ERR_UNEXP_PDU);
-        return;
-    }
-
+    /* For case MESH/NODE/PROV/BI-15-C, when the node receive a Provisioning PDU
+     * with the Type field set to the lowest unsupported or RFU value, it sends a
+     * Provisioning Failed PDU with the Error Code field set to Invalid PDU(0x01).
+     */
     if (type >= ARRAY_SIZE(prov_handlers)) {
         BT_ERR("Unknown provisioning PDU type 0x%02x", type);
         prov_send_fail_msg(PROV_ERR_NVAL_PDU);
+        return;
+    }
+
+    if (type != PROV_FAILED && type != link.expect) {
+        BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
+        prov_send_fail_msg(PROV_ERR_UNEXP_PDU);
         return;
     }
 
@@ -1666,15 +1670,30 @@ int bt_mesh_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_simple *buf)
         return -EINVAL;
     }
 
-    type = net_buf_simple_pull_u8(buf);
-    if (type != PROV_FAILED && type != link.expect) {
-        BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
+    /* For case MESH/NODE/PROV/BI-03-C, if the link is closed, when the node receive
+     * a Provisioning PDU , it will send a Provisioning Failed PDU with the Error Code
+     * field set to Unexpected PDU(0x03).
+     */
+    if (bt_mesh_atomic_test_bit(link.flags, LINK_INVALID)) {
+        BT_WARN("Unexpected msg 0x%02x on invalid link", type);
         prov_send_fail_msg(PROV_ERR_UNEXP_PDU);
         return -EINVAL;
     }
 
+    /* For case MESH/NODE/PROV/BI-15-C, when the node receive a Provisioning PDU
+     * with the Type field set to the lowest unsupported or RFU value, it sends a
+     * Provisioning Failed PDU with the Error Code field set to Invalid PDU(0x01).
+     */
+    type = net_buf_simple_pull_u8(buf);
     if (type >= ARRAY_SIZE(prov_handlers)) {
         BT_ERR("Unknown provisioning PDU type 0x%02x", type);
+        prov_send_fail_msg(PROV_ERR_NVAL_PDU);
+        return -EINVAL;
+    }
+
+    if (type != PROV_FAILED && type != link.expect) {
+        BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
+        prov_send_fail_msg(PROV_ERR_UNEXP_PDU);
         return -EINVAL;
     }
 
@@ -1818,8 +1837,8 @@ int bt_mesh_prov_deinit(void)
     k_delayed_work_free(&link.tx.retransmit);
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Remove the link id from exceptional list */
-    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
+    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_REMOVE,
+                                    BLE_MESH_EXCEP_LIST_TYPE_MESH_LINK_ID, &link.id);
 #endif /* CONFIG_BLE_MESH_USE_DUPLICATE_SCAN */
 #endif /* CONFIG_BLE_MESH_PB_ADV */
 

@@ -23,6 +23,7 @@
 #include "test_mqtt_client_broker.h"
 #include "test_mqtt_connection.h"
 #include "esp_mac.h"
+#include "esp_partition.h"
 
 static void test_leak_setup(const char * file, long line)
 {
@@ -38,7 +39,7 @@ TEST_CASE("mqtt init with invalid url", "[mqtt][leaks=0]")
 {
     test_leak_setup(__FILE__, __LINE__);
     const esp_mqtt_client_config_t mqtt_cfg = {
-            .uri = "INVALID",
+            .broker.address.uri = "INVALID",
     };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     TEST_ASSERT_EQUAL(NULL, client );
@@ -49,7 +50,7 @@ TEST_CASE("mqtt init and deinit", "[mqtt][leaks=0]")
     test_leak_setup(__FILE__, __LINE__);
     const esp_mqtt_client_config_t mqtt_cfg = {
             // no connection takes place, but the uri has to be valid for init() to succeed
-            .uri = "mqtts://localhost:8883",
+            .broker.address.uri = "mqtts://localhost:8883",
     };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     TEST_ASSERT_NOT_EQUAL(NULL, client );
@@ -58,10 +59,10 @@ TEST_CASE("mqtt init and deinit", "[mqtt][leaks=0]")
 
 static const char* this_bin_addr(void)
 {
-    spi_flash_mmap_handle_t out_handle;
+    esp_partition_mmap_handle_t out_handle;
     const void *binary_address;
     const esp_partition_t* partition = esp_ota_get_running_partition();
-    esp_partition_mmap(partition, 0, partition->size, SPI_FLASH_MMAP_DATA, &binary_address, &out_handle);
+    esp_partition_mmap(partition, 0, partition->size, ESP_PARTITION_MMAP_DATA, &binary_address, &out_handle);
     return binary_address;
 }
 
@@ -73,7 +74,7 @@ TEST_CASE("mqtt enqueue and destroy outbox", "[mqtt][leaks=0]")
     const int size = 2000;
     const esp_mqtt_client_config_t mqtt_cfg = {
             // no connection takes place, but the uri has to be valid for init() to succeed
-            .uri = "mqtts://localhost:8883",
+            .broker.address.uri = "mqtts://localhost:8883",
     };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     TEST_ASSERT_NOT_EQUAL(NULL, client );
@@ -104,4 +105,5 @@ TEST_CASE("mqtt broker tests", "[mqtt][test_env=UT_T2_Ethernet]")
 
     connect_test_fixture_teardown();
 }
+
 #endif // SOC_EMAC_SUPPORTED

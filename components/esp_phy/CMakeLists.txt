@@ -1,5 +1,11 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
+if(IDF_TARGET STREQUAL "esp32c6" OR IDF_TARGET STREQUAL "esp32h2")
+    # TODO : IDF-5680
+    # TODO : IDF-6337
+    return()
+endif()
+
 set(srcs "src/phy_override.c" "src/lib_printf.c")
 
 if(CONFIG_APP_NO_BLOBS)
@@ -10,7 +16,7 @@ else()
     set(ldfragments "linker.lf")
 endif()
 
-if(IDF_TARGET STREQUAL "esp32h2")
+if(IDF_TARGET STREQUAL "esp32h4")
     list(APPEND srcs "src/phy_init_esp32hxx.c")
 else()
     list(APPEND srcs "src/phy_init.c")
@@ -31,21 +37,23 @@ endif()
 # [refactor-todo]: requires "driver" component for periph_ctrl header file
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include" "${idf_target}/include"
-                    PRIV_REQUIRES nvs_flash driver efuse esp_timer
+                    PRIV_REQUIRES nvs_flash driver efuse esp_timer esp_wifi
                     LDFRAGMENTS "${ldfragments}"
                     EMBED_FILES  ${embed_files}
                     )
 
 set(target_name "${idf_target}")
-if(IDF_TARGET STREQUAL "esp32h2")
-    if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
-        target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/rev2\"")
+if(IDF_TARGET STREQUAL "esp32h4")
+    if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
+        # TODO: rename esp32h2 to esp32h4 [WIFI-4956]
+        target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h2/rev2")
     endif()
-    if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
-        target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/rev1\"")
+    if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
+        # TODO: rename esp32h2 to esp32h4 [WIFI-4956]
+        target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/esp32h2/rev1")
     endif()
 else()
-    target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}\"")
+    target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
 endif()
 
 # Override functions in PHY lib with the functions in 'phy_override.c'
@@ -68,7 +76,7 @@ if(link_binary_libs)
     endif()
 
     if(CONFIG_IDF_TARGET_ESP32C3 OR CONFIG_IDF_TARGET_ESP32S3
-        OR CONFIG_IDF_TARGET_ESP32H2 OR CONFIG_IDF_TARGET_ESP32C2)
+        OR CONFIG_IDF_TARGET_ESP32H4 OR CONFIG_IDF_TARGET_ESP32C2)
         target_link_libraries(${COMPONENT_LIB} PUBLIC btbb)
         target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a libbtbb.a
         $<TARGET_FILE:${esp_phy_lib}>)
@@ -112,3 +120,5 @@ if(CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION)
     esptool_py_flash_target_image(${phy_name}-flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
     esptool_py_flash_target_image(flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
 endif()
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

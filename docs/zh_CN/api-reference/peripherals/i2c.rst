@@ -3,7 +3,7 @@ I2C 驱动程序
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_I2C_NUM:default="2", esp32c3="1", esp32h2="1", esp32c2="1"}
+{IDF_TARGET_I2C_NUM:default="2", esp32c3="1", esp32h4="1", esp32c2="1"}
 
 概述
 ---------
@@ -24,7 +24,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 .. only:: SOC_I2C_SUPPORT_SLAVE
 
     - 支持从机模式
-    
+
 - 读取并写入寄存器，然后由主机读取/写入
 
 
@@ -105,6 +105,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
             .mode = I2C_MODE_SLAVE,
             .slave.addr_10bit_en = 0,
             .slave.slave_addr = ESP_SLAVE_ADDR,      // address of your project
+            .clk_flags = 0,
         };
 
 在此阶段，:cpp:func:`i2c_param_config` 还将其他 I2C 配置参数设置为 I2C 总线协议规范中定义的默认值。有关默认值及修改默认值的详细信息，请参考 :ref:`i2c-api-customized-configuration`。
@@ -205,6 +206,12 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 .. note::
 
     在主机模式下，SCL 的时钟频率不应大于上表中提到的 SCL 的最大频率。
+
+.. note::
+
+    SCL 的时钟频率会被上拉电阻和线上电容（或是从机电容）一起影响。因此，用户需要自己选择合适的上拉电阻去保证 SCL 时钟频率是准确的。尽管 I2C 协议推荐上拉电阻值为 1K 欧姆到 10K 欧姆，但是需要根据不同的频率需要选择不同的上拉电阻。
+
+    通常来说，所选择的频率越高，需要的上拉电阻越小 （但是不要小于 1K 欧姆）。这是因为高电阻会减小电流，这会延长上升时间从而是频率变慢。通常我们推荐的上拉阻值范围为 2K 欧姆到 5K 欧姆，但是用户可能也需要根据他们的实际情况做出一些调整。
 
 .. _i2c-api-install-driver:
 
@@ -322,7 +329,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 .. only:: not SOC_I2C_SUPPORT_SLAVE
 
     .. _i2c-api-interrupt-handling:
-    
+
 中断处理
 ^^^^^^^^^^^
 
@@ -333,7 +340,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 用户自定义配置
 ^^^^^^^^^^^^^^^
 
-如本节末尾所述 :ref:`i2c-api-configure-driver`，函数 :cpp:func:`i2c_param_config` 在初始化 I2C 端口的驱动程序配置时，也会将几个 I2C 通信参数设置为 `I2C 总线协议规范 <https://www.nxp.com/docs/en/user-guide/UM10204.pdf>`_ 规定的默认值。 其他一些相关参数已在 I2C 控制器的寄存器中预先配置。
+如本节末尾所述 :ref:`i2c-api-configure-driver`，函数 :cpp:func:`i2c_param_config` 在初始化 I2C 端口的驱动程序配置时，也会将几个 I2C 通信参数设置为 I2C 总线协议规范规定的默认值。其他一些相关参数已在 I2C 控制器的寄存器中预先配置。
 
 通过调用下表中提供的专用函数，可以将所有这些参数更改为用户自定义值。请注意，时序值是在 APB 时钟周期中定义。APB 的频率在 :c:macro:`I2C_APB_CLK_FREQ` 中指定。
 
@@ -365,7 +372,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 
 .. 注解 ::
 
-    {IDF_TARGET_NAME} 的内部上拉电阻范围为几万欧姆，因此在大多数情况下，它们本身不足以用作 I2C 上拉电阻。建议用户使用阻值在 `I2C 总线协议规范 <https://www.nxp.com/docs/en/user-guide/UM10204.pdf>`_ 规定范围内的上拉电阻。
+    {IDF_TARGET_NAME} 的内部上拉电阻范围为几万欧姆，因此在大多数情况下，它们本身不足以用作 I2C 上拉电阻。建议用户使用阻值在 I2C 总线协议规范规定范围内的上拉电阻。计算阻值的具体方法，可参考 `TI 应用说明 <https://www.ti.com/lit/an/slva689/slva689.pdf>`_
 
 
 .. _i2c-api-error-handling:

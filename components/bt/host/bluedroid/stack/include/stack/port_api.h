@@ -113,7 +113,15 @@ typedef void (tPORT_MGMT_CALLBACK) (UINT32 code, UINT16 port_handle, void* data)
 typedef struct {
     BOOLEAN accept; /* If upper layer accepts the incoming connection */
     BOOLEAN ignore_rfc_state; /* If need to ignore rfc state for PORT_CheckConnection */
+    UINT16  peer_mtu; /* Max MTU that port can send */
 } tPORT_MGMT_SR_CALLBACK_ARG;
+
+/**
+ * Define the client port manage callback function argument
+ */
+typedef struct {
+    UINT16  peer_mtu; /* Max MTU that port can send */
+} tPORT_MGMT_CL_CALLBACK_ARG;
 
 /*
 ** Define events that registered application can receive in the callback
@@ -683,6 +691,17 @@ extern UINT8 PORT_SetTraceLevel (UINT8 new_level);
 **
 *******************************************************************************/
 extern const char *PORT_GetResultString (const uint8_t result_code);
+
+/*******************************************************************************
+**
+** Function         PORT_SetL2capErtm
+**
+** Description      This function sets whether RFCOMM uses L2CAP ERTM.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void PORT_SetL2capErtm (BOOLEAN enable_l2cap_ertm);
 
 #ifdef __cplusplus
 }

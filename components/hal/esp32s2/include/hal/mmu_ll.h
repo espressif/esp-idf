@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "stdint.h"
 #include "soc/extmem_reg.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/assert.h"
@@ -17,6 +18,38 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * Convert MMU virtual address to linear address
+ *
+ * @param vaddr  virtual address
+ *
+ * @return linear address
+ */
+static inline uint32_t mmu_ll_vaddr_to_laddr(uint32_t vaddr)
+{
+    return vaddr & SOC_MMU_LINEAR_ADDR_MASK;
+}
+
+/**
+ * Convert MMU linear address to virtual address
+ *
+ * @param laddr       linear address
+ * @param vaddr_type  virtual address type, could be instruction type or data type. See `mmu_vaddr_t`
+ *
+ * @return virtual address
+ */
+static inline uint32_t mmu_ll_laddr_to_vaddr(uint32_t laddr, mmu_vaddr_t vaddr_type)
+{
+    uint32_t vaddr_base = 0;
+    if (vaddr_type == MMU_VADDR_DATA) {
+        vaddr_base = SOC_MMU_DBUS_VADDR_BASE;
+    } else {
+        vaddr_base = SOC_MMU_IBUS_VADDR_BASE;
+    }
+
+    return vaddr_base | laddr;
+}
 
 /**
  * Get MMU page size
@@ -36,12 +69,12 @@ static inline mmu_page_size_t mmu_ll_get_page_size(uint32_t mmu_id)
 /**
  * Set MMU page size
  *
- * @param size  See `mmu_page_size_t`
+ * @param size  MMU page size
  *
  * @note On esp32s2, only supports `MMU_PAGE_64KB`
  */
 __attribute__((always_inline))
-static inline void mmu_ll_set_page_size(uint32_t mmu_id, mmu_page_size_t size)
+static inline void mmu_ll_set_page_size(uint32_t mmu_id, uint32_t size)
 {
     HAL_ASSERT(size == MMU_PAGE_64KB);
 }
@@ -60,14 +93,15 @@ __attribute__((always_inline))
 static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start, uint32_t len)
 {
     (void)mmu_id;
-    uint32_t vaddr_end = vaddr_start + len;
+    uint32_t vaddr_end = vaddr_start + len - 1;
 
-    return (ADDRESS_IN_DROM0(vaddr_start) && ADDRESS_IN_DROM0(vaddr_end)) ||
-           (ADDRESS_IN_IRAM1(vaddr_start) && ADDRESS_IN_IRAM1(vaddr_end)) ||
-           (ADDRESS_IN_IRAM0_CACHE(vaddr_start) && ADDRESS_IN_IRAM0_CACHE(vaddr_end)) ||
-           (ADDRESS_IN_DPORT_CACHE(vaddr_start) && ADDRESS_IN_DPORT_CACHE(vaddr_end)) ||
-           (ADDRESS_IN_DRAM1(vaddr_start) && ADDRESS_IN_DRAM1(vaddr_end)) ||
-           (ADDRESS_IN_DRAM0_CACHE(vaddr_start) && ADDRESS_IN_DRAM0_CACHE(vaddr_end));
+    //DROM0 is an alias of the IBUS2
+    bool on_ibus = ((vaddr_start >= DROM0_ADDRESS_LOW) && (vaddr_end < DROM0_ADDRESS_HIGH)) ||
+                   ((vaddr_start >= IRAM0_CACHE_ADDRESS_LOW) && (vaddr_end < IRAM1_ADDRESS_HIGH));
+
+    bool on_dbus = (vaddr_start >= DPORT_CACHE_ADDRESS_LOW) && (vaddr_end < DRAM0_CACHE_ADDRESS_HIGH);
+
+    return (on_ibus || on_dbus);
 }
 
 /**

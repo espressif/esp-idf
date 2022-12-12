@@ -63,22 +63,18 @@ All the following instructions are general. Part of them may be complemented by 
 
 ### Requirements
 
-The following requirements need to be satisfied in the IDF python virtual environment.
+Install Python dependencies and export the Python path where the IDF CI Python modules are found with the following commands:
 
-- ttfw needs to be in the `PYTHONPATH`. Add it like this: `export PYTHONPATH=$PYTHONPATH:$IDF_PATH/tools/ci/python_packages`
-- Install all requirements from `tools/ci/python_packages/ttfw_idf/requirements.txt`: `pip install -r $IDF_PATH/tools/ci/python_packages/ttfw_idf/requirements.txt`
-
-You should also set the port via the environment variable ESPPORT to prevent the tools from looking and iterating over all serial ports. The latter causes much trouble, currently:
+```bash
+bash install.sh --enable-ttfw
+source export.sh
+export PYTHONPATH=$IDF_PATH/tools/ci/python_packages:$PYTHONPATH
+```
+You should also set the port via the environment variable `ESPPORT` to prevent the tools from looking and iterating over all serial ports. The latter causes much trouble, currently:
 
 ```
 export ESPPORT=/dev/ttyUSB<X>
 ```
-
-## Test Apps local execution (pytest)
-
-Some of the examples have `pytest_....py` scripts that are using the `pytest` as the test framework. For detailed information, please refer to the "Run the Tests Locally" Section under [ESP-IDF tests in Pytest documentation](../../docs/en/contribute/esp-idf-tests-with-pytest.rst)
-
-Using `pytest` is the recommended way to write new tests. We will migrate all the test apps scripts to this new framework soon.
 
 ### Execution
 
@@ -86,3 +82,9 @@ Using `pytest` is the recommended way to write new tests. We will migrate all th
 - Run `idf.py menuconfig` to configure local project attributes
 - Run `idf.py build` to build the test app
 - Run `python app_test.py` to run the test locally
+
+## Test Apps local execution (pytest)
+
+Some of the examples have `pytest_....py` scripts that are using the `pytest` as the test framework. For detailed information, please refer to the "Run the Tests Locally" Section under [ESP-IDF tests in Pytest documentation](../../docs/en/contribute/esp-idf-tests-with-pytest.rst)
+
+Using `pytest` is the recommended way to write new tests. We will migrate all the test apps scripts to this new framework soon.

@@ -10,6 +10,7 @@
 #include "soc/uart_pins.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
+#include "sdkconfig.h"
 
 #define EXAMPLE_UART_NUM        0
 /* Notice that ESP32 has to use the iomux input to configure uart as wakeup source
@@ -96,7 +97,7 @@ static void uart_wakeup_task(void *arg)
 static esp_err_t uart_initialization(void)
 {
     uart_config_t uart_cfg = {
-        .baud_rate  = 115200,
+        .baud_rate  = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
         .data_bits  = UART_DATA_8_BITS,
         .parity     = UART_PARITY_DISABLE,
         .stop_bits  = UART_STOP_BITS_1,
@@ -106,6 +107,10 @@ static esp_err_t uart_initialization(void)
     //Install UART driver, and get the queue.
     ESP_RETURN_ON_ERROR(uart_driver_install(EXAMPLE_UART_NUM, EXAMPLE_UART_BUF_SIZE, EXAMPLE_UART_BUF_SIZE, 20, &uart_evt_que, 0),
                         TAG, "Install uart failed");
+    if (EXAMPLE_UART_NUM == CONFIG_ESP_CONSOLE_UART_NUM) {
+        /* temp fix for uart garbled output, can be removed when IDF-5683 done */
+        ESP_RETURN_ON_ERROR(uart_wait_tx_idle_polling(EXAMPLE_UART_NUM), TAG, "Wait uart tx done failed");
+    }
     ESP_RETURN_ON_ERROR(uart_param_config(EXAMPLE_UART_NUM, &uart_cfg), TAG, "Configure uart param failed");
     ESP_RETURN_ON_ERROR(uart_set_pin(EXAMPLE_UART_NUM, EXAMPLE_UART_TX_IO_NUM, EXAMPLE_UART_RX_IO_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE),
                         TAG, "Configure uart gpio pins failed");

@@ -13,14 +13,17 @@
 #include "crypto/sha256.h"
 #include "crypto/sha384.h"
 
-/* ToDo - Remove this once appropriate solution is available.
-We need to define this for the file as ssl_misc.h uses private structures from mbedtls,
-which are undefined if the following flag is not defined */
-/* Many APIs in the file make use of this flag instead of `MBEDTLS_PRIVATE` */
-/* ToDo - Replace them with proper getter-setter once they are added */
+/* TODO: Remove this once the appropriate solution is found
+ *
+ * ssl_misc.h header uses private elements from
+ * mbedtls, which become undefined if the following flag
+ * is not defined
+ */
 #define MBEDTLS_ALLOW_PRIVATE_ACCESS
 
+// located at mbedtls/library/ssl_misc.h
 #include "ssl_misc.h"
+
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/debug.h"
@@ -196,12 +199,18 @@ static int set_ca_cert(tls_context_t *tls, const unsigned char *cacert, size_t c
 }
 
 #ifdef CONFIG_SUITEB192
-static int tls_sig_hashes_for_suiteb[] = {
+static uint16_t tls_sig_algs_for_suiteb[] = {
 #if defined(MBEDTLS_SHA512_C)
-	MBEDTLS_MD_SHA512,
-	MBEDTLS_MD_SHA384,
+#if defined(MBEDTLS_ECDSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512 ),
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA384 ),
 #endif
-	MBEDTLS_MD_NONE
+#if defined(MBEDTLS_RSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA512 ),
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA384 ),
+#endif
+#endif /* MBEDTLS_SHA512_C */
+    MBEDTLS_TLS_SIG_NONE
 };
 
 const mbedtls_x509_crt_profile suiteb_mbedtls_x509_crt_profile =
@@ -220,23 +229,40 @@ static void tls_set_suiteb_config(tls_context_t *tls)
 {
 	const mbedtls_x509_crt_profile *crt_profile = &suiteb_mbedtls_x509_crt_profile;
 	mbedtls_ssl_conf_cert_profile(&tls->conf, crt_profile);
-	mbedtls_ssl_conf_sig_hashes(&tls->conf, tls_sig_hashes_for_suiteb);
+	mbedtls_ssl_conf_sig_algs(&tls->conf, tls_sig_algs_for_suiteb);
 }
 #endif
 
-static int tls_sig_hashes_for_eap[] = {
+static uint16_t tls_sig_algs_for_eap[] = {
 #if defined(MBEDTLS_SHA512_C)
-	MBEDTLS_MD_SHA512,
-	MBEDTLS_MD_SHA384,
+#if defined(MBEDTLS_ECDSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512 ),
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA384 ),
 #endif
+#if defined(MBEDTLS_RSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA512 ),
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA384 ),
+#endif
+#endif /* MBEDTLS_SHA512_C */
 #if defined(MBEDTLS_SHA256_C)
-	MBEDTLS_MD_SHA256,
-	MBEDTLS_MD_SHA224,
+#if defined(MBEDTLS_ECDSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA256 ),
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA224 ),
 #endif
+#if defined(MBEDTLS_RSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA256 ),
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA224 ),
+#endif
+#endif /* MBEDTLS_SHA256_C */
 #if defined(MBEDTLS_SHA1_C)
-	MBEDTLS_MD_SHA1,
+#if defined(MBEDTLS_ECDSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA1 ),
 #endif
-	MBEDTLS_MD_NONE
+#if defined(MBEDTLS_RSA_C)
+    MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA1 ),
+#endif
+#endif /* MBEDTLS_SHA1_C */
+    MBEDTLS_TLS_SIG_NONE
 };
 
 const mbedtls_x509_crt_profile eap_mbedtls_x509_crt_profile =
@@ -262,7 +288,7 @@ static void tls_enable_sha1_config(tls_context_t *tls)
 {
 	const mbedtls_x509_crt_profile *crt_profile = &eap_mbedtls_x509_crt_profile;
 	mbedtls_ssl_conf_cert_profile(&tls->conf, crt_profile);
-	mbedtls_ssl_conf_sig_hashes(&tls->conf, tls_sig_hashes_for_eap);
+	mbedtls_ssl_conf_sig_algs(&tls->conf, tls_sig_algs_for_eap);
 }
 
 static const int eap_ciphersuite_preference[] =
@@ -390,23 +416,6 @@ static const int eap_ciphersuite_preference[] =
 #if defined(MBEDTLS_CCM_C)
 	MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8,
 #endif
-#endif
-
-#if defined(MBEDTLS_DES_C)
-	/* 3DES suites */
-	MBEDTLS_TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA,
-	MBEDTLS_TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA,
-	MBEDTLS_TLS_RSA_WITH_3DES_EDE_CBC_SHA,
-	MBEDTLS_TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA,
-	MBEDTLS_TLS_PSK_WITH_3DES_EDE_CBC_SHA,
-#endif
-#if defined(MBEDTLS_ARC4_C)
-	/* RC4 suites */
-	MBEDTLS_TLS_DHE_PSK_WITH_RC4_128_SHA,
-	MBEDTLS_TLS_RSA_WITH_RC4_128_SHA,
-	MBEDTLS_TLS_RSA_WITH_RC4_128_MD5,
-	MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA,
-	MBEDTLS_TLS_PSK_WITH_RC4_128_SHA,
 #endif
 	0
 };
@@ -653,11 +662,7 @@ int tls_connection_established(void *tls_ctx, struct tls_connection *conn)
 {
 	mbedtls_ssl_context *ssl = &conn->tls->ssl;
 
-	if (ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_HANDSHAKE_OVER) {
-		return 1;
-	}
-
-	return 0;
+	return mbedtls_ssl_is_handshake_over(ssl);
 }
 
 int tls_global_set_verify(void *tls_ctx, int check_crl, int strict)
@@ -690,13 +695,13 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 	}
 
 	/* Multiple reads */
-	while (tls->ssl.MBEDTLS_PRIVATE(state) != MBEDTLS_SSL_HANDSHAKE_OVER) {
+	while (!mbedtls_ssl_is_handshake_over(&tls->ssl)) {
 		if (tls->ssl.MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_CLIENT_CERTIFICATE) {
 			/* Read random data before session completes, not present after handshake */
 			if (tls->ssl.MBEDTLS_PRIVATE(handshake)) {
 				os_memcpy(conn->randbytes, tls->ssl.MBEDTLS_PRIVATE(handshake)->randbytes,
 					  TLS_RANDOM_LEN * 2);
-				conn->mac = tls->ssl.handshake->ciphersuite_info->mac;
+				conn->mac = tls->ssl.MBEDTLS_PRIVATE(handshake)->ciphersuite_info->mac;
 			}
 		}
 		ret = mbedtls_ssl_handshake_step(&tls->ssl);
@@ -938,7 +943,7 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 		wpa_printf(MSG_ERROR, "TLS: %s, session ingo is null", __func__);
 		return -1;
 	}
-	if (ssl->MBEDTLS_PRIVATE(state) != MBEDTLS_SSL_HANDSHAKE_OVER) {
+	if (!mbedtls_ssl_is_handshake_over(ssl)) {
 		wpa_printf(MSG_ERROR, "TLS: %s, incorrect tls state=%d", __func__, ssl->MBEDTLS_PRIVATE(state));
 		return -1;
 	}
@@ -951,7 +956,7 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 	}
 
 	wpa_hexdump_key(MSG_MSGDUMP, "random", seed, 2 * TLS_RANDOM_LEN);
-	wpa_hexdump_key(MSG_MSGDUMP, "master", ssl->MBEDTLS_PRIVATE(session)->MBEDTLS_PRIVATE(master), TLS_MASTER_SECRET_LEN);
+	wpa_hexdump_key(MSG_MSGDUMP, "master",  ssl->MBEDTLS_PRIVATE(session)->MBEDTLS_PRIVATE(master), TLS_MASTER_SECRET_LEN);
 
 	ret = mbedtls_ssl_tls_prf(conn->tls_prf_type, conn->master_secret, TLS_MASTER_SECRET_LEN,
 				label, seed, 2 * TLS_RANDOM_LEN, out, out_len);

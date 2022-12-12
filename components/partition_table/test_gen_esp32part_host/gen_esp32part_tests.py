@@ -409,6 +409,16 @@ factory,  app,  factory, ,        1M,
             t = gen_esp32part.PartitionTable.from_csv(csv)
             t.verify()
 
+    def test_overlap_part_table(self):
+        csv = """
+# Name,Type, SubType,Offset,Size
+nvs,      data, nvs,     0x0000,  0x6000,
+phy_init, data, phy,     ,        0x1000,
+factory,  app,  factory, ,        1M,
+"""
+        with self.assertRaisesRegex(gen_esp32part.InputError, r'CSV Error at line 3: Partitions overlap. Partition sets offset 0x0'):
+            gen_esp32part.PartitionTable.from_csv(csv)
+
     def test_only_one_otadata(self):
         csv_txt = """
 # Name,Type, SubType,Offset,Size

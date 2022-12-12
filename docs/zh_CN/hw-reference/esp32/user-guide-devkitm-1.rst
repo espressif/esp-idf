@@ -10,9 +10,9 @@ ESP32-DevKitM-1 是乐鑫推出的一款基于 ESP32-MINI-1(1U) 模组的入门�
 
 
 +------------------------+-------------------------+
-| |ESP32-DevKitM-1-正面| | |ESP32-DevKitM-1-侧面|  | 
+| |ESP32-DevKitM-1-正面| | |ESP32-DevKitM-1-侧面|  |
 +------------------------+-------------------------+
-|  ESP32-DevKitM-1-正面  |  ESP32-DevKitM-1-侧面   | 
+|  ESP32-DevKitM-1-正面  |  ESP32-DevKitM-1-侧面   |
 +------------------------+-------------------------+
 
 .. |ESP32-DevKitM-1-正面| image:: ../../../_static/esp32-DevKitM-1-front.png
@@ -63,7 +63,7 @@ ESP32-DevKitM-1 开发板是一款小巧实用的开发板，具备以下特色�
 
 批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
 
-组件介绍 
+组件介绍
 -----------
 
 ESP32-DevKitM-1 开发板的主要组件、接口及控制方式见下图。下文以板载 ESP32-MINI-1 的开发板为例进行说明。
@@ -123,7 +123,7 @@ ESP32-DevKitM-1 上电前，请首先确认开发板完好无损。
 
 .. attention::
 
-  ESP32-DevKitM-1 搭载的模组为单核 MCU 模组，烧录应用程序前，需要在 :ref:`menuconfig <get-started-configure>` 中使能单核模式 (:ref:`CONFIG_FREERTOS_UNICORE`)。
+  对于2021年12月2日之前生产的ESP32-DevKitM-1， 其搭载的模组为单核 MCU 模组。请查看 `PCN-2021-021 <https://www.espressif.com/sites/default/files/pcn_downloads/PCN-2021-021%20ESP32-U4WDH%20%E5%8D%87%E7%BA%A7%E4%B8%BA%E5%8F%8C%E6%A0%B8%E5%A4%84%E7%90%86%E5%99%A8%E4%BA%A7%E5%93%81.pdf>`_ 以确定开发板上搭载的模组是否为单核模组。对于搭载单核模组的开发板，烧录应用程序前，需要在 :ref:`menuconfig <get-started-configure>` 中使能单核模式 (:ref:`CONFIG_FREERTOS_UNICORE`)。
 
 硬件参考
 ===========
@@ -135,10 +135,10 @@ ESP32-DevKitM-1 的主要组件和连接方式如下图所示。
 
 .. figure:: ../../../_static/esp32-DevKitM-1_v1_SystemBlock.png
     :align: center
-    :alt: ESP32-DevKitM-1 
+    :alt: ESP32-DevKitM-1
     :figclass: align-center
 
-    ESP32-DevKitM-1 
+    ESP32-DevKitM-1
 
 
 电源选项
@@ -161,144 +161,157 @@ ESP32-DevKitM-1 的主要组件和连接方式如下图所示。
 
 开发板两侧 I/O 管脚，其具体名称和功能见下表。外设管脚分配请参考 `《ESP32 技术规格书》`_。
 
-.. list-table::     
-   :header-rows: 1      
-   :widths: 10 12 12 66            
-      
-      
+.. list-table::
+   :header-rows: 1
+   :widths: 10 12 12 66
+
+
    * - 编号
-     - 名称 
-     - 类型
-     - 功能     
+     - 名称
+     - 类型 [1]_
+     - 功能
    * - 1
-     - GND 
-     - P 
-     - 接地     
+     - GND
+     - P
+     - 接地
    * - 2
-     - 3V3 
-     - P 
-     - 3.3 V 电源     
+     - 3V3
+     - P
+     - 3.3 V 电源
    * - 3
-     - I36 
-     - I 
-     - GPIO36, ADC1_CH0, RTC_GPIO0      
+     - I36
+     - I
+     - GPIO36, ADC1_CH0, RTC_GPIO0
    * - 4
-     - I37 
-     - I 
-     - GPIO37, ADC1_CH1, RTC_GPIO1       
+     - I37
+     - I
+     - GPIO37, ADC1_CH1, RTC_GPIO1
    * - 5
-     - I38 
-     - I 
-     - GPIO38, ADC1_CH2, RTC_GPIO2       
+     - I38
+     - I
+     - GPIO38, ADC1_CH2, RTC_GPIO2
    * - 6
-     - I39 
-     - I 
-     - GPIO39, ADC1_CH3, RTC_GPIO3       
+     - I39
+     - I
+     - GPIO39, ADC1_CH3, RTC_GPIO3
    * - 7
      - RST
      - I
-     - 复位；高电平：使能；低电平：关闭       
+     - 复位；高电平：使能；低电平：关闭
    * - 8
-     - I34 
-     - I 
-     - GPIO34, ADC1_CH6, RTC_GPIO4       
+     - I34
+     - I
+     - GPIO34, ADC1_CH6, RTC_GPIO4
    * - 9
-     - I35 
-     - I 
-     - GPIO35, ADC1_CH7, RTC_GPIO5       
+     - I35
+     - I
+     - GPIO35, ADC1_CH7, RTC_GPIO5
    * - 10
-     - IO32 
-     - I/O 
-     - GPIO32, XTAL_32K_P (32.768 kHz crystal oscillator input), ADC1_CH4, TOUCH9, RTC_GPIO9       
+     - IO32
+     - I/O
+     - GPIO32, XTAL_32K_P (32.768 kHz crystal oscillator input), ADC1_CH4, TOUCH9, RTC_GPIO9
    * - 11
-     - IO33 
-     - I/O 
-     - GPIO33, XTAL_32K_N (32.768 kHz crystal oscillator output), ADC1_CH5, TOUCH8, RTC_GPIO8     
+     - IO33
+     - I/O
+     - GPIO33, XTAL_32K_N (32.768 kHz crystal oscillator output), ADC1_CH5, TOUCH8, RTC_GPIO8
    * - 12
-     - IO25 
-     - I/O 
-     - GPIO25, DAC_1, ADC2_CH8, RTC_GPIO6, EMAC_RXD0       
+     - IO25
+     - I/O
+     - GPIO25, DAC_1, ADC2_CH8, RTC_GPIO6, EMAC_RXD0
    * - 13
-     - IO26 
-     - I/O 
-     - GPIO26, DAC_2, ADC2_CH9, RTC_GPIO7, EMAC_RXD1       
+     - IO26
+     - I/O
+     - GPIO26, DAC_2, ADC2_CH9, RTC_GPIO7, EMAC_RXD1
    * - 14
-     - IO27 
-     - I/O 
-     - GPIO27, ADC2_CH7, TOUCH7, RTC_GPIO17, EMAC_RX_DV      
+     - IO27
+     - I/O
+     - GPIO27, ADC2_CH7, TOUCH7, RTC_GPIO17, EMAC_RX_DV
    * - 15
-     - IO14 
-     - I/O 
-     - GPIO14, ADC2_CH6, TOUCH6, RTC_GPIO16, MTMS, HSPICLK, HS2_CLK, SD_CLK, EMAC_TXD2      
+     - IO14
+     - I/O
+     - GPIO14, ADC2_CH6, TOUCH6, RTC_GPIO16, MTMS, HSPICLK, HS2_CLK, SD_CLK, EMAC_TXD2
    * - 16
      - 5V
-     - P 
-     - 5 V 电源      
+     - P
+     - 5 V 电源
    * - 17
-     - IO12 
-     - I/O 
-     - GPIO12, ADC2_CH5, TOUCH5, RTC_GPIO15, MTDI, HSPIQ, HS2_DATA2, SD_DATA2, EMAC_TXD3       
+     - IO12
+     - I/O
+     - GPIO12, ADC2_CH5, TOUCH5, RTC_GPIO15, MTDI [2]_, HSPIQ, HS2_DATA2, SD_DATA2, EMAC_TXD3
    * - 18
-     - IO13 
-     - I/O 
-     - GPIO13, ADC2_CH4, TOUCH4, RTC_GPIO14, MTCK, HSPID, HS2_DATA3, SD_DATA3, EMAC_RX_ER      
+     - IO13
+     - I/O
+     - GPIO13, ADC2_CH4, TOUCH4, RTC_GPIO14, MTCK, HSPID, HS2_DATA3, SD_DATA3, EMAC_RX_ER
    * - 19
-     - IO15 
-     - I/O 
-     - GPIO15, ADC2_CH3, TOUCH3, RTC_GPIO13, MTDO, HSPICS0, HS2_CMD, SD_CMD, EMAC_RXD3      
+     - IO15
+     - I/O
+     - GPIO15, ADC2_CH3, TOUCH3, RTC_GPIO13, MTDO [2]_, HSPICS0, HS2_CMD, SD_CMD, EMAC_RXD3
    * - 20
-     - IO2 
-     - I/O 
-     - GPIO2, ADC2_CH2, TOUCH2, RTC_GPIO12, HSPIWP, HS2_DATA0, SD_DATA0      
+     - IO2
+     - I/O
+     - GPIO2 [2]_, ADC2_CH2, TOUCH2, RTC_GPIO12, HSPIWP, HS2_DATA0, SD_DATA0
    * - 21
-     - IO0 
-     - I/O 
-     - GPIO0, ADC2_CH1, TOUCH1, RTC_GPIO11, CLK_OUT1, EMAC_TX_CLK      
+     - IO0
+     - I/O
+     - GPIO0 [2]_, ADC2_CH1, TOUCH1, RTC_GPIO11, CLK_OUT1, EMAC_TX_CLK
    * - 22
-     - IO4 
-     - I/O 
-     - GPIO4, ADC2_CH0, TOUCH0, RTC_GPIO10, HSPIHD, HS2_DATA1, SD_DATA1, EMAC_TX_ER      
+     - IO4
+     - I/O
+     - GPIO4, ADC2_CH0, TOUCH0, RTC_GPIO10, HSPIHD, HS2_DATA1, SD_DATA1, EMAC_TX_ER
    * - 23
-     - IO9 
-     - I/O 
-     - GPIO9, HS1_DATA2, U1RXD, SD_DATA2       
+     - IO9
+     - I/O
+     - GPIO9, HS1_DATA2, U1RXD, SD_DATA2
    * - 24
-     - IO10 
-     - I/O 
-     - GPIO10, HS1_DATA3, U1TXD, SD_DATA3     
+     - IO10
+     - I/O
+     - GPIO10, HS1_DATA3, U1TXD, SD_DATA3
    * - 25
-     - IO5 
-     - I/O 
-     - GPIO5, HS1_DATA6, VSPICS0, EMAC_RX_CLK      
+     - IO5
+     - I/O
+     - GPIO5 [2]_, HS1_DATA6, VSPICS0, EMAC_RX_CLK
    * - 26
-     - IO18 
-     - I/O 
-     - GPIO18, HS1_DATA7, VSPICLK      
+     - IO18
+     - I/O
+     - GPIO18, HS1_DATA7, VSPICLK
    * - 27
-     - IO23 
-     - I/O 
-     - GPIO23, HS1_STROBE, VSPID       
+     - IO23
+     - I/O
+     - GPIO23, HS1_STROBE, VSPID
    * - 28
-     - IO19 
-     - I/O 
-     - GPIO19, VSPIQ, U0CTS, EMAC_TXD0       
+     - IO19
+     - I/O
+     - GPIO19, VSPIQ, U0CTS, EMAC_TXD0
    * - 29
-     - IO22 
-     - I/O 
-     - GPIO22, VSPIWP, U0RTS, EMAC_TXD1      
+     - IO22
+     - I/O
+     - GPIO22, VSPIWP, U0RTS, EMAC_TXD1
    * - 30
-     - IO21 
-     - I/O 
-     - GPIO21, VSPIHD, EMAC_TX_EN     
+     - IO21
+     - I/O
+     - GPIO21, VSPIHD, EMAC_TX_EN
    * - 31
-     - TXD0 
-     - I/O 
-     - GPIO1, U0TXD, CLK_OUT3, EMAC_RXD2      
+     - TXD0
+     - I/O
+     - GPIO1, U0TXD, CLK_OUT3, EMAC_RXD2
    * - 32
-     - RXD0 
-     - I/O 
-     - GPIO3, U0RXD, CLK_OUT2     
+     - RXD0
+     - I/O
+     - GPIO3, U0RXD, CLK_OUT2
 
+.. [1] P：电源；I：输入；O：输出。
+.. [2] MTDI、GPIO0、GPIO2、MTDO 和 GPIO5 为 Strapping 管脚。在芯片上电和系统复位过程中，Strapping 管脚根据管脚的二进制电压值控制芯片功能。Strapping 管脚的具体描述和应用，请参考 `《ESP32 技术规格书》`_ > 章节 Strapping 管脚。
+
+管脚布局
+^^^^^^^^
+
+.. figure:: ../../../_static/ESP32_DevKitM-1_pinlayout.png
+    :align: center
+    :scale: 43%
+    :alt: ESP32-DevKitM-1 （点击放大）
+    :figclass: align-center
+
+    ESP32-DevKitM-1 （点击放大）
 
 硬件修订历史
 ===============

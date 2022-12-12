@@ -1,0 +1,46 @@
+choice ESP32C6_UNIVERSAL_MAC_ADDRESSES
+    bool "Number of universally administered (by IEEE) MAC address"
+    default ESP32C6_UNIVERSAL_MAC_ADDRESSES_FOUR
+    help
+        Configure the number of universally administered (by IEEE) MAC addresses.
+
+        During initialization, MAC addresses for each network interface are generated or derived from a
+        single base MAC address.
+
+        If the number of universal MAC addresses is four, all four interfaces (WiFi station, WiFi softap,
+        Bluetooth and Ethernet) receive a universally administered MAC address. These are generated
+        sequentially by adding 0, 1, 2 and 3 (respectively) to the final octet of the base MAC address.
+
+        If the number of universal MAC addresses is two, only two interfaces (WiFi station and Bluetooth)
+        receive a universally administered MAC address. These are generated sequentially by adding 0
+        and 1 (respectively) to the base MAC address. The remaining two interfaces (WiFi softap and Ethernet)
+        receive local MAC addresses. These are derived from the universal WiFi station and Bluetooth MAC
+        addresses, respectively.
+
+        When using the default (Espressif-assigned) base MAC address, either setting can be used. When using
+        a custom universal MAC address range, the correct setting will depend on the allocation of MAC
+        addresses in this range (either 2 or 4 per device.)
+
+        Note that ESP32-C6 has no integrated Ethernet MAC. Although it's possible to use the esp_read_mac()
+        API to return a MAC for Ethernet, this can only be used with an external MAC peripheral.
+
+    config ESP32C6_UNIVERSAL_MAC_ADDRESSES_TWO
+        bool "Two"
+        select ESP_MAC_UNIVERSAL_MAC_ADDRESSES_TWO
+        select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+        select ESP_MAC_ADDR_UNIVERSE_BT
+
+    config ESP32C6_UNIVERSAL_MAC_ADDRESSES_FOUR
+        bool "Four"
+        select ESP_MAC_UNIVERSAL_MAC_ADDRESSES_FOUR
+        select ESP_MAC_ADDR_UNIVERSE_IEEE802154
+        select ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+        select ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+        select ESP_MAC_ADDR_UNIVERSE_BT
+        select ESP_MAC_ADDR_UNIVERSE_ETH
+endchoice
+
+config ESP32C6_UNIVERSAL_MAC_ADDRESSES
+    int
+    default 2 if ESP32C6_UNIVERSAL_MAC_ADDRESSES_TWO
+    default 4 if ESP32C6_UNIVERSAL_MAC_ADDRESSES_FOUR

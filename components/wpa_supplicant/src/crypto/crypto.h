@@ -20,6 +20,7 @@
 
 #ifndef CRYPTO_H
 #define CRYPTO_H
+#include "utils/common.h"
 
 /**
  * md4_vector - MD4 hash for data vector
@@ -654,6 +655,38 @@ int crypto_bignum_mulmod(const struct crypto_bignum *a,
 			 struct crypto_bignum *d);
 
 /**
+ * crypto_bignum_sqrmod - c = a^2 (mod b)
+ * @a: Bignum
+ * @b: Bignum
+ * @c: Bignum; used to store the result of a^2 % b
+ * Returns: 0 on success, -1 on failure
+ */
+int crypto_bignum_sqrmod(const struct crypto_bignum *a,
+			  const struct crypto_bignum *b,
+			  struct crypto_bignum *c);
+
+/**
+ * crypto_bignum_sqrtmod - returns sqrt(a) (mod b)
+ * @a: Bignum
+ * @b: Bignum
+ * @c: Bignum; used to store the result
+ * Returns: 0 on success, -1 on failure
+ */
+int crypto_bignum_sqrtmod(const struct crypto_bignum *a,
+			  const struct crypto_bignum *b,
+			  struct crypto_bignum *c);
+
+/**
+ * crypto_bignum_rshift - r = a >> n
+ * @a: Bignum
+ * @n: Number of bits
+ * @r: Bignum; used to store the result of a >> n
+ * Returns: 0 on success, -1 on failure
+ */
+int crypto_bignum_rshift(const struct crypto_bignum *a, int n,
+			  struct crypto_bignum *r);
+
+/**
  * crypto_bignum_cmp - Compare two bignums
  * @a: Bignum
  * @b: Bignum
@@ -682,6 +715,13 @@ int crypto_bignum_is_zero(const struct crypto_bignum *a);
  * Returns: 1 if @a is one or 0 if not
  */
 int crypto_bignum_is_one(const struct crypto_bignum *a);
+
+/**
+ * crypto_bignum_is_odd - Is the given bignum odd
+ * @a: Bignum
+ * Returns: 1 if @a is odd or 0 if not
+ */
+int crypto_bignum_is_odd(const struct crypto_bignum *a);
 
 /**
  * crypto_bignum_legendre - Compute the Legendre symbol (a/p)
@@ -730,6 +770,13 @@ size_t crypto_ec_prime_len(struct crypto_ec *e);
 size_t crypto_ec_prime_len_bits(struct crypto_ec *e);
 
 /**
+ * crypto_ec_order_len - Get length of the order in octets
+ * @e: EC context from crypto_ec_init()
+ * Returns: Length of the order defining the group
+ */
+size_t crypto_ec_order_len(struct crypto_ec *e);
+
+/**
  * crypto_ec_get_prime - Get prime defining an EC group
  * @e: EC context from crypto_ec_init()
  * Returns: Prime (bignum) defining the group
@@ -749,6 +796,14 @@ const struct crypto_bignum * crypto_ec_get_order(struct crypto_ec *e);
  * Internal data structure for EC implementation to represent a point. The
  * contents is specific to the used crypto library.
  */
+
+/**
+ * crypto_ec_get_b - Get 'b' coeffiecient of an EC group's curve
+ * @e: EC context from crypto_ec_init()
+ * Returns: 'b' coefficient (bignum) of the group
+ */
+const struct crypto_bignum * crypto_ec_get_b(struct crypto_ec *e);
+
 struct crypto_ec_point;
 
 /**
@@ -1081,4 +1136,15 @@ int crypto_ec_get_priv_key_der(struct crypto_key *key, unsigned char **key_data,
  */
 int crypto_bignum_to_string(const struct crypto_bignum *a,
                          u8 *buf, size_t buflen, size_t padlen);
+
+struct crypto_ecdh;
+
+void crypto_ecdh_deinit(struct crypto_ecdh *ecdh);
+
+struct crypto_ecdh * crypto_ecdh_init(int group);
+
+struct wpabuf * crypto_ecdh_get_pubkey(struct crypto_ecdh *ecdh,int y);
+struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
+                                        const u8 *key, size_t len);
+
 #endif /* CRYPTO_H */

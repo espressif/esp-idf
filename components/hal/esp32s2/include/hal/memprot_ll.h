@@ -1,22 +1,15 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
 #include <stdbool.h>
 #include "soc/memprot_defs.h"
 #include "hal/memprot_types.h"
+#include "soc/dport_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -277,16 +270,16 @@ static inline uint32_t memprot_ll_iram0_sram_get_perm_split_reg(void)
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_2_REG);
 }
 
-static inline memprot_ll_err_t memprot_ll_iram0_sram_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
+static inline memprot_hal_err_t memprot_ll_iram0_sram_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
 
     //sanity check: split address required above unified mgmt region & 32bit aligned
     if (addr > IRAM0_SRAM_SPL_BLOCK_HIGH) {
-        return MEMP_LL_ERR_SPLIT_ADDR_INVALID;
+        return MEMP_HAL_ERR_SPLIT_ADDR_INVALID;
     }
     if (addr % 0x4 != 0) {
-        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+        return MEMP_HAL_ERR_SPLIT_ADDR_UNALIGNED;
     }
 
     //find possible split.address in low region blocks
@@ -310,7 +303,7 @@ static inline memprot_ll_err_t memprot_ll_iram0_sram_set_prot(uint32_t *split_ad
 
     for (int x = 0; x < IRAM0_SRAM_TOTAL_UNI_BLOCKS; x++) {
         if (!memprot_ll_iram0_sram_get_uni_block_sgnf_bits(x, &write_bit, &read_bit, &exec_bit)) {
-            return MEMP_LL_ERR_UNI_BLOCK_INVALID;
+            return MEMP_HAL_ERR_UNI_BLOCK_INVALID;
         }
         if (x <= uni_blocks_low) {
             if (lw) {
@@ -367,7 +360,7 @@ static inline memprot_ll_err_t memprot_ll_iram0_sram_set_prot(uint32_t *split_ad
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_IRAM0_1_REG, uni_block_perm);
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_IRAM0_2_REG, (uint32_t)(reg_split_addr | permission_mask));
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
 static inline void memprot_ll_iram0_sram_get_split_sgnf_bits(bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx)
@@ -424,16 +417,16 @@ static inline uint32_t memprot_ll_iram0_rtcfast_get_perm_split_reg(void)
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_IRAM0_3_REG);
 }
 
-static inline memprot_ll_err_t memprot_ll_iram0_rtcfast_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
+static inline memprot_hal_err_t memprot_ll_iram0_rtcfast_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
 
     //32bit aligned
     if (addr < IRAM0_RTCFAST_ADDRESS_LOW || addr > IRAM0_RTCFAST_ADDRESS_HIGH) {
-        return MEMP_LL_ERR_SPLIT_ADDR_INVALID;
+        return MEMP_HAL_ERR_SPLIT_ADDR_INVALID;
     }
     if (addr % 0x4 != 0) {
-        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+        return MEMP_HAL_ERR_SPLIT_ADDR_UNALIGNED;
     }
 
     //conf reg [10:0]
@@ -463,7 +456,7 @@ static inline memprot_ll_err_t memprot_ll_iram0_rtcfast_set_prot(uint32_t *split
     //write IRAM0 RTCFAST cfg register
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_IRAM0_3_REG, reg_split_addr | permission_mask);
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
 static inline void memprot_ll_iram0_rtcfast_get_split_sgnf_bits(bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx)
@@ -619,12 +612,12 @@ static inline bool memprot_ll_dram0_sram_get_uni_block_sgnf_bits(uint32_t block,
     return true;
 }
 
-static inline memprot_ll_err_t memprot_ll_dram0_sram_set_uni_block_perm(uint32_t block, bool write_perm, bool read_perm)
+static inline memprot_hal_err_t memprot_ll_dram0_sram_set_uni_block_perm(uint32_t block, bool write_perm, bool read_perm)
 {
     //get block-specific WR flags offset within the conf.register
     uint32_t write_bit_offset, read_bit_offset;
     if (!memprot_ll_dram0_sram_get_uni_block_sgnf_bits(block, &write_bit_offset, &read_bit_offset)) {
-        return MEMP_LL_ERR_UNI_BLOCK_INVALID;
+        return MEMP_HAL_ERR_UNI_BLOCK_INVALID;
     }
 
     //set/reset required flags
@@ -640,7 +633,7 @@ static inline memprot_ll_err_t memprot_ll_dram0_sram_set_uni_block_perm(uint32_t
         DPORT_CLEAR_PERI_REG_MASK(DPORT_PMS_PRO_DRAM0_1_REG, read_bit_offset);
     }
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
 static inline bool memprot_ll_dram0_sram_get_uni_block_read_bit(uint32_t block, uint32_t *read_bit)
@@ -693,16 +686,16 @@ static inline uint32_t memprot_ll_dram0_sram_get_perm_reg(void)
     return DPORT_READ_PERI_REG(DPORT_PMS_PRO_DRAM0_1_REG);
 }
 
-static inline memprot_ll_err_t memprot_ll_dram0_sram_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
+static inline memprot_hal_err_t memprot_ll_dram0_sram_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
 {
     uint32_t addr = (uint32_t)split_addr;
 
     //low boundary check provided by LD script. see comment in memprot_ll_iram0_sram_set_prot()
     if (addr > DRAM0_SRAM_SPL_BLOCK_HIGH) {
-        return MEMP_LL_ERR_SPLIT_ADDR_INVALID;
+        return MEMP_HAL_ERR_SPLIT_ADDR_INVALID;
     }
     if (addr % 0x4 != 0) {
-        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+        return MEMP_HAL_ERR_SPLIT_ADDR_UNALIGNED;
     }
 
     //set low region
@@ -724,7 +717,7 @@ static inline memprot_ll_err_t memprot_ll_dram0_sram_set_prot(uint32_t *split_ad
     uint32_t write_bit, read_bit, uni_block_perm = 0;
     for (int x = 0; x < DRAM0_SRAM_TOTAL_UNI_BLOCKS; x++) {
         if (!memprot_ll_dram0_sram_get_uni_block_sgnf_bits(x, &write_bit, &read_bit)) {
-            return MEMP_LL_ERR_UNI_BLOCK_INVALID;
+            return MEMP_HAL_ERR_UNI_BLOCK_INVALID;
         }
         if (x <= uni_blocks_low) {
             if (lw) {
@@ -764,7 +757,7 @@ static inline memprot_ll_err_t memprot_ll_dram0_sram_set_prot(uint32_t *split_ad
     //write DRAM0 SRAM cfg register
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_DRAM0_1_REG, reg_split_addr | permission_mask | uni_block_perm);
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
 static inline void memprot_ll_dram0_sram_get_split_sgnf_bits(bool *lw, bool *lr, bool *hw, bool *hr)
@@ -808,16 +801,16 @@ static inline bool memprot_ll_dram0_rtcfast_is_intr_mine(void)
     return false;
 }
 
-static inline memprot_ll_err_t memprot_ll_dram0_rtcfast_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
+static inline memprot_hal_err_t memprot_ll_dram0_rtcfast_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
 {
     uint32_t addr = (uint32_t)split_addr;
 
     //addr: 32bit aligned, inside corresponding range
     if (addr < DRAM0_RTCFAST_ADDRESS_LOW || addr > DRAM0_RTCFAST_ADDRESS_HIGH) {
-        return MEMP_LL_ERR_SPLIT_ADDR_INVALID;
+        return MEMP_HAL_ERR_SPLIT_ADDR_INVALID;
     }
     if (addr % 0x4 != 0) {
-        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+        return MEMP_HAL_ERR_SPLIT_ADDR_UNALIGNED;
     }
 
     //conf reg [10:0]
@@ -841,7 +834,7 @@ static inline memprot_ll_err_t memprot_ll_dram0_rtcfast_set_prot(uint32_t *split
     //write DRAM0 RTC FAST cfg register
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_DRAM0_2_REG, reg_split_addr | permission_mask);
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
 static inline void memprot_ll_dram0_rtcfast_get_split_sgnf_bits(bool *lw, bool *lr, bool *hw, bool *hr)

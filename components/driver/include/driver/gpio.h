@@ -13,6 +13,7 @@
 #include "soc/soc_caps.h"
 #include "hal/gpio_types.h"
 #include "esp_rom_gpio.h"
+#include "driver/gpio_etm.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,9 +26,29 @@ extern "C" {
 /// Check whether it can be a valid GPIO number of output mode
 #define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) ((gpio_num >= 0) && \
                                               (((1ULL << (gpio_num)) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0))
-
+/// Check whether it can be a valid digital I/O pad
+#define GPIO_IS_VALID_DIGITAL_IO_PAD(gpio_num) ((gpio_num >= 0) && \
+                                                 (((1ULL << (gpio_num)) & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK) != 0))
 
 typedef intr_handle_t gpio_isr_handle_t;
+
+/**
+ * @brief GPIO interrupt handler
+ *
+ * @param arg User registered data
+ */
+typedef void (*gpio_isr_t)(void *arg);
+
+/**
+ * @brief Configuration parameters of GPIO pad for gpio_config function
+ */
+typedef struct {
+    uint64_t pin_bit_mask;          /*!< GPIO pin: set with bit mask, each bit maps to a GPIO */
+    gpio_mode_t mode;               /*!< GPIO mode: set input/output mode                     */
+    gpio_pullup_t pull_up_en;       /*!< GPIO pull-up                                         */
+    gpio_pulldown_t pull_down_en;   /*!< GPIO pull-down                                       */
+    gpio_int_type_t intr_type;      /*!< GPIO interrupt type                                  */
+} gpio_config_t;
 
 /**
  * @brief GPIO common configuration
@@ -72,11 +93,10 @@ esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type);
 /**
  * @brief  Enable GPIO module interrupt signal
  *
- * @note Please do not use the interrupt of GPIO36 and GPIO39 when using ADC or Wi-Fi with sleep mode enabled.
+ * @note ESP32: Please do not use the interrupt of GPIO36 and GPIO39 when using ADC or Wi-Fi and Bluetooth with sleep mode enabled.
  *       Please refer to the comments of `adc1_get_raw`.
- *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
- *       As a workaround, call adc_power_acquire() in the app. This will result in higher power consumption (by ~1mA),
- *       but will remove the glitches on GPIO36 and GPIO39.
+ *       Please refer to Section 3.11 of <a href="https://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf">ESP32 ECO and Workarounds for Bugs</a> for the description of this issue.
+
  *
  * @param  gpio_num GPIO number. If you want to enable an interrupt on e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  *
@@ -131,7 +151,7 @@ esp_err_t gpio_set_level(gpio_num_t gpio_num, uint32_t level);
 int gpio_get_level(gpio_num_t gpio_num);
 
 /**
- * @brief	 GPIO set direction
+ * @brief    GPIO set direction
  *
  * Configure GPIO direction,such as output_only,input_only,output_and_input
  *
@@ -148,7 +168,7 @@ esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
 /**
  * @brief  Configure GPIO pull-up/pull-down resistors
  *
- * Only pins that support both input & output have integrated pull-up and pull-down resistors. Input-only GPIOs 34-39 do not.
+ * @note ESP32: Only pins that support both input & output have integrated pull-up and pull-down resistors. Input-only GPIOs 34-39 do not.
  *
  * @param  gpio_num GPIO number. If you want to set pull up or down mode for e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @param  pull GPIO pull up/down mode.
@@ -255,7 +275,7 @@ esp_err_t gpio_pulldown_en(gpio_num_t gpio_num);
 esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num);
 
 /**
-  * @brief Install the driver's GPIO ISR handler service, which allows per-pin GPIO interrupt handlers.
+  * @brief Install the GPIO driver's ETS_GPIO_INTR_SOURCE ISR handler service, which allows per-pin GPIO interrupt handlers.
   *
   * This function is incompatible with gpio_isr_register() - if that function is used, a single global ISR is registered for all GPIO interrupts. If this function is used, the ISR service provides a global GPIO ISR and individual pin handlers are registered via the gpio_isr_handler_add() function.
   *
@@ -341,16 +361,21 @@ esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t *stren
 /**
   * @brief Enable gpio pad hold function.
   *
+  * When the pin is set to hold, the state is latched at that moment and will not change no matter how the internal
+  * signals change or how the IO MUX/GPIO configuration is modified (including input enable, output enable,
+  * output value, function, and drive strength values). It can be used to retain the pin state through a
+  * core reset and system reset triggered by watchdog time-out or Deep-sleep events.
+  *
   * The gpio pad hold function works in both input and output modes, but must be output-capable gpios.
   * If pad hold enabled:
   *   in output mode: the output level of the pad will be force locked and can not be changed.
-  *   in input mode: the input value read will not change, regardless the changes of input signal.
+  *   in input mode: input read value can still reflect the changes of the input signal.
   *
-  * The state of digital gpio cannot be held during Deep-sleep, and it will resume the hold function
+  * The state of the digital gpio cannot be held during Deep-sleep, and it will resume to hold at its default pin state
   * when the chip wakes up from Deep-sleep. If the digital gpio also needs to be held during Deep-sleep,
   * `gpio_deep_sleep_hold_en` should also be called.
   *
-  * Power down or call gpio_hold_dis will disable this function.
+  * Power down or call `gpio_hold_dis` will disable this function.
   *
   * @param gpio_num GPIO number, only support output-capable GPIOs
   *
@@ -380,19 +405,21 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num);
 esp_err_t gpio_hold_dis(gpio_num_t gpio_num);
 
 /**
-  * @brief Enable all digital gpio pad hold function during Deep-sleep.
+  * @brief Enable all digital gpio pads hold function during Deep-sleep.
   *
-  * When the chip is in Deep-sleep mode, all digital gpio will hold the state before sleep, and when the chip is woken up,
-  * the status of digital gpio will not be held. Note that the pad hold feature only works when the chip is in Deep-sleep mode,
-  * when not in sleep mode, the digital gpio state can be changed even you have called this function.
+  * Enabling this feature makes all digital gpio pads be at the holding state during Deep-sleep. The state of each pad
+  * holds is its active configuration (not pad's sleep configuration!).
   *
-  * Power down or call gpio_hold_dis will disable this function, otherwise, the digital gpio hold feature works as long as the chip enter Deep-sleep.
+  * Note that this pad hold feature only works when the chip is in Deep-sleep mode. When the chip is in active mode,
+  * the digital gpio state can be changed freely even you have called this function.
+  *
+  * After this API is being called, the digital gpio Deep-sleep hold feature will work during every sleep process. You
+  * should call `gpio_deep_sleep_hold_dis` to disable this feature.
   */
 void gpio_deep_sleep_hold_en(void);
 
 /**
-  * @brief Disable all digital gpio pad hold function during Deep-sleep.
-  *
+  * @brief Disable all digital gpio pads hold function during Deep-sleep.
   */
 void gpio_deep_sleep_hold_dis(void);
 
@@ -414,14 +441,21 @@ void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv);
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**
-  * @brief Force hold digital and rtc gpio pad.
-  * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
+  * @brief Force hold all digital and rtc gpio pads.
+  *
+  * GPIO force hold, no matter the chip in active mode or sleep modes.
+  *
+  * This function will immediately cause all pads to latch the current values of input enable, output enable,
+  * output value, function, and drive strength values.
+  *
+  * @warning This function will hold flash and UART pins as well. Therefore, this function, and all code run afterwards
+  * (till calling `gpio_force_unhold_all` to disable this feature), MUST be placed in internal RAM as holding the flash
+  * pins will halt SPI flash operation, and holding the UART pins will halt any UART logging.
   * */
 esp_err_t gpio_force_hold_all(void);
 
 /**
-  * @brief Force unhold digital and rtc gpio pad.
-  * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
+  * @brief Force unhold all digital and rtc gpio pads.
   * */
 esp_err_t gpio_force_unhold_all(void);
 #endif
@@ -447,7 +481,7 @@ esp_err_t gpio_sleep_sel_en(gpio_num_t gpio_num);
 esp_err_t gpio_sleep_sel_dis(gpio_num_t gpio_num);
 
 /**
- * @brief	 GPIO set direction at sleep
+ * @brief    GPIO set direction at sleep
  *
  * Configure GPIO direction,such as output_only,input_only,output_and_input
  *
@@ -463,7 +497,7 @@ esp_err_t gpio_sleep_set_direction(gpio_num_t gpio_num, gpio_mode_t mode);
 /**
  * @brief  Configure GPIO pull-up/pull-down resistors at sleep
  *
- * Only pins that support both input & output have integrated pull-up and pull-down resistors. Input-only GPIOs 34-39 do not.
+ * @note ESP32: Only pins that support both input & output have integrated pull-up and pull-down resistors. Input-only GPIOs 34-39 do not.
  *
  * @param  gpio_num GPIO number. If you want to set pull up or down mode for e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @param  pull GPIO pull up/down mode.

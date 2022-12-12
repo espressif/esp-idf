@@ -31,7 +31,7 @@ static const char *TAG = "cmd_i2ctools";
 #if CONFIG_IDF_TARGET_ESP32S3
 static gpio_num_t i2c_gpio_sda = 1;
 static gpio_num_t i2c_gpio_scl = 2;
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2
 static gpio_num_t i2c_gpio_sda = 5;
 static gpio_num_t i2c_gpio_scl = 6;
 #else
@@ -148,7 +148,7 @@ static int do_i2cdetect_cmd(int argc, char **argv)
     return 0;
 }
 
-static void register_i2cdectect(void)
+static void register_i2cdetect(void)
 {
     const esp_console_cmd_t i2cdetect_cmd = {
         .command = "i2cdetect",
@@ -380,7 +380,7 @@ static int do_i2cdump_cmd(int argc, char **argv)
             } else if ((block[k] & 0xff) < 32 || (block[k] & 0xff) >= 127) {
                 printf("?");
             } else {
-                printf("%c", block[k] & 0xff);
+                printf("%c", (char)(block[k] & 0xff));
             }
         }
         printf("\r\n");
@@ -407,7 +407,7 @@ static void register_i2cdump(void)
 void register_i2ctools(void)
 {
     register_i2cconfig();
-    register_i2cdectect();
+    register_i2cdetect();
     register_i2cget();
     register_i2cset();
     register_i2cdump();

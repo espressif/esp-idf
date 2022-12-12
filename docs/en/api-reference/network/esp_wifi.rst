@@ -20,11 +20,7 @@ The Wi-Fi libraries provide support for configuring and monitoring the {IDF_TARG
 Application Examples
 --------------------
 
-The :example:`wifi` directory of ESP-IDF examples contains the following applications:
-
-* Code examples for Wi-Fi.
-
-* A simple `esp-idf-template <https://github.com/espressif/esp-idf-template>`_ application to demonstrate a minimal IDF project structure.
+Several application examples demonstrating the functionality of Wi-Fi library are provided in :example:`wifi` directory of ESP-IDF repository. Please check the :example_file:`README <wifi/README.md>` for more details.
 
 
 API Reference

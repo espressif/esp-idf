@@ -44,14 +44,8 @@ SECTIONS
     *(.sdata)
     *(.sdata.*)
     *(.gnu.linkonce.s.*)
-    *(.sdata2)
-    *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     *(.jcr)
-
-    _esp_system_init_fn_array_start = ABSOLUTE(.);
-    KEEP (*(SORT(.esp_system_init_fn) SORT(.esp_system_init_fn.*)))
-    _esp_system_init_fn_array_end = ABSOLUTE(.);
 
     mapping[dram0_data]
 
@@ -146,7 +140,7 @@ SECTIONS
     . = . + SIZEOF(.flash.text);
     /* Prepare the alignment of the section above. Few bytes (0x20) must be
      * added for the mapping header. */
-    . = ALIGN(0x10000) + 0x20;
+    . = ALIGN(_esp_mmu_block_size) + 0x20;
     _rodata_reserved_start = .;
   } > default_rodata_seg
 
@@ -177,9 +171,6 @@ SECTIONS
     *(.gcc_except_table .gcc_except_table.*)
     *(.gnu.linkonce.e.*)
     *(.gnu.version_r)
-    . = (. + 3) & ~ 3;
-    __eh_frame = ABSOLUTE(.);
-    KEEP(*(.eh_frame))
     . = (. + 7) & ~ 3;
     /*
      * C++ constructor and destructor tables
@@ -213,6 +204,10 @@ SECTIONS
     soc_reserved_memory_region_start = ABSOLUTE(.);
     KEEP (*(.reserved_memory_address))
     soc_reserved_memory_region_end = ABSOLUTE(.);
+    /* System init functions registered via ESP_SYSTEM_INIT_FN */
+    _esp_system_init_fn_array_start = ABSOLUTE(.);
+    KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
+    _esp_system_init_fn_array_end = ABSOLUTE(.);
     _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
@@ -226,11 +221,29 @@ SECTIONS
     *(.tdata.*)
     *(.tbss)
     *(.tbss.*)
-    *(.srodata)
-    *(.srodata.*)
     _thread_local_end = ABSOLUTE(.);
     _rodata_reserved_end = ABSOLUTE(.);
-    . = ALIGN(4);
+    . = ALIGN(ALIGNOF(.eh_frame));
+  } > default_rodata_seg
+
+  /* Keep this section shall be at least aligned on 4 */
+  .eh_frame : ALIGN(8)
+  {
+    __eh_frame = ABSOLUTE(.);
+    KEEP (*(.eh_frame))
+    __eh_frame_end = ABSOLUTE(.);
+    /* Guarantee that this section and the next one will be merged by making
+     * them adjacent. */
+    . = ALIGN(ALIGNOF(.eh_frame_hdr));
+  } > default_rodata_seg
+
+  /* To avoid any exception in C++ exception frame unwinding code, this section
+   * shall be aligned on 8. */
+  .eh_frame_hdr : ALIGN(8)
+  {
+    __eh_frame_hdr = ABSOLUTE(.);
+    KEEP (*(.eh_frame_hdr))
+    __eh_frame_hdr_end = ABSOLUTE(.);
   } > default_rodata_seg
 
   .flash.rodata_noload (NOLOAD) :

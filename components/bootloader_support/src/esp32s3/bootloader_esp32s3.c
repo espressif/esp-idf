@@ -37,6 +37,8 @@
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
+#include "xtensa/config/core.h"
+#include "xt_instr_macros.h"
 
 
 static const char *TAG = "boot.esp32s3";
@@ -208,10 +210,17 @@ static esp_err_t bootloader_init_spi_flash(void)
     }
 #endif
 
+#if CONFIG_SPI_FLASH_HPM_ENABLE
+    // Reset flash, clear volatile bits DC[0:1]. Make it work under default mode to boot.
+    bootloader_spi_flash_reset();
+#endif
+
     bootloader_flash_unlock();
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
-    bootloader_enable_qio_mode();
+    if (!bootloader_flash_is_octal_mode_enabled()) {
+        bootloader_enable_qio_mode();
+    }
 #endif
 
     print_flash_info(&bootloader_image_hdr);
@@ -316,6 +325,12 @@ static inline void bootloader_ana_reset_config(void)
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
+
+#if XCHAL_ERRATUM_572
+    uint32_t memctl = XCHAL_CACHE_MEMCTL_DEFAULT;
+    WSR(MEMCTL, memctl);
+#endif // XCHAL_ERRATUM_572
+
     bootloader_ana_reset_config();
     bootloader_super_wdt_auto_feed();
     // protect memory region

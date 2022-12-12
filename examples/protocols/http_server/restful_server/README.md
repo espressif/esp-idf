@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # HTTP Restful API Server Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -57,7 +60,7 @@ Only if you deploy the website to SD card, then the following pin connection is 
 
 ### Configure the project
 
-Open the project configuration menu (`idf.py menuconfig`). 
+Open the project configuration menu (`idf.py menuconfig`).
 
 In the `Example Connection Configuration` menu:
 

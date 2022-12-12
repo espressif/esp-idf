@@ -1,5 +1,4 @@
 .deploy_job_template:
-  extends: .before_script_no_sync_submodule
   stage: deploy
   image: $ESP_ENV_IMAGE
   tags:
@@ -45,7 +44,7 @@ deploy_test_result:
   extends:
     - .deploy_job_template
     - .before_script_minimal
-    - .rules:ref:master-schedule-always
+    - .rules:ref:master-always
   image: $CI_DOCKER_REGISTRY/bot-env:1
   dependencies: []
   tags:

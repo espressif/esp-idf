@@ -13,7 +13,7 @@
 #include "hal/efuse_ll.h"
 #include "esp_efuse.h"
 #include "esp_chip_info.h"
-#include "esp_spi_flash.h"
+#include "esp_flash.h"
 #include "esp_log.h"
 #include "esp_efuse_table.h"
 #include <string.h>
@@ -36,15 +36,22 @@ static void example_print_chip_info(void)
 {
     /* Print chip information */
     esp_chip_info_t chip_info;
+    uint32_t flash_size;
     esp_chip_info(&chip_info);
     printf("This is ESP32 chip with %d CPU cores, WiFi%s%s, ",
             chip_info.cores,
             (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
             (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
 
-    printf("silicon revision %d, ", chip_info.revision);
+    unsigned major_rev = chip_info.revision / 100;
+    unsigned minor_rev = chip_info.revision % 100;
+    printf("silicon revision v%d.%d, ", major_rev, minor_rev);
+    if(esp_flash_get_size(NULL, &flash_size) != ESP_OK) {
+        printf("Get flash size failed");
+        return;
+    }
 
-    printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
+    printf("%dMB %s flash\n", flash_size / (1024 * 1024),
             (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
 }
 
@@ -52,7 +59,7 @@ static void example_print_chip_info(void)
 
 static void example_secure_boot_status(void)
 {
-#ifdef CONFIG_ESP32_REV_MIN_3
+#if CONFIG_ESP32_REV_MIN_FULL >= 300
     uint8_t efuse_trusted_digest[DIGEST_LEN] = {0}, i;
     ESP_LOGI(TAG, "Checking for secure boot v2..");
     if(efuse_ll_get_secure_boot_v2_en()) {
@@ -74,7 +81,7 @@ static void example_secure_boot_status(void)
     ESP_LOGI(TAG, "Checking for secure boot v1..");
     if (efuse_ll_get_secure_boot_v1_en()) {
     ESP_LOGI(TAG, "ABS_DONE_0 is set. Secure Boot V1 enabled");
-#ifdef CONFIG_ESP32_REV_MIN_3
+#if CONFIG_ESP32_REV_MIN_FULL >= 300
         ESP_LOGW(TAG, "This chip version supports Secure Boot V2. It is recommended to use Secure Boot V2.");
 #endif
         ESP_LOGI(TAG, "Checking the integrityof the key in BLK2..");

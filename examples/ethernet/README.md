@@ -56,7 +56,7 @@ Please consult Espressif Technical reference manual along with datasheet for spe
 
 ## Common Configurations
 
-1. In the `Example Configuration` menu:
+1. In the `Example Ethernet Configuration` menu:
     * Choose the kind of Ethernet.
     * If `Internal EMAC` is selected:
         * Choose PHY device under `Ethernet PHY Device`, by default, the **ESP32-Ethernet-Kit** has an `IP101` on board.

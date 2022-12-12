@@ -385,7 +385,7 @@ typedef UINT8   tBTM_BLE_AD_TYPE;
 
 /* adv tx power level */
 #define BTM_BLE_ADV_TX_POWER_MIN        0           /* minimum tx power */
-#define BTM_BLE_ADV_TX_POWER_MAX        7           /* maximum tx power */
+#define BTM_BLE_ADV_TX_POWER_MAX        BTM_TX_POWER_LEVEL_MAX           /* maximum tx power */
 typedef UINT8 tBTM_BLE_ADV_TX_POWER;
 
 /* adv tx power in dBm */
@@ -702,6 +702,7 @@ typedef void (tBTM_BLE_PF_PARAM_CBACK) (tBTM_BLE_PF_ACTION action_type,
                                         tBTM_BLE_REF_VALUE ref_value, tBTM_STATUS status);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define MAX_BLE_ADV_INSTANCE 10
+#define MIN_BLE_PERIODIC_ADV_REPORT_LEN 7
 typedef struct {
     UINT8                       inst_id;
     BOOLEAN                     configured;
@@ -766,7 +767,7 @@ typedef struct {
     tBLE_ADDR_TYPE peer_addr_type;
     BD_ADDR peer_addr;
     tBTM_BLE_AFP filter_policy;
-    UINT8 tx_power;
+    INT8 tx_power;
     tBTM_BLE_GAP_PHY primary_phy;
     UINT8 max_skip;
     tBTM_BLE_GAP_PHY secondary_phy;

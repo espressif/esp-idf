@@ -47,7 +47,7 @@ Linux 用户
     sudo pacman -S --needed gcc git make flex bison gperf python cmake ninja ccache dfu-util libusb
 
 .. note::
-    - 使用 ESP-IDF 需要 CMake 3.5 或以上版本。较早的 Linux 发行版可能需要升级自身的软件源仓库，或开启 backports 套件库，或安装 "cmake3" 软件包（不是安装 "cmake"）。
+    - 使用 ESP-IDF 需要 CMake 3.16 或以上版本。较早的 Linux 发行版可能需要升级自身的软件源仓库，或开启 backports 套件库，或安装 "cmake3" 软件包（不是安装 "cmake"）。
     - 如果上述列表中没有您使用的系统，请参考您所用系统的相关文档，查看安装软件包所用的命令。
 
 macOS 用户
@@ -75,6 +75,25 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
      xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at: /Library/Developer/CommandLineTools/usr/bin/xcrun
 
     则必须安装 XCode 命令行工具，可运行 ``xcode-select --install`` 命令进行安装。
+
+Apple M1 用户
+~~~~~~~~~~~~~~~~~~
+
+如果您使用的是 Apple M1 系列且看到如下错误提示::
+
+      WARNING: directory for tool xtensa-esp32-elf version esp-2021r2-patch3-8.4.0 is present, but tool was not found
+      ERROR: tool xtensa-esp32-elf has no installed versions. Please run 'install.sh' to install it.
+
+或者::
+
+      zsh: bad CPU type in executable: ~/.espressif/tools/xtensa-esp32-elf/esp-2021r2-patch3-8.4.0/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc
+
+您需要运行如下命令来安装 Apple Rosetta 2：
+
+.. code-block:: bash
+
+    /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+
 
 安装 Python 3
 ---------------------------------------------
@@ -135,7 +154,7 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
     cd ~/esp/esp-idf
     ./install.fish {IDF_TARGET_PATH_NAME}
 
-上述命令仅仅为 {IDF_TARGET_NAME} 安装所需工具。如果需要为多个目标芯片开发项目，则可以一次性指定多个目标，如下所示::
+上述命令仅仅为 {IDF_TARGET_NAME} 安装所需工具。如果需要为多个目标芯片开发项目，则可以一次性指定多个目标，如下所示：
 
 .. code-block:: bash
 
@@ -163,6 +182,12 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
     cd ~/esp/esp-idf
     ./install.fish all
 
+.. note::
+    对于 macOS 用户，如您在上述任何步骤中遇到以下错误::
+
+     <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:xxx)
+
+    可运行您电脑 Python 文件夹中的 ``Install Certificates.command`` 安装证书。了解更多信息，请参考 `安装 ESP-IDF 工具时出现的下载错误 <https://github.com/espressif/esp-idf/issues/4775>`_。
 
 下载工具备选方案
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -249,12 +274,17 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 相关文档
 =================
 
+* :doc:`establish-serial-connection`
+* `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README_CN.md>`_
+* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
+* :doc:`../api-guides/tools/idf-monitor`
+
 .. toctree::
+    :hidden:
     :maxdepth: 1
 
     establish-serial-connection
-    eclipse-setup
-    vscode-setup
+    flashing-troubleshooting
     ../api-guides/tools/idf-monitor
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository

@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Simple Sniffer Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -23,7 +26,7 @@ See common pin assignments for Ethernet from [ethernet examples folder](../../et
 
 ### Configure the project
 
-Open the project configuration menu (`idf.py menuconfig`). Then go into `Example Configuration` menu.
+Open the project configuration menu (`idf.py menuconfig`). Then go into `Example Configuration` in top menu.
 
 - Check `Store command history in flash` if you want to save command history into flash (recommend).
 - Select where to save the pcap file in `Select destination to store pcap file` menu item.
@@ -35,10 +38,8 @@ Open the project configuration menu (`idf.py menuconfig`). Then go into `Example
 - Set the length of sniffer work queue in `Length of sniffer work queue` menu item.
 - Set the stack size of the sniffer task in `Stack size of sniffer task` menu item.
 - Set the priority of the sniffer task in `Length of sniffer work queue` menu item.
-- Select Ethernet Type
-  - `No Ethernet` means your board does not have Ethernet.
-  - `Internal EMAC` means ESP32 EMAC is used in conjunction with with selected PHY.
-  - `DM9051 Module`, `W5500 Module` or `KSZ8851SNL Module` means that SPI-Ethernet module is used with its own EMAC and PHY.
+
+To configure Ethernet device(s), go to `Example Ethernet Configuration` in top menu.
   - For more information related to Ethernet configurations see common configuration of Ethernet from [ethernet examples folder](../../ethernet/README.md#common-configurations).
 
 ### Build and Flash

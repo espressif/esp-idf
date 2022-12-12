@@ -90,7 +90,6 @@ static void hostapd_wps_reg_success_cb(void *ctx, const u8 *mac_addr,
 	data.dev_pw = dev_pw;
 	data.dev_pw_len = dev_pw_len;
 	wps_stop_registrar(hapd, &data);
-        wps_set_status(WPS_STATUS_DISABLE);
 
 	/* TODO add callback event for freeRTOS */
 }
@@ -111,68 +110,20 @@ static void hostapd_wps_reenable_ap_pin(void *eloop_data, void *user_ctx)
 	wps_registrar_update_ie(hapd->wps->registrar);
 }
 
-
-static int wps_pwd_auth_fail(struct hostapd_data *hapd, void *ctx)
-{
-	struct wps_event_pwd_auth_fail *data = ctx;
-
-	if (!data->enrollee || hapd->conf->ap_pin == NULL || hapd->wps == NULL)
-		return 0;
-
-	/*
-	 * Registrar failed to prove its knowledge of the AP PIN. Lock AP setup
-	 * for some time if this happens multiple times to slow down brute
-	 * force attacks.
-	 */
-	hapd->ap_pin_failures++;
-	hapd->ap_pin_failures_consecutive++;
-	wpa_printf(MSG_DEBUG, "WPS: AP PIN authentication failure number %u "
-		   "(%u consecutive)",
-		   hapd->ap_pin_failures, hapd->ap_pin_failures_consecutive);
-	if (hapd->ap_pin_failures < 3)
-		return 0;
-
-	wpa_msg(hapd->msg_ctx, MSG_INFO, WPS_EVENT_AP_SETUP_LOCKED);
-	hapd->wps->ap_setup_locked = 1;
-
-	wps_registrar_update_ie(hapd->wps->registrar);
-
-	if (!hapd->conf->ap_setup_locked &&
-	    hapd->ap_pin_failures_consecutive >= 10) {
-		/*
-		 * In indefinite lockdown - disable automatic AP PIN
-		 * reenablement.
-		 */
-		eloop_cancel_timeout(hostapd_wps_reenable_ap_pin, hapd, NULL);
-		wpa_printf(MSG_DEBUG, "WPS: AP PIN disabled indefinitely");
-	} else if (!hapd->conf->ap_setup_locked) {
-		if (hapd->ap_pin_lockout_time == 0)
-			hapd->ap_pin_lockout_time = 60;
-		else if (hapd->ap_pin_lockout_time < 365 * 24 * 60 * 60 &&
-			 (hapd->ap_pin_failures % 3) == 0)
-			hapd->ap_pin_lockout_time *= 2;
-
-		wpa_printf(MSG_DEBUG, "WPS: Disable AP PIN for %u seconds",
-			   hapd->ap_pin_lockout_time);
-		eloop_cancel_timeout(hostapd_wps_reenable_ap_pin, hapd, NULL);
-		eloop_register_timeout(hapd->ap_pin_lockout_time, 0,
-				       hostapd_wps_reenable_ap_pin, hapd,
-				       NULL);
-	}
-
-	return 0;
-}
-
-
 static void hostapd_pwd_auth_fail(struct hostapd_data *hapd,
 				  struct wps_event_pwd_auth_fail *data)
 {
 	/* Update WPS Status - Authentication Failure */
+	wifi_event_ap_wps_rg_fail_reason_t evt = {0};
+
 	wpa_printf(MSG_DEBUG, "WPS: Authentication failure update");
 	hapd->wps_stats.status = WPS_FAILURE_STATUS;
 	os_memcpy(hapd->wps_stats.peer_addr, data->peer_macaddr, ETH_ALEN);
 
-	wps_pwd_auth_fail(hapd, data);
+	os_memcpy(evt.peer_macaddr, data->peer_macaddr, ETH_ALEN);
+	evt.reason = WPS_AP_FAIL_REASON_AUTH;
+	esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_WPS_RG_FAILED, &evt,
+			sizeof(evt), OS_BLOCK);
 }
 
 
@@ -193,16 +144,12 @@ static int wps_ap_pin_success(struct hostapd_data *hapd, void *ctx)
 }
 
 
-static void hostapd_wps_ap_pin_success(struct hostapd_data *hapd)
-{
-	wps_ap_pin_success(hapd, NULL);
-}
-
-
 static void hostapd_wps_event_pbc_overlap(struct hostapd_data *hapd)
 {
 	/* Update WPS Status - PBC Overlap */
+
 	hapd->wps_stats.pbc_status = WPS_PBC_STATUS_OVERLAP;
+	esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_WPS_RG_PBC_OVERLAP, NULL, 0, OS_BLOCK);
 }
 
 
@@ -210,15 +157,13 @@ static void hostapd_wps_event_pbc_timeout(struct hostapd_data *hapd)
 {
 	/* Update WPS PBC Status:PBC Timeout */
 	hapd->wps_stats.pbc_status = WPS_PBC_STATUS_TIMEOUT;
+	esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_WPS_RG_TIMEOUT, NULL, 0, OS_BLOCK);
 }
 
-
-static void hostapd_wps_event_pbc_active(struct hostapd_data *hapd)
+static void hostapd_wps_event_pin_timeout(struct hostapd_data *hapd)
 {
-	/* Update WPS PBC status - Active */
-	hapd->wps_stats.pbc_status = WPS_PBC_STATUS_ACTIVE;
+	esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_WPS_RG_TIMEOUT, NULL, 0, OS_BLOCK);
 }
-
 
 static void hostapd_wps_event_pbc_disable(struct hostapd_data *hapd)
 {
@@ -230,31 +175,25 @@ static void hostapd_wps_event_pbc_disable(struct hostapd_data *hapd)
 static void hostapd_wps_event_success(struct hostapd_data *hapd,
 				      struct wps_event_success *success)
 {
-	/* Update WPS status - Success */
-	hapd->wps_stats.pbc_status = WPS_PBC_STATUS_DISABLE;
-	hapd->wps_stats.status = WPS_SUCCESS_STATUS;
-	os_memcpy(hapd->wps_stats.peer_addr, success->peer_macaddr, ETH_ALEN);
+	wifi_event_ap_wps_rg_success_t evt;
+
+	os_memcpy(evt.peer_macaddr, success->peer_macaddr, ETH_ALEN);
+	esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_WPS_RG_SUCCESS, &evt,
+			sizeof(evt), OS_BLOCK);
 }
 
 
 static void hostapd_wps_event_fail(struct hostapd_data *hapd,
 				   struct wps_event_fail *fail)
 {
-	/* Update WPS status - Failure */
-	hapd->wps_stats.status = WPS_FAILURE_STATUS;
-	os_memcpy(hapd->wps_stats.peer_addr, fail->peer_macaddr, ETH_ALEN);
-
-	if (fail->error_indication > 0 &&
-	    fail->error_indication < NUM_WPS_EI_VALUES) {
-		wpa_msg(hapd->msg_ctx, MSG_INFO,
-			WPS_EVENT_FAIL "msg=%d config_error=%d reason=%d (%s)",
-			fail->msg, fail->config_error, fail->error_indication,
-			wps_ei_str(fail->error_indication));
-	} else {
-		wpa_msg(hapd->msg_ctx, MSG_INFO,
-			WPS_EVENT_FAIL "msg=%d config_error=%d",
-			fail->msg, fail->config_error);
-	}
+	wifi_event_ap_wps_rg_fail_reason_t evt;
+	if (fail->config_error > WPS_CFG_NO_ERROR)
+		evt.reason = WPS_AP_FAIL_REASON_CONFIG;
+	else
+		evt.reason = WPS_AP_FAIL_REASON_NORMAL;
+	os_memcpy(evt.peer_macaddr, fail->peer_macaddr, ETH_ALEN);
+	esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_WPS_RG_FAILED, &evt,
+			sizeof(evt), OS_BLOCK);
 }
 
 
@@ -264,9 +203,6 @@ static void hostapd_wps_event_cb(void *ctx, enum wps_event event,
 	struct hostapd_data *hapd = ctx;
 
 	switch (event) {
-	case WPS_EV_M2D:
-		wpa_msg(hapd->msg_ctx, MSG_INFO, WPS_EVENT_M2D);
-		break;
 	case WPS_EV_FAIL:
 		hostapd_wps_event_fail(hapd, &data->fail);
 		break;
@@ -285,8 +221,9 @@ static void hostapd_wps_event_cb(void *ctx, enum wps_event event,
 		hostapd_wps_event_pbc_timeout(hapd);
 		wpa_msg(hapd->msg_ctx, MSG_INFO, WPS_EVENT_TIMEOUT);
 		break;
+	case WPS_EV_SELECTED_REGISTRAR_TIMEOUT:
+		hostapd_wps_event_pin_timeout(hapd);
 	case WPS_EV_PBC_ACTIVE:
-		hostapd_wps_event_pbc_active(hapd);
 		wpa_msg(hapd->msg_ctx, MSG_INFO, WPS_EVENT_ACTIVE);
 		break;
 	case WPS_EV_PBC_DISABLE:
@@ -306,7 +243,9 @@ static void hostapd_wps_event_cb(void *ctx, enum wps_event event,
 	case WPS_EV_ER_SET_SELECTED_REGISTRAR:
 		break;
 	case WPS_EV_AP_PIN_SUCCESS:
-		hostapd_wps_ap_pin_success(hapd);
+		wps_ap_pin_success(hapd, NULL);
+		break;
+	default:
 		break;
 	}
 	if (hapd->wps_event_cb)
@@ -392,7 +331,8 @@ void hostapd_deinit_wps(struct hostapd_data *hapd)
 		return;
 	}
 	wps_registrar_deinit(hapd->wps->registrar);
-	hostapd_free_wps(hapd->wps);
+	hapd->wps->registrar = NULL;
+	eap_server_unregister_methods();
 	hapd->wps = NULL;
 	hostapd_wps_clear_ies(hapd, 1);
 }

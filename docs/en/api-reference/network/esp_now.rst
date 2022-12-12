@@ -68,15 +68,11 @@ Call :cpp:func:`esp_now_add_peer()` to add the device to the paired device list 
 
 .. only:: esp32c2
 
-    The maximum number of paired devices is 20, and the paired encryption devices are no more than 4, the default is 2. 
+    The maximum number of paired devices is 20, and the paired encryption devices are no more than 4, the default is 2. If you want to change the number of paired encryption devices, set :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` in WiFi component configuration menu.
 
-.. only:: esp32c3
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3
 
-    The maximum number of paired devices is 20, and the paired encryption devices are no more than 10, the default is 6. 
-
-.. only:: esp32 or esp32s2 or esp32s3 
-
-    The maximum number of paired devices is 20, and the paired encryption devices are no more than 16, the default is 6. 
+    The maximum number of paired devices is 20, and the paired encryption devices are no more than 16, the default is 6. If you want to change the number of paired encryption devices, set :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` in WiFi component configuration menu.
 
 A device with a broadcast MAC address must be added before sending broadcast data. The range of the channel of paired devices is from 0 to 14. If the channel is set to 0, data will be sent on the current channel. Otherwise, the channel must be set as the channel that the local device is on.
 
@@ -97,6 +93,19 @@ Config ESP-NOW Rate
 -------------------
 
 Call :cpp:func:`esp_wifi_config_espnow_rate()` to config ESPNOW rate of specified interface. Make sure that the interface is enabled before config rate. This API should be called after :cpp:func:`esp_wifi_start()`.
+
+Config ESP-NOW Power-saving Parameter
+--------------------------------------------
+
+Sleep is supported only when {IDF_TARGET_NAME} is configured as station.
+
+Call :cpp:func:`esp_now_set_wake_window()` to configure Window for ESP-NOW RX at sleep. The default value is the maximum, which allowing RX all the time.
+
+If Power-saving is needed for ESP-NOW, call :cpp:func:`esp_wifi_connectionless_module_set_wake_interval()` to configure Interval as well. 
+
+.. only:: SOC_WIFI_SUPPORTED
+
+    Please refer to :ref:`connectionless module power save <connectionless-module-power-save>` to get more detail.
 
 Application Examples
 --------------------

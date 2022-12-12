@@ -15,9 +15,9 @@
 #include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "hal/timer_hal.h"
-#include "hal/cpu_hal.h"
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
+#include "esp_private/esp_int_wdt.h"
 
 #include "esp_private/panic_internal.h"
 #include "port/panic_funcs.h"
@@ -25,9 +25,9 @@
 
 #include "sdkconfig.h"
 
-#if __has_include("esp_ota_ops.h")
-#include "esp_ota_ops.h"
-#define HAS_ESP_OTA 1
+#if __has_include("esp_app_desc.h")
+#define WITH_ELF_SHA256
+#include "esp_app_desc.h"
 #endif
 
 #if CONFIG_ESP_COREDUMP_ENABLE
@@ -55,21 +55,25 @@
 #include "esp_gdbstub.h"
 #endif
 
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 #include "hal/usb_serial_jtag_ll.h"
 #endif
 
 bool g_panic_abort = false;
 static char *s_panic_abort_details = NULL;
 
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
+static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
+#else
 static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+#endif
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
 #if CONFIG_ESP_CONSOLE_UART
 static uart_hal_context_t s_panic_uart = { .dev = CONFIG_ESP_CONSOLE_UART_NUM == 0 ? &UART0 :&UART1 };
 
-void panic_print_char(const char c)
+static void panic_print_char_uart(const char c)
 {
     uint32_t sz = 0;
     while (!uart_hal_get_txfifo_len(&s_panic_uart));
@@ -79,21 +83,21 @@ void panic_print_char(const char c)
 
 
 #if CONFIG_ESP_CONSOLE_USB_CDC
-void panic_print_char(const char c)
+static void panic_print_char_usb_cdc(const char c)
 {
     esp_usb_console_write_buf(&c, 1);
     /* result ignored */
 }
 #endif // CONFIG_ESP_CONSOLE_USB_CDC
 
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 //Timeout; if there's no host listening, the txfifo won't ever
 //be writable after the first packet.
 
 #define USBSERIAL_TIMEOUT_MAX_US 50000
 static int s_usbserial_timeout = 0;
 
-void panic_print_char(const char c)
+static void panic_print_char_usb_serial_jtag(const char c)
 {
     while (!usb_serial_jtag_ll_txfifo_writable() && s_usbserial_timeout < (USBSERIAL_TIMEOUT_MAX_US / 100)) {
         esp_rom_delay_us(100);
@@ -104,15 +108,21 @@ void panic_print_char(const char c)
         s_usbserial_timeout = 0;
     }
 }
-#endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 
 
-#if CONFIG_ESP_CONSOLE_NONE
 void panic_print_char(const char c)
 {
-    /* no-op */
+#if CONFIG_ESP_CONSOLE_UART
+    panic_print_char_uart(c);
+#endif
+#if CONFIG_ESP_CONSOLE_USB_CDC
+    panic_print_char_usb_cdc(c);
+#endif
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+    panic_print_char_usb_serial_jtag(c);
+#endif
 }
-#endif // CONFIG_ESP_CONSOLE_NONE
 
 void panic_print_str(const char *str)
 {
@@ -247,8 +257,8 @@ void esp_panic_handler(panic_info_t *info)
       *
       * ----------------------------------------------------------------------------------------
       * core - core where exception was triggered
-      * exception - what kind of exception occured
-      * description - a short description regarding the exception that occured
+      * exception - what kind of exception occurred
+      * description - a short description regarding the exception that occurred
       * details - more details about the exception
       * state - processor state like register contents, and backtrace
       * elf_info - details about the image currently running
@@ -277,7 +287,7 @@ void esp_panic_handler(panic_info_t *info)
     // If on-chip-debugger is attached, and system is configured to be aware of this,
     // then only print up to details. Users should be able to probe for the other information
     // in debug mode.
-    if (esp_cpu_in_ocd_debug_mode()) {
+    if (esp_cpu_dbgr_is_attached()) {
         panic_print_str("Setting breakpoint at 0x");
         panic_print_hex((uint32_t)info->addr);
         panic_print_str(" and returning...\r\n");
@@ -291,7 +301,7 @@ void esp_panic_handler(panic_info_t *info)
 #endif
 #endif
 
-        cpu_hal_set_breakpoint(0, info->addr); // use breakpoint 0
+        esp_cpu_set_breakpoint(0, info->addr); // use breakpoint 0
         return;
     }
 
@@ -313,13 +323,21 @@ void esp_panic_handler(panic_info_t *info)
     PANIC_INFO_DUMP(info, state);
     panic_print_str("\r\n");
 
-#if HAS_ESP_OTA
+    /* No matter if we come here from abort or an exception, this variable must be reset.
+     * Else, any exception/error occurring during the current panic handler would considered
+     * an abort. Do this after PANIC_INFO_DUMP(info, state) as it also checks this variable.
+     * For example, if coredump triggers a stack overflow and this variable is not reset,
+     * the second panic would be still be marked as the result of an abort, even the previous
+     * message reason would be kept. */
+    g_panic_abort = false;
+
+#ifdef WITH_ELF_SHA256
     panic_print_str("\r\nELF file SHA256: ");
     char sha256_buf[65];
-    esp_ota_get_app_elf_sha256(sha256_buf, sizeof(sha256_buf));
+    esp_app_get_elf_sha256(sha256_buf, sizeof(sha256_buf));
     panic_print_str(sha256_buf);
     panic_print_str("\r\n");
-#endif //HAS_ESP_OTA
+#endif
 
     panic_print_str("\r\n");
 

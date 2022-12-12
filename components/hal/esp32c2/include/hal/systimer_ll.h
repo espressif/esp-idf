@@ -8,14 +8,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/systimer_struct.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/assert.h"
 
-#define SYSTIMER_LL_COUNTER_CLOCK       (0) // Counter used for "wallclock" time
-#define SYSTIMER_LL_COUNTER_OS_TICK     (1) // Counter used for OS tick
-#define SYSTIMER_LL_ALARM_OS_TICK_CORE0 (0) // Alarm used for OS tick of CPU core 0
-#define SYSTIMER_LL_ALARM_CLOCK         (2) // Alarm used for "wallclock" time
-
-#define SYSTIMER_LL_TICKS_PER_US        (16) // 16 systimer ticks == 1us
+#define SYSTIMER_LL_COUNTER_CLOCK       0 // Counter used by esptimer, to generate the system level wall clock
+#define SYSTIMER_LL_COUNTER_OS_TICK     1 // Counter used by RTOS porting layer, to generate the OS tick
+#define SYSTIMER_LL_ALARM_OS_TICK_CORE0 0 // Alarm used by OS tick, dedicated for core 0
+#define SYSTIMER_LL_ALARM_CLOCK         2 // Alarm used by esptimer
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +28,16 @@ extern "C" {
 __attribute__((always_inline)) static inline void systimer_ll_enable_clock(systimer_dev_t *dev, bool en)
 {
     dev->conf.clk_en = en;
+}
+
+static inline void systimer_ll_set_clock_source(soc_periph_systimer_clk_src_t clk_src)
+{
+    (void)clk_src;
+}
+
+static inline soc_periph_systimer_clk_src_t systimer_ll_get_clock_source(void)
+{
+    return SYSTIMER_CLK_SRC_XTAL;
 }
 
 /******************* Counter *************************/

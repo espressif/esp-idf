@@ -128,8 +128,8 @@ void RFCOMM_ConnectInd (BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UINT8 id)
     }
 
     if (p_mcb == NULL) {
-        // L2CA_ConnectRsp (bd_addr, id, lcid, L2CAP_CONN_NO_RESOURCES, 0);
-        L2CA_ErtmConnectRsp (bd_addr, id, lcid, L2CAP_CONN_NO_RESOURCES, 0, &rfc_l2c_etm_opt);
+        tL2CAP_ERTM_INFO *ertm_opt = rfc_cb.port.enable_l2cap_ertm ? &rfc_l2c_etm_opt : NULL;
+        L2CA_ErtmConnectRsp (bd_addr, id, lcid, L2CAP_CONN_NO_RESOURCES, 0, ertm_opt);
         return;
     }
     p_mcb->lcid     = lcid;
@@ -189,10 +189,9 @@ void RFCOMM_ConnectCnf (UINT16 lcid, UINT16 result)
         } else {
             RFCOMM_TRACE_DEBUG ("RFCOMM_ConnectCnf peer gave up pending LCID(0x%x)", p_mcb->pending_lcid);
 
+            tL2CAP_ERTM_INFO *ertm_opt = rfc_cb.port.enable_l2cap_ertm ? &rfc_l2c_etm_opt : NULL;
             /* Peer gave up his connection request, make sure cleaning up L2CAP channel */
-            // L2CA_ConnectRsp (p_mcb->bd_addr, p_mcb->pending_id, p_mcb->pending_lcid, L2CAP_CONN_NO_RESOURCES, 0);
-            L2CA_ErtmConnectRsp (p_mcb->bd_addr, p_mcb->pending_id, p_mcb->pending_lcid, L2CAP_CONN_NO_RESOURCES, 0,
-                                    &rfc_l2c_etm_opt);
+            L2CA_ErtmConnectRsp (p_mcb->bd_addr, p_mcb->pending_id, p_mcb->pending_lcid, L2CAP_CONN_NO_RESOURCES, 0, ertm_opt);
 
             p_mcb->pending_lcid = 0;
         }

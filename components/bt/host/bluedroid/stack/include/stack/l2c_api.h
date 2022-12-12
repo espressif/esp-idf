@@ -39,6 +39,7 @@
 ** HCI type(1), len(2), handle(2), L2CAP len(2) and CID(2) => 9
 */
 #define L2CAP_MIN_OFFSET    13     /* plus control(2), SDU length(2) */
+#define L2CAP_FCS_LEN       2      /* FCS 0 or 2 bytes */
 
 /* Minimum offset for broadcast needs another two bytes for the PSM */
 #define L2CAP_BCST_MIN_OFFSET       11

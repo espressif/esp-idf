@@ -1,9 +1,9 @@
-| Supported Targets | ESP32 | ESP32-C3 |
-| ----------------- | ----- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-H4 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # ESP-IDF BLE throughput GATT SERVER Test
 
-This is the demo used to test the BLE throughput, this demo should used with throughput client demo together. 
+This is the demo used to test the BLE throughput, this demo should used with throughput client demo together.
 The throughput of BLE can up to 720-767 Kbps between to ESP32 board.
 
 ## How to Use Example
@@ -17,7 +17,7 @@ To configure the project, you can follow these steps:
 
 1. In order to maximize throughput, we need to set the uart print baud rate at `921600` or more:
 Go to: `idf.py menuconfig --> Component config --> ESP32-specific --> UART console baud rate` and set to `921600` or `1500000` and don't print too much log.
-2. We can only test notify or write throughput at the same time, this demo default to test the notify throughput, if want to test the write throughput, 
+2. We can only test notify or write throughput at the same time, this demo default to test the notify throughput, if want to test the write throughput,
 please set: `idf.py menuconfig --> Component config --> Example 'GATT CLIENT THROUGHPUT' Config  --->` then select the `test the gattc write throughput` option.
 3. This demo only test unidirectional throughput, if you want to test the bidirectional throughput please change the demo by yourself.
 4. Should change the CPU frequency to 160 MHz or 240 MHz in the `idf.py menuconfig`  and `Component config  ---> ESP32-specific  ---> CPU frequency (240 MHz or 160 MHz)`.
@@ -26,7 +26,7 @@ please set: `idf.py menuconfig --> Component config --> Example 'GATT CLIENT THR
 
 ### Hardware Required
 
-* A development board with ESP32/ESP32-C3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with ESP32/ESP32-C3/ESP32-C2/ESP32-H4/ESP32-S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for Power supply and programming
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
@@ -71,7 +71,7 @@ I (6258) GATTS_DEMO: ESP_GATTS_CONNECT_EVT, conn_id 0, remote ac:67:b2:6d:4e:22:
 I (7538) GATTS_DEMO: ESP_GATTS_MTU_EVT, MTU 517
 I (7698) GATTS_DEMO: GATT_WRITE_EVT, conn_id 0, trans_id 2, handle 43
 I (7698) GATTS_DEMO: GATT_WRITE_EVT, value len 2, value :
-I (7698) GATTS_DEMO: 01 00 
+I (7698) GATTS_DEMO: 01 00
 I (7698) GATTS_DEMO: notify enable
 I (7708) GATTS_DEMO: ESP_GATTS_CONF_EVT, status 0
 I (7718) GATTS_DEMO: ESP_GATTS_CONF_EVT, status 0

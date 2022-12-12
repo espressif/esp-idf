@@ -26,6 +26,7 @@ menu "Supplicant"
 
     config WPA_WAPI_PSK
         bool "Enable WAPI PSK support"
+        depends on SOC_WIFI_WAPI_SUPPORT
         default n
         help
             Select this option to enable WAPI-PSK

@@ -582,7 +582,7 @@ static const ProtobufCFieldDescriptor cmd_get_property_values__field_descriptors
     offsetof(CmdGetPropertyValues, indices),
     NULL,
     NULL,
-    0,             /* flags */
+    0 | PROTOBUF_C_FIELD_FLAG_PACKED,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };

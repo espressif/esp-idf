@@ -85,6 +85,17 @@ typedef struct {
      * sector size.
      */
     size_t allocation_unit_size;
+    /**
+     * Enables real ff_disk_status function implementation for SD cards
+     * (ff_sdmmc_status). Possibly slows down IO performance.
+     *
+     * Try to enable if you need to handle situations when SD cards
+     * are not unmounted properly before physical removal
+     * or you are experiencing issues with SD cards.
+     *
+     * Doesn't do anything for other memory storage media.
+     */
+    bool disk_status_check_enable;
 } esp_vfs_fat_mount_config_t;
 
 // Compatibility definition
@@ -116,8 +127,6 @@ typedef esp_vfs_fat_mount_config_t esp_vfs_fat_sdmmc_mount_config_t;
  * @param slot_config   Pointer to structure with slot configuration.
  *                      For SDMMC peripheral, pass a pointer to sdmmc_slot_config_t
  *                      structure initialized using SDMMC_SLOT_CONFIG_DEFAULT.
- *                      (Deprecated) For SPI peripheral, pass a pointer to sdspi_slot_config_t
- *                      structure initialized using SDSPI_SLOT_CONFIG_DEFAULT().
  * @param mount_config  pointer to structure with extra parameters for mounting FATFS
  * @param[out] out_card  if not NULL, pointer to the card information structure will be returned via this argument
  * @return

@@ -1,16 +1,5 @@
-# Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 """ IDF Test Applications """
 import hashlib
@@ -168,7 +157,7 @@ class Artifacts(object):
         self.gitlab_inst.download_artifact(job_id, artifact_files, self.dest_root_path)
 
     def _download_sdkconfig_file(self, base_path, job_id):  # type: (str, str) -> None
-        self.gitlab_inst.download_artifact(job_id, [os.path.join(os.path.dirname(base_path), 'sdkconfig')],
+        self.gitlab_inst.download_artifact(job_id, [os.path.join(base_path, 'sdkconfig')],
                                            self.dest_root_path)
 
     def download_artifacts(self):  # type: () -> Any
@@ -196,7 +185,7 @@ class Artifacts(object):
             self.gitlab_inst.download_artifact(job_id, artifact_files, self.dest_root_path)
 
             # download sdkconfig file
-            self.gitlab_inst.download_artifact(job_id, [os.path.join(os.path.dirname(base_path), 'sdkconfig')],
+            self.gitlab_inst.download_artifact(job_id, [os.path.join(base_path, 'sdkconfig')],
                                                self.dest_root_path)
         else:
             base_path = None
@@ -459,31 +448,24 @@ class Example(IDFApp):
             target = 'esp32'
         super(Example, self).__init__(app_path, config_name, target, case_group, artifacts_cls)
 
-    def _get_sdkconfig_paths(self):  # type: () -> List[str]
-        """
-        overrides the parent method to provide exact path of sdkconfig for example tests
-        """
-        return [os.path.join(self.binary_path, '..', 'sdkconfig')]
-
     def _try_get_binary_from_local_fs(self):  # type: () -> Optional[str]
         # build folder of example path
         path = os.path.join(self.idf_path, self.app_path, 'build')
         if os.path.exists(path):
             return path
 
+        # new style build dir
+        path = os.path.join(self.idf_path, self.app_path, f'build_{self.target}_{self.config_name}')
+        if os.path.exists(path):
+            return path
+
         # Search for CI build folders.
-        # Path format: $IDF_PATH/build_examples/app_path_with_underscores/config/target
-        # (see tools/ci/build_examples.sh)
-        # For example: $IDF_PATH/build_examples/examples_get-started_blink/default/esp32
-        app_path_underscored = self.app_path.replace(os.path.sep, '_')
-        example_path = os.path.join(self.idf_path, self.case_group.LOCAL_BUILD_DIR)
-        for dirpath in os.listdir(example_path):
-            if os.path.basename(dirpath) == app_path_underscored:
-                path = os.path.join(example_path, dirpath, self.config_name, self.target, 'build')
-                if os.path.exists(path):
-                    return path
-                else:
-                    return None
+        # Path format: $IDF_PATH/<app_dir>/build_<target>_<config>
+        build_dir = f'build_{self.target}_{self.config_name}'
+        example_path = os.path.join(self.idf_path, self.app_path, build_dir)
+        if os.path.exists(example_path):
+            return path
+
         return None
 
 

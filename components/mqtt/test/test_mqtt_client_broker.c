@@ -101,8 +101,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 bool mqtt_connect_disconnect(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
-            .uri = CONFIG_MQTT_TEST_BROKER_URI,
-            .disable_auto_reconnect = true,
+            .broker.address.uri = CONFIG_MQTT_TEST_BROKER_URI,
+            .network.disable_auto_reconnect = true,
     };
     s_event_group = xEventGroupCreate();
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
@@ -122,7 +122,7 @@ bool mqtt_connect_disconnect(void)
 bool mqtt_subscribe_publish(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
-            .uri = CONFIG_MQTT_TEST_BROKER_URI,
+            .broker.address.uri = CONFIG_MQTT_TEST_BROKER_URI,
     };
     char* topic = append_mac("topic");
     TEST_ASSERT_TRUE(NULL != topic);
@@ -152,16 +152,16 @@ bool mqtt_lwt_clean_disconnect(void)
     char* lwt = append_mac("lwt");
     TEST_ASSERT_TRUE(lwt);
     const esp_mqtt_client_config_t mqtt_cfg1 = {
-            .uri = CONFIG_MQTT_TEST_BROKER_URI,
-            .set_null_client_id = true,
-            .lwt_topic = lwt,
-            .lwt_msg = "lwt_msg"
+            .broker.address.uri = CONFIG_MQTT_TEST_BROKER_URI,
+            .credentials.set_null_client_id = true,
+            .session.last_will.topic = lwt,
+            .session.last_will.msg = "lwt_msg"
     };
     const esp_mqtt_client_config_t mqtt_cfg2 = {
-            .uri = CONFIG_MQTT_TEST_BROKER_URI,
-            .set_null_client_id = true,
-            .lwt_topic = lwt,
-            .lwt_msg = "lwt_msg"
+            .broker.address.uri = CONFIG_MQTT_TEST_BROKER_URI,
+            .credentials.set_null_client_id = true,
+            .session.last_will.topic = lwt,
+            .session.last_will.msg = "lwt_msg"
     };
     s_event_group = xEventGroupCreate();
 
@@ -201,8 +201,8 @@ bool mqtt_lwt_clean_disconnect(void)
 bool mqtt_subscribe_payload(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
-            .uri = CONFIG_MQTT_TEST_BROKER_URI,
-            .disable_auto_reconnect = true,
+            .broker.address.uri = CONFIG_MQTT_TEST_BROKER_URI,
+            .network.disable_auto_reconnect = true,
     };
     char* topic = append_mac("topic");
     TEST_ASSERT_TRUE(NULL != topic);

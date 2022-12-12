@@ -1,0 +1,113 @@
+'ccache error: Failed to create temporary file\n':
+    "HINT: On Windows, you should enable long path support in the installer, or disable ccache temporarily. See 'idf.py --help' or the documentation how to achieve this."
+
+"CMake Error at C:/Users/esp-idf/esp-idf/ (message): Directory specified in EXTRA_COMPONENT_DIRS doesn't exist: C:/Users/esp-idf/esp-idf/examples/common_components/component\n":
+    "HINT: The component with path specified in the EXTRA_COMPONENT_DIRS variable has been moved to IDF component manager (or has been removed).\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details."
+
+'CMake Error: The current CMakeCache.txt directory C:/Users/esp-idf/examples/get-started/hello_world/build is different than the directory /mnt/c/Users/esp-idf/examples/get-started/hello_world/build where CMakeCache.txt was created.\n':
+    "HINT: Run 'idf.py fullclean' and try the build again."
+
+"error: 'portTICK_RATE_MS' undeclared\n":
+    'HINT: You are maybe using pre FreeRTOS V8.0.0 APIs. The backward compatibility of such APIs is no longer enabled by default. Please turn on CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY explicitly to use such APIs.'
+
+"error: enumeration value 'HTTP_EVENT_REDIRECT' not handled in switch\n":
+    "HINT: The event handler, specified in the 'event_handler' element, of the 'esp_http_client_config_t' struct now needs to handle the new 'HTTP_EVENT_REDIRECT' event case."
+
+"error: implicit declaration of function 'portENTER_CRITICAL_NESTED'\n":
+    'HINT: The header file portmacro_deprecated.h has been removed. Users should refer the migration guide for alternative functions.'
+
+"error: implicit declaration of function 'bootloader_common_get_reset_reason'\n":
+    "HINT: Function 'bootloader_common_get_reset_reason()' has been removed. Please use the function 'esp_rom_get_reset_reason()' in the ROM component."
+
+"error: implicit declaration of function 'esp_base_mac_addr_get'\n":
+    'HINT: esp_mac.h header file is not included by esp_system.h anymore. It shall then be manually included with #include "esp_mac.h"'
+
+"error: implicit declaration of function 'esp_chip_info'\n":
+    'HINT: esp_chip_info.h header file is not included by esp_system.h anymore. It shall then be manually included with #include "esp_chip_info.h"'
+
+"error: implicit declaration of function 'esp_cpu_ccount_t'\n":
+    'HINT: Use esp_cpu_cycle_count_t defined in esp_cpu.h instead of esp_cpu_ccount_t.'
+
+"error: implicit declaration of function 'esp_cpu_get_ccount'\n":
+    'HINT: Use esp_cpu_get_cycle_count() defined in esp_cpu.h instead of esp_cpu_get_ccount.'
+
+"error: implicit declaration of function 'esp_cpu_set_ccount'\n":
+    'HINT: Use esp_cpu_set_cycle_count() defined in esp_cpu.h instead of esp_cpu_set_ccount.'
+
+"error: implicit declaration of function 'esp_efuse_get_chip_ver'\n":
+    "HINT: Function 'esp_efuse_get_chip_ver()' has been removed. Please use the function efuse_hal_get_major_chip_version()."
+
+"error: implicit declaration of function 'esp_fill_random'\n":
+    'HINT: esp_random.h header file is not included by esp_system.h anymore. It shall then be manually included with #include "esp_random.h"'
+
+"error: implicit declaration of function 'esp_spiram_get_chip_size'\n":
+    "HINT: Function 'esp_spiram_get_chip_size and esp_spiram_get_size' has been removed. Please use the function esp_psram_get_size()."
+
+"error: invalid use of incomplete typedef 'esp_tls_t'\n":
+    "HINT: The struct 'esp_tls_t' has now been made private - its elements can be only be accessed/modified through respective getter/setter functions. Please refer to the migration guide for more information."
+
+"error: unknown type name 'TaskSnapshot_t'\n":
+    'HINT: The header file task_snapshot.h is no longer included as part of freertos/task.h. Users need to include freertos/task_snapshot.h explicitly.'
+
+"Failed to resolve component 'component'\n":
+    "HINT: The component component could not be found. This could be because: component name was misspelled, the component was not added to the build, the component has been moved to the IDF component manager or has been removed and refactored into some other component.\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details about moved components.\nRefer to the build-system guide for more details about how components are found and included in the build."
+
+'fatal error: tmp/atca_mbedtls_wrap.h: No such file or directory\n':
+    "HINT: To use CONFIG_ESP_TLS_USE_SECURE_ELEMENT option, please install `esp-cryptoauthlib` using 'idf.py add-dependency espressif/esp-cryptoauthlib'"
+
+'fatal error: brownout.h: No such file or directory\n':
+    'HINT: The Brownout API (functions/types/macros prefixed with "esp_brownout") has been made into a private API. If users still require usage of the Brownout API (though this is not recommended), it can be included via  #include "esp_private/brownout.h".'
+
+'fatal error: compare_set.h: No such file or directory\n':
+    'HINT: compare_set.h was removed. Include and use the API function provided by esp_cpu.h instead.'
+
+'fatal error: eh_frame_parser.h: No such file or directory\n':
+    'HINT: The Backtrace Parser API (functions/types/macros prefixed with "eh_frame_parser") has been made into a private API. If users still require usage of the Backtrace Parser API (though this is not recommended), it can be included via  #include "esp_private/eh_frame_parser.h".'
+
+'fatal error: esp32/cache_err_int.h: No such file or directory\n':
+    'HINT: The Cache Error Interrupt API (functions/types/macros prefixed with "esp_cache_err") has been made into a private API. If users still require usage of the Cache Error Interrupt API (though this is not recommended), it can be included via  #include "esp_private/cache_err_int.h".'
+
+'fatal error: esp32/clk.h: No such file or directory\n':
+    'HINT: The ESP Clock API (functions/types/macros prefixed with "esp_clk") has been made into a private API. If users still require usage of the ESP Clock API (though this is not recommended), it can be included via  #include "esp_private/esp_clk.h".'
+
+'fatal error: esp_adc_cal.h: No such file or directory\n':
+    "HINT: ``esp_adc_cal`` component is no longer supported. New adc calibration driver is in ``esp_adc``. Legacy adc calibration driver has been moved into ``esp_adc`` component. To use legacy ``esp_adc_cal`` driver APIs, you should add ``esp_adc`` component to the list of component requirements in CMakeLists.txt. For more information run 'idf.py docs -sp migration-guides/release-5.x/peripherals.html'."
+
+'fatal error: esp_intr.h: No such file or directory\n':
+    'HINT: esp_intr.h was removed. Include esp_intr_alloc.h instead.'
+
+'fatal error: esp_panic.h: No such file or directory\n':
+    'HINT: esp_panic.h was removed. Include use functionalities provided in esp_debug_helpers.h instead.'
+
+'fatal error: esp_rom_tjpgd.h: No such file or directory\n':
+    "HINT: esp_rom_tjpgd.h was removed. Please use esp_jpeg component from IDF component manager instead.\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details."
+
+'fatal error: soc/cpu.h: No such file or directory\n':
+    'HINT: soc/cpu.h was removed. Include and use the API function provided by esp_cpu.h instead.'
+
+'fatal error: soc/spinlock.h: No such file or directory\n':
+    "HINT: spinlock.h must be included without the 'soc' part."
+
+'fatal error: soc_log.h: No such file or directory\n':
+    'HINT: soc_log.h was renamed and made private. Consider using the logging APIs provided under esp_log.h instead.'
+
+'fatal error: spiram.h: No such file or directory\n':
+    'HINT: spiram.h was removed. Include esp_psram.h instead. Make sure to also add esp_psram as a dependency in your CMakeLists.txt file.'
+
+'fatal error: trax.h: No such file or directory\n':
+    'HINT: The Trax API (functions/types/macros prefixed with "trax_") has been made into a private API. If users still require usage of the Trax API (though this is not recommended), it can be included via  #include "esp_private/trax.h".'
+
+"format 'format' expects argument of type 'unsigned int', but argument arg has type 'uint32_t' {aka 'int'}\n":
+    "HINT: The issue is better to resolve by replacing format specifiers to 'PRI'-family macros (include <inttypes.h> header file)."
+
+"ImportError: bad magic number in 'kconfiglib':\n":
+    "HINT: Run 'idf.py python-clean', and try again"
+
+'The CMAKE_CXX_COMPILER: xtensa-esp32s3-elf-g++ is not a full path and was not found in the PATH.\n':
+    "HINT: Try to reinstall the toolchain for the chip that you trying to use. \nFor more information run 'idf.py docs -sp get-started/#installation' and follow the instructions for your system"
+
+'The keyword signature for target_link_libraries has already been used\n':
+    'HINT: Projects using target_link_libraries with project_elf explicitly and custom CMake projects must specify PRIVATE, PUBLIC or INTERFACE arguments.'
+
+"warning: passing argument 1 of 'esp_secure_boot_read_key_digests' from incompatible pointer type\n":
+    'HINT: The parameter type of the function esp_secure_boot_read_key_digests() has been changed from ets_secure_boot_key_digests_t* to esp_secure_boot_key_digests_t*.'

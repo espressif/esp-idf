@@ -1,0 +1,4 @@
+idf_component_register(SRCS "test_app_main.c" "test_attr.c"
+                       INCLUDE_DIRS "."
+                       PRIV_REQUIRES test_utils esp_psram
+                       WHOLE_ARCHIVE)

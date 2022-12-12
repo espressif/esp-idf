@@ -46,7 +46,6 @@ entries:
     etharp:etharp_output_to_arp_index (noflash_text)
     etharp:etharp_output (noflash_text)
     ip4_addr:ip4_addr_isbroadcast_u32 (noflash_text)
-    ip4:ip4_route_src_hook (noflash_text)
     ip4:ip4_route_src (noflash_text)
     ip4:ip4_route (noflash_text)
     ip4:ip4_input (noflash_text)
@@ -62,6 +61,8 @@ entries:
     pbuf:pbuf_header_impl (noflash_text)
     pbuf:pbuf_header (noflash_text)
     pbuf:pbuf_free (noflash_text)
+    pbuf:pbuf_alloced_custom (noflash_text)
+    pbuf:pbuf_init_alloced_pbuf (noflash_text)
     udp:udp_input_local_match (noflash_text)
     udp:udp_input (noflash_text)
     udp:udp_send (noflash_text)
@@ -77,10 +78,7 @@ entries:
     sys_arch:sys_mbox_post (noflash_text)
     sys_arch:sys_mbox_trypost (noflash_text)
     sys_arch:sys_arch_mbox_fetch (noflash_text)
-    ethernetif:ethernet_low_level_output (noflash_text)
-    ethernetif:ethernetif_input (noflash_text)
-    wlanif:low_level_output (noflash_text)
-    wlanif:wlanif_input (noflash_text)
+    lwip_default_hooks:ip4_route_src_hook (noflash_text)
 
   if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
     * (extram_bss)

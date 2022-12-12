@@ -147,8 +147,6 @@
 
 #ifdef CONFIG_FATFS_API_ENCODING_UTF_8
 #define FF_LFN_UNICODE      2
-#elif defined(CONFIG_FATFS_API_ENCODING_UTF_16)
-#define FF_LFN_UNICODE      1
 #else /* CONFIG_FATFS_API_ENCODING_ANSI_OEM */
 #define FF_LFN_UNICODE      0
 #endif

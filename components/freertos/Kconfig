@@ -4,17 +4,24 @@ menu "FreeRTOS"
         # Upstream FreeRTOS configurations go here
 
         config FREERTOS_SMP
-            bool "Run the SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
-            depends on IDF_TARGET_ESP32
+            bool "Run the Amazon SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
             default  "n"
             help
-                This will cause the FreeRTOS component to compile with the SMP FreeRTOS kernel instead.
-                THIS FEATURE IS UNDER ACTIVE DEVELOPMENT, users use this at their own risk.
+                Amazon has released an SMP version of the FreeRTOS Kernel which can be found via the following link:
+                https://github.com/FreeRTOS/FreeRTOS-Kernel/tree/smp
+
+                IDF has added an experimental port of this SMP kernel located in
+                components/freertos/FreeRTOS-Kernel-SMP. Enabling this option will cause IDF to use the Amazon SMP
+                kernel. Note that THIS FEATURE IS UNDER ACTIVE DEVELOPMENT, users use this at their own risk.
+
+                Leaving this option disabled will mean the IDF FreeRTOS kernel is used instead, which is located in:
+                components/freertos/FreeRTOS-Kernel. Both kernel versions are SMP capable, but differ in
+                their implementation and features.
 
         config FREERTOS_UNICORE
             # Todo: Replace with CONFIG_NUM_CORES (IDF-4986)
             bool "Run FreeRTOS only on first core"
-            default "y" if IDF_TARGET_ESP32S2
+            default "y" if IDF_TARGET_ESP32S2 || IDF_TARGET_LINUX
             select ESP_SYSTEM_SINGLE_CORE_MODE
             help
                 This version of FreeRTOS normally takes control of all cores of the CPU. Select this if you only want
@@ -31,13 +38,12 @@ menu "FreeRTOS"
                 details).
 
         config FREERTOS_OPTIMIZED_SCHEDULER
-            # Todo: Not available in SMP FREERTOS (IDF-4986)
-            # Todo: Rename to CONFIG_FREERTOS_USE_PORT_OPTIMISED_TASK_SELECTION (IDF-4986)
+            # Todo: Not available in SMP FREERTOS (IDF-3733)
             bool "configUSE_PORT_OPTIMISED_TASK_SELECTION"
             depends on FREERTOS_UNICORE
             default y
             help
-                Enables port specific task selection method. This option can will speed up the search of ready tasks
+                Enables port specific task selection method. This option can speed up the search of ready tasks
                 when scheduling (see configUSE_PORT_OPTIMISED_TASK_SELECTION documentation for more details).
 
         choice FREERTOS_CHECK_STACKOVERFLOW
@@ -162,6 +168,7 @@ menu "FreeRTOS"
         config FREERTOS_TIMER_TASK_STACK_DEPTH
             int "configTIMER_TASK_STACK_DEPTH"
             range 1536 32768
+            default 2053 if IDF_TARGET_LINUX
             default 2048
             help
                 Set the timer task's stack size (see configTIMER_TASK_STACK_DEPTH documentation for more details).
@@ -183,6 +190,16 @@ menu "FreeRTOS"
 
                 Note: A value of 0 will disable queue registry functionality
 
+        config FREERTOS_TASK_NOTIFICATION_ARRAY_ENTRIES
+            int "configTASK_NOTIFICATION_ARRAY_ENTRIES"
+            range 1 32
+            default 1
+            help
+                Set the size of the task notification array of each task. When increasing this value, keep in
+                mind that this means additional memory for each and every task on the system.
+                However, task notifications in general are more light weight compared to alternatives
+                such as semaphores.
+
         config FREERTOS_USE_TRACE_FACILITY
             bool "configUSE_TRACE_FACILITY"
             default n
@@ -200,9 +217,9 @@ menu "FreeRTOS"
                 configUSE_STATS_FORMATTING_FUNCTIONS documentation for more details).
 
         config FREERTOS_VTASKLIST_INCLUDE_COREID
-            # Todo: Remove this once core affinity in stats is supported in SMP FreeRTOS (IDF-4986)
+            # Core affinity is supported in stats for Amazon FreeRTOS SMP by default
             bool "Enable display of xCoreID in vTaskList"
-            depends on FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
+            depends on !FREERTOS_SMP && FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
             default n
             help
                 If enabled, this will include an extra column when vTaskList is called to display the CoreID the task
@@ -286,7 +303,7 @@ menu "FreeRTOS"
 
         config FREERTOS_TLSP_DELETION_CALLBACKS
             bool "Enable thread local storage pointers deletion callbacks"
-            depends on FREERTOS_SMP && (FREERTOS_THREAD_LOCAL_STORAGE_POINTERS > 0)
+            depends on (FREERTOS_THREAD_LOCAL_STORAGE_POINTERS > 0)
             default y
             help
                 ESP-IDF provides users with the ability to free TLSP memory by registering TLSP deletion callbacks.
@@ -296,7 +313,6 @@ menu "FreeRTOS"
                 off to save space in the TCB memory.
 
         config FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
-            # Todo: This is incompatible with SMP FreeRTOS. See if this can be deprecated (IDF-4986)
             bool "Enable static task clean up hook"
             default n
             help
@@ -305,7 +321,9 @@ menu "FreeRTOS"
                 Note: Users will need to provide a ``void vPortCleanUpTCB ( void *pxTCB )`` callback
 
         config FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
-            # Todo: Not supported on SMP FreeRTOS (IDF-4986)
+            # This feature is innately supported in FreeRTOS SMP, and hence not available as a config option when
+            # FreeRTOS SMP is enabled.
+            depends on !FREERTOS_SMP
             bool "Check that mutex semaphore is given by owner task"
             default y
             help
@@ -348,7 +366,7 @@ menu "FreeRTOS"
         config FREERTOS_TICK_SUPPORT_SYSTIMER
             bool
             default y if !FREERTOS_TICK_SUPPORT_CORETIMER
-            # ESP32-S3, ESP32-C3 and ESP32-H2 can use Systimer for FreeRTOS SysTick
+            # ESP32-S3, ESP32-C3 and ESP32-H4 can use Systimer for FreeRTOS SysTick
             # ESP32S2 also has SYSTIMER but it can not be used for the FreeRTOS SysTick because:
             # - It has only one counter, which already in use esp_timer.
             #   A counter for SysTick should be stall in debug mode but work esp_timer.
@@ -450,20 +468,12 @@ menu "FreeRTOS"
                 If enabled, context of port*_CRITICAL calls (ISR or Non-ISR) would be checked to be in compliance with
                 Vanilla FreeRTOS. e.g Calling port*_CRITICAL from ISR context would cause assert failure
 
-        config FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
-            # Todo: Check if we still need this (IDF-4986)
-            bool "Halt when an SMP-untested function is called"
-            default y
-            help
-                Some functions in FreeRTOS have not been thoroughly tested yet when moving to the SMP implementation of
-                FreeRTOS. When this option is enabled, these functions will throw an ``assert()``.
-
         config FREERTOS_ENABLE_TASK_SNAPSHOT
             bool "Enable task snapshot functions"
             default y
             help
                 When enabled, the functions related to snapshots, such as vTaskGetSnapshot or uxTaskGetSnapshotAll, are
-                compiled and linked. Task snapshots are primarily used by GDB Stub and Core dump.
+                compiled and linked. Task snapshots are used by Task Watchdog (TWDT), GDB Stub and Core dump.
 
     endmenu # Port
 

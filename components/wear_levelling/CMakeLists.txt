@@ -7,4 +7,7 @@ idf_component_register(SRCS "Partition.cpp"
                             "wear_levelling.cpp"
                     INCLUDE_DIRS include
                     PRIV_INCLUDE_DIRS private_include
-                    REQUIRES spi_flash)
+                    REQUIRES esp_partition
+                    PRIV_REQUIRES spi_flash)
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

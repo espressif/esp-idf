@@ -1,4 +1,0 @@
--r ../tiny_test_fw/requirements.txt
-pexpect
-python-gitlab
-pygdbmi<=0.9.0.2

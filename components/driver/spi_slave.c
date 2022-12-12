@@ -26,7 +26,7 @@
 #include "sdkconfig.h"
 
 #include "driver/gpio.h"
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "driver/spi_slave.h"
 #include "hal/spi_slave_hal.h"
 
@@ -60,6 +60,7 @@ typedef struct {
     QueueHandle_t trans_queue;
     QueueHandle_t ret_queue;
     bool dma_enabled;
+    bool cs_iomux;
     uint32_t tx_dma_chan;
     uint32_t rx_dma_chan;
 #ifdef CONFIG_PM_ENABLE
@@ -97,7 +98,7 @@ static void SPI_SLAVE_ISR_ATTR freeze_cs(spi_slave_t *host)
 // This is used in test by internal gpio matrix connections
 static inline void SPI_SLAVE_ISR_ATTR restore_cs(spi_slave_t *host)
 {
-    if (bus_is_iomux(host)) {
+    if (host->cs_iomux) {
         gpio_iomux_in(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in);
     } else {
         esp_rom_gpio_connect_in_signal(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in, false);
@@ -124,6 +125,11 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     SPI_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM)==0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_SLAVE_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
 #endif
     SPI_CHECK(slave_config->spics_io_num < 0 || GPIO_IS_VALID_GPIO(slave_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
+
+    //Check post_trans_cb status when `SPI_SLAVE_NO_RETURN_RESULT` flag is set.
+    if(slave_config->flags & SPI_SLAVE_NO_RETURN_RESULT) {
+        SPI_CHECK(slave_config->post_trans_cb != NULL, "use feature flag 'SPI_SLAVE_NO_RETURN_RESULT' but no post_trans_cb function sets", ESP_ERR_INVALID_ARG);
+    }
 
     spi_chan_claimed=spicommon_periph_claim(host, "spi slave");
     SPI_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
@@ -153,6 +159,8 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     }
     if (slave_config->spics_io_num >= 0) {
         spicommon_cs_initialize(host, slave_config->spics_io_num, 0, !bus_is_iomux(spihost[host]));
+        // check and save where cs line really route through
+        spihost[host]->cs_iomux = (slave_config->spics_io_num == spi_periph_signal[host].spics0_iomux_pin) && bus_is_iomux(spihost[host]);
     }
 
     // The slave DMA suffers from unexpected transactions. Forbid reading if DMA is enabled by disabling the CS line.
@@ -183,10 +191,16 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
 
     //Create queues
     spihost[host]->trans_queue = xQueueCreate(slave_config->queue_size, sizeof(spi_slave_transaction_t *));
-    spihost[host]->ret_queue = xQueueCreate(slave_config->queue_size, sizeof(spi_slave_transaction_t *));
-    if (!spihost[host]->trans_queue || !spihost[host]->ret_queue) {
+    if (!spihost[host]->trans_queue) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
+    }
+    if(!(slave_config->flags & SPI_SLAVE_NO_RETURN_RESULT)) {
+        spihost[host]->ret_queue = xQueueCreate(slave_config->queue_size, sizeof(spi_slave_transaction_t *));
+        if (!spihost[host]->ret_queue) {
+            ret = ESP_ERR_NO_MEM;
+            goto cleanup;
+        }
     }
 
     int flags = bus_config->intr_flags | ESP_INTR_FLAG_INTRDISABLED;
@@ -272,6 +286,33 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     return ESP_OK;
 }
 
+/**
+ * @note
+ * This API is used to reset SPI Slave transaction queue. After calling this function:
+ * - The SPI Slave transaction queue will be reset.
+ *
+ * Therefore, this API shouldn't be called when the corresponding SPI Master is doing an SPI transaction.
+ *
+ * @note
+ * We don't actually need to enter a critical section here.
+ * SPI Slave ISR will only get triggered when its corresponding SPI Master's transaction is done.
+ * As we don't expect this function to be called when its corresponding SPI Master is doing an SPI transaction,
+ * so concurrent call to these registers won't happen
+ *
+ */
+esp_err_t SPI_SLAVE_ATTR spi_slave_queue_reset(spi_host_device_t host)
+{
+    SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
+
+    esp_intr_disable(spihost[host]->intr);
+    spi_ll_set_int_stat(spihost[host]->hal.hw);
+
+    spihost[host]->cur_trans = NULL;
+    xQueueReset(spihost[host]->trans_queue);
+
+    return ESP_OK;
+}
 
 esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait)
 {
@@ -298,6 +339,9 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_get_trans_result(spi_host_device_t host, spi_
     BaseType_t r;
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
+    //if SPI_SLAVE_NO_RETURN_RESULT is set, ret_queue will always be empty
+    SPI_CHECK(!(spihost[host]->cfg.flags & SPI_SLAVE_NO_RETURN_RESULT), "API not Supported!", ESP_ERR_NOT_SUPPORTED);
+
     r = xQueueReceive(spihost[host]->ret_queue, (void *)trans_desc, ticks_to_wait);
     if (!r) return ESP_ERR_TIMEOUT;
     return ESP_OK;
@@ -317,11 +361,13 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_transmit(spi_host_device_t host, spi_slave_tr
     return ESP_OK;
 }
 
+#if CONFIG_IDF_TARGET_ESP32
 static void SPI_SLAVE_ISR_ATTR spi_slave_restart_after_dmareset(void *arg)
 {
     spi_slave_t *host = (spi_slave_t *)arg;
     esp_intr_enable(host->intr);
 }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
 
 //This is run in interrupt context and apart from initialization and destruction, this is the only code
 //touching the host (=spihost[x]) variable. The rest of the data arrives in queues. That is why there are
@@ -344,18 +390,26 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
         spi_slave_hal_store_result(hal);
         host->cur_trans->trans_len = spi_slave_hal_get_rcv_bitlen(hal);
 
+#if CONFIG_IDF_TARGET_ESP32
+        //This workaround is only for esp32
         if (spi_slave_hal_dma_need_reset(hal)) {
-            //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+            //On ESP32, actual_tx_dma_chan and actual_rx_dma_chan are always same
             spicommon_dmaworkaround_req_reset(host->tx_dma_chan, spi_slave_restart_after_dmareset, host);
         }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
+
         if (host->cfg.post_trans_cb) host->cfg.post_trans_cb(host->cur_trans);
-        //Okay, transaction is done.
-        //Return transaction descriptor.
-        xQueueSendFromISR(host->ret_queue, &host->cur_trans, &do_yield);
+
+        if(!(host->cfg.flags & SPI_SLAVE_NO_RETURN_RESULT)) {
+            xQueueSendFromISR(host->ret_queue, &host->cur_trans, &do_yield);
+        }
         host->cur_trans = NULL;
     }
+
+#if CONFIG_IDF_TARGET_ESP32
+    //This workaround is only for esp32
     if (use_dma) {
-        //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+        //On ESP32, actual_tx_dma_chan and actual_rx_dma_chan are always same
         spicommon_dmaworkaround_idle(host->tx_dma_chan);
         if (spicommon_dmaworkaround_reset_in_progress()) {
             //We need to wait for the reset to complete. Disable int (will be re-enabled on reset callback) and exit isr.
@@ -364,6 +418,7 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
             return;
         }
     }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
 
     //Disable interrupt before checking to avoid concurrency issue.
     esp_intr_disable(host->intr);
@@ -383,10 +438,13 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
         hal->rx_buffer = trans->rx_buffer;
         hal->tx_buffer = trans->tx_buffer;
 
+#if CONFIG_IDF_TARGET_ESP32
         if (use_dma) {
-            //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
+            //This workaround is only for esp32
+            //On ESP32, actual_tx_dma_chan and actual_rx_dma_chan are always same
             spicommon_dmaworkaround_transfer_active(host->tx_dma_chan);
         }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
 
         spi_slave_hal_prepare_data(hal);
 

@@ -8,8 +8,8 @@
 #include "freertos/portmacro.h"
 #include "esp_freertos_hooks.h"
 #include "soc/soc_caps.h"
-#include "hal/cpu_hal.h"
 #include "esp_rom_sys.h"
+#include "esp_cpu.h"
 #include "esp_private/esp_clk.h"
 
 typedef enum {
@@ -31,69 +31,69 @@ static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
 
 static void IRAM_ATTR update_ccount(void)
 {
-    if (s_status[cpu_hal_get_core_id()].state == PERF_TIMER_ACTIVE) {
-        int64_t new_ccount = cpu_hal_get_cycle_count();
-        if (new_ccount > s_status[cpu_hal_get_core_id()].last_ccount) {
-            s_status[cpu_hal_get_core_id()].ccount += new_ccount - s_status[cpu_hal_get_core_id()].last_ccount;
+    if (s_status[esp_cpu_get_core_id()].state == PERF_TIMER_ACTIVE) {
+        int64_t new_ccount = esp_cpu_get_cycle_count();
+        if (new_ccount > s_status[esp_cpu_get_core_id()].last_ccount) {
+            s_status[esp_cpu_get_core_id()].ccount += new_ccount - s_status[esp_cpu_get_core_id()].last_ccount;
         } else {
             // CCOUNT has wrapped around
-            s_status[cpu_hal_get_core_id()].ccount += new_ccount + (UINT32_MAX - s_status[cpu_hal_get_core_id()].last_ccount);
+            s_status[esp_cpu_get_core_id()].ccount += new_ccount + (UINT32_MAX - s_status[esp_cpu_get_core_id()].last_ccount);
         }
-        s_status[cpu_hal_get_core_id()].last_ccount = new_ccount;
+        s_status[esp_cpu_get_core_id()].last_ccount = new_ccount;
     }
 }
 
 esp_err_t ccomp_timer_impl_init(void)
 {
-    s_status[cpu_hal_get_core_id()].state = PERF_TIMER_IDLE;
+    s_status[esp_cpu_get_core_id()].state = PERF_TIMER_IDLE;
     return ESP_OK;
 }
 
 esp_err_t ccomp_timer_impl_deinit(void)
 {
-    s_status[cpu_hal_get_core_id()].state = PERF_TIMER_UNINIT;
+    s_status[esp_cpu_get_core_id()].state = PERF_TIMER_UNINIT;
     return ESP_OK;
 }
 
 esp_err_t ccomp_timer_impl_start(void)
 {
-    s_status[cpu_hal_get_core_id()].state = PERF_TIMER_ACTIVE;
-    s_status[cpu_hal_get_core_id()].last_ccount = cpu_hal_get_cycle_count();
+    s_status[esp_cpu_get_core_id()].state = PERF_TIMER_ACTIVE;
+    s_status[esp_cpu_get_core_id()].last_ccount = esp_cpu_get_cycle_count();
     // Update elapsed cycles every OS tick
-    esp_register_freertos_tick_hook_for_cpu(update_ccount, cpu_hal_get_core_id());
+    esp_register_freertos_tick_hook_for_cpu(update_ccount, esp_cpu_get_core_id());
     return ESP_OK;
 }
 
 esp_err_t IRAM_ATTR ccomp_timer_impl_stop(void)
 {
-    esp_deregister_freertos_tick_hook_for_cpu(update_ccount, cpu_hal_get_core_id());
+    esp_deregister_freertos_tick_hook_for_cpu(update_ccount, esp_cpu_get_core_id());
     update_ccount();
-    s_status[cpu_hal_get_core_id()].state = PERF_TIMER_IDLE;
+    s_status[esp_cpu_get_core_id()].state = PERF_TIMER_IDLE;
     return ESP_OK;
 }
 
 int64_t IRAM_ATTR ccomp_timer_impl_get_time(void)
 {
     update_ccount();
-    int64_t cycles = s_status[cpu_hal_get_core_id()].ccount;
+    int64_t cycles = s_status[esp_cpu_get_core_id()].ccount;
     return (cycles * 1000000) / esp_clk_cpu_freq();
 }
 
 esp_err_t ccomp_timer_impl_reset(void)
 {
-    s_status[cpu_hal_get_core_id()].ccount = 0;
-    s_status[cpu_hal_get_core_id()].last_ccount = 0;
+    s_status[esp_cpu_get_core_id()].ccount = 0;
+    s_status[esp_cpu_get_core_id()].last_ccount = 0;
     return ESP_OK;
 }
 
 bool ccomp_timer_impl_is_init(void)
 {
-    return s_status[cpu_hal_get_core_id()].state != PERF_TIMER_UNINIT;
+    return s_status[esp_cpu_get_core_id()].state != PERF_TIMER_UNINIT;
 }
 
 bool IRAM_ATTR ccomp_timer_impl_is_active(void)
 {
-    return s_status[cpu_hal_get_core_id()].state == PERF_TIMER_ACTIVE;
+    return s_status[esp_cpu_get_core_id()].state == PERF_TIMER_ACTIVE;
 }
 
 void IRAM_ATTR ccomp_timer_impl_lock(void)

@@ -13,6 +13,7 @@
 #include "utils/includes.h"
 
 #include "utils/common.h"
+#include "utils/eloop.h"
 #include "common/ieee802_11_defs.h"
 #include "rsn_supp/wpa.h"
 #include "wpa_supplicant_i.h"
@@ -21,7 +22,6 @@
 #include "ieee802_11_common.h"
 
 #ifdef ESP_SUPPLICANT
-#include "esp_timer.h"
 #include "esp_mbo.h"
 
 extern struct wpa_supplicant g_wpa_supp;
@@ -522,18 +522,16 @@ wpa_bss_tmp_disallowed * wpas_get_disallowed_bss(struct wpa_supplicant *wpa_s,
 	return NULL;
 }
 
-static void wpa_bss_tmp_disallow_timeout(void *timeout_ctx)
+static void wpa_bss_tmp_disallow_timeout(void *timeout_ctx, void *user_ctx)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
-	struct wpa_bss_tmp_disallowed *tmp, *bss = timeout_ctx;
+	struct wpa_bss_tmp_disallowed *tmp, *bss = user_ctx;
 
 	/* Make sure the bss is not already freed */
 	dl_list_for_each(tmp, &wpa_s->bss_tmp_disallowed,
 			 struct wpa_bss_tmp_disallowed, list) {
 		if (bss == tmp) {
 			dl_list_del(&tmp->list);
-			esp_timer_stop(bss->blacklist_timer);
-			esp_timer_delete(bss->blacklist_timer);
 			os_free(tmp);
 			break;
 		}
@@ -547,7 +545,7 @@ void wpa_bss_tmp_disallow(struct wpa_supplicant *wpa_s, const u8 *bssid,
 
 	bss = wpas_get_disallowed_bss(wpa_s, bssid);
 	if (bss) {
-		esp_timer_stop(bss->blacklist_timer);
+		eloop_cancel_timeout(wpa_bss_tmp_disallow_timeout, wpa_s, bss);
 		goto finish;
 	}
 
@@ -558,22 +556,12 @@ void wpa_bss_tmp_disallow(struct wpa_supplicant *wpa_s, const u8 *bssid,
 		return;
 	}
 
-	esp_timer_create_args_t blacklist_timer_create = {
-		.callback = &wpa_bss_tmp_disallow_timeout,
-		.arg = bss,
-		.dispatch_method = ESP_TIMER_TASK,
-		.name = "blacklist_timeout_timer"
-	};
-	if (esp_timer_create(&blacklist_timer_create, &(bss->blacklist_timer)) != ESP_OK) {
-		os_free(bss);
-		return;
-	}
-
 	os_memcpy(bss->bssid, bssid, ETH_ALEN);
 	dl_list_add(&wpa_s->bss_tmp_disallowed, &bss->list);
 
 finish:
-	esp_timer_start_once(bss->blacklist_timer, (sec + 1) * 1e6);
+	eloop_register_timeout(sec, 0, wpa_bss_tmp_disallow_timeout,
+			       wpa_s, bss);
 }
 
 int wpa_is_bss_tmp_disallowed(struct wpa_supplicant *wpa_s,

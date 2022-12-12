@@ -12,7 +12,6 @@
 
 #include "drivers/driver.h"
 #include "common/ieee802_11_defs.h"
-#include "esp_timer.h"
 /*
  * struct rrm_data - Data used for managing RRM features
  */
@@ -47,8 +46,6 @@ struct wpa_bss_tmp_disallowed {
 	u8 bssid[ETH_ALEN];
 #ifndef ESP_SUPPLICANT
 	int rssi_threshold;
-#else
-	esp_timer_handle_t blacklist_timer;
 #endif
 };
 

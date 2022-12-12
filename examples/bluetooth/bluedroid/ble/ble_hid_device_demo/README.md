@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 |
-| ----------------- | ----- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-H4 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # ESP-IDF BLE HID Example
 
@@ -11,7 +11,7 @@ This example implement a BLE HID device profile related functions, in which the 
 4. Vendor devices
 
 Users can choose different reports according to their own application scenarios.
-BLE HID profile inheritance and USB HID class. 
+BLE HID profile inheritance and USB HID class.
 
 ## How to Use Example
 
@@ -23,7 +23,7 @@ idf.py set-target <chip_name>
 
 ### Hardware Required
 
-* A development board with ESP32/ESP32-C3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with ESP32/ESP32-C3/ESP32-H4/ESP32-C2/ESP32-S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for Power supply and programming
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
@@ -31,7 +31,7 @@ See [Development Boards](https://www.espressif.com/en/products/devkits) for more
 ### Configure the Project
 
 * `ble_hidd_demo_main.c`
-This file is the demo to show how to used the HID(you can used it to connected to the smart phone act as the consumer device then can used the button to 
+This file is the demo to show how to used the HID(you can used it to connected to the smart phone act as the consumer device then can used the button to
 volume++ or volume-- etc., or connected to the Windows 10 PC act as a keyboard or mouse)
 
 * `hidd_le_prf_int.h`
@@ -45,8 +45,8 @@ When you used the HID profile, you just need to added the esp_hidd_prf_api.h inc
 These file define the HID spec related definitions
 
 * `hid_device_le_prf.c`
-This file is the HID profile definition file, it include the main function of the HID profile. 
-It mainly includes how to create HID service. If you send and receive HID data and convert the data to keyboard keys, 
+This file is the HID profile definition file, it include the main function of the HID profile.
+It mainly includes how to create HID service. If you send and receive HID data and convert the data to keyboard keys,
 the mouse and consumer values are forwarded to the application.
 
 ### Build and Flash

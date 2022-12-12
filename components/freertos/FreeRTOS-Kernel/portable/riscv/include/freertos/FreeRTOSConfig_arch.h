@@ -17,7 +17,11 @@
 
 // ------------------ Scheduler Related --------------------
 
+#ifdef CONFIG_FREERTOS_OPTIMIZED_SCHEDULER
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION             1
+#else
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION             0
+#endif
 #define configMAX_API_CALL_INTERRUPT_PRIORITY               0
 
 /* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------

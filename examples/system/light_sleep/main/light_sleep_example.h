@@ -18,6 +18,10 @@ esp_err_t example_register_timer_wakeup(void);
 
 esp_err_t example_register_uart_wakeup(void);
 
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+void example_register_touch_wakeup(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

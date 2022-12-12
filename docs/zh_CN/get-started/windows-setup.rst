@@ -9,7 +9,7 @@ Windows 平台工具链的标准设置
 
 ESP-IDF 需要安装一些必备工具，才能围绕 {IDF_TARGET_NAME} 构建固件，包括 Python、Git、交叉编译器、CMake 和 Ninja 编译工具等。
 
-在本入门指南中，我们通过 **命令提示符** 进行有关操作。不过，您在安装 ESP-IDF 后还可以使用 :doc:`Eclipse <eclipse-setup>` 或其他支持 CMake 的图形化工具 IDE。
+在本入门指南中，我们通过 **命令提示符** 进行有关操作。不过，您在安装 ESP-IDF 后还可以使用 `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README_CN.md>`_ 或其他支持 CMake 的图形化工具 IDE。
 
 .. note::
     限定条件：
@@ -119,13 +119,19 @@ ESP-IDF 工具安装器可在“开始”菜单中，创建一个打开 ESP-IDF 
 
 想要自定义安装流程的高阶用户可参照：
 
+* :doc:`windows-setup-update`
+* :doc:`establish-serial-connection`
+* `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README_CN.md>`_
+* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
+* :doc:`../api-guides/tools/idf-monitor`
+
 .. toctree::
+    :hidden:
     :maxdepth: 1
 
     windows-setup-update
     establish-serial-connection
-    eclipse-setup
-    vscode-setup
+    flashing-troubleshooting
     ../api-guides/tools/idf-monitor
 
 .. _CMake: https://cmake.org/download/

@@ -1,28 +1,18 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "catch.hpp"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_partition.h"
 #include "spi_flash_emulation.h"
 #include <functional>
 
-using namespace std;
-
 template <typename Tit>
 bool range_empty_n(Tit it_begin, size_t n)
 {
-    return all_of(it_begin, it_begin + n, bind(equal_to<uint32_t>(), placeholders::_1, 0xffffffff));
+    return std::all_of(it_begin, it_begin + n, bind(std::equal_to<uint32_t>(), std::placeholders::_1, 0xffffffff));
 }
 
 struct FlashEmuFixture {

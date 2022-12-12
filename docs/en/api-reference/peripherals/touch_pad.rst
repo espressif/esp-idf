@@ -9,14 +9,6 @@ Introduction
 
 A touch sensor system is built on a substrate which carries electrodes and relevant connections under a protective flat surface. When a user touches the surface, the capacitance variation is used to evaluate if the touch was valid.
 
-.. only:: SOC_TOUCH_VERSION_1
-
-    Touch sensor on {IDF_TARGET_NAME} can support up to 10 capacitive touch pads / GPIOs.
-
-.. only:: SOC_TOUCH_VERSION_2
-
-    Touch sensor on {IDF_TARGET_NAME} can support up to 14 capacitive touch pads / GPIOs.
-
 The sensing pads can be arranged in different combinations (e.g., matrix, slider), so that a larger area or more points can be detected. The touch pad sensing process is under the control of a hardware-implemented finite-state machine (FSM) which is initiated by software or a dedicated hardware timer.
 
 For design, operation, and control registers of a touch sensor, see *{IDF_TARGET_NAME} Technical Reference Manual* > *On-Chip Sensors and Analog Signal Processing* [`PDF <{IDF_TARGET_TRM_EN_URL}#sensor>`__].
@@ -43,7 +35,6 @@ Description of API is broken down into groups of functions to provide a quick ov
 
 For detailed description of a particular function, please go to Section :ref:`touch_pad-api-reference`. Practical implementation of this API is covered in Section :ref:`Application Examples <touch_pad-api-examples>`.
 
-
 Initialization
 ^^^^^^^^^^^^^^
 
@@ -54,7 +45,79 @@ If the driver is not required anymore, deinitialize it by calling :cpp:func:`tou
 Configuration
 ^^^^^^^^^^^^^
 
-Enabling the touch sensor functionality for a particular GPIO is done with :cpp:func:`touch_pad_config`.
+.. only:: esp32
+
+    Enabling the touch sensor functionality for a particular GPIO is done with :cpp:func:`touch_pad_config()`. The following 10 capacitive touch pads are supported for {IDF_TARGET_NAME}.
+
+    .. list-table::
+        :align: center
+        :widths: 50 50
+        :header-rows: 1
+
+        * - Touch Pad
+          - GPIO Pin
+        * - T0
+          - GPIO4
+        * - T1
+          - GPIO0
+        * - T2
+          - GPIO2
+        * - T3
+          - MTDO
+        * - T4
+          - MTCK
+        * - T5
+          - MTDI
+        * - T6
+          - MTMS
+        * - T7
+          - GPIO27
+        * - T8
+          - 32K_XN
+        * - T9
+          - 32K_XP
+
+.. only:: esp32s2 or esp32s3
+
+    Enabling the touch sensor functionality for a particular GPIO is done with :cpp:func:`touch_pad_config()`. The following 14 capacitive touch pads are supported for {IDF_TARGET_NAME}.
+
+    .. list-table::
+        :align: center
+        :widths: 50 50
+        :header-rows: 1
+
+        * - Touch Pad
+          - GPIO Pin
+        * - T0
+          - Internal channel, not connect to a GPIO
+        * - T1
+          - GPIO1
+        * - T2
+          - GPIO2
+        * - T3
+          - GPIO3
+        * - T4
+          - GPIO4
+        * - T5
+          - GPIO5
+        * - T6
+          - GPIO6
+        * - T7
+          - GPIO7
+        * - T8
+          - GPIO8
+        * - T9
+          - GPIO9
+        * - T10
+          - GPIO10
+        * - T11
+          - GPIO11
+        * - T12
+          - GPIO12
+        * - T13
+          - GPIO13
+        * - T14
+          - GPIO14    
 
 Use the function :cpp:func:`touch_pad_set_fsm_mode` to select if touch pad measurement (operated by FSM) should be started automatically by a hardware timer, or by software. If software mode is selected, use :cpp:func:`touch_pad_sw_start` to start the FSM.
 
@@ -84,12 +147,37 @@ Touch State Measurements
 
 For the demonstration of how to read the touch pad data, check the application example :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`.
 
+Method of Measurements
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. only:: SOC_TOUCH_VERSION_1
+
+    The touch sensor will count the number of charge/discharge cycles over a fixed period of time (specified by :cpp:func:`touch_pad_set_measurement_clock_cycles`). The count result is the raw data that read from :cpp:func:`touch_pad_read_raw_data`. After finishing one measurement, the touch sensor will sleep until the next measurement start, this interval between two measurements can be set by :cpp:func:`touch_pad_set_measurement_interval`.
+
+    .. note::
+
+        If the specified clock cycles for measurement is too samll, the result may be inaccurate, but increasing clock cycles will increase the power consumption as well. Additionally, the response of the touch sensor will slow down if the total time of the inverval and measurement is too long.
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    The touch sensor will record the period of time (i.e. the number of clock cycles) over a fixed charge/discharge cycles (specified by :cpp:func:`touch_pad_set_charge_discharge_times`). The count result is the raw data that read from :cpp:func:`touch_pad_read_raw_data`. After finishing one measurement, the touch sensor will sleep until the next measurement start, this interval between two measurements can be set by :cpp:func:`touch_pad_set_measurement_interval`.
+
+    .. note::
+
+        If the specified charge and discharge cycles for measurement is too samll, the result may be inaccurate, but increasing charge and discharge cycles will increase the power consumption as well. Additionally, the response of the touch sensor will slow down if the total time of the inverval and measurement is too long.
+
 Optimization of Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A touch sensor has several configurable parameters to match the characteristics of a particular touch pad design. For instance, to sense smaller capacity changes, it is possible to narrow down the reference voltage range within which the touch pads are charged / discharged. The high and low reference voltages are set using the function :cpp:func:`touch_pad_set_voltage`.
 
-Besides the ability to discern smaller capacity changes, a positive side effect is reduction of power consumption for low power applications. A likely negative effect is an increase in measurement noise. If the dynamic range of obtained readings is still satisfactory, then further reduction of power consumption might be done by reducing the measurement time with :cpp:func:`touch_pad_set_meas_time`.
+.. only:: SOC_TOUCH_VERSION_1
+
+    Besides the ability to discern smaller capacity changes, a positive side effect is reduction of power consumption for low power applications. A likely negative effect is an increase in measurement noise. If the dynamic range of obtained readings is still satisfactory, then further reduction of power consumption might be done by reducing the measurement time with :cpp:func:`touch_pad_set_measurement_clock_cycles`.
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    Besides the ability to discern smaller capacity changes, a positive side effect is reduction of power consumption for low power applications. A likely negative effect is an increase in measurement noise. If the dynamic range of obtained readings is still satisfactory, then further reduction of power consumption might be done by reducing the measurement time with :cpp:func:`touch_pad_set_charge_discharge_times`.
 
 The following list summarizes available measurement parameters and corresponding 'set' functions:
 
@@ -98,18 +186,37 @@ The following list summarizes available measurement parameters and corresponding
     * voltage range: :cpp:func:`touch_pad_set_voltage`
     * speed (slope): :cpp:func:`touch_pad_set_cnt_mode`
 
-* Measurement time: :cpp:func:`touch_pad_set_meas_time`
+.. only:: SOC_TOUCH_VERSION_1
 
-Relationship between the voltage range (high / low reference voltages), speed (slope), and measurement time is shown in the figure below.
+    * Clock cycles of one measurement: :cpp:func:`touch_pad_set_measurement_clock_cycles`
 
-.. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
-    :align: center
-    :alt: Touch Pad - relationship between measurement parameters
-    :figclass: align-center
+.. only:: SOC_TOUCH_VERSION_2
 
-    Touch pad - relationship between measurement parameters
+    * Charge and discharge times of one measurement: :cpp:func:`touch_pad_set_charge_discharge_times`
 
-The last chart *Output* represents the touch sensor reading, i.e., the count of pulses collected within the measurement time.
+Relationship between the voltage range (high/low reference voltages), speed (slope), and measurement time is shown in the figure below.
+
+.. only:: SOC_TOUCH_VERSION_1
+
+    .. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
+        :align: center
+        :alt: Touch Pad - relationship between measurement parameters
+        :figclass: align-center
+
+        Touch pad - relationship between measurement parameters
+
+    The last chart *Output* represents the touch sensor reading, i.e., the count of pulses collected within the measurement time.
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    .. figure:: ../../../_static/touch_pad-measurement-parameters-version2.png
+        :align: center
+        :alt: Touch Pad - relationship between measurement parameters
+        :figclass: align-center
+
+        Touch pad - relationship between measurement parameters
+
+    The last chart *Output* represents the touch sensor reading, i.e., the time taken to accumulate the fixed number of cycles.
 
 All functions are provided in pairs to *set* a specific parameter and to *get* the current parameter's value, e.g., :cpp:func:`touch_pad_set_voltage` and :cpp:func:`touch_pad_get_voltage`.
 

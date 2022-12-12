@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,7 +47,7 @@ extern "C" {
 #define MHZ (1000000)
 
 #define RTC_SLOW_CLK_X32K_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
-#define RTC_SLOW_CLK_RC32K_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
+#define RTC_SLOW_CLK_8MD256_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
 #define RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
 
 #define OTHER_BLOCKS_POWERUP        1
@@ -55,50 +55,32 @@ extern "C" {
 
 /* Approximate mapping of voltages to RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_SLP,
  * RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DIG_DBIAS_SLP values.
- * Valid if RTC_CNTL_DBG_ATTEN is 0.
  */
-#define RTC_CNTL_DBIAS_SLP          0 //sleep dig_dbias & rtc_dbias
-#define RTC_CNTL_DBIAS_1V00         0
-#define RTC_CNTL_DBIAS_1V05         4
-#define RTC_CNTL_DBIAS_1V10         5
-#define RTC_CNTL_DBIAS_1V15         6
-#define RTC_CNTL_DBIAS_1V20         7
-#define RTC_CNTL_DBIAS_DEFAULT      8
-/* The value of 1V00 can be adjusted between 0~3*/
+#define RTC_CNTL_DBIAS_SLP  5 //sleep dig_dbias & rtc_dbias
+#define RTC_CNTL_DBIAS_0V90 13 //digital voltage
+#define RTC_CNTL_DBIAS_0V95 16
+#define RTC_CNTL_DBIAS_1V00 18
+#define RTC_CNTL_DBIAS_1V05 20
+#define RTC_CNTL_DBIAS_1V10 23
+#define RTC_CNTL_DBIAS_1V15 25
+#define RTC_CNTL_DBIAS_1V20 28
+#define RTC_CNTL_DBIAS_1V25 30
+#define RTC_CNTL_DBIAS_1V30 31 //voltage is about 1.34v in fact
 
-
-/* dcdc mode
+/* Delays for various clock sources to be enabled/switched.
+ * All values are in microseconds.
  */
-#define RTC_CNTL_DCDC_TRX_MODE  0b100
-#define RTC_CNTL_DCDC_LSLP_MODE 0b110
-#define RTC_CNTL_DCDC_DSLP_MODE 0b101
-#define RTC_CNTL_DCDC_FREQ_DEFAULT 3
+#define SOC_DELAY_RTC_FAST_CLK_SWITCH       3
+#define SOC_DELAY_RTC_SLOW_CLK_SWITCH       300
+#define SOC_DELAY_RC_FAST_ENABLE            50
+#define SOC_DELAY_RC_FAST_DIGI_SWITCH       5
 
-#define DCDC_SLP_TRX_MODE 0
-#define DCDC_SLP_LSLP_MODE 1
-#define DCDC_SLP_DSLP_MODE 2
-
-#define RTC_CNTL_DIG_DBIAS_0V85  0
-#define RTC_CNTL_DIG_DBIAS_0V90  1
-#define RTC_CNTL_DIG_DBIAS_0V95  2
-#define RTC_CNTL_DIG_DBIAS_1V00  3
-#define RTC_CNTL_DIG_DBIAS_1V05  4
-#define RTC_CNTL_DIG_DBIAS_1V10  5
-#define RTC_CNTL_DIG_DBIAS_1V15  6
-#define RTC_CNTL_DIG_DBIAS_1V20  7
-
-#define DELAY_FAST_CLK_SWITCH           3
-#define DELAY_SLOW_CLK_SWITCH           300
-#define DELAY_8M_ENABLE                 50
-
-/* Number of 8M/256 clock cycles to use for XTAL frequency estimation.
- * 10 cycles will take approximately 300 microseconds.
+/* Core voltage:
+ * Currently, ESP32C3 never adjust its wake voltage in runtime
+ * Only sets dig/rtc voltage dbias at startup time
  */
-#define XTAL_FREQ_EST_CYCLES            10
-
-#define DIG_DBIAS_80M   RTC_CNTL_DBIAS_1V20
-#define DIG_DBIAS_160M  RTC_CNTL_DBIAS_1V20
-
+#define DIG_DBIAS_80M       RTC_CNTL_DBIAS_1V20
+#define DIG_DBIAS_160M      RTC_CNTL_DBIAS_1V20
 #define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
 #define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
 
@@ -107,10 +89,8 @@ extern "C" {
 #define RTC_CNTL_CK8M_WAIT_DEFAULT  20
 #define RTC_CK8M_ENABLE_WAIT_DEFAULT 5
 
-#define RTC_CNTL_CK8M_DFREQ_DEFAULT  600
-#define RTC_CNTL_SCK_DCAP_DEFAULT    128
-#define RTC_CNTL_RC32K_DFREQ_DEFAULT 707
-
+#define RTC_CNTL_CK8M_DFREQ_DEFAULT 100
+#define RTC_CNTL_SCK_DCAP_DEFAULT   255
 
 /* Various delays to be programmed into power control state machines */
 #define RTC_CNTL_XTL_BUF_WAIT_SLP_US            (250)
@@ -119,19 +99,31 @@ extern "C" {
 #define RTC_CNTL_WAKEUP_DELAY_CYCLES            (5)
 #define RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES    (1)
 #define RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES       (1)
+#define RTC_CNTL_MIN_SLP_VAL_MIN                (2)
 
 /*
 set sleep_init default param
 */
-#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  3
+#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  5
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP  0
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
 #define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
 #define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
+#define RTC_CNTL_BIASSLP_SLEEP_ON  0
 #define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
 #define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
+#define RTC_CNTL_PD_CUR_SLEEP_ON  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 #define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
+
+/*
+The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
+storing in efuse (based on ATE 5k ECO3 chips)
+*/
+#define K_RTC_MID_MUL10000 215
+#define K_DIG_MID_MUL10000 213
+#define V_RTC_MID_MUL10000  10800
+#define V_DIG_MID_MUL10000  10860
 
 /**
  * @brief Possible main XTAL frequency values.
@@ -163,8 +155,9 @@ typedef struct rtc_cpu_freq_config_s {
  */
 typedef enum {
     RTC_CAL_RTC_MUX = 0,       //!< Currently selected RTC SLOW_CLK
-    RTC_CAL_RC32K = 1,        //!< Internal 32 kHz RC oscillator
-    RTC_CAL_32K_XTAL = 2       //!< External 32 kHz XTAL
+    RTC_CAL_8MD256 = 1,        //!< Internal 8 MHz RC oscillator, divided by 256
+    RTC_CAL_32K_XTAL = 2,      //!< External 32 kHz XTAL
+    RTC_CAL_INTERNAL_OSC = 3   //!< Internal 150 kHz oscillator
 } rtc_cal_sel_t;
 
 /**
@@ -173,51 +166,26 @@ typedef enum {
 typedef struct {
     rtc_xtal_freq_t xtal_freq : 8;             //!< Main XTAL frequency
     uint32_t cpu_freq_mhz : 10;                //!< CPU frequency to set, in MHz
-    soc_rtc_fast_clk_src_t fast_clk_src : 1;   //!< RTC_FAST_CLK clock source to choose
+    soc_rtc_fast_clk_src_t fast_clk_src : 2;   //!< RTC_FAST_CLK clock source to choose
     soc_rtc_slow_clk_src_t slow_clk_src : 2;   //!< RTC_SLOW_CLK clock source to choose
     uint32_t clk_rtc_clk_div : 8;
     uint32_t clk_8m_clk_div : 3;               //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
     uint32_t slow_clk_dcap : 8;                //!< RTC 150k clock adjustment parameter (higher value leads to lower frequency)
-    uint32_t clk_8m_dfreq : 10;                //!< RTC 8m clock adjustment parameter (higher value leads to higher frequency)
-    uint32_t root_clk_slt : 2;                 //!< Select clock root source for esp32h2 (default 0: xtal_32M)
+    uint32_t clk_8m_dfreq : 8;                 //!< RTC 8m clock adjustment parameter (higher value leads to higher frequency)
 } rtc_clk_config_t;
 
 /**
  * Default initializer for rtc_clk_config_t
  */
 #define RTC_CLK_CONFIG_DEFAULT() { \
-    .xtal_freq = RTC_XTAL_FREQ_32M, \
-    .cpu_freq_mhz = 32, \
+    .xtal_freq = RTC_XTAL_FREQ_40M, \
+    .cpu_freq_mhz = 80, \
     .fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST, \
     .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, \
-    .clk_rtc_clk_div = 1, \
-    .clk_8m_clk_div = 1, \
+    .clk_rtc_clk_div = 0, \
+    .clk_8m_clk_div = 0, \
     .slow_clk_dcap = RTC_CNTL_SCK_DCAP_DEFAULT, \
     .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \
-    .root_clk_slt = 0, \
-}
-
-typedef struct {
-    uint32_t dac : 6;
-    uint32_t dres : 3;
-    uint32_t dgm : 3;
-    uint32_t dbuf: 1;
-} x32k_config_t;
-
-
-#define X32K_CONFIG_DEFAULT() { \
-    .dac = 3, \
-    .dres = 3, \
-    .dgm = 3, \
-    .dbuf = 1, \
-}
-
-typedef struct {
-    uint32_t dfreq : 10;
-} rc32k_config_t;
-
-#define RC32K_CONFIG_DEFAULT() {\
-    .dfreq = RTC_CNTL_RC32K_DFREQ_DEFAULT,\
 }
 
 typedef struct {
@@ -307,12 +275,6 @@ bool rtc_clk_32k_enabled(void);
 void rtc_clk_32k_bootstrap(uint32_t cycle);
 
 /**
- * @brief Enable or disable 32 kHz internal rc oscillator
- * @param en  true to enable, false to disable
- */
-void rtc_clk_rc32k_enable(bool enable);
-
-/**
  * @brief Enable or disable 8 MHz internal oscillator
  *
  * Output from 8 MHz internal oscillator is passed into a configurable
@@ -344,9 +306,9 @@ bool rtc_clk_8md256_enabled(void);
 
 /**
  * @brief Select source for RTC_SLOW_CLK
- * @param slow_freq clock source (one of soc_rtc_slow_clk_src_t values)
+ * @param clk_src clock source (one of soc_rtc_slow_clk_src_t values)
  */
-void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t slow_freq);
+void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src);
 
 /**
  * @brief Get the RTC_SLOW_CLK source
@@ -359,7 +321,7 @@ soc_rtc_slow_clk_src_t rtc_clk_slow_src_get(void);
  *
  * - if SOC_RTC_SLOW_CLK_SRC_RC_SLOW is selected, returns ~150000
  * - if SOC_RTC_SLOW_CLK_SRC_XTAL32K is selected, returns 32768
- * - if SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 is selected, returns ~33000
+ * - if SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 is selected, returns ~68000
  *
  * rtc_clk_cal function can be used to get more precise value by comparing
  * RTC_SLOW_CLK frequency to the frequency of main XTAL.
@@ -370,9 +332,9 @@ uint32_t rtc_clk_slow_freq_get_hz(void);
 
 /**
  * @brief Select source for RTC_FAST_CLK
- * @param fast_freq clock source (one of soc_rtc_fast_clk_src_t values)
+ * @param clk_src clock source (one of soc_rtc_fast_clk_src_t values)
  */
-void rtc_clk_fast_src_set(soc_rtc_fast_clk_src_t fast_freq);
+void rtc_clk_fast_src_set(soc_rtc_fast_clk_src_t clk_src);
 
 /**
  * @brief Get the RTC_FAST_CLK source
@@ -458,15 +420,6 @@ void rtc_clk_apb_freq_update(uint32_t apb_freq);
  * @return The APB frequency value as last set via rtc_clk_apb_freq_update(), in Hz.
  */
 uint32_t rtc_clk_apb_freq_get(void);
-
-void rtc_clk_cpu_freq_set(uint32_t source, uint32_t div);
-
-/**
- * @brief Get the current stored AHB frequency.
- * @return The AHB frequency value as last set via rtc_clk_ahb_freq_set(), in Hz.
- */
-uint32_t rtc_clk_ahb_freq_get(void);
-
 
 uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
 
@@ -607,7 +560,7 @@ typedef struct {
     uint32_t rtc_fastmem_pd_en : 1;     //!< power down RTC fast memory
     uint32_t rtc_slowmem_pd_en : 1;     //!< power down RTC slow memory
     uint32_t rtc_peri_pd_en : 1;        //!< power down RTC peripherals
-    uint32_t dig_ret_pd_en : 1;               //!< power down dig_ret
+    uint32_t wifi_pd_en : 1;            //!< power down WiFi
     uint32_t bt_pd_en : 1;              //!< power down BT
     uint32_t cpu_pd_en : 1;             //!< power down CPU, but not restart when lightsleep.
     uint32_t int_8m_pd_en : 1;          //!< Power down Internal 8M oscillator
@@ -618,7 +571,9 @@ typedef struct {
     uint32_t dig_dbias_slp : 5;         //!< set bias for digital domain, in sleep mode
     uint32_t rtc_dbias_wak : 5;         //!< set bias for RTC domain, in active mode
     uint32_t rtc_dbias_slp : 5;         //!< set bias for RTC domain, in sleep mode
+    uint32_t dbg_atten_monitor : 4;     //!< voltage parameter, in monitor mode
     uint32_t bias_sleep_monitor : 1;    //!< circuit control parameter, in monitor mode
+    uint32_t dbg_atten_slp : 4;         //!< voltage parameter, in sleep mode
     uint32_t bias_sleep_slp : 1;        //!< circuit control parameter, in sleep mode
     uint32_t pd_cur_monitor : 1;        //!< circuit control parameter, in monitor mode
     uint32_t pd_cur_slp : 1;            //!< circuit control parameter, in sleep mode
@@ -634,7 +589,7 @@ typedef struct {
 #define RTC_SLEEP_PD_RTC_FAST_MEM       BIT(3)  //!< Power down RTC FAST memory
 #define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)  //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
-#define RTC_SLEEP_PD_DIG_RET            BIT(6)  //!< Power down WIFI
+#define RTC_SLEEP_PD_WIFI               BIT(6)  //!< Power down WIFI
 #define RTC_SLEEP_PD_BT                 BIT(7)  //!< Power down BT
 #define RTC_SLEEP_PD_CPU                BIT(8)  //!< Power down CPU when in lightsleep, but not restart
 #define RTC_SLEEP_PD_DIG_PERIPH         BIT(9)  //!< Power down DIG peripherals
@@ -772,11 +727,11 @@ typedef struct {
     uint32_t pll_wait : 8;          //!< Number of rtc_fast_clk cycles to wait for PLL to be ready
     uint32_t clkctl_init : 1;       //!< Perform clock control related initialization
     uint32_t pwrctl_init : 1;       //!< Perform power control related initialization
+    uint32_t rtc_dboost_fpd : 1;    //!< Force power down RTC_DBOOST
     uint32_t xtal_fpu : 1;
     uint32_t bbpll_fpu : 1;
     uint32_t cpu_waiti_clk_gate : 1;
     uint32_t cali_ocode : 1;        //!< Calibrate Ocode to make bangap voltage more precise.
-    uint32_t pmu_ctl : 1;
 } rtc_config_t;
 
 /**
@@ -791,93 +746,17 @@ typedef struct {
     .pll_wait  = RTC_CNTL_PLL_BUF_WAIT_DEFAULT, \
     .clkctl_init = 1, \
     .pwrctl_init = 1, \
+    .rtc_dboost_fpd = 1, \
     .xtal_fpu = 0, \
     .bbpll_fpu = 0, \
     .cpu_waiti_clk_gate = 1, \
-    .cali_ocode = 0, \
-    .pmu_ctl = 1\
-}
-typedef struct {
-    /* data */
-    uint32_t or_en_cont_cal : 1;                //!< default:0  rtc_init:0  pvt can be enable by either this register or digital -- if_en_cont_cal
-    uint32_t enx_rtc_dreg : 1;                  //!< default:1  rtc_init:1  use i2c registers to configure rtc regulator voltage level instead of pvt result --  int_dreg
-    uint32_t enx_dig_dreg : 1;                  //!< default:1  rtc_init:1  use i2c registers to configure dig regulator voltage level instead of pvt result -- int_dreg
-    uint32_t en_i2c_rtc_dreg : 1;               //!< default:1  rtc_init:0  1: i2c_rtc_dreg; 0: if_rtc_dreg
-    uint32_t en_i2c_dig_dreg : 1;               //!< default:1  rtc_init:0  1: i2c_dig_dreg; 0: if_dig_dreg
-    uint32_t en_i2c_rtc_dreg_slp : 1;           //!< default:1  rtc_init:0  1: i2c_rtc_dreg_slp; 0: if_rtc_dreg_slp
-    uint32_t en_i2c_dig_dreg_slp : 1;           //!< default:1  rtc_init:0  1: i2c_dig_dreg_slp; 0: if_dig_dreg_slp
-    uint32_t or_xpd_rtc_slave_3p3 : 1;          //!< default:1  rtc_init:0  to turn off rtc slave, which is only required before DCDC running
-    uint32_t or_xpd_rtc_reg : 1;                //!< default:1  rtc_init:0  handover control to digital -- if_xpd_rtc_reg
-    uint32_t or_xpd_dig_reg : 1;                //!< default:1  rtc_init:0  handover control to digital -- if_xpd_dig_reg
-    uint32_t or_pd_rtc_reg_slp : 1;             //!< default:0  rtc_init:1  configure this i2c to control rtc_sleep_regulator on off, no coressponding digital control signal
-    uint32_t or_pd_dig_reg_slp : 1;             //!< default:0  rtc_init:0  default value 0 puts dig_sleep_regulator controlled by digital -- if_xpd_dig_reg_slp
-    uint32_t or_xpd_dcdc : 1;                   //!< default:1  rtc_init:0  handover control to digital -- if_xpd_dcdc
-    uint32_t or_disalbe_deep_sleep_dcdc : 1;    //!< default:1  rtc_init:0  handover control to digital -- if_enable_deep_sleep_dcdc
-    uint32_t or_disalbe_light_sleep_dcdc : 1;   //!< default:1  rtc_init:0  handover control to digital -- if_enable_light_sleep_dcdc
-    uint32_t or_enalbe_trx_mode_dcdc : 1;       //!< default:1  rtc_init:0  handover control to digital -- if_enable_trx_mode_dcdc
-    uint32_t or_enx_reg_dcdc : 1;               //!< default:0  rtc_init:1  handover dcdc configuration registers to digital control signals, including popenb, sstime, ccm, vset, fsw, dcmlevel, dcm2enb, ramp, ramplevel
-    uint32_t or_unlock_dcdc : 1;                //!< default:0  rtc_init:0  not used in this version of silicon, can be unleashed if metal change if_vgood_lock_dcdc signal to high
-    uint32_t or_force_lock_dcdc : 1;            //!< default:0  rtc_init:0  dcdc will be locked and shut-off if this register sets to 1
-    uint32_t or_enb_slow_clk : 1;               //!< default:0  rtc_init:1  handover slow clock control to digital -- if_enb_slow_clk
-    uint32_t or_xpd_trx : 1;                    //!< default:1  rtc_init:0  handover trx control to digital -- if_xpd_trx
-    uint32_t or_en_reset_chip : 1;              //!< default:0  rtc_init:1  handover reset chip control to digital -- if_reset_chip
-    uint32_t or_force_xpd_reg_slave : 1;        //!< default:0  rtc_init:1  set this reg to 1 after DCDC ready, to have rtc & dig slave control independent of DCDC status
-} pmu_config_t;
-
-#define PMU_CONFIG_DEFAULT() {\
-    .or_en_cont_cal = 0, \
-    .enx_rtc_dreg = 1, \
-    .enx_dig_dreg = 1, \
-    .en_i2c_rtc_dreg = 0, \
-    .en_i2c_dig_dreg = 0, \
-    .en_i2c_rtc_dreg_slp = 0, \
-    .en_i2c_dig_dreg_slp = 0, \
-    .or_xpd_rtc_slave_3p3 = 0, \
-    .or_xpd_rtc_reg = 0, \
-    .or_xpd_dig_reg = 0, \
-    .or_pd_rtc_reg_slp = 0, \
-    .or_pd_dig_reg_slp = 0, \
-    .or_xpd_dcdc = 0, \
-    .or_disalbe_deep_sleep_dcdc = 0, \
-    .or_disalbe_light_sleep_dcdc = 0, \
-    .or_enalbe_trx_mode_dcdc = 0, \
-    .or_enx_reg_dcdc = 1, \
-    .or_unlock_dcdc = 0, \
-    .or_force_lock_dcdc = 0, \
-    .or_xpd_trx = 0, \
-    .or_en_reset_chip = 1, \
-    .or_force_xpd_reg_slave = 1\
-}
-
-typedef struct {
-    uint32_t swt_idle: 1;       //!< If 1, swt_idle is sleep mode ; if 0,  swt_idle is active mode
-    uint32_t swt_monitor: 1;    //!< If 1, swt_monitor is sleep mode ; if 0,  swt_monitor is active mode
-    uint32_t swt_slp: 1;        //!< If 1, swt_slp is sleep mode ; if 0,  swt_slp is active mode
-} dbias_swt_cfg_t;
-
-#define DBIAS_SWITCH_CONFIG_DEFAULT(){\
-    .swt_idle = 0, \
-    .swt_monitor = 1, \
-    .swt_slp = 1\
-}
-
-typedef struct {
-    /* data */
-    uint32_t dig_regul0_en: 1;  //!< If 1, dig_regulator0 is ctl by fsm; if 0, dig_regulator0 force pd.
-    uint32_t dig_regul1_en: 1;  //!< If 1, dig_regulator1 is ctl by fsm; if 0, dig_regulator1 force pd.
-    uint32_t rtc_regul0_en: 1;  //!< If 1, rtc_regulator0 is ctl by fsm; if 0, rtc_regulator0 force pd.
-} regulator_cfg_t;
-
-#define REGULATOR_SET_DEFAULT(){\
-    .dig_regul0_en = 1, \
-    .dig_regul1_en = 1, \
-    .rtc_regul0_en = 1, \
+    .cali_ocode = 0\
 }
 
 /**
-* Initialize RTC clock and power control related functions
-* @param cfg configuration options as rtc_config_t
-*/
+ * Initialize RTC clock and power control related functions
+ * @param cfg configuration options as rtc_config_t
+ */
 void rtc_init(rtc_config_t cfg);
 
 /**
@@ -911,47 +790,6 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config(void);
 void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
 
 
-/* Select clock root source for esp32h2. return source clk freq_mhz
- */
-uint32_t root_clk_slt(uint32_t source);
-uint32_t root_clk_get(void);
-
-/**
- * Regulator config
- */
-typedef struct {
-    uint32_t dig_source         : 1;
-    uint32_t dig_active_dbias   : 5;
-    uint32_t dig_slp_dbias      : 5;
-    uint32_t rtc_source         : 1;
-    uint32_t rtc_active_dbias   : 5;
-    uint32_t rtc_slp_dbias      : 5;
-} regulator_config_t;
-
-#define REGULATOR0_CONFIG_DEFAULT() {\
-    .dig_source = 0, \
-    .dig_active_dbias = 20, \
-    .dig_slp_dbias = 8, \
-    .rtc_source = 0, \
-    .rtc_active_dbias = 20, \
-    .rtc_slp_dbias = 8  \
-}
-#define REGULATOR1_CONFIG_DEFAULT() {\
-    .dig_source = 1, \
-    .dig_active_dbias = 15, \
-    .dig_slp_dbias = 8, \
-    .rtc_source = 1, \
-    .rtc_active_dbias = 15, \
-    .rtc_slp_dbias = 8  \
-}
-
-
-/**
- * gpio hangup
- */
-void rtc_gpio_hangup(uint32_t gpio_no);
-
-
 // -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
 // **WARNING**: The following are only for backwards compatibility.
 // Please use the declarations in soc/clk_tree_defs.h instead.
@@ -960,9 +798,8 @@ void rtc_gpio_hangup(uint32_t gpio_no);
  */
 typedef soc_cpu_clk_src_t rtc_cpu_freq_src_t;
 #define RTC_CPU_FREQ_SRC_XTAL SOC_CPU_CLK_SRC_XTAL  //!< XTAL
-#define RTC_CPU_FREQ_SRC_PLL SOC_CPU_CLK_SRC_PLL    //!< PLL (96M)
-#define RTC_CPU_FREQ_SRC_8M SOC_CPU_CLK_SRC_RC_FAST //!< Internal 8M RTC oscillator
-#define RTC_CPU_FREQ_SRC_XTAL_D2 SOC_CPU_CLK_SRC_XTAL_D2 //!< XTAL/2
+#define RTC_CPU_FREQ_SRC_PLL SOC_CPU_CLK_SRC_PLL    //!< PLL (480M or 320M)
+#define RTC_CPU_FREQ_SRC_8M SOC_CPU_CLK_SRC_RC_FAST //!< Internal 17.5M RTC oscillator
 
 /**
  * @brief RTC SLOW_CLK frequency values
@@ -970,21 +807,21 @@ typedef soc_cpu_clk_src_t rtc_cpu_freq_src_t;
 typedef soc_rtc_slow_clk_src_t rtc_slow_freq_t;
 #define RTC_SLOW_FREQ_RTC SOC_RTC_SLOW_CLK_SRC_RC_SLOW         //!< Internal 150 kHz RC oscillator
 #define RTC_SLOW_FREQ_32K_XTAL SOC_RTC_SLOW_CLK_SRC_XTAL32K    //!< External 32 kHz XTAL
-#define RTC_SLOW_FREQ_RC32K SOC_RTC_SLOW_CLK_SRC_RC32K         //!< Internal 32 KHz RC oscillator
+#define RTC_SLOW_FREQ_8MD256 SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 //!< Internal 17.5 MHz RC oscillator, divided by 256
 
 /**
  * @brief RTC FAST_CLK frequency values
  */
 typedef soc_rtc_fast_clk_src_t rtc_fast_freq_t;
 #define RTC_FAST_FREQ_XTALD4 SOC_RTC_FAST_CLK_SRC_XTAL_DIV  //!< Main XTAL, divided by 2
-#define RTC_FAST_FREQ_8M SOC_RTC_FAST_CLK_SRC_RC_FAST       //!< Internal 8 MHz RC oscillator
+#define RTC_FAST_FREQ_8M SOC_RTC_FAST_CLK_SRC_RC_FAST       //!< Internal 17.5 MHz RC oscillator
 
 /* Alias of frequency related macros */
 #define RTC_FAST_CLK_FREQ_APPROX    SOC_CLK_RC_FAST_FREQ_APPROX
 #define RTC_FAST_CLK_FREQ_8M        SOC_CLK_RC_FAST_FREQ_APPROX
 #define RTC_SLOW_CLK_FREQ_150K      SOC_CLK_RC_SLOW_FREQ_APPROX
+#define RTC_SLOW_CLK_FREQ_8MD256    SOC_CLK_RC_FAST_D256_FREQ_APPROX
 #define RTC_SLOW_CLK_FREQ_32K       SOC_CLK_XTAL32K_FREQ_APPROX
-#define RTC_SLOW_CLK_FREQ_RC32      SOC_CLK_RC32K_FREQ_APPROX
 
 /* Alias of deprecated function names */
 #define rtc_clk_slow_freq_set(slow_freq) rtc_clk_slow_src_set(slow_freq)

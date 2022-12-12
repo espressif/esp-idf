@@ -14,7 +14,7 @@ The ESP-IDF Software Bootloader performs the following functions:
 
 Bootloader is located at the address {IDF_TARGET_BOOTLOADER_OFFSET} in the flash.
 
-For a full description of the startup process including the the ESP-IDF bootloader, see :doc:`startup`.
+For a full description of the startup process including the ESP-IDF bootloader, see :doc:`startup`.
 
 .. _bootloader-compatibility:
 
@@ -143,10 +143,12 @@ Options to work around this are:
 
 When Secure Boot V2 is enabled, there is also an absolute binary size limit of {IDF_TARGET_MAX_BOOTLOADER_SIZE} (excluding the 4 KB signature), because the bootloader is first loaded into a fixed size buffer for verification.
 
-Fast boot from Deep Sleep
--------------------------
+.. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
-The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows the wake-up time from deep sleep to be reduced (useful for reducing power consumption). This option is available when :ref:`CONFIG_SECURE_BOOT` option is disabled. Reduction of time is achieved due to the lack of image verification. During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. And during the awakening, this address is used for booting without any checks, thus fast loading is achieved.
+    Fast boot from Deep Sleep
+    -------------------------
+
+    The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows the wake-up time from deep sleep to be reduced (useful for reducing power consumption). This option is available when :ref:`CONFIG_SECURE_BOOT` option is disabled. Reduction of time is achieved due to the lack of image verification. During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. And during the awakening, this address is used for booting without any checks, thus fast loading is achieved.
 
 Custom bootloader
 -----------------

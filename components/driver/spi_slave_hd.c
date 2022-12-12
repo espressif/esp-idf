@@ -5,12 +5,13 @@
  */
 
 #include "esp_log.h"
+#include "esp_memory_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "freertos/ringbuf.h"
 #include "driver/gpio.h"
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "driver/spi_slave_hd.h"
 #include "hal/spi_slave_hd_hal.h"
 

@@ -98,7 +98,7 @@ The primary purpose of the LL Layer is to abstract away register field access in
 
 The code snippet above illustrates typical LL functions for a peripheral ``xxx``. LL functions typically have the following characteristics:
 
-- All LL functions are defined as ``static inline`` so that there is minimal overhead when calling these functions due to compiler optimization.
+- All LL functions are defined as ``static inline`` so that there is minimal overhead when calling these functions due to compiler optimization. These functions are not guaranteed to be inlined by the compiler, so any LL function that will be called when the cache is disabled (e.g. from an IRAM ISR context) should be marked with ``__attribute__((always_inline))``.
 - The first argument should be a pointer to a ``xxx_dev_t`` type. The ``xxx_dev_t`` type is a structure representing the peripheral's registers, thus the first argument is always a pointer to the starting address of the peripheral's registers. Note that in some cases where the peripheral has multiple channels with identical register layouts, ``xxx_dev_t *hw`` may point to the registers of a particular channel instead.
 - LL functions should be short and in most cases are deterministic. In other words, the worst case runtime of the LL function can be determined at compile time. Thus, any loops in LL functions should be finite bounded; however, there are currently a few exceptions to this rule.
 - LL functions are not thread safe, it is the responsibility of the upper layers (driver layer) to ensure that registers or register fields are not accessed concurrently.
@@ -109,7 +109,7 @@ The code snippet above illustrates typical LL functions for a peripheral ``xxx``
 HAL (Hardware Abstraction Layer)
 --------------------------------
 
-The HAL layer models the operational process of a peripheral as a set of general steps, where each step has an associated function. For each step, the details of a peripheral's register implementation (i.e., which registers need to be set/read) are hidden (abstracted away) by the HAL. By modelling peripheral operation as a set of functional steps, any minor hardware implementation differences of the peripheral between different targets or chip versions can be abstracted away by the HAL (i.e., handled transparently). In other words, the HAL API for a particular peripheral will remain mostly the same across multiple targets/chip versions.
+The HAL layer models the operational process of a peripheral as a set of general steps, where each step has an associated function. For each step, the details of a peripheral's register implementation (i.e., which registers need to be set/read) are hidden (abstracted away) by the HAL. By modeling peripheral operation as a set of functional steps, any minor hardware implementation differences of the peripheral between different targets or chip versions can be abstracted away by the HAL (i.e., handled transparently). In other words, the HAL API for a particular peripheral will remain mostly the same across multiple targets/chip versions.
 
 The following HAL function examples are selected from the Watchdog Timer HAL as each function maps to one of the steps in a WDT's operation life cycle, thus illustrating how a HAL abstracts a peripheral's operation into functional steps.
 

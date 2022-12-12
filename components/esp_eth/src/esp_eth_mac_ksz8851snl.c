@@ -3,21 +3,24 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2021-2022 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <string.h>
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_cpu.h"
 #include "driver/gpio.h"
 #include "esp_rom_gpio.h"
 #include "driver/spi_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "esp_eth.h"
+#include "esp_eth_driver.h"
 #include "ksz8851.h"
 
+
+#define KSZ8851_ETH_MAC_RX_BUF_SIZE_AUTO (0)
 
 typedef struct {
     esp_eth_mac_t parent;
@@ -31,6 +34,11 @@ typedef struct {
     uint8_t *tx_buffer;
 } emac_ksz8851snl_t;
 
+typedef struct {
+    uint32_t copy_len;
+    uint32_t byte_cnt;
+}__attribute__((packed)) ksz8851_auto_buf_info_t;
+
 typedef enum {
     KSZ8851_SPI_COMMAND_READ_REG   = 0x0U,
     KSZ8851_SPI_COMMAND_WRITE_REG  = 0x1U,
@@ -42,7 +50,6 @@ typedef enum {
     KSZ8851_QMU_PACKET_LENGTH  = 2000U,
     KSZ8851_QMU_PACKET_PADDING = 16U,
 } ksz8851_qmu_packet_size_t;
-
 
 static const char *TAG = "ksz8851snl-mac";
 
@@ -222,7 +229,7 @@ static esp_err_t init_set_defaults(emac_ksz8851snl_t *emac)
                                        RXCR1_RXUDPFCC | RXCR1_RXTCPFCC | RXCR1_RXIPFCC | RXCR1_RXPAFMA | RXCR1_RXFCE | RXCR1_RXBE | RXCR1_RXUE | RXCR1_RXME), err, TAG, "RXCR1 write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXCR2,
                                        (4 << RXCR2_SRDBL_SHIFT) | RXCR2_IUFFP | RXCR2_RXIUFCEZ | RXCR2_UDPLFE | RXCR2_RXICMPFCC), err, TAG, "RXCR2 write failed");
-    ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXQCR, RXQCR_RXIPHTOE | RXQCR_RXFCTE | RXQCR_ADRFE), err, TAG, "RXQCR write failed");
+    ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXQCR, RXQCR_RXFCTE | RXQCR_ADRFE), err, TAG, "RXQCR write failed");
     ESP_GOTO_ON_ERROR(ksz8851_clear_bits(emac, KSZ8851_P1CR, P1CR_FORCE_DUPLEX), err, TAG, "P1CR write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_P1CR, P1CR_RESTART_AN), err, TAG, "P1CR write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_ISR, ISR_ALL), err, TAG, "ISR write failed");
@@ -310,7 +317,8 @@ static esp_err_t emac_ksz8851snl_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint
         return ESP_ERR_TIMEOUT;
     }
 
-    ESP_GOTO_ON_FALSE(length <= KSZ8851_QMU_PACKET_LENGTH, ESP_ERR_INVALID_ARG, err, TAG, "packet is too big");
+    ESP_GOTO_ON_FALSE(length <= KSZ8851_QMU_PACKET_LENGTH, ESP_ERR_INVALID_ARG, err,
+                        TAG, "frame size is too big (actual %u, maximum %u)", length, ETH_MAX_PACKET_SIZE);
     // NOTE(v.chistyakov): 4 bytes header + length aligned to 4 bytes
     unsigned transmit_length = 4U + ((length + 3U) & ~0x3U);
 
@@ -351,61 +359,121 @@ err:
     return ret;
 }
 
-static esp_err_t emac_ksz8851_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *length)
+static esp_err_t emac_ksz8851_get_recv_byte_count(emac_ksz8851snl_t *emac, uint16_t *size)
 {
-    esp_err_t ret           = ESP_OK;
-    emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
-    if (!ksz8851_mutex_lock(emac)) {
-        return ESP_ERR_TIMEOUT;
-    }
-
-    ESP_GOTO_ON_FALSE(buf, ESP_ERR_INVALID_ARG, err, TAG, "receive buffer can not be null");
-    ESP_GOTO_ON_FALSE(length, ESP_ERR_INVALID_ARG, err, TAG, "receive buffer length can not be null");
-    ESP_GOTO_ON_FALSE(*length > 0U, ESP_ERR_INVALID_ARG, err, TAG, "receive buffer length must be greater than zero");
-
+    esp_err_t ret = ESP_OK;
+    *size = 0;
     uint16_t header_status;
     ESP_GOTO_ON_ERROR(ksz8851_read_reg(emac, KSZ8851_RXFHSR, &header_status), err, TAG, "RXFHSR read failed");
-
     uint16_t byte_count;
     ESP_GOTO_ON_ERROR(ksz8851_read_reg(emac, KSZ8851_RXFHBCR, &byte_count), err, TAG, "RXFHBCR read failed");
-    byte_count &= RXFHBCR_RXBC_MASK;
-
-    // NOTE(v.chistyakov): do not include 2 bytes padding at the beginning and 4 bytes CRC at the end
-    const unsigned frame_size = byte_count - 6U;
-    ESP_GOTO_ON_FALSE(frame_size <= *length, ESP_FAIL, err, TAG, "frame size is greater than length");
-
     if (header_status & RXFHSR_RXFV) {
-        // NOTE(v.chistyakov): 4 dummy + 4 header + alignment
-        const unsigned receive_size = 8U + ((byte_count + 3U) & ~0x3U);
-        spi_transaction_ext_t trans = {
-            .base.flags     = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR | SPI_TRANS_VARIABLE_DUMMY,
-            .base.cmd       = KSZ8851_SPI_COMMAND_READ_FIFO,
-            .base.length    = receive_size * 8U, // NOTE(v.chistyakov): bits
-            .base.rx_buffer = emac->rx_buffer,
-            .command_bits   = 2U,
-            .address_bits   = 6U,
-        };
-
-        ESP_GOTO_ON_ERROR(ksz8851_clear_bits(emac, KSZ8851_RXFDPR, RXFDPR_RXFP_MASK), err, TAG, "RXFDPR write failed");
-        ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXQCR, RXQCR_SDA), err, TAG, "RXQCR write failed");
-        if (spi_device_polling_transmit(emac->spi_hdl, &trans.base) != ESP_OK) {
-            ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
-            ret = ESP_FAIL;
-        }
-        ESP_GOTO_ON_ERROR(ksz8851_clear_bits(emac, KSZ8851_RXQCR, RXQCR_SDA), err, TAG, "RXQCR write failed");
-
-        // NOTE(v.chistyakov): skip 4 dummy, 4 header, 2 padding
-        memcpy(buf, emac->rx_buffer + 10U, frame_size);
-        *length = frame_size;
-        ESP_LOGV(TAG, "received frame of size %u", frame_size);
+        *size = byte_count & RXFHBCR_RXBC_MASK;
     } else if (header_status & (RXFHSR_RXCE | RXFHSR_RXRF | RXFHSR_RXFTL | RXFHSR_RXMR | RXFHSR_RXUDPFCS | RXFHSR_RXTCPFCS |
                                 RXFHSR_RXIPFCS | RXFHSR_RXICMPFCS)) {
         // NOTE(v.chistyakov): RRXEF is a self-clearing bit
         ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXQCR, RXQCR_RRXEF), err, TAG, "RXQCR write failed");
-        *length = 0U;
     }
 err:
+    return ret;
+}
+
+static esp_err_t emac_ksz8851_alloc_recv_buf(emac_ksz8851snl_t *emac, uint8_t **buf, uint32_t *length)
+{
+    esp_err_t ret = ESP_OK;
+    uint16_t rx_len = 0;
+    uint16_t byte_count;
+    *buf = NULL;
+
+    ESP_GOTO_ON_ERROR(emac_ksz8851_get_recv_byte_count(emac, &byte_count), err, TAG, "get receive frame byte count failed");
+    // silently return when no frame is waiting
+    if (!byte_count) {
+        goto err;
+    }
+    // do not include 4 bytes CRC at the end
+    rx_len = byte_count - ETH_CRC_LEN;
+    // frames larger than expected will be truncated
+    uint16_t copy_len = rx_len > *length ? *length : rx_len;
+    // runt frames are not forwarded, but check the length anyway since it could be corrupted at SPI bus
+    ESP_GOTO_ON_FALSE(copy_len >= ETH_MIN_PACKET_SIZE - ETH_CRC_LEN, ESP_ERR_INVALID_SIZE, err, TAG, "invalid frame length %u", copy_len);
+    *buf = malloc(copy_len);
+    if (*buf != NULL) {
+        ksz8851_auto_buf_info_t *buff_info = (ksz8851_auto_buf_info_t *)*buf;
+        buff_info->copy_len = copy_len;
+        buff_info->byte_cnt = byte_count;
+    } else {
+        ret = ESP_ERR_NO_MEM;
+        goto err;
+    }
+err:
+    *length = rx_len;
+    return ret;
+}
+
+static esp_err_t emac_ksz8851_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *length)
+{
+    esp_err_t ret           = ESP_OK;
+    emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
+    uint16_t copy_len       = 0;
+    uint16_t rx_len;
+    uint16_t byte_count;
+
+    ESP_GOTO_ON_FALSE(buf, ESP_ERR_INVALID_ARG, err, TAG, "receive buffer can not be null");
+    ESP_GOTO_ON_FALSE(length, ESP_ERR_INVALID_ARG, err, TAG, "receive buffer length can not be null");
+    if (*length != KSZ8851_ETH_MAC_RX_BUF_SIZE_AUTO) {
+        ESP_GOTO_ON_ERROR(emac_ksz8851_get_recv_byte_count(emac, &byte_count), err, TAG, "get receive frame byte count failed");
+        // silently return when no frame is waiting
+        if (!byte_count) {
+            goto err;
+        }
+        // do not include 4 bytes CRC at the end
+        rx_len = byte_count - ETH_CRC_LEN;
+        // frames larger than expected will be truncated
+        copy_len = rx_len > *length ? *length : rx_len;
+    } else {
+        ksz8851_auto_buf_info_t *buff_info = (ksz8851_auto_buf_info_t *)buf;
+        copy_len = buff_info->copy_len;
+        byte_count = buff_info->byte_cnt;
+    }
+
+    // NOTE(v.chistyakov): 4 dummy + 4 header + alignment
+    const unsigned receive_size = 8U + ((byte_count + 3U) & ~0x3U);
+    spi_transaction_ext_t trans = {
+        .base.flags     = SPI_TRANS_VARIABLE_CMD | SPI_TRANS_VARIABLE_ADDR | SPI_TRANS_VARIABLE_DUMMY,
+        .base.cmd       = KSZ8851_SPI_COMMAND_READ_FIFO,
+        .base.length    = receive_size * 8U, // NOTE(v.chistyakov): bits
+        .base.rx_buffer = emac->rx_buffer,
+        .command_bits   = 2U,
+        .address_bits   = 6U,
+    };
+    if (!ksz8851_mutex_lock(emac)) {
+        return ESP_ERR_TIMEOUT;
+    }
+    ESP_GOTO_ON_ERROR(ksz8851_clear_bits(emac, KSZ8851_RXFDPR, RXFDPR_RXFP_MASK), err, TAG, "RXFDPR write failed");
+    ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXQCR, RXQCR_SDA), err, TAG, "RXQCR write failed");
+    if (spi_device_polling_transmit(emac->spi_hdl, &trans.base) != ESP_OK) {
+        ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
+        ret = ESP_FAIL;
+    }
+    ESP_GOTO_ON_ERROR(ksz8851_clear_bits(emac, KSZ8851_RXQCR, RXQCR_SDA), err, TAG, "RXQCR write failed");
     ksz8851_mutex_unlock(emac);
+    // NOTE(v.chistyakov): skip 4 dummy, 4 header
+    memcpy(buf, emac->rx_buffer + 8U, copy_len);
+    *length = copy_len;
+    return ret;
+err:
+    *length = 0U;
+    return ret;
+}
+
+static esp_err_t emac_ksz8851_flush_recv_queue(emac_ksz8851snl_t *emac)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_ERROR(ksz8851_clear_bits(emac, KSZ8851_RXCR1, RXCR1_RXE), err, TAG, "RXCR1 write failed");
+    ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXCR1, RXCR1_FRXQ), err, TAG, "RXCR1 write failed");
+    ESP_GOTO_ON_ERROR(ksz8851_clear_bits(emac, KSZ8851_RXCR1, RXCR1_FRXQ), err, TAG, "RXCR1 write failed");
+    ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXCR1, RXCR1_RXE), err, TAG, "RXCR1 write failed");
+err:
     return ret;
 }
 
@@ -567,17 +635,6 @@ static esp_err_t emac_ksz8851_set_peer_pause_ability(esp_eth_mac_t *mac, uint32_
     return ESP_ERR_NOT_SUPPORTED;
 }
 
-static esp_err_t emac_ksz8851_del(esp_eth_mac_t *mac)
-{
-    emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
-    vTaskDelete(emac->rx_task_hdl);
-    vSemaphoreDelete(emac->spi_lock);
-    heap_caps_free(emac->rx_buffer);
-    heap_caps_free(emac->tx_buffer);
-    free(emac);
-    return ESP_OK;
-}
-
 static void emac_ksz8851snl_task(void *arg)
 {
     emac_ksz8851snl_t *emac = (emac_ksz8851snl_t *)arg;
@@ -631,27 +688,52 @@ static void emac_ksz8851snl_task(void *arg)
             frame_count = (frame_count & RXFCTR_RXFC_MASK) >> RXFCTR_RXFC_SHIFT;
 
             while (frame_count--) {
-                uint32_t length = ETH_MAX_PACKET_SIZE;
-                uint8_t *packet = malloc(ETH_MAX_PACKET_SIZE);
-                if (!packet) {
-                    continue;
-                }
-
-                if (emac->parent.receive(&emac->parent, packet, &length) == ESP_OK && length) {
-                    emac->eth->stack_input(emac->eth, packet, length);
-                    // NOTE(v.chistyakov): the packet is freed in the upper layers
-                } else {
-                    free(packet);
-                    ksz8851_clear_bits(emac, KSZ8851_RXCR1, RXCR1_RXE);
-                    ksz8851_set_bits(emac, KSZ8851_RXCR1, RXCR1_FRXQ);
-                    ksz8851_clear_bits(emac, KSZ8851_RXCR1, RXCR1_FRXQ);
-                    ksz8851_set_bits(emac, KSZ8851_RXCR1, RXCR1_RXE);
+                /* define max expected frame len */
+                uint32_t frame_len = ETH_MAX_PACKET_SIZE;
+                uint8_t *buffer;
+                emac_ksz8851_alloc_recv_buf(emac, &buffer, &frame_len);
+                /* we have memory to receive the frame of maximal size previously defined */
+                if (buffer != NULL) {
+                    uint32_t buf_len = KSZ8851_ETH_MAC_RX_BUF_SIZE_AUTO;
+                    if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
+                        if (buf_len == 0) {
+                            emac_ksz8851_flush_recv_queue(emac);
+                            free(buffer);
+                        } else if (frame_len > buf_len) {
+                            ESP_LOGE(TAG, "received frame was truncated");
+                            free(buffer);
+                        } else {
+                            ESP_LOGD(TAG, "receive len=%u", buf_len);
+                            /* pass the buffer to stack (e.g. TCP/IP layer) */
+                            emac->eth->stack_input(emac->eth, buffer, buf_len);
+                        }
+                    } else {
+                        ESP_LOGE(TAG, "frame read from module failed");
+                        emac_ksz8851_flush_recv_queue(emac);
+                        free(buffer);
+                    }
+                /* if allocation failed and there is a waiting frame */
+                } else if (frame_len) {
+                    ESP_LOGE(TAG, "no mem for receive buffer");
+                    emac_ksz8851_flush_recv_queue(emac);
                 }
             }
             ksz8851_write_reg(emac, KSZ8851_IER, ier);
         }
     }
     vTaskDelete(NULL);
+}
+
+static esp_err_t emac_ksz8851_del(esp_eth_mac_t *mac)
+{
+    emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
+    vTaskDelete(emac->rx_task_hdl);
+    spi_bus_remove_device(emac->spi_hdl);
+    vSemaphoreDelete(emac->spi_lock);
+    heap_caps_free(emac->rx_buffer);
+    heap_caps_free(emac->tx_buffer);
+    free(emac);
+    return ESP_OK;
 }
 
 esp_eth_mac_t *esp_eth_mac_new_ksz8851snl(const eth_ksz8851snl_config_t *ksz8851snl_config,
@@ -666,9 +748,12 @@ esp_eth_mac_t *esp_eth_mac_new_ksz8851snl(const eth_ksz8851snl_config_t *ksz8851
     emac = calloc(1, sizeof(emac_ksz8851snl_t));
     ESP_GOTO_ON_FALSE(emac, NULL, err, TAG, "no mem for MAC instance");
 
+    /* SPI device init */
+    ESP_GOTO_ON_FALSE(spi_bus_add_device(ksz8851snl_config->spi_host_id, ksz8851snl_config->spi_devcfg, &emac->spi_hdl) == ESP_OK,
+                                            NULL, err, TAG, "adding device to SPI host #%d failed", ksz8851snl_config->spi_host_id + 1);
+
     emac->sw_reset_timeout_ms           = mac_config->sw_reset_timeout_ms;
     emac->int_gpio_num                  = ksz8851snl_config->int_gpio_num;
-    emac->spi_hdl                       = ksz8851snl_config->spi_hdl;
     emac->parent.set_mediator           = emac_ksz8851_set_mediator;
     emac->parent.init                   = emac_ksz8851_init;
     emac->parent.deinit                 = emac_ksz8851_deinit;
@@ -698,7 +783,7 @@ esp_eth_mac_t *esp_eth_mac_new_ksz8851snl(const eth_ksz8851snl_config_t *ksz8851
 
     BaseType_t core_num = tskNO_AFFINITY;
     if (mac_config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
-        core_num = cpu_hal_get_core_id();
+        core_num = esp_cpu_get_core_id();
     }
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_ksz8851snl_task, "ksz8851snl_tsk", mac_config->rx_task_stack_size,
                            emac, mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,8 +33,8 @@ extern "C" {
 #define gpspi_flash_ll_hw_get_id(dev)   ( ((dev) == (void*)&GPSPI2) ? SPI2_HOST : -1 )
 
 typedef typeof(GPSPI2.clock.val) gpspi_flash_ll_clock_reg_t;
+#define GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ  (80)
 
-#define GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ  (48)
 /*------------------------------------------------------------------------------
  * Control
  *----------------------------------------------------------------------------*/
@@ -53,9 +53,9 @@ static inline void gpspi_flash_ll_reset(spi_dev_t *dev)
     dev->clk_gate.mst_clk_sel = 1;
 
     dev->dma_conf.val = 0;
-    dev->dma_conf.tx_seg_trans_clr_en = 1;
-    dev->dma_conf.rx_seg_trans_clr_en = 1;
-    dev->dma_conf.dma_seg_trans_en = 0;
+    // dev->dma_conf.tx_seg_trans_clr_en = 1;
+    // dev->dma_conf.rx_seg_trans_clr_en = 1;
+    // dev->dma_conf.dma_seg_trans_en = 0;
 }
 
 /**
@@ -79,20 +79,20 @@ static inline bool gpspi_flash_ll_cmd_is_done(const spi_dev_t *dev)
  */
 static inline void gpspi_flash_ll_get_buffer_data(spi_dev_t *dev, void *buffer, uint32_t read_len)
 {
-    if (((intptr_t)buffer % 4 == 0) && (read_len % 4 == 0)) {
-        // If everything is word-aligned, do a faster memcpy
-        memcpy(buffer, (void *)dev->data_buf, read_len);
-    } else {
-        // Otherwise, slow(er) path copies word by word
-        int copy_len = read_len;
-        for (int i = 0; i < (read_len + 3) / 4; i++) {
-            int word_len = MIN(sizeof(uint32_t), copy_len);
-            uint32_t word = dev->data_buf[i];
-            memcpy(buffer, &word, word_len);
-            buffer = (void *)((intptr_t)buffer + word_len);
-            copy_len -= word_len;
-        }
-    }
+    // if (((intptr_t)buffer % 4 == 0) && (read_len % 4 == 0)) {
+    //     // If everything is word-aligned, do a faster memcpy
+    //     memcpy(buffer, (void *)dev->data_buf, read_len);
+    // } else {
+    //     // Otherwise, slow(er) path copies word by word
+    //     int copy_len = read_len;
+    //     for (int i = 0; i < (read_len + 3) / 4; i++) {
+    //         int word_len = MIN(sizeof(uint32_t), copy_len);
+    //         uint32_t word = dev->data_buf[i];
+    //         memcpy(buffer, &word, word_len);
+    //         buffer = (void *)((intptr_t)buffer + word_len);
+    //         copy_len -= word_len;
+    //     }
+    // }
 }
 
 /**
@@ -103,7 +103,7 @@ static inline void gpspi_flash_ll_get_buffer_data(spi_dev_t *dev, void *buffer, 
  */
 static inline void gpspi_flash_ll_write_word(spi_dev_t *dev, uint32_t word)
 {
-    dev->data_buf[0] = word;
+    // dev->data_buf[0] = word;
 }
 
 /**
@@ -116,15 +116,15 @@ static inline void gpspi_flash_ll_write_word(spi_dev_t *dev, uint32_t word)
 static inline void gpspi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *buffer, uint32_t length)
 {
     // Load data registers, word at a time
-    int num_words = (length + 3) / 4;
-    for (int i = 0; i < num_words; i++) {
-        uint32_t word = 0;
-        uint32_t word_len = MIN(length, sizeof(word));
-        memcpy(&word, buffer, word_len);
-        dev->data_buf[i] = word;
-        length -= word_len;
-        buffer = (void *)((intptr_t)buffer + word_len);
-    }
+    // int num_words = (length + 3) / 4;
+    // for (int i = 0; i < num_words; i++) {
+    //     uint32_t word = 0;
+    //     uint32_t word_len = MIN(length, sizeof(word));
+    //     memcpy(&word, buffer, word_len);
+    //     dev->data_buf[i] = word;
+    //     length -= word_len;
+    //     buffer = (void *)((intptr_t)buffer + word_len);
+    // }
 }
 
 /**
@@ -326,8 +326,8 @@ static inline void gpspi_flash_ll_set_addr_bitlen(spi_dev_t *dev, uint32_t bitle
 static inline void gpspi_flash_ll_set_usr_address(spi_dev_t *dev, uint32_t addr, uint32_t bitlen)
 {
     // The blank region should be all ones
-    uint32_t padding_ones = (bitlen == 32? 0 : UINT32_MAX >> bitlen);
-    dev->addr = (addr << (32 - bitlen)) | padding_ones;
+    // uint32_t padding_ones = (bitlen == 32? 0 : UINT32_MAX >> bitlen);
+    // dev->addr = (addr << (32 - bitlen)) | padding_ones;
 }
 
 /**
@@ -338,7 +338,7 @@ static inline void gpspi_flash_ll_set_usr_address(spi_dev_t *dev, uint32_t addr,
  */
 static inline void gpspi_flash_ll_set_address(spi_dev_t *dev, uint32_t addr)
 {
-    dev->addr = addr;
+    // dev->addr = addr;
 }
 
 /**

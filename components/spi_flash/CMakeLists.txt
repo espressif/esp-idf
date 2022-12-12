@@ -1,14 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
 if(${target} STREQUAL "linux")
-    set(srcs "partition.c"
-         "partition_linux.c")
-    idf_component_get_property(hal_dir hal COMPONENT_DIR)
-    idf_component_get_property(bootloader_support_dir bootloader_support COMPONENT_DIR)
-
-    idf_component_register(SRCS "${srcs}"
-        INCLUDE_DIRS include ${hal_dir}/include ${bootloader_support_dir}/include
-        PRIV_INCLUDE_DIRS include/spi_flash
-        PRIV_REQUIRES linux partition_table)
     return()
 endif()
 
@@ -22,12 +13,10 @@ else()
         "flash_ops.c"
         "${target}/flash_ops_${target}.c"
     )
-    set(srcs
-        "partition.c"
-        "partition_target.c"
-    )
 
-    if(CONFIG_ESPTOOLPY_OCT_FLASH)
+    set(srcs "flash_brownout_hook.c")
+
+    if(CONFIG_SOC_SPI_MEM_SUPPORT_OPI_MODE)
         list(APPEND srcs "${target}/spi_flash_oct_flash_init.c")
     endif()
 
@@ -74,4 +63,13 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     # These flags are GCC specific
     set_property(SOURCE ${cache_srcs} APPEND_STRING PROPERTY COMPILE_FLAGS
         " -fno-inline-small-functions -fno-inline-functions-called-once")
+endif()
+
+if(NOT BOOTLOADER_BUILD)
+    if(CONFIG_SPIRAM)
+        # [refactor-todo]: requires "esp_psram" for few MMU usages in `flash_mmap.c`
+        # will be replaced with MMU requirements
+        idf_component_optional_requires(PRIVATE esp_psram)
+    endif()
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 endif()

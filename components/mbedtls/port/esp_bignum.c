@@ -20,7 +20,9 @@
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
+#if CONFIG_PM_ENABLE
 #include "esp_pm.h"
+#endif
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -640,6 +642,13 @@ static int mpi_mult_mpi_failover_mod_mult( mbedtls_mpi *Z, const mbedtls_mpi *X,
     esp_mpi_read_result_hw_op(Z, hw_words);
 
     Z->MBEDTLS_PRIVATE(s) = X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
+    /*
+     * If this condition fails then most likely hardware peripheral
+     * has produced an incorrect result for MPI operation. This can
+     * happen if data fed to the peripheral register was incorrect.
+     * Relevant: https://github.com/espressif/esp-idf/issues/8710#issuecomment-1249178698
+     */
+    assert(mpi_words(Z) == z_words);
 cleanup:
     esp_mpi_disable_hardware_hw_op();
     return ret;

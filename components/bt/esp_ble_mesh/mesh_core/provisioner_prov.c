@@ -1318,8 +1318,8 @@ static void reset_link(const uint8_t idx, uint8_t reason)
 
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Remove the link id from exceptional list */
-    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link[idx].link_id);
+    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_REMOVE,
+                                    BLE_MESH_EXCEP_LIST_TYPE_MESH_LINK_ID, &link[idx].link_id);
 #endif
 
     /* Clear everything except the retransmit delayed work config */
@@ -1478,8 +1478,8 @@ static void send_link_open(const uint8_t idx)
 
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Add the link id into exceptional list */
-    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link[idx].link_id);
+    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_ADD,
+                                    BLE_MESH_EXCEP_LIST_TYPE_MESH_LINK_ID, &link[idx].link_id);
 #endif
 
     bearer_ctl_send(idx, LINK_OPEN, link[idx].uuid, 16);
@@ -2943,6 +2943,12 @@ static void gen_prov_ack(const uint8_t idx, struct prov_rx *rx, struct net_buf_s
         case PROV_START:
             pub_key_oob = link[idx].conf_inputs[13];
             send_pub_key(idx, pub_key_oob);
+            /* For case MESH/PVNR/PROV/BV-04-C, if using OOB public key,
+             * the value of expect_ack_for shall be PROV_PUB_KEY.
+             */
+            if (pub_key_oob) {
+                return;
+            }
             break;
         case PROV_PUB_KEY:
             prov_gen_dh_key(idx);
@@ -3332,8 +3338,8 @@ int bt_mesh_provisioner_prov_reset(bool erase)
 #if CONFIG_BLE_MESH_PB_ADV
             prov_clear_tx(i);
 #if CONFIG_BLE_MESH_USE_DUPLICATE_SCAN
-            bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-                BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link[i].link_id);
+            bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_REMOVE,
+                BLE_MESH_EXCEP_LIST_TYPE_MESH_LINK_ID, &link[i].link_id);
 #endif
             memset(&link[i], 0, offsetof(struct prov_link, tx.retransmit));
             link[i].pending_ack = XACT_NVAL;

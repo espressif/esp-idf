@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,8 @@
 extern "C" {
 #endif
 
+
+// ESP32H2-TODO: IDF-5719 Need update
 /**
  * @brief Naming conventions: RESET_REASON_{reset level}_{reset reason}
  * @note refer to TRM: <Reset and Clock> chapter
@@ -47,7 +49,6 @@ typedef enum {
     RESET_REASON_CORE_USB_UART   = 0x15, // USB UART resets the digital core
     RESET_REASON_CORE_USB_JTAG   = 0x16, // USB JTAG resets the digital core
     RESET_REASON_CORE_PWR_GLITCH = 0x17, // Glitch on power resets the digital core
-    RESET_REASON_CPU0_JTAG       = 0x18, // JTAG resets the CPU 0
 } soc_reset_reason_t;
 
 

@@ -106,33 +106,65 @@ esp_err_t touch_pad_isr_register(intr_handler_t fn, void *arg, touch_pad_intr_ma
         en_msk |= RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ST_M;
     }
 #endif
-    esp_err_t ret = rtc_isr_register(fn, arg, en_msk);
+    esp_err_t ret = rtc_isr_register(fn, arg, en_msk, 0);
     /* Must ensure: After being registered, it is executed first. */
     if ( (ret == ESP_OK) && (reg_flag == false) && (intr_mask & (TOUCH_PAD_INTR_MASK_SCAN_DONE | TOUCH_PAD_INTR_MASK_TIMEOUT)) ) {
-        rtc_isr_register(touch_pad_workaround_isr_internal, NULL, RTC_CNTL_TOUCH_SCAN_DONE_INT_ST_M | RTC_CNTL_TOUCH_TIMEOUT_INT_ST_M);
+        rtc_isr_register(touch_pad_workaround_isr_internal, NULL, RTC_CNTL_TOUCH_SCAN_DONE_INT_ST_M | RTC_CNTL_TOUCH_TIMEOUT_INT_ST_M, 0);
         reg_flag = true;
     }
 
     return ret;
 }
 
-esp_err_t touch_pad_set_meas_time(uint16_t sleep_cycle, uint16_t meas_times)
+esp_err_t touch_pad_set_measurement_interval(uint16_t interval_cycle)
 {
     TOUCH_ENTER_CRITICAL();
-    touch_hal_set_meas_times(meas_times);
-    touch_hal_set_sleep_time(sleep_cycle);
+    touch_hal_set_sleep_time(interval_cycle);
+    TOUCH_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+esp_err_t touch_pad_get_measurement_interval(uint16_t *interval_cycle)
+{
+    TOUCH_NULL_POINTER_CHECK(interval_cycle, "interval_cycle");
+    TOUCH_ENTER_CRITICAL();
+    touch_hal_get_sleep_time(interval_cycle);
+    TOUCH_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+esp_err_t touch_pad_set_charge_discharge_times(uint16_t charge_discharge_times)
+{
+    TOUCH_ENTER_CRITICAL();
+    touch_hal_set_meas_times(charge_discharge_times);
     TOUCH_EXIT_CRITICAL();
 
     return ESP_OK;
 }
 
-esp_err_t touch_pad_get_meas_time(uint16_t *sleep_cycle, uint16_t *meas_times)
+esp_err_t touch_pad_get_charge_discharge_times(uint16_t *charge_discharge_times)
 {
+    TOUCH_NULL_POINTER_CHECK(charge_discharge_times, "charge_discharge_times");
     TOUCH_ENTER_CRITICAL();
-    touch_hal_get_measure_times(meas_times);
-    touch_hal_get_sleep_time(sleep_cycle);
+    touch_hal_get_measure_times(charge_discharge_times);
     TOUCH_EXIT_CRITICAL();
 
+    return ESP_OK;
+}
+
+esp_err_t touch_pad_set_meas_time(uint16_t sleep_cycle, uint16_t meas_times)
+{
+    touch_pad_set_charge_discharge_times(meas_times);
+    touch_pad_set_measurement_interval(sleep_cycle);
+    return ESP_OK;
+}
+
+esp_err_t touch_pad_get_meas_time(uint16_t *sleep_cycle, uint16_t *meas_times)
+{
+    TOUCH_NULL_POINTER_CHECK(sleep_cycle, "sleep_cycle");
+    TOUCH_NULL_POINTER_CHECK(meas_times, "meas_times");
+    touch_pad_get_measurement_interval(sleep_cycle);
+    touch_pad_get_charge_discharge_times(meas_times);
     return ESP_OK;
 }
 

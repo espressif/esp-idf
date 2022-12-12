@@ -1,5 +1,15 @@
 idf_build_get_property(target IDF_TARGET)
 
+# On Linux, we only support a few features, hence this simple component registration
+if(${target} STREQUAL "linux")
+    idf_component_register(SRCS "esp_system.c"
+                        "port/soc/linux/reset_reason.c"
+                        "port/soc/linux/system_internal.c"
+                        "port/esp_system_linux.c"
+                        INCLUDE_DIRS "include")
+    return()
+endif()
+
 set(srcs "esp_err.c")
 
 if(CONFIG_IDF_ENV_FPGA)
@@ -21,17 +31,26 @@ else()
             "startup.c"
             "system_time.c"
             "stack_check.c"
-            "task_wdt.c"
             "ubsan.c"
             "xt_wdt.c"
             "debug_stubs.c")
 
-    if(NOT (${target} STREQUAL "esp32c2"))
-        list(APPEND srcs "debug_stubs.c")
+    if(CONFIG_ESP_TASK_WDT_EN)
+        list(APPEND srcs "task_wdt/task_wdt.c")
+
+        if(CONFIG_ESP_TASK_WDT_USE_ESP_TIMER)
+            list(APPEND srcs "task_wdt/task_wdt_impl_esp_timer.c")
+        else()
+            list(APPEND srcs "task_wdt/task_wdt_impl_timergroup.c")
+        endif()
     endif()
 
     if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
         list(APPEND srcs "eh_frame_parser.c")
+    endif()
+
+    if(CONFIG_SOC_SYSTIMER_SUPPORT_ETM)
+        list(APPEND srcs "systick_etm.c")
     endif()
 
     idf_component_register(SRCS "${srcs}"
@@ -42,7 +61,9 @@ else()
                                     # link-time registration is used.
                                     # [refactor-todo] requires "driver" for headers:
                                     # - spi_common_internal.h
-                                    pthread bootloader_support efuse driver
+                                    # [refactor-todo] esp_partition required for virtual efuse
+                                    # init code. Move to esp_efuse component.
+                                    pthread bootloader_support efuse driver esp_partition
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 
@@ -89,7 +110,7 @@ endif()
 # need to introduce panic "event" concept to remove this dependency (IDF-2194)
 idf_component_optional_requires(PRIVATE esp_gdbstub)
 
-idf_component_optional_requires(PRIVATE app_update)
+idf_component_optional_requires(PRIVATE esp_app_format)
 
 if(CONFIG_PM_ENABLE)
     idf_component_optional_requires(PRIVATE pm)
@@ -102,3 +123,11 @@ endif()
 if(CONFIG_SW_COEXIST_ENABLE OR CONFIG_EXTERNAL_COEX_ENABLE)
     idf_component_optional_requires(PRIVATE esp_wifi)
 endif()
+
+if(NOT BOOTLOADER_BUILD)
+    if(CONFIG_SPIRAM)
+        idf_component_optional_requires(PRIVATE esp_psram)
+    endif()
+endif()
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+import logging
+import os
+import shutil
+import subprocess
+import sys
+import typing
+from pathlib import Path
+
+try:
+    EXT_IDF_PATH = os.environ['IDF_PATH']  # type: str
+except KeyError:
+    print('IDF_PATH must be set before running this test', file=sys.stderr)
+    exit(1)
+
+
+EnvDict = typing.Dict[str, str]
+IdfPyFunc = typing.Callable[..., subprocess.CompletedProcess]
+
+
+def find_python(path_var: str) -> str:
+    """
+    Find python interpreter in the paths specified in the given PATH variable.
+    Returns the full path to the interpreter.
+    """
+    res = shutil.which('python', path=path_var)
+    if res is None:
+        raise ValueError('python not found')
+    return res
+
+
+def get_idf_build_env(idf_path: str) -> EnvDict:
+    """
+    Get environment variables (as set by export.sh) for the specific IDF copy
+    :param idf_path: path of the IDF copy to use
+    :return: dictionary of environment variables and their values
+    """
+    cmd = [
+        sys.executable,
+        os.path.join(idf_path, 'tools', 'idf_tools.py'),
+        'export',
+        '--format=key-value'
+    ]
+    keys_values = subprocess.check_output(cmd, stderr=subprocess.PIPE).decode()
+    env_vars = {key: os.path.expandvars(value) for key, value in
+                [line.split('=') for line in keys_values.splitlines()]}
+    # not set by idf_tools.py, normally set by export.sh
+    env_vars['IDF_PATH'] = idf_path
+
+    return env_vars
+
+
+def run_idf_py(*args: str,
+               env: typing.Optional[EnvDict] = None,
+               idf_path: typing.Optional[typing.Union[str,Path]] = None,
+               workdir: typing.Optional[str] = None) -> subprocess.CompletedProcess:
+    """
+    Run idf.py command with given arguments, raise an exception on failure
+    :param args: arguments to pass to idf.py
+    :param env: environment variables to run the build with; if not set, the default environment is used
+    :param idf_path: path to the IDF copy to use; if not set, IDF_PATH from the 'env' argument is used
+    :param workdir: directory where to run the build; if not set, the current directory is used
+    """
+    env_dict = dict(**os.environ)
+    if env is not None:
+        env_dict.update(env)
+    if not workdir:
+        workdir = os.getcwd()
+    # order: function argument -> value in env dictionary -> system environment
+    if idf_path is None:
+        idf_path = env_dict.get('IDF_PATH')
+        if not idf_path:
+            raise ValueError('IDF_PATH must be set in the env array if idf_path argument is not set')
+
+    python = find_python(env_dict['PATH'])
+
+    cmd = [
+        python,
+        os.path.join(idf_path, 'tools', 'idf.py')
+    ]
+    cmd += args  # type: ignore
+    logging.debug('running {} in {}'.format(' '.join(cmd), workdir))
+    return subprocess.run(
+        cmd, env=env_dict, cwd=workdir,
+        check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        text=True, encoding='utf-8', errors='backslashreplace')

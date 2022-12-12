@@ -1,16 +1,8 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_SYSCON_REG_H_
 #define _SOC_SYSCON_REG_H_
 
@@ -469,23 +461,31 @@ extern "C" {
 
 #define DPORT_CORE_RST_EN_REG         DPORT_WIFI_RST_EN_REG
 #define DPORT_WIFI_RST_EN_REG         SYSCON_WIFI_RST_EN_REG
+
 /* DPORT_WIFI_RST : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
 #define DPORT_WIFI_RST  0xFFFFFFFF
 #define DPORT_WIFI_RST_M  ((DPORT_WIFI_RST_V)<<(DPORT_WIFI_RST_S))
 #define DPORT_WIFI_RST_V  0xFFFFFFFF
 #define DPORT_WIFI_RST_S  0
-#define DPORT_RW_BTLP_RST (BIT(10))
-#define DPORT_RW_BTMAC_RST (BIT(9))
-#define DPORT_MACPWR_RST (BIT(8))
-#define DPORT_EMAC_RST (BIT(7))
-#define DPORT_SDIO_HOST_RST (BIT(6))
-#define DPORT_SDIO_RST (BIT(5))
-#define DPORT_BTMAC_RST (BIT(4))
-#define DPORT_BT_RST (BIT(3))
-#define DPORT_MAC_RST (BIT(2))
-#define DPORT_FE_RST (BIT(1))
-#define DPORT_BB_RST (BIT(0))
+
+#define DPORT_WIFIBB_RST   BIT(0)
+#define DPORT_FE_RST       BIT(1)
+#define DPORT_WIFIMAC_RST  BIT(2)
+#define DPORT_BTBB_RST     BIT(3)
+#define DPORT_BTMAC_RST    BIT(4)
+#define DPORT_SDIO_RST     BIT(5)
+#define DPORT_EMAC_RST     BIT(7)
+#define DPORT_MACPWR_RST   BIT(8)
+#define DPORT_RW_BTMAC_RST BIT(9)
+#define DPORT_RW_BTLP_RST  BIT(10)
+
+#define MODEM_RESET_FIELD_WHEN_PU   (DPORT_WIFIBB_RST       | \
+                                     DPORT_FE_RST           | \
+                                     DPORT_WIFIMAC_RST      | \
+                                     DPORT_BTBB_RST         | \
+                                     DPORT_BTMAC_RST        | \
+                                     DPORT_RW_BTMAC_RST)
 
 #define SYSCON_FRONT_END_MEM_PD_REG          (DR_REG_SYSCON_BASE + 0x098)
 /* SYSCON_DC_MEM_FORCE_PD : R/W ;bitpos:[5] ;default: 1'b0 ; */

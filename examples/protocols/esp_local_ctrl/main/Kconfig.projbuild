@@ -1,20 +1,44 @@
 menu "Example Configuration"
 
-    config EXAMPLE_WIFI_SSID
-        string "WiFi SSID"
-        default "myssid"
+    choice EXAMPLE_PROTOCOMM_SECURITY_VERSION
+        bool "Protocomm security version"
+        default EXAMPLE_PROTOCOMM_SECURITY_VERSION_2
         help
-            SSID (network name) for the example to connect to.
+            Local Control component offers 3 security versions.
+            The example offers a choice between security version 0, 1 and 2.
 
-    config EXAMPLE_WIFI_PASSWORD
-        string "WiFi Password"
-        default "mypassword"
-        help
-            WiFi password (WPA or WPA2) for the example to use.
+        config EXAMPLE_PROTOCOMM_SECURITY_VERSION_0
+            bool "Security Version 0"
+            select ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
 
-    config EXAMPLE_MAXIMUM_RETRY
-        int "Maximum retry"
-        default 5
-        help
-            Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
+        config EXAMPLE_PROTOCOMM_SECURITY_VERSION_1
+            bool "Security version 1"
+            select ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
+
+        config EXAMPLE_PROTOCOMM_SECURITY_VERSION_2
+            bool "Security version 2"
+            select ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+    endchoice
+
+    choice EXAMPLE_PROTOCOMM_SEC2_MODE
+        bool "Security version 2 mode"
+        depends on EXAMPLE_PROTOCOMM_SECURITY_VERSION_2
+        default EXAMPLE_PROTOCOMM_SEC2_DEV_MODE
+
+        config EXAMPLE_PROTOCOMM_SEC2_DEV_MODE
+            bool "Security version 2 development mode"
+            depends on EXAMPLE_PROTOCOMM_SECURITY_VERSION_2
+            help
+                This enables the development mode for
+                security version 2.
+                Please note that this mode is NOT recommended for production purpose.
+
+        config EXAMPLE_PROTOCOMM_SEC2_PROD_MODE
+            bool "Security version 2 production mode"
+            depends on EXAMPLE_PROTOCOMM_SECURITY_VERSION_2
+            help
+                This enables the production mode for
+                security version 2.
+    endchoice
+
 endmenu

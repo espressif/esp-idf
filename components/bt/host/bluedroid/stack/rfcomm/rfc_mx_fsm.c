@@ -136,15 +136,20 @@ void rfc_mx_sm_execute (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 *******************************************************************************/
 void rfc_mx_sm_state_idle (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 {
+    tL2CAP_ERTM_INFO *ertm_opt = NULL;
+
     RFCOMM_TRACE_EVENT ("rfc_mx_sm_state_idle - evt:%d", event);
+
     switch (event) {
     case RFC_MX_EVENT_START_REQ:
 
         /* Initialize L2CAP MTU */
         p_mcb->peer_l2cap_mtu = L2CAP_DEFAULT_MTU - RFCOMM_MIN_OFFSET - 1;
 
-        // if ((p_mcb->lcid = L2CA_ConnectReq (BT_PSM_RFCOMM, p_mcb->bd_addr)) == 0) {
-        if ((p_mcb->lcid = L2CA_ErtmConnectReq (BT_PSM_RFCOMM, p_mcb->bd_addr, &rfc_l2c_etm_opt)) == 0) {
+        ertm_opt = rfc_cb.port.enable_l2cap_ertm ? &rfc_l2c_etm_opt : NULL;
+        p_mcb->lcid = L2CA_ErtmConnectReq (BT_PSM_RFCOMM, p_mcb->bd_addr, ertm_opt);
+
+        if (p_mcb->lcid == 0) {
             PORT_StartCnf (p_mcb, RFCOMM_ERROR);
             return;
         }
@@ -164,8 +169,8 @@ void rfc_mx_sm_state_idle (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
     case RFC_MX_EVENT_CONN_IND:
 
         rfc_timer_start (p_mcb, RFCOMM_CONN_TIMEOUT);
-        // L2CA_ConnectRsp (p_mcb->bd_addr, *((UINT8 *)p_data), p_mcb->lcid, L2CAP_CONN_OK, 0);
-        L2CA_ErtmConnectRsp (p_mcb->bd_addr, *((UINT8 *)p_data), p_mcb->lcid, L2CAP_CONN_OK, 0, &rfc_l2c_etm_opt);
+        ertm_opt = rfc_cb.port.enable_l2cap_ertm ? &rfc_l2c_etm_opt : NULL;
+        L2CA_ErtmConnectRsp (p_mcb->bd_addr, *((UINT8 *)p_data), p_mcb->lcid, L2CAP_CONN_OK, 0, ertm_opt);
 
         rfc_mx_send_config_req (p_mcb);
 
@@ -502,9 +507,11 @@ void rfc_mx_sm_state_disc_wait_ua (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
         L2CA_DisconnectReq (p_mcb->lcid);
 
         if (p_mcb->restart_required) {
+            tL2CAP_ERTM_INFO *ertm_opt = rfc_cb.port.enable_l2cap_ertm ? &rfc_l2c_etm_opt : NULL;
             /* Start Request was received while disconnecting.  Execute it again */
-            // if ((p_mcb->lcid = L2CA_ConnectReq (BT_PSM_RFCOMM, p_mcb->bd_addr)) == 0) {
-            if ((p_mcb->lcid = L2CA_ErtmConnectReq (BT_PSM_RFCOMM, p_mcb->bd_addr, &rfc_l2c_etm_opt)) == 0) {
+            p_mcb->lcid = L2CA_ErtmConnectReq(BT_PSM_RFCOMM, p_mcb->bd_addr, ertm_opt);
+
+            if (p_mcb->lcid == 0) {
                 PORT_StartCnf (p_mcb, RFCOMM_ERROR);
                 return;
             }
@@ -576,8 +583,10 @@ static void rfc_mx_send_config_req (tRFC_MCB *p_mcb)
     cfg.mtu_present      = TRUE;
     cfg.mtu              = L2CAP_MTU_SIZE;
 
-    cfg.fcr_present = TRUE;
-    cfg.fcr = rfc_l2c_fcr_opts_def;
+    if (rfc_cb.port.enable_l2cap_ertm) {
+        cfg.fcr_present = TRUE;
+        cfg.fcr = rfc_l2c_fcr_opts_def;
+    }
 
     /* Defaults set by memset
         cfg.flush_to_present = FALSE;

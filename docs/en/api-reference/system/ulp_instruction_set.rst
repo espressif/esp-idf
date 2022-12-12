@@ -191,8 +191,8 @@ The detailed description of all instructions is presented below:
     label:   nop                        // definition of variable label
 
 
-**AND** - Logical AND of two operands
--------------------------------------
+**AND** - Bitwise logical AND of two operands
+---------------------------------------------
 
 **Syntax**
     **AND** *Rdst, Rsrc1, Rsrc2*
@@ -209,7 +209,7 @@ The detailed description of all instructions is presented below:
   2 cycles to execute, 4 cycles to fetch next instruction
 
 **Description**
-  The instruction does a logical AND of a source register and another source register or a 16-bit signed value and stores the result to the destination register.
+  The instruction does a bitwise logical AND of a source register and another source register or a 16-bit signed value and stores the result to the destination register.
 
 **Examples**::
 
@@ -226,8 +226,8 @@ The detailed description of all instructions is presented below:
     label:  nop                     // definition of variable label
 
 
-**OR** - Logical OR of two operands
------------------------------------
+**OR** - Bitwise logical OR of two operands
+-------------------------------------------
 
 **Syntax**
   **OR** *Rdst, Rsrc1, Rsrc2*
@@ -244,7 +244,7 @@ The detailed description of all instructions is presented below:
   2 cycles to execute, 4 cycles to fetch next instruction
 
 **Description**
-  The instruction does a logical OR of a source register and another source register or a 16-bit signed value and stores the result to the destination register.
+  The instruction does a bitwise logical OR of a source register and another source register or a 16-bit signed value and stores the result to the destination register.
 
 **Examples**::
 
@@ -281,6 +281,9 @@ The detailed description of all instructions is presented below:
 **Description**
    The instruction does a logical shift to left of the source register by the number of bits from another source register or a 16-bit signed value and stores the result to the destination register.
 
+.. note::
+   Shift operations which are greater than 15 bits will have an undefined result.
+
 **Examples**::
 
   1:       LSH R1, R2, R3            // R1 = R2 << R3
@@ -315,6 +318,9 @@ The detailed description of all instructions is presented below:
 
 **Description**
   The instruction does a logical shift to right of a source register by the number of bits from another source register or a 16-bit signed value and stores the result to the destination register.
+
+.. note::
+   Shift operations which are greater than 15 bits will have an undefined result.
 
 **Examples**::
 
@@ -796,10 +802,10 @@ The detailed description of all instructions is presented below:
   Conditions *LE* and *GE* are implemented in the assembler using two **JUMPR** instructions::
 
     // JUMPR target, threshold, LE is implemented as:
-    
+
              JUMPR target, threshold, EQ
              JUMPR target, threshold, LT
- 
+
     // JUMPR target, threshold, GE is implemented as:
 
              JUMPR target, threshold, EQ
@@ -979,7 +985,8 @@ The detailed description of all instructions is presented below:
 
   - If the SoC is not in deep sleep mode, and ULP interrupt bit (RTC_CNTL_ULP_CP_INT_ENA) is set in RTC_CNTL_INT_ENA_REG register, RTC interrupt will be triggered.
 
-  Note that before using WAKE instruction, ULP program may needs to wait until RTC controller is ready to wake up the main CPU. This is indicated using RTC_CNTL_RDY_FOR_WAKEUP bit of RTC_CNTL_LOW_POWER_ST_REG register. If WAKE instruction is executed while RTC_CNTL_RDY_FOR_WAKEUP is zero, it has no effect (wake up does not occur).
+.. note::
+  Note that before using WAKE instruction, ULP program may need to wait until RTC controller is ready to wake up the main CPU. This is indicated using RTC_CNTL_RDY_FOR_WAKEUP bit of RTC_CNTL_LOW_POWER_ST_REG register. If WAKE instruction is executed while RTC_CNTL_RDY_FOR_WAKEUP is zero, it has no effect (wake up does not occur). If the WAKE instruction is intended to be used while the main CPU is not in sleep mode then the RTC_CNTL_MAIN_STATE_IN_IDLE (bit 27) of RTC_CNTL_LOW_POWER_ST_REG can be used to check whether main CPU is in normal mode or sleep mode.
 
 **Examples**::
 
@@ -992,6 +999,15 @@ The detailed description of all instructions is presented below:
             HALT                          // Stop the ULP program
             // After these instructions, SoC will wake up,
             // and ULP will not run again until started by the main program.
+
+  1: check_wakeup:                        // Read RTC_CNTL_RDY_FOR_WAKEUP and RTC_CNTL_MAIN_STATE_IN_IDLE bit
+            READ_RTC_REG(RTC_CNTL_LOW_POWER_ST_REG, 27, 1)
+            MOVE r1, r0                   // Copy result in to r1
+            READ_RTC_FIELD(RTC_CNTL_LOW_POWER_ST_REG, RTC_CNTL_RDY_FOR_WAKEUP)
+            OR r0, r0, r1
+            JUMP check_wakeup, eq         // Retry until either of the bit are set
+            WAKE                          // Trigger wake up
+            HALT                          // Stop the ULP program
 
 
 .. only:: esp32
@@ -1041,27 +1057,28 @@ The detailed description of all instructions is presented below:
   2:        .set  wait_cnt, 10  // Set a constant
             WAIT  wait_cnt      // wait for 10 cycles
 
+.. only:: not esp32
 
-**TSENS** – do measurement with temperature sensor
---------------------------------------------------
+    **TSENS** – do measurement with temperature sensor
+    --------------------------------------------------
 
-**Syntax**
-   - **TSENS**   *Rdst, Wait_Delay*
+    **Syntax**
+      - **TSENS**   *Rdst, Wait_Delay*
 
-**Operands**
-  - *Rdst* – Destination Register R[0..3], result will be stored to this register
-  - *Wait_Delay* – number of cycles used to perform the measurement
+    **Operands**
+      - *Rdst* – Destination Register R[0..3], result will be stored to this register
+      - *Wait_Delay* – number of cycles used to perform the measurement
 
-**Cycles**
-  2 + *Wait_Delay* + 3 * TSENS_CLK to execute, 4 cycles to fetch next instruction
+    **Cycles**
+      2 + *Wait_Delay* + 3 * TSENS_CLK to execute, 4 cycles to fetch next instruction
 
-**Description**
-   The instruction performs measurement using TSENS and stores the result into a general purpose register.
+    **Description**
+      The instruction performs measurement using TSENS and stores the result into a general purpose register.
 
-**Examples**::
+    **Examples**::
 
-  1:        TSENS     R1, 1000     // Measure temperature sensor for 1000 cycles,
-                                   // and store result to R1
+      1:        TSENS     R1, 1000     // Measure temperature sensor for 1000 cycles,
+                                      // and store result to R1
 
 
 **ADC** – do measurement with ADC
@@ -1208,7 +1225,7 @@ The detailed description of all instructions is presented below:
 
 .. only:: esp32s2 or esp32s3
 
-  This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the the register, as seen from the ULP, can be calculated from the address of the same register on the PeriBUS1 as follows::
+  This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the register, as seen from the ULP, can be calculated from the address of the same register on the PeriBUS1 as follows::
 
     addr_ulp = (addr_peribus1 - DR_REG_RTCCNTL_BASE) / 4
 

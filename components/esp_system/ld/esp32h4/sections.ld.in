@@ -1,0 +1,409 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Default entry point */
+ENTRY(call_start_cpu0);
+
+SECTIONS
+{
+  /**
+   * RTC fast memory holds RTC wake stub code,
+   * including from any source file named rtc_wake_stub*.c
+   */
+  .rtc.text :
+  {
+    . = ALIGN(4);
+    _rtc_fast_start = ABSOLUTE(.);
+
+    mapping[rtc_text]
+
+    *rtc_wake_stub*.*(.literal .text .literal.* .text.*)
+    *(.rtc_text_end_test)
+
+    /* 16B padding for possible CPU prefetch and 4B alignment for PMS split lines */
+    . += _esp_memprot_prefetch_pad_size;
+    . = ALIGN(4);
+
+    _rtc_text_end = ABSOLUTE(.);
+  } > rtc_iram_seg
+
+  /**
+   * This section located in RTC FAST Memory area.
+   * It holds data marked with RTC_FAST_ATTR attribute.
+   * See the file "esp_attr.h" for more information.
+   */
+  .rtc.force_fast :
+  {
+    . = ALIGN(4);
+    _rtc_force_fast_start = ABSOLUTE(.);
+
+    mapping[rtc_force_fast]
+
+    *(.rtc.force_fast .rtc.force_fast.*)
+    . = ALIGN(4) ;
+    _rtc_force_fast_end = ABSOLUTE(.);
+  } > rtc_data_seg
+
+  /**
+   * RTC data section holds RTC wake stub
+   * data/rodata, including from any source file
+   * named rtc_wake_stub*.c and the data marked with
+   * RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
+   * The memory location of the data is dependent on
+   * CONFIG_ESP32H4_RTCDATA_IN_FAST_MEM option.
+   */
+  .rtc.data :
+  {
+    _rtc_data_start = ABSOLUTE(.);
+
+    mapping[rtc_data]
+
+    *rtc_wake_stub*.*(.data .rodata .data.* .rodata.* .bss .bss.*)
+    _rtc_data_end = ABSOLUTE(.);
+  } > rtc_data_location
+
+  /* RTC bss, from any source file named rtc_wake_stub*.c */
+  .rtc.bss (NOLOAD) :
+  {
+    _rtc_bss_start = ABSOLUTE(.);
+    *rtc_wake_stub*.*(.bss .bss.*)
+    *rtc_wake_stub*.*(COMMON)
+
+    mapping[rtc_bss]
+
+    _rtc_bss_end = ABSOLUTE(.);
+  } > rtc_data_location
+
+  /**
+   * This section holds data that should not be initialized at power up
+   * and will be retained during deep sleep.
+   * User data marked with RTC_NOINIT_ATTR will be placed
+   * into this section. See the file "esp_attr.h" for more information.
+   * The memory location of the data is dependent on CONFIG_ESP32H4_RTCDATA_IN_FAST_MEM option.
+   */
+  .rtc_noinit (NOLOAD):
+  {
+    . = ALIGN(4);
+    _rtc_noinit_start = ABSOLUTE(.);
+    *(.rtc_noinit .rtc_noinit.*)
+    . = ALIGN(4) ;
+    _rtc_noinit_end = ABSOLUTE(.);
+  } > rtc_data_location
+
+  /**
+   * This section located in RTC SLOW Memory area.
+   * It holds data marked with RTC_SLOW_ATTR attribute.
+   * See the file "esp_attr.h" for more information.
+   */
+  .rtc.force_slow :
+  {
+    . = ALIGN(4);
+    _rtc_force_slow_start = ABSOLUTE(.);
+    *(.rtc.force_slow .rtc.force_slow.*)
+    . = ALIGN(4) ;
+    _rtc_force_slow_end = ABSOLUTE(.);
+  } > rtc_slow_seg
+
+  /* Get size of rtc slow data based on rtc_data_location alias */
+  _rtc_slow_length = (ORIGIN(rtc_slow_seg) == ORIGIN(rtc_data_location))
+                        ? (_rtc_force_slow_end - _rtc_data_start)
+                        : (_rtc_force_slow_end - _rtc_force_slow_start);
+
+  _rtc_fast_length = (ORIGIN(rtc_slow_seg) == ORIGIN(rtc_data_location))
+                        ? (_rtc_force_fast_end - _rtc_fast_start)
+                        : (_rtc_noinit_end - _rtc_fast_start);
+
+  ASSERT((_rtc_slow_length <= LENGTH(rtc_slow_seg)),
+          "RTC_SLOW segment data does not fit.")
+
+  ASSERT((_rtc_fast_length <= LENGTH(rtc_data_seg)),
+          "RTC_FAST segment data does not fit.")
+
+  .iram0.text :
+  {
+    _iram_start = ABSOLUTE(.);
+    /* Vectors go to start of IRAM */
+    ASSERT(ABSOLUTE(.) % 0x100 == 0, "vector address must be 256 byte aligned");
+    KEEP(*(.exception_vectors.text));
+    . = ALIGN(4);
+
+    _invalid_pc_placeholder = ABSOLUTE(.);
+
+    /* Code marked as running out of IRAM */
+    _iram_text_start = ABSOLUTE(.);
+
+    mapping[iram0_text]
+
+  } > iram0_0_seg
+
+  /**
+   * This section is required to skip .iram0.text area because iram0_0_seg and
+   * dram0_0_seg reflect the same address space on different buses.
+   */
+  .dram0.dummy (NOLOAD):
+  {
+    . = ORIGIN(dram0_0_seg) + _iram_end - _iram_start;
+  } > dram0_0_seg
+
+  .dram0.data :
+  {
+    _data_start = ABSOLUTE(.);
+    *(.gnu.linkonce.d.*)
+    *(.data1)
+    __global_pointer$ = . + 0x800;
+    *(.sdata)
+    *(.sdata.*)
+    *(.gnu.linkonce.s.*)
+    *(.gnu.linkonce.s2.*)
+    *(.jcr)
+
+    mapping[dram0_data]
+
+    _data_end = ABSOLUTE(.);
+    . = ALIGN(4);
+  } > dram0_0_seg
+
+  /**
+   * This section holds data that should not be initialized at power up.
+   * The section located in Internal SRAM memory region. The macro _NOINIT
+   * can be used as attribute to place data into this section.
+   * See the "esp_attr.h" file for more information.
+   */
+  .noinit (NOLOAD):
+  {
+    . = ALIGN(4);
+    _noinit_start = ABSOLUTE(.);
+    *(.noinit .noinit.*)
+    . = ALIGN(4) ;
+    _noinit_end = ABSOLUTE(.);
+  } > dram0_0_seg
+
+  /* Shared RAM */
+  .dram0.bss (NOLOAD) :
+  {
+    . = ALIGN (8);
+    _bss_start = ABSOLUTE(.);
+
+    mapping[dram0_bss]
+
+    *(.dynsbss)
+    *(.sbss)
+    *(.sbss.*)
+    *(.gnu.linkonce.sb.*)
+    *(.scommon)
+    *(.sbss2)
+    *(.sbss2.*)
+    *(.gnu.linkonce.sb2.*)
+    *(.dynbss)
+    *(.share.mem)
+    *(.gnu.linkonce.b.*)
+
+    . = ALIGN (8);
+    _bss_end = ABSOLUTE(.);
+  } > dram0_0_seg
+
+  ASSERT(((_bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
+
+  .flash.text :
+  {
+    _stext = .;
+    _instruction_reserved_start = ABSOLUTE(.);
+    _text_start = ABSOLUTE(.);
+
+    mapping[flash_text]
+
+    *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
+    *(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */
+    *(.fini.literal)
+    *(.fini)
+    *(.gnu.version)
+
+    /** CPU will try to prefetch up to 16 bytes of
+      * of instructions. This means that any configuration (e.g. MMU, PMS) must allow
+      * safe access to up to 16 bytes after the last real instruction, add
+      * dummy bytes to ensure this
+      */
+    . += 16;
+
+    _text_end = ABSOLUTE(.);
+    _instruction_reserved_end = ABSOLUTE(.);
+    _etext = .;
+
+    /**
+     * Similar to _iram_start, this symbol goes here so it is
+     * resolved by addr2line in preference to the first symbol in
+     * the flash.text segment.
+     */
+    _flash_cache_start = ABSOLUTE(0);
+  } > default_code_seg
+
+  /**
+   * This dummy section represents the .flash.text section but in default_rodata_seg.
+   * Thus, it must have its alignment and (at least) its size.
+   */
+  .flash_rodata_dummy (NOLOAD):
+  {
+    _flash_rodata_dummy_start = .;
+    /* Start at the same alignment constraint than .flash.text */
+    . = ALIGN(ALIGNOF(.flash.text));
+    /* Create an empty gap as big as .flash.text section */
+    . = . + SIZEOF(.flash.text);
+    /* Prepare the alignment of the section above. Few bytes (0x20) must be
+     * added for the mapping header. */
+    . = ALIGN(0x10000) + 0x20;
+    _rodata_reserved_start = .;
+  } > default_rodata_seg
+
+  .flash.appdesc : ALIGN(0x10)
+  {
+    _rodata_start = ABSOLUTE(.);
+
+    *(.rodata_desc .rodata_desc.*)               /* Should be the first.  App version info.        DO NOT PUT ANYTHING BEFORE IT! */
+    *(.rodata_custom_desc .rodata_custom_desc.*) /* Should be the second. Custom app version info. DO NOT PUT ANYTHING BEFORE IT! */
+
+    /* Create an empty gap within this section. Thanks to this, the end of this
+     * section will match .flash.rodata's begin address. Thus, both sections
+     * will be merged when creating the final bin image. */
+    . = ALIGN(ALIGNOF(.flash.rodata));
+  } >default_rodata_seg
+
+  .flash.rodata : ALIGN(0x10)
+  {
+    _flash_rodata_start = ABSOLUTE(.);
+
+    mapping[flash_rodata]
+
+    *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
+    *(.gnu.linkonce.r.*)
+    *(.rodata1)
+    __XT_EXCEPTION_TABLE_ = ABSOLUTE(.);
+    *(.xt_except_table)
+    *(.gcc_except_table .gcc_except_table.*)
+    *(.gnu.linkonce.e.*)
+    *(.gnu.version_r)
+    . = (. + 7) & ~ 3;
+    /*
+     * C++ constructor and destructor tables
+     * Don't include anything from crtbegin.o or crtend.o, as IDF doesn't use toolchain crt.
+     *
+     * RISC-V gcc is configured with --enable-initfini-array so it emits an .init_array section instead.
+     * But the init_priority sections will be sorted for iteration in ascending order during startup.
+     * The rest of the init_array sections is sorted for iteration in descending order during startup, however.
+     * Hence a different section is generated for the init_priority functions which is iterated in
+     * ascending order during startup. The corresponding code can be found in startup.c.
+     */
+    __init_priority_array_start = ABSOLUTE(.);
+    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*))
+    __init_priority_array_end = ABSOLUTE(.);
+    __init_array_start = ABSOLUTE(.);
+    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array))
+    __init_array_end = ABSOLUTE(.);
+    KEEP (*crtbegin.*(.dtors))
+    KEEP (*(EXCLUDE_FILE (*crtend.*) .dtors))
+    KEEP (*(SORT(.dtors.*)))
+    KEEP (*(.dtors))
+    /* C++ exception handlers table: */
+    __XT_EXCEPTION_DESCS_ = ABSOLUTE(.);
+    *(.xt_except_desc)
+    *(.gnu.linkonce.h.*)
+    __XT_EXCEPTION_DESCS_END__ = ABSOLUTE(.);
+    *(.xt_except_desc_end)
+    *(.dynamic)
+    *(.gnu.version_d)
+    /* Addresses of memory regions reserved via SOC_RESERVE_MEMORY_REGION() */
+    soc_reserved_memory_region_start = ABSOLUTE(.);
+    KEEP (*(.reserved_memory_address))
+    soc_reserved_memory_region_end = ABSOLUTE(.);
+    /* System init functions registered via ESP_SYSTEM_INIT_FN */
+    _esp_system_init_fn_array_start = ABSOLUTE(.);
+    KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
+    _esp_system_init_fn_array_end = ABSOLUTE(.);
+    _rodata_end = ABSOLUTE(.);
+    /* Literals are also RO data. */
+    _lit4_start = ABSOLUTE(.);
+    *(*.lit4)
+    *(.lit4.*)
+    *(.gnu.linkonce.lit4.*)
+    _lit4_end = ABSOLUTE(.);
+    . = ALIGN(4);
+    _thread_local_start = ABSOLUTE(.);
+    *(.tdata)
+    *(.tdata.*)
+    *(.tbss)
+    *(.tbss.*)
+    _thread_local_end = ABSOLUTE(.);
+    _rodata_reserved_end = ABSOLUTE(.);
+    . = ALIGN(ALIGNOF(.eh_frame));
+  } > default_rodata_seg
+
+    /* Keep this section shall be at least aligned on 4 */
+  .eh_frame : ALIGN(4)
+  {
+    __eh_frame = ABSOLUTE(.);
+    KEEP (*(.eh_frame))
+    __eh_frame_end = ABSOLUTE(.);
+    /* Guarantee that this section and the next one will be merged by making
+     * them adjacent. */
+    . = ALIGN(ALIGNOF(.eh_frame_hdr));
+  } > default_rodata_seg
+
+  /* To avoid any exception in C++ exception frame unwinding code, this section
+   * shall be aligned on 8. */
+  .eh_frame_hdr : ALIGN(8)
+  {
+    __eh_frame_hdr = ABSOLUTE(.);
+    KEEP (*(.eh_frame_hdr))
+    __eh_frame_hdr_end = ABSOLUTE(.);
+  } > default_rodata_seg
+
+  /* Marks the end of IRAM code segment */
+  .iram0.text_end (NOLOAD) :
+  {
+    /* iram_end_test section exists for use by memprot unit tests only */
+     *(.iram_end_test)
+
+    /* ESP32-H4 memprot requires 16B padding for possible CPU prefetch and 512B alignment for PMS split lines */
+    . += _esp_memprot_prefetch_pad_size;
+    . = ALIGN(_esp_memprot_align_size);
+
+    _iram_text_end = ABSOLUTE(.);
+  } > iram0_0_seg
+
+  .iram0.data :
+  {
+    . = ALIGN(16);
+    _iram_data_start = ABSOLUTE(.);
+
+    mapping[iram0_data]
+
+    _iram_data_end = ABSOLUTE(.);
+  } > iram0_0_seg
+
+  .iram0.bss (NOLOAD) :
+  {
+    . = ALIGN(16);
+    _iram_bss_start = ABSOLUTE(.);
+
+    mapping[iram0_bss]
+
+    _iram_bss_end = ABSOLUTE(.);
+    . = ALIGN(16);
+    _iram_end = ABSOLUTE(.);
+  } > iram0_0_seg
+
+  /* Marks the end of data, bss and possibly rodata  */
+  .dram0.heap_start (NOLOAD) :
+  {
+    . = ALIGN (16);
+    _heap_start = ABSOLUTE(.);
+  } > dram0_0_seg
+}
+
+ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
+          "IRAM0 segment data does not fit.")
+
+ASSERT(((_heap_start - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
+          "DRAM segment data does not fit.")

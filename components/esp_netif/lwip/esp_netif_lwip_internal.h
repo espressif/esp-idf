@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,35 +8,10 @@
 
 #include "esp_netif.h"
 #include "esp_netif_ppp.h"
-#include "esp_netif_slip.h"
 #include "lwip/netif.h"
 #include "dhcpserver/dhcpserver.h"
 
-#ifdef CONFIG_ESP_NETIF_TCPIP_LWIP
-
-struct esp_netif_netstack_lwip_vanilla_config {
-    err_t (*init_fn)(struct netif*);
-    void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
-};
-
-struct esp_netif_netstack_lwip_ppp_config {
-    void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
-    esp_netif_ppp_config_t ppp_events;
-};
-
-struct esp_netif_netstack_lwip_slip_config {
-    err_t (*init_fn)(struct netif*);
-    void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
-    esp_netif_slip_config_t slip_config;
-};
-
-// LWIP netif specific network stack configuration
-struct esp_netif_netstack_config {
-    union {
-        struct esp_netif_netstack_lwip_vanilla_config lwip;
-        struct esp_netif_netstack_lwip_ppp_config lwip_ppp;
-    };
-};
+#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
 
 struct esp_netif_api_msg_s;
 
@@ -63,10 +38,10 @@ typedef struct esp_netif_ip_lost_timer_s {
 /**
  * @brief Check the netif if of a specific P2P type
  */
-#if CONFIG_PPP_SUPPORT || CONFIG_LWIP_SLIP_SUPPORT
-#define _IS_NETIF_POINT2POINT_TYPE(netif, type) (netif->related_data && netif->related_data->is_point2point && netif->related_data->netif_type == type)
+#if CONFIG_PPP_SUPPORT
+#define ESP_NETIF_IS_POINT2POINT_TYPE(netif, type) (netif->related_data && netif->related_data->is_point2point && netif->related_data->netif_type == type)
 #else
-#define _IS_NETIF_POINT2POINT_TYPE(netif, type) false
+#define ESP_NETIF_IS_POINT2POINT_TYPE(netif, type) false
 #endif
 
 /**
@@ -75,12 +50,11 @@ typedef struct esp_netif_ip_lost_timer_s {
 enum netif_types {
     COMMON_LWIP_NETIF,
     PPP_LWIP_NETIF,
-    SLIP_LWIP_NETIF
 };
 
 /**
  * @brief Related data to esp-netif (additional data for some special types of netif
- * (typically for point-point network types, such as PPP or SLIP)
+ * (typically for point-point network types, such as PPP)
  */
 typedef struct netif_related_data {
     bool is_point2point;
@@ -126,6 +100,13 @@ struct esp_netif_obj {
     char * if_key;
     char * if_desc;
     int route_prio;
+
+#if CONFIG_ESP_NETIF_BRIDGE_EN
+    // bridge configuration
+    uint16_t max_fdb_dyn_entries;
+    uint16_t max_fdb_sta_entries;
+    uint8_t max_ports;
+#endif // CONFIG_ESP_NETIF_BRIDGE_EN
 };
 
 #endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */

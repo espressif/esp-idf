@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 from __future__ import print_function, unicode_literals
 
@@ -20,6 +9,7 @@ import argparse
 import os
 import sys
 from io import open
+from typing import Set, Tuple
 
 from check_kconfigs import valid_directory
 from idf_ci_utils import get_submodule_dirs
@@ -30,11 +20,11 @@ FILES_TO_CHECK = ('sdkconfig.ci', 'sdkconfig.defaults')
 # ignored directories (makes sense only when run on IDF_PATH)
 # Note: IGNORE_DIRS is a tuple in order to be able to use it directly with the startswith() built-in function which
 # accepts tuples but no lists.
-IGNORE_DIRS = (
+IGNORE_DIRS: Tuple = (
 )
 
 
-def _parse_path(path, sep=None):
+def _parse_path(path: 'os.PathLike[str]', sep: str=None) -> Set:
     ret = set()
     with open(path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -44,13 +34,13 @@ def _parse_path(path, sep=None):
     return ret
 
 
-def _valid_directory(path):
+def _valid_directory(path: 'os.PathLike[str]') -> 'os.PathLike[str]':
     if not os.path.isdir(path):
         raise argparse.ArgumentTypeError('{} is not a valid directory!'.format(path))
     return path
 
 
-def main():
+def check() -> int:
     parser = argparse.ArgumentParser(description='Kconfig options checker')
     parser.add_argument('files', nargs='*',
                         help='Kconfig files')
@@ -113,5 +103,9 @@ def main():
     return 0
 
 
+def main() -> None:
+    sys.exit(check())
+
+
 if __name__ == '__main__':
-    sys.exit(main())
+    main()

@@ -21,9 +21,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
+#include "osi/pkt_queue.h"
 #include "stack/bt_types.h"
-
+#if SOC_ESP_NIMBLE_CONTROLLER
+#include "os/os_mbuf.h"
+#endif
 typedef enum {
     DATA_TYPE_COMMAND = 1,
     DATA_TYPE_ACL     = 2,
@@ -32,12 +34,14 @@ typedef enum {
 } serial_data_type_t;
 
 typedef void (*packet_ready_cb)(BT_HDR *packet);
+typedef void (*adv_rpt_ready_cb)(pkt_linked_item_t *linked_pkt);
 
 typedef struct {
     // Called when the HAL detects inbound data.
     // Data |type| may be ACL, SCO, or EVENT.
     // Executes in the context of the thread supplied to |init|.
     packet_ready_cb packet_ready;
+    adv_rpt_ready_cb adv_rpt_ready;
 
     /*
     // Called when the HAL detects inbound astronauts named Dave.
@@ -81,5 +85,11 @@ typedef struct hci_hal_t {
 
 // Gets the correct hal implementation, as compiled for.
 const hci_hal_t *hci_hal_h4_get_interface(void);
+#if SOC_ESP_NIMBLE_CONTROLLER
+int ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg);
+
+int ble_hs_rx_data(struct os_mbuf *om, void *arg);
+#endif
+
 
 #endif /* _HCI_HAL_H */

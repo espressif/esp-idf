@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # HTTP Request Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -72,7 +75,7 @@ Connection: close
         margin: 0;
         padding: 0;
         font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-        
+
     }
     div {
         width: 600px;
@@ -92,7 +95,7 @@ Connection: close
             width: auto;
         }
     }
-    </style>    
+    </style>
 </head>
 
 <body>
@@ -105,7 +108,7 @@ Connection: close
 </body>
 </html>
 I (11467) example: ... done reading from socket. Last read return=0 errno=128.
-I (11477) example: 10... 
-I (12477) example: 9... 
-I (13477) example: 8... 
+I (11477) example: 10...
+I (12477) example: 9...
+I (13477) example: 8...
 ```

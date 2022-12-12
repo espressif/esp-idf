@@ -9,14 +9,13 @@ set(priv_requires driver log esp_timer)
 
 # If Ethernet disabled in Kconfig, this is a config-only component
 if(CONFIG_ETH_ENABLED)
-    set(srcs "src/esp_eth.c" "src/esp_eth_phy.c")
+    set(srcs "src/esp_eth.c" "src/esp_eth_phy_802_3.c")
     set(include "include")
 
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         # esp_netif related
         if(esp_netif IN_LIST components_to_build)
             list(APPEND srcs "src/esp_eth_netif_glue.c")
-            list(APPEND priv_requires esp_netif esp_pm)
         endif()
     endif()
 
@@ -51,8 +50,15 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS ${include}
-                       REQUIRES "esp_event" # For using "ESP_EVENT_DECLARE_BASE" in header file
+                       REQUIRES esp_event # For using "ESP_EVENT_DECLARE_BASE" in header file
                        PRIV_REQUIRES ${priv_requires})
+if(CONFIG_ETH_ENABLED)
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
+endif()
 
-# uses C11 atomic feature
-set_source_files_properties(src/esp_eth.c PROPERTIES COMPILE_FLAGS -std=gnu11)
+if(CONFIG_ETH_ENABLED)
+    if(CONFIG_ETH_USE_SPI_ETHERNET)
+        idf_component_optional_requires(PUBLIC driver)
+    endif()
+    idf_component_optional_requires(PRIVATE esp_netif esp_pm)
+endif()

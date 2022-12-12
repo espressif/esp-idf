@@ -7,11 +7,15 @@ from datetime import datetime
 from typing import Any, List, Optional
 
 from fatfs_utils.boot_sector import BootSector
+from fatfs_utils.exceptions import NoFreeClusterException
 from fatfs_utils.fat import FAT
 from fatfs_utils.fatfs_state import FATFSState
 from fatfs_utils.fs_object import Directory
-from fatfs_utils.utils import (BYTES_PER_DIRECTORY_ENTRY, FATFS_INCEPTION, FATDefaults,
-                               get_args_for_partition_generator, read_filesystem)
+from fatfs_utils.long_filename_utils import get_required_lfn_entries_count
+from fatfs_utils.utils import (BYTES_PER_DIRECTORY_ENTRY, FATFS_INCEPTION, FATFS_MIN_ALLOC_UNIT,
+                               RESERVED_CLUSTERS_COUNT, FATDefaults, get_args_for_partition_generator,
+                               get_fat_sectors_count, get_non_data_sectors_cnt, read_filesystem,
+                               required_clusters_count)
 
 
 class FATFS:
@@ -27,7 +31,6 @@ class FATFS:
                  fat_tables_cnt: int = FATDefaults.FAT_TABLES_COUNT,
                  sectors_per_cluster: int = FATDefaults.SECTORS_PER_CLUSTER,
                  sector_size: int = FATDefaults.SECTOR_SIZE,
-                 sectors_per_fat: int = FATDefaults.SECTORS_PER_FAT,
                  hidden_sectors: int = FATDefaults.HIDDEN_SECTORS,
                  long_names_enabled: bool = False,
                  use_default_datetime: bool = True,
@@ -39,7 +42,6 @@ class FATFS:
                  root_entry_count: int = FATDefaults.ROOT_ENTRIES_COUNT,
                  explicit_fat_type: int = None,
                  media_type: int = FATDefaults.MEDIA_TYPE) -> None:
-
         # root directory bytes should be aligned by sector size
         assert (root_entry_count * BYTES_PER_DIRECTORY_ENTRY) % sector_size == 0
         # number of bytes in the root dir must be even multiple of BPB_BytsPerSec
@@ -55,7 +57,6 @@ class FATFS:
                                             file_sys_type=file_sys_type,
                                             num_heads=num_heads,
                                             fat_tables_cnt=fat_tables_cnt,
-                                            sectors_per_fat=sectors_per_fat,
                                             sectors_per_cluster=sectors_per_cluster,
                                             media_type=media_type,
                                             hidden_sectors=hidden_sectors,
@@ -81,17 +82,41 @@ class FATFS:
     def create_file(self, name: str,
                     extension: str = '',
                     path_from_root: Optional[List[str]] = None,
-                    object_timestamp_: datetime = FATFS_INCEPTION) -> None:
-        # when path_from_root is None the dir is root
+                    object_timestamp_: datetime = FATFS_INCEPTION,
+                    is_empty: bool = False) -> None:
+        """
+        Root directory recursively finds the parent directory of the new file, allocates cluster,
+        entry and appends a new file into the parent directory.
+
+        When path_from_root is None the dir is root.
+
+        :param name: The name of the file.
+        :param extension: The extension of the file.
+        :param path_from_root: List of strings containing names of the ancestor directories in the given order.
+        :param object_timestamp_: is not None, this will be propagated to the file's entry
+        :param is_empty: True if there is no need to allocate any cluster, otherwise False
+        """
         self.root_directory.new_file(name=name,
                                      extension=extension,
                                      path_from_root=path_from_root,
-                                     object_timestamp_=object_timestamp_)
+                                     object_timestamp_=object_timestamp_,
+                                     is_empty=is_empty)
 
     def create_directory(self, name: str,
                          path_from_root: Optional[List[str]] = None,
                          object_timestamp_: datetime = FATFS_INCEPTION) -> None:
-        # when path_from_root is None the dir is root
+        """
+        Initially recursively finds a parent of the new directory
+        and then create a new directory inside the parent.
+
+        When path_from_root is None the parent dir is root.
+
+        :param name: The full name of the directory (excluding its path)
+        :param path_from_root: List of strings containing names of the ancestor directories in the given order.
+        :param object_timestamp_: in case the user preserves the timestamps, this will be propagated to the
+        metadata of the directory (to the corresponding entry)
+        :returns: None
+        """
         parent_dir = self.root_directory
         if path_from_root:
             parent_dir = self.root_directory.recursive_search(path_from_root, self.root_directory)
@@ -141,7 +166,8 @@ class FATFS:
             self.create_file(name=file_name,
                              extension=extension,
                              path_from_root=split_path[1:-1] or None,
-                             object_timestamp_=object_timestamp)
+                             object_timestamp_=object_timestamp,
+                             is_empty=len(content) == 0)
             self.write_content(split_path[1:], content)
         elif os.path.isdir(real_path):
             if not is_dir:
@@ -162,8 +188,47 @@ class FATFS:
         self._generate_partition_from_folder(folder_name, folder_path=path_to_folder, is_dir=True)
 
 
+def calculate_min_space(path: List[str],
+                        fs_entity: str,
+                        sector_size: int = 0x1000,
+                        long_file_names: bool = False,
+                        is_root: bool = False) -> int:
+    if os.path.isfile(os.path.join(*path, fs_entity)):
+        with open(os.path.join(*path, fs_entity), 'rb') as file_:
+            content = file_.read()
+        res: int = required_clusters_count(sector_size, content)
+        return res
+    buff: int = 0
+    dir_size = 2 * FATDefaults.ENTRY_SIZE  # record for symlinks "." and ".."
+    for file in sorted(os.listdir(os.path.join(*path, fs_entity))):
+        if long_file_names and True:
+            # LFN entries + one short entry
+            dir_size += (get_required_lfn_entries_count(fs_entity) + 1) * FATDefaults.ENTRY_SIZE
+        else:
+            dir_size += FATDefaults.ENTRY_SIZE
+        buff += calculate_min_space(path + [fs_entity], file, sector_size, long_file_names, is_root=False)
+    if is_root and dir_size // FATDefaults.ENTRY_SIZE > FATDefaults.ROOT_ENTRIES_COUNT:
+        raise NoFreeClusterException('Not enough space in root!')
+
+    # roundup sectors, at least one is required
+    buff += (dir_size + sector_size - 1) // sector_size
+    return buff
+
+
 def main() -> None:
-    args = get_args_for_partition_generator('Create a FAT filesystem and populate it with directory content')
+    args = get_args_for_partition_generator('Create a FAT filesystem and populate it with directory content', wl=False)
+
+    if args.partition_size == -1:
+        clusters = calculate_min_space([], args.input_directory, args.sector_size, long_file_names=True, is_root=True)
+        fats = get_fat_sectors_count(clusters, args.sector_size)
+        root_dir_sectors = (FATDefaults.ROOT_ENTRIES_COUNT * FATDefaults.ENTRY_SIZE) // args.sector_size
+        args.partition_size = max(FATFS_MIN_ALLOC_UNIT * args.sector_size,
+                                  (clusters + fats + get_non_data_sectors_cnt(RESERVED_CLUSTERS_COUNT,
+                                                                              fats,
+                                                                              root_dir_sectors)
+                                   ) * args.sector_size
+                                  )
+
     fatfs = FATFS(sector_size=args.sector_size,
                   sectors_per_cluster=args.sectors_per_cluster,
                   size=args.partition_size,

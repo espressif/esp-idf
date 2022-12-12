@@ -25,7 +25,7 @@ class WLFatFSGen(unittest.TestCase):
 
     def test_empty_file_sn_fat12(self) -> None:
         fatfs = wl_fatfsgen.WLFATFS()
-        fatfs.wl_create_file('TESTFILE')
+        fatfs.plain_fatfs.create_file('TESTFILE')
         fatfs.init_wl()
         fatfs.wl_write_filesystem(CFG['output_file'])
         with open(CFG['output_file'], 'rb') as fs_file:
@@ -36,7 +36,7 @@ class WLFatFSGen(unittest.TestCase):
 
     def test_directory_sn_fat12(self) -> None:
         fatfs = wl_fatfsgen.WLFATFS(device_id=3750448905)
-        fatfs.wl_create_directory('TESTFOLD')
+        fatfs.plain_fatfs.create_directory('TESTFOLD')
         fatfs.init_wl()
 
         fatfs.wl_write_filesystem(CFG['output_file'])
@@ -73,7 +73,7 @@ class WLFatFSGen(unittest.TestCase):
 
     def test_directory_sn_fat122mb(self) -> None:
         fatfs = wl_fatfsgen.WLFATFS(device_id=3750448905, size=2 * 1024 * 1024)
-        fatfs.wl_create_directory('TESTFOLD')
+        fatfs.plain_fatfs.create_directory('TESTFOLD')
         fatfs.init_wl()
 
         fatfs.wl_write_filesystem(CFG['output_file'])
@@ -102,15 +102,12 @@ class WLFatFSGen(unittest.TestCase):
 
     def test_write_not_initialized_wlfatfs(self) -> None:
         fatfs = wl_fatfsgen.WLFATFS()
-        fatfs.wl_create_directory('TESTFOLD')
+        fatfs.plain_fatfs.create_directory('TESTFOLD')
         self.assertRaises(WLNotInitialized, fatfs.wl_write_filesystem, CFG['output_file'])
-
-    def test_wrong_sector_size(self) -> None:
-        self.assertRaises(NotImplementedError, wl_fatfsgen.WLFATFS, sector_size=1024)
 
     def test_e2e_deep_folder_into_image_ext(self) -> None:
         fatfs = wl_fatfsgen.WLFATFS()
-        fatfs.wl_generate(CFG['test_dir2'])
+        fatfs.plain_fatfs.generate(CFG['test_dir2'])
         fatfs.init_wl()
         fatfs.wl_write_filesystem(CFG['output_file'])
         with open(CFG['output_file'], 'rb') as fs_file:
@@ -127,7 +124,7 @@ class WLFatFSGen(unittest.TestCase):
 
     def test_e2e_deep_folder_into_image(self) -> None:
         fatfs = wl_fatfsgen.WLFATFS()
-        fatfs.wl_generate(CFG['test_dir'])
+        fatfs.plain_fatfs.generate(CFG['test_dir'])
         fatfs.init_wl()
         fatfs.wl_write_filesystem(CFG['output_file'])
         with open(CFG['output_file'], 'rb') as fs_file:

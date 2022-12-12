@@ -1,11 +1,26 @@
-| Supported Targets | ESP32-S2 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- |
 
 # Touch Element waterproof Example
+
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example demonstrates how to use the Touch Element library of capacitive Touch Sensor and setup the touch elements with touch element waterproof protection.
 
 ## How to use example
+
+### Hardware Required
+
+* A development board with ESP32-S2 or ESP32-S3 chip
+* A touch extension board like [esp32-s2-touch-devkit-1](https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32s2/esp32-s2-touch-devkit-1/user_guide.html)
+
+### Configure the project
+
+* Set the target of the build by following command, where TARGET can be `esp32s2` or `esp32s3`.
+```
+idf.py set-target TARGET
+```
+* Run `idf.py menuconfig` to select weather to enable waterproof function.
 
 ### Build and Flash
 
@@ -39,4 +54,6 @@ I (12561) Touch Element Waterproof Example: Button[9] Press
 I (12811) Touch Element Waterproof Example: Button[9] Release
 ```
 
-See the README.md file in the upper level 'examples' directory for more information about examples.
+## Troubleshooting
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

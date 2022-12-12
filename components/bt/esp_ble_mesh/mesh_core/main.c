@@ -78,6 +78,11 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 
     memcpy(bt_mesh.dev_key, dev_key, 16);
 
+    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
+        IS_ENABLED(CONFIG_BLE_MESH_LPN_SUB_ALL_NODES_ADDR)) {
+        bt_mesh_lpn_group_add(BLE_MESH_ADDR_ALL_NODES);
+    }
+
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         BT_DBG("Storing network information persistently");
         bt_mesh_store_net();
@@ -110,6 +115,12 @@ void bt_mesh_node_reset(void)
     bt_mesh_tx_reset();
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_LPN_SUB_ALL_NODES_ADDR)) {
+            uint16_t group = BLE_MESH_ADDR_ALL_NODES;
+
+            bt_mesh_lpn_group_del(&group, 1);
+        }
+
         bt_mesh_lpn_disable(true);
     }
 
@@ -602,14 +613,14 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
             (bearers & BLE_MESH_PROV_ADV)) {
-        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-                                        BLE_MESH_EXCEP_INFO_MESH_BEACON, NULL);
+        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_ADD,
+                                        BLE_MESH_EXCEP_LIST_TYPE_MESH_BEACON, NULL);
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
             (bearers & BLE_MESH_PROV_GATT)) {
-        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-                                        BLE_MESH_EXCEP_INFO_MESH_PROV_ADV, NULL);
+        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_ADD,
+                                        BLE_MESH_EXCEP_LIST_TYPE_MESH_PROV_ADV, NULL);
     }
 #endif
 
@@ -657,8 +668,8 @@ int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers)
             (bearers & BLE_MESH_PROV_GATT)) {
         bt_mesh_proxy_client_prov_disable();
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
-        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-                                        BLE_MESH_EXCEP_INFO_MESH_PROV_ADV, NULL);
+        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_REMOVE,
+                                        BLE_MESH_EXCEP_LIST_TYPE_MESH_PROV_ADV, NULL);
 #endif
     }
 
@@ -669,8 +680,8 @@ int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers)
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
                 (enable & BLE_MESH_PROV_ADV)) {
-            bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-                                            BLE_MESH_EXCEP_INFO_MESH_BEACON, NULL);
+            bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_REMOVE,
+                                            BLE_MESH_EXCEP_LIST_TYPE_MESH_BEACON, NULL);
         }
 #endif
 

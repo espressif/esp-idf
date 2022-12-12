@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -24,6 +16,10 @@
 #include "soc/usb_wrap_reg.h"
 #include "soc/usb_wrap_struct.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief A pin descriptor for init
  */
@@ -35,3 +31,7 @@ typedef struct {
 } usb_iopin_dsc_t;
 
 extern const usb_iopin_dsc_t usb_periph_iopins[];
+
+#ifdef __cplusplus
+}
+#endif

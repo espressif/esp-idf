@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_attr.h"
 #include "esp_freertos_hooks.h"
+#include "esp_cpu.h"
 
 #include "sdkconfig.h"
 
@@ -55,7 +56,7 @@ void esp_vApplicationIdleHook(void)
     esp_pm_impl_idle_hook();
     esp_pm_impl_waiti();
 #else
-    cpu_hal_waiti();
+    esp_cpu_wait_for_intr();
 #endif
 
 

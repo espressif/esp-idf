@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/touch_pad.h"
@@ -33,10 +34,10 @@ static void tp_example_read_task(void *pvParameter)
             // If open the filter mode, please use this API to get the touch pad count.
             touch_pad_read_raw_data(i, &touch_value);
             touch_pad_read_filtered(i, &touch_filter_value);
-            printf("T%d:[%4d,%4d] ", i, touch_value, touch_filter_value);
+            printf("T%d:[%4"PRIu16",%4"PRIu16"] ", i, touch_value, touch_filter_value);
 #else
             touch_pad_read(i, &touch_value);
-            printf("T%d:[%4d] ", i, touch_value);
+            printf("T%d:[%4"PRIu16"] ", i, touch_value);
 #endif
         }
         printf("\n");
@@ -66,5 +67,5 @@ void app_main(void)
     touch_pad_filter_start(TOUCHPAD_FILTER_TOUCH_PERIOD);
 #endif
     // Start task to read values sensed by pads
-    xTaskCreate(&tp_example_read_task, "touch_pad_read_task", 2048, NULL, 5, NULL);
+    xTaskCreate(&tp_example_read_task, "touch_pad_read_task", 4096, NULL, 5, NULL);
 }

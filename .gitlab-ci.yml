@@ -1,4 +1,5 @@
 stages:
+  - upload_cache
   - pre_check
   - build
   - assign_test
@@ -53,28 +54,30 @@ variables:
   BATCH_BUILD: "1"
   V: "0"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
+  PYTHON_VER: 3.7.10
+
+  CLANG_TIDY_RUNNER_PROJ: 2107  # idf/clang-tidy-runner
+  IDF_BUILD_APPS_PROJ: 2818  # espressif/idf-build-apps
 
   # Docker images
   BOT_DOCKER_IMAGE_TAG: ":latest"
 
-  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env-v5.0:2-3"
-  ESP_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-env-v5.0:2"
-  AFL_FUZZER_TEST_IMAGE: "$CI_DOCKER_REGISTRY/afl-fuzzer-test-v5.0:2-1"
-  CLANG_STATIC_ANALYSIS_IMAGE: "${CI_DOCKER_REGISTRY}/clang-static-analysis-v5.0:2-1"
-  TARGET_TEST_ENV_IMAGE: "$CI_DOCKER_REGISTRY/target-test-env-v5.0:2"
-  QEMU_IMAGE: "${CI_DOCKER_REGISTRY}/qemu-v5.0:2-20210826"
+  ESP_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-env-v5.1:1"
+  AFL_FUZZER_TEST_IMAGE: "$CI_DOCKER_REGISTRY/afl-fuzzer-test-v5.1:1-1"
+  CLANG_STATIC_ANALYSIS_IMAGE: "${CI_DOCKER_REGISTRY}/clang-static-analysis-v5.1:1-1"
+  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env-v5.1:1-1"
+  QEMU_IMAGE: "${CI_DOCKER_REGISTRY}/qemu-v5.1:1-20220802"
+  TARGET_TEST_ENV_IMAGE: "$CI_DOCKER_REGISTRY/target-test-env-v5.1:1"
 
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:3"
-  LINUX_SHELL_IMAGE: "${CI_DOCKER_REGISTRY}/linux-shells-v5.0:2"
+
+  PRE_COMMIT_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-pre-commit:1"
 
   # target test config file, used by assign test job
   CI_TARGET_TEST_CONFIG_FILE: "$CI_PROJECT_DIR/.gitlab/ci/target-test.yml"
 
   # target test repo parameters
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
-  CI_AUTO_TEST_SCRIPT_REPO_URL: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/auto_test_script.git"
-  CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v4.1"
-  PYTEST_EMBEDDED_VERSION: "0.7.1"
 
   # cache python dependencies
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -85,7 +88,7 @@ variables:
   CI_PYTHON_CONSTRAINT_BRANCH: ""
 
   # Update the filename for a specific ESP-IDF release. It is used only with CI_PYTHON_CONSTRAINT_BRANCH.
-  CI_PYTHON_CONSTRAINT_FILE: "espidf.constraints.v5.0.txt"
+  CI_PYTHON_CONSTRAINT_FILE: "espidf.constraints.v5.1.txt"
 
   # Set this variable to repository name of a Python tool you wish to install and test in the context of ESP-IDF CI.
   # Keep the variable empty when not used.
@@ -96,38 +99,92 @@ variables:
   # This is used only if CI_PYTHON_TOOL_REPO is not empty.
   CI_PYTHON_TOOL_BRANCH: ""
 
+  IDF_CI_BUILD: 1
+
 cache:
-  key: pip-cache
-  paths:
-    - .cache/pip
   # pull only for most of the use cases since it's cache dir.
-  # Only set "pull-push" policy for "scan_test" since it would **possibly** install all pypi packages
-  policy: pull
+  # Only set "push" policy for "upload_cache" stage jobs
+  - key: pip-cache
+    paths:
+      - .cache/pip
+    policy: pull
+  - key: submodule-cache
+    paths:
+      - .cache/submodule_archives
+    policy: pull
 
-.setup_tools_unless_target_test: &setup_tools_unless_target_test |
+.common_before_scripts: &common-before_scripts |
+  source tools/ci/utils.sh
+  is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
+
   if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then
-  export IDF_MIRROR_PREFIX_MAP=
-  fi
-  if [[ "$SETUP_TOOLS" == "1" || "$CI_JOB_STAGE" != "target_test" ]]; then
-  tools/idf_tools.py --non-interactive install ${SETUP_TOOLS_LIST:-} && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
-    if [[ ! -z "$OOCD_DISTRO_URL" && "$CI_JOB_STAGE" == "target_test" ]]; then
-    echo "Using custom OpenOCD from ${OOCD_DISTRO_URL}"
-    wget $OOCD_DISTRO_URL
-    ARCH_NAME=$(basename $OOCD_DISTRO_URL)
-    tar -x -f $ARCH_NAME
-    export OPENOCD_SCRIPTS=$PWD/openocd-esp32/share/openocd/scripts
-    export PATH=$PWD/openocd-esp32/bin:$PATH
-    fi
+    export IDF_MIRROR_PREFIX_MAP=
   fi
 
-.download_test_python_contraint_file: &download_test_python_contraint_file |
+  if echo "$CI_MERGE_REQUEST_LABELS" | egrep "^([^,\n\r]+,)*include_nightly_run(,[^,\n\r]+)*$"; then
+    export INCLUDE_NIGHTLY_RUN="1"
+  fi
+
+  # configure cmake related flags
+  source tools/ci/configure_ci_environment.sh
+
+  # add extra python packages
+  export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/esp_app_trace:$IDF_PATH/components/partition_table:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
+
+.setup_tools_and_idf_python_venv: &setup_tools_and_idf_python_venv |
+  # must use after setup_tools_except_target_test
+  # otherwise the export.sh won't work properly
+
+  # download constraint file for dev
   if [[ -n "$CI_PYTHON_CONSTRAINT_BRANCH" ]]; then
     wget -O /tmp/constraint.txt --header="Authorization:Bearer ${ESPCI_TOKEN}" ${GITLAB_HTTP_SERVER}/api/v4/projects/2581/repository/files/${CI_PYTHON_CONSTRAINT_FILE}/raw?ref=${CI_PYTHON_CONSTRAINT_BRANCH}
     mkdir -p ~/.espressif
     mv /tmp/constraint.txt ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
   fi
 
-.download_test_python_tool: &download_test_python_tool |
+  # Mirror
+  if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then
+    export IDF_MIRROR_PREFIX_MAP=
+  fi
+
+  # install latest python packages
+  # target test jobs
+  if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
+    # ttfw jobs
+    if ! echo "${CI_JOB_NAME}" | egrep ".+_pytest_.+"; then
+      run_cmd bash install.sh --enable-ci --enable-ttfw
+    else
+      run_cmd bash install.sh --enable-ci --enable-pytest
+    fi
+  elif [[ "${CI_JOB_STAGE}" == "build_doc" ]]; then
+    run_cmd bash install.sh --enable-ci --enable-docs
+  elif [[ "${CI_JOB_STAGE}" == "build" ]]; then
+    run_cmd bash install.sh --enable-ci --enable-pytest
+  else
+    if ! echo "${CI_JOB_NAME}" | egrep ".+_pytest_.+"; then
+      run_cmd bash install.sh --enable-ci
+    else
+      run_cmd bash install.sh --enable-ci --enable-pytest
+    fi
+  fi
+
+  # Install esp-clang if necessary
+  if [[ "$IDF_TOOLCHAIN" == "clang" ]]; then
+    $IDF_PATH/tools/idf_tools.py --non-interactive install esp-clang
+  fi
+
+  source ./export.sh
+
+  # Custom OpenOCD
+  if [[ ! -z "$OOCD_DISTRO_URL" && "$CI_JOB_STAGE" == "target_test" ]]; then
+    echo "Using custom OpenOCD from ${OOCD_DISTRO_URL}"
+    wget $OOCD_DISTRO_URL
+    ARCH_NAME=$(basename $OOCD_DISTRO_URL)
+    tar -x -f $ARCH_NAME
+    export OPENOCD_SCRIPTS=$PWD/openocd-esp32/share/openocd/scripts
+    export PATH=$PWD/openocd-esp32/bin:$PATH
+  fi
+
   if [[ -n "$CI_PYTHON_TOOL_REPO" ]]; then
     git clone --quiet --depth=1 -b ${CI_PYTHON_TOOL_BRANCH} https://gitlab-ci-token:${ESPCI_TOKEN}@${GITLAB_HTTPS_HOST}/espressif/${CI_PYTHON_TOOL_REPO}.git
     pip install ./${CI_PYTHON_TOOL_REPO}
@@ -135,90 +192,31 @@ cache:
   fi
 
 before_script:
-  - source tools/ci/utils.sh
-  - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
-  - source tools/ci/setup_python.sh
+  - *common-before_scripts
+  - *setup_tools_and_idf_python_venv
   - add_gitlab_ssh_keys
-  - source tools/ci/configure_ci_environment.sh
-  - *setup_tools_unless_target_test
   - fetch_submodules
-  - *download_test_python_contraint_file
-  - $IDF_PATH/tools/idf_tools.py install-python-env
-  # install esptool globally, TODO: remove this, IDFCI-1207
-  - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
-  - *download_test_python_tool
-
-# used for check scripts which we want to run unconditionally
-.before_script_no_sync_submodule:
-  before_script:
-    - echo "Not setting up GitLab key, not fetching submodules"
-    - source tools/ci/utils.sh
-    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
-    - source tools/ci/setup_python.sh
-    - source tools/ci/configure_ci_environment.sh
-    - *download_test_python_contraint_file
-    - $IDF_PATH/tools/idf_tools.py install-python-env
 
 .before_script_minimal:
   before_script:
-    - echo "Only load utils.sh"
-    - source tools/ci/utils.sh
-    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
-
-.before_script_integration_test:
-  before_script:
-    # need to install esptool, needn't install idf python env
-  - source tools/ci/utils.sh
-  - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
-  - source tools/ci/setup_python.sh
-  - add_gitlab_ssh_keys
-  - fetch_submodules
-  # download the constraint file manually
-  - mkdir -p ~/.espressif
-  - wget -O ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE} --header="Authorization:Bearer ${ESPCI_TOKEN}" ${GITLAB_HTTP_SERVER}/api/v4/projects/2581/repository/files/${CI_PYTHON_CONSTRAINT_FILE}/raw
-  - *download_test_python_contraint_file
-  # TODO: remove this, IDFCI-1207
-  - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
-  - *download_test_python_tool
+    - *common-before_scripts
 
 .before_script_macos:
   before_script:
-    - source tools/ci/utils.sh
-    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
-    - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
-    - *download_test_python_contraint_file
-    - $IDF_PATH/tools/idf_tools.py install-python-env
+    - *common-before_scripts
     # On macOS, these tools need to be installed
+    - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
     - $IDF_PATH/tools/idf_tools.py --non-interactive install cmake ninja
     # This adds tools (compilers) and the version-specific Python environment to PATH
-    - *setup_tools_unless_target_test
-    # Install packages required by CI scripts into IDF Python environment
-    - pip install -r $IDF_PATH/tools/ci/python_packages/ttfw_idf/requirements.txt
-    - source tools/ci/configure_ci_environment.sh
-    # Part of tools/ci/setup_python.sh; we don't use pyenv on macOS, so can't run the rest of the script.
-    - export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
+    - *setup_tools_and_idf_python_venv
     - fetch_submodules
 
-.before_script_pytest:
+.before_script_build_jobs:
   before_script:
-    - source tools/ci/utils.sh
-    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
-    - source tools/ci/setup_python.sh
+    - *common-before_scripts
+    - *setup_tools_and_idf_python_venv
     - add_gitlab_ssh_keys
-    - source tools/ci/configure_ci_environment.sh
-    - *setup_tools_unless_target_test
     - fetch_submodules
-    - *download_test_python_contraint_file
-    - $IDF_PATH/tools/idf_tools.py install-python-env
-    # TODO: remove this, IDFCI-1207
-    - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
-    - pip install
-      "pytest-embedded-serial-esp~=$PYTEST_EMBEDDED_VERSION"
-      "pytest-embedded-idf~=$PYTEST_EMBEDDED_VERSION"
-      "pytest-embedded-qemu~=$PYTEST_EMBEDDED_VERSION"
-      pytest-rerunfailures
-      scapy
-      -r tools/esp_prov/requirements.txt
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 
@@ -233,6 +231,7 @@ default:
 
 include:
   - '.gitlab/ci/rules.yml'
+  - '.gitlab/ci/upload_cache.yml'
   - '.gitlab/ci/docs.yml'
   - '.gitlab/ci/static-code-analysis.yml'
   - '.gitlab/ci/pre_check.yml'

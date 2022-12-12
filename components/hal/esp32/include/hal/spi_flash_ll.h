@@ -45,6 +45,9 @@ extern "C" {
 /// Empty function to be compatible with new version chips.
 #define spi_flash_ll_set_dummy_out(dev, out_en, out_lev)
 
+// On ESP32, we extent 4 bits to occupy `Continuous Read Mode` bits. (same to origin code.)
+#define SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS (4)
+
 /// type to store pre-calculated register value in above layers
 typedef typeof(SPI1.clock.val) spi_flash_ll_clock_reg_t;
 
@@ -429,6 +432,17 @@ static inline uint32_t spi_flash_ll_calculate_clock_reg(uint8_t host_id, uint8_t
         div_parameter = ((clkdiv - 1) | (((clkdiv/2 - 1) & 0xff) << 6 ) | (((clkdiv - 1) & 0xff) << 12));
     }
     return div_parameter;
+}
+
+/**
+ * Set extra address for bits M0-M7 in DIO/QIO mode.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param extra_addr extra address(M0-M7) to send.
+ */
+static inline void spi_flash_ll_set_extra_address(spi_dev_t *dev, uint32_t extra_addr)
+{
+    // Not supported on ESP32.
 }
 
 #ifdef __cplusplus

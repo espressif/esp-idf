@@ -11,8 +11,7 @@
 #include "esp_attr.h"
 #include "esp_efuse.h"
 #include "esp_log.h"
-#include "riscv/riscv_interrupts.h"
-#include "riscv/interrupt.h"
+#include "riscv/rv_utils.h"
 #include "esp_rom_uart.h"
 #include "soc/gpio_reg.h"
 #include "soc/rtc_cntl_reg.h"
@@ -35,7 +34,7 @@
 void IRAM_ATTR esp_restart_noos(void)
 {
     // Disable interrupts
-    riscv_global_interrupts_disable();
+    rv_utils_intr_global_disable();
     // Enable RTC watchdog for 1 second
     wdt_hal_context_t rtc_wdt_ctx;
     wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
@@ -51,7 +50,7 @@ void IRAM_ATTR esp_restart_noos(void)
     // CPU must be reset before stalling, in case it was running a s32c1i
     // instruction. This would cause memory pool to be locked by arbiter
     // to the stalled CPU, preventing current CPU from accessing this pool.
-    const uint32_t core_id = cpu_hal_get_core_id();
+    const uint32_t core_id = esp_cpu_get_core_id();
 #if !CONFIG_FREERTOS_UNICORE
     const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
     esp_cpu_reset(other_core_id);

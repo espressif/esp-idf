@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # HTTPD Server Persistent Sockets Example
 
 The Example consists of HTTPD server persistent sockets demo.

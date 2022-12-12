@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_SPI_MEM_STRUCT_H_
-#define _SOC_SPI_MEM_STRUCT_H_
+#pragma once
 
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -565,12 +565,10 @@ typedef volatile struct spi_mem_dev_s{
 extern spi_mem_dev_t SPIMEM0;
 extern spi_mem_dev_t SPIMEM1;
 
+#ifndef __cplusplus
 _Static_assert(sizeof(spi_mem_dev_t) == 0x400, "spi_mem_dev_t size error!");
+#endif
 
 #ifdef __cplusplus
 }
 #endif
-
-
-
-#endif /*_SOC_SPI_MEM_STRUCT_H_ */

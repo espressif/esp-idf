@@ -1,3 +1,0 @@
-future
-protobuf<4.0.0  # IDFCI-1278
-cryptography

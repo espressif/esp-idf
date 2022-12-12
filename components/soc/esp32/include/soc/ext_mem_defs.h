@@ -13,7 +13,6 @@
 extern "C" {
 #endif
 
-
 #define IRAM0_CACHE_ADDRESS_LOW     0x400D0000
 #define IRAM0_CACHE_ADDRESS_HIGH    0x40400000
 
@@ -30,17 +29,51 @@ extern "C" {
 #define DROM0_CACHE_ADDRESS_HIGH    0x3F800000
 
 
-#define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) <= bus_name##_ADDRESS_HIGH)
+#define BUS_SIZE(bus_name)                 (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
+#define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
 #define ADDRESS_IN_IRAM0_CACHE(vaddr)      ADDRESS_IN_BUS(IRAM0_CACHE, vaddr)
 #define ADDRESS_IN_IRAM1_CACHE(vaddr)      ADDRESS_IN_BUS(IRAM1_CACHE, vaddr)
 #define ADDRESS_IN_IROM0_CACHE(vaddr)      ADDRESS_IN_BUS(IROM0_CACHE, vaddr)
 #define ADDRESS_IN_DRAM1_CACHE(vaddr)      ADDRESS_IN_BUS(DRAM1_CACHE, vaddr)
 #define ADDRESS_IN_DROM0_CACHE(vaddr)      ADDRESS_IN_BUS(DROM0_CACHE, vaddr)
 
-#define MMU_INVALID                 BIT(8)
+#define MMU_INVALID                           BIT(8)
 
-//MMU entry num
-#define MMU_ENTRY_NUM    256
+//MMU entry num, 384 entries that are used in IDF
+#define MMU_ENTRY_NUM                         384
+
+
+#define SOC_MMU_DBUS_VADDR_BASE               0x3E000000
+#define SOC_MMU_IBUS_VADDR_BASE               0x40000000
+
+/*------------------------------------------------------------------------------
+ * MMU Linear Address
+ *----------------------------------------------------------------------------*/
+/**
+ * - 64KB MMU page size: the last 0xFFFF, which is the offset
+ * - 384 MMU entries, needs 0x1FF to hold it.
+ *
+ * Therefore, 0x1FF,FFFF
+ */
+#define SOC_MMU_LINEAR_ADDR_MASK              0x1FFFFFF
+
+#define SOC_MMU_IRAM0_LINEAR_ADDRESS_LOW      (IRAM0_CACHE_ADDRESS_LOW & SOC_MMU_LINEAR_ADDR_MASK)
+#define SOC_MMU_IRAM0_LINEAR_ADDRESS_HIGH     (IRAM0_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK)
+
+#define SOC_MMU_IRAM1_LINEAR_ADDRESS_LOW      (IRAM1_CACHE_ADDRESS_LOW & SOC_MMU_LINEAR_ADDR_MASK)
+#define SOC_MMU_IRAM1_LINEAR_ADDRESS_HIGH     (IRAM1_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK)
+
+#define SOC_MMU_IROM0_LINEAR_ADDRESS_LOW      (IROM0_CACHE_ADDRESS_LOW & SOC_MMU_LINEAR_ADDR_MASK)
+#define SOC_MMU_IROM0_LINEAR_ADDRESS_HIGH     (IROM0_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK)
+
+#define SOC_MMU_DROM0_LINEAR_ADDRESS_LOW      (DROM0_CACHE_ADDRESS_LOW & SOC_MMU_LINEAR_ADDR_MASK)
+#define SOC_MMU_DROM0_LINEAR_ADDRESS_HIGH     (DROM0_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK)
+
+#define SOC_MMU_DRAM1_LINEAR_ADDRESS_LOW      (DRAM1_CACHE_ADDRESS_LOW & SOC_MMU_LINEAR_ADDR_MASK)
+#define SOC_MMU_DRAM1_LINEAR_ADDRESS_HIGH     (DRAM1_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK)
+
+
+
 
 #ifdef __cplusplus
 }

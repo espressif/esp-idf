@@ -1,5 +1,6 @@
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Wi-Fi Provisioning Manager Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -44,11 +45,9 @@ For iOS, a provisioning application along with source code is available on GitHu
 
 #### Platform : Linux / Windows / macOS
 
-To provision the device running this example, the `esp_prov.py` script needs to be run (found under `$IDF_PATH/tools/esp_prov`). Make sure to satisfy all the dependencies prior to running the script.
+To install the dependency packages needed, please refer to the top level [README file](../../README.md#running-test-python-script-ttfw).
 
-Presently, `esp_prov` supports BLE transport only for Linux platform. For Windows/macOS it falls back to console mode and requires another application (for BLE) through which the communication can take place.
-
-There are various applications, specific to Windows and macOS platform which can be used. The `esp_prov` console will guide you through the provisioning process of locating the correct BLE GATT services and characteristics, the values to write, and input read values.
+`esp_prov` supports BLE and SoftAP transport for Linux, MacOS and Windows platforms. For BLE, however, if dependencies are not met, the script falls back to console mode and requires another application through which the communication can take place. The `esp_prov` console will guide you through the provisioning process of locating the correct BLE GATT services and characteristics, the values to write, and input read values.
 
 ### Configure the project
 
@@ -79,10 +78,15 @@ I (1045) wifi_prov_mgr: Provisioning started with service name : PROV_261FCC
 
 Make sure to note down the BLE device name (starting with `PROV_`) displayed in the serial monitor log (eg. PROV_261FCC). This will depend on the MAC ID and will be unique for every device.
 
-In a separate terminal run the `esp_prov.py` script under `$IDP_PATH/tools/esp_prov` directory (make sure to replace `myssid` and `mypassword` with the credentials of the AP to which the device is supposed to connect to after provisioning). Assuming default example configuration, which uses protocomm security scheme 1 and proof of possession PoP based authentication :
+In a separate terminal run the `esp_prov.py` script under `$IDP_PATH/tools/esp_prov` directory (make sure to replace `myssid` and `mypassword` with the credentials of the AP to which the device is supposed to connect to after provisioning). Assuming default example configuration, which uses the protocomm security scheme 1 with PoP-based (proof-of-possession) authentication :
 
 ```
 python esp_prov.py --transport ble --service_name PROV_261FCC --sec_ver 1 --pop abcd1234 --ssid myssid --passphrase mypassword
+```
+
+For security version 2, the following command can be used:
+```
+python esp_prov.py --transport ble --service_name PROV_261FCC --sec_ver 2 --sec2_username wifiprov --sec2_pwd abcd1234 --ssid myssid --passphrase mypassword
 ```
 
 Above command will perform the provisioning steps, and the monitor log should display something like this :
@@ -112,6 +116,28 @@ I (52355) app: Hello World!
 I (53355) app: Hello World!
 I (54355) app: Hello World!
 I (55355) app: Hello World!
+```
+
+**Note:** For generating the credentials for security version 2 (`SRP6a` salt and verifier) for the device-side, the following example command can be used. The output can then directly be used in this example.
+
+The config option `CONFIG_EXAMPLE_PROV_SEC2_DEV_MODE` should be enabled for the example and in `main/app_main.c`, the macro `EXAMPLE_PROV_SEC2_USERNAME` should be set to the same username used in the salt-verifier generation.
+
+```log
+$ python esp_prov.py --transport softap --sec_ver 2 --sec2_gen_cred --sec2_username wifiprov --sec2_pwd abcd1234
+==== Salt-verifier for security scheme 2 (SRP6a) ====
+static const char sec2_salt[] = {
+    0x03, 0x6e, 0xe0, 0xc7, 0xbc, 0xb9, 0xed, 0xa8, 0x4c, 0x9e, 0xac, 0x97, 0xd9, 0x3d, 0xec, 0xf4
+};
+
+static const char sec2_verifier[] = {
+    0x7c, 0x7c, 0x85, 0x47, 0x65, 0x08, 0x94, 0x6d, 0xd6, 0x36, 0xaf, 0x37, 0xd7, 0xe8, 0x91, 0x43,
+    0x78, 0xcf, 0xfd, 0x61, 0x6c, 0x59, 0xd2, 0xf8, 0x39, 0x08, 0x12, 0x72, 0x38, 0xde, 0x9e, 0x24,
+    .
+    .
+    .
+    0xe6, 0xf6, 0x53, 0xc8, 0x31, 0xa8, 0x78, 0xde, 0x50, 0x40, 0xf7, 0x62, 0xde, 0x36, 0xb2, 0xba
+};
+
 ```
 
 ### QR Code Scanning
@@ -150,6 +176,7 @@ I (1702) app: If QR code is not visible, copy paste the below URL in a browser.
 https://espressif.github.io/esp-jumpstart/qrcode.html?data={"ver":"v1","name":"PROV_EA69FC","pop":"abcd1234","transport":"ble"}
 ```
 
+
 ### Wi-Fi Scanning
 
 Provisioning manager also supports providing real-time Wi-Fi scan results (performed on the device) during provisioning. This allows the client side applications to choose the AP for which the device Wi-Fi station is to be configured. Various information about the visible APs is available, like signal strength (RSSI) and security type, etc. Also, the manager now provides capabilities information which can be used by client applications to determine the security type and availability of specific features (like `wifi_scan`).
@@ -187,14 +214,59 @@ S.N. SSID                              BSSID         CHN RSSI AUTH
 Select AP by number (0 to rescan) : 1
 Enter passphrase for MyHomeWiFiAP :
 
-==== Sending Wi-Fi credential to esp32 ====
+==== Sending Wi-Fi Credentials to Target ====
 ==== Wi-Fi Credentials sent successfully ====
 
-==== Applying config to esp32 ====
+==== Applying Wi-Fi Config to Target ====
 ==== Apply config sent successfully ====
 
 ==== Wi-Fi connection state  ====
-++++ WiFi state: connected ++++
+==== WiFi state: Connected ====
+==== Provisioning was successful ====
+```
+
+### Interactive Provisioning
+
+`esp_prov` supports interactive provisioning. You can trigger the script with a simplified command and input the necessary details
+(`Proof-of-possession` for security scheme 1 and `SRP6a username`, `SRP6a password` for security scheme 2) as the provisioning process advances.
+
+The command `python esp_prov.py --transport ble --sec_ver 1` gives out the following sample output:
+
+```
+Discovering...
+==== BLE Discovery results ====
+S.N. Name                              Address
+[ 1] PROV_4C33E8                       01:02:03:04:05:06
+[ 1] BT_DEVICE_SBC                     0A:0B:0C:0D:0E:0F
+Select device by number (0 to rescan) : 1
+Connecting...
+Getting Services...
+Proof of Possession required:
+
+==== Starting Session ====
+==== Session Established ====
+
+==== Scanning Wi-Fi APs ====
+++++ Scan process executed in 3.8695244789123535 sec
+++++ Scan results : 2
+
+++++ Scan finished in 4.4132080078125 sec
+==== Wi-Fi Scan results ====
+S.N. SSID                              BSSID         CHN RSSI AUTH
+[ 1] MyHomeWiFiAP                      788a20841996    1 -45  WPA2_PSK
+[ 2] MobileHotspot                     7a8a20841996   11 -46  WPA2_PSK
+
+Select AP by number (0 to rescan) : 1
+Enter passphrase for myssid :
+
+==== Sending Wi-Fi Credentials to Target ====
+==== Wi-Fi Credentials sent successfully ====
+
+==== Applying Wi-Fi Config to Target ====
+==== Apply config sent successfully ====
+
+==== Wi-Fi connection state  ====
+==== WiFi state: Connected ====
 ==== Provisioning was successful ====
 ```
 
@@ -264,6 +336,17 @@ Now erase NVS partition by running the following commands :
 ```
 $IDF_PATH/components/esptool_py/esptool/esptool.py erase_region 0x9000 0x6000
 ```
+
+### Bluetooth Pairing Request during provisioning
+
+ESP-IDF now has functionality to enforce link encryption requirement while performing GATT write on characteristics of provisioning service. This will however result in a pairing pop-up dialog, if link is not encrypted. This feature is disabled by default. In order to enable this feature, please set `CONFIG_WIFI_PROV_BLE_FORCE_ENCRYPTION=y` in the sdkconfig or select the configuration using "idf.py menuconfig" .
+
+```
+Component Config --> Wi-Fi Provisioning Manager --> Force Link Encryption during Characteristic Read/Write
+
+```
+Recompiling the application with above changes should suffice to enable this functionality.
+
 
 ### Unsupported platform
 

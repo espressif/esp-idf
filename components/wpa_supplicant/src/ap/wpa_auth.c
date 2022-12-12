@@ -31,13 +31,13 @@
 #include "esp_wifi.h"
 #include "esp_private/wifi.h"
 #include "esp_wpas_glue.h"
+#include "esp_wps_i.h"
 
 #define STATE_MACHINE_DATA struct wpa_state_machine
 #define STATE_MACHINE_DEBUG_PREFIX "WPA"
 #define STATE_MACHINE_ADDR sm->addr
 
 
-static void wpa_send_eapol_timeout(void *eloop_ctx, void *timeout_ctx);
 static int wpa_sm_step(struct wpa_state_machine *sm);
 static int wpa_verify_key_mic(int akmp, struct wpa_ptk *PTK, u8 *data,
 			      size_t data_len);
@@ -55,6 +55,7 @@ static const u32 dot11RSNAConfigPairwiseUpdateCount = 4;
 #define WPA_SM_MAX_INDEX 16
 static void *s_sm_table[WPA_SM_MAX_INDEX];
 static u32 s_sm_valid_bitmap = 0;
+void resend_eapol_handle(void *data, void *user_ctx);
 
 static struct wpa_state_machine * wpa_auth_get_sm(u32 index)
 {
@@ -449,8 +450,7 @@ void wpa_auth_sta_deinit(struct wpa_state_machine *sm)
     if (sm == NULL)
         return;
 
-    ets_timer_disarm(&sm->resend_eapol);
-    ets_timer_done(&sm->resend_eapol);
+    eloop_cancel_timeout(resend_eapol_handle, (void*)(sm->index), NULL);
 
     if (sm->in_step_loop) {
         /* Must not free state machine while wpa_sm_step() is running.
@@ -805,9 +805,7 @@ continue_processing:
             return;
         }
         sm->MICVerified = TRUE;
-        eloop_cancel_timeout(wpa_send_eapol_timeout, wpa_auth, sm);
-        ets_timer_disarm(&sm->resend_eapol);
-        ets_timer_done(&sm->resend_eapol);
+        eloop_cancel_timeout(resend_eapol_handle, (void*)(sm->index), NULL);
         sm->pending_1_of_4_timeout = 0;
     }
 
@@ -915,16 +913,6 @@ static int wpa_gmk_to_gtk(const u8 *gmk, const char *label, const u8 *addr,
 #endif /* CONFIG_IEEE80211W */
 
     return ret;
-}
-
-
-static void wpa_send_eapol_timeout(void *eloop_ctx, void *timeout_ctx)
-{
-    struct wpa_state_machine *sm = timeout_ctx;
-
-    sm->pending_1_of_4_timeout = 0;
-    sm->TimeoutEvt = TRUE;
-    wpa_sm_step(sm);
 }
 
 
@@ -1062,6 +1050,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
             os_free(hdr);
             return;
         }
+        os_free(buf);
     }
 
     if (key_info & WPA_KEY_INFO_MIC) {
@@ -1098,12 +1087,12 @@ int hostap_eapol_resend_process(void *timeout_ctx)
     return ESP_OK;
 }
 
-void resend_eapol_handle(void *timeout_ctx)
+void resend_eapol_handle(void *data, void *user_ctx)
 {
     wifi_ipc_config_t cfg;
 
     cfg.fn = hostap_eapol_resend_process;
-    cfg.arg = timeout_ctx;
+    cfg.arg = data;
     cfg.arg_size = 0;
     esp_wifi_ipc_internal(&cfg, false);
 }
@@ -1126,9 +1115,9 @@ static void wpa_send_eapol(struct wpa_authenticator *wpa_auth,
     ctr = pairwise ? sm->TimeoutCtr : sm->GTimeoutCtr;
     if (pairwise && ctr == 1 && !(key_info & WPA_KEY_INFO_MIC))
         sm->pending_1_of_4_timeout = 1;
-    ets_timer_disarm(&sm->resend_eapol);
-    ets_timer_setfn(&sm->resend_eapol, (ETSTimerFunc *)resend_eapol_handle, (void*)(sm->index));
-    ets_timer_arm(&sm->resend_eapol, 1000, 0);
+
+    eloop_cancel_timeout(resend_eapol_handle, (void*)(sm->index), NULL);
+    eloop_register_timeout(1, 0, resend_eapol_handle, (void*)(sm->index), NULL);
 }
 
 static int wpa_verify_key_mic(int akmp, struct wpa_ptk *PTK, u8 *data,
@@ -1550,7 +1539,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 #endif /* CONFIG_IEEE80211R_AP */
 
     sm->pending_1_of_4_timeout = 0;
-    eloop_cancel_timeout(wpa_send_eapol_timeout, sm->wpa_auth, sm);
+    eloop_cancel_timeout(resend_eapol_handle, (void*)(sm->index), NULL);
 
     if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) && sm->PMK != pmk) {
         /* PSK may have changed from the previous choice, so update
@@ -2352,53 +2341,78 @@ static int wpa_sm_step(struct wpa_state_machine *sm)
     return 0;
 }
 
-bool wpa_ap_join(void** sm, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, bool *pmf_enable)
+bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, bool *pmf_enable)
 {
     struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
-    struct wpa_state_machine   **wpa_sm;
 
-    if (!sm || !bssid || !wpa_ie){
+    if (!sta || !bssid || !wpa_ie){
         return false;
     }
 
-
-    wpa_sm = (struct wpa_state_machine  **)sm;
-
     if (hapd) {
         if (hapd->wpa_auth->conf.wpa) {
-            if (*wpa_sm){
-                wpa_auth_sta_deinit(*wpa_sm);
+            if (sta->wpa_sm){
+                wpa_auth_sta_deinit(sta->wpa_sm);
             }
 
-            *wpa_sm = wpa_auth_sta_init(hapd->wpa_auth, bssid);
-            wpa_printf( MSG_DEBUG, "init wpa sm=%p\n", *wpa_sm);
+            sta->wpa_sm = wpa_auth_sta_init(hapd->wpa_auth, bssid);
+            wpa_printf( MSG_DEBUG, "init wpa sm=%p\n", sta->wpa_sm);
 
-            if (*wpa_sm == NULL) {
+            if (sta->wpa_sm == NULL) {
                 return false;
             }
 
-            if (wpa_validate_wpa_ie(hapd->wpa_auth, *wpa_sm, wpa_ie, wpa_ie_len)) {
+            if (wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, wpa_ie, wpa_ie_len)) {
                 return false;
 	    }
 
 	    //Check whether AP uses Management Frame Protection for this connection
-	    *pmf_enable = wpa_auth_uses_mfp(*wpa_sm);
+	    *pmf_enable = wpa_auth_uses_mfp(sta->wpa_sm);
         }
 
-        wpa_auth_sta_associated(hapd->wpa_auth, *wpa_sm);
+        wpa_auth_sta_associated(hapd->wpa_auth, sta->wpa_sm);
     }
 
     return true;
 }
 
-bool wpa_ap_remove(void* sm)
+#ifdef CONFIG_WPS_REGISTRAR
+static void ap_free_sta_timeout(void *ctx, void *data)
+{
+    struct hostapd_data *hapd = (struct hostapd_data *) ctx;
+    u8 *addr = (u8 *) data;
+    struct sta_info *sta = ap_get_sta(hapd, addr);
+
+    if (sta) {
+        ap_free_sta(hapd, sta);
+    }
+
+    os_free(addr);
+}
+#endif
+
+bool wpa_ap_remove(void* sta_info)
 {
     struct hostapd_data *hapd = hostapd_get_hapd_data();
-    if (!sm || !hapd) {
+
+    if (!sta_info || !hapd) {
         return false;
     }
 
-    ap_free_sta(hapd, sm);
+#ifdef CONFIG_WPS_REGISTRAR
+    wpa_printf(MSG_DEBUG, "wps_status=%d", wps_get_status());
+    if (wps_get_status() == WPS_STATUS_PENDING) {
+        struct sta_info *sta = (struct sta_info *)sta_info;
+        u8 *addr = os_malloc(ETH_ALEN);
+
+	if (!addr) {
+            return false;
+	}
+	os_memcpy(addr, sta->addr, ETH_ALEN);
+        eloop_register_timeout(0, 10000, ap_free_sta_timeout, hapd, addr);
+    } else
+#endif
+    ap_free_sta(hapd, sta_info);
 
     return true;
 }

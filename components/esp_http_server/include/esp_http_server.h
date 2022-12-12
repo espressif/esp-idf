@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+#define ESP_HTTPD_DEF_CTRL_PORT         (32768)    /*!< HTTP Server control socket port*/
+
 /*
 note: esp_https_server.h includes a customized copy of this
 initializer that should be kept in sync
@@ -28,7 +30,7 @@ initializer that should be kept in sync
         .stack_size         = 4096,                     \
         .core_id            = tskNO_AFFINITY,           \
         .server_port        = 80,                       \
-        .ctrl_port          = 32768,                    \
+        .ctrl_port          = ESP_HTTPD_DEF_CTRL_PORT,  \
         .max_open_sockets   = 7,                        \
         .max_uri_handlers   = 8,                        \
         .max_resp_headers   = 8,                        \
@@ -40,6 +42,12 @@ initializer that should be kept in sync
         .global_user_ctx_free_fn = NULL,                \
         .global_transport_ctx = NULL,                   \
         .global_transport_ctx_free_fn = NULL,           \
+        .enable_so_linger = false,                      \
+        .linger_timeout = 0,                            \
+        .keep_alive_enable = false,                     \
+        .keep_alive_idle = 0,                           \
+        .keep_alive_interval = 0,                       \
+        .keep_alive_count = 0,                          \
         .open_fn = NULL,                                \
         .close_fn = NULL,                               \
         .uri_match_fn = NULL                            \
@@ -147,7 +155,7 @@ typedef struct httpd_config {
      */
     uint16_t    ctrl_port;
 
-    uint16_t    max_open_sockets;   /*!< Max number of sockets/clients connected at any time*/
+    uint16_t    max_open_sockets;   /*!< Max number of sockets/clients connected at any time (3 sockets are reserved for internal working of the HTTP server) */
     uint16_t    max_uri_handlers;   /*!< Maximum allowed uri handlers */
     uint16_t    max_resp_headers;   /*!< Maximum allowed additional headers in HTTP response */
     uint16_t    backlog_conn;       /*!< Number of backlog connections */
@@ -185,6 +193,12 @@ typedef struct httpd_config {
      */
     httpd_free_ctx_fn_t global_transport_ctx_free_fn;
 
+    bool enable_so_linger;  /*!< bool to enable/disable linger */
+    int linger_timeout;     /*!< linger timeout (in seconds) */
+    bool keep_alive_enable; /*!< Enable keep-alive timeout */
+    int keep_alive_idle;    /*!< Keep-alive idle time. Default is 5 (second) */
+    int keep_alive_interval;/*!< Keep-alive interval time. Default is 5 (second) */
+    int keep_alive_count;   /*!< Keep-alive packet retry send count. Default is 3 counts */
     /**
      * Custom session opening callback.
      *

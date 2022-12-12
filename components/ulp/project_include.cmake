@@ -58,6 +58,7 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
                             -DULP_APP_NAME=${app_name}
                             -DCOMPONENT_DIR=${COMPONENT_DIR}
                             -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
+                            -DIDF_TARGET=${idf_target}
                             -DIDF_PATH=${idf_path}
                             -DSDKCONFIG_HEADER=${SDKCONFIG_HEADER}
                             -DPYTHON=${python}

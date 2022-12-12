@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Ethernet iperf Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -6,7 +9,7 @@
 
 This example demonstrates basic usage of [iperf](https://iperf.fr/) protocol to measure the throughout/bandwidth of Ethernet.
 
-The cli environment in the example is based on the [console component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/console.html).
+The cli environment in the example is based on the [console component](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/console.html).
 
 ## How to use example
 

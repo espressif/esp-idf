@@ -5,6 +5,7 @@
  *
  * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
+
 /*
  * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
@@ -95,6 +96,14 @@
 
 #if configMAX_PRIORITIES < 1
     #error configMAX_PRIORITIES must be defined to be greater than or equal to 1.
+#endif
+
+#ifndef configNUM_CORES
+    #error Missing definition:  configNUM_CORES must be defined in FreeRTOSConfig.h
+#endif
+
+#if ( ( configNUM_CORES != 1 ) && ( configNUM_CORES != 2 ) )
+    #error configNUM_CORES must be defined to either 1 or 2.
 #endif
 
 #ifndef configUSE_PREEMPTION
@@ -225,6 +234,10 @@
 
 #ifndef configNUM_THREAD_LOCAL_STORAGE_POINTERS
     #define configNUM_THREAD_LOCAL_STORAGE_POINTERS    0
+#endif
+
+#ifndef configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS
+    #define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS    0
 #endif
 
 #ifndef configUSE_RECURSIVE_MUTEXES
@@ -756,32 +769,32 @@
 #endif
 
 /*
-Default values for trace macros added by ESP-IDF and are not part of Vanilla FreeRTOS
-*/
+ * Default values for trace macros added by ESP-IDF and are not part of Vanilla FreeRTOS
+ */
 #ifdef ESP_PLATFORM
-#ifndef traceISR_EXIT_TO_SCHEDULER
-    #define traceISR_EXIT_TO_SCHEDULER()
-#endif
+    #ifndef traceISR_EXIT_TO_SCHEDULER
+        #define traceISR_EXIT_TO_SCHEDULER()
+    #endif
 
-#ifndef traceISR_EXIT
-    #define traceISR_EXIT()
-#endif
+    #ifndef traceISR_EXIT
+        #define traceISR_EXIT()
+    #endif
 
-#ifndef traceISR_ENTER
-    #define traceISR_ENTER(_n_)
-#endif
+    #ifndef traceISR_ENTER
+        #define traceISR_ENTER( _n_ )
+    #endif
 
-#ifndef traceQUEUE_SEMAPHORE_RECEIVE
-    #define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
-#endif
+    #ifndef traceQUEUE_SEMAPHORE_RECEIVE
+        #define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
+    #endif
 
-#ifndef traceQUEUE_GIVE_FROM_ISR
-    #define traceQUEUE_GIVE_FROM_ISR( pxQueue )
-#endif
+    #ifndef traceQUEUE_GIVE_FROM_ISR
+        #define traceQUEUE_GIVE_FROM_ISR( pxQueue )
+    #endif
 
-#ifndef traceQUEUE_GIVE_FROM_ISR_FAILED
-    #define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
-#endif
+    #ifndef traceQUEUE_GIVE_FROM_ISR_FAILED
+        #define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
+    #endif
 #endif // ESP_PLATFORM
 
 #ifndef configGENERATE_RUN_TIME_STATS
@@ -934,7 +947,7 @@ Default values for trace macros added by ESP-IDF and are not part of Vanilla Fre
 
 #ifndef configSTACK_ALLOCATION_FROM_SEPARATE_HEAP
     /* Defaults to 0 for backward compatibility. */
-    #define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP   0
+    #define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP    0
 #endif
 
 #ifndef configSTACK_DEPTH_TYPE
@@ -965,6 +978,10 @@ Default values for trace macros added by ESP-IDF and are not part of Vanilla Fre
 
 #if ( ( configUSE_RECURSIVE_MUTEXES == 1 ) && ( configUSE_MUTEXES != 1 ) )
     #error configUSE_MUTEXES must be set to 1 to use recursive mutexes
+#endif
+
+#if ( ( configNUM_CORES > 1 ) && ( configUSE_PORT_OPTIMISED_TASK_SELECTION == 1 ) )
+    #error configUSE_PORT_OPTIMISED_TASK_SELECTION is not supported if configNUM_CORES > 1
 #endif
 
 #ifndef configINITIAL_TICK_COUNT
@@ -1212,7 +1229,7 @@ typedef struct xSTATIC_TCB
     UBaseType_t uxDummy5;
     void * pxDummy6;
     uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ];
-    BaseType_t xDummyCore;
+    BaseType_t xDummyCoreID;
     #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
         void * pxDummy8;
     #endif
@@ -1230,9 +1247,9 @@ typedef struct xSTATIC_TCB
     #endif
     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 )
         void * pvDummy15[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-    #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
-        void            *pvDummyLocalStorageCallBack[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-    #endif
+        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
+            void * pvDummyLocalStorageCallBack[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
+        #endif
     #endif
     #if ( configGENERATE_RUN_TIME_STATS == 1 )
         uint32_t ulDummy16;
@@ -1296,7 +1313,7 @@ typedef struct xSTATIC_QUEUE
         UBaseType_t uxDummy8;
         uint8_t ucDummy9;
     #endif
-    portMUX_TYPE xDummy10;
+    portMUX_TYPE xDummyQueueLock;
 } StaticQueue_t;
 typedef StaticQueue_t StaticSemaphore_t;
 
@@ -1326,7 +1343,7 @@ typedef struct xSTATIC_EVENT_GROUP
     #if ( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
         uint8_t ucDummy4;
     #endif
-    portMUX_TYPE xDummy5;
+    portMUX_TYPE xDummyEventGroupLock;
 } StaticEventGroup_t;
 
 /*
@@ -1363,12 +1380,12 @@ typedef struct xSTATIC_TIMER
  * internally by FreeRTOS is not accessible to application code.  However, if
  * the application writer wants to statically allocate the memory required to
  * create a stream buffer then the size of the stream buffer object needs to be
- * known.  The StaticStreamBuffer_t structure below is provided for this
- * purpose.  Its size and alignment requirements are guaranteed to match those
- * of the genuine structure, no matter which architecture is being used, and
- * no matter how the values in FreeRTOSConfig.h are set.  Its contents are
- * somewhat obfuscated in the hope users will recognise that it would be unwise
- * to make direct use of the structure members.
+ * known.  The StaticStreamBuffer_t structure below is provided for this purpose.
+ * Its size and alignment requirements are guaranteed to match those of the
+ * genuine structure, no matter which architecture is being used, and no matter
+ * how the values in FreeRTOSConfig.h are set.  Its contents are somewhat
+ * obfuscated in the hope users will recognise that it would be unwise to make
+ * direct use of the structure members.
  */
 typedef struct xSTATIC_STREAM_BUFFER
 {
@@ -1378,7 +1395,7 @@ typedef struct xSTATIC_STREAM_BUFFER
     #if ( configUSE_TRACE_FACILITY == 1 )
         UBaseType_t uxDummy4;
     #endif
-    portMUX_TYPE xDummy5;
+    portMUX_TYPE xStreamBufferLock;
 } StaticStreamBuffer_t;
 
 /* Message buffers are built on stream buffers. */

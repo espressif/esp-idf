@@ -1,5 +1,5 @@
 set(srcs "ble_mesh_adapter.c"
-        "ble_mesh_cfg_srv_model.c"
+        "ble_mesh_model.c"
         "ble_mesh_console_lib.c"
         "ble_mesh_console_main.c"
         "ble_mesh_console_system.c"
@@ -13,3 +13,4 @@ set(srcs "ble_mesh_adapter.c"
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS  ".")
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

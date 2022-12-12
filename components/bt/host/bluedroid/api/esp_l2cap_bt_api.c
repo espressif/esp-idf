@@ -36,7 +36,7 @@ esp_err_t esp_bt_l2cap_init(void)
     msg.pid = BTC_PID_L2CAP;
     msg.act = BTC_L2CAP_ACT_INIT;
 
-    return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_l2cap_deinit(void)
@@ -48,7 +48,7 @@ esp_err_t esp_bt_l2cap_deinit(void)
     msg.pid = BTC_PID_L2CAP;
     msg.act = BTC_L2CAP_ACT_UNINIT;
 
-    return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_l2cap_connect(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t remote_psm, esp_bd_addr_t peer_bd_addr)
@@ -65,7 +65,7 @@ esp_err_t esp_bt_l2cap_connect(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t rem
     arg.connect.remote_psm = remote_psm;
     memcpy(arg.connect.peer_bd_addr, peer_bd_addr, ESP_BD_ADDR_LEN);
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_l2cap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_l2cap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_l2cap_start_srv(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t local_psm)
@@ -81,7 +81,7 @@ esp_err_t esp_bt_l2cap_start_srv(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t l
     arg.start_srv.sec_mask = (cntl_flag & 0xffff);
     arg.start_srv.local_psm = local_psm;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_l2cap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_l2cap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_l2cap_stop_all_srv(void)
@@ -96,7 +96,7 @@ esp_err_t esp_bt_l2cap_stop_all_srv(void)
 
     arg.stop_srv.psm = BTC_L2CAP_INVALID_PSM;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_l2cap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_l2cap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_l2cap_stop_srv(uint16_t local_psm)
@@ -111,7 +111,7 @@ esp_err_t esp_bt_l2cap_stop_srv(uint16_t local_psm)
 
     arg.stop_srv.psm = local_psm;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_l2cap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_l2cap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_l2cap_vfs_register(void)

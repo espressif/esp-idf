@@ -373,11 +373,11 @@ static int do_sniffer_cmd(int argc, char **argv)
                 snf_rt.interf = SNIFFER_INTF_ETH;
                 snf_rt.interf_num = eth_intf_num;
             } else {
-                ESP_LOGE(SNIFFER_TAG, "unsupported interface %s", sniffer_args.interface->sval[0]);
+                ESP_LOGE(SNIFFER_TAG, "interface %s not found", sniffer_args.interface->sval[0]);
                 return 1;
             }
         } else {
-            ESP_LOGE(SNIFFER_TAG, "unsupported interface %s", sniffer_args.interface->sval[0]);
+            ESP_LOGE(SNIFFER_TAG, "interface %s not found", sniffer_args.interface->sval[0]);
             return 1;
         }
     } else {

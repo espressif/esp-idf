@@ -583,6 +583,11 @@ tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, U
         return (tGATT_STATUS) GATT_INVALID_CONN_ID;
     }
 
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_WRONG_STATE;
+    }
+
     if (! GATT_HANDLE_IS_VALID (attr_handle)) {
         return GATT_ILLEGAL_PARAMETER;
     }
@@ -650,6 +655,11 @@ tGATT_STATUS GATTS_HandleValueNotification (UINT16 conn_id, UINT16 attr_handle,
         return (tGATT_STATUS) GATT_INVALID_CONN_ID;
     }
 
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_WRONG_STATE;
+    }
+
     if (GATT_HANDLE_IS_VALID (attr_handle)) {
         notif.handle    = attr_handle;
         notif.len       = val_len;
@@ -695,6 +705,11 @@ tGATT_STATUS GATTS_SendRsp (UINT16 conn_id,  UINT32 trans_id,
     if ( (p_reg == NULL) || (p_tcb == NULL)) {
         GATT_TRACE_ERROR ("GATTS_SendRsp Unknown  conn_id: %u\n", conn_id);
         return (tGATT_STATUS) GATT_INVALID_CONN_ID;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_WRONG_STATE;
     }
 
     if (p_tcb->sr_cmd.trans_id != trans_id) {
@@ -818,6 +833,11 @@ tGATT_STATUS GATTC_ConfigureMTU (UINT16 conn_id)
         return GATT_ILLEGAL_PARAMETER;
     }
 
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_ERROR;
+    }
+
     /* Validate that the link is BLE, not BR/EDR */
     if (p_tcb->transport != BT_TRANSPORT_LE) {
         return GATT_ERROR;
@@ -870,6 +890,10 @@ tGATT_STATUS GATTC_Discover (UINT16 conn_id, tGATT_DISC_TYPE disc_type,
         return GATT_ILLEGAL_PARAMETER;
     }
 
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_ERROR;
+    }
 
     if (gatt_is_clcb_allocated(conn_id)) {
         GATT_TRACE_ERROR("GATTC_Discover GATT_BUSY conn_id = %d", conn_id);
@@ -930,6 +954,11 @@ tGATT_STATUS GATTC_Read (UINT16 conn_id, tGATT_READ_TYPE type, tGATT_READ_PARAM 
     if ( (p_tcb == NULL) || (p_reg == NULL) || (p_read == NULL) || ((type >= GATT_READ_MAX) || (type == 0))) {
         GATT_TRACE_ERROR("GATT_Read Illegal param: conn_id %d, type 0%d,", conn_id, type);
         return GATT_ILLEGAL_PARAMETER;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_ERROR;
     }
 
     if (gatt_is_clcb_allocated(conn_id)) {
@@ -1010,6 +1039,11 @@ tGATT_STATUS GATTC_Write (UINT16 conn_id, tGATT_WRITE_TYPE type, tGATT_VALUE *p_
         return GATT_ILLEGAL_PARAMETER;
     }
 
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_ERROR;
+    }
+
     if (gatt_is_clcb_allocated(conn_id)) {
         GATT_TRACE_ERROR("GATTC_Write GATT_BUSY conn_id = %d", conn_id);
         return GATT_BUSY;
@@ -1074,6 +1108,11 @@ tGATT_STATUS GATTC_ExecuteWrite (UINT16 conn_id, BOOLEAN is_execute)
     if ( (p_tcb == NULL) || (p_reg == NULL) ) {
         GATT_TRACE_ERROR("GATTC_ExecuteWrite Illegal param: conn_id %d", conn_id);
         return GATT_ILLEGAL_PARAMETER;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_ERROR;
     }
 
     if (gatt_is_clcb_allocated(conn_id)) {

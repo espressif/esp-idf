@@ -13,8 +13,13 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_system.h"
+#include "esp_log.h"
+#include "esp_timer.h"
+#include "esp_check.h"
 #include "esp_intr_alloc.h"
 #include "esp_private/usb_console.h"
+#include "esp_private/system_internal.h"
+#include "esp_private/startup_internal.h"
 #include "soc/periph_defs.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/usb_struct.h"
@@ -51,6 +56,9 @@ static uint8_t cdcmem[CDC_WORK_BUF_SIZE];
 static esp_usb_console_cb_t s_rx_cb;
 static esp_usb_console_cb_t s_tx_cb;
 static void *s_cb_arg;
+static esp_timer_handle_t s_restart_timer;
+
+static const char* TAG = "usb_console";
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
 static portMUX_TYPE s_write_lock = portMUX_INITIALIZER_UNLOCKED;
@@ -67,6 +75,9 @@ static inline void write_lock_release(void);
 
 /* The two functions below need to be revisited in the multicore case */
 _Static_assert(SOC_CPU_CORES_NUM == 1, "usb_osglue_*_int is not multicore capable");
+
+/* Other forward declarations */
+void esp_usb_console_before_restart(void);
 
 /* Called by ROM to disable the interrupts
  * Non-static to allow placement into IRAM by ldgen.
@@ -150,8 +161,35 @@ void esp_usb_console_interrupt(void *arg)
     usb_dc_check_poll_for_interrupts();
     /* Restart can be requested from esp_usb_console_cdc_acm_cb or esp_usb_console_dfu_detach_cb */
     if (s_queue_reboot != REBOOT_NONE) {
-        esp_restart();
+        /* We can't call esp_restart here directly, since this function is called from an ISR.
+         * Instead, start an esp_timer and call esp_restart from the callback.
+         */
+        esp_err_t err = ESP_FAIL;
+        if (s_restart_timer) {
+            /* In case the timer is already running, stop it. No error check since this will fail if
+             * the timer is not running.
+             */
+            esp_timer_stop(s_restart_timer);
+            /* Start the timer again. 50ms seems to be not too long for the user to notice, but
+             * enough for the USB console output to be flushed.
+             */
+            const int restart_timeout_us = 50 * 1000;
+            err = esp_timer_start_once(s_restart_timer, restart_timeout_us);
+        }
+        if (err != ESP_OK) {
+            /* Can't schedule a restart for some reason? Call the "no-OS" restart function directly. */
+            esp_usb_console_before_restart();
+            esp_restart_noos();
+        }
     }
+}
+
+/* Called as esp_timer callback when the restart timeout expires.
+ * Non-static to allow placement into IRAM by ldgen.
+ */
+void esp_usb_console_on_restart_timeout(void *arg)
+{
+    esp_restart();
 }
 
 /* Call the USB interrupt handler while any interrupts are pending,
@@ -256,6 +294,21 @@ esp_err_t esp_usb_console_init(void)
     return ESP_OK;
 }
 
+/* This function runs as part of the startup code to initialize the restart timer.
+ * This is not done as part of esp_usb_console_init since that function is called
+ * too early, before esp_timer is fully initialized.
+ * This gets called a bit later in the process when we can already register a timer.
+ */
+ESP_SYSTEM_INIT_FN(esp_usb_console_init_restart_timer, BIT(0), 220)
+{
+    esp_timer_create_args_t timer_create_args = {
+        .callback = &esp_usb_console_on_restart_timeout,
+        .name = "usb_console_restart"
+    };
+    ESP_RETURN_ON_ERROR(esp_timer_create(&timer_create_args, &s_restart_timer), TAG, "failed to create the restart timer");
+    return ESP_OK;
+}
+
 /* Non-static to allow placement into IRAM by ldgen.
  * Must be called with the write lock held.
  */
@@ -333,7 +386,7 @@ ssize_t esp_usb_console_read_buf(char *buf, size_t buf_size)
     if (s_cdc_acm_device == NULL) {
         return -1;
     }
-    if (!esp_usb_console_read_available()) {
+    if (esp_usb_console_available_for_read() == 0) {
         return 0;
     }
     int bytes_read = cdc_acm_fifo_read(s_cdc_acm_device, (uint8_t*) buf, buf_size);
@@ -361,12 +414,12 @@ esp_err_t esp_usb_console_set_cb(esp_usb_console_cb_t rx_cb, esp_usb_console_cb_
     return ESP_OK;
 }
 
-bool esp_usb_console_read_available(void)
+ssize_t esp_usb_console_available_for_read(void)
 {
     if (s_cdc_acm_device == NULL) {
-        return false;
+        return -1;
     }
-    return cdc_acm_rx_fifo_cnt(s_cdc_acm_device) > 0;
+    return cdc_acm_rx_fifo_cnt(s_cdc_acm_device);
 }
 
 bool esp_usb_console_write_available(void)

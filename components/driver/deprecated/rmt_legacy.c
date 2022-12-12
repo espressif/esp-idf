@@ -64,7 +64,7 @@ typedef struct {
     portMUX_TYPE rmt_spinlock; // Mutex lock for protecting concurrent register/unregister of RMT channels' ISR
     rmt_isr_handle_t rmt_driver_intr_handle;
     rmt_tx_end_callback_t rmt_tx_end_callback;// Event called when transmission is ended
-    uint8_t rmt_driver_channels; // Bitmask of installed drivers' channels
+    uint8_t rmt_driver_channels; // Bitmask of installed drivers' channels, used to protect concurrent register/unregister of RMT channels' ISR
     bool rmt_module_enabled;
     uint32_t synchro_channel_mask; // Bitmap of channels already added in the synchronous group
 } rmt_contex_t;
@@ -586,11 +586,11 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     s_rmt_source_clock_hz[channel] = rmt_source_clk_hz;
 #else
     if (s_rmt_source_clock_hz && rmt_source_clk_hz != s_rmt_source_clock_hz) {
-        ESP_LOGW(TAG, "RMT clock source has been configured to %d by other channel, now reconfigure it to %d", s_rmt_source_clock_hz, rmt_source_clk_hz);
+        ESP_LOGW(TAG, "RMT clock source has been configured to %"PRIu32" by other channel, now reconfigure it to %"PRIu32, s_rmt_source_clock_hz, rmt_source_clk_hz);
     }
     s_rmt_source_clock_hz = rmt_source_clk_hz;
 #endif
-    ESP_LOGD(TAG, "rmt_source_clk_hz: %d\n", rmt_source_clk_hz);
+    ESP_LOGD(TAG, "rmt_source_clk_hz: %"PRIu32, rmt_source_clk_hz);
 
     if (mode == RMT_MODE_TX) {
         uint16_t carrier_duty_percent = rmt_param->tx_config.carrier_duty_percent;
@@ -625,7 +625,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
         }
         RMT_EXIT_CRITICAL();
 
-        ESP_LOGD(TAG, "Rmt Tx Channel %u|Gpio %u|Sclk_Hz %u|Div %u|Carrier_Hz %u|Duty %u",
+        ESP_LOGD(TAG, "Rmt Tx Channel %u|Gpio %u|Sclk_Hz %"PRIu32"|Div %u|Carrier_Hz %"PRIu32"|Duty %u",
                  channel, gpio_num, rmt_source_clk_hz, clk_div, carrier_freq_hz, carrier_duty_percent);
     } else if (RMT_MODE_RX == mode) {
         uint8_t filter_cnt = rmt_param->rx_config.filter_ticks_thresh;
@@ -659,7 +659,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
 #endif
         RMT_EXIT_CRITICAL();
 
-        ESP_LOGD(TAG, "Rmt Rx Channel %u|Gpio %u|Sclk_Hz %u|Div %u|Thresold %u|Filter %u",
+        ESP_LOGD(TAG, "Rmt Rx Channel %u|Gpio %u|Sclk_Hz %"PRIu32"|Div %u|Thresold %u|Filter %u",
                  channel, gpio_num, rmt_source_clk_hz, clk_div, threshold, filter_cnt);
     }
 
@@ -924,7 +924,7 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
 {
     esp_err_t err = ESP_OK;
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
-    ESP_RETURN_ON_FALSE(rmt_contex.rmt_driver_channels & BIT(channel), ESP_ERR_INVALID_STATE, TAG, "No RMT driver for this channel");
+    // we allow to call this uninstall function on the same channel for multiple times
     if (p_rmt_obj[channel] == NULL) {
         return ESP_OK;
     }
@@ -936,29 +936,21 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     RMT_ENTER_CRITICAL();
     // check channel's working mode
     if (p_rmt_obj[channel]->rx_buf) {
-        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_DONE(RMT_DECODE_RX_CHANNEL(channel)), false);
-        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_ERROR(RMT_DECODE_RX_CHANNEL(channel)), false);
-#if SOC_RMT_SUPPORT_RX_PINGPONG
-        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_THRES(RMT_DECODE_RX_CHANNEL(channel)), false);
-#endif
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_MASK(RMT_DECODE_RX_CHANNEL(channel)) | RMT_LL_EVENT_RX_ERROR(RMT_DECODE_RX_CHANNEL(channel)), false);
     } else {
-        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_TX_DONE(channel) | RMT_LL_EVENT_TX_ERROR(channel) | RMT_LL_EVENT_TX_THRES(channel), false);
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_TX_MASK(channel) | RMT_LL_EVENT_TX_ERROR(channel), false);
     }
     RMT_EXIT_CRITICAL();
 
     _lock_acquire_recursive(&(rmt_contex.rmt_driver_isr_lock));
     rmt_contex.rmt_driver_channels &= ~BIT(channel);
-    if (rmt_contex.rmt_driver_channels == 0) {
+    if (rmt_contex.rmt_driver_channels == 0 && rmt_contex.rmt_driver_intr_handle) {
         rmt_module_disable();
         // all channels have driver disabled
         err = rmt_isr_deregister(rmt_contex.rmt_driver_intr_handle);
         rmt_contex.rmt_driver_intr_handle = NULL;
     }
     _lock_release_recursive(&(rmt_contex.rmt_driver_isr_lock));
-
-    if (err != ESP_OK) {
-        return err;
-    }
 
     if (p_rmt_obj[channel]->tx_sem) {
         vSemaphoreDelete(p_rmt_obj[channel]->tx_sem);
@@ -985,13 +977,12 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
 
     free(p_rmt_obj[channel]);
     p_rmt_obj[channel] = NULL;
-    return ESP_OK;
+    return err;
 }
 
 esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr_alloc_flags)
 {
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
-    ESP_RETURN_ON_FALSE((rmt_contex.rmt_driver_channels & BIT(channel)) == 0, ESP_ERR_INVALID_STATE, TAG, "RMT driver already installed for channel");
 
     esp_err_t err = ESP_OK;
 
@@ -999,6 +990,13 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
         ESP_LOGD(TAG, "RMT driver already installed");
         return ESP_ERR_INVALID_STATE;
     }
+
+#if CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
+    if (intr_alloc_flags & ESP_INTR_FLAG_IRAM ) {
+        ESP_LOGE(TAG, "ringbuf ISR functions in flash, but used in IRAM interrupt");
+        return ESP_ERR_INVALID_ARG;
+    }
+#endif
 
 #if !CONFIG_SPIRAM_USE_MALLOC
     p_rmt_obj[channel] = calloc(1, sizeof(rmt_obj_t));

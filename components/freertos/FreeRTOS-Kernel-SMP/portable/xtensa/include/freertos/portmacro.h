@@ -16,8 +16,9 @@
 #include "xt_instr_macros.h"
 #include "portbenchmark.h"
 #include "esp_macros.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 #include "esp_private/crosscore_int.h"
+#include "esp_memory_utils.h"
 
 /*
 Note: We should not include any FreeRTOS headers (directly or indirectly) here as this will create a reverse dependency
@@ -71,7 +72,7 @@ typedef uint32_t TickType_t;
 #define portCRITICAL_NESTING_IN_TCB     1
 #define portSTACK_GROWTH                ( -1 )
 #define portTICK_PERIOD_MS              ( ( TickType_t ) 1000 / configTICK_RATE_HZ )
-#define portBYTE_ALIGNMENT              4
+#define portBYTE_ALIGNMENT              16    // Xtensa Windowed ABI requires the stack pointer to always be 16-byte aligned. See "isa_rm.pdf 8.1.1 Windowed Register Usage and Stack Layout"
 #define portNOP()                       XT_NOP()    //Todo: Check if XT_NOP exists
 
 /* ---------------------------------------------- Forward Declarations -------------------------------------------------
@@ -142,6 +143,7 @@ void vPortCleanUpTCB ( void *pxTCB );
 #define portDISABLE_INTERRUPTS()            ({ \
     unsigned int prev_level = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); \
     portbenchmarkINTERRUPT_DISABLE(); \
+    prev_level = ((prev_level >> XCHAL_PS_INTLEVEL_SHIFT) & XCHAL_PS_INTLEVEL_MASK); \
     prev_level; \
 })
 
@@ -252,7 +254,7 @@ static inline void __attribute__((always_inline)) vPortYieldFromISR( void )
 
 static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void )
 {
-    return (BaseType_t) cpu_hal_get_core_id();
+    return (BaseType_t) esp_cpu_get_core_id();
 }
 
 /* ------------------------------------------------ IDF Compatibility --------------------------------------------------
@@ -267,7 +269,7 @@ static inline BaseType_t xPortInIsrContext(void)
     return xPortCheckIfInISR();
 }
 
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void);
+BaseType_t xPortInterruptedFromISRContext(void);
 
 static inline UBaseType_t xPortSetInterruptMaskFromISR(void)
 {
@@ -283,18 +285,6 @@ static inline void vPortClearInterruptMaskFromISR(UBaseType_t prev_level)
 }
 
 // ---------------------- Spinlocks ------------------------
-
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-    compare_and_set_native(addr, compare, set);
-}
-
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-#if defined(CONFIG_SPIRAM)
-    compare_and_set_extram(addr, compare, set);
-#endif
-}
 
 static inline bool __attribute__((always_inline)) vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout)
 {
@@ -354,6 +344,9 @@ static inline bool IRAM_ATTR xPortCanYield(void)
 
     return ((ps_reg & PS_INTLEVEL_MASK) == 0);
 }
+
+// Added for backward compatibility with IDF
+#define portYIELD_WITHIN_API()                      vTaskYieldWithinAPI()
 
 // ----------------------- System --------------------------
 

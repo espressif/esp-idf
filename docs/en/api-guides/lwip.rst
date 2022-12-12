@@ -382,6 +382,18 @@ IP layer features
 
 - IPV4 mapped IPV6 addresses are supported.
 
+Customized lwIP hooks
++++++++++++++++++++++
+
+The original lwIP supports implementing custom compile-time modifications via ``LWIP_HOOK_FILENAME``. This file is already used by the IDF port layer, but IDF users could still include and implement any custom additions via a header file defined by the macro ``ESP_IDF_LWIP_HOOK_FILENAME``. Here is an exmaple of adding a custom hook file to the build process (the hook is called ``my_hook.h`` and located in the project's ``main`` folder):
+
+.. code-block:: cmake
+
+   idf_component_get_property(lwip lwip COMPONENT_LIB)
+   target_compile_options(${lwip} PRIVATE "-I${PROJECT_DIR}/main")
+   target_compile_definitions(${lwip} PRIVATE "-DESP_IDF_LWIP_HOOK_FILENAME=\"my_hook.h\"")
+
+
 Limitations
 ^^^^^^^^^^^
 Calling ``send()`` or ``sendto()`` repeatedly on a UDP socket may eventually fail with ``errno`` equal to ``ENOMEM``. This is a limitation of buffer sizes in the lower layer network interface drivers. If all driver transmit buffers are full then UDP transmission will fail. Applications sending a high volume of UDP datagrams who don't wish for any to be dropped by the sender should check for this error code and re-send the datagram after a short delay.
@@ -436,6 +448,7 @@ Most lwIP RAM usage is on-demand, as RAM is allocated from the heap as needed. T
 
 - Reducing :ref:`CONFIG_LWIP_MAX_SOCKETS` reduces the maximum number of sockets in the system. This will also cause TCP sockets in the ``WAIT_CLOSE`` state to be closed and recycled more rapidly (if needed to open a new socket), further reducing peak RAM usage.
 - Reducing :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`, :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` and :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` reduce memory usage at the expense of throughput, depending on usage.
+- Reducing :ref:`CONFIG_LWIP_TCP_MSL`, :ref:`CONFIG_LWIP_TCP_FIN_WAIT_TIMEOUT` reduces the maximum segment lifetime in the system. This will also cause TCP sockets in the ``TIME_WAIT``, ``FIN_WAIT_2`` state to be closed and recycled more rapidly 
 - Disable  :ref:`CONFIG_LWIP_IPV6` can save about 39 KB for firmware size and 2KB RAM when system power up and 7KB RAM when TCPIP stack running. If there is no requirement for supporting IPV6 then it can be disabled to save flash and RAM footprint.
 
 .. only:: SOC_WIFI_SUPPORTED

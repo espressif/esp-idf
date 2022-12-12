@@ -5,9 +5,7 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32c3
+@pytest.mark.supported_targets
 @pytest.mark.generic
 def test_custom_bootloader_hooks_example(dut: Dut) -> None:
     # Expect to read both hooks messages

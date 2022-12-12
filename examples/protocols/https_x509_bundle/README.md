@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # HTTPS x509 Bundle Example
 
 This example shows how to use the ESP certificate bundle utility to embed a bundle of x509 certificates and use them to

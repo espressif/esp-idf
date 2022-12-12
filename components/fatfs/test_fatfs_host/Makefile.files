@@ -40,4 +40,5 @@ INCLUDE_DIRS := \
 		hal/include \
 		spi_flash/include \
 		wear_levelling/include \
+		esp_partition/include \
 	)

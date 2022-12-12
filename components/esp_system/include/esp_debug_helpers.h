@@ -115,7 +115,7 @@ esp_err_t esp_backtrace_print(int depth);
  */
 static inline __attribute__((deprecated)) esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags)
 {
-    return esp_cpu_set_watchpoint(no, adr, size, flags);
+    return esp_cpu_set_watchpoint(no, adr, size, (esp_cpu_watchpoint_trigger_t)flags);
 }
 
 /**

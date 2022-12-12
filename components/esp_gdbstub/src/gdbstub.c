@@ -13,6 +13,7 @@
 #include "soc/uart_reg.h"
 #include "soc/periph_defs.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "hal/wdt_hal.h"
@@ -113,7 +114,11 @@ static uint32_t gdbstub_hton(uint32_t i)
     return __builtin_bswap32(i);
 }
 
+#if !CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
 static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+#else
+static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
+#endif
 static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 static wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
 
@@ -192,7 +197,7 @@ static int wp_count = 0;
 static uint32_t bp_list[GDB_BP_SIZE] = {0};
 static uint32_t wp_list[GDB_WP_SIZE] = {0};
 static uint32_t wp_size[GDB_WP_SIZE] = {0};
-static watchpoint_trigger_t wp_access[GDB_WP_SIZE] = {0};
+static esp_cpu_watchpoint_trigger_t wp_access[GDB_WP_SIZE] = {0};
 
 static volatile bool step_in_progress = false;
 static bool not_send_reason = false;
@@ -438,16 +443,16 @@ void update_breakpoints(void)
 {
     for (size_t i = 0; i < GDB_BP_SIZE; i++) {
         if (bp_list[i] != 0) {
-            cpu_ll_set_breakpoint(i, (uint32_t)bp_list[i]);
+            esp_cpu_set_breakpoint(i, (const void *)bp_list[i]);
         } else {
-            cpu_hal_clear_breakpoint(i);
+            esp_cpu_clear_breakpoint(i);
         }
     }
     for (size_t i = 0; i < GDB_WP_SIZE; i++) {
         if (wp_list[i] != 0) {
-            cpu_hal_set_watchpoint(i, (void *)wp_list[i], wp_size[i], wp_access[i]);
+            esp_cpu_set_watchpoint(i, (void *)wp_list[i], wp_size[i], wp_access[i]);
         } else {
-            cpu_hal_clear_watchpoint(i);
+            esp_cpu_clear_watchpoint(i);
         }
     }
 }
@@ -514,7 +519,7 @@ static void handle_Z2_command(const unsigned char *cmd, int len)
         esp_gdbstub_send_str_packet("E02");
         return;
     }
-    wp_access[wp_count] = WATCHPOINT_TRIGGER_ON_WO;
+    wp_access[wp_count] = ESP_CPU_WATCHPOINT_STORE;
     wp_size[wp_count] = size;
     wp_list[wp_count++] = (uint32_t)addr;
     update_breakpoints();
@@ -533,7 +538,7 @@ static void handle_Z3_command(const unsigned char *cmd, int len)
         esp_gdbstub_send_str_packet("E02");
         return;
     }
-    wp_access[wp_count] = WATCHPOINT_TRIGGER_ON_RO;
+    wp_access[wp_count] = ESP_CPU_WATCHPOINT_LOAD;
     wp_size[wp_count] = size;
     wp_list[wp_count++] = (uint32_t)addr;
     update_breakpoints();
@@ -552,7 +557,7 @@ static void handle_Z4_command(const unsigned char *cmd, int len)
         esp_gdbstub_send_str_packet("E02");
         return;
     }
-    wp_access[wp_count] = WATCHPOINT_TRIGGER_ON_RW;
+    wp_access[wp_count] = ESP_CPU_WATCHPOINT_ACCESS;
     wp_size[wp_count] = size;
     wp_list[wp_count++] = (uint32_t)addr;
     update_breakpoints();
@@ -846,7 +851,7 @@ static bool get_task_handle(size_t index, TaskHandle_t *handle)
 static eTaskState get_task_state(size_t index)
 {
     eTaskState result = eReady;
-    TaskHandle_t handle;
+    TaskHandle_t handle = NULL;
     get_task_handle(index, &handle);
     if (gdb_debug_int == false) {
         result = eTaskGetState(handle);
@@ -857,7 +862,9 @@ static eTaskState get_task_state(size_t index)
 static int get_task_cpu_id(size_t index)
 {
     TaskHandle_t handle;
-    get_task_handle(index, &handle);
+    if (!get_task_handle(index, &handle)) {
+        return -1;
+    }
     BaseType_t core_id = xTaskGetAffinity(handle);
     return (int)core_id;
 }

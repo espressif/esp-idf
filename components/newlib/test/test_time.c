@@ -1,8 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include "unity.h"
-#include "driver/adc.h"
 #include <time.h>
 #include <sys/time.h>
 #include "freertos/FreeRTOS.h"
@@ -10,7 +14,6 @@
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
 #include "esp_system.h"
 #include "test_utils.h"
 #include "esp_log.h"
@@ -32,13 +35,16 @@
 #include "esp32s3/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rtc.h"
 #endif
 
 #if portNUM_PROCESSORS == 2
+#include "soc/rtc_cntl_reg.h"
 
 // This runs on APP CPU:
 static void time_adc_test_task(void* arg)
@@ -450,7 +456,9 @@ static struct timeval get_time(const char *desc, char *buffer)
     gettimeofday(&timestamp, NULL);
     struct tm* tm_info = localtime(&timestamp.tv_sec);
     strftime(buffer, 32, "%c", tm_info);
+#if !CONFIG_NEWLIB_NANO_FORMAT
     ESP_LOGI("TAG", "%s: %016llX (%s)", desc, timestamp.tv_sec, buffer);
+#endif
     return timestamp;
 }
 
@@ -462,7 +470,9 @@ TEST_CASE("test time_t wide 64 bits", "[newlib]")
 
     struct tm tm = {4, 14, 3, 19, 0, 138, 0, 0, 0};
     struct timeval timestamp = { mktime(&tm), 0 };
+#if !CONFIG_NEWLIB_NANO_FORMAT
     ESP_LOGI("TAG", "timestamp: %016llX", timestamp.tv_sec);
+#endif
     settimeofday(&timestamp, NULL);
     get_time("Set time", buffer);
 
@@ -494,7 +504,9 @@ TEST_CASE("test time functions wide 64 bits", "[newlib]")
         localtime_r(&now, &timeinfo);
 
         time_t t = mktime(&timeinfo);
+#if !CONFIG_NEWLIB_NANO_FORMAT
         ESP_LOGI("TAG", "Test mktime(). Time: %016llX", t);
+#endif
         TEST_ASSERT_EQUAL(timestamp.tv_sec, t);
         // mktime() has error in newlib-3.0.0. It fixed in newlib-3.0.0.20180720
         TEST_ASSERT_EQUAL((timestamp.tv_sec >> 32), (t >> 32));
@@ -531,9 +543,13 @@ TEST_CASE("test time functions wide 64 bits", "[newlib]")
 #endif // !_USE_LONG_TIME_T
 
 #if defined( CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER ) && defined( CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER )
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5057
 
 extern int64_t s_microseconds_offset;
 static const uint64_t s_start_timestamp  = 1606838354;
+
+
 static RTC_NOINIT_ATTR uint64_t s_saved_time;
 static RTC_NOINIT_ATTR uint64_t s_time_in_reboot;
 
@@ -623,7 +639,9 @@ static void check_time(void)
     TEST_ASSERT_LESS_OR_EQUAL(latency_before_run_ut, dt);
 }
 
+
 TEST_CASE_MULTIPLE_STAGES("Timestamp after abort is correct in case RTC & High-res timer have + big error", "[newlib][reset=abort,SW_CPU_RESET]", set_timestamp1, check_time);
 TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & High-res timer have + big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp2, check_time);
 TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & High-res timer have - big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp3, check_time);
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 #endif // CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER && CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER

@@ -9,14 +9,6 @@
 
 触摸传感器系统由保护覆盖层、触摸电极、绝缘基板和走线组成，保护覆盖层位于最上层，绝缘基板上设有电极及走线。用户触摸覆盖层将产生电容变化，根据电容变化判断此次触摸是否为有效触摸行为。
 
-.. only:: SOC_TOUCH_VERSION_1
-
-	ESP32 最多可支持 10 个电容式触摸传感器通道/GPIO。
-
-.. only:: SOC_TOUCH_VERSION_2
-
-    {IDF_TARGET_NAME} 最多可支持 14 个电容式触摸传感器通道/GPIO。
-
 触摸传感器可以以矩阵或滑条等方式组合使用，从而覆盖更大触感区域及更多触感点。触摸传感由软件或专用硬件计时器发起，由有限状态机 (FSM) 硬件控制。
 
 如需了解触摸传感器设计、操作及其控制寄存器等相关信息，请参考《`{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_》(PDF) 中“片上传感器与模拟信号处理”章节。
@@ -43,7 +35,6 @@
 
 请前往 :ref:`touch_pad-api-reference` 章节，查看某一函数的具体描述。:ref:`应用示例 <touch_pad-api-examples>` 章节则介绍了此 API 的具体实现。
 
-
 初始化触摸传感器驱动程序
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -54,7 +45,79 @@
 配置触摸传感器 GPIO 管脚
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-调用 :cpp:func:`touch_pad_config` 使能某一 GPIO 的触感功能。
+.. only:: esp32
+
+    可调用 :cpp:func:`touch_pad_config()` 使能某一 GPIO 的触感功能。{IDF_TARGET_NAME} 最多可支持 10 个电容式触摸传感器通道。
+
+    .. list-table::
+        :align: center
+        :widths: 50 50
+        :header-rows: 1
+
+        * - 触摸传感器通道
+          - GPIO 管脚
+        * - T0
+          - GPIO4
+        * - T1
+          - GPIO0
+        * - T2
+          - GPIO2
+        * - T3
+          - MTDO
+        * - T4
+          - MTCK
+        * - T5
+          - MTDI
+        * - T6
+          - MTMS
+        * - T7
+          - GPIO27
+        * - T8
+          - 32K_XN
+        * - T9
+          - 32K_XP
+
+.. only:: esp32s2 or esp32s3
+
+    可调用 :cpp:func:`touch_pad_config()` 使能某一 GPIO 的触感功能。{IDF_TARGET_NAME} 最多可支持 14 个电容式触摸传感器通道。
+
+    .. list-table::
+        :align: center
+        :widths: 50 50
+        :header-rows: 1
+
+        * - 触摸传感器通道
+          - 管脚
+        * - T0
+          - 内部通道，无对应管脚
+        * - T1
+          - GPIO1
+        * - T2
+          - GPIO2
+        * - T3
+          - GPIO3
+        * - T4
+          - GPIO4
+        * - T5
+          - GPIO5
+        * - T6
+          - GPIO6
+        * - T7
+          - GPIO7
+        * - T8
+          - GPIO8
+        * - T9
+          - GPIO9
+        * - T10
+          - GPIO10
+        * - T11
+          - GPIO11
+        * - T12
+          - GPIO12
+        * - T13
+          - GPIO13
+        * - T14
+          - GPIO14    
 
 使用 :cpp:func:`touch_pad_set_fsm_mode` 选择触摸传感器测量（由 FSM 操作）是由硬件定时器自动启动，还是由软件自动启动。如果选择软件模式，请使用 :cpp:func:`touch_pad_sw_start` 启动 FSM。
 
@@ -84,12 +147,37 @@
 
 请参考应用示例 :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`，查看如何使用读取触摸传感器数据。
 
+测量方式
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. only:: SOC_TOUCH_VERSION_1
+
+    触摸传感器会统计固定时间内的充放电次数，其计数结果即为原始数据，可由 :cpp:func:`touch_pad_read_raw_data` 读出。上述固定时间可通过 :cpp:func:`touch_pad_set_measurement_clock_cycles` 设置。完成一次测量后，触摸传感器会在下次测量开始前保持睡眠状态。两次测量之前的间隔时间可由 :cpp:func:`touch_pad_set_measurement_interval` 进行设置。
+
+    .. note::
+
+        若设置的计数时间太短（即测量持续的时钟周期数太小），则可能导致结果不准确，但是过大的计数时间也会造成功耗上升。另外，若睡眠时间加测量时间的总时间过长，则会造成触摸传感器响应变慢。
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    触摸传感器会统计固定充放电次数所需的时间（即所需时钟周期数），其结果即为原始数据，可由 :cpp:func:`touch_pad_read_raw_data` 读出。上述固定的充放电次数可通过 :cpp:func:`touch_pad_set_charge_discharge_times` 设置。完成一次测量后，触摸传感器会在下次测量开始前保持睡眠状态。两次测量之前的间隔时间可由 :cpp:func:`touch_pad_set_measurement_interval` 进行设置。
+
+    .. note::
+
+        若设置的充放电次数太少，则可能导致结果不准确，但是充放电次数过多也会造成功耗上升。另外，若睡眠时间加测量时间的总时间过长，则会造成触摸传感器响应变慢。
+
 优化测量
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 触摸传感器设有数个可配置参数，以适应触摸传感器设计特点。例如，如果需要感知较细微的电容变化，则可以缩小触摸传感器充放电的参考电压范围。用户可以使用 :cpp:func:`touch_pad_set_voltage` 函数设置电压参考低值和参考高值。
 
-优化测量除了可以识别细微的电容变化之外，还可以降低应用程序功耗，但可能会增加测量噪声干扰。如果得到的动态读数范围结果比较理想，则可以调用 :cpp:func:`touch_pad_set_meas_time` 函数来减少测量时间，从而进一步降低功耗。
+.. only:: SOC_TOUCH_VERSION_1
+
+    优化测量除了可以识别细微的电容变化之外，还可以降低应用程序功耗，但可能会增加测量噪声干扰。如果得到的动态读数范围结果比较理想，则可以调用 :cpp:func:`touch_pad_set_measurement_clock_cycles` 函数来减少测量时间，从而进一步降低功耗。
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    优化测量除了可以识别细微的电容变化之外，还可以降低应用程序功耗，但可能会增加测量噪声干扰。如果得到的动态读数范围结果比较理想，则可以调用 :cpp:func:`touch_pad_set_charge_discharge_times` 函数来减少测量时间，从而进一步降低功耗。
 
 可用的测量参数及相应的 'set' 函数总结如下：
 
@@ -98,18 +186,37 @@
     * 电压门限：:cpp:func:`touch_pad_set_voltage`
     * 速率（斜率） :cpp:func:`touch_pad_set_cnt_mode`
 
-* 测量时间：:cpp:func:`touch_pad_set_meas_time`
+.. only:: SOC_TOUCH_VERSION_1
+
+    * 单次测量所用的时钟周期：:cpp:func:`touch_pad_set_measurement_clock_cycles`
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    * 单次测量所需充放电次数：:cpp:func:`touch_pad_set_charge_discharge_times`
 
 电压门限（参考低值/参考高值）、速率（斜率）与测量时间的关系如下图所示：
 
-.. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
-    :align: center
-    :alt: Touch Pad - relationship between measurement parameters
-    :figclass: align-center
+.. only:: SOC_TOUCH_VERSION_1
 
-    触摸传感器 - 测量参数之间的关系
+    .. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
+        :align: center
+        :alt: Touch Pad - relationship between measurement parameters
+        :figclass: align-center
 
-上图中的 *Output* 代表触摸传感器读值，即一个测量周期内测得的脉冲计数值。
+        触摸传感器 - 测量参数之间的关系
+
+    上图中的 *Output* 代表触摸传感器读值，即一个测量周期内测得的脉冲计数值。
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    .. figure:: ../../../_static/touch_pad-measurement-parameters-version2.png
+        :align: center
+        :alt: Touch Pad - relationship between measurement parameters
+        :figclass: align-center
+
+        触摸传感器 - 测量参数之间的关系
+
+    上图中的 *Output* 代表触摸传感器读值，即固定充放电次数所需的时间。
 
 所有函数均成对出现，用于设定某一特定参数，并获取当前参数值。例如：:cpp:func:`touch_pad_set_voltage` 和 :cpp:func:`touch_pad_get_voltage`。
 

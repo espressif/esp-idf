@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: CC0-1.0
 
 import pytest
-from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
@@ -15,7 +14,5 @@ from pytest_embedded import Dut
     ],
     indirect=True,
 )
-def test_gpio(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output()
+def test_gpio(case_tester) -> None:  # type: ignore
+    case_tester.run_all_cases(timeout=300)

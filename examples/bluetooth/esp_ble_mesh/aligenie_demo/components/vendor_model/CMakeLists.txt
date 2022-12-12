@@ -11,3 +11,4 @@ set(COMPONENT_ADD_INCLUDEDIRS ". include")
 set(COMPONENT_REQUIRES bt nvs_flash example_nvs)
 
 register_component()
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

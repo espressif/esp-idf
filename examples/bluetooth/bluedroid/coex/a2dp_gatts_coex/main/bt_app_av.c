@@ -21,7 +21,11 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/i2s.h"
+#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+#include "driver/dac_continuous.h"
+#else
+#include "driver/i2s_std.h"
+#endif
 
 #include "sys/lock.h"
 
@@ -48,6 +52,11 @@ static _lock_t s_volume_lock;
 static TaskHandle_t s_vcs_task_hdl = NULL;
 static uint8_t s_volume = 0;
 static bool s_volume_notify;
+#ifndef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+extern i2s_chan_handle_t tx_chan;
+#else
+extern dac_continuous_handle_t tx_chan;
+#endif
 
 /* callback for A2DP sink */
 void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
@@ -162,7 +171,28 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
             } else if (oct0 & (0x01 << 4)) {
                 sample_rate = 48000;
             }
-            i2s_set_clk(0, sample_rate, 16, 2);
+        #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+            dac_continuous_disable(tx_chan);
+            dac_continuous_del_channels(tx_chan);
+            dac_continuous_config_t cont_cfg = {
+                .chan_mask = DAC_CHANNEL_MASK_ALL,
+                .desc_num = 8,
+                .buf_size = 2048,
+                .freq_hz = sample_rate,
+                .offset = 127,
+                .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,   // Using APLL as clock source to get a wider frequency range
+                .chan_mode = DAC_CHANNEL_MODE_ALTER,
+            };
+            /* Allocate continuous channels */
+            dac_continuous_new_channels(&cont_cfg, &tx_chan);
+            /* Enable the continuous channels */
+            dac_continuous_enable(tx_chan);
+        #else
+            i2s_channel_disable(tx_chan);
+            i2s_std_clk_config_t clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(sample_rate);
+            i2s_channel_reconfig_std_clock(tx_chan, &clk_cfg);
+            i2s_channel_enable(tx_chan);
+        #endif
 
             ESP_LOGI(BT_AV_TAG, "Configure audio player %x-%x-%x-%x",
                      a2d->audio_cfg.mcc.cie.sbc[0],

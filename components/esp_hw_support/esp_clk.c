@@ -8,12 +8,14 @@
 #include <sys/param.h>
 #include <sys/lock.h>
 
+#include "freertos/FreeRTOS.h"
 #include "esp_attr.h"
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
 #include "esp_rom_sys.h"
 #include "esp_private/esp_clk.h"
+#include "hal/clk_tree_ll.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/rtc.h"
@@ -27,12 +29,15 @@
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/rtc.h"
 #include "esp32c3/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/rtc.h"
-#include "esp32h2/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/rtc.h"
+#include "esp32h4/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/rtc.h"
 #include "esp32c2/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/rtc.h"
+#include "esp32c6/rtc.h"
 #endif
 
 #define MHZ (1000000)
@@ -45,10 +50,10 @@ extern uint32_t g_ticks_per_us_app;
 #endif
 #endif
 
-static _lock_t s_esp_rtc_time_lock;
+static portMUX_TYPE s_esp_rtc_time_lock = portMUX_INITIALIZER_UNLOCKED;
 
 // TODO: IDF-4239
-static RTC_DATA_ATTR uint64_t s_esp_rtc_time_us = 0, s_rtc_last_ticks = 0;
+static RTC_NOINIT_ATTR uint64_t s_esp_rtc_time_us, s_rtc_last_ticks;
 
 inline static int IRAM_ATTR s_get_cpu_freq_mhz(void)
 {
@@ -74,7 +79,7 @@ int IRAM_ATTR esp_clk_xtal_freq(void)
     return rtc_clk_xtal_freq_get() * MHZ;
 }
 
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 {
     /* Update scale factors used by esp_rom_delay_us */
@@ -93,8 +98,12 @@ uint64_t esp_rtc_get_time_us(void)
     //IDF-3901
     return 0;
 #endif
-    _lock_acquire(&s_esp_rtc_time_lock);
+    portENTER_CRITICAL_SAFE(&s_esp_rtc_time_lock);
     const uint32_t cal = esp_clk_slowclk_cal_get();
+    if (cal == 0) {
+        s_esp_rtc_time_us = 0;
+        s_rtc_last_ticks = 0;
+    }
     const uint64_t rtc_this_ticks = rtc_time_get();
     const uint64_t ticks = rtc_this_ticks - s_rtc_last_ticks;
     /* RTC counter result is up to 2^48, calibration factor is up to 2^24,
@@ -114,7 +123,7 @@ uint64_t esp_rtc_get_time_us(void)
                                    ((ticks_high * cal) << (32 - RTC_CLK_CAL_FRACT));
     s_esp_rtc_time_us += delta_time_us;
     s_rtc_last_ticks = rtc_this_ticks;
-    _lock_release(&s_esp_rtc_time_lock);
+    portEXIT_CRITICAL_SAFE(&s_esp_rtc_time_lock);
     return s_esp_rtc_time_us;
 }
 
@@ -126,12 +135,12 @@ void esp_clk_slowclk_cal_set(uint32_t new_cal)
      */
     esp_rtc_get_time_us();
 #endif // CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
-    REG_WRITE(RTC_SLOW_CLK_CAL_REG, new_cal);
+    clk_ll_rtc_slow_store_cal(new_cal);
 }
 
 uint32_t esp_clk_slowclk_cal_get(void)
 {
-    return REG_READ(RTC_SLOW_CLK_CAL_REG);
+    return clk_ll_rtc_slow_load_cal();
 }
 
 uint64_t esp_clk_rtc_time(void)
@@ -141,4 +150,14 @@ uint64_t esp_clk_rtc_time(void)
 #else
     return 0;
 #endif
+}
+
+void esp_clk_private_lock(void)
+{
+    portENTER_CRITICAL(&s_esp_rtc_time_lock);
+}
+
+void esp_clk_private_unlock(void)
+{
+    portEXIT_CRITICAL(&s_esp_rtc_time_lock);
 }

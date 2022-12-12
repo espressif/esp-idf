@@ -120,7 +120,7 @@ Thread-Specific Data
 * ``pthread_key_delete()``
 * ``pthread_setspecific()`` / ``pthread_getspecific()``
 
-.. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs
+.. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs. When calling these functions from tasks created using FreeRTOS APIs, :ref:`CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS` config option must be enabled to ensure the thread-specific data is cleaned up before the task is deleted.
 
 .. note:: There are other options for thread local storage in ESP-IDF, including options with higher performance. See :doc:`/api-guides/thread-local-storage`.
 

@@ -41,6 +41,14 @@ esp_netif_t* esp_netif_get_handle_from_netif_impl(void *dev);
 void* esp_netif_get_netif_impl(esp_netif_t *esp_netif);
 
 /**
+ * @brief Set link-speed for the specified network interface
+ * @param[in] esp_netif Handle to esp-netif instance
+ * @param[in] speed  Link speed in bit/s
+ * @return ESP_OK on success
+ */
+esp_err_t esp_netif_set_link_speed(esp_netif_t *esp_netif, uint32_t speed);
+
+/**
  * @}
  */
 

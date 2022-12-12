@@ -46,7 +46,7 @@ esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
     msg.act = BTC_GATTS_ACT_APP_REGISTER;
     arg.app_reg.app_id = app_id;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -62,7 +62,7 @@ esp_err_t esp_ble_gatts_app_unregister(esp_gatt_if_t gatts_if)
     msg.act = BTC_GATTS_ACT_APP_UNREGISTER;
     arg.app_unreg.gatts_if = gatts_if;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
@@ -80,18 +80,23 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
     arg.create_srvc.num_handle = num_handle;
     memcpy(&arg.create_srvc.service_id, service_id, sizeof(esp_gatt_srvc_id_t));
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db,
                                         esp_gatt_if_t gatts_if,
-                                        uint8_t max_nb_attr,
+                                        uint16_t max_nb_attr,
                                         uint8_t srvc_inst_id)
 {
     btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (max_nb_attr > ESP_GATT_ATTR_HANDLE_MAX) {
+        LOG_ERROR("The number of attribute should not be greater than CONFIG_BT_GATT_MAX_SR_ATTRIBUTES\n");
+        return ESP_ERR_INVALID_ARG;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -101,8 +106,8 @@ esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db
     arg.create_attr_tab.srvc_inst_id = srvc_inst_id;
     arg.create_attr_tab.gatts_attr_db = (esp_gatts_attr_db_t *)gatts_attr_db;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), btc_gatts_arg_deep_copy)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), btc_gatts_arg_deep_copy,
+                btc_gatts_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -119,7 +124,7 @@ esp_err_t esp_ble_gatts_add_included_service(uint16_t service_handle, uint16_t i
     arg.add_incl_srvc.service_handle = service_handle;
     arg.add_incl_srvc.included_service_handle = included_service_handle;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -157,7 +162,8 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
     }
     memcpy(&arg.add_char.char_uuid, char_uuid, sizeof(esp_bt_uuid_t));
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), btc_gatts_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), btc_gatts_arg_deep_copy,
+                btc_gatts_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -196,7 +202,8 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
     }
     memcpy(&arg.add_descr.descr_uuid, descr_uuid, sizeof(esp_bt_uuid_t));
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), btc_gatts_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), btc_gatts_arg_deep_copy,
+                btc_gatts_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_delete_service(uint16_t service_handle)
@@ -211,7 +218,7 @@ esp_err_t esp_ble_gatts_delete_service(uint16_t service_handle)
     msg.act = BTC_GATTS_ACT_DELETE_SERVICE;
     arg.delete_srvc.service_handle = service_handle;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_start_service(uint16_t service_handle)
@@ -226,7 +233,7 @@ esp_err_t esp_ble_gatts_start_service(uint16_t service_handle)
     msg.act = BTC_GATTS_ACT_START_SERVICE;
     arg.start_srvc.service_handle = service_handle;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle)
@@ -241,7 +248,7 @@ esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle)
     msg.act = BTC_GATTS_ACT_STOP_SERVICE;
     arg.stop_srvc.service_handle = service_handle;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
@@ -254,7 +261,7 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
-    if (!p_tcb) {
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
         return ESP_ERR_INVALID_STATE;
     }
@@ -275,8 +282,8 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     if(need_confirm == false){
         l2ble_update_att_acl_pkt_num(L2CA_ADD_BTC_NUM, NULL);
     }
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t),
-                                 btc_gatts_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), btc_gatts_arg_deep_copy,
+                btc_gatts_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_send_response(esp_gatt_if_t gatts_if, uint16_t conn_id, uint32_t trans_id,
@@ -287,6 +294,12 @@ esp_err_t esp_ble_gatts_send_response(esp_gatt_if_t gatts_if, uint16_t conn_id, 
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        LOG_WARN("%s, The connection not created.", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_SEND_RESPONSE;
@@ -295,8 +308,8 @@ esp_err_t esp_ble_gatts_send_response(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     arg.send_rsp.status = status;
     arg.send_rsp.rsp = rsp;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t),
-                                 btc_gatts_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), btc_gatts_arg_deep_copy,
+                btc_gatts_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, const uint8_t *value)
@@ -313,8 +326,8 @@ esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, co
     arg.set_attr_val.length = length;
     arg.set_attr_val.value  = (uint8_t *)value;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t),
-                                 btc_gatts_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), btc_gatts_arg_deep_copy,
+                btc_gatts_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_gatt_status_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, const uint8_t **value)
@@ -343,7 +356,7 @@ esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatts_if, esp_bd_addr_t remote_bda, b
     arg.open.is_direct = is_direct;
     memcpy(&arg.open.remote_bda, remote_bda, sizeof(esp_bd_addr_t));
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
@@ -359,7 +372,7 @@ esp_err_t esp_ble_gatts_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
     msg.act = BTC_GATTS_ACT_CLOSE;
     arg.close.conn_id = BTC_GATT_CREATE_CONN_ID(gatts_if, conn_id);
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
@@ -381,7 +394,7 @@ esp_err_t esp_ble_gatts_send_service_change_indication(esp_gatt_if_t gatts_if, e
     }
 
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 

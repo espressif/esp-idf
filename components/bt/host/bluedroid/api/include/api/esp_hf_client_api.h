@@ -575,7 +575,7 @@ esp_err_t esp_hf_client_send_dtmf(char code);
 
 /**
  *
- * @brief           Send command to enable Vendor sepecific feature to indicate battery level
+ * @brief           Send command to enable Vendor specific feature to indicate battery level
  *                  and docker status
  *                  This is Apple-specific commands, but used by most device, including Android and Windows
  *

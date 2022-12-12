@@ -1,2 +1,2 @@
-TEST_COMPONENTS=freertos driver spi_flash esp_ringbuf
+TEST_COMPONENTS=driver spi_flash
 CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH=y
