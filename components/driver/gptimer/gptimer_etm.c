@@ -33,19 +33,19 @@ static esp_err_t gptimer_del_etm_task(esp_etm_task_t *task)
     return ESP_OK;
 }
 
-esp_err_t gptimer_new_etm_event(gptimer_handle_t timer, gptimer_etm_event_type_t event_type, esp_etm_event_handle_t *out_event)
+esp_err_t gptimer_new_etm_event(gptimer_handle_t timer, const gptimer_etm_event_config_t *config, esp_etm_event_handle_t *out_event)
 {
     esp_etm_event_t *event = NULL;
     esp_err_t ret = ESP_OK;
-    ESP_GOTO_ON_FALSE(timer && out_event, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(event_type < GPTIMER_ETM_EVENT_MAX, ESP_ERR_INVALID_ARG, err, TAG, "invalid event type");
+    ESP_GOTO_ON_FALSE(timer && config && out_event, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE(config->event_type < GPTIMER_ETM_EVENT_MAX, ESP_ERR_INVALID_ARG, err, TAG, "invalid event type");
     event = heap_caps_calloc(1, sizeof(esp_etm_event_t), ETM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(event, ESP_ERR_NO_MEM, err, TAG, "no memory for ETM event");
 
     gptimer_group_t *group = timer->group;
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
-    uint32_t event_id = TIMER_LL_ETM_EVENT_TABLE(group_id, timer_id, event_type);
+    uint32_t event_id = TIMER_LL_ETM_EVENT_TABLE(group_id, timer_id, config->event_type);
     ESP_GOTO_ON_FALSE(event_id != 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "not supported event type");
 
     // fill the ETM event object
@@ -62,19 +62,19 @@ err:
     return ret;
 }
 
-esp_err_t gptimer_new_etm_task(gptimer_handle_t timer, gptimer_etm_task_type_t task_type, esp_etm_task_handle_t *out_task)
+esp_err_t gptimer_new_etm_task(gptimer_handle_t timer, const gptimer_etm_task_config_t *config, esp_etm_task_handle_t *out_task)
 {
     esp_etm_task_t *task = NULL;
     esp_err_t ret = ESP_OK;
-    ESP_GOTO_ON_FALSE(timer && out_task, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(task_type < GPTIMER_ETM_TASK_MAX, ESP_ERR_INVALID_ARG, err, TAG, "invalid task type");
+    ESP_GOTO_ON_FALSE(timer && config && out_task, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE(config->task_type < GPTIMER_ETM_TASK_MAX, ESP_ERR_INVALID_ARG, err, TAG, "invalid task type");
     task = heap_caps_calloc(1, sizeof(esp_etm_task_t), ETM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(task, ESP_ERR_NO_MEM, err, TAG, "no memory for ETM task");
 
     gptimer_group_t *group = timer->group;
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
-    uint32_t task_id = TIMER_LL_ETM_TASK_TABLE(group_id, timer_id, task_type);
+    uint32_t task_id = TIMER_LL_ETM_TASK_TABLE(group_id, timer_id, config->task_type);
     ESP_GOTO_ON_FALSE(task_id != 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "not supported task type");
 
     // fill the ETM task object

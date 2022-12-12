@@ -328,12 +328,19 @@ esp_err_t gdma_append(gdma_channel_handle_t dma_chan);
 esp_err_t gdma_reset(gdma_channel_handle_t dma_chan);
 
 /**
+ * @brief GDMA ETM event configuration
+ */
+typedef struct {
+    gdma_etm_event_type_t event_type; /*!< GDMA ETM event type */
+} gdma_etm_event_config_t;
+
+/**
  * @brief Get the ETM event for GDMA channel
  *
  * @note The created ETM event object can be deleted later by calling `esp_etm_del_event`
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
- * @param[in] event_type GDMA ETM event type
+ * @param[in] config GDMA ETM event configuration
  * @param[out] out_event Returned ETM event handle
  * @return
  *      - ESP_OK: Get ETM event successfully
@@ -341,7 +348,14 @@ esp_err_t gdma_reset(gdma_channel_handle_t dma_chan);
  *      - ESP_ERR_NOT_SUPPORTED: Get ETM event failed because the GDMA hardware doesn't support ETM event
  *      - ESP_FAIL: Get ETM event failed because of other error
  */
-esp_err_t gdma_new_etm_event(gdma_channel_handle_t dma_chan, gdma_etm_event_type_t event_type, esp_etm_event_handle_t *out_event);
+esp_err_t gdma_new_etm_event(gdma_channel_handle_t dma_chan, const gdma_etm_event_config_t *config, esp_etm_event_handle_t *out_event);
+
+/**
+ * @brief GDMA ETM task configuration
+ */
+typedef struct {
+    gdma_etm_task_type_t task_type; /*!< GDMA ETM task type */
+} gdma_etm_task_config_t;
 
 /**
  * @brief Get the ETM task for GDMA channel
@@ -349,7 +363,7 @@ esp_err_t gdma_new_etm_event(gdma_channel_handle_t dma_chan, gdma_etm_event_type
  * @note The created ETM task object can be deleted later by calling `esp_etm_del_task`
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
- * @param[in] task_type GDMA ETM task type
+ * @param[in] config GDMA ETM task configuration
  * @param[out] out_task Returned ETM task handle
  * @return
  *      - ESP_OK: Get ETM task successfully
@@ -357,7 +371,7 @@ esp_err_t gdma_new_etm_event(gdma_channel_handle_t dma_chan, gdma_etm_event_type
  *      - ESP_ERR_NOT_SUPPORTED: Get ETM task failed because the gdma hardware doesn't support ETM task
  *      - ESP_FAIL: Get ETM task failed because of other error
  */
-esp_err_t gdma_new_etm_task(gdma_channel_handle_t dma_chan, gdma_etm_task_type_t task_type, esp_etm_task_handle_t *out_task);
+esp_err_t gdma_new_etm_task(gdma_channel_handle_t dma_chan, const gdma_etm_task_config_t *config, esp_etm_task_handle_t *out_task);
 
 #ifdef __cplusplus
 }
