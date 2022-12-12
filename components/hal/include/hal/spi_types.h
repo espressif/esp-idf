@@ -27,7 +27,9 @@ typedef enum {
 //SPI1 can be used as GPSPI only on ESP32
     SPI1_HOST=0,    ///< SPI1
     SPI2_HOST=1,    ///< SPI2
+#if SOC_SPI_PERIPH_NUM > 2
     SPI3_HOST=2,    ///< SPI3
+#endif
 } spi_host_device_t;
 
 /// SPI Events
