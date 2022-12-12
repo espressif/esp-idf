@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include "nvs.h"
 #include "nvs_flash.h"
 
@@ -490,7 +491,7 @@ static void throughput_client_task(void *param)
             if (start_time) {
                 current_time = esp_timer_get_time();
                 bit_rate = notify_len * SECOND_TO_USECOND / (current_time - start_time);
-                ESP_LOGI(GATTC_TAG, "Notify Bit rate = %d Byte/s, = %d bit/s, time = %ds",
+                ESP_LOGI(GATTC_TAG, "Notify Bit rate = %" PRIu32 " Byte/s, = %" PRIu32 " bit/s, time = %ds",
                         bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
             } else {
                 ESP_LOGI(GATTC_TAG, "Notify Bit rate = 0 Byte/s, = 0 bit/s");
