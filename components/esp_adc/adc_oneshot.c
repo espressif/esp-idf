@@ -77,6 +77,13 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
     adc_oneshot_unit_ctx_t *unit = NULL;
     ESP_GOTO_ON_FALSE(init_config && ret_unit, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument: null pointer");
     ESP_GOTO_ON_FALSE(init_config->unit_id < SOC_ADC_PERIPH_NUM, ESP_ERR_INVALID_ARG, err, TAG, "invalid unit");
+#if CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3
+    /**
+     * We only check this on ESP32C3, because other adc units are no longer supported on later chips
+     * If CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3 is enabled, we jump this check
+     */
+    ESP_GOTO_ON_FALSE(SOC_ADC_DIG_SUPPORTED_UNIT(init_config->unit_id), ESP_ERR_INVALID_ARG, err, TAG, "adc unit not supported");
+#endif
 
     unit = heap_caps_calloc(1, sizeof(adc_oneshot_unit_ctx_t), ADC_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(unit, ESP_ERR_NO_MEM, err, TAG, "no mem for unit");
