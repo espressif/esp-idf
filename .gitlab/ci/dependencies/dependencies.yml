@@ -155,13 +155,20 @@ build:integration_test:
     - "build:example_test"
     - build:target_test
 
-"test:integration_test":
+"test:integration_test_{0}":
+  matrix:
+    - - wifi
+      - ble
   labels:
+    - integration_test_{0}
     - integration_test
     - target_test
   patterns:
-    - integration_test
+    - integration_test-{0}
+    - target_test-{0}
+    # - maybe others
   included_in:
+    - test:integration_test
     - build:integration_test
     - build:target_test
 
