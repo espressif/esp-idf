@@ -1,5 +1,11 @@
 idf_build_get_property(target IDF_TARGET)
 
+# On Linux, there is currently no HAL, hence this simple component registration
+if(${target} STREQUAL "linux")
+    idf_component_register()
+    return()
+endif()
+
 set(srcs "mpu_hal.c"
          "efuse_hal.c"
          "${target}/efuse_hal.c"

@@ -393,6 +393,14 @@ test_heap_linux:
     - echo "*" | timeout 5 build/test_heap.elf | tee log.txt || true
     - grep "4 Tests 0 Failures 0 Ignored" log.txt
 
+test_esp_hw_support_linux:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/components/esp_hw_support/host_test/host_test_linux/
+    - idf.py build
+    - echo "*" | timeout 5 build/test_hw_support_linux.elf | tee log.txt || true
+    - grep "2 Tests 0 Failures 0 Ignored" log.txt
+
 test_esp_timer_cxx:
   extends: .host_test_template
   script:

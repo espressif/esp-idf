@@ -10,7 +10,6 @@ set(include_dirs
     "${original_driver_dir}/include"
     "${original_driver_dir}/include/driver"
     "${CMAKE_CURRENT_SOURCE_DIR}/../hal/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../soc/include" # for I2C SOC caps
     "${CMAKE_CURRENT_SOURCE_DIR}/../esp_hw_support/include")
 
 idf_component_mock(INCLUDE_DIRS ${include_dirs}
@@ -20,3 +19,5 @@ idf_component_mock(INCLUDE_DIRS ${include_dirs}
     ${original_driver_dir}/include/driver/spi_common.h
     ${original_driver_dir}/include/driver/i2c.h
     ${original_driver_dir}/include/driver/gpio.h)
+
+target_compile_definitions(${COMPONENT_LIB} PUBLIC SOC_I2C_NUM=2)

@@ -33,7 +33,7 @@ menu "Hardware Settings"
             bool
 
             # Insert chip-specific MAC config
-        rsource "./port/$IDF_TARGET/Kconfig.mac"
+        orsource "./port/$IDF_TARGET/Kconfig.mac"
     endmenu
 
     menu "Sleep Config"
