@@ -1,21 +1,15 @@
-// Copyright (C) 2018-2020 Alibaba Group Holding Limited
-// Adaptations to ESP-IDF Copyright (c) 2020 Espressif Systems (Shanghai) Co. Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2020 Alibaba Group Holding Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * SPDX-FileContributor: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ */
 
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "genie_mesh.h"
 #include "genie_event.h"
@@ -333,7 +327,7 @@ static void genie_timer_update(void *args)
     k_work_submit(&g_genie_timer.work);
 
     if (g_genie_timer.unix_time % 60 == 0) {
-        ESP_LOGI(TAG, "genie_timer_update %d", g_genie_timer.unix_time);
+        ESP_LOGI(TAG, "genie_timer_update %" PRIu32, g_genie_timer.unix_time);
     }
 }
 
@@ -534,7 +528,7 @@ int genie_timer_start(uint8_t index, uint32_t unix_time, genie_timer_attr_data_t
         return -GENIE_TIMER_ERR_PARAM;
     }
 
-    ESP_LOGI(TAG, "timer start index %d expect unix_time %d attr_type %d",
+    ESP_LOGI(TAG, "timer start index %d expect unix_time %" PRIu32 " attr_type %d",
              index,  unix_time, attr_data->type);
 
     if (!g_genie_timer.init) {
@@ -634,7 +628,7 @@ int genie_timer_periodic_start(uint8_t index, uint16_t periodic_time, uint8_t sc
 
     vendor_timer->unixtime_match = convert_utc_to_unix(&utc) + periodic_time - g_timing_data.timezone * HOUR;
 
-    ESP_LOGI(TAG, "periodic timer unixtime_match %d", vendor_timer->unixtime_match);
+    ESP_LOGI(TAG, "periodic timer unixtime_match %" PRIu32, vendor_timer->unixtime_match);
 
     VT_LOCK;
     genie_slist_append(&g_genie_timer.timer_list_active, &vendor_timer->next);
@@ -704,7 +698,7 @@ int genie_timer_remove(uint8_t index)
 void genie_timer_local_time_show(void)
 {
     ENTER_FUNC();
-    ESP_LOGI(TAG, "unix_time revert %d", convert_utc_to_unix(&local_time));
+    ESP_LOGI(TAG, "unix_time revert %" PRIu32, convert_utc_to_unix(&local_time));
     ESP_LOGI(TAG, "%4d/%2d/%2d %2d:%2d:%d weekday %2d %04d",
              local_time.year, local_time.month + 1, local_time.day,
              local_time.hour, local_time.minutes, local_time.seconds,
@@ -780,12 +774,12 @@ int genie_timer_local_time_update(uint32_t unix_time)
 
     local_time = convert_unix_to_utc(unix_time + g_timing_data.timezone * HOUR);
 
-    ESP_LOGI(TAG, "unix_time %d", unix_time);
+    ESP_LOGI(TAG, "unix_time %" PRIu32, unix_time);
     ESP_LOGI(TAG, "localtime update %4d/%2d/%2d %2d:%2d:%d weekday %2d",
              local_time.year, local_time.month + 1, local_time.day,
              local_time.hour, local_time.minutes, local_time.seconds,
              local_time.weekday);
-    ESP_LOGI(TAG, "unix_time revert %d", convert_utc_to_unix(&local_time));
+    ESP_LOGI(TAG, "unix_time revert %" PRIu32, convert_utc_to_unix(&local_time));
 
     return 0;
 }

@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "esp_ble_mesh_networking_api.h"
 #include "esp_ble_mesh_provisioning_api.h"
@@ -425,7 +426,7 @@ esp_err_t example_send_fast_prov_info_set(esp_ble_mesh_model_t *model,
     }
 
     ESP_LOGI(TAG, "min:       0x%04x, max:        0x%04x", set->unicast_min, set->unicast_max);
-    ESP_LOGI(TAG, "flags:     0x%02x,   iv_index:   0x%08x", set->flags, set->iv_index);
+    ESP_LOGI(TAG, "flags:     0x%02x,   iv_index:   0x%08" PRIx32, set->flags, set->iv_index);
     ESP_LOGI(TAG, "net_idx:   0x%04x, group_addr: 0x%04x", set->net_idx, set->group_addr);
     ESP_LOGI(TAG, "action:    0x%02x", set->action);
     ESP_LOG_BUFFER_HEX("FAST_PROV_OP: match_val", set->match_val, set->match_len);
@@ -563,7 +564,7 @@ esp_err_t example_send_fast_prov_status_msg(esp_ble_mesh_model_t *model,
         ctx->send_rel = false;
         break;
     default:
-        ESP_LOGW(TAG, "%s: Invalid fast prov status opcode 0x%04x", __func__, opcode);
+        ESP_LOGW(TAG, "%s: Invalid fast prov status opcode 0x%04" PRIx32, __func__, opcode);
         return ESP_FAIL;
     }
 

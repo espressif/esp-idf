@@ -10,6 +10,7 @@
 #include <string.h>
 #include <errno.h>
 #include <math.h>
+#include <inttypes.h>
 
 #include "esp_log.h"
 #include "esp_mac.h"
@@ -857,7 +858,7 @@ static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32
 {
     ENTER_FUNC();
     ESP_LOGI(TAG, "net_idx: 0x%04x, addr: 0x%04x", net_idx, addr);
-    ESP_LOGI(TAG, "flags: 0x%02x, iv_index: 0x%08x", flags, iv_index);
+    ESP_LOGI(TAG, "flags: 0x%02x, iv_index: 0x%08" PRIx32, flags, iv_index);
 }
 
 static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
@@ -1021,7 +1022,7 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
 static void example_ble_mesh_generic_server_cb(esp_ble_mesh_generic_server_cb_event_t event,
         esp_ble_mesh_generic_server_cb_param_t *param)
 {
-    ESP_LOGD(TAG, "event 0x%02x, opcode 0x%04x, src 0x%04x, dst 0x%04x",
+    ESP_LOGD(TAG, "event 0x%02x, opcode 0x%04" PRIx32 ", src 0x%04x, dst 0x%04x",
              event, param->ctx.recv_op, param->ctx.addr, param->ctx.recv_dst);
 
     switch (event) {
@@ -1090,7 +1091,7 @@ static void example_ble_mesh_lighting_server_cb(esp_ble_mesh_lighting_server_cb_
 #endif
     esp_ble_mesh_server_state_value_t state = {0};
 
-    ESP_LOGD(TAG, "event 0x%02x, opcode 0x%04x, src 0x%04x, dst 0x%04x",
+    ESP_LOGD(TAG, "event 0x%02x, opcode 0x%04" PRIx32 ", src 0x%04x, dst 0x%04x",
              event, param->ctx.recv_op, param->ctx.addr, param->ctx.recv_dst);
 
     switch (event) {
@@ -1208,15 +1209,15 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
         ESP_LOGD(TAG, "ESP_BLE_MESH_MODEL_OPERATION_EVT");
-        ESP_LOGD(TAG, "opcode: 0x%06x", param->model_operation.opcode);
+        ESP_LOGD(TAG, "opcode: 0x%06" PRIx32, param->model_operation.opcode);
         genie_model_dispatch(param->model_operation.opcode, param->model_operation.model,
                              param->model_operation.ctx, param->model_operation.msg, param->model_operation.length);
         break;
     case ESP_BLE_MESH_MODEL_SEND_COMP_EVT:
         ESP_LOGD(TAG, "ESP_BLE_MESH_MODEL_SEND_COMP_EVT");
-        ESP_LOGD(TAG, "opcode: 0x%06x", param->model_send_comp.opcode);
+        ESP_LOGD(TAG, "opcode: 0x%06" PRIx32, param->model_send_comp.opcode);
         if (param->model_send_comp.err_code) {
-            ESP_LOGE(TAG, "Failed to send message: 0x%06x, err: %d", param->model_send_comp.opcode, param->model_send_comp.err_code);
+            ESP_LOGE(TAG, "Failed to send message: 0x%06" PRIx32 ", err: %d", param->model_send_comp.opcode, param->model_send_comp.err_code);
             break;
         }
         break;

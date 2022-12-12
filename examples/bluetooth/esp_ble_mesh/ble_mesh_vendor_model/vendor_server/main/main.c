@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -86,7 +87,7 @@ static esp_ble_mesh_prov_t provision = {
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index)
 {
     ESP_LOGI(TAG, "net_idx 0x%03x, addr 0x%04x", net_idx, addr);
-    ESP_LOGI(TAG, "flags 0x%02x, iv_index 0x%08x", flags, iv_index);
+    ESP_LOGI(TAG, "flags 0x%02x, iv_index 0x%08" PRIx32, flags, iv_index);
     board_led_operation(LED_G, LED_OFF);
 }
 
@@ -157,7 +158,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
         if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_SEND) {
             uint16_t tid = *(uint16_t *)param->model_operation.msg;
-            ESP_LOGI(TAG, "Recv 0x%06x, tid 0x%04x", param->model_operation.opcode, tid);
+            ESP_LOGI(TAG, "Recv 0x%06" PRIx32 ", tid 0x%04x", param->model_operation.opcode, tid);
             esp_err_t err = esp_ble_mesh_server_model_send_msg(&vnd_models[0],
                     param->model_operation.ctx, ESP_BLE_MESH_VND_MODEL_OP_STATUS,
                     sizeof(tid), (uint8_t *)&tid);
@@ -168,10 +169,10 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         break;
     case ESP_BLE_MESH_MODEL_SEND_COMP_EVT:
         if (param->model_send_comp.err_code) {
-            ESP_LOGE(TAG, "Failed to send message 0x%06x", param->model_send_comp.opcode);
+            ESP_LOGE(TAG, "Failed to send message 0x%06" PRIx32, param->model_send_comp.opcode);
             break;
         }
-        ESP_LOGI(TAG, "Send 0x%06x", param->model_send_comp.opcode);
+        ESP_LOGI(TAG, "Send 0x%06" PRIx32, param->model_send_comp.opcode);
         break;
     default:
         break;

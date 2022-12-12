@@ -5,4 +5,3 @@ set(COMPONENT_SRCS "board.c"
 set(COMPONENT_ADD_INCLUDEDIRS ". include")
 
 register_component()
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
