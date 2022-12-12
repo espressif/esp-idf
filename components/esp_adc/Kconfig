@@ -55,5 +55,15 @@ menu "ADC and ADC Calibration"
 
             Disable this option so as to measure the output of DAC by internal ADC, for test usage.
 
+    config ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3
+        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        bool "Force use ADC2 continumous mode on ESP32S3 or ESP32C3"
+        default n
+        help
+            On ESP32C3 and ESP32S3, ADC2 Digital Controller is not stable. Therefore,
+            ADC2 continuous mode is not suggested on ESP32S3 and ESP32C3
+
+            If you stick to this, you can enable this option to force use ADC2 under above conditions.
+            For more details, you can search for errata on espressif website.
 
 endmenu
