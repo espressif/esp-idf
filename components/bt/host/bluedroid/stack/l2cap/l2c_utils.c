@@ -3613,6 +3613,9 @@ void l2cu_set_acl_hci_header (BT_HDR *p_buf, tL2C_CCB *p_ccb)
 void l2cu_check_channel_congestion (tL2C_CCB *p_ccb)
 {
     size_t q_count = fixed_queue_length(p_ccb->xmit_hold_q);
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    size_t q_waiting_ack_count = fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q);
+#endif
 
 #if (L2CAP_UCD_INCLUDED == TRUE)
     if ( p_ccb->local_cid == L2CAP_CONNECTIONLESS_CID ) {
@@ -3625,7 +3628,11 @@ void l2cu_check_channel_congestion (tL2C_CCB *p_ccb)
         /* If this channel was congested */
         if ( p_ccb->cong_sent ) {
             /* If the channel is not congested now, tell the app */
-            if (q_count <= (p_ccb->buff_quota / 2)) {
+            if (q_count <= (p_ccb->buff_quota / 2)
+#if (CLASSIC_BT_INCLUDED == TRUE)
+                        && (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE || q_waiting_ack_count < p_ccb->our_cfg.fcr.tx_win_sz)
+#endif
+                    ) {
                 p_ccb->cong_sent = FALSE;
                 if (p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb) {
                     L2CAP_TRACE_DEBUG ("L2CAP - Calling CongestionStatus_Cb (FALSE), CID: 0x%04x  xmit_hold_q.count: %u  buff_quota: %u",
@@ -3664,7 +3671,11 @@ void l2cu_check_channel_congestion (tL2C_CCB *p_ccb)
         } else {
             tL2C_LCB *p_lcb = p_ccb->p_lcb;
             /* If this channel was not congested but it is congested now, tell the app */
-            if (q_count > p_ccb->buff_quota || (p_lcb && (p_lcb->link_xmit_data_q) && (list_length(p_lcb->link_xmit_data_q) + q_count) > p_ccb->buff_quota)) {
+            if (q_count > p_ccb->buff_quota || (p_lcb && (p_lcb->link_xmit_data_q) && (list_length(p_lcb->link_xmit_data_q) + q_count) > p_ccb->buff_quota)
+#if (CLASSIC_BT_INCLUDED == TRUE)
+                    || (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE && q_waiting_ack_count >= p_ccb->our_cfg.fcr.tx_win_sz)
+#endif
+                    ) {
                 p_ccb->cong_sent = TRUE;
                 if (p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb) {
                     L2CAP_TRACE_DEBUG ("L2CAP - Calling CongestionStatus_Cb (TRUE),CID:0x%04x,XmitQ:%u,Quota:%u",

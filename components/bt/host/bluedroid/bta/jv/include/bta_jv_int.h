@@ -57,6 +57,7 @@ enum {
     BTA_JV_API_L2CAP_WRITE_EVT,
 #endif /* BTA_JV_L2CAP_INCLUDED */
 #if BTA_JV_RFCOMM_INCLUDED
+    BTA_JV_API_RFCOMM_CONFIG_EVT,
     BTA_JV_API_RFCOMM_CONNECT_EVT,
     BTA_JV_API_RFCOMM_CLOSE_EVT,
     BTA_JV_API_RFCOMM_START_SERVER_EVT,
@@ -83,7 +84,7 @@ enum {
 
 /* data type for BTA_JV_API_ENABLE_EVT */
 typedef struct {
-    BT_HDR          hdr;
+    BT_HDR              hdr;
     tBTA_JV_DM_CBACK   *p_cback;
 } tBTA_JV_API_ENABLE;
 
@@ -257,6 +258,12 @@ typedef struct {
 #endif /* BTA_JV_L2CAP_INCLUDED */
 
 #if BTA_JV_RFCOMM_INCLUDED
+/* data type for BTA_JV_API_RFCOMM_CONFIG_EVT */
+typedef struct {
+    BT_HDR          hdr;
+    BOOLEAN         enable_l2cap_ertm;
+} tBTA_JV_API_RFCOMM_CONFIG;
+
 /* data type for BTA_JV_API_RFCOMM_CONNECT_EVT */
 typedef struct {
     BT_HDR          hdr;
@@ -392,6 +399,7 @@ typedef union {
     tBTA_JV_API_L2CAP_WRITE_FIXED   l2cap_write_fixed;
 #endif /* BTA_JV_L2CAP_INCLUDED */
 #if BTA_JV_RFCOMM_INCLUDED
+    tBTA_JV_API_RFCOMM_CONFIG       rfcomm_config;
     tBTA_JV_API_RFCOMM_CONNECT      rfcomm_connect;
     tBTA_JV_API_RFCOMM_READ         rfcomm_read;
     tBTA_JV_API_RFCOMM_WRITE        rfcomm_write;
@@ -463,6 +471,7 @@ extern void bta_jv_l2cap_read (tBTA_JV_MSG *p_data);
 extern void bta_jv_l2cap_write (tBTA_JV_MSG *p_data);
 #endif /* BTA_JV_L2CAP_INCLUDED */
 #if BTA_JV_RFCOMM_INCLUDED
+extern void bta_jv_rfcomm_config (tBTA_JV_MSG *p_data);
 extern void bta_jv_rfcomm_connect (tBTA_JV_MSG *p_data);
 extern void bta_jv_rfcomm_close (tBTA_JV_MSG *p_data);
 extern void bta_jv_rfcomm_start_server (tBTA_JV_MSG *p_data);

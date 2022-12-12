@@ -18,8 +18,6 @@
 #define ESP_SPP_MAX_SESSION     BTA_JV_MAX_RFC_SR_SESSION
 #define ESP_SPP_SERVER_NAME_MAX 32
 
-#define ESP_SPP_RINGBUF_SIZE 1000
-
 #define BTC_SPP_INVALID_SCN 0x00
 
 typedef enum {
@@ -38,6 +36,8 @@ typedef union {
     //BTC_SPP_ACT_INIT
     struct init_arg {
         esp_spp_mode_t mode;
+        bool enable_l2cap_ertm;
+        UINT16 tx_buffer_size;
     } init;
     //BTC_SPP_ACT_UNINIT
     struct uninit_arg {
