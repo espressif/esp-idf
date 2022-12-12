@@ -182,11 +182,11 @@ typedef struct {
     uint32_t arg_size;
 } wifi_ipc_config_t;
 
-#define WPA_IGTK_LEN 16
+#define WPA_IGTK_MAX_LEN 32
 typedef struct {
     uint8_t keyid[2];
     uint8_t pn[6];
-    uint8_t igtk[WPA_IGTK_LEN];
+    uint8_t igtk[WPA_IGTK_MAX_LEN];
 } wifi_wpa_igtk_t;
 
 typedef struct {

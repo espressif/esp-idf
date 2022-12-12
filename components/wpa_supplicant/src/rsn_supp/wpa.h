@@ -33,6 +33,7 @@
 #define WPA_SM_STATE(_sm) ((_sm)->wpa_state)
 
 struct wpa_sm;
+extern struct wpa_sm gWpaSm;
 
 int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
 bool wpa_sta_is_cur_pmksa_set(void);
@@ -140,8 +141,14 @@ int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len);
 
 int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len);
 
+void wpa_sm_drop_sa(struct wpa_sm *sm);
+
 struct wpa_sm * get_wpa_sm(void);
 
 void wpa_sm_set_pmk_from_pmksa(struct wpa_sm *sm);
+
+void wpa_sm_notify_assoc(struct wpa_sm *sm, const u8 *bssid);
+
+void wpa_sm_notify_disassoc(struct wpa_sm *sm);
 
 #endif /* WPA_H */
