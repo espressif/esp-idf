@@ -530,16 +530,27 @@ esp_err_t adc_continuous_config(adc_continuous_handle_t handle, const adc_contin
 
     //Pattern related check
     ESP_RETURN_ON_FALSE(config->pattern_num <= SOC_ADC_PATT_LEN_MAX, ESP_ERR_INVALID_ARG, ADC_TAG, "Max pattern num is %d", SOC_ADC_PATT_LEN_MAX);
-#if CONFIG_IDF_TARGET_ESP32
     for (int i = 0; i < config->pattern_num; i++) {
         ESP_RETURN_ON_FALSE((config->adc_pattern[i].bit_width >= SOC_ADC_DIGI_MIN_BITWIDTH && config->adc_pattern->bit_width <= SOC_ADC_DIGI_MAX_BITWIDTH), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC bitwidth not supported");
-        ESP_RETURN_ON_FALSE(config->adc_pattern[i].unit == 0, ESP_ERR_INVALID_ARG, ADC_TAG, "Only support using ADC1 DMA mode");
     }
-#else
+
     for (int i = 0; i < config->pattern_num; i++) {
-        ESP_RETURN_ON_FALSE((config->adc_pattern[i].bit_width == SOC_ADC_DIGI_MAX_BITWIDTH), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC bitwidth not supported");
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
+        //we add this error log to hint users what happened
+        if (SOC_ADC_DIG_SUPPORTED_UNIT(config->adc_pattern[i].unit) == 0) {
+            ESP_LOGE(ADC_TAG, "ADC2 continuous mode is no longer supported, please use ADC1. Search for errata on espressif website for more details. You can enable CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3 to force use ADC2");
+        }
+#endif  //CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
+
+#if !CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3
+        /**
+         * On all continuous mode supported chips, we will always check the unit to see if it's a continuous mode supported unit.
+         * However, on ESP32C3 and ESP32S3, we will jump this check, if `CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` is enabled.
+         */
+        ESP_RETURN_ON_FALSE(SOC_ADC_DIG_SUPPORTED_UNIT(config->adc_pattern[i].unit), ESP_ERR_INVALID_ARG, ADC_TAG, "Only support using ADC1 DMA mode");
+#endif  //#if !CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3
     }
-#endif
+
     ESP_RETURN_ON_FALSE(config->sample_freq_hz <= SOC_ADC_SAMPLE_FREQ_THRES_HIGH && config->sample_freq_hz >= SOC_ADC_SAMPLE_FREQ_THRES_LOW, ESP_ERR_INVALID_ARG, ADC_TAG, "ADC sampling frequency out of range");
 
 #if CONFIG_IDF_TARGET_ESP32
