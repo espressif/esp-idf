@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "driver/gpio.h"
 #include "board.h"
@@ -21,7 +22,7 @@ struct _led_state led_state[3] = {
 
 void board_output_number(esp_ble_mesh_output_action_t action, uint32_t number)
 {
-    ESP_LOGI(TAG, "Board output number %d", number);
+    ESP_LOGI(TAG, "Board output number %" PRIu32, number);
 }
 
 void board_prov_complete(void)

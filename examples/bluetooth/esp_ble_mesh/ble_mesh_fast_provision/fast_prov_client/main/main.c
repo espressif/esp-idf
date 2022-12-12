@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "esp_system.h"
 #include "esp_log.h"
@@ -324,7 +325,7 @@ static void example_custom_model_callback(esp_ble_mesh_model_cb_event_t event,
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_STATUS:
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NET_KEY_STATUS:
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_STATUS: {
-            ESP_LOGI(TAG, "%s: Fast Prov Client Model receives status, opcode 0x%04x", __func__, opcode);
+            ESP_LOGI(TAG, "%s: Fast Prov Client Model receives status, opcode 0x%04" PRIx32, __func__, opcode);
             err = example_fast_prov_client_recv_status(param->model_operation.model,
                     param->model_operation.ctx,
                     param->model_operation.length,
@@ -336,7 +337,7 @@ static void example_custom_model_callback(esp_ble_mesh_model_cb_event_t event,
             break;
         }
         default:
-            ESP_LOGI(TAG, "%s: opcode 0x%04x", __func__, param->model_operation.opcode);
+            ESP_LOGI(TAG, "%s: opcode 0x%04" PRIx32, __func__, param->model_operation.opcode);
             break;
         }
         break;
@@ -350,11 +351,11 @@ static void example_custom_model_callback(esp_ble_mesh_model_cb_event_t event,
                  param->model_publish_comp.err_code);
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT:
-        ESP_LOGI(TAG, "ESP_BLE_MESH_MODEL_CLIENT_RECV_PUBLISH_MSG_EVT, opcode 0x%04x",
+        ESP_LOGI(TAG, "ESP_BLE_MESH_MODEL_CLIENT_RECV_PUBLISH_MSG_EVT, opcode 0x%04" PRIx32,
                  param->client_recv_publish_msg.opcode);
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT:
-        ESP_LOGI(TAG, "ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT, opcode 0x%04x, dst 0x%04x",
+        ESP_LOGI(TAG, "ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT, opcode 0x%04" PRIx32 ", dst 0x%04x",
                  param->client_send_timeout.opcode, param->client_send_timeout.ctx->addr);
         err = example_fast_prov_client_recv_timeout(param->client_send_timeout.opcode,
                 param->client_send_timeout.model,
@@ -390,7 +391,7 @@ static void example_config_client_callback(esp_ble_mesh_cfg_client_cb_event_t ev
     }
 
     if (param->error_code) {
-        ESP_LOGE(TAG, "Failed to send config client message, opcode: 0x%04x", opcode);
+        ESP_LOGE(TAG, "Failed to send config client message, opcode: 0x%04" PRIx32, opcode);
         return;
     }
 
@@ -491,7 +492,7 @@ static void example_generic_client_callback(esp_ble_mesh_generic_client_cb_event
     }
 
     if (param->error_code) {
-        ESP_LOGE(TAG, "Failed to send generic client message, opcode: 0x%04x", opcode);
+        ESP_LOGE(TAG, "Failed to send generic client message, opcode: 0x%04" PRIx32, opcode);
         return;
     }
 

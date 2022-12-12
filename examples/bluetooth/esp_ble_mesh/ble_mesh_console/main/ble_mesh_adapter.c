@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
+
 #include "esp_ble_mesh_networking_api.h"
 #include "ble_mesh_adapter.h"
 
@@ -120,7 +122,7 @@ void ble_mesh_deinit_node_prestore_params(void)
 void ble_mesh_node_statistics_get(void)
 {
     xSemaphoreTake(ble_mesh_node_sema, portMAX_DELAY);
-    ESP_LOGI(TAG, "Statistics:%d\n", ble_mesh_node_statistics.package_num);
+    ESP_LOGI(TAG, "Statistics:%" PRIu32, ble_mesh_node_statistics.package_num);
     xSemaphoreGive(ble_mesh_node_sema);
 }
 
@@ -229,7 +231,7 @@ void ble_mesh_test_performance_client_model_get(void)
         rtt = (int)(sum_time / succeed_packet_count);
     }
 
-    ESP_LOGI(TAG, "VendorModel:Statistics,%d,%d\n", failed_packet_num, rtt);
+    ESP_LOGI(TAG, "VendorModel:Statistics,%" PRIu32 ",%" PRIu32, failed_packet_num, rtt);
 }
 
 void ble_mesh_test_performance_client_model_get_received_percent(void)

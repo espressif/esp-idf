@@ -1581,8 +1581,6 @@ docs/en/conf.py
 docs/zh_CN/conf.py
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/genie_event.c
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/genie_reset.c
-examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/genie_timer.c
-examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/genie_util.c
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/include/genie_dlist.h
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/include/genie_event.h
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/include/genie_mesh.h

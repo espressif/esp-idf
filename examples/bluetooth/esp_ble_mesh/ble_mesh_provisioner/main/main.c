@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -355,11 +356,11 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
     opcode = param->params->opcode;
     addr = param->params->ctx.addr;
 
-    ESP_LOGI(TAG, "%s, error_code = 0x%02x, event = 0x%02x, addr: 0x%04x, opcode: 0x%04x",
+    ESP_LOGI(TAG, "%s, error_code = 0x%02x, event = 0x%02x, addr: 0x%04x, opcode: 0x%04" PRIx32,
              __func__, param->error_code, event, param->params->ctx.addr, opcode);
 
     if (param->error_code) {
-        ESP_LOGE(TAG, "Send config client message failed, opcode 0x%04x", opcode);
+        ESP_LOGE(TAG, "Send config client message failed, opcode 0x%04" PRIx32, opcode);
         return;
     }
 
@@ -495,11 +496,11 @@ static void example_ble_mesh_generic_client_cb(esp_ble_mesh_generic_client_cb_ev
     opcode = param->params->opcode;
     addr = param->params->ctx.addr;
 
-    ESP_LOGI(TAG, "%s, error_code = 0x%02x, event = 0x%02x, addr: 0x%04x, opcode: 0x%04x",
+    ESP_LOGI(TAG, "%s, error_code = 0x%02x, event = 0x%02x, addr: 0x%04x, opcode: 0x%04" PRIx32,
              __func__, param->error_code, event, param->params->ctx.addr, opcode);
 
     if (param->error_code) {
-        ESP_LOGE(TAG, "Send generic client message failed, opcode 0x%04x", opcode);
+        ESP_LOGE(TAG, "Send generic client message failed, opcode 0x%04" PRIx32, opcode);
         return;
     }
 
