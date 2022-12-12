@@ -173,6 +173,8 @@ static void btc_dm_remove_ble_bonding_keys(void)
 
     bdcpy(bd_addr.address, btc_dm_cb.pairing_cb.bd_addr);
 
+    btc_storage_remove_gatt_cl_supp_feat(&bd_addr);
+    btc_storage_remove_gatt_db_hash(&bd_addr);
     btc_storage_remove_remote_addr_type(&bd_addr, false);
     btc_storage_remove_ble_dev_auth_mode(&bd_addr, false);
     btc_storage_remove_ble_dev_type(&bd_addr, false);
@@ -809,6 +811,8 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
 
         if (p_data->link_down.status == HCI_SUCCESS) {
             //remove the bonded key in the config and nvs flash.
+            btc_storage_remove_gatt_cl_supp_feat(&bd_addr);
+            btc_storage_remove_gatt_db_hash(&bd_addr);
             btc_storage_remove_ble_dev_type(&bd_addr, false);
             btc_storage_remove_remote_addr_type(&bd_addr, false);
             btc_storage_remove_ble_dev_auth_mode(&bd_addr, false);
@@ -942,6 +946,19 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         rsp_app = true;
         ble_msg->act = ESP_GAP_BLE_OOB_REQ_EVT;
         memcpy(param.ble_security.ble_req.bd_addr, p_data->ble_req.bd_addr, BD_ADDR_LEN);
+        break;
+    }
+    case BTA_DM_BLE_SC_OOB_REQ_EVT: {
+        rsp_app = true;
+        ble_msg->act = ESP_GAP_BLE_SC_OOB_REQ_EVT;
+        memcpy(param.ble_security.ble_req.bd_addr, p_data->ble_req.bd_addr, BD_ADDR_LEN);
+        break;
+    }
+    case BTA_DM_BLE_SC_CR_LOC_OOB_EVT: {
+        rsp_app = true;
+        ble_msg->act = ESP_GAP_BLE_SC_CR_LOC_OOB_EVT;
+        memcpy(param.ble_security.oob_data.oob_c, p_data->local_oob_data.local_oob_c, BT_OCTET16_LEN);
+        memcpy(param.ble_security.oob_data.oob_r, p_data->local_oob_data.local_oob_r, BT_OCTET16_LEN);
         break;
     }
     case BTA_DM_BLE_LOCAL_IR_EVT: {

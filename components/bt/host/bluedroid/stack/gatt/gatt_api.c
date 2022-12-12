@@ -122,6 +122,20 @@ BOOLEAN  GATTS_NVRegister (const tGATT_APPL_INFO *p_cb_info)
     return status;
 }
 
+static void gatt_update_for_database_change(void)
+{
+    UINT8 i;
+
+    gatts_calculate_datebase_hash(gatt_cb.database_hash);
+
+    for (i = 0; i < GATT_MAX_PHY_CHANNEL; i++) {
+        tGATT_TCB *p_tcb = gatt_get_tcb_by_idx(i);
+        if (p_tcb && p_tcb->in_use) {
+            gatt_sr_update_cl_status(p_tcb, false);
+        }
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         GATTS_CreateService
@@ -398,7 +412,8 @@ BOOLEAN GATTS_DeleteService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid, UINT16 svc_
         GATT_TRACE_DEBUG ("Delete a new service changed item - the service has not yet started");
         osi_free(fixed_queue_try_remove_from_queue(gatt_cb.pending_new_srv_start_q, p_buf));
     } else {
-        if (GATTS_SEND_SERVICE_CHANGE_MODE == GATTS_SEND_SERVICE_CHANGE_AUTO) {
+        gatt_update_for_database_change();
+        if (gatt_cb.srv_chg_mode == GATTS_SEND_SERVICE_CHANGE_AUTO) {
             gatt_proc_srv_chg();
         }
     }
@@ -510,7 +525,8 @@ tGATT_STATUS GATTS_StartService (tGATT_IF gatt_if, UINT16 service_handle,
     if ( (p_buf = gatt_sr_is_new_srv_chg(&p_list->asgn_range.app_uuid128,
                                          &p_list->asgn_range.svc_uuid,
                                          p_list->asgn_range.svc_inst)) != NULL) {
-        if (GATTS_SEND_SERVICE_CHANGE_MODE == GATTS_SEND_SERVICE_CHANGE_AUTO) {
+        gatt_update_for_database_change();
+        if (gatt_cb.srv_chg_mode == GATTS_SEND_SERVICE_CHANGE_AUTO) {
             gatt_proc_srv_chg();
         }
         /* remove the new service element after the srv changed processing is completed*/
@@ -980,6 +996,7 @@ tGATT_STATUS GATTC_Read (UINT16 conn_id, tGATT_READ_TYPE type, tGATT_READ_PARAM 
             memcpy(&p_clcb->uuid, &p_read->service.uuid, sizeof(tBT_UUID));
             break;
         case GATT_READ_MULTIPLE:
+        case GATT_READ_MULTIPLE_VAR:
             p_clcb->s_handle = 0;
             /* copy multiple handles in CB */
             p_read_multi = (tGATT_READ_MULTI *)osi_malloc(sizeof(tGATT_READ_MULTI));
@@ -1169,6 +1186,12 @@ tGATT_STATUS GATTC_SendHandleValueConfirm (UINT16 conn_id, UINT16 handle)
         GATT_TRACE_ERROR ("GATTC_SendHandleValueConfirm - Unknown conn_id: %u", conn_id);
     }
     return ret;
+}
+
+tGATT_STATUS GATTC_AutoDiscoverEnable(UINT8 enable)
+{
+    gatt_cb.auto_disc = (enable > 0) ? TRUE : FALSE;
+    return GATT_SUCCESS;
 }
 
 #endif  ///GATTC_INCLUDED == TRUE
@@ -1543,7 +1566,8 @@ tGATT_STATUS GATT_SendServiceChangeIndication (BD_ADDR bd_addr)
     tGATT_TCB           *p_tcb;
     tBT_TRANSPORT      transport;
     tGATT_STATUS status = GATT_NOT_FOUND;
-    if (GATTS_SEND_SERVICE_CHANGE_MODE == GATTS_SEND_SERVICE_CHANGE_AUTO) {
+
+    if (gatt_cb.srv_chg_mode == GATTS_SEND_SERVICE_CHANGE_AUTO) {
         status = GATT_WRONG_STATE;
         GATT_TRACE_ERROR ("%s can't send service change indication manually, please configure the option through menuconfig", __func__);
         return status;
@@ -1673,6 +1697,74 @@ BOOLEAN GATT_Listen (tGATT_IF gatt_if, BOOLEAN start, BD_ADDR_PTR bd_addr)
     }
 
     return gatt_update_listen_mode();
+}
+
+tGATT_STATUS GATTS_SetServiceChangeMode(UINT8 mode)
+{
+    if (mode > GATTS_SEND_SERVICE_CHANGE_MANUAL) {
+        GATT_TRACE_ERROR("%s invalid service change mode %u", __func__, mode);
+        return GATT_VALUE_NOT_ALLOWED;
+    }
+
+    gatt_cb.srv_chg_mode = mode;
+    return GATT_SUCCESS;
+}
+
+tGATT_STATUS GATTS_HandleMultiValueNotification (UINT16 conn_id, tGATT_HLV *tuples, UINT16 num_tuples)
+{
+    tGATT_STATUS    cmd_sent = GATT_ILLEGAL_PARAMETER;
+    BT_HDR          *p_buf;
+    tGATT_VALUE     notif;
+    tGATT_IF        gatt_if = GATT_GET_GATT_IF(conn_id);
+    UINT8           tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(tcb_idx);
+    UINT8           *p = notif.value;
+    tGATT_HLV       *p_hlv = tuples;
+
+    GATT_TRACE_API ("GATTS_HandleMultiValueNotification");
+
+    if ( (p_reg == NULL) || (p_tcb == NULL)) {
+        GATT_TRACE_ERROR ("GATTS_HandleMultiValueNotification Unknown conn_id: %u \n", conn_id);
+        return (tGATT_STATUS) GATT_INVALID_CONN_ID;
+    }
+
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_WRONG_STATE;
+    }
+
+    if (tuples == NULL) {
+        return GATT_ILLEGAL_PARAMETER;
+    }
+
+    notif.len = 0;
+
+    while (num_tuples) {
+        if (!GATT_HANDLE_IS_VALID (p_hlv->handle)) {
+            return GATT_ILLEGAL_PARAMETER;
+        }
+
+        UINT16_TO_STREAM(p, p_hlv->handle);   //handle
+        UINT16_TO_STREAM(p, p_hlv->length);   //length
+        memcpy (p, p_hlv->value, p_hlv->length); //value
+        GATT_TRACE_DEBUG("%s handle %x, length %u", __func__, p_hlv->handle, p_hlv->length);
+        p += p_hlv->length;
+        notif.len += 4 + p_hlv->length;
+        num_tuples--;
+        p_hlv++;
+    }
+
+    notif.auth_req = GATT_AUTH_REQ_NONE;
+
+    p_buf = attp_build_sr_msg (p_tcb, GATT_HANDLE_MULTI_VALUE_NOTIF, (tGATT_SR_MSG *)&notif);
+    if (p_buf != NULL) {
+        cmd_sent = attp_send_sr_msg (p_tcb, p_buf);
+    } else {
+        cmd_sent = GATT_NO_RESOURCES;
+    }
+
+    return cmd_sent;
 }
 
 #endif

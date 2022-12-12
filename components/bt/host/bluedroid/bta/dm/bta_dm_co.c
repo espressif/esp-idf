@@ -350,10 +350,6 @@ void bta_dm_co_ble_io_req(BD_ADDR bd_addr,  tBTA_IO_CAP *p_io_cap,
 
     *p_auth_req = bte_appl_cfg.ble_auth_req | (bte_appl_cfg.ble_auth_req & BTA_LE_AUTH_REQ_MITM) | ((*p_auth_req) & BTA_LE_AUTH_REQ_MITM);
 
-    if (*p_oob_data == BTM_BLE_OOB_ENABLE) {
-        *p_auth_req = (*p_auth_req)&(~BTA_LE_AUTH_REQ_SC_ONLY);
-    }
-
     if (bte_appl_cfg.ble_io_cap <= 4) {
         *p_io_cap = bte_appl_cfg.ble_io_cap;
     }

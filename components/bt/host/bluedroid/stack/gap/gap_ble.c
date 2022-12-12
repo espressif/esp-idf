@@ -298,12 +298,34 @@ UINT8 gap_proc_write_req( tGATTS_REQ_TYPE type, tGATT_WRITE_REQ *p_data)
     UNUSED(type);
 
     for (i = 0; i < GAP_MAX_CHAR_NUM; i ++, p_db_attr ++) {
-        if (p_data-> handle == p_db_attr->handle) {
+        if (p_data->handle == p_db_attr->handle) {
+            switch (p_db_attr->uuid) {
+                #if (GATTS_DEVICE_NAME_WRITABLE == TRUE)
+                case GATT_UUID_GAP_DEVICE_NAME: {
+                    UINT8 *p_val = p_data->value;
+                    p_val[p_data->len] = '\0';
+                    BTM_SetLocalDeviceName((char *)p_val);
+                    return GATT_SUCCESS;
+                }
+                #endif
+                #if (GATTS_APPEARANCE_WRITABLE == TRUE)
+                case GATT_UUID_GAP_ICON: {
+                    UINT8 *p_val = p_data->value;
+                    if (p_data->len != sizeof(UINT16)) {
+                        return GATT_INVALID_ATTR_LEN;
+                    }
+                    STREAM_TO_UINT16(p_db_attr->attr_value.icon, p_val);
+                    return GATT_SUCCESS;
+                }
+                #endif
+                default:
+                    break;
+            }
             return GATT_WRITE_NOT_PERMIT;
         }
     }
-    return GATT_NOT_FOUND;
 
+    return GATT_NOT_FOUND;
 }
 
 /******************************************************************************
@@ -393,17 +415,26 @@ void gap_attr_db_init(void)
     */
     uuid.len = LEN_UUID_16;
     uuid.uu.uuid16 = p_db_attr->uuid = GATT_UUID_GAP_DEVICE_NAME;
-    p_db_attr->handle = GATTS_AddCharacteristic(service_handle, &uuid, GATT_PERM_READ, GATT_CHAR_PROP_BIT_READ,
-											NULL, NULL);
+    p_db_attr->handle = GATTS_AddCharacteristic(service_handle, &uuid,
+                        #if (GATTS_DEVICE_NAME_WRITABLE == TRUE)
+                        GATT_PERM_READ | GATT_PERM_WRITE,
+                        GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_WRITE_NR,
+                        #else
+                        GATT_PERM_READ, GATT_CHAR_PROP_BIT_READ,
+                        #endif
+                        NULL, NULL);
     p_db_attr ++;
 
     /* add Icon characteristic
     */
     uuid.uu.uuid16   = p_db_attr->uuid = GATT_UUID_GAP_ICON;
-    p_db_attr->handle = GATTS_AddCharacteristic(service_handle,
-                        &uuid,
-                        GATT_PERM_READ,
-                        GATT_CHAR_PROP_BIT_READ,
+    p_db_attr->handle = GATTS_AddCharacteristic(service_handle, &uuid,
+                        #if (GATTS_APPEARANCE_WRITABLE == TRUE)
+                        GATT_PERM_READ | GATT_PERM_WRITE,
+                        GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_WRITE_NR,
+                        #else
+                        GATT_PERM_READ, GATT_CHAR_PROP_BIT_READ,
+                        #endif
                         NULL, NULL);
     p_db_attr ++;
 

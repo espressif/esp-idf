@@ -1765,6 +1765,7 @@ typedef union {
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
     tBTM_LE_COMPLT      complt;     /* BTM_LE_COMPLT_EVT      */
     tSMP_OOB_DATA_TYPE  req_oob_type;
+    tSMP_LOC_OOB_DATA   local_oob_data;
 #endif
     tBTM_LE_KEY         key;
 } tBTM_LE_EVT_DATA;

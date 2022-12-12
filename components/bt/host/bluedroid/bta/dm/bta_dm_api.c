@@ -650,7 +650,7 @@ void BTA_DmLocalOob(void)
 ** Function         BTA_DmOobReply
 **
 **                  This function is called to provide the OOB data for
-**                  SMP in response to BTM_LE_OOB_REQ_EVT
+**                  SMP in response to BTA_LE_OOB_REQ_EVT
 **
 ** Parameters:      bd_addr     - Address of the peer device
 **                  len         - length of simple pairing Randomizer  C
@@ -672,6 +672,55 @@ void BTA_DmOobReply(BD_ADDR bd_addr, UINT8 len, UINT8 *p_value)
         memcpy(p_msg->bd_addr, bd_addr, BD_ADDR_LEN);
         p_msg->len = len;
         memcpy(p_msg->value, p_value, len);
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         BTA_DmSecureConnectionOobReply
+**
+**                  This function is called to provide the OOB data for
+**                  SMP in response to BTA_LE_OOB_REQ_EVT
+**
+** Parameters:      bd_addr     - Address of the peer device
+**                  p_c         - Pointer to Confirmation
+**                  p_r         - Pointer to Randomizer
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSecureConnectionOobReply(BD_ADDR bd_addr, UINT8 *p_c, UINT8 *p_r)
+{
+    tBTA_DM_API_SC_OOB_REPLY    *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_SC_OOB_REPLY *) osi_malloc(sizeof(tBTA_DM_API_OOB_REPLY))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SC_OOB_REPLY_EVT;
+        if((p_c == NULL) || (p_r == NULL)) {
+            return;
+        }
+        memcpy(p_msg->bd_addr, bd_addr, BD_ADDR_LEN);
+        memcpy(p_msg->c, p_c, BT_OCTET16_LEN);
+        memcpy(p_msg->r, p_r, BT_OCTET16_LEN);
+        bta_sys_sendmsg(p_msg);
+    }
+}
+/*******************************************************************************
+**
+** Function         BTA_DmSecureConnectionCreateOobData
+**
+**                  This function is called to create the OOB data for
+**                  SMP when secure connection
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSecureConnectionCreateOobData(void)
+{
+    tBTA_DM_API_SC_CR_OOB_DATA *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_SC_CR_OOB_DATA *) osi_malloc(sizeof(tBTA_DM_API_SC_CR_OOB_DATA))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SC_CR_OOB_DATA_EVT;
         bta_sys_sendmsg(p_msg);
     }
 }
@@ -3088,5 +3137,19 @@ void BTA_DmBleGapExtConnect(tBLE_ADDR_TYPE own_addr_type, const BD_ADDR peer_add
 }
 
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+uint8_t BTA_DmBlePeriodicAdvSetInfoTrans(uint8_t addr[6], uint16_t service_data, uint8_t adv_handle)
+{
+    BTM_BlePeriodicAdvSetInfoTrans(addr, service_data, adv_handle);
+    return 0;
+}
+
+uint8_t BTA_DmBleSetPeriodicAdvSyncTransParams(uint8_t addr[6], uint8_t mode, uint16_t skip, uint16_t sync_timeout)
+{
+    BTM_BleSetPeriodicAdvSyncTransParams(addr, mode, skip, sync_timeout, 0);
+    return 0;
+}
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 #endif

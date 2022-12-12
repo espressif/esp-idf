@@ -969,6 +969,10 @@ void bta_gattc_disc_res_cback (UINT16 conn_id, tGATT_DISC_TYPE disc_type, tGATT_
     BOOLEAN          pri_srvc;
     tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
+    if (bta_gattc_cb.auto_disc == FALSE) {
+        return;
+    }
+
     p_srvc_cb = bta_gattc_find_scb_by_cid(conn_id);
 
     if (p_srvc_cb != NULL && p_clcb != NULL && p_clcb->state == BTA_GATTC_DISCOVER_ST) {
@@ -1041,6 +1045,10 @@ void bta_gattc_disc_cmpl_cback (UINT16 conn_id, tGATT_DISC_TYPE disc_type, tGATT
 {
     tBTA_GATTC_SERV *p_srvc_cb;
     tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
+
+    if (bta_gattc_cb.auto_disc == FALSE) {
+        return;
+    }
 
     if ( p_clcb && (status != GATT_SUCCESS || p_clcb->status != GATT_SUCCESS) ) {
         if (status == GATT_SUCCESS) {

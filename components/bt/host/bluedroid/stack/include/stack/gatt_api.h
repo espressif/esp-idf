@@ -44,6 +44,8 @@
 #define  GATT_INSUF_ENCRYPTION               0x0f
 #define  GATT_UNSUPPORT_GRP_TYPE             0x10
 #define  GATT_INSUF_RESOURCE                 0x11
+#define  GATT_DATABASE_OUT_OF_SYNC           0x12
+#define  GATT_VALUE_NOT_ALLOWED              0x13
 
 
 #define  GATT_NO_RESOURCES                   0x80
@@ -108,8 +110,11 @@ typedef UINT8 tGATT_STATUS;
 #define  GATT_HANDLE_VALUE_NOTIF             0x1B
 #define  GATT_HANDLE_VALUE_IND               0x1D
 #define  GATT_HANDLE_VALUE_CONF              0x1E
+#define  GATT_REQ_READ_MULTI_VAR             0x20
+#define  GATT_RSP_READ_MULTI_VAR             0x21
+#define  GATT_HANDLE_MULTI_VALUE_NOTIF       0x23
 #define  GATT_SIGN_CMD_WRITE                 0xD2 /* changed in V4.0 1101-0010 (signed write)  see write cmd above*/
-#define  GATT_OP_CODE_MAX                    GATT_HANDLE_VALUE_CONF + 1 /* 0x1E = 30 + 1 = 31*/
+#define  GATT_OP_CODE_MAX                    GATT_HANDLE_MULTI_VALUE_NOTIF + 1 /* 0x1E = 30 + 1 = 31*/
 
 #define  GATT_COMMAND_FLAG                   0x40 /* Command Flag: set to one means command */
 
@@ -413,6 +418,7 @@ enum {
     GATT_DISC_SRVC_BY_UUID,     /* discover service of a special type */
     GATT_DISC_INC_SRVC,         /* discover the included service within a service */
     GATT_DISC_CHAR,             /* discover characteristics of a service with/without type requirement */
+    GATT_DISC_CHAR_BY_UUID,     /* discover characteristic with type requirement */
     GATT_DISC_CHAR_DSCPT,       /* discover characteristic descriptors of a character */
     GATT_DISC_MAX               /* maximnun discover type */
 };
@@ -432,6 +438,7 @@ enum {
     GATT_READ_BY_TYPE =        1,
     GATT_READ_BY_HANDLE,
     GATT_READ_MULTIPLE,
+    GATT_READ_MULTIPLE_VAR,
     GATT_READ_CHAR_VALUE,
     GATT_READ_PARTIAL,
     GATT_READ_MAX
@@ -654,6 +661,12 @@ typedef struct {
     tGATTS_NV_SAVE_CBACK       *p_nv_save_callback;
     tGATTS_NV_SRV_CHG_CBACK    *p_srv_chg_callback;
 } tGATT_APPL_INFO;
+
+typedef struct {
+    UINT16                  handle;
+    UINT16                  length;
+    UINT8                   *value;
+} tGATT_HLV;
 
 /*
 ***********************  End Handle Management Definitions   **********************/
@@ -1032,6 +1045,18 @@ extern tGATT_STATUS GATTC_ExecuteWrite (UINT16 conn_id, BOOLEAN is_execute);
 *******************************************************************************/
 extern tGATT_STATUS GATTC_SendHandleValueConfirm (UINT16 conn_id, UINT16 handle);
 
+/*******************************************************************************
+**
+** Function         GATTC_AutoDiscoverEnable
+**
+** Description      This function is called to enable/disable auto discover.
+**
+** Parameters       enable: 0 for disable, otherwise enable.
+**
+** Returns          GATT_SUCCESS if command started successfully.
+**
+*******************************************************************************/
+extern tGATT_STATUS GATTC_AutoDiscoverEnable(UINT8 enable);
 
 /*******************************************************************************
 **
@@ -1225,6 +1250,34 @@ extern BOOLEAN GATT_Listen (tGATT_IF gatt_if, BOOLEAN start, BD_ADDR_PTR bd_addr
 *******************************************************************************/
 extern void GATT_ConfigServiceChangeCCC (BD_ADDR remote_bda, BOOLEAN enable,
         tBT_TRANSPORT transport);
+
+/*******************************************************************************
+**
+** Function         GATTS_SetServiceChangeMode
+**
+** Description      Configure service change indication mode
+**
+** Parameters       mode: service change mode
+**
+** Returns          Status.
+**
+*******************************************************************************/
+extern tGATT_STATUS GATTS_SetServiceChangeMode(UINT8 mode);
+
+/*******************************************************************************
+**
+** Function         GATTS_HandleMultiValueNotification
+**
+** Description      This function sends multiple handle value notification to a client.
+**
+** Parameter        conn_id: connection identifier.
+**                  tuples: Pointer to handle-length-value tuple list.
+**                  num_tuples: Number of tuples.
+**
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
+**
+*******************************************************************************/
+extern tGATT_STATUS GATTS_HandleMultiValueNotification (UINT16 conn_id, tGATT_HLV *tuples, UINT16 num_tuples);
 
 #ifdef __cplusplus
 

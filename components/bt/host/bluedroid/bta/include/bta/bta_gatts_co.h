@@ -77,5 +77,12 @@ extern BOOLEAN bta_gatts_co_srv_chg(tBTA_GATTS_SRV_CHG_CMD cmd,
 extern  BOOLEAN bta_gatts_co_load_handle_range(UINT8 index,
         tBTA_GATTS_HNDL_RANGE *p_handle);
 
+extern void bta_gatts_co_cl_feat_save(BD_ADDR remote_addr, UINT8 *feature);
+
+extern void bta_gatts_co_db_hash_save(BD_ADDR remote_addr, BT_OCTET16 db_hash);
+
+extern void bta_gatts_co_cl_feat_load(BD_ADDR remote_addr, UINT8 *feature);
+
+extern void bta_gatts_co_db_hash_load(BD_ADDR remote_addr, BT_OCTET16 db_hash);
 
 #endif /* BTA_GATTS_CO_H */

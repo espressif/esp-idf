@@ -640,4 +640,31 @@ void BTA_GATTS_Listen(tBTA_GATTS_IF server_if, BOOLEAN start, BD_ADDR_PTR target
     return;
 }
 
+uint8_t BTA_GATTS_SetServiceChangeMode(uint8_t mode)
+{
+    tGATT_STATUS status;
+    APPL_TRACE_DEBUG("%s mode %u", __func__, mode);
+
+    status = GATTS_SetServiceChangeMode(mode);
+    if (status != GATT_SUCCESS) {
+        APPL_TRACE_ERROR("%s status %x", __func__, status);
+        return -1;
+    }
+
+    return 0;
+}
+
+uint8_t BTA_GATTS_SendMultiNotification(uint8_t gatt_if, uint16_t conn_id, void *tuples, uint16_t num_tuples)
+{
+    tGATT_STATUS status;
+    conn_id = (UINT16)((((UINT8)conn_id) << 8) | gatt_if);
+
+    status = GATTS_HandleMultiValueNotification(conn_id, (tGATT_HLV *)tuples, num_tuples);
+    if (status != GATT_SUCCESS) {
+        APPL_TRACE_ERROR("%s status %x", __func__, status);
+        return -1;
+    }
+
+    return 0;
+}
 #endif /* BTA_GATT_INCLUDED */

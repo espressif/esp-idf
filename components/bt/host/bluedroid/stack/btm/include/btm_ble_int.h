@@ -147,8 +147,6 @@ typedef struct {
 
 #define BTM_BLE_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)) || ((x) == BTM_BLE_CONN_PARAM_UNDEF))
 
-#define BTM_BLE_PRIVATE_ADDR_INT    900  /* 15 minutes minimum for random address refreshing */
-
 typedef struct {
     UINT16 discoverable_mode;
     UINT16 connectable_mode;

@@ -208,6 +208,27 @@ config BT_GATTS_SEND_SERVICE_CHANGE_MODE
     default 1 if BT_GATTS_SEND_SERVICE_CHANGE_MANUAL
     default 0
 
+config BT_GATTS_ROBUST_CACHING_ENABLED
+    bool "Enable Robust Caching on Server Side"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        This option enable gatt robust caching feature on server
+
+config BT_GATTS_DEVICE_NAME_WRITABLE
+    bool "Allow to write device name by GATT clients"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        Enabling this option allows remote GATT clients to write device name
+
+config BT_GATTS_APPEARANCE_WRITABLE
+    bool "Allow to write appearance by GATT clients"
+    depends on BT_GATTS_ENABLE
+    default n
+    help
+        Enabling this option allows remote GATT clients to write appearance
+
 config BT_GATTC_ENABLE
     bool "Include GATT client module(GATTC)"
     depends on BT_BLE_ENABLED
@@ -1093,6 +1114,15 @@ config BT_BLE_RPA_SUPPORTED
 
         For ESP32C3, ESP32S3, ESP32H4 and ESP32C2, devices support network privacy mode and device privacy mode,
         users can switch the two modes according to their own needs. So this option is enabled by default.
+
+config BT_BLE_RPA_TIMEOUT
+    int "Timeout of resolvable private address"
+    depends on BT_BLUEDROID_ENABLED
+    range 1 3600
+    default 900
+    help
+        This set RPA timeout of Controller and Host.
+        Default is 900 s (15 minutes). Range is 1 s to 1 hour (3600 s).
 
 config BT_BLE_50_FEATURES_SUPPORTED
     bool "Enable BLE 5.0 features"
