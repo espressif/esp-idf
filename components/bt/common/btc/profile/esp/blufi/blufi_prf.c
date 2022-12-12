@@ -90,7 +90,7 @@ void btc_blufi_report_error(esp_blufi_error_state_t state)
     msg.act = ESP_BLUFI_EVENT_REPORT_ERROR;
     esp_blufi_cb_param_t param;
     param.report_error.state = state;
-    btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+    btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
 }
 
 void btc_blufi_recv_handler(uint8_t *data, int len)

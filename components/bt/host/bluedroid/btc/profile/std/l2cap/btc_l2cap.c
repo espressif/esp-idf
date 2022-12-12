@@ -259,7 +259,7 @@ static void close_timeout_handler(void *arg)
     msg.pid = BTC_PID_L2CAP;
     msg.act = BTA_JV_L2CAP_CLOSE_EVT;
 
-    status = btc_transfer_context(&msg, arg, sizeof(tBTA_JV), NULL);
+    status = btc_transfer_context(&msg, arg, sizeof(tBTA_JV), NULL, NULL);
 
     if (arg) {
         free(arg);
@@ -350,7 +350,7 @@ static void *btc_l2cap_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
     msg.pid = BTC_PID_L2CAP;
     msg.act = event;
 
-    status = btc_transfer_context(&msg, p_data, sizeof(tBTA_JV), NULL);
+    status = btc_transfer_context(&msg, p_data, sizeof(tBTA_JV), NULL, NULL);
     if (status != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
     }
@@ -369,7 +369,7 @@ static void btc_l2cap_dm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user
         msg.pid = BTC_PID_L2CAP;
         msg.act = event;
 
-        status = btc_transfer_context(&msg, p_data, sizeof(tBTA_JV), NULL);
+        status = btc_transfer_context(&msg, p_data, sizeof(tBTA_JV), NULL, NULL);
         if (status != BT_STATUS_SUCCESS) {
             BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
         }
