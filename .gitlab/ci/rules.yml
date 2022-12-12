@@ -79,16 +79,25 @@
 
   - "components/**/*"
 
-.patterns-integration_test: &patterns-integration_test
+.patterns-target_test-wifi: &patterns-target_test-wifi
+  - "components/esp_netif/**/*"
+  - "components/lwip/**/*"
+  - "components/esp_wifi/**/*"
+  - "components/esp_phy/**/*"
+  - "components/wpa_supplicant/**/*"
+
+.patterns-integration_test-ble: &patterns-integration_test-ble
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/integration_test/**/*"
-
   - "components/bt/controller/lib_esp32"
   - "components/bt/controller/lib_esp32c3_family"
   - "components/bt/controller/lib_esp32h2/esp32h2-bt-lib"
   - "components/bt/host/nimble/nimble"
-  - "components/esp_wifi/lib"
   - "components/esp_phy/lib"
+
+.patterns-integration_test-wifi: &patterns-integration_test-wifi
+  - "tools/ci/python_packages/gitlab_api.py"
+  - "tools/ci/integration_test/**/*"
 
 .patterns-host_test: &patterns-host_test
   - ".gitlab/ci/host-test.yml"
@@ -202,11 +211,6 @@
   - "examples/protocols/**/*"
   - "examples/wifi/**/*"
   - "examples/network/simple_sniffer/**/*"
-
-  - "components/esp_phy/**/*"
-  - "components/esp_wifi/**/*"
-  - "components/esp_netif/**/*"
-  - "components/lwip/**/*"
 
   # for cases with wifi_high_traffic marker
   - "examples/system/ota/**/*"
@@ -417,6 +421,12 @@
 .if-label-integration_test: &if-label-integration_test
   if: '$BOT_LABEL_INTEGRATION_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*integration_test(?:,[^,\n\r]+)*$/i'
 
+.if-label-integration_test_ble: &if-label-integration_test_ble
+  if: '$BOT_LABEL_INTEGRATION_TEST_BLE || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*integration_test_ble(?:,[^,\n\r]+)*$/i'
+
+.if-label-integration_test_wifi: &if-label-integration_test_wifi
+  if: '$BOT_LABEL_INTEGRATION_TEST_WIFI || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*integration_test_wifi(?:,[^,\n\r]+)*$/i'
+
 .if-label-iperf_stress_test: &if-label-iperf_stress_test
   if: '$BOT_LABEL_IPERF_STRESS_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*iperf_stress_test(?:,[^,\n\r]+)*$/i'
 
@@ -506,6 +516,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32:
   rules:
@@ -527,6 +539,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32c2:
   rules:
@@ -547,6 +561,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32c3:
   rules:
@@ -567,6 +583,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32h2:
   rules:
@@ -587,6 +605,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32s2:
   rules:
@@ -607,6 +627,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32s3:
   rules:
@@ -627,6 +649,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test:
   rules:
@@ -649,6 +673,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32:
   rules:
@@ -666,6 +692,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32c2:
   rules:
@@ -682,6 +710,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32c3:
   rules:
@@ -698,6 +728,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32h2:
   rules:
@@ -714,6 +746,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32s2:
   rules:
@@ -730,6 +764,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32s3:
   rules:
@@ -746,6 +782,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:docker:
   rules:
@@ -787,6 +825,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32:
   rules:
@@ -813,6 +853,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32c2:
   rules:
@@ -837,6 +879,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32c3:
   rules:
@@ -862,6 +906,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32h2:
   rules:
@@ -886,6 +932,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32s2:
   rules:
@@ -910,6 +958,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:example_test-esp32s3:
   rules:
@@ -934,6 +984,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:integration_test:
   rules:
@@ -942,13 +994,19 @@
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-integration_test
+    - <<: *if-label-integration_test_ble
+    - <<: *if-label-integration_test_wifi
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
-      changes: *patterns-integration_test
+      changes: *patterns-integration_test-ble
+    - <<: *if-dev-push
+      changes: *patterns-integration_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:build:macos:
   rules:
@@ -990,6 +1048,8 @@
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-integration_test
+    - <<: *if-label-integration_test_ble
+    - <<: *if-label-integration_test_wifi
     - <<: *if-label-iperf_stress_test
     - <<: *if-label-lan8720
     - <<: *if-label-target_test
@@ -1022,7 +1082,11 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
-      changes: *patterns-integration_test
+      changes: *patterns-integration_test-ble
+    - <<: *if-dev-push
+      changes: *patterns-integration_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
@@ -1048,6 +1112,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1067,6 +1133,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1084,6 +1152,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
@@ -1103,6 +1173,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1120,6 +1192,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
@@ -1139,6 +1213,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+    - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
@@ -1156,6 +1232,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
@@ -1276,6 +1354,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:component_ut-esp32c2:
   rules:
@@ -1348,6 +1428,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32c2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:component_ut-esp32c3:
   rules:
@@ -1420,6 +1502,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32c3
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:component_ut-esp32h2:
   rules:
@@ -1492,6 +1576,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32h2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:component_ut-esp32s2:
   rules:
@@ -1564,6 +1650,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32s2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:component_ut-esp32s3:
   rules:
@@ -1636,6 +1724,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32s3
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:custom_test-esp32:
   rules:
@@ -1704,6 +1794,8 @@
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:custom_test-esp32c2:
   rules:
@@ -1772,6 +1864,8 @@
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32c2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:custom_test-esp32c3:
   rules:
@@ -1840,6 +1934,8 @@
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32c3
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:custom_test-esp32h2:
   rules:
@@ -1908,6 +2004,8 @@
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32h2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:custom_test-esp32s2:
   rules:
@@ -1976,6 +2074,8 @@
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32s2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:custom_test-esp32s3:
   rules:
@@ -2044,6 +2144,8 @@
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32s3
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:example_test-esp32:
   rules:
@@ -2129,6 +2231,8 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:example_test-esp32c2:
   rules:
@@ -2205,6 +2309,8 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:example_test-esp32c3:
   rules:
@@ -2290,6 +2396,8 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:example_test-esp32h2:
   rules:
@@ -2366,6 +2474,8 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:example_test-esp32s2:
   rules:
@@ -2442,6 +2552,8 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:example_test-esp32s3:
   rules:
@@ -2518,6 +2630,8 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:host_test:
   rules:
@@ -2538,9 +2652,43 @@
     - <<: *if-label-build-only
       when: never
     - <<: *if-label-integration_test
+    - <<: *if-label-integration_test_ble
+    - <<: *if-label-integration_test_wifi
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-integration_test
+      changes: *patterns-integration_test-ble
+    - <<: *if-dev-push
+      changes: *patterns-integration_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+
+.rules:test:integration_test_ble:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-integration_test
+    - <<: *if-label-integration_test_ble
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-integration_test-ble
+
+.rules:test:integration_test_wifi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-integration_test
+    - <<: *if-label-integration_test_wifi
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-integration_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:submodule:
   rules:
@@ -2622,6 +2770,8 @@
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:unit_test-esp32c2:
   rules:
@@ -2692,6 +2842,8 @@
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32c2
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:unit_test-esp32c3:
   rules:
@@ -2762,6 +2914,8 @@
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:unit_test-esp32h2:
   rules:
@@ -2832,6 +2986,8 @@
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32h2
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:unit_test-esp32s2:
   rules:
@@ -2902,6 +3058,8 @@
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32s2
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:unit_test-esp32s3:
   rules:
@@ -2972,3 +3130,5 @@
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi

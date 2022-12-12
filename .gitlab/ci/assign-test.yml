@@ -90,6 +90,7 @@ assign_integration_test:
   needs:
     - build_ssc_esp32
     - build_ssc_esp32c3
+    - build_ssc_esp32c2
   artifacts:
     paths:
       - $TEST_DIR/test_configs
