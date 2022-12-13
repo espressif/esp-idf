@@ -170,6 +170,7 @@ extern esp_btc_creat_tab_t *btc_creat_tab_env_ptr;
 void btc_gatts_call_handler(btc_msg_t *msg);
 void btc_gatts_cb_handler(btc_msg_t *msg);
 void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+void btc_gatts_arg_deep_free(btc_msg_t *msg);
 esp_gatt_status_t btc_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, uint8_t **value);
 
 

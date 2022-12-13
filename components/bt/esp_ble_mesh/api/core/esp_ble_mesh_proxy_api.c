@@ -30,7 +30,7 @@ esp_err_t esp_ble_mesh_proxy_identity_enable(void)
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_PROXY_IDENTITY_ENABLE;
 
-    return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_mesh_proxy_gatt_enable(void)
@@ -43,7 +43,7 @@ esp_err_t esp_ble_mesh_proxy_gatt_enable(void)
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_PROXY_GATT_ENABLE;
 
-    return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_mesh_proxy_gatt_disable(void)
@@ -56,7 +56,7 @@ esp_err_t esp_ble_mesh_proxy_gatt_disable(void)
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_PROXY_GATT_DISABLE;
 
-    return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_mesh_proxy_client_connect(esp_ble_mesh_bd_addr_t addr,
@@ -80,7 +80,7 @@ esp_err_t esp_ble_mesh_proxy_client_connect(esp_ble_mesh_bd_addr_t addr,
     arg.proxy_client_connect.addr_type = addr_type;
     arg.proxy_client_connect.net_idx = net_idx;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
@@ -97,7 +97,7 @@ esp_err_t esp_ble_mesh_proxy_client_disconnect(uint8_t conn_handle)
 
     arg.proxy_client_disconnect.conn_handle = conn_handle;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
@@ -121,7 +121,7 @@ esp_err_t esp_ble_mesh_proxy_client_set_filter_type(uint8_t conn_handle, uint16_
     arg.proxy_client_set_filter_type.net_idx = net_idx;
     arg.proxy_client_set_filter_type.filter_type = filter_type;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
@@ -146,8 +146,8 @@ esp_err_t esp_ble_mesh_proxy_client_add_filter_addr(uint8_t conn_handle, uint16_
     arg.proxy_client_add_filter_addr.addr_num = addr_num;
     arg.proxy_client_add_filter_addr.addr = addr;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), btc_ble_mesh_prov_arg_deep_copy)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), btc_ble_mesh_prov_arg_deep_copy,
+                btc_ble_mesh_prov_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_mesh_proxy_client_remove_filter_addr(uint8_t conn_handle, uint16_t net_idx,
@@ -171,6 +171,6 @@ esp_err_t esp_ble_mesh_proxy_client_remove_filter_addr(uint8_t conn_handle, uint
     arg.proxy_client_remove_filter_addr.addr_num = addr_num;
     arg.proxy_client_remove_filter_addr.addr = addr;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), btc_ble_mesh_prov_arg_deep_copy)
-            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), btc_ble_mesh_prov_arg_deep_copy,
+                btc_ble_mesh_prov_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }

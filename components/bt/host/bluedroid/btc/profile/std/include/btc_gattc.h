@@ -199,7 +199,8 @@ typedef union {
 void btc_gattc_call_handler(btc_msg_t *msg);
 void btc_gattc_cb_handler(btc_msg_t *msg);
 void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
-esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc_uuid, 
+void btc_gattc_arg_deep_free(btc_msg_t *msg);
+esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc_uuid,
                                             esp_gattc_service_elem_t *result,
                                             uint16_t *count, uint16_t offset);
 esp_gatt_status_t btc_ble_gattc_get_all_char(uint16_t conn_id,
@@ -245,7 +246,7 @@ esp_gatt_status_t btc_ble_gattc_get_attr_count(uint16_t conn_id,
                                                uint16_t char_handle,
                                                uint16_t *count);
 
-esp_gatt_status_t btc_ble_gattc_get_db(uint16_t conn_id, uint16_t start_handle, uint16_t end_handle, 
+esp_gatt_status_t btc_ble_gattc_get_db(uint16_t conn_id, uint16_t start_handle, uint16_t end_handle,
                                        esp_gattc_db_elem_t *db, uint16_t *count);
 
 

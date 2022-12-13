@@ -109,7 +109,7 @@ bt_status_t btc_queue_connect(uint16_t uuid, const bt_bdaddr_t *bda, btc_connect
     arg.connect_node.uuid = uuid;
     arg.connect_node.connect_cb = connect_cb;
 
-    return btc_transfer_context(&msg, &arg, sizeof(btc_prf_que_args_t), NULL);
+    return btc_transfer_context(&msg, &arg, sizeof(btc_prf_que_args_t), NULL, NULL);
 }
 /*******************************************************************************
 **
@@ -129,7 +129,7 @@ void btc_queue_advance(void)
     msg.pid = BTC_PID_PRF_QUE;
     msg.act = BTC_PRF_QUE_ADVANCE;
 
-    btc_transfer_context(&msg, NULL, 0, NULL);
+    btc_transfer_context(&msg, NULL, 0, NULL, NULL);
 }
 
 // This function dispatches the next pending connect request. It is called from

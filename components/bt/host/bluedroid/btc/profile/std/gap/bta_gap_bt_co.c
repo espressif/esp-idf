@@ -31,7 +31,7 @@ void btc_gap_bt_config_eir_cmpl_callback (uint8_t status, uint8_t eir_type_num, 
     memcpy(param.config_eir_data.eir_type, eir_type, eir_type_num);
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_bt_gap_cb_param_t), NULL);
+                               sizeof(esp_bt_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);

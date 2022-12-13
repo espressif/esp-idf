@@ -134,7 +134,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         msg.act = ESP_BLUFI_EVENT_DEINIT_FINISH;
         param.deinit_finish.state = ESP_BLUFI_DEINIT_OK;
 
-        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
 
         break;
     }
@@ -273,7 +273,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         msg.act = ESP_BLUFI_EVENT_INIT_FINISH;
         param.init_finish.state = ESP_BLUFI_INIT_OK;
 
-        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
         break;
     }
     case BTA_GATTS_CONNECT_EVT: {
@@ -296,7 +296,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         memcpy(param.connect.remote_bda, p_data->conn.remote_bda, sizeof(esp_bd_addr_t));
         param.connect.conn_id=BTC_GATT_GET_CONN_ID(p_data->conn.conn_id);
         param.connect.server_if=p_data->conn.server_if;
-        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
         break;
     }
     case BTA_GATTS_DISCONNECT_EVT: {
@@ -324,7 +324,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         msg.pid = BTC_PID_BLUFI;
         msg.act = ESP_BLUFI_EVENT_BLE_DISCONNECT;
         memcpy(param.disconnect.remote_bda, p_data->conn.remote_bda, sizeof(esp_bd_addr_t));
-        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
         break;
     }
     case BTA_GATTS_OPEN_EVT:
@@ -390,7 +390,7 @@ void btc_blufi_report_error(esp_blufi_error_state_t state)
     msg.act = ESP_BLUFI_EVENT_REPORT_ERROR;
     esp_blufi_cb_param_t param;
     param.report_error.state = state;
-    btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+    btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
 }
 
 static void btc_blufi_recv_handler(uint8_t *data, int len)

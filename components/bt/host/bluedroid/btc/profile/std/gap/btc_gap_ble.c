@@ -297,7 +297,7 @@ static void btc_adv_data_callback(tBTA_STATUS status)
     param.adv_data_cmpl.status = status;
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -316,7 +316,7 @@ static void btc_scan_rsp_data_callback(tBTA_STATUS status)
     param.scan_rsp_data_cmpl.status = status;
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -335,7 +335,7 @@ static void btc_adv_data_raw_callback(tBTA_STATUS status)
     param.adv_data_raw_cmpl.status = status;
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -354,7 +354,7 @@ static void btc_scan_rsp_data_raw_callback(tBTA_STATUS status)
     param.scan_rsp_data_raw_cmpl.status = status;
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -399,7 +399,7 @@ static void btc_start_adv_callback(uint8_t status)
     param.adv_start_cmpl.status = btc_hci_to_esp_status(status);
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -418,7 +418,7 @@ static void btc_stop_adv_callback(uint8_t status)
     param.adv_stop_cmpl.status = btc_hci_to_esp_status(status);
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -441,7 +441,7 @@ void btc_update_duplicate_exceptional_list_callback(tBTA_STATUS status, uint8_t 
     }
     param.update_duplicate_exceptional_list_cmpl.length = length;
     memcpy(param.update_duplicate_exceptional_list_cmpl.device_info, device_info, length);
-    ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL);
+    ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -518,7 +518,7 @@ static void btc_scan_params_callback(tGATT_IF gatt_if, tBTM_STATUS status)
     param.scan_param_cmpl.status = status;
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -610,7 +610,7 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
         BTC_TRACE_ERROR("%s : Unknown event 0x%x\n", __FUNCTION__, event);
         return;
     }
-    btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL);
+    btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 }
 
 static void btc_start_scan_callback(uint8_t status)
@@ -625,7 +625,7 @@ static void btc_start_scan_callback(uint8_t status)
     param.scan_start_cmpl.status = status;
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -644,7 +644,7 @@ static void btc_stop_scan_callback(tBTA_STATUS status)
     param.scan_stop_cmpl.status = status;
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -670,7 +670,7 @@ void btc_update_conn_param_callback (UINT8 status, BD_ADDR bd_addr, tBTM_LE_UPDA
     param.update_conn_params.timeout = update_conn_params->supervision_tout;
     memcpy(param.update_conn_params.bda, bd_addr, sizeof(esp_bd_addr_t));
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -689,7 +689,7 @@ static void btc_set_pkt_length_callback(UINT8 status, tBTM_LE_SET_PKT_DATA_LENGT
     param.pkt_data_lenth_cmpl.params.rx_len = data_len_params->rx_len;
     param.pkt_data_lenth_cmpl.params.tx_len = data_len_params->tx_len;
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -709,7 +709,7 @@ static void btc_gap_ble_set_channels_cmpl_callback(void *p_data)
     param.ble_set_channels.stat = btc_btm_status_to_esp_status(result->status);
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -728,7 +728,7 @@ static void btc_add_whitelist_complete_callback(UINT8 status, tBTM_WL_OPERATION 
     param.update_whitelist_cmpl.status = btc_hci_to_esp_status(status);
     param.update_whitelist_cmpl.wl_opration = wl_opration;
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -745,7 +745,7 @@ static void btc_set_rand_addr_callback(UINT8 status)
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT;
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -763,7 +763,7 @@ static void btc_set_local_privacy_callback(UINT8 status)
     msg.act = ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT;
     param.local_privacy_cmpl.status = btc_btm_status_to_esp_status(status);
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -795,7 +795,7 @@ static void btc_read_ble_rssi_cmpl_callback(void *p_data)
     memcpy(param.read_rssi_cmpl.remote_addr, result->rem_bda, sizeof(BD_ADDR));
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_ble_gap_cb_param_t), NULL);
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);

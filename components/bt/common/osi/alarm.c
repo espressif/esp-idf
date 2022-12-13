@@ -149,7 +149,7 @@ static void alarm_cb_handler(struct alarm_t *alarm)
     msg.pid = BTC_PID_ALARM;
     arg.cb = alarm->cb;
     arg.cb_data = alarm->cb_data;
-    btc_transfer_context(&msg, &arg, sizeof(btc_alarm_args_t), NULL);
+    btc_transfer_context(&msg, &arg, sizeof(btc_alarm_args_t), NULL, NULL);
 }
 
 osi_alarm_t *osi_alarm_new(const char *alarm_name, osi_alarm_callback_t callback, void *data, period_ms_t timer_expire)

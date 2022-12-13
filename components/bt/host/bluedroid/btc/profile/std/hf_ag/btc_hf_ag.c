@@ -227,7 +227,7 @@ static void bte_hf_evt(tBTA_AG_EVT event, tBTA_AG *param)
     msg.act = event;
 
     /* Switch to BTC context */
-    bt_status_t status = btc_transfer_context(&msg, param, param_len, NULL);
+    bt_status_t status = btc_transfer_context(&msg, param, param_len, NULL, NULL);
     /* catch any failed context transfers */
     BTC_ASSERTC(status == BT_STATUS_SUCCESS, "context transfer failed", status);
 }

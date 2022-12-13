@@ -56,7 +56,8 @@ esp_err_t esp_blufi_send_wifi_conn_report(wifi_mode_t opmode, esp_blufi_sta_conn
     arg.wifi_conn_report.softap_conn_num = softap_conn_num;
     arg.wifi_conn_report.extra_info = extra_info;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), btc_blufi_call_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), btc_blufi_call_deep_copy, btc_blufi_call_deep_free
+                                    ) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_blufi_send_wifi_list(uint16_t apCount, esp_blufi_ap_record_t *list)
@@ -74,7 +75,8 @@ esp_err_t esp_blufi_send_wifi_list(uint16_t apCount, esp_blufi_ap_record_t *list
     arg.wifi_list.apCount = apCount;
     arg.wifi_list.list = list;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), btc_blufi_call_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), btc_blufi_call_deep_copy, btc_blufi_call_deep_free
+                ) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_blufi_profile_init(void)
@@ -89,7 +91,7 @@ esp_err_t esp_blufi_profile_init(void)
     msg.pid = BTC_PID_BLUFI;
     msg.act = BTC_BLUFI_ACT_INIT;
 
-    return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_blufi_profile_deinit(void)
@@ -104,7 +106,7 @@ esp_err_t esp_blufi_profile_deinit(void)
     msg.pid = BTC_PID_BLUFI;
     msg.act = BTC_BLUFI_ACT_DEINIT;
 
-    return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 uint16_t esp_blufi_get_version(void)
@@ -123,7 +125,7 @@ esp_err_t esp_blufi_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
     msg.pid = BTC_PID_GATTS;
     msg.act = BTC_GATTS_ACT_CLOSE;
     arg.close.conn_id = BTC_GATT_CREATE_CONN_ID(gatts_if, conn_id);
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
@@ -141,7 +143,7 @@ esp_err_t esp_blufi_send_error_info(esp_blufi_error_state_t state)
     msg.act = BTC_BLUFI_ACT_SEND_ERR_INFO;
     arg.blufi_err_infor.state = state;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_blufi_send_custom_data(uint8_t *data, uint32_t data_len)
@@ -161,6 +163,7 @@ esp_err_t esp_blufi_send_custom_data(uint8_t *data, uint32_t data_len)
     arg.custom_data.data = data;
     arg.custom_data.data_len = data_len;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), btc_blufi_call_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_blufi_args_t), btc_blufi_call_deep_copy, btc_blufi_call_deep_free
+                ) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif  ///BLUFI_INCLUDED == TRUE

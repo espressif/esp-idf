@@ -55,7 +55,7 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_MESH_INIT;
 
-    if (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL) != BT_STATUS_SUCCESS) {
+    if (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL) != BT_STATUS_SUCCESS) {
         vSemaphoreDelete(semaphore);
         BT_ERR("Failed to start mesh init");
         return ESP_FAIL;
@@ -87,7 +87,7 @@ esp_err_t esp_ble_mesh_deinit(esp_ble_mesh_deinit_param_t *param)
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_DEINIT_MESH;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
