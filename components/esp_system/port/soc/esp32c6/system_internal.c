@@ -66,7 +66,6 @@ void IRAM_ATTR esp_restart_noos(void)
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     // Moved to module internal
     // SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-    //                   SYSTEM_WIFIBB_RST | SYSTEM_FE_RST |            // TODO: IDF-5680 (esp_phy)
     //                   SYSTEM_WIFIMAC_RST |                           // TODO: IDF-5679 (esp_wifi)
     //                   SYSTEM_SDIO_RST |                              // SDIO_HINF_HINF_SDIO_RST?
     //                   SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |          // TODO: IDF-5325 (ethernet)

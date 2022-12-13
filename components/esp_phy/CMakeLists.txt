@@ -1,7 +1,6 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
-if(IDF_TARGET STREQUAL "esp32c6" OR IDF_TARGET STREQUAL "esp32h2")
-    # TODO : IDF-5680
+if(IDF_TARGET STREQUAL "esp32h2")
     # TODO : IDF-6337
     return()
 endif()
@@ -68,15 +67,10 @@ if(link_binary_libs)
         target_link_libraries(${COMPONENT_LIB} PUBLIC rtc)
         target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a librtc.a
         $<TARGET_FILE:${esp_phy_lib}>)
-    endif()
-
-    if(CONFIG_IDF_TARGET_ESP32S2)
+    elseif(CONFIG_IDF_TARGET_ESP32S2)
         target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a
         $<TARGET_FILE:${esp_phy_lib}>)
-    endif()
-
-    if(CONFIG_IDF_TARGET_ESP32C3 OR CONFIG_IDF_TARGET_ESP32S3
-        OR CONFIG_IDF_TARGET_ESP32H4 OR CONFIG_IDF_TARGET_ESP32C2)
+    elseif(CONFIG_SOC_BT_SUPPORTED OR CONFIG_SOC_IEEE802154_SUPPORTED)
         target_link_libraries(${COMPONENT_LIB} PUBLIC btbb)
         target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a libbtbb.a
         $<TARGET_FILE:${esp_phy_lib}>)
