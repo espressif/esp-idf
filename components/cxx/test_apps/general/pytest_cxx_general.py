@@ -38,5 +38,4 @@ def test_cxx_stack_smash(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('\"stack smashing protection CXX\"')
     dut.expect_exact('Stack smashing protect failure!')
-    dut.expect_exact('abort() was called')
     dut.expect_exact('Rebooting...')
