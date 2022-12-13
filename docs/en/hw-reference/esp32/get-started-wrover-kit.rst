@@ -288,6 +288,10 @@ SPI Flash / JP2
 6     CMD / GPIO11
 ====  =============
 
+.. note::
+
+    SPI Flash pins are used to access the internal flash memory, therefore they are not available to connect external SPI devices. Those pins are exposed for monitoring or for advanced usage only.
+
 .. important::
 
     The module's flash bus is connected to the jumper block JP2 through zero-ohm resistors R140 ~ R145. If the flash memory needs to operate at the frequency of 80 MHz, for reasons such as improving the integrity of bus signals, you can desolder these resistors to disconnect the module's flash bus from the pin header JP2.
