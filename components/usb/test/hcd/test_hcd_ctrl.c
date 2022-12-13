@@ -1,22 +1,13 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "unity.h"
-#include "test_utils.h"
 #include "test_hcd_common.h"
 
 #define TEST_DEV_ADDR               0
@@ -72,7 +63,7 @@ TEST_CASE("Test HCD control pipe URBs", "[hcd][ignore]")
     for (int i = 0; i < NUM_URBS; i++) {
         urb_t *urb = hcd_urb_dequeue(default_pipe);
         TEST_ASSERT_EQUAL(urb_list[i], urb);
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
+        TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status, "Transfer NOT completed");
         TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
         //We must have transmitted at least the setup packet, but device may return less than bytes requested
         TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
@@ -120,6 +111,8 @@ TEST_CASE("Test HCD control pipe URBs", "[hcd][ignore]")
 
 /*
 Test HCD control pipe STALL condition, abort, and clear
+
+@todo this test is not passing with low-speed: test with bus analyzer
 
 Purpose:
     - Test that a control pipe can react to a STALL (i.e., a HCD_PIPE_EVENT_ERROR_STALL event)
@@ -205,7 +198,7 @@ TEST_CASE("Test HCD control pipe STALL", "[hcd][ignore]")
         //expect_pipe_event(pipe_evt_queue, default_pipe, HCD_PIPE_EVENT_URB_DONE);
         urb_t *urb = hcd_urb_dequeue(default_pipe);
         TEST_ASSERT_EQUAL(urb_list[i], urb);
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
+        TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status, "Transfer NOT completed");
         TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
         //We must have transmitted at least the setup packet, but device may return less than bytes requested
         TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
@@ -279,7 +272,7 @@ TEST_CASE("Test HCD control pipe runtime halt and clear", "[hcd][ignore]")
     //Wait for each URB to be done, dequeue, and check results
     for (int i = 0; i < NUM_URBS; i++) {
         urb_t *urb = hcd_urb_dequeue(default_pipe);
-        TEST_ASSERT_EQUAL(urb_list[i], urb);
+        TEST_ASSERT_EQUAL_PTR(urb_list[i], urb);
         TEST_ASSERT(urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED || urb->transfer.status == USB_TRANSFER_STATUS_CANCELED);
         if (urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED) {
              //We must have transmitted at least the setup packet, but device may return less than bytes requested

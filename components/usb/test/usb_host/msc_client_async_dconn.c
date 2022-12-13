@@ -12,12 +12,11 @@
 #include "freertos/task.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "test_usb_mock_classes.h"
+#include "test_usb_mock_msc.h"
 #include "test_usb_common.h"
 #include "msc_client.h"
 #include "usb/usb_host.h"
 #include "unity.h"
-#include "test_utils.h"
 
 /*
 Implementation of an asynchronous MSC client used for USB Host disconnection test.
@@ -29,7 +28,7 @@ Implementation of an asynchronous MSC client used for USB Host disconnection tes
     - Trigger a single MSC SCSI transfer
         - Split the data stage into multiple transfers (so that the endpoint multiple queued up transfers)
         - Cause a disconnection mid-way through the data stage
-    - All of the transfers should be automatically deqeueud
+    - All of the transfers should be automatically dequeued
     - Then a USB_HOST_CLIENT_EVENT_DEV_GONE event should occur afterwards
     - Free transfer objects
     - Close device
@@ -62,7 +61,7 @@ static void msc_reset_cbw_transfer_cb(usb_transfer_t *transfer)
 {
     msc_client_obj_t *msc_obj = (msc_client_obj_t *)transfer->context;
     //We expect the reset and CBW transfers to complete with no issues
-    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, transfer->status);
+    TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, transfer->status, "Transfer NOT completed");
     TEST_ASSERT_EQUAL(transfer->num_bytes, transfer->actual_num_bytes);
     switch (msc_obj->cur_stage) {
         case TEST_STAGE_MSC_RESET:

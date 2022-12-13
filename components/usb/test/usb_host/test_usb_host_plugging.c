@@ -10,12 +10,11 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "test_usb_common.h"
-#include "test_usb_mock_classes.h"
+#include "test_usb_mock_msc.h"
 #include "msc_client.h"
 #include "ctrl_client.h"
 #include "usb/usb_host.h"
 #include "unity.h"
-#include "test_utils.h"
 
 // --------------------------------------------------- Test Cases ------------------------------------------------------
 
@@ -162,6 +161,7 @@ Procedure:
 
 TEST_CASE("Test USB Host enumeration", "[usb_host][ignore]")
 {
+    mock_msc_scsi_init_reference_descriptors();
     test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
     //Install USB Host
     usb_host_config_t host_config = {

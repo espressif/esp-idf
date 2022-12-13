@@ -11,12 +11,11 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "test_usb_common.h"
-#include "test_usb_mock_classes.h"
+#include "test_usb_mock_msc.h"
 #include "msc_client.h"
 #include "ctrl_client.h"
 #include "usb/usb_host.h"
 #include "unity.h"
-#include "test_utils.h"
 
 #define TEST_MSC_NUM_SECTORS_TOTAL          10
 #define TEST_MSC_NUM_SECTORS_PER_XFER       2
@@ -66,6 +65,7 @@ TEST_CASE("Test USB Host async client (single client)", "[usb_host][ignore]")
     };
     TaskHandle_t task_hdl;
     xTaskCreatePinnedToCore(msc_client_async_seq_task, "async", 4096, (void *)&params, 2, &task_hdl, 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(task_hdl, "Failed to create async task");
     //Start the task
     xTaskNotifyGive(task_hdl);
 
@@ -130,6 +130,7 @@ TEST_CASE("Test USB Host async client (multi client)", "[usb_host][ignore]")
     };
     TaskHandle_t msc_task_hdl;
     xTaskCreatePinnedToCore(msc_client_async_seq_task, "msc", 4096, (void *)&msc_params, 2, &msc_task_hdl, 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(msc_task_hdl, "Failed to create MSC task");
 
     //Create task a control transfer client
     ctrl_client_test_param_t ctrl_params = {
@@ -139,6 +140,7 @@ TEST_CASE("Test USB Host async client (multi client)", "[usb_host][ignore]")
     };
     TaskHandle_t ctrl_task_hdl;
     xTaskCreatePinnedToCore(ctrl_client_async_seq_task, "ctrl", 4096, (void *)&ctrl_params, 2, &ctrl_task_hdl, 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(ctrl_task_hdl, "Failed to create CTRL task");
 
     //Start both tasks
     xTaskNotifyGive(msc_task_hdl);
@@ -249,16 +251,17 @@ TEST_CASE("Test USB Host async API", "[usb_host][ignore]")
         usb_host_lib_handle_events(0, NULL);
         usb_host_client_handle_events(client0_hdl, 0);
         usb_host_client_handle_events(client1_hdl, 0);
-        vTaskDelay(10);
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 
     //Check that both clients can open the device
     TEST_ASSERT_NOT_EQUAL(0, dev_addr);
     usb_device_handle_t client0_dev_hdl;
     usb_device_handle_t client1_dev_hdl;
+    printf("Opening device\n");
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_open(client0_hdl, dev_addr, &client0_dev_hdl));
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_open(client1_hdl, dev_addr, &client1_dev_hdl));
-    TEST_ASSERT_EQUAL(client0_dev_hdl, client1_dev_hdl);    //Check that its the same device
+    TEST_ASSERT_EQUAL_PTR(client0_dev_hdl, client1_dev_hdl);    //Check that its the same device
     //Check that a client cannot open a non-existent device
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_device_open(client0_hdl, 0, &client0_dev_hdl));
 
@@ -266,12 +269,14 @@ TEST_CASE("Test USB Host async API", "[usb_host][ignore]")
     usb_device_handle_t dummy_dev_hdl;
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_device_open(client0_hdl, dev_addr, &dummy_dev_hdl));
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_device_open(client1_hdl, dev_addr, &dummy_dev_hdl));
+    printf("Claiming interface\n");
     //Check that both clients cannot claim the same interface
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_interface_claim(client0_hdl, client0_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER, MOCK_MSC_SCSI_INTF_ALT_SETTING));
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_interface_claim(client1_hdl, client1_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER, MOCK_MSC_SCSI_INTF_ALT_SETTING));
     //Check that client0 cannot claim the same interface multiple times
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_interface_claim(client0_hdl, client0_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER, MOCK_MSC_SCSI_INTF_ALT_SETTING));
 
+    printf("Releasing interface\n");
     //Check that client0 can release the interface
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_interface_release(client0_hdl, client0_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER));
     //Check that client0 cannot release interface it has not claimed
@@ -285,6 +290,7 @@ TEST_CASE("Test USB Host async API", "[usb_host][ignore]")
         usb_host_client_handle_events(client1_hdl, 0);
         vTaskDelay(10);
     }
+    printf("Closing device\n");
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_close(client0_hdl, client0_dev_hdl));
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_close(client1_hdl, client1_dev_hdl));
 

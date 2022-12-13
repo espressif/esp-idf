@@ -9,8 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "unity.h"
-#include "test_utils.h"
-#include "test_usb_mock_classes.h"
+#include "test_usb_mock_msc.h"
 #include "test_hcd_common.h"
 
 // --------------------------------------------------- Test Cases ------------------------------------------------------
@@ -25,8 +24,8 @@ static void mock_msc_reset_req(hcd_pipe_handle_t default_pipe)
     //Enqueue, wait, dequeue, and check URB
     TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb));
     test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
-    TEST_ASSERT_EQUAL(urb, hcd_urb_dequeue(default_pipe));
-    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
+    TEST_ASSERT_EQUAL_PTR(urb, hcd_urb_dequeue(default_pipe));
+    TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status, "Transfer NOT completed");
     //Free URB
     test_hcd_free_urb(urb);
 }
@@ -80,20 +79,20 @@ TEST_CASE("Test HCD bulk pipe URBs", "[hcd][ignore]")
         mock_msc_scsi_init_cbw((mock_msc_bulk_cbw_t *)urb_cbw->transfer.data_buffer, true, block_num, TEST_NUM_SECTORS_PER_XFER, 0xAAAAAAAA);
         TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(bulk_out_pipe, urb_cbw));
         test_hcd_expect_pipe_event(bulk_out_pipe, HCD_PIPE_EVENT_URB_DONE);
-        TEST_ASSERT_EQUAL(urb_cbw, hcd_urb_dequeue(bulk_out_pipe));
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb_cbw->transfer.status);
+        TEST_ASSERT_EQUAL_PTR(urb_cbw, hcd_urb_dequeue(bulk_out_pipe));
+        TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb_cbw->transfer.status, "Transfer NOT completed");
         //Read data through BULK IN pipe
         TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(bulk_in_pipe, urb_data));
         test_hcd_expect_pipe_event(bulk_in_pipe, HCD_PIPE_EVENT_URB_DONE);
-        TEST_ASSERT_EQUAL(urb_data, hcd_urb_dequeue(bulk_in_pipe));
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb_data->transfer.status);
+        TEST_ASSERT_EQUAL_PTR(urb_data, hcd_urb_dequeue(bulk_in_pipe));
+        TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb_data->transfer.status, "Transfer NOT completed");
         //Read the CSW through BULK IN pipe
         TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(bulk_in_pipe, urb_csw));
         test_hcd_expect_pipe_event(bulk_in_pipe, HCD_PIPE_EVENT_URB_DONE);
-        TEST_ASSERT_EQUAL(urb_csw, hcd_urb_dequeue(bulk_in_pipe));
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb_data->transfer.status);
+        TEST_ASSERT_EQUAL_PTR(urb_csw, hcd_urb_dequeue(bulk_in_pipe));
+        TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb_data->transfer.status, "Transfer NOT completed");
         TEST_ASSERT_EQUAL(sizeof(mock_msc_bulk_csw_t), urb_csw->transfer.actual_num_bytes);
-        TEST_ASSERT_EQUAL(true, mock_msc_scsi_check_csw((mock_msc_bulk_csw_t *)urb_csw->transfer.data_buffer, 0xAAAAAAAA));
+        TEST_ASSERT_TRUE(mock_msc_scsi_check_csw((mock_msc_bulk_csw_t *)urb_csw->transfer.data_buffer, 0xAAAAAAAA));
         //Print the read data
         printf("Block %d to %d:\n", block_num, block_num + TEST_NUM_SECTORS_PER_XFER);
         for (int i = 0; i < urb_data->transfer.actual_num_bytes; i++) {

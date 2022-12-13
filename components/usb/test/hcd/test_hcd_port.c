@@ -9,7 +9,6 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "esp_rom_sys.h"
-#include "test_utils.h"
 #include "test_usb_common.h"
 #include "test_hcd_common.h"
 
@@ -210,14 +209,14 @@ TEST_CASE("Test HCD port disable", "[hcd][ignore]")
     printf("Enqueuing URBs\n");
     for (int i = 0; i < NUM_URBS; i++) {
         TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb_list[i]));
+        //Add a short delay to let the transfers run for a bit
+        esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
     }
-    //Add a short delay to let the transfers run for a bit
-    esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
+
     //Halt the default pipe before suspending
     TEST_ASSERT_EQUAL(HCD_PIPE_STATE_ACTIVE, hcd_pipe_get_state(default_pipe));
     TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_HALT));
     TEST_ASSERT_EQUAL(HCD_PIPE_STATE_HALTED, hcd_pipe_get_state(default_pipe));
-
 
     //Check that port can be disabled
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_DISABLE));
@@ -288,8 +287,8 @@ TEST_CASE("Test HCD port command bailout", "[hcd][ignore]")
     //Create task to run port commands concurrently
     SemaphoreHandle_t sync_sem = xSemaphoreCreateBinary();
     TaskHandle_t task_handle;
-    TEST_ASSERT_NOT_EQUAL(NULL, sync_sem);
-    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(concurrent_task, "tsk", 4096, (void *) sync_sem, UNITY_FREERTOS_PRIORITY + 1, &task_handle, 0));
+    TEST_ASSERT_NOT_NULL(sync_sem);
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(concurrent_task, "tsk", 4096, (void *) sync_sem, uxTaskPriorityGet(NULL) + 1, &task_handle, 0));
 
     //Suspend the device
     printf("Suspending\n");
