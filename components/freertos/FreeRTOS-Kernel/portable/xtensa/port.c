@@ -412,6 +412,11 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
                                      void * pvParameters )
 #endif
 {
+#ifdef __clang_analyzer__
+    // Teach clang-tidy that pxTopOfStack cannot be a pointer to const
+    volatile StackType_t * pxTemp = pxTopOfStack;
+    pxTopOfStack = pxTemp;
+#endif /*__clang_analyzer__ */
     /*
     HIGH ADDRESS
     |---------------------------| <- pxTopOfStack on entry
