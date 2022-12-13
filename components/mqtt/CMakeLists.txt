@@ -8,6 +8,6 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS esp-mqtt/include
                     PRIV_INCLUDE_DIRS "esp-mqtt/lib/include"
                     REQUIRES esp_event tcp_transport
-                    PRIV_REQUIRES esp_timer http_parser esp_hw_support
+                    PRIV_REQUIRES esp_timer http_parser esp_hw_support heap
                     )
 target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
