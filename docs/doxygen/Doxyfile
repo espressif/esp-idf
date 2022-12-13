@@ -121,6 +121,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_continuous.h \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_oneshot.h \
     $(PROJECT_PATH)/components/esp_app_format/include/esp_app_desc.h \
+    $(PROJECT_PATH)/components/esp_bootloader_format/include/esp_bootloader_desc.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_idf_version.h \

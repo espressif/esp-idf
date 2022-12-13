@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,7 @@ const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_de
     .secure_version = 0,
 #endif
 
-#if defined(CONFIG_APP_COMPILE_TIME_DATE) && !defined(CONFIG_APP_REPRODUCIBLE_BUILD)
+#ifdef CONFIG_APP_COMPILE_TIME_DATE
     .time = __TIME__,
     .date = __DATE__,
 #else
