@@ -30,7 +30,8 @@
 **  constants
 *****************************************************************************/
 #define A2D_VERSION             0x0102
-#define A2D_VERSION_SYC         0x0103
+#define A2D_VERSION_1_3         0x0103
+#define A2D_VERSION_1_4         0x0104
 
 /* Profile supported features */
 #define A2D_SUPF_PLAYER     0x0001
