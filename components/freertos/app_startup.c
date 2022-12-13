@@ -199,6 +199,10 @@ static void main_task(void* args)
     ESP_ERROR_CHECK(esp_task_wdt_init(&twdt_config));
 #endif // CONFIG_ESP_TASK_WDT
 
+    /*
+    Note: Be careful when changing the "Calling app_main()" log below as multiple pytest scripts expect this log as a
+    start-of-application marker.
+    */
     ESP_LOGI(MAIN_TAG, "Calling app_main()");
     extern void app_main(void);
     app_main();

@@ -284,8 +284,8 @@ def test_examples_efuse_with_virt_secure_boot_v1(dut: Dut) -> None:
     dut.expect('Disable ROM BASIC interpreter fallback...')
     dut.expect('secure_boot_v1: secure boot is now enabled for bootloader image')
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -312,8 +312,8 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(dut: Dut) -> None:
     dut.serial.flash()
 
     dut.expect('Loading virtual efuse blocks from real efuses')
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -339,8 +339,8 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(dut: Dut) -> None:
     dut.expect('Disable ROM BASIC interpreter fallback...')
     dut.expect('secure_boot_v1: secure boot is now enabled for bootloader image')
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -397,8 +397,8 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('Prevent read disabling of additional efuses...')
     dut.expect('secure_boot_v2: Secure boot permanently enabled')
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -453,8 +453,8 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('Prevent read disabling of additional efuses...')
     dut.expect('secure_boot_v2: Secure boot permanently enabled')
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -481,8 +481,8 @@ def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(dut: Dut) -> None:
     print(' - Start app (flash partition_table and app)')
     dut.serial.flash()
     dut.expect('Loading virtual efuse blocks from real efuses')
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -517,8 +517,8 @@ def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(dut: Dut) -> None:
     dut.expect('Prevent read disabling of additional efuses...')
     dut.expect('secure_boot_v2: Secure boot permanently enabled')
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -580,8 +580,8 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
     dut.expect('Disable hardware & software JTAG...')
     dut.expect('secure_boot_v2: Secure boot permanently enabled')
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -628,8 +628,8 @@ def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> 
     dut.serial.bootloader_flash()
     dut.serial.flash()
     dut.expect('Loading virtual efuse blocks from real efuses')
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -672,8 +672,8 @@ def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> 
     dut.expect('Disable hardware & software JTAG...')
     dut.expect('secure_boot_v2: Secure boot permanently enabled', timeout=20)
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -768,9 +768,9 @@ def test_examples_efuse_with_virt_sb_v1_and_fe(dut: Dut) -> None:
     dut.expect('Checking secure boot...')
     dut.expect('secure_boot_v1: bootloader secure boot is already enabled, continuing..')
 
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
     dut.expect_exact('flash_encrypt: Flash encryption mode is DEVELOPMENT (not secure)')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -847,9 +847,9 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect('secure_boot_v2: enabling secure boot v2...')
     dut.expect('secure_boot_v2: secure boot v2 is already enabled, continuing..')
     dut.expect_exact('flash_encrypt: flash encryption is enabled (3 plaintext flashes left)')
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
     dut.expect_exact('flash_encrypt: Flash encryption mode is DEVELOPMENT (not secure)')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
@@ -934,9 +934,9 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
     dut.expect('secure_boot_v2: enabling secure boot v2...')
     dut.expect('secure_boot_v2: secure boot v2 is already enabled, continuing..')
     dut.expect_exact('flash_encrypt: flash encryption is enabled (1 plaintext flashes left)')
-    dut.expect('cpu_start: Pro cpu up')
     dut.expect('Loading virtual efuse blocks from flash')
     dut.expect_exact('flash_encrypt: Flash encryption mode is DEVELOPMENT (not secure)')
+    dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
