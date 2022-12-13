@@ -292,12 +292,12 @@ static esp_err_t get_value_from_nvs(const char *key, const char *str_type)
     } else if (type == NVS_TYPE_I32) {
         int32_t value;
         if ((err = nvs_get_i32(nvs, key, &value)) == ESP_OK) {
-            printf("%d\n", value);
+            printf("%"PRIi32"\n", value);
         }
     } else if (type == NVS_TYPE_U32) {
         uint32_t value;
         if ((err = nvs_get_u32(nvs, key, &value)) == ESP_OK) {
-            printf("%u\n", value);
+            printf("%"PRIu32"\n", value);
         }
     } else if (type == NVS_TYPE_I64) {
         int64_t value;
