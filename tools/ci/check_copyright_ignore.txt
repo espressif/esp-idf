@@ -693,7 +693,6 @@ components/hal/include/hal/usb_hal.h
 components/hal/include/hal/usb_types_private.h
 components/hal/include/hal/wdt_types.h
 components/hal/mpu_hal.c
-components/hal/rtc_io_hal.c
 components/hal/sha_hal.c
 components/hal/spi_flash_encrypt_hal_iram.c
 components/hal/spi_flash_hal_gpspi.c
@@ -864,7 +863,6 @@ components/soc/esp32/include/soc/pid.h
 components/soc/esp32/include/soc/reset_reasons.h
 components/soc/esp32/include/soc/rtc_cntl_struct.h
 components/soc/esp32/include/soc/rtc_i2c_reg.h
-components/soc/esp32/include/soc/rtc_io_channel.h
 components/soc/esp32/include/soc/rtc_io_reg.h
 components/soc/esp32/include/soc/rtc_io_struct.h
 components/soc/esp32/include/soc/sdio_slave_pins.h
@@ -955,7 +953,6 @@ components/soc/esp32s2/include/soc/memprot_defs.h
 components/soc/esp32s2/include/soc/nrx_reg.h
 components/soc/esp32s2/include/soc/rtc_cntl_struct.h
 components/soc/esp32s2/include/soc/rtc_i2c_reg.h
-components/soc/esp32s2/include/soc/rtc_io_channel.h
 components/soc/esp32s2/include/soc/rtc_io_reg.h
 components/soc/esp32s2/include/soc/sdio_slave_pins.h
 components/soc/esp32s2/include/soc/sdmmc_pins.h
@@ -1018,7 +1015,6 @@ components/soc/esp32s3/include/soc/peri_backup_struct.h
 components/soc/esp32s3/include/soc/reset_reasons.h
 components/soc/esp32s3/include/soc/rtc_i2c_reg.h
 components/soc/esp32s3/include/soc/rtc_i2c_struct.h
-components/soc/esp32s3/include/soc/rtc_io_channel.h
 components/soc/esp32s3/include/soc/rtc_io_reg.h
 components/soc/esp32s3/include/soc/rtc_io_struct.h
 components/soc/esp32s3/include/soc/sdio_slave_pins.h

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,16 +14,24 @@
 
 #include <stdlib.h>
 #include "soc/rtc_periph.h"
+#include "soc/pcr_struct.h"
+#include "soc/rtc_io_struct.h"
+#include "soc/lp_aon_struct.h"
+#include "soc/pmu_struct.h"
+#include "hal/misc.h"
 #include "hal/gpio_types.h"
-
-#define RTCIO_LL_PIN_FUNC     0
+#include "soc/io_mux_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define RTCIO_LL_PIN_FUNC       0
+
+#define RTCIO_LL_PIN_MASK_ALL   ((1 << SOC_RTCIO_PIN_COUNT) - 1)
+
 typedef enum {
-    RTCIO_FUNC_RTC = 0x0,         /*!< The pin controled by RTC module. */
+    RTCIO_FUNC_RTC = 0x0,         /*!< The pin controlled by RTC module. */
     RTCIO_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
 } rtcio_ll_func_t;
 
@@ -42,6 +50,9 @@ typedef enum {
  * @brief Select the rtcio function.
  *
  * @note The RTC function must be selected before the pad analog function is enabled.
+ * @note The clock gating 'PCR.iomux_conf.iomux_clk_en' is the gate of both 'lp_io' and 'etm_gpio'
+ *       And it's default to be turned on, so we don't need to operate this clock gate here additionally
+ *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @param func Select pin function.
  */
@@ -49,11 +60,16 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
 {
     if (func == RTCIO_FUNC_RTC) {
         // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
-        SET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
+        uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);
+        sel_mask |= BIT(rtcio_num);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel, sel_mask);
         //0:RTC FUNCTION 1,2,3:Reserved
-        SET_PERI_REG_BITS(rtc_io_desc[rtcio_num].reg, RTC_IO_TOUCH_PAD1_FUN_SEL_V, RTCIO_LL_PIN_FUNC, rtc_io_desc[rtcio_num].func);
+        LP_IO.gpio[rtcio_num].mcu_sel = RTCIO_LL_PIN_FUNC;
     } else if (func == RTCIO_FUNC_DIGITAL) {
-        CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
+        // Clear the bit to use digital GPIO module
+        uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);
+        sel_mask &= ~BIT(rtcio_num);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel, sel_mask);
     }
 }
 
@@ -64,7 +80,7 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
  */
 static inline void rtcio_ll_output_enable(int rtcio_num)
 {
-    RTCIO.enable_w1ts.w1ts = (1U << rtcio_num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_enable_w1ts, enable_w1ts, BIT(rtcio_num));
 }
 
 /**
@@ -74,7 +90,7 @@ static inline void rtcio_ll_output_enable(int rtcio_num)
  */
 static inline void rtcio_ll_output_disable(int rtcio_num)
 {
-    RTCIO.enable_w1tc.w1tc = (1U << rtcio_num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_enable_w1tc, enable_w1tc, BIT(rtcio_num));
 }
 
 /**
@@ -86,9 +102,9 @@ static inline void rtcio_ll_output_disable(int rtcio_num)
 static inline void rtcio_ll_set_level(int rtcio_num, uint32_t level)
 {
     if (level) {
-        RTCIO.out_w1ts.w1ts = (1U << rtcio_num);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_data_w1ts, out_data_w1ts, BIT(rtcio_num));
     } else {
-        RTCIO.out_w1tc.w1tc = (1U << rtcio_num);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_data_w1tc, out_data_w1tc, BIT(rtcio_num));
     }
 }
 
@@ -99,7 +115,7 @@ static inline void rtcio_ll_set_level(int rtcio_num, uint32_t level)
  */
 static inline void rtcio_ll_input_enable(int rtcio_num)
 {
-    SET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].ie);
+    LP_IO.gpio[rtcio_num].fun_ie = 1;
 }
 
 /**
@@ -109,7 +125,7 @@ static inline void rtcio_ll_input_enable(int rtcio_num)
  */
 static inline void rtcio_ll_input_disable(int rtcio_num)
 {
-    CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].ie);
+    LP_IO.gpio[rtcio_num].fun_ie = 0;
 }
 
 /**
@@ -120,7 +136,7 @@ static inline void rtcio_ll_input_disable(int rtcio_num)
  */
 static inline uint32_t rtcio_ll_get_level(int rtcio_num)
 {
-    return (uint32_t)(RTCIO.in_val.in >> rtcio_num) & 0x1;
+    return (uint32_t)(LP_IO.in.in_data_next >> rtcio_num) & 0x1;
 }
 
 /**
@@ -131,9 +147,7 @@ static inline uint32_t rtcio_ll_get_level(int rtcio_num)
  */
 static inline void rtcio_ll_set_drive_capability(int rtcio_num, uint32_t strength)
 {
-    if (rtc_io_desc[rtcio_num].drv_v) {
-        SET_PERI_REG_BITS(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].drv_v, strength, rtc_io_desc[rtcio_num].drv_s);
-    }
+    LP_IO.gpio[rtcio_num].fun_drv = strength;
 }
 
 /**
@@ -144,7 +158,7 @@ static inline void rtcio_ll_set_drive_capability(int rtcio_num, uint32_t strengt
  */
 static inline uint32_t rtcio_ll_get_drive_capability(int rtcio_num)
 {
-    return GET_PERI_REG_BITS2(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].drv_v, rtc_io_desc[rtcio_num].drv_s);
+    return LP_IO.gpio[rtcio_num].fun_drv;
 }
 
 /**
@@ -155,7 +169,7 @@ static inline uint32_t rtcio_ll_get_drive_capability(int rtcio_num)
  */
 static inline void rtcio_ll_output_mode_set(int rtcio_num, rtcio_ll_out_mode_t mode)
 {
-    RTCIO.pin[rtcio_num].pad_driver = mode;
+    LP_IO.pin[rtcio_num].pad_driver = mode;
 }
 
 /**
@@ -165,9 +179,8 @@ static inline void rtcio_ll_output_mode_set(int rtcio_num, rtcio_ll_out_mode_t m
  */
 static inline void rtcio_ll_pullup_enable(int rtcio_num)
 {
-    if (rtc_io_desc[rtcio_num].pullup) {
-        SET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].pullup);
-    }
+    /* Enable internal weak pull-up */
+    LP_IO.gpio[rtcio_num].fun_wpu = 1;
 }
 
 /**
@@ -177,9 +190,8 @@ static inline void rtcio_ll_pullup_enable(int rtcio_num)
  */
 static inline void rtcio_ll_pullup_disable(int rtcio_num)
 {
-    if (rtc_io_desc[rtcio_num].pullup) {
-        CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].pullup);
-    }
+    /* Disable internal weak pull-up */
+    LP_IO.gpio[rtcio_num].fun_wpu = 0;
 }
 
 /**
@@ -189,9 +201,8 @@ static inline void rtcio_ll_pullup_disable(int rtcio_num)
  */
 static inline void rtcio_ll_pulldown_enable(int rtcio_num)
 {
-    if (rtc_io_desc[rtcio_num].pulldown) {
-        SET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].pulldown);
-    }
+    /* Enable internal weak pull-down */
+    LP_IO.gpio[rtcio_num].fun_wpd = 1;
 }
 
 /**
@@ -201,13 +212,12 @@ static inline void rtcio_ll_pulldown_enable(int rtcio_num)
  */
 static inline void rtcio_ll_pulldown_disable(int rtcio_num)
 {
-    if (rtc_io_desc[rtcio_num].pulldown) {
-        CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].pulldown);
-    }
+    /* Enable internal weak pull-down */
+    LP_IO.gpio[rtcio_num].fun_wpd = 0;
 }
 
 /**
- * Enable force hold function on an RTC IO pad.
+ * Enable force hold function for an RTC IO pad.
  *
  * Enabling HOLD function will cause the pad to lock current status, such as,
  * input/output enable, input/output value, function, drive strength values.
@@ -218,69 +228,82 @@ static inline void rtcio_ll_pulldown_disable(int rtcio_num)
  */
 static inline void rtcio_ll_force_hold_enable(int rtcio_num)
 {
-    REG_SET_BIT(RTC_CNTL_HOLD_FORCE_REG, rtc_io_desc[rtcio_num].hold_force);
-    REG_SET_BIT(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].hold);
+    LP_AON.gpio_hold0.gpio_hold0 |= BIT(rtcio_num);
 }
 
 /**
- * Disable hold function on an RTC IO pad.
+ * Disable hold function on an RTC IO pad
  *
  * @note If disable the pad hold, the status of pad maybe changed in sleep mode.
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
 static inline void rtcio_ll_force_hold_disable(int rtcio_num)
 {
-    REG_CLR_BIT(RTC_CNTL_HOLD_FORCE_REG, rtc_io_desc[rtcio_num].hold_force);
-    REG_CLR_BIT(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].hold);
+    LP_AON.gpio_hold0.gpio_hold0 &= ~BIT(rtcio_num);
 }
 
 /**
- * Enable force hold function on all RTC IO pads.
+ * @brief Enable all LP IO pads hold function during Deep-sleep
+ */
+static inline void rtcio_ll_deep_sleep_hold_en_all(void)
+{
+    PMU.imm_pad_hold_all.tie_high_lp_pad_hold_all = 1;
+}
+
+/**
+ * @brief Disable all LP IO pads hold function during Deep-sleep
+ */
+static inline void rtcio_ll_deep_sleep_hold_dis_all(void)
+{
+    PMU.imm_pad_hold_all.tie_low_lp_pad_hold_all = 1;
+}
+
+/**
+ * Enable force hold function for all RTC IO pads
  *
  * Enabling HOLD function will cause the pad to lock current status, such as,
  * input/output enable, input/output value, function, drive strength values.
  * This function is useful when going into light or deep sleep mode to prevent
  * the pin configuration from changing.
- *
- * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
 static inline void rtcio_ll_force_hold_all(void)
 {
-    SET_PERI_REG_BITS(RTC_CNTL_HOLD_FORCE_REG, 0x3FFFF, 0x3FFFF, 0);
+    // No such a 'hold_all' bit on C6, use bit hold instead
+    LP_AON.gpio_hold0.gpio_hold0 |= RTCIO_LL_PIN_MASK_ALL;
 }
 
 /**
- * Disable hold function on all RTC IO pads.
+ * Disable hold function fon all RTC IO pads
  *
  * @note If disable the pad hold, the status of pad maybe changed in sleep mode.
- * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
 static inline void rtcio_ll_force_unhold_all(void)
 {
-    SET_PERI_REG_BITS(RTC_CNTL_HOLD_FORCE_REG, 0x3FFFF, 0, 0);
+    // No such a 'hold_all' bit on C6, use bit hold instead
+    LP_AON.gpio_hold0.gpio_hold0 &= ~RTCIO_LL_PIN_MASK_ALL;
 }
 
 /**
- * Enable wakeup function and set wakeup type from light sleep status for rtcio.
+ * Enable wakeup function and set wakeup type from light sleep or deep sleep for rtcio.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @param type  Wakeup on high level or low level.
  */
 static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t type)
 {
-    RTCIO.pin[rtcio_num].wakeup_enable = 0x1;
-    RTCIO.pin[rtcio_num].int_type = type;
+    LP_IO.pin[rtcio_num].wakeup_enable = 0x1;
+    LP_IO.pin[rtcio_num].int_type = type;
 }
 
 /**
- * Disable wakeup function from light sleep status for rtcio.
+ * Disable wakeup function from light sleep or deep sleep for rtcio.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
 static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 {
-    RTCIO.pin[rtcio_num].wakeup_enable = 0;
-    RTCIO.pin[rtcio_num].int_type = RTCIO_WAKEUP_DISABLE;
+    LP_IO.pin[rtcio_num].wakeup_enable = 0;
+    LP_IO.pin[rtcio_num].int_type = RTCIO_WAKEUP_DISABLE;
 }
 
 /**
@@ -290,9 +313,7 @@ static inline void rtcio_ll_wakeup_disable(int rtcio_num)
  */
 static inline void rtcio_ll_enable_output_in_sleep(gpio_num_t gpio_num)
 {
-    if (rtc_io_desc[gpio_num].slpoe) {
-        SET_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpoe);
-    }
+    LP_IO.gpio[gpio_num].mcu_oe = 1;
 }
 
 /**
@@ -302,9 +323,7 @@ static inline void rtcio_ll_enable_output_in_sleep(gpio_num_t gpio_num)
  */
 static inline void rtcio_ll_disable_output_in_sleep(gpio_num_t gpio_num)
 {
-    if (rtc_io_desc[gpio_num].slpoe) {
-        CLEAR_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpoe);
-    }
+    LP_IO.gpio[gpio_num].mcu_oe = 0;
 }
 
 /**
@@ -314,7 +333,7 @@ static inline void rtcio_ll_disable_output_in_sleep(gpio_num_t gpio_num)
  */
 static inline void rtcio_ll_enable_input_in_sleep(gpio_num_t gpio_num)
 {
-    SET_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpie);
+    LP_IO.gpio[gpio_num].mcu_ie = 1;
 }
 
 /**
@@ -324,7 +343,7 @@ static inline void rtcio_ll_enable_input_in_sleep(gpio_num_t gpio_num)
  */
 static inline void rtcio_ll_disable_input_in_sleep(gpio_num_t gpio_num)
 {
-    CLEAR_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpie);
+    LP_IO.gpio[gpio_num].mcu_ie = 0;
 }
 
 /**
@@ -334,7 +353,7 @@ static inline void rtcio_ll_disable_input_in_sleep(gpio_num_t gpio_num)
  */
 static inline void rtcio_ll_enable_sleep_setting(gpio_num_t gpio_num)
 {
-    SET_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpsel);
+    LP_IO.gpio[gpio_num].slp_sel = 1;
 }
 
 /**
@@ -344,7 +363,7 @@ static inline void rtcio_ll_enable_sleep_setting(gpio_num_t gpio_num)
  */
 static inline void rtcio_ll_disable_sleep_setting(gpio_num_t gpio_num)
 {
-    CLEAR_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpsel);
+    LP_IO.gpio[gpio_num].slp_sel = 0;
 }
 
 /**
@@ -355,10 +374,17 @@ static inline void rtcio_ll_disable_sleep_setting(gpio_num_t gpio_num)
  */
 static inline void rtcio_ll_ext0_set_wakeup_pin(int rtcio_num, int level)
 {
-    REG_SET_FIELD(RTC_IO_EXT_WAKEUP0_REG, RTC_IO_EXT_WAKEUP0_SEL, rtcio_num);
-    // Set level which will trigger wakeup
-    SET_PERI_REG_BITS(RTC_CNTL_EXT_WAKEUP_CONF_REG, 0x1,
-            level , RTC_CNTL_EXT_WAKEUP0_LV_S);
+    uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
+    wakeup_sel_mask |= BIT(rtcio_num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel, wakeup_sel_mask);
+
+    uint32_t wakeup_level_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv);
+    if (level) {
+        wakeup_level_mask |= BIT(rtcio_num);
+    } else {
+        wakeup_level_mask &= ~BIT(rtcio_num);
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv, wakeup_level_mask);
 }
 
 #ifdef __cplusplus

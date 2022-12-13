@@ -318,7 +318,7 @@ static inline void rtcio_ll_enable_output_in_sleep(gpio_num_t gpio_num)
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
-static inline void rtcio_ll_in_sleep_disable_output(gpio_num_t gpio_num)
+static inline void rtcio_ll_disable_output_in_sleep(gpio_num_t gpio_num)
 {
     if (rtc_io_desc[gpio_num].slpoe) {
         CLEAR_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpoe);
@@ -330,7 +330,7 @@ static inline void rtcio_ll_in_sleep_disable_output(gpio_num_t gpio_num)
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
-static inline void rtcio_ll_in_sleep_enable_input(gpio_num_t gpio_num)
+static inline void rtcio_ll_enable_input_in_sleep(gpio_num_t gpio_num)
 {
     SET_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpie);
 }
@@ -340,7 +340,7 @@ static inline void rtcio_ll_in_sleep_enable_input(gpio_num_t gpio_num)
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  */
-static inline void rtcio_ll_in_sleep_disable_input(gpio_num_t gpio_num)
+static inline void rtcio_ll_disable_input_in_sleep(gpio_num_t gpio_num)
 {
     CLEAR_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpie);
 }
@@ -365,6 +365,12 @@ static inline void rtcio_ll_disable_sleep_setting(gpio_num_t gpio_num)
     CLEAR_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpsel);
 }
 
+/**
+ * Set specific logic level on an RTC IO pin as a wakeup trigger.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @param level Logic level (0)
+ */
 static inline void rtcio_ll_ext0_set_wakeup_pin(int rtcio_num, int level)
 {
     REG_SET_FIELD(RTC_IO_EXT_WAKEUP0_REG, RTC_IO_EXT_WAKEUP0_SEL, rtcio_num);

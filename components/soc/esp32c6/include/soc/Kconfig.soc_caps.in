@@ -323,6 +323,18 @@ config SOC_GPIO_SUPPORT_SLP_SWITCH
     bool
     default y
 
+config SOC_RTCIO_PIN_COUNT
+    int
+    default 8
+
+config SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+    bool
+    default y
+
+config SOC_RTCIO_HOLD_SUPPORTED
+    bool
+    default y
+
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
     default 8
@@ -586,10 +598,6 @@ config SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH
 config SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM
     int
     default 108
-
-config SOC_RTCIO_PIN_COUNT
-    int
-    default 0
 
 config SOC_RSA_MAX_BIT_LEN
     int

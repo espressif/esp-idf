@@ -3,6 +3,7 @@ set(srcs
     "dedic_gpio_periph.c"
     "gdma_periph.c"
     "gpio_periph.c"
+    "rtc_io_periph.c"
     "sdm_periph.c"
     "interrupts.c"
     "spi_periph.c"

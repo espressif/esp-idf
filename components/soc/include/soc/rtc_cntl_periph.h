@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "sdkconfig.h"
+
 // TODO: IDF-5645
 #if CONFIG_IDF_TARGET_ESP32C6
 #include "soc/lp_aon_reg.h"
