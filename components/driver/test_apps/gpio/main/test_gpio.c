@@ -677,7 +677,7 @@ static void prompt_to_continue(const char *str)
 
 // This case needs the resistance to pull up the voltage or pull down the voltage
 // Ignored in CI because the voltage needs to be tested with multimeter
-TEST_CASE_CI_IGNORE("GPIO_verify_only_the_gpio_with_input_ability_can_be_set_pull/down", "[gpio]")
+TEST_CASE("GPIO_verify_only_the_gpio_with_input_ability_can_be_set_pull/down", "[gpio][ignore]")
 {
     gpio_config_t output_io = test_init_io(TEST_GPIO_EXT_OUT_IO);
     gpio_config_t input_io = test_init_io(TEST_GPIO_EXT_IN_IO);
@@ -768,7 +768,7 @@ static void drive_capability_set_get(gpio_num_t num, gpio_drive_cap_t capability
  *
  * all of these cases should be ignored that it will not run in CI
  */
-TEST_CASE_CI_IGNORE("GPIO_drive_capability_test", "[gpio]")
+TEST_CASE("GPIO_drive_capability_test", "[gpio][ignore]")
 {
     printf("weak capability test! please view the current change!\n");
     drive_capability_set_get(TEST_GPIO_EXT_OUT_IO, GPIO_DRIVE_CAP_0);
@@ -846,7 +846,7 @@ TEST_CASE("GPIO_USB_DP_pin_pullup_disable_test", "[gpio]")
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6) // TODO: IDF-5348 Remove when light sleep is supported on ESP32C6
 // Ignored in CI because it needs manually connect TEST_GPIO_INPUT_LEVEL_LOW_PIN to 3.3v to wake up from light sleep
-TEST_CASE_CI_IGNORE("GPIO_light_sleep_wake_up_test", "[gpio]")
+TEST_CASE("GPIO_light_sleep_wake_up_test", "[gpio][ignore]")
 {
     gpio_config_t io_config = test_init_io(TEST_GPIO_INPUT_LEVEL_LOW_PIN);
     io_config.mode = GPIO_MODE_INPUT;
