@@ -12,7 +12,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "soc/usbh_struct.h"
+#include "soc/usb_dwc_struct.h"
 #include "hal/usb_types_private.h"
 #include "hal/misc.h"
 
