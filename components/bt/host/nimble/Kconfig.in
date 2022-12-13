@@ -369,7 +369,10 @@ menuconfig BT_NIMBLE_MESH
     depends on BT_NIMBLE_ENABLED
     default n
     help
-        Enable BLE Mesh functionality
+        Enable BLE Mesh example present in upstream mynewt-nimble and not maintained by Espressif.
+
+        IDF maintains ESP-BLE-MESH as the official Mesh solution. Please refer to ESP-BLE-MESH guide at:
+        `https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/esp-ble-mesh/ble-mesh-index.html`
 
 config BT_NIMBLE_MESH_PROXY
     bool "Enable mesh proxy functionality"
