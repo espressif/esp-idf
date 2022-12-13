@@ -101,7 +101,6 @@ api-reference/peripherals/sdspi_host
 api-reference/peripherals/dac
 api-reference/peripherals/touch_element
 api-reference/peripherals/secure_element
-api-reference/peripherals/ledc
 api-reference/peripherals/sdio_slave
 api-reference/peripherals/clk_tree
 api-reference/peripherals/touch_pad
