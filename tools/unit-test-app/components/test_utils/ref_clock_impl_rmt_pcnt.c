@@ -33,11 +33,11 @@
 #define REF_CLOCK_GPIO         0  // GPIO used to combine RMT out signal with PCNT input signal
 #define REF_CLOCK_PRESCALER_MS 30 // PCNT high threshold interrupt fired every 30ms
 
+// peripheral driver handles
 static pcnt_unit_handle_t s_pcnt_unit;
 static pcnt_channel_handle_t s_pcnt_chan;
 static rmt_channel_handle_t s_rmt_chan;
 static rmt_encoder_handle_t s_rmt_encoder;
-static volatile uint32_t s_milliseconds;
 
 void ref_clock_init(void)
 {

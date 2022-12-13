@@ -101,7 +101,7 @@ typedef enum {
 } soc_rtc_fast_clk_src_t;
 
 // Naming convention: SOC_MOD_CLK_{[upstream]clock_name}_[attr]
-// {[upstream]clock_name}: APB, (BB)PLL, etc.
+// {[upstream]clock_name}: XTAL, (BB)PLL, etc.
 // [attr] - optional: FAST, SLOW, D<divider>, F<freq>
 /**
  * @brief Supported clock sources for modules (CPU, peripherals, RTC, etc.)
@@ -115,7 +115,6 @@ typedef enum {
     SOC_MOD_CLK_RTC_FAST,                      /*!< RTC_FAST_CLK can be sourced from XTAL_D2 or RC_FAST by configuring soc_rtc_fast_clk_src_t */
     SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, or RC_FAST_D256 by configuring soc_rtc_slow_clk_src_t */
     // For digital domain: peripherals, WIFI, BLE
-    SOC_MOD_CLK_APB,                           /*!< APB_CLK is highly dependent on the CPU_CLK source */    // TODO: IDF-6343 This should be removed on ESP32C6! Impacts on all following peripheral drivers!
     SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from PLL, and has a fixed frequency of 80MHz */
     SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from PLL, and has a fixed frequency of 160MHz */
     SOC_MOD_CLK_PLL_F240M,                     /*!< PLL_F240M_CLK is derived from PLL, and has a fixed frequency of 240MHz */
@@ -291,14 +290,15 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of SDM
  */
-#define SOC_SDM_CLKS {SOC_MOD_CLK_APB}
+#define SOC_SDM_CLKS {SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_XTAL}
 
 /**
  * @brief Sigma Delta Modulator clock source
  */
 typedef enum {
-    SDM_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
-    SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
+    SDM_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL clock as the source clock */
+    SDM_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M, /*!< Select PLL_F80M clock as the source clock */
+    SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< Select PLL_F80M clock as the default clock choice */
 } soc_periph_sdm_clk_src_t;
 
 //////////////////////////////////////////////////TWAI/////////////////////////////////////////////////////////////////
