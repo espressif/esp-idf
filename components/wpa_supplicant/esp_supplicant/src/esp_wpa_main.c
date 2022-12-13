@@ -239,7 +239,7 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
         case WIFI_REASON_CONNECTION_FAIL:
         case WIFI_REASON_HANDSHAKE_TIMEOUT:
             esp_wpa3_free_sae_data();
-            wpa_sta_clear_curr_pmksa();
+            wpa_sm_notify_disassoc(&gWpaSm);
             break;
         default:
             break;
