@@ -83,7 +83,7 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
     CALIBRATE_ONE(RTC_CAL_8MD256);
 
 #if CONFIG_IDF_TARGET_ESP32C2
-    uint32_t cal_ext_slow_clk = CALIBRATE_ONE(RTC_CAL_EXT_32K);
+    uint32_t cal_ext_slow_clk = CALIBRATE_ONE(RTC_CAL_32K_OSC_SLOW);
     if (cal_ext_slow_clk == 0) {
         printf("EXT CLOCK by PIN has not started up");
     } else {
@@ -93,7 +93,7 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
 
         CALIBRATE_ONE(RTC_CAL_RTC_MUX);
         CALIBRATE_ONE(RTC_CAL_8MD256);
-        CALIBRATE_ONE(RTC_CAL_EXT_32K);
+        CALIBRATE_ONE(RTC_CAL_32K_OSC_SLOW);
     }
 #else
     uint32_t cal_32k = CALIBRATE_ONE(RTC_CAL_32K_XTAL);
@@ -116,7 +116,7 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
     CALIBRATE_ONE(RTC_CAL_RTC_MUX);
     CALIBRATE_ONE(RTC_CAL_8MD256);
 #if CONFIG_IDF_TARGET_ESP32C2
-    CALIBRATE_ONE(RTC_CAL_EXT_32K);
+    CALIBRATE_ONE(RTC_CAL_32K_OSC_SLOW);
 #else
     CALIBRATE_ONE(RTC_CAL_32K_XTAL);
 #endif

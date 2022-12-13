@@ -299,6 +299,10 @@ config SOC_I2S_SUPPORTS_APLL
     bool
     default y
 
+config SOC_I2S_SUPPORTS_PLL_F160M
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_PDM
     bool
     default y

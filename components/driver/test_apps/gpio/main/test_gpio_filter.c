@@ -123,6 +123,10 @@ TEST_CASE("GPIO flex glitch filter enable/disable", "[gpio_filter]")
 
     printf("generate rising edge glitch signal\r\n");
     asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
+    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
+    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
+    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
+
     asm volatile("csrrci zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
 
     // should timeout, because the glitch is filtered out
@@ -133,6 +137,10 @@ TEST_CASE("GPIO flex glitch filter enable/disable", "[gpio_filter]")
 
     printf("generate rising edge glitch signal again\r\n");
     asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
+    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
+    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
+    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
+
     asm volatile("csrrci zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
 
     // this time we should see the GPIO interrupt fired up

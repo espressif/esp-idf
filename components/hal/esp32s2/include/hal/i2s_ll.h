@@ -42,6 +42,8 @@ extern "C" {
 #define I2S_LL_TX_EVENT_MASK        I2S_LL_EVENT_TX_EOF
 #define I2S_LL_RX_EVENT_MASK        I2S_LL_EVENT_RX_EOF
 
+#define I2S_LL_PLL_F160M_CLK_FREQ   (160 * 1000000) // PLL_F160M_CLK: 160MHz
+
 /* I2S clock configuration structure */
 typedef struct {
     uint16_t mclk_div; // I2S module clock divider, Fmclk = Fsclk /(mclk_div+b/a)

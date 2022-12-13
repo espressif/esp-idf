@@ -185,6 +185,7 @@
 #define SOC_I2S_NUM                 (2U)
 #define SOC_I2S_HW_VERSION_1        (1)
 #define SOC_I2S_SUPPORTS_APLL       (1)
+#define SOC_I2S_SUPPORTS_PLL_F160M  (1)
 #define SOC_I2S_SUPPORTS_PDM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
 #define SOC_I2S_PDM_MAX_TX_LINES    (1U)

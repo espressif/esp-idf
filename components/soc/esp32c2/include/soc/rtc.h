@@ -154,7 +154,10 @@ typedef struct rtc_cpu_freq_config_s {
 typedef enum {
     RTC_CAL_RTC_MUX = 0,       //!< Currently selected RTC SLOW_CLK
     RTC_CAL_8MD256 = 1,        //!< Internal 8 MHz RC oscillator, divided by 256
-    RTC_CAL_EXT_32K = 2        //!< External 32.768 KHz CLK
+    RTC_CAL_32K_OSC_SLOW = 2,  //!< External 32.768 KHz CLK
+
+    // deprecated name
+    RTC_CAL_EXT_32K __attribute__((deprecated)) = RTC_CAL_32K_OSC_SLOW,
 } rtc_cal_sel_t;
 
 /**

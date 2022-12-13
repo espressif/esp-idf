@@ -238,8 +238,8 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
         div = clk_ll_cpu_get_divider();
         source_freq_mhz = (uint32_t)rtc_clk_xtal_freq_get();
         freq_mhz = source_freq_mhz / div;
+        break;
     }
-    break;
     case SOC_CPU_CLK_SRC_PLL: {
         freq_mhz = clk_ll_cpu_get_freq_mhz_from_pll();
         source_freq_mhz = clk_ll_bbpll_get_freq_mhz();

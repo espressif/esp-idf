@@ -351,6 +351,10 @@ config SOC_I2S_SUPPORTS_XTAL
     bool
     default y
 
+config SOC_I2S_SUPPORTS_PLL_F96M
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_PCM
     bool
     default y

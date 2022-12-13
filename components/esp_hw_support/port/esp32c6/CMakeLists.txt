@@ -1,6 +1,6 @@
 set(srcs "rtc_clk_init.c"
          "rtc_clk.c"
-        #  "rtc_init.c" // TODO: IDF-5645
+         "rtc_init.c"
         #  "rtc_pm.c" // TODO: IDF-5645
         #  "rtc_sleep.c" // TODO: IDF-5645
          "rtc_time.c"

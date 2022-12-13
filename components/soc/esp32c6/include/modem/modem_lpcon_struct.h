@@ -1,12 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
 #include <stdint.h>
-#include "modem/reg_base.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -228,7 +227,9 @@ typedef volatile struct {
         uint32_t val;
     } date;
 } modem_lpcon_dev_t;
+
 extern modem_lpcon_dev_t MODEM_LPCON;
+
 #ifdef __cplusplus
 }
 #endif

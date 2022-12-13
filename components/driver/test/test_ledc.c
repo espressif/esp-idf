@@ -535,10 +535,8 @@ TEST_CASE("LEDC timer select specific clock source", "[ledc]")
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 
     if (test_speed_mode == LEDC_LOW_SPEED_MODE) {
-#if !CONFIG_IDF_TARGET_ESP32C6 // Temporary. RC_FAST not able to calibrate currently. Can be removed once IDF-5346 done.
         printf("Check LEDC_USE_RTC8M_CLK for a 100Hz signal\n");
         timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_RTC8M_CLK, 10, 100);
-#endif
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
         printf("Check LEDC_USE_XTAL_CLK for a 400Hz signal\n");
         timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_XTAL_CLK, 13, 400);

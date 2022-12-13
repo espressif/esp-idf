@@ -411,6 +411,18 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
 #endif
         break;
 #endif // SOC_TIMER_GROUP_SUPPORT_PLL_F40M
+#if SOC_TIMER_GROUP_SUPPORT_PLL_F80M
+    case GPTIMER_CLK_SRC_PLL_F80M:
+        counter_src_hz = 80 * 1000 * 1000;
+#if CONFIG_PM_ENABLE
+        sprintf(timer->pm_lock_name, "gptimer_%d_%d", timer->group->group_id, timer_id); // e.g. gptimer_0_0
+        // ESP32C6 PLL_F80M is available when SOC_ROOT_CLK switchs to XTAL
+        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, timer->pm_lock_name, &timer->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
+        ESP_LOGD(TAG, "install NO_LIGHT_SLEEP lock for timer (%d,%d)", timer->group->group_id, timer_id);
+#endif
+        break;
+#endif // SOC_TIMER_GROUP_SUPPORT_PLL_F80M
 #if SOC_TIMER_GROUP_SUPPORT_AHB
     case GPTIMER_CLK_SRC_AHB:
         // TODO: decide which kind of PM lock we should use for such clock

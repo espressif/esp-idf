@@ -1,5 +1,4 @@
 choice RTC_CLK_SRC
-    # TODO: IDF-5346
     prompt "RTC clock source"
     default RTC_CLK_SRC_INT_RC
     help
@@ -13,8 +12,8 @@ choice RTC_CLK_SRC
     config RTC_CLK_SRC_EXT_OSC
         bool "External 32kHz oscillator at 32K_XP pin"
         select ESP_SYSTEM_RTC_EXT_OSC
-    config RTC_CLK_SRC_INT_8MD256
-        bool "Internal 17.5MHz oscillator, divided by 256"
+    config RTC_CLK_SRC_INT_RC32K
+        bool "Internal 32kHz RC oscillator"
 endchoice
 
 config RTC_CLK_CAL_CYCLES

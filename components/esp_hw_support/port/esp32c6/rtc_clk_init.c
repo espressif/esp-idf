@@ -13,45 +13,41 @@
 #include "esp32c6/rom/uart.h"
 #include "soc/rtc.h"
 #include "esp_cpu.h"
-#include "hal/regi2c_ctrl_ll.h"
+#include "regi2c_ctrl.h"
+#include "soc/lp_clkrst_reg.h"
+#include "soc/regi2c_dig_reg.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
+#include "hal/clk_tree_ll.h"
 
 static const char *TAG = "rtc_clk_init";
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {
-    ESP_HW_LOGW(TAG, "rtc_clk_init() has not been implemented yet");
-#if 0 // TODO: IDF-5645
     rtc_cpu_freq_config_t old_config, new_config;
 
-    /* Set tuning parameters for 8M and 150k clocks.
+    /* Set tuning parameters for RC_FAST, RC_SLOW, and RC32K clocks.
      * Note: this doesn't attempt to set the clocks to precise frequencies.
      * Instead, we calibrate these clocks against XTAL frequency later, when necessary.
-     * - SCK_DCAP value controls tuning of 150k clock.
+     * - SCK_DCAP value controls tuning of RC_SLOW clock.
      *   The higher the value of DCAP is, the lower is the frequency.
-     * - CK8M_DFREQ value controls tuning of 8M clock.
+     * - CK8M_DFREQ value controls tuning of RC_FAST clock.
      *   CLK_8M_DFREQ constant gives the best temperature characteristics.
+     * - RC32K_DFREQ value controls tuning of RC32K clock.
      */
-    REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_SCK_DCAP, cfg.slow_clk_dcap);
-    REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DFREQ, cfg.clk_8m_dfreq);
-
-    /* Configure 150k clock division */
-    rtc_clk_divider_set(cfg.clk_rtc_clk_div);
-
-    /* Configure 8M clock division */
-    rtc_clk_8m_divider_set(cfg.clk_8m_clk_div);
-
-    /* Reset (disable) i2c internal bus for all regi2c registers */
-    regi2c_ctrl_ll_i2c_reset(); // TODO: This should be move out from rtc_clk_init
-    /* Enable the internal bus used to configure BBPLL */
-    regi2c_ctrl_ll_i2c_bbpll_enable(); // TODO: This should be moved to bbpll_set_config
+    REG_SET_FIELD(LP_CLKRST_FOSC_CNTL_REG, LP_CLKRST_FOSC_DFREQ, cfg.clk_8m_dfreq);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_SCK_DCAP, cfg.slow_clk_dcap);
+    REG_SET_FIELD(LP_CLKRST_RC32K_CNTL_REG, LP_CLKRST_RC32K_DFREQ, cfg.rc32k_dfreq);
 
     rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
     esp_rom_uart_tx_wait_idle(0);
     rtc_clk_xtal_freq_update(xtal_freq);
-    rtc_clk_apb_freq_update(xtal_freq * MHZ);
+
+    // On ESP32C6, MSPI source clock's default HS divider leads to 120MHz, which is unusable before calibration
+    // Therefore, before switching SOC_ROOT_CLK to HS, we need to set MSPI source clock HS divider to make it run at
+    // 80MHz after the switch. PLL = 480MHz, so divider is 6.
+    clk_ll_mspi_fast_set_hs_divider(6);
 
     /* Set CPU frequency */
     rtc_clk_cpu_freq_get_config(&old_config);
@@ -70,14 +66,14 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     // We will not power off RC_FAST in bootloader stage even if it is not being used as any
     // cpu / rtc_fast / rtc_slow clock sources, this is because RNG always needs it in the bootloader stage.
     bool need_rc_fast_en = true;
-    bool need_rc_fast_d256_en = false;
     if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
         rtc_clk_32k_enable(true);
-    } else if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
-        need_rc_fast_d256_en = true;
+    } else if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+        rtc_clk_32k_enable_external();
+    } else if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
+       rtc_clk_rc32k_enable(true);
     }
-    rtc_clk_8m_enable(need_rc_fast_en, need_rc_fast_d256_en);
+    rtc_clk_8m_enable(need_rc_fast_en);
     rtc_clk_fast_src_set(cfg.fast_clk_src);
     rtc_clk_slow_src_set(cfg.slow_clk_src);
-#endif
 }
