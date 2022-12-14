@@ -172,7 +172,6 @@ menu "LWIP"
     config LWIP_IPV4_NAPT
         bool "Enable NAT (new/experimental)"
         depends on LWIP_IP_FORWARD
-        select LWIP_L2_TO_L3_COPY
         default n
         help
             Enabling this option allows Network Address and Port Translation.
@@ -1094,6 +1093,11 @@ menu "LWIP"
     config LWIP_DNS_DEBUG
         bool "Enable DNS debug messages"
         depends on LWIP_DEBUG
+        default n
+
+    config LWIP_NAPT_DEBUG
+        bool "Enable NAPT debug messages"
+        depends on LWIP_DEBUG && LWIP_IPV4_NAPT
         default n
 
     config LWIP_BRIDGEIF_DEBUG
