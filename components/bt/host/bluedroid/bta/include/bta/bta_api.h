@@ -656,6 +656,7 @@ typedef UINT8 tBTA_SIG_STRENGTH_MASK;
 #define BTA_DM_BLE_DEV_UNPAIRED_EVT     29      /* BLE unpair event */
 #define BTA_DM_SP_KEY_REQ_EVT           30      /* Simple Pairing Passkey request */
 #define BTA_DM_PM_MODE_CHG_EVT          31      /* Mode changed event */
+#define BTA_DM_ACL_LINK_STAT_EVT        32      /* ACL connection status report event */
 
 typedef UINT8 tBTA_DM_SEC_EVT;
 
@@ -819,6 +820,33 @@ typedef struct {
 #endif
 } tBTA_DM_LINK_DOWN;
 
+enum {
+    BTA_ACL_LINK_STAT_CONN_CMPL,
+    BTA_ACL_LINK_STAT_DISCONN_CMPL
+};
+typedef UINT8 tBTA_ACL_LINK_STAT_EVT;
+
+typedef struct {
+    UINT8      status;             /* ACL link connection status */
+    UINT16     handle;             /* ACL connection handle */
+    BD_ADDR    bd_addr;            /* peer bluetooth address */
+} tBTA_DM_ACL_CONN_CMPL_STAT;
+
+typedef struct {
+    UINT8     reason;             /* ACL link disconnection reason */
+    UINT16    handle;             /* ACL connection handle */
+    BD_ADDR   bd_addr;            /* peer bluetooth address */
+} tBTA_DM_ACL_DISCONN_CMPL_STAT;
+
+/* Structure associated with BTA_DM_ACL_LINK_STAT_EVT */
+typedef struct {
+    tBTA_ACL_LINK_STAT_EVT            event;       /* ACL link event */
+    union {
+        tBTA_DM_ACL_CONN_CMPL_STAT     conn_cmpl;
+        tBTA_DM_ACL_DISCONN_CMPL_STAT  disconn_cmpl;
+    } link_act;
+} tBTA_DM_ACL_LINK_STAT;
+
 /* Structure associated with BTA_DM_ROLE_CHG_EVT */
 typedef struct {
     BD_ADDR         bd_addr;            /* BD address peer device. */
@@ -957,6 +985,7 @@ typedef union {
     tBTA_DM_AUTHORIZE           authorize;          /* Authorization request. */
     tBTA_DM_LINK_UP             link_up;            /* ACL connection up event */
     tBTA_DM_LINK_DOWN           link_down;          /* ACL connection down event */
+    tBTA_DM_ACL_LINK_STAT       acl_link_stat;      /* ACL link status event */
     tBTA_DM_BUSY_LEVEL          busy_level;         /* System busy level */
     tBTA_DM_SP_CFM_REQ          cfm_req;            /* user confirm request */
     tBTA_DM_SP_KEY_REQ          key_req;            /* user passkey request */
