@@ -183,12 +183,6 @@ examples/peripherals/timer_group/gptimer_capture_hc_sr04:
   disable:
     - if: SOC_TIMER_SUPPORT_ETM != 1
 
-examples/peripherals/timer_group/legacy_driver:
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
-
 examples/peripherals/touch_sensor:
   disable:
     - if: SOC_TOUCH_SENSOR_SUPPORTED != 1

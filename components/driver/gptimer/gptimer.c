@@ -26,6 +26,7 @@
 #include "esp_memory_utils.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
+#include "clk_ctrl_os.h"
 #include "gptimer_priv.h"
 
 static const char *TAG = "gptimer";
@@ -153,12 +154,23 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(timer->fsm == GPTIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
     gptimer_group_t *group = timer->group;
+    gptimer_clock_source_t clk_src = timer->clk_src;
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
     ESP_LOGD(TAG, "del timer (%d,%d)", group_id, timer_id);
     timer_hal_deinit(&timer->hal);
     // recycle memory resource
     ESP_RETURN_ON_ERROR(gptimer_destory(timer), TAG, "destory gptimer failed");
+
+    switch (clk_src) {
+#if SOC_TIMER_GROUP_SUPPORT_RC_FAST
+    case GPTIMER_CLK_SRC_RC_FAST:
+        periph_rtc_dig_clk8m_disable();
+        break;
+#endif // SOC_TIMER_GROUP_SUPPORT_RC_FAST
+    default:
+        break;
+    }
     return ESP_OK;
 }
 
@@ -179,6 +191,13 @@ esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, unsigned long long *valu
     portENTER_CRITICAL_SAFE(&timer->spinlock);
     *value = timer_hal_capture_and_get_counter_value(&timer->hal);
     portEXIT_CRITICAL_SAFE(&timer->spinlock);
+    return ESP_OK;
+}
+
+esp_err_t gptimer_get_resolution(gptimer_handle_t timer, uint32_t *out_resolution)
+{
+    ESP_RETURN_ON_FALSE(timer && out_resolution, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *out_resolution = timer->resolution_hz;
     return ESP_OK;
 }
 
@@ -404,7 +423,7 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
         counter_src_hz = 40 * 1000 * 1000;
 #if CONFIG_PM_ENABLE
         sprintf(timer->pm_lock_name, "gptimer_%d_%d", timer->group->group_id, timer_id); // e.g. gptimer_0_0
-        // PLL_F40M will be turned off when DFS switches CPU clock source to XTAL
+        // on ESP32C2, PLL_F40M is unavailable when CPU clock source switches from PLL to XTAL, so we're acquiring a "APB" lock here to prevent the clock switch
         ret  = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, timer->pm_lock_name, &timer->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create APB_FREQ_MAX lock failed");
         ESP_LOGD(TAG, "install APB_FREQ_MAX lock for timer (%d,%d)", timer->group->group_id, timer_id);
@@ -416,7 +435,7 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
         counter_src_hz = 80 * 1000 * 1000;
 #if CONFIG_PM_ENABLE
         sprintf(timer->pm_lock_name, "gptimer_%d_%d", timer->group->group_id, timer_id); // e.g. gptimer_0_0
-        // ESP32C6 PLL_F80M is available when SOC_ROOT_CLK switchs to XTAL
+        // ESP32C6 PLL_F80M is available when SOC_ROOT_CLK switches to XTAL
         ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, timer->pm_lock_name, &timer->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
         ESP_LOGD(TAG, "install NO_LIGHT_SLEEP lock for timer (%d,%d)", timer->group->group_id, timer_id);
@@ -434,6 +453,12 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
         counter_src_hz = esp_clk_xtal_freq();
         break;
 #endif // SOC_TIMER_GROUP_SUPPORT_XTAL
+#if SOC_TIMER_GROUP_SUPPORT_RC_FAST
+    case GPTIMER_CLK_SRC_RC_FAST:
+        periph_rtc_dig_clk8m_enable();
+        counter_src_hz = periph_rtc_dig_clk8m_get_freq();
+        break;
+#endif // SOC_TIMER_GROUP_SUPPORT_RC_FAST
     default:
         ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "clock source %d is not support", src_clk);
         break;
