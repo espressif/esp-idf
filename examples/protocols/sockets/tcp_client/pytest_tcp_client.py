@@ -1,28 +1,20 @@
-# This example code is in the Public Domain (or CC0 licensed, at your option.)
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
-# Unless required by applicable law or agreed to in writing, this
-# software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-# CONDITIONS OF ANY KIND, either express or implied.
-
-# -*- coding: utf-8 -*-
-import os
-import re
+import logging
 import socket
-import sys
 from threading import Event, Thread
 
-import ttfw_idf
+import pytest
 from common_test_methods import (get_env_config_variable, get_host_ip4_by_dest_ip, get_host_ip6_by_dest_ip,
                                  get_my_interface_by_dest_ip)
+from pytest_embedded import Dut
 
-# -----------  Config  ----------
 PORT = 3333
-# -------------------------------
 
 
-class TcpServer:
-
-    def __init__(self, port, family_addr, persist=False):
+class TcpServer(object):
+    def __init__(self, port, family_addr, persist=False):  # type: ignore
         self.port = port
         self.socket = socket.socket(family_addr, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -31,7 +23,7 @@ class TcpServer:
         self.persist = persist
         self.family_addr = family_addr
 
-    def __enter__(self):
+    def __enter__(self):  # type: ignore
         try:
             self.socket.bind(('', self.port))
         except socket.error as e:
@@ -44,7 +36,7 @@ class TcpServer:
         self.server_thread.start()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback) -> None:  # type: ignore
         if self.persist:
             sock = socket.socket(self.family_addr, socket.SOCK_STREAM)
             sock.connect(('localhost', self.port))
@@ -55,7 +47,7 @@ class TcpServer:
         self.server_thread.join()
         self.socket.close()
 
-    def run_server(self):
+    def run_server(self) -> None:
         while not self.shutdown.is_set():
             try:
                 conn, address = self.socket.accept()  # accept new connection
@@ -76,54 +68,49 @@ class TcpServer:
                 break
 
 
-@ttfw_idf.idf_example_test(env_tag='wifi_router')
-def test_examples_protocol_socket_tcpclient(env, extra_data):
-    """
-    steps:
-      1. join AP
-      2. have the board connect to the server
-      3. send and receive data
-    """
-    dut1 = env.get_dut('tcp_client', 'examples/protocols/sockets/tcp_client', dut_class=ttfw_idf.ESP32DUT)
-    # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, 'tcp_client.bin')
-    bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance('tcp_client_bin_size', '{}KB'.format(bin_size // 1024))
-
-    # start test
-    dut1.start_app()
-    if dut1.app.get_sdkconfig_config_value('CONFIG_EXAMPLE_WIFI_SSID_PWD_FROM_STDIN'):
-        dut1.expect('Please input ssid password:')
+@pytest.mark.esp32
+@pytest.mark.wifi_router
+def test_examples_tcp_client_ipv4(dut: Dut) -> None:
+    # Parse IP address of STA
+    logging.info('Waiting to connect with AP')
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        dut.expect('Please input ssid password:')
         env_name = 'wifi_router'
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
-        dut1.write(f'{ap_ssid} {ap_password}')
+        dut.write(f'{ap_ssid} {ap_password}')
+    ipv4 = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+    print(f'Connected with IPv4={ipv4}')
 
-    ipv4 = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]'), timeout=30)[0]
-    ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
-    ipv6 = dut1.expect(re.compile(r' IPv6 address: ({})'.format(ipv6_r)), timeout=30)[0]
-    print('Connected with IPv4={} and IPv6={}'.format(ipv4, ipv6))
-
-    my_interface = get_my_interface_by_dest_ip(ipv4)
     # test IPv4
     with TcpServer(PORT, socket.AF_INET):
         server_ip = get_host_ip4_by_dest_ip(ipv4)
         print('Connect tcp client to server IP={}'.format(server_ip))
-        dut1.write(server_ip)
-        dut1.expect(re.compile(r'OK: Message from ESP32'))
+        dut.write(server_ip)
+        dut.expect('OK: Message from ESP32')
+
+
+@pytest.mark.esp32
+@pytest.mark.wifi_router
+def test_examples_tcp_client_ipv6(dut: Dut) -> None:
+    # Parse IP address of STA
+    logging.info('Waiting to connect with AP')
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        dut.expect('Please input ssid password:')
+        env_name = 'wifi_router'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
+    ipv4 = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
+    ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)
+    ipv6 = dut.expect(ipv6_r, timeout=30)[0].decode()
+    print('Connected with IPv4={} and IPv6={}'.format(ipv4, ipv6))
+
     # test IPv6
+    my_interface = get_my_interface_by_dest_ip(ipv4)
     with TcpServer(PORT, socket.AF_INET6):
         server_ip = get_host_ip6_by_dest_ip(ipv6, my_interface)
         print('Connect tcp client to server IP={}'.format(server_ip))
-        dut1.write(server_ip)
-        dut1.expect(re.compile(r'OK: Message from ESP32'))
-
-
-if __name__ == '__main__':
-    if sys.argv[1:] and sys.argv[1].startswith('IPv'):     # if additional arguments provided:
-        # Usage: example_test.py <IPv4|IPv6>
-        family_addr = socket.AF_INET6 if sys.argv[1] == 'IPv6' else socket.AF_INET
-        with TcpServer(PORT, family_addr, persist=True) as s:
-            print(input('Press Enter stop the server...'))
-    else:
-        test_examples_protocol_socket_tcpclient()
+        dut.write(server_ip)
+        dut.expect('OK: Message from ESP32')
