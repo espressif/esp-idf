@@ -75,7 +75,7 @@ Flash Encryption Best Practices
 
     Please refer to the :doc:`DS Peripheral Guide <../api-reference/peripherals/ds>` for detailed documentation.
 
-.. only:: SOC_MEMPROT_SUPPORTED
+.. only:: SOC_MEMPROT_SUPPORTED or SOC_CPU_IDRAM_SPLIT_USING_PMP
 
     Memory Protection
     ~~~~~~~~~~~~~~~~~
