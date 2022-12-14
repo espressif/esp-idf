@@ -224,7 +224,7 @@ protected:
  *             - ESP_ERR_NVS_INVALID_NAME if namespace name doesn't satisfy constraints
  *             - other error codes from the underlying storage driver
  *
- * @return shared pointer of an nvs handle on success, an empty shared pointer otherwise
+ * @return unique pointer of an nvs handle on success, an empty unique pointer otherwise
  */
 std::unique_ptr<NVSHandle> open_nvs_handle_from_partition(const char *partition_name,
         const char *ns_name,
