@@ -183,6 +183,7 @@
   - "components/cmock/CMock"
   - "components/esp_phy/lib"
   - "components/esp_wifi/lib"
+  - "components/esp_coex/lib"
   - "components/ieee802154/lib"
   - "components/json/cJSON"
   - "components/lwip/lwip"

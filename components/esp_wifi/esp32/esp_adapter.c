@@ -40,10 +40,10 @@
 #include "os.h"
 #include "esp_smartconfig.h"
 #include "esp_coexist_internal.h"
-#include "esp_coexist_adapter.h"
 #include "dport_access.h"
 #include "esp_rom_sys.h"
 #include "esp32/rom/ets_sys.h"
+#include "esp_modem_wrapper.h"
 
 #define TAG "esp_adapter"
 
@@ -196,46 +196,9 @@ static void set_isr_wrapper(int32_t n, void *f, void *arg)
     xt_set_interrupt_handler(n, (xt_handler)f, arg);
 }
 
-static void * spin_lock_create_wrapper(void)
-{
-    portMUX_TYPE tmp = portMUX_INITIALIZER_UNLOCKED;
-    void *mux = heap_caps_malloc(sizeof(portMUX_TYPE), MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
-
-    if (mux) {
-        memcpy(mux,&tmp,sizeof(portMUX_TYPE));
-        return mux;
-    }
-    return NULL;
-}
-
-static uint32_t IRAM_ATTR wifi_int_disable_wrapper(void *wifi_int_mux)
-{
-    if (xPortInIsrContext()) {
-        portENTER_CRITICAL_ISR(wifi_int_mux);
-    } else {
-        portENTER_CRITICAL(wifi_int_mux);
-    }
-
-    return 0;
-}
-
-static void IRAM_ATTR wifi_int_restore_wrapper(void *wifi_int_mux, uint32_t tmp)
-{
-    if (xPortInIsrContext()) {
-        portEXIT_CRITICAL_ISR(wifi_int_mux);
-    } else {
-        portEXIT_CRITICAL(wifi_int_mux);
-    }
-}
-
 static bool IRAM_ATTR is_from_isr_wrapper(void)
 {
     return !xPortCanYield();
-}
-
-static void IRAM_ATTR task_yield_from_isr_wrapper(void)
-{
-    portYIELD_FROM_ISR();
 }
 
 static void * semphr_create_wrapper(uint32_t max, uint32_t init)
@@ -296,82 +259,6 @@ static int32_t semphr_give_wrapper(void *semphr)
 {
     return (int32_t)xSemaphoreGive(semphr);
 }
-
-
-static void *internal_semphr_create_wrapper(uint32_t max, uint32_t init)
-{
-    wifi_static_queue_t *semphr = heap_caps_calloc(1, sizeof(wifi_static_queue_t), MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
-    if (!semphr) {
-        return NULL;
-    }
-
-#ifdef CONFIG_SPIRAM_USE_MALLOC
-    semphr->storage = heap_caps_calloc(1, sizeof(StaticSemaphore_t), MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
-    if (!semphr->storage) {
-        goto _error;
-    }
-
-    semphr->handle = xSemaphoreCreateCountingStatic(max, init, semphr->storage);
-    if (!semphr->handle) {
-        goto _error;
-    }
-    return (void *)semphr;
-
-_error:
-    if (semphr) {
-        if (semphr->storage) {
-            free(semphr->storage);
-        }
-
-        free(semphr);
-    }
-    return NULL;
-#else
-    semphr->handle = xSemaphoreCreateCounting(max, init);
-    return (void *)semphr;
-#endif
-}
-
-void internal_semphr_delete_wrapper(void *semphr)
-{
-    wifi_static_queue_t *semphr_item = (wifi_static_queue_t *)semphr;
-    if (semphr_item) {
-        if (semphr_item->handle) {
-            vSemaphoreDelete(semphr_item->handle);
-        }
-#ifdef CONFIG_SPIRAM_USE_MALLOC
-        if (semphr_item->storage) {
-            free(semphr_item->storage);
-        }
-#endif
-        free(semphr_item);
-    }
-}
-
-static int32_t IRAM_ATTR internal_semphr_take_from_isr_wrapper(void *semphr, void *hptw)
-{
-    return (int32_t)xSemaphoreTakeFromISR(((wifi_static_queue_t *)semphr)->handle, hptw);
-}
-
-static int32_t IRAM_ATTR internal_semphr_give_from_isr_wrapper(void *semphr, void *hptw)
-{
-    return (int32_t)xSemaphoreGiveFromISR(((wifi_static_queue_t *)semphr)->handle, hptw);
-}
-
-static int32_t internal_semphr_take_wrapper(void *semphr, uint32_t block_time_tick)
-{
-    if (block_time_tick == OSI_FUNCS_TIME_BLOCKING) {
-        return (int32_t)xSemaphoreTake(((wifi_static_queue_t *)semphr)->handle, portMAX_DELAY);
-    } else {
-        return (int32_t)xSemaphoreTake(((wifi_static_queue_t *)semphr)->handle, block_time_tick);
-    }
-}
-
-static int32_t internal_semphr_give_wrapper(void *semphr)
-{
-    return (int32_t)xSemaphoreGive(((wifi_static_queue_t *)semphr)->handle);
-}
-
 
 static void * recursive_mutex_create_wrapper(void)
 {
@@ -493,26 +380,6 @@ static void IRAM_ATTR timer_arm_wrapper(void *timer, uint32_t tmout, bool repeat
     ets_timer_arm(timer, tmout, repeat);
 }
 
-static void IRAM_ATTR timer_disarm_wrapper(void *timer)
-{
-    ets_timer_disarm(timer);
-}
-
-static void timer_done_wrapper(void *ptimer)
-{
-    ets_timer_done(ptimer);
-}
-
-static void timer_setfn_wrapper(void *ptimer, void *pfunction, void *parg)
-{
-    ets_timer_setfn(ptimer, pfunction, parg);
-}
-
-static void IRAM_ATTR timer_arm_us_wrapper(void *ptimer, uint32_t us, bool repeat)
-{
-    ets_timer_arm_us(ptimer, us, repeat);
-}
-
 static void wifi_reset_mac_wrapper(void)
 {
     periph_module_reset(PERIPH_WIFI_MODULE);
@@ -531,11 +398,6 @@ static void wifi_clock_disable_wrapper(void)
 static int get_time_wrapper(void *t)
 {
     return os_get_time(t);
-}
-
-static void * IRAM_ATTR malloc_internal_wrapper(size_t size)
-{
-    return heap_caps_malloc(size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
 }
 
 static void * IRAM_ATTR realloc_internal_wrapper(void *ptr, size_t size)
@@ -725,11 +587,6 @@ static void IRAM_ATTR esp_empty_wrapper(void)
 
 }
 
-int IRAM_ATTR coex_is_in_isr_wrapper(void)
-{
-    return !xPortCanYield();
-}
-
 wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._version = ESP_WIFI_OS_ADAPTER_VERSION,
     ._env_is_chip = env_is_chip_wrapper,
@@ -849,28 +706,4 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_schm_process_restart = coex_schm_process_restart_wrapper,
     ._coex_schm_register_cb = coex_schm_register_cb_wrapper,
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
-};
-
-coex_adapter_funcs_t g_coex_adapter_funcs = {
-    ._version = COEX_ADAPTER_VERSION,
-    ._spin_lock_create = spin_lock_create_wrapper,
-    ._spin_lock_delete = free,
-    ._int_disable = wifi_int_disable_wrapper,
-    ._int_enable = wifi_int_restore_wrapper,
-    ._task_yield_from_isr = task_yield_from_isr_wrapper,
-    ._semphr_create = internal_semphr_create_wrapper,
-    ._semphr_delete = internal_semphr_delete_wrapper,
-    ._semphr_take_from_isr = internal_semphr_take_from_isr_wrapper,
-    ._semphr_give_from_isr = internal_semphr_give_from_isr_wrapper,
-    ._semphr_take = internal_semphr_take_wrapper,
-    ._semphr_give = internal_semphr_give_wrapper,
-    ._is_in_isr = coex_is_in_isr_wrapper,
-    ._malloc_internal =  malloc_internal_wrapper,
-    ._free = free,
-    ._esp_timer_get_time = esp_timer_get_time,
-    ._timer_disarm = timer_disarm_wrapper,
-    ._timer_done = timer_done_wrapper,
-    ._timer_setfn = timer_setfn_wrapper,
-    ._timer_arm_us = timer_arm_us_wrapper,
-    ._magic = COEX_ADAPTER_MAGIC,
 };

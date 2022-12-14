@@ -135,12 +135,6 @@ entries:
     if ESP_WIFI_RX_IRAM_OPT || ESP_WIFI_SLP_IRAM_OPT:
         * (wifi_slp_rx_iram)
 
-[mapping:coexist]
-archive: libcoexist.a
-entries:
-    if ESP_WIFI_SLP_IRAM_OPT = y:
-        * (wifi_slp_iram)
-
 [mapping:esp_wifi]
 archive: libesp_wifi.a
 entries:

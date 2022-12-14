@@ -6,18 +6,6 @@ menu "Wi-Fi"
         bool
         default y if SOC_WIFI_SUPPORTED
 
-    config ESP_WIFI_SW_COEXIST_ENABLE
-        bool "Software controls WiFi/Bluetooth coexistence"
-        depends on ESP_WIFI_ENABLED && BT_ENABLED
-        default y
-        select ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
-        help
-            If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
-            Recommended for heavy traffic scenarios. Both coexistence configuration options are
-            automatically managed, no user intervention is required.
-            If only Bluetooth is used, it is recommended to disable this option to reduce binary file
-            size.
-
     config ESP_WIFI_STATIC_RX_BUFFER_NUM
         int "Max number of WiFi static RX buffers"
         range 2 25 if !SOC_WIFI_HE_SUPPORT
@@ -322,18 +310,6 @@ menu "Wi-Fi"
         help
             Select this option to enable power_management for station when disconnected.
             Chip will do modem-sleep when rf module is not in use any more.
-
-    config ESP_WIFI_EXTERNAL_COEXIST_ENABLE
-        bool "WiFi External Coexistence"
-        default n
-        depends on (!(BT_ENABLED||NIMBLE_ENABLED)&&(!IDF_TARGET_ESP32))
-        help
-            If enabled, HW External coexistence arbitration is managed by GPIO pins.
-            It can support three types of wired combinations so far which are 1-wired/2-wired/3-wired.
-            User can select GPIO pins in application code with configure interfaces.
-
-            This function depends on BT-off
-            because currently we do not support external coex and internal coex simultaneously.
 
     config ESP_WIFI_GCMP_SUPPORT
         bool "WiFi GCMP Support(GCMP128 and GCMP256)"

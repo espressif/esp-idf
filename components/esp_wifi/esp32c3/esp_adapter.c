@@ -42,8 +42,8 @@
 #include "os.h"
 #include "esp_smartconfig.h"
 #include "esp_coexist_internal.h"
-#include "esp_coexist_adapter.h"
 #include "esp32c3/rom/ets_sys.h"
+#include "esp_modem_wrapper.h"
 
 #define TAG "esp_adapter"
 
@@ -179,21 +179,6 @@ static bool IRAM_ATTR is_from_isr_wrapper(void)
     return !xPortCanYield();
 }
 
-static void IRAM_ATTR task_yield_from_isr_wrapper(void)
-{
-    portYIELD_FROM_ISR();
-}
-
-static void * semphr_create_wrapper(uint32_t max, uint32_t init)
-{
-    return (void *)xSemaphoreCreateCounting(max, init);
-}
-
-static void semphr_delete_wrapper(void *semphr)
-{
-    vSemaphoreDelete(semphr);
-}
-
 static void wifi_thread_semphr_free(void* data)
 {
     SemaphoreHandle_t *sem = (SemaphoreHandle_t*)(data);
@@ -227,30 +212,6 @@ static void * wifi_thread_semphr_get_wrapper(void)
 
     ESP_LOGV(TAG, "thread sem get: sem=%p", sem);
     return (void*)sem;
-}
-
-static int32_t IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw)
-{
-    return (int32_t)xSemaphoreTakeFromISR(semphr, hptw);
-}
-
-static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw)
-{
-    return (int32_t)xSemaphoreGiveFromISR(semphr, hptw);
-}
-
-static int32_t semphr_take_wrapper(void *semphr, uint32_t block_time_tick)
-{
-    if (block_time_tick == OSI_FUNCS_TIME_BLOCKING) {
-        return (int32_t)xSemaphoreTake(semphr, portMAX_DELAY);
-    } else {
-        return (int32_t)xSemaphoreTake(semphr, block_time_tick);
-    }
-}
-
-static int32_t semphr_give_wrapper(void *semphr)
-{
-    return (int32_t)xSemaphoreGive(semphr);
 }
 
 static void * recursive_mutex_create_wrapper(void)
@@ -373,26 +334,6 @@ static void IRAM_ATTR timer_arm_wrapper(void *timer, uint32_t tmout, bool repeat
     ets_timer_arm(timer, tmout, repeat);
 }
 
-static void IRAM_ATTR timer_disarm_wrapper(void *timer)
-{
-    ets_timer_disarm(timer);
-}
-
-static void timer_done_wrapper(void *ptimer)
-{
-    ets_timer_done(ptimer);
-}
-
-static void timer_setfn_wrapper(void *ptimer, void *pfunction, void *parg)
-{
-    ets_timer_setfn(ptimer, pfunction, parg);
-}
-
-static void IRAM_ATTR timer_arm_us_wrapper(void *ptimer, uint32_t us, bool repeat)
-{
-    ets_timer_arm_us(ptimer, us, repeat);
-}
-
 static void wifi_reset_mac_wrapper(void)
 {
     periph_module_reset(PERIPH_WIFI_MODULE);
@@ -438,11 +379,6 @@ static uint32_t esp_clk_slowclk_cal_get_wrapper(void)
     } else {
         return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
     }
-}
-
-static void * IRAM_ATTR malloc_internal_wrapper(size_t size)
-{
-    return heap_caps_malloc(size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
 }
 
 static void * IRAM_ATTR realloc_internal_wrapper(void *ptr, size_t size)
@@ -777,24 +713,4 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_schm_process_restart = coex_schm_process_restart_wrapper,
     ._coex_schm_register_cb = coex_schm_register_cb_wrapper,
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
-};
-
-coex_adapter_funcs_t g_coex_adapter_funcs = {
-    ._version = COEX_ADAPTER_VERSION,
-    ._task_yield_from_isr = task_yield_from_isr_wrapper,
-    ._semphr_create = semphr_create_wrapper,
-    ._semphr_delete = semphr_delete_wrapper,
-    ._semphr_take_from_isr = semphr_take_from_isr_wrapper,
-    ._semphr_give_from_isr = semphr_give_from_isr_wrapper,
-    ._semphr_take = semphr_take_wrapper,
-    ._semphr_give = semphr_give_wrapper,
-    ._is_in_isr = xPortInIsrContext,
-    ._malloc_internal =  malloc_internal_wrapper,
-    ._free = free,
-    ._esp_timer_get_time = esp_timer_get_time,
-    ._timer_disarm = timer_disarm_wrapper,
-    ._timer_done = timer_done_wrapper,
-    ._timer_setfn = timer_setfn_wrapper,
-    ._timer_arm_us = timer_arm_us_wrapper,
-    ._magic = COEX_ADAPTER_MAGIC,
 };
