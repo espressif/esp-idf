@@ -1,4 +1,5 @@
 # Python package requirements for gdbgui support ESP-IDF.
 # This feature can be enabled by running "install.{sh,bat,ps1,fish} --enable-gdbgui"
 
-gdbgui
+# gdbgui is not supported on Python 3.11. See https://github.com/cs01/gdbgui/issues/447
+gdbgui; python_version < "3.11"
