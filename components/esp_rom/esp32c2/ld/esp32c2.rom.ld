@@ -1138,7 +1138,6 @@ r_ble_lll_conn_get_next_sched_time = 0x40001524;
 r_ble_lll_conn_halt = 0x4000152c;
 r_ble_lll_conn_master_common_init = 0x40001530;
 r_ble_lll_conn_master_new = 0x40001534;
-r_ble_lll_conn_module_deinit = 0x40001538;
 r_ble_lll_conn_module_reset = 0x40001540;
 r_ble_lll_conn_pre_process = 0x40001548;
 r_ble_lll_conn_process_acked_pdu = 0x4000154c;

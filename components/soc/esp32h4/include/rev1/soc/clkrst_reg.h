@@ -171,12 +171,12 @@ extern "C" {
 #define SYSTEM_BLE_SEC_CLK_EN_M  (BIT(17))
 #define SYSTEM_BLE_SEC_CLK_EN_V  0x1
 #define SYSTEM_BLE_SEC_CLK_EN_S  17
-/* SYSTEM_BLE_SEC_AAR_CLK_EN : R/W ;bitpos:[16] ;default: 1'b0 ; */
+/* SYSTEM_BLE_SEC_BAH_CLK_EN : R/W ;bitpos:[16] ;default: 1'b0 ; */
 /*description: */
-#define SYSTEM_BLE_SEC_AAR_CLK_EN  (BIT(16))
-#define SYSTEM_BLE_SEC_AAR_CLK_EN_M  (BIT(16))
-#define SYSTEM_BLE_SEC_AAR_CLK_EN_V  0x1
-#define SYSTEM_BLE_SEC_AAR_CLK_EN_S  16
+#define SYSTEM_BLE_SEC_BAH_CLK_EN  (BIT(16))
+#define SYSTEM_BLE_SEC_BAH_CLK_EN_M  (BIT(16))
+#define SYSTEM_BLE_SEC_BAH_CLK_EN_V  0x1
+#define SYSTEM_BLE_SEC_BAH_CLK_EN_S  16
 /* SYSTEM_BLE_SEC_CCM_CLK_EN : R/W ;bitpos:[15] ;default: 1'b0 ; */
 /*description: */
 #define SYSTEM_BLE_SEC_CCM_CLK_EN  (BIT(15))
@@ -293,12 +293,12 @@ extern "C" {
 #define SYSTEM_BLE_SEC_RST_M  (BIT(18))
 #define SYSTEM_BLE_SEC_RST_V  0x1
 #define SYSTEM_BLE_SEC_RST_S  18
-/* SYSTEM_BLE_SEC_AAR_RST : R/W ;bitpos:[17] ;default: 1'b0 ; */
+/* SYSTEM_BLE_SEC_BAH_RST : R/W ;bitpos:[17] ;default: 1'b0 ; */
 /*description: */
-#define SYSTEM_BLE_SEC_AAR_RST  (BIT(17))
-#define SYSTEM_BLE_SEC_AAR_RST_M  (BIT(17))
-#define SYSTEM_BLE_SEC_AAR_RST_V  0x1
-#define SYSTEM_BLE_SEC_AAR_RST_S  17
+#define SYSTEM_BLE_SEC_BAH_RST  (BIT(17))
+#define SYSTEM_BLE_SEC_BAH_RST_M  (BIT(17))
+#define SYSTEM_BLE_SEC_BAH_RST_V  0x1
+#define SYSTEM_BLE_SEC_BAH_RST_S  17
 /* SYSTEM_BLE_SEC_CCM_RST : R/W ;bitpos:[16] ;default: 1'b0 ; */
 /*description: */
 #define SYSTEM_BLE_SEC_CCM_RST  (BIT(16))
