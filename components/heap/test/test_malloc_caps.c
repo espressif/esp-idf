@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+/*
  Tests for the capabilities-based memory allocator.
 */
 
@@ -13,9 +18,6 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5167
 #ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 TEST_CASE("Capabilities allocator test", "[heap]")
 {
@@ -106,8 +108,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
     free(m1);
     printf("Done.\n");
 }
-#endif
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 TEST_CASE("IRAM_8BIT capability test", "[heap]")
@@ -170,11 +171,10 @@ TEST_CASE("heap_caps metadata test", "[heap]")
     TEST_ASSERT(after.minimum_free_bytes < original.total_free_bytes);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5167
 /* Small function runs from IRAM to check that malloc/free/realloc
    all work OK when cache is disabled...
 */
+#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 static IRAM_ATTR __attribute__((noinline)) bool iram_malloc_test(void)
 {
     spi_flash_guard_get()->start(); // Disables flash cache
@@ -196,7 +196,7 @@ TEST_CASE("heap_caps_xxx functions work with flash cache disabled", "[heap]")
 {
     TEST_ASSERT( iram_malloc_test() );
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 
 #ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS
 TEST_CASE("When enabled, allocation operation failure generates an abort", "[heap][reset=abort,SW_CPU_RESET]")
