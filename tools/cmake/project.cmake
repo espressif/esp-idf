@@ -44,7 +44,7 @@ if(NOT "$ENV{IDF_COMPONENT_MANAGER}" EQUAL "0")
     idf_build_set_property(IDF_COMPONENT_MANAGER 1)
 endif()
 # Set component manager interface version
-idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 1)
+idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 2)
 
 #
 # Get the project version from either a version file or the Git revision. This is passed

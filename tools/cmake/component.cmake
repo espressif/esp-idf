@@ -237,6 +237,7 @@ function(__component_get_requirements)
             "-m"
             "idf_component_manager.prepare_components"
             "--project_dir=${project_dir}"
+            "--lock_path=${DEPENDENCIES_LOCK}"
             "--interface_version=${component_manager_interface_version}"
             "inject_requirements"
             "--idf_path=${idf_path}"
