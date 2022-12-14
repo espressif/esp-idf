@@ -68,6 +68,15 @@ typedef struct {
 #define uart_hal_ena_intr_mask(hal, mask)  uart_ll_ena_intr_mask((hal)->dev, mask)
 
 /**
+ * @brief Get the UART raw interrupt status
+ *
+ * @param  hal Context of the HAL layer
+ *
+ * @return UART raw interrupt status
+ */
+#define uart_hal_get_intraw_mask(hal) uart_ll_get_intraw_mask((hal)->dev)
+
+/**
  * @brief Get the UART interrupt status
  *
  * @param  hal Context of the HAL layer

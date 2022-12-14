@@ -799,6 +799,9 @@ static uint32_t UART_ISR_ATTR uart_enable_tx_write_fifo(uart_port_t uart_num, co
     UART_ENTER_CRITICAL_SAFE(&(uart_context[uart_num].spinlock));
     if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
         uart_hal_set_rts(&(uart_context[uart_num].hal), 0);
+        // If any new things are written to fifo, then we can always clear the previous TX_DONE interrupt bit (if it was set)
+        // Old TX_DONE bit might reset the RTS, leading new tx transmission failure for rs485 mode
+        uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
         uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
     }
     uart_hal_write_txfifo(&(uart_context[uart_num].hal), pbuf, len, &sent_len);
@@ -1121,13 +1124,32 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
     if (res == pdFALSE) {
         return ESP_ERR_TIMEOUT;
     }
+
+    // Check the enable status of TX_DONE: If already enabled, then let the isr handle the status bit;
+    // If not enabled, then make sure to clear the status bit before enabling the TX_DONE interrupt bit
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+    bool is_rs485_mode = UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX);
+    bool disabled = !(uart_hal_get_intr_ena_status(&(uart_context[uart_num].hal)) & UART_INTR_TX_DONE);
+    // For RS485 mode, TX_DONE interrupt is enabled for every tx transmission, so there shouldn't be a case of
+    // interrupt not enabled but raw bit is set.
+    assert(!(is_rs485_mode &&
+             disabled &&
+             uart_hal_get_intraw_mask(&(uart_context[uart_num].hal)) & UART_INTR_TX_DONE));
+    // If decided to register for the TX_DONE event, then we should clear any possible old tx transmission status.
+    // The clear operation of RS485 mode should only be handled in isr or when writing to tx fifo.
+    if (disabled && !is_rs485_mode) {
+        uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
+    }
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     xSemaphoreTake(p_uart_obj[uart_num]->tx_done_sem, 0);
+    // FSM status register update comes later than TX_DONE interrupt raw bit raise
+    // The maximum time takes for FSM status register to update is (6 APB clock cycles + 3 UART core clock cycles)
+    // Therefore, to avoid the situation of TX_DONE bit being cleared but FSM didn't be recognized as IDLE (which
+    // would lead to timeout), a delay of 2us is added in between.
+    esp_rom_delay_us(2);
     if (uart_hal_is_tx_idle(&(uart_context[uart_num].hal))) {
         xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
         return ESP_OK;
-    }
-    if (!UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
-        uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
     }
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
