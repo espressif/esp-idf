@@ -4,7 +4,7 @@
 import logging
 import os
 import socket
-from typing import Any
+from typing import Any, List
 
 import netifaces
 import yaml
@@ -26,10 +26,23 @@ $IDF_PATH/EnvConfig.yml:
 
 
 def get_host_ip_by_interface(interface_name: str, ip_type: int = netifaces.AF_INET) -> str:
-    for _addr in netifaces.ifaddresses(interface_name)[ip_type]:
-        host_ip = _addr['addr'].replace('%{}'.format(interface_name), '')
-        assert isinstance(host_ip, str)
-        return host_ip
+    if ip_type == netifaces.AF_INET:
+        for _addr in netifaces.ifaddresses(interface_name)[ip_type]:
+            host_ip = _addr['addr'].replace('%{}'.format(interface_name), '')
+            assert isinstance(host_ip, str)
+            return host_ip
+    elif ip_type == netifaces.AF_INET6:
+        ip6_addrs: List[str] = []
+        for _addr in netifaces.ifaddresses(interface_name)[ip_type]:
+            host_ip = _addr['addr'].replace('%{}'.format(interface_name), '')
+            assert isinstance(host_ip, str)
+            # prefer to use link local address due to example settings
+            if host_ip.startswith('FE80::'):
+                ip6_addrs.insert(0, host_ip)
+            else:
+                ip6_addrs.append(host_ip)
+        if ip6_addrs:
+            return ip6_addrs[0]
     return ''
 
 
@@ -38,6 +51,17 @@ def get_host_ip4_by_dest_ip(dest_ip: str = '') -> str:
         dest_ip = '8.8.8.8'
     s1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s1.connect((dest_ip, 80))
+    host_ip = s1.getsockname()[0]
+    s1.close()
+    assert isinstance(host_ip, str)
+    print(f'Using host ip: {host_ip}')
+    return host_ip
+
+
+def get_host_ip6_by_dest_ip(dest_ip: str, interface: str) -> str:
+    addr_info = socket.getaddrinfo(f'{dest_ip}%{interface}', 80, socket.AF_INET6, socket.SOCK_DGRAM)
+    s1 = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+    s1.connect(addr_info[0][-1])
     host_ip = s1.getsockname()[0]
     s1.close()
     assert isinstance(host_ip, str)
