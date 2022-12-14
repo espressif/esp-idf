@@ -603,14 +603,21 @@ void vPortSetStackWatchpoint( void *pxStackStart )
 // -------------------- Co-Processor -----------------------
 
 #if XCHAL_CP_NUM > 0
-void _xt_coproc_release(volatile void *coproc_sa_base);
+void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xTargetCoreID);
 
 void vPortCleanUpCoprocArea(void *pvTCB)
 {
-    /* Get a pointer to the task's coprocessor save area */
     UBaseType_t uxCoprocArea;
+    BaseType_t xTargetCoreID;
+
+    /* Get a pointer to the task's coprocessor save area */
     uxCoprocArea = ( UBaseType_t ) ( ( ( StaticTask_t * ) pvTCB )->pxDummy8 );  /* Get TCB_t.pxEndOfStack */
     uxCoprocArea = STACKPTR_ALIGN_DOWN(16, uxCoprocArea - XT_CP_SIZE);
-    _xt_coproc_release( ( void * ) uxCoprocArea );
+
+    /* Get xTargetCoreID from the TCB.xCoreID */
+    xTargetCoreID = ( ( StaticTask_t * ) pvTCB )->xDummyCoreID;
+
+    /* If task has live floating point registers somewhere, release them */
+    _xt_coproc_release( (void *)uxCoprocArea, xTargetCoreID );
 }
 #endif /* XCHAL_CP_NUM > 0 */

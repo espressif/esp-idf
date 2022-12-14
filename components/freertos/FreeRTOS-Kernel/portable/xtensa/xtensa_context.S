@@ -397,17 +397,16 @@ May be called when a thread terminates or completes but does not delete
 the co-proc save area, to avoid the exception handler having to save the
 thread's co-proc state before another thread can use it (optimization).
 
-Needs to be called on the processor the thread was running on. Unpinned threads
-won't have an entry here because they get pinned as soon they use a coprocessor.
-
 Entry Conditions:
     A2  = Pointer to base of co-processor state save area.
+    A3  = Core ID of the task (must be pinned) who's coproc ownership we are
+          releasing.
 
 Exit conditions:
     None.
 
 Obeys ABI conventions per prototype:
-    void _xt_coproc_release(void * coproc_sa_base)
+    void _xt_coproc_release(void * coproc_sa_base, BaseType_t xTargetCoreID)
 
 *******************************************************************************/
 
@@ -420,17 +419,21 @@ Obeys ABI conventions per prototype:
     .align  4
 _xt_coproc_release:
     ENTRY0                                  /* a2 = base of save area */
+                                            /* a3 = xTargetCoreID */
 
-    getcoreid a5
-    movi    a3, XCHAL_CP_MAX << 2
-    mull    a5, a5, a3
-    movi    a3, _xt_coproc_owner_sa         /* a3 = base of owner array */
-    add     a3, a3, a5
-
-    addi    a4, a3, XCHAL_CP_MAX << 2       /* a4 = top+1 of owner array */
+    movi    a4, XCHAL_CP_MAX << 2           /* a4 = size of an owner array */
+    mull    a4, a3, a4                      /* a4 = offset to the owner array of the target core */
+    movi    a3, _xt_coproc_owner_sa         /* a3 = base of all owner arrays */
+    add     a3, a3, a4                      /* a3 = base of owner array of the target core */
+    addi    a4, a3, XCHAL_CP_MAX << 2       /* a4 = top+1 of owner array of the target core */
     movi    a5, 0                           /* a5 = 0 (unowned) */
 
     rsil    a6, XCHAL_EXCM_LEVEL            /* lock interrupts */
+#if portNUM_PROCESSORS > 1
+    /* If multicore, we must also acquire the _xt_coproc_owner_sa_lock spinlock
+     * to ensure thread safe access of _xt_coproc_owner_sa between cores. */
+    spinlock_take a7 a8 _xt_coproc_owner_sa_lock
+#endif /* portNUM_PROCESSORS > 1 */
 
 1:  l32i    a7, a3, 0                       /* a7 = owner at a3 */
     bne     a2, a7, 2f                      /* if (coproc_sa_base == owner) */
@@ -438,7 +441,11 @@ _xt_coproc_release:
 2:  addi    a3, a3, 1<<2                    /* a3 = next entry in owner array */
     bltu    a3, a4, 1b                      /* repeat until end of array */
 
-3:  wsr     a6, PS                          /* restore interrupts */
+#if portNUM_PROCESSORS > 1
+    /* Release previously taken spinlock */
+    spinlock_release a7 a8 _xt_coproc_owner_sa_lock
+#endif /* portNUM_PROCESSORS > 1 */
+    wsr     a6, PS                          /* restore interrupts */
 
     RET0
 

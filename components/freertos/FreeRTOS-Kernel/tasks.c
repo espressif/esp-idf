@@ -1415,18 +1415,8 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
              * not return. */
             uxTaskNumber++;
 
-            /*
-             * We cannot immediately a task that is
-             * - Currently running on either core
-             * - If the task is not currently running but is pinned to the other (due to FPU cleanup)
-             * Todo: Allow deletion of tasks pinned to other core (IDF-5803)
-             */
-            #if ( configNUM_CORES > 1 )
-                xFreeNow = ( taskIS_CURRENTLY_RUNNING( pxTCB ) || ( pxTCB->xCoreID == !xCurCoreID ) ) ? pdFALSE : pdTRUE;
-            #else
-                xFreeNow = ( taskIS_CURRENTLY_RUNNING( pxTCB ) ) ? pdFALSE : pdTRUE;
-            #endif /* configNUM_CORES > 1 */
-
+            /* We cannot free the task immediately if it is currently running (on either core) */
+            xFreeNow = ( taskIS_CURRENTLY_RUNNING( pxTCB ) ) ? pdFALSE : pdTRUE;
             if( xFreeNow == pdFALSE )
             {
                 /* A task is deleting itself.  This cannot complete within the
@@ -1455,7 +1445,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
                 #if ( configNUM_CORES > 1 )
                     if( taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, !xCurCoreID ) )
                     {
-                        /* SMP case of deleting a task running on a different core. Same issue
+                        /* SMP case of deleting a task currently running on a different core. Same issue
                          * as a task deleting itself, but we need to send a yield to this task now
                          * before we release xKernelLock.
                          *
@@ -4505,71 +4495,73 @@ static void prvInitialiseTaskLists( void )
 }
 /*-----------------------------------------------------------*/
 
+
 static void prvCheckTasksWaitingTermination( void )
 {
     /** THIS FUNCTION IS CALLED FROM THE RTOS IDLE TASK **/
 
     #if ( INCLUDE_vTaskDelete == 1 )
         {
-            BaseType_t xListIsEmpty;
-            BaseType_t core = xPortGetCoreID();
+            TCB_t * pxTCB;
 
-            /* uxDeletedTasksWaitingCleanUp is used to prevent taskENTER_CRITICAL( &xKernelLock )
+            /* uxDeletedTasksWaitingCleanUp is used to prevent taskENTER_CRITICAL()
              * being called too often in the idle task. */
             while( uxDeletedTasksWaitingCleanUp > ( UBaseType_t ) 0U )
             {
-                TCB_t * pxTCB = NULL;
-
-                taskENTER_CRITICAL( &xKernelLock );
-                {
-                    xListIsEmpty = listLIST_IS_EMPTY( &xTasksWaitingTermination );
-
-                    if( xListIsEmpty == pdFALSE )
+                #if ( configNUM_CORES > 1 )
+                    pxTCB = NULL;
+                    taskENTER_CRITICAL( &xKernelLock );
                     {
-                        /* We only want to kill tasks that ran on this core because e.g. _xt_coproc_release needs to
-                         * be called on the core the process is pinned on, if any */
-                        ListItem_t * target = listGET_HEAD_ENTRY( &xTasksWaitingTermination );
-
-                        for( ; target != listGET_END_MARKER( &xTasksWaitingTermination ); target = listGET_NEXT( target ) ) /*Walk the list */
+                        /* List may have already been cleared by the other core. Check again */
+                        if ( listLIST_IS_EMPTY( &xTasksWaitingTermination ) == pdFALSE )
                         {
-                            TCB_t * tgt_tcb = ( TCB_t * ) listGET_LIST_ITEM_OWNER( target );
-                            int affinity = tgt_tcb->xCoreID;
-
-                            /*Self deleting tasks are added to Termination List before they switch context. Ensure they aren't still currently running */
-                            if( ( pxCurrentTCB[ core ] == tgt_tcb ) || ( ( configNUM_CORES > 1 ) && ( pxCurrentTCB[ !core ] == tgt_tcb ) ) )
+                            /* We can't delete a task if it is still running on
+                             * the other core. Keep walking the list until we
+                             * find a task we can free, or until we walk the
+                             * entire list. */
+                            ListItem_t *xEntry;
+                            for ( xEntry = listGET_HEAD_ENTRY( &xTasksWaitingTermination ); xEntry != listGET_END_MARKER( &xTasksWaitingTermination ); xEntry = listGET_NEXT( xEntry ) )
                             {
-                                continue; /*Can't free memory of task that is still running */
+                                if ( !taskIS_CURRENTLY_RUNNING( ( ( TCB_t * ) listGET_LIST_ITEM_OWNER( xEntry ) ) ) )
+                                {
+                                    pxTCB = ( TCB_t * ) listGET_LIST_ITEM_OWNER( xEntry );
+                                    ( void ) uxListRemove( &( pxTCB->xStateListItem ) );
+                                    --uxCurrentNumberOfTasks;
+                                    --uxDeletedTasksWaitingCleanUp;
+                                    break;
+                                }
                             }
-
-                            if( ( affinity == core ) || ( affinity == tskNO_AFFINITY ) ) /*Find first item not pinned to other core */
-                            {
-                                pxTCB = tgt_tcb;
-                                break;
-                            }
-                        }
-
-                        if( pxTCB != NULL )
-                        {
-                            ( void ) uxListRemove( target ); /*Remove list item from list */
-                            --uxCurrentNumberOfTasks;
-                            --uxDeletedTasksWaitingCleanUp;
                         }
                     }
-                }
-                taskEXIT_CRITICAL( &xKernelLock ); /*Need to call deletion callbacks outside critical section */
+                    taskEXIT_CRITICAL( &xKernelLock );
 
-                if( pxTCB != NULL )                /*Call deletion callbacks and free TCB memory */
-                {
+                    if ( pxTCB != NULL )
+                    {
+                        #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
+                            prvDeleteTLS( pxTCB );
+                        #endif
+                        prvDeleteTCB( pxTCB );
+                    }
+                    else
+                    {
+                        /* No task found to delete, break out of loop */
+                        break;
+                    }
+                #else
+                    taskENTER_CRITICAL( &xKernelLock );
+                    {
+                        pxTCB = listGET_OWNER_OF_HEAD_ENTRY( ( &xTasksWaitingTermination ) ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
+                        ( void ) uxListRemove( &( pxTCB->xStateListItem ) );
+                        --uxCurrentNumberOfTasks;
+                        --uxDeletedTasksWaitingCleanUp;
+                    }
+                    taskEXIT_CRITICAL( &xKernelLock );
+
                     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) && ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
                         prvDeleteTLS( pxTCB );
                     #endif
                     prvDeleteTCB( pxTCB );
-                }
-                else
-                {
-                    mtCOVERAGE_TEST_MARKER();
-                    break; /*No TCB found that could be freed by this core, break out of loop */
-                }
+                #endif  /* configNUM_CORES > 1 */
             }
         }
     #endif /* INCLUDE_vTaskDelete */

@@ -102,6 +102,7 @@
 #include "esp_private/panic_reason.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
+#include "xt_asm_utils.h"
 
 
 /*
@@ -849,9 +850,25 @@ _xt_coproc_mask:
 _xt_coproc_owner_sa:
     .space  (XCHAL_CP_MAX * portNUM_PROCESSORS) << 2
 
+/* Spinlock per core for accessing _xt_coproc_owner_sa array
+ *
+ * 0 = Spinlock available
+ * PRID = Spinlock taken
+ *
+ * The lock provides mutual exclusion for accessing the _xt_coproc_owner_sa array.
+ * The array can be modified by multiple cores simultaneously (via _xt_coproc_exc
+ * and _xt_coproc_release). Therefore, this spinlock is defined to ensure thread
+ * safe access of the _xt_coproc_owner_sa array.
+ */
+#if portNUM_PROCESSORS > 1
+    .global _xt_coproc_owner_sa_lock
+    .type   _xt_coproc_owner_sa_lock,@object
+    .align  16                      /* minimize crossing cache boundaries */
+_xt_coproc_owner_sa_lock:
+    .space  4
+#endif /* portNUM_PROCESSORS > 1 */
+
     .section .iram1,"ax"
-
-
     .align  4
 .L_goto_invalid:
     j   .L_xt_coproc_invalid    /* not in a thread (invalid) */
@@ -919,23 +936,29 @@ _xt_coproc_exc:
     or      a4, a4, a2                      /* a4 = CPENABLE | (1 << n) */
     wsr     a4, CPENABLE
 
-/*
-Keep loading _xt_coproc_owner_sa[n] atomic (=load once, then use that value
-everywhere): _xt_coproc_release assumes it works like this in order not to need
-locking.
-*/
-    /* Grab correct xt_coproc_owner_sa for this core */
+    /* Grab the xt_coproc_owner_sa owner array for current core */
     getcoreid a3                            /* a3 = current core ID */
-    movi    a2, XCHAL_CP_MAX << 2
-    mull    a2, a2, a3                      /* multiply by current processor id */
-    movi    a3, _xt_coproc_owner_sa         /* a3 = base of owner array */
-    add     a3, a3, a2                      /* a3 = owner area needed for this processor */
+    movi    a2, XCHAL_CP_MAX << 2           /* a2 = size of an owner array */
+    mull    a2, a2, a3                      /* a2 = offset to the owner array of the current core*/
+    movi    a3, _xt_coproc_owner_sa         /* a3 = base of all owner arrays */
+    add     a3, a3, a2                      /* a3 = base of owner array of the current core */
+
+#if portNUM_PROCESSORS > 1
+    /* If multicore, we must also acquire the _xt_coproc_owner_sa_lock spinlock
+     * to ensure thread safe access of _xt_coproc_owner_sa between cores. */
+    spinlock_take a0 a2 _xt_coproc_owner_sa_lock
+#endif /* portNUM_PROCESSORS > 1 */
 
     /* Get old coprocessor owner thread (save area ptr) and assign new one.  */
     addx4   a3,  a5, a3                      /* a3 = &_xt_coproc_owner_sa[n] */
     l32i    a2,  a3, 0                       /* a2 = old owner's save area */
     s32i    a15, a3, 0                       /* _xt_coproc_owner_sa[n] = new */
     rsync                                    /* ensure wsr.CPENABLE is complete */
+
+#if portNUM_PROCESSORS > 1
+    /* Release previously taken spinlock */
+    spinlock_release a0 a2 _xt_coproc_owner_sa_lock
+#endif /* portNUM_PROCESSORS > 1 */
 
     /* Only need to context switch if new owner != old owner. */
     /* If float is necessary on ISR, we need to remove this check */
