@@ -103,12 +103,6 @@
 #include "sdkconfig.h"
 #include "soc/soc.h"
 
-/*
-  Define for workaround: pin no-cpu-affinity tasks to a cpu when fpu is used.
-  Please change this when the tcb structure is changed
-*/
-#define TASKTCB_XCOREID_OFFSET (0x38+configMAX_TASK_NAME_LEN+3)&~3
-.extern pxCurrentTCB
 
 /*
 --------------------------------------------------------------------------------
@@ -907,28 +901,14 @@ _xt_coproc_exc:
     s32i    a4,  sp, XT_STK_A4
     s32i    a15, sp, XT_STK_A15
 
+    /* Call the RTOS coprocessor exception hook */
+    call0   XT_RTOS_CP_EXC_HOOK
+
     /* Get co-processor state save area of new owner thread. */
     call0   XT_RTOS_CP_STATE                /* a15 = new owner's save area */
-    #if CONFIG_FREERTOS_FPU_IN_ISR
-    beqz    a15, .L_skip_core_pin           /* CP used in ISR, skip task pinning */
-    #else
+    #if !CONFIG_FREERTOS_FPU_IN_ISR
     beqz    a15, .L_goto_invalid            /* not in a thread (invalid) */
     #endif
-
-#if configNUM_CORES > 1
-    /* CP operations are incompatible with unpinned tasks. Thus we pin the task
-    to the current running core. */
-    movi    a2, pxCurrentTCB
-    getcoreid a3                            /* a3 = current core ID */
-    addx4   a2, a3, a2
-    l32i    a2, a2, 0                       /* a2 = start of pxCurrentTCB[cpuid] */
-    addi    a2, a2, TASKTCB_XCOREID_OFFSET  /* a2 = &TCB.xCoreID */
-    s32i    a3, a2, 0                       /* TCB.xCoreID = current core ID */
-#endif // configNUM_CORES > 1
-
-#if CONFIG_FREERTOS_FPU_IN_ISR
-.L_skip_core_pin:
-#endif
 
     /* Enable the co-processor's bit in CPENABLE. */
     movi    a0, _xt_coproc_mask
@@ -945,6 +925,7 @@ everywhere): _xt_coproc_release assumes it works like this in order not to need
 locking.
 */
     /* Grab correct xt_coproc_owner_sa for this core */
+    getcoreid a3                            /* a3 = current core ID */
     movi    a2, XCHAL_CP_MAX << 2
     mull    a2, a2, a3                      /* multiply by current processor id */
     movi    a3, _xt_coproc_owner_sa         /* a3 = base of owner array */
@@ -960,8 +941,9 @@ locking.
     /* If float is necessary on ISR, we need to remove this check */
     /* below, because on restoring from ISR we may have new == old condition used
      * to force cp restore to next thread
+     * Todo: IDF-6418
      */
-    #ifndef CONFIG_FREERTOS_FPU_IN_ISR
+    #if !CONFIG_FREERTOS_FPU_IN_ISR
     bne     a15, a2, .L_switch_context
     j    .L_goto_done                       /* new owner == old, we're done */
 .L_switch_context:
