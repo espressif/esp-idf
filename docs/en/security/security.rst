@@ -108,13 +108,13 @@ UART DL Mode
     .. important::
         If UART Download mode is disabled then ``esptool`` can not work on the device.
 
-.. only:: not esp32
+.. only:: SOC_SUPPORTS_SECURE_DL_MODE
 
     In {IDF_TARGET_NAME}, Secure UART Download mode gets activated if any of the security features are enabled.
 
     * Secure UART Download mode can also be enabled by calling :cpp:func:`esp_efuse_enable_rom_secure_download_mode`.
     * This mode does not allow any arbitrary code to execute if downloaded through the UART download mode.
-    * It also limits the available commands in Download mode to basic flash read and write, plus a command to return a summary of currently enabled security features.
+    * It also limits the available commands in Download mode to update SPI config, changing baud rate, basic flash write and a command to return a summary of currently enabled security features (`get_security_info`).
     * To disable Download Mode entirely select the :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)" or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
 
     .. important::

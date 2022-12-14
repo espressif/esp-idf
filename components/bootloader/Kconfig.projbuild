@@ -997,9 +997,9 @@ menu "Security features"
                 Download Mode into a separate Secure Download mode. This option can only work if
                 Download Mode is not already disabled by eFuse.
 
-                Secure Download mode limits the use of Download Mode functions to simple flash read,
-                write and erase operations, plus a command to return a summary of currently enabled
-                security features.
+                Secure Download mode limits the use of Download Mode functions to update SPI config,
+                changing baud rate, basic flash write and a command to return a summary of currently
+                enabled security features (`get_security_info`).
 
                 Secure Download mode is not compatible with the esptool.py flasher stub feature,
                 espefuse.py, read/writing memory or registers, encrypted download, or any other
