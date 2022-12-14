@@ -68,7 +68,7 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
     case PERIPH_ETM_MODULE:
         return SYSTEM_ETM_CLK_EN;
     case PERIPH_MODEM_RPA_MODULE:
-        return SYSTEM_BLE_SEC_AAR_CLK_EN;
+        return SYSTEM_BLE_SEC_BAH_CLK_EN;
     default:
         return 0;
     }
@@ -145,7 +145,7 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
     case PERIPH_ETM_MODULE:
         return SYSTEM_ETM_RST;
     case PERIPH_MODEM_RPA_MODULE:
-        return SYSTEM_BLE_SEC_AAR_RST;
+        return SYSTEM_BLE_SEC_BAH_RST;
     default:
         return 0;
     }

@@ -35,7 +35,7 @@ void nimble_port_freertos_init(TaskFunction_t host_task_fn);
 void nimble_port_freertos_deinit(void);
 void npl_freertos_funcs_init(void);
 void npl_freertos_funcs_deinit(void);
-int npl_freertos_mempool_init(void);
+int npl_freertos_mempool_init(ble_npl_count_info_t *npl_info);
 struct npl_funcs_t * npl_freertos_funcs_get(void);
 #ifdef __cplusplus
 }
