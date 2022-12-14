@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -28,8 +28,6 @@ TEST_CASE("realloc shrink buffer in place", "[heap]")
 
 #endif
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5167
 #ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 TEST_CASE("realloc shrink buffer with EXEC CAPS", "[heap]")
 {
@@ -70,4 +68,3 @@ TEST_CASE("realloc move data to a new heap type", "[heap]")
     free(c);
 }
 #endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
