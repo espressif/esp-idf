@@ -131,10 +131,6 @@ examples/peripherals/rmt/onewire_ds18b20:
 examples/peripherals/rmt/stepper_motor:
   disable:
     - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
 
 examples/peripherals/sdio/host:
   enable:

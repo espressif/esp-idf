@@ -252,7 +252,8 @@
 #define SOC_RMT_SUPPORT_TX_SYNCHRO            1  /*!< Support coordinate a group of TX channels to start simultaneously */
 #define SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY  1  /*!< TX carrier can be modulated to data phase only */
 #define SOC_RMT_SUPPORT_XTAL                  1  /*!< Support set XTAL clock as the RMT clock source */
-#define SOC_RMT_SUPPORT_APB                   1  /*!< Support set APB as the RMT clock source */
+#define SOC_RMT_SUPPORT_PLL_F80M              1  /*!< Support set PLL_F80M as the RMT clock source */
+#define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST as the RMT clock source */
 
 /*-------------------------- MCPWM CAPS --------------------------------------*/
 #define SOC_MCPWM_GROUPS                     (1U)   ///< 1 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)

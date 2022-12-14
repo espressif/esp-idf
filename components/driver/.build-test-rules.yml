@@ -73,10 +73,6 @@ components/driver/test_apps/pulse_cnt:
 components/driver/test_apps/rmt:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
 
 components/driver/test_apps/rs485:
   disable_test:
