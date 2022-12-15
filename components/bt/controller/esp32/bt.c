@@ -1479,7 +1479,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto error;
     }
 
-    esp_phy_pd_mem_init();
+    esp_phy_modem_init();
 
     esp_bt_power_domain_on();
 
@@ -1641,7 +1641,7 @@ esp_err_t esp_bt_controller_deinit(void)
 
     esp_bt_power_domain_off();
 
-    esp_phy_pd_mem_deinit();
+    esp_phy_modem_deinit();
 
     return ESP_OK;
 }

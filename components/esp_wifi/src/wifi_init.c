@@ -129,14 +129,11 @@ esp_err_t esp_wifi_deinit(void)
     esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
     esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
 #endif
-#if CONFIG_IDF_TARGET_ESP32C3
-    phy_init_flag();
-#endif
     esp_wifi_power_domain_off();
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_pd_mem_deinit();
 #endif
-    esp_phy_pd_mem_deinit();
+    esp_phy_modem_deinit();
 
     return err;
 }
@@ -255,7 +252,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         esp_mac_bb_pd_mem_init();
         esp_wifi_internal_set_mac_sleep(true);
 #endif
-        esp_phy_pd_mem_init();
+        esp_phy_modem_init();
 #if CONFIG_IDF_TARGET_ESP32
         s_wifi_mac_time_update_cb = esp_wifi_internal_update_mac_time;
 #endif
