@@ -36,6 +36,7 @@
 static const char *TAG = "wifi_prov_mgr";
 
 ESP_EVENT_DEFINE_BASE(WIFI_PROV_EVENT);
+ESP_EVENT_DEFINE_BASE(WIFI_PROV_PRIVATE_EVENT);
 
 typedef enum {
     WIFI_PROV_STATE_IDLE,
@@ -46,6 +47,10 @@ typedef enum {
     WIFI_PROV_STATE_SUCCESS,
     WIFI_PROV_STATE_STOPPING
 } wifi_prov_mgr_state_t;
+
+enum {
+    WIFI_PROV_STOP,
+};
 
 /**
  * @brief  Structure for storing capabilities supported by
@@ -99,6 +104,9 @@ struct wifi_prov_mgr_ctx {
 
     /* Handle for delayed Wi-Fi connection timer */
     esp_timer_handle_t wifi_connect_timer;
+
+    /* Handle for delayed cleanup timer */
+    esp_timer_handle_t cleanup_delay_timer;
 
     /* State of Wi-Fi Station */
     wifi_prov_sta_state_t wifi_state;
@@ -439,6 +447,22 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
         return ret;
     }
 
+  ret = esp_event_handler_register(WIFI_PROV_PRIVATE_EVENT, WIFI_PROV_STOP,
+                                   wifi_prov_mgr_event_handler_internal, NULL);
+  if (ret != ESP_OK) {
+      ESP_LOGE(TAG, "Failed to register provisioning event handler");
+      esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID,
+                                   wifi_prov_mgr_event_handler_internal);
+      esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP,
+                                   wifi_prov_mgr_event_handler_internal);
+      free(prov_ctx->wifi_scan_handlers);
+      free(prov_ctx->wifi_prov_handlers);
+      scheme->prov_stop(prov_ctx->pc);
+      protocomm_delete(prov_ctx->pc);
+      return ret;
+  }
+
+
     ESP_LOGI(TAG, "Provisioning started with service name : %s ",
              service_name ? service_name : "<NULL>");
     return ESP_OK;
@@ -512,6 +536,15 @@ static void prov_stop_task(void *arg)
 {
     bool is_this_a_task = (bool) arg;
 
+    esp_event_handler_unregister(WIFI_PROV_PRIVATE_EVENT, WIFI_PROV_STOP,
+                                 wifi_prov_mgr_event_handler_internal);
+
+    if (prov_ctx->cleanup_delay_timer) {
+        esp_timer_stop(prov_ctx->cleanup_delay_timer);
+        esp_timer_delete(prov_ctx->cleanup_delay_timer);
+        prov_ctx->cleanup_delay_timer = NULL;
+    }
+
     wifi_prov_cb_func_t app_cb = prov_ctx->mgr_config.app_event_handler.event_cb;
     void *app_data = prov_ctx->mgr_config.app_event_handler.user_data;
 
@@ -520,8 +553,11 @@ static void prov_stop_task(void *arg)
 
     /* This delay is so that the client side app is notified first
      * and then the provisioning is stopped. Generally 1000ms is enough. */
-    uint32_t cleanup_delay = prov_ctx->cleanup_delay > 100 ? prov_ctx->cleanup_delay : 100;
-    vTaskDelay(cleanup_delay / portTICK_PERIOD_MS);
+    if(!is_this_a_task)
+    {
+        uint32_t cleanup_delay = prov_ctx->cleanup_delay > 100 ? prov_ctx->cleanup_delay : 100;
+        vTaskDelay(cleanup_delay / portTICK_PERIOD_MS);
+    }
 
     /* All the extra application added endpoints are also
      * removed automatically when prov_stop is called */
@@ -563,8 +599,6 @@ static void prov_stop_task(void *arg)
         if (esp_event_post(WIFI_PROV_EVENT, WIFI_PROV_END, NULL, 0, portMAX_DELAY) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to post event WIFI_PROV_END");
         }
-
-        vTaskDelete(NULL);
     }
 }
 
@@ -671,10 +705,8 @@ static bool wifi_prov_mgr_stop_service(bool blocking)
          * released - some duration after - returning from a call to
          * wifi_prov_mgr_stop_provisioning(), like when it is called
          * inside a protocomm handler */
-        if (xTaskCreate(prov_stop_task, "prov_stop_task", 4096, (void *)1, tskIDLE_PRIORITY, NULL) != pdPASS) {
-            ESP_LOGE(TAG, "Failed to create prov_stop_task!");
-            abort();
-        }
+        uint64_t cleanup_delay_ms = prov_ctx->cleanup_delay > 100 ? prov_ctx->cleanup_delay : 100;
+        esp_timer_start_once(prov_ctx->cleanup_delay_timer, cleanup_delay_ms * 1000U);
         ESP_LOGD(TAG, "Provisioning scheduled for stopping");
     }
     return true;
@@ -684,6 +716,15 @@ static bool wifi_prov_mgr_stop_service(bool blocking)
 static void stop_prov_timer_cb(void *arg)
 {
     wifi_prov_mgr_stop_provisioning();
+}
+
+static void cleanup_delay_timer_cb(void *arg)
+{
+    esp_err_t ret = esp_event_post(WIFI_PROV_PRIVATE_EVENT, WIFI_PROV_STOP, NULL, 0, pdMS_TO_TICKS(100));
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to post WIFI_PROV_STOP event! %d %s", ret, esp_err_to_name(ret));
+        abort();
+    }
 }
 
 esp_err_t wifi_prov_mgr_disable_auto_stop(uint32_t cleanup_delay)
@@ -852,6 +893,12 @@ static void wifi_prov_mgr_event_handler_internal(
         ESP_LOGE(TAG, "Provisioning manager not initialized");
         return;
     }
+
+    if(event_base == WIFI_PROV_PRIVATE_EVENT && event_id == WIFI_PROV_STOP)
+    {
+        prov_stop_task((void*)1);
+    }
+
     ACQUIRE_LOCK(prov_ctx_lock);
 
     /* If pointer to provisioning application data is NULL
@@ -1580,6 +1627,21 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
             goto err;
         }
     }
+
+    esp_timer_create_args_t cleanup_delay_timer = {
+        .callback = cleanup_delay_timer_cb,
+        .arg = NULL,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "cleanup_delay_tm"
+    };
+    ret = esp_timer_create(&cleanup_delay_timer, &prov_ctx->cleanup_delay_timer);
+    if (ret != ESP_OK) {
+      ESP_LOGE(TAG, "Failed to create cleanup delay timer");
+      esp_timer_delete(prov_ctx->wifi_connect_timer);
+      esp_timer_delete(prov_ctx->autostop_timer);
+      goto err;
+    }
+
 
     /* System APIs for BLE / Wi-Fi will be called inside wifi_prov_mgr_start_service(),
      * which may trigger system level events. Hence, releasing the context lock will
