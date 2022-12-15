@@ -1,7 +1,7 @@
 /*
  * Console example - various system commands
  *
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <inttypes.h>
 
 #include "esp_log.h"
 #include "esp_console.h"
@@ -57,7 +58,7 @@ static void register_restart(void)
 
 static int free_mem(int argc, char **argv)
 {
-    printf("freeheap:%d\n", esp_get_free_heap_size());
+    printf("freeheap:%" PRIu32 "\n", esp_get_free_heap_size());
     return 0;
 }
 

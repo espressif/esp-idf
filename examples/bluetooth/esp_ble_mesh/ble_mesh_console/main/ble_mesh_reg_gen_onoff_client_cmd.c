@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
+
 #include "esp_timer.h"
 #include "ble_mesh_adapter.h"
 
@@ -36,7 +38,7 @@ void ble_mesh_generic_onoff_client_model_cb(esp_ble_mesh_generic_client_cb_event
 {
     uint32_t opcode = param->params->opcode;
 
-    ESP_LOGD(TAG, "enter %s: event is %d, error code is %d, opcode is 0x%x\n",
+    ESP_LOGD(TAG, "enter %s: event is %d, error code is %d, opcode is 0x%" PRIx32,
              __func__, event, param->error_code, opcode);
 
     switch (event) {

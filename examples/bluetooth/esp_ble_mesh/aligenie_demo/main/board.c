@@ -1,12 +1,13 @@
 /*
  * AliGenie - Example
  *
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "driver/gpio.h"
 #include "esp_log.h"
@@ -215,7 +216,7 @@ uint8_t *mac_str2hex(const char *mac_str, uint8_t *mac_hex)
 {
     uint32_t mac_data[6] = {0};
 
-    sscanf(mac_str, "%02x%02x%02x%02x%02x%02x",
+    sscanf(mac_str, "%02" PRIx32 "%02" PRIx32 "%02" PRIx32 "%02" PRIx32 "%02" PRIx32 "%02" PRIx32,
            mac_data, mac_data + 1, mac_data + 2, mac_data + 3, mac_data + 4, mac_data + 5);
 
     for (int i = 0; i < 6; i++) {

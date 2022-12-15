@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include <inttypes.h>
+
 #include "run_tc.h"
 #include "test_env.h"
 #include "wifi_unit.h"
@@ -48,7 +50,7 @@ static void wifi_tc_sta_throughput_timeout(void *arg)
         uint32_t speed = report[1] * 8 / (now - last_timestamp);
         accumulate_speed += speed;
         statistic_count += 1;
-        printf("speed: %d kbps average speed: %lld kbps\n", speed, accumulate_speed / statistic_count );
+        printf("speed: %" PRIu32 " kbps average speed: %lld kbps\n", speed, accumulate_speed / statistic_count );
         report[1] = 0;
         report[0] = now;
     }

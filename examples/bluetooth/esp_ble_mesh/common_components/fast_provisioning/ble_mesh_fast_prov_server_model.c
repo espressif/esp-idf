@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "esp_ble_mesh_defs.h"
 #include "esp_ble_mesh_local_data_operation_api.h"
@@ -580,7 +581,7 @@ esp_err_t example_handle_fast_prov_status_send_comp_evt(int err_code, uint32_t o
 
     srv = (example_fast_prov_server_t *)model->user_data;
 
-    ESP_LOGI(TAG, "%s: opcode 0x%06x", __func__, opcode);
+    ESP_LOGI(TAG, "%s: opcode 0x%06" PRIx32, __func__, opcode);
 
     switch (opcode) {
     case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_STATUS:
