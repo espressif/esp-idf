@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table e3b1264d26cc94f387d58e4ba9a3677c
+// md5_digest_table 19131923372be226ce98d85f5a13f16a
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -340,48 +340,9 @@ static const esp_efuse_desc_t MAC_FACTORY[] = {
     {EFUSE_BLK1, 0, 8}, 	 // Factory MAC addr [5],
 };
 
-static const esp_efuse_desc_t SPI_PAD_CONFIG_CLK[] = {
-    {EFUSE_BLK1, 48, 6}, 	 // SPI_PAD_configure CLK,
-};
-
-static const esp_efuse_desc_t SPI_PAD_CONFIG_Q_D1[] = {
-    {EFUSE_BLK1, 54, 6}, 	 // SPI_PAD_configure Q(D1),
-};
-
-static const esp_efuse_desc_t SPI_PAD_CONFIG_D_D0[] = {
-    {EFUSE_BLK1, 60, 6}, 	 // SPI_PAD_configure D(D0),
-};
-
-static const esp_efuse_desc_t SPI_PAD_CONFIG_CS[] = {
-    {EFUSE_BLK1, 66, 6}, 	 // SPI_PAD_configure CS,
-};
-
-static const esp_efuse_desc_t SPI_PAD_CONFIG_HD_D3[] = {
-    {EFUSE_BLK1, 72, 6}, 	 // SPI_PAD_configure HD(D3),
-};
-
-static const esp_efuse_desc_t SPI_PAD_CONFIG_WP_D2[] = {
-    {EFUSE_BLK1, 78, 6}, 	 // SPI_PAD_configure WP(D2),
-};
-
-static const esp_efuse_desc_t SPI_PAD_CONFIG_DQS[] = {
-    {EFUSE_BLK1, 84, 6}, 	 // SPI_PAD_configure DQS,
-};
-
-static const esp_efuse_desc_t SPI_PAD_CONFIG_D4[] = {
-    {EFUSE_BLK1, 90, 6}, 	 // SPI_PAD_configure D4,
-};
-
-static const esp_efuse_desc_t SPI_PAD_CONFIG_D5[] = {
-    {EFUSE_BLK1, 96, 6}, 	 // SPI_PAD_configure D5,
-};
-
-static const esp_efuse_desc_t SPI_PAD_CONFIG_D6[] = {
-    {EFUSE_BLK1, 102, 6}, 	 // SPI_PAD_configure D6,
-};
-
-static const esp_efuse_desc_t SPI_PAD_CONFIG_D7[] = {
-    {EFUSE_BLK1, 108, 6}, 	 // SPI_PAD_configure D7,
+static const esp_efuse_desc_t MAC_EXT[] = {
+    {EFUSE_BLK1, 48, 8}, 	 // Extend  MAC addr [0],
+    {EFUSE_BLK1, 56, 8}, 	 // Extend  MAC addr [1],
 };
 
 static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
@@ -395,10 +356,6 @@ static const esp_efuse_desc_t PKG_VERSION[] = {
 
 static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
     {EFUSE_BLK1, 120, 3}, 	 // BLK_VERSION_MINOR,
-};
-
-static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
-    {EFUSE_BLK1, 184, 2}, 	 // WAFER_VERSION_MAJOR,
 };
 
 static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
@@ -918,58 +875,9 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_CLK[] = {
-    &SPI_PAD_CONFIG_CLK[0],    		// SPI_PAD_configure CLK
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_Q_D1[] = {
-    &SPI_PAD_CONFIG_Q_D1[0],    		// SPI_PAD_configure Q(D1)
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D_D0[] = {
-    &SPI_PAD_CONFIG_D_D0[0],    		// SPI_PAD_configure D(D0)
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_CS[] = {
-    &SPI_PAD_CONFIG_CS[0],    		// SPI_PAD_configure CS
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_HD_D3[] = {
-    &SPI_PAD_CONFIG_HD_D3[0],    		// SPI_PAD_configure HD(D3)
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_WP_D2[] = {
-    &SPI_PAD_CONFIG_WP_D2[0],    		// SPI_PAD_configure WP(D2)
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_DQS[] = {
-    &SPI_PAD_CONFIG_DQS[0],    		// SPI_PAD_configure DQS
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D4[] = {
-    &SPI_PAD_CONFIG_D4[0],    		// SPI_PAD_configure D4
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D5[] = {
-    &SPI_PAD_CONFIG_D5[0],    		// SPI_PAD_configure D5
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D6[] = {
-    &SPI_PAD_CONFIG_D6[0],    		// SPI_PAD_configure D6
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[] = {
-    &SPI_PAD_CONFIG_D7[0],    		// SPI_PAD_configure D7
+const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
+    &MAC_EXT[0],    		// Extend  MAC addr [0]
+    &MAC_EXT[1],    		// Extend  MAC addr [1]
     NULL
 };
 
@@ -986,11 +894,6 @@ const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
     &BLK_VERSION_MINOR[0],    		// BLK_VERSION_MINOR
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
-    &WAFER_VERSION_MAJOR[0],    		// WAFER_VERSION_MAJOR
     NULL
 };
 
