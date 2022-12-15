@@ -38,4 +38,7 @@ skip:
   - "components/bt/host/bluedroid/stack/btm/btm_dev.c"
   - "components/bt/host/bluedroid/stack/gatt/att_protocol.c"
   - "components/bt/host/bluedroid/stack/gatt/gatt_db.c"
+  - "components/bt/host/bluedroid/stack/l2cap/l2c_utils.c"
   - "components/wifi_provisioning/src/scheme_ble.c"
+  - "components/wpa_supplicant/src/rsn_supp/wpa.c"
+  - "components/nvs_flash/src/nvs_storage.cpp"
