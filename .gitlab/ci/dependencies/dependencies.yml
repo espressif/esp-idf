@@ -167,6 +167,7 @@ build:integration_test:
 # For i154 runners
 "test:example_test-i154":
   patterns:
+    - "example_test-i154"
     - "target_test-i154"
   labels:
     - target_test
