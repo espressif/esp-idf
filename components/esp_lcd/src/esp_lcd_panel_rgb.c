@@ -225,10 +225,6 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
                       ESP_ERR_INVALID_ARG, err, TAG, "must set bounce buffer if there's no frame buffer");
     ESP_GOTO_ON_FALSE(!(rgb_panel_config->flags.refresh_on_demand && rgb_panel_config->bounce_buffer_size_px),
                       ESP_ERR_INVALID_ARG, err, TAG, "refresh on demand is not supported under bounce buffer mode");
-#if CONFIG_LCD_RGB_ISR_IRAM_SAFE
-    ESP_GOTO_ON_FALSE(rgb_panel_config->bounce_buffer_size_px == 0,
-                      ESP_ERR_INVALID_ARG, err, TAG, "bounce buffer mode is not IRAM Safe");
-#endif
 
     // determine number of framebuffers
     size_t num_fbs = 1;
