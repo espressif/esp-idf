@@ -392,6 +392,9 @@ static void clear_timing_tuning_regs(bool control_spi1)
     } else {
         //Won't touch SPI1 registers
     }
+
+    spi_timing_config_psram_set_din_mode_num(0, 0, 0);
+    spi_timing_config_psram_set_extra_dummy(0, 0);
 }
 #endif  //#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
 
@@ -413,6 +416,9 @@ void spi_timing_enter_mspi_low_speed_mode(bool control_spi1)
         //After tuning, won't touch SPI1 again
         spi_timing_config_set_flash_clock(1, 4);
     }
+
+    //Set PSRAM module clock
+    spi_timing_config_set_psram_clock(0, 4);
 
 #if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
     clear_timing_tuning_regs(control_spi1);
