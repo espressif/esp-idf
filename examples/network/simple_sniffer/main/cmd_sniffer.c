@@ -430,7 +430,7 @@ static int do_sniffer_cmd(int argc, char **argv)
     snf_rt.packets_to_sniff = -1;
     if (sniffer_args.number->count) {
         snf_rt.packets_to_sniff = sniffer_args.number->ival[0];
-        ESP_LOGI(SNIFFER_TAG, "%d packages will be captured", snf_rt.packets_to_sniff);
+        ESP_LOGI(SNIFFER_TAG, "%" PRIi32 " packages will be captured", snf_rt.packets_to_sniff);
     }
 
     /* start sniffer */
