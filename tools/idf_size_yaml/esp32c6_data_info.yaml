@@ -6,9 +6,6 @@ DRAM:
   primary_address: 0x40800000
   length: 0x80000
   secondary_address: 0x40800000
-IRAM:
-  primary_address: 0x40800000
-  length: 0x80000
 CACHE_I:
   primary_address: 0x42000000
   length: 0x800000

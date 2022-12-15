@@ -141,6 +141,9 @@
                 ".rtc.data": {
                     "type": "integer"
                 },
+                ".rtc_noinit": {
+                    "type": "integer"
+                },
                 "flash_total": {
                     "type": "integer"
                 },
