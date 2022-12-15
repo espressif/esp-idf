@@ -1321,6 +1321,15 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #endif
 
 /**
+ * UDP_DEBUG: Enable debugging for UDP.
+ */
+#ifdef CONFIG_LWIP_UDP_DEBUG
+#define UDP_DEBUG                        LWIP_DBG_ON
+#else
+#define UDP_DEBUG                        LWIP_DBG_OFF
+#endif
+
+/**
  * SNTP_DEBUG: Enable debugging for SNTP.
  */
 #ifdef CONFIG_LWIP_SNTP_DEBUG
