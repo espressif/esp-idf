@@ -298,7 +298,7 @@ config BT_CTRL_SCAN_DUPL_CACHE_SIZE
         When the maximum amount of device in the filter is reached, the cache will be refreshed.
 
 config BT_CTRL_DUPL_SCAN_CACHE_REFRESH_PERIOD
-    int "Duplicate scan list refresh period"
+    int "Duplicate scan list refresh period (seconds)"
     depends on BT_CTRL_BLE_SCAN_DUPL
     range 0 1000
     default 0
