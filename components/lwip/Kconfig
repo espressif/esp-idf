@@ -227,6 +227,13 @@ menu "LWIP"
         help
             Enabling this option allows Network Address and Port Translation.
 
+    config LWIP_IPV4_NAPT_PORTMAP
+        bool "Enable NAT Port Mapping (new/experimental)"
+        depends on LWIP_IPV4_NAPT
+        default y
+        help
+            Enabling this option allows Port Forwarding or Port mapping.
+
     config LWIP_STATS
         bool "Enable LWIP statistics"
         default n
