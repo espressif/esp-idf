@@ -9,6 +9,7 @@
 #include "esp_attr.h"
 #include "hal/ledc_hal.h"
 #include "soc/soc_caps.h"
+#include "sdkconfig.h"
 #include "hal/assert.h"
 
 void ledc_hal_init(ledc_hal_context_t *hal, ledc_mode_t speed_mode)

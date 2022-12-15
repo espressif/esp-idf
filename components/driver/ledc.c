@@ -258,7 +258,6 @@ int duty_val, ledc_duty_direction_t duty_direction, uint32_t duty_num, uint32_t 
     ledc_hal_set_duty_range(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 0);
     ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 1);
 #endif
-    ledc_ls_channel_update(speed_mode, channel);
     return ESP_OK;
 }
 
@@ -662,6 +661,13 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
             return ESP_ERR_NO_MEM;
         }
         ledc_hal_init(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode);
+#if !CONFIG_IDF_TARGET_ESP32
+        // On targets other than esp32, the default ledc core(global) clock does not connect to any clock source
+        // Set channel configurations and update bits before core clock is on could lead to error
+        // Therefore, we should connect the core clock to a real clock source to make it on before any ledc register operation
+        // It can be switched to the other desired clock sources to meet the output pwm freq requirement later at timer configuration
+        ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), 1);
+#endif
     }
 
     /*set channel parameters*/
@@ -940,6 +946,7 @@ void IRAM_ATTR ledc_fade_isr(void *arg)
                                  scale);
                 s_ledc_fade_rec[speed_mode][channel]->fsm = LEDC_FSM_HW_FADE;
                 ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, true);
+                ledc_ls_channel_update(speed_mode, channel);
             }
             portEXIT_CRITICAL_ISR(&ledc_spinlock);
             if (finished) {
