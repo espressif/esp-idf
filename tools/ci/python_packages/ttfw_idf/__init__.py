@@ -311,22 +311,3 @@ def check_performance(item, value, target):
         break
     else:
         raise AssertionError('Failed to get performance standard for {}'.format(item))
-
-
-MINIMUM_FREE_HEAP_SIZE_RE = re.compile(r'Minimum free heap size: (\d+) bytes')
-
-
-def print_heap_size(app_name, config_name, target, minimum_free_heap_size):
-    """
-    Do not change the print output in case you really need to.
-    The result is parsed by ci-dashboard project
-    """
-    print('------ heap size info ------\n'
-          '[app_name] {}\n'
-          '[config_name] {}\n'
-          '[target] {}\n'
-          '[minimum_free_heap_size] {} Bytes\n'
-          '------ heap size end ------'.format(app_name,
-                                               '' if not config_name else config_name,
-                                               target,
-                                               minimum_free_heap_size))
