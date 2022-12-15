@@ -15,6 +15,7 @@
 
 import logging
 import os
+import re
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -219,27 +220,6 @@ def session_tempdir() -> str:
     return _tmpdir
 
 
-@pytest.fixture()
-def log_minimum_free_heap_size(dut: IdfDut, config: str) -> Callable[..., None]:
-    def real_func() -> None:
-        res = dut.expect(r'Minimum free heap size: (\d+) bytes')
-        logging.info(
-            '\n------ heap size info ------\n'
-            '[app_name] {}\n'
-            '[config_name] {}\n'
-            '[target] {}\n'
-            '[minimum_free_heap_size] {} Bytes\n'
-            '------ heap size end ------'.format(
-                os.path.basename(dut.app.app_path),
-                config,
-                dut.target,
-                res.group(1).decode('utf8'),
-            )
-        )
-
-    return real_func
-
-
 @pytest.fixture
 def case_tester(dut: IdfDut, **kwargs):  # type: ignore
     yield CaseTester(dut, **kwargs)
@@ -311,6 +291,102 @@ def junit_properties(test_case_name: str, record_xml_attribute: Callable[[str, o
     This fixture is autoused and will modify the junit report test case name to <target>.<config>.<case_name>
     """
     record_xml_attribute('name', test_case_name)
+
+
+######################
+# Log Util Functions #
+######################
+@pytest.fixture
+def log_performance(record_property: Callable[[str, object], None]) -> Callable[[str, str], None]:
+    """
+    log performance item with pre-defined format to the console
+    and record it under the ``properties`` tag in the junit report if available.
+    """
+
+    def real_func(item: str, value: str) -> None:
+        """
+        :param item: performance item name
+        :param value: performance value
+        """
+        logging.info('[Performance][%s]: %s', item, value)
+        record_property(item, value)
+
+    return real_func
+
+
+@pytest.fixture
+def check_performance(idf_path: str) -> Callable[[str, float, str], None]:
+    """
+    check if the given performance item meets the passing standard or not
+    """
+
+    def real_func(item: str, value: float, target: str) -> None:
+        """
+        :param item: performance item name
+        :param value: performance item value
+        :param target: target chip
+        :raise: AssertionError: if check fails
+        """
+        def _find_perf_item(operator: str, path: str) -> float:
+            with open(path, 'r') as f:
+                data = f.read()
+            match = re.search(r'#define\s+IDF_PERFORMANCE_{}_{}\s+([\d.]+)'.format(operator, item.upper()), data)
+            return float(match.group(1))  # type: ignore
+
+        def _check_perf(operator: str, standard_value: float) -> None:
+            if operator == 'MAX':
+                ret = value <= standard_value
+            else:
+                ret = value >= standard_value
+            if not ret:
+                raise AssertionError(
+                    "[Performance] {} value is {}, doesn't meet pass standard {}".format(item, value, standard_value)
+                )
+
+        path_prefix = os.path.join(idf_path, 'components', 'idf_test', 'include')
+        performance_files = (
+            os.path.join(path_prefix, target, 'idf_performance_target.h'),
+            os.path.join(path_prefix, 'idf_performance.h'),
+        )
+
+        found_item = False
+        for op in ['MIN', 'MAX']:
+            for performance_file in performance_files:
+                try:
+                    standard = _find_perf_item(op, performance_file)
+                except (IOError, AttributeError):
+                    # performance file doesn't exist or match is not found in it
+                    continue
+
+                _check_perf(op, standard)
+                found_item = True
+                break
+
+        if not found_item:
+            raise AssertionError('Failed to get performance standard for {}'.format(item))
+
+    return real_func
+
+
+@pytest.fixture
+def log_minimum_free_heap_size(dut: IdfDut, config: str) -> Callable[..., None]:
+    def real_func() -> None:
+        res = dut.expect(r'Minimum free heap size: (\d+) bytes')
+        logging.info(
+            '\n------ heap size info ------\n'
+            '[app_name] {}\n'
+            '[config_name] {}\n'
+            '[target] {}\n'
+            '[minimum_free_heap_size] {} Bytes\n'
+            '------ heap size end ------'.format(
+                os.path.basename(dut.app.app_path),
+                config,
+                dut.target,
+                res.group(1).decode('utf8'),
+            )
+        )
+
+    return real_func
 
 
 ##################
