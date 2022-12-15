@@ -33,6 +33,7 @@
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_ETM_SUPPORTED               1
 #define SOC_BT_SUPPORTED                1
+#define SOC_IEEE802154_SUPPORTED        1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
