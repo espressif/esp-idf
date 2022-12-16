@@ -97,7 +97,8 @@ struct esp_rgb_panel_t {
     esp_pm_lock_handle_t pm_lock; // Power management lock
     size_t num_dma_nodes;  // Number of DMA descriptors that used to carry the frame buffer
     uint8_t *fbs[RGB_LCD_PANEL_MAX_FB_NUM]; // Frame buffers
-    uint8_t cur_fb_index;  // Current frame buffer index (0 or 1)
+    uint8_t cur_fb_index;  // Current frame buffer index
+    uint8_t bb_fb_index;  // Current frame buffer index which used by bounce buffer
     size_t fb_size;        // Size of frame buffer
     int data_gpio_nums[SOC_LCD_RGB_DATA_WIDTH]; // GPIOs used for data lines, we keep these GPIOs for action like "invert_color"
     uint32_t src_clk_hz;   // Peripheral source clock resolution
@@ -165,6 +166,7 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(const esp_lcd_rgb_panel_confi
         }
     }
     rgb_panel->cur_fb_index = 0;
+    rgb_panel->bb_fb_index = 0;
     rgb_panel->flags.fb_in_psram = fb_in_psram;
 
     return ESP_OK;
@@ -223,10 +225,6 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
                       ESP_ERR_INVALID_ARG, err, TAG, "must set bounce buffer if there's no frame buffer");
     ESP_GOTO_ON_FALSE(!(rgb_panel_config->flags.refresh_on_demand && rgb_panel_config->bounce_buffer_size_px),
                       ESP_ERR_INVALID_ARG, err, TAG, "refresh on demand is not supported under bounce buffer mode");
-#if CONFIG_LCD_RGB_ISR_IRAM_SAFE
-    ESP_GOTO_ON_FALSE(rgb_panel_config->bounce_buffer_size_px == 0,
-                      ESP_ERR_INVALID_ARG, err, TAG, "bounce buffer mode is not IRAM Safe");
-#endif
 
     // determine number of framebuffers
     size_t num_fbs = 1;
@@ -962,25 +960,26 @@ static IRAM_ATTR bool lcd_rgb_panel_fill_bounce_buffer(esp_rgb_panel_t *panel, u
     } else {
         // We do have frame buffer; copy from there.
         // Note: if the cache is diabled, and accessing the PSRAM by DCACHE will crash.
-        memcpy(buffer, &panel->fbs[panel->cur_fb_index][panel->bounce_pos_px * bytes_per_pixel], panel->bb_size);
+        memcpy(buffer, &panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel], panel->bb_size);
         if (panel->flags.bb_invalidate_cache) {
             // We don't need the bytes we copied from the psram anymore
             // Make sure that if anything happened to have changed (because the line already was in cache) we write the data back.
-            Cache_WriteBack_Addr((uint32_t)&panel->fbs[panel->cur_fb_index][panel->bounce_pos_px * bytes_per_pixel], panel->bb_size);
+            Cache_WriteBack_Addr((uint32_t)&panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel], panel->bb_size);
             // Invalidate the data.
             // Note: possible race: perhaps something on the other core can squeeze a write between this and the writeback,
             // in which case that data gets discarded.
-            Cache_Invalidate_Addr((uint32_t)&panel->fbs[panel->cur_fb_index][panel->bounce_pos_px * bytes_per_pixel], panel->bb_size);
+            Cache_Invalidate_Addr((uint32_t)&panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel], panel->bb_size);
         }
     }
     panel->bounce_pos_px += panel->bb_size / bytes_per_pixel;
     // If the bounce pos is larger than the frame buffer size, wrap around so the next isr starts pre-loading the next frame.
     if (panel->bounce_pos_px >= panel->fb_size / bytes_per_pixel) {
         panel->bounce_pos_px = 0;
+        panel->bb_fb_index = panel->cur_fb_index;
     }
     if (panel->num_fbs > 0) {
         // Preload the next bit of buffer from psram
-        Cache_Start_DCache_Preload((uint32_t)&panel->fbs[panel->cur_fb_index][panel->bounce_pos_px * bytes_per_pixel],
+        Cache_Start_DCache_Preload((uint32_t)&panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel],
                                    panel->bb_size, 0);
     }
     return need_yield;
