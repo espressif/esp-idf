@@ -19,5 +19,5 @@ def test_phy_multi_init_data_bin(dut: IdfDut, config: str) -> None:
     if config == 'phy_multiple_init_data':
         dut.expect_exact('Support multiple PHY init data bins')
     else:
-        dut.expect_exact('load embedded multi phy init data')
+        dut.expect_exact('loading embedded multiple PHY init data')
     dut.expect_exact('wifi_init finished')
