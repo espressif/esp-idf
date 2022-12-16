@@ -66,6 +66,9 @@
 #define ADC1_TEST_CHAN0          ADC1_CHANNEL_2
 #endif
 
+//ESP32C3 ADC2 oneshot mode is not supported anymore
+#define ADC_TEST_ADC2    ((SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3)
+
 const __attribute__((unused)) static char *TAG = "TEST_ADC_LEGACY";
 
 
@@ -94,7 +97,7 @@ TEST_CASE("Legacy ADC oneshot high/low test", "[legacy_adc_oneshot]")
     //ADC1 config
     TEST_ESP_OK(adc1_config_width(ADC_WIDTH_BIT_DEFAULT));
     TEST_ESP_OK(adc1_config_channel_atten(ADC1_TEST_CHAN0, ADC_ATTEN_DB_11));
-#if (SOC_ADC_PERIPH_NUM >= 2)
+#if ADC_TEST_ADC2
     //ADC2 config
     TEST_ESP_OK(adc2_config_channel_atten(ADC2_TEST_CHAN0, ADC_ATTEN_DB_11));
 #endif
@@ -109,7 +112,7 @@ TEST_CASE("Legacy ADC oneshot high/low test", "[legacy_adc_oneshot]")
     ESP_LOGI(TAG, "ADC%d Channel %d raw: %d\n", ADC_UNIT_1, ADC1_TEST_CHAN0, adc_raw);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw);
 
-#if (SOC_ADC_PERIPH_NUM >= 2)
+#if ADC_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, (adc2_channel_t)ADC2_TEST_CHAN0, 0);
     TEST_ESP_OK(adc2_get_raw(ADC2_TEST_CHAN0, ADC_WIDTH_BIT_DEFAULT, &adc_raw));
     ESP_LOGI(TAG, "ADC%d Channel %d raw: %d\n", ADC_UNIT_2, ADC2_TEST_CHAN0, adc_raw);

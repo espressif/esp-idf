@@ -14,30 +14,19 @@
 #include "esp_adc/adc_continuous.h"
 
 #define EXAMPLE_READ_LEN   256
-#define GET_UNIT(x)        ((x>>3) & 0x1)
+#define EXAMPLE_ADC_CONV_MODE           ADC_CONV_SINGLE_UNIT_1
+
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#define EXAMPLE_ADC_USE_OUTPUT_TYPE1    1
+#define EXAMPLE_ADC_OUTPUT_TYPE         ADC_DIGI_OUTPUT_FORMAT_TYPE1
+#else
+#define EXAMPLE_ADC_OUTPUT_TYPE         ADC_DIGI_OUTPUT_FORMAT_TYPE2
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32
-#define ADC_CONV_MODE       ADC_CONV_SINGLE_UNIT_1  //ESP32 only supports ADC1 DMA mode
-#define ADC_OUTPUT_TYPE     ADC_DIGI_OUTPUT_FORMAT_TYPE1
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define ADC_CONV_MODE       ADC_CONV_BOTH_UNIT
-#define ADC_OUTPUT_TYPE     ADC_DIGI_OUTPUT_FORMAT_TYPE2
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
-#define ADC_CONV_MODE       ADC_CONV_ALTER_UNIT     //ESP32C3 only supports alter mode
-#define ADC_OUTPUT_TYPE     ADC_DIGI_OUTPUT_FORMAT_TYPE2
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define ADC_CONV_MODE       ADC_CONV_BOTH_UNIT
-#define ADC_OUTPUT_TYPE     ADC_DIGI_OUTPUT_FORMAT_TYPE2
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
-static adc_channel_t channel[3] = {ADC_CHANNEL_2, ADC_CHANNEL_3, (ADC_CHANNEL_0 | 1 << 3)};
-#endif
-#if CONFIG_IDF_TARGET_ESP32S2
-static adc_channel_t channel[3] = {ADC_CHANNEL_2, ADC_CHANNEL_3, (ADC_CHANNEL_0 | 1 << 3)};
-#endif
-#if CONFIG_IDF_TARGET_ESP32
-static adc_channel_t channel[1] = {ADC_CHANNEL_7};
+static adc_channel_t channel[2] = {ADC_CHANNEL_6, ADC_CHANNEL_7};
+#else
+static adc_channel_t channel[2] = {ADC_CHANNEL_2, ADC_CHANNEL_3};
 #endif
 
 static TaskHandle_t s_task_handle;
@@ -65,14 +54,14 @@ static void continuous_adc_init(adc_channel_t *channel, uint8_t channel_num, adc
 
     adc_continuous_config_t dig_cfg = {
         .sample_freq_hz = 20 * 1000,
-        .conv_mode = ADC_CONV_MODE,
-        .format = ADC_OUTPUT_TYPE,
+        .conv_mode = EXAMPLE_ADC_CONV_MODE,
+        .format = EXAMPLE_ADC_OUTPUT_TYPE,
     };
 
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
     dig_cfg.pattern_num = channel_num;
     for (int i = 0; i < channel_num; i++) {
-        uint8_t unit = GET_UNIT(channel[i]);
+        uint8_t unit = ADC_UNIT_1;
         uint8_t ch = channel[i] & 0x7;
         adc_pattern[i].atten = ADC_ATTEN_DB_0;
         adc_pattern[i].channel = ch;
@@ -89,16 +78,20 @@ static void continuous_adc_init(adc_channel_t *channel, uint8_t channel_num, adc
     *out_handle = handle;
 }
 
-#if !CONFIG_IDF_TARGET_ESP32
 static bool check_valid_data(const adc_digi_output_data_t *data)
 {
-    const unsigned int unit = data->type2.unit;
-    if (unit > 2) return false;
-    if (data->type2.channel >= SOC_ADC_CHANNEL_NUM(unit)) return false;
+#if EXAMPLE_ADC_USE_OUTPUT_TYPE1
+    if (data->type1.channel >= SOC_ADC_CHANNEL_NUM(ADC_UNIT_1)) {
+        return false;
+    }
+#else
+    if (data->type2.channel >= SOC_ADC_CHANNEL_NUM(ADC_UNIT_1)) {
+        return false;
+    }
+#endif
 
     return true;
 }
-#endif
 
 void app_main(void)
 {
@@ -136,24 +129,15 @@ void app_main(void)
                 ESP_LOGI("TASK", "ret is %x, ret_num is %"PRIu32, ret, ret_num);
                 for (int i = 0; i < ret_num; i += SOC_ADC_DIGI_RESULT_BYTES) {
                     adc_digi_output_data_t *p = (void*)&result[i];
-        #if CONFIG_IDF_TARGET_ESP32
-                    ESP_LOGI(TAG, "Unit: %d, Channel: %d, Value: %x", 1, p->type1.channel, p->type1.data);
-        #else
-                    if (ADC_CONV_MODE == ADC_CONV_BOTH_UNIT || ADC_CONV_MODE == ADC_CONV_ALTER_UNIT) {
-                        if (check_valid_data(p)) {
-                            ESP_LOGI(TAG, "Unit: %d,_Channel: %d, Value: %x", p->type2.unit+1, p->type2.channel, p->type2.data);
-                        } else {
-                            ESP_LOGI(TAG, "Invalid data [%d_%d_%x]", p->type2.unit+1, p->type2.channel, p->type2.data);
-                        }
-                    }
-        #if CONFIG_IDF_TARGET_ESP32S2
-                    else if (ADC_CONV_MODE == ADC_CONV_SINGLE_UNIT_2) {
-                        ESP_LOGI(TAG, "Unit: %d, Channel: %d, Value: %x", 2, p->type1.channel, p->type1.data);
-                    } else if (ADC_CONV_MODE == ADC_CONV_SINGLE_UNIT_1) {
+                    if (check_valid_data(p)) {
+                #if EXAMPLE_ADC_USE_OUTPUT_TYPE1
                         ESP_LOGI(TAG, "Unit: %d, Channel: %d, Value: %x", 1, p->type1.channel, p->type1.data);
+                #else
+                        ESP_LOGI(TAG, "Unit: %d,_Channel: %d, Value: %x", 1, p->type2.channel, p->type2.data);
+                #endif
+                    } else {
+                        ESP_LOGI(TAG, "Invalid data");
                     }
-        #endif  //#if CONFIG_IDF_TARGET_ESP32S2
-        #endif
                 }
                 /**
                  * Because printing is slow, so every time you call `ulTaskNotifyTake`, it will immediately return.
