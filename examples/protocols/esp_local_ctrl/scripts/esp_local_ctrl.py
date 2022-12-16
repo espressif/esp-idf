@@ -124,6 +124,8 @@ async def get_transport(sel_transport, service_name, check_hostname):
     try:
         tp = None
         if (sel_transport == 'http'):
+            tp = esp_prov.transport.Transport_HTTP(service_name, None)
+        elif (sel_transport == 'https'):
             example_path = os.environ['IDF_PATH'] + '/examples/protocols/esp_local_ctrl'
             cert_path = example_path + '/main/certs/rootCA.pem'
             ssl_ctx = ssl.create_default_context(cafile=cert_path)
@@ -274,7 +276,7 @@ async def main():
                         help='Protocol version', default='')
 
     parser.add_argument('--transport', dest='transport', type=str,
-                        help='transport i.e http or ble', default='http')
+                        help='transport i.e http/https/ble', default='https')
 
     parser.add_argument('--name', dest='service_name', type=str,
                         help='BLE Device Name / HTTP Server hostname or IP', default='')
@@ -309,7 +311,7 @@ async def main():
 
     if args.service_name == '':
         args.service_name = 'my_esp_ctrl_device'
-        if args.transport == 'http':
+        if args.transport == 'http' or args.transport == 'https':
             args.service_name += '.local'
 
     obj_transport = await get_transport(args.transport, args.service_name, not args.dont_check_hostname)

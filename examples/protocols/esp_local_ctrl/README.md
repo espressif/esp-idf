@@ -73,11 +73,13 @@ Select properties to set (0 to re-read, 'q' to quit) : q
 Quitting...
 ```
 
-The script also allows to connect over BLE, and provide a custom service name. To display the list of supported parameters, run:
+The script also allows to connect over plain HTTP or BLE, and provide a custom service name. To display the list of supported parameters, run:
 
 ```
 python scripts/esp_local_ctrl.py --help
 ```
+
+**Note:** To use plain HTTP transport, disable the config option `CONFIG_ESP_HTTPS_SERVER_ENABLE`.
 
 ## Certificates
 
