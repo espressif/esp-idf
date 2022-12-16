@@ -117,6 +117,8 @@ json_test() {
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32c3 --archive_details libdriver.a app_esp32c3.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32s3..." &>> output \
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s3 app_esp32s3.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py for esp32s3 configured with 32KB of icache..." &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s3 app_esp32s3_32k_icache.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32s3 with overflow..." &>> output \
     && python -m coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s3 overflow_esp32s3.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32s3 (target autodetected)..." &>> output \
