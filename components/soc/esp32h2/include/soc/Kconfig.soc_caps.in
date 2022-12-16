@@ -727,10 +727,6 @@ config SOC_PHY_DIG_REGS_MEM_SIZE
     int
     default 21
 
-config SOC_MAC_BB_PD_MEM_SIZE
-    int
-    default 192
-
 config SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH
     int
     default 12
