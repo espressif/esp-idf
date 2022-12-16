@@ -8,7 +8,7 @@
 
 #define TIMES 256
 
-static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask, adc_channel_t *channel, uint8_t channel_num)
+static void continuous_adc_init(uint16_t adc1_chan_mask, adc_channel_t *channel, uint8_t channel_num)
 {
     esp_err_t ret = ESP_OK;
     assert(ret == ESP_OK);
@@ -17,7 +17,7 @@ static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask
         .max_store_buf_size = 1024,
         .conv_num_each_intr = 256,
         .adc1_chan_mask = adc1_chan_mask,
-        .adc2_chan_mask = adc2_chan_mask,
+        .adc2_chan_mask = 0,
     };
     ret = adc_digi_initialize(&adc_dma_config);
     assert(ret == ESP_OK);
@@ -61,10 +61,9 @@ static void continuous_read(void *arg)
     memset(result, 0xcc, TIMES);
 
     uint16_t adc1_chan_mask = BIT(0) | BIT(1);
-    uint16_t adc2_chan_mask = BIT(0);
-    adc_channel_t channel[3] = {ADC1_CHANNEL_0, ADC1_CHANNEL_1, (ADC2_CHANNEL_0 | 1 << 3)};
+    adc_channel_t channel[3] = {ADC1_CHANNEL_0, ADC1_CHANNEL_1};
 
-    continuous_adc_init(adc1_chan_mask, adc2_chan_mask, channel, sizeof(channel) / sizeof(adc_channel_t));
+    continuous_adc_init(adc1_chan_mask, channel, sizeof(channel) / sizeof(adc_channel_t));
     adc_digi_start();
 
     int n = 20;
