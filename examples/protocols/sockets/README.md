@@ -30,10 +30,25 @@ There are many host-side tools which can be used to interact with the UDP/TCP se
 One command line tool is [netcat](http://netcat.sourceforge.net) which can send and receive many kinds of packets. 
 Note: please replace `192.168.0.167 3333` with desired IPV4/IPV6 address (displayed in monitor console) and port number in the following commands.
 
-In addition to those tools, Python scripts named `pytest_xxx.py` can be found under each example directory. 
+In addition to those tools, There are some python scripts under `examples/protocols/sockets/scripts`. 
+And scripts for automated tests named `pytest_xxx.py` can be found under each example directory. 
 
 
-### Python scripts
+### Python Scripts Socket Tools
+
+Python scripts under `examples/protocols/sockets/scripts` could be used to exercise the socket communication. 
+Command line arguments such as IP version and IP address shall be supplied. Use `python xxxx.py --help` to see how to use these scripts. 
+
+Examples:
+```bash
+# python run_tcp_client.py --help
+python run_tcp_client.py 192.168.1.2 [--port=3333] [--message="Data to ESP"]
+python run_tcp_client.py fe80::2%eth0 [--port=3333] [--message="Data to ESP"]
+# python run_tcp_server.py --help
+python run_tcp_server.py [--port=3333] [--ipv6]
+```
+
+### Python Scripts For Automated Tests
 
 Script named `pytest_xxxx` in the application directory can be used for automated tests. 
 They can also be run locally. Ref: [ESP-IDF Tests with Pytest Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/contribute/esp-idf-tests-with-pytest.html).

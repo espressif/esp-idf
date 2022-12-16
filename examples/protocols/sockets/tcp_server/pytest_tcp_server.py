@@ -2,42 +2,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
-import os
-import socket
 import time
 
 import pytest
 from common_test_methods import get_env_config_variable, get_my_interface_by_dest_ip
 from pytest_embedded import Dut
 
+try:
+    from run_tcp_client import tcp_client
+except ImportError:
+    import os
+    import sys
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts')))
+    from run_tcp_client import tcp_client
+
+
 PORT = 3333
 MESSAGE = 'Data to ESP'
-
-
-def tcp_client(address: str, payload: str) -> str:
-    for res in socket.getaddrinfo(address, PORT, socket.AF_UNSPEC,
-                                  socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
-        family_addr, socktype, proto, canonname, addr = res
-    try:
-        sock = socket.socket(family_addr, socket.SOCK_STREAM)
-        sock.settimeout(60.0)
-    except socket.error as msg:
-        print('Could not create socket')
-        print(os.strerror(msg.errno))
-        raise
-    try:
-        sock.connect(addr)
-    except socket.error as e:
-        print('Could not open socket: ' + str(e))
-        sock.close()
-        raise
-    sock.sendall(payload.encode())
-    data = sock.recv(1024)
-    if not data:
-        return ''
-    print('Reply : ' + data.decode())
-    sock.close()
-    return data.decode()
 
 
 @pytest.mark.esp32
@@ -56,7 +37,7 @@ def test_examples_tcp_server_ipv4(dut: Dut) -> None:
     time.sleep(1)
 
     # test IPv4
-    received = tcp_client(ipv4, MESSAGE)
+    received = tcp_client(ipv4, PORT, MESSAGE)
     if not received == MESSAGE:
         raise
     dut.expect(MESSAGE)
@@ -82,7 +63,7 @@ def test_examples_tcp_server_ipv6(dut: Dut) -> None:
 
     interface = get_my_interface_by_dest_ip(ipv4)
     # test IPv6
-    received = tcp_client('{}%{}'.format(ipv6, interface), MESSAGE)
+    received = tcp_client('{}%{}'.format(ipv6, interface), PORT, MESSAGE)
     if not received == MESSAGE:
         raise
     dut.expect(MESSAGE)
