@@ -3,7 +3,6 @@ clang_tidy_check:
   extends:
     - .pre_check_template
     - .rules:patterns:clang_tidy
-  image: ${CLANG_STATIC_ANALYSIS_IMAGE}
   artifacts:
     paths:
       - $OUTPUT_DIR
@@ -13,6 +12,7 @@ clang_tidy_check:
     CLANG_TIDY_DIRS_TXT: ${CI_PROJECT_DIR}/tools/ci/clang_tidy_dirs.txt
     RULES_FILE: ${CI_PROJECT_DIR}/tools/ci/static-analysis-rules.yml
     OUTPUT_DIR: ${CI_PROJECT_DIR}/clang_tidy_reports
+    IDF_TOOLCHAIN: clang
   script:
     - internal_pip_install $CLANG_TIDY_RUNNER_PROJ pyclang
     - export PATH=$PATH:$(python -c "import sys; print(sys.executable.rsplit('/', 1)[0])")
@@ -21,7 +21,7 @@ clang_tidy_check:
       --output-path ${OUTPUT_DIR}
       --limit-file ${RULES_FILE}
       --xtensa-include-dir
-      --run-clang-tidy-py ${RUN_CLANG_TIDY_PY}
+      --run-clang-tidy-py run-clang-tidy
 
 check_pylint:
   extends:

@@ -7,8 +7,8 @@
   - "tools/ci/static-analysis-rules.yml"
   - "tools/ci/clang_tidy_dirs.txt"
 
-  - "**/*.{c,C}"
-  - "**/*.{h,H}"
+  - "**/*.{c,C,cpp}"
+  - "**/*.{h,H,hpp}"
   - "components/**/Kconfig"
   - "components/**/CMakeList.txt"
 
