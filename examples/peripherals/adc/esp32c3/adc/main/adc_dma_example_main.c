@@ -87,17 +87,13 @@ static void continuous_read(void *arg)
 
 static void single_read(void *arg)
 {
-    esp_err_t ret;
     int adc1_reading[3] = {0xcc};
-    int adc2_reading[1] = {0xcc};
-
-    const char TAG_CH[][10] = {"ADC1_CH2", "ADC1_CH3","ADC1_CH4", "ADC2_CH0"};
+    const char TAG_CH[][10] = {"ADC1_CH2", "ADC1_CH3","ADC1_CH4"};
 
     adc1_config_width(ADC_WIDTH_BIT_DEFAULT);
     adc1_config_channel_atten(ADC1_CHANNEL_2, ADC_ATTEN_DB_0);
     adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_6);
     adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_0);
-    adc2_config_channel_atten(ADC2_CHANNEL_0, ADC_ATTEN_DB_0);
 
     int n = 20;
     while (n--) {
@@ -109,10 +105,6 @@ static void single_read(void *arg)
         for (int i = 0; i < 3; i++) {
             ESP_LOGI(TAG_CH[i], "%x", adc1_reading[i]);
         }
-
-        ret = adc2_get_raw(ADC2_CHANNEL_0, ADC_WIDTH_BIT_12, &adc2_reading[0]);
-        assert(ret == ESP_OK);
-        ESP_LOGI(TAG_CH[3], "%x", adc2_reading[0]);
     }
 }
 
