@@ -11,8 +11,6 @@
 #include "lwip/netif.h"
 #include "dhcpserver/dhcpserver.h"
 
-#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
-
 struct esp_netif_api_msg_s;
 
 typedef int (*esp_netif_api_fn)(struct esp_netif_api_msg_s *msg);
@@ -108,5 +106,3 @@ struct esp_netif_obj {
     uint8_t max_ports;
 #endif // CONFIG_ESP_NETIF_BRIDGE_EN
 };
-
-#endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */

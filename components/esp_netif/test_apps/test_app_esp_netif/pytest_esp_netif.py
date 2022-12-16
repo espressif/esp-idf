@@ -6,6 +6,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32s2
+@pytest.mark.esp32c3
 @pytest.mark.generic
 def test_esp_netif(dut: Dut) -> None:
     dut.expect_unity_test_output()

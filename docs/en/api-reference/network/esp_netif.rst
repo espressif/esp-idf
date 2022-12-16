@@ -8,6 +8,8 @@ The purpose of ESP-NETIF library is twofold:
 
 ESP-IDF currently implements ESP-NETIF for the lwIP TCP/IP stack only. However, the adapter itself is TCP/IP implementation agnostic and different implementations are possible.
 
+It is also possible to use a custom TCP/IP stack with ESP-IDF, provided it implements BSD API. For more information on building ESP-IDF without lwIP, please refer to :idf_file:`components/esp_netif_stack/README.md`.
+
 Some ESP-NETIF API functions are intended to be called by application code, for example to get/set interface IP addresses, configure DHCP. Other functions are intended for internal ESP-IDF use by the network driver layer.
 
 In many cases, applications do not need to call ESP-NETIF APIs directly as they are called from the default network event handlers.

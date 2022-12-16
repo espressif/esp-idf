@@ -7,8 +7,6 @@
 
 #include "esp_netif.h"
 
-#ifdef CONFIG_ESP_NETIF_TCPIP_LWIP
-
 #include "lwip/dns.h"
 #include "netif/ppp/pppapi.h"
 #include "netif/ppp/pppos.h"
@@ -325,5 +323,3 @@ esp_err_t esp_netif_ppp_get_params(esp_netif_t *netif, esp_netif_ppp_config_t *c
     config->ppp_error_event_enabled = obj->ppp_error_event_enabled;
     return ESP_OK;
 }
-
-#endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */

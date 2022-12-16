@@ -6,9 +6,9 @@ components/esp_netif/test_apps/test_app_esp_netif:
       temporary: true
       reason: target esp32c6 is not supported yet
   disable_test:
-    - if: IDF_TARGET != "esp32s2"
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32s2", "esp32c3"]
+      temporary: false
+      reason: Not needed to test on all targets (chosen two, one for each architecture)
 
 components/esp_netif/test_apps/test_app_vfs_l2tap:
   disable:

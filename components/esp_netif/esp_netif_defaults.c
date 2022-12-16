@@ -5,7 +5,6 @@
  */
 
 #include "esp_netif.h"
-#include "lwip/esp_netif_net_stack.h"
 
 //
 // Purpose of this module is to provide
@@ -31,4 +30,6 @@ const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config = ESP_NETIF_IN
 
 const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config = ESP_NETIF_INHERENT_DEFAULT_ETH();
 
+#ifdef CONFIG_PPP_SUPPORT
 const esp_netif_inherent_config_t _g_esp_netif_inherent_ppp_config = ESP_NETIF_INHERENT_DEFAULT_PPP();
+#endif

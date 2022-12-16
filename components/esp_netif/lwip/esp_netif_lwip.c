@@ -17,8 +17,6 @@
 #include "esp_netif_private.h"
 #include "esp_random.h"
 
-#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
-
 #include "lwip/tcpip.h"
 #include "lwip/dhcp.h"
 #include "lwip/ip_addr.h"
@@ -2275,5 +2273,3 @@ esp_err_t esp_netif_remove_ip6_address(esp_netif_t *esp_netif, const esp_ip6_add
     _RUN_IN_LWIP_TASK(esp_netif_remove_ip6_address_api, esp_netif, addr)
 
 #endif // CONFIG_LWIP_IPV6
-
-#endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */
