@@ -197,12 +197,17 @@ typedef struct protocomm_ble_config esp_local_ctrl_transport_config_ble_t;
 /**
  * @brief   Configuration for transport mode HTTPD
  *
- * This is a forward declaration for `httpd_ssl_config_t`.
- * To use this, application must set CONFIG_ESP_HTTPS_SERVER_ENABLE
+ * This is a forward declaration for `httpd_ssl_config_t` (for HTTPS)
+ * or `httpd_config_t` (for HTTP)
+ */
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
+/* To use this, application must set CONFIG_ESP_HTTPS_SERVER_ENABLE
  * and include `esp_https_server.h`
  */
 typedef struct httpd_ssl_config esp_local_ctrl_transport_config_httpd_t;
-
+#else
+typedef struct httpd_config esp_local_ctrl_transport_config_httpd_t;
+#endif
 /**
  * @brief   Transport mode (BLE / HTTPD) configuration
  */
