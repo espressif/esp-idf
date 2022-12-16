@@ -51,7 +51,10 @@ static int adc_raw[2][10];
 static const char *TAG = "ADC SINGLE";
 
 static esp_adc_cal_characteristics_t adc1_chars;
+#if !CONFIG_IDF_TARGET_ESP32C3
+//ESP32C3 ADC2 single mode is no longer supported
 static esp_adc_cal_characteristics_t adc2_chars;
+#endif
 
 static bool adc_calibration_init(void)
 {
@@ -66,7 +69,9 @@ static bool adc_calibration_init(void)
     } else if (ret == ESP_OK) {
         cali_enable = true;
         esp_adc_cal_characterize(ADC_UNIT_1, ADC_EXAMPLE_ATTEN, ADC_WIDTH_BIT_DEFAULT, 0, &adc1_chars);
+#if !CONFIG_IDF_TARGET_ESP32C3
         esp_adc_cal_characterize(ADC_UNIT_2, ADC_EXAMPLE_ATTEN, ADC_WIDTH_BIT_DEFAULT, 0, &adc2_chars);
+#endif
     } else {
         ESP_LOGE(TAG, "Invalid arg");
     }
@@ -76,15 +81,16 @@ static bool adc_calibration_init(void)
 
 void app_main(void)
 {
-    esp_err_t ret = ESP_OK;
     uint32_t voltage = 0;
     bool cali_enable = adc_calibration_init();
 
     //ADC1 config
     ESP_ERROR_CHECK(adc1_config_width(ADC_WIDTH_BIT_DEFAULT));
     ESP_ERROR_CHECK(adc1_config_channel_atten(ADC1_EXAMPLE_CHAN0, ADC_EXAMPLE_ATTEN));
+#if !CONFIG_IDF_TARGET_ESP32C3
     //ADC2 config
     ESP_ERROR_CHECK(adc2_config_channel_atten(ADC2_EXAMPLE_CHAN0, ADC_EXAMPLE_ATTEN));
+#endif
 
     while (1) {
         adc_raw[0][0] = adc1_get_raw(ADC1_EXAMPLE_CHAN0);
@@ -95,6 +101,8 @@ void app_main(void)
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
 
+#if !CONFIG_IDF_TARGET_ESP32C3
+        esp_err_t ret = ESP_OK;
         do {
             ret = adc2_get_raw(ADC2_EXAMPLE_CHAN0, ADC_WIDTH_BIT_DEFAULT, &adc_raw[1][0]);
         } while (ret == ESP_ERR_INVALID_STATE);
@@ -106,5 +114,6 @@ void app_main(void)
             ESP_LOGI(TAG_CH[1][0], "cali data: %d mV", voltage);
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
+#endif
     }
 }

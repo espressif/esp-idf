@@ -744,6 +744,11 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 
 esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *raw_out)
 {
+#if !CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3
+    ESP_LOGE(ADC_TAG, "ADC2 is no longer supported, please use ADC1. Search for errata on espressif website for more details. You can enable ADC_ONESHOT_FORCE_USE_ADC2_ON_C3 to force use ADC2");
+    ESP_RETURN_ON_FALSE(SOC_ADC_DIG_SUPPORTED_UNIT(ADC_UNIT_2), ESP_ERR_INVALID_ARG, ADC_TAG, "adc unit not supported");
+#endif
+
     //On ESP32C3, the data width is always 12-bits.
     if (width_bit != ADC_WIDTH_BIT_12) {
         return ESP_ERR_INVALID_ARG;
