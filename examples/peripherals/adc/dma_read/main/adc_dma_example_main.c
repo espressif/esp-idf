@@ -17,41 +17,37 @@
 #define GET_UNIT(x)        ((x>>3) & 0x1)
 
 #if CONFIG_IDF_TARGET_ESP32
-#define ADC_RESULT_BYTE     2
-#define ADC_CONV_LIMIT_EN   1                       //For ESP32, this should always be set to 1
-#define ADC_CONV_MODE       ADC_CONV_SINGLE_UNIT_1  //ESP32 only supports ADC1 DMA mode
-#define ADC_OUTPUT_TYPE     ADC_DIGI_OUTPUT_FORMAT_TYPE1
+#define ADC_RESULT_BYTE                 2
+#define ADC_CONV_LIMIT_EN               1                       //For ESP32, this should always be set to 1
+#define ADC_OUTPUT_TYPE                 ADC_DIGI_OUTPUT_FORMAT_TYPE1
+#define EXAMPLE_ADC_USE_OUTPUT_TYPE1    1
+#define ADC_CONV_MODE                   ADC_CONV_SINGLE_UNIT_1
 #elif CONFIG_IDF_TARGET_ESP32S2
-#define ADC_RESULT_BYTE     2
-#define ADC_CONV_LIMIT_EN   0
-#define ADC_CONV_MODE       ADC_CONV_BOTH_UNIT
-#define ADC_OUTPUT_TYPE     ADC_DIGI_OUTPUT_FORMAT_TYPE2
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
-#define ADC_RESULT_BYTE     4
-#define ADC_CONV_LIMIT_EN   0
-#define ADC_CONV_MODE       ADC_CONV_ALTER_UNIT     //ESP32C3 only supports alter mode
-#define ADC_OUTPUT_TYPE     ADC_DIGI_OUTPUT_FORMAT_TYPE2
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define ADC_RESULT_BYTE     4
-#define ADC_CONV_LIMIT_EN   0
-#define ADC_CONV_MODE       ADC_CONV_BOTH_UNIT
-#define ADC_OUTPUT_TYPE     ADC_DIGI_OUTPUT_FORMAT_TYPE2
+#define ADC_RESULT_BYTE                 2
+#define ADC_CONV_LIMIT_EN               0
+#define ADC_OUTPUT_TYPE                 ADC_DIGI_OUTPUT_FORMAT_TYPE2
+#define ADC_CONV_MODE                   ADC_CONV_BOTH_UNIT
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32S3
+#define ADC_RESULT_BYTE                 4
+#define ADC_CONV_LIMIT_EN               0
+#define ADC_OUTPUT_TYPE                 ADC_DIGI_OUTPUT_FORMAT_TYPE2
+#define ADC_CONV_MODE                   ADC_CONV_SINGLE_UNIT_1
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H2
-static uint16_t adc1_chan_mask = BIT(2) | BIT(3);
-static uint16_t adc2_chan_mask = BIT(0);
-static adc_channel_t channel[3] = {ADC1_CHANNEL_2, ADC1_CHANNEL_3, (ADC2_CHANNEL_0 | 1 << 3)};
-#endif
-#if CONFIG_IDF_TARGET_ESP32S2
-static uint16_t adc1_chan_mask = BIT(2) | BIT(3);
-static uint16_t adc2_chan_mask = BIT(0);
-static adc_channel_t channel[3] = {ADC1_CHANNEL_2, ADC1_CHANNEL_3, (ADC2_CHANNEL_0 | 1 << 3)};
-#endif
 #if CONFIG_IDF_TARGET_ESP32
 static uint16_t adc1_chan_mask = BIT(7);
 static uint16_t adc2_chan_mask = 0;
 static adc_channel_t channel[1] = {ADC1_CHANNEL_7};
+
+#elif CONFIG_IDF_TARGET_ESP32S2
+static uint16_t adc1_chan_mask = BIT(2) | BIT(3);
+static uint16_t adc2_chan_mask = BIT(0);
+static adc_channel_t channel[3] = {ADC1_CHANNEL_2, ADC1_CHANNEL_3, (ADC2_CHANNEL_0 | 1 << 3)};
+
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H2
+static uint16_t adc1_chan_mask = BIT(2) | BIT(3);
+static uint16_t adc2_chan_mask = 0;
+static adc_channel_t channel[2] = {ADC1_CHANNEL_2, ADC1_CHANNEL_3};
 #endif
 
 static const char *TAG = "ADC DMA";
@@ -92,16 +88,24 @@ static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask
     ESP_ERROR_CHECK(adc_digi_controller_configure(&dig_cfg));
 }
 
-#if !CONFIG_IDF_TARGET_ESP32
 static bool check_valid_data(const adc_digi_output_data_t *data)
 {
-    const unsigned int unit = data->type2.unit;
-    if (unit > 2) return false;
-    if (data->type2.channel >= SOC_ADC_CHANNEL_NUM(unit)) return false;
+#if EXAMPLE_ADC_USE_OUTPUT_TYPE1
+    if (data->type1.channel >= SOC_ADC_CHANNEL_NUM(ADC_UNIT_1)) {
+        return false;
+    }
+#else
+    int unit = data->type2.unit;
+    if (unit >= ADC_UNIT_2) {
+        return false;
+    }
+    if (data->type2.channel >= SOC_ADC_CHANNEL_NUM(unit)) {
+        return false;
+    }
+#endif
 
     return true;
 }
-#endif
 
 void app_main(void)
 {
@@ -137,25 +141,15 @@ void app_main(void)
             ESP_LOGI("TASK:", "ret is %x, ret_num is %d", ret, ret_num);
             for (int i = 0; i < ret_num; i += ADC_RESULT_BYTE) {
                 adc_digi_output_data_t *p = (void*)&result[i];
-    #if CONFIG_IDF_TARGET_ESP32
-                ESP_LOGI(TAG, "Unit: %d, Channel: %d, Value: %x", 1, p->type1.channel, p->type1.data);
-    #else
-                if (ADC_CONV_MODE == ADC_CONV_BOTH_UNIT || ADC_CONV_MODE == ADC_CONV_ALTER_UNIT) {
-                    if (check_valid_data(p)) {
-                        ESP_LOGI(TAG, "Unit: %d,_Channel: %d, Value: %x", p->type2.unit+1, p->type2.channel, p->type2.data);
-                    } else {
-                        // abort();
-                        ESP_LOGI(TAG, "Invalid data [%d_%d_%x]", p->type2.unit+1, p->type2.channel, p->type2.data);
-                    }
-                }
-    #if CONFIG_IDF_TARGET_ESP32S2
-                else if (ADC_CONV_MODE == ADC_CONV_SINGLE_UNIT_2) {
-                    ESP_LOGI(TAG, "Unit: %d, Channel: %d, Value: %x", 2, p->type1.channel, p->type1.data);
-                } else if (ADC_CONV_MODE == ADC_CONV_SINGLE_UNIT_1) {
+                if (check_valid_data(p)) {
+            #if EXAMPLE_ADC_USE_OUTPUT_TYPE1
                     ESP_LOGI(TAG, "Unit: %d, Channel: %d, Value: %x", 1, p->type1.channel, p->type1.data);
+            #else
+                    ESP_LOGI(TAG, "Unit: %d,_Channel: %d, Value: %x", p->type2.unit + 1, p->type2.channel, p->type2.data);
+            #endif
+                } else {
+                    ESP_LOGI(TAG, "Invalid data");
                 }
-    #endif  //#if CONFIG_IDF_TARGET_ESP32S2
-    #endif
             }
             //See `note 1`
             vTaskDelay(1);
