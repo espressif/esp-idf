@@ -12,11 +12,9 @@ from __future__ import division, unicode_literals
 import os
 import re
 import subprocess
-import time
 
-import netifaces
 import ttfw_idf
-from common_test_methods import get_env_config_variable, get_host_ip_by_interface
+from common_test_methods import get_host_ip4_by_dest_ip
 from idf_iperf_test_util import IperfUtility
 from tiny_test_fw import TinyFW
 
@@ -46,11 +44,10 @@ class IperfTestUtilityEth(IperfUtility.IperfTestUtility):
         except subprocess.CalledProcessError:
             pass
         self.dut.write('restart')
+        self.dut.expect("Type 'help' to get the list of commands.")
         self.dut.expect_any('iperf>', 'esp32>')
         self.dut.write('ethernet start')
-        time.sleep(10)
-        self.dut.write('ethernet info')
-        dut_ip = self.dut.expect(re.compile(r'ETHIP: (\d+[.]\d+[.]\d+[.]\d+)\r'))[0]
+        dut_ip = self.dut.expect(re.compile(r'esp_netif_handlers: .+ ip: (\d+\.\d+\.\d+\.\d+),'))[0]
         rssi = 0
         return dut_ip, rssi
 
@@ -62,8 +59,6 @@ def test_ethernet_throughput_basic(env, _):  # type: (Any, Any) -> None
       1. test TCP tx rx and UDP tx rx throughput
       2. compare with the pre-defined pass standard
     """
-    pc_nic = get_env_config_variable('wifi_router', 'pc_nic', default='eth1')
-    pc_nic_ip = get_host_ip_by_interface(pc_nic, netifaces.AF_INET)
     pc_iperf_log_file = os.path.join(env.log_path, 'pc_iperf_log.md')
 
     # 1. get DUT
@@ -72,6 +67,10 @@ def test_ethernet_throughput_basic(env, _):  # type: (Any, Any) -> None
     dut.expect_any('iperf>', 'esp32>')
 
     # 2. preparing
+    dut.write('ethernet start')
+    dut_ip = dut.expect(re.compile(r'esp_netif_handlers: .+ ip: (\d+\.\d+\.\d+\.\d+),'))[0]
+    pc_nic_ip = get_host_ip4_by_dest_ip(dut_ip)
+
     test_result = {
         'tcp_tx': IperfUtility.TestResult('tcp', 'tx', 'ethernet'),
         'tcp_rx': IperfUtility.TestResult('tcp', 'rx', 'ethernet'),
