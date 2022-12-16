@@ -68,7 +68,7 @@ Call :cpp:func:`esp_now_add_peer()` to add the device to the paired device list 
 
 .. only:: esp32c2
 
-    The maximum number of paired devices is 20, and the paired encryption devices are no more than 4, the default is 2. If you want to change the number of paired encryption devices, set :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` in WiFi component configuration menu.
+    The maximum number of paired devices is 20, and the paired encryption devices are no more than 4, the default is 2. If you want to change the number of paired encryption devices, set :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` in the Wi-Fi component configuration menu.
 
 .. only:: esp32 or esp32s2 or esp32s3 or esp32c3
 
