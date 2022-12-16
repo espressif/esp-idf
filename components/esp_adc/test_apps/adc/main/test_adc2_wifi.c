@@ -18,7 +18,10 @@
 #include "test_common_adc.h"
 #include "test_utils.h"
 
-#if (SOC_ADC_PERIPH_NUM > 1)
+/**
+ * On ESP32C3, ADC2 is no longer supported, due to its HW limitation.
+ */
+#if (SOC_ADC_PERIPH_NUM > 1) && !CONFIG_IDF_TARGET_ESP32C3
 
 static const char* TAG = "test_adc2";
 

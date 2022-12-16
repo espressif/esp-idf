@@ -52,6 +52,7 @@
 #define SOC_ADC_DIG_CTRL_SUPPORTED              1
 #define SOC_ADC_FILTER_SUPPORTED                1
 #define SOC_ADC_MONITOR_SUPPORTED               1
+#define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        1    //Digital controller supported ADC unit
 #define SOC_ADC_PERIPH_NUM                      (1U)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (5)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (5)

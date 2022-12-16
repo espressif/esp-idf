@@ -209,7 +209,7 @@ Hardware Limitations
 
 - Random Number Generator uses ADC as an input source. When ADC continuous mode driver works, the random number generated from RNG will be less random.
 
-.. only:: esp32 or esp32s2 or esp32c3 or esp32s3
+.. only:: esp32 or esp32s2
 
     - ADC2 is also used by the Wi-Fi. :cpp:func:`adc_continuous_start` has provided the protection between Wi-Fi driver and ADC continuous mode driver.
 
@@ -224,6 +224,14 @@ Hardware Limitations
 .. only:: esp32s2
 
     - ADC continuous mode driver uses SPI3 peripheral as hardware DMA fifo. Therefore, if SPI3 is in use already, the :cpp:func:`adc_continuous_new_handle` will return :c:macro:`ESP_ERR_NOT_FOUND`.
+
+.. only:: esp32c3
+
+    - ADC2 continuous mode is no longer supported, due to hardware limitation. The results are not stable. This issue can be found in `ESP32C3 Errata <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_en.pdf>`. For compatibility, you can enable :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` to force use ADC2.
+
+.. only:: esp32s3
+
+    - ADC2 continuous mode is no longer supported, due to hardware limitation. The results are not stable. This issue can be found in `ESP32S3 Errata <https://www.espressif.com/sites/default/files/documentation/esp32-s3_errata_en.pdf>`. For compatibility, you can enable :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` to force use ADC2.
 
 
 Power Management

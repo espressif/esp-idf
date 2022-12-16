@@ -107,6 +107,7 @@
 #define SOC_ADC_RTC_CTRL_SUPPORTED              1
 #define SOC_ADC_DIG_CTRL_SUPPORTED              1
 #define SOC_ADC_DMA_SUPPORTED                   1
+#define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        ((UNIT == 0) ? 1 : 0)
 #define SOC_ADC_PERIPH_NUM                      (2)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 8: 10)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (10)
