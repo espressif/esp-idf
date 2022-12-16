@@ -57,6 +57,8 @@ typedef enum {
 typedef enum {
     ESP_BLUFI_STA_CONN_SUCCESS = 0x00,
     ESP_BLUFI_STA_CONN_FAIL    = 0x01,
+    ESP_BLUFI_STA_CONNECTING   = 0x02,
+    ESP_BLUFI_STA_NO_IP        = 0x03,
 } esp_blufi_sta_conn_state_t;
 
 /// BLUFI init status
@@ -82,6 +84,8 @@ typedef enum {
     ESP_BLUFI_READ_PARAM_ERROR,
     ESP_BLUFI_MAKE_PUBLIC_ERROR,
     ESP_BLUFI_DATA_FORMAT_ERROR,
+    ESP_BLUFI_CALC_MD5_ERROR,
+    ESP_BLUFI_WIFI_SCAN_FAIL,
 } esp_blufi_error_state_t;
 
 /**
@@ -105,6 +109,12 @@ typedef struct {
     bool softap_max_conn_num_set;   /*!< is max connection number of softap interface set */
     uint8_t softap_channel;         /*!< channel of softap interface */
     bool softap_channel_set;        /*!< is channel of softap interface set */
+    uint8_t sta_max_conn_retry;     /*!< max retry of sta establish connection */
+    bool sta_max_conn_retry_set;    /*!< is max retry of sta establish connection set */
+    uint8_t sta_conn_end_reason;    /*!< reason of sta connection end */
+    bool sta_conn_end_reason_set;   /*!< is reason of sta connection end set */
+    int8_t sta_conn_rssi;           /*!< rssi of sta connection */
+    bool sta_conn_rssi_set;         /*!< is rssi of sta connection set */
 } esp_blufi_extra_info_t;
 
 /** @brief Description of an WiFi AP */

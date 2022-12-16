@@ -181,12 +181,12 @@ void esp_phy_load_cal_and_init(void);
 /**
  * @brief Initialize backup memory for Phy power up/down
  */
-void esp_phy_pd_mem_init(void);
+void esp_phy_modem_init(void);
 
 /**
  * @brief Deinitialize backup memory for Phy power up/down
  */
-void esp_phy_pd_mem_deinit(void);
+void esp_phy_modem_deinit(void);
 
 #if CONFIG_MAC_BB_PD
 /**

@@ -1215,13 +1215,15 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     ESP_LOGI(BTDM_LOG_TAG, "BT controller compile version [%s]", btdm_controller_get_compile_version());
 
+    esp_phy_modem_init();
+
+    esp_bt_power_domain_on();
+
     s_wakeup_req_sem = semphr_create_wrapper(1, 0);
     if (s_wakeup_req_sem == NULL) {
         err = ESP_ERR_NO_MEM;
         goto error;
     }
-
-    esp_bt_power_domain_on();
 
     btdm_controller_mem_init();
 
@@ -1335,6 +1337,10 @@ error:
         semphr_delete_wrapper(s_wakeup_req_sem);
         s_wakeup_req_sem = NULL;
     }
+
+    esp_bt_power_domain_off();
+
+    esp_phy_modem_deinit();
     return err;
 }
 
@@ -1379,6 +1385,8 @@ esp_err_t esp_bt_controller_deinit(void)
     btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
 
     esp_bt_power_domain_off();
+
+    esp_phy_modem_deinit();
 
     return ESP_OK;
 }

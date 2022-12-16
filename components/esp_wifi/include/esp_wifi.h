@@ -1245,7 +1245,7 @@ esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
   * @attention 3. This configuration would influence nothing until some module configure wake_window
   * @attention 4. A sensible interval which is not too small is recommended (e.g. 100ms)
   *
-  * @param      interval  how much micriosecond would the chip wake up, from 1 to 65535.
+  * @param      interval  how much milliseconds would the chip wake up, from 1 to 65535.
   */
 esp_err_t esp_wifi_set_connectionless_wake_interval(uint16_t interval);
 
