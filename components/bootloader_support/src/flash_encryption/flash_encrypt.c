@@ -111,7 +111,7 @@ esp_err_t esp_flash_encrypt_check_and_update(void)
         err = esp_flash_encrypt_enable();
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Enabling of Flash encryption failed (%d)", err);
-            return err;f
+            return err;
         }
 #else
         ESP_LOGE(TAG, "flash encryption is not enabled, and SECURE_FLASH_REQUIRE_ALREADY_ENABLED "
@@ -311,10 +311,10 @@ esp_err_t esp_flash_encrypt_enable(void)
 #endif
     }
 
+    ESP_LOGI(TAG, "Flash encryption completed");
+
 #if CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "Flash encryption not really completed. Must disable virtual efuses");
-#else
-    ESP_LOGI(TAG, "Flash encryption completed");
 #endif
 
     return err;
