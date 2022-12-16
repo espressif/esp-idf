@@ -1107,10 +1107,12 @@ static void esp_netif_internal_dhcpc_cb(struct netif *netif)
 
     if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY4) ) {
 
-        //check whether IP is changed
-        if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), (&ip_info->ip)) ||
-             !ip4_addr_cmp(ip_2_ip4(&netif->netmask), (&ip_info->netmask)) ||
-             !ip4_addr_cmp(ip_2_ip4(&netif->gw), (&ip_info->gw)) ) {
+        //check whether IP is changed (or if we're an PPP interface)
+        if ( (!ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), (&ip_info->ip)) ||
+              !ip4_addr_cmp(ip_2_ip4(&netif->netmask), (&ip_info->netmask)) ||
+              !ip4_addr_cmp(ip_2_ip4(&netif->gw), (&ip_info->gw)))
+          // post IP event for PPP interfaces even if IP hasn't changed
+             || (_IS_NETIF_ANY_POINT2POINT_TYPE(esp_netif))) {
             ip_event_got_ip_t evt = {
                     .esp_netif = esp_netif,
                     .ip_changed = false,
