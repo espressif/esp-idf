@@ -13,6 +13,8 @@
 
 #define FILTER_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
 
+#define GLITCH_FILTER_PM_LOCK_NAME_LEN_MAX 16
+
 #ifdef __cplusplus
 extern "C" {
 #endif

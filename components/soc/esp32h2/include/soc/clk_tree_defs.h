@@ -308,7 +308,7 @@ typedef enum {
     I2C_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,
 } soc_periph_i2c_clk_src_t;
 
-//////////////////////////////////////////////////SDM//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////SDM///////////////////////////////////////////////////////////////////
 
 /**
  * @brief Array initializer for all supported clock sources of SDM
@@ -322,6 +322,23 @@ typedef enum {
     SDM_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
     SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
 } soc_periph_sdm_clk_src_t;
+
+//////////////////////////////////////////////////GPIO Glitch Filter////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of Glitch Filter
+ */
+#define SOC_GLITCH_FILTER_CLKS {SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Glitch filter clock source
+ */
+
+typedef enum {
+    GLITCH_FILTER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL clock as the source clock */
+    GLITCH_FILTER_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M, /*!< Select PLL_F80M clock as the source clock */
+    GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< Select PLL_F80M clock as the default clock choice */
+} soc_periph_glitch_filter_clk_src_t;
 
 //////////////////////////////////////////////////TWAI/////////////////////////////////////////////////////////////////
 

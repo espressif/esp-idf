@@ -211,6 +211,10 @@ config SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
     bool
     default y
 
+config SOC_GPIO_FILTER_CLK_SUPPORT_APB
+    bool
+    default y
+
 config SOC_GPIO_SUPPORTS_RTC_INDEPENDENT
     bool
     default y

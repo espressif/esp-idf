@@ -19,7 +19,9 @@
 TEST_CASE("GPIO pin glitch filter life cycle", "[gpio_filter]")
 {
     gpio_glitch_filter_handle_t filter = NULL;
-    gpio_pin_glitch_filter_config_t config = {};
+    gpio_pin_glitch_filter_config_t config = {
+        .clk_src = GLITCH_FILTER_CLK_SRC_DEFAULT,
+    };
     TEST_ESP_OK(gpio_new_pin_glitch_filter(&config, &filter));
 
     TEST_ESP_OK(gpio_glitch_filter_enable(filter));
@@ -38,7 +40,9 @@ TEST_CASE("GPIO pin glitch filter life cycle", "[gpio_filter]")
 TEST_CASE("GPIO flex glitch filter life cycle", "[gpio_filter]")
 {
     gpio_glitch_filter_handle_t filters[SOC_GPIO_FLEX_GLITCH_FILTER_NUM];
-    gpio_flex_glitch_filter_config_t config = {};
+    gpio_flex_glitch_filter_config_t config = {
+        .clk_src = GLITCH_FILTER_CLK_SRC_DEFAULT,
+    };
 
     // install filter with wrong parameters
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, gpio_new_flex_glitch_filter(&config, &filters[0]));
@@ -82,6 +86,19 @@ static void test_gpio_intr_callback(void *args)
     }
 }
 
+// put the simulation code in the IRAM to avoid cache miss
+NOINLINE_ATTR IRAM_ATTR static void test_gpio_simulate_glitch_pulse(void)
+{
+    // the following code is used to generate a short glitch pulse
+    // around 10ns @CPU160MHz
+    asm volatile(
+        "csrrsi zero, %0, 0x1\n"
+        "csrrsi zero, %0, 0x1\n"
+        "csrrci zero, %0, 0x1"
+        :: "i"(CSR_GPIO_OUT_USER)
+    );
+}
+
 TEST_CASE("GPIO flex glitch filter enable/disable", "[gpio_filter]")
 {
     const gpio_num_t test_gpio = 0;
@@ -109,9 +126,10 @@ TEST_CASE("GPIO flex glitch filter enable/disable", "[gpio_filter]")
     printf("apply glitch filter to the GPIO\r\n");
     gpio_glitch_filter_handle_t filter;
     gpio_flex_glitch_filter_config_t filter_cfg = {
+        .clk_src = GLITCH_FILTER_CLK_SRC_DEFAULT,
         .gpio_num = test_gpio,
-        .window_thres_ns = 1500, // pulse whose width is shorter than 1500 will be filtered out
-        .window_width_ns = 1500,
+        .window_thres_ns = 500,
+        .window_width_ns = 500,
     };
     TEST_ESP_OK((gpio_new_flex_glitch_filter(&filter_cfg, &filter)));
     TEST_ESP_OK(gpio_glitch_filter_enable(filter));
@@ -122,12 +140,7 @@ TEST_CASE("GPIO flex glitch filter enable/disable", "[gpio_filter]")
     TEST_ESP_OK(gpio_isr_handler_add(test_gpio, test_gpio_intr_callback, sem));
 
     printf("generate rising edge glitch signal\r\n");
-    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
-    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
-    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
-    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
-
-    asm volatile("csrrci zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
+    test_gpio_simulate_glitch_pulse();
 
     // should timeout, because the glitch is filtered out
     TEST_ASSERT_EQUAL(pdFALSE, xSemaphoreTake(sem, pdMS_TO_TICKS(1000)));
@@ -136,12 +149,7 @@ TEST_CASE("GPIO flex glitch filter enable/disable", "[gpio_filter]")
     TEST_ESP_OK(gpio_glitch_filter_disable(filter));
 
     printf("generate rising edge glitch signal again\r\n");
-    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
-    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
-    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
-    asm volatile("csrrsi zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
-
-    asm volatile("csrrci zero, %0, 0x1" :: "i"(CSR_GPIO_OUT_USER));
+    test_gpio_simulate_glitch_pulse();
 
     // this time we should see the GPIO interrupt fired up
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(1000)));

@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "esp_err.h"
+#include "hal/glitch_filter_types.h"
 #include "driver/gpio.h"
 
 #ifdef __cplusplus
@@ -24,6 +25,7 @@ typedef struct gpio_glitch_filter_t *gpio_glitch_filter_handle_t;
  * @brief Configuration of GPIO pin glitch filter
  */
 typedef struct {
+    glitch_filter_clock_source_t clk_src; /*!< Clock source for the glitch filter */
     gpio_num_t gpio_num;    /*!< GPIO number */
 } gpio_pin_glitch_filter_config_t;
 
@@ -48,6 +50,7 @@ esp_err_t gpio_new_pin_glitch_filter(const gpio_pin_glitch_filter_config_t *conf
  * @brief Configuration of GPIO flex glitch filter
  */
 typedef struct {
+    glitch_filter_clock_source_t clk_src; /*!< Clock source for the glitch filter */
     gpio_num_t gpio_num;      /*!< GPIO number */
     uint32_t window_width_ns; /*!< Sample window width (in ns) */
     uint32_t window_thres_ns; /*!< Sample window threshold (in ns), during the `window_width_ns` sample window, any pulse whose width < window_thres_ns will be discarded. */

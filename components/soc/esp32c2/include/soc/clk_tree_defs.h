@@ -102,6 +102,7 @@ typedef enum {
     SOC_MOD_CLK_RTC_FAST,                      /*!< RTC_FAST_CLK can be sourced from XTAL_D2 or RC_FAST by configuring soc_rtc_fast_clk_src_t */
     SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, or RC_FAST_D256 by configuring soc_rtc_slow_clk_src_t */
     // For digital domain: peripherals, WIFI, BLE
+    SOC_MOD_CLK_APB,                           /*!< APB_CLK is always 40MHz no matter it derives from XTAL or PLL */
     SOC_MOD_CLK_PLL_F40M,                      /*!< PLL_F40M_CLK is derived from PLL, and has a fixed frequency of 40MHz */
     SOC_MOD_CLK_PLL_F60M,                      /*!< PLL_F60M_CLK is derived from PLL, and has a fixed frequency of 60MHz */
     SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from PLL, and has a fixed frequency of 80MHz */
@@ -177,7 +178,7 @@ typedef enum {
  * @brief Type of UART clock source, reserved for the legacy UART driver
  */
 typedef enum {
-    UART_SCLK_PLL_F40M = SOC_MOD_CLK_PLL_F40M, /*!< UART source clock is APB CLK */
+    UART_SCLK_PLL_F40M = SOC_MOD_CLK_PLL_F40M, /*!< UART source clock is PLL_F40M CLK */
     UART_SCLK_RTC = SOC_MOD_CLK_RC_FAST,       /*!< UART source clock is RC_FAST */
     UART_SCLK_XTAL = SOC_MOD_CLK_XTAL,         /*!< UART source clock is XTAL */
     UART_SCLK_DEFAULT = SOC_MOD_CLK_PLL_F40M,  /*!< UART source clock default choice is PLL_F40M */
@@ -214,6 +215,21 @@ typedef enum {
     ADC_DIGI_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M,   /*!< Select PLL_F80M as the source clock */
     ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,    /*!< Select PLL_F80M as the default clock choice */
 } soc_periph_adc_digi_clk_src_t;
+
+//////////////////////////////////////////////////GPIO Glitch Filter////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of Glitch Filter
+ */
+#define SOC_GLITCH_FILTER_CLKS {SOC_MOD_CLK_APB}
+
+/**
+ * @brief Glitch filter clock source
+ */
+typedef enum {
+    GLITCH_FILTER_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB clock as the source clock */
+    GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB clock as the default clock choice */
+} soc_periph_glitch_filter_clk_src_t;
 
 #ifdef __cplusplus
 }
