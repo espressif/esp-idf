@@ -61,7 +61,15 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
         //0:RTC FUNCTION 1,2,3:Reserved
         SET_PERI_REG_BITS(rtc_io_desc[rtcio_num].reg, RTC_IO_TOUCH_PAD1_FUN_SEL_V, RTCIO_LL_PIN_FUNC, rtc_io_desc[rtcio_num].func);
     } else if (func == RTCIO_FUNC_DIGITAL) {
+
         CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
+        // If any other rtcio is set to rtc mux, then return early to leave the
+        // clock on.
+        for (gpio_num_t n = 0; n < SOC_RTCIO_PIN_COUNT; n++) {
+            if (GET_PERI_REG_MASK(rtc_io_desc[n].reg, rtc_io_desc[n].mux) != 0) {
+                return;
+            }
+        }
         SENS.sar_peri_clk_gate_conf.iomux_clk_en = 0;
         // USB Serial JTAG pad re-enable won't be done here (it requires both DM and DP pins not in rtc function)
         // Instead, USB_SERIAL_JTAG_USB_PAD_ENABLE needs to be guaranteed to be set in usb_serial_jtag driver
