@@ -1085,6 +1085,11 @@ menu "LWIP"
         depends on LWIP_DEBUG
         default n
 
+    config LWIP_UDP_DEBUG
+        bool "Enable UDP debug messages"
+        depends on LWIP_DEBUG
+        default n
+
     config LWIP_SNTP_DEBUG
         bool "Enable SNTP debug messages"
         depends on LWIP_DEBUG
