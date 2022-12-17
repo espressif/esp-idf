@@ -19,6 +19,8 @@
 #include "common/ieee802_11_common.h"
 #include "esp_rrm.h"
 #include "esp_wnm.h"
+#include "rsn_supp/wpa.h"
+
 
 struct wpa_supplicant g_wpa_supp;
 
@@ -226,24 +228,42 @@ static void supplicant_sta_disconn_handler(void* arg, esp_event_base_t event_bas
 	}
 }
 
+#endif /* defined(CONFIG_WPA_11KV_SUPPORT) */
 static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
 				   u32 rssi, u8 channel, u64 current_tsf)
 {
-	if (type == WLAN_FC_STYPE_BEACON || type == WLAN_FC_STYPE_PROBE_RESP) {
-		return esp_handle_beacon_probe(type, frame, len, sender, rssi, channel, current_tsf);
-	} else if (type ==  WLAN_FC_STYPE_ACTION) {
-		return handle_action_frm(frame, len, sender, rssi, channel);
+	int ret = 0;
+
+	switch (type) {
+#if defined(CONFIG_WPA_11KV_SUPPORT)
+	case WLAN_FC_STYPE_BEACON:
+	case WLAN_FC_STYPE_PROBE_RESP:
+		ret = esp_handle_beacon_probe(type, frame, len, sender, rssi, channel, current_tsf);
+		break;
+#endif /* defined(CONFIG_WPA_11KV_SUPPORT) */
+	case WLAN_FC_STYPE_ASSOC_RESP:
+	case WLAN_FC_STYPE_REASSOC_RESP:
+		wpa_sm_notify_assoc(&gWpaSm, sender);
+		break;
+#if defined(CONFIG_WPA_11KV_SUPPORT)
+	case WLAN_FC_STYPE_ACTION:
+		ret = handle_action_frm(frame, len, sender, rssi, channel);
+		break;
+#endif /* defined(CONFIG_WPA_11KV_SUPPORT) */
+	default:
+		ret = -1;
+		break;
 	}
 
-	return -1;
+	return ret;
 }
-
 
 int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 	int ret;
 
+#if defined(CONFIG_WPA_11KV_SUPPORT)
 	s_supplicant_api_lock = xSemaphoreCreateRecursiveMutex();
 	if (!s_supplicant_api_lock) {
 		wpa_printf(MSG_ERROR, "%s: failed to create Supplicant API lock", __func__);
@@ -274,9 +294,14 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 	esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
 			&supplicant_sta_disconn_handler, NULL);
 
+#endif /* defined(CONFIG_WPA_11KV_SUPPORT) */
 	wpa_s->type = 0;
 	wpa_s->subtype = 0;
-	esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
+	wpa_s->type |= (1 << WLAN_FC_STYPE_ASSOC_RESP) | (1 << WLAN_FC_STYPE_REASSOC_RESP) | (1 << WLAN_FC_STYPE_AUTH);
+	if (esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype) != ESP_OK) {
+		ret = -1;
+		goto err;
+	}
 	wpa_cb->wpa_sta_rx_mgmt = ieee80211_handle_rx_frm;
 	return 0;
 err:
@@ -288,6 +313,7 @@ void esp_supplicant_common_deinit(void)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
+#if defined(CONFIG_WPA_11KV_SUPPORT)
 	esp_scan_deinit(wpa_s);
 	wpas_rrm_reset(wpa_s);
 	wpas_clear_beacon_rep_data(wpa_s);
@@ -295,10 +321,12 @@ void esp_supplicant_common_deinit(void)
 			&supplicant_sta_conn_handler);
 	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
 			&supplicant_sta_disconn_handler);
+#endif /* defined(CONFIG_WPA_11KV_SUPPORT) */
 	if (wpa_s->type) {
 		wpa_s->type = 0;
 		esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
 	}
+#if defined(CONFIG_WPA_11KV_SUPPORT)
 	if (!s_supplicant_task_hdl && esp_supplicant_post_evt(SIG_SUPPLICANT_DEL_TASK, 0) != 0) {
 		if (s_supplicant_evt_queue) {
 			vQueueDelete(s_supplicant_evt_queue);
@@ -310,8 +338,10 @@ void esp_supplicant_common_deinit(void)
 		}
 		wpa_printf(MSG_ERROR, "failed to send task delete event");
 	}
+#endif /* defined(CONFIG_WPA_11KV_SUPPORT) */
 }
 
+#if defined(CONFIG_WPA_11KV_SUPPORT)
 bool esp_rrm_is_rrm_supported_connection(void)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;

@@ -682,31 +682,33 @@ static int wpa_supplicant_install_ptk(struct wpa_sm *sm, enum key_flag key_flag)
     int keylen;
     enum wpa_alg alg;
 
+    if (sm->ptk.installed) {
+        wpa_printf(MSG_DEBUG, "WPA: Do not re-install same PTK to the driver");
+        return 0;
+    }
    #ifdef DEBUG_PRINT
     wpa_printf(MSG_DEBUG, "WPA: Installing PTK to the driver.\n");
    #endif
 
-    switch (sm->pairwise_cipher) {
-    case WPA_CIPHER_CCMP:
-        alg = WIFI_WPA_ALG_CCMP;
-        keylen = 16;
-        break;
-    case WPA_CIPHER_TKIP:
-        alg = WIFI_WPA_ALG_TKIP;
-        keylen = 32;
-        break;
-    case WPA_CIPHER_NONE:
+    if (sm->pairwise_cipher == WPA_CIPHER_NONE) {
+        wpa_printf(MSG_DEBUG, "WPA: Pairwise Cipher Suite: NONE - do not use pairwise keys");
+        return 0;
+    }
+
+    if (!wpa_cipher_valid_pairwise(sm->pairwise_cipher)) {
+        wpa_printf(MSG_DEBUG, "WPA: Unsupported pairwise cipher %d", sm->pairwise_cipher);
+        return -1;
+    }
+
+    alg = wpa_cipher_to_alg(sm->pairwise_cipher);
+    keylen = wpa_cipher_key_len(sm->pairwise_cipher);
+
+    if (alg == WIFI_WPA_ALG_NONE) {
         #ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: Pairwise Cipher Suite: "
                "NONE - do not use pairwise keys");
         #endif
         return 0;
-    default:
-        #ifdef DEBUG_PRINT
-        wpa_printf(MSG_DEBUG, "WPA: Unsupported pairwise cipher %d",
-               sm->pairwise_cipher);
-           #endif
-        return -1;
     }
 
     if (wpa_sm_set_key(&(sm->install_ptk), alg, sm->bssid, 0, 1, (sm->install_ptk).seq, WPA_KEY_RSC_LEN,
@@ -718,6 +720,8 @@ static int wpa_supplicant_install_ptk(struct wpa_sm *sm, enum key_flag key_flag)
         #endif
         return -1;
     }
+
+    sm->ptk.installed = 1;
 
     if (sm->wpa_ptk_rekey) {
         eloop_cancel_timeout(wpa_sm_rekey_ptk, sm, NULL);
@@ -832,7 +836,9 @@ int   wpa_supplicant_install_gtk(struct wpa_sm *sm,
     wpa_hexdump(MSG_DEBUG, "WPA: Group Key", gd->gtk, gd->gtk_len);
 
     /* Detect possible key reinstallation */
-    if (wpa_supplicant_gtk_in_use(sm, &(sm->gd))) {
+    if ((sm->gtk.gtk_len == (size_t) gd->gtk_len &&
+            os_memcmp(sm->gtk.gtk, gd->gtk, sm->gtk.gtk_len) == 0) ||
+            wpa_supplicant_gtk_in_use(sm, &(sm->gd))) {
             wpa_printf(MSG_DEBUG,
                     "WPA: Not reinstalling already in-use GTK to the driver (keyidx=%d tx=%d len=%d)",
                     gd->keyidx, gd->tx, gd->gtk_len);
@@ -875,6 +881,8 @@ int   wpa_supplicant_install_gtk(struct wpa_sm *sm,
         #endif
         return -1;
     }
+    sm->gtk.gtk_len = gd->gtk_len;
+    os_memcpy(sm->gtk.gtk, gd->gtk, sm->gtk.gtk_len);
 
     return 0;
 }
@@ -975,6 +983,47 @@ int wpa_supplicant_pairwise_gtk(struct wpa_sm *sm,
 #endif /* CONFIG_NO_WPA2 */
 }
 
+
+#ifdef CONFIG_IEEE80211W
+static int wpa_supplicant_install_igtk(struct wpa_sm *sm,
+                      const wifi_wpa_igtk_t *igtk)
+{
+   size_t len = wpa_cipher_key_len(sm->mgmt_group_cipher);
+   u16 keyidx = WPA_GET_LE16(igtk->keyid);
+
+   /* Detect possible key reinstallation */
+   if (sm->igtk.igtk_len == len &&
+       os_memcmp(sm->igtk.igtk, igtk->igtk, sm->igtk.igtk_len) == 0) {
+       wpa_printf(MSG_DEBUG,
+           "WPA: Not reinstalling already in-use IGTK to the driver (keyidx=%d)",
+           keyidx);
+       return  0;
+   }
+
+   wpa_printf(MSG_DEBUG,
+       "WPA: IGTK keyid %d pn %02x%02x%02x%02x%02x%02x",
+       keyidx, MAC2STR(igtk->pn));
+   wpa_hexdump_key(MSG_DEBUG, "WPA: IGTK", igtk->igtk, len);
+   if (keyidx > 4095) {
+       wpa_printf(MSG_WARNING,
+           "WPA: Invalid IGTK KeyID %d", keyidx);
+       return -1;
+   }
+   if (esp_wifi_set_igtk_internal(WIFI_IF_STA, igtk) < 0) {
+       wpa_printf(MSG_WARNING,
+           "WPA: Failed to configure IGTK to the driver");
+           return -1;
+   }
+
+   sm->igtk.igtk_len = len;
+   os_memcpy(sm->igtk.igtk, igtk->igtk, sm->igtk.igtk_len);
+
+   return 0;
+}
+#endif /* CONFIG_IEEE80211W */
+
+
+
 #ifdef DEBUG_PRINT
 void wpa_report_ie_mismatch(struct wpa_sm *sm,
                    const char *reason, const u8 *src_addr,
@@ -1027,28 +1076,26 @@ int   ieee80211w_set_keys(struct wpa_sm *sm,
                    struct wpa_eapol_ie_parse *ie)
 {
 #ifdef CONFIG_IEEE80211W
-	if (sm->mgmt_group_cipher != WPA_CIPHER_AES_128_CMAC) {
-		return -1;
-	}
+    size_t len;
 
-	if (ie->igtk) {
-		const wifi_wpa_igtk_t *igtk;
-		uint16_t keyidx;
+    if (!wpa_cipher_valid_mgmt_group(sm->mgmt_group_cipher))
+        return 0;
 
-		if (ie->igtk_len != sizeof(*igtk)) {
-			return -1;
-		}
-		igtk = (const wifi_wpa_igtk_t*)ie->igtk;
-		keyidx = WPA_GET_LE16(igtk->keyid);
-		if (keyidx > 4095) {
-			return -1;
-		}
-		return esp_wifi_set_igtk_internal(WIFI_IF_STA, igtk);
-	}
-	return 0;
-#else
-     return 0;
+    if (ie->igtk) {
+        const wifi_wpa_igtk_t *igtk;
+#define WPA_IGTK_KDE_PREFIX_LEN (2 + 6)
+        len = wpa_cipher_key_len(sm->mgmt_group_cipher);
+        if (ie->igtk_len != WPA_IGTK_KDE_PREFIX_LEN + len) {
+            return -1;
+        }
+
+        igtk = (const wifi_wpa_igtk_t*)ie->igtk;
+        if (wpa_supplicant_install_igtk(sm, igtk) < 0) {
+            return -1;
+        }
+    }
 #endif
+    return 0;
 }
 
   int   wpa_supplicant_validate_ie(struct wpa_sm *sm,
@@ -2180,7 +2227,64 @@ void wpa_sm_deinit(void)
     os_free(sm->ap_rsnxe);
     sm->ap_rsnxe = NULL;
     os_free(sm->assoc_rsnxe);
+    wpa_sm_drop_sa(sm);
     sm->assoc_rsnxe = NULL;
+}
+
+/**
+ * wpa_sm_notify_assoc - Notify WPA state machine about association
+ * @sm: Pointer to WPA state machine data from wpa_sm_init()
+ * @bssid: The BSSID of the new association
+ *
+ * This function is called to let WPA state machine know that the connection
+ * was established.
+ */
+void wpa_sm_notify_assoc(struct wpa_sm *sm, const u8 *bssid)
+{
+    int clear_keys = 1;
+
+    if (sm == NULL)
+        return;
+
+    wpa_printf(MSG_DEBUG,
+        "WPA: Association event - clear replay counter");
+    os_memcpy(sm->bssid, bssid, ETH_ALEN);
+    os_memset(sm->rx_replay_counter, 0, WPA_REPLAY_COUNTER_LEN);
+    sm->rx_replay_counter_set = 0;
+    sm->renew_snonce = 1;
+
+    if (clear_keys) {
+        /*
+         * IEEE 802.11, 8.4.10: Delete PTK SA on (re)association if
+         * this is not part of a Fast BSS Transition.
+         */
+        wpa_printf(MSG_DEBUG, "WPA: Clear old PTK");
+        sm->ptk_set = 0;
+        os_memset(&sm->ptk, 0, sizeof(sm->ptk));
+        sm->tptk_set = 0;
+        os_memset(&sm->tptk, 0, sizeof(sm->tptk));
+        os_memset(&sm->gtk, 0, sizeof(sm->gtk));
+        os_memset(&sm->igtk, 0, sizeof(sm->igtk));
+    }
+}
+
+
+/**
+ * wpa_sm_notify_disassoc - Notify WPA state machine about disassociation
+ * @sm: Pointer to WPA state machine data from wpa_sm_init()
+ *
+ * This function is called to let WPA state machine know that the connection
+ * was lost. This will abort any existing pre-authentication session.
+ */
+void wpa_sm_notify_disassoc(struct wpa_sm *sm)
+{
+    eloop_cancel_timeout(wpa_sm_rekey_ptk, sm, NULL);
+    pmksa_cache_clear_current(sm);
+
+    /* Keys are not needed in the WPA state machine anymore */
+    wpa_sm_drop_sa(sm);
+
+    os_memset(sm->bssid, 0, ETH_ALEN);
 }
 
 
@@ -2590,4 +2694,15 @@ int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len)
     return 0;
 }
 
+void wpa_sm_drop_sa(struct wpa_sm *sm)
+{
+    wpa_printf(MSG_DEBUG, "WPA: Clear old PMK and PTK");
+    sm->ptk_set = 0;
+    sm->tptk_set = 0;
+    sm->pmk_len = 0;
+    os_memset(&sm->ptk, 0, sizeof(sm->ptk));
+    os_memset(&sm->tptk, 0, sizeof(sm->tptk));
+    os_memset(&sm->gtk, 0, sizeof(sm->gtk));
+    os_memset(&sm->igtk, 0, sizeof(sm->igtk));
+}
 #endif // ESP_SUPPLICANT
