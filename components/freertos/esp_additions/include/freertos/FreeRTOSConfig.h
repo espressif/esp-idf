@@ -287,9 +287,7 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #endif /* FREERTOS_CONFIG_H */
 
 // -------------------- Trace Macros -----------------------
-
-/* For trace macros.
-Note: Include trace macros here and not above as trace macros are dependent on some of the FreeRTOS configs*/
+// Note: Include trace macros here and not above as trace macros are dependent on some of the FreeRTOS configs*/
 
 #define traceTASK_INCREMENT_TICK(xTickCount)\
 extern int taskList[100][2];\
@@ -301,3 +299,4 @@ taskList[idx_gl][0] = pxCurrentTCB[0]->uxTCBNumber;\
 taskList[idx_gl][1] = xTickCount;\
 idx_gl++;\
 }
+
