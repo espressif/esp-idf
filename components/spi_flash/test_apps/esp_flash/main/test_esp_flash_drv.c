@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -15,6 +15,7 @@
 #include "esp_private/spi_common_internal.h"
 #include "esp_flash_spi_init.h"
 #include "memspi_host_driver.h"
+#include "spi_flash_mmap.h"
 #include <esp_attr.h>
 #include "esp_log.h"
 
@@ -443,6 +444,21 @@ void test_erase_large_region(const esp_partition_t *part)
 
 TEST_CASE_FLASH("SPI flash erase large region", test_erase_large_region);
 TEST_CASE_MULTI_FLASH("SPI flash erase large region", test_erase_large_region);
+
+static void test_flash_erase_not_trigger_wdt(const esp_partition_t *part)
+{
+    spi_host_device_t out_host_id;
+    get_chip_host(part->flash_chip, &out_host_id, NULL);
+    // don't erase main flash (spi1), test only spi2 & spi3
+    if (out_host_id != SPI1_HOST) {
+        ESP_ERROR_CHECK(esp_flash_erase_chip(part->flash_chip));
+    } else {
+        ESP_LOGI(TAG, "spi1 skipped");
+    }
+}
+
+TEST_CASE_MULTI_FLASH_LONG("Test erasing flash chip not triggering WDT", test_flash_erase_not_trigger_wdt);
+
 
 #if CONFIG_SPI_FLASH_AUTO_SUSPEND
 void esp_test_for_suspend(void)
