@@ -261,7 +261,7 @@ typedef struct {
     uint8_t channel;            /**< Channel of ESP32 soft-AP */
     wifi_auth_mode_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
     uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
-    uint8_t max_connection;     /**< Max number of stations allowed to connect in, default 4, max 10 */
+    uint8_t max_connection;     /**< Max number of stations allowed to connect in */
     uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
     wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of SoftAP, group cipher will be derived using this. cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
     bool ftm_responder;         /**< Enable FTM Responder mode */
@@ -316,8 +316,10 @@ typedef struct {
 
 #if CONFIG_IDF_TARGET_ESP32C2
 #define ESP_WIFI_MAX_CONN_NUM  (4)        /**< max number of stations which can connect to ESP32C2 soft-AP */
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32C3 soft-AP */
 #else
-#define ESP_WIFI_MAX_CONN_NUM  (16)       /**< max number of stations which can connect to ESP32/ESP32S3/ESP32S2/ESP32C3 soft-AP */
+#define ESP_WIFI_MAX_CONN_NUM  (15)       /**< max number of stations which can connect to ESP32/ESP32S3/ESP32S2 soft-AP */
 #endif
 
 /** @brief List of stations associated with the ESP32 Soft-AP */
