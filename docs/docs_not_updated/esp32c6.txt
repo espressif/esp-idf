@@ -32,7 +32,6 @@ api-guides/tools/idf-docker-image
 api-guides/tools/index
 api-guides/startup
 api-guides/hlinterrupts
-api-guides/RF_calibration
 api-guides/unit-tests
 api-guides/deep-sleep-stub
 api-guides/blufi

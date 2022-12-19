@@ -23,6 +23,10 @@ config SOC_BT_SUPPORTED
     bool
     default y
 
+config SOC_IEEE802154_SUPPORTED
+    bool
+    default y
+
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -750,10 +754,6 @@ config SOC_COEX_HW_PTI
 config SOC_PHY_DIG_REGS_MEM_SIZE
     int
     default 21
-
-config SOC_MAC_BB_PD_MEM_SIZE
-    int
-    default 192
 
 config SOC_PM_SUPPORT_BT_WAKEUP
     bool

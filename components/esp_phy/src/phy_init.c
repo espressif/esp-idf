@@ -31,8 +31,12 @@
 #include "esp_rom_crc.h"
 #include "esp_rom_sys.h"
 
-#include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_periph.h"
+
+#if __has_include("soc/syscon_reg.h")
 #include "soc/syscon_reg.h"
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
 #endif
@@ -46,7 +50,7 @@ static const char* TAG = "phy_init";
 
 static _lock_t s_phy_access_lock;
 
-#if !CONFIG_IDF_TARGET_ESP32C2 // TODO - WIFI-4424
+#if !CONFIG_IDF_TARGET_ESP32C2 && !CONFIG_IDF_TARGET_ESP32C6 // TODO - WIFI-4424
 static DRAM_ATTR struct {
     int     count;  /* power on count of wifi and bt power domain */
     _lock_t lock;
@@ -200,12 +204,16 @@ static inline void phy_update_wifi_mac_time(bool en_clock_stopped, int64_t now)
 
 IRAM_ATTR void esp_phy_common_clock_enable(void)
 {
+#if !CONFIG_IDF_TARGET_ESP32C6 // IDF-5679
     wifi_bt_common_module_enable();
+#endif
 }
 
 IRAM_ATTR void esp_phy_common_clock_disable(void)
 {
+#if !CONFIG_IDF_TARGET_ESP32C6 // IDF-5679
     wifi_bt_common_module_disable();
+#endif
 }
 
 static inline void phy_digital_regs_store(void)
@@ -280,7 +288,7 @@ void esp_phy_disable(void)
 
 void IRAM_ATTR esp_wifi_bt_power_domain_on(void)
 {
-#if !CONFIG_IDF_TARGET_ESP32C2 // TODO - WIFI-4424
+#if !CONFIG_IDF_TARGET_ESP32C2 && !CONFIG_IDF_TARGET_ESP32C6 // TODO - WIFI-4424
     _lock_acquire(&s_wifi_bt_pd_controller.lock);
     if (s_wifi_bt_pd_controller.count++ == 0) {
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
@@ -296,7 +304,7 @@ void IRAM_ATTR esp_wifi_bt_power_domain_on(void)
 
 void esp_wifi_bt_power_domain_off(void)
 {
-#if !CONFIG_IDF_TARGET_ESP32C2 // TODO - WIFI-4424
+#if !CONFIG_IDF_TARGET_ESP32C2 && !CONFIG_IDF_TARGET_ESP32C6 // TODO - WIFI-4424
     _lock_acquire(&s_wifi_bt_pd_controller.lock);
     if (--s_wifi_bt_pd_controller.count == 0) {
         SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);

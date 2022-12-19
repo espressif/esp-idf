@@ -150,6 +150,8 @@ ESP32C3_DOCS = ['hw-reference/esp32c3/**',
 
 ESP32C2_DOCS = ['api-guides/RF_calibration.rst']
 
+ESP32C6_DOCS = ['api-guides/RF_calibration.rst']
+
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_BLE_MESH_SUPPORTED':BLE_MESH_DOCS,
@@ -187,7 +189,8 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,
                             'esp32c2':ESP32C2_DOCS,
-                            'esp32c3':ESP32C3_DOCS}
+                            'esp32c3':ESP32C3_DOCS,
+                            'esp32c6':ESP32C6_DOCS}
 
 extensions += ['sphinx_copybutton',
                'sphinxcontrib.wavedrom',
