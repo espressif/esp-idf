@@ -7,13 +7,13 @@ SPI Slave driver is a program that controls {IDF_TARGET_NAME}'s SPI peripherals 
 Overview of {IDF_TARGET_NAME}'s SPI peripherals
 -----------------------------------------------
 
-On {IDF_TARGET_NAME}, {SOC_SPI_PERIPH_NUM} SPI controllers are available for general purpose usage. A certain SPI controller has independent signal bus with the same name.
+On {IDF_TARGET_NAME}, {SOC_SPI_PERIPH_NUM} SPI controllers are available for general purpose usage. A certain SPI controller has an independent signal bus with the same name.
 
 .. only:: esp32
 
     .. note::
 
-        On ESP32, HSPI refers to SPI2, VSPI refers to SPI3. 
+        On ESP32, HSPI refers to SPI2, VSPI refers to SPI3.
 
 Terminology
 -----------
@@ -120,91 +120,102 @@ GPIO Matrix and IO_MUX
 
     The IO_MUX pins for SPI buses are given below.
 
-    +----------+------+------+
-    | Pin Name | SPI2 | SPI3 |
-    +          +------+------+
-    |          | GPIO Number |
-    +==========+======+======+
-    | CS0*     | 15   | 5    |
-    +----------+------+------+
-    | SCLK     | 14   | 18   |
-    +----------+------+------+
-    | MISO     | 12   | 19   |
-    +----------+------+------+
-    | MOSI     | 13   | 23   |
-    +----------+------+------+
-    | QUADWP   | 2    | 22   |
-    +----------+------+------+
-    | QUADHD   | 4    | 21   |
-    +----------+------+------+
+    .. list-table::
+       :widths: 40 30 30
+       :header-rows: 1
+
+       * - Pin Name
+         - GPIO Number (SPI2)
+         - GPIO Number (SPI3)
+       * - CS0*
+         - 15
+         - 5
+       * - SCLK
+         - 14
+         - 18
+       * - MISO
+         - 12
+         - 19
+       * - MOSI
+         - 13
+         - 23
+       * - QUADWP
+         - 2
+         - 22
+       * - QUADHD
+         - 4
+         - 21
 
 .. only:: not esp32
 
     Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
-    When an SPI Host is set to 80MHz or lower frequencies, routing SPI pins via GPIO matrix will behave the same comparing to routing them via IOMUX.
+    When an SPI Host is set to 80 MHz or lower frequencies, routing SPI pins via GPIO matrix will behave the same compared to routing them via IO_MUX.
 
     The IO_MUX pins for SPI buses are given below.
 
 .. only:: esp32s2 or esp32s3
 
-    +----------+------+------+
-    | Pin Name | SPI2 | SPI3 |
-    +          +------+------+
-    |          | GPIO Number |
-    +==========+======+======+
-    | CS0*     | 10   | N/A  |
-    +----------+------+------+
-    | SCLK     | 12   | N/A  |
-    +----------+------+------+
-    | MISO     | 13   | N/A  |
-    +----------+------+------+
-    | MOSI     | 11   | N/A  |
-    +----------+------+------+
-    | QUADWP   | 14   | N/A  |
-    +----------+------+------+
-    | QUADHD   | 9    | N/A  |
-    +----------+------+------+
+    .. list-table::
+       :widths: 40 30
+       :header-rows: 1
+
+       * - Pin Name
+         - GPIO Number (SPI2)
+       * - CS0*
+         - 10
+       * - SCLK
+         - 12
+       * - MISO
+         - 13
+       * - MOSI
+         - 11
+       * - QUADWP
+         - 14
+       * - QUADHD
+         - 9
 
 .. only:: esp32c2 or esp32c3
 
-    +----------+-------------+
-    | Pin Name |    SPI2     |
-    +          +-------------+
-    |          | GPIO Number |
-    +==========+=============+
-    | CS0*     |      10     |
-    +----------+-------------+
-    | SCLK     |      6      |
-    +----------+-------------+
-    | MISO     |      2      |
-    +----------+-------------+
-    | MOSI     |      7      |
-    +----------+-------------+
-    | QUADWP   |      5      |
-    +----------+-------------+
-    | QUADHD   |      4      |
-    +----------+-------------+
+    .. list-table::
+       :widths: 40 30
+       :header-rows: 1
+
+       * - Pin Name
+         - GPIO Number (SPI2)
+       * - CS0*
+         - 10
+       * - SCLK
+         - 6
+       * - MISO
+         - 2
+       * - MOSI
+         - 7
+       * - QUADWP
+         - 5
+       * - QUADHD
+         - 4
 
 .. only:: esp32c6
 
-    +----------+-------------+
-    | Pin Name |    SPI2     |
-    +          +-------------+
-    |          | GPIO Number |
-    +==========+=============+
-    | CS0*     |      16     |
-    +----------+-------------+
-    | SCLK     |      6      |
-    +----------+-------------+
-    | MISO     |      2      |
-    +----------+-------------+
-    | MOSI     |      7      |
-    +----------+-------------+
-    | QUADWP   |      5      |
-    +----------+-------------+
-    | QUADHD   |      4      |
-    +----------+-------------+
+    .. list-table::
+       :widths: 40 30
+       :header-rows: 1
+
+       * - Pin Name
+         - GPIO Number (SPI2)
+       * - CS0*
+         - 16
+       * - SCLK
+         - 6
+       * - MISO
+         - 2
+       * - MOSI
+         - 7
+       * - QUADWP
+         - 5
+       * - QUADHD
+         - 4
 
 * Only the first Device attached to the bus can use the CS0 pin.
 
