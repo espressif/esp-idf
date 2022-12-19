@@ -130,7 +130,9 @@ Common Errors and Known Issues
 - Flashing with ``dfu-util`` on Windows fails on the first attempt with error ``Lost device after RESET?``. Please retry the flashing and it should succeed the next time.
 
 
-Secure Download Mode 
-------------------------------
+.. only:: SOC_SUPPORTS_SECURE_DL_MODE
 
-- When Secure Download Mode is enabled, DFU is no longer possible. See: :doc:`Flash Encryption <../security/flash-encryption>`
+    Secure Download Mode
+    --------------------
+
+    When Secure Download Mode is enabled, DFU is no longer possible. Please see :doc:`Flash Encryption <../security/flash-encryption>` guide for more details.
