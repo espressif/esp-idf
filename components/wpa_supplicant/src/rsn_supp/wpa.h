@@ -58,6 +58,8 @@ int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len);
 
 int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len);
 
+void wpa_sm_drop_sa(struct wpa_sm *sm);
+
 #ifdef CONFIG_IEEE80211R
 
 int wpa_sm_set_ft_params(struct wpa_sm *sm, const u8 *ies, size_t ies_len);
@@ -122,6 +124,10 @@ wpa_ft_validate_reassoc_resp(struct wpa_sm *sm, const u8 *ies, size_t ies_len,
 struct wpa_sm * get_wpa_sm(void);
 
 void wpa_sm_set_pmk_from_pmksa(struct wpa_sm *sm);
+
+void wpa_sm_notify_assoc(struct wpa_sm *sm, const u8 *bssid);
+
+void wpa_sm_notify_disassoc(struct wpa_sm *sm);
 
 int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_ie, size_t dh_len);
 
