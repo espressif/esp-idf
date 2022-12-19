@@ -1,30 +1,32 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
 // DESCRIPTION:
-// This file contains the code for accessing the storage medium ie SPI Flash.
+// This file contains the code for accessing the storage medium i.e. SPI Flash.
 
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_check.h"
 #include "esp_vfs_fat.h"
 #include "diskio_impl.h"
 #include "diskio_wl.h"
 #include "wear_levelling.h"
 #include "esp_partition.h"
+#include "tusb_msc_storage.h"
 
 static wl_handle_t s_wl_handle = WL_INVALID_HANDLE;
 static bool s_fat_mounted;
 static const char *s_base_path;
 
-static const char *TAG = "example_msc_storage";
+static const char *TAG = "msc_spiflash";
 
-esp_err_t storage_init(void)
+esp_err_t storage_init(const tinyusb_config_storage_t *config)
 {
+    assert(config->storage_type == TINYUSB_STORAGE_SPI);
     ESP_LOGI(TAG, "Initializing wear levelling");
-    esp_err_t err;
 
     const esp_partition_t *data_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, NULL);
     if (data_partition == NULL) {
@@ -32,13 +34,7 @@ esp_err_t storage_init(void)
         return ESP_ERR_NOT_FOUND;
     }
 
-    err = wl_mount(data_partition, &s_wl_handle);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "failed to mount wear levelling layer (0x%x)", err);
-        return err;
-    }
-
-    return ESP_OK;
+    return wl_mount(data_partition, &s_wl_handle);
 }
 
 static inline size_t esp_vfs_fat_get_allocation_unit_size(
@@ -56,7 +52,7 @@ esp_err_t storage_mount(const char *base_path)
 {
     const size_t workbuf_size = 4096;
     void *workbuf = NULL;
-    esp_err_t err;
+    esp_err_t ret;
 
     if (s_fat_mounted) {
         return ESP_OK;
@@ -66,24 +62,20 @@ esp_err_t storage_mount(const char *base_path)
 
     // connect driver to FATFS
     BYTE pdrv = 0xFF;
-    if (ff_diskio_get_drive(&pdrv) != ESP_OK) {
-        ESP_LOGE(TAG, "the maximum count of volumes is already mounted");
-        return ESP_ERR_NO_MEM;
-    }
+    ESP_RETURN_ON_ERROR(ff_diskio_get_drive(&pdrv), TAG,
+                        "The maximum count of volumes is already mounted");
     ESP_LOGD(TAG, "using pdrv=%i", pdrv);
     char drv[3] = {(char)('0' + pdrv), ':', 0};
 
-    err = ff_diskio_register_wl_partition(pdrv, s_wl_handle);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "ff_diskio_register_wl_partition failed pdrv=%d (0x%x)", pdrv, err);
-        goto fail;
-    }
+    ESP_GOTO_ON_ERROR(ff_diskio_register_wl_partition(pdrv, s_wl_handle),
+                      fail, TAG, "Failed pdrv=%d", pdrv);
+
     FATFS *fs;
-    err = esp_vfs_fat_register(base_path, drv, 2, &fs);
-    if (err == ESP_ERR_INVALID_STATE) {
+    ret = esp_vfs_fat_register(base_path, drv, 2, &fs);
+    if (ret == ESP_ERR_INVALID_STATE) {
         // it's okay, already registered with VFS
-    } else if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_vfs_fat_register failed (0x%x)", err);
+    } else if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_vfs_fat_register failed (0x%x)", ret);
         goto fail;
     }
 
@@ -92,12 +84,12 @@ esp_err_t storage_mount(const char *base_path)
     if (fresult != FR_OK) {
         ESP_LOGW(TAG, "f_mount failed (%d)", fresult);
         if (!((fresult == FR_NO_FILESYSTEM || fresult == FR_INT_ERR))) {
-            err = ESP_FAIL;
+            ret = ESP_FAIL;
             goto fail;
         }
         workbuf = ff_memalloc(workbuf_size);
         if (workbuf == NULL) {
-            err = ESP_ERR_NO_MEM;
+            ret = ESP_ERR_NO_MEM;
             goto fail;
         }
         size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(
@@ -108,7 +100,7 @@ esp_err_t storage_mount(const char *base_path)
         const MKFS_PARM opt = {(BYTE)FM_FAT, 0, 0, 0, 0};
         fresult = f_mkfs("", &opt, workbuf, workbuf_size); // Use default volume
         if (fresult != FR_OK) {
-            err = ESP_FAIL;
+            ret = ESP_FAIL;
             ESP_LOGE(TAG, "f_mkfs failed (%d)", fresult);
             goto fail;
         }
@@ -117,7 +109,7 @@ esp_err_t storage_mount(const char *base_path)
         ESP_LOGI(TAG, "Mounting again");
         fresult = f_mount(fs, drv, 0);
         if (fresult != FR_OK) {
-            err = ESP_FAIL;
+            ret = ESP_FAIL;
             ESP_LOGE(TAG, "f_mount failed after formatting (%d)", fresult);
             goto fail;
         }
@@ -132,8 +124,8 @@ fail:
     esp_vfs_fat_unregister_path(base_path);
     ff_diskio_unregister(pdrv);
     s_fat_mounted = false;
-    ESP_LOGW(TAG, "Failed to mount storage (0x%x)", err);
-    return err;
+    ESP_LOGW(TAG, "Failed to mount storage (0x%x)", ret);
+    return ret;
 }
 
 esp_err_t storage_unmount(void)
@@ -159,31 +151,36 @@ esp_err_t storage_unmount(void)
 
 }
 
-size_t storage_get_size(void)
+uint32_t storage_get_sector_count(void)
 {
     assert(s_wl_handle != WL_INVALID_HANDLE);
 
-    return wl_size(s_wl_handle);
+    size_t size = wl_sector_size(s_wl_handle);
+    if (size == 0) {
+        ESP_LOGW(TAG, "WL Sector size is zero !!!");
+        return 0;
+    }
+    return (uint32_t)(wl_size(s_wl_handle) / size);
 }
 
-size_t storage_get_sector_size(void)
+uint32_t storage_get_sector_size(void)
 {
     assert(s_wl_handle != WL_INVALID_HANDLE);
 
-    return wl_sector_size(s_wl_handle);
+    return (uint32_t)wl_sector_size(s_wl_handle);
 }
 
-esp_err_t storage_read_sector(size_t addr, size_t size, void *dest)
+esp_err_t storage_read_sector(uint32_t lba, uint32_t offset, size_t size, void *dest)
 {
     assert(s_wl_handle != WL_INVALID_HANDLE);
-
+    size_t addr = lba * storage_get_sector_size() + offset; // Address of the data to be read, relative to the beginning of the partition.
     return wl_read(s_wl_handle, addr, dest, size);
 }
 
-esp_err_t storage_write_sector(size_t addr, size_t size, const void *src)
+esp_err_t storage_write_sector(uint32_t lba, uint32_t offset, size_t size, const void *src)
 {
     assert(s_wl_handle != WL_INVALID_HANDLE);
-
+    size_t addr = lba * storage_get_sector_size() + offset; // Address of the data to be read, relative to the beginning of the partition.
     if (s_fat_mounted) {
         ESP_LOGE(TAG, "can't write, FAT mounted");
         return ESP_ERR_INVALID_STATE;
@@ -192,10 +189,8 @@ esp_err_t storage_write_sector(size_t addr, size_t size, const void *src)
     if (addr % sector_size != 0 || size % sector_size != 0) {
         return ESP_ERR_INVALID_ARG;
     }
-    esp_err_t err = wl_erase_range(s_wl_handle, addr, size);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "wl_erase_range failed (0x%x)", err);
-        return err;
-    }
+
+    ESP_RETURN_ON_ERROR(wl_erase_range(s_wl_handle, addr, size),
+                        TAG, "Failed to erase");
     return wl_write(s_wl_handle, addr, src, size);
 }
