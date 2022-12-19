@@ -32,6 +32,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "hal/uart_types.h"
+#include "nvs_flash.h"
 #include "openthread/cli.h"
 #include "openthread/instance.h"
 #include "openthread/logging.h"
@@ -101,6 +102,7 @@ void app_main(void)
         .max_fds = 3,
     };
 
+    ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));

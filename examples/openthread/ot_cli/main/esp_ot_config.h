@@ -16,7 +16,7 @@
 
 #include "esp_openthread_types.h"
 
-#if CONFIG_IDF_TARGET_ESP32H4
+#if SOC_IEEE802154_SUPPORTED
 #define ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG()              \
     {                                                      \
         .radio_mode = RADIO_MODE_NATIVE,                   \

@@ -203,6 +203,16 @@ if(CONFIG_OPENTHREAD_ENABLED)
                     "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev2/libopenthread_port.a"
                     REQUIRES openthread)
             endif()
+        elseif(IDF_TARGET STREQUAL "esp32c6")
+            if(CONFIG_OPENTHREAD_BORDER_ROUTER)
+                add_prebuilt_library(openthread_port
+                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/br/libopenthread_port.a"
+                    REQUIRES openthread)
+            else()
+                add_prebuilt_library(openthread_port
+                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/cli/libopenthread_port.a"
+                    REQUIRES openthread)
+            endif()
         else()
             add_prebuilt_library(openthread_port "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/libopenthread_port.a"
                                 REQUIRES openthread)
