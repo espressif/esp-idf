@@ -592,18 +592,12 @@ config BT_NIMBLE_MAX_PERIODIC_ADVERTISER_LIST
     help
         Set this option to set the upper limit for number of periodic advertiser list.
 
-menuconfig BT_NIMBLE_53_FEATURE_SUPPORT
-    bool "Enable BLE 5.3 feature"
-    depends on BT_NIMBLE_ENABLED && SOC_ESP_NIMBLE_CONTROLLER && IDF_TARGET_NONE
+config BT_NIMBLE_BLE_POWER_CONTROL
+    bool "Enable support for BLE Power Control"
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT && IDF_TARGET_ESP32C6
+    default n
     help
-            Enable BLE 5.3 feature
-
-config BT_NIMBLE_SUBRATE
-    bool "Connection Subrate"
-    depends on BT_NIMBLE_53_FEATURE_SUPPORT
-    help
-        Enable support for Connection Subrate
-
+        Set this option to enable the Power Control feature
 
 choice BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM
     prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
@@ -623,17 +617,6 @@ choice BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM
             help
                 Disable the limitation on max tx/rx time for Coded-PHY connection
 endchoice
-
-menuconfig BT_NIMBLE_52_FEATURE_SUPPORT
-    bool "Enable BLE 5.2 Feature"
-    help
-        Enable this option to select 5.2 features
-
-config BT_NIMBLE_BLE_POWER_CONTROL
-    bool "Enable support for BLE Power Control"
-    depends on BT_NIMBLE_52_FEATURE_SUPPORT && SOC_ESP_NIMBLE_CONTROLLER
-    help
-        Set this option to enable the Power Control feature
 
 config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EFF
     int

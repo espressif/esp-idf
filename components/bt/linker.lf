@@ -39,6 +39,14 @@ entries:
         bt_common -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(btdm_common),
         data -> dram0_data ALIGN(4) ALIGN(4, post) SURROUND(btdm_data)
 
+[mapping:bt_controller]
+archive: libble_app.a
+entries:
+    * (bt_start_end);
+        bt_bss -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_bss),
+        bt_common -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_common),
+        data -> dram0_data ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_data)
+
 [mapping:nimble]
 archive: libnimble.a
 entries:
