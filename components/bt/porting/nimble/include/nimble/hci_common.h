@@ -1214,6 +1214,8 @@ struct ble_hci_vs_rd_static_addr_rp {
 #define BLE_HCI_ADV_ITVL_DEF                (0x800)         /* 1.28 seconds */
 #define BLE_HCI_ADV_CHANMASK_DEF            (0x7)           /* all channels */
 
+#define BLE_HCI_PERIODIC_ADV_ITVL           (1250)          /* usecs */
+
 /* Set scan parameters */
 #define BLE_HCI_SCAN_TYPE_PASSIVE           (0)
 #define BLE_HCI_SCAN_TYPE_ACTIVE            (1)
