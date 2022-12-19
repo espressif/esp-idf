@@ -695,7 +695,7 @@ static void httpd_req_cleanup(httpd_req_t *r)
 
     /* Check if the context has changed and needs to be cleared */
     if ((r->ignore_sess_ctx_changes == false) && (ra->sd->ctx != r->sess_ctx)) {
-        httpd_sess_free_ctx(ra->sd->ctx, ra->sd->free_ctx);
+        httpd_sess_free_ctx(&ra->sd->ctx, ra->sd->free_ctx);
     }
 
 #if CONFIG_HTTPD_WS_SUPPORT
