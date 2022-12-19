@@ -34,7 +34,7 @@
 #define SDSPI_MOSI_PIN 35
 #define SDSPI_CLK_PIN  36
 #define SDSPI_CS_PIN   34
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
 #define SDSPI_MISO_PIN 6
 #define SDSPI_MOSI_PIN 4
 #define SDSPI_CLK_PIN  5
@@ -47,8 +47,6 @@
 #endif //SPI_DMA_CHAN
 #define SDSPI_HOST_ID  SPI2_HOST
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C2)
-//no runners
 
 typedef struct sdspi_mem {
     size_t heap_size;
@@ -161,5 +159,3 @@ TEST_CASE("(SDSPI) can get partition info", "[fatfs][sdspi]")
 
     test_teardown_sdspi(&mem);
 }
-
-#endif //TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # SD Card example (SDSPI)
 
@@ -125,4 +125,3 @@ An attempt to download a new firmware under this conditions may also result in t
 `esptool --port PORT --before no_reset --baud 115200 --chip esp32 erase_flash`
 
 to erase your board's flash, then flash the firmware again.
-
