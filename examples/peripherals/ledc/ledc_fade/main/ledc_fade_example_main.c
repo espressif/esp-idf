@@ -67,7 +67,7 @@
  * Use callback only if you are aware it is being called inside an ISR
  * Otherwise, you can use a semaphore to unblock tasks
  */
-static bool cb_ledc_fade_end_event(const ledc_cb_param_t *param, void *user_arg)
+static IRAM_ATTR bool cb_ledc_fade_end_event(const ledc_cb_param_t *param, void *user_arg)
 {
     portBASE_TYPE taskAwoken = pdFALSE;
 
