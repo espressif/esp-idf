@@ -38,7 +38,7 @@
 #include "esp32c3/rom/rom_layout.h"
 #include "esp_timer.h"
 #include "esp_sleep.h"
-#include "phy.h"
+#include "esp_private/phy.h"
 
 #if CONFIG_BT_ENABLED
 

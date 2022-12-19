@@ -1,8 +1,8 @@
 menu "IEEE 802.15.4"
-    visible if IDF_TARGET_ESP32H4
+    visible if SOC_IEEE802154_SUPPORTED
 
     config IEEE802154_ENABLED
         bool
-        default "y" if IDF_TARGET_ESP32H4
+        default "y" if SOC_IEEE802154_SUPPORTED
 
 endmenu  # IEEE 802.15.4

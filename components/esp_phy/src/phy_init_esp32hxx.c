@@ -7,7 +7,7 @@
 #include "esp_attr.h"
 #include "freertos/portmacro.h"
 #include "esp_phy_init.h"
-#include "phy.h"
+#include "esp_private/phy.h"
 
 #define PHY_ENABLE_VERSION_PRINT 1
 
