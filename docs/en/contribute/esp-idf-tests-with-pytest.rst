@@ -605,6 +605,48 @@ Sometimes you may need to add some extra logging lines while running the test ca
 
 You can use `python logging module <https://docs.python.org/3/library/logging.html>`__ to achieve this.
 
+Useful Logging Functions (as Fixture)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``log_performance``
+"""""""""""""""""""
+
+.. code:: python
+
+    def test_hello_world(
+        dut: IdfDut,
+        log_performance: Callable[[str, object], None],
+    ) -> None:
+        log_performance('test', 1)
+
+The above example would log the performance item with pre-defined format: "[performance][test]: 1" and record it under the ``properties`` tag in the junit report if ``--junitxml <filepath>`` is specified. The junit test case node would look like:
+
+.. code:: html
+
+    <testcase classname="examples.get-started.hello_world.pytest_hello_world" file="examples/get-started/hello_world/pytest_hello_world.py" line="13" name="esp32.default.test_hello_world" time="8.389">
+        <properties>
+            <property name="test" value="1"/>
+        </properties>
+    </testcase>
+
+``check_performance``
+"""""""""""""""""""""
+
+We provide C macros ``TEST_PERFORMANCE_LESS_THAN`` and ``TEST_PERFORMANCE_GREATER_THAN`` to log the performance item and check if the value is in the valid range. Sometimes the performance item value could not be measured in C code, so we also provide a python function for the same purpose. Please note that using C macros is the preferred approach, since the python function couldn't recognize the threshold values of the same performance item under different ifdef blocks well.
+
+.. code:: python
+
+    def test_hello_world(
+        dut: IdfDut,
+        check_performance: Callable[[str, float, str], None],
+    ) -> None:
+        check_performance('RSA_2048KEY_PUBLIC_OP', 123, 'esp32')
+        check_performance('RSA_2048KEY_PUBLIC_OP', 19001, 'esp32')
+
+The above example would first get the threshold values of the performance item ``RSA_2048KEY_PUBLIC_OP`` from :idf_file:`components/idf_test/include/idf_performance.h` and the target-specific one :idf_file:`components/idf_test/include/esp32/idf_performance_target.h`, then check if the value reached the minimum limit or exceeded the maximum limit.
+
+Let's assume the value of ``IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP`` is 19000. so the first ``check_performance`` line would pass and the second one would fail with warning: ``[Performance] RSA_2048KEY_PUBLIC_OP value is 19001, doesn\'t meet pass standard 19000.0``
+
 Further Readings
 ================
 
