@@ -75,9 +75,9 @@ typedef struct {
     esp_spp_mode_t spp_mode;
     osi_mutex_t spp_slot_mutex;
     EventGroupHandle_t tx_event_group;
-    esp_vfs_id_t spp_vfs_id;
 } spp_local_param_t;
 
+static esp_vfs_id_t s_spp_vfs_id = -1;
 #if SPP_DYNAMIC_MEMORY == FALSE
 static spp_local_param_t spp_local_param;
 #else
@@ -151,7 +151,7 @@ static spp_slot_t *spp_malloc_slot(void)
                 goto err;
             }
             if (spp_local_param.spp_mode == ESP_SPP_MODE_VFS) {
-                if (esp_vfs_register_fd(spp_local_param.spp_vfs_id, &(*slot)->fd) != ESP_OK) {
+                if (esp_vfs_register_fd(s_spp_vfs_id, &(*slot)->fd) != ESP_OK) {
                     BTC_TRACE_ERROR("%s unable to register fd!", __func__);
                     err_no = 3;
                     goto err;
@@ -253,7 +253,7 @@ static void spp_free_slot(spp_slot_t *slot)
     }
     spp_local_param.spp_slots[slot->serial] = NULL;
     if (spp_local_param.spp_mode == ESP_SPP_MODE_VFS) {
-        (void) esp_vfs_unregister_fd(spp_local_param.spp_vfs_id, slot->fd);
+        (void) esp_vfs_unregister_fd(s_spp_vfs_id, slot->fd);
         xEventGroupSetBits(spp_local_param.tx_event_group, SLOT_CLOSE_BIT(slot->serial));
     }
     free_slot_data(&slot->tx);
@@ -1578,10 +1578,12 @@ esp_err_t btc_spp_vfs_register(void)
         .fcntl = NULL
     };
 
-    // No FD range is registered here: spp_vfs_id is used to register/unregister
-    // file descriptors
-    if (esp_vfs_register_with_id(&vfs, NULL, &spp_local_param.spp_vfs_id) != ESP_OK) {
-        return ESP_FAIL;
+    if (s_spp_vfs_id == -1) {
+        // No FD range is registered here: s_spp_vfs_id is used to register/unregister
+        // file descriptors
+        if (esp_vfs_register_with_id(&vfs, NULL, &s_spp_vfs_id) != ESP_OK) {
+            return ESP_FAIL;
+        }
     }
 
     return ESP_OK;
