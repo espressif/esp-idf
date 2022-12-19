@@ -20,6 +20,7 @@
 #include "lwip/sockets.h"
 #include "ping/ping_sock.h"
 #include "dhcpserver/dhcpserver.h"
+#include "dhcpserver/dhcpserver_options.h"
 #include "esp_sntp.h"
 
 #define ETH_PING_END_BIT BIT(1)
@@ -144,8 +145,9 @@ TEST(lwip, dhcp_server_init_deinit)
 TEST(lwip, dhcp_server_start_stop_localhost)
 {
     test_case_uses_tcpip();
-    dhcps_t *dhcps = dhcps_new();
     struct netif *netif;
+    dhcps_t *dhcps;
+    ip4_addr_t netmask;
 
     NETIF_FOREACH(netif) {
         if (netif->name[0] == 'l' && netif->name[1] == 'o') {
@@ -154,8 +156,39 @@ TEST(lwip, dhcp_server_start_stop_localhost)
     }
     TEST_ASSERT_NOT_NULL(netif);
 
-    ip4_addr_t ip = { .addr = 0x7f0001 };
-    TEST_ASSERT(dhcps_start(dhcps, netif, ip) == ERR_OK);
+     //Class A
+    dhcps = dhcps_new();
+    IP4_ADDR(&netmask, 255,0,0,0);
+    dhcps_set_option_info(dhcps, SUBNET_MASK, (void*)&netmask, sizeof(netmask));
+    ip4_addr_t a_ip = { .addr = 0x7f0001 };
+    IP4_ADDR(&netmask, 255,0,0,0);
+    TEST_ASSERT(dhcps_start(dhcps, netif, a_ip) == ERR_OK);
+    TEST_ASSERT(dhcps_stop(dhcps, netif) == ERR_OK);
+    dhcps_delete(dhcps);
+
+     //Class B
+    dhcps = dhcps_new();
+    IP4_ADDR(&netmask, 255,255,0,0);
+    dhcps_set_option_info(dhcps, SUBNET_MASK, (void*)&netmask, sizeof(netmask));
+    ip4_addr_t b_ip = { .addr = 0x1000080 };
+    TEST_ASSERT(dhcps_start(dhcps, netif, b_ip) == ERR_OK);
+    TEST_ASSERT(dhcps_stop(dhcps, netif) == ERR_OK);
+    dhcps_delete(dhcps);
+
+     //Class C
+    dhcps = dhcps_new();
+    IP4_ADDR(&netmask, 255,255,255,0);
+    dhcps_set_option_info(dhcps, SUBNET_MASK, (void*)&netmask, sizeof(netmask));
+    ip4_addr_t c_ip = { .addr = 0x101A8C0 };
+    TEST_ASSERT(dhcps_start(dhcps, netif, c_ip) == ERR_OK);
+    TEST_ASSERT(dhcps_stop(dhcps, netif) == ERR_OK);
+    dhcps_delete(dhcps);
+
+     //Class A Subnet C
+    dhcps = dhcps_new();
+    IP4_ADDR(&netmask, 255,255,255,0);
+    dhcps_set_option_info(dhcps, SUBNET_MASK, (void*)&netmask, sizeof(netmask));
+    TEST_ASSERT(dhcps_start(dhcps, netif, a_ip) == ERR_ARG);
     TEST_ASSERT(dhcps_stop(dhcps, netif) == ERR_OK);
     dhcps_delete(dhcps);
 }
