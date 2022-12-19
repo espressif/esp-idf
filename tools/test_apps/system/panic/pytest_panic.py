@@ -28,6 +28,14 @@ CONFIGS_ESP32 = [
     pytest.param('panic', marks=[pytest.mark.esp32]),
 ]
 
+# IDF-5692: Uncomment the marks related to ESP32-S3 and quad_psram once ESP32-S3 runners are available
+CONFIG_EXTRAM_STACK = [
+    pytest.param('coredump_extram_stack',
+                 marks=[pytest.mark.esp32, pytest.mark.esp32s2, pytest.mark.psram,
+                        # pytest.mark.esp32s3, pytest.mark.quad_psram
+                        ])
+]
+
 
 def get_default_backtrace(config: str) -> List[str]:
     return [config, 'app_main', 'main_task', 'vPortTaskWrapper']
@@ -140,6 +148,23 @@ def test_task_wdt_both_cpus(dut: PanicTestDut, config: str, test_func_name: str)
         )
     else:
         common_test(dut, config)
+
+
+@pytest.mark.parametrize('config', CONFIG_EXTRAM_STACK, indirect=True)
+def test_panic_extram_stack(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.expect_test_func_name(test_func_name)
+    dut.expect_none('Allocated stack is not in external RAM')
+    dut.expect_none('Guru Meditation')
+    dut.expect_backtrace()
+    dut.expect_elf_sha256()
+    # Check that coredump is getting written to flash
+    dut.expect_exact('Save core dump to flash...')
+    # And that the stack is replaced and restored
+    dut.expect_exact('Backing up stack @')
+    dut.expect_exact('Restoring stack')
+    # The caller must be accessible after restoring the stack
+    dut.expect_exact('Core dump has been saved to flash.')
+    common_test(dut, config)
 
 
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)

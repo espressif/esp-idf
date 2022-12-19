@@ -91,7 +91,8 @@ menu "Core dump"
         depends on ESP_COREDUMP_ENABLE
         range 0 4096 if !ESP_COREDUMP_USE_STACK_SIZE
         range 1280 4096 if ESP_COREDUMP_USE_STACK_SIZE
-        default 0
+        default 0 if !ESP_COREDUMP_USE_STACK_SIZE
+        default 1280 if ESP_COREDUMP_USE_STACK_SIZE
         help
             Size of the memory to be reserved for core dump stack. If 0 core dump process will run on
             the stack of crashed task/ISR, otherwise special stack will be allocated.

@@ -17,6 +17,9 @@ static void test_abort(void);
 static void test_abort_cache_disabled(void);
 static void test_int_wdt(void);
 static void test_task_wdt_cpu0(void);
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+static void test_panic_extram_stack(void);
+#endif
 #if !CONFIG_FREERTOS_UNICORE
 static void test_task_wdt_cpu1(void);
 static void test_task_wdt_both_cpus(void);
@@ -55,6 +58,9 @@ void app_main(void)
     HANDLE_TEST(test_abort_cache_disabled);
     HANDLE_TEST(test_int_wdt);
     HANDLE_TEST(test_task_wdt_cpu0);
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+    HANDLE_TEST(test_panic_extram_stack);
+#endif
 #if !CONFIG_FREERTOS_UNICORE
     HANDLE_TEST(test_task_wdt_cpu1);
     HANDLE_TEST(test_task_wdt_both_cpus);
@@ -101,6 +107,34 @@ static void test_task_wdt_cpu0(void)
         ;
     }
 }
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+
+static void stack_in_extram(void* arg) {
+    (void) arg;
+    /* Abort instead of using a load/store prohibited to prevent a sanitize error */
+    abort();
+}
+
+static void test_panic_extram_stack(void) {
+    /* Start by initializing a Task which has a stack in external RAM */
+    StaticTask_t handle;
+    const uint32_t stack_size = 8192;
+    void* stack = heap_caps_malloc(stack_size, MALLOC_CAP_SPIRAM);
+
+    /* Make sure the stack is in external RAM */
+    if (!esp_ptr_external_ram(stack)) {
+        die("Allocated stack is not in external RAM!\n");
+    }
+
+    xTaskCreateStatic(stack_in_extram, "Task_stack_extram", stack_size, NULL, 4, (StackType_t*) stack, &handle);
+
+    vTaskDelay(1000);
+}
+
+
+#endif // ESP_COREDUMP_ENABLE_TO_FLASH && SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+
 
 #if !CONFIG_FREERTOS_UNICORE
 static void infinite_loop(void* arg) {
