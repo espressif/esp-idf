@@ -94,7 +94,7 @@ In ESP-IDF, the MAC addresses for the various network interfaces are calculated 
 Custom Interface MAC
 ^^^^^^^^^^^^^^^^^^^^
 
-Sometimes you may need to define custom MAC addresses that are not generated from the base MAC address. To set a custom interface MAC address, use the :cpp:func:`esp_iface_mac_addr_set` function. This function allows you to overwrite the MAC addresses of interfaces set (or not yet set) by the base MAC address. Once a MAC address has been set for a particular interface, changing the base MAC address does not affect it.
+Sometimes you may need to define custom MAC addresses that are not generated from the base MAC address. To set a custom interface MAC address, use the :cpp:func:`esp_iface_mac_addr_set` function. This function allows you to overwrite the MAC addresses of interfaces set (or not yet set) by the base MAC address. Once a MAC address has been set for a particular interface, it will not be affected when the base MAC address is changed.
 
 Custom Base MAC
 ^^^^^^^^^^^^^^^
@@ -111,7 +111,7 @@ The custom base MAC addresses should be allocated such that derived MAC addresse
 Custom MAC Address in eFuse
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function :cpp:func:`esp_efuse_mac_get_custom` or use :cpp:func:`esp_read_mac` with the ``ESP_MAC_EFUSE_CUSTOM`` argument. This loads the MAC address from eFuse BLK3. The :cpp:func:`esp_efuse_mac_get_custom` function assumes that the custom base MAC address is stored in the following format:
+When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function :cpp:func:`esp__mac_get_custom`. Users can also use :cpp:func:`esp_read_mac` with the ``ESP_MAC_EFUSE_CUSTOM`` argument. This loads the MAC address from eFuse BLK3. The :cpp:func:`esp__mac_get_custom` function assumes that the custom base MAC address is stored in the following format:
 
 .. only:: esp32
 
@@ -130,11 +130,11 @@ When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function
         * - Reserved
           - 128
           - 183:56
-          - 
+          -
         * - MAC address
           - 48
           - 55:8
-          - 
+          -
         * - MAC address CRC
           - 8
           - 7:0
@@ -159,12 +159,12 @@ When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function
 
     .. note::
 
-        The eFuse BLK3 uses RS-coding during a burn operation, which means that all eFuse fields in this block must be burnt at the same time.
+        The eFuse BLK3 uses RS-coding during burning, which means that all eFuse fields in this block must be burnt at the same time.
 
-Once custom efuse MAC address has been obtained (using cpp:func:`esp_efuse_mac_get_custom` or :cpp:func:`esp_read_mac`) you need to set it as the base MAC address. There is two ways to do it:
+Once custom eFuse MAC address has been obtained (using :cpp:func:`esp_efuse_mac_get_custom` or :cpp:func:`esp_read_mac`), you need to set it as the base MAC address. There are two ways to do it:
 
-1. using an old API, call :cpp:func:`esp_base_mac_addr_set`.
-2. using a new API, call :cpp:func:`esp_iface_mac_addr_set` with the ``ESP_MAC_BASE`` argument.
+1. Use an old API: call :cpp:func:`esp_base_mac_addr_set`.
+2. Use a new API: call :cpp:func:`esp_iface_mac_addr_set` with the ``ESP_MAC_BASE`` argument.
 
 
 .. _local-mac-addresses:

@@ -102,10 +102,10 @@ RTC peripherals or RTC memories don't need to be powered on during sleep in this
         rtc_gpio_pullup_dis(gpio_num);
         rtc_gpio_pulldown_en(gpio_num);
 
-    .. warning:: 
-        - To use the EXT1 wakeup, the IO pad(s) are configured as RTC IO. Thus if these pads want to be used as digital GPIOs after waking up from sleep, :cpp:func:`rtc_gpio_deinit` needs to be called first.
+    .. warning::
+        - To use the EXT1 wakeup, the IO pad(s) are configured as RTC IO. Therefore, before using these pads as digital GPIOs, users need to reconfigure them by calling the :cpp:func:`rtc_gpio_deinit` function.
 
-        - If the RTC peripherals are configured to be powered down (which is by default), the wakeup IOs will be set to holding state before entering sleep. Therefore, after waking up from Light-sleep, please call `rtc_gpio_hold_dis` to disable the hold function to perform any pin re-configuration. For Deep-sleep wakeup, this is already being handled at the application startup stage.
+        - If the RTC peripherals are configured to be powered down (which is by default), the wakeup IOs will be set to the holding state before entering sleep. Therefore, after the chip wakes up from Light-sleep, please call `rtc_gpio_hold_dis` to disable the hold function to perform any pin re-configuration. For Deep-sleep wakeup, this is already being handled at the application startup stage.
 
     :cpp:func:`esp_sleep_enable_ext1_wakeup` function can be used to enable this wakeup source.
 
@@ -149,9 +149,9 @@ RTC peripherals or RTC memories don't need to be powered on during sleep in this
     GPIO Wakeup
     ^^^^^^^^^^^
 
-    Any IO can be used as the external input to wakeup the chip from Light-sleep. Each pin can be individually configured to trigger wakeup on high or low level using :cpp:func:`gpio_wakeup_enable` function. Then :cpp:func:`esp_sleep_enable_gpio_wakeup` function should be called to enable this wakeup source.
+    Any IO can be used as the external input to wake up the chip from Light-sleep. Each pin can be individually configured to trigger wakeup on high or low level using the :cpp:func:`gpio_wakeup_enable` function. Then the :cpp:func:`esp_sleep_enable_gpio_wakeup` function should be called to enable this wakeup source.
 
-    Additionally, IOs that are powered by the VDD3P3_RTC power domain can be used to wakeup the chip from Deep-sleep. The wakeup pin and wakeup trigger level can be configured by calling :cpp:func:`esp_deep_sleep_enable_gpio_wakeup`. The function will enable the Deep-sleep wakeup for the selected pin.
+    Additionally, IOs that are powered by the VDD3P3_RTC power domain can be used to wake up the chip from Deep-sleep. The wakeup pin and wakeup trigger level can be configured by calling :cpp:func:`esp_deep_sleep_enable_gpio_wakeup`. The function will enable the Deep-sleep wakeup for the selected pin.
 
 UART Wakeup (Light-sleep Only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
