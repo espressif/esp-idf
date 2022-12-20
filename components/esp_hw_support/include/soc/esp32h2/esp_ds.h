@@ -90,6 +90,9 @@ typedef struct esp_digital_signature_data {
  * This is only used for encrypting the RSA parameters by calling esp_ds_encrypt_params().
  * Afterwards, the result can be stored in flash or in other persistent memory.
  * The encryption is a prerequisite step before any signature operation can be done.
+ *
+ * @note
+ * Y, M, Rb, & M_Prime must all be in little endian format.
  */
 typedef struct {
     uint32_t  Y[ESP_DS_SIGNATURE_MAX_BIT_LEN / 32]; //!< RSA exponent
@@ -113,7 +116,9 @@ typedef struct {
  *
  * @note This function locks the HMAC, SHA, AES and RSA components during its entire execution time.
  *
- * @param message the message to be signed; its length should be (data->rsa_length + 1)*4 bytes
+ * @param message the message to be signed; its length should be (data->rsa_length + 1)*4 bytes, and those
+          bytes must be in little endian format. It is your responsibility to apply your hash function
+          and padding before calling this function, if required. (e.g. message = padding(hash(inputMsg)))
  * @param data the encrypted signing key data (AES encrypted RSA key + IV)
  * @param key_id the HMAC key ID determining the HMAC key of the HMAC which will be used to decrypt the
  *        signing key data
@@ -149,7 +154,9 @@ esp_err_t esp_ds_sign(const void *message,
  * @note This function locks the HMAC, SHA, AES and RSA components, so the user has to ensure to call
  *       \c esp_ds_finish_sign() in a timely manner.
  *
- * @param message the message to be signed; its length should be (data->rsa_length + 1)*4 bytes
+ * @param message the message to be signed; its length should be (data->rsa_length + 1)*4 bytes, and those
+          bytes must be in little endian format. It is your responsibility to apply your hash function
+          and padding before calling this function, if required. (e.g. message = padding(hash(inputMsg)))
  * @param data the encrypted signing key data (AES encrypted RSA key + IV)
  * @param key_id the HMAC key ID determining the HMAC key of the HMAC which will be used to decrypt the
  *        signing key data
@@ -177,7 +184,8 @@ bool esp_ds_is_busy(void);
 /**
  * @brief Finish the signing process.
  *
- * @param signature the destination of the signature, should be (data->rsa_length + 1)*4 bytes long
+ * @param signature the destination of the signature, should be (data->rsa_length + 1)*4 bytes long,
+          the resultant signature bytes shall be written in little endian format.
  * @param esp_ds_ctx the context object retreived by \c esp_ds_start_sign()
  *
  * @return
