@@ -6,9 +6,7 @@ NVS Partition Parser Utility
 Introduction
 ------------
 
-The utility :component_file:`nvs_flash/nvs_partition_parser/nvs_tool.py` loads and parses an NVS storage partition for easier debugging and data extraction. 
-The utility also features integrity check which scans the partition for potential errors.
-Data blobs are encoded in `base64` format.
+The utility :component_file:`nvs_flash/nvs_partition_parser/nvs_tool.py` loads and parses an NVS storage partition for easier debugging and data extraction. The utility also features integrity check which scans the partition for potential errors. Data blobs are encoded in `base64` format.
 
 Encrypted Partitions
 --------------------
@@ -18,11 +16,11 @@ This utility does not support decryption. To decrypt the NVS partition, please u
 Usage
 -----
 
-There are 2 output format styles available with `-f` or `--format` option:
+There are two output format styles available with the `-f` or `--format` option:
     - `json` - All of the output is printed as a JSON.
     - `text` - The output is printed as a human-readable text with different selectable output styles mentioned below.
 
-For the `text` output format the utility provides six different output styles with `-d` or `--dump` option:
+For the `text` output format, the utility provides six different output styles with the `-d` or `--dump` option:
     - `all` (default) - Prints all entries with metadata.
     - `written` - Prints only written entries with metadata.
     - `minimal` - Prints written `namespace:key = value` pairs.
