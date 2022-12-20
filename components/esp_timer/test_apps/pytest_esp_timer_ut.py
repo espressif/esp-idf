@@ -33,6 +33,7 @@ def test_esp_timer_psram(dut: Dut) -> None:
 
 
 @pytest.mark.esp32c2
+@pytest.mark.generic
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'config, baud',
