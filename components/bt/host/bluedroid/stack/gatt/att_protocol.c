@@ -134,8 +134,10 @@ BT_HDR *attp_build_browse_cmd(UINT8 op_code, UINT16 s_hdl, UINT16 e_hdl, tBT_UUI
 {
     BT_HDR      *p_buf = NULL;
     UINT8       *p;
+    /* length of ATT_READ_BY_TYPE_REQ PDU: opcode(1) + start_handle (2) + end_handle (2) + uuid (2 or 16) */
+    const UINT8 payload_size = 1 + 2 + 2 + ((uuid.len == LEN_UUID_16) ? LEN_UUID_16 : LEN_UUID_128);
 
-    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + 8 + L2CAP_MIN_OFFSET)) != NULL) {
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
         /* Describe the built message location and size */
         p_buf->offset = L2CAP_MIN_OFFSET;

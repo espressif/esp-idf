@@ -30,6 +30,7 @@ typedef enum {
     ESP_HIDD_EVENT_BLE_CONNECT,                         
     ESP_HIDD_EVENT_BLE_DISCONNECT,
     ESP_HIDD_EVENT_BLE_VENDOR_REPORT_WRITE_EVT,
+    ESP_HIDD_EVENT_BLE_LED_REPORT_WRITE_EVT,
 } esp_hidd_cb_event_t;
 
 /// HID config status
@@ -104,6 +105,15 @@ typedef union {
         uint8_t  *data;                             /*!< The pointer to the data */
     } vendor_write;									/*!< HID callback param of ESP_HIDD_EVENT_BLE_VENDOR_REPORT_WRITE_EVT */
 
+    /**
+     * @brief ESP_HIDD_EVENT_BLE_LED_REPORT_WRITE_EVT
+     */
+    struct hidd_led_write_evt_param {
+        uint16_t conn_id;
+        uint8_t report_id;
+        uint8_t length;
+        uint8_t *data;
+    } led_write;
 } esp_hidd_cb_param_t;
 
 
