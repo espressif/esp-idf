@@ -16,22 +16,12 @@ There are many host-side tools which can be used to interact with the UDP/TCP se
 One command line tool is [netcat](http://netcat.sourceforge.net) which can send and receive many kinds of packets.
 Note: please replace `192.168.0.167 3333` with desired IPV4/IPV6 address (displayed in monitor console) and port number in the following command.
 
-In addition to those tools, simple Python scripts can be found under sockets/scripts directory. Every script is designed to interact with one of the examples.
+Ref to the [upper level README](../README.md#host-tools) for more information.
 
 ### TCP client using netcat
 ```
 nc 192.168.0.167 3333
 ```
-
-### Python scripts
-Script example_test.py could be used as a counter part to the tcp-server application,
-IP address and the message to be send to the server shall be stated as arguments. Example:
-
-```
-python example_test.py 192.168.0.167 Message
-```
-Note that this script is used in automated tests, as well, so the IDF test framework packages need to be imported;
-please add `$IDF_PATH/tools/ci/python_packages` to `PYTHONPATH`.
 
 ## Hardware Required
 

@@ -869,14 +869,6 @@ example_test_001C:
     - ESP32
     - Example_GENERIC
 
-example_test_protocols:
-  extends:
-    - .example_test_esp32_template
-    - .rules:test:example_test-esp32-wifi
-  tags:
-    - ESP32
-    - wifi_router
-
 example_test_002:
   extends:
     - .example_test_esp32_template
