@@ -201,8 +201,9 @@
   - "examples/common_components/**/*"
   - "examples/protocols/**/*"
   - "examples/system/ota/**/*"
-
+  - "examples/ethernet/iperf/**/*"
   - "components/esp_eth/**/*"
+  - "components/esp_netif/esp_netif_handlers.c"
 
 # for jobs: example_test_002, example_test*wifi*
 .patterns-example_test-wifi: &patterns-example_test-wifi

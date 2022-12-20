@@ -15,9 +15,9 @@ import sys
 from builtins import input
 from threading import Event, Thread
 
-import netifaces
 import ttfw_idf
-from common_test_methods import get_env_config_variable, get_host_ip_by_interface, get_my_interface_by_dest_ip
+from common_test_methods import (get_env_config_variable, get_host_ip4_by_dest_ip, get_host_ip6_by_dest_ip,
+                                 get_my_interface_by_dest_ip)
 from tiny_test_fw.DUT import ExpectTimeout
 
 # -----------  Config  ----------
@@ -106,7 +106,7 @@ def test_examples_protocol_socket_udpclient(env, extra_data):
     my_interface = get_my_interface_by_dest_ip(ipv4)
     # test IPv4
     with UdpServer(PORT, socket.AF_INET):
-        server_ip = get_host_ip_by_interface(my_interface, netifaces.AF_INET)
+        server_ip = get_host_ip4_by_dest_ip(ipv4)
         print('Connect udp client to server IP={}'.format(server_ip))
         for _ in range(3):
             try:
@@ -119,7 +119,7 @@ def test_examples_protocol_socket_udpclient(env, extra_data):
             raise ValueError('Failed to send/recv udp packets.')
     # test IPv6
     with UdpServer(PORT, socket.AF_INET6):
-        server_ip = get_host_ip_by_interface(my_interface, netifaces.AF_INET6)
+        server_ip = get_host_ip6_by_dest_ip(ipv6, my_interface)
         print('Connect udp client to server IP={}'.format(server_ip))
         for _ in range(3):
             try:
