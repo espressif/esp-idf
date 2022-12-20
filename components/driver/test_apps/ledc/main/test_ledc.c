@@ -10,23 +10,16 @@
  * real duty = duty/2^duty_resolution
  */
 #include <esp_types.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <malloc.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "freertos/queue.h"
 #include "unity.h"
-#include "soc/ledc_periph.h"
 #include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "driver/ledc.h"
-#include "hal/ledc_ll.h"
-#include "driver/gpio.h"
+#include "soc/ledc_struct.h"
 
 #define PULSE_IO      18
 
@@ -197,7 +190,7 @@ TEST_CASE("LEDC output idle level test", "[ledc]")
     uint32_t current_level = LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv;
     TEST_ESP_OK(ledc_stop(test_speed_mode, LEDC_CHANNEL_0, !current_level));
     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    TEST_ASSERT_EQUAL_INT32(LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv, !current_level);
+    TEST_ASSERT_EQUAL_INT32(!current_level, LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv);
 }
 
 TEST_CASE("LEDC iterate over all channel and timer configs", "[ledc]")
@@ -207,17 +200,15 @@ TEST_CASE("LEDC iterate over all channel and timer configs", "[ledc]")
 
     // use all kinds of speed mode, channel, timer combination to test all of possible configuration
     ledc_mode_t speed_mode[LEDC_SPEED_MODE_MAX] = SPEED_MODE_LIST;
-    ledc_channel_t channels[8] = {LEDC_CHANNEL_0, LEDC_CHANNEL_1, LEDC_CHANNEL_2, LEDC_CHANNEL_3, LEDC_CHANNEL_4, LEDC_CHANNEL_5};
-    ledc_timer_t timer_select[4] = {LEDC_TIMER_0, LEDC_TIMER_1, LEDC_TIMER_2, LEDC_TIMER_3};
 
     for (int i = 0; i < LEDC_SPEED_MODE_MAX; i++) {
         ledc_ch_config.speed_mode = speed_mode[i];
         ledc_time_config.speed_mode = speed_mode[i];
-        for (int j = 0; j < 8; j++) {
-            ledc_ch_config.channel = channels[j];
-            for (int k = 0; k < 4; k++) {
-                ledc_ch_config.timer_sel = timer_select[k];
-                ledc_time_config.timer_num = timer_select[k];
+        for (int j = 0; j < LEDC_CHANNEL_MAX; j++) {
+            ledc_ch_config.channel = (ledc_channel_t)j;
+            for (int k = 0; k < LEDC_TIMER_MAX; k++) {
+                ledc_ch_config.timer_sel = (ledc_timer_t)k;
+                ledc_time_config.timer_num = (ledc_timer_t)k;
                 TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
                 TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
             }
@@ -246,12 +237,12 @@ TEST_CASE("LEDC memory leak test", "[ledc]")
 }
 
 // duty should be manually checked from the waveform using a logic analyzer
-// this test is enabled only for testting the settings
+// this test is enabled only for testing the settings
 TEST_CASE("LEDC set and get duty", "[ledc]")
 {
     ledc_timer_t timer_list[4] = {LEDC_TIMER_0, LEDC_TIMER_1, LEDC_TIMER_2, LEDC_TIMER_3};
     ledc_mode_t speed_mode_list[LEDC_SPEED_MODE_MAX] = SPEED_MODE_LIST;
-    for (int i = 0; i < LEDC_TIMER_MAX - 1; i++) {
+    for (int i = 0; i < LEDC_TIMER_MAX; i++) {
         for (int j = 0; j < LEDC_SPEED_MODE_MAX; j++) {
             timer_duty_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, timer_list[i], speed_mode_list[j]);
         }
@@ -452,7 +443,7 @@ static void frequency_set_get(ledc_mode_t speed_mode, ledc_timer_t timer, uint32
     int count;
     TEST_ESP_OK(ledc_set_freq(speed_mode, timer, freq_hz));
     count = wave_count(1000);
-    TEST_ASSERT_INT16_WITHIN(error, count, real_freq);
+    TEST_ASSERT_INT16_WITHIN(error, real_freq, count);
     TEST_ASSERT_EQUAL_INT32(real_freq, ledc_get_freq(speed_mode, timer));
 }
 
@@ -481,7 +472,7 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 9000, 8992, 50);
 }
 
-TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60][ignore]")
+TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60]")
 {
     setup_testbench();
 #if SOC_LEDC_SUPPORT_HS_MODE
@@ -511,12 +502,12 @@ static void timer_set_clk_src_and_freq_test(ledc_mode_t speed_mode, ledc_clk_cfg
     vTaskDelay(100 / portTICK_PERIOD_MS);
     if (clk_src == LEDC_USE_RTC8M_CLK) {
         // RTC8M_CLK freq is get from calibration, it is reasonable that divider calculation does a rounding
-        TEST_ASSERT_UINT32_WITHIN(5, ledc_get_freq(speed_mode, LEDC_TIMER_0), freq_hz);
+        TEST_ASSERT_UINT32_WITHIN(5, freq_hz, ledc_get_freq(speed_mode, LEDC_TIMER_0));
     } else {
-        TEST_ASSERT_EQUAL_INT32(ledc_get_freq(speed_mode, LEDC_TIMER_0), freq_hz);
+        TEST_ASSERT_EQUAL_INT32(freq_hz, ledc_get_freq(speed_mode, LEDC_TIMER_0));
     }
     int count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(10, count, freq_hz);
+    TEST_ASSERT_UINT32_WITHIN(10, freq_hz, count);
 }
 
 TEST_CASE("LEDC timer select specific clock source", "[ledc]")
@@ -590,29 +581,28 @@ TEST_CASE("LEDC timer pause and resume", "[ledc]")
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
     count = wave_count(1000);
-    TEST_ASSERT_INT16_WITHIN(5, count, 5000);
+    TEST_ASSERT_INT16_WITHIN(5, 5000, count);
 
     //pause ledc timer, when pause it, will get no waveform count
     printf("Pause ledc timer\n");
     TEST_ESP_OK(ledc_timer_pause(test_speed_mode, LEDC_TIMER_0));
     vTaskDelay(10 / portTICK_PERIOD_MS);
     count = wave_count(1000);
-    TEST_ASSERT_INT16_WITHIN(5, count, 0);
-    TEST_ASSERT_EQUAL_UINT32(count, 0);
+    TEST_ASSERT_INT16_WITHIN(5, 0, count);
 
     //resume ledc timer
     printf("Resume ledc timer\n");
     TEST_ESP_OK(ledc_timer_resume(test_speed_mode, LEDC_TIMER_0));
     vTaskDelay(10 / portTICK_PERIOD_MS);
     count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(5, count, 5000);
+    TEST_ASSERT_UINT32_WITHIN(5, 5000, count);
 
     //reset ledc timer
     printf("reset ledc timer\n");
     TEST_ESP_OK(ledc_timer_rst(test_speed_mode, LEDC_TIMER_0));
     vTaskDelay(100 / portTICK_PERIOD_MS);
     count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(5, count, 5000);
+    TEST_ASSERT_UINT32_WITHIN(5, 5000, count);
     tear_testbench();
 }
 

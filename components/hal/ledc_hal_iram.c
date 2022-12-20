@@ -15,6 +15,16 @@ void ledc_hal_ls_channel_update(ledc_hal_context_t *hal, ledc_channel_t channel_
     ledc_ll_ls_channel_update(hal->dev, hal->speed_mode, channel_num);
 }
 
+void ledc_hal_set_duty_start(ledc_hal_context_t *hal, ledc_channel_t channel_num, bool duty_start)
+{
+    ledc_ll_set_duty_start(hal->dev, hal->speed_mode, channel_num, duty_start);
+}
+
+void ledc_hal_set_duty_int_part(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t duty_val)
+{
+    ledc_ll_set_duty_int_part(hal->dev, hal->speed_mode, channel_num, duty_val);
+}
+
 void ledc_hal_set_hpoint(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t hpoint_val)
 {
     ledc_ll_set_hpoint(hal->dev, hal->speed_mode, channel_num, hpoint_val);
