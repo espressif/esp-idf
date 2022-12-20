@@ -109,6 +109,7 @@ static char* s_phy_type[ESP_PHY_INIT_DATA_TYPE_NUMBER] = {"DEFAULT", "SRRC", "FC
 
 /* Country and PHY init data type map */
 static phy_country_to_bin_type_t s_country_code_map_type_table[] = {
+    {"01",  ESP_PHY_INIT_DATA_TYPE_DEFAULT},
     {"AT",  ESP_PHY_INIT_DATA_TYPE_CE},
     {"AU",  ESP_PHY_INIT_DATA_TYPE_ACMA},
     {"BE",  ESP_PHY_INIT_DATA_TYPE_CE},
