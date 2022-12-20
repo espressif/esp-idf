@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer for Timer Group register operations.
 // Note that most of the register operations in this layer are non-atomic operations.
@@ -28,6 +20,7 @@ extern "C" {
 #include "soc/rtc_cntl_struct.h"
 #include "soc/efuse_reg.h"
 #include "esp_attr.h"
+#include "esp_assert.h"
 
 /* The value that needs to be written to RTC_CNTL_WDT_WKEY to write-enable the wdt registers */
 #define RWDT_LL_WDT_WKEY_VALUE 0x50D83AA1
@@ -51,20 +44,20 @@ extern "C" {
 #define RWDT_LL_RESET_LENGTH_3200_NS   7
 
 //Type check wdt_stage_action_t
-_Static_assert(WDT_STAGE_ACTION_OFF == RWDT_LL_STG_SEL_OFF, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-_Static_assert(WDT_STAGE_ACTION_INT == RWDT_LL_STG_SEL_INT, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-_Static_assert(WDT_STAGE_ACTION_RESET_CPU == RWDT_LL_STG_SEL_RESET_CPU, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-_Static_assert(WDT_STAGE_ACTION_RESET_SYSTEM == RWDT_LL_STG_SEL_RESET_SYSTEM, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-_Static_assert(WDT_STAGE_ACTION_RESET_RTC == RWDT_LL_STG_SEL_RESET_RTC, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_OFF == RWDT_LL_STG_SEL_OFF, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_INT == RWDT_LL_STG_SEL_INT, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_CPU == RWDT_LL_STG_SEL_RESET_CPU, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_SYSTEM == RWDT_LL_STG_SEL_RESET_SYSTEM, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_RTC == RWDT_LL_STG_SEL_RESET_RTC, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
 //Type check wdt_reset_sig_length_t
-_Static_assert(WDT_RESET_SIG_LENGTH_100ns == RWDT_LL_RESET_LENGTH_100_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-_Static_assert(WDT_RESET_SIG_LENGTH_200ns == RWDT_LL_RESET_LENGTH_200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-_Static_assert(WDT_RESET_SIG_LENGTH_300ns == RWDT_LL_RESET_LENGTH_300_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-_Static_assert(WDT_RESET_SIG_LENGTH_400ns == RWDT_LL_RESET_LENGTH_400_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-_Static_assert(WDT_RESET_SIG_LENGTH_500ns == RWDT_LL_RESET_LENGTH_500_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-_Static_assert(WDT_RESET_SIG_LENGTH_800ns == RWDT_LL_RESET_LENGTH_800_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-_Static_assert(WDT_RESET_SIG_LENGTH_1_6us == RWDT_LL_RESET_LENGTH_1600_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-_Static_assert(WDT_RESET_SIG_LENGTH_3_2us == RWDT_LL_RESET_LENGTH_3200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_100ns == RWDT_LL_RESET_LENGTH_100_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_200ns == RWDT_LL_RESET_LENGTH_200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_300ns == RWDT_LL_RESET_LENGTH_300_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_400ns == RWDT_LL_RESET_LENGTH_400_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_500ns == RWDT_LL_RESET_LENGTH_500_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_800ns == RWDT_LL_RESET_LENGTH_800_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_1_6us == RWDT_LL_RESET_LENGTH_1600_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_3_2us == RWDT_LL_RESET_LENGTH_3200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
 
 /**
  * @brief Enable the RWDT

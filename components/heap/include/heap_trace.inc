@@ -16,6 +16,7 @@
 #include "soc/soc_memory_layout.h"
 #include "esp_attr.h"
 #include "esp_cpu.h"
+#include "esp_macros.h"
 
 /* Encode the CPU ID in the LSB of the ccount value */
 inline static uint32_t get_ccount(void)
@@ -71,7 +72,7 @@ static IRAM_ATTR __attribute__((noinline)) void get_call_stack(void **callers)
     TEST_STACK(9);
 }
 
-_Static_assert(STACK_DEPTH >= 0 && STACK_DEPTH <= 10, "CONFIG_HEAP_TRACING_STACK_DEPTH must be in range 0-10");
+ESP_STATIC_ASSERT(STACK_DEPTH >= 0 && STACK_DEPTH <= 10, "CONFIG_HEAP_TRACING_STACK_DEPTH must be in range 0-10");
 
 
 typedef enum {

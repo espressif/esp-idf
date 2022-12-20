@@ -12,6 +12,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_assert.h"
 #include "esp_err.h"
 #include "hal/eth_types.h"
 #include "soc/emac_dma_struct.h"
@@ -76,7 +77,7 @@ typedef struct {
 #define EMAC_DMATXDESC_CHECKSUM_TCPUDPICMPSEGMENT 2 /*!< TCP/UDP/ICMP Checksum Insertion calculated over segment only */
 #define EMAC_DMATXDESC_CHECKSUM_TCPUDPICMPFULL 3    /*!< TCP/UDP/ICMP Checksum Insertion fully calculated */
 
-_Static_assert(sizeof(eth_dma_tx_descriptor_t) == 32, "eth_dma_tx_descriptor_t should occupy 32 bytes in memory");
+ESP_STATIC_ASSERT(sizeof(eth_dma_tx_descriptor_t) == 32, "eth_dma_tx_descriptor_t should occupy 32 bytes in memory");
 
 /**
 * @brief Ethernet DMA RX Descriptor
@@ -150,7 +151,7 @@ typedef struct {
     uint32_t TimeStampHigh; /*!< Receive frame timestamp high */
 } eth_dma_rx_descriptor_t;
 
-_Static_assert(sizeof(eth_dma_rx_descriptor_t) == 32, "eth_dma_rx_descriptor_t should occupy 32 bytes in memory");
+ESP_STATIC_ASSERT(sizeof(eth_dma_rx_descriptor_t) == 32, "eth_dma_rx_descriptor_t should occupy 32 bytes in memory");
 
 typedef struct {
     emac_mac_dev_t *mac_regs;
