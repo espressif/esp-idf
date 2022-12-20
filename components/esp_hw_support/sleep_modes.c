@@ -375,6 +375,9 @@ inline static bool is_light_sleep(uint32_t pd_flags)
 
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
+#if CONFIG_IDF_TARGET_ESP32C6
+    return 0; // TODO: WIFI-5150
+#else
     // Stop UART output so that output is not lost due to APB frequency change.
     // For light sleep, suspend UART output — it will resume after wakeup.
     // For deep sleep, wait for the contents of UART FIFO to be sent.
@@ -539,6 +542,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     resume_uarts();
 
     return result;
+#endif
 }
 
 inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu)
@@ -617,6 +621,9 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
                                        uint32_t flash_enable_time_us,
                                        rtc_vddsdio_config_t vddsdio_config)
 {
+#if CONFIG_IDF_TARGET_ESP32C6
+    return ESP_ERR_NOT_SUPPORTED; // TODO: WIFI-5150
+#else
     // Enter sleep
     uint32_t reject = esp_sleep_start(pd_flags);
 
@@ -633,6 +640,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
     }
 
     return reject ? ESP_ERR_SLEEP_REJECT : ESP_OK;
+#endif
 }
 
 /**
@@ -653,6 +661,9 @@ static inline bool can_power_down_vddsdio(const uint32_t vddsdio_pd_sleep_durati
 
 esp_err_t esp_light_sleep_start(void)
 {
+#if CONFIG_IDF_TARGET_ESP32C6
+    return ESP_ERR_NOT_SUPPORTED; // TODO: WIFI-5150
+#else
 #if CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
     esp_err_t timerret = ESP_OK;
 
@@ -843,6 +854,7 @@ esp_err_t esp_light_sleep_start(void)
 #endif // CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
 
     return err;
+#endif
 }
 
 esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
