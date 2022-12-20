@@ -75,9 +75,9 @@ typedef struct {
     esp_spp_mode_t spp_mode;
     osi_mutex_t spp_slot_mutex;
     EventGroupHandle_t tx_event_group;
-    esp_vfs_id_t spp_vfs_id;
 } spp_local_param_t;
 
+static esp_vfs_id_t s_spp_vfs_id = -1;
 #if SPP_DYNAMIC_MEMORY == FALSE
 static spp_local_param_t spp_local_param;
 #else
@@ -151,7 +151,7 @@ static spp_slot_t *spp_malloc_slot(void)
                 goto err;
             }
             if (spp_local_param.spp_mode == ESP_SPP_MODE_VFS) {
-                if (esp_vfs_register_fd(spp_local_param.spp_vfs_id, &(*slot)->fd) != ESP_OK) {
+                if (esp_vfs_register_fd(s_spp_vfs_id, &(*slot)->fd) != ESP_OK) {
                     BTC_TRACE_ERROR("%s unable to register fd!", __func__);
                     err_no = 3;
                     goto err;
@@ -253,7 +253,7 @@ static void spp_free_slot(spp_slot_t *slot)
     }
     spp_local_param.spp_slots[slot->serial] = NULL;
     if (spp_local_param.spp_mode == ESP_SPP_MODE_VFS) {
-        (void) esp_vfs_unregister_fd(spp_local_param.spp_vfs_id, slot->fd);
+        (void) esp_vfs_unregister_fd(s_spp_vfs_id, slot->fd);
         xEventGroupSetBits(spp_local_param.tx_event_group, SLOT_CLOSE_BIT(slot->serial));
     }
     free_slot_data(&slot->tx);
@@ -473,6 +473,7 @@ static void btc_spp_dm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
                 user_data->slot_id = slot->id;
             } else {
                 BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
+                assert(0);
             }
             BTA_JvFreeChannel(slot->scn, BTA_JV_CONN_TYPE_RFCOMM,
                               (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)user_data);
@@ -514,12 +515,20 @@ static void btc_spp_init(btc_spp_args_t *arg)
 
         if (osi_mutex_new(&spp_local_param.spp_slot_mutex) != 0) {
             BTC_TRACE_ERROR("%s osi_mutex_new failed\n", __func__);
+#if SPP_DYNAMIC_MEMORY == TRUE
+            osi_free(spp_local_param_ptr);
+            spp_local_param_ptr = NULL;
+#endif
             ret = ESP_SPP_NO_RESOURCE;
             break;
         }
         if ((spp_local_param.tx_event_group = xEventGroupCreate()) == NULL) {
             BTC_TRACE_ERROR("%s create tx_event_group failed\n", __func__);
             osi_mutex_free(&spp_local_param.spp_slot_mutex);
+#if SPP_DYNAMIC_MEMORY == TRUE
+            osi_free(spp_local_param_ptr);
+            spp_local_param_ptr = NULL;
+#endif
             ret = ESP_SPP_NO_RESOURCE;
             break;
         }
@@ -569,11 +578,8 @@ static void btc_spp_uninit(void)
                     user_data->server_status = BTA_JV_SERVER_RUNNING;
                     user_data->slot_id = spp_local_param.spp_slots[i]->id;
                 } else {
-                    esp_spp_cb_param_t param;
                     BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
-                    param.srv_stop.status = ESP_SPP_NO_RESOURCE;
-                    param.srv_stop.scn = spp_local_param.spp_slots[i]->scn;
-                    btc_spp_cb_to_app(ESP_SPP_SRV_STOP_EVT, &param);
+                    assert(0);
                 }
                 BTA_JvFreeChannel(spp_local_param.spp_slots[i]->scn, BTA_JV_CONN_TYPE_RFCOMM,
                                   (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)user_data);
@@ -749,7 +755,7 @@ static void btc_spp_stop_srv(btc_spp_args_t *arg)
         }
 
         osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-        // [1] find all server
+        // [1] find all unconnected server
         for (i = 1; i <= MAX_RFC_PORTS; i++) {
             if (spp_local_param.spp_slots[i] != NULL && !spp_local_param.spp_slots[i]->connected &&
                 spp_local_param.spp_slots[i]->sdp_handle > 0) {
@@ -804,11 +810,8 @@ static void btc_spp_stop_srv(btc_spp_args_t *arg)
                         user_data->server_status = BTA_JV_SERVER_RUNNING;
                         user_data->slot_id = spp_local_param.spp_slots[i]->id;
                     } else {
-                        esp_spp_cb_param_t param;
                         BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
-                        param.srv_stop.status = ESP_SPP_NO_RESOURCE;
-                        param.srv_stop.scn = spp_local_param.spp_slots[i]->scn;
-                        btc_spp_cb_to_app(ESP_SPP_SRV_STOP_EVT, &param);
+                        assert(0);
                     }
                     BTA_JvFreeChannel(spp_local_param.spp_slots[i]->scn, BTA_JV_CONN_TYPE_RFCOMM,
                                       (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)user_data);
@@ -1575,10 +1578,12 @@ esp_err_t btc_spp_vfs_register(void)
         .fcntl = NULL
     };
 
-    // No FD range is registered here: spp_vfs_id is used to register/unregister
-    // file descriptors
-    if (esp_vfs_register_with_id(&vfs, NULL, &spp_local_param.spp_vfs_id) != ESP_OK) {
-        return ESP_FAIL;
+    if (s_spp_vfs_id == -1) {
+        // No FD range is registered here: s_spp_vfs_id is used to register/unregister
+        // file descriptors
+        if (esp_vfs_register_with_id(&vfs, NULL, &s_spp_vfs_id) != ESP_OK) {
+            return ESP_FAIL;
+        }
     }
 
     return ESP_OK;
