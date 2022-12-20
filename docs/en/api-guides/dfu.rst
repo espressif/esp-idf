@@ -128,3 +128,11 @@ Common Errors and Known Issues
 - The reason for ``No DFU capable USB device available`` could be that the USB driver wasn't properly installed on Windows (see :ref:`api_guide_dfu_flash_win`), udev rule was not setup on Linux (see :ref:`api_guide_dfu_flash_udev`) or the device isn't in bootloader mode.
 
 - Flashing with ``dfu-util`` on Windows fails on the first attempt with error ``Lost device after RESET?``. Please retry the flashing and it should succeed the next time.
+
+
+.. only:: SOC_SUPPORTS_SECURE_DL_MODE
+
+    Secure Download Mode
+    --------------------
+
+    When Secure Download Mode is enabled, DFU is no longer possible. Please see :doc:`Flash Encryption <../security/flash-encryption>` guide for more details.
