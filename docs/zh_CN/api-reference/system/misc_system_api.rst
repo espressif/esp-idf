@@ -91,6 +91,11 @@ MAC 地址
 
     .. note:: {IDF_TARGET_NAME} 内部未集成以太网 MAC 地址，但仍可以计算得出该地址。不过，以太网 MAC 地址只能与外部以太网接口（如 SPI 以太网设备）一起使用，具体请参阅 :doc:`/api-reference/network/esp_eth`。
 
+自定义接口 MAC
+^^^^^^^^^^^^^^^^
+
+有时用户可能需要自定义 MAC 地址，这些地址并不由基准 MAC 地址生成。如需设置自定义接口 MAC 地址，请使用 :cpp:func:`esp_iface_mac_addr_set` 函数。该函数用于覆盖由基准 MAC 地址设置（或尚未设置）的接口 MAC 地址。一旦设置某个接口 MAC 地址，即使更改基准 MAC 地址，也不会对其产生影响。
+
 自定义基准 MAC
 ^^^^^^^^^^^^^^^
 
@@ -106,7 +111,7 @@ MAC 地址
 eFuse 中的自定义 MAC 地址
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-ESP-IDF 提供了 :cpp:func:`esp_efuse_mac_get_custom` 函数。从 eFuse 读取自定义 MAC 地址时，调用该函数将从 eFuse BLK3 加载 MAC 地址。此函数假定自定义基准 MAC 地址的存储格式如下：
+ESP-IDF 提供了 :cpp:func:`esp_efuse_mac_get_custom` 函数，从 eFuse 读取自定义 MAC 地址时，调用该函数将从 eFuse BLK3 加载 MAC 地址。用户也可以调用 :cpp:func:`esp_read_mac` 函数，此时需使用 ``ESP_MAC_EFUSE_CUSTOM`` 参数。:cpp:func:`esp_efuse_mac_get_custom` 函数假定自定义基准 MAC 地址的存储格式如下：
 
 .. only:: esp32
 
@@ -125,11 +130,11 @@ ESP-IDF 提供了 :cpp:func:`esp_efuse_mac_get_custom` 函数。从 eFuse 读取
         * - Reserved
           - 128
           - 183:56
-          - 
+          -
         * - MAC address
           - 48
           - 55:8
-          - 
+          -
         * - MAC address CRC
           - 8
           - 7:0
@@ -156,7 +161,10 @@ ESP-IDF 提供了 :cpp:func:`esp_efuse_mac_get_custom` 函数。从 eFuse 读取
 
         eFuse BLK3 在烧写时使用 RS 编码，这意味着必须同时烧写该块中的所有 eFuse 字段。
 
-调用 :cpp:func:`esp_efuse_mac_get_custom` 函数获得 MAC 地址后，请调用 :cpp:func:`esp_base_mac_addr_set` 函数将此 MAC 地址设置为基准 MAC 地址。
+调用 :cpp:func:`esp_efuse_mac_get_custom` 或 :cpp:func:`esp_read_mac` 函数获得自定义 eFuse MAC 地址后，请将此 MAC 地址设置为基准 MAC 地址。有以下两种方法：
+
+1. 使用原有 API：调用 :cpp:func:`esp_base_mac_addr_set`。
+2. 使用新 API：调用 :cpp:func:`esp_iface_mac_addr_set`，此时需使用 ``ESP_MAC_BASE`` 参数。
 
 
 .. _local-mac-addresses:

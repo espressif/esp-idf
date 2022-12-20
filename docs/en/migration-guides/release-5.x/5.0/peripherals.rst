@@ -525,7 +525,7 @@ LCD
     TWAI Driver
     -----------
 
-    The deprecated ``CAN`` peripheral driver is removed. Please use ``TWAI`` driver instead (i.e. include ``driver/twai.h`` in your application).
+    The deprecated ``CAN`` peripheral driver is removed. Please use ``TWAI`` driver instead (i.e., include ``driver/twai.h`` in your application).
 
 Register Access Macros
 ----------------------
