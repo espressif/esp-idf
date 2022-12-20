@@ -1625,7 +1625,6 @@ examples/system/ipc/ipc_isr/main/main.c
 examples/system/light_sleep/example_test.py
 examples/system/ota/advanced_https_ota/example_test.py
 examples/system/ota/advanced_https_ota/main/advanced_https_ota_example.c
-examples/system/ota/advanced_https_ota/main/ble_helper/include/ble_api.h
 examples/system/ota/native_ota_example/example_test.py
 examples/system/ota/native_ota_example/main/native_ota_example.c
 examples/system/ota/otatool/example_test.py

@@ -35,8 +35,21 @@
 extern "C" {
 #endif
 
-void nimble_port_init(void);
-void nimble_port_deinit(void);
+/**
+* @brief nimble_port_init - Initialize controller and NimBLE host stack
+*
+* @return esp_err_t   - ESP_OK ( if success)
+*                       Error code in case of failure
+*/
+esp_err_t nimble_port_init(void);
+
+/**
+* @brief nimble_port_deinit - Deinitialize controller and NimBLE host stack
+*
+* @return esp_err_t   - ESP_OK ( if success)
+*                       Error code in case of failure
+*/
+esp_err_t nimble_port_deinit(void);
 
 void nimble_port_run(void);
 int nimble_port_stop(void);
