@@ -113,31 +113,29 @@ void vPortEndScheduler(void)
 }
 
 // ------------------------ Stack --------------------------
-
-__attribute__((noreturn)) static void _prvTaskExitError(void)
+#if CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
+/**
+ * Wrapper to allow task functions to return. Force the optimization option -O1 on that function to make sure there
+ * is no tail-call. Indeed, we need the compiler to keep the return address to this function when calling `panic_abort`.
+ *
+ * Thanks to `naked` attribute, the compiler won't generate a prologue and epilogue for the function, which saves time
+ * and stack space.
+ */
+static void __attribute__((optimize("O1"), naked)) vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 {
-    /* A function that implements a task must not exit or attempt to return to
-    its caller as there is nothing to return to.  If a task wants to exit it
-    should instead call vTaskDelete( NULL ).
-
-    Artificially force an assert() to be triggered if configASSERT() is
-    defined, then stop here so application writers can catch the error. */
-    configASSERT(uxCriticalNesting == ~0UL);
-    portDISABLE_INTERRUPTS();
-    abort();
+    asm volatile(".cfi_undefined ra\n");
+    extern void __attribute__((noreturn)) panic_abort(const char *details);
+    static char DRAM_ATTR msg[80] = "FreeRTOS: FreeRTOS Task \"\0";
+    pxCode(pvParameters);
+    //FreeRTOS tasks should not return. Log the task name and abort.
+    char *pcTaskName = pcTaskGetName(NULL);
+    /* We cannot use s(n)printf because it is in flash */
+    strcat(msg, pcTaskName);
+    strcat(msg, "\" should not return, Aborting now!");
+    panic_abort(msg);
 }
+#endif // CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
 
-__attribute__((naked)) static void prvTaskExitError(void)
-{
-    asm volatile(".option push\n" \
-                ".option norvc\n" \
-                "nop\n" \
-                ".option pop");
-    /* Task entry's RA will point here. Shifting RA into prvTaskExitError is necessary
-       to make GDB backtrace ending inside that function.
-       Otherwise backtrace will end in the function laying just before prvTaskExitError in address space. */
-    _prvTaskExitError();
-}
 
 StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters)
 {
@@ -201,12 +199,18 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     sp -= RV_STK_FRMSZ;
     RvExcFrame *frame = (RvExcFrame *)sp;
     memset(frame, 0, sizeof(*frame));
-    /* Shifting RA into prvTaskExitError is necessary to make GDB backtrace ending inside that function.
-       Otherwise backtrace will end in the function laying just before prvTaskExitError in address space. */
-    frame->ra = (UBaseType_t)prvTaskExitError + 4/*size of the nop insruction at the beginning of prvTaskExitError*/;
-    frame->mepc = (UBaseType_t)pxCode;
-    frame->a0 = (UBaseType_t)pvParameters;
-    frame->gp = (UBaseType_t)&__global_pointer$;
+
+    /* Initialize the stack frame. */
+    extern uint32_t __global_pointer$;
+    #if CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
+        frame->mepc = (UBaseType_t)vPortTaskWrapper;
+        frame->a0 = (UBaseType_t)pxCode;
+        frame->a1 = (UBaseType_t)pvParameters;
+    #else
+        frame->mepc = (UBaseType_t)pxCode;
+        frame->a0 = (UBaseType_t)pvParameters;
+    #endif // CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
+	frame->gp = (UBaseType_t)&__global_pointer$;
     frame->tp = (UBaseType_t)threadptr;
 
     //TODO: IDF-2393
