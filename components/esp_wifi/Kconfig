@@ -20,7 +20,8 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_STATIC_RX_BUFFER_NUM
         int "Max number of WiFi static RX buffers"
-        range 2 25
+        range 2 25 if !SOC_WIFI_HE_SUPPORT
+        range 2 128 if SOC_WIFI_HE_SUPPORT
         default 10 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         help
@@ -142,7 +143,8 @@ menu "Wi-Fi"
     config ESP32_WIFI_TX_BA_WIN
         int "WiFi AMPDU TX BA window size"
         depends on ESP32_WIFI_AMPDU_TX_ENABLED
-        range 2 32
+        range 2 32 if !SOC_WIFI_HE_SUPPORT
+        range 2 64 if SOC_WIFI_HE_SUPPORT
         default 6
         help
             Set the size of WiFi Block Ack TX window. Generally a bigger value means higher throughput but
@@ -159,7 +161,8 @@ menu "Wi-Fi"
     config ESP32_WIFI_RX_BA_WIN
         int "WiFi AMPDU RX BA window size"
         depends on ESP32_WIFI_AMPDU_RX_ENABLED
-        range 2 32
+        range 2 32 if !SOC_WIFI_HE_SUPPORT
+        range 2 64 if SOC_WIFI_HE_SUPPORT
         default 6 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         help
@@ -399,5 +402,26 @@ menu "Wi-Fi"
 
             When using ESP mesh, this value should be set to a maximum of 6.
 
+     config ENABLE_WIFI_TX_STATS
+        bool "Enable Wi-Fi transmission statistics"
+        depends on SOC_WIFI_HE_SUPPORT
+        default "y"
+        help
+            Enable Wi-Fi transmission statistics. Total support 4 access category. Each access category will use 346 bytes memory.
+
+    config ENABLE_WIFI_RX_STATS
+        bool "Enable Wi-Fi reception statistics"
+        depends on SOC_WIFI_HE_SUPPORT
+        default "y"
+        help
+            Enable Wi-Fi reception statistics. Total support 2 access category. Each access category will use 190 bytes memory.
+
+    config ENABLE_WIFI_RX_MU_STATS
+        bool "Enable Wi-Fi DL MU-MIMO and DL OFDMA reception statistics"
+        depends on SOC_WIFI_HE_SUPPORT
+        depends on ENABLE_WIFI_RX_STATS
+        default "y"
+        help
+            Enable Wi-Fi DL MU-MIMO and DL OFDMA reception statistics. Will use 10932 bytes memory.
 
 endmenu  # Wi-Fi

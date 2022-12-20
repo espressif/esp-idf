@@ -9,6 +9,9 @@
 #define __ESP_WIFI_TYPES_H__
 
 #include "esp_private/esp_wifi_types_private.h"
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+#include "esp_wifi_he_types.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -184,6 +187,13 @@ typedef enum {
     WIFI_ANT_MAX,           /**< Invalid WiFi antenna */
 } wifi_ant_t;
 
+typedef struct {
+    uint8_t bss_color:6;                  /**< an unsigned integer whose value is the BSS Color of the BSS corresponding to the AP */
+    uint8_t partial_bss_color:1;          /**< indicate if an AID assignment rule based on the BSS color */
+    uint8_t bss_color_disabled:1;         /**< indicate if the use of BSS color is disabled */
+    uint8_t bssid_index;                  /**< in M-BSSID set, identifies the nontransmitted BSSID */
+} wifi_he_ap_info_t;
+
 /** @brief Description of a WiFi AP */
 typedef struct {
     uint8_t bssid[6];                     /**< MAC address of AP */
@@ -199,11 +209,13 @@ typedef struct {
     uint32_t phy_11g:1;                   /**< bit: 1 flag to identify if 11g mode is enabled or not */
     uint32_t phy_11n:1;                   /**< bit: 2 flag to identify if 11n mode is enabled or not */
     uint32_t phy_lr:1;                    /**< bit: 3 flag to identify if low rate is enabled or not */
-    uint32_t wps:1;                       /**< bit: 4 flag to identify if WPS is supported or not */
-    uint32_t ftm_responder:1;             /**< bit: 5 flag to identify if FTM is supported in responder mode */
-    uint32_t ftm_initiator:1;             /**< bit: 6 flag to identify if FTM is supported in initiator mode */
-    uint32_t reserved:25;                 /**< bit: 7..31 reserved */
+    uint32_t phy_11ax:1;                  /**< bit: 4 flag to identify if 11ax mode is enabled or not */
+    uint32_t wps:1;                       /**< bit: 5 flag to identify if WPS is supported or not */
+    uint32_t ftm_responder:1;             /**< bit: 6 flag to identify if FTM is supported in responder mode */
+    uint32_t ftm_initiator:1;             /**< bit: 7 flag to identify if FTM is supported in initiator mode */
+    uint32_t reserved:24;                 /**< bit: 8..31 reserved */
     wifi_country_t country;               /**< country information of AP */
+    wifi_he_ap_info_t he_ap;              /**< HE AP info */
 } wifi_ap_record_t;
 
 typedef enum {
@@ -233,6 +245,7 @@ typedef enum {
 #define WIFI_PROTOCOL_11G         2
 #define WIFI_PROTOCOL_11N         4
 #define WIFI_PROTOCOL_LR          8
+#define WIFI_PROTOCOL_11AX        16
 
 typedef enum {
     WIFI_BW_HT20 = 1, /* Bandwidth is HT20 */
@@ -270,25 +283,32 @@ typedef struct {
 
 /** @brief STA configuration settings for the ESP32 */
 typedef struct {
-    uint8_t ssid[32];      /**< SSID of target AP. */
-    uint8_t password[64];  /**< Password of target AP. */
-    wifi_scan_method_t scan_method;    /**< do all channel scan or fast scan */
-    bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
-    uint8_t bssid[6];     /**< MAC address of target AP*/
-    uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
-    uint16_t listen_interval;   /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
-    wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
-    wifi_scan_threshold_t  threshold;     /**< When sort_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
-    wifi_pmf_config_t pmf_cfg;    /**< Configuration for Protected Management Frame. Will be advertized in RSN Capabilities in RSN IE. */
-    uint32_t rm_enabled:1;        /**< Whether Radio Measurements are enabled for the connection */
-    uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
-    uint32_t mbo_enabled:1;       /**< Whether MBO is enabled for the connection */
-    uint32_t ft_enabled:1;        /**< Whether FT is enabled for the connection */
-    uint32_t owe_enabled:1;       /**< Whether OWE is enabled for the connection */
-    uint32_t transition_disable:1;      /**< Whether to enable transition disable feature */
-    uint32_t reserved:26;         /**< Reserved for future feature set */
-    wifi_sae_pwe_method_t sae_pwe_h2e;     /**< Whether SAE hash to element is enabled */
-    uint8_t failure_retry_cnt;    /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config. Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
+    uint8_t ssid[32];                         /**< SSID of target AP. */
+    uint8_t password[64];                     /**< Password of target AP. */
+    wifi_scan_method_t scan_method;           /**< do all channel scan or fast scan */
+    bool bssid_set;                           /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
+    uint8_t bssid[6];                         /**< MAC address of target AP*/
+    uint8_t channel;                          /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
+    uint16_t listen_interval;                 /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
+    wifi_sort_method_t sort_method;           /**< sort the connect AP in the list by rssi or security mode */
+    wifi_scan_threshold_t  threshold;         /**< When sort_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
+    wifi_pmf_config_t pmf_cfg;                /**< Configuration for Protected Management Frame. Will be advertised in RSN Capabilities in RSN IE. */
+    uint32_t rm_enabled:1;                    /**< Whether Radio Measurements are enabled for the connection */
+    uint32_t btm_enabled:1;                   /**< Whether BSS Transition Management is enabled for the connection */
+    uint32_t mbo_enabled:1;                   /**< Whether MBO is enabled for the connection */
+    uint32_t ft_enabled:1;                    /**< Whether FT is enabled for the connection */
+    uint32_t owe_enabled:1;                   /**< Whether OWE is enabled for the connection */
+    uint32_t transition_disable:1;            /**< Whether to enable transition disable feature */
+    uint32_t aid:12;                          /**< Authentication id assigned by the connected AP. aid = 0 if the STA is not connected. */
+    uint32_t phymode:6;                       /**< Operation phy mode, BIT[5]: indicate whether LR enabled, BIT[0-4]: wifi_phy_mode_t. */
+    uint32_t reserved:8;                      /**< Reserved for future feature set */
+    wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Whether SAE hash to element is enabled */
+    uint8_t failure_retry_cnt;                /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config.
+                                                   Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
+    uint8_t he_dcm_set:1;                     /**< Whether DCM max.constellation for transmission and reception is set. */
+    uint8_t he_dcm_max_constellation_tx:2;    /**< Indicate the max.constellation for DCM in TB PPDU the STA supported. 0: not supported. 1: BPSK, 2: QPSK, 3: 16-QAM. The default value is 3. */
+    uint8_t he_dcm_max_constellation_rx:2;    /**< Indicate the max.constellation for DCM in both Data field and HE-SIG-B field the STA supported. 0: not supported. 1: BPSK, 2: QPSK, 3: 16-QAM. The default value is 3. */
+    uint8_t he_mcs9_enabled:1;                /**< Whether to support HE-MCS 0 to 9. The default value is 0. */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.
@@ -304,19 +324,20 @@ typedef union {
 
 /** @brief Description of STA associated with AP */
 typedef struct {
-    uint8_t mac[6];  /**< mac address */
-    int8_t  rssi;    /**< current average rssi of sta connected */
+    uint8_t mac[6];          /**< mac address */
+    int8_t  rssi;            /**< current average rssi of sta connected */
     uint32_t phy_11b:1;      /**< bit: 0 flag to identify if 11b mode is enabled or not */
     uint32_t phy_11g:1;      /**< bit: 1 flag to identify if 11g mode is enabled or not */
     uint32_t phy_11n:1;      /**< bit: 2 flag to identify if 11n mode is enabled or not */
     uint32_t phy_lr:1;       /**< bit: 3 flag to identify if low rate is enabled or not */
-    uint32_t is_mesh_child:1;/**< bit: 4 flag to identify mesh child */
-    uint32_t reserved:27;    /**< bit: 5..31 reserved */
+    uint32_t phy_11ax:1;     /**< bit: 4 flag to identify if 11ax mode is enabled or not */
+    uint32_t is_mesh_child:1;/**< bit: 5 flag to identify mesh child */
+    uint32_t reserved:26;    /**< bit: 6..31 reserved */
 } wifi_sta_info_t;
 
 #if CONFIG_IDF_TARGET_ESP32C2
 #define ESP_WIFI_MAX_CONN_NUM  (4)        /**< max number of stations which can connect to ESP32C2 soft-AP */
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6
 #define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32C3 soft-AP */
 #else
 #define ESP_WIFI_MAX_CONN_NUM  (15)       /**< max number of stations which can connect to ESP32/ESP32S3/ESP32S2 soft-AP */
@@ -359,6 +380,19 @@ typedef enum {
 #define WIFI_VENDOR_IE_ELEMENT_ID 0xDD
 
 /**
+  * @brief     Operation Phymode
+  */
+typedef enum
+{
+    WIFI_PHY_MODE_LR,   /**< PHY mode for Low Rate */
+    WIFI_PHY_MODE_11B,  /**< PHY mode for 11b */
+    WIFI_PHY_MODE_11G,  /**< PHY mode for 11g */
+    WIFI_PHY_MODE_HT20, /**< PHY mode for Bandwidth HT20 */
+    WIFI_PHY_MODE_HT40, /**< PHY mode for Bandwidth HT40 */
+    WIFI_PHY_MODE_HE20, /**< PHY mode for Bandwidth HE20 */
+} wifi_phy_mode_t;
+
+/**
  * @brief Vendor Information Element header
  *
  * The first bytes of the Information Element will match this header. Payload follows.
@@ -371,6 +405,9 @@ typedef struct {
     uint8_t payload[0];      /**< Payload. Length is equal to value in 'length' field, minus 4. */
 } vendor_ie_data_t;
 
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+typedef esp_wifi_rxctrl_t wifi_pkt_rx_ctrl_t;
+#else
 /** @brief Received packet radio metadata header, this is the common header at the beginning of all promiscuous mode RX callback buffers */
 typedef struct {
     signed rssi:8;                /**< Received Signal Strength Indicator(RSSI) of packet. unit: dBm */
@@ -420,6 +457,7 @@ typedef struct {
     unsigned :12;                 /**< reserved */
     unsigned rx_state:8;          /**< state of the packet. 0: no error; others: error numbers which are not public */
 } wifi_pkt_rx_ctrl_t;
+#endif
 
 /** @brief Payload passed to 'buf' parameter of promiscuous mode RX callback.
  */
@@ -475,6 +513,9 @@ typedef struct {
   * @brief Channel state information(CSI) configuration type
   *
   */
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+typedef wifi_csi_acquire_config_t wifi_csi_config_t;
+#else
 typedef struct {
     bool lltf_en;           /**< enable to receive legacy long training field(lltf) data. Default enabled */
     bool htltf_en;          /**< enable to receive HT long training field(htltf) data. Default enabled */
@@ -484,6 +525,7 @@ typedef struct {
     bool manu_scale;        /**< manually scale the CSI data by left shifting or automatically scale the CSI data. If set true, please set the shift bits. false: automatically. true: manually. Default false */
     uint8_t shift;          /**< manually left shift bits of the scale of the CSI data. The range of the left shift bits is 0~15 */
 } wifi_csi_config_t;
+#endif
 
 /**
   * @brief CSI data type
@@ -603,14 +645,22 @@ typedef enum {
     WIFI_PHY_RATE_MCS5_LGI  = 0x15, /**< MCS5 with long GI, 52 Mbps for 20MHz, 108 Mbps for 40MHz */
     WIFI_PHY_RATE_MCS6_LGI  = 0x16, /**< MCS6 with long GI, 58.5 Mbps for 20MHz, 121.5 Mbps for 40MHz */
     WIFI_PHY_RATE_MCS7_LGI  = 0x17, /**< MCS7 with long GI, 65 Mbps for 20MHz, 135 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS0_SGI  = 0x18, /**< MCS0 with short GI, 7.2 Mbps for 20MHz, 15 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS1_SGI  = 0x19, /**< MCS1 with short GI, 14.4 Mbps for 20MHz, 30 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS2_SGI  = 0x1A, /**< MCS2 with short GI, 21.7 Mbps for 20MHz, 45 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS3_SGI  = 0x1B, /**< MCS3 with short GI, 28.9 Mbps for 20MHz, 60 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS4_SGI  = 0x1C, /**< MCS4 with short GI, 43.3 Mbps for 20MHz, 90 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS5_SGI  = 0x1D, /**< MCS5 with short GI, 57.8 Mbps for 20MHz, 120 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS6_SGI  = 0x1E, /**< MCS6 with short GI, 65 Mbps for 20MHz, 135 Mbps for 40MHz */
-    WIFI_PHY_RATE_MCS7_SGI  = 0x1F, /**< MCS7 with short GI, 72.2 Mbps for 20MHz, 150 Mbps for 40MHz */
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+    WIFI_PHY_RATE_MCS8_LGI,         /**< MCS8 */
+    WIFI_PHY_RATE_MCS9_LGI,         /**< MCS9 */
+#endif
+    WIFI_PHY_RATE_MCS0_SGI,         /**< MCS0 with short GI, 7.2 Mbps for 20MHz, 15 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS1_SGI,         /**< MCS1 with short GI, 14.4 Mbps for 20MHz, 30 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS2_SGI,         /**< MCS2 with short GI, 21.7 Mbps for 20MHz, 45 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS3_SGI,         /**< MCS3 with short GI, 28.9 Mbps for 20MHz, 60 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS4_SGI,         /**< MCS4 with short GI, 43.3 Mbps for 20MHz, 90 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS5_SGI,         /**< MCS5 with short GI, 57.8 Mbps for 20MHz, 120 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS6_SGI,         /**< MCS6 with short GI, 65 Mbps for 20MHz, 135 Mbps for 40MHz */
+    WIFI_PHY_RATE_MCS7_SGI,         /**< MCS7 with short GI, 72.2 Mbps for 20MHz, 150 Mbps for 40MHz */
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+    WIFI_PHY_RATE_MCS8_SGI,         /**< MCS8 */
+    WIFI_PHY_RATE_MCS9_SGI,         /**< MCS9 */
+#endif
     WIFI_PHY_RATE_LORA_250K = 0x29, /**< 250 Kbps */
     WIFI_PHY_RATE_LORA_500K = 0x2A, /**< 500 Kbps */
     WIFI_PHY_RATE_MAX,
@@ -656,6 +706,11 @@ typedef enum {
     WIFI_EVENT_AP_WPS_RG_PIN,           /**< Soft-AP wps pin code in registrar mode */
     WIFI_EVENT_AP_WPS_RG_PBC_OVERLAP,   /**< Soft-AP wps overlap in registrar mode */
 
+    WIFI_EVENT_ITWT_SETUP,              /**< iTWT setup */
+    WIFI_EVENT_ITWT_TEARDOWN,           /**< iTWT teardown */
+    WIFI_EVENT_ITWT_PROBE,              /**< iTWT probe */
+    WIFI_EVENT_ITWT_SUSPEND,            /**< iTWT suspend */
+
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;
 
@@ -678,6 +733,7 @@ typedef struct {
     uint8_t bssid[6];         /**< BSSID of connected AP*/
     uint8_t channel;          /**< channel of connected AP*/
     wifi_auth_mode_t authmode;/**< authentication mode used by AP*/
+    uint16_t aid;             /**< authentication id assigned by the connected AP */
 } wifi_event_sta_connected_t;
 
 /** Argument structure for WIFI_EVENT_STA_DISCONNECTED event */

@@ -126,7 +126,7 @@ void esp_wifi_internal_free_rx_buffer(void* buffer);
   * copy to WiFi driver.
   *
   * @param  wifi_interface_t wifi_if : wifi interface id
-  * @param  void *buffer : the buffer to be tansmit
+  * @param  void *buffer : the buffer to be transmit
   * @param  uint16_t len : the length of buffer
   *
   * @return
@@ -142,6 +142,33 @@ void esp_wifi_internal_free_rx_buffer(void* buffer);
   *    - ESP_ERR_WIFI_POST : caller fails to post event to WiFi task
   */
 int esp_wifi_internal_tx(wifi_interface_t wifi_if, void *buffer, uint16_t len);
+
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+/**
+  * @brief  transmit eapol frames via wifi driver
+  *
+  * This API makes a copy of the input buffer and then forwards the buffer
+  * copy to WiFi driver.
+  *
+  * @param  wifi_interface_t wifi_if : wifi interface id
+  * @param  void *buffer : the buffer to be transmit
+  * @param  uint16_t len : the length of buffer
+  * @param  uint8_t msg_id : eapol message id
+  *
+  * @return
+  *    - ESP_OK  : Successfully transmit the buffer to wifi driver
+  *    - ESP_ERR_NO_MEM: out of memory
+  *    - ESP_ERR_WIFI_ARG: invalid argument
+  *    - ESP_ERR_WIFI_IF : WiFi interface is invalid
+  *    - ESP_ERR_WIFI_CONN : WiFi interface is not created, e.g. send the data to STA while WiFi mode is AP mode
+  *    - ESP_ERR_WIFI_NOT_STARTED : WiFi is not started
+  *    - ESP_ERR_WIFI_STATE : WiFi internal state is not ready, e.g. WiFi is not started
+  *    - ESP_ERR_WIFI_NOT_ASSOC : WiFi is not associated
+  *    - ESP_ERR_WIFI_TX_DISALLOW : WiFi TX is disallowed, e.g. WiFi hasn't pass the authentication
+  *    - ESP_ERR_WIFI_POST : caller fails to post event to WiFi task
+  */
+int esp_wifi_eapol_tx(wifi_interface_t wifi_if, void *buffer, uint16_t len, uint8_t msg_id);
+#endif
 
 /**
   * @brief     The net stack buffer reference counter callback function
