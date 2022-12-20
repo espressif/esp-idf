@@ -79,14 +79,6 @@ example_test_pytest_esp32c2_generic:
     - build_pytest_examples_esp32c2
   tags: [ esp32c2, generic, xtal_40mhz ]
 
-example_test_pytest_esp32c2_26mhz:
-  extends:
-    - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32c2
-  needs:
-    - build_pytest_examples_esp32c2
-  tags: [ esp32c2, xtal_26mhz ]
-
 example_test_pytest_esp32c3_generic:
   extends:
     - .pytest_examples_dir_template
@@ -362,7 +354,7 @@ component_ut_pytest_esp32c2_adc:
     - .rules:test:component_ut-esp32c2-adc
   needs:
     - build_pytest_components_esp32c2
-  tags: [ esp32c2, adc ]
+  tags: [ esp32c2, adc, xtal_26mhz ]
 
 component_ut_pytest_esp32c2_xtal_26mhz:
   extends:
@@ -370,7 +362,7 @@ component_ut_pytest_esp32c2_xtal_26mhz:
     - .rules:test:component_ut-esp32c2
   needs:
     - build_pytest_components_esp32c2
-  tags: [ esp32c2, xtal_26mhz ]
+  tags: [ esp32c2, generic, xtal_26mhz ]
 
 component_ut_pytest_esp32c3_generic:
   extends:
@@ -444,14 +436,6 @@ test_app_test_pytest_esp32c2_generic:
   needs:
     - build_pytest_test_apps_esp32c2
   tags: [ esp32c2, generic, xtal_40mhz ]
-
-test_app_test_pytest_esp32c2_26mhz:
-  extends:
-    - .pytest_test_apps_dir_template
-    - .rules:test:custom_test-esp32c2
-  needs:
-    - build_pytest_test_apps_esp32c2
-  tags: [ esp32c2, xtal_26mhz ]
 
 test_app_test_pytest_esp32c3_generic:
   extends:

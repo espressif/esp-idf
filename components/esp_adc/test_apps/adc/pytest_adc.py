@@ -25,6 +25,7 @@ def test_adc(dut: Dut) -> None:
 # No PM test, as C2 doesn't support ADC continuous mode
 @pytest.mark.esp32c2
 @pytest.mark.adc
+@pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'config, baud',
     [

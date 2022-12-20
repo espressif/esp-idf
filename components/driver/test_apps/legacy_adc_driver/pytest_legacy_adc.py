@@ -23,9 +23,9 @@ def test_legacy_adc(dut: Dut) -> None:
     dut.expect_unity_test_output(timeout=240)
 
 
-# All ESP32C2 ADC runners are 26m xtal
 @pytest.mark.esp32c2
 @pytest.mark.adc
+@pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'config, baud',
     [
