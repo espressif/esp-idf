@@ -29,6 +29,8 @@ typedef enum {
     BTC_SPP_ACT_START_SRV,
     BTC_SPP_ACT_STOP_SRV,
     BTC_SPP_ACT_WRITE,
+    BTC_SPP_ACT_VFS_REGISTER,
+    BTC_SPP_ACT_VFS_UNREGISTER,
 } btc_spp_act_t;
 
 /* btc_spp_args_t */
@@ -88,6 +90,5 @@ void btc_spp_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_spp_arg_deep_free(btc_msg_t *msg);
 
 esp_err_t spp_send_data_to_btc(uint32_t handle, int len, uint8_t *p_data, esp_spp_mode_t spp_mode);
-esp_err_t btc_spp_vfs_register(void);
 #endif ///defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE
 #endif ///__BTC_SPP_H__
