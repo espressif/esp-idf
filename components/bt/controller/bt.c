@@ -310,6 +310,7 @@ static uint8_t coex_schm_curr_period_get_wrapper(void);
 static void * coex_schm_curr_phase_get_wrapper(void);
 static int coex_wifi_channel_get_wrapper(uint8_t *primary, uint8_t *secondary);
 static int coex_register_wifi_channel_change_callback_wrapper(void *cb);
+static void bt_controller_deinit_internal(void);
 
 /* Local variable definition
  ***************************************************************************
@@ -1303,26 +1304,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     return ESP_OK;
 
 error:
-#ifdef CONFIG_PM_ENABLE
-    if (!s_btdm_allow_light_sleep) {
-        if (s_light_sleep_pm_lock != NULL) {
-            esp_pm_lock_delete(s_light_sleep_pm_lock);
-            s_light_sleep_pm_lock = NULL;
-        }
-    }
-    if (s_pm_lock != NULL) {
-        esp_pm_lock_delete(s_pm_lock);
-        s_pm_lock = NULL;
-    }
-    if (s_btdm_slp_tmr != NULL) {
-        esp_timer_delete(s_btdm_slp_tmr);
-        s_btdm_slp_tmr = NULL;
-    }
-#endif
-    if (s_wakeup_req_sem) {
-        semphr_delete_wrapper(s_wakeup_req_sem);
-        s_wakeup_req_sem = NULL;
-    }
+
+    bt_controller_deinit_internal();
+
     return err;
 }
 
@@ -1334,6 +1318,13 @@ esp_err_t esp_bt_controller_deinit(void)
 
     btdm_controller_deinit();
 
+    bt_controller_deinit_internal();
+
+    return ESP_OK;
+}
+
+static void bt_controller_deinit_internal(void)
+{
     periph_module_disable(PERIPH_BT_MODULE);
 
 #ifdef CONFIG_PM_ENABLE
@@ -1355,18 +1346,22 @@ esp_err_t esp_bt_controller_deinit(void)
 
     s_pm_lock_acquired = false;
 #endif
-    semphr_delete_wrapper(s_wakeup_req_sem);
-    s_wakeup_req_sem = NULL;
 
-    free(osi_funcs_p);
-    osi_funcs_p = NULL;
+    if (s_wakeup_req_sem) {
+        semphr_delete_wrapper(s_wakeup_req_sem);
+        s_wakeup_req_sem = NULL;
+    }
+
+    if (osi_funcs_p) {
+        free(osi_funcs_p);
+        osi_funcs_p = NULL;
+    }
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 
     btdm_lpcycle_us = 0;
     btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
 
-    return ESP_OK;
 }
 
 static void bt_shutdown(void)
