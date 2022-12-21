@@ -361,7 +361,7 @@ static const struct bt_mesh_comp comp = {
 
 static int output_number(bt_mesh_output_action_t action, uint32_t number)
 {
-    ESP_LOGI(tag, "OOB Number: %u\n", number);
+    ESP_LOGI(tag, "OOB Number: %" PRIu32 "\n", number);
 
     return 0;
 }

@@ -349,11 +349,11 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
             pkey.action = event->passkey.params.action;
             pkey.passkey = 123456; // This is the passkey to be entered on peer
-            ESP_LOGI(tag, "Enter passkey %d on the peer side", pkey.passkey);
+            ESP_LOGI(tag, "Enter passkey %" PRIu32 "on the peer side", pkey.passkey);
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
             ESP_LOGI(tag, "ble_sm_inject_io result: %d\n", rc);
         } else if (event->passkey.params.action == BLE_SM_IOACT_NUMCMP) {
-            ESP_LOGI(tag, "Passkey on device's display: %d", event->passkey.params.numcmp);
+            ESP_LOGI(tag, "Passkey on device's display: %" PRIu32 , event->passkey.params.numcmp);
             ESP_LOGI(tag, "Accept or reject the passkey through console in this format -> key Y or key N");
             pkey.action = event->passkey.params.action;
             if (scli_receive_key(&key)) {
