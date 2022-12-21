@@ -18,6 +18,7 @@ netifaces
 rangehttpserver
 dbus-python; sys_platform == 'linux'
 protobuf
+paho-mqtt
 
 # for twai tests, communicate with socket can device (e.g. Canable)
 python-can
