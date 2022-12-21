@@ -10,6 +10,7 @@
 #include <esp_log.h>
 #include <esp_err.h>
 #include <http_parser.h>
+#include <inttypes.h>
 
 #include <esp_http_server.h>
 #include "esp_httpd_priv.h"
@@ -364,7 +365,7 @@ static esp_err_t cb_headers_complete(http_parser *parser)
     r->content_len = ((int)parser->content_length != -1 ?
                       parser->content_length : 0);
 
-    ESP_LOGD(TAG, LOG_FMT("bytes read     = %d"),  parser->nread);
+    ESP_LOGD(TAG, LOG_FMT("bytes read     = %" PRId32 ""),  parser->nread);
     ESP_LOGD(TAG, LOG_FMT("content length = %zu"), r->content_len);
 
     /* Handle upgrade requests - only WebSocket is supported for now */
