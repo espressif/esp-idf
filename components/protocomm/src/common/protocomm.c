@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include <esp_err.h>
 #include <esp_log.h>
@@ -149,7 +150,7 @@ esp_err_t protocomm_open_session(protocomm_t *pc, uint32_t session_id)
     if (pc->sec && pc->sec->new_transport_session) {
         esp_err_t ret = pc->sec->new_transport_session(pc->sec_inst, session_id);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to launch new session with ID: %d", session_id);
+            ESP_LOGE(TAG, "Failed to launch new session with ID: %" PRId32, session_id);
             return ret;
         }
     }
@@ -165,7 +166,7 @@ esp_err_t protocomm_close_session(protocomm_t *pc, uint32_t session_id)
     if (pc->sec && pc->sec->close_transport_session) {
         esp_err_t ret = pc->sec->close_transport_session(pc->sec_inst, session_id);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Error while closing session with ID: %d", session_id);
+            ESP_LOGE(TAG, "Error while closing session with ID: %" PRId32, session_id);
             return ret;
         }
     }
