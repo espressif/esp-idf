@@ -239,6 +239,46 @@ example_test_pytest_esp32_extflash:
     - build_pytest_examples_esp32
   tags: [ esp32, external_flash ]
 
+example_test_pytest_esp32_adc:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32-adc
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, adc ]
+
+example_test_pytest_esp32s2_adc:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2-adc
+  needs:
+    - build_pytest_examples_esp32s2
+  tags: [ esp32s2, adc ]
+
+example_test_pytest_esp32s3_adc:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3-adc
+  needs:
+    - build_pytest_examples_esp32s3
+  tags: [ esp32s3, adc ]
+
+example_test_pytest_esp32c3_adc:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3-adc
+  needs:
+    - build_pytest_examples_esp32c3
+  tags: [ esp32c3, adc ]
+
+example_test_pytest_esp32c2_adc:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2-adc
+  needs:
+    - build_pytest_examples_esp32c2
+  tags: [ esp32c2, adc, xtal_26mhz]
+
 .pytest_components_dir_template:
   extends: .pytest_template
   variables:
