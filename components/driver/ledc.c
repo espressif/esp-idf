@@ -19,6 +19,7 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 #include "soc/clk_ctrl_os.h"
+#include "soc/soc_memory_types.h"
 
 static const char* LEDC_TAG = "ledc";
 
@@ -1079,8 +1080,15 @@ esp_err_t ledc_cb_register(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_ARG_CHECK(cbs, "callback");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    if (cbs->fade_cb && !esp_ptr_in_iram(cbs->fade_cb)) {
+        ESP_LOGW(LEDC_TAG, "fade callback not in IRAM");
+    }
+    if (user_arg && !esp_ptr_internal(user_arg)) {
+        ESP_LOGW(LEDC_TAG, "user context not in internal RAM");
+    }
     s_ledc_fade_rec[speed_mode][channel]->ledc_fade_callback = cbs->fade_cb;
     s_ledc_fade_rec[speed_mode][channel]->cb_user_arg = user_arg;
     return ESP_OK;
