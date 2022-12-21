@@ -101,7 +101,7 @@ static void eap_wsc_reset(struct eap_sm *sm, void *priv)
 	struct eap_wsc_data *data = priv;
 	wpabuf_free(data->in_buf);
 	wpabuf_free(data->out_buf);
-	wps_deinit(data->wps);
+	//wps_deinit(data->wps);
 	os_free(data);
 }
 

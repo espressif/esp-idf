@@ -330,6 +330,14 @@ void wps_pbc_overlap_event(struct wps_context *wps)
 }
 
 
+void wps_selected_registrar_timeout_event(struct wps_context *wps)
+{
+	if (wps->event_cb == NULL)
+		return;
+
+	wps->event_cb(wps->cb_ctx, WPS_EV_SELECTED_REGISTRAR_TIMEOUT, NULL);
+}
+
 void wps_pbc_timeout_event(struct wps_context *wps)
 {
 	if (wps->event_cb == NULL)

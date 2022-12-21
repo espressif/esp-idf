@@ -521,7 +521,9 @@ enum wps_event {
 	/**
 	 * WPS_EV_AP_PIN_SUCCESS - External Registrar used correct AP PIN
 	 */
-	WPS_EV_AP_PIN_SUCCESS
+	WPS_EV_AP_PIN_SUCCESS,
+
+	WPS_EV_SELECTED_REGISTRAR_TIMEOUT,
 };
 
 /**

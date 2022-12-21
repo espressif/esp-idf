@@ -1200,22 +1200,7 @@ int wps_dev_deinit(struct wps_device_data *dev)
     if (!dev) {
         return ESP_FAIL;
     }
-
-    if (dev->manufacturer) {
-        os_free(dev->manufacturer);
-    }
-    if (dev->model_name) {
-        os_free(dev->model_name);
-    }
-    if (dev->model_number) {
-        os_free(dev->model_number);
-    }
-    if (dev->device_name) {
-        os_free(dev->device_name);
-    }
-    if (dev->serial_number) {
-        os_free(dev->serial_number);
-    }
+    wps_device_data_free(dev);
 
     if (s_factory_info) {
         os_free(s_factory_info);
@@ -1370,21 +1355,23 @@ int wps_init_cfg_pin(struct wps_config *cfg)
     }
 
     cfg->pbc = 0;
-    if (os_strncmp((char *)cfg->pin, "00000000", 8) != 0) {
+
+    if ((os_strncmp((char *)cfg->pin, "00000000", 8) == 0) || !wps_pin_str_valid((char *)cfg->pin)) {
         unsigned int spin = 0;
+
         cfg->dev_pw_id = DEV_PW_DEFAULT;
         cfg->pin_len = 8;
         if (wps_generate_pin(&spin) < 0) {
             return -1;
 	}
+        wpa_printf(MSG_INFO, "Provided PIN %s is not valid, generated a new PIN %08d", (char *)cfg->pin, spin);
         os_snprintf((char *)cfg->pin, 9, "%08d", spin);
     }
 
     return 0;
 }
 
-int
-wifi_station_wps_init(void)
+static int wifi_station_wps_init(const esp_wps_config_t *config)
 {
     struct wps_funcs *wps_cb;
     struct wps_sm *sm = NULL;
@@ -1420,6 +1407,7 @@ wifi_station_wps_init(void)
 
     cfg.wps = sm->wps_ctx;
 
+    os_memcpy((void *)cfg.pin, config->pin, 8);
     if (wps_init_cfg_pin(&cfg) < 0) {
         goto _err;
     }
@@ -1867,7 +1855,7 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
     wps_set_type(config->wps_type);
     wps_set_status(WPS_STATUS_DISABLE);
 
-    ret = wifi_station_wps_init();
+    ret = wifi_station_wps_init(config);
 
     if (ret != 0) {
         wps_set_type(WPS_TYPE_DISABLE);

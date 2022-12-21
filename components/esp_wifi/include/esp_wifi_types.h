@@ -120,6 +120,7 @@ typedef enum {
     WIFI_REASON_CONNECTION_FAIL                    = 205,
     WIFI_REASON_AP_TSF_RESET                       = 206,
     WIFI_REASON_ROAMING                            = 207,
+    WIFI_REASON_ASSOC_COMEBACK_TIME_TOO_LONG       = 208,
 } wifi_err_reason_t;
 
 typedef enum {
@@ -260,7 +261,7 @@ typedef struct {
     uint8_t channel;            /**< Channel of ESP32 soft-AP */
     wifi_auth_mode_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
     uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
-    uint8_t max_connection;     /**< Max number of stations allowed to connect in, default 4, max 10 */
+    uint8_t max_connection;     /**< Max number of stations allowed to connect in */
     uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
     wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of SoftAP, group cipher will be derived using this. cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
     bool ftm_responder;         /**< Enable FTM Responder mode */
@@ -315,8 +316,10 @@ typedef struct {
 
 #if CONFIG_IDF_TARGET_ESP32C2
 #define ESP_WIFI_MAX_CONN_NUM  (4)        /**< max number of stations which can connect to ESP32C2 soft-AP */
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32C3 soft-AP */
 #else
-#define ESP_WIFI_MAX_CONN_NUM  (16)       /**< max number of stations which can connect to ESP32/ESP32S3/ESP32S2/ESP32C3 soft-AP */
+#define ESP_WIFI_MAX_CONN_NUM  (15)       /**< max number of stations which can connect to ESP32/ESP32S3/ESP32S2 soft-AP */
 #endif
 
 /** @brief List of stations associated with the ESP32 Soft-AP */
@@ -489,6 +492,7 @@ typedef struct {
 typedef struct {
     wifi_pkt_rx_ctrl_t rx_ctrl;/**< received packet radio metadata header of the CSI data */
     uint8_t mac[6];            /**< source MAC address of the CSI data */
+    uint8_t dmac[6];           /**< destination MAC address of the CSI data */
     bool first_word_invalid;   /**< first four bytes of the CSI data is invalid or not */
     int8_t *buf;               /**< buffer of CSI data */
     uint16_t len;              /**< length of CSI data */
@@ -646,6 +650,12 @@ typedef enum {
 
     WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START,   /**< ESP32 connectionless module wake interval start */
 
+    WIFI_EVENT_AP_WPS_RG_SUCCESS,       /**< Soft-AP wps succeeds in registrar mode */
+    WIFI_EVENT_AP_WPS_RG_FAILED,        /**< Soft-AP wps fails in registrar mode */
+    WIFI_EVENT_AP_WPS_RG_TIMEOUT,       /**< Soft-AP wps timeout in registrar mode */
+    WIFI_EVENT_AP_WPS_RG_PIN,           /**< Soft-AP wps pin code in registrar mode */
+    WIFI_EVENT_AP_WPS_RG_PBC_OVERLAP,   /**< Soft-AP wps overlap in registrar mode */
+
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;
 
@@ -788,6 +798,29 @@ typedef struct {
 typedef struct {
     uint32_t context;         /**< Context to identify the request */
 } wifi_event_roc_done_t;
+
+/** Argument structure for WIFI_EVENT_AP_WPS_RG_PIN event */
+typedef struct {
+    uint8_t pin_code[8];         /**< PIN code of station in enrollee mode */
+} wifi_event_ap_wps_rg_pin_t;
+
+typedef enum {
+    WPS_AP_FAIL_REASON_NORMAL = 0,     /**< WPS normal fail reason */
+    WPS_AP_FAIL_REASON_CONFIG,         /**< WPS failed due to incorrect config */
+    WPS_AP_FAIL_REASON_AUTH,           /**< WPS failed during auth */
+    WPS_AP_FAIL_REASON_MAX,
+} wps_fail_reason_t;
+
+/** Argument structure for WIFI_EVENT_AP_WPS_RG_FAILED event */
+typedef struct {
+    wps_fail_reason_t reason;          /**< WPS failure reason wps_fail_reason_t */
+    uint8_t peer_macaddr[6];           /**< Enrollee mac address */
+} wifi_event_ap_wps_rg_fail_reason_t;
+
+/** Argument structure for WIFI_EVENT_AP_WPS_RG_SUCCESS event */
+typedef struct {
+    uint8_t peer_macaddr[6];           /**< Enrollee mac address */
+} wifi_event_ap_wps_rg_success_t;
 
 #ifdef __cplusplus
 }

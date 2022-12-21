@@ -388,9 +388,9 @@ menu "Wi-Fi"
     config ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM
         int "Maximum espnow encrypt peers number"
         range 0 4 if IDF_TARGET_ESP32C2
-        range 0 16 if (!IDF_TARGET_ESP32C2)
+        range 0 17 if (!IDF_TARGET_ESP32C2)
         default 2 if IDF_TARGET_ESP32C2
-        default 6 if !IDF_TARGET_ESP32C2
+        default 7 if (!IDF_TARGET_ESP32C2)
         help
             Maximum number of encrypted peers supported by espnow.
             The number of hardware keys for encryption is fixed. And the espnow and SoftAP share the same
