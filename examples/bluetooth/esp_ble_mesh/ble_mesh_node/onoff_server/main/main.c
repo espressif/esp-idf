@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -111,7 +112,7 @@ static esp_ble_mesh_prov_t provision = {
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index)
 {
     ESP_LOGI(TAG, "net_idx: 0x%04x, addr: 0x%04x", net_idx, addr);
-    ESP_LOGI(TAG, "flags: 0x%02x, iv_index: 0x%08x", flags, iv_index);
+    ESP_LOGI(TAG, "flags: 0x%02x, iv_index: 0x%08" PRIx32, flags, iv_index);
     board_led_operation(LED_G, LED_OFF);
 }
 
@@ -211,7 +212,7 @@ static void example_ble_mesh_generic_server_cb(esp_ble_mesh_generic_server_cb_ev
                                                esp_ble_mesh_generic_server_cb_param_t *param)
 {
     esp_ble_mesh_gen_onoff_srv_t *srv;
-    ESP_LOGI(TAG, "event 0x%02x, opcode 0x%04x, src 0x%04x, dst 0x%04x",
+    ESP_LOGI(TAG, "event 0x%02x, opcode 0x%04" PRIx32 ", src 0x%04x, dst 0x%04x",
         event, param->ctx.recv_op, param->ctx.addr, param->ctx.recv_dst);
 
     switch (event) {

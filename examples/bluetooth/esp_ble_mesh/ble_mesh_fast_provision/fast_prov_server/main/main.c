@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -173,7 +174,7 @@ static void example_change_led_state(uint8_t onoff)
 static void node_prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index)
 {
     ESP_LOGI(TAG, "net_idx: 0x%04x, unicast_addr: 0x%04x", net_idx, addr);
-    ESP_LOGI(TAG, "flags: 0x%02x, iv_index: 0x%08x", flags, iv_index);
+    ESP_LOGI(TAG, "flags: 0x%02x, iv_index: 0x%08" PRIx32, flags, iv_index);
     board_prov_complete();
     /* Updates the net_idx used by Fast Prov Server model, and it can also
      * be updated if the Fast Prov Info Set message contains a valid one.
@@ -449,7 +450,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_GET:
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_GROUP_ADD:
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_GROUP_DELETE: {
-            ESP_LOGI(TAG, "%s: Fast prov server receives msg, opcode 0x%04x", __func__, opcode);
+            ESP_LOGI(TAG, "%s: Fast prov server receives msg, opcode 0x%04" PRIx32, __func__, opcode);
             struct net_buf_simple buf = {
                 .len = param->model_operation.length,
                 .data = param->model_operation.msg,
@@ -465,7 +466,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_STATUS:
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NET_KEY_STATUS:
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_ACK: {
-            ESP_LOGI(TAG, "%s: Fast prov client receives msg, opcode 0x%04x", __func__, opcode);
+            ESP_LOGI(TAG, "%s: Fast prov client receives msg, opcode 0x%04" PRIx32, __func__, opcode);
             err = example_fast_prov_client_recv_status(param->model_operation.model,
                     param->model_operation.ctx,
                     param->model_operation.length,
@@ -477,7 +478,7 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
             break;
         }
         default:
-            ESP_LOGI(TAG, "%s: opcode 0x%04x", __func__, param->model_operation.opcode);
+            ESP_LOGI(TAG, "%s: opcode 0x%04" PRIx32, __func__, param->model_operation.opcode);
             break;
         }
         break;
@@ -507,11 +508,11 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
                  param->model_publish_comp.err_code);
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT:
-        ESP_LOGI(TAG, "ESP_BLE_MESH_MODEL_CLIENT_RECV_PUBLISH_MSG_EVT, opcode 0x%04x",
+        ESP_LOGI(TAG, "ESP_BLE_MESH_MODEL_CLIENT_RECV_PUBLISH_MSG_EVT, opcode 0x%04" PRIx32,
                  param->client_recv_publish_msg.opcode);
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT:
-        ESP_LOGI(TAG, "ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT, opcode 0x%04x, dst 0x%04x",
+        ESP_LOGI(TAG, "ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT, opcode 0x%04" PRIx32 ", dst 0x%04x",
                  param->client_send_timeout.opcode, param->client_send_timeout.ctx->addr);
         err = example_fast_prov_client_recv_timeout(param->client_send_timeout.opcode,
                 param->client_send_timeout.model,
@@ -547,7 +548,7 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
     }
 
     if (param->error_code) {
-        ESP_LOGE(TAG, "Failed to send config client message, opcode: 0x%04x", opcode);
+        ESP_LOGE(TAG, "Failed to send config client message, opcode: 0x%04" PRIx32, opcode);
         return;
     }
 
@@ -651,7 +652,7 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
 {
     esp_err_t err;
 
-    ESP_LOGI(TAG, "%s, event = 0x%02x, opcode = 0x%04x, addr: 0x%04x",
+    ESP_LOGI(TAG, "%s, event = 0x%02x, opcode = 0x%04" PRIx32 ", addr: 0x%04x",
              __func__, event, param->ctx.recv_op, param->ctx.addr);
 
     switch (event) {
@@ -678,7 +679,7 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
 static void example_ble_mesh_generic_server_cb(esp_ble_mesh_generic_server_cb_event_t event,
                                                esp_ble_mesh_generic_server_cb_param_t *param)
 {
-    ESP_LOGI(TAG, "event 0x%02x, opcode 0x%04x, src 0x%04x, dst 0x%04x",
+    ESP_LOGI(TAG, "event 0x%02x, opcode 0x%04" PRIx32 ", src 0x%04x, dst 0x%04x",
         event, param->ctx.recv_op, param->ctx.addr, param->ctx.recv_dst);
 
     switch (event) {

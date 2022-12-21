@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
+
 #include "esp_bt.h"
 #include "esp_timer.h"
 #include "soc/soc.h"
@@ -197,7 +199,7 @@ void ble_mesh_generic_server_model_cb(esp_ble_mesh_generic_server_cb_event_t eve
     uint32_t opcode = param->ctx.recv_op;
     uint8_t status;
 
-    ESP_LOGD(TAG, "enter %s: event is %d, opcode is 0x%x\n", __func__, event, opcode);
+    ESP_LOGD(TAG, "enter %s: event is %d, opcode is 0x%04" PRIx32, __func__, event, opcode);
 
     switch (event) {
         case ESP_BLE_MESH_GENERIC_SERVER_STATE_CHANGE_EVT:
@@ -280,7 +282,7 @@ void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_p
         ESP_LOGI(TAG, "Node:LinkClose,OK,%d", param->node_prov_link_close.bearer);
         break;
     case ESP_BLE_MESH_NODE_PROV_OUTPUT_NUMBER_EVT:
-        ESP_LOGI(TAG, "Node:OutPut,%d,%d", param->node_prov_output_num.action, param->node_prov_output_num.number);
+        ESP_LOGI(TAG, "Node:OutPut,%d,%" PRIu32, param->node_prov_output_num.action, param->node_prov_output_num.number);
         break;
     case ESP_BLE_MESH_NODE_PROV_OUTPUT_STRING_EVT:
         ESP_LOGI(TAG, "Node:OutPutStr,%s", param->node_prov_output_str.string);
@@ -461,7 +463,7 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
         ESP_LOGI(TAG, "PublishSend,OK,0x%x,%d,", param->model_publish_comp.model->model_id, param->model_publish_comp.model->pub->msg->len);
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT:
-        ESP_LOGI(TAG, "Node:PublishReceive,OK,0x%04X,%d,%d", param->client_recv_publish_msg.opcode, param->client_recv_publish_msg.length, param->client_recv_publish_msg.msg[1]);
+        ESP_LOGI(TAG, "Node:PublishReceive,OK,0x%04" PRIx32 ",%d,%d", param->client_recv_publish_msg.opcode, param->client_recv_publish_msg.length, param->client_recv_publish_msg.msg[1]);
         if (trans) {
             uint64_t current_time = esp_timer_get_time();
             outcome = ble_mesh_test_performance_client_model_accumulate_time(((uint32_t)(current_time - *start_time) / 2000), param->client_recv_publish_msg.msg,
@@ -473,7 +475,7 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
         ESP_LOGI(TAG, "PublishUpdate,OK");
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT:
-        ESP_LOGI(TAG, "Node:TimeOut, 0x%04X", param->client_send_timeout.opcode);
+        ESP_LOGI(TAG, "Node:TimeOut, 0x%04" PRIx32, param->client_send_timeout.opcode);
         if (trans) {
             transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
         }

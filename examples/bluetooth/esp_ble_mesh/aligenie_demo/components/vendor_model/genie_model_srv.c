@@ -1,12 +1,14 @@
-// Copyright (C) 2018-2020 Alibaba Group Holding Limited
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2020 Alibaba Group Holding Limited
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * SPDX-FileContributor: 2020-2022 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "esp_log.h"
 #include "esp_random.h"
@@ -247,7 +249,7 @@ static void genie_model_retry_timer_cb(void *args)
     /* start new timer */
     if (!genie_dlist_is_empty(p_head)) {
         util_timer_start(&g_vnd_msg_timer, nearest);
-        ESP_LOGD(TAG, "restart retry timer, timeout: %d", nearest);
+        ESP_LOGD(TAG, "restart retry timer, timeout: %" PRIu32, nearest);
     } else {
         util_timer_stop(&g_vnd_msg_timer);
         ESP_LOGD(TAG, "list empty, stop timer");
@@ -631,5 +633,5 @@ void genie_model_dispatch(uint32_t opcode, esp_ble_mesh_model_t *model,
             return;
         }
     }
-    ESP_LOGW(TAG, "not find callback function for opcode: 0x%02x", opcode);
+    ESP_LOGW(TAG, "not find callback function for opcode: 0x%02" PRIu32, opcode);
 }
