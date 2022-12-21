@@ -5,6 +5,7 @@ import re
 from pprint import pformat
 from typing import List, Optional
 
+import pexpect
 import pytest
 from test_panic_util import PanicTestDut
 
@@ -354,3 +355,21 @@ def test_assert_cache_disabled(
     dut.expect_elf_sha256()
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
     common_test(dut, config, expected_backtrace=get_default_backtrace(test_func_name))
+
+
+@pytest.mark.esp32
+@pytest.mark.parametrize('config', ['panic_delay'], indirect=True)
+@pytest.mark.generic
+def test_panic_delay(dut: PanicTestDut) -> None:
+    dut.expect_test_func_name('test_storeprohibited')
+    try:
+        dut.expect_exact('Rebooting...', timeout=4)
+    except pexpect.TIMEOUT:
+        # We are supposed to NOT find the output for the specified time
+        pass
+    else:
+        # If we actually match the output within the timeout, it means the delay didn't work
+        raise AssertionError('Rebooted too early, delay is too short')
+
+    dut.expect_exact('Rebooting...', timeout=3)
+    dut.expect_exact('rst:0xc (SW_CPU_RESET)')

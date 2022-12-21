@@ -41,7 +41,7 @@
 
 extern int _invalid_pc_placeholder;
 
-extern void esp_panic_handler_reconfigure_wdts(void);
+extern void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms);
 
 extern void esp_panic_handler(panic_info_t *);
 
@@ -151,7 +151,7 @@ static void panic_handler(void *frame, bool pseudo_excause)
     }
 
     // Need to reconfigure WDTs before we stall any other CPU
-    esp_panic_handler_reconfigure_wdts();
+    esp_panic_handler_reconfigure_wdts(1000);
 
     esp_rom_delay_us(1);
     // Stall all other cores

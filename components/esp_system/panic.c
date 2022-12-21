@@ -173,7 +173,7 @@ void panic_print_dec(int d)
   for example stalling the other core on ESP32 may cause the ESP32_ECO3_CACHE_LOCK_FIX
   handler to get stuck.
 */
-void esp_panic_handler_reconfigure_wdts(void)
+void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms)
 {
     wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 #if SOC_TIMER_GROUPS >= 2
@@ -185,7 +185,7 @@ void esp_panic_handler_reconfigure_wdts(void)
     //Reconfigure TWDT (Timer Group 0)
     wdt_hal_init(&wdt0_context, WDT_MWDT0, MWDT0_TICK_PRESCALER, false); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
     wdt_hal_write_protect_disable(&wdt0_context);
-    wdt_hal_config_stage(&wdt0_context, 0, 1000 * 1000 / MWDT0_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM); //1 second before reset
+    wdt_hal_config_stage(&wdt0_context, 0, timeout_ms * 1000 / MWDT0_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM); //1 second before reset
     wdt_hal_enable(&wdt0_context);
     wdt_hal_write_protect_enable(&wdt0_context);
 
@@ -233,7 +233,7 @@ void esp_panic_handler(panic_info_t *info)
 {
     // The port-level panic handler has already called this, but call it again
     // to reset the TG0WDT period
-    esp_panic_handler_reconfigure_wdts();
+    esp_panic_handler_reconfigure_wdts(1000);
 
     // If the exception was due to an abort, override some of the panic info
     if (g_panic_abort) {
@@ -318,7 +318,7 @@ void esp_panic_handler(panic_info_t *info)
 
     }
 
-    esp_panic_handler_reconfigure_wdts(); // Restart WDT again
+    esp_panic_handler_reconfigure_wdts(1000); // Restart WDT again
 
     PANIC_INFO_DUMP(info, state);
     panic_print_str("\r\n");
@@ -349,7 +349,7 @@ void esp_panic_handler(panic_info_t *info)
     esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                               APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
-    esp_panic_handler_reconfigure_wdts(); // restore WDT config
+    esp_panic_handler_reconfigure_wdts(1000); // restore WDT config
 #endif // CONFIG_APPTRACE_ENABLE
 
 #if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
@@ -375,12 +375,37 @@ void esp_panic_handler(panic_info_t *info)
 #endif
         s_dumping_core = false;
 
-        esp_panic_handler_reconfigure_wdts();
+        esp_panic_handler_reconfigure_wdts(1000);
     }
 #endif /* CONFIG_ESP_COREDUMP_ENABLE */
+
+#if CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS
+    // start RTC WDT if it hasn't been started yet and set the timeout to more than the delay time
+    wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
+    uint32_t stage_timeout_ticks = (uint32_t)(((CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS + 1) * 1000
+            * rtc_clk_slow_freq_get_hz()) / 1000ULL);
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_SYSTEM);
+    // 64KB of core dump data (stacks of about 30 tasks) will produce ~85KB base64 data.
+    // @ 115200 UART speed it will take more than 6 sec to print them out.
+    wdt_hal_enable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+
+    esp_panic_handler_reconfigure_wdts((CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS + 1) * 1000);
+
+    panic_print_str("Rebooting in ");
+    panic_print_dec(CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS);
+    panic_print_str(" seconds...\r\n");
+
+    esp_rom_delay_us(CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS * 1000000);
+
+    esp_panic_handler_reconfigure_wdts(1000);
+#endif /* CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS */
+
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
     wdt_hal_disable(&rtc_wdt_ctx);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+
 #if CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
     if (esp_reset_reason_get_hint() == ESP_RST_UNKNOWN) {
@@ -401,7 +426,7 @@ void esp_panic_handler(panic_info_t *info)
 
     panic_print_str("Rebooting...\r\n");
     panic_restart();
-#else
+#else /* CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT */
     disable_all_wdts();
     panic_print_str("CPU halted.\r\n");
     while (1);
