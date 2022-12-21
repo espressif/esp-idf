@@ -51,9 +51,6 @@ components/driver/test_apps/legacy_mcpwm_driver:
 components/driver/test_apps/legacy_pcnt_driver:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: test depends on ledc to be supported on esp32c6
 
 components/driver/test_apps/legacy_rmt_driver:
   disable:

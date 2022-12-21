@@ -28,7 +28,7 @@ TEST_CASE("SigmaDelta_config_test", "[sigma_delta]")
 
 // connect GPIO4 with LED positive pin, and the GND pin connect LED negative pin
 // logic analyzer help also to see the wave form(more standard and accurate)
-TEST_CASE("SigmaDelta_pin_duty_prescale_set", "[sigma_delta][ignore]")
+TEST_CASE("SigmaDelta_pin_duty_prescale_set", "[sigma_delta]")
 {
     sigmadelta_config_t sigmadelta_cfg = {
         .channel = 0,
@@ -40,7 +40,7 @@ TEST_CASE("SigmaDelta_pin_duty_prescale_set", "[sigma_delta][ignore]")
 
     int8_t duty = 0;
     int inc = 1;
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 100; i++) {
         sigmadelta_set_duty(sigmadelta_cfg.channel, duty);
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
@@ -51,7 +51,7 @@ TEST_CASE("SigmaDelta_pin_duty_prescale_set", "[sigma_delta][ignore]")
     }
 
     TEST_ESP_OK(sigmadelta_set_prescale(0, 200));
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 100; i++) {
         sigmadelta_set_duty(sigmadelta_cfg.channel, duty);
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
@@ -62,5 +62,4 @@ TEST_CASE("SigmaDelta_pin_duty_prescale_set", "[sigma_delta][ignore]")
     }
 
     TEST_ESP_OK(sigmadelta_set_pin(sigmadelta_cfg.channel, 5));
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
 }
