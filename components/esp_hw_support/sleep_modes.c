@@ -164,22 +164,7 @@ typedef struct {
 _Static_assert(22 >= SOC_RTCIO_PIN_COUNT, "Chip has more RTCIOs than 22, should increase ext1_rtc_gpio_mask field size");
 
 static sleep_config_t s_config = {
-    .pd_options = {
-#if SOC_PM_SUPPORT_RTC_PERIPH_PD
-        ESP_PD_OPTION_AUTO,
-#endif
-#if SOC_PM_SUPPORT_RTC_SLOW_MEM_PD
-        ESP_PD_OPTION_AUTO,
-#endif
-#if SOC_PM_SUPPORT_RTC_FAST_MEM_PD
-        ESP_PD_OPTION_AUTO,
-#endif
-        ESP_PD_OPTION_AUTO,
-#if SOC_PM_SUPPORT_CPU_PD
-        ESP_PD_OPTION_AUTO,
-#endif
-        ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO
-    },
+    .pd_options = {[0 ... ESP_PD_DOMAIN_MAX - 1] = ESP_PD_OPTION_AUTO,},
     .ccount_ticks_record = 0,
     .sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US,
     .wakeup_triggers = 0

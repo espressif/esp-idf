@@ -47,6 +47,15 @@ typedef enum {
     ESP_PD_DOMAIN_RTC_FAST_MEM,    //!< RTC fast memory
 #endif
     ESP_PD_DOMAIN_XTAL,            //!< XTAL oscillator
+#if SOC_PM_SUPPORT_XTAL32K_PD
+    ESP_PD_DOMAIN_XTAL32K,
+#endif
+#if SOC_PM_SUPPORT_RC32K_PD
+    ESP_PD_DOMAIN_RC32K,
+#endif
+#if SOC_PM_SUPPORT_FOSC_PD
+    ESP_PD_DOMAIN_FOSC,
+#endif
 #if SOC_PM_SUPPORT_CPU_PD
     ESP_PD_DOMAIN_CPU,             //!< CPU core
 #endif

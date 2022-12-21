@@ -428,8 +428,15 @@
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
 
+#define SOC_PM_SUPPORT_XTAL32K_PD       (1)
+
+#define SOC_PM_SUPPORT_RC32K_PD         (1)
+
+#define SOC_PM_SUPPORT_FOSC_PD          (1)
+
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
+#define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
