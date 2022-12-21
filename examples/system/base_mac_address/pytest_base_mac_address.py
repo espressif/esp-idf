@@ -31,7 +31,7 @@ def test_base_mac_address(dut: Dut) -> None:
                 # Format the new string to match the expected output from the app (includes stripping leading zeroes)
                 return ', '.join('0x{}'.format(hex_string[i:i + 2].lstrip('0')) for i in range(0, len(hex_string), 2))
 
-        return ', '.join(['0x{}'.format(m.decode('utf8')) for m in mac_m[:-1]] + [hex(int(mac_m[-1], 16) + increment)])
+        return ', '.join(['0x{}'.format(m.decode('utf8')) for m in mac_m[:-1]] + [hex((int(mac_m[-1], 16) + increment) & 0xFF)])
 
     sdkconfig = dut.app.sdkconfig
 

@@ -26,24 +26,24 @@ def test_examples_protocol_mqtt5(dut: Dut) -> None:
     # check if connected or not
     dut.expect_exact('MQTT_EVENT_CONNECTED', timeout=30)
     # check log
-    res = dut.expect(r'sent publish successful, msg_id=(\d+)')
+    res = dut.expect(r'sent publish successful, msg_id=(\d+)[^\d]')
     msgid_pub1 = res.group(1).decode('utf8')
-    res = dut.expect(r'sent subscribe successful, msg_id=(\d+)')
+    res = dut.expect(r'sent subscribe successful, msg_id=(\d+)[^\d]')
     msgid_sub1 = res.group(1).decode('utf8')
-    res = dut.expect(r'sent subscribe successful, msg_id=(\d+)')
+    res = dut.expect(r'sent subscribe successful, msg_id=(\d+)[^\d]')
     msgid_sub2 = res.group(1).decode('utf8')
-    res = dut.expect(r'sent unsubscribe successful, msg_id=(\d+)')
+    res = dut.expect(r'sent unsubscribe successful, msg_id=(\d+)[^\d]')
     msgid_unsub = res.group(1).decode('utf8')
-    res = dut.expect(r'MQTT_EVENT_PUBLISHED, msg_id=(\d+)')
+    res = dut.expect(r'MQTT_EVENT_PUBLISHED, msg_id=(\d+)[^\d]')
     msgid_pubd = res.group(1).decode('utf8')
     assert msgid_pubd == msgid_pub1
 
-    res = dut.expect(r'MQTT_EVENT_SUBSCRIBED, msg_id=(\d+)')
+    res = dut.expect(r'MQTT_EVENT_SUBSCRIBED, msg_id=(\d+)[^\d]')
     msgid_subd = res.group(1).decode('utf8')
     assert msgid_subd == msgid_sub1
 
     dut.expect_exact('sent publish successful, msg_id=0')
-    res = dut.expect(r'MQTT_EVENT_SUBSCRIBED, msg_id=(\d+)')
+    res = dut.expect(r'MQTT_EVENT_SUBSCRIBED, msg_id=(\d+)[^\d]')
     msgid_subd = res.group(1).decode('utf8')
     assert msgid_subd == msgid_sub2
 
@@ -57,7 +57,7 @@ def test_examples_protocol_mqtt5(dut: Dut) -> None:
     dut.expect_exact('correlation_data is 123456')
     dut.expect_exact('TOPIC=/topic/qos1')
     dut.expect_exact('DATA=data_3')
-    res = dut.expect(r'MQTT_EVENT_UNSUBSCRIBED, msg_id=(\d+)')
+    res = dut.expect(r'MQTT_EVENT_UNSUBSCRIBED, msg_id=(\d+)[^\d]')
     msgid_unsubd = res.group(1).decode('utf8')
     assert msgid_unsubd == msgid_unsub
 
