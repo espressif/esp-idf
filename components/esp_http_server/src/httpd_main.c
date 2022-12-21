@@ -30,6 +30,16 @@ typedef struct {
 
 static const char *TAG = "httpd";
 
+ESP_EVENT_DEFINE_BASE(ESP_HTTP_SERVER_EVENT);
+
+void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size)
+{
+    esp_err_t err = esp_event_post(ESP_HTTP_SERVER_EVENT, event_id, event_data, event_data_size, portMAX_DELAY);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to post esp_http_server event: %s", esp_err_to_name(err));
+    }
+}
+
 static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
 {
     /* If no space is available for new session, close the least recently used one */
@@ -101,6 +111,7 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
         goto exit;
     }
     ESP_LOGD(TAG, LOG_FMT("complete"));
+    esp_http_server_dispatch_event(HTTP_SERVER_EVENT_ON_CONNECTED, &new_fd, sizeof(int));
     return ESP_OK;
 exit:
     close(new_fd);
@@ -507,6 +518,8 @@ esp_err_t httpd_start(httpd_handle_t *handle, const httpd_config_t *config)
     }
 
     *handle = (httpd_handle_t)hd;
+    esp_http_server_dispatch_event(HTTP_SERVER_EVENT_START, NULL, 0);
+
     return ESP_OK;
 }
 
@@ -556,5 +569,6 @@ esp_err_t httpd_stop(httpd_handle_t handle)
     vSemaphoreDelete(hd->ctrl_sock_semaphore);
 #endif
     httpd_delete(hd);
+    esp_http_server_dispatch_event(HTTP_SERVER_EVENT_STOP, NULL, 0);
     return ESP_OK;
 }

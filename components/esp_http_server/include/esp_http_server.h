@@ -14,12 +14,36 @@
 #include <http_parser.h>
 #include <sdkconfig.h>
 #include <esp_err.h>
+#include <esp_event.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define ESP_HTTPD_DEF_CTRL_PORT         (32768)    /*!< HTTP Server control socket port*/
+
+ESP_EVENT_DECLARE_BASE(ESP_HTTP_SERVER_EVENT);
+
+/**
+ * @brief   HTTP Server events id
+ */
+typedef enum {
+    HTTP_SERVER_EVENT_ERROR = 0,       /*!< This event occurs when there are any errors during execution */
+    HTTP_SERVER_EVENT_START,           /*!< This event occurs when HTTP Server is started */
+    HTTP_SERVER_EVENT_ON_CONNECTED,    /*!< Once the HTTP Server has been connected to the client, no data exchange has been performed */
+    HTTP_SERVER_EVENT_ON_HEADER,       /*!< Occurs when receiving each header sent from the client */
+    HTTP_SERVER_EVENT_HEADERS_SENT,     /*!< After sending all the headers to the client */
+    HTTP_SERVER_EVENT_ON_DATA,         /*!< Occurs when receiving data from the client */
+    HTTP_SERVER_EVENT_SENT_DATA,       /*!< Occurs when an ESP HTTP server session is finished */
+    HTTP_SERVER_EVENT_DISCONNECTED,    /*!< The connection has been disconnected */
+    HTTP_SERVER_EVENT_STOP,            /*!< This event occurs when HTTP Server is stopped */
+} esp_http_server_event_id_t;
+
+/** Argument structure for HTTP_SERVER_EVENT_ON_DATA and HTTP_SERVER_EVENT_SENT_DATA event */
+typedef struct {
+    int fd;         /*!< Session socket file descriptor */
+    int data_len;   /*!< Data length */
+} esp_http_server_event_data;
 
 /*
 note: esp_https_server.h includes a customized copy of this
