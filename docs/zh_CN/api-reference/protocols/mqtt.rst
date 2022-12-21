@@ -1,10 +1,11 @@
 ESP-MQTT
 ========
+:link_to_translation:`en:[English]`
 
 概述
 --------
 
-ESP-MQTT 是 `MQTT <https://mqtt.org/>`_ 协议客户端的实现。MQTT 是一种基于发布/订阅模式的轻量级消息传输协议。
+ESP-MQTT 是 `MQTT <https://mqtt.org/>`__ 协议客户端的实现，MQTT 是一种基于发布/订阅模式的轻量级消息传输协议。ESP-MQTT 当前支持 `MQTT v5.0 <https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html>`__。
 
 
 特性
@@ -25,6 +26,7 @@ ESP-MQTT 是 `MQTT <https://mqtt.org/>`_ 协议客户端的实现。MQTT 是一�
    * :example:`protocols/mqtt/ssl_psk`：基于 TLS 的 MQTT，使用预共享密钥进行身份验证，默认端口 8883
    * :example:`protocols/mqtt/ws`：基于 WebSocket 的 MQTT，默认端口 80
    * :example:`protocols/mqtt/wss`：基于 WebSocket Secure 的 MQTT，默认端口 443
+   * :example:`protocols/mqtt5`: 使用 ESP-MQTT 库连接 MQTT v5.0 的服务器
 
 MQTT 消息重传
 --------------------------

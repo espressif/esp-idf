@@ -1,10 +1,11 @@
 ESP-MQTT
 ========
+:link_to_translation:`zh_CN:[中文]`
 
 Overview
 --------
 
-ESP-MQTT is an implementation of `MQTT <https://mqtt.org/>`_ protocol client. MQTT is a lightweight publish/subscribe messaging protocol.
+ESP-MQTT is an implementation of `MQTT <https://mqtt.org/>`__ protocol client, which is a lightweight publish/subscribe messaging protocol. Now ESP-MQTT supports `MQTT v5.0 <https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html>`__.
 
 
 Features
@@ -25,6 +26,7 @@ Application Examples
    * :example:`protocols/mqtt/ssl_psk`: MQTT over TLS using pre-shared keys for authentication, default port 8883
    * :example:`protocols/mqtt/ws`: MQTT over WebSocket, default port 80
    * :example:`protocols/mqtt/wss`: MQTT over WebSocket Secure, default port 443
+   * :example:`protocols/mqtt5`: Uses ESP-MQTT library to connect to broker with MQTT v5.0
 
 MQTT Message Retransmission
 ---------------------------
