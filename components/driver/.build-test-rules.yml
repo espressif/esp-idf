@@ -43,10 +43,6 @@ components/driver/test_apps/legacy_adc_driver:
 components/driver/test_apps/legacy_mcpwm_driver:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
 
 components/driver/test_apps/legacy_pcnt_driver:
   disable:
@@ -69,10 +65,6 @@ components/driver/test_apps/legacy_timer_driver:
 components/driver/test_apps/mcpwm:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
 
 components/driver/test_apps/pulse_cnt:
   disable:
