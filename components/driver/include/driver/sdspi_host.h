@@ -63,6 +63,7 @@ typedef struct {
     gpio_num_t gpio_int;    ///< GPIO number of interrupt line (input) for SDIO card.
 } sdspi_device_config_t;
 
+#define SDSPI_SLOT_NO_CS    GPIO_NUM_NC ///< indicates that card select line is not used
 #define SDSPI_SLOT_NO_CD    GPIO_NUM_NC ///< indicates that card detect line is not used
 #define SDSPI_SLOT_NO_WP    GPIO_NUM_NC ///< indicates that write protect line is not used
 #define SDSPI_SLOT_NO_INT   GPIO_NUM_NC ///< indicates that interrupt line is not used
