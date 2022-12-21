@@ -111,6 +111,13 @@ static esp_err_t set_config_handler(const wifi_prov_config_set_data_t *req_data,
     /* Using strlcpy allows both max passphrase length (63 bytes) and ensures null termination
      * because size of wifi_cfg->sta.password is 64 bytes (1 extra byte for null character) */
     strlcpy((char *) wifi_cfg->sta.password, req_data->password, sizeof(wifi_cfg->sta.password));
+
+#ifdef CONFIG_WIFI_PROV_STA_ALL_CHANNEL_SCAN
+    wifi_cfg->sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+#else /* CONFIG_WIFI_PROV_STA_FAST_SCAN */
+    wifi_cfg->sta.scan_method = WIFI_FAST_SCAN;
+#endif
+
     return ESP_OK;
 }
 
