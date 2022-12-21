@@ -11,11 +11,14 @@ choice ESP32C2_REV_MIN
 
     config ESP32C2_REV_MIN_1
         bool "Rev v1.0 (ECO1)"
+    config ESP32C2_REV_MIN_1_1
+        bool "Rev v1.1 (ECO2)"
 endchoice
 
 config ESP32C2_REV_MIN_FULL
     int
     default 100 if ESP32C2_REV_MIN_1
+    default 101 if ESP32C2_REV_MIN_1_1
 
 config ESP_REV_MIN_FULL
     int
