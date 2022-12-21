@@ -3,6 +3,27 @@
 
 :link_to_translation:`en:[English]`
 
+Wi-Fi
+*****
+
+
+回调函数类型 esp_now_recv_cb_t
+------------------------------
+
+先前， ``esp_now_recv_cb_t`` 的第一个参数的类型是 ``const uint8_t *mac_addr``， 它只包含对端 ESP-NOW 设备的地址。
+
+类型定义已更新。 第一个参数的类型是 ``esp_now_recv_info_t``， 它包含三个成员变量 ``src_addr``，``des_addr`` 和 ``rx_ctrl``。 因此，以下更新是需要的:
+
+    - 重新定义的 ESP-NOW 收包回调函数。
+
+    - ``src_addr`` 可以等价替换原来的 ``mac_addr`` 。
+
+    - ``des_addr`` 是 ESP-NOW 包的目的 MAC 地址，它可以是单播地址或广播地址。有了 ``des_addr``，可以区分单播和广播的 ESP-NOW ，其中广播的 ESP-NOW 包在加密的 ESP-NOW 配置中也可以是非加密的。
+
+    - ``rx_ctrl`` 是 ESP-NOW 包的 Rx control info，它包含此包的更多有用信息。
+
+请参考 ESP-NOW 样例：:example_file:`wifi/espnow/main/espnow_example_main.c`
+
 以太网
 **************
 
