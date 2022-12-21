@@ -105,12 +105,8 @@ examples/storage/sd_card/sdmmc:
       reason: lack of runners
 
 examples/storage/sd_card/sdspi:
-  disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target(s) not supported yet
   disable_test:
-    - if: IDF_TARGET == "esp32s3"
+    - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c6"]
       temporary: true
       reason: lack of runners
 
