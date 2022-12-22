@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/param.h>
@@ -351,7 +352,7 @@ TEST_CASE("esp_timer produces correct delays with light sleep", "[pm]")
         test_args_t *p_args = (test_args_t *) arg;
         int64_t t_end = esp_clk_rtc_time();
         int32_t ms_diff = (t_end - p_args->t_start) / 1000;
-        printf("timer #%d %dms\n", p_args->cur_interval, ms_diff);
+        printf("timer #%d %"PRIi32"ms\n", p_args->cur_interval, ms_diff);
         p_args->intervals[p_args->cur_interval++] = ms_diff;
         // Deliberately make timer handler run longer.
         // We check that this doesn't affect the result.

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
 #include <sys/param.h>
 
 #include "esp_attr.h"
@@ -646,7 +647,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
         int64_t sleep_time_us = MIN(wakeup_delay_us, time_until_next_alarm);
         if (sleep_time_us >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP * portTICK_PERIOD_MS * 1000LL) {
             esp_sleep_enable_timer_wakeup(sleep_time_us - LIGHT_SLEEP_EARLY_WAKEUP_US);
-#ifdef CONFIG_PM_TRACE
+#if CONFIG_PM_TRACE && SOC_PM_SUPPORT_RTC_PERIPH_PD
             /* to force tracing GPIOs to keep state */
             esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
 #endif
@@ -704,7 +705,7 @@ void esp_pm_impl_dump_stats(FILE* out)
             /* don't display light sleep mode if it's not enabled */
             continue;
         }
-        fprintf(out, "%-8s  %-3dM%-7s %-10lld  %-2d%%\n",
+        fprintf(out, "%-8s  %-3"PRIu32"M%-7s %-10lld  %-2d%%\n",
                 s_mode_names[i],
                 s_cpu_freq_by_mode[i].freq_mhz,
                 "",                                     //Empty space to align columns
