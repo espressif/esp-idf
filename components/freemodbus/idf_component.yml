@@ -1,0 +1,11 @@
+version: "1.0.7"
+description: ESP-MODBUS is the official Modbus library for Espressif SoCs.
+url: https://github.com/espressif/esp-modbus
+dependencies:
+  idf: ">=4.1"
+files:
+  exclude:
+    - "docs/_build/**/*"
+    - "docs/_build"
+    - "test/**/build/**/*"
+    - "test/**/build"

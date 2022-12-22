@@ -1,3 +1,5 @@
+# The following five lines of boilerplate have to be in your project's
+# CMakeLists in this exact order for cmake to work correctly
 set(srcs
     "common/esp_modbus_master.c"
     "common/esp_modbus_slave.c"
@@ -44,14 +46,29 @@ set(srcs
 set(include_dirs common/include)
 
 set(priv_include_dirs common port modbus modbus/ascii modbus/functions
-                                modbus/rtu modbus/tcp modbus/include)
+                      modbus/rtu modbus/tcp modbus/include)
 
 list(APPEND priv_include_dirs serial_slave/port serial_slave/modbus_controller
-                                        serial_master/port serial_master/modbus_controller
-                                tcp_slave/port tcp_slave/modbus_controller
-                                tcp_master/port tcp_master/modbus_controller)
+     serial_master/port serial_master/modbus_controller
+     tcp_slave/port tcp_slave/modbus_controller
+     tcp_master/port tcp_master/modbus_controller)
+
+add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/freemodbus/" ${srcs})
+add_prefix(include_dirs "${CMAKE_CURRENT_LIST_DIR}/freemodbus/" ${include_dirs})
+add_prefix(priv_include_dirs "${CMAKE_CURRENT_LIST_DIR}/freemodbus/" ${priv_include_dirs})
+
+message(STATUS "DEBUG: Use esp-modbus component folder: ${CMAKE_CURRENT_LIST_DIR}.")
+
+set(requires driver lwip)
+
+# esp_timer component was introduced in v4.2
+if("${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}" VERSION_GREATER "4.1")
+    list(APPEND requires esp_timer)
+endif()
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                    REQUIRES driver)
+                    REQUIRES ${requires}
+                    PRIV_REQUIRES esp_netif)
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
