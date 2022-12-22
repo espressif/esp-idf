@@ -2,6 +2,10 @@
 ------------------
 :link_to_translation:`en:[English]`
 
+.. See SOC_CPU_BREAKPOINTS_NUM, SOC_CPU_WATCHPOINTS_NUM in soc_caps.h
+{IDF_TARGET_CPU_BREAKPOINT_NUM:default="Not updated", esp32="2", esp32s2="2", esp32s3="2", esp32c3="8", esp32c2="2", "esp32c6"="4", "esp32h2"="8"}
+{IDF_TARGET_CPU_WATCHPOINT_NUM:default="Not updated", esp32="2", esp32s2="2", esp32s3="2", esp32c3="8", esp32c2="2", "esp32c6"="4", "esp32h2"="8"}
+
 本节提供了本指南中各部分提到的一些注意事项和补充内容。
 
 .. _jtag-debugging-tip-breakpoints:
@@ -9,7 +13,7 @@
 可用的断点和观察点
 ^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_NAME} 调试器支持 2 个硬件断点和 64 个软件断点。硬件断点是由 {IDF_TARGET_NAME} 芯片内部的逻辑电路实现的，能够设置在代码的任何位置：闪存或者 IRAM 的代码区域。除此以外，OpenOCD 实现了两种软件断点：闪存断点（最多 32 个）和 IRAM 断点（最多 32 个）。目前 GDB 无法在闪存中设置软件断点，因此除非解决此限制，否则这些断点只能由 OpenOCD 模拟为硬件断点。（详细信息可以参阅 :ref:`下面 <jtag-debugging-tip-where-breakpoints>`）。{IDF_TARGET_NAME} 还支持 2 个观察点，所以可以观察两个变量的变化或者通过 GDB 命令 ``watch myVariable`` 来读取变量的值。请注意 menuconfig 中的 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项会使用第二个观察点，如果你想在 OpenOCD 或者 GDB 中再次尝试使用这个观察点，可能不会得到预期的结果。详情请查看 menuconfig 中的帮助文档。
+{IDF_TARGET_NAME} 调试器支持 {IDF_TARGET_CPU_BREAKPOINT_NUM} 个硬件断点和 64 个软件断点。硬件断点是由 {IDF_TARGET_NAME} 芯片内部的逻辑电路实现的，能够设置在代码的任何位置：闪存或者 IRAM 的代码区域。除此以外，OpenOCD 实现了两种软件断点：闪存断点（最多 32 个）和 IRAM 断点（最多 32 个）。目前 GDB 无法在闪存中设置软件断点，因此除非解决此限制，否则这些断点只能由 OpenOCD 模拟为硬件断点（详细信息可以参阅 :ref:`下面 <jtag-debugging-tip-where-breakpoints>`）。{IDF_TARGET_NAME} 还支持 {IDF_TARGET_CPU_WATCHPOINT_NUM} 个观察点，所以可以观察 {IDF_TARGET_CPU_WATCHPOINT_NUM} 个变量的变化或者通过 GDB 命令 ``watch myVariable`` 来读取变量的值。请注意 menuconfig 中的 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项会使用最后一个观察点，如果你想在 OpenOCD 或者 GDB 中再次尝试使用这个观察点，可能不会得到预期的结果。详情请查看 menuconfig 中的帮助文档。
 
 
 .. _jtag-debugging-tip-where-breakpoints:
