@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include <esp_err.h>
 #include <esp_log.h>
 
@@ -355,7 +356,7 @@ esp_err_t esp_local_ctrl_get_prop_values(size_t total_indices, uint32_t *indices
     /* Convert indices to names */
     for (size_t i = 0; i < total_indices; i++) {
         if (indices[i] >= local_ctrl_inst_ctx->props_count) {
-            ESP_LOGE(TAG, "Invalid property index %d", indices[i]);
+            ESP_LOGE(TAG, "Invalid property index %" PRId32, indices[i]);
             return ESP_ERR_INVALID_ARG;
         }
         props[i].name  = local_ctrl_inst_ctx->props[indices[i]]->name;
@@ -396,7 +397,7 @@ esp_err_t esp_local_ctrl_set_prop_values(size_t total_indices, uint32_t *indices
     }
     for (size_t i = 0; i < total_indices; i++) {
         if (indices[i] >= local_ctrl_inst_ctx->props_count) {
-            ESP_LOGE(TAG, "Invalid property index %d", indices[i]);
+            ESP_LOGE(TAG, "Invalid property index %" PRId32, indices[i]);
             free(props);
             return ESP_ERR_INVALID_ARG;
         }

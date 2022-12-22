@@ -9,5 +9,3 @@ idf_component_register(SRCS "src/httpd_main.c"
                     PRIV_INCLUDE_DIRS "src/port/esp32" "src/util"
                     REQUIRES esp_event http_parser # for http_parser.h
                     PRIV_REQUIRES lwip mbedtls esp_timer)
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

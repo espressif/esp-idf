@@ -24,5 +24,3 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES protobuf-c)
 
 idf_component_optional_requires(PRIVATE espressif__mdns mdns)
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

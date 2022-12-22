@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
 #include <freertos/FreeRTOS.h>
 #include <esp_system.h>
 #include <esp_log.h>
@@ -209,7 +210,7 @@ esp_err_t simple_ble_deinit(void)
 esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
 {
     g_ble_cfg_p = cfg;
-    ESP_LOGD(TAG, "Free mem at start of simple_ble_init %d", esp_get_free_heap_size());
+    ESP_LOGD(TAG, "Free mem at start of simple_ble_init %" PRIu32, esp_get_free_heap_size());
     esp_err_t ret;
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -267,7 +268,7 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     if (local_mtu_ret) {
         ESP_LOGE(TAG, "set local  MTU failed, error code = 0x%x", local_mtu_ret);
     }
-    ESP_LOGD(TAG, "Free mem at end of simple_ble_init %d", esp_get_free_heap_size());
+    ESP_LOGD(TAG, "Free mem at end of simple_ble_init %" PRIu32, esp_get_free_heap_size());
 
     /* set the security iocap & auth_req & key size & init key response key parameters to the stack*/
     esp_ble_auth_req_t auth_req= ESP_LE_AUTH_REQ_MITM;
@@ -294,7 +295,7 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
 esp_err_t simple_ble_stop(void)
 {
     esp_err_t err;
-    ESP_LOGD(TAG, "Free mem at start of simple_ble_stop %d", esp_get_free_heap_size());
+    ESP_LOGD(TAG, "Free mem at start of simple_ble_stop %" PRIu32, esp_get_free_heap_size());
     err = esp_bluedroid_disable();
     if (err != ESP_OK) {
         return ESP_FAIL;
@@ -320,7 +321,7 @@ esp_err_t simple_ble_stop(void)
     }
     ESP_LOGD(TAG, "esp_bt_controller_deinit called successfully");
 
-    ESP_LOGD(TAG, "Free mem at end of simple_ble_stop %d", esp_get_free_heap_size());
+    ESP_LOGD(TAG, "Free mem at end of simple_ble_stop %" PRIu32, esp_get_free_heap_size());
     return ESP_OK;
 }
 

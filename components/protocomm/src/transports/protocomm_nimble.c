@@ -7,6 +7,7 @@
 #include <sys/param.h>
 #include <esp_log.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include <protocomm.h>
 #include <protocomm_ble.h>
@@ -208,7 +209,7 @@ simple_ble_advertise(void)
         return;
     }
     /*   Take note of free heap space  */
-    ESP_LOGD(TAG, "Minimum free heap size = %d, free Heap size = %d",
+    ESP_LOGD(TAG, "Minimum free heap size = %" PRIu32 ", free Heap size = %" PRIu32,
              esp_get_minimum_free_heap_size(), esp_get_free_heap_size());
 }
 
@@ -488,7 +489,7 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
 {
     ble_cfg_p = (void *)cfg;
     int rc;
-    ESP_LOGD(TAG, "Free memory at start of simple_ble_init %d", esp_get_free_heap_size());
+    ESP_LOGD(TAG, "Free memory at start of simple_ble_init %" PRIu32, esp_get_free_heap_size());
 
     nimble_port_init();
 
@@ -948,7 +949,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     }
 
     esp_err_t err = simple_ble_start(ble_config);
-    ESP_LOGD(TAG, "Free Heap size after simple_ble_start= %d", esp_get_free_heap_size());
+    ESP_LOGD(TAG, "Free Heap size after simple_ble_start= %" PRIu32, esp_get_free_heap_size());
 
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "simple_ble_start failed w/ error code 0x%x", err);

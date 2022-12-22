@@ -9,6 +9,7 @@
 #include <string.h>
 #include <esp_err.h>
 #include <esp_log.h>
+#include <inttypes.h>
 
 /* TODO: Currently MBEDTLS_ECDH_LEGACY_CONTEXT is enabled by default
  * when MBEDTLS_ECP_RESTARTABLE is enabled.
@@ -459,7 +460,7 @@ static esp_err_t sec1_new_session(protocomm_security_handle_t handle, uint32_t s
 
     if (cur_session->id != -1) {
         /* Only one session is allowed at a time */
-        ESP_LOGE(TAG, "Closing old session with id %u", cur_session->id);
+        ESP_LOGE(TAG, "Closing old session with id %" PRIu32, cur_session->id);
         sec1_close_session(cur_session, session_id);
     }
 
@@ -503,7 +504,7 @@ static esp_err_t sec1_decrypt(protocomm_security_handle_t handle,
     }
 
     if (!cur_session || cur_session->id != session_id) {
-        ESP_LOGE(TAG, "Session with ID %d not found", session_id);
+        ESP_LOGE(TAG, "Session with ID %" PRId32 "not found", session_id);
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -542,7 +543,7 @@ static esp_err_t sec1_req_handler(protocomm_security_handle_t handle,
     }
 
     if (session_id != cur_session->id) {
-        ESP_LOGE(TAG, "Invalid session ID : %d (expected %d)", session_id, cur_session->id);
+        ESP_LOGE(TAG, "Invalid session ID:%" PRId32 "(expected %" PRId32 ")", session_id, cur_session->id);
         return ESP_ERR_INVALID_STATE;
     }
 
