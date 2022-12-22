@@ -747,15 +747,15 @@ static void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_c
     esp_rom_gpio_connect_in_signal(MASTER_WS_IO, pcnt_periph_signals.groups[0].units[0].channels[0].pulse_sig, 0);
 
     // Test common sample rate
-    uint32_t test_freq[15] = {8000,  11025, 12000, 16000, 22050, 24000,
+    uint32_t test_freq[16] = {8000, 10000, 11025, 12000, 16000, 22050, 24000,
                             32000, 44100, 48000, 64000, 88200, 96000,
                             128000, 144000, 196000};
     int real_pulse = 0;
-    int case_cnt = 15;
+    int case_cnt = 16;
 #if SOC_I2S_HW_VERSION_2
     // Can't support a very high sample rate while using XTAL as clock source
     if (clk_cfg->clk_src == I2S_CLK_SRC_XTAL) {
-        case_cnt = 9;
+        case_cnt = 10;
     }
 #endif
     for (int i = 0; i < case_cnt; i++) {

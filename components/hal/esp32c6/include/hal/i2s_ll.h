@@ -434,8 +434,9 @@ finish:
  */
 static inline void i2s_ll_tx_start(i2s_dev_t *hw)
 {
-    hw->tx_conf.tx_update = 0;
+    // Have to update registers before start
     hw->tx_conf.tx_update = 1;
+    while (hw->tx_conf.tx_update);
     hw->tx_conf.tx_start = 1;
 }
 
@@ -446,8 +447,9 @@ static inline void i2s_ll_tx_start(i2s_dev_t *hw)
  */
 static inline void i2s_ll_rx_start(i2s_dev_t *hw)
 {
-    hw->rx_conf.rx_update = 0;
+    // Have to update registers before start
     hw->rx_conf.rx_update = 1;
+    while (hw->rx_conf.rx_update);
     hw->rx_conf.rx_start = 1;
 }
 
