@@ -6,6 +6,11 @@ examples/storage/custom_flash_driver:
       temporary: true
       reason: target esp32c2 is not supported yet
 
+examples/storage/emmc:
+  enable:
+    - if: IDF_TARGET == "esp32s3"
+      reason: only support on esp32s3
+
 examples/storage/ext_flash_fatfs:
   disable:
     - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
