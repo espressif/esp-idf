@@ -4,7 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdbool.h>
+#include <stdlib.h>
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
+#endif
 #include <string.h>
 
 #include "esp_attr.h"
