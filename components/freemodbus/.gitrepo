@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/espressif/esp-modbus.git
+	branch = master
+	commit = 0e1fe58fbf775edc5a7b6dcd46cc07d477120cf6
+	parent = 24e597928cca93c926ffcae0ecaf0c99463a397f
+	method = merge
+	cmdver = 0.4.5

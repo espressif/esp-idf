@@ -16,8 +16,12 @@
 #include "nvs_flash.h"
 #include "esp_netif.h"
 #include "mdns.h"
-#include "protocol_examples_common.h"
 
+#if __has_include("esp_mac.h")
+#include "esp_mac.h"
+#endif
+
+#include "protocol_examples_common.h"
 #include "modbus_params.h"  // for modbus parameters structures
 #include "mbcontroller.h"
 #include "sdkconfig.h"
