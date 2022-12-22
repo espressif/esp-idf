@@ -193,7 +193,7 @@ Pin Layout
 ^^^^^^^^^^^
 .. figure:: ../../../_static/esp32-c3-devkitc-02-v1-pinout.png
     :align: center
-    :scale: 100%
+    :scale: 50%
     :alt: ESP32-C3-DevKitC-02 (click to enlarge)
     :figclass: align-center
 
