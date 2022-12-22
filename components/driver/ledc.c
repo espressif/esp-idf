@@ -843,7 +843,7 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
     return ((uint64_t) src_clk_freq << 8) / precision / clock_divider;
 }
 
-static inline void ledc_calc_fade_end_channel(uint32_t *fade_end_status, uint32_t *channel)
+static inline void IRAM_ATTR ledc_calc_fade_end_channel(uint32_t *fade_end_status, uint32_t *channel)
 {
     uint32_t i = __builtin_ffs((*fade_end_status)) - 1;
     (*fade_end_status) &= ~(1 << i);
