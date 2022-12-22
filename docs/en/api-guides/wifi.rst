@@ -1314,45 +1314,57 @@ AP Basic Configuration
 
 API :cpp:func:`esp_wifi_set_config()` can be used to configure the AP. And the configuration will be stored in NVS. The table below describes the fields in detail.
 
-+------------------+--------------------------------------------------------------+
-| Field            | Description                                                  |
-+==================+==============================================================+
-| ssid             | SSID of AP; if the ssid[0] is 0xFF and ssid[1] is 0xFF,      |
-|                  | the AP defaults the SSID to ESP_aabbcc, where "aabbcc"       |
-|                  | is the last three bytes of the AP MAC.                       |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| password         | Password of AP; if the auth mode is WIFI_AUTH_OPEN,          |
-|                  | this field will be ignored.                                  |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| ssid_len         | Length of SSID; if ssid_len is 0, check the SSID until there |
-|                  | is a termination character. If ssid_len > 32, change it to   |
-|                  | 32; otherwise, set the SSID length according to ssid_len.    |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| channel          | Channel of AP; if the channel is out of range, the Wi-Fi     |
-|                  | driver defaults the channel to channel 1. So, please make    |
-|                  | sure the channel is within the required range.               |
-|                  | For more details, refer to `Wi-Fi Country Code`_.            |
-+------------------+--------------------------------------------------------------+
-| authmode         | Auth mode of ESP AP; currently, ESP Wi-Fi does not           |
-|                  | support AUTH_WEP. If the authmode is an invalid value,       |
-|                  | AP defaults the value to WIFI_AUTH_OPEN.                     |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| ssid_hidden      | If ssid_hidden is 1, AP does not broadcast the SSID;         |
-|                  | otherwise, it does broadcast the SSID.                       |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| max_connection   | Currently, ESP Wi-Fi supports up to 10 Wi-Fi connections.    |
-|                  | If max_connection > 10, AP defaults the value to 10.         |
-|                  |                                                              |
-+------------------+--------------------------------------------------------------+
-| beacon_interval  | Beacon interval; the value is 100 ~ 60000 ms, with default   |
-|                  | value being 100 ms. If the value is out of range,            |
-|                  | AP defaults it to 100 ms.                                    |
-+------------------+--------------------------------------------------------------+
+.. only:: esp32 or esp32s2 or esp32s3
+
+    .. list-table::
+      :header-rows: 1
+      :widths: 15 55
+
+      * - Field
+        - Description
+      * - ssid
+        - SSID of AP; if the ssid[0] is 0xFF and ssid[1] is 0xFF, the AP defaults the SSID to ESP_aabbcc, where “aabbcc” is the last three bytes of the AP MAC.
+      * - password
+        - Password of AP; if the auth mode is WIFI_AUTH_OPEN, this field will be ignored.
+      * - ssid_len
+        - Length of SSID; if ssid_len is 0, check the SSID until there is a termination character. If ssid_len > 32, change it to 32; otherwise, set the SSID length according to ssid_len.
+      * - channel
+        - Channel of AP; if the channel is out of range, the Wi-Fi driver defaults the channel to channel 1. So, please make sure the channel is within the required range. For more details, refer to `Wi-Fi Country Code`_.
+      * - authmode
+        - Auth mode of ESP AP; currently, ESP AP does not support AUTH_WEP. If the authmode is an invalid value, AP defaults the value to WIFI_AUTH_OPEN.
+      * - ssid_hidden
+        - If ssid_hidden is 1, AP does not broadcast the SSID; otherwise, it does broadcast the SSID.
+      * - max_connection
+        - The max number of stations allowed to connect in, default value is 10. Currently, ESP Wi-Fi supports up to 15 (ESP_WIFI_MAX_CONN_NUM) Wi-Fi connections. Please note that ESP AP and ESP-NOW share the same encryption hardware keys, so the max_connection parameter will be affected by the :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`. The total num of encryption hardware keys is 17, if :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` <= 2, the max_connection can be set up to 15, otherwise the max_connection can be set up to (17 - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`).
+      * - beacon_interval
+        - Beacon interval; the value is 100 ~ 60000 ms, with default value being 100 ms. If the value is out of range, AP defaults it to 100 ms.
+
+
+.. only:: esp32c3
+
+    .. list-table::
+      :header-rows: 1
+      :widths: 15 55
+
+      * - Field
+        - Description
+      * - ssid
+        - SSID of AP; if the ssid[0] is 0xFF and ssid[1] is 0xFF, the AP defaults the SSID to ESP_aabbcc, where “aabbcc” is the last three bytes of the AP MAC.
+      * - password
+        - Password of AP; if the auth mode is WIFI_AUTH_OPEN, this field will be ignored.
+      * - ssid_len
+        - Length of SSID; if ssid_len is 0, check the SSID until there is a termination character. If ssid_len > 32, change it to 32; otherwise, set the SSID length according to ssid_len.
+      * - channel
+        - Channel of AP; if the channel is out of range, the Wi-Fi driver defaults the channel to channel 1. So, please make sure the channel is within the required range. For more details, refer to `Wi-Fi Country Code`_.
+      * - authmode
+        - Auth mode of ESP AP; currently, ESP AP does not support AUTH_WEP. If the authmode is an invalid value, AP defaults the value to WIFI_AUTH_OPEN.
+      * - ssid_hidden
+        - If ssid_hidden is 1, AP does not broadcast the SSID; otherwise, it does broadcast the SSID.
+      * - max_connection
+        - The max number of stations allowed to connect in, default value is 10. Currently, ESP Wi-Fi supports up to 10 (ESP_WIFI_MAX_CONN_NUM) Wi-Fi connections. Please note that ESP AP and ESP-NOW share the same encryption hardware keys, so the max_connection parameter will be affected by the :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`. The total num of encryption hardware keys is 17, if :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` <= 7, the max_connection can be set up to 10, otherwise the max_connection can be set up to (17 - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`).
+      * - beacon_interval
+        - Beacon interval; the value is 100 ~ 60000 ms, with default value being 100 ms. If the value is out of range, AP defaults it to 100 ms.
+
 
 Wi-Fi Protocol Mode
 +++++++++++++++++++++++++
