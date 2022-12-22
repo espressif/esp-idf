@@ -64,3 +64,30 @@ def test_heap_8bit_access(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"IRAM_8BIT capability test"')
     dut.expect_unity_test_output(timeout=300)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32
+@pytest.mark.parametrize(
+    'config',
+    [
+        'heap_trace'
+    ]
+)
+def test_heap_trace_dump(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('[trace-dump][internal]')
+    dut.expect('Internal')
+
+    dut.expect_exact('Enter next test, or \'enter\' to see menu')
+    dut.write('[trace-dump][external]')
+    dut.expect('PSRAM')
+
+    dut.expect_exact('Enter next test, or \'enter\' to see menu')
+    dut.write('[trace-dump][all]')
+    dut.expect('Internal')
+    dut.expect('PSRAM')
+
+    dut.expect_exact('Enter next test, or \'enter\' to see menu')
+    dut.write('[heap-trace]')
+    dut.expect_unity_test_output(timeout=100)

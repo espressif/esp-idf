@@ -19,12 +19,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "esp_heap_caps.h"
+
 #ifdef CONFIG_HEAP_TRACING
 // only compile in heap tracing tests if tracing is enabled
 
 #include "esp_heap_trace.h"
 
-TEST_CASE("heap trace leak check", "[heap]")
+TEST_CASE("heap trace leak check", "[heap-trace]")
 {
     heap_trace_record_t recs[8];
     heap_trace_init_standalone(recs, 8);
@@ -71,7 +73,7 @@ TEST_CASE("heap trace leak check", "[heap]")
     heap_trace_stop();
 }
 
-TEST_CASE("heap trace wrapped buffer check", "[heap]")
+TEST_CASE("heap trace wrapped buffer check", "[heap-trace]")
 {
     const size_t N = 8;
     heap_trace_record_t recs[N];
@@ -140,7 +142,7 @@ static void print_floats_task(void *ignore)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("can trace allocations made by newlib", "[heap]")
+TEST_CASE("can trace allocations made by newlib", "[heap-trace]")
 {
     const size_t N = 8;
     heap_trace_record_t recs[N];
@@ -165,5 +167,110 @@ TEST_CASE("can trace allocations made by newlib", "[heap]")
     TEST_ASSERT(heap_trace_get_count() > 3);
 }
 
+TEST_CASE("check for summary value validity", "[heap-trace]") {
+    const size_t alloc_size = 100;
+    const size_t counter_size = 2;
+    const size_t ptr_array_size = counter_size + 1;
+
+    // N+1 pointers to allocate to test the overflow in the summary
+    void *ptrs[ptr_array_size];
+
+    heap_trace_record_t recs[counter_size];
+    heap_trace_init_standalone(recs, counter_size);
+    heap_trace_start(HEAP_TRACE_ALL);
+
+    for (size_t i = 0; i < ptr_array_size; i ++) {
+        ptrs[i] = heap_caps_malloc(alloc_size, MALLOC_CAP_INTERNAL);
+        TEST_ASSERT_NOT_NULL(ptrs[i]);
+    }
+
+    // check that the summary shows the right number of internal memory allocation count
+    heap_trace_summary_t summary;
+    heap_trace_summary(&summary);
+    TEST_ASSERT(summary.count == counter_size);
+    TEST_ASSERT(summary.capacity == counter_size);
+    TEST_ASSERT(summary.total_allocations == ptr_array_size);
+    TEST_ASSERT(summary.has_overflowed == true);
+
+    // free the pointers
+    for (size_t i = 0; i < ptr_array_size; i++) {
+        heap_caps_free(ptrs[i]);
+    }
+
+    heap_trace_summary(&summary);
+    TEST_ASSERT(summary.total_frees == ptr_array_size);
+
+    heap_trace_stop();
+}
+
+#ifdef CONFIG_SPIRAM
+void* allocate_pointer(uint32_t caps)
+{
+    const size_t alloc_size = 100;
+    void *ptr = heap_caps_malloc(alloc_size, caps);
+    TEST_ASSERT_NOT_NULL(ptr);
+    return ptr;
+}
+
+TEST_CASE("can dump only internal memory allocations", "[trace-dump][internal]")
+{
+    const size_t number_log = 2;
+    heap_trace_record_t recs[number_log];
+    heap_trace_init_standalone(recs, number_log);
+    heap_trace_start(HEAP_TRACE_ALL);
+
+    void *internal_ptr = allocate_pointer(MALLOC_CAP_INTERNAL);
+    void *external_ptr = allocate_pointer(MALLOC_CAP_SPIRAM);
+
+    // dump records for memory only. The pytest environment will look for specific strings
+    // related to internal memory allocation in the output of the dump.
+    heap_trace_dump_caps(MALLOC_CAP_INTERNAL);
+
+    heap_caps_free(internal_ptr);
+    heap_caps_free(external_ptr);
+
+    heap_trace_stop();
+}
+
+TEST_CASE("can dump only external memory allocations", "[trace-dump][external]")
+{
+    const size_t number_log = 2;
+    heap_trace_record_t recs[number_log];
+    heap_trace_init_standalone(recs, number_log);
+    heap_trace_start(HEAP_TRACE_ALL);
+
+    void *internal_ptr = allocate_pointer(MALLOC_CAP_INTERNAL);
+    void *external_ptr = allocate_pointer(MALLOC_CAP_SPIRAM);
+
+    // dump records for memory only. The pytest environment will look for specific strings
+    // related to external memory allocation in the output of the dump.
+    heap_trace_dump_caps(MALLOC_CAP_SPIRAM);
+
+    heap_caps_free(internal_ptr);
+    heap_caps_free(external_ptr);
+
+    heap_trace_stop();
+}
+
+TEST_CASE("can dump both external and internal allocations", "[trace-dump][all]")
+{
+    const size_t number_log = 2;
+    heap_trace_record_t recs[number_log];
+    heap_trace_init_standalone(recs, number_log);
+    heap_trace_start(HEAP_TRACE_ALL);
+
+    void *internal_ptr = allocate_pointer(MALLOC_CAP_INTERNAL);
+    void *external_ptr = allocate_pointer(MALLOC_CAP_SPIRAM);
+
+    // dump records for memory only. The pytest environment will look for specific strings
+    // related to external and internal memory allocation in the output of the dump.
+    heap_trace_dump_caps(MALLOC_CAP_INTERNAL | MALLOC_CAP_SPIRAM);
+
+    heap_caps_free(internal_ptr);
+    heap_caps_free(external_ptr);
+
+    heap_trace_stop();
+}
+#endif // CONFIG_SPIRAM
 
 #endif
