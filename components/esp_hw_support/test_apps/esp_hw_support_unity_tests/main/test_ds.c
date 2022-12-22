@@ -24,6 +24,11 @@
 #include "esp32s3/rom/digital_signature.h"
 #include "esp32s3/rom/aes.h"
 #include "esp32s3/rom/sha.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/efuse.h"
+#include "esp32c6/rom/digital_signature.h"
+#include "esp32c6/rom/aes.h"
+#include "esp32c6/rom/sha.h"
 #endif
 
 #include "esp_ds.h"

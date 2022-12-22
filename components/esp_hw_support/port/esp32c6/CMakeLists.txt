@@ -7,8 +7,6 @@ set(srcs "rtc_clk_init.c"
          "chip_info.c")
 
 if(NOT BOOTLOADER_BUILD)
-    # list(APPEND srcs "esp_hmac.c" // TODO: IDF-5355
-    #                  "esp_ds.c") // TODO: IDF-5360
     list(APPEND srcs "sar_periph_ctrl.c"
                      "esp_crypto_lock.c")
 

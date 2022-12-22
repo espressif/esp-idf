@@ -199,7 +199,8 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs
               "spi_flash_hal_gpspi.c"
               "esp32c6/rtc_cntl_hal.c"
-              )
+              "hmac_hal.c"
+              "ds_hal.c")
 
     endif()
 
