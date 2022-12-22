@@ -21,6 +21,10 @@ else()
     list(APPEND srcs "src/phy_init.c")
 endif()
 
+if(CONFIG_SOC_BT_SUPPORTED OR CONFIG_SOC_IEEE802154_SUPPORTED)
+    list(APPEND srcs "src/btbb_init.c")
+endif()
+
 idf_build_get_property(build_dir BUILD_DIR)
 
 if(CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN)

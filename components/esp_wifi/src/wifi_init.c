@@ -17,7 +17,7 @@
 #include "esp_netif.h"
 #include "esp_coexist_internal.h"
 #include "esp_phy_init.h"
-#include "phy.h"
+#include "esp_private/phy.h"
 
 #if (CONFIG_ESP32_WIFI_RX_BA_WIN > CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM)
 #error "WiFi configuration check: WARNING, WIFI_RX_BA_WIN should not be larger than WIFI_DYNAMIC_RX_BUFFER_NUM!"

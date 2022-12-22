@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table e3b1264d26cc94f387d58e4ba9a3677c
+// md5_digest_table 19131923372be226ce98d85f5a13f16a
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -97,21 +97,10 @@ extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_DISABLE_FAST_WAKE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_CLK[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_Q_D1[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D_D0[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_CS[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_HD_D3[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_WP_D2[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_DQS[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D4[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D5[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D6[];
-extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[];
+extern const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[];
-extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[];
 extern const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALIB[];

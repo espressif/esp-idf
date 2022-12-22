@@ -23,7 +23,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "endian.h"
-#include "phy.h"
+#include "esp_private/phy.h"
 #include "phy_init_data.h"
 #include "esp_coexist_internal.h"
 #include "esp_private/periph_ctrl.h"
