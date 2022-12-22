@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,9 @@ static esp_err_t i2s_pdm_tx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     uint32_t rate = clk_cfg->sample_rate_hz;
     i2s_pdm_tx_clk_config_t *pdm_tx_clk = (i2s_pdm_tx_clk_config_t *)clk_cfg;
 
-    clk_info->bclk = rate * I2S_LL_PDM_BCK_FACTOR * pdm_tx_clk->up_sample_fp / pdm_tx_clk->up_sample_fs;
+    // Over sampling ratio (integer, mostly should be 1 or 2)
+    uint32_t over_sample_ratio = pdm_tx_clk->up_sample_fp / pdm_tx_clk->up_sample_fs;
+    clk_info->bclk = rate * I2S_LL_PDM_BCK_FACTOR * over_sample_ratio;
     clk_info->bclk_div = 8;
     clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
 #if SOC_I2S_SUPPORTS_APLL
@@ -47,8 +49,9 @@ static esp_err_t i2s_pdm_tx_calculate_clock(i2s_chan_handle_t handle, const i2s_
 
     /* Check if the configuration is correct */
     ESP_RETURN_ON_FALSE(clk_info->mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
-    /* Set upsampling configuration */
+    /* Set up sampling configuration */
     i2s_ll_tx_set_pdm_fpfs(handle->controller->hal.dev, pdm_tx_clk->up_sample_fp, pdm_tx_clk->up_sample_fs);
+    i2s_ll_tx_set_pdm_over_sample_ratio(handle->controller->hal.dev, over_sample_ratio);
 
     return ESP_OK;
 }
@@ -57,6 +60,7 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
 {
     esp_err_t ret = ESP_OK;
     i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t *)(handle->mode_info);
+    ESP_RETURN_ON_FALSE(clk_cfg->up_sample_fs <= 480, ESP_ERR_INVALID_ARG, TAG, "up_sample_fs should be within 480");
 
     i2s_hal_clock_info_t clk_info;
     /* Calculate clock parameters */
