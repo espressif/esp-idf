@@ -126,6 +126,12 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
     }
 }
 
+/*
+Delta of the timer count after the triggering of the alarm. Delta must be sufficient large to account for the latency
+between the alarm triggering and the execution of the callback that actually stops the gptimer.
+*/
+#define GPTIMER_STOP_ON_ALARM_COUNT_DELTA       50
+
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_stop_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
 {
     TaskHandle_t task_handle = (TaskHandle_t)user_data;
@@ -174,7 +180,7 @@ TEST_CASE("gptimer_stop_on_alarm", "[gptimer]")
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
         TEST_ESP_OK(gptimer_get_raw_count(timers[i], &value));
         printf("get raw count of gptimer %d: %llu\r\n", i, value);
-        TEST_ASSERT_UINT_WITHIN(40, 100000 * (i + 1), value);
+        TEST_ASSERT_UINT_WITHIN(GPTIMER_STOP_ON_ALARM_COUNT_DELTA, 100000 * (i + 1), value);
     }
 
     printf("restart timers\r\n");
@@ -192,7 +198,7 @@ TEST_CASE("gptimer_stop_on_alarm", "[gptimer]")
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
         TEST_ESP_OK(gptimer_get_raw_count(timers[i], &value));
         printf("get raw count of gptimer %d: %llu\r\n", i, value);
-        TEST_ASSERT_UINT_WITHIN(40, 100000 * (i + 1), value);
+        TEST_ASSERT_UINT_WITHIN(GPTIMER_STOP_ON_ALARM_COUNT_DELTA, 100000 * (i + 1), value);
     }
 
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
@@ -201,13 +207,19 @@ TEST_CASE("gptimer_stop_on_alarm", "[gptimer]")
     }
 }
 
+/*
+Delta of the timer count after the triggering of the alarm. Delta must be sufficient large to account for the latency
+between the alarm triggering and the capturing of the counter's value in the subsequent ISR.
+*/
+#define GPTIMER_AUTO_RELOAD_ON_ALARM_COUNT_DELTA        30
+
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_reload_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
 {
     TaskHandle_t task_handle = (TaskHandle_t)user_data;
     BaseType_t high_task_wakeup;
     esp_rom_printf("alarm isr count=%llu\r\n", edata->count_value);
     // check if the count value has been reloaded
-    TEST_ASSERT_UINT_WITHIN(20, 100, edata->count_value);
+    TEST_ASSERT_UINT_WITHIN(GPTIMER_AUTO_RELOAD_ON_ALARM_COUNT_DELTA, 100, edata->count_value);
     vTaskNotifyGiveFromISR(task_handle, &high_task_wakeup);
     return high_task_wakeup == pdTRUE;
 }
@@ -383,13 +395,19 @@ TEST_CASE("gptimer_update_alarm_dynamically", "[gptimer]")
     }
 }
 
+/*
+Delta of the timer count after the triggering of the alarm. Delta must be sufficient large to account for the latency
+between the alarm triggering and the capturing of the counter's value in the subsequent ISR.
+*/
+#define GPTIMER_COUNT_DOWN_RELOAD_DELTA     30
+
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_count_down_reload_alarm_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
 {
     TaskHandle_t task_handle = (TaskHandle_t)user_data;
     BaseType_t high_task_wakeup;
     esp_rom_printf("alarm isr count=%llu\r\n", edata->count_value);
     // check if the count value has been reloaded
-    TEST_ASSERT_UINT_WITHIN(20, 200000, edata->count_value);
+    TEST_ASSERT_UINT_WITHIN(GPTIMER_COUNT_DOWN_RELOAD_DELTA, 200000, edata->count_value);
     vTaskNotifyGiveFromISR(task_handle, &high_task_wakeup);
     return high_task_wakeup == pdTRUE;
 }
