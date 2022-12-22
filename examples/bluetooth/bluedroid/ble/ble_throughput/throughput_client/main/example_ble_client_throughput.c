@@ -60,7 +60,7 @@ static uint64_t current_time = 0;
 #endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
 
 #if (CONFIG_GATTC_WRITE_THROUGHPUT)
-#define GATTC_WRITE_LEN 490
+#define GATTC_WRITE_LEN 495
 
 static bool can_send_write = false;
 static SemaphoreHandle_t gattc_semaphore;
@@ -150,7 +150,6 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         }
         break;
     case ESP_GATTC_CONNECT_EVT: {
-        is_connect = true;
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_CONNECT_EVT conn_id %d, if %d", p_data->connect.conn_id, gattc_if);
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = p_data->connect.conn_id;
         memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, p_data->connect.remote_bda, sizeof(esp_bd_addr_t));
@@ -173,6 +172,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         if (param->cfg_mtu.status != ESP_GATT_OK){
             ESP_LOGE(GATTC_TAG,"config mtu failed, error status = %x", param->cfg_mtu.status);
         }
+        is_connect = true;
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_CFG_MTU_EVT, Status %d, MTU %d, conn_id %d", param->cfg_mtu.status, param->cfg_mtu.mtu, param->cfg_mtu.conn_id);
         esp_ble_gattc_search_service(gattc_if, param->cfg_mtu.conn_id, &remote_filter_service_uuid);
         break;
@@ -309,8 +309,6 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             break;
         }
 
-#else /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
-        esp_log_buffer_hex(GATTC_TAG, p_data->notify.value, p_data->notify.value_len);
 #endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
         break;
     }
@@ -337,7 +335,6 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             ESP_LOGE(GATTC_TAG, "write char failed, error status = %x", p_data->write.status);
             break;
         }
-        ESP_LOGI(GATTC_TAG, "write char success ");
         break;
     case ESP_GATTC_DISCONNECT_EVT:
         is_connect = false;
@@ -402,7 +399,12 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                     if (connect == false) {
                         connect = true;
                         ESP_LOGI(GATTC_TAG, "connect to the remote device.");
+#if(CONFIG_GATTC_WRITE_THROUGHPUT && CONFIG_GATTS_NOTIFY_THROUGHPUT)
+                        esp_ble_gap_set_prefer_conn_params(scan_result->scan_rst.bda, 34, 34, 0, 600);
+#else
                         esp_ble_gap_set_prefer_conn_params(scan_result->scan_rst.bda, 32, 32, 0, 600);
+#endif
+
                         esp_ble_gap_stop_scanning();
                         esp_ble_gattc_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, scan_result->scan_rst.bda, BLE_ADDR_TYPE_PUBLIC, true);
                     }
@@ -475,30 +477,15 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
     } while (0);
 }
 
+#if (CONFIG_GATTC_WRITE_THROUGHPUT)
 static void throughput_client_task(void *param)
 {
     vTaskDelay(2000 / portTICK_PERIOD_MS);
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
     uint8_t sum = check_sum(write_data, sizeof(write_data) - 1);
     write_data[GATTC_WRITE_LEN - 1] = sum;
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
 
     while(1) {
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-        if(is_connect){
-            uint32_t bit_rate = 0;
-            if (start_time) {
-                current_time = esp_timer_get_time();
-                bit_rate = notify_len * SECOND_TO_USECOND / (current_time - start_time);
-                ESP_LOGI(GATTC_TAG, "Notify Bit rate = %" PRIu32 " Byte/s, = %" PRIu32 " bit/s, time = %ds",
-                        bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
-            } else {
-                ESP_LOGI(GATTC_TAG, "Notify Bit rate = 0 Byte/s, = 0 bit/s");
-            }
-        }
-#endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+
             if (!can_send_write) {
                 int res = xSemaphoreTake(gattc_semaphore, portMAX_DELAY);
                 assert(res == pdTRUE);
@@ -519,12 +506,36 @@ static void throughput_client_task(void *param)
                     } else { //Add the vTaskDelay to prevent this task from consuming the CPU all the time, causing low-priority tasks to not be executed at all.
                         vTaskDelay( 10 / portTICK_PERIOD_MS );
                     }
+                } else {
+                    vTaskDelay(300 / portTICK_PERIOD_MS );
                 }
             }
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
 
     }
 }
+#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+
+#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
+static void throughput_cal_task(void *param)
+{
+    while (1)
+    {
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        if(is_connect){
+            uint32_t bit_rate = 0;
+            if (start_time) {
+                current_time = esp_timer_get_time();
+                bit_rate = notify_len * SECOND_TO_USECOND / (current_time - start_time);
+                ESP_LOGI(GATTC_TAG, "Notify Bit rate = %" PRIu32 " Byte/s, = %" PRIu32 " bit/s, time = %ds",
+                        bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
+            } else {
+                ESP_LOGI(GATTC_TAG, "Notify Bit rate = 0 Byte/s, = 0 bit/s");
+            }
+        }
+    }
+
+}
+#endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
 
 void app_main(void)
 {
@@ -586,9 +597,15 @@ void app_main(void)
     if (local_mtu_ret){
         ESP_LOGE(GATTC_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
+#if (CONFIG_GATTC_WRITE_THROUGHPUT)
     // The task is only created on the CPU core that Bluetooth is working on,
     // preventing the sending task from using the un-updated Bluetooth state on another CPU.
     xTaskCreatePinnedToCore(&throughput_client_task, "throughput_client_task", 4096, NULL, 10, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
+#endif
+
+#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
+    xTaskCreatePinnedToCore(&throughput_cal_task, "throughput_cal_task", 4096, NULL, 9, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
+#endif
 
 #if (CONFIG_GATTC_WRITE_THROUGHPUT)
     gattc_semaphore = xSemaphoreCreateBinary();
