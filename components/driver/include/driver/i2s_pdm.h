@@ -210,7 +210,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
  *       2: fp = 960, fs = 480, in this case, Fpdm = 128*Fpcm = 128*sample_rate_hz
  *       If the pdm receiver do not care the pdm serial clock, it's recommended set Fpdm = 128*48000.
  *       Otherwise, the second configuration should be adopted.
- * @param rate sample rate
+ * @param rate sample rate (not suggest to exceed 48000 Hz, otherwise more glitches and noise may appear)
  */
 #define I2S_PDM_TX_CLK_DEFAULT_CONFIG(rate) { \
     .sample_rate_hz = rate, \
@@ -256,7 +256,7 @@ typedef struct {
     i2s_pdm_sig_scale_t     lp_scale;           /*!< Low pass filter scaling value */
     i2s_pdm_sig_scale_t     sinc_scale;         /*!< Sinc filter scaling value */
 #if SOC_I2S_HW_VERSION_2
-    i2s_pdm_tx_line_mode_t  line_mode;          /*!< PDM TX line mode, on-line codec, one-line dac, two-line dac mode can be selected */
+    i2s_pdm_tx_line_mode_t  line_mode;          /*!< PDM TX line mode, one-line codec, one-line dac, two-line dac mode can be selected */
     bool                    hp_en;              /*!< High pass filter enable */
     float                   hp_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
     uint32_t                sd_dither;          /*!< Sigma-delta filter dither */
@@ -269,12 +269,12 @@ typedef struct {
  */
 typedef struct {
     /* General fields */
-    uint32_t                sample_rate_hz;     /*!< I2S sample rate */
+    uint32_t                sample_rate_hz;     /*!< I2S sample rate, not suggest to exceed 48000 Hz, otherwise more glitches and noise may appear */
     i2s_clock_src_t         clk_src;            /*!< Choose clock source */
     i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate */
     /* Particular fields */
     uint32_t                up_sample_fp;       /*!< Up-sampling param fp */
-    uint32_t                up_sample_fs;       /*!< Up-sampling param fs */
+    uint32_t                up_sample_fs;       /*!< Up-sampling param fs, not allowed to be greater than 480 */
 } i2s_pdm_tx_clk_config_t;
 
 /**

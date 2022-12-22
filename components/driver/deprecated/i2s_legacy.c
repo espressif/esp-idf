@@ -1201,6 +1201,7 @@ esp_err_t i2s_set_pdm_tx_up_sample(i2s_port_t i2s_num, const i2s_pdm_tx_upsample
     p_i2s[i2s_num]->clk_cfg.up_sample_fp = upsample_cfg->fp;
     p_i2s[i2s_num]->clk_cfg.up_sample_fs = upsample_cfg->fs;
     i2s_ll_tx_set_pdm_fpfs(p_i2s[i2s_num]->hal.dev, upsample_cfg->fp, upsample_cfg->fs);
+    i2s_ll_tx_set_pdm_over_sample_ratio(p_i2s[i2s_num]->hal.dev, upsample_cfg->fp / upsample_cfg->fs);
     i2s_start(i2s_num);
     xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
     return i2s_set_clk(i2s_num, p_i2s[i2s_num]->clk_cfg.sample_rate_hz, p_i2s[i2s_num]->slot_cfg.data_bit_width, p_i2s[i2s_num]->slot_cfg.slot_mode);
