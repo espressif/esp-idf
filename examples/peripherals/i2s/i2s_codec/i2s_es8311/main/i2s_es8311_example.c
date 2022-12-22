@@ -88,7 +88,7 @@ static esp_err_t es8311_codec_init(void)
     ESP_RETURN_ON_ERROR(es8311_voice_volume_set(es_handle, EXAMPLE_VOICE_VOLUME, NULL), TAG, "set es8311 volume failed");
     ESP_RETURN_ON_ERROR(es8311_microphone_config(es_handle, false), TAG, "set es8311 microphone failed");
 #if CONFIG_EXAMPLE_MODE_ECHO
-    ESP_RETURN_ON_ERROR(es8311_microphone_gain_set(es_handle, EXAMPLE_MIC_GAIN), TAG, "set es8311 microphone gain faield");
+    ESP_RETURN_ON_ERROR(es8311_microphone_gain_set(es_handle, EXAMPLE_MIC_GAIN), TAG, "set es8311 microphone gain failed");
 #endif
     return ESP_OK;
 }
@@ -141,7 +141,7 @@ static void i2s_music(void *args)
         if (bytes_write > 0) {
             ESP_LOGI(TAG, "[music] i2s music played, %d bytes are written.", bytes_write);
         } else {
-            ESP_LOGE(TAG, "[music] i2s music play falied.");
+            ESP_LOGE(TAG, "[music] i2s music play failed.");
             abort();
         }
         vTaskDelay(1000 / portTICK_PERIOD_MS);

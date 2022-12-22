@@ -263,7 +263,7 @@ esp_err_t i2s_channel_reconfig_std_clock(i2s_chan_handle_t handle, const i2s_std
     esp_err_t ret = ESP_OK;
 
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_STD, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard moded");
+    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_STD, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard mode");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S should be disabled before reconfiguring the clock");
 
     i2s_std_config_t *std_cfg = (i2s_std_config_t *)handle->mode_info;
@@ -313,7 +313,7 @@ esp_err_t i2s_channel_reconfig_std_slot(i2s_chan_handle_t handle, const i2s_std_
     esp_err_t ret = ESP_OK;
 
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_STD, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard moded");
+    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_STD, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard mode");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S should be disabled before reconfiguring the slot");
 
     i2s_std_config_t *std_cfg = (i2s_std_config_t *)handle->mode_info;
@@ -343,7 +343,7 @@ esp_err_t i2s_channel_reconfig_std_gpio(i2s_chan_handle_t handle, const i2s_std_
     esp_err_t ret = ESP_OK;
 
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_STD, ESP_ERR_INVALID_ARG, err, TAG, "This handle is not working in standard moded");
+    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_STD, ESP_ERR_INVALID_ARG, err, TAG, "This handle is not working in standard mode");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "Invalid state, I2S should be disabled before reconfiguring the gpio");
 
     ESP_GOTO_ON_ERROR(i2s_std_set_gpio(handle, gpio_cfg), err, TAG, "set i2s standard slot failed");

@@ -455,7 +455,7 @@ uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
     mclk_div = mclk_div < 2 ? 2 : mclk_div;
     uint32_t expt_freq = mclk_freq_hz * mclk_div;
     if (expt_freq > SOC_APLL_MAX_HZ) {
-        ESP_LOGE(TAG, "The required APLL frequecy exceed its maximum value");
+        ESP_LOGE(TAG, "The required APLL frequency exceed its maximum value");
         return 0;
     }
     uint32_t real_freq = 0;

@@ -68,7 +68,7 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
     /* Set clock configurations in HAL*/
     i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
 #if SOC_I2S_HW_VERSION_2
-    /* Work aroud for PDM TX clock, overwrite the raw division directly to reduce the noise
+    /* Work around for PDM TX clock, overwrite the raw division directly to reduce the noise
      * This set of coefficients is a special division to reduce the background noise in PDM TX mode */
     i2s_ll_tx_set_raw_clk_div(handle->controller->hal.dev, 1, 1, 0, 0);
 #endif
@@ -217,7 +217,7 @@ esp_err_t i2s_channel_reconfig_pdm_tx_clock(i2s_chan_handle_t handle, const i2s_
     esp_err_t ret = ESP_OK;
 
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard moded");
+    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard mode");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S should be disabled before reconfiguring the clock");
     i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t *)handle->mode_info;
     ESP_GOTO_ON_FALSE(pdm_tx_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
@@ -267,7 +267,7 @@ esp_err_t i2s_channel_reconfig_pdm_tx_slot(i2s_chan_handle_t handle, const i2s_p
     esp_err_t ret = ESP_OK;
 
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard moded");
+    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard mode");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S should be disabled before reconfiguring the slot");
 
     i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t *)handle->mode_info;
@@ -298,7 +298,7 @@ esp_err_t i2s_channel_reconfig_pdm_tx_gpio(i2s_chan_handle_t handle, const i2s_p
     esp_err_t ret = ESP_OK;
 
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "This handle is not working in standard moded");
+    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "This handle is not working in standard mode");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "Invalid state, I2S should be disabled before reconfiguring the gpio");
 
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_gpio(handle, gpio_cfg), err, TAG, "set i2s standard slot failed");
@@ -489,7 +489,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_clock(i2s_chan_handle_t handle, const i2s_
     esp_err_t ret = ESP_OK;
 
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard moded");
+    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard mode");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S should be disabled before reconfiguring the clock");
     i2s_pdm_rx_config_t *pdm_rx_cfg = (i2s_pdm_rx_config_t *)handle->mode_info;
     ESP_GOTO_ON_FALSE(pdm_rx_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
@@ -539,7 +539,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_slot(i2s_chan_handle_t handle, const i2s_p
     esp_err_t ret = ESP_OK;
 
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard moded");
+    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard mode");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S should be disabled before reconfiguring the slot");
 
     i2s_pdm_rx_config_t *pdm_rx_cfg = (i2s_pdm_rx_config_t *)handle->mode_info;
@@ -569,7 +569,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
     esp_err_t ret = ESP_OK;
 
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "This handle is not working in standard moded");
+    ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "This handle is not working in standard mode");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "Invalid state, I2S should be disabled before reconfiguring the gpio");
 
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_gpio(handle, gpio_cfg), err, TAG, "set i2s standard slot failed");
