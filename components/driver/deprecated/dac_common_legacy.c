@@ -115,7 +115,7 @@ esp_err_t dac_cw_generator_config(dac_cw_config_t *cw)
 {
     ESP_RETURN_ON_FALSE(cw, ESP_ERR_INVALID_ARG, TAG, "invalid clock configuration");
     portENTER_CRITICAL(&rtc_spinlock);
-    /* Enable the rtc8m clock temporary to get the correct frequecy */
+    /* Enable the rtc8m clock temporary to get the correct frequency */
     periph_rtc_dig_clk8m_enable();
     uint32_t rtc_freq = periph_rtc_dig_clk8m_get_freq();
     periph_rtc_dig_clk8m_disable();

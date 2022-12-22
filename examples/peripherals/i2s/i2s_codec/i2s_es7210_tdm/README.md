@@ -38,7 +38,7 @@ The component can be installed by esp component manager. Since this example alre
 idf.py add-dependency espressif/es7210^1.0.0
 ```
 
-If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_componets` folder.
+If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_components` folder.
 
 ### Configure the project
 
@@ -47,7 +47,7 @@ If the dependency is added, you can check `idf_component.yml` for more detail. W
 idf.py set-target TARGET
 ```
 * Change value of `EXAMPLE_I2S_FORMAT` to check I2S driver's functionality on different I2S formats.
-* Change `EXAMPLE_ES7210_MIC_GAIN` and `EXAMPLE_ES7210_MIC_BIAS` accoirding your MIC's specs if needed.
+* Change `EXAMPLE_ES7210_MIC_GAIN` and `EXAMPLE_ES7210_MIC_BIAS` according your MIC's specs if needed.
 * Change `EXAMPLE_ES7210_ADC_VOLUME` if recorded voice is too loud or too quite.
 
 Note: it's better to adjust `EXAMPLE_ES7210_MIC_GAIN` first. If adjusting MIC gain doesn't meet your demand, you can then adjust `EXAMPLE_ES7210_ADC_VOLUME`. That is to say, it's better to adjust analog gain than digital gain.
