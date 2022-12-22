@@ -191,11 +191,10 @@ No.  Name  Type [1]_   Function
 
 Pin Layout
 ^^^^^^^^^^^
-.. figure:: ../../../_static/esp32-c3-devkitm-1-v1-pinout.jpg
+.. figure:: ../../../_static/esp32-c3-devkitm-1-v1-pinout.png
     :align: center
     :scale: 45%
     :alt: ESP32-C3-DevKitM-1 (click to enlarge)
-    :figclass: align-center
 
     ESP32-C3-DevKitM-1 Pin Layout (click to enlarge)
 

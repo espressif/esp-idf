@@ -60,9 +60,9 @@ ESP32-C3-DevKitM-1 是一款入门级开发板，使用以尺寸小而得名的 
    * - Boot Button（Boot 键）
      - 下载按键。按住 **Boot** 键的同时按一下 **Reset** 键进入“固件下载”模式，通过串口下载固件。
    * - Micro-USB Port（Micro-USB 接口）
-     - USB 接口。可用作开发板的供电电源或 PC 和 ESP32-C3FN4 芯片的通信接口。     
+     - USB 接口。可用作开发板的供电电源或 PC 和 ESP32-C3FN4 芯片的通信接口。
    * - Reset Button（Reset 键）
-     - 复位按键。 
+     - 复位按键。
    * - USB-to-UART Bridge（USB 至 UART 桥接器）
      - 单芯片 USB 至 UART 桥接器，可提供高达 3 Mbps 的传输速率。
    * - RGB LED
@@ -187,15 +187,14 @@ J3
 ====  ====  ==========  ================================
 
 .. [1] P：电源；I：输入；O：输出；T：可设置为高阻。
-.. [2] GPIO2、GPIO8、GPIO9 为 ESP32-C3FN4 芯片的 Strapping 管脚。在芯片上电和系统复位过程中，Strapping 管脚根据管脚的二进制电压值控制芯片功能。Strapping 管脚的具体描述和应用，请参考 `ESP32-C3 技术规格书`_ 的 Strapping 管脚章节。 
+.. [2] GPIO2、GPIO8、GPIO9 为 ESP32-C3FN4 芯片的 Strapping 管脚。在芯片上电和系统复位过程中，Strapping 管脚根据管脚的二进制电压值控制芯片功能。Strapping 管脚的具体描述和应用，请参考 `ESP32-C3 技术规格书`_ 的 Strapping 管脚章节。
 
 管脚布局
 ^^^^^^^^
-.. figure:: ../../../_static/esp32-c3-devkitm-1-v1-pinout.jpg
+.. figure:: ../../../_static/esp32-c3-devkitm-1-v1-pinout.png
     :align: center
     :scale: 45%
     :alt: ESP32-C3-DevKitM-1 管脚布局（点击放大）
-    :figclass: align-center
 
     ESP32-C3-DevKitM-1 管脚布局（点击放大）
 
@@ -207,7 +206,7 @@ J3
 相关文档
 ========
 * `使用 ESP32-C3 构建安全高性价比的互联设备 <http://c3.espressif.com/>`_
-* `ESP32-C3 技术规格书`_ (PDF) 
+* `ESP32-C3 技术规格书`_ (PDF)
 * `ESP32-C3-MINI-1 规格书`_ (PDF)
 * `ESP32-C3-DevKitM-1 原理图`_ (PDF)
 * `ESP32-C3-DevKitM-1 PCB 布局图 <https://dl.espressif.com/dl/schematics/PCB_ESP32-C3-DEVKITM-1_V1_20200915AA.pdf>`_ (PDF)

@@ -150,7 +150,7 @@ J1
 3     3V3   P            3.3 V 电源
 4     RST   I            CHIP_PU
 5     G     G            接地
-6     4     I/O/T        GPIO4, ADC1_CH4, FSPIHD, MTMS 
+6     4     I/O/T        GPIO4, ADC1_CH4, FSPIHD, MTMS
 7     5     I/O/T        GPIO5, ADC2_CH0, FSPIWP, MTDI
 8     6     I/O/T        GPIO6, FSPICLK, MTCK
 9     7     I/O/T        GPIO7, FSPID, MTDO
@@ -168,18 +168,18 @@ J3
 序号  名称   类型 [1]_     功能
 ====  ====  ==========  ================================
 1     G     G            接地
-2     0     I/O/T        GPIO0, ADC1_CH0, XTAL_32K_P 
-3     1     I/O/T        GPIO1, ADC1_CH1, XTAL_32K_N 
-4     2     I/O/T        GPIO2 [2]_, ADC1_CH2, FSPIQ 
-5     3     I/O/T        GPIO3, ADC1_CH3 
+2     0     I/O/T        GPIO0, ADC1_CH0, XTAL_32K_P
+3     1     I/O/T        GPIO1, ADC1_CH1, XTAL_32K_N
+4     2     I/O/T        GPIO2 [2]_, ADC1_CH2, FSPIQ
+5     3     I/O/T        GPIO3, ADC1_CH3
 6     G     G            接地
-7     10    I/O/T        GPIO10, FSPICS0 
+7     10    I/O/T        GPIO10, FSPICS0
 8     G     G            接地
-9     RX    I/O/T        GPIO20, U0RXD 
-10    TX    I/O/T        GPIO21, U0TXD 
+9     RX    I/O/T        GPIO20, U0RXD
+10    TX    I/O/T        GPIO21, U0TXD
 11    G     G            接地
-12    18    I/O/T        GPIO18 
-13    19    I/O/T        GPIO19 
+12    18    I/O/T        GPIO18
+13    19    I/O/T        GPIO19
 14    G     G            接地
 15    G     G            接地
 ====  ====  ==========  ================================
@@ -193,7 +193,7 @@ J3
 ^^^^^^^^
 .. figure:: ../../../_static/esp32-c3-devkitc-02-v1-pinout.png
     :align: center
-    :scale: 100%
+    :scale: 50%
     :alt: ESP32-C3-DevKitC-02 管脚布局（点击放大）
     :figclass: align-center
 
@@ -207,7 +207,7 @@ J3
 相关文档
 ========
 * `使用 ESP32-C3 构建安全高性价比的互联设备 <http://c3.espressif.com/>`_
-* `ESP32-C3 技术规格书`_ (PDF) 
+* `ESP32-C3 技术规格书`_ (PDF)
 * `ESP32-C3-WROOM-02 规格书`_ (PDF)
 * `ESP32-C3-DevKitC-02 原理图`_ (PDF)
 * `ESP32-C3-DevKitC-02 PCB 布局图 <https://dl.espressif.com/dl/schematics/PCB_ESP32-C3-DevKitC-02_V1_1_20210121AA.pdf>`_ (PDF)
