@@ -89,7 +89,9 @@
       "license": "GPL-3.0-or-later",
       "name": "riscv32-esp-elf-gdb",
       "supported_targets": [
-        "esp32c3"
+        "esp32c3",
+        "esp32c2",
+        "esp32h2"
       ],
       "version_cmd": [
         "riscv32-esp-elf-gdb-no-python",
