@@ -490,4 +490,10 @@ test_pytest_qemu:
       --target esp32
       --pytest-apps
       -m qemu
-    - pytest --target esp32 -m qemu --embedded-services idf,qemu --junitxml=XUNIT_RESULT.xml
+    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    - pytest
+      --target esp32
+      -m qemu
+      --embedded-services idf,qemu
+      --junitxml=XUNIT_RESULT.xml
+      --known-failure-cases-file known_failure_cases/known_failure_cases.txt
