@@ -24,6 +24,8 @@
 static const char *TAG = "rtcio_test";
 
 #ifdef CONFIG_IDF_TARGET_ESP32
+// The input-only rtcio pins do not have pull-up/down resistors (not support pull-up/down)
+#define RTCIO_SUPPORT_PU_PD(num)    (rtc_io_desc[num].pullup != 0)
 #define TEST_GPIO_PIN_COUNT 16
 const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     // GPIO_NUM_0,    //GPIO0   // Workaround: GPIO0 is strap pin, can not be used pullup/pulldown test.
@@ -46,6 +48,8 @@ const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     GPIO_NUM_39,   //GPIO39
 };
 #elif defined CONFIG_IDF_TARGET_ESP32S2
+// Has no input-only rtcio pins, all pins support pull-up/down
+#define RTCIO_SUPPORT_PU_PD(num)    1
 #define TEST_GPIO_PIN_COUNT 20
 const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     // GPIO_NUM_0,    //GPIO0   // Workaround: GPIO0 is strap pin, can not be used pullup/pulldown test.
@@ -72,6 +76,8 @@ const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     GPIO_NUM_21,   //GPIO21
 };
 #elif defined CONFIG_IDF_TARGET_ESP32S3
+// Has no input-only rtcio pins, all pins support pull-up/down
+#define RTCIO_SUPPORT_PU_PD(num)    1
 #define TEST_GPIO_PIN_COUNT 21
 const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     // GPIO_NUM_0,    //GPIO0   // Workaround: GPIO0 is strap pin, can not be used pullup/pulldown test.
@@ -96,6 +102,20 @@ const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     GPIO_NUM_19,   //GPIO19
     GPIO_NUM_20,   //GPIO20
     GPIO_NUM_21,   //GPIO21
+};
+#elif CONFIG_IDF_TARGET_ESP32C6
+// Has no input-only rtcio pins, all pins support pull-up/down
+#define RTCIO_SUPPORT_PU_PD(num)    1
+#define TEST_GPIO_PIN_COUNT 8
+const int s_test_map[TEST_GPIO_PIN_COUNT] = {
+    GPIO_NUM_0,    //GPIO0
+    GPIO_NUM_1,    //GPIO1
+    GPIO_NUM_2,    //GPIO2
+    GPIO_NUM_3,    //GPIO3
+    GPIO_NUM_4,    //GPIO4
+    GPIO_NUM_5,    //GPIO5
+    GPIO_NUM_6,    //GPIO6
+    GPIO_NUM_7,    //GPIO7
 };
 #endif
 
@@ -153,7 +173,7 @@ TEST_CASE("RTCIO_pullup/pulldown_test", "[rtcio]")
     // init rtcio
     for (int i = 0; i < TEST_GPIO_PIN_COUNT; i++) {
         int num = rtc_io_number_get(s_test_map[i]);
-        if (rtc_gpio_is_valid_gpio(s_test_map[i]) && num > 0 && rtc_io_desc[num].pullup != 0) {
+        if (rtc_gpio_is_valid_gpio(s_test_map[i]) && num > 0 && RTCIO_SUPPORT_PU_PD(num)) {
             RTCIO_CHECK( rtc_gpio_init(s_test_map[i]) );
             RTCIO_CHECK( rtc_gpio_set_direction(s_test_map[i], RTC_GPIO_MODE_INPUT_ONLY) );
             RTCIO_CHECK( rtc_gpio_pullup_dis(s_test_map[i]) );
@@ -167,7 +187,7 @@ TEST_CASE("RTCIO_pullup/pulldown_test", "[rtcio]")
         ESP_LOGI(TAG, "RTCIO pull level %d", level);
         for (int i = 0; i < TEST_GPIO_PIN_COUNT; i++) {
             int num = rtc_io_number_get(s_test_map[i]);
-            if (rtc_gpio_is_valid_gpio(s_test_map[i]) && num > 0 && rtc_io_desc[num].pullup != 0) {
+            if (rtc_gpio_is_valid_gpio(s_test_map[i]) && num > 0 && RTCIO_SUPPORT_PU_PD(num)) {
                 if (level) {
                     RTCIO_CHECK( rtc_gpio_pulldown_dis(s_test_map[i]) );
                     RTCIO_CHECK( rtc_gpio_pullup_en(s_test_map[i]) );
@@ -188,7 +208,7 @@ TEST_CASE("RTCIO_pullup/pulldown_test", "[rtcio]")
     // Deinit rtcio
     for (int i = 0; i < TEST_GPIO_PIN_COUNT; i++) {
         int num = rtc_io_number_get(s_test_map[i]);
-        if (rtc_gpio_is_valid_gpio(s_test_map[i]) && num > 0 && rtc_io_desc[num].pullup != 0) {
+        if (rtc_gpio_is_valid_gpio(s_test_map[i]) && num > 0 && RTCIO_SUPPORT_PU_PD(num)) {
             RTCIO_CHECK( rtc_gpio_deinit(s_test_map[i]) );
         }
     }
@@ -238,6 +258,7 @@ TEST_CASE("RTCIO_output_OD_test", "[rtcio]")
     ESP_LOGI(TAG, "RTCIO output OD test over");
 }
 
+#if SOC_RTCIO_HOLD_SUPPORTED
 /*
  * Test rtcio hold function.
  */
@@ -305,6 +326,7 @@ TEST_CASE("RTCIO_output_hold_test", "[rtcio]")
     ESP_LOGI(TAG, "RTCIO hold test over");
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6) // TODO: IDF-5349 Remove when deep sleep is supported on ESP32C6
 // It is not necessary to test every rtcio pin, it will take too much ci testing time for deep sleep
 // Only tests on s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX] pin
 // (ESP32: IO25, ESP32S2, S3: IO6) these pads' default configuration is low level
@@ -348,8 +370,10 @@ static void rtcio_deep_sleep_hold_test_second_stage(void)
  * Test rtcio hold function during deep sleep.
  * This test case can only check the hold state after waking up from deep sleep
  * If you want to check that the rtcio hold function works properly during deep sleep,
- * please use logic analyzer or oscillscope
+ * please use logic analyzer or oscilloscope
  */
 TEST_CASE_MULTIPLE_STAGES("RTCIO_deep_sleep_output_hold_test", "[rtcio]",
                          rtcio_deep_sleep_hold_test_first_stage,
                          rtcio_deep_sleep_hold_test_second_stage)
+#endif  // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
+#endif  // #if SOC_RTCIO_HOLD_SUPPORTED

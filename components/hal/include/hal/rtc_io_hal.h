@@ -17,8 +17,8 @@
 #include <esp_err.h>
 #include "sdkconfig.h"
 
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #include "soc/soc_caps.h"
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 #include "hal/rtc_io_ll.h"
 #include "hal/rtc_io_types.h"
 #endif

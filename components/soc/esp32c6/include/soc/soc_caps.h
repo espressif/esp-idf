@@ -178,11 +178,10 @@
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
-// TODO: IDF-6027
-// #define SOC_RTCIO_PIN_COUNT   8
-// #define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1
-// #define SOC_RTCIO_HOLD_SUPPORTED 1 (does not have force_hold_all feature, but has deep_sleep_hold_all feature)
-// #define SOC_RTCIO_WAKE_SUPPORTED 1
+#define SOC_RTCIO_PIN_COUNT                 8
+#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1
+#define SOC_RTCIO_HOLD_SUPPORTED            1
+// #define SOC_RTCIO_WAKE_SUPPORTED            1  // TODO: IDF-5645
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
@@ -279,11 +278,6 @@
 #define SOC_RTC_CNTL_CPU_PD_DMA_BLOCK_SIZE      (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3)
 
 #define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
-
-/*-------------------------- RTCIO CAPS --------------------------------------*/
-/* No dedicated RTCIO subsystem on ESP32-C6. RTC functions are still supported
- * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
-#define SOC_RTCIO_PIN_COUNT    (0U)
 
 // TODO: IDF-5359 (Copy from esp32c3, need check)
 /*--------------------------- RSA CAPS ---------------------------------------*/

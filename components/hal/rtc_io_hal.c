@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The HAL layer for RTC IO (common part)
 
@@ -70,23 +62,23 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode)
 {
     switch (mode) {
     case RTC_GPIO_MODE_INPUT_ONLY:
-        rtcio_ll_in_sleep_enable_input(rtcio_num);
-        rtcio_ll_in_sleep_disable_output(rtcio_num);
+        rtcio_ll_enable_input_in_sleep(rtcio_num);
+        rtcio_ll_disable_output_in_sleep(rtcio_num);
         rtcio_ll_enable_sleep_setting(rtcio_num);
         break;
     case RTC_GPIO_MODE_OUTPUT_ONLY:
         rtcio_ll_enable_output_in_sleep(rtcio_num);
-        rtcio_ll_in_sleep_disable_input(rtcio_num);
+        rtcio_ll_disable_input_in_sleep(rtcio_num);
         rtcio_ll_enable_sleep_setting(rtcio_num);
         break;
     case RTC_GPIO_MODE_INPUT_OUTPUT:
-        rtcio_ll_in_sleep_enable_input(rtcio_num);
+        rtcio_ll_enable_input_in_sleep(rtcio_num);
         rtcio_ll_enable_output_in_sleep(rtcio_num);
         rtcio_ll_enable_sleep_setting(rtcio_num);
         break;
     case RTC_GPIO_MODE_DISABLED:
-        rtcio_ll_in_sleep_disable_input(rtcio_num);
-        rtcio_ll_in_sleep_disable_output(rtcio_num);
+        rtcio_ll_disable_input_in_sleep(rtcio_num);
+        rtcio_ll_disable_output_in_sleep(rtcio_num);
         rtcio_ll_disable_sleep_setting(rtcio_num);
         break;
     default:

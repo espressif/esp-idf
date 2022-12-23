@@ -159,13 +159,6 @@
 // Support to configure sleep status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
 
-/*-------------------------- RTCIO CAPS --------------------------------------*/
-// TODO: IDF-6027
-// #define SOC_RTCIO_PIN_COUNT   8
-// #define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1
-// #define SOC_RTCIO_HOLD_SUPPORTED 1 (does not have force_hold_all feature, but has deep_sleep_hold_all feature)
-// #define SOC_RTCIO_WAKE_SUPPORTED 1
-
 // TODO: IDF-6241
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
