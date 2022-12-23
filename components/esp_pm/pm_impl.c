@@ -322,7 +322,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     s_config_changed = true;
     portEXIT_CRITICAL(&s_switch_lock);
 
-#if CONFIG_PM_SLP_DISABLE_GPIO && SOC_GPIO_SUPPORT_SLP_SWITCH
+#if CONFIG_PM_SLP_DISABLE_GPIO
     esp_sleep_enable_gpio_switch(config->light_sleep_enable);
 #endif
 
@@ -773,7 +773,7 @@ void esp_pm_impl_init(void)
     esp_pm_trace_init();
 #endif
 
-#if CONFIG_PM_SLP_DISABLE_GPIO && SOC_GPIO_SUPPORT_SLP_SWITCH
+#if CONFIG_PM_SLP_DISABLE_GPIO
     esp_sleep_config_gpio_isolate();
 #endif
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "rtos0",

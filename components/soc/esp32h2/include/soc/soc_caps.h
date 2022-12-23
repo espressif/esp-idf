@@ -174,9 +174,6 @@
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_0~6. GPIO_NUM_15~27)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x000000000FFF807FULL
 
-// Support to configure sleep status
-#define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
-
 // TODO: IDF-6241
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
