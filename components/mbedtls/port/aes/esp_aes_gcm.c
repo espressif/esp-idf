@@ -352,6 +352,8 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
     /* Initialize AES-GCM context */
     memset(ctx->ghash, 0, sizeof(ctx->ghash));
     ctx->data_len = 0;
+    ctx->aad = NULL;
+    ctx->aad_len = 0;
 
     ctx->iv = iv;
     ctx->iv_len = iv_len;
@@ -370,6 +372,15 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
 
         gcm_gen_table(ctx);
     }
+
+    /* Once H is obtained we need to derive J0 (Initial Counter Block) */
+    esp_gcm_derive_J0(ctx);
+
+    /* The initial counter block keeps updating during the esp_gcm_update call
+     * however to calculate final authentication tag T we need original J0
+     * so we make a copy here
+     */
+    memcpy(ctx->ori_j0, ctx->J0, 16);
 
     ctx->gcm_state = ESP_AES_GCM_STATE_START;
 
@@ -395,26 +406,14 @@ int esp_aes_gcm_update_ad( esp_gcm_context *ctx,
         return -1;
     }
 
-    /* Initialize AES-GCM context */
-    memset(ctx->ghash, 0, sizeof(ctx->ghash));
-    ctx->data_len = 0;
-
-    ctx->aad = aad;
-    ctx->aad_len = aad_len;
-
     if (ctx->gcm_state != ESP_AES_GCM_STATE_START) {
         ESP_LOGE(TAG, "AES context in invalid state!");
         return -1;
     }
 
-    /* Once H is obtained we need to derive J0 (Initial Counter Block) */
-    esp_gcm_derive_J0(ctx);
-
-    /* The initial counter block keeps updating during the esp_gcm_update call
-     * however to calculate final authentication tag T we need original J0
-     * so we make a copy here
-     */
-    memcpy(ctx->ori_j0, ctx->J0, 16);
+    /* Initialise associated data */
+    ctx->aad = aad;
+    ctx->aad_len = aad_len;
 
     esp_gcm_ghash(ctx, ctx->aad, ctx->aad_len, ctx->ghash);
 
