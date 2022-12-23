@@ -117,7 +117,7 @@ char *http_auth_digest(const char *username, const char *password, esp_http_auth
         }
     }
     int rc = asprintf(&auth_str, "Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", algorithm=\"MD5\", "
-             "response=\"%s\", qop=%s, nc=%08x, cnonce=\"%016llx\"",
+             "response=\"%s\", qop=%s, nc=%08x, cnonce=%016"PRIx64,
              username, auth_data->realm, auth_data->nonce, auth_data->uri, digest, auth_data->qop, auth_data->nc, auth_data->cnonce);
     if (rc < 0) {
         ESP_LOGE(TAG, "asprintf() returned: %d", rc);
