@@ -175,10 +175,6 @@ config SOC_ADC_ATTEN_NUM
     int
     default 4
 
-config SOC_ADC_DIGI_SEGMENTED_THRESH
-    bool
-    default y
-
 config SOC_ADC_DIGI_CONTROLLER_NUM
     int
     default 1

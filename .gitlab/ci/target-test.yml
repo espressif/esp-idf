@@ -336,6 +336,14 @@ example_test_pytest_esp32c2_adc:
     - build_pytest_examples_esp32c2
   tags: [ esp32c2, adc, xtal_26mhz]
 
+example_test_pytest_esp32c6_adc:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c6-adc
+  needs:
+    - build_pytest_examples_esp32c6
+  tags: [ esp32c6, adc ]
+
 .pytest_components_dir_template:
   extends: .pytest_template
   variables:
@@ -672,6 +680,14 @@ component_ut_pytest_esp32c6_generic_multi_device:
   needs:
     - build_pytest_components_esp32c6
   tags: [ esp32c6, generic_multi_device ]
+
+component_ut_pytest_esp32c6_adc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c6-adc
+  needs:
+    - build_pytest_components_esp32c6
+  tags: [ esp32c6, adc ]
 
 component_ut_pytest_esp32h4_i154:
   extends:
