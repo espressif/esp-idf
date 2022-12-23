@@ -25,8 +25,6 @@
 
 static const char *TAG = "sleep";
 
-#if SOC_GPIO_SUPPORT_SLP_SWITCH
-
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
 void gpio_sleep_mode_config_apply(void)
 {
@@ -94,8 +92,6 @@ void esp_sleep_enable_gpio_switch(bool enable)
         }
     }
 }
-
-#endif // SOC_GPIO_SUPPORT_SLP_SWITCH
 
 // IDF does not officially support esp32h2 in v5.0
 #if !CONFIG_IDF_TARGET_ESP32H2
