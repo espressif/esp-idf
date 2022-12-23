@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
@@ -106,11 +107,11 @@ static void filter_inquiry_scan_result(esp_bt_gap_cb_param_t *param)
         switch (p->type) {
         case ESP_BT_GAP_DEV_PROP_COD:
             cod = *(uint32_t *)(p->val);
-            ESP_LOGI(L2CAP_TAG, "--Class of Device: 0x%x", cod);
+            ESP_LOGI(L2CAP_TAG, "--Class of Device: 0x%"PRIx32, cod);
             break;
         case ESP_BT_GAP_DEV_PROP_RSSI:
             rssi = *(int8_t *)(p->val);
-            ESP_LOGI(L2CAP_TAG, "--RSSI: %d", rssi);
+            ESP_LOGI(L2CAP_TAG, "--RSSI: %"PRId32, rssi);
             break;
         case ESP_BT_GAP_DEV_PROP_EIR:
             eir = (uint8_t *)(p->val);
@@ -178,12 +179,12 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 #if (CONFIG_BT_SSP_ENABLED == true)
     /* when Security Simple Pairing user confirmation requested, this event comes */
     case ESP_BT_GAP_CFM_REQ_EVT:
-        ESP_LOGI(L2CAP_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %d", param->cfm_req.num_val);
+        ESP_LOGI(L2CAP_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %"PRIu32, param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
         break;
     /* when Security Simple Pairing passkey notified, this event comes */
     case ESP_BT_GAP_KEY_NOTIF_EVT:
-        ESP_LOGI(L2CAP_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey: %d", param->key_notif.passkey);
+        ESP_LOGI(L2CAP_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey: %"PRIu32, param->key_notif.passkey);
         break;
     /* when Security Simple Pairing passkey requested, this event comes */
     case ESP_BT_GAP_KEY_REQ_EVT:
@@ -281,7 +282,7 @@ static void esp_hdl_bt_l2cap_cb_evt(uint16_t event, void *p_param)
         break;
     case ESP_BT_L2CAP_OPEN_EVT:
         if (l2cap_param->open.status == ESP_BT_L2CAP_SUCCESS) {
-            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_OPEN_EVT: status:%d, fd = %d, tx mtu = %d, remote_address:%s\n", l2cap_param->open.status,
+            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_OPEN_EVT: status:%d, fd = %d, tx mtu = %"PRId32", remote_address:%s\n", l2cap_param->open.status,
                     l2cap_param->open.fd, l2cap_param->open.tx_mtu, bda2str(l2cap_param->open.rem_bda, bda_str, sizeof(bda_str)));
             l2cap_wr_task_start_up(l2cap_write_handle, l2cap_param->open.fd);
         } else {
@@ -296,7 +297,7 @@ static void esp_hdl_bt_l2cap_cb_evt(uint16_t event, void *p_param)
         break;
     case ESP_BT_L2CAP_START_EVT:
         if (l2cap_param->start.status == ESP_BT_L2CAP_SUCCESS) {
-            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_START_EVT: status:%d, hdl:0x%x, sec_id:0x%x\n",
+            ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_START_EVT: status:%d, hdl:0x%"PRIx32", sec_id:0x%x\n",
                 l2cap_param->start.status, l2cap_param->start.handle, l2cap_param->start.sec_id);
         } else {
             ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_START_EVT: status:%d\n", l2cap_param->start.status);
@@ -357,8 +358,8 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
         if (sdp_param->search.status == ESP_SDP_SUCCESS) {
             ESP_LOGI(SDP_TAG, "Remote device address: %s\n", bda2str(sdp_param->search.remote_addr, bda_str, sizeof(bda_str)));
             ESP_LOGI(SDP_TAG, "Remote device record count: %d\n", sdp_param->search.record_count);
-            ESP_LOGI(SDP_TAG, "Remote device rfcomm channel number: %d\n", sdp_param->search.records->hdr.rfcomm_channel_number);
-            ESP_LOGI(SDP_TAG, "Remote device l2cap psm: 0x%04x\n", sdp_param->search.records->hdr.l2cap_psm);
+            ESP_LOGI(SDP_TAG, "Remote device rfcomm channel number: %"PRId32"\n", sdp_param->search.records->hdr.rfcomm_channel_number);
+            ESP_LOGI(SDP_TAG, "Remote device l2cap psm: 0x%04"PRIx32"\n", sdp_param->search.records->hdr.l2cap_psm);
             esp_bt_l2cap_connect(sec_mask, sdp_param->search.records->hdr.l2cap_psm, sdp_param->search.remote_addr);
         }
         break;

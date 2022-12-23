@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -397,7 +398,7 @@ static void bt_gap_event_handler(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_para
         break;
     }
     case ESP_BT_GAP_KEY_NOTIF_EVT:
-        ESP_LOGI(TAG, "BT GAP KEY_NOTIF passkey:%d", param->key_notif.passkey);
+        ESP_LOGI(TAG, "BT GAP KEY_NOTIF passkey:%"PRIu32, param->key_notif.passkey);
         break;
     case ESP_BT_GAP_MODE_CHG_EVT:
         ESP_LOGI(TAG, "BT GAP MODE_CHG_EVT mode:%d", param->mode_chg.mode);
@@ -519,13 +520,13 @@ static void ble_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
     case ESP_GAP_BLE_PASSKEY_NOTIF_EVT: // ESP_IO_CAP_OUT
         // The app will receive this evt when the IO has Output capability and the peer device IO has Input capability.
         // Show the passkey number to the user to input it in the peer device.
-        ESP_LOGI(TAG, "BLE GAP PASSKEY_NOTIF passkey:%d", param->ble_security.key_notif.passkey);
+        ESP_LOGI(TAG, "BLE GAP PASSKEY_NOTIF passkey:%"PRIu32, param->ble_security.key_notif.passkey);
         break;
 
     case ESP_GAP_BLE_NC_REQ_EVT: // ESP_IO_CAP_IO
         // The app will receive this event when the IO has DisplayYesNO capability and the peer device IO also has DisplayYesNo capability.
         // show the passkey number to the user to confirm it with the number displayed by peer device.
-        ESP_LOGI(TAG, "BLE GAP NC_REQ passkey:%d", param->ble_security.key_notif.passkey);
+        ESP_LOGI(TAG, "BLE GAP NC_REQ passkey:%"PRIu32, param->ble_security.key_notif.passkey);
         esp_ble_confirm_reply(param->ble_security.key_notif.bd_addr, true);
         break;
 

@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
@@ -166,7 +167,7 @@ static void esp_spp_cb(uint16_t e, void *p)
         break;
     case ESP_SPP_OPEN_EVT:
         if (param->open.status == ESP_SPP_SUCCESS) {
-            ESP_LOGI(SPP_TAG, "ESP_SPP_OPEN_EVT handle:%d fd:%d rem_bda:[%s]", param->open.handle, param->open.fd,
+            ESP_LOGI(SPP_TAG, "ESP_SPP_OPEN_EVT handle:%"PRIu32" fd:%d rem_bda:[%s]", param->open.handle, param->open.fd,
                      bda2str(param->open.rem_bda, bda_str, sizeof(bda_str)));
             spp_wr_task_start_up(spp_write_handle, param->open.fd);
         } else {
@@ -174,7 +175,7 @@ static void esp_spp_cb(uint16_t e, void *p)
         }
         break;
     case ESP_SPP_CLOSE_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_CLOSE_EVT status:%d handle:%d close_by_remote:%d", param->close.status,
+        ESP_LOGI(SPP_TAG, "ESP_SPP_CLOSE_EVT status:%d handle:%"PRIu32" close_by_remote:%d", param->close.status,
                  param->close.handle, param->close.async);
         break;
     case ESP_SPP_START_EVT:
@@ -182,7 +183,7 @@ static void esp_spp_cb(uint16_t e, void *p)
         break;
     case ESP_SPP_CL_INIT_EVT:
         if (param->cl_init.status == ESP_SPP_SUCCESS) {
-            ESP_LOGI(SPP_TAG, "ESP_SPP_CL_INIT_EVT handle:%d sec_id:%d", param->cl_init.handle, param->cl_init.sec_id);
+            ESP_LOGI(SPP_TAG, "ESP_SPP_CL_INIT_EVT handle:%"PRIu32" sec_id:%d", param->cl_init.handle, param->cl_init.sec_id);
         } else {
             ESP_LOGE(SPP_TAG, "ESP_SPP_CL_INIT_EVT status:%d", param->cl_init.status);
         }
@@ -265,11 +266,11 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 
 #if (CONFIG_BT_SSP_ENABLED == true)
     case ESP_BT_GAP_CFM_REQ_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %d", param->cfm_req.num_val);
+        ESP_LOGI(SPP_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %"PRIu32, param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
         break;
     case ESP_BT_GAP_KEY_NOTIF_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey:%d", param->key_notif.passkey);
+        ESP_LOGI(SPP_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey:%"PRIu32, param->key_notif.passkey);
         break;
     case ESP_BT_GAP_KEY_REQ_EVT:
         ESP_LOGI(SPP_TAG, "ESP_BT_GAP_KEY_REQ_EVT Please enter passkey!");
