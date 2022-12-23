@@ -3,6 +3,26 @@ Networking
 
 :link_to_translation:`zh_CN:[中文]`
 
+Wi-Fi
+*****
+
+Callback function type esp_now_recv_cb_t
+----------------------------------------
+
+Previously, the first parameter of ``esp_now_recv_cb_t`` was of type ``const uint8_t *mac_addr``, which only included the address of ESP-NOW peer device.
+
+This now changes. The first parameter is of type ``esp_now_recv_info_t``, which has members ``src_addr``, ``des_addr`` and ``rx_ctrl``. Therefore, the following updates are required:
+
+    - Redefine ESP-NOW receive callback function.
+
+    - ``src_addr`` can be used to replace original ``mac_addr``.
+
+    - ``des_addr`` is the destination MAC address of ESP-NOW packet, which can be unitcast or broadcast address. With ``des_addr``, the user can distinguish unitcast and broadcast ESP-NOW packets where broadcast ESP-NOW packets can be non-encrypted even when encryption policy is configured for the ESP-NOW.
+
+    - ``rx_ctrl`` is Rx control info of the ESP-NOW packet, which provides more information about the packet.
+
+Please refer to the ESP-NOW example: :example_file:`wifi/espnow/main/espnow_example_main.c`
+
 Ethernet
 ********
 
