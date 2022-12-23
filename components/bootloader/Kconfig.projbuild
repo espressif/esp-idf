@@ -811,6 +811,10 @@ menu "Security features"
             Release mode should always be selected for production or manufacturing. Once enabled it's no longer
             possible for the device in ROM Download Mode to use the flash encryption hardware.
 
+            When EFUSE_VIRTUAL is enabled, SECURE_FLASH_ENCRYPTION_MODE_RELEASE is not available.
+            For CI tests we use IDF_CI_BUILD to bypass it ("export IDF_CI_BUILD=1").
+            We do not recommend bypassing it for other purposes.
+
             Refer to the Flash Encryption section of the ESP-IDF Programmer's Guide for details.
 
         config SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
@@ -820,6 +824,7 @@ menu "Security features"
         config SECURE_FLASH_ENCRYPTION_MODE_RELEASE
             bool "Release"
             select PARTITION_TABLE_MD5 if !APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS
+            depends on !EFUSE_VIRTUAL || IDF_CI_BUILD
 
     endchoice
 

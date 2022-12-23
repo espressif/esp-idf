@@ -23,6 +23,9 @@ menu "eFuse Bit Manager"
             to RAM instead of eFuse registers, all permanent changes (via eFuse) are disabled.
             Log output will state changes that would be applied, but they will not be.
 
+            If it is "y", then SECURE_FLASH_ENCRYPTION_MODE_RELEASE cannot be used.
+            Because the EFUSE VIRT mode is for testing only.
+
             During startup, the eFuses are copied into RAM. This mode is useful for fast tests.
 
     config EFUSE_VIRTUAL_KEEP_IN_FLASH
