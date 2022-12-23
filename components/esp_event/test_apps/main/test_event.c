@@ -32,7 +32,12 @@ static const char* TAG = "test_event";
 #define TEST_CONFIG_ITEMS_TO_REGISTER        5
 #define TEST_CONFIG_TASKS_TO_SPAWN           2
 
-#define TEST_CONFIG_WAIT_MULTIPLIER          5
+/* General wait time for tests, e.g. waiting for background task to finish,
+   expected timeout, etc. */
+#define TEST_CONFIG_WAIT_TIME               30
+
+/* Time used in tearDown function to wait for cleaning up memory in background tasks */
+#define TEST_CONFIG_TEARDOWN_WAIT           30
 
 // The initial logging "initializing test" is to ensure mutex allocation is not counted against memory not being freed
 // during teardown.
@@ -45,7 +50,7 @@ static const char* TAG = "test_event";
 
 #define TEST_TEARDOWN() \
         test_teardown(); \
-        vTaskDelay(pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)); \
+        vTaskDelay(pdMS_TO_TICKS(TEST_CONFIG_TEARDOWN_WAIT)); \
         TEST_ASSERT_EQUAL(free_mem_before, heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
 
 typedef struct {
@@ -103,6 +108,7 @@ ESP_EVENT_DEFINE_BASE(s_test_base2);
 enum {
     TEST_EVENT_BASE1_EV1,
     TEST_EVENT_BASE1_EV2,
+    TEST_EVENT_BASE1_EV3,
     TEST_EVENT_BASE1_MAX
 };
 
@@ -1014,8 +1020,6 @@ TEST_CASE("handler instance can unregister itself", "[event]")
     TEST_ESP_OK(esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
     TEST_ASSERT_EQUAL(1, count);
 
-    vTaskDelay(1000);
-
     TEST_ESP_OK(esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, &loop, sizeof(loop), portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
     TEST_ASSERT_EQUAL(1, count);
@@ -1544,7 +1548,14 @@ TEST_CASE("performance test - no dedicated task", "[event]")
     performance_test(false);
 }
 
-TEST_CASE("can post to loop from handler - dedicated task", "[event]")
+static SemaphoreHandle_t pending_sem = NULL;
+
+static void test_handler_pending(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    xSemaphoreGive(pending_sem);
+}
+
+TEST_CASE("can post to loop from handler - dedicated task", "[event][long]")
 {
     TEST_SETUP();
 
@@ -1561,12 +1572,14 @@ TEST_CASE("can post to loop from handler - dedicated task", "[event]")
 
     TEST_ESP_OK(esp_event_loop_create(&loop_args, &loop_w_task));
 
+    pending_sem = xSemaphoreCreateCounting(loop_args.queue_size, 0);
     count = 0;
 
-    // Test that a handler can post to a different loop while there is still slots on the queue
     TEST_ESP_OK(esp_event_handler_register_with(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV1, test_handler_post_w_task, &arg));
     TEST_ESP_OK(esp_event_handler_register_with(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV2, test_handler_post_w_task, &arg));
+    TEST_ESP_OK(esp_event_handler_register_with(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV3, test_handler_pending, &arg));
 
+    // Test that a handler can post to a different loop while there is still slots on the queue
     TEST_ESP_OK(esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV1, &loop_w_task, sizeof(&loop_w_task), portMAX_DELAY));
 
     xSemaphoreTake(arg.mutex, portMAX_DELAY);
@@ -1579,24 +1592,27 @@ TEST_CASE("can post to loop from handler - dedicated task", "[event]")
     TEST_ESP_OK(esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV1, &loop_w_task, sizeof(&loop_w_task), portMAX_DELAY));
 
     for (int i = 0; i < loop_args.queue_size; i++) {
-        TEST_ESP_OK(esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0, portMAX_DELAY));
+        TEST_ESP_OK(esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV3, NULL, 0, portMAX_DELAY));
     }
 
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0,
-                         pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)));
+                         pdMS_TO_TICKS(TEST_CONFIG_WAIT_TIME)));
 
     xSemaphoreGive(arg.mutex);
 
-    vTaskDelay(pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
+    for (int i = 0; i < loop_args.queue_size; i++) {
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(pending_sem, pdMS_TO_TICKS(TEST_CONFIG_WAIT_TIME)));
+    }
 
     TEST_ESP_OK(esp_event_loop_delete(loop_w_task));
 
+    vSemaphoreDelete(pending_sem);
     vSemaphoreDelete(arg.mutex);
 
     TEST_TEARDOWN();
 }
 
-TEST_CASE("can post to loop from handler instance - dedicated task", "[event]")
+TEST_CASE("can post to loop from handler instance - dedicated task", "[event][long]")
 {
     TEST_SETUP();
 
@@ -1604,6 +1620,7 @@ TEST_CASE("can post to loop from handler instance - dedicated task", "[event]")
 
     esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
 
+    pending_sem = xSemaphoreCreateCounting(loop_args.queue_size, 0);
     int count;
 
     simple_arg_t arg = {
@@ -1617,11 +1634,13 @@ TEST_CASE("can post to loop from handler instance - dedicated task", "[event]")
 
     esp_event_handler_instance_t ctx_1;
     esp_event_handler_instance_t ctx_2;
+    esp_event_handler_instance_t ctx_3;
 
-    // Test that a handler can post to a different loop while there is still slots on the queue
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV1, test_handler_post_w_task, &arg, &ctx_1));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV2, test_handler_post_w_task, &arg, &ctx_2));
+    TEST_ESP_OK(esp_event_handler_instance_register_with(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV3, test_handler_pending, &arg, &ctx_3));
 
+    // Test that a handler can post to a different loop while there is still slots on the queue
     TEST_ESP_OK(esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV1, &loop_w_task, sizeof(&loop_w_task), portMAX_DELAY));
 
     xSemaphoreTake(arg.mutex, portMAX_DELAY);
@@ -1634,24 +1653,27 @@ TEST_CASE("can post to loop from handler instance - dedicated task", "[event]")
     TEST_ESP_OK(esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV1, &loop_w_task, sizeof(&loop_w_task), portMAX_DELAY));
 
     for (int i = 0; i < loop_args.queue_size; i++) {
-        TEST_ESP_OK(esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0, portMAX_DELAY));
+        TEST_ESP_OK(esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV3, NULL, 0, portMAX_DELAY));
     }
 
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0,
-                         pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)));
+                         pdMS_TO_TICKS(TEST_CONFIG_WAIT_TIME)));
 
     xSemaphoreGive(arg.mutex);
 
-    vTaskDelay(pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
+    for (int i = 0; i < loop_args.queue_size; i++) {
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(pending_sem, pdMS_TO_TICKS(TEST_CONFIG_WAIT_TIME)));
+    }
 
     TEST_ESP_OK(esp_event_loop_delete(loop_w_task));
 
+    vSemaphoreDelete(pending_sem);
     vSemaphoreDelete(arg.mutex);
 
     TEST_TEARDOWN();
 }
 
-TEST_CASE("can post to loop from handler - no dedicated task", "[event]")
+TEST_CASE("can post to loop from handler - no dedicated task", "[event][long]")
 {
     TEST_SETUP();
 
@@ -1676,10 +1698,10 @@ TEST_CASE("can post to loop from handler - no dedicated task", "[event]")
 
     xTaskCreate(test_post_from_handler_loop_task, "task", 2584, (void*) loop_wo_task, s_test_priority, &mtask);
 
-    // Test that a handler can post to a different loop while there is still slots on the queue
     TEST_ESP_OK(esp_event_handler_register_with(loop_wo_task, s_test_base1, TEST_EVENT_BASE1_EV1, test_handler_post_wo_task, &arg));
     TEST_ESP_OK(esp_event_handler_register_with(loop_wo_task, s_test_base1, TEST_EVENT_BASE1_EV2, test_handler_post_wo_task, &arg));
 
+    // Test that a handler can post to a different loop while there is still slots on the queue
     TEST_ESP_OK(esp_event_post_to(loop_wo_task, s_test_base1, TEST_EVENT_BASE1_EV1, &loop_wo_task, sizeof(&loop_wo_task), portMAX_DELAY));
 
     xSemaphoreTake(arg.mutex, portMAX_DELAY);
@@ -1690,15 +1712,15 @@ TEST_CASE("can post to loop from handler - no dedicated task", "[event]")
 
     TEST_ESP_OK(esp_event_post_to(loop_wo_task, s_test_base1, TEST_EVENT_BASE1_EV1, &loop_wo_task, sizeof(&loop_wo_task), portMAX_DELAY));
 
-    vTaskDelay(pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
+    vTaskDelay(pdMS_TO_TICKS(TEST_CONFIG_WAIT_TIME));
 
     // For loop without tasks, posting is more restrictive. Posting should wait until execution of handler finishes
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, esp_event_post_to(loop_wo_task, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0,
-                         pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)));
+                         pdMS_TO_TICKS(TEST_CONFIG_WAIT_TIME)));
 
     xSemaphoreGive(arg.mutex);
 
-    vTaskDelay(pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
+    vTaskDelay(pdMS_TO_TICKS(TEST_CONFIG_WAIT_TIME));
 
     vTaskDelete(mtask);
 
@@ -1709,7 +1731,7 @@ TEST_CASE("can post to loop from handler - no dedicated task", "[event]")
     TEST_TEARDOWN();
 }
 
-TEST_CASE("can post to loop from handler instance - no dedicated task", "[event]")
+TEST_CASE("can post to loop from handler instance - no dedicated task", "[event][long]")
 {
     TEST_SETUP();
 
@@ -1737,10 +1759,10 @@ TEST_CASE("can post to loop from handler instance - no dedicated task", "[event]
 
     xTaskCreate(test_post_from_handler_loop_task, "task", 2584, (void*) loop_wo_task, s_test_priority, &mtask);
 
-    // Test that a handler can post to a different loop while there is still slots on the queue
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_wo_task, s_test_base1, TEST_EVENT_BASE1_EV1, test_handler_post_wo_task, &arg, &ctx_1));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_wo_task, s_test_base1, TEST_EVENT_BASE1_EV2, test_handler_post_wo_task, &arg, &ctx_2));
 
+    // Test that a handler can post to a different loop while there is still slots on the queue
     TEST_ESP_OK(esp_event_post_to(loop_wo_task, s_test_base1, TEST_EVENT_BASE1_EV1, &loop_wo_task, sizeof(&loop_wo_task), portMAX_DELAY));
 
     xSemaphoreTake(arg.mutex, portMAX_DELAY);
@@ -1751,15 +1773,15 @@ TEST_CASE("can post to loop from handler instance - no dedicated task", "[event]
 
     TEST_ESP_OK(esp_event_post_to(loop_wo_task, s_test_base1, TEST_EVENT_BASE1_EV1, &loop_wo_task, sizeof(&loop_wo_task), portMAX_DELAY));
 
-    vTaskDelay(pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
+    vTaskDelay(pdMS_TO_TICKS(TEST_CONFIG_WAIT_TIME));
 
     // For loop without tasks, posting is more restrictive. Posting should wait until execution of handler finishes
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, esp_event_post_to(loop_wo_task, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0,
-                         pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)));
+                         pdMS_TO_TICKS(TEST_CONFIG_WAIT_TIME)));
 
     xSemaphoreGive(arg.mutex);
 
-    vTaskDelay(pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
+    vTaskDelay(pdMS_TO_TICKS(TEST_CONFIG_WAIT_TIME));
 
     vTaskDelete(mtask);
 
