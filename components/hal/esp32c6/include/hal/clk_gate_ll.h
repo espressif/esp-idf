@@ -321,18 +321,6 @@ static inline void periph_ll_disable_clk_set_rst(periph_module_t periph)
     DPORT_SET_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
 }
 
-static inline void IRAM_ATTR periph_ll_wifi_bt_module_enable_clk_clear_rst(void)
-{
-    // DPORT_SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_WIFI_BT_COMMON_M);// TODO: IDF-5679
-    // DPORT_CLEAR_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
-}
-
-static inline void IRAM_ATTR periph_ll_wifi_bt_module_disable_clk_set_rst(void)
-{
-    // DPORT_CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_WIFI_BT_COMMON_M);// TODO: IDF-5679
-    // DPORT_SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
-}
-
 static inline void periph_ll_reset(periph_module_t periph)
 {
     DPORT_SET_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
@@ -343,18 +331,6 @@ static inline bool IRAM_ATTR periph_ll_periph_enabled(periph_module_t periph)
 {
     return DPORT_REG_GET_BIT(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false)) == 0 &&
            DPORT_REG_GET_BIT(periph_ll_get_clk_en_reg(periph), periph_ll_get_clk_en_mask(periph)) != 0;
-}
-
-static inline void periph_ll_wifi_module_enable_clk_clear_rst(void)
-{
-    // DPORT_SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_WIFI_EN_M); // TODO: IDF-5679
-    // DPORT_CLEAR_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
-}
-
-static inline void periph_ll_wifi_module_disable_clk_set_rst(void)
-{
-    // DPORT_CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_WIFI_EN_M); // TODO: IDF-5679
-    // DPORT_SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
 }
 
 #ifdef __cplusplus
