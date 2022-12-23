@@ -274,6 +274,11 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackFrame(UBaseType_t uxStackPointer,
 
 StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters)
 {
+#ifdef __clang_analyzer__
+    // Teach clang-tidy that pxTopOfStack cannot be a pointer to const
+    volatile StackType_t * pxTemp = pxTopOfStack;
+    pxTopOfStack = pxTemp;
+#endif /*__clang_analyzer__ */
     /*
     HIGH ADDRESS
     |---------------------------| <- pxTopOfStack on entry

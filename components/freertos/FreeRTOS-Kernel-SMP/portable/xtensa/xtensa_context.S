@@ -397,18 +397,16 @@ May be called when a thread terminates or completes but does not delete
 the co-proc save area, to avoid the exception handler having to save the
 thread's co-proc state before another thread can use it (optimization).
 
-Needs to be called on the processor the thread was running on. Unpinned threads
-won't have an entry here because they get pinned as soon they use a coprocessor.
-
 Entry Conditions:
     A2  = Pointer to base of co-processor state save area.
-    A3  = Core ID of the pinned task
+    A3  = Core ID of the task (must be pinned) who's coproc ownership we are
+          releasing.
 
 Exit conditions:
     None.
 
 Obeys ABI conventions per prototype:
-    void _xt_coproc_release(void * coproc_sa_base, BaseType_t xCoreID)
+    void _xt_coproc_release(void * coproc_sa_base, BaseType_t xTargetCoreID)
 
 *******************************************************************************/
 
@@ -421,43 +419,33 @@ Obeys ABI conventions per prototype:
     .align  4
 _xt_coproc_release:
     ENTRY0                                  /* a2 = base of save area */
-                                            /* a3 = core ID */
+                                            /* a3 = xTargetCoreID */
 
-    rsil    a7, XCHAL_EXCM_LEVEL            /* lock interrupts */
+    movi    a4, XCHAL_CP_MAX << 2           /* a4 = size of an owner array */
+    mull    a4, a3, a4                      /* a4 = offset to the owner array of the target core */
+    movi    a3, _xt_coproc_owner_sa         /* a3 = base of all owner arrays */
+    add     a3, a3, a4                      /* a3 = base of owner array of the target core */
+    addi    a4, a3, XCHAL_CP_MAX << 2       /* a4 = top+1 of owner array of the target core */
+    movi    a5, 0                           /* a5 = 0 (unowned) */
 
-    /* Aquire spinlock before proceeding with the routine.
-     * Refer _xt_coproc_exc for details on the puspose of
-     * the _xt_coproc_owner_sa_lock lock and its intended use.
-     */
-.L_spinlock_loop:
-    mov     a8, a3                          /* Save a copy of the core ID in a8 */
-    movi    a10, _xt_coproc_owner_sa_lock   /* a10 = base address of lock variable */
-    addx4   a10, a8, a10                    /* Use core ID in a8 to calculate the offset to the lock variable for the core */
-    movi    a11, 0                          /* a11 = 0 */
-    wsr     a11, scompare1                  /* scompare1 = a11 :- Expect the spinlock to be free (value = 0) */
-    movi    a11, 1                          /* a11 = 1 :- Write 1 to take the spinlock */
-    s32c1i  a11, a10, 0                     /* if (lock == scompare1) {tmp = lock; lock = a11; a11 = tmp} else {a11 = lock} */
-    bnez    a11, .L_spinlock_loop           /* if (a11 != 0) {loop} :- Keep spinning until the spinlock is available */
+    rsil    a6, XCHAL_EXCM_LEVEL            /* lock interrupts */
+#if portNUM_PROCESSORS > 1
+    /* If multicore, we must also acquire the _xt_coproc_owner_sa_lock spinlock
+     * to ensure thread safe access of _xt_coproc_owner_sa between cores. */
+    spinlock_take a7 a8 _xt_coproc_owner_sa_lock
+#endif /* portNUM_PROCESSORS > 1 */
 
-    movi    a4, XCHAL_CP_MAX << 2
-    mull    a3, a3, a4
-    movi    a4, _xt_coproc_owner_sa         /* a4 = base of owner array */
-    add     a4, a4, a3
+1:  l32i    a7, a3, 0                       /* a7 = owner at a3 */
+    bne     a2, a7, 2f                      /* if (coproc_sa_base == owner) */
+    s32i    a5, a3, 0                       /*   owner = unowned */
+2:  addi    a3, a3, 1<<2                    /* a3 = next entry in owner array */
+    bltu    a3, a4, 1b                      /* repeat until end of array */
 
-    addi    a5, a4, XCHAL_CP_MAX << 2       /* a5 = top+1 of owner array */
-    movi    a6, 0                           /* a6 = 0 (unowned) */
-
-1:  l32i    a8, a4, 0                       /* a8 = owner at a4 */
-    bne     a2, a8, 2f                      /* if (coproc_sa_base == owner) */
-    s32i    a3, a4, 0                       /*   owner = unowned */
-2:  addi    a4, a4, 1<<2                    /* a4 = next entry in owner array */
-    bltu    a4, a5, 1b                      /* repeat until end of array */
-
-3:  wsr     a7, PS                          /* restore interrupts */
-
-    /* Release spinlock */
-    movi    a11, 0                          /* a11 = 0 */
-    s32ri   a11, a10, 0                     /* a10 = base address of lock variable. Write 0 to release the lock */
+#if portNUM_PROCESSORS > 1
+    /* Release previously taken spinlock */
+    spinlock_release a7 a8 _xt_coproc_owner_sa_lock
+#endif /* portNUM_PROCESSORS > 1 */
+    wsr     a6, PS                          /* restore interrupts */
 
     RET0
 

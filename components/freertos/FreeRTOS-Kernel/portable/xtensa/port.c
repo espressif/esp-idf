@@ -81,8 +81,20 @@ _Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "incorrect tskNO_A
 
 
 /* ---------------------------------------------------- Variables ------------------------------------------------------
- *
+ * - Various variables used to maintain the FreeRTOS port's state. Used from both port.c and various .S files
+ * - Constant offsets are used by assembly to jump to particular TCB members or a stack area (such as the CPSA). We use
+ *   C constants instead of preprocessor macros due to assembly lacking "offsetof()".
  * ------------------------------------------------------------------------------------------------------------------ */
+
+#if XCHAL_CP_NUM > 0
+/* Offsets used to navigate to a task's CPSA on the stack */
+const DRAM_ATTR uint32_t offset_pxEndOfStack = offsetof(StaticTask_t, pxDummy8);
+const DRAM_ATTR uint32_t offset_cpsa = XT_CP_SIZE;  /* Offset to start of the CPSA area on the stack. See uxInitialiseStackCPSA(). */
+#if configNUM_CORES > 1
+/* Offset to TCB_t.xCoreID member. Used to pin unpinned tasks that use the FPU. */
+const DRAM_ATTR uint32_t offset_xCoreID = offsetof(StaticTask_t, xDummyCoreID);
+#endif /* configNUM_CORES > 1 */
+#endif /* XCHAL_CP_NUM > 0 */
 
 volatile unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Indicates whether scheduler is running on a per-core basis
 unsigned port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c, _frxt_int_enter/_frxt_int_exit
@@ -389,16 +401,26 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackFrame(UBaseType_t uxStackPointer,
     return uxStackPointer;
 }
 
-#if portUSING_MPU_WRAPPERS
-StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters, BaseType_t xRunPrivileged)
+#if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
+StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
+                                     StackType_t * pxEndOfStack,
+                                     TaskFunction_t pxCode,
+                                     void * pvParameters )
 #else
-StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters )
+StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
+                                     TaskFunction_t pxCode,
+                                     void * pvParameters )
 #endif
 {
+#ifdef __clang_analyzer__
+    // Teach clang-tidy that pxTopOfStack cannot be a pointer to const
+    volatile StackType_t * pxTemp = pxTopOfStack;
+    pxTopOfStack = pxTemp;
+#endif /*__clang_analyzer__ */
     /*
     HIGH ADDRESS
     |---------------------------| <- pxTopOfStack on entry
-    | Coproc Save Area          |
+    | Coproc Save Area          | (CPSA MUST BE FIRST)
     | ------------------------- |
     | TLS Variables             |
     | ------------------------- | <- Start of useable stack
@@ -417,7 +439,7 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     // Make sure the incoming stack pointer is aligned on 16
     configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 #if XCHAL_CP_NUM > 0
-    // Initialize the coprocessor save area
+    // Initialize the coprocessor save area. THIS MUST BE THE FIRST AREA due to access from _frxt_task_coproc_state()
     uxStackPointer = uxInitialiseStackCPSA(uxStackPointer);
     // Each allocated section on the stack must have a size aligned on 16
     configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
@@ -583,33 +605,24 @@ void vPortSetStackWatchpoint( void *pxStackStart )
     esp_cpu_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char *)addr, 32, ESP_CPU_WATCHPOINT_STORE);
 }
 
-/* ---------------------------------------------- Misc Implementations -------------------------------------------------
- *
- * ------------------------------------------------------------------------------------------------------------------ */
-
 // -------------------- Co-Processor -----------------------
 
-/*
- * Used to set coprocessor area in stack. Current hack is to reuse MPU pointer for coprocessor area.
- */
-#if portUSING_MPU_WRAPPERS
-void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMORY_REGION *const xRegions, StackType_t *pxBottomOfStack, uint32_t usStackDepth )
-{
 #if XCHAL_CP_NUM > 0
-    xMPUSettings->coproc_area = ( StackType_t * ) ( ( uint32_t ) ( pxBottomOfStack + usStackDepth - 1 ));
-    xMPUSettings->coproc_area = ( StackType_t * ) ( ( ( portPOINTER_SIZE_TYPE ) xMPUSettings->coproc_area ) & ( ~( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) ) );
-    xMPUSettings->coproc_area = ( StackType_t * ) ( ( ( uint32_t ) xMPUSettings->coproc_area - XT_CP_SIZE ) & ~0xf );
+void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xTargetCoreID);
 
-
-    /* NOTE: we cannot initialize the coprocessor save area here because FreeRTOS is going to
-     * clear the stack area after we return. This is done in pxPortInitialiseStack().
-     */
-#endif
-}
-
-void vPortReleaseTaskMPUSettings( xMPU_SETTINGS *xMPUSettings )
+void vPortCleanUpCoprocArea(void *pvTCB)
 {
+    UBaseType_t uxCoprocArea;
+    BaseType_t xTargetCoreID;
+
+    /* Get a pointer to the task's coprocessor save area */
+    uxCoprocArea = ( UBaseType_t ) ( ( ( StaticTask_t * ) pvTCB )->pxDummy8 );  /* Get TCB_t.pxEndOfStack */
+    uxCoprocArea = STACKPTR_ALIGN_DOWN(16, uxCoprocArea - XT_CP_SIZE);
+
+    /* Get xTargetCoreID from the TCB.xCoreID */
+    xTargetCoreID = ( ( StaticTask_t * ) pvTCB )->xDummyCoreID;
+
     /* If task has live floating point registers somewhere, release them */
-    _xt_coproc_release( xMPUSettings->coproc_area );
+    _xt_coproc_release( (void *)uxCoprocArea, xTargetCoreID );
 }
-#endif /* portUSING_MPU_WRAPPERS */
+#endif /* XCHAL_CP_NUM > 0 */

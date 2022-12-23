@@ -41,9 +41,25 @@
 
 _Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
 
-/*
-OS state variables
-*/
+/* ---------------------------------------------------- Variables ------------------------------------------------------
+ * - Various variables used to maintain the FreeRTOS port's state. Used from both port.c and various .S files
+ * - Constant offsets are used by assembly to jump to particular TCB members or a stack area (such as the CPSA). We use
+ *   C constants instead of preprocessor macros due to assembly lacking "offsetof()".
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#if XCHAL_CP_NUM > 0
+/* Offsets used to navigate to a task's CPSA on the stack */
+const DRAM_ATTR uint32_t offset_pxEndOfStack = offsetof(StaticTask_t, pxDummy8);
+const DRAM_ATTR uint32_t offset_cpsa = XT_CP_SIZE;  /* Offset to start of the CPSA area on the stack. See uxInitialiseStackCPSA(). */
+#if configNUM_CORES > 1
+/* Offset to TCB_t.uxCoreAffinityMask member. Used to pin unpinned tasks that use the FPU. */
+const DRAM_ATTR uint32_t offset_uxCoreAffinityMask = offsetof(StaticTask_t, uxDummy25);
+#if configUSE_CORE_AFFINITY != 1
+#error "configUSE_CORE_AFFINITY must be 1 on multicore targets with coprocessor support"
+#endif
+#endif /* configNUM_CORES > 1 */
+#endif /* XCHAL_CP_NUM > 0 */
+
 volatile unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Indicates whether scheduler is running on a per-core basis
 unsigned int port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c, _frxt_int_enter/_frxt_int_exit
 //FreeRTOS SMP Locks
@@ -423,12 +439,6 @@ static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 }
 #endif
 
-const DRAM_ATTR uint32_t offset_pxEndOfStack = offsetof(StaticTask_t, pxDummy8);
-#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
-const DRAM_ATTR uint32_t offset_uxCoreAffinityMask = offsetof(StaticTask_t, uxDummy25);
-#endif // ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
-const DRAM_ATTR uint32_t offset_cpsa = XT_CP_SIZE;
-
 /**
  * @brief Align stack pointer in a downward growing stack
  *
@@ -674,10 +684,15 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
                                      void * pvParameters )
 #endif
 {
+#ifdef __clang_analyzer__
+    // Teach clang-tidy that pxTopOfStack cannot be a pointer to const
+    volatile StackType_t * pxTemp = pxTopOfStack;
+    pxTopOfStack = pxTemp;
+#endif /*__clang_analyzer__ */
     /*
     HIGH ADDRESS
     |---------------------------| <- pxTopOfStack on entry
-    | Coproc Save Area          |
+    | Coproc Save Area          | (CPSA MUST BE FIRST)
     | ------------------------- |
     | TLS Variables             |
     | ------------------------- | <- Start of useable stack
@@ -697,7 +712,7 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
     configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 
 #if XCHAL_CP_NUM > 0
-    // Initialize the coprocessor save area
+    // Initialize the coprocessor save area. THIS MUST BE THE FIRST AREA due to access from _frxt_task_coproc_state()
     uxStackPointer = uxInitialiseStackCPSA(uxStackPointer);
     configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 #endif /* XCHAL_CP_NUM > 0 */
@@ -717,25 +732,25 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
 // -------------------- Co-Processor -----------------------
 #if ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 
-void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xCoreID);
+void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xTargetCoreID);
 
 void vPortCleanUpCoprocArea( void *pxTCB )
 {
-    StackType_t *coproc_area;
-    BaseType_t xCoreID;
+    UBaseType_t uxCoprocArea;
+    BaseType_t xTargetCoreID;
 
-    /* Calculate the coproc save area in the stack from the TCB base */
-    coproc_area = ( StackType_t * ) ( ( uint32_t ) ( pxTCB + offset_pxEndOfStack ));
-    coproc_area = ( StackType_t * ) ( ( ( portPOINTER_SIZE_TYPE ) coproc_area ) & ( ~( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) ) );
-    coproc_area = ( StackType_t * ) ( ( ( uint32_t ) coproc_area - XT_CP_SIZE ) & ~0xf );
+    /* Get pointer to the task's coprocessor save area from TCB->pxEndOfStack. See uxInitialiseStackCPSA() */
+    uxCoprocArea = ( UBaseType_t ) ( ( ( StaticTask_t * ) pxTCB )->pxDummy8 );  /* Get TCB_t.pxEndOfStack */
+    uxCoprocArea = STACKPTR_ALIGN_DOWN(16, uxCoprocArea - XT_CP_SIZE);
 
     /* Extract core ID from the affinity mask */
-    xCoreID = __builtin_ffs( * ( UBaseType_t * ) ( pxTCB + offset_uxCoreAffinityMask ) );
-    assert( xCoreID >= 1 );
-    xCoreID -= 1;
+    xTargetCoreID = ( ( StaticTask_t * ) pxTCB )->uxDummy25 ;
+    xTargetCoreID = ( BaseType_t ) __builtin_ffs( ( int ) xTargetCoreID );
+    assert( xTargetCoreID >= 1 ); // __builtin_ffs always returns first set index + 1
+    xTargetCoreID -= 1;
 
     /* If task has live floating point registers somewhere, release them */
-    _xt_coproc_release( coproc_area, xCoreID );
+    _xt_coproc_release( (void *)uxCoprocArea, xTargetCoreID );
 }
 #endif // ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 

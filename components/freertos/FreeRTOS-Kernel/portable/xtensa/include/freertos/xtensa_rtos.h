@@ -170,6 +170,15 @@ The implementation may use only a2-4, a15 (all other regs must be preserved).
 // void* XT_RTOS_CP_STATE(void)
 #define XT_RTOS_CP_STATE    _frxt_task_coproc_state
 
+/*
+RTOS provided hook function that is called on every coprocessor exception. May
+only be called from assembly code and by the 'call0' instruction.
+The implementation may use only a2-4, a15 (all other regs must be preserved).
+*/
+// void XT_RTOS_CP_EXC_HOOK(void)
+#if XCHAL_CP_NUM > 0
+#define XT_RTOS_CP_EXC_HOOK   _frxt_coproc_exc_hook
+#endif
 
 /*******************************************************************************
 

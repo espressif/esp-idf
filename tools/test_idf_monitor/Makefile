@@ -7,9 +7,7 @@ PREFIX_RISCV ?= riscv32-esp-elf-
 PROG_XTENSA := dummy_xtensa.elf
 PROG_RISCV := dummy_riscv.elf
 
-# This actually depends on the value of portUSING_MPU_WRAPPERS.
-# I.e. ESP32-S2 would also have TASK_NAME_OFFSET=52 since portUSING_MPU_WRAPPERS is 0.
-CPPFLAGS_XTENSA := -DTASK_NAME_OFFSET=56
+CPPFLAGS_XTENSA := -DTASK_NAME_OFFSET=52
 CPPFLAGS_RISCV := -DTASK_NAME_OFFSET=52
 
 all: $(PROG_XTENSA) $(PROG_RISCV)
