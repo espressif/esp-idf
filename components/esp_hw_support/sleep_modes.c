@@ -1448,7 +1448,7 @@ void rtc_sleep_enable_ultra_low(bool enable)
     s_ultra_low_enabled = enable;
 }
 
-#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
 ESP_SYSTEM_INIT_FN(esp_sleep_startup_init, BIT(0), 105)
 {
     // Configure to isolate (disable the Input/Output/Pullup/Pulldown
