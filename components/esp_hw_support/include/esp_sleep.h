@@ -458,7 +458,6 @@ void esp_deep_sleep_disable_rom_logging(void);
 esp_err_t esp_sleep_cpu_pd_low_init(bool enable);
 #endif
 
-#if SOC_GPIO_SUPPORT_SLP_SWITCH
 /**
  * @brief Configure to isolate all GPIO pins in sleep state
  */
@@ -469,7 +468,6 @@ void esp_sleep_config_gpio_isolate(void);
  * @param enable decide whether to switch status or not
  */
 void esp_sleep_enable_gpio_switch(bool enable);
-#endif
 
 #if CONFIG_MAC_BB_PD
 /**
