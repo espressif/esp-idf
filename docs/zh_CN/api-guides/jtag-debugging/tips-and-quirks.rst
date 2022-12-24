@@ -13,7 +13,7 @@
 可用的断点和观察点
 ^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_NAME} 调试器支持 {IDF_TARGET_CPU_BREAKPOINT_NUM} 个硬件断点和 64 个软件断点。硬件断点是由 {IDF_TARGET_NAME} 芯片内部的逻辑电路实现的，能够设置在代码的任何位置：闪存或者 IRAM 的代码区域。除此以外，OpenOCD 实现了两种软件断点：闪存断点（最多 32 个）和 IRAM 断点（最多 32 个）。目前 GDB 无法在闪存中设置软件断点，因此除非解决此限制，否则这些断点只能由 OpenOCD 模拟为硬件断点（详细信息可以参阅 :ref:`下面 <jtag-debugging-tip-where-breakpoints>`）。{IDF_TARGET_NAME} 还支持 {IDF_TARGET_CPU_WATCHPOINT_NUM} 个观察点，所以可以观察 {IDF_TARGET_CPU_WATCHPOINT_NUM} 个变量的变化或者通过 GDB 命令 ``watch myVariable`` 来读取变量的值。请注意 menuconfig 中的 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项会使用最后一个观察点，如果你想在 OpenOCD 或者 GDB 中再次尝试使用这个观察点，可能不会得到预期的结果。详情请查看 menuconfig 中的帮助文档。
+{IDF_TARGET_NAME} 调试器支持 {IDF_TARGET_CPU_BREAKPOINT_NUM} 个硬件断点和 64 个软件断点。硬件断点是由 {IDF_TARGET_NAME} 芯片内部的逻辑电路实现的，能够设置在代码的任何位置：flash 或者 IRAM 的代码区域。除此以外，OpenOCD 实现了两种软件断点：flash 断点（最多 32 个）和 IRAM 断点（最多 32 个）。目前 GDB 无法在 flash 中设置软件断点，因此除非解决此限制，否则这些断点只能由 OpenOCD 模拟为硬件断点（详细信息可以参阅 :ref:`下面 <jtag-debugging-tip-where-breakpoints>`）。{IDF_TARGET_NAME} 还支持 {IDF_TARGET_CPU_WATCHPOINT_NUM} 个观察点，所以可以观察 {IDF_TARGET_CPU_WATCHPOINT_NUM} 个变量的变化或者通过 GDB 命令 ``watch myVariable`` 来读取变量的值。请注意 menuconfig 中的 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项会使用最后一个观察点，如果你想在 OpenOCD 或者 GDB 中再次尝试使用这个观察点，可能不会得到预期的结果。详情请查看 menuconfig 中的帮助文档。
 
 
 .. _jtag-debugging-tip-where-breakpoints:
@@ -21,15 +21,15 @@
 关于断点的补充知识
 ^^^^^^^^^^^^^^^^^^
 
-使用软件闪存模拟部分硬件断点的意思就是当使用 GDB 命令 ``hb myFunction`` 给某个函数设置硬件断点时，如果该函数位于闪存中，并且此时还有可用的硬件断点，那调试器就会使用硬件断点，否则就使用 32 个软件闪存断点中的一个来模拟。这个规则同样适用于 ``b myFunction`` 之类的命令，在这种情况下，GDB 会自己决定该使用哪种类型的断点。如果 ``myFunction`` 位于可写区域（IRAM），那就会使用软件 IRAM 断点，否则就会像处理 ``hb`` 命令一样使用硬件断点或者软件闪存断点。
+使用软件 flash 模拟部分硬件断点的意思就是当使用 GDB 命令 ``hb myFunction`` 给某个函数设置硬件断点时，如果该函数位于 flash 中，并且此时还有可用的硬件断点，那调试器就会使用硬件断点，否则就使用 32 个软件 flash 断点中的一个来模拟。这个规则同样适用于 ``b myFunction`` 之类的命令，在这种情况下，GDB 会自己决定该使用哪种类型的断点。如果 ``myFunction`` 位于可写区域 (IRAM)，那就会使用软件 IRAM 断点，否则就会像处理 ``hb`` 命令一样使用硬件断点或者软件 flash 断点。
 
 
 .. _jtag-debugging-tip-flash-mappings:
 
-闪存映射 vs 软件闪存断点
-^^^^^^^^^^^^^^^^^^^^^^^^
+flash 映射 vs 软件 flash 断点
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-为了在闪存中设置或者清除软件断点，OpenOCD 需要知道它们在闪存中的地址。为了完成从 {IDF_TARGET_NAME} 的地址空间到闪存地址的转换，OpenOCD 使用闪存中程序代码区域的映射。这些映射被保存在程序映像的头部，位于二进制数据（代码段和数据段）之前，并且特定于写入闪存的每一个应用程序的映像。因此，为了支持软件闪存断点，OpenOCD 需要知道待调试的应用程序映像在闪存中的位置。默认情况下，OpenOCD 会在 0x8000 处读取分区表并使用第一个找到的应用程序映像的映射，但是也可能会存在无法工作的情况，比如分区表不在标准的闪存位置，甚至可能有多个映像：一个出厂映像和两个 OTA 映像，你可能想要调试其中的任意一个。为了涵盖所有可能的调试情况，OpenOCD 支持特殊的命令，用于指定待调试的应用程序映像在闪存中的具体位置。该命令具有以下格式：
+为了在 flash 中设置或者清除软件断点，OpenOCD 需要知道它们在 flash 中的地址。为了完成从 {IDF_TARGET_NAME} 的地址空间到 flash 地址的转换，OpenOCD 使用 flash 中程序代码区域的映射。这些映射被保存在程序映像的头部，位于二进制数据（代码段和数据段）之前，并且特定于写入 flash 的每一个应用程序的映像。因此，为了支持软件 flash 断点，OpenOCD 需要知道待调试的应用程序映像在 flash 中的位置。默认情况下，OpenOCD 会在 0x8000 处读取分区表并使用第一个找到的应用程序映像的映射，但是也可能会存在无法工作的情况，比如分区表不在标准的 flash 位置，甚至可能有多个映像：一个出厂映像和两个 OTA 映像，你可能想要调试其中的任意一个。为了涵盖所有可能的调试情况，OpenOCD 支持特殊的命令，用于指定待调试的应用程序映像在 flash 中的具体位置。该命令具有以下格式：
 
 ``esp appimage_offset <offset>``
 
@@ -81,14 +81,14 @@ GDB 具有 FreeRTOS 支持的 Python 扩展模块。在系统要求满足的情�
 
     .. _jtag-debugging-tip-code-flash-voltage:
 
-    在 OpenOCD 的配置文件中设置 SPI 闪存的工作电压
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    在 OpenOCD 的配置文件中设置 SPI flash 的工作电压
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    ESP32 的 MTDI 管脚是用于 JTAG 通信的四个管脚之一，同时也是 ESP32 的 bootstrapping 管脚。上电时，ESP32 会在 MTDI 管脚上采样二进制电平，据此来设置内部的稳压器，用于给外部的 SPI 闪存芯片供电。如果上电时 MTDI 管脚上的二进制电平为低电平，则稳压器会被设置为 3.3 V；如果 MTDI 管脚为高电平，则稳压器会被设置为 1.8 V。MTDI 管脚通常需要一个上拉电阻或者直接使能内部的弱下拉电阻（详见 `ESP32 系列芯片技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ ），具体取决于所使用的 SPI 芯片的类型。但是一旦连接上 JTAG 后，原来用于实现 bootstrapping 功能的上拉或者下拉电阻都会被覆盖掉。
+    ESP32 的 MTDI 管脚是用于 JTAG 通信的四个管脚之一，同时也是 ESP32 的 bootstrapping 管脚。上电时，ESP32 会在 MTDI 管脚上采样二进制电平，据此来设置内部的稳压器，用于给外部的 SPI flash 芯片供电。如果上电时 MTDI 管脚上的二进制电平为低电平，则稳压器会被设置为 3.3 V；如果 MTDI 管脚为高电平，则稳压器会被设置为 1.8 V。MTDI 管脚通常需要一个上拉电阻或者直接使能内部的弱下拉电阻（详见 `ESP32 系列芯片技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ ），具体取决于所使用的 SPI 芯片的类型。但是一旦连接上 JTAG 后，原来用于实现 bootstrapping 功能的上拉或者下拉电阻都会被覆盖掉。
 
-    为了解决这个问题，OpenOCD 的板级配置文件（例如 ESP-WROVER-KIT 开发板的 ``board\esp32-wrover-kit-3.3v.cfg``）提供了 ``ESP32_FLASH_VOLTAGE`` 参数来设置 ``TDO`` 信号线在空闲状态下的二进制电平，这样就可以减少由于闪存电压不正确而导致的应用程序启动不良的几率。
+    为了解决这个问题，OpenOCD 的板级配置文件（例如 ESP-WROVER-KIT 开发板的 ``board\esp32-wrover-kit-3.3v.cfg``）提供了 ``ESP32_FLASH_VOLTAGE`` 参数来设置 ``TDO`` 信号线在空闲状态下的二进制电平，这样就可以减少由于 flash 电压不正确而导致的应用程序启动不良的几率。
 
-    查看 JTAG 连接的 ESP32 模组的规格书，检查其 SPI 闪存芯片的供电电压值，然后再相应的设置 ``ESP32_FLASH_VOLTAGE``。大多数WROOM模块使用 3.3 V 的闪存芯片。 早于 ESP32-WROVER-B 的 WROVER 模块使用 1.8 V 闪存芯片，而ESP32-WROVER-B和-E模块使用 3.3 V 闪存芯片。
+    查看 JTAG 连接的 ESP32 模组的规格书，检查其 SPI flash 芯片的供电电压值，然后再相应的设置 ``ESP32_FLASH_VOLTAGE``。大多数WROOM模块使用 3.3 V 的 flash 芯片。 早于 ESP32-WROVER-B 的 WROVER 模块使用 1.8 V flash 芯片，而ESP32-WROVER-B和-E模块使用 3.3 V flash 芯片。
 
     .. _jtag-debugging-tip-optimize-jtag-speed:
 
@@ -97,20 +97,20 @@ GDB 具有 FreeRTOS 支持的 Python 扩展模块。在系统要求满足的情�
     .. _jtag-debugging-tip-optimize-jtag-speed:
 
 优化 JTAG 的速度
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 为了实现更高的数据通信速率同时最小化丢包数，建议优化 JTAG 时钟频率的设置，使其达到 JTAG 能稳定运行的最大值。为此，请参考以下建议。
 
 1.  如果 CPU 以 80 MHz 运行，则 JTAG 时钟频率的上限为 20 MHz；如果 CPU 以 160 MHz 或者 240 MHz 运行，则上限为 26 MHz。
-2.  根据特定的 JTAG 适配器和连接线缆的长度，你可能需要将 JTAG 的工作频率降低至 20 / 26 MHz 以下。
+2.  根据特定的 JTAG 适配器和连接线缆的长度，你可能需要将 JTAG 的工作频率降低至 20 MHz 或 26 MHz 以下。
 3.  在某些特殊情况下，如果你看到 DSR/DIR 错误（并且它并不是由 OpenOCD 试图从一个没有物理存储器映射的地址空间读取数据而导致的），请降低 JTAG 的工作频率。
-4.  ESP-WROVER-KIT 能够稳定运行在 20 / 26 MHz 频率下。
+4.  ESP-WROVER-KIT 能够稳定运行在 20 MHz 或 26 MHz 频率下。
 
 
 .. _jtag-debugging-tip-debugger-startup-commands:
 
 调试器的启动命令的含义
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 在启动时，调试器发出一系列命令来复位芯片并使其在特定的代码行停止运行。这个命令序列（如下所示）支持自定义，用户可以选择在最方便合适的代码行开始调试工作。
 
@@ -124,7 +124,7 @@ GDB 具有 FreeRTOS 支持的 Python 扩展模块。在系统要求满足的情�
 .. _jtag-debugging-tip-openocd-configure-target:
 
 根据目标芯片配置 OpenOCD
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 OpenOCD 有很多种配置文件（``*.cfg``），它们位于 OpenOCD 安装目录的 ``share/openocd/scripts`` 子目录中（或者在 OpenOCD 源码目录的 ``tcl/scripts`` 目录中）。本文主要介绍 ``board``，``interface`` 和 ``target`` 这三个目录。
 
@@ -196,8 +196,16 @@ TCL 语言中为变量赋值的语法是:
 
 .. _jtag-debugging-tip-jtag-pins-reconfigured:
 
-不要将 JTAG 管脚用于其他功能
+JTAG 管脚是否能用于其他功能
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    {IDF_TARGET_NAME} 包含一个可用于调试的 USB Serial/JTAG 控制器。 默认情况下，{IDF_TARGET_NAME} JTAG 接口连接到内置的外设 USB Serial/JTAG。 详细信息可参阅 :doc:`配置 {IDF_TARGET_NAME} 内置 JTAG 接口 <../jtag-debugging/configure-builtin-jtag>`。
+
+    如果 USB Serial/JTAG 控制器用于调试，|jtag-gpio-list| 可用于其他功能。
+
+    如果用户通过烧录 eFuse 将 USB JTAG 接口切换为 GPIO，|jtag-gpio-list| 则可用于 JTAG 调试，但用于 JTAG 调试的 |jtag-gpio-list| 不能再用于其他功能。
 
 如果除了 {IDF_TARGET_NAME} 模组和 JTAG 适配器之外的其他硬件也连接到了 JTAG 管脚，那么 JTAG 的操作可能会受到干扰。{IDF_TARGET_NAME} JTAG 使用以下管脚：
 
@@ -205,31 +213,33 @@ TCL 语言中为变量赋值的语法是:
     :start-after: jtag-pins
     :end-before: ---
 
-如果用户应用程序更改了 JTAG 管脚的配置，JTAG 通信可能会失败。如果 OpenOCD 正确初始化（检测到两个 Tensilica 内核），但在程序运行期间失去了同步并报出大量 DTR/DIR 错误，则应用程序可能将 JTAG 管脚重新配置为其他功能或者用户忘记将 Vtar 连接到 JTAG 适配器。
+如果用户应用程序更改了 JTAG 管脚的配置，JTAG 通信可能会失败。如果 OpenOCD 正确初始化（检测到芯片全部 CPU 内核），但在程序运行期间失去了同步并报出大量 DTR/DIR 错误，原因可能是应用程序将 JTAG 管脚重新配置为其他功能或者用户忘记将 Vtar 连接到 JTAG 适配器。
 
-.. highlight:: none
+.. only:: esp32
 
-下面是 GDB 在应用程序进入重新配置 MTDO/GPIO15 作为输入代码后报告的一系列错误摘录::
+    .. highlight:: none
 
-    cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates target still busy!
-    cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an exception!
-    cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
-    cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates target still busy!
-    cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an exception!
-    cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
+    以下是应用程序进入重新配置 MTDO 作为输入代码后，双核 {IDF_TARGET_NAME} GDB 报告的一系列错误摘录::
+
+        cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates target still busy!
+        cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an exception!
+        cpu0: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
+        cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates target still busy!
+        cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an exception!
+        cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
 
 .. _jtag-debugging-security-features:
 
-JTAG 与闪存加密和安全引导
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+JTAG 与 flash 加密和安全引导
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-默认情况下，开启了闪存加密和（或者）安全引导后，系统在首次启动时，引导程序会烧写 eFuse 的某个比特，从而将 JTAG 永久关闭。
+默认情况下，开启了 flash 加密和（或者）安全引导后，系统在首次启动时，引导程序会烧写 eFuse 的某个比特，从而将 JTAG 永久关闭。
 
-Kconfig 配置项 :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` 可以改变这个默认行为，使得用户即使开启了安全引导或者闪存加密，仍会保留 JTAG 的功能。
+Kconfig 配置项 :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` 可以改变这个默认行为，使得用户即使开启了安全引导或者 flash 加密，仍会保留 JTAG 的功能。
 
 然而，因为设置 :ref:`软件断点 <jtag-debugging-tip-where-breakpoints>` 的需要，OpenOCD 会尝试自动读写 flash 中的内容，这会带来两个问题：
 
-- 软件断点和闪存加密是不兼容的，目前 OpenOCD 尚不支持对 flash 中的内容进行加密和解密。
+- 软件断点和 flash 加密是不兼容的，目前 OpenOCD 尚不支持对 flash 中的内容进行加密和解密。
 - 如果开启了安全引导功能，设置软件断点会改变被签名的程序的摘要，从而使得签名失效。这也意味着，如果设置了软件断点，系统会在下次重启时的签名验证阶段失败，导致无法启动。
 
 关闭 JTAG 的软件断点功能，可以在启动 OpenOCD 时在命令行额外加一项配置参数 ``-c 'set ESP_FLASH_SIZE 0'``，请参考 :ref:`jtag-debugging-tip-openocd-config-vars`。
@@ -249,7 +259,7 @@ Kconfig 配置项 :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` 可以改变这个默认�
 
 .. _jtag-debugging-tip-reporting-issues:
 
-报告 OpenOCD / GDB 的问题
+报告 OpenOCD/GDB 的问题
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 如果你遇到 OpenOCD 或者 GDB 程序本身的问题，并且在网上没有找到可用的解决方案，请前往 https://github.com/espressif/openocd-esp32/issues 新建一个议题。

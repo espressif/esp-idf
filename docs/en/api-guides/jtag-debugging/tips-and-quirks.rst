@@ -10,16 +10,16 @@ This section provides collection of all tips and quirks referred to from various
 
 .. _jtag-debugging-tip-breakpoints:
 
-Breakpoints and watchpoints available
+Breakpoints and Watchpoints Available
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_NAME} debugger supports {IDF_TARGET_CPU_BREAKPOINT_NUM} hardware implemented breakpoints and 64 software ones. Hardware breakpoints are implemented by {IDF_TARGET_NAME} chip's logic and can be set anywhere in the code: either in flash or IRAM program's regions. Additionally there are 2 types of software breakpoints implemented by OpenOCD: flash (up to 32) and IRAM (up to 32) breakpoints. Currently GDB can not set software breakpoints in flash. So until this limitation is removed those breakpoints have to be emulated by OpenOCD as hardware ones (see :ref:`below <jtag-debugging-tip-where-breakpoints>` for details). {IDF_TARGET_NAME} also supports {IDF_TARGET_CPU_WATCHPOINT_NUM} watchpoints, so {IDF_TARGET_CPU_WATCHPOINT_NUM} variables can be watched for change or read by the GDB command ``watch myVariable``. Note that menuconfig option :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` uses the last watchpoint and will not provide expected results, if you also try to use it within OpenOCD / GDB. See menuconfig's help for detailed description.
+{IDF_TARGET_NAME} debugger supports {IDF_TARGET_CPU_BREAKPOINT_NUM} hardware implemented breakpoints and 64 software ones. Hardware breakpoints are implemented by {IDF_TARGET_NAME} chip's logic and can be set anywhere in the code: either in flash or IRAM program's regions. Additionally there are 2 types of software breakpoints implemented by OpenOCD: flash (up to 32) and IRAM (up to 32) breakpoints. Currently GDB can not set software breakpoints in flash. So until this limitation is removed those breakpoints have to be emulated by OpenOCD as hardware ones (see :ref:`below <jtag-debugging-tip-where-breakpoints>` for details). {IDF_TARGET_NAME} also supports {IDF_TARGET_CPU_WATCHPOINT_NUM} watchpoints, so {IDF_TARGET_CPU_WATCHPOINT_NUM} variables can be watched for change or read by the GDB command ``watch myVariable``. Note that menuconfig option :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` uses the last watchpoint and will not provide expected results, if you also try to use it within OpenOCD/GDB. See menuconfig's help for detailed description.
 
 
 .. _jtag-debugging-tip-where-breakpoints:
 
-What else should I know about breakpoints?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+What Else Should I Know About Breakpoints?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Emulating part of hardware breakpoints using software flash ones means that the GDB command ``hb myFunction`` which is invoked for function in flash will use pure hardware breakpoint if it is avalable otherwise one of the 32 software flash breakpoints is used. The same rule applies to ``b myFunction``-like commands. In this case GDB will decide what type of breakpoint to set itself. If ``myFunction`` is resided in writable region (IRAM) software IRAM breakpoint will be used otherwise hardware or software flash breakpoint is used as it is done for ``hb`` command.
 
@@ -49,7 +49,7 @@ Offset should be in hex format. To reset to the default behaviour you can specif
 
 .. _jtag-debugging-tip-why-next-works-as-step:
 
-Why stepping with "next" does not bypass subroutine calls?
+Why Stepping with "next" Does Not Bypass Subroutine Calls?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When stepping through the code with ``next`` command, GDB is internally setting a breakpoint (one out of two available) ahead in the code to bypass the subroutine calls. This functionality will not work, if the two available breakpoints are already set elsewhere in the code. If this is the case, delete breakpoints to have one "spare". With both breakpoints already used, stepping through the code with ``next`` command will work as like with ``step`` command and debugger will step inside subroutine calls.
@@ -57,7 +57,7 @@ When stepping through the code with ``next`` command, GDB is internally setting 
 
 .. _jtag-debugging-tip-code-options:
 
-Support options for OpenOCD at compile time
+Support Options for OpenOCD at Compile Time
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ESP-IDF has some support options for OpenOCD debugging which can be set at compile time:
@@ -70,7 +70,7 @@ Please see the :ref:`project configuration menu <get-started-configure>` menu fo
 
 .. _jtag-debugging-tip-freertos-support:
 
-FreeRTOS support
+FreeRTOS Support
 ^^^^^^^^^^^^^^^^
 
 OpenOCD has explicit support for the ESP-IDF FreeRTOS. GDB can see FreeRTOS tasks as threads. Viewing them all can be done using the GDB ``i threads`` command, changing to a certain task is done with ``thread n``, with ``n`` being the number of the thread. FreeRTOS detection can be disabled in target's configuration. For more details see :ref:`jtag-debugging-tip-openocd-configure-target`.
@@ -81,7 +81,7 @@ GDB has a Python extension for FreeRTOS support. ESP-IDF automatically loads thi
 
     .. _jtag-debugging-tip-code-flash-voltage:
 
-    Why to set SPI flash voltage in OpenOCD configuration?
+    Why to Set SPI Flash Voltage in OpenOCD Configuration?
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The MTDI pin of ESP32, being among four pins used for JTAG communication, is also one of ESP32's bootstrapping pins. On power up ESP32 is sampling binary level on MTDI to set it's internal voltage regulator used to supply power to external SPI flash chip. If binary level on MDTI pin on power up is low, the voltage regulator is set to deliver 3.3 V, if it is high, then the voltage is set to 1.8 V. The MTDI pin should have a pull-up or may rely on internal weak pull down resistor (see `ESP32 Series Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ for details), depending on the type of SPI chip used. Once JTAG is connected, it overrides the pull-up or pull-down resistor that is supposed to do the bootstrapping.
@@ -96,23 +96,23 @@ GDB has a Python extension for FreeRTOS support. ESP-IDF automatically loads thi
 
     .. _jtag-debugging-tip-optimize-jtag-speed:
 
-Optimize JTAG speed
+Optimize JTAG Speed
 ^^^^^^^^^^^^^^^^^^^
 
 In order to achieve higher data rates and minimize number of dropped packets it is recommended to optimize setting of JTAG clock frequency, so it is at maximum and still provides stable operation of JTAG. To do so use the following tips.
 
 1.  The upper limit of JTAG clock frequency is 20 MHz if CPU runs at 80 MHz, or 26 MHz if CPU runs at 160 MHz or 240 MHz.
-2.  Depending on particular JTAG adapter and the length of connecting cables, you may need to reduce JTAG frequency below 20 / 26 MHz.
+2.  Depending on particular JTAG adapter and the length of connecting cables, you may need to reduce JTAG frequency below 20 MHz or 26 MHz.
 3.  In particular reduce frequency, if you get DSR/DIR errors (and they do not relate to OpenOCD trying to read from a memory range without physical memory being present there).
-4.  ESP-WROVER-KIT operates stable at 20 / 26 MHz.
+4.  ESP-WROVER-KIT operates stable at 20 MHz or 26 MHz.
 
 
 .. _jtag-debugging-tip-debugger-startup-commands:
 
-What is the meaning of debugger's startup commands?
+What is the Meaning of Debugger's Startup Commands?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On startup, debugger is issuing sequence of commands to reset the chip and halt it at specific line of code. This sequence (shown below) is user defined to pick up at most convenient / appropriate line and start debugging.
+On startup, debugger is issuing sequence of commands to reset the chip and halt it at specific line of code. This sequence (shown below) is user defined to pick up at most convenient/appropriate line and start debugging.
 
 * ``set remote hardware-watchpoint-limit 2`` — Restrict GDB to using two hardware watchpoints supported by the chip, 2 for {IDF_TARGET_NAME}. For more information see https://sourceware.org/gdb/onlinedocs/gdb/Remote-Configuration.html.
 * ``mon reset halt`` — reset the chip and keep the CPUs halted
@@ -123,7 +123,7 @@ On startup, debugger is issuing sequence of commands to reset the chip and halt 
 
 .. _jtag-debugging-tip-openocd-configure-target:
 
-Configuration of OpenOCD for specific target
+Configuration of OpenOCD for Specific Target
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are several kinds of OpenOCD configuration files (``*.cfg``). All configuration files are located in subdirectories of ``share/openocd/scripts`` directory of OpenOCD distribution (or ``tcl/scripts`` directory of the source repository). For the purposes of this guide, the most important ones are ``board``, ``interface`` and ``target``.
@@ -143,14 +143,14 @@ If you are using one of the boards which have a pre-defined configuration file, 
 
 If you are using a board not listed here, you need to specify both the interface configuration file and target configuration file.
 
-Custom configuration files
+Custom Configuration Files
 """"""""""""""""""""""""""
 
 OpenOCD configuration files are written in TCL, and include a variety of choices for customization and scripting. This can be useful for non-standard debugging situations. Please refer to `OpenOCD Manual`_ for the TCL scripting reference.
 
 .. _jtag-debugging-tip-openocd-config-vars:
 
-OpenOCD configuration variables
+OpenOCD Configuration Variables
 """""""""""""""""""""""""""""""
 
 The following variables can be optionally set before including the ESP-specific target configuration file. This can be done either in a custom configuration file, or from the command line.
@@ -188,7 +188,7 @@ It is important to set the variable before including the ESP-specific configurat
 
 .. _jtag-debugging-tip-reset-by-debugger:
 
-How debugger resets {IDF_TARGET_NAME}?
+How Debugger Resets {IDF_TARGET_NAME}?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The board can be reset by entering ``mon reset`` or ``mon reset halt`` into GDB.
@@ -196,7 +196,7 @@ The board can be reset by entering ``mon reset`` or ``mon reset halt`` into GDB.
 
 .. _jtag-debugging-tip-jtag-pins-reconfigured:
 
-Can JTAG pins be used for other purposes?
+Can JTAG Pins be Used for Other Purposes?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
@@ -250,7 +250,7 @@ To disable software breakpoints while using JTAG, add an extra argument ``-c 'se
 
 .. only:: esp32
 
-    JTAG and ESP32-WROOM-32 AT firmware Compatibility Issue
+    JTAG and ESP32-WROOM-32 AT Firmware Compatibility Issue
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The ESP32-WROOM series of modules come pre-flashed with AT firmware. This firmware configures the pins GPIO12 to GPIO15 as SPI slave interface, which makes using JTAG impossible.
@@ -259,7 +259,7 @@ To disable software breakpoints while using JTAG, add an extra argument ``-c 'se
 
 .. _jtag-debugging-tip-reporting-issues:
 
-Reporting issues with OpenOCD / GDB
+Reporting Issues with OpenOCD/GDB
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In case you encounter a problem with OpenOCD or GDB programs itself and do not find a solution searching available resources on the web, open an issue in the OpenOCD issue tracker under https://github.com/espressif/openocd-esp32/issues.

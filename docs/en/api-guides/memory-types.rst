@@ -25,8 +25,8 @@ Non-constant static data (.data) and zero-initialized data (.bss) is placed by t
    The available size of the internal DRAM region is reduced by 64 KB (by shifting start address to ``0x3FFC0000``) if Bluetooth stack is used. Length of this region is also reduced by 16 KB or 32 KB if trace memory is used. Due to some memory fragmentation issues caused by ROM, it is also not possible to use all available DRAM for static allocations - however the remaining DRAM is still available as heap at runtime.
 
    .. note::
-   
-    There is 520KB of available SRAM (320KB of DRAM and 200KB of IRAM) on the esp32. However, due to a technical limitation, the maximum statically allocated DRAM usage is 160KB. The remaining 160KB (for a total of 320KB of DRAM) can only be allocated at runtime as heap.
+
+    There is 520 KB of available SRAM (320 KB of DRAM and 200 KB of IRAM) on the ESP32. However, due to a technical limitation, the maximum statically allocated DRAM usage is 160 KB. The remaining 160 KB (for a total of 320 KB of DRAM) can only be allocated at runtime as heap.
 
 .. only:: not esp32
 
@@ -71,7 +71,7 @@ IRAM (Instruction RAM)
         Any internal SRAM which is not used for Instruction RAM will be made available as :ref:`dram` for static data and dynamic allocation (heap).
 
 
-When to place code in IRAM
+When to Place Code in IRAM
 ================================
 
 Cases when parts of the application should be placed into IRAM:
@@ -83,7 +83,7 @@ Cases when parts of the application should be placed into IRAM:
 
 .. _how-to-place-code-in-iram:
 
-How to place code in IRAM
+How to Place Code in IRAM
 =========================
 
 Some code is automatically placed into the IRAM region using the linker script.
@@ -213,7 +213,7 @@ Or::
 
 It is also possible to allocate DMA-capable memory buffers dynamically by using the :ref:`MALLOC_CAP_DMA <dma-capable-memory>` capabilities flag.
 
-DMA Buffer in the stack
+DMA Buffer in the Stack
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Placing DMA buffers in the stack is possible but discouraged. If doing so, pay attention to the following:
