@@ -162,17 +162,6 @@ RESET_REASON rtc_get_reset_reason(int cpu_no);
 WAKEUP_REASON rtc_get_wakeup_cause(void);
 
 /**
-  * @brief Get CRC for Fast RTC Memory.
-  *
-  * @param  uint32_t start_addr : 0 - 0x7ff for Fast RTC Memory.
-  *
-  * @param  uint32_t crc_len : 0 - 0x7ff, 0 for 4 byte, 0x7ff for 0x2000 byte.
-  *
-  * @return uint32_t : CRC32 result
-  */
-uint32_t calc_rtc_memory_crc(uint32_t start_addr, uint32_t crc_len);
-
-/**
   * @brief Suppress ROM log by setting specific RTC control register.
   * @note This is not a permanent disable of ROM logging since the RTC register can not retain after chip reset.
   *
@@ -189,26 +178,6 @@ static inline void rtc_suppress_rom_log(void)
      */
     REG_SET_BIT(RTC_CNTL_STORE4_REG, RTC_DISABLE_ROM_LOG);
 }
-
-/**
-  * @brief Set CRC of Fast RTC memory 0-0x7ff into RTC STORE7.
-  *
-  * @param  None
-  *
-  * @return None
-  */
-void set_rtc_memory_crc(void);
-
-/**
-  * @brief Fetch entry from RTC memory and RTC STORE reg
-  *
-  * @param uint32_t * entry_addr : the address to save entry
-  *
-  * @param RESET_REASON reset_reason : reset reason this time
-  *
-  * @return None
-  */
-void rtc_boot_control(uint32_t *entry_addr, RESET_REASON reset_reason);
 
 /**
   * @brief Software Reset digital core.

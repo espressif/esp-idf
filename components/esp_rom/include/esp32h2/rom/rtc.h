@@ -4,10 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ROM_RTC_H_
-#define _ROM_RTC_H_
-
-#include "ets_sys.h"
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -66,7 +63,6 @@ extern "C" {
 #define RTC_MEMORY_CRC_REG      LP_AON_STORE7_REG
 
 #define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
-
 
 typedef enum {
     AWAKE = 0,             //<CPU ON
@@ -173,16 +169,31 @@ RESET_REASON rtc_get_reset_reason(int cpu_no);
   */
 WAKEUP_REASON rtc_get_wakeup_cause(void);
 
+typedef void (* esp_rom_wake_func_t)(void);
+
 /**
-  * @brief Get CRC for Fast RTC Memory.
+  * @brief Read stored RTC wake function address
   *
-  * @param  uint32_t start_addr : 0 - 0x7ff for Fast RTC Memory.
+  * Returns pointer to wake address if a value is set in RTC registers, and stored length & CRC all valid.
   *
-  * @param  uint32_t crc_len : 0 - 0x7ff, 0 for 4 byte, 0x7ff for 0x2000 byte.
+  * @param  None
   *
-  * @return uint32_t : CRC32 result
+  * @return esp_rom_wake_func_t : Returns pointer to wake address if a value is set in RTC registers
   */
-uint32_t calc_rtc_memory_crc(uint32_t start_addr, uint32_t crc_len);
+esp_rom_wake_func_t esp_rom_get_rtc_wake_addr(void);
+
+/**
+  * @brief Store new RTC wake function address
+  *
+  * Set a new RTC wake address function. If a non-NULL function pointer is set then the function
+  * memory is calculated and stored also.
+  *
+  * @param entry_addr Address of function. If NULL, length is ignored and all registers are cleared to 0.
+  * @param length of function in RTC fast memory. cannot be larger than RTC Fast memory size.
+  *
+  * @return None
+  */
+void esp_rom_set_rtc_wake_addr(esp_rom_wake_func_t entry_addr, size_t length);
 
 /**
   * @brief Suppress ROM log by setting specific RTC control register.
@@ -201,26 +212,6 @@ static inline void rtc_suppress_rom_log(void)
      */
     REG_SET_BIT(LP_AON_STORE4_REG, RTC_DISABLE_ROM_LOG);
 }
-
-/**
-  * @brief Set CRC of Fast RTC memory 0-0x7ff into RTC STORE7.
-  *
-  * @param  None
-  *
-  * @return None
-  */
-void set_rtc_memory_crc(void);
-
-/**
-  * @brief Fetch entry from RTC memory and RTC STORE reg
-  *
-  * @param uint32_t * entry_addr : the address to save entry
-  *
-  * @param RESET_REASON reset_reason : reset reason this time
-  *
-  * @return None
-  */
-void rtc_boot_control(uint32_t *entry_addr, RESET_REASON reset_reason);
 
 /**
   * @brief Software Reset digital core.
@@ -253,5 +244,3 @@ void software_reset_cpu(int cpu_no);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _ROM_RTC_H_ */
