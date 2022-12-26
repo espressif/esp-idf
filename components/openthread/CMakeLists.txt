@@ -14,6 +14,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
         "private_include")
 
         set(src_dirs
+        "port"
         "openthread/examples/platforms/utils"
         "openthread/src/core/api"
         "openthread/src/core/common"
@@ -33,7 +34,6 @@ if(CONFIG_OPENTHREAD_ENABLED)
 
     if(CONFIG_OPENTHREAD_FTD OR CONFIG_OPENTHREAD_MTD)
         list(APPEND src_dirs
-            "src"
             "openthread/src/core/backbone_router"
             "openthread/src/core/coap"
             "openthread/src/core/meshcop"
@@ -105,6 +105,15 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/utils/child_supervision.cpp")
     endif()
 
+    if(CONFIG_OPENTHREAD_RADIO_NATIVE)
+        list(APPEND exclude_srcs
+            "port/esp_openthread_radio_uart.cpp"
+            "port/esp_uart_spinel_interface.cpp")
+    elseif(CONFIG_OPENTHREAD_RADIO_SPINEL_UART)
+        list(APPEND exclude_srcs
+            "port/esp_openthread_radio.c")
+    endif()
+
     if(CONFIG_OPENTHREAD_BORDER_ROUTER)
         list(APPEND src_dirs
             "openthread/src/core/border_router")
@@ -148,7 +157,7 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        EXCLUDE_SRCS "${exclude_srcs}"
                        INCLUDE_DIRS "${public_include_dirs}"
                        PRIV_INCLUDE_DIRS "${private_include_dirs}"
-                       REQUIRES esp_event mbedtls ieee802154 console lwip)
+                       REQUIRES esp_event mbedtls ieee802154 console lwip esp_timer esp_netif esp_partition spi_flash driver)
 
 if(CONFIG_OPENTHREAD_ENABLED)
     if(CONFIG_OPENTHREAD_RADIO)
@@ -168,64 +177,20 @@ if(CONFIG_OPENTHREAD_ENABLED)
         "PACKAGE_VERSION=\"${IDF_VERSION_FOR_OPENTHREAD_PACKAGE}-${OPENTHREAD_VERSION}\""
         "OPENTHREAD_BUILD_DATETIME=\"${OT_BUILD_TIMESTAMP}\""
         )
+
     if(CONFIG_OPENTHREAD_RADIO)
         file(WRITE ${CMAKE_BINARY_DIR}/rcp_version ${OT_FULL_VERSION_STRING})
     endif()
 
-    if($ENV{OPENTHREAD_ESP_LIB_FROM_INTERNAL_SRC})
-        idf_component_get_property(openthread_port_lib openthread_port COMPONENT_LIB)
-        idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
-        idf_component_get_property(esp_netif_lib esp_netif COMPONENT_LIB)
-        idf_component_get_property(esp_system_lib esp_system COMPONENT_LIB)
-        target_link_libraries(${COMPONENT_LIB} PUBLIC
-                              $<TARGET_FILE:${openthread_port_lib}>
-                              $<TARGET_FILE:${esp_system_lib}>)
-        target_link_libraries(${COMPONENT_LIB} PUBLIC
-                              $<TARGET_FILE:${lwip_lib}>
-                              $<TARGET_FILE:${esp_netif_lib}>
-                              $<TARGET_FILE:${openthread_port_lib}>
-                              $<TARGET_FILE:${esp_netif_lib}>
-                              $<TARGET_FILE:${lwip_lib}>)
-        if(CONFIG_OPENTHREAD_BORDER_ROUTER)
+    if(CONFIG_OPENTHREAD_BORDER_ROUTER)
+        if($ENV{OPENTHREAD_ESP_BR_LIB_FROM_INTERNAL_SRC})
             idf_component_get_property(openthread_br_lib openthread_br COMPONENT_LIB)
             target_link_libraries(${COMPONENT_LIB} PUBLIC $<TARGET_FILE:${openthread_br_lib}>)
-        endif()
-
-    else()
-        if(IDF_TARGET STREQUAL "esp32h4")
-        if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)
-                add_prebuilt_library(openthread_port
-                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev1/libopenthread_port.a"
-                    REQUIRES openthread)
-            endif()
-            if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_2)
-                add_prebuilt_library(openthread_port
-                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev2/libopenthread_port.a"
-                    REQUIRES openthread)
-            endif()
-        elseif(IDF_TARGET STREQUAL "esp32c6")
-            if(CONFIG_OPENTHREAD_BORDER_ROUTER)
-                add_prebuilt_library(openthread_port
-                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/br/libopenthread_port.a"
-                    REQUIRES openthread)
-            else()
-                add_prebuilt_library(openthread_port
-                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/cli/libopenthread_port.a"
-                    REQUIRES openthread)
-            endif()
         else()
-            add_prebuilt_library(openthread_port "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/libopenthread_port.a"
-                                REQUIRES openthread)
-        endif()
-        add_prebuilt_library(openthread_br "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/libopenthread_br.a"
-                            REQUIRES openthread)
-
-        target_link_libraries(${COMPONENT_LIB} INTERFACE openthread_port)
-
-        if(CONFIG_OPENTHREAD_BORDER_ROUTER)
+            add_prebuilt_library(openthread_br "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/libopenthread_br.a"
+                                 REQUIRES openthread)
             target_link_libraries(${COMPONENT_LIB} INTERFACE openthread_br)
         endif()
-
     endif()
 
 endif()
