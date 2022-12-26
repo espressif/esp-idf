@@ -10,7 +10,6 @@
 #include "esp_err.h"
 #include "esp_openthread_border_router.h"
 #include "esp_openthread_common_macro.h"
-#include "esp_openthread_ncp.h"
 #include "esp_openthread_platform.h"
 #include "esp_openthread_types.h"
 #include "esp_system.h"

@@ -431,6 +431,4 @@
 #endif
 #endif
 
-#define OPENTHREAD_ENABLE_NCP_VENDOR_HOOK 1
-
 #define OPENTHREAD_FTD 1
