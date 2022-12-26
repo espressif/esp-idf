@@ -58,10 +58,10 @@ void esp_openthread_lock_release(void);
  *
  * @note In OpenThread API context, it waits for some actions to be done in other tasks (like lwip),
  *       after task switching, it needs to call OpenThread API again. Normally it's not allowed,
- *       since the previous OpenThread API lock is not released yet. This task_switching_lock allows
+ *       since the previous OpenThread API lock is not released yet. This task_switching lock allows
  *       the OpenThread API can be called in this case.
  *
- * @note Please use @ref esp_openthread_lock_acquire() for normal cases.
+ * @note Please use esp_openthread_lock_acquire() for normal cases.
  *
  * @param[in] block_ticks   The maxinum number of RTOS ticks to wait for the lock.
  *

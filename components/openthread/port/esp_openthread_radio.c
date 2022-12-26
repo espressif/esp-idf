@@ -14,6 +14,7 @@
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_platform.h"
 #include "esp_openthread_types.h"
+#include "esp_random.h"
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "esp_vfs.h"
@@ -26,28 +27,15 @@
 
 #define ESP_RECEIVE_SENSITIVITY -120
 
-typedef struct {
-    uint8_t length;
-    uint8_t psdu[OT_RADIO_FRAME_MAX_SIZE];
-} esp_openthread_radio_tx_psdu;
-
-static otRadioFrame s_transmit_frame;
-
-static esp_openthread_radio_tx_psdu s_transmit_psdu;
-static otRadioFrame s_receive_frame[CONFIG_IEEE802154_RX_BUFFER_SIZE];
-static otRadioFrame s_ack_frame;
-static int s_energy_detect_power;
-static esp_ieee802154_tx_error_t s_tx_error;
-static int s_radio_event_fd = -1;
-static bool s_diag_mode = false;
-static const char *radio_workflow = "radio";
-
 #define EVENT_TX_DONE (1 << 0)
 #define EVENT_TX_FAILED (1 << 1)
 #define EVENT_RX_DONE (1 << 2)
 #define EVENT_ENERGY_DETECT_DONE (1 << 3)
 
-static uint8_t s_txrx_events;
+typedef struct {
+    uint8_t length;
+    uint8_t psdu[OT_RADIO_FRAME_MAX_SIZE];
+} esp_openthread_radio_tx_psdu;
 
 typedef struct {
     uint8_t head;
@@ -55,7 +43,20 @@ typedef struct {
     uint8_t used;
 } esp_openthread_circular_queue_info_t;
 
-static esp_openthread_circular_queue_info_t recv_queue = {.head = 0, .tail = 0, .used = 0};
+static otRadioFrame s_transmit_frame;
+
+static esp_openthread_radio_tx_psdu s_transmit_psdu;
+static otRadioFrame s_receive_frame[CONFIG_IEEE802154_RX_BUFFER_SIZE];
+static otRadioFrame s_ack_frame;
+static int s_ed_power;
+static int s_rssi = 127;
+static esp_ieee802154_tx_error_t s_tx_error;
+static int s_radio_event_fd = -1;
+static bool s_diag_mode = false;
+static const char *s_radio_workflow = "radio";
+static uint8_t s_txrx_events;
+
+static esp_openthread_circular_queue_info_t s_recv_queue = {.head = 0, .tail = 0, .used = 0};
 
 static void set_event(uint8_t event)
 {
@@ -65,12 +66,12 @@ static void set_event(uint8_t event)
     assert(ret == sizeof(event_write));
 }
 
-static void clr_event(uint8_t event)
+static inline void clr_event(uint8_t event)
 {
     s_txrx_events &= ~event;
 }
 
-static bool get_event(uint8_t event)
+static inline bool get_event(uint8_t event)
 {
     return s_txrx_events & event;
 }
@@ -89,13 +90,14 @@ esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *conf
     }
 
     s_ack_frame.mPsdu = NULL;
+    memset(&s_recv_queue, 0, sizeof(esp_openthread_circular_queue_info_t));
 
     esp_ieee802154_enable();
     esp_ieee802154_set_promiscuous(false);
     esp_ieee802154_set_rx_when_idle(true);
 
     return esp_openthread_platform_workflow_register(&esp_openthread_radio_update, &esp_openthread_radio_process,
-                                                     radio_workflow);
+                                                     s_radio_workflow);
 }
 
 void esp_openthread_radio_deinit(void)
@@ -106,7 +108,7 @@ void esp_openthread_radio_deinit(void)
     }
 
     esp_ieee802154_disable();
-    esp_openthread_platform_workflow_unregister(radio_workflow);
+    esp_openthread_platform_workflow_unregister(s_radio_workflow);
 }
 
 void esp_openthread_radio_update(esp_openthread_mainloop_context_t *mainloop)
@@ -117,7 +119,7 @@ void esp_openthread_radio_update(esp_openthread_mainloop_context_t *mainloop)
     }
 }
 
-esp_err_t esp_openthread_radio_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop)
+esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthread_mainloop_context_t *mainloop)
 {
     uint64_t event_read;
     int ret = read(s_radio_event_fd, &event_read, sizeof(event_read));
@@ -127,14 +129,14 @@ esp_err_t esp_openthread_radio_process(otInstance *instance, const esp_openthrea
         clr_event(EVENT_TX_DONE);
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
         if (otPlatDiagModeGet()) {
-            otPlatDiagRadioTransmitDone(instance, &s_transmit_frame, OT_ERROR_NONE);
+            otPlatDiagRadioTransmitDone(aInstance, &s_transmit_frame, OT_ERROR_NONE);
         } else
 #endif
         {
             if (s_ack_frame.mPsdu == NULL) {
-                otPlatRadioTxDone(instance, &s_transmit_frame, NULL, OT_ERROR_NONE);
+                otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, OT_ERROR_NONE);
             } else {
-                otPlatRadioTxDone(instance, &s_transmit_frame, &s_ack_frame, OT_ERROR_NONE);
+                otPlatRadioTxDone(aInstance, &s_transmit_frame, &s_ack_frame, OT_ERROR_NONE);
                 s_ack_frame.mPsdu = NULL;
             }
         }
@@ -144,7 +146,7 @@ esp_err_t esp_openthread_radio_process(otInstance *instance, const esp_openthrea
         clr_event(EVENT_TX_FAILED);
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
         if (otPlatDiagModeGet()) {
-            otPlatDiagRadioTransmitDone(instance, &s_transmit_frame, OT_ERROR_CHANNEL_ACCESS_FAILURE);
+            otPlatDiagRadioTransmitDone(aInstance, &s_transmit_frame, OT_ERROR_CHANNEL_ACCESS_FAILURE);
         } else
 #endif
         {
@@ -169,28 +171,28 @@ esp_err_t esp_openthread_radio_process(otInstance *instance, const esp_openthrea
                 break;
             }
 
-            otPlatRadioTxDone(instance, &s_transmit_frame, NULL, err);
+            otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, err);
         }
     }
 
     if (get_event(EVENT_ENERGY_DETECT_DONE)) {
         clr_event(EVENT_ENERGY_DETECT_DONE);
-        otPlatRadioEnergyScanDone(instance, s_energy_detect_power);
+        otPlatRadioEnergyScanDone(aInstance, s_ed_power);
     }
 
-    while (recv_queue.used) {
-        if (s_receive_frame[recv_queue.head].mPsdu != NULL) {
+    while (s_recv_queue.used) {
+        if (s_receive_frame[s_recv_queue.head].mPsdu != NULL) {
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
             if (otPlatDiagModeGet()) {
-                otPlatDiagRadioReceiveDone(instance, &s_receive_frame[recv_queue.head], OT_ERROR_NONE);
+                otPlatDiagRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
             } else
 #endif
             {
-                otPlatRadioReceiveDone(instance, &s_receive_frame[recv_queue.head], OT_ERROR_NONE);
+                otPlatRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
             }
-            s_receive_frame[recv_queue.head].mPsdu = NULL;
-            recv_queue.head = (recv_queue.head + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
-            recv_queue.used--;
+            s_receive_frame[s_recv_queue.head].mPsdu = NULL;
+            s_recv_queue.head = (s_recv_queue.head + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
+            s_recv_queue.used--;
         }
     }
 
@@ -231,7 +233,7 @@ bool otPlatRadioIsEnabled(otInstance *aInstance)
 
 otError otPlatRadioEnable(otInstance *aInstance)
 {
-    // radio has been enabled in platformRadioInit()
+    // radio has been enabled in esp_openthread_radio_init()
 
     return OT_ERROR_NONE;
 }
@@ -278,7 +280,7 @@ otRadioFrame *otPlatRadioGetTransmitBuffer(otInstance *aInstance)
 
 int8_t otPlatRadioGetRssi(otInstance *aInstance)
 {
-    return 0;
+    return s_rssi;
 }
 
 otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
@@ -390,16 +392,16 @@ void otPlatDiagChannelSet(uint8_t channel)
     OT_UNUSED_VARIABLE(channel);
 }
 
-void otPlatDiagRadioReceived(otInstance *instance, otRadioFrame *frame, otError error)
+void otPlatDiagRadioReceived(otInstance *aInstance, otRadioFrame *frame, otError error)
 {
-    OT_UNUSED_VARIABLE(instance);
+    OT_UNUSED_VARIABLE(aInstance);
     OT_UNUSED_VARIABLE(frame);
     OT_UNUSED_VARIABLE(error);
 }
 
-void otPlatDiagAlarmCallback(otInstance *instance)
+void otPlatDiagAlarmCallback(otInstance *aInstance)
 {
-    OT_UNUSED_VARIABLE(instance);
+    OT_UNUSED_VARIABLE(aInstance);
 }
 
 // events
@@ -418,19 +420,21 @@ void IRAM_ATTR esp_ieee802154_transmit_done(const uint8_t *frame, const uint8_t 
 
 void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
 {
-    if (recv_queue.used == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
+    if (s_recv_queue.used == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
         ESP_EARLY_LOGE(OT_PLAT_LOG_TAG, "radio receive buffer full!");
     }
 
-    s_receive_frame[recv_queue.tail].mPsdu = data + 1;
-    s_receive_frame[recv_queue.tail].mLength = *data;
-    s_receive_frame[recv_queue.tail].mChannel = frame_info->channel;
-    s_receive_frame[recv_queue.tail].mInfo.mRxInfo.mRssi = frame_info->rssi;
-    s_receive_frame[recv_queue.tail].mInfo.mRxInfo.mAckedWithFramePending = frame_info->pending;
-    s_receive_frame[recv_queue.tail].mInfo.mRxInfo.mTimestamp = esp_timer_get_time();
+    s_rssi = frame_info->rssi;
 
-    recv_queue.tail = (recv_queue.tail + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
-    recv_queue.used++;
+    s_receive_frame[s_recv_queue.tail].mPsdu = data + 1;
+    s_receive_frame[s_recv_queue.tail].mLength = *data;
+    s_receive_frame[s_recv_queue.tail].mChannel = frame_info->channel;
+    s_receive_frame[s_recv_queue.tail].mInfo.mRxInfo.mRssi = frame_info->rssi;
+    s_receive_frame[s_recv_queue.tail].mInfo.mRxInfo.mAckedWithFramePending = frame_info->pending;
+    s_receive_frame[s_recv_queue.tail].mInfo.mRxInfo.mTimestamp = esp_timer_get_time();
+
+    s_recv_queue.tail = (s_recv_queue.tail + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
+    s_recv_queue.used++;
     set_event(EVENT_RX_DONE);
 }
 
@@ -453,7 +457,7 @@ void IRAM_ATTR esp_ieee802154_transmit_sfd_done(uint8_t *frame)
 
 void IRAM_ATTR esp_ieee802154_energy_detect_done(int8_t power)
 {
-    s_energy_detect_power = power;
+    s_ed_power = power;
 
     set_event(EVENT_ENERGY_DETECT_DONE);
 }
@@ -461,12 +465,10 @@ void IRAM_ATTR esp_ieee802154_energy_detect_done(int8_t power)
 void IRAM_ATTR esp_ieee802154_cca_done(bool channel_free)
 {
 }
-// TODO irregular implementation
+
 otError otPlatEntropyGet(uint8_t *aOutput, uint16_t aOutputLength)
 {
-    otError error = OT_ERROR_NONE;
-    for (uint16_t i = 0; i < aOutputLength; i++) {
-        aOutput[i] = (uint8_t)(esp_timer_get_time() % 256);
-    }
-    return error;
+    esp_fill_random(aOutput, aOutputLength);
+
+    return OT_ERROR_NONE;
 }

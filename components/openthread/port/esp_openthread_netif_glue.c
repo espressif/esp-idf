@@ -84,7 +84,7 @@ static esp_err_t notify_packets_pending(void)
     return ESP_OK;
 }
 
-void process_thread_address(const otIp6AddressInfo *address_info, bool is_added, void *context)
+static void process_thread_address(const otIp6AddressInfo *address_info, bool is_added, void *context)
 {
     bool is_multicast = address_info->mAddress->mFields.m8[0] == 0xff;
     esp_ip6_addr_t addr;

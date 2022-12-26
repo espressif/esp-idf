@@ -157,7 +157,9 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        EXCLUDE_SRCS "${exclude_srcs}"
                        INCLUDE_DIRS "${public_include_dirs}"
                        PRIV_INCLUDE_DIRS "${private_include_dirs}"
-                       REQUIRES esp_event mbedtls ieee802154 console lwip esp_timer esp_netif esp_partition spi_flash driver)
+                       REQUIRES esp_netif lwip
+                       PRIV_REQUIRES console driver esp_event esp_partition esp_timer
+                                     ieee802154 mbedtls spi_flash)
 
 if(CONFIG_OPENTHREAD_ENABLED)
     if(CONFIG_OPENTHREAD_RADIO)

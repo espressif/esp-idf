@@ -125,7 +125,7 @@ menu "OpenThread"
     config OPENTHREAD_SRP_CLIENT
         bool "Enable SRP Client"
         depends on OPENTHREAD_ENABLED
-        default n
+        default y
         help
             Select this option to enable SRP Client in OpenThread. This allows a device to register SRP services to SRP
             Server.

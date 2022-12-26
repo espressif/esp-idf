@@ -73,10 +73,6 @@ esp_err_t esp_openthread_uart_init(const esp_openthread_platform_config_t *confi
     char uart_path[16];
     esp_err_t ret = ESP_OK;
 
-    // Disable IO buffer.
-    setvbuf(stdin, NULL, _IONBF, 0);
-    setvbuf(stdout, NULL, _IONBF, 0);
-
     // Install UART driver for interrupt-driven reads and writes.
     ESP_RETURN_ON_FALSE(config->host_config.host_connection_mode == HOST_CONNECTION_MODE_CLI_UART ||
                             config->host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_UART,
