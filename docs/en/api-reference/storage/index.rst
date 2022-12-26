@@ -16,7 +16,7 @@ This section contains reference of the high-level storage APIs. They are based o
 .. note::
     It's suggested to use high-level APIs (``esp_partition`` or file system) instead of low-level driver APIs to access the SPI NOR Flash.
 
-    Due to the restriction of NOR Flash and ESP hardware, accessing the main flash will affect the performance of the whole system. See :doc:`SPI Flash Documents </api-reference/peripherals/spi_flash/spi_flash>` to learn more about the limitations.
+    Due to the restriction of NOR Flash and ESP hardware, accessing the main flash will affect the performance of the whole system. See :doc:`SPI Flash Documents </api-reference/peripherals/spi_flash/index>` to learn more about the limitations.
 
 .. toctree::
     :maxdepth: 1

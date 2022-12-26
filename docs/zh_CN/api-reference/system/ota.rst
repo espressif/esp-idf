@@ -296,7 +296,7 @@ Python API
 
 * :doc:`分区表 <../../api-guides/partition-tables>`
 * :doc:`分区表 API <../storage/partition>`
-* :doc:`低层 SPI Flash API <../peripherals/spi_flash/spi_flash>`
+* :doc:`低层 SPI Flash API <../peripherals/spi_flash/index>`
 * :doc:`ESP HTTPS OTA <esp_https_ota>`
 
 应用程序示例

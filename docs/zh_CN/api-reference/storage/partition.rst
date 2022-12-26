@@ -3,7 +3,7 @@
 
 概述
 --------
-``esp_partition`` 组件提供了高层次的 API 函数，用于访问定义在 :doc:`分区表 </api-guides/partition-tables>` 中的分区。这些 API 基于 :doc:`SPI Flash 驱动 </api-reference/peripherals/spi_flash/spi_flash>` 提供的低层次 API。
+``esp_partition`` 组件提供了高层次的 API 函数，用于访问定义在 :doc:`分区表 </api-guides/partition-tables>` 中的分区。这些 API 基于 :doc:`SPI Flash 驱动 </api-reference/peripherals/spi_flash/index>` 提供的低层次 API。
 
 
 

@@ -296,7 +296,7 @@ See also
 
 * :doc:`Partition Table documentation <../../api-guides/partition-tables>`
 * :doc:`Partition API <../storage/partition>`
-* :doc:`Lower-Level SPI Flash API <../peripherals/spi_flash/spi_flash>`
+* :doc:`Lower-Level SPI Flash API <../peripherals/spi_flash/index>`
 * :doc:`ESP HTTPS OTA <esp_https_ota>`
 
 Application Example

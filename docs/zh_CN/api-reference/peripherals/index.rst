@@ -29,7 +29,7 @@
     sdspi_host
     :SOC_SDIO_SLAVE_SUPPORTED: sdio_slave
     :SOC_SDM_SUPPORTED: sdm
-    spi_flash/spi_flash
+    spi_flash/index
     spi_master
     spi_slave
     :esp32: secure_element

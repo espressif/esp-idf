@@ -6,7 +6,7 @@ Partitions API
 Overview
 --------
 
-The ``esp_partition`` component has higher-level API functions which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`. These APIs are based on lower level API provided by :doc:`SPI Flash driver </api-reference/peripherals/spi_flash/spi_flash>`.
+The ``esp_partition`` component has higher-level API functions which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`. These APIs are based on lower level API provided by :doc:`SPI Flash driver </api-reference/peripherals/spi_flash/index>`.
 
 .. _flash-partition-apis:
 
