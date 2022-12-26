@@ -1399,7 +1399,7 @@ static uint32_t get_power_down_flags(void)
         pd_flags |= RTC_SLEEP_PD_CPU;
     }
 #endif
-    if (s_config.pd_options[ESP_PD_DOMAIN_RTC8M] != ESP_PD_OPTION_ON) {
+    if (s_config.pd_options[ESP_PD_DOMAIN_RC_FAST] != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_INT_8M;
     }
     if (s_config.pd_options[ESP_PD_DOMAIN_XTAL] != ESP_PD_OPTION_ON) {

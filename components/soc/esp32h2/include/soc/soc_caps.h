@@ -403,14 +403,11 @@
 // TODO: IDF-6270 (Copy from esp32c6, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
-
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-
 #define SOC_PM_SUPPORT_CPU_PD           (1)
-
 #define SOC_PM_SUPPORT_WIFI_PD          (1)
-
 #define SOC_PM_SUPPORT_BT_PD            (1)
+#define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 
 // TODO: IDF-6229 (Copy from esp32c6, need check)
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/

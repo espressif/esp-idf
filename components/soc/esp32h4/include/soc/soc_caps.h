@@ -362,12 +362,10 @@
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
 /*-------------------------- Power Management CAPS ----------------------------*/
-
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-
 #define SOC_PM_SUPPORT_CPU_PD           (1)
-
 #define SOC_PM_SUPPORT_BT_PD            (1)
+#define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

@@ -923,7 +923,7 @@ config SOC_PM_SUPPORT_RC32K_PD
     bool
     default y
 
-config SOC_PM_SUPPORT_FOSC_PD
+config SOC_PM_SUPPORT_RC_FAST_PD
     bool
     default y
 

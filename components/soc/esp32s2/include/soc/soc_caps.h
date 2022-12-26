@@ -401,6 +401,7 @@
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP        (1)     /*!<Supports waking up from touch pad trigger */
 #define SOC_PM_SUPPORT_RTC_FAST_MEM_PD            (1)
 #define SOC_PM_SUPPORT_RTC_SLOW_MEM_PD            (1)
+#define SOC_PM_SUPPORT_RC_FAST_PD                 (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_APLL_SUPPORTED                    (1)
