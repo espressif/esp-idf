@@ -63,7 +63,7 @@ At file scope, define it before including ``esp_log.h``, e.g.:
    #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
    #include "esp_log.h"
 
-At component scope, define it in the component makefile:
+At component scope, define it in the component CMakeLists:
 
 .. code-block:: cmake
 
