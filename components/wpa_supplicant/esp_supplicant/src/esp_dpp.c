@@ -627,7 +627,7 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
                                &offchan_event_handler, NULL);
 
-    wpa_printf(MSG_INFO, "esp_dpp_task prio:%d, stack:%d\n", 2, DPP_TASK_STACK_SIZE);
+    wpa_printf(MSG_INFO, "esp_dpp_task prio:%d, stack:%d", 2, DPP_TASK_STACK_SIZE);
 
     return ESP_OK;
 }

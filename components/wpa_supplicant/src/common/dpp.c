@@ -702,7 +702,7 @@ static struct crypto_key * dpp_set_keypair(const struct dpp_curve_params **curve
 	int id;
 
 	if (!pkey) {
-		wpa_printf(MSG_ERROR, "%s: failed to get pkey\n", __func__);
+		wpa_printf(MSG_ERROR, "%s: failed to get pkey", __func__);
 		return NULL;
 	}
 	group = crypto_ec_get_group_from_key(pkey);

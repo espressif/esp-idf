@@ -675,7 +675,7 @@ struct wpabuf * eap_peer_tls_build_ack(u8 id, EapType eap_type,
 	resp = eap_tls_msg_alloc(eap_type, 1, EAP_CODE_RESPONSE, id);
 	if (resp == NULL)
 		return NULL;
-	wpa_printf(MSG_DEBUG, "SSL: Building ACK (type=%d id=%d ver=%d) \n",
+	wpa_printf(MSG_DEBUG, "SSL: Building ACK (type=%d id=%d ver=%d)",
 		   (int) eap_type, id, peap_version);
 	wpabuf_put_u8(resp, peap_version); /* Flags */
 	return resp;
@@ -995,7 +995,7 @@ get_defaults:
 	if (methods == NULL)
 		methods = eap_get_phase2_types(config, &num_methods);
 	if (methods == NULL) {
-		wpa_printf(MSG_ERROR, "TLS: No Phase EAP methods available\n");
+		wpa_printf(MSG_ERROR, "TLS: No Phase EAP methods available");
 		return -1;
 	}
 	wpa_hexdump(MSG_DEBUG, "TLS: Phase2 EAP types",
@@ -1025,7 +1025,7 @@ int eap_peer_tls_phase2_nak(struct eap_method_type *types, size_t num_types,
 	size_t i;
 
 	/* TODO: add support for expanded Nak */
-	wpa_printf(MSG_DEBUG, "TLS: Phase Request: Nak type=%d\n", *pos);
+	wpa_printf(MSG_DEBUG, "TLS: Phase Request: Nak type=%d", *pos);
 	wpa_hexdump(MSG_DEBUG, "TLS: Allowed Phase2 EAP types",
 		    (u8 *) types, num_types * sizeof(struct eap_method_type));
 	*resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_NAK, num_types,

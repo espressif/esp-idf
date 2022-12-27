@@ -106,7 +106,7 @@ static void * eap_ttls_init(struct eap_sm *sm)
 	}
 
 	if (eap_peer_tls_ssl_init(sm, &data->ssl, config, EAP_TYPE_TTLS)) {
-		wpa_printf(MSG_ERROR, "EAP-TTLS: Failed to initialize SSL.\n");
+		wpa_printf(MSG_ERROR, "EAP-TTLS: Failed to initialize SSL.");
 		eap_ttls_deinit(sm, data);
 		return NULL;
 	}
@@ -211,7 +211,7 @@ static int eap_ttls_v0_derive_key(struct eap_sm *sm,
 						 "ttls keying material",
 						 EAP_TLS_KEY_LEN);
 	if (!data->key_data) {
-		wpa_printf(MSG_ERROR, "EAP-TTLS: Failed to derive key\n");
+		wpa_printf(MSG_ERROR, "EAP-TTLS: Failed to derive key");
 		return -1;
 	}
 
@@ -229,7 +229,7 @@ static int eap_ttls_v0_derive_key(struct eap_sm *sm,
 		wpa_hexdump(MSG_DEBUG, "EAP-TTLS: Derived Session-Id",
 			    data->session_id, data->id_len);
 	} else {
-		wpa_printf(MSG_ERROR, "EAP-TTLS: Failed to derive Session-Id\n");
+		wpa_printf(MSG_ERROR, "EAP-TTLS: Failed to derive Session-Id");
 	}
 
 	return 0;
@@ -424,7 +424,7 @@ static int eap_ttls_phase2_request_mschapv2(struct eap_sm *sm,
 	size_t identity_len, password_len;
 	int pwhash;
 
-	wpa_printf(MSG_DEBUG, "EAP-TTLS: Phase 2 MSCHAPV2 Request\n");
+	wpa_printf(MSG_DEBUG, "EAP-TTLS: Phase 2 MSCHAPV2 Request");
 
 	identity = eap_get_config_identity(sm, &identity_len);
 	password = eap_get_config_password2(sm, &password_len, &pwhash);
@@ -433,7 +433,7 @@ static int eap_ttls_phase2_request_mschapv2(struct eap_sm *sm,
 
 	msg = wpabuf_alloc(identity_len + 1000);
 	if (msg == NULL) {
-		wpa_printf(MSG_ERROR, "EAP-TTLS/MSCHAPV2: Failed to allocate memory\n");
+		wpa_printf(MSG_ERROR, "EAP-TTLS/MSCHAPV2: Failed to allocate memory");
 		return -1;
 	}
 	pos = buf = wpabuf_mhead(msg);
@@ -448,7 +448,7 @@ static int eap_ttls_phase2_request_mschapv2(struct eap_sm *sm,
 	if (challenge == NULL) {
 		wpabuf_free(msg);
 		wpa_printf(MSG_ERROR, "EAP-TTLS/MSCHAPV2: Failed to derive "
-			  "implicit challenge\n");
+			  "implicit challenge");
 		return -1;
 	}
 
@@ -467,7 +467,7 @@ static int eap_ttls_phase2_request_mschapv2(struct eap_sm *sm,
 		os_free(challenge);
 		wpabuf_free(msg);
 		wpa_printf(MSG_ERROR, "EAP-TTLS/MSCHAPV2: Failed to get "
-			  "random data for peer challenge\n");
+			  "random data for peer challenge");
 		return -1;
 	}
 	peer_challenge = pos;
@@ -481,7 +481,7 @@ static int eap_ttls_phase2_request_mschapv2(struct eap_sm *sm,
 		os_free(challenge);
 		wpabuf_free(msg);
 		wpa_printf(MSG_ERROR, "EAP-TTLS/MSCHAPV2: Failed to derive "
-			  "response\n");
+			  "response");
 		return -1;
 	}
 	data->auth_response_valid = 1;
@@ -498,7 +498,7 @@ static int eap_ttls_phase2_request_mschapv2(struct eap_sm *sm,
 		 * EAP-TTLS/MSHCAPV2 without the expected MS-CHAP-v2 Success
 		 * packet. */
 		wpa_printf(MSG_DEBUG, "EAP-TTLS/MSCHAPV2: EAP workaround - "
-			  "allow success without tunneled response\n");
+			  "allow success without tunneled response");
 		ret->methodState = METHOD_MAY_CONT;
 		ret->decision = DECISION_COND_SUCC;
 	}
@@ -506,7 +506,7 @@ static int eap_ttls_phase2_request_mschapv2(struct eap_sm *sm,
 	return 0;
 #else /* EAP_MSCHAPv2 */
     printf("[Debug] Set EEEEE \n");
-	wpa_printf(MSG_ERROR, "EAP-TTLS: MSCHAPv2 not included in the build\n");
+	wpa_printf(MSG_ERROR, "EAP-TTLS: MSCHAPv2 not included in the build");
 	return -1;
 #endif /* EAP_MSCHAPv2 */
 #endif /* CONFIG_FIPS */
@@ -748,7 +748,7 @@ static int eap_ttls_phase2_request(struct eap_sm *sm,
 #ifdef EAP_TNC
 	if (data->tnc_started) {
 		printf("[debug] set phase2_type \n");
-		wpa_printf(MSG_DEBUG, "EAP-TTLS: Processing TNC\n");
+		wpa_printf(MSG_DEBUG, "EAP-TTLS: Processing TNC");
 		phase2_type = EAP_TTLS_PHASE2_EAP;
 	}
 #endif /* EAP_TNC */
@@ -758,14 +758,14 @@ static int eap_ttls_phase2_request(struct eap_sm *sm,
 	    phase2_type == EAP_TTLS_PHASE2_PAP ||
 	    phase2_type == EAP_TTLS_PHASE2_CHAP) {
 		if (eap_get_config_identity(sm, &len) == NULL) {
-			wpa_printf(MSG_ERROR, "EAP-TTLS: Identity not configured\n");
+			wpa_printf(MSG_ERROR, "EAP-TTLS: Identity not configured");
             if (eap_get_config_password(sm, &len) == NULL)
                 printf("[Debug] Return because no identity  EAP_TTLS_PHASE2_MSCHAPV2 EAP_TTLS_PHASE2_MSCHAP\n");
 			return 0;
 		}
 
 		if (eap_get_config_password(sm, &len) == NULL) {
-			wpa_printf(MSG_ERROR, "EAP-TTLS: Password not configured\n");
+			wpa_printf(MSG_ERROR, "EAP-TTLS: Password not configured");
 			printf("[Debug] Return because no password  EAP_TTLS_PHASE2_MSCHAPV2 EAP_TTLS_PHASE2_MSCHAP\n");
 			return 0;
 		}
@@ -788,7 +788,7 @@ static int eap_ttls_phase2_request(struct eap_sm *sm,
 		res = eap_ttls_phase2_request_chap(sm, data, ret, resp);
 		break;
 	default:
-		wpa_printf(MSG_ERROR, "EAP-TTLS: Phase 2 - Unknown\n");
+		wpa_printf(MSG_ERROR, "EAP-TTLS: Phase 2 - Unknown");
 		res = -1;
 		break;
 	}
@@ -813,12 +813,12 @@ struct ttls_parse_avp {
 static int eap_ttls_parse_attr_eap(const u8 *dpos, size_t dlen,
 			struct ttls_parse_avp *parse)
 {
-	wpa_printf(MSG_DEBUG, "EAP-TTLS: AVP - EAP Message\n");
+	wpa_printf(MSG_DEBUG, "EAP-TTLS: AVP - EAP Message");
 	if (parse->eapdata == NULL) {
 		parse->eapdata = os_malloc(dlen);
 		if (parse->eapdata == NULL) {
 			wpa_printf(MSG_ERROR, "EAP-TTLS: Failed to allocate "
-				  "memory for Phase 2 EAP data\n");
+				  "memory for Phase 2 EAP data");
 			return -1;
 		}
 		os_memcpy(parse->eapdata, dpos, dlen);
@@ -827,7 +827,7 @@ static int eap_ttls_parse_attr_eap(const u8 *dpos, size_t dlen,
 		u8 *neweap = (u8 *)os_realloc(parse->eapdata, parse->eap_len + dlen);
 		if (neweap == NULL) {
 			wpa_printf(MSG_ERROR, "EAP-TTLS: Failed to allocate "
-				  "memory for Phase 2 EAP data\n");
+				  "memory for Phase 2 EAP data");
 			return -1;
 		}
 		os_memcpy(neweap + parse->eap_len, dpos, dlen);
@@ -853,18 +853,18 @@ static int eap_ttls_parse_avp(u8 *pos, size_t left,
 	avp_flags = (avp_length >> 24) & 0xff;
 	avp_length &= 0xffffff;
 	wpa_printf(MSG_DEBUG, "EAP-TTLS: AVP: code=%d flags=0x%02x "
-		  "length=%d\n", (int) avp_code, avp_flags,
+		  "length=%d", (int) avp_code, avp_flags,
 		  (int) avp_length);
 
 	if (avp_length > left) {
 		wpa_printf(MSG_ERROR, "EAP-TTLS: AVP overflow "
-			  "(len=%d, left=%lu) - dropped\n",
+			  "(len=%d, left=%lu) - dropped",
 			  (int) avp_length, (unsigned long) left);
 		return -1;
 	}
 
 	if (avp_length < sizeof(*avp)) {
-		wpa_printf(MSG_ERROR, "EAP-TTLS: Invalid AVP length %d\n",
+		wpa_printf(MSG_ERROR, "EAP-TTLS: Invalid AVP length %d",
 			  avp_length);
 		return -1;
 	}
@@ -873,11 +873,11 @@ static int eap_ttls_parse_avp(u8 *pos, size_t left,
 	dlen = avp_length - sizeof(*avp);
 	if (avp_flags & AVP_FLAGS_VENDOR) {
 		if (dlen < 4) {
-			wpa_printf(MSG_ERROR, "EAP-TTLS: Vendor AVP underflow\n");
+			wpa_printf(MSG_ERROR, "EAP-TTLS: Vendor AVP underflow");
 			return -1;
 		}
 		vendor_id = WPA_GET_BE32(dpos);
-		wpa_printf(MSG_DEBUG, "EAP-TTLS: AVP vendor_id %d\n",
+		wpa_printf(MSG_DEBUG, "EAP-TTLS: AVP vendor_id %d",
 			  (int) vendor_id);
 		dpos += 4;
 		dlen -= 4;
@@ -900,7 +900,7 @@ static int eap_ttls_parse_avp(u8 *pos, size_t left,
 		if (dlen != 43) {
 			wpa_printf(MSG_ERROR, "EAP-TTLS: Unexpected "
 				  "MS-CHAP2-Success length "
-				  "(len=%lu, expected 43)\n",
+				  "(len=%lu, expected 43)",
 				  (unsigned long) dlen);
 			return -1;
 		}
@@ -912,12 +912,12 @@ static int eap_ttls_parse_avp(u8 *pos, size_t left,
 		parse->mschapv2_error = 1;
 	} else if (avp_flags & AVP_FLAGS_MANDATORY) {
 		wpa_printf(MSG_ERROR, "EAP-TTLS: Unsupported mandatory AVP "
-			  "code %d vendor_id %d - dropped\n",
+			  "code %d vendor_id %d - dropped",
 			  (int) avp_code, (int) vendor_id);
 		return -1;
 	} else {
 		wpa_printf(MSG_INFO, "EAP-TTLS: Ignoring unsupported AVP "
-			  "code %d vendor_id %d\n",
+			  "code %d vendor_id %d",
 			  (int) avp_code, (int) vendor_id);
 	}
 
@@ -937,7 +937,7 @@ static int eap_ttls_parse_avps(struct wpabuf *in_decrypted,
 	wpa_hexdump(MSG_DEBUG, "EAP-TTLS: Decrypted Phase 2 AVPs", pos, left);
 	if (left < sizeof(struct ttls_avp)) {
 		wpa_printf(MSG_ERROR, "EAP-TTLS: Too short Phase 2 AVP frame"
-			  " len=%lu expected %lu or more - dropped\n",
+			  " len=%lu expected %lu or more - dropped",
 			  (unsigned long) left,
 			  (unsigned long) sizeof(struct ttls_avp));
 		return -1;
@@ -969,11 +969,11 @@ static u8 * eap_ttls_fake_identity_request(void)
 	u8 *buf;
 
 	wpa_printf(MSG_DEBUG, "EAP-TTLS: empty data in beginning of "
-		  "Phase 2 - use fake EAP-Request Identity\n");
+		  "Phase 2 - use fake EAP-Request Identity");
 	buf = os_malloc(sizeof(*hdr) + 1);
 	if (buf == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-TTLS: failed to allocate "
-			  "memory for fake EAP-Identity Request\n");
+			  "memory for fake EAP-Identity Request");
 		return NULL;
 	}
 
@@ -998,7 +998,7 @@ static int eap_ttls_encrypt_response(struct eap_sm *sm,
 	if (eap_peer_tls_encrypt(sm, &data->ssl, EAP_TYPE_TTLS,
 				 data->ttls_version, identifier,
 				 resp, out_data)) {
-		wpa_printf(MSG_ERROR, "EAP-TTLS: Failed to encrypt a Phase 2 frame\n");
+		wpa_printf(MSG_ERROR, "EAP-TTLS: Failed to encrypt a Phase 2 frame");
 		return -1;
 	}
 	wpabuf_free(resp);
@@ -1071,7 +1071,7 @@ static int eap_ttls_process_phase2_mschapv2(struct eap_sm *sm,
 #ifdef EAP_MSCHAPv2
 	if (parse->mschapv2_error) {
 		wpa_printf(MSG_ERROR, "EAP-TTLS/MSCHAPV2: Received "
-			  "MS-CHAP-Error - failed\n");
+			  "MS-CHAP-Error - failed");
 		ret->methodState = METHOD_DONE;
 		ret->decision = DECISION_FAIL;
 		/* Reply with empty data to ACK error */
@@ -1089,12 +1089,12 @@ static int eap_ttls_process_phase2_mschapv2(struct eap_sm *sm,
 		}
 #endif /* EAP_TNC */
 		wpa_printf(MSG_ERROR, "EAP-TTLS: no MS-CHAP2-Success AVP "
-			  "received for Phase2 MSCHAPV2\n");
+			  "received for Phase2 MSCHAPV2");
 		return -1;
 	}
 	if (parse->mschapv2[0] != data->ident) {
 		wpa_printf(MSG_ERROR, "EAP-TTLS: Ident mismatch for Phase 2 "
-			  "MSCHAPV2 (received Ident 0x%02x, expected 0x%02x)\n",
+			  "MSCHAPV2 (received Ident 0x%02x, expected 0x%02x)",
 			  parse->mschapv2[0], data->ident);
 		return -1;
 	}
@@ -1102,12 +1102,12 @@ static int eap_ttls_process_phase2_mschapv2(struct eap_sm *sm,
 	    mschapv2_verify_auth_response(data->auth_response,
 					  parse->mschapv2 + 1, 42)) {
 		wpa_printf(MSG_ERROR, "EAP-TTLS: Invalid authenticator "
-			  "response in Phase 2 MSCHAPV2 success request\n");
+			  "response in Phase 2 MSCHAPV2 success request");
 		return -1;
 	}
 
 	wpa_printf(MSG_DEBUG, "EAP-TTLS: Phase 2 MSCHAPV2 "
-		  "authentication succeeded\n");
+		  "authentication succeeded");
 	ret->methodState = METHOD_DONE;
 	ret->decision = DECISION_UNCOND_SUCC;
 	data->phase2_success = 1;
@@ -1118,7 +1118,7 @@ static int eap_ttls_process_phase2_mschapv2(struct eap_sm *sm,
 	 */
 	return 1;
 #else /* EAP_MSCHAPv2 */
-	wpa_printf(MSG_ERROR, "EAP-TTLS: MSCHAPv2 not included in the build\n");
+	wpa_printf(MSG_ERROR, "EAP-TTLS: MSCHAPv2 not included in the build");
 	return -1;
 #endif /* EAP_MSCHAPv2 */
 }
@@ -1134,18 +1134,18 @@ static int eap_ttls_process_tnc_start(struct eap_sm *sm,
 	/* TNC uses inner EAP method after non-EAP TTLS phase 2. */
 	if (parse->eapdata == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-TTLS: Phase 2 received "
-			  "unexpected tunneled data (no EAP)\n");
+			  "unexpected tunneled data (no EAP)");
 		return -1;
 	}
 
 	if (!data->ready_for_tnc) {
 		wpa_printf(MSG_ERROR, "EAP-TTLS: Phase 2 received "
-			  "EAP after non-EAP, but not ready for TNC\n");
+			  "EAP after non-EAP, but not ready for TNC");
 		return -1;
 	}
 
 	wpa_printf(MSG_DEBUG, "EAP-TTLS: Start TNC after completed "
-		  "non-EAP method\n");
+		  "non-EAP method");
 	data->tnc_started = 1;
 
 	if (eap_ttls_process_phase2_eap(sm, data, ret, parse, resp) < 0)
@@ -1249,7 +1249,7 @@ static int eap_ttls_implicit_identity_request(struct eap_sm *sm,
 	resp = NULL;
 	if (eap_ttls_phase2_request(sm, data, ret, hdr, &resp)) {
 		wpa_printf(MSG_ERROR, "EAP-TTLS: Phase2 Request "
-			  "processing failed\n");
+			  "processing failed");
 		retval = -1;
 	} else {
 		struct eap_peer_config *config = eap_get_config(sm);
@@ -1298,7 +1298,7 @@ static int eap_ttls_phase2_start(struct eap_sm *sm, struct eap_ttls_data *data,
 	if (data->reauth &&
 	    tls_connection_resumed(sm->ssl_ctx, data->ssl.conn)) {
 		wpa_printf(MSG_DEBUG, "EAP-TTLS: Session resumption - "
-			  "skip phase 2\n");
+			  "skip phase 2");
 		*out_data = eap_peer_tls_build_ack(identifier, EAP_TYPE_TTLS,
 						   data->ttls_version);
 		ret->methodState = METHOD_DONE;
@@ -1324,12 +1324,12 @@ static int eap_ttls_decrypt(struct eap_sm *sm, struct eap_ttls_data *data,
 	os_memset(&parse, 0, sizeof(parse));
 
 	wpa_printf(MSG_DEBUG, "EAP-TTLS: received %lu bytes encrypted data for"
-		  " Phase 2\n",
+		  " Phase 2",
 		  in_data ? (unsigned long) wpabuf_len(in_data) : 0);
 
 	if (data->pending_phase2_req) {
 		wpa_printf(MSG_DEBUG, "EAP-TTLS: Pending Phase 2 request - "
-			  "skip decryption and use old data\n");
+			  "skip decryption and use old data");
 		/* Clear TLS reassembly state. */
 		eap_peer_tls_reset_input(&data->ssl);
 
@@ -1399,10 +1399,10 @@ static int eap_ttls_process_handshake(struct eap_sm *sm,
 
 	if (tls_connection_established(sm->ssl_ctx, data->ssl.conn)) {
 		wpa_printf(MSG_DEBUG, "EAP-TTLS: TLS done, proceed to "
-			  "Phase 2\n");
+			  "Phase 2");
 		if (data->resuming) {
 			wpa_printf(MSG_DEBUG, "EAP-TTLS: fast reauth - may "
-				  "skip Phase 2\n");
+				  "skip Phase 2");
 			ret->decision = DECISION_COND_SUCC;
 			ret->methodState = METHOD_MAY_CONT;
 		}
@@ -1414,7 +1414,7 @@ static int eap_ttls_process_handshake(struct eap_sm *sm,
 					     NULL, out_data)) {
 				wpa_printf(MSG_ERROR, "EAP-TTLS: "
 					  "failed to process early "
-					  "start for Phase 2\n");
+					  "start for Phase 2");
 			}
 			res = 0;
 		}
@@ -1464,7 +1464,7 @@ static void eap_ttls_check_auth_status(struct eap_sm *sm,
 		   (ret->decision == DECISION_UNCOND_SUCC ||
 		    ret->decision == DECISION_COND_SUCC)) {
 			wpa_printf(MSG_DEBUG, "EAP-TTLS: Authentication "
-				  "completed successfully (MAY_CONT)\n");
+				  "completed successfully (MAY_CONT)");
 			data->phase2_success = 1;
 	}
 }
@@ -1489,7 +1489,7 @@ static struct wpabuf * eap_ttls_process(struct eap_sm *sm, void *priv,
 
 	if (flags & EAP_TLS_FLAGS_START) {
 		wpa_printf(MSG_DEBUG, "EAP-TTLS: Start (server ver=%d, own "
-			  "ver=%d)\n", flags & EAP_TLS_VERSION_MASK,
+			  "ver=%d)", flags & EAP_TLS_VERSION_MASK,
 			  data->ttls_version);
 
 		/* RFC 5281, Ch. 9.2:

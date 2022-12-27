@@ -962,7 +962,7 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 				label, seed, 2 * TLS_RANDOM_LEN, out, out_len);
 
 	if (ret < 0) {
-		wpa_printf(MSG_ERROR, "prf failed, ret=%d\n", ret);
+		wpa_printf(MSG_ERROR, "prf failed, ret=%d", ret);
 	}
 	wpa_hexdump_key(MSG_MSGDUMP, "key", out, out_len);
 

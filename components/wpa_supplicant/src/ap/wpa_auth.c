@@ -80,7 +80,7 @@ static void wpa_auth_add_sm(struct wpa_state_machine *sm)
             s_sm_table[i] = sm;
             s_sm_valid_bitmap |= BIT(i);
             sm->index = i;
-            wpa_printf( MSG_DEBUG, "add sm, index=%d bitmap=%x\n", i, s_sm_valid_bitmap);
+            wpa_printf( MSG_DEBUG, "add sm, index=%d bitmap=%x", i, s_sm_valid_bitmap);
             return;
         }
     }
@@ -94,7 +94,7 @@ static void wpa_auth_del_sm(struct wpa_state_machine *sm)
         }
         s_sm_table[sm->index] = NULL;
         s_sm_valid_bitmap &= ~BIT(sm->index);
-        wpa_printf( MSG_DEBUG, "del sm, index=%d bitmap=%x\n", sm->index, s_sm_valid_bitmap);
+        wpa_printf( MSG_DEBUG, "del sm, index=%d bitmap=%x", sm->index, s_sm_valid_bitmap);
     }
 }
 
@@ -145,7 +145,7 @@ static inline int wpa_auth_set_key(struct wpa_authenticator *wpa_auth,
 
     if (alg == WIFI_WPA_ALG_IGTK) {
 	if (key) {
-	    wpa_printf (MSG_DEBUG, "%s : igtk idx %d\n", __func__, idx);
+	    wpa_printf (MSG_DEBUG, "%s : igtk idx %d", __func__, idx);
 	    wifi_wpa_igtk_t *igtk = malloc(sizeof(wifi_wpa_igtk_t));
 
 	    if (igtk != NULL) {
@@ -166,7 +166,7 @@ static inline int wpa_auth_set_key(struct wpa_authenticator *wpa_auth,
             return -1;
 	}
     } else {
-	wpa_printf( MSG_DEBUG, "%s : key idx  %d alg %d vlan_id %d key_len %d key \n", __func__, idx, alg, vlan_id, key_len);
+	wpa_printf( MSG_DEBUG, "%s : key idx  %d alg %d vlan_id %d key_len %d key", __func__, idx, alg, vlan_id, key_len);
 	return esp_wifi_set_ap_key_internal(alg, addr, idx, key, key_len);
     }
     return 0;
@@ -308,7 +308,7 @@ static struct wpa_group * wpa_group_init(struct wpa_authenticator *wpa_auth,
     group->GInit = TRUE;
     if (delay_init) {
         wpa_printf( MSG_DEBUG, "WPA: Delay group state machine start "
-               "until Beacon frames have been configured\n");
+               "until Beacon frames have been configured");
         /* Initialization is completed in wpa_init_keys(). */
     } else {
         wpa_group_sm_step(wpa_auth, group);
@@ -606,17 +606,17 @@ void wpa_receive(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *s
              * msg 4/4 with incorrect type value in WPA2 mode.
              */
             wpa_printf( MSG_DEBUG, "Workaround: Allow EAPOL-Key "
-                   "with unexpected WPA type in RSN mode\n");
+                   "with unexpected WPA type in RSN mode");
         } else if (key->type != EAPOL_KEY_TYPE_RSN) {
             wpa_printf( MSG_DEBUG, "Ignore EAPOL-Key with "
-                   "unexpected type %d in RSN mode\n",
+                   "unexpected type %d in RSN mode",
                    key->type);
             return;
         }
     } else {
         if (key->type != EAPOL_KEY_TYPE_WPA) {
             wpa_printf( MSG_DEBUG, "Ignore EAPOL-Key with "
-                   "unexpected type %d in WPA mode\n",
+                   "unexpected type %d in WPA mode",
                    key->type);
             return;
         }
@@ -865,12 +865,12 @@ continue_processing:
         wpa_replay_counter_mark_invalid(sm->key_replay, NULL);
     }
 
-    wpa_printf( MSG_DEBUG, "wpa_rx: free eapol=%p\n", sm->last_rx_eapol_key);
+    wpa_printf( MSG_DEBUG, "wpa_rx: free eapol=%p", sm->last_rx_eapol_key);
     os_free(sm->last_rx_eapol_key);
     sm->last_rx_eapol_key = (u8 *)os_malloc(data_len);
     if (sm->last_rx_eapol_key == NULL)
         return;
-    wpa_printf( MSG_DEBUG, "wpa_rx: new eapol=%p\n", sm->last_rx_eapol_key);
+    wpa_printf( MSG_DEBUG, "wpa_rx: new eapol=%p", sm->last_rx_eapol_key);
     memcpy(sm->last_rx_eapol_key, data, data_len);
     sm->last_rx_eapol_key_len = data_len;
 
@@ -931,7 +931,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
     int version, pairwise;
     int i;
 
-    wpa_printf( MSG_DEBUG, "wpa_auth=%p sm=%p  kdersc=%p kde=%p nounce=%p kde_len=%u keyidx=%d encr=%d force=%d\n",
+    wpa_printf( MSG_DEBUG, "wpa_auth=%p sm=%p  kdersc=%p kde=%p nounce=%p kde_len=%u keyidx=%d encr=%d force=%d",
                    wpa_auth,sm, key_rsc, kde, nonce, kde_len, keyidx, encr, force_version);
     len = sizeof(struct ieee802_1x_hdr) + sizeof(struct wpa_eapol_key);
 
@@ -948,7 +948,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
 
     wpa_printf( MSG_DEBUG, "WPA: Send EAPOL(version=%d secure=%d mic=%d "
            "ack=%d install=%d pairwise=%d kde_len=%lu keyidx=%d "
-           "encr=%d)\n",
+           "encr=%d)",
            version,
            (key_info & WPA_KEY_INFO_SECURE) ? 1 : 0,
            (key_info & WPA_KEY_INFO_MIC) ? 1 : 0,
@@ -1131,7 +1131,7 @@ static int wpa_verify_key_mic(int akmp, struct wpa_ptk *PTK, u8 *data,
     size_t mic_len = 16;
 
     if (data_len < sizeof(*hdr) + sizeof(*key)){
-        wpa_printf( MSG_DEBUG, "invalid data length, len=%u\n", data_len);
+        wpa_printf( MSG_DEBUG, "invalid data length, len=%u", data_len);
         return -1;
     }
 
@@ -1311,7 +1311,7 @@ static void wpa_group_ensure_init(struct wpa_authenticator *wpa_auth,
      * enough entropy available immediately after system startup.
      */
     wpa_printf( MSG_DEBUG, "WPA: Re-initialize GMK/Counter on first "
-           "station\n");
+           "station");
     if (random_pool_ready() != 1) {
         wpa_printf( MSG_INFO, "WPA: Not enough entropy in random pool "
                "to proceed - reject first 4-way handshake");
@@ -1503,10 +1503,10 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
      * the packet */
     for (;;) {
         if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)) {
-            wpa_printf( MSG_DEBUG, "wpa psk\n");
+            wpa_printf( MSG_DEBUG, "wpa psk");
             pmk = wpa_auth_get_psk(sm->wpa_auth, sm->addr, pmk);
             if (pmk == NULL){
-                wpa_printf( MSG_DEBUG, "pmk is null\n");
+                wpa_printf( MSG_DEBUG, "pmk is null");
                 break;
             }
         } else {
@@ -1518,15 +1518,15 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
         if (wpa_verify_key_mic(sm->wpa_key_mgmt, &PTK,
                        sm->last_rx_eapol_key,
                        sm->last_rx_eapol_key_len) == 0) {
-            wpa_printf( MSG_DEBUG, "mic verify ok, pmk=%p\n", pmk);
+            wpa_printf( MSG_DEBUG, "mic verify ok, pmk=%p", pmk);
             ok = 1;
             break;
         } else {
-            wpa_printf( MSG_DEBUG, "mic verify fail, pmk=%p\n", pmk);
+            wpa_printf( MSG_DEBUG, "mic verify fail, pmk=%p", pmk);
         }
 
         if (!wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)){
-            wpa_printf( MSG_DEBUG, "wpa_key_mgmt=%x\n", sm->wpa_key_mgmt);
+            wpa_printf( MSG_DEBUG, "wpa_key_mgmt=%x", sm->wpa_key_mgmt);
             break;
         }
     }
@@ -2100,7 +2100,7 @@ static void wpa_group_gtk_init(struct wpa_authenticator *wpa_auth,
                    struct wpa_group *group)
 {
     wpa_printf( MSG_DEBUG, "WPA: group state machine entering state "
-           "GTK_INIT (VLAN-ID %d)\n", group->vlan_id);
+           "GTK_INIT (VLAN-ID %d)", group->vlan_id);
     group->changed = FALSE; /* GInit is not cleared here; avoid loop */
     group->wpa_group_state = WPA_GROUP_GTK_INIT;
 
@@ -2232,7 +2232,7 @@ static void wpa_group_setkeys(struct wpa_authenticator *wpa_auth,
     int tmp;
 
     wpa_printf( MSG_DEBUG, "WPA: group state machine entering state "
-           "SETKEYS (VLAN-ID %d)\n", group->vlan_id);
+           "SETKEYS (VLAN-ID %d)", group->vlan_id);
     group->changed = TRUE;
     group->wpa_group_state = WPA_GROUP_SETKEYS;
     group->GTKReKey = FALSE;
@@ -2288,7 +2288,7 @@ static int wpa_group_setkeysdone(struct wpa_authenticator *wpa_auth,
                  struct wpa_group *group)
 {
     wpa_printf( MSG_DEBUG, "WPA: group state machine entering state "
-           "SETKEYSDONE (VLAN-ID %d)\n", group->vlan_id);
+           "SETKEYSDONE (VLAN-ID %d)", group->vlan_id);
     group->changed = TRUE;
     group->wpa_group_state = WPA_GROUP_SETKEYSDONE;
 
@@ -2374,7 +2374,7 @@ bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie, uint8_t 
             }
 
             sta->wpa_sm = wpa_auth_sta_init(hapd->wpa_auth, bssid);
-            wpa_printf( MSG_DEBUG, "init wpa sm=%p\n", sta->wpa_sm);
+            wpa_printf( MSG_DEBUG, "init wpa sm=%p", sta->wpa_sm);
 
             if (sta->wpa_sm == NULL) {
                 return false;

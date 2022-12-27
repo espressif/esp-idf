@@ -268,7 +268,7 @@ int wpa2_post(uint32_t sig, uint32_t par)
     } else {
         ETSEvent *evt = (ETSEvent *)os_malloc(sizeof(ETSEvent));
         if (evt == NULL) {
-            wpa_printf(MSG_ERROR, "WPA2: E N M\n");
+            wpa_printf(MSG_ERROR, "WPA2: E N M");
             DATA_MUTEX_GIVE();
             return ESP_FAIL;
         }
@@ -303,7 +303,7 @@ int eap_sm_send_eapol(struct eap_sm *sm, struct wpabuf *resp)
     ret = esp_wifi_get_assoc_bssid_internal(bssid);
 
     if (ret != 0) {
-        wpa_printf(MSG_DEBUG, "bssid is empty \n");
+        wpa_printf(MSG_DEBUG, "bssid is empty");
         return WPA_ERR_INVALID_BSSID;
     }
 
@@ -398,7 +398,7 @@ int eap_sm_process_request(struct eap_sm *sm, struct wpabuf *reqData)
         sm->m = m;
         sm->eap_method_priv = sm->m->init(sm);
         if (sm->eap_method_priv == NULL) {
-            wpa_printf(MSG_ERROR, "Method private structure allocated failure\n");
+            wpa_printf(MSG_ERROR, "Method private structure allocated failure");
             sm->m = NULL;
             goto build_nak;
         }
@@ -499,7 +499,7 @@ static int wpa2_ent_rx_eapol(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
             ret = wpa_sm_rx_eapol(src_addr, buf, len);
 		    break;
 	    default:
-		wpa_printf(MSG_ERROR, "Unknown EAPOL packet type - %d\n", hdr->type);
+		wpa_printf(MSG_ERROR, "Unknown EAPOL packet type - %d", hdr->type);
 		    break;
     }
 
@@ -538,7 +538,7 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
     data_len = plen + sizeof(*hdr);
 
 #ifdef DEBUG_PRINT
-    wpa_printf(MSG_DEBUG, "IEEE 802.1X RX: version=%d type=%d length=%d\n",
+    wpa_printf(MSG_DEBUG, "IEEE 802.1X RX: version=%d type=%d length=%d",
                hdr->version, hdr->type, plen);
 #endif
     if (hdr->version < EAPOL_VERSION) {
@@ -576,7 +576,7 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
     case EAP_CODE_REQUEST:
         /* Handle EAP-reauthentication case */
         if (sm->finish_state == WPA2_ENT_EAP_STATE_SUCCESS) {
-                wpa_printf(MSG_INFO, ">>>>>wpa2 EAP Re-authentication in progress\n");
+                wpa_printf(MSG_INFO, ">>>>>wpa2 EAP Re-authentication in progress");
 		wpa2_set_eap_state(WPA2_ENT_EAP_STATE_IN_PROGRESS);
 	}
 
@@ -591,18 +591,18 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
             wpa_set_pmk(sm->eapKeyData, NULL, false);
             os_free(sm->eapKeyData);
             sm->eapKeyData = NULL;
-            wpa_printf(MSG_INFO, ">>>>>wpa2 FINISH\n");
+            wpa_printf(MSG_INFO, ">>>>>wpa2 FINISH");
             ret = WPA2_ENT_EAP_STATE_SUCCESS;
             wpa2_set_eap_state(WPA2_ENT_EAP_STATE_SUCCESS);
 	    eap_deinit_prev_method(sm, "EAP Success");
         } else {
-            wpa_printf(MSG_INFO, ">>>>>wpa2 FAILED, receive EAP_SUCCESS but pmk is empty, potential attack!\n");
+            wpa_printf(MSG_INFO, ">>>>>wpa2 FAILED, receive EAP_SUCCESS but pmk is empty, potential attack!");
             ret = WPA2_ENT_EAP_STATE_FAIL;
             wpa2_set_eap_state(WPA2_ENT_EAP_STATE_FAIL);
         }
         break;
     case EAP_CODE_FAILURE:
-        wpa_printf(MSG_INFO, ">>>>>wpa2 FAILED\n");
+        wpa_printf(MSG_INFO, ">>>>>wpa2 FAILED");
         ret = WPA2_ENT_EAP_STATE_FAIL;
         wpa2_set_eap_state(WPA2_ENT_EAP_STATE_FAIL);
         break;
@@ -700,14 +700,14 @@ static int eap_peer_sm_init(void)
     esp_wifi_get_macaddr_internal(WIFI_IF_STA, sm->ownaddr);
     ret = eap_peer_blob_init(sm);
     if (ret) {
-        wpa_printf(MSG_ERROR, "eap_peer_blob_init failed\n");
+        wpa_printf(MSG_ERROR, "eap_peer_blob_init failed");
         ret = ESP_FAIL;
         goto _err;
     }
 
     ret = eap_peer_config_init(sm, g_wpa_private_key_passwd, g_wpa_private_key_passwd_len);
     if (ret) {
-        wpa_printf(MSG_ERROR, "eap_peer_config_init failed\n");
+        wpa_printf(MSG_ERROR, "eap_peer_config_init failed");
         ret = ESP_FAIL;
         goto _err;
     }
@@ -737,7 +737,7 @@ static int eap_peer_sm_init(void)
         goto _err;
     }
 
-    wpa_printf(MSG_INFO, "wpa2_task prio:%d, stack:%d\n", 2, WPA2_TASK_STACK_SIZE);
+    wpa_printf(MSG_INFO, "wpa2_task prio:%d, stack:%d", 2, WPA2_TASK_STACK_SIZE);
 #endif
     return ESP_OK;
 
@@ -797,12 +797,12 @@ esp_err_t esp_wifi_sta_wpa2_ent_enable_fn(void *arg)
 {
     struct wpa2_funcs *wpa2_cb;
 
-    wpa_printf(MSG_INFO, "WPA2 ENTERPRISE VERSION: [%s] enable\n",
+    wpa_printf(MSG_INFO, "WPA2 ENTERPRISE VERSION: [%s] enable",
                WPA2_VERSION);
 
     wpa2_cb = (struct wpa2_funcs *)os_zalloc(sizeof(struct wpa2_funcs));
     if (wpa2_cb == NULL) {
-        wpa_printf(MSG_ERROR, "WPA2: no mem for wpa2 cb\n");
+        wpa_printf(MSG_ERROR, "WPA2: no mem for wpa2 cb");
         return ESP_ERR_NO_MEM;
     }
 
@@ -813,11 +813,11 @@ esp_err_t esp_wifi_sta_wpa2_ent_enable_fn(void *arg)
 
     esp_wifi_register_wpa2_cb_internal(wpa2_cb);
 
-    wpa_printf(MSG_DEBUG, "WPA2 ENTERPRISE CRYPTO INIT.\r\n");
+    wpa_printf(MSG_DEBUG, "WPA2 ENTERPRISE CRYPTO INIT.\r");
 
 #ifdef EAP_PEER_METHOD
     if (eap_peer_register_methods()) {
-        wpa_printf(MSG_ERROR, "Register EAP Peer methods Failure\n");
+        wpa_printf(MSG_ERROR, "Register EAP Peer methods Failure");
     }
 #endif
     return ESP_OK;
@@ -854,7 +854,7 @@ esp_err_t esp_wifi_sta_wpa2_ent_enable(void)
 
 esp_err_t esp_wifi_sta_wpa2_ent_disable_fn(void *param)
 {
-    wpa_printf(MSG_INFO, "WPA2 ENTERPRISE VERSION: [%s] disable\n", WPA2_VERSION);
+    wpa_printf(MSG_INFO, "WPA2 ENTERPRISE VERSION: [%s] disable", WPA2_VERSION);
     esp_wifi_unregister_wpa2_cb_internal();
 
     if (gEapSm) {
