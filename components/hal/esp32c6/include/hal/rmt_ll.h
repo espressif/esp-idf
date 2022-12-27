@@ -95,8 +95,11 @@ static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, 
     PCR.rmt_sclk_conf.rmt_sclk_div_a = divider_numerator;
     PCR.rmt_sclk_conf.rmt_sclk_div_b = divider_denominator;
     switch (src) {
-    case RMT_CLK_SRC_APB:
+    case RMT_CLK_SRC_PLL_F80M:
         PCR.rmt_sclk_conf.rmt_sclk_sel = 1;
+        break;
+    case RMT_CLK_SRC_RC_FAST:
+        PCR.rmt_sclk_conf.rmt_sclk_sel = 2;
         break;
     case RMT_CLK_SRC_XTAL:
         PCR.rmt_sclk_conf.rmt_sclk_sel = 3;
@@ -758,10 +761,13 @@ static inline bool rmt_ll_tx_is_loop_enabled(rmt_dev_t *dev, uint32_t channel)
 __attribute__((always_inline))
 static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint32_t channel)
 {
-    rmt_clock_source_t clk_src = RMT_CLK_SRC_APB;
+    rmt_clock_source_t clk_src = RMT_CLK_SRC_PLL_F80M;
     switch (PCR.rmt_sclk_conf.rmt_sclk_sel) {
     case 1:
-        clk_src = RMT_CLK_SRC_APB;
+        clk_src = RMT_CLK_SRC_PLL_F80M;
+        break;
+    case 2:
+        clk_src = RMT_CLK_SRC_RC_FAST;
         break;
     case 3:
         clk_src = RMT_CLK_SRC_XTAL;

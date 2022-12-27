@@ -133,8 +133,20 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
         ESP_RETURN_ON_ERROR(ret, TAG, "create APB_FREQ_MAX lock failed");
         ESP_LOGD(TAG, "install APB_FREQ_MAX lock for RMT channel (%d,%d)", group->group_id, channel_id);
 #endif // CONFIG_PM_ENABLE
-#endif // SOC_RMT_SUPPORT_APB
         break;
+#endif // SOC_RMT_SUPPORT_APB
+#if SOC_RMT_SUPPORT_PLL_F80M
+    case RMT_CLK_SRC_PLL_F80M:
+        periph_src_clk_hz = 80000000;
+#if CONFIG_PM_ENABLE
+        sprintf(chan->pm_lock_name, "rmt_%d_%d", group->group_id, channel_id); // e.g. rmt_0_0
+        // ESP32C6 PLL_F80M is available even when SOC_ROOT_CLK switches from PLL to XTAL, so using NO_LIGHT_SLEEP lock here is sufficient
+        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, chan->pm_lock_name, &chan->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
+        ESP_LOGD(TAG, "install NO_LIGHT_SLEEP lock for RMT channel (%d,%d)", group->group_id, channel_id);
+#endif // CONFIG_PM_ENABLE
+        break;
+#endif // SOC_RMT_SUPPORT_PLL_F80M
 #if SOC_RMT_SUPPORT_AHB
     case RMT_CLK_SRC_AHB:
         // TODO: decide which kind of PM lock we should use for such clock

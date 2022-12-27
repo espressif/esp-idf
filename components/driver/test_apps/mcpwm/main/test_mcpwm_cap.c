@@ -111,13 +111,14 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
 
     printf("simulate GPIO capture signal\r\n");
     gpio_set_level(cap_gpio, 1);
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(10));
     gpio_set_level(cap_gpio, 0);
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(10));
     printf("capture value: Pos=%"PRIu32", Neg=%"PRIu32"\r\n", cap_value[0], cap_value[1]);
     uint32_t clk_src_res;
-    mcpwm_capture_timer_get_resolution(cap_timer, &clk_src_res);
-    TEST_ASSERT_UINT_WITHIN(100000, clk_src_res / 10, cap_value[1] - cap_value[0]);
+    TEST_ESP_OK(mcpwm_capture_timer_get_resolution(cap_timer, &clk_src_res));
+    clk_src_res /= 1000; // convert to kHz
+    TEST_ASSERT_UINT_WITHIN(1000, 10000, (cap_value[1] - cap_value[0]) * 1000 / clk_src_res);
 
     printf("uninstall capture channel and timer\r\n");
     TEST_ESP_OK(mcpwm_capture_channel_disable(pps_channel));
@@ -184,8 +185,9 @@ TEST_CASE("mcpwm_capture_software_catch", "[mcpwm]")
     uint32_t delta = test_callback_data.cap_data[1] - test_callback_data.cap_data[0];
     esp_rom_printf("duration=%u ticks\r\n", delta);
     uint32_t clk_src_res;
-    mcpwm_capture_timer_get_resolution(cap_timer, &clk_src_res);
-    TEST_ASSERT_UINT_WITHIN(80000, clk_src_res / 100, delta);
+    TEST_ESP_OK(mcpwm_capture_timer_get_resolution(cap_timer, &clk_src_res));
+    clk_src_res /= 1000; // convert to kHz
+    TEST_ASSERT_UINT_WITHIN(1000, 10000, delta * 1000 / clk_src_res);
 
     printf("uninstall capture channel and timer\r\n");
     TEST_ESP_OK(mcpwm_capture_channel_disable(cap_channel));

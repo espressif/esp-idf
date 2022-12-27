@@ -618,7 +618,7 @@ TEST_CASE("RMT Interrupt IRAM Safe", "[rmt]")
         .rmt_mode = RMT_MODE_TX,
     };
     TEST_ESP_OK(rmt_config(&tx));
-    TEST_ESP_OK(rmt_set_source_clk(tx.channel, RMT_BASECLK_APB));
+    TEST_ESP_OK(rmt_set_source_clk(tx.channel, RMT_BASECLK_DEFAULT));
     // install interrupt with IRAM safe
     TEST_ESP_OK(rmt_driver_install(tx.channel, 0, ESP_INTR_FLAG_IRAM));
 
