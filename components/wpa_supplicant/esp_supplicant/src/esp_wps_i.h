@@ -27,6 +27,13 @@ enum wps_sig_type {
     SIG_WPS_NUM,                //10
 };
 #endif
+#ifdef ESP_SUPPLICANT
+enum wps_sm_state{
+     WAIT_START,
+     WPA_MESG,
+     WPA_FAIL
+};
+#endif /* ESP_SUPPLICANT */
 
 #define WPS_IGNORE_SEL_REG_MAX_CNT	4
 
@@ -47,6 +54,7 @@ struct discard_ap_list_t{
 
 #define WPS_OUTBUF_SIZE 500
 struct wps_sm {
+    u8 state;
     struct wps_config *wps_cfg;
     struct wps_context *wps_ctx;
     struct wps_data *wps;
