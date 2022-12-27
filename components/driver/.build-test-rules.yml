@@ -8,12 +8,6 @@ components/driver/test_apps/dac_test_apps/legacy_dac_driver:
   disable:
     - if: SOC_DAC_SUPPORTED != 1
 
-components/driver/test_apps/gptimer:
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
-
 components/driver/test_apps/i2s_test_apps:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
@@ -63,12 +57,6 @@ components/driver/test_apps/legacy_rmt_driver:
 components/driver/test_apps/legacy_rtc_temp_driver:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
-
-components/driver/test_apps/legacy_timer_driver:
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
 
 components/driver/test_apps/mcpwm:
   disable:

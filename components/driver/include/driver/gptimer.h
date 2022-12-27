@@ -80,7 +80,7 @@ esp_err_t gptimer_set_raw_count(gptimer_handle_t timer, uint64_t value);
  * @brief Get GPTimer raw count value
  *
  * @note This function will trigger a software capture event and then return the captured count value.
- * @note With the raw count value and the resolution set in the `gptimer_config_t`, you can convert the count value into seconds.
+ * @note With the raw count value and the resolution returned from `gptimer_get_resolution`, you can convert the count value into seconds.
  * @note This function is allowed to run within ISR context
  * @note This function is allowed to be executed when Cache is disabled, by enabling `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM`
  *
@@ -92,6 +92,20 @@ esp_err_t gptimer_set_raw_count(gptimer_handle_t timer, uint64_t value);
  *      - ESP_FAIL: Get GPTimer raw count value failed because of other error
  */
 esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, uint64_t *value);
+
+/**
+ * @brief Return the real resolution of the timer
+ *
+ * @note usually the timer resolution is same as what you configured in the `gptimer_config_t::resolution_hz`, but for some unstable clock source (e.g. RC_FAST), which needs a calibration, the real resolution may be different from the configured one.
+ *
+ * @param[in] timer Timer handle created by `gptimer_new_timer`
+ * @param[out] out_resolution Returned timer resolution, in Hz
+ * @return
+ *      - ESP_OK: Get GPTimer resolution successfully
+ *      - ESP_ERR_INVALID_ARG: Get GPTimer resolution failed because of invalid argument
+ *      - ESP_FAIL: Get GPTimer resolution failed because of other error
+ */
+esp_err_t gptimer_get_resolution(gptimer_handle_t timer, uint32_t *out_resolution);
 
 /**
  * @brief Get GPTimer captured count value
