@@ -29,6 +29,7 @@
     <string name="btn_save">Save</string>
     <string name="btn_change_prefix">Change</string>
     <string name="btn_yes">Yes</string>
+    <string name="btn_get_permission">Get Permission</string>
 
     <!-- Hint Text -->
     <string name="hint_pop">Proof of Possession</string>
@@ -93,6 +94,8 @@
     <string name="error_provisioning">Reset your board to factory defaults and retry</string>
     <string name="error_wifi_off">Please turn on Wi-Fi to connect with device.</string>
     <string name="error_security_mismatch">Security applied for communicating with device does not match configuration setting</string>
+    <string name="error_camera_permission">Camera permission is not given. App will not be able to scan QR code to add device.</string>
+    <string name="error_location_permission">Location permission is not given. It will be required to add BLE or SoftAP devices.</string>
 
     <string name="prefix">Prefix :</string>
     <string name="hint_prefix">Enter Prefix</string>

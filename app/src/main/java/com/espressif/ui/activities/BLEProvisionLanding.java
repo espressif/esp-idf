@@ -135,7 +135,17 @@ public class BLEProvisionLanding extends ManualProvBaseActivity {
         // fire an intent to display a dialog asking the user to grant permission to enable it.
         if (!bleAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (ActivityCompat.checkSelfPermission(BLEProvisionLanding.this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+                } else {
+                    Log.e(TAG, "BLUETOOTH_CONNECT permission is not granted.");
+                    return;
+                }
+            } else {
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            }
+
         } else {
 
             if (!isDeviceConnected && !isConnecting) {
@@ -270,30 +280,44 @@ public class BLEProvisionLanding extends ManualProvBaseActivity {
             requestBluetoothEnable();
             return false;
 
-        } else if (!hasLocationPermissions()) {
+        } else if (!hasLocationAndBtPermissions()) {
 
-            requestLocationPermission();
+            requestLocationAndBtPermission();
             return false;
         }
         return true;
     }
 
     private void requestBluetoothEnable() {
-
         Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-        Log.d(TAG, "Requested user enables Bluetooth.");
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            } else {
+                requestLocationAndBtPermission();
+            }
+        } else {
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        }
     }
 
-    private boolean hasLocationPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    private boolean hasLocationAndBtPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            boolean permissionsGranted = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    && checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
+                    && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
+            return permissionsGranted;
+        } else {
             return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
         }
-        return true;
     }
 
-    private void requestLocationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    private void requestLocationAndBtPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT}, REQUEST_FINE_LOCATION);
+        } else {
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_FINE_LOCATION);
         }
     }
@@ -403,7 +427,14 @@ public class BLEProvisionLanding extends ManualProvBaseActivity {
         @Override
         public void onPeripheralFound(BluetoothDevice device, ScanResult scanResult) {
 
-            Log.d(TAG, "====== onPeripheralFound ===== " + device.getName());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (ActivityCompat.checkSelfPermission(BLEProvisionLanding.this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                    Log.d(TAG, "====== onPeripheralFound ===== " + device.getName());
+                }
+            } else {
+                Log.d(TAG, "====== onPeripheralFound ===== " + device.getName());
+            }
+
             boolean deviceExists = false;
             String serviceUuid = "";
 
