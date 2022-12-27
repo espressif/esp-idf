@@ -141,11 +141,8 @@ void adc_hal_digi_deinit(adc_hal_dma_ctx_t *hal)
 ---------------------------------------------------------------*/
 static adc_ll_digi_convert_mode_t get_convert_mode(adc_digi_convert_mode_t convert_mode)
 {
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32 || SOC_ADC_DIGI_CONTROLLER_NUM == 1
     return ADC_LL_DIGI_CONV_ONLY_ADC1;
-#endif
-#if (SOC_ADC_DIGI_CONTROLLER_NUM == 1)
-    return ADC_LL_DIGI_CONV_ALTER_UNIT;
 #elif (SOC_ADC_DIGI_CONTROLLER_NUM >= 2)
     switch (convert_mode) {
         case ADC_CONV_SINGLE_UNIT_1:
@@ -177,7 +174,7 @@ static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, uint32_t fre
     adc_ll_digi_set_trigger_interval(interval);
     //Here we set the clock divider factor to make the digital clock to 5M Hz
     adc_ll_digi_controller_clk_div(ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT);
-    adc_ll_digi_clk_sel(0);   //use APB
+    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);   // use default clock source for ADC digital controller
 #else
     i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_SRC_DEFAULT);    /*!< Clock from PLL_D2_CLK(160M)*/
     uint32_t bclk_div = 16;

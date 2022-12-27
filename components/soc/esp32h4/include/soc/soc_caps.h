@@ -95,7 +95,7 @@
 #define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (4)
 #define SOC_ADC_DIGI_FILTER_NUM                 (2)
 #define SOC_ADC_DIGI_MONITOR_NUM                (2)
-/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
+/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interval<= 4095 */
 #define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
 #define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
 

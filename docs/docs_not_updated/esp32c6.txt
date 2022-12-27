@@ -91,8 +91,6 @@ api-reference/storage/sdmmc
 api-reference/storage/mass_mfg
 api-reference/storage/index
 api-reference/peripherals
-api-reference/peripherals/adc_continuous
-api-reference/peripherals/adc_oneshot
 api-reference/peripherals/usb_host
 api-reference/peripherals/hmac
 api-reference/peripherals/usb_device

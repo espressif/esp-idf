@@ -34,9 +34,7 @@ components/driver/test_apps/ledc:
 
 components/driver/test_apps/legacy_adc_driver:
   disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
+    - if: SOC_ADC_SUPPORTED != 1
 
 components/driver/test_apps/legacy_mcpwm_driver:
   disable:

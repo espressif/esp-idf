@@ -12,14 +12,16 @@
 #include "soc/adc_periph.h"
 #include "soc/apb_saradc_struct.h"
 #include "soc/apb_saradc_reg.h"
-#include "soc/rtc_cntl_struct.h"
-#include "soc/rtc_cntl_reg.h"
+#include "soc/pmu_reg.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/pcr_struct.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "hal/adc_types.h"
 #include "hal/adc_types_private.h"
 #include "hal/regi2c_ctrl.h"
+#include "hal/sar_ctrl_ll.h"
+
 #include "soc/regi2c_saradc.h"
 
 #ifdef __cplusplus
@@ -29,27 +31,49 @@ extern "C" {
 #define ADC_LL_CLKM_DIV_NUM_DEFAULT       15
 #define ADC_LL_CLKM_DIV_B_DEFAULT         1
 #define ADC_LL_CLKM_DIV_A_DEFAULT         0
+#define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
+#define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
 #define ADC_LL_EVENT_ADC1_ONESHOT_DONE    BIT(31)
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
+#define ADC_LL_EVENT_THRES0_HIGH          BIT(29)
+#define ADC_LL_EVENT_THRES1_HIGH          BIT(28)
+#define ADC_LL_EVENT_THRES0_LOW           BIT(27)
+#define ADC_LL_EVENT_THRES1_LOW           BIT(26)
 
 typedef enum {
-    ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
-    ADC_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
-    ADC_POWER_SW_OFF,   /*!< ADC XPD controlled by SW. power off. */
+    ADC_POWER_BY_FSM = SAR_CTRL_LL_POWER_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
+    ADC_POWER_SW_ON = SAR_CTRL_LL_POWER_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
+    ADC_POWER_SW_OFF = SAR_CTRL_LL_POWER_OFF,   /*!< ADC XPD controlled by SW. power off. */
     ADC_POWER_MAX,      /*!< For parameter check. */
 } adc_ll_power_t;
 
 typedef enum {
-    ADC_RTC_DATA_OK = 0,
-    ADC_RTC_CTRL_UNSELECTED = 1,
-    ADC_RTC_CTRL_BREAK = 2,
-    ADC_RTC_DATA_FAIL = -1,
-} adc_ll_rtc_raw_data_t;
-
-typedef enum {
-    ADC_LL_CTRL_DIG = 0,    ///< For ADC1. Select DIG controller.
+    ADC_LL_CTRL_DIG = 0,    ///< ADC digital controller
 } adc_ll_controller_t;
+
+/**
+ * @brief ADC digital controller (DMA mode) work mode.
+ *
+ * @note  The conversion mode affects the sampling frequency:
+ *        ESP32C6 only support ONLY_ADC1 mode
+ *        SINGLE_UNIT_1: When the measurement is triggered, only ADC1 is sampled once.
+ */
+typedef enum {
+    ADC_LL_DIGI_CONV_ONLY_ADC1 = 0,     // Only use ADC1 for conversion
+} adc_ll_digi_convert_mode_t;
+
+typedef struct  {
+    union {
+        struct {
+            uint8_t atten:      2;
+            uint8_t channel:    3;
+            uint8_t unit:       1;
+            uint8_t reserved:   2;
+        };
+        uint8_t val;
+    };
+} __attribute__((packed)) adc_ll_digi_pattern_table_t;
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -81,8 +105,7 @@ static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wa
  */
 static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 {
-    /* Should be called before writing I2C registers. */
-    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU);
+    /* Peripheral reg i2c has powered up in rtc_init, write directly */
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_SAMPLE_CYCLE_ADDR, sample_cycle);
 }
 
@@ -96,6 +119,96 @@ static inline void adc_ll_digi_set_clk_div(uint32_t div)
 {
     /* ADC clock divided from digital controller clock clk */
     HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_ctrl, saradc_saradc_sar_clk_div, div);
+}
+
+/**
+ * Set adc max conversion number for digital controller.
+ * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
+ *
+ * @param meas_num Max conversion number. Range: 0 ~ 255.
+ */
+static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_ctrl2, saradc_saradc_max_meas_num, meas_num);
+}
+
+/**
+ * Enable max conversion number detection for digital controller.
+ * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
+ *
+ * @param enable  true: enable; false: disable
+ */
+static inline void adc_ll_digi_convert_limit_enable(bool enable)
+{
+    APB_SARADC.saradc_ctrl2.saradc_saradc_meas_num_limit = enable;
+}
+
+/**
+ * Set adc conversion mode for digital controller.
+ *
+ * @note ESP32C6 only support ADC1 single mode.
+ *
+ * @param mode Conversion mode select.
+ */
+static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
+{
+    //ESP32C6 only supports ADC_LL_DIGI_CONV_ONLY_ADC1 mode
+}
+
+/**
+ * Set pattern table length for digital controller.
+ * The pattern table that defines the conversion rules for each SAR ADC. Each table has 4 items, in which channel selection,
+ * and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
+ * pattern table one by one. For each controller the scan sequence has at most 8 different rules before repeating itself.
+ *
+ * @param adc_n ADC unit.
+ * @param patt_len Items range: 1 ~ 8.
+ */
+static inline void adc_ll_digi_set_pattern_table_len(adc_unit_t adc_n, uint32_t patt_len)
+{
+    APB_SARADC.saradc_ctrl.saradc_saradc_sar_patt_len = patt_len - 1;
+}
+
+/**
+ * Set pattern table for digital controller.
+ * The pattern table that defines the conversion rules for each SAR ADC. Each table has 4 items, in which channel selection,
+ * resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
+ * pattern table one by one. For each controller the scan sequence has at most 8 different rules before repeating itself.
+ *
+ * @param adc_n ADC unit.
+ * @param pattern_index Items index. Range: 0 ~ 7.
+ * @param pattern Stored conversion rules.
+ */
+static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t pattern_index, adc_digi_pattern_config_t table)
+{
+    uint32_t tab;
+    uint8_t index = pattern_index / 4;
+    uint8_t offset = (pattern_index % 4) * 6;
+    adc_ll_digi_pattern_table_t pattern = {0};
+
+    pattern.val = (table.atten & 0x3) | ((table.channel & 0x7) << 2) | ((table.unit & 0x1) << 5);
+    if (index == 0) {
+        tab = APB_SARADC.saradc_sar_patt_tab1.saradc_saradc_sar_patt_tab1;         // Read old register value
+        tab &= (~(0xFC0000 >> offset));                             // Clear old data
+        tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;    // Fill in the new data
+        APB_SARADC.saradc_sar_patt_tab1.saradc_saradc_sar_patt_tab1 = tab;         // Write back
+    } else {
+        tab = APB_SARADC.saradc_sar_patt_tab2.saradc_saradc_sar_patt_tab2;         // Read old register value
+        tab &= (~(0xFC0000 >> offset));                             // Clear old data
+        tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;    // Fill in the new data
+        APB_SARADC.saradc_sar_patt_tab2.saradc_saradc_sar_patt_tab2 = tab;         // Write back
+    }
+}
+
+/**
+ * Reset the pattern table pointer, then take the measurement rule from table header in next measurement.
+ *
+ * @param adc_n ADC unit.
+ */
+static inline void adc_ll_digi_clear_pattern_table(adc_unit_t adc_n)
+{
+    APB_SARADC.saradc_ctrl.saradc_saradc_sar_patt_p_clear = 1;
+    APB_SARADC.saradc_ctrl.saradc_saradc_sar_patt_p_clear = 0;
 }
 
 /**
@@ -119,9 +232,35 @@ static inline void adc_ll_digi_output_invert(adc_unit_t adc_n, bool inv_en)
 {
     if (adc_n == ADC_UNIT_1) {
         APB_SARADC.saradc_ctrl2.saradc_saradc_sar1_inv = inv_en;   // Enable / Disable ADC data invert
-    } else { // adc_n == ADC_UNIT_2
-        APB_SARADC.saradc_ctrl2.saradc_saradc_sar2_inv = inv_en;   // Enable / Disable ADC data invert
     }
+}
+
+/**
+ * Set the interval clock cycle for the digital controller to trigger the measurement.
+ * Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval.
+ *
+ * @note The trigger interval should not be smaller than the sampling time of the SAR ADC.
+ * @param cycle The clock cycle (trigger interval) of the measurement. Range: 30 ~ 4095.
+ */
+static inline void adc_ll_digi_set_trigger_interval(uint32_t cycle)
+{
+    APB_SARADC.saradc_ctrl2.saradc_saradc_timer_target = cycle;
+}
+
+/**
+ * Enable digital controller timer to trigger the measurement.
+ */
+static inline void adc_ll_digi_trigger_enable(void)
+{
+    APB_SARADC.saradc_ctrl2.saradc_saradc_timer_en = 1;
+}
+
+/**
+ * Disable digital controller timer to trigger the measurement.
+ */
+static inline void adc_ll_digi_trigger_disable(void)
+{
+    APB_SARADC.saradc_ctrl2.saradc_saradc_timer_en = 0;
 }
 
 /**
@@ -134,9 +273,9 @@ static inline void adc_ll_digi_output_invert(adc_unit_t adc_n, bool inv_en)
  */
 static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div_b, uint32_t div_a)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_apb_adc_clkm_conf, saradc_reg_clkm_div_num, div_num);
-    APB_SARADC.saradc_apb_adc_clkm_conf.saradc_reg_clkm_div_b = div_b;
-    APB_SARADC.saradc_apb_adc_clkm_conf.saradc_reg_clkm_div_a = div_a;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.saradc_clkm_conf, saradc_clkm_div_num, div_num);
+    PCR.saradc_clkm_conf.saradc_clkm_div_b = div_b;
+    PCR.saradc_clkm_conf.saradc_clkm_div_a = div_a;
 }
 
 /**
@@ -146,7 +285,20 @@ static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div
  */
 static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
 {
-    APB_SARADC.saradc_apb_adc_clkm_conf.saradc_reg_clk_sel = 2;
+    switch (clk_src) {
+        case ADC_DIGI_CLK_SRC_XTAL:
+            PCR.saradc_clkm_conf.saradc_clkm_sel = 0;
+            break;
+        case ADC_DIGI_CLK_SRC_PLL_F80M:
+            PCR.saradc_clkm_conf.saradc_clkm_sel = 1;
+            break;
+        case ADC_DIGI_CLK_SRC_RC_FAST:
+            PCR.saradc_clkm_conf.saradc_clkm_sel = 2;
+            break;
+        default:
+            HAL_ASSERT(false && "unsupported clock");
+    }
+    // Enable ADC_CTRL_CLK (i.e. digital domain clock)
     APB_SARADC.saradc_ctrl.saradc_saradc_sar_clk_gated = 1;
 }
 
@@ -165,7 +317,7 @@ static inline void adc_ll_digi_controller_clk_disable(void)
  */
 static inline void adc_ll_digi_filter_reset(adc_unit_t adc_n)
 {
-    APB_SARADC.saradc_filter_ctrl0.saradc_filter_reset = 1;
+    APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_reset = 1;
 }
 
 /**
@@ -177,7 +329,13 @@ static inline void adc_ll_digi_filter_reset(adc_unit_t adc_n)
  */
 static inline void adc_ll_digi_filter_set_factor(adc_digi_filter_idx_t idx, adc_digi_filter_t *filter)
 {
-    abort();
+    if (idx == ADC_DIGI_FILTER_IDX0) {
+        APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_channel0 = (filter->adc_unit << 3) | (filter->channel & 0x7);
+        APB_SARADC.saradc_filter_ctrl1.saradc_apb_saradc_filter_factor0 = filter->mode;
+    } else if (idx == ADC_DIGI_FILTER_IDX1) {
+        APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_channel1 = (filter->adc_unit << 3) | (filter->channel & 0x7);
+        APB_SARADC.saradc_filter_ctrl1.saradc_apb_saradc_filter_factor1 = filter->mode;
+    }
 }
 
 /**
@@ -188,7 +346,15 @@ static inline void adc_ll_digi_filter_set_factor(adc_digi_filter_idx_t idx, adc_
  */
 static inline void adc_ll_digi_filter_get_factor(adc_digi_filter_idx_t idx, adc_digi_filter_t *filter)
 {
-    abort();
+    if (idx == ADC_DIGI_FILTER_IDX0) {
+        filter->adc_unit = (APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_channel0 >> 3) & 0x1;
+        filter->channel = APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_channel0 & 0x7;
+        filter->mode = APB_SARADC.saradc_filter_ctrl1.saradc_apb_saradc_filter_factor0;
+    } else if (idx == ADC_DIGI_FILTER_IDX1) {
+        filter->adc_unit = (APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_channel1 >> 3) & 0x1;
+        filter->channel = APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_channel1 & 0x7;
+        filter->mode = APB_SARADC.saradc_filter_ctrl1.saradc_apb_saradc_filter_factor1;
+    }
 }
 
 /**
@@ -200,7 +366,13 @@ static inline void adc_ll_digi_filter_get_factor(adc_digi_filter_idx_t idx, adc_
  */
 static inline void adc_ll_digi_filter_disable(adc_digi_filter_idx_t idx)
 {
-    abort();
+    if (idx == ADC_DIGI_FILTER_IDX0) {
+        APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_channel0 = 0xF;
+        APB_SARADC.saradc_filter_ctrl1.saradc_apb_saradc_filter_factor0 = 0;
+    } else if (idx == ADC_DIGI_FILTER_IDX1) {
+        APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_channel1 = 0xF;
+        APB_SARADC.saradc_filter_ctrl1.saradc_apb_saradc_filter_factor1 = 0;
+    }
 }
 
 /**
@@ -214,13 +386,13 @@ static inline void adc_ll_digi_filter_disable(adc_digi_filter_idx_t idx)
 static inline void adc_ll_digi_monitor_set_mode(adc_digi_monitor_idx_t idx, adc_digi_monitor_t *cfg)
 {
     if (idx == ADC_DIGI_MONITOR_IDX0) {
-        APB_SARADC.saradc_thres0_ctrl.saradc_thres0_channel = (cfg->adc_unit << 3) | (cfg->channel & 0x7);
-        APB_SARADC.saradc_thres0_ctrl.saradc_thres0_high = cfg->h_threshold;
-        APB_SARADC.saradc_thres0_ctrl.saradc_thres0_low = cfg->l_threshold;
+        APB_SARADC.saradc_thres0_ctrl.saradc_apb_saradc_thres0_channel = (cfg->adc_unit << 3) | (cfg->channel & 0x7);
+        APB_SARADC.saradc_thres0_ctrl.saradc_apb_saradc_thres0_high = cfg->h_threshold;
+        APB_SARADC.saradc_thres0_ctrl.saradc_apb_saradc_thres0_low = cfg->l_threshold;
     } else { // ADC_DIGI_MONITOR_IDX1
-        APB_SARADC.saradc_thres1_ctrl.saradc_thres1_channel = (cfg->adc_unit << 3) | (cfg->channel & 0x7);
-        APB_SARADC.saradc_thres1_ctrl.saradc_thres1_high = cfg->h_threshold;
-        APB_SARADC.saradc_thres1_ctrl.saradc_thres1_low = cfg->l_threshold;
+        APB_SARADC.saradc_thres1_ctrl.saradc_apb_saradc_thres1_channel = (cfg->adc_unit << 3) | (cfg->channel & 0x7);
+        APB_SARADC.saradc_thres1_ctrl.saradc_apb_saradc_thres1_low = cfg->h_threshold;
+        APB_SARADC.saradc_thres1_ctrl.saradc_apb_saradc_thres1_low = cfg->l_threshold;
     }
 }
 
@@ -233,10 +405,37 @@ static inline void adc_ll_digi_monitor_set_mode(adc_digi_monitor_idx_t idx, adc_
 static inline void adc_ll_digi_monitor_disable(adc_digi_monitor_idx_t idx)
 {
     if (idx == ADC_DIGI_MONITOR_IDX0) {
-        APB_SARADC.saradc_thres0_ctrl.saradc_thres0_channel = 0xF;
+        APB_SARADC.saradc_thres0_ctrl.saradc_apb_saradc_thres0_channel = 0xF;
     } else { // ADC_DIGI_MONITOR_IDX1
-        APB_SARADC.saradc_thres1_ctrl.saradc_thres1_channel = 0xF;
+        APB_SARADC.saradc_thres1_ctrl.saradc_apb_saradc_thres1_channel = 0xF;
     }
+}
+
+/**
+ * Set DMA eof num of adc digital controller.
+ * If the number of measurements reaches `dma_eof_num`, then `dma_in_suc_eof` signal is generated.
+ *
+ * @param num eof num of DMA.
+ */
+static inline void adc_ll_digi_dma_set_eof_num(uint32_t num)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_dma_conf, saradc_apb_adc_eof_num, num);
+}
+
+/**
+ * Enable output data to DMA from adc digital controller.
+ */
+static inline void adc_ll_digi_dma_enable(void)
+{
+    APB_SARADC.saradc_dma_conf.saradc_apb_adc_trans = 1;
+}
+
+/**
+ * Disable output data to DMA from adc digital controller.
+ */
+static inline void adc_ll_digi_dma_disable(void)
+{
+    APB_SARADC.saradc_dma_conf.saradc_apb_adc_trans = 0;
 }
 
 /**
@@ -259,8 +458,7 @@ static inline void adc_ll_digi_reset(void)
  */
 static inline void adc_ll_pwdet_set_cct(uint32_t cct)
 {
-    /* Capacitor tuning of the PA power monitor. cct set to the same value with PHY. */
-    RTCCNTL.sensor_ctrl.sar2_pwdet_cct = cct;
+    (void)cct;
 }
 
 /**
@@ -271,8 +469,7 @@ static inline void adc_ll_pwdet_set_cct(uint32_t cct)
  */
 static inline uint32_t adc_ll_pwdet_get_cct(void)
 {
-    /* Capacitor tuning of the PA power monitor. cct set to the same value with PHY. */
-    return RTCCNTL.sensor_ctrl.sar2_pwdet_cct;
+    return 0;
 }
 
 /*---------------------------------------------------------------
@@ -302,7 +499,7 @@ static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
 __attribute__((always_inline))
 static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t ctrl)
 {
-    //Not used on ESP32-C2
+    //Not used on ESP32C6
 }
 
 /* ADC calibration code. */
@@ -312,7 +509,7 @@ static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t c
 __attribute__((always_inline))
 static inline void adc_ll_calibration_init(adc_unit_t adc_n)
 {
-    (void)adc_n;
+    HAL_ASSERT(adc_n == ADC_UNIT_1);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 1);
 }
 
@@ -327,7 +524,7 @@ static inline void adc_ll_calibration_init(adc_unit_t adc_n)
  */
 static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, bool internal_gnd)
 {
-    (void)adc_n;
+    HAL_ASSERT(adc_n == ADC_UNIT_1);
     /* Enable/disable internal connect GND (for calibration). */
     if (internal_gnd) {
         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
@@ -343,7 +540,7 @@ static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, bool internal_gn
  */
 static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
 {
-    (void)adc_n;
+    HAL_ASSERT(adc_n == ADC_UNIT_1);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
 }
 
@@ -357,7 +554,7 @@ static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
 __attribute__((always_inline))
 static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param)
 {
-    (void)adc_n;
+    HAL_ASSERT(adc_n == ADC_UNIT_1);
     uint8_t msb = param >> 8;
     uint8_t lsb = param & 0xFF;
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
@@ -370,13 +567,13 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
 /**
  * Set adc output data format for oneshot mode
  *
- * @note ESP32C2 Oneshot mode only supports 12bit.
+ * @note ESP32C6 Oneshot mode only supports 12bit.
  * @param adc_n ADC unit.
  * @param bits  Output data bits width option.
  */
 static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth_t bits)
 {
-    //ESP32C2 only supports 12bit, leave here for compatibility
+    //ESP32C6 only supports 12bit, leave here for compatibility
     HAL_ASSERT(bits == ADC_BITWIDTH_12 || bits == ADC_BITWIDTH_DEFAULT);
 }
 
@@ -444,7 +641,7 @@ static inline bool adc_oneshot_ll_get_event(uint32_t event_mask)
 }
 
 /**
- * Get the converted value for each ADCn for RTC controller.
+ * Get the converted value for each ADCn for controller.
  *
  * @param adc_n ADC unit.
  * @return
@@ -454,7 +651,7 @@ static inline uint32_t adc_oneshot_ll_get_raw_result(adc_unit_t adc_n)
 {
     HAL_ASSERT(adc_n == ADC_UNIT_1);
     uint32_t ret_val = 0;
-    ret_val = APB_SARADC.saradc1_data_status.saradc1_data & 0xfff;
+    ret_val = APB_SARADC.saradc_sar1data_status.saradc_apb_saradc1_data & 0xfff;
     return ret_val;
 }
 
@@ -482,7 +679,7 @@ static inline bool adc_oneshot_ll_raw_check_valid(adc_unit_t adc_n, uint32_t raw
  */
 static inline void adc_oneshot_ll_output_invert(adc_unit_t adc_n, bool inv_en)
 {
-    (void)adc_n;
+    HAL_ASSERT(adc_n == ADC_UNIT_1);
     (void)inv_en;
     //For compatibility
 }
@@ -518,7 +715,7 @@ static inline void adc_oneshot_ll_disable_all_unit(void)
  */
 static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
-    (void)adc_n;
+    HAL_ASSERT(adc_n == ADC_UNIT_1);
     (void)channel;
     // Attenuation is for all channels, unit and channel are for compatibility
     APB_SARADC.saradc_onetime_sample.saradc_saradc_onetime_atten = atten;
@@ -534,9 +731,9 @@ static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t chan
 __attribute__((always_inline))
 static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t channel)
 {
-    (void)adc_n;
+    HAL_ASSERT(adc_n == ADC_UNIT_1);
     (void)channel;
-    return APB_SARADC.saradc_onetime_sample.saradc_saradc_onetime_atten;
+    return (adc_atten_t)APB_SARADC.saradc_onetime_sample.saradc_saradc_onetime_atten;
 }
 
 #ifdef __cplusplus

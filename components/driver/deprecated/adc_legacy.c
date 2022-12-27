@@ -617,11 +617,11 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
     adc_power_acquire();
     if (adc_unit == ADC_UNIT_1) {
         VREF_ENTER(1);
-        adc_hal_vref_output(ADC_UNIT_1, ch, true);
+        adc_ll_vref_output(ADC_UNIT_1, ch, true);
         VREF_EXIT(1);
     } else if (adc_unit == ADC_UNIT_2) {
         VREF_ENTER(2);
-        adc_hal_vref_output(ADC_UNIT_2, ch, true);
+        adc_ll_vref_output(ADC_UNIT_2, ch, true);
         VREF_EXIT(2);
     }
 
@@ -706,11 +706,11 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
     adc_power_acquire();
     if (adc_unit == ADC_UNIT_1) {
         RTC_ENTER_CRITICAL();
-        adc_hal_vref_output(ADC_UNIT_1, channel, true);
+        adc_ll_vref_output(ADC_UNIT_1, channel, true);
         RTC_EXIT_CRITICAL();
     } else {    //ADC_UNIT_2
         RTC_ENTER_CRITICAL();
-        adc_hal_vref_output(ADC_UNIT_2, channel, true);
+        adc_ll_vref_output(ADC_UNIT_2, channel, true);
         RTC_EXIT_CRITICAL();
     }
 
@@ -756,7 +756,7 @@ int adc1_get_raw(adc1_channel_t channel)
 
     periph_module_enable(PERIPH_SARADC_MODULE);
     adc_power_acquire();
-    adc_ll_digi_clk_sel(0);
+    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
 
     adc_atten_t atten = s_atten1_single[channel];
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
@@ -764,7 +764,7 @@ int adc1_get_raw(adc1_channel_t channel)
 #endif
 
     ADC_REG_LOCK_ENTER();
-    adc_oneshot_ll_set_atten(ADC_UNIT_2, channel, atten);
+    adc_oneshot_ll_set_atten(ADC_UNIT_1, channel, atten);
     adc_hal_convert(ADC_UNIT_1, channel, &raw_out);
     ADC_REG_LOCK_EXIT();
 
@@ -807,7 +807,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     periph_module_enable(PERIPH_SARADC_MODULE);
     adc_power_acquire();
-    adc_ll_digi_clk_sel(0);
+    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
 
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
     adc_hal_arbiter_config(&config);

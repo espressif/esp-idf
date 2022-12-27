@@ -2,15 +2,11 @@
 
 examples/peripherals/adc/continuous_read:
   disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: adc dma mode isn't supported on these targets
+    - if: SOC_ADC_DMA_SUPPORTED != 1
 
 examples/peripherals/adc/oneshot_read:
   disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
+    - if: SOC_ADC_SUPPORTED != 1
 
 examples/peripherals/dac:
   disable:

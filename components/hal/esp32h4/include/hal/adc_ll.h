@@ -16,6 +16,7 @@
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/misc.h"
 #include "hal/regi2c_ctrl.h"
 
@@ -35,9 +36,9 @@ extern "C" {
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
 
 typedef enum {
-    ADC_POWER_BY_FSM,   /*!< ADC XPD controled by FSM. Used for polling mode */
-    ADC_POWER_SW_ON,    /*!< ADC XPD controled by SW. power on. Used for DMA mode */
-    ADC_POWER_SW_OFF,   /*!< ADC XPD controled by SW. power off. */
+    ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
+    ADC_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
+    ADC_POWER_SW_OFF,   /*!< ADC XPD controlled by SW. power off. */
     ADC_POWER_MAX,      /*!< For parameter check. */
 } adc_ll_power_t;
 
@@ -57,11 +58,11 @@ typedef enum {
  * @brief ADC digital controller (DMA mode) work mode.
  *
  * @note  The conversion mode affects the sampling frequency:
- *        ESP32H4 only support ALTER_UNIT mode
- *        ALTER_UNIT   : When the measurement is triggered, ADC1 or ADC2 samples alternately.
+ *        ESP32H4 only support ONLY_ADC1 mode
+ *        SINGLE_UNIT_1: When the measurement is triggered, only ADC1 is sampled once.
  */
 typedef enum {
-    ADC_LL_DIGI_CONV_ALTER_UNIT = 0,     // Use both ADC1 and ADC2 for conversion by turn. e.g. ADC1 -> ADC2 -> ADC1 -> ADC2 .....
+    ADC_LL_DIGI_CONV_ONLY_ADC1 = 0,     // Only use ADC1 for conversion
 } adc_ll_digi_convert_mode_t;
 
 //These values should be set according to the HW
@@ -130,7 +131,7 @@ static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
  */
 static inline void adc_ll_digi_set_clk_div(uint32_t div)
 {
-    /* ADC clock devided from digital controller clock clk */
+    /* ADC clock divided from digital controller clock clk */
     HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.ctrl, sar_clk_div, div);
 }
 
@@ -165,7 +166,7 @@ static inline void adc_ll_digi_convert_limit_enable(bool enable)
  */
 static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
 {
-    //ESP32H4 only supports ADC_CONV_ALTER_UNIT mode
+    //ESP32H4 only supports ADC_LL_DIGI_CONV_ONLY_ADC1 mode
 }
 
 /**
@@ -289,15 +290,12 @@ static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div
 /**
  * Enable clock and select clock source for ADC digital controller.
  *
- * @param use_apll true: use APLL clock; false: use APB clock.
+ * @param clk_src clock source for ADC digital controller.
  */
-static inline void adc_ll_digi_clk_sel(bool use_apll)
+static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
 {
-    if (use_apll) {
-        APB_SARADC.apb_adc_clkm_conf.clk_sel = 1;   // APLL clock
-    } else {
-        APB_SARADC.apb_adc_clkm_conf.clk_sel = 2;   // APB clock
-    }
+    // TODO: temporary support
+    APB_SARADC.apb_adc_clkm_conf.clk_sel = 0;
     APB_SARADC.ctrl.sar_clk_gated = 1;
 }
 
@@ -673,22 +671,6 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
     }
 }
 /* Temp code end. */
-
-/**
- *  Output ADCn inter reference voltage to ADC2 channels.
- *
- *  This function routes the internal reference voltage of ADCn to one of
- *  ADC1's channels. This reference voltage can then be manually measured
- *  for calibration purposes.
- *
- *  @param[in]  adc ADC unit select
- *  @param[in]  channel ADC1 channel number
- *  @param[in]  en Enable/disable the reference voltage output
- */
-static inline void adc_ll_vref_output(adc_unit_t adc, adc_channel_t channel, bool en)
-{
-    abort();
-}
 
 /*---------------------------------------------------------------
                     Single Read

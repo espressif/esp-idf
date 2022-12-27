@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
 #include "esp_attr.h"
 
 /**
@@ -77,6 +78,14 @@ typedef enum {
     ADC_DIGI_OUTPUT_FORMAT_TYPE1,   ///< See `adc_digi_output_data_t.type1`
     ADC_DIGI_OUTPUT_FORMAT_TYPE2,   ///< See `adc_digi_output_data_t.type2`
 } adc_digi_output_format_t;
+
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+typedef soc_periph_adc_digi_clk_src_t    adc_oneshot_clk_src_t;     ///< Clock source type of oneshot mode which uses digital controller
+typedef soc_periph_adc_digi_clk_src_t    adc_continuous_clk_src_t;  ///< Clock source type of continuous mode which uses digital controller
+#elif SOC_ADC_RTC_CTRL_SUPPORTED
+typedef soc_periph_adc_rtc_clk_src_t     adc_oneshot_clk_src_t;     ///< Clock source type of oneshot mode which uses RTC controller
+typedef soc_periph_adc_digi_clk_src_t    adc_continuous_clk_src_t;  ///< Clock source type of continuous mode which uses digital controller
+#endif
 
 /**
  * @brief ADC digital controller pattern configuration
@@ -155,6 +164,26 @@ typedef struct {
         uint32_t val;                   /*!<Raw data value */
     };
 } adc_digi_output_data_t;
+
+#elif CONFIG_IDF_TARGET_ESP32C6
+/**
+ * @brief ADC digital controller (DMA mode) output data format.
+ *        Used to analyze the acquired ADC (DMA) data.
+ */
+typedef struct {
+    union {
+        struct {
+            uint32_t data:          12; /*!<ADC real output data info. Resolution: 12 bit. */
+            uint32_t reserved12:    1;  /*!<Reserved12. */
+            uint32_t channel:       4;  /*!<ADC channel index info.
+                                            If (channel < ADC_CHANNEL_MAX), The data is valid.
+                                            If (channel > ADC_CHANNEL_MAX), The data is invalid. */
+            uint32_t reserved17_31: 15; /*!<Reserved 17-31. */
+        } type2;                        /*!<When the configured output format is 12bit. */
+        uint32_t val;                   /*!<Raw data value */
+    };
+} adc_digi_output_data_t;
+
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32S2

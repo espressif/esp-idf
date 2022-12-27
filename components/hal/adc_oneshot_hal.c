@@ -57,7 +57,7 @@ void adc_oneshot_hal_setup(adc_oneshot_hal_ctx_t *hal, adc_channel_t chan)
 #endif
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-    adc_ll_digi_clk_sel(0);
+    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
 #else
     adc_ll_set_sar_clk_div(unit, ADC_HAL_SAR_CLK_DIV_DEFAULT(unit));
     if (unit == ADC_UNIT_2) {

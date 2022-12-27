@@ -129,7 +129,7 @@ finish:
     dac_ll_digi_clk_inv(true);
     dac_ll_digi_set_trigger_interval(interval); // secondary clock division
     adc_ll_digi_controller_clk_div(clk_div - 1, b, a);
-    adc_ll_digi_clk_sel(is_apll);
+    adc_ll_digi_clk_sel(is_apll ? ADC_DIGI_CLK_SRC_APLL : ADC_DIGI_CLK_SRC_DEFAULT);
     return ESP_OK;
 }
 

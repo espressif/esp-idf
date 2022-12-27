@@ -70,13 +70,6 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "esp_ds.c")
     endif()
 
-    # ESP32C6-TODO
-    if(CONFIG_IDF_TARGET_ESP32C6)
-        list(REMOVE_ITEM srcs
-                "adc_share_hw_ctrl.c" # TODO: IDF-5312
-            )
-    endif()
-
 else()
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")

@@ -14,10 +14,12 @@
 #include "hal/assert.h"
 #include "soc/apb_saradc_struct.h"
 #include "soc/sens_struct.h"
+#include "soc/sens_reg.h"
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/regi2c_defs.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
 
@@ -35,9 +37,9 @@ extern "C" {
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
 
 typedef enum {
-    ADC_POWER_BY_FSM,   /*!< ADC XPD controled by FSM. Used for polling mode */
-    ADC_POWER_SW_ON,    /*!< ADC XPD controled by SW. power on. Used for DMA mode */
-    ADC_POWER_SW_OFF,   /*!< ADC XPD controled by SW. power off. */
+    ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
+    ADC_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
+    ADC_POWER_SW_OFF,   /*!< ADC XPD controlled by SW. power off. */
     ADC_POWER_MAX,      /*!< For parameter check. */
 } adc_ll_power_t;
 
@@ -145,7 +147,7 @@ static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
  */
 static inline void adc_ll_digi_set_clk_div(uint32_t div)
 {
-    /* ADC clock devided from digital controller clock clk */
+    /* ADC clock divided from digital controller clock clk */
     HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.ctrl, sar_clk_div, div);
 }
 
@@ -335,15 +337,11 @@ static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div
 /**
  * Enable clock and select clock source for ADC digital controller.
  *
- * @param use_apll true: use APLL clock; false: use APB clock.
+ * @param clk_src clock source for ADC digital controller.
  */
-static inline void adc_ll_digi_clk_sel(bool use_apll)
+static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
 {
-    if (use_apll) {
-        APB_SARADC.apb_adc_clkm_conf.clk_sel = 1;   // APLL clock
-    } else {
-        APB_SARADC.apb_adc_clkm_conf.clk_sel = 2;   // APB clock
-    }
+    APB_SARADC.apb_adc_clkm_conf.clk_sel = (clk_src == ADC_DIGI_CLK_SRC_APLL) ? 1 : 2;
     APB_SARADC.ctrl.sar_clk_gated = 1;
 }
 
@@ -568,7 +566,7 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
                     RTC controller setting
 ---------------------------------------------------------------*/
 /**
- * ADC SAR clock division factor setting. ADC SAR clock devided from `RTC_FAST_CLK`.
+ * ADC SAR clock division factor setting. ADC SAR clock divided from `RTC_FAST_CLK`.
  *
  * @param div Division factor.
  */
@@ -798,7 +796,7 @@ static inline void adc_ll_rtc_set_arbiter_stable_cycle(uint32_t cycle)
  *
  * When VDD_A is 3.3V:
  *
- * - 0dB attenuaton (ADC_ATTEN_DB_0) gives full-scale voltage 1.1V
+ * - 0dB attenuation (ADC_ATTEN_DB_0) gives full-scale voltage 1.1V
  * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) gives full-scale voltage 1.5V
  * - 6dB attenuation (ADC_ATTEN_DB_6) gives full-scale voltage 2.2V
  * - 11dB attenuation (ADC_ATTEN_DB_11) gives full-scale voltage 3.9V (see note below)
@@ -810,7 +808,7 @@ static inline void adc_ll_rtc_set_arbiter_stable_cycle(uint32_t cycle)
  *
  * Due to ADC characteristics, most accurate results are obtained within the following approximate voltage ranges:
  *
- * - 0dB attenuaton (ADC_ATTEN_DB_0) between 100 and 950mV
+ * - 0dB attenuation (ADC_ATTEN_DB_0) between 100 and 950mV
  * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) between 100 and 1250mV
  * - 6dB attenuation (ADC_ATTEN_DB_6) between 150 to 1750mV
  * - 11dB attenuation (ADC_ATTEN_DB_11) between 150 to 2450mV

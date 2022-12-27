@@ -191,11 +191,6 @@ if(NOT BOOTLOADER_BUILD)
               "esp32c6/brownout_hal.c"
               "esp32c6/rtc_cntl_hal.c")
 
-        # TODO: IDF-5310
-        list(REMOVE_ITEM srcs
-                "adc_oneshot_hal.c"
-                "adc_hal_common.c"
-                )
     endif()
 
     if(${target} STREQUAL "esp32h2")

@@ -13,8 +13,10 @@
 #include "soc/adc_periph.h"
 #include "soc/rtc_io_struct.h"
 #include "soc/sens_struct.h"
+#include "soc/sens_reg.h"
 #include "soc/syscon_struct.h"
 #include "soc/rtc_cntl_struct.h"
+#include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

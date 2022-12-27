@@ -318,6 +318,35 @@ typedef enum {
     TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
 } soc_periph_twai_clk_src_t;
 
+//////////////////////////////////////////////////ADC///////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of ADC digital controller
+ */
+#define SOC_ADC_DIGI_CLKS {SOC_MOD_CLK_APB, SOC_MOD_CLK_PLL_D2}
+
+/**
+ * @brief ADC digital controller clock source
+ */
+typedef enum {
+    ADC_DIGI_CLK_SRC_APB = SOC_MOD_CLK_APB,             /*!< Select APB as the source clock */
+    ADC_DIGI_CLK_SRC_PLL_F240M = SOC_MOD_CLK_PLL_D2,    /*!< Select PLL_D2 (default value PLL_F240M) as the source clock */
+    ADC_DIGI_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,         /*!< Select APB as the default clock choice */
+} soc_periph_adc_digi_clk_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of ADC RTC controller
+ */
+#define SOC_ADC_RTC_CLKS {SOC_MOD_CLK_RC_FAST}
+
+/**
+ * @brief ADC RTC controller clock source
+ */
+typedef enum {
+    ADC_RTC_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as the source clock */
+    ADC_RTC_CLK_SRC_DEFAULT = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as the default clock choice */
+} soc_periph_adc_rtc_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif

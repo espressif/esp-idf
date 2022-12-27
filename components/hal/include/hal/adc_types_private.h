@@ -133,8 +133,6 @@ typedef enum {
 /**
  * @brief ADC digital controller (DMA mode) monitor configuration.
  *
- * @note  For ESP32-S2, The monitor object of the ADC is fixed.
- * @note  For ESP32-S2, The monitor object is always all enabled channels.
  */
 typedef struct {
     adc_unit_t adc_unit;            /*!<Set adc unit number for monitor.
@@ -142,12 +140,8 @@ typedef struct {
     adc_channel_t channel;          /*!<Set adc channel number for monitor.
                                         For ESP32-S2, it's always `ADC_CHANNEL_MAX` */
     adc_digi_monitor_mode_t mode;   /*!<Set adc monitor mode. See ``adc_digi_monitor_mode_t``. */
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2
-    uint32_t h_threshold;             /*!<Set monitor threshold of adc digital controller. */
-    uint32_t l_threshold;             /*!<Set monitor threshold of adc digital controller. */
-#else
-    uint32_t threshold;             /*!<Set monitor threshold of adc digital controller. */
-#endif
+    uint32_t h_threshold;           /*!<Set monitor threshold of adc digital controller. */
+    uint32_t l_threshold;           /*!<Set monitor threshold of adc digital controller. */
 } adc_digi_monitor_t;
 #endif  //#if SOC_ADC_MONITOR_SUPPORTED
 

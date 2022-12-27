@@ -751,7 +751,7 @@ typedef union {
          */
         uint32_t saradc_clkm_div_num:8;
         /** saradc_clkm_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 240MHz, 2: FOSC, 3:
+         *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
          *  reserved.
          */
         uint32_t saradc_clkm_sel:2;

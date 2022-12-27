@@ -18,11 +18,6 @@ set(srcs
     "timer_periph.c"
     "twai_periph.c")
 
-# ESP32C6-TODO
-list(REMOVE_ITEM srcs
-        "adc_periph.c"                  # TODO: IDF-5310
-        )
-
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")
