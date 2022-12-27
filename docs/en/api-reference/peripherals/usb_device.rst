@@ -15,7 +15,7 @@ The driver allows you to use {IDF_TARGET_NAME} chips to develop USB devices on a
 
 TinyUSB stack is distributed via `IDF Component Registry <https://components.espressif.com/components/espressif/esp_tinyusb>`_.
 
-Our USB-OTG implementation is limited to {IDF_TARGET_USB_EP_NUM} USB endpoints ({IDF_TARGET_USB_EP_NUM_INOUT} IN/OUT endpoints and {IDF_TARGET_USB_EP_NUM_IN} IN endpoint) - find more information in `technical reference manual <{IDF_TARGET_TRM_EN_URL}>`_.
+Our USB-OTG implementation is limited to {IDF_TARGET_USB_EP_NUM} USB endpoints ({IDF_TARGET_USB_EP_NUM_INOUT} IN/OUT endpoints and {IDF_TARGET_USB_EP_NUM_IN} IN endpoint) . Please note that enabling Secure Boot or flash encryption disables the USB-OTG USB stack in the ROM, disallowing updates via the serial emulation or Device Firmware Update (DFU) on that port. For more details, please refer to `technical reference manual <{IDF_TARGET_TRM_EN_URL}>`_.
 
 Features
 --------
@@ -38,7 +38,7 @@ On {IDF_TARGET_NAME}, connect GPIO {IDF_TARGET_USB_DP_GPIO_NUM} and {IDF_TARGET_
 
 .. figure:: ../../../_static/usb-board-connection.png
     :align: center
-    :alt: Connection of an ESP board to a USB host 
+    :alt: Connection of an ESP board to a USB host
     :figclass: align-center
 
 Self-powered devices must also connect VBUS through voltage divider or comparator, more details in :ref:`self-powered-device` subchapter.
