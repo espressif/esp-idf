@@ -18,14 +18,12 @@ allprojects {
 }
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 33
     buildToolsVersion "30.0.3"
 
     defaultConfig {
         minSdkVersion 23
-        targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
+        targetSdkVersion 33
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
@@ -37,6 +35,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    namespace 'com.espressif.provisioning'
 }
 
 protobuf {
@@ -59,13 +58,13 @@ dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.3.1'
     implementation 'org.greenrobot:eventbus:3.2.0'
-    implementation 'com.google.protobuf:protobuf-javalite:3.14.0'
+    implementation 'com.google.protobuf:protobuf-javalite:3.18.0'
     implementation 'com.google.crypto.tink:tink-android:1.6.1'
     implementation 'com.google.android.gms:play-services-vision:20.1.3'
     implementation 'androidx.preference:preference:1.1.1'
-    implementation 'com.github.yuriy-budiyev:code-scanner:2.1.0'
+    implementation 'com.github.yuriy-budiyev:code-scanner:2.1.2'
 
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.4'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
 }
