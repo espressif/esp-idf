@@ -39,6 +39,7 @@
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_BT_SUPPORTED                1
 #define SOC_IEEE802154_SUPPORTED        1
+#define SOC_IEEE802154_BLE_ONLY         1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1

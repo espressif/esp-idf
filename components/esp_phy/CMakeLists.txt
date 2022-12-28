@@ -15,7 +15,7 @@ else()
     set(ldfragments "linker.lf")
 endif()
 
-if(IDF_TARGET STREQUAL "esp32h4")
+if(CONFIG_SOC_IEEE802154_BLE_ONLY)
     list(APPEND srcs "src/phy_init_esp32hxx.c")
 else()
     list(APPEND srcs "src/phy_init.c")
