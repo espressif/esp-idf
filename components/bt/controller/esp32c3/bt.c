@@ -241,7 +241,6 @@ extern bool btdm_deep_sleep_mem_init(void);
 extern void btdm_deep_sleep_mem_deinit(void);
 extern void btdm_ble_power_down_dma_copy(bool copy);
 extern uint8_t btdm_sleep_clock_sync(void);
-extern void sdk_config_extend_set_pll_track(bool enable);
 
 #if CONFIG_MAC_BB_PD
 extern void esp_mac_bb_power_down(void);
@@ -1097,8 +1096,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif
     esp_phy_modem_init();
     esp_bt_power_domain_on();
-
-    sdk_config_extend_set_pll_track(false);
 
     btdm_controller_mem_init();
 
