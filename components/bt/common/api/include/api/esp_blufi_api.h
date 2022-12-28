@@ -86,6 +86,7 @@ typedef enum {
     ESP_BLUFI_DATA_FORMAT_ERROR,
     ESP_BLUFI_CALC_MD5_ERROR,
     ESP_BLUFI_WIFI_SCAN_FAIL,
+    ESP_BLUFI_MSG_STATE_ERROR,
 } esp_blufi_error_state_t;
 
 /**
