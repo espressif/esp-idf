@@ -703,7 +703,6 @@ components/hal/test/test_mpu.c
 components/hal/touch_sensor_hal.c
 components/hal/uart_hal_iram.c
 components/hal/usb_hal.c
-components/heap/include/esp_heap_trace.h
 components/heap/include/heap_memory_layout.h
 components/heap/test/test_aligned_alloc_caps.c
 components/heap/test/test_allocator_timings.c

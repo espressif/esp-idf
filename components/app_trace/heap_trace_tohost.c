@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,7 +69,17 @@ esp_err_t heap_trace_get(size_t index, heap_trace_record_t *record)
     return ESP_ERR_NOT_SUPPORTED;
 }
 
+esp_err_t heap_trace_summary(heap_trace_summary_t *summary)
+{
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
 void heap_trace_dump(void)
+{
+    return;
+}
+
+void heap_trace_dump_caps(__attribute__((unused)) const uint32_t caps)
 {
     return;
 }
