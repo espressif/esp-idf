@@ -46,7 +46,7 @@ void periph_module_reset(periph_module_t periph)
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
 }
 
-#if CONFIG_ESP32_WIFI_ENABLED
+#if !SOC_IEEE802154_BLE_ONLY
 IRAM_ATTR void wifi_bt_common_module_enable(void)
 {
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
@@ -74,7 +74,9 @@ IRAM_ATTR void wifi_bt_common_module_disable(void)
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
 #endif
 }
+#endif
 
+#if CONFIG_ESP32_WIFI_ENABLED
 void wifi_module_enable(void)
 {
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
