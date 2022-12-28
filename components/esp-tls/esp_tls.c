@@ -72,6 +72,8 @@ static const char *TAG = "esp-tls";
 #error "No TLS stack configured"
 #endif
 
+#define ESP_TLS_DEFAULT_CONN_TIMEOUT  (10)  /*!< Default connection timeout in seconds */
+
 static esp_err_t create_ssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls)
 {
     return _esp_create_ssl_handle(hostname, hostlen, cfg, tls);
@@ -226,18 +228,22 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
     }
 
     if (cfg) {
-        if (cfg->timeout_ms >= 0) {
-            struct timeval tv;
+        struct timeval tv = {};
+        if (cfg->timeout_ms > 0) {
             ms_to_timeval(cfg->timeout_ms, &tv);
-            setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-            setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-            if (cfg->keep_alive_cfg && cfg->keep_alive_cfg->keep_alive_enable) {
-                if (esp_tls_tcp_enable_keep_alive(fd, cfg->keep_alive_cfg) < 0) {
-                    ESP_LOGE(TAG, "Error setting keep-alive");
-                    goto err_freesocket;
-                }
+        } else {
+            tv.tv_sec = ESP_TLS_DEFAULT_CONN_TIMEOUT;
+            tv.tv_usec = 0;
+        }
+        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+        setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+        if (cfg->keep_alive_cfg && cfg->keep_alive_cfg->keep_alive_enable) {
+            if (esp_tls_tcp_enable_keep_alive(fd, cfg->keep_alive_cfg) < 0) {
+                ESP_LOGE(TAG, "Error setting keep-alive");
+                goto err_freesocket;
             }
         }
+
         if (cfg->non_block) {
             int flags = fcntl(fd, F_GETFL, 0);
             ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
