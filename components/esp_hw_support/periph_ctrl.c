@@ -8,6 +8,10 @@
 #include "esp_attr.h"
 #include "esp_private/periph_ctrl.h"
 
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+#include "esp_private/esp_modem_clock.h"
+#endif
+
 static portMUX_TYPE periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 static uint8_t ref_counts[PERIPH_MODULE_MAX] = {0};
@@ -45,35 +49,51 @@ void periph_module_reset(periph_module_t periph)
 #if CONFIG_ESP32_WIFI_ENABLED
 IRAM_ATTR void wifi_bt_common_module_enable(void)
 {
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_enable(PERIPH_PHY_MODULE);
+#else
     portENTER_CRITICAL_SAFE(&periph_spinlock);
     if (ref_counts[PERIPH_WIFI_BT_COMMON_MODULE] == 0) {
         periph_ll_wifi_bt_module_enable_clk_clear_rst();
     }
     ref_counts[PERIPH_WIFI_BT_COMMON_MODULE]++;
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
+#endif
 }
 
 IRAM_ATTR void wifi_bt_common_module_disable(void)
 {
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_disable(PERIPH_PHY_MODULE);
+#else
     portENTER_CRITICAL_SAFE(&periph_spinlock);
     ref_counts[PERIPH_WIFI_BT_COMMON_MODULE]--;
     if (ref_counts[PERIPH_WIFI_BT_COMMON_MODULE] == 0) {
         periph_ll_wifi_bt_module_disable_clk_set_rst();
     }
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
+#endif
 }
 
 void wifi_module_enable(void)
 {
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_enable(PERIPH_WIFI_MODULE);
+#else
     portENTER_CRITICAL_SAFE(&periph_spinlock);
     periph_ll_wifi_module_enable_clk_clear_rst();
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
+#endif
 }
 
 void wifi_module_disable(void)
 {
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+    modem_clock_module_disable(PERIPH_WIFI_MODULE);
+#else
     portENTER_CRITICAL_SAFE(&periph_spinlock);
     periph_ll_wifi_module_disable_clk_set_rst();
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
+#endif
 }
 #endif // CONFIG_ESP32_WIFI_ENABLED

@@ -419,17 +419,17 @@
 // TODO: IDF-5351 (Copy from esp32c3, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
-
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-
 #define SOC_PM_SUPPORT_CPU_PD           (1)
-
 #define SOC_PM_SUPPORT_WIFI_PD          (1)
-
 #define SOC_PM_SUPPORT_BT_PD            (1)
+#define SOC_PM_SUPPORT_XTAL32K_PD       (1)
+#define SOC_PM_SUPPORT_RC32K_PD         (1)
+#define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
+#define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

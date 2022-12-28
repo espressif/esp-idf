@@ -19,6 +19,7 @@
 #include "soc/rtc_periph.h"
 #include "soc/uart_reg.h"
 #include "hal/wdt_hal.h"
+#include "hal/modem_syscon_ll.h"
 #include "esp_private/cache_err_int.h"
 
 #include "esp32c6/rom/cache.h"
@@ -66,12 +67,11 @@ void IRAM_ATTR esp_restart_noos(void)
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     // Moved to module internal
     // SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-    //                   SYSTEM_WIFIMAC_RST |                           // TODO: IDF-5679 (esp_wifi)
     //                   SYSTEM_SDIO_RST |                              // SDIO_HINF_HINF_SDIO_RST?
     //                   SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |          // TODO: IDF-5325 (ethernet)
-    //                   SYSTEM_BTBB_RST | SYSTEM_BTBB_REG_RST |        // TODO: IDF-5727 (bt)
-    //                   SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | SYSTEM_RW_BTMAC_REG_RST | SYSTEM_RW_BTLP_REG_RST);
     // REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
+
+    modem_syscon_ll_reset_all(&MODEM_SYSCON);
 
     // Set Peripheral clk rst
     SET_PERI_REG_MASK(PCR_TIMERGROUP0_CONF_REG, PCR_TG0_RST_EN);

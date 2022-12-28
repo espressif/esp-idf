@@ -111,6 +111,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "sha_hal.c")
     endif()
 
+    if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT)
+        list(APPEND srcs "${target}/modem_clock_hal.c")
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "sdio_slave_hal.c"

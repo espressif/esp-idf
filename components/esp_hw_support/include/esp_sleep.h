@@ -47,13 +47,23 @@ typedef enum {
     ESP_PD_DOMAIN_RTC_FAST_MEM,    //!< RTC fast memory
 #endif
     ESP_PD_DOMAIN_XTAL,            //!< XTAL oscillator
+#if SOC_PM_SUPPORT_XTAL32K_PD
+    ESP_PD_DOMAIN_XTAL32K,
+#endif
+#if SOC_PM_SUPPORT_RC32K_PD
+    ESP_PD_DOMAIN_RC32K,
+#endif
+#if SOC_PM_SUPPORT_RC_FAST_PD
+    ESP_PD_DOMAIN_RC_FAST,         //!< Internal Fast oscillator
+#endif
 #if SOC_PM_SUPPORT_CPU_PD
     ESP_PD_DOMAIN_CPU,             //!< CPU core
 #endif
-    ESP_PD_DOMAIN_RTC8M,           //!< Internal 8M oscillator
     ESP_PD_DOMAIN_VDDSDIO,         //!< VDD_SDIO
     ESP_PD_DOMAIN_MAX              //!< Number of domains
 } esp_sleep_pd_domain_t;
+
+#define ESP_PD_DOMAIN_RTC8M _Pragma("GCC warning \"'ESP_PD_DOMAIN_RTC8M' enum is deprecated\"") ESP_PD_DOMAIN_RC_FAST
 
 /**
  * @brief Power down options

@@ -5,4 +5,5 @@
  */
 
 #pragma once
+#define DR_REG_MODEM_SYSCON_BASE  0x600A9800
 #define DR_REG_MODEM_LPCON_BASE   0x600AF000

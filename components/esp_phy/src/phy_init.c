@@ -205,16 +205,12 @@ static inline void phy_update_wifi_mac_time(bool en_clock_stopped, int64_t now)
 
 IRAM_ATTR void esp_phy_common_clock_enable(void)
 {
-#if !CONFIG_IDF_TARGET_ESP32C6 // IDF-5679
     wifi_bt_common_module_enable();
-#endif
 }
 
 IRAM_ATTR void esp_phy_common_clock_disable(void)
 {
-#if !CONFIG_IDF_TARGET_ESP32C6 // IDF-5679
     wifi_bt_common_module_disable();
-#endif
 }
 
 static inline void phy_digital_regs_store(void)

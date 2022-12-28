@@ -573,7 +573,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
 #endif
         ESP_LOGD(LEDC_TAG, "In slow speed mode, global clk set: %d", glb_clk);
 
-        /* keep ESP_PD_DOMAIN_RTC8M on during light sleep */
+        /* keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
         esp_sleep_periph_use_8m(glb_clk == LEDC_SLOW_CLK_RTC8M);
 
         portENTER_CRITICAL(&ledc_spinlock);

@@ -70,6 +70,9 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "esp_ds.c")
     endif()
 
+    if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT)
+        list(APPEND srcs "modem_clock.c")
+    endif()
 else()
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")
