@@ -17,7 +17,7 @@
 #include "ccomp_timer.h"
 #include "sys/param.h"
 
-#if CONFIG_MBEDTLS_HARDWARE_GCM
+#if CONFIG_MBEDTLS_HARDWARE_AES
 
 /*
     Python example code for generating test vectors
@@ -105,13 +105,13 @@ TEST_CASE("mbedtls GCM stream test", "[aes-gcm]")
         mbedtls_gcm_starts( &ctx, MBEDTLS_AES_ENCRYPT, nonce, sizeof(nonce) );
         mbedtls_gcm_update_ad( &ctx, NULL, 0 );
 
+        size_t olen;
         // Encrypt
         for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
             // Limit length of last call to avoid exceeding buffer size
             size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
-            mbedtls_gcm_update(&ctx, plaintext + idx, length, ciphertext + idx, 0, NULL);
+            mbedtls_gcm_update(&ctx, plaintext + idx, length, ciphertext + idx, length, &olen);
         }
-        size_t olen;
         mbedtls_gcm_finish( &ctx, NULL, 0, &olen, tag, sizeof(tag) );
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, ciphertext, SZ);
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_tag, tag, sizeof(tag));
@@ -129,7 +129,7 @@ TEST_CASE("mbedtls GCM stream test", "[aes-gcm]")
             // Limit length of last call to avoid exceeding buffer size
 
             size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
-            mbedtls_gcm_update(&ctx, ciphertext + idx, length, decryptedtext + idx, 0, NULL);
+            mbedtls_gcm_update(&ctx, ciphertext + idx, length, decryptedtext + idx, length, &olen);
         }
         mbedtls_gcm_finish( &ctx, NULL, 0, &olen, tag, sizeof(tag) );
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
@@ -199,7 +199,7 @@ static void aes_gcm_test(aes_gcm_test_cfg_t *cfg, aes_gcm_test_expected_res_t *r
     } else if (aes_gcm_type == AES_GCM_TEST_START_UPDATE_FINISH) {
         TEST_ASSERT(mbedtls_gcm_starts( &ctx, MBEDTLS_AES_ENCRYPT, iv_buf, cfg->iv_length) == 0 );
         TEST_ASSERT(mbedtls_gcm_update_ad( &ctx, cfg->add_buf, cfg->add_length) == 0 );
-        TEST_ASSERT(mbedtls_gcm_update( &ctx, cfg->plaintext, cfg->plaintext_length, ciphertext, 0, NULL) == 0 );
+        TEST_ASSERT(mbedtls_gcm_update( &ctx, cfg->plaintext, cfg->plaintext_length, ciphertext, cfg->plaintext_length, &olen) == 0 );
         TEST_ASSERT(mbedtls_gcm_finish( &ctx, NULL, 0, &olen, tag_buf_encrypt, cfg->tag_len) == 0 );
     }
     size_t offset = cfg->plaintext_length > 16 ? cfg->plaintext_length - 16 : 0;
@@ -214,7 +214,7 @@ static void aes_gcm_test(aes_gcm_test_cfg_t *cfg, aes_gcm_test_expected_res_t *r
     } else if (aes_gcm_type == AES_GCM_TEST_START_UPDATE_FINISH) {
         TEST_ASSERT(mbedtls_gcm_starts( &ctx, MBEDTLS_AES_DECRYPT, iv_buf, cfg->iv_length) == 0 );
         TEST_ASSERT(mbedtls_gcm_update_ad( &ctx, cfg->add_buf, cfg->add_length) == 0 );
-        TEST_ASSERT(mbedtls_gcm_update( &ctx, ciphertext, cfg->plaintext_length, output, 0, NULL) == 0 );
+        TEST_ASSERT(mbedtls_gcm_update( &ctx, ciphertext, cfg->plaintext_length, output, cfg->plaintext_length, &olen) == 0 );
         TEST_ASSERT(mbedtls_gcm_finish( &ctx, NULL, 0, &olen, tag_buf_decrypt, cfg->tag_len) == 0 );
 
         /* mbedtls_gcm_auth_decrypt already checks tag so only needed for AES_GCM_TEST_START_UPDATE_FINISH */
@@ -222,7 +222,7 @@ static void aes_gcm_test(aes_gcm_test_cfg_t *cfg, aes_gcm_test_expected_res_t *r
     }
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(cfg->plaintext, output, cfg->plaintext_length);
-
+    mbedtls_gcm_free( &ctx );
     free(ciphertext);
     free(output);
 }
@@ -439,7 +439,7 @@ TEST_CASE("mbedtls AES GCM performance, start, update, ret", "[aes-gcm]")
 
     TEST_ASSERT(mbedtls_gcm_starts( &ctx, MBEDTLS_AES_ENCRYPT, iv, sizeof(iv) ) == 0 );
     TEST_ASSERT(mbedtls_gcm_update_ad( &ctx, aad, sizeof(aad)) == 0 );
-    TEST_ASSERT(mbedtls_gcm_update( &ctx, buf, CALL_SZ, buf, 0, NULL) == 0 );
+    TEST_ASSERT(mbedtls_gcm_update( &ctx, buf, CALL_SZ, buf, CALL_SZ, &olen) == 0 );
     TEST_ASSERT(mbedtls_gcm_finish( &ctx, NULL, 0, &olen, tag_buf, 16 ) == 0 );
 
     elapsed_usec = ccomp_timer_stop();
@@ -830,4 +830,4 @@ TEST_CASE("mbedtls AES GCM - Combine different IV/Key/Plaintext/AAD lengths", "[
     }
 }
 
-#endif //CONFIG_MBEDTLS_HARDWARE_GCM
+#endif //CONFIG_MBEDTLS_HARDWARE_AES
