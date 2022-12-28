@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@ extern "C" {
 #define CLK_LL_PLL_80M_FREQ_MHZ    (80)
 #define CLK_LL_PLL_120M_FREQ_MHZ   (120)
 #define CLK_LL_PLL_160M_FREQ_MHZ   (160)
+#define CLK_LL_PLL_240M_FREQ_MHZ   (240)
 
 #define CLK_LL_PLL_480M_FREQ_MHZ   (480)
 

@@ -31,6 +31,8 @@ extern "C" {
 #define CLK_LL_PLL_320M_FREQ_MHZ   (320)
 #define CLK_LL_PLL_480M_FREQ_MHZ   (480)
 
+#define CLK_LL_AHB_MAX_FREQ_MHZ    CLK_LL_PLL_80M_FREQ_MHZ
+
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
     .dac = 3, \
     .dres = 3, \

@@ -33,6 +33,8 @@ extern "C" {
 #define CLK_LL_PLL_320M_FREQ_MHZ   (320)
 #define CLK_LL_PLL_480M_FREQ_MHZ   (480)
 
+#define CLK_LL_AHB_MAX_FREQ_MHZ    CLK_LL_PLL_80M_FREQ_MHZ
+
 /* BBPLL configuration parameters at reset */
 #define CLK_LL_BBPLL_IR_CAL_DELAY_VAL          0x18
 #define CLK_LL_BBPLL_IR_CAL_EXT_CAP_VAL        0x20
@@ -148,6 +150,22 @@ static inline void clk_ll_apll_disable(void)
 static inline bool clk_ll_apll_is_fpd(void)
 {
     return REG_GET_FIELD(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PD);
+}
+
+/**
+ * @brief Get APLL configuration which can be used to calculate APLL frequency
+ *
+ * @param[out] o_div  Frequency divider, 0..31
+ * @param[out] sdm0  Frequency adjustment parameter, 0..255
+ * @param[out] sdm1  Frequency adjustment parameter, 0..255
+ * @param[out] sdm2  Frequency adjustment parameter, 0..63
+ */
+static inline void clk_ll_apll_get_config(uint32_t *o_div, uint32_t *sdm0, uint32_t *sdm1, uint32_t *sdm2)
+{
+    *o_div = REGI2C_READ_MASK(I2C_APLL, I2C_APLL_OR_OUTPUT_DIV);
+    *sdm0 = REGI2C_READ_MASK(I2C_APLL, I2C_APLL_DSDM0);
+    *sdm1 = REGI2C_READ_MASK(I2C_APLL, I2C_APLL_DSDM1);
+    *sdm2 = REGI2C_READ_MASK(I2C_APLL, I2C_APLL_DSDM2);
 }
 
 /**
@@ -616,6 +634,26 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_set_divider(uint32_
 static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_divider(void)
 {
     return REG_GET_FIELD(SYSCON_SYSCLK_CONF_REG, SYSCON_PRE_DIV_CNT) + 1;
+}
+
+/**
+ * @brief Get CPU_CLK's APLL clock source path divider
+ *
+ * @return Divider. Returns 0 means invalid.
+ */
+static inline uint32_t clk_ll_cpu_get_divider_from_apll(void)
+{
+    // APLL path divider choice shares the same register with CPUPERIOD_SEL
+    uint32_t cpu_freq_sel = DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL);
+    switch (cpu_freq_sel) {
+    case 0:
+        return 4;
+    case 1:
+        return 2;
+    default:
+        // Invalid CPUPERIOD_SEL value if APLL is the clock source
+        return 0;
+    }
 }
 
 /**

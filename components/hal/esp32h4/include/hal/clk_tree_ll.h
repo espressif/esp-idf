@@ -341,7 +341,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_divider(voi
  *
  * @param divider Divider. AHB_DIV_NUM = divider - 1.
  */
-static inline void clk_ll_ahb_set_divider(uint32_t divider)
+static inline __attribute__((always_inline)) void clk_ll_ahb_set_divider(uint32_t divider)
 {
     HAL_ASSERT(divider > 0);
     REG_SET_FIELD(SYSTEM_BUSCLK_CONF_REG, SYSTEM_AHB_DIV_NUM, divider - 1);
@@ -352,7 +352,7 @@ static inline void clk_ll_ahb_set_divider(uint32_t divider)
  *
  * @return Divider. Divider = (AHB_DIV_NUM + 1).
  */
-static inline uint32_t clk_ll_ahb_get_divider(void)
+static inline __attribute__((always_inline)) uint32_t clk_ll_ahb_get_divider(void)
 {
     return REG_GET_FIELD(SYSTEM_BUSCLK_CONF_REG, SYSTEM_AHB_DIV_NUM) + 1;
 }
@@ -362,7 +362,7 @@ static inline uint32_t clk_ll_ahb_get_divider(void)
  *
  * @param divider Divider. APB_DIV_NUM = divider - 1.
  */
-static inline void clk_ll_apb_set_divider(uint32_t divider)
+static inline __attribute__((always_inline)) void clk_ll_apb_set_divider(uint32_t divider)
 {
     HAL_ASSERT(divider > 0);
     REG_SET_FIELD(SYSTEM_BUSCLK_CONF_REG, SYSTEM_APB_DIV_NUM, divider - 1);
@@ -373,7 +373,7 @@ static inline void clk_ll_apb_set_divider(uint32_t divider)
  *
  * @return Divider. Divider = (APB_DIV_NUM + 1).
  */
-static inline uint32_t clk_ll_apb_get_divider(void)
+static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(void)
 {
     return REG_GET_FIELD(SYSTEM_BUSCLK_CONF_REG, SYSTEM_APB_DIV_NUM) + 1;
 }

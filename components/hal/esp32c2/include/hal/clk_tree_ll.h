@@ -24,10 +24,14 @@ extern "C" {
 
 #define MHZ                 (1000000)
 
+#define CLK_LL_PLL_40M_FREQ_MHZ    (40)
+#define CLK_LL_PLL_60M_FREQ_MHZ    (60)
 #define CLK_LL_PLL_80M_FREQ_MHZ    (80)
 #define CLK_LL_PLL_120M_FREQ_MHZ   (120)
 
 #define CLK_LL_PLL_480M_FREQ_MHZ   (480)
+
+#define CLK_LL_AHB_MAX_FREQ_MHZ    CLK_LL_PLL_40M_FREQ_MHZ
 
 /**
  * @brief XTAL32K_CLK enable modes

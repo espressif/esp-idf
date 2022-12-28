@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,6 +115,7 @@ typedef enum {
     SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external crystal (2~40MHz) */
     SOC_MOD_CLK_REF_TICK,                      /*!< REF_TICK is derived from APB, it has a fixed frequency of 1MHz even when APB frequency changes */
     SOC_MOD_CLK_APLL,                          /*!< APLL is sourced from PLL, and its frequency is configurable through APLL configuration registers */
+    SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
 } soc_module_clk_t;
 
 //////////////////////////////////////////////////SYSTIMER///////////////////////////////////////////////////////////////

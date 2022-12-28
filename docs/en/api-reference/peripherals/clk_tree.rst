@@ -9,10 +9,17 @@ Clock Tree
 
 {IDF_TARGET_RC_SLOW_VAGUE_FREQ: default="136", esp32="150", esp32s2="90"}
 
+The clock subsystem of {IDF_TARGET_NAME} is used to source and distribute system/module clocks from a range of root clocks. The clock tree driver maintains the basic functionality of the system clock and the intricate relationship among module clocks.
+
+This document starts with the introduction to root and module clocks. Then it covers the clock tree APIs that users can call to monitor the status of the module clocks at runtime.
+
+Introduction
+------------
+
 This section lists definitions of the {IDF_TARGET_NAME}'s supported root clocks and module clocks. These definitions are commonly used in the driver configuration, to help user select a proper source clock for the peripheral.
 
 Root Clocks
------------
+^^^^^^^^^^^
 
 Root clocks generate reliable clock signals. These clock signals then pass through various gates, muxes, dividers, or multipliers to become the clock sources for every functional module: the CPU core(s), WIFI, BT, the RTC, and the peripherals.
 
@@ -69,11 +76,17 @@ Root clocks generate reliable clock signals. These clock signals then pass throu
 Typically, the frequency of the signal generated from a RC oscillator circuit is less accurate and more sensitive to environment comparing to the signal generated from a crystal. {IDF_TARGET_NAME} provides several clock source options for the RTC_SLOW_CLK, and users can make the choice based on the requirements for system time accuracy and power consumption (refer to :ref:`rtc-clock-source-choice` for more details).
 
 Module Clocks
--------------
+^^^^^^^^^^^^^
 
 {IDF_TARGET_NAME}'s available module clocks are listed in :cpp:type:`soc_module_clk_t`. Each module clock has a unique ID. You can get more information on each clock by checking the documented enum value.
+
+API Usage
+---------
+
+The clock tree driver provides an all-in-one API to get the frequency of the module clocks, :cpp:func:`clk_tree_src_get_freq_hz`. Users can call this function at any moment, with specifying the clock name (:cpp:enum:`soc_module_clk_t`) and the desired degree of precision of the returned frequency value (:cpp:enum:`clk_tree_src_freq_precision_t`).
 
 API Reference
 -------------
 
 .. include-build-file:: inc/clk_tree_defs.inc
+.. include-build-file:: inc/clk_tree.inc
