@@ -10,7 +10,7 @@
 #include "sdkconfig.h"
 
 /*
-This file get's pulled into assembly sources. Therefore, some includes need to be wrapped in #ifndef __ASSEMBLER__
+This file gets pulled into assembly sources. Therefore, some includes need to be wrapped in #ifndef __ASSEMBLER__
 */
 
 #ifndef __ASSEMBLER__
@@ -104,7 +104,7 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #define configTICK_RATE_HZ                              CONFIG_FREERTOS_HZ
 #ifdef CONFIG_IDF_TARGET_LINUX
 #define configMAX_PRIORITIES                            ( 7 ) // Default in upstream simulator
-/* The stack allocated by FreeRTOS will be passed passed to a pthread.
+/* The stack allocated by FreeRTOS will be passed to a pthread.
    pthread has a minimal stack size which currently is 16KB.
    The rest is for additional structures of the POSIX/Linux port.
    This is a magic number since PTHREAD_STACK_MIN seems to not be a constant. */

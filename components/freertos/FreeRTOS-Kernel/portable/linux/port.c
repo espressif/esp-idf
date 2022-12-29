@@ -87,7 +87,7 @@ typedef struct THREAD
  */
 static inline Thread_t *prvGetThreadFromTask(TaskHandle_t xTask)
 {
-StackType_t *pxTopOfStack = *(StackType_t **)xTask;
+    StackType_t *pxTopOfStack = *(StackType_t **)xTask;
 
     return (Thread_t *)(pxTopOfStack + 1);
 }
@@ -128,10 +128,10 @@ portSTACK_TYPE *pxPortInitialiseStack( portSTACK_TYPE *pxTopOfStack,
                                        portSTACK_TYPE *pxEndOfStack,
                                        TaskFunction_t pxCode, void *pvParameters )
 {
-Thread_t *thread;
-pthread_attr_t xThreadAttributes;
-size_t ulStackSize;
-int iRet;
+    Thread_t *thread;
+    pthread_attr_t xThreadAttributes;
+    size_t ulStackSize;
+    int iRet;
 
     (void)pthread_once( &hSigSetupThread, prvSetupSignalsAndSchedulerPolicy );
 
@@ -168,7 +168,7 @@ int iRet;
 
 void vPortStartFirstTask( void )
 {
-Thread_t *pxFirstThread = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
+    Thread_t *pxFirstThread = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
 
     /* Start the first task. */
     prvResumeThread( pxFirstThread );
@@ -180,8 +180,8 @@ Thread_t *pxFirstThread = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
  */
 portBASE_TYPE xPortStartScheduler( void )
 {
-int iSignal;
-sigset_t xSignals;
+    int iSignal;
+    sigset_t xSignals;
 
     hMainThread = pthread_self();
 
@@ -220,9 +220,9 @@ sigset_t xSignals;
 
 void vPortEndScheduler( void )
 {
-struct itimerval itimer;
-struct sigaction sigtick;
-Thread_t *xCurrentThread;
+    struct itimerval itimer;
+    struct sigaction sigtick;
+    Thread_t *xCurrentThread;
 
     /* Stop the timer and ignore any pending SIGALRMs that would end
      * up running on the main thread when it is resumed. */
@@ -271,8 +271,8 @@ void vPortExitCritical( void )
 
 void vPortYieldFromISR( void )
 {
-Thread_t *xThreadToSuspend;
-Thread_t *xThreadToResume;
+    Thread_t *xThreadToSuspend;
+    Thread_t *xThreadToResume;
 
     xThreadToSuspend = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
 
@@ -321,7 +321,7 @@ void vPortClearInterruptMask( portBASE_TYPE xMask )
 
 static uint64_t prvGetTimeNs(void)
 {
-struct timespec t;
+    struct timespec t;
 
     clock_gettime(CLOCK_MONOTONIC, &t);
 
@@ -339,8 +339,8 @@ static uint64_t prvStartTimeNs;
  */
 void prvSetupTimerInterrupt( void )
 {
-struct itimerval itimer;
-int iRet;
+    struct itimerval itimer;
+    int iRet;
 
     /* Initialise the structure with the current timer information. */
     iRet = getitimer( ITIMER_REAL, &itimer );
@@ -370,9 +370,9 @@ int iRet;
 
 static void vPortSystemTickHandler( int sig )
 {
-Thread_t *pxThreadToSuspend;
-Thread_t *pxThreadToResume;
-/* uint64_t xExpectedTicks; */
+    Thread_t *pxThreadToSuspend;
+    Thread_t *pxThreadToResume;
+    /* uint64_t xExpectedTicks; */
 
     uxCriticalNesting++; /* Signals are blocked in this signal handler. */
 
@@ -407,14 +407,14 @@ Thread_t *pxThreadToResume;
 
 void vPortThreadDying( void *pxTaskToDelete, volatile BaseType_t *pxPendYield )
 {
-Thread_t *pxThread = prvGetThreadFromTask( pxTaskToDelete );
+    Thread_t *pxThread = prvGetThreadFromTask( pxTaskToDelete );
 
     pxThread->xDying = pdTRUE;
 }
 
 void vPortCancelThread( void *pxTaskToDelete )
 {
-Thread_t *pxThreadToCancel = prvGetThreadFromTask( pxTaskToDelete );
+    Thread_t *pxThreadToCancel = prvGetThreadFromTask( pxTaskToDelete );
 
     /*
      * The thread has already been suspended so it can be safely cancelled.
@@ -427,7 +427,7 @@ Thread_t *pxThreadToCancel = prvGetThreadFromTask( pxTaskToDelete );
 
 static void *prvWaitForStart( void * pvParams )
 {
-Thread_t *pxThread = pvParams;
+    Thread_t *pxThread = pvParams;
 
     prvSuspendSelf(pxThread);
 
@@ -452,7 +452,7 @@ Thread_t *pxThread = pvParams;
 static void prvSwitchThread( Thread_t *pxThreadToResume,
                              Thread_t *pxThreadToSuspend )
 {
-BaseType_t uxSavedCriticalNesting;
+    BaseType_t uxSavedCriticalNesting;
 
     if ( pxThreadToSuspend != pxThreadToResume )
     {
@@ -508,8 +508,8 @@ static void prvResumeThread( Thread_t *xThreadId )
 
 static void prvSetupSignalsAndSchedulerPolicy( void )
 {
-struct sigaction sigresume, sigtick;
-int iRet;
+    struct sigaction sigresume, sigtick;
+    int iRet;
 
     hMainThread = pthread_self();
 
@@ -555,7 +555,7 @@ int iRet;
 
 unsigned long ulPortGetRunTime( void )
 {
-struct tms xTimes;
+    struct tms xTimes;
 
     times( &xTimes );
 
