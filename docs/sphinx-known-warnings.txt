@@ -9,12 +9,6 @@
 idf-component-manager.rst: WARNING: Badly formated string substitution: {IDF_TARGET}
 esp_ble_mesh_defs.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp-ble-mesh:line.
 Declaration is '.. cpp:member:: uint16_t model_id'.
-rmt_encoder.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/rmt:line.
-Declaration is '.. cpp:type:: struct rmt_encoder_t rmt_encoder_t'.
-spi_master.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/spi_master:line.
-Declaration is '.. cpp:type:: struct spi_transaction_t spi_transaction_t'.
-spi_slave.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/spi_slave:line.
-Declaration is '.. cpp:type:: struct spi_slave_transaction_t spi_slave_transaction_t'.
 mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
 Declaration is '.. cpp:type:: struct esp_mqtt_event_t esp_mqtt_event_t'.
 mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
@@ -29,8 +23,6 @@ mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-re
 Declaration is '.. cpp:enum:: esp_mqtt_transport_t'.
 mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
 Declaration is '.. cpp:enum:: esp_mqtt_protocol_ver_t'.
-esp_flash.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/spi_flash:line.
-Declaration is '.. cpp:type:: struct esp_flash_t esp_flash_t'.
 wear-levelling.rst:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/fatfs:line.
 Declaration is '.. cpp:struct:: esp_vfs_fat_mount_config_t'.
 wear-levelling.rst:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/fatfs:line.

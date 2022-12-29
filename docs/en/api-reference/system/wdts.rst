@@ -99,7 +99,7 @@ The default timeout period for the TWDT is set using config item :ref:`CONFIG_ES
     - Increase :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` in menuconfig for a larger watchdog timeout period.
     - You can also call :cpp:func:`esp_task_wdt_init` to increase the watchdog timeout period before erasing a large flash area.
 
-    For more information, you can refer to :doc:`SPI Flash <../storage/spi_flash>`.
+    For more information, you can refer to :doc:`SPI Flash <../peripherals/spi_flash/index>`.
 
 The following config options control TWDT configuration. They are all enabled by default:
 

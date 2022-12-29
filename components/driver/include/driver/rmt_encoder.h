@@ -15,10 +15,9 @@
 extern "C" {
 #endif
 
-/**
- * @brief Type of RMT encoder
- */
+/** @cond */
 typedef struct rmt_encoder_t rmt_encoder_t;
+/** @endcond */
 
 /**
  * @brief RMT encoding state
