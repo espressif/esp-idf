@@ -10,7 +10,6 @@
 #include <stdbool.h>
 #include "sys/queue.h"
 #include "esp_err.h"
-#include "esp_interface.h"
 #include "esp_event_base.h"
 
 #ifdef __cplusplus
@@ -315,4 +314,3 @@ typedef struct {
 #ifdef __cplusplus
 }
 #endif
-

@@ -189,4 +189,3 @@ esp_err_t esp_wifi_sta_reset_muedca_timer(uint8_t aci_bitmap);
 #ifdef __cplusplus
 }
 #endif
-

@@ -85,7 +85,7 @@ static void scan_done_handler(void *arg, esp_event_base_t event_base,
     if (esp_wifi_scan_get_ap_records(&sta_number, (wifi_ap_record_t *)ap_list_buffer) == ESP_OK) {
         for (i = 0; i < sta_number; i++) {
 #if CONFIG_SOC_WIFI_HE_SUPPORT
-            char ssid_rssi[45] = { 0, };
+            char ssid_rssi[46] = { 0, };
             sprintf(ssid_rssi, "[%s][rssi=%d]", ap_list_buffer[i].ssid, ap_list_buffer[i].rssi);
             if (ap_list_buffer[i].phy_11ax) {
                 ESP_LOGW(TAG,
@@ -186,9 +186,8 @@ void initialise_wifi(void)
 #endif
 #endif
 
-
-#if CONFIG_ENABLE_WIFI_RX_STATS
-#if CONFIG_ENABLE_WIFI_RX_MU_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
     esp_wifi_enable_rx_statistics(true, true);
 #else
     esp_wifi_enable_rx_statistics(true, false);

@@ -187,6 +187,7 @@ typedef enum {
     WIFI_ANT_MAX,           /**< Invalid WiFi antenna */
 } wifi_ant_t;
 
+/** @brief Description of a WiFi AP HE Info */
 typedef struct {
     uint8_t bss_color:6;                  /**< an unsigned integer whose value is the BSS Color of the BSS corresponding to the AP */
     uint8_t partial_bss_color:1;          /**< indicate if an AID assignment rule based on the BSS color */

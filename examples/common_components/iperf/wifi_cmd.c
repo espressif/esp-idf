@@ -465,9 +465,9 @@ static int do_ping_cmd(int argc, char **argv)
     return 0;
 }
 
-extern bool pm_is_waked();
-extern bool pm_is_sleeping();
-extern bool pm_is_dream();
+extern bool pm_is_waked(void);
+extern bool pm_is_sleeping(void);
+extern bool pm_is_dream(void);
 static int wifi_cmd_get_ps_state(int argc, char **argv)
 {
     ESP_LOGW(TAG, "ps: awake:%d, sleep:%d, dream:%d", pm_is_waked(), pm_is_sleeping(), pm_is_dream());
@@ -1076,4 +1076,3 @@ void register_wifi_cmd(void)
 }
 
 #endif /* CONFIG_SOC_WIFI_HE_SUPPORT */
-

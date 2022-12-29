@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_err.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -112,8 +113,8 @@ typedef enum {
 } wifi_rx_bb_format_t;
 
 /**
- * @brief RxControl Info
- */
+  * @brief RxControl Info
+  */
 typedef struct {
     signed rssi : 8;                              /**< the RSSI of the reception frame */
     unsigned rate : 5;                            /**< if cur_bb_format is RX_BB_FORMAT_11B, it's the transmission rate. otherwise it's Rate field of L-SIG */
@@ -222,4 +223,3 @@ typedef struct {
 #ifdef __cplusplus
 }
 #endif
-

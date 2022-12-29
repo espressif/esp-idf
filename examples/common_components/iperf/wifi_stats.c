@@ -8,7 +8,7 @@
 #include <string.h>
 #include "esp_log.h"
 
-#if CONFIG_ENABLE_WIFI_TX_STATS || CONFIG_ENABLE_WIFI_RX_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS || CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
 
 #include "esp_console.h"
 #include "argtable3/argtable3.h"
@@ -39,7 +39,7 @@ static const char *TAG = "stats";
 /*******************************************************
  *                Variable Definitions
  *******************************************************/
-#if CONFIG_ENABLE_WIFI_RX_MU_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
 esp_test_rx_mu_statistics_t rx_mu_stats = { 0, }; //10932 bytes
 #endif
 
@@ -466,7 +466,7 @@ int wifi_cmd_clr_rx_statistics(int argc, char **argv)
     ESP_LOGW(TAG, "Clear rx statistics");
     esp_wifi_clr_rx_statistics(0);
     esp_wifi_clr_rx_statistics(7);
-#if CONFIG_ENABLE_WIFI_RX_MU_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
     esp_test_clr_rx_error_occurs();
     esp_wifi_clr_rx_mu_statistics();
 #endif
@@ -521,7 +521,7 @@ int wifi_cmd_get_rx_statistics(int argc, char **argv)
     ESP_LOGW(TAG, "(hw)isr:%d, nblks:%d", rx_stats.rx_isr, rx_stats.rx_nblks);
     /* hw rx statistics */
     print_hw_rx_statistics();
-#if CONFIG_ENABLE_WIFI_RX_MU_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
     print_rx_mu_statistics();
 #endif
     esp_test_get_rx_error_occurs(&rx_error_occurs);
@@ -541,11 +541,11 @@ int wifi_cmd_get_rx_statistics(int argc, char **argv)
     return 0;
 }
 
-#endif /* CONFIG_ENABLE_WIFI_TX_STATS || CONFIG_ENABLE_WIFI_RX_STATS */
+#endif /* CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS || CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS */
 
 void register_wifi_stats(void)
 {
-#if CONFIG_ENABLE_WIFI_TX_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
     /* get tx statistics */
     const esp_console_cmd_t tx_stats_cmd = {
         .command = "tx",
@@ -564,7 +564,7 @@ void register_wifi_stats(void)
     ESP_ERROR_CHECK(esp_console_cmd_register(&clr_cmd));
 #endif
 
-#if CONFIG_ENABLE_WIFI_RX_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
     /* get rx statistics */
     const esp_console_cmd_t rx_stats_cmd = {
         .command = "rx",

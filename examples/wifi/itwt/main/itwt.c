@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 /* itwt Example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -215,14 +220,14 @@ static void wifi_itwt(void)
 
     ESP_ERROR_CHECK(esp_wifi_start());
 
-#if CONFIG_ENABLE_WIFI_RX_STATS
-#if CONFIG_ENABLE_WIFI_RX_MU_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
     esp_wifi_enable_rx_statistics(true, true);
 #else
     esp_wifi_enable_rx_statistics(true, false);
 #endif
 #endif
-#if CONFIG_ENABLE_WIFI_TX_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
     esp_wifi_enable_tx_statistics(ESP_WIFI_ACI_VO, true); //VO, mgmt
     esp_wifi_enable_tx_statistics(ESP_WIFI_ACI_BE, true); //BE, data
 #endif
