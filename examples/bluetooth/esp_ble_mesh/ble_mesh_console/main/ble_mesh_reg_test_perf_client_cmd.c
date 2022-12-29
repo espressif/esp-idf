@@ -37,11 +37,96 @@ typedef struct {
 } ble_mesh_test_perf_client_model_statistics_t;
 ble_mesh_test_perf_client_model_statistics_t test_perf_client_model_statistics;
 
+bool deinit_flag = false;
+
 void ble_mesh_performance_client_model_command(void);
 
 void ble_mesh_register_mesh_test_performance_client(void)
 {
     ble_mesh_performance_client_model_command();
+}
+
+void ble_mesh_vendor_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_cb_param_t *param)
+{
+    uint16_t result;
+    uint8_t data[4];
+    uint64_t *start_time = NULL;
+    transaction_t *trans = NULL;
+
+    ESP_LOGD(TAG, "enter %s, event=%x", __func__, event);
+    do {
+        trans = transaction_get(TRANS_TYPE_MESH_PERF, TRANS_MESH_SEND_MESSAGE, trans);
+        if (trans) {
+            start_time = (uint64_t *)trans->input;
+            break;
+        }
+    }while(trans);
+
+    switch (event) {
+    case ESP_BLE_MESH_MODEL_OPERATION_EVT:
+        if (param->model_operation.model != NULL && param->model_operation.model->op != NULL) {
+            if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET) {
+                ESP_LOGI(TAG, "VndSrvModel:SetAck,Success,%d", param->model_operation.ctx->recv_ttl);
+                data[0] = param->model_operation.msg[0];
+                data[1] = param->model_operation.msg[1];
+                data[2] = param->model_operation.msg[2];
+                data[3] = param->model_operation.ctx->recv_ttl;
+                result = ble_mesh_node_statistics_accumulate(param->model_operation.msg, param->model_operation.length, VENDOR_MODEL_PERF_OPERATION_TYPE_SET);
+                if (result == 0) {
+                    esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx,
+                                                       ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_STATUS, sizeof(data), data);
+                }
+            } else if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET_UNACK) {
+                ESP_LOGI(TAG, "VndSrvModel:SetUnAck,Success,%d,%d", param->model_operation.ctx->recv_ttl, param->model_operation.length);
+                result = ble_mesh_node_statistics_accumulate(param->model_operation.msg, param->model_operation.length, VENDOR_MODEL_PERF_OPERATION_TYPE_SET_UNACK);
+            } else if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_STATUS) {
+                if (trans) {
+                    uint64_t current_time = esp_timer_get_time();
+                    result = ble_mesh_test_performance_client_model_accumulate_time(((uint32_t)(current_time - *start_time) / 1000), param->model_operation.msg,
+                        param->model_operation.ctx->recv_ttl, param->model_operation.length);
+                    transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
+                }
+            }
+        }
+        break;
+    case ESP_BLE_MESH_MODEL_SEND_COMP_EVT:
+        if (param->model_send_comp.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET_UNACK) {
+            transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
+        }
+        if (param->model_send_comp.err_code == ESP_OK) {
+            ESP_LOGI(TAG, "VndModel:ModelSend,OK");
+        } else {
+            ESP_LOGE(TAG, "VndModel:ModelSend,Fail");
+        }
+        break;
+    case ESP_BLE_MESH_MODEL_PUBLISH_COMP_EVT:
+        ESP_LOGI(TAG, "VndModel:PublishSend,OK,0x%x,%d,", param->model_publish_comp.model->model_id, param->model_publish_comp.model->pub->msg->len);
+        break;
+    case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT:
+        ESP_LOGI(TAG, "VndModel:PublishReceive,OK,0x%06" PRIx32 ",%d,%d", param->client_recv_publish_msg.opcode, param->client_recv_publish_msg.length, param->client_recv_publish_msg.msg[1]);
+        if (trans) {
+            uint64_t current_time = esp_timer_get_time();
+            result = ble_mesh_test_performance_client_model_accumulate_time(((uint32_t)(current_time - *start_time) / 2000), param->client_recv_publish_msg.msg,
+                param->client_recv_publish_msg.ctx->recv_ttl, param->client_recv_publish_msg.length);
+            transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
+        }
+        break;
+    case ESP_BLE_MESH_MODEL_PUBLISH_UPDATE_EVT:
+        ESP_LOGI(TAG, "VndModel:PublishUpdate,OK");
+        break;
+    case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT:
+        ESP_LOGI(TAG, "VndModel:TimeOut,0x%06" PRIx32, param->client_send_timeout.opcode);
+        if (trans) {
+            transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
+        }
+        break;
+    case ESP_BLE_MESH_MODEL_EVT_MAX:
+        ESP_LOGI(TAG, "VndModel:MaxEvt");
+        break;
+    default:
+        break;
+    }
+
 }
 
 void ble_mesh_test_performance_client_model_throughput(void *params)
@@ -54,8 +139,6 @@ void ble_mesh_test_performance_client_model_throughput(void *params)
     ble_mesh_test_perf_throughput_data *profile_context = (ble_mesh_test_perf_throughput_data *)params;
     esp_err_t result = ESP_OK;
 
-    ESP_LOGD(TAG, "enter %s\n", __func__);
-
     ctx.net_idx = profile_context->net_idx;
     ctx.app_idx = profile_context->app_idx;
     ctx.addr = profile_context->address;
@@ -66,7 +149,7 @@ void ble_mesh_test_performance_client_model_throughput(void *params)
     // create send data
     data = malloc(profile_context->length);
     if (data == NULL) {
-        ESP_LOGE(TAG, " %s, %d, malloc fail\n", __func__, __LINE__);
+        ESP_LOGE(TAG, " %s, %d, malloc fail", __func__, __LINE__);
         goto cleanup;
     }
 
@@ -80,13 +163,22 @@ void ble_mesh_test_performance_client_model_throughput(void *params)
                                                     profile_context->length, data, 8000,
                                                     profile_context->need_ack,
                                                     profile_context->device_role);
-        ble_mesh_test_performance_client_model_accumulate_statistics(profile_context->length);
-        transaction_run(trans);
 
-        if (result == ESP_OK) {
-            ESP_LOGI(TAG, "VendorModel:SendPackage,OK");
-        } else {
-            ESP_LOGI(TAG, "VendorModel:SendPackage,Fail");
+        if (result != ESP_OK) {
+            ESP_LOGE(TAG, "VendorModel:SendPackage,Fail");
+        }
+
+        ble_mesh_test_performance_client_model_accumulate_statistics(profile_context->length);
+
+        if (deinit_flag) {
+            ESP_LOGI(TAG, "Already deinit, stop sending message");
+            break;
+        }
+
+        result = transaction_run(trans);
+        if (result == ESP_ERR_INVALID_STATE) {
+            ESP_LOGI(TAG, "Already deinit, transactions abort");
+            break;
         }
     }
 
@@ -97,7 +189,6 @@ cleanup:
     if (data != NULL) {
         free(data);
     }
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     vTaskDelete(NULL);
 }
 
@@ -109,7 +200,6 @@ int ble_mesh_test_performance_client_model(int argc, char **argv)
     ble_mesh_test_perf_throughput_data *profile_data = NULL;
     uint16_t company_id = CID_ESP;
 
-    ESP_LOGD(TAG, "enter %s\n", __func__);
     int nerrors = arg_parse(argc, argv, (void **) &test_perf_client_model);
     if (nerrors != 0) {
         arg_print_errors(stderr, test_perf_client_model.end, argv[0]);
@@ -124,7 +214,7 @@ int ble_mesh_test_performance_client_model(int argc, char **argv)
 
     model = esp_ble_mesh_find_vendor_model(element, company_id, ESP_BLE_MESH_VND_MODEL_ID_TEST_PERF_CLI);
     if (!model) {
-        ESP_LOGI(TAG, "VendorClient:LoadModel,Fail");
+        ESP_LOGE(TAG, "VendorClient:LoadModel,Fail");
         return ESP_FAIL;
     }
 
@@ -139,7 +229,7 @@ int ble_mesh_test_performance_client_model(int argc, char **argv)
         profile_data = malloc(sizeof(ble_mesh_test_perf_throughput_data));
         profile_data->model = model;
         if (profile_data == NULL) {
-            ESP_LOGE(TAG, " %s, %d malloc fail\n", __func__, __LINE__);
+            ESP_LOGE(TAG, " %s, %d malloc fail", __func__, __LINE__);
             return ESP_ERR_NO_MEM;
         }
 
@@ -161,7 +251,6 @@ int ble_mesh_test_performance_client_model(int argc, char **argv)
         xTaskCreate(ble_mesh_test_performance_client_model_throughput, "MESHTHROUGHPUTSEND", 4048, profile_data, 1, NULL);
     }
 
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return result;
 }
 
@@ -169,7 +258,6 @@ int ble_mesh_test_performance_client_model_performance(int argc, char **argv)
 {
     uint8_t result = 0;
 
-    ESP_LOGD(TAG, "enter %s\n", __func__);
     int nerrors = arg_parse(argc, argv, (void **) &test_perf_client_model_statistics);
     if (nerrors != 0) {
         arg_print_errors(stderr, test_perf_client_model_statistics.end, argv[0]);
@@ -180,19 +268,18 @@ int ble_mesh_test_performance_client_model_performance(int argc, char **argv)
         result = ble_mesh_test_performance_client_model_init(test_perf_client_model_statistics.node_num->ival[0],
                  test_perf_client_model_statistics.test_size->ival[0], test_perf_client_model_statistics.ttl->ival[0]);
         if (result == 0) {
-            ESP_LOGI(TAG, "VendorPerfTest:InitStatistics,OK\n");
+            ESP_LOGI(TAG, "VendorPerfTest:InitStatistics,OK");
         }
     } else if (strcmp(test_perf_client_model_statistics.action_type->sval[0], "get") == 0) {
         ble_mesh_test_performance_client_model_get();
     } else if (strcmp(test_perf_client_model_statistics.action_type->sval[0], "destroy") == 0) {
         ble_mesh_test_performance_client_model_destroy();
-        ESP_LOGI(TAG, "VendorPerfTest:DestroyStatistics,OK\n");
+        ESP_LOGI(TAG, "VendorPerfTest:DestroyStatistics,OK");
     } else if (strcmp(test_perf_client_model_statistics.action_type->sval[0], "percent") == 0) {
         ble_mesh_test_performance_client_model_get_received_percent();
-        ESP_LOGI(TAG, "VendorPerfTest:GetPercent,OK\n");
+        ESP_LOGI(TAG, "VendorPerfTest:GetPercent,OK");
     }
 
-    ESP_LOGD(TAG, "exit %s\n", __func__);
     return 0;
 }
 
