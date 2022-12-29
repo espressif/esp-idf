@@ -225,18 +225,19 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one", "[in
     esp_intr_free(handle1);
 }
 
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5061
 static void dummy(void *arg)
 {
 }
 static IRAM_ATTR void dummy_iram(void *arg)
 {
 }
+
+// RTC not supported on all target (e.g., esp32c2)
+#if SOC_RTC_FAST_MEM_SUPPORTED
 static RTC_IRAM_ATTR void dummy_rtc(void *arg)
 {
 }
+#endif
 
 TEST_CASE("Can allocate IRAM int only with an IRAM handler", "[intr_alloc]")
 {
@@ -249,14 +250,16 @@ TEST_CASE("Can allocate IRAM int only with an IRAM handler", "[intr_alloc]")
     TEST_ESP_OK(err);
     err = esp_intr_free(ih);
     TEST_ESP_OK(err);
+
+// RTC not supported on all target (e.g., esp32c2)
+#if SOC_RTC_FAST_MEM_SUPPORTED
     err = esp_intr_alloc(spi_periph_signal[1].irq,
                          ESP_INTR_FLAG_IRAM, &dummy_rtc, NULL, &ih);
     TEST_ESP_OK(err);
     err = esp_intr_free(ih);
     TEST_ESP_OK(err);
+#endif
 }
-
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #ifndef CONFIG_FREERTOS_UNICORE
 void isr_free_task(void *param)
