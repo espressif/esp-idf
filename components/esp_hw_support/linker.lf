@@ -13,7 +13,7 @@ entries:
     cpu: esp_cpu_compare_and_set (noflash)
     esp_memory_utils (noflash)
     rtc_clk (noflash)
-    if IDF_TARGET_ESP32C6 = n: # TODO: IDF-5645
+    if IDF_TARGET_ESP32C6 = n && IDF_TARGET_ESP32H2 = n: # TODO: IDF-5645
         rtc_init:rtc_vddsdio_set_config (noflash)
         rtc_pm (noflash_text)
         rtc_sleep (noflash_text)

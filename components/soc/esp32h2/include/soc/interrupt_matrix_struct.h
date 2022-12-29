@@ -989,7 +989,7 @@ typedef union {
 } intmtx_core0_interrupt_reg_date_reg_t;
 
 
-typedef struct {
+typedef struct interrupt_matrix_dev_t {
     volatile intmtx_core0_pmu_intr_map_reg_t pmu_intr_map;
     volatile intmtx_core0_efuse_intr_map_reg_t efuse_intr_map;
     volatile intmtx_core0_lp_rtc_timer_intr_map_reg_t lp_rtc_timer_intr_map;
@@ -1061,12 +1061,12 @@ typedef struct {
     volatile intmtx_core0_clock_gate_reg_t clock_gate;
     uint32_t reserved_114[442];
     volatile intmtx_core0_interrupt_reg_date_reg_t interrupt_reg_date;
-} intmtx_core0_dev_t;
+} interrupt_matrix_dev_t;
 
 extern interrupt_matrix_dev_t INTMTX;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(intmtx_core0_dev_t) == 0x800, "Invalid size of intmtx_core0_dev_t structure");
+_Static_assert(sizeof(interrupt_matrix_dev_t) == 0x800, "Invalid size of interrupt_matrix_dev_t structure");
 #endif
 
 #ifdef __cplusplus

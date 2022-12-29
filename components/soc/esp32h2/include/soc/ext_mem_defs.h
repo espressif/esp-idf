@@ -7,6 +7,7 @@
 #define _CACHE_MEMORY_H_
 
 #include "esp_bit_defs.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {

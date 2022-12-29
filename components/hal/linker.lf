@@ -4,8 +4,9 @@ entries:
     mmu_hal (noflash)
     if IDF_TARGET_ESP32 = n:
         cache_hal (noflash)
-    spi_hal_iram (noflash)
-    spi_slave_hal_iram (noflash)
+    if SOC_GPSPI_SUPPORTED = y:
+        spi_hal_iram (noflash)
+        spi_slave_hal_iram (noflash)
     if UART_ISR_IN_IRAM = y || ESP_PANIC_HANDLER_IRAM = y:
         uart_hal_iram (noflash)
     else:

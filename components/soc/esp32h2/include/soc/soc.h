@@ -163,10 +163,10 @@
 #define SOC_IROM_LOW    0x42000000
 #define SOC_IROM_HIGH   (SOC_IROM_LOW + (CONFIG_MMU_PAGE_SIZE<<7))
 #define SOC_DROM_LOW    SOC_IROM_HIGH
-#define SOC_DROM_HIGH   (SOC_IROM_LOW + (CONFIG_MMU_PAGE_SIZE<<8))
+#define SOC_DROM_HIGH   (SOC_IROM_LOW + (CONFIG_MMU_PAGE_SIZE<<8)) // ESP32H2 MMU-TODO: IDF-6251
 #define SOC_IROM_MASK_LOW  0x40000000
-#define SOC_IROM_MASK_HIGH 0x4004A000
-#define SOC_DROM_MASK_LOW  0x4004A000
+#define SOC_IROM_MASK_HIGH 0x4001C400
+#define SOC_DROM_MASK_LOW  0x4001C400
 #define SOC_DROM_MASK_HIGH 0x40020000
 #define SOC_IRAM_LOW    0x40800000
 #define SOC_IRAM_HIGH   0x40850000
@@ -212,7 +212,7 @@
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
 #define SOC_ROM_STACK_START         0x4087c770
-
+#define SOC_ROM_STACK_SIZE          0x2000
 
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.
 //There is no HW NMI conception. SW should controlled the masked levels through INT_THRESH_REG.

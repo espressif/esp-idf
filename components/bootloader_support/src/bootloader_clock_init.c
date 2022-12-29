@@ -9,7 +9,7 @@
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 
-#if !CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
+#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-5645
 #include "soc/rtc_cntl_reg.h"
 #else
 #include "soc/lp_wdt_reg.h"
@@ -100,6 +100,17 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     // SET CLR
     SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_SUPER_WDT_INT_CLR);                                        /* SWD */
     SET_PERI_REG_MASK(LP_TIMER_LP_INT_CLR_REG, LP_TIMER_MAIN_TIMER_LP_INT_CLR);                             /* MAIN_TIMER */
+    SET_PERI_REG_MASK(LP_ANALOG_PERI_LP_ANA_LP_INT_CLR_REG, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_CLR);    /* BROWN_OUT */
+    SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_LP_WDT_INT_CLR);                                           /* WDT */
+#elif CONFIG_IDF_TARGET_ESP32H2
+    // CLR ENA
+    CLEAR_PERI_REG_MASK(LP_WDT_INT_ENA_REG, LP_WDT_SUPER_WDT_INT_ENA);                                      /* SWD */
+    CLEAR_PERI_REG_MASK(LP_ANALOG_PERI_LP_ANA_LP_INT_ENA_REG, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_ENA);  /* BROWN_OUT */
+    CLEAR_PERI_REG_MASK(LP_WDT_INT_ENA_REG, LP_WDT_LP_WDT_INT_ENA);                                         /* WDT */
+    CLEAR_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SOC_WAKEUP_INT_ENA);                                        /* SLP_REJECT */
+    CLEAR_PERI_REG_MASK(PMU_SOC_SLEEP_REJECT_INT_ENA, PMU_SOC_SLEEP_REJECT_INT_ENA);                        /* SLP_WAKEUP */
+    // SET CLR
+    SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_SUPER_WDT_INT_CLR);                                        /* SWD */
     SET_PERI_REG_MASK(LP_ANALOG_PERI_LP_ANA_LP_INT_CLR_REG, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_CLR);    /* BROWN_OUT */
     SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_LP_WDT_INT_CLR);                                           /* WDT */
     // SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_WAKEUP_INT_CLR);  // TODO: IDF-5348                                          /* SLP_REJECT */

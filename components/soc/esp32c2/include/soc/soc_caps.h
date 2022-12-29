@@ -37,6 +37,7 @@
 #define SOC_TEMP_SENSOR_SUPPORTED       1
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1
+#define SOC_GPSPI_SUPPORTED             1
 #define SOC_SHA_SUPPORTED               1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_FLASH_ENC_SUPPORTED         1

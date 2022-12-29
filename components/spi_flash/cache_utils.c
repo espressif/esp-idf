@@ -40,6 +40,10 @@
 #include "esp32c6/rom/cache.h"
 #include "soc/extmem_reg.h"
 #include "soc/ext_mem_defs.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/cache.h"
+#include "soc/extmem_reg.h"
+#include "soc/ext_mem_defs.h"
 #endif
 #include "esp_rom_spiflash.h"
 #include <soc/soc.h>
@@ -74,7 +78,7 @@ static void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
 
 static uint32_t s_flash_op_cache_state[2];
 
-#if CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
 /* esp32c6 does not has a register indicating if cache is enabled
  * so we use s static data to store to state of cache, every time
  * disable/restore api is called, the state will be updated
@@ -384,7 +388,7 @@ static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_st
     uint32_t icache_state;
     icache_state = Cache_Suspend_ICache() << 16;
     *saved_state = icache_state;
-#elif CONFIG_IDF_TARGET_ESP32C6
+#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
     uint32_t icache_state;
     icache_state = Cache_Suspend_ICache();
     *saved_state = icache_state;
@@ -413,7 +417,7 @@ static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_sta
     Cache_Resume_ICache(saved_state >> 16);
 #elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2
     Cache_Resume_ICache(saved_state >> 16);
-#elif CONFIG_IDF_TARGET_ESP32C6
+#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
     Cache_Resume_ICache(saved_state);
     s_cache_enabled = 1;
 #endif
@@ -430,7 +434,7 @@ IRAM_ATTR bool spi_flash_cache_enabled(void)
     bool result = (REG_GET_BIT(EXTMEM_PRO_ICACHE_CTRL_REG, EXTMEM_PRO_ICACHE_ENABLE) != 0);
 #elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2
     bool result = (REG_GET_BIT(EXTMEM_ICACHE_CTRL_REG, EXTMEM_ICACHE_ENABLE) != 0);
-#elif CONFIG_IDF_TARGET_ESP32C6
+#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
     bool result = s_cache_enabled;
 #endif
     return result;
