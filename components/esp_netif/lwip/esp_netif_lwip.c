@@ -733,7 +733,11 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
                 memcpy(&lwip_netmask, &default_ip->netmask, sizeof(struct ip4_addr));
                 dhcps_set_new_lease_cb(esp_netif_dhcps_cb);
                 dhcps_set_option_info(SUBNET_MASK, (void*)&lwip_netmask, sizeof(lwip_netmask));
-                dhcps_start(p_netif, lwip_ip);
+                if (dhcps_start(p_netif, lwip_ip) != ERR_OK) {
+                    ESP_LOGE(TAG, "DHCP server cannot be started");
+                    esp_netif->dhcps_status = ESP_NETIF_DHCP_INIT;
+                    return ESP_ERR_ESP_NETIF_DHCPS_START_FAILED;
+                }
                 esp_netif->dhcps_status = ESP_NETIF_DHCP_STARTED;
                 ESP_LOGD(TAG, "DHCP server started successfully");
                 esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
@@ -1145,7 +1149,11 @@ static esp_err_t esp_netif_dhcps_start_api(esp_netif_api_msg_t *msg)
         memcpy(&lwip_netmask, &default_ip->netmask, sizeof(struct ip4_addr));
         dhcps_set_new_lease_cb(esp_netif_dhcps_cb);
         dhcps_set_option_info(SUBNET_MASK, (void*)&lwip_netmask, sizeof(lwip_netmask));
-        dhcps_start(p_netif, lwip_ip);
+        if (dhcps_start(p_netif, lwip_ip) != ERR_OK) {
+            ESP_LOGE(TAG, "DHCP server cannot be started");
+            esp_netif->dhcps_status = ESP_NETIF_DHCP_INIT;
+            return ESP_ERR_ESP_NETIF_DHCPS_START_FAILED;
+        }
         esp_netif->dhcps_status = ESP_NETIF_DHCP_STARTED;
         ESP_LOGD(TAG, "DHCP server started successfully");
         return ESP_OK;
