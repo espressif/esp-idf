@@ -115,7 +115,7 @@ tools/test_apps/system/flash_psram:
 
 tools/test_apps/system/g0_components:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32h4", "esp32c6"] # preview targets
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32h4", "esp32c6", "esp32h2"] # preview targets
 
 tools/test_apps/system/g1_components:
 

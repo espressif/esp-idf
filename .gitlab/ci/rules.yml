@@ -394,6 +394,9 @@
 .if-label-component_ut_esp32c6: &if-label-component_ut_esp32c6
   if: '$BOT_LABEL_COMPONENT_UT_ESP32C6 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32c6(?:,[^,\n\r]+)*$/i'
 
+.if-label-component_ut_esp32h2: &if-label-component_ut_esp32h2
+  if: '$BOT_LABEL_COMPONENT_UT_ESP32H2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32h2(?:,[^,\n\r]+)*$/i'
+
 .if-label-component_ut_esp32h4: &if-label-component_ut_esp32h4
   if: '$BOT_LABEL_COMPONENT_UT_ESP32H4 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32h4(?:,[^,\n\r]+)*$/i'
 
@@ -417,6 +420,9 @@
 
 .if-label-custom_test_esp32c6: &if-label-custom_test_esp32c6
   if: '$BOT_LABEL_CUSTOM_TEST_ESP32C6 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32c6(?:,[^,\n\r]+)*$/i'
+
+.if-label-custom_test_esp32h2: &if-label-custom_test_esp32h2
+  if: '$BOT_LABEL_CUSTOM_TEST_ESP32H2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32h2(?:,[^,\n\r]+)*$/i'
 
 .if-label-custom_test_esp32h4: &if-label-custom_test_esp32h4
   if: '$BOT_LABEL_CUSTOM_TEST_ESP32H4 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32h4(?:,[^,\n\r]+)*$/i'
@@ -444,6 +450,9 @@
 
 .if-label-example_test_esp32c6: &if-label-example_test_esp32c6
   if: '$BOT_LABEL_EXAMPLE_TEST_ESP32C6 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32c6(?:,[^,\n\r]+)*$/i'
+
+.if-label-example_test_esp32h2: &if-label-example_test_esp32h2
+  if: '$BOT_LABEL_EXAMPLE_TEST_ESP32H2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32h2(?:,[^,\n\r]+)*$/i'
 
 .if-label-example_test_esp32h4: &if-label-example_test_esp32h4
   if: '$BOT_LABEL_EXAMPLE_TEST_ESP32H4 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32h4(?:,[^,\n\r]+)*$/i'
@@ -505,6 +514,9 @@
 .if-label-unit_test_esp32c6: &if-label-unit_test_esp32c6
   if: '$BOT_LABEL_UNIT_TEST_ESP32C6 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32c6(?:,[^,\n\r]+)*$/i'
 
+.if-label-unit_test_esp32h2: &if-label-unit_test_esp32h2
+  if: '$BOT_LABEL_UNIT_TEST_ESP32H2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32h2(?:,[^,\n\r]+)*$/i'
+
 .if-label-unit_test_esp32h4: &if-label-unit_test_esp32h4
   if: '$BOT_LABEL_UNIT_TEST_ESP32H4 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32h4(?:,[^,\n\r]+)*$/i'
 
@@ -544,6 +556,7 @@
     - <<: *if-label-component_ut_esp32c2
     - <<: *if-label-component_ut_esp32c3
     - <<: *if-label-component_ut_esp32c6
+    - <<: *if-label-component_ut_esp32h2
     - <<: *if-label-component_ut_esp32h4
     - <<: *if-label-component_ut_esp32s2
     - <<: *if-label-component_ut_esp32s3
@@ -554,6 +567,7 @@
     - <<: *if-label-unit_test_esp32c2
     - <<: *if-label-unit_test_esp32c3
     - <<: *if-label-unit_test_esp32c6
+    - <<: *if-label-unit_test_esp32h2
     - <<: *if-label-unit_test_esp32h4
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
@@ -782,6 +796,7 @@
     - <<: *if-label-custom_test_esp32c2
     - <<: *if-label-custom_test_esp32c3
     - <<: *if-label-custom_test_esp32c6
+    - <<: *if-label-custom_test_esp32h2
     - <<: *if-label-custom_test_esp32h4
     - <<: *if-label-custom_test_esp32s2
     - <<: *if-label-custom_test_esp32s3
@@ -999,6 +1014,7 @@
     - <<: *if-label-example_test_esp32c2
     - <<: *if-label-example_test_esp32c3
     - <<: *if-label-example_test_esp32c6
+    - <<: *if-label-example_test_esp32h2
     - <<: *if-label-example_test_esp32h4
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
@@ -1332,6 +1348,7 @@
     - <<: *if-label-component_ut_esp32c2
     - <<: *if-label-component_ut_esp32c3
     - <<: *if-label-component_ut_esp32c6
+    - <<: *if-label-component_ut_esp32h2
     - <<: *if-label-component_ut_esp32h4
     - <<: *if-label-component_ut_esp32s2
     - <<: *if-label-component_ut_esp32s3
@@ -1340,6 +1357,7 @@
     - <<: *if-label-custom_test_esp32c2
     - <<: *if-label-custom_test_esp32c3
     - <<: *if-label-custom_test_esp32c6
+    - <<: *if-label-custom_test_esp32h2
     - <<: *if-label-custom_test_esp32h4
     - <<: *if-label-custom_test_esp32s2
     - <<: *if-label-custom_test_esp32s3
@@ -1348,6 +1366,7 @@
     - <<: *if-label-example_test_esp32c2
     - <<: *if-label-example_test_esp32c3
     - <<: *if-label-example_test_esp32c6
+    - <<: *if-label-example_test_esp32h2
     - <<: *if-label-example_test_esp32h4
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
@@ -1362,6 +1381,7 @@
     - <<: *if-label-unit_test_esp32c2
     - <<: *if-label-unit_test_esp32c3
     - <<: *if-label-unit_test_esp32c6
+    - <<: *if-label-unit_test_esp32h2
     - <<: *if-label-unit_test_esp32h4
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
@@ -1420,6 +1440,7 @@
     - <<: *if-label-unit_test_esp32c2
     - <<: *if-label-unit_test_esp32c3
     - <<: *if-label-unit_test_esp32c6
+    - <<: *if-label-unit_test_esp32h2
     - <<: *if-label-unit_test_esp32h4
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
