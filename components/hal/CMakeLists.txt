@@ -32,10 +32,6 @@ endif()
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs
         "rtc_io_hal.c"
-        "spi_hal.c"
-        "spi_hal_iram.c"
-        "spi_slave_hal.c"
-        "spi_slave_hal_iram.c"
         "timer_hal.c"
         "timer_hal_iram.c"
         "gpio_hal.c"
@@ -115,6 +111,19 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "${target}/modem_clock_hal.c")
     endif()
 
+    if(CONFIG_SOC_GPSPI_SUPPORTED)
+        list(APPEND srcs
+                    "spi_hal.c"
+                    "spi_hal_iram.c"
+                    "spi_slave_hal.c"
+                    "spi_slave_hal_iram.c")
+    endif()
+
+    if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)
+        list(APPEND srcs "spi_slave_hd_hal.c")
+    endif()
+
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "sdio_slave_hal.c"
@@ -128,7 +137,6 @@ if(NOT BOOTLOADER_BUILD)
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
                     "spi_flash_hal_gpspi.c"
-                    "spi_slave_hd_hal.c"
                     "touch_sensor_hal.c"
                     "usb_hal.c"
                     "usb_phy_hal.c"
@@ -144,7 +152,6 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs
             "ds_hal.c"
             "spi_flash_hal_gpspi.c"
-            "spi_slave_hd_hal.c"
             "touch_sensor_hal.c"
             "usb_hal.c"
             "usb_phy_hal.c"
@@ -161,7 +168,6 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs
               "ds_hal.c"
               "spi_flash_hal_gpspi.c"
-              "spi_slave_hd_hal.c"
               "xt_wdt_hal.c"
               "aes_hal.c"
               "esp32c3/brownout_hal.c"
@@ -173,7 +179,6 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs
             "ds_hal.c"
             "spi_flash_hal_gpspi.c"
-            "spi_slave_hd_hal.c"
             "aes_hal.c"
             "esp32h4/brownout_hal.c"
             "hmac_hal.c"
@@ -183,7 +188,6 @@ if(NOT BOOTLOADER_BUILD)
     if(${target} STREQUAL "esp32c2")
         list(APPEND srcs
               "spi_flash_hal_gpspi.c"
-              "spi_slave_hd_hal.c"
               "esp32c2/brownout_hal.c"
               "esp32c2/rtc_cntl_hal.c")
     endif()
@@ -191,7 +195,6 @@ if(NOT BOOTLOADER_BUILD)
     if(${target} STREQUAL "esp32c6")
         list(APPEND srcs
               "spi_flash_hal_gpspi.c"
-              "spi_slave_hd_hal.c"
               "esp32c6/brownout_hal.c"
               "esp32c6/rtc_cntl_hal.c")
 
@@ -202,15 +205,9 @@ if(NOT BOOTLOADER_BUILD)
               "spi_flash_hal_gpspi.c"
             )
 
-        # TODO: IDF-5310
         list(REMOVE_ITEM srcs
-                "adc_oneshot_hal.c"
-                "adc_hal_common.c"
-                "spi_slave_hd_hal.c"
-                "spi_hal.c"
-                "spi_hal_iram.c"
-                "spi_slave_hal.c"
-                "spi_slave_hal_iram.c"
+                "adc_oneshot_hal.c" # TODO: IDF-6214
+                "adc_hal_common.c" # TODO: IDF-6215
                 "esp32h2/brownout_hal.c"
                 "esp32h2/rtc_cntl_hal.c"
                 "timer_hal.c"

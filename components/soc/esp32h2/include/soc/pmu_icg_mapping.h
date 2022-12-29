@@ -64,4 +64,3 @@
 #define PMU_ICG_FUNC_ENA_UHCI                              5
 #define PMU_ICG_FUNC_ENA_HPCORE                            17
 #define PMU_ICG_FUNC_ENA_HPBUS                             15
-#endif  /* _SOC_ICG_MAP_H_ */

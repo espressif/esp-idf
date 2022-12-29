@@ -744,12 +744,12 @@ typedef struct {
     volatile apb_tsens_sample_reg_t tsens_sample;
     uint32_t reserved_06c[228];
     volatile apb_saradc_ctrl_date_reg_t saradc_ctrl_date;
-} apb_dev_t;
+} apb_saradc_dev_t;
 
 extern apb_saradc_dev_t APB_SARADC;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(apb_dev_t) == 0x400, "Invalid size of apb_dev_t structure");
+_Static_assert(sizeof(apb_saradc_dev_t) == 0x400, "Invalid size of apb_dev_t structure");
 #endif
 
 #ifdef __cplusplus

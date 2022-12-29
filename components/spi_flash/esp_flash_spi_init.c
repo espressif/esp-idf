@@ -112,7 +112,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
     .input_delay_ns = 0,\
     .cs_setup = 1,\
 }
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
 #if !CONFIG_SPI_FLASH_AUTO_SUSPEND
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI1_HOST,\
@@ -363,8 +363,8 @@ esp_err_t esp_flash_init_default_chip(void)
     const esp_rom_spiflash_chip_t *legacy_chip = &g_rom_flashchip;
     memspi_host_config_t cfg = ESP_FLASH_HOST_CONFIG_DEFAULT();
 
-    #if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32C2 && !CONFIG_IDF_TARGET_ESP32C6
-    // For esp32s2 spi IOs are configured as from IO MUX by default
+    #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+    // Only these chips have efuses for spi pin configuration.
     cfg.iomux = esp_rom_efuse_get_flash_gpio_info() == 0 ?  true : false;
     #endif
 

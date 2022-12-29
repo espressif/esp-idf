@@ -8,6 +8,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/systimer_struct.h"
+#include "soc/clk_tree_defs.h"
+#include "soc/pcr_struct.h"
 #include "hal/assert.h"
 
 #define SYSTIMER_LL_COUNTER_CLOCK       (0) // Counter used for "wallclock" time
@@ -27,6 +29,24 @@ extern "C" {
 __attribute__((always_inline)) static inline void systimer_ll_enable_clock(systimer_dev_t *dev, bool en)
 {
     dev->conf.clk_en = en;
+}
+
+// Set clock source: XTAL(default) or RC_FAST
+static inline void systimer_ll_set_clock_source(soc_periph_systimer_clk_src_t clk_src)
+{
+    PCR.systimer_func_clk_conf.systimer_func_clk_sel = (clk_src == SYSTIMER_CLK_SRC_RC_FAST) ? 1 : 0;
+}
+
+static inline soc_periph_systimer_clk_src_t systimer_ll_get_clock_source(void)
+{
+    return (PCR.systimer_func_clk_conf.systimer_func_clk_sel == 1) ? SYSTIMER_CLK_SRC_RC_FAST : SYSTIMER_CLK_SRC_XTAL;
+}
+
+/********************** ETM *****************************/
+
+__attribute__((always_inline)) static inline void systimer_ll_enable_etm(systimer_dev_t *dev, bool en)
+{
+    dev->conf.etm_en = en;
 }
 
 /******************* Counter *************************/

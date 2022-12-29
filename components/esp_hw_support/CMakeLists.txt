@@ -73,6 +73,11 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT)
         list(APPEND srcs "modem_clock.c")
     endif()
+    if(CONFIG_IDF_TARGET_ESP32H2)
+        list(REMOVE_ITEM srcs
+                "adc_share_hw_ctrl.c" # TODO: IDF-6215
+            )
+    endif()
 else()
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")

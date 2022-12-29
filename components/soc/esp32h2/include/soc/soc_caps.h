@@ -32,7 +32,7 @@
 // #define SOC_MCPWM_SUPPORTED             1 // TODO: IDF-6237
 // #define SOC_TWAI_SUPPORTED              1 // TODO: IDF-6217
 // #define SOC_BT_SUPPORTED                1 // TODO: IDF-6416
-#define SOC_IEEE802154_SUPPORTED           1
+// #define SOC_IEEE802154_SUPPORTED        1 // TODO: IDF-6577
 #define SOC_IEEE802154_BLE_ONLY            1
 // #define SOC_ASYNC_MEMCPY_SUPPORTED      1 // TODO: IDF-6238
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1 // TODO: IDF-6239
@@ -46,6 +46,7 @@
 // #define SOC_I2S_SUPPORTED               1 // TODO: IDF-6219
 // #define SOC_RMT_SUPPORTED               1 // TODO: IDF-6224
 // #define SOC_SDM_SUPPORTED               1 // TODO: IDF-6220
+// #define SOC_GPSPI_SUPPORTED             1 // TODO: IDF-6264
 #define SOC_SYSTIMER_SUPPORTED          1
 // #define SOC_SUPPORT_COEXISTENCE         1 // TODO: IDF-6416
 // #define SOC_AES_SUPPORTED               1 // TODO: IDF-6280
@@ -76,7 +77,7 @@
 #define SOC_ADC_ARBITER_SUPPORTED               1
 #define SOC_ADC_FILTER_SUPPORTED                1
 #define SOC_ADC_MONITOR_SUPPORTED               1
-#define SOC_ADC_PERIPH_NUM                      (2)
+#define SOC_ADC_PERIPH_NUM                      (1U)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 5 : 1)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (5)
 #define SOC_ADC_ATTEN_NUM                       (4)
@@ -307,7 +308,7 @@
 #define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
-#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+//#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1 //TODO: IDF-6247
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 // host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,

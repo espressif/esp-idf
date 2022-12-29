@@ -57,31 +57,25 @@
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/rtc.h"
 #include "soc/extmem_reg.h"
 #include "esp_private/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/rtc.h"
-#include "soc/extmem_reg.h"
 #include "esp_private/sleep_mac_bb.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/cache.h"
 #include "esp32c3/rom/rtc.h"
-#include "soc/extmem_reg.h"
 #include "esp_private/sleep_mac_bb.h"
 #elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/cache.h"
 #include "esp32h4/rom/rtc.h"
-#include "soc/extmem_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/cache.h"
 #include "esp32c2/rom/rtc.h"
-#include "soc/extmem_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/cache.h"
 #include "esp32c6/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/rtc.h"
+#include "esp32h2/rom/cache.h"
+#include "esp32h2/rom/rtc.h"
 #include "soc/extmem_reg.h"
 #endif
 
@@ -114,6 +108,9 @@
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
 #elif CONFIG_IDF_TARGET_ESP32C6
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)// TODO: IDF-5348
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)// TODO: IDF-6267
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
 #endif
 
@@ -495,7 +492,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     uint32_t result;
     if (deep_sleep) {
 // TODO: IDF-6051, IDF-6052
-#if !CONFIG_IDF_TARGET_ESP32H4 && !CONFIG_IDF_TARGET_ESP32C6
+#if !CONFIG_IDF_TARGET_ESP32H4 && !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2
         esp_sleep_isolate_digital_gpio();
 #endif
 
@@ -778,7 +775,7 @@ esp_err_t esp_light_sleep_start(void)
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
     // Safety net: enable WDT in case exit from light sleep fails
-#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-5653
     wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
 #else
     wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
@@ -986,7 +983,7 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
 
 bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 {
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED || CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-6027 C6 IO0-7 meet both conditions here
     return RTC_GPIO_IS_VALID_GPIO(gpio_num);
 #else
     return GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num);
@@ -1236,7 +1233,7 @@ esp_err_t esp_sleep_disable_bt_wakeup(void)
 
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 {
-#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-5645
     return ESP_SLEEP_WAKEUP_UNDEFINED;
 #else
     if (esp_rom_get_reset_reason(0) != RESET_REASON_CORE_DEEP_SLEEP && !s_light_sleep_wakeup) {

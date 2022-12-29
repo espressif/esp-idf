@@ -82,6 +82,7 @@
 #define SOC_I2S_SUPPORTED           1
 #define SOC_RMT_SUPPORTED           1
 #define SOC_SDM_SUPPORTED           1
+#define SOC_GPSPI_SUPPORTED         1
 #define SOC_LEDC_SUPPORTED          1
 #define SOC_I2C_SUPPORTED           1
 #define SOC_SUPPORT_COEXISTENCE     1

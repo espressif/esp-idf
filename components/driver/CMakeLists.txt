@@ -5,12 +5,6 @@ set(srcs
     "gpio/rtc_io.c"
     "gpio/gpio_glitch_filter_ops.c"
     "gptimer/gptimer.c"
-    "sdspi_crc.c"
-    "sdspi_host.c"
-    "sdspi_transaction.c"
-    "spi_common.c"
-    "spi_master.c"
-    "spi_slave.c"
     "spi_bus_lock.c"
     "uart.c")
 
@@ -111,6 +105,16 @@ if(CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED)
     list(APPEND srcs "usb_serial_jtag.c")
 endif()
 
+if(CONFIG_SOC_GPSPI_SUPPORTED)
+    list(APPEND srcs
+                "spi_common.c"
+                "spi_master.c"
+                "spi_slave.c"
+                "sdspi_crc.c"
+                "sdspi_host.c"
+                "sdspi_transaction.c")
+endif()
+
 if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)
     list(APPEND srcs "spi_slave_hd.c")
 endif()
@@ -136,6 +140,14 @@ endif()
 
 if(${target} STREQUAL "esp32")
     list(APPEND srcs "deprecated/adc_i2s_deprecated.c")
+endif()
+
+if(${target} STREQUAL "esp32h2")
+    # TODO: IDF-5310
+    list(REMOVE_ITEM srcs
+        "deprecated/timer_legacy.c"
+        "gptimer/gptimer.c"
+            )
 endif()
 
 if(BOOTLOADER_BUILD)

@@ -1,0 +1,14 @@
+set(srcs "rtc_clk_init.c"
+         "rtc_clk.c"
+         # "rtc_init.c"     // ESP32H2-TODO
+         # "rtc_pm.c"       // ESP32H2-TODO
+         # "rtc_sleep.c"    // ESP32H2-TODO
+         "rtc_time.c"
+         "chip_info.c"
+         )
+
+add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
+
+target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")
+target_include_directories(${COMPONENT_LIB} PUBLIC . private_include)
+target_include_directories(${COMPONENT_LIB} PRIVATE ../hal)
