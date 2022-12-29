@@ -361,19 +361,20 @@ esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t *stren
 /**
   * @brief Enable gpio pad hold function.
   *
-  * When the pin is set to hold, the state is latched at that moment and will not change no matter how the internal
-  * signals change or how the IO MUX/GPIO configuration is modified (including input enable, output enable,
-  * output value, function, and drive strength values). It can be used to retain the pin state through a
-  * core reset and system reset triggered by watchdog time-out or Deep-sleep events.
+  * When a GPIO is set to hold, its state is latched at that moment and will not change when the internal
+  * signal or the IO MUX/GPIO configuration is modified (including input enable, output enable, output value,
+  * function, and drive strength values). This function can be used to retain the state of GPIOs when the chip
+  * or system is reset, for example, when watchdog time-out or Deep-sleep events are triggered.
   *
-  * The gpio pad hold function works in both input and output modes, but must be output-capable gpios.
-  * If pad hold enabled:
-  *   in output mode: the output level of the pad will be force locked and can not be changed.
-  *   in input mode: input read value can still reflect the changes of the input signal.
+  * This function works in both input and output modes, and only applicable to output-capable GPIOs.
+  * If this function is enabled:
+  *   in output mode: the output level of the GPIO will be locked and can not be changed.
+  *   in input mode: the input read value can still reflect the changes of the input signal.
   *
-  * The state of the digital gpio cannot be held during Deep-sleep, and it will resume to hold at its default pin state
-  * when the chip wakes up from Deep-sleep. If the digital gpio also needs to be held during Deep-sleep,
-  * `gpio_deep_sleep_hold_en` should also be called.
+  * However, this function cannot be used to hold the state of a digital GPIO during Deep-sleep. Even if this
+  * function is enabled, the digital GPIO will be reset to its default state when the chip wakes up from
+  * Deep-sleep. If you want to hold the state of a digital GPIO during Deep-sleep, please call
+  * `gpio_deep_sleep_hold_en`.
   *
   * Power down or call `gpio_hold_dis` will disable this function.
   *
