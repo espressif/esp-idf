@@ -262,6 +262,7 @@
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_GROUPS             1U
 #define SOC_SDM_CHANNELS_PER_GROUP 8
+#define SOC_SDM_CLK_SUPPORT_APB    1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_HD_BOTH_INOUT_SUPPORTED 1  //Support enabling MOSI and MISO phases together under Halfduplex mode

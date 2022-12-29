@@ -145,6 +145,7 @@
 #define SOC_GPIO_PORT                      1U
 #define SOC_GPIO_PIN_COUNT                 22
 #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
+#define SOC_GPIO_FILTER_CLK_SUPPORT_APB 1
 
 // Target has no full RTC IO subsystem, so GPIO is 100% "independent" of RTC
 // On ESP32-C3, Digital IOs have their own registers to control pullup/down capability, independent of RTC registers.
@@ -263,6 +264,7 @@
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_GROUPS             1U
 #define SOC_SDM_CHANNELS_PER_GROUP 4
+#define SOC_SDM_CLK_SUPPORT_APB    1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2

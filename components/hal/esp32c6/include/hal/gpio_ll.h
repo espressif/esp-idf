@@ -23,6 +23,8 @@
 #include "soc/lp_io_struct.h"
 #include "soc/pmu_reg.h"
 #include "soc/usb_serial_jtag_reg.h"
+#include "soc/pcr_struct.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
 
@@ -452,6 +454,26 @@ static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func,
     hw->func_out_sel_cfg[gpio_num].oen_sel = 0;
     hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
     gpio_ll_iomux_func_sel(IO_MUX_GPIO0_REG + (gpio_num * 4), func);
+}
+
+/**
+ * @brief Set clock source of IO MUX module
+ *
+ * @param src IO MUX clock source (only a subset of soc_module_clk_t values are valid)
+ */
+static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
+{
+    switch (src) {
+    case SOC_MOD_CLK_XTAL:
+        PCR.iomux_clk_conf.iomux_func_clk_sel = 3;
+        break;
+    case SOC_MOD_CLK_PLL_F80M:
+        PCR.iomux_clk_conf.iomux_func_clk_sel = 1;
+        break;
+    default:
+        // Unsupported IO_MUX clock source
+        HAL_ASSERT(false);
+    }
 }
 
 /**

@@ -8,8 +8,8 @@
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
 
-// Some resources are lazy allocated in pulse_cnt driver, the threshold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (-200)
+// Some resources are lazy allocated in the driver, the threshold is left for that case
+#define TEST_MEMORY_LEAK_THRESHOLD (-300)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
@@ -37,15 +37,15 @@ void tearDown(void)
 
 void app_main(void)
 {
-    //   ____ ____ ___ ___    ____  ____  __  __
-    //  / ___|  _ \_ _/ _ \  / ___||  _ \|  \/  |
-    // | |  _| |_) | | | | | \___ \| | | | |\/| |
-    // | |_| |  __/| | |_| |  ___) | |_| | |  | |
-    //  \____|_|  |___\___/  |____/|____/|_|  |_|
-    printf("  ____ ____ ___ ___    ____  ____  __  __\r\n");
-    printf(" / ___|  _ \\_ _/ _ \\  / ___||  _ \\|  \\/  |\r\n");
-    printf("| |  _| |_) | | | | | \\___ \\| | | | |\\/| |\r\n");
-    printf("| |_| |  __/| | |_| |  ___) | |_| | |  | |\r\n");
-    printf(" \\____|_|  |___\\___/  |____/|____/|_|  |_|\r\n");
+    //   ____ ____ ___ ___    _____      _     _____         _
+    //  / ___|  _ \_ _/ _ \  | ____|_  _| |_  |_   _|__  ___| |_
+    // | |  _| |_) | | | | | |  _| \ \/ / __|   | |/ _ \/ __| __|
+    // | |_| |  __/| | |_| | | |___ >  <| |_    | |  __/\__ \ |_
+    //  \____|_|  |___\___/  |_____/_/\_\\__|   |_|\___||___/\__|
+    printf("  ____ ____ ___ ___    _____      _     _____         _\r\n");
+    printf(" / ___|  _ \\_ _/ _ \\  | ____|_  _| |_  |_   _|__  ___| |_\r\n");
+    printf("| |  _| |_) | | | | | |  _| \\ \\/ / __|   | |/ _ \\/ __| __|\r\n");
+    printf("| |_| |  __/| | |_| | | |___ >  <| |_    | |  __/\\__ \\ |_\r\n");
+    printf(" \\____|_|  |___\\___/  |_____/_/\\_\\\\__|   |_|\\___||___/\\__|\r\n");
     unity_run_menu();
 }

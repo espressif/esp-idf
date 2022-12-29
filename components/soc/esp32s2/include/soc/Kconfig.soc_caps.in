@@ -291,6 +291,10 @@ config SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
     bool
     default y
 
+config SOC_GPIO_FILTER_CLK_SUPPORT_APB
+    bool
+    default y
+
 config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
     bool
     default y
@@ -550,6 +554,10 @@ config SOC_SDM_GROUPS
 config SOC_SDM_CHANNELS_PER_GROUP
     int
     default 8
+
+config SOC_SDM_CLK_SUPPORT_APB
+    bool
+    default y
 
 config SOC_SPI_HD_BOTH_INOUT_SUPPORTED
     bool

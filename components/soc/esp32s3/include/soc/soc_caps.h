@@ -147,6 +147,7 @@
 #define SOC_GPIO_PORT                      1U
 #define SOC_GPIO_PIN_COUNT                 49
 #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
+#define SOC_GPIO_FILTER_CLK_SUPPORT_APB 1
 
 // On ESP32-S3, Digital IOs have their own registers to control pullup/down/capability, independent with RTC registers.
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT (1)
@@ -276,6 +277,7 @@
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_GROUPS             1
 #define SOC_SDM_CHANNELS_PER_GROUP 8
+#define SOC_SDM_CLK_SUPPORT_APB    1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM                  3

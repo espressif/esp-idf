@@ -9,8 +9,10 @@
 #include "esp_check.h"
 #include "glitch_filter_priv.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/io_mux.h"
 #include "soc/soc_caps.h"
 #include "hal/gpio_glitch_filter_ll.h"
+#include "esp_pm.h"
 
 static const char *TAG = "gpio-filter";
 
@@ -26,6 +28,10 @@ struct gpio_flex_glitch_filter_t {
     gpio_glitch_filter_t base;
     gpio_flex_glitch_filter_group_t *group;
     uint32_t filter_id;
+    esp_pm_lock_handle_t pm_lock;
+#if CONFIG_PM_ENABLE
+    char pm_lock_name[GLITCH_FILTER_PM_LOCK_NAME_LEN_MAX]; // pm lock name
+#endif
 };
 
 static gpio_flex_glitch_filter_group_t s_gpio_glitch_filter_group = {
@@ -66,6 +72,10 @@ static esp_err_t gpio_filter_destroy(gpio_flex_glitch_filter_t *filter)
         portEXIT_CRITICAL(&group->spinlock);
     }
 
+    if (filter->pm_lock) {
+        esp_pm_lock_delete(filter->pm_lock);
+    }
+
     free(filter);
     return ESP_OK;
 }
@@ -82,6 +92,11 @@ static esp_err_t gpio_flex_glitch_filter_enable(gpio_glitch_filter_t *filter)
     ESP_RETURN_ON_FALSE(filter->fsm == GLITCH_FILTER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "filter not in init state");
     gpio_flex_glitch_filter_t *flex_filter = __containerof(filter, gpio_flex_glitch_filter_t, base);
 
+    // acquire pm lock
+    if (flex_filter->pm_lock) {
+        esp_pm_lock_acquire(flex_filter->pm_lock);
+    }
+
     int filter_id = flex_filter->filter_id;
     gpio_ll_glitch_filter_enable(s_gpio_glitch_filter_group.hw, filter_id, true);
     filter->fsm = GLITCH_FILTER_FSM_ENABLE;
@@ -95,6 +110,12 @@ static esp_err_t gpio_flex_glitch_filter_disable(gpio_glitch_filter_t *filter)
 
     int filter_id = flex_filter->filter_id;
     gpio_ll_glitch_filter_enable(s_gpio_glitch_filter_group.hw, filter_id, false);
+
+    // release pm lock
+    if (flex_filter->pm_lock) {
+        esp_pm_lock_release(flex_filter->pm_lock);
+    }
+
     filter->fsm = GLITCH_FILTER_FSM_INIT;
     return ESP_OK;
 }
@@ -105,19 +126,46 @@ esp_err_t gpio_new_flex_glitch_filter(const gpio_flex_glitch_filter_config_t *co
     gpio_flex_glitch_filter_t *filter = NULL;
     ESP_GOTO_ON_FALSE(config && ret_filter, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(GPIO_IS_VALID_GPIO(config->gpio_num), ESP_ERR_INVALID_ARG, err, TAG, "invalid gpio number");
-    // Glitch filter's clock source is same to the IOMUX clock
-    // TODO: IDF-6345 task will make the IOMUX clock source configurable, and we should opt the glitch filter clock source accordingly
-    uint32_t clk_freq_mhz = esp_clk_xtal_freq() / 1000000;
+
+    // allocate driver object
+    filter = heap_caps_calloc(1, sizeof(gpio_flex_glitch_filter_t), FILTER_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(filter, ESP_ERR_NO_MEM, err, TAG, "no memory for flex glitch filter");
+
+    // register the filter to the group
+    ESP_GOTO_ON_ERROR(gpio_filter_register_to_group(filter), err, TAG, "register filter to group failed");
+    int filter_id = filter->filter_id;
+
+    // set clock source
+    uint32_t clk_freq_mhz = 0;
+    switch (config->clk_src) {
+#if SOC_GPIO_FILTER_CLK_SUPPORT_XTAL
+    case GLITCH_FILTER_CLK_SRC_XTAL:
+        clk_freq_mhz = esp_clk_xtal_freq() / 1000000;
+        break;
+#endif // SOC_GPIO_FILTER_CLK_SUPPORT_XTAL
+
+#if SOC_GPIO_FILTER_CLK_SUPPORT_PLL_F80M
+    case GLITCH_FILTER_CLK_SRC_PLL_F80M:
+        clk_freq_mhz = 80;
+#if CONFIG_PM_ENABLE
+        sprintf(filter->pm_lock_name, "filter_%d", filter_id); // e.g. filter_0
+        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, filter->pm_lock_name, &filter->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
+#endif
+        break;
+#endif // SOC_GPIO_FILTER_CLK_SUPPORT_PLL_F80M
+    default:
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid clock source");
+        break;
+    }
+
     uint32_t window_thres_ticks = clk_freq_mhz * config->window_thres_ns / 1000;
     uint32_t window_width_ticks = clk_freq_mhz * config->window_width_ns / 1000;
     ESP_GOTO_ON_FALSE(window_thres_ticks && window_thres_ticks <= window_width_ticks && window_width_ticks <= GPIO_LL_GLITCH_FILTER_MAX_WINDOW,
                       ESP_ERR_INVALID_ARG, err, TAG, "invalid or out of range window width/threshold");
 
-    filter = heap_caps_calloc(1, sizeof(gpio_flex_glitch_filter_t), FILTER_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(filter, ESP_ERR_NO_MEM, err, TAG, "no memory for flex glitch filter");
-    // register the filter to the group
-    ESP_GOTO_ON_ERROR(gpio_filter_register_to_group(filter), err, TAG, "register filter to group failed");
-    int filter_id = filter->filter_id;
+    // Glitch filter's clock source is same to the IOMUX clock
+    ESP_GOTO_ON_ERROR(io_mux_set_clock_source((soc_module_clk_t)(config->clk_src)), err, TAG, "set IO MUX clock source failed");
 
     // make sure the filter is disabled
     gpio_ll_glitch_filter_enable(s_gpio_glitch_filter_group.hw, filter_id, false);

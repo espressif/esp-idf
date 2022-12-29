@@ -159,6 +159,8 @@
 #define SOC_GPIO_PIN_COUNT                 31
 #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
 #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8
+#define SOC_GPIO_FILTER_CLK_SUPPORT_XTAL 1
+#define SOC_GPIO_FILTER_CLK_SUPPORT_PLL_F80M 1
 
 // GPIO peripheral has the ETM extension
 #define SOC_GPIO_SUPPORT_ETM          1
@@ -310,8 +312,10 @@
 #define SOC_SHA_SUPPORT_SHA256          (1)
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-#define SOC_SDM_GROUPS             1U
-#define SOC_SDM_CHANNELS_PER_GROUP 4
+#define SOC_SDM_GROUPS               1U
+#define SOC_SDM_CHANNELS_PER_GROUP   4
+#define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
+#define SOC_SDM_CLK_SUPPORT_XTAL     1
 
 // TODO: IDF-5334 (Copy from esp32c3, need check)
 /*-------------------------- SPI CAPS ----------------------------------------*/

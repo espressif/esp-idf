@@ -142,6 +142,7 @@
 // ESP32-H4 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                      1U
 #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
+#define SOC_GPIO_FILTER_CLK_SUPPORT_APB 1
 
 #if CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1
 #define SOC_GPIO_PIN_COUNT          (41)
@@ -270,6 +271,7 @@
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_GROUPS             1U
 #define SOC_SDM_CHANNELS_PER_GROUP 4
+#define SOC_SDM_CLK_SUPPORT_APB    1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2

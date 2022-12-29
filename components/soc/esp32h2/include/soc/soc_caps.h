@@ -293,8 +293,10 @@
 
 // TODO: IDF-6220
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-#define SOC_SDM_GROUPS             1U
-#define SOC_SDM_CHANNELS_PER_GROUP 4
+#define SOC_SDM_GROUPS               1U
+#define SOC_SDM_CHANNELS_PER_GROUP   4
+#define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
+#define SOC_SDM_CLK_SUPPORT_XTAL     1
 
 // TODO: IDF-6245 (Copy from esp32c6, need check)
 /*-------------------------- SPI CAPS ----------------------------------------*/
