@@ -219,9 +219,15 @@ static void __attribute__((section(".rtc.entry.text"))) esp_wake_stub_entry(void
 {
 #define _SYM2STR(s) # s
 #define SYM2STR(s)  _SYM2STR(s)
+
+#ifdef __riscv
+    __asm__ __volatile__ ("call " SYM2STR(esp_wake_stub_start) "\n");
+#else
     // call4 has a larger effective addressing range (-524284 to 524288 bytes),
     // which is sufficient for instruction addressing in RTC fast memory.
     __asm__ __volatile__ ("call4 " SYM2STR(esp_wake_stub_start) "\n");
+#endif
+
 }
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 

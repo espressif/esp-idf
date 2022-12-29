@@ -368,6 +368,8 @@
 #define SOC_PM_SUPPORT_BT_PD            (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 
+#define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
+
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                (1)
