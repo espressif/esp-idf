@@ -18,6 +18,8 @@
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "iperf.h"
+#include "wifi_stats.h"
+
 
 typedef struct {
     iperf_cfg_t cfg;
@@ -277,7 +279,20 @@ static esp_err_t IRAM_ATTR iperf_run_tcp_server(void)
     timeout.tv_sec = IPERF_SOCKET_RX_TIMEOUT;
     setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
+    wifi_cmd_clr_tx_statistics(0, NULL);
+#endif
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+    wifi_cmd_clr_rx_statistics(0, NULL);
+#endif
     socket_recv(client_socket, listen_addr, IPERF_TRANS_TYPE_TCP);
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+    wifi_cmd_get_rx_statistics(0, NULL);
+#endif
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
+    wifi_cmd_get_tx_statistics(0, NULL);
+#endif
+
 exit:
     if (client_socket != -1) {
         close(client_socket);
@@ -328,7 +343,21 @@ static esp_err_t iperf_run_tcp_client(void)
         memcpy(&dest_addr, &dest_addr4, sizeof(dest_addr4));
     }
 
+
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+    wifi_cmd_clr_rx_statistics(0, NULL);
+#endif
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
+    wifi_cmd_clr_tx_statistics(0, NULL);
+#endif
     socket_send(client_socket, dest_addr, IPERF_TRANS_TYPE_TCP, s_iperf_ctrl.cfg.bw_lim);
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
+    wifi_cmd_get_tx_statistics(0, NULL);
+#endif
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+    wifi_cmd_get_rx_statistics(0, NULL);
+#endif
+
 exit:
     if (client_socket != -1) {
         shutdown(client_socket, 0);
@@ -388,8 +417,13 @@ static esp_err_t IRAM_ATTR iperf_run_udp_server(void)
 
     timeout.tv_sec = IPERF_SOCKET_RX_TIMEOUT;
     setsockopt(listen_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+    wifi_cmd_clr_rx_statistics(0, NULL);
+#endif
     socket_recv(listen_socket, listen_addr, IPERF_TRANS_TYPE_UDP);
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+    wifi_cmd_get_rx_statistics(0, NULL);
+#endif
 exit:
     if (listen_socket != -1) {
         shutdown(listen_socket, 0);
@@ -434,8 +468,13 @@ static esp_err_t iperf_run_udp_client(void)
         setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
         memcpy(&dest_addr, &dest_addr4, sizeof(dest_addr4));
     }
-
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
+    wifi_cmd_clr_tx_statistics(0, NULL);
+#endif
     socket_send(client_socket, dest_addr, IPERF_TRANS_TYPE_UDP, s_iperf_ctrl.cfg.bw_lim);
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
+    wifi_cmd_get_tx_statistics(0, NULL);
+#endif
 exit:
     if (client_socket != -1) {
         shutdown(client_socket, 0);

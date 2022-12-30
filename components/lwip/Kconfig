@@ -163,6 +163,13 @@ menu "LWIP"
         help
             Enabling this option allows reassemblying incoming fragmented IP6 packets.
 
+    config LWIP_IP_REASS_MAX_PBUFS
+        int "The maximum amount of pbufs waiting to be reassembled"
+        range 10 100
+        default 10
+        help
+            Set the maximum amount of pbufs waiting to be reassembled.
+
     config LWIP_IP_FORWARD
         bool "Enable IP forwarding"
         default n

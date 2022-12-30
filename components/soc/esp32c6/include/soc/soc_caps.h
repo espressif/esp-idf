@@ -37,7 +37,7 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
-// #define SOC_WIFI_SUPPORTED              1 // TODO: IDF-5679
+#define SOC_WIFI_SUPPORTED              1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 //#define SOC_RISCV_COPROC_SUPPORTED       1 // TODO: IDF-5816
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
@@ -442,7 +442,6 @@
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                (1)
 
-// TODO: IDF-5679 (Copy from esp32c3, need check)
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)    /*!< Support hardware TSF */
 #define SOC_WIFI_FTM_SUPPORT            (1)    /*!< Support FTM */
@@ -450,6 +449,7 @@
 #define SOC_WIFI_WAPI_SUPPORT           (1)    /*!< Support WAPI */
 #define SOC_WIFI_CSI_SUPPORT            (1)    /*!< Support CSI */
 #define SOC_WIFI_MESH_SUPPORT           (1)    /*!< Support WIFI MESH */
+#define SOC_WIFI_HE_SUPPORT             (1)    /*!< Support Wi-Fi 6 */
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */

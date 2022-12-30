@@ -83,6 +83,8 @@ extern "C" {
 #define ESP_ERR_WIFI_NOT_ASSOC   (ESP_ERR_WIFI_BASE + 21)  /*!< The WiFi connection is not associated */
 #define ESP_ERR_WIFI_TX_DISALLOW (ESP_ERR_WIFI_BASE + 22)  /*!< The WiFi TX is disallowed */
 
+#define ESP_ERR_WIFI_TWT_FULL    (ESP_ERR_WIFI_BASE + 23)  /*!< no available flow id */
+
 /**
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.
  */
@@ -511,9 +513,10 @@ esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type);
 
 /**
   * @brief     Set protocol type of specified interface
-  *            The default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N)
+  *            The default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N).
+  *            if CONFIG_SOC_WIFI_HE_SUPPORT, the default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX).
   *
-  * @attention Support 802.11b or 802.11bg or 802.11bgn or LR mode
+  * @attention Support 802.11b or 802.11bg or 802.11bgn or 802.11bgnax or LR mode
   *
   * @param     ifx  interfaces
   * @param     protocol_bitmap  WiFi protocol bitmap

@@ -126,7 +126,7 @@ void esp_wifi_internal_free_rx_buffer(void* buffer);
   * copy to WiFi driver.
   *
   * @param  wifi_interface_t wifi_if : wifi interface id
-  * @param  void *buffer : the buffer to be tansmit
+  * @param  void *buffer : the buffer to be transmit
   * @param  uint16_t len : the length of buffer
   *
   * @return

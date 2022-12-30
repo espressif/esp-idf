@@ -394,6 +394,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_WIFI_TX_DISALLOW
     ERR_TBL_IT(ESP_ERR_WIFI_TX_DISALLOW),                       /* 12310 0x3016 The WiFi TX is disallowed */
 #   endif
+#   ifdef      ESP_ERR_WIFI_TWT_FULL
+    ERR_TBL_IT(ESP_ERR_WIFI_TWT_FULL),                          /* 12311 0x3017 no available flow id */
+#   endif
     // components/wpa_supplicant/esp_supplicant/include/esp_wps.h
 #   ifdef      ESP_ERR_WIFI_REGISTRAR
     ERR_TBL_IT(ESP_ERR_WIFI_REGISTRAR),                         /* 12339 0x3033 WPS registrar is not supported */
