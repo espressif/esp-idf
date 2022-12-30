@@ -219,6 +219,7 @@ static void RTC_IRAM_ATTR __attribute__((used, noinline)) esp_wake_stub_start(vo
  * must be simple enough to ensure that there is no litteral data before the
  * wake stub entry, otherwise, the litteral data before the wake stub entry
  * will not be CRC checked. */
+#if !CONFIG_IDF_TARGET_ESP32C6 // TODO: WIFI-5150
 static void __attribute__((section(".rtc.entry.text"))) esp_wake_stub_entry(void)
 {
 #define _SYM2STR(s) # s
@@ -233,6 +234,7 @@ static void __attribute__((section(".rtc.entry.text"))) esp_wake_stub_entry(void
 #endif
 
 }
+#endif // !CONFIG_IDF_TARGET_ESP32C6 // TODO: WIFI-5150
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 
 /* Wake from deep sleep stub
