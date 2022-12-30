@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #include "hal/timer_ll.h"
 #include "hal/check.h"
 #include "soc/timer_periph.h"
-#include "esp_private/esp_clk.h"
+#include "clk_tree.h"
 #include "soc/timer_group_reg.h"
 #include "esp_private/periph_ctrl.h"
 
@@ -76,42 +76,12 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
     ESP_RETURN_ON_FALSE(p_timer_obj[group_num][timer_num] != NULL, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_NEVER_INIT_ERROR);
     uint64_t timer_val = timer_hal_capture_and_get_counter_value(&p_timer_obj[group_num][timer_num]->hal);
     uint32_t div = p_timer_obj[group_num][timer_num]->divider;
-    // [clk_tree] TODO: replace the following switch table by clk_tree API
-    switch (p_timer_obj[group_num][timer_num]->clk_src) {
-#if SOC_TIMER_GROUP_SUPPORT_APB
-    case TIMER_SRC_CLK_APB:
-        *time = (double)timer_val * div / esp_clk_apb_freq();
-        break;
-#endif
-#if SOC_TIMER_GROUP_SUPPORT_XTAL
-    case TIMER_SRC_CLK_XTAL:
-        *time = (double)timer_val * div / esp_clk_xtal_freq();
-        break;
-#endif
-#if SOC_TIMER_GROUP_SUPPORT_AHB
-    case TIMER_SRC_CLK_AHB:
-        *time = (double)timer_val * div / (48 * 1000 * 1000);
-        break;
-#endif
-#if SOC_TIMER_GROUP_SUPPORT_PLL_F40M
-    case TIMER_SRC_CLK_PLL_F40M:
-        *time = (double)timer_val * div / (40 * 1000 * 1000);
-        break;
-#endif
-#if SOC_TIMER_GROUP_SUPPORT_PLL_F48M
-    case TIMER_SRC_CLK_PLL_F48M:
-        *time = (double)timer_val * div / (48 * 1000 * 1000);
-        break;
-#endif
-#if SOC_TIMER_GROUP_SUPPORT_PLL_F80M
-    case TIMER_SRC_CLK_PLL_F80M:
-        *time = (double)timer_val * div / (80 * 1000 * 1000);
-        break;
-#endif
-    default:
-        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TIMER_TAG, "invalid clock source");
-        break;
-    }
+    // get clock source frequency
+    uint32_t counter_src_hz = 0;
+    ESP_RETURN_ON_ERROR(clk_tree_src_get_freq_hz((soc_module_clk_t)p_timer_obj[group_num][timer_num]->clk_src,
+                        CLK_TREE_SRC_FREQ_PRECISION_CACHED, &counter_src_hz),
+                        TIMER_TAG, "get clock source frequency failed");
+    *time = (double)timer_val * div / counter_src_hz;
     return ESP_OK;
 }
 
@@ -340,9 +310,14 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
     timer_hal_init(hal, group_num, timer_num);
     timer_hal_set_counter_value(hal, 0);
+
+    timer_src_clk_t clk_src = TIMER_SRC_CLK_DEFAULT;
+    if (config->clk_src) {
+        clk_src = config->clk_src;
+    }
     // although `clk_src` is of `timer_src_clk_t` type, but it's binary compatible with `gptimer_clock_source_t`,
     // as the underlying enum entries come from the same `soc_module_clk_t`
-    timer_ll_set_clock_source(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, (gptimer_clock_source_t)config->clk_src);
+    timer_ll_set_clock_source(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, (gptimer_clock_source_t)clk_src);
     timer_ll_set_clock_prescale(hal->dev, timer_num, config->divider);
     timer_ll_set_count_direction(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, config->counter_dir);
     timer_ll_enable_intr(hal->dev, TIMER_LL_EVENT_ALARM(timer_num), false);
@@ -350,7 +325,7 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     timer_ll_enable_alarm(hal->dev, timer_num, config->alarm_en);
     timer_ll_enable_auto_reload(hal->dev, timer_num, config->auto_reload);
     timer_ll_enable_counter(hal->dev, timer_num, config->counter_en);
-    p_timer_obj[group_num][timer_num]->clk_src = config->clk_src;
+    p_timer_obj[group_num][timer_num]->clk_src = clk_src;
     p_timer_obj[group_num][timer_num]->alarm_en = config->alarm_en;
     p_timer_obj[group_num][timer_num]->auto_reload_en = config->auto_reload;
     p_timer_obj[group_num][timer_num]->direction = config->counter_dir;
