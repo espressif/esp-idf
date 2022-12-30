@@ -2871,6 +2871,12 @@ static void prov_msg_recv(const uint8_t idx)
     return;
 
 fail:
+    /**
+     * FOR the case MESH/PVNR/PROV/BV-10-C and MESH/PVNR/PROV/BI-14-C
+     * Provisioner should send transaction ack before closing the link
+     */
+    gen_prov_ack_send(idx, link[idx].rx.trans_id);
+
     close_link(idx, CLOSE_REASON_FAILED);
     return;
 }
