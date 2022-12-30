@@ -12,7 +12,7 @@
 #include "es7210.h"
 #include "format_wav.h"
 
-#if CONFIG_IDF_TARGET_ESP32S3 // ESP32-S3-Korvo-1 pinout
+#if CONFIG_IDF_TARGET_ESP32S3 // ESP32-S3-Korvo-1 pin out
 /* I2C port and GPIOs */
 #define EXAMPLE_I2C_NUM            (0)
 #define EXAMPLE_I2C_SDA_IO         (1)
@@ -210,7 +210,7 @@ static esp_err_t record_wav(i2s_chan_handle_t i2s_rx_chan)
 
     /* Write wav header */
     ESP_GOTO_ON_FALSE(fwrite(&wav_header, sizeof(wav_header_t), 1, f), ESP_FAIL, err,
-                      TAG, "error while writting wav header");
+                      TAG, "error while writing wav header");
 
     /* Start recording */
     size_t wav_written = 0;

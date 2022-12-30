@@ -781,6 +781,17 @@ static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw)
 }
 
 /**
+ * @brief Set the PDM TX over sampling ratio
+ *
+ * @param hw  Peripheral I2S hardware instance address.
+ * @param ovr Over sampling ratio
+ */
+static inline void i2s_ll_tx_set_pdm_over_sample_ratio(i2s_dev_t *hw, uint32_t ovr)
+{
+    hw->tx_pcm2pdm_conf.tx_sinc_osr2 = ovr;
+}
+
+/**
  * @brief Configure I2S TX PDM sample rate
  *        Fpdm = 64*Fpcm*fp/fs
  *
@@ -792,7 +803,6 @@ static inline void i2s_ll_tx_set_pdm_fpfs(i2s_dev_t *hw, uint32_t fp, uint32_t f
 {
     hw->tx_pcm2pdm_conf1.tx_pdm_fp = fp;
     hw->tx_pcm2pdm_conf1.tx_pdm_fs = fs;
-    hw->tx_pcm2pdm_conf.tx_sinc_osr2 = fp / fs;
 }
 
 /**

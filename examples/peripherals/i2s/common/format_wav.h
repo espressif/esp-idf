@@ -16,7 +16,7 @@ extern "C" {
  *
  * @note See this for reference: http://soundfile.sapp.org/doc/WaveFormat/
  *
- * @note Assignment to variables in this struct directely is only possible for little endian architectures
+ * @note Assignment to variables in this struct directly is only possible for little endian architectures
  *       (including Xtensa & RISC-V)
  */
 typedef struct {

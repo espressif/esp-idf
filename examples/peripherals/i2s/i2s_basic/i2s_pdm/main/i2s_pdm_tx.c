@@ -18,7 +18,7 @@
 #define EXAMPLE_PDM_TX_DOUT_IO          GPIO_NUM_5      // I2S PDM TX data out io number
 
 #define EXAMPLE_PDM_TX_FREQ_HZ          44100           // I2S PDM TX frequency
-#define EXAMPLE_WAVE_AMPTITUDE          (1000.0)        // 1~32767
+#define EXAMPLE_WAVE_AMPLITUDE          (1000.0)        // 1~32767
 #define CONST_PI                        (3.1416f)
 #define EXAMPLE_SINE_WAVE_LEN(tone)     (uint32_t)((EXAMPLE_PDM_TX_FREQ_HZ / (float)tone) + 0.5) // The sample point number per sine wave to generate the tone
 #define EXAMPLE_TONE_LAST_TIME_MS       500
@@ -89,7 +89,7 @@ void i2s_example_pdm_tx_task(void *args)
         int tone_point = EXAMPLE_SINE_WAVE_LEN(tone[tone_select][song[cnt]-1]);
         /* Generate the tone buffer */
         for (int i = 0; i < tone_point; i++) {
-            w_buf[i] =  (int16_t)((sin(2 * (float)i * CONST_PI / tone_point)) * EXAMPLE_WAVE_AMPTITUDE);
+            w_buf[i] =  (int16_t)((sin(2 * (float)i * CONST_PI / tone_point)) * EXAMPLE_WAVE_AMPLITUDE);
         }
         for (int tot_bytes = 0; tot_bytes < EXAMPLE_BYTE_NUM_EVERY_TONE * rhythm[cnt % 7]; tot_bytes += w_bytes) {
             /* Play the tone */
