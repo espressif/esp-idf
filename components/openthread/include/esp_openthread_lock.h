@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) CO LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -41,7 +33,7 @@ esp_err_t esp_openthread_lock_init(void);
 void esp_openthread_lock_deinit(void);
 
 /**
- * @brief This functions acquires the OpenThread API lock.
+ * @brief This function acquires the OpenThread API lock.
  *
  * @note Every OT APIs that takes an otInstance argument MUST be protected with this API lock
  *       except that the call site is in OT callbacks.
@@ -61,6 +53,28 @@ bool esp_openthread_lock_acquire(TickType_t block_ticks);
  */
 void esp_openthread_lock_release(void);
 
+/**
+ * @brief This function acquires the OpenThread API task switching lock.
+ *
+ * @note In OpenThread API context, it waits for some actions to be done in other tasks (like lwip),
+ *       after task switching, it needs to call OpenThread API again. Normally it's not allowed,
+ *       since the previous OpenThread API lock is not released yet. This task_switching lock allows
+ *       the OpenThread API can be called in this case.
+ *
+ * @note Please use esp_openthread_lock_acquire() for normal cases.
+ *
+ * @return
+ *      - True on lock acquired
+ *      - False on failing to acquire the lock with the timeout.
+ *
+ */
+bool esp_openthread_task_switching_lock_acquire(void);
+
+/**
+ * @brief This function releases the OpenThread API task switching lock.
+ *
+ */
+void esp_openthread_task_switching_lock_release(void);
 
 #ifdef __cplusplus
 }

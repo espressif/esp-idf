@@ -6,16 +6,22 @@ examples/openthread/ot_br:
       temporary: true
       reason: target(s) not supported yet
   disable_test:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2", "esp32c6"]
       temporary: true
       reason: only test on esp32s3
 
 examples/openthread/ot_cli:
   enable:
-    - if: IDF_TARGET == "esp32h4"
+    - if: IDF_TARGET in ["esp32h4", "esp32c6"]
+  disable_test:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
       reason: only test on esp32h4
 
 examples/openthread/ot_rcp:
   enable:
-    - if: IDF_TARGET == "esp32h4"
+    - if: IDF_TARGET in ["esp32h4", "esp32c6"]
+  disable_test:
+    - if: IDF_TARGET == "esp32c6"
+      temporary: true
       reason: only test on esp32h4

@@ -813,7 +813,6 @@ components/nvs_flash/test_nvs_host/test_intrusive_list.cpp
 components/nvs_flash/test_nvs_host/test_nvs_cxx_api.cpp
 components/nvs_flash/test_nvs_host/test_nvs_initialization.cpp
 components/nvs_flash/test_nvs_host/test_nvs_storage.cpp
-components/openthread/include/esp_openthread_lock.h
 components/protocomm/include/transports/protocomm_console.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/pthread/pthread_cond_var.c

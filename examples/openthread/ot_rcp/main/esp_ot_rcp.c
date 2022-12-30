@@ -16,13 +16,14 @@
 #include <unistd.h>
 
 #include "esp_event.h"
+#include "nvs_flash.h"
 #include "esp_openthread.h"
 #include "esp_ot_config.h"
 #include "esp_vfs_eventfd.h"
 #include "driver/uart.h"
 
-#if !CONFIG_IDF_TARGET_ESP32H4
-#error "RCP is only supported for esp32h4"
+#if !SOC_IEEE802154_SUPPORTED
+#error "RCP is only supported for the SoCs which have IEEE 802.15.4 module"
 #endif
 
 #define TAG "ot_esp_rcp"
@@ -60,6 +61,7 @@ void app_main(void)
         .max_fds = 2,
     };
 
+    ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
     xTaskCreate(ot_task_worker, "ot_rcp_main", 10240, xTaskGetCurrentTaskHandle(), 5, NULL);
