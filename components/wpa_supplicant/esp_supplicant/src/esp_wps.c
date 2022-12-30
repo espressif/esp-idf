@@ -624,7 +624,7 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
         wps_enrollee_process_msg(sm->wps, expd->opcode, wps_buf);
     }
 
-    if (*res == WPS_FAILURE) {
+    if (res && *res == WPS_FAILURE) {
         sm->state = WPA_FAIL;
     }
 
