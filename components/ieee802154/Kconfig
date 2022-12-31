@@ -5,4 +5,10 @@ menu "IEEE 802.15.4"
         bool
         default "y" if SOC_IEEE802154_SUPPORTED
 
+    config IEEE802154_RX_BUFFER_SIZE
+        int "The number of 802.15.4 receive buffers"
+        depends on IEEE802154_ENABLED
+        default 20
+        range 2 100
+
 endmenu  # IEEE 802.15.4

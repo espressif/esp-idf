@@ -63,12 +63,14 @@ void esp_openthread_lock_release(void);
  *
  * @note Please use esp_openthread_lock_acquire() for normal cases.
  *
+ * @param[in] block_ticks   The maxinum number of RTOS ticks to wait for the lock.
+ *
  * @return
  *      - True on lock acquired
  *      - False on failing to acquire the lock with the timeout.
  *
  */
-bool esp_openthread_task_switching_lock_acquire(void);
+bool esp_openthread_task_switching_lock_acquire(TickType_t block_ticks);
 
 /**
  * @brief This function releases the OpenThread API task switching lock.
