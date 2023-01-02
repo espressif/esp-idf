@@ -43,8 +43,11 @@ def get_idf_build_env(idf_path: str) -> EnvDict:
         '--format=key-value'
     ]
     keys_values = subprocess.check_output(cmd, stderr=subprocess.PIPE).decode()
-    env_vars = {key: os.path.expandvars(value) for key, value in
-                [line.split('=') for line in keys_values.splitlines()]}
+    idf_tool_py_env = {key: os.path.expandvars(value) for key, value in
+                       [line.split('=') for line in keys_values.splitlines()]}
+    env_vars = {}  # type: EnvDict
+    env_vars.update(os.environ)
+    env_vars.update(idf_tool_py_env)
     # not set by idf_tools.py, normally set by export.sh
     env_vars['IDF_PATH'] = idf_path
 
