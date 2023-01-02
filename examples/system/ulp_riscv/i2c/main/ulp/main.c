@@ -71,7 +71,7 @@ static void bmp180_read_ut_data(int16_t *ut_data)
     ulp_riscv_i2c_master_write_to_device(&cmd, 1);
 
     /* Wait at least 4.5 milliseconds for the sensor to complete the reading */
-    ulp_riscv_delay_cycles(5 * ULP_RISCV_CYCLES_PER_US * 1000);
+    ulp_riscv_delay_cycles(5 * ULP_RISCV_CYCLES_PER_MS);
 
     /* Read uncompensated temperature data */
     bmp180_read16((uint16_t *)ut_data, BMP180_SENSOR_REG_ADDR_SENSOR_DATA_MSB, BMP180_SENSOR_REG_ADDR_SENSOR_DATA_LSB);
@@ -111,7 +111,7 @@ static void bmp180_read_up_data(int32_t *up_data, oss_mode_t oss_mode)
     ulp_riscv_i2c_master_write_to_device(&cmd, 1);
 
     /* Wait for the required amount of time for the sensor to complete the reading */
-    ulp_riscv_delay_cycles(wait * ULP_RISCV_CYCLES_PER_US * 1000);
+    ulp_riscv_delay_cycles(wait * ULP_RISCV_CYCLES_PER_MS);
 
     /* Read uncompensated temperature data */
 

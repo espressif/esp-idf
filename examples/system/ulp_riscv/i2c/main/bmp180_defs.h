@@ -103,8 +103,8 @@ static int32_t bmp180_calculate_real_pressure(int32_t up_data, int32_t ut_data, 
 
 /************************************************
  * Temperature and Pressure thresholds (uncompensated) to wake up Main CPU
- * The threshold values have been selected for demp purposes and may not
+ * The threshold values have been selected for demo purposes and may not
  * represent real world use case.
  ************************************************/
-#define EXAMPLE_UT_THRESHOLD    20000
-#define EXAMPLE_UP_THRESHOLD    40000
+#define EXAMPLE_UT_THRESHOLD    25000
+#define EXAMPLE_UP_THRESHOLD    50000

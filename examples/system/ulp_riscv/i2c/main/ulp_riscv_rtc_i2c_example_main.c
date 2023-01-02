@@ -143,7 +143,7 @@ void app_main(void)
     }
 
 
-    /* Add a delay for everything to the printed before heading in to light sleep */
+    /* Add a delay for everything to the printed before heading in to deep sleep */
     vTaskDelay(100);
 
     /* Go back to sleep, only the ULP RISC-V will run */
@@ -342,9 +342,9 @@ static void init_ulp_program(void)
     ESP_ERROR_CHECK(err);
 
     /* The first argument is the period index, which is not used by the ULP-RISC-V timer
-     * The second argument is the period in microseconds, which gives a wakeup time period of: 20ms
+     * The second argument is the period in microseconds, which gives a wakeup time period of: 40ms
      */
-    ulp_set_wakeup_period(0, 20000);
+    ulp_set_wakeup_period(0, 40000);
 
     /* Start the program */
     err = ulp_riscv_run();
