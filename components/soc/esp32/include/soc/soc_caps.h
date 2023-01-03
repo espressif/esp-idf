@@ -92,6 +92,7 @@
 #define SOC_FLASH_ENC_SUPPORTED     1
 #define SOC_SECURE_BOOT_SUPPORTED   1
 #define SOC_TOUCH_SENSOR_SUPPORTED  1
+#define SOC_BOD_SUPPORTED           1
 
 #if SOC_CAPS_ECO_VER < 200
 #define SOC_DPORT_WORKAROUND                   1
