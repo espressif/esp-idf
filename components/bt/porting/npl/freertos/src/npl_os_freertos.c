@@ -59,6 +59,13 @@ struct os_mempool ble_freertos_mutex_pool;
 static os_membuf_t *ble_freertos_mutex_buf = NULL;
 
 static uint16_t ble_freertos_total_event_cnt = 0;
+static ble_npl_count_info_t g_ctrl_npl_info = {
+    .co_count = 0,
+    .evt_count = 0,
+    .evtq_count = 0,
+    .mutex_count = 0,
+    .sem_count = 0,
+};
 
 bool
 IRAM_ATTR npl_freertos_os_started(void)
@@ -1032,8 +1039,17 @@ void npl_freertos_funcs_init(void)
     memcpy(npl_funcs, &npl_funcs_ro, sizeof(struct npl_funcs_t));
 }
 
+int npl_freertos_set_controller_npl_info(ble_npl_count_info_t *ctrl_npl_info)
+{
+    if (!ctrl_npl_info) {
+        return -1;
+    }
 
-int npl_freertos_mempool_init(ble_npl_count_info_t *npl_info)
+    memcpy(&g_ctrl_npl_info, ctrl_npl_info, sizeof(ble_npl_count_info_t));
+    return 0;
+}
+
+int npl_freertos_mempool_init(void)
 {
     int rc = -1;
     uint16_t ble_total_evt_count = 0;
@@ -1041,16 +1057,11 @@ int npl_freertos_mempool_init(ble_npl_count_info_t *npl_info)
     uint16_t ble_total_evtq_count = 0;
     uint16_t ble_total_sem_count = 0;
     uint16_t ble_total_mutex_count = 0;
-
-    if (!npl_info) {
-        return -1;
-    }
-
-    ble_total_evt_count = npl_info->evt_count + BLE_HOST_EV_COUNT;
-    ble_total_evtq_count = npl_info->evtq_count + BLE_HOST_EVQ_COUNT;
-    ble_total_co_count = npl_info->co_count + BLE_HOST_CO_COUNT;
-    ble_total_sem_count = npl_info->sem_count + BLE_HOST_SEM_COUNT;
-    ble_total_mutex_count = npl_info->mutex_count + BLE_HOST_MUTEX_COUNT;
+    ble_total_evt_count = g_ctrl_npl_info.evt_count + BLE_HOST_EV_COUNT;
+    ble_total_evtq_count = g_ctrl_npl_info.evtq_count + BLE_HOST_EVQ_COUNT;
+    ble_total_co_count = g_ctrl_npl_info.co_count + BLE_HOST_CO_COUNT;
+    ble_total_sem_count = g_ctrl_npl_info.sem_count + BLE_HOST_SEM_COUNT;
+    ble_total_mutex_count = g_ctrl_npl_info.mutex_count + BLE_HOST_MUTEX_COUNT;
     ble_freertos_total_event_cnt = ble_total_evt_count;
 
     if (ble_total_evt_count) {
