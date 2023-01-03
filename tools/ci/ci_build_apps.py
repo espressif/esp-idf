@@ -8,6 +8,7 @@ This file is used in CI generate binary files for different kinds of apps
 import argparse
 import os
 import sys
+import unittest
 from collections import defaultdict
 from pathlib import Path
 from typing import List, Optional, Set
@@ -19,9 +20,9 @@ from idf_ci_utils import IDF_PATH, PytestApp, get_pytest_cases, get_ttfw_app_pat
 
 CI_ENV_VARS = {
     'EXTRA_CFLAGS': '-Werror -Werror=deprecated-declarations -Werror=unused-variable '
-                    '-Werror=unused-but-set-variable -Werror=unused-function',
+                    '-Werror=unused-but-set-variable -Werror=unused-function -Wstrict-prototypes',
     'EXTRA_CXXFLAGS': '-Werror -Werror=deprecated-declarations -Werror=unused-variable '
-                      '-Werror=unused-but-set-variable -Werror=unused-function -Wstrict-prototypes',
+                      '-Werror=unused-but-set-variable -Werror=unused-function',
     'LDGEN_CHECK_MAPPING': '1',
 }
 
@@ -302,3 +303,13 @@ if __name__ == '__main__':
             LOGGER.info(f'env var {_k} set to "{_v}"')
 
     main(arguments)
+
+
+class TestParsingShellScript(unittest.TestCase):
+    """
+    This test case is run in CI jobs to make sure the CI build flags is the same as the ones recorded in CI_ENV_VARS
+    """
+
+    def test_parse_result(self) -> None:
+        for k, v in CI_ENV_VARS.items():
+            self.assertEqual(os.getenv(k), v)
