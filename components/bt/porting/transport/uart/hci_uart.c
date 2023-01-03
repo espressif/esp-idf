@@ -122,6 +122,7 @@ int hci_uart_config(int port_num, int32_t baud_rate, uint8_t data_bits, uint8_t 
         .stop_bits = stop_bits,
         .flow_ctrl = HCI_UART_FLOWCTRL,
         .source_clk = UART_SCLK_DEFAULT,
+        .rx_flow_ctrl_thresh = UART_FIFO_LEN - 1,
     };
     hci_uart.port = port_num;
     hci_uart.cfg = uart_cfg;
