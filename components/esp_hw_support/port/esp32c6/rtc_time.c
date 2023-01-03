@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include "soc/rtc.h"
 #include "soc/lp_timer_reg.h"
 #include "hal/clk_tree_ll.h"
+#include "hal/rtc_cntl_ll.h"
 #include "soc/timer_group_reg.h"
 #include "esp_rom_sys.h"
 #include "assert.h"
@@ -206,10 +207,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 
 uint64_t rtc_time_get(void)
 {
-    SET_PERI_REG_MASK(LP_TIMER_UPDATE_REG, LP_TIMER_MAIN_TIMER_UPDATE);
-    uint64_t t = READ_PERI_REG(LP_TIMER_MAIN_BUF0_LOW_REG);
-    t |= ((uint64_t) READ_PERI_REG(LP_TIMER_MAIN_BUF0_HIGH_REG)) << 32;
-    return t;
+    return rtc_cntl_ll_get_rtc_time();
 }
 
 uint64_t rtc_light_slp_time_get(void)
