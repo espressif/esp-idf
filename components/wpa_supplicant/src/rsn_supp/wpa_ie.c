@@ -417,11 +417,9 @@ int  wpa_supplicant_parse_ies(const u8 *buf, size_t len,
 			break;
 		}
 		if (pos + 2 + pos[1] > end) {
-		    #ifdef DEBUG_PRINT
 			wpa_printf(MSG_DEBUG, "WPA: EAPOL-Key Key Data "
 				   "underflow (ie=%d len=%d pos=%d)",
 				   pos[0], pos[1], (int) (pos - buf));
-		    #endif
 			wpa_hexdump(MSG_DEBUG, "WPA: Key Data",
 					buf, len);
 			ret = -1;

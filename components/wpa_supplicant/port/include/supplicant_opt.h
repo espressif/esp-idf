@@ -10,7 +10,6 @@
 #include "sdkconfig.h"
 
 #if CONFIG_WPA_DEBUG_PRINT
-#define DEBUG_PRINT
 #if defined(CONFIG_LOG_DEFAULT_LEVEL_DEBUG) || defined(CONFIG_LOG_DEFAULT_LEVEL_VERBOSE)
 #define ELOOP_DEBUG
 #endif

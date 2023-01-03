@@ -607,7 +607,7 @@ static int tls_create_mbedtls_handle(struct tls_connection *conn,
 #endif
 
 	/* Enable debug prints in case supplicant's prints are enabled */
-#if defined(DEBUG_PRINT) && defined(CONFIG_MBEDTLS_DEBUG) && defined(ESPRESSIF_USE)
+#if defined(CONFIG_MBEDTLS_DEBUG) && defined(ESPRESSIF_USE)
 	mbedtls_esp_enable_debug_log(&tls->conf, 2);
 #endif
 	return 0;
