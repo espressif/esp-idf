@@ -68,7 +68,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
-On initial startup, this example will detect that this is the first boot and output the following low:
+On initial startup, this example will detect that this is the first boot and output the following log:
 
 ```
 ...
