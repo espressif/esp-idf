@@ -1455,6 +1455,15 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define ESP_GRATUITOUS_ARP              0
 #endif
 
+/**
+ * ESP_MLDV6_REPORT==1: This option allows to send mldv6 report periodically.
+ */
+#ifdef CONFIG_LWIP_ESP_MLDV6_REPORT
+#define ESP_MLDV6_REPORT              1
+#else
+#define ESP_MLDV6_REPORT              0
+#endif
+
 #define ESP_LWIP                        1
 #define ESP_LWIP_ARP                    1
 #define ESP_PER_SOC_TCP_WND             0

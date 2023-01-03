@@ -17,9 +17,15 @@ extern "C" {
 // Macros to assemble master configs with partial configs from netif, stack and driver
 //
 
+#ifdef CONFIG_LWIP_ESP_MLDV6_REPORT
+#define ESP_NETIF_DEFAULT_MLDV6_REPORT_FLAGS (ESP_NETIF_FLAG_MLDV6_REPORT)
+#else
+#define ESP_NETIF_DEFAULT_MLDV6_REPORT_FLAGS (0)
+#endif
+
 #define ESP_NETIF_INHERENT_DEFAULT_WIFI_STA() \
     {   \
-        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
+        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_DEFAULT_MLDV6_REPORT_FLAGS | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
         .get_ip_event = IP_EVENT_STA_GOT_IP, \
