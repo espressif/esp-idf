@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include "esp_rom_sys.h"
+#include "hal/rtc_cntl_ll.h"
 #include "soc/rtc.h"
 #include "soc/timer_periph.h"
 #include "soc_log.h"
@@ -150,20 +151,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 
 uint64_t rtc_time_get(void)
 {
-    SET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_UPDATE);
-    int attempts = 1000;
-    while (GET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_VALID) == 0) {
-        esp_rom_delay_us(1); // might take 1 RTC slowclk period, don't flood RTC bus
-        if (attempts) {
-            if (--attempts == 0 && REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN)) {
-                SOC_LOGE(TAG, "rtc_time_get() 32kHz xtal has been stopped");
-            }
-        }
-    }
-    SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_TIME_VALID_INT_CLR);
-    uint64_t t = READ_PERI_REG(RTC_CNTL_TIME0_REG);
-    t |= ((uint64_t) READ_PERI_REG(RTC_CNTL_TIME1_REG)) << 32;
-    return t;
+    return rtc_cntl_ll_get_rtc_time();
 }
 
 void rtc_clk_wait_for_slow_cycle(void)
