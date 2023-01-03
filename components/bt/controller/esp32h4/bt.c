@@ -613,8 +613,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 
     ble_get_npl_element_info(cfg, &npl_info);
-
-    if (npl_freertos_mempool_init(&npl_info) != 0) {
+    npl_freertos_set_controller_npl_info(&npl_info);
+    if (npl_freertos_mempool_init() != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "npl mempool init failed");
         ret = ESP_ERR_INVALID_ARG;
         goto free_mem;

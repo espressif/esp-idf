@@ -35,14 +35,6 @@
 extern "C" {
 #endif
 
-typedef struct {
-    uint16_t evt_count;
-    uint16_t evtq_count;
-    uint16_t co_count;
-    uint16_t sem_count;
-    uint16_t mutex_count;
-} ble_npl_count_info_t;
-
 void nimble_port_init(void);
 void nimble_port_deinit(void);
 
