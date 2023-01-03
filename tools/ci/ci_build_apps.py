@@ -17,6 +17,14 @@ from idf_build_apps import LOGGER, App, build_apps, find_apps, setup_logging
 from idf_build_apps.constants import SUPPORTED_TARGETS
 from idf_ci_utils import IDF_PATH, PytestApp, get_pytest_cases, get_ttfw_app_paths
 
+CI_ENV_VARS = {
+    'EXTRA_CFLAGS': '-Werror -Werror=deprecated-declarations -Werror=unused-variable '
+                    '-Werror=unused-but-set-variable -Werror=unused-function',
+    'EXTRA_CXXFLAGS': '-Werror -Werror=deprecated-declarations -Werror=unused-variable '
+                      '-Werror=unused-but-set-variable -Werror=unused-function -Wstrict-prototypes',
+    'LDGEN_CHECK_MAPPING': '1',
+}
+
 
 def get_pytest_apps(
     paths: List[str],
@@ -157,21 +165,21 @@ def main(args: argparse.Namespace) -> None:
                 if abs_extra_preserve_dir == abs_app_dir or abs_extra_preserve_dir in abs_app_dir.parents:
                     app.preserve = True
 
-    ret_code = build_apps(
-        apps,
-        parallel_count=args.parallel_count,
-        parallel_index=args.parallel_index,
-        dry_run=False,
-        build_verbose=args.build_verbose,
-        keep_going=True,
-        collect_size_info=args.collect_size_info,
-        collect_app_info=args.collect_app_info,
-        ignore_warning_strs=args.ignore_warning_str,
-        ignore_warning_file=args.ignore_warning_file,
-        copy_sdkconfig=args.copy_sdkconfig,
+    sys.exit(
+        build_apps(
+            apps,
+            parallel_count=args.parallel_count,
+            parallel_index=args.parallel_index,
+            dry_run=False,
+            build_verbose=args.build_verbose,
+            keep_going=True,
+            collect_size_info=args.collect_size_info,
+            collect_app_info=args.collect_app_info,
+            ignore_warning_strs=args.ignore_warning_str,
+            ignore_warning_file=args.ignore_warning_file,
+            copy_sdkconfig=args.copy_sdkconfig,
+        )
     )
-
-    sys.exit(ret_code)
 
 
 if __name__ == '__main__':
@@ -276,8 +284,21 @@ if __name__ == '__main__':
         default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'default-build-test-rules.yml'),
         help='default build test rules config file',
     )
+    parser.add_argument(
+        '--skip-setting-flags',
+        action='store_true',
+        help='by default this script would set the build flags exactly the same as the CI ones. '
+        'Set this flag to use your local build flags.',
+    )
 
     arguments = parser.parse_args()
 
     setup_logging(arguments.verbose)
+
+    # skip setting flags in CI
+    if not arguments.skip_setting_flags and not os.getenv('CI_JOB_ID'):
+        for _k, _v in CI_ENV_VARS.items():
+            os.environ[_k] = _v
+            LOGGER.info(f'env var {_k} set to "{_v}"')
+
     main(arguments)
