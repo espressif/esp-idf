@@ -12,7 +12,6 @@ from copy import deepcopy
 import junit_xml
 from tiny_test_fw import TinyFW, Utility
 
-from .DebugUtils import CustomProcess, GDBBackend, OCDBackend  # noqa: export DebugUtils for users
 from .IDFApp import UT, ComponentUTApp, Example, IDFApp, LoadableElfTestApp, TestApp  # noqa: export all Apps for users
 from .IDFDUT import (ESP32C2DUT, ESP32C3DUT, ESP32C3FPGADUT, ESP32C6DUT, ESP32DUT,  # noqa: export DUTs for users
                      ESP32H4DUT, ESP32QEMUDUT, ESP32S2DUT, ESP32S3DUT, ESP32S3FPGADUT, ESP8266DUT, IDFDUT)
