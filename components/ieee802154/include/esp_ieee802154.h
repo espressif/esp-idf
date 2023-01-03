@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -473,6 +473,75 @@ extern void esp_ieee802154_timer0_done(void);
  *
  */
 extern void esp_ieee802154_timer1_done(void);
+
+/**
+ * @brief  Set the IEEE 802.15.4 Radio to receive state at a specific time.
+ *
+ *
+ * @param[in]  time  A specific timestamp for starting receiving.
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failure due to invalid state.
+ *
+ * Note: Radio will start receiving after the timestamp, and continue receiving until it receives a valid frame.
+ *       Ref to esp_ieee802154_receive_done().
+ *
+ */
+esp_err_t esp_ieee802154_receive_at(uint32_t time);
+
+/**
+ * @brief  Transmit the given frame at a specific time.
+ *
+ * @param[in]  frame  The pointer to the frame. Refer to `esp_ieee802154_transmit()`.
+ * @param[in]  cca    Perform CCA before transmission if it's true, otherwise transmit the frame directly.
+ * @param[in]  time  A specific timestamp for starting transmission.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure due to invalid state.
+ *
+ * Note: The transmit result will be reported via esp_ieee802154_transmit_done()
+ *       or esp_ieee802154_transmit_failed().
+ *
+ */
+esp_err_t esp_ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time);
+
+/**
+ * @brief  Get the RSSI of the most recent received frame.
+ *
+ * @return The value of RSSI.
+ *
+ */
+int8_t esp_ieee802154_get_recent_rssi(void);
+
+/**
+ * @brief  Get the LQI of the most recent received frame.
+ *
+ * @return The value of LQI.
+ *
+ */
+uint8_t esp_ieee802154_get_recent_lqi(void);
+
+/**
+ * @brief  Set the key and addr for a frame needs to be encrypted by HW.
+ *
+ * @param[in]  frame  A frame needs to be encrypted. Refer to `esp_ieee802154_transmit()`.
+ * @param[in]  key    A 16-bytes key for encryption.
+ * @param[in]  addr   An 8-bytes addr for HW to generate nonce, in general, is the device extended address.
+ *
+ */
+void esp_ieee802154_set_transmit_security(uint8_t *frame, uint8_t *key, uint8_t *addr);
+
+/**
+ * @brief  This function will be called when a received frame needs to be acked with Enh-Ack, the upper
+ *         layer should generate the Enh-Ack frame in this callback function.
+ *
+ * @param[in]  frame          The received frame.
+ * @param[in]  frame_info     The frame information. Refer to `esp_ieee802154_frame_info_t`.
+ * @param[out] enhack_frame   The Enh-ack frame need to be generated via this function, HW will send it back after AIFS.
+ *
+ */
+void esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info, uint8_t* enhack_frame);
 
 #ifdef __cplusplus
 }

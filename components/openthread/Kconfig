@@ -165,4 +165,24 @@ menu "OpenThread"
         help
             Set the OpenThread UART buffer size.
 
+    config OPENTHREAD_LINK_METRICS
+        bool "Enable link metrics feature"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to enable link metrics feature
+
+    config OPENTHREAD_CSL_ENABLE
+        bool "Enable CSL feature"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to enable CSL feature
+
+    config OPENTHREAD_CSL_DEBUG_ENABLE
+        bool "Enable CSL debug"
+        depends on OPENTHREAD_CSL_ENABLE
+        default n
+        help
+            Select this option to set rx on when sleep in CSL feature, only for debug
 endmenu
