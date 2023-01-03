@@ -65,7 +65,7 @@ void timer_arm_us_wrapper(void *ptimer, uint32_t us, bool repeat);
 
 void * malloc_internal_wrapper(size_t size);
 
-#if CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
 bool env_is_chip_wrapper(void);
 
 uint32_t esp_clk_slowclk_cal_get_wrapper(void);

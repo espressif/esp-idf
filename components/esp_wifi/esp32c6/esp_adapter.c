@@ -40,8 +40,8 @@
 #include "os.h"
 #include "esp_smartconfig.h"
 #include "esp_coexist_internal.h"
-#include "esp_coexist_adapter.h"
 #include "esp32c6/rom/ets_sys.h"
+#include "esp_modem_wrapper.h"
 
 #define TAG "esp_adapter"
 
@@ -100,15 +100,6 @@ static void *wifi_create_queue_wrapper(int queue_len, int item_size)
 static void wifi_delete_queue_wrapper(void *queue)
 {
     wifi_delete_queue(queue);
-}
-
-static bool IRAM_ATTR env_is_chip_wrapper(void)
-{
-#ifdef CONFIG_IDF_ENV_FPGA
-    return false;
-#else
-    return true;
-#endif
 }
 
 static void set_intr_wrapper(int32_t cpu_no, uint32_t intr_source, uint32_t intr_num, int32_t intr_prio)
@@ -175,21 +166,6 @@ static bool IRAM_ATTR is_from_isr_wrapper(void)
     return !xPortCanYield();
 }
 
-static void IRAM_ATTR task_yield_from_isr_wrapper(void)
-{
-    portYIELD_FROM_ISR();
-}
-
-static void *semphr_create_wrapper(uint32_t max, uint32_t init)
-{
-    return (void *)xSemaphoreCreateCounting(max, init);
-}
-
-static void semphr_delete_wrapper(void *semphr)
-{
-    vSemaphoreDelete(semphr);
-}
-
 static void wifi_thread_semphr_free(void *data)
 {
     SemaphoreHandle_t *sem = (SemaphoreHandle_t *)(data);
@@ -223,30 +199,6 @@ static void *wifi_thread_semphr_get_wrapper(void)
 
     ESP_LOGV(TAG, "thread sem get: sem=%p", sem);
     return (void *)sem;
-}
-
-static int32_t IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw)
-{
-    return (int32_t)xSemaphoreTakeFromISR(semphr, hptw);
-}
-
-static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw)
-{
-    return (int32_t)xSemaphoreGiveFromISR(semphr, hptw);
-}
-
-static int32_t semphr_take_wrapper(void *semphr, uint32_t block_time_tick)
-{
-    if (block_time_tick == OSI_FUNCS_TIME_BLOCKING) {
-        return (int32_t)xSemaphoreTake(semphr, portMAX_DELAY);
-    } else {
-        return (int32_t)xSemaphoreTake(semphr, block_time_tick);
-    }
-}
-
-static int32_t semphr_give_wrapper(void *semphr)
-{
-    return (int32_t)xSemaphoreGive(semphr);
 }
 
 static void *recursive_mutex_create_wrapper(void)
@@ -369,26 +321,6 @@ static void IRAM_ATTR timer_arm_wrapper(void *timer, uint32_t tmout, bool repeat
     ets_timer_arm(timer, tmout, repeat);
 }
 
-static void IRAM_ATTR timer_disarm_wrapper(void *timer)
-{
-    ets_timer_disarm(timer);
-}
-
-static void timer_done_wrapper(void *ptimer)
-{
-    ets_timer_done(ptimer);
-}
-
-static void timer_setfn_wrapper(void *ptimer, void *pfunction, void *parg)
-{
-    ets_timer_setfn(ptimer, pfunction, parg);
-}
-
-static void IRAM_ATTR timer_arm_us_wrapper(void *ptimer, uint32_t us, bool repeat)
-{
-    ets_timer_arm_us(ptimer, us, repeat);
-}
-
 static void wifi_reset_mac_wrapper(void)
 {
     // TODO: IDF-5713
@@ -420,19 +352,6 @@ static void wifi_clock_disable_wrapper(void)
 static int get_time_wrapper(void *t)
 {
     return os_get_time(t);
-}
-
-static uint32_t esp_clk_slowclk_cal_get_wrapper(void)
-{
-    /* The bit width of WiFi light sleep clock calibration is 12 while the one of
-     * system is 19. It should shift 19 - 12 = 7.
-    */
-    return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
-}
-
-static void *IRAM_ATTR malloc_internal_wrapper(size_t size)
-{
-    return heap_caps_malloc(size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 }
 
 static void *IRAM_ATTR realloc_internal_wrapper(void *ptr, size_t size)
@@ -617,28 +536,28 @@ static void *coex_schm_curr_phase_get_wrapper(void)
 #endif
 }
 
-static int coex_schm_curr_phase_idx_set_wrapper(int idx)
-{
-#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
-    return coex_schm_curr_phase_idx_set(idx);
-#else
-    return 0;
-#endif
-}
-
-static int coex_schm_curr_phase_idx_get_wrapper(void)
-{
-#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
-    return coex_schm_curr_phase_idx_get();
-#else
-    return 0;
-#endif
-}
-
 static int coex_register_start_cb_wrapper(int (* cb)(void))
 {
 #if CONFIG_SW_COEXIST_ENABLE
     return coex_register_start_cb(cb);
+#else
+    return 0;
+#endif
+}
+
+static int coex_schm_process_restart_wrapper(void)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_schm_process_restart();
+#else
+    return 0;
+#endif
+}
+
+static int coex_schm_register_cb_wrapper(int type, void(*cb)(int))
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_schm_register_callback(type, cb);
 #else
     return 0;
 #endif
@@ -763,8 +682,6 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_schm_interval_get = coex_schm_interval_get_wrapper,
     ._coex_schm_curr_period_get = coex_schm_curr_period_get_wrapper,
     ._coex_schm_curr_phase_get = coex_schm_curr_phase_get_wrapper,
-    ._coex_schm_curr_phase_idx_set = coex_schm_curr_phase_idx_set_wrapper,
-    ._coex_schm_curr_phase_idx_get = coex_schm_curr_phase_idx_get_wrapper,
     ._coex_register_start_cb = coex_register_start_cb_wrapper,
 #if 0//CONFIG_IDF_TARGET_ESP32C6
     // TODO: WIFI-5150
@@ -773,23 +690,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._sleep_retention_entries_create = (int (*)(const void *, int, int, int))sleep_retention_entries_create,
     ._sleep_retention_entries_destroy = sleep_retention_entries_destroy,
 #endif
+    ._coex_schm_process_restart = coex_schm_process_restart_wrapper,
+    ._coex_schm_register_cb = coex_schm_register_cb_wrapper,
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
-};
-
-coex_adapter_funcs_t g_coex_adapter_funcs = {
-    ._version = COEX_ADAPTER_VERSION,
-    ._task_yield_from_isr = task_yield_from_isr_wrapper,
-    ._semphr_create = semphr_create_wrapper,
-    ._semphr_delete = semphr_delete_wrapper,
-    ._semphr_take_from_isr = semphr_take_from_isr_wrapper,
-    ._semphr_give_from_isr = semphr_give_from_isr_wrapper,
-    ._semphr_take = semphr_take_wrapper,
-    ._semphr_give = semphr_give_wrapper,
-    ._is_in_isr = xPortInIsrContext,
-    ._malloc_internal =  malloc_internal_wrapper,
-    ._free = free,
-    ._esp_timer_get_time = esp_timer_get_time,
-    ._env_is_chip = env_is_chip_wrapper,
-    ._slowclk_cal_get = esp_clk_slowclk_cal_get_wrapper,
-    ._magic = COEX_ADAPTER_MAGIC,
 };

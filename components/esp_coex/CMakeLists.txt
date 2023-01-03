@@ -20,7 +20,7 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include"
-                    PRIV_REQUIRES esp_timer driver
+                    PRIV_REQUIRES esp_timer driver esp_event
                     LDFRAGMENTS "${ldfragments}")
 
 if(CONFIG_SW_COEXIST_ENABLE OR CONFIG_EXTERNAL_COEX_ENABLE)
