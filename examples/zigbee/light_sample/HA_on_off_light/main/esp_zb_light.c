@@ -40,6 +40,7 @@
 #include "freertos/task.h"
 #include "ha/esp_zigbee_ha_standard.h"
 #include "esp_zb_light.h"
+#include "nvs_flash.h"
 
 /**
  * @note Make sure set idf.py menuconfig in zigbee component as zigbee end device!
@@ -128,6 +129,7 @@ void app_main(void)
         .radio_config = ESP_ZB_DEFAULT_RADIO_CONFIG(),
         .host_config = ESP_ZB_DEFAULT_HOST_CONFIG(),
     };
+    ESP_ERROR_CHECK(nvs_flash_init());
     /* load Zigbee light_bulb platform config to initialization */
     ESP_ERROR_CHECK(esp_zb_platform_config(&config));
     /* hardware related and device init */
