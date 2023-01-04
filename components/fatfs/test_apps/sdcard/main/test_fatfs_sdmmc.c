@@ -51,8 +51,9 @@
 // No runner
 #include "driver/sdmmc_host.h"
 
-static void test_setup_sdmmc(void)
+static void test_setup_sdmmc(sdmmc_card_t **out_card)
 {
+    sdmmc_card_t *card = NULL;
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
@@ -60,12 +61,13 @@ static void test_setup_sdmmc(void)
         .max_files = 5,
         .allocation_unit_size = 16 * 1024
     };
-    TEST_ESP_OK(esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, NULL));
+    TEST_ESP_OK(esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, &card));
+    *out_card = card;
 }
 
-static void test_teardown_sdmmc(void)
+static void test_teardown_sdmmc(sdmmc_card_t *card)
 {
-    TEST_ESP_OK(esp_vfs_fat_sdmmc_unmount());
+    TEST_ESP_OK(esp_vfs_fat_sdcard_unmount("/sdcard", card));
 }
 
 static const char* test_filename = "/sdcard/hello.txt";
@@ -90,118 +92,144 @@ TEST_CASE("Mount fails cleanly without card inserted", "[fatfs][ignore]")
     HEAP_SIZE_CHECK(heap_size, 0);
 }
 
+TEST_CASE("(SD) can format partition", "[fatfs][sdmmc]")
+{
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
+    TEST_ESP_OK(esp_vfs_fat_sdcard_format("/sdcard", card));
+    test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
+    test_fatfs_read_file(test_filename);
+    test_teardown_sdmmc(card);
+}
+
 TEST_CASE("(SD) can create and write file", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) can read file", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
     test_fatfs_read_file(test_filename);
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) can read file with pread()", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
     test_fatfs_pread_file(test_filename);
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) pwrite() works well", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_pwrite_file(test_filename);
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) overwrite and append file", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_overwrite_append(test_filename);
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) can lseek", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_lseek("/sdcard/seek.txt");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) can truncate", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_truncate_file("/sdcard/truncate.txt");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) can ftruncate", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_ftruncate_file("/sdcard/ftrunc.txt");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) stat returns correct values", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_stat("/sdcard/stat.txt", "/sdcard");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) utime sets modification time", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_utime("/sdcard/utime.txt", "/sdcard");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) unlink removes a file", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_unlink("/sdcard/unlink.txt");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) link copies a file, rename moves a file", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_link_rename("/sdcard/link");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) can create and remove directories", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_mkdir_rmdir("/sdcard/dir");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) can opendir root directory of FS", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_can_opendir("/sdcard");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_opendir_readdir_rewinddir("/sdcard/dir");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) multiple tasks can use same volume", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_concurrent("/sdcard/f");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 static void sdmmc_speed_test(void *buf, size_t buf_size, size_t file_size, bool write);
@@ -231,6 +259,7 @@ TEST_CASE("(SD) write/read speed test", "[fatfs][sdmmc]")
 
 static void sdmmc_speed_test(void *buf, size_t buf_size, size_t file_size, bool write)
 {
+    sdmmc_card_t *card = NULL;
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
     host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -239,11 +268,11 @@ static void sdmmc_speed_test(void *buf, size_t buf_size, size_t file_size, bool 
         .max_files = 5,
         .allocation_unit_size = 64 * 1024
     };
-    TEST_ESP_OK(esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, NULL));
+    TEST_ESP_OK(esp_vfs_fat_sdmmc_mount("/sdcard", &host, &slot_config, &mount_config, &card));
 
     test_fatfs_rw_speed("/sdcard/4mb.bin", buf, buf_size, file_size, write);
 
-    TEST_ESP_OK(esp_vfs_fat_sdmmc_unmount());
+    TEST_ESP_OK(esp_vfs_fat_sdcard_unmount("/sdcard", card));
 }
 
 TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fatfs][sdmmc]")
@@ -265,17 +294,18 @@ TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fat
 
     /* Mount FATFS in SD can WL at the same time. Create a file on each FS */
     wl_handle_t wl_handle = WL_INVALID_HANDLE;
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &wl_handle));
     unlink(filename_sd);
     unlink(filename_wl);
     test_fatfs_create_file_with_text(filename_sd, str_sd);
     test_fatfs_create_file_with_text(filename_wl, str_wl);
     TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", wl_handle));
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 
     /* Check that the file "sd.txt" was created on FS in SD, and has the right data */
-    test_setup_sdmmc();
+    test_setup_sdmmc(&card);
     TEST_ASSERT_NULL(fopen(filename_wl, "r"));
     FILE* f = fopen(filename_sd, "r");
     TEST_ASSERT_NOT_NULL(f);
@@ -283,7 +313,7 @@ TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fat
     TEST_ASSERT_NOT_NULL(fgets(buf, sizeof(buf) - 1, f));
     TEST_ASSERT_EQUAL(0, strcmp(buf, str_sd));
     fclose(f);
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 
     /* Check that the file "wl.txt" was created on FS in WL, and has the right data */
     TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &wl_handle));
@@ -307,25 +337,28 @@ static const char* test_filename_utf_8 = "/sdcard/测试文件.txt";
 
 TEST_CASE("(SD) can read file using UTF-8 encoded strings", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_create_file_with_text(test_filename_utf_8, fatfs_test_hello_str_utf);
     test_fatfs_read_file_utf_8(test_filename_utf_8);
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected using UTF-8 encoded strings", "[fatfs][ignore]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_opendir_readdir_rewinddir_utf_8("/sdcard/目录");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 #endif // CONFIG_FATFS_API_ENCODING_UTF_8 && CONFIG_FATFS_CODEPAGE == 936
 
 TEST_CASE("(SD) can get partition info", "[fatfs][sdmmc]")
 {
-    test_setup_sdmmc();
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
     test_fatfs_info("/sdcard", "/sdcard/test.txt");
-    test_teardown_sdmmc();
+    test_teardown_sdmmc(card);
 }
 
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)

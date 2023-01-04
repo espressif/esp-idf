@@ -208,6 +208,23 @@ esp_err_t esp_vfs_fat_sdmmc_unmount(void);
 esp_err_t esp_vfs_fat_sdcard_unmount(const char* base_path, sdmmc_card_t *card);
 
 /**
+ * @brief Format FAT filesystem
+ *
+ * @note
+ * This API should be only called when the FAT is already mounted.
+ *
+ * @param base_path  Path where partition should be registered (e.g. "/sdcard")
+ * @param card       Pointer to the card handle, which should be initialised by calling `esp_vfs_fat_sdspi_mount` first
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_INVALID_STATE: FAT partition isn't mounted, call esp_vfs_fat_sdmmc_mount or esp_vfs_fat_sdspi_mount first
+ *        - ESP_ERR_NO_MEM: if memory can not be allocated
+ *        - ESP_FAIL: fail to format it, or fail to mount back
+ */
+esp_err_t esp_vfs_fat_sdcard_format(const char *base_path, sdmmc_card_t *card);
+
+/**
  * @brief Convenience function to initialize FAT filesystem in SPI flash and register it in VFS
  *
  * This is an all-in-one function which does the following:
