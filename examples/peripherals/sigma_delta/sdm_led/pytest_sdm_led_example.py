@@ -11,7 +11,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
 @pytest.mark.generic
-def test_sdm_example(dut: Dut) -> None:
-    dut.expect_exact('example: Install sigma delta channel')
-    dut.expect_exact('example: Enable sigma delta channel')
-    dut.expect_exact('example: Change duty cycle continuously')
+def test_sdm_led_example(dut: Dut) -> None:
+    dut.expect_exact('sdm_led: Install sigma delta channel')
+    dut.expect_exact('sdm_led: Enable sigma delta channel')
+    dut.expect_exact('sdm_led: Change duty cycle continuously')

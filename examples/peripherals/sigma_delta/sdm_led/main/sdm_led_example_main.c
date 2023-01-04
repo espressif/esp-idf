@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -16,7 +16,7 @@
 #define EXAMPLE_LED_DIM_DUTY_MAX     90
 #define EXAMPLE_LED_DIM_DUTY_MIN     (EXAMPLE_LED_DIM_DUTY_MAX - EXAMPLE_LED_DIM_PERIOD_MS / EXAMPLE_LED_DIM_DELAY_MS * EXAMPLE_LED_DIM_DUTY_STEP)
 
-static const char *TAG = "example";
+static const char *TAG = "sdm_led";
 
 void app_main(void)
 {

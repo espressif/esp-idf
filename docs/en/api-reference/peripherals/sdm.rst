@@ -6,6 +6,14 @@ Introduction
 
 {IDF_TARGET_NAME} has a second-order sigma-delta modulator, which can generate independent PDM pulses to multiple channels. Please refer to the TRM to check how many hardware channels are available. [1]_
 
+Delta-sigma modulation converts an analog voltage signal into a pulse frequency, or pulse density, which can be understood as pulse-density modulation (PDM) (refer to [Delta-sigma modulation on Wikipedia](https://en.wikipedia.org/wiki/Delta-sigma_modulation)).
+
+The main differences comparing to the PDM in I2S peripheral and DAC are:
+
+1. SDM has no clock signal, it just like the DAC mode of PDM;
+2. SDM has no DMA, it can only output the analog signal by a timer just like DAC oneshot mode, therefore, its output rate is limited by the timer callback interval;
+3. Base on the former two points, an external active or passive filter is required to restore the analog wave;
+
 Typically, a Sigma-Delta modulated channel can be used in scenarios like:
 
 -  LED dimming
