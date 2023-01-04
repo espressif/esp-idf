@@ -115,3 +115,10 @@ CRC Check For Wake Stubs
 .. note::
 
     When the `CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` option is enabled, all the RTC fast memory except the wake stubs area is added to the heap.
+
+Example
+-------
+
+ESP-IDF provides an example to show how to implement the Deep-sleep wake stub.
+
+- :example:`system/deep_sleep_wake_stub`
