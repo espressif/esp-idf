@@ -442,7 +442,107 @@ _DebugExceptionVector:
 
     .end        literal_prefix
 
+    .global    xt_debugexception
+    .weak xt_debugexception
+    .set xt_debugexception, _xt_debugexception
+    .section .iram1,"ax"
+    .type       _xt_debugexception,@function
+    .align      4
+_xt_debugexception:
+#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+    s32i    a0, sp, XT_STK_EXIT
+
+#define XT_DEBUGCAUSE_DI        (5)
+    getcoreid   a0
+#if (CONFIG_BTDM_CTRL_PINNED_TO_CORE == PRO_CPU_NUM)
+    beqz    a0, 1f
+#else
+    bnez    a0, 1f
 #endif
+
+    rsr     a0, DEBUGCAUSE
+    extui   a0, a0, XT_DEBUGCAUSE_DI, 1
+    bnez    a0, _xt_debug_di_exc
+1:
+#endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+
+    movi    a0,PANIC_RSN_DEBUGEXCEPTION
+    wsr     a0,EXCCAUSE
+    /* _xt_panic assumes a level 1 exception. As we're
+       crashing anyhow, copy EPC & EXCSAVE from DEBUGLEVEL
+       to level 1. */
+    rsr     a0,(EPC + XCHAL_DEBUGLEVEL)
+    wsr     a0,EPC_1
+    rsr     a0,(EXCSAVE + XCHAL_DEBUGLEVEL)
+    wsr     a0,EXCSAVE_1
+#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    J   _xt_panic_gdbstub                   /* For gdbstub we make jump */
+#else
+    call0   _xt_panic                       /* does not return */
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    rfi     XCHAL_DEBUGLEVEL
+
+#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+    .align  4
+_xt_debug_di_exc:
+
+    /*
+    The delay time can be calculated by the following formula:
+      T = ceil(0.25 + max(t1, t2)) us
+
+      t1 = 80 / f1, t2 = (1 + 14/N) * 20 / f2
+
+      f1: PSRAM access frequency, unit: MHz.
+      f2: Flash access frequency, unit: MHz.
+
+      When flash is slow/fast read, N = 1.
+      When flash is DOUT/DIO read, N = 2.
+      When flash is QOUT/QIO read, N = 4.
+
+      And after testing, when CPU frequency is 240 MHz, it will take 1us to loop 27 times.
+    */
+#if defined(CONFIG_ESPTOOLPY_FLASHMODE_QIO) || defined(CONFIG_ESPTOOLPY_FLASHMODE_QOUT)
+
+# if defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_80M)
+    movi    a0, 54
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 81
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_40M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 81
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_26M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 108
+# else
+    movi    a0, 135
+# endif
+
+#elif defined(CONFIG_ESPTOOLPY_FLASHMODE_DIO) || defined(CONFIG_ESPTOOLPY_FLASHMODE_DOUT)
+
+# if defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_80M)
+    movi    a0, 81
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 81
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_40M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 135
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_26M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 189
+# else
+    movi    a0, 243
+# endif
+
+#else
+    movi    a0, 243
+#endif
+
+1:  addi    a0, a0, -1         /* delay_us(N) */
+    .rept   4
+    nop
+    .endr
+    bnez    a0, 1b
+
+    rsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL
+    rfi     XCHAL_DEBUGLEVEL
+#endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+#endif // XCHAL_HAVE_DEBUG
 
 /*
 --------------------------------------------------------------------------------
@@ -1588,9 +1688,9 @@ the minimum necessary before jumping to the handler in the .text section.
 *******************************************************************************/
 
 /*
-These stubs just call xt_highintX/xt_nmi to handle the real interrupt. Please define
-these in an external assembly source file. If these symbols are not defined anywhere
-else, the defaults in xtensa_vector_defaults.S are used.
+Currently only shells for high priority interrupt handlers are provided
+here. However a template and example can be found in the Cadence Design Systems tools
+documentation: "Microprocessor Programmer's Guide".
 */
 
 #if XCHAL_NUM_INTLEVELS >=2 && XCHAL_EXCM_LEVEL <2 && XCHAL_DEBUGLEVEL !=2
@@ -1603,9 +1703,36 @@ else, the defaults in xtensa_vector_defaults.S are used.
     .align      4
 _Level2Vector:
     wsr     a0, EXCSAVE_2                   /* preserve a0 */
-    call0   xt_highint2                    /* load interrupt handler */
+    call0   xt_highint2                     /* load interrupt handler */
 
     .end        literal_prefix
+
+    .global     xt_highint2
+    .weak       xt_highint2
+    .set        xt_highint2, _xt_highint2
+    .section    .iram1, "ax"
+    .type       _xt_highint2,@function
+    .align      4
+_xt_highint2:
+
+    #ifdef XT_INTEXC_HOOKS
+    /* Call interrupt hook if present to (pre)handle interrupts. */
+    movi    a0, _xt_intexc_hooks
+    l32i    a0, a0, 2<<2
+    beqz    a0, 1f
+.Ln_xt_highint2_call_hook:
+    callx0  a0                              /* must NOT disturb stack! */
+1:
+    #endif
+
+    /* USER_EDIT:
+    ADD HIGH PRIORITY LEVEL 2 INTERRUPT HANDLER CODE HERE.
+    */
+
+    .align  4
+.L_xt_highint2_exit:
+    rsr     a0, EXCSAVE_2                   /* restore a0 */
+    rfi     2
 
 #endif  /* Level 2 */
 
@@ -1619,10 +1746,37 @@ _Level2Vector:
     .align      4
 _Level3Vector:
     wsr     a0, EXCSAVE_3                   /* preserve a0 */
-    call0   xt_highint3                    /* load interrupt handler */
+    call0   xt_highint3                     /* load interrupt handler */
     /* never returns here - call0 is used as a jump (see note at top) */
 
     .end        literal_prefix
+
+    .global     xt_highint3
+    .weak       xt_highint3
+    .set        xt_highint3, _xt_highint3
+    .section    .iram1, "ax"
+    .type       _xt_highint3,@function
+    .align      4
+_xt_highint3:
+
+    #ifdef XT_INTEXC_HOOKS
+    /* Call interrupt hook if present to (pre)handle interrupts. */
+    movi    a0, _xt_intexc_hooks
+    l32i    a0, a0, 3<<2
+    beqz    a0, 1f
+.Ln_xt_highint3_call_hook:
+    callx0  a0                              /* must NOT disturb stack! */
+1:
+    #endif
+
+    /* USER_EDIT:
+    ADD HIGH PRIORITY LEVEL 3 INTERRUPT HANDLER CODE HERE.
+    */
+
+    .align  4
+.L_xt_highint3_exit:
+    rsr     a0, EXCSAVE_3                   /* restore a0 */
+    rfi     3
 
 #endif  /* Level 3 */
 
@@ -1636,10 +1790,37 @@ _Level3Vector:
     .align      4
 _Level4Vector:
     wsr     a0, EXCSAVE_4                   /* preserve a0 */
-    call0   xt_highint4                    /* load interrupt handler */
+    call0   xt_highint4                     /* load interrupt handler */
     /* never returns here - call0 is used as a jump (see note at top) */
 
     .end        literal_prefix
+
+    .global     xt_highint4
+    .weak       xt_highint4
+    .set        xt_highint4, _xt_highint4
+    .section    .iram1, "ax"
+    .type       _xt_highint4,@function
+    .align      4
+_xt_highint4:
+
+    #ifdef XT_INTEXC_HOOKS
+    /* Call interrupt hook if present to (pre)handle interrupts. */
+    movi    a0, _xt_intexc_hooks
+    l32i    a0, a0, 4<<2
+    beqz    a0, 1f
+.Ln_xt_highint4_call_hook:
+    callx0  a0                              /* must NOT disturb stack! */
+1:
+    #endif
+
+    /* USER_EDIT:
+    ADD HIGH PRIORITY LEVEL 4 INTERRUPT HANDLER CODE HERE.
+    */
+
+    .align  4
+.L_xt_highint4_exit:
+    rsr     a0, EXCSAVE_4                   /* restore a0 */
+    rfi     4
 
 #endif  /* Level 4 */
 
@@ -1658,6 +1839,33 @@ _Level5Vector:
 
     .end        literal_prefix
 
+    .global     xt_highint5
+    .weak       xt_highint5
+    .set        xt_highint5, _xt_highint5
+    .section    .iram1, "ax"
+    .type       _xt_highint5,@function
+    .align      4
+_xt_highint5:
+
+    #ifdef XT_INTEXC_HOOKS
+    /* Call interrupt hook if present to (pre)handle interrupts. */
+    movi    a0, _xt_intexc_hooks
+    l32i    a0, a0, 5<<2
+    beqz    a0, 1f
+.Ln_xt_highint5_call_hook:
+    callx0  a0                              /* must NOT disturb stack! */
+1:
+    #endif
+
+    /* USER_EDIT:
+    ADD HIGH PRIORITY LEVEL 5 INTERRUPT HANDLER CODE HERE.
+    */
+
+    .align  4
+.L_xt_highint5_exit:
+    rsr     a0, EXCSAVE_5                   /* restore a0 */
+    rfi     5
+
 #endif  /* Level 5 */
 
 #if XCHAL_NUM_INTLEVELS >=6 && XCHAL_EXCM_LEVEL <6 && XCHAL_DEBUGLEVEL !=6
@@ -1675,6 +1883,33 @@ _Level6Vector:
 
     .end        literal_prefix
 
+    .global     xt_highint6
+    .weak       xt_highint6
+    .set        xt_highint6, _xt_highint6
+    .section    .iram1, "ax"
+    .type       _xt_highint6,@function
+    .align      4
+_xt_highint6:
+
+    #ifdef XT_INTEXC_HOOKS
+    /* Call interrupt hook if present to (pre)handle interrupts. */
+    movi    a0, _xt_intexc_hooks
+    l32i    a0, a0, 6<<2
+    beqz    a0, 1f
+.Ln_xt_highint6_call_hook:
+    callx0  a0                              /* must NOT disturb stack! */
+1:
+    #endif
+
+    /* USER_EDIT:
+    ADD HIGH PRIORITY LEVEL 6 INTERRUPT HANDLER CODE HERE.
+    */
+
+    .align  4
+.L_xt_highint6_exit:
+    rsr     a0, EXCSAVE_6                   /* restore a0 */
+    rfi     6
+
 #endif  /* Level 6 */
 
 #if XCHAL_HAVE_NMI
@@ -1691,6 +1926,33 @@ _NMIExceptionVector:
     /* never returns here - call0 is used as a jump (see note at top) */
 
     .end        literal_prefix
+
+    .global     xt_nmi
+    .weak       xt_nmi
+    .set        xt_nmi, _xt_nmi
+    .section    .iram1, "ax"
+    .type       _xt_nmi,@function
+    .align      4
+_xt_nmi:
+
+    #ifdef XT_INTEXC_HOOKS
+    /* Call interrupt hook if present to (pre)handle interrupts. */
+    movi    a0, _xt_intexc_hooks
+    l32i    a0, a0, XCHAL_NMILEVEL<<2
+    beqz    a0, 1f
+.Ln_xt_nmi_call_hook:
+    callx0  a0                              /* must NOT disturb stack! */
+1:
+    #endif
+
+    /* USER_EDIT:
+    ADD HIGH PRIORITY NON-MASKABLE INTERRUPT (NMI) HANDLER CODE HERE.
+    */
+
+    .align  4
+.L_xt_nmi_exit:
+    rsr     a0, EXCSAVE + XCHAL_NMILEVEL    /* restore a0 */
+    rfi     XCHAL_NMILEVEL
 
 #endif  /* NMI */
 
