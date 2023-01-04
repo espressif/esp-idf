@@ -385,13 +385,13 @@ static void unaligned_test_slave(void)
     TEST_ASSERT(spi_slave_free(TEST_SPI_HOST) == ESP_OK);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][test_env=generic_multi_device][timeout=120]", unaligned_test_master, unaligned_test_slave);
+TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][timeout=120]", unaligned_test_master, unaligned_test_slave);
 #endif  //#if (TEST_SPI_PERIPH_NUM == 1)
 
 
 #if CONFIG_SPI_SLAVE_ISR_IN_IRAM
 #define TEST_IRAM_TRANS_NUM     8
-#define TEST_TRANS_LEN          64
+#define TEST_TRANS_LEN          120
 #define TEST_BUFFER_SZ          (TEST_IRAM_TRANS_NUM*TEST_TRANS_LEN)
 
 static void test_slave_iram_master_normal(void){
@@ -424,9 +424,10 @@ static void test_slave_iram_master_normal(void){
         trans_cfg.user = master_exp + TEST_TRANS_LEN*cnt;
         unity_wait_for_signal("Slave ready");
         TEST_ESP_OK(spi_device_transmit(dev_handle, &trans_cfg));
+
         ESP_LOG_BUFFER_HEX("master tx", trans_cfg.tx_buffer, TEST_TRANS_LEN);
-        // ESP_LOG_BUFFER_HEX("master rx", trans_cfg.rx_buffer, TEST_TRANS_LEN);
-        // ESP_LOG_BUFFER_HEX("master exp", trans_cfg.user, TEST_TRANS_LEN);
+        ESP_LOG_BUFFER_HEX_LEVEL("master rx", trans_cfg.rx_buffer, TEST_TRANS_LEN, ESP_LOG_DEBUG);
+        ESP_LOG_BUFFER_HEX_LEVEL("master exp", trans_cfg.user, TEST_TRANS_LEN, ESP_LOG_DEBUG);
         spitest_cmp_or_dump(trans_cfg.user, trans_cfg.rx_buffer, TEST_TRANS_LEN);
     }
 
@@ -442,8 +443,7 @@ static IRAM_ATTR void ESP_LOG_BUFFER_HEX_ISR(const char *tag, const uint8_t *buf
     esp_rom_printf(DRAM_STR("%s: "), tag);
     for(uint16_t i=0; i<byte_len; i++){
         if(0 == i%16) esp_rom_printf(DRAM_STR("\n"));
-        if(buff[i] < 0x10) esp_rom_printf(DRAM_STR("0"));
-        esp_rom_printf(DRAM_STR("%x "), buff[i]);
+        esp_rom_printf(DRAM_STR("%2x "), buff[i]);
     } esp_rom_printf(DRAM_STR("\n"));
 }
 
@@ -573,5 +573,92 @@ static IRAM_ATTR void spi_slave_trans_in_isr(void){
     spi_slave_free(TEST_SPI_HOST);
 }
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_Queue_Trans_in_ISR", "[spi_ms]", test_slave_iram_master_normal, spi_slave_trans_in_isr);
+
+
+uint32_t dummy_data[2] = {0x38383838, 0x5b5b5b5b};
+spi_slave_transaction_t dummy_trans[2];
+static uint32_t queue_reset_isr_trans_cnt, test_queue_reset_isr_fail;
+static IRAM_ATTR void test_queue_reset_in_isr_post_trans_cbk(spi_slave_transaction_t *curr_trans){
+    queue_reset_isr_trans_cnt ++;
+
+    //first trans is the trigger trans with random data
+    if(queue_reset_isr_trans_cnt > 1){
+        ESP_LOG_BUFFER_HEX_ISR(DRAM_STR("slave tx"), curr_trans->tx_buffer, curr_trans->length/8);
+
+        if(memcmp(curr_trans->rx_buffer, curr_trans->user, curr_trans->length/8)){
+            ESP_LOG_BUFFER_HEX_ISR(DRAM_STR("slave rx"), curr_trans->rx_buffer, curr_trans->length/8);
+            ESP_LOG_BUFFER_HEX_ISR(DRAM_STR("slave exp"), curr_trans->user, curr_trans->length/8);
+            test_queue_reset_isr_fail = true;
+        }
+
+        if(queue_reset_isr_trans_cnt > 4) {
+            // add some confusing transactions
+            dummy_data[0] ++;
+            dummy_data[1] --;
+            spi_slave_queue_trans_isr(TEST_SPI_HOST, &dummy_trans[0]);
+            ESP_LOG_BUFFER_HEX_ISR(DRAM_STR("Queue Hacked hahhhhh..."), dummy_trans[0].tx_buffer, dummy_trans[0].length/8);
+            spi_slave_queue_trans_isr(TEST_SPI_HOST, &dummy_trans[1]);
+            ESP_LOG_BUFFER_HEX_ISR(DRAM_STR("Queue Hacked hahhhhh..."), dummy_trans[1].tx_buffer, dummy_trans[1].length/8);
+            if(ESP_OK == spi_slave_queue_reset_isr(TEST_SPI_HOST)){
+                esp_rom_printf(DRAM_STR("Queue reset done, continue\n"));
+            }
+        }
+
+        curr_trans->tx_buffer = (uint8_t *)curr_trans->tx_buffer + TEST_TRANS_LEN;
+        curr_trans->rx_buffer = (uint8_t *)curr_trans->rx_buffer + TEST_TRANS_LEN;
+        curr_trans->user = (uint8_t *)curr_trans->user + TEST_TRANS_LEN;
+    }
+
+    if(queue_reset_isr_trans_cnt <= TEST_IRAM_TRANS_NUM){
+        if(ESP_OK == spi_slave_queue_trans_isr(TEST_SPI_HOST, curr_trans)){
+            esp_rom_printf(DRAM_STR("Send signal: [Slave ready]!\n"));
+        }
+        else esp_rom_printf(DRAM_STR("SPI Add trans in isr fail, Queue full\n"));
+    }
+}
+
+static IRAM_ATTR void spi_queue_reset_in_isr(void){
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+    slvcfg.flags = SPI_SLAVE_NO_RETURN_RESULT;
+    slvcfg.queue_size = 16;
+    slvcfg.post_trans_cb = test_queue_reset_in_isr_post_trans_cbk;
+    TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
+
+    uint8_t *slave_isr_send = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *slave_isr_recv = heap_caps_calloc(1, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *slave_isr_exp  = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+    get_tx_buffer(1001, slave_isr_exp, slave_isr_send, TEST_BUFFER_SZ);
+    spi_slave_transaction_t trans_cfg = {
+        .tx_buffer = slave_isr_send,
+        .rx_buffer = slave_isr_recv,
+        .user = slave_isr_exp,
+        .length = TEST_TRANS_LEN * 8,
+    };
+
+    unity_wait_for_signal("Master ready");
+    for(uint8_t i=0; i<2; i++) {
+        dummy_trans[i].tx_buffer = &dummy_data[i];
+        dummy_trans[i].rx_buffer = &dummy_data[i];
+        dummy_trans[i].user = &dummy_data[i];
+        dummy_trans[i].length = sizeof(uint32_t) * 8;
+    }
+    // start a trans by normal API first to trigger spi isr
+    spi_slave_queue_trans(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY);
+    // spi_flash_disable_interrupts_caches_and_other_cpu();
+    esp_rom_printf(DRAM_STR("Send signal: [Slave ready]!\n"));
+    while(queue_reset_isr_trans_cnt <= TEST_IRAM_TRANS_NUM){
+        esp_rom_delay_us(10);
+    }
+    // spi_flash_enable_interrupts_caches_and_other_cpu();
+    if(test_queue_reset_isr_fail) TEST_FAIL();
+
+    free(slave_isr_send);
+    free(slave_isr_recv);
+    free(slave_isr_exp);
+    spi_slave_free(TEST_SPI_HOST);
+}
+TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_Queue_Reset_in_ISR", "[spi_ms]", test_slave_iram_master_normal, spi_queue_reset_in_isr);
+
 
 #endif // CONFIG_SPI_SLAVE_ISR_IN_IRAM

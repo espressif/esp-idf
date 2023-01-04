@@ -41,6 +41,20 @@ esp_err_t spi_slave_queue_reset(spi_host_device_t host);
 
 
 /**
+ * @note
+ * This API is used to reset SPI Slave transaction queue from within ISR. After calling this function:
+ * - The SPI Slave transaction queue will be empty.
+ *
+ * @param host SPI peripheral that is acting as a slave
+ *
+ * @return
+ *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_OK                on success
+ */
+esp_err_t spi_slave_queue_reset_isr(spi_host_device_t host);
+
+
+/**
  * @brief Queue a SPI transaction in ISR
  *
  * Similar as ``spi_slave_queue_trans``, but can and can only called within an ISR, then get the transaction results

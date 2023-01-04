@@ -319,6 +319,24 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_reset(spi_host_device_t host)
     return ESP_OK;
 }
 
+esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_queue_reset_isr(spi_host_device_t host)
+{
+    ESP_RETURN_ON_FALSE_ISR(is_valid_host(host), ESP_ERR_INVALID_ARG, SPI_TAG, "invalid host");
+    ESP_RETURN_ON_FALSE_ISR(spihost[host], ESP_ERR_INVALID_ARG, SPI_TAG, "host not slave");
+
+    spi_slave_transaction_t *trans = NULL;
+    BaseType_t do_yield = pdFALSE;
+    while( pdFALSE == xQueueIsQueueEmptyFromISR(spihost[host]->trans_queue)) {
+        xQueueReceiveFromISR(spihost[host]->trans_queue, &trans, &do_yield);
+    }
+    if (do_yield) {
+        portYIELD_FROM_ISR();
+    }
+
+    spihost[host]->cur_trans = NULL;
+    return ESP_OK;
+}
+
 esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait)
 {
     BaseType_t r;
