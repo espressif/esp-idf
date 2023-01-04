@@ -7,6 +7,7 @@ import pytest
 # If `test_env` is define, should not run on generic runner
 @pytest.mark.supported_targets
 @pytest.mark.generic
+@pytest.mark.parametrize('config', ['defaults',], indirect=True)
 def test_slave_single_dev(case_tester) -> None:       # type: ignore
     for case in case_tester.test_menu:
         if 'test_env' in case.attributes:

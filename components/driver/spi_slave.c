@@ -27,6 +27,7 @@
 #include "driver/spi_slave.h"
 #include "hal/gpio_hal.h"
 #include "hal/spi_slave_hal.h"
+#include "esp_private/spi_slave_internal.h"
 #include "esp_private/spi_common_internal.h"
 
 
@@ -337,6 +338,29 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi
     return ESP_OK;
 }
 
+esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_queue_trans_isr(spi_host_device_t host, const spi_slave_transaction_t *trans_desc)
+{
+    BaseType_t r;
+    BaseType_t do_yield = pdFALSE;
+    ESP_RETURN_ON_FALSE_ISR(is_valid_host(host), ESP_ERR_INVALID_ARG, SPI_TAG, "invalid host");
+    ESP_RETURN_ON_FALSE_ISR(spihost[host], ESP_ERR_INVALID_ARG, SPI_TAG, "host not slave");
+    ESP_RETURN_ON_FALSE_ISR(spihost[host]->dma_enabled == 0 || trans_desc->tx_buffer==NULL || esp_ptr_dma_capable(trans_desc->tx_buffer),
+        ESP_ERR_INVALID_ARG, SPI_TAG, "txdata not in DMA-capable memory");
+    ESP_RETURN_ON_FALSE_ISR(spihost[host]->dma_enabled == 0 || trans_desc->rx_buffer==NULL ||
+        (esp_ptr_dma_capable(trans_desc->rx_buffer) && esp_ptr_word_aligned(trans_desc->rx_buffer) &&
+            (trans_desc->length%4==0)),
+        ESP_ERR_INVALID_ARG, SPI_TAG, "rxdata not in DMA-capable memory or not WORD aligned");
+    ESP_RETURN_ON_FALSE_ISR(trans_desc->length <= spihost[host]->max_transfer_sz * 8, ESP_ERR_INVALID_ARG, SPI_TAG, "data transfer > host maximum");
+
+    r = xQueueSendFromISR(spihost[host]->trans_queue, (void *)&trans_desc, &do_yield);
+    if (!r) {
+        return ESP_ERR_NO_MEM;
+    }
+    if (do_yield) {
+        portYIELD_FROM_ISR();
+    }
+    return ESP_OK;
+}
 
 esp_err_t SPI_SLAVE_ATTR spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transaction_t **trans_desc, TickType_t ticks_to_wait)
 {

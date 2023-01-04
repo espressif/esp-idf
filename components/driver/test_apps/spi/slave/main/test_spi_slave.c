@@ -16,6 +16,7 @@
 #include "driver/spi_slave.h"
 #include "driver/gpio.h"
 #include "esp_private/cache_utils.h"
+#include "esp_private/spi_slave_internal.h"
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
 
@@ -385,7 +386,6 @@ static void unaligned_test_slave(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][test_env=generic_multi_device][timeout=120]", unaligned_test_master, unaligned_test_slave);
-
 #endif  //#if (TEST_SPI_PERIPH_NUM == 1)
 
 
@@ -447,31 +447,28 @@ static IRAM_ATTR void ESP_LOG_BUFFER_HEX_ISR(const char *tag, const uint8_t *buf
     } esp_rom_printf(DRAM_STR("\n"));
 }
 
-static uint32_t slave_isr_cnt, test_fail;
-static IRAM_ATTR void test_spi_slave_post_trans_cbk(spi_slave_transaction_t *curr_trans){
-    slave_isr_cnt ++;
+static uint32_t isr_iram_cnt, iram_test_fail;
+static IRAM_ATTR void test_slave_iram_post_trans_cbk(spi_slave_transaction_t *curr_trans){
+    isr_iram_cnt ++;
 
     // first trans is the trigger trans with random data by master
-    if(slave_isr_cnt > 1){
+    if(isr_iram_cnt > 1){
         ESP_LOG_BUFFER_HEX_ISR(DRAM_STR("slave tx"), curr_trans->tx_buffer, curr_trans->trans_len/8);
         if(memcmp(curr_trans->rx_buffer, curr_trans->user, curr_trans->trans_len/8)){
             ESP_LOG_BUFFER_HEX_ISR(DRAM_STR("slave rx"), curr_trans->rx_buffer, curr_trans->trans_len/8);
             ESP_LOG_BUFFER_HEX_ISR(DRAM_STR("slave exp"), curr_trans->user, curr_trans->trans_len/8);
-            test_fail = true;
+            iram_test_fail = true;
         }
     }
-    if(slave_isr_cnt <= TEST_IRAM_TRANS_NUM) esp_rom_printf(DRAM_STR("Send signal: [Slave ready]!\n"));
+    if(isr_iram_cnt <= TEST_IRAM_TRANS_NUM) esp_rom_printf(DRAM_STR("Send signal: [Slave ready]!\n"));
 }
 
-static IRAM_ATTR void spi_slave_trans_in_isr(void){
+static IRAM_ATTR void test_slave_isr_iram(void){
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
-    spi_slave_interface_config_t slvcfg = {
-        .mode = 0,
-        .spics_io_num = SPI2_IOMUX_PIN_NUM_CS,
-        .flags = SPI_SLAVE_NO_RETURN_RESULT,
-        .queue_size = 16,
-        .post_trans_cb = test_spi_slave_post_trans_cbk,
-    };
+    spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+    slvcfg.flags = SPI_SLAVE_NO_RETURN_RESULT;
+    slvcfg.queue_size = 16;
+    slvcfg.post_trans_cb = test_slave_iram_post_trans_cbk;
     TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
 
     uint8_t *slave_iram_send = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
@@ -499,11 +496,11 @@ static IRAM_ATTR void spi_slave_trans_in_isr(void){
     // disable cache then send signal `ready` to start transaction
     spi_flash_disable_interrupts_caches_and_other_cpu();
     esp_rom_printf(DRAM_STR("Send signal: [Slave ready]!\n"));
-    while(slave_isr_cnt < TEST_IRAM_TRANS_NUM + 1){
+    while(isr_iram_cnt <= TEST_IRAM_TRANS_NUM){
         esp_rom_delay_us(10);
     }
     spi_flash_enable_interrupts_caches_and_other_cpu();
-    if(test_fail) TEST_FAIL();
+    if(iram_test_fail) TEST_FAIL();
 
     free(slave_iram_send);
     free(slave_iram_recv);
@@ -511,5 +508,70 @@ static IRAM_ATTR void spi_slave_trans_in_isr(void){
     spi_slave_free(TEST_SPI_HOST);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_ISR_IRAM_disable_cache", "[spi_ms]", test_slave_iram_master_normal, spi_slave_trans_in_isr);
+TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_ISR_IRAM_disable_cache", "[spi_ms]", test_slave_iram_master_normal, test_slave_isr_iram);
+
+
+static uint32_t isr_trans_cnt, isr_trans_test_fail;
+static IRAM_ATTR void test_trans_in_isr_post_trans_cbk(spi_slave_transaction_t *curr_trans){
+    isr_trans_cnt ++;
+
+    //first trans is the trigger trans with random data
+    if(isr_trans_cnt > 1){
+        ESP_LOG_BUFFER_HEX_ISR(DRAM_STR("slave tx"), curr_trans->tx_buffer, curr_trans->trans_len/8);
+        if(memcmp(curr_trans->rx_buffer, curr_trans->user, curr_trans->trans_len/8)){
+            ESP_LOG_BUFFER_HEX_ISR(DRAM_STR("slave rx"), curr_trans->rx_buffer, curr_trans->trans_len/8);
+            ESP_LOG_BUFFER_HEX_ISR(DRAM_STR("slave exp"), curr_trans->user, curr_trans->trans_len/8);
+            isr_trans_test_fail = true;
+        }
+
+        curr_trans->tx_buffer = (uint8_t *)curr_trans->tx_buffer + TEST_TRANS_LEN;
+        curr_trans->rx_buffer = (uint8_t *)curr_trans->rx_buffer + TEST_TRANS_LEN;
+        curr_trans->user = (uint8_t *)curr_trans->user + TEST_TRANS_LEN;
+    }
+
+    if(isr_trans_cnt <= TEST_IRAM_TRANS_NUM){
+        if(ESP_OK == spi_slave_queue_trans_isr(TEST_SPI_HOST, curr_trans)){
+            esp_rom_printf(DRAM_STR("Send signal: [Slave ready]!\n"));
+        }
+        else esp_rom_printf(DRAM_STR("SPI Add trans in isr fail, Queue full\n"));
+    }
+}
+
+static IRAM_ATTR void spi_slave_trans_in_isr(void){
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+    slvcfg.flags = SPI_SLAVE_NO_RETURN_RESULT;
+    slvcfg.queue_size = 16;
+    slvcfg.post_trans_cb = test_trans_in_isr_post_trans_cbk;
+    TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
+
+    uint8_t *slave_isr_send = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *slave_isr_recv = heap_caps_calloc(1, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *slave_isr_exp  = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+    get_tx_buffer(1001, slave_isr_exp, slave_isr_send, TEST_BUFFER_SZ);
+    spi_slave_transaction_t trans_cfg = {
+        .tx_buffer = slave_isr_send,
+        .rx_buffer = slave_isr_recv,
+        .user = slave_isr_exp,
+        .length = TEST_TRANS_LEN * 8,
+    };
+
+    unity_wait_for_signal("Master ready");
+    //start a trans by normal API first to trigger spi isr
+    spi_slave_queue_trans(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY);
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    esp_rom_printf(DRAM_STR("Send signal: [Slave ready]!\n"));
+    while(isr_trans_cnt <= TEST_IRAM_TRANS_NUM){
+        esp_rom_delay_us(10);
+    }
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+    if(isr_trans_test_fail) TEST_FAIL();
+
+    free(slave_isr_send);
+    free(slave_isr_recv);
+    free(slave_isr_exp);
+    spi_slave_free(TEST_SPI_HOST);
+}
+TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_Queue_Trans_in_ISR", "[spi_ms]", test_slave_iram_master_normal, spi_slave_trans_in_isr);
+
 #endif // CONFIG_SPI_SLAVE_ISR_IN_IRAM
