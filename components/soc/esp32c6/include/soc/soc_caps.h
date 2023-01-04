@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,9 +51,9 @@
 #define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_SUPPORT_COEXISTENCE         1
-// #define SOC_AES_SUPPORTED               1 // TODO: IDF-5356
+#define SOC_AES_SUPPORTED               1
 // #define SOC_MPI_SUPPORTED               1
-// #define SOC_SHA_SUPPORTED               1 // TODO: IDF-5353
+#define SOC_SHA_SUPPORTED               1
 // #define SOC_HMAC_SUPPORTED              1 // TODO: IDF-5355
 // #define SOC_DIG_SIGN_SUPPORTED          1 // TODO: IDF-5360
 #define SOC_ECC_SUPPORTED               1
