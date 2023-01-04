@@ -251,6 +251,24 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
 esp_err_t esp_vfs_fat_spiflash_unmount_rw_wl(const char* base_path, wl_handle_t wl_handle);
 
 /**
+ * @brief Format FAT filesystem
+ *
+ * @note
+ * This API can be called when the FAT is mounted / not mounted.
+ * If this API is called when the FAT isn't mounted (by calling esp_vfs_fat_spiflash_mount_rw_wl),
+ * this API will first mount the FAT then format it, then restore back to the original state.
+ *
+ * @param base_path        Path where partition should be registered (e.g. "/spiflash")
+ * @param partition_label  Label of the partition which should be used
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_NO_MEM: if memory can not be allocated
+ *        - Other errors from esp_vfs_fat_spiflash_mount_rw_wl
+ */
+esp_err_t esp_vfs_fat_spiflash_format_rw_wl(const char* base_path, const char* partition_label);
+
+/**
  * @brief Convenience function to initialize read-only FAT filesystem and register it in VFS
  *
  * This is an all-in-one function which does the following:
