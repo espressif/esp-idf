@@ -36,7 +36,7 @@ void app_main(void)
     int8_t duty = 0;
     int step = EXAMPLE_LED_DIM_DUTY_STEP;
     while (1) {
-        ESP_ERROR_CHECK(sdm_channel_set_duty(sdm_chan, duty));
+        ESP_ERROR_CHECK(sdm_channel_set_pulse_density(sdm_chan, duty));
         /* By changing delay time, you can change the blink frequency of LED */
         vTaskDelay(pdMS_TO_TICKS(EXAMPLE_LED_DIM_DELAY_MS));
 

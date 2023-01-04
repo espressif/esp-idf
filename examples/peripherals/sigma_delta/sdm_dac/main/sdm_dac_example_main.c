@@ -14,28 +14,29 @@
 #define EXAMPLE_SIGMA_DELTA_GPIO_NUM    (0)                 // Select GPIO_NUM_0 as the sigma-delta output pin
 #define EXAMPLE_OVER_SAMPLE_RATE        (20 * 1000 * 1000)  // 20 MHz over sample rate
 #define EXAMPLE_TIMER_RESOLUTION        (10 * 1000 * 1000)  // 10 MHz timer counting resolution
-#define EXAMPLE_CALLBACK_INTERVAL_US    (10)                // 20 us interval of each timer callback
+#define EXAMPLE_CALLBACK_INTERVAL_US    (10)                // 10 us interval of each timer callback
 #define EXAMPLE_ALARM_COUNT             (EXAMPLE_CALLBACK_INTERVAL_US * (EXAMPLE_TIMER_RESOLUTION / 1000000))
-#define EXAMPLE_SINE_WAVE_FREQ_HZ       (1000)              // 1 KHz wave
-#define EXAMPLE_SINE_WAVE_AMPLITUDE     (127.0f)            // 1 ~ 127
+#define EXAMPLE_SINE_WAVE_FREQ_HZ       (1000)              // 1 KHz wave, adjust this value to decide the sine wave frequency
+#define EXAMPLE_SINE_WAVE_AMPLITUDE     (127.0f)            // 1 ~ 127, adjust this value to decide the sine wave amplitude
 #define EXAMPLE_SINE_WAVE_POINT_NUM     (1000000 / (EXAMPLE_CALLBACK_INTERVAL_US * EXAMPLE_SINE_WAVE_FREQ_HZ))
 #define CONST_PI                        (3.1416f)           // Constant of PI, used for calculating the sine wave
 
-_Static_assert(EXAMPLE_SINE_WAVE_POINT_NUM > 1, "Sine wave frequency is too high");
-_Static_assert(EXAMPLE_CALLBACK_INTERVAL_US >= 7, "Timer callback interval is too short");
+ESP_STATIC_ASSERT(EXAMPLE_SINE_WAVE_POINT_NUM > 1, "Sine wave frequency is too high");
+ESP_STATIC_ASSERT(EXAMPLE_CALLBACK_INTERVAL_US >= 7, "Timer callback interval is too short");
 
 static const char *TAG = "sdm_dac";
 static int8_t sine_wave[EXAMPLE_SINE_WAVE_POINT_NUM];   // Sine wave data buffer
 
-static bool example_timer_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
+static bool IRAM_ATTR example_timer_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
     static uint32_t cnt = 0;
     sdm_channel_handle_t sdm_chan = (sdm_channel_handle_t)user_ctx;
     /* Set the pulse density */
-    sdm_channel_set_duty(sdm_chan, sine_wave[cnt]);
+    sdm_channel_set_pulse_density(sdm_chan, sine_wave[cnt++]);
     /* Loop the sine wave data buffer */
-    cnt++;
-    cnt %= EXAMPLE_SINE_WAVE_POINT_NUM;
+    if (cnt >= EXAMPLE_SINE_WAVE_POINT_NUM) {
+        cnt = 0;
+    }
     return false;
 }
 
@@ -47,7 +48,6 @@ static gptimer_handle_t example_init_gptimer(void* args)
         .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = EXAMPLE_TIMER_RESOLUTION,
-        .flags.intr_shared = false,
     };
     ESP_ERROR_CHECK(gptimer_new_timer(&timer_cfg, &timer_handle));
     ESP_LOGI(TAG, "Timer allocated with resolution %d Hz", EXAMPLE_TIMER_RESOLUTION);
@@ -108,9 +108,4 @@ void app_main(void)
     /* Start the GPTimer */
     ESP_LOGI(TAG, "Output start");
     ESP_ERROR_CHECK(gptimer_start(timer_handle));
-
-    /* Forever loop */
-    while (1) {
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
 }

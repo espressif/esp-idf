@@ -13,13 +13,13 @@ This example uses the sigma-delta driver to generate modulated output on a GPIO.
 
 * A development board with any supported Espressif SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for Power supply and programming
-* An active or passive filter. Connect them as below:
+* An active or passive low-pass filter. Connect them as below:
 
 ```
 ┌──────────────────────────────┐
 │             ESP              │     ┌───────────────────┐
 │                              │     │ Active or Passive │    Sine Wave
-│ EXAMPLE_SIGMA_DELTA_GPIO_NUM ├────►│      Filter       ├──────────────
+│ EXAMPLE_SIGMA_DELTA_GPIO_NUM ├────►│  Low-pass Filter  ├──────────────
 └──────────────────────────────┘     └───────────────────┘
 ```
 
@@ -52,10 +52,18 @@ I (329) sdm_dac: Timer enabled
 I (339) sdm_dac: Output start
 ```
 
-After the output stated, you can monitor the sine wave after the filter by an oscilloscope.
+After the output stated, you can monitor the output signal by an oscilloscope.
 
-![output_wave](output_wave.jpeg)
+If you monitor on the GPIO directly, you can see the raw SDM output, it consists by square waves (i.e. pulse) with different density
+
+![raw_sdm_output](raw_sdm_output.png)
+
+If you monitor the signal after a low-pass filter, you can see the pulses are filtered into a sine wave already
+
+![filtered_sine_wave](filtered_sine_wave.png)
 
 ## Troubleshooting
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
+
+If a lot of glitches appear in the filtered sine wave, it might be the inappropriate GND that the probe connected, please try to choose the GND that nearby the filter.
