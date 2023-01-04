@@ -565,6 +565,42 @@ void BTA_GATTC_ReadMultiple(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_multi,
 
 /*******************************************************************************
 **
+** Function         BTA_GATTC_ReadMultipleVariable
+**
+** Description      This function is called to read multiple variable length characteristic or
+**                  characteristic descriptors.
+**
+** Parameters       conn_id - connection ID.
+**                    p_read_multi - pointer to the read multiple parameter.
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTA_GATTC_ReadMultipleVariable(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_multi,
+                            tBTA_GATT_AUTH_REQ auth_req)
+{
+    tBTA_GATTC_API_READ_MULTI  *p_buf;
+    UINT16 len = (UINT16)(sizeof(tBTA_GATTC_API_READ_MULTI));
+
+    if ((p_buf = (tBTA_GATTC_API_READ_MULTI *) osi_malloc(len)) != NULL) {
+        memset(p_buf, 0, len);
+
+        p_buf->hdr.event = BTA_GATTC_API_READ_MULTI_VAR_EVT;
+        p_buf->hdr.layer_specific = conn_id;
+        p_buf->auth_req = auth_req;
+        p_buf->num_attr = p_read_multi->num_attr;
+        p_buf->cmpl_evt = BTA_GATTC_READ_MULTI_VAR_EVT;
+        if (p_buf->num_attr > 0) {
+            memcpy(p_buf->handles, p_read_multi->handles, sizeof(UINT16) * p_read_multi->num_attr);
+	    }
+
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
+
+/*******************************************************************************
+**
 ** Function         BTA_GATTC_Read_by_type
 **
 ** Description      This function is called to read a attribute value by uuid
@@ -1174,31 +1210,6 @@ uint8_t BTA_GATTC_ReadLongChar(uint8_t gatt_if, uint16_t conn_id, uint16_t handl
     read_param.partial.auth_req = auth_req;
 
     status = GATTC_Read(conn_id, GATT_READ_PARTIAL, &read_param);
-    if (status != GATT_SUCCESS) {
-        APPL_TRACE_ERROR("%s status %x", __func__, status);
-        return -1;
-    }
-
-    return 0;
-}
-
-uint8_t BTA_GATTC_ReadMultiVariableChar(uint8_t gatt_if, uint16_t conn_id, uint16_t num_handles, uint16_t *handles, uint8_t auth_req)
-{
-    tGATT_STATUS status;
-    tGATT_READ_PARAM read_param;
-
-    if (num_handles > GATT_MAX_READ_MULTI_HANDLES) {
-        APPL_TRACE_ERROR("%s max read multi handlse %x", __func__, num_handles);
-        return -1;
-    }
-
-    conn_id = (UINT16)((((UINT8)conn_id) << 8) | gatt_if);
-    memset (&read_param, 0, sizeof(tGATT_READ_PARAM));
-    read_param.read_multiple.num_handles = num_handles;
-    memcpy(read_param.read_multiple.handles, handles, num_handles);
-    read_param.read_multiple.auth_req = auth_req;
-
-    status = GATTC_Read(conn_id, GATT_READ_MULTIPLE_VAR, &read_param);
     if (status != GATT_SUCCESS) {
         APPL_TRACE_ERROR("%s status %x", __func__, status);
         return -1;
