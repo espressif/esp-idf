@@ -303,7 +303,7 @@ static void _mount(void)
     struct dirent *d;
     DIR *dh = opendir(BASE_PATH);
     if (!dh) {
-        if (errno = ENOENT) {
+        if (errno == ENOENT) {
             //If the directory is not found
             ESP_LOGE(TAG, "Directory doesn't exist %s", BASE_PATH);
         } else {
