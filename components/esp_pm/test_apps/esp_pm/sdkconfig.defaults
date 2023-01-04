@@ -1,0 +1,8 @@
+# This "default" configuration is appended to all other configurations
+# The contents of "sdkconfig.debug_helpers" is also appended to all other configurations (see CMakeLists.txt)
+CONFIG_PM_ENABLE=y
+CONFIG_FREERTOS_USE_TICKLESS_IDLE=y
+CONFIG_ESP_TASK_WDT_INIT=n
+
+# SMP FreeRTOS currently does not support power management IDF-4997
+CONFIG_FREERTOS_SMP=n
