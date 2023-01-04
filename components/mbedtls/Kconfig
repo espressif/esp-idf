@@ -208,6 +208,7 @@ menu "mbedTLS"
         config MBEDTLS_SSL_CONTEXT_SERIALIZATION
             bool "Enable serialization of the TLS context structures"
             default n
+            depends on MBEDTLS_GCM_C || MBEDTLS_CCM_C || MBEDTLS_CHACHAPOLY_C
             help
                 Enable serialization of the TLS context structures
                 This is a local optimization in handling a single, potentially long-lived connection.
@@ -696,7 +697,7 @@ menu "mbedTLS"
     config MBEDTLS_SERVER_SSL_SESSION_TICKETS
         bool "TLS: Server Support for RFC 5077 SSL session tickets"
         default y
-        depends on MBEDTLS_TLS_ENABLED
+        depends on MBEDTLS_TLS_ENABLED && (MBEDTLS_GCM_C || MBEDTLS_CCM_C || MBEDTLS_CHACHAPOLY_C)
         help
             Server support for RFC 5077 session tickets. See mbedTLS documentation for more details.
             Disabling this option will save some code size.
