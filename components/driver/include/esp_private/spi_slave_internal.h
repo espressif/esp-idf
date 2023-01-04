@@ -24,6 +24,7 @@ extern "C" {
 
 
 /**
+ * @brief Reset the trans Queue of slave driver
  * @note
  * This API is used to reset SPI Slave transaction queue. After calling this function:
  * - The SPI Slave transaction queue will be reset.
@@ -41,6 +42,7 @@ esp_err_t spi_slave_queue_reset(spi_host_device_t host);
 
 
 /**
+ * @brief Reset the trans Queue from within ISR of slave driver
  * @note
  * This API is used to reset SPI Slave transaction queue from within ISR. After calling this function:
  * - The SPI Slave transaction queue will be empty.
@@ -56,9 +58,9 @@ esp_err_t spi_slave_queue_reset_isr(spi_host_device_t host);
 
 /**
  * @brief Queue a SPI transaction in ISR
- *
+ * @note
  * Similar as ``spi_slave_queue_trans``, but can and can only called within an ISR, then get the transaction results
- * through the transaction discriptor passed in ``spi_slave_interface_config_t::post_trans_cb``. if use this API, you
+ * through the transaction descriptor passed in ``spi_slave_interface_config_t::post_trans_cb``. if use this API, you
  * should trigger a transaction by normal ``spi_slave_queue_trans`` once and only once to start isr
  *
  * If you use both ``spi_slave_queue_trans`` and ``spi_slave_queue_trans_isr`` simultaneously to transfer valid data,
