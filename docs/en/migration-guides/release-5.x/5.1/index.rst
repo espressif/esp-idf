@@ -7,4 +7,5 @@ Migration from 5.0 to 5.1
     :maxdepth: 1
 
     peripherals
+    storage
     networking

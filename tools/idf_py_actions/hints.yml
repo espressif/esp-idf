@@ -280,6 +280,10 @@
     match_to_output: True
 
 -
+    re: "warning: 'esp_vfs_fat_sdmmc_unmount' is deprecated: Please use esp_vfs_fat_sdcard_unmount instead [-Wdeprecated-declarations]"
+    hint: "``esp_vfs_fat_sdmmc_unmount()`` is now deprecated, you can use :cpp:func:`esp_vfs_fat_sdcard_unmount()` instead. See Storage migration guide 5.1 for more details"
+
+-
     re: "esp_usb_jtag: could not find or open device!"
     hint: "Please check the wire connection to debugging device or access rights to a serial port."
 
