@@ -37,7 +37,7 @@ To run this example, you should have any ESP32, ESP32-S and ESP32-C based develo
 | ESP32-H4 I2C Master | GPIO5  | GPIO6  | GND  | GND   | 3.3V |
 | Sensor              | SDA    | SCL    | GND  | WAK   | VCC  |
 
-**Note: ** There’s no need to add an external pull-up resistors for SDA/SCL pin, because the driver will enable the internal pull-up resistors itself.
+**Note:** It is recommended to add external pull-up resistors for SDA/SCL pins to make the communication more stable, though the driver will enable internal pull-up resistors.
 
 ### Configure the project
 
