@@ -49,7 +49,7 @@ static void ssl_update_checksum_start( mbedtls_ssl_context *ssl,
     mbedtls_sha256_update( &ssl->handshake->fin_sha256, buf, len );
 #endif
 #if defined(MBEDTLS_SHA512_C)
-    mbedtls_sha512_update( &ssl->handshake->fin_sha512, buf, len );
+    mbedtls_sha512_update( &ssl->handshake->fin_sha384, buf, len );
 #endif
 }
 
@@ -62,8 +62,8 @@ static void ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
     mbedtls_sha256_starts( &handshake->fin_sha256, 0 );
 #endif
 #if defined(MBEDTLS_SHA512_C)
-    mbedtls_sha512_init(   &handshake->fin_sha512    );
-    mbedtls_sha512_starts( &handshake->fin_sha512, 1 );
+    mbedtls_sha512_init(   &handshake->fin_sha384    );
+    mbedtls_sha512_starts( &handshake->fin_sha384, 1 );
 #endif
 
     handshake->update_checksum = ssl_update_checksum_start;
