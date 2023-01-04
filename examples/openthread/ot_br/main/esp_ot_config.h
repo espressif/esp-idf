@@ -16,6 +16,12 @@
 
 #include "esp_openthread_types.h"
 
+#if CONFIG_OPENTHREAD_RADIO_NATIVE
+#define ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG()              \
+    {                                                      \
+        .radio_mode = RADIO_MODE_NATIVE,                   \
+    }
+#else
 #define ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG()                        \
     {                                                                \
         .radio_mode = RADIO_MODE_UART_RCP,                           \
@@ -35,6 +41,13 @@
             .tx_pin = 5,                                             \
         },                                                           \
     }
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32C2 && CONFIG_XTAL_FREQ_26
+#define HOST_BAUD_RATE 74880
+#else
+#define HOST_BAUD_RATE 115200
+#endif
 
 #define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()                    \
     {                                                           \
@@ -43,7 +56,7 @@
             .port = 0,                                          \
             .uart_config =                                      \
                 {                                               \
-                    .baud_rate = 115200,                        \
+                    .baud_rate = HOST_BAUD_RATE,                \
                     .data_bits = UART_DATA_8_BITS,              \
                     .parity = UART_PARITY_DISABLE,              \
                     .stop_bits = UART_STOP_BITS_1,              \

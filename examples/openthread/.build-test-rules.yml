@@ -1,12 +1,8 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 examples/openthread/ot_br:
-  disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target(s) not supported yet
   disable_test:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2", "esp32c6"]
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32c2", "esp32c6", "esp32s2"]
       temporary: true
       reason: only test on esp32s3
 
