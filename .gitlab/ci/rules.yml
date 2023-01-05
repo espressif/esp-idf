@@ -197,6 +197,7 @@
   - "components/spiffs/spiffs"
   - "components/unity/unity"
   - "components/heap/tlsf"
+  - "components/bt/controller/lib_esp32c6/esp32c6-bt-lib"
   - ".gitmodules"
 
 # for jobs: example_test*flash_encryption_wifi_high_traffic
