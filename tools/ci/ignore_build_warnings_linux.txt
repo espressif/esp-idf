@@ -1,0 +1,6 @@
+the hex symbol ESP_MAIN_TASK_AFFINITY \(defined at .+\) has a non-hex default FREERTOS_NO_AFFINITY \(undefined\)
+"CONFIG_ESP_SYSTEM_EVENT_QUEUE_SIZE" redefined
+No function prototypes found!
+-Wdeprecated-declarations
+-Wno-enum-conversion
+-Wunused-result

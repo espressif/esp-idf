@@ -20,10 +20,6 @@ tools/test_apps/build_system/rsource_test:
 tools/test_apps/linux_compatible/hello_world_linux_compatible:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
-  disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3"]
-      temporary: true
-      reason: pytest doesn't support linux target yet, hence, it's tested independenly in the host_tests stage
 
 tools/test_apps/peripherals/usb:
   enable:

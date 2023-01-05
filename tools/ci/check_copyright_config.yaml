@@ -53,6 +53,7 @@ examples_and_unit_tests:
    - 'components/**/test/**'
    - 'components/**/test_apps/**'
    - 'tools/test_apps/**'
+   - '**/pytest_*.py'
   allowed_licenses:
   - Apache-2.0
   - Unlicense
@@ -145,6 +146,7 @@ xtensa:
   allowed_licenses:
     - Apache-2.0    #Files added to the xtensa component by us
     - MIT           #Cadence sources
+
 tinyusb:
   include:
     - 'examples/peripherals/usb/device/tusb_midi/'
