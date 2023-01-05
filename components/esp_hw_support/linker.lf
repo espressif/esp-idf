@@ -32,3 +32,6 @@ entries:
         gdma: gdma_reset (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
         systimer (noflash)
+    if SOC_MEMSPI_SRC_FREQ_120M = y:
+        mspi_timing_tuning (noflash)
+        mspi_timing_config (noflash)

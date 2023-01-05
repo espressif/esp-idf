@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <sys/param.h>
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -21,7 +22,7 @@
 #include "esp_hw_log.h"
 #include "esp_err.h"
 #include "esp_attr.h"
-#include "esp_private/spi_flash_os.h"
+#include "esp_private/mspi_timing_tuning.h"
 #include "hal/efuse_hal.h"
 #include "hal/efuse_ll.h"
 #ifndef BOOTLOADER_BUILD
@@ -260,7 +261,7 @@ static void calibrate_ocode(void)
      *
      * When CPU clock switches down, the delay should be cleared. Therefore here we call this function to remove the delays.
      */
-    spi_timing_change_speed_mode_cache_safe(true);
+    mspi_timing_change_speed_mode_cache_safe(true);
 #endif
     /*
     Bandgap output voltage is not precise when calibrate o-code by hardware sometimes, so need software o-code calibration (must turn off PLL).
@@ -309,7 +310,7 @@ static void calibrate_ocode(void)
     rtc_clk_cpu_freq_set_config(&old_config);
 #ifndef BOOTLOADER_BUILD
     //System clock is switched back to PLL. Here we switch to the MSPI high speed mode, add the delays back
-    spi_timing_change_speed_mode_cache_safe(false);
+    mspi_timing_change_speed_mode_cache_safe(false);
 #endif
 }
 

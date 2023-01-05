@@ -12,8 +12,7 @@
 #include "esp_types.h"
 #include "esp_log.h"
 #include "soc/spi_mem_reg.h"
-#include "spi_timing_config.h"
-#include "esp_private/spi_flash_os.h"
+#include "mspi_timing_config.h"
 #include "bootloader_flash.h"
 
 #define OPI_PSRAM_SYNC_READ           0x0000
