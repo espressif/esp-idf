@@ -60,13 +60,17 @@ def get_pytest_apps(
     LOGGER.info(f'Found {len(app_dirs)} apps')
     app_dirs.sort()
 
+    default_size_json_path = 'size.json'
+    if target == 'linux':  # no idf_size.py for linux target
+        default_size_json_path = None  # type: ignore
+
     apps = find_apps(
         app_dirs,
         target=target,
         build_dir='build_@t_@w',
         config_rules_str=config_rules_str,
         build_log_path='build_log.txt',
-        size_json_path='size.json',
+        size_json_path=default_size_json_path,
         check_warnings=True,
         manifest_files=[str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')],
         default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
