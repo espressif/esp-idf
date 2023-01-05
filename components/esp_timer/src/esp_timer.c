@@ -15,6 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "esp_ipc.h"
 #include "esp_timer.h"
 #include "esp_timer_impl.h"
 
@@ -479,37 +480,58 @@ esp_err_t esp_timer_early_init(void)
     return ESP_OK;
 }
 
-esp_err_t esp_timer_init(void)
+static esp_err_t init_timer_task(void)
 {
-    esp_err_t err;
+    esp_err_t err = ESP_OK;
     if (is_initialized()) {
-        return ESP_ERR_INVALID_STATE;
+        ESP_EARLY_LOGE(TAG, "Task is already initialized");
+        err = ESP_ERR_INVALID_STATE;
+    } else {
+        int ret = xTaskCreatePinnedToCore(
+                    &timer_task, "esp_timer",
+                    ESP_TASK_TIMER_STACK, NULL, ESP_TASK_TIMER_PRIO,
+                    &s_timer_task, CONFIG_ESP_TIMER_TASK_AFFINITY);
+        if (ret != pdPASS) {
+            ESP_EARLY_LOGE(TAG, "Not enough memory to create timer task");
+            err = ESP_ERR_NO_MEM;
+        }
     }
+    return err;
+}
 
-    int ret = xTaskCreatePinnedToCore(&timer_task, "esp_timer",
-            ESP_TASK_TIMER_STACK, NULL, ESP_TASK_TIMER_PRIO, &s_timer_task, PRO_CPU_NUM);
-    if (ret != pdPASS) {
-        err = ESP_ERR_NO_MEM;
-        goto out;
-    }
-
-    err = esp_timer_impl_init(&timer_alarm_handler);
-    if (err != ESP_OK) {
-        goto out;
-    }
-
-    return ESP_OK;
-
-out:
+static void deinit_timer_task(void)
+{
     if (s_timer_task) {
         vTaskDelete(s_timer_task);
         s_timer_task = NULL;
     }
-
-    return ESP_ERR_NO_MEM;
 }
 
-ESP_SYSTEM_INIT_FN(esp_timer_startup_init, BIT(0), 100)
+esp_err_t esp_timer_init(void)
+{
+    esp_err_t err = ESP_OK;
+#ifndef CONFIG_ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
+    err = init_timer_task();
+#else
+    /* This function will be run on all cores if CONFIG_ESP_TIMER_ISR_AFFINITY_NO_AFFINITY is enabled,
+     * We do it that way because we need to allocate the timer ISR on MULTIPLE cores.
+     * timer task will be created by CPU0.
+     */
+    if (xPortGetCoreID() == 0) {
+        err = init_timer_task();
+    }
+#endif // CONFIG_ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
+    if (err == ESP_OK) {
+        err = esp_timer_impl_init(&timer_alarm_handler);
+        if (err != ESP_OK) {
+            ESP_EARLY_LOGE(TAG, "ISR init failed");
+            deinit_timer_task();
+        }
+    }
+    return err;
+}
+
+ESP_SYSTEM_INIT_FN(esp_timer_startup_init, CONFIG_ESP_TIMER_ISR_AFFINITY, 100)
 {
     return esp_timer_init();
 }
@@ -539,9 +561,7 @@ esp_err_t esp_timer_deinit(void)
 #endif
 
     esp_timer_impl_deinit();
-
-    vTaskDelete(s_timer_task);
-    s_timer_task = NULL;
+    deinit_timer_task();
     return ESP_OK;
 }
 

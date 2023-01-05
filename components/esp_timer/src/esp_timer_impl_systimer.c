@@ -36,8 +36,15 @@
 
 static const char *TAG = "esp_timer_systimer";
 
+#define NOT_USED 0xBAD00FAD
+
 /* Interrupt handle returned by the interrupt allocator */
-static intr_handle_t s_timer_interrupt_handle;
+#ifdef CONFIG_ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
+#define ISR_HANDLERS (portNUM_PROCESSORS)
+#else
+#define ISR_HANDLERS (1)
+#endif
+static intr_handle_t s_timer_interrupt_handle[ISR_HANDLERS] = { NULL };
 
 /* Function from the upper layer to be called when the interrupt happens.
  * Registered in esp_timer_impl_init.
@@ -91,10 +98,47 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 
 static void IRAM_ATTR timer_alarm_isr(void *arg)
 {
+#if ISR_HANDLERS == 1
     // clear the interrupt
     systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_ESPTIMER);
     /* Call the upper layer handler */
     (*s_alarm_handler)(arg);
+#else
+    static volatile uint32_t processed_by = NOT_USED;
+    static volatile bool pending_alarm = false;
+    /* CRITICAL section ensures the read/clear is atomic between cores */
+    portENTER_CRITICAL_ISR(&s_time_update_lock);
+    if (systimer_ll_is_alarm_int_fired(systimer_hal.dev, SYSTIMER_ALARM_ESPTIMER)) {
+        // Clear interrupt status
+        systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_ESPTIMER);
+        // Is the other core already processing a previous alarm?
+        if (processed_by == NOT_USED) {
+            // Current core is not processing an alarm yet
+            processed_by = xPortGetCoreID();
+            do {
+                pending_alarm = false;
+                // Clear interrupt status
+                systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_ESPTIMER);
+                portEXIT_CRITICAL_ISR(&s_time_update_lock);
+
+                (*s_alarm_handler)(arg);
+
+                portENTER_CRITICAL_ISR(&s_time_update_lock);
+               // Another alarm could have occurred while were handling the previous alarm.
+               // Check if we need to call the s_alarm_handler again:
+               //   1) if the alarm has already been fired, it helps to handle it immediately without an additional ISR call.
+               //   2) handle pending alarm that was cleared by the other core in time when this core worked with the current alarm.
+            } while (systimer_ll_is_alarm_int_fired(systimer_hal.dev, SYSTIMER_ALARM_ESPTIMER) || pending_alarm);
+            processed_by = NOT_USED;
+        } else {
+            // Current core arrived at ISR but the other core is still handling a previous alarm.
+            // Once we already cleared the ISR status we need to let the other core know that it was.
+            // Set the flag to handle the current alarm by the other core later.
+            pending_alarm = true;
+        }
+    }
+    portEXIT_CRITICAL_ISR(&s_time_update_lock);
+#endif // ISR_HANDLERS != 1
 }
 
 void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
@@ -148,53 +192,55 @@ esp_err_t esp_timer_impl_early_init(void)
 
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 {
-    s_alarm_handler = alarm_handler;
-    const int interrupt_lvl = (1 << CONFIG_ESP_TIMER_INTERRUPT_LEVEL) & ESP_INTR_FLAG_LEVELMASK;
-#if SOC_SYSTIMER_INT_LEVEL
-    int int_type = 0;
-#else
-    int int_type = ESP_INTR_FLAG_EDGE;
-#endif // SOC_SYSTIMER_INT_LEVEL
-    esp_err_t err = esp_intr_alloc(ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE,
-                                   ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM | int_type | interrupt_lvl,
-                                   &timer_alarm_isr, NULL, &s_timer_interrupt_handle);
+    if (s_timer_interrupt_handle[(ISR_HANDLERS == 1) ? 0 : xPortGetCoreID()] != NULL) {
+        ESP_EARLY_LOGE(TAG, "timer ISR is already initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
 
+    int isr_flags = ESP_INTR_FLAG_INTRDISABLED
+                    | ((1 << CONFIG_ESP_TIMER_INTERRUPT_LEVEL) & ESP_INTR_FLAG_LEVELMASK)
+#if !SOC_SYSTIMER_INT_LEVEL
+                    | ESP_INTR_FLAG_EDGE
+#endif
+                    | ESP_INTR_FLAG_IRAM;
+
+    esp_err_t err = esp_intr_alloc(ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE, isr_flags,
+                                   &timer_alarm_isr, NULL,
+                                   &s_timer_interrupt_handle[(ISR_HANDLERS == 1) ? 0 : xPortGetCoreID()]);
     if (err != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "esp_intr_alloc failed (0x%x)", err);
-        goto err_intr_alloc;
+        return err;
     }
 
-    /* TODO: if SYSTIMER is used for anything else, access to SYSTIMER_INT_ENA_REG has to be
-    * protected by a shared spinlock. Since this code runs as part of early startup, this
-    * is practically not an issue.
-    */
-    systimer_hal_enable_alarm_int(&systimer_hal, SYSTIMER_ALARM_ESPTIMER);
+    if (s_alarm_handler == NULL) {
+        s_alarm_handler = alarm_handler;
+        /* TODO: if SYSTIMER is used for anything else, access to SYSTIMER_INT_ENA_REG has to be
+        * protected by a shared spinlock. Since this code runs as part of early startup, this
+        * is practically not an issue.
+        */
+        systimer_hal_enable_alarm_int(&systimer_hal, SYSTIMER_ALARM_ESPTIMER);
+    }
 
-    err = esp_intr_enable(s_timer_interrupt_handle);
+    err = esp_intr_enable(s_timer_interrupt_handle[(ISR_HANDLERS == 1) ? 0 : xPortGetCoreID()]);
     if (err != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "esp_intr_enable failed (0x%x)", err);
-        goto err_intr_en;
+        ESP_EARLY_LOGE(TAG, "Can not enable ISR (0x%0x)", err);
     }
-    return ESP_OK;
 
-err_intr_en:
-    systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_ESPTIMER, false);
-    /* TODO: may need a spinlock, see the note related to SYSTIMER_INT_ENA_REG in systimer_hal_init */
-    systimer_ll_enable_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_ESPTIMER, false);
-    esp_intr_free(s_timer_interrupt_handle);
-err_intr_alloc:
-    s_alarm_handler = NULL;
     return err;
 }
 
 void esp_timer_impl_deinit(void)
 {
-    esp_intr_disable(s_timer_interrupt_handle);
     systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_ESPTIMER, false);
     /* TODO: may need a spinlock, see the note related to SYSTIMER_INT_ENA_REG in systimer_hal_init */
     systimer_ll_enable_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_ESPTIMER, false);
-    esp_intr_free(s_timer_interrupt_handle);
-    s_timer_interrupt_handle = NULL;
+    for (unsigned i = 0; i < ISR_HANDLERS; i++) {
+        if (s_timer_interrupt_handle[i] != NULL) {
+            esp_intr_disable(s_timer_interrupt_handle[i]);
+            esp_intr_free(s_timer_interrupt_handle[i]);
+            s_timer_interrupt_handle[i] = NULL;
+        }
+    }
     s_alarm_handler = NULL;
 }
 
