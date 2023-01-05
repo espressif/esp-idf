@@ -140,7 +140,9 @@ static void setup_bus(spi_host_device_t host_id)
         };
         esp_err_t ret = spi_bus_initialize(host_id, &fspi_bus_cfg, 0);
         TEST_ESP_OK(ret);
-    } else if (host_id == SPI3_HOST) {
+    }
+#if SOC_SPI_PERIPH_NUM > 2
+    else if (host_id == SPI3_HOST) {
         ESP_LOGI(TAG, "setup flash on SPI%u (HSPI) CS0...\n", host_id + 1);
         spi_bus_config_t hspi_bus_cfg = {
             .mosi_io_num = HSPI_PIN_NUM_MOSI,
@@ -159,7 +161,9 @@ static void setup_bus(spi_host_device_t host_id)
 
         gpio_set_direction(HSPI_PIN_NUM_WP, GPIO_MODE_OUTPUT);
         gpio_set_level(HSPI_PIN_NUM_WP, 1);
-    } else {
+    }
+#endif
+    else {
         ESP_LOGE(TAG, "invalid bus");
     }
 }
@@ -168,7 +172,12 @@ static void setup_bus(spi_host_device_t host_id)
 static void release_bus(int host_id)
 {
     //SPI1 bus can't be deinitialized
-    if (host_id == SPI2_HOST || host_id == SPI3_HOST) {
+#if SOC_SPI_PERIPH_NUM > 2
+    if (host_id == SPI2_HOST || host_id == SPI3_HOST)
+#else
+    if (host_id == SPI2_HOST)
+#endif
+    {
         spi_bus_free(host_id);
     }
 }

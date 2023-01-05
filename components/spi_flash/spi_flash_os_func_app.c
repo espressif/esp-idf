@@ -243,33 +243,39 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id, spi_bus_lo
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (host_id == SPI1_HOST) {
-        //SPI1
-        chip->os_func = &esp_flash_spi1_default_os_functions;
-        chip->os_func_data = heap_caps_malloc(sizeof(spi1_app_func_arg_t),
-                                         MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        if (chip->os_func_data == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
-        *(spi1_app_func_arg_t*) chip->os_func_data = (spi1_app_func_arg_t) {
-            .common_arg = {
+    switch (host_id)
+    {
+        case SPI1_HOST:
+            //SPI1
+            chip->os_func = &esp_flash_spi1_default_os_functions;
+            chip->os_func_data = heap_caps_malloc(sizeof(spi1_app_func_arg_t),
+                                            MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+            if (chip->os_func_data == NULL) {
+                return ESP_ERR_NO_MEM;
+            }
+            *(spi1_app_func_arg_t*) chip->os_func_data = (spi1_app_func_arg_t) {
+                .common_arg = {
+                    .dev_lock = dev_handle,
+                },
+                .no_protect = true,
+            };
+            break;
+        case SPI2_HOST:
+#if SOC_SPI_PERIPH_NUM > 2
+        case SPI3_HOST:
+#endif
+            //SPI2, SPI3
+            chip->os_func = &esp_flash_spi23_default_os_functions;
+            chip->os_func_data = heap_caps_malloc(sizeof(app_func_arg_t),
+                                            MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+            if (chip->os_func_data == NULL) {
+                return ESP_ERR_NO_MEM;
+            }
+            *(app_func_arg_t*) chip->os_func_data = (app_func_arg_t) {
                 .dev_lock = dev_handle,
-            },
-            .no_protect = true,
-        };
-    } else if (host_id == SPI2_HOST || host_id == SPI3_HOST) {
-        //SPI2, SPI3
-        chip->os_func = &esp_flash_spi23_default_os_functions;
-        chip->os_func_data = heap_caps_malloc(sizeof(app_func_arg_t),
-                                         MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        if (chip->os_func_data == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
-        *(app_func_arg_t*) chip->os_func_data = (app_func_arg_t) {
-            .dev_lock = dev_handle,
-        };
-    } else {
-        return ESP_ERR_INVALID_ARG;
+            };
+            break;
+        default: return ESP_ERR_INVALID_ARG;
     }
 
     return ESP_OK;
