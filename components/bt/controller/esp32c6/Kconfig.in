@@ -159,7 +159,7 @@ config BT_LE_MAX_PERIODIC_SYNCS
     int "Maximum number of periodic advertising syncs"
     depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED
 
-    range 0 3
+    range 0 8
     default 1 if BT_LE_ENABLE_PERIODIC_ADV
     default 0
     help
@@ -207,13 +207,13 @@ menu "Memory Settings"
 
     config BT_LE_ACL_BUF_COUNT
         int "ACL Buffer count"
-        default 24
+        default 10
         help
             The number of ACL data buffers.
 
     config BT_LE_ACL_BUF_SIZE
         int "ACL Buffer size"
-        default 255
+        default 517
         help
             This is the maximum size of the data portion of HCI ACL data packets.
             It does not include the HCI data header (of 4 bytes)
@@ -333,8 +333,8 @@ config BT_LE_LL_SCA
 config BT_LE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
     depends on !BT_NIMBLE_ENABLED
-    range 1 2
-    default 2
+    range 1 9
+    default 3
     help
         Defines maximum number of concurrent BLE connections. For ESP32, user
         is expected to configure BTDM_CTRL_BLE_MAX_CONN from controller menu
@@ -387,3 +387,11 @@ choice BT_LE_WAKEUP_SOURCE
         help
             Use BLE rtc timer to wakeup CPU
 endchoice
+
+config BT_LE_USE_ESP_TIMER
+    bool "Enable Esp Timer for Callout"
+    depends on !BT_NIMBLE_ENABLED
+    default y
+    help
+        Set this option to use Esp Timer which has higher priority timer
+        instead of FreeRTOS timer
