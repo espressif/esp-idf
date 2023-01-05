@@ -142,7 +142,7 @@ esp_err_t i2s_channel_enable(i2s_chan_handle_t handle);
 
 /**
  * @brief Disable the i2s channel
- * @note  Only allowed to be called when the channel state is READY / RUNNING, (i.e., channel has been initialized)
+ * @note  Only allowed to be called when the channel state is RUNNING, (i.e., channel has been started)
  *        the channel will enter READY state once it is disabled successfully.
  * @note  Disable the channel can stop the I2S communication on hardware. It will stop bclk and ws signal but not mclk signal
  *
@@ -153,6 +153,28 @@ esp_err_t i2s_channel_enable(i2s_chan_handle_t handle);
  *      - ESP_ERR_INVALID_STATE This channel has not stated
  */
 esp_err_t i2s_channel_disable(i2s_chan_handle_t handle);
+
+/**
+ * @brief Preload the data into TX DMA buffer
+ * @note  Only allowed to be called when the channel state is READY, (i.e., channel has been initialized, but not started)
+ * @note  As the initial DMA buffer has no data inside, it will transmit the empty buffer after enabled the channel,
+ *        this function is used to preload the data into the DMA buffer, so that the valid data can be transmit immediately
+ *        when the channel is enabled.
+ * @note  This function can be called multiple times before enabling the channel, the buffer that loaded later will be concatenated
+ *        behind the former loaded buffer. But when all the DMA buffers have been loaded, no more data can be preload then, please
+ *        check the `bytes_loaded` parameter to see how many bytes are loaded successfully, when the `bytes_loaded` is smaller than
+ *        the `size`, it means the DMA buffers are full.
+ *
+ * @param[in]   handle      I2S TX channel handler
+ * @param[in]   src         The pointer of the source buffer to be loaded
+ * @param[in]   size        The source buffer size
+ * @param[out]  bytes_loaded    The bytes that successfully been loaded into the TX DMA buffer
+ * @return
+ *      - ESP_OK    Load data successful
+ *      - ESP_ERR_INVALID_ARG   NULL pointer or not TX direction
+ *      - ESP_ERR_INVALID_STATE This channel has not stated
+ */
+esp_err_t i2s_channel_preload_writing_data(i2s_chan_handle_t handle, const void *src, size_t size, size_t *bytes_loaded);
 
 /**
  * @brief I2S write data
