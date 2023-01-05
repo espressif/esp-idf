@@ -87,7 +87,7 @@ repos:
         name: Check rules.yml all rules have at lease one job applied, all rules needed exist
         entry: tools/ci/check_rules_yml.py
         language: python
-        files: '\.gitlab/ci/.+\.yml|\.gitlab-ci.yml'
+        files: '\.gitlab/ci/.+\.yml|\.gitlab-ci.yml|\.gitmodules'
         pass_filenames: false
         additional_dependencies:
           - PyYAML == 5.3.1
