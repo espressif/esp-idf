@@ -26,7 +26,9 @@ void app_main(void)
             (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
             (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
 
-    printf("silicon revision %d, ", chip_info.revision);
+    unsigned major_rev = chip_info.full_revision / 100;
+    unsigned minor_rev = chip_info.full_revision % 100;
+    printf("silicon revision v%d.%d, ", major_rev, minor_rev);
 
     printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
             (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");

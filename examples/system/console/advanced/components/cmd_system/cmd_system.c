@@ -78,7 +78,9 @@ static int get_version(int argc, char **argv)
            info.features & CHIP_FEATURE_BT ? "/BT" : "",
            info.features & CHIP_FEATURE_EMB_FLASH ? "/Embedded-Flash:" : "/External-Flash:",
            spi_flash_get_chip_size() / (1024 * 1024), " MB");
-    printf("\trevision number:%d\r\n", info.revision);
+    unsigned major_rev = info.full_revision / 100;
+    unsigned minor_rev = info.full_revision % 100;
+    printf("\trevision number:v%d.%d\r\n", major_rev, minor_rev);
     return 0;
 }
 

@@ -39,7 +39,9 @@ static void example_print_chip_info(void)
     esp_chip_info(&chip_info);
     printf("This is %s chip with %d CPU cores\n", CONFIG_IDF_TARGET, chip_info.cores);
 
-    printf("silicon revision %d, ", chip_info.revision);
+    unsigned major_rev = chip_info.full_revision / 100;
+    unsigned minor_rev = chip_info.full_revision % 100;
+    printf("silicon revision v%d.%d, ", major_rev, minor_rev);
 
     printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
             (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
