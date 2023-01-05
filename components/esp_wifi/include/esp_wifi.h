@@ -1348,6 +1348,19 @@ esp_err_t esp_wifi_sta_get_aid(uint16_t *aid);
   */
 esp_err_t esp_wifi_sta_get_negotiated_phymode(wifi_phy_mode_t *phymode);
 
+/**
+  * @brief      Config dynamic carrier sense
+  *
+  * @attention  This API should be called after esp_wifi_start().
+  *
+  * @param      enabled Dynamic carrier sense is enabled or not.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_set_dynamic_cs(bool enabled);
+
 #ifdef __cplusplus
 }
 #endif
