@@ -7,6 +7,10 @@
 #include "esp_tls.h"
 #include "esp_tls_error_capture_internal.h"
 
+#if CONFIG_IDF_TARGET_LINUX
+#include "esp_linux_helper.h"
+#endif
+
 typedef struct esp_tls_error_storage {
     struct esp_tls_last_error parent;   /*!< standard esp-tls last error container */
     int    sock_errno;                  /*!< last socket error captured in esp-tls */

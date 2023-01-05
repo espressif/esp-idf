@@ -17,6 +17,18 @@
 #include "esp_tls_private.h"
 #include "esp_tls_error_capture_internal.h"
 #include <errno.h>
+
+#if CONFIG_IDF_TARGET_LINUX
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <linux/if.h>
+#include <sys/time.h>
+
+#define ipaddr_ntoa(ipaddr)     inet_ntoa(*ipaddr)
+typedef struct in_addr ip_addr_t;
+#endif
+
 static const char *TAG = "esp-tls";
 
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
