@@ -114,6 +114,13 @@ static inline int wpa_key_mgmt_cckm(int akm)
 	return akm == WPA_KEY_MGMT_CCKM;
 }
 
+#ifdef ESP_SUPPLICANT
+static inline int wpa_key_mgmt_supports_caching(int akm)
+{
+        return wpa_key_mgmt_wpa_ieee8021x(akm) ||
+		wpa_key_mgmt_sae(akm);
+}
+#endif
 
 #define WPA_PROTO_WPA BIT(0)
 #define WPA_PROTO_RSN BIT(1)
