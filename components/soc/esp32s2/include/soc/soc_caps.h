@@ -44,6 +44,7 @@
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_CP_DMA_SUPPORTED            1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
+#define SOC_GPTIMER_SUPPORTED           1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_RISCV_COPROC_SUPPORTED      1
 #define SOC_USB_OTG_SUPPORTED           1

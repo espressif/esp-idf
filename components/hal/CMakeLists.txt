@@ -32,8 +32,6 @@ endif()
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs
         "rtc_io_hal.c"
-        "timer_hal.c"
-        "timer_hal_iram.c"
         "gpio_hal.c"
         "uart_hal.c"
         "uart_hal_iram.c"
@@ -45,6 +43,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED AND NOT CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
         list(APPEND srcs "systimer_hal.c")
+    endif()
+
+    if(CONFIG_SOC_GPTIMER_SUPPORTED)
+        list(APPEND srcs "timer_hal.c" "timer_hal_iram.c")
     endif()
 
     if(CONFIG_SOC_LEDC_SUPPORTED)
@@ -207,8 +209,6 @@ if(NOT BOOTLOADER_BUILD)
                 "adc_oneshot_hal.c" # TODO: IDF-6214
                 "adc_hal_common.c" # TODO: IDF-6215
                 "esp32h2/rtc_cntl_hal.c"
-                "timer_hal.c"
-                "timer_hal_iram.c"
                 )
     endif()
 endif()
