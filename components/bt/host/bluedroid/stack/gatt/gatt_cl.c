@@ -69,39 +69,6 @@ static const UINT16 disc_type_to_uuid[GATT_DISC_MAX] = {
 // Use for GATTC discover infomation print
 #define GATT_DISC_INFO(fmt, args...) {if (gatt_cb.auto_disc == FALSE) BT_PRINT_I("BT_GATT", fmt, ## args);}
 
-char *gatt_uuid_to_str(const tBT_UUID *uuid)
-{
-    static char dst[48] = {0};
-    const uint8_t *u8p;
-
-    memset(dst, 0, sizeof(dst));
-
-    switch (uuid->len) {
-    case LEN_UUID_16:
-        sprintf(dst, "0x%04x", uuid->uu.uuid16);
-        break;
-    case LEN_UUID_32:
-        sprintf(dst, "0x%08x", uuid->uu.uuid32);
-        break;
-    case LEN_UUID_128:
-        u8p = uuid->uu.uuid128;
-
-        sprintf(dst, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
-                     "%02x%02x%02x%02x%02x%02x",
-                u8p[15], u8p[14], u8p[13], u8p[12],
-                u8p[11], u8p[10],  u8p[9],  u8p[8],
-                 u8p[7],  u8p[6],  u8p[5],  u8p[4],
-                 u8p[3],  u8p[2],  u8p[1],  u8p[0]);
-        break;
-    default:
-        dst[0] = '\0';
-        break;
-    }
-
-    return dst;
-}
-
-
 /*******************************************************************************
 **
 ** Function         gatt_act_discovery
@@ -1187,7 +1154,8 @@ void gatt_client_handle_server_rsp (tGATT_TCB *p_tcb, UINT8 op_code,
     tGATT_CLCB   *p_clcb = NULL;
     UINT8        rsp_code;
 
-    if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF) {
+    if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF &&
+        op_code != GATT_HANDLE_MULTI_VALUE_NOTIF) {
         p_clcb = gatt_cmd_dequeue(p_tcb, &rsp_code);
 
         rsp_code = gatt_cmd_to_rsp_code(rsp_code);
@@ -1206,8 +1174,8 @@ void gatt_client_handle_server_rsp (tGATT_TCB *p_tcb, UINT8 op_code,
     /* The message has to be smaller than the agreed MTU, len does not count op_code */
     if (len >= p_tcb->payload_size) {
         GATT_TRACE_ERROR("invalid response/indicate pkt size: %d, PDU size: %d", len + 1, p_tcb->payload_size);
-        if (op_code != GATT_HANDLE_VALUE_NOTIF &&
-                op_code != GATT_HANDLE_VALUE_IND) {
+        if (op_code != GATT_HANDLE_VALUE_NOTIF && op_code != GATT_HANDLE_VALUE_IND &&
+            op_code != GATT_HANDLE_MULTI_VALUE_NOTIF) {
             gatt_end_operation(p_clcb, GATT_ERROR, NULL);
         }
     } else {
@@ -1264,11 +1232,10 @@ void gatt_client_handle_server_rsp (tGATT_TCB *p_tcb, UINT8 op_code,
         }
     }
 
-    if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF) {
+    if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF &&
+        op_code != GATT_HANDLE_MULTI_VALUE_NOTIF) {
         gatt_cl_send_next_cmd_inq(p_tcb);
     }
-
-    return;
 }
 
 #endif  /* BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE */
