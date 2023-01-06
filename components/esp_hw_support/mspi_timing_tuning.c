@@ -13,10 +13,11 @@
 #include "esp_log.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/io_mux_reg.h"
-#include "esp_private/spi_flash_os.h"
+#include "esp_private/mspi_timing_tuning.h"
 #include "soc/soc.h"
+#include "hal/spi_flash_hal.h"
 #if CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/spi_timing_config.h"
+#include "port/esp32s3/mspi_timing_config.h"
 #include "esp32s3/rom/cache.h"
 #endif
 
@@ -31,7 +32,7 @@ static spi_timing_tuning_param_t s_psram_best_timing_tuning_config;
 /*------------------------------------------------------------------------------
  * Common settings
  *----------------------------------------------------------------------------*/
-void spi_timing_set_pin_drive_strength(void)
+void mspi_timing_set_pin_drive_strength(void)
 {
     //For now, set them all to 3. Need to check after QVL test results are out. TODO: IDF-3663
     //Set default clk
@@ -297,13 +298,13 @@ static void get_flash_tuning_configs(spi_timing_config_t *config)
 #undef FLASH_MODE
 }
 
-void spi_timing_flash_tuning(void)
+void mspi_timing_flash_tuning(void)
 {
     /**
      * set SPI01 related regs to 20mhz configuration, to get reference data from FLASH
-     * see detailed comments in this function (`spi_timing_enter_mspi_low_speed_mode`)
+     * see detailed comments in this function (`mspi_timing_enter_low_speed_mode`)
      */
-    spi_timing_enter_mspi_low_speed_mode(true);
+    mspi_timing_enter_low_speed_mode(true);
 
     //Disable the variable dummy mode when doing timing tuning
     CLEAR_PERI_REG_MASK(SPI_MEM_DDR_REG(1), SPI_MEM_SPI_FMEM_VAR_DUMMY);    //GD flash will read error in variable mode with 20MHz
@@ -314,10 +315,10 @@ void spi_timing_flash_tuning(void)
     get_flash_tuning_configs(&timing_configs);
 
     do_tuning(reference_data, &timing_configs, true);
-    spi_timing_enter_mspi_high_speed_mode(true);
+    mspi_timing_enter_high_speed_mode(true);
 }
 #else
-void spi_timing_flash_tuning(void)
+void mspi_timing_flash_tuning(void)
 {
     //Empty function for compatibility, therefore upper layer won't need to know that FLASH in which operation mode and frequency config needs to be tuned
 }
@@ -347,13 +348,13 @@ static void get_psram_tuning_configs(spi_timing_config_t *config)
 #undef PSRAM_MODE
 }
 
-void spi_timing_psram_tuning(void)
+void mspi_timing_psram_tuning(void)
 {
     /**
      * set SPI01 related regs to 20mhz configuration, to write reference data to PSRAM
-     * see detailed comments in this function (`spi_timing_enter_mspi_low_speed_mode`)
+     * see detailed comments in this function (`mspi_timing_enter_low_speed_mode`)
      */
-    spi_timing_enter_mspi_low_speed_mode(true);
+    mspi_timing_enter_low_speed_mode(true);
 
     // write data into psram, used to do timing tuning test.
     uint8_t reference_data[SPI_TIMING_TEST_DATA_LEN];
@@ -368,11 +369,11 @@ void spi_timing_psram_tuning(void)
     CLEAR_PERI_REG_MASK(SPI_MEM_DDR_REG(1), SPI_MEM_SPI_FMEM_VAR_DUMMY);
     //Get required config, and set them to PSRAM related registers
     do_tuning(reference_data, &timing_configs, false);
-    spi_timing_enter_mspi_high_speed_mode(true);
+    mspi_timing_enter_high_speed_mode(true);
 }
 
 #else
-void spi_timing_psram_tuning(void)
+void mspi_timing_psram_tuning(void)
 {
     //Empty function for compatibility, therefore upper layer won't need to know that FLASH in which operation mode and frequency config needs to be tuned
 }
@@ -398,7 +399,7 @@ static void clear_timing_tuning_regs(bool control_spi1)
 }
 #endif  //#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
 
-void spi_timing_enter_mspi_low_speed_mode(bool control_spi1)
+void mspi_timing_enter_low_speed_mode(bool control_spi1)
 {
     /**
      * Here we are going to slow the SPI1 frequency to 20Mhz, so we need to set SPI1 din_num and din_mode regs.
@@ -445,9 +446,9 @@ static void set_timing_tuning_regs_as_required(bool control_spi1)
  * according to the configuration got from timing tuning function (`calculate_best_flash_tuning_config`).
  * iF control_spi1 == 1, will also update SPI1 timing registers. Should only be set to 1 when do tuning.
  *
- * This function should always be called after `spi_timing_flash_tuning` or `calculate_best_flash_tuning_config`
+ * This function should always be called after `mspi_timing_flash_tuning` or `calculate_best_flash_tuning_config`
  */
-void spi_timing_enter_mspi_high_speed_mode(bool control_spi1)
+void mspi_timing_enter_high_speed_mode(bool control_spi1)
 {
     spi_timing_config_core_clock_t core_clock = get_mspi_core_clock();
     uint32_t flash_div = get_flash_clock_divider();
@@ -468,16 +469,16 @@ void spi_timing_enter_mspi_high_speed_mode(bool control_spi1)
 #endif
 }
 
-void spi_timing_change_speed_mode_cache_safe(bool switch_down)
+void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
 {
     Cache_Freeze_ICache_Enable(1);
     Cache_Freeze_DCache_Enable(1);
     if (switch_down) {
         //enter MSPI low speed mode, extra delays should be removed
-        spi_timing_enter_mspi_low_speed_mode(false);
+        mspi_timing_enter_low_speed_mode(false);
     } else {
         //enter MSPI high speed mode, extra delays should be considered
-        spi_timing_enter_mspi_high_speed_mode(false);
+        mspi_timing_enter_high_speed_mode(false);
     }
     Cache_Freeze_DCache_Disable();
     Cache_Freeze_ICache_Disable();

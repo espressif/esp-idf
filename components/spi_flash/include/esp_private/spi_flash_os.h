@@ -7,16 +7,6 @@
 /**
  * System level MSPI APIs (private)
  */
-/**
- * Currently the MSPI timing tuning related APIs are designed to be private.
- * Because:
- * 1. now we don't split SPI0 and SPI1, we don't have a component for SPI0, including PSRAM, Cache, etc..
- * 2. SPI0 and SPI1 are strongly coupling.
- *
- * In the future, we may consider creating a component for SPI0, and spi_flash component will only work on SPI1 (and it
- * can rely on SPI0). Therefore, we can put these APIs there.
- *
- */
 #pragma once
 
 #include <stdint.h>
@@ -57,37 +47,6 @@ typedef enum {
  * @brief To setup Flash chip
  */
 esp_err_t spi_flash_init_chip_state(void);
-
-/**
- * @brief Make MSPI work under 20Mhz, remove the timing tuning required delays.
- * @param control_spi1  Select whether to control SPI1. For tuning, we need to use SPI1. After tuning (during startup stage), let the flash driver to control SPI1
- */
-void spi_timing_enter_mspi_low_speed_mode(bool control_spi1);
-
-/**
- * @brief Make MSPI work under the frequency as users set, may add certain delays to MSPI RX direction to meet timing requirements.
- * @param control_spi1  Select whether to control SPI1. For tuning, we need to use SPI1. After tuning (during startup stage), let the flash driver to control SPI1
- */
-void spi_timing_enter_mspi_high_speed_mode(bool control_spi1);
-
-/**
- * @brief Switch MSPI into low speed mode / high speed mode.
- * @note This API is cache safe, it will freeze both D$ and I$ and restore them after MSPI is switched
- * @note For some of the MSPI high frequency settings (e.g. 80M DDR mode Flash or PSRAM), timing tuning is required.
- *       Certain delays will be added to the MSPI RX direction. When CPU clock switches from PLL to XTAL, should call
- *       this API first to enter MSPI low speed mode to remove the delays, and vice versa.
- */
-void spi_timing_change_speed_mode_cache_safe(bool switch_down);
-
-/**
- * @brief Tune MSPI flash timing to make it work under high frequency
- */
-void spi_timing_flash_tuning(void);
-
-/**
- * @brief Tune MSPI psram timing to make it work under high frequency
- */
-void spi_timing_psram_tuning(void);
 
 /**
  * @brief To initislize the MSPI pins

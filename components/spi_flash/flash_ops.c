@@ -45,6 +45,7 @@
 #endif
 #include "esp_rom_spiflash.h"
 #include "esp_flash_partitions.h"
+#include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/cache_utils.h"
 #include "esp_flash.h"
 #include "esp_attr.h"
@@ -163,8 +164,7 @@ void IRAM_ATTR esp_mspi_pin_init(void)
 
     if (octal_mspi_required) {
         esp_rom_opiflash_pin_config();
-        extern void spi_timing_set_pin_drive_strength(void);
-        spi_timing_set_pin_drive_strength();
+        mspi_timing_set_pin_drive_strength();
     }
     //Set F4R4 board pin drive strength. TODO: IDF-3663
 #endif
