@@ -625,6 +625,7 @@ extern BOOLEAN gatt_parse_uuid_from_cmd(tBT_UUID *p_uuid, UINT16 len, UINT8 **p_
 extern UINT8 gatt_build_uuid_to_stream(UINT8 **p_dst, tBT_UUID uuid);
 extern BOOLEAN gatt_uuid_compare(tBT_UUID src, tBT_UUID tar);
 extern void gatt_convert_uuid32_to_uuid128(UINT8 uuid_128[LEN_UUID_128], UINT32 uuid_32);
+extern char *gatt_uuid_to_str(const tBT_UUID *uuid);
 extern void gatt_sr_get_sec_info(BD_ADDR rem_bda, tBT_TRANSPORT transport, UINT8 *p_sec_flag, UINT8 *p_key_size);
 extern void gatt_start_rsp_timer(UINT16 clcb_idx);
 extern void gatt_start_conf_timer(tGATT_TCB    *p_tcb);
