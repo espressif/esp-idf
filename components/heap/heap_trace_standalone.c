@@ -353,7 +353,7 @@ static IRAM_ATTR void record_free(void *p, void **callers)
     portEXIT_CRITICAL(&trace_mux);
 }
 
-// connect all records into a linked list
+// connect all records into a linked list of 'unused' records
 static void linked_list_setup(records_t* rs)
 {
     rs->first = NULL;
@@ -376,60 +376,72 @@ static void linked_list_setup(records_t* rs)
     }
 }
 
-/* remove the record from the linked list */
+/* remove a record from the first/last linked list,
+   and place it into the 'unused' linked list */
 static IRAM_ATTR void linked_list_remove(records_t* rs, heap_trace_record_t* rRemove)
 {
+    assert(rs->count > 0);
+    assert(rs->last != NULL);
+    assert(rs->first != NULL);
+
     // set as available
     rRemove->address = 0;
     rRemove->size = 0;
 
+    heap_trace_record_t* rPrev = rRemove->prev;
+    heap_trace_record_t* rNext = rRemove->next;
+
+    if (rPrev){
+        assert(rPrev->next == rRemove);
+    }
+
+    if (rNext){
+        assert(rNext->prev == rRemove);
+    }
+
+    // update prev neighbor
+    if (rPrev) {
+        rPrev->next = rNext;
+    }
+
+    // update next neighbor
+    if (rNext) {
+        rNext->prev = rPrev;
+    }
+
+    // update first
+    if (rRemove == rs->first) {
+        rs->first = rNext;
+    }
+
+    // update last
+    if (rRemove == rs->last) {
+        rs->last = rPrev;
+    }
+
+    // move self to unused
+    rRemove->next = rs->unused;
+    rRemove->prev = NULL;
+    rs->unused = rRemove;
+
+    // decrement
+    rs->count--;
+
     if (rs->count > 1) {
+        assert(rs->last != NULL);
+        assert(rs->first != NULL);
+        assert(rs->last != rs->first);
+    }
 
-        heap_trace_record_t* rPrev = rRemove->prev;
-        heap_trace_record_t* rNext = rRemove->next;
-
-        if (rPrev){
-            assert(rPrev->next == rRemove);
-        }
-
-        if (rNext){
-            assert(rNext->prev == rRemove);
-        }
-
-        // update prev neighbor
-        if (rPrev) {
-            rPrev->next = rNext;
-        }
-
-        // update next neighbor
-        if (rNext) {
-            rNext->prev = rPrev;
-        }
-
-        // update first
-        if (rRemove == rs->first) {
-            rs->first = rNext;
-        }
-
-        // update last
-        if (rRemove == rs->last) {
-            rs->last = rPrev;
-        }
-
-        // move self to unused
-        rRemove->next = rs->unused;
-        rRemove->prev = NULL;
-        rs->unused = rRemove;
-
-        // decrement
-        rs->count--;
-
-        if (rs->count == 1){
-            assert(rs->last == rs->first);
-        }
-
-    } else if (rs->count == 1) {
-        rs->count--;
+    if (rs->count == 1) {
+        assert(rs->last != NULL);
+        assert(rs->first != NULL);
+        assert(rs->last == rs->first);
+    }
+    
+    if (rs->count == 0) {
+        assert(rs->last == NULL);
+        assert(rs->first == NULL);
     }
 }
 
@@ -472,7 +484,7 @@ static IRAM_ATTR bool linked_list_append_copy(records_t* rs, const heap_trace_re
     if (rs->count < rs->capacity) {
 
         // get unused record
-        heap_trace_record_t* rUnused = linked_list_pop_unused(r);
+        heap_trace_record_t* rUnused = linked_list_pop_unused(rs);
 
         // we checked that there is capacity, so this
         // should never be null.
