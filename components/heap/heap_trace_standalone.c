@@ -199,15 +199,6 @@ void heap_trace_dump_caps(const uint32_t caps) {
 
 static void heap_trace_dump_base(bool internal_ram, bool psram)
 {
-    // In order to keep the linked list valid,
-    // we must stop tracing
-    bool was_tracing = false;
-    if (tracing) {
-        printf("Heap Tracing: temporarily disabled\n");
-        was_tracing = true;
-        tracing = false;
-    }
-
     portENTER_CRITICAL(&trace_mux);
 
     size_t delta_size = 0;
@@ -292,11 +283,6 @@ static void heap_trace_dump_base(bool internal_ram, bool psram)
     printf("================================\n");
 
     portEXIT_CRITICAL(&trace_mux);
-
-    if (was_tracing) {
-        printf("Heap Tracing: re-enabled\n");
-        tracing = true;
-    }
 }
 
 /* Add a new allocation to the heap trace records */
@@ -459,9 +445,12 @@ static IRAM_ATTR heap_trace_record_t* linked_list_next_available(const records_t
     }
     if (rs->count == 0){
         assert(rs->last == rs->first);
+        assert(rs->last->address == NULL);
+        assert(rs->last->size == NULL);
         return rs->last;
     } else {
         assert(rs->last->next->address == NULL);
+        assert(rs->last->next->size == NULL);
         return rs->last->next;
     }
 }
@@ -483,8 +472,28 @@ static IRAM_ATTR bool linked_list_append_copy(records_t* rs, const heap_trace_re
 {
     if (rs->count < rs->capacity) {
 
-        // copy record into the next available slot
+        // get unused record
         heap_trace_record_t* rAvailable = linked_list_next_available(r);
+
+        // we checked that there is capacity, so this
+        // should never be null.
+        assert(rAvailable != NULL);
+
+        /*
+        Copy the alocation data directly into the available record.
+
+        We don't need to update the linked list connectivity. 
+        
+        Why? Because the linked list always remains fully connected (see linked_list_setup()). 
+        When we "remove" a node, it is just zero'd and moved after "last", but it
+        still remains fully connected.
+        
+        We do it this way because it would take more memory to maintain a 
+        separate "free list" when removing records. Instead, we keep the free records
+        in the same list, but zero'd out and placed after "last".
+        */
+        
+        // copy allocation data
         linked_list_copy(rAvailable, rAppend);
 
         rs->last = rAvailable;
