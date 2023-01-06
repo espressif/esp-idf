@@ -145,7 +145,9 @@ esp_err_t heap_trace_get(size_t index, heap_trace_record_t *rOut)
     portENTER_CRITICAL(&trace_mux);
 
     if (index >= records.count) {
+        
         result = ESP_ERR_INVALID_ARG; /* out of range for 'count' */
+
     } else {
 
         // Iterate through through the linked list
@@ -391,11 +393,11 @@ static IRAM_ATTR void linked_list_remove(records_t* rs, heap_trace_record_t* rRe
     heap_trace_record_t* rPrev = rRemove->prev;
     heap_trace_record_t* rNext = rRemove->next;
 
-    if (rPrev){
+    if (rPrev) {
         assert(rPrev->next == rRemove);
     }
 
-    if (rNext){
+    if (rNext) {
         assert(rNext->prev == rRemove);
     }
 
@@ -471,7 +473,7 @@ static IRAM_ATTR heap_trace_record_t* linked_list_pop_unused(const records_t* rs
     rs->unused = next;
 
     // assert we popped the last unused record
-    if (rs->count == rs->capacity - 1){
+    if (rs->count == rs->capacity - 1) {
         assert(next == NULL)
     }
 
