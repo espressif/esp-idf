@@ -27,14 +27,14 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 // #define SOC_ADC_SUPPORTED               1 // TODO: IDF-6214
 // #define SOC_DEDICATED_GPIO_SUPPORTED    1 // TODO: IDF-6241
-// #define SOC_GDMA_SUPPORTED              1 // TODO: IDF-6222
+#define SOC_GDMA_SUPPORTED              1
+#define SOC_ASYNC_MEMCPY_SUPPORTED      1
 // #define SOC_PCNT_SUPPORTED              1 // TODO: IDF-6221
 // #define SOC_MCPWM_SUPPORTED             1 // TODO: IDF-6237
 // #define SOC_TWAI_SUPPORTED              1 // TODO: IDF-6217
 // #define SOC_BT_SUPPORTED                1 // TODO: IDF-6416
 // #define SOC_IEEE802154_SUPPORTED        1 // TODO: IDF-6577
 #define SOC_IEEE802154_BLE_ONLY            1
-// #define SOC_ASYNC_MEMCPY_SUPPORTED      1 // TODO: IDF-6238
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1 // TODO: IDF-6239
 // #define SOC_TEMP_SENSOR_SUPPORTED       1 // TODO: IDF-6229
 // #define SOC_SUPPORTS_SECURE_DL_MODE     1 // TODO: IDF-6281
@@ -137,10 +137,10 @@
     See TRM DS chapter for more details */
 #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
-// TODO: IDF-6222 (Copy from esp32c6, need check)
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
 #define SOC_GDMA_PAIRS_PER_GROUP        (3)  // Number of GDMA pairs in each group
+#define SOC_GDMA_SUPPORT_ETM            (1)  // Support ETM submodule
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C6 has 1 GPIO peripheral
