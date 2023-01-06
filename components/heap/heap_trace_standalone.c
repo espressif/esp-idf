@@ -60,7 +60,7 @@ static void heap_trace_dump_base(bool internal_ram, bool psram);
 static void linked_list_setup(records_t* rs);
 static void linked_list_remove(records_t* rs, heap_trace_record_t* rRemove);
 static void linked_list_copy(heap_trace_record_t *rDest, const heap_trace_record_t* rSrc);
-static bool linked_list_append_copy(records_t* rs, const heap_trace_record_t* rAppend);
+static bool linked_list_add(records_t* rs, const heap_trace_record_t* rAppend);
 static heap_trace_record_t* linked_list_pop_unused(const records_t* rs);
 static heap_trace_record_t* linked_list_find_address_reverse(const records_t* rs, void* p);
 
@@ -145,7 +145,7 @@ esp_err_t heap_trace_get(size_t index, heap_trace_record_t *rOut)
     portENTER_CRITICAL(&trace_mux);
 
     if (index >= records.count) {
-        
+
         result = ESP_ERR_INVALID_ARG; /* out of range for 'count' */
 
     } else {
@@ -309,7 +309,7 @@ static IRAM_ATTR void record_allocation(const heap_trace_record_t *rAllocation)
         }
 
         // push onto end of list
-        linked_list_append_copy(&records, rAllocation);
+        linked_list_add(&records, rAllocation);
 
         total_allocations++;
     }
@@ -493,7 +493,7 @@ static IRAM_ATTR void linked_list_copy(heap_trace_record_t *rDest, const heap_tr
 
 // Append a record to the end of the linked list.
 // This deep copies rAppend into the linked list. 
-static IRAM_ATTR bool linked_list_append_copy(records_t* rs, const heap_trace_record_t *rAppend)
+static IRAM_ATTR bool linked_list_add(records_t* rs, const heap_trace_record_t *rAppend)
 {
     if (rs->count < rs->capacity) {
 
