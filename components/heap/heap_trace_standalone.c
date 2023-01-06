@@ -27,20 +27,22 @@ static heap_trace_mode_t mode;
 /* Linked List of Records */
 typedef struct {
 
-    /* Buffer used for records. Linked list.*/
+    /* Buffer used for records. Linked list. */
     heap_trace_record_t *buffer;
 
-    /* The first record in the Linked list.*/
+    /* The first record in the Linked list. */
     heap_trace_record_t* first;
 
-    /* The last valid record in the Linked list, 
-       i.e. a record that has actual data when count > 0*/
+    /* The last valid record in the Linked list */
     heap_trace_record_t* last;
+
+    /* Records that are not yet storing any allocation data */
+    heap_trace_record_t* unused;
 
     /* capacity of the buffer */
     size_t capacity;
 
-    /* Count of entries logged in the buffer.*/
+    /* Count of entries logged in the buffer. */
     size_t count;
 
     /* During execution, we remember the maximum
@@ -56,11 +58,10 @@ typedef struct {
 // Forward Defines
 static void heap_trace_dump_base(bool internal_ram, bool psram);
 static void linked_list_setup(records_t* rs);
-static void linked_list_move(heap_trace_record_t* rInsert, heap_trace_record_t* rAfter);
 static void linked_list_remove(records_t* rs, heap_trace_record_t* rRemove);
 static void linked_list_copy(heap_trace_record_t *rDest, const heap_trace_record_t* rSrc);
 static bool linked_list_append_copy(records_t* rs, const heap_trace_record_t* rAppend);
-static heap_trace_record_t* linked_list_next_available(const records_t* rs);
+static heap_trace_record_t* linked_list_pop_unused(const records_t* rs);
 static heap_trace_record_t* linked_list_find_address_reverse(const records_t* rs, void* p);
 
 /* The actual records. */
@@ -355,8 +356,9 @@ static IRAM_ATTR void record_free(void *p, void **callers)
 // connect all records into a linked list
 static void linked_list_setup(records_t* rs)
 {
-    rs->first = &rs->buffer[0];
-    rs->last = &rs->buffer[0];
+    rs->first = NULL;
+    rs->last = NULL;
+    rs->unused = &rs->buffer[0];
 
     for (int i = 0; i < rs->capacity; i++) {
 
@@ -414,9 +416,12 @@ static IRAM_ATTR void linked_list_remove(records_t* rs, heap_trace_record_t* rRe
             rs->last = rPrev;
         }
 
-        // move after last
-        linked_list_move(rRemove, rs->last);
+        // move self to unused
+        rRemove->next = rs->unused;
+        rRemove->prev = NULL;
+        rs->unused = rRemove;
 
+        // decrement
         rs->count--;
 
         if (rs->count == 1){
@@ -428,31 +433,25 @@ static IRAM_ATTR void linked_list_remove(records_t* rs, heap_trace_record_t* rRe
     }
 }
 
-// insert a record after the given record
-static IRAM_ATTR void linked_list_move(heap_trace_record_t* rInsert, heap_trace_record_t* rAfter)
-{
-    rAfter->next->prev = rInsert;
-    rInsert->prev = rAfter;
-    rInsert->next = rAfter->next;
-    rAfter->next = rInsert;
-}
 
-// get next available record
-static IRAM_ATTR heap_trace_record_t* linked_list_next_available(const records_t* rs)
+// pop record from unused list
+static IRAM_ATTR heap_trace_record_t* linked_list_pop_unused(const records_t* rs)
 {
     if (rs->count == rs->capacity){
         return NULL;
     }
-    if (rs->count == 0){
-        assert(rs->last == rs->first);
-        assert(rs->last->address == NULL);
-        assert(rs->last->size == NULL);
-        return rs->last;
-    } else {
-        assert(rs->last->next->address == NULL);
-        assert(rs->last->next->size == NULL);
-        return rs->last->next;
+    heap_trace_record_t* pop = rs->unused;
+    assert(pop != NULL);
+    assert(pop->address == NULL);
+    assert(pop->size == NULL);
+
+    // update linked list
+    rs->unused = pop->next;
+    if (rs->unused != NULL) {
+        rs->unused->prev = NULL;
     }
+
+    return pop;
 }
 
 // copy a record.
@@ -473,30 +472,23 @@ static IRAM_ATTR bool linked_list_append_copy(records_t* rs, const heap_trace_re
     if (rs->count < rs->capacity) {
 
         // get unused record
-        heap_trace_record_t* rAvailable = linked_list_next_available(r);
+        heap_trace_record_t* rUnused = linked_list_pop_unused(r);
 
         // we checked that there is capacity, so this
         // should never be null.
-        assert(rAvailable != NULL);
-
-        /*
-        Copy the alocation data directly into the available record.
-
-        We don't need to update the linked list connectivity. 
-        
-        Why? Because the linked list always remains fully connected (see linked_list_setup()). 
-        When we "remove" a node, it is just zero'd and moved after "last", but it
-        still remains fully connected.
-        
-        We do it this way because it would take more memory to maintain a 
-        separate "free list" when removing records. Instead, we keep the free records
-        in the same list, but zero'd out and placed after "last".
-        */
+        assert(rUnused != NULL);
         
         // copy allocation data
-        linked_list_copy(rAvailable, rAppend);
+        linked_list_copy(rUnused, rAppend);
 
-        rs->last = rAvailable;
+        // update linked list connectivity
+        rUnused->next = NULL;
+        rUnused->prev = rs->last;
+
+        // update last
+        rs->last = rUnused;
+
+        // increment
         rs->count++;
 
         // high water mark
