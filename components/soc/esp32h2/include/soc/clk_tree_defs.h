@@ -193,7 +193,7 @@ typedef enum {
 #if CONFIG_IDF_ENV_FPGA
 #define SOC_RMT_CLKS {SOC_MOD_CLK_XTAL}
 #else
-#define SOC_RMT_CLKS {SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL}
+#define SOC_RMT_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
 #endif
 
 /**

@@ -58,6 +58,16 @@ static const char *TAG = "rmt(legacy)";
 #define RMT_DECODE_RX_CHANNEL(encode_chan) ((encode_chan - RMT_RX_CHANNEL_ENCODING_START))
 #define RMT_ENCODE_RX_CHANNEL(decode_chan) ((decode_chan + RMT_RX_CHANNEL_ENCODING_START))
 
+#if SOC_RMT_SUPPORT_APB
+#define RMT_DEFAULT_CLOCK_FREQ esp_clk_apb_freq()
+#elif SOC_RMT_SUPPORT_PLL_F80M
+#define RMT_DEFAULT_CLOCK_FREQ (80*1000*1000)
+#elif SOC_RMT_SUPPORT_XTAL
+#define RMT_DEFAULT_CLOCK_FREQ esp_clk_xtal_freq()
+#else
+#error "RMT unknow default clock"
+#endif
+
 typedef struct {
     rmt_hal_context_t hal;
     _lock_t rmt_driver_isr_lock;
@@ -577,7 +587,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
 #endif
     } else {
         // fallback to use default clock source
-        rmt_source_clk_hz = APB_CLK_FREQ;
+        rmt_source_clk_hz = RMT_DEFAULT_CLOCK_FREQ;
         rmt_ll_set_group_clock_src(dev, channel, (rmt_clock_source_t)RMT_BASECLK_DEFAULT, 1, 0, 0);
     }
     RMT_EXIT_CRITICAL();
