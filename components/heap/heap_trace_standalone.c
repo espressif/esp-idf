@@ -484,10 +484,10 @@ static IRAM_ATTR heap_trace_record_t* linked_list_pop_unused(const records_t* rs
 // Note: only copies the *allocation data*, not the next & prev ptrs
 static IRAM_ATTR void linked_list_copy(heap_trace_record_t *rDest, const heap_trace_record_t *rSrc)
 {
-    rDest->ccount = rSrc->ccount;
+    rDest->ccount  = rSrc->ccount;
     rDest->address = rSrc->address;
-    rDest->size = rSrc->size;
-    memcpy(rDest->freed_by, rSrc->freed_by, sizeof(void *) * STACK_DEPTH);
+    rDest->size    = rSrc->size;
+    memcpy(rDest->freed_by,   rSrc->freed_by,   sizeof(void *) * STACK_DEPTH);
     memcpy(rDest->alloced_by, rSrc->alloced_by, sizeof(void *) * STACK_DEPTH);
 }
 
