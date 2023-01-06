@@ -79,6 +79,14 @@ esp_err_t heap_trace_init_standalone(heap_trace_record_t *record_buffer, size_t 
         return ESP_ERR_INVALID_STATE;
     }
 
+    if (num_records == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (record_buffer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     records.buffer = record_buffer;
     records.capacity = num_records;
     memset(records.buffer, 0, num_records * sizeof(heap_trace_record_t));
@@ -91,7 +99,6 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
     if (records.buffer == NULL || records.capacity == 0) {
         return ESP_ERR_INVALID_STATE;
     }
-
 
     portENTER_CRITICAL(&trace_mux);
 
@@ -465,17 +472,20 @@ static IRAM_ATTR heap_trace_record_t* linked_list_pop_unused(const records_t* rs
 
     // update next unused record
     heap_trace_record_t* next = pop->next;
-    if (next) {
+
+    // popped last item, next should be NULL
+    if (rs->count == rs->capacity - 1) {
+        assert(next == NULL);
+    }
+
+    // next should be non-null
+    if (rs->count < rs->capacity - 1) {
+        assert(next != NULL);
         next->prev = NULL;
     }
 
     // update unused list
     rs->unused = next;
-
-    // assert we popped the last unused record
-    if (rs->count == rs->capacity - 1) {
-        assert(next == NULL)
-    }
 
     return pop;
 }
