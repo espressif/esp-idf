@@ -489,21 +489,21 @@ static IRAM_ATTR bool linked_list_append_copy(records_t* rs, const heap_trace_re
     if (rs->count < rs->capacity) {
 
         // get unused record
-        heap_trace_record_t* rUnused = linked_list_pop_unused(rs);
+        heap_trace_record_t* rDest = linked_list_pop_unused(rs);
 
         // we checked that there is capacity, so this
         // should never be null.
-        assert(rUnused != NULL);
+        assert(rDest != NULL);
         
         // copy allocation data
-        linked_list_copy(rUnused, rAppend);
+        linked_list_copy(rDest, rAppend);
 
         // update linked list connectivity
-        rUnused->next = NULL;
-        rUnused->prev = rs->last;
+        rDest->next = NULL;
+        rDest->prev = rs->last;
 
         // update last
-        rs->last = rUnused;
+        rs->last = rDest;
 
         // increment
         rs->count++;
