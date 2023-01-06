@@ -181,8 +181,10 @@ UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
     } else {
         if ( (p_svc_uuid->len == LEN_UUID_16) && (p_svc_uuid->uu.uuid16 == UUID_SERVCLASS_GATT_SERVER)) {
             s_hdl =  gatt_cb.hdl_cfg.gatt_start_hdl;
+            save_hdl = TRUE;
         } else if ((p_svc_uuid->len == LEN_UUID_16) && (p_svc_uuid->uu.uuid16 == UUID_SERVCLASS_GAP_SERVER)) {
             s_hdl = gatt_cb.hdl_cfg.gap_start_hdl;
+            save_hdl = TRUE;
         } else {
             p_list = p_list_info->p_first;
 
