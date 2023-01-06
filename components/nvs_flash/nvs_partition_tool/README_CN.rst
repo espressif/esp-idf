@@ -6,7 +6,7 @@ NVS 分区解析程序
 介绍
 -------
 
-NVS 分区解析程序 :component_file:`nvs_flash/nvs_partition_parser/nvs_read.py` 加载并解析 NVS 存储分区，以便于调试和数据提取。该程序还支持完整性检查功能，可扫描分区中可能存在的错误。Blob 数据以 `base64` 格式进行编码。
+NVS 分区解析程序 :component_file:`nvs_flash/nvs_partition_tool/nvs_tool.py` 加载并解析 NVS 存储分区，以便于调试和数据提取。该程序还支持完整性检查功能，可扫描分区中可能存在的错误。Blob 数据以 `base64` 格式进行编码。
 
 加密分区
 -----------
