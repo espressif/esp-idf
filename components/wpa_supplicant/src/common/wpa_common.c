@@ -597,6 +597,7 @@ int wpa_cipher_key_len(int cipher)
 	switch (cipher) {
 	case WPA_CIPHER_CCMP:
 	case WPA_CIPHER_GCMP:
+	case WPA_CIPHER_AES_128_CMAC:
 		return 16;
 	case WPA_CIPHER_TKIP:
 		return 32;
