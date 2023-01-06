@@ -71,6 +71,11 @@ class PanicTestDut(IdfDut):
         match = self.expect(r'Backtrace:( 0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8})+(?P<corrupted> \|<-CORRUPTED)?')
         assert not match.group('corrupted')
 
+    def expect_corrupted_backtrace(self) -> None:
+        assert self.is_xtensa, 'Backtrace can be printed only on Xtensa'
+        self.expect_exact('Backtrace:')
+        self.expect_exact('CORRUPTED')
+
     def expect_stack_dump(self) -> None:
         assert not self.is_xtensa, 'Stack memory dump is only printed on RISC-V'
         self.expect_exact('Stack memory:')

@@ -1,0 +1,9 @@
+# Restricting to ESP32C3
+CONFIG_IDF_TARGET="esp32c3"
+
+# Enabling memory protection
+CONFIG_ESP_SYSTEM_MEMPROT_FEATURE=y
+CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK=y
+
+# Enable memprot test
+CONFIG_TEST_MEMPROT=y

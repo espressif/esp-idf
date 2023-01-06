@@ -16,6 +16,7 @@
 #include "freertos/task.h"
 
 #include "test_panic.h"
+#include "test_memprot.h"
 
 /* Test Utility Functions */
 
@@ -98,6 +99,42 @@ void app_main(void)
     HANDLE_TEST(test_name, test_ub);
     HANDLE_TEST(test_name, test_assert);
     HANDLE_TEST(test_name, test_assert_cache_disabled);
+
+#if CONFIG_TEST_MEMPROT
+
+    HANDLE_TEST(test_name, test_iram_reg1_write_violation);
+    HANDLE_TEST(test_name, test_iram_reg2_write_violation);
+    HANDLE_TEST(test_name, test_iram_reg3_write_violation);
+
+    /* TODO: IDF-6820: ESP32-S2 -> Fix incorrect panic reason: Unhandled debug exception */
+    HANDLE_TEST(test_name, test_iram_reg4_write_violation);
+
+    /* TODO: IDF-6820: ESP32-S2-> Fix multiple panic reasons in different runs */
+    HANDLE_TEST(test_name, test_dram_reg1_execute_violation);
+
+    HANDLE_TEST(test_name, test_dram_reg2_execute_violation);
+
+#if CONFIG_SOC_RTC_FAST_MEM_SUPPORTED
+    HANDLE_TEST(test_name, test_rtc_fast_reg1_execute_violation);
+    HANDLE_TEST(test_name, test_rtc_fast_reg2_execute_violation);
+
+    /* TODO: IDF-6820: ESP32-S2-> Fix multiple panic reasons in different runs */
+    HANDLE_TEST(test_name, test_rtc_fast_reg3_execute_violation);
+#endif
+
+#if SOC_DCACHE_SUPPORTED
+    HANDLE_TEST(test_name, test_dcache_read_violation);
+
+    /* TODO: IDF-6820: ESP32-S2-> Fix multiple panic reasons in different runs */
+    HANDLE_TEST(test_name, test_dcache_write_violation);
+#endif
+
+#if CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED
+    HANDLE_TEST(test_name, test_rtc_slow_reg1_execute_violation);
+    HANDLE_TEST(test_name, test_rtc_slow_reg2_execute_violation);
+#endif
+
+#endif
 
     die("Unknown test name");
 }
