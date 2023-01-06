@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -39,6 +31,33 @@
 /// Get address of the only HINF registers for ESP32
 #define sdio_slave_ll_get_hinf(ID)  (&HINF)
 
+
+/*
+ *  SLC2 DMA Desc struct, aka sdio_slave_ll_desc_t
+ *
+ * --------------------------------------------------------------
+ * | own | EoF | sub_sof | 5'b0   | length [11:0] | size [11:0] |
+ * --------------------------------------------------------------
+ * |            buf_ptr [31:0]                                  |
+ * --------------------------------------------------------------
+ * |            next_desc_ptr [31:0]                            |
+ * --------------------------------------------------------------
+ */
+
+/* this bitfield is start from the LSB!!! */
+typedef struct sdio_slave_ll_desc_s {
+    volatile uint32_t size  : 12,
+             length: 12,
+             offset: 5, /* starting from bit24, h/w reserved 5bit, s/w use it as offset in buffer */
+             sosf  : 1, /* start of sub-frame */
+             eof   : 1, /* end of frame */
+             owner : 1; /* hw or sw */
+    volatile const uint8_t *buf;       /* point to buffer data */
+    union {
+        volatile uint32_t empty;
+        STAILQ_ENTRY(sdio_slave_ll_desc_s) qe;  /* pointing to the next desc */
+    };
+} sdio_slave_ll_desc_t;
 
 /// Mask of general purpose interrupts sending from the host.
 typedef enum {
@@ -155,7 +174,7 @@ static inline void sdio_slave_ll_send_reset(slc_dev_t *slc)
  * @param slc Address of the SLC registers
  * @param desc Descriptor to send
  */
-static inline void sdio_slave_ll_send_start(slc_dev_t *slc, const lldesc_t *desc)
+static inline void sdio_slave_ll_send_start(slc_dev_t *slc, const sdio_slave_ll_desc_t *desc)
 {
     slc->slc0_rx_link.addr = (uint32_t)desc;
     slc->slc0_rx_link.start = 1;
@@ -289,7 +308,7 @@ static inline void sdio_slave_ll_recv_intr_ena(slc_dev_t *slc, bool ena)
  * @param slc Address of the SLC registers
  * @param desc Descriptor of the receiving buffer.
  */
-static inline void sdio_slave_ll_recv_start(slc_dev_t *slc, lldesc_t *desc)
+static inline void sdio_slave_ll_recv_start(slc_dev_t *slc, sdio_slave_ll_desc_t *desc)
 {
     slc->slc0_tx_link.addr = (uint32_t)desc;
     slc->slc0_tx_link.start = 1;

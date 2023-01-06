@@ -46,7 +46,7 @@ static inline int sdio_ringbuf_return(sdio_ringbuf_t* buf, uint8_t *ptr);
 #define _SEND_DESC_NEXT(x)    STAILQ_NEXT(&((sdio_slave_hal_send_desc_t*)x)->dma_desc, qe)
 #define SEND_DESC_NEXT(x)    (sdio_slave_hal_send_desc_t*)_SEND_DESC_NEXT(x)
 #define SEND_DESC_NEXT_SET(x, target)    do { \
-        _SEND_DESC_NEXT(x)=(lldesc_t*)target; \
+        _SEND_DESC_NEXT(x)=(sdio_slave_ll_desc_t*)target; \
     }while(0)
 
 static esp_err_t link_desc_to_last(uint8_t* desc, void* arg)
@@ -259,7 +259,7 @@ static inline send_state_t send_get_state(sdio_slave_context_t* hal)
     return hal->send_state;
 }
 
-DMA_ATTR static const lldesc_t start_desc = {
+DMA_ATTR static const sdio_slave_ll_desc_t start_desc = {
     .owner = 1,
     .buf = (void*)0x3ffbbbbb, //assign a dma-capable pointer other than NULL, which will not be used
     .size = 1,
@@ -319,7 +319,7 @@ static void send_new_packet(sdio_slave_context_t *hal)
 
     sdio_slave_ll_send_stop(hal->slc);
     sdio_slave_ll_send_reset(hal->slc);
-    sdio_slave_ll_send_start(hal->slc, (lldesc_t*)start_desc);
+    sdio_slave_ll_send_start(hal->slc, (sdio_slave_ll_desc_t*)start_desc);
 
     // update pkt_len register to allow host reading.
     sdio_slave_ll_send_write_len(hal->slc, end_desc->pkt_len);
@@ -552,10 +552,10 @@ esp_err_t sdio_slave_hal_send_queue(sdio_slave_context_t* hal, uint8_t *addr, si
  *                  Receive
  *--------------------------------------------------------------------------*/
 
-static lldesc_t* recv_get_first_empty_buf(sdio_slave_context_t* hal)
+static sdio_slave_ll_desc_t* recv_get_first_empty_buf(sdio_slave_context_t* hal)
 {
     sdio_slave_hal_recv_stailq_t *const queue = &(hal->recv_link_list);
-    lldesc_t *desc = STAILQ_FIRST(queue);
+    sdio_slave_ll_desc_t *desc = STAILQ_FIRST(queue);
     while(desc && desc->owner == 0) {
         desc = STAILQ_NEXT(desc, qe);
     }
@@ -593,19 +593,19 @@ bool sdio_slave_hal_recv_done(sdio_slave_context_t *hal)
     return ret;
 }
 
-lldesc_t *sdio_slave_hal_recv_unload_desc(sdio_slave_context_t *hal)
+sdio_slave_ll_desc_t *sdio_slave_hal_recv_unload_desc(sdio_slave_context_t *hal)
 {
     sdio_slave_hal_recv_stailq_t *const queue = &hal->recv_link_list;
-    lldesc_t *desc = STAILQ_FIRST(queue);
+    sdio_slave_ll_desc_t *desc = STAILQ_FIRST(queue);
     if (desc) {
         STAILQ_REMOVE_HEAD(queue, qe);
     }
     return desc;
 }
 
-void sdio_slave_hal_recv_init_desc(sdio_slave_context_t* hal, lldesc_t *desc, uint8_t *start)
+void sdio_slave_hal_recv_init_desc(sdio_slave_context_t* hal, sdio_slave_ll_desc_t *desc, uint8_t *start)
 {
-    *desc = (lldesc_t) {
+    *desc = (sdio_slave_ll_desc_t) {
         .size = hal->recv_buffer_size,
         .buf = start,
     };
@@ -614,7 +614,7 @@ void sdio_slave_hal_recv_init_desc(sdio_slave_context_t* hal, lldesc_t *desc, ui
 void sdio_slave_hal_recv_start(sdio_slave_context_t *hal)
 {
     sdio_slave_ll_recv_reset(hal->slc);
-    lldesc_t *desc = recv_get_first_empty_buf(hal);
+    sdio_slave_ll_desc_t *desc = recv_get_first_empty_buf(hal);
     if (!desc) {
         HAL_LOGD(TAG, "recv: restart without desc");
     } else {
@@ -627,7 +627,7 @@ void sdio_slave_hal_recv_start(sdio_slave_context_t *hal)
 void sdio_slave_hal_recv_reset_counter(sdio_slave_context_t *hal)
 {
     sdio_slave_ll_recv_size_reset(hal->slc);
-    lldesc_t *desc = recv_get_first_empty_buf(hal);
+    sdio_slave_ll_desc_t *desc = recv_get_first_empty_buf(hal);
     while (desc != NULL) {
         sdio_slave_ll_recv_size_inc(hal->slc);
         desc = STAILQ_NEXT(desc, qe);
@@ -637,7 +637,7 @@ void sdio_slave_hal_recv_reset_counter(sdio_slave_context_t *hal)
 void sdio_slave_hal_recv_flush_one_buffer(sdio_slave_context_t *hal)
 {
     sdio_slave_hal_recv_stailq_t *const queue = &hal->recv_link_list;
-    lldesc_t *desc = STAILQ_FIRST(queue);
+    sdio_slave_ll_desc_t *desc = STAILQ_FIRST(queue);
     assert (desc != NULL && desc->owner == 0);
     STAILQ_REMOVE_HEAD(queue, qe);
     desc->owner = 1;
@@ -646,12 +646,12 @@ void sdio_slave_hal_recv_flush_one_buffer(sdio_slave_context_t *hal)
     //we only add it to the tail here, without start the DMA nor increase buffer num.
 }
 
-void sdio_slave_hal_load_buf(sdio_slave_context_t *hal, lldesc_t *desc)
+void sdio_slave_hal_load_buf(sdio_slave_context_t *hal, sdio_slave_ll_desc_t *desc)
 {
     sdio_slave_hal_recv_stailq_t *const queue = &(hal->recv_link_list);
     desc->owner = 1;
 
-    lldesc_t *const tail = STAILQ_LAST(queue, lldesc_s, qe);
+    sdio_slave_ll_desc_t *const tail = STAILQ_LAST(queue, sdio_slave_ll_desc_s, qe);
 
     STAILQ_INSERT_TAIL(queue, desc, qe);
     if (hal->recv_cur_ret == NULL) {
@@ -671,7 +671,7 @@ void sdio_slave_hal_load_buf(sdio_slave_context_t *hal, lldesc_t *desc)
     sdio_slave_ll_recv_size_inc(hal->slc);
 }
 
-static inline void show_queue_item(lldesc_t *item)
+static inline void show_queue_item(sdio_slave_ll_desc_t *item)
 {
     HAL_EARLY_LOGI(TAG, "=> %p: size: %d(%d), eof: %d, owner: %d", item, item->size, item->length, item->eof, item->owner);
     HAL_EARLY_LOGI(TAG, "   buf: %p, stqe_next: %p", item->buf, item->qe.stqe_next);
@@ -680,7 +680,7 @@ static inline void show_queue_item(lldesc_t *item)
 static void __attribute((unused)) dump_queue(sdio_slave_hal_recv_stailq_t *queue)
 {
     int cnt = 0;
-    lldesc_t *item = NULL;
+    sdio_slave_ll_desc_t *item = NULL;
     HAL_EARLY_LOGI(TAG, ">>>>> first: %p, last: %p <<<<<", queue->stqh_first, queue->stqh_last);
     STAILQ_FOREACH(item, queue, qe) {
         cnt++;

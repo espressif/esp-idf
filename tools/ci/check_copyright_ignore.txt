@@ -863,7 +863,6 @@ components/soc/esp32/include/soc/rtc_cntl_struct.h
 components/soc/esp32/include/soc/rtc_i2c_reg.h
 components/soc/esp32/include/soc/rtc_io_reg.h
 components/soc/esp32/include/soc/rtc_io_struct.h
-components/soc/esp32/include/soc/sdio_slave_pins.h
 components/soc/esp32/include/soc/sdmmc_pins.h
 components/soc/esp32/include/soc/sdmmc_reg.h
 components/soc/esp32/include/soc/sens_reg.h
@@ -885,7 +884,6 @@ components/soc/esp32/include/soc/uhci_reg.h
 components/soc/esp32/include/soc/uhci_struct.h
 components/soc/esp32/include/soc/wdev_reg.h
 components/soc/esp32/ledc_periph.c
-components/soc/esp32/sdio_slave_periph.c
 components/soc/esp32/sdmmc_periph.c
 components/soc/esp32/spi_periph.c
 components/soc/esp32/uart_periph.c
