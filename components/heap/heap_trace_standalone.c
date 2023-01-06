@@ -452,15 +452,20 @@ static IRAM_ATTR heap_trace_record_t* linked_list_pop_unused(const records_t* rs
     if (rs->count == rs->capacity){
         return NULL;
     }
+
     heap_trace_record_t* pop = rs->unused;
     assert(pop != NULL);
     assert(pop->address == NULL);
     assert(pop->size == NULL);
 
-    // update linked list
-    rs->unused = pop->next;
-    if (rs->unused != NULL) {
-        rs->unused->prev = NULL;
+    heap_trace_record_t* next = pop->next;
+
+    // update unused list
+    if (next) {
+        next->prev = NULL;
+        rs->unused = next;
+    } else {
+        rs->unused = NULL;
     }
 
     return pop;
