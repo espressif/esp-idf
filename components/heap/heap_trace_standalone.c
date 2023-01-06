@@ -27,16 +27,16 @@ static heap_trace_mode_t mode;
 /* Linked List of Records */
 typedef struct {
 
-    /* Buffer used for records. Linked list. */
+    /* Buffer used for records. */
     heap_trace_record_t *buffer;
 
-    /* The first record in the Linked list. */
+    /* The first valid record in the Linked list. May be NULL. */
     heap_trace_record_t* first;
 
-    /* The last valid record in the Linked list */
+    /* The last valid record in the Linked list. May be NULL. */
     heap_trace_record_t* last;
 
-    /* Records that are not yet storing any allocation data */
+    /* Records that are not yet storing any allocation data. May be NULL. */
     heap_trace_record_t* unused;
 
     /* capacity of the buffer */
@@ -449,12 +449,15 @@ static IRAM_ATTR void linked_list_remove(records_t* rs, heap_trace_record_t* rRe
 // pop record from unused list
 static IRAM_ATTR heap_trace_record_t* linked_list_pop_unused(const records_t* rs)
 {
-    if (rs->count == rs->capacity){
+    if (rs->count >= rs->capacity){
         return NULL;
     }
 
+    // we checked that there is capacity, 
+    // so there should be some unused records
+    assert(rs->unused != NULL);
+
     heap_trace_record_t* pop = rs->unused;
-    assert(pop != NULL);
     assert(pop->address == NULL);
     assert(pop->size == NULL);
 
