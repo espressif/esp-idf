@@ -449,7 +449,7 @@ static IRAM_ATTR void linked_list_remove(records_t* rs, heap_trace_record_t* rRe
 // pop record from unused list
 static IRAM_ATTR heap_trace_record_t* linked_list_pop_unused(const records_t* rs)
 {
-    if (rs->count >= rs->capacity){
+    if (rs->count >= rs->capacity) {
         return NULL;
     }
 
@@ -461,14 +461,18 @@ static IRAM_ATTR heap_trace_record_t* linked_list_pop_unused(const records_t* rs
     assert(pop->address == NULL);
     assert(pop->size == NULL);
 
+    // update next unused record
     heap_trace_record_t* next = pop->next;
-
-    // update unused list
     if (next) {
         next->prev = NULL;
-        rs->unused = next;
-    } else {
-        rs->unused = NULL;
+    }
+
+    // update unused list
+    rs->unused = next;
+
+    // assert we popped the last unused record
+    if (rs->count == rs->capacity - 1){
+        assert(next == NULL)
     }
 
     return pop;
