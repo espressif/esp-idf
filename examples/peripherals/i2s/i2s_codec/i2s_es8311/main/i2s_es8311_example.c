@@ -117,9 +117,10 @@ static void i2s_music(void *args)
     size_t bytes_write = 0;
     uint8_t *data_ptr = (uint8_t *)music_pcm_start;
 
-    /* (Optional) Disable TX channel and preload the data before enabling the TX channel, so that the valid data can be transmit immediately */
+    /* (Optional) Disable TX channel and preload the data before enabling the TX channel,
+     * so that the valid data can be transmitted immediately */
     ESP_ERROR_CHECK(i2s_channel_disable(tx_handle));
-    ESP_ERROR_CHECK(i2s_channel_preload_writing_data(tx_handle, data_ptr, music_pcm_end - data_ptr, &bytes_write));
+    ESP_ERROR_CHECK(i2s_channel_preload_data(tx_handle, data_ptr, music_pcm_end - data_ptr, &bytes_write));
     data_ptr += bytes_write;  // Move forward the data pointer
 
     /* Enable the TX channel */
