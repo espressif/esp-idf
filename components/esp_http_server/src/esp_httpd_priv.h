@@ -22,6 +22,14 @@
 extern "C" {
 #endif
 
+#if CONFIG_NEWLIB_NANO_FORMAT
+#define NEWLIB_NANO_COMPAT_FORMAT            PRIu32
+#define NEWLIB_NANO_COMPAT_CAST(size_t_var)  (uint32_t)size_t_var
+#else
+#define NEWLIB_NANO_COMPAT_FORMAT            "zu"
+#define NEWLIB_NANO_COMPAT_CAST(size_t_var)  size_t_var
+#endif
+
 /* Size of request data block/chunk (not to be confused with chunked encoded data)
  * that is received and parsed in one turn of the parsing process. This should not
  * exceed the scratch buffer size and should at least be 8 bytes */

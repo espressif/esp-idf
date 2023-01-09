@@ -10,8 +10,17 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "sdkconfig.h"
 
 #include "ctrl_sock.h"
+
+#if CONFIG_IDF_TARGET_LINUX
+#define IPV4_ENABLED    1
+#define IPV6_ENABLED    1
+#else   // CONFIG_IDF_TARGET_LINUX
+#define IPV4_ENABLED    CONFIG_LWIP_IPV4
+#define IPV6_ENABLED    CONFIG_LWIP_IPV6
+#endif  // !CONFIG_IDF_TARGET_LINUX
 
 /* Control socket, because in some network stacks select can't be woken up any
  * other way
@@ -25,7 +34,7 @@ int cs_create_ctrl_sock(int port)
 
     int ret;
     struct sockaddr_storage addr = {};
-#ifdef CONFIG_LWIP_IPV4
+#if IPV4_ENABLED
     struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
     addr4->sin_family = AF_INET;
     addr4->sin_port = htons(port);
@@ -53,7 +62,7 @@ int cs_send_to_ctrl_sock(int send_fd, int port, void *data, unsigned int data_le
 {
     int ret;
     struct sockaddr_storage to_addr = {};
-#ifdef CONFIG_LWIP_IPV4
+#if IPV4_ENABLED
     struct sockaddr_in *addr4 = (struct sockaddr_in *)&to_addr;
     addr4->sin_family = AF_INET;
     addr4->sin_port = htons(port);

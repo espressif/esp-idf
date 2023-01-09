@@ -153,7 +153,7 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
 
     char subprotocol[50] = { '\0' };
     if (httpd_req_get_hdr_value_str(req, "Sec-WebSocket-Protocol", subprotocol, sizeof(subprotocol) - 1) == ESP_ERR_HTTPD_RESULT_TRUNC) {
-        ESP_LOGW(TAG, "Sec-WebSocket-Protocol length exceeded buffer size of %d, was trunctated", sizeof(subprotocol));
+        ESP_LOGW(TAG, "Sec-WebSocket-Protocol length exceeded buffer size of %"NEWLIB_NANO_COMPAT_FORMAT", was trunctated", NEWLIB_NANO_COMPAT_CAST(sizeof(subprotocol)));
     }
 
 
@@ -175,7 +175,7 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
         int r = snprintf(tx_buf + fmt_len, sizeof(tx_buf) - fmt_len, "Sec-WebSocket-Protocol: %s\r\n", supported_subprotocol);
         if (r <= 0) {
             ESP_LOGE(TAG, "Error in response generation"
-                          "(snprintf of subprotocol returned %d, buffer size: %d", r, sizeof(tx_buf));
+                          "(snprintf of subprotocol returned %d, buffer size: %"NEWLIB_NANO_COMPAT_FORMAT, r, NEWLIB_NANO_COMPAT_CAST(sizeof(tx_buf)));
             return ESP_FAIL;
         }
 
@@ -183,7 +183,7 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
 
         if (fmt_len >= sizeof(tx_buf)) {
             ESP_LOGE(TAG, "Error in response generation"
-                          "(snprintf of subprotocol returned %d, desired response len: %d, buffer size: %d", r, fmt_len, sizeof(tx_buf));
+                          "(snprintf of subprotocol returned %d, desired response len: %d, buffer size: %"NEWLIB_NANO_COMPAT_FORMAT, r, fmt_len, NEWLIB_NANO_COMPAT_CAST(sizeof(tx_buf)));
             return ESP_FAIL;
         }
     }
@@ -191,13 +191,13 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
     int r = snprintf(tx_buf + fmt_len, sizeof(tx_buf) - fmt_len, "\r\n");
     if (r <= 0) {
         ESP_LOGE(TAG, "Error in response generation"
-                        "(snprintf of subprotocol returned %d, buffer size: %d", r, sizeof(tx_buf));
+                        "(snprintf of subprotocol returned %d, buffer size: %"NEWLIB_NANO_COMPAT_FORMAT, r, NEWLIB_NANO_COMPAT_CAST(sizeof(tx_buf)));
         return ESP_FAIL;
     }
     fmt_len += r;
     if (fmt_len >= sizeof(tx_buf)) {
         ESP_LOGE(TAG, "Error in response generation"
-                       "(snprintf of header terminal returned %d, desired response len: %d, buffer size: %d", r, fmt_len, sizeof(tx_buf));
+                       "(snprintf of header terminal returned %d, desired response len: %d, buffer size: %"NEWLIB_NANO_COMPAT_FORMAT, r, fmt_len, NEWLIB_NANO_COMPAT_CAST(sizeof(tx_buf)));
         return ESP_FAIL;
     }
 
@@ -354,7 +354,7 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *frame, size_t 
         offset += read_len;
         left_len -= read_len;
 
-        ESP_LOGD(TAG, "Frame length: %d, Bytes Read: %d", frame->len, offset);
+        ESP_LOGD(TAG, "Frame length: %"NEWLIB_NANO_COMPAT_FORMAT", Bytes Read: %"NEWLIB_NANO_COMPAT_FORMAT, NEWLIB_NANO_COMPAT_CAST(frame->len), NEWLIB_NANO_COMPAT_CAST(offset));
     }
 
     /* Unmask payload */
