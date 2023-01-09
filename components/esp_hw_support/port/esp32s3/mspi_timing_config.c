@@ -12,6 +12,7 @@
 #include "esp_types.h"
 #include "esp_log.h"
 #include "soc/spi_mem_reg.h"
+#include "hal/mspi_timing_tuning_ll.h"
 #include "mspi_timing_config.h"
 #include "bootloader_flash.h"
 
@@ -23,15 +24,6 @@
 #define QPI_PSRAM_FAST_READ            0XEB
 #define QPI_PSRAM_WRITE                0X38
 #define QPI_PSRAM_FAST_READ_DUMMY      6
-
-#define MULTI_LINE_MASK_OCT_FLASH     (SPI_MEM_FCMD_OCT | SPI_MEM_FADDR_OCT | SPI_MEM_FDIN_OCT | SPI_MEM_FDOUT_OCT)
-#define MULTI_LINE_MASK_QUAD_FLASH    (SPI_MEM_FASTRD_MODE | SPI_MEM_FREAD_DUAL | SPI_MEM_FREAD_DIO | SPI_MEM_FREAD_QUAD | SPI_MEM_FREAD_QIO)
-#define SPI_FLASH_QIO_MODE            (SPI_MEM_FREAD_QIO | SPI_MEM_FASTRD_MODE)
-#define SPI_FLASH_QUAD_MODE           (SPI_MEM_FREAD_QUAD | SPI_MEM_FASTRD_MODE)
-#define SPI_FLASH_DIO_MODE            (SPI_MEM_FREAD_DIO | SPI_MEM_FASTRD_MODE)
-#define SPI_FLASH_DUAL_MODE           (SPI_MEM_FREAD_DUAL | SPI_MEM_FASTRD_MODE)
-#define SPI_FLASH_FAST_MODE           (SPI_MEM_FASTRD_MODE)
-#define SPI_FLASH_SLOW_MODE           0
 
 #define NOT_INIT_INT                  127
 
@@ -73,28 +65,18 @@ void spi_timing_config_set_core_clock(uint8_t spi_num, spi_timing_config_core_cl
             abort();
     }
 
-    REG_SET_FIELD(SPI_MEM_CORE_CLK_SEL_REG(spi_num), SPI_MEM_CORE_CLK_SEL, reg_val);
+    mspi_timing_ll_set_core_clock_divider(spi_num, reg_val);
 }
 
 void spi_timing_config_set_flash_clock(uint8_t spi_num, uint32_t freqdiv)
 {
     assert(freqdiv > 0);
-    if (freqdiv == 1) {
-        WRITE_PERI_REG(SPI_MEM_CLOCK_REG(spi_num), SPI_MEM_CLK_EQU_SYSCLK);
-    } else {
-        uint32_t freqbits = (((freqdiv - 1) << SPI_MEM_CLKCNT_N_S)) | (((freqdiv / 2 - 1) << SPI_MEM_CLKCNT_H_S)) | ((freqdiv - 1) << SPI_MEM_CLKCNT_L_S);
-        WRITE_PERI_REG(SPI_MEM_CLOCK_REG(spi_num), freqbits);
-    }
+    mspi_timing_ll_set_flash_clock(spi_num, freqdiv);
 }
 
 void spi_timing_config_set_psram_clock(uint8_t spi_num, uint32_t freqdiv)
 {
-    if (freqdiv == 1) {
-        WRITE_PERI_REG(SPI_MEM_SRAM_CLK_REG(spi_num), SPI_MEM_SCLK_EQU_SYSCLK);
-    } else {
-        uint32_t freqbits = (((freqdiv-1)<<SPI_MEM_SCLKCNT_N_S)) | (((freqdiv/2-1)<<SPI_MEM_SCLKCNT_H_S)) | ((freqdiv-1)<<SPI_MEM_SCLKCNT_L_S);
-        WRITE_PERI_REG(SPI_MEM_SRAM_CLK_REG(spi_num), freqbits);
-    }
+    mspi_timing_ll_set_psram_clock(spi_num, freqdiv);
 }
 
 /////////////////////////////////////////TIMING TUNING IS NEEDED//////////////////////////////////////////////
@@ -123,40 +105,32 @@ extern void psram_exec_cmd(int spi_num, psram_cmd_mode_t mode,
 //-------------------------------------FLASH timing tuning register config-------------------------------------//
 void spi_timing_config_flash_set_din_mode_num(uint8_t spi_num, uint8_t din_mode, uint8_t din_num)
 {
-    uint32_t reg_val = 0;
-    reg_val = (REG_READ(SPI_MEM_DIN_MODE_REG(spi_num)) & (~(SPI_MEM_DIN0_MODE_M | SPI_MEM_DIN1_MODE_M | SPI_MEM_DIN2_MODE_M | SPI_MEM_DIN3_MODE_M | SPI_MEM_DIN4_MODE_M | SPI_MEM_DIN5_MODE_M | SPI_MEM_DIN6_MODE_M | SPI_MEM_DIN7_MODE_M | SPI_MEM_DINS_MODE_M)))
-        | (din_mode << SPI_MEM_DIN0_MODE_S) | (din_mode << SPI_MEM_DIN1_MODE_S) | (din_mode << SPI_MEM_DIN2_MODE_S) | (din_mode << SPI_MEM_DIN3_MODE_S)
-        | (din_mode << SPI_MEM_DIN4_MODE_S) | (din_mode << SPI_MEM_DIN5_MODE_S) | (din_mode << SPI_MEM_DIN6_MODE_S) | (din_mode << SPI_MEM_DIN7_MODE_S) | (din_mode << SPI_MEM_DINS_MODE_S);
-    REG_WRITE(SPI_MEM_DIN_MODE_REG(spi_num), reg_val);
-
-    reg_val = (REG_READ(SPI_MEM_DIN_NUM_REG(spi_num)) & (~(SPI_MEM_DIN0_NUM_M | SPI_MEM_DIN1_NUM_M | SPI_MEM_DIN2_NUM_M | SPI_MEM_DIN3_NUM_M | SPI_MEM_DIN4_NUM_M | SPI_MEM_DIN5_NUM_M | SPI_MEM_DIN6_NUM_M | SPI_MEM_DIN7_NUM_M | SPI_MEM_DINS_NUM_M)))
-        | (din_num << SPI_MEM_DIN0_NUM_S) | (din_num << SPI_MEM_DIN1_NUM_S) | (din_num << SPI_MEM_DIN2_NUM_S) | (din_num << SPI_MEM_DIN3_NUM_S)
-        | (din_num << SPI_MEM_DIN4_NUM_S) | (din_num << SPI_MEM_DIN5_NUM_S) | (din_num << SPI_MEM_DIN6_NUM_S) | (din_num << SPI_MEM_DIN7_NUM_S) | (din_num << SPI_MEM_DINS_NUM_S);
-    REG_WRITE(SPI_MEM_DIN_NUM_REG(spi_num), reg_val);
+    mspi_timing_ll_set_flash_din_mode(spi_num, din_mode);
+    mspi_timing_ll_set_flash_din_num(spi_num, din_num);
 }
 
 static uint32_t spi_timing_config_get_dummy(void)
 {
-    uint32_t ctrl_reg = READ_PERI_REG(SPI_MEM_CTRL_REG(0));
-    if (ctrl_reg & MULTI_LINE_MASK_OCT_FLASH) {
+    mspi_timing_ll_flash_mode_t mode = mspi_timing_ll_get_flash_mode(0);
+    if (mode == MSPI_TIMING_LL_FLASH_OPI_MODE) {
         abort();
     }
 
 #if CONFIG_SPI_FLASH_HPM_ENABLE
     if (spi_flash_hpm_dummy_adjust()) { // HPM is enabled
         const spi_flash_hpm_dummy_conf_t *hpm_dummy = spi_flash_hpm_get_dummy();
-        switch (ctrl_reg & MULTI_LINE_MASK_QUAD_FLASH) {
-            case SPI_FLASH_QIO_MODE:
+        switch (mode) {
+            case MSPI_TIMING_LL_FLASH_QIO_MODE:
                 return hpm_dummy->qio_dummy - 1;
-            case SPI_FLASH_QUAD_MODE:
+            case MSPI_TIMING_LL_FLASH_QUAD_MODE:
                 return hpm_dummy->qout_dummy - 1;
-            case SPI_FLASH_DIO_MODE:
+            case MSPI_TIMING_LL_FLASH_DIO_MODE:
                 return hpm_dummy->dio_dummy - 1;
-            case SPI_FLASH_DUAL_MODE:
+            case MSPI_TIMING_LL_FLASH_DUAL_MODE:
                 return hpm_dummy->dout_dummy - 1;
-            case SPI_FLASH_FAST_MODE:
+            case MSPI_TIMING_LL_FLASH_FAST_MODE:
                 return hpm_dummy->fastrd_dummy - 1;
-            case SPI_FLASH_SLOW_MODE:
+            case MSPI_TIMING_LL_FLASH_SLOW_MODE:
                 return 0;
             default:
                 abort();
@@ -164,18 +138,18 @@ static uint32_t spi_timing_config_get_dummy(void)
     } else
 #endif
     { // HPM is not enabled
-        switch (ctrl_reg & MULTI_LINE_MASK_QUAD_FLASH) {
-            case SPI_FLASH_QIO_MODE:
+        switch (mode) {
+            case MSPI_TIMING_LL_FLASH_QIO_MODE:
                 return SPI1_R_QIO_DUMMY_CYCLELEN;
-            case SPI_FLASH_QUAD_MODE:
+            case MSPI_TIMING_LL_FLASH_QUAD_MODE:
                 return SPI1_R_FAST_DUMMY_CYCLELEN;
-            case SPI_FLASH_DIO_MODE:
+            case MSPI_TIMING_LL_FLASH_DIO_MODE:
                 return SPI1_R_DIO_DUMMY_CYCLELEN;
-            case SPI_FLASH_DUAL_MODE:
+            case MSPI_TIMING_LL_FLASH_DUAL_MODE:
                 return SPI1_R_FAST_DUMMY_CYCLELEN;
-            case SPI_FLASH_FAST_MODE:
+            case MSPI_TIMING_LL_FLASH_FAST_MODE:
                 return SPI1_R_FAST_DUMMY_CYCLELEN;
-            case SPI_FLASH_SLOW_MODE:
+            case MSPI_TIMING_LL_FLASH_SLOW_MODE:
                 return 0;
             default:
                 abort();
@@ -186,18 +160,11 @@ static uint32_t spi_timing_config_get_dummy(void)
 void spi_timing_config_flash_set_extra_dummy(uint8_t spi_num, uint8_t extra_dummy)
 {
     if (bootloader_flash_is_octal_mode_enabled()) {
-        if (extra_dummy > 0) {
-            SET_PERI_REG_MASK(SPI_MEM_TIMING_CALI_REG(spi_num), SPI_MEM_TIMING_CALI_M);
-            SET_PERI_REG_BITS(SPI_MEM_TIMING_CALI_REG(spi_num), SPI_MEM_EXTRA_DUMMY_CYCLELEN_V, extra_dummy,
-                SPI_MEM_EXTRA_DUMMY_CYCLELEN_S);
-        } else {
-            CLEAR_PERI_REG_MASK(SPI_MEM_TIMING_CALI_REG(spi_num), SPI_MEM_TIMING_CALI_M);
-            SET_PERI_REG_BITS(SPI_MEM_TIMING_CALI_REG(spi_num), SPI_MEM_EXTRA_DUMMY_CYCLELEN_V, 0,
-                SPI_MEM_EXTRA_DUMMY_CYCLELEN_S);
-        }
+        mspi_timing_ll_set_octal_flash_extra_dummy(spi_num, extra_dummy);
         return;
     }
     /**
+     * HW workaround:
      * The `SPI_MEM_TIMING_CALI_REG` register is only used for OPI on 728
      * Here we only need to update this global variable for extra dummy. Since we use the ROM Flash API, which will set the dummy based on this.
      * We only initialise the SPI0. And leave the SPI1 for flash driver to configure.
@@ -215,31 +182,16 @@ void spi_timing_config_flash_set_extra_dummy(uint8_t spi_num, uint8_t extra_dumm
 //-------------------------------------PSRAM timing tuning register config-------------------------------------//
 void spi_timing_config_psram_set_din_mode_num(uint8_t spi_num, uint8_t din_mode, uint8_t din_num)
 {
-    uint32_t reg_val = 0;
-    reg_val = (REG_READ(SPI_MEM_SPI_SMEM_DIN_MODE_REG(spi_num)) & (~(SPI_MEM_SPI_SMEM_DIN0_MODE_M | SPI_MEM_SPI_SMEM_DIN1_MODE_M | SPI_MEM_SPI_SMEM_DIN2_MODE_M | SPI_MEM_SPI_SMEM_DIN3_MODE_M | SPI_MEM_SPI_SMEM_DIN4_MODE_M | SPI_MEM_SPI_SMEM_DIN5_MODE_M | SPI_MEM_SPI_SMEM_DIN6_MODE_M | SPI_MEM_SPI_SMEM_DIN7_MODE_M | SPI_MEM_SPI_SMEM_DINS_MODE_M)))
-        | (din_mode << SPI_MEM_SPI_SMEM_DIN0_MODE_S) | (din_mode << SPI_MEM_SPI_SMEM_DIN1_MODE_S) | (din_mode << SPI_MEM_SPI_SMEM_DIN2_MODE_S) | (din_mode << SPI_MEM_SPI_SMEM_DIN3_MODE_S)
-        | (din_mode << SPI_MEM_SPI_SMEM_DIN4_MODE_S) | (din_mode << SPI_MEM_SPI_SMEM_DIN5_MODE_S) | (din_mode << SPI_MEM_SPI_SMEM_DIN6_MODE_S) | (din_mode << SPI_MEM_SPI_SMEM_DIN7_MODE_S) | (din_mode << SPI_MEM_SPI_SMEM_DINS_MODE_S);
-    REG_WRITE(SPI_MEM_SPI_SMEM_DIN_MODE_REG(spi_num), reg_val);
-
-    reg_val = (REG_READ(SPI_MEM_SPI_SMEM_DIN_NUM_REG(spi_num)) & (~(SPI_MEM_SPI_SMEM_DIN0_NUM_M | SPI_MEM_SPI_SMEM_DIN1_NUM_M | SPI_MEM_SPI_SMEM_DIN2_NUM_M | SPI_MEM_SPI_SMEM_DIN3_NUM_M | SPI_MEM_SPI_SMEM_DIN4_NUM_M | SPI_MEM_SPI_SMEM_DIN5_NUM_M | SPI_MEM_SPI_SMEM_DIN6_NUM_M | SPI_MEM_SPI_SMEM_DIN7_NUM_M | SPI_MEM_SPI_SMEM_DINS_NUM_M)))
-        | (din_num << SPI_MEM_SPI_SMEM_DIN0_NUM_S) | (din_num << SPI_MEM_SPI_SMEM_DIN1_NUM_S) | (din_num << SPI_MEM_SPI_SMEM_DIN2_NUM_S) | (din_num << SPI_MEM_SPI_SMEM_DIN3_NUM_S)
-        | (din_num << SPI_MEM_SPI_SMEM_DIN4_NUM_S) | (din_num << SPI_MEM_SPI_SMEM_DIN5_NUM_S) | (din_num << SPI_MEM_SPI_SMEM_DIN6_NUM_S) | (din_num << SPI_MEM_SPI_SMEM_DIN7_NUM_S) | (din_num << SPI_MEM_SPI_SMEM_DINS_NUM_S);
-    REG_WRITE(SPI_MEM_SPI_SMEM_DIN_NUM_REG(spi_num), reg_val);
+    mspi_timing_ll_set_psram_din_mode(spi_num, din_mode);
+    mspi_timing_ll_set_psram_din_num(spi_num, din_num);
 }
 
 void spi_timing_config_psram_set_extra_dummy(uint8_t spi_num, uint8_t extra_dummy)
 {
 #if CONFIG_SPIRAM_MODE_OCT
-    if (extra_dummy > 0) {
-        SET_PERI_REG_MASK(SPI_MEM_SPI_SMEM_TIMING_CALI_REG(spi_num), SPI_MEM_SPI_SMEM_TIMING_CALI_M);
-        SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_TIMING_CALI_REG(spi_num), SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN_V, extra_dummy,
-            SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN_S);
-    } else {
-        CLEAR_PERI_REG_MASK(SPI_MEM_SPI_SMEM_TIMING_CALI_REG(spi_num), SPI_MEM_SPI_SMEM_TIMING_CALI_M);
-        SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_TIMING_CALI_REG(spi_num), SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN_V, 0,
-            SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN_S);
-    }
+    mspi_timing_ll_set_octal_psram_extra_dummy(spi_num, extra_dummy);
 #elif CONFIG_SPIRAM_MODE_QUAD
+    //HW workaround: Use normal dummy register to set extra dummy, the calibration dedicated extra dummy register doesn't work for quad mode
     SET_PERI_REG_MASK(SPI_MEM_CACHE_SCTRL_REG(spi_num), SPI_MEM_USR_RD_SRAM_DUMMY_M);
     SET_PERI_REG_BITS(SPI_MEM_CACHE_SCTRL_REG(spi_num), SPI_MEM_SRAM_RDUMMY_CYCLELEN_V, (QPI_PSRAM_FAST_READ_DUMMY + extra_dummy - 1), SPI_MEM_SRAM_RDUMMY_CYCLELEN_S);
 #endif

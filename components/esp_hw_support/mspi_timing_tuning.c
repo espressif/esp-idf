@@ -16,12 +16,11 @@
 #include "esp_private/mspi_timing_tuning.h"
 #include "soc/soc.h"
 #include "hal/spi_flash_hal.h"
+#include "hal/mspi_timing_tuning_ll.h"
 #if CONFIG_IDF_TARGET_ESP32S3
 #include "port/esp32s3/mspi_timing_config.h"
 #include "esp32s3/rom/cache.h"
 #endif
-
-#define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(*(arr)))
 
 #if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
 const static char *TAG = "MSPI Timing";
@@ -36,18 +35,7 @@ void mspi_timing_set_pin_drive_strength(void)
 {
     //For now, set them all to 3. Need to check after QVL test results are out. TODO: IDF-3663
     //Set default clk
-    SET_PERI_REG_MASK(SPI_MEM_DATE_REG(0), SPI_MEM_SPICLK_PAD_DRV_CTL_EN);
-    REG_SET_FIELD(SPI_MEM_DATE_REG(0), SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV, 3);
-    REG_SET_FIELD(SPI_MEM_DATE_REG(0), SPI_MEM_SPI_FMEM_SPICLK_FUN_DRV, 3);
-    //Set default mspi d0 ~ d7, dqs pin drive strength
-    uint32_t regs[] = {IO_MUX_GPIO27_REG, IO_MUX_GPIO28_REG,
-                       IO_MUX_GPIO31_REG, IO_MUX_GPIO32_REG,
-                       IO_MUX_GPIO33_REG, IO_MUX_GPIO34_REG,
-                       IO_MUX_GPIO35_REG, IO_MUX_GPIO36_REG,
-                       IO_MUX_GPIO37_REG};
-    for (int i = 0; i < ARRAY_SIZE(regs); i++) {
-        PIN_SET_DRV(regs[i], 3);
-    }
+    mspi_timing_ll_set_all_pin_drive(0, 3);
 }
 
 /*------------------------------------------------------------------------------
@@ -105,13 +93,13 @@ static void init_spi1_for_tuning(bool is_flash)
         uint32_t flash_div = get_flash_clock_divider();
         spi_timing_config_set_flash_clock(1, flash_div);
         //Power on HCLK
-        REG_SET_BIT(SPI_MEM_TIMING_CALI_REG(0), SPI_MEM_TIMING_CLK_ENA);
+        mspi_timinng_ll_enable_flash_hclk(0);
     } else {
         //We use SPI1 Flash to tune PSRAM, PSRAM timing related regs do nothing on SPI1
         uint32_t psram_div = get_psram_clock_divider();
         spi_timing_config_set_flash_clock(1, psram_div);
         //Power on HCLK
-        REG_SET_BIT(SPI_MEM_SPI_SMEM_TIMING_CALI_REG(0), SPI_MEM_SPI_SMEM_TIMING_CLK_ENA);
+        mspi_timinng_ll_enable_psram_hclk(0);
     }
 }
 
@@ -307,7 +295,7 @@ void mspi_timing_flash_tuning(void)
     mspi_timing_enter_low_speed_mode(true);
 
     //Disable the variable dummy mode when doing timing tuning
-    CLEAR_PERI_REG_MASK(SPI_MEM_DDR_REG(1), SPI_MEM_SPI_FMEM_VAR_DUMMY);    //GD flash will read error in variable mode with 20MHz
+    mspi_timing_ll_enable_flash_variable_dummy(1, false);    //GD flash will read error in variable mode with 20MHz
 
     uint8_t reference_data[SPI_TIMING_TEST_DATA_LEN] = {0};
     spi_timing_config_flash_read_data(1, reference_data, SPI_TIMING_FLASH_TEST_DATA_ADDR, sizeof(reference_data));
@@ -366,7 +354,7 @@ void mspi_timing_psram_tuning(void)
     get_psram_tuning_configs(&timing_configs);
 
     //Disable the variable dummy mode when doing timing tuning
-    CLEAR_PERI_REG_MASK(SPI_MEM_DDR_REG(1), SPI_MEM_SPI_FMEM_VAR_DUMMY);
+    mspi_timing_ll_enable_flash_variable_dummy(1, false);
     //Get required config, and set them to PSRAM related registers
     do_tuning(reference_data, &timing_configs, false);
     mspi_timing_enter_high_speed_mode(true);
