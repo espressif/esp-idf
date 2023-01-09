@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -262,7 +262,7 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     sdm_ll_set_prescale(group->hal.dev, chan_id, prescale);
     chan->sample_rate_hz = src_clk_hz / prescale;
     // preset the duty cycle to zero
-    sdm_ll_set_duty(group->hal.dev, chan_id, 0);
+    sdm_ll_set_pulse_density(group->hal.dev, chan_id, 0);
 
     // initialize other members of timer
     chan->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
@@ -317,7 +317,7 @@ esp_err_t sdm_channel_disable(sdm_channel_handle_t chan)
     return ESP_OK;
 }
 
-esp_err_t sdm_channel_set_duty(sdm_channel_handle_t chan, int8_t duty)
+esp_err_t sdm_channel_set_pulse_density(sdm_channel_handle_t chan, int8_t density)
 {
     ESP_RETURN_ON_FALSE_ISR(chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
@@ -325,8 +325,11 @@ esp_err_t sdm_channel_set_duty(sdm_channel_handle_t chan, int8_t duty)
     int chan_id = chan->chan_id;
 
     portENTER_CRITICAL_SAFE(&chan->spinlock);
-    sdm_ll_set_duty(group->hal.dev, chan_id, duty);
+    sdm_ll_set_pulse_density(group->hal.dev, chan_id, density);
     portEXIT_CRITICAL_SAFE(&chan->spinlock);
 
     return ESP_OK;
 }
+
+esp_err_t sdm_channel_set_duty(sdm_channel_handle_t chan, int8_t duty)
+__attribute__((alias("sdm_channel_set_pulse_density")));

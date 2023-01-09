@@ -1,7 +1,7 @@
 | Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- |
 
-# Sigma Delta Modulation Example
+# Sigma Delta Modulation LED Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -22,7 +22,7 @@ EXAMPLE_SIGMA_DELTA_GPIO_NUM +----/\/\/\----+------|>|-----+ GND
 
 ### Configure the project
 
-You can change the GPIO number by [EXAMPLE_SIGMA_DELTA_GPIO_NUM](main/sdm_example_main.c).
+You can change the GPIO number by [EXAMPLE_SIGMA_DELTA_GPIO_NUM](main/sdm_led_example_main.c).
 
 ### Build and Flash
 

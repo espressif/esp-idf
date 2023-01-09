@@ -107,11 +107,12 @@ GPIO
     - SDM 通道配置原来存放于 ``sigmadelta_config_t``，现存放于 :cpp:type:`sdm_config_t`。
     - 旧版驱动中，用户无需为 SDM 通道设置时钟源。但是在新驱动中，用户需要在 :cpp:member:`sdm_config_t::clk_src` 为 SDM 通道设置合适的时钟源，:cpp:type:`soc_periph_sdm_clk_src_t` 中列出了可用的时钟源。
     - 旧版驱动中，用户需要为通道设置 ``prescale``，该参数会影响调制器输出脉冲的频率。在新的驱动中，用户需要使用 :cpp:member:`sdm_config_t::sample_rate_hz` 实现该功能。
+    - 旧版驱动中，用户通过设置 ``duty`` 来改变输出的模拟量，现在换成了一个更贴切的名字 ``density``
 
     主要使用方法更新
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    - 更新前，通道配置由通道分配在 :cpp:func:`sdm_new_channel` 完成。在新驱动中，只有 ``duty`` 可在运行时由 :cpp:func:`sdm_channel_set_duty` 更新。其他参数如 ``gpio number``、 ``prescale`` 只能在通道分配时进行设置。
+    - 更新前，通道配置由通道分配在 :cpp:func:`sdm_new_channel` 完成。在新驱动中，只有 ``density`` 可在运行时由 :cpp:func:`sdm_channel_set_pulse_density` 更新。其他参数如 ``gpio number``、 ``prescale`` 只能在通道分配时进行设置。
     - 在进行下一步通道操作前，用户应通过调用 :cpp:func:`sdm_channel_enable` 提前 **使能** 该通道。该函数有助于管理一些系统级服务，如 **电源管理**。
 
 定时器组驱动
