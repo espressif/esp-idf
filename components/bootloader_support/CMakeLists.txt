@@ -40,6 +40,10 @@ if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
     "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"
     )
     list(APPEND priv_requires hal)
+    if(CONFIG_ESP_ROM_REV0_HAS_NO_ECDSA_INTERFACE)
+        list(APPEND srcs
+            "src/${IDF_TARGET}/bootloader_ecdsa.c")
+    endif()
 else()
     list(APPEND srcs
         "src/idf/bootloader_sha.c")

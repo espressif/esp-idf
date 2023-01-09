@@ -379,7 +379,6 @@
 #define SOC_EFUSE_DIS_DIRECT_BOOT 1
 #define SOC_EFUSE_SOFT_DIS_JTAG 1
 
-// TODO: IDF-5357 (Copy from esp32c3, need check)
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
 #define SOC_SECURE_BOOT_V2_ECC              1
@@ -387,7 +386,6 @@
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
 #define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY  1
 
-// TODO: IDF-5358 (Copy from esp32c3, need check)
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1

@@ -120,6 +120,7 @@ if(BOOTLOADER_BUILD)
         # The linking of the bootloader needs to use the rom_i2c_writeReg_Mask in esp32c6.rom.phy.ld
         rom_linker_script("phy")
         rom_linker_script("wdt")
+        rom_linker_script("version")
 
     elseif(target STREQUAL "esp32h2")
         rom_linker_script("newlib")
