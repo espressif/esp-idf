@@ -18,17 +18,6 @@
 #include <xtensa/xtruntime.h>
 #include <xt_instr_macros.h>
 
-/**
- * @brief Chip ID associated to this implementation.
- */
-#if CONFIG_IDF_TARGET_ESP32
-    #define COREDUMP_VERSION_CHIP ESP_CHIP_ID_ESP32
-#elif CONFIG_IDF_TARGET_ESP32S2
-    #define COREDUMP_VERSION_CHIP ESP_CHIP_ID_ESP32S2
-#elif CONFIG_IDF_TARGET_ESP32S3
-    #define COREDUMP_VERSION_CHIP ESP_CHIP_ID_ESP32S3
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
