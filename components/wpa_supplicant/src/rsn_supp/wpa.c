@@ -2407,7 +2407,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     if (res < 0)
         return -1;
     sm->assoc_wpa_ie_len = res;
-    res = wpa_gen_rsnxe(sm ,assoc_rsnxe, assoc_rsnxe_len);
+    res = wpa_gen_rsnxe(sm, assoc_rsnxe, assoc_rsnxe_len);
     if (res < 0)
         return -1;
     assoc_rsnxe_len = res;
