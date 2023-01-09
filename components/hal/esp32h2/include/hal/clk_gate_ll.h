@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
             return PCR_SARADC_CLK_EN;
         case PERIPH_RMT_MODULE:
             return PCR_RMT_CLK_EN;
+        case PERIPH_PCNT_MODULE:
+            return PCR_PCNT_CLK_EN;
         case PERIPH_LEDC_MODULE:
             return PCR_LEDC_CLK_EN;
         case PERIPH_UART0_MODULE:
@@ -88,6 +90,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
             return PCR_SARADC_RST_EN;
         case PERIPH_RMT_MODULE:
             return PCR_RMT_RST_EN;
+        case PERIPH_PCNT_MODULE:
+            return PCR_PCNT_RST_EN;
         case PERIPH_LEDC_MODULE:
             return PCR_LEDC_RST_EN;
         case PERIPH_UART0_MODULE:
@@ -178,6 +182,8 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
             return PCR_RMT_CONF_REG;
         case PERIPH_LEDC_MODULE:
             return PCR_LEDC_CONF_REG;
+        case PERIPH_PCNT_MODULE:
+            return PCR_PCNT_CONF_REG;
         case PERIPH_UART0_MODULE:
             return PCR_UART0_CONF_REG;
         case PERIPH_UART1_MODULE:
@@ -227,6 +233,8 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
             return PCR_SARADC_CONF_REG;
         case PERIPH_RMT_MODULE:
             return PCR_RMT_CONF_REG;
+        case PERIPH_PCNT_MODULE:
+            return PCR_PCNT_CONF_REG;
         case PERIPH_LEDC_MODULE:
             return PCR_LEDC_CONF_REG;
         case PERIPH_UART0_MODULE:
