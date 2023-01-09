@@ -936,6 +936,8 @@ static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
  */
 static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
 {
+    // Due to the lack of `PDM to PCM` module on ESP32-H4, PDM RX is not available
+    HAL_ASSERT(!pdm_enable);
     hw->rx_conf.rx_pdm_en = pdm_enable;
     hw->rx_conf.rx_tdm_en = !pdm_enable;
 }

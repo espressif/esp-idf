@@ -33,8 +33,9 @@ extern "C" {
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (9)
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
 
-#define I2S_LL_PLL_F160M_CLK_FREQ      (160 * 1000000) // PLL_F160M_CLK: 160MHz
-#define I2S_LL_DEFAULT_PLL_CLK_FREQ     I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
+#define I2S_LL_PLL_F96M_CLK_FREQ      (96 * 1000000) // PLL_F96M_CLK: 96MHz
+#define I2S_LL_PLL_F64M_CLK_FREQ      (64 * 1000000) // PLL_F64M_CLK: 64MHz
+#define I2S_LL_DEFAULT_PLL_CLK_FREQ   I2S_LL_PLL_F96M_CLK_FREQ  // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
 
 /* I2S clock configuration structure */
 typedef struct {
@@ -211,7 +212,10 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
     case I2S_CLK_SRC_XTAL:
         PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 0;
         break;
-    case I2S_CLK_SRC_PLL_160M:
+    case I2S_CLK_SRC_PLL_96M:
+        PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 1;
+        break;
+    case I2S_CLK_SRC_PLL_64M:
         PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 2;
         break;
     default:
@@ -234,7 +238,10 @@ static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
     case I2S_CLK_SRC_XTAL:
         PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 0;
         break;
-    case I2S_CLK_SRC_PLL_160M:
+    case I2S_CLK_SRC_PLL_96M:
+        PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 1;
+        break;
+    case I2S_CLK_SRC_PLL_64M:
         PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 2;
         break;
     default:
@@ -251,7 +258,7 @@ static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
  */
 static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
 {
-    hw->tx_conf1.tx_bck_div_num = val - 1;
+    hw->tx_conf.tx_bck_div_num = val - 1;
 }
 
 /**
@@ -361,7 +368,7 @@ finish:
  */
 static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
 {
-    hw->rx_conf1.rx_bck_div_num = val - 1;
+    hw->rx_conf.rx_bck_div_num = val - 1;
 }
 
 /**
@@ -541,7 +548,7 @@ static inline void i2s_ll_rx_set_sample_bit(i2s_dev_t *hw, uint8_t chan_bit, int
  */
 static inline void i2s_ll_tx_set_half_sample_bit(i2s_dev_t *hw, int half_sample_bits)
 {
-    hw->tx_conf1.tx_half_sample_bits = half_sample_bits - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_conf1, tx_half_sample_bits,  half_sample_bits - 1);
 }
 
 /**
@@ -552,7 +559,7 @@ static inline void i2s_ll_tx_set_half_sample_bit(i2s_dev_t *hw, int half_sample_
  */
 static inline void i2s_ll_rx_set_half_sample_bit(i2s_dev_t *hw, int half_sample_bits)
 {
-    hw->rx_conf1.rx_half_sample_bits = half_sample_bits - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_conf1, rx_half_sample_bits,  half_sample_bits - 1);
 }
 
 /**
@@ -563,7 +570,7 @@ static inline void i2s_ll_rx_set_half_sample_bit(i2s_dev_t *hw, int half_sample_
  */
 static inline void i2s_ll_tx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enable)
 {
-    hw->tx_conf1.tx_msb_shift = msb_shift_enable;
+    hw->tx_conf.tx_msb_shift = msb_shift_enable;
 }
 
 /**
@@ -574,7 +581,7 @@ static inline void i2s_ll_tx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enab
  */
 static inline void i2s_ll_rx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enable)
 {
-    hw->rx_conf1.rx_msb_shift = msb_shift_enable;
+    hw->rx_conf.rx_msb_shift = msb_shift_enable;
 }
 
 /**
@@ -944,14 +951,14 @@ static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
 
 /**
  * @brief Enable RX PDM mode.
- * @note  ESP32-C6 doesn't support pdm in rx mode, disable anyway
+ * @note  ESP32-H2 doesn't support pdm in rx mode, disable anyway
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param pdm_enable Set true to RX enable PDM mode (ignored)
  */
 static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
 {
-    // Due to the lack of `PDM to PCM` module on ESP32-C6, PDM RX is not available
+    // Due to the lack of `PDM to PCM` module on ESP32-H2, PDM RX is not available
     HAL_ASSERT(!pdm_enable);
     hw->rx_conf.rx_pdm_en = 0;
     hw->rx_conf.rx_tdm_en = 1;

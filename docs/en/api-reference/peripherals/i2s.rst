@@ -160,7 +160,15 @@ Standard mode always has left and right two sound channels which are called 'slo
     TDM Mode
     ^^^^^^^^
 
-    TDM(Time Division Multiplexing) mode supports upto 16 slots, these slots can be enabled by :cpp:member:`i2s_tdm_slot_config_t::slot_mask`. But due to the hardware limitation, only upto 4 slots are supported while the slot is set to 32 bit-width, and 8 slots for 16 bit-width, 16 slots for 8 bit-width. The slot communication format of TDM is almost same as standard mode, but there are some small differences between them.
+    TDM(Time Division Multiplexing) mode supports up to 16 slots, these slots can be enabled by :cpp:member:`i2s_tdm_slot_config_t::slot_mask`.
+
+    .. only:: SOC_I2S_TDM_FULL_DATA_WIDTH
+
+        Any data bit-width is supported no matter how many slots are enabled, that means there can be up to ``32 bit-width * 16 slots = 512 bit`` in one frame.
+
+    .. only:: not SOC_I2S_TDM_FULL_DATA_WIDTH
+
+        But due to the hardware limitation, only up to 4 slots are supported while the slot is set to 32 bit-width, and 8 slots for 16 bit-width, 16 slots for 8 bit-width. The slot communication format of TDM is almost same as standard mode, but there are some small differences between them.
 
     - **Philips Format**: Data signal have one bit shift comparing to the WS(word select) signal. And no matter how many slots are contained in one frame, the duty of WS signal will always keep 50%.
 

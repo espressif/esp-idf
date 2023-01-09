@@ -27,10 +27,6 @@ components/driver/test_apps/i2s_test_apps/legacy_i2s_adc_dac:
 components/driver/test_apps/i2s_test_apps/legacy_i2s_driver:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
 
 components/driver/test_apps/ledc:
   disable:

@@ -21,7 +21,6 @@ list(REMOVE_ITEM srcs
     "adc_periph.c"
     "dedic_gpio_periph.c"
     "ledc_periph.c"
-    "i2s_periph.c"
     "i2c_periph.c"
     "temperature_sensor_periph.c"
     "adc_periph.c"

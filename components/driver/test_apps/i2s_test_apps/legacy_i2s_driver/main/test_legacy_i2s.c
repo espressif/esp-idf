@@ -876,11 +876,17 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
 
     /* Test common sample rate
      * Workaround: set 12000 as 12001 to bypass the unknown failure, TODO: IDF-6705 */
-    uint32_t test_freq[] = {8000, 10000, 11025, 12001, 16000, 22050, 24000,
-                            32000, 44100, 48000, 64000, 88200, 96000,
-                            128000, 144000, 196000};
-    int case_cnt = sizeof(test_freq) / sizeof(uint32_t);
+    const uint32_t test_freq[] = {
+        8000,  10000,  11025, 12001, 16000, 22050,
+        24000, 32000,  44100, 48000, 64000, 88200,
+        96000, 128000, 144000,196000};
     int real_pulse = 0;
+#if CONFIG_IDF_ENV_FPGA
+    // Limit the test sample rate on FPGA platform due to the low frequency it supports.
+    int case_cnt = 10;
+#else
+    int case_cnt = sizeof(test_freq) / sizeof(uint32_t);
+#endif
 
     // Acquire the PM lock incase Dynamic Frequency Scaling(DFS) lower the frequency
 #ifdef CONFIG_PM_ENABLE
