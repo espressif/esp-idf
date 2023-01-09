@@ -367,6 +367,8 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
     } else {
         extend_adv_cb.inst[instance].legacy_pdu = false;
     }
+
+#if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
     // if own_addr_type == BLE_ADDR_PUBLIC_ID or BLE_ADDR_RANDOM_ID,
     if((params->own_addr_type == BLE_ADDR_PUBLIC_ID || params->own_addr_type == BLE_ADDR_RANDOM_ID) && BTM_GetLocalResolvablePrivateAddr(rand_addr)) {
         params->own_addr_type = BLE_ADDR_RANDOM;
@@ -376,6 +378,9 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
     } else if (params->own_addr_type == BLE_ADDR_RANDOM_ID) {
         params->own_addr_type = BLE_ADDR_RANDOM;
     }
+#else
+    btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = params->own_addr_type;
+#endif
 
     if ((err = btsnd_hcic_ble_set_ext_adv_params(instance, params->type, params->interval_min, params->interval_max,
                                       params->channel_map, params->own_addr_type, params->peer_addr_type,

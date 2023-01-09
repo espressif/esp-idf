@@ -591,7 +591,7 @@ void btm_ble_refresh_local_resolvable_private_addr(BD_ADDR pseudo_addr,
     BD_ADDR     dummy_bda = {0};
 
     if (p != NULL) {
-        if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM) {
+        if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type >= BLE_ADDR_RANDOM) {
             p->conn_addr_type = BLE_ADDR_RANDOM;
             if (memcmp(local_rpa, dummy_bda, BD_ADDR_LEN)) {
                 memcpy(p->conn_addr, local_rpa, BD_ADDR_LEN);

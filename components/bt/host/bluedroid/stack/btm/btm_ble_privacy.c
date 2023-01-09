@@ -1021,4 +1021,19 @@ void btm_ble_resolving_list_cleanup(void)
     }
 
 }
+
+void btm_ble_add_default_entry_to_resolving_list(void)
+{
+    /*
+     * Add local IRK entry with 00:00:00:00:00:00 address. This entry will
+     * be used to generate RPA for non-directed advertising if own_addr_type
+     * is set to rpa_pub since we use all-zero address as peer addres in
+     * such case. Peer IRK should be left all-zero since this is not for an
+     * actual peer.
+     */
+    BD_ADDR peer_addr = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+    BT_OCTET16 peer_irk = {0x0};
+
+    btsnd_hcic_ble_add_device_resolving_list (BLE_ADDR_PUBLIC, peer_addr, peer_irk, btm_cb.devcb.id_keys.irk);
+}
 #endif
