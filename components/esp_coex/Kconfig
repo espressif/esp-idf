@@ -4,7 +4,8 @@ menu "ESP-COEX"
 
     config ESP_WIFI_SW_COEXIST_ENABLE
         bool "Software controls WiFi/Bluetooth coexistence"
-        depends on ESP_WIFI_ENABLED && BT_ENABLED
+        depends on (ESP_WIFI_ENABLED && BT_ENABLED) || \
+            (ESP_WIFI_ENABLED && IEEE802154_ENABLED)
         default y
         select ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
         help
