@@ -893,8 +893,16 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode, tBTM_SET_LOCAL_PRIVACY_CBACK 
         // Disable RPA function
         btsnd_hcic_ble_set_addr_resolution_enable(FALSE);
     } else { /* privacy is turned on*/
+#if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
         /* always set host random address, used when privacy 1.1 or priavcy 1.2 is disabled */
         btm_gen_resolvable_private_addr((void *)btm_gen_resolve_paddr_low);
+#else
+        /* Controller generates RPA, Host don't need to set random address */
+        if (random_cb && random_cb->set_local_privacy_cback){
+            (*random_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_SUCCESS);
+            random_cb->set_local_privacy_cback = NULL;
+        }
+#endif
 
         if (BTM_BleMaxMultiAdvInstanceCount() > 0) {
             btm_ble_multi_adv_enb_privacy(privacy_mode);
@@ -910,7 +918,7 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode, tBTM_SET_LOCAL_PRIVACY_CBACK 
         } else { /* 4.1/4.0 controller */
             p_cb->privacy_mode = BTM_PRIVACY_1_1;
         }
-        // Disable RPA function
+        // Enable RPA function
         btsnd_hcic_ble_set_addr_resolution_enable(TRUE);
     }
 
@@ -990,6 +998,7 @@ void BTM_BleSetStaticAddr(BD_ADDR rand_addr)
     btm_cb.ble_ctr_cb.addr_mgnt_cb.exist_addr_bit |= BTM_BLE_GAP_ADDR_BIT_RANDOM;
 }
 
+#if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
 uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *cb)
 {
     if(*own_bda_type == BLE_ADDR_RANDOM) {
@@ -1056,6 +1065,13 @@ uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *
 
     return BTM_SUCCESS;
 }
+#else
+uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *cb)
+{
+    btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = *own_bda_type;
+    return BTM_SUCCESS;
+}
+#endif
 
 
 /*******************************************************************************
@@ -4238,8 +4254,10 @@ void btm_ble_timeout(TIMER_LIST_ENT *p_tle)
     case BTU_TTYPE_BLE_RANDOM_ADDR:
         if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM) {
             if (NULL == (void *)(p_tle->param)) {
+#if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
                 /* refresh the random addr */
                 btm_gen_resolvable_private_addr((void *)btm_gen_resolve_paddr_low);
+#endif
             } else {
                 if (BTM_BleMaxMultiAdvInstanceCount() > 0) {
                     btm_ble_multi_adv_configure_rpa((tBTM_BLE_MULTI_ADV_INST *)p_tle->param);
