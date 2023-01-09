@@ -48,10 +48,13 @@ typedef enum {
 static inline void sar_ctrl_ll_set_power_mode(sar_ctrl_ll_power_t mode)
 {
     if (mode == SAR_CTRL_LL_POWER_FSM) {
+        SENS.sar_meas1_ctrl1.rtc_saradc_clkgate_en = 1;
         SENS.sar_power_xpd_sar.force_xpd_sar = 0x0;
     } else if (mode == SAR_CTRL_LL_POWER_ON) {
+        SENS.sar_meas1_ctrl1.rtc_saradc_clkgate_en = 1;
         SENS.sar_power_xpd_sar.force_xpd_sar = 0x3;
     } else {
+        SENS.sar_meas1_ctrl1.rtc_saradc_clkgate_en = 0;
         SENS.sar_power_xpd_sar.force_xpd_sar = 0x2;
     }
 }

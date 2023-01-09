@@ -41,17 +41,6 @@ typedef enum {
                     SAR power control
 ---------------------------------------------------------------*/
 /**
- * Set SAR power mode
- *
- * @param mode  See `sar_ctrl_ll_power_t`
- */
-static inline void sar_ctrl_ll_set_power_mode(sar_ctrl_ll_power_t mode)
-{
-    //TODO: IDF-6124
-    abort();
-}
-
-/**
  * @brief Set SAR power mode when controlled by PWDET
  *
  * @param[in] mode  See `sar_ctrl_ll_power_t`

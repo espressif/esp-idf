@@ -20,17 +20,11 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_private/sar_periph_ctrl.h"
 #include "hal/sar_ctrl_ll.h"
+#include "hal/adc_ll.h"
 
 static const char *TAG = "sar_periph_ctrl";
 extern portMUX_TYPE rtc_spinlock;
 
-/*------------------------------------------------------------------------------
-* PWDET Power
-*----------------------------------------------------------------------------*/
-// This gets incremented when sar_periph_ctrl_pwdet_power_acquire() is called,
-// and decremented when sar_periph_ctrl_pwdet_power_release() is called. PWDET
-// is powered down when the value reaches zero. Should be modified within critical section.
-static int s_pwdet_power_on_cnt;
 
 void sar_periph_ctrl_init(void)
 {
@@ -46,6 +40,12 @@ void sar_periph_ctrl_power_disable(void)
     sar_ctrl_ll_set_power_mode(SAR_CTRL_LL_POWER_OFF);
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
 }
+
+
+/*------------------------------------------------------------------------------
+* PWDET Power
+*----------------------------------------------------------------------------*/
+static int s_pwdet_power_on_cnt;
 
 void sar_periph_ctrl_pwdet_power_acquire(void)
 {
@@ -70,4 +70,28 @@ void sar_periph_ctrl_pwdet_power_release(void)
         sar_ctrl_ll_set_power_mode_from_pwdet(SAR_CTRL_LL_POWER_FSM);
     }
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
+}
+
+
+/*------------------------------------------------------------------------------
+* ADC Power
+*----------------------------------------------------------------------------*/
+void sar_periph_ctrl_adc_oneshot_power_acquire(void)
+{
+    //Keep oneshot mode power controlled by HW, leave this function for compatibility
+}
+
+void sar_periph_ctrl_adc_oneshot_power_release(void)
+{
+    //Keep oneshot mode power controlled by HW, leave this function for compatibility
+}
+
+void sar_periph_ctrl_adc_continuous_power_acquire(void)
+{
+    adc_ll_digi_set_power_manage(ADC_POWER_SW_ON);
+}
+
+void sar_periph_ctrl_adc_continuous_power_release(void)
+{
+    adc_ll_digi_set_power_manage(ADC_POWER_BY_FSM);
 }
