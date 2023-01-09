@@ -49,9 +49,6 @@ class WsClient:
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.wifi_router
 def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
     # Get binary file

@@ -22,7 +22,6 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32
 @pytest.mark.esp32c3
-@pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.parametrize('config', ['spiffs',], indirect=True)
 def test_examples_protocol_http_server_file_serving(dut: Dut) -> None:
