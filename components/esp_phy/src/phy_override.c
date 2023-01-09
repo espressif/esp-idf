@@ -49,3 +49,12 @@ IRAM_ATTR void phy_i2c_exit_critical(void)
 {
     regi2c_exit_critical();
 }
+
+void phy_set_pwdet_power(bool en)
+{
+    if (en) {
+        sar_periph_ctrl_pwdet_power_acquire();
+    } else {
+        sar_periph_ctrl_pwdet_power_release();
+    }
+}
