@@ -2,19 +2,19 @@
 
 examples/bluetooth/bluedroid/ble:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32h4", "esp32s3"]
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
       temporary: true
       reason: the other targets are not tested yet
 
 examples/bluetooth/bluedroid/ble_50:
   enable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
       temporary: true
       reason: the other targets are not tested yet
 
 examples/bluetooth/bluedroid/ble_50/multi-adv:
   enable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3"]
+    - if: IDF_TARGET in ["esp32c3", "esp32h4", "esp32s3", "esp32c6"]
       temporary: true
       reason: the other targets are not tested yet
 
@@ -32,25 +32,31 @@ examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
 
 examples/bluetooth/bluedroid/coex/gattc_gatts_coex:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3"]
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32h4", "esp32s3", "esp32c6"]
       temporary: true
       reason: the other targets are not tested yet
 
 examples/bluetooth/blufi:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32s3"]
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32s3", "esp32c6"]
       temporary: true
       reason: the other targets are not tested yet
 
 examples/bluetooth/esp_ble_mesh:
   enable:
-    - if: IDF_TARGET == "esp32"
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s3", "esp32c6"]
       temporary: true
       reason: the other targets are not tested yet
 
-examples/bluetooth/esp_ble_mesh/ble_mesh_console:
+examples/bluetooth/esp_ble_mesh/aligenie_demo:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s3"]
+    - if: IDF_TARGET in ["esp32"]
+      temporary: true
+      reason: the other targets are not tested yet
+
+examples/bluetooth/esp_ble_mesh/ble_mesh_coex_test:
+  enable:
+    - if: IDF_TARGET in ["esp32"]
       temporary: true
       reason: the other targets are not tested yet
 
@@ -88,13 +94,6 @@ examples/bluetooth/hci/controller_vhci_ble_adv:
 
 examples/bluetooth/nimble:
   enable:
-    - if: IDF_TARGET == "esp32"
-      temporary: true
-
-      reason: not tested yet
-
-examples/bluetooth/nimble/ble_l2cap_coc:
-  enable:
     - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
@@ -117,14 +116,20 @@ examples/bluetooth/nimble/ble_phy:
       temporary: true
       reason: the other targets are not tested yet
 
-examples/bluetooth/nimble/ble_spp:
+examples/bluetooth/nimble/blemesh:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s3"]
+    - if: IDF_TARGET in ["esp32"]
+      temporary: true
+      reason: the other targets are not tested yet
+
+examples/bluetooth/nimble/bleprph_wifi_coex:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
 
 examples/bluetooth/nimble/hci:
   enable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET in ["esp32c2", "esp32c6"]
       temporary: true
       reason: the other targets are not tested yet

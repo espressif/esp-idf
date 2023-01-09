@@ -1,6 +1,5 @@
-| Supported Targets | ESP32-C2 |
-| ----------------- | -------- |
-
+| Supported Targets | ESP32-C2 | ESP32-C6 |
+| ----------------- | -------- | -------- |
 
 ESP-IDF UART HCI Controller
 ===========================
