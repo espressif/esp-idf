@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include "sdkconfig.h"
 #include "esp_err.h"
+#include "esp_ipc.h"
+#include "intr_types.h"
 #include "hal/spi_types.h"
 
 #ifdef __cplusplus
@@ -115,6 +117,7 @@ typedef struct {
     int data7_io_num;     ///< GPIO pin for spi data7 signal in octal mode, or -1 if not used.
     int max_transfer_sz;  ///< Maximum transfer size, in bytes. Defaults to 4092 if 0 when DMA enabled, or to `SOC_SPI_MAXIMUM_BUFFER_SIZE` if DMA is disabled.
     uint32_t flags;       ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
+    intr_cpu_id_t  isr_cpu_id;    ///< Select cpu core to register SPI ISR.
     int intr_flags;       /**< Interrupt flag for the bus to set the priority, and IRAM attribute, see
                            *  ``esp_intr_alloc.h``. Note that the EDGE, INTRDISABLED attribute are ignored
                            *  by the driver. Note that if ESP_INTR_FLAG_IRAM is set, ALL the callbacks of

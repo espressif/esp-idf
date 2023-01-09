@@ -115,6 +115,7 @@ We have two bits to control the interrupt:
 #include "driver/spi_master.h"
 #include "clk_tree.h"
 #include "esp_log.h"
+#include "esp_ipc.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "soc/soc_memory_layout.h"
@@ -191,6 +192,20 @@ static inline bool is_valid_host(spi_host_device_t host)
 #endif
 }
 
+#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+typedef struct {
+    spi_host_t *spi_host;
+    esp_err_t *err;
+} spi_ipc_param_t;
+
+static void ipc_isr_reg_to_core(void *args)
+{
+    spi_host_t *host = ((spi_ipc_param_t *)args)->spi_host;
+    const spi_bus_attr_t* bus_attr = host->bus_attr;
+    *((spi_ipc_param_t *)args)->err = esp_intr_alloc(spicommon_irqsource_for_host(host->id), bus_attr->bus_cfg.intr_flags | ESP_INTR_FLAG_INTRDISABLED, spi_intr, host, &host->intr);
+}
+#endif
+
 // Should be called before any devices are actually registered or used.
 // Currently automatically called after `spi_bus_initialize()` and when first device is registered.
 static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
@@ -215,11 +230,21 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
         .bus_attr = bus_attr,
     };
 
+    // interrupts are not allowed on SPI1 bus
     if (host_id != SPI1_HOST) {
-        // interrupts are not allowed on SPI1 bus
-        err = esp_intr_alloc(spicommon_irqsource_for_host(host_id),
-                            bus_attr->bus_cfg.intr_flags | ESP_INTR_FLAG_INTRDISABLED,
-                            spi_intr, host, &host->intr);
+#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+        if(bus_attr->bus_cfg.isr_cpu_id > INTR_CPU_ID_AUTO) {
+            SPI_CHECK(bus_attr->bus_cfg.isr_cpu_id <= INTR_CPU_ID_1, "invalid core id", ESP_ERR_INVALID_ARG);
+            spi_ipc_param_t ipc_arg = {
+                .spi_host = host,
+                .err = &err,
+            };
+            esp_ipc_call_blocking(INTR_CPU_CONVERT_ID(bus_attr->bus_cfg.isr_cpu_id), ipc_isr_reg_to_core, (void *) &ipc_arg);
+        } else
+#endif
+        {
+            err = esp_intr_alloc(spicommon_irqsource_for_host(host_id), bus_attr->bus_cfg.intr_flags | ESP_INTR_FLAG_INTRDISABLED, spi_intr, host, &host->intr);
+        }
         if (err != ESP_OK) {
             goto cleanup;
         }

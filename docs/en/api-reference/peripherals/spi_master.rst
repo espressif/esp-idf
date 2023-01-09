@@ -78,7 +78,7 @@ The SPI master driver governs communications of Hosts with Devices. The driver s
 
     The SPI master driver has the concept of multiple Devices connected to a single bus (sharing a single {IDF_TARGET_NAME} SPI peripheral). As long as each Device is accessed by only one task, the driver is thread safe. However, if multiple tasks try to access the same SPI Device, the driver is **not thread-safe**. In this case, it is recommended to either:
 
-    - Refactor your application so that each SPI peripheral is only accessed by a single task at a time.
+    - Refactor your application so that each SPI peripheral is only accessed by a single task at a time. You can use :cpp:member:`spi_bus_config_t::isr_cpu_id` to register the SPI ISR to the same core as SPI peripheral related tasks to ensure thread safety.
     - Add a mutex lock around the shared Device using :c:macro:`xSemaphoreCreateMutex`.
 
 .. toctree::

@@ -61,6 +61,7 @@ Driver Features
 
 The SPI slave driver allows using the SPI peripherals as full-duplex Devices. The driver can send/receive transactions up to {IDF_TARGET_MAX_DATA_BUF} bytes in length, or utilize DMA to send/receive longer transactions. However, there are some :ref:`known issues <spi_dma_known_issues>` related to DMA.
 
+The SPI slave driver supports registering the SPI ISR to a certain CPU core. If multiple tasks try to access the same SPI Device, it is recommended to refactor your application so that each SPI peripheral is only accessed by a single task at a time. and use :cpp:member:`spi_bus_config_t::isr_cpu_id` to register the SPI ISR to the same core as SPI peripheral related tasks to ensure thread safe.
 
 SPI Transactions
 ----------------
@@ -79,7 +80,7 @@ As not every transaction requires both writing and reading data, you have a choi
 Driver Usage
 ------------
 
-- Initialize an SPI peripheral as a Device by calling the function cpp:func:`spi_slave_initialize`. Make sure to set the correct I/O pins in the struct `bus_config`. Set the unused signals to ``-1``.
+- Initialize an SPI peripheral as a Device by calling the function :cpp:func:`spi_slave_initialize`. Make sure to set the correct I/O pins in the struct `bus_config`. Set the unused signals to ``-1``.
 
 .. only:: esp32
 
