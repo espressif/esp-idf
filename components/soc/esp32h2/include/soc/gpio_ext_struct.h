@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -16,11 +16,11 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** sd0_in : R/W; bitpos: [7:0]; default: 0;
+        /** duty : R/W; bitpos: [7:0]; default: 0;
          *  This field is used to configure the duty cycle of sigma delta modulation output.
          */
         uint32_t duty:8;
-        /** sd0_prescale : R/W; bitpos: [15:8]; default: 255;
+        /** prescale : R/W; bitpos: [15:8]; default: 255;
          *  This field is used to set a divider value to divide APB clock.
          */
         uint32_t prescale:8;
@@ -272,7 +272,7 @@ typedef union {
     uint32_t val;
 } gpio_ext_version_reg_t;
 
-typedef struct {
+typedef struct gpio_sd_dev_t {
     volatile gpio_sigmadelta_chn_reg_t channel[4];
     uint32_t reserved_010[4];
     volatile gpio_sigmadelta_misc_reg_t misc;

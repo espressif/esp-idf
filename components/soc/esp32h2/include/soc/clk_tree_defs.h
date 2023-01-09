@@ -330,9 +330,13 @@ typedef enum {
  * @brief Sigma Delta Modulator clock source
  */
 typedef enum {
-    SDM_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL clock as the source clock */
-    SDM_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M, /*!< Select PLL_F48M clock as the source clock */
-    SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,  /*!< Select PLL_F48M clock as the default clock choice */
+    SDM_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                        /*!< Select XTAL clock as the source clock */
+    SDM_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M,                /*!< Select PLL_F48M clock as the source clock */
+#if CONFIG_IDF_ENV_FPGA
+    SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,                     /*!< Select XTAL as the default clock choice */
+#else
+    SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,                 /*!< Select PLL_F48M as the default clock choice */
+#endif
 } soc_periph_sdm_clk_src_t;
 
 //////////////////////////////////////////////////GPIO Glitch Filter////////////////////////////////////////////////////
