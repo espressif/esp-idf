@@ -263,6 +263,20 @@ static inline void mspi_timing_ll_set_octal_flash_extra_dummy(uint8_t spi_num, u
 }
 
 /**
+ * Set MSPI Quad Flash dummy
+ *
+ * @param spi_num    SPI0 / SPI1
+ * @param dummy      dummy
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_set_quad_flash_dummy(uint8_t spi_num, uint8_t dummy)
+{
+    //HW workaround: Use normal dummy register to set extra dummy, the calibration dedicated extra dummy register doesn't work for quad mode
+    SET_PERI_REG_MASK(SPI_MEM_USER_REG(spi_num), SPI_MEM_USR_DUMMY);
+    SET_PERI_REG_BITS(SPI_MEM_USER1_REG(spi_num), SPI_MEM_USR_DUMMY_CYCLELEN_V, dummy, SPI_MEM_USR_DUMMY_CYCLELEN_S);
+}
+
+/**
  * Set MSPI PSRAM din mode
  *
  * @param spi_num   SPI0 / SPI1
@@ -310,6 +324,101 @@ static inline void mspi_timing_ll_set_octal_psram_extra_dummy(uint8_t spi_num, u
         SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_TIMING_CALI_REG(spi_num), SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN_V, 0,
             SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN_S);
     }
+}
+
+/**
+ * Set MSPI Octal PSRAM dummy
+ *
+ * @param spi_num    SPI0 / SPI1
+ * @param dummy      dummy
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_set_quad_psram_dummy(uint8_t spi_num, uint8_t dummy)
+{
+    //HW workaround: Use normal dummy register to set extra dummy, the calibration dedicated extra dummy register doesn't work for quad mode
+    SET_PERI_REG_MASK(SPI_MEM_CACHE_SCTRL_REG(spi_num), SPI_MEM_USR_RD_SRAM_DUMMY_M);
+    SET_PERI_REG_BITS(SPI_MEM_CACHE_SCTRL_REG(spi_num), SPI_MEM_SRAM_RDUMMY_CYCLELEN_V, dummy, SPI_MEM_SRAM_RDUMMY_CYCLELEN_S);
+}
+
+/**
+ * Clear MSPI hw fifo
+ *
+ * @param spi_num    SPI0 / SPI1
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_clear_fifo(uint8_t spi_num)
+{
+    for (int i = 0; i < 16; i++) {
+        REG_WRITE(SPI_MEM_W0_REG(spi_num) + i*4, 0);
+    }
+}
+
+/**
+ * Get if cs setup is enabled or not
+ *
+ * @param spi_num    SPI0 / SPI1
+ *
+ * @return
+ *        true: enabled; false: disabled
+ */
+__attribute__((always_inline))
+static inline bool mspi_timing_ll_is_cs_setup_enabled(uint8_t spi_num)
+{
+    return REG_GET_BIT(SPI_MEM_USER_REG(spi_num), SPI_MEM_CS_SETUP);
+}
+
+/**
+ * Get cs setup val
+ *
+ * @param spi_num    SPI0 / SPI1
+ *
+ * @return
+ *        cs setup reg val
+ */
+static inline uint32_t mspi_timing_ll_get_cs_setup_val(uint8_t spi_num)
+{
+    return REG_GET_FIELD(SPI_MEM_CTRL2_REG(spi_num), SPI_MEM_CS_SETUP_TIME);
+}
+
+/**
+ * Get if cs hold is enabled or not
+ *
+ * @param spi_num    SPI0 / SPI1
+ *
+ * @return
+ *        true: enabled; false: disabled
+ */
+__attribute__((always_inline))
+static inline bool mspi_timing_ll_is_cs_hold_enabled(uint8_t spi_num)
+{
+    return REG_GET_BIT(SPI_MEM_USER_REG(spi_num), SPI_MEM_CS_HOLD);
+}
+
+/**
+ * Get cs hold val
+ *
+ * @param spi_num    SPI0 / SPI1
+ *
+ * @return
+ *        cs hold reg val
+ */
+static inline uint32_t mspi_timing_ll_get_cs_hold_val(uint8_t spi_num)
+{
+    return REG_GET_FIELD(SPI_MEM_CTRL2_REG(spi_num), SPI_MEM_CS_HOLD_TIME);
+}
+
+/**
+ * Get clock reg val
+ *
+ * @param spi_num    SPI0 / SPI1
+ *
+ * @return
+ *        clock reg val
+ */
+__attribute__((always_inline))
+static inline uint32_t mspi_timing_ll_get_clock_reg(uint8_t spi_num)
+{
+    return READ_PERI_REG(SPI_MEM_CLOCK_REG(spi_num));
 }
 
 #ifdef __cplusplus

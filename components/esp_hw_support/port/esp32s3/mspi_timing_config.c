@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,8 +13,10 @@
 #include "esp_log.h"
 #include "soc/spi_mem_reg.h"
 #include "hal/mspi_timing_tuning_ll.h"
-#include "mspi_timing_config.h"
+#include "../../mspi_timing_config.h"
 #include "bootloader_flash.h"
+#include "esp32s3/rom/spi_flash.h"
+#include "esp32s3/rom/opi_flash.h"
 
 #define OPI_PSRAM_SYNC_READ           0x0000
 #define OPI_PSRAM_SYNC_WRITE          0x8080
@@ -28,37 +30,37 @@
 #define NOT_INIT_INT                  127
 
 //-------------------------------------MSPI Clock Setting-------------------------------------//
-spi_timing_config_core_clock_t spi_timing_config_get_core_clock(void)
+mspi_timing_config_core_clock_t mspi_timing_config_get_core_clock(void)
 {
-    switch (SPI_TIMING_CORE_CLOCK_MHZ) {
+    switch (MSPI_TIMING_CORE_CLOCK_MHZ) {
         case 80:
-            return SPI_TIMING_CONFIG_CORE_CLOCK_80M;
+            return MSPI_TIMING_CONFIG_CORE_CLOCK_80M;
         case 120:
-            return SPI_TIMING_CONFIG_CORE_CLOCK_120M;
+            return MSPI_TIMING_CONFIG_CORE_CLOCK_120M;
         case 160:
-            return SPI_TIMING_CONFIG_CORE_CLOCK_160M;
+            return MSPI_TIMING_CONFIG_CORE_CLOCK_160M;
         case 240:
-            return SPI_TIMING_CONFIG_CORE_CLOCK_240M;
+            return MSPI_TIMING_CONFIG_CORE_CLOCK_240M;
         default:
             abort();
     }
 }
 
-void spi_timing_config_set_core_clock(uint8_t spi_num, spi_timing_config_core_clock_t core_clock)
+void mspi_timing_config_set_core_clock(uint8_t spi_num, mspi_timing_config_core_clock_t core_clock)
 {
     uint32_t reg_val = 0;
 
     switch (core_clock) {
-        case SPI_TIMING_CONFIG_CORE_CLOCK_80M:
+        case MSPI_TIMING_CONFIG_CORE_CLOCK_80M:
             reg_val = 0;
             break;
-        case SPI_TIMING_CONFIG_CORE_CLOCK_120M:
+        case MSPI_TIMING_CONFIG_CORE_CLOCK_120M:
             reg_val = 1;
             break;
-        case SPI_TIMING_CONFIG_CORE_CLOCK_160M:
+        case MSPI_TIMING_CONFIG_CORE_CLOCK_160M:
             reg_val = 2;
             break;
-        case SPI_TIMING_CONFIG_CORE_CLOCK_240M:
+        case MSPI_TIMING_CONFIG_CORE_CLOCK_240M:
             reg_val = 3;
             break;
         default:
@@ -68,20 +70,20 @@ void spi_timing_config_set_core_clock(uint8_t spi_num, spi_timing_config_core_cl
     mspi_timing_ll_set_core_clock_divider(spi_num, reg_val);
 }
 
-void spi_timing_config_set_flash_clock(uint8_t spi_num, uint32_t freqdiv)
+void mspi_timing_config_set_flash_clock(uint8_t spi_num, uint32_t freqdiv)
 {
     assert(freqdiv > 0);
     mspi_timing_ll_set_flash_clock(spi_num, freqdiv);
 }
 
-void spi_timing_config_set_psram_clock(uint8_t spi_num, uint32_t freqdiv)
+void mspi_timing_config_set_psram_clock(uint8_t spi_num, uint32_t freqdiv)
 {
     mspi_timing_ll_set_psram_clock(spi_num, freqdiv);
 }
 
 /////////////////////////////////////////TIMING TUNING IS NEEDED//////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
+#if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
 //If one of the FLASH / PSRAM or both of them need timing tuning, we should build following code
 typedef enum {
     PSRAM_CMD_QPI,
@@ -103,7 +105,7 @@ extern void psram_exec_cmd(int spi_num, psram_cmd_mode_t mode,
 #endif
 
 //-------------------------------------FLASH timing tuning register config-------------------------------------//
-void spi_timing_config_flash_set_din_mode_num(uint8_t spi_num, uint8_t din_mode, uint8_t din_num)
+void mspi_timing_config_flash_set_din_mode_num(uint8_t spi_num, uint8_t din_mode, uint8_t din_num)
 {
     mspi_timing_ll_set_flash_din_mode(spi_num, din_mode);
     mspi_timing_ll_set_flash_din_num(spi_num, din_num);
@@ -157,7 +159,7 @@ static uint32_t spi_timing_config_get_dummy(void)
     }
 }
 
-void spi_timing_config_flash_set_extra_dummy(uint8_t spi_num, uint8_t extra_dummy)
+void mspi_timing_config_flash_set_extra_dummy(uint8_t spi_num, uint8_t extra_dummy)
 {
     if (bootloader_flash_is_octal_mode_enabled()) {
         mspi_timing_ll_set_octal_flash_extra_dummy(spi_num, extra_dummy);
@@ -176,47 +178,44 @@ void spi_timing_config_flash_set_extra_dummy(uint8_t spi_num, uint8_t extra_dumm
 
     // Only Quad Flash will run into this branch.
     uint32_t dummy = spi_timing_config_get_dummy();
-    SET_PERI_REG_BITS(SPI_MEM_USER1_REG(0), SPI_MEM_USR_DUMMY_CYCLELEN_V, dummy + g_rom_spiflash_dummy_len_plus[spi_num], SPI_MEM_USR_DUMMY_CYCLELEN_S);
+    mspi_timing_ll_set_quad_flash_dummy(spi_num, dummy + g_rom_spiflash_dummy_len_plus[spi_num]);
 }
 
 //-------------------------------------PSRAM timing tuning register config-------------------------------------//
-void spi_timing_config_psram_set_din_mode_num(uint8_t spi_num, uint8_t din_mode, uint8_t din_num)
+void mspi_timing_config_psram_set_din_mode_num(uint8_t spi_num, uint8_t din_mode, uint8_t din_num)
 {
     mspi_timing_ll_set_psram_din_mode(spi_num, din_mode);
     mspi_timing_ll_set_psram_din_num(spi_num, din_num);
 }
 
-void spi_timing_config_psram_set_extra_dummy(uint8_t spi_num, uint8_t extra_dummy)
+void mspi_timing_config_psram_set_extra_dummy(uint8_t spi_num, uint8_t extra_dummy)
 {
 #if CONFIG_SPIRAM_MODE_OCT
     mspi_timing_ll_set_octal_psram_extra_dummy(spi_num, extra_dummy);
 #elif CONFIG_SPIRAM_MODE_QUAD
     //HW workaround: Use normal dummy register to set extra dummy, the calibration dedicated extra dummy register doesn't work for quad mode
-    SET_PERI_REG_MASK(SPI_MEM_CACHE_SCTRL_REG(spi_num), SPI_MEM_USR_RD_SRAM_DUMMY_M);
-    SET_PERI_REG_BITS(SPI_MEM_CACHE_SCTRL_REG(spi_num), SPI_MEM_SRAM_RDUMMY_CYCLELEN_V, (QPI_PSRAM_FAST_READ_DUMMY + extra_dummy - 1), SPI_MEM_SRAM_RDUMMY_CYCLELEN_S);
+    mspi_timing_ll_set_quad_psram_dummy(spi_num, (QPI_PSRAM_FAST_READ_DUMMY + extra_dummy - 1));
 #endif
 }
 
 //-------------------------------------------FLASH/PSRAM Read/Write------------------------------------------//
-void spi_timing_config_flash_read_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint32_t len)
+void mspi_timing_config_flash_read_data(uint8_t *buf, uint32_t addr, uint32_t len)
 {
     if (bootloader_flash_is_octal_mode_enabled()) {
         // note that in spi_flash_read API, there is a wait-idle stage, since flash can only be read in idle state.
         // but after we change the timing settings, we might not read correct idle status via RDSR.
         // so, here we should use a read API that won't check idle status.
-        for (int i = 0; i < 16; i++) {
-            REG_WRITE(SPI_MEM_W0_REG(1) + i*4, 0);
-        }
+        mspi_timing_ll_clear_fifo(1);
         esp_rom_opiflash_read_raw(addr, buf, len);
     } else {
         esp_rom_spiflash_read(addr, (uint32_t *)buf, len);
     }
 }
 
-static void s_psram_write_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint32_t len)
+static void s_psram_write_data(uint8_t *buf, uint32_t addr, uint32_t len)
 {
 #if CONFIG_SPIRAM_MODE_OCT
-    esp_rom_opiflash_exec_cmd(spi_num, ESP_ROM_SPIFLASH_OPI_DTR_MODE,
+    esp_rom_opiflash_exec_cmd(1, ESP_ROM_SPIFLASH_OPI_DTR_MODE,
                             OPI_PSRAM_SYNC_WRITE, 16,
                             addr, 32,
                             OCT_PSRAM_WR_DUMMY_NUM,
@@ -225,7 +224,7 @@ static void s_psram_write_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uin
                             BIT(1),
                             false);
 #elif CONFIG_SPIRAM_MODE_QUAD
-    psram_exec_cmd(spi_num, 0,
+    psram_exec_cmd(1, 0,
                    QPI_PSRAM_WRITE, 8,
                    addr, 24,
                    0,
@@ -236,13 +235,11 @@ static void s_psram_write_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uin
 #endif
 }
 
-static void s_psram_read_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint32_t len)
+static void s_psram_read_data(uint8_t *buf, uint32_t addr, uint32_t len)
 {
 #if CONFIG_SPIRAM_MODE_OCT
-    for (int i = 0; i < 16; i++) {
-        REG_WRITE(SPI_MEM_W0_REG(1) + i*4, 0);
-    }
-    esp_rom_opiflash_exec_cmd(spi_num, ESP_ROM_SPIFLASH_OPI_DTR_MODE,
+    mspi_timing_ll_clear_fifo(1);
+    esp_rom_opiflash_exec_cmd(1, ESP_ROM_SPIFLASH_OPI_DTR_MODE,
                             OPI_PSRAM_SYNC_READ, 16,
                             addr, 32,
                             OCT_PSRAM_RD_DUMMY_NUM,
@@ -251,7 +248,7 @@ static void s_psram_read_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint
                             BIT(1),
                             false);
 #elif CONFIG_SPIRAM_MODE_QUAD
-    psram_exec_cmd(spi_num, 0,
+    psram_exec_cmd(1, 0,
                    QPI_PSRAM_FAST_READ, 8,
                    addr, 24,
                    QPI_PSRAM_FAST_READ_DUMMY + s_psram_extra_dummy,
@@ -262,14 +259,14 @@ static void s_psram_read_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint
 #endif
 }
 
-static void s_psram_execution(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint32_t len, bool is_read)
+static void s_psram_execution(uint8_t *buf, uint32_t addr, uint32_t len, bool is_read)
 {
     while (len) {
         uint32_t length = MIN(len, 32);
         if (is_read) {
-            s_psram_read_data(1, buf, addr, length);
+            s_psram_read_data(buf, addr, length);
         } else {
-            s_psram_write_data(1, buf, addr, length);
+            s_psram_write_data(buf, addr, length);
         }
         addr += length;
         buf += length;
@@ -277,14 +274,14 @@ static void s_psram_execution(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint
     }
 }
 
-void spi_timing_config_psram_write_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint32_t len)
+void mspi_timing_config_psram_write_data(uint8_t *buf, uint32_t addr, uint32_t len)
 {
-    s_psram_execution(spi_num, buf, addr, len, false);
+    s_psram_execution(buf, addr, len, false);
 }
 
-void spi_timing_config_psram_read_data(uint8_t spi_num, uint8_t *buf, uint32_t addr, uint32_t len)
+void mspi_timing_config_psram_read_data(uint8_t *buf, uint32_t addr, uint32_t len)
 {
-    s_psram_execution(spi_num, buf, addr, len, true);
+    s_psram_execution(buf, addr, len, true);
 }
 
 
@@ -293,80 +290,69 @@ void spi_timing_config_psram_read_data(uint8_t spi_num, uint8_t *buf, uint32_t a
  * These APIs are only used in `spi_flash_timing_tuning.c/sweep_for_success_sample_points()` for
  * configuring SPI1 timing tuning related registers to find best tuning parameter
  *-------------------------------------------------------------------------------------------------*/
-void spi_timing_config_flash_tune_din_num_mode(uint8_t din_mode, uint8_t din_num)
+void mspi_timing_config_flash_tune_din_num_mode(uint8_t din_mode, uint8_t din_num)
 {
     /**
      * 1. SPI_MEM_DINx_MODE(1), SPI_MEM_DINx_NUM(1) are meaningless
      *    SPI0 and SPI1 share the SPI_MEM_DINx_MODE(0), SPI_MEM_DINx_NUM(0) for FLASH timing tuning
      * 2. We use SPI1 to get the best Flash timing tuning (mode and num) config
      */
-    spi_timing_config_flash_set_din_mode_num(0, din_mode, din_num);
+    mspi_timing_config_flash_set_din_mode_num(0, din_mode, din_num);
 }
 
-void spi_timing_config_flash_tune_dummy(uint8_t extra_dummy)
+void mspi_timing_config_flash_tune_dummy(uint8_t extra_dummy)
 {
-    spi_timing_config_flash_set_extra_dummy(1, extra_dummy);
+    mspi_timing_config_flash_set_extra_dummy(1, extra_dummy);
 }
 
-void spi_timing_config_psram_tune_din_num_mode(uint8_t din_mode, uint8_t din_num)
+void mspi_timing_config_psram_tune_din_num_mode(uint8_t din_mode, uint8_t din_num)
 {
     /**
      * 1. SPI_MEM_SPI_SMEM_DINx_MODE(1), SPI_MEM_SPI_SMEM_DINx_NUM(1) are meaningless
      *    SPI0 and SPI1 share the SPI_MEM_SPI_SMEM_DINx_MODE(0), SPI_MEM_SPI_SMEM_DINx_NUM(0) for PSRAM timing tuning
      * 2. We use SPI1 to get the best PSRAM timing tuning (mode and num) config
      */
-    spi_timing_config_psram_set_din_mode_num(0, din_mode, din_num);
+    mspi_timing_config_psram_set_din_mode_num(0, din_mode, din_num);
 }
 
-void spi_timing_config_psram_tune_dummy(uint8_t extra_dummy)
+void mspi_timing_config_psram_tune_dummy(uint8_t extra_dummy)
 {
 #if CONFIG_SPIRAM_MODE_OCT
     //On 728, for SPI1, flash and psram share the extra dummy register
-    spi_timing_config_flash_set_extra_dummy(1, extra_dummy);
+    mspi_timing_config_flash_set_extra_dummy(1, extra_dummy);
 #elif CONFIG_SPIRAM_MODE_QUAD
     //Update this `s_psram_extra_dummy`, the `s_psram_read_data` will set dummy according to this `s_psram_extra_dummy`
     s_psram_extra_dummy = extra_dummy;
-    SET_PERI_REG_MASK(SPI_MEM_USER_REG(1), SPI_MEM_USR_DUMMY); // dummy en
-    SET_PERI_REG_BITS(SPI_MEM_USER1_REG(1), SPI_MEM_USR_DUMMY_CYCLELEN_V, extra_dummy - 1, SPI_MEM_USR_DUMMY_CYCLELEN_S);
+    mspi_timing_ll_set_quad_flash_dummy(1, extra_dummy - 1);
 #endif
 }
 
-#endif //#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
+#endif //#if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
 
 
 /*-------------------------------------------------------------------------------------------------
  * To let upper lay (spi_flash_timing_tuning.c) to know the necessary timing registers
  *-------------------------------------------------------------------------------------------------*/
-static bool s_get_cs_setup_enable(void)
-{
-    return REG_GET_BIT(SPI_MEM_USER_REG(0), SPI_MEM_CS_SETUP);
-}
-
-static bool s_get_cs_hold_enable(void)
-{
-    return REG_GET_BIT(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD);
-}
-
 /**
  * Get the SPI1 Flash CS timing setting. The setup time and hold time are both realistic cycles.
  * @note On ESP32-S3, SPI0/1 share the Flash CS timing registers. Therefore, we should not change these values.
  * @note This function inform `spi_flash_timing_tuning.c` (driver layer) of the cycle,
  * and other component (esp_flash driver) should get these cycle and configure the registers accordingly.
  */
-void spi_timing_config_get_cs_timing(uint8_t *setup_time, uint32_t *hold_time)
+void mspi_timing_config_get_cs_timing(uint8_t *setup_time, uint32_t *hold_time)
 {
-    *setup_time = REG_GET_FIELD(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_SETUP_TIME);
-    *hold_time = REG_GET_FIELD(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_HOLD_TIME);
+    *setup_time = mspi_timing_ll_get_cs_setup_val(0);
+    *hold_time = mspi_timing_ll_get_cs_hold_val(0);
     /**
      * The logic here is, if setup_en / hold_en is false, then we return the realistic cycle number,
      * which is 0. If true, then the realistic cycle number is (reg_value + 1)
      */
-    if (s_get_cs_setup_enable()) {
+    if (mspi_timing_ll_is_cs_setup_enabled(0)) {
         *setup_time += 1;
     } else {
         *setup_time = 0;
     }
-    if (s_get_cs_hold_enable()) {
+    if (mspi_timing_ll_is_cs_hold_enabled(0)) {
         *hold_time += 1;
     } else {
         *hold_time = 0;
@@ -378,7 +364,7 @@ void spi_timing_config_get_cs_timing(uint8_t *setup_time, uint32_t *hold_time)
  * @note Similarly, this function inform `spi_flash_timing_tuning.c` (driver layer) of the clock setting,
  * and other component (esp_flash driver) should get these and configure the registers accordingly.
  */
-uint32_t spi_timing_config_get_flash_clock_reg(void)
+uint32_t mspi_timing_config_get_flash_clock_reg(void)
 {
-    return READ_PERI_REG(SPI_MEM_CLOCK_REG(1));
+    return mspi_timing_ll_get_clock_reg(1);
 }
