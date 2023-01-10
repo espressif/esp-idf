@@ -995,6 +995,11 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
         return -1;
     }
 
+    if (!stream_block) {
+        ESP_LOGE(TAG, "No stream supplied");
+        return -1;
+    }
+
     if (!nonce_counter) {
         ESP_LOGE(TAG, "No nonce supplied");
         return -1;
