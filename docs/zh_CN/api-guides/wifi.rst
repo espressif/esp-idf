@@ -1512,7 +1512,7 @@ WPA2-Enterprise 是企业无线网络的安全认证机制。在连接到接入�
 
 请参考 IDF 示例程序 :idf_file:`examples/wifi/roaming/README.md` 来设置和使用这些 API。示例代码只演示了如何使用这些 API，应用程序应根据需要定义自己的算法和案例。
 
-.. only:: esp32s2 or esp32c3
+.. only:: SOC_WIFI_FTM_SUPPORT
 
     Wi-Fi Location
     -------------------------------
