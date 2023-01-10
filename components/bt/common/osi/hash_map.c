@@ -157,7 +157,11 @@ bool hash_map_set(hash_map_t *hash_map, const void *key, void *data)
     hash_map_entry->data = data;
     hash_map_entry->hash_map = hash_map;
 
-    return list_append(hash_bucket_list, hash_map_entry);
+    if (list_append(hash_bucket_list, hash_map_entry))
+        return true;
+
+    osi_free(hash_map_entry);
+    return false;
 }
 
 bool hash_map_erase(hash_map_t *hash_map, const void *key)

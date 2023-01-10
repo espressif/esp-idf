@@ -171,18 +171,22 @@ static void reassemble_and_dispatch(BT_HDR *packet)
                 return;
             }
             partial_packet = (BT_HDR *)osi_calloc(full_length + sizeof(BT_HDR));
-            partial_packet->event = packet->event;
-            partial_packet->len = full_length;
-            partial_packet->offset = packet->len;
+            if (partial_packet) {
+                partial_packet->event = packet->event;
+                partial_packet->len = full_length;
+                partial_packet->offset = packet->len;
 
-            memcpy(partial_packet->data, packet->data + packet->offset, packet->len);
+                memcpy(partial_packet->data, packet->data + packet->offset, packet->len);
 
-            // Update the ACL data size to indicate the full expected length
-            stream = partial_packet->data;
-            STREAM_SKIP_UINT16(stream); // skip the handle
-            UINT16_TO_STREAM(stream, full_length - HCI_ACL_PREAMBLE_SIZE);
+                // Update the ACL data size to indicate the full expected length
+                stream = partial_packet->data;
+                STREAM_SKIP_UINT16(stream); // skip the handle
+                UINT16_TO_STREAM(stream, full_length - HCI_ACL_PREAMBLE_SIZE);
 
-            hash_map_set(partial_packets, (void *)(uintptr_t)handle, partial_packet);
+                if (!hash_map_set(partial_packets, (void *)(uintptr_t)handle, partial_packet)) {
+                    osi_free(partial_packet);
+                }
+            }
             // Free the old packet buffer, since we don't need it anymore
             osi_free(packet);
         } else {
