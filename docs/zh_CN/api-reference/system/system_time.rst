@@ -142,19 +142,21 @@ lwIP SNTP 库提供了 API 函数，用于设置某个事件的回调函数。�
 完成上述步骤后，请调用标准 C 库函数 ``localtime()``。该函数将返回排除时区偏差和夏令时干扰后的准确本地时间。
 
 
-64 位 ``time_t``
------------------
+2036 年和 2038 年溢出问题
+--------------------------------
 
-ESP-IDF 默认使用 32 位的 ``time_t`` 类型。为解决 Y2K38 漏洞，您在构建应用程序时可能需要使用 64 位的 ``time_t`` 类型。
+SNTP/NTP 2036 年溢出问题
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-目前，完成这一操作需要从头开始构建交叉编译器工具链，具体步骤请参阅 :doc:`/get-started/linux-macos-setup`。要在工具链中启用对 64 位 ``time_t`` 的支持，您需要在构建工具链之前从 ``crosstool-NG/samples/xtensa-esp32-elf/crosstool.config`` 文件中删除 ``--enable-newlib-long-time_t`` 选项。
+SNTP/NTP 时间戳为 64 位无符号定点数，其中前 32 位表示整数部分，后 32 位表示小数部分。该 64 位无符号定点数代表从 1900 年 1 月 1 日 00:00 起经过的秒数，因此 SNTP/NTP 时间将在 2036 年溢出。
 
-如需使程序同时兼容 32 位和 64 位的 ``time_t``，可以使用以下方法：
+为了解决这一问题，可以使用整数部分的 MSB（惯例为位 0）来表示 1968 年到 2104 年之间的时间范围（查看 `RFC2030 <https://www.rfc-editor.org/rfc/rfc2030>` 了解更多信息），这一惯例将使得 SNTP/NTP 时间戳的生命周期延长。该惯例会在 lwIP 库的 SNTP 模块中实现，因此 ESP-IDF 中 SNTP 相关功能在 2104 年之前能够经受住时间的考验。
 
-- 在 C 或 C++ 源文件中，如果 ``time_t`` 是 32 位的，编译器会预定义 ``_USE_LONG_TIME_T`` 宏，该宏定义在 ``<sys/types.h>`` 中。
-- 在 CMake 文件中，ESP-IDF 构建属性 ``TIME_T_SIZE`` 将被设置为 ``time_t`` 的大小，单位为字节。您可以调用 ``idf_build_get_property(var TIME_T_SIZE)`` 来获取该属性的值，并将其放入 CMake 变量 ``var`` 中。了解更多关于 ``idf_build_get_property`` 的信息，参见 :ref:`ESP-IDF CMake 构建系统 API <cmake_buildsystem_api>`。
 
-注意， ``time_t`` 类型的大小也会影响其他类型的大小，例如 ``struct timeval``、 ``struct stat`` 和 ``struct utimbuf``。
+Unix 时间 2038 年溢出问题
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Unix 时间（类型 ``time_t``）此前为有符号的 32 位整数，因此将于 2038 年溢出（即 `Y2K38 问题 <https://zh.wikipedia.org/wiki/2038%E5%B9%B4%E9%97%AE%E9%A2%98>`_）。为了解决 Y2K38 问题，ESP-IDF 从 v5.0 版本起开始使用有符号的 64 位整数来表示 ``time_t``，从而将 ``time_t`` 溢出推迟 2920 亿年。
 
 
 API 参考
