@@ -24,6 +24,7 @@
 
 #include "esp_log.h"
 #include "mbedtls/aes.h"
+#include "mbedtls/gcm.h"
 #include "esp_heap_caps.h"
 #include "soc/soc_memory_layout.h"
 
@@ -340,12 +341,12 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
 
     if (!ctx) {
         ESP_LOGE(TAG, "No AES context supplied");
-        return -1;
+        return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
 
     if (!iv) {
         ESP_LOGE(TAG, "No IV supplied");
-        return -1;
+        return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
 
     /* Initialize AES-GCM context */
@@ -401,12 +402,12 @@ int esp_aes_gcm_update_ad( esp_gcm_context *ctx,
 
     if (!ctx) {
         ESP_LOGE(TAG, "No AES context supplied");
-        return -1;
+        return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
 
     if ( (aad_len > 0) && !aad) {
         ESP_LOGE(TAG, "No aad supplied");
-        return -1;
+        return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
 
     if (ctx->gcm_state != ESP_AES_GCM_STATE_START) {
@@ -435,21 +436,21 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
 
     if (!output_length) {
         ESP_LOGE(TAG, "No output length supplied");
-        return -1;
+        return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
     *output_length = input_length;
 
     if (!ctx) {
         ESP_LOGE(TAG, "No GCM context supplied");
-        return -1;
+        return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
     if (!input) {
         ESP_LOGE(TAG, "No input supplied");
-        return -1;
+        return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
     if (!output) {
         ESP_LOGE(TAG, "No output supplied");
-        return -1;
+        return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
 
     if ( output > input && (size_t) ( output - input ) < input_length ) {
@@ -611,7 +612,7 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
        In practice, e.g. with mbedtls the length of aad will always be short
     */
     if (aad_len > LLDESC_MAX_NUM_PER_DESC) {
-        return -1;
+        return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
     /* IV and AD are limited to 2^32 bits, so 2^29 bytes */
     /* IV is not allowed to be zero length */
@@ -623,17 +624,17 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
 
     if (!ctx) {
         ESP_LOGE(TAG, "No AES context supplied");
-        return -1;
+        return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
 
     if (!iv) {
         ESP_LOGE(TAG, "No IV supplied");
-        return -1;
+        return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
 
     if ( (aad_len > 0) && !aad) {
         ESP_LOGE(TAG, "No aad supplied");
-        return -1;
+        return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
 
     /* Initialize AES-GCM context */

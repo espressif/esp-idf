@@ -606,7 +606,7 @@ int esp_internal_aes_encrypt(esp_aes_context *ctx,
     int r;
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!valid_key_length(ctx)) {
@@ -640,7 +640,7 @@ int esp_internal_aes_decrypt(esp_aes_context *ctx,
     int r;
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!valid_key_length(ctx)) {
@@ -676,7 +676,7 @@ int esp_aes_crypt_ecb(esp_aes_context *ctx,
     int r;
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!valid_key_length(ctx)) {
@@ -705,12 +705,12 @@ int esp_aes_crypt_cbc(esp_aes_context *ctx,
 {
     int r = 0;
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!iv) {
         ESP_LOGE(TAG, "No IV supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     /* For CBC input length should be multiple of
@@ -758,12 +758,12 @@ int esp_aes_crypt_cfb8(esp_aes_context *ctx,
     size_t block_bytes = length - (length % AES_BLOCK_BYTES);
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!iv) {
         ESP_LOGE(TAG, "No IV supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
 
@@ -846,17 +846,17 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
     size_t n;
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!iv) {
         ESP_LOGE(TAG, "No IV supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!iv_off) {
         ESP_LOGE(TAG, "No IV offset supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!valid_key_length(ctx)) {
@@ -931,17 +931,17 @@ int esp_aes_crypt_ofb(esp_aes_context *ctx,
     size_t stream_bytes = 0;
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!iv) {
         ESP_LOGE(TAG, "No IV supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!iv_off) {
         ESP_LOGE(TAG, "No IV offset supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     n = *iv_off;
@@ -992,7 +992,7 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
     size_t n;
 
     if (esp_aes_validate_input(ctx, input, output)) {
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!stream_block) {
@@ -1002,12 +1002,12 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
 
     if (!nonce_counter) {
         ESP_LOGE(TAG, "No nonce supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     if (!nc_off) {
         ESP_LOGE(TAG, "No nonce offset supplied");
-        return -1;
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
     n = *nc_off;
