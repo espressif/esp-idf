@@ -1,0 +1,9 @@
+# Test configuration for enabling optional features that are supported on esp_pm. Tested on all targets
+
+# Enable optional features
+CONFIG_PM_DFS_INIT_AUTO=y
+CONFIG_PM_PROFILING=y
+CONFIG_PM_TRACE=y
+CONFIG_PM_SLP_IRAM_OPT=y
+CONFIG_PM_RTOS_IDLE_OPT=y
+CONFIG_PM_SLP_DISABLE_GPIO=y
