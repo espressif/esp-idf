@@ -79,6 +79,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "mspi_timing_tuning.c" "port/${target}/mspi_timing_config.c")
     endif()
 
+    if(CONFIG_SOC_RTC_FAST_MEM_SUPPORTED)
+        list(APPEND srcs "sleep_wake_stub.c")
+    endif()
+
     if(CONFIG_IDF_TARGET_ESP32H2)
         list(REMOVE_ITEM srcs
                 "adc_share_hw_ctrl.c" # TODO: IDF-6215

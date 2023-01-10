@@ -42,6 +42,12 @@ examples/system/deep_sleep:
       temporary: true
       reason: target(s) not supported yet
 
+examples/system/deep_sleep_wake_stub:
+  disable:
+    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
+      temporary: true
+      reason: target(s) is not supported yet
+
 examples/system/efuse:
   disable_test:
     - if: IDF_TARGET == "esp32s3"
