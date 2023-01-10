@@ -29,11 +29,13 @@ typedef struct {
     bool rf_power_down;
 } brownout_hal_config_t;
 
+/**
+ * @brief Config brown out hal.
+ *
+ * @param cfg Pointer of brown out configuration structure.
+ */
 void brownout_hal_config(const brownout_hal_config_t *cfg);
 
-void brownout_hal_intr_enable(bool enable);
-
-void brownout_hal_intr_clear(void);
 
 #ifdef __cplusplus
 }
