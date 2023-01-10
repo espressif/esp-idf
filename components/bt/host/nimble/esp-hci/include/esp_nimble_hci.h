@@ -7,7 +7,7 @@
 #ifndef __ESP_NIMBLE_HCI_H__
 #define __ESP_NIMBLE_HCI_H__
 
-#include "nimble/ble_hci_trans.h"
+#include "nimble/transport.h"
 
 #ifdef __cplusplus
 extern "C" {
