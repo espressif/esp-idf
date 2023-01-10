@@ -19,13 +19,13 @@
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
 #include "soc/gpio_struct.h"
-#include "soc/lp_aon_reg.h"
-#include "soc/lp_io_struct.h"
+#include "soc/lp_aon_struct.h"
 #include "soc/pmu_reg.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "hal/gpio_types.h"
+#include "hal/misc.h"
 #include "hal/assert.h"
 
 #ifdef __cplusplus
@@ -84,6 +84,7 @@ static inline void gpio_ll_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
     // USB DP pin is default to PU enabled
     // Note that esp32c6 has supported USB_EXCHG_PINS feature. If this efuse is burnt, the gpio pin
     // which should be checked is USB_DM_GPIO_NUM instead.
+    // TODO: read the specific efuse with efuse_ll.h
     if (gpio_num == USB_DP_GPIO_NUM) {
         SET_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_PAD_PULL_OVERRIDE);
         CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_DP_PULLUP);
@@ -381,7 +382,7 @@ static inline void gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
   */
 static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    SET_PERI_REG_MASK(LP_AON_GPIO_HOLD0_REG, GPIO_HOLD_MASK[gpio_num]);
+    LP_AON.gpio_hold0.gpio_hold0 |= GPIO_HOLD_MASK[gpio_num];
 }
 
 /**
@@ -392,7 +393,7 @@ static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    CLEAR_PERI_REG_MASK(LP_AON_GPIO_HOLD0_REG, GPIO_HOLD_MASK[gpio_num]);
+    LP_AON.gpio_hold0.gpio_hold0 &= ~GPIO_HOLD_MASK[gpio_num];
 }
 
 /**
@@ -598,9 +599,21 @@ static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num
 static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, uint32_t gpio_num, gpio_int_type_t intr_type)
 {
     HAL_ASSERT(gpio_num <= GPIO_NUM_7 && "gpio larger than 7 does not support deep sleep wake-up function");
-    // On ESP32-C6, (lp_io pin number) == (gpio pin number)
-    LP_IO.pin[gpio_num].wakeup_enable = 1;
-    LP_IO.pin[gpio_num].int_type = intr_type;
+
+    LP_AON.ext_wakeup_cntl.ext_wakeup_filter = 1;
+
+    uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
+    wakeup_sel_mask |= BIT(gpio_num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel, wakeup_sel_mask);
+
+    bool trigger_level = (intr_type == GPIO_INTR_LOW_LEVEL) ? 0 : 1;
+    uint32_t wakeup_level_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv);
+    if (trigger_level) {
+        wakeup_level_mask |= BIT(gpio_num);
+    } else {
+        wakeup_level_mask &= ~BIT(gpio_num);
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv, wakeup_level_mask);
 }
 
 /**
@@ -612,9 +625,10 @@ static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, uint32_t gpio
 static inline void gpio_ll_deepsleep_wakeup_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     HAL_ASSERT(gpio_num <= GPIO_NUM_7 && "gpio larger than 7 does not support deep sleep wake-up function");
-    // On ESP32-C6, (lp_io pin number) == (gpio pin number)
-    LP_IO.pin[gpio_num].wakeup_enable = 0;
-    LP_IO.pin[gpio_num].int_type = 0; // Disable io interrupt
+
+    uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
+    wakeup_sel_mask &= ~BIT(gpio_num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel, wakeup_sel_mask);
 }
 
 /**
@@ -627,8 +641,9 @@ static inline void gpio_ll_deepsleep_wakeup_disable(gpio_dev_t *hw, uint32_t gpi
 static inline bool gpio_ll_deepsleep_wakeup_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
 {
     HAL_ASSERT(gpio_num <= GPIO_NUM_7 && "gpio larger than 7 does not support deep sleep wake-up function");
-    // On ESP32-C6, (lp_io pin number) == (gpio pin number)
-    return LP_IO.pin[gpio_num].wakeup_enable;
+
+    uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
+    return wakeup_sel_mask & BIT(gpio_num);
 }
 
 #ifdef __cplusplus

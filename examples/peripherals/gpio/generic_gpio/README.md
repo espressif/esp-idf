@@ -23,10 +23,10 @@ This test code shows how to configure GPIO and how to use it with interruption.
 
  **Note:** The following pin assignments are used by default, you can change them by `idf.py menuconfig` > `Example Configuration`.
 
-|                 | CONFIG_GPIO_OUTPUT_0 | CONFIG_GPIO_OUTPUT_1 | CONFIG_GPIO_INPUT_0 | CONFIG_GPIO_INPUT_1 |
-| --------------- | -------------------- | -------------------- | ------------------- | ------------------- |
-| ESP32-C2/ESP32H4| 8                    | 9                    | 4                   | 5                   |
-| All other chips | 18                   | 19                   | 4                   | 5                   |
+|                        | CONFIG_GPIO_OUTPUT_0 | CONFIG_GPIO_OUTPUT_1 | CONFIG_GPIO_INPUT_0 | CONFIG_GPIO_INPUT_1 |
+| ---------------------- | -------------------- | -------------------- | ------------------- | ------------------- |
+| ESP32C2/ESP32H2/ESP32H4| 8                    | 9                    | 4                   | 5                   |
+| All other chips        | 18                   | 19                   | 4                   | 5                   |
 
 ## How to use example
 

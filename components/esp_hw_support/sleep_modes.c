@@ -1013,7 +1013,7 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
 
 bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 {
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED || CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-6027 C6 IO0-7 meet both conditions here
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
     return RTC_GPIO_IS_VALID_GPIO(gpio_num);
 #else
     return GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num);

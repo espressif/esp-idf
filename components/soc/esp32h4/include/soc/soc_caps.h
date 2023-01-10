@@ -152,9 +152,8 @@
 #define SOC_GPIO_PIN_COUNT          (26)
 #endif
 
-// Target has no full RTC IO subsystem, so GPIO is 100% "independent" of RTC
-// On ESP32-H4, Digital IOs have their own registers to control pullup/down capability, independent of RTC registers.
-#define SOC_GPIO_SUPPORTS_RTC_INDEPENDENT       (1)
+// Target has no full RTC IO subsystem, GPIO0~5(7~12) remain RTC function (powered by VDD3V3_RTC, and can be used as deep-sleep wakeup pins)
+
 // Force hold is a new function of ESP32-H4
 #define SOC_GPIO_SUPPORT_FORCE_HOLD         (1)
 // GPIO0~5 on ESP32H4Beta1 / GPIO7~12 on ESP32H4Beta2 can support chip deep sleep wakeup
