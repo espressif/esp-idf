@@ -1179,7 +1179,9 @@ esp_err_t esp_wifi_set_rssi_threshold(int32_t rssi);
   * @brief      Start an FTM Initiator session by sending FTM request
   *             If successful, event WIFI_EVENT_FTM_REPORT is generated with the result of the FTM procedure
   *
-  * @attention  Use this API only in Station mode
+  * @attention  1. Use this API only in Station mode.
+  * @attention  2. If FTM is initiated on a different channel than Station is connected in or internal SoftAP is started in,
+  *                FTM defaults to a single burst in ASAP mode.
   *
   * @param      cfg  FTM Initiator session configuration
   *
