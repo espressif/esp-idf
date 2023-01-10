@@ -22,7 +22,9 @@ extern "C" {
 #include "soc/soc_caps.h"
 #include "hal/i2c_types.h"
 
-#define I2C_APB_CLK_FREQ  APB_CLK_FREQ /*!< I2C source clock is APB clock, 80MHz */
+#if SOC_I2C_SUPPORT_APB
+#define I2C_APB_CLK_FREQ  _Pragma ("GCC warning \"'I2C_APB_CLK_FREQ' macro is deprecated\"") (APB_CLK_FREQ) /*!< I2C source clock is APB clock, 80MHz, deprecated */
+#endif
 
 // I2C clk flags for users to use, can be expanded in the future.
 #define I2C_SCLK_SRC_FLAG_FOR_NOMAL       (0)         /*!< Any one clock source that is available for the specified frequency may be choosen*/
