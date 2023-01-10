@@ -11,6 +11,9 @@
 #include <string.h>
 #include <stdbool.h>
 #include "esp_event_base.h"
+#if CONFIG_BT_HID_HOST_ENABLED
+#include "esp_hidh_api.h"
+#endif /* CONFIG_BT_HID_HOST_ENABLED */
 
 ESP_EVENT_DEFINE_BASE(ESP_HIDH_EVENTS);
 #define ESP_HIDH_DELAY_FREE_TO 100000 // us
@@ -801,7 +804,15 @@ void esp_hidh_post_process_event_handler(void *event_handler_arg, esp_event_base
     switch (event) {
     case ESP_HIDH_OPEN_EVENT:
         if (param->open.status != ESP_OK) {
-            esp_hidh_dev_free_inner(param->open.dev);
+            esp_hidh_dev_t *dev = param->open.dev;
+            if (dev) {
+#if CONFIG_BT_HID_HOST_ENABLED
+                if (esp_hidh_dev_transport_get(dev) == ESP_HID_TRANSPORT_BT && param->open.status == ESP_HIDH_ERR_SDP) {
+                    break;
+                }
+#endif /* CONFIG_BT_HID_HOST_ENABLED */
+                esp_hidh_dev_free_inner(dev);
+            }
         }
         break;
     case ESP_HIDH_CLOSE_EVENT:
