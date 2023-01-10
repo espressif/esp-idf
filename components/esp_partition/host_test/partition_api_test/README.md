@@ -8,9 +8,8 @@ Source the IDF environment as usual.
 
 Once this is done, build the application:
 ```bash
-idf.py build partition-table
+idf.py build
 ```
-Note that for the time being, `partition-table` target needs to be built manually.
 
 # Run
 ```bash
