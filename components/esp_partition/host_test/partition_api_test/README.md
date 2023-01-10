@@ -13,5 +13,5 @@ idf.py build
 
 # Run
 ```bash
-`build/partition_api_test.elf`
+idf.py monitor
 ```
