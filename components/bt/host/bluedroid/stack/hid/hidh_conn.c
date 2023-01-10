@@ -110,6 +110,7 @@ tHID_STATUS hidh_conn_reg (void)
 
     for (xx = 0; xx < HID_HOST_MAX_DEVICES; xx++) {
         hh_cb.devices[xx].in_use = FALSE ;
+        hh_cb.devices[xx].delay_remove = FALSE;
         hh_cb.devices[xx].conn.conn_state = HID_CONN_STATE_UNUSED;
     }
 
@@ -681,6 +682,12 @@ static void hidh_l2cif_disconnect_cfm (UINT16 l2cap_cid, UINT16 result)
     if ((p_hcon->ctrl_cid == 0) && (p_hcon->intr_cid == 0)) {
         hh_cb.devices[dhandle].state = HID_DEV_NO_CONN;
         p_hcon->conn_state = HID_CONN_STATE_UNUSED;
+        // removes the device from list devices that host has to manage
+        if (hh_cb.devices[dhandle].delay_remove) {
+            hh_cb.devices[dhandle].in_use = FALSE;
+            hh_cb.devices[dhandle].delay_remove = FALSE;
+            hh_cb.devices[dhandle].attr_mask = 0;
+        }
         hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, p_hcon->disc_reason, NULL ) ;
     }
 }
