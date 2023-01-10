@@ -56,15 +56,14 @@ typedef struct {
     bool has_overflowed;
 } records_t;
 
-
 // Forward Defines
 static void heap_trace_dump_base(bool internal_ram, bool psram);
-static void linked_list_setup();
-static void linked_list_remove(heap_trace_record_t* rRemove);
-static void linked_list_deep_copy(heap_trace_record_t *rDest, const heap_trace_record_t* rSrc);
-static bool linked_list_add(const heap_trace_record_t* rAppend);
-static heap_trace_record_t* linked_list_pop_unused();
-static heap_trace_record_t* linked_list_find_address_reverse(void* p);
+static void record_deep_copy(heap_trace_record_t *rDest, const heap_trace_record_t* rSrc);
+static void list_setup();
+static void list_remove(heap_trace_record_t* rRemove);
+static bool list_add(const heap_trace_record_t* rAppend);
+static heap_trace_record_t* list_pop_unused();
+static heap_trace_record_t* list_find_address_reverse(void* p);
 
 /* The actual records. */
 static records_t records;
@@ -111,7 +110,7 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 
     records.count = 0;
     records.has_overflowed = false;
-    linked_list_setup(&records);
+    list_setup(&records);
 
     total_allocations = 0;
     total_frees = 0;
@@ -321,11 +320,11 @@ static IRAM_ATTR void record_allocation(const heap_trace_record_t *rAllocation)
 
             heap_trace_record_t *rFirst = TAILQ_FIRST(&records.list);
 
-            linked_list_remove(rFirst);
+            list_remove(rFirst);
         }
 
         // push onto end of list
-        linked_list_add(rAllocation);
+        list_add(rAllocation);
 
         total_allocations++;
     }
@@ -351,7 +350,7 @@ static IRAM_ATTR void record_free(void *p, void **callers)
         total_frees++;
 
         // search backwards for the allocation record matching this free
-        heap_trace_record_t* rFound = linked_list_find_address_reverse(p);
+        heap_trace_record_t* rFound = list_find_address_reverse(p);
 
         if (rFound) {
             if (mode == HEAP_TRACE_ALL) {
@@ -363,7 +362,7 @@ static IRAM_ATTR void record_free(void *p, void **callers)
 
                 // Leak trace mode, once an allocation is freed
                 // we remove it from the list
-                linked_list_remove(rFound);
+                list_remove(rFound);
             }
         }
     }
@@ -372,7 +371,7 @@ static IRAM_ATTR void record_free(void *p, void **callers)
 }
 
 // connect all records into a linked list of 'unused' records
-static void linked_list_setup()
+static void list_setup()
 {
     TAILQ_INIT(&records.list);
     TAILQ_INIT(&records.unused);
@@ -387,7 +386,7 @@ static void linked_list_setup()
 
 /* 1. removes record from records.list,
    2. places it into records.unused */
-static IRAM_ATTR void linked_list_remove(heap_trace_record_t* rRemove)
+static IRAM_ATTR void list_remove(heap_trace_record_t* rRemove)
 {
     assert(records.count > 0);
 
@@ -407,7 +406,7 @@ static IRAM_ATTR void linked_list_remove(heap_trace_record_t* rRemove)
 
 
 // pop record from unused list
-static IRAM_ATTR heap_trace_record_t* linked_list_pop_unused()
+static IRAM_ATTR heap_trace_record_t* list_pop_unused()
 {
     // no records left?
     if (records.count >= records.capacity) {
@@ -427,7 +426,7 @@ static IRAM_ATTR heap_trace_record_t* linked_list_pop_unused()
 
 // deep copy a record.
 // Note: only copies the *allocation data*, not the next & prev ptrs
-static IRAM_ATTR void linked_list_deep_copy(heap_trace_record_t *rDest, const heap_trace_record_t *rSrc)
+static IRAM_ATTR void record_deep_copy(heap_trace_record_t *rDest, const heap_trace_record_t *rSrc)
 {
     rDest->ccount  = rSrc->ccount;
     rDest->address = rSrc->address;
@@ -438,19 +437,19 @@ static IRAM_ATTR void linked_list_deep_copy(heap_trace_record_t *rDest, const he
 
 // Append a record to records.list
 // Note: This deep copies rAppend
-static IRAM_ATTR bool linked_list_add(const heap_trace_record_t *rAppend)
+static IRAM_ATTR bool list_add(const heap_trace_record_t *rAppend)
 {
     if (records.count < records.capacity) {
 
         // get unused record
-        heap_trace_record_t* rDest = linked_list_pop_unused();
+        heap_trace_record_t* rDest = list_pop_unused();
 
         // we checked that there is capacity, so this
         // should never be null.
         assert(rDest != NULL);
 
         // copy allocation data
-        linked_list_deep_copy(rDest, rAppend);
+        record_deep_copy(rDest, rAppend);
 
         // append to records.list
         TAILQ_INSERT_TAIL(&records.list, rDest, tailq);
@@ -472,7 +471,7 @@ static IRAM_ATTR bool linked_list_add(const heap_trace_record_t *rAppend)
 }
 
 // search records.list backwards for the allocation record matching this address
-static IRAM_ATTR heap_trace_record_t* linked_list_find_address_reverse(void* p)
+static IRAM_ATTR heap_trace_record_t* list_find_address_reverse(void* p)
 {
     if (records.count == 0) {
         return NULL;
