@@ -25,7 +25,7 @@ static struct wpabuf *g_sae_commit = NULL;
 static struct wpabuf *g_sae_confirm = NULL;
 int g_allowed_groups[] = { IANA_SECP256R1, 0 };
 
-static esp_err_t wpa3_build_sae_commit(u8 *bssid)
+static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
 {
     int default_group = IANA_SECP256R1;
     u32 len = 0;
@@ -34,6 +34,7 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid)
 
     if (wpa_sta_cur_pmksa_matches_akm()) {
         wpa_printf(MSG_INFO, "wpa3: Skip SAE and use cached PMK instead");
+        *sae_msg_len = 0;
         return ESP_FAIL;
     }
 
@@ -140,7 +141,7 @@ static u8 *wpa3_build_sae_msg(u8 *bssid, u32 sae_msg_type, u32 *sae_msg_len)
             if (esp_wifi_get_wps_status_internal() != WPS_STATUS_DISABLE) {
                 return NULL;
             }
-            if (ESP_OK != wpa3_build_sae_commit(bssid))
+            if (ESP_OK != wpa3_build_sae_commit(bssid, sae_msg_len))
                 return NULL;
             *sae_msg_len = (u32)wpabuf_len(g_sae_commit);
             buf = wpabuf_mhead_u8(g_sae_commit);
