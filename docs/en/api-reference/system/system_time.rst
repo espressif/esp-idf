@@ -142,19 +142,21 @@ To set the local timezone, use the following POSIX functions:
 Once these steps are completed, call the standard C library function ``localtime()``, and it will return the correct local time taking into account the timezone offset and daylight saving time.
 
 
-64-bit ``time_t``
------------------
+Year 2036 and 2038 Overflow Issues
+----------------------------------
 
-ESP-IDF uses 32-bit ``time_t`` type by default. To address the Y2K38 issue, you may need to use 64-bit ``time_t`` type when building the application.
+SNTP/NTP 2036 Overflow
+^^^^^^^^^^^^^^^^^^^^^^
 
-Currently, this requires building the cross-compiler toolchain from scratch. See the instructions for building the toolchain in :doc:`/get-started/linux-macos-setup`. To enable 64-bit ``time_t`` support in the toolchain, you need to remove the ``--enable-newlib-long-time_t`` option from the ``crosstool-NG/samples/xtensa-esp32-elf/crosstool.config`` file before building the toolchain.
+SNTP/NTP timestamps are represented as 64-bit unsigned fixed point numbers, where the first 32 bits represent the integer part, and the last 32 bits represent the fractional part. The 64-bit unsigned fixed point number represents the number of seconds since 00:00 on 1st of January 1900, thus SNTP/NTP times will overflow in the year 2036.
 
-If you need to make the program compatible with both 32-bit and 64-bit ``time_t``, you may use the following methods:
+To address this issue, lifetime of the SNTP/NTP timestamps has been extended by convention by using the MSB (bit 0 by convention) of the integer part to indicate time ranges between years 1968 to 2104 (see `RFC2030 <https://www.rfc-editor.org/rfc/rfc2030>`_ for more details). This convention is implemented in lwIP library SNTP module. Therefore SNTP-related functions in ESP-IDF are future-proof until year 2104.
 
-- In C or C++ source files, ``_USE_LONG_TIME_T`` preprocessor macro will be defined if 32-bit ``time_t`` is used. You need to include ``<sys/types.h>`` to make this macro available.
-- In CMake files, ``TIME_T_SIZE`` IDF build property will be set to the size of ``time_t`` in bytes. You may call ``idf_build_get_property(var TIME_T_SIZE)`` to get the value of this property into a CMake variable ``var``. See :ref:`ESP-IDF CMake Build System API <cmake_buildsystem_api>` for more information about ``idf_build_get_property``.
 
-Note that the size of ``time_t`` type also affects the sizes of other types, for example, ``struct timeval``, ``struct stat``, and ``struct utimbuf``.
+Unix Time 2038 Overflow
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Unix time (type ``time_t``) was previously represented as a 32-bit signed integer, leading to an overflow in year 2038 (i.e., `Y2K38 issue <https://en.wikipedia.org/wiki/Year_2038_problem>`_). To address the Y2K38 issue, ESP-IDF uses a 64-bit signed integer to represent ``time_t`` starting from release v5.0, thus deferring ``time_t`` overflow for another 292 billion years.
 
 
 API Reference
