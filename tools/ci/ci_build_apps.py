@@ -61,13 +61,18 @@ def get_pytest_apps(
     app_dirs.sort()
 
     default_size_json_path = 'size.json'
+    build_dir = 'build_@t_@w'
     if target == 'linux':  # no idf_size.py for linux target
         default_size_json_path = None  # type: ignore
+        # IDF-6644
+        # hard-coded in components/esp_partition/partition_linux.c
+        # const char *partition_table_file_name = "build/partition_table/partition-table.bin";
+        build_dir = 'build'
 
     apps = find_apps(
         app_dirs,
         target=target,
-        build_dir='build_@t_@w',
+        build_dir=build_dir,
         config_rules_str=config_rules_str,
         build_log_path='build_log.txt',
         size_json_path=default_size_json_path,

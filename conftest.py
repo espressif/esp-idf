@@ -260,15 +260,20 @@ def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> st
     Returns:
         valid build directory
     """
-
-    check_dirs = []
-    if target is not None and config is not None:
-        check_dirs.append(f'build_{target}_{config}')
-    if target is not None:
-        check_dirs.append(f'build_{target}')
-    if config is not None:
-        check_dirs.append(f'build_{config}')
-    check_dirs.append('build')
+    if target == 'linux':
+        # IDF-6644
+        # hard-coded in components/esp_partition/partition_linux.c
+        # const char *partition_table_file_name = "build/partition_table/partition-table.bin";
+        check_dirs = ['build']
+    else:
+        check_dirs = []
+        if target is not None and config is not None:
+            check_dirs.append(f'build_{target}_{config}')
+        if target is not None:
+            check_dirs.append(f'build_{target}')
+        if config is not None:
+            check_dirs.append(f'build_{config}')
+        check_dirs.append('build')
 
     for check_dir in check_dirs:
         binary_path = os.path.join(app_path, check_dir)
@@ -282,6 +287,15 @@ def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> st
     raise ValueError(
         f'no build dir valid. Please build the binary via "idf.py -B {recommend_place} build" and run pytest again'
     )
+
+
+@pytest.fixture(autouse=True)
+def linux_cd_into_app_folder(app_path: str, target: Optional[str]) -> None:
+    # IDF-6644
+    # hard-coded in components/esp_partition/partition_linux.c
+    # const char *partition_table_file_name = "build/partition_table/partition-table.bin";
+    if target == 'linux':
+        os.chdir(app_path)
 
 
 @pytest.fixture(autouse=True)
@@ -327,6 +341,7 @@ def check_performance(idf_path: str) -> Callable[[str, float, str], None]:
         :param target: target chip
         :raise: AssertionError: if check fails
         """
+
         def _find_perf_item(operator: str, path: str) -> float:
             with open(path, 'r') as f:
                 data = f.read()
