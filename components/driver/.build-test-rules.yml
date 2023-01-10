@@ -84,6 +84,14 @@ components/driver/test_apps/sdio:
       temporary: true
       reason: Not supported.
 
+components/driver/test_apps/spi/master:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
+components/driver/test_apps/spi/slave:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
 components/driver/test_apps/temperature_sensor:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1

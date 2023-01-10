@@ -251,10 +251,6 @@ config SOC_I2C_FIFO_LEN
     int
     default 32
 
-config SOC_I2C_SUPPORT_SLAVE
-    bool
-    default y
-
 config SOC_I2C_SUPPORT_HW_CLR_BUS
     bool
     default y
@@ -283,10 +279,6 @@ config SOC_I2S_SUPPORTS_PCM
     bool
     default y
 
-config SOC_I2S_SUPPORTS_PDM
-    bool
-    default y
-
 config SOC_I2S_SUPPORTS_PDM_TX
     bool
     default y
@@ -294,10 +286,6 @@ config SOC_I2S_SUPPORTS_PDM_TX
 config SOC_I2S_PDM_MAX_TX_LINES
     int
     default 2
-
-config SOC_I2S_SUPPORTS_TDM
-    bool
-    default y
 
 config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     bool
@@ -392,14 +380,6 @@ config SOC_RMT_SUPPORT_RX_DEMODULATION
     default y
 
 config SOC_RMT_SUPPORT_TX_ASYNC_STOP
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_TX_LOOP_COUNT
-    bool
-    default y
-
-config SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP
     bool
     default y
 
@@ -662,10 +642,6 @@ config SOC_TIMER_GROUP_SUPPORT_PLL_F48M
 config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 2
-
-config SOC_TIMER_SUPPORT_ETM
-    bool
-    default y
 
 config SOC_TWAI_CONTROLLER_NUM
     bool

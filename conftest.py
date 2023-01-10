@@ -49,7 +49,7 @@ except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages'))
     import common_test_methods  # noqa: F401
 
-SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6']
+SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2']
 PREVIEW_TARGETS = ['esp32h4']  # this PREVIEW_TARGETS excludes 'linux' target
 DEFAULT_SDKCONFIG = 'default'
 
@@ -61,6 +61,7 @@ TARGET_MARKERS = {
     'esp32c2': 'support esp32c2 target',
     'esp32c6': 'support esp32c6 target',
     'esp32h4': 'support esp32h4 target',
+    'esp32h2': 'support esp32h2 target',
     'linux': 'support linux target',
 }
 

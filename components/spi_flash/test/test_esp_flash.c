@@ -124,7 +124,7 @@
 #define HSPI_PIN_NUM_CS     FSPI_PIN_NUM_CS
 #endif
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
 #define TEST_CONFIG_NUM (sizeof(config_list)/sizeof(flashtest_config_t))
 
 typedef void (*flash_test_func_t)(const esp_partition_t *part);
@@ -651,5 +651,4 @@ TEST_CASE("Test esp_flash read/write performance", "[esp_flash][test_env=UT_T1_E
 #endif
 
 TEST_CASE_MULTI_FLASH("Test esp_flash read/write performance", test_flash_read_write_performance);
-
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)

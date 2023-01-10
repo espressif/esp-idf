@@ -6,13 +6,17 @@ components/esp_hw_support/test_apps/dma:
       temporary: false
       reason: Neither GDMA nor CPDMA is supported on ESP32
 
+components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
 components/esp_hw_support/test_apps/etm:
   disable:
     - if: SOC_ETM_SUPPORTED != 1
 
 components/esp_hw_support/test_apps/rtc_clk:
   disable:
-    - if: IDF_TARGET in ["esp32c6"]
+    - if: IDF_TARGET in ["esp32c6", "esp32h2"]
       temporary: true
       reason: Unsupported on C6 for now. TODO IDF-5645
 

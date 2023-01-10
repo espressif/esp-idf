@@ -13,7 +13,7 @@
 #include "soc/soc_caps.h"
 #include "esp_private/wifi.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
 //IDF-5046
 
 #include "esp_phy_init.h"

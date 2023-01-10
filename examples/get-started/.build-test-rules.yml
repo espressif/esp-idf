@@ -1,5 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+examples/get-started/blink:
+  disable:
+    - if: IDF_TARGET == "esp32h2" # RMT support IDF-6224
+      reason: RMT has not been supported
+
 examples/get-started/hello_world:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32h4", "esp32c6"] # preview targets
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32h4"] # preview targets

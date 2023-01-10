@@ -250,6 +250,14 @@ build_pytest_examples_esp32c6:
     IDF_TARGET: esp32c6
     TEST_DIR: examples
 
+build_pytest_examples_esp32h2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
+    TEST_DIR: examples
+
 build_pytest_components_esp32:
   extends:
     - .build_pytest_template
@@ -302,6 +310,14 @@ build_pytest_components_esp32c6:
   parallel: 3
   variables:
     IDF_TARGET: esp32c6
+    TEST_DIR: components
+
+build_pytest_components_esp32h2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
     TEST_DIR: components
 
 build_non_test_components_apps:
@@ -389,6 +405,14 @@ build_pytest_test_apps_esp32c6:
     - .rules:build:custom_test-esp32c6
   variables:
     IDF_TARGET: esp32c6
+    TEST_DIR: tools/test_apps
+
+build_pytest_test_apps_esp32h2:
+  extends:
+    - .build_pytest_test_apps_template
+    - .rules:build:custom_test-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
     TEST_DIR: tools/test_apps
 
 .build_template_app_template:
@@ -562,6 +586,13 @@ build_esp_idf_tests_cmake_esp32c6:
   variables:
     IDF_TARGET: esp32c6
 
+build_esp_idf_tests_cmake_esp32h2:
+  extends:
+    - .build_esp_idf_tests_cmake_template
+    - .rules:build:unit_test-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
+
 build_examples_cmake_esp32:
   extends:
     - .build_cmake_template
@@ -624,6 +655,16 @@ build_examples_cmake_esp32c6:
     IDF_TARGET: esp32c6
     TEST_DIR: examples
 
+build_examples_cmake_esp32h2:
+  extends:
+    - .build_cmake_template
+    - .rules:build:example_test-esp32h2
+  parallel: 2
+  variables:
+    IDF_TARGET: esp32h2
+    TEST_DIR: examples
+
+
 build_test_apps_esp32:
   extends:
     - .build_cmake_template
@@ -674,6 +715,14 @@ build_test_apps_esp32c6:
     - .rules:build:custom_test-esp32c6
   variables:
     IDF_TARGET: esp32c6
+    TEST_DIR: tools/test_apps
+
+build_test_apps_esp32h2:
+  extends:
+    - .build_cmake_template
+    - .rules:build:custom_test-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
     TEST_DIR: tools/test_apps
 
 build_clang_test_apps_esp32:
