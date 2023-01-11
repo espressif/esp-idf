@@ -102,7 +102,7 @@ Setup
 
     .. note:: The API *esp_efuse_write_field_bit(ESP_EFUSE_SOFT_DIS_JTAG)* can be used to burn "soft JTAG disable" bit on {IDF_TARGET_NAME}.
 
-.. only:: esp32s3 or esp32c3 or esp32h4
+.. only:: not esp32s2
 
     .. note:: The API *esp_efuse_write_field_cnt(ESP_EFUSE_SOFT_DIS_JTAG, ESP_EFUSE_SOFT_DIS_JTAG[0]->bit_count)* can be used to burn "soft JTAG disable" bits on {IDF_TARGET_NAME}.
 
