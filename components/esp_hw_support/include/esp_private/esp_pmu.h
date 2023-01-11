@@ -116,6 +116,14 @@ typedef enum pmu_sleep_regdma_entry {
     PMU_SLEEP_REGDMA_ENTRY_MAX
 } pmu_sleep_regdma_entry_t;
 
+/**
+ * @brief PMU ICG modem code of HP system
+ */
+typedef enum {
+    PMU_HP_ICG_MODEM_CODE_SLEEP = 0,
+    PMU_HP_ICG_MODEM_CODE_MODEM = 1,
+    PMU_HP_ICG_MODEM_CODE_ACTIVE = 2,
+} pmu_hp_icg_modem_mode_t;
 
 
 /**

@@ -98,7 +98,7 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
     .icg_func   = 0xffffffff,                   \
     .icg_apb    = 0xffffffff,                   \
     .icg_modem  = {                             \
-        .code = 2                               \
+        .code = PMU_HP_ICG_MODEM_CODE_ACTIVE    \
     }, \
     .sysclk     = {                             \
         .dig_sysclk_nodiv = 0,                  \
@@ -113,7 +113,7 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
     .icg_func   = 0,                            \
     .icg_apb    = 0,                            \
     .icg_modem  = {                             \
-        .code = 1                               \
+        .code = PMU_HP_ICG_MODEM_CODE_MODEM     \
     }, \
     .sysclk     = {                             \
         .dig_sysclk_nodiv = 0,                  \
@@ -128,7 +128,7 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
     .icg_func   = 0,                            \
     .icg_apb    = 0,                            \
     .icg_modem  = {                             \
-        .code = 0                               \
+        .code = PMU_HP_ICG_MODEM_CODE_SLEEP     \
     }, \
     .sysclk     = {                             \
         .dig_sysclk_nodiv = 0,                  \
