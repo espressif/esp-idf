@@ -6,6 +6,7 @@
 #ifndef _SOC_SYSTEM_STRUCT_H_
 #define _SOC_SYSTEM_STRUCT_H_
 
+#include <stdint.h>
 #include "soc/soc.h"
 
 #ifdef __cplusplus
