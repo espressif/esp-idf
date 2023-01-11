@@ -121,7 +121,7 @@ ENV_MARKERS = {
     'psramv0': 'Runner with PSRAM version 0',
     # multi-dut markers
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
-    'i154_multi_dut': 'tests should be used for i154, such as openthread.',
+    'openthread_br': 'tests should be used for openthread border router.',
     'wifi_two_dut': 'tests should be run on runners which has two wifi duts connected.',
     'generic_multi_device': 'generic multiple devices whose corresponding gpio pins are connected to each other.',
     'twai_network': 'multiple runners form a TWAI network.',
