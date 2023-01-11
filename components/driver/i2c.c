@@ -756,6 +756,7 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
         return ret;
     }
     i2c_hw_enable(i2c_num);
+    i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_ll_disable_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
     i2c_ll_clear_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
