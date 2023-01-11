@@ -73,6 +73,14 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "esp_ds.c")
     endif()
 
+    if(CONFIG_SOC_PM_CPU_RETENTION_BY_SW)
+        list(APPEND srcs "sleep_cpu_asm.S")
+        set_property(TARGET ${COMPONENT_LIB}
+                    APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_critical_regs_save")
+        set_property(TARGET ${COMPONENT_LIB}
+                    APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_critical_regs_restore")
+    endif()
+
     if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT)
         list(APPEND srcs "modem_clock.c")
     endif()
