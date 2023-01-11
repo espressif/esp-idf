@@ -126,12 +126,13 @@ char *http_auth_digest(const char *username, const char *password, esp_http_auth
     }
     if (auth_data->opaque) {
         rc = asprintf(&temp_auth_str, "%s, opaque=\"%s\"", auth_str, auth_data->opaque);
+        // Free the previous memory allocated for `auth_str`
+        free(auth_str);
         if (rc < 0) {
             ESP_LOGE(TAG, "asprintf() returned: %d", rc);
             ret = ESP_FAIL;
             goto _digest_exit;
         }
-        free(auth_str);
         auth_str = temp_auth_str;
     }
 _digest_exit:
