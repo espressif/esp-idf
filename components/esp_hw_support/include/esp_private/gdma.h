@@ -32,7 +32,7 @@ typedef struct gdma_channel_t *gdma_channel_handle_t;
  */
 typedef enum {
     GDMA_TRIG_PERIPH_M2M,  /*!< GDMA trigger peripheral: M2M */
-    GDMA_TRIG_PERIPH_UART, /*!< GDMA trigger peripheral: UART */
+    GDMA_TRIG_PERIPH_UHCI, /*!< GDMA trigger peripheral: UHCI */
     GDMA_TRIG_PERIPH_SPI,  /*!< GDMA trigger peripheral: SPI */
     GDMA_TRIG_PERIPH_I2S,  /*!< GDMA trigger peripheral: I2S */
     GDMA_TRIG_PERIPH_AES,  /*!< GDMA trigger peripheral: AES */
@@ -126,13 +126,13 @@ typedef struct {
  */
 typedef struct {
     gdma_trigger_peripheral_t periph; /*!< Target peripheral which will trigger DMA operations */
-    int instance_id;                  /*!< Peripheral instance ID. Supported IDs are listed in `soc/gdma_channel.h`, e.g. SOC_GDMA_TRIG_PERIPH_UART0 */
+    int instance_id;                  /*!< Peripheral instance ID. Supported IDs are listed in `soc/gdma_channel.h`, e.g. SOC_GDMA_TRIG_PERIPH_UHCI0 */
 } gdma_trigger_t;
 
 /**
  * @brief Helper macro to initialize GDMA trigger
  * @note value of `peri` must be selected from `gdma_trigger_peripheral_t` enum.
- *       e.g. GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UART,0)
+ *       e.g. GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_I2S,0)
  *
  */
 #define GDMA_MAKE_TRIGGER(peri, id) \

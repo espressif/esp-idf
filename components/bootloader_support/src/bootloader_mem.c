@@ -12,7 +12,7 @@
 #include "bootloader_mem.h"
 #include "esp_cpu.h"
 
-#if CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
 #include "soc/hp_apm_reg.h"
 #include "soc/lp_apm_reg.h"
 #include "soc/lp_apm0_reg.h"
@@ -20,7 +20,7 @@
 
 void bootloader_init_mem(void)
 {
-#if CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
     // disable apm filter // TODO: IDF-5909
     REG_WRITE(LP_APM_FUNC_CTRL_REG, 0);
     REG_WRITE(LP_APM0_FUNC_CTRL_REG, 0);

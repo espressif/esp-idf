@@ -47,7 +47,7 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "dma/async_memcpy_impl_cp_dma.c")
     endif()
 
-    if(CONFIG_SOC_GDMA_SUPPORTED OR CONFIG_SOC_CP_DMA_SUPPORTED)
+    if(CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED)
         list(APPEND srcs "dma/esp_async_memcpy.c")
     endif()
 
