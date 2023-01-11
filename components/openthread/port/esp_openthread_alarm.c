@@ -23,13 +23,21 @@
 #include "openthread/platform/radio.h"
 #include "openthread/platform/time.h"
 
-static uint64_t s_alarm_ms_t0 = 0;
-static uint64_t s_alarm_ms_dt = 0;
+static uint32_t s_alarm_ms = 0;
 static bool s_is_ms_running = false;
-static uint64_t s_alarm_us_t0 = 0;
-static uint64_t s_alarm_us_dt = 0;
+static uint32_t s_alarm_us = 0;
 static bool s_is_us_running = false;
 static const char *alarm_workflow = "alarm";
+
+static inline bool is_expired(uint32_t target, uint32_t now)
+{
+    return (((now - target) & (1 << 31)) == 0);
+}
+
+static inline uint32_t calculate_duration(uint32_t target, uint32_t now)
+{
+    return is_expired(target, now) ? 0 : target - now;
+}
 
 uint64_t otPlatTimeGet(void)
 {
@@ -45,11 +53,10 @@ void otPlatAlarmMilliStartAt(otInstance *aInstance, uint32_t aT0, uint32_t aDt)
 {
     OT_UNUSED_VARIABLE(aInstance);
 
-    s_alarm_ms_t0 = aT0;
-    s_alarm_ms_dt = aDt;
+    s_alarm_ms = aT0 + aDt;
     s_is_ms_running = true;
 
-    ESP_LOGD(OT_PLAT_LOG_TAG, "Millisecond timer alarm start running, t0=%llu, dt=%llu", s_alarm_ms_t0, s_alarm_ms_dt);
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Millisecond timer alarm start running, t0=%"PRIu32", dt=%"PRIu32"", aT0, aDt);
 }
 
 void otPlatAlarmMilliStop(otInstance *aInstance)
@@ -59,7 +66,7 @@ void otPlatAlarmMilliStop(otInstance *aInstance)
     s_is_ms_running = false;
 }
 
-uint32_t otPlatAlarmMilliGetNow(void)
+uint32_t inline otPlatAlarmMilliGetNow(void)
 {
     return esp_timer_get_time() / US_PER_MS;
 }
@@ -68,11 +75,10 @@ void otPlatAlarmMicroStartAt(otInstance *aInstance, uint32_t aT0, uint32_t aDt)
 {
     OT_UNUSED_VARIABLE(aInstance);
 
-    s_alarm_us_t0 = aT0;
-    s_alarm_us_dt = aDt;
+    s_alarm_us = aT0 + aDt;
     s_is_us_running = true;
 
-    ESP_LOGD(OT_PLAT_LOG_TAG, "Microsecond timer alarm start running, t0=%llu, dt=%llu", s_alarm_us_t0, s_alarm_us_dt);
+    ESP_LOGD(OT_PLAT_LOG_TAG, "Microsecond timer alarm start running, t0=%"PRIu32", dt=%"PRIu32"", aT0, aDt);
 }
 
 void otPlatAlarmMicroStop(otInstance *aInstance)
@@ -81,7 +87,7 @@ void otPlatAlarmMicroStop(otInstance *aInstance)
     s_is_us_running = false;
 }
 
-uint32_t otPlatAlarmMicroGetNow(void)
+uint32_t inline otPlatAlarmMicroGetNow(void)
 {
     return esp_timer_get_time();
 }
@@ -100,17 +106,16 @@ void esp_openthread_alarm_deinit(void)
 void esp_openthread_alarm_update(esp_openthread_mainloop_context_t *mainloop)
 {
     struct timeval *timeout = &mainloop->timeout;
-    uint64_t now = esp_timer_get_time();
-    int64_t remain_min_time_us = INT64_MAX;
-    int64_t remaining_us = 0;
+    int32_t remain_min_time_us = INT32_MAX;
+    int32_t remaining_us = 0;
     if (s_is_ms_running) {
-        remaining_us = (s_alarm_ms_dt + s_alarm_ms_t0) * US_PER_MS - now;
+        remaining_us = calculate_duration(s_alarm_ms, otPlatAlarmMilliGetNow()) * US_PER_MS;
         if (remain_min_time_us > remaining_us) {
             remain_min_time_us = remaining_us;
         }
     }
     if (s_is_us_running) {
-        remaining_us = s_alarm_us_dt + s_alarm_us_t0 - now;
+        remaining_us = calculate_duration(s_alarm_us, otPlatAlarmMicroGetNow());
         if (remain_min_time_us > remaining_us) {
             remain_min_time_us = remaining_us;
         }
@@ -126,7 +131,7 @@ void esp_openthread_alarm_update(esp_openthread_mainloop_context_t *mainloop)
 
 esp_err_t esp_openthread_alarm_process(otInstance *aInstance, const esp_openthread_mainloop_context_t *mainloop)
 {
-    if (s_is_ms_running && s_alarm_ms_t0 + s_alarm_ms_dt <= otPlatAlarmMilliGetNow()) {
+    if (s_is_ms_running && is_expired(s_alarm_ms, otPlatAlarmMilliGetNow())) {
         s_is_ms_running = false;
 
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
@@ -140,7 +145,7 @@ esp_err_t esp_openthread_alarm_process(otInstance *aInstance, const esp_openthre
 
         ESP_LOGD(OT_PLAT_LOG_TAG, "Millisecond timer alarm fired");
     }
-    if (s_is_us_running && s_alarm_us_t0 + s_alarm_us_dt <= esp_timer_get_time()) {
+    if (s_is_us_running && is_expired(s_alarm_us, otPlatAlarmMicroGetNow())) {
         s_is_us_running = false;
         otPlatAlarmMicroFired(aInstance);
         ESP_LOGD(OT_PLAT_LOG_TAG, "Microsecond timer alarm fired");
