@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,7 @@ extern "C" {
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
 
 #define I2S_LL_PLL_F160M_CLK_FREQ      (160 * 1000000) // PLL_F160M_CLK: 160MHz
+#define I2S_LL_DEFAULT_PLL_CLK_FREQ     I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
 
 /* I2S clock configuration structure */
 typedef struct {

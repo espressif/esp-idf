@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -875,7 +875,7 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
     esp_rom_gpio_connect_in_signal(MASTER_WS_IO, pcnt_periph_signals.groups[0].units[0].channels[0].pulse_sig, 0);
 
     // Test common sample rate
-    uint32_t test_freq[15] = {8000,  11025, 12000, 16000, 22050, 24000,
+    uint32_t test_freq[16] = {8000, 10000, 11025, 12000, 16000, 22050, 24000,
                             32000, 44100, 48000, 64000, 88200, 96000,
                             128000, 144000, 196000};
     int real_pulse = 0;
@@ -887,7 +887,7 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
     TEST_ESP_OK(esp_pm_lock_create(pm_type, 0, "legacy_i2s_test", &pm_lock));
     esp_pm_lock_acquire(pm_lock);
 #endif
-    for (int i = 0; i < 15; i++) {
+    for (int i = 0; i < 16; i++) {
         int expt_pulse = (int16_t)((float)test_freq[i] * (TEST_I2S_PERIOD_MS / 1000.0));
         TEST_ESP_OK(i2s_set_clk(id, test_freq[i], SAMPLE_BITS, I2S_CHANNEL_STEREO));
         vTaskDelay(1); // Waiting for hardware totally started
