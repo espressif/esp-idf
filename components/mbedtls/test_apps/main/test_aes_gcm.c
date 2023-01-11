@@ -830,4 +830,56 @@ TEST_CASE("mbedtls AES GCM - Combine different IV/Key/Plaintext/AAD lengths", "[
     }
 }
 
+TEST_CASE("mbedtls AES GCM - Different Authentication Tag lengths", "[aes-gcm]")
+{
+    const unsigned CALL_SZ = 160;
+    uint8_t iv[16];
+    uint8_t key[16];
+    uint8_t aad[16];
+    uint8_t *input = heap_caps_malloc(CALL_SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(input);
+
+    memset(input, 0x67, CALL_SZ);
+    memset(iv, 0xA2, sizeof(iv));
+    memset(key, 0x48, sizeof(key));
+    memset(aad, 0x12, sizeof(aad));
+
+    size_t tag_len[] = {4, 8, 11, 16};
+
+    const uint8_t expected_last_block[] = {
+        0xcd, 0xb9, 0xad, 0x6f, 0xc9, 0x35, 0x21, 0x0d,
+        0xc9, 0x5d, 0xea, 0xd9, 0xf7, 0x1d, 0x43, 0xed
+    };
+
+    const uint8_t expected_tag[16] = {
+        0x57, 0x10, 0x22, 0x91, 0x65, 0xfa, 0x89, 0xba,
+        0x0a, 0x3e, 0xc1, 0x7c, 0x93, 0x6e, 0x35, 0xac
+    };
+
+    aes_gcm_test_cfg_t cfg = {
+        .plaintext = input,
+        .plaintext_length = CALL_SZ,
+        .output_caps = MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL,
+        .add_buf = aad,
+        .add_length = sizeof(aad),
+        .iv = iv,
+        .iv_length = sizeof(iv),
+        .key = key,
+        .key_bits = 8 * sizeof(key),
+    };
+
+    aes_gcm_test_expected_res_t res = {
+        .expected_tag = expected_tag,
+        .ciphertext_last_block = expected_last_block,
+    };
+
+    for (int i = 0; i < sizeof(tag_len) / sizeof(tag_len[0]); i++) {
+        printf("Test AES-GCM with tag length = %d\n", tag_len[i]);
+        cfg.tag_len = tag_len[i];
+        aes_gcm_test(&cfg, &res, AES_GCM_TEST_CRYPT_N_TAG);
+        aes_gcm_test(&cfg, &res, AES_GCM_TEST_START_UPDATE_FINISH);
+    }
+    free(input);
+}
+
 #endif //CONFIG_MBEDTLS_HARDWARE_AES
