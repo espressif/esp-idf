@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,10 +18,17 @@
 #pragma once
 
 #include <stdlib.h>
+#include <stdbool.h>
+#include "soc/soc.h"
+#include "soc/apb_saradc_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define PWDET_CONF_REG        0x600A8010
+#define PWDET_SAR_POWER_FORCE BIT(24)
+#define PWDET_SAR_POWER_CNTL  BIT(23)
 
 
 typedef enum {
@@ -34,16 +41,32 @@ typedef enum {
                     SAR power control
 ---------------------------------------------------------------*/
 /**
- * Set SAR power mode
+ * @brief Set SAR power mode when controlled by PWDET
  *
- * @param mode  See `sar_ctrl_ll_power_t`
+ * @param[in] mode  See `sar_ctrl_ll_power_t`
  */
-static inline void sar_ctrl_ll_set_power_mode(sar_ctrl_ll_power_t mode)
+static inline void sar_ctrl_ll_set_power_mode_from_pwdet(sar_ctrl_ll_power_t mode)
 {
-    //TODO: IDF-6124
-    abort();
+    if (mode == SAR_CTRL_LL_POWER_FSM) {
+        REG_CLR_BIT(PWDET_CONF_REG, PWDET_SAR_POWER_FORCE);
+    } else if (mode == SAR_CTRL_LL_POWER_ON) {
+        REG_SET_BIT(PWDET_CONF_REG, PWDET_SAR_POWER_FORCE);
+        REG_SET_BIT(PWDET_CONF_REG, PWDET_SAR_POWER_CNTL);
+    } else if (mode == SAR_CTRL_LL_POWER_OFF) {
+        REG_SET_BIT(PWDET_CONF_REG, PWDET_SAR_POWER_FORCE);
+        REG_CLR_BIT(PWDET_CONF_REG, PWDET_SAR_POWER_CNTL);
+    }
 }
 
+/**
+ * @brief Set SAR power ctrl source
+ *
+ * @param[in] force  set PWDET as SAR power ctrl source when force is true
+ */
+static inline void sar_ctrl_ll_force_power_ctrl_from_pwdet(bool force)
+{
+    APB_SARADC.saradc_ctrl.saradc_saradc2_pwdet_drv = force;
+}
 
 #ifdef __cplusplus
 }

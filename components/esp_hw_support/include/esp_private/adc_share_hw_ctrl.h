@@ -26,20 +26,6 @@
 extern "C" {
 #endif
 
-/*------------------------------------------------------------------------------
-* ADC Power
-*----------------------------------------------------------------------------*/
-/**
- * @brief Acquire the ADC Power
- */
-void adc_power_acquire(void);
-
-/**
- * @brief Release the ADC Power
- */
-void adc_power_release(void);
-
-
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
 /*---------------------------------------------------------------
             ADC Hardware Calibration

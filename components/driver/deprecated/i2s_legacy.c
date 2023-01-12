@@ -29,6 +29,7 @@
 #include "hal/dac_ll.h"
 #include "hal/dac_types.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 #include "adc1_private.h"
 #include "driver/adc_i2s_legacy.h"
 #include "driver/adc_types_legacy.h"
@@ -1453,7 +1454,7 @@ static esp_err_t i2s_init_legacy(i2s_port_t i2s_num, int intr_alloc_flag)
 #if SOC_I2S_SUPPORTS_ADC_DAC
     if ((int)p_i2s[i2s_num]->mode == I2S_COMM_MODE_ADC_DAC) {
         if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
-            adc_power_acquire();
+            sar_periph_ctrl_adc_continuous_power_acquire();
             adc_set_i2s_data_source(ADC_I2S_DATA_SRC_ADC);
             i2s_ll_enable_builtin_adc(p_i2s[i2s_num]->hal.dev, true);
         }
@@ -1508,7 +1509,7 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
         if (obj->dir & I2S_DIR_RX) {
             // Deinit ADC
             adc_set_i2s_data_source(ADC_I2S_DATA_SRC_IO_SIG);
-            adc_power_release();
+            sar_periph_ctrl_adc_continuous_power_release();
         }
     }
 #endif
