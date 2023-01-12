@@ -21,10 +21,10 @@ entries:
         esp_clk:esp_rtc_get_time_us (noflash)
         if GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL = y:
             sleep_gpio:gpio_sleep_mode_config_apply (noflash)
-        if SOC_PM_SUPPORT_CPU_PD = y || SOC_PM_SUPPORT_TAGMEM_PD = y:
-            sleep_retention:sleep_enable_memory_retention (noflash)
+        if SOC_PM_CPU_RETENTION_BY_RTCCNTL = y && (SOC_PM_SUPPORT_CPU_PD = y || SOC_PM_SUPPORT_TAGMEM_PD = y):
+            sleep_cpu:sleep_enable_cpu_retention (noflash)
         if SOC_PM_SUPPORT_CPU_PD = y:
-            sleep_retention:cpu_domain_pd_allowed (noflash)
+            sleep_cpu:cpu_domain_pd_allowed (noflash)
 
 [mapping:esp_system_pm]
 archive: libesp_system.a
@@ -86,7 +86,8 @@ entries:
             gpio_hal_workaround:gpio_hal_sleep_pupd_config_unapply  (noflash)
             gpio_hal_workaround:gpio_hal_sleep_mode_setup_wrapper   (noflash)
             gpio_hal_workaround:gpio_hal_fun_pupd_restore           (noflash)
-    if PM_SLP_IRAM_OPT = y && PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y:
-        rtc_cntl_hal:rtc_cntl_hal_enable_cpu_retention (noflash)
-    if PM_SLP_IRAM_OPT = y && PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP = y:
-        rtc_cntl_hal:rtc_cntl_hal_enable_tagmem_retention (noflash)
+    if SOC_PM_CPU_RETENTION_BY_RTCCNTL = y:
+        if PM_SLP_IRAM_OPT = y && PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y:
+            rtc_cntl_hal:rtc_cntl_hal_enable_cpu_retention (noflash)
+        if PM_SLP_IRAM_OPT = y && PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP = y:
+            rtc_cntl_hal:rtc_cntl_hal_enable_tagmem_retention (noflash)

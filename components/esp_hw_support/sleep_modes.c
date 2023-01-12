@@ -49,7 +49,7 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_private/brownout.h"
-#include "esp_private/sleep_retention.h"
+#include "esp_private/sleep_cpu.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/startup_internal.h"
 #include "esp_private/esp_task_wdt.h"
@@ -366,8 +366,8 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(void)
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
     gpio_sleep_mode_config_apply();
 #endif
-#if SOC_PM_SUPPORT_CPU_PD || SOC_PM_SUPPORT_TAGMEM_PD
-    sleep_enable_memory_retention();
+#if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
+    sleep_enable_cpu_retention();
 #endif
 #if REGI2C_ANA_CALI_PD_WORKAROUND
     regi2c_analog_cali_reg_read();
@@ -379,8 +379,8 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(void)
  */
 inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 {
-#if SOC_PM_SUPPORT_CPU_PD || SOC_PM_SUPPORT_TAGMEM_PD
-    sleep_disable_memory_retention();
+#if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
+    sleep_disable_cpu_retention();
 #endif
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
     gpio_sleep_mode_config_unapply();

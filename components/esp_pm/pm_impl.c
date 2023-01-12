@@ -327,9 +327,12 @@ esp_err_t esp_pm_configure(const void* vconfig)
 #endif
 
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_SUPPORT_CPU_PD
-    esp_err_t ret = esp_sleep_cpu_pd_low_init(config->light_sleep_enable);
-    if (config->light_sleep_enable && ret != ESP_OK) {
-        ESP_LOGW(TAG, "Failed to enable CPU power down during light sleep.");
+    if (config->light_sleep_enable) {
+        if (esp_sleep_cpu_retention_init() != ESP_OK) {
+            ESP_LOGW(TAG, "Failed to enable CPU power down during light sleep.");
+        }
+    } else {
+        esp_sleep_cpu_retention_deinit();
     }
 #endif
 

@@ -30,8 +30,8 @@ if(NOT BOOTLOADER_BUILD)
                      "port/${target}/clk_tree.c"
                      "port/clk_tree_common.c")
 
-    if(NOT CONFIG_IDF_TARGET_ESP32 AND NOT CONFIG_IDF_TARGET_ESP32S2)
-        list(APPEND srcs "sleep_retention.c")
+    if(CONFIG_SOC_PM_SUPPORT_CPU_PD)
+        list(APPEND srcs "sleep_cpu.c")
     endif()
 
     # [refactor-todo]: requires "driver" for GPIO and RTC  (by sleep_gpio and sleep_modes)

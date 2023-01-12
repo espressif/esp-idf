@@ -1,0 +1,55 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#pragma once
+#include <stdint.h>
+#include "sdkconfig.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @file sleep_cpu.h
+ *
+ * This file contains declarations of cpu retention related functions in light sleep mode.
+ */
+
+#if SOC_PM_SUPPORT_CPU_PD
+
+/**
+ * @brief Whether to allow the cpu power domain to be powered off.
+ *
+ * In light sleep mode, only when the system can provide enough memory
+ * for cpu retention, the cpu power domain can be powered off.
+ */
+bool cpu_domain_pd_allowed(void);
+
+#endif
+
+#if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
+
+/**
+ * @brief Enable cpu retention of some modules.
+ *
+ * In light sleep mode, before the system goes to sleep, enable the cpu
+ * retention of modules such as CPU and I/D-cache tag memory.
+ */
+void sleep_enable_cpu_retention(void);
+
+/**
+ * @brief Disable cpu retention of some modules.
+ *
+ * In light sleep mode, after the system exits sleep, disable the cpu
+ * retention of moudles such as CPU and I/D-cache tag memory.
+ */
+void sleep_disable_cpu_retention(void);
+
+#endif // SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
+
+#ifdef __cplusplus
+}
+#endif
