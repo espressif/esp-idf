@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include <unistd.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -20,11 +21,20 @@
 #include "hid_usage_keyboard.h"
 #include "hid_usage_mouse.h"
 
-#define APP_QUIT_PIN            GPIO_NUM_0
-#define APP_QUIT_PIN_POLL_MS    500
+#define APP_QUIT_PIN                GPIO_NUM_0
+#define APP_QUIT_PIN_POLL_MS        500
 
-#define READY_TO_UNINSTALL      (HOST_NO_CLIENT | HOST_ALL_FREE)
+#define READY_TO_UNINSTALL          (HOST_NO_CLIENT | HOST_ALL_FREE)
 
+/* Main char symbol for ENTER key */
+#define KEYBOARD_ENTER_MAIN_CHAR    '\r'
+/* When set to 1 pressing ENTER will be extending with LineFeed during serial debug output */
+#define KEYBOARD_ENTER_LF_EXTEND    1
+
+/**
+ * @brief Application Event from USB Host driver
+ *
+ */
 typedef enum {
     HOST_NO_CLIENT = 0x1,
     HOST_ALL_FREE = 0x2,
@@ -32,6 +42,19 @@ typedef enum {
     DEVICE_DISCONNECTED = 0x8,
     DEVICE_ADDRESS_MASK = 0xFF0,
 } app_event_t;
+
+/**
+ * @brief Key event
+ *
+ */
+typedef struct {
+    enum key_state {
+        KEY_STATE_PRESSED = 0x00,
+        KEY_STATE_RELEASED = 0x01
+    } state;
+    uint8_t modifier;
+    uint8_t key_code;
+} key_event_t;
 
 #define USB_EVENTS_TO_WAIT      (DEVICE_CONNECTED | DEVICE_ADDRESS_MASK | DEVICE_DISCONNECTED)
 
@@ -42,16 +65,67 @@ static bool hid_device_connected = false;
 hid_host_interface_handle_t keyboard_handle = NULL;
 hid_host_interface_handle_t mouse_handle = NULL;
 
-
-const char *modifier_char_name[8] = {
-    "LEFT_CONTROL",
-    "LEFT_SHIFT",
-    "LEFT_ALT",
-    "LEFT_GUI",
-    "RIGHT_CONTROL",
-    "RIGHT_SHIFT",
-    "RIGHT_ALT",
-    "RIGHT_GUI"
+/**
+ * @brief Scancode to ascii table
+ */
+const uint8_t keycode2ascii [57][2] = {
+    {0, 0}, /* HID_KEY_NO_PRESS        */
+    {0, 0}, /* HID_KEY_ROLLOVER        */
+    {0, 0}, /* HID_KEY_POST_FAIL       */
+    {0, 0}, /* HID_KEY_ERROR_UNDEFINED */
+    {'a', 'A'}, /* HID_KEY_A               */
+    {'b', 'B'}, /* HID_KEY_B               */
+    {'c', 'C'}, /* HID_KEY_C               */
+    {'d', 'D'}, /* HID_KEY_D               */
+    {'e', 'E'}, /* HID_KEY_E               */
+    {'f', 'F'}, /* HID_KEY_F               */
+    {'g', 'G'}, /* HID_KEY_G               */
+    {'h', 'H'}, /* HID_KEY_H               */
+    {'i', 'I'}, /* HID_KEY_I               */
+    {'j', 'J'}, /* HID_KEY_J               */
+    {'k', 'K'}, /* HID_KEY_K               */
+    {'l', 'L'}, /* HID_KEY_L               */
+    {'m', 'M'}, /* HID_KEY_M               */
+    {'n', 'N'}, /* HID_KEY_N               */
+    {'o', 'O'}, /* HID_KEY_O               */
+    {'p', 'P'}, /* HID_KEY_P               */
+    {'q', 'Q'}, /* HID_KEY_Q               */
+    {'r', 'R'}, /* HID_KEY_R               */
+    {'s', 'S'}, /* HID_KEY_S               */
+    {'t', 'T'}, /* HID_KEY_T               */
+    {'u', 'U'}, /* HID_KEY_U               */
+    {'v', 'V'}, /* HID_KEY_V               */
+    {'w', 'W'}, /* HID_KEY_W               */
+    {'x', 'X'}, /* HID_KEY_X               */
+    {'y', 'Y'}, /* HID_KEY_Y               */
+    {'z', 'Z'}, /* HID_KEY_Z               */
+    {'1', '!'}, /* HID_KEY_1               */
+    {'2', '@'}, /* HID_KEY_2               */
+    {'3', '#'}, /* HID_KEY_3               */
+    {'4', '$'}, /* HID_KEY_4               */
+    {'5', '%'}, /* HID_KEY_5               */
+    {'6', '^'}, /* HID_KEY_6               */
+    {'7', '&'}, /* HID_KEY_7               */
+    {'8', '*'}, /* HID_KEY_8               */
+    {'9', '('}, /* HID_KEY_9               */
+    {'0', ')'}, /* HID_KEY_0               */
+    {KEYBOARD_ENTER_MAIN_CHAR, KEYBOARD_ENTER_MAIN_CHAR}, /* HID_KEY_ENTER           */
+    {0, 0}, /* HID_KEY_ESC             */
+    {'\b', 0}, /* HID_KEY_DEL             */
+    {0, 0}, /* HID_KEY_TAB             */
+    {' ', ' '}, /* HID_KEY_SPACE           */
+    {'-', '_'}, /* HID_KEY_MINUS           */
+    {'=', '+'}, /* HID_KEY_EQUAL           */
+    {'[', '{'}, /* HID_KEY_OPEN_BRACKET    */
+    {']', '}'}, /* HID_KEY_CLOSE_BRACKET   */
+    {'\\', '|'}, /* HID_KEY_BACK_SLASH      */
+    {'\\', '|'}, /* HID_KEY_SHARP           */  // HOTFIX: for NonUS Keyboards repeat HID_KEY_BACK_SLASH
+    {';', ':'}, /* HID_KEY_COLON           */
+    {'\'', '"'}, /* HID_KEY_QUOTE           */
+    {'`', '~'}, /* HID_KEY_TILDE           */
+    {',', '<'}, /* HID_KEY_LESS            */
+    {'.', '>'}, /* HID_KEY_GREATER         */
+    {'/', '?'} /* HID_KEY_SLASH           */
 };
 
 /**
@@ -59,29 +133,20 @@ const char *modifier_char_name[8] = {
  *
  * @param[in] proto Current protocol to output
  */
-static void hid_trigger_new_line_output(hid_protocol_t proto)
+static void hid_print_new_device_report_header(hid_protocol_t proto)
 {
     static hid_protocol_t prev_proto_output = HID_PROTOCOL_NONE;
 
     if (prev_proto_output != proto) {
         prev_proto_output = proto;
         printf("\r\n");
-        fflush(stdout);
-    }
-}
-
-/**
- * @brief HID Keyboard modifier verification function. Verify and print debug information about modifier has been pressed
- *
- * @param[in] modifier
- */
-static inline void hid_keyboard_modifier_pressed(uint8_t modifier)
-{
-    // verify bit mask
-    for (uint8_t i = 0; i < (sizeof(uint8_t) << 3); i++) {
-        if ((modifier >> i) & 0x01) {
-            ESP_LOGD(TAG, "Modifier Pressed: %s", modifier_char_name[i]);
+        if (proto == HID_PROTOCOL_MOUSE) {
+            printf("Mouse\r\n");
         }
+        if (proto == HID_PROTOCOL_KEYBOARD) {
+            printf("Keyboard\r\n");
+        }
+        fflush(stdout);
     }
 }
 
@@ -93,7 +158,7 @@ static inline void hid_keyboard_modifier_pressed(uint8_t modifier)
  * @return false Modifier was not pressed (left or right shift)
  *
  */
-static inline bool hid_keyboard_is_modifier_capital(uint8_t modifier)
+static inline bool hid_keyboard_is_modifier_shift(uint8_t modifier)
 {
     if ((modifier && HID_LEFT_SHIFT) ||
             (modifier && HID_RIGHT_SHIFT)) {
@@ -107,23 +172,84 @@ static inline bool hid_keyboard_is_modifier_capital(uint8_t modifier)
  *
  * @param[in] modifier  Keyboard modifier data
  * @param[in] key_code  Keyboard key code
+ * @param[in] key_char  Pointer to key char data
+ *
+ * @return true  Key scancode converted successfully
+ * @return false Key scancode unknown
  */
-static inline char hid_keyboard_get_char(uint8_t modifier, uint8_t key_code)
+static inline bool hid_keyboard_get_char(uint8_t modifier,
+        uint8_t key_code,
+        unsigned char *key_char)
 {
-    uint8_t key_char = (hid_keyboard_is_modifier_capital(modifier)) ? 'A' : 'a';
-    // Handle only char key pressed
-    if ((key_code >= HID_KEY_A) && (key_code <= HID_KEY_Z)) {
-        key_char += (key_code - HID_KEY_A);
-    } else if ((key_code >= HID_KEY_1) && (key_code <= HID_KEY_9)) {
-        key_char = '1' + (key_code - HID_KEY_1);
-    } else if (key_code == HID_KEY_0) {
-        key_char = '0';
+    uint8_t mod = (hid_keyboard_is_modifier_shift(modifier)) ? 1 : 0;
+
+    if ((key_code >= HID_KEY_A) && (key_code <= HID_KEY_SLASH)) {
+        *key_char = keycode2ascii[key_code][mod];
     } else {
         // All other key pressed
-        key_char = 0x00;
+        return false;
     }
 
-    return key_char;
+    return true;
+}
+
+/**
+ * @brief HID Keyboard print char symbol
+ *
+ * @param[in] key_char  Keyboard char to stdout
+ */
+static inline void hid_keyboard_print_char(unsigned int key_char)
+{
+    if (!!key_char) {
+        putchar(key_char);
+#if (KEYBOARD_ENTER_LF_EXTEND)
+        if (KEYBOARD_ENTER_MAIN_CHAR == key_char) {
+            putchar('\n');
+        }
+#endif // KEYBOARD_ENTER_LF_EXTEND
+        fflush(stdout);
+    }
+}
+
+/**
+ * @brief Key Event. Key event with the key code, state and modifier.
+ *
+ * @param[in] key_event Pointer to Key Event structure
+ *
+ */
+static void key_event_callback(key_event_t *key_event)
+{
+    unsigned char key_char;
+
+    hid_print_new_device_report_header(HID_PROTOCOL_KEYBOARD);
+
+    if (KEY_STATE_PRESSED == key_event->state) {
+        if (hid_keyboard_get_char(key_event->modifier,
+                                  key_event->key_code, &key_char)) {
+
+            hid_keyboard_print_char(key_char);
+
+        }
+    }
+}
+
+/**
+ * @brief Key buffer scan code search.
+ *
+ * @param[in] src       Pointer to source buffer where to search
+ * @param[in] key       Key scancode to search
+ * @param[in] length    Size of the source buffer
+ */
+static inline bool key_found(const uint8_t *const src,
+                             uint8_t key,
+                             unsigned int length)
+{
+    for (unsigned int i = 0; i < length; i++) {
+        if (src[i] == key) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -134,37 +260,37 @@ static inline char hid_keyboard_get_char(uint8_t modifier, uint8_t key_code)
  */
 static void hid_host_keyboard_report_callback(const uint8_t *const data, const int length)
 {
-    bool keys_state_changed = false;
     hid_keyboard_input_report_boot_t *kb_report = (hid_keyboard_input_report_boot_t *)data;
 
-    if (kb_report->modifier.val != 0) {
-        hid_keyboard_modifier_pressed(kb_report->modifier.val);
+    if (length < sizeof(hid_keyboard_input_report_boot_t)) {
+        return;
     }
 
-    static uint8_t keys[HID_KEYBOARD_KEY_MAX] = { 0 };
+    static uint8_t prev_keys[HID_KEYBOARD_KEY_MAX] = { 0 };
+    key_event_t key_event;
 
     for (int i = 0; i < HID_KEYBOARD_KEY_MAX; i++) {
-        if (kb_report->key[i] != keys[i]) {
-            keys_state_changed = true;
-            if (kb_report->key[i] != 0) {
-                keys[i] = hid_keyboard_get_char(kb_report->modifier.val, kb_report->key[i]);
-            } else {
-                keys[i] = 0x00;
-            }
+
+        // key has been released verification
+        if (prev_keys[i] > HID_KEY_ERROR_UNDEFINED &&
+                !key_found(kb_report->key, prev_keys[i], HID_KEYBOARD_KEY_MAX)) {
+            key_event.key_code = prev_keys[i];
+            key_event.modifier = 0;
+            key_event.state = KEY_STATE_RELEASED;
+            key_event_callback(&key_event);
+        }
+
+        // key has been pressed verification
+        if (kb_report->key[i] > HID_KEY_ERROR_UNDEFINED &&
+                !key_found(prev_keys, kb_report->key[i], HID_KEYBOARD_KEY_MAX)) {
+            key_event.key_code = kb_report->key[i];
+            key_event.modifier = kb_report->modifier.val;
+            key_event.state = KEY_STATE_PRESSED;
+            key_event_callback(&key_event);
         }
     }
 
-    if (keys_state_changed) {
-
-        hid_trigger_new_line_output(HID_PROTOCOL_KEYBOARD);
-
-        printf("|");
-        for (int i = 0; i < HID_KEYBOARD_KEY_MAX; i++) {
-            printf("%c|", keys[i] ? keys[i] : ' ');
-        }
-        printf("\r");
-        fflush(stdout);
-    }
+    memcpy(prev_keys, &kb_report->key, HID_KEYBOARD_KEY_MAX);
 }
 
 /**
@@ -177,9 +303,7 @@ static void hid_host_mouse_report_callback(const uint8_t *const data, const int 
 {
     hid_mouse_input_report_boot_t *mouse_report = (hid_mouse_input_report_boot_t *)data;
 
-    // First 3 bytes are mandated by HID specification
     if (length < sizeof(hid_mouse_input_report_boot_t)) {
-        ESP_LOGE(TAG, "Mouse Boot report length (%d) error", length);
         return;
     }
 
@@ -190,7 +314,7 @@ static void hid_host_mouse_report_callback(const uint8_t *const data, const int 
     x_pos += mouse_report->x_displacement;
     y_pos += mouse_report->y_displacement;
 
-    hid_trigger_new_line_output(HID_PROTOCOL_MOUSE);
+    hid_print_new_device_report_header(HID_PROTOCOL_MOUSE);
 
     printf("X: %06d\tY: %06d\t|%c|%c|\r",
            x_pos, y_pos,
@@ -251,7 +375,7 @@ static void hid_host_interface_event_callback(const hid_host_interface_event_t *
 
         break;
     case HID_DEVICE_INTERFACE_TRANSFER_ERROR:
-        ESP_LOGI(TAG, "Interface number %d, transfer error",
+        ESP_LOGD(TAG, "Interface number %d, transfer error",
                  event->interface.num);
         break;
 

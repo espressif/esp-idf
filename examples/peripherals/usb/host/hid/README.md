@@ -36,31 +36,33 @@ idf.py -p PORT flash monitor
 The example serial output will be the following:
 
 ```
-I (195) example: HID HOST example
-I (35955) example: Interface number 0, protocol Mouse
-I (35955) example: Interface number 1, protocol Keyboard
-X: 000016       Y: -00083       | |o|
-|Q|T| | | | |
-X: 000016       Y: -00083       |o| |
-| |1|3|5| | |
+I (198) example: HID HOST example
+I (598) example: Interface number 0, protocol Mouse
+I (598) example: Interface number 1, protocol Keyboard
+
+Mouse
+X: 000883       Y: 000058       |o| |
+Keyboard
+qwertyuiop[]\asdfghjkl;'zxcvbnm,./
+Mouse
+X: 000883       Y: 000058       | |o|
 ```
 
 Where every keyboard key printed as char symbol if it is possible and a Hex value for any other key. 
 
-#### Keyboard report description
+#### Keyboard input data
+Keyboard input data starts with the word "Keyboard" and every pressed key is printed to the serial debug.
+Left or right Shift modifier is also supported. 
+
 ```
-|Q|T| | | | |
- | | | | | |
- | | | | | +----------------- Key 5 Char symbol
- | | | | +------------------- Key 4 Char symbol 
- | | | +--------------------- Key 3 Char symbol
- | | +----------------------- Key 2 Char symbol
- | +------------------------- Key 1 Char symbol
- +--------------------------- Key 0 Char symbol
+Keyboard
+Hello, ESP32 USB HID Keyboard is here!
 ```
 
-#### Mouse report description
+#### Mouse input data 
+Mouse input data starts with the word "Mouse" and has the following structure. 
 ```
+Mouse
 X: -00343   Y: 000183   | |o|
      |            |      | |
      |            |      | +- Right mouse button pressed status ("o" - pressed, " " - not pressed)
