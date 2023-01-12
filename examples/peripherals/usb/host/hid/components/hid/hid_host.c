@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -113,7 +113,7 @@ STAILQ_HEAD(interfaces, hid_interface) ifaces_tailq;
  *
  * @param[in] desc   Pointer to Descriptor buffer (usually starts from Configuration descriptor)
  * @param[in] len    Total length
- * @param[in] offset Pointer to offset DEscriptor buffer
+ * @param[in] offset Pointer to offset descriptor buffer
  * @return const usb_standard_desc_t* Pointer to Interface descriptor
  */
 static inline const usb_standard_desc_t *next_interface_desc(const usb_standard_desc_t *desc, size_t len, size_t *offset)
@@ -509,11 +509,11 @@ static void client_event_cb(const usb_host_client_event_msg_t *event, void *arg)
     } else if (event->event == USB_HOST_CLIENT_EVENT_DEV_GONE) {
         hid_device_t *hid_device = get_hid_device_by_handle(event->dev_gone.dev_hdl);
         if (hid_device) {
-            const hid_host_event_t msc_event = {
+            const hid_host_event_t hid_event = {
                 .event = HID_DEVICE_DISCONNECTED,
                 .device.handle = hid_device,
             };
-            s_hid_driver->user_cb(&msc_event, s_hid_driver->user_arg);
+            s_hid_driver->user_cb(&hid_event, s_hid_driver->user_arg);
         }
     }
 }
@@ -585,7 +585,7 @@ static bool transfer_complete_status_verify(usb_transfer_t *transfer)
     case USB_TRANSFER_STATUS_OVERFLOW:
     case USB_TRANSFER_STATUS_SKIPPED:
     default:
-        // Transfer was not completed or cancelled by user.
+        // Transfer was not completed or canceled by user.
         ESP_LOGE(TAG, "Transfer failed, status %d", transfer->status);
     }
     return completed;
@@ -975,7 +975,7 @@ esp_err_t hid_host_claim_interface(const hid_host_interface_config_t *iface_conf
         return ESP_ERR_NOT_FOUND;
     }
 
-    // Interface alredy claimed
+    // Interface already claimed
     if (iface->report_cb != NULL) {
         return ESP_ERR_INVALID_STATE;
     }
