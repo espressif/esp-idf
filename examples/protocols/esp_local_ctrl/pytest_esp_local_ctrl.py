@@ -41,7 +41,15 @@ class CustomProcess(object):
 
 @pytest.mark.supported_targets
 @pytest.mark.wifi_router
-def test_examples_esp_local_ctrl(dut: Dut) -> None:
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default',
+        'http',
+    ],
+    indirect=True,
+)
+def test_examples_esp_local_ctrl(config: str, dut: Dut) -> None:
 
     rel_project_path = os.path.join('examples', 'protocols', 'esp_local_ctrl')
     idf_path = get_sdk_path()
@@ -53,8 +61,9 @@ def test_examples_esp_local_ctrl(dut: Dut) -> None:
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
     dut_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]')[1].decode()
-    dut.expect('esp_https_server: Starting server')
-    dut.expect('esp_https_server: Server listening on port 443')
+    if config == 'default':
+        dut.expect('esp_https_server: Starting server')
+        dut.expect('esp_https_server: Server listening on port 443')
     dut.expect('control: esp_local_ctrl service started with name : my_esp_ctrl_device')
 
     def dut_expect_read() -> None:
@@ -65,10 +74,18 @@ def test_examples_esp_local_ctrl(dut: Dut) -> None:
 
     # Running mDNS services in docker is not a trivial task. Therefore, the script won't connect to the host name but
     # to IP address. However, the certificates were generated for the host name and will be rejected.
-    cmd = ' '.join([sys.executable, os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
-                    '--sec_ver 0',
-                    '--name', dut_ip,
-                    '--dont-check-hostname'])  # don't reject the certificate because of the hostname
+    if config == 'default':
+        cmd = ' '.join([sys.executable, os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
+                        '--sec_ver 0',
+                        '--name', dut_ip,
+                        '--dont-check-hostname'])  # don't reject the certificate because of the hostname
+    elif config == 'http':
+        cmd = ' '.join([sys.executable, os.path.join(idf_path, rel_project_path, 'scripts/esp_local_ctrl.py'),
+                        '--sec_ver 0',
+                        '--transport http',
+                        '--name', dut_ip,
+                        '--dont-check-hostname'])
+
     esp_local_ctrl_log = os.path.join(idf_path, rel_project_path, 'esp_local_ctrl.log')
     with CustomProcess(cmd, esp_local_ctrl_log) as ctrl_py:
 
@@ -86,7 +103,8 @@ def test_examples_esp_local_ctrl(dut: Dut) -> None:
         property3 = ''
 
         ctrl_py.pexpect_proc.expect_exact('Connecting to {}'.format(dut_ip))
-        dut.expect('esp_https_server: performing session handshake', timeout=60)
+        if config == 'default':
+            dut.expect('esp_https_server: performing session handshake', timeout=60)
         expect_properties(property1, property3)
 
         ctrl_py.pexpect_proc.sendline('1')

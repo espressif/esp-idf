@@ -20,8 +20,11 @@
 #include <esp_log.h>
 #include <esp_timer.h>
 #include <esp_local_ctrl.h>
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
 #include <esp_https_server.h>
-
+#else
+#include <esp_http_server.h>
+#endif
 static const char *TAG = "control";
 
 #define SERVICE_NAME "my_esp_ctrl_device"
@@ -159,6 +162,7 @@ static void free_str(void *arg)
 /* Function used by app_main to start the esp_local_ctrl service */
 void start_esp_local_ctrl_service(void)
 {
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
     /* Set the configuration */
     httpd_ssl_config_t https_conf = HTTPD_SSL_CONFIG_DEFAULT();
 
@@ -173,11 +177,18 @@ void start_esp_local_ctrl_service(void)
     extern const unsigned char prvtkey_pem_end[]   asm("_binary_prvtkey_pem_end");
     https_conf.prvtkey_pem = prvtkey_pem_start;
     https_conf.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
+#else
+    httpd_config_t http_conf = HTTPD_DEFAULT_CONFIG();
+#endif
 
     esp_local_ctrl_config_t config = {
         .transport = ESP_LOCAL_CTRL_TRANSPORT_HTTPD,
         .transport_config = {
-            .httpd = &https_conf
+#ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
+            .httpd = &https_conf,
+#else
+            .httpd = &http_conf,
+#endif
         },
         .proto_sec = {
             .version = 0,
