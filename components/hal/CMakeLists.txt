@@ -138,6 +138,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "sdio_slave_hal.c")
     endif()
 
+    if(CONFIG_SOC_PMU_SUPPORTED)
+        list(APPEND srcs "${target}/pmu_hal.c")
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "touch_sensor_hal.c"
@@ -198,7 +202,6 @@ if(NOT BOOTLOADER_BUILD)
     if(${target} STREQUAL "esp32c6")
         list(APPEND srcs
               "spi_flash_hal_gpspi.c"
-              "esp32c6/rtc_cntl_hal.c"
               "hmac_hal.c"
               "ds_hal.c")
 
