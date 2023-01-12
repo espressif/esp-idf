@@ -176,6 +176,8 @@ typedef struct {
 
 typedef UINT16 tBTA_SEC;
 
+typedef tBTM_GET_DEV_NAME_CBACK tBTA_GET_DEV_NAME_CBACK;
+
 /* Ignore for Discoverable, Connectable, Pairable and Connectable Paired only device modes */
 #define BTA_DM_IGNORE           0x00FF
 
@@ -1678,6 +1680,18 @@ extern void BTA_DisableTestMode(void);
 **
 *******************************************************************************/
 extern void BTA_DmSetDeviceName(const char *p_name);
+
+/*******************************************************************************
+**
+** Function         BTA_DmGetDeviceName
+**
+** Description      This function gets the Bluetooth name of the local device.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback);
 
 /*******************************************************************************
 **

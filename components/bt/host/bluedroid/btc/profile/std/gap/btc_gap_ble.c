@@ -70,6 +70,33 @@ static inline void btc_gap_ble_cb_to_app(esp_gap_ble_cb_event_t event, esp_ble_g
         btc_gap_ble_cb(event, param);
     }
 }
+
+static void btc_gap_ble_get_dev_name_callback(UINT8 status, char *name)
+{
+    esp_ble_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg = {0};
+
+    memset(&param, 0, sizeof(esp_ble_gap_cb_param_t));
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_GET_DEV_NAME_COMPLETE_EVT;
+
+    param.get_dev_name_cmpl.status = btc_btm_status_to_esp_status(status);
+    param.get_dev_name_cmpl.name = (char *)osi_malloc(BTC_MAX_LOC_BD_NAME_LEN + 1);
+    if (param.get_dev_name_cmpl.name) {
+        BCM_STRNCPY_S(param.get_dev_name_cmpl.name, name, BTC_MAX_LOC_BD_NAME_LEN + 1);
+    } else {
+        param.get_dev_name_cmpl.status = ESP_BT_STATUS_NOMEM;
+    }
+
+    ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 static void btc_gap_adv_point_cleanup(void **buf)
 {
@@ -1505,6 +1532,13 @@ void btc_gap_ble_cb_deep_free(btc_msg_t *msg)
 {
     BTC_TRACE_DEBUG("%s", __func__);
     switch (msg->act) {
+        case ESP_GAP_BLE_GET_DEV_NAME_COMPLETE_EVT: {
+            char *value = ((esp_ble_gap_cb_param_t *)msg->arg)->get_dev_name_cmpl.name;
+            if (value) {
+                osi_free(value);
+            }
+            break;
+        }
         default:
             BTC_TRACE_DEBUG("Unhandled deep free %d", msg->act);
             break;
@@ -1590,6 +1624,9 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
     case BTC_GAP_BLE_ACT_SET_DEV_NAME:
         BTA_DmSetDeviceName(arg->set_dev_name.device_name);
+        break;
+    case BTC_GAP_BLE_ACT_GET_DEV_NAME:
+        BTA_DmGetDeviceName(btc_gap_ble_get_dev_name_callback);
         break;
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     case BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW:

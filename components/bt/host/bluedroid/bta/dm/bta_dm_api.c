@@ -181,6 +181,27 @@ void BTA_DmSetDeviceName(const char *p_name)
     }
 }
 
+/*******************************************************************************
+**
+** Function         BTA_DmGetDeviceName
+**
+** Description      This function gets the Bluetooth name of local device
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback)
+{
+    tBTA_DM_API_GET_NAME *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_GET_NAME *) osi_malloc(sizeof(tBTA_DM_API_GET_NAME))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_GET_NAME_EVT;
+        p_msg->p_cback = p_cback;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 #if (CLASSIC_BT_INCLUDED == TRUE)
 
 void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)

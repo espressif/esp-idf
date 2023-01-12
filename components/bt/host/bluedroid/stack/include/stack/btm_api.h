@@ -157,6 +157,7 @@ typedef enum{
 
 typedef void (tBTM_DEV_STATUS_CB) (tBTM_DEV_STATUS status);
 
+typedef void (tBTM_GET_DEV_NAME_CBACK) (UINT8 status, char *name);
 
 /* Callback function for when a vendor specific event occurs. The length and
 ** array of returned parameter bytes are included. This asynchronous event
