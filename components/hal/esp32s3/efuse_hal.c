@@ -35,7 +35,7 @@ IRAM_ATTR uint32_t efuse_hal_get_major_chip_version(void)
     return efuse_ll_get_chip_wafer_version_major();
 }
 
-uint32_t efuse_hal_get_minor_chip_version(void)
+IRAM_ATTR uint32_t efuse_hal_get_minor_chip_version(void)
 {
     uint32_t minor_raw = efuse_ll_get_chip_wafer_version_minor();
 

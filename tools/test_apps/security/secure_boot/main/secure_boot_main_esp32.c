@@ -59,7 +59,7 @@ static void example_print_chip_info(void)
 
 static void example_secure_boot_status(void)
 {
-#ifdef CONFIG_ESP32_REV_MIN_3
+#if CONFIG_ESP32_REV_MIN_FULL >= 300
     uint8_t efuse_trusted_digest[DIGEST_LEN] = {0}, i;
     ESP_LOGI(TAG, "Checking for secure boot v2..");
     if(efuse_ll_get_secure_boot_v2_en()) {
@@ -81,7 +81,7 @@ static void example_secure_boot_status(void)
     ESP_LOGI(TAG, "Checking for secure boot v1..");
     if (efuse_ll_get_secure_boot_v1_en()) {
     ESP_LOGI(TAG, "ABS_DONE_0 is set. Secure Boot V1 enabled");
-#ifdef CONFIG_ESP32_REV_MIN_3
+#if CONFIG_ESP32_REV_MIN_FULL >= 300
         ESP_LOGW(TAG, "This chip version supports Secure Boot V2. It is recommended to use Secure Boot V2.");
 #endif
         ESP_LOGI(TAG, "Checking the integrityof the key in BLK2..");

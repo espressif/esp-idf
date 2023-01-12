@@ -60,21 +60,24 @@ if(NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND
     endif()
 endif()
 
-if(CONFIG_ESP32_REV_MIN)
-    set(min_rev ${CONFIG_ESP32_REV_MIN})
+# We still set "--min-rev" to keep the app compatible with older booloaders where this field is controlled.
+if(CONFIG_IDF_TARGET_ESP32)
+    # for this chip min_rev is major revision
+    math(EXPR min_rev "${CONFIG_ESP_REV_MIN_FULL} / 100")
 endif()
-if(CONFIG_ESP32C3_REV_MIN)
-    set(min_rev ${CONFIG_ESP32C3_REV_MIN})
-endif()
-if(CONFIG_IDF_TARGET_ESP32C2)
-    set(min_rev 1)
+if(CONFIG_IDF_TARGET_ESP32C3)
+    # for this chip min_rev is minor revision
+    math(EXPR min_rev "${CONFIG_ESP_REV_MIN_FULL} % 100")
 endif()
 
 if(min_rev)
     list(APPEND esptool_elf2image_args --min-rev ${min_rev})
-    set(monitor_rev_args "--revision;${min_rev}")
-    unset(min_rev)
 endif()
+
+list(APPEND esptool_elf2image_args --min-rev-full ${CONFIG_ESP_REV_MIN_FULL})
+list(APPEND esptool_elf2image_args --max-rev-full ${CONFIG_ESP_REV_MAX_FULL})
+
+set(monitor_rev_args "--revision;${CONFIG_ESP_REV_MIN_FULL}")
 
 if(CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE)
     # Set ESPFLASHSIZE to 'detect' *after* esptool_elf2image_args are generated,

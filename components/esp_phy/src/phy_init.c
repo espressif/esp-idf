@@ -676,7 +676,7 @@ void esp_phy_load_cal_and_init(void)
     ESP_LOGI(TAG, "phy_version %s", phy_version);
 
 #if CONFIG_IDF_TARGET_ESP32S2
-    phy_eco_version_sel(efuse_hal_get_major_chip_version());
+    phy_eco_version_sel(efuse_hal_chip_revision() / 100);
 #endif
     esp_phy_calibration_data_t* cal_data =
             (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);

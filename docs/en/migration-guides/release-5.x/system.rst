@@ -163,3 +163,10 @@ Bootloader Support
 - The :cpp:type:`esp_app_desc_t` structure, which used to be declared in :component_file:`esp_app_format.h <bootloader_support/include/esp_app_format.h>`, is now declared in :component_file:`esp_app_desc.h <esp_app_format/include/esp_app_desc.h>`.
 
 - The function :cpp:func:`bootloader_common_get_partition_description` has now been made private. Please use the alternative function :cpp:func:`esp_ota_get_partition_description`. Note that this function takes :cpp:type:`esp_partition_t` as its first argument instead of :cpp:type:`esp_partition_pos_t`.
+
+Chip Revision
+^^^^^^^^^^^^^
+
+The bootloader checks the chip revision at the beginning of the application loading. The application can only be loaded if the version is ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and `<` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.
+
+During the OTA upgrade, the version requirements and chip revision in the application header are checked for compatibility. The application can only be updated if the version is ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` and `<` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL``.

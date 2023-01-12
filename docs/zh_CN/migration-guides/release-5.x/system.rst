@@ -149,3 +149,10 @@ FreeRTOS 移植相关的宏
 - ``vPortCPUAcquireMutex()`` 已被移除，请使用 ``spinlock_acquire()`` 函数。
 - ``vPortCPUAcquireMutexTimeout()`` 已被移除，请使用 ``spinlock_acquire()`` 函数。
 - ``vPortCPUReleaseMutex()`` 已被移除，请使用 ``spinlock_release()`` 函数。
+
+芯片版本
+^^^^^^^^^^^^^
+
+在应用程序开始加载时，引导加载程序会检查芯片版本。只有当版本为 ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 和 `<` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL`` 时，应用程序才能成功加载。
+
+在 OTA 升级时，会检查应用程序头部中的版本需求和芯片版本是否符合条件。只有当版本为 ``>=`` :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 和 `<` ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL`` 时，应用程序才能成功更新。

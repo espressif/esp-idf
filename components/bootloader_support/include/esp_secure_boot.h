@@ -191,7 +191,7 @@ typedef struct {
  */
 esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest);
 
-#if !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_3
+#if !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_FULL >= 300
 /**
  * @brief Structure to hold public key digests calculated from the signature blocks of a single image.
  *
@@ -202,7 +202,7 @@ typedef struct {
     unsigned num_digests;                                       /* Number of valid digests, starting at index 0 */
 } esp_image_sig_public_key_digests_t;
 
-#endif // !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_3
+#endif // !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_FULL >= 300
 
 /** @brief Legacy ECDSA verification function
  *

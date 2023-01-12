@@ -12,6 +12,7 @@
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 #include "soc/soc_caps.h"
+#include "soc/chip_revision.h"
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 #include "soc/gpio_struct.h"
@@ -44,9 +45,8 @@ static void rtc_clk_32k_enable_common(clk_ll_xtal32k_enable_mode_t mode)
     SET_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_MUX_SEL | RTC_IO_X32P_MUX_SEL);
 
 #ifdef CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT
-    uint8_t chip_ver = efuse_hal_get_major_chip_version();
     // version0 and version1 need provide additional current to external XTAL.
-    if(chip_ver == 0 || chip_ver == 1) {
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 200)) {
         /* TOUCH sensor can provide additional current to external XTAL.
         In some case, X32N and X32P PAD don't have enough drive capability to start XTAL */
         SET_PERI_REG_MASK(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_XPD_BIAS_M);
@@ -60,8 +60,7 @@ static void rtc_clk_32k_enable_common(clk_ll_xtal32k_enable_mode_t mode)
         SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
     }
 #elif defined CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT_V2
-    uint8_t chip_ver = efuse_hal_get_major_chip_version();
-    if(chip_ver == 0 || chip_ver == 1) {
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 200)) {
         /* TOUCH sensor can provide additional current to external XTAL.
         In some case, X32N and X32P PAD don't have enough drive capability to start XTAL */
         SET_PERI_REG_MASK(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_XPD_BIAS_M);
@@ -94,14 +93,12 @@ void rtc_clk_32k_enable(bool enable)
         CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_MUX_SEL | RTC_IO_X32P_MUX_SEL);
 
 #ifdef CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT
-        uint8_t chip_ver = efuse_hal_get_major_chip_version();
-        if(chip_ver == 0 || chip_ver == 1) {
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 200)) {
             /* Power down TOUCH */
             CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
         }
 #elif defined CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT_V2
-        uint8_t chip_ver = efuse_hal_get_major_chip_version();
-        if(chip_ver == 0 || chip_ver == 1) {
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 200)) {
             /* Power down TOUCH */
             CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_XPD_BIAS_M);
             SET_PERI_REG_BITS(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_DCUR, 0, RTC_IO_TOUCH_DCUR_S);

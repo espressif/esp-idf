@@ -17,7 +17,7 @@ config SOC_DPORT_WORKAROUND
 
 config SOC_CAPS_ECO_VER_MAX
     int
-    default 3
+    default 301
 
 config SOC_ADC_SUPPORTED
     bool
