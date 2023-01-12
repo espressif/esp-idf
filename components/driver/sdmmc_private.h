@@ -18,7 +18,7 @@ typedef struct {
     uint32_t dma_status;        ///< masked DMA interrupt status
 } sdmmc_event_t;
 
-void sdmmc_host_reset(void);
+esp_err_t sdmmc_host_reset(void);
 
 esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg);
 
