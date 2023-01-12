@@ -688,6 +688,28 @@ IT_003:
     - ESP32_IDF
     - SSC_T2_5
 
+IT_T5_BT_Simple:
+  extends: .integration_test_template
+  parallel: 3
+  tags:
+    - ESP32_IDF
+    - SSC_T5_BT_Simple
+
+IT_T2_BT_Simple:
+  extends: .integration_test_template
+  parallel: 6
+  tags:
+    - ESP32_IDF
+    - SSC_T2_BT_Simple
+
+IT_T1_BT_Dongle:
+  extends: .integration_test_template
+  image: gitlab.espressif.cn:5050/qa/dockerfiles/integration-test-env-dbg:1
+  parallel: 2
+  tags:
+    - ESP32_IDF
+    - SSC_T1_BT_Dongle
+
 IT_005:
   extends: .integration_test_template
   tags:
@@ -787,3 +809,25 @@ IT_C3_001:
   tags:
     - ESP32C3_IDF
     - SSC_T2_5
+
+IT_C3_T2_BT_Simple:
+  extends: .integration_test_esp32c3_template
+  parallel: 11
+  tags:
+    - ESP32C3_IDF
+    - SSC_T2_BT_Simple
+
+IT_C3_T5_BT_Simple:
+  extends: .integration_test_esp32c3_template
+  parallel: 5
+  tags:
+    - ESP32C3_IDF
+    - SSC_T5_BT_Simple
+
+IT_C3_T1_BT_Dongle:
+  extends: .integration_test_esp32c3_template
+  image: gitlab.espressif.cn:5050/qa/dockerfiles/integration-test-env-dbg:1
+  parallel: 2
+  tags:
+    - ESP32C3_IDF
+    - SSC_T1_BT_Dongle
