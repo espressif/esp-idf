@@ -15,9 +15,14 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
-#include "hal/rtc_cntl_ll.h"
 #include "hal/uart_ll.h"
 
+#if SOC_LP_TIMER_SUPPORTED
+#include "hal/lp_timer_ll.h"
+#include "hal/lp_timer_hal.h"
+#else
+#include "hal/rtc_cntl_ll.h"
+#endif
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
@@ -70,9 +75,16 @@ void RTC_IRAM_ATTR esp_wake_stub_uart_tx_wait_idle(uint8_t uart_no)
 
 void RTC_IRAM_ATTR esp_wake_stub_set_wakeup_time(uint64_t time_in_us)
 {
+#if SOC_LP_TIMER_SUPPORTED
+    uint64_t rtc_count_delta = lp_timer_ll_time_to_count(time_in_us);
+    uint64_t rtc_curr_count = lp_timer_hal_get_cycle_count(0);
+    lp_timer_hal_set_alarm_target(0, rtc_curr_count + rtc_count_delta);
+#else
     uint64_t rtc_count_delta = rtc_cntl_ll_time_to_count(time_in_us);
     uint64_t rtc_curr_count = rtc_cntl_ll_get_rtc_time();
     rtc_cntl_ll_set_wakeup_timer(rtc_curr_count + rtc_count_delta);
+#endif
+
 }
 
 uint32_t RTC_IRAM_ATTR esp_wake_stub_get_wakeup_cause(void)

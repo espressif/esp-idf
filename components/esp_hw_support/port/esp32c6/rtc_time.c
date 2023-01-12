@@ -8,8 +8,8 @@
 #include "esp32c6/rom/ets_sys.h"
 #include "soc/rtc.h"
 #include "soc/lp_timer_reg.h"
+#include "hal/lp_timer_hal.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/rtc_cntl_ll.h"
 #include "soc/timer_group_reg.h"
 #include "esp_rom_sys.h"
 #include "assert.h"
@@ -207,7 +207,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 
 uint64_t rtc_time_get(void)
 {
-    return rtc_cntl_ll_get_rtc_time();
+    return lp_timer_hal_get_cycle_count(0);
 }
 
 uint64_t rtc_light_slp_time_get(void)
