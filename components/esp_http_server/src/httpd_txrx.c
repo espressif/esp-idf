@@ -281,6 +281,7 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len)
     if (httpd_send_all(r, cr_lf_seperator, strlen(cr_lf_seperator)) != ESP_OK) {
         return ESP_ERR_HTTPD_RESP_SEND;
     }
+    esp_http_server_dispatch_event(HTTP_SERVER_EVENT_HEADERS_SENT, &(ra->sd->fd), sizeof(int));
 
     /* Sending content */
     if (buf && buf_len) {
@@ -288,6 +289,11 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len)
             return ESP_ERR_HTTPD_RESP_SEND;
         }
     }
+    esp_http_server_event_data evt_data = {
+        .fd = ra->sd->fd,
+        .data_len = buf_len,
+    };
+    esp_http_server_dispatch_event(HTTP_SERVER_EVENT_SENT_DATA, &evt_data, sizeof(esp_http_server_event_data));
     return ESP_OK;
 }
 
@@ -369,6 +375,12 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
     if (httpd_send_all(r, "\r\n", strlen("\r\n")) != ESP_OK) {
         return ESP_ERR_HTTPD_RESP_SEND;
     }
+    esp_http_server_event_data evt_data = {
+        .fd = ra->sd->fd,
+        .data_len = buf_len,
+    };
+    esp_http_server_dispatch_event(HTTP_SERVER_EVENT_SENT_DATA, &evt_data, sizeof(esp_http_server_event_data));
+
     return ESP_OK;
 }
 
@@ -465,6 +477,7 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
         }
     }
 #endif
+    esp_http_server_dispatch_event(HTTP_SERVER_EVENT_ERROR, &error, sizeof(httpd_err_code_t));
 
     return ret;
 }
@@ -532,6 +545,11 @@ int httpd_req_recv(httpd_req_t *r, char *buf, size_t buf_len)
     }
     ra->remaining_len -= ret;
     ESP_LOGD(TAG, LOG_FMT("received length = %d"), ret);
+    esp_http_server_event_data evt_data = {
+        .fd = ra->sd->fd,
+        .data_len = ret,
+    };
+    esp_http_server_dispatch_event(HTTP_SERVER_EVENT_ON_DATA, &evt_data, sizeof(esp_http_server_event_data));
     return ret;
 }
 
