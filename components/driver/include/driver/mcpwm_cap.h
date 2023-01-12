@@ -131,7 +131,7 @@ esp_err_t mcpwm_capture_timer_set_phase_on_sync(mcpwm_cap_timer_handle_t cap_tim
  * @brief MCPWM capture channel configuration structure
  */
 typedef struct {
-    int gpio_num;                /*!< GPIO used capturing input signal */
+    int gpio_num;                    /*!< GPIO used capturing input signal */
     uint32_t prescale;               /*!< Prescale of input signal, effective frequency = cap_input_clk/prescale */
     struct {
         uint32_t pos_edge: 1;          /*!< Whether to capture on positive edge */
@@ -140,6 +140,8 @@ typedef struct {
         uint32_t pull_down: 1;         /*!< Whether to pull down internally */
         uint32_t invert_cap_signal: 1; /*!< Invert the input capture signal */
         uint32_t io_loop_back: 1;      /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
+        uint32_t keep_io_conf_at_exit: 1; /*!< For debug/test, whether to keep the GPIO configuration when capture channel is deleted.
+                                            By default, driver will reset the GPIO pin at exit. */
     } flags;                           /*!< Extra configuration flags for capture channel */
 } mcpwm_capture_channel_config_t;
 
