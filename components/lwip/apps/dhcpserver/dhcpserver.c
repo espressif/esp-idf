@@ -63,6 +63,43 @@
 #define DHCPS_DEBUG          0
 #define DHCPS_LOG printf
 
+
+#define IS_INVALID_SUBNET_MASK(x)  (((x-1) | x) != 0xFFFFFFFF)
+/* Notes:
+*  1. Class a address range 0.0.0.0~127.255.255.255.
+ * 2. Class b address range 128.0.0.0~191.255.255.255.
+ * 3. Class c address range 192.0.0.0~223.255.255.255.
+ */
+#define IS_VALID_CLASSA_SUBNET_MASK(mask)  (mask >= 0xFF000000 && mask <= 0xFFFE0000)
+#define IS_VALID_CLASSB_SUBNET_MASK(mask)  (mask >= 0xFFFF0000 && mask <= 0xFFFFFE00)
+#define IS_VALID_CLASSC_SUBNET_MASK(mask)  (mask >= 0xFFFFFF00 && mask <= 0xFFFFFFFC)
+#define IP_CLASS_HOST_NUM(mask)            (0xffffffff & ~mask)
+
+#define DHCP_CHECK_SUBNET_MASK_IP(mask, ip)                                                               \
+    do {                                                                                                  \
+        if (IS_INVALID_SUBNET_MASK(mask)) {                                                               \
+            DHCPS_LOG("dhcps: Illegal subnet mask.\n");                                                   \
+            return ERR_ARG;                                                                               \
+        } else {                                                                                          \
+            if (IP_CLASSA(ip)) {                                                                          \
+                if(!IS_VALID_CLASSA_SUBNET_MASK(mask)) {                                                  \
+                    DHCPS_LOG("dhcps: The subnet mask does not match the A address.\n");                  \
+                    return ERR_ARG;                                                                       \
+                }                                                                                         \
+            } else if (IP_CLASSB(ip)) {                                                                   \
+                if(!IS_VALID_CLASSB_SUBNET_MASK(mask)) {                                                  \
+                    DHCPS_LOG("dhcps: The subnet mask does not match the B address.\n");                  \
+                    return ERR_ARG;                                                                       \
+                }                                                                                         \
+            } else if (IP_CLASSC(ip)) {                                                                   \
+                if(!IS_VALID_CLASSC_SUBNET_MASK(mask)) {                                                  \
+                    DHCPS_LOG("dhcps: The subnet mask does not match the C address.\n");                  \
+                    return ERR_ARG;                                                                       \
+                }                                                                                         \
+            }                                                                                             \
+        }                                                                                                 \
+    } while (0)
+
 #define MAX_STATION_NUM CONFIG_LWIP_DHCPS_MAX_STATION_NUM
 
 #define DHCPS_STATE_OFFER 1
@@ -1079,6 +1116,8 @@ static void dhcps_poll_set(u32_t ip)
     u32_t softap_ip = 0, local_ip = 0;
     u32_t start_ip = 0;
     u32_t end_ip = 0;
+    u32_t temp_local_ip = 0;
+    u32_t host_num = 0;
 
     if (dhcps_poll.enable == true) {
         softap_ip = htonl(ip);
@@ -1102,17 +1141,22 @@ static void dhcps_poll_set(u32_t ip)
     if (dhcps_poll.enable == false) {
         local_ip = softap_ip = htonl(ip);
         softap_ip &= 0xFFFFFF00;
-        local_ip &= 0xFF;
+        temp_local_ip = local_ip &= 0xFF;
 
         if (local_ip >= 0x80) {
             local_ip -= DHCPS_MAX_LEASE;
+            temp_local_ip -= DHCPS_MAX_LEASE;
         } else {
             local_ip ++;
         }
 
         bzero(&dhcps_poll, sizeof(dhcps_poll));
+        host_num = IP_CLASS_HOST_NUM(htonl(s_dhcps_mask.addr));
+        if (host_num > DHCPS_MAX_LEASE) {
+            host_num = DHCPS_MAX_LEASE;
+        }
         dhcps_poll.start_ip.addr = softap_ip | local_ip;
-        dhcps_poll.end_ip.addr = softap_ip | (local_ip + DHCPS_MAX_LEASE - 1);
+        dhcps_poll.end_ip.addr = softap_ip | (temp_local_ip + host_num - 1);
         dhcps_poll.start_ip.addr = htonl(dhcps_poll.start_ip.addr);
         dhcps_poll.end_ip.addr = htonl(dhcps_poll.end_ip.addr);
     }
@@ -1139,8 +1183,11 @@ void dhcps_set_new_lease_cb(dhcps_cb_t cb)
  *              : info  -- The current ip info
  * Returns      : none
 *******************************************************************************/
-void dhcps_start(struct netif *netif, ip4_addr_t ip)
+err_t dhcps_start(struct netif *netif, ip4_addr_t ip)
 {
+    if (netif == NULL) {
+        return ERR_ARG;
+    }
     dhcps_netif = netif;
 
     if (dhcps_netif->dhcps_pcb != NULL) {
@@ -1152,6 +1199,7 @@ void dhcps_start(struct netif *netif, ip4_addr_t ip)
 
     if (pcb_dhcps == NULL || ip4_addr_isany_val(ip)) {
         printf("dhcps_start(): could not obtain pcb\n");
+        return ERR_ARG;
     }
 
     dhcps_netif->dhcps_pcb = pcb_dhcps;
@@ -1159,6 +1207,7 @@ void dhcps_start(struct netif *netif, ip4_addr_t ip)
     IP4_ADDR(&broadcast_dhcps, 255, 255, 255, 255);
 
     server_address.addr = ip.addr;
+    DHCP_CHECK_SUBNET_MASK_IP(htonl(s_dhcps_mask.addr), htonl(server_address.addr));
     dhcps_poll_set(server_address.addr);
 
     client_address_plus.addr = dhcps_poll.start_ip.addr;
@@ -1168,7 +1217,7 @@ void dhcps_start(struct netif *netif, ip4_addr_t ip)
 #if DHCPS_DEBUG
     DHCPS_LOG("dhcps:dhcps_start->udp_recv function Set a receive callback handle_dhcp for UDP_PCB pcb_dhcps\n");
 #endif
-
+    return ERR_OK;
 }
 
 /******************************************************************************

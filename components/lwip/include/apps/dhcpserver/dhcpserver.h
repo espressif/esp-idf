@@ -16,6 +16,7 @@
 
 #include "sdkconfig.h"
 #include "lwip/ip_addr.h"
+#include "lwip/err.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,7 +87,7 @@ static inline bool dhcps_dns_enabled (dhcps_offer_t offer)
     return (offer & OFFER_DNS) != 0;
 }
 
-void dhcps_start(struct netif *netif, ip4_addr_t ip);
+err_t dhcps_start(struct netif *netif, ip4_addr_t ip);
 void dhcps_stop(struct netif *netif);
 void *dhcps_option_info(u8_t op_id, u32_t opt_len);
 void dhcps_set_option_info(u8_t op_id, void *opt_info, u32_t opt_len);
