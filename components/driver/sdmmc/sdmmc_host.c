@@ -25,6 +25,8 @@
 
 #define SDMMC_EVENT_QUEUE_LENGTH 32
 
+#define SDMMC_TIMEOUT_MS 1000
+
 
 static void sdmmc_isr(void* arg);
 static void sdmmc_host_dma_init(void);
@@ -68,16 +70,22 @@ static void configure_pin_iomux(uint8_t gpio_num);
 
 static esp_err_t sdmmc_host_pullup_en_internal(int slot, int width);
 
-void sdmmc_host_reset(void)
+esp_err_t sdmmc_host_reset(void)
 {
     // Set reset bits
     SDMMC.ctrl.controller_reset = 1;
     SDMMC.ctrl.dma_reset = 1;
     SDMMC.ctrl.fifo_reset = 1;
+
     // Wait for the reset bits to be cleared by hardware
+    int t0 = esp_timer_get_time();
     while (SDMMC.ctrl.controller_reset || SDMMC.ctrl.fifo_reset || SDMMC.ctrl.dma_reset) {
-        ;
+        if (esp_timer_get_time() - t0 > SDMMC_TIMEOUT_MS) {
+            return ESP_ERR_TIMEOUT;
+        }
     }
+
+    return ESP_OK;
 }
 
 /* We have two clock divider stages:
@@ -172,7 +180,7 @@ static void sdmmc_host_input_clk_disable(void)
     SDMMC.clock.val = 0;
 }
 
-static void sdmmc_host_clock_update_command(int slot)
+static esp_err_t sdmmc_host_clock_update_command(int slot)
 {
     // Clock update command (not a real command; just updates CIU registers)
     sdmmc_hw_cmd_t cmd_val = {
@@ -182,8 +190,20 @@ static void sdmmc_host_clock_update_command(int slot)
     };
     bool repeat = true;
     while(repeat) {
-        sdmmc_host_start_command(slot, cmd_val, 0);
+
+        esp_err_t err = sdmmc_host_start_command(slot, cmd_val, 0);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "sdmmc_host_start_command() failed");
+            return err;
+        }
+
+        int t0 = esp_timer_get_time();
         while (true) {
+
+            if (esp_timer_get_time() - t0 > SDMMC_TIMEOUT_MS) {
+                return ESP_ERR_TIMEOUT;
+            }
+
             // Sending clock update command to the CIU can generate HLE error.
             // According to the manual, this is okay and we must retry the command.
             if (SDMMC.rintsts.hle) {
@@ -199,6 +219,8 @@ static void sdmmc_host_clock_update_command(int slot)
             }
         }
     }
+
+    return ESP_OK;
 }
 
 void sdmmc_host_get_clk_dividers(const uint32_t freq_khz, int *host_div, int *card_div)
@@ -245,7 +267,11 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
 
     // Disable clock first
     SDMMC.clkena.cclk_enable &= ~BIT(slot);
-    sdmmc_host_clock_update_command(slot);
+    esp_err_t err = sdmmc_host_clock_update_command(slot);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "disable clk failed");
+        return err;
+    }
 
     int host_div = 0;   /* clock divider of the host (SDMMC.clock) */
     int card_div = 0;   /* 1/2 of card clock divider (SDMMC.clkdiv) */
@@ -266,12 +292,20 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
             break;
     }
     sdmmc_host_set_clk_div(host_div);
-    sdmmc_host_clock_update_command(slot);
+    err = sdmmc_host_clock_update_command(slot);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "set clk div failed");
+        return err;
+    }
 
     // Re-enable clocks
     SDMMC.clkena.cclk_enable |= BIT(slot);
     SDMMC.clkena.cclk_low_power |= BIT(slot);
-    sdmmc_host_clock_update_command(slot);
+    err = sdmmc_host_clock_update_command(slot);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "re-enable clk failed");
+        return err;
+    }
 
     // set data timeout
     const uint32_t data_timeout_ms = 100;
@@ -315,8 +349,11 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg) {
     /* Outputs should be synchronized to cclk_out */
     cmd.use_hold_reg = 1;
 
+    int t0 = esp_timer_get_time();
     while (SDMMC.cmd.start_command == 1) {
-        ;
+        if (esp_timer_get_time() - t0 > SDMMC_TIMEOUT_MS) {
+            return ESP_ERR_TIMEOUT;
+        }
     }
     SDMMC.cmdarg = arg;
     cmd.card_num = slot;
@@ -338,7 +375,12 @@ esp_err_t sdmmc_host_init(void)
     sdmmc_host_set_clk_div(2);
 
     // Reset
-    sdmmc_host_reset();
+    esp_err_t err = sdmmc_host_reset();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "sdmmc_host_reset() failed");
+        return err;
+    }
+
     ESP_LOGD(TAG, "peripheral version %"PRIx32", hardware config %08"PRIx32, SDMMC.verid, SDMMC.hcon);
 
     // Clear interrupt status and set interrupt mask to known state
@@ -545,6 +587,7 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
     // By default, set probing frequency (400kHz) and 1-bit bus
     esp_err_t ret = sdmmc_host_set_card_clk(slot, 400);
     if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "sdmmc_host_set_card_clk() 400kHz failed");
         return ret;
     }
     ret = sdmmc_host_set_bus_width(slot, 1);
