@@ -45,4 +45,16 @@ menu "Wi-Fi Provisioning Manager"
         depends on WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
         default y
 
+    choice WIFI_PROV_STA_SCAN_METHOD
+        bool "Wifi Provisioning Scan Method"
+        default WIFI_PROV_STA_ALL_CHANNEL_SCAN
+        config WIFI_PROV_STA_ALL_CHANNEL_SCAN
+            bool "All Channel Scan"
+            help
+                    Scan will end after scanning the entire channel. This option is useful in Mesh WiFi Systems.
+        config WIFI_PROV_STA_FAST_SCAN
+            bool "Fast Scan"
+            help
+                    Scan will end after an AP matching with the SSID has been detected.
+    endchoice
 endmenu
