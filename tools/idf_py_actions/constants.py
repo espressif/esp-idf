@@ -41,4 +41,5 @@ OPENOCD_TAGET_CONFIG: Dict[str, str] = {
     'esp32s2': '-f board/esp32s2-kaluga-1.cfg',
     'esp32c3': '-f board/esp32c3-builtin.cfg',
     'esp32s3': '-f board/esp32s3-builtin.cfg',
+    'esp32c6': '-f board/esp32c6-builtin.cfg',
 }

@@ -206,13 +206,15 @@ Another option is to write application image to flash using OpenOCD via JTAG wit
 
 OpenOCD flashing command ``program_esp`` has the following format:
 
-``program_esp <image_file> <offset> [verify] [reset] [exit]``
+``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt]``
 
  - ``image_file`` - Path to program image file.
  - ``offset`` - Offset in flash bank to write image.
  - ``verify`` - Optional. Verify flash contents after writing.
  - ``reset`` - Optional. Reset target after programing.
  - ``exit`` - Optional. Finally exit OpenOCD.
+ - ``compress`` - Optional. Compress image file before programming.
+ - ``encrypt`` - Optional. Encrypt binary before writing to flash. Same functionality with ``idf.py encrypted-flash``
 
 You are now ready to start application debugging. Follow the steps described in the section below.
 
