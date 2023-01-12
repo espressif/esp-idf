@@ -13,6 +13,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "soc/efuse_periph.h"
+#include "hal/efuse_hal.h"
 #include "bootloader_random.h"
 #include "sys/param.h"
 #include "soc/syscon_reg.h"
@@ -20,35 +21,6 @@
 const static char *TAG = "efuse";
 
 // Contains functions that provide access to efuse fields which are often used in IDF.
-
-// Returns chip version from efuse
-uint8_t esp_efuse_get_chip_ver(void)
-{
-    uint8_t eco_bit0, eco_bit1, eco_bit2;
-    esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV1, &eco_bit0, 1);
-    esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV2, &eco_bit1, 1);
-    eco_bit2 = (REG_READ(SYSCON_DATE_REG) & 0x80000000) >> 31;
-    uint32_t combine_value = (eco_bit2 << 2) | (eco_bit1 << 1) | eco_bit0;
-    uint8_t chip_ver = 0;
-    switch (combine_value) {
-    case 0:
-        chip_ver = 0;
-        break;
-    case 1:
-        chip_ver = 1;
-        break;
-    case 3:
-        chip_ver = 2;
-        break;
-    case 7:
-        chip_ver = 3;
-        break;
-    default:
-        chip_ver = 0;
-        break;
-    }
-    return chip_ver;
-}
 
 // Returns chip package from efuse
 uint32_t esp_efuse_get_pkg_ver(void)
@@ -71,7 +43,7 @@ esp_err_t esp_efuse_disable_rom_download_mode(void)
 {
 #ifndef CONFIG_ESP32_REV_MIN_3
     /* Check if we support this revision at all */
-    if(esp_efuse_get_chip_ver() < 3) {
+    if (efuse_hal_get_major_chip_version() < 3) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 #endif

@@ -244,7 +244,7 @@ Access to the fields is via a pointer to the description structure. API function
 * :cpp:func:`esp_efuse_get_keypurpose_dis_write` - Returns a write protection of the key purpose field for an eFuse key block (for esp32 always true).
 * :cpp:func:`esp_efuse_key_block_unused` - Returns true if the key block is unused, false otherwise.
 
-For frequently used fields, special functions are made, like this :cpp:func:`esp_efuse_get_chip_ver`, :cpp:func:`esp_efuse_get_pkg_ver`.
+For frequently used fields, special functions are made, like this :cpp:func:`esp_efuse_get_pkg_ver`.
 
 .. only:: not esp32
 

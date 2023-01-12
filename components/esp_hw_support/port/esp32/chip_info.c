@@ -9,22 +9,24 @@
 #include "soc/soc.h"
 #include "soc/efuse_reg.h"
 #include "esp_efuse.h"
+#include "hal/efuse_hal.h"
+#include "hal/efuse_ll.h"
 
 void esp_chip_info(esp_chip_info_t* out_info)
 {
-    uint32_t efuse_rd3 = REG_READ(EFUSE_BLK0_RDATA3_REG);
     memset(out_info, 0, sizeof(*out_info));
 
     out_info->model = CHIP_ESP32;
-    out_info->revision = esp_efuse_get_chip_ver();
+    out_info->revision = efuse_hal_get_major_chip_version();
+    out_info->full_revision = efuse_hal_chip_revision();
 
-    if ((efuse_rd3 & EFUSE_RD_CHIP_VER_DIS_APP_CPU_M) == 0) {
+    if (efuse_ll_get_disable_app_cpu() == 0) {
         out_info->cores = 2;
     } else {
         out_info->cores = 1;
     }
     out_info->features = CHIP_FEATURE_WIFI_BGN;
-    if ((efuse_rd3 & EFUSE_RD_CHIP_VER_DIS_BT_M) == 0) {
+    if (efuse_ll_get_disable_bt() == 0) {
         out_info->features |= CHIP_FEATURE_BT | CHIP_FEATURE_BLE;
     }
     uint32_t package = esp_efuse_get_pkg_ver();
@@ -42,6 +44,6 @@ void esp_chip_info(esp_chip_info_t* out_info)
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 inline bool soc_has_cache_lock_bug(void)
 {
-    return (esp_efuse_get_chip_ver() == 3);
+    return (efuse_hal_get_major_chip_version() == 3);
 }
 #endif

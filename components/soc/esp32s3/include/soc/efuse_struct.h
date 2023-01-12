@@ -120,8 +120,10 @@ typedef volatile struct efuse_dev_s {
     } rd_repeat_data3;
     union {
         struct {
-            uint32_t reg_rpt4_reserved2            :    24;  /*Reserved (used for four backups method).*/
-            uint32_t reserved24                    :    8;  /*Reserved.*/
+            uint32_t disable_wafer_version_major   : 1;
+            uint32_t disable_blk_version_major     : 1;
+            uint32_t reg_rpt4_reserved2            : 22; /*Reserved.*/
+            uint32_t reserved24                    : 8;  /*Reserved.*/
         };
         uint32_t val;
     } rd_repeat_data4;
@@ -136,18 +138,35 @@ typedef volatile struct efuse_dev_s {
     uint32_t rd_mac_spi_sys_2;
     union {
         struct {
-            uint32_t reg_spi_pad_conf_2            :    18;  /*Stores the second part of SPI_PAD_CONF.*/
-            uint32_t reg_sys_data_part0_0          :    14;  /*Stores the fist 14 bits of the zeroth part of system data.*/
+            uint32_t spi_pad_conf_2:  18;                        /*Stores the second part of SPI_PAD_CONF.*/
+            uint32_t wafer_version_minor_low:    3;
+            uint32_t pkg_version:      3;
+            uint32_t blk_version_minor:3;
+            uint32_t reg_sys_data_part0_0: 5;
         };
         uint32_t val;
     } rd_mac_spi_sys_3;
     uint32_t rd_mac_spi_sys_4;
-    uint32_t rd_mac_spi_sys_5;
+    union {
+        struct {
+            uint32_t reserved1:              23;
+            uint32_t wafer_version_minor_high:    1;
+            uint32_t wafer_version_major:    2;
+            uint32_t reserved2:              6;
+        };
+        uint32_t val;
+    } rd_mac_spi_sys_5;
     uint32_t rd_sys_part1_data0;
     uint32_t rd_sys_part1_data1;
     uint32_t rd_sys_part1_data2;
     uint32_t rd_sys_part1_data3;
-    uint32_t rd_sys_part1_data4;
+    union {
+        struct {
+            uint32_t blk_version_major :     2;
+            uint32_t reserved1:              30;
+        };
+        uint32_t val;
+    } rd_sys_part1_data4;
     uint32_t rd_sys_part1_data5;
     uint32_t rd_sys_part1_data6;
     uint32_t rd_sys_part1_data7;

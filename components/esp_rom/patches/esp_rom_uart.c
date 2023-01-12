@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "esp_attr.h"
-#include "esp_efuse.h"
+#include "hal/efuse_hal.h"
 #include "sdkconfig.h"
 #include "hal/uart_ll.h"
 
@@ -48,7 +48,7 @@ IRAM_ATTR void esp_rom_uart_set_as_console(uint8_t uart_no)
     typedef void (*rom_func_t)(uint8_t);
     rom_func_t uart_tx_switch = NULL;
 
-    if (esp_efuse_get_chip_ver() < 3) {
+    if (efuse_hal_chip_revision() < 3) {
         uart_tx_switch = (rom_func_t)0x4004b8ca;
     } else {
         uart_tx_switch = (rom_func_t)0x4004c166;

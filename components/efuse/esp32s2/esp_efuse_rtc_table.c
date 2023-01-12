@@ -90,7 +90,7 @@ static const efuse_map_info_t adc_efuse_raw_map[] = {
 int esp_efuse_rtc_table_read_calib_version(void)
 {
     uint32_t result = 0;
-    esp_efuse_read_field_blob(ESP_EFUSE_BLOCK2_VERSION, &result, 32);
+    esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MINOR, &result, 3);
     return result;
 }
 

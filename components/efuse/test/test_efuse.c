@@ -950,12 +950,6 @@ TEST_CASE("Test chip_ver_pkg APIs return the same value", "[efuse]")
     TEST_ASSERT_EQUAL_INT(esp_efuse_get_pkg_ver(), bootloader_common_get_chip_ver_pkg());
 }
 
-TEST_CASE("Test chip_revision APIs return the same value", "[efuse]")
-{
-    esp_efuse_utility_update_virt_blocks();
-    TEST_ASSERT_EQUAL_INT(esp_efuse_get_chip_ver(), bootloader_common_get_chip_revision());
-}
-
 #ifndef CONFIG_IDF_TARGET_ESP32
 #if CONFIG_IDF_ENV_FPGA || CONFIG_EFUSE_VIRTUAL
 TEST_CASE("Test writing order is BLK_MAX->BLK0", "[efuse]")

@@ -18,6 +18,7 @@
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "hal/wdt_hal.h"
+#include "hal/efuse_hal.h"
 
 static const char *TAG = "boot";
 
@@ -40,9 +41,10 @@ esp_err_t bootloader_read_bootloader_header(void)
 
 esp_err_t bootloader_check_bootloader_validity(void)
 {
-    /* read chip revision from efuse */
-    uint8_t revision = bootloader_common_get_chip_revision();
-    ESP_LOGI(TAG, "chip revision: %d", revision);
+    unsigned revision = efuse_hal_chip_revision();
+    unsigned major = revision / 100;
+    unsigned minor = revision % 100;
+    ESP_LOGI(TAG, "chip revision: v%d.%d", major, minor);
     /* compare with the one set in bootloader image header */
     if (bootloader_common_check_chip_validity(&bootloader_image_hdr, ESP_IMAGE_BOOTLOADER) != ESP_OK) {
         return ESP_FAIL;

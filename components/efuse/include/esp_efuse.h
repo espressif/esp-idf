@@ -277,13 +277,6 @@ esp_err_t esp_efuse_read_block(esp_efuse_block_t blk, void* dst_key, size_t offs
 esp_err_t esp_efuse_write_block(esp_efuse_block_t blk, const void* src_key, size_t offset_in_bits, size_t size_bits);
 
 /**
- * @brief   Returns chip version from efuse
- *
- * @return chip version
- */
-uint8_t esp_efuse_get_chip_ver(void);
-
-/**
  * @brief   Returns chip package from efuse
  *
  * @return chip package
