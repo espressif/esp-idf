@@ -1023,7 +1023,10 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, output_format: str
 
         def _get_header_format_diff(disp_list: List=display_name_list, columns: bool=False, output_format: str='') -> str:
             if output_format == 'csv':
-                return '{},' * len(disp_list) + '{}' + os.linesep
+                if columns:
+                    return '{},' * len(disp_list) + '{}' + os.linesep
+                # This makes sure that every archive in the header has 3 columns (curr, reference and diff)
+                return '{},,,' * len(disp_list) + '{}' + os.linesep
             if columns:
                 len_list = (24, ) + (7, ) * 3 * len(disp_list)
                 return '|'.join(['{:>%d}' % x for x in len_list]) + os.linesep
@@ -1035,16 +1038,21 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, output_format: str
             header_format = _get_header_format_diff(columns=False, output_format=output_format)
             output = header_format.format(header, *disp_list)
 
-            f_print = ('-' * 23, '') * len(key_list)
-            f_print = f_print[0:len(key_list)]
-            header_line = header_format.format('', *f_print)
-
-            header_format = _get_header_format_diff(columns=True, output_format=output_format)
-            f_print = ('<C>', '<R>', '<C>-<R>') * len(key_list)
-
-            output += header_format.format('', *f_print)
             if output_format != 'csv':
+                f_print = ('-' * 23, '') * len(key_list)
+                f_print = f_print[0:len(key_list)]
+                header_line = header_format.format('', *f_print)
+                header_format = _get_header_format_diff(columns=True, output_format=output_format)
+                f_print = ('<C>', '<R>', '<C>-<R>') * len(key_list)
+                output += header_format.format('', *f_print)
                 output += header_line
+                line_format = header_format
+            else:
+                header_format = _get_header_format_diff(columns=True, output_format=output_format)
+                # When formatting with CSV we have 3 entries per key (curr, reference and diff)
+                f_print = ('<C>', '<R>', '<C>-<R>') * len(key_list) * 3
+                output += header_format.format('', *f_print)
+                line_format = '{},' * len(disp_list) * 3 + '{}' + os.linesep
 
             for key, data_info in curr.items():
                 try:
@@ -1063,14 +1071,14 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, output_format: str
                     a = section_dict.get(name, 0)
                     b = section_dict_ref.get(name, 0)
                     diff = a - b
-                    # the sign is added here and not in header_format in order to be able to print empty strings
+                    # the sign is added here and not in line_format in order to be able to print empty strings
                     return (a or '', b or '', '' if diff == 0 else '{:+}'.format(diff))
 
                 x = []  # type: List[str]
                 for section in key_list:
                     x.extend(_get_items(section))
 
-                output += header_format.format(key[:24], *(x))
+                output += line_format.format(key[:24], *(x))
 
             return output
 

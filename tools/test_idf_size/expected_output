@@ -20103,26 +20103,26 @@ Used Flash size ,186524 bytes,99551,+86973,
 .rodata,39580 bytes,22360,+17220,
 Total image size,234780 bytes (.bin may be padded larger),147087,+87693,
 Per-archive contributions to ELF file:
-Archive File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata,flash_total
+Archive File,,,DRAM .data,,,& 0.bss,,,IRAM0 .text,,,& 0.vectors,,,ram_st_total,,,Flash .text,,,& .rodata,,,flash_total
 ,<C>,<R>,<C>-<R>,<C>,<R>,<C>-<R>,<C>,<R>
-libc.a,,364,-364,,,,,
-libesp32.a,2635,2118,+517,2375,81,+2294,7758,5462
-libfreertos.a,4156,4140,+16,832,792,+40,12428,12459
-libspi_flash.a,36,779,-743,359,294,+65,7004,4896
-libsoc.a,660,208,+452,8,4,+4,3887,6790
-libheap.a,1331,304,+1027,4,4,,4376,3129
-libgcc.a,4,,+4,20,,+20,104,
-libvfs.a,232,308,-76,103,48,+55,,
-libnewlib.a,152,152,,272,272,,853,820
-libpthread.a,16,8,+8,12,12,,174,
-libdriver.a,40,112,-72,20,20,,,
-liblog.a,8,8,,268,272,-4,456,222
-libapp_update.a,,,,,4,-4,,109
-libhal.a,,,,,,,515,447
-libmain.a,,,,,,,,
-libcxx.a,,,,,,,,
-libbootloader_support.a,,,,,,,,1028
-libwpa_supplicant.a,,,,,,,,
+libc.a,,364,-364,,,,,,,,,,,364,-364,55583,54704,+879,3709,3703,+6,59292,58771,+521
+libesp32.a,2635,2118,+517,2375,81,+2294,7758,5462,+2296,,,,12768,7661,+5107,4814,4511,+303,8133,2751,+5382,23340,14842,+8498
+libfreertos.a,4156,4140,+16,832,792,+40,12428,12459,-31,425,425,,17841,17816,+25,,,,1545,1451,+94,18554,18475,+79
+libspi_flash.a,36,779,-743,359,294,+65,7004,4896,+2108,,,,7399,5969,+1430,886,1135,-249,1624,1412,+212,9550,8222,+1328
+libsoc.a,660,208,+452,8,4,+4,3887,6790,-2903,,,,4555,7002,-2447,,1763,-1763,3456,1956,+1500,8003,10717,-2714
+libheap.a,1331,304,+1027,4,4,,4376,3129,+1247,,,,5711,3437,+2274,1218,884,+334,980,741,+239,7905,5058,+2847
+libgcc.a,4,,+4,20,,+20,104,,+104,,,,128,,+128,5488,,+5488,888,160,+728,6484,160,+6324
+libvfs.a,232,308,-76,103,48,+55,,,,,,,335,356,-21,3770,5650,-1880,403,915,-512,4405,6873,-2468
+libnewlib.a,152,152,,272,272,,853,820,+33,,,,1277,1244,+33,803,868,-65,86,84,+2,1894,1924,-30
+libpthread.a,16,8,+8,12,12,,174,,+174,,,,202,20,+182,774,264,+510,638,,+638,1602,272,+1330
+libdriver.a,40,112,-72,20,20,,,,,,,,60,132,-72,961,4272,-3311,537,1910,-1373,1538,6294,-4756
+liblog.a,8,8,,268,272,-4,456,222,+234,,,,732,502,+230,396,484,-88,166,147,+19,1026,861,+165
+libapp_update.a,,,,,4,-4,,109,-109,,,,,113,-113,123,159,-36,717,470,+247,840,738,+102
+libhal.a,,,,,,,515,447,+68,,,,515,447,+68,,,,32,32,,547,479,+68
+libmain.a,,,,,,,,,,,,,,,,53,72,-19,10,39,-29,63,111,-48
+libcxx.a,,,,,,,,,,,,,,,,11,11,,,,,11,11,
+libbootloader_support.a,,,,,,,,1028,-1028,,,,,1028,-1028,,565,-565,,20,-20,,1613,-1613
+libwpa_supplicant.a,,,,,,,,,,,,,,,,,,,,,,,,
 The following entries are present in <CURRENT> only:
 Archive File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata
 liblwip.a,14,3751,0,0,3765,66978,13936
@@ -20168,47 +20168,47 @@ Used Flash size ,186524 bytes,99551,+86973,
 .rodata,39580 bytes,22360,+17220,
 Total image size,234780 bytes (.bin may be padded larger),147087,+87693,
 Per-file contributions to ELF file:
-Object File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata,flash_total
+Object File,,,DRAM .data,,,& 0.bss,,,IRAM0 .text,,,& 0.vectors,,,ram_st_total,,,Flash .text,,,& .rodata,,,flash_total
 ,<C>,<R>,<C>-<R>,<C>,<R>,<C>-<R>,<C>,<R>
-lib_a-vfprintf.o,,,,,,,,
-lib_a-svfprintf.o,,,,,,,,
-lib_a-svfiprintf.o,,,,,,,,
-lib_a-vfiprintf.o,,,,,,,,
-lib_a-dtoa.o,,,,,,,,
-lib_a-mprec.o,,,,,,,,
-lib_a-fseeko.o,,,,,,,,
-windowspill_asm.o,,,,,,,311,315
-lib_a-reent.o,,,,,,,,
-lib_a-fopen.o,,,,,,,,
-lib_a-puts.o,,,,,,,,
-lib_a-assert.o,,,,,,,,
-lib_a-flags.o,,,,,,,,
-lib_a-printf.o,,,,,,,,
-lib_a-s_frexp.o,,,,,,,,
-lib_a-vprintf.o,,,,,,,,
-lib_a-fiprintf.o,,,,,,,,
-state_asm--restore_extra,,,,,,,62,62
-state_asm--save_extra_nw,,,,,,,62,62
-lib_a-fseek.o,,,,,,,,
-_divdi3.o,,,,,,,,
-_moddi3.o,,,,,,,,
-_udivdi3.o,,,,,,,,
-_umoddi3.o,,,,,,,,
-interrupts--intlevel.o,,,,,,,,
-lib_a-errno.o,,,,,,,,
-int_asm--set_intclear.o,,,,,,,8,8
-lib_a-fputs.o,,,,,,,,
-lib_a-snprintf.o,,,,,,,,
-lib_a-strerror.o,,,,,,,,
-lib_a-sysgettod.o,,,,,,,,
-lib_a-u_strerr.o,,,,,,,,
-_addsubdf3.o,,,,,,,,
-_cmpdf2.o,,,,,,,,
-_divdf3.o,,,,,,,,
-_fixdfsi.o,,,,,,,,
-_floatsidf.o,,,,,,,,
-_muldf3.o,,,,,,,,
-_popcountsi2.o,,,,,,,,
+lib_a-vfprintf.o,,,,,,,,,,,,,,,,14193,13681,+512,704,700,+4,14897,14381,+516
+lib_a-svfprintf.o,,,,,,,,,,,,,,,,13834,13290,+544,756,752,+4,14590,14042,+548
+lib_a-svfiprintf.o,,,,,,,,,,,,,,,,9642,9623,+19,1176,1172,+4,10818,10795,+23
+lib_a-vfiprintf.o,,,,,,,,,,,,,,,,9933,9933,,704,700,+4,10637,10633,+4
+lib_a-dtoa.o,,,,,,,,,,,,,,,,3522,3524,-2,13,13,,3535,3537,-2
+lib_a-mprec.o,,,,,,,,,,,,,,,,2134,2140,-6,296,296,,2430,2436,-6
+lib_a-fseeko.o,,,,,,,,,,,,,,,,862,918,-56,,,,862,918,-56
+windowspill_asm.o,,,,,,,311,315,-4,,,,311,315,-4,,,,,,,311,315,-4
+lib_a-reent.o,,,,,,,,,,,,,,,,232,236,-4,,,,232,236,-4
+lib_a-fopen.o,,,,,,,,,,,,,,,,228,244,-16,,,,228,244,-16
+lib_a-puts.o,,,,,,,,,,,,,,,,182,234,-52,,,,182,234,-52
+lib_a-assert.o,,,,,,,,,,,,,,,,68,68,,60,60,,128,128,
+lib_a-flags.o,,,,,,,,,,,,,,,,127,128,-1,,,,127,128,-1
+lib_a-printf.o,,,,,,,,,,,,,,,,116,,+116,,,,116,,+116
+lib_a-s_frexp.o,,,,,,,,,,,,,,,,110,100,+10,,,,110,100,+10
+lib_a-vprintf.o,,,,,,,,,,,,,,,,94,94,,,,,94,94,
+lib_a-fiprintf.o,,,,,,,,,,,,,,,,84,84,,,,,84,84,
+state_asm--restore_extra,,,,,,,62,62,,,,,62,62,,,,,,,,62,62,
+state_asm--save_extra_nw,,,,,,,62,62,,,,,62,62,,,,,,,,62,62,
+lib_a-fseek.o,,,,,,,,,,,,,,,,45,45,,,,,45,45,
+_divdi3.o,,,,,,,,,,,,,,,,,,,40,40,,40,40,
+_moddi3.o,,,,,,,,,,,,,,,,,,,40,40,,40,40,
+_udivdi3.o,,,,,,,,,,,,,,,,,,,40,40,,40,40,
+_umoddi3.o,,,,,,,,,,,,,,,,,,,40,40,,40,40,
+interrupts--intlevel.o,,,,,,,,,,,,,,,,,,,32,32,,32,32,
+lib_a-errno.o,,,,,,,,,,,,,,,,10,10,,,,,10,10,
+int_asm--set_intclear.o,,,,,,,8,8,,,,,8,8,,,,,,,,8,8,
+lib_a-fputs.o,,,,,,,,,,,,,,,,,,,,,,,,
+lib_a-snprintf.o,,,,,,,,,,,,,,,,,217,-217,,,,,217,-217
+lib_a-strerror.o,,,,,,,,,,,,,,,,,,,,,,,,
+lib_a-sysgettod.o,,,,,,,,,,,,,,,,,,,,,,,,
+lib_a-u_strerr.o,,,,,,,,,,,,,,,,,,,,,,,,
+_addsubdf3.o,,,,,,,,,,,,,,,,,,,,,,,,
+_cmpdf2.o,,,,,,,,,,,,,,,,,,,,,,,,
+_divdf3.o,,,,,,,,,,,,,,,,,,,,,,,,
+_fixdfsi.o,,,,,,,,,,,,,,,,,,,,,,,,
+_floatsidf.o,,,,,,,,,,,,,,,,,,,,,,,,
+_muldf3.o,,,,,,,,,,,,,,,,,,,,,,,,
+_popcountsi2.o,,,,,,,,,,,,,,,,,,,,,,,,
 The following entries are present in <CURRENT> only:
 Object File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata
 tcp_in.o,0,54,0,0,54,8127,916
