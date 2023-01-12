@@ -179,10 +179,26 @@ menu "mbedTLS"
             select MBEDTLS_HKDF_C
             default n
 
-        config MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE
-            bool "Enable TLS 1.3 middlebox compatibility mode"
+        menu "TLS 1.3 related configurations"
             depends on MBEDTLS_SSL_PROTO_TLS1_3
-            default y
+
+            config MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE
+                bool "TLS 1.3 middlebox compatibility mode"
+                default y
+
+            config MBEDTLS_SSL_TLS1_3_KEXM_PSK
+                bool "TLS 1.3 PSK key exchange mode"
+                default y
+
+            config MBEDTLS_SSL_TLS1_3_KEXM_EPHEMERAL
+                bool "TLS 1.3 ephemeral key exchange mode"
+                default y
+
+            config MBEDTLS_SSL_TLS1_3_KEXM_PSK_EPHEMERAL
+                bool "TLS 1.3 PSK ephemeral key exchange mode"
+                default y
+
+        endmenu
 
         config MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
             bool "Variable SSL buffer length"
@@ -212,6 +228,7 @@ menu "mbedTLS"
         config MBEDTLS_SSL_CONTEXT_SERIALIZATION
             bool "Enable serialization of the TLS context structures"
             default n
+            depends on MBEDTLS_GCM_C || MBEDTLS_CCM_C || MBEDTLS_CHACHAPOLY_C
             help
                 Enable serialization of the TLS context structures
                 This is a local optimization in handling a single, potentially long-lived connection.
@@ -230,17 +247,14 @@ menu "mbedTLS"
                 See mbedTLS documentation for required API and more details.
 
         menu "DTLS-based configurations"
-            visible if MBEDTLS_SSL_PROTO_DTLS
+            depends on MBEDTLS_SSL_PROTO_DTLS
 
             config MBEDTLS_SSL_DTLS_CONNECTION_ID
                 bool "Support for the DTLS Connection ID extension"
-                depends on MBEDTLS_SSL_PROTO_DTLS
                 default n
                 help
                     Enable support for the DTLS Connection ID extension which allows to
                     identify DTLS connections across changes in the underlying transport.
-                    The Connection ID extension is still in draft state.
-                    Refer: version draft-ietf-tls-dtls-connection-id-05
 
             config MBEDTLS_SSL_CID_IN_LEN_MAX
                 int "Maximum length of CIDs used for incoming DTLS messages"
@@ -276,7 +290,6 @@ menu "mbedTLS"
 
             config MBEDTLS_SSL_DTLS_SRTP
                 bool "Enable support for negotiation of DTLS-SRTP (RFC 5764)"
-                depends on MBEDTLS_SSL_PROTO_DTLS
                 default n
                 help
                     Enable support for negotiation of DTLS-SRTP (RFC 5764) through the use_srtp extension.
@@ -702,7 +715,7 @@ menu "mbedTLS"
     config MBEDTLS_SERVER_SSL_SESSION_TICKETS
         bool "TLS: Server Support for RFC 5077 SSL session tickets"
         default y
-        depends on MBEDTLS_TLS_ENABLED
+        depends on MBEDTLS_TLS_ENABLED && (MBEDTLS_GCM_C || MBEDTLS_CCM_C || MBEDTLS_CHACHAPOLY_C)
         help
             Server support for RFC 5077 session tickets. See mbedTLS documentation for more details.
             Disabling this option will save some code size.

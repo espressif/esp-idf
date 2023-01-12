@@ -35,7 +35,7 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
     if( ssl->state == MBEDTLS_SSL_SERVER_CHANGE_CIPHER_SPEC &&
         ssl->handshake->new_session_ticket != 0 )
     {
-        ssl->state = MBEDTLS_SSL_SERVER_NEW_SESSION_TICKET;
+        ssl->state = MBEDTLS_SSL_NEW_SESSION_TICKET;
     }
 #endif
 
@@ -158,7 +158,7 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
 
 
 #if defined(MBEDTLS_SSL_SESSION_TICKETS)
-        case MBEDTLS_SSL_SERVER_NEW_SESSION_TICKET:
+        case MBEDTLS_SSL_NEW_SESSION_TICKET:
             if (add) {
                 CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
             } else {
