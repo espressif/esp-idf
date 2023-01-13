@@ -41,10 +41,10 @@ typedef struct {
     /* Linked list of available record objects */
     heap_trace_record_list_t unused;
 
-    /* capacity of the buffer */
+    /* capacity of 'buffer' */
     size_t capacity;
 
-    /* Count of entries logged in the buffer. */
+    /* Count of entries in 'list' */
     size_t count;
 
     /* During execution, we remember the maximum
@@ -73,6 +73,10 @@ static size_t total_allocations;
 
 /* Actual number of frees logged */
 static size_t total_frees;
+
+/* Used to speed up heap_trace_get */
+static heap_trace_record_t* rGet;
+static size_t rGetIdx;
 
 esp_err_t heap_trace_init_standalone(heap_trace_record_t *record_buffer, size_t num_records)
 {
@@ -160,24 +164,39 @@ esp_err_t heap_trace_get(size_t index, heap_trace_record_t *rOut)
 
     } else {
 
-        // Iterate through through the linked list
+        // Perf: speed up sequential access
+        if (rGet && rGetIdx == index - 1) {
 
-        heap_trace_record_t* rCur = TAILQ_FIRST(&records.list);
+            rGet = TAILQ_NEXT(rGet, tailq);
+            rGetIdx = index;
 
-        for (int i = 0; i < index; i++) {
+        } else {
 
-            // this should not happen, since we already
-            // checked that index >= records.count == false
-            if (rCur == NULL) {
-                result = ESP_ERR_INVALID_STATE;
-                break;
+            // Iterate through through the linked list
+
+            rGet = TAILQ_FIRST(&records.list);
+
+            for (int i = 0; i < index; i++) {
+
+                if (rGet == NULL) {
+                    break;
+                }
+
+                rGet = TAILQ_NEXT(rGet, tailq);
+                rGetIdx = i + 1;
             }
-
-            rCur = TAILQ_NEXT(rCur, tailq);
         }
 
         // copy to destination
-        memcpy(rOut, rCur, sizeof(heap_trace_record_t));
+        if (rGet) {
+            memcpy(rOut, rGet, sizeof(heap_trace_record_t));
+        } else {
+            // this should not happen since we already
+            // checked that index < records.count,
+            // but could be indicative of memory corruption
+            result = ESP_ERR_INVALID_STATE;
+            memset(rOut, 0, sizeof(heap_trace_record_t));
+        }
     }
 
     portEXIT_CRITICAL(&trace_mux);
