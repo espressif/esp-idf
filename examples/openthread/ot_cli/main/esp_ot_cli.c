@@ -70,7 +70,9 @@ static void ot_task_worker(void *aContext)
     (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
 #endif
     // Initialize the OpenThread cli
+#if CONFIG_OPENTHREAD_CLI
     esp_openthread_cli_init();
+#endif
 
     esp_netif_t *openthread_netif;
     // Initialize the esp_netif bindings
@@ -81,7 +83,9 @@ static void ot_task_worker(void *aContext)
 #endif // CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
 
     // Run the main loop
+#if CONFIG_OPENTHREAD_CLI
     esp_openthread_cli_create_task();
+#endif
     esp_openthread_launch_mainloop();
 
     // Clean up
