@@ -15,10 +15,8 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_efuse_custom_table.h"
-#if CONFIG_IDF_TARGET_ESP32C2
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
-#endif
 #include "sdkconfig.h"
 
 static const char* TAG = "example";
@@ -134,6 +132,21 @@ static esp_efuse_coding_scheme_t get_coding_scheme(void)
 void app_main(void)
 {
     ESP_LOGI(TAG, "Start eFuse example");
+
+#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
+    if (esp_flash_encryption_cfg_verify_release_mode()) {
+        ESP_LOGI(TAG, "Flash Encryption is in RELEASE mode");
+    } else {
+        ESP_LOGW(TAG, "Flash Encryption is NOT in RELEASE mode");
+    }
+#endif
+#ifdef CONFIG_SECURE_BOOT
+    if (esp_secure_boot_cfg_verify_release_mode()) {
+        ESP_LOGI(TAG, "Secure Boot is in RELEASE mode");
+    } else {
+        ESP_LOGW(TAG, "Secure Boot is NOT in RELEASE mode");
+    }
+#endif
 
     esp_efuse_coding_scheme_t coding_scheme = get_coding_scheme();
     (void) coding_scheme;

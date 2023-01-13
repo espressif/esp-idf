@@ -218,3 +218,206 @@ void esp_flash_encryption_set_release_mode(void)
     }
     ESP_LOGI(TAG, "Flash encryption mode is RELEASE");
 }
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+bool esp_flash_encryption_cfg_verify_release_mode(void)
+{
+    bool result = false;
+    bool secure;
+
+    secure = esp_flash_encryption_enabled();
+    result = secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not enabled Flash Encryption (FLASH_CRYPT_CNT->1 or max)");
+    }
+
+    uint8_t crypt_config = 0;
+    esp_efuse_read_field_blob(ESP_EFUSE_ENCRYPT_CONFIG, &crypt_config, 4);
+    if (crypt_config != EFUSE_FLASH_CRYPT_CONFIG) {
+        result &= false;
+        ESP_LOGW(TAG, "ENCRYPT_CONFIG must be set 0xF (set ENCRYPT_CONFIG->0xF)");
+    }
+
+    uint8_t flash_crypt_cnt = 0;
+    esp_efuse_read_field_blob(ESP_EFUSE_FLASH_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_FLASH_CRYPT_CNT[0]->bit_count);
+    if (flash_crypt_cnt != (1 << (ESP_EFUSE_FLASH_CRYPT_CNT[0]->bit_count)) - 1) {
+        if (!esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT)) {
+            result &= false;
+            ESP_LOGW(TAG, "Not release mode of Flash Encryption (set FLASH_CRYPT_CNT->max or WR_DIS_FLASH_CRYPT_CNT->1)");
+        }
+    }
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled UART bootloader encryption (set DISABLE_DL_ENCRYPT->1)");
+    }
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_DECRYPT);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled UART bootloader decryption (set DISABLE_DL_DECRYPT->1)");
+    }
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_CACHE);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled UART bootloader MMU cache (set DISABLE_DL_CACHE->1)");
+    }
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_JTAG);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled JTAG (set DISABLE_JTAG->1)");
+    }
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_CONSOLE_DEBUG_DISABLE);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled ROM BASIC interpreter fallback (set CONSOLE_DEBUG_DISABLE->1)");
+    }
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_RD_DIS_BLK1);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not read-protected flash ecnryption key (set RD_DIS_BLK1->1)");
+    }
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_BLK1);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not write-protected flash ecnryption key (set WR_DIS_BLK1->1)");
+    }
+    return result;
+}
+#else // not CONFIG_IDF_TARGET_ESP32
+bool esp_flash_encryption_cfg_verify_release_mode(void)
+{
+    bool result = false;
+    bool secure;
+
+    secure = esp_flash_encryption_enabled();
+    result = secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not enabled Flash Encryption (SPI_BOOT_CRYPT_CNT->1 or max)");
+    }
+
+    uint8_t flash_crypt_cnt = 0;
+    esp_efuse_read_field_blob(ESP_EFUSE_SPI_BOOT_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_SPI_BOOT_CRYPT_CNT[0]->bit_count);
+    if (flash_crypt_cnt != (1 << (ESP_EFUSE_SPI_BOOT_CRYPT_CNT[0]->bit_count)) - 1) {
+        if (!esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT)) {
+            result &= false;
+            ESP_LOGW(TAG, "Not release mode of Flash Encryption (set SPI_BOOT_CRYPT_CNT->max or WR_DIS_SPI_BOOT_CRYPT_CNT->1)");
+        }
+    }
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled UART bootloader encryption (set DIS_DOWNLOAD_MANUAL_ENCRYPT->1)");
+    }
+
+#if SOC_EFUSE_DIS_DOWNLOAD_DCACHE
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled UART bootloader Dcache (set DIS_DOWNLOAD_DCACHE->1)");
+    }
+#endif
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled UART bootloader cache (set DIS_DOWNLOAD_ICACHE->1)");
+    }
+
+#if SOC_EFUSE_DIS_PAD_JTAG
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_PAD_JTAG);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled JTAG PADs (set DIS_PAD_JTAG->1)");
+    }
+#endif
+
+#if SOC_EFUSE_DIS_USB_JTAG
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_USB_JTAG);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled USB JTAG (set DIS_USB_JTAG->1)");
+    }
+#endif
+
+#if SOC_EFUSE_DIS_DIRECT_BOOT
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DIRECT_BOOT);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled direct boot mode (set DIS_DIRECT_BOOT->1)");
+    }
+#endif
+
+#if SOC_EFUSE_HARD_DIS_JTAG
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_HARD_DIS_JTAG);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled JTAG (set HARD_DIS_JTAG->1)");
+    }
+#endif
+
+#if SOC_EFUSE_DIS_BOOT_REMAP
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_BOOT_REMAP);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled boot from RAM (set DIS_BOOT_REMAP->1)");
+    }
+#endif
+
+#if SOC_EFUSE_DIS_LEGACY_SPI_BOOT
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_LEGACY_SPI_BOOT);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled Legcy SPI boot (set DIS_LEGACY_SPI_BOOT->1)");
+    }
+#endif
+
+    esp_efuse_purpose_t purposes[] = {
+#if SOC_FLASH_ENCRYPTION_XTS_AES_256
+        ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1,
+        ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2,
+#endif
+#if SOC_FLASH_ENCRYPTION_XTS_AES_128
+        ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
+#endif
+    };
+    // S2 and S3 chips have both XTS_AES_128_KEY and XTS_AES_256_KEY_1/2.
+    // The check below does not take into account that XTS_AES_128_KEY and XTS_AES_256_KEY_1/2
+    // are mutually exclusive because this will make the chip not functional.
+    // Only one type key must be configured in eFuses.
+    secure = false;
+    for (unsigned i = 0; i < sizeof(purposes) / sizeof(esp_efuse_purpose_t); i++) {
+        esp_efuse_block_t block;
+        if (esp_efuse_find_purpose(purposes[i], &block)) {
+            secure = esp_efuse_get_key_dis_read(block);
+            result &= secure;
+            if (!secure) {
+                ESP_LOGW(TAG, "Not read-protected Flash encryption key in BLOCK%d (set RD_DIS_KEY%d->1)", block, block - EFUSE_BLK_KEY0);
+            }
+            secure = esp_efuse_get_key_dis_write(block);
+            result &= secure;
+            if (!secure) {
+                ESP_LOGW(TAG, "Not write-protected Flash encryption key in BLOCK%d (set WR_DIS_KEY%d->1)", block, block - EFUSE_BLK_KEY0);
+            }
+
+#if SOC_EFUSE_KEY_PURPOSE_FIELD
+            secure = esp_efuse_get_keypurpose_dis_write(block);
+            result &= secure;
+            if (!secure) {
+                ESP_LOGW(TAG, "Not write-protected KEY_PURPOSE for BLOCK%d (set WR_DIS_KEY_PURPOSE%d->1)", block, block - EFUSE_BLK_KEY0);
+            }
+#endif
+        }
+    }
+    result &= secure;
+
+    return result;
+}
+#endif // not CONFIG_IDF_TARGET_ESP32

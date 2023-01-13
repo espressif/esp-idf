@@ -362,6 +362,13 @@
 #define SOC_AES_SUPPORT_DMA     (1)
 #define SOC_AES_SUPPORT_GCM     (1)
 
+/*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_DIS_DOWNLOAD_DCACHE 1
+#define SOC_EFUSE_HARD_DIS_JTAG 1
+#define SOC_EFUSE_SOFT_DIS_JTAG 1
+#define SOC_EFUSE_DIS_BOOT_REMAP 1
+#define SOC_EFUSE_DIS_LEGACY_SPI_BOOT 1
+
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3

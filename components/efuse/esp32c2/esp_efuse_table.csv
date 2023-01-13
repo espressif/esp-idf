@@ -12,7 +12,7 @@
 ##############################
     # EFUSE_RD_WR_DIS_REG #
         WR_DIS,                           EFUSE_BLK0,    0,    8,      Write protection
-            WR_DIS.KEY0_RD_DIS,           EFUSE_BLK0,    0,    1,      Write protection for KEY0_RD_DIS
+            WR_DIS.RD_DIS,                EFUSE_BLK0,    0,    1,      Write protection for RD_DIS
             WR_DIS.GROUP_1,               EFUSE_BLK0,    1,    1,      Write protection for WDT_DELAY DIS_PAD_JTAG DIS_DOWNLOAD_ICACHE
             WR_DIS.GROUP_2,               EFUSE_BLK0,    2,    1,      Write protection for DOWNLOAD_DIS_MANUAL_ENCRYPT SPI_BOOT_CRYPT_CNT XTS_KEY_LENGTH_256 SECURE_BOOT_EN
             WR_DIS.SPI_BOOT_CRYPT_CNT,    EFUSE_BLK0,    2,    1,      Write protection for DOWNLOAD_DIS_MANUAL_ENCRYPT [SPI_BOOT_CRYPT_CNT] XTS_KEY_LENGTH_256 SECURE_BOOT_EN
