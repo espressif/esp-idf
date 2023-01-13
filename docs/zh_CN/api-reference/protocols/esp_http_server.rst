@@ -22,7 +22,7 @@ HTTP Server 组件提供了在 ESP32 上运行轻量级 Web 服务器的功能�
         esp_err_t get_handler(httpd_req_t *req)
         {
             /* 发送回简单的响应数据包 */
-            const char[] resp = "URI GET Response";
+            const char resp[] = "URI GET Response";
             httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
             return ESP_OK;
         }
@@ -55,7 +55,7 @@ HTTP Server 组件提供了在 ESP32 上运行轻量级 Web 服务器的功能�
             }
 
             /* 发送简单的响应数据包 */
-            const char[] resp = "URI POST Response";
+            const char resp[] = "URI POST Response";
             httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
             return ESP_OK;
         }

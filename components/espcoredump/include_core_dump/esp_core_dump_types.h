@@ -50,8 +50,6 @@ extern "C" {
 /**
  * @brief The following macros defined below are used to create a version
  * numbering. This number is then used in the core dump header.
- *
- * @note COREDUMP_VERSION_CHIP is defined in ports header.
  */
 #define COREDUMP_VERSION_MAKE(_maj_, _min_) ( \
                                                 (((COREDUMP_VERSION_CHIP)&0xFFFF) << 16) | \
@@ -82,6 +80,11 @@ extern "C" {
 #if (COREDUMP_CACHE_SIZE % 16) != 0
     #error "Coredump cache size must be a multiple of 16"
 #endif
+
+/**
+ * @brief Chip ID associated to this implementation.
+ */
+#define COREDUMP_VERSION_CHIP CONFIG_IDF_FIRMWARE_CHIP_ID
 
 
 typedef struct _core_dump_write_data_t

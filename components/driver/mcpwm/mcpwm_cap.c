@@ -276,6 +276,7 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
 
     cap_chan->gpio_num = config->gpio_num;
     cap_chan->fsm = MCPWM_CAP_CHAN_FSM_INIT;
+    cap_chan->flags.reset_io_at_exit = !config->flags.keep_io_conf_at_exit && config->gpio_num >= 0;
     *ret_cap_channel = cap_chan;
     ESP_LOGD(TAG, "new capture channel (%d,%d) at %p", group->group_id, cap_chan_id, cap_chan);
     return ESP_OK;
@@ -296,7 +297,7 @@ esp_err_t mcpwm_del_capture_channel(mcpwm_cap_channel_handle_t cap_channel)
     int cap_chan_id = cap_channel->cap_chan_id;
 
     ESP_LOGD(TAG, "del capture channel (%d,%d)", group->group_id, cap_channel->cap_chan_id);
-    if (cap_channel->gpio_num >= 0) {
+    if (cap_channel->flags.reset_io_at_exit) {
         gpio_reset_pin(cap_channel->gpio_num);
     }
 

@@ -2291,7 +2291,11 @@ The maximum number of payload octets that the local device can receive in a sing
 #endif
 
 // TODO: add menuconfig and api for periodic adv sync transfer
+#if (BLE_50_FEATURE_SUPPORT)
+#define BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER TRUE
+#else
 #define BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER FALSE
+#endif
 
 #include "common/bt_trace.h"
 

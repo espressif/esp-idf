@@ -13,12 +13,10 @@
 #include "soc/soc_caps.h"
 #include "esp_private/wifi.h"
 
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C6)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
 //IDF-5046
-#include "esp_phy_init.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
+#include "esp_phy_init.h"
 
 //Function just extern, need not test
 #if SOC_BT_SUPPORTED
@@ -97,20 +95,6 @@ static IRAM_ATTR void test_phy_rtc_cache_task(void *arg)
     spi_flash_enable_interrupts_caches_and_other_cpu();
 #endif //CONFIG_IDF_TARGET_ESP32
 
-#if CONFIG_IDF_TARGET_ESP32C3
-    extern void bt_bb_v2_init_cmplx(int print_version);
-    ESP_LOGI(TAG, "Test bt_bb_v2_init_cmplx()...");
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    bt_bb_v2_init_cmplx(0);
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-
-    extern void coex_pti_v2(void);
-    ESP_LOGI(TAG, "Test coex_pti_v2()...");
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    coex_pti_v2();
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-#endif //CONFIG_IDF_TARGET_ESP32C3
-
 #endif //SOC_BT_SUPPORTED
 
     //power down wifi and bt mac bb power domain
@@ -132,6 +116,4 @@ TEST_CASE("Test PHY/RTC functions called when cache is disabled", "[phy_rtc][cac
 
     vSemaphoreDelete(semphr_done);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
-
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)

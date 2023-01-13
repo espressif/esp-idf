@@ -30,6 +30,3 @@ protobuf
 
 # tools/test_apps/system/monitor_ide_integration
 SimpleWebSocketServer
-
-# py_debug_backend
-debug_backend

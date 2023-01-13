@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@ typedef struct sdm_channel_t *sdm_channel_handle_t;
 typedef struct {
     int gpio_num;               /*!< GPIO number */
     sdm_clock_source_t clk_src; /*!< Clock source */
-    uint32_t sample_rate_hz;    /*!< Sample rate in Hz, it determines how frequent the modulator outputs a pulse */
+    uint32_t sample_rate_hz;    /*!< Over sample rate in Hz, it determines the frequency of the carrier pulses */
     struct {
         uint32_t invert_out: 1;   /*!< Whether to invert the output signal */
         uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
@@ -88,17 +88,33 @@ esp_err_t sdm_channel_enable(sdm_channel_handle_t chan);
 esp_err_t sdm_channel_disable(sdm_channel_handle_t chan);
 
 /**
- * @brief Set the duty cycle of the PDM output signal.
+ * @brief Set the pulse density of the PDM output signal.
  *
- * @note For PDM signals, duty cycle refers to the percentage of high level cycles to the whole statistical period.
- *       The average output voltage could be Vout = VDD_IO / 256 * duty + VDD_IO / 2
- * @note If the duty is set to zero, the output signal is like a 50% duty cycle square wave, with a frequency around (sample_rate_hz / 4).
- * @note The duty is proportional to the equivalent output voltage after a low-pass-filter.
+ * @note The raw output signal requires a low-pass filter to restore it into analog voltage,
+*        the restored analog output voltage could be Vout = VDD_IO / 256 * density + VDD_IO / 2
  * @note This function is allowed to run within ISR context
- * @note This function will be placed into IRAM if `CONFIG_SDM_CTRL_FUNC_IN_IRAM` is on, so that it's allowed to be executed when Cache is disabled
+ * @note This function will be placed into IRAM if `CONFIG_SDM_CTRL_FUNC_IN_IRAM` is on,
+ *       so that it's allowed to be executed when Cache is disabled
  *
  * @param[in] chan SDM channel created by `sdm_new_channel`
- * @param[in] duty Equivalent duty cycle of the PDM output signal, ranges from -128 to 127. But the range of [-90, 90] can provide a better randomness.
+ * @param[in] density Quantized pulse density of the PDM output signal, ranges from -128 to 127.
+ *                    But the range of [-90, 90] can provide a better randomness.
+ * @return
+ *      - ESP_OK: Set pulse density successfully
+ *      - ESP_ERR_INVALID_ARG: Set pulse density failed because of invalid argument
+ *      - ESP_FAIL: Set pulse density failed because of other error
+ */
+esp_err_t sdm_channel_set_pulse_density(sdm_channel_handle_t chan, int8_t density);
+
+/**
+ * @brief The alias function of `sdm_channel_set_pulse_density`, it decides the pulse density of the output signal
+ *
+ * @note  `sdm_channel_set_pulse_density` has a more appropriate name compare this
+ *        alias function, suggest to turn to `sdm_channel_set_pulse_density` instead
+ *
+ * @param[in] chan SDM channel created by `sdm_new_channel`
+ * @param[in] duty Actually it's the quantized pulse density of the PDM output signal
+ *
  * @return
  *      - ESP_OK: Set duty cycle successfully
  *      - ESP_ERR_INVALID_ARG: Set duty cycle failed because of invalid argument

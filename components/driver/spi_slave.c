@@ -7,35 +7,34 @@
 #include <string.h>
 #include "esp_types.h"
 #include "esp_attr.h"
+#include "esp_check.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_pm.h"
 #include "esp_heap_caps.h"
-#include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
 #include "soc/spi_periph.h"
 #include "soc/soc_memory_layout.h"
-#include "hal/spi_ll.h"
-#include "hal/spi_slave_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
 
 #include "driver/gpio.h"
-#include "esp_private/spi_common_internal.h"
 #include "driver/spi_slave.h"
+#include "hal/gpio_hal.h"
 #include "hal/spi_slave_hal.h"
+#include "esp_private/spi_slave_internal.h"
+#include "esp_private/spi_common_internal.h"
+
 
 static const char *SPI_TAG = "spi_slave";
-#define SPI_CHECK(a, str, ret_val) \
-    if (!(a)) { \
-        ESP_LOGE(SPI_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
-        return (ret_val); \
-    }
+
+#define SPI_CHECK(a, str, ret_val)  ESP_RETURN_ON_FALSE(a, ret_val, SPI_TAG, str)
+
 
 #ifdef CONFIG_SPI_SLAVE_ISR_IN_IRAM
 #define SPI_SLAVE_ISR_ATTR IRAM_ATTR
@@ -61,6 +60,7 @@ typedef struct {
     QueueHandle_t ret_queue;
     bool dma_enabled;
     bool cs_iomux;
+    uint8_t cs_in_signal;
     uint32_t tx_dma_chan;
     uint32_t rx_dma_chan;
 #ifdef CONFIG_PM_ENABLE
@@ -72,6 +72,7 @@ static spi_slave_t *spihost[SOC_SPI_PERIPH_NUM];
 
 static void spi_intr(void *arg);
 
+__attribute__((always_inline))
 static inline bool is_valid_host(spi_host_device_t host)
 {
 //SPI1 can be used as GPSPI only on ESP32
@@ -91,7 +92,7 @@ static inline bool SPI_SLAVE_ISR_ATTR bus_is_iomux(spi_slave_t *host)
 
 static void SPI_SLAVE_ISR_ATTR freeze_cs(spi_slave_t *host)
 {
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host->id].spics_in, false);
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, host->cs_in_signal, false);
 }
 
 // Use this function instead of cs_initial to avoid overwrite the output config
@@ -99,9 +100,9 @@ static void SPI_SLAVE_ISR_ATTR freeze_cs(spi_slave_t *host)
 static inline void SPI_SLAVE_ISR_ATTR restore_cs(spi_slave_t *host)
 {
     if (host->cs_iomux) {
-        gpio_iomux_in(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in);
+        gpio_ll_iomux_in(GPIO_HAL_GET_HW(GPIO_PORT_0), host->cfg.spics_io_num, host->cs_in_signal);
     } else {
-        esp_rom_gpio_connect_in_signal(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in, false);
+        esp_rom_gpio_connect_in_signal(host->cfg.spics_io_num, host->cs_in_signal, false);
     }
 }
 
@@ -161,6 +162,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         spicommon_cs_initialize(host, slave_config->spics_io_num, 0, !bus_is_iomux(spihost[host]));
         // check and save where cs line really route through
         spihost[host]->cs_iomux = (slave_config->spics_io_num == spi_periph_signal[host].spics0_iomux_pin) && bus_is_iomux(spihost[host]);
+        spihost[host]->cs_in_signal = spi_periph_signal[host].spics_in;
     }
 
     // The slave DMA suffers from unexpected transactions. Forbid reading if DMA is enabled by disabling the CS line.
@@ -204,6 +206,9 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     }
 
     int flags = bus_config->intr_flags | ESP_INTR_FLAG_INTRDISABLED;
+#ifdef CONFIG_SPI_SLAVE_ISR_IN_IRAM
+    flags |= ESP_INTR_FLAG_IRAM;
+#endif
     err = esp_intr_alloc(spicommon_irqsource_for_host(host), flags, spi_intr, (void *)spihost[host], &spihost[host]->intr);
     if (err != ESP_OK) {
         ret = err;
@@ -314,6 +319,24 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_reset(spi_host_device_t host)
     return ESP_OK;
 }
 
+esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_queue_reset_isr(spi_host_device_t host)
+{
+    ESP_RETURN_ON_FALSE_ISR(is_valid_host(host), ESP_ERR_INVALID_ARG, SPI_TAG, "invalid host");
+    ESP_RETURN_ON_FALSE_ISR(spihost[host], ESP_ERR_INVALID_ARG, SPI_TAG, "host not slave");
+
+    spi_slave_transaction_t *trans = NULL;
+    BaseType_t do_yield = pdFALSE;
+    while( pdFALSE == xQueueIsQueueEmptyFromISR(spihost[host]->trans_queue)) {
+        xQueueReceiveFromISR(spihost[host]->trans_queue, &trans, &do_yield);
+    }
+    if (do_yield) {
+        portYIELD_FROM_ISR();
+    }
+
+    spihost[host]->cur_trans = NULL;
+    return ESP_OK;
+}
+
 esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait)
 {
     BaseType_t r;
@@ -333,6 +356,29 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi
     return ESP_OK;
 }
 
+esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_queue_trans_isr(spi_host_device_t host, const spi_slave_transaction_t *trans_desc)
+{
+    BaseType_t r;
+    BaseType_t do_yield = pdFALSE;
+    ESP_RETURN_ON_FALSE_ISR(is_valid_host(host), ESP_ERR_INVALID_ARG, SPI_TAG, "invalid host");
+    ESP_RETURN_ON_FALSE_ISR(spihost[host], ESP_ERR_INVALID_ARG, SPI_TAG, "host not slave");
+    ESP_RETURN_ON_FALSE_ISR(spihost[host]->dma_enabled == 0 || trans_desc->tx_buffer==NULL || esp_ptr_dma_capable(trans_desc->tx_buffer),
+        ESP_ERR_INVALID_ARG, SPI_TAG, "txdata not in DMA-capable memory");
+    ESP_RETURN_ON_FALSE_ISR(spihost[host]->dma_enabled == 0 || trans_desc->rx_buffer==NULL ||
+        (esp_ptr_dma_capable(trans_desc->rx_buffer) && esp_ptr_word_aligned(trans_desc->rx_buffer) &&
+            (trans_desc->length%4==0)),
+        ESP_ERR_INVALID_ARG, SPI_TAG, "rxdata not in DMA-capable memory or not WORD aligned");
+    ESP_RETURN_ON_FALSE_ISR(trans_desc->length <= spihost[host]->max_transfer_sz * 8, ESP_ERR_INVALID_ARG, SPI_TAG, "data transfer > host maximum");
+
+    r = xQueueSendFromISR(spihost[host]->trans_queue, (void *)&trans_desc, &do_yield);
+    if (!r) {
+        return ESP_ERR_NO_MEM;
+    }
+    if (do_yield) {
+        portYIELD_FROM_ISR();
+    }
+    return ESP_OK;
+}
 
 esp_err_t SPI_SLAVE_ATTR spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transaction_t **trans_desc, TickType_t ticks_to_wait)
 {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -239,32 +239,32 @@ void vPortSetupTimer(void)
             .us_to_ticks = systimer_us_to_ticks,
         };
         systimer_hal_set_tick_rate_ops(&systimer_hal, &ops);
-        systimer_ll_set_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_OS_TICK, 0);
-        systimer_ll_apply_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_OS_TICK);
+        systimer_ll_set_counter_value(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK, 0);
+        systimer_ll_apply_counter_value(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK);
 
         for (cpuid = 0; cpuid < SOC_CPU_CORES_NUM; cpuid++) {
-            systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK, cpuid, false);
+            systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_OS_TICK, cpuid, false);
         }
 
         for (cpuid = 0; cpuid < portNUM_PROCESSORS; ++cpuid) {
-            uint32_t alarm_id = SYSTIMER_LL_ALARM_OS_TICK_CORE0 + cpuid;
+            uint32_t alarm_id = SYSTIMER_ALARM_OS_TICK_CORE0 + cpuid;
 
             /* configure the timer */
-            systimer_hal_connect_alarm_counter(&systimer_hal, alarm_id, SYSTIMER_LL_COUNTER_OS_TICK);
+            systimer_hal_connect_alarm_counter(&systimer_hal, alarm_id, SYSTIMER_COUNTER_OS_TICK);
             systimer_hal_set_alarm_period(&systimer_hal, alarm_id, 1000000UL / CONFIG_FREERTOS_HZ);
             systimer_hal_select_alarm_mode(&systimer_hal, alarm_id, SYSTIMER_ALARM_MODE_PERIOD);
-            systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK, cpuid, true);
+            systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_OS_TICK, cpuid, true);
             if (cpuid == 0) {
                 systimer_hal_enable_alarm_int(&systimer_hal, alarm_id);
-                systimer_hal_enable_counter(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK);
+                systimer_hal_enable_counter(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
 #ifndef CONFIG_FREERTOS_UNICORE
                 // SysTick of core 0 and core 1 are shifted by half of period
-                systimer_hal_counter_value_advance(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK, 1000000UL / CONFIG_FREERTOS_HZ / 2);
+                systimer_hal_counter_value_advance(&systimer_hal, SYSTIMER_COUNTER_OS_TICK, 1000000UL / CONFIG_FREERTOS_HZ / 2);
 #endif
             }
         }
     } else {
-        uint32_t alarm_id = SYSTIMER_LL_ALARM_OS_TICK_CORE0 + cpuid;
+        uint32_t alarm_id = SYSTIMER_ALARM_OS_TICK_CORE0 + cpuid;
         systimer_hal_enable_alarm_int(&systimer_hal, alarm_id);
     }
 }
@@ -283,11 +283,11 @@ IRAM_ATTR void SysTickIsrHandler(void *arg)
     ESP_PM_TRACE_ENTER(TICK, cpuid);
 #endif
 
-    uint32_t alarm_id = SYSTIMER_LL_ALARM_OS_TICK_CORE0 + cpuid;
+    uint32_t alarm_id = SYSTIMER_ALARM_OS_TICK_CORE0 + cpuid;
     do {
         systimer_ll_clear_alarm_int(systimer_hal->dev, alarm_id);
 
-        uint32_t diff = systimer_hal_get_counter_value(systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK) / systimer_ll_get_alarm_period(systimer_hal->dev, alarm_id) - s_handled_systicks[cpuid];
+        uint32_t diff = systimer_hal_get_counter_value(systimer_hal, SYSTIMER_COUNTER_OS_TICK) / systimer_ll_get_alarm_period(systimer_hal->dev, alarm_id) - s_handled_systicks[cpuid];
         if (diff > 0) {
             if (s_handled_systicks[cpuid] == 0) {
                 s_handled_systicks[cpuid] = diff;

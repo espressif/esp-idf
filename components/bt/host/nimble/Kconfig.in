@@ -64,11 +64,13 @@ config BT_NIMBLE_LOG_LEVEL
 
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
-    range 1 8 if IDF_TARGET_ESP32H4
+    range 1 8 if (IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32C6)
     range 1 2 if IDF_TARGET_ESP32C2
     range 1 9 if !SOC_ESP_NIMBLE_CONTROLLER
+    range 1 2
     default 3 if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H4)
-    default 2 if IDF_TARGET_ESP32C2
+    default 2 if (IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6)
+    default 1
     depends on BT_NIMBLE_ENABLED
     help
         Defines maximum number of concurrent BLE connections. For ESP32, user
@@ -487,7 +489,7 @@ config BT_NIMBLE_HOST_BASED_PRIVACY
 
 config BT_NIMBLE_ENABLE_CONN_REATTEMPT
     bool "Enable connection reattempts on connection establishment error"
-    default y if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H4 || IDF_TARGET_ESP32C2)
+    default y if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || SOC_ESP_NIMBLE_CONTROLLER)
     default n if IDF_TARGET_ESP32
     help
         Enable to make the NimBLE host to reattempt GAP connection on connection
@@ -568,14 +570,13 @@ if BT_NIMBLE_EXT_ADV
         default y
         help
                 This enables controller transfer periodic sync events to host
-
 endif
 
 config BT_NIMBLE_MAX_PERIODIC_SYNCS
     int "Maximum number of periodic advertising syncs"
     depends on BT_NIMBLE_50_FEATURE_SUPPORT
-    range 0 8 if !IDF_TARGET_ESP32C2
     range 0 3 if IDF_TARGET_ESP32C2
+    range 0 8
     default 1 if BT_NIMBLE_ENABLE_PERIODIC_ADV
     default 0
     help
@@ -585,24 +586,18 @@ config BT_NIMBLE_MAX_PERIODIC_SYNCS
 
 config BT_NIMBLE_MAX_PERIODIC_ADVERTISER_LIST
     int "Maximum number of periodic advertiser list"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT && (IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H4)
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT && SOC_ESP_NIMBLE_CONTROLLER
     range 1 5
     default 5 if BT_NIMBLE_50_FEATURE_SUPPORT
     help
         Set this option to set the upper limit for number of periodic advertiser list.
 
-menuconfig BT_NIMBLE_53_FEATURE_SUPPORT
-    bool "Enable BLE 5.3 feature"
-    depends on BT_NIMBLE_ENABLED && SOC_ESP_NIMBLE_CONTROLLER
+config BT_NIMBLE_BLE_POWER_CONTROL
+    bool "Enable support for BLE Power Control"
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT && IDF_TARGET_ESP32C6
+    default n
     help
-            Enable BLE 5.3 feature
-
-config BT_NIMBLE_SUBRATE
-    bool "Connection Subrate"
-    depends on BT_NIMBLE_53_FEATURE_SUPPORT
-    help
-        Enable support for Connection Subrate
-
+        Set this option to enable the Power Control feature
 
 choice BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM
     prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
@@ -622,17 +617,6 @@ choice BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM
             help
                 Disable the limitation on max tx/rx time for Coded-PHY connection
 endchoice
-
-menuconfig BT_NIMBLE_52_FEATURE_SUPPORT
-    bool "Enable BLE 5.2 Feature"
-    help
-        Enable this option to select 5.2 features
-
-config BT_NIMBLE_BLE_POWER_CONTROL
-    bool "Enable support for BLE Power Control"
-    depends on BT_NIMBLE_52_FEATURE_SUPPORT && SOC_ESP_NIMBLE_CONTROLLER
-    help
-        Set this option to enable the Power Control feature
 
 config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EFF
     int

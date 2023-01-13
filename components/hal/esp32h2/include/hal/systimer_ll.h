@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,11 +11,6 @@
 #include "soc/clk_tree_defs.h"
 #include "soc/pcr_struct.h"
 #include "hal/assert.h"
-
-#define SYSTIMER_LL_COUNTER_CLOCK       (0) // Counter used for "wallclock" time
-#define SYSTIMER_LL_COUNTER_OS_TICK     (1) // Counter used for OS tick
-#define SYSTIMER_LL_ALARM_OS_TICK_CORE0 (0) // Alarm used for OS tick of CPU core 0
-#define SYSTIMER_LL_ALARM_CLOCK         (2) // Alarm used for "wallclock" time
 
 #ifdef __cplusplus
 extern "C" {

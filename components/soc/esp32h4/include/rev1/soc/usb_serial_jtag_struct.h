@@ -6,6 +6,7 @@
 #ifndef _SOC_USB_SERIAL_JTAG_STRUCT_H_
 #define _SOC_USB_SERIAL_JTAG_STRUCT_H_
 
+#include <stdint.h>
 #include "soc/soc.h"
 
 #ifdef __cplusplus

@@ -160,9 +160,6 @@ tGATT_STATUS gatts_calculate_datebase_hash(BT_OCTET16 hash)
     BT_OCTET16 key = {0};
     aes_cipher_msg_auth_code(key, data_buf, len, 16, hash);
     //ESP_LOG_BUFFER_HEX("db hash", hash, BT_OCTET16_LEN);
-#else
-    // TODO
-    GATT_TRACE_ERROR("%s SMP disabled", __func__);
 #endif
 
     osi_free(data_buf);

@@ -61,7 +61,7 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      -
    * - Ctrl+C
      - Interrupt running application
-     - Pauses IDF Monitor and run GDB_ project debugger to debug the application at runtime. This requires :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME option to be enabled.
+     - Pauses IDF Monitor and runs GDB_ project debugger to debug the application at runtime. This requires :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME option to be enabled.
 
 Any keys pressed, other than ``Ctrl-]`` and ``Ctrl-T``, will be sent through the serial port.
 
@@ -72,13 +72,13 @@ IDF-specific features
 Automatic Address Decoding
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Whenever ESP-IDF outputs a hexadecimal code address of the form ``0x4_______``, IDF Monitor uses ``addr2line_`` to look up the location in the source code and find the function name.
+Whenever the chip outputs a hexadecimal address that points to executable code, IDF monitor looks up the location in the source code (file name and line number) and prints the location on the next line in yellow.
 
 .. highlight:: none
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-  If an ESP-IDF app crashes and panics, a register dump and backtrace is produced, such as the following::
+  If an ESP-IDF app crashes and panics, a register dump and backtrace are produced, such as the following::
 
       Guru Meditation Error of type StoreProhibited occurred on core  0. Exception was unhandled.
       Register dump:

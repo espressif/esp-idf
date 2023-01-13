@@ -527,9 +527,14 @@ def init_cli(verbose_output: List=None) -> Any:
                         default = () if option.multiple else option.default
 
                         if global_value != default and local_value != default and global_value != local_value:
-                            raise FatalError(
-                                'Option "%s" provided for "%s" is already defined to a different value. '
-                                'This option can appear at most once in the command line.' % (key, task.name))
+                            if hasattr(option, 'envvar') and option.envvar and os.getenv(option.envvar) != default:
+                                msg = (f'This option cannot be set in command line if the {option.envvar} '
+                                       'environment variable is set to a different value.')
+                            else:
+                                msg = 'This option can appear at most once in the command line.'
+
+                            raise FatalError(f'Option "{key}" provided for "{task.name}" is already defined to '
+                                             f'a different value. {msg}')
                         if local_value != default:
                             global_args[key] = local_value
 

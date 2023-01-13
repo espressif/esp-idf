@@ -47,7 +47,7 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "dma/async_memcpy_impl_cp_dma.c")
     endif()
 
-    if(CONFIG_SOC_GDMA_SUPPORTED OR CONFIG_SOC_CP_DMA_SUPPORTED)
+    if(CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED)
         list(APPEND srcs "dma/esp_async_memcpy.c")
     endif()
 
@@ -74,6 +74,15 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT)
         list(APPEND srcs "modem_clock.c")
     endif()
+
+    if(CONFIG_SOC_MEMSPI_SRC_FREQ_120M)
+        list(APPEND srcs "mspi_timing_tuning.c" "port/${target}/mspi_timing_config.c")
+    endif()
+
+    if(CONFIG_SOC_RTC_FAST_MEM_SUPPORTED)
+        list(APPEND srcs "sleep_wake_stub.c")
+    endif()
+
     if(CONFIG_IDF_TARGET_ESP32H2)
         list(REMOVE_ITEM srcs
                 "adc_share_hw_ctrl.c" # TODO: IDF-6215

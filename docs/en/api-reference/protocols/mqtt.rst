@@ -1,10 +1,11 @@
 ESP-MQTT
 ========
+:link_to_translation:`zh_CN:[中文]`
 
 Overview
 --------
 
-ESP-MQTT is an implementation of `MQTT <https://mqtt.org/>`_ protocol client. MQTT is a lightweight publish/subscribe messaging protocol.
+ESP-MQTT is an implementation of `MQTT <https://mqtt.org/>`__ protocol client, which is a lightweight publish/subscribe messaging protocol. Now ESP-MQTT supports `MQTT v5.0 <https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html>`__.
 
 
 Features
@@ -18,39 +19,37 @@ Features
 Application Examples
 ---------------------
 
-    * :example:`protocols/mqtt/tcp`: MQTT over TCP, default port 1883
-    * :example:`protocols/mqtt/ssl`: MQTT over TLS, default port 8883
-    * :example:`protocols/mqtt/ssl_ds`: MQTT over TLS using digital signature peripheral for authentication, default port 8883
-    * :example:`protocols/mqtt/ssl_mutual_auth`: MQTT over TLS using certificates for authentication, default port 8883
-    * :example:`protocols/mqtt/ssl_psk`: MQTT over TLS using pre-shared keys for authentication, default port 8883
-    * :example:`protocols/mqtt/ws`: MQTT over WebSocket, default port 80
-    * :example:`protocols/mqtt/wss`: MQTT over WebSocket Secure, default port 443
+   * :example:`protocols/mqtt/tcp`: MQTT over TCP, default port 1883
+   * :example:`protocols/mqtt/ssl`: MQTT over TLS, default port 8883
+   * :example:`protocols/mqtt/ssl_ds`: MQTT over TLS using digital signature peripheral for authentication, default port 8883
+   * :example:`protocols/mqtt/ssl_mutual_auth`: MQTT over TLS using certificates for authentication, default port 8883
+   * :example:`protocols/mqtt/ssl_psk`: MQTT over TLS using pre-shared keys for authentication, default port 8883
+   * :example:`protocols/mqtt/ws`: MQTT over WebSocket, default port 80
+   * :example:`protocols/mqtt/wss`: MQTT over WebSocket Secure, default port 443
+   * :example:`protocols/mqtt5`: Uses ESP-MQTT library to connect to broker with MQTT v5.0
 
-MQTT message retransmission
+MQTT Message Retransmission
 ---------------------------
 
-A new mqtt message is created by calling :cpp:func:`esp_mqtt_client_publish <esp_mqtt_client_publish()>` or its non blocking
-counterpart :cpp:func:`esp_mqtt_client_enqueue <esp_mqtt_client_enqueue()>`. 
+A new MQTT message is created by calling :cpp:func:`esp_mqtt_client_publish <esp_mqtt_client_publish()>` or its non blocking counterpart :cpp:func:`esp_mqtt_client_enqueue <esp_mqtt_client_enqueue()>`.
 
-Messages with QoS 0 will be sent only once, QoS 1 and 2 have a different behavior since the protocol requires extra steps to complete the process. 
+Messages with QoS 0 will be sent only once. QoS 1 and 2 have different behaviors since the protocol requires extra steps to complete the process.
 
-The ESP-MQTT library opts to always retransmit unacknowledged QoS 1 and 2 PUBLISH messages to avoid losses in faulty connections, even though the MQTT specification 
-requires the re-transmission only on reconnect with Clean Session flag been set to 0 (set :cpp:member:`disable_clean_session <esp_mqtt_client_config_t::session_t::disable_clean_session>` to true for this behavior).
+The ESP-MQTT library opts to always retransmit unacknowledged QoS 1 and 2 publish messages to avoid losses in faulty connections, even though the MQTT specification requires the re-transmission only on reconnect with Clean Session flag been set to 0 (set :cpp:member:`disable_clean_session <esp_mqtt_client_config_t::session_t::disable_clean_session>` to true for this behavior).
 
-
-Messages that could need retransmission, QoS 1 and 2, are always enqueued, but first transmission try occurs immediately if :cpp:func:`esp_mqtt_client_publish <esp_mqtt_client_publish>` is used. A transmission retry for unacknowledged messages will occur after :cpp:member:`message_retransmit_timeout <esp_mqtt_client_config_t::session_t::message_retransmit_timeout>`. After :ref:`CONFIG_MQTT_OUTBOX_EXPIRED_TIMEOUT_MS` messages will expire and deleted. If :ref:`CONFIG_MQTT_REPORT_DELETED_MESSAGES` is set an event is sent to notify the user.
+QoS 1 and 2 messages that may need retransmission are always enqueued, but first transmission try occurs immediately if :cpp:func:`esp_mqtt_client_publish <esp_mqtt_client_publish>` is used. A transmission retry for unacknowledged messages will occur after :cpp:member:`message_retransmit_timeout <esp_mqtt_client_config_t::session_t::message_retransmit_timeout>`. After :ref:`CONFIG_MQTT_OUTBOX_EXPIRED_TIMEOUT_MS` messages will expire and be deleted. If :ref:`CONFIG_MQTT_REPORT_DELETED_MESSAGES` is set, an event will be sent to notify the user.
 
 Configuration
 -------------
 
 The configuration is made by setting fields in :cpp:class:`esp_mqtt_client_config_t` struct. The configuration struct has the following sub structs to configure different aspects of the client operation.
 
-  * :cpp:class:`esp_mqtt_client_config_t::broker_t` - Allow to set address and security verification.
-  * :cpp:class:`esp_mqtt_client_config_t::credentials_t` - Client credentials for authentication.
-  * :cpp:class:`esp_mqtt_client_config_t::session_t` - Configuration for MQTT session aspects.
-  * :cpp:class:`esp_mqtt_client_config_t::network_t` - Networking related configuration. 
-  * :cpp:class:`esp_mqtt_client_config_t::task_t` - Allow to configure FreeRTOS task.
-  * :cpp:class:`esp_mqtt_client_config_t::buffer_t` - Buffer size for input and output.
+   * :cpp:class:`esp_mqtt_client_config_t::broker_t` - Allow to set address and security verification.
+   * :cpp:class:`esp_mqtt_client_config_t::credentials_t` - Client credentials for authentication.
+   * :cpp:class:`esp_mqtt_client_config_t::session_t` - Configuration for MQTT session aspects.
+   * :cpp:class:`esp_mqtt_client_config_t::network_t` - Networking related configuration.
+   * :cpp:class:`esp_mqtt_client_config_t::task_t` - Allow to configure FreeRTOS task.
+   * :cpp:class:`esp_mqtt_client_config_t::buffer_t` - Buffer size for input and output.
 
 In the following sections, the most common aspects are detailed.
 
@@ -131,7 +130,7 @@ Client Credentials
 
 All client related credentials are under the :cpp:class:`credentials <esp_mqtt_client_config_t::credentials_t>` field.
 
- * :cpp:member:`username <esp_mqtt_client_config_t::credentials_t::username>` pointer to the username used for connecting to the broker, can also be set by URI
+ * :cpp:member:`username <esp_mqtt_client_config_t::credentials_t::username>`: pointer to the username used for connecting to the broker, can also be set by URI
  * :cpp:member:`client_id <esp_mqtt_client_config_t::credentials_t::client_id>`: pointer to the client ID, defaults to ``ESP32_%CHIPID%`` where ``%CHIPID%`` are the last 3 bytes of MAC address in hex format
 
 ==============

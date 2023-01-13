@@ -1,57 +1,5 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-examples/protocols/asio/asio_chat:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
-      temporary: true
-      reason: lack of runners
-
-examples/protocols/asio/async_request:
-  enable:
-    - if: IDF_TARGET == "esp32"
-      temporary: true
-      reason: the other targets are not tested yet
-
-examples/protocols/asio/socks4:
-  enable:
-    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32s2"
-      temporary: true
-      reason: the other targets are not tested yet
-
-examples/protocols/asio/ssl_client_server:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
-      temporary: true
-      reason: lack of runners
-
-examples/protocols/asio/tcp_echo_server:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
-      temporary: true
-      reason: lack of runners
-
-examples/protocols/asio/udp_echo_server:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
-      temporary: true
-      reason: lack of runners
-
 examples/protocols/coap_client:
   disable:
     - if: IDF_TARGET == "esp32c6"
@@ -78,6 +26,10 @@ examples/protocols/esp_local_ctrl:
     - if: IDF_TARGET == "esp32c6"
       temporary: true
       reason: target esp32c6 is not supported yet
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
+      temporary: true
+      reason: lack of runners
 
 examples/protocols/http2_request:
   disable:
@@ -96,6 +48,22 @@ examples/protocols/http_server:
     - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
       reason: target(s) not supported yet
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/protocols/http_server/captive_portal:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      temporary: true
+      reason: only test on esp32
+
+examples/protocols/http_server/ws_echo_server:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      temporary: true
+      reason: only test on esp32
 
 examples/protocols/https_mbedtls:
   disable:
@@ -119,7 +87,7 @@ examples/protocols/https_server/simple:
       temporary: true
       reason: target esp32c6 is not supported yet
   disable_test:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
 
@@ -129,9 +97,9 @@ examples/protocols/https_server/wss_server:
       temporary: true
       reason: target esp32c6 is not supported yet
   disable_test:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET != "esp32"
       temporary: true
-      reason: lack of runners
+      reason: only test on esp32
 
 examples/protocols/https_x509_bundle:
   disable:
@@ -139,7 +107,7 @@ examples/protocols/https_x509_bundle:
       temporary: true
       reason: target esp32c6 is not supported yet
   disable_test:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
@@ -149,7 +117,7 @@ examples/protocols/icmp_echo:
       temporary: true
       reason: target esp32c6 is not supported yet
   disable_test:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
 
@@ -281,7 +249,7 @@ examples/protocols/sockets/tcp_client:
       temporary: true
       reason: target esp32c6 is not supported yet
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
   enable:
@@ -299,7 +267,7 @@ examples/protocols/sockets/tcp_server:
       temporary: true
       reason: target esp32c6 is not supported yet
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
 
@@ -315,7 +283,7 @@ examples/protocols/sockets/udp_client:
       temporary: true
       reason: target(s) not supported yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
 
@@ -331,7 +299,7 @@ examples/protocols/sockets/udp_server:
       temporary: true
       reason: target esp32c6 is not supported yet
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
 

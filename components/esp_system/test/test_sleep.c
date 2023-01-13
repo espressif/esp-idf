@@ -445,8 +445,7 @@ __attribute__((unused)) static float get_time_ms(void)
 
 __attribute__((unused)) static uint32_t get_cause(void)
 {
-    uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, \
-                                            RTC_CNTL_WAKEUP_CAUSE);
+    uint32_t wakeup_cause = rtc_cntl_ll_get_wakeup_cause();
     return wakeup_cause;
 }
 

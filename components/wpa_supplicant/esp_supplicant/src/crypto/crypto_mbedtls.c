@@ -745,25 +745,7 @@ cleanup:
 int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
 		int iterations, u8 *buf, size_t buflen)
 {
-
-	mbedtls_md_context_t sha1_ctx;
-	const mbedtls_md_info_t *info_sha1;
-	int ret;
-
-	mbedtls_md_init(&sha1_ctx);
-
-	info_sha1 = mbedtls_md_info_from_type(MBEDTLS_MD_SHA1);
-	if (info_sha1 == NULL) {
-		ret = -1;
-		goto cleanup;
-	}
-
-	if ((ret = mbedtls_md_setup(&sha1_ctx, info_sha1, 1)) != 0) {
-		ret = -1;
-		goto cleanup;
-	}
-
-	ret = mbedtls_pkcs5_pbkdf2_hmac(&sha1_ctx, (const u8 *) passphrase,
+	int ret = mbedtls_pkcs5_pbkdf2_hmac_ext(MBEDTLS_MD_SHA1, (const u8 *) passphrase,
 					os_strlen(passphrase) , ssid,
 					ssid_len, iterations, 32, buf);
 	if (ret != 0) {
@@ -772,7 +754,6 @@ int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
 	}
 
 cleanup:
-	mbedtls_md_free(&sha1_ctx);
 	return ret;
 }
 

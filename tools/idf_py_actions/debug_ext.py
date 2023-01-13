@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
@@ -149,11 +149,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         coredump_to_flash = coredump_to_flash_config.rstrip().endswith('y') if coredump_to_flash_config else False
 
         prog = os.path.join(project_desc['build_dir'], project_desc['app_elf'])
-        esp_port = args.port or get_default_serial_port()
+        args.port = args.port or get_default_serial_port()
 
         espcoredump_kwargs = dict()
 
-        espcoredump_kwargs['port'] = esp_port
+        espcoredump_kwargs['port'] = args.port
         espcoredump_kwargs['baud'] = args.baud
         espcoredump_kwargs['gdb_timeout_sec'] = gdb_timeout_sec
 

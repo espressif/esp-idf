@@ -97,8 +97,6 @@ ext_bleprph_advertise(void)
 
     /* enable connectable advertising */
     params.connectable = 1;
-    params.scannable = 1;
-    params.legacy_pdu = 1;
 
     /* advertise using random addr */
     params.own_addr_type = BLE_OWN_ADDR_PUBLIC;

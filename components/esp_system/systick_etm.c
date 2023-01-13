@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include "esp_systick_etm.h"
 #include "soc/soc_caps.h"
 #include "soc/soc_etm_source.h"
-#include "hal/systimer_ll.h"
+#include "esp_private/systimer.h"
 #include "esp_private/etm_interface.h"
 
 #define ETM_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
@@ -32,7 +32,7 @@ esp_err_t esp_systick_new_etm_alarm_event(int core_id, esp_etm_event_handle_t *o
     ESP_GOTO_ON_FALSE(event, ESP_ERR_NO_MEM, err, TAG, "no memory for ETM event");
 
     // fill the ETM event object
-    uint32_t event_id = SYSTIMER_EVT_CNT_CMP0 + SYSTIMER_LL_ALARM_OS_TICK_CORE0 + core_id;
+    uint32_t event_id = SYSTIMER_EVT_CNT_CMP0 + SYSTIMER_ALARM_OS_TICK_CORE0 + core_id;
     event->event_id = event_id;
     event->trig_periph = ETM_TRIG_PERIPH_SYSTIMER;
     event->del = systick_etm_event_del;

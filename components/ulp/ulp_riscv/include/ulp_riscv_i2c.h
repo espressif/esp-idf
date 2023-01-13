@@ -61,6 +61,10 @@ void ulp_riscv_i2c_master_set_slave_addr(uint8_t slave_addr);
 /**
  * @brief Set the I2C slave device sub register address
  *
+ * @note The RTC I2C peripheral always expects a slave sub register address to be programmed. If it is not, the I2C
+ * peripheral uses the SENS_SAR_I2C_CTRL_REG[18:11] as the sub register address for the subsequent read or write
+ * operation.
+ *
  * @param slave_reg_addr    I2C slave sub register address
  */
 void ulp_riscv_i2c_master_set_slave_reg_addr(uint8_t slave_reg_addr);

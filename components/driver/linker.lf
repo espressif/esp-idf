@@ -17,7 +17,7 @@ entries:
         gpio: gpio_set_level (noflash)
         gpio: gpio_intr_disable (noflash)
     if SDM_CTRL_FUNC_IN_IRAM = y:
-        sdm: sdm_channel_set_duty (noflash)
+        sdm: sdm_channel_set_pulse_density (noflash)
     if DAC_CTRL_FUNC_IN_IRAM = y:
         dac_oneshot: dac_oneshot_output_voltage (noflash)
         dac_continuous: dac_continuous_write_asynchronously (noflash)

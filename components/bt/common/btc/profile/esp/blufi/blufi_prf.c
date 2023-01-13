@@ -136,6 +136,16 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
 
     if (BLUFI_FC_IS_FRAG(hdr->fc)) {
         if (blufi_env.offset == 0) {
+            /*
+            blufi_env.aggr_buf should be NULL if blufi_env.offset is 0.
+            It is possible that the process of sending fragment packet
+            has not been completed
+            */
+            if (blufi_env.aggr_buf) {
+                BTC_TRACE_ERROR("%s msg error, blufi_env.aggr_buf is not freed\n", __func__);
+                btc_blufi_report_error(ESP_BLUFI_MSG_STATE_ERROR);
+                return;
+            }
             blufi_env.total_len = hdr->data[0] | (((uint16_t) hdr->data[1]) << 8);
             blufi_env.aggr_buf = osi_malloc(blufi_env.total_len);
             if (blufi_env.aggr_buf == NULL) {
@@ -155,6 +165,18 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
 
     } else {
         if (blufi_env.offset > 0) {   /* if previous pkt is frag */
+            /* blufi_env.aggr_buf should not be NULL */
+            if (blufi_env.aggr_buf == NULL) {
+                BTC_TRACE_ERROR("%s buffer is NULL\n", __func__);
+                btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
+                return;
+            }
+            /* payload length should be equal to total_len */
+            if ((blufi_env.offset + hdr->data_len) != blufi_env.total_len) {
+                BTC_TRACE_ERROR("%s payload is longer than packet length, len %d \n", __func__, blufi_env.total_len);
+                btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
+                return;
+            }
             memcpy(blufi_env.aggr_buf + blufi_env.offset, hdr->data, hdr->data_len);
 
             btc_blufi_protocol_handler(hdr->type, blufi_env.aggr_buf, blufi_env.total_len);

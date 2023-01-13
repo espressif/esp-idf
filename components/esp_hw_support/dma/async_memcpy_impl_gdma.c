@@ -15,6 +15,9 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_async_memcpy_impl.h"
+#if SOC_APM_SUPPORTED
+#include "hal/apm_ll.h"
+#endif
 
 IRAM_ATTR static bool async_memcpy_impl_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
@@ -70,6 +73,14 @@ esp_err_t async_memcpy_impl_init(async_memcpy_impl_t *impl)
     }
     gdma_apply_strategy(impl->tx_channel, &strategy_config);
     gdma_apply_strategy(impl->rx_channel, &strategy_config);
+
+#if SOC_APM_SUPPORTED
+    // APM GDMA master for M2M should have the same offset of its GDMA trigger
+    ESP_STATIC_ASSERT((APM_LL_MASTER_GDMA_M2M - 16) == SOC_GDMA_TRIG_PERIPH_M2M0);
+    // APM strategy: trusted mode
+    // TODO: IDF-5354 GDMA for M2M usage only need read and write permissions, we should disable the execute permission by the APM controller
+    apm_ll_set_master_secure_mode(APM_LL_MASTER_GDMA_M2M, APM_LL_SECURE_MODE_TEE);
+#endif // SOC_APM_SUPPORTED
 
     gdma_rx_event_callbacks_t cbs = {
         .on_recv_eof = async_memcpy_impl_rx_eof_callback

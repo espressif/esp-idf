@@ -34,7 +34,8 @@ typedef struct rmt_encoder_t *rmt_encoder_handle_t;
  * @brief Type of RMT TX done event data
  */
 typedef struct {
-    size_t num_symbols; /*!< The number of transmitted RMT symbols (only one round is counted if it's a loop transmission) */
+    size_t num_symbols; /*!< The number of transmitted RMT symbols, including one EOF symbol, which is appended by the driver to mark the end of a transmission.
+                             For a loop transmission, this value only counts for one round. */
 } rmt_tx_done_event_data_t;
 
 /**

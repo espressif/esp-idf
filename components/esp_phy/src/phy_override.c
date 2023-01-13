@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include "esp_attr.h"
 #include "esp_private/regi2c_ctrl.h"
-#include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 
 /*
  * This file is used to override the hooks provided by the PHY lib for some system features.
@@ -33,9 +33,9 @@ void set_xpd_sar(bool en)
 
     s_wifi_adc_xpd_flag = en;
     if (en) {
-        adc_power_acquire();
+        sar_periph_ctrl_pwdet_power_acquire();
     } else {
-        adc_power_release();
+        sar_periph_ctrl_pwdet_power_release();
     }
 }
 
@@ -48,4 +48,13 @@ IRAM_ATTR void phy_i2c_enter_critical(void)
 IRAM_ATTR void phy_i2c_exit_critical(void)
 {
     regi2c_exit_critical();
+}
+
+void phy_set_pwdet_power(bool en)
+{
+    if (en) {
+        sar_periph_ctrl_pwdet_power_acquire();
+    } else {
+        sar_periph_ctrl_pwdet_power_release();
+    }
 }

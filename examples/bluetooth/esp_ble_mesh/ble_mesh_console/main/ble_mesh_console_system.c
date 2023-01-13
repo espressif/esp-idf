@@ -16,7 +16,6 @@
 #include "esp_system.h"
 #include "esp_sleep.h"
 #include "driver/rtc_io.h"
-#include "soc/rtc_cntl_reg.h"
 #include "argtable3/argtable3.h"
 
 #include "freertos/FreeRTOS.h"

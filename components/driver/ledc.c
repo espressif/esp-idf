@@ -28,6 +28,7 @@ static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 #define LEDC_ARG_CHECK(a, param) ESP_RETURN_ON_FALSE(a, ESP_ERR_INVALID_ARG, LEDC_TAG, param " argument is invalid")
 
 #define LEDC_CLK_NOT_FOUND  0
+#define LEDC_SLOW_CLK_UNINIT -1
 
 typedef enum {
     LEDC_FSM_IDLE,
@@ -258,7 +259,6 @@ int duty_val, ledc_duty_direction_t duty_direction, uint32_t duty_num, uint32_t 
     ledc_hal_set_duty_range(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 0);
     ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 1);
 #endif
-    ledc_ls_channel_update(speed_mode, channel);
     return ESP_OK;
 }
 
@@ -498,7 +498,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     /* Timer-specific mux. Set to timer-specific clock or LEDC_SCLK if a global clock is used. */
     ledc_clk_src_t timer_clk_src;
     /* Global clock mux. Should be set when LEDC_SCLK is used in LOW_SPEED_MODE. Otherwise left uninitialized. */
-    ledc_slow_clk_sel_t glb_clk;
+    ledc_slow_clk_sel_t glb_clk = LEDC_SLOW_CLK_UNINIT;
 
     if (clk_cfg == LEDC_AUTO_CLK) {
         /* User hasn't specified the speed, we should try to guess it. */
@@ -571,6 +571,8 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
          */
         assert(timer_clk_src == LEDC_SCLK);
 #endif
+        // Arriving here, variable glb_clk must have been assigned to one of the ledc_slow_clk_sel_t enum values
+        assert(glb_clk != LEDC_SLOW_CLK_UNINIT);
         ESP_LOGD(LEDC_TAG, "In slow speed mode, global clk set: %d", glb_clk);
 
         /* keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
@@ -662,6 +664,13 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
             return ESP_ERR_NO_MEM;
         }
         ledc_hal_init(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode);
+#if !CONFIG_IDF_TARGET_ESP32
+        // On targets other than esp32, the default ledc core(global) clock does not connect to any clock source
+        // Set channel configurations and update bits before core clock is on could lead to error
+        // Therefore, we should connect the core clock to a real clock source to make it on before any ledc register operation
+        // It can be switched to the other desired clock sources to meet the output pwm freq requirement later at timer configuration
+        ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), 1);
+#endif
     }
 
     /*set channel parameters*/
@@ -940,6 +949,7 @@ void IRAM_ATTR ledc_fade_isr(void *arg)
                                  scale);
                 s_ledc_fade_rec[speed_mode][channel]->fsm = LEDC_FSM_HW_FADE;
                 ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, true);
+                ledc_ls_channel_update(speed_mode, channel);
             }
             portEXIT_CRITICAL_ISR(&ledc_spinlock);
             if (finished) {

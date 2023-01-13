@@ -11,7 +11,7 @@ if(CONFIG_IEEE802154_ENABLED)
     if($ENV{IEEE802154_LIB_FROM_INTERNAL_SRC})
         idf_component_get_property(ieee802154_lib ieee802154_driver COMPONENT_LIB)
         target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${ieee802154_lib}>
-                            $<TARGET_FILE:${esp_phy_lib}> libphy.a libbtbb.a)
+                            $<TARGET_FILE:${esp_phy_lib}> libphy.a libbtbb.a $<TARGET_FILE:${esp_phy_lib}>)
     else()
         if(IDF_TARGET STREQUAL "esp32h4")
             if(CONFIG_IDF_TARGET_ESP32H4_BETA_VERSION_1)

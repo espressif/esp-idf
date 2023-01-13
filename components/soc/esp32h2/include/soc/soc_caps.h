@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,14 +27,14 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 // #define SOC_ADC_SUPPORTED               1 // TODO: IDF-6214
 // #define SOC_DEDICATED_GPIO_SUPPORTED    1 // TODO: IDF-6241
-// #define SOC_GDMA_SUPPORTED              1 // TODO: IDF-6222
+#define SOC_GDMA_SUPPORTED              1
+#define SOC_ASYNC_MEMCPY_SUPPORTED      1
 // #define SOC_PCNT_SUPPORTED              1 // TODO: IDF-6221
 // #define SOC_MCPWM_SUPPORTED             1 // TODO: IDF-6237
 // #define SOC_TWAI_SUPPORTED              1 // TODO: IDF-6217
 // #define SOC_BT_SUPPORTED                1 // TODO: IDF-6416
 // #define SOC_IEEE802154_SUPPORTED        1 // TODO: IDF-6577
 #define SOC_IEEE802154_BLE_ONLY            1
-// #define SOC_ASYNC_MEMCPY_SUPPORTED      1 // TODO: IDF-6238
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1 // TODO: IDF-6239
 // #define SOC_TEMP_SENSOR_SUPPORTED       1 // TODO: IDF-6229
 // #define SOC_SUPPORTS_SECURE_DL_MODE     1 // TODO: IDF-6281
@@ -56,6 +56,8 @@
 // #define SOC_DIG_SIGN_SUPPORTED          1 // TODO: IDF-6285
 // #define SOC_FLASH_ENC_SUPPORTED         1 // TODO: IDF-6282
 // #define SOC_SECURE_BOOT_SUPPORTED       1 // TODO: IDF-6281
+#define SOC_BOD_SUPPORTED               1
+#define SOC_APM_SUPPORTED               1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M            1
@@ -135,10 +137,10 @@
     See TRM DS chapter for more details */
 #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
-// TODO: IDF-6222 (Copy from esp32c6, need check)
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
 #define SOC_GDMA_PAIRS_PER_GROUP        (3)  // Number of GDMA pairs in each group
+#define SOC_GDMA_SUPPORT_ETM            (1)  // Support ETM submodule
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C6 has 1 GPIO peripheral
@@ -329,15 +331,16 @@
 
 #define SOC_MEMSPI_SRC_FREQ_48M_SUPPORTED         1
 
-// TODO: IDF-6230 (Copy from esp32c6, need check)
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units
 #define SOC_SYSTIMER_ALARM_NUM              3  // Number of alarm units
 #define SOC_SYSTIMER_BIT_WIDTH_LO           32 // Bit width of systimer low part
 #define SOC_SYSTIMER_BIT_WIDTH_HI           20 // Bit width of systimer high part
-#define SOC_SYSTIMER_FIXED_DIVIDER          1  // Clock source divider is fixed: 2.5
+#define SOC_SYSTIMER_FIXED_DIVIDER          1  // Clock source divider is fixed to 2 when clock source is XTAL
+#define SOC_SYSTIMER_SUPPORT_RC_FAST        1  // Systimer can use RC_FAST clock source
 #define SOC_SYSTIMER_INT_LEVEL              1  // Systimer peripheral uses level interrupt
 #define SOC_SYSTIMER_ALARM_MISS_COMPENSATE  1  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
+#define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
 // TODO: IDF-6242 (Copy from esp32c6, need check)
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
@@ -383,7 +386,7 @@
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
 
-#define SOC_UART_SUPPORT_APB_CLK    (1)     /*!< Support APB as the clock source */
+// #define SOC_UART_SUPPORT_APB_CLK    (1)     /*!< Support APB as the clock source */
 #define SOC_UART_SUPPORT_RTC_CLK    (0)     /*!< Support RTC clock as the clock source */ // TODO: IDF-6249
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
 // #define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */ // TODO: IDF-6249
