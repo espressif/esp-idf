@@ -42,6 +42,10 @@ if(CONFIG_SOC_SYSTIMER_SUPPORTED)
     list(APPEND sources "patches/esp_rom_systimer.c")
 endif()
 
+if(CONFIG_HAL_WDT_USE_ROM_IMPL)
+    list(APPEND sources "patches/esp_rom_wdt.c")
+endif()
+
 idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS ${include_dirs}
                        PRIV_REQUIRES ${private_required_comp}
@@ -115,6 +119,7 @@ if(BOOTLOADER_BUILD)
         rom_linker_script("newlib")
         # The linking of the bootloader needs to use the rom_i2c_writeReg_Mask in esp32c6.rom.phy.ld
         rom_linker_script("phy")
+        rom_linker_script("wdt")
 
     elseif(target STREQUAL "esp32h2")
         rom_linker_script("newlib")
@@ -244,6 +249,11 @@ else() # Regular app build
         if(CONFIG_SPI_FLASH_ROM_IMPL)
             rom_linker_script("spiflash")
         endif()
+
+        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
+            rom_linker_script("wdt")
+        endif()
+
 
         if(time_t_size EQUAL 8)
             # The ROM functions listed in this linker script depend on sizeof(time_t).

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@ extern "C" {
 #include <stdbool.h>
 #include "soc/timer_periph.h"
 #include "soc/timer_group_struct.h"
+#include "soc/pcr_struct.h"
 #include "hal/wdt_types.h"
 #include "hal/assert.h"
 #include "esp_attr.h"
@@ -248,6 +249,55 @@ FORCE_INLINE_ATTR void mwdt_ll_set_intr_enable(timg_dev_t *hw, bool enable)
 {
     hw->int_ena_timers.wdt_int_ena = (enable) ? 1 : 0;
 }
+
+/**
+ * @brief Set the clock source for the MWDT.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param clk_src Clock source
+ */
+FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_source_t clk_src)
+{
+    uint8_t clk_id = 0;
+    switch (clk_src) {
+    case MWDT_CLK_SRC_XTAL:
+        clk_id = 0;
+        break;
+    case MWDT_CLK_SRC_PLL_F80M:
+        clk_id = 1;
+        break;
+    case MWDT_CLK_SRC_RC_FAST:
+        clk_id = 2;
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
+
+    if (hw == &TIMERG0) {
+        PCR.timergroup0_wdt_clk_conf.tg0_wdt_clk_sel = clk_id;
+    } else {
+        PCR.timergroup1_wdt_clk_conf.tg1_wdt_clk_sel = clk_id;
+    }
+}
+
+/**
+ * @brief Enable MWDT module clock
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param en true to enable, false to disable
+ */
+__attribute__((always_inline))
+static inline void mwdt_ll_enable_clock(timg_dev_t *hw, bool en)
+{
+    if (hw == &TIMERG0) {
+        PCR.timergroup0_wdt_clk_conf.tg0_wdt_clk_en = en;
+    } else {
+        PCR.timergroup1_wdt_clk_conf.tg1_wdt_clk_en = en;
+    }
+}
+
+
 
 #ifdef __cplusplus
 }

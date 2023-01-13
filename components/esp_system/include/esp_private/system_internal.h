@@ -16,8 +16,9 @@ extern "C" {
 #if SOC_TIMER_GROUPS >= 2
 
 /* All the targets that have more than one timer group are using
- * APB clock by default, which frequency is 80MHz.
- * Thus, we can determine the default parameter for the prescaler here */
+ * APB or PLL clock by default (depends on target).
+ * The following configurations are based on 80MHz clock
+ */
 #define MWDT0_TICK_PRESCALER    40000
 #define MWDT0_TICKS_PER_US      500
 #define MWDT1_TICK_PRESCALER    40000

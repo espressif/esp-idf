@@ -690,7 +690,6 @@ components/hal/include/hal/spi_slave_hd_hal.h
 components/hal/include/hal/uhci_types.h
 components/hal/include/hal/usb_hal.h
 components/hal/include/hal/usb_types_private.h
-components/hal/include/hal/wdt_types.h
 components/hal/mpu_hal.c
 components/hal/sha_hal.c
 components/hal/spi_flash_encrypt_hal_iram.c

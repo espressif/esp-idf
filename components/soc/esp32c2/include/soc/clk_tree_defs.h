@@ -249,6 +249,24 @@ typedef enum {
     GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB clock as the default clock choice */
 } soc_periph_glitch_filter_clk_src_t;
 
+
+//////////////////////////////////////////////////MWDT/////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of MWDT
+ */
+#define SOC_MWDT_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F40M}
+
+/**
+ * @brief MWDT clock source
+ */
+typedef enum {
+    MWDT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+    MWDT_CLK_SRC_PLL_F40M = SOC_MOD_CLK_PLL_F40M,     /*!< Select PLL 40 Mhz as the source clock */
+    MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F40M,     /*!< Select PLL 40 Mhz as the default clock choice */
+} soc_periph_mwdt_clk_src_t;
+
+
 #ifdef __cplusplus
 }
 #endif
