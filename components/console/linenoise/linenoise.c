@@ -1046,7 +1046,7 @@ int linenoiseProbe(void) {
     flushWrite();
 
     /* Try to read response */
-    int timeout_ms = 300;
+    int timeout_ms = 500;
     const int retry_ms = 10;
     size_t read_bytes = 0;
     while (timeout_ms > 0 && read_bytes < 4) { // response is ESC[0n or ESC[3n
