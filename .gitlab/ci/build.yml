@@ -616,7 +616,7 @@ build_examples_cmake_esp32c6:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32c6
-  parallel: 2
+  parallel: 4
   variables:
     IDF_TARGET: esp32c6
     TEST_DIR: examples
