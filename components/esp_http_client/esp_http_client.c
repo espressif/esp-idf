@@ -277,7 +277,7 @@ static int http_on_body(http_parser *parser, const char *at, size_t length)
     } else {
         /* Do not cache body when http_on_body is called from esp_http_client_perform */
         if (client->state < HTTP_STATE_RES_ON_DATA_START && client->cache_data_in_fetch_hdr) {
-            ESP_LOGI(TAG, "Body received in fetch header state, %p, %zu", at, length);
+            ESP_LOGD(TAG, "Body received in fetch header state, %p, %zu", at, length);
             esp_http_buffer_t *res_buffer = client->response->buffer;
             assert(res_buffer->orig_raw_data == res_buffer->raw_data);
             res_buffer->orig_raw_data = (char *)realloc(res_buffer->orig_raw_data, res_buffer->raw_len + length);
