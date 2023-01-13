@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ROM_UART_H_
 #define _ROM_UART_H_
@@ -197,39 +189,6 @@ void Uart_Init(uint8_t uart_no, uint32_t clock);
 void uart_div_modify(uint8_t uart_no, uint32_t DivLatchValue);
 
 /**
-  * @brief Init uart0 or uart1 for UART download booting mode.
-  *        Please do not call this function in SDK.
-  *
-  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
-  *
-  * @param  uint8_t is_sync : 0, only one UART module, easy to detect, wait until detected;
-  *                           1, two UART modules, hard to detect, detect and return.
-  *
-  * @return None
-  */
-int uart_baudrate_detect(uint8_t uart_no, uint8_t is_sync);
-
-/**
-  * @brief Switch printf channel of uart_tx_one_char.
-  *        Please do not call this function when printf.
-  *
-  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
-  *
-  * @return None
-  */
-void uart_tx_switch(uint8_t uart_no);
-
-/**
-  * @brief Switch message exchange channel for UART download booting.
-  *        Please do not call this function in SDK.
-  *
-  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
-  *
-  * @return None
-  */
-void uart_buff_switch(uint8_t uart_no);
-
-/**
   * @brief Output a char to printf channel, wait until fifo not full.
   *
   * @param  None
@@ -301,16 +260,6 @@ char uart_rx_one_char_block(void);
 STATUS UartRxString(uint8_t *pString, uint8_t MaxStrlen);
 
 /**
-  * @brief Process uart recevied information in the interrupt handler.
-  *        Please do not call this function in SDK.
-  *
-  * @param  void *para : the message receive buffer.
-  *
-  * @return None
-  */
-void uart_rx_intr_handler(void *para);
-
-/**
   * @brief Get an char from receive buffer.
   *        Please do not call this function in SDK.
   *
@@ -322,17 +271,6 @@ void uart_rx_intr_handler(void *para);
   *         FAIL for failed.
   */
 STATUS uart_rx_readbuff( RcvMsgBuff *pRxBuff, uint8_t *pRxByte);
-
-/**
-  * @brief Get all chars from receive buffer.
-  *        Please do not call this function in SDK.
-  *
-  * @param  uint8_t *pCmdLn : the pointer to store the string.
-  *
-  * @return OK for successful.
-  *         FAIL for failed.
-  */
-STATUS UartGetCmdLn(uint8_t *pCmdLn);
 
 /**
   * @brief Get uart configuration struct.
@@ -370,62 +308,6 @@ void send_packet(uint8_t *p, int len);
   * @return int : the length of the string.
   */
 int recv_packet(uint8_t *p, int len, uint8_t is_sync);
-
-/**
-  * @brief Send an packet to download tool, with SLIP escaping.
-  *        Please do not call this function in SDK.
-  *
-  * @param  uint8_t *pData : the pointer to input string.
-  *
-  * @param  uint16_t DataLen : the string length.
-  *
-  * @return OK for successful.
-  *         FAIL for failed.
-  */
-STATUS SendMsg(uint8_t *pData, uint16_t DataLen);
-
-/**
-  * @brief Receive an packet from download tool, with SLIP escaping.
-  *        Please do not call this function in SDK.
-  *
-  * @param  uint8_t *pData : the pointer to input string.
-  *
-  * @param  uint16_t MaxDataLen : If string length > MaxDataLen, the string will be truncated.
-  *
-  * @param  uint8_t is_sync : 0, only one UART module;
-  *                           1, two UART modules.
-  *
-  * @return OK for successful.
-  *         FAIL for failed.
-  */
-STATUS RcvMsg(uint8_t *pData, uint16_t MaxDataLen, uint8_t is_sync);
-
-/**
-  * @brief Check if this UART is in download connection.
-  *        Please do not call this function in SDK.
-  *
-  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
-  *
-  * @return ETS_NO_BOOT = 0 for no.
-  *         SEL_UART_BOOT = BIT(1) for yes.
-  */
-uint8_t UartConnCheck(uint8_t uart_no);
-
-/**
-  * @brief Initialize the USB ACM UART
-  * Needs to be fed a buffer of at least 128 bytes, plus any rx buffer you may want to have.
-  *
-  * @param cdc_acm_work_mem Pointer to work mem for CDC-ACM code
-  * @param cdc_acm_work_mem_len Length of work mem
-  */
-void Uart_Init_USB(void *cdc_acm_work_mem, int cdc_acm_work_mem_len);
-
-
-/**
-  * @brief Install handler to reset the chip when a RTS change has been detected on the CDC-ACM 'UART'.
-  */
-void uart_usb_enable_reset_on_rts(void);
-
 
 extern UartDevice UartDev;
 

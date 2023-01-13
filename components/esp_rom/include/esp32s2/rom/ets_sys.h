@@ -1,16 +1,8 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ROM_ETS_SYS_H_
 #define _ROM_ETS_SYS_H_
@@ -71,54 +63,9 @@ struct ETSEventTag {
 typedef void (*ETSTask)(ETSEvent *e);       /**< Type of the Task processer*/
 typedef void (* ets_idle_cb_t)(void *arg);  /**< Type of the system idle callback*/
 
-/**
-  * @brief  Start the Espressif Task Scheduler, which is an infinit loop. Please do not add code after it.
-  *
-  * @param  none
-  *
-  * @return none
-  */
-void ets_run(void);
 
-/**
-  * @brief  Set the Idle callback, when Tasks are processed, will call the callback before CPU goto sleep.
-  *
-  * @param  ets_idle_cb_t func : The callback function.
-  *
-  * @param  void *arg : Argument of the callback.
-  *
-  * @return None
-  */
-void ets_set_idle_cb(ets_idle_cb_t func, void *arg);
 
-/**
-  * @brief  Init a task with processer, priority, queue to receive Event, queue length.
-  *
-  * @param  ETSTask task : The task processer.
-  *
-  * @param  uint8_t prio : Task priority, 0-31, bigger num with high priority, one priority with one task.
-  *
-  * @param  ETSEvent *queue : Queue belongs to the task, task always receives Events, Queue is circular used.
-  *
-  * @param  uint8_t qlen : Queue length.
-  *
-  * @return None
-  */
-void ets_task(ETSTask task, uint8_t prio, ETSEvent *queue, uint8_t qlen);
 
-/**
-  * @brief  Post an event to an Task.
-  *
-  * @param  uint8_t prio : Priority of the Task.
-  *
-  * @param  ETSSignal sig : Event signal.
-  *
-  * @param  ETSParam  par : Event parameter
-  *
-  * @return ETS_OK     : post successful
-  * @return ETS_FAILED : post failed
-  */
-ETS_STATUS ets_post(uint8_t prio, ETSSignal sig, ETSParam par);
 
 /**
   * @}
@@ -143,26 +90,6 @@ extern const char *const exc_cause_table[40];   ///**< excption cause that defin
   * @return None
   */
 void ets_set_user_start(uint32_t start);
-
-/**
-  * @brief  Set Pro cpu Startup code, code can be called when booting is not completed, or in Entry code.
-  *         When Entry code completed, CPU will call the Startup code if not NULL, else call ets_run.
-  *
-  * @param  uint32_t callback : the Startup code address value in uint32_t
-  *
-  * @return None     : post successful
-  */
-void ets_set_startup_callback(uint32_t callback);
-
-/**
-  * @brief  Set App cpu Entry code, code can be called in PRO CPU.
-  *         When APP booting is completed, APP CPU will call the Entry code if not NULL.
-  *
-  * @param  uint32_t start : the APP Entry code address value in uint32_t, stored in register APPCPU_CTRL_REG_D.
-  *
-  * @return None
-  */
-void ets_set_appcpu_boot_addr(uint32_t start);
 
 /**
   * @}
@@ -377,17 +304,7 @@ void ets_delay_us(uint32_t us);
   */
 void ets_update_cpu_frequency(uint32_t ticks_per_us);
 
-/**
-  * @brief  Set the real CPU ticks per us to the ets, so that ets_delay_us will be accurate.
-  *
-  * @note This function only sets the tick rate for the current CPU. It is located in ROM,
-  *       so the deep sleep stub can use it even if IRAM is not initialized yet.
-  *
-  * @param  uint32_t ticks_per_us : CPU ticks per us.
-  *
-  * @return None
-  */
-void ets_update_cpu_frequency_rom(uint32_t ticks_per_us);
+
 
 /**
   * @brief  Get the real CPU ticks per us to the ets.

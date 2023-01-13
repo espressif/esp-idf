@@ -173,16 +173,6 @@ RESET_REASON rtc_get_reset_reason(int cpu_no);
   */
 WAKEUP_REASON rtc_get_wakeup_cause(void);
 
-/**
-  * @brief Get CRC for Fast RTC Memory.
-  *
-  * @param  uint32_t start_addr : 0 - 0x7ff for Fast RTC Memory.
-  *
-  * @param  uint32_t crc_len : 0 - 0x7ff, 0 for 4 byte, 0x7ff for 0x2000 byte.
-  *
-  * @return uint32_t : CRC32 result
-  */
-uint32_t calc_rtc_memory_crc(uint32_t start_addr, uint32_t crc_len);
 
 /**
   * @brief Suppress ROM log by setting specific RTC control register.

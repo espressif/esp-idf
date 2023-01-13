@@ -58,17 +58,6 @@ typedef void(*uart_irq_callback_t)(cdc_acm_device *dev, int status);
 
 int cdc_acm_rx_fifo_cnt(cdc_acm_device *dev);
 
-
-/*
- * @brief Poll the device for input.
- *
- * @return -ENOTSUP Since underlying USB device controller always uses
- * interrupts, polled mode UART APIs are not implemented for the UART interface
- * exported by CDC ACM driver. Apps should use fifo_read API instead.
- */
-
-int cdc_acm_poll_in(cdc_acm_device *dev, unsigned char *c);
-
 /*
  * @brief Output a character in polled mode.
  *

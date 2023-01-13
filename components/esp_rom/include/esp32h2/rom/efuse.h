@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,20 +53,6 @@ typedef enum {
     ETS_EFUSE_BLOCK_KEY6 = 10,
     ETS_EFUSE_BLOCK_MAX,
 } ets_efuse_block_t;
-
-/**
- * @brief set timing accroding the apb clock, so no read error or write error happens.
- *
- * @param clock: apb clock in HZ, only accept 5M(in FPGA), 10M(in FPGA), 20M, 40M, 80M.
- *
- * @return : 0 if success, others if clock not accepted
- */
-int ets_efuse_set_timing(uint32_t clock);
-
-/**
- * @brief Enable efuse subsystem. Called after reset. Doesn't need to be called again.
- */
-void ets_efuse_start(void);
 
 /**
   * @brief  Efuse read operation: copies data from physical efuses to efuse read registers.
@@ -168,37 +154,6 @@ unsigned ets_efuse_count_unused_key_blocks(void);
 void ets_efuse_rs_calculate(const void *data, void *rs_values);
 
 /**
-  * @brief  Read spi flash pads configuration from Efuse
-  *
-  * @return
-  * - 0 for default SPI pins.
-  * - 1 for default HSPI pins.
-  * - Other values define a custom pin configuration mask. Pins are encoded as per the EFUSE_SPICONFIG_RET_SPICLK,
-  *   EFUSE_SPICONFIG_RET_SPIQ, EFUSE_SPICONFIG_RET_SPID, EFUSE_SPICONFIG_RET_SPICS0, EFUSE_SPICONFIG_RET_SPIHD macros.
-  *   WP pin (for quad I/O modes) is not saved in efuse and not returned by this function.
-  */
-uint32_t ets_efuse_get_spiconfig(void);
-
-/**
-  * @brief  Read spi flash wp pad from Efuse
-  *
-  * @return
-  * - 0x3f for invalid.
-  * - 0~46 is valid.
-  */
-uint32_t ets_efuse_get_wp_pad(void);
-
-/**
- * @brief Read opi flash pads configuration from Efuse
- *
- * @return
- * - 0 for default SPI pins.
- * - Other values define a custom pin configuration mask. From the LSB, every 6 bits represent a GPIO number which stand for:
- *   DQS, D4, D5, D6, D7 accordingly.
- */
-uint32_t ets_efuse_get_opiconfig(void);
-
-/**
   * @brief  Read if download mode disabled from Efuse
   *
   * @return
@@ -206,15 +161,6 @@ uint32_t ets_efuse_get_opiconfig(void);
   * - false for efuse doesn't disable download mode.
   */
 bool ets_efuse_download_modes_disabled(void);
-
-/**
-  * @brief  Read if legacy spi flash boot mode disabled from Efuse
-  *
-  * @return
-  * - true for efuse disable legacy spi flash boot mode.
-  * - false for efuse doesn't disable legacy spi flash boot mode.
-  */
-bool ets_efuse_legacy_spi_boot_mode_disabled(void);
 
 /**
   * @brief  Read if uart print control value from Efuse
@@ -228,15 +174,6 @@ bool ets_efuse_legacy_spi_boot_mode_disabled(void);
 uint32_t ets_efuse_get_uart_print_control(void);
 
 /**
-  * @brief  Read if USB-Serial-JTAG print during rom boot is disabled from Efuse
-  *
-  * @return
-  * - 1 for efuse disable USB-Serial-JTAG print during rom boot.
-  * - 0 for efuse doesn't disable USB-Serial-JTAG print during rom boot.
-  */
-uint32_t ets_efuse_usb_serial_jtag_print_is_disabled(void);
-
-/**
   * @brief  Read if usb download mode disabled from Efuse
   *
   * (Also returns true if security download mode is enabled, as this mode
@@ -247,24 +184,6 @@ uint32_t ets_efuse_usb_serial_jtag_print_is_disabled(void);
   * - false for efuse doesn't disable usb download mode.
   */
 bool ets_efuse_usb_download_mode_disabled(void);
-
-/**
-  * @brief  Read if tiny basic mode disabled from Efuse
-  *
-  * @return
-  * - true for efuse disable tiny basic mode.
-  * - false for efuse doesn't disable tiny basic mode.
-  */
-bool ets_efuse_tiny_basic_mode_disabled(void);
-
-/**
-  * @brief  Read if usb module disabled from Efuse
-  *
-  * @return
-  * - true for efuse disable usb module.
-  * - false for efuse doesn't disable usb module.
-  */
-bool ets_efuse_usb_module_disabled(void);
 
 /**
   * @brief  Read if security download modes enabled from Efuse
@@ -289,26 +208,6 @@ bool ets_efuse_secure_boot_aggressive_revoke_enabled(void);
  * @brief Return true if cache encryption (flash, etc) is enabled from boot via EFuse
  */
 bool ets_efuse_cache_encryption_enabled(void);
-
-/**
- * @brief Return true if EFuse indicates an external phy needs to be used for USB
- */
-bool ets_efuse_usb_use_ext_phy(void);
-
-/**
- * @brief Return true if EFuse indicates USB device persistence is disabled
- */
-bool ets_efuse_usb_force_nopersist(void);
-
-/**
- * @brief Return true if OPI pins GPIO33-37 are powered by VDDSPI, otherwise by VDD33CPU
- */
-bool ets_efuse_flash_opi_5pads_power_sel_vddspi(void);
-
-/**
- * @brief Return true if EFuse indicates an opi flash is attached.
- */
-bool ets_efuse_flash_opi_mode(void);
 
 /**
  * @brief Return true if EFuse indicates to send a flash resume command.

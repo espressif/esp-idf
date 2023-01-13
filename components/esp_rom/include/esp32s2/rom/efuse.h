@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ROM_EFUSE_H_
 #define _ROM_EFUSE_H_
@@ -257,14 +249,6 @@ uint32_t ets_efuse_get_uart_print_channel(void);
   */
 bool ets_efuse_usb_download_mode_disabled(void);
 
-/**
-  * @brief  Read if tiny basic mode disabled from Efuse
-  *
-  * @return
-  * - true for efuse disable tiny basic mode.
-  * - false for efuse doesn't disable tiny basic mode.
-  */
-bool ets_efuse_tiny_basic_mode_disabled(void);
 
 /**
   * @brief  Read if usb module disabled from Efuse

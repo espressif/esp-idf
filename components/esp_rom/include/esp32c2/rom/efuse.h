@@ -48,11 +48,6 @@ typedef enum {
 int ets_efuse_set_timing(uint32_t clock);
 
 /**
- * @brief Enable efuse subsystem. Called after reset. Doesn't need to be called again.
- */
-void ets_efuse_start(void);
-
-/**
   * @brief  Efuse read operation: copies data from physical efuses to efuse read registers.
   *
   * @param  null
@@ -152,37 +147,6 @@ unsigned ets_efuse_count_unused_key_blocks(void);
 void ets_efuse_rs_calculate(const void *data, void *rs_values);
 
 /**
-  * @brief  Read spi flash pads configuration from Efuse
-  *
-  * @return
-  * - 0 for default SPI pins.
-  * - 1 for default HSPI pins.
-  * - Other values define a custom pin configuration mask. Pins are encoded as per the EFUSE_SPICONFIG_RET_SPICLK,
-  *   EFUSE_SPICONFIG_RET_SPIQ, EFUSE_SPICONFIG_RET_SPID, EFUSE_SPICONFIG_RET_SPICS0, EFUSE_SPICONFIG_RET_SPIHD macros.
-  *   WP pin (for quad I/O modes) is not saved in efuse and not returned by this function.
-  */
-uint32_t ets_efuse_get_spiconfig(void);
-
-/**
-  * @brief  Read spi flash wp pad from Efuse
-  *
-  * @return
-  * - 0x3f for invalid.
-  * - 0~46 is valid.
-  */
-uint32_t ets_efuse_get_wp_pad(void);
-
-/**
- * @brief Read opi flash pads configuration from Efuse
- *
- * @return
- * - 0 for default SPI pins.
- * - Other values define a custom pin configuration mask. From the LSB, every 6 bits represent a GPIO number which stand for:
- *   DQS, D4, D5, D6, D7 accordingly.
- */
-uint32_t ets_efuse_get_opiconfig(void);
-
-/**
   * @brief  Read if download mode disabled from Efuse
   *
   * @return
@@ -190,15 +154,6 @@ uint32_t ets_efuse_get_opiconfig(void);
   * - false for efuse doesn't disable download mode.
   */
 bool ets_efuse_download_modes_disabled(void);
-
-/**
-  * @brief  Read if legacy spi flash boot mode disabled from Efuse
-  *
-  * @return
-  * - true for efuse disable legacy spi flash boot mode.
-  * - false for efuse doesn't disable legacy spi flash boot mode.
-  */
-bool ets_efuse_legacy_spi_boot_mode_disabled(void);
 
 /**
   * @brief  Read if uart print control value from Efuse
@@ -210,45 +165,6 @@ bool ets_efuse_legacy_spi_boot_mode_disabled(void);
   *   3 for uart force slient
   */
 uint32_t ets_efuse_get_uart_print_control(void);
-
-/**
-  * @brief  Read if USB-Serial-JTAG print during rom boot is disabled from Efuse
-  *
-  * @return
-  * - 1 for efuse disable USB-Serial-JTAG print during rom boot.
-  * - 0 for efuse doesn't disable USB-Serial-JTAG print during rom boot.
-  */
-uint32_t ets_efuse_usb_serial_jtag_print_is_disabled(void);
-
-/**
-  * @brief  Read if usb download mode disabled from Efuse
-  *
-  * (Also returns true if security download mode is enabled, as this mode
-  * disables USB download.)
-  *
-  * @return
-  * - true for efuse disable usb download mode.
-  * - false for efuse doesn't disable usb download mode.
-  */
-bool ets_efuse_usb_download_mode_disabled(void);
-
-/**
-  * @brief  Read if tiny basic mode disabled from Efuse
-  *
-  * @return
-  * - true for efuse disable tiny basic mode.
-  * - false for efuse doesn't disable tiny basic mode.
-  */
-bool ets_efuse_tiny_basic_mode_disabled(void);
-
-/**
-  * @brief  Read if usb module disabled from Efuse
-  *
-  * @return
-  * - true for efuse disable usb module.
-  * - false for efuse doesn't disable usb module.
-  */
-bool ets_efuse_usb_module_disabled(void);
 
 /**
   * @brief  Read if security download modes enabled from Efuse
@@ -273,26 +189,6 @@ bool ets_efuse_secure_boot_aggressive_revoke_enabled(void);
  * @brief Return true if cache encryption (flash, etc) is enabled from boot via EFuse
  */
 bool ets_efuse_cache_encryption_enabled(void);
-
-/**
- * @brief Return true if EFuse indicates an external phy needs to be used for USB
- */
-bool ets_efuse_usb_use_ext_phy(void);
-
-/**
- * @brief Return true if EFuse indicates USB device persistence is disabled
- */
-bool ets_efuse_usb_force_nopersist(void);
-
-/**
- * @brief Return true if OPI pins GPIO33-37 are powered by VDDSPI, otherwise by VDD33CPU
- */
-bool ets_efuse_flash_opi_5pads_power_sel_vddspi(void);
-
-/**
- * @brief Return true if EFuse indicates an opi flash is attached.
- */
-bool ets_efuse_flash_opi_mode(void);
 
 /**
  * @brief Return true if EFuse indicates to send a flash resume command.
@@ -330,21 +226,6 @@ uint32_t ets_efuse_get_flash_delay_us(void);
 #define EFUSE_SPICONFIG_RET_SPIHD_MASK          0x3f
 #define EFUSE_SPICONFIG_RET_SPIHD_SHIFT         24
 #define EFUSE_SPICONFIG_RET_SPIHD(ret)          (((ret) >> EFUSE_SPICONFIG_RET_SPIHD_SHIFT) & EFUSE_SPICONFIG_RET_SPIHD_MASK)
-
-/**
- * @brief Enable JTAG temporarily by writing a JTAG HMAC "key" into
- * the JTAG_CTRL registers.
- *
- * Works if JTAG has been "soft" disabled by burning the EFUSE_SOFT_DIS_JTAG efuse.
- *
- * Will enable the HMAC module to generate a "downstream" HMAC value from a key already saved in efuse, and then write the JTAG HMAC "key" which will enable JTAG if the two keys match.
- *
- * @param jtag_hmac_key Pointer to a 32 byte array containing a valid key. Supplied by user.
- * @param key_block Index of a key block containing the source for this key.
- *
- * @return ETS_FAILED if HMAC operation fails or invalid parameter, ETS_OK otherwise. ETS_OK doesn't necessarily mean that JTAG was enabled.
- */
-int ets_jtag_enable_temporarily(const uint8_t *jtag_hmac_key, ets_efuse_block_t key_block);
 
 /**
   * @brief  A crc8 algorithm used for MAC addresses in efuse
