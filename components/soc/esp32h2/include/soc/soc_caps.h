@@ -34,6 +34,7 @@
 // #define SOC_TWAI_SUPPORTED              1 // TODO: IDF-6217
 // #define SOC_BT_SUPPORTED                1 // TODO: IDF-6416
 // #define SOC_IEEE802154_SUPPORTED        1 // TODO: IDF-6577
+#define SOC_GPTIMER_SUPPORTED              1
 #define SOC_IEEE802154_BLE_ONLY            1
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1 // TODO: IDF-6239
 // #define SOC_TEMP_SENSOR_SUPPORTED       1 // TODO: IDF-6229
@@ -342,15 +343,15 @@
 #define SOC_SYSTIMER_ALARM_MISS_COMPENSATE  1  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
 #define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
-// TODO: IDF-6242 (Copy from esp32c6, need check)
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 #define SOC_TIMER_GROUPS                  (2)
 #define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1U)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
-#define SOC_TIMER_GROUP_SUPPORT_APB       (1)
+#define SOC_TIMER_GROUP_SUPPORT_PLL_F48M  (1)
+// #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1) // TODO: IDF-6265
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
-// #define SOC_TIMER_SUPPORT_ETM             (1)
+#define SOC_TIMER_SUPPORT_ETM             (1)
 
 // TODO: IDF-6217 (Copy from esp32c6, need check)
 /*-------------------------- TWAI CAPS ---------------------------------------*/

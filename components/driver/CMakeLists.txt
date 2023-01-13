@@ -4,12 +4,8 @@ set(srcs
     "gpio/gpio.c"
     "gpio/rtc_io.c"
     "gpio/gpio_glitch_filter_ops.c"
-    "gptimer/gptimer.c"
     "spi_bus_lock.c"
     "uart.c")
-
-# deprecated source files
-list(APPEND srcs "deprecated/timer_legacy.c")
 
 set(includes "include" "deprecated")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${target}/include")
@@ -18,6 +14,10 @@ endif()
 
 if(CONFIG_SOC_LEDC_SUPPORTED)
     list(APPEND srcs "ledc.c")
+endif()
+
+if(CONFIG_SOC_GPTIMER_SUPPORTED)
+    list(APPEND srcs "gptimer/gptimer.c" "deprecated/timer_legacy.c")
 endif()
 
 if(CONFIG_SOC_TIMER_SUPPORT_ETM)
@@ -140,14 +140,6 @@ endif()
 
 if(${target} STREQUAL "esp32")
     list(APPEND srcs "deprecated/adc_i2s_deprecated.c")
-endif()
-
-if(${target} STREQUAL "esp32h2")
-    # TODO: IDF-5310
-    list(REMOVE_ITEM srcs
-        "deprecated/timer_legacy.c"
-        "gptimer/gptimer.c"
-            )
 endif()
 
 if(BOOTLOADER_BUILD)
