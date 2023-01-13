@@ -1692,23 +1692,7 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
     esp_netif_dns_type_t type = dns_param->dns_type;
     esp_netif_dns_info_t *dns = dns_param->dns_info;
 
-    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
-
-    if (esp_netif == NULL) {
-        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
-    }
-
-    if (!dns) {
-        ESP_LOGD(TAG, "set dns null dns");
-        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
-    }
-
-    if (ip4_addr_isany_val(dns->ip.u_addr.ip4)) {
-        ESP_LOGD(TAG, "set dns invalid dns");
-        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
-    }
-
-    ESP_LOGD(TAG, "set dns if=%p type=%d dns=%x", esp_netif, type, dns->ip.u_addr.ip4.addr);
+    ESP_LOGD(TAG, "esp_netif_set_dns_info: if=%p type=%d dns=%x", esp_netif, type, dns->ip.u_addr.ip4.addr);
 
     ip_addr_t *lwip_ip = (ip_addr_t*)&dns->ip;
 #if CONFIG_LWIP_IPV6 && LWIP_IPV4
@@ -1737,9 +1721,20 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
 
 esp_err_t esp_netif_set_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t type, esp_netif_dns_info_t *dns)
 {
-    if (_IS_NETIF_ANY_POINT2POINT_TYPE(esp_netif)) {
-        return ESP_ERR_NOT_SUPPORTED;
+    if (esp_netif == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
     }
+
+    if (dns == NULL) {
+        ESP_LOGD(TAG, "set dns null dns");
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+
+    if (ip4_addr_isany_val(dns->ip.u_addr.ip4)) {
+        ESP_LOGD(TAG, "set dns invalid dns");
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+
     esp_netif_dns_param_t dns_param = {
         .dns_type = type,
         .dns_info = dns
@@ -1754,18 +1749,14 @@ static esp_err_t esp_netif_get_dns_info_api(esp_netif_api_msg_t *msg)
     esp_netif_dns_type_t type = dns_param->dns_type;
     esp_netif_dns_info_t *dns = dns_param->dns_info;
 
-    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
-
-    if (!dns) {
-        ESP_LOGE(TAG, "%s: dns_info cannot be NULL", __func__);
-        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
-    }
+    ESP_LOGD(TAG, "esp_netif_get_dns_info: esp_netif=%p type=%d", esp_netif, type);
 
     if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
 #if ESP_DHCPS
         ip4_addr_t dns_ip;
         dhcps_dns_getserver(esp_netif->dhcps, &dns_ip);
         memcpy(&dns->ip.u_addr.ip4, &dns_ip, sizeof(ip4_addr_t));
+        dns->ip.type = ESP_IPADDR_TYPE_V4;
 #else
         LOG_NETIF_DISABLED_AND_DO("DHCP Server", return ESP_ERR_NOT_SUPPORTED);
 #endif
@@ -1782,17 +1773,13 @@ static esp_err_t esp_netif_get_dns_info_api(esp_netif_api_msg_t *msg)
 
 esp_err_t esp_netif_get_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t type, esp_netif_dns_info_t *dns)
 {
-    if (_IS_NETIF_ANY_POINT2POINT_TYPE(esp_netif)) {
-        const ip_addr_t *dns_ip = dns_getserver(type);
-        if (dns_ip == IP_ADDR_ANY) {
-            return ESP_ERR_ESP_NETIF_DNS_NOT_CONFIGURED;
-        }
-#if CONFIG_LWIP_IPV6
-        memcpy(&dns->ip.u_addr.ip4, &dns_ip->u_addr.ip4, sizeof(ip4_addr_t));
-#else
-        memcpy(&dns->ip.u_addr.ip4, &dns_ip->addr, sizeof(ip4_addr_t));
-#endif
-        return ESP_OK;
+    if (esp_netif == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+
+    if (dns == NULL) {
+        ESP_LOGE(TAG, "%s: dns_info cannot be NULL", __func__);
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
     }
 
     esp_netif_dns_param_t dns_param = {
