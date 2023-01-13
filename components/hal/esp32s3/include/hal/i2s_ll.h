@@ -319,6 +319,7 @@ static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mcl
         }
     }
 finish:
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_clkm_conf, tx_clkm_div_num, mclk_div);
     if (denominator == 0 || numerator == 0) {
         hw->tx_clkm_div_conf.tx_clkm_div_x = 0;
         hw->tx_clkm_div_conf.tx_clkm_div_y = 0;
@@ -336,7 +337,6 @@ finish:
             hw->tx_clkm_div_conf.tx_clkm_div_yn1 = 0;
         }
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_clkm_conf, tx_clkm_div_num, mclk_div);
 }
 
 /**
@@ -393,6 +393,7 @@ static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mcl
         }
     }
 finish:
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_clkm_conf, rx_clkm_div_num, mclk_div);
     if (denominator == 0 || numerator == 0) {
         hw->rx_clkm_div_conf.rx_clkm_div_x = 0;
         hw->rx_clkm_div_conf.rx_clkm_div_y = 0;
@@ -410,7 +411,6 @@ finish:
             hw->rx_clkm_div_conf.rx_clkm_div_yn1 = 0;
         }
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_clkm_conf, rx_clkm_div_num, mclk_div);
 }
 
 /**
