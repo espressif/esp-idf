@@ -9,7 +9,7 @@ ESP-IDF provides the following methods to test software.
 - Linux-host based unit tests in which part of the hardware can be abstracted via mocks. Currently, Linux-host based tests are still under development and only a small fraction of IDF components support them. More information on running IDF applications on the host can be found here: :doc:`Running Applications on the Host Machine <host-apps>`.
 
 Normal Test Cases
-------------------
+-----------------
 
 Unit tests are located in the ``test`` subdirectory of a component. Tests are written in C, and a single C source file can contain multiple test cases. Test files start with the word "test".
 
@@ -44,7 +44,7 @@ See http://www.throwtheswitch.org/unity for more information about writing tests
 
 
 Multi-device Test Cases
--------------------------
+-----------------------
 
 The normal test cases will be executed on one DUT (Device Under Test). However, components that require some form of communication (e.g., GPIO, SPI) require another device to communicate with, thus cannot be tested through normal test cases. Multi-device test cases involve writing multiple test functions, and running them on multiple DUTs.
 
@@ -97,7 +97,7 @@ Once the signal is sent from DUT2, you need to press "Enter" on DUT1, then DUT1 
 
 
 Multi-stage Test Cases
------------------------
+----------------------
 
 The normal test cases are expected to finish without reset (or only need to check if reset happens). Sometimes we expect to run some specific tests after certain kinds of reset. For example, we want to test if the reset reason is correct after a wake up from deep sleep. We need to create a deep-sleep reset first and then check the reset reason. To support this, we can define multi-stage test cases, to group a set of test functions::
 
@@ -118,7 +118,7 @@ The normal test cases are expected to finish without reset (or only need to chec
 Multi-stage test cases present a group of test functions to users. It needs user interactions (select cases and select different stages) to run the case.
 
 Tests For Different Targets
-------------------------------
+---------------------------
 
 Some tests (especially those related to hardware) cannot run on all targets. Below is a guide how to make your unit tests run on only specified targets.
 
@@ -219,11 +219,8 @@ The normal case will print the case name and description. Master-slave cases wil
 Test cases can be run by inputting one of the following:
 
 - Test case name in quotation marks to run a single test case
-
 - Test case index to run a single test case
-
 - Module name in square brackets to run all test cases for a specific module
-
 - An asterisk to run all test cases
 
 ``[multi_device]`` and ``[multi_stage]`` tags tell the test runner whether a test case is a multiple devices or multiple stages of test case. These tags are automatically added by ```TEST_CASE_MULTIPLE_STAGES`` and ``TEST_CASE_MULTIPLE_DEVICES`` macros.
@@ -250,7 +247,7 @@ First time you execute this case, input ``1`` to run first stage (trigger deepsl
 .. _cache-compensated-timer:
 
 Timing Code with Cache Compensated Timer
------------------------------------------
+----------------------------------------
 
 Instructions and data stored in external memory (e.g. SPI Flash and SPI RAM) are accessed through the CPU's unified instruction and data cache. When code or data is in cache, access is very fast (i.e., a cache hit).
 
@@ -313,7 +310,7 @@ Mock a Component
 
 If a mocked component, called a *component mock*, is already available in ESP-IDF, then it can be used right away as long as it satisfies the required functionality. Refer to :ref:`component-linux-mock-support` to see which components are mocked already. Then refer to :ref:`adjustments_for_mocks` in order to use the component mock.
 
-If IDF does not yet provide any component mock, it has to be created. To create a component mock, the component needs to be overwritten in a particular way. Overriding a component entails creating a component with the exact same name as the original component, then let the build system discover it later than the original component (see :ref:`Multiple components with the same name <cmake-components-same-name>` for more details).
+It is necessary to create component mocks if they are not yet provided in ESP-IDF. To create a component mock, the component needs to be overwritten in a particular way. Overriding a component entails creating a component with the exact same name as the original component, then letting the build system discover it later than the original component (see :ref:`Multiple components with the same name <cmake-components-same-name>` for more details).
 
 In the component mock, the following parts are specified:
 
@@ -345,7 +342,7 @@ For more details about the CMock configuration yaml file, have a look at :compon
 
 Note that the component mock does not have to mock the original component in its entirety. As long as the test project's dependencies and dependencies of other code to the original components are satisfied by the component mock, partial mocking is adequate. In fact, most of the component mocks in IDF in ``tools/mocks`` are only partially mocking the original component.
 
-Examples of component mocks can be found under :idf:`tools/mocks` in the IDF directory. General information on how to *override an IDF component* can be found in :ref:`Multiple components with the same name <cmake-components-same-name>`. There are several examples for testing code while mocking dependencies with CMock (non-exhaustive list): 
+Examples of component mocks can be found under :idf:`tools/mocks` in the IDF directory. General information on how to *override an IDF component* can be found in :ref:`Multiple components with the same name <cmake-components-same-name>`. There are several examples for testing code while mocking dependencies with CMock (non-exhaustive list):
 
 - :component_file:`unit test for the NVS Page class <nvs_flash/host_test/nvs_page_test/README.md>`.
 - :component_file:`unit test for esp_event <esp_event/host_test/esp_event_unit_test/main/esp_event_test.cpp>`.
