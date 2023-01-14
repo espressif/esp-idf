@@ -222,8 +222,8 @@ extern void btdm_in_wakeup_requesting_set(bool in_wakeup_requesting);
 /* vendor dependent tasks to be posted and handled by controller task*/
 extern int btdm_vnd_offload_task_register(btdm_vnd_ol_sig_t sig, btdm_vnd_ol_task_func_t func);
 extern int btdm_vnd_offload_task_deregister(btdm_vnd_ol_sig_t sig);
-extern int btdm_vnd_offload_post_from_isr(btdm_vnd_ol_sig_t sig, void *param, bool need_yield);
-extern int btdm_vnd_offload_post(btdm_vnd_ol_sig_t sig, void *param);
+extern int r_btdm_vnd_offload_post_from_isr(btdm_vnd_ol_sig_t sig, void *param, bool need_yield);
+extern int r_btdm_vnd_offload_post(btdm_vnd_ol_sig_t sig, void *param);
 
 /* Low Power Clock */
 extern bool btdm_lpclk_select_src(uint32_t sel);
@@ -846,7 +846,7 @@ static void IRAM_ATTR btdm_sleep_exit_phase0(void *param)
 static void IRAM_ATTR btdm_slp_tmr_callback(void *arg)
 {
 #ifdef CONFIG_PM_ENABLE
-    btdm_vnd_offload_post(BTDM_VND_OL_SIG_WAKEUP_TMR, (void *)BTDM_ASYNC_WAKEUP_SRC_TMR);
+    r_btdm_vnd_offload_post(BTDM_VND_OL_SIG_WAKEUP_TMR, (void *)BTDM_ASYNC_WAKEUP_SRC_TMR);
 #endif
 }
 
@@ -863,7 +863,7 @@ static bool async_wakeup_request(int event)
         case BTDM_ASYNC_WAKEUP_SRC_DISA:
             btdm_in_wakeup_requesting_set(true);
             if (!btdm_power_state_active()) {
-                btdm_vnd_offload_post(BTDM_VND_OL_SIG_WAKEUP_TMR, (void *)event);
+                r_btdm_vnd_offload_post(BTDM_VND_OL_SIG_WAKEUP_TMR, (void *)event);
                 do_wakeup_request = true;
                 semphr_take_wrapper(s_wakeup_req_sem, OSI_FUNCS_TIME_BLOCKING);
             }
