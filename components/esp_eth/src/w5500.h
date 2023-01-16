@@ -16,6 +16,8 @@
 #define W5500_BSB_OFFSET  (3)  // Block Select Bits offset
 #define W5500_RWB_OFFSET  (2)  // Read Write Bits offset
 
+#define W5500_CHIP_VERSION (0x4) // Chip version that VERSIONR returns
+
 #define W5500_BSB_COM_REG        (0x00)    // Common Register
 #define W5500_BSB_SOCK_REG(s)    ((s)*4+1) // Socket Register
 #define W5500_BSB_SOCK_TX_BUF(s) ((s)*4+2) // Socket TX Buffer
