@@ -115,10 +115,10 @@ menu "PHY"
             can not work properly. Notice: Enabling this configuration option will slightly impact wifi performance.
 
     config ESP_PHY_ENABLE_CERT_TEST
-        bool "Enable rf cert test"
+        bool "Enable RF certification test functions"
         default n
+        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         help
-            If enabled, You can use rf cert test APIs.
-            Currently only ESP32-C3/S3 is supported.
+            If enabled, you can use RF certification test APIs.
 
 endmenu  # PHY
