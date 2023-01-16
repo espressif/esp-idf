@@ -211,8 +211,6 @@ tools/test_apps/system/panic/app_test.py
 tools/test_apps/system/panic/panic_tests.py
 tools/test_apps/system/panic/test_panic_util/test_panic_util.py
 tools/test_apps/system/startup/app_test.py
-tools/test_idf_monitor/idf_monitor_wrapper.py
-tools/test_idf_monitor/run_test_idf_monitor.py
 tools/test_idf_py/extra_path/some_ext.py
 tools/test_idf_py/idf_ext.py
 tools/test_idf_py/test_idf_extensions/test_ext/test_extension.py

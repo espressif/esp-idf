@@ -146,18 +146,6 @@ test_certificate_bundle_on_host:
     - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
     - ./test_gen_crt_bundle.py
 
-test_idf_monitor:
-  extends: .host_test_template
-  artifacts:
-    # save artifacts always in order to access results which were retried without consequent failure
-    when: always
-    paths:
-      - tools/test_idf_monitor/outputs/*
-    expire_in: 1 week
-  script:
-    - eval $($IDF_PATH/tools/idf_tools.py export)
-    - cd ${IDF_PATH}/tools/test_idf_monitor
-    - ./run_test_idf_monitor.py
 
 test_idf_size:
   extends: .host_test_template

@@ -4,7 +4,7 @@ IDF Monitor
 
 :link_to_translation:`zh_CN:[中文]`
 
-IDF Monitor is mainly a serial terminal program which relays serial data to and from the target device's serial port. It also provides some IDF-specific features.
+IDF Monitor uses the esp-idf-monitor_ package as a serial terminal program which relays serial data to and from the target device's serial port. It also provides some IDF-specific features.
 
 IDF Monitor can be launched from an IDF project by running ``idf.py monitor``.
 
@@ -182,12 +182,12 @@ To decode each address, IDF Monitor runs the following command in the background
 
 .. note::
 
-    Set environment variable ``ESP_MONITOR_DECODE`` to ``0`` or call idf_monitor.py with specific command line option: ``idf_monitor.py --disable-address-decoding`` to disable address decoding.
+    Set environment variable ``ESP_MONITOR_DECODE`` to ``0`` or call esp_idf_monitor with specific command line option: ``python -m esp_idf_monitor --disable-address-decoding`` to disable address decoding.
 
 Target Reset on Connection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default, IDF Monitor will reset the target when connecting to it. The reset of the target chip is performed using the DTR and RTS serial lines. To prevent IDF Monitor from automatically resetting the target on connection, call IDF Monitor with the ``--no-reset`` option (e.g., ``idf_monitor.py --no-reset``).
+By default, IDF Monitor will reset the target when connecting to it. The reset of the target chip is performed using the DTR and RTS serial lines. To prevent IDF Monitor from automatically resetting the target on connection, call IDF Monitor with the ``--no-reset`` option (e.g., ``idf.py monitor --no-reset``).
 
 .. note::
 
@@ -281,6 +281,7 @@ Issues Observed on Windows
 - When "gdb" is run, it might stall for a short time before it begins communicating with the GDBStub.
 
 .. _addr2line: https://sourceware.org/binutils/docs/binutils/addr2line.html
+.. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
 .. _gdb: https://sourceware.org/gdb/download/onlinedocs/
 .. _pySerial: https://github.com/pyserial/pyserial
 .. _miniterm: https://pyserial.readthedocs.org/en/latest/tools.html#module-serial.tools.miniterm

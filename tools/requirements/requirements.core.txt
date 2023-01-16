@@ -10,6 +10,7 @@ idf-component-manager
 esp-coredump
 esptool
 esp-idf-kconfig
+esp-idf-monitor
 
 # gdb extensions dependencies
 freertos_gdb

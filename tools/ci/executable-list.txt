@@ -109,7 +109,6 @@ tools/mkuf2.py
 tools/python_version_checker.py
 tools/set-submodules-to-github.sh
 tools/test_apps/system/no_embedded_paths/check_for_file_paths.py
-tools/test_idf_monitor/run_test_idf_monitor.py
 tools/test_idf_py/test_hints.py
 tools/test_idf_py/test_idf_py.py
 tools/test_idf_size/test.sh

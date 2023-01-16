@@ -61,9 +61,6 @@ tools/test_apps/**/build_*_*/
 tools/test_apps/**/sdkconfig
 tools/test_apps/**/sdkconfig.old
 
-# IDF monitor test
-tools/test_idf_monitor/outputs
-
 TEST_LOGS
 
 # gcov coverage reports

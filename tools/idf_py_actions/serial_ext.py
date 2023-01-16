@@ -5,10 +5,9 @@ import json
 import os
 import signal
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import click
-from idf_monitor_base.output_helpers import yellow_print
 from idf_py_actions.global_options import global_options
 from idf_py_actions.tools import (PropertyDict, RunTool, ensure_build_directory, get_default_serial_port,
                                   get_sdkconfig_value, run_target)
@@ -31,6 +30,12 @@ PORT = {
     'envvar': 'ESPPORT',
     'default': None,
 }
+
+
+def yellow_print(message, newline='\n'):  # type: (str, Optional[str]) -> None
+    """Print a message to stderr with yellow highlighting """
+    sys.stderr.write('%s%s%s%s' % ('\033[0;33m', message, '\033[0m', newline))
+    sys.stderr.flush()
 
 
 def action_extensions(base_actions: Dict, project_path: str) -> Dict:
@@ -81,7 +86,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
     def monitor(action: str, ctx: click.core.Context, args: PropertyDict, print_filter: str, monitor_baud: str, encrypted: bool,
                 no_reset: bool, timestamps: bool, timestamp_format: str, force_color: bool) -> None:
         """
-        Run idf_monitor.py to watch build output
+        Run esp_idf_monitor to watch build output
         """
         project_desc = _get_project_desc(ctx, args)
         elf_file = os.path.join(args.build_dir, project_desc['app_elf'])

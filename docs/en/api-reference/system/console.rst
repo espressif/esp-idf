@@ -21,7 +21,7 @@ Line editing feature lets users compose commands by typing them, erasing symbols
 
 .. note::
 
-  This feature relies on ANSI escape sequence support in the terminal application. As such, serial monitors which display raw UART data can not be used together with the line editing library. If you see ``[6n`` or similar escape sequence when running :example:`system/console` example instead of a command prompt (e.g. ``esp>`` ), it means that the serial monitor does not support escape sequences. Programs which are known to work are  GNU screen, minicom, and idf_monitor.py (which can be invoked using ``idf.py monitor`` from project directory).
+  This feature relies on ANSI escape sequence support in the terminal application. As such, serial monitors which display raw UART data can not be used together with the line editing library. If you see ``[6n`` or similar escape sequence when running :example:`system/console` example instead of a command prompt (e.g. ``esp>`` ), it means that the serial monitor does not support escape sequences. Programs which are known to work are GNU screen, minicom, and esp-idf-monitor (which can be invoked using ``idf.py monitor`` from project directory).
 
 Here is an overview of functions provided by `linenoise <https://github.com/antirez/linenoise>`_ library.
 

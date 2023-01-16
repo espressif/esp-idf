@@ -11,14 +11,12 @@ repos:
         # 1 - some file extensions
         # 2 - any file matching *test*/*expected* (for host tests, if possible use this naming pattern always)
         # 3 - any directory named 'testdata'
-        # 4 - IDF monitor test data
-        # 5 - protobuf auto-generated files
+        # 4 - protobuf auto-generated files
         exclude: &whitespace_excludes |
           (?x)^(
             .+\.(md|rst|map|bin)|
             .+test.*\/.*expected.*|
             .+\/testdata\/.+|
-            .+test_idf_monitor\/tests\/.+|
             .*_pb2.py|
             .*.pb-c.h|
             .*.pb-c.c|
