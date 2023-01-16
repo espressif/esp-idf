@@ -74,6 +74,11 @@ if(link_binary_libs)
         target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a libbtbb.a
         $<TARGET_FILE:${esp_phy_lib}>)
     endif()
+
+    if(CONFIG_ESP_PHY_ENABLE_CERT_TEST)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libbttestmode.a
+        librfate.a librftest.a $<TARGET_FILE:${esp_phy_lib}>)
+    endif()
 endif()
 
 if(CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION)
