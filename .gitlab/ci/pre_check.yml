@@ -58,8 +58,6 @@ test_check_kconfigs:
 
 check_blobs:
   extends: .pre_check_template
-  tags:
-    - build
   variables:
     SUBMODULES_TO_FETCH: "components/esp_wifi/lib;components/esp_phy/lib"
   script:
@@ -84,8 +82,6 @@ check_public_headers:
   extends:
     - .pre_check_template
     - .rules:build
-  tags:
-    - build
   script:
     - IDF_TARGET=esp32 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
     - IDF_TARGET=esp32s2 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32s2-elf-
@@ -99,8 +95,6 @@ check_chip_support_components:
   extends:
     - .pre_check_template
     - .rules:build
-  tags:
-    - build
   artifacts:
     when: on_failure
     paths:
@@ -116,8 +110,6 @@ check_esp_err_to_name:
   extends:
     - .pre_check_template
     - .rules:build
-  tags:
-    - build
   artifacts:
     when: on_failure
     paths:
@@ -132,8 +124,6 @@ check_esp_system:
   extends:
     - .pre_check_template
     - .rules:build
-  tags:
-    - build
   script:
     - python components/esp_system/check_system_init_priorities.py
 

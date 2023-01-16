@@ -36,8 +36,6 @@ test_nvs_coverage:
 
 test_partition_table_on_host:
   extends: .host_test_template
-  tags:
-    - build
   script:
     - cd components/partition_table/test_gen_esp32part_host
     - ./gen_esp32part_tests.py
@@ -144,8 +142,6 @@ test_multi_heap_on_host:
 
 test_certificate_bundle_on_host:
   extends: .host_test_template
-  tags:
-    - build
   script:
     - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
     - ./test_gen_crt_bundle.py
