@@ -226,6 +226,15 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
     return ESP_OK;
 }
 
+esp_err_t adc_oneshot_get_calibrated_result(adc_oneshot_unit_handle_t handle, adc_cali_handle_t cali_handle, adc_channel_t chan, int *cali_result)
+{
+    int raw = 0;
+    ESP_RETURN_ON_ERROR(adc_oneshot_read(handle, chan, &raw), TAG, "adc oneshot read fail");
+    ESP_LOGD(TAG, "raw: 0d%d", raw);
+    ESP_RETURN_ON_ERROR(adc_cali_raw_to_voltage(cali_handle, raw, cali_result), TAG, "adc calibration fail");
+
+    return ESP_OK;
+}
 
 #define ADC_GET_IO_NUM(unit, channel) (adc_channel_io_map[unit][channel])
 
