@@ -16,12 +16,12 @@ This document is split into the following sections:
 .. toctree::
     :maxdepth: 1
 
+    usb_host_notes_design
+    usb_host_notes_arch
     usb_host_notes_dwc_otg
 
 Todo:
 
-- USB Host Maintainers Notes (Design)
-- USB Host Maintainers Notes (Architecture)
 - USB Host Maintainers Notes (HAL & LL)
 - USB Host Maintainers Notes (HCD)
 - USB Host Maintainers Notes (USBH)
