@@ -417,6 +417,8 @@
 #define SOC_PM_SUPPORT_RC_FAST_PD                 (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD                 (1)
 
+#define SOC_CONFIGURABLE_VDDSDIO_SUPPORTED        (1)
+
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_APLL_SUPPORTED                    (1)
 // apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)

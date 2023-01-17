@@ -714,37 +714,6 @@ typedef struct {
  */
 void rtc_init(rtc_config_t cfg);
 
-/**
- * Structure describing vddsdio configuration
- */
-typedef struct {
-    uint32_t force : 1;     //!< If 1, use configuration from RTC registers; if 0, use EFUSE/bootstrapping pins.
-    uint32_t enable : 1;    //!< Enable VDDSDIO regulator
-    uint32_t tieh  : 1;     //!< Select VDDSDIO voltage. One of RTC_VDDSDIO_TIEH_1_8V, RTC_VDDSDIO_TIEH_3_3V
-    uint32_t drefh : 2;     //!< Tuning parameter for VDDSDIO regulator
-    uint32_t drefm : 2;     //!< Tuning parameter for VDDSDIO regulator
-    uint32_t drefl : 2;     //!< Tuning parameter for VDDSDIO regulator
-} rtc_vddsdio_config_t;
-
-/**
- * Get current VDDSDIO configuration
- * If VDDSDIO configuration is overridden by RTC, get values from RTC
- * Otherwise, if VDDSDIO is configured by EFUSE, get values from EFUSE
- * Otherwise, use default values and the level of MTDI bootstrapping pin.
- * @return currently used VDDSDIO configuration
- */
-rtc_vddsdio_config_t rtc_vddsdio_get_config(void);
-
-/**
- * Set new VDDSDIO configuration using RTC registers.
- * If config.force == 1, this overrides configuration done using bootstrapping
- * pins and EFUSE.
- *
- * @param config new VDDSDIO configuration
- */
-void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
-
-
 // -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
 // **WARNING**: The following are only for backwards compatibility.
 // Please use the declarations in soc/clk_tree_defs.h instead.

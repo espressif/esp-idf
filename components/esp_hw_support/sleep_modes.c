@@ -649,12 +649,10 @@ void IRAM_ATTR esp_deep_sleep_start(void)
  */
 #if !CONFIG_IDF_TARGET_ESP32C6 // TODO: WIFI-5150
 static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
-                                       uint32_t flash_enable_time_us,
-                                       rtc_vddsdio_config_t vddsdio_config) IRAM_ATTR __attribute__((noinline));
+                                       uint32_t flash_enable_time_us) IRAM_ATTR __attribute__((noinline));
 
 static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
-                                       uint32_t flash_enable_time_us,
-                                       rtc_vddsdio_config_t vddsdio_config)
+                                       uint32_t flash_enable_time_us)
 {
 #if CONFIG_IDF_TARGET_ESP32C6
     return ESP_ERR_NOT_SUPPORTED; // TODO: WIFI-5150
@@ -662,11 +660,14 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
     // Enter sleep
     uint32_t reject = esp_sleep_start(pd_flags);
 
+#if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
+    rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
     // If VDDSDIO regulator was controlled by RTC registers before sleep,
     // restore the configuration.
     if (vddsdio_config.force) {
         rtc_vddsdio_set_config(vddsdio_config);
     }
+#endif
 
     // If SPI flash was powered down, wait for it to become ready
     if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
@@ -828,8 +829,6 @@ esp_err_t esp_light_sleep_start(void)
 
     periph_inform_out_light_sleep_overhead(s_config.sleep_time_adjustment - sleep_time_overhead_in);
 
-    rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
-
     // Safety net: enable WDT in case exit from light sleep fails
 #if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-5653
     wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
@@ -858,7 +857,7 @@ esp_err_t esp_light_sleep_start(void)
         err = ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION;
     } else {
         // Enter sleep, then wait for flash to be ready on wakeup
-        err = esp_light_sleep_inner(pd_flags, flash_enable_time_us, vddsdio_config);
+        err = esp_light_sleep_inner(pd_flags, flash_enable_time_us);
     }
 
     // light sleep wakeup flag only makes sense after a successful light sleep
