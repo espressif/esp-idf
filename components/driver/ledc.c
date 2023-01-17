@@ -27,6 +27,7 @@ static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 #define LEDC_ARG_CHECK(a, param) ESP_RETURN_ON_FALSE(a, ESP_ERR_INVALID_ARG, LEDC_TAG, param " argument is invalid")
 
 #define LEDC_CLK_NOT_FOUND  0
+#define LEDC_SLOW_CLK_UNINIT -1
 
 typedef enum {
     LEDC_FSM_IDLE,
@@ -493,7 +494,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     /* Timer-specific mux. Set to timer-specific clock or LEDC_SCLK if a global clock is used. */
     ledc_clk_src_t timer_clk_src;
     /* Global clock mux. Should be set when LEDC_SCLK is used in LOW_SPEED_MODE. Otherwise left uninitialized. */
-    ledc_slow_clk_sel_t glb_clk;
+    ledc_slow_clk_sel_t glb_clk = LEDC_SLOW_CLK_UNINIT;
 
     if (clk_cfg == LEDC_AUTO_CLK) {
         /* User hasn't specified the speed, we should try to guess it. */
@@ -566,6 +567,8 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
          */
         assert(timer_clk_src == LEDC_SCLK);
 #endif
+        // Arriving here, variable glb_clk must have been assigned to one of the ledc_slow_clk_sel_t enum values
+        assert(glb_clk != LEDC_SLOW_CLK_UNINIT);
         ESP_LOGD(LEDC_TAG, "In slow speed mode, global clk set: %d", glb_clk);
 
         /* keep ESP_PD_DOMAIN_RTC8M on during light sleep */
