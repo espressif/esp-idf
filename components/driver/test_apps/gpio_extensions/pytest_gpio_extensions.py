@@ -16,7 +16,7 @@ CONFIGS = [
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-# @pytest.mark.esp32h2 // TODO: IDF-6263
+@pytest.mark.esp32h2
 @pytest.mark.generic
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
 def test_sdm(dut: IdfDut) -> None:
