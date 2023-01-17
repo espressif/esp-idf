@@ -29,7 +29,7 @@
 // #define SOC_DEDICATED_GPIO_SUPPORTED    1 // TODO: IDF-6241
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
-// #define SOC_PCNT_SUPPORTED              1 // TODO: IDF-6221
+#define SOC_PCNT_SUPPORTED              1
 // #define SOC_MCPWM_SUPPORTED             1 // TODO: IDF-6237
 // #define SOC_TWAI_SUPPORTED              1 // TODO: IDF-6217
 // #define SOC_BT_SUPPORTED                1 // TODO: IDF-6416
@@ -212,7 +212,6 @@
 #define SOC_MPU_REGION_RO_SUPPORTED               0
 #define SOC_MPU_REGION_WO_SUPPORTED               0
 
-// TODO: IDF-6221
 /*-------------------------- PCNT CAPS ---------------------------------------*/
 #define SOC_PCNT_GROUPS                       1U
 #define SOC_PCNT_UNITS_PER_GROUP              4
