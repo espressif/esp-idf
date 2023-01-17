@@ -423,6 +423,13 @@
 
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
+/*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
+// #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
+
+#define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
+#define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< Support to connect an external oscillator, not a crystal */
+#define SOC_CLK_RC32K_SUPPORTED                   (1)     /*!< Support an internal 32kHz RC oscillator */
+
 // TODO: IDF-6229 (Copy from esp32c6, need check)
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

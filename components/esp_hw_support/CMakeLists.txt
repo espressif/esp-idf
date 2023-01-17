@@ -26,7 +26,9 @@ if(NOT BOOTLOADER_BUILD)
                      "sleep_mac_bb.c"
                      "regi2c_ctrl.c"
                      "adc_share_hw_ctrl.c"
-                     "port/${target}/io_mux.c")
+                     "port/${target}/io_mux.c"
+                     "port/${target}/clk_tree.c"
+                     "port/clk_tree_common.c")
 
     if(NOT CONFIG_IDF_TARGET_ESP32 AND NOT CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "sleep_retention.c")
@@ -86,6 +88,7 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_IDF_TARGET_ESP32H2)
         list(REMOVE_ITEM srcs
                 "adc_share_hw_ctrl.c" # TODO: IDF-6215
+                "port/clk_tree_common.c" # TODO: IDF-6265
             )
     endif()
 else()

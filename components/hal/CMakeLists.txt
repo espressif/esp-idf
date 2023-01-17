@@ -39,7 +39,8 @@ if(NOT BOOTLOADER_BUILD)
         "spi_flash_hal_iram.c"
         "spi_flash_encrypt_hal_iram.c"
         "adc_hal_common.c"
-        "adc_oneshot_hal.c")
+        "adc_oneshot_hal.c"
+        "${target}/clk_tree_hal.c")
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED AND NOT CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
         list(APPEND srcs "systimer_hal.c")
@@ -209,6 +210,7 @@ if(NOT BOOTLOADER_BUILD)
                 "adc_oneshot_hal.c" # TODO: IDF-6214
                 "adc_hal_common.c" # TODO: IDF-6215
                 "esp32h2/rtc_cntl_hal.c"
+                "esp32h2/clk_tree_hal.c"
                 )
     endif()
 endif()

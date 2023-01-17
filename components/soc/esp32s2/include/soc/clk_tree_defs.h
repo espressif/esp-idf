@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -113,6 +113,7 @@ typedef enum {
     SOC_MOD_CLK_REF_TICK,                      /*!< REF_TICK is derived from XTAL or RC_FAST via a divider, it has a fixed frequency of 1MHz by default */
     SOC_MOD_CLK_APLL,                          /*!< APLL is sourced from PLL, and its frequency is configurable through APLL configuration registers */
     SOC_MOD_CLK_TEMP_SENSOR,                   /*!< TEMP_SENSOR_CLK comes directly from the internal 8MHz rc oscillator */
+    SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
 } soc_module_clk_t;
 
 //////////////////////////////////////////////////SYSTIMER///////////////////////////////////////////////////////////////

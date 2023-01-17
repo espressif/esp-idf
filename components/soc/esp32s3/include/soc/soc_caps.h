@@ -417,6 +417,8 @@
 #define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
+#define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
+
 /*-------------------------- eFuse CAPS----------------------------*/
 #define SOC_EFUSE_DIS_DOWNLOAD_DCACHE 1
 #define SOC_EFUSE_HARD_DIS_JTAG 1

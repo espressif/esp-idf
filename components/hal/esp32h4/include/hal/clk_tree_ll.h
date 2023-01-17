@@ -341,7 +341,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_divider(voi
  *
  * @param divider Divider. AHB_DIV_NUM = divider - 1.
  */
-static inline void clk_ll_ahb_set_divider(uint32_t divider)
+static inline __attribute__((always_inline)) void clk_ll_ahb_set_divider(uint32_t divider)
 {
     HAL_ASSERT(divider > 0);
     REG_SET_FIELD(SYSTEM_BUSCLK_CONF_REG, SYSTEM_AHB_DIV_NUM, divider - 1);
@@ -352,7 +352,7 @@ static inline void clk_ll_ahb_set_divider(uint32_t divider)
  *
  * @return Divider. Divider = (AHB_DIV_NUM + 1).
  */
-static inline uint32_t clk_ll_ahb_get_divider(void)
+static inline __attribute__((always_inline)) uint32_t clk_ll_ahb_get_divider(void)
 {
     return REG_GET_FIELD(SYSTEM_BUSCLK_CONF_REG, SYSTEM_AHB_DIV_NUM) + 1;
 }
@@ -362,7 +362,7 @@ static inline uint32_t clk_ll_ahb_get_divider(void)
  *
  * @param divider Divider. APB_DIV_NUM = divider - 1.
  */
-static inline void clk_ll_apb_set_divider(uint32_t divider)
+static inline __attribute__((always_inline)) void clk_ll_apb_set_divider(uint32_t divider)
 {
     HAL_ASSERT(divider > 0);
     REG_SET_FIELD(SYSTEM_BUSCLK_CONF_REG, SYSTEM_APB_DIV_NUM, divider - 1);
@@ -373,7 +373,7 @@ static inline void clk_ll_apb_set_divider(uint32_t divider)
  *
  * @return Divider. Divider = (APB_DIV_NUM + 1).
  */
-static inline uint32_t clk_ll_apb_get_divider(void)
+static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(void)
 {
     return REG_GET_FIELD(SYSTEM_BUSCLK_CONF_REG, SYSTEM_APB_DIV_NUM) + 1;
 }
@@ -503,10 +503,18 @@ static inline void clk_ll_rc_slow_set_divider(uint32_t divider)
  * Value of RTC_XTAL_FREQ_REG is stored as two copies in lower and upper 16-bit
  * halves. These are the routines to work with that representation.
  *
- * @param xtal_freq_mhz XTAL frequency, in MHz
+ * @param xtal_freq_mhz XTAL frequency, in MHz. The frequency must necessarily be even,
+ * otherwise there will be a conflict with the low bit, which is used to disable logs
+ * in the ROM code.
  */
 static inline void clk_ll_xtal_store_freq_mhz(uint32_t xtal_freq_mhz)
 {
+    // Read the status of whether disabling logging from ROM code
+    uint32_t reg = READ_PERI_REG(RTC_XTAL_FREQ_REG) & RTC_DISABLE_ROM_LOG;
+    // If so, need to write back this setting
+    if (reg == RTC_DISABLE_ROM_LOG) {
+        xtal_freq_mhz |= 1;
+    }
     WRITE_PERI_REG(RTC_XTAL_FREQ_REG, (xtal_freq_mhz & UINT16_MAX) | ((xtal_freq_mhz & UINT16_MAX) << 16));
 }
 
@@ -522,7 +530,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_load_freq_mhz(
 {
     // ESP32H4 has a fixed crystal frequency (32MHz), but we will still read from the RTC storage register
     uint32_t xtal_freq_reg = READ_PERI_REG(RTC_XTAL_FREQ_REG);
-    if ((xtal_freq_reg & UINT16_MAX) != RTC_XTAL_FREQ_32M) {
+    if ((xtal_freq_reg & ~RTC_DISABLE_ROM_LOG & UINT16_MAX) != RTC_XTAL_FREQ_32M) {
         return 0;
     }
     return (uint32_t)RTC_XTAL_FREQ_32M;

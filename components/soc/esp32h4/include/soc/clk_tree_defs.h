@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -117,6 +117,7 @@ typedef enum {
     SOC_MOD_CLK_RC_FAST,                       /*< RC_FAST_CLK comes from the internal 8MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL,                          /*< XTAL_CLK comes from the external 32MHz crystal */
     SOC_MOD_CLK_PLL,                           /*< PLL_CLK is the output of 32MHz crystal oscillator frequency multiplier, 96MHz */
+    SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
 } soc_module_clk_t;
 
 //////////////////////////////////////////////////SYSTIMER///////////////////////////////////////////////////////////////
