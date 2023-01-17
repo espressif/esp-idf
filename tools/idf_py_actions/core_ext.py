@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import fnmatch
 import json
@@ -19,7 +19,7 @@ from idf_py_actions.constants import GENERATORS, PREVIEW_TARGETS, SUPPORTED_TARG
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
 from idf_py_actions.tools import (PropertyDict, TargetChoice, ensure_build_directory, get_target, idf_version,
-                                  merge_action_lists, print_hints, realpath, run_target)
+                                  merge_action_lists, print_hints, run_target)
 
 
 def action_extensions(base_actions: Dict, project_path: str) -> Any:
@@ -164,14 +164,14 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         ensure_build_directory(args, ctx.info_name, True)
 
     def validate_root_options(ctx: Context, args: PropertyDict, tasks: List) -> None:
-        args.project_dir = realpath(args.project_dir)
-        if args.build_dir is not None and args.project_dir == realpath(args.build_dir):
+        args.project_dir = os.path.realpath(args.project_dir)
+        if args.build_dir is not None and args.project_dir == os.path.realpath(args.build_dir):
             raise FatalError(
                 'Setting the build directory to the project directory is not supported. Suggest dropping '
                 "--build-dir option, the default is a 'build' subdirectory inside the project directory.")
         if args.build_dir is None:
             args.build_dir = os.path.join(args.project_dir, 'build')
-        args.build_dir = realpath(args.build_dir)
+        args.build_dir = os.path.realpath(args.build_dir)
 
     def idf_version_callback(ctx: Context, param: str, value: str) -> None:
         if not value or ctx.resilient_parsing:
