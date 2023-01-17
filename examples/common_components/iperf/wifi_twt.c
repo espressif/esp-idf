@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,7 +86,7 @@ static int wifi_cmd_itwt(int argc, char **argv)
         // teardown a given flow id, all_twt has a high priority
         int flow_id = itwt_args.flowid->count ?  itwt_args.flowid->ival[0] : (-1);
         bool all_twt = itwt_args.all_twt->count ? ((itwt_args.all_twt->ival[0] == 1) ? true : false) : false;
-        flow_id = (all_twt == true) ? 8 : flow_id;
+        flow_id = (all_twt == true) ? FLOW_ID_ALL : flow_id;
         if (flow_id >= 0) {
             err = esp_wifi_sta_itwt_teardown(flow_id);
             ESP_LOGI(TAG, "(itwt)teardown, flow_id:%d, all_twt:%d, err:0x%x", flow_id, all_twt, err);
@@ -98,7 +98,7 @@ static int wifi_cmd_itwt(int argc, char **argv)
         // suspend a given flow id
         int flow_id = itwt_args.flowid->count ?  itwt_args.flowid->ival[0] : (-1);
         bool all_twt = itwt_args.all_twt->count ? (itwt_args.all_twt->ival[0] ? true : false) : false;
-        flow_id = (all_twt == true) ? 8 : flow_id;
+        flow_id = (all_twt == true) ? FLOW_ID_ALL : flow_id;
         int suspend_time_ms = itwt_args.suspend_time_ms->count ? itwt_args.suspend_time_ms->ival[0] : 0;
         if (flow_id > 0) {
             err = esp_wifi_sta_itwt_suspend(flow_id, suspend_time_ms);

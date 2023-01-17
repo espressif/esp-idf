@@ -192,6 +192,7 @@ typedef struct {
     uint16_t wake_invl_mant;             /**< the value of the mantissa of the TWT wake interval value in microseconds, base 2 */
     bool trigger;                        /**< true: indicates a trigger-enabled TWT, false: indicates a non-trigger-enabled TWT */
     uint8_t flow_type;                   /**< 0: indicate an announced TWT, 1: indicates an unannounced TWT */
+    esp_err_t status;                    /**< 1: indicate tx success, others : indicate tx fail */
 } wifi_event_sta_itwt_setup_t;
 
 /** Argument structure for WIFI_EVENT_TWT_TEARDOWN event */
