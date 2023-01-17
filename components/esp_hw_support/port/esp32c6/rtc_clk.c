@@ -149,6 +149,7 @@ static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
  */
 static void rtc_clk_cpu_freq_to_xtal(int freq, int div)
 {
+    clk_ll_ahb_set_ls_divider(div);
     clk_ll_cpu_set_ls_divider(div);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
     ets_update_cpu_frequency(freq);
@@ -156,6 +157,7 @@ static void rtc_clk_cpu_freq_to_xtal(int freq, int div)
 
 static void rtc_clk_cpu_freq_to_8m(void)
 {
+    clk_ll_ahb_set_ls_divider(1);
     clk_ll_cpu_set_ls_divider(1);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
     ets_update_cpu_frequency(20);
