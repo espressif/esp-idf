@@ -34,6 +34,7 @@ extern "C" {
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
 
 #define I2S_LL_PLL_F96M_CLK_FREQ       (96 * 1000000) // PLL_F96M_CLK: 96MHz
+#define I2S_LL_DEFAULT_PLL_CLK_FREQ     I2S_LL_PLL_F96M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
 
 /* I2S clock configuration structure */
 typedef struct {
