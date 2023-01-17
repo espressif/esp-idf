@@ -241,6 +241,8 @@ linkcheck_exclude_documents = ['index',  # several false positives due to the wa
 
 linkcheck_ignore = ['https://webhome.phy.duke.edu/~rgb/General/dieharder.php',  # Certificate error
                     'https://docs.espressif.com/projects/esptool/en/latest/esp32c2/espefuse/index.html',  # Not published
+                    'https://docs.espressif.com/projects/esptool/en/latest/esp32c6/espefuse/index.html',  # Not published
+                    'https://www.cadence.com/content/dam/cadence-www/global/en_US/documents/tools/ip/tensilica-ip/isa-summary.pdf',  # Rejects user-agent
                     ]
 
 
