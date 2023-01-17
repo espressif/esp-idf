@@ -6,7 +6,7 @@ Hardware Reference
 .. toctree::
     :maxdepth: 1
 
-    Technical Reference Manual (PDF) <{IDF_TARGET_TRM_EN_URL}>
+    :not esp32h2: Technical Reference Manual (PDF) <{IDF_TARGET_TRM_EN_URL}>
     :esp32:   Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>
     :esp32s2: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>
     :esp32s3: Chip Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf>

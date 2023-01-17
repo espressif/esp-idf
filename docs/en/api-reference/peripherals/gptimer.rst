@@ -25,7 +25,7 @@ The following sections of this document cover the typical steps to install and o
     - :ref:`gptimer-register-event-callbacks` - covers how to hook user specific code to the alarm event callback function.
     - :ref:`enable-and-disable-timer` - covers how to enable and disable the timer.
     - :ref:`start-and-stop-timer` - shows some typical use cases that start the timer with different alarm behavior.
-    :SOC_TIMER_SUPPORT_ETM: - :ref:`gptimer-etm-event-and-task` - describes what the events and tasks can be connected to the ETM channel.
+    :SOC_ETM_SUPPORTED and SOC_TIMER_SUPPORT_ETM: - :ref:`gptimer-etm-event-and-task` - describes what the events and tasks can be connected to the ETM channel.
     - :ref:`gptimer-power-management` - describes how different source clock selections can affect power consumption.
     - :ref:`gptimer-iram-safe` - describes tips on how to make the timer interrupt and IO control functions work better along with a disabled cache.
     - :ref:`gptimer-thread-safety` - lists which APIs are guaranteed to be thread safe by the driver.
@@ -260,7 +260,7 @@ Alarm value can be updated dynamically inside the ISR handler callback, by chang
     ESP_ERROR_CHECK(gptimer_start(gptimer, &alarm_config));
 
 
-.. only:: SOC_TIMER_SUPPORT_ETM
+.. only:: SOC_ETM_SUPPORTED and SOC_TIMER_SUPPORT_ETM
 
     .. _gptimer-etm-event-and-task:
 
@@ -273,7 +273,7 @@ Alarm value can be updated dynamically inside the ISR handler callback, by chang
 
     .. _gptimer-power-management:
 
-.. only:: not SOC_TIMER_SUPPORT_ETM
+.. only:: not SOC_ETM_SUPPORTED or not SOC_TIMER_SUPPORT_ETM
 
     .. _gptimer-power-management:
 

@@ -1,1 +1,5 @@
 # ESP32H2-TODO: MAC support
+
+choice ESP32H2_UNIVERSAL_MAC_ADDRESSES
+    bool "Number of universally administered (by IEEE) MAC address"
+endchoice

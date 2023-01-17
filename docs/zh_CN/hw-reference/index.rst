@@ -6,7 +6,7 @@ H/W 硬件参考
 .. toctree::
     :maxdepth: 1
 
-    技术参考手册 (PDF) <{IDF_TARGET_TRM_CN_URL}>
+    :not esp32h2: 技术参考手册 (PDF) <{IDF_TARGET_TRM_CN_URL}>
     :esp32:   技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>
     :esp32s2: 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s2_datasheet_cn.pdf>
     :esp32s3: 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s3_datasheet_cn.pdf>
