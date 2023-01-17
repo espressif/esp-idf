@@ -40,7 +40,6 @@
 
 .patterns-build_components: &patterns-build_components
   - "components/**/*"
-  - "examples/cxx/experimental/experimental_cpp_component/*"
 
 .patterns-downloadable-tools: &patterns-downloadable-tools
   - "tools/idf_tools.py"
