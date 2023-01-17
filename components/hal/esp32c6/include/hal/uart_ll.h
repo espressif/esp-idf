@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,7 +76,7 @@ typedef enum {
     UART_INTR_RS485_FRM_ERR    = (0x1 << 16),
     UART_INTR_RS485_CLASH      = (0x1 << 17),
     UART_INTR_CMD_CHAR_DET     = (0x1 << 18),
-    // UART_INTR_WAKEUP           = (0x1 << 19),  // TODO: Test UART wakeup while supporting sleep
+    UART_INTR_WAKEUP           = (0x1 << 19),
 } uart_intr_t;
 
 /**
