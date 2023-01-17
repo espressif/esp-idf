@@ -180,25 +180,7 @@ TEST_CASE("ULP-RISC-V can stop itself and be resumed from the main CPU", "[ulp]"
     TEST_ASSERT(ulp_riscv_is_running());
 }
 
-/*
-* Keep this test case as the last test case in this suite as a CPU reset occurs.
-* Add new test cases above in order to ensure they run when all test cases are run together.
-*/
-TEST_CASE("ULP-RISC-V is able to wakeup main CPU from deep sleep", "[ulp][ulp_deep_sleep_wakeup]")
-{
-    /* Load ULP RISC-V firmware and start the ULP RISC-V Coprocessor */
-    load_and_start_ulp_firmware();
 
-    /* Setup wakeup triggers */
-    TEST_ASSERT(esp_sleep_enable_ulp_wakeup() == ESP_OK);
-
-    /* Setup test data */
-    ulp_main_cpu_command = RISCV_DEEP_SLEEP_WAKEUP_TEST;
-
-    /* Enter Deep Sleep */
-    esp_deep_sleep_start();
-    UNITY_TEST_FAIL(__LINE__, "Should not get here!");
-}
 
 TEST_CASE("ULP-RISC-V mutex", "[ulp]")
 {
@@ -227,3 +209,69 @@ TEST_CASE("ULP-RISC-V mutex", "[ulp]")
     */
     TEST_ASSERT_EQUAL(2*MUTEX_TEST_ITERATIONS, ulp_riscv_incrementer);
 }
+
+
+static void do_ulp_wakeup_deepsleep(riscv_test_commands_t ulp_cmd, bool rtc_periph_pd)
+{
+    if (!rtc_periph_pd) {
+        // Force RTC peripheral power domain to be on
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+    }
+
+    /* Load ULP RISC-V firmware and start the ULP RISC-V Coprocessor */
+    load_and_start_ulp_firmware();
+
+    /* Setup wakeup triggers */
+    TEST_ASSERT(esp_sleep_enable_ulp_wakeup() == ESP_OK);
+
+    /* Setup test data */
+    ulp_main_cpu_command = ulp_cmd;
+
+    /* Enter Deep Sleep */
+    esp_deep_sleep_start();
+    UNITY_TEST_FAIL(__LINE__, "Should not get here!");
+}
+
+static void check_reset_reason_ulp_wakeup(void)
+{
+    TEST_ASSERT_EQUAL(ESP_SLEEP_WAKEUP_ULP, esp_sleep_get_wakeup_cause());
+}
+
+static void do_ulp_wakeup_after_long_delay_deepsleep(void)
+{
+    do_ulp_wakeup_deepsleep(RISCV_DEEP_SLEEP_WAKEUP_LONG_DELAY_TEST, true);
+}
+
+/* Certain erroneous wake-up triggers happen only after a sleeping for a few seconds  */
+TEST_CASE_MULTIPLE_STAGES("ULP-RISC-V is able to wakeup main CPU from deep sleep after a long delay", "[ulp]",
+        do_ulp_wakeup_after_long_delay_deepsleep,
+        check_reset_reason_ulp_wakeup);
+
+
+static void do_ulp_wakeup_after_long_delay_deepsleep_rtc_perip_on(void)
+{
+    do_ulp_wakeup_deepsleep(RISCV_DEEP_SLEEP_WAKEUP_LONG_DELAY_TEST, false);
+}
+
+TEST_CASE_MULTIPLE_STAGES("ULP-RISC-V is able to wakeup main CPU from deep sleep after a long delay, RTC periph powerup", "[ulp]",
+        do_ulp_wakeup_after_long_delay_deepsleep_rtc_perip_on,
+        check_reset_reason_ulp_wakeup);
+
+static void do_ulp_wakeup_after_short_delay_deepsleep(void)
+{
+    do_ulp_wakeup_deepsleep(RISCV_DEEP_SLEEP_WAKEUP_SHORT_DELAY_TEST, true);
+}
+
+TEST_CASE_MULTIPLE_STAGES("ULP-RISC-V is able to wakeup main CPU from deep sleep after a short delay", "[ulp]",
+        do_ulp_wakeup_after_short_delay_deepsleep,
+        check_reset_reason_ulp_wakeup);
+
+
+static void do_ulp_wakeup_after_short_delay_deepsleep_rtc_perip_on(void)
+{
+    do_ulp_wakeup_deepsleep(RISCV_DEEP_SLEEP_WAKEUP_SHORT_DELAY_TEST, false);
+}
+
+TEST_CASE_MULTIPLE_STAGES("ULP-RISC-V is able to wakeup main CPU from deep sleep after a short delay, RTC periph powerup", "[ulp]",
+        do_ulp_wakeup_after_short_delay_deepsleep_rtc_perip_on,
+        check_reset_reason_ulp_wakeup);
