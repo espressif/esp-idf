@@ -232,9 +232,19 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
         sprintf(chan->pm_lock_name, "sdm_%d_%d", group->group_id, chan_id); // e.g. sdm_0_0
         ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, chan->pm_lock_name, &chan->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
-#endif
+#endif // CONFIG_PM_ENABLE
         break;
 #endif // SOC_SDM_CLK_SUPPORT_PLL_F80M
+#if SOC_SDM_CLK_SUPPORT_PLL_F48M
+    case SDM_CLK_SRC_PLL_F48M:
+        src_clk_hz = 48 * 1000 * 1000;
+#if CONFIG_PM_ENABLE
+        sprintf(chan->pm_lock_name, "sdm_%d_%d", group->group_id, chan_id); // e.g. sdm_0_0
+        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, chan->pm_lock_name, &chan->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
+#endif // CONFIG_PM_ENABLE
+        break;
+#endif // SOC_SDM_CLK_SUPPORT_PLL_F48M
     default:
         ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "clock source %d is not support", config->clk_src);
         break;

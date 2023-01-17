@@ -46,7 +46,7 @@
 #define SOC_RTC_MEM_SUPPORTED           1
 // #define SOC_I2S_SUPPORTED               1 // TODO: IDF-6219
 // #define SOC_RMT_SUPPORTED               1 // TODO: IDF-6224
-// #define SOC_SDM_SUPPORTED               1 // TODO: IDF-6220
+#define SOC_SDM_SUPPORTED               1
 // #define SOC_GPSPI_SUPPORTED             1 // TODO: IDF-6264
 #define SOC_SYSTIMER_SUPPORTED          1
 // #define SOC_SUPPORT_COEXISTENCE         1 // TODO: IDF-6416
@@ -294,11 +294,10 @@
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
 
-// TODO: IDF-6220
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_GROUPS               1U
 #define SOC_SDM_CHANNELS_PER_GROUP   4
-#define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
+#define SOC_SDM_CLK_SUPPORT_PLL_F48M 1
 #define SOC_SDM_CLK_SUPPORT_XTAL     1
 
 // TODO: IDF-6245 (Copy from esp32c6, need check)

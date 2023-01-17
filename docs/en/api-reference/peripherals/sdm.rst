@@ -128,7 +128,8 @@ For example, you can take the following `Sallen-Key topology Low Pass Filter`_ a
 Application Example
 -------------------
 
-* LED driven by a GPIO that is modulated with Sigma-Delta: :example:`peripherals/sigma_delta`.
+* 100 Hz sine wave that is modulated with Sigma-Delta: :example:`peripherals/sigma_delta/sdm_dac`.
+* LED driven by a GPIO that is modulated with Sigma-Delta: :example:`peripherals/sigma_delta/sdm_led`.
 
 API Reference
 -------------
