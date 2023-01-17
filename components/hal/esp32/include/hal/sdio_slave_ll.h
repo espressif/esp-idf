@@ -129,6 +129,14 @@ static inline void sdio_slave_ll_set_timing(host_dev_t *host, sdio_slave_timing_
 }
 
 /**
+ * Set the CCCR, SDIO and Physical Layer version
+ */
+static inline void sdio_slave_ll_init_version(hinf_dev_t *hinf)
+{
+    hinf->cfg_data1.sdio_ver = 0x232;
+}
+
+/**
  * Set the HS supported bit to be read by the host.
  *
  * @param hinf Address of the hinf registers
@@ -137,8 +145,9 @@ static inline void sdio_slave_ll_set_timing(host_dev_t *host, sdio_slave_timing_
 static inline void sdio_slave_ll_enable_hs(hinf_dev_t *hinf, bool hs)
 {
     if (hs) {
-        hinf->cfg_data1.sdio_ver = 0x232;
         hinf->cfg_data1.highspeed_enable = 1;
+    } else {
+        hinf->cfg_data1.highspeed_enable = 0;
     }
 }
 
