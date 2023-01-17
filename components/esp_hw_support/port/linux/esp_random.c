@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 
 static const char* TAG = "esp-random";
 
-static void __attribute__((constructor)) esp_random_init()
+static void __attribute__((constructor)) esp_random_init(void)
 {
     srand(time(NULL));
     ESP_LOGW(TAG, "esp_random do not provide a cryptographically secure numbers on Linux, and should never be used for anything security related");

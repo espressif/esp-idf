@@ -44,7 +44,7 @@ struct event
     bool event_triggered;
 };
 
-struct event * event_create()
+struct event * event_create(void)
 {
     struct event * ev = malloc( sizeof( struct event ) );
 

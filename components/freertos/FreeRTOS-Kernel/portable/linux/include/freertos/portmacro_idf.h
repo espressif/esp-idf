@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,17 +16,12 @@
 #include <stdlib.h> // This is for malloc(), used by portmacro.h
 #include "sdkconfig.h"
 #include "esp_attr.h"
+#include "esp_task.h"
 #include "spinlock.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define ESP_TASK_PRIO_MAX (configMAX_PRIORITIES)
-#define ESP_TASK_PRIO_MIN (0)
-#define ESP_TASK_MAIN_PRIO            (ESP_TASK_PRIO_MIN + 1)
-#define ESP_TASK_MAIN_STACK           (CONFIG_ESP_MAIN_TASK_STACK_SIZE)
-#define ESP_TASK_MAIN_CORE            CONFIG_ESP_MAIN_TASK_AFFINITY
 
 // interrupt module will mask interrupt with priority less than threshold
 #define RVHAL_EXCM_LEVEL    4

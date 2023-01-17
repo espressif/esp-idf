@@ -149,7 +149,7 @@ static void check_spiffs_files(spiffs *fs, const char *base_path, char *cur_path
             fseek(f, 0, SEEK_SET);
 
             char *f_contents = (char *) malloc(sz);
-            fread(f_contents, 1, sz, f);
+            TEST_ASSERT(fread(f_contents, 1, sz, f) == sz);
             fclose(f);
 
             s32_t spiffs_res;
@@ -247,7 +247,7 @@ TEST(spiffs, can_read_spiffs_image)
     fseek(img_file, 0, SEEK_SET);
 
     char *img = (char *) malloc(img_size);
-    fread(img, 1, img_size, img_file);
+    TEST_ASSERT(fread(img, 1, img_size, img_file) == img_size);
     fclose(img_file);
 
     TEST_ASSERT_TRUE(partition->size == img_size);

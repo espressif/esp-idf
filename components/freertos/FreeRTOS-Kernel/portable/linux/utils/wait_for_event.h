@@ -39,7 +39,7 @@
 
 struct event;
 
-struct event * event_create();
+struct event * event_create(void);
 void event_delete( struct event * );
 bool event_wait( struct event * ev );
 bool event_wait_timed( struct event * ev,
