@@ -3,6 +3,7 @@
 
 import json
 import os
+import signal
 import sys
 from typing import Any, Dict, List
 
@@ -151,7 +152,14 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         monitor_args += ['-m', ' '.join("'%s'" % a for a in idf_py)]
         hints = False  # Temporarily disabled because of https://github.com/espressif/esp-idf/issues/9610
 
-        RunTool('idf_monitor', monitor_args, args.project_dir, build_dir=args.build_dir, hints=hints, interactive=True)()
+        # Temporally ignore SIGINT, which is used in idf_monitor to spawn gdb.
+        old_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+        try:
+            RunTool('idf_monitor', monitor_args, args.project_dir, build_dir=args.build_dir, hints=hints, interactive=True)()
+        finally:
+            signal.signal(signal.SIGINT, old_handler)
 
     def flash(action: str, ctx: click.core.Context, args: PropertyDict) -> None:
         """
