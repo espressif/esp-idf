@@ -4,7 +4,7 @@ import os
 import threading
 import time
 
-import debug_backend
+import esp_debug_backend as debug_backend
 import pexpect
 import serial
 import ttfw_idf

@@ -10,10 +10,10 @@ import pexpect
 from tiny_test_fw import Utility
 
 try:
-    import debug_backend
+    import esp_debug_backend as debug_backend
 except ImportError:
     # Exception is ignored so the package is not required for those who don't use debug utils.
-    err_msg = 'Please install py_debug_backend for debug utils to work properly!'
+    err_msg = 'Please install esp-debug-backend for debug utils to work properly!'
 
     class debug_backend(object):  # type: ignore
         @staticmethod
@@ -27,11 +27,11 @@ except ImportError:
 try:
     from debug_backend.defs import NoGdbProcessError
 except ImportError:
-    # fallback for pygdbmi<0.10.0.0 which is used in the previous version of debug_backend
+    # fallback for pygdbmi<0.10.0.0 which is used in the previous version of esp-debug-backend
     try:
         from pygdbmi.gdbcontroller import NoGdbProcessError
     except ImportError:
-        # If debug_backend is not installed, the exception is ignored.
+        # If esp-debug-backend is not installed, the exception is ignored.
         class NoGdbProcessError(ValueError):  # type: ignore
             pass
 

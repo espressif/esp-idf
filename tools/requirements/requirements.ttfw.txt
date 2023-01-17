@@ -32,7 +32,7 @@ protobuf
 SimpleWebSocketServer
 
 # py_debug_backend
-debug_backend
+esp_debug_backend
 
 # examples/protocols/mqtt
 # tools/test_apps/protocols/mqtt
