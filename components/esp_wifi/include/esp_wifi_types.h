@@ -281,7 +281,8 @@ typedef struct {
     wifi_pmf_config_t pmf_cfg;    /**< Configuration for Protected Management Frame. Will be advertized in RSN Capabilities in RSN IE. */
     uint32_t rm_enabled:1;        /**< Whether Radio Measurements are enabled for the connection */
     uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
-    uint32_t reserved:30;         /**< Reserved for future feature set */
+    uint32_t transition_disable:1;      /**< Whether to enable transition disable feature */
+    uint32_t reserved:29;         /**< Reserved for future feature set */
     wifi_sae_pwe_method_t sae_pwe_h2e;     /**< Whether SAE hash to element is enabled */
     uint8_t failure_retry_cnt;    /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config. Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
 } wifi_sta_config_t;

@@ -61,6 +61,15 @@ void  wpa_sm_free_eapol(u8 *buffer)
     os_free(buffer);
 }
 
+void wpa_supplicant_transition_disable(void *sm, u8 bitmap)
+{
+    wpa_printf(MSG_INFO, "TRANSITION_DISABLE %02x", bitmap);
+
+    if (bitmap & TRANSITION_DISABLE_WPA3_PERSONAL) {
+        esp_wifi_sta_disable_wpa2_authmode_internal();
+    }
+}
+
 void  wpa_sm_deauthenticate(struct wpa_sm *sm, u8 reason_code)
 {
 
