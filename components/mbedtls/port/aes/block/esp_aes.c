@@ -28,6 +28,7 @@
 #include <string.h>
 #include "mbedtls/aes.h"
 #include "mbedtls/platform_util.h"
+#include "esp_log.h"
 #include "aes/esp_aes.h"
 #include "soc/hwcrypto_periph.h"
 #include <sys/lock.h>
@@ -40,6 +41,7 @@
 #include "esp_private/periph_ctrl.h"
 
 
+static const char *TAG = "esp-aes";
 /* AES uses a spinlock mux not a lock as the underlying block operation
    only takes 208 cycles (to write key & compute block), +600 cycles
    for DPORT protection but +3400 cycles again if you use a full sized lock.
@@ -113,6 +115,26 @@ static int esp_aes_block(esp_aes_context *ctx, const void *input, void *output)
     return 0;
 }
 
+static int esp_aes_validate_input(esp_aes_context *ctx, const unsigned char *input,
+                                  const unsigned char *output )
+{
+    if (!ctx) {
+        ESP_LOGD(TAG, "No AES context supplied");
+        return -1;
+    }
+    if (!input) {
+        ESP_LOGD(TAG, "No input supplied");
+        return -1;
+    }
+    if (!output) {
+        ESP_LOGD(TAG, "No output supplied");
+        return -1;
+    }
+
+    return 0;
+}
+
+
 void esp_aes_encrypt(esp_aes_context *ctx,
                      const unsigned char input[16],
                      unsigned char output[16] )
@@ -128,6 +150,10 @@ int esp_internal_aes_encrypt(esp_aes_context *ctx,
                              unsigned char output[16] )
 {
     int r;
+
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
 
     if (!valid_key_length(ctx)) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
@@ -158,6 +184,10 @@ int esp_internal_aes_decrypt(esp_aes_context *ctx,
 {
     int r;
 
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
     if (!valid_key_length(ctx)) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
     }
@@ -179,6 +209,10 @@ int esp_aes_crypt_ecb(esp_aes_context *ctx,
                       unsigned char output[16] )
 {
     int r;
+
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
 
     if (!valid_key_length(ctx)) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
@@ -204,6 +238,15 @@ int esp_aes_crypt_cbc(esp_aes_context *ctx,
                       const unsigned char *input,
                       unsigned char *output )
 {
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
+    if (!iv) {
+        ESP_LOGD(TAG, "No IV supplied");
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
     uint32_t *output_words = (uint32_t *)output;
     const uint32_t *input_words = (const uint32_t *)input;
     uint32_t *iv_words = (uint32_t *)iv;
@@ -274,6 +317,20 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
     int c;
     size_t n = *iv_off;
 
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
+    if (!iv) {
+        ESP_LOGE(TAG, "No IV supplied");
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
+    if (!iv_off) {
+        ESP_LOGE(TAG, "No IV offset supplied");
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
     if (!valid_key_length(ctx)) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
     }
@@ -326,6 +383,15 @@ int esp_aes_crypt_cfb8(esp_aes_context *ctx,
     unsigned char c;
     unsigned char ov[17];
 
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
+    if (!iv) {
+        ESP_LOGE(TAG, "No IV supplied");
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
     if (!valid_key_length(ctx)) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
     }
@@ -369,8 +435,27 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
                       unsigned char *output )
 {
     int c, i;
-    size_t n = *nc_off;
 
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
+    if (!stream_block) {
+        ESP_LOGE(TAG, "No stream supplied");
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
+    if (!nonce_counter) {
+        ESP_LOGE(TAG, "No nonce supplied");
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
+    if (!nc_off) {
+        ESP_LOGE(TAG, "No nonce offset supplied");
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
+    size_t n = *nc_off;
     if (!valid_key_length(ctx)) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
     }
@@ -416,8 +501,17 @@ int esp_aes_crypt_ofb(esp_aes_context *ctx,
     int ret = 0;
     size_t n;
 
-    if (ctx == NULL || iv_off == NULL || iv == NULL ||
-            input == NULL || output == NULL ) {
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
+    if (!iv) {
+        ESP_LOGE(TAG, "No IV supplied");
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
+    if (!iv_off) {
+        ESP_LOGE(TAG, "No IV offset supplied");
         return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
 
