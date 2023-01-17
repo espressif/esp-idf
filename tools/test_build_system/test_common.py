@@ -83,3 +83,8 @@ def test_efuse_symmary_cmake_functions(
     output = idf_py('efuse-summary')
     assert 'FROM_CMAKE: MAC: 00:00:00:00:00:00' in output.stdout
     assert 'FROM_CMAKE: WR_DIS: 0' in output.stdout
+
+
+def test_custom_build_folder(test_app_copy: Path, idf_py: IdfPyFunc) -> None:
+    idf_py('-BBuiLDdiR', 'build')
+    assert (test_app_copy / 'BuiLDdiR').is_dir()
