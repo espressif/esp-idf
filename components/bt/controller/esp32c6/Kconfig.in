@@ -175,6 +175,13 @@ config BT_LE_MAX_PERIODIC_ADVERTISER_LIST
     help
         Set this option to set the upper limit for number of periodic advertiser list.
 
+config BT_LE_POWER_CONTROL_ENABLED
+    bool "Enable controller support for BLE Power Control"
+    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED && IDF_TARGET_ESP32C6
+    default n
+    help
+        Set this option to enable the Power Control feature on controller
+
 menu "Memory Settings"
     depends on !BT_NIMBLE_ENABLED
 
