@@ -1,14 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
 /* DESCRIPTION:
  * This example contains code to make ESP32-S3 based device recognizable by USB-hosts as a USB Mass Storage Device.
- * It either allows the embedded application ie example to access the partition or Host PC accesses the partition over USB MSC.
+ * It either allows the embedded application i.e. example to access the partition or Host PC accesses the partition over USB MSC.
  * They can't be allowed to access the partition at the same time.
- * The access to the underlying block device is provided by functions in tusb_msc_storage.c
  * For different scenarios and behaviour, Refer to README of this example.
  */
 
@@ -22,10 +21,10 @@
 #include "tusb_msc_storage.h"
 #include "driver/gpio.h"
 
-static const char *TAG = "example_msc_main";
-#define PROMPT_STR CONFIG_IDF_TARGET
+static const char *TAG = "example_main";
 
-/********* TinyUSB MSC callbacks ***************/
+/* TinyUSB MSC callbacks
+   ********************************************************************* */
 
 /** SCSI ASC/ASCQ codes. **/
 /** User can add and use more codes as per the need of the application **/
@@ -76,11 +75,11 @@ void tud_msc_capacity_cb(uint8_t lun, uint32_t *block_count, uint16_t *block_siz
 {
     (void) lun;
 
-    size_t size = storage_get_size();
-    size_t sec_size = storage_get_sector_size();
-    ESP_LOGI(TAG, "tud_msc_capacity_cb() size(%d), sec_size(%d)", size, sec_size);
-    *block_count = size / sec_size;
-    *block_size  = sec_size;
+    uint32_t sec_count = storage_get_sector_count();
+    uint32_t sec_size = storage_get_sector_size();
+    ESP_LOGD(TAG, "tud_msc_capacity_cb() sec_count(%lu), sec_size(%lu)", sec_count, sec_size);
+    *block_count = sec_count;
+    *block_size  = (uint16_t)sec_size;
 }
 
 // Invoked when received Start Stop Unit command
@@ -107,8 +106,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void *buff
 {
     ESP_LOGD(TAG, "tud_msc_read10_cb() invoked, lun=%d, lba=%lu, offset=%lu, bufsize=%lu", lun, lba, offset, bufsize);
 
-    size_t addr = lba * storage_get_sector_size() + offset;
-    esp_err_t err = storage_read_sector(addr, bufsize, buffer);
+    esp_err_t err = storage_read_sector(lba, offset, bufsize, buffer);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "storage_read_sector failed: 0x%x", err);
         return 0;
@@ -121,10 +119,9 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void *buff
 // - Application write data from buffer to address contents (up to bufsize) and return number of written byte.
 int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t bufsize)
 {
-    ESP_LOGD(TAG, "tud_msc_write10_cb() invoked, lun=%d, lba=%lu, offset=%lu", lun, lba, offset);
+    ESP_LOGD(TAG, "tud_msc_write10_cb() invoked, lun=%d, lba=%lu, offset=%lu, bufsize=%lu", lun, lba, offset, bufsize);
 
-    size_t addr = lba * storage_get_sector_size() + offset;
-    esp_err_t err = storage_write_sector(addr, bufsize, buffer);
+    esp_err_t err = storage_write_sector(lba, offset, bufsize, buffer);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "storage_write_sector failed: 0x%x", err);
         return 0;
@@ -185,13 +182,15 @@ void tud_mount_cb(void)
     ESP_LOGI(TAG, "tud_mount_cb MSC START: Expose Over USB");
     _unmount();
 }
+/*********************************************************************** TinyUSB MSC callbacks*/
 
-/************* Application Code *******************/
+/* Application Code
+   ********************************************************************* */
 
-/************* TinyUSB descriptors ****************/
+/* TinyUSB descriptors
+   ********************************************************************* */
 #define EPNUM_MSC       1
 #define TUSB_DESC_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_MSC_DESC_LEN)
-#define VBUS_MONITORING_GPIO_NUM GPIO_NUM_4
 
 enum {
     ITF_NUM_MSC = 0,
@@ -238,9 +237,57 @@ static char const *string_desc_arr[] = {
     "123456",                       // 3: Serials
     "Example MSC",                  // 4. MSC
 };
+/*********************************************************************** TinyUSB descriptors*/
 
+#define VBUS_MONITORING_GPIO_NUM GPIO_NUM_4
 #define BASE_PATH "/data" // base path to mount the partition
 static bool is_mount = false;
+
+#define PROMPT_STR CONFIG_IDF_TARGET
+static int f_unmount(int argc, char **argv);
+static int f_read(int argc, char **argv);
+static int f_write(int argc, char **argv);
+static int f_size(int argc, char **argv);
+static int f_status(int argc, char **argv);
+static int f_exit(int argc, char **argv);
+const esp_console_cmd_t cmds[] = {
+    {
+        .command = "read",
+        .help = "read BASE_PATH/README.MD and print its contents",
+        .hint = NULL,
+        .func = &f_read,
+    },
+    {
+        .command = "write",
+        .help = "create file BASE_PATH/README.MD if it does not exist",
+        .hint = NULL,
+        .func = &f_write,
+    },
+    {
+        .command = "size",
+        .help = "show storage size and sector size",
+        .hint = NULL,
+        .func = &f_size,
+    },
+    {
+        .command = "expose",
+        .help = "Expose Storage to Host",
+        .hint = NULL,
+        .func = &f_unmount,
+    },
+    {
+        .command = "status",
+        .help = "Status of storage exposure over USB",
+        .hint = NULL,
+        .func = &f_status,
+    },
+    {
+        .command = "exit",
+        .help = "exit from application",
+        .hint = NULL,
+        .func = &f_exit,
+    }
+};
 
 // mount the partition and show all the files in BASE_PATH
 static void _mount(void)
@@ -256,7 +303,7 @@ static void _mount(void)
     struct dirent *d;
     DIR *dh = opendir(BASE_PATH);
     if (!dh) {
-        if (errno = ENOENT) {
+        if (errno == ENOENT) {
             //If the directory is not found
             ESP_LOGE(TAG, "Directory doesn't exist %s", BASE_PATH);
         } else {
@@ -341,9 +388,9 @@ static int f_size(int argc, char **argv)
         ESP_LOGE(TAG, "storage exposed over USB. Application can't access storage");
         return -1;
     }
-    size_t size = storage_get_size();
-    size_t sec_size = storage_get_sector_size();
-    printf("storage size(%d), sec_size(%d)\n", size, sec_size);
+    uint32_t sec_count = storage_get_sector_count();
+    uint32_t sec_size = storage_get_sector_size();
+    printf("Storage Capacity %lluMB\n", ((uint64_t) sec_count) * sec_size / (1024 * 1024));
     return 0;
 }
 
@@ -364,7 +411,7 @@ static int f_exit(int argc, char **argv)
 
 void app_main(void)
 {
-    // Configure GPIO Pin for vbus monitorung
+    // Configure GPIO Pin for vbus monitoring
     const gpio_config_t vbus_gpio_config = {
         .pin_bit_mask = BIT64(VBUS_MONITORING_GPIO_NUM),
         .mode = GPIO_MODE_INPUT,
@@ -375,7 +422,61 @@ void app_main(void)
     ESP_ERROR_CHECK(gpio_config(&vbus_gpio_config));
 
     ESP_LOGI(TAG, "Initializing storage...");
-    ESP_ERROR_CHECK(storage_init());
+    tinyusb_config_storage_t storage_config;
+
+#ifdef CONFIG_EXAMPLE_STORAGE_MEDIA_SPIFLASH
+    // configuration is to defined in case of SPI Flash
+    storage_config.storage_type = TINYUSB_STORAGE_SPI;
+    tinyusb_config_spiffs_t config_spi;
+    storage_config.spiffs_config = &config_spi;
+#else // CONFIG_EXAMPLE_STORAGE_MEDIA_SPIFLASH
+    storage_config.storage_type = TINYUSB_STORAGE_SDMMC;
+    tinyusb_config_sdmmc_t config_sdmmc;
+
+    // By default, SD card frequency is initialized to SDMMC_FREQ_DEFAULT (20MHz)
+    // For setting a specific frequency, use host.max_freq_khz (range 400kHz - 40MHz for SDMMC)
+    // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
+    sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+
+    // This initializes the slot without card detect (CD) and write protect (WP) signals.
+    // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
+    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+
+    // For SD Card, set bus width to use
+#ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
+    slot_config.width = 4;
+#else
+    slot_config.width = 1;
+#endif  // CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
+
+    // On chips where the GPIOs used for SD card can be configured, set the user defined values
+#ifdef CONFIG_SOC_SDMMC_USE_GPIO_MATRIX
+    slot_config.clk = CONFIG_EXAMPLE_PIN_CLK;
+    slot_config.cmd = CONFIG_EXAMPLE_PIN_CMD;
+    slot_config.d0 = CONFIG_EXAMPLE_PIN_D0;
+#ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
+    slot_config.d1 = CONFIG_EXAMPLE_PIN_D1;
+    slot_config.d2 = CONFIG_EXAMPLE_PIN_D2;
+    slot_config.d3 = CONFIG_EXAMPLE_PIN_D3;
+#endif  // CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
+
+#endif  // CONFIG_SOC_SDMMC_USE_GPIO_MATRIX
+
+    // Enable internal pullups on enabled pins. The internal pullups
+    // are insufficient however, please make sure 10k external pullups are
+    // connected on the bus. This is for debug / example purpose only.
+    slot_config.flags |= SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
+
+    config_sdmmc.host = host;
+    config_sdmmc.slot_config = slot_config;
+    storage_config.sdmmc_config = &config_sdmmc;
+
+#endif  // CONFIG_EXAMPLE_STORAGE_MEDIA_SPIFLASH
+
+    ESP_ERROR_CHECK(storage_init(&storage_config));
+
+    //mounted in the app by default
+    _mount();
 
     ESP_LOGI(TAG, "USB MSC initialization");
     const tinyusb_config_t tusb_cfg = {
@@ -389,9 +490,6 @@ void app_main(void)
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
     ESP_LOGI(TAG, "USB MSC initialization DONE");
 
-    //mounted in the app by default
-    _mount();
-
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     /* Prompt to be printed before each line.
@@ -402,54 +500,9 @@ void app_main(void)
     esp_console_register_help_command();
     esp_console_dev_uart_config_t hw_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&hw_config, &repl_config, &repl));
-
-    const esp_console_cmd_t cmd_read = {
-        .command = "read",
-        .help = "read BASE_PATH/README.MD and print its contents",
-        .hint = NULL,
-        .func = &f_read,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd_read) );
-
-    const esp_console_cmd_t cmd_write = {
-        .command = "write",
-        .help = "create file BASE_PATH/README.MD if it does not exist",
-        .hint = NULL,
-        .func = &f_write,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd_write) );
-
-    const esp_console_cmd_t cmd_size = {
-        .command = "size",
-        .help = "show storage size and sector size",
-        .hint = NULL,
-        .func = &f_size,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd_size) );
-
-    const esp_console_cmd_t cmd_umount = {
-        .command = "expose",
-        .help = "Expose Storage to Host",
-        .hint = NULL,
-        .func = &f_unmount,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd_umount) );
-
-    const esp_console_cmd_t cmd_status = {
-        .command = "status",
-        .help = "Status of storage exposure over USB",
-        .hint = NULL,
-        .func = &f_status,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd_status) );
-
-    const esp_console_cmd_t cmd_exit = {
-        .command = "exit",
-        .help = "exit from application",
-        .hint = NULL,
-        .func = &f_exit,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd_exit) );
-
+    for (int count = 0; count < sizeof(cmds) / sizeof(esp_console_cmd_t); count++) {
+        ESP_ERROR_CHECK( esp_console_cmd_register(&cmds[count]) );
+    }
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }
+/*********************************************************************** Application Code*/
