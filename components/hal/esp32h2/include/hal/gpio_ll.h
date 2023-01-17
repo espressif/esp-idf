@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -109,6 +109,7 @@ static inline void gpio_ll_set_intr_type(gpio_dev_t *hw, gpio_num_t gpio_num, gp
   * @param core_id interrupt core id
   * @param status interrupt status
   */
+__attribute__((always_inline))
 static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
     *status = hw->pcpu_int.val;
@@ -121,6 +122,7 @@ static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uin
   * @param core_id interrupt core id
   * @param status interrupt status high
   */
+__attribute__((always_inline))
 static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
     *status = 0; // Less than 32 GPIOs in ESP32-H2
@@ -132,6 +134,7 @@ static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id
   * @param hw Peripheral GPIO hardware instance address.
   * @param mask interrupt status clear mask
   */
+__attribute__((always_inline))
 static inline void gpio_ll_clear_intr_status(gpio_dev_t *hw, uint32_t mask)
 {
     // hw->status_w1tc = mask;
@@ -143,6 +146,7 @@ static inline void gpio_ll_clear_intr_status(gpio_dev_t *hw, uint32_t mask)
   * @param hw Peripheral GPIO hardware instance address.
   * @param mask interrupt status high clear mask
   */
+__attribute__((always_inline))
 static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
 {
     // Not supported on H2
@@ -257,6 +261,7 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
  * @param  gpio_num GPIO number. If you want to set the output level of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @param  level Output level. 0: low ; 1: high
  */
+__attribute__((always_inline))
 static inline void gpio_ll_set_level(gpio_dev_t *hw, gpio_num_t gpio_num, uint32_t level)
 {
     // if (level) {

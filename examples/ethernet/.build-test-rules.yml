@@ -2,19 +2,19 @@
 
 examples/ethernet/enc28j60:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2" #Depends on IDF-6245
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: target esp32c6, esp32h2 is not supported yet
 
 examples/ethernet/eth2ap:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: target esp32c6, esp32h2 is not supported yet
 
 examples/ethernet/iperf:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6 is not supported yet
   disable_test:

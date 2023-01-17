@@ -11,15 +11,13 @@ tools/test_apps/build_system/ldgen_test:
       temporary: true
       reason: target esp32c2 is not supported yet
 
-tools/test_apps/build_system/rsource_test:
-  disable:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
-
 tools/test_apps/linux_compatible/hello_world_linux_compatible:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+
+tools/test_apps/peripherals/i2c_wifi:
+  disable:
+    - if: SOC_I2C_SUPPORTED != 1 or SOC_WIFI_SUPPORTED != 1
 
 tools/test_apps/peripherals/usb:
   enable:
@@ -119,9 +117,9 @@ tools/test_apps/system/gdb_loadable_elf:
       temporary: true
       reason: lack of runners
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: target esp32c6, esp32h2 is not supported yet
 
 tools/test_apps/system/longjmp_test:
   enable:

@@ -2,18 +2,18 @@
 
 components/spi_flash/test_apps/esp_flash:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6 cannot pass atomic build
+      reason: target esp32c6 cannot pass atomic build, target esp32h2 currently doesn't support GPSPI.
 
 components/spi_flash/test_apps/flash_encryption:
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32s2", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32s2", "esp32c6", "esp32h2"]
       temporary: true
       reason: No runners # IDF-5634
 
 components/spi_flash/test_apps/flash_mmap:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6 is not supported yet
+      reason: target esp32c6, esp32h2 is not supported yet

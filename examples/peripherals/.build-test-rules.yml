@@ -27,6 +27,8 @@ examples/peripherals/i2c/i2c_simple:
       reason: the test requires both master and slave
 
 examples/peripherals/i2c/i2c_tools:
+  disable:
+    - if: SOC_I2C_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -75,6 +77,14 @@ examples/peripherals/lcd/i80_controller:
 examples/peripherals/lcd/rgb_panel:
   disable:
     - if: SOC_LCD_RGB_SUPPORTED != 1
+
+examples/peripherals/lcd/spi_lcd_touch:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
+examples/peripherals/lcd/tjpgd:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
 
 examples/peripherals/ledc:
   disable:
@@ -149,9 +159,25 @@ examples/peripherals/sigma_delta:
   disable:
     - if: SOC_SDM_SUPPORTED != 1
 
+examples/peripherals/spi_master/hd_eeprom:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
+examples/peripherals/spi_master/lcd:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
+examples/peripherals/spi_slave/receiver:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
+examples/peripherals/spi_slave/sender:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
 examples/peripherals/spi_slave_hd/append_mode/master:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target(s) not supported yet
 
@@ -161,9 +187,13 @@ examples/peripherals/spi_slave_hd/append_mode/slave:
       temporary: true
       reason: the other targets are not tested yet
 
+examples/peripherals/spi_slave_hd/segment_mode/seg_master:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
 examples/peripherals/spi_slave_hd/segment_mode/seg_slave:
   disable:
-    - if: IDF_TARGET == "esp32"
+    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: not supported
 

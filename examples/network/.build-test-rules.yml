@@ -1,10 +1,12 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 examples/network:
-  enable:
-    - if: INCLUDE_DEFAULT == 1
+  disable:
+    - if: IDF_TARGET in ["esp32h2"]
 
 examples/network/simple_sniffer:
+  disable:
+    - if: IDF_TARGET in ["esp32h2"]
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true

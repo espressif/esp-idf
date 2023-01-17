@@ -12,7 +12,7 @@ examples/system/app_trace_to_host:
 
 examples/system/console/advanced:
   disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
       temporary: true
       reason: target(s) not supported yet
   disable_test:
@@ -28,7 +28,7 @@ examples/system/console/advanced_usb_cdc:
 
 examples/system/console/basic:
   disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
       temporary: true
       reason: target(s) not supported yet
   disable_test:
@@ -38,7 +38,7 @@ examples/system/console/basic:
 
 examples/system/deep_sleep:
   disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
       temporary: true
       reason: target(s) not supported yet
 
@@ -53,15 +53,20 @@ examples/system/efuse:
     - if: IDF_TARGET == "esp32s3"
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32c6"
+  disable:
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6 is not supported yet
 
 examples/system/esp_timer:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6 is not supported yet
+
+examples/system/eventfd:
+  disable:
+    - if: SOC_GPTIMER_SUPPORTED != 1
 
 examples/system/flash_suspend:
   enable:
@@ -77,15 +82,15 @@ examples/system/gcov:
 
 examples/system/gdbstub:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target esp32c2, esp32h2 is not supported yet
 
 examples/system/heap_task_tracking:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target esp32c2, esp32h2 is not supported yet
 
 examples/system/himem:
   enable:
@@ -101,13 +106,13 @@ examples/system/ipc/ipc_isr:
 
 examples/system/light_sleep:
   disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
       temporary: true
       reason: target(s) not supported yet
 
 examples/system/ota/advanced_https_ota:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6 is not supported yet
   disable_test:
@@ -117,19 +122,19 @@ examples/system/ota/advanced_https_ota:
 
 examples/system/ota/native_ota_example:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6 is not supported yet
 
 examples/system/ota/otatool:
   disable:
-    - if: IDF_TARGET == "esp32c2"
+    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: target esp32c2, esp32h2 is not supported yet
 
 examples/system/ota/pre_encrypted_ota:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6 is not supported yet
   disable_test:
@@ -139,7 +144,7 @@ examples/system/ota/pre_encrypted_ota:
 
 examples/system/ota/simple_ota_example:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6 is not supported yet
   disable_test:
@@ -162,17 +167,21 @@ examples/system/select:
     - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6 is not supported yet
 
 examples/system/sysview_tracing:
+  disable:
+    - if: SOC_GPTIMER_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/system/sysview_tracing_heap_log:
+  disable:
+    - if: SOC_GPTIMER_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true

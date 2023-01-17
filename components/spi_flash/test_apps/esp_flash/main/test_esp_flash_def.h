@@ -88,7 +88,7 @@
 #define HSPI_PIN_NUM_WP     FSPI_PIN_NUM_WP
 #define HSPI_PIN_NUM_CS     FSPI_PIN_NUM_CS
 
-#elif CONFIG_IDF_TARGET_ESP32C6
+#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
 
 #define FSPI_PIN_NUM_MOSI   7
 #define FSPI_PIN_NUM_MISO   2
@@ -244,7 +244,7 @@ flashtest_config_t config_list[] = {
         .input_delay_ns = 0,
     },
 };
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
+#else
 flashtest_config_t config_list[] = {
     /* No SPI1 CS1 flash on esp32c3 test */
     {

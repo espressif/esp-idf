@@ -14,13 +14,13 @@ examples/cxx/experimental/esp_modem_cxx:
 
 examples/cxx/experimental/esp_mqtt_cxx/ssl:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6 is not supported yet
 
 examples/cxx/experimental/esp_mqtt_cxx/tcp:
   disable:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
       reason: target esp32c6 is not supported yet
 
@@ -31,13 +31,13 @@ examples/cxx/experimental/experimental_cpp_component/host_test:
 
 examples/cxx/experimental/simple_i2c_rw_example:
   disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
       temporary: true
       reason: target(s) not supported yet
 
 examples/cxx/experimental/simple_spi_rw_example:
   disable:
-    - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
       temporary: true
       reason: target(s) not supported yet
 
