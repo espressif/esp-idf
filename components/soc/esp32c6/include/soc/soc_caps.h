@@ -63,6 +63,8 @@
 #define SOC_SDIO_SLAVE_SUPPORTED        1
 #define SOC_BOD_SUPPORTED               1
 #define SOC_APM_SUPPORTED               1
+#define SOC_PMU_SUPPORTED               1
+#define SOC_LP_TIMER_SUPPORTED          1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -281,15 +283,6 @@
 #define SOC_MCPWM_CLK_SUPPORT_PLL160M        (1)    ///< Support PLL160M as clock source
 #define SOC_MCPWM_CLK_SUPPORT_XTAL           (1)    ///< Support XTAL as clock source
 
-// TODO: IDF-5348 (Copy from esp32c3, need check)
-/*-------------------------- RTC CAPS --------------------------------------*/
-#define SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH       (128)
-#define SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM        (108)
-#define SOC_RTC_CNTL_CPU_PD_DMA_ADDR_ALIGN      (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3)
-#define SOC_RTC_CNTL_CPU_PD_DMA_BLOCK_SIZE      (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3)
-
-#define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
-
 // TODO: IDF-5359 (Copy from esp32c3, need check)
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)
@@ -410,14 +403,13 @@
 // TODO: IDF-5338 (Copy from esp32c3, need check)
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C6 has 2 UARTs
-#define SOC_UART_NUM                (2)
-#define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
-#define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
-
-#define SOC_UART_SUPPORT_PLL_F80M_CLK (1)    /*!< Support PLL_DIV as the clock source */
-#define SOC_UART_SUPPORT_RTC_CLK    (1)     /*!< Support RTC clock as the clock source */
-#define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
-// #define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */ // TODO: Test UART wakeup while supporting sleep
+#define SOC_UART_NUM                    (2)
+#define SOC_UART_FIFO_LEN               (128)       /*!< The UART hardware FIFO length */
+#define SOC_UART_BITRATE_MAX            (5000000)   /*!< Max bit rate supported by UART */
+#define SOC_UART_SUPPORT_PLL_F80M_CLK   (1)         /*!< Support PLL_DIV as the clock source */
+#define SOC_UART_SUPPORT_RTC_CLK        (1)         /*!< Support RTC clock as the clock source */
+#define SOC_UART_SUPPORT_XTAL_CLK       (1)         /*!< Support XTAL clock as the clock source */
+#define SOC_UART_SUPPORT_WAKEUP_INT     (1)         /*!< Support UART wakeup interrupt */ // TODO: Test UART wakeup while supporting sleep
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
@@ -438,13 +430,15 @@
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 #define SOC_PM_SUPPORT_CPU_PD           (1)
-#define SOC_PM_SUPPORT_WIFI_PD          (1)
-#define SOC_PM_SUPPORT_BT_PD            (1)
+#define SOC_PM_SUPPORT_MODEM_PD         (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
+#define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
 
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
+
+#define SOC_PM_CPU_RETENTION_BY_SW      (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
