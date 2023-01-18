@@ -20,6 +20,10 @@ if(CONFIG_SOC_BT_SUPPORTED OR CONFIG_SOC_IEEE802154_SUPPORTED OR CONFIG_SOC_IEEE
     list(APPEND srcs "src/btbb_init.c")
 endif()
 
+if(CONFIG_ESP_PHY_ENABLE_CERT_TEST)
+    list(APPEND srcs "src/phy_callback.c")
+endif()
+
 idf_build_get_property(build_dir BUILD_DIR)
 
 if(CONFIG_SOC_WIFI_SUPPORTED)
