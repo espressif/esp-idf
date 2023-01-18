@@ -17,6 +17,7 @@
 #include "driver/sdmmc_types.h"
 #include "driver/sdmmc_defs.h"
 #include "driver/sdmmc_host.h"
+#include "esp_timer.h"
 #include "sdmmc_private.h"
 
 
