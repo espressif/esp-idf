@@ -416,10 +416,8 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	}
 
 	if (rsn_ie_len < sizeof(struct rsn_ie_hdr)) {
-#ifdef DEBUG_PRINT
 		wpa_printf(MSG_DEBUG, "%s: ie len too short %lu",
 			   __func__, (unsigned long) rsn_ie_len);
-#endif
 		return -1;
 	}
 
@@ -428,10 +426,8 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	if (hdr->elem_id != WLAN_EID_RSN ||
 	    hdr->len != rsn_ie_len - 2 ||
 	    WPA_GET_LE16(hdr->version) != RSN_VERSION) {
-#ifdef DEBUG_PRINT
 		wpa_printf(MSG_DEBUG, "%s: malformed ie or unknown version",
 			   __func__);
-#endif
 		return -2;
 	}
 
@@ -443,10 +439,8 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 		pos += RSN_SELECTOR_LEN;
 		left -= RSN_SELECTOR_LEN;
 	} else if (left > 0) {
-#ifdef DEBUG_PRINT
 		wpa_printf(MSG_DEBUG, "%s: ie length mismatch, %u too much",
 			   __func__, left);
-#endif
 		return -3;
 	}
 
@@ -456,10 +450,8 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 		pos += 2;
 		left -= 2;
 		if (count == 0 || left < count * RSN_SELECTOR_LEN) {
-		    #ifdef DEBUG_PRINT
 			wpa_printf(MSG_DEBUG, "%s: ie count botch (pairwise), "
 				   "count %u left %u", __func__, count, left);
-		    #endif
 			return -4;
 		}
 		for (i = 0; i < count; i++) {
@@ -468,10 +460,8 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 			left -= RSN_SELECTOR_LEN;
 		}
 	} else if (left == 1) {
-	    #ifdef DEBUG_PRINT
 		wpa_printf(MSG_DEBUG, "%s: ie too short (for key mgmt)",
 			   __func__);
-	    #endif
 		return -5;
 	}
 
@@ -481,10 +471,8 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 		pos += 2;
 		left -= 2;
 		if (count == 0 || left < count * RSN_SELECTOR_LEN) {
-		    #ifdef DEBUG_PRINT
 			wpa_printf(MSG_DEBUG, "%s: ie count botch (key mgmt), "
 				   "count %u left %u", __func__, count, left);
-		    #endif
 			return -6;
 		}
 		for (i = 0; i < count; i++) {
@@ -493,10 +481,8 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 			left -= RSN_SELECTOR_LEN;
 		}
 	} else if (left == 1) {
-	    #ifdef DEBUG_PRINT
 		wpa_printf(MSG_DEBUG, "%s: ie too short (for capabilities)",
 			   __func__);
-	    #endif
 		return -7;
 	}
 
@@ -511,12 +497,10 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 		pos += 2;
 		left -= 2;
 		if (left < (int) data->num_pmkid * PMKID_LEN) {
-		    #ifdef DEBUG_PRINT
 			wpa_printf(MSG_DEBUG, "%s: PMKID underflow "
 				   "(num_pmkid=%lu left=%d)",
 				   __func__, (unsigned long) data->num_pmkid,
 				   left);
-		    #endif
 			data->num_pmkid = 0;
 			return -9;
 		} else {
@@ -540,10 +524,8 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	}
 
 	if (left > 0) {
-	    #ifdef DEBUG_PRINT
 		wpa_printf(MSG_DEBUG, "%s: ie has %u trailing bytes - ignored",
 			   __func__, left);
-	    #endif
 	}
 
 	return 0;
@@ -1033,7 +1015,6 @@ int rsn_pmkid_suite_b_192(const u8 *kck, size_t kck_len, const u8 *aa,
 }
 #endif /* CONFIG_SUITEB192 */
 
-#ifdef DEBUG_PRINT
 /**
  * wpa_cipher_txt - Convert cipher suite to a text string
  * @cipher: Cipher suite (WPA_CIPHER_* enum)
@@ -1066,7 +1047,6 @@ const char * wpa_cipher_txt(int cipher)
 		return "UNKNOWN";
 	}
 }
-#endif
 
 /**
  * wpa_pmk_to_ptk - Calculate PTK from PMK, addresses, and nonces

@@ -933,12 +933,10 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
     }
 
     if (len < sizeof(*hdr) + sizeof(*ehdr)) {
-#ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG,  "WPA: EAPOL frame too short to be a WPA "
                    "EAPOL-Key (len %lu, expecting at least %lu)",
                    (unsigned long) len,
                    (unsigned long) sizeof(*hdr) + sizeof(*ehdr));
-#endif
         return ESP_OK;
     }
 
@@ -950,28 +948,22 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
     data_len = plen + sizeof(*hdr);
     eap_len = be_to_host16(ehdr->length);
 
-#ifdef DEBUG_PRINT
     wpa_printf(MSG_DEBUG, "IEEE 802.1X RX: version=%d type=%d length=%d",
                hdr->version, hdr->type, plen);
-#endif
 
     if (hdr->version < EAPOL_VERSION) {
         /* TODO: backwards compatibility */
     }
     if (hdr->type != IEEE802_1X_TYPE_EAP_PACKET) {
-#ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPS: EAP frame (type %u) discarded, "
                    "not a EAP PACKET frame", hdr->type);
-#endif
         ret = 0;
         goto out;
     }
     if (plen > len - sizeof(*hdr) || plen < sizeof(*ehdr)) {
-#ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: EAPOL frame payload size %lu "
                    "invalid (frame size %lu)",
                    (unsigned long) plen, (unsigned long) len);
-#endif
         ret = 0;
         goto out;
     }
@@ -979,18 +971,14 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
     wpa_hexdump(MSG_MSGDUMP, "WPA: RX EAPOL-EAP PACKET", tmp, len);
 
     if (data_len < len) {
-#ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: ignoring %lu bytes after the IEEE "
                    "802.1X data", (unsigned long) len - data_len);
-#endif
     }
 
     if (eap_len != plen) {
-#ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: EAPOL length %lu "
                    "invalid (eapol length %lu)",
                    (unsigned long) eap_len, (unsigned long) plen);
-#endif
         ret = 0;
         goto out;
     }
