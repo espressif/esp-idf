@@ -1597,7 +1597,14 @@ typedef struct {
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT                   BTM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT                BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT               BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT
-#define BTA_DM_BLE_5_GAP_UNKNOWN_EVT                              BTM_BLE_5_GAP_UNKNOWN_EVT
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#define BTA_BLE_GAP_PERIODIC_ADV_RECV_ENABLE_COMPLETE_EVT          BTM_BLE_GAP_PERIODIC_ADV_RECV_ENABLE_COMPLETE_EVT
+#define BTA_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_COMPLETE_EVT           BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_COMPLETE_EVT
+#define BTA_BLE_GAP_PERIODIC_ADV_SET_INFO_TRANS_COMPLETE_EVT       BTM_BLE_GAP_PERIODIC_ADV_SET_INFO_TRANS_COMPLETE_EVT
+#define BTA_BLE_GAP_SET_PAST_PARAMS_COMPLETE_EVT                   BTM_BLE_GAP_SET_PAST_PARAMS_COMPLETE_EVT
+#define BTA_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT               BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#define BTA_DM_BLE_5_GAP_UNKNOWN_EVT                               BTM_BLE_5_GAP_UNKNOWN_EVT
 typedef tBTM_BLE_5_GAP_EVENT tBTA_DM_BLE_5_GAP_EVENT;
 
 typedef tBTM_BLE_5_GAP_CB_PARAMS tBTA_DM_BLE_5_GAP_CB_PARAMS;
@@ -1606,6 +1613,15 @@ typedef tBTM_BLE_5_HCI_CBACK tBTA_DM_BLE_5_HCI_CBCAK;
 extern tBTM_BLE_5_HCI_CBACK ble_5_hci_cb;
 
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+typedef struct {
+    UINT8 mode;
+    UINT16 skip;
+    UINT16 sync_timeout;
+    UINT8 cte_type;
+} tBTA_DM_BLE_PAST_PARAMS;
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 /*****************************************************************************
 **  External Function Declarations
@@ -3014,6 +3030,16 @@ extern void BTA_DmBleGapPreferExtConnectParamsSet(BD_ADDR bd_addr,
 
 extern void BTA_DmBleGapExtConnect(tBLE_ADDR_TYPE own_addr_type, const BD_ADDR peer_addr);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+extern void BTA_DmBleGapPeriodicAdvRecvEnable(UINT16 sync_handle, UINT8 enable);
+
+extern void BTA_DmBleGapPeriodicAdvSyncTrans(BD_ADDR peer_addr, UINT16 service_data, UINT16 sync_handle);
+
+extern void BTA_DmBleGapPeriodicAdvSetInfoTrans(BD_ADDR peer_addr, UINT16 service_data, UINT8 adv_handle);
+
+extern void BTA_DmBleGapSetPeriodicAdvSyncTransParams(BD_ADDR peer_addr, tBTA_DM_BLE_PAST_PARAMS *params);
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 #endif
 
