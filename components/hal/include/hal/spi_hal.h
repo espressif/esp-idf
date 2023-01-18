@@ -36,7 +36,6 @@
  * Input parameters to the ``spi_hal_cal_clock_conf`` to calculate the timing configuration
  */
 typedef struct {
-    spi_clock_source_t clk_sel;         ///< Select SPI clock source
     uint32_t clk_src_hz;                ///< Selected SPI clock source speed in Hz
     uint32_t half_duplex;               ///< Whether half duplex mode is used, device specific
     uint32_t no_compensate;             ///< No need to add dummy to compensate the timing, device specific
@@ -56,6 +55,7 @@ typedef struct {
  */
 typedef struct {
     spi_ll_clock_val_t clock_reg;       ///< Register value used by the LL layer
+    spi_clock_source_t clock_source;    ///< Clock source of each device used by LL layer
     int timing_dummy;                   ///< Extra dummy needed to compensate the timing
     int timing_miso_delay;              ///< Extra miso delay clocks to compensate the timing
 } spi_hal_timing_conf_t;
@@ -244,6 +244,7 @@ int spi_hal_master_cal_clock(int fapb, int hz, int duty_cycle);
 /**
  * Get the timing configuration for given parameters.
  *
+ * @param source_freq_hz Clock freq of selected clock source for SPI in Hz.
  * @param eff_clk        Actual SPI clock frequency
  * @param gpio_is_used   true if the GPIO matrix is used, otherwise false.
  * @param input_delay_ns Maximum delay between SPI launch clock and the data to
@@ -252,7 +253,7 @@ int spi_hal_master_cal_clock(int fapb, int hz, int duty_cycle);
  * @param dummy_n        Dummy cycles required to correctly read the data.
  * @param miso_delay_n   suggested delay on the MISO line, in APB clocks.
  */
-void spi_hal_cal_timing(int eff_clk, bool gpio_is_used, int input_delay_ns, int *dummy_n, int *miso_delay_n);
+void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int input_delay_ns, int *dummy_n, int *miso_delay_n);
 
 /**
  * Get the maximum frequency allowed to read if no compensation is used.

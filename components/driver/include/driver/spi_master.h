@@ -8,12 +8,25 @@
 
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
+#include "hal/spi_types.h"
 //for spi_bus_initialization funcions. to be back-compatible
 #include "driver/spi_common.h"
 
-/** SPI master clock is divided by 80MHz apb clock. Below defines are example frequencies, and are accurate. Be free to specify a random frequency, it will be rounded to closest frequency (to macros below if above 8MHz).
-  * 8MHz
+/** SPI master clock is divided by clock source. Below defines are example frequencies. Be free to specify a random frequency, it will be rounded to closest frequency (to macros below if above 8MHz).
   */
+#if !CONFIG_SPI_SUPPRESS_FREQ_MACRO_DEPRECATE_WARN
+#define SPI_MASTER_FREQ_8M    _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/10)
+#define SPI_MASTER_FREQ_9M    _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/9)    ///< 8.89MHz
+#define SPI_MASTER_FREQ_10M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/8)    ///< 10MHz
+#define SPI_MASTER_FREQ_11M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/7)    ///< 11.43MHz
+#define SPI_MASTER_FREQ_13M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/6)    ///< 13.33MHz
+#define SPI_MASTER_FREQ_16M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/5)    ///< 16MHz
+#define SPI_MASTER_FREQ_20M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/4)    ///< 20MHz
+#define SPI_MASTER_FREQ_26M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/3)    ///< 26.67MHz
+#define SPI_MASTER_FREQ_40M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/2)    ///< 40MHz
+#define SPI_MASTER_FREQ_80M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/1)    ///< 80MHz
+
+#else
 #define SPI_MASTER_FREQ_8M      (APB_CLK_FREQ/10)
 #define SPI_MASTER_FREQ_9M      (APB_CLK_FREQ/9)    ///< 8.89MHz
 #define SPI_MASTER_FREQ_10M     (APB_CLK_FREQ/8)    ///< 10MHz
@@ -24,6 +37,8 @@
 #define SPI_MASTER_FREQ_26M     (APB_CLK_FREQ/3)    ///< 26.67MHz
 #define SPI_MASTER_FREQ_40M     (APB_CLK_FREQ/2)    ///< 40MHz
 #define SPI_MASTER_FREQ_80M     (APB_CLK_FREQ/1)    ///< 80MHz
+#endif  //!CONFIG_SPI_SUPPRESS_FREQ_MACRO_DEPRECATE_WARN
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -63,8 +78,9 @@ typedef struct {
                                          - 2: (1, 0)
                                          - 3: (1, 1)
                                      */
-    uint16_t duty_cycle_pos;         ///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
-    uint16_t cs_ena_pretrans;        ///< Amount of SPI bit-cycles the cs should be activated before the transmission (0-16). This only works on half-duplex transactions.
+    spi_clock_source_t clock_source;///< Select SPI clock source, `SPI_CLK_SRC_DEFAULT` by default.
+    uint16_t duty_cycle_pos;        ///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
+    uint16_t cs_ena_pretrans;       ///< Amount of SPI bit-cycles the cs should be activated before the transmission (0-16). This only works on half-duplex transactions.
     uint8_t cs_ena_posttrans;       ///< Amount of SPI bit-cycles the cs should stay active after the transmission (0-16)
     int clock_speed_hz;             ///< Clock speed, divisors of 80MHz, in Hz. See ``SPI_MASTER_FREQ_*``.
     int input_delay_ns;             /**< Maximum data valid time of slave. The time required between SCLK and MISO
@@ -356,7 +372,7 @@ esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int* freq_khz);
  *
  * @return Actual working frequency that most fit.
  */
-int spi_get_actual_clock(int fapb, int hz, int duty_cycle);
+int spi_get_actual_clock(int fapb, int hz, int duty_cycle) __attribute__((deprecated("Please use spi_device_get_actual_freq instead")));
 
 /**
   * @brief Calculate the timing settings of specified frequency and settings.

@@ -47,3 +47,14 @@ Peripherals
         - ``dac_digi_deinit`` is replaced by :cpp:func:`dac_continuous_del_channels`.
         - ``dac_digi_start``, ``dac_digi_fifo_reset`` and ``dac_digi_reset`` are merged into :cpp:func:`dac_continuous_enable`.
         - ``dac_digi_stop`` is replaced by :cpp:func:`dac_continuous_disable`.
+
+
+.. only:: SOC_GPSPI_SUPPORTED
+
+    GPSPI
+    -----
+
+    Following items are deprecated. Since IDF v5.1, GPSPI clock source is configurable.
+
+    - ``spi_get_actual_clock`` is deprecated, you should use :cpp:func:`spi_device_get_actual_freq` instead.
+    - ``SPI_MASTER_FREQ_nM`` macros are deprecated, these macros are no longer guaranteed to be accurate, as clock source may not be APB. By default, using these macros will generate deprecation warnings. You can suppress the warnings by enabling the Kconfig option :ref:`CONFIG_SPI_SUPPRESS_FREQ_MACRO_DEPRECATE_WARN`.

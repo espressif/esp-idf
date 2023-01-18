@@ -444,9 +444,9 @@ static const ptest_func_t hd_test_func = {
 
 static int test_freq_hd[] = {
     // 100*1000,
-    // SPI_MASTER_FREQ_10M, //maximum freq MISO stable before next latch edge
-    // SPI_MASTER_FREQ_20M, //maximum freq MISO stable before next latch edge
-    SPI_MASTER_FREQ_40M, //maximum freq MISO stable before next latch edge
+    // 10 * 1000 * 1000, //maximum freq MISO stable before next latch edge
+    // 20 * 1000 * 1000, //maximum freq MISO stable before next latch edge
+    40 * 1000 * 1000, //maximum freq MISO stable before next latch edge
     0,
 };
 

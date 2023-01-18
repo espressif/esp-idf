@@ -264,6 +264,7 @@
 #define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
+#define SOC_SPI_SUPPORT_CLK_APB             1
 /// The SPI Slave half duplex mode has been updated greatly in ESP32-S2
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
 

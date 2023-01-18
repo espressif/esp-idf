@@ -187,6 +187,23 @@ typedef enum {
 
 /////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////
 
+
+/////////////////////////////////////////////////SPI////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of SPI
+ */
+#define SOC_SPI_CLKS {SOC_MOD_CLK_PLL_F40M, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Type of SPI clock source.
+ */
+typedef enum {
+    SPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F40M,     /*!< Select PLL_40M as SPI source clock */
+    SPI_CLK_SRC_PLL_F40M = SOC_MOD_CLK_PLL_F40M,     /*!< Select PLL_40M as SPI source clock */
+    SPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select XTAL as SPI source clock */
+} soc_periph_spi_clk_src_t;
+
 /**
  * @brief Array initializer for all supported clock sources of I2C
  */
