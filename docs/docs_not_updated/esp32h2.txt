@@ -113,8 +113,6 @@ api-reference/peripherals/dac
 api-reference/peripherals/spi_slave
 api-reference/peripherals/etm
 api-reference/peripherals/i2s
-api-reference/peripherals/gptimer
-api-reference/peripherals/pcnt
 api-reference/peripherals/touch_element
 api-reference/peripherals/lcd
 api-reference/peripherals/mcpwm
@@ -130,7 +128,6 @@ api-reference/peripherals/spi_flash/spi_flash_override_driver
 api-reference/peripherals/spi_flash/spi_flash_optional_feature
 api-reference/peripherals/spi_flash/index
 api-reference/peripherals/spi_flash/auto_suspend.inc
-api-reference/peripherals/sdm
 api-reference/peripherals/touch_pad
 api-reference/peripherals/adc_calibration
 api-reference/peripherals/spi_slave_hd
@@ -142,7 +139,6 @@ api-reference/peripherals/spi_master
 api-reference/peripherals/index
 api-reference/peripherals/sdmmc_host
 api-reference/peripherals/uart
-api-reference/peripherals/rmt
 api-reference/kconfig
 api-reference/network/esp_openthread
 api-reference/network/esp_eth
@@ -164,7 +160,6 @@ api-reference/system/esp_function_with_shared_stack
 api-reference/system/efuse
 api-reference/system/chip_revision
 api-reference/system/ulp_instruction_set
-api-reference/system/async_memcpy
 api-reference/system/random
 api-reference/system/esp_timer
 api-reference/system/esp_event
