@@ -41,9 +41,9 @@ RTC 定时器有以下时钟源：
     - ``内置 {IDF_TARGET_RTC_CLK_FRE} RC 振荡器`` （默认）：Deep-sleep 模式下电流消耗最低，不依赖任何外部元件。但由于温度波动会影响该时钟源的频率稳定性，在 Deep-sleep 和 Light-sleep 模式下都有可能发生时间偏移。
 
     :not esp32c2: - ``外置 32 kHz 晶振``：需要将一个 32 kHz 晶振连接到 {IDF_TARGET_EXT_CRYSTAL_PIN} 管脚。频率稳定性更高，但在 Deep-sleep 模式下电流消耗略高（比默认模式高 1 μA）。
-    
+
     - ``管脚 {IDF_TARGET_EXT_OSC_PIN} 外置 32 kHz 振荡器``：允许使用由外部电路产生的 32 kHz 时钟。外部时钟信号必须连接到管脚 {IDF_TARGET_EXT_OSC_PIN}。正弦波信号的振幅应小于 1.2 V，方波信号的振幅应小于 1 V。正常模式下，电压范围应为 0.1 < Vcm < 0.5 xVamp，其中 Vamp 代表信号振幅。使用此时钟源时，管脚 {IDF_TARGET_EXT_OSC_PIN} 无法用作 GPIO 管脚。
-    
+
     - ``内置 {IDF_TARGET_INT_OSC_FRE} 振荡器的 256 分频时钟 ({IDF_TARGET_INT_OSC_FRE_DIVIDED})``：频率稳定性优于 ``内置 {IDF_TARGET_RTC_CLK_FRE} RC 振荡器``，同样无需外部元件，但 Deep-sleep 模式下电流消耗更高（比默认模式高 5 μA）。
 
 时钟源的选择取决于系统时间精度要求和睡眠模式下的功耗要求。要修改 RTC 时钟源，请在项目配置中设置 :ref:`CONFIG_RTC_CLK_SRC`。
@@ -108,27 +108,45 @@ SNTP 时间同步
 
 要设置当前时间，可以使用 POSIX 函数 ``settimeofday()`` 和 ``adjtime()``。lwIP 中的 SNTP 库会在收到 NTP 服务器的响应报文后，调用这两个函数以更新当前的系统时间。当然，用户可以在 lwIP SNTP 库之外独立地使用这两个函数。
 
-在 lwIP SNTP 库内部调用的函数依赖于系统时间的同步模式。可使用函数 :cpp:func:`sntp_set_sync_mode` 来设置下列同步模式之一。
+包括 SNTP 函数在内的一些 lwIP API 并非线程安全，因此建议在与 SNTP 模块交互时使用 :doc:`esp_netif component <../network/esp_netif>`。
 
-- :cpp:enumerator:`SNTP_SYNC_MODE_IMMED` （默认）：使用函数 ``settimeofday()`` 后，收到 SNTP 服务器响应时立即更新系统时间。
-- :cpp:enumerator:`SNTP_SYNC_MODE_SMOOTH`：使用函数 ``adjtime()`` 后，通过逐渐减小时间误差，平滑地更新时间。如果 SNTP 响应报文中的时间与当前系统时间相差大于 35 分钟，则会通过 ``settimeofday()`` 立即更新系统时间。
-
-lwIP SNTP 库提供了 API 函数，用于设置某个事件的回调函数。您可能需要使用以下函数：
-
-- :cpp:func:`sntp_set_time_sync_notification_cb()`：用于设置回调函数，通知时间同步的过程。
-- :cpp:func:`sntp_get_sync_status()` 和 :cpp:func:`sntp_set_sync_status()`：用于获取或设置时间同步状态。
-
-通过 SNTP 开始时间同步，只需调用以下三个函数：
+要初始化特定的 SNTP 服务器并启动 SNTP 服务，只需创建有特定服务器名称的默认 SNTP 服务器配置，然后调用 :cpp:func:`esp_netif_sntp_init()` 注册该服务器并启动 SNTP 服务。
 
 .. code-block:: c
 
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "pool.ntp.org");
-    sntp_init();
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+    esp_netif_sntp_init(&config);
+
+一旦收到 SNTP 服务器的响应，此代码会自动执行时间同步。有时等待时间同步很有意义，调用 :cpp:func:`esp_netif_sntp_sync_wait()` 可实现此目的：
+
+.. code-block:: c
+
+    if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) != ESP_OK) {
+        printf("Failed to update system time within 10s timeout");
+    }
+
+要配置多个 NTP 服务器（或使用更高级的设置，例如 DHCP 提供的 NTP 服务器），请参考 :doc:`esp_netif <../network/esp_netif>` 文档 :ref:`esp_netif-sntp-api` 中的详细说明。
+
+lwIP SNTP 库可在下列任一同步模式下工作：
+
+- :cpp:enumerator:`SNTP_SYNC_MODE_IMMED` （默认）：使用 ``settimeofday()``，收到 SNTP 服务器响应后立即更新系统时间。
+- :cpp:enumerator:`SNTP_SYNC_MODE_SMOOTH`：使用函数 ``adjtime()`` 逐渐减少时间误差以平滑更新时间。如果 SNTP 响应时间和系统时间之差超过 35 分钟，请立即使用 ``settimeofday()`` 更新系统时间。
+
+如要选择 :cpp:enumerator:`SNTP_SYNC_MODE_SMOOTH` 模式，请将 SNTP 配置结构体中的 :cpp:member:`esp_sntp_config::smooth` 设置为 ``true``，否则将默认使用 :cpp:enumerator:`SNTP_SYNC_MODE_IMMED` 模式。
+
+设置时间同步时的回调函数，请使用配置结构体中的 :cpp:member:`esp_sntp_config::sync_cb` 字段。
 
 添加此初始化代码后，应用程序将定期同步时间。时间同步周期由 :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` 设置（默认为一小时）。如需修改，请在项目配置中设置 :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY`。
 
 如需查看示例代码，请前往 :example:`protocols/sntp` 目录。该目录下的示例展示了如何基于 lwIP SNTP 库实现时间同步。
+
+您也可以直接使用 lwIP API，但请务必注意线程安全。线程安全的 API 如下：
+
+- :cpp:func:`sntp_set_time_sync_notification_cb` 用于设置通知时间同步过程的回调函数。
+- :cpp:func:`sntp_get_sync_status` 和 :cpp:func:`sntp_set_sync_status` 用于获取/设置时间同步状态。
+- :cpp:func:`sntp_set_sync_mode` 用于设置同步模式。
+- :cpp:func:`esp_sntp_setoperatingmode` 用于设置首选操作模式。:cpp:enumerator:`ESP_SNTP_OPMODE_POLL` 和 :cpp:func:`esp_sntp_init` 可初始化 SNTP 模块。
+- :cpp:func:`esp_sntp_setservername` 用于配置特定 SNTP 服务器。
 
 
 时区

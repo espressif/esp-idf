@@ -153,6 +153,7 @@ idf_component_register(SRCS "${srcs}"
 
 # lots of LWIP source files evaluate macros that check address of stack variables
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)
+target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP_LWIP_COMPONENT_BUILD)
 
 set_source_files_properties(
     lwip/src/netif/ppp/pppos.c

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,21 +8,26 @@
 #include "unity.h"
 #include "unity_fixture.h"
 #include "esp_netif.h"
+#include "esp_netif_sntp.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "esp_wifi_netif.h"
 #include "sdkconfig.h"
-#include "lwip/sockets.h"
 #include "test_utils.h"
+#include "memory_checks.h"
 
 TEST_GROUP(esp_netif);
 
 TEST_SETUP(esp_netif)
 {
+    test_utils_record_free_mem();
+    TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
 }
 
 TEST_TEAR_DOWN(esp_netif)
 {
+    test_utils_finish_and_evaluate_leaks(test_utils_get_leak_level(ESP_LEAK_TYPE_WARNING, ESP_COMP_LEAK_ALL),
+                                         test_utils_get_leak_level(ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_ALL));
 }
 
 TEST(esp_netif, init_and_destroy)
@@ -37,6 +42,13 @@ TEST(esp_netif, init_and_destroy)
     esp_netif_destroy(esp_netif);
 }
 
+TEST(esp_netif, init_and_destroy_sntp)
+{
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("127.0.0.1");
+    config.start = false;
+    esp_netif_sntp_init(&config);
+    esp_netif_sntp_deinit();
+}
 
 TEST(esp_netif, get_from_if_key)
 {
@@ -275,14 +287,22 @@ TEST(esp_netif, get_set_hostname)
 
 TEST_GROUP_RUNNER(esp_netif)
 {
+    /**
+     * Keep the tests that don't need to start TCP/IP stack first, when the leak checker
+     * is more strict with leak level set to 0
+     */
     RUN_TEST_CASE(esp_netif, init_and_destroy)
+    RUN_TEST_CASE(esp_netif, init_and_destroy_sntp)
     RUN_TEST_CASE(esp_netif, get_from_if_key)
     RUN_TEST_CASE(esp_netif, create_delete_multiple_netifs)
+    RUN_TEST_CASE(esp_netif, create_custom_wifi_interfaces)
+    /**
+     * After follow tests which start lwIP and thus expect some mem-leaks by TCP/IP stack
+     */
+    RUN_TEST_CASE(esp_netif, get_set_hostname)
     RUN_TEST_CASE(esp_netif, dhcp_client_state_transitions_wifi_sta)
     RUN_TEST_CASE(esp_netif, dhcp_server_state_transitions_wifi_ap)
     RUN_TEST_CASE(esp_netif, dhcp_server_state_transitions_mesh)
-    RUN_TEST_CASE(esp_netif, create_custom_wifi_interfaces)
-    RUN_TEST_CASE(esp_netif, get_set_hostname)
 }
 
 void app_main(void)

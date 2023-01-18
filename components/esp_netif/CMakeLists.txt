@@ -8,6 +8,7 @@ endif()
 
 set(srcs_lwip
         "lwip/esp_netif_lwip.c"
+        "lwip/esp_netif_sntp.c"
         "lwip/esp_netif_lwip_defaults.c"
         "lwip/netif/wlanif.c"
         "lwip/netif/ethernetif.c"
@@ -55,3 +56,4 @@ endif()
 
 
 target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
+target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP_NETIF_COMPONENT_BUILD)
