@@ -1117,6 +1117,21 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_test_command_complete(p);
         break;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+    case HCI_BLE_SET_PERIOD_ADV_RECV_ENABLE:
+    case HCI_BLE_SET_DEFAULT_PAST_PARAMS:
+        break;
+    case HCI_BLE_PERIOD_ADV_SYNC_TRANS:
+    case HCI_BLE_PERIOD_ADV_SET_INFO_TRANS:
+    case HCI_BLE_SET_PAST_PARAMS: {
+        UINT8 status;
+        UINT16 conn_handle;
+        STREAM_TO_UINT8(status, p);
+        STREAM_TO_UINT16(conn_handle, p);
+        btm_ble_periodic_adv_sync_trans_complete(opcode, status, conn_handle);
+        break;
+    }
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 #endif
 #endif /* (BLE_INCLUDED == TRUE) */
 
@@ -2317,20 +2332,32 @@ static void btu_ble_scan_req_received_evt(UINT8 *p)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p)
 {
-    tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV recv = {0};
+    UINT16 conn_handle;
+    tL2C_LCB *p_lcb = NULL;
+    tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV past_recv = {0};
 
-    STREAM_TO_UINT8(recv.status, p);
-    STREAM_TO_UINT16(recv.conn_handle, p);
-    STREAM_TO_UINT16(recv.service_data, p);
-    STREAM_TO_UINT16(recv.sync_handle, p);
-    STREAM_TO_UINT8(recv.adv_sid, p);
-    STREAM_TO_UINT8(recv.adv_addr_type, p);
-    STREAM_TO_BDADDR(recv.adv_addr, p);
-    STREAM_TO_UINT8(recv.adv_phy, p);
-    STREAM_TO_UINT16(recv.period_adv_interval, p);
-    STREAM_TO_UINT8(recv.adv_clk_accuracy, p);
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
 
-    HCI_TRACE_DEBUG("%s status %x, conn handle %x, sync handle %x", recv.status, recv.conn_handle, recv.sync_handle);
+    STREAM_TO_UINT8(past_recv.status, p);
+    STREAM_TO_UINT16(conn_handle, p);
+    STREAM_TO_UINT16(past_recv.service_data, p);
+    STREAM_TO_UINT16(past_recv.sync_handle, p);
+    STREAM_TO_UINT8(past_recv.adv_sid, p);
+    STREAM_TO_UINT8(past_recv.adv_addr_type, p);
+    STREAM_TO_BDADDR(past_recv.adv_addr, p);
+    STREAM_TO_UINT8(past_recv.adv_phy, p);
+    STREAM_TO_UINT16(past_recv.adv_interval, p);
+    STREAM_TO_UINT8(past_recv.adv_clk_accuracy, p);
+
+    p_lcb = l2cu_find_lcb_by_handle(conn_handle);
+    if(p_lcb) {
+       memcpy(past_recv.addr, p_lcb->remote_bd_addr, BD_ADDR_LEN);
+    }
+
+    btm_ble_periodic_adv_sync_trans_recv_evt(&past_recv);
 }
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
