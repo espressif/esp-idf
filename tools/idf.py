@@ -33,7 +33,7 @@ sys.dont_write_bytecode = True
 
 import python_version_checker  # noqa: E402
 from idf_py_actions.errors import FatalError  # noqa: E402
-from idf_py_actions.tools import executable_exists, idf_version, merge_action_lists, realpath  # noqa: E402
+from idf_py_actions.tools import executable_exists, idf_version, merge_action_lists  # noqa: E402
 
 # Use this Python interpreter for any subprocesses we launch
 PYTHON = sys.executable
@@ -69,9 +69,9 @@ def check_environment():
 
     # verify that IDF_PATH env variable is set
     # find the directory idf.py is in, then the parent directory of this, and assume this is IDF_PATH
-    detected_idf_path = realpath(os.path.join(os.path.dirname(__file__), '..'))
+    detected_idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
     if 'IDF_PATH' in os.environ:
-        set_idf_path = realpath(os.environ['IDF_PATH'])
+        set_idf_path = os.path.realpath(os.environ['IDF_PATH'])
         if set_idf_path != detected_idf_path:
             print_warning(
                 'WARNING: IDF_PATH environment variable is set to %s but %s path indicates IDF directory %s. '
@@ -650,7 +650,7 @@ def init_cli(verbose_output=None):
     )
     @click.option('-C', '--project-dir', default=os.getcwd(), type=click.Path())
     def parse_project_dir(project_dir):
-        return realpath(project_dir)
+        return os.path.realpath(project_dir)
 
     # Set `complete_var` to not existing environment variable name to prevent early cmd completion
     project_dir = parse_project_dir(standalone_mode=False, complete_var='_IDF.PY_COMPLETE_NOT_EXISTING')
@@ -658,11 +658,11 @@ def init_cli(verbose_output=None):
     all_actions = {}
     # Load extensions from components dir
     idf_py_extensions_path = os.path.join(os.environ['IDF_PATH'], 'tools', 'idf_py_actions')
-    extension_dirs = [realpath(idf_py_extensions_path)]
+    extension_dirs = [os.path.realpath(idf_py_extensions_path)]
     extra_paths = os.environ.get('IDF_EXTRA_ACTIONS_PATH')
     if extra_paths is not None:
         for path in extra_paths.split(';'):
-            path = realpath(path)
+            path = os.path.realpath(path)
             if path not in extension_dirs:
                 extension_dirs.append(path)
 
