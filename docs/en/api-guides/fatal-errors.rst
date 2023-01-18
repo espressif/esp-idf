@@ -395,8 +395,8 @@ This CPU exception indicates that the instruction which was executed was not a v
 
     Application has attempted to read or write memory location, and address alignment did not match load/store size. For example, 32-bit load can only be done from 4-byte aligned address, and 16-bit load can only be done from a 2-byte aligned address.
 
-Interrupt wdt timeout on CPU0 / CPU1
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Interrupt Watchdog Timeout on CPU0/CPU1
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Indicates that an interrupt watchdog timeout has occurred. See :doc:`Watchdogs <../api-reference/system/wdts>` for more information.
 
@@ -472,7 +472,7 @@ The backtrace should point to the function where stack smashing has occurred. Ch
     .. |ILLEGAL_INSTR_MSG| replace:: Illegal instruction
     .. |CACHE_ERR_MSG| replace:: Cache error
 
-Undefined behavior sanitizer (UBSAN) checks
+Undefined Behavior Sanitizer (UBSAN) Checks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Undefined behavior sanitizer (UBSAN) is a compiler feature which adds run-time checks for potentially incorrect operations, such as:
@@ -509,7 +509,7 @@ To enable UBSAN for a specific component (``component_name``) from ``CMakeLists.
 
     target_compile_options(${COMPONENT_LIB} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
 
-UBSAN output
+UBSAN Output
 """"""""""""
 
 When UBSAN detects an error, a message and the backtrace are printed, for example::
