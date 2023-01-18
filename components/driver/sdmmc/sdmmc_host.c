@@ -9,6 +9,7 @@
 #include <sys/param.h>
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
+#include "esp_timer.h"
 #include "soc/soc_caps.h"
 #include "soc/soc_pins.h"
 #include "soc/gpio_periph.h"
@@ -24,9 +25,6 @@
 #include "hal/gpio_hal.h"
 
 #define SDMMC_EVENT_QUEUE_LENGTH 32
-
-#define SDMMC_TIMEOUT_MS 1000
-
 
 static void sdmmc_isr(void* arg);
 static void sdmmc_host_dma_init(void);
@@ -78,9 +76,9 @@ esp_err_t sdmmc_host_reset(void)
     SDMMC.ctrl.fifo_reset = 1;
 
     // Wait for the reset bits to be cleared by hardware
-    int t0 = esp_timer_get_time();
+    int64_t t0 = esp_timer_get_time();
     while (SDMMC.ctrl.controller_reset || SDMMC.ctrl.fifo_reset || SDMMC.ctrl.dma_reset) {
-        if (esp_timer_get_time() - t0 > SDMMC_TIMEOUT_MS) {
+        if (esp_timer_get_time() - t0 > SDMMC_HOST_RESET_TIMEOUT_US) {
             return ESP_ERR_TIMEOUT;
         }
     }
@@ -197,10 +195,10 @@ static esp_err_t sdmmc_host_clock_update_command(int slot)
             return err;
         }
 
-        int t0 = esp_timer_get_time();
+        int64_t t0 = esp_timer_get_time();
         while (true) {
 
-            if (esp_timer_get_time() - t0 > SDMMC_TIMEOUT_MS) {
+            if (esp_timer_get_time() - t0 > SDMMC_HOST_CLOCK_UPDATE_CMD_TIMEOUT_US) {
                 return ESP_ERR_TIMEOUT;
             }
 
@@ -349,9 +347,9 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg) {
     /* Outputs should be synchronized to cclk_out */
     cmd.use_hold_reg = 1;
 
-    int t0 = esp_timer_get_time();
+    int64_t t0 = esp_timer_get_time();
     while (SDMMC.cmd.start_command == 1) {
-        if (esp_timer_get_time() - t0 > SDMMC_TIMEOUT_MS) {
+        if (esp_timer_get_time() - t0 > SDMMC_HOST_START_CMD_TIMEOUT_US) {
             return ESP_ERR_TIMEOUT;
         }
     }
