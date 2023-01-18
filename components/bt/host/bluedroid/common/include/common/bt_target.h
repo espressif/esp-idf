@@ -192,6 +192,12 @@
 #define BLE_42_FEATURE_SUPPORT   FALSE
 #endif
 
+#if (UC_BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#define BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER   TRUE
+#else
+#define BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER   FALSE
+#endif
+
 #if (UC_BT_BLE_RPA_SUPPORTED  == TRUE)
 #define CONTROLLER_RPA_LIST_ENABLE   TRUE
 #else
@@ -2313,13 +2319,6 @@ The maximum number of payload octets that the local device can receive in a sing
 #define HEAP_ALLOCATION_FROM_SPIRAM_FIRST TRUE
 #else
 #define HEAP_ALLOCATION_FROM_SPIRAM_FIRST FALSE
-#endif
-
-// TODO: add menuconfig and api for periodic adv sync transfer
-#if (BLE_50_FEATURE_SUPPORT)
-#define BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER TRUE
-#else
-#define BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER FALSE
 #endif
 
 #include "common/bt_trace.h"

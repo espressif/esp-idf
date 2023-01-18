@@ -1143,3 +1143,10 @@ config BT_BLE_42_FEATURES_SUPPORTED
     default n
     help
         This enables BLE 4.2 features.
+
+config BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
+    bool "Enable BLE periodic advertising sync transfer feature"
+    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_FEATURES_SUPPORTED && SOC_ESP_NIMBLE_CONTROLLER)
+    default n
+    help
+        This enables BLE periodic advertising sync transfer feature
