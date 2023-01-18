@@ -26,22 +26,28 @@ Please run wires between the slave and master to make the example function, and 
 
 ### Slave
 
-On ESP32, the pins of SDIO Slave are fixed:
+On ESP32 / ESP32C6, the pins of SDIO Slave are fixed:
 
-| Signal | GPIO NUM |
-|--------|----------|
-| CLK    | GPIO-14  |
-| CMD    | GPIO-15  |
-| DAT0   | GPIO-2   |
-| DAT1   | GPIO-4   |
-| DAT2   | GPIO-12  |
-| DAT3   | GPIO-13  |
+|        |  ESP32   |  ESP32C6 |
+|--------|----------|----------|
+| Signal | GPIO NUM | GPIO NUM |
+|--------|----------|----------|
+| CLK    | GPIO-14  | GPIO-19  |
+| CMD    | GPIO-15  | GPIO-18  |
+| DAT0   | GPIO-2   | GPIO-20  |
+| DAT1   | GPIO-4   | GPIO-21  |
+| DAT2   | GPIO-12  | GPIO-22  |
+| DAT3   | GPIO-13  | GPIO-23  |
+
+#### Note
+
+The SD peripheral works at a high frequency
+and uses native pins, there's no way to configure it to other pins through
+the GPIO matrix.
 
 Be aware that these pins are normally reserved for JTAG on ESP32. If you're
 using a board with JTAG functions, please remember to remove jumpers
-connecting to the JTAG adapter. The SD peripheral works at a high frequency
-and uses native pins, there's no way to configure it to other pins through
-the GPIO matrix.
+connecting to the JTAG adapter. (ESP32 Only).
 
 ### Host
 
@@ -72,11 +78,18 @@ please try:
 
 ## Board compatibility
 
-1. If you're using a board (e.g. WroverKit v2 and before, PICO, DevKitC)
+Pull-up resistors is needed. As the SD specification and the eMMC datasheet clarify,
+minimum 10k pull-up resistors are required for the bus IOs to protect the IOs against bus floating issue.
+Note these pull-up resistors are needed, even if the pin is not used (For example,
+you use 1-line-mode, the pull-up resistor is still required for the D1 pin).
+
+Some other notes:
+
+1. (ESP32 Only) If you're using a board (e.g. WroverKit v2 and before, PICO, DevKitC)
     which is not able to drive GPIO2 low on downloading, please remember to
     disconnect GPIO2 between two boards when downloading the application.
 
-2. It is suggested to use the official Wrover Kit as the slave. This is
+2. (ESP32 Only) It is suggested to use the official Wrover Kit as the slave. This is
     because Wrover Kits have pullups on CMD, DAT0 and DAT1. Otherwise you'll have
     to connect the pullups manually (or use the Wrover Kit as the host). However,
     due to a PCB issue, Wrover Kits v3 and earlier have pullup v.s. pulldown
@@ -92,7 +105,7 @@ please try:
     DAT0 and DAT1 and DAT3 lines. However please don't rely on internal weak
     pullups in your own design.
 
-3. Moreover, if your slave devkit is using code flash of 3.3V, it is required
+3. (ESP32 Only) Moreover, if your slave devkit is using code flash of 3.3V, it is required
     to pull down DAT2 line to set proper flash voltage. This conflicts with SDIO
     pullup requirements. Currently devkits using PICO-D4 and Wroom-32 series
     modules have this problem. You can either:

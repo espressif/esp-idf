@@ -96,7 +96,6 @@ api-reference/peripherals/sdio_slave
 api-reference/peripherals/touch_pad
 api-reference/peripherals/adc_calibration
 api-reference/peripherals/ds
-api-reference/peripherals/sd_pullup_requirements
 api-reference/peripherals/index
 api-reference/peripherals/sdmmc_host
 api-reference/kconfig
@@ -178,7 +177,6 @@ api-reference/error-codes
 api-reference/index
 api-reference/protocols
 api-reference/protocols/esp_serial_slave_link
-api-reference/protocols/esp_sdio_slave_protocol
 api-reference/protocols/esp_spi_slave_protocol
 api-reference/protocols/index
 security

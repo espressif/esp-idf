@@ -13,7 +13,6 @@ set(srcs
     "pcnt_periph.c"
     "rmt_periph.c"
     "rtc_io_periph.c"
-    "sdio_slave_periph.c"
     "sdmmc_periph.c"
     "spi_periph.c"
     "temperature_sensor_periph.c"

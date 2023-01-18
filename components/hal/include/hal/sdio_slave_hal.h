@@ -141,7 +141,6 @@ The HAL is used as below:
 
 #pragma once
 #include <esp_err.h>
-#include "soc/lldesc.h"
 #include "hal/sdio_slave_types.h"
 #include "hal/sdio_slave_ll.h"
 
@@ -172,15 +171,15 @@ typedef struct {
 
 /// DMA descriptor with extra fields
 typedef struct sdio_slave_hal_send_desc_s {
-    lldesc_t dma_desc;    ///< Used by Hardware, has pointer linking to next desc
+    sdio_slave_ll_desc_t dma_desc;    ///< Used by Hardware, has pointer linking to next desc
     uint32_t pkt_len;     ///< Accumulated length till this descriptor
     void*   arg;          ///< Holding arguments indicating this buffer */
 } sdio_slave_hal_send_desc_t;
 
 /// Descriptor used by the receiving part, call `sdio_slave_hal_recv_init_desc`
 /// to initialize it before use.
-typedef lldesc_t sdio_slave_hal_recv_desc_t;
-#define sdio_slave_hal_recv_desc_s lldesc_s
+typedef sdio_slave_ll_desc_t sdio_slave_hal_recv_desc_t;
+#define sdio_slave_hal_recv_desc_s sdio_slave_ll_desc_s
 typedef STAILQ_HEAD(recv_stailq_head_s, sdio_slave_hal_recv_desc_s) sdio_slave_hal_recv_stailq_t;
 
 

@@ -134,10 +134,12 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "spi_slave_hd_hal.c")
     endif()
 
+    if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
+        list(APPEND srcs "sdio_slave_hal.c")
+    endif()
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
-            "sdio_slave_hal.c"
             "touch_sensor_hal.c"
             "esp32/touch_sensor_hal.c"
             "esp32/gpio_hal_workaround.c")

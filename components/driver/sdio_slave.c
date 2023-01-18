@@ -78,7 +78,6 @@ The driver of FIFOs works as below:
 #include <string.h>
 #include "driver/sdio_slave.h"
 #include "soc/sdio_slave_periph.h"
-#include "esp32/rom/lldesc.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
@@ -176,16 +175,16 @@ static inline void critical_exit_recv(void);
 
 static void deinit_context(void);
 
-static inline void show_ll(lldesc_t *item)
+static inline void show_ll(sdio_slave_ll_desc_t *item)
 {
     ESP_EARLY_LOGI(TAG, "=> %p: size: %d(%d), eof: %d, owner: %d", item, item->size, item->length, item->eof, item->owner);
     ESP_EARLY_LOGI(TAG, "   buf: %p, stqe_next: %p", item->buf, item->qe.stqe_next);
 }
 
-static void __attribute((unused)) dump_ll(lldesc_t *queue)
+static void __attribute((unused)) dump_ll(sdio_slave_ll_desc_t *queue)
 {
     int cnt = 0;
-    lldesc_t *item = queue;
+    sdio_slave_ll_desc_t *item = queue;
     while (item != NULL) {
         cnt++;
         show_ll(item);
@@ -294,7 +293,7 @@ static void configure_pin(int pin, uint32_t func, bool pullup)
 static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
 {
     //initialize pin
-    const sdio_slave_slot_info_t *slot = &sdio_slave_slot_info[1];
+    const sdio_slave_slot_info_t *slot = &sdio_slave_slot_info[0];
 
     bool pullup = config->flags & SDIO_SLAVE_FLAG_INTERNAL_PULLUP;
     configure_pin(slot->clk_gpio, slot->func, false);   //clk doesn't need a pullup
@@ -330,7 +329,7 @@ static void recover_pin(int pin, int sdio_func)
 
 static void sdio_slave_hw_deinit(void)
 {
-    const sdio_slave_slot_info_t *slot = &sdio_slave_slot_info[1];
+    const sdio_slave_slot_info_t *slot = &sdio_slave_slot_info[0];
     recover_pin(slot->clk_gpio, slot->func);
     recover_pin(slot->cmd_gpio, slot->func);
     recover_pin(slot->d0_gpio, slot->func);

@@ -5,7 +5,7 @@ if(CONFIG_SOC_GPSPI_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
-    list(APPEND srcs "essl_sdio.c")
+    list(APPEND srcs "essl_sdio.c" "essl_sdio_defs.c")
 endif()
 
 idf_component_register(

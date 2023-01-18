@@ -81,8 +81,10 @@ components/driver/test_apps/rs485:
 components/driver/test_apps/sdio:
   disable:
     - if: SOC_SDIO_SLAVE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32c6"
       temporary: true
-      reason: Not supported.
+      reason: lack of runners
 
 components/driver/test_apps/spi/master:
   disable:
