@@ -19,6 +19,7 @@
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/esp_clk.h"
 #include "esp_heap_caps.h"
+#include "clk_tree.h"
 #include "esp_log.h"
 #include "test_utils.h"
 #include "test_spi_utils.h"
@@ -29,7 +30,7 @@ const static char TAG[] = "test_spi";
 // There is no input-only pin except on esp32 and esp32s2
 #define TEST_SOC_HAS_INPUT_ONLY_PINS  (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2)
 
-static void check_spi_pre_n_for(int clk, int pre, int n)
+static void check_spi_pre_n_for(spi_clock_source_t clock_source, int clk, int pre, int n)
 {
     spi_device_handle_t handle;
 
@@ -37,6 +38,7 @@ static void check_spi_pre_n_for(int clk, int pre, int n)
         .command_bits = 0,
         .address_bits = 0,
         .dummy_bits = 0,
+        .clock_source = clock_source,
         .clock_speed_hz = clk,
         .duty_cycle_pos = 128,
         .mode = 0,
@@ -63,7 +65,6 @@ static void check_spi_pre_n_for(int clk, int pre, int n)
     TEST_ESP_OK(spi_bus_remove_device(handle));
 }
 
-#define TEST_CLK_TIMES              8
 /**
  * In this test, SPI Clock Calculation:
  *   Fspi = Fclk_spi_mst / (pre + n)
@@ -71,33 +72,71 @@ static void check_spi_pre_n_for(int clk, int pre, int n)
  * For each item:
  * {freq, pre, n}
  */
-#define TEST_CLK_PARAM_APB_80       {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 2, 44}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} }
-#define TEST_CLK_PARAM_APB_40       {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 8, 50}, {333333, 2, 60}, {800000, 1, 50}, {900000, 1, 44}, {8000000, 1, 5}, {10000000, 1, 4}, {20000000, 1, 2} }
+#define TEST_CLK_TIMES     8
+struct test_clk_param_group_t
+{
+    uint32_t clk_param_80m[TEST_CLK_TIMES][3];
+    uint32_t clk_param_40m[TEST_CLK_TIMES][3];
+    uint32_t clk_param_17m[TEST_CLK_TIMES][3];
+} test_clk_param = {
+    {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 2, 44}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} },
+    {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000,  8, 50}, {333333, 2, 60}, {800000, 1, 50}, {900000, 1, 44}, {8000000, 1,  5}, {10000000, 1, 4}, {20000000, 1, 2} },
+    {{1, SOC_SPI_MAX_PRE_DIVIDER, 64}, {100000,  5, 35}, {333333, 1, 53}, {800000, 1, 22}, {900000, 1, 19}, {8000000, 1,  2}, {10000000, 1, 2}, {15000000, 1, 1} },
+};
+
 
 TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 {
-    spi_bus_config_t buscfg = {
-        .mosi_io_num = PIN_NUM_MOSI,
-        .miso_io_num = PIN_NUM_MISO,
-        .sclk_io_num = PIN_NUM_CLK,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1
-    };
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
-
-    uint32_t apb_freq_hz = esp_clk_apb_freq();
-    if (apb_freq_hz == (80 * 1000 * 1000)) {
-        uint32_t clk_param[TEST_CLK_TIMES][3] = TEST_CLK_PARAM_APB_80;
-        for (int i = 0; i < TEST_CLK_TIMES; i++) {
-            check_spi_pre_n_for(clk_param[i][0], clk_param[i][1], clk_param[i][2]);
-        }
-    } else {
-        TEST_ASSERT(apb_freq_hz == (40 * 1000 * 1000));
-        uint32_t clk_param[TEST_CLK_TIMES][3] = TEST_CLK_PARAM_APB_40;
-        for (int i = 0; i < TEST_CLK_TIMES; i++) {
-            check_spi_pre_n_for(clk_param[i][0], clk_param[i][1], clk_param[i][2]);
-        }
+    uint32_t clock_source_hz;
+// Test main clock source
+#if SOC_SPI_SUPPORT_CLK_PLL_F80M
+    clk_tree_src_get_freq_hz(SPI_CLK_SRC_PLL_F80M, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source PLL_80M = %ld\n", clock_source_hz);
+    TEST_ASSERT((80 * 1000 * 1000) == clock_source_hz);
+    for (int i = 0; i < TEST_CLK_TIMES; i++) {
+        check_spi_pre_n_for(SPI_CLK_SRC_PLL_F80M, test_clk_param.clk_param_80m[i][0], test_clk_param.clk_param_80m[i][1], test_clk_param.clk_param_80m[i][2]);
     }
+#endif
+
+#if SOC_SPI_SUPPORT_CLK_PLL_F40M
+    clk_tree_src_get_freq_hz(SPI_CLK_SRC_PLL_F40M, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source PLL_40M = %ld\n", clock_source_hz);
+    TEST_ASSERT((40 * 1000 * 1000) == clock_source_hz);
+    for (int i = 0; i < TEST_CLK_TIMES; i++) {
+        check_spi_pre_n_for(SPI_CLK_SRC_PLL_F40M, test_clk_param.clk_param_40m[i][0], test_clk_param.clk_param_40m[i][1], test_clk_param.clk_param_40m[i][2]);
+    }
+#endif
+
+#if SOC_SPI_SUPPORT_CLK_APB
+    clk_tree_src_get_freq_hz(SPI_CLK_SRC_APB, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source APB = %ld\n", clock_source_hz);
+    TEST_ASSERT((80 * 1000 * 1000) == clock_source_hz);
+    for (int i = 0; i < TEST_CLK_TIMES; i++) {
+        check_spi_pre_n_for(SPI_CLK_SRC_APB, test_clk_param.clk_param_80m[i][0], test_clk_param.clk_param_80m[i][1], test_clk_param.clk_param_80m[i][2]);
+    }
+#endif
+
+// Test XTAL clock source
+#if SOC_SPI_SUPPORT_CLK_XTAL
+    clk_tree_src_get_freq_hz(SPI_CLK_SRC_XTAL, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source XTAL = %ld\n", clock_source_hz);
+    TEST_ASSERT((40 * 1000 * 1000) == clock_source_hz);
+    for (int i = 0; i < TEST_CLK_TIMES; i++) {
+        check_spi_pre_n_for(SPI_CLK_SRC_XTAL, test_clk_param.clk_param_40m[i][0], test_clk_param.clk_param_40m[i][1], test_clk_param.clk_param_40m[i][2]);
+    }
+#endif
+
+// Test RC fast osc clock source
+#if SOC_SPI_SUPPORT_CLK_RC_FAST
+    clk_tree_src_get_freq_hz(SPI_CLK_SRC_RC_FAST, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source RC_FAST = %ld\n", clock_source_hz);
+    TEST_ASSERT((17500000) == clock_source_hz);
+    for (int i = 0; i < TEST_CLK_TIMES; i++) {
+        check_spi_pre_n_for(SPI_CLK_SRC_RC_FAST, test_clk_param.clk_param_17m[i][0], test_clk_param.clk_param_17m[i][1], test_clk_param.clk_param_17m[i][2]);
+    }
+#endif
 
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }

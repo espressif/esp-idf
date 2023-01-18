@@ -607,6 +607,10 @@ config SOC_SPI_SUPPORT_CONTINUOUS_TRANS
     bool
     default y
 
+config SOC_SPI_SUPPORT_CLK_APB
+    bool
+    default y
+
 config SOC_SPI_SUPPORT_SLAVE_HD_VER2
     bool
     default y

@@ -113,7 +113,7 @@ We have two bits to control the interrupt:
 #include <string.h>
 #include "esp_private/spi_common_internal.h"
 #include "driver/spi_master.h"
-
+#include "clk_tree.h"
 #include "esp_log.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -121,8 +121,6 @@ We have two bits to control the interrupt:
 #include "driver/gpio.h"
 #include "hal/spi_hal.h"
 #include "esp_heap_caps.h"
-//Temporarily include esp_clk.h, will be replaced by clock tree API
-#include "esp_private/esp_clk.h"
 
 
 typedef struct spi_device_t spi_device_t;
@@ -156,6 +154,7 @@ typedef struct {
 
 struct spi_device_t {
     int id;
+    int real_clk_freq_hz;
     QueueHandle_t trans_queue;
     QueueHandle_t ret_queue;
     spi_device_interface_config_t cfg;
@@ -286,17 +285,28 @@ static esp_err_t spi_master_deinit_driver(void* arg)
 
 void spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int* dummy_o, int* cycles_remain_o)
 {
+#ifdef CONFIG_IDF_TARGET_ESP32
     int timing_dummy;
     int timing_miso_delay;
 
-    spi_hal_cal_timing(eff_clk, gpio_is_used, input_delay_ns, &timing_dummy, &timing_miso_delay);
+    spi_hal_cal_timing(APB_CLK_FREQ, eff_clk, gpio_is_used, input_delay_ns, &timing_dummy, &timing_miso_delay);
     if (dummy_o) *dummy_o = timing_dummy;
     if (cycles_remain_o) *cycles_remain_o = timing_miso_delay;
+#else
+    //TODO: IDF-6578
+    ESP_LOGW(SPI_TAG, "This func temporary not supported for current target!");
+#endif
 }
 
 int spi_get_freq_limit(bool gpio_is_used, int input_delay_ns)
 {
+#ifdef CONFIG_IDF_TARGET_ESP32
     return spi_hal_get_freq_limit(gpio_is_used, input_delay_ns);
+#else
+    //TODO: IDF-6578
+    ESP_LOGW(SPI_TAG, "This func temporary not supported for current target!");
+    return 0;
+#endif
 }
 
 /*
@@ -320,9 +330,9 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     spi_host_t *host = bus_driver_ctx[host_id];
     const spi_bus_attr_t* bus_attr = host->bus_attr;
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
-    uint32_t apb_clk_freq_hz = esp_clk_apb_freq();
-    assert((apb_clk_freq_hz == 80 * 1000 * 1000) || (apb_clk_freq_hz == 40 * 1000 * 1000) || (apb_clk_freq_hz == 48 * 1000 * 1000));
-    SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= apb_clk_freq_hz) , "invalid sclk speed", ESP_ERR_INVALID_ARG);
+    uint32_t clock_source_hz;
+    clk_tree_src_get_freq_hz((dev_config->clock_source == 0)?SPI_CLK_SRC_DEFAULT:dev_config->clock_source, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= clock_source_hz), "invalid sclk speed", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
     //The hardware looks like it would support this, but actually setting cs_ena_pretrans when transferring in full
     //duplex mode does absolutely nothing on the ESP32.
@@ -355,10 +365,9 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     int duty_cycle = (dev_config->duty_cycle_pos==0) ? 128 : dev_config->duty_cycle_pos;
     int use_gpio = !(bus_attr->flags & SPICOMMON_BUSFLAG_IOMUX_PINS);
     spi_hal_timing_param_t timing_param = {
-        .clk_src_hz = esp_clk_apb_freq(),
-        .clk_sel = SPI_CLK_APB,     //Currently, SPI driver only set SPI to APB clock. SPI is not supposed to be used during sleep modes.
         .half_duplex = half_duplex,
         .no_compensate = no_compensate,
+        .clk_src_hz = clock_source_hz,
         .expected_freq = dev_config->clock_speed_hz,
         .duty_cycle = duty_cycle,
         .input_delay_ns = dev_config->input_delay_ns,
@@ -369,6 +378,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     spi_hal_timing_conf_t temp_timing_conf;
     int freq;
     esp_err_t ret = spi_hal_cal_clock_conf(&timing_param, &freq, &temp_timing_conf);
+    temp_timing_conf.clock_source = dev_config->clock_source;
     SPI_CHECK(ret==ESP_OK, "assigned clock speed not supported", ret);
 
     //Allocate memory for device
@@ -395,6 +405,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     //We want to save a copy of the dev config in the dev struct.
     memcpy(&dev->cfg, dev_config, sizeof(spi_device_interface_config_t));
     dev->cfg.duty_cycle_pos = duty_cycle;
+    dev->real_clk_freq_hz = freq;
     // TODO: if we have to change the apb clock among transactions, re-calculate this each time the apb clock lock is locked.
 
     //Set CS pin, CS options
@@ -476,10 +487,7 @@ esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int* freq_khz)
         return ESP_ERR_INVALID_ARG;
     }
 
-    int dev_required_freq = ((spi_device_t*)handle)->cfg.clock_speed_hz;
-    int dev_duty_cycle = ((spi_device_t*)handle)->cfg.duty_cycle_pos;
-    *freq_khz = spi_get_actual_clock(esp_clk_apb_freq(), dev_required_freq, dev_duty_cycle);
-
+    *freq_khz = handle->real_clk_freq_hz / 1000;
     return ESP_OK;
 }
 
@@ -846,6 +854,8 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi
     if (ret != ESP_OK) return ret;
 
 #ifdef CONFIG_PM_ENABLE
+    // though clock source is selectable, read/write reg and mem of spi peripherial still use APB
+    // and dma still use APB, so pm_lock is still needed
     esp_pm_lock_acquire(host->bus_attr->pm_lock);
 #endif
     //Send to queue and invoke the ISR.

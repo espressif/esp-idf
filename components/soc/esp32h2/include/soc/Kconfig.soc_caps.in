@@ -559,6 +559,10 @@ config SOC_SPI_SUPPORT_CONTINUOUS_TRANS
     bool
     default y
 
+config SOC_SPI_SUPPORT_CLK_PLL_F48M
+    bool
+    default y
+
 config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
