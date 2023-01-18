@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -364,27 +364,6 @@ static inline void rtcio_ll_enable_sleep_setting(gpio_num_t gpio_num)
 static inline void rtcio_ll_disable_sleep_setting(gpio_num_t gpio_num)
 {
     LP_IO.gpio[gpio_num].slp_sel = 0;
-}
-
-/**
- * Set specific logic level on an RTC IO pin as a wakeup trigger.
- *
- * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
- * @param level Logic level (0)
- */
-static inline void rtcio_ll_ext0_set_wakeup_pin(int rtcio_num, int level)
-{
-    uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
-    wakeup_sel_mask |= BIT(rtcio_num);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel, wakeup_sel_mask);
-
-    uint32_t wakeup_level_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv);
-    if (level) {
-        wakeup_level_mask |= BIT(rtcio_num);
-    } else {
-        wakeup_level_mask &= ~BIT(rtcio_num);
-    }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv, wakeup_level_mask);
 }
 
 #ifdef __cplusplus
