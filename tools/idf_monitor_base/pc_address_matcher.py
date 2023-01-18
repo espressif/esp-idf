@@ -7,8 +7,8 @@ from elftools.elf.elffile import ELFFile
 
 class PcAddressMatcher(object):
     """
-    Class for detecting potentional addresses which will consequently run through the external addr2line command to
-    indentify and print information about it.
+    Class for detecting potential addresses which will consequently run through the external addr2line command to
+    identify and print information about it.
 
     The input to this class is the path to the ELF file. Addresses of sections with executable flag are stored and
     used later for lookup.
@@ -18,6 +18,14 @@ class PcAddressMatcher(object):
         self.intervals = []
         try:
             with open(elf_path, 'rb') as f:
+                # Is this an ELF file?
+                elf_magic = f.read(4)
+                if elf_magic != b'\x7fELF':
+                    # Probably not an ELF file
+                    # (could be Mach-O format on macOS, for example)
+                    raise NotImplementedError()
+                f.seek(0)
+
                 elf = ELFFile(f)
 
                 for section in elf.iter_sections():
@@ -30,13 +38,15 @@ class PcAddressMatcher(object):
         except FileNotFoundError:
             # ELF file is just an optional argument
             pass
+        except NotImplementedError:
+            pass
 
         # sort them in order to have faster lookup
         self.intervals = sorted(self.intervals)
 
     def is_executable_address(self, addr):  # type: (int) -> bool
         """
-        Returns True/False depending on of "addr" is in one of the ELF sections with executable flag set.
+        Returns True/False if "addr" is in one of the ELF sections with executable flag set.
         """
 
         for start, end in self.intervals:

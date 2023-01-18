@@ -22,4 +22,5 @@ set_property(
     DIRECTORY
     APPEND PROPERTY ADDITIONAL_CLEAN_FILES "../image.bin")
 
-add_dependencies(host_test_spiffs.elf partition-table image.bin)
+
+add_dependencies(host_test_spiffs.elf image.bin)
