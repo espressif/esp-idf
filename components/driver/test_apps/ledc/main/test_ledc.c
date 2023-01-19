@@ -443,6 +443,7 @@ static void frequency_set_get(ledc_mode_t speed_mode, ledc_timer_t timer, uint32
 {
     int real_freq;
     TEST_ESP_OK(ledc_set_freq(speed_mode, timer, desired_freq));
+    vTaskDelay(10 / portTICK_PERIOD_MS);
     real_freq = wave_count(1000);
     TEST_ASSERT_INT16_WITHIN(error, theoretical_freq, real_freq);
     TEST_ASSERT_EQUAL_INT32(theoretical_freq, ledc_get_freq(speed_mode, timer));

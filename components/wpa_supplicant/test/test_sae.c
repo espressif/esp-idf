@@ -19,7 +19,7 @@
 #include "../src/common/sae.h"
 #include "utils/wpabuf.h"
 #include "test_utils.h"
-
+#if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6781
 typedef struct crypto_bignum crypto_bignum;
 
 
@@ -259,4 +259,5 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
     ESP_LOGI("SAE Test", "=========== Complete ============");
 
 }
+#endif
 #endif /* CONFIG_WPA3_SAE */

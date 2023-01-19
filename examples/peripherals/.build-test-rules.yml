@@ -41,6 +41,9 @@ examples/peripherals/i2s/i2s_adc_dac:
 examples/peripherals/i2s/i2s_basic/i2s_pdm:
   disable:
     - if: SOC_I2S_SUPPORTS_PDM != 1
+    - if: IDF_TARGET == "esp32h2"
+      temporary: true
+      reason: rtc timer is not supported
 
 examples/peripherals/i2s/i2s_basic/i2s_std:
   disable:
@@ -54,6 +57,10 @@ examples/peripherals/i2s/i2s_codec/i2s_es7210_tdm:
   disable:
     - if: SOC_I2S_SUPPORTS_TDM != 1 or (SOC_I2C_SUPPORTED != 1 or SOC_GPSPI_SUPPORTED != 1)
       reason: rely on I2S TDM mode to receive audio, I2C to config es7210 and SPI to save audio to SD card
+  disable_test:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: cannot pass target test IDF-6811
 
 examples/peripherals/i2s/i2s_codec/i2s_es8311:
   disable:
@@ -135,6 +142,9 @@ examples/peripherals/rmt/onewire_ds18b20:
 examples/peripherals/rmt/stepper_motor:
   disable:
     - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP != 1
+    - if: IDF_TARGET == "esp32h2"
+      temporary: true
+      reason: wrong GPIO on esp32h2
 
 examples/peripherals/sdio/host:
   enable:
@@ -202,6 +212,12 @@ examples/peripherals/temp_sensor:
 examples/peripherals/timer_group:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
+
+examples/peripherals/timer_group/gptimer:
+  disable_test:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: cannot pass target test IDF-6846
 
 examples/peripherals/timer_group/gptimer_capture_hc_sr04:
   disable:

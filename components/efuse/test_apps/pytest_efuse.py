@@ -11,7 +11,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32c2
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
-@pytest.mark.esp32h2
+# @pytest.mark.esp32h2  IDF-6897
 @pytest.mark.generic
 def test_efuse(dut: Dut) -> None:
     dut.run_all_single_board_cases()

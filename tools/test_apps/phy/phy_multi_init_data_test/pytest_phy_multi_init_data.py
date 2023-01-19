@@ -6,6 +6,7 @@ from pytest_embedded_idf.dut import IdfDut
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='h2 not supported')
 @pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'phy_multiple_init_data',
