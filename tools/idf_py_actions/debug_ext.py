@@ -251,11 +251,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             if not is_one_revision:
                 r.append('define target hookpost-remote')
             r.append('set confirm off')
-            # Workaround for reading ROM data on xtensa chips
-            # This should be deleted after the new openocd-esp release (newer than v0.11.0-esp32-20220706)
-            xtensa_chips = ['esp32', 'esp32s2', 'esp32s3']
-            if target in xtensa_chips:
-                r.append('monitor xtensa set_permissive 1')
             # Since GDB does not have 'else if' statement than we use nested 'if..else' instead.
             for i, k in enumerate(roms[target], 1):
                 indent_str = base_ident * i
@@ -277,8 +272,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             # Close 'else' operators
             for i in range(len(roms[target]), 0, -1):
                 r.append(indent('end', base_ident * i))
-            if target in xtensa_chips:
-                r.append('monitor xtensa set_permissive 0')
             r.append('set confirm on')
             if not is_one_revision:
                 r.append('end')
