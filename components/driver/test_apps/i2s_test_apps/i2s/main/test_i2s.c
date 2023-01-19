@@ -748,16 +748,21 @@ static void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_c
 
     /* Test common sample rate
      * Workaround: set 12000 as 12001 to bypass the unknown failure, TODO: IDF-6705 */
-    uint32_t test_freq[] = {8000, 10000, 11025, 12001, 16000, 22050, 24000,
-                            32000, 44100, 48000, 64000, 88200, 96000,
-                            128000, 144000, 196000};
+    const uint32_t test_freq[] = {
+        8000,  10000, 11025, 12001, 16000, 22050,
+        24000, 32000, 44100, 48000, 64000, 88200,
+        96000, 128000,144000,196000};
     int real_pulse = 0;
     int case_cnt = sizeof(test_freq) / sizeof(uint32_t);
-#if SOC_I2S_HW_VERSION_2
+#if SOC_I2S_SUPPORTS_XTAL
     // Can't support a very high sample rate while using XTAL as clock source
     if (clk_cfg->clk_src == I2S_CLK_SRC_XTAL) {
         case_cnt = 10;
     }
+#endif
+#if CONFIG_IDF_ENV_FPGA
+    // Limit the test sample rate on FPGA platform due to the low frequency it supports.
+    case_cnt = 10;
 #endif
     for (int i = 0; i < case_cnt; i++) {
         int expt_pulse = (int)((float)test_freq[i] * (TEST_I2S_PERIOD_MS / 1000.0));
@@ -797,7 +802,7 @@ TEST_CASE("I2S_default_PLL_clock_test", "[i2s]")
     TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
 
     i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
-#if SOC_I2S_HW_VERSION_2
+#if SOC_I2S_SUPPORTS_XTAL
     std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_XTAL;
     i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
 #endif
