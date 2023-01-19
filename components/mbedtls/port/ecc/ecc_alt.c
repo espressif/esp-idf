@@ -24,28 +24,33 @@ static int esp_mbedtls_ecp_point_multiply(const mbedtls_ecp_group *grp, mbedtls_
         const mbedtls_mpi *m, const mbedtls_ecp_point *P)
 {
     int ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    uint8_t x_tmp[MAX_SIZE];
-    uint8_t y_tmp[MAX_SIZE];
+    uint8_t x_tmp[MAX_SIZE] = {0};
+    uint8_t y_tmp[MAX_SIZE] = {0};
 
+    uint8_t m_le[MAX_SIZE] = {0};
     ecc_point_t p_pt = {0};
     ecc_point_t r_pt = {0};
 
     p_pt.len = grp->pbits / 8;
 
-    memcpy(&p_pt.x, P->MBEDTLS_PRIVATE(X).MBEDTLS_PRIVATE(p), mbedtls_mpi_size(&P->MBEDTLS_PRIVATE(X)));
-    memcpy(&p_pt.y, P->MBEDTLS_PRIVATE(Y).MBEDTLS_PRIVATE(p), mbedtls_mpi_size(&P->MBEDTLS_PRIVATE(Y)));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary_le(&P->MBEDTLS_PRIVATE(X), p_pt.x, MAX_SIZE));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary_le(&P->MBEDTLS_PRIVATE(Y), p_pt.y, MAX_SIZE));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary_le(m, m_le, MAX_SIZE));
 
-    ret = esp_ecc_point_multiply(&p_pt, (uint8_t *)m->MBEDTLS_PRIVATE(p), &r_pt, false);
+    ret = esp_ecc_point_multiply(&p_pt, m_le, &r_pt, false);
 
     for (int i = 0; i < MAX_SIZE; i++) {
         x_tmp[MAX_SIZE - i - 1] = r_pt.x[i];
         y_tmp[MAX_SIZE - i - 1] = r_pt.y[i];
     }
 
-    mbedtls_mpi_read_binary(&R->MBEDTLS_PRIVATE(X), x_tmp, MAX_SIZE);
-    mbedtls_mpi_read_binary(&R->MBEDTLS_PRIVATE(Y), y_tmp, MAX_SIZE);
-    mbedtls_mpi_lset(&R->MBEDTLS_PRIVATE(Z), 1);
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&R->MBEDTLS_PRIVATE(X), x_tmp, MAX_SIZE));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&R->MBEDTLS_PRIVATE(Y), y_tmp, MAX_SIZE));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&R->MBEDTLS_PRIVATE(Z), 1));
     return ret;
+
+cleanup:
+    return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 }
 
 int ecp_mul_restartable_internal( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
@@ -61,6 +66,10 @@ int ecp_mul_restartable_internal( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
         return ret;
 #endif
     }
+
+    /* Common sanity checks to conform with mbedTLS return values */
+    MBEDTLS_MPI_CHK( mbedtls_ecp_check_privkey(grp, m) );
+    MBEDTLS_MPI_CHK( mbedtls_ecp_check_pubkey(grp, P) );
 
     MBEDTLS_MPI_CHK( esp_mbedtls_ecp_point_multiply(grp, R, m, P) );
 cleanup:

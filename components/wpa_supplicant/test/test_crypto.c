@@ -315,9 +315,6 @@ TEST_CASE("Test crypto lib bignum apis", "[wpa_crypto]")
 
 #endif /* bits in mbedtls_mpi_uint */
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5046
 /*
  * Create an MPI from embedded constants
  * (assumes len is an exact multiple of sizeof mbedtls_mpi_uint)
@@ -541,5 +538,3 @@ TEST_CASE("Test crypto lib ECC apis", "[wpa_crypto]")
     }
 
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
