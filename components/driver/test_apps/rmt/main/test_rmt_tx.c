@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -465,6 +465,12 @@ static void test_rmt_multi_channels_trans(size_t channel0_mem_block_symbols, siz
 {
 #define TEST_RMT_CHANS 2
 #define TEST_LED_NUM   24
+#define TEST_STOP_TIME_NO_SYNCHRO_DELTA     150
+#if CONFIG_IDF_TARGET_ESP32C6
+#define TEST_STOP_TIME_SYNCHRO_DELTA        400
+#else
+#define TEST_STOP_TIME_SYNCHRO_DELTA        10
+#endif // CONFIG_IDF_TARGET_ESP32C6
     rmt_tx_channel_config_t tx_channel_cfg = {
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 10000000, // 10MHz, 1 tick = 0.1us (led strip needs a high resolution)
@@ -526,7 +532,7 @@ static void test_rmt_multi_channels_trans(size_t channel0_mem_block_symbols, siz
         printf("\t%lld\r\n", record_stop_time[i]);
     }
     // without synchronization, there will be obvious time shift
-    TEST_ASSERT((record_stop_time[1] - record_stop_time[0]) < 100);
+    TEST_ASSERT_INT64_WITHIN(TEST_STOP_TIME_NO_SYNCHRO_DELTA, record_stop_time[0], record_stop_time[1]);
 
     printf("install sync manager\r\n");
     rmt_sync_manager_handle_t synchro = NULL;
@@ -556,7 +562,7 @@ static void test_rmt_multi_channels_trans(size_t channel0_mem_block_symbols, siz
     }
     // because of synchronization, the managed channels will stop at the same time
     // but call of `esp_timer_get_time` won't happen at the same time, so there still be time drift, very small
-    TEST_ASSERT((record_stop_time[1] - record_stop_time[0]) < 10);
+    TEST_ASSERT_INT64_WITHIN(TEST_STOP_TIME_SYNCHRO_DELTA, record_stop_time[0], record_stop_time[1]);
 
     printf("reset sync manager\r\n");
     TEST_ESP_OK(rmt_sync_reset(synchro));
@@ -573,7 +579,7 @@ static void test_rmt_multi_channels_trans(size_t channel0_mem_block_symbols, siz
     for (int i = 0; i < TEST_RMT_CHANS; i++) {
         printf("\t%lld\r\n", record_stop_time[i]);
     }
-    TEST_ASSERT((record_stop_time[1] - record_stop_time[0]) < 10);
+    TEST_ASSERT_INT64_WITHIN(TEST_STOP_TIME_SYNCHRO_DELTA, record_stop_time[0], record_stop_time[1]);
 
     printf("delete sync manager\r\n");
     TEST_ESP_OK(rmt_del_sync_manager(synchro));
