@@ -146,6 +146,7 @@ class Platforms:
         'Linux-i686': PLATFORM_LINUX32,
         'FreeBSD-i386': PLATFORM_LINUX32,
         'i586-linux-gnu': PLATFORM_LINUX32,
+        'i686-linux-gnu': PLATFORM_LINUX32,
         PLATFORM_LINUX_ARM64: PLATFORM_LINUX_ARM64,
         'Linux-arm64': PLATFORM_LINUX_ARM64,
         'Linux-aarch64': PLATFORM_LINUX_ARM64,
