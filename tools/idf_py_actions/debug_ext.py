@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
@@ -164,9 +164,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 print(f'Warning: {msg_body}')
                 return f'# {msg_body}'
             r = ['', f'# Load {target} ROM ELF symbols']
-            is_one_revision = len(roms[target]) == 1
-            if not is_one_revision:
-                r.append('define target hookpost-remote')
+            r.append('define target hookpost-remote')
             r.append('set confirm off')
             # Workaround for reading ROM data on xtensa chips
             # This should be deleted after the new openocd-esp release (newer than v0.11.0-esp32-20220706)
@@ -197,8 +195,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             if target in xtensa_chips:
                 r.append('monitor xtensa set_permissive 0')
             r.append('set confirm on')
-            if not is_one_revision:
-                r.append('end')
+            r.append('end')
             r.append('')
             return os.linesep.join(r)
         raise FatalError(f'{ESP_ROM_INFO_FILE} file not found. Please check IDF integrity.')
