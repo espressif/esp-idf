@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "hal/adc_types.h"
+#include "adc_cali.h"
+#include "adc_cali_scheme.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -124,6 +126,24 @@ esp_err_t adc_oneshot_io_to_channel(int io_num, adc_unit_t *unit_id, adc_channel
  *       - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t adc_oneshot_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int *io_num);
+
+/**
+ * @brief Convenience function to get ADC calibrated result
+ *
+ * This is an all-in-one function which does:
+ * - oneshot read ADC raw result
+ * - calibrate the raw result and convert it into calibrated result (in mV)
+ *
+ * @param[in]  handle       ADC oneshot handle, you should call adc_oneshot_new_unit() to get this handle
+ * @param[in]  cali_handle  ADC calibration handle, you should call adc_cali_create_scheme_x() in adc_cali_scheme.h to create a handle
+ * @param[in]  chan         ADC channel
+ * @param[out] cali_result  Calibrated ADC result (in mV)
+ *
+ * @return
+ *        - ESP_OK
+ *        Other return errors from adc_oneshot_read() and adc_cali_raw_to_voltage()
+ */
+esp_err_t adc_oneshot_get_calibrated_result(adc_oneshot_unit_handle_t handle, adc_cali_handle_t cali_handle, adc_channel_t chan, int *cali_result);
 
 #ifdef __cplusplus
 }
