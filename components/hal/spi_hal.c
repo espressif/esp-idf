@@ -39,7 +39,7 @@ static void s_spi_hal_dma_init_config(const spi_hal_context_t *hal)
     spi_dma_ll_rx_enable_burst_data(hal->dma_in, hal->rx_dma_chan, 1);
     spi_dma_ll_tx_enable_burst_data(hal->dma_out, hal->tx_dma_chan, 1);
     spi_dma_ll_rx_enable_burst_desc(hal->dma_in, hal->rx_dma_chan, 1);
-    spi_dma_ll_tx_enable_burst_desc(hal->dma_out, hal->tx_dma_chan ,1);
+    spi_dma_ll_tx_enable_burst_desc(hal->dma_out, hal->tx_dma_chan, 1);
 }
 
 void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_config_t *config)
@@ -79,7 +79,7 @@ void spi_hal_deinit(spi_hal_context_t *hal)
 
 esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, int *out_freq, spi_hal_timing_conf_t *timing_conf)
 {
-    spi_hal_timing_conf_t temp_conf;
+    spi_hal_timing_conf_t temp_conf = {};
 
     int eff_clk_n = spi_ll_master_cal_clock(timing_param->clk_src_hz, timing_param->expected_freq, timing_param->duty_cycle, &temp_conf.clock_reg);
 
