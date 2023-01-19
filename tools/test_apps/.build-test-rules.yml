@@ -31,9 +31,9 @@ tools/test_apps/phy/phy_multi_init_data_test:
 
 tools/test_apps/protocols/esp_netif/build_config:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32c3"]
-      temporary: true
-      reason: the other targets are not tested yet
+    - if: IDF_TARGET in ["esp32", "esp32c2"]
+      temporary: false
+      reason: No need to test on all targets
 
 tools/test_apps/protocols/mdns:
   enable:
