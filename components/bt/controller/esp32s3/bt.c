@@ -1472,7 +1472,7 @@ esp_err_t esp_bt_controller_deinit(void)
 
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 {
-    int ret = ESP_OK;
+    esp_err_t ret = ESP_OK;
 
     if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_INITED) {
         return ESP_ERR_INVALID_STATE;
@@ -1527,6 +1527,9 @@ error:
 #endif
     } while (0);
 
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_disable();
+#endif
     return ret;
 }
 
