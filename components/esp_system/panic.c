@@ -352,14 +352,6 @@ void esp_panic_handler(panic_info_t *info)
     esp_panic_handler_reconfigure_wdts(1000); // restore WDT config
 #endif // CONFIG_APPTRACE_ENABLE
 
-#if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
-    disable_all_wdts();
-    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-    wdt_hal_disable(&rtc_wdt_ctx);
-    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
-    panic_print_str("Entering gdb stub now.\r\n");
-    esp_gdbstub_panic_handler((void *)info->frame);
-#else
 #if CONFIG_ESP_COREDUMP_ENABLE
     static bool s_dumping_core;
     if (s_dumping_core) {
@@ -379,6 +371,14 @@ void esp_panic_handler(panic_info_t *info)
     }
 #endif /* CONFIG_ESP_COREDUMP_ENABLE */
 
+#if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
+    disable_all_wdts();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_disable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+    panic_print_str("Entering gdb stub now.\r\n");
+    esp_gdbstub_panic_handler((void *)info->frame);
+#else
 #if CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS
     // start RTC WDT if it hasn't been started yet and set the timeout to more than the delay time
     wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);

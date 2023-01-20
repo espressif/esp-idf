@@ -705,3 +705,19 @@ def test_rtc_slow_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
     dut.expect(r'Read operation at address [0-9xa-f]+ not permitted \((\S+)\)')
     dut.expect_reg_dump(0)
     dut.expect_corrupted_backtrace()
+
+
+@pytest.mark.esp32
+@pytest.mark.parametrize('config', ['gdbstub_coredump'], indirect=True)
+def test_gdbstub_coredump(dut: PanicTestDut) -> None:
+    test_func_name = 'test_storeprohibited'
+    dut.run_test_func(test_func_name)
+
+    dut.process_coredump_uart()
+
+    dut.expect_exact('Entering gdb stub now.')
+    dut.start_gdb()
+    frames = dut.gdb_backtrace()
+    dut.verify_gdb_backtrace(frames, get_default_backtrace(test_func_name))
+    dut.revert_log_level()
+    return  # don't expect "Rebooting" output below
