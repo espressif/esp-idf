@@ -76,7 +76,6 @@ api-reference/storage/mass_mfg
 api-reference/storage/index
 api-reference/peripherals
 api-reference/peripherals/usb_host
-api-reference/peripherals/hmac
 api-reference/peripherals/usb_device
 api-reference/peripherals/dac
 api-reference/peripherals/touch_element
@@ -84,7 +83,6 @@ api-reference/peripherals/secure_element
 api-reference/peripherals/sdio_slave
 api-reference/peripherals/touch_pad
 api-reference/peripherals/adc_calibration
-api-reference/peripherals/ds
 api-reference/peripherals/index
 api-reference/peripherals/sdmmc_host
 api-reference/kconfig
