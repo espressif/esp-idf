@@ -48,8 +48,13 @@ esp_err_t async_memcpy_impl_init(async_memcpy_impl_t *impl)
         goto err;
     }
 
-    gdma_connect(impl->rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0));
-    gdma_connect(impl->tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0));
+    gdma_trigger_t m2m_trigger = GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0);
+    // get a free DMA trigger ID for memory copy
+    uint32_t free_m2m_id_mask = 0;
+    gdma_get_free_m2m_trig_id_mask(impl->tx_channel, &free_m2m_id_mask);
+    m2m_trigger.instance_id = __builtin_ctz(free_m2m_id_mask);
+    gdma_connect(impl->rx_channel, m2m_trigger);
+    gdma_connect(impl->tx_channel, m2m_trigger);
 
     gdma_strategy_config_t strategy_config = {
         .auto_update_desc = true,
