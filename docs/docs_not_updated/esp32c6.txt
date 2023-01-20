@@ -54,7 +54,6 @@ api-guides/hardware-abstraction
 api-guides/wifi-security
 api-guides/index
 api-guides/openthread
-api-guides/fatal-errors
 api-guides/memory-types
 api-guides/general-notes
 api-reference

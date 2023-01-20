@@ -73,7 +73,6 @@ api-guides/wifi-security
 api-guides/host-apps
 api-guides/index
 api-guides/openthread
-api-guides/fatal-errors
 api-guides/memory-types
 api-guides/general-notes
 third-party-tools/platformio
