@@ -18,6 +18,11 @@ extern "C" {
 #include "esp_private/panic_internal.h"
 #include "core_dump_checksum.h"
 
+#ifdef CONFIG_ESP_COREDUMP_LOG_LEVEL
+#undef LOG_LOCAL_LEVEL
+#define LOG_LOCAL_LEVEL  CONFIG_ESP_COREDUMP_LOG_LEVEL
+#endif
+
 #define ESP_COREDUMP_LOG( level, format, ... )  if (LOG_LOCAL_LEVEL >= level)   { esp_rom_printf(DRAM_STR(format), esp_log_early_timestamp(), (const char *)TAG, ##__VA_ARGS__); }
 #define ESP_COREDUMP_LOGE( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_ERROR, LOG_FORMAT(E, format), ##__VA_ARGS__)
 #define ESP_COREDUMP_LOGW( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_WARN, LOG_FORMAT(W, format), ##__VA_ARGS__)

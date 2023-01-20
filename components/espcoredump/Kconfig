@@ -122,4 +122,44 @@ menu "Core dump"
         default "disable" if ESP_COREDUMP_DECODE_DISABLE
         default "info" if ESP_COREDUMP_DECODE_INFO
 
+    config ESP_COREDUMP_LOG_LEVEL_OVERRIDE
+        bool "Override LOG_LOCAL_LEVEL"
+        default n
+        depends on !ESP_COREDUMP_ENABLE_TO_NONE
+        help
+            Core dump related functions might produce an unconveniently lot of
+            debug outputs when one sets the default log level to DEBUG or higher.
+            It is possible to suppress these debug outputs by enabling this and
+            selecting the log level accordingly.
+
+    choice ESP_COREDUMP_LOG_LEVEL
+        bool "Log verbosity for the core dump component"
+        default ESP_COREDUMP_LOG_LEVEL_INFO
+        depends on ESP_COREDUMP_LOG_LEVEL_OVERRIDE
+        help
+            Specify how much output to see for core dump component.
+
+        config ESP_COREDUMP_LOG_LEVEL_NONE
+            bool "No output"
+        config ESP_COREDUMP_LOG_LEVEL_ERROR
+            bool "Error"
+        config ESP_COREDUMP_LOG_LEVEL_WARN
+            bool "Warning"
+        config ESP_COREDUMP_LOG_LEVEL_INFO
+            bool "Info"
+        config ESP_COREDUMP_LOG_LEVEL_DEBUG
+            bool "Debug"
+        config ESP_COREDUMP_LOG_LEVEL_VERBOSE
+            bool "Verbose"
+    endchoice
+
+    config ESP_COREDUMP_LOG_LEVEL
+        int
+        default 0 if ESP_COREDUMP_LOG_LEVEL_NONE
+        default 1 if ESP_COREDUMP_LOG_LEVEL_ERROR
+        default 2 if ESP_COREDUMP_LOG_LEVEL_WARN
+        default 3 if ESP_COREDUMP_LOG_LEVEL_INFO
+        default 4 if ESP_COREDUMP_LOG_LEVEL_DEBUG
+        default 5 if ESP_COREDUMP_LOG_LEVEL_VERBOSE
+
 endmenu
