@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <limits.h>
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -24,7 +25,12 @@ extern "C" {
 #define ESP_PARTITION_EMULATED_SECTOR_SIZE 0x1000
 
 /** @brief emulated whole flash size for the partition API on Linux */
-#define ESP_PARTITION_EMULATED_FLASH_SIZE 0x400000 //4MB fixed
+#define ESP_PARTITION_DEFAULT_EMULATED_FLASH_SIZE 0x400000 //4MB fixed
+
+/** @brief mode of fail after */
+#define ESP_PARTITION_FAIL_AFTER_MODE_ERASE 0x01
+#define ESP_PARTITION_FAIL_AFTER_MODE_WRITE 0x02
+#define ESP_PARTITION_FAIL_AFTER_MODE_BOTH 0x03
 
 /**
  * @brief Partition type to string conversion routine
@@ -166,21 +172,22 @@ size_t esp_partition_get_write_bytes(void);
 size_t esp_partition_get_total_time(void);
 
 /**
- * @brief Initializes emulation of failure caused by wear on behalf of write/erase operations
+ * @brief Initializes emulation of lost power failure in write/erase operations
  *
- * Function initializes down counter emulating remaining write / erase cycles.
- * Once this counter reaches 0, emulation of all subsequent write / erase operations fails
+ * Function initializes down counter emulating power off failure during write / erase operations.
+ * Once this counter reaches 0, actual as well as all subsequent write / erase operations fail
  * Initial state of down counter is disabled.
  *
- * @param[in] count Number of remaining write / erase cycles before failure. Call with SIZE_MAX to disable simulation of flash wear.
+ * @param[in] count Number of remaining write / erase cycles before emulated failure. Call with SIZE_MAX to disable failure emulation.
+ * @param[in] mode Controls whether remaining cycles are applied to erase, write or both operations
  *
 */
-void esp_partition_fail_after(size_t count);
+void esp_partition_fail_after(size_t count, uint8_t mode);
 
 /**
  * @brief Returns count of erase operations performed on virtual emulated sector
  *
- * Function returns number of erase operatinos performed on virtual sector specified by the parameter sector.
+ * Function returns number of erase operations performed on virtual sector specified by the parameter sector.
  * The esp_parttion mapped address space is virtually split into sectors of the size ESP_PARTITION_EMULATED_SECTOR_SIZE.
  * Calls to the esp_partition_erase_range are impacting one or multiple virtual sectors, for each of them, the respective
  * count is incremented.
@@ -192,6 +199,46 @@ void esp_partition_fail_after(size_t count);
  *
 */
 size_t esp_partition_get_sector_erase_count(size_t sector);
+
+typedef struct {
+    char flash_file_name[PATH_MAX];      /*!< name of flash dump file, zero-terminated ASCII string */
+    size_t flash_file_size;              /*!< size of flash dump file in bytes */
+    char partition_file_name[PATH_MAX];  /*!< name of file containing binary representation of partition table, zero-terminated ASCII string */
+    bool remove_dump;                    /*!< flag is set to true if dump file has to be removed after esp_partition_file_munmap */
+} esp_partition_file_mmap_ctrl_t;
+
+/**
+ * @brief Returns pointer to the structure controlling mapping of flash file
+ *
+ * Function returns pointer to structure used by esp_partition_file_mmap and esp_partition_file_munmap
+ * Caller can change this structure members prior calls involving the above functions to
+ * Specify existing flash file which will represent the content of flash memory after mapping
+ * Specify size and partition file name used to create empty flash memory
+ * Control whether the actual flash file will be deleted of kept after call to esp_partition_file_munmap
+ *
+ * @return
+ *      - pointer to flash file mapping control structure
+ *
+*/
+esp_partition_file_mmap_ctrl_t* esp_partition_get_file_mmap_ctrl_input(void);
+
+/**
+ * @brief Returns pointer to the structure reflecting actual settings of flash file emulation
+ *
+ * Function returns pointer to structure containing:
+ * flash file name representing emulated flash memory
+ * size of file representing emulated flash memory
+ * file name holding binary used to initialize partition table (if it was used)
+ *
+ * @return
+ *      - pointer to flash file mapping actuall values in control structure
+ *
+*/
+esp_partition_file_mmap_ctrl_t* esp_partition_get_file_mmap_ctrl_act(void);
+
+// private function in partition.c to unload partitions and free space allocated by them
+void unload_partitions(void);
+
 
 #ifdef __cplusplus
 }

@@ -225,6 +225,19 @@ static esp_err_t load_partitions(void)
     return err;
 }
 
+void unload_partitions(void)
+{
+    _lock_acquire(&s_partition_list_lock);
+    partition_list_item_t *it;
+    SLIST_FOREACH(it, &s_partition_list, next) {
+        SLIST_REMOVE(&s_partition_list, it, partition_list_item_, next);
+        free(it);
+    }
+    _lock_release(&s_partition_list_lock);
+
+    assert(SLIST_EMPTY(&s_partition_list));
+}
+
 static esp_err_t ensure_partitions_loaded(void)
 {
     esp_err_t err = ESP_OK;

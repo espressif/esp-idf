@@ -1,10 +1,10 @@
-menu "ESP_PARTITION"
+menu "Partition API Configuration"
 
+    # This option enables gathering statistics and flash wear levelling simulation.
+    # Linux target only (host tests).
     config ESP_PARTITION_ENABLE_STATS
-        bool "Enable esp_partition statistics gathering"
-        default n
+        bool
         depends on IDF_TARGET_LINUX
-        help
-            This option enables statistics gathering and flash wear simulation. Linux only.
+        default n
 
 endmenu
