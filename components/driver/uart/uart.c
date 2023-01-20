@@ -1762,6 +1762,16 @@ esp_err_t uart_set_loop_back(uart_port_t uart_num, bool loop_back_en)
     return ESP_OK;
 }
 
+esp_err_t uart_unblock_reads(uart_port_t uart_num)
+{
+    if (p_uart_obj[uart_num]->rx_ring_buf == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    vRingbufferUnblockRx(p_uart_obj[uart_num]->rx_ring_buf);
+    return ESP_OK;
+}
+
 void uart_set_always_rx_timeout(uart_port_t uart_num, bool always_rx_timeout)
 {
     uint16_t rx_tout = uart_hal_get_rx_tout_thr(&(uart_context[uart_num].hal));

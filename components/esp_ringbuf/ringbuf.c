@@ -25,6 +25,7 @@
 #define rbBUFFER_FULL_FLAG          ( ( UBaseType_t ) 4 )   //The ring buffer is currently full (write pointer == free pointer)
 #define rbBUFFER_STATIC_FLAG        ( ( UBaseType_t ) 8 )   //The ring buffer is statically allocated
 #define rbUSING_QUEUE_SET           ( ( UBaseType_t ) 16 )  //The ring buffer has been added to a queue set
+#define rbBUFFER_UNBLOCK_RX_FLAG    ( ( UBaseType_t ) 32 )   //A request has been made to unblock any pending reads
 
 //Item flags
 #define rbITEM_FREE_FLAG            ( ( UBaseType_t ) 1 )   //Item has been retrieved and returned by application, free to overwrite
@@ -831,6 +832,15 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
 
     while (xExitLoop == pdFALSE) {
         portENTER_CRITICAL(&pxRingbuffer->mux);
+
+        // has a request been made to unblock?
+        if (pxRingbuffer->uxRingbufferFlags & rbBUFFER_UNBLOCK_RX_FLAG) {
+            pxRingbuffer->uxRingbufferFlags &= ~rbBUFFER_UNBLOCK_RX_FLAG; // clear flag
+            xExitLoop = pdTRUE;
+            xReturn = pdFALSE;
+            goto loop_end;
+        }
+
         if (prvCheckItemAvail(pxRingbuffer) == pdTRUE) {
             //Item/data is available for retrieval
             BaseType_t xIsSplit = pdFALSE;
@@ -1349,6 +1359,15 @@ void vRingbufferGetInfo(RingbufHandle_t xRingbuffer,
         *uxItemsWaiting = (UBaseType_t)(pxRingbuffer->xItemsWaiting);
     }
     portEXIT_CRITICAL(&pxRingbuffer->mux);
+}
+
+void vRingbufferUnblockRx(RingbufHandle_t xRingbuffer)
+{
+    Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
+    configASSERT(pxRingbuffer);
+
+    // todo: race conditions?
+    pxRingbuffer->uxRingbufferFlags |= rbBUFFER_UNBLOCK_RX_FLAG;
 }
 
 void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer)

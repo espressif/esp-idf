@@ -824,6 +824,17 @@ esp_err_t uart_wait_tx_idle_polling(uart_port_t uart_num);
 esp_err_t uart_set_loop_back(uart_port_t uart_num, bool loop_back_en);
 
 /**
+ * @brief Unblocks uart_read_bytes() if it is currently waiting to receive bytes.
+ *
+ * This will cause uart_read_bytes() to return -1 with errno set to EWOULDBLOCK.
+ *
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_INVALID_STATE If the Uart driver has not been installed
+ */
+esp_err_t uart_unblock_reads(uart_port_t uart_num);
+
+/**
   * @brief Configure behavior of UART RX timeout interrupt.
   *
   * When always_rx_timeout is true, timeout interrupt is triggered even if FIFO is full.

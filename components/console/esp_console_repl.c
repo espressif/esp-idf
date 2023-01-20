@@ -30,6 +30,8 @@ typedef enum {
     CONSOLE_REPL_STATE_DEINIT,
     CONSOLE_REPL_STATE_INIT,
     CONSOLE_REPL_STATE_START,
+    CONSOLE_REPL_STATE_REPL_STOP_REQUESTED,
+    CONSOLE_REPL_STATE_REPL_TASK_ENDED,
 } repl_state_t;
 
 typedef struct {
@@ -409,13 +411,25 @@ static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl)
     esp_err_t ret = ESP_OK;
     esp_console_repl_com_t *repl_com = __containerof(repl, esp_console_repl_com_t, repl_core);
     esp_console_repl_universal_t *uart_repl = __containerof(repl_com, esp_console_repl_universal_t, repl_com);
+
     // check if already de-initialized
     if (repl_com->state == CONSOLE_REPL_STATE_DEINIT) {
         ESP_LOGE(TAG, "already de-initialized");
         ret = ESP_ERR_INVALID_STATE;
         goto _exit;
     }
+
+    // wait for repl thread to stop, if it is running
+    if (repl_com->state == CONSOLE_REPL_STATE_START) {
+        repl_com->state = CONSOLE_REPL_STATE_REPL_STOP_REQUESTED;
+        while (repl_com->state != CONSOLE_REPL_STATE_REPL_TASK_ENDED) {
+            uart_unblock_reads(uart_repl->uart_channel);
+            vTaskDelay(1);
+        }
+    }
+
     repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+
     esp_console_deinit();
     esp_vfs_dev_uart_use_nonblocking(uart_repl->uart_channel);
     uart_driver_delete(uart_repl->uart_channel);
@@ -429,13 +443,21 @@ static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl)
     esp_err_t ret = ESP_OK;
     esp_console_repl_com_t *repl_com = __containerof(repl, esp_console_repl_com_t, repl_core);
     esp_console_repl_universal_t *cdc_repl = __containerof(repl_com, esp_console_repl_universal_t, repl_com);
+
     // check if already de-initialized
     if (repl_com->state == CONSOLE_REPL_STATE_DEINIT) {
         ESP_LOGE(TAG, "already de-initialized");
         ret = ESP_ERR_INVALID_STATE;
         goto _exit;
     }
+
+    // TODO: wait for repl thread to stop, if it is running.
+    //   Need to implement a USB CDC driver, and a
+    //   corresponding usb_cdc_unblock_reads() function.
+    //   See other esp_console_repl_X_delete() functions for reference.
+
     repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+
     esp_console_deinit();
     free(cdc_repl);
 _exit:
@@ -454,7 +476,18 @@ static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *rep
         ret = ESP_ERR_INVALID_STATE;
         goto _exit;
     }
+
+    // wait for repl thread to stop, if it is running
+    if (repl_com->state == CONSOLE_REPL_STATE_START) {
+        repl_com->state = CONSOLE_REPL_STATE_REPL_STOP_REQUESTED;
+        while (repl_com->state != CONSOLE_REPL_STATE_REPL_TASK_ENDED) {
+            usb_serial_jtag_unblock_reads();
+            vTaskDelay(1);
+        }
+    }
+
     repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+
     esp_console_deinit();
     esp_vfs_usb_serial_jtag_use_nonblocking();
     usb_serial_jtag_driver_uninstall();
@@ -535,6 +568,8 @@ static void esp_console_repl_task(void *args)
         /* linenoise allocates line buffer on the heap, so need to free it */
         linenoiseFree(line);
     }
+
+    repl_com->state = CONSOLE_REPL_STATE_REPL_TASK_ENDED;
     ESP_LOGD(TAG, "The End");
     vTaskDelete(NULL);
 }

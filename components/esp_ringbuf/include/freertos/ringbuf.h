@@ -507,6 +507,16 @@ void vRingbufferGetInfo(RingbufHandle_t xRingbuffer,
                         UBaseType_t *uxItemsWaiting);
 
 /**
+ * @brief   Unblock any read function that is currently waiting. example: xRingbufferReceiveUpTo()
+ *
+ * All read functions take a xTicksToWait argument, which can be set up to
+ * to infinity. This function will unblock any threads currently waiting.
+ *
+ * @param[in]   xRingbuffer     The ring buffer who's rx will be unblocked.
+ */
+void vRingbufferUnblockRx(RingbufHandle_t xRingbuffer);
+
+/**
  * @brief   Debugging function to print the internal pointers in the ring buffer
  *
  * @param   xRingbuffer Ring buffer to show
