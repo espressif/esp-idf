@@ -382,6 +382,7 @@ test_pytest_qemu:
 test_pytest_linux:
   extends:
     - .host_test_template
+    - .before_script_build_jobs
   artifacts:
     when: always
     paths:
@@ -391,13 +392,8 @@ test_pytest_linux:
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
   script:
-    # TODO: fix the warnings in build flags and ignore-warning-str: IDF-6637
-    # Record the warnings regexes in file tools/ci/ignore_build_warnings_linux.txt to avoid using parentheses and
-    # doublequotes with bash.
-    # Please remove that file while fixing all the warnings.
     - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
       --target linux
       --pytest-apps
       -m host_test
-      --ignore-warning-file tools/ci/ignore_build_warnings_linux.txt
     - run_cmd pytest --target linux -m host_test --junitxml=XUNIT_RESULT.xml

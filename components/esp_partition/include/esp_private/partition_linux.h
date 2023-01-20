@@ -102,7 +102,7 @@ esp_err_t esp_partition_file_munmap(void);
  * @brief Clears statistics gathered by emulated partition read/write/erase operations
  *
  */
-void esp_partition_clear_stats();
+void esp_partition_clear_stats(void);
 
 /**
  * @brief Returns number of read operations called
@@ -112,7 +112,7 @@ void esp_partition_clear_stats();
  * @return
  *      - number of calls to esp_partition_read since recent esp_partition_clear_stats
  */
-size_t esp_partition_get_read_ops();
+size_t esp_partition_get_read_ops(void);
 
 /**
  * @brief Returns number of write operations called
@@ -122,7 +122,7 @@ size_t esp_partition_get_read_ops();
  * @return
  *      - number of calls to esp_partition_write since recent esp_partition_clear_stats
  */
-size_t esp_partition_get_write_ops();
+size_t esp_partition_get_write_ops(void);
 
 /**
  * @brief Returns number of erase operations performed on behalf of calls to esp_partition_erase_range
@@ -132,7 +132,7 @@ size_t esp_partition_get_write_ops();
  * @return
  *      - total number of emulated sector erase operations on behalf of esp_partition_erase_range since recent esp_partition_clear_stats
  */
-size_t esp_partition_get_erase_ops();
+size_t esp_partition_get_erase_ops(void);
 
 /**
  * @brief Returns total number of bytes read on behalf of esp_partition_read
@@ -142,7 +142,7 @@ size_t esp_partition_get_erase_ops();
  * @return
  *      - total number of bytes read on behalf of esp_partition_read since recent esp_partition_clear_stats
  */
-size_t esp_partition_get_read_bytes();
+size_t esp_partition_get_read_bytes(void);
 
 /**
  * @brief Returns total number of bytes written on behalf of esp_partition_write
@@ -152,7 +152,7 @@ size_t esp_partition_get_read_bytes();
  * @return
  *      - total number of bytes written on behalf of esp_partition_write since recent esp_partition_clear_stats
  */
-size_t esp_partition_get_write_bytes();
+size_t esp_partition_get_write_bytes(void);
 
 /**
  * @brief Returns estimated total time spent on partition operations.
@@ -163,7 +163,7 @@ size_t esp_partition_get_write_bytes();
  * @return
  *      - estimated total time spent in read/write/erase operations in miliseconds
  */
-size_t esp_partition_get_total_time();
+size_t esp_partition_get_total_time(void);
 
 /**
  * @brief Initializes emulation of failure caused by wear on behalf of write/erase operations

@@ -176,7 +176,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
     return ESP_OK;
 }
 
-esp_err_t esp_partition_file_munmap()
+esp_err_t esp_partition_file_munmap(void)
 {
     if (s_spiflash_mem_file_buf == NULL) {
         return ESP_ERR_NO_MEM;
@@ -445,7 +445,7 @@ static bool esp_partition_hook_erase(const void *dstAddr, const size_t size)
     return true;
 }
 
-void esp_partition_clear_stats()
+void esp_partition_clear_stats(void)
 {
     s_esp_partition_stat_read_bytes = 0;
     s_esp_partition_stat_write_bytes = 0;
@@ -457,32 +457,32 @@ void esp_partition_clear_stats()
     memset(s_esp_partition_stat_sector_erase_count, 0, sizeof(s_esp_partition_stat_sector_erase_count));
 }
 
-size_t esp_partition_get_read_ops()
+size_t esp_partition_get_read_ops(void)
 {
     return s_esp_partition_stat_read_ops;
 }
 
-size_t esp_partition_get_write_ops()
+size_t esp_partition_get_write_ops(void)
 {
     return s_esp_partition_stat_write_ops;
 }
 
-size_t esp_partition_get_erase_ops()
+size_t esp_partition_get_erase_ops(void)
 {
     return s_esp_partition_stat_erase_ops;
 }
 
-size_t esp_partition_get_read_bytes()
+size_t esp_partition_get_read_bytes(void)
 {
     return s_esp_partition_stat_read_bytes;
 }
 
-size_t esp_partition_get_write_bytes()
+size_t esp_partition_get_write_bytes(void)
 {
     return s_esp_partition_stat_write_bytes;
 }
 
-size_t esp_partition_get_total_time()
+size_t esp_partition_get_total_time(void)
 {
     return s_esp_partition_stat_total_time;
 }
