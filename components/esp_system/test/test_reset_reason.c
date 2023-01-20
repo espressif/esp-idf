@@ -48,6 +48,16 @@
 #define BROWNOUT            "BROWNOUT_RST"
 #define STORE_ERROR         LOAD_STORE_ERROR
 
+#elif CONFIG_IDF_TARGET_ESP32C6
+#define DEEPSLEEP           "DSLEEP"
+#define LOAD_STORE_ERROR    "Store access fault"
+#define RESET               "SW_CPU"
+#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
+#define INT_WDT             "TG1_WDT_HPSYS"
+#define RTC_WDT             "LP_WDT_SYS"
+#define BROWNOUT            "LP_BOD_SYS"
+#define STORE_ERROR         LOAD_STORE_ERROR
+
 #endif // CONFIG_IDF_TARGET_ESP32
 
 
@@ -86,7 +96,8 @@ static void setup_values(void)
     s_rtc_force_slow_val = CHECK_VALUE;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C6)
+// TODO IDF-5349, enable test when deep sleep is brought up
 static void do_deep_sleep(void)
 {
     setup_values();

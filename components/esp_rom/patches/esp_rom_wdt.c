@@ -1,16 +1,19 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-#include <stdbool.h>
+#include "sdkconfig.h"
+#include <stddef.h>
+
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
+#include "hal/mwdt_ll.h"
 
-/* ---------------------------- Init and Config ----------------------------- */
+#if CONFIG_HAL_WDT_USE_ROM_IMPL
 
+#if CONFIG_IDF_TARGET_ESP32C6
 void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescaler, bool enable_intr)
 {
     //Initialize HAL context
@@ -117,90 +120,6 @@ void wdt_hal_deinit(wdt_hal_context_t *hal)
     //Deinit HAL context
     hal->mwdt_dev = NULL;
 }
+#endif // CONFIG_IDF_TARGET_ESP32C6
 
-void wdt_hal_config_stage(wdt_hal_context_t *hal, wdt_stage_t stage, uint32_t timeout_ticks, wdt_stage_action_t behavior)
-{
-    if (hal->inst == WDT_RWDT) {
-        rwdt_ll_config_stage(hal->rwdt_dev, stage, timeout_ticks, behavior);
-    } else {
-        mwdt_ll_config_stage(hal->mwdt_dev, stage, timeout_ticks, behavior);
-    }
-}
-
-/* -------------------------------- Runtime --------------------------------- */
-
-void wdt_hal_write_protect_disable(wdt_hal_context_t *hal)
-{
-    if (hal->inst == WDT_RWDT) {
-        rwdt_ll_write_protect_disable(hal->rwdt_dev);
-    } else {
-        mwdt_ll_write_protect_disable(hal->mwdt_dev);
-    }
-}
-
-void wdt_hal_write_protect_enable(wdt_hal_context_t *hal)
-{
-    if (hal->inst == WDT_RWDT) {
-        rwdt_ll_write_protect_enable(hal->rwdt_dev);
-    } else {
-        mwdt_ll_write_protect_enable(hal->mwdt_dev);
-    }
-}
-
-void wdt_hal_enable(wdt_hal_context_t *hal)
-{
-    if (hal->inst == WDT_RWDT) {
-        rwdt_ll_feed(hal->rwdt_dev);
-        rwdt_ll_enable(hal->rwdt_dev);
-    } else {
-        mwdt_ll_feed(hal->mwdt_dev);
-        mwdt_ll_enable(hal->mwdt_dev);
-    }
-}
-
-void wdt_hal_disable(wdt_hal_context_t *hal)
-{
-    if (hal->inst == WDT_RWDT) {
-        rwdt_ll_disable(hal->rwdt_dev);
-    } else {
-        mwdt_ll_disable(hal->mwdt_dev);
-    }
-}
-
-void wdt_hal_handle_intr(wdt_hal_context_t *hal)
-{
-    if (hal->inst == WDT_RWDT) {
-        rwdt_ll_feed(hal->rwdt_dev);
-        rwdt_ll_clear_intr_status(hal->rwdt_dev);
-    } else {
-        mwdt_ll_feed(hal->mwdt_dev);
-        mwdt_ll_clear_intr_status(hal->mwdt_dev);
-    }
-}
-
-void wdt_hal_feed(wdt_hal_context_t *hal)
-{
-    if (hal->inst == WDT_RWDT) {
-        rwdt_ll_feed(hal->rwdt_dev);
-    } else {
-        mwdt_ll_feed(hal->mwdt_dev);
-    }
-}
-
-void wdt_hal_set_flashboot_en(wdt_hal_context_t *hal, bool enable)
-{
-    if (hal->inst == WDT_RWDT) {
-        rwdt_ll_set_flashboot_en(hal->rwdt_dev, enable);
-    } else {
-        mwdt_ll_set_flashboot_en(hal->mwdt_dev, enable);
-    }
-}
-
-bool wdt_hal_is_enabled(wdt_hal_context_t *hal)
-{
-    if (hal->inst == WDT_RWDT) {
-        return rwdt_ll_check_if_enabled(hal->rwdt_dev);
-    } else {
-        return mwdt_ll_check_if_enabled(hal->mwdt_dev);
-    }
-}
+#endif // CONFIG_HAL_WDT_USE_ROM_IMPL

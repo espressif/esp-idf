@@ -6,3 +6,5 @@ entries:
         esp_rom_tlsf (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
         esp_rom_systimer (noflash)
+    if CONFIG_HAL_WDT_USE_ROM_IMPL = y:
+        esp_rom_wdt (noflash)
