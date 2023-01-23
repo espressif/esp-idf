@@ -25,10 +25,11 @@
 
 static const char *TAG = "mdns-test";
 static char* generate_hostname(void);
+static const int RETRY_COUNT = 10;
 
 #if CONFIG_MDNS_RESOLVE_TEST_SERVICES == 1
-static void  query_mdns_host_with_gethostbyname(char * host);
-static void  query_mdns_host_with_getaddrinfo(char * host);
+static esp_err_t query_mdns_host_with_gethostbyname(char * host);
+static esp_err_t query_mdns_host_with_getaddrinfo(char * host);
 #endif
 
 static void initialise_mdns(void)
@@ -116,7 +117,7 @@ static void query_mdns_service(const char * service_name, const char * proto)
     mdns_query_results_free(results);
 }
 
-static void query_mdns_host(const char * host_name)
+static esp_err_t query_mdns_host(const char * host_name)
 {
     ESP_LOGI(TAG, "Query A: %s.local", host_name);
 
@@ -127,13 +128,14 @@ static void query_mdns_host(const char * host_name)
     if(err){
         if(err == ESP_ERR_NOT_FOUND){
             ESP_LOGW(TAG, "%s: Host was not found!", esp_err_to_name(err));
-            return;
+            return err;
         }
         ESP_LOGE(TAG, "Query Failed: %s", esp_err_to_name(err));
-        return;
+        return err;
     }
 
     ESP_LOGI(TAG, "Query A: %s.local resolved to: " IPSTR, host_name, IP2STR(&addr));
+    return ESP_OK;
 }
 
 static void initialise_button(void)
@@ -167,11 +169,27 @@ static void check_button(void)
 
 static void mdns_example_task(void *pvParameters)
 {
+    int i = 0;
+    const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
 #if CONFIG_MDNS_RESOLVE_TEST_SERVICES == 1
     /* Send initial queries that are started by CI tester */
-    query_mdns_host("tinytester");
-    query_mdns_host_with_gethostbyname("tinytester-lwip.local");
-    query_mdns_host_with_getaddrinfo("tinytester-lwip.local");
+    while (query_mdns_host("tinytester") != ESP_OK && i != RETRY_COUNT) {
+        query_mdns_host("tinytester");
+        i++;
+        vTaskDelay(xDelay);
+    }
+    i = 0;
+    while (query_mdns_host_with_gethostbyname("tinytester-lwip.local") != ESP_OK && i != RETRY_COUNT) {
+        query_mdns_host_with_gethostbyname("tinytester-lwip.local");
+        i++;
+        vTaskDelay(xDelay);
+    }
+    i = 0;
+    while (query_mdns_host_with_getaddrinfo("tinytester-lwip.local") != ESP_OK && i != RETRY_COUNT) {
+        query_mdns_host_with_getaddrinfo("tinytester-lwip.local");
+        i++;
+        vTaskDelay(xDelay);
+    }
 #endif
 
     while(1) {
@@ -221,7 +239,7 @@ static char* generate_hostname(void)
  *  @brief Executes gethostbyname and displays list of resolved addresses.
  *  Note: This function is used only to test advertised mdns hostnames resolution
  */
-static void  query_mdns_host_with_gethostbyname(char * host)
+static esp_err_t query_mdns_host_with_gethostbyname(char * host)
 {
     struct hostent *res = gethostbyname(host);
     if (res) {
@@ -230,14 +248,16 @@ static void  query_mdns_host_with_gethostbyname(char * host)
             ESP_LOGI(TAG, "gethostbyname: %s resolved to: %s", host, inet_ntoa(*(struct in_addr *) (res->h_addr_list[i])));
             i++;
         }
+        return ESP_OK;
     }
+    return ESP_FAIL;
 }
 
 /**
  *  @brief Executes getaddrinfo and displays list of resolved addresses.
  *  Note: This function is used only to test advertised mdns hostnames resolution
  */
-static void  query_mdns_host_with_getaddrinfo(char * host)
+static esp_err_t query_mdns_host_with_getaddrinfo(char * host)
 {
     struct addrinfo hints;
     struct addrinfo * res;
@@ -254,6 +274,8 @@ static void  query_mdns_host_with_getaddrinfo(char * host)
                      inet_ntoa(((struct sockaddr_in6 *) res->ai_addr)->sin6_addr));
             res = res->ai_next;
         }
+        return ESP_OK;
     }
+    return ESP_FAIL;
 }
 #endif
