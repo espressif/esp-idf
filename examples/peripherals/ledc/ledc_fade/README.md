@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # _LEDC Fade Example_
 
@@ -39,12 +39,12 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ## Example Output
 
-Running this example, you will see each ledc's brightness changes differently
+Running this example, you will see the four LEDs' brightness change repeatedly in the following orders
 
-* LEDC 1: Fade up / increase intensity
-* LEDC 2: Fade down / decrease intensity
-* LEDC 3: Keep a stable intensity
-* LEDC 4: LED is not on
+* 1: Fade up / increase intensity on the LEDs connecting to Channel 0/1; Fade down / decrease intensity on the LEDs connecting to Channel 2/3
+* 2: Fade down / decrease intensity on the LEDs connecting to Channel 0/1;Fade up / increase intensity on the LEDs connecting to Channel 2/3
+* 3: All LEDs keep a stable intensity
+* 4: All LEDs are off
 
 you can also see the following output log on the serial monitor:
 

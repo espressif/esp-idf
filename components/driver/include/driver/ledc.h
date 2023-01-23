@@ -39,9 +39,9 @@ extern "C" {
 typedef struct {
     int gpio_num;                   /*!< the LEDC output gpio_num, if you want to use gpio16, gpio_num = 16 */
     ledc_mode_t speed_mode;         /*!< LEDC speed speed_mode, high-speed mode or low-speed mode */
-    ledc_channel_t channel;         /*!< LEDC channel (0 - 7) */
+    ledc_channel_t channel;         /*!< LEDC channel (0 - LEDC_CHANNEL_MAX-1) */
     ledc_intr_type_t intr_type;     /*!< configure interrupt, Fade interrupt enable  or Fade interrupt disable */
-    ledc_timer_t timer_sel;         /*!< Select the timer source of channel (0 - 3) */
+    ledc_timer_t timer_sel;         /*!< Select the timer source of channel (0 - LEDC_TIMER_MAX-1) */
     uint32_t duty;                  /*!< LEDC channel duty, the range of duty setting is [0, (2**duty_resolution)] */
     int hpoint;                     /*!< LEDC channel hpoint value, the max value is 0xfffff */
     struct {
@@ -56,12 +56,12 @@ typedef struct {
 typedef struct {
     ledc_mode_t speed_mode;                /*!< LEDC speed speed_mode, high-speed mode or low-speed mode */
     ledc_timer_bit_t duty_resolution;      /*!< LEDC channel duty resolution */
-    ledc_timer_t  timer_num;               /*!< The timer source of channel (0 - 3) */
+    ledc_timer_t  timer_num;               /*!< The timer source of channel (0 - LEDC_TIMER_MAX-1) */
     uint32_t freq_hz;                      /*!< LEDC timer frequency (Hz) */
     ledc_clk_cfg_t clk_cfg;                /*!< Configure LEDC source clock from ledc_clk_cfg_t.
-                                                Note that LEDC_USE_RTC8M_CLK and LEDC_USE_XTAL_CLK are
+                                                Note that LEDC_USE_RC_FAST_CLK and LEDC_USE_XTAL_CLK are
                                                 non-timer-specific clock sources. You can not have one LEDC timer uses
-                                                RTC8M_CLK as the clock source and have another LEDC timer uses XTAL_CLK
+                                                RC_FAST_CLK as the clock source and have another LEDC timer uses XTAL_CLK
                                                 as its clock source. All chips except esp32 and esp32s2 do not have
                                                 timer-specific clock sources, which means clock source for all timers
                                                 must be the same one. */
