@@ -818,7 +818,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect('secure_boot_v2: blowing secure boot efuse...')
     dut.expect('Disable JTAG...')
     dut.expect('Disable ROM BASIC interpreter fallback...')
-    dut.expect('UART ROM Download mode kept enabled - SECURITY COMPROMISED')
+    dut.expect('Disable ROM Download mode...')
     dut.expect('secure_boot_v2: Secure boot permanently enabled')
 
     dut.expect('Checking flash encryption...')
@@ -900,7 +900,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
         dut.expect_exact('secure_boot_v2: Revoking empty key digest slot (1)...')
         dut.expect_exact('secure_boot_v2: Revoking empty key digest slot (2)...')
     dut.expect('secure_boot_v2: blowing secure boot efuse...')
-    dut.expect('UART ROM Download mode kept enabled - SECURITY COMPROMISED')
+    dut.expect('Enabling Security download mode...')
     dut.expect('Disable hardware & software JTAG...')
 
     if dut.app.target != 'esp32c2':
