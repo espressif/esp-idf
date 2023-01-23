@@ -3,8 +3,3 @@
 components/heap/host_test/host_test_linux:
   enable:
     - if: IDF_TARGET == "linux"
-components/heap/test_apps:
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: target esp32c6 is not supported yet
