@@ -146,6 +146,12 @@ void esp_efuse_utility_update_virt_blocks(void);
  */
 void esp_efuse_utility_debug_dump_blocks(void);
 
+
+/**
+ * @brief   Prints efuse values for a single block.
+ */
+void esp_efuse_utility_debug_dump_single_block(int num_block);
+
 /**
  * @brief   Erase the virt_blocks array.
  */
