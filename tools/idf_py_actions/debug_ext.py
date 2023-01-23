@@ -247,9 +247,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 print(f'Warning: {msg_body}')
                 return f'# {msg_body}'
             r = ['', f'# Load {target} ROM ELF symbols']
-            is_one_revision = len(roms[target]) == 1
-            if not is_one_revision:
-                r.append('define target hookpost-remote')
+            r.append('define target hookpost-remote')
             r.append('set confirm off')
             # Since GDB does not have 'else if' statement than we use nested 'if..else' instead.
             for i, k in enumerate(roms[target], 1):
@@ -273,8 +271,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             for i in range(len(roms[target]), 0, -1):
                 r.append(indent('end', base_ident * i))
             r.append('set confirm on')
-            if not is_one_revision:
-                r.append('end')
+            r.append('end')
             r.append('')
             return os.linesep.join(r)
         raise FatalError(f'{ESP_ROM_INFO_FILE} file not found. Please check IDF integrity.')
