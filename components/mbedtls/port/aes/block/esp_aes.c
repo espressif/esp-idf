@@ -314,9 +314,6 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
                          const unsigned char *input,
                          unsigned char *output )
 {
-    int c;
-    size_t n = *iv_off;
-
     if (esp_aes_validate_input(ctx, input, output)) {
         return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
     }
@@ -335,6 +332,8 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
     }
 
+    int c;
+    size_t n = *iv_off;
     esp_aes_acquire_hardware();
     ctx->key_in_hardware = 0;
     ctx->key_in_hardware = aes_hal_setkey(ctx->key, ctx->key_bytes, ESP_AES_ENCRYPT);
