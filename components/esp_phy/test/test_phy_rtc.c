@@ -77,12 +77,15 @@ static IRAM_ATTR void test_phy_rtc_cache_task(void *arg)
 
 #if SOC_BT_SUPPORTED
 
+#if CONFIG_IDF_TARGET_ESP32
+    /* Only esp32 will call bt_track_pll_cap() in the interrupt
+        handler, other chips will call this function in the task
+     */
     ESP_LOGI(TAG, "Test bt_track_pll_cap()...");
     spi_flash_disable_interrupts_caches_and_other_cpu();
     bt_track_pll_cap();
     spi_flash_enable_interrupts_caches_and_other_cpu();
 
-#if CONFIG_IDF_TARGET_ESP32
     extern void bt_bb_init_cmplx_reg(void);
     ESP_LOGI(TAG, "Test bt_bb_init_cmplx_reg()...");
     spi_flash_disable_interrupts_caches_and_other_cpu();

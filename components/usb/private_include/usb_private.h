@@ -38,12 +38,13 @@ _Static_assert(sizeof(usb_transfer_dummy_t) == sizeof(usb_transfer_t), "usb_tran
 
 struct urb_s{
     TAILQ_ENTRY(urb_s) tailq_entry;
-    //HCD handler pointer and variables. Must be initialized to NULL and 0 respectively
+    //HCD Layer: Handler pointer and variables. Must be initialized to NULL and 0 respectively
     void *hcd_ptr;
     uint32_t hcd_var;
-    //Host Driver layer handler
+    //Host Lib Layer:
     void *usb_host_client;  //Currently only used when submitted to shared pipes (i.e., Device default pipes)
     size_t usb_host_header_size; //USB Host may need the data buffer to have a transparent header
+    bool usb_host_inflight; //Debugging variable, used to prevent re-submitting URBs already inflight
     //Public transfer structure. Must be last due to variable length array
     usb_transfer_t transfer;
 };

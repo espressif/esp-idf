@@ -1,11 +1,11 @@
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 |
-| ----------------- | ----- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
 
 # SPI Host Driver Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example aims to show how to use SPI Host driver API, like `spi_transaction_t` and spi_device_queue. 
+This example aims to show how to use SPI Host driver API, like `spi_transaction_t` and spi_device_queue.
 
 If you are looking for code to drive LCDs in general, rather than code that uses the SPI master, that may be a better example to look at as it uses ESP-IDFs built-in LCD support rather than doing all the low-level work itself, which can be found at `examples/peripherals/lcd/tjpgd/`
 

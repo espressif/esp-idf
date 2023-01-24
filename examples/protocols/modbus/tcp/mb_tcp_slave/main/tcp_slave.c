@@ -18,6 +18,11 @@
 
 #include "mdns.h"
 #include "esp_netif.h"
+
+#if __has_include("esp_mac.h")
+#include "esp_mac.h"
+#endif
+
 #include "protocol_examples_common.h"
 
 #include "mbcontroller.h"       // for mbcontroller defines and api

@@ -98,7 +98,7 @@ void btc_blufi_report_error(esp_blufi_error_state_t state)
     msg.act = ESP_BLUFI_EVENT_REPORT_ERROR;
     esp_blufi_cb_param_t param;
     param.report_error.state = state;
-    btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+    btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
 }
 
 void btc_blufi_recv_handler(uint8_t *data, int len)
@@ -320,6 +320,21 @@ static void btc_blufi_wifi_conn_report(uint8_t opmode, uint8_t sta_conn_state, u
             *p++ = BLUFI_TYPE_DATA_SUBTYPE_SOFTAP_CHANNEL;
             *p++ = 1;
             *p++ = info->softap_channel;
+        }
+        if (info->sta_max_conn_retry_set) {
+            *p++ = BLUFI_TYPE_DATA_SUBTYPE_STA_MAX_CONN_RETRY;
+            *p++ = 1;
+            *p++ = info->sta_max_conn_retry;
+        }
+        if (info->sta_conn_end_reason_set) {
+            *p++ = BLUFI_TYPE_DATA_SUBTYPE_STA_CONN_END_REASON;
+            *p++ = 1;
+            *p++ = info->sta_conn_end_reason;
+        }
+        if (info->sta_conn_rssi_set) {
+            *p++ = BLUFI_TYPE_DATA_SUBTYPE_STA_CONN_RSSI;
+            *p++ = 1;
+            *p++ = info->sta_conn_rssi;
         }
     }
     if (p - data > data_len) {
@@ -712,6 +727,21 @@ void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         if (src_info->softap_channel_set) {
             dst->wifi_conn_report.extra_info->softap_channel_set = src_info->softap_channel_set;
             dst->wifi_conn_report.extra_info->softap_channel = src_info->softap_channel;
+            dst->wifi_conn_report.extra_info_len += (1 + 2);
+        }
+        if (src_info->sta_max_conn_retry_set) {
+            dst->wifi_conn_report.extra_info->sta_max_conn_retry_set = src_info->sta_max_conn_retry_set;
+            dst->wifi_conn_report.extra_info->sta_max_conn_retry = src_info->sta_max_conn_retry;
+            dst->wifi_conn_report.extra_info_len += (1 + 2);
+        }
+        if (src_info->sta_conn_end_reason_set) {
+            dst->wifi_conn_report.extra_info->sta_conn_end_reason_set = src_info->sta_conn_end_reason_set;
+            dst->wifi_conn_report.extra_info->sta_conn_end_reason = src_info->sta_conn_end_reason;
+            dst->wifi_conn_report.extra_info_len += (1 + 2);
+        }
+        if (src_info->sta_conn_rssi_set) {
+            dst->wifi_conn_report.extra_info->sta_conn_rssi_set = src_info->sta_conn_rssi_set;
+            dst->wifi_conn_report.extra_info->sta_conn_rssi = src_info->sta_conn_rssi;
             dst->wifi_conn_report.extra_info_len += (1 + 2);
         }
         break;

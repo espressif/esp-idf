@@ -131,7 +131,8 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
 FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw)
 {
     uint32_t sclk_freq = uart_ll_get_sclk_freq(hw);
-    typeof(hw->clk_div) div_reg = hw->clk_div;
+    typeof(hw->clk_div) div_reg;
+    div_reg.val = hw->clk_div.val;
     return ((sclk_freq << 4)) / ((div_reg.div_int << 4) | div_reg.div_frag);
 }
 
@@ -291,7 +292,8 @@ FORCE_INLINE_ATTR void uart_ll_txfifo_rst(uart_dev_t *hw)
 FORCE_INLINE_ATTR uint32_t uart_ll_get_rxfifo_len(uart_dev_t *hw)
 {
     uint32_t fifo_cnt = HAL_FORCE_READ_U32_REG_FIELD(hw->status, rxfifo_cnt);
-    typeof(hw->mem_rx_status) rx_status = hw->mem_rx_status;
+    typeof(hw->mem_rx_status) rx_status;
+    rx_status.val = hw->mem_rx_status.val;
     uint32_t len = 0;
 
     // When using DPort to read fifo, fifo_cnt is not credible, we need to calculate the real cnt based on the fifo read and write pointer.
@@ -351,9 +353,9 @@ FORCE_INLINE_ATTR void uart_ll_get_stop_bits(uart_dev_t *hw, uart_stop_bits_t *s
 {
     //workaround for hardware issue, when UART stop bit set as 2-bit mode.
     if(hw->rs485_conf.dl1_en == 1 && hw->conf0.stop_bit_num == 0x1) {
-        *stop_bit = UART_STOP_BITS_2;
+        *stop_bit = (uart_stop_bits_t)UART_STOP_BITS_2;
     } else {
-        *stop_bit = hw->conf0.stop_bit_num;
+        *stop_bit = (uart_stop_bits_t)hw->conf0.stop_bit_num;
     }
 }
 
@@ -384,7 +386,7 @@ FORCE_INLINE_ATTR void uart_ll_set_parity(uart_dev_t *hw, uart_parity_t parity_m
 FORCE_INLINE_ATTR void uart_ll_get_parity(uart_dev_t *hw, uart_parity_t *parity_mode)
 {
     if(hw->conf0.parity_en) {
-        *parity_mode = 0X2 | hw->conf0.parity;
+        *parity_mode = (uart_parity_t)(0x2 | hw->conf0.parity);
     } else {
         *parity_mode = UART_PARITY_DISABLE;
     }
@@ -500,10 +502,10 @@ FORCE_INLINE_ATTR void uart_ll_get_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcont
 {
     *flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
     if(hw->conf1.rx_flow_en) {
-        *flow_ctrl |= UART_HW_FLOWCTRL_RTS;
+        *flow_ctrl = (uart_hw_flowcontrol_t)((unsigned int)(*flow_ctrl) | (unsigned int)UART_HW_FLOWCTRL_RTS);
     }
     if(hw->conf0.tx_flow_en) {
-        *flow_ctrl |= UART_HW_FLOWCTRL_CTS;
+        *flow_ctrl = (uart_hw_flowcontrol_t)((unsigned int)(*flow_ctrl) | (unsigned int)UART_HW_FLOWCTRL_CTS);
     }
 }
 
@@ -758,7 +760,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_wakeup_thrd(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR void uart_ll_get_data_bit_num(uart_dev_t *hw, uart_word_length_t *data_bit)
 {
-    *data_bit = hw->conf0.bit_num;
+    *data_bit = (uart_word_length_t)hw->conf0.bit_num;
 }
 
 /**
@@ -770,7 +772,8 @@ FORCE_INLINE_ATTR void uart_ll_get_data_bit_num(uart_dev_t *hw, uart_word_length
  */
 FORCE_INLINE_ATTR IRAM_ATTR bool uart_ll_is_tx_idle(uart_dev_t *hw)
 {
-    typeof(hw->status) status = hw->status;
+    typeof(hw->status) status;
+    status.val = hw->status.val;
     return ((status.txfifo_cnt == 0) && (status.st_utx_out == 0));
 }
 
@@ -822,7 +825,8 @@ FORCE_INLINE_ATTR void uart_ll_set_loop_back(uart_dev_t *hw, bool loop_back_en)
  */
 FORCE_INLINE_ATTR void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
 {
-    typeof(hw->conf0) conf0_reg = hw->conf0;
+    typeof(hw->conf0) conf0_reg;
+    conf0_reg.val = hw->conf0.val;
     conf0_reg.irda_tx_inv = (inv_mask & UART_SIGNAL_IRDA_TX_INV) ? 1 : 0;
     conf0_reg.irda_rx_inv = (inv_mask & UART_SIGNAL_IRDA_RX_INV) ? 1 : 0;
     conf0_reg.rxd_inv = (inv_mask & UART_SIGNAL_RXD_INV) ? 1 : 0;

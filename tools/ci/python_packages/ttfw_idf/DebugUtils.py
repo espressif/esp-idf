@@ -1,16 +1,5 @@
-# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 from __future__ import unicode_literals
 
@@ -18,7 +7,6 @@ import logging
 from io import open
 
 import pexpect
-import pygdbmi.gdbcontroller
 from tiny_test_fw import Utility
 
 try:
@@ -27,7 +15,7 @@ except ImportError:
     # Exception is ignored so the package is not required for those who don't use debug utils.
     err_msg = 'Please install py_debug_backend for debug utils to work properly!'
 
-    class debug_backend(object):
+    class debug_backend(object):  # type: ignore
         @staticmethod
         def create_oocd(*args, **kwargs):
             raise RuntimeError(err_msg)
@@ -35,6 +23,17 @@ except ImportError:
         @staticmethod
         def create_gdb(*args, **kwargs):
             raise RuntimeError(err_msg)
+
+try:
+    from debug_backend.defs import NoGdbProcessError
+except ImportError:
+    # fallback for pygdbmi<0.10.0.0 which is used in the previous version of debug_backend
+    try:
+        from pygdbmi.gdbcontroller import NoGdbProcessError
+    except ImportError:
+        # If debug_backend is not installed, the exception is ignored.
+        class NoGdbProcessError(ValueError):  # type: ignore
+            pass
 
 
 class CustomProcess(object):
@@ -125,8 +124,9 @@ class GDBBackend(object):
     def __exit__(self, type, value, traceback):
         try:
             self.gdb.gdb_exit()
-        except pygdbmi.gdbcontroller.NoGdbProcessError as e:
-            #  the debug backend can fail on gdb exit when it tries to read the response after issuing the exit command.
+        except NoGdbProcessError as e:
+            #  the debug backend can fail on gdb exit
+            #  when it tries to read the response after issuing the exit command.
             Utility.console_log('Ignoring exception: {}'.format(e), 'O')
         except debug_backend.defs.DebuggerTargetStateTimeoutError:
             Utility.console_log('Ignoring timeout exception for GDB exit', 'O')

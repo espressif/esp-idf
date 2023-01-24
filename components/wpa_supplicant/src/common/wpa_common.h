@@ -311,6 +311,10 @@ struct rsn_rdie {
 
 #endif /* CONFIG_IEEE80211R */
 
+/* WFA Transition Disable KDE (using OUI_WFA) */
+/* Transition Disable Bitmap bits */
+#define TRANSITION_DISABLE_WPA3_PERSONAL BIT(0)
+
 struct wpa_ie_data {
 	int proto;
 	int pairwise_cipher;

@@ -149,7 +149,7 @@ config BT_CTRL_RX_ANTENNA_INDEX_EFF
 
 choice BT_CTRL_DFT_TX_POWER_LEVEL
     prompt "BLE default Tx power level"
-    default BT_CTRL_DFT_TX_POWER_LEVEL_P3
+    default BT_CTRL_DFT_TX_POWER_LEVEL_P9
     help
         Specify default Tx power level
 
@@ -429,3 +429,11 @@ config BT_CTRL_CODED_AGC_RECORRECT_EN
     default n
     help
         Enable coded phy AGC recorrect
+
+config BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+    bool "Disable active scan backoff"
+    default n
+    help
+        Disable active scan backoff. The bluetooth spec requires that scanners should run a backoff procedure to
+        minimize collision of scan request PDUs from nultiple scanners. If scan backoff is disabled, in active
+        scanning, scan request PDU will be sent every time when HW receives scannable ADV PDU.

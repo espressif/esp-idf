@@ -12,6 +12,7 @@
 #include "esp_err.h"
 #include "sdkconfig.h"
 #include "esp_task.h"
+#include "esp_assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -186,7 +187,7 @@ the adv packet will be discarded until the memory is restored. */
 }
 
 #else
-#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable bluetooth in menuconfig to use bt.h");
+#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; ESP_STATIC_ASSERT(0, "please enable bluetooth in menuconfig to use esp_bt.h");
 #endif
 
 /**

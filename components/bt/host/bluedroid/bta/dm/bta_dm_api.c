@@ -666,6 +666,7 @@ void BTA_DmOobReply(BD_ADDR bd_addr, UINT8 len, UINT8 *p_value)
     if ((p_msg = (tBTA_DM_API_OOB_REPLY *) osi_malloc(sizeof(tBTA_DM_API_OOB_REPLY))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_OOB_REPLY_EVT;
         if(p_value == NULL || len > BT_OCTET16_LEN) {
+            osi_free(p_msg);
             return;
         }
         memcpy(p_msg->bd_addr, bd_addr, BD_ADDR_LEN);

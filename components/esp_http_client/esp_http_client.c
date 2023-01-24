@@ -765,6 +765,17 @@ error:
     return NULL;
 }
 
+static void esp_http_client_cached_buf_cleanup(esp_http_buffer_t *res_buffer)
+{
+    /* Free cached data if any, that was received during fetch header stage */
+    if (res_buffer && res_buffer->orig_raw_data) {
+        free(res_buffer->orig_raw_data);
+        res_buffer->orig_raw_data = NULL;
+        res_buffer->raw_data = NULL;
+        res_buffer->raw_len = 0;
+    }
+}
+
 esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
 {
     if (client == NULL) {
@@ -786,11 +797,7 @@ esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
         http_header_destroy(client->response->headers);
         if (client->response->buffer) {
             free(client->response->buffer->data);
-            if (client->response->buffer->orig_raw_data) {
-                free(client->response->buffer->orig_raw_data);
-                client->response->buffer->orig_raw_data = NULL;
-                client->response->buffer->raw_data = NULL;
-            }
+            esp_http_client_cached_buf_cleanup(client->response->buffer);
         }
         free(client->response->buffer);
         free(client->response);
@@ -886,6 +893,8 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
             free(old_host);
             return ESP_ERR_NO_MEM;
         }
+        /* Free cached data if any, as we are closing this connection */
+        esp_http_client_cached_buf_cleanup(client->response->buffer);
         esp_http_client_close(client);
     }
 
@@ -910,6 +919,8 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
     }
 
     if (old_port != client->connection_info.port) {
+        /* Free cached data if any, as we are closing this connection */
+        esp_http_client_cached_buf_cleanup(client->response->buffer);
         esp_http_client_close(client);
     }
 
@@ -1029,9 +1040,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         res_buffer->raw_data += remain_len;
         ridx = remain_len;
         if (res_buffer->raw_len == 0) {
-            free(res_buffer->orig_raw_data);
-            res_buffer->orig_raw_data = NULL;
-            res_buffer->raw_data = NULL;
+            esp_http_client_cached_buf_cleanup(res_buffer);
         }
     }
     int need_read = len - ridx;

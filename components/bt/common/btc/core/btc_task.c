@@ -206,9 +206,6 @@ static void btc_thread_handler(void *arg)
         break;
     }
 
-    if (msg->arg) {
-        osi_free(msg->arg);
-    }
     osi_free(msg);
 }
 
@@ -227,59 +224,61 @@ static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
  * @param  arg       paramter
  * @param  arg_len   length of paramter
  * @param  copy_func deep copy function
+ * @param  free_func deep free function
  * @return           BT_STATUS_SUCCESS: success
  *                   others: fail
  */
-bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func)
+bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func,
+                                    btc_arg_deep_free_t free_func)
 {
     btc_msg_t* lmsg;
-
+    bt_status_t ret;
     //                              arg XOR arg_len
     if ((msg == NULL) || ((arg == NULL) == !(arg_len == 0))) {
+        BTC_TRACE_WARNING("%s Invalid parameters\n", __func__);
         return BT_STATUS_PARM_INVALID;
     }
 
     BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, arg);
 
-    lmsg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t));
+    lmsg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + arg_len);
     if (lmsg == NULL) {
+        BTC_TRACE_WARNING("%s No memory\n", __func__);
         return BT_STATUS_NOMEM;
     }
 
     memcpy(lmsg, msg, sizeof(btc_msg_t));
     if (arg) {
-        lmsg->arg = (void *)osi_malloc(arg_len);
-        if (lmsg->arg == NULL) {
-            osi_free(lmsg);
-            return BT_STATUS_NOMEM;
-        }
         memset(lmsg->arg, 0x00, arg_len);    //important, avoid arg which have no length
         memcpy(lmsg->arg, arg, arg_len);
         if (copy_func) {
             copy_func(lmsg, lmsg->arg, arg);
         }
-    } else {
-        lmsg->arg = NULL;
     }
 
-    return btc_task_post(lmsg, OSI_THREAD_MAX_TIMEOUT);
+    ret = btc_task_post(lmsg, OSI_THREAD_MAX_TIMEOUT);
+    if (ret != BT_STATUS_SUCCESS) {
+        if (copy_func && free_func) {
+            free_func(lmsg);
+        }
+        osi_free(lmsg);
+    }
 
+    return ret;
 }
 
 /**
  * transfer an message to another module in tha same task.
  * @param  msg       message
- * @param  arg       paramter
  * @return           BT_STATUS_SUCCESS: success
  *                   others: fail
  */
-bt_status_t btc_inter_profile_call(btc_msg_t *msg, void *arg)
+bt_status_t btc_inter_profile_call(btc_msg_t *msg)
 {
     if (msg == NULL) {
         return BT_STATUS_PARM_INVALID;
     }
 
-    msg->arg = arg;
     switch (msg->sig) {
     case BTC_SIG_API_CALL:
         profile_tab[msg->pid].btc_call(msg);

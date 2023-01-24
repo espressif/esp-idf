@@ -67,3 +67,8 @@ void i2c_hal_get_txfifo_cnt(i2c_hal_context_t *hal, uint32_t *len)
 {
     *len =  i2c_ll_get_txfifo_len(hal->dev);
 }
+
+void i2c_hal_get_intsts_mask(i2c_hal_context_t *hal, uint32_t *mask)
+{
+    *mask = i2c_ll_get_intsts_mask(hal->dev);
+}

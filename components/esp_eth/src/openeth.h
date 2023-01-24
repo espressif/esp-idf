@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 #include <stdint.h>
@@ -18,6 +10,7 @@
 #include <assert.h>
 #include "sdkconfig.h"
 #include "soc/soc.h"
+#include "esp_assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -135,7 +128,7 @@ typedef struct {
     void* txpnt;        //!< Pointer to the data to transmit
 } openeth_tx_desc_t;
 
-_Static_assert(sizeof(openeth_tx_desc_t) == 8, "incorrect size of openeth_tx_desc_t");
+ESP_STATIC_ASSERT(sizeof(openeth_tx_desc_t) == 8, "incorrect size of openeth_tx_desc_t");
 
 typedef struct {
     uint16_t lc: 1;     //!< Late collision flag
@@ -155,7 +148,7 @@ typedef struct {
     void* rxpnt;        //!< Pointer to the receive buffer
 } openeth_rx_desc_t;
 
-_Static_assert(sizeof(openeth_rx_desc_t) == 8, "incorrect size of openeth_rx_desc_t");
+ESP_STATIC_ASSERT(sizeof(openeth_rx_desc_t) == 8, "incorrect size of openeth_rx_desc_t");
 
 
 static inline openeth_tx_desc_t* openeth_tx_desc(int idx)

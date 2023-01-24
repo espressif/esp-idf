@@ -1590,10 +1590,16 @@ def action_install_python_env(args):  # type: ignore
         if with_seeder_option:
             virtualenv_options += ['--seeder', 'pip']
 
+        env_copy = os.environ.copy()
+        # Virtualenv with setuptools>=60 produces on recent Debian/Ubuntu systems virtual environments with
+        # local/bin/python paths. SETUPTOOLS_USE_DISTUTILS=stdlib is a workaround to keep bin/python paths.
+        # See https://github.com/pypa/setuptools/issues/3278 for more information.
+        env_copy['SETUPTOOLS_USE_DISTUTILS'] = 'stdlib'
         subprocess.check_call([sys.executable, '-m', 'virtualenv',
                                *virtualenv_options,
                                idf_python_env_path],
-                              stdout=sys.stdout, stderr=sys.stderr)
+                              stdout=sys.stdout, stderr=sys.stderr,
+                              env=env_copy)
     env_copy = os.environ.copy()
     if env_copy.get('PIP_USER')  == 'yes':
         warn('Found PIP_USER="yes" in the environment. Disabling PIP_USER in this shell to install packages into a virtual environment.')

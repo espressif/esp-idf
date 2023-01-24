@@ -64,6 +64,7 @@ extern "C" {
 #define ETS_INTERNAL_SW0_INTR_SOURCE        -4 ///< Software int source 1
 #define ETS_INTERNAL_SW1_INTR_SOURCE        -5 ///< Software int source 2
 #define ETS_INTERNAL_PROFILING_INTR_SOURCE  -6 ///< Int source for profiling
+#define ETS_INTERNAL_UNUSED_INTR_SOURCE    -99 ///< Interrupt is not assigned to any source
 
 /**@}*/
 

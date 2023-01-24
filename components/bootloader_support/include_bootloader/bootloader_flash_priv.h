@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,10 +24,13 @@
 #define CMD_RDID       0x9F
 #define CMD_WRSR       0x01
 #define CMD_WRSR2      0x31 /* Not all SPI flash uses this command */
+#define CMD_WRSR3      0x11 /* Not all SPI flash uses this command */
 #define CMD_WREN       0x06
+#define CMD_WRENVSR    0x50 /* Flash write enable for volatile SR bits */
 #define CMD_WRDI       0x04
 #define CMD_RDSR       0x05
 #define CMD_RDSR2      0x35 /* Not all SPI flash uses this command */
+#define CMD_RDSR3      0x15 /* Not all SPI flash uses this command */
 #define CMD_OTPEN      0x3A /* Enable OTP mode, not all SPI flash uses this command */
 #define CMD_RDSFDP     0x5A /* Read the SFDP of the flash */
 #define CMD_WRAP       0x77 /* Set burst with wrap command */
@@ -170,5 +173,13 @@ uint32_t bootloader_flash_read_sfdp(uint32_t sfdp_addr, unsigned int miso_byte_n
  * @brief Enable the flash write protect (WEL bit).
  */
 void bootloader_enable_wp(void);
+
+/**
+ * @brief Once this function is called,
+ * any on-going internal operations will be terminated and the device will return to its default power-on
+ * state and lose all the current volatile settings, such as Volatile Status Register bits, Write Enable Latch
+ * (WEL) status, Program/Erase Suspend status, etc.
+ */
+void bootloader_spi_flash_reset(void);
 
 #endif

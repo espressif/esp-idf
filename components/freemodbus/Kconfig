@@ -193,44 +193,14 @@ menu "Modbus configuration"
                 If this option is set the Modbus stack uses timer for T3.5 time measurement.
                 Else the internal UART TOUT timeout is used for 3.5T symbol time measurement.
 
-    config FMB_TIMER_GROUP
-        int "Slave Timer group number"
-        range 0 1
-        default 0
-        help
-                Modbus slave Timer group number that is used for timeout measurement.
-
-    config FMB_TIMER_INDEX
-        int "Slave Timer index in the group"
-        range 0 1
-        default 0
-        help
-                Modbus slave Timer Index in the group that is used for timeout measurement.
-
-    config FMB_MASTER_TIMER_GROUP
-        int "Master Timer group number"
-        range 0 1
-        default FMB_TIMER_GROUP
-        help
-                Modbus master Timer group number that is used for timeout measurement.
-
-    config FMB_MASTER_TIMER_INDEX
-        int "Master Timer index"
-        range 0 1
-        default FMB_TIMER_INDEX
-        help
-                Modbus master Timer Index in the group that is used for timeout measurement.
-                Note: Modbus master and slave should have different timer index to be able to work simultaneously.
-
-    config FMB_TIMER_ISR_IN_IRAM
-        bool "Place timer interrupt handler into IRAM"
+    config FMB_TIMER_USE_ISR_DISPATCH_METHOD
+        bool "Modbus timer uses ISR dispatch method"
         default n
+        select ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
         select UART_ISR_IN_IRAM
         help
-                This option places Modbus timer IRQ handler into IRAM.
-                This allows to avoid delays related to processing of non-IRAM-safe interrupts
-                during a flash write operation (NVS updating a value, or some other
-                flash API which has to perform an read/write operation and disable CPU cache).
+                If this option is set the Modbus stack uses ISR dispatch method
+                to send timeout events from the callback function called from ISR.
                 This option has dependency with the UART_ISR_IN_IRAM option which places UART interrupt
                 handler into IRAM to prevent delays related to processing of UART events.
 

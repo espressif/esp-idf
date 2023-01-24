@@ -38,6 +38,7 @@
 #include <stddef.h>
 #include <sys/cdefs.h>
 #include "usb_dc.h"
+#include "esp_assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,7 +65,7 @@ struct usb_setup_packet {
 } __packed;
 
 
-_Static_assert(sizeof(struct usb_setup_packet) == 8, "USB setup packet struct size error");
+ESP_STATIC_ASSERT(sizeof(struct usb_setup_packet) == 8, "USB setup packet struct size error");
 
 /**
  * Callback function signature for the device

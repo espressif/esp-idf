@@ -45,7 +45,7 @@ As an optional step, it is also possible to set up an interrupt on fade end.
 
 .. _ledc-api-configure-timer:
 
-Timer Configuration 
+Timer Configuration
 ^^^^^^^^^^^^^^^^^^^
 
 Setting the timer is done by calling the function :cpp:func:`ledc_timer_config` and passing the data structure :cpp:type:`ledc_timer_config_t` that contains the following configuration settings:
@@ -108,7 +108,9 @@ The LEDC hardware provides the means to gradually transition from one duty cycle
 * :cpp:func:`ledc_set_fade_with_step`
 * :cpp:func:`ledc_set_fade`
 
-Finally start fading with :cpp:func:`ledc_fade_start`.
+Start fading with :cpp:func:`ledc_fade_start`. A fade can be operated in blocking or non-blocking mode, please check :cpp:enum:`ledc_fade_mode_t` for the difference between the two available fade modes. Note that with either fade mode, the next fade or fixed-duty update will not take effect until the last fade finishes.
+
+To get a notification about the completion of a fade operation, a fade end callback function can be registered for each channel by calling :cpp:func:`ledc_cb_register` after the fade service being installed. The fade end callback prototype is defined in :cpp:type:`ledc_cb_t`, where you should return a boolean value from the callback function, indicating whether a high priority task is woken up by this callback function.
 
 If not required anymore, fading and an associated interrupt can be disabled with :cpp:func:`ledc_fade_func_uninstall`.
 
@@ -149,11 +151,11 @@ For registration of a handler to address this interrupt, call :cpp:func:`ledc_is
 .. only:: esp32
 
     .. _ledc-api-high_low_speed_mode:
-    
+
     LEDC High and Low Speed Mode
     ----------------------------
 
-    High speed mode enables a glitch-free changeover of timer settings. This means that if the timer settings are modified, the changes will be applied automatically on the next overflow interrupt of the timer. In contrast, when updating the low-speed timer, the change of settings should be explicitly triggered by software. The LEDC driver handles it in the background, e.g., when :cpp:func:`ledc_timer_config` or :cpp:func:`ledc_timer_set` is called. 
+    High speed mode enables a glitch-free changeover of timer settings. This means that if the timer settings are modified, the changes will be applied automatically on the next overflow interrupt of the timer. In contrast, when updating the low-speed timer, the change of settings should be explicitly triggered by software. The LEDC driver handles it in the background, e.g., when :cpp:func:`ledc_timer_config` or :cpp:func:`ledc_timer_set` is called.
 
     For additional details regarding speed modes, see *{IDF_TARGET_NAME} Technical Reference Manual* > *LED PWM Controller (LEDC)* [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__]. Please note that the support for ``SLOW_CLOCK`` mentioned in this manual is not yet supported in the LEDC driver.
 

@@ -163,6 +163,7 @@ BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr);
 void btc_avrc_ct_call_handler(btc_msg_t *msg);
 void btc_avrc_tg_call_handler(btc_msg_t *msg);
 void btc_avrc_tg_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+void btc_avrc_tg_arg_deep_free(btc_msg_t *msg);
 
 bool btc_avrc_tg_init_p(void);
 bool btc_avrc_ct_init_p(void);

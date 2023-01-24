@@ -331,6 +331,13 @@ esp_err_t esp_flash_init_default_chip(void)
         return err;
     }
 #endif
+
+#if CONFIG_SPI_FLASH_HPM_ENABLE
+    if (spi_flash_hpm_dummy_adjust()) {
+        default_chip.hpm_dummy_ena = 1;
+    }
+#endif
+
     return ESP_OK;
 }
 

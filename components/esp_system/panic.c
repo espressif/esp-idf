@@ -59,7 +59,7 @@
 #include "esp_gdbstub.h"
 #endif
 
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 #include "hal/usb_serial_jtag_ll.h"
 #endif
 
@@ -73,7 +73,7 @@ static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
 #if CONFIG_ESP_CONSOLE_UART
 static uart_hal_context_t s_panic_uart = { .dev = CONFIG_ESP_CONSOLE_UART_NUM == 0 ? &UART0 :&UART1 };
 
-void panic_print_char(const char c)
+static void panic_print_char_uart(const char c)
 {
     uint32_t sz = 0;
     while (!uart_hal_get_txfifo_len(&s_panic_uart));
@@ -83,21 +83,21 @@ void panic_print_char(const char c)
 
 
 #if CONFIG_ESP_CONSOLE_USB_CDC
-void panic_print_char(const char c)
+static void panic_print_char_usb_cdc(const char c)
 {
     esp_usb_console_write_buf(&c, 1);
     /* result ignored */
 }
 #endif // CONFIG_ESP_CONSOLE_USB_CDC
 
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 //Timeout; if there's no host listening, the txfifo won't ever
 //be writable after the first packet.
 
 #define USBSERIAL_TIMEOUT_MAX_US 50000
 static int s_usbserial_timeout = 0;
 
-void panic_print_char(const char c)
+static void panic_print_char_usb_serial_jtag(const char c)
 {
     while (!usb_serial_jtag_ll_txfifo_writable() && s_usbserial_timeout < (USBSERIAL_TIMEOUT_MAX_US / 100)) {
         esp_rom_delay_us(100);
@@ -108,15 +108,21 @@ void panic_print_char(const char c)
         s_usbserial_timeout = 0;
     }
 }
-#endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 
 
-#if CONFIG_ESP_CONSOLE_NONE
 void panic_print_char(const char c)
 {
-    /* no-op */
+#if CONFIG_ESP_CONSOLE_UART
+    panic_print_char_uart(c);
+#endif
+#if CONFIG_ESP_CONSOLE_USB_CDC
+    panic_print_char_usb_cdc(c);
+#endif
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+    panic_print_char_usb_serial_jtag(c);
+#endif
 }
-#endif // CONFIG_ESP_CONSOLE_NONE
 
 void panic_print_str(const char *str)
 {

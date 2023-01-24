@@ -40,6 +40,16 @@ DRAM_ATTR const static flash_chip_dummy_t default_flash_chip_dummy = {
     .slowrd_dummy_bitlen = SPI_FLASH_SLOWRD_DUMMY_BITLEN,
 };
 
+DRAM_ATTR const static flash_chip_dummy_t hpm_flash_chip_dummy = {
+    .dio_dummy_bitlen = SPI_FLASH_DIO_HPM_DUMMY_BITLEN,
+    .qio_dummy_bitlen = SPI_FLASH_QIO_HPM_DUMMY_BITLEN,
+    .qout_dummy_bitlen = SPI_FLASH_QOUT_DUMMY_BITLEN,
+    .dout_dummy_bitlen = SPI_FLASH_DOUT_DUMMY_BITLEN,
+    .fastrd_dummy_bitlen = SPI_FLASH_FASTRD_DUMMY_BITLEN,
+    .slowrd_dummy_bitlen = SPI_FLASH_SLOWRD_DUMMY_BITLEN,
+};
+
+
 // These are the pointer to HW flash encryption. Default using hardware encryption.
 DRAM_ATTR static spi_flash_encryption_t esp_flash_encryption_default __attribute__((__unused__)) = {
     .flash_encryption_enable = spi_flash_encryption_hal_enable,
@@ -51,6 +61,8 @@ DRAM_ATTR static spi_flash_encryption_t esp_flash_encryption_default __attribute
 };
 
 DRAM_ATTR flash_chip_dummy_t *rom_flash_chip_dummy = (flash_chip_dummy_t *)&default_flash_chip_dummy;
+
+DRAM_ATTR flash_chip_dummy_t *rom_flash_chip_dummy_hpm = (flash_chip_dummy_t *)&hpm_flash_chip_dummy;
 
 #define SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS           200
 #define SPI_FLASH_GENERIC_CHIP_ERASE_TIMEOUT_MS     4000
@@ -462,35 +474,35 @@ esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, uint32_t
     case SPI_FLASH_QIO:
         //for QIO mode, the 4 bit right after the address are used for continuous mode, should be set to 0 to avoid that.
         addr_bitlen = SPI_FLASH_QIO_ADDR_BITLEN;
-        dummy_cyclelen_base = rom_flash_chip_dummy->qio_dummy_bitlen;
+        dummy_cyclelen_base = (chip->hpm_dummy_ena ? rom_flash_chip_dummy_hpm->qio_dummy_bitlen : rom_flash_chip_dummy->qio_dummy_bitlen);
         read_command = (addr_32bit? CMD_FASTRD_QIO_4B: CMD_FASTRD_QIO);
         conf_required = true;
         break;
     case SPI_FLASH_QOUT:
         addr_bitlen = SPI_FLASH_QOUT_ADDR_BITLEN;
-        dummy_cyclelen_base = rom_flash_chip_dummy->qout_dummy_bitlen;
+        dummy_cyclelen_base = (chip->hpm_dummy_ena ? rom_flash_chip_dummy_hpm->qout_dummy_bitlen : rom_flash_chip_dummy->qout_dummy_bitlen);
         read_command = (addr_32bit? CMD_FASTRD_QUAD_4B: CMD_FASTRD_QUAD);
         break;
     case SPI_FLASH_DIO:
         //for DIO mode, the 4 bit right after the address are used for continuous mode, should be set to 0 to avoid that.
         addr_bitlen = SPI_FLASH_DIO_ADDR_BITLEN;
-        dummy_cyclelen_base = rom_flash_chip_dummy->dio_dummy_bitlen;
+        dummy_cyclelen_base = (chip->hpm_dummy_ena ? rom_flash_chip_dummy_hpm->dio_dummy_bitlen : rom_flash_chip_dummy->dio_dummy_bitlen);
         read_command = (addr_32bit? CMD_FASTRD_DIO_4B: CMD_FASTRD_DIO);
         conf_required = true;
         break;
     case SPI_FLASH_DOUT:
         addr_bitlen = SPI_FLASH_DOUT_ADDR_BITLEN;
-        dummy_cyclelen_base = rom_flash_chip_dummy->dout_dummy_bitlen;
+        dummy_cyclelen_base = (chip->hpm_dummy_ena ? rom_flash_chip_dummy_hpm->dout_dummy_bitlen : rom_flash_chip_dummy->dout_dummy_bitlen);
         read_command = (addr_32bit? CMD_FASTRD_DUAL_4B: CMD_FASTRD_DUAL);
         break;
     case SPI_FLASH_FASTRD:
         addr_bitlen = SPI_FLASH_FASTRD_ADDR_BITLEN;
-        dummy_cyclelen_base = rom_flash_chip_dummy->fastrd_dummy_bitlen;
+        dummy_cyclelen_base = (chip->hpm_dummy_ena ? rom_flash_chip_dummy_hpm->fastrd_dummy_bitlen : rom_flash_chip_dummy->fastrd_dummy_bitlen);
         read_command = (addr_32bit? CMD_FASTRD_4B: CMD_FASTRD);
         break;
     case SPI_FLASH_SLOWRD:
         addr_bitlen = SPI_FLASH_SLOWRD_ADDR_BITLEN;
-        dummy_cyclelen_base = rom_flash_chip_dummy->slowrd_dummy_bitlen;
+        dummy_cyclelen_base = (chip->hpm_dummy_ena ? rom_flash_chip_dummy_hpm->slowrd_dummy_bitlen : rom_flash_chip_dummy->slowrd_dummy_bitlen);
         read_command = (addr_32bit? CMD_READ_4B: CMD_READ);
         break;
     default:

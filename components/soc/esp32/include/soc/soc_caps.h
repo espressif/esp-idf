@@ -131,6 +131,9 @@
 // GPIO >= 34 are input only
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT34 | BIT35 | BIT36 | BIT37 | BIT38 | BIT39))
 
+// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM: 1, 3, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 21, 22, 23)
+#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0xEF0FEAULL
+
 // Support to configure slept status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
 
@@ -320,6 +323,3 @@
  */
 #define SOC_SDMMC_USE_IOMUX  1
 #define SOC_SDMMC_NUM_SLOTS  2
-
-/*------------------------------ BLE --------------------------------------------*/
-#define SOC_BLE_DONT_UPDATE_OWN_RPA  (1)

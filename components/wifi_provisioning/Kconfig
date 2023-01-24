@@ -19,7 +19,6 @@ menu "Wi-Fi Provisioning Manager"
         bool
         prompt "Enable BLE bonding"
         depends on BT_ENABLED
-        default y
         help
             This option is applicable only when provisioning transport is BLE.
 
@@ -34,7 +33,6 @@ menu "Wi-Fi Provisioning Manager"
     config WIFI_PROV_BLE_FORCE_ENCRYPTION
         bool
         prompt "Force Link Encryption during characteristic Read / Write"
-        default y
         help
             Used to enforce link encryption when attempting to read / write characteristic
 

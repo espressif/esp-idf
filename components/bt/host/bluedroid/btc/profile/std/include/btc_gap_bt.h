@@ -160,6 +160,7 @@ typedef union {
 void btc_gap_bt_call_handler(btc_msg_t *msg);
 void btc_gap_bt_cb_handler(btc_msg_t *msg);
 void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+void btc_gap_bt_arg_deep_free(btc_msg_t *msg);
 void btc_gap_bt_busy_level_updated(uint8_t bl_flags);
 
 esp_err_t btc_gap_bt_get_cod(esp_bt_cod_t *cod);

@@ -26,6 +26,7 @@
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 #include "soc/soc_memory_types.h"
+#include "esp_assert.h"
 
 /* Hardware host-specific constants */
 #define SPI_FLASH_HAL_MAX_WRITE_BYTES 64
@@ -56,7 +57,7 @@ typedef struct {
     uint32_t slicer_flags;      /// Slicer flags for configuring how to slice data correctly while reading or writing.
 #define SPI_FLASH_HOST_CONTEXT_SLICER_FLAG_DTR           BIT(0)  ///< Slice data according to DTR mode, the address and length must be even (A0=0).
 } spi_flash_hal_context_t;
-_Static_assert(sizeof(spi_flash_hal_context_t) == 40, "size of spi_flash_hal_context_t incorrect. Please check data compatibility with the ROM");
+ESP_STATIC_ASSERT(sizeof(spi_flash_hal_context_t) == 40, "size of spi_flash_hal_context_t incorrect. Please check data compatibility with the ROM");
 
 /// This struct provide MSPI Flash necessary timing related config, should be consistent with that in union in `spi_flash_hal_config_t`.
 typedef struct {

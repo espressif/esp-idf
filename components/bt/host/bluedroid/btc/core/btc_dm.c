@@ -113,7 +113,8 @@ void btc_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *data)
     msg.act = event;
 
     btc_transfer_context(&msg, (btc_dm_sec_args_t *)data,
-                            data == NULL ? 0 : sizeof(btc_dm_sec_args_t), btc_dm_sec_arg_deep_copy);
+                            data == NULL ? 0 : sizeof(btc_dm_sec_args_t),
+                            btc_dm_sec_arg_deep_copy, btc_dm_sec_arg_deep_free);
 }
 
 static void btc_enable_bluetooth_evt(tBTA_STATUS status)
@@ -402,15 +403,23 @@ static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 #if (BTC_GAP_BT_INCLUDED == TRUE)
     esp_bt_gap_cb_param_t param;
     bt_status_t ret;
-    btc_msg_t msg;
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_GAP_BT;
-    msg.act = BTC_GAP_BT_AUTH_CMPL_EVT;
+    btc_msg_t *msg;
+
+    msg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + sizeof(esp_bt_gap_cb_param_t));
+    if (msg == NULL) {
+        BTC_TRACE_ERROR("%s malloc fail", __func__);
+        return;
+    }
+    msg->sig = BTC_SIG_API_CB;
+    msg->pid = BTC_PID_GAP_BT;
+    msg->act = BTC_GAP_BT_AUTH_CMPL_EVT;
     param.auth_cmpl.stat = status;
     memcpy(param.auth_cmpl.bda, p_auth_cmpl->bd_addr, ESP_BD_ADDR_LEN);
     memcpy(param.auth_cmpl.device_name, p_auth_cmpl->bd_name, ESP_BT_GAP_MAX_BDNAME_LEN + 1);
+    memcpy(msg->arg, &param, sizeof(esp_bt_gap_cb_param_t));
 
-    ret = btc_inter_profile_call(&msg, &param);
+    ret = btc_inter_profile_call(msg);
+    osi_free(msg);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
@@ -425,14 +434,22 @@ static void btc_dm_pin_req_evt(tBTA_DM_PIN_REQ *p_pin_req)
 #if (BTC_GAP_BT_INCLUDED == TRUE)
     esp_bt_gap_cb_param_t param;
     bt_status_t ret;
-    btc_msg_t msg;
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_GAP_BT;
-    msg.act = BTC_GAP_BT_PIN_REQ_EVT;
+    btc_msg_t *msg;
+
+    msg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + sizeof(esp_bt_gap_cb_param_t));
+    if (msg == NULL) {
+        BTC_TRACE_ERROR("%s malloc fail", __func__);
+        return;
+    }
+    msg->sig = BTC_SIG_API_CB;
+    msg->pid = BTC_PID_GAP_BT;
+    msg->act = BTC_GAP_BT_PIN_REQ_EVT;
     param.pin_req.min_16_digit = p_pin_req->min_16_digit;
     memcpy(param.pin_req.bda, p_pin_req->bd_addr, ESP_BD_ADDR_LEN);
+    memcpy(msg->arg, &param, sizeof(esp_bt_gap_cb_param_t));
 
-    ret = btc_inter_profile_call(&msg, &param);
+    ret = btc_inter_profile_call(msg);
+    osi_free(msg);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
@@ -452,14 +469,22 @@ static void btc_dm_sp_cfm_req_evt(tBTA_DM_SP_CFM_REQ *p_cfm_req)
 
     esp_bt_gap_cb_param_t param;
     bt_status_t ret;
-    btc_msg_t msg;
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_GAP_BT;
-    msg.act = BTC_GAP_BT_CFM_REQ_EVT;
+    btc_msg_t *msg;
+
+    msg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + sizeof(esp_bt_gap_cb_param_t));
+    if (msg == NULL) {
+        BTC_TRACE_ERROR("%s malloc fail", __func__);
+        return;
+    }
+    msg->sig = BTC_SIG_API_CB;
+    msg->pid = BTC_PID_GAP_BT;
+    msg->act = BTC_GAP_BT_CFM_REQ_EVT;
     param.cfm_req.num_val = p_cfm_req->num_val;
     memcpy(param.cfm_req.bda, p_cfm_req->bd_addr, ESP_BD_ADDR_LEN);
+    memcpy(msg->arg, &param, sizeof(esp_bt_gap_cb_param_t));
 
-    ret = btc_inter_profile_call(&msg, &param);
+    ret = btc_inter_profile_call(msg);
+    osi_free(msg);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
@@ -472,14 +497,22 @@ static void btc_dm_sp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF *p_key_notif)
 #if (BTC_GAP_BT_INCLUDED == TRUE)
     esp_bt_gap_cb_param_t param;
     bt_status_t ret;
-    btc_msg_t msg;
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_GAP_BT;
-    msg.act = BTC_GAP_BT_KEY_NOTIF_EVT;
+    btc_msg_t *msg;
+
+    msg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + sizeof(esp_bt_gap_cb_param_t));
+    if (msg == NULL) {
+        BTC_TRACE_ERROR("%s malloc fail", __func__);
+        return;
+    }
+    msg->sig = BTC_SIG_API_CB;
+    msg->pid = BTC_PID_GAP_BT;
+    msg->act = BTC_GAP_BT_KEY_NOTIF_EVT;
     param.key_notif.passkey = p_key_notif->passkey;
     memcpy(param.key_notif.bda, p_key_notif->bd_addr, ESP_BD_ADDR_LEN);
+    memcpy(msg->arg, &param, sizeof(esp_bt_gap_cb_param_t));
 
-    ret = btc_inter_profile_call(&msg, &param);
+    ret = btc_inter_profile_call(msg);
+    osi_free(msg);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
@@ -492,13 +525,21 @@ static void btc_dm_sp_key_req_evt(tBTA_DM_SP_KEY_REQ *p_key_req)
 #if (BTC_GAP_BT_INCLUDED == TRUE)
     esp_bt_gap_cb_param_t param;
     bt_status_t ret;
-    btc_msg_t msg;
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_GAP_BT;
-    msg.act = BTC_GAP_BT_KEY_REQ_EVT;
-    memcpy(param.key_req.bda, p_key_req->bd_addr, ESP_BD_ADDR_LEN);
+    btc_msg_t *msg;
 
-    ret = btc_inter_profile_call(&msg, &param);
+    msg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + sizeof(esp_bt_gap_cb_param_t));
+    if (msg == NULL) {
+        BTC_TRACE_ERROR("%s malloc fail", __func__);
+        return;
+    }
+    msg->sig = BTC_SIG_API_CB;
+    msg->pid = BTC_PID_GAP_BT;
+    msg->act = BTC_GAP_BT_KEY_REQ_EVT;
+    memcpy(param.key_req.bda, p_key_req->bd_addr, ESP_BD_ADDR_LEN);
+    memcpy(msg->arg, &param, sizeof(esp_bt_gap_cb_param_t));
+
+    ret = btc_inter_profile_call(msg);
+    osi_free(msg);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
@@ -522,12 +563,20 @@ static void btc_dm_dev_unpaired_evt(tBTA_DM_LINK_DOWN *p_link_down)
 
 #if (BTC_GAP_BT_INCLUDED == TRUE)
     bt_status_t ret;
-    btc_msg_t msg;
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_GAP_BT;
-    msg.act = BTC_GAP_BT_REMOVE_BOND_DEV_COMPLETE_EVT;
+    btc_msg_t *msg;
 
-    ret = btc_inter_profile_call(&msg, &param);
+    msg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + sizeof(esp_bt_gap_cb_param_t));
+    if (msg == NULL) {
+        BTC_TRACE_ERROR("%s malloc fail", __func__);
+        return;
+    }
+    msg->sig = BTC_SIG_API_CB;
+    msg->pid = BTC_PID_GAP_BT;
+    msg->act = BTC_GAP_BT_REMOVE_BOND_DEV_COMPLETE_EVT;
+    memcpy(msg->arg, &param, sizeof(esp_bt_gap_cb_param_t));
+
+    ret = btc_inter_profile_call(msg);
+    osi_free(msg);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
@@ -541,14 +590,22 @@ static void btc_dm_pm_mode_chg_evt(tBTA_DM_MODE_CHG *p_mode_chg)
 {
     esp_bt_gap_cb_param_t param;
     bt_status_t ret;
-    btc_msg_t msg;
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_GAP_BT;
-    msg.act = BTC_GAP_BT_MODE_CHG_EVT;
+    btc_msg_t *msg;
+
+    msg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + sizeof(esp_bt_gap_cb_param_t));
+    if (msg == NULL) {
+        BTC_TRACE_ERROR("%s malloc fail", __func__);
+        return;
+    }
+    msg->sig = BTC_SIG_API_CB;
+    msg->pid = BTC_PID_GAP_BT;
+    msg->act = BTC_GAP_BT_MODE_CHG_EVT;
     memcpy(param.mode_chg.bda, p_mode_chg->bd_addr, ESP_BD_ADDR_LEN);
     param.mode_chg.mode = p_mode_chg->mode;
+    memcpy(msg->arg, &param, sizeof(esp_bt_gap_cb_param_t));
 
-    ret = btc_inter_profile_call(&msg, &param);
+    ret = btc_inter_profile_call(msg);
+    osi_free(msg);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
@@ -633,11 +690,18 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     btc_dm_sec_args_t *arg = (btc_dm_sec_args_t *)(msg->arg);
     tBTA_DM_SEC *p_data = &(arg->sec);
     esp_ble_gap_cb_param_t param = {0};
-    btc_msg_t ble_msg = {0};
+    btc_msg_t *ble_msg;
     bool rsp_app = false;
     bt_status_t ret = BT_STATUS_SUCCESS;
-    ble_msg.sig = BTC_SIG_API_CB;
-    ble_msg.pid = BTC_PID_GAP_BLE;
+
+    ble_msg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + sizeof(esp_ble_gap_cb_param_t));
+    if (ble_msg == NULL) {
+        BTC_TRACE_ERROR("%s malloc fail", __func__);
+        btc_dm_sec_arg_deep_free(msg);
+        return;
+    }
+    ble_msg->sig = BTC_SIG_API_CB;
+    ble_msg->pid = BTC_PID_GAP_BLE;
     // tBTA_SERVICE_MASK service_mask;
     BTC_TRACE_DEBUG("btc_dm_upstreams_cback  ev: %d\n", msg->act);
 
@@ -720,7 +784,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
             btc_storage_remove_ble_dev_auth_mode(&bd_addr, false);
             param.remove_bond_dev_cmpl.status = btc_storage_remove_ble_bonding_keys(&bd_addr);
         }
-        ble_msg.act = ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT;
+        ble_msg->act = ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT;
         memcpy(param.remove_bond_dev_cmpl.bd_addr, p_data->link_down.bd_addr, sizeof(BD_ADDR));
 #endif /* #if (SMP_INCLUDED == TRUE) */
         break;
@@ -745,7 +809,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
 #if ((BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE))
     case BTA_DM_BLE_AUTH_CMPL_EVT: {
         rsp_app = true;
-        ble_msg.act = ESP_GAP_BLE_AUTH_CMPL_EVT;
+        ble_msg->act = ESP_GAP_BLE_AUTH_CMPL_EVT;
         param.ble_security.auth_cmpl.addr_type = p_data->auth_cmpl.addr_type;
         param.ble_security.auth_cmpl.dev_type = p_data->auth_cmpl.dev_type;
         param.ble_security.auth_cmpl.key_type = p_data->auth_cmpl.key_type;
@@ -760,7 +824,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     }
     case BTA_DM_BLE_KEY_EVT: {
         rsp_app = true;
-        ble_msg.act = ESP_GAP_BLE_KEY_EVT;
+        ble_msg->act = ESP_GAP_BLE_KEY_EVT;
         param.ble_security.ble_key.key_type = p_data->ble_key.key_type;
         memcpy(param.ble_security.ble_key.bd_addr, p_data->ble_key.bd_addr, BD_ADDR_LEN);
         switch (p_data->ble_key.key_type) {
@@ -827,32 +891,32 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     }
     case BTA_DM_BLE_SEC_REQ_EVT: {
         rsp_app = true;
-        ble_msg.act = ESP_GAP_BLE_SEC_REQ_EVT;
+        ble_msg->act = ESP_GAP_BLE_SEC_REQ_EVT;
         memcpy(param.ble_security.ble_req.bd_addr, p_data->ble_req.bd_addr, BD_ADDR_LEN);
         break;
     }
     case BTA_DM_BLE_PASSKEY_NOTIF_EVT: {
         rsp_app = true;
-        ble_msg.act = ESP_GAP_BLE_PASSKEY_NOTIF_EVT;
+        ble_msg->act = ESP_GAP_BLE_PASSKEY_NOTIF_EVT;
         param.ble_security.key_notif.passkey = p_data->key_notif.passkey;
         memcpy(param.ble_security.key_notif.bd_addr, p_data->ble_req.bd_addr, BD_ADDR_LEN);
         break;
     }
     case BTA_DM_BLE_PASSKEY_REQ_EVT: {
         rsp_app = true;
-        ble_msg.act = ESP_GAP_BLE_PASSKEY_REQ_EVT;
+        ble_msg->act = ESP_GAP_BLE_PASSKEY_REQ_EVT;
         memcpy(param.ble_security.ble_req.bd_addr, p_data->ble_req.bd_addr, BD_ADDR_LEN);
         break;
     }
     case BTA_DM_BLE_OOB_REQ_EVT: {
         rsp_app = true;
-        ble_msg.act = ESP_GAP_BLE_OOB_REQ_EVT;
+        ble_msg->act = ESP_GAP_BLE_OOB_REQ_EVT;
         memcpy(param.ble_security.ble_req.bd_addr, p_data->ble_req.bd_addr, BD_ADDR_LEN);
         break;
     }
     case BTA_DM_BLE_LOCAL_IR_EVT: {
         rsp_app = true;
-        ble_msg.act = ESP_GAP_BLE_LOCAL_IR_EVT;
+        ble_msg->act = ESP_GAP_BLE_LOCAL_IR_EVT;
         memcpy(&param.ble_security.ble_id_keys, &p_data->ble_id_keys, sizeof(tBTA_BLE_LOCAL_ID_KEYS));
         BTC_TRACE_DEBUG("BTA_DM_BLE_LOCAL_IR_EVT. ");
         btc_dm_cb.ble_local_key_cb.is_id_keys_rcvd = TRUE;
@@ -875,7 +939,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     }
     case BTA_DM_BLE_LOCAL_ER_EVT: {
         rsp_app = true;
-        ble_msg.act = ESP_GAP_BLE_LOCAL_ER_EVT;
+        ble_msg->act = ESP_GAP_BLE_LOCAL_ER_EVT;
         memcpy(&param.ble_security.ble_id_keys, &p_data->ble_id_keys, sizeof(tBTA_BLE_LOCAL_ID_KEYS));
         BTC_TRACE_DEBUG("BTA_DM_BLE_LOCAL_ER_EVT. ");
         btc_dm_cb.ble_local_key_cb.is_er_rcvd = TRUE;
@@ -887,7 +951,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     }
     case BTA_DM_BLE_NC_REQ_EVT: {
         rsp_app = true;
-        ble_msg.act = ESP_GAP_BLE_NC_REQ_EVT;
+        ble_msg->act = ESP_GAP_BLE_NC_REQ_EVT;
         memcpy(param.ble_security.key_notif.bd_addr, p_data->key_notif.bd_addr, BD_ADDR_LEN);
         param.ble_security.key_notif.passkey = p_data->key_notif.passkey;
         break;
@@ -912,11 +976,13 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     }
 
     if (rsp_app) {
-        ret = btc_inter_profile_call(&ble_msg, &param);
+        memcpy(ble_msg->arg, &param, sizeof(esp_ble_gap_cb_param_t));
+        ret = btc_inter_profile_call(ble_msg);
 
         if (ret != BT_STATUS_SUCCESS) {
             BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
         }
     }
+    osi_free(ble_msg);
     btc_dm_sec_arg_deep_free(msg);
 }

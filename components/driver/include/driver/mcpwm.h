@@ -7,6 +7,7 @@
 #pragma once
 
 #include "soc/soc_caps.h"
+#include "esp_assert.h"
 #if SOC_MCPWM_SUPPORTED
 #include "esp_err.h"
 #include "soc/soc.h"
@@ -74,7 +75,7 @@ typedef enum {
     MCPWM_UNIT_MAX, /*!<Max number of MCPWM units*/
 } mcpwm_unit_t;
 
-_Static_assert(MCPWM_UNIT_MAX == SOC_MCPWM_GROUPS, "MCPWM unit number not equal to chip capabilities");
+ESP_STATIC_ASSERT(MCPWM_UNIT_MAX == SOC_MCPWM_GROUPS, "MCPWM unit number not equal to chip capabilities");
 
 /**
  * @brief Select MCPWM timer
@@ -374,6 +375,7 @@ esp_err_t mcpwm_init( mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcp
  *        This will override default resolution of group(=10,000,000).
  *        This WILL NOT automatically update frequency and duty. Call mcpwm_set_frequency() and mcpwm_set_duty() manually
  *        to set them back.
+ *        The group resolution must be an integral multiple of timer resolution.
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param resolution set expected frequency resolution
@@ -390,6 +392,7 @@ esp_err_t mcpwm_group_set_resolution(mcpwm_unit_t mcpwm_num, unsigned long int r
  *        This WILL override default resolution of timer(=1,000,000).
  *        This WILL NOT automatically update frequency and duty. Call mcpwm_set_frequency() and mcpwm_set_duty() manually
  *        to set them back.
+ *        The group resolution must be an integral multiple of timer resolution.
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
@@ -815,7 +818,7 @@ uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_si
  * @param cap_sig capture channel of whose edge is to be determined
  *
  * @return
- *     Capture signal edge: 1 - positive edge, 2 - negtive edge
+ *     Capture signal edge: 1 - positive edge, 2 - negative edge, 0 - Invalid
  */
 uint32_t mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig);
 

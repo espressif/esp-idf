@@ -61,41 +61,62 @@ typedef enum {
 } wifi_auth_mode_t;
 
 typedef enum {
-    WIFI_REASON_UNSPECIFIED              = 1,
-    WIFI_REASON_AUTH_EXPIRE              = 2,
-    WIFI_REASON_AUTH_LEAVE               = 3,
-    WIFI_REASON_ASSOC_EXPIRE             = 4,
-    WIFI_REASON_ASSOC_TOOMANY            = 5,
-    WIFI_REASON_NOT_AUTHED               = 6,
-    WIFI_REASON_NOT_ASSOCED              = 7,
-    WIFI_REASON_ASSOC_LEAVE              = 8,
-    WIFI_REASON_ASSOC_NOT_AUTHED         = 9,
-    WIFI_REASON_DISASSOC_PWRCAP_BAD      = 10,
-    WIFI_REASON_DISASSOC_SUPCHAN_BAD     = 11,
-    WIFI_REASON_BSS_TRANSITION_DISASSOC  = 12,
-    WIFI_REASON_IE_INVALID               = 13,
-    WIFI_REASON_MIC_FAILURE              = 14,
-    WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT   = 15,
-    WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT = 16,
-    WIFI_REASON_IE_IN_4WAY_DIFFERS       = 17,
-    WIFI_REASON_GROUP_CIPHER_INVALID     = 18,
-    WIFI_REASON_PAIRWISE_CIPHER_INVALID  = 19,
-    WIFI_REASON_AKMP_INVALID             = 20,
-    WIFI_REASON_UNSUPP_RSN_IE_VERSION    = 21,
-    WIFI_REASON_INVALID_RSN_IE_CAP       = 22,
-    WIFI_REASON_802_1X_AUTH_FAILED       = 23,
-    WIFI_REASON_CIPHER_SUITE_REJECTED    = 24,
+    WIFI_REASON_UNSPECIFIED                        = 1,
+    WIFI_REASON_AUTH_EXPIRE                        = 2,
+    WIFI_REASON_AUTH_LEAVE                         = 3,
+    WIFI_REASON_ASSOC_EXPIRE                       = 4,
+    WIFI_REASON_ASSOC_TOOMANY                      = 5,
+    WIFI_REASON_NOT_AUTHED                         = 6,
+    WIFI_REASON_NOT_ASSOCED                        = 7,
+    WIFI_REASON_ASSOC_LEAVE                        = 8,
+    WIFI_REASON_ASSOC_NOT_AUTHED                   = 9,
+    WIFI_REASON_DISASSOC_PWRCAP_BAD                = 10,
+    WIFI_REASON_DISASSOC_SUPCHAN_BAD               = 11,
+    WIFI_REASON_BSS_TRANSITION_DISASSOC            = 12,
+    WIFI_REASON_IE_INVALID                         = 13,
+    WIFI_REASON_MIC_FAILURE                        = 14,
+    WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT             = 15,
+    WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT           = 16,
+    WIFI_REASON_IE_IN_4WAY_DIFFERS                 = 17,
+    WIFI_REASON_GROUP_CIPHER_INVALID               = 18,
+    WIFI_REASON_PAIRWISE_CIPHER_INVALID            = 19,
+    WIFI_REASON_AKMP_INVALID                       = 20,
+    WIFI_REASON_UNSUPP_RSN_IE_VERSION              = 21,
+    WIFI_REASON_INVALID_RSN_IE_CAP                 = 22,
+    WIFI_REASON_802_1X_AUTH_FAILED                 = 23,
+    WIFI_REASON_CIPHER_SUITE_REJECTED              = 24,
+    WIFI_REASON_TDLS_PEER_UNREACHABLE              = 25,
+    WIFI_REASON_TDLS_UNSPECIFIED                   = 26,
+    WIFI_REASON_SSP_REQUESTED_DISASSOC             = 27,
+    WIFI_REASON_NO_SSP_ROAMING_AGREEMENT           = 28,
+    WIFI_REASON_BAD_CIPHER_OR_AKM                  = 29,
+    WIFI_REASON_NOT_AUTHORIZED_THIS_LOCATION       = 30,
+    WIFI_REASON_SERVICE_CHANGE_PERCLUDES_TS        = 31,
+    WIFI_REASON_UNSPECIFIED_QOS                    = 32,
+    WIFI_REASON_NOT_ENOUGH_BANDWIDTH               = 33,
+    WIFI_REASON_MISSING_ACKS                       = 34,
+    WIFI_REASON_EXCEEDED_TXOP                      = 35,
+    WIFI_REASON_STA_LEAVING                        = 36,
+    WIFI_REASON_END_BA                             = 37,
+    WIFI_REASON_UNKNOWN_BA                         = 38,
+    WIFI_REASON_TIMEOUT                            = 39,
+    WIFI_REASON_PEER_INITIATED                     = 46,
+    WIFI_REASON_AP_INITIATED                       = 47,
+    WIFI_REASON_INVALID_FT_ACTION_FRAME_COUNT      = 48,
+    WIFI_REASON_INVALID_PMKID                      = 49,
+    WIFI_REASON_INVALID_MDE                        = 50,
+    WIFI_REASON_INVALID_FTE                        = 51,
+    WIFI_REASON_TRANSMISSION_LINK_ESTABLISH_FAILED = 67,
+    WIFI_REASON_ALTERATIVE_CHANNEL_OCCUPIED        = 68,
 
-    WIFI_REASON_INVALID_PMKID            = 53,
-
-    WIFI_REASON_BEACON_TIMEOUT           = 200,
-    WIFI_REASON_NO_AP_FOUND              = 201,
-    WIFI_REASON_AUTH_FAIL                = 202,
-    WIFI_REASON_ASSOC_FAIL               = 203,
-    WIFI_REASON_HANDSHAKE_TIMEOUT        = 204,
-    WIFI_REASON_CONNECTION_FAIL          = 205,
-    WIFI_REASON_AP_TSF_RESET             = 206,
-    WIFI_REASON_ROAMING                  = 207,
+    WIFI_REASON_BEACON_TIMEOUT                     = 200,
+    WIFI_REASON_NO_AP_FOUND                        = 201,
+    WIFI_REASON_AUTH_FAIL                          = 202,
+    WIFI_REASON_ASSOC_FAIL                         = 203,
+    WIFI_REASON_HANDSHAKE_TIMEOUT                  = 204,
+    WIFI_REASON_CONNECTION_FAIL                    = 205,
+    WIFI_REASON_AP_TSF_RESET                       = 206,
+    WIFI_REASON_ROAMING                            = 207,
 } wifi_err_reason_t;
 
 typedef enum {
@@ -235,7 +256,7 @@ typedef struct {
     uint8_t channel;            /**< Channel of ESP32 soft-AP */
     wifi_auth_mode_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
     uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
-    uint8_t max_connection;     /**< Max number of stations allowed to connect in, default 4, max 10 */
+    uint8_t max_connection;     /**< Max number of stations allowed to connect in */
     uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
     wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of SoftAP, group cipher will be derived using this. cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
     bool ftm_responder;         /**< Enable FTM Responder mode */
@@ -256,8 +277,10 @@ typedef struct {
     uint32_t rm_enabled:1;        /**< Whether Radio Measurements are enabled for the connection */
     uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
     uint32_t mbo_enabled:1;       /**< Whether MBO is enabled for the connection */
-    uint32_t reserved:29;         /**< Reserved for future feature set */
+    uint32_t transition_disable:1;      /**< Whether to enable transition disable feature */
+    uint32_t reserved:28;         /**< Reserved for future feature set */
     wifi_sae_pwe_method_t sae_pwe_h2e;     /**< Whether SAE hash to element is enabled */
+    uint8_t failure_retry_cnt;    /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config. Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.
@@ -283,7 +306,11 @@ typedef struct {
     uint32_t reserved:27;    /**< bit: 5..31 reserved */
 } wifi_sta_info_t;
 
-#define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32 soft-AP */
+#if CONFIG_IDF_TARGET_ESP32C3
+#define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32C3 soft-AP */
+#else
+#define ESP_WIFI_MAX_CONN_NUM  (15)       /**< max number of stations which can connect to ESP32/ESP32S3/ESP32S2 soft-AP */
+#endif
 
 /** @brief List of stations associated with the ESP32 Soft-AP */
 typedef struct {
@@ -640,6 +667,7 @@ typedef struct {
     uint8_t ssid_len;         /**< SSID length of disconnected AP */
     uint8_t bssid[6];         /**< BSSID of disconnected AP */
     uint8_t reason;           /**< reason of disconnection */
+    int8_t  rssi;             /**< rssi of disconnection */
 } wifi_event_sta_disconnected_t;
 
 /** Argument structure for WIFI_EVENT_STA_AUTHMODE_CHANGE event */
