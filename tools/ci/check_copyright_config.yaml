@@ -109,7 +109,6 @@ systemview:
   allowed_licenses:
     - Apache-2.0
     - BSD-1-Clause
-    - BSD-3-Clause
   license_for_new_files: Apache-2.0
 
 spiffs:

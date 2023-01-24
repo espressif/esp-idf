@@ -49,14 +49,14 @@
 *                                                                    *
 **********************************************************************
 *                                                                    *
-*       SystemView version: 3.32                                    *
+*       SystemView version: 3.42                                    *
 *                                                                    *
 **********************************************************************
 -------------------------- END-OF-HEADER -----------------------------
 
 File    : SEGGER_SYSVIEW.c
 Purpose : System visualization API implementation.
-Revision: $Rev: 26232 $
+Revision: $Rev: 28341 $
 
 Additional information:
   Packet format:
@@ -781,14 +781,14 @@ Send:
       //
       // Backwards U32 encode EventId.
       //
-      if (NumBytes < (1u << 14)) { // Encodes in 2 bytes
+      if (NumBytes < (1ul << 14)) { // Encodes in 2 bytes
         *--pStartPacket = (U8)(NumBytes >>  7);
         *--pStartPacket = (U8)(NumBytes | 0x80);
-      } else if (NumBytes < (1u << 21)) {    // Encodes in 3 bytes
+      } else if (NumBytes < (1ul << 21)) {    // Encodes in 3 bytes
         *--pStartPacket = (U8)(NumBytes >> 14);
         *--pStartPacket = (U8)((NumBytes >>  7) | 0x80);
         *--pStartPacket = (U8)(NumBytes | 0x80);
-      } else if (NumBytes < (1u << 28)) {    // Encodes in 4 bytes
+      } else if (NumBytes < (1ul << 28)) {    // Encodes in 4 bytes
         *--pStartPacket = (U8)(NumBytes >> 21);
         *--pStartPacket = (U8)((NumBytes >> 14) | 0x80);
         *--pStartPacket = (U8)((NumBytes >>  7) | 0x80);
@@ -822,11 +822,11 @@ Send:
       if (EventId < (1u << 14)) { // Encodes in 2 bytes
         *--pStartPacket = (U8)(EventId >>  7);
         *--pStartPacket = (U8)(EventId | 0x80);
-      } else if (EventId < (1u << 21)) {    // Encodes in 3 bytes
+      } else if (EventId < (1ul << 21)) {    // Encodes in 3 bytes
         *--pStartPacket = (U8)(EventId >> 14);
         *--pStartPacket = (U8)((EventId >>  7) | 0x80);
         *--pStartPacket = (U8)(EventId | 0x80);
-      } else if (EventId < (1u << 28)) {    // Encodes in 4 bytes
+      } else if (EventId < (1ul << 28)) {    // Encodes in 4 bytes
         *--pStartPacket = (U8)(EventId >> 21);
         *--pStartPacket = (U8)((EventId >> 14) | 0x80);
         *--pStartPacket = (U8)((EventId >>  7) | 0x80);
@@ -1369,7 +1369,7 @@ static void _VPrintTarget(const char* sFormat, U32 Options, va_list* pParamList)
 *
 *  Function description
 *    Initializes the SYSVIEW module.
-*    Must be called before the Systemview Application connects to
+*    Must be called before the SystemView Application connects to
 *    the system.
 *
 *  Parameters
@@ -1867,7 +1867,7 @@ void SEGGER_SYSVIEW_Start(void) {
 *    Stop recording SystemView events.
 *
 *    This function is triggered by the SystemView Application on disconnect.
-*    For single-shot or post-mortem mode recording, it can be called
+*    For single-shot or postmortem mode recording, it can be called
 *    by the application.
 *
 *  Additional information
@@ -1978,7 +1978,7 @@ void SEGGER_SYSVIEW_SendTaskList(void) {
 *
 *  Function description
 *    Send the system description string to the host.
-*    The system description is used by the Systemview Application
+*    The system description is used by the SystemView Application
 *    to identify the current application and handle events accordingly.
 *
 *    The system description is usually called by the system description
@@ -2445,6 +2445,179 @@ void SEGGER_SYSVIEW_NameResource(U32 ResourceId, const char* sName) {
   ENCODE_U32(pPayload, SHRINK_ID(ResourceId));
   pPayload = _EncodeStr(pPayload, sName, SEGGER_SYSVIEW_MAX_STRING_LEN);
   _SendPacket(pPayloadStart, pPayload, SYSVIEW_EVTID_NAME_RESOURCE);
+  RECORD_END();
+}
+
+/*********************************************************************
+*
+*       SEGGER_SYSVIEW_HeapDefine()
+*
+*  Function description
+*    Define heap.
+*
+*  Parameters
+*    pHeap        - Pointer to heap control structure.
+*    pBase        - Pointer to managed heap memory.
+*    HeapSize     - Size of managed heap memory in bytes.
+*    MetadataSize - Size of metadata associated with each heap allocation.
+*
+*  Additional information
+*    SystemView can track allocations across multiple heaps.
+*
+*    HeapSize must be a multiple of the natural alignment unit of the
+*    target.  This size is subject to compression, controlled by the
+*    specific setting of SEGGER_SYSVIEW_ID_SHIFT.
+*
+*    MetadataSize defines the size of the per-allocation metadata.
+*    For many heap implementations, the metadata size is a multiple of
+*    the word size of the machine and typically contains the size
+*    of the allocated block (used upon deallocation), optional
+*    pointers to the preceding and/or following blocks, and optionally
+*    a tag identifying the owner of the block.  Note that MetadataSize
+*    is not compressed within the SystemView packet and is not
+*    required to be a multiple of 1<<SEGGER_SYSVIEW_ID_SHIFT.
+*/
+void SEGGER_SYSVIEW_HeapDefine(void* pHeap, void *pBase, unsigned int HeapSize, unsigned int MetadataSize) {
+  U8* pPayload;
+  U8* pPayloadStart;
+  RECORD_START(SEGGER_SYSVIEW_INFO_SIZE + 4 * SEGGER_SYSVIEW_QUANTA_U32);
+  //
+  pPayload = pPayloadStart;
+  ENCODE_U32(pPayload, SYSVIEW_EVTID_EX_HEAP_DEFINE);
+  ENCODE_U32(pPayload, SHRINK_ID((U32)pHeap));
+  ENCODE_U32(pPayload, SHRINK_ID((U32)pBase));
+  ENCODE_U32(pPayload, HeapSize >> SEGGER_SYSVIEW_ID_SHIFT);
+  ENCODE_U32(pPayload, MetadataSize);
+  _SendPacket(pPayloadStart, pPayload, SYSVIEW_EVTID_EX);
+  RECORD_END();
+}
+
+/*********************************************************************
+*
+*       SEGGER_SYSVIEW_HeapAlloc()
+*
+*  Function description
+*    Record a system-heap allocation event.
+*
+*  Parameters
+*    pHeap       - Pointer to heap where allocation was made.
+*    pUserData   - Pointer to allocated user data.
+*    UserDataLen - Size of block allocated to hold user data, excluding any metadata.
+*
+*  Additional information
+*    The user data must be correctly aligned for the architecture, which
+*    typically requires that the alignment is at least the alignment
+*    of a double or a long long.  pUserData is, therefore, compressed by
+*    shrinking as IDs are compressed, controlled by the specific setting
+*    of SEGGER_SYSVIEW_ID_SHIFT.
+*
+*    In the same way, UserDataLen must reflect the size of the allocated
+*    block, not the allocation size requested by the application.  This
+*    size is also subject to compression, controlled by the specific setting
+*    of SEGGER_SYSVIEW_ID_SHIFT.
+*
+*    As an example, assume the allocator is running on a Cortex-M device
+*    with SEGGER_SYSVIEW_ID_SHIFT set to 2 (the word alignment of the device).
+*    If a user requests an allocation of 5 bytes, a hypothetical heap
+*    allocator could allocate a block with size 32 bytes for this.  The value
+*    of UserDataLen sent to SystemView for recording should be 32, not 5,
+*    and the 32 is compressed by shifting by two bits, the configured value
+*    of SEGGER_SYSVIEW_ID_SHIFT, and describes the number of bytes that are
+*    consumed from managed memory from which SystemView can calculate
+*    accurate heap metrics.
+*/
+void SEGGER_SYSVIEW_HeapAlloc(void *pHeap, void* pUserData, unsigned int UserDataLen) {
+  U8* pPayload;
+  U8* pPayloadStart;
+  RECORD_START(SEGGER_SYSVIEW_INFO_SIZE + 3 * SEGGER_SYSVIEW_QUANTA_U32);
+  //
+  pPayload = pPayloadStart;
+  ENCODE_U32(pPayload, SYSVIEW_EVTID_EX_HEAP_ALLOC);
+  ENCODE_U32(pPayload, SHRINK_ID((U32)pHeap));
+  ENCODE_U32(pPayload, SHRINK_ID((U32)pUserData));
+  ENCODE_U32(pPayload, UserDataLen >> SEGGER_SYSVIEW_ID_SHIFT);
+  _SendPacket(pPayloadStart, pPayload, SYSVIEW_EVTID_EX);
+  RECORD_END();
+}
+
+/*********************************************************************
+*
+*       SEGGER_SYSVIEW_HeapAllocEx()
+*
+*  Function description
+*    Record a per-heap allocation event.
+*
+*  Parameters
+*    pHeap       - Pointer to heap where allocation was made.
+*    pUserData   - Pointer to allocated user data.
+*    UserDataLen - Size of block allocated to hold user data, excluding any metadata.
+*    Tag         - Block tag, typically used to identify the owner of the block.
+*
+*  Additional information
+*    The user data must be correctly aligned for the architecture, which
+*    typically requires that the alignment is at least the alignment
+*    of a double or a long long.  pUserData is, therefore, compressed by
+*    shrinking as IDs are compressed, controlled by the specific setting
+*    of SEGGER_SYSVIEW_ID_SHIFT.
+*
+*    In the same way, UserDataLen must reflect the size of the allocated
+*    block, not the allocation size requested by the application.  This
+*    size is also subject to compression, controlled by the specific setting
+*    of SEGGER_SYSVIEW_ID_SHIFT.
+*
+*    As an example, assume the allocator is running on a Cortex-M device
+*    with SEGGER_SYSVIEW_ID_SHIFT set to 2 (the word alignment of the device).
+*    If a user requests an allocation of 5 bytes, a hypothetical heap
+*    allocator could allocate a block with size 32 bytes for this.  The value
+*    of UserDataLen sent to SystemView for recording should be 32, not 5,
+*    and the 32 is compressed by shifting by two bits, the configured value
+*    of SEGGER_SYSVIEW_ID_SHIFT, and describes the number of bytes that are
+*    consumed from managed memory from which SystemView can calculate
+*    accurate heap metrics.
+*
+*  See also
+*    SEGGER_SYSVIEW_HeapAlloc().
+*/
+void SEGGER_SYSVIEW_HeapAllocEx(void *pHeap, void* pUserData, unsigned int UserDataLen, unsigned int Tag) {
+  U8* pPayload;
+  U8* pPayloadStart;
+  RECORD_START(SEGGER_SYSVIEW_INFO_SIZE + 5 * SEGGER_SYSVIEW_QUANTA_U32);
+  //
+  pPayload = pPayloadStart;
+  ENCODE_U32(pPayload, SYSVIEW_EVTID_EX_HEAP_ALLOC_EX);
+  ENCODE_U32(pPayload, SHRINK_ID((U32)pHeap));
+  ENCODE_U32(pPayload, SHRINK_ID((U32)pUserData));
+  ENCODE_U32(pPayload, UserDataLen >> SEGGER_SYSVIEW_ID_SHIFT);
+  ENCODE_U32(pPayload, Tag);
+  _SendPacket(pPayloadStart, pPayload, SYSVIEW_EVTID_EX);
+  RECORD_END();
+}
+
+/*********************************************************************
+*
+*       SEGGER_SYSVIEW_HeapFree()
+*
+*  Function description
+*    Record a heap deallocation event.
+*
+*  Parameters
+*    pHeap     - Pointer to heap where allocation was made.
+*    pUserData - Pointer to allocated user data.
+*
+*  Additional information
+*    SystemViews track allocations and knows the size of the
+*    allocated data.
+*/
+void SEGGER_SYSVIEW_HeapFree(void* pHeap, void* pUserData) {
+  U8* pPayload;
+  U8* pPayloadStart;
+  RECORD_START(SEGGER_SYSVIEW_INFO_SIZE + 2 * SEGGER_SYSVIEW_QUANTA_U32);
+  //
+  pPayload = pPayloadStart;
+  ENCODE_U32(pPayload, SYSVIEW_EVTID_EX_HEAP_FREE);
+  ENCODE_U32(pPayload, SHRINK_ID((U32)pHeap));
+  ENCODE_U32(pPayload, SHRINK_ID((U32)pUserData));
+  _SendPacket(pPayloadStart, pPayload, SYSVIEW_EVTID_EX);
   RECORD_END();
 }
 

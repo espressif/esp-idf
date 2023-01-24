@@ -49,13 +49,13 @@
 *                                                                    *
 **********************************************************************
 *                                                                    *
-*       SystemView version: 3.32                                    *
+*       SystemView version: 3.42                                    *
 *                                                                    *
 **********************************************************************
 -------------------------- END-OF-HEADER -----------------------------
 File    : SEGGER_SYSVIEW.h
 Purpose : System visualization API.
-Revision: $Rev: 26226 $
+Revision: $Rev: 28237 $
 */
 
 #ifndef SEGGER_SYSVIEW_H
@@ -137,6 +137,10 @@ extern "C" {
 //
 #define   SYSVIEW_EVTID_EX_MARK            0
 #define   SYSVIEW_EVTID_EX_NAME_MARKER     1
+#define   SYSVIEW_EVTID_EX_HEAP_DEFINE     2
+#define   SYSVIEW_EVTID_EX_HEAP_ALLOC      3
+#define   SYSVIEW_EVTID_EX_HEAP_ALLOC_EX   4
+#define   SYSVIEW_EVTID_EX_HEAP_FREE       5
 //
 // Event masks to disable/enable events
 //
@@ -300,6 +304,11 @@ void SEGGER_SYSVIEW_MarkStart                     (unsigned int MarkerId);
 void SEGGER_SYSVIEW_MarkStop                      (unsigned int MarkerId);
 void SEGGER_SYSVIEW_Mark                          (unsigned int MarkerId);
 void SEGGER_SYSVIEW_NameMarker                    (unsigned int MarkerId, const char* sName);
+
+void SEGGER_SYSVIEW_HeapDefine                    (void* pHeap, void* pBase, unsigned int HeapSize, unsigned int MetadataSize);
+void SEGGER_SYSVIEW_HeapAlloc                     (void* pHeap, void* pUserData, unsigned int UserDataLen);
+void SEGGER_SYSVIEW_HeapAllocEx                   (void* pHeap, void* pUserData, unsigned int UserDataLen, unsigned int Tag);
+void SEGGER_SYSVIEW_HeapFree                      (void* pHeap, void* pUserData);
 
 void SEGGER_SYSVIEW_NameResource                  (U32 ResourceId, const char* sName);
 
