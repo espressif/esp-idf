@@ -64,6 +64,7 @@ struct sock_db {
     bool lru_socket;                        /*!< Flag indicating LRU socket */
     char pending_data[PARSER_BLOCK_SIZE];   /*!< Buffer for pending data to be received */
     size_t pending_len;                     /*!< Length of pending data to be received */
+    bool ownership_claimed;                 /*!< True is some other thread is now responsible for this socket */
 #ifdef CONFIG_HTTPD_WS_SUPPORT
     bool ws_handshake_done;                 /*!< True if it has done WebSocket handshake (if this socket is a valid WS) */
     bool ws_close;                          /*!< Set to true to close the socket later (when WS Close frame received) */
@@ -91,6 +92,7 @@ struct httpd_req_aux {
         const char *value;
     } *resp_hdrs;                                   /*!< Additional headers in response packet */
     struct http_parser_url url_parse_res;           /*!< URL parsing result, used for retrieving URL elements */
+    bool           ownership_claimed;               /*!< If true, the socket will not be LRU purged*/
 #ifdef CONFIG_HTTPD_WS_SUPPORT
     bool ws_handshake_detect;                       /*!< WebSocket handshake detection flag */
     httpd_ws_type_t ws_type;                        /*!< WebSocket frame type */
@@ -384,6 +386,16 @@ esp_err_t httpd_req_delete(struct httpd_data *hd);
  *  - ESP_FAIL  : failure indicates that the underlying socket needs to be closed
  */
 esp_err_t httpd_req_handle_err(httpd_req_t *req, httpd_err_code_t error);
+
+
+/**
+ * @brief   Internal function which takes a request, finds the corresponding
+ * session, and then marks the session as no longer "owned".
+ *
+ * @param[in] req     Pointer to a httpd_req_t
+ *
+ */
+void httpd_req_relinquish_ownership_work_fn(void *req /*(httpd_req_t*)*/);
 
 /** End of Group : Parsing
  * @}

@@ -1533,6 +1533,7 @@ examples/protocols/http_server/advanced_tests/http_server_advanced_test.py
 examples/protocols/http_server/advanced_tests/main/include/tests.h
 examples/protocols/http_server/advanced_tests/main/main.c
 examples/protocols/http_server/advanced_tests/main/tests.c
+examples/protocols/http_server/async_handlers/main/main.c
 examples/protocols/http_server/captive_portal/example_test.py
 examples/protocols/http_server/captive_portal/main/dns_server.c
 examples/protocols/http_server/captive_portal/main/include/dns_server.h

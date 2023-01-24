@@ -790,7 +790,14 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
     ret = httpd_parse_req(hd);
     if (ret != ESP_OK) {
         httpd_req_cleanup(r);
+        return ret;
     }
+
+    /* Handle ownership change */
+    if (ra->ownership_claimed) {
+        sd->ownership_claimed = true;
+    }
+
     return ret;
 }
 

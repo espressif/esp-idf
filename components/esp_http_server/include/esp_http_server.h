@@ -811,6 +811,76 @@ esp_err_t httpd_sess_set_send_override(httpd_handle_t hd, int sockfd, httpd_send
  */
 esp_err_t httpd_sess_set_pending_override(httpd_handle_t hd, int sockfd, httpd_pending_func_t pending_func);
 
+
+/**
+ * @brief   Create a deep copy of a request.
+ *
+ * @param[out] dest
+ * @param[in] source
+ *
+ * @return
+ *  - ESP_OK : the request was copied successfully
+ *  - ESP_ERR_INVALID_ARG : dest or source is null
+ *  - ESP_ERR_NO_MEM : no memory available to create the copy
+ */
+esp_err_t httpd_req_copy(httpd_req_t *dest, const httpd_req_t *source);
+
+/**
+ * @brief   Free a request that was created with httpd_req_copy()
+ *
+ * @note This only frees the memory associated with the request.
+ * It does not close sockets, etc.
+ *
+ * @param[in] r The request to be freed
+ *
+ * @return
+ *  - ESP_OK : the request was freed successfully
+ *  - ESP_ERR_INVALID_ARG : r is null
+ */
+esp_err_t httpd_req_free_copy(httpd_req_t *r);
+
+/**
+ * @brief   Mark a request as not being owned by the httpd server
+ * thread anymore. Instead, this request will be handled by some other
+ * user created thread, such as an async worker thread. This function
+ * should be called in the http request handler.
+ *
+ * This will prevent the httpd server from purging the socket from
+ * underneath us. see: lru_purge_enable.
+ *
+ * To relinquish ownership and allow the httpd server to purge this socket,
+ * call httpd_req_relinquish_ownership()
+ *
+ * @note This function is necessary in order to handle multiple requests simultaneously.
+ * See examples/async_requests for example usage.
+ *
+ * @note This if we claim ownership of too many sockets, the httpd server
+ * will eventually run out of sockets. Make sure to relinquish your requests,
+ * and consider responding with errors if resources become scarce.
+ *
+ * @param[in] r The request to have ownership claimed
+ *
+ * @return
+ *  - ESP_OK : ownership was claimed
+ */
+esp_err_t httpd_req_claim_ownership(httpd_req_t *r);
+
+/**
+ * @brief   Relinquish ownership of a socket. If lru_purge_enable
+ * is enabled, this will allow the http server to close our socket
+ * in order to accept new incoming connections.
+ *
+ * @note If requests are not reqlinquished, eventually the server
+ * will no longer accept incoming connections. The server will log a
+ * "httpd_accept_conn: error in accept (23)" message if this happens.
+ *
+ * @param[in] r The request to have ownership relinquished
+ *
+ * @return
+ *  - ESP_OK : ownership was relinquished
+ */
+esp_err_t httpd_req_relinquish_ownership(httpd_req_t *r);
+
 /**
  * @brief   Get the Socket Descriptor from the HTTP request
  *

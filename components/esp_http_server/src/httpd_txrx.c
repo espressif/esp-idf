@@ -553,6 +553,73 @@ int httpd_req_recv(httpd_req_t *r, char *buf, size_t buf_len)
     return ret;
 }
 
+esp_err_t httpd_req_copy(httpd_req_t *dest, const httpd_req_t *source)
+{
+    if (dest == NULL || source == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memcpy(dest, source, sizeof(httpd_req_t));
+
+    // copy aux
+    struct httpd_req_aux *aux = malloc(sizeof(struct httpd_req_aux));
+    if (aux == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(aux, source->aux, sizeof(struct httpd_req_aux));
+    dest->aux = aux;
+
+    return ESP_OK;
+}
+
+esp_err_t httpd_req_free_copy(httpd_req_t *r)
+{
+    if (r == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (r->aux) {
+        free(r->aux);
+    }
+    return ESP_OK;
+}
+
+esp_err_t httpd_req_claim_ownership(httpd_req_t *r)
+{
+    struct httpd_req_aux *ra = r->aux;
+    ra->ownership_claimed = true;
+    return ESP_OK;
+}
+
+void httpd_req_relinquish_ownership_work_fn(void *arg /*(httpd_req_t*)*/)
+{
+    httpd_req_t* r = (httpd_req_t*) arg;
+    struct httpd_req_aux *ra = r->aux;
+    ra->sd->ownership_claimed = false;
+    httpd_req_free_copy(r);
+}
+
+esp_err_t httpd_req_relinquish_ownership(httpd_req_t *r)
+{
+    if (r == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    struct httpd_req_aux *ra = r->aux;
+    ra->ownership_claimed = false;
+
+    httpd_req_t* copy = malloc(sizeof(httpd_req_t));
+    if (!copy) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    esp_err_t ret = httpd_req_copy(copy, r);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    return httpd_queue_work(r->handle, httpd_req_relinquish_ownership_work_fn, copy);
+}
+
 int httpd_req_to_sockfd(httpd_req_t *r)
 {
     if (r == NULL) {
