@@ -363,7 +363,11 @@ bool esp_secure_boot_cfg_verify_release_mode(void)
             }
 #endif
             ++num_keys;
+#if SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
+            secure = !esp_efuse_read_field_bit(ESP_EFUSE_RD_DIS_KEY0_HI);
+#else
             secure = !esp_efuse_get_key_dis_read(block);
+#endif // !SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
             result &= secure;
             if (!secure) {
                 ESP_LOGE(TAG, "Secure boot key in BLOCK%d must NOT be read-protected (can not be used)", block);
