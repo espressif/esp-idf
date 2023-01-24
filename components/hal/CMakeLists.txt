@@ -155,6 +155,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "${target}/pmu_hal.c")
     endif()
 
+    if(CONFIG_SOC_APM_SUPPORTED)
+        list(APPEND srcs "apm_hal.c")
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "touch_sensor_hal.c"
