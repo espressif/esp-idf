@@ -10,11 +10,13 @@
 #include <string.h>
 #include <sys/param.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "protocol_examples_common.h"
+#include "protocol_examples_utils.h"
 #include "esp_tls.h"
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 #include "esp_crt_bundle.h"
@@ -431,6 +433,34 @@ static void https_with_hostname_path(void)
     esp_http_client_cleanup(client);
 }
 
+static void http_encoded_query(void)
+{
+    esp_http_client_config_t config = {
+        .host = "httpbin.org",
+        .path = "/get",
+        .event_handler = _http_event_handler,
+    };
+
+    static const char query_val[] = "ABC xyz!012@#%&";
+    char query_val_enc[64] = {0};
+
+    uint32_t enc_len = example_uri_encode(query_val_enc, query_val, strlen(query_val));
+    if (enc_len > 0) {
+        ESP_LOG_BUFFER_HEXDUMP(TAG, query_val_enc, enc_len, ESP_LOG_DEBUG);
+        config.query = query_val_enc;
+    }
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_err_t err = esp_http_client_perform(client);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %"PRIu64,
+                esp_http_client_get_status_code(client),
+                esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "HTTP GET request failed: %s", esp_err_to_name(err));
+    }
+}
+
 static void http_relative_redirect(void)
 {
     esp_http_client_config_t config = {
@@ -743,6 +773,7 @@ static void http_test_task(void *pvParameters)
 #if CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
     http_auth_digest();
 #endif
+    http_encoded_query();
     http_relative_redirect();
     http_absolute_redirect();
     http_absolute_redirect_manual();

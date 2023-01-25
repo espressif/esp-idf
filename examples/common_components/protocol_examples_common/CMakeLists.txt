@@ -1,7 +1,8 @@
 set(srcs "stdin_out.c"
          "addr_from_stdin.c"
          "connect.c"
-         "wifi_connect.c")
+         "wifi_connect.c"
+         "protocol_examples_utils.c")
 
 if(CONFIG_EXAMPLE_PROVIDE_WIFI_CONSOLE_CMD)
     list(APPEND srcs "console_cmd.c")
