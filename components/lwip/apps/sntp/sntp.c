@@ -10,12 +10,17 @@
 #include <sys/time.h>
 #include "esp_log.h"
 #include "esp_sntp.h"
-#include "lwip/tcpip.h"
+#include "lwip/priv/tcpip_priv.h"
 
 static const char *TAG = "sntp";
 
 ESP_STATIC_ASSERT(SNTP_OPMODE_POLL == ESP_SNTP_OPMODE_POLL, "SNTP mode in lwip doesn't match the IDF enum. Please make sure lwIP version is correct");
 ESP_STATIC_ASSERT(SNTP_OPMODE_LISTENONLY == ESP_SNTP_OPMODE_LISTENONLY, "SNTP mode in lwip doesn't match the IDF enum. Please make sure lwIP version is correct");
+
+#define SNTP_ERROR(func, message) do { \
+        err_t err = func;   \
+        LWIP_ERROR(message, err == ERR_OK, );   \
+    } while (0)
 
 static volatile sntp_sync_mode_t sntp_sync_mode = SNTP_SYNC_MODE_IMMED;
 static volatile sntp_sync_status_t sntp_sync_status = SNTP_SYNC_STATUS_RESET;
@@ -113,7 +118,7 @@ static void sntp_do_restart(void *ctx)
 bool sntp_restart(void)
 {
     if (sntp_enabled()) {
-        tcpip_callback(sntp_do_restart, NULL);
+        SNTP_ERROR(tcpip_callback(sntp_do_restart, NULL), "sntp_restart: tcpip_callback() failed");
         return true;
     }
     return false;
@@ -136,13 +141,13 @@ void sntp_get_system_time(uint32_t *sec, uint32_t *us)
 
 static void do_setoperatingmode(void *ctx)
 {
-    esp_sntp_operatingmode_t operating_mode = (esp_sntp_operatingmode_t)ctx;
-    sntp_setoperatingmode(operating_mode);
+    sntp_setoperatingmode((intptr_t)ctx);
 }
 
 void esp_sntp_setoperatingmode(esp_sntp_operatingmode_t operating_mode)
 {
-    tcpip_callback(do_setoperatingmode, (void*)operating_mode);
+    SNTP_ERROR(tcpip_callback(do_setoperatingmode, (void*)operating_mode),
+               "esp_sntp_setoperatingmode: tcpip_callback() failed");
 }
 
 static void do_init(void *ctx)
@@ -152,7 +157,7 @@ static void do_init(void *ctx)
 
 void esp_sntp_init(void)
 {
-    tcpip_callback(do_init, NULL);
+    SNTP_ERROR(tcpip_callback(do_init, NULL), "esp_sntp_init: tcpip_callback() failed");
 }
 
 static void do_stop(void *ctx)
@@ -162,47 +167,51 @@ static void do_stop(void *ctx)
 
 void esp_sntp_stop(void)
 {
-    tcpip_callback(do_stop, NULL);
+    SNTP_ERROR(tcpip_callback(do_stop, NULL), "esp_sntp_stop: tcpip_callback() failed");
 }
 
-struct do_setserver {
+struct tcpip_setserver {
+    struct tcpip_api_call_data call;
     u8_t idx;
     const ip_addr_t *addr;
 };
 
-static void do_setserver(void *ctx)
+static err_t do_setserver(struct tcpip_api_call_data *msg)
 {
-    struct do_setserver *params = ctx;
+    struct tcpip_setserver *params = __containerof(msg, struct tcpip_setserver, call);
     sntp_setserver(params->idx, params->addr);
+    return ERR_OK;
 }
 
 void esp_sntp_setserver(u8_t idx, const ip_addr_t *addr)
 {
-    struct do_setserver params = {
+    struct tcpip_setserver params = {
             .idx = idx,
             .addr = addr
     };
-    tcpip_callback(do_setserver, &params);
+    SNTP_ERROR(tcpip_api_call(do_setserver, &params.call), "esp_sntp_setserver :tcpip_api_call() failed");
 }
 
-struct do_setservername {
+struct tcpip_setservername {
+    struct tcpip_api_call_data call;
     u8_t idx;
     const char *server;
 };
 
-static void do_setservername(void *ctx)
+static err_t do_setservername(struct tcpip_api_call_data *msg)
 {
-    struct do_setservername *params = ctx;
+    struct tcpip_setservername *params = __containerof(msg, struct tcpip_setservername, call);
     sntp_setservername(params->idx, params->server);
+    return ERR_OK;
 }
 
 void esp_sntp_setservername(u8_t idx, const char *server)
 {
-    struct do_setservername params = {
+    struct tcpip_setservername params = {
             .idx = idx,
             .server = server
     };
-    tcpip_callback(do_setservername, &params);
+    SNTP_ERROR(tcpip_api_call(do_setservername, &params.call), "esp_sntp_setservername :tcpip_api_call() failed");
 }
 
 const char *esp_sntp_getservername(u8_t idx)
@@ -218,13 +227,12 @@ const ip_addr_t* esp_sntp_getserver(u8_t idx)
 #if LWIP_DHCP_GET_NTP_SRV
 static void do_servermode_dhcp(void* ctx)
 {
-    u8_t servermode = (bool)ctx ? 1 : 0;
-    sntp_servermode_dhcp(servermode);
+    sntp_servermode_dhcp((intptr_t)ctx);
 }
 
 void esp_sntp_servermode_dhcp(bool enable)
 {
-    tcpip_callback(do_servermode_dhcp, (void*)enable);
+    SNTP_ERROR(tcpip_callback(do_servermode_dhcp, (void*)enable), "esp_sntp_servermode_dhcp: tcpip_callback() failed");
 }
 
 #endif /* LWIP_DHCP_GET_NTP_SRV */
