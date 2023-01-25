@@ -159,7 +159,7 @@ size_t heap_caps_get_largest_free_block( uint32_t caps )
 
 void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps )
 {
-    bzero(info, sizeof(multi_heap_info_t));
+    memset(info, 0, sizeof(multi_heap_info_t));
 }
 
 void heap_caps_print_heap_info( uint32_t caps )
