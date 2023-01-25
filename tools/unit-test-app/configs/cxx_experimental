@@ -1,2 +1,0 @@
-TEST_COMPONENTS=experimental_cpp_component
-CONFIG_COMPILER_CXX_EXCEPTIONS=y

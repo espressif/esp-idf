@@ -13277,7 +13277,6 @@ LOAD esp-idf/ulp/libulp.a
 LOAD esp-idf/usb/libusb.a
 LOAD esp-idf/wifi_provisioning/libwifi_provisioning.a
 LOAD esp-idf/main/libmain.a
-LOAD esp-idf/experimental_cpp_component/libexperimental_cpp_component.a
 LOAD esp-idf/esp_serial_slave_link/libesp_serial_slave_link.a
 LOAD esp-idf/test_driver_utils/libtest_driver_utils.a
 LOAD esp-idf/test_utils/libtest_utils.a
