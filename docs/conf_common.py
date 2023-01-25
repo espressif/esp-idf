@@ -90,8 +90,10 @@ SPIRAM_DOCS = ['api-guides/external-ram.rst']
 
 USB_DOCS = ['api-reference/peripherals/usb_device.rst',
             'api-reference/peripherals/usb_host.rst',
-            'api-reference/peripherals/usb_host/usb_host_notes_index.rst',
+            'api-reference/peripherals/usb_host/usb_host_notes_arch.rst',
+            'api-reference/peripherals/usb_host/usb_host_notes_design.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst',
+            'api-reference/peripherals/usb_host/usb_host_notes_index.rst',
             'api-guides/usb-otg-console.rst',
             'api-guides/dfu.rst']
 
