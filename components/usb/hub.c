@@ -421,6 +421,10 @@ static bool enum_stage_transfer_check(enum_ctrl_t *enum_ctrl)
     usb_transfer_t *transfer = &dequeued_enum_urb->transfer;
     if (transfer->status != USB_TRANSFER_STATUS_COMPLETED) {
         ESP_LOGE(HUB_DRIVER_TAG, "Bad transfer status %d: %s", transfer->status, enum_stage_strings[enum_ctrl->stage]);
+        if (transfer->status == USB_TRANSFER_STATUS_STALL) {
+            //EP stalled, clearing the pipe to execute further stages
+            ESP_ERROR_CHECK(hcd_pipe_command(enum_ctrl->pipe, HCD_PIPE_CMD_CLEAR));
+        }
         return false;
     }
     //Check IN transfer returned the expected correct number of bytes
@@ -622,6 +626,27 @@ static void enum_stage_cleanup_failed(enum_ctrl_t *enum_ctrl)
     HUB_DRIVER_EXIT_CRITICAL();
 }
 
+static enum_stage_t get_next_stage(enum_stage_t old_stage, enum_ctrl_t *enum_ctrl)
+{
+    enum_stage_t new_stage = old_stage + 1;
+    //Skip the GET_DESCRIPTOR string type corresponding stages if a particular index is 0.
+    while(((new_stage == ENUM_STAGE_GET_SHORT_MANU_STR_DESC ||
+        new_stage == ENUM_STAGE_CHECK_SHORT_MANU_STR_DESC ||
+        new_stage == ENUM_STAGE_GET_FULL_MANU_STR_DESC ||
+        new_stage == ENUM_STAGE_CHECK_FULL_MANU_STR_DESC) && enum_ctrl->iManufacturer == 0) ||
+        ((new_stage == ENUM_STAGE_GET_SHORT_PROD_STR_DESC ||
+        new_stage == ENUM_STAGE_CHECK_SHORT_PROD_STR_DESC ||
+        new_stage == ENUM_STAGE_GET_FULL_PROD_STR_DESC ||
+        new_stage == ENUM_STAGE_CHECK_FULL_PROD_STR_DESC) && enum_ctrl->iProduct == 0) ||
+        ((new_stage == ENUM_STAGE_GET_SHORT_SER_STR_DESC ||
+        new_stage == ENUM_STAGE_CHECK_SHORT_SER_STR_DESC ||
+        new_stage == ENUM_STAGE_GET_FULL_SER_STR_DESC ||
+        new_stage == ENUM_STAGE_CHECK_FULL_SER_STR_DESC) && enum_ctrl->iSerialNumber == 0)) {
+            new_stage++;
+        }
+    return new_stage;
+}
+
 static void enum_set_next_stage(enum_ctrl_t *enum_ctrl, bool last_stage_pass)
 {
     //Set next stage
@@ -629,7 +654,7 @@ static void enum_set_next_stage(enum_ctrl_t *enum_ctrl, bool last_stage_pass)
         if (enum_ctrl->stage != ENUM_STAGE_NONE &&
             enum_ctrl->stage != ENUM_STAGE_CLEANUP &&
             enum_ctrl->stage != ENUM_STAGE_CLEANUP_FAILED) {
-                enum_ctrl->stage++; //Go to next stage
+                enum_ctrl->stage = get_next_stage(enum_ctrl->stage, enum_ctrl);
         } else {
                 enum_ctrl->stage = ENUM_STAGE_NONE;
         }
