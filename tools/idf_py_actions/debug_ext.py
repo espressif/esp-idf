@@ -210,8 +210,12 @@ def action_extensions(base_actions, project_path):
         env['PURE_PYTHON'] = '1'
         try:
             process = subprocess.Popen(args, stdout=gdbgui_out, stderr=subprocess.STDOUT, bufsize=1, env=env)
-        except Exception as e:
+        except (OSError, subprocess.CalledProcessError) as e:
             print(e)
+            if sys.version_info[:2] >= (3, 11):
+                raise SystemExit('Unfortunately, gdbgui is supported only with Python 3.10 or older. '
+                                 'See: https://github.com/espressif/esp-idf/issues/10116. '
+                                 'Please use "idf.py gdb" or debug in Eclipse/Vscode instead.')
             raise FatalError('Error starting gdbgui. Please make sure gdbgui can be started', ctx)
 
         processes['gdbgui'] = process

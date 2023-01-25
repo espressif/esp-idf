@@ -106,7 +106,6 @@ static void esp_spp_cb(uint16_t e, void *p)
             ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT");
             /* Enable SPP VFS mode */
             esp_spp_vfs_register();
-            esp_spp_start_srv(sec_mask, role_slave, 0, SPP_SERVER_NAME);
         } else {
             ESP_LOGE(SPP_TAG, "ESP_SPP_INIT_EVT status:%d", param->init.status);
         }
@@ -139,6 +138,14 @@ static void esp_spp_cb(uint16_t e, void *p)
                  param->srv_open.handle, bda2str(param->srv_open.rem_bda, bda_str, sizeof(bda_str)));
         if (param->srv_open.status == ESP_SPP_SUCCESS) {
             spp_wr_task_start_up(spp_read_handle, param->srv_open.fd);
+        }
+        break;
+    case ESP_SPP_VFS_REGISTER_EVT:
+        if (param->vfs_register.status == ESP_SPP_SUCCESS) {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_VFS_REGISTER_EVT");
+            esp_spp_start_srv(sec_mask, role_slave, 0, SPP_SERVER_NAME);
+        } else {
+            ESP_LOGE(SPP_TAG, "ESP_SPP_VFS_REGISTER_EVT status:%d", param->vfs_register.status);
         }
         break;
     default:

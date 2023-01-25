@@ -214,17 +214,17 @@ osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priorit
         return NULL;
     }
 
-    osi_thread_t *thread = (osi_thread_t *)osi_malloc(sizeof(osi_thread_t));
+    osi_thread_t *thread = (osi_thread_t *)osi_calloc(sizeof(osi_thread_t));
     if (thread == NULL) {
         goto _err;
     }
 
     thread->stop = false;
-    thread->work_queue_num = work_queue_num;
-    thread->work_queues = (struct work_queue **)osi_malloc(sizeof(struct work_queue *) * work_queue_num);
+    thread->work_queues = (struct work_queue **)osi_calloc(sizeof(struct work_queue *) * work_queue_num);
     if (thread->work_queues == NULL) {
         goto _err;
     }
+    thread->work_queue_num = work_queue_num;
 
     for (int i = 0; i < thread->work_queue_num; i++) {
         size_t queue_len = work_queue_len[i] ? work_queue_len[i] : DEFAULT_WORK_QUEUE_CAPACITY;

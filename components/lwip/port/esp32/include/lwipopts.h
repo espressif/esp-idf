@@ -254,6 +254,14 @@
  */
 #define ESP_DHCP_DISABLE_VENDOR_CLASS_IDENTIFIER       CONFIG_LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
 
+#define DHCP_DEFINE_CUSTOM_TIMEOUTS     1
+/* Since for embedded devices it's not that hard to miss a discover packet, so lower
+ * the discover retry backoff time from (2,4,8,16,32,60,60)s to (500m,1,2,4,8,15,15)s.
+ */
+ #define DHCP_REQUEST_TIMEOUT_SEQUENCE(state, tries)   (state == DHCP_STATE_REQUESTING ? \
+                                                       (uint16_t)(1 * 1000) : \
+                                                       (uint16_t)(((tries) < 6 ? 1 << (tries) : 60) * 250))
+
 /*
    ------------------------------------
    ---------- AUTOIP options ----------
@@ -358,6 +366,11 @@
  * TCP_MSL: The maximum segment lifetime in milliseconds
  */
 #define TCP_MSL                         CONFIG_LWIP_TCP_MSL
+
+/**
+ * TCP_FIN_WAIT_TIMEOUT: The maximum FIN segment lifetime in milliseconds
+ */
+#define TCP_FIN_WAIT_TIMEOUT            CONFIG_LWIP_TCP_FIN_WAIT_TIMEOUT
 
 /**
  * TCP_MAXRTX: Maximum number of retransmissions of data segments.
@@ -1021,9 +1034,25 @@
 #ifdef CONFIG_LWIP_TIMERS_ONDEMAND
 #define ESP_LWIP_IGMP_TIMERS_ONDEMAND            1
 #define ESP_LWIP_MLD6_TIMERS_ONDEMAND            1
+#define ESP_LWIP_DHCP_FINE_TIMERS_ONDEMAND       1
+#define ESP_LWIP_DNS_TIMERS_ONDEMAND             1
+#if IP_REASSEMBLY
+#define ESP_LWIP_IP4_REASSEMBLY_TIMERS_ONDEMAND  1
+#endif /* IP_REASSEMBLY */
+#if LWIP_IPV6_REASS
+#define ESP_LWIP_IP6_REASSEMBLY_TIMERS_ONDEMAND  1
+#endif /* LWIP_IPV6_REASS */
 #else
 #define ESP_LWIP_IGMP_TIMERS_ONDEMAND            0
 #define ESP_LWIP_MLD6_TIMERS_ONDEMAND            0
+#define ESP_LWIP_DHCP_FINE_TIMERS_ONDEMAND       0
+#define ESP_LWIP_DNS_TIMERS_ONDEMAND             0
+#if IP_REASSEMBLY
+#define ESP_LWIP_IP4_REASSEMBLY_TIMERS_ONDEMAND  0
+#endif /* IP_REASSEMBLY */
+#if LWIP_IPV6_REASS
+#define ESP_LWIP_IP6_REASSEMBLY_TIMERS_ONDEMAND  0
+#endif /* LWIP_IPV6_REASS */
 #endif
 
 #define TCP_SND_BUF                     CONFIG_LWIP_TCP_SND_BUF_DEFAULT

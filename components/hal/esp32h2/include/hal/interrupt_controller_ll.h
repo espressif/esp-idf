@@ -124,7 +124,7 @@ static inline void intr_cntrl_ll_set_int_level(int intr, int level)
  */
 static inline void intr_cntrl_ll_set_int_type(int intr, int_type_t type)
 {
-    esprv_intc_int_set_type(BIT(intr), type);
+    esprv_intc_int_set_type(intr, type);
 }
 
 #ifdef __cplusplus

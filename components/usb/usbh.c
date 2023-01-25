@@ -536,7 +536,7 @@ esp_err_t usbh_dev_open(uint8_t dev_addr, usb_device_handle_t *dev_hdl)
             goto exit;
         }
     }
-    TAILQ_FOREACH(dev_obj, &p_usbh_obj->dynamic.devs_idle_tailq, dynamic.tailq_entry) {
+    TAILQ_FOREACH(dev_obj, &p_usbh_obj->dynamic.devs_pending_tailq, dynamic.tailq_entry) {
         if (dev_obj->constant.address == dev_addr) {
             found_dev_obj = dev_obj;
             goto exit;
@@ -783,7 +783,7 @@ esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config
     if (is_in && dev_obj->mux_protected.ep_in[addr - 1] == NULL) {  //Is an IN EP
         dev_obj->mux_protected.ep_in[addr - 1] = pipe_hdl;
         assigned = true;
-    } else if (dev_obj->mux_protected.ep_out[addr - 1] == NULL) {   //Is an OUT EP
+    } else if (!is_in && dev_obj->mux_protected.ep_out[addr - 1] == NULL) {   //Is an OUT EP
         dev_obj->mux_protected.ep_out[addr - 1] = pipe_hdl;
         assigned = true;
     }

@@ -976,7 +976,7 @@ tGATT_STATUS gatts_write_attr_value_by_handle(tGATT_SVC_DB *p_db,
                     memcpy(p_attr->p_value->attr_val.attr_val + offset, p_value, len);
                     p_attr->p_value->attr_val.attr_len = len + offset;
                     return GATT_SUCCESS;
-                } else if (p_attr->p_value->attr_val.attr_max_len < offset + len){
+                } else if (p_attr->p_value && p_attr->p_value->attr_val.attr_max_len < offset + len){
                     GATT_TRACE_DEBUG("Remote device try to write with a length larger then attribute's max length\n");
                     return GATT_INVALID_ATTR_LEN;
                 } else if ((p_attr->p_value == NULL) || (p_attr->p_value->attr_val.attr_val == NULL)){

@@ -19,7 +19,7 @@ else()
                         "patches/esp_rom_uart.c"
                         "patches/esp_rom_tjpgd.c"
                         "patches/esp_rom_efuse.c")
-    list(APPEND private_required_comp soc hal)
+    list(APPEND private_required_comp soc hal efuse)
 endif()
 
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)

@@ -37,6 +37,8 @@
 #include "esp_coexist_internal.h"
 #include "esp_timer.h"
 #include "esp_sleep.h"
+#include "esp_rom_sys.h"
+#include "esp32s3/rom/rom_layout.h"
 
 #if CONFIG_BT_ENABLED
 
@@ -244,7 +246,6 @@ extern bool btdm_deep_sleep_mem_init(void);
 extern void btdm_deep_sleep_mem_deinit(void);
 extern void btdm_ble_power_down_dma_copy(bool copy);
 extern uint8_t btdm_sleep_clock_sync(void);
-extern void sdk_config_extend_set_pll_track(bool enable);
 
 #if CONFIG_MAC_BB_PD
 extern void esp_mac_bb_power_down(void);
@@ -252,24 +253,18 @@ extern void esp_mac_bb_power_up(void);
 extern void ets_backup_dma_copy(uint32_t reg, uint32_t mem_addr, uint32_t num, bool to_mem);
 #endif
 
-extern char _bss_start_btdm;
-extern char _bss_end_btdm;
-extern char _data_start_btdm;
-extern char _data_end_btdm;
-extern uint32_t _data_start_btdm_rom;
-extern uint32_t _data_end_btdm_rom;
-
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
 extern uint32_t _btdm_bss_start;
 extern uint32_t _btdm_bss_end;
+extern uint32_t _nimble_bss_start;
+extern uint32_t _nimble_bss_end;
 extern uint32_t _bt_data_start;
 extern uint32_t _bt_data_end;
 extern uint32_t _btdm_data_start;
 extern uint32_t _btdm_data_end;
-
-extern char _bt_tmp_bss_start;
-extern char _bt_tmp_bss_end;
+extern uint32_t _nimble_data_start;
+extern uint32_t _nimble_data_end;
 
 /* Local Function Declare
  *********************************************************************
@@ -319,6 +314,9 @@ static void btdm_hw_mac_power_down_wrapper(void);
 static void btdm_backup_dma_copy_wrapper(uint32_t reg, uint32_t mem_addr, uint32_t num,  bool to_mem);
 
 static void btdm_slp_tmr_callback(void *arg);
+
+static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end);
+
 /* Local variable definition
  ***************************************************************************
  */
@@ -927,14 +925,157 @@ static void btdm_controller_mem_init(void)
 
 esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
 {
-    ESP_LOGW(BT_LOG_TAG, "%s not implemented, return OK", __func__);
+    intptr_t mem_start=(intptr_t) NULL, mem_end=(intptr_t) NULL;
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (mode & ESP_BT_MODE_BLE) {
+        /* if the addresses of rom btdm .data and .bss are consecutive,
+           they are registered in the system heap as a piece of memory
+        */
+        if(ets_rom_layout_p->data_end_btdm == ets_rom_layout_p->bss_start_btdm) {
+            mem_start = (intptr_t)ets_rom_layout_p->data_start_btdm;
+            mem_end = (intptr_t)ets_rom_layout_p->bss_end_btdm;
+            if (mem_start != mem_end) {
+                ESP_LOGD(BT_LOG_TAG, "Release rom btdm [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+            }
+        } else {
+            mem_start = (intptr_t)ets_rom_layout_p->bss_start_btdm;
+            mem_end = (intptr_t)ets_rom_layout_p->bss_end_btdm;
+            if (mem_start != mem_end) {
+                ESP_LOGD(BT_LOG_TAG, "Release rom btdm BSS [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+            }
+
+            mem_start = (intptr_t)ets_rom_layout_p->data_start_btdm;
+            mem_end = (intptr_t)ets_rom_layout_p->data_end_btdm;
+            if (mem_start != mem_end) {
+                ESP_LOGD(BT_LOG_TAG, "Release rom btdm Data [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+            }
+        }
+        /* if the addresses of rom interface btdm .data and .bss are consecutive,
+           they are registered in the system heap as a piece of memory
+        */
+        if(ets_rom_layout_p->data_end_interface_btdm == ets_rom_layout_p->bss_start_interface_btdm) {
+            mem_start = (intptr_t)ets_rom_layout_p->data_start_interface_btdm;
+            mem_end = (intptr_t)ets_rom_layout_p->bss_end_interface_btdm;
+            if (mem_start != mem_end) {
+                ESP_LOGD(BT_LOG_TAG, "Release rom interface btdm [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+            }
+        } else {
+            mem_start = (intptr_t)ets_rom_layout_p->data_start_interface_btdm;
+            mem_end = (intptr_t)ets_rom_layout_p->data_end_interface_btdm;
+            if (mem_start != mem_end) {
+                ESP_LOGD(BT_LOG_TAG, "Release rom interface btdm Data [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+            }
+
+            mem_start = (intptr_t)ets_rom_layout_p->bss_start_interface_btdm;
+            mem_end = (intptr_t)ets_rom_layout_p->bss_end_interface_btdm;
+            if (mem_start != mem_end) {
+                ESP_LOGD(BT_LOG_TAG, "Release rom interface btdm BSS [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+            }
+        }
+
+    }
     return ESP_OK;
 }
 
 esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
-    ESP_LOGW(BT_LOG_TAG, "%s not implemented, return OK", __func__);
+    int ret;
+    intptr_t mem_start, mem_end;
+
+    ret = esp_bt_controller_mem_release(mode);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    if (mode & ESP_BT_MODE_BLE) {
+        /* if the addresses of btdm .bss and bt .bss are consecutive,
+           they are registered in the system heap as a piece of memory
+        */
+        if(_bt_bss_end == _btdm_bss_start) {
+            mem_start = (intptr_t)&_bt_bss_start;
+            mem_end = (intptr_t)&_btdm_bss_end;
+            if (mem_start != mem_end) {
+                ESP_LOGD(BT_LOG_TAG, "Release BSS [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+            }
+        } else {
+            mem_start = (intptr_t)&_bt_bss_start;
+            mem_end = (intptr_t)&_bt_bss_end;
+            if (mem_start != mem_end) {
+                ESP_LOGD(BT_LOG_TAG, "Release BT BSS [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+            }
+
+            mem_start = (intptr_t)&_btdm_bss_start;
+            mem_end = (intptr_t)&_btdm_bss_end;
+            if (mem_start != mem_end) {
+                ESP_LOGD(BT_LOG_TAG, "Release BTDM BSS [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+            }
+        }
+        /* if the addresses of btdm .data and bt .data are consecutive,
+           they are registered in the system heap as a piece of memory
+        */
+        if(_bt_data_end == _btdm_data_start) {
+            mem_start = (intptr_t)&_bt_data_start;
+            mem_end = (intptr_t)&_btdm_data_end;
+            if (mem_start != mem_end) {
+                ESP_LOGD(BT_LOG_TAG, "Release data [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+            }
+        } else {
+            mem_start = (intptr_t)&_bt_data_start;
+            mem_end = (intptr_t)&_bt_data_end;
+            if (mem_start != mem_end) {
+                ESP_LOGD(BT_LOG_TAG, "Release BT Data [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+            }
+
+            mem_start = (intptr_t)&_btdm_data_start;
+            mem_end = (intptr_t)&_btdm_data_end;
+            if (mem_start != mem_end) {
+                ESP_LOGD(BT_LOG_TAG, "Release BTDM Data [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+            }
+        }
+
+        mem_start = (intptr_t)&_nimble_bss_start;
+        mem_end = (intptr_t)&_nimble_bss_end;
+        if (mem_start != mem_end) {
+            ESP_LOGD(BT_LOG_TAG, "Release NimBLE BSS [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+        }
+        mem_start = (intptr_t)&_nimble_data_start;
+        mem_end = (intptr_t)&_nimble_data_end;
+        if (mem_start != mem_end) {
+            ESP_LOGD(BT_LOG_TAG, "Release NimBLE Data [0x%08x] - [0x%08x], len %d", mem_start, mem_end, mem_end - mem_start);
+            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+        }
+    }
     return ESP_OK;
+}
+
+static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end)
+{
+    int ret = heap_caps_add_region(start, end);
+    /* heap_caps_add_region() returns ESP_ERR_INVALID_SIZE if the memory region is
+     * is too small to fit a heap. This cannot be termed as a fatal error and hence
+     * we replace it by ESP_OK
+     */
+
+    if (ret == ESP_ERR_INVALID_SIZE) {
+        return ESP_OK;
+    }
+    return ret;
 }
 
 #if CONFIG_MAC_BB_PD
@@ -995,12 +1136,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     // overwrite some parameters
     cfg->magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL;
 
-    sdk_config_extend_set_pll_track(false);
-
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_pd_mem_init();
 #endif
-    esp_phy_pd_mem_init();
+    esp_phy_modem_init();
     esp_bt_power_domain_on();
 
     btdm_controller_mem_init();
@@ -1322,7 +1461,7 @@ esp_err_t esp_bt_controller_deinit(void)
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_pd_mem_deinit();
 #endif
-    esp_phy_pd_mem_deinit();
+    esp_phy_modem_deinit();
 
     free(osi_funcs_p);
     osi_funcs_p = NULL;

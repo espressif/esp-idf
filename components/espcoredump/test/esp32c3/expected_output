@@ -43,46 +43,46 @@ pc             0x4200583c	0x4200583c <recur_func+88>
 #1  0x4200581a in recur_func () at ../main/test_core_dump.c:63
 #2  0x4200581a in recur_func () at ../main/test_core_dump.c:63
 #3  0x42005874 in unaligned_ptr_task (pvParameter=<optimized out>) at ../main/test_core_dump.c:80
-#4  0x40385f2a in vPortEnterCritical () at /builds/espressif/esp-idf/components/freertos/port/riscv/port.c:129
+#4  0x40385f2a in vPortEnterCritical () at /builds/espressif/esp-idf/components/freertos/port/riscv/port.c:131
 #5  0x00000000 in ?? ()
 Backtrace stopped: frame did not save the PC
 
 ======================== THREADS INFO =========================
   Id   Target Id          Frame 
 * 1    process 1070144160 0x4200583c in recur_func () at ../main/test_core_dump.c:70
-  2    process 1070141676 0x40382dba in esp_crosscore_int_send_yield (core_id=core_id@entry=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:144
-  3    process 1070138176 0x4200c022 in esp_pm_impl_waiti () at ../../../hal/esp32c3/include/hal/cpu_ll.h:168
-  4    process 1070146556 0x40382dba in esp_crosscore_int_send_yield (core_id=core_id@entry=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:144
-  5    process 1070131784 0x40385eb4 in vPortClearInterruptMask (mask=1) at /builds/espressif/esp-idf/components/freertos/port/riscv/port.c:177
+  2    process 1070141676 0x40382dba in esp_crosscore_int_send_yield (core_id=core_id@entry=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:145
+  3    process 1070138176 0x4200c022 in esp_pm_impl_waiti () at /builds/espressif/esp-idf/components/esp_pm/pm_impl.c:840
+  4    process 1070146556 0x40382dba in esp_crosscore_int_send_yield (core_id=core_id@entry=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:145
+  5    process 1070131784 0x40385eb4 in vPortClearInterruptMask (mask=1) at /builds/espressif/esp-idf/components/freertos/port/riscv/port.c:178
 
 ==================== THREAD 1 (TCB: 0x3fc91aa0, name: 'unaligned_ptr_t') =====================
 #0  0x4200583c in recur_func () at ../main/test_core_dump.c:70
 #1  0x4200581a in recur_func () at ../main/test_core_dump.c:63
 #2  0x4200581a in recur_func () at ../main/test_core_dump.c:63
 #3  0x42005874 in unaligned_ptr_task (pvParameter=<optimized out>) at ../main/test_core_dump.c:80
-#4  0x40385f2a in vPortEnterCritical () at /builds/espressif/esp-idf/components/freertos/port/riscv/port.c:129
+#4  0x40385f2a in vPortEnterCritical () at /builds/espressif/esp-idf/components/freertos/port/riscv/port.c:131
 #5  0x00000000 in ?? ()
 Backtrace stopped: frame did not save the PC
 
 ==================== THREAD 2 (TCB: 0x3fc910ec, name: 'bad_ptr_task') =====================
-#0  0x40382dba in esp_crosscore_int_send_yield (core_id=core_id@entry=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:144
+#0  0x40382dba in esp_crosscore_int_send_yield (core_id=core_id@entry=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:145
 #1  0x4038601e in vPortYield () at /builds/espressif/esp-idf/components/freertos/port/riscv/port.c:316
 #2  0x00000000 in ?? ()
 Backtrace stopped: frame did not save the PC
 
 ==================== THREAD 3 (TCB: 0x3fc90340, name: 'IDLE') =====================
-#0  0x4200c022 in esp_pm_impl_waiti () at ../../../hal/esp32c3/include/hal/cpu_ll.h:168
+#0  0x4200c022 in esp_pm_impl_waiti () at /builds/espressif/esp-idf/components/esp_pm/pm_impl.c:840
 #1  0x4200b476 in esp_vApplicationIdleHook () at /builds/espressif/esp-idf/components/esp_system/freertos_hooks.c:63
 Backtrace stopped: Cannot access memory at address 0xa5a5a5b1
 
 ==================== THREAD 4 (TCB: 0x3fc923fc, name: 'failed_assert_t') =====================
-#0  0x40382dba in esp_crosscore_int_send_yield (core_id=core_id@entry=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:144
+#0  0x40382dba in esp_crosscore_int_send_yield (core_id=core_id@entry=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:145
 #1  0x4038601e in vPortYield () at /builds/espressif/esp-idf/components/freertos/port/riscv/port.c:316
 #2  0x00000000 in ?? ()
 Backtrace stopped: frame did not save the PC
 
 ==================== THREAD 5 (TCB: 0x3fc8ea48, name: 'esp_timer') =====================
-#0  0x40385eb4 in vPortClearInterruptMask (mask=1) at /builds/espressif/esp-idf/components/freertos/port/riscv/port.c:177
+#0  0x40385eb4 in vPortClearInterruptMask (mask=1) at /builds/espressif/esp-idf/components/freertos/port/riscv/port.c:178
 #1  0x40385ede in vPortExitCritical () at /builds/espressif/esp-idf/components/freertos/port/riscv/port.c:138
 Backtrace stopped: Cannot access memory at address 0xa5a5a5b1
 

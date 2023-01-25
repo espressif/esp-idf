@@ -1,5 +1,5 @@
 set(srcs "ble_mesh_adapter.c"
-        "ble_mesh_cfg_srv_model.c"
+        "ble_mesh_model.c"
         "ble_mesh_console_lib.c"
         "ble_mesh_console_main.c"
         "ble_mesh_console_system.c"

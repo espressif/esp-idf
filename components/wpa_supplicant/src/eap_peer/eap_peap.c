@@ -1104,7 +1104,7 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 		}
 
 		if (tls_connection_established(sm->ssl_ctx, data->ssl.conn)) {
-			char label[24];
+			char label[24] = {0};
 			wpa_printf(MSG_DEBUG, "EAP-PEAP: TLS done, proceed to Phase 2");
 			os_free(data->key_data);
 			/* draft-josefsson-ppext-eap-tls-eap-05.txt

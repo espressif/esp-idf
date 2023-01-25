@@ -56,6 +56,11 @@ class HeaderFailedContainsCode(HeaderFailed):
         return 'Header Produced non-zero object'
 
 
+class HeaderFailedContainsStaticAssert(HeaderFailed):
+    def __str__(self) -> str:
+        return 'Header uses _Static_assert or static_assert instead of ESP_STATIC_ASSERT'
+
+
 #   Creates a temp file and returns both output as a string and a file name
 #
 def exec_cmd_to_temp_file(what, suffix=''):
@@ -84,6 +89,7 @@ class PublicHeaderChecker:
     PREPROC_OUT_SAME_HRD_FAILED = 5        # -> Both preprocessors produce the same, non-zero output (header file FAILs)
     PREPROC_OUT_DIFFERENT_WITH_EXT_C_HDR_OK = 6    # -> Both preprocessors produce different, non-zero output with extern "C" (header seems OK)
     PREPROC_OUT_DIFFERENT_NO_EXT_C_HDR_FAILED = 7  # -> Both preprocessors produce different, non-zero output without extern "C" (header fails)
+    HEADER_CONTAINS_STATIC_ASSERT = 8      # -> Header file contains _Static_assert instead of static_assert or ESP_STATIC_ASSERT
 
     def log(self, message, debug=False):
         if self.verbose or debug:
@@ -99,6 +105,9 @@ class PublicHeaderChecker:
         self.error_macro = re.compile(r'#error')
         self.error_orphan_kconfig = re.compile(r'#error CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED')
         self.kconfig_macro = re.compile(r'\bCONFIG_[A-Z0-9_]+')
+        self.static_assert = re.compile(r'(_Static_assert|static_assert)')
+        self.defines_assert = re.compile(r'#define[ \t]+ESP_STATIC_ASSERT')
+        self.auto_soc_header = re.compile(r'components/soc/esp[a-z0-9_]+/include(?:/rev[0-9]+)?/soc/[a-zA-Z0-9_]+.h')
         self.assembly_nocode = r'^\s*(\.file|\.text|\.ident).*$'
         self.check_threads = []
 
@@ -170,6 +179,8 @@ class PublicHeaderChecker:
             return self.compile_one_header(header)
         elif res == self.PREPROC_OUT_SAME_HRD_FAILED:
             raise HeaderFailedCppGuardMissing()
+        elif res == self.HEADER_CONTAINS_STATIC_ASSERT:
+            raise HeaderFailedContainsStaticAssert()
         else:
             self.compile_one_header(header)
             temp_header = None
@@ -196,12 +207,20 @@ class PublicHeaderChecker:
 
     def preprocess_one_header(self, header, num, ignore_sdkconfig_issue=False):
         all_compilation_flags = ['-w', '-P', '-E', '-DESP_PLATFORM', '-include', header, self.main_c] + self.include_dir_flags
+        # just strip comments to check for CONFIG_... macros or static asserts
+        rc, out, err = exec_cmd([self.gcc, '-fpreprocessed', '-dD',  '-P',  '-E', header] + self.include_dir_flags)
         if not ignore_sdkconfig_issue:
-            # just strip commnets to check for CONFIG_... macros
-            rc, out, err = exec_cmd([self.gcc, '-fpreprocessed', '-dD',  '-P',  '-E', header] + self.include_dir_flags)
             if re.search(self.kconfig_macro, out):
                 # enable defined #error if sdkconfig.h not included
                 all_compilation_flags.append('-DIDF_CHECK_SDKCONFIG_INCLUDED')
+        # If the file contain _Static_assert or static_assert, make sure it does't not define ESP_STATIC_ASSERT and that it
+        # is not an automatically generated soc header file
+        grp = re.search(self.static_assert, out)
+        # Normalize the potential A//B, A/./B, A/../A, from the name
+        normalized_path = os.path.normpath(header)
+        if grp and not re.search(self.defines_assert, out) and not re.search(self.auto_soc_header, normalized_path):
+            self.log('{}: FAILED: contains {}. Please use ESP_STATIC_ASSERT'.format(header, grp.group(1)), True)
+            return self.HEADER_CONTAINS_STATIC_ASSERT
         try:
             # compile with C++, check for errors, outputs for a temp file
             rc, cpp_out, err, cpp_out_file = exec_cmd_to_temp_file([self.gpp, '--std=c++17'] + all_compilation_flags)

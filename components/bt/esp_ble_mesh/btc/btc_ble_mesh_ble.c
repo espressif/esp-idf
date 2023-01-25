@@ -83,7 +83,7 @@ static void btc_ble_mesh_ble_callback(esp_ble_mesh_ble_cb_param_t *cb_params, ui
     msg.act = act;
 
     btc_transfer_context(&msg, cb_params, cb_params == NULL ? 0 : sizeof(esp_ble_mesh_ble_cb_param_t),
-                         btc_ble_mesh_ble_copy_req_data);
+                         btc_ble_mesh_ble_copy_req_data, btc_ble_mesh_ble_free_req_data);
 }
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN

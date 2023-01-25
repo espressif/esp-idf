@@ -673,7 +673,11 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
             return false;
         }
 
-        if (iv_index > bt_mesh.iv_index + 1) {
+        if ((iv_index > bt_mesh.iv_index + 1)
+#if CONFIG_BLE_MESH_IVU_RECOVERY_IVI
+            || (iv_index == bt_mesh.iv_index + 1 && !iv_update)
+#endif
+            ) {
             BT_WARN("Performing IV Index Recovery");
             (void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
             bt_mesh.iv_index = iv_index;
@@ -681,10 +685,12 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
             goto do_update;
         }
 
+#if !CONFIG_BLE_MESH_IVU_RECOVERY_IVI
         if (iv_index == bt_mesh.iv_index + 1 && !iv_update) {
             BT_WARN("Ignoring new index in normal mode");
             return false;
         }
+#endif
 
         if (!iv_update) {
             /* Nothing to do */
@@ -1544,8 +1550,8 @@ void bt_mesh_net_start(void)
 
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Add Mesh beacon type (Secure Network Beacon) to the exceptional list */
-    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-                                    BLE_MESH_EXCEP_INFO_MESH_BEACON, NULL);
+    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_SUB_CODE_ADD,
+                                    BLE_MESH_EXCEP_LIST_TYPE_MESH_BEACON, NULL);
 #endif
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {

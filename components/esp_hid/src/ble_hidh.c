@@ -59,6 +59,7 @@ static esp_event_loop_handle_t event_loop_handle;
 static uint8_t *s_read_data_val = NULL;
 static uint16_t s_read_data_len = 0;
 static esp_gatt_status_t s_read_status = ESP_GATT_OK;
+static esp_event_handler_t s_event_callback;
 
 static esp_gatt_status_t read_char(esp_gatt_if_t gattc_if, uint16_t conn_id, uint16_t handle, esp_gatt_auth_req_t auth_req, uint8_t **out, uint16_t *out_len)
 {
@@ -112,6 +113,8 @@ static void read_device_services(esp_gatt_if_t gattc_if, esp_hidh_dev_t *dev)
             ESP_LOGE(TAG, "malloc report maps failed");
             return;
         }
+        /* read characteristic value may failed, so we should init report maps */
+        memset(dev->config.report_maps, 0, dev->config.report_maps_len * sizeof(esp_hid_raw_report_map_t));
 
         for (uint16_t s = 0; s < dcount; s++) {
             suuid = service_result[s].uuid.uuid.uuid16;
@@ -622,6 +625,18 @@ static void esp_ble_hidh_dev_dump(esp_hidh_dev_t *dev, FILE *fp)
 
 }
 
+static void esp_ble_hidh_event_handler_wrapper(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+                                               void *event_data)
+{
+    esp_hidh_preprocess_event_handler(event_handler_arg, event_base, event_id, event_data);
+
+    if (s_event_callback) {
+        s_event_callback(event_handler_arg, event_base, event_id, event_data);
+    }
+
+    esp_hidh_post_process_event_handler(event_handler_arg, event_base, event_id, event_data);
+}
+
 esp_err_t esp_ble_hidh_init(const esp_hidh_config_t *config)
 {
     esp_err_t ret;
@@ -659,10 +674,10 @@ esp_err_t esp_ble_hidh_init(const esp_hidh_config_t *config)
             break;
         }
         WAIT_CB();
+
+        s_event_callback = config->callback;
         ret = esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID,
-                                              esp_hidh_process_event_data_handler, NULL);
-        ret |= esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID, config->callback,
-                                              config->callback_arg);
+                                              esp_ble_hidh_event_handler_wrapper, config->callback_arg);
     } while (0);
 
     if (ret != ESP_OK) {
@@ -696,6 +711,8 @@ esp_err_t esp_ble_hidh_deinit(void)
     }
     vSemaphoreDelete(s_ble_hidh_cb_semaphore);
     s_ble_hidh_cb_semaphore = NULL;
+    s_event_callback = NULL;
+
     return err;
 }
 

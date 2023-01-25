@@ -6,4 +6,10 @@ menu "Example Configuration"
         help
             Enter the peer address in aa:bb:cc:dd:ee:ff form to connect to a specific peripheral
 
+    config EXAMPLE_INIT_DEINIT_LOOP
+        bool
+        prompt "Perform init deinit of nimble stack in a loop"
+        help
+            Enable this flag, to perform only stack Init and Deinit in a loop.
+
 endmenu

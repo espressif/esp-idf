@@ -686,6 +686,7 @@ esp_err_t esp_intr_free(intr_handle_t handle)
         //we save.(We can also not use the same exit path for empty shared ints anymore if we delete
         //the desc.) For now, just mark it as free.
         handle->vector_desc->flags&=!(VECDESC_FL_NONSHARED|VECDESC_FL_RESERVED);
+        handle->vector_desc->source = ETS_INTERNAL_UNUSED_INTR_SOURCE;
         //Also kill non_iram mask bit.
         non_iram_int_mask[handle->vector_desc->cpu]&=~(1<<(handle->vector_desc->intno));
     }

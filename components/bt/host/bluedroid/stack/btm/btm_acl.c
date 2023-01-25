@@ -819,22 +819,6 @@ void btm_acl_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
         }
 #endif
     }
-#if (CLASSIC_BT_INCLUDED == TRUE)
-    /* If authentication is done through legacy authentication and esp32 has
-     * not authenticated peer deivce yet, do not proceed for encrytion and
-     * first authenticate it. */
-    else if ((BTM_BothEndsSupportSecureConnections(p->remote_addr) == 0) &&
-            ((p->legacy_auth_state & BTM_ACL_LEGACY_AUTH_SELF) == 0)) {
-        if ((p_dev_rec = btm_find_dev (p->remote_addr)) != NULL) {
-            if (btm_sec_legacy_authentication_mutual(p_dev_rec)) {
-                btm_sec_update_legacy_auth_state(btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR), BTM_ACL_LEGACY_AUTH_SELF);
-            } else {
-                BTM_TRACE_ERROR("%s failed, Resources not available for Authentication procedure", __FUNCTION__);
-            }
-        }
-    }
-#endif
-
 }
 /*******************************************************************************
 **

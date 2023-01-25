@@ -165,6 +165,13 @@ config BT_GATT_MAX_SR_PROFILES
     help
         Maximum GATT Server Profiles Count
 
+config BT_GATT_MAX_SR_ATTRIBUTES
+    int "Max GATT Service Attributes"
+    depends on BT_GATTS_ENABLE && BT_BLUEDROID_ENABLED
+    range 1 500
+    default 100
+    help
+        Maximum GATT Service Attributes Count
 
 
 choice BT_GATTS_SEND_SERVICE_CHANGE_MODE
@@ -199,6 +206,14 @@ config BT_GATTC_ENABLE
     default y
     help
         This option can be close when the app work only on gatt server mode
+
+config BT_GATTC_MAX_CACHE_CHAR
+    int "Max gattc cache characteristic for discover"
+    depends on BT_GATTC_ENABLE
+    range 1 500
+    default 40
+    help
+        Maximum GATTC cache characteristic count
 
 config BT_GATTC_CACHE_NVS_FLASH
     bool "Save gattc cache data to nvs flash"
@@ -978,12 +993,16 @@ menu "BT DEBUG LOG LEVEL"
 endmenu #BT DEBUG LOG LEVEL
 
 config BT_ACL_CONNECTIONS
-    int "BT/BLE MAX ACL CONNECTIONS(1~7)"
+    int "BT/BLE MAX ACL CONNECTIONS(1~9)"
     depends on BT_BLUEDROID_ENABLED
-    range 1 7
+    range 1 9
     default 4
     help
-        Maximum BT/BLE connection count
+        Maximum BT/BLE connection count. The ESP32-C3/S3 chip supports a maximum of 10 instances,
+        including ADV, SCAN and connections. The ESP32-C3/S3 chip can connect up to 9 devices if
+        ADV or SCAN uses only one. If ADV and SCAN are both used, The ESP32-C3/S3 chip is connected
+        to a maximum of 8 devices. Because Bluetooth cannot reclaim used instances once ADV or SCAN
+        is used.
 
 config BT_MULTI_CONNECTION_ENBALE
     bool "Enable BLE multi-conections"
@@ -1022,7 +1041,7 @@ config BT_SMP_ENABLE
 
 config BT_BLE_ACT_SCAN_REP_ADV_SCAN
     bool "Report adv data and scan response individually when BLE active scan"
-    depends on BT_BLUEDROID_ENABLED && (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
+    depends on BT_BLUEDROID_ENABLED && BT_BLE_ENABLED
     default n
     help
         Originally, when doing BLE active scan, Bluedroid will not report adv to application layer

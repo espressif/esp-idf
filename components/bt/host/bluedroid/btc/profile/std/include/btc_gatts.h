@@ -63,7 +63,7 @@ typedef union {
     struct create_attr_tab_args{
         esp_gatt_if_t gatts_if;
         uint8_t srvc_inst_id;
-        uint8_t max_nb_attr;
+        uint16_t max_nb_attr;
         esp_gatts_attr_db_t *gatts_attr_db;
     }create_attr_tab;
 
@@ -157,8 +157,8 @@ typedef struct {
     esp_bt_uuid_t svc_uuid;
     bool        is_tab_creat_svc;
     bool      is_use_svc;
-    uint8_t   num_handle;
-    uint8_t   handle_idx;
+    uint16_t   num_handle;
+    uint16_t   handle_idx;
     uint16_t handles[ESP_GATT_ATTR_HANDLE_MAX];
 } esp_btc_creat_tab_t;
 
@@ -170,6 +170,7 @@ extern esp_btc_creat_tab_t *btc_creat_tab_env_ptr;
 void btc_gatts_call_handler(btc_msg_t *msg);
 void btc_gatts_cb_handler(btc_msg_t *msg);
 void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+void btc_gatts_arg_deep_free(btc_msg_t *msg);
 esp_gatt_status_t btc_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, uint8_t **value);
 
 

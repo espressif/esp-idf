@@ -670,7 +670,7 @@ static void bte_hf_client_evt(tBTA_HF_CLIENT_EVT event, void *p_data)
     msg.pid = BTC_PID_HF_CLIENT;
     msg.act = (uint8_t) event;
 
-    stat = btc_transfer_context(&msg, arg, arg_len, NULL);
+    stat = btc_transfer_context(&msg, arg, arg_len, NULL, NULL);
 
     if (stat) {
         BTC_TRACE_ERROR("%s transfer failed\n", __func__);

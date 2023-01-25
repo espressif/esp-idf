@@ -199,6 +199,7 @@ extern "C" {
 #define SYSTEM_WIFI_RST_M ((SYSTEM_WIFI_RST_V) << (SYSTEM_WIFI_RST_S))
 #define SYSTEM_WIFI_RST_V 0xFFFFFFFF
 #define SYSTEM_WIFI_RST_S 0
+
 #define SYSTEM_WIFIBB_RST           BIT(0)
 #define SYSTEM_FE_RST               BIT(1)
 #define SYSTEM_WIFIMAC_RST          BIT(2)
@@ -212,6 +213,15 @@ extern "C" {
 #define SYSTEM_RW_BTMAC_REG_RST     BIT(11)   /* Bluetooth MAC Regsiters */
 #define SYSTEM_RW_BTLP_REG_RST      BIT(12)   /* Bluetooth Low Power Registers */
 #define SYSTEM_BTBB_REG_RST         BIT(13)   /* Bluetooth Baseband Registers */
+
+#define MODEM_RESET_FIELD_WHEN_PU   (SYSTEM_WIFIBB_RST       | \
+                                     SYSTEM_FE_RST           | \
+                                     SYSTEM_WIFIMAC_RST      | \
+                                     SYSTEM_BTBB_RST         | \
+                                     SYSTEM_BTMAC_RST        | \
+                                     SYSTEM_RW_BTMAC_RST     | \
+                                     SYSTEM_RW_BTMAC_REG_RST | \
+                                     SYSTEM_BTBB_REG_RST)
 
 #define SYSCON_HOST_INF_SEL_REG          (DR_REG_SYSCON_BASE + 0x1C)
 /* SYSCON_PERI_IO_SWAP : R/W ;bitpos:[7:0] ;default: 8'h0 ; */

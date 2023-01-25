@@ -13,6 +13,7 @@
 #include "esp_sleep.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/system_internal.h"
+#include "esp_private/esp_sleep_internal.h"
 #include "esp_log.h"
 #include "esp_newlib.h"
 #include "esp_timer.h"
@@ -492,13 +493,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
     uint32_t result;
     if (deep_sleep) {
-        /* Disable interrupts in case another task writes to RTC memory while we
-         * calculate RTC memory CRC
-         *
-         * Note: for ESP32-S3 running in dual core mode this is currently not enough,
-         * see the assert at top of this function.
-         */
-        portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
+#if !CONFIG_IDF_TARGET_ESP32H2 // IDF does not officially support esp32h2 in v4.4
+        esp_sleep_isolate_digital_gpio();
+#endif
 
 #if SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
         extern char _rtc_text_start[];
@@ -521,8 +518,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         result = rtc_deep_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
-
-        portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
     } else {
         result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
     }
@@ -618,7 +613,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
                                        rtc_vddsdio_config_t vddsdio_config)
 {
     // Enter sleep
-    esp_err_t err = esp_sleep_start(pd_flags);
+    uint32_t reject = esp_sleep_start(pd_flags);
 
     // If VDDSDIO regulator was controlled by RTC registers before sleep,
     // restore the configuration.
@@ -631,7 +626,8 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
         // Wait for the flash chip to start up
         esp_rom_delay_us(flash_enable_time_us);
     }
-    return err;
+
+    return reject ? ESP_ERR_SLEEP_REJECT : ESP_OK;
 }
 
 /**
@@ -781,11 +777,23 @@ esp_err_t esp_light_sleep_start(void)
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
 
-    // Enter sleep, then wait for flash to be ready on wakeup
-    esp_err_t err = esp_light_sleep_inner(pd_flags,
-                                          flash_enable_time_us, vddsdio_config);
+    esp_err_t err = ESP_OK;
+    int64_t final_sleep_duration_us = (int64_t)s_config.sleep_duration - (int64_t)s_config.sleep_time_adjustment;
+    int64_t min_sleep_duration_us = rtc_time_slowclk_to_us(RTC_CNTL_MIN_SLP_VAL_MIN, s_config.rtc_clk_cal_period);
 
-    s_light_sleep_wakeup = true;
+    // reset light sleep wakeup flag before a new light sleep
+    s_light_sleep_wakeup = false;
+
+    // if rtc timer wakeup source is enabled, need to compare final sleep duration and min sleep duration to avoid late wakeup
+    if ((s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) && (final_sleep_duration_us <= min_sleep_duration_us)) {
+        err = ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION;
+    } else {
+        // Enter sleep, then wait for flash to be ready on wakeup
+        err = esp_light_sleep_inner(pd_flags, flash_enable_time_us, vddsdio_config);
+    }
+
+    // light sleep wakeup flag only makes sense after a successful light sleep
+    s_light_sleep_wakeup = (err == ESP_OK);
 
     // FRC1 has been clock gated for the duration of the sleep, correct for that.
 #ifdef CONFIG_IDF_TARGET_ESP32C3
@@ -940,6 +948,7 @@ static void touch_wakeup_prepare(void)
 
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
 {
+#if CONFIG_IDF_TARGET_ESP32
 #if ((defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) || (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2))
     ESP_LOGE(TAG, "Failed to enable wakeup when provide current to external 32kHz crystal");
     return ESP_ERR_NOT_SUPPORTED;
@@ -948,6 +957,8 @@ esp_err_t esp_sleep_enable_touchpad_wakeup(void)
         ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
         return ESP_ERR_INVALID_STATE;
     }
+#endif //CONFIG_IDF_TARGET_ESP32
+
     s_config.wakeup_triggers |= RTC_TOUCH_TRIG_EN;
     return ESP_OK;
 }
@@ -984,10 +995,13 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
     if (!esp_sleep_is_valid_wakeup_gpio(gpio_num)) {
         return ESP_ERR_INVALID_ARG;
     }
+#if CONFIG_IDF_TARGET_ESP32
     if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) {
         ESP_LOGE(TAG, "Conflicting wake-up triggers: touch / ULP");
         return ESP_ERR_INVALID_STATE;
     }
+#endif //CONFIG_IDF_TARGET_ESP32
+
     s_config.ext0_rtc_gpio_num = rtc_io_number_get(gpio_num);
     s_config.ext0_trigger_level = level;
     s_config.wakeup_triggers |= RTC_EXT0_TRIG_EN;
@@ -1287,29 +1301,22 @@ static uint32_t get_power_down_flags(void)
     s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] = ESP_PD_OPTION_ON;
 #endif
 
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
     // RTC_PERIPH is needed for EXT0 wakeup and GPIO wakeup.
-    // If RTC_PERIPH is auto, and EXT0/GPIO aren't enabled, power down RTC_PERIPH.
+    // If RTC_PERIPH is left auto (EXT0/GPIO aren't enabled), RTC_PERIPH will be powered off by default.
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] == ESP_PD_OPTION_AUTO) {
-#if SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
-        uint32_t wakeup_source = RTC_TOUCH_TRIG_EN;
-#if SOC_ULP_SUPPORTED
-        wakeup_source |= RTC_ULP_TRIG_EN;
-#endif
         if (s_config.wakeup_triggers & (RTC_EXT0_TRIG_EN | RTC_GPIO_TRIG_EN)) {
             s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_ON;
-        } else if (s_config.wakeup_triggers & wakeup_source) {
-            // In both rev. 0 and rev. 1 of ESP32, forcing power up of RTC_PERIPH
+        }
+#if CONFIG_IDF_TARGET_ESP32
+        else if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) {
+            // On ESP32, forcing power up of RTC_PERIPH
             // prevents ULP timer and touch FSMs from working correctly.
             s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_OFF;
         }
-#else
-        if (s_config.wakeup_triggers & RTC_GPIO_TRIG_EN) {
-            s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_ON;
-        } else {
-            s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_OFF;
-        }
-#endif // SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
+#endif //CONFIG_IDF_TARGET_ESP32
     }
+#endif //SOC_PM_SUPPORT_RTC_PERIPH_PD
 
 #if SOC_PM_SUPPORT_CPU_PD
     if (!cpu_domain_pd_allowed()) {

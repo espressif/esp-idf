@@ -433,7 +433,9 @@ typedef struct {
     volatile usb_wrap_date_reg_t date;
 } usb_wrap_dev_t;
 
+#ifndef __cplusplus
 _Static_assert(sizeof(usb_wrap_dev_t)==0x400, "Invalid USB_WRAP size");
+#endif
 
 extern usb_wrap_dev_t USB_WRAP;
 

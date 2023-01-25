@@ -620,7 +620,9 @@ typedef struct {
     volatile cp_dma_date_reg_t dma_date;
 } cp_dma_dev_t;
 
+#ifndef __cplusplus
 _Static_assert(sizeof(cp_dma_dev_t) == 0x100, "cp_dma_dev_t should occupy 0x100 bytes in memory");
+#endif
 
 extern cp_dma_dev_t CP_DMA;
 

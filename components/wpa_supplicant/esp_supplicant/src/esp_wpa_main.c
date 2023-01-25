@@ -175,6 +175,8 @@ int wpa_sta_connect(uint8_t *bssid)
             wpa_printf(MSG_DEBUG, "Rejecting bss, validation failed");
             return ret;
         }
+    } else if (esp_wifi_sta_get_prof_authmode_internal() == NONE_AUTH) {
+        esp_set_assoc_ie((uint8_t *)bssid, NULL, 0, false);
     }
 
     return 0;
@@ -206,7 +208,6 @@ int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t 
 static void wpa_sta_disconnected_cb(uint8_t reason_code)
 {
     switch (reason_code) {
-        case WIFI_REASON_UNSPECIFIED:
         case WIFI_REASON_AUTH_EXPIRE:
         case WIFI_REASON_NOT_AUTHED:
         case WIFI_REASON_NOT_ASSOCED:

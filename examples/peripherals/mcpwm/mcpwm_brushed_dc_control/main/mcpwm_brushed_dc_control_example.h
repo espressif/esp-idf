@@ -17,10 +17,10 @@
 extern "C" {
 #endif
 
-#define GPIO_PWM0A_OUT 15   //Set GPIO 15 as PWM0A
-#define GPIO_PWM0B_OUT 16   //Set GPIO 16 as PWM0B
-#define GPIO_PCNT_PINA 18   //Set GPIO 18 as phaseA/C1
-#define GPIO_PCNT_PINB 19   //Set GPIO 19 as phaseB/C2
+#define GPIO_PWM0A_OUT 7    //Set GPIO 15 as PWM0A
+#define GPIO_PWM0B_OUT 15   //Set GPIO 16 as PWM0B
+#define GPIO_PCNT_PINA 36   //Set GPIO 18 as phaseA/C1
+#define GPIO_PCNT_PINB 35   //Set GPIO 19 as phaseB/C2
 
 typedef enum {
     MOTOR_CTRL_MODE_FIXED = 0,

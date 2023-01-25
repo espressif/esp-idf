@@ -108,6 +108,7 @@ typedef struct {
     int                    mgmt_sbuf_num;          /**< WiFi management short buffer number, the minimum value is 6, the maximum value is 32 */
     uint64_t               feature_caps;           /**< Enables additional WiFi features and capabilities */
     bool                   sta_disconnected_pm;    /**< WiFi Power Management for station at disconnected status */
+    int                    espnow_max_encrypt_num; /**< Maximum encrypt number of peers supported by espnow */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -227,6 +228,7 @@ extern uint64_t g_wifi_feature_caps;
     .mgmt_sbuf_num = WIFI_MGMT_SBUF_NUM, \
     .feature_caps = g_wifi_feature_caps, \
     .sta_disconnected_pm = WIFI_STA_DISCONNECTED_PM_ENABLED,  \
+    .espnow_max_encrypt_num = CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM, \
     .magic = WIFI_INIT_CONFIG_MAGIC\
 }
 
@@ -456,6 +458,21 @@ esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_re
 
 
 /**
+  * @brief     Clear AP list found in last scan
+  *
+  * @attention When the obtained ap list fails,bss info must be cleared,otherwise it may cause memory leakage.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_MODE: WiFi mode is wrong
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_clear_ap_list(void);
+
+
+/**
   * @brief     Get information of AP which the ESP32 station is associated with
   *
   * @attention When the obtained country information is empty, it means that the AP does not carry country information
@@ -567,6 +584,8 @@ esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
   * @attention 2. When ESP32 is in STA mode, this API should not be called when STA is scanning or connecting to an external AP
   * @attention 3. When ESP32 is in softAP mode, this API should not be called when softAP has connected to external STAs
   * @attention 4. When ESP32 is in STA+softAP mode, this API should not be called when in the scenarios described above
+  * @attention 5. The channel info set by this API will not be stored in NVS. So If you want to remeber the channel used before wifi stop,
+  *               you need to call this API again after wifi start, or you can call `esp_wifi_set_config()` to store the channel info in NVS.
   *
   * @param     primary  for HT20, primary is the channel number, for HT40, primary is the primary channel
   * @param     second   for HT20, second is ignored, for HT40, second is the second channel
@@ -776,6 +795,7 @@ esp_err_t esp_wifi_get_promiscuous_ctrl_filter(wifi_promiscuous_filter_t *filter
   * @attention 2. For station configuration, bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.
   * @attention 3. ESP32 is limited to only one channel, so when in the soft-AP+station mode, the soft-AP will adjust its channel automatically to be the same as
   *               the channel of the ESP32 station.
+  * @attention 4. The configuration will be stored in NVS
   *
   * @param     interface  interface
   * @param     conf  station or soft-AP configuration
@@ -1161,7 +1181,9 @@ esp_err_t esp_wifi_set_rssi_threshold(int32_t rssi);
   * @brief      Start an FTM Initiator session by sending FTM request
   *             If successful, event WIFI_EVENT_FTM_REPORT is generated with the result of the FTM procedure
   *
-  * @attention  Use this API only in Station mode
+  * @attention  1. Use this API only in Station mode.
+  * @attention  2. If FTM is initiated on a different channel than Station is connected in or internal SoftAP is started in,
+  *                FTM defaults to a single burst in ASAP mode.
   *
   * @param      cfg  FTM Initiator session configuration
   *
@@ -1219,7 +1241,7 @@ esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
   * @attention 3. This configuration would influence nothing until some module configure wake_window
   * @attention 4. A sensible interval which is not too small is recommended (e.g. 100ms)
   *
-  * @param      interval  how much micriosecond would the chip wake up, from 1 to 65535.
+  * @param      interval  how much milliseconds would the chip wake up, from 1 to 65535.
   */
 esp_err_t esp_wifi_set_connectionless_wake_interval(uint16_t interval);
 

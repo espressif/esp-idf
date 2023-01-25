@@ -147,6 +147,10 @@ static u8 *wpa3_build_sae_msg(u8 *bssid, u32 sae_msg_type, size_t *sae_msg_len)
 
     switch (sae_msg_type) {
         case SAE_MSG_COMMIT:
+            /* Do not go for SAE when WPS is ongoing */
+            if (esp_wifi_get_wps_status_internal() != WPS_STATUS_DISABLE) {
+                return NULL;
+            }
             if (ESP_OK != wpa3_build_sae_commit(bssid))
                 return NULL;
             *sae_msg_len = wpabuf_len(g_sae_commit);

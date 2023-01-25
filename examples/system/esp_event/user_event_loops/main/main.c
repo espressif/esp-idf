@@ -94,7 +94,7 @@ void app_main(void)
         .queue_size = 5,
         .task_name = "loop_task", // task will be created
         .task_priority = uxTaskPriorityGet(NULL),
-        .task_stack_size = 2048,
+        .task_stack_size = 3072,
         .task_core_id = tskNO_AFFINITY
     };
 

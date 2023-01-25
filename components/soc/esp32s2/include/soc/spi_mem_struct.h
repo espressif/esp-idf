@@ -699,7 +699,11 @@ typedef volatile struct spi_mem_dev_s {
         uint32_t val;
     } date;
 } spi_mem_dev_t;
+
+#ifndef __cplusplus
 _Static_assert(sizeof(spi_mem_dev_t) == 0x400, "invalid spi_mem_dev_t size");
+#endif
+
 extern spi_mem_dev_t SPIMEM0;
 extern spi_mem_dev_t SPIMEM1;
 #ifdef __cplusplus

@@ -1,4 +1,4 @@
-.. _auto_suspend:
+.. _auto-suspend:
 
 When auto suspend is enabled
 ----------------------------

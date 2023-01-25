@@ -240,12 +240,6 @@ BOOLEAN BTM_SecRegister(tBTM_APPL_INFO *p_cb_info)
         if (memcmp(btm_cb.devcb.id_keys.ir, &temp_value, sizeof(BT_OCTET16)) == 0) {
             btm_ble_reset_id();
         }
-#if (!BLE_UPDATE_BLE_ADDR_TYPE_RPA)
-        BD_ADDR peer_addr = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
-        BT_OCTET16 peer_irk = {0x0};
-        /* add local irk to controller */
-        btsnd_hcic_ble_add_device_resolving_list (0, peer_addr, peer_irk, btm_cb.devcb.id_keys.irk);
-#endif
     } else {
         BTM_TRACE_WARNING("%s p_cb_info->p_le_callback == NULL\n", __func__);
     }
@@ -3176,6 +3170,10 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
         }
     }
 
+    if(!p_dev_rec) {
+        return;
+    }
+
     /* If this is a bonding procedure can disconnect the link now */
     if ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)
             && (p_dev_rec->sec_flags & BTM_SEC_AUTHENTICATED)) {
@@ -3957,6 +3955,10 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
                 p_dev_rec = NULL;
             }
         }
+    }
+
+    if(!p_dev_rec) {
+        return;
     }
 
     p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
@@ -4802,6 +4804,10 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
         }
     }
 
+    if(!p_dev_rec) {
+        return;
+    }
+
     /* We will save link key only if the user authorized it - BTE report link key in all cases */
 #ifdef BRCM_NONE_BTE
     if (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED)
@@ -5196,6 +5202,15 @@ static tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec)
         }
         return (BTM_CMD_STARTED);
     }
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    tACL_CONN *p_acl_cb = btm_handle_to_acl(p_dev_rec->hci_handle);
+    /* If esp32 has not authenticated peer deivce yet, just remove the flag of BTM_SEC_AUTHENTICATED. */
+    if ((BTM_BothEndsSupportSecureConnections(p_acl_cb->remote_addr) == 0) &&
+        ((p_acl_cb->legacy_auth_state & BTM_ACL_LEGACY_AUTH_SELF) == 0)) {
+        p_dev_rec->sec_flags &= ~BTM_SEC_AUTHENTICATED;
+    }
+#endif
 
     /* If connection is not authenticated and authentication is required */
     /* start authentication and return PENDING to the caller */

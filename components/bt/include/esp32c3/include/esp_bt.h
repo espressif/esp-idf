@@ -12,13 +12,14 @@
 #include "esp_err.h"
 #include "sdkconfig.h"
 #include "esp_task.h"
+#include "esp_assert.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02112280
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02209230
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -141,6 +142,12 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BT_CTRL_CODED_AGC_RECORRECT        0
 #endif
 
+#ifdef CONFIG_BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+#define BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX CONFIG_BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+#else
+#define BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX  0
+#endif
+
 #define AGC_RECORRECT_EN       ((BT_CTRL_AGC_RECORRECT_EN << 0) | (BT_CTRL_CODED_AGC_RECORRECT <<1))
 
 
@@ -181,10 +188,11 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .slave_ce_len_min = SLAVE_CE_LEN_MIN_DEFAULT,                          \
     .hw_recorrect_en = AGC_RECORRECT_EN,                                   \
     .cca_thresh = CONFIG_BT_CTRL_HW_CCA_VAL,                               \
+    .scan_backoff_upperlimitmax = BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,      \
 }
 
 #else
-#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable bluetooth in menuconfig to use bt.h");
+#define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; ESP_STATIC_ASSERT(0, "please enable bluetooth in menuconfig to use esp_bt.h");
 #endif
 
 /**
@@ -248,6 +256,7 @@ typedef struct {
     uint8_t slave_ce_len_min;
     uint8_t hw_recorrect_en;
     uint8_t cca_thresh;                     /*!< cca threshold*/
+    uint16_t scan_backoff_upperlimitmax;    /*!< scan backoff upperlimitmax value */
 } esp_bt_controller_config_t;
 
 /**

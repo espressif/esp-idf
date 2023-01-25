@@ -145,7 +145,7 @@ void bta_hh_co_data(UINT8 dev_handle, UINT8 *p_rpt, UINT16 len, tBTA_HH_PROTO_MO
     p_data.int_data.handle = dev_handle;
     p_data.int_data.p_data = p_buf;
     p_data.int_data.proto_mode = mode;
-    status = btc_transfer_context(&msg, &p_data, sizeof(tBTA_HH), NULL);
+    status = btc_transfer_context(&msg, &p_data, sizeof(tBTA_HH), NULL, NULL);
     assert(status == BT_STATUS_SUCCESS);
 }
 

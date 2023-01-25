@@ -188,6 +188,15 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, gpio_num_t gpio_num);
 #define gpio_hal_od_enable(hal, gpio_num) gpio_ll_od_enable((hal)->dev, gpio_num)
 
 /**
+ * @brief  Select a function for the pin in the IOMUX
+ *
+ * @param  hw Peripheral GPIO hardware instance address.
+ * @param  gpio_num GPIO number
+ * @param  func Function to assign to the pin
+ */
+#define gpio_hal_func_sel(hal, gpio_num, func)  gpio_ll_func_sel((hal)->dev, gpio_num, func)
+
+/**
  * @brief  GPIO set output level
  *
  * @param  hal Context of the HAL layer
@@ -281,6 +290,22 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, gpio_num_t gpio_num);
 #define gpio_hal_hold_dis(hal, gpio_num) gpio_ll_hold_dis((hal)->dev, gpio_num)
 
 /**
+  * @brief Get wether digital gpio pad is held
+  *
+  * @param hal Context of the HAL layer
+  * @param gpio_num GPIO number, only support output GPIOs
+  *
+  * @note digital io means io pad powered by VDD3P3_CPU or VDD_SPI
+  *       rtc io means io pad powered by VDD3P3_RTC
+  *       caller must ensure that gpio_num is a digital io pad
+  *
+  * @return
+  *     - true  digital gpio pad is held
+  *     - false digital gpio pad is unheld
+  */
+#define gpio_hal_is_digital_io_hold(hal, gpio_num) gpio_ll_is_digital_io_hold((hal)->dev, gpio_num)
+
+/**
   * @brief Enable all digital gpio pad hold function during Deep-sleep.
   *
   * When the chip is in Deep-sleep mode, all digital gpio will hold the state before sleep, and when the chip is woken up,
@@ -299,6 +324,17 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, gpio_num_t gpio_num);
   * @param hal Context of the HAL layer
   */
 #define gpio_hal_deep_sleep_hold_dis(hal) gpio_ll_deep_sleep_hold_dis((hal)->dev)
+
+/**
+  * @brief Get whether all digital gpio pad hold function during Deep-sleep is enabled.
+  *
+  * @param hal Context of the HAL layer
+  *
+  * @return
+  *     - true  deep sleep hold is enabled
+  *     - false deep sleep hold is disabled
+  */
+#define gpio_hal_deep_sleep_hold_is_en(hal) gpio_ll_deep_sleep_hold_is_en((hal)->dev)
 
 /**
   * @brief Set pad input to a peripheral signal through the IOMUX.
@@ -322,7 +358,7 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, gpio_num_t gpio_num);
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**
-  * @brief Force hold digital and rtc gpio pad.
+  * @brief Force hold digital gpio pad.
   * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
   *
   * @param hal Context of the HAL layer
@@ -330,7 +366,7 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, gpio_num_t gpio_num);
 #define gpio_hal_force_hold_all(hal) gpio_ll_force_hold_all((hal)->dev)
 
 /**
-  * @brief Force unhold digital and rtc gpio pad.
+  * @brief Force unhold digital gpio pad.
   * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
   *
   * @param hal Context of the HAL layer

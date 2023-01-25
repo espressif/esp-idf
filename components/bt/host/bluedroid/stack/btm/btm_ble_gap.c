@@ -1018,9 +1018,7 @@ uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *
         }
     } else if(*own_bda_type == BLE_ADDR_PUBLIC_ID || *own_bda_type == BLE_ADDR_RANDOM_ID) {
         if((btm_cb.ble_ctr_cb.addr_mgnt_cb.exist_addr_bit & BTM_BLE_GAP_ADDR_BIT_RESOLVABLE) == BTM_BLE_GAP_ADDR_BIT_RESOLVABLE) {
-#if (BLE_UPDATE_BLE_ADDR_TYPE_RPA)
             *own_bda_type = BLE_ADDR_RANDOM;
-#endif
             btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
             memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr, btm_cb.ble_ctr_cb.addr_mgnt_cb.resolvale_addr, BD_ADDR_LEN);
             btsnd_hcic_ble_set_random_addr(btm_cb.ble_ctr_cb.addr_mgnt_cb.resolvale_addr);
@@ -3675,21 +3673,20 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
         0x04 Scan Response (SCAN_RSP)
         0x05-0xFF Reserved for future use
     */
-   //if scan duplicate is enabled, the adv packet without scan response is allowed to report to higher layer
-   if(p_le_inq_cb->scan_duplicate_filter == BTM_BLE_SCAN_DUPLICATE_ENABLE) {
-       /*
-        Bluedroid will put the advertising packet and scan response into a packet and send it to the higher layer.
-        If two advertising packets are not with the same address, or can't be combined into a packet, then the first advertising
-        packet will be discarded. So we added the following judgment:
-        1. For different addresses, send the last advertising packet to higher layer
-        2. For same address and same advertising type (not scan response), send the last advertising packet to higher layer
-        3. For same address and scan response, do nothing
-        */
-       int same_addr = memcmp(bda, p_le_inq_cb->adv_addr, BD_ADDR_LEN);
-       if (same_addr != 0 || (same_addr == 0 && evt_type != BTM_BLE_SCAN_RSP_EVT)) {
-            btm_ble_process_last_adv_pkt();
-       }
-   }
+    // The adv packet without scan response is allowed to report to higher layer
+    /*
+    Bluedroid will put the advertising packet and scan response into a packet and send it to the higher layer.
+    If two advertising packets are not with the same address, or can't be combined into a packet, then the first advertising
+    packet will be discarded. So we added the following judgment:
+    1. For different addresses, send the last advertising packet to higher layer
+    2. For same address and same advertising type (not scan response), send the last advertising packet to higher layer
+    3. For same address and scan response, do nothing
+    */
+    int same_addr = memcmp(bda, p_le_inq_cb->adv_addr, BD_ADDR_LEN);
+    if (same_addr != 0 || (same_addr == 0 && evt_type != BTM_BLE_SCAN_RSP_EVT)) {
+        btm_ble_process_last_adv_pkt();
+    }
+
 
     p_i = btm_inq_db_find (bda);
 
@@ -4118,6 +4115,59 @@ tBTM_STATUS btm_ble_stop_adv(void)
         }
         osi_mutex_unlock(&adv_enable_lock);
     }
+    return rt;
+}
+
+tBTM_STATUS btm_ble_set_random_addr(BD_ADDR random_bda)
+{
+    tBTM_STATUS rt = BTM_SUCCESS;
+
+    osi_mutex_lock(&adv_enable_lock, OSI_MUTEX_MAX_TIMEOUT);
+    osi_mutex_lock(&scan_enable_lock, OSI_MUTEX_MAX_TIMEOUT);
+
+    if (btm_cb.ble_ctr_cb.inq_var.adv_mode == BTM_BLE_ADV_ENABLE) {
+        if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE)) {
+            osi_sem_take(&adv_enable_sem, OSI_SEM_MAX_TIMEOUT);
+            rt = adv_enable_status;
+        } else {
+            rt = BTM_BAD_VALUE_RET;
+        }
+    }
+
+    if (BTM_BLE_IS_DISCO_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
+        if (btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_SCAN_DUPLICATE_DISABLE)) {
+            osi_sem_take(&scan_enable_sem, OSI_SEM_MAX_TIMEOUT);
+            rt = scan_enable_status;
+        } else {
+            rt = BTM_BAD_VALUE_RET;
+        }
+    }
+
+    if (rt == BTM_SUCCESS) {
+        btsnd_hcic_ble_set_random_addr(random_bda);
+    }
+
+    if (btm_cb.ble_ctr_cb.inq_var.adv_mode == BTM_BLE_ADV_ENABLE) {
+        if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_ENABLE)) {
+            osi_sem_take(&adv_enable_sem, OSI_SEM_MAX_TIMEOUT);
+            rt = adv_enable_status;
+        } else {
+            rt = BTM_BAD_VALUE_RET;
+        }
+    }
+
+    if (BTM_BLE_IS_DISCO_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
+        if (btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, btm_cb.ble_ctr_cb.inq_var.scan_duplicate_filter)) {
+            osi_sem_take(&scan_enable_sem, OSI_SEM_MAX_TIMEOUT);
+            rt = scan_enable_status;
+        } else {
+            rt = BTM_BAD_VALUE_RET;
+        }
+    }
+
+    osi_mutex_unlock(&adv_enable_lock);
+    osi_mutex_unlock(&scan_enable_lock);
+
     return rt;
 }
 

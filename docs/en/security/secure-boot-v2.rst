@@ -223,7 +223,7 @@ How To Enable Secure Boot V2
 
     4. Select the desired UART ROM download mode in "UART ROM download mode". By default, it is set to "Permanently switch to Secure mode" which is generally recommended. For production devices, the most secure option is to set it to "Permanently disabled".
 
-5. Set other menuconfig options (as desired). Pay particular attention to the "Bootloader Config" options, as you can only flash the bootloader once. Then exit menuconfig and save your configuration.
+5. Set other menuconfig options (as desired). Then exit menuconfig and save your configuration.
 
 6. The first time you run ``make`` or ``idf.py build``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
 
@@ -284,7 +284,7 @@ To use remote signing, disable the option "Sign binaries during build". The priv
 
 After the app image and partition table are built, the build system will print signing steps using espsecure.py::
 
-  espsecure.py sign_data --version 2 --keyfile PRIVATE_SIGNING_KEY BINARY_FILE
+  espsecure.py sign_data BINARY_FILE --version 2 --keyfile PRIVATE_SIGNING_KEY
 
 The above command appends the image signature to the existing binary. You can use the `--output` argument to write the signed binary to a separate file::
 
