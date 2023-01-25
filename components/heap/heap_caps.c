@@ -456,7 +456,7 @@ IRAM_ATTR static void *heap_caps_calloc_base( size_t n, size_t size, uint32_t ca
 
     result = heap_caps_malloc_base(size_bytes, caps);
     if (result != NULL) {
-        bzero(result, size_bytes);
+        memset(result, 0, size_bytes);
     }
     return result;
 }
@@ -517,7 +517,7 @@ size_t heap_caps_get_largest_free_block( uint32_t caps )
 
 void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps )
 {
-    bzero(info, sizeof(multi_heap_info_t));
+    memset(info, 0, sizeof(multi_heap_info_t));
 
     heap_t *heap;
     SLIST_FOREACH(heap, &registered_heaps, next) {
