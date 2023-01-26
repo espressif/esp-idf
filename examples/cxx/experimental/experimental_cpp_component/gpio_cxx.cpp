@@ -145,12 +145,12 @@ GPIO_Output::GPIO_Output(GPIONum num) : GPIOBase(num)
     GPIO_CHECK_THROW(gpio_set_direction(gpio_to_driver_type(gpio_num), GPIO_MODE_OUTPUT));
 }
 
-void GPIO_Output::set_high()
+void GPIO_Output::set_high() const
 {
     GPIO_CHECK_THROW(gpio_set_level(gpio_to_driver_type(gpio_num), 1));
 }
 
-void GPIO_Output::set_low()
+void GPIO_Output::set_low() const
 {
     GPIO_CHECK_THROW(gpio_set_level(gpio_to_driver_type(gpio_num), 0));
 }
