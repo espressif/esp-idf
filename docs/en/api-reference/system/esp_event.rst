@@ -22,7 +22,7 @@ These two appear prominently in the event loop library APIs.
 
 Using this library roughly entails the following flow:
 
-1. A user defines a function that should run when an event is posted to a loop. This function is referred to  as the event handler. It should have the same signature as :cpp:type:`esp_event_handler_t`.
+1. A user defines a function that should run when an event is posted to a loop. This function is referred to as the event handler. It should have the same signature as :cpp:type:`esp_event_handler_t`.
 2. An event loop is created using :cpp:func:`esp_event_loop_create`, which outputs a handle to the loop of type :cpp:type:`esp_event_loop_handle_t`. Event loops created using this API are referred to as user event loops. There is, however, a special type of event loop called the default event loop which are discussed :ref:`here <esp-event-default-loops>`.
 3. Components register event handlers to the loop using :cpp:func:`esp_event_handler_register_with`. Handlers can be registered with multiple loops, more on that :ref:`here <esp-event-handler-registration>`.
 4. Event sources post an event to the loop using :cpp:func:`esp_event_post_to`.
@@ -105,8 +105,8 @@ Event base definition:
 .. note::
 
     In IDF, the base identifiers for system events are uppercase and are postfixed with ``_EVENT``. For example, the base for Wi-Fi events is declared and defined
-    as ``WIFI_EVENT``, the ethernet event base ``ETHERNET_EVENT``, and so on. The purpose is to have event bases look like constants (although
-    they are global variables considering the defintions of macros ``ESP_EVENT_DECLARE_BASE`` and ``ESP_EVENT_DEFINE_BASE``).
+    as ``WIFI_EVENT``, the Ethernet event base ``ETHERNET_EVENT``, and so on. The purpose is to have event bases look like constants (although
+    they are global variables considering the definitions of macros ``ESP_EVENT_DECLARE_BASE`` and ``ESP_EVENT_DEFINE_BASE``).
 
 For event ID's, declaring them as enumerations is recommended. Once again, for visibility, these are typically placed in public header files.
 

@@ -19,7 +19,7 @@ Vanilla FreeRTOS allows ports and applications to configure the kernel by adding
 
 ESP-IDF FreeRTOS can be configured in the project configuration menu (``idf.py menuconfig``) under ``Component Config/FreeRTOS``. The following section highlights some of the ESP-IDF FreeRTOS configuration options. For a full list of ESP-IDF FreeRTOS configurations, see :doc:`/api-reference/kconfig`
 
-- :ref:`CONFIG_FREERTOS_UNICORE` will run ESP-IDF FreeRTOS only on CPU0. Note that this is **not equivalent to running Vanilla FreeRTOS**. Futhermore, this option may affect behavior of components other than :component:`freertos`. For more details regarding the effects of running ESP-IDF FreeRTOS on a single core, refer to :ref:`freertos-smp-single-core`. Alternatively, users can also search for occurrences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
+- :ref:`CONFIG_FREERTOS_UNICORE` will run ESP-IDF FreeRTOS only on CPU0. Note that this is **not equivalent to running Vanilla FreeRTOS**. Furthermore, this option may affect behavior of components other than :component:`freertos`. For more details regarding the effects of running ESP-IDF FreeRTOS on a single core, refer to :ref:`freertos-smp-single-core`. Alternatively, users can also search for occurrences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
 
 - :ref:`CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER` will enclose all task functions within a wrapper function. In the case that a task function mistakenly returns (i.e. does not call :cpp:func:`vTaskDelete`), the call flow will return to the wrapper function. The wrapper function will then log an error and abort the application, as illustrated below::
 
@@ -66,7 +66,7 @@ The ``main`` task is one of multiple tasks that are automatically spawned by ESP
         * - IPC Tasks (``ipcx``)
           - CPU0 and CPU1
           - 24
-          - IPC tasks created for (and pinned to ) each CPU. IPC tasks are used to implement the IPC feature. See :doc:`/api-reference/system/ipc` for more details.
+          - IPC tasks created for (and pinned to) each CPU. IPC tasks are used to implement the Inter-processor Call (IPC) feature. See :doc:`/api-reference/system/ipc` for more details.
 
 .. only:: CONFIG_FREERTOS_UNICORE
 
@@ -82,10 +82,10 @@ The ``main`` task is one of multiple tasks that are automatically spawned by ESP
           - CPU0
           - 1
           - Task that simply calls ``app_main``. This task will self delete when ``app_main`` returns
-        * - Idle Tasks (``IDLEx``)
-          - CPU0 and CPU1
+        * - Idle Tasks (``IDLE``)
+          - CPU0
           - 0
-          - Idle task created for (and pinned to) each CPU
+          - Idle task created for CPU0
     
     .. note::
 
@@ -111,7 +111,6 @@ Timer API
 
 .. include-build-file:: inc/timers.inc
 
-
 Event Group API
 ---------------
 
@@ -121,7 +120,6 @@ Stream Buffer API
 -----------------
 
 .. include-build-file:: inc/stream_buffer.inc
-
 
 Message Buffer API
 ------------------
