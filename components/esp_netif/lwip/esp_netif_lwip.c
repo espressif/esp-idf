@@ -677,6 +677,16 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
         return NULL;
     }
 
+#if ESP_DHCPS
+    // DHCP server and client cannot be configured together
+    if((esp_netif_config->base->flags & ESP_NETIF_DHCP_SERVER) &&
+       (esp_netif_config->base->flags & ESP_NETIF_DHCP_CLIENT)) {
+        ESP_LOGE(TAG, "%s: Failed to configure netif with config=%p (DHCP server and client cannot be configured together)",
+        __func__,  esp_netif_config);
+        return NULL;
+    }
+#endif
+
     // Create parent esp-netif object
     esp_netif_t *esp_netif = calloc(1, sizeof(struct esp_netif_obj));
     if (!esp_netif) {
