@@ -228,7 +228,7 @@ void esp_sntp_servermode_dhcp(bool enable);
 static inline __attribute__((deprecated("use esp_sntp_setoperatingmode() instead")))
 void sntp_setoperatingmode(u8_t operating_mode)
 {
-    esp_sntp_setoperatingmode(operating_mode);
+    esp_sntp_setoperatingmode((esp_sntp_operatingmode_t)operating_mode);
 }
 
 static inline __attribute__((deprecated("use esp_sntp_servermode_dhcp() instead")))
