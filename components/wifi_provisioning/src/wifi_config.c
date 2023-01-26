@@ -314,6 +314,19 @@ esp_err_t wifi_prov_config_data_handler(uint32_t session_id, const uint8_t *inbu
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* Authorize before dispatching command */
+    const wifi_prov_config_handlers_t *h = (const wifi_prov_config_handlers_t *)priv_data;
+    esp_err_t auth_status = ESP_OK;
+    if (h->config_auth) {
+        auth_status = h->config_auth(
+                (const char*)req->auth_token.data,
+                req->auth_token.len);
+    }
+    if (ESP_OK != auth_status) {
+        ESP_LOGE(TAG, "Proto command dispatch not authorized");
+        return ESP_FAIL;
+    }
+
     wi_fi_config_payload__init(&resp);
     ret = wifi_prov_config_command_dispatcher(req, &resp, priv_data);
     if (ret != ESP_OK) {

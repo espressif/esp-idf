@@ -129,6 +129,7 @@ struct  WiFiConfigPayload
 {
   ProtobufCMessage base;
   WiFiConfigMsgType msg;
+  ProtobufCBinaryData auth_token;
   WiFiConfigPayload__PayloadCase payload_case;
   union {
     CmdGetStatus *cmd_get_status;
@@ -141,7 +142,7 @@ struct  WiFiConfigPayload
 };
 #define WI_FI_CONFIG_PAYLOAD__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&wi_fi_config_payload__descriptor) \
-    , WI_FI_CONFIG_MSG_TYPE__TypeCmdGetStatus, WI_FI_CONFIG_PAYLOAD__PAYLOAD__NOT_SET, {0} }
+    , WI_FI_CONFIG_MSG_TYPE__TypeCmdGetStatus, {0,NULL}, WI_FI_CONFIG_PAYLOAD__PAYLOAD__NOT_SET, {0} }
 
 
 /* CmdGetStatus methods */

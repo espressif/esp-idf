@@ -135,6 +135,7 @@ struct  WiFiScanPayload
   ProtobufCMessage base;
   WiFiScanMsgType msg;
   Status status;
+  ProtobufCBinaryData auth_token;
   WiFiScanPayload__PayloadCase payload_case;
   union {
     CmdScanStart *cmd_scan_start;
@@ -147,7 +148,7 @@ struct  WiFiScanPayload
 };
 #define WI_FI_SCAN_PAYLOAD__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&wi_fi_scan_payload__descriptor) \
-    , WI_FI_SCAN_MSG_TYPE__TypeCmdScanStart, STATUS__Success, WI_FI_SCAN_PAYLOAD__PAYLOAD__NOT_SET, {0} }
+    , WI_FI_SCAN_MSG_TYPE__TypeCmdScanStart, STATUS__Success, {0,NULL}, WI_FI_SCAN_PAYLOAD__PAYLOAD__NOT_SET, {0} }
 
 
 /* CmdScanStart methods */

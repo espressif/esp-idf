@@ -25,6 +25,16 @@
 
 #include "wifi_provisioning_priv.h"
 
+/**
+ * @brief Enables the SpinDance changes in wifi_prov_mgr_start_provisioning().
+ *
+ * The reasoning behind the SpinDance changes has been lost. Note that the code that remains
+ * (getting the current WiFi configuration) is effectively useless, because the restoring of
+ * the old WiFi config is performed inside the err: label but only if the WIFI_PROV_SETTING_BIT
+ * is set, and the code that sets the bit is commented out.
+ */
+#define INCLUDE_SPINDANCE_PROVISIONING_SETUP_CHANGES 1
+
 #define WIFI_PROV_MGR_VERSION      "v1.1"
 #define WIFI_PROV_STORAGE_BIT       BIT0
 #define WIFI_PROV_SETTING_BIT       BIT1
@@ -133,6 +143,7 @@ struct wifi_prov_mgr_ctx {
     wifi_ap_record_t *ap_list[14];
     wifi_ap_record_t *ap_list_sorted[MAX_SCAN_RESULTS];
     wifi_scan_config_t scan_cfg;
+    wifi_prov_cb_auth_t auth_cb;
 };
 
 /* Mutex to lock/unlock access to provisioning singleton
@@ -350,6 +361,7 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
         protocomm_delete(prov_ctx->pc);
         return ESP_ERR_NO_MEM;
     }
+    prov_ctx->wifi_prov_handlers->config_auth = prov_ctx->auth_cb;
 
     /* Add protocomm endpoint for Wi-Fi station configuration */
     ret = protocomm_add_endpoint(prov_ctx->pc, "prov-config",
@@ -372,6 +384,7 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
         protocomm_delete(prov_ctx->pc);
         return ESP_ERR_NO_MEM;
     }
+    prov_ctx->wifi_scan_handlers->scan_auth = prov_ctx->auth_cb;
 
     /* Add endpoint for scanning Wi-Fi APs and sending scan list */
     ret = protocomm_add_endpoint(prov_ctx->pc, "prov-scan",
@@ -493,6 +506,7 @@ static void prov_stop_task(void *arg)
     /* This delay is so that the client side app is notified first
      * and then the provisioning is stopped. Generally 1000ms is enough. */
     uint32_t cleanup_delay = prov_ctx->cleanup_delay > 100 ? prov_ctx->cleanup_delay : 100;
+    ESP_LOGI(TAG, "Delaying %d ms", cleanup_delay);
     vTaskDelay(cleanup_delay / portTICK_PERIOD_MS);
 
     /* All the extra application added endpoints are also
@@ -930,6 +944,8 @@ esp_err_t wifi_prov_mgr_wifi_scan_start(bool blocking, bool passive,
         RELEASE_LOCK(prov_ctx_lock);
         return ESP_OK;
     }
+
+    execute_event_cb(WIFI_PROV_SCAN_STARTED, NULL, 0);
 
     /* Clear sorted list for new entries */
     for (uint8_t i = 0; i < MAX_SCAN_RESULTS; i++) {
@@ -1435,6 +1451,10 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
      * thread doesn't interfere with this process */
     prov_ctx->prov_state = WIFI_PROV_STATE_STARTING;
 
+#if INCLUDE_SPINDANCE_PROVISIONING_SETUP_CHANGES
+    wifi_config_t wifi_cfg_old = {0};
+    esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg_old);
+#else
     /* Start Wi-Fi in Station Mode.
      * This is necessary for scanning to work */
     ret = esp_wifi_set_mode(WIFI_MODE_STA);
@@ -1479,6 +1499,7 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
         ESP_LOGE(TAG, "Failed to disconnect");
         goto err;
     }
+#endif // INCLUDE_SPINDANCE_PROVISIONING_SETUP_CHANGES
 
 #ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
     /* Initialize app data */
@@ -1640,4 +1661,12 @@ esp_err_t wifi_prov_mgr_reset_sm_state_on_failure(void)
 exit:
     RELEASE_LOCK(prov_ctx_lock);
     return err;
+}
+
+esp_err_t wifi_prov_mgr_set_authorization_cb(wifi_prov_cb_auth_t auth_cb) {
+    if (!prov_ctx) {
+        return ESP_FAIL;
+    }
+    prov_ctx->auth_cb = auth_cb;
+    return ESP_OK;
 }
