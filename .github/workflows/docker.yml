@@ -74,14 +74,14 @@ jobs:
             IDF_CLONE_URL=${{ github.server_url }}/${{ github.repository }}.git
             IDF_CLONE_BRANCH_OR_TAG=${{ env.CLONE_BRANCH_OR_TAG }}
 
-      - name: Update Docker Hub repository description (master branch)
-        if: ${{ github.ref_type == 'branch' && github.ref_name == 'master' }}
-        uses: peter-evans/dockerhub-description@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          # Token based authentication is not supported here:
-          # https://github.com/peter-evans/dockerhub-description/issues/10
-          # https://github.com/docker/roadmap/issues/115#issuecomment-891694974
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          repository: ${{ env.DOCKERHUB_REPO }}
-          readme-filepath: ./tools/docker/README.md
+      # - name: Update Docker Hub repository description (master branch)
+      #   if: ${{ github.ref_type == 'branch' && github.ref_name == 'master' }}
+      #   uses: peter-evans/dockerhub-description@v3
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     # Token based authentication is not supported here:
+      #     # https://github.com/peter-evans/dockerhub-description/issues/10
+      #     # https://github.com/docker/roadmap/issues/115#issuecomment-891694974
+      #     password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      #     repository: ${{ env.DOCKERHUB_REPO }}
+      #     readme-filepath: ./tools/docker/README.md
