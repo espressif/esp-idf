@@ -303,14 +303,14 @@ public:
      *
      * @throws GPIOException if the underlying driver function fails.
      */
-    void set_high();
+    void set_high() const;
 
     /**
      * @brief Set GPIO to low level.
      *
      * @throws GPIOException if the underlying driver function fails.
      */
-    void set_low();
+    void set_low() const;
 
     using GPIOBase::set_drive_strength;
     using GPIOBase::get_drive_strength;
