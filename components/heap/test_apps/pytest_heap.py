@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
 import pytest
@@ -92,3 +92,18 @@ def test_heap_trace_dump(dut: Dut) -> None:
     dut.expect_exact('Enter next test, or \'enter\' to see menu')
     dut.write('[heap-trace]')
     dut.expect_unity_test_output(timeout=100)
+
+
+@pytest.mark.generic
+@pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c3', 'esp32s3'], reason='test failed')
+@pytest.mark.parametrize(
+    'config',
+    [
+        'mem_prot'
+    ]
+)
+def test_memory_protection(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('[heap][mem_prot]')
+    dut.expect_unity_test_output(timeout=300)

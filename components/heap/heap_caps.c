@@ -131,7 +131,9 @@ IRAM_ATTR static void *heap_caps_malloc_base( size_t size, uint32_t caps)
                 //doesn't cover, see if they're available in other prios.
                 if ((get_all_caps(heap) & caps) == caps) {
                     //This heap can satisfy all the requested capabilities. See if we can grab some memory using it.
-                    if ((caps & MALLOC_CAP_EXEC) && esp_ptr_in_diram_dram((void *)heap->start)) {
+                    // If MALLOC_CAP_EXEC is requested but the DRAM and IRAM are on the same addresses (like on esp32c6)
+                    // proceed as for a default allocation.
+                    if ((caps & MALLOC_CAP_EXEC) && !esp_dram_match_iram() && esp_ptr_in_diram_dram((void *)heap->start)) {
                         //This is special, insofar that what we're going to get back is a DRAM address. If so,
                         //we need to 'invert' it (lowest address in DRAM == highest address in IRAM and vice-versa) and
                         //add a pointer to the DRAM equivalent before the address we're going to return.

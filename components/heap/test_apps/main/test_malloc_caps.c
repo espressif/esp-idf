@@ -278,3 +278,23 @@ TEST_CASE("RTC memory shoule be lowest priority and its free size should be big 
     free(ptr);
 }
 #endif
+
+TEST_CASE("test memory protection features", "[heap][mem_prot]")
+{
+    // try to allocate memory in IRAM and check that if memory protection is active,
+    // no memory is being allocated
+    uint32_t *iram_ptr = heap_caps_malloc(4, MALLOC_CAP_EXEC);
+
+#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+    // System memory protection not active, check that iram_ptr is not null
+    // Check that iram_ptr is in IRAM
+    TEST_ASSERT_NOT_NULL(iram_ptr);
+    TEST_ASSERT(true == esp_ptr_in_iram(iram_ptr));
+
+    // free the memory
+    heap_caps_free(iram_ptr);
+#else
+    // System memory protection is active, DIRAM seen as DRAM, iram_ptr should be null
+    TEST_ASSERT_NULL(iram_ptr);
+#endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+}
