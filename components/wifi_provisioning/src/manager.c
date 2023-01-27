@@ -506,7 +506,7 @@ static void prov_stop_task(void *arg)
     /* This delay is so that the client side app is notified first
      * and then the provisioning is stopped. Generally 1000ms is enough. */
     uint32_t cleanup_delay = prov_ctx->cleanup_delay > 100 ? prov_ctx->cleanup_delay : 100;
-    ESP_LOGI(TAG, "Delaying %d ms", cleanup_delay);
+    ESP_LOGI(TAG, "Delaying %lu ms", cleanup_delay);
     vTaskDelay(cleanup_delay / portTICK_PERIOD_MS);
 
     /* All the extra application added endpoints are also
