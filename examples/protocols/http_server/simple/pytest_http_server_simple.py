@@ -115,17 +115,18 @@ def test_examples_protocol_http_server_simple(dut: Dut) -> None:
     if not client.test_post_handler(got_ip, got_port, random_data):
         raise RuntimeError
 
-    query = 'http://foobar'
-    logging.info('Test /hello with custom query : {}'.format(query))
-    if not client.test_custom_uri_query(got_ip, got_port, query):
+    queries = 'query1=http%3A%2F%2Ffoobar&query3=abcd%2B1234%20xyz&query2=Esp%21%40%20%23%2471'
+    logging.info('Test /hello with custom query')
+    if not client.test_custom_uri_query(got_ip, got_port, queries):
         raise RuntimeError
-    dut.expect('Found URL query => ' + query, timeout=30)
 
-    query = 'abcd+1234%20xyz'
-    logging.info('Test /hello with custom query : {}'.format(query))
-    if not client.test_custom_uri_query(got_ip, got_port, query):
-        raise RuntimeError
-    dut.expect_exact('Found URL query => ' + query, timeout=30)
+    dut.expect_exact('Found URL query => query1=http%3A%2F%2Ffoobar&query3=abcd%2B1234%20xyz&query2=Esp%21%40%20%23%2471', timeout=30)
+    dut.expect_exact('Found URL query parameter => query1=http%3A%2F%2Ffoobar', timeout=30)
+    dut.expect_exact('Decoded query parameter => http://foobar', timeout=30)
+    dut.expect_exact('Found URL query parameter => query3=abcd%2B1234%20xyz', timeout=30)
+    dut.expect_exact('Decoded query parameter => abcd+1234 xyz', timeout=30)
+    dut.expect_exact('Found URL query parameter => query2=Esp%21%40%20%23%2471', timeout=30)
+    dut.expect_exact('Decoded query parameter => Esp!@ #$71', timeout=30)
 
 
 @pytest.mark.esp32

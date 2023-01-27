@@ -156,6 +156,16 @@ tinyusb:
     - Unlicense
     - CC0-1.0
 
+protocol_examples_common_component:
+  include:
+    - 'examples/common_components/protocol_examples_common/'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-2-Clause  # Contains URI encoding/decoding code from nginx
+    - Unlicense
+    - CC0-1.0
+  license_for_new_files: Unlicense OR CC0-1.0
+
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.
 ignore:
