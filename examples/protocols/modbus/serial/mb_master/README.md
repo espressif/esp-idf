@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # Modbus Master Example
 
@@ -96,8 +96,8 @@ Define the communication mode parameter for master and slave in Kconfig - CONFIG
 Configure the slave address for each slave in the Modbus segment (the CONFIG_MB_SLAVE_ADDR in Kconfig).
 ```
   --------------------------------------------------------------------------------------------------------------------------
-  |  UART Interface       | #define            | Default ESP32 Pin     | Default pins for      | External RS485 Driver Pin |
-  |                       |                    |                       | ESP32-S2(S3, C3)      |                           |
+  |  UART Interface       | #define            | Default pins for      | Default pins for      | External RS485 Driver Pin |
+  |                       |                    | ESP32 (C6)            | ESP32-S2 (S3, C3, C2) |                           |
   | ----------------------|--------------------|-----------------------|-----------------------|---------------------------|
   | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO9                 | DI                        |
   | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO8                 | RO                        |
