@@ -59,6 +59,16 @@ typedef enum {
 } esp_ieee802154_pending_mode_t;
 
 /**
+* @brief The four groups of mac filter interface index.
+*/
+typedef enum {
+    ESP_IEEE802154_MULTIPAN_0 = 0,
+    ESP_IEEE802154_MULTIPAN_1 = 1,
+    ESP_IEEE802154_MULTIPAN_2 = 2,
+    ESP_IEEE802154_MULTIPAN_3 = 3,
+} esp_ieee802154_multipan_index_t;
+
+/**
  * @brief The information of received 15.4 frame.
  *
  */

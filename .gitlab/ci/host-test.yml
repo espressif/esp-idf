@@ -20,13 +20,6 @@ test_nvs_on_host:
     - cd components/nvs_flash/test_nvs_host
     - make test
 
-test_nvs_on_host_cmake:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/nvs_flash/host_test/nvs_host_test
-    - idf.py build
-    - build/nvs_host_test.elf
-
 test_nvs_coverage:
   extends:
     - .host_test_template
@@ -340,73 +333,12 @@ test_split_path_by_spaces:
     - cd ${IDF_PATH}/tools
     - python -m unittest split_paths_by_spaces.py
 
-test_nvs_page:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/nvs_flash/host_test/nvs_page_test
-    - idf.py build
-    - build/test_nvs_page_host.elf
-
 test_mqtt_on_host:
   extends: .host_test_template
   script:
-    - cd ${IDF_PATH}/components/mqtt/host_test
+    - cd ${IDF_PATH}/components/mqtt/esp-mqtt/host_test
     - idf.py build
     - LSAN_OPTIONS=verbosity=1:log_threads=1 build/host_mqtt_client_test.elf
-
-test_log:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/log/host_test/log_test
-    - idf.py build
-    - build/test_log_host.elf
-
-test_esp_event:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/esp_event/host_test/esp_event_unit_test
-    - idf.py build
-    - build/test_esp_event_host.elf
-
-test_hello_world_linux_compatible_example:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/tools/test_apps/linux_compatible/hello_world_linux_compatible
-    - idf.py --preview set-target linux
-    - idf.py build
-    - timeout 15 build/hello_world.elf | tee test.txt
-    - grep "Hello world!" test.txt
-
-test_esp_system:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/esp_system/host_test/test_esp_system/
-    - idf.py build
-    - echo "*" | timeout 5 build/test_esp_system.elf | tee log.txt || true
-    - grep "6 Tests 0 Failures 0 Ignored" log.txt
-
-test_heap_linux:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/heap/host_test/host_test_linux/
-    - idf.py build
-    - echo "*" | timeout 5 build/test_heap.elf | tee log.txt || true
-    - grep "4 Tests 0 Failures 0 Ignored" log.txt
-
-test_esp_hw_support_linux:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/esp_hw_support/host_test/host_test_linux/
-    - idf.py build
-    - echo "*" | timeout 5 build/test_hw_support_linux.elf | tee log.txt || true
-    - grep "2 Tests 0 Failures 0 Ignored" log.txt
-
-test_esp_timer_cxx:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/esp_timer
-    - idf.py build
-    - build/test_esp_timer_cxx_host.elf
 
 test_eh_frame_parser:
   extends: .host_test_template
@@ -414,57 +346,6 @@ test_eh_frame_parser:
     - cd ${IDF_PATH}/components/esp_system/test_eh_frame_parser
     - make
     - ./eh_frame_test
-
-test_rom_on_linux_works:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/esp_rom/host_test/rom_test
-    - idf.py build
-    - build/test_rom_host.elf
-
-test_cxx_gpio:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/gpio
-    - idf.py build
-    - build/test_gpio_cxx_host.elf
-
-test_i2c_cxx:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/i2c
-    - idf.py build
-    - build/test_i2c_cxx_host.elf
-
-test_spi_cxx:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/spi
-    - idf.py build
-    - build/test_spi_cxx_host.elf
-
-test_system_cxx:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/system
-    - idf.py build
-    - build/test_system_cxx_host.elf
-
-test_partition_api_host:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/esp_partition/host_test/partition_api_test
-    - idf.py build
-    - timeout 5 ./build/partition_api_test.elf | tee test.txt
-    - grep " 0 Failures" test.txt
-
-test_spiffs_host:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/components/spiffs/host_test
-    - idf.py build
-    - timeout 5 ./build/host_test_spiffs.elf | tee test.txt
-    - grep " 0 Failures" test.txt
 
 test_gen_soc_caps_kconfig:
   extends: .host_test_template
@@ -497,3 +378,22 @@ test_pytest_qemu:
       --embedded-services idf,qemu
       --junitxml=XUNIT_RESULT.xml
       --known-failure-cases-file known_failure_cases/known_failure_cases.txt
+
+test_pytest_linux:
+  extends:
+    - .host_test_template
+    - .before_script_build_jobs
+  artifacts:
+    when: always
+    paths:
+      - XUNIT_RESULT.xml
+      - pytest_embedded_log/
+    reports:
+      junit: XUNIT_RESULT.xml
+    expire_in: 1 week
+  script:
+    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
+      --target linux
+      --pytest-apps
+      -m host_test
+    - run_cmd pytest --target linux -m host_test --junitxml=XUNIT_RESULT.xml

@@ -219,6 +219,9 @@ tGATT_STATUS gatt_proc_read (UINT16 conn_id, tGATTS_REQ_TYPE type, tGATT_READ_RE
 
     /* handle request for reading client supported features */
     if (p_data->handle == gatt_cb.handle_of_cl_supported_feat) {
+        if (tcb == NULL) {
+            return GATT_INSUF_RESOURCE;
+        }
         p_rsp->attr_value.len = 1;
         memcpy(p_rsp->attr_value.value, &tcb->cl_supp_feat, 1);
         status = GATT_SUCCESS;
@@ -281,7 +284,9 @@ static tGATT_STATUS gatt_sr_write_cl_supp_feat(UINT16 conn_id, tGATT_WRITE_REQ *
     }
 
     p_tcb->cl_supp_feat = val_new;
+#if (SMP_INCLUDED == TRUE)
     bta_gatts_co_cl_feat_save(p_tcb->peer_bda, &p_tcb->cl_supp_feat);
+#endif
     return GATT_SUCCESS;
 }
 
@@ -736,7 +741,9 @@ BOOLEAN gatt_sr_is_cl_change_aware(tGATT_TCB *p_tcb)
 *******************************************************************************/
 void gatt_sr_init_cl_status(tGATT_TCB *p_tcb)
 {
+#if (SMP_INCLUDED == TRUE)
     bta_gatts_co_cl_feat_load(p_tcb->peer_bda, &p_tcb->cl_supp_feat);
+#endif
 
     // This is used to reset bit when robust caching is disabled
     if (!GATTS_ROBUST_CACHING_ENABLED) {
@@ -745,7 +752,9 @@ void gatt_sr_init_cl_status(tGATT_TCB *p_tcb)
 
     if (gatt_sr_is_cl_robust_caching_supported(p_tcb)) {
         BT_OCTET16 stored_hash = {0};
+#if (SMP_INCLUDED == TRUE)
         bta_gatts_co_db_hash_load(p_tcb->peer_bda, stored_hash);
+#endif
         p_tcb->is_robust_cache_change_aware = (memcmp(stored_hash, gatt_cb.database_hash, BT_OCTET16_LEN) == 0);
     } else {
         p_tcb->is_robust_cache_change_aware = true;
@@ -776,7 +785,9 @@ void gatt_sr_update_cl_status(tGATT_TCB *p_tcb, BOOLEAN chg_aware)
 
     // only when client status is changed from unaware to aware, we should store database hash
     if (!p_tcb->is_robust_cache_change_aware && chg_aware) {
+#if (SMP_INCLUDED == TRUE)
         bta_gatts_co_db_hash_save(p_tcb->peer_bda, gatt_cb.database_hash);
+#endif
     }
 
     p_tcb->is_robust_cache_change_aware = chg_aware;

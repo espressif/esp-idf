@@ -512,31 +512,15 @@ esp_err_t IRAM_ATTR esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size)
 
 esp_err_t IRAM_ATTR esp_flash_erase_chip(esp_flash_t *chip)
 {
-    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
-    VERIFY_CHIP_OP(erase_chip);
-    CHECK_WRITE_ADDRESS(chip, 0, chip->size);
-
-    //check before the operation, in case this is called too close to the last operation
-    if (chip->chip_drv->yield) {
-        err = chip->chip_drv->yield(chip, 0);
-        if (err != ESP_OK) {
-            return err;
-        }
-    }
-
-    err = rom_spiflash_api_funcs->start(chip);
+    esp_err_t err = ESP_OK;
+    uint32_t size = 0;
+    err = esp_flash_get_size(chip, &size);
     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_flash_get_size failed, flash error code: %d", err);
         return err;
     }
-
-    err = chip->chip_drv->erase_chip(chip);
-    if (chip->host->driver->flush_cache) {
-        esp_err_t flush_cache_err = chip->host->driver->flush_cache(chip->host, 0, chip->size);
-        if (err == ESP_OK) {
-            err = flush_cache_err;
-        }
-    }
-    return rom_spiflash_api_funcs->end(chip, err);
+    err = esp_flash_erase_region(chip, 0, size);
+    return err;
 }
 
 esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, uint32_t len)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -164,7 +164,7 @@ typedef enum {
     RTC_CAL_RC_SLOW = SOC_RTC_SLOW_CLK_SRC_RC_SLOW,        //!< Internal 150kHz RC oscillator
     RTC_CAL_RC32K = SOC_RTC_SLOW_CLK_SRC_RC32K,            //!< Internal 32kHz RC oscillator, as one type of 32k clock
     RTC_CAL_32K_XTAL = SOC_RTC_SLOW_CLK_SRC_XTAL32K,       //!< External 32kHz XTAL, as one type of 32k clock
-    RTC_CAL_32K_OSC_SLOW = SOC_RTC_SLOW_CLK_SRC_OSC_SLOW,  //!< External 32kHz clk signal input by lp_pad_gpio0, as one type of 32k clock
+    RTC_CAL_32K_OSC_SLOW = SOC_RTC_SLOW_CLK_SRC_OSC_SLOW,  //!< External slow clock signal input by lp_pad_gpio0, as one type of 32k clock
     RTC_CAL_RC_FAST                                        //!< Internal 20MHz RC oscillator
 } rtc_cal_sel_t;
 
@@ -793,7 +793,7 @@ void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
  */
 typedef soc_cpu_clk_src_t rtc_cpu_freq_src_t;
 #define RTC_CPU_FREQ_SRC_XTAL SOC_CPU_CLK_SRC_XTAL  //!< XTAL
-#define RTC_CPU_FREQ_SRC_PLL SOC_CPU_CLK_SRC_PLL    //!< PLL (480M or 320M)
+#define RTC_CPU_FREQ_SRC_PLL SOC_CPU_CLK_SRC_PLL    //!< PLL (480M)
 #define RTC_CPU_FREQ_SRC_8M SOC_CPU_CLK_SRC_RC_FAST //!< Internal 17.5M RTC oscillator
 
 /**
@@ -802,7 +802,6 @@ typedef soc_cpu_clk_src_t rtc_cpu_freq_src_t;
 typedef soc_rtc_slow_clk_src_t rtc_slow_freq_t;
 #define RTC_SLOW_FREQ_RTC SOC_RTC_SLOW_CLK_SRC_RC_SLOW         //!< Internal 150 kHz RC oscillator
 #define RTC_SLOW_FREQ_32K_XTAL SOC_RTC_SLOW_CLK_SRC_XTAL32K    //!< External 32 kHz XTAL
-#define RTC_SLOW_FREQ_8MD256 SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 //!< Internal 17.5 MHz RC oscillator, divided by 256
 
 /**
  * @brief RTC FAST_CLK frequency values
@@ -815,7 +814,6 @@ typedef soc_rtc_fast_clk_src_t rtc_fast_freq_t;
 #define RTC_FAST_CLK_FREQ_APPROX    SOC_CLK_RC_FAST_FREQ_APPROX
 #define RTC_FAST_CLK_FREQ_8M        SOC_CLK_RC_FAST_FREQ_APPROX
 #define RTC_SLOW_CLK_FREQ_150K      SOC_CLK_RC_SLOW_FREQ_APPROX
-#define RTC_SLOW_CLK_FREQ_8MD256    SOC_CLK_RC_FAST_D256_FREQ_APPROX
 #define RTC_SLOW_CLK_FREQ_32K       SOC_CLK_XTAL32K_FREQ_APPROX
 
 /* Alias of deprecated function names */

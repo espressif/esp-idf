@@ -32,6 +32,11 @@ if(CONFIG_IDF_TARGET_ESP32C2 OR CONFIG_IDF_TARGET_ESP32C6 OR CONFIG_IDF_TARGET_E
     idf_build_set_property(C_COMPILE_OPTIONS "-DCONFIG_MMU_PAGE_SIZE=64" APPEND)
 endif()
 
+if(CONFIG_IDF_TARGET_ESP32C2)
+    # clk_tree hal-driver needs CONFIG_XTAL_FREQ
+    idf_build_set_property(C_COMPILE_OPTIONS "-DCONFIG_XTAL_FREQ=26" APPEND)
+endif()
+
 # Currently, only support a single core on Xtensa targets.
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)
     idf_build_set_property(C_COMPILE_OPTIONS "-DportNUM_PROCESSORS=1" APPEND)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -113,6 +113,7 @@ typedef enum {
     SOC_MOD_CLK_REF_TICK,                      /*!< REF_TICK is derived from XTAL or RC_FAST via a divider, it has a fixed frequency of 1MHz by default */
     SOC_MOD_CLK_APLL,                          /*!< APLL is sourced from PLL, and its frequency is configurable through APLL configuration registers */
     SOC_MOD_CLK_TEMP_SENSOR,                   /*!< TEMP_SENSOR_CLK comes directly from the internal 8MHz rc oscillator */
+    SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
 } soc_module_clk_t;
 
 //////////////////////////////////////////////////SYSTIMER///////////////////////////////////////////////////////////////
@@ -259,7 +260,22 @@ typedef enum {
     I2C_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,
 } soc_periph_i2c_clk_src_t;
 
-//////////////////////////////////////////////////SDM///////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////SPI////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of SPI
+ */
+#define SOC_SPI_CLKS {SOC_MOD_CLK_APB}
+
+/**
+ * @brief Type of SPI clock source.
+ */
+typedef enum {
+    SPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,      /*!< Select APB as SPI source clock */
+    SPI_CLK_SRC_APB = SOC_MOD_CLK_APB,          /*!< Select XTAL as SPI source clock */
+} soc_periph_spi_clk_src_t;
+
+//////////////////////////////////////////////////SDM//////////////////////////////////////////////////////////////
 
 /**
  * @brief Array initializer for all supported clock sources of SDM
@@ -364,6 +380,23 @@ typedef enum {
     ADC_RTC_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,  /*!< Select RC_FAST as the source clock */
     ADC_RTC_CLK_SRC_DEFAULT = SOC_MOD_CLK_RC_FAST,  /*!< Select RC_FAST as the default clock choice */
 } soc_periph_adc_rtc_clk_src_t;
+
+
+//////////////////////////////////////////////////MWDT/////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of MWDT
+ */
+#define SOC_MWDT_CLKS {SOC_MOD_CLK_APB}
+
+/**
+ * @brief MWDT clock source
+ */
+typedef enum {
+    MWDT_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
+    MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
+} soc_periph_mwdt_clk_src_t;
+
 
 #ifdef __cplusplus
 }

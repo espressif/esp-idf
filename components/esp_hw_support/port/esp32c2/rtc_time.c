@@ -9,6 +9,7 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "hal/clk_tree_ll.h"
+#include "hal/rtc_cntl_ll.h"
 #include "soc/timer_group_reg.h"
 #include "esp_rom_sys.h"
 
@@ -166,10 +167,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 
 uint64_t rtc_time_get(void)
 {
-    SET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_UPDATE);
-    uint64_t t = READ_PERI_REG(RTC_CNTL_TIME0_REG);
-    t |= ((uint64_t) READ_PERI_REG(RTC_CNTL_TIME1_REG)) << 32;
-    return t;
+    return rtc_cntl_ll_get_rtc_time();
 }
 
 uint64_t rtc_light_slp_time_get(void)

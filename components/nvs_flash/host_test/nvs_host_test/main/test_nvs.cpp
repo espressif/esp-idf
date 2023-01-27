@@ -720,8 +720,8 @@ TEST_CASE("nvs iterators tests", "[nvs]")
 
     nvs_iterator_t it;
     nvs_entry_info_t info;
-    nvs_handle handle_1;
-    nvs_handle handle_2;
+    nvs_handle_t handle_1;
+    nvs_handle_t handle_2;
     const  uint32_t blob = 0x11223344;
     const char *name_1 = "namespace1";
     const char *name_2 = "namespace2";
@@ -860,7 +860,7 @@ TEST_CASE("nvs iterators tests", "[nvs]")
 
 
     SECTION("Iterating over multiple pages works correctly") {
-        nvs_handle handle_3;
+        nvs_handle_t handle_3;
         const char *name_3 = "namespace3";
         const int entries_created = 250;
 
@@ -885,7 +885,7 @@ TEST_CASE("nvs iterators tests", "[nvs]")
     }
 
     SECTION("Iterating over multi-page blob works correctly") {
-        nvs_handle handle_3;
+        nvs_handle_t handle_3;
         const char *name_3 = "namespace3";
         const uint8_t multipage_blob[4096 * 2] = { 0 };
         const int NUMBER_OF_ENTRIES_PER_PAGE = 125;
@@ -1740,7 +1740,7 @@ TEST_CASE("Multi-page blob erased using nvs_erase_key should not be found when p
     size_t read_size = blob_size;
     PartitionEmulationFixture f(0, 5);
     TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(), 0, 5));
-    nvs_handle handle;
+    nvs_handle_t handle;
     TEST_ESP_OK(nvs_open("Test", NVS_READWRITE, &handle));
     TEST_ESP_OK(nvs_set_blob(handle, "abc", blob, blob_size));
     TEST_ESP_OK(nvs_erase_key(handle, "abc"));

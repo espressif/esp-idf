@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -88,7 +88,7 @@
 #define HSPI_PIN_NUM_WP     FSPI_PIN_NUM_WP
 #define HSPI_PIN_NUM_CS     FSPI_PIN_NUM_CS
 
-#elif CONFIG_IDF_TARGET_ESP32C6
+#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
 
 #define FSPI_PIN_NUM_MOSI   7
 #define FSPI_PIN_NUM_MISO   2
@@ -153,6 +153,10 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
 #define TEST_CASE_MULTI_FLASH(STR, FUNC_TO_RUN) \
     TEST_CASE(STR", "TEST_CHIP_NUM_STR" chips", "[esp_flash_multi][test_env=UT_T1_ESP_FLASH][timeout=35]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}
 #endif
+
+#define TEST_CASE_MULTI_FLASH_LONG(STR, FUNC_TO_RUN) \
+    TEST_CASE(STR", "TEST_CHIP_NUM_STR" chips", "[esp_flash_multi][test_env=UT_T1_ESP_FLASH][timeout=120]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}
+
 #endif
 
 #define TEST_CASE_MULTI_FLASH_IGNORE(STR, FUNC_TO_RUN) \
@@ -240,7 +244,7 @@ flashtest_config_t config_list[] = {
         .input_delay_ns = 0,
     },
 };
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
+#else
 flashtest_config_t config_list[] = {
     /* No SPI1 CS1 flash on esp32c3 test */
     {

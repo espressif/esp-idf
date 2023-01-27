@@ -400,7 +400,6 @@ components/console/linenoise/linenoise.c
 components/console/linenoise/linenoise.h
 components/esp_eth/src/dm9051.h
 components/esp_eth/src/ksz8851.h
-components/esp_eth/src/w5500.h
 components/esp_eth/test_apps/component_ut_test.py
 components/esp_eth/test_apps/main/esp_eth_test.c
 components/esp_event/esp_event_private.c
@@ -437,7 +436,6 @@ components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
 components/esp_netif/include/esp_netif_ppp.h
-components/esp_netif/private_include/esp_netif_private.h
 components/esp_netif/test/test_esp_netif.c
 components/esp_netif/test_apps/component_ut_test.py
 components/esp_netif/test_apps/main/esp_netif_test.c
@@ -691,7 +689,6 @@ components/hal/include/hal/spi_slave_hd_hal.h
 components/hal/include/hal/uhci_types.h
 components/hal/include/hal/usb_hal.h
 components/hal/include/hal/usb_types_private.h
-components/hal/include/hal/wdt_types.h
 components/hal/mpu_hal.c
 components/hal/sha_hal.c
 components/hal/spi_flash_encrypt_hal_iram.c
@@ -724,7 +721,6 @@ components/lwip/apps/ping/ping.c
 components/lwip/include/apps/dhcpserver/dhcpserver_options.h
 components/lwip/include/apps/esp_ping.h
 components/lwip/include/apps/ping/ping.h
-components/lwip/include/apps/sntp/sntp.h
 components/lwip/port/esp32/debug/lwip_debug.c
 components/lwip/port/esp32/freertos/sys_arch.c
 components/lwip/port/esp32/hooks/tcp_isn_default.c
@@ -863,7 +859,6 @@ components/soc/esp32/include/soc/rtc_cntl_struct.h
 components/soc/esp32/include/soc/rtc_i2c_reg.h
 components/soc/esp32/include/soc/rtc_io_reg.h
 components/soc/esp32/include/soc/rtc_io_struct.h
-components/soc/esp32/include/soc/sdio_slave_pins.h
 components/soc/esp32/include/soc/sdmmc_pins.h
 components/soc/esp32/include/soc/sdmmc_reg.h
 components/soc/esp32/include/soc/sens_reg.h
@@ -885,7 +880,6 @@ components/soc/esp32/include/soc/uhci_reg.h
 components/soc/esp32/include/soc/uhci_struct.h
 components/soc/esp32/include/soc/wdev_reg.h
 components/soc/esp32/ledc_periph.c
-components/soc/esp32/sdio_slave_periph.c
 components/soc/esp32/sdmmc_periph.c
 components/soc/esp32/spi_periph.c
 components/soc/esp32/uart_periph.c
@@ -1444,12 +1438,10 @@ examples/cxx/experimental/experimental_cpp_component/esp_event_cxx.cpp
 examples/cxx/experimental/experimental_cpp_component/esp_exception.cpp
 examples/cxx/experimental/experimental_cpp_component/esp_timer_cxx.cpp
 examples/cxx/experimental/experimental_cpp_component/host_test/esp_timer/main/esp_timer_test.cpp
-examples/cxx/experimental/experimental_cpp_component/host_test/gpio/main/gpio_cxx_test.cpp
 examples/cxx/experimental/experimental_cpp_component/include/esp_event_api.hpp
 examples/cxx/experimental/experimental_cpp_component/include/esp_timer_cxx.hpp
 examples/cxx/experimental/experimental_cpp_component/test/test_cxx_exceptions.cpp
 examples/cxx/experimental/experimental_cpp_component/test/test_esp_event_cxx.cpp
-examples/cxx/experimental/experimental_cpp_component/test/test_esp_timer.cpp
 examples/cxx/experimental/sensor_mcp9808/main/sensor_mcp9808.cpp
 examples/cxx/pthread/example_test.py
 examples/cxx/pthread/main/cpp_pthread.cpp

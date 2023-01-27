@@ -28,9 +28,11 @@ void setUp(void)
 {
     // Execute esp_sha operation to allocate internal SHA semaphore memory
     // which is considered as leaked otherwise
+#if SOC_SHA_SUPPORTED
     const uint8_t input_buffer[64] = {0};
     uint8_t output_buffer[64];
     esp_sha(SHA_TYPE, input_buffer, sizeof(input_buffer), output_buffer);
+#endif // SOC_SHA_SUPPORTED
     test_utils_record_free_mem();
     TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
     TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_WARNING, ESP_COMP_LEAK_GENERAL));

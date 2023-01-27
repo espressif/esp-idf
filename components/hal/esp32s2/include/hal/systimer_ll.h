@@ -11,9 +11,6 @@
 #include "soc/clk_tree_defs.h"
 #include "hal/assert.h"
 
-#define SYSTIMER_LL_COUNTER_CLOCK 0 // Counter used by esptimer, to generate the system level wall clock
-#define SYSTIMER_LL_ALARM_CLOCK   2 // Alarm used by esptimer
-
 #ifdef __cplusplus
 extern "C" {
 #endif

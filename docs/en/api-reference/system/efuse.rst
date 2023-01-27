@@ -401,6 +401,53 @@ Thus, reading the eFuse ``USER_DATA`` block written as above gives the following
     // id = 0x01
     // b'001
 
+Get eFuses During Build
+-----------------------
+
+There is a way to get the state of eFuses at the build stage of the project. There are two cmake functions for this:
+
+* ``espefuse_get_json_summary()`` - It calls the ``espefuse.py summary --format json`` command and returns a json string (it is not stored in a file).
+* ``espefuse_get_efuse()`` - It finds a given eFuse name in the json string and returns its property.
+
+The json string has the following properties:
+
+.. code-block:: json
+
+    {
+        "MAC": {
+            "bit_len": 48,
+            "block": 0,
+            "category": "identity",
+            "description": "Factory MAC Address",
+            "efuse_type": "bytes:6",
+            "name": "MAC",
+            "pos": 0,
+            "readable": true,
+            "value": "94:b9:7e:5a:6e:58 (CRC 0xe2 OK)",
+            "word": 1,
+            "writeable": true
+        },
+    }
+
+These functions can be used from a top-level project ``CMakeLists.txt`` (:example_file:`get-started/hello_world/CMakeLists.txt`):
+
+.. code-block:: cmake
+
+    # ...
+    project(hello_world)
+
+    espefuse_get_json_summary(efuse_json)
+    espefuse_get_efuse(ret_data ${efuse_json} "MAC" "value")
+    message("MAC:" ${ret_data})
+
+The format of the ``value`` property is the same as shown in ``espefuse.py summary``.
+
+.. code-block:: none
+
+    MAC:94:b9:7e:5a:6e:58 (CRC 0xe2 OK)
+
+There is an example test :example_file:`system/efuse/CMakeLists.txt` which adds a custom target ``efuse-summary``. This allows you to run the ``idf.py efuse-summary`` command to read the required eFuses (specified in the ``efuse_names`` list) at any time, not just at project build time.
+
 Debug eFuse & Unit tests
 ------------------------
 

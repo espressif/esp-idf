@@ -190,7 +190,15 @@ Flash 的加密过程
 
   5. 固件引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数位。
 
-  6. 对于 :ref:`flash-enc-development-mode`，固件引导加载程序允许 UART 引导加载程序重新烧录加密后的二进制文件。同时，``{IDF_TARGET_CRYPT_CNT}`` eFuse 位不受写入保护。此外，默认情况下，固件引导加载程序设置 ``DIS_BOOT_REMAP``、 ``DIS_DOWNLOAD_ICACHE``、 ``DIS_DOWNLOAD_DCACHE``、 ``HARD_DIS_JTAG`` 和 ``DIS_LEGACY_SPI_BOOT`` eFuse 位。
+  6. 对于 :ref:`flash-enc-development-mode`，固件引导加载程序允许 UART 引导加载程序重新烧录加密后的二进制文件。同时，``{IDF_TARGET_CRYPT_CNT}`` eFuse 位不受写入保护。此外，固件引导加载程序默认置位以下 eFuse 位：
+
+    .. list::
+
+      :esp32s2: - ``DIS_BOOT_REMAP``
+      - ``DIS_DOWNLOAD_ICACHE``
+      - ``DIS_DOWNLOAD_DCACHE``
+      - ``HARD_DIS_JTAG``
+      - ``DIS_LEGACY_SPI_BOOT``
 
   7. 对于 :ref:`flash-enc-release-mode`，固件引导加载程序设置所有在开发模式下设置的 eFuse 位。它还写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 位。要修改此行为，请参阅 :ref:`uart-bootloader-encryption`。
 
@@ -426,7 +434,7 @@ Flash 加密设置
 
         espefuse.py  --port PORT  burn_key BLOCK_KEY0 flash_encryption_key256.bin XTS_AES_128_KEY
 
-    对于由 128 位导出的 AES-128 密钥（SHA256（128 位））- ``XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS``。Flash 加密密钥会被写入 eFuse BLOCK_KEY0 的低位，留出高 128 位以支持软件读取。如小节 ``同时烧录两个密钥`` 所示，在 espefuse 工具的特殊模式下，您可以使用任意 espefuse 命令来写入数据。 
+    对于由 128 位导出的 AES-128 密钥（SHA256（128 位））- ``XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS``。Flash 加密密钥会被写入 eFuse BLOCK_KEY0 的低位，留出高 128 位以支持软件读取。如小节 ``同时烧录两个密钥`` 所示，在 espefuse 工具的特殊模式下，您可以使用任意 espefuse 命令来写入数据。
 
     .. code-block:: bash
 
@@ -544,7 +552,7 @@ Flash 加密设置
 
    - 不要在多个设备之间重复使用同一个 flash 加密密钥，这样攻击者就无法从一台设备上复制加密数据后再将其转移到第二台设备上。
    :esp32: - 在使用 ESP32 V3 时，如果生产设备不需要 UART ROM 下载模式，那么则该禁用该模式以增加设备安全性。这可以通过在应用程序启动时调用 :cpp:func:`esp_efuse_disable_rom_download_mode` 来实现。或者，可将项目 :ref:`CONFIG_ESP32_REV_MIN` 级别配置为 3（仅针对 ESP32 V3），然后选择 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 为“永久性的禁用 ROM 下载模式（推荐）”。在早期的 ESP32 版本上无法禁用 ROM 下载模式。
-   :not esp32: - 如果不需要 UART ROM 下载模式，则应完全禁用该模式，或者永久设置为“安全下载模式”。安全下载模式永久性地将可用的命令限制在基本的 flash 只读和只写。默认在发布模式下第一次启动时设置为安全下载模式。要完全禁用下载模式，请选择 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 为“永久禁用 ROM 下载模式（推荐）”或在运行时调用 :cpp:func:`esp_efuse_disable_rom_download_mode`。
+   :not esp32: - 如果不需要 UART ROM 下载模式，则应完全禁用该模式，或者永久设置为“安全下载模式”。安全下载模式永久性地将可用的命令限制在更新 SPI 配置、更改波特率、基本的 flash 写入和使用 `get_security_info` 命令返回当前启用的安全功能摘要。默认在发布模式下第一次启动时设置为安全下载模式。要完全禁用下载模式，请选择 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 为“永久禁用 ROM 下载模式（推荐）”或在运行时调用 :cpp:func:`esp_efuse_disable_rom_download_mode`。
    - 启用 :doc:`安全启动<secure-boot-v2>` 作为额外的保护层，防止攻击者在启动前有选择地破坏 flash 中某部分。
 
 可能出现的错误

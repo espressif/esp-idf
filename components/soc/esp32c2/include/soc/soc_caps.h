@@ -28,6 +28,7 @@
 #define SOC_ADC_SUPPORTED               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
+#define SOC_GPTIMER_SUPPORTED           1
 #define SOC_BT_SUPPORTED                1
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
@@ -43,6 +44,7 @@
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_SYSTIMER_SUPPORTED          1
+#define SOC_BOD_SUPPORTED               1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_26M            1
@@ -109,9 +111,8 @@
 #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
 #define SOC_GPIO_FILTER_CLK_SUPPORT_APB    1
 
-// Target has no full RTC IO subsystem, so GPIO is 100% "independent" of RTC
-// On ESP32-C2, Digital IOs have their own registers to control pullup/down capability, independent of RTC registers.
-#define SOC_GPIO_SUPPORTS_RTC_INDEPENDENT   (1)
+// Target has no full RTC IO subsystem, GPIO0~5 remain RTC function (powered by VDD3V3_RTC, and can be used as deep-sleep wakeup pins)
+
 // Force hold is a new function of ESP32-C2
 #define SOC_GPIO_SUPPORT_FORCE_HOLD         (1)
 // GPIO0~5 on ESP32-C2 can support chip deep sleep wakeup
@@ -198,6 +199,8 @@
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+#define SOC_SPI_SUPPORT_CLK_XTAL            1
+#define SOC_SPI_SUPPORT_CLK_PLL_F40M        1
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 // host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
@@ -238,6 +241,10 @@
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
 #define SOC_TIMER_GROUP_SUPPORT_PLL_F40M  (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (1U)
+
+/*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_DIS_PAD_JTAG 1
+#define SOC_EFUSE_DIS_DIRECT_BOOT 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_ECC              1
@@ -287,6 +294,8 @@
 #define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
 #define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
+
+#define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< ESP32C2 only supports to connect an external oscillator, not a crystal */
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)    /*!< Support hardware TSF */

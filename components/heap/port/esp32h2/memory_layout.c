@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,8 +65,12 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 #define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
 
 const soc_memory_region_t soc_memory_regions[] = {
-    { 0x40800000, 0x30000, SOC_MEMORY_TYPE_DEFAULT, 0x40800000}, //Block 4,  can be remapped to ROM, can be used as trace memory
-    { 0x40830000, 0x20000, SOC_MEMORY_TYPE_STACK_DRAM, 0x40830000}, //Block 9,  can be used as trace memory
+    { 0x40800000,           0x10000,                                    SOC_MEMORY_TYPE_DEFAULT,    0x40800000}, //D/IRAM level 0
+    { 0x40810000,           0x10000,                                    SOC_MEMORY_TYPE_DEFAULT,    0x40810000}, //D/IRAM level 1
+    { 0x40820000,           0x10000,                                    SOC_MEMORY_TYPE_DEFAULT,    0x40820000}, //D/IRAM level 2
+    { 0x40830000,           0x10000,                                    SOC_MEMORY_TYPE_DEFAULT,    0x40830000}, //D/IRAM level 3
+    { 0x40840000,           APP_USABLE_DRAM_END-0x40840000,             SOC_MEMORY_TYPE_DEFAULT,    0x40840000}, //D/IRAM level 4
+    { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END),  SOC_MEMORY_TYPE_STACK_DRAM, APP_USABLE_DRAM_END}, //D/IRAM level 4
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     { 0x50000000, 0x1000,  SOC_MEMORY_TYPE_RTCRAM, 0}, //Fast RTC memory
 #endif

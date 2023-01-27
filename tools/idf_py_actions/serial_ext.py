@@ -95,8 +95,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 yellow_print(msg)
                 no_reset = False
 
-            esp_port = args.port or get_default_serial_port()
-            monitor_args += ['-p', esp_port]
+            args.port = args.port or get_default_serial_port()
+            monitor_args += ['-p', args.port]
 
             baud = monitor_baud or os.getenv('IDF_MONITOR_BAUD') or os.getenv('MONITORBAUD')
 
@@ -163,8 +163,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             yellow_print('skipping flash since running on linux...')
             return
 
-        esp_port = args.port or get_default_serial_port()
-        run_target(action, args, {'ESPBAUD': str(args.baud), 'ESPPORT': esp_port})
+        args.port = args.port or get_default_serial_port()
+        run_target(action, args, {'ESPBAUD': str(args.baud), 'ESPPORT': args.port})
 
     def erase_flash(action: str, ctx: click.core.Context, args: PropertyDict) -> None:
         ensure_build_directory(args, ctx.info_name)

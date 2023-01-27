@@ -17,6 +17,7 @@
 #include "esp_adc/adc_oneshot.h"
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 #include "hal/adc_types.h"
 #include "hal/adc_oneshot_hal.h"
 #include "hal/adc_ll.h"
@@ -112,7 +113,7 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
     _lock_release(&s_ctx.mutex);
 #endif
 
-    adc_power_acquire();
+    sar_periph_ctrl_adc_oneshot_power_acquire();
 
     ESP_LOGD(TAG, "new adc unit%"PRId32" is created", unit->unit_id);
     *ret_unit = unit;
@@ -209,7 +210,7 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
     ESP_LOGD(TAG, "adc unit%"PRId32" is deleted", handle->unit_id);
     free(handle);
 
-    adc_power_release();
+    sar_periph_ctrl_adc_oneshot_power_release();
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     //To free the APB_SARADC periph if needed
@@ -225,6 +226,15 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
     return ESP_OK;
 }
 
+esp_err_t adc_oneshot_get_calibrated_result(adc_oneshot_unit_handle_t handle, adc_cali_handle_t cali_handle, adc_channel_t chan, int *cali_result)
+{
+    int raw = 0;
+    ESP_RETURN_ON_ERROR(adc_oneshot_read(handle, chan, &raw), TAG, "adc oneshot read fail");
+    ESP_LOGD(TAG, "raw: 0d%d", raw);
+    ESP_RETURN_ON_ERROR(adc_cali_raw_to_voltage(cali_handle, raw, cali_result), TAG, "adc calibration fail");
+
+    return ESP_OK;
+}
 
 #define ADC_GET_IO_NUM(unit, channel) (adc_channel_io_map[unit][channel])
 

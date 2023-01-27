@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ESP_NETIF_PRIVATE_H_
 #define _ESP_NETIF_PRIVATE_H_
@@ -144,34 +136,6 @@ void esp_netif_list_unlock(void);
  * @return true if supplied interface is listed
  */
 bool esp_netif_is_netif_listed(esp_netif_t *esp_netif);
-
-/**
- * @brief  Cause the TCP/IP stack to join a multicast group
- *
- * @param[in]  esp_netif Handle to esp-netif instance
- * @param[in]  addr      The multicast group to join
- *
- * @return
- *         - ESP_OK
- *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
- *         - ESP_ERR_ESP_NETIF_MLD6_FAILED
- *         - ESP_ERR_NO_MEM
- */
-esp_err_t esp_netif_join_ip6_multicast_group(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr);
-
-/**
- * @brief  Cause the TCP/IP stack to leave a multicast group
- *
- * @param[in]  esp_netif Handle to esp-netif instance
- * @param[in]  addr      The multicast group to leave
- *
- * @return
- *         - ESP_OK
- *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
- *         - ESP_ERR_ESP_NETIF_MLD6_FAILED
- *         - ESP_ERR_NO_MEM
- */
-esp_err_t esp_netif_leave_ip6_multicast_group(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr);
 
 /**
  * @brief  Cause the TCP/IP stack to add an IPv6 address to the interface

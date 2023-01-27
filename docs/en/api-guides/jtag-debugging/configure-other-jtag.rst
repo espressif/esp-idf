@@ -2,31 +2,25 @@ Configure Other JTAG Interfaces
 ===============================
 :link_to_translation:`zh_CN:[中文]`
 
+{IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE"}
+
 For guidance about which JTAG interface to select when using OpenOCD with {IDF_TARGET_NAME}, refer to the section :ref:`jtag-debugging-selecting-jtag-adapter`. Then follow the configuration steps below to get it working.
 
-
-.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED and not esp32c3
-
-    Configure eFuses
-    ^^^^^^^^^^^^^^^^
-
-    By default, {IDF_TARGET_NAME} JTAG interface is connected to the :doc:`built-in USB_SERIAL_JTAG peripheral <configure-builtin-jtag>`. To use an external JTAG adapter instead, you need to switch the JTAG interface to the GPIO pins. This can be done by burning eFuses using ``espefuse.py`` tool.
-
-    - Burning ``DIS_USB_JTAG`` eFuse will permanently disable the connection between USB_SERIAL_JTAG and the JTAG port of the CPU. JTAG interface can then be connected to |jtag-gpio-list|. Note that USB CDC functionality of USB_SERIAL_JTAG will still be usable, i.e., flashing and monitoring over USB CDC will still work.
-    - Burning ``STRAP_JTAG_SEL`` eFuse will enable selection of JTAG interface by a strapping pin, |jtag-sel-gpio|. If the strapping pin is low when {IDF_TARGET_NAME} is reset, JTAG interface will use |jtag-gpio-list|. If the strapping pin is high, USB_SERIAL_JTAG will be used as the JTAG interface.
-
-    .. warning::
-        Burning eFuses is an irreversible operation, so please consider the above options before starting the process.
-
-
-.. only:: esp32c3
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
     Configure eFuses
     ^^^^^^^^^^^^^^^^
 
     By default, {IDF_TARGET_NAME} JTAG interface is connected to the :doc:`built-in USB_SERIAL_JTAG peripheral <configure-builtin-jtag>`. To use an external JTAG adapter instead, you need to switch the JTAG interface to the GPIO pins. This can be done by burning eFuses using ``espefuse.py`` tool.
 
-    Burning ``DIS_USB_JTAG`` eFuse will permanently disable the connection between USB_SERIAL_JTAG and the JTAG port of the CPU. JTAG interface can then be connected to |jtag-gpio-list|. Note that USB CDC functionality of USB_SERIAL_JTAG will still be usable, i.e., flashing and monitoring over USB CDC will still work.
+    .. only:: esp32c3
+
+    Burning ``DIS_USB_JTAG`` eFuse will permanently disable the connection between USB_SERIAL_JTAG and the JTAG port of the {IDF_TARGET_NAME}. JTAG interface can then be connected to |jtag-gpio-list|. Note that USB CDC functionality of USB_SERIAL_JTAG will still be usable, i.e., flashing and monitoring over USB CDC will still work.
+
+    .. only:: esp32s3 or esp32c6
+
+    - Burning ``DIS_USB_JTAG`` eFuse will permanently disable the connection between USB_SERIAL_JTAG and the JTAG port of the {IDF_TARGET_NAME}. JTAG interface can then be connected to |jtag-gpio-list|. Note that USB CDC functionality of USB_SERIAL_JTAG will still be usable, i.e., flashing and monitoring over USB CDC will still work.
+    - Burning ``{IDF_TARGET_JTAG_SEL_EFUSE}`` eFuse will enable selection of JTAG interface by a strapping pin, |jtag-sel-gpio|. If the strapping pin is low when {IDF_TARGET_NAME} is reset, JTAG interface will use |jtag-gpio-list|. If the strapping pin is high, USB_SERIAL_JTAG will be used as the JTAG interface.
 
     .. warning::
         Burning eFuses is an irreversible operation, so please consider the above option before starting the process.

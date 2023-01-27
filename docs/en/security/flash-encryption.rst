@@ -434,7 +434,7 @@ To use a host generated key, take the following steps:
 
         espefuse.py  --port PORT  burn_key BLOCK_KEY0 flash_encryption_key256.bin XTS_AES_128_KEY
 
-    For AES-128 key derived from 128 bits (SHA256(128 bits)) - ``XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS``. The FE key will be written in the lower part of eFuse BLOCK_KEY0, the upper 128 bits are not used and will remain available for reading by software. Using the special mode of the espefuse tool, shown in the ``For burning both keys together`` section below, the user can write their data to it using any espefuse commands. 
+    For AES-128 key derived from 128 bits (SHA256(128 bits)) - ``XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS``. The FE key will be written in the lower part of eFuse BLOCK_KEY0. The upper 128 bits are not used and will remain available for reading by software. Using the special mode of the espefuse tool, shown in the ``For burning both keys together`` section below, the user can write their data to it using any espefuse commands.
 
     .. code-block:: bash
 
@@ -552,7 +552,7 @@ When using Flash Encryption in production:
 
    - Do not reuse the same flash encryption key between multiple devices. This means that an attacker who copies encrypted data from one device cannot transfer it to a second device.
    :esp32: - When using ESP32 V3, if the UART ROM Download Mode is not needed for a production device then it should be disabled to provide an extra level of protection. Do this by calling :cpp:func:`esp_efuse_disable_rom_download_mode` during application startup. Alternatively, configure the project :ref:`CONFIG_ESP32_REV_MIN` level to 3 (targeting ESP32 V3 only) and select the :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)". The ability to disable ROM Download Mode is not available on earlier ESP32 versions.
-   :not esp32: - The UART ROM Download Mode should be disabled entirely if it is not needed, or permanently set to "Secure Download Mode" otherwise. Secure Download Mode permanently limits the available commands to update SPI config, changing baud rate, basic flash write and a command to return a summary of currently enabled security features (`get_security_info`). The default behaviour is to set Secure Download Mode on first boot in Release mode. To disable Download Mode entirely select select the :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)" or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
+   :not esp32: - The UART ROM Download Mode should be disabled entirely if it is not needed, or permanently set to "Secure Download Mode" otherwise. Secure Download Mode permanently limits the available commands to updating SPI config, changing baud rate, basic flash write, and returning a summary of the currently enabled security features with the `get_security_info` command. The default behaviour is to set Secure Download Mode on first boot in Release mode. To disable Download Mode entirely, select :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)" or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
    - Enable :doc:`Secure Boot <secure-boot-v2>` as an extra layer of protection, and to prevent an attacker from selectively corrupting any part of the flash before boot.
 
 Possible Failures

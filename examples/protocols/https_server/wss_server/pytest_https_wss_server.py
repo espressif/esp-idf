@@ -107,9 +107,6 @@ def test_multiple_client_keep_alive_and_async_response(ip, port, ca_file):  # ty
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.wifi_router
 def test_examples_protocol_https_wss_server(dut: Dut) -> None:
 

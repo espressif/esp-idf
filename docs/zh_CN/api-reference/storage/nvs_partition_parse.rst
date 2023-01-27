@@ -1,1 +1,1 @@
-.. include:: /../../components/nvs_flash/nvs_partition_parser/README_CN.rst
+.. include:: /../../components/nvs_flash/nvs_partition_tool/README_CN.rst

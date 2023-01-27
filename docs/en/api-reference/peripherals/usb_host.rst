@@ -6,7 +6,6 @@ The document provides information regarding the USB Host Library. This document 
 .. contents:: Sections
   :depth: 2
 
-
 .. ---------------------------------------------------- Overview -------------------------------------------------------
 
 Overview
@@ -166,7 +165,7 @@ With reference the graph above, the typical lifecycle involves the following key
 2. Once the Host Library is installed, the clients can be registered by calling :cpp:func:`usb_host_client_register`.
     - This is typically called from the client task (where the client task waits for a signal from the Daemon Task).
     - This can be called elsewhere if necessary as long it is called after :cpp:func:`usb_host_install`.
-3. Device 1 connects and is then enumerated. 
+3. Device 1 connects and is then enumerated.
     - Each registered client (in this case Client 1 and Client 2) are notified of the new device by way of the :cpp:enumerator:`USB_HOST_CLIENT_EVENT_NEW_DEV` event.
     - Client 1 opens Device 1 and begins communication with it.
 4. Similarly Device 2 connects and is enumerated.
@@ -393,3 +392,17 @@ The API of the USB Host Library is separated into the following header files. Ho
 .. include-build-file:: inc/usb_types_stack.inc
 
 .. include-build-file:: inc/usb_types_ch9.inc
+
+.. ------------------------------------------------ Maintainers Notes --------------------------------------------------
+
+Maintainers Notes
+-----------------
+
+.. note::
+    For more details regarding the internal implementation details of the USB Host stack, please refer to :doc:`/api-reference/peripherals/usb_host/usb_host_notes_index`.
+
+.. toctree::
+    :hidden:
+    :maxdepth: 0
+
+    usb_host/usb_host_notes_index

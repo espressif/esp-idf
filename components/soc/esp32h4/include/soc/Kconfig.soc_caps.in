@@ -15,7 +15,7 @@ config SOC_GDMA_SUPPORTED
     bool
     default y
 
-config SOC_TWAI_SUPPORTED
+config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
@@ -112,6 +112,10 @@ config SOC_FLASH_ENC_SUPPORTED
     default y
 
 config SOC_SECURE_BOOT_SUPPORTED
+    bool
+    default y
+
+config SOC_BOD_SUPPORTED
     bool
     default y
 
@@ -291,10 +295,6 @@ config SOC_GPIO_PIN_COUNT
     int
     default 41
 
-config SOC_GPIO_SUPPORTS_RTC_INDEPENDENT
-    bool
-    default y
-
 config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
     default y
@@ -352,8 +352,8 @@ config SOC_I2C_SUPPORT_RTC
     default y
 
 config SOC_I2S_NUM
-    bool
-    default y
+    int
+    default 1
 
 config SOC_I2S_HW_VERSION_2
     bool
@@ -571,6 +571,10 @@ config SOC_SPI_SUPPORT_SLAVE_HD_VER2
     bool
     default y
 
+config SOC_SPI_SUPPORT_CLK_AHB
+    bool
+    default y
+
 config SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT
     bool
     default y
@@ -699,6 +703,22 @@ config SOC_TWAI_SUPPORTS_RX_STATUS
     bool
     default y
 
+config SOC_EFUSE_DIS_PAD_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_USB_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_DIRECT_BOOT
+    bool
+    default y
+
+config SOC_EFUSE_SOFT_DIS_JTAG
+    bool
+    default y
+
 config SOC_SECURE_BOOT_V2_RSA
     bool
     default y
@@ -784,6 +804,14 @@ config SOC_PM_SUPPORT_RC_FAST_PD
     default y
 
 config SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
+    bool
+    default y
+
+config SOC_CLK_XTAL32K_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_RC32K_SUPPORTED
     bool
     default y
 

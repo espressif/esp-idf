@@ -7,6 +7,7 @@
 #include <freertos/FreeRTOS.h>
 #include "clk_ctrl_os.h"
 #include "soc/rtc.h"
+#include "esp_private/clk_tree_common.h"
 #include "esp_check.h"
 
 static portMUX_TYPE periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -27,14 +28,9 @@ bool periph_rtc_dig_clk8m_enable(void)
     if (s_periph_ref_counts == 0) {
         rtc_dig_clk8m_enable();
 #if SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
-#if SOC_CLK_RC_FAST_D256_SUPPORTED
-        // If RC_FAST_D256 clock exists, calibration on a slow freq clock is much faster (less slow clock cycles need to wait)
-        s_rc_fast_freq = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_8MD256, 100)) << 8; // f_[rc_fast] = f_[rc_fast_d256] * 256;
-#else
-        // Calibrate directly on the RC_FAST clock requires much more slow clock cycles to get an accurate freq value
-        s_rc_fast_freq = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_RC_FAST, 10000));
-#endif
+        s_rc_fast_freq = clk_tree_rc_fast_get_freq_hz(CLK_TREE_SRC_FREQ_PRECISION_EXACT);
         if (s_rc_fast_freq == 0) {
+            rtc_dig_clk8m_disable();
             portEXIT_CRITICAL(&periph_spinlock);
             return false;
         }

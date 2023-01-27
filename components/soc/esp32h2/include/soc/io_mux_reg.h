@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,15 +63,33 @@
 #define MCU_SEL_M (MCU_SEL_V << MCU_SEL_S)
 #define MCU_SEL_V 0x7
 #define MCU_SEL_S 12
+/* Pin filter (Pulse width shorter than 2 clock cycles will be filtered out) */
+#define FILTER_EN (BIT(15))
+#define FILTER_EN_M (FILTER_EN_V << FILTER_EN_S)
+#define FILTER_EN_V 1
+#define FILTER_EN_S 15
 
-#define PIN_INPUT_ENABLE(PIN_NAME)               SET_PERI_REG_MASK(PIN_NAME,FUN_IE)
-#define PIN_INPUT_DISABLE(PIN_NAME)              CLEAR_PERI_REG_MASK(PIN_NAME,FUN_IE)
-#define PIN_SET_DRV(PIN_NAME, drv)            REG_SET_FIELD(PIN_NAME, FUN_DRV, (drv));
-#define PIN_PULLUP_DIS(PIN_NAME)                 REG_CLR_BIT(PIN_NAME, FUN_PU)
-#define PIN_PULLUP_EN(PIN_NAME)                  REG_SET_BIT(PIN_NAME, FUN_PU)
-#define PIN_PULLDWN_DIS(PIN_NAME)             REG_CLR_BIT(PIN_NAME, FUN_PD)
-#define PIN_PULLDWN_EN(PIN_NAME)              REG_SET_BIT(PIN_NAME, FUN_PD)
-#define PIN_FUNC_SELECT(PIN_NAME, FUNC)      REG_SET_FIELD(PIN_NAME, MCU_SEL, FUNC)
+#define PIN_SLP_INPUT_ENABLE(PIN_NAME)      SET_PERI_REG_MASK(PIN_NAME,SLP_IE)
+#define PIN_SLP_INPUT_DISABLE(PIN_NAME)     CLEAR_PERI_REG_MASK(PIN_NAME,SLP_IE)
+#define PIN_SLP_OUTPUT_ENABLE(PIN_NAME)     SET_PERI_REG_MASK(PIN_NAME,SLP_OE)
+#define PIN_SLP_OUTPUT_DISABLE(PIN_NAME)    CLEAR_PERI_REG_MASK(PIN_NAME,SLP_OE)
+#define PIN_SLP_PULLUP_ENABLE(PIN_NAME)     SET_PERI_REG_MASK(PIN_NAME,SLP_PU)
+#define PIN_SLP_PULLUP_DISABLE(PIN_NAME)    CLEAR_PERI_REG_MASK(PIN_NAME,SLP_PU)
+#define PIN_SLP_PULLDOWN_ENABLE(PIN_NAME)   SET_PERI_REG_MASK(PIN_NAME,SLP_PD)
+#define PIN_SLP_PULLDOWN_DISABLE(PIN_NAME)  CLEAR_PERI_REG_MASK(PIN_NAME,SLP_PD)
+#define PIN_SLP_SEL_ENABLE(PIN_NAME)        SET_PERI_REG_MASK(PIN_NAME,SLP_SEL)
+#define PIN_SLP_SEL_DISABLE(PIN_NAME)       CLEAR_PERI_REG_MASK(PIN_NAME,SLP_SEL)
+
+#define PIN_INPUT_ENABLE(PIN_NAME)          SET_PERI_REG_MASK(PIN_NAME,FUN_IE)
+#define PIN_INPUT_DISABLE(PIN_NAME)         CLEAR_PERI_REG_MASK(PIN_NAME,FUN_IE)
+#define PIN_SET_DRV(PIN_NAME, drv)          REG_SET_FIELD(PIN_NAME, FUN_DRV, (drv));
+#define PIN_PULLUP_DIS(PIN_NAME)            REG_CLR_BIT(PIN_NAME, FUN_PU)
+#define PIN_PULLUP_EN(PIN_NAME)             REG_SET_BIT(PIN_NAME, FUN_PU)
+#define PIN_PULLDWN_DIS(PIN_NAME)           REG_CLR_BIT(PIN_NAME, FUN_PD)
+#define PIN_PULLDWN_EN(PIN_NAME)            REG_SET_BIT(PIN_NAME, FUN_PD)
+#define PIN_FUNC_SELECT(PIN_NAME, FUNC)     REG_SET_FIELD(PIN_NAME, MCU_SEL, FUNC)
+#define PIN_FILTER_EN(PIN_NAME)             REG_SET_BIT(PIN_NAME, FILTER_EN)
+#define PIN_FILTER_DIS(PIN_NAME)            REG_CLR_BIT(PIN_NAME, FILTER_EN)
 
 #define IO_MUX_GPIO0_REG               PERIPHS_IO_MUX_GPIO0_U
 #define IO_MUX_GPIO1_REG               PERIPHS_IO_MUX_GPIO1_U
@@ -102,7 +120,6 @@
 #define IO_MUX_GPIO26_REG              PERIPHS_IO_MUX_GPIO26_U
 #define IO_MUX_GPIO27_REG              PERIPHS_IO_MUX_GPIO27_U
 
-#define FUNC_GPIO_GPIO                              1
 #define PIN_FUNC_GPIO								1
 
 #define GPIO_PAD_PULLUP(num) do{PIN_PULLDWN_DIS(IOMUX_REG_GPIO##num);PIN_PULLUP_EN(IOMUX_REG_GPIO##num);}while(0)
@@ -116,25 +133,17 @@
 #define SPI_D_GPIO_NUM               20
 #define SPI_Q_GPIO_NUM               16
 
-#define MAX_RTC_GPIO_NUM              7
+#define USB_DM_GPIO_NUM              26
+#define USB_DP_GPIO_NUM              27
+
+#define MAX_RTC_GPIO_NUM             14            // GPIO7~14 are the pads with LP function
 #define MAX_PAD_GPIO_NUM             27
 #define MAX_GPIO_NUM                 31
 #define HIGH_IO_HOLD_BIT_SHIFT       32
-#define GPIO_NUM_IN_FORCE_0          0x3c
-#define GPIO_NUM_IN_FORCE_1          0x38
-#define GPIO_NUM_IN_INVALID          0x3a
+
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE
 #define PIN_CTRL                          (REG_IO_MUX_BASE +0x00)
-#define PAD_POWER_SEL                               BIT(15)
-#define PAD_POWER_SEL_V                             0x1
-#define PAD_POWER_SEL_M                             BIT(15)
-#define PAD_POWER_SEL_S                             15
-
-#define PAD_POWER_SWITCH_DELAY                      0x7
-#define PAD_POWER_SWITCH_DELAY_V                    0x7
-#define PAD_POWER_SWITCH_DELAY_M                    (PAD_POWER_SWITCH_DELAY_V << PAD_POWER_SWITCH_DELAY_S)
-#define PAD_POWER_SWITCH_DELAY_S                    12
 
 #define CLK_OUT3                                    IO_MUX_CLK_OUT3
 #define CLK_OUT3_V                                  IO_MUX_CLK_OUT3_V
@@ -274,40 +283,64 @@
 #define FUNC_GPIO27_GPIO27                                          1
 #define FUNC_GPIO27_GPIO27_0                                        0
 
-#define IO_MUX_PIN_CTRL_REG          (REG_IO_MUX_BASE + 0x0)
-/* IO_MUX_CLK_OUT3 : R/W ;bitpos:[14:10] ;default: 5'h7 ; */
-/*description: If you want to output clock for I2S to CLK_OUT_out3, set this register to 0x0. C
-LK_OUT_out3 can be found in peripheral output signals..*/
-#define IO_MUX_CLK_OUT3    0x0000001F
-#define IO_MUX_CLK_OUT3_M  ((IO_MUX_CLK_OUT3_V)<<(IO_MUX_CLK_OUT3_S))
-#define IO_MUX_CLK_OUT3_V  0x1F
-#define IO_MUX_CLK_OUT3_S  10
-/* IO_MUX_CLK_OUT2 : R/W ;bitpos:[9:5] ;default: 5'hf ; */
-/*description: If you want to output clock for I2S to CLK_OUT_out2, set this register to 0x0. C
-LK_OUT_out2 can be found in peripheral output signals..*/
-#define IO_MUX_CLK_OUT2    0x0000001F
-#define IO_MUX_CLK_OUT2_M  ((IO_MUX_CLK_OUT2_V)<<(IO_MUX_CLK_OUT2_S))
-#define IO_MUX_CLK_OUT2_V  0x1F
-#define IO_MUX_CLK_OUT2_S  5
-/* IO_MUX_CLK_OUT1 : R/W ;bitpos:[4:0] ;default: 5'hf ; */
-/*description: If you want to output clock for I2S to CLK_OUT_out1, set this register to 0x0. C
-LK_OUT_out1 can be found in peripheral output signals..*/
+/** IO_MUX_PIN_CTRL_REG register
+ *  Clock Output Configuration
+ *  Register
+ */
+#define IO_MUX_PIN_CTRL_REG (REG_IO_MUX_BASE + 0x0)
+/* IO_MUX_CLK_OUT1 : R/W; bitpos: [5:0]; default: 15;
+ * If you want to output clock for I2S to CLK_OUT_out1, set this register
+ * to 0x0. CLK_OUT_out1 can be found in peripheral output
+ * signals.
+ */
 #define IO_MUX_CLK_OUT1    0x0000001F
-#define IO_MUX_CLK_OUT1_M  ((IO_MUX_CLK_OUT1_V)<<(IO_MUX_CLK_OUT1_S))
-#define IO_MUX_CLK_OUT1_V  0x1F
+#define IO_MUX_CLK_OUT1_M  (IO_MUX_CLK_OUT1_V << IO_MUX_CLK_OUT1_S)
+#define IO_MUX_CLK_OUT1_V  0x0000001F
 #define IO_MUX_CLK_OUT1_S  0
-#define IO_MUX_MODEM_DIAG_EN_REG          (REG_IO_MUX_BASE + 0xBC)
-/* IO_MUX_MODEM_DIAG_EN : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
-/*description: bit i to enable modem_diag[i] into gpio matrix. 1:enable modem_diag[i] into gpio
- matrix. 0:enable other signals into gpio matrix.*/
+/* IO_MUX_CLK_OUT2 : R/W; bitpos: [10:5]; default: 15;
+ * If you want to output clock for I2S to CLK_OUT_out2, set this register
+ * to 0x0. CLK_OUT_out2 can be found in peripheral output
+ * signals.
+ */
+#define IO_MUX_CLK_OUT2    0x0000001F
+#define IO_MUX_CLK_OUT2_M  (IO_MUX_CLK_OUT2_V << IO_MUX_CLK_OUT2_S)
+#define IO_MUX_CLK_OUT2_V  0x0000001F
+#define IO_MUX_CLK_OUT2_S  5
+/* IO_MUX_CLK_OUT3 : R/W; bitpos: [15:10]; default: 7;
+ * If you want to output clock for I2S to CLK_OUT_out3, set this register
+ * to 0x0. CLK_OUT_out3 can be found in peripheral output
+ * signals.
+ */
+#define IO_MUX_CLK_OUT3    0x0000001F
+#define IO_MUX_CLK_OUT3_M  (IO_MUX_CLK_OUT3_V << IO_MUX_CLK_OUT3_S)
+#define IO_MUX_CLK_OUT3_V  0x0000001F
+#define IO_MUX_CLK_OUT3_S  10
+
+/** IO_MUX_MODEM_DIAG_EN_REG register
+ *  GPIO MATRIX Configure Register for modem
+ *  diag
+ */
+#define IO_MUX_MODEM_DIAG_EN_REG (REG_IO_MUX_BASE + 0xbc)
+/* IO_MUX_MODEM_DIAG_EN : R/W; bitpos: [32:0]; default: 0;
+ * bit i to enable modem_diag[i] into gpio matrix. 1:enable modem_diag[i]
+ * into gpio matrix. 0:enable other signals into gpio
+ * matrix
+ */
 #define IO_MUX_MODEM_DIAG_EN    0xFFFFFFFF
-#define IO_MUX_MODEM_DIAG_EN_M  ((IO_MUX_MODEM_DIAG_EN_V)<<(IO_MUX_MODEM_DIAG_EN_S))
+#define IO_MUX_MODEM_DIAG_EN_M  (IO_MUX_MODEM_DIAG_EN_V << IO_MUX_MODEM_DIAG_EN_S)
 #define IO_MUX_MODEM_DIAG_EN_V  0xFFFFFFFF
 #define IO_MUX_MODEM_DIAG_EN_S  0
-#define IO_MUX_DATE_REG          (REG_IO_MUX_BASE + 0xFC)
-/* IO_MUX_REG_DATE : R/W ;bitpos:[27:0] ;default: 28'h2207270 ; */
-/*description: Version control register.*/
+
+/** IO_MUX_DATE_REG register
+ *  IO MUX Version Control
+ *  Register
+ */
+#define IO_MUX_DATE_REG (REG_IO_MUX_BASE + 0xfc)
+/* IO_MUX_REG_DATE : R/W; bitpos: [28:0]; default: 35680880;
+ * Version control
+ * register
+ */
 #define IO_MUX_REG_DATE    0x0FFFFFFF
-#define IO_MUX_REG_DATE_M  ((IO_MUX_REG_DATE_V)<<(IO_MUX_REG_DATE_S))
-#define IO_MUX_REG_DATE_V  0xFFFFFFF
+#define IO_MUX_REG_DATE_M  (IO_MUX_REG_DATE_V << IO_MUX_REG_DATE_S)
+#define IO_MUX_REG_DATE_V  0x0FFFFFFF
 #define IO_MUX_REG_DATE_S  0

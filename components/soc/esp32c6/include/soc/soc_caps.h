@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@
 #define SOC_ADC_SUPPORTED               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
+#define SOC_GPTIMER_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_TWAI_SUPPORTED              1
@@ -51,14 +52,17 @@
 #define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_SUPPORT_COEXISTENCE         1
-// #define SOC_AES_SUPPORTED               1 // TODO: IDF-5356
+#define SOC_AES_SUPPORTED               1
 // #define SOC_MPI_SUPPORTED               1
-// #define SOC_SHA_SUPPORTED               1 // TODO: IDF-5353
-// #define SOC_HMAC_SUPPORTED              1 // TODO: IDF-5355
-// #define SOC_DIG_SIGN_SUPPORTED          1 // TODO: IDF-5360
+#define SOC_SHA_SUPPORTED               1
+#define SOC_HMAC_SUPPORTED              1
+#define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
+#define SOC_SDIO_SLAVE_SUPPORTED        1
+#define SOC_BOD_SUPPORTED               1
+#define SOC_APM_SUPPORTED               1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -208,7 +212,7 @@
 #define SOC_I2C_SUPPORT_RTC         (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-#define SOC_I2S_NUM                 (1)
+#define SOC_I2S_NUM                 (1U)
 #define SOC_I2S_HW_VERSION_2        (1)
 #define SOC_I2S_SUPPORTS_XTAL       (1)
 #define SOC_I2S_SUPPORTS_PLL_F160M  (1)
@@ -330,6 +334,9 @@
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+#define SOC_SPI_SUPPORT_CLK_XTAL            1
+#define SOC_SPI_SUPPORT_CLK_PLL_F80M        1
+#define SOC_SPI_SUPPORT_CLK_RC_FAST         1
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 // host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
@@ -350,7 +357,6 @@
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
 
-// TODO: IDF-5323 (Copy from esp32c3, need check)
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units
 #define SOC_SYSTIMER_ALARM_NUM              3  // Number of alarm units
@@ -378,6 +384,12 @@
 #define SOC_TWAI_BRP_MIN                2
 #define SOC_TWAI_BRP_MAX                32768
 #define SOC_TWAI_SUPPORTS_RX_STATUS     1
+
+/*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_DIS_PAD_JTAG 1
+#define SOC_EFUSE_DIS_USB_JTAG 1
+#define SOC_EFUSE_DIS_DIRECT_BOOT 1
+#define SOC_EFUSE_SOFT_DIS_JTAG 1
 
 // TODO: IDF-5357 (Copy from esp32c3, need check)
 /*-------------------------- Secure Boot CAPS----------------------------*/
@@ -438,6 +450,10 @@
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
 
+#define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
+#define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< Support to connect an external oscillator, not a crystal */
+#define SOC_CLK_RC32K_SUPPORTED                   (1)     /*!< Support an internal 32kHz RC oscillator */
+
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                (1)
@@ -453,3 +469,5 @@
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_BLE_MESH_SUPPORTED          (1)    /*!< Support BLE MESH */
+#define SOC_ESP_NIMBLE_CONTROLLER       (1)    /*!< Support BLE EMBEDDED controller V1 */

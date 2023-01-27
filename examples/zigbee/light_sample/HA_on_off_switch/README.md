@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-H4 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-C6 | ESP32-H4 |
+| ----------------- | -------- | -------- |
 
 # Light Switch Example
 
@@ -13,7 +13,7 @@ This test code shows how to configure Zigbee Coordinator and use it as an HA on/
 
 ## Configure the project
 
-Before project configuration and build, make sure to set the correct chip target using `idf.py set-target esp32h4`.
+Before project configuration and build, make sure to set the correct chip target using `idf.py --preview set-target TARGET` command.
 
 ## Erase the NVRAM
 

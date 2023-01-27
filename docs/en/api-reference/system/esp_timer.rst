@@ -61,7 +61,7 @@ Callback functions
 Timer callbacks which are processed by ``ESP_TIMER_ISR`` method should not call the context switch call - ``portYIELD_FROM_ISR()``, instead of this you should use the :cpp:func:`esp_timer_isr_dispatch_need_yield` function.
 The context switch will be done after all ISR dispatch timers have been processed, if required by the system.
 
-.. only:: SOC_SYSTIMER_SUPPORT_ETM
+.. only:: SOC_ETM_SUPPORTED and SOC_SYSTIMER_SUPPORT_ETM
 
     ETM Event
     ---------

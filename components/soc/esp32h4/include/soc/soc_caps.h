@@ -36,7 +36,7 @@
 #define SOC_ADC_SUPPORTED               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
-#define SOC_TWAI_SUPPORTED              1
+#define SOC_GPTIMER_SUPPORTED           1
 #define SOC_BT_SUPPORTED                1
 #define SOC_IEEE802154_SUPPORTED        1
 #define SOC_IEEE802154_BLE_ONLY         1
@@ -61,6 +61,7 @@
 #define SOC_ECC_SUPPORTED               1
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
+#define SOC_BOD_SUPPORTED               1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M            1
@@ -150,9 +151,8 @@
 #define SOC_GPIO_PIN_COUNT          (26)
 #endif
 
-// Target has no full RTC IO subsystem, so GPIO is 100% "independent" of RTC
-// On ESP32-H4, Digital IOs have their own registers to control pullup/down capability, independent of RTC registers.
-#define SOC_GPIO_SUPPORTS_RTC_INDEPENDENT       (1)
+// Target has no full RTC IO subsystem, GPIO0~5(7~12) remain RTC function (powered by VDD3V3_RTC, and can be used as deep-sleep wakeup pins)
+
 // Force hold is a new function of ESP32-H4
 #define SOC_GPIO_SUPPORT_FORCE_HOLD         (1)
 // GPIO0~5 on ESP32H4Beta1 / GPIO7~12 on ESP32H4Beta2 can support chip deep sleep wakeup
@@ -192,7 +192,7 @@
 #define SOC_I2C_SUPPORT_RTC         (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-#define SOC_I2S_NUM                 (1)
+#define SOC_I2S_NUM                 (1U)
 #define SOC_I2S_HW_VERSION_2        (1)
 #define SOC_I2S_SUPPORTS_XTAL       (1)
 #define SOC_I2S_SUPPORTS_PLL_F96M   (1)
@@ -285,6 +285,7 @@
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+#define SOC_SPI_SUPPORT_CLK_AHB             1
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 // host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
@@ -334,6 +335,12 @@
 #define SOC_TWAI_BRP_MAX                16384
 #define SOC_TWAI_SUPPORTS_RX_STATUS     1
 
+/*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_DIS_PAD_JTAG 1
+#define SOC_EFUSE_DIS_USB_JTAG 1
+#define SOC_EFUSE_DIS_DIRECT_BOOT 1
+#define SOC_EFUSE_SOFT_DIS_JTAG 1
+
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
@@ -371,6 +378,10 @@
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
+
+/*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
+#define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
+#define SOC_CLK_RC32K_SUPPORTED                   (1)     /*!< Support an internal 32kHz RC oscillator */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

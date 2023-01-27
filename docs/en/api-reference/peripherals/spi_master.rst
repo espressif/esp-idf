@@ -512,10 +512,10 @@ The main parameter that determines the transfer speed for large transactions is 
 Transaction Duration
 ^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_TRANS_TIME_INTR_DMA:default="28", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26", esp32c2="42"}
-{IDF_TARGET_TRANS_TIME_POLL_DMA:default="10", esp32="10", esp32s2="9", esp32c3="10", esp32s3="11", esp32c2="17"}
-{IDF_TARGET_TRANS_TIME_INTR_CPU:default="25", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24", esp32c2="40"}
-{IDF_TARGET_TRANS_TIME_POLL_CPU:default="8", esp32="8", esp32s2="8", esp32c3="9", esp32s3="9", esp32c2="15"}
+{IDF_TARGET_TRANS_TIME_INTR_DMA:default="28", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26", esp32c2="42", esp32c6="34"}
+{IDF_TARGET_TRANS_TIME_POLL_DMA:default="10", esp32="10", esp32s2="9", esp32c3="10", esp32s3="11", esp32c2="17", esp32c6="17"}
+{IDF_TARGET_TRANS_TIME_INTR_CPU:default="25", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24", esp32c2="40", esp32c6="32"}
+{IDF_TARGET_TRANS_TIME_POLL_CPU:default="8", esp32="8", esp32s2="8", esp32c3="9", esp32s3="9", esp32c2="15", esp32c6="15"}
 
 Transaction duration includes setting up SPI peripheral registers, copying data to FIFOs or setting up DMA links, and the time for SPI transaction.
 
@@ -534,7 +534,11 @@ Typical transaction duration for one byte of data are given below.
 
 SPI Clock Frequency
 ^^^^^^^^^^^^^^^^^^^
-The driver support setting an SPI peripheral to different clock frequencies. Actual clock frequency may not be exactly equal to the number you set, it will be re-calculated by the driver to the nearest hardware compatible number, you can call :cpp:func:`spi_device_get_actual_freq` to get the actual frequency computed by driver.
+
+Clock source of the GPSPI peripherals can be selected by setting :cpp:member:`spi_device_handle_t::cfg::clock_source`. You can refer to :cpp:type:`spi_clock_source_t` to know the supported clock sources.
+By default driver will set :cpp:member:`spi_device_handle_t::cfg::clock_source` to `SPI_CLK_SRC_DEFAULT`. This usually stands for the highest frequency among GPSPI clock sources. Its value will be different among chips.
+
+Actual clock frequency of a device may not be exactly equal to the number you set, it will be re-calculated by the driver to the nearest hardware compatible number, and not larger than the clock frequency of the clock source. You can call :cpp:func:`spi_device_get_actual_freq` or use :cpp:member:`spi_device_handle_t::real_clk_freq_hz` directly to know the actual frequency computed by the driver.
 
 Theoretical maximum transfer speed of Write or Read phase can be calculated according to the table below:
 

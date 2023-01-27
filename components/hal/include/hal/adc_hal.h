@@ -88,16 +88,6 @@ typedef struct adc_hal_digi_ctrlr_cfg_t {
 
 
 /*---------------------------------------------------------------
-                    Common setting
----------------------------------------------------------------*/
-/**
- * Set ADC module power management.
- *
- * @prarm manage Set ADC power status.
- */
-#define adc_hal_set_power_manage(manage) adc_ll_set_power_manage(manage)
-
-/*---------------------------------------------------------------
                     PWDET(Power detect) controller setting
 ---------------------------------------------------------------*/
 /**

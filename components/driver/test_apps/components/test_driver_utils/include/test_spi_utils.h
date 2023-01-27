@@ -116,7 +116,7 @@
 #define ESP_SPI_SLAVE_TV        0
 #define WIRE_DELAY              12.5
 
-#elif CONFIG_IDF_TARGET_ESP32C6
+#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
 #define TEST_SPI_HOST           SPI2_HOST
 #define TEST_SLAVE_HOST         SPI2_HOST
 
@@ -145,25 +145,25 @@
 #define TV_WITH_ESP_SLAVE       (TV_INT_CONNECT+WIRE_DELAY)
 
 //currently ESP32 slave only supports up to 20MHz, but 40MHz on the same board
-#define ESP_SPI_SLAVE_MAX_FREQ      SPI_MASTER_FREQ_20M
-#define ESP_SPI_SLAVE_MAX_FREQ_SYNC SPI_MASTER_FREQ_40M
+#define ESP_SPI_SLAVE_MAX_FREQ      20 * 1000 * 1000
+#define ESP_SPI_SLAVE_MAX_FREQ_SYNC 40 * 1000 * 1000
 
 #define MAX_TEST_SIZE   16  ///< in this test we run several transactions, this is the maximum trans that can be run
 #define PSET_NAME_LEN   30  ///< length of each param set name
 
 //test low frequency, high frequency until freq limit for worst case (both GPIO)
 #define TEST_FREQ_DEFAULT(){    \
-        1*1000*1000,            \
-        SPI_MASTER_FREQ_8M ,    \
-        SPI_MASTER_FREQ_9M ,    \
-        SPI_MASTER_FREQ_10M,    \
-        SPI_MASTER_FREQ_11M,    \
-        SPI_MASTER_FREQ_13M,    \
-        SPI_MASTER_FREQ_16M,    \
-        SPI_MASTER_FREQ_20M,    \
-        SPI_MASTER_FREQ_26M,    \
-        SPI_MASTER_FREQ_40M,    \
-        SPI_MASTER_FREQ_80M,    \
+         1 * 1000 * 1000,       \
+         8 * 1000 * 1000,       \
+         9 * 1000 * 1000,       \
+        10 * 1000 * 1000,       \
+        11 * 1000 * 1000,       \
+        13 * 1000 * 1000,       \
+        16 * 1000 * 1000,       \
+        20 * 1000 * 1000,       \
+        26 * 1000 * 1000,       \
+        40 * 1000 * 1000,       \
+        80 * 1000 * 1000,       \
         0,\
     }
 

@@ -7,7 +7,7 @@
 
 每片 {IDF_TARGET_NAME} 的 flash 可以包含多个应用程序，以及多种不同类型的数据（例如校准数据、文件系统数据、参数存储数据等）。因此，我们在 flash 的 :ref:`默认偏移地址 <CONFIG_PARTITION_TABLE_OFFSET>` 0x8000 处烧写一张分区表。
 
-分区表的长度为 0xC00 字节（最多可以保存 95 条分区表条目）。分区表数据后还保存着该表的 MD5 校验和，用于验证分区表的完整性。此外，如果芯片使能了 :doc:`安全启动 </security/secure-boot-v2>` 功能，则该分区表后还会保存签名信息。
+分区表的长度为 0xC00 字节，最多可以保存 95 条分区表条目。MD5 校验和附加在分区表之后，用于在运行时验证分区表的完整性。分区表占据了整个 flash 扇区，大小为 0x1000 (4 KB)。因此，它后面的任何分区至少需要位于 (:ref:`默认偏移地址 <CONFIG_PARTITION_TABLE_OFFSET>`) + 0x1000 处。
 
 分区表中的每个条目都包括以下几个部分：Name（标签）、Type（app、data 等）、SubType 以及在 flash 中的偏移量（分区的加载地址）。
 
@@ -43,7 +43,7 @@
   ota_0,    app,  ota_0,   0x110000, 1M,
   ota_1,    app,  ota_1,   0x210000, 1M,
 
--  分区表中定义了三个应用程序分区，这三个分区的类型都被设置为 “app”，但具体 app 类型不同。其中，位于 0x10000 偏移地址处的为出厂应用程序（factory），其余两个为 OTA 应用程序（ota_0，ota_1）。
+-  分区表中定义了三个应用程序分区，这三个分区的类型都被设置为 “app”，但具体 app 类型不同。其中，位于 0x10000 偏移地址处的为出厂应用程序 (factory)，其余两个为 OTA 应用程序（ota_0，ota_1）。
 -  新增了一个名为 “otadata” 的数据分区，用于保存 OTA 升级时需要的数据。启动加载器会查询该分区的数据，以判断该从哪个 OTA 应用程序分区加载程序。如果 “otadata” 分区为空，则会执行出厂程序。
 
 创建自定义分区表
@@ -88,7 +88,7 @@ Type 字段可以指定为 app (0x00) 或者 data (0x01)，也可以直接使用
 
 SubType 字段
 ~~~~~~~~~~~~
-{IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32c6 = "(not updated yet)"}
+{IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32h2 = "NOT UPDATED YET"}
 
 SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp-idf 仅仅规定了 “app” 和 “data” 两种分区类型的子类型含义。
 
@@ -136,12 +136,14 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp
 
 组件可以通过设置 ``EXTRA_PARTITION_SUBTYPES`` 属性来定义额外的分区子类型。 ``EXTRA_PARTITION_SUBTYPES`` 是一个 CMake 列表，其中的每个条目由字符串组成，以逗号为分隔，格式为 ``<type>, <subtype>, <value>``。构建系统通过该属性会自动添加额外的子类型，并在 :cpp:type:`esp_partition_subtype_t` 中插入名为 ``ESP_PARTITION_SUBTYPE_<type>_<subtype>`` 的字段。项目可以使用这个子类型来定义分区表 CSV 文件中的分区，并使用 :cpp:type:`esp_partition_subtype_t` 中的新字段。
 
-Offset 和 Size 字段
-~~~~~~~~~~~~~~~~~~~
+偏移地址 (Offset) 和 Size 字段
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+偏移地址表示 SPI flash 中的分区地址，扇区大小为 0x1000 (4 KB)。 因此，偏移地址必须是 4 KB 的倍数。
 
 分区若偏移地址为空，则会紧跟着前一个分区之后开始；若为首个分区，则将紧跟着分区表开始。
 
-app 分区的偏移地址必须要与 0x10000 (64K) 对齐，如果将偏移字段留空，``gen_esp32part.py`` 工具会自动计算得到一个满足对齐要求的偏移地址。如果 app 分区的偏移地址没有与 0x10000 (64K) 对齐，则该工具会报错。
+app 分区的偏移地址必须要与 0x10000 (64 K) 对齐，如果将偏移字段留空，``gen_esp32part.py`` 工具会自动计算得到一个满足对齐要求的偏移地址。如果 app 分区的偏移地址没有与 0x10000 (64 K) 对齐，则该工具会报错。
 
 app 分区的大小和偏移地址可以采用十进制数、以 0x 为前缀的十六进制数，且支持 K 或 M 的倍数单位（分别代表 1024 和 1024*1024 字节）。
 

@@ -1,10 +1,12 @@
 idf_build_get_property(idf_target IDF_TARGET)
 idf_build_get_property(python PYTHON)
 
+if(NOT ${IDF_TARGET} STREQUAL "linux")
 set(priv_requires soc esp_hw_support)
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND priv_requires esp_pm)
+endif()
 endif()
 
 set(mbedtls_srcs "")
@@ -120,6 +122,10 @@ set(mbedtls_target_sources ${mbedtls_target_sources}
                            "${COMPONENT_DIR}/port/dynamic/esp_ssl_tls.c")
 endif()
 
+if(${IDF_TARGET} STREQUAL "linux")
+set(mbedtls_target_sources ${mbedtls_target_sources} "${COMPONENT_DIR}/port/net_sockets.c")
+endif()
+
 # net_sockets.c should only be compiled if BSD socket functions are available.
 # Do this by checking if lwip component is included into the build.
 idf_build_get_property(build_components BUILD_COMPONENTS)
@@ -180,7 +186,6 @@ endif()
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
                                   "${COMPONENT_DIR}/port/esp_mem.c"
                                   "${COMPONENT_DIR}/port/esp_timing.c"
-                                  "${COMPONENT_DIR}/port/sha/esp_sha.c"
 )
 
 if(CONFIG_SOC_AES_SUPPORTED)
@@ -191,7 +196,9 @@ if(CONFIG_SOC_AES_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_SHA_SUPPORTED)
-    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c")
+    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/esp_sha.c"
+                                    "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
+    )
 endif()
 
 # CONFIG_ESP_TLS_USE_DS_PERIPHERAL can be enabled only for the supported targets.

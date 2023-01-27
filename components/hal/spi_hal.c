@@ -10,6 +10,7 @@
 #include "hal/log.h"
 #include "hal/assert.h"
 #include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
 
 //This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
 #if SOC_GDMA_SUPPORTED
@@ -80,13 +81,11 @@ esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, int
 {
     spi_hal_timing_conf_t temp_conf;
 
-    int clk_src_freq_hz = timing_param->clk_src_hz;
-    HAL_ASSERT((clk_src_freq_hz == 80 * 1000 * 1000) || (clk_src_freq_hz == 40 * 1000 * 1000) || (clk_src_freq_hz == 48 * 1000 * 1000));
-    int eff_clk_n = spi_ll_master_cal_clock(clk_src_freq_hz, timing_param->expected_freq, timing_param->duty_cycle, &temp_conf.clock_reg);
+    int eff_clk_n = spi_ll_master_cal_clock(timing_param->clk_src_hz, timing_param->expected_freq, timing_param->duty_cycle, &temp_conf.clock_reg);
 
     //When the speed is too fast, we may need to use dummy cycles to compensate the reading.
     //But these don't work for full-duplex connections.
-    spi_hal_cal_timing(eff_clk_n, timing_param->use_gpio, timing_param->input_delay_ns, &temp_conf.timing_dummy, &temp_conf.timing_miso_delay);
+    spi_hal_cal_timing(timing_param->clk_src_hz, eff_clk_n, timing_param->use_gpio, timing_param->input_delay_ns, &temp_conf.timing_dummy, &temp_conf.timing_miso_delay);
 
 #ifdef CONFIG_IDF_TARGET_ESP32
     const int freq_limit = spi_hal_get_freq_limit(timing_param->use_gpio, timing_param->input_delay_ns);
@@ -113,11 +112,12 @@ int spi_hal_master_cal_clock(int fapb, int hz, int duty_cycle)
     return spi_ll_master_cal_clock(fapb, hz, duty_cycle, NULL);
 }
 
-void spi_hal_cal_timing(int eff_clk, bool gpio_is_used, int input_delay_ns, int *dummy_n, int *miso_delay_n)
+
+void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int input_delay_ns, int *dummy_n, int *miso_delay_n)
 {
-    const int apbclk_kHz = APB_CLK_FREQ / 1000;
+    const int apbclk_kHz = source_freq_hz / 1000;
     //how many apb clocks a period has
-    const int spiclk_apb_n = APB_CLK_FREQ / eff_clk;
+    const int spiclk_apb_n = source_freq_hz / eff_clk;
     const int gpio_delay_ns = gpio_is_used ? GPIO_MATRIX_DELAY_NS : 0;
 
     //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
@@ -144,6 +144,8 @@ void spi_hal_cal_timing(int eff_clk, bool gpio_is_used, int input_delay_ns, int 
     HAL_LOGD(SPI_HAL_TAG, "eff: %d, limit: %dk(/%d), %d dummy, %d delay", eff_clk / 1000, apbclk_kHz / (delay_apb_n + 1), delay_apb_n, dummy_required, miso_delay);
 }
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+//TODO: IDF-6578
 int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns)
 {
     const int apbclk_kHz = APB_CLK_FREQ / 1000;
@@ -157,3 +159,4 @@ int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns)
 
     return APB_CLK_FREQ / (delay_apb_n + 1);
 }
+#endif

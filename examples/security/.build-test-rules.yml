@@ -6,6 +6,6 @@ examples/security/flash_encryption:
       temporary: true
       reason: target esp32c2 is not supported yet
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: lack of runners

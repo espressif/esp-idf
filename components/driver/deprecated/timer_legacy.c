@@ -98,6 +98,11 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
         *time = (double)timer_val * div / (40 * 1000 * 1000);
         break;
 #endif
+#if SOC_TIMER_GROUP_SUPPORT_PLL_F48M
+    case TIMER_SRC_CLK_PLL_F48M:
+        *time = (double)timer_val * div / (48 * 1000 * 1000);
+        break;
+#endif
 #if SOC_TIMER_GROUP_SUPPORT_PLL_F80M
     case TIMER_SRC_CLK_PLL_F80M:
         *time = (double)timer_val * div / (80 * 1000 * 1000);

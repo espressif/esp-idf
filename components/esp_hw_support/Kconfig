@@ -34,6 +34,15 @@ menu "Hardware Settings"
 
             # Insert chip-specific MAC config
         orsource "./port/$IDF_TARGET/Kconfig.mac"
+
+        config ESP_MAC_IGNORE_MAC_CRC_ERROR
+            bool "Ignore MAC CRC error (not recommended)"
+            depends on IDF_TARGET_ESP32
+            default n
+            help
+                If you have an invalid MAC CRC (ESP_ERR_INVALID_CRC) problem
+                and you still want to use this chip, you can enable this option to bypass such an error.
+                This applies to both MAC_FACTORY and CUSTOM_MAC efuses.
     endmenu
 
     menu "Sleep Config"

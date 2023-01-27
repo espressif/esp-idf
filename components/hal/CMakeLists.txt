@@ -32,8 +32,6 @@ endif()
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs
         "rtc_io_hal.c"
-        "timer_hal.c"
-        "timer_hal_iram.c"
         "gpio_hal.c"
         "uart_hal.c"
         "uart_hal_iram.c"
@@ -41,10 +39,15 @@ if(NOT BOOTLOADER_BUILD)
         "spi_flash_hal_iram.c"
         "spi_flash_encrypt_hal_iram.c"
         "adc_hal_common.c"
-        "adc_oneshot_hal.c")
+        "adc_oneshot_hal.c"
+        "${target}/clk_tree_hal.c")
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED AND NOT CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
         list(APPEND srcs "systimer_hal.c")
+    endif()
+
+    if(CONFIG_SOC_GPTIMER_SUPPORTED)
+        list(APPEND srcs "timer_hal.c" "timer_hal_iram.c")
     endif()
 
     if(CONFIG_SOC_LEDC_SUPPORTED)
@@ -107,8 +110,16 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "sha_hal.c")
     endif()
 
+    if(CONFIG_SOC_AES_SUPPORTED)
+        list(APPEND srcs "aes_hal.c")
+    endif()
+
     if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT)
         list(APPEND srcs "${target}/modem_clock_hal.c")
+    endif()
+
+    if(CONFIG_SOC_BOD_SUPPORTED)
+        list(APPEND srcs "brownout_hal.c")
     endif()
 
     if(CONFIG_SOC_GPSPI_SUPPORTED)
@@ -123,13 +134,13 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "spi_slave_hd_hal.c")
     endif()
 
+    if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
+        list(APPEND srcs "sdio_slave_hal.c")
+    endif()
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
-            "sdio_slave_hal.c"
             "touch_sensor_hal.c"
-            "aes_hal.c"
-            "esp32/brownout_hal.c"
             "esp32/touch_sensor_hal.c"
             "esp32/gpio_hal_workaround.c")
     endif()
@@ -141,8 +152,6 @@ if(NOT BOOTLOADER_BUILD)
                     "usb_hal.c"
                     "usb_phy_hal.c"
                     "xt_wdt_hal.c"
-                    "aes_hal.c"
-                    "esp32s2/brownout_hal.c"
                     "esp32s2/cp_dma_hal.c"
                     "esp32s2/touch_sensor_hal.c"
                     "usb_dwc_hal.c")
@@ -156,8 +165,6 @@ if(NOT BOOTLOADER_BUILD)
             "usb_hal.c"
             "usb_phy_hal.c"
             "xt_wdt_hal.c"
-            "aes_hal.c"
-            "esp32s3/brownout_hal.c"
             "hmac_hal.c"
             "esp32s3/touch_sensor_hal.c"
             "esp32s3/rtc_cntl_hal.c"
@@ -169,8 +176,6 @@ if(NOT BOOTLOADER_BUILD)
               "ds_hal.c"
               "spi_flash_hal_gpspi.c"
               "xt_wdt_hal.c"
-              "aes_hal.c"
-              "esp32c3/brownout_hal.c"
               "hmac_hal.c"
               "esp32c3/rtc_cntl_hal.c")
     endif()
@@ -180,7 +185,6 @@ if(NOT BOOTLOADER_BUILD)
             "ds_hal.c"
             "spi_flash_hal_gpspi.c"
             "aes_hal.c"
-            "esp32h4/brownout_hal.c"
             "hmac_hal.c"
             "esp32h4/rtc_cntl_hal.c")
     endif()
@@ -188,15 +192,15 @@ if(NOT BOOTLOADER_BUILD)
     if(${target} STREQUAL "esp32c2")
         list(APPEND srcs
               "spi_flash_hal_gpspi.c"
-              "esp32c2/brownout_hal.c"
               "esp32c2/rtc_cntl_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32c6")
         list(APPEND srcs
               "spi_flash_hal_gpspi.c"
-              "esp32c6/brownout_hal.c"
-              "esp32c6/rtc_cntl_hal.c")
+              "esp32c6/rtc_cntl_hal.c"
+              "hmac_hal.c"
+              "ds_hal.c")
 
     endif()
 
@@ -208,10 +212,8 @@ if(NOT BOOTLOADER_BUILD)
         list(REMOVE_ITEM srcs
                 "adc_oneshot_hal.c" # TODO: IDF-6214
                 "adc_hal_common.c" # TODO: IDF-6215
-                "esp32h2/brownout_hal.c"
                 "esp32h2/rtc_cntl_hal.c"
-                "timer_hal.c"
-                "timer_hal_iram.c"
+                "esp32h2/clk_tree_hal.c"
                 )
     endif()
 endif()

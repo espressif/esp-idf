@@ -117,7 +117,9 @@ esp_err_t esp_openthread_uart_process(otInstance *instance, const esp_openthread
     int rval = read(s_uart_fd, s_uart_buffer, sizeof(s_uart_buffer));
 
     if (rval > 0) {
+#if CONFIG_OPENTHREAD_CLI || CONFIG_OPENTHREAD_RADIO
         otPlatUartReceived(s_uart_buffer, (uint16_t)rval);
+#endif
     } else if (rval < 0) {
         if (errno != EAGAIN) {
             ESP_LOGW(OT_PLAT_LOG_TAG, "read uart failed: %d", errno);

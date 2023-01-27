@@ -607,7 +607,7 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle_t handle,
         return ESP_ERR_INVALID_SIZE;
     }
     uint8_t sta_mac[6];
-    esp_efuse_mac_get_default(sta_mac);
+    ESP_ERROR_CHECK(esp_efuse_mac_get_default(sta_mac));
     if (memcmp(sta_mac, cal_data_mac, sizeof(sta_mac)) != 0) {
         ESP_LOGE(TAG, "%s: calibration data MAC check failed: expected " \
                 MACSTR ", found " MACSTR,
@@ -639,7 +639,7 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle_t handle,
     }
 
     uint8_t sta_mac[6];
-    esp_efuse_mac_get_default(sta_mac);
+    ESP_ERROR_CHECK(esp_efuse_mac_get_default(sta_mac));
     err = nvs_set_blob(handle, PHY_CAL_MAC_KEY, sta_mac, sizeof(sta_mac));
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: store calibration mac failed(0x%x)\n", __func__, err);
@@ -730,7 +730,7 @@ void esp_phy_load_cal_and_init(void)
         calibration_mode = PHY_RF_CAL_FULL;
     }
 
-    esp_efuse_mac_get_default(sta_mac);
+    ESP_ERROR_CHECK(esp_efuse_mac_get_default(sta_mac));
     memcpy(cal_data->mac, sta_mac, 6);
     esp_err_t ret = register_chipv7_phy(init_data, cal_data, calibration_mode);
     if (ret == ESP_CAL_DATA_CHECK_FAIL) {

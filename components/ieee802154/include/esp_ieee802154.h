@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -183,6 +183,81 @@ void esp_ieee802154_get_extended_address(uint8_t *ext_addr);
  *
  */
 void esp_ieee802154_set_extended_address(const uint8_t *ext_addr);
+
+/**
+ * @brief  Get the device PAN ID for specific interface.
+ *
+ * @param[in]  index  The interface index.
+ *
+ * @return  The device PAN ID.
+ *
+ */
+uint16_t esp_ieee802154_get_multipan_panid(esp_ieee802154_multipan_index_t index);
+
+/**
+ * @brief  Set the device PAN ID for specific interface.
+ *
+ * @param[in]  index  The interface index.
+ * @param[in]  panid  The device PAN ID.
+ *
+ */
+void esp_ieee802154_set_multipan_panid(esp_ieee802154_multipan_index_t index, uint16_t panid);
+
+/**
+ * @brief  Get the device short address for specific interface.
+ *
+ * @param[in]  index  The interface index.
+ *
+ * @return  The device short address.
+ *
+ */
+uint16_t esp_ieee802154_get_multipan_short_address(esp_ieee802154_multipan_index_t index);
+
+/**
+ * @brief  Set the device short address for specific interface.
+ *
+ * @param[in]  index  The interface index.
+ * @param[in]  short_address  The device short address.
+ *
+ */
+void esp_ieee802154_set_multipan_short_address(esp_ieee802154_multipan_index_t index, uint16_t short_address);
+
+/**
+ * @brief  Get the device extended address for specific interface.
+ *
+ * @param[in]  index  The interface index.
+ * @param[out]  ext_addr  The pointer to the device extended address.
+ *
+ */
+void esp_ieee802154_get_multipan_extended_address(esp_ieee802154_multipan_index_t index, uint8_t *ext_addr);
+
+/**
+ * @brief  Set the device extended address for specific interface.
+ *
+ * @param[in]  index  The interface index.
+ * @param[in]  ext_addr  The pointer to the device extended address.
+ *
+ */
+void esp_ieee802154_set_multipan_extended_address(esp_ieee802154_multipan_index_t index, const uint8_t *ext_addr);
+
+/**
+ * @brief  Get the device current multipan interface enable mask.
+ *
+ * @return  Current multipan interface enable mask.
+ *
+ */
+uint8_t esp_ieee802154_get_multipan_enable(void);
+
+/**
+ * @brief Enable specific interface for the device.
+ *
+ * As an example, call `esp_ieee802154_set_multipan_enable(BIT(ESP_IEEE802154_MULTIPAN_0) | BIT(ESP_IEEE802154_MULTIPAN_1));`
+ * to enable multipan interface 0 and 1.
+ *
+ * @param[in]  mask  The multipan interface bit mask.
+ *
+ */
+void esp_ieee802154_set_multipan_enable(uint8_t mask);
 
 /**
  * @brief  Get the device coordinator.

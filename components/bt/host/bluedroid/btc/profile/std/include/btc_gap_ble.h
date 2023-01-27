@@ -85,6 +85,7 @@ typedef enum {
     BTC_GAP_BLE_STOP_EXT_SCAN,
     BTC_GAP_BLE_SET_EXT_PEFER_CONNET_PARAMS,
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_ACT_GET_DEV_NAME,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */

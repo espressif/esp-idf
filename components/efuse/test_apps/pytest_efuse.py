@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 
 from time import sleep
@@ -11,6 +11,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32c2
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.generic
 def test_efuse(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import pytest
@@ -56,6 +56,4 @@ def test_esp_flash_rom(dut: Dut) -> None:
     indirect=True,
 )
 def test_esp_flash_multi(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('[esp_flash_multi]')
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases(group='esp_flash_multi', timeout=120)

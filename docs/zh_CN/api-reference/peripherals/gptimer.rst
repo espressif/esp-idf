@@ -25,7 +25,7 @@
     - :ref:`gptimer-register-event-callbacks` - 如何将用户的特定代码挂载到警报事件回调函数。
     - :ref:`enable-and-disable-timer` - 如何使能和禁用定时器。
     - :ref:`start-and-stop-timer` - 通过不同报警行为启动定时器的典型使用场景。
-    :SOC_TIMER_SUPPORT_ETM: - :ref:`gptimer-etm-event-and-task` - 定时器提供了哪些事件和任务可以连接到 ETM 通道上。
+    :SOC_ETM_SUPPORTED and SOC_TIMER_SUPPORT_ETM: - :ref:`gptimer-etm-event-and-task` - 定时器提供了哪些事件和任务可以连接到 ETM 通道上。
     - :ref:`gptimer-power-management` - 选择不同的时钟源将会如何影响功耗。
     - :ref:`gptimer-iram-safe` - 在 cache 禁用的情况下，如何更好地让定时器处理中断事务以及实现 IO 控制功能。
     - :ref:`gptimer-thread-safety` - 驱动程序保证哪些 API 线程安全。
@@ -260,7 +260,7 @@
     ESP_ERROR_CHECK(gptimer_start(gptimer, &alarm_config));
 
 
-.. only:: SOC_TIMER_SUPPORT_ETM
+.. only:: SOC_ETM_SUPPORTED and SOC_TIMER_SUPPORT_ETM
 
     .. _gptimer-etm-event-and-task:
 
@@ -273,7 +273,7 @@
 
     .. _gptimer-power-management:
 
-.. only:: not SOC_TIMER_SUPPORT_ETM
+.. only:: not SOC_ETM_SUPPORTED or not SOC_TIMER_SUPPORT_ETM
 
     .. _gptimer-power-management:
 

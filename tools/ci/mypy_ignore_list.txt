@@ -162,7 +162,6 @@ tools/ci/python_packages/tiny_test_fw/Utility/__init__.py
 tools/ci/python_packages/tiny_test_fw/bin/Runner.py
 tools/ci/python_packages/tiny_test_fw/bin/example.py
 tools/ci/python_packages/tiny_test_fw/docs/conf.py
-tools/ci/python_packages/ttfw_idf/DebugUtils.py
 tools/ci/python_packages/ttfw_idf/IDFAssignTest.py
 tools/ci/python_packages/ttfw_idf/IDFDUT.py
 tools/ci/python_packages/ttfw_idf/__init__.py

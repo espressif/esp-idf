@@ -6,6 +6,14 @@ Introduction
 
 {IDF_TARGET_NAME} has a second-order sigma-delta modulator, which can generate independent PDM pulses to multiple channels. Please refer to the TRM to check how many hardware channels are available. [1]_
 
+Delta-sigma modulation converts an analog voltage signal into a pulse frequency, or pulse density, which can be understood as pulse-density modulation (PDM) (refer to |wiki_ref|_).
+
+The main differences comparing to the PDM in I2S peripheral and DAC are:
+
+1. SDM has no clock signal, it just like the DAC mode of PDM;
+2. SDM has no DMA, and it can't change its output density continuously. If you have to, you can update the density in a timer's callback;
+3. Base on the former two points, an external active or passive filter is required to restore the analog wave (See :ref:`convert_to_analog_signal`);
+
 Typically, a Sigma-Delta modulated channel can be used in scenarios like:
 
 -  LED dimming
@@ -65,10 +73,10 @@ Before doing further IO control to the SDM channel, you should enable it first, 
 
 On the contrary, calling :cpp:func:`sdm_channel_disable` will do the opposite, that is, put the channel back to the **init** state and release the power management lock.
 
-Set Equivalent Duty Cycle
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Set Pulse Density
+^^^^^^^^^^^^^^^^^
 
-For the output PDM signals, the duty cycle refers to the percentage of high level cycles to the whole statistical period. The average output voltage from the channel is calculated by ``Vout = VDD_IO / 256 * duty + VDD_IO / 2``. Thus the range of the ``duty`` input parameter of :cpp:func:`sdm_channel_set_duty` is from -128 to 127 (eight bit signed integer). For example,if zero value is set, then the output signal's duty will be about 50%.
+For the output PDM signals, the pulse density decides the output analog voltage that restored by a low-pass filter. The restored analog voltage from the channel is calculated by ``Vout = VDD_IO / 256 * duty + VDD_IO / 2``. The range of the quantized ``density`` input parameter of :cpp:func:`sdm_channel_set_pulse_density` is from -128 to 127 (eight-bit signed integer). For example, if a zero value is set, then the output signal's duty will be around 50%.
 
 Power Management
 ^^^^^^^^^^^^^^^^
@@ -82,7 +90,7 @@ IRAM Safe
 
 There's a Kconfig option :ref:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` that can put commonly used IO control functions into IRAM as well. So that these functions can also be executable when the cache is disabled. These IO control functions are listed as follows:
 
-- :cpp:func:`sdm_channel_set_duty`
+- :cpp:func:`sdm_channel_set_pulse_density`
 
 Thread Safety
 ^^^^^^^^^^^^^
@@ -90,7 +98,7 @@ Thread Safety
 The factory function :cpp:func:`sdm_new_channel` is guaranteed to be thread safe by the driver, which means, user can call it from different RTOS tasks without protection by extra locks.
 The following functions are allowed to run under ISR context, the driver uses a critical section to prevent them being called concurrently in both task and ISR.
 
-- :cpp:func:`sdm_channel_set_duty`
+- :cpp:func:`sdm_channel_set_pulse_density`
 
 Other functions that take the :cpp:type:`sdm_channel_handle_t` as the first positional parameter, are not treated as thread safe. Which means the user should avoid calling them from multiple tasks.
 
@@ -99,6 +107,8 @@ Kconfig Options
 
 - :ref:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` controls where to place the SDM channel control functions (IRAM or Flash), see `IRAM Safe <#iram-safe>`__ for more information.
 - :ref:`CONFIG_SDM_ENABLE_DEBUG_LOG` is used to enabled the debug log output. Enable this option will increase the firmware binary size.
+
+.. _convert_to_analog_signal:
 
 Convert to analog signal (Optional)
 -----------------------------------
@@ -118,7 +128,8 @@ For example, you can take the following `Sallen-Key topology Low Pass Filter`_ a
 Application Example
 -------------------
 
-* LED driven by a GPIO that is modulated with Sigma-Delta: :example:`peripherals/sigma_delta`.
+* 100 Hz sine wave that is modulated with Sigma-Delta: :example:`peripherals/sigma_delta/sdm_dac`.
+* LED driven by a GPIO that is modulated with Sigma-Delta: :example:`peripherals/sigma_delta/sdm_led`.
 
 API Reference
 -------------
@@ -130,3 +141,6 @@ API Reference
    Different ESP chip series might have different numbers of SDM channels. Please refer to Chapter `GPIO and IOMUX <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__ in {IDF_TARGET_NAME} Technical Reference Manual for more details. The driver won't forbid you from applying for more channels, but it will return error when all available hardware resources are used up. Please always check the return value when doing resource allocation (e.g. :cpp:func:`sdm_new_channel`).
 
 .. _Sallen-Key topology Low Pass Filter: https://en.wikipedia.org/wiki/Sallen%E2%80%93Key_topology
+
+.. |wiki_ref| replace:: Delta-sigma modulation on Wikipedia
+.. _wiki_ref: https://en.wikipedia.org/wiki/Delta-sigma_modulation

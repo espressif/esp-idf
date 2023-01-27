@@ -15,6 +15,10 @@ config SOC_GDMA_SUPPORTED
     bool
     default y
 
+config SOC_GPTIMER_SUPPORTED
+    bool
+    default y
+
 config SOC_PCNT_SUPPORTED
     bool
     default y
@@ -103,6 +107,22 @@ config SOC_SUPPORT_COEXISTENCE
     bool
     default y
 
+config SOC_AES_SUPPORTED
+    bool
+    default y
+
+config SOC_SHA_SUPPORTED
+    bool
+    default y
+
+config SOC_HMAC_SUPPORTED
+    bool
+    default y
+
+config SOC_DIG_SIGN_SUPPORTED
+    bool
+    default y
+
 config SOC_ECC_SUPPORTED
     bool
     default y
@@ -112,6 +132,18 @@ config SOC_FLASH_ENC_SUPPORTED
     default y
 
 config SOC_SECURE_BOOT_SUPPORTED
+    bool
+    default y
+
+config SOC_SDIO_SLAVE_SUPPORTED
+    bool
+    default y
+
+config SOC_BOD_SUPPORTED
+    bool
+    default y
+
+config SOC_APM_SUPPORTED
     bool
     default y
 
@@ -404,8 +436,8 @@ config SOC_I2C_SUPPORT_RTC
     default y
 
 config SOC_I2S_NUM
-    bool
-    default y
+    int
+    default 1
 
 config SOC_I2S_HW_VERSION_2
     bool
@@ -715,6 +747,18 @@ config SOC_SPI_SUPPORT_SLAVE_HD_VER2
     bool
     default y
 
+config SOC_SPI_SUPPORT_CLK_XTAL
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_CLK_PLL_F80M
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_CLK_RC_FAST
+    bool
+    default y
+
 config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
@@ -847,6 +891,22 @@ config SOC_TWAI_SUPPORTS_RX_STATUS
     bool
     default y
 
+config SOC_EFUSE_DIS_PAD_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_USB_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_DIRECT_BOOT
+    bool
+    default y
+
+config SOC_EFUSE_SOFT_DIS_JTAG
+    bool
+    default y
+
 config SOC_SECURE_BOOT_V2_RSA
     bool
     default y
@@ -963,6 +1023,18 @@ config SOC_MODEM_CLOCK_IS_INDEPENDENT
     bool
     default y
 
+config SOC_CLK_XTAL32K_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_OSC_SLOW_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_RC32K_SUPPORTED
+    bool
+    default y
+
 config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
     bool
     default y
@@ -1000,5 +1072,13 @@ config SOC_WIFI_HE_SUPPORT
     default y
 
 config SOC_BLE_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_MESH_SUPPORTED
+    bool
+    default y
+
+config SOC_ESP_NIMBLE_CONTROLLER
     bool
     default y

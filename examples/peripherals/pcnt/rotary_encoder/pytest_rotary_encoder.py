@@ -9,6 +9,7 @@ from pytest_embedded.dut import Dut
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.generic
 def test_rotary_encoder(dut: Dut) -> None:
     dut.expect_exact('install pcnt unit')

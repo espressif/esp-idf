@@ -168,3 +168,11 @@ check_test_scripts_build_test_rules:
     # required pytest related packages
     - run_cmd bash install.sh --enable-pytest
     - python tools/ci/check_build_test_rules.py check-test-scripts examples/ tools/test_apps components
+
+check_configure_ci_environment_parsing:
+  extends:
+    - .pre_check_template
+    - .before_script_build_jobs
+  script:
+    - cd tools/ci
+    - python -m unittest ci_build_apps.py

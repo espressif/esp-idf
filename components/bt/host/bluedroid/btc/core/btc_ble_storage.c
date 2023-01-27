@@ -924,10 +924,7 @@ int btc_storage_get_num_ble_bond_devices(void)
 
     return num_dev;
 }
-#endif  ///BLE_INCLUDED == TRUE
-#endif  ///SMP_INCLUDED == TRUE
 
-#if (BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
 bt_status_t btc_storage_get_gatt_cl_supp_feat(bt_bdaddr_t *remote_bd_addr, uint8_t *value, int len)
 {
     bdstr_t bdstr;
@@ -1001,4 +998,5 @@ bt_status_t btc_storage_remove_gatt_db_hash(bt_bdaddr_t *remote_bd_addr)
 
     return  BT_STATUS_SUCCESS;
 }
-#endif /* BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE */
+#endif  ///BLE_INCLUDED == TRUE
+#endif  ///SMP_INCLUDED == TRUE

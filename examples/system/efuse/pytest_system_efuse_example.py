@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 from __future__ import unicode_literals
 
@@ -248,6 +248,7 @@ def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
     dut.expect_exact('flash encryption is enabled (0 plaintext flashes left)', timeout=5)
     dut.expect('Flash encryption mode is RELEASE')
     dut.expect('Start eFuse example')
+    dut.expect('Flash Encryption is in RELEASE mode')
     dut.expect('example: Done')
 
 
@@ -354,6 +355,7 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
+@pytest.mark.generic
 @pytest.mark.esp32
 @pytest.mark.parametrize('config', [('virt_secure_boot_v2.esp32'),], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
@@ -469,15 +471,16 @@ def test_examples_efuse_with_virt_secure_boot_v2(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
+@pytest.mark.generic
 @pytest.mark.esp32
 @pytest.mark.parametrize('config', [('virt_secure_boot_v2.esp32'),], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
 def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(dut: Dut) -> None:
 
     print(' - Erase flash')
-    dut.erase_flash()
+    dut.serial.erase_flash()
     print(' - Flash bootloader and app')
-    dut.bootloader_flash()
+    dut.serial.bootloader_flash()
     print(' - Start app (flash partition_table and app)')
     dut.serial.flash()
     dut.expect('Loading virtual efuse blocks from real efuses')
@@ -772,9 +775,12 @@ def test_examples_efuse_with_virt_sb_v1_and_fe(dut: Dut) -> None:
     dut.expect_exact('flash_encrypt: Flash encryption mode is DEVELOPMENT (not secure)')
     dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
+    dut.expect('example: Flash Encryption is NOT in RELEASE mode')
+    dut.expect('example: Secure Boot is in RELEASE mode')
     dut.expect('example: Done')
 
 
+@pytest.mark.generic
 @pytest.mark.esp32
 @pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
@@ -815,7 +821,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect('secure_boot_v2: blowing secure boot efuse...')
     dut.expect('Disable JTAG...')
     dut.expect('Disable ROM BASIC interpreter fallback...')
-    dut.expect('UART ROM Download mode kept enabled - SECURITY COMPROMISED')
+    dut.expect('Disable ROM Download mode...')
     dut.expect('secure_boot_v2: Secure boot permanently enabled')
 
     dut.expect('Checking flash encryption...')
@@ -851,6 +857,8 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect_exact('flash_encrypt: Flash encryption mode is DEVELOPMENT (not secure)')
     dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
+    dut.expect('example: Flash Encryption is NOT in RELEASE mode')
+    dut.expect('example: Secure Boot is in RELEASE mode')
     dut.expect('example: Done')
 
 
@@ -895,7 +903,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
         dut.expect_exact('secure_boot_v2: Revoking empty key digest slot (1)...')
         dut.expect_exact('secure_boot_v2: Revoking empty key digest slot (2)...')
     dut.expect('secure_boot_v2: blowing secure boot efuse...')
-    dut.expect('UART ROM Download mode kept enabled - SECURITY COMPROMISED')
+    dut.expect('Enabling Security download mode...')
     dut.expect('Disable hardware & software JTAG...')
 
     if dut.app.target != 'esp32c2':
@@ -938,9 +946,12 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
     dut.expect_exact('flash_encrypt: Flash encryption mode is DEVELOPMENT (not secure)')
     dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
+    dut.expect('example: Flash Encryption is NOT in RELEASE mode')
+    dut.expect('example: Secure Boot is in RELEASE mode')
     dut.expect('example: Done')
 
 
+@pytest.mark.generic
 @pytest.mark.esp32c3
 @pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32c3'], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
@@ -948,6 +959,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32c3(dut: Dut) -> None:
     test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut)
 
 
+@pytest.mark.generic
 @pytest.mark.esp32c2
 @pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32c2'], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
@@ -955,6 +967,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32c2(dut: Dut) -> None:
     test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut)
 
 
+@pytest.mark.generic
 @pytest.mark.esp32s2
 @pytest.mark.parametrize('config', ['virt_sb_v2_and_fe.esp32s2'], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)

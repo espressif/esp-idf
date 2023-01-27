@@ -105,7 +105,7 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit);
  *       the input of GPIO36 and GPIO39 will be pulled down for about 80ns.
  *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
  *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
- *       As a workaround, call adc_power_acquire() in the app. This will result in higher power consumption (by ~1mA),
+ *       As a workaround, call sar_periph_ctrl_adc_oneshot_power_acquire() in the app. This will result in higher power consumption (by ~1mA),
  *       but will remove the glitches on GPIO36 and GPIO39.
  *
  * @note Call ``adc1_config_width()`` before the first time this
@@ -236,7 +236,7 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten);
  *       the input of GPIO36 and GPIO39 will be pulled down for about 80ns.
  *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
  *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
- *       As a workaround, call adc_power_acquire() in the app. This will result in higher power consumption (by ~1mA),
+ *       As a workaround, call sar_periph_ctrl_adc_oneshot_power_acquire() in the app. This will result in higher power consumption (by ~1mA),
  *       but will remove the glitches on GPIO36 and GPIO39.
  *
  *

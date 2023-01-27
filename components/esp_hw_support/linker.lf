@@ -22,6 +22,7 @@ entries:
         rtc_wdt (noflash_text)
     if PERIPH_CTRL_FUNC_IN_IRAM = y:
         periph_ctrl: periph_module_reset (noflash)
+    if PERIPH_CTRL_FUNC_IN_IRAM = y && ESP32_WIFI_ENABLED = y:
         periph_ctrl: wifi_module_enable (noflash)
         periph_ctrl: wifi_module_disable (noflash)
     if GDMA_CTRL_FUNC_IN_IRAM = y:
@@ -31,3 +32,6 @@ entries:
         gdma: gdma_reset (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
         systimer (noflash)
+    if SOC_MEMSPI_SRC_FREQ_120M = y:
+        mspi_timing_tuning (noflash)
+        mspi_timing_config (noflash)

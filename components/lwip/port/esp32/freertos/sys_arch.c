@@ -53,7 +53,6 @@ static sys_mutex_t g_lwip_protect_mutex = NULL;
 
 static pthread_key_t sys_thread_sem_key;
 static void sys_thread_sem_free(void* data);
-sys_thread_t g_lwip_task;
 
 #if !LWIP_COMPAT_MUTEX
 
@@ -428,10 +427,8 @@ sys_thread_new(const char *name, lwip_thread_fn thread, void *arg, int stacksize
   ret = xTaskCreatePinnedToCore(thread, name, stacksize, arg, prio, &rtos_task,
           CONFIG_LWIP_TCPIP_TASK_AFFINITY);
 
-  g_lwip_task = rtos_task;
-
-  LWIP_DEBUGF(TCPIP_DEBUG, ("tcpip_task_hdlxxx : %x, prio:%d,stack:%d\n",
-             (u32_t)g_lwip_task,TCPIP_THREAD_PRIO,TCPIP_THREAD_STACKSIZE));
+  LWIP_DEBUGF(TCPIP_DEBUG, ("new lwip task : %x, prio:%d,stack:%d\n",
+             (u32_t)rtos_task, prio, stacksize));
 
   if (ret != pdTRUE) {
     return NULL;
@@ -576,4 +573,37 @@ void
 sys_delay_ms(uint32_t ms)
 {
   vTaskDelay(ms / portTICK_PERIOD_MS);
+}
+
+bool
+sys_thread_tcpip(sys_thread_core_lock_t type)
+{
+    static sys_thread_t lwip_task = NULL;
+#if LWIP_TCPIP_CORE_LOCKING
+    static sys_thread_t core_lock_holder = NULL;
+#endif
+    switch (type) {
+        default:
+            return false;
+        case LWIP_CORE_IS_TCPIP_INITIALIZED:
+            return lwip_task != NULL;
+        case LWIP_CORE_MARK_TCPIP_TASK:
+            LWIP_ASSERT("LWIP_CORE_MARK_TCPIP_TASK: lwip_task == NULL", (lwip_task == NULL));
+            lwip_task = (sys_thread_t) xTaskGetCurrentTaskHandle();
+            return true;
+#if LWIP_TCPIP_CORE_LOCKING
+        case LWIP_CORE_LOCK_QUERY_HOLDER:
+            return lwip_task ? core_lock_holder == (sys_thread_t) xTaskGetCurrentTaskHandle() : true;
+        case LWIP_CORE_LOCK_MARK_HOLDER:
+            core_lock_holder = (sys_thread_t) xTaskGetCurrentTaskHandle();
+            return true;
+        case LWIP_CORE_LOCK_UNMARK_HOLDER:
+            core_lock_holder = NULL;
+            return true;
+#else
+        case LWIP_CORE_LOCK_QUERY_HOLDER:
+            return lwip_task == NULL || lwip_task == (sys_thread_t) xTaskGetCurrentTaskHandle();
+#endif /* LWIP_TCPIP_CORE_LOCKING */
+    }
+    return true;
 }

@@ -24,6 +24,10 @@ if(CONFIG_BT_ENABLED)
     elseif(CONFIG_IDF_TARGET_ESP32C2)
         list(APPEND srcs "controller/esp32c2/bt.c")
         list(APPEND include_dirs include/esp32c2/include)
+
+    elseif(CONFIG_IDF_TARGET_ESP32C6)
+        list(APPEND srcs "controller/esp32c6/bt.c")
+        list(APPEND include_dirs include/esp32c6/include)
     endif()
 
 
@@ -711,6 +715,9 @@ if(CONFIG_BT_ENABLED)
         target_link_libraries(${COMPONENT_LIB} PRIVATE nimblelib)
     elseif(CONFIG_IDF_TARGET_ESP32C2)
         add_prebuilt_library(nimblelib "controller/lib_esp32c2/esp32c2-bt-lib/libble_app.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE nimblelib)
+    elseif(CONFIG_IDF_TARGET_ESP32C6)
+        add_prebuilt_library(nimblelib "controller/lib_esp32c6/esp32c6-bt-lib/libble_app.a")
         target_link_libraries(${COMPONENT_LIB} PRIVATE nimblelib)
     endif()
 

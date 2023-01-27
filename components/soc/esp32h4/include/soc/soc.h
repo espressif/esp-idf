@@ -184,11 +184,11 @@
 #define MAP_IRAM_TO_DRAM(addr) (addr - SOC_I_D_OFFSET)
 
 // Region of memory accessible via DMA. See esp_ptr_dma_capable().
-#define SOC_DMA_LOW  0x3FC88000
-#define SOC_DMA_HIGH 0x3FD00000
+#define SOC_DMA_LOW  0x3FC80000
+#define SOC_DMA_HIGH 0x3FCE0000
 
 // Region of RAM that is byte-accessible. See esp_ptr_byte_accessible().
-#define SOC_BYTE_ACCESSIBLE_LOW     0x3FC88000
+#define SOC_BYTE_ACCESSIBLE_LOW     0x3FC80000
 #define SOC_BYTE_ACCESSIBLE_HIGH    0x3FD00000
 
 //Region of memory that is internal, as in on the same silicon die as the ESP32 CPUs

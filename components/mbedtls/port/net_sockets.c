@@ -34,6 +34,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
+#include <fcntl.h>
+#include <errno.h>
 
 /*
  * Prepare for using the sockets interface

@@ -144,7 +144,7 @@ The driver allows to redirect all standard application streams (stdinm stdout, s
 USB Mass Storage Device (MSC)
 -----------------------------
 
-If the MSC CONFIG_TINYUSB_MSC_ENABLED option is enabled and SPI Flash Wear Levelling WL_SECTOR_SIZE is set to 512 and WL_SECTOR_MODE is set to PERF in Menuconfig, the USB MSC Device can be initialized as shown below (see example below).
+If the MSC CONFIG_TINYUSB_MSC_ENABLED option is enabled, the USB MSC Device can be initialized as shown below (see example below).
 
 .. code-block:: c
 

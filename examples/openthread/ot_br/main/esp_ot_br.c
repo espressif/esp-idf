@@ -205,7 +205,12 @@ void app_main(void)
     // * task queue
     // * border router
     esp_vfs_eventfd_config_t eventfd_config = {
+#if CONFIG_OPENTHREAD_RADIO_NATIVE
+        // * radio driver (A native radio device needs a eventfd for radio driver.)
+        .max_fds = 4,
+#else
         .max_fds = 3,
+#endif
     };
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
 

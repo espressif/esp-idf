@@ -27,21 +27,13 @@
 
 #define NIMBLE_HS_STACK_SIZE CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE
 
-#if (CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2)
+#if SOC_ESP_NIMBLE_CONTROLLER
 #define NIMBLE_LL_STACK_SIZE CONFIG_BT_LE_CONTROLLER_TASK_STACK_SIZE
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct {
-    uint16_t evt_count;
-    uint16_t evtq_count;
-    uint16_t co_count;
-    uint16_t sem_count;
-    uint16_t mutex_count;
-} ble_npl_count_info_t;
 
 void nimble_port_init(void);
 void nimble_port_deinit(void);

@@ -219,11 +219,8 @@ DUT2（slave）终端::
 可以输入以下任意一项来运行测试用例：
 
 -  引号中写入测试用例的名字，运行单个测试用例。
-
 -  测试用例的序号，运行单个测试用例。
-
 -  方括号中的模块名字，运行指定模块所有的测试用例。
-
 -  星号，运行所有测试用例。
 
 ``[multi_device]`` 和 ``[multi_stage]``标签告诉测试运行者该用例是多设备测试还是多阶段测试。这些标签由 ``TEST_CASE_MULTIPLE_STAGES`` 和 ``TEST_CASE_MULTIPLE_DEVICES`` 宏自动生成。
@@ -311,7 +308,9 @@ Mocks
 对组件进行 Mock
 ^^^^^^^^^^^^^^^^
 
-要创建组件的 Mock 版本（也称为 “组件模拟”），需要以特定方式覆盖组件。覆盖组件时需要创建一个与原始组件名称完全相同的组件，然后让构建系统先发现原始组件再发现这个具有相同名称的新组件。具体可参考 :ref:`同名组件 <cmake-components-same-name>`。
+如果 ESP-IDF 中已对组件进行 Mock（也称为 *组件模拟*），那么只要满足要求，该版本即可立即投入使用。已进行 Mock 的组件列表，可参考 :ref:`component-linux-mock-support`。具体组件模拟的使用方法，请参考 :ref:`adjustments_for_mocks`。
+
+如果 ESP-IDF 尚未提供任何组件模拟，则需要创建组件的 Mock 版本，以特定方式覆盖组件。覆盖组件时，需要创建一个与原始组件名称完全相同的组件，让构建系统先发现原始组件，再发现这个具有相同名称的新组件。具体可参考 :ref:`同名组件 <cmake-components-same-name>`。
 
 在组件模拟中需要指定如下部分：
 
@@ -344,6 +343,12 @@ Mocks
 请注意，组件模拟不一定要对原始组件进行整体模拟。只要组件模拟满足测试项目的依赖以及其他代码对原始组件的依赖，部分模拟就足够了。事实上，IDF 中 ``tools/mocks`` 中的大多数组件模拟都只是部分地模拟了原始组件。
 
 可在 IDF 目录的 :idf:`tools/mocks` 下找到组件模拟的示例。有关如何 *覆盖 IDF 组件*，可查看 :ref:`同名组件 <cmake-components-same-name>`。
+
+- :component_file:`NVS 页面类的单元测试 <nvs_flash/host_test/nvs_page_test/README.md>`。
+- :component_file:`esp_event 的单元测试 <esp_event/host_test/esp_event_unit_test/main/esp_event_test.cpp>`。
+- :component_file:`mqtt 的单元测试 <mqtt/esp-mqtt/host_test/README.md>`。
+
+.. _adjustments_for_mocks:
 
 修改单元测试文件
 ^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1195,6 +1195,7 @@ ESP-IDF 构建属性
 - COMPILE_DEFINITIONS - 适用于所有组件源文件的编译定义。
 - CXX_COMPILE_OPTIONS - 适用于所有组件的 C++ 源文件的编译选项。
 - EXECUTABLE - 项目可执行文件；通过调用 ``idf_build_executable`` 设置。
+- DEPENDENCIES_LOCK - 组件管理器使用的依赖关系锁定文件的路径。默认值为项目路径下的 `dependencies.lock`。
 - EXECUTABLE_NAME - 不含扩展名的项目可执行文件的名称；通过调用 ``idf_build_executable`` 设置。
 - EXECUTABLE_DIR - 输出的可执行文件的路径
 - IDF_COMPONENT_MANAGER - 默认启用组件管理器，但如果设置这个属性为`0``，则会被 IDF_COMPONENT_MANAGER 环境变量禁用。
@@ -1362,7 +1363,7 @@ JSON 配置服务器
 
 您可以通过 ``idf.py confserver`` 或 ``ninja kconfserver`` 从项目中运行 ``kconfserver``，也可以使用不同的构建生成器来触发类似的目标。
 
-有关 kconfserver 的更多信息，请参阅 `esp-idf-kconfig documentation <https://github.com/espressif/esp-idf-kconfig/blob/master/docs/DOCUMENTATION.md>`_.
+有关 kconfserver 的更多信息，请参阅 `esp-idf-kconfig 文档 <https://github.com/espressif/esp-idf-kconfig/blob/master/docs/DOCUMENTATION.md>`_。
 
 构建系统内部
 =======================

@@ -21,6 +21,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/sar_periph_ctrl.h"
 #include "driver/gpio.h"
 #include "esp_adc/adc_continuous.h"
 #include "hal/adc_types.h"
@@ -372,7 +373,7 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
     }
 
     handle->fsm = ADC_FSM_STARTED;
-    adc_power_acquire();
+    sar_periph_ctrl_adc_continuous_power_acquire();
     //reset flags
     if (handle->use_adc1) {
         adc_lock_acquire(ADC_UNIT_1);
@@ -439,7 +440,7 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle)
     if (handle->use_adc1) {
         adc_lock_release(ADC_UNIT_1);
     }
-    adc_power_release();
+    sar_periph_ctrl_adc_continuous_power_release();
 
     //release power manager lock
     if (handle->pm_lock) {

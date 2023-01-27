@@ -521,12 +521,10 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
     }
 
     if (len < sizeof(*hdr) + sizeof(*ehdr)) {
-#ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: EAPOL frame too short to be a WPA "
                    "EAPOL-Key (len %lu, expecting at least %lu)",
                    (unsigned long) len,
                    (unsigned long) sizeof(*hdr) + sizeof(*ehdr));
-#endif
         return ESP_FAIL;
     }
 
@@ -537,27 +535,21 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
     plen = be_to_host16(hdr->length);
     data_len = plen + sizeof(*hdr);
 
-#ifdef DEBUG_PRINT
     wpa_printf(MSG_DEBUG, "IEEE 802.1X RX: version=%d type=%d length=%d",
                hdr->version, hdr->type, plen);
-#endif
     if (hdr->version < EAPOL_VERSION) {
         /* TODO: backwards compatibility */
     }
     if (hdr->type != IEEE802_1X_TYPE_EAP_PACKET) {
-#ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA2: EAP frame (type %u) discarded, "
                    "not a EAP PACKET frame", hdr->type);
-#endif
         ret = -2;
         goto _out;
     }
     if (plen > len - sizeof(*hdr) || plen < sizeof(*ehdr)) {
-#ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA2: EAPOL frame payload size %lu "
                    "invalid (frame size %lu)",
                    (unsigned long) plen, (unsigned long) len);
-#endif
         ret = -2;
         goto _out;
     }
@@ -565,10 +557,8 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
     wpa_hexdump(MSG_MSGDUMP, "WPA2: RX EAPOL-EAP PACKET", tmp, len);
 
     if (data_len < len) {
-#ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: ignoring %lu bytes after the IEEE "
                    "802.1X data\n", (unsigned long) len - data_len);
-#endif
     }
 
 #ifdef EAP_PEER_METHOD

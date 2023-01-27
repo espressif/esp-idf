@@ -19,6 +19,7 @@
 #include "soc/io_mux_reg.h"
 #include "soc/syscon_reg.h"
 #include "esp_private/spi_flash_os.h"
+#include "esp_private/mspi_timing_tuning.h"
 
 #define OPI_PSRAM_SYNC_READ             0x0000
 #define OPI_PSRAM_SYNC_WRITE            0x8080
@@ -295,7 +296,7 @@ esp_err_t esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)
     s_configure_psram_ecc();
 
     //enter MSPI slow mode to init PSRAM device registers
-    spi_timing_enter_mspi_low_speed_mode(true);
+    mspi_timing_enter_low_speed_mode(true);
 
     //set to variable dummy mode
     SET_PERI_REG_MASK(SPI_MEM_DDR_REG(1), SPI_MEM_SPI_FMEM_VAR_DUMMY);
@@ -322,9 +323,9 @@ esp_err_t esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)
                    mode_reg.mr2.density == 0x7 ? PSRAM_SIZE_32MB : 0;
 
     //Do PSRAM timing tuning, we use SPI1 to do the tuning, and set the SPI0 PSRAM timing related registers accordingly
-    spi_timing_psram_tuning();
+    mspi_timing_psram_tuning();
     //Back to the high speed mode. Flash/PSRAM clocks are set to the clock that user selected. SPI0/1 registers are all set correctly
-    spi_timing_enter_mspi_high_speed_mode(true);
+    mspi_timing_enter_high_speed_mode(true);
 
     /**
      * Tuning may change SPI1 regs, whereas legacy spi_flash APIs rely on these regs.

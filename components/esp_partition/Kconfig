@@ -1,0 +1,10 @@
+menu "ESP_PARTITION"
+
+    config ESP_PARTITION_ENABLE_STATS
+        bool "Enable esp_partition statistics gathering"
+        default n
+        depends on IDF_TARGET_LINUX
+        help
+            This option enables statistics gathering and flash wear simulation. Linux only.
+
+endmenu

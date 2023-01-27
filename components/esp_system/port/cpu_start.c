@@ -74,6 +74,7 @@
 #endif
 
 #include "esp_private/spi_flash_os.h"
+#include "esp_private/mspi_timing_tuning.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_flash.h"
 #include "esp_private/crosscore_int.h"
@@ -386,9 +387,8 @@ void IRAM_ATTR call_start_cpu0(void)
      * In this stage, we re-configure the Flash (and MSPI) to required configuration
      */
     spi_flash_init_chip_state();
-#if CONFIG_IDF_TARGET_ESP32S3
-    //On other chips, this feature is not provided by HW, or hasn't been tested yet.
-    spi_timing_flash_tuning();
+#if SOC_MEMSPI_SRC_FREQ_120M
+    mspi_timing_flash_tuning();
 #endif
 
     bootloader_init_mem();

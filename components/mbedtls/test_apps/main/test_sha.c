@@ -33,6 +33,7 @@ are tested as part of mbedTLS tests. Only esp_sha() is different.
 
 #define TAG "sha_test"
 
+#if SOC_SHA_SUPPORTED
 TEST_CASE("Test esp_sha()", "[hw_crypto]")
 {
     const size_t BUFFER_SZ = 32 * 1024 + 6; // NB: not an exact multiple of SHA block size
@@ -136,3 +137,5 @@ TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha512_espsha, sha512_mbedtls, sizeof(sha512_espsha), "SHA512 results should match");
 #endif
 }
+
+#endif // SOC_SHA_SUPPORTED

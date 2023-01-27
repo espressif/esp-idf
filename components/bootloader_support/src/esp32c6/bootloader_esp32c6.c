@@ -25,6 +25,7 @@
 #include "soc/pcr_reg.h"
 #include "esp32c6/rom/efuse.h"
 #include "esp32c6/rom/ets_sys.h"
+#include "esp32c6/rom/spi_flash.h"
 #include "bootloader_common.h"
 #include "bootloader_init.h"
 #include "bootloader_clock.h"
@@ -39,6 +40,7 @@
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
+#include "hal/clk_tree_ll.h"
 #include "soc/lp_wdt_reg.h"
 #include "hal/efuse_hal.h"
 #include "modem/modem_lpcon_reg.h"
@@ -226,6 +228,15 @@ static void bootloader_super_wdt_auto_feed(void)
 
 static inline void bootloader_hardware_init(void)
 {
+    // In 80MHz flash mode, ROM sets the mspi module clk divider to 2, fix it here
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
+    clk_ll_mspi_fast_set_hs_divider(6);
+    esp_rom_spiflash_config_clk(1, 0);
+    esp_rom_spiflash_config_clk(1, 1);
+    esp_rom_spiflash_fix_dummylen(0, 1);
+    esp_rom_spiflash_fix_dummylen(1, 1);
+#endif
+
     // TODO: IDF-5990 need update, enable i2c mst clk by force on temporarily
     SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_FORCE_ON_REG, MODEM_LPCON_CLK_I2C_MST_FO);
     SET_PERI_REG_MASK(MODEM_LPCON_I2C_MST_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_SEL_160M);

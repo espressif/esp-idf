@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,7 @@ typedef enum {
     PERIPH_ECC_MODULE,
     PERIPH_HMAC_MODULE,
     PERIPH_DS_MODULE,
+    PERIPH_SDIO_SLAVE_MODULE,
     PERIPH_GDMA_MODULE,
     PERIPH_MCPWM0_MODULE,
     PERIPH_ETM_MODULE,

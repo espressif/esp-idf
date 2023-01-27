@@ -375,5 +375,5 @@ static void rtcio_deep_sleep_hold_test_second_stage(void)
 TEST_CASE_MULTIPLE_STAGES("RTCIO_deep_sleep_output_hold_test", "[rtcio]",
                          rtcio_deep_sleep_hold_test_first_stage,
                          rtcio_deep_sleep_hold_test_second_stage)
-#endif  // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
+#endif  // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
 #endif  // #if SOC_RTCIO_HOLD_SUPPORTED

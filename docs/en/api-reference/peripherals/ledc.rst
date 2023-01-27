@@ -42,6 +42,10 @@ As an optional step, it is also possible to set up an interrupt on fade end.
 
     Key Settings of LED PWM Controller's API
 
+.. note::
+
+    For an initial setup, it is recommended to configure for the timers first (by calling :cpp:func:`ledc_timer_config`), and then for the channels (by calling :cpp:func:`ledc_channel_config`). This ensures the PWM frequency is at the desired value since the appearance of the PWM signal from the IO pad.
+
 
 .. _ledc-api-configure-timer:
 

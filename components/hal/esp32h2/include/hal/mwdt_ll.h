@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -246,6 +246,34 @@ FORCE_INLINE_ATTR void mwdt_ll_clear_intr_status(timg_dev_t *hw)
 FORCE_INLINE_ATTR void mwdt_ll_set_intr_enable(timg_dev_t *hw, bool enable)
 {
     hw->int_ena_timers.wdt_int_ena = (enable) ? 1 : 0;
+}
+
+
+/**
+ * @brief Set the clock source for the MWDT.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param clk_src Clock source
+ */
+FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_source_t clk_src)
+{
+    // TODO IDF-6643
+    (void)hw;
+    (void)clk_src;
+}
+
+/**
+ * @brief Enable MWDT module clock
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param en true to enable, false to disable
+ */
+__attribute__((always_inline))
+static inline void mwdt_ll_enable_clock(timg_dev_t *hw, bool en)
+{
+    // TODO IDF-6643
+    (void)hw;
+    (void)en;
 }
 
 #ifdef __cplusplus

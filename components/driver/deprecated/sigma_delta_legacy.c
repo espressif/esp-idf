@@ -35,7 +35,7 @@ static inline esp_err_t _sigmadelta_set_duty(sigmadelta_port_t sigmadelta_port, 
 {
     SIGMADELTA_OBJ_CHECK(sigmadelta_port);
 
-    sdm_ll_set_duty(p_sigmadelta_obj[sigmadelta_port]->hal.dev, channel, duty);
+    sdm_ll_set_pulse_density(p_sigmadelta_obj[sigmadelta_port]->hal.dev, channel, duty);
     return ESP_OK;
 }
 

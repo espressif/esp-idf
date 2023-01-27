@@ -104,11 +104,21 @@ menu "Driver Configurations"
         config SPI_SLAVE_ISR_IN_IRAM
             bool "Place SPI slave ISR function into IRAM"
             default y
+            select PERIPH_CTRL_FUNC_IN_IRAM
             help
                 Place the SPI slave ISR in to IRAM to avoid possible cache miss.
 
                 Also you can forbid the ISR being disabled during flash writing
                 access, by add ESP_INTR_FLAG_IRAM when initializing the driver.
+
+        config SPI_SUPPRESS_FREQ_MACRO_DEPRECATE_WARN
+            bool "Suppress SPI_MASTER_FREQ_nM deprecation warning"
+            default n
+            help
+                Select this option to suppress the deprecation warning when using
+                `SPI_MASTER_FREQ_nM` macros.
+                SPI clock source can be set into different clock sources. These
+                macros are no longer guaranteed to be accurate.
 
     endmenu # SPI Configuration
 

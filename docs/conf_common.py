@@ -32,8 +32,9 @@ BT_DOCS = ['api-guides/blufi.rst',
            'api-reference/bluetooth/esp_gattc.rst',
            'api-reference/bluetooth/esp_blufi.rst',
            'api-reference/bluetooth/index.rst',
-           'api-reference/bluetooth/nimble/index.rst',
-           'migration-guides/release-5.x/5.0/bluetooth-low-energy.rst']
+           'api-reference/bluetooth/nimble/index.rst']
+
+BLE_DOCS = ['migration-guides/release-5.x/5.0/bluetooth-low-energy.rst']
 
 BLE_MESH_DOCS = ['api-guides/esp-ble-mesh/ble-mesh-index.rst',
                  'api-guides/esp-ble-mesh/ble-mesh-feature-list.rst',
@@ -64,8 +65,7 @@ WIFI_MESH_DOCS = ['api-guides/esp-wifi-mesh.rst',
 
 COEXISTENCE_DOCS = ['api-guides/coexist.rst']
 
-SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst',
-              'api-reference/peripherals/sd_pullup_requirements.rst']
+SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst']
 
 SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst',
                    'api-reference/protocols/esp_sdio_slave_protocol.rst']
@@ -90,6 +90,8 @@ SPIRAM_DOCS = ['api-guides/external-ram.rst']
 
 USB_DOCS = ['api-reference/peripherals/usb_device.rst',
             'api-reference/peripherals/usb_host.rst',
+            'api-reference/peripherals/usb_host/usb_host_notes_index.rst',
+            'api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst',
             'api-guides/usb-otg-console.rst',
             'api-guides/dfu.rst']
 
@@ -127,6 +129,7 @@ ESP32_DOCS = ['api-reference/system/himem.rst',
               'security/secure-boot-v1.rst',
               'api-reference/peripherals/secure_element.rst',
               'api-reference/peripherals/dac.rst',
+              'api-reference/peripherals/sd_pullup_requirements.rst',
               'hw-reference/esp32/**',
               'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
 
@@ -142,6 +145,7 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/system/ipc.rst',
                 'api-guides/flash_psram_config.rst',
+                'api-reference/peripherals/sd_pullup_requirements.rst',
                 'api-guides/RF_calibration.rst']
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
@@ -150,10 +154,12 @@ ESP32C3_DOCS = ['hw-reference/esp32c3/**',
 
 ESP32C2_DOCS = ['api-guides/RF_calibration.rst']
 
-ESP32C6_DOCS = ['api-guides/RF_calibration.rst']
+ESP32C6_DOCS = ['api-guides/RF_calibration.rst',
+                'api-reference/peripherals/sd_pullup_requirements.rst']
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
+                            'SOC_BLE_SUPPORTED':BLE_DOCS,
                             'SOC_BLE_MESH_SUPPORTED':BLE_MESH_DOCS,
                             'SOC_WIFI_SUPPORTED':WIFI_DOCS,
                             'SOC_BT_CLASSIC_SUPPORTED':CLASSIC_BT_DOCS,
@@ -237,6 +243,8 @@ linkcheck_exclude_documents = ['index',  # several false positives due to the wa
 
 linkcheck_ignore = ['https://webhome.phy.duke.edu/~rgb/General/dieharder.php',  # Certificate error
                     'https://docs.espressif.com/projects/esptool/en/latest/esp32c2/espefuse/index.html',  # Not published
+                    'https://docs.espressif.com/projects/esptool/en/latest/esp32c6/espefuse/index.html',  # Not published
+                    'https://www.cadence.com/content/dam/cadence-www/global/en_US/documents/tools/ip/tensilica-ip/isa-summary.pdf',  # Rejects user-agent
                     ]
 
 

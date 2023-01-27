@@ -249,6 +249,40 @@ FORCE_INLINE_ATTR void mwdt_ll_set_intr_enable(timg_dev_t *hw, bool enable)
     hw->int_ena_timers.wdt_int_ena = (enable) ? 1 : 0;
 }
 
+/**
+ * @brief Set the clock source for the MWDT.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param clk_src Clock source
+ */
+FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_source_t clk_src)
+{
+    switch (clk_src) {
+    case MWDT_CLK_SRC_APB:
+        hw->wdtconfig0.wdt_use_xtal = 0;
+        break;
+    case MWDT_CLK_SRC_XTAL:
+        hw->wdtconfig0.wdt_use_xtal = 1;
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
+}
+
+/**
+ * @brief Enable MWDT module clock
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param en true to enable, false to disable
+ */
+__attribute__((always_inline))
+static inline void mwdt_ll_enable_clock(timg_dev_t *hw, bool en)
+{
+    hw->regclk.wdt_clk_is_active = en;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

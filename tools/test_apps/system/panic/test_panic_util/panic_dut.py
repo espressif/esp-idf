@@ -1,10 +1,10 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
 import subprocess
 import sys
-from typing import Any, Dict, List, TextIO
+from typing import Any, Dict, List, Optional, TextIO
 
 import pexpect
 from panic_utils import NoGdbProcessError, attach_logger, quote_string, sha256, verify_valid_gdb_subprocess
@@ -24,28 +24,33 @@ class PanicTestDut(IdfDut):
     app: IdfApp
     serial: IdfSerial
 
-    def __init__(self, *args, **kwargs) -> None:  # type: ignore
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        self.gdb: GdbController = None  # type: ignore
+        self.gdbmi: Optional[GdbController] = None
         # record this since pygdbmi is using logging.debug to generate some single character mess
         self.log_level = logging.getLogger().level
         # pygdbmi is using logging.debug to generate some single character mess
         if self.log_level <= logging.DEBUG:
             logging.getLogger().setLevel(logging.INFO)
 
-        self.coredump_output: TextIO = None  # type: ignore
+        self.coredump_output: Optional[TextIO] = None
 
     def close(self) -> None:
-        if self.gdb:
-            self.gdb.exit()
+        if self.gdbmi:
+            logging.info('Waiting for GDB to exit')
+            self.gdbmi.exit()
 
         super().close()
 
     def revert_log_level(self) -> None:
         logging.getLogger().setLevel(self.log_level)
 
-    def expect_test_func_name(self, test_func_name: str) -> None:
+    @property
+    def is_xtensa(self) -> bool:
+        return self.target in self.XTENSA_TARGETS
+
+    def run_test_func(self, test_func_name: str) -> None:
         self.expect_exact('Enter test name:')
         self.write(test_func_name)
         self.expect_exact('Got test name: ' + test_func_name)
@@ -62,8 +67,13 @@ class PanicTestDut(IdfDut):
             pass
 
     def expect_backtrace(self) -> None:
-        self.expect_exact('Backtrace:')
-        self.expect_none('CORRUPTED')
+        assert self.is_xtensa, 'Backtrace can be printed only on Xtensa'
+        match = self.expect(r'Backtrace:( 0x[0-9a-fA-F]{8}:0x[0-9a-fA-F]{8})+(?P<corrupted> \|<-CORRUPTED)?')
+        assert not match.group('corrupted')
+
+    def expect_stack_dump(self) -> None:
+        assert not self.is_xtensa, 'Stack memory dump is only printed on RISC-V'
+        self.expect_exact('Stack memory:')
 
     def expect_gme(self, reason: str) -> None:
         """Expect method for Guru Meditation Errors"""
@@ -137,25 +147,29 @@ class PanicTestDut(IdfDut):
         Wrapper to write to gdb with a longer timeout, as test runner
         host can be slow sometimes
         """
-        return self.gdb.write(command, timeout_sec=10)
+        assert self.gdbmi, 'This function should be called only after start_gdb'
+        return self.gdbmi.write(command, timeout_sec=10)
 
     def start_gdb(self) -> None:
         """
         Runs GDB and connects it to the "serial" port of the DUT.
         After this, the DUT expect methods can no longer be used to capture output.
         """
-        gdb_path = self.toolchain_prefix + 'gdb'
+        if self.is_xtensa:
+            gdb_path = f'xtensa-{self.target}-elf-gdb'
+        else:
+            gdb_path = 'riscv32-esp-elf-gdb'
         try:
             from pygdbmi.constants import GdbTimeoutError
             default_gdb_args = ['--nx', '--quiet', '--interpreter=mi2']
             gdb_command = [gdb_path] + default_gdb_args
-            self.gdb = GdbController(command=gdb_command)
+            self.gdbmi = GdbController(command=gdb_command)
             pygdbmi_logger = attach_logger()
         except ImportError:
             # fallback for pygdbmi<0.10.0.0.
             from pygdbmi.gdbcontroller import GdbTimeoutError
-            self.gdb = GdbController(gdb_path=gdb_path)
-            pygdbmi_logger = self.gdb.logger
+            self.gdbmi = GdbController(gdb_path=gdb_path)
+            pygdbmi_logger = self.gdbmi.logger
 
         # pygdbmi logs to console by default, make it log to a file instead
         pygdbmi_log_file_name = os.path.join(self.logdir, 'pygdbmi_log.txt')
@@ -166,22 +180,23 @@ class PanicTestDut(IdfDut):
         log_handler.setFormatter(
             logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
         )
+        logging.info(f'Saving pygdbmi logs to {pygdbmi_log_file_name}')
         pygdbmi_logger.addHandler(log_handler)
         try:
-            gdb_command = self.gdb.command
+            gdb_command = self.gdbmi.command
         except AttributeError:
             # fallback for pygdbmi < 0.10
-            gdb_command = self.gdb.cmd
+            gdb_command = self.gdbmi.cmd
 
         logging.info(f'Running command: "{" ".join(quote_string(c) for c in gdb_command)}"')
         for _ in range(10):
             try:
                 # GdbController creates a process with subprocess.Popen(). Is it really running? It is probable that
                 # an RPI under high load will get non-responsive during creating a lot of processes.
-                if not hasattr(self.gdb, 'verify_valid_gdb_subprocess'):
+                if not hasattr(self.gdbmi, 'verify_valid_gdb_subprocess'):
                     # for pygdbmi >= 0.10.0.0
-                    verify_valid_gdb_subprocess(self.gdb.gdb_process)
-                resp = self.gdb.get_gdb_response(
+                    verify_valid_gdb_subprocess(self.gdbmi.gdb_process)
+                resp = self.gdbmi.get_gdb_response(
                     timeout_sec=10
                 )  # calls verify_valid_gdb_subprocess() internally for pygdbmi < 0.10.0.0
                 # it will be interesting to look up this response if the next GDB command fails (times out)
@@ -207,17 +222,25 @@ class PanicTestDut(IdfDut):
         self.gdb_write('-file-exec-and-symbols {}'.format(self.app.elf_file))
 
         # Connect GDB to UART
-        self.serial.proc.close()
+        self.serial.close()
         logging.info('Connecting to GDB Stub...')
         self.gdb_write('-gdb-set serial baud 115200')
-        responses = self.gdb_write('-target-select remote ' + self.serial.port)
+
+        if sys.platform == 'darwin':
+            assert '/dev/tty.' not in self.serial.port, \
+                '/dev/tty.* ports can\'t be used with GDB on macOS. Use with /dev/cu.* instead.'
 
         # Make sure we get the 'stopped' notification
+        responses = self.gdb_write('-target-select remote ' + self.serial.port)
         stop_response = self.find_gdb_response('stopped', 'notify', responses)
-        if not stop_response:
+
+        retries = 3
+        while not stop_response and retries > 0:
+            logging.info('Sending -exec-interrupt')
             responses = self.gdb_write('-exec-interrupt')
             stop_response = self.find_gdb_response('stopped', 'notify', responses)
-            assert stop_response
+            retries -= 1
+
         frame = stop_response['payload']['frame']
         if 'file' not in frame:
             frame['file'] = '?'
@@ -226,33 +249,32 @@ class PanicTestDut(IdfDut):
         logging.info('Stopped in {func} at {addr} ({file}:{line})'.format(**frame))
 
         # Drain remaining responses
-        self.gdb.get_gdb_response(raise_error_on_timeout=False)
+        self.gdbmi.get_gdb_response(raise_error_on_timeout=False)
 
     def gdb_backtrace(self) -> Any:
         """
         Returns the list of stack frames for the current thread.
         Each frame is a dictionary, refer to pygdbmi docs for the format.
         """
-        assert self.gdb
+        assert self.gdbmi
 
         responses = self.gdb_write('-stack-list-frames')
         return self.find_gdb_response('done', 'result', responses)['payload']['stack']
 
     @staticmethod
-    def match_backtrace(
+    def verify_gdb_backtrace(
         gdb_backtrace: List[Any], expected_functions_list: List[Any]
-    ) -> bool:
+    ) -> None:
         """
-        Returns True if the function names listed in expected_functions_list match the backtrace
+        Raises an assert if the function names listed in expected_functions_list do not match the backtrace
         given by gdb_backtrace argument. The latter is in the same format as returned by gdb_backtrace()
         function.
         """
-        return all(
-            [
-                frame['func'] == expected_functions_list[i]
-                for i, frame in enumerate(gdb_backtrace)
-            ]
-        )
+        actual_functions_list = [frame['func'] for frame in gdb_backtrace]
+        if actual_functions_list != expected_functions_list:
+            logging.error(f'Expected backtrace: {expected_functions_list}')
+            logging.error(f'Actual backtrace: {actual_functions_list}')
+            assert False, 'Got unexpected backtrace'
 
     @staticmethod
     def find_gdb_response(

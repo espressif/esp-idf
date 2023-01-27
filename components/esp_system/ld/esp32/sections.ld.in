@@ -63,7 +63,7 @@ SECTIONS
 
     mapping[rtc_data]
 
-    *rtc_wake_stub*.*(.data .rodata .data.* .rodata.* .bss .bss.*)
+    *rtc_wake_stub*.*(.data .rodata .data.* .rodata.*)
     _rtc_data_end = ABSOLUTE(.);
 
   } > rtc_data_location

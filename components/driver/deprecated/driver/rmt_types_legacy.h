@@ -186,6 +186,12 @@ typedef struct {
     };
 } rmt_config_t;
 
+#if CONFIG_IDF_TARGET_ESP32H2
+#define RMT_DEFAULT_CLK_DIV 32
+#else
+#define RMT_DEFAULT_CLK_DIV 80
+#endif
+
 /**
  * @brief Default configuration for Tx channel
  *
@@ -195,7 +201,7 @@ typedef struct {
         .rmt_mode = RMT_MODE_TX,                     \
         .channel = channel_id,                       \
         .gpio_num = gpio,                            \
-        .clk_div = 80,                               \
+        .clk_div = RMT_DEFAULT_CLK_DIV,              \
         .mem_block_num = 1,                          \
         .flags = 0,                                  \
         .tx_config = {                               \
@@ -219,7 +225,7 @@ typedef struct {
         .rmt_mode = RMT_MODE_RX,                \
         .channel = channel_id,                  \
         .gpio_num = gpio,                       \
-        .clk_div = 80,                          \
+        .clk_div = RMT_DEFAULT_CLK_DIV,         \
         .mem_block_num = 1,                     \
         .flags = 0,                             \
         .rx_config = {                          \

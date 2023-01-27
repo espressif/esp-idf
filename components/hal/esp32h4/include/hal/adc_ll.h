@@ -505,18 +505,8 @@ static inline adc_ll_rtc_raw_data_t adc_ll_analysis_raw_data(adc_unit_t adc_n, i
  */
 static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
 {
-    /* Bit1  0:Fsm  1: SW mode
-       Bit0  0:SW mode power down  1: SW mode power on */
-    if (manage == ADC_POWER_SW_ON) {
-        APB_SARADC.ctrl.sar_clk_gated = 1;
-        APB_SARADC.ctrl.xpd_sar_force = 3;
-    } else if (manage == ADC_POWER_BY_FSM) {
-        APB_SARADC.ctrl.sar_clk_gated = 1;
-        APB_SARADC.ctrl.xpd_sar_force = 0;
-    } else if (manage == ADC_POWER_SW_OFF) {
-        APB_SARADC.ctrl.sar_clk_gated = 0;
-        APB_SARADC.ctrl.xpd_sar_force = 2;
-    }
+    //HW bug, use `sar_ctrl_ll_set_power_mode_from_pwdet` instead, `APB_SARADC.ctrl.xpd_sar_force` doesn not effect
+    //Leave here for a record
 }
 
 __attribute__((always_inline))

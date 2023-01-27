@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -122,7 +122,7 @@ TEST_CASE("test asctime", "[newlib]")
     TEST_ASSERT_EQUAL_STRING(buf, time_str);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
 static bool fn_in_rom(void *fn)
 {
     const int fnaddr = (int)fn;
@@ -158,7 +158,7 @@ TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
     TEST_ASSERT_FALSE(fn_in_rom(strtol));
 #endif // defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
 
 #ifndef CONFIG_NEWLIB_NANO_FORMAT
 TEST_CASE("test 64bit int formats", "[newlib]")

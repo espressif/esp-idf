@@ -34,7 +34,7 @@ API Guides
    partition-tables
    performance/index
    reproducible-builds
-   RF_calibration
+   :not esp32h2: RF_calibration
    ../security/security
    :esp32: ../security/secure-boot-v1
    ../security/secure-boot-v2

@@ -3,6 +3,22 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
+config SOC_GDMA_SUPPORTED
+    bool
+    default y
+
+config SOC_ASYNC_MEMCPY_SUPPORTED
+    bool
+    default y
+
+config SOC_PCNT_SUPPORTED
+    bool
+    default y
+
+config SOC_GPTIMER_SUPPORTED
+    bool
+    default y
+
 config SOC_IEEE802154_BLE_ONLY
     bool
     default y
@@ -23,7 +39,27 @@ config SOC_RTC_MEM_SUPPORTED
     bool
     default y
 
+config SOC_I2S_SUPPORTED
+    bool
+    default y
+
+config SOC_SDM_SUPPORTED
+    bool
+    default y
+
+config SOC_RMT_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_SUPPORTED
+    bool
+    default y
+
+config SOC_BOD_SUPPORTED
+    bool
+    default y
+
+config SOC_APM_SUPPORTED
     bool
     default y
 
@@ -179,17 +215,17 @@ config SOC_GDMA_PAIRS_PER_GROUP
     int
     default 3
 
+config SOC_GDMA_SUPPORT_ETM
+    bool
+    default y
+
 config SOC_GPIO_PORT
     int
     default 1
 
 config SOC_GPIO_PIN_COUNT
     int
-    default 31
-
-config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
-    bool
-    default y
+    default 28
 
 config SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
     bool
@@ -201,7 +237,7 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
 
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
-    default 0x000000007FFFFF00
+    default 0x000000000FFF807F
 
 config SOC_GPIO_SUPPORT_SLP_SWITCH
     bool
@@ -227,10 +263,6 @@ config SOC_I2C_FIFO_LEN
     int
     default 32
 
-config SOC_I2C_SUPPORT_SLAVE
-    bool
-    default y
-
 config SOC_I2C_SUPPORT_HW_CLR_BUS
     bool
     default y
@@ -244,14 +276,22 @@ config SOC_I2C_SUPPORT_RTC
     default y
 
 config SOC_I2S_NUM
-    bool
-    default y
+    int
+    default 1
 
 config SOC_I2S_HW_VERSION_2
     bool
     default y
 
 config SOC_I2S_SUPPORTS_XTAL
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PLL_F96M
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PLL_F64M
     bool
     default y
 
@@ -272,6 +312,10 @@ config SOC_I2S_PDM_MAX_TX_LINES
     default 2
 
 config SOC_I2S_SUPPORTS_TDM
+    bool
+    default y
+
+config SOC_I2S_TDM_FULL_DATA_WIDTH
     bool
     default y
 
@@ -391,10 +435,6 @@ config SOC_RMT_SUPPORT_XTAL
     bool
     default y
 
-config SOC_RMT_SUPPORT_APB
-    bool
-    default y
-
 config SOC_MCPWM_GROUPS
     int
     default 1
@@ -507,7 +547,7 @@ config SOC_SDM_CHANNELS_PER_GROUP
     int
     default 4
 
-config SOC_SDM_CLK_SUPPORT_PLL_F80M
+config SOC_SDM_CLK_SUPPORT_PLL_F48M
     bool
     default y
 
@@ -540,6 +580,10 @@ config SOC_SPI_SUPPORT_CD_SIG
     default y
 
 config SOC_SPI_SUPPORT_CONTINUOUS_TRANS
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_CLK_PLL_F48M
     bool
     default y
 
@@ -599,11 +643,19 @@ config SOC_SYSTIMER_FIXED_DIVIDER
     bool
     default y
 
+config SOC_SYSTIMER_SUPPORT_RC_FAST
+    bool
+    default y
+
 config SOC_SYSTIMER_INT_LEVEL
     bool
     default y
 
 config SOC_SYSTIMER_ALARM_MISS_COMPENSATE
+    bool
+    default y
+
+config SOC_SYSTIMER_SUPPORT_ETM
     bool
     default y
 
@@ -623,7 +675,7 @@ config SOC_TIMER_GROUP_SUPPORT_XTAL
     bool
     default y
 
-config SOC_TIMER_GROUP_SUPPORT_APB
+config SOC_TIMER_GROUP_SUPPORT_PLL_F48M
     bool
     default y
 
@@ -648,6 +700,22 @@ config SOC_TWAI_BRP_MAX
     default 32768
 
 config SOC_TWAI_SUPPORTS_RX_STATUS
+    bool
+    default y
+
+config SOC_EFUSE_DIS_PAD_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_USB_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_DIRECT_BOOT
+    bool
+    default y
+
+config SOC_EFUSE_SOFT_DIS_JTAG
     bool
     default y
 
@@ -703,10 +771,6 @@ config SOC_UART_BITRATE_MAX
     int
     default 5000000
 
-config SOC_UART_SUPPORT_APB_CLK
-    bool
-    default y
-
 config SOC_UART_SUPPORT_RTC_CLK
     bool
     default n
@@ -760,6 +824,18 @@ config SOC_PM_SUPPORT_RC_FAST_PD
     default y
 
 config SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
+    bool
+    default y
+
+config SOC_CLK_XTAL32K_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_OSC_SLOW_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_RC32K_SUPPORTED
     bool
     default y
 

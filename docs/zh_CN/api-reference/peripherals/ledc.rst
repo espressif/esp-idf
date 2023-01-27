@@ -42,6 +42,10 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
 
     LED PWM 控制器 API 的关键配置
 
+.. note::
+
+    首次 LEDC 配置时，建议先配置定时器（调用函数 :cpp:func:`ledc_timer_config`），再配置通道（调用函数 :cpp:func:`ledc_channel_config`）。这样可以确保 IO 脚上的 PWM 信号自有输出开始其频率就是正确的。
+
 
 .. _ledc-api-configure-timer:
 

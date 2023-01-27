@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import collections
 import multiprocessing
@@ -41,4 +41,5 @@ OPENOCD_TAGET_CONFIG: Dict[str, str] = {
     'esp32s2': '-f board/esp32s2-kaluga-1.cfg',
     'esp32c3': '-f board/esp32c3-builtin.cfg',
     'esp32s3': '-f board/esp32s3-builtin.cfg',
+    'esp32c6': '-f board/esp32c6-builtin.cfg',
 }

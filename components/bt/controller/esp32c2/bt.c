@@ -596,7 +596,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     esp_err_t ret = ESP_OK;
     ble_npl_count_info_t npl_info;
     memset(&npl_info, 0, sizeof(ble_npl_count_info_t));
-
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
         return ESP_ERR_INVALID_STATE;
@@ -630,8 +629,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 
     ble_get_npl_element_info(cfg, &npl_info);
-
-    if (npl_freertos_mempool_init(&npl_info) != 0) {
+    npl_freertos_set_controller_npl_info(&npl_info);
+    if (npl_freertos_mempool_init() != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "npl mempool init failed");
         ret = ESP_ERR_INVALID_ARG;
         goto free_mem;
@@ -750,6 +749,8 @@ esp_err_t esp_bt_controller_deinit(void)
 
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 {
+    esp_err_t ret = ESP_OK;
+
     if (mode != ESP_BT_MODE_BLE) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller mode");
         return ESP_FAIL;
@@ -762,10 +763,18 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     coex_enable();
 #endif
     if (ble_controller_enable(mode) != 0) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto error;
     }
+
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_ENABLED;
     return ESP_OK;
+
+error:
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_disable();
+#endif
+    return ret;
 }
 
 esp_err_t esp_bt_controller_disable(void)
@@ -777,6 +786,9 @@ esp_err_t esp_bt_controller_disable(void)
     if (ble_controller_disable() != 0) {
         return ESP_FAIL;
     }
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_disable();
+#endif
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     return ESP_OK;
 }

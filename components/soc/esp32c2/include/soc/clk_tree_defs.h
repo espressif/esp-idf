@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,6 +110,7 @@ typedef enum {
     SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 20MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST_D256,                  /*!< RC_FAST_D256_CLK comes from the internal 20MHz rc oscillator, divided by 256, and passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 26/40MHz crystal */
+    SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
 } soc_module_clk_t;
 
 //////////////////////////////////////////////////SYSTIMER///////////////////////////////////////////////////////////////
@@ -186,6 +187,23 @@ typedef enum {
 
 /////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////
 
+
+/////////////////////////////////////////////////SPI////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of SPI
+ */
+#define SOC_SPI_CLKS {SOC_MOD_CLK_PLL_F40M, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Type of SPI clock source.
+ */
+typedef enum {
+    SPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F40M,     /*!< Select PLL_40M as SPI source clock */
+    SPI_CLK_SRC_PLL_F40M = SOC_MOD_CLK_PLL_F40M,     /*!< Select PLL_40M as SPI source clock */
+    SPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select XTAL as SPI source clock */
+} soc_periph_spi_clk_src_t;
+
 /**
  * @brief Array initializer for all supported clock sources of I2C
  */
@@ -230,6 +248,24 @@ typedef enum {
     GLITCH_FILTER_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB clock as the source clock */
     GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB clock as the default clock choice */
 } soc_periph_glitch_filter_clk_src_t;
+
+
+//////////////////////////////////////////////////MWDT/////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of MWDT
+ */
+#define SOC_MWDT_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F40M}
+
+/**
+ * @brief MWDT clock source
+ */
+typedef enum {
+    MWDT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+    MWDT_CLK_SRC_PLL_F40M = SOC_MOD_CLK_PLL_F40M,     /*!< Select PLL 40 Mhz as the source clock */
+    MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F40M,     /*!< Select PLL 40 Mhz as the default clock choice */
+} soc_periph_mwdt_clk_src_t;
+
 
 #ifdef __cplusplus
 }

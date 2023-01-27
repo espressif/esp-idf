@@ -106,12 +106,13 @@ GPIO
     - SDM channel representation has changed from ``sigmadelta_channel_t`` to :cpp:type:`sdm_channel_handle_t`, which is an opaque pointer.
     - SDM channel configurations are stored in :cpp:type:`sdm_config_t` now, instead the previous ``sigmadelta_config_t``.
     - In the legacy driver, users don't have to set the clock source for SDM channel. But in the new driver, users need to set a proper one in the :cpp:member:`sdm_config_t::clk_src`. The available clock sources are listed in the :cpp:type:`soc_periph_sdm_clk_src_t`.
-    - In the legacy driver, users need to set a ``prescale`` for the channel, which reflects the frequency in which the modulator outputs a pulse. In the new driver, users should use :cpp:member:`sdm_config_t::sample_rate_hz`.
+    - In the legacy driver, users need to set a ``prescale`` for the channel, which reflects the frequency in which the modulator outputs a pulse. In the new driver, users should use :cpp:member:`sdm_config_t::sample_rate_hz` to set the over sample rate.
+    - In the legacy driver, users set ``duty`` to decide the output analog value, it's now renamed to a more appropriate name ``density``.
 
     Breaking Changes in Usage
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    - Channel configuration was done by channel allocation, in :cpp:func:`sdm_new_channel`. In the new driver, only the ``duty`` can be changed at runtime, by :cpp:func:`sdm_channel_set_duty`. Other parameters like ``gpio number`` and ``prescale`` are only allowed to set during channel allocation.
+    - Channel configuration was done by channel allocation, in :cpp:func:`sdm_new_channel`. In the new driver, only the ``density`` can be changed at runtime, by :cpp:func:`sdm_channel_set_pulse_density`. Other parameters like ``gpio number`` and ``prescale`` are only allowed to set during channel allocation.
     - Before further channel operations, users should **enable** the channel in advance, by calling :cpp:func:`sdm_channel_enable`. This function will help to manage some system level services, like **Power Management**.
 
 Timer Group Driver

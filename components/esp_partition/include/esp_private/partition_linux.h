@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -22,6 +23,9 @@ extern "C" {
 /** @brief emulated sector size for the partition API on Linux */
 #define ESP_PARTITION_EMULATED_SECTOR_SIZE 0x1000
 
+/** @brief emulated whole flash size for the partition API on Linux */
+#define ESP_PARTITION_EMULATED_FLASH_SIZE 0x400000 //4MB fixed
+
 /**
  * @brief Partition type to string conversion routine
  *
@@ -29,7 +33,7 @@ extern "C" {
  *
  * @return string equivalent of given partition type or "unknown" on mismatch
  */
-const char* esp_partition_type_to_str(const uint32_t type);
+const char *esp_partition_type_to_str(const uint32_t type);
 
 /**
  * @brief Partition subtype to string conversion routine
@@ -89,6 +93,105 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start);
  *      - ESP_ERR_INVALID_RESPONSE: Failed to munmap() the emulation file from memory
  */
 esp_err_t esp_partition_file_munmap(void);
+
+/**
+ * Functions for host tests
+*/
+
+/**
+ * @brief Clears statistics gathered by emulated partition read/write/erase operations
+ *
+ */
+void esp_partition_clear_stats(void);
+
+/**
+ * @brief Returns number of read operations called
+ *
+ * Function returns number of calls to the function esp_partition_read
+ *
+ * @return
+ *      - number of calls to esp_partition_read since recent esp_partition_clear_stats
+ */
+size_t esp_partition_get_read_ops(void);
+
+/**
+ * @brief Returns number of write operations called
+ *
+ * Function returns number of calls to the function esp_partition_write
+ *
+ * @return
+ *      - number of calls to esp_partition_write since recent esp_partition_clear_stats
+ */
+size_t esp_partition_get_write_ops(void);
+
+/**
+ * @brief Returns number of erase operations performed on behalf of calls to esp_partition_erase_range
+ *
+ * Function returns accumulated number of sectors erased on behalf of esp_partition_erase_range
+ *
+ * @return
+ *      - total number of emulated sector erase operations on behalf of esp_partition_erase_range since recent esp_partition_clear_stats
+ */
+size_t esp_partition_get_erase_ops(void);
+
+/**
+ * @brief Returns total number of bytes read on behalf of esp_partition_read
+ *
+ * Function returns number of bytes read by esp_partition_read
+ *
+ * @return
+ *      - total number of bytes read on behalf of esp_partition_read since recent esp_partition_clear_stats
+ */
+size_t esp_partition_get_read_bytes(void);
+
+/**
+ * @brief Returns total number of bytes written on behalf of esp_partition_write
+ *
+ * Function returns number of bytes written by esp_partition_write
+ *
+ * @return
+ *      - total number of bytes written on behalf of esp_partition_write since recent esp_partition_clear_stats
+ */
+size_t esp_partition_get_write_bytes(void);
+
+/**
+ * @brief Returns estimated total time spent on partition operations.
+ *
+ * Function returns estimated total time spent in esp_partition_read,
+ * esp_partition_write and esp_partition_erase_range operations.
+ *
+ * @return
+ *      - estimated total time spent in read/write/erase operations in miliseconds
+ */
+size_t esp_partition_get_total_time(void);
+
+/**
+ * @brief Initializes emulation of failure caused by wear on behalf of write/erase operations
+ *
+ * Function initializes down counter emulating remaining write / erase cycles.
+ * Once this counter reaches 0, emulation of all subsequent write / erase operations fails
+ * Initial state of down counter is disabled.
+ *
+ * @param[in] count Number of remaining write / erase cycles before failure. Call with SIZE_MAX to disable simulation of flash wear.
+ *
+*/
+void esp_partition_fail_after(size_t count);
+
+/**
+ * @brief Returns count of erase operations performed on virtual emulated sector
+ *
+ * Function returns number of erase operatinos performed on virtual sector specified by the parameter sector.
+ * The esp_parttion mapped address space is virtually split into sectors of the size ESP_PARTITION_EMULATED_SECTOR_SIZE.
+ * Calls to the esp_partition_erase_range are impacting one or multiple virtual sectors, for each of them, the respective
+ * count is incremented.
+ *
+ * @param[in] sector Virtual sector number to return erase count for
+ *
+ * @return
+ *      - count of erase operations performed on virtual emulated sector
+ *
+*/
+size_t esp_partition_get_sector_erase_count(size_t sector);
 
 #ifdef __cplusplus
 }

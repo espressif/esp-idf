@@ -226,7 +226,7 @@ ssize_t esp_mbedtls_read(esp_tls_t *tls, char *data, size_t datalen)
         }
         if (ret != ESP_TLS_ERR_SSL_WANT_READ  && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
-            ESP_LOGE(TAG, "read error :-0x%04X:", -ret);
+            ESP_LOGE(TAG, "read error :-0x%04zX:", -ret);
             mbedtls_print_error_msg(ret);
         }
     }
@@ -242,19 +242,19 @@ ssize_t esp_mbedtls_write(esp_tls_t *tls, const char *data, size_t datalen)
             write_len = MBEDTLS_SSL_OUT_CONTENT_LEN;
         }
         if (datalen > MBEDTLS_SSL_OUT_CONTENT_LEN) {
-            ESP_LOGD(TAG, "Fragmenting data of excessive size :%d, offset: %d, size %d", datalen, written, write_len);
+            ESP_LOGD(TAG, "Fragmenting data of excessive size :%zu, offset: %zu, size %zu", datalen, written, write_len);
         }
         ssize_t ret = mbedtls_ssl_write(&tls->ssl, (unsigned char*) data + written, write_len);
         if (ret <= 0) {
             if (ret != ESP_TLS_ERR_SSL_WANT_READ  && ret != ESP_TLS_ERR_SSL_WANT_WRITE && ret != 0) {
                 ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
                 ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_WRITE_FAILED);
-                ESP_LOGE(TAG, "write error :-0x%04X:", -ret);
+                ESP_LOGE(TAG, "write error :-0x%04zX:", -ret);
                 mbedtls_print_error_msg(ret);
                 return ret;
             } else {
                 // Exiting the tls-write process as less than desired datalen are writable
-                ESP_LOGD(TAG, "mbedtls_ssl_write() returned -0x%04X, already written %d, exitting...", -ret, written);
+                ESP_LOGD(TAG, "mbedtls_ssl_write() returned -0x%04zX, already written %zu, exitting...", -ret, written);
                 mbedtls_print_error_msg(ret);
                 return (written > 0) ? written : ret;
             }

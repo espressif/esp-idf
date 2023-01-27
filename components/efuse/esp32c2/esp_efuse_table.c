@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table ceedae45d1a885ced865a05eeca7d7ee
+// md5_digest_table 2216d0ff3e0f4e8803f85711b5cc2829
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -19,8 +19,8 @@ static const esp_efuse_desc_t WR_DIS[] = {
     {EFUSE_BLK0, 0, 8}, 	 // Write protection,
 };
 
-static const esp_efuse_desc_t WR_DIS_KEY0_RD_DIS[] = {
-    {EFUSE_BLK0, 0, 1}, 	 // Write protection for KEY0_RD_DIS,
+static const esp_efuse_desc_t WR_DIS_RD_DIS[] = {
+    {EFUSE_BLK0, 0, 1}, 	 // Write protection for RD_DIS,
 };
 
 static const esp_efuse_desc_t WR_DIS_GROUP_1[] = {
@@ -265,8 +265,8 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KEY0_RD_DIS[] = {
-    &WR_DIS_KEY0_RD_DIS[0],    		// Write protection for KEY0_RD_DIS
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[] = {
+    &WR_DIS_RD_DIS[0],    		// Write protection for RD_DIS
     NULL
 };
 

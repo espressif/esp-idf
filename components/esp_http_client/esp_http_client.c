@@ -8,7 +8,6 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "esp_system.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "http_parser.h"
@@ -20,6 +19,7 @@
 #include "sdkconfig.h"
 #include "esp_http_client.h"
 #include "errno.h"
+#include "esp_random.h"
 
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
 #include "esp_transport_ssl.h"
@@ -269,7 +269,7 @@ static int http_on_headers_complete(http_parser *parser)
 static int http_on_body(http_parser *parser, const char *at, size_t length)
 {
     esp_http_client_t *client = parser->data;
-    ESP_LOGD(TAG, "http_on_body %d", length);
+    ESP_LOGD(TAG, "http_on_body %zu", length);
 
     if (client->response->buffer->output_ptr) {
         memcpy(client->response->buffer->output_ptr, (char *)at, length);
@@ -277,7 +277,7 @@ static int http_on_body(http_parser *parser, const char *at, size_t length)
     } else {
         /* Do not cache body when http_on_body is called from esp_http_client_perform */
         if (client->state < HTTP_STATE_RES_ON_DATA_START && client->cache_data_in_fetch_hdr) {
-            ESP_LOGI(TAG, "Body received in fetch header state, %p, %d", at, length);
+            ESP_LOGD(TAG, "Body received in fetch header state, %p, %zu", at, length);
             esp_http_buffer_t *res_buffer = client->response->buffer;
             assert(res_buffer->orig_raw_data == res_buffer->raw_data);
             res_buffer->orig_raw_data = (char *)realloc(res_buffer->orig_raw_data, res_buffer->raw_len + length);
@@ -298,7 +298,7 @@ static int http_on_body(http_parser *parser, const char *at, size_t length)
 
 static int http_on_message_complete(http_parser *parser)
 {
-    ESP_LOGD(TAG, "http_on_message_complete, parser=%x", (int)parser);
+    ESP_LOGD(TAG, "http_on_message_complete, parser=%p", parser);
     esp_http_client_handle_t client = parser->data;
     client->is_chunk_complete = true;
     return 0;
@@ -1041,7 +1041,7 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
 
     esp_http_buffer_t *res_buffer = client->response->buffer;
 
-    ESP_LOGD(TAG, "data_process=%lld, content_length=%lld", client->response->data_process, client->response->content_length);
+    ESP_LOGD(TAG, "data_process=%"PRId64", content_length=%"PRId64, client->response->data_process, client->response->content_length);
 
     int rlen = esp_transport_read(client->transport, res_buffer->data, client->buffer_size_rx, client->timeout_ms);
     if (rlen >= 0) {
@@ -1059,7 +1059,7 @@ bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client)
         }
     } else {
         if (client->response->data_process != client->response->content_length) {
-            ESP_LOGD(TAG, "Data processed %lld != Data specified in content length %lld", client->response->data_process, client->response->content_length);
+            ESP_LOGD(TAG, "Data processed %"PRId64" != Data specified in content length %"PRId64, client->response->data_process, client->response->content_length);
             return false;
         }
     }
@@ -1092,7 +1092,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         } else {
             is_data_remain = client->response->data_process < client->response->content_length;
         }
-        ESP_LOGD(TAG, "is_data_remain=%d, is_chunked=%d, content_length=%lld", is_data_remain, client->response->is_chunked, client->response->content_length);
+        ESP_LOGD(TAG, "is_data_remain=%"PRId8", is_chunked=%d"PRId8", content_length=%"PRId64, is_data_remain, client->response->is_chunked, client->response->content_length);
         if (!is_data_remain) {
             break;
         }
@@ -1279,7 +1279,7 @@ int64_t esp_http_client_fetch_headers(esp_http_client_handle_t client)
         http_parser_execute(client->parser, client->parser_settings, buffer->data, buffer->len);
     }
     client->state = HTTP_STATE_RES_ON_DATA_START;
-    ESP_LOGD(TAG, "content_length = %lld", client->response->content_length);
+    ESP_LOGD(TAG, "content_length = %"PRId64, client->response->content_length);
     if (client->response->content_length <= 0) {
         client->response->is_chunked = true;
         return 0;

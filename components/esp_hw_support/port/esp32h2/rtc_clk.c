@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,14 +31,13 @@ soc_rtc_slow_clk_src_t rtc_clk_slow_src_get(void)
 
 uint32_t rtc_clk_slow_freq_get_hz(void)
 {
-    // ESP32H2-TODO: IDF-6254
     switch (rtc_clk_slow_freq_get()) {
-        case RTC_SLOW_FREQ_RTC: return RTC_SLOW_CLK_FREQ_150K;
-        case RTC_SLOW_FREQ_32K_XTAL: return RTC_SLOW_CLK_FREQ_32K;
-        case RTC_SLOW_FREQ_8MD256: return RTC_SLOW_CLK_FREQ_8MD256;
-        default: return 0;
+    case SOC_RTC_SLOW_CLK_SRC_RC_SLOW: return SOC_CLK_RC_SLOW_FREQ_APPROX;
+    case SOC_RTC_SLOW_CLK_SRC_XTAL32K: return SOC_CLK_XTAL32K_FREQ_APPROX;
+    case SOC_RTC_SLOW_CLK_SRC_RC32K: return SOC_CLK_RC32K_FREQ_APPROX;
+    case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW: return SOC_CLK_OSC_SLOW_FREQ_APPROX;
+    default: return 0;
     }
-    return 0;
 }
 
 void rtc_clk_cpu_freq_set_xtal(void)

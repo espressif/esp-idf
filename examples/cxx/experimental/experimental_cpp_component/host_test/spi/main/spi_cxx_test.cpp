@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: CC0
+ * SPDX-License-Identifier: CC0-1.0
  *
  * This test code is in the Public Domain (or CC0 licensed, at your option.)
  *
@@ -13,6 +13,7 @@
 #define CATCH_CONFIG_MAIN
 #include <stdio.h>
 #include "unity.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "spi_host_cxx.hpp"
 #include "spi_host_private_cxx.hpp"

@@ -7,8 +7,7 @@ Overview
 
 A single {IDF_TARGET_NAME}'s flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) 0x8000 in the flash.
 
-The partition table length is 0xC00 bytes, as we allow a maximum of 95 entries. An MD5 checksum, used for checking the integrity of the partition table at runtime, is appended after the table data. Thus, the partition table occupies an entire flash sector, which size is 0x1000 (4KB). As a result, any partition following it must be at least located at (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) + 0x1000.
-
+The partition table length is 0xC00 bytes, as we allow a maximum of 95 entries. An MD5 checksum, used for checking the integrity of the partition table at runtime, is appended after the table data. Thus, the partition table occupies an entire flash sector, which size is 0x1000 (4 KB). As a result, any partition following it must be at least located at (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) + 0x1000.
 
 Each entry in the partition table has a name (label), type (app, data, or something else), subtype and the offset in flash where the partition is loaded.
 
@@ -89,7 +88,7 @@ The ESP-IDF bootloader ignores any partition types other than ``app`` (0x00) and
 
 SubType
 ~~~~~~~
-{IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`"}
+{IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32h2="NOT UPDATED YET"}
 
 The 8-bit SubType field is specific to a given partition type. ESP-IDF currently only specifies the meaning of the subtype field for ``app`` and ``data`` partition types.
 
@@ -140,11 +139,11 @@ A component can define a new partition subtype by setting the ``EXTRA_PARTITION_
 Offset & Size
 ~~~~~~~~~~~~~
 
-The offset represents the partition address in the SPI flash, which sector size is 0x1000 (4KB). Thus, the offset must be a multiple of 4KB.
+The offset represents the partition address in the SPI flash, which sector size is 0x1000 (4 KB). Thus, the offset must be a multiple of 4 KB.
 
 Partitions with blank offsets in the CSV file will start after the previous partition, or after the partition table in the case of the first partition.
 
-Partitions of type ``app`` have to be placed at offsets aligned to 0x10000 (64K). If you leave the offset field blank,  ``gen_esp32part.py`` will automatically align the partition. If you specify an unaligned offset for an app partition, the tool will return an error.
+Partitions of type ``app`` have to be placed at offsets aligned to 0x10000 (64 K). If you leave the offset field blank,  ``gen_esp32part.py`` will automatically align the partition. If you specify an unaligned offset for an app partition, the tool will return an error.
 
 Sizes and offsets can be specified as decimal numbers, hex numbers with the prefix 0x, or size multipliers K or M (1024 and 1024*1024 bytes).
 

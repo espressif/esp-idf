@@ -21,14 +21,14 @@ ESP-NETIF architecture
 
 
                          |          (A) USER CODE                 |
-                         |                                        |
+                         |                 Apps                   |
         .................| init          settings      events     |
         .                +----------------------------------------+
         .                   .                |           *
         .                   .                |           *
     --------+            +===========================+   *     +-----------------------+
-            |            | new/config     get/set    |   *     |                       |
-            |            |                           |...*.....| init                  |
+            |            | new/config   get/set/apps |   *     | init                  |
+            |            |                           |...*.....| Apps (DHCP, SNTP)     |
             |            |---------------------------|   *     |                       |
       init  |            |                           |****     |                       |
       start |************|  event handler            |*********|  DHCP                 |
@@ -132,6 +132,7 @@ ESP-NETIF is an intermediary between an IO driver and a network stack, connectin
   * Set interface up or down
   * DHCP server and client API
   * DNS API
+  * `SNTP API`_
 
 6) Driver conversion utilities
 
@@ -242,6 +243,81 @@ select()
 Select is used in a standard way, just :ref:`CONFIG_VFS_SUPPORT_SELECT` needs to be enabled to be the ``select()`` function available.
 
 
+.. _esp_netif-sntp-api:
+
+SNTP API
+--------
+
+You can find a brief introduction to SNTP in general, its initialization code and basic modes in :ref:`system-time-sntp-sync` section in the :doc:`System Time Document</api-reference/system/system_time>`.
+
+This section provides more details about specific use cases of SNTP service, with statically configured servers, or using DHCP provided servers, or both.
+The workflow is usually very simple:
+
+1) Initialize and configure the service using :cpp:func:`esp_netif_sntp_init()`.
+2) Start the service via :cpp:func:`esp_netif_sntp_start()`. This step is not needed if we auto-started the service in the previous step (default). It's useful to start the service explicitly after connecting, if we want to use DHCP obtained NTP servers. (This option needs to be enabled before connecting, but SNTP service should be started after)
+3) Wait for the system time to synchronize using :cpp:func:`esp_netif_sntp_sync_wait()` (only if needed).
+4) Stop and destroy the service using :cpp:func:`esp_netif_sntp_deinit()`.
+
+
+Basic mode with statically defined server(s)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Initialize the module with the default configuration after connecting to network. Note that it's possible to provide multiple NTP servers in the configuration struct:
+
+.. code-block:: c
+
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG_MULTIPLE(2,
+                               ESP_SNTP_SERVER_LIST("time.windows.com", "pool.ntp.org" ) );
+    esp_netif_sntp_init(&config);
+
+.. note::
+
+    If we want to configure multiple SNTP servers, we have to update lwIP configuration :ref:`CONFIG_LWIP_SNTP_MAX_SERVERS`.
+
+
+Use DHCP obtained SNTP server(s)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+First of all, we have to enable lwIP configuration option :ref:`CONFIG_LWIP_DHCP_GET_NTP_SRV`.
+Then we have to initialize the SNTP module with the DHCP option and no NTP server:
+
+.. code-block:: c
+
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG_MULTIPLE(0, {} );
+    config.start = false;                       // start SNTP service explicitly
+    config.server_from_dhcp = true;             // accept NTP offer from DHCP server
+    esp_netif_sntp_init(&config);
+
+Then, once we're connected, we could start the service using:
+
+.. code-block:: c
+
+    esp_netif_sntp_start();
+
+.. note::
+
+    It's also possible to start the service during initialization (default ``config.start=true``). This would likely cause the initial SNTP request to fail (since we are not connected yet) and thus some backoff time for subsequent requests.
+
+
+Use both static and dynamic servers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Very similar to the scenario above (DHCP provided SNTP server), but in this configuration we need to make sure that the static server configuration is refreshed when obtaining NTP servers by DHCP. The underlying lwIP code cleans up the rest of the list of NTP servers when DHCP provided information gets accepted. Thus the ESP-NETIF SNTP module saves the statically configured server(s) and reconfigures them after obtaining DHCP lease.
+
+The typical configuration now looks as per below, providing the specific ``IP_EVENT`` to update the config and index of the first server to reconfigure (for example setting ``config.index_of_first_server=1`` would keep DHCP provided server at index 0, and the statically configured server at index 1).
+
+.. code-block:: c
+
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+    config.start = false;                       // start SNTP service explicitly (after connecting)
+    config.server_from_dhcp = true;             // accept NTP offers from DHCP server
+    config.renew_servers_after_new_IP = true;   // let esp-netif update configured SNTP server(s) after receiving DHCP lease
+    config.index_of_first_server = 1;           // updates from server num 1, leaving server 0 (from DHCP) intact
+    config.ip_event_to_renew = IP_EVENT_STA_GOT_IP;  // IP event on which we refresh the configuration
+
+Then we start the service normally with  :cpp:func:`esp_netif_sntp_start()`.
+
+
 ESP-NETIF programmer's manual
 -----------------------------
 
@@ -287,6 +363,7 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_netif.inc
+.. include-build-file:: inc/esp_netif_sntp.inc
 .. include-build-file:: inc/esp_netif_types.inc
 .. include-build-file:: inc/esp_netif_ip_addr.inc
 .. include-build-file:: inc/esp_vfs_l2tap.inc

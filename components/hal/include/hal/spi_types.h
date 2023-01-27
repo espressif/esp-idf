@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "esp_attr.h"
 #include "esp_bit_defs.h"
+#include "soc/clk_tree_defs.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
@@ -19,14 +20,16 @@ typedef enum {
 //SPI1 can be used as GPSPI only on ESP32
     SPI1_HOST=0,    ///< SPI1
     SPI2_HOST=1,    ///< SPI2
+#if SOC_SPI_PERIPH_NUM > 2
     SPI3_HOST=2,    ///< SPI3
+#endif
     SPI_HOST_MAX,   ///< invalid host value
 } spi_host_device_t;
 
-typedef enum {
-    SPI_CLK_APB,    ///< Select APB as the source clock
-    SPI_CLK_XTAL    ///< Select XTAL as the source clock
-} spi_clock_source_t;
+/**
+ * @brief Type of SPI clock source.
+ */
+typedef soc_periph_spi_clk_src_t spi_clock_source_t;
 
 /// SPI Events
 typedef enum {

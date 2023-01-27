@@ -102,9 +102,12 @@ static void i2s_example_init_tdm_duplex(void)
      * They can help to specify the slot and clock configurations for initialization or re-configuring */
     i2s_tdm_config_t tdm_cfg = {
         .clk_cfg  = I2S_TDM_CLK_DEFAULT_CONFIG(16000),
-        /* Limited by the hardware, the number of bit clock can't exceed 128 in one frame,
+        /* For the target that not support full data bit-width in multiple slots (e.g. ESP32C3, ESP32S3, ESP32C6)
+         * The maximum bits in one frame is limited by the hardware, the number of bit clock can't exceed 128 in one frame,
          * which is to say, TDM mode can only support 32 bit-width data upto 4 slots,
-         * 16 bit-width data upto 8 slots and 8 bit-width data upto 16 slots */
+         * 16 bit-width data upto 8 slots and 8 bit-width data upto 16 slots
+         * But for the target that support full data bit-width in multiple slots (e.g. ESP32H2)
+         * There is no such limitation, it can support up to 32 bit-width with 16 slots */
         .slot_cfg = I2S_TDM_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO,
                                                     I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3),
         .gpio_cfg = {

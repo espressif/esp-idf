@@ -1013,7 +1013,7 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
 
 bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 {
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED || CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-6027 C6 IO0-7 meet both conditions here
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
     return RTC_GPIO_IS_VALID_GPIO(gpio_num);
 #else
     return GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num);
@@ -1272,11 +1272,7 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-    uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_CAUSE);
-#else
-    uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_SLP_WAKEUP_CAUSE_REG, RTC_CNTL_WAKEUP_CAUSE);
-#endif
+    uint32_t wakeup_cause = rtc_cntl_ll_get_wakeup_cause();
 
     if (wakeup_cause & RTC_TIMER_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_TIMER;

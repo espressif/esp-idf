@@ -176,7 +176,7 @@ build_pytest_examples_esp32:
   extends:
     - .build_pytest_no_jtag_template
     - .rules:build:example_test-esp32
-  parallel: 4
+  parallel: 6
   variables:
     IDF_TARGET: esp32
     TEST_DIR: examples
@@ -203,7 +203,7 @@ build_pytest_examples_esp32c3:
   extends:
     - .build_pytest_no_jtag_template
     - .rules:build:example_test-esp32c3
-  parallel: 3
+  parallel: 4
   variables:
     IDF_TARGET: esp32c3
     TEST_DIR: examples
@@ -212,6 +212,7 @@ build_pytest_examples_esp32c2:
   extends:
     - .build_pytest_no_jtag_template
     - .rules:build:example_test-esp32c2
+  parallel: 2
   variables:
     IDF_TARGET: esp32c2
     TEST_DIR: examples
@@ -244,15 +245,24 @@ build_pytest_examples_esp32c6:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32c6
+  parallel: 2
   variables:
     IDF_TARGET: esp32c6
+    TEST_DIR: examples
+
+build_pytest_examples_esp32h2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
     TEST_DIR: examples
 
 build_pytest_components_esp32:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32
-  parallel: 2
+  parallel: 5
   variables:
     IDF_TARGET: esp32
     TEST_DIR: components
@@ -261,7 +271,7 @@ build_pytest_components_esp32s2:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32s2
-  parallel: 2
+  parallel: 4
   variables:
     IDF_TARGET: esp32s2
     TEST_DIR: components
@@ -270,7 +280,7 @@ build_pytest_components_esp32s3:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32s3
-  parallel: 2
+  parallel: 4
   variables:
     IDF_TARGET: esp32s3
     TEST_DIR: components
@@ -279,7 +289,7 @@ build_pytest_components_esp32c3:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32c3
-  parallel: 2
+  parallel: 4
   variables:
     IDF_TARGET: esp32c3
     TEST_DIR: components
@@ -288,6 +298,7 @@ build_pytest_components_esp32c2:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32c2
+  parallel: 3
   variables:
     IDF_TARGET: esp32c2
     TEST_DIR: components
@@ -296,15 +307,24 @@ build_pytest_components_esp32c6:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32c6
+  parallel: 3
   variables:
     IDF_TARGET: esp32c6
+    TEST_DIR: components
+
+build_pytest_components_esp32h2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
     TEST_DIR: components
 
 build_non_test_components_apps:
   extends:
     - .build_cmake_template
     - .rules:build:component_ut
-  parallel: 2
+  parallel: 5
   script:
     - set_component_ut_vars
     # CI specific options start from "--collect-size-info xxx". could ignore when running locally
@@ -358,6 +378,7 @@ build_pytest_test_apps_esp32s3:
   extends:
     - .build_pytest_test_apps_template
     - .rules:build:custom_test-esp32s3
+  parallel: 2
   variables:
     IDF_TARGET: esp32s3
     TEST_DIR: tools/test_apps
@@ -384,6 +405,14 @@ build_pytest_test_apps_esp32c6:
     - .rules:build:custom_test-esp32c6
   variables:
     IDF_TARGET: esp32c6
+    TEST_DIR: tools/test_apps
+
+build_pytest_test_apps_esp32h2:
+  extends:
+    - .build_pytest_test_apps_template
+    - .rules:build:custom_test-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
     TEST_DIR: tools/test_apps
 
 .build_template_app_template:
@@ -472,6 +501,12 @@ build_ssc_esp32s3:
   variables:
     TARGET_NAME: "ESP32S3"
 
+build_ssc_esp32c6:
+  extends: .build_ssc_template
+  parallel: 3
+  variables:
+    TARGET_NAME: "ESP32C6"
+
 .build_esp_idf_tests_cmake_template:
   extends:
     - .build_cmake_template
@@ -513,7 +548,6 @@ build_esp_idf_tests_cmake_esp32:
   extends:
     - .build_esp_idf_tests_cmake_template
     - .rules:build:unit_test-esp32
-  parallel: 2
   variables:
     IDF_TARGET: esp32
 
@@ -521,7 +555,6 @@ build_esp_idf_tests_cmake_esp32s2:
   extends:
     - .build_esp_idf_tests_cmake_template
     - .rules:build:unit_test-esp32s2
-  parallel: 2
   variables:
     IDF_TARGET: esp32s2
 
@@ -553,11 +586,18 @@ build_esp_idf_tests_cmake_esp32c6:
   variables:
     IDF_TARGET: esp32c6
 
+build_esp_idf_tests_cmake_esp32h2:
+  extends:
+    - .build_esp_idf_tests_cmake_template
+    - .rules:build:unit_test-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
+
 build_examples_cmake_esp32:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32
-  parallel: 9
+  parallel: 8
   variables:
     IDF_TARGET: esp32
     TEST_DIR: examples
@@ -566,7 +606,7 @@ build_examples_cmake_esp32s2:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32s2
-  parallel: 6
+  parallel: 7
   variables:
     IDF_TARGET: esp32s2
     TEST_DIR: examples
@@ -584,7 +624,7 @@ build_examples_cmake_esp32c2:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32c2
-  parallel: 4
+  parallel: 6
   variables:
     IDF_TARGET: esp32c2
     TEST_DIR: examples
@@ -610,10 +650,20 @@ build_examples_cmake_esp32c6:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32c6
-  parallel: 2
+  parallel: 6
   variables:
     IDF_TARGET: esp32c6
     TEST_DIR: examples
+
+build_examples_cmake_esp32h2:
+  extends:
+    - .build_cmake_template
+    - .rules:build:example_test-esp32h2
+  parallel: 2
+  variables:
+    IDF_TARGET: esp32h2
+    TEST_DIR: examples
+
 
 build_test_apps_esp32:
   extends:
@@ -665,6 +715,14 @@ build_test_apps_esp32c6:
     - .rules:build:custom_test-esp32c6
   variables:
     IDF_TARGET: esp32c6
+    TEST_DIR: tools/test_apps
+
+build_test_apps_esp32h2:
+  extends:
+    - .build_cmake_template
+    - .rules:build:custom_test-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
     TEST_DIR: tools/test_apps
 
 build_clang_test_apps_esp32:

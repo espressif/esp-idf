@@ -67,6 +67,7 @@
 #define SOC_ADC_SUPPORTED           1
 #define SOC_DAC_SUPPORTED           1
 #define SOC_MCPWM_SUPPORTED         1
+#define SOC_GPTIMER_SUPPORTED       1
 #define SOC_SDMMC_HOST_SUPPORTED    1
 #define SOC_BT_SUPPORTED            1
 #define SOC_PCNT_SUPPORTED          1
@@ -92,6 +93,7 @@
 #define SOC_FLASH_ENC_SUPPORTED     1
 #define SOC_SECURE_BOOT_SUPPORTED   1
 #define SOC_TOUCH_SENSOR_SUPPORTED  1
+#define SOC_BOD_SUPPORTED           1
 
 #if SOC_CAPS_ECO_VER < 200
 #define SOC_DPORT_WORKAROUND                   1
@@ -273,6 +275,8 @@
 #define SOC_SPI_PERIPH_CS_NUM(i)        3
 #define SOC_SPI_MAX_CS_NUM              3
 
+#define SOC_SPI_SUPPORT_CLK_APB         1
+
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 #define SOC_SPI_MAX_PRE_DIVIDER         8192
 
@@ -381,6 +385,8 @@
 #define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
 #define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
+
+#define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 
 /*-------------------------- SDMMC CAPS -----------------------------------------*/
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,9 +87,8 @@ TEST_CASE("mcpwm_operator_carrier", "[mcpwm]")
     mcpwm_gen_handle_t generator = NULL;
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator));
 
-    TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(generator,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_TOGGLE),
-                MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(generator,
+                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_TOGGLE)));
 
     printf("add carrier to PWM wave\r\n");
     mcpwm_carrier_config_t carrier_config = {
@@ -206,20 +205,16 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_b));
 
     printf("set generator actions on timer event\r\n");
-    TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(gen_a,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW),
-                MCPWM_GEN_TIMER_EVENT_ACTION_END()));
-    TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(gen_b,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW),
-                MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen_a,
+                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW)));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen_b,
+                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW)));
 
     printf("set generator actions on brake event\r\n");
-    TEST_ESP_OK(mcpwm_generator_set_actions_on_brake_event(gen_a,
-                MCPWM_GEN_BRAKE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_OPER_BRAKE_MODE_CBC, MCPWM_GEN_ACTION_HIGH),
-                MCPWM_GEN_BRAKE_EVENT_ACTION_END()));
-    TEST_ESP_OK(mcpwm_generator_set_actions_on_brake_event(gen_b,
-                MCPWM_GEN_BRAKE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_OPER_BRAKE_MODE_OST, MCPWM_GEN_ACTION_HIGH),
-                MCPWM_GEN_BRAKE_EVENT_ACTION_END()));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_brake_event(gen_a,
+                MCPWM_GEN_BRAKE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_OPER_BRAKE_MODE_CBC, MCPWM_GEN_ACTION_HIGH)));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_brake_event(gen_b,
+                MCPWM_GEN_BRAKE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_OPER_BRAKE_MODE_OST, MCPWM_GEN_ACTION_HIGH)));
 
     printf("enable and start timer\r\n");
     TEST_ESP_OK(mcpwm_timer_enable(timer));
@@ -316,20 +311,16 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_b));
 
     printf("set generator actions on timer event\r\n");
-    TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(gen_a,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW),
-                MCPWM_GEN_TIMER_EVENT_ACTION_END()));
-    TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(gen_b,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW),
-                MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen_a,
+                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW)));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen_b,
+                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW)));
 
     printf("set generator actions on brake event\r\n");
-    TEST_ESP_OK(mcpwm_generator_set_actions_on_brake_event(gen_a,
-                MCPWM_GEN_BRAKE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_OPER_BRAKE_MODE_CBC, MCPWM_GEN_ACTION_HIGH),
-                MCPWM_GEN_BRAKE_EVENT_ACTION_END()));
-    TEST_ESP_OK(mcpwm_generator_set_actions_on_brake_event(gen_b,
-                MCPWM_GEN_BRAKE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_OPER_BRAKE_MODE_OST, MCPWM_GEN_ACTION_HIGH),
-                MCPWM_GEN_BRAKE_EVENT_ACTION_END()));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_brake_event(gen_a,
+                MCPWM_GEN_BRAKE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_OPER_BRAKE_MODE_CBC, MCPWM_GEN_ACTION_HIGH)));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_brake_event(gen_b,
+                MCPWM_GEN_BRAKE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_OPER_BRAKE_MODE_OST, MCPWM_GEN_ACTION_HIGH)));
 
     printf("enable and start timer\r\n");
     TEST_ESP_OK(mcpwm_timer_enable(timer));

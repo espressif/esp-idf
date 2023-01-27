@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import shutil
 import subprocess
@@ -71,3 +71,20 @@ def test_idf_build_with_env_var_sdkconfig_defaults(
 
     with open(test_app_copy / 'sdkconfig') as fr:
         assert 'CONFIG_BT_ENABLED=y' in fr.read()
+
+
+@pytest.mark.usefixtures('test_app_copy')
+@pytest.mark.test_app_copy('examples/system/efuse')
+def test_efuse_symmary_cmake_functions(
+    idf_py: IdfPyFunc,
+    monkeypatch: MonkeyPatch
+) -> None:
+    monkeypatch.setenv('IDF_CI_BUILD', '1')
+    output = idf_py('efuse-summary')
+    assert 'FROM_CMAKE: MAC: 00:00:00:00:00:00' in output.stdout
+    assert 'FROM_CMAKE: WR_DIS: 0' in output.stdout
+
+
+def test_custom_build_folder(test_app_copy: Path, idf_py: IdfPyFunc) -> None:
+    idf_py('-BBuiLDdiR', 'build')
+    assert (test_app_copy / 'BuiLDdiR').is_dir()

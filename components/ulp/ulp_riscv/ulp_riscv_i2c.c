@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -398,6 +398,10 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
 
 esp_err_t ulp_riscv_i2c_master_init(const ulp_riscv_i2c_cfg_t *cfg)
 {
+    /* Clear any stale config registers */
+    WRITE_PERI_REG(RTC_I2C_CTRL_REG, 0);
+    WRITE_PERI_REG(SENS_SAR_I2C_CTRL_REG, 0);
+
     /* Reset RTC I2C */
 #if CONFIG_IDF_TARGET_ESP32S2
     i2c_dev->ctrl.i2c_reset = 1;

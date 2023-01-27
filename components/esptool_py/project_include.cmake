@@ -494,3 +494,7 @@ if(NOT BOOTLOADER_BUILD)
 
     esptool_py_custom_target(flash project "${flash_deps}")
 endif()
+
+# Adds espefuse functions for global use
+idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
+include(${esptool_py_dir}/espefuse.cmake)

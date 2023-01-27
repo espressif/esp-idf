@@ -424,10 +424,11 @@ static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
   * @param gpio_num GPIO number of the pad.
   * @param signal_idx Peripheral signal id to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
   */
+__attribute__((always_inline))
 static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t signal_idx)
 {
     hw->func_in_sel_cfg[signal_idx].sig_in_sel = 0;
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[gpio]);
+    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio * 4));
 }
 
 /**

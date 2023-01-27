@@ -162,6 +162,7 @@ BOOLEAN bta_gatts_co_load_handle_range(UINT8 index,
     return FALSE;
 }
 
+#if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_gatts_co_cl_feat_save
@@ -245,5 +246,6 @@ void bta_gatts_co_db_hash_load(BD_ADDR remote_addr, BT_OCTET16 db_hash)
     memcpy(bd_addr.address, remote_addr, BD_ADDR_LEN);
     btc_storage_get_gatt_db_hash(&bd_addr, db_hash, BT_OCTET16_LEN);
 }
-#endif
-#endif
+#endif // #if (SMP_INCLUDED == TRUE)
+#endif // #if (GATTS_INCLUDED == TRUE)
+#endif // #if (BLE_INCLUDED == TRUE)

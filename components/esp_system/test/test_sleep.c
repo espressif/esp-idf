@@ -34,7 +34,7 @@
 
 __attribute__((unused)) static struct timeval tv_start, tv_stop;
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
 #ifndef CONFIG_FREERTOS_UNICORE
 static void deep_sleep_task(void *arg)
 {
@@ -445,8 +445,7 @@ __attribute__((unused)) static float get_time_ms(void)
 
 __attribute__((unused)) static uint32_t get_cause(void)
 {
-    uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, \
-                                            RTC_CNTL_WAKEUP_CAUSE);
+    uint32_t wakeup_cause = rtc_cntl_ll_get_wakeup_cause();
     return wakeup_cause;
 }
 
@@ -591,4 +590,4 @@ TEST_CASE("wake up using GPIO (2 or 4 low)", "[deepsleep][ignore]")
 }
 #endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6) TODO: IDF-5348, IDF-5349
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2) TODO: IDF-5348, IDF-5349

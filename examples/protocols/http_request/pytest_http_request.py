@@ -11,14 +11,11 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet
 def test_examples_protocol_http_request(dut: Dut) -> None:
     """
     steps: |
-      1. join AP
+      1. join AP/Ethernet
       2. connect to example.com
       3. check conneciton success
     """

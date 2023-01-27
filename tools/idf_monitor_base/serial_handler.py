@@ -122,7 +122,7 @@ class SerialHandler:
             # It is possible that the incomplete line cuts in half the PC
             # address. A small buffer is kept and will be used the next time
             # handle_possible_pc_address_in_line is invoked to avoid this problem.
-            # MATCH_PCADDR matches 10 character long addresses. Therefore, we
+            # ADDRESS_RE matches 10 character long addresses. Therefore, we
             # keep the last 9 characters.
             self.logger.pc_address_buffer = self._last_line_part[-9:]
             # GDB sequence can be cut in half also. GDB sequence is 7

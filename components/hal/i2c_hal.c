@@ -51,8 +51,10 @@ void i2c_hal_master_init(i2c_hal_context_t *hal)
 
 void i2c_hal_init(i2c_hal_context_t *hal, int i2c_port)
 {
-    hal->dev = I2C_LL_GET_HW(i2c_port);
-    i2c_ll_enable_controller_clock(hal->dev, true);
+    if (hal->dev == NULL) {
+        hal->dev = I2C_LL_GET_HW(i2c_port);
+        i2c_ll_enable_controller_clock(hal->dev, true);
+    }
 }
 
 void i2c_hal_deinit(i2c_hal_context_t *hal)

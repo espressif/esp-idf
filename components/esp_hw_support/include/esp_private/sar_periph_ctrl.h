@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,44 @@ extern "C" {
  * Should only be used when running into app stage
  */
 void sar_periph_ctrl_init(void);
+
+
+/*------------------------------------------------------------------------------
+* ADC Power
+*----------------------------------------------------------------------------*/
+/**
+ * @brief Acquire the ADC oneshot mode power
+ */
+void sar_periph_ctrl_adc_oneshot_power_acquire(void);
+
+/**
+ * @brief Release the ADC oneshot mode power
+ */
+void sar_periph_ctrl_adc_oneshot_power_release(void);
+
+/**
+ * @brief Acquire the ADC continuous mode power
+ */
+void sar_periph_ctrl_adc_continuous_power_acquire(void);
+
+/**
+ * @brief Release the ADC ADC continuous mode power
+ */
+void sar_periph_ctrl_adc_continuous_power_release(void);
+
+
+/*------------------------------------------------------------------------------
+* PWDET Power
+*----------------------------------------------------------------------------*/
+/**
+ * @brief Acquire the PWDET Power
+ */
+void sar_periph_ctrl_pwdet_power_acquire(void);
+
+/**
+ * @brief Release the PWDET Power
+ */
+void sar_periph_ctrl_pwdet_power_release(void);
 
 #ifdef __cplusplus
 }

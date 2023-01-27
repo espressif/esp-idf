@@ -30,6 +30,7 @@
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
+#define SOC_GPTIMER_SUPPORTED           1
 #define SOC_LCDCAM_SUPPORTED            1
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
@@ -67,6 +68,7 @@
 #define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_MEMPROT_SUPPORTED           1
 #define SOC_TOUCH_SENSOR_SUPPORTED      1
+#define SOC_BOD_SUPPORTED               1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -185,7 +187,7 @@
 #define SOC_I2C_SUPPORT_RTC        (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-#define SOC_I2S_NUM                 (2)
+#define SOC_I2S_NUM                 (2U)
 #define SOC_I2S_HW_VERSION_2        (1)
 #define SOC_I2S_SUPPORTS_XTAL       (1)
 #define SOC_I2S_SUPPORTS_PLL_F160M  (1)
@@ -289,6 +291,8 @@
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+#define SOC_SPI_SUPPORT_CLK_APB             1
+#define SOC_SPI_SUPPORT_CLK_XTAL            1
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
@@ -414,6 +418,15 @@
 #define SOC_CLK_RC_FAST_D256_SUPPORTED            (1)
 #define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
+
+#define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
+
+/*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_DIS_DOWNLOAD_DCACHE 1
+#define SOC_EFUSE_HARD_DIS_JTAG 1
+#define SOC_EFUSE_DIS_USB_JTAG 1
+#define SOC_EFUSE_SOFT_DIS_JTAG 1
+#define SOC_EFUSE_DIS_DIRECT_BOOT 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1

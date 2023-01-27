@@ -8,23 +8,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
 #include "esp_private/system_internal.h"
 #include "esp_private/rtc_ctrl.h"
 #include "esp_private/spi_flash_os.h"
-
 #include "esp_rom_sys.h"
 #include "esp_cpu.h"
-
 #include "soc/soc.h"
-
 #include "soc/rtc_periph.h"
 #include "esp_attr.h"
 #include "bootloader_flash.h"
 #include "esp_intr_alloc.h"
-
 #include "hal/brownout_hal.h"
-
+#include "hal/brownout_ll.h"
 #include "sdkconfig.h"
 
 #if defined(CONFIG_ESP_BROWNOUT_DET_LVL)
@@ -40,7 +35,7 @@ IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
      * handler returns. Since restart is called here, the flag needs to be
      * cleared manually.
      */
-    brownout_hal_intr_clear();
+    brownout_ll_intr_clear();
 
     // Stop the other core.
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -75,13 +70,15 @@ void esp_brownout_init(void)
     };
 
     brownout_hal_config(&cfg);
-    brownout_hal_intr_clear();
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2// ESP32-C6, ESP32-H2 TODO: IDF-5645
-    rtc_isr_register(rtc_brownout_isr_handler, NULL, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_ENA_M, RTC_INTR_FLAG_IRAM);
+    brownout_ll_intr_clear();
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+    // TODO IDF-6606: LP_RTC_TIMER interrupt source is shared by lp_timer and brownout detector, but lp_timer interrupt
+    // is not used now. An interrupt allocator is needed when lp_timer intr gets supported.
+    esp_intr_alloc(ETS_LP_RTC_TIMER_INTR_SOURCE, ESP_INTR_FLAG_IRAM, &rtc_brownout_isr_handler, NULL, NULL);
 #else
     rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M, RTC_INTR_FLAG_IRAM);
 #endif
-    brownout_hal_intr_enable(true);
+    brownout_ll_intr_enable(true);
 
 #else // brownout without interrupt
 
@@ -105,7 +102,7 @@ void esp_brownout_disable(void)
 
     brownout_hal_config(&cfg);
 #if CONFIG_ESP_SYSTEM_BROWNOUT_INTR
-    brownout_hal_intr_enable(false);
+    brownout_ll_intr_enable(false);
     rtc_isr_deregister(rtc_brownout_isr_handler, NULL);
 #endif // CONFIG_ESP_SYSTEM_BROWNOUT_INTR
 }

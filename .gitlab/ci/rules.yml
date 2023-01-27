@@ -197,6 +197,7 @@
   - "components/spiffs/spiffs"
   - "components/unity/unity"
   - "components/heap/tlsf"
+  - "components/bt/controller/lib_esp32c6/esp32c6-bt-lib"
   - ".gitmodules"
 
 # for jobs: example_test*flash_encryption_wifi_high_traffic
@@ -701,6 +702,34 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
+.rules:build:component_ut-esp32h2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32h2
+    - <<: *if-label-target_test
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32h2
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-usb
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
+      changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+
 .rules:build:component_ut-esp32h4:
   rules:
     - <<: *if-revert-branch
@@ -898,6 +927,30 @@
     - <<: *if-label-build
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32c6
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
+      changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+
+.rules:build:custom_test-esp32h2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32h2
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-build_components
@@ -1166,6 +1219,42 @@
     - <<: *if-label-build
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32c6
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-bt
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ethernet
+    - <<: *if-dev-push
+      changes: *patterns-example_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-example_test-usb
+    - <<: *if-dev-push
+      changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+
+.rules:build:example_test-esp32h2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32h2
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
@@ -1566,6 +1655,32 @@
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
+.rules:build:unit_test-esp32h2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-target_test
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32h2
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
+      changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+    - <<: *if-dev-push
+      changes: *patterns-unit_test-sdio
+
 .rules:build:unit_test-esp32s2:
   rules:
     - <<: *if-revert-branch
@@ -1719,6 +1834,19 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
+.rules:test:component_ut-esp32c2-wifi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32c2
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+
 .rules:test:component_ut-esp32c3:
   rules:
     - <<: *if-revert-branch
@@ -1869,6 +1997,19 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
+
+.rules:test:component_ut-esp32s3-wifi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32s3
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:custom_test-esp32:
   rules:
@@ -2054,6 +2195,21 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
+.rules:test:example_test-esp32c2-wifi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c2
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+
 .rules:test:example_test-esp32c3:
   rules:
     - <<: *if-revert-branch
@@ -2090,6 +2246,21 @@
     - <<: *if-label-build-only
       when: never
     - <<: *if-example_test-ota-include_nightly_run-rule
+
+.rules:test:example_test-esp32c3-wifi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c3
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:example_test-esp32c6:
   rules:
@@ -2187,6 +2358,21 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+
+.rules:test:example_test-esp32s3-wifi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32s3
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
 
 .rules:test:example_test-i154:
   rules:

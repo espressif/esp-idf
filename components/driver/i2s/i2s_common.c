@@ -498,6 +498,11 @@ uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
         (void)mclk_freq_hz;
         return I2S_LL_PLL_F96M_CLK_FREQ;
 #endif
+#if SOC_I2S_SUPPORTS_PLL_F64M
+    case I2S_CLK_SRC_PLL_64M:
+        (void)mclk_freq_hz;
+        return I2S_LL_PLL_F64M_CLK_FREQ;
+#endif
     default:
         // Invalid clock source
         return 0;

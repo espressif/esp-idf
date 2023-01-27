@@ -20,7 +20,6 @@
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t periodic_adv_raw_data[] = {'E', 'S', 'P', '_', 'P', 'E', 'R', 'I', 'O', 'D', 'I', 'C', '_', 'A', 'D', 'V'};
-static uint8_t id_addr_type;
 #endif
 
 static const char *tag = "NimBLE_BLE_PERIODIC_ADV";
@@ -41,18 +40,21 @@ void ble_store_config_init(void);
 static void
 start_periodic_adv(void)
 {
-    int rc = ble_hs_util_ensure_addr(0);
-    assert(rc == 0);
-    /* configure global address */
-    rc = ble_hs_id_infer_auto(0, &id_addr_type);
-    assert(rc == 0);
-
+    int rc;
     struct ble_gap_periodic_adv_params pparams;
     struct ble_gap_ext_adv_params params;
     struct ble_hs_adv_fields adv_fields;
     struct os_mbuf *data;
     uint8_t instance = 1;
     ble_addr_t addr;
+
+    /* set random (NRPA) address for instance */
+    rc = ble_hs_id_gen_rnd(1, &addr);
+    assert (rc == 0);
+
+    MODLOG_DFLT(INFO, "Device Address: ");
+    print_addr(addr.val);
+    MODLOG_DFLT(INFO, "\n");
 
     /* For periodic we use instance with non-connectable advertising */
     memset (&params, 0, sizeof(params));
@@ -65,10 +67,6 @@ start_periodic_adv(void)
 
     /* configure instance 1 */
     rc = ble_gap_ext_adv_configure(instance, &params, NULL, NULL, NULL);
-    assert (rc == 0);
-
-    /* set random (NRPA) address for instance */
-    rc = ble_hs_id_gen_rnd(1, &addr);
     assert (rc == 0);
 
     rc = ble_gap_ext_adv_set_addr(instance, &addr );
@@ -92,19 +90,10 @@ start_periodic_adv(void)
     /* configure periodic advertising */
     memset(&pparams, 0, sizeof(pparams));
     pparams.include_tx_power = 0;
-    pparams.itvl_min = 160;
-    pparams.itvl_max = 240;
+    pparams.itvl_min = BLE_GAP_ADV_ITVL_MS(120);
+    pparams.itvl_max = BLE_GAP_ADV_ITVL_MS(240);
 
     rc = ble_gap_periodic_adv_configure(instance, &pparams);
-    assert(rc == 0);
-
-    /* get mbuf for periodic data */
-    data = os_msys_get_pkthdr(sizeof(ext_adv_pattern_1), 0);
-    assert(data);
-
-    /* fill mbuf with periodic data */
-
-    rc = os_mbuf_append(data, ext_adv_pattern_1, sizeof(ext_adv_pattern_1));
     assert(rc == 0);
 
     data = os_msys_get_pkthdr(sizeof(periodic_adv_raw_data), 0);
@@ -126,6 +115,7 @@ start_periodic_adv(void)
     MODLOG_DFLT(INFO, "instance %u started (periodic)\n", instance);
 }
 #endif
+
 static void
 periodic_adv_on_reset(int reason)
 {
@@ -172,13 +162,6 @@ periodic_adv_on_sync(void)
         return;
     }
 
-    /* Printing ADDR */
-    uint8_t addr_val[6] = {0};
-    rc = ble_hs_id_copy_addr(own_addr_type, addr_val, NULL);
-
-    MODLOG_DFLT(INFO, "Device Address: ");
-    print_addr(addr_val);
-    MODLOG_DFLT(INFO, "\n");
     /* Begin advertising. */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
     start_periodic_adv();

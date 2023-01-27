@@ -9,10 +9,17 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "esp_log.h"
-#include "sntp.h"
+#include "esp_sntp.h"
+
+// Remove compat macro and include lwip API
+#undef SNTP_OPMODE_POLL
 #include "lwip/apps/sntp.h"
+#include "lwip/tcpip.h"
 
 static const char *TAG = "sntp";
+
+ESP_STATIC_ASSERT(SNTP_OPMODE_POLL == ESP_SNTP_OPMODE_POLL, "SNTP mode in lwip doesn't match the IDF enum. Please make sure lwIP version is correct");
+ESP_STATIC_ASSERT(SNTP_OPMODE_LISTENONLY == ESP_SNTP_OPMODE_LISTENONLY, "SNTP mode in lwip doesn't match the IDF enum. Please make sure lwIP version is correct");
 
 static volatile sntp_sync_mode_t sntp_sync_mode = SNTP_SYNC_MODE_IMMED;
 static volatile sntp_sync_status_t sntp_sync_status = SNTP_SYNC_STATUS_RESET;
@@ -100,11 +107,17 @@ uint32_t sntp_get_sync_interval(void)
     return s_sync_interval;
 }
 
+static void sntp_do_restart(void *ctx)
+{
+    (void)ctx;
+    sntp_stop();
+    sntp_init();
+}
+
 bool sntp_restart(void)
 {
     if (sntp_enabled()) {
-        sntp_stop();
-        sntp_init();
+        tcpip_callback(sntp_do_restart, NULL);
         return true;
     }
     return false;
@@ -138,3 +151,98 @@ void sntp_get_system_time(uint32_t *sec, uint32_t *us)
     *(us) = tv.tv_usec;
     sntp_set_sync_status(SNTP_SYNC_STATUS_RESET);
 }
+
+static void do_setoperatingmode(void *ctx)
+{
+    esp_sntp_operatingmode_t operating_mode = (esp_sntp_operatingmode_t)ctx;
+    sntp_setoperatingmode(operating_mode);
+}
+
+void esp_sntp_setoperatingmode(esp_sntp_operatingmode_t operating_mode)
+{
+    tcpip_callback(do_setoperatingmode, (void*)operating_mode);
+}
+
+static void do_init(void *ctx)
+{
+    sntp_init();
+}
+
+void esp_sntp_init(void)
+{
+    tcpip_callback(do_init, NULL);
+}
+
+static void do_stop(void *ctx)
+{
+    sntp_stop();
+}
+
+void esp_sntp_stop(void)
+{
+    tcpip_callback(do_stop, NULL);
+}
+
+struct do_setserver {
+    u8_t idx;
+    const ip_addr_t *addr;
+};
+
+static void do_setserver(void *ctx)
+{
+    struct do_setserver *params = ctx;
+    sntp_setserver(params->idx, params->addr);
+}
+
+void esp_sntp_setserver(u8_t idx, const ip_addr_t *addr)
+{
+    struct do_setserver params = {
+            .idx = idx,
+            .addr = addr
+    };
+    tcpip_callback(do_setserver, &params);
+}
+
+struct do_setservername {
+    u8_t idx;
+    const char *server;
+};
+
+static void do_setservername(void *ctx)
+{
+    struct do_setservername *params = ctx;
+    sntp_setservername(params->idx, params->server);
+}
+
+void esp_sntp_setservername(u8_t idx, const char *server)
+{
+    struct do_setservername params = {
+            .idx = idx,
+            .server = server
+    };
+    tcpip_callback(do_setservername, &params);
+}
+
+const char *esp_sntp_getservername(u8_t idx)
+{
+    return sntp_getservername(idx);
+}
+
+const ip_addr_t* esp_sntp_getserver(u8_t idx)
+{
+    return sntp_getserver(idx);
+}
+
+#if LWIP_DHCP_GET_NTP_SRV
+static void do_servermode_dhcp(void* ctx)
+{
+    u8_t servermode = (bool)ctx ? 1 : 0;
+    sntp_servermode_dhcp(servermode);
+}
+
+void esp_sntp_servermode_dhcp(bool enable)
+{
+    tcpip_callback(do_servermode_dhcp, (void*)enable);
+}
+
+#endif /* LWIP_DHCP_GET_NTP_SRV */
