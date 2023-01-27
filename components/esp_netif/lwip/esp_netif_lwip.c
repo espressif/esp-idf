@@ -381,6 +381,11 @@ esp_err_t esp_netif_set_default_netif(esp_netif_t *esp_netif)
     return esp_netif_update_default_netif(esp_netif, ESP_NETIF_SET_DEFAULT);
 }
 
+esp_netif_t *esp_netif_get_default_netif(void)
+{
+    return s_last_default_esp_netif;
+}
+
 static inline esp_netif_t* lwip_get_esp_netif(struct netif *netif)
 {
 #if LWIP_ESP_NETIF_DATA
