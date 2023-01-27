@@ -20,13 +20,11 @@ import json
 import locale
 import os
 import os.path
-import signal
 import subprocess
 import sys
 from collections import Counter, OrderedDict, _OrderedDictKeysView
 from importlib import import_module
 from pkgutil import iter_modules
-from types import FrameType
 from typing import Any, Callable, Dict, List, Optional, Union
 
 # pyc files remain in the filesystem when switching between branches which might raise errors for incompatible
@@ -689,15 +687,7 @@ def init_cli(verbose_output: List=None) -> Any:
     return CLI(help=cli_help, verbose_output=verbose_output, all_actions=all_actions)
 
 
-def signal_handler(_signal: int, _frame: Optional[FrameType]) -> None:
-    # The Ctrl+C processed by other threads inside
-    pass
-
-
 def main() -> None:
-    # Processing of Ctrl+C event for all threads made by main()
-    signal.signal(signal.SIGINT, signal_handler)
-
     # Check the environment only when idf.py is invoked regularly from command line.
     checks_output = None if SHELL_COMPLETE_RUN else check_environment()
 
