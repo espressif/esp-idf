@@ -1,18 +1,18 @@
-# SpinDance ESP IDF v4.4.2 Changes
-The following is an analysis of the changes to [ESP IDF](https://github.com/espressif/esp-idf) `v4.4.2` in this [SpinDance fork](https://github.com/spindance/esp-idf) on branch `spindance_changes_v4.4.2`. The purpose is to categorize the changes into features and describe their purpose and usage in the [SpinDance Embedded Starter Kit](https://github.com/spindance/spindance-embedded-reuse/).
+# SpinDance ESP IDF v5.0 Changes
+The following is an analysis of the changes to [ESP IDF](https://github.com/espressif/esp-idf) `v5.0` in this [SpinDance fork](https://github.com/spindance/esp-idf) on branch `spindance_changes_v5.0`. The purpose is to categorize the changes into features and describe their purpose and usage in the [SpinDance Embedded Starter Kit](https://github.com/spindance/spindance-embedded-reuse/).
 
-A handy way to view the diff is via this [Github pull request link](https://github.com/espressif/esp-idf/compare/v4.4.2...spindance:esp-idf:spindance_changes_v4.4.2).
+A handy way to view the diff is via this [Github pull request link](https://github.com/espressif/esp-idf/compare/v5.0...spindance:esp-idf:spindance_changes_v5.0).
 
 The original ESP repo and this SpinDance fork can be cloned and viewed separately via:
 ```
 git clone git@github.com:espressif/esp-idf.git esp-idf
 cd esp-idf
-git checkout v4.4.2
+git checkout v5.0
 
 cd ..
 git clone git@github.com:spindance/esp-idf.git spindance-esp-idf
 cd spindance-esp-idf
-git checkout spindance_changes_v4.4.2
+git checkout spindance_changes_v5.0
 ```
 
 ## Changed Files
