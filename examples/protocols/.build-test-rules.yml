@@ -129,9 +129,11 @@ examples/protocols/mdns:
 
 examples/protocols/modbus:
   disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32h2"]
+  disable_test:
+    - if: IDF_TARGET != "esp32"
       temporary: true
-      reason: target(s) not supported yet
+      reason: lack of runners
 
 examples/protocols/mqtt/ssl:
   disable:
