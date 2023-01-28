@@ -255,10 +255,6 @@ else() # Regular app build
     elseif(target STREQUAL "esp32h2")
         rom_linker_script("newlib")
         rom_linker_script("version")
-        rom_linker_script("phy")
-        rom_linker_script("coexist")
-        rom_linker_script("net80211")
-        rom_linker_script("pp")
 
         if(CONFIG_SPI_FLASH_ROM_IMPL)
             rom_linker_script("spiflash")
