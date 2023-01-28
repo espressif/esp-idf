@@ -23,6 +23,11 @@
 #else
 #include "hal/rtc_cntl_ll.h"
 #endif
+
+#if SOC_PMU_SUPPORTED
+#include "hal/pmu_ll.h"
+#endif
+
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
@@ -62,7 +67,12 @@ void RTC_IRAM_ATTR esp_wake_stub_sleep(esp_deep_sleep_wake_stub_fn_t new_stub)
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_MEM
 
     // Go to sleep.
+#if SOC_PMU_SUPPORTED
+    pmu_ll_hp_set_sleep_enable(&PMU);
+#else
     rtc_cntl_ll_sleep_enable();
+#endif
+
     // A few CPU cycles may be necessary for the sleep to start...
     while (true) {};
     // never reaches here.
@@ -89,5 +99,9 @@ void RTC_IRAM_ATTR esp_wake_stub_set_wakeup_time(uint64_t time_in_us)
 
 uint32_t RTC_IRAM_ATTR esp_wake_stub_get_wakeup_cause(void)
 {
+#if SOC_PMU_SUPPORTED
+    return pmu_ll_hp_get_wakeup_cause(&PMU);
+#else
     return rtc_cntl_ll_get_wakeup_cause();
+#endif
 }

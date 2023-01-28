@@ -95,8 +95,8 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     CLEAR_PERI_REG_MASK(LP_TIMER_LP_INT_ENA_REG, LP_TIMER_MAIN_TIMER_LP_INT_ENA);                           /* MAIN_TIMER */
     CLEAR_PERI_REG_MASK(LP_ANALOG_PERI_LP_ANA_LP_INT_ENA_REG, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_ENA);  /* BROWN_OUT */
     CLEAR_PERI_REG_MASK(LP_WDT_INT_ENA_REG, LP_WDT_LP_WDT_INT_ENA);                                         /* WDT */
-    // CLEAR_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SOC_WAKEUP_INT_ENA);  // TODO: IDF-5348                                    /* SLP_REJECT */
-    // CLEAR_PERI_REG_MASK(PMU_SOC_SLEEP_REJECT_INT_ENA, PMU_SOC_SLEEP_REJECT_INT_ENA);                        /* SLP_WAKEUP */
+    CLEAR_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SOC_WAKEUP_INT_ENA);                                        /* SLP_REJECT */
+    CLEAR_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SOC_SLEEP_REJECT_INT_ENA);                                  /* SLP_WAKEUP */
     // SET CLR
     SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_SUPER_WDT_INT_CLR);                                        /* SWD */
     SET_PERI_REG_MASK(LP_TIMER_LP_INT_CLR_REG, LP_TIMER_MAIN_TIMER_LP_INT_CLR);                             /* MAIN_TIMER */
@@ -108,13 +108,13 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     CLEAR_PERI_REG_MASK(LP_ANALOG_PERI_LP_ANA_LP_INT_ENA_REG, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_ENA);  /* BROWN_OUT */
     CLEAR_PERI_REG_MASK(LP_WDT_INT_ENA_REG, LP_WDT_LP_WDT_INT_ENA);                                         /* WDT */
     CLEAR_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SOC_WAKEUP_INT_ENA);                                        /* SLP_REJECT */
-    CLEAR_PERI_REG_MASK(PMU_SOC_SLEEP_REJECT_INT_ENA, PMU_SOC_SLEEP_REJECT_INT_ENA);                        /* SLP_WAKEUP */
+    CLEAR_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SOC_SLEEP_REJECT_INT_ENA);                                  /* SLP_WAKEUP */
     // SET CLR
     SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_SUPER_WDT_INT_CLR);                                        /* SWD */
     SET_PERI_REG_MASK(LP_ANALOG_PERI_LP_ANA_LP_INT_CLR_REG, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_CLR);    /* BROWN_OUT */
     SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_LP_WDT_INT_CLR);                                           /* WDT */
-    // SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_WAKEUP_INT_CLR);  // TODO: IDF-5348                                          /* SLP_REJECT */
-    // SET_PERI_REG_MASK(PMU_SOC_SLEEP_REJECT_INT_CLR, PMU_SOC_SLEEP_REJECT_INT_CLR);                          /* SLP_WAKEUP */
+    SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_WAKEUP_INT_CLR);                                          /* SLP_REJECT */
+    SET_PERI_REG_MASK(PMU_SOC_SLEEP_REJECT_INT_CLR, PMU_SOC_SLEEP_REJECT_INT_CLR);                          /* SLP_WAKEUP */
 #else
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
