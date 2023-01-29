@@ -894,7 +894,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     echo "CONFIG_ESP_ERR_TO_NAME_LOOKUP=n" >> sdkconfig
 
     idf.py reconfigure || failure "Couldn't configure for loadable ELF file"
-    test -f build/flasher_args.json && failure "flasher_args.json should not be generated in a loadable ELF build"
+    test ! -f build/flasher_args.json && failure "flasher_args.json should be generated in a loadable ELF build"
     idf.py build || failure "Couldn't build a loadable ELF file"
 
     print_status "Defaults set properly for unspecified idf_build_process args"
