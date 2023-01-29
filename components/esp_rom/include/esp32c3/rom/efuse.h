@@ -64,11 +64,6 @@ typedef enum {
 int ets_efuse_set_timing(uint32_t clock);
 
 /**
- * @brief Enable efuse subsystem. Called after reset. Doesn't need to be called again.
- */
-void ets_efuse_start(void);
-
-/**
   * @brief  Efuse read operation: copies data from physical efuses to efuse read registers.
   *
   * @param  null
@@ -189,16 +184,6 @@ uint32_t ets_efuse_get_spiconfig(void);
 uint32_t ets_efuse_get_wp_pad(void);
 
 /**
- * @brief Read opi flash pads configuration from Efuse
- *
- * @return
- * - 0 for default SPI pins.
- * - Other values define a custom pin configuration mask. From the LSB, every 6 bits represent a GPIO number which stand for:
- *   DQS, D4, D5, D6, D7 accordingly.
- */
-uint32_t ets_efuse_get_opiconfig(void);
-
-/**
   * @brief  Read if download mode disabled from Efuse
   *
   * @return
@@ -248,14 +233,6 @@ uint32_t ets_efuse_usb_serial_jtag_print_is_disabled(void);
   */
 bool ets_efuse_usb_download_mode_disabled(void);
 
-/**
-  * @brief  Read if tiny basic mode disabled from Efuse
-  *
-  * @return
-  * - true for efuse disable tiny basic mode.
-  * - false for efuse doesn't disable tiny basic mode.
-  */
-bool ets_efuse_tiny_basic_mode_disabled(void);
 
 /**
   * @brief  Read if usb module disabled from Efuse
@@ -291,24 +268,9 @@ bool ets_efuse_secure_boot_aggressive_revoke_enabled(void);
 bool ets_efuse_cache_encryption_enabled(void);
 
 /**
- * @brief Return true if EFuse indicates an external phy needs to be used for USB
- */
-bool ets_efuse_usb_use_ext_phy(void);
-
-/**
- * @brief Return true if EFuse indicates USB device persistence is disabled
- */
-bool ets_efuse_usb_force_nopersist(void);
-
-/**
  * @brief Return true if OPI pins GPIO33-37 are powered by VDDSPI, otherwise by VDD33CPU
  */
 bool ets_efuse_flash_opi_5pads_power_sel_vddspi(void);
-
-/**
- * @brief Return true if EFuse indicates an opi flash is attached.
- */
-bool ets_efuse_flash_opi_mode(void);
 
 /**
  * @brief Return true if EFuse indicates to send a flash resume command.

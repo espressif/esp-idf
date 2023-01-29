@@ -145,20 +145,6 @@ esp_rom_spiflash_result_t esp_rom_spiflash_read_status(esp_rom_spiflash_chip_t *
 esp_rom_spiflash_result_t esp_rom_spiflash_read_statushigh(esp_rom_spiflash_chip_t *spi, uint32_t *status);
 
 /**
-  * @brief Write status to Flash status register.
-  *        Please do not call this function in SDK.
-  *
-  * @param  esp_rom_spiflash_chip_t *spi : The information for Flash, which is exported from ld file.
-  *
-  * @param  uint32_t status_value : Value to .
-  *
-  * @return ESP_ROM_SPIFLASH_RESULT_OK : write OK.
-  *         ESP_ROM_SPIFLASH_RESULT_ERR : write error.
-  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : write timeout.
-  */
-esp_rom_spiflash_result_t esp_rom_spiflash_write_status(esp_rom_spiflash_chip_t *spi, uint32_t status_value);
-
-/**
   * @brief Use a command to Read Flash status register.
   *        Please do not call this function in SDK.
   *
@@ -248,18 +234,6 @@ esp_rom_spiflash_result_t esp_rom_spiflash_config_param(uint32_t deviceId, uint3
                                                         uint32_t sector_size, uint32_t page_size, uint32_t status_mask);
 
 /**
-  * @brief Erase whole flash chip.
-  *        Please do not call this function in SDK.
-  *
-  * @param  None
-  *
-  * @return ESP_ROM_SPIFLASH_RESULT_OK : Erase OK.
-  *         ESP_ROM_SPIFLASH_RESULT_ERR : Erase error.
-  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Erase timeout.
-  */
-esp_rom_spiflash_result_t esp_rom_spiflash_erase_chip(void);
-
-/**
   * @brief Erase a 64KB block of flash
   *        Uses SPI flash command D8H.
   *        Please do not call this function in SDK.
@@ -340,20 +314,6 @@ esp_rom_spiflash_result_t esp_rom_spiflash_read(uint32_t src_addr, uint32_t *des
   * @return None
   */
 void esp_rom_spiflash_write_encrypted_enable(void);
-
-/**
-  * @brief Prepare 32 Bytes data to encrpto writing, you should Erase it yourself if need.
-  *        Please do not call this function in SDK.
-  *
-  * @param  uint32_t flash_addr : Address to write, should be 32 bytes aligned.
-  *
-  * @param  uint32_t *data : The pointer to data which is to write.
-  *
-  * @return ESP_ROM_SPIFLASH_RESULT_OK : Prepare OK.
-  *         ESP_ROM_SPIFLASH_RESULT_ERR : Prepare error.
-  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Prepare timeout.
-  */
-esp_rom_spiflash_result_t esp_rom_spiflash_prepare_encrypted_data(uint32_t flash_addr, uint32_t *data);
 
 /**
   * @brief SPI1 go out of encrypto mode.

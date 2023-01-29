@@ -270,54 +270,6 @@ void Cache_Occupy_ICache_MEMORY(cache_array_t icache_low);
 void Cache_Get_Mode(struct cache_mode * mode);
 
 /**
-  * @brief set ICache modes: cache size, associate ways and cache line size.
-  *        Please do not call this function in your SDK application.
-  *
-  * @param cache_size_t cache_size : the cache size, can be CACHE_SIZE_HALF and CACHE_SIZE_FULL
-  *
-  * @param cache_ways_t ways : the associate ways of cache, can be CACHE_4WAYS_ASSOC and CACHE_8WAYS_ASSOC
-  *
-  * @param cache_line_size_t cache_line_size : the cache line size, can be CACHE_LINE_SIZE_16B, CACHE_LINE_SIZE_32B and CACHE_LINE_SIZE_64B
-  *
-  * return none
-  */
-void Cache_Set_ICache_Mode(cache_size_t cache_size, cache_ways_t ways, cache_line_size_t cache_line_size);
-
-/**
-  * @brief set DCache modes: cache size, associate ways and cache line size.
-  *        Please do not call this function in your SDK application.
-  *
-  * @param cache_size_t cache_size : the cache size, can be CACHE_SIZE_8KB and CACHE_SIZE_16KB
-  *
-  * @param cache_ways_t ways : the associate ways of cache, can be CACHE_4WAYS_ASSOC and CACHE_8WAYS_ASSOC
-  *
-  * @param cache_line_size_t cache_line_size : the cache line size, can be CACHE_LINE_SIZE_16B, CACHE_LINE_SIZE_32B and CACHE_LINE_SIZE_64B
-  *
-  * return none
-  */
-void Cache_Set_DCache_Mode(cache_size_t cache_size, cache_ways_t ways, cache_line_size_t cache_line_size);
-
-/**
-  * @brief check if the address is accessed through ICache.
-  *        Please do not call this function in your SDK application.
-  *
-  * @param  uint32_t addr : the address to check.
-  *
-  * @return 1 if the address is accessed through ICache, 0 if not.
-  */
-uint32_t Cache_Address_Through_ICache(uint32_t addr);
-
-/**
-  * @brief check if the address is accessed through DCache.
-  *        Please do not call this function in your SDK application.
-  *
-  * @param  uint32_t addr : the address to check.
-  *
-  * @return 1 if the address is accessed through DCache, 0 if not.
-  */
-uint32_t Cache_Address_Through_DCache(uint32_t addr);
-
-/**
   * @brief Init mmu owner register to make i/d cache use half mmu entries.
   *
   * @param None
@@ -773,13 +725,6 @@ int Cache_Dbus_Pms_Set_Addr(uint32_t dbus_boundary0_addr, uint32_t dbus_boundary
   * @return None
   */
 void Cache_Dbus_Pms_Set_Attr(uint32_t dbus_pms_sct2_attr, uint32_t dbus_pms_sct1_attr);
-
-/**
-  * @brief Used by SPI flash mmap
-  *
-  */
-uint32_t flash_instr_rodata_start_page(uint32_t bus);
-uint32_t flash_instr_rodata_end_page(uint32_t bus);
 
 #ifdef __cplusplus
 }

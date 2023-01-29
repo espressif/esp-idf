@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,54 +61,9 @@ struct ETSEventTag {
 typedef void (*ETSTask)(ETSEvent *e);       /**< Type of the Task processer*/
 typedef void (* ets_idle_cb_t)(void *arg);  /**< Type of the system idle callback*/
 
-/**
-  * @brief  Start the Espressif Task Scheduler, which is an infinit loop. Please do not add code after it.
-  *
-  * @param  none
-  *
-  * @return none
-  */
-void ets_run(void);
 
-/**
-  * @brief  Set the Idle callback, when Tasks are processed, will call the callback before CPU goto sleep.
-  *
-  * @param  ets_idle_cb_t func : The callback function.
-  *
-  * @param  void *arg : Argument of the callback.
-  *
-  * @return None
-  */
-void ets_set_idle_cb(ets_idle_cb_t func, void *arg);
 
-/**
-  * @brief  Init a task with processer, priority, queue to receive Event, queue length.
-  *
-  * @param  ETSTask task : The task processer.
-  *
-  * @param  uint8_t prio : Task priority, 0-31, bigger num with high priority, one priority with one task.
-  *
-  * @param  ETSEvent *queue : Queue belongs to the task, task always receives Events, Queue is circular used.
-  *
-  * @param  uint8_t qlen : Queue length.
-  *
-  * @return None
-  */
-void ets_task(ETSTask task, uint8_t prio, ETSEvent *queue, uint8_t qlen);
 
-/**
-  * @brief  Post an event to an Task.
-  *
-  * @param  uint8_t prio : Priority of the Task.
-  *
-  * @param  ETSSignal sig : Event signal.
-  *
-  * @param  ETSParam  par : Event parameter
-  *
-  * @return ETS_OK     : post successful
-  * @return ETS_FAILED : post failed
-  */
-ETS_STATUS ets_post(uint8_t prio, ETSSignal sig, ETSParam par);
 
 /**
   * @}
@@ -135,26 +90,6 @@ extern const char *const exc_cause_table[40];   ///**< excption cause that defin
 void ets_set_user_start(uint32_t start);
 
 /**
-  * @brief  Set Pro cpu Startup code, code can be called when booting is not completed, or in Entry code.
-  *         When Entry code completed, CPU will call the Startup code if not NULL, else call ets_run.
-  *
-  * @param  uint32_t callback : the Startup code address value in uint32_t
-  *
-  * @return None     : post successful
-  */
-void ets_set_startup_callback(uint32_t callback);
-
-/**
-  * @brief  Set App cpu Entry code, code can be called in PRO CPU.
-  *         When APP booting is completed, APP CPU will call the Entry code if not NULL.
-  *
-  * @param  uint32_t start : the APP Entry code address value in uint32_t, stored in register APPCPU_CTRL_REG_D.
-  *
-  * @return None
-  */
-void ets_set_appcpu_boot_addr(uint32_t start);
-
-/**
   * @}
   */
 
@@ -178,16 +113,6 @@ void ets_set_appcpu_boot_addr(uint32_t start);
   * @return int : the length printed to the output device.
   */
 int ets_printf(const char *fmt, ...);
-
-/**
-  * @brief  Set the uart channel of ets_printf(uart_tx_one_char).
-  *         ROM will set it base on the efuse and gpio setting, however, this can be changed after booting.
-  *
-  * @param  uart_no : 0 for UART0, 1 for UART1.
-  *
-  * @return None
-  */
-void ets_set_printf_channel(uint8_t uart_no);
 
 /**
   * @brief Get the uart channel of ets_printf(uart_tx_one_char).
@@ -367,17 +292,7 @@ void ets_delay_us(uint32_t us);
   */
 void ets_update_cpu_frequency(uint32_t ticks_per_us);
 
-/**
-  * @brief  Set the real CPU ticks per us to the ets, so that ets_delay_us will be accurate.
-  *
-  * @note This function only sets the tick rate for the current CPU. It is located in ROM,
-  *       so the deep sleep stub can use it even if IRAM is not initialized yet.
-  *
-  * @param  uint32_t ticks_per_us : CPU ticks per us.
-  *
-  * @return None
-  */
-void ets_update_cpu_frequency_rom(uint32_t ticks_per_us);
+
 
 /**
   * @brief  Get the real CPU ticks per us to the ets.
@@ -388,40 +303,6 @@ void ets_update_cpu_frequency_rom(uint32_t ticks_per_us);
   * @return uint32_t : CPU ticks per us record in ets.
   */
 uint32_t ets_get_cpu_frequency(void);
-
-/**
-  * @brief  Get xtal_freq value, If value not stored in RTC_STORE5, than store.
-  *
-  * @param  None
-  *
-  * @return uint32_t : if stored in efuse(not 0)
-  *                         clock = ets_efuse_get_xtal_freq() * 1000000;
-  *                    else if analog_8M in efuse
-  *                         clock = ets_get_xtal_scale() * 625 / 16 * ets_efuse_get_8M_clock();
-  *                    else clock = 40M.
-  */
-uint32_t ets_get_xtal_freq(void);
-
-/**
-  * @brief  Get the apb divior by xtal frequency.
-  *         When any types of reset happen, the default value is 2.
-  *
-  * @param  None
-  *
-  * @return uint32_t : 1 or 2.
-  */
-uint32_t ets_get_xtal_div(void);
-
-/**
-  * @brief  Get apb_freq value, If value not stored in RTC_STORE5, than store.
-  *
-  * @param  None
-  *
-  * @return uint32_t : if rtc store the value (RTC_STORE5 high 16 bits and low 16 bits with same value), read from rtc register.
-  *                         clock = (REG_READ(RTC_STORE5) & 0xffff) << 12;
-  *                    else store ets_get_detected_xtal_freq() in.
-  */
-uint32_t ets_get_apb_freq(void);
 
 /**
   * @}
@@ -496,16 +377,6 @@ void ets_intr_lock(void);
   */
 void ets_intr_unlock(void);
 
-/**
-  * @brief  Unlock the interrupt to level 0, and CPU will go into power save mode(wait interrupt).
-  *         This function direct set the CPU registers.
-  *         In FreeRTOS, please call FreeRTOS apis, never call this api.
-  *
-  * @param  None
-  *
-  * @return None
-  */
-void ets_waiti0(void);
 
 /**
   * @brief  Attach an CPU interrupt to a hardware source.
