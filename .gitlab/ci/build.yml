@@ -3,6 +3,8 @@
   image: $ESP_ENV_IMAGE
   tags:
     - build
+    # build only on shiny servers since shiny storage server is at the same location
+    - shiny
   variables:
     # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
     IDF_CCACHE_ENABLE: "1"
@@ -19,10 +21,6 @@
   needs:
     - job: fast_template_app
       artifacts: false
-  tags:
-    - build
-    # build only on shiny servers since shiny storage server is at the same location
-    - shiny
   artifacts:
     paths:
       - "**/build*/size.json"
