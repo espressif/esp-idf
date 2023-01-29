@@ -5,6 +5,7 @@ SPI Flash API
 
 概述
 --------
+
 spi_flash 组件提供外部 flash 数据读取、写入、擦除和内存映射相关的 API 函数。
 
 关于更多高层次的用于访问分区（分区表定义于 :doc:`分区表 </api-guides/partition-tables>`）的 API 函数，参见 :doc:`/api-reference/storage/partition` 。
@@ -127,6 +128,7 @@ SPI1 Flash 并发约束
 .. attention::
 
     指令/数据 cache（用以执行固件）与 SPI1 外设（由像 SPI flash 驱动一样的驱动程序控制）共享 SPI0/1 总线。因此，在 SPI1 总线上调用 SPI flash API（包括访问主 flash）会对整个系统造成显著的影响。请参阅 :doc:`spi_flash_concurrency`，查看详细信息。
+
 
 SPI Flash 加密
 --------------------
@@ -252,8 +254,6 @@ SPI Flash API 参考
 .. include-build-file:: inc/spi_flash_mmap.inc
 .. include-build-file:: inc/spi_flash_types.inc
 .. include-build-file:: inc/esp_flash_err.inc
-
-.. _api-reference-partition-table:
 
 Flash 加密 API 参考
 -----------------------------
