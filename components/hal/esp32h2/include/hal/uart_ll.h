@@ -191,7 +191,8 @@ static inline void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t 
  */
 static inline uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_freq)
 {
-    typeof(hw->clkdiv_sync) div_reg = hw->clkdiv_sync;
+    typeof(hw->clkdiv_sync) div_reg;
+    div_reg.val = hw->clkdiv_sync.val;
     return ((sclk_freq << 4)) / (((div_reg.clkdiv_int << 4) | div_reg.clkdiv_frag) * (HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1));
 }
 
@@ -908,7 +909,8 @@ static inline void uart_ll_xon_force_on(uart_dev_t *hw, bool always_on)
  */
 static inline void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
 {
-    typeof(hw->conf0_sync) conf0_reg = hw->conf0_sync;
+    typeof(hw->conf0_sync) conf0_reg;
+    conf0_reg.val = hw->conf0_sync.val;
     conf0_reg.irda_tx_inv = (inv_mask & UART_SIGNAL_IRDA_TX_INV) ? 1 : 0;
     conf0_reg.irda_rx_inv = (inv_mask & UART_SIGNAL_IRDA_RX_INV) ? 1 : 0;
     conf0_reg.rxd_inv = (inv_mask & UART_SIGNAL_RXD_INV) ? 1 : 0;
@@ -916,7 +918,8 @@ static inline void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
     hw->conf0_sync.val = conf0_reg.val;
     uart_ll_update(0); // TODO: IDF-5338
 
-    typeof(hw->conf1) conf1_reg = hw->conf1;
+    typeof(hw->conf1) conf1_reg;
+    conf1_reg.val = hw->conf1.val;
     conf1_reg.rts_inv = (inv_mask & UART_SIGNAL_RTS_INV) ? 1 : 0;
     conf1_reg.dtr_inv = (inv_mask & UART_SIGNAL_DTR_INV) ? 1 : 0;
     conf1_reg.cts_inv = (inv_mask & UART_SIGNAL_CTS_INV) ? 1 : 0;
