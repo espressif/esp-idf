@@ -16,7 +16,7 @@ Overview
 
   The {IDF_TARGET_NAME} has two cores, with 32 interrupts. Each interrupt has a certain priority level, most (but not all) interrupts are connected to the interrupt mux.
 
-.. only:: esp32c3 or esp32c2
+.. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2
 
   The {IDF_TARGET_NAME} has one core, with 31 interrupts. Each interrupt has a programmable priority level.
 
