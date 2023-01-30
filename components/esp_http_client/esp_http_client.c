@@ -827,7 +827,12 @@ esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client)
         return ESP_ERR_INVALID_ARG;
     }
     ESP_LOGD(TAG, "Redirect to %s", client->location);
-    return esp_http_client_set_url(client, client->location);
+    esp_err_t err = esp_http_client_set_url(client, client->location);
+    if (err == ESP_OK) {
+        client->redirect_counter ++;
+        client->process_again = 1;  // used only in the blocking mode (when esp_http_client_perform() is called)
+    }
+    return err;
 }
 
 static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
@@ -848,10 +853,10 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
             if (client->disable_auto_redirect) {
                 http_dispatch_event(client, HTTP_EVENT_REDIRECT, NULL, 0);
             } else {
-                ESP_ERROR_CHECK(esp_http_client_set_redirection(client));
+                if (esp_http_client_set_redirection(client) != ESP_OK){
+                    return ESP_FAIL;
+                };
             }
-            client->redirect_counter ++;
-            client->process_again = 1;
             break;
         case HttpStatus_Unauthorized:
             esp_http_client_add_auth(client);
