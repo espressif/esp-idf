@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import datetime
 import logging
@@ -51,7 +51,8 @@ def fixture_session_work_dir(request: FixtureRequest) -> typing.Generator[Path, 
         logging.debug(f'created temporary work directory: {work_dir}')
         clean_dir = work_dir
 
-    yield Path(work_dir)
+    # resolve allows to use relative paths with --work-dir option
+    yield Path(work_dir).resolve()
 
     if clean_dir:
         logging.debug(f'cleaning up {clean_dir}')
@@ -138,6 +139,6 @@ def fixture_default_idf_env() -> EnvDict:
 
 @pytest.fixture
 def idf_py(default_idf_env: EnvDict) -> IdfPyFunc:
-    def result(*args: str) -> subprocess.CompletedProcess:
-        return run_idf_py(*args, env=default_idf_env, workdir=os.getcwd())  # type: ignore
+    def result(*args: str, check: bool = True) -> subprocess.CompletedProcess:
+        return run_idf_py(*args, env=default_idf_env, workdir=os.getcwd(), check=check)  # type: ignore
     return result

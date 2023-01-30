@@ -2,11 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
 import typing
 from pathlib import Path
+from typing import Pattern, Union
 
 try:
     EXT_IDF_PATH = os.environ['IDF_PATH']  # type: str
@@ -57,13 +59,15 @@ def get_idf_build_env(idf_path: str) -> EnvDict:
 def run_idf_py(*args: str,
                env: typing.Optional[EnvDict] = None,
                idf_path: typing.Optional[typing.Union[str,Path]] = None,
-               workdir: typing.Optional[str] = None) -> subprocess.CompletedProcess:
+               workdir: typing.Optional[str] = None,
+               check: bool = True) -> subprocess.CompletedProcess:
     """
     Run idf.py command with given arguments, raise an exception on failure
     :param args: arguments to pass to idf.py
     :param env: environment variables to run the build with; if not set, the default environment is used
     :param idf_path: path to the IDF copy to use; if not set, IDF_PATH from the 'env' argument is used
     :param workdir: directory where to run the build; if not set, the current directory is used
+    :param check: check process exits with a zero exit code, if false all retvals are accepted without failing the test
     """
     env_dict = dict(**os.environ)
     if env is not None:
@@ -86,7 +90,7 @@ def run_idf_py(*args: str,
     logging.debug('running {} in {}'.format(' '.join(cmd), workdir))
     return subprocess.run(
         cmd, env=env_dict, cwd=workdir,
-        check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, encoding='utf-8', errors='backslashreplace')
 
 
@@ -107,3 +111,12 @@ def run_cmake(*cmake_args: str, env: typing.Optional[EnvDict] = None) -> None:
     subprocess.check_call(
         cmd, env=env, cwd=workdir,
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def check_file_contains(filename: Union[str, Path], what: Union[str, Pattern]) -> None:
+    with open(filename, 'r', encoding='utf-8') as f:
+        data = f.read()
+        if isinstance(what, str):
+            assert what in data
+        else:
+            assert re.search(what, data) is not None

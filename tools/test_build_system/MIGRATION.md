@@ -34,19 +34,19 @@ idf.py can build with Unix Makefiles | test_build.py::test_build_with_generator_
 Can build with IDF_PATH set via cmake cache not environment | test_build.py::test_build_with_cmake_and_idf_path_unset |
 Can build with IDF_PATH unset and inferred by build system | test_build.py::test_build_with_cmake_and_idf_path_unset |
 Can build with IDF_PATH unset and inferred by cmake when Kconfig needs it to be set | test_build.py::test_build_with_cmake_and_idf_path_unset |
-can build with phy_init_data | |
-can build with ethernet component disabled | |
-Compiler flags on build command line are taken into account | |
-Compiler flags cannot be overwritten | |
-Can override IDF_TARGET from environment | |
-Can set target using idf.py -D | |
-Can set target using -D as subcommand parameter for idf.py | |
-Can set target using idf.py set-target | |
-idf.py understands alternative target names | |
-Can guess target from sdkconfig, if CMakeCache does not exist | |
-Can set the default target using sdkconfig.defaults | |
-IDF_TARGET takes precedence over the value of CONFIG_IDF_TARGET in sdkconfig.defaults | |
-idf.py fails if IDF_TARGET settings don't match in sdkconfig, CMakeCache.txt, and the environment | |
+can build with phy_init_data | test_build.py::test_build_skdconfig_phy_init_data |
+can build with ethernet component disabled | | moved to test_apps/system/build_test/sdkconfig.ci.ethernet_disabled
+Compiler flags on build command line are taken into account | test_build.py::test_build_compiler_flag_in_source_file |
+Compiler flags cannot be overwritten | test_build.py::test_build_compiler_flags_no_overwriting |
+Can override IDF_TARGET from environment | test_non_default_target.py::test_target_from_environment_cmake |
+Can set target using idf.py -D | test_non_default_target.py::test_target_using_D_parameter |
+Can set target using -D as subcommand parameter for idf.py | test_non_default_target.py::test_target_using_D_parameter |
+Can set target using idf.py set-target | test_non_default_target.py::test_target_using_settarget_parameter |
+idf.py understands alternative target names | test_non_default_target.py::test_target_using_settarget_parameter_alternative_name |
+Can guess target from sdkconfig, if CMakeCache does not exist | test_non_default_target.py::test_target_using_settarget_parameter |
+Can set the default target using sdkconfig.defaults | test_non_default_target.py::test_target_using_sdkconfig |
+IDF_TARGET takes precedence over the value of CONFIG_IDF_TARGET in sdkconfig.defaults | test_non_default_target.py::test_target_precedence |
+idf.py fails if IDF_TARGET settings don't match in sdkconfig, CMakeCache.txt, and the environment | test_non_default_target.py::test_target_from_environment_idf_py |
 Setting EXTRA_COMPONENT_DIRS works | |
 Non-existent paths in EXTRA_COMPONENT_DIRS are not allowed | |
 Component names may contain spaces | |
