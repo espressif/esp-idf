@@ -885,7 +885,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     rm -rf build sdkconfig
 
     print_status "Loadable ELF build works"
-    echo "CONFIG_APP_BUILD_TYPE_ELF_RAM=y" > sdkconfig
+    echo "CONFIG_APP_BUILD_TYPE_RAM=y" > sdkconfig
 
     # Set recommend configs to reduce memory footprint
     echo "CONFIG_VFS_SUPPORT_TERMIOS=n" >> sdkconfig

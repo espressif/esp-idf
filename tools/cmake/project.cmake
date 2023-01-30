@@ -153,6 +153,12 @@ function(__project_info test_components)
     idf_build_get_property(COMPONENT_KCONFIGS_PROJBUILD KCONFIG_PROJBUILDS)
     idf_build_get_property(debug_prefix_map_gdbinit DEBUG_PREFIX_MAP_GDBINIT)
 
+    if(CONFIG_APP_BUILD_TYPE_RAM)
+        set(PROJECT_BUILD_TYPE ram_app)
+    else()
+        set(PROJECT_BUILD_TYPE flash_app)
+    endif()
+
     # Write project description JSON file
     idf_build_get_property(build_dir BUILD_DIR)
     make_json_list("${build_components};${test_components}" build_components_json)
