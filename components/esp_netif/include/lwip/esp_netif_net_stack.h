@@ -72,4 +72,8 @@ err_t wlanif_init_sta(struct netif *netif);
  */
 void wlanif_input(void *h, void *buffer, size_t len, void* l2_buff);
 
+// Statistics
+int wlanif_bytes_in(void);
+int wlanif_bytes_out(void);
+
 #endif // CONFIG_ESP_NETIF_TCPIP_LWIP
