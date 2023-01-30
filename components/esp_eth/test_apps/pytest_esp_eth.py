@@ -1,11 +1,10 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
 import contextlib
 import logging
 import os
 import socket
-import time
 from multiprocessing import Pipe, Process, connection
 from typing import Iterator
 
@@ -42,8 +41,10 @@ class EthTestIntf(object):
         logging.info('Use %s for testing', self.target_if)
 
     @contextlib.contextmanager
-    def configure_eth_if(self) -> Iterator[socket.socket]:
-        so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(self.eth_type))
+    def configure_eth_if(self, eth_type:int=0) -> Iterator[socket.socket]:
+        if eth_type == 0:
+            eth_type = self.eth_type
+        so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(eth_type))
         so.bind((self.target_if, 0))
         try:
             yield so
@@ -62,15 +63,16 @@ class EthTestIntf(object):
             except Exception as e:
                 raise e
 
-    def recv_resp_poke(self, i: int) -> None:
-        with self.configure_eth_if() as so:
-            so.settimeout(10)
+    def recv_resp_poke(self, i:int=0) -> None:
+        eth_type_ctrl = self.eth_type + 1
+        with self.configure_eth_if(eth_type_ctrl) as so:
+            so.settimeout(30)
             try:
                 eth_frame = Ether(so.recv(60))
-
-                if eth_frame.type == self.eth_type and eth_frame.load[0] == 0xfa:
+                if eth_frame.load[0] == 0xfa:
                     if eth_frame.load[1] != i:
                         raise Exception('Missed Poke Packet')
+                    logging.info('Poke Packet received...')
                     eth_frame.dst = eth_frame.src
                     eth_frame.src = so.getsockname()[4]
                     eth_frame.load = bytes.fromhex('fb')    # POKE_RESP code
@@ -118,6 +120,11 @@ def ethernet_l2_test(dut: Dut) -> None:
     with target_if.configure_eth_if() as so:
         so.settimeout(30)
         dut.write('"ethernet broadcast transmit"')
+
+        # wait for POKE msg to be sure the switch already started forwarding the port's traffic
+        # (there might be slight delay due to the RSTP execution)
+        target_if.recv_resp_poke()
+
         eth_frame = Ether(so.recv(1024))
         for i in range(0, 1010):
             if eth_frame.load[i] != i & 0xff:
@@ -130,7 +137,9 @@ def ethernet_l2_test(dut: Dut) -> None:
         r'([\s\S]*)'
         r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
     )
-    time.sleep(1)
+    # wait for POKE msg to be sure the switch already started forwarding the port's traffic
+    # (there might be slight delay due to the RSTP execution)
+    target_if.recv_resp_poke()
     target_if.send_eth_packet('ff:ff:ff:ff:ff:ff')  # broadcast frame
     target_if.send_eth_packet('01:00:00:00:00:00')  # multicast frame
     target_if.send_eth_packet(res.group(2))  # unicast frame
@@ -145,19 +154,20 @@ def ethernet_l2_test(dut: Dut) -> None:
     # Start/stop under heavy Tx traffic
     for tx_i in range(10):
         target_if.recv_resp_poke(tx_i)
+        dut.expect_exact('Ethernet stopped')
 
-    # Start/stop under heavy Rx traffic
-    pipe_rcv, pipe_send = Pipe(False)
-    tx_proc = Process(target=target_if.traffic_gen, args=(res.group(2), pipe_rcv, ))
-    tx_proc.start()
-    try:
-        for rx_i in range(10):
-            target_if.recv_resp_poke(rx_i)
-    finally:
+    for rx_i in range(10):
+        target_if.recv_resp_poke(rx_i)
+        # Start/stop under heavy Rx traffic
+        pipe_rcv, pipe_send = Pipe(False)
+        tx_proc = Process(target=target_if.traffic_gen, args=(res.group(2), pipe_rcv, ))
+        tx_proc.start()
+        dut.expect_exact('Ethernet stopped')
         pipe_send.send(0)  # just send some dummy data
         tx_proc.join(5)
         if tx_proc.exitcode is None:
             tx_proc.terminate()
+
     dut.expect_unity_test_output(extra_before=res.group(1))
 
 
