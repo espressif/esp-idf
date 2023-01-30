@@ -11,6 +11,10 @@ config ESP_ROM_HAS_MZ_CRC32
     bool
     default y
 
+config ESP_ROM_HAS_UART_BUF_SWITCH
+    bool
+    default y
+
 config ESP_ROM_NEEDS_SWSETUP_WORKAROUND
     bool
     default y

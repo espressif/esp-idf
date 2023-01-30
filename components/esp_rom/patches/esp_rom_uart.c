@@ -10,6 +10,8 @@
 #include "sdkconfig.h"
 #include "hal/uart_ll.h"
 #include "hal/efuse_hal.h"
+#include "esp_rom_caps.h"
+#include "rom/uart.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 /**
@@ -47,3 +49,11 @@ IRAM_ATTR void esp_rom_uart_set_as_console(uint8_t uart_no)
     uart_tx_switch(uart_no);
 }
 #endif
+
+#if !ESP_ROM_HAS_UART_BUF_SWITCH
+IRAM_ATTR void esp_rom_uart_switch_buffer(uint8_t uart_no)
+{
+    UartDevice *uart = GetUartDevice();
+    uart->buff_uart_no = uart_no;
+}
+#endif // !ESP_ROM_HAS_UART_BUF_SWITCH
