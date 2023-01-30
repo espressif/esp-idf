@@ -48,10 +48,10 @@ typedef enum {
 #endif
     ESP_PD_DOMAIN_XTAL,            //!< XTAL oscillator
 #if SOC_PM_SUPPORT_XTAL32K_PD
-    ESP_PD_DOMAIN_XTAL32K,
+    ESP_PD_DOMAIN_XTAL32K,         //!< External 32 kHz XTAL oscillator
 #endif
 #if SOC_PM_SUPPORT_RC32K_PD
-    ESP_PD_DOMAIN_RC32K,
+    ESP_PD_DOMAIN_RC32K,           //!< Internal 32 kHz RC oscillator
 #endif
 #if SOC_PM_SUPPORT_RC_FAST_PD
     ESP_PD_DOMAIN_RC_FAST,         //!< Internal Fast oscillator
@@ -59,7 +59,9 @@ typedef enum {
 #if SOC_PM_SUPPORT_CPU_PD
     ESP_PD_DOMAIN_CPU,             //!< CPU core
 #endif
+#if SOC_PM_SUPPORT_VDDSDIO_PD
     ESP_PD_DOMAIN_VDDSDIO,         //!< VDD_SDIO
+#endif
     ESP_PD_DOMAIN_MAX              //!< Number of domains
 } esp_sleep_pd_domain_t;
 

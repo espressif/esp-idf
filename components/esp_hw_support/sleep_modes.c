@@ -24,7 +24,11 @@
 #include "soc/soc_caps.h"
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
+
+#if !SOC_PMU_SUPPORTED
 #include "hal/rtc_cntl_ll.h"
+#include "hal/rtc_hal.h"
+#endif
 
 #include "driver/uart.h"
 
@@ -33,7 +37,6 @@
 #include "regi2c_ctrl.h"    //For `REGI2C_ANA_CALI_PD_WORKAROUND`, temp
 
 #include "hal/wdt_hal.h"
-#include "hal/rtc_hal.h"
 #include "hal/uart_hal.h"
 #if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_hal.h"
@@ -87,6 +90,7 @@
 
 // Cycles for RTC Timer clock source (internal oscillator) calibrate
 #define RTC_CLK_SRC_CAL_CYCLES      (10)
+#define FAST_CLK_SRC_CAL_CYCLES     (2000)  /* ~ 127.4 us */
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (212)
@@ -107,8 +111,8 @@
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
 #elif CONFIG_IDF_TARGET_ESP32C6
-#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)// TODO: IDF-5348
-#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (318)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (56)
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)// TODO: IDF-6267
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
@@ -154,6 +158,7 @@ typedef struct {
     uint32_t ccount_ticks_record;
     uint32_t sleep_time_overhead_out;
     uint32_t rtc_clk_cal_period;
+    uint32_t fast_clk_cal_period;
     uint64_t rtc_ticks_at_sleep_start;
 } sleep_config_t;
 
@@ -161,7 +166,7 @@ typedef struct {
 _Static_assert(22 >= SOC_RTCIO_PIN_COUNT, "Chip has more RTCIOs than 22, should increase ext1_rtc_gpio_mask field size");
 
 static sleep_config_t s_config = {
-    .pd_options = {[0 ... ESP_PD_DOMAIN_MAX - 1] = ESP_PD_OPTION_AUTO,},
+    .pd_options = { [0 ... ESP_PD_DOMAIN_MAX - 1] = ESP_PD_OPTION_AUTO },
     .ccount_ticks_record = 0,
     .sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US,
     .wakeup_triggers = 0
@@ -492,6 +497,12 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     }
 
     // Enter sleep
+#if CONFIG_IDF_TARGET_ESP32C6
+    pmu_sleep_config_t config;
+    pmu_sleep_init(pmu_sleep_config_default(&config, pd_flags, s_config.sleep_time_adjustment,
+            s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period,
+            deep_sleep), deep_sleep);
+#else
     rtc_sleep_config_t config;
     rtc_sleep_get_default_config(sleep_flags, &config);
     rtc_sleep_init(config);
@@ -500,6 +511,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     if (!deep_sleep) {
         rtc_sleep_low_init(s_config.rtc_clk_cal_period);
     }
+#endif
 
     // Configure timer wakeup
     if (s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) {
@@ -665,11 +677,11 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
  * x                        |  1                                   |  pd flash with relaxed conditions(force_pd)
  * 1                        |  0                                   |  pd flash with strict  conditions(safe_pd)
  */
-static inline bool can_power_down_vddsdio(const uint32_t vddsdio_pd_sleep_duration)
+static inline bool can_power_down_vddsdio(uint32_t pd_flags, const uint32_t vddsdio_pd_sleep_duration)
 {
     bool force_pd = !(s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) || (s_config.sleep_duration > vddsdio_pd_sleep_duration);
     bool safe_pd  = (s_config.wakeup_triggers == RTC_TIMER_TRIG_EN) && (s_config.sleep_duration > vddsdio_pd_sleep_duration);
-    return (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] == ESP_PD_OPTION_OFF) ? force_pd : safe_pd;
+    return (pd_flags & RTC_SLEEP_PD_VDDSDIO) ? force_pd : safe_pd;
 }
 
 esp_err_t esp_light_sleep_start(void)
@@ -743,6 +755,10 @@ esp_err_t esp_light_sleep_start(void)
     esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32C6
+    s_config.fast_clk_cal_period = rtc_clk_cal(RTC_CAL_RC_FAST, FAST_CLK_SRC_CAL_CYCLES);
+#endif
+
     /*
      * Adjustment time consists of parts below:
      * 1. Hardware time waiting for internal 8M oscilate clock and XTAL;
@@ -751,9 +767,15 @@ esp_err_t esp_light_sleep_start(void)
      * 4. Code execution time which can be measured;
      */
 
+#if CONFIG_IDF_TARGET_ESP32C6
+    int sleep_time_sw_adjustment = LIGHT_SLEEP_TIME_OVERHEAD_US + sleep_time_overhead_in + s_config.sleep_time_overhead_out;
+    int sleep_time_hw_adjustment = pmu_sleep_calculate_hw_wait_time(pd_flags, s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period);
+    s_config.sleep_time_adjustment = sleep_time_sw_adjustment + sleep_time_hw_adjustment;
+#else
     uint32_t rtc_cntl_xtl_buf_wait_slp_cycles = rtc_time_us_to_slowclk(RTC_CNTL_XTL_BUF_WAIT_SLP_US, s_config.rtc_clk_cal_period);
     s_config.sleep_time_adjustment = LIGHT_SLEEP_TIME_OVERHEAD_US + sleep_time_overhead_in + s_config.sleep_time_overhead_out
                                      + rtc_time_slowclk_to_us(rtc_cntl_xtl_buf_wait_slp_cycles + RTC_CNTL_CK8M_WAIT_SLP_CYCLES + RTC_CNTL_WAKEUP_DELAY_CYCLES, s_config.rtc_clk_cal_period);
+#endif
 
     // Decide if VDD_SDIO needs to be powered down;
     // If it needs to be powered down, adjust sleep time.
@@ -781,7 +803,7 @@ esp_err_t esp_light_sleep_start(void)
                         flash_enable_time_us + LIGHT_SLEEP_MIN_TIME_US + s_config.sleep_time_adjustment
                         + rtc_time_slowclk_to_us(RTC_MODULE_SLEEP_PREPARE_CYCLES, s_config.rtc_clk_cal_period));
 
-        if (can_power_down_vddsdio(vddsdio_pd_sleep_duration)) {
+        if (can_power_down_vddsdio(pd_flags, vddsdio_pd_sleep_duration)) {
             if (s_config.sleep_time_overhead_out < flash_enable_time_us) {
                 s_config.sleep_time_adjustment += flash_enable_time_us;
             }
@@ -1384,9 +1406,27 @@ static uint32_t get_power_down_flags(void)
         s_config.pd_options[ESP_PD_DOMAIN_CPU] = ESP_PD_OPTION_ON;
     }
 #endif
+    /**
+     * VDD_SDIO power domain shall be kept on during the light sleep
+     * when CONFIG_ESP_SLEEP_POWER_DOWN_FLASH is not set and off when it is set.
+     * The application can still force the power domain to remain on by calling
+     * `esp_sleep_pd_config` before getting into light sleep mode.
+     *
+     * In deep sleep mode, the power domain will be turned off, regardless the
+     * value of this field.
+     */
+#if SOC_PM_SUPPORT_VDDSDIO_PD
+    if (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] == ESP_PD_OPTION_AUTO) {
+#ifndef CONFIG_ESP_SLEEP_POWER_DOWN_FLASH
+        s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_ON;
+#endif
+    }
+#endif
 
+#if SOC_PM_SUPPORT_XTAL_PD
 #ifdef CONFIG_IDF_TARGET_ESP32
     s_config.pd_options[ESP_PD_DOMAIN_XTAL] = ESP_PD_OPTION_OFF;
+#endif
 #endif
 
    const  __attribute__((unused)) char *option_str[] = {"OFF", "ON", "AUTO(OFF)" /* Auto works as OFF */};
@@ -1424,31 +1464,39 @@ static uint32_t get_power_down_flags(void)
         pd_flags |= RTC_SLEEP_PD_CPU;
     }
 #endif
-    if (s_config.pd_options[ESP_PD_DOMAIN_RC_FAST] != ESP_PD_OPTION_ON) {
-        pd_flags |= RTC_SLEEP_PD_INT_8M;
+#if SOC_PM_SUPPORT_XTAL32K_PD
+    if (s_config.pd_options[ESP_PD_DOMAIN_XTAL32K] != ESP_PD_OPTION_ON) {
+        pd_flags |= PMU_SLEEP_PD_XTAL32K;
     }
+#endif
+#if SOC_PM_SUPPORT_RC32K_PD
+    if (s_config.pd_options[ESP_PD_DOMAIN_RC32K] != ESP_PD_OPTION_ON) {
+        pd_flags |= PMU_SLEEP_PD_RC32K;
+    }
+#endif
+#if SOC_PM_SUPPORT_RC_FAST_PD
+    if (s_config.pd_options[ESP_PD_DOMAIN_RC_FAST] != ESP_PD_OPTION_ON) {
+#if CONFIG_IDF_TARGET_ESP32C6
+        pd_flags |= PMU_SLEEP_PD_FOSC;
+#else
+        pd_flags |= RTC_SLEEP_PD_INT_8M;
+#endif
+    }
+#endif
+#if SOC_PM_SUPPORT_XTAL_PD
     if (s_config.pd_options[ESP_PD_DOMAIN_XTAL] != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_XTAL;
     }
-
-    /**
-     * VDD_SDIO power domain shall be kept on during the light sleep
-     * when CONFIG_ESP_SLEEP_POWER_DOWN_FLASH is not set and off when it is set.
-     * The application can still force the power domain to remain on by calling
-     * `esp_sleep_pd_config` before getting into light sleep mode.
-     *
-     * In deep sleep mode, the power domain will be turned off, regardless the
-     * value of this field.
-     */
-    if (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] == ESP_PD_OPTION_AUTO) {
-#ifndef CONFIG_ESP_SLEEP_POWER_DOWN_FLASH
-        s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_ON;
+#endif
+#if SOC_PM_SUPPORT_VDDSDIO_PD
+    if (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] != ESP_PD_OPTION_ON) {
+#if CONFIG_IDF_TARGET_ESP32C6
+        pd_flags |= PMU_SLEEP_PD_VDDSDIO;
+#else
+        pd_flags |= RTC_SLEEP_PD_VDDSDIO;
 #endif
     }
-
-    if (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] != ESP_PD_OPTION_ON) {
-        pd_flags |= RTC_SLEEP_PD_VDDSDIO;
-    }
+#endif
 
 #if ((defined CONFIG_RTC_CLK_SRC_EXT_CRYS) && (defined CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT) && (SOC_PM_SUPPORT_RTC_PERIPH_PD))
     if ((s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) == 0) {

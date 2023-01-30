@@ -578,23 +578,6 @@ typedef struct {
     uint32_t light_slp_reject : 1;      //!< enable light sleep reject
 } rtc_sleep_config_t;
 
-#define RTC_SLEEP_PD_DIG                BIT(0)  //!< Deep sleep (power down digital domain)
-#define RTC_SLEEP_PD_RTC_PERIPH         BIT(1)  //!< Power down RTC peripherals
-#define RTC_SLEEP_PD_RTC_SLOW_MEM       BIT(2)  //!< Power down RTC SLOW memory
-#define RTC_SLEEP_PD_RTC_FAST_MEM       BIT(3)  //!< Power down RTC FAST memory
-#define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)  //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
-#define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
-#define RTC_SLEEP_PD_WIFI               BIT(6)  //!< Power down WIFI
-#define RTC_SLEEP_PD_BT                 BIT(7)  //!< Power down BT
-#define RTC_SLEEP_PD_CPU                BIT(8)  //!< Power down CPU when in lightsleep, but not restart
-#define RTC_SLEEP_PD_DIG_PERIPH         BIT(9)  //!< Power down DIG peripherals
-#define RTC_SLEEP_PD_INT_8M             BIT(10) //!< Power down Internal 8M oscillator
-#define RTC_SLEEP_PD_XTAL               BIT(11) //!< Power down main XTAL
-
-//These flags are not power domains, but will affect some sleep parameters
-#define RTC_SLEEP_DIG_USE_8M            BIT(16)
-#define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(17)
-#define RTC_SLEEP_NO_ULTRA_LOW          BIT(18) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
 
 /**
  * Default initializer for rtc_sleep_config_t
@@ -639,29 +622,6 @@ void rtc_sleep_low_init(uint32_t slowclk_period);
  *          only the lower 48 bits are used
  */
 void rtc_sleep_set_wakeup_time(uint64_t t);
-
-#define RTC_GPIO_TRIG_EN            BIT(2)  //!< GPIO wakeup
-#define RTC_TIMER_TRIG_EN           BIT(3)  //!< Timer wakeup
-#define RTC_WIFI_TRIG_EN            BIT(5)  //!< WIFI wakeup (light sleep only)
-#define RTC_UART0_TRIG_EN           BIT(6)  //!< UART0 wakeup (light sleep only)
-#define RTC_UART1_TRIG_EN           BIT(7)  //!< UART1 wakeup (light sleep only)
-#define RTC_BT_TRIG_EN              BIT(10) //!< BT wakeup (light sleep only)
-#define RTC_XTAL32K_DEAD_TRIG_EN    BIT(12)
-#define RTC_USB_TRIG_EN             BIT(14)
-#define RTC_BROWNOUT_DET_TRIG_EN    BIT(16)
-
-/**
- * RTC_SLEEP_REJECT_MASK records sleep reject sources supported by chip
- */
-#define RTC_SLEEP_REJECT_MASK (RTC_GPIO_TRIG_EN         | \
-                               RTC_TIMER_TRIG_EN        | \
-                               RTC_WIFI_TRIG_EN         | \
-                               RTC_UART0_TRIG_EN        | \
-                               RTC_UART1_TRIG_EN        | \
-                               RTC_BT_TRIG_EN           | \
-                               RTC_XTAL32K_DEAD_TRIG_EN | \
-                               RTC_USB_TRIG_EN          | \
-                               RTC_BROWNOUT_DET_TRIG_EN)
 
 /**
  * @brief Enter deep or light sleep mode
