@@ -62,6 +62,18 @@
 #define PIN_NUM_DC   9
 #define PIN_NUM_RST  4
 #define PIN_NUM_BCKL 5
+
+#elif defined CONFIG_IDF_TARGET_ESP32H2
+#define LCD_HOST    SPI2_HOST
+
+#define PIN_NUM_MISO 0
+#define PIN_NUM_MOSI 5
+#define PIN_NUM_CLK  4
+#define PIN_NUM_CS   1
+
+#define PIN_NUM_DC   10
+#define PIN_NUM_RST  11
+#define PIN_NUM_BCKL 12
 #endif
 
 //To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many. More means more memory use,

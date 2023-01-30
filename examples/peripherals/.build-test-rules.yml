@@ -80,10 +80,14 @@ examples/peripherals/lcd/rgb_panel:
 examples/peripherals/lcd/spi_lcd_touch:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32h2"
+      reason: Not tested yet.
 
 examples/peripherals/lcd/tjpgd:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32h2"
+      reason: Not tested yet.
 
 examples/peripherals/ledc:
   disable:
@@ -176,7 +180,7 @@ examples/peripherals/spi_slave/sender:
 
 examples/peripherals/spi_slave_hd/append_mode/master:
   disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
+    - if: IDF_TARGET == "esp32c6"
       temporary: true
       reason: target(s) not supported yet
 
@@ -192,7 +196,7 @@ examples/peripherals/spi_slave_hd/segment_mode/seg_master:
 
 examples/peripherals/spi_slave_hd/segment_mode/seg_slave:
   disable:
-    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32h2"
+    - if: IDF_TARGET == "esp32"
       temporary: true
       reason: not supported
 

@@ -28,16 +28,27 @@
 
 #define TEST_SPI_PERIPH_NUM     (SOC_SPI_PERIPH_NUM - 1)
 
-#if CONFIG_IDF_TARGET_ESP32
-#define TEST_SPI_HOST           SPI2_HOST
-#define TEST_SLAVE_HOST         SPI3_HOST
 
+#if CONFIG_IDF_TARGET_ESP32C6   // cs_pin conflict with uart pin
+#define PIN_NUM_MISO            SPI2_IOMUX_PIN_NUM_MISO
+#define PIN_NUM_MOSI            SPI2_IOMUX_PIN_NUM_MOSI
+#define PIN_NUM_CLK             SPI2_IOMUX_PIN_NUM_CLK
+#define PIN_NUM_CS              10  //the IOMUX pin of SPI2 CS0&CS1 is Pin_16&17 which conflict with UART Tx&Rx Pin
+#define PIN_NUM_WP              SPI2_IOMUX_PIN_NUM_WP
+#define PIN_NUM_HD              SPI2_IOMUX_PIN_NUM_HD
+#else
 #define PIN_NUM_MISO            SPI2_IOMUX_PIN_NUM_MISO
 #define PIN_NUM_MOSI            SPI2_IOMUX_PIN_NUM_MOSI
 #define PIN_NUM_CLK             SPI2_IOMUX_PIN_NUM_CLK
 #define PIN_NUM_CS              SPI2_IOMUX_PIN_NUM_CS
 #define PIN_NUM_WP              SPI2_IOMUX_PIN_NUM_WP
 #define PIN_NUM_HD              SPI2_IOMUX_PIN_NUM_HD
+#endif
+
+
+#if (TEST_SPI_PERIPH_NUM >= 2)  // esp32, s2, s3
+#define TEST_SPI_HOST           SPI2_HOST
+#define TEST_SLAVE_HOST         SPI3_HOST
 
 #define MASTER_IOMUX_PIN_MISO   SPI2_IOMUX_PIN_NUM_MISO
 #define MASTER_IOMUX_PIN_MOSI   SPI2_IOMUX_PIN_NUM_MOSI
@@ -45,7 +56,13 @@
 #define MASTER_IOMUX_PIN_CS     SPI2_IOMUX_PIN_NUM_CS
 #define MASTER_IOMUX_PIN_WP     SPI2_IOMUX_PIN_NUM_WP
 #define MASTER_IOMUX_PIN_HD     SPI2_IOMUX_PIN_NUM_HD
+#else
+#define TEST_SPI_HOST           SPI2_HOST
+#define TEST_SLAVE_HOST         SPI2_HOST
+#endif
 
+
+#if CONFIG_IDF_TARGET_ESP32     // spi3 have iomux pin only on esp32
 #define SLAVE_IOMUX_PIN_MISO    SPI3_IOMUX_PIN_NUM_MISO
 #define SLAVE_IOMUX_PIN_MOSI    SPI3_IOMUX_PIN_NUM_MOSI
 #define SLAVE_IOMUX_PIN_SCLK    SPI3_IOMUX_PIN_NUM_CLK
@@ -60,29 +77,12 @@
 #define WIRE_DELAY              12.5
 
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-#define TEST_SPI_HOST           SPI2_HOST
-#define TEST_SLAVE_HOST         SPI3_HOST
-
-#define PIN_NUM_MISO            SPI2_IOMUX_PIN_NUM_MISO
-#define PIN_NUM_MOSI            SPI2_IOMUX_PIN_NUM_MOSI
-#define PIN_NUM_CLK             SPI2_IOMUX_PIN_NUM_CLK
-#define PIN_NUM_CS              SPI2_IOMUX_PIN_NUM_CS
-#define PIN_NUM_WP              SPI2_IOMUX_PIN_NUM_WP
-#define PIN_NUM_HD              SPI2_IOMUX_PIN_NUM_HD
-
-#define MASTER_IOMUX_PIN_MISO   SPI2_IOMUX_PIN_NUM_MISO
-#define MASTER_IOMUX_PIN_MOSI   SPI2_IOMUX_PIN_NUM_MOSI
-#define MASTER_IOMUX_PIN_SCLK   SPI2_IOMUX_PIN_NUM_CLK
-#define MASTER_IOMUX_PIN_CS     SPI2_IOMUX_PIN_NUM_CS
-#define MASTER_IOMUX_PIN_WP     SPI2_IOMUX_PIN_NUM_WP
-#define MASTER_IOMUX_PIN_HD     SPI2_IOMUX_PIN_NUM_HD
-
 #define SLAVE_IOMUX_PIN_MISO    -1
 #define SLAVE_IOMUX_PIN_MOSI    -1
 #define SLAVE_IOMUX_PIN_SCLK    -1
 #define SLAVE_IOMUX_PIN_CS      -1
-#define SLAVE_IOMUX_PIN_NUM_WP  -1
-#define SLAVE_IOMUX_PIN_NUM_HD  -1
+#define SLAVE_IOMUX_PIN_WP      -1
+#define SLAVE_IOMUX_PIN_HD      -1
 
 #define UNCONNECTED_PIN         41
 #define INPUT_ONLY_PIN          46
@@ -90,43 +90,12 @@
 #define ESP_SPI_SLAVE_TV        0
 #define WIRE_DELAY              12.5
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H4
-//NOTE: On these chips, there is only 1 GPSPI controller, so master-slave test on single board should be disabled
-#define TEST_SPI_HOST           SPI2_HOST
-#define TEST_SLAVE_HOST         SPI2_HOST
-
-#define PIN_NUM_MISO            SPI2_IOMUX_PIN_NUM_MISO
-#define PIN_NUM_MOSI            SPI2_IOMUX_PIN_NUM_MOSI
-#define PIN_NUM_CLK             SPI2_IOMUX_PIN_NUM_CLK
-#define PIN_NUM_CS              SPI2_IOMUX_PIN_NUM_CS
-#define PIN_NUM_WP              SPI2_IOMUX_PIN_NUM_WP
-#define PIN_NUM_HD              SPI2_IOMUX_PIN_NUM_HD
-
-#define SLAVE_IOMUX_PIN_MISO    SPI2_IOMUX_PIN_NUM_MISO
-#define SLAVE_IOMUX_PIN_MOSI    SPI2_IOMUX_PIN_NUM_MOSI
-#define SLAVE_IOMUX_PIN_SCLK    SPI2_IOMUX_PIN_NUM_CLK
-#define SLAVE_IOMUX_PIN_CS      SPI2_IOMUX_PIN_NUM_CS
-
-#define MASTER_IOMUX_PIN_MISO   SPI2_IOMUX_PIN_NUM_MISO
-#define MASTER_IOMUX_PIN_MOSI   SPI2_IOMUX_PIN_NUM_MOSI
-#define MASTER_IOMUX_PIN_SCLK   SPI2_IOMUX_PIN_NUM_CLK
-#define MASTER_IOMUX_PIN_CS     SPI2_IOMUX_PIN_NUM_CS
-
+#else
 #define GPIO_DELAY              0
 #define ESP_SPI_SLAVE_TV        0
 #define WIRE_DELAY              12.5
+#endif  //CONFIG_IDF_TARGET_ESP32
 
-#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
-#define TEST_SPI_HOST           SPI2_HOST
-#define TEST_SLAVE_HOST         SPI2_HOST
-
-#define PIN_NUM_MISO            SPI2_IOMUX_PIN_NUM_MISO
-#define PIN_NUM_MOSI            SPI2_IOMUX_PIN_NUM_MOSI
-#define PIN_NUM_CLK             SPI2_IOMUX_PIN_NUM_CLK
-#define PIN_NUM_CS              10  //the IOMUX pin of SPI2 CS0&CS1 is Pin_16&17 which is same from UART Tx&Rx Pin
-#define PIN_NUM_WP              SPI2_IOMUX_PIN_NUM_WP
-#define PIN_NUM_HD              SPI2_IOMUX_PIN_NUM_HD
-#endif
 
 #define GET_DMA_CHAN(HOST)      (HOST)
 

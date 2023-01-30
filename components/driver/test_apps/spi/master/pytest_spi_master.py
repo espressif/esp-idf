@@ -6,6 +6,7 @@ import pytest
 
 # If `test_env` is define, should not run on generic runner
 @pytest.mark.supported_targets
+@pytest.mark.esp32h2
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['defaults', 'release', 'freertos_compliance', 'freertos_flash',], indirect=True)
 def test_master_single_dev(case_tester) -> None:       # type: ignore
@@ -28,6 +29,7 @@ def test_master_esp_flash(case_tester) -> None:        # type: ignore
 
 # if `test_env` not defined, will run on `generic_multi_device` by default
 @pytest.mark.supported_targets
+@pytest.mark.esp32h2
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count, config', [(2, 'defaults',), (2, 'release',), (2, 'freertos_compliance',), (2, 'freertos_flash',)], indirect=True)
 def test_master_multi_dev(case_tester) -> None:        # type: ignore
