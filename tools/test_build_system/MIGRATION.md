@@ -11,15 +11,15 @@ Updating component source file rebuilds component | test_rebuild::test_rebuild_s
 Bootloader source file rebuilds bootloader | test_rebuild::test_rebuild_source_files |
 Partition CSV file rebuilds partitions | test_rebuild::test_rebuild_source_files |
 Partial build doesn't compile anything by default | test_rebuild::test_rebuild_no_changes |
-Rebuild when app version was changed | |
-Change app version | |
-Re-building does not change app.bin | |
+Rebuild when app version was changed | test_rebuild.py::test_rebuild_version_change |
+Change app version | test_rebuild.py::test_rebuild_version_change |
+Re-building does not change app.bin | test_rebuild.py::test_rebuild_version_change |
 Get the version of app from git describe. Project is not inside IDF and do not have a tag only a hash commit. | |
 Get the version of app from Kconfig option | |
 Use IDF version variables in component CMakeLists.txt file | |
 Project is in ESP-IDF which has a custom tag | |
-Moving BUILD_DIR_BASE out of tree | |
-BUILD_DIR_BASE inside default build directory | |
+Moving BUILD_DIR_BASE out of tree | test_build.py::test_build_alternative_directories |
+BUILD_DIR_BASE inside default build directory | test_build.py::test_build_alternative_directories |
 Can still clean build if all text files are CRLFs | |
 Updating rom ld file should re-link app and bootloader | test_rebuild::test_rebuild_linker |
 Updating app-only ld file should only re-link app | test_rebuild::test_rebuild_linker |
@@ -27,13 +27,13 @@ Updating ld file should only re-link app | test_rebuild::test_rebuild_linker |
 Updating fragment file should only re-link app | test_rebuild::test_rebuild_linker |
 sdkconfig update triggers full recompile | test_rebuild::test_rebuild_source_files |
 Updating project CMakeLists.txt triggers full recompile | test_rebuild::test_rebuild_source_files |
-Can build with Ninja (no idf.py) | |
-Can build with GNU Make (no idf.py) | |
-idf.py can build with Ninja | |
-idf.py can build with Unix Makefiles | |
-Can build with IDF_PATH set via cmake cache not environment | |
-Can build with IDF_PATH unset and inferred by build system | |
-Can build with IDF_PATH unset and inferred by cmake when Kconfig needs it to be set | |
+Can build with Ninja (no idf.py) | test_build.py::test_build_cmake_ninja |
+Can build with GNU Make (no idf.py) | test_build.py::test_build_cmake_makefile |
+idf.py can build with Ninja | test_build.py::test_build_with_generator_ninja |
+idf.py can build with Unix Makefiles | test_build.py::test_build_with_generator_makefile |
+Can build with IDF_PATH set via cmake cache not environment | test_build.py::test_build_with_cmake_and_idf_path_unset |
+Can build with IDF_PATH unset and inferred by build system | test_build.py::test_build_with_cmake_and_idf_path_unset |
+Can build with IDF_PATH unset and inferred by cmake when Kconfig needs it to be set | test_build.py::test_build_with_cmake_and_idf_path_unset |
 can build with phy_init_data | |
 can build with ethernet component disabled | |
 Compiler flags on build command line are taken into account | |
