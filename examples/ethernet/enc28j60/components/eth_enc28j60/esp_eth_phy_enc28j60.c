@@ -213,6 +213,9 @@ esp_err_t enc28j60_set_phy_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex)
     esp_eth_mediator_t *eth = enc28j60->eth;
     phcon1_reg_t phcon1;
 
+    /* Since the link is going to be reconfigured, consider it down to be status updated once the driver re-started */
+    enc28j60->link_status = ETH_LINK_DOWN;
+
     PHY_CHECK(eth->phy_reg_read(eth, enc28j60->addr, 0, &phcon1.val) == ESP_OK,
               "read PHCON1 failed", err);
     switch (duplex) {
