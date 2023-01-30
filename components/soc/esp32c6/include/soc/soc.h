@@ -140,7 +140,7 @@
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
 #define  EFUSE_CLK_FREQ_ROM                          ( 20*1000000)
 #define  CPU_CLK_FREQ                                APB_CLK_FREQ
-#define  APB_CLK_FREQ                                ( 80*1000000 ) // TODO: IDF-6343 APB clock freq is 40MHz indeed
+#define  APB_CLK_FREQ                                ( 40*1000000 )
 #define  REF_CLK_FREQ                                ( 1000000 )
 #define  RTC_CLK_FREQ                                (20*1000000)
 #define  XTAL_CLK_FREQ                               (40*1000000)

@@ -19,6 +19,7 @@
 #include "hal/uart_ll.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs.h"
+#include "clk_tree.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
 
@@ -210,6 +211,8 @@ TEST_CASE("fcntl supported in UART VFS", "[vfs]")
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 TEST_CASE("Can use termios for UART", "[vfs]")
 {
+    uint32_t clk_src_hz = 0;
+    TEST_ESP_OK(clk_tree_src_get_freq_hz((soc_module_clk_t)UART_SCLK_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz));
     uart_config_t uart_config = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
@@ -303,7 +306,7 @@ TEST_CASE("Can use termios for UART", "[vfs]")
         TEST_ASSERT_EQUAL(CBAUD, tios_result.c_cflag & CBAUD);
         TEST_ASSERT_EQUAL(ESP_OK, uart_get_baudrate(UART_NUM_1, &baudrate));
         TEST_ASSERT_INT32_WITHIN(2, 38400, baudrate);
-        if (APB_CLK_FREQ == 40000000) {
+        if (clk_src_hz == 40000000) {
             // Setting the speed to 38400 will set it actually to 38401
             // Note: can't use TEST_ASSERT_INT32_WITHIN here because B38400 == 15
             TEST_ASSERT_EQUAL(38401, tios_result.c_ispeed);
@@ -320,7 +323,7 @@ TEST_CASE("Can use termios for UART", "[vfs]")
         TEST_ASSERT_EQUAL(BOTHER, tios_result.c_cflag & BOTHER);
         TEST_ASSERT_EQUAL(ESP_OK, uart_get_baudrate(UART_NUM_1, &baudrate));
         // Setting the speed to 230400 will set it actually to something else,
-        // depending on the APB clock
+        // depending on the default clock source
         TEST_ASSERT_INT32_WITHIN(100, 230400, tios_result.c_ispeed);
         TEST_ASSERT_INT32_WITHIN(100, 230400, tios_result.c_ospeed);
         TEST_ASSERT_INT32_WITHIN(100, 230400, baudrate);
@@ -332,7 +335,7 @@ TEST_CASE("Can use termios for UART", "[vfs]")
         TEST_ASSERT_EQUAL(BOTHER, tios_result.c_cflag & BOTHER);
         TEST_ASSERT_EQUAL(ESP_OK, uart_get_baudrate(UART_NUM_1, &baudrate));
         // Setting the speed to 230400 will set it actually to something else,
-        // depending on the APB clock
+        // depending on the default clock source
         TEST_ASSERT_INT32_WITHIN(10, 42321, tios_result.c_ispeed);
         TEST_ASSERT_INT32_WITHIN(10, 42321, tios_result.c_ospeed);
         TEST_ASSERT_INT32_WITHIN(10, 42321, baudrate);
