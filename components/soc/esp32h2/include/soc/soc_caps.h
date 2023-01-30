@@ -50,9 +50,9 @@
 // #define SOC_GPSPI_SUPPORTED             1 // TODO: IDF-6264
 #define SOC_SYSTIMER_SUPPORTED          1
 // #define SOC_SUPPORT_COEXISTENCE         1 // TODO: IDF-6416
-// #define SOC_AES_SUPPORTED               1 // TODO: IDF-6280
+#define SOC_AES_SUPPORTED               1
 // #define SOC_MPI_SUPPORTED               1 // TODO: IDF-6415
-// #define SOC_SHA_SUPPORTED               1 // TODO: IDF-6275
+#define SOC_SHA_SUPPORTED               1
 // #define SOC_HMAC_SUPPORTED              1 // TODO: IDF-6279
 // #define SOC_DIG_SIGN_SUPPORTED          1 // TODO: IDF-6285
 // #define SOC_FLASH_ENC_SUPPORTED         1 // TODO: IDF-6282
@@ -63,7 +63,6 @@
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M            1
 
-// TODO: IDF-6280 (Copy from esp32c6, need check)
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)
 
@@ -272,7 +271,6 @@
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)
 
-// TODO: IDF-6275 (Copy from esp32c6, need check)
 /*--------------------------- SHA CAPS ---------------------------------------*/
 
 /* Max amount of bytes in a single DMA operation is 4095,
