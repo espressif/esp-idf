@@ -175,6 +175,7 @@ typedef struct spi_device_t *spi_device_handle_t;  ///< Handle for a device on a
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid or configuration combination is not supported (e.g.
  *                                 `dev_config->post_cb` isn't set while flag `SPI_DEVICE_NO_RETURN_RESULT` is enabled)
+ *         - ESP_ERR_INVALID_STATE if selected clock source is unavailable or spi bus not initialized
  *         - ESP_ERR_NOT_FOUND     if host doesn't have any free CS slots
  *         - ESP_ERR_NO_MEM        if out of memory
  *         - ESP_OK                on success

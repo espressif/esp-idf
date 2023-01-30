@@ -57,7 +57,9 @@ static void check_spi_pre_n_for(spi_clock_source_t clock_source, int clk, int pr
 
     spi_dev_t *hw = spi_periph_signal[TEST_SPI_HOST].hw;
 
-    printf("Checking clk rate %dHz. expect pre %d n %d, got pre %d n %d\n", clk, pre, n, hw->clock.clkdiv_pre + 1, hw->clock.clkcnt_n + 1);
+    int real_freq_khz;
+    spi_device_get_actual_freq(handle, &real_freq_khz);
+    printf("Checking clk rate %dHz. expect pre %d n %d, got pre %d n %d, real_freq %d kHZ\n", clk, pre, n, hw->clock.clkdiv_pre + 1, hw->clock.clkcnt_n + 1, real_freq_khz);
 
     TEST_ASSERT(hw->clock.clkcnt_n + 1 == n);
     TEST_ASSERT(hw->clock.clkdiv_pre + 1 == pre);
