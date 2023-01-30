@@ -28,7 +28,6 @@ api-guides/startup
 api-guides/RF_calibration
 api-guides/blufi
 api-guides/coexist
-api-guides/usb-serial-jtag-console
 api-guides/wifi
 api-guides/usb-otg-console
 api-guides/wireshark-user-guide

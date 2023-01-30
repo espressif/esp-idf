@@ -23,6 +23,10 @@ config SOC_IEEE802154_BLE_ONLY
     bool
     default y
 
+config SOC_USB_SERIAL_JTAG_SUPPORTED
+    bool
+    default y
+
 config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y

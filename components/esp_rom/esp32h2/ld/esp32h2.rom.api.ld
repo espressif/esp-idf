@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,7 @@ PROVIDE ( esp_rom_efuse_mac_address_crc8       = esp_crc8 );
 PROVIDE ( esp_rom_efuse_is_secure_boot_enabled = ets_efuse_secure_boot_enabled );
 
 PROVIDE ( esp_rom_uart_flush_tx       = uart_tx_flush );
-PROVIDE ( esp_rom_uart_tx_one_char    = uart_tx_one_char );
+PROVIDE ( esp_rom_uart_tx_one_char    = uart_tx_one_char2 );
 PROVIDE ( esp_rom_uart_tx_wait_idle   = uart_tx_wait_idle );
 PROVIDE ( esp_rom_uart_rx_one_char    = uart_rx_one_char );
 PROVIDE ( esp_rom_uart_rx_string      = UartRxString );
