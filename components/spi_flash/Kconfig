@@ -1,4 +1,5 @@
 menu "SPI Flash driver"
+    depends on !APP_BUILD_TYPE_PURE_RAM_APP
 
     config SPI_FLASH_VERIFY_WRITE
         bool "Verify SPI flash writes"

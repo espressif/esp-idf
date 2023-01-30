@@ -3,17 +3,10 @@ if(${target} STREQUAL "linux")
     return()
 endif()
 
-if(BOOTLOADER_BUILD)
+if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     set(cache_srcs "")
     set(priv_requires bootloader_support soc)
 else()
-    set(cache_srcs
-        "cache_utils.c"
-        "flash_mmap.c"
-        "flash_ops.c"
-        "${target}/flash_ops_${target}.c"
-    )
-
     set(srcs "flash_brownout_hook.c")
 
     if(CONFIG_SOC_SPI_MEM_SUPPORT_OPI_MODE)
@@ -37,6 +30,13 @@ else()
         "spi_flash_chip_mxic_opi.c"
         "spi_flash_chip_th.c"
         "memspi_host_driver.c")
+
+    set(cache_srcs
+        "cache_utils.c"
+        "flash_mmap.c"
+        "flash_ops.c"
+        "${target}/flash_ops_${target}.c"
+    )
 
     list(APPEND cache_srcs
         "esp_flash_api.c"
@@ -63,7 +63,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
         " -fno-inline-small-functions -fno-inline-functions-called-once")
 endif()
 
-if(NOT BOOTLOADER_BUILD)
+if(NOT BOOTLOADER_BUILD AND NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     if(CONFIG_SPIRAM)
         # [refactor-todo]: requires "esp_psram" for few MMU usages in `flash_mmap.c`
         # will be replaced with MMU requirements

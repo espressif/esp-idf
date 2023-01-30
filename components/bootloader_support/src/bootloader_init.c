@@ -33,7 +33,7 @@ esp_err_t bootloader_read_bootloader_header(void)
 {
     /* load bootloader image header */
     if (bootloader_flash_read(ESP_BOOTLOADER_OFFSET, &bootloader_image_hdr, sizeof(esp_image_header_t), true) != ESP_OK) {
-        ESP_LOGE(TAG, "failed to load bootloader image header!");
+        ESP_EARLY_LOGE(TAG, "failed to load bootloader image header!");
         return ESP_FAIL;
     }
     return ESP_OK;
@@ -44,7 +44,7 @@ esp_err_t bootloader_check_bootloader_validity(void)
     unsigned int revision = efuse_hal_chip_revision();
     unsigned int major = revision / 100;
     unsigned int minor = revision % 100;
-    ESP_LOGI(TAG, "chip revision: v%d.%d", major, minor);
+    ESP_EARLY_LOGI(TAG, "chip revision: v%d.%d", major, minor);
     /* compare with the one set in bootloader image header */
     if (bootloader_common_check_chip_validity(&bootloader_image_hdr, ESP_IMAGE_BOOTLOADER) != ESP_OK) {
         return ESP_FAIL;
@@ -72,7 +72,7 @@ void bootloader_config_wdt(void)
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     //Initialize and start RWDT to protect the  for bootloader if configured to do so
-    ESP_LOGD(TAG, "Enabling RTCWDT(%d ms)", CONFIG_BOOTLOADER_WDT_TIME_MS);
+    ESP_EARLY_LOGD(TAG, "Enabling RTCWDT(%d ms)", CONFIG_BOOTLOADER_WDT_TIME_MS);
     wdt_hal_init(&rwdt_ctx, WDT_RWDT, 0, false);
     uint32_t stage_timeout_ticks = (uint32_t)((uint64_t)CONFIG_BOOTLOADER_WDT_TIME_MS * rtc_clk_slow_freq_get_hz() / 1000);
     wdt_hal_write_protect_disable(&rwdt_ctx);
@@ -90,14 +90,14 @@ void bootloader_config_wdt(void)
 
 void bootloader_enable_random(void)
 {
-    ESP_LOGI(TAG, "Enabling RNG early entropy source...");
+    ESP_EARLY_LOGI(TAG, "Enabling RNG early entropy source...");
     bootloader_random_enable();
 }
 
 void bootloader_print_banner(void)
 {
-    ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
+    ESP_EARLY_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
 #ifndef CONFIG_APP_REPRODUCIBLE_BUILD
-    ESP_LOGI(TAG, "compile time " __DATE__ " " __TIME__);
+    ESP_EARLY_LOGI(TAG, "compile time " __DATE__ " " __TIME__);
 #endif
 }

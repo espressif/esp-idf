@@ -170,10 +170,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 Example gdbinit files for other targets can be found in tools/test_apps/system/gdb_loadable_elf/
 
                 Recommended sdkconfig.defaults for building loadable ELF files is as follows.
-                CONFIG_APP_BUILD_TYPE_ELF_RAM is required, other options help reduce application
+                CONFIG_APP_BUILD_TYPE_RAM is required, other options help reduce application
                 memory footprint.
 
-                    CONFIG_APP_BUILD_TYPE_ELF_RAM=y
+                    CONFIG_APP_BUILD_TYPE_RAM=y
                     CONFIG_VFS_SUPPORT_TERMIOS=
                     CONFIG_NEWLIB_NANO_FORMAT=y
                     CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y
@@ -258,7 +258,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             bool
             depends on IDF_TARGET_ESP32
             default y if APP_COMPATIBLE_PRE_V2_1_BOOTLOADERS
-            default y if APP_BUILD_TYPE_ELF_RAM
+            default y if APP_BUILD_TYPE_RAM
 
 
     endmenu # Build type

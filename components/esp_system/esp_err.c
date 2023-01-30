@@ -31,7 +31,10 @@ static void esp_error_check_failed_print(const char *msg, esp_err_t rc, const ch
     esp_rom_printf(" (%s)", esp_err_to_name(rc));
 #endif //CONFIG_ESP_ERR_TO_NAME_LOOKUP
     esp_rom_printf(" at 0x%08x\n", esp_cpu_get_call_addr(addr));
-    if (spi_flash_cache_enabled()) { // strings may be in flash cache
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    if (spi_flash_cache_enabled())  // strings may be in flash cache
+#endif
+    {
         esp_rom_printf("file: \"%s\" line %d\nfunc: %s\nexpression: %s\n", file, line, function, expression);
     }
 }

@@ -263,6 +263,9 @@ esp_err_t bootloader_init(void)
     bootloader_hardware_init();
     bootloader_ana_reset_config();
     bootloader_super_wdt_auto_feed();
+
+// In RAM_APP, memory will be initialized in `call_start_cpu0`
+#if !CONFIG_APP_BUILD_TYPE_RAM
     // protect memory region
     bootloader_init_mem();
     /* check that static RAM is after the stack */
@@ -270,41 +273,46 @@ esp_err_t bootloader_init(void)
     assert(&_data_start <= &_data_end);
     // clear bss section
     bootloader_clear_bss_section();
-    //init cache hal
-    cache_hal_init();   //TODO IDF-4649
-    //reset mmu
-    mmu_hal_init();
+#endif // !CONFIG_APP_BUILD_TYPE_RAM
+
     // config clock
     bootloader_clock_configure();
     // initialize console, from now on, we can use esp_log
     bootloader_console_init();
     /* print 2nd bootloader banner */
     bootloader_print_banner();
+
+#if !CONFIG_APP_BUILD_TYPE_RAM
+    //init cache hal
+    cache_hal_init();   //TODO IDF-4649
+    //reset mmu
+    mmu_hal_init();
     // update flash ID
     bootloader_flash_update_id();
     // Check and run XMC startup flow
     if ((ret = bootloader_flash_xmc_startup()) != ESP_OK) {
         ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
-        goto err;
+        return ret;
     }
     // read bootloader header
     if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
-        goto err;
+        return ret;
     }
     // read chip revision and check if it's compatible to bootloader
     if ((ret = bootloader_check_bootloader_validity()) != ESP_OK) {
-        goto err;
+        return ret;
     }
     // initialize spi flash
     if ((ret = bootloader_init_spi_flash()) != ESP_OK) {
-        goto err;
+        return ret;
     }
+#endif // !CONFIG_APP_BUILD_TYPE_RAM
+
     // check whether a WDT reset happend
     bootloader_check_wdt_reset();
     // config WDT
     bootloader_config_wdt();
     // enable RNG early entropy source
     bootloader_enable_random();
-err:
     return ret;
 }

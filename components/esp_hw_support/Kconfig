@@ -96,6 +96,7 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
             bool "Flash leakage current workaround in light sleep"
+            depends on !APP_BUILD_TYPE_PURE_RAM_APP
             default y
             help
                 When the CS pin of Flash is not pulled up, the sleep current will

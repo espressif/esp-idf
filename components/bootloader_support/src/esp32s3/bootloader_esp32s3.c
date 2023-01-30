@@ -333,6 +333,9 @@ esp_err_t bootloader_init(void)
 
     bootloader_ana_reset_config();
     bootloader_super_wdt_auto_feed();
+
+// In RAM_APP, memory will be initialized in `call_start_cpu0`
+#if !CONFIG_APP_BUILD_TYPE_RAM
     // protect memory region
     bootloader_init_mem();
     /* check that static RAM is after the stack */
@@ -344,6 +347,8 @@ esp_err_t bootloader_init(void)
 #endif
     // clear bss section
     bootloader_clear_bss_section();
+#endif // !CONFIG_APP_BUILD_TYPE_RAM
+
     // init eFuse virtual mode (read eFuses to RAM)
 #ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
@@ -351,41 +356,44 @@ esp_err_t bootloader_init(void)
     esp_efuse_init_virtual_mode_in_ram();
 #endif
 #endif
-    //init cache hal
-    cache_hal_init();
-    //reset mmu
-    mmu_hal_init();
     // config clock
     bootloader_clock_configure();
     // initialize console, from now on, we can use esp_log
     bootloader_console_init();
     /* print 2nd bootloader banner */
     bootloader_print_banner();
+
+#if !CONFIG_APP_BUILD_TYPE_RAM
+    //init cache hal
+    cache_hal_init();
+    //reset mmu
+    mmu_hal_init();
     // update flash ID
     bootloader_flash_update_id();
     // Check and run XMC startup flow
     if ((ret = bootloader_flash_xmc_startup()) != ESP_OK) {
         ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
-        goto err;
+        return ret;
     }
     // read bootloader header
     if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
-        goto err;
+        return ret;
     }
     // read chip revision and check if it's compatible to bootloader
     if ((ret = bootloader_check_bootloader_validity()) != ESP_OK) {
-        goto err;
+        return ret;
     }
     // initialize spi flash
     if ((ret = bootloader_init_spi_flash()) != ESP_OK) {
-        goto err;
+        return ret;
     }
+#endif // !CONFIG_APP_BUILD_TYPE_RAM
+
     // check whether a WDT reset happend
     bootloader_check_wdt_reset();
     // config WDT
     bootloader_config_wdt();
     // enable RNG early entropy source
     bootloader_enable_random();
-err:
     return ret;
 }
