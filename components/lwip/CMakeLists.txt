@@ -1,7 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
 if(NOT ${target} STREQUAL "linux")
     # ESP platform targets share the same port folder
-    set(target esp32)
+    set(target esp32xx)
 endif()
 
 set(include_dirs
