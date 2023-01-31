@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,7 +49,8 @@ esp_err_t esp_wifi_sta_itwt_setup(wifi_twt_setup_cmds_t setup_cmd, bool trigger,
 /**
   * @brief     Tear down individual TWT agreements
   *
-  * @param[in]    flow_id  The value range is [0, 8]. 8 indicates tear down all individual TWT agreements.
+  * @param[in]    flow_id  The value range is [0, 7].
+  *                        FLOW_ID_ALL indicates tear down all individual TWT agreements.
   *
   * @return
   *    - ESP_OK: succeed
@@ -64,7 +65,8 @@ esp_err_t esp_wifi_sta_itwt_teardown(int flow_id);
 /**
   * @brief     Send a TWT Information frame to AP for suspending/resuming established iTWT agreements.
   *
-  * @param[in]    flow_id The value range is [0, 8]. 8 indicates suspend all individual TWT agreements
+  * @param[in]    flow_id The value range is [0, 7].
+  *                       FLOW_ID_ALL indicates suspend all individual TWT agreements
   * @param[in]    suspend_time_ms If the value is 0, indicates the specified flow_id or all established agreements will be suspended until resume by users.
   *                               If the value is greater than 0, indicates the specified flow_id or all established agreements will be suspended until suspend_time_ms timeout, unit: ms.
   *
