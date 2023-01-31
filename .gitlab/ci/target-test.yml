@@ -244,6 +244,13 @@ example_test_pytest_esp32s3_wifi_router:
   needs:
     - build_pytest_examples_esp32s3
   tags: [ esp32s3, wifi_router ]
+example_test_pytest_esp32_wifi_iperf:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32-wifi
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, Example_ShieldBox_Basic ]
 
 example_test_pytest_esp32_wifi_wlan:
   extends:
@@ -252,6 +259,14 @@ example_test_pytest_esp32_wifi_wlan:
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_wlan ]
+
+example_test_pytest_esp32_ethernet_router:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32-ethernet
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, ethernet_router ]
 
 example_test_pytest_esp32_ethernet_ip101:
   extends:
@@ -988,22 +1003,6 @@ example_test_001C:
     - ESP32
     - Example_GENERIC
 
-example_test_002:
-  extends:
-    - .example_test_esp32_template
-    - .rules:test:example_test-esp32-wifi
-  tags:
-    - ESP32
-    - Example_ShieldBox_Basic
-
-example_test_ethernet_router:
-  extends:
-    - .example_test_esp32_template
-    - .rules:test:example_test-esp32-ethernet
-  tags:
-    - ESP32
-    - ethernet_router
-
 .example_test_003:
   extends: .example_test_esp32_template
   tags:
@@ -1106,12 +1105,6 @@ example_test_C6_GENERIC:
   extends:
     - .test_app_template
     - .rules:test:custom_test-esp32s3
-
-test_app_test_eth:
-  extends: .test_app_esp32_template
-  tags:
-    - ESP32
-    - ethernet_router
 
 .unit_test_template:
   extends: .target_test_job_template
