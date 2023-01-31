@@ -17,7 +17,7 @@ In certain situations, execution of the program can not be continued in a well d
      - :doc:`Interrupt watchdog <../api-reference/system/wdts>` timeout
      - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :ref:`CONFIG_ESP_TASK_WDT_PANIC` is set)
      - Cache access error
-     :CONFIG_ESP_SYSTEM_MEMPROT_FEATURE: - Memory protection fault
+     :SOC_MEMPROT_SUPPORTED: - Memory protection fault
      - Brownout detection event
      - Stack overflow
      - Stack smashing protection check
@@ -285,20 +285,14 @@ The GDB prompt can be used to inspect CPU registers, local and static variables,
 
 RTC Watchdog Timeout
 --------------------
+{IDF_TARGET_RTCWDT_RTC_RESET:default="Not updated", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS"}
 
 The RTC watchdog is used in the startup code to keep track of execution time and it also helps to prevent a lock-up caused by an unstable power source. It is enabled by default (see :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`). If the execution time is exceeded, the RTC watchdog will restart the system. In this case, the ROM bootloader will print a message with the ``RTC Watchdog Timeout`` reason for the reboot.
 
-.. only:: esp32
+::
 
-    ::
+    rst:0x10 ({IDF_TARGET_RTCWDT_RTC_RESET})
 
-        rst:0x10 (RTCWDT_RTC_RESET)
-
-.. only:: not esp32
-
-    ::
-
-        rst:0x10 (RTCWDT_RTC_RST)
 
 The RTC watchdog covers the execution time from the first stage bootloader (ROM bootloader) to application startup. It is initially set in the ROM bootloader, then configured in the bootloader with the :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` option (9000 ms by default). During the application initialization stage, it is reconfigured because the source of the slow clock may have changed, and finally disabled right before the ``app_main()`` call. There is an option :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` which prevents the RTC watchdog from being disabled before ``app_main``. Instead, the RTC watchdog remains active and must be fed periodically in your application's code.
 
@@ -405,7 +399,7 @@ Indicates that an interrupt watchdog timeout has occurred. See :doc:`Watchdogs <
 
 In some situations, ESP-IDF will temporarily disable access to external SPI Flash and SPI RAM via caches. For example, this happens when spi_flash APIs are used to read/write/erase/mmap regions of SPI Flash. In these situations, tasks are suspended, and interrupt handlers not registered with ``ESP_INTR_FLAG_IRAM`` are disabled. Make sure that any interrupt handlers registered with this flag have all the code and data in IRAM/DRAM. Refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
 
-.. only:: CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+.. only:: SOC_MEMPROT_SUPPORTED
 
     Memory protection fault
     ^^^^^^^^^^^^^^^^^^^^^^^
