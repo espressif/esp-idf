@@ -25,12 +25,12 @@ extern "C" {
 #define LEDC_LL_HPOINT_VAL_MAX     (LEDC_HPOINT_CH0_V)
 #define LEDC_LL_FRACTIONAL_BITS    (8)
 #define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
+
 #define LEDC_LL_GLOBAL_CLOCKS { \
                                 LEDC_SLOW_CLK_PLL_DIV, \
                                 LEDC_SLOW_CLK_XTAL, \
-                                LEDC_SLOW_CLK_RTC8M, \
+                                LEDC_SLOW_CLK_RC_FAST, \
                               }
-#define LEDC_LL_PLL_DIV_CLK_FREQ    (60 * 1000000) // PLL_60M_CLK: 60MHz
 
 
 /**
@@ -46,7 +46,7 @@ static inline void ledc_ll_set_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t 
     uint32_t clk_sel_val = 0;
     if (slow_clk_sel == LEDC_SLOW_CLK_PLL_DIV) {
         clk_sel_val = 1;
-    } else if (slow_clk_sel == LEDC_SLOW_CLK_RTC8M) {
+    } else if (slow_clk_sel == LEDC_SLOW_CLK_RC_FAST) {
         clk_sel_val = 2;
     } else if (slow_clk_sel == LEDC_SLOW_CLK_XTAL) {
         clk_sel_val = 3;
@@ -68,7 +68,7 @@ static inline void ledc_ll_get_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t 
     if (clk_sel_val == 1) {
         *slow_clk_sel = LEDC_SLOW_CLK_PLL_DIV;
     } else if (clk_sel_val == 2) {
-        *slow_clk_sel = LEDC_SLOW_CLK_RTC8M;
+        *slow_clk_sel = LEDC_SLOW_CLK_RC_FAST;
     } else if (clk_sel_val == 3) {
         *slow_clk_sel = LEDC_SLOW_CLK_XTAL;
     } else {

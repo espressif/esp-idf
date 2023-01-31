@@ -68,3 +68,15 @@ uint32_t rtc_clk_apb_freq_get(void)
     // ESP32H2-TODO: IDF-6254
     return 0;
 }
+
+void rtc_dig_clk8m_enable(void)
+{
+    clk_ll_rc_fast_digi_enable();
+    esp_rom_delay_us(SOC_DELAY_RC_FAST_DIGI_SWITCH);
+}
+
+void rtc_dig_clk8m_disable(void)
+{
+    clk_ll_rc_fast_digi_disable();
+    esp_rom_delay_us(SOC_DELAY_RC_FAST_DIGI_SWITCH);
+}

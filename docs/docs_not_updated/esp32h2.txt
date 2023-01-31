@@ -84,7 +84,6 @@ api-reference/peripherals/touch_element
 api-reference/peripherals/lcd
 api-reference/peripherals/mcpwm
 api-reference/peripherals/secure_element
-api-reference/peripherals/ledc
 api-reference/peripherals/temp_sensor
 api-reference/peripherals/spi_features
 api-reference/peripherals/sdio_slave

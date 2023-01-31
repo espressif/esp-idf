@@ -48,6 +48,7 @@
 #define SOC_SDM_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 // #define SOC_GPSPI_SUPPORTED             1 // TODO: IDF-6264
+#define SOC_LEDC_SUPPORTED              1
 #define SOC_SYSTIMER_SUPPORTED          1
 // #define SOC_SUPPORT_COEXISTENCE         1 // TODO: IDF-6416
 #define SOC_AES_SUPPORTED               1
@@ -195,7 +196,6 @@
 #define SOC_I2S_SUPPORTS_TDM        (1)
 #define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
 
-// TODO: IDF-6235 (Copy from esp32c6, need check)
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
@@ -263,8 +263,8 @@
 #define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
-/* No dedicated RTCIO subsystem on ESP32-C6. RTC functions are still supported
- * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
+/* No dedicated LP_IO subsystem on ESP32-H2. LP functions are still supported
+ * for hold, wake & 32kHz crystal functions - via LP_AON registers */
 #define SOC_RTCIO_PIN_COUNT    (0U)
 
 // TODO: IDF-6284 (Copy from esp32c6, need check)
@@ -423,7 +423,7 @@
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
-// #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
+// #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1) // TODO: IDF-6265
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 #define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< Support to connect an external oscillator, not a crystal */

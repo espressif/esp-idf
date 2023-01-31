@@ -20,8 +20,9 @@
 #include "esp_timer.h"
 #include "driver/ledc.h"
 #include "soc/ledc_struct.h"
+#include "clk_tree.h"
 
-#define PULSE_IO      18
+#define PULSE_IO      5
 
 #define TEST_PWM_FREQ 2000
 
@@ -438,13 +439,13 @@ static int wave_count(int last_time)
 }
 
 // the PCNT will count the frequency of it
-static void frequency_set_get(ledc_mode_t speed_mode, ledc_timer_t timer, uint32_t freq_hz, int16_t real_freq, int16_t error)
+static void frequency_set_get(ledc_mode_t speed_mode, ledc_timer_t timer, uint32_t desired_freq, int16_t theoretical_freq, int16_t error)
 {
-    int count;
-    TEST_ESP_OK(ledc_set_freq(speed_mode, timer, freq_hz));
-    count = wave_count(1000);
-    TEST_ASSERT_INT16_WITHIN(error, real_freq, count);
-    TEST_ASSERT_EQUAL_INT32(real_freq, ledc_get_freq(speed_mode, timer));
+    int real_freq;
+    TEST_ESP_OK(ledc_set_freq(speed_mode, timer, desired_freq));
+    real_freq = wave_count(1000);
+    TEST_ASSERT_INT16_WITHIN(error, theoretical_freq, real_freq);
+    TEST_ASSERT_EQUAL_INT32(theoretical_freq, ledc_get_freq(speed_mode, timer));
 }
 
 static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, ledc_timer_t timer, ledc_mode_t speed_mode)
@@ -469,7 +470,16 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 100, 100, 20);
     frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 5000, 5000, 50);
-    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 9000, 8992, 50);
+    // Try a frequency that couldn't be exactly achieved, requires rounding
+    uint32_t theoretical_freq = 9000;
+    uint32_t clk_src_freq = 0;
+    clk_tree_src_get_freq_hz((soc_module_clk_t)TEST_DEFAULT_CLK_CFG, CLK_TREE_SRC_FREQ_PRECISION_EXACT, &clk_src_freq);
+    if (clk_src_freq == 80 * 1000 * 1000) {
+        theoretical_freq = 8992;
+    } else if (clk_src_freq == 96 * 1000 * 1000) {
+        theoretical_freq = 9009;
+    }
+    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 9000, theoretical_freq, 50);
 }
 
 TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60]")
@@ -500,8 +510,8 @@ static void timer_set_clk_src_and_freq_test(ledc_mode_t speed_mode, ledc_clk_cfg
     };
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     vTaskDelay(100 / portTICK_PERIOD_MS);
-    if (clk_src == LEDC_USE_RTC8M_CLK) {
-        // RTC8M_CLK freq is get from calibration, it is reasonable that divider calculation does a rounding
+    if (clk_src == LEDC_USE_RC_FAST_CLK) {
+        // RC_FAST_CLK freq is get from calibration, it is reasonable that divider calculation does a rounding
         TEST_ASSERT_UINT32_WITHIN(5, freq_hz, ledc_get_freq(speed_mode, LEDC_TIMER_0));
     } else {
         TEST_ASSERT_EQUAL_INT32(freq_hz, ledc_get_freq(speed_mode, LEDC_TIMER_0));
@@ -526,8 +536,10 @@ TEST_CASE("LEDC timer select specific clock source", "[ledc]")
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 
     if (test_speed_mode == LEDC_LOW_SPEED_MODE) {
-        printf("Check LEDC_USE_RTC8M_CLK for a 100Hz signal\n");
-        timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_RTC8M_CLK, 10, 100);
+#if SOC_CLK_RC_FAST_SUPPORT_CALIBRATION // Otherwise, the frequency of output PWM signal may not be very accurate
+        printf("Check LEDC_USE_RC_FAST_CLK for a 100Hz signal\n");
+        timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_RC_FAST_CLK, 10, 100);
+#endif
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
         printf("Check LEDC_USE_XTAL_CLK for a 400Hz signal\n");
         timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_XTAL_CLK, 13, 400);
