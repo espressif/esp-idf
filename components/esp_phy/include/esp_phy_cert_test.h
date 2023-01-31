@@ -60,7 +60,7 @@ typedef enum {
  * @brief Environment variable configuration
  *
  * @param conf:
- *     Setting to 1 to enter RF test environment.
+ *     Set to 1 to enter RF test mode.
  */
 void esp_phy_rftest_config(uint8_t conf);
 
@@ -73,8 +73,8 @@ void esp_phy_rftest_init(void);
  * @brief TX Continuous mode
  *
  * @param contin_en:
- *     Setting to true for continuous packet sending, which can be used for certification testing;
- *     Setting to false to cancel continuous mode, which is the default mode and can be used for WLAN tester.
+ *     Set to true for continuous packet sending, which can be used for certification testing;
+ *     Set to false to cancel continuous mode, which is the default mode and can be used for WLAN tester.
 */
 void esp_phy_tx_contin_en(bool contin_en);
 
@@ -82,8 +82,8 @@ void esp_phy_tx_contin_en(bool contin_en);
  * @brief HT40/HT20 mode selection
  *
  * @param en:
- *     Setting to false to enter 11n HT20 mode;
- *     Setting to true to enter 11n HT40 mode;
+ *     Set to false to enter 11n HT20 mode;
+ *     Set to true to enter 11n HT40 mode;
  **/
 void esp_phy_cbw40m_en(bool en);
 
@@ -104,7 +104,7 @@ void esp_phy_wifi_tx(uint32_t chan, esp_phy_wifi_rate_t rate, int8_t backoff, ui
  *
  * @param value:
  *     Value should be set to 3 before TX/RX.
- *     Setting value to 0 to end TX/RX state.
+ *     Set value to 0 to end TX/RX state.
  */
 void esp_phy_test_start_stop(uint8_t value);
 
@@ -118,7 +118,7 @@ void esp_phy_test_start_stop(uint8_t value);
 void esp_phy_wifi_rx(uint32_t chan, esp_phy_wifi_rate_t rate);
 
 /**
- * @brief Wi-Fi CW TX command
+ * @brief Wi-Fi Carrier Wave(CW) TX command
  *
  * @param start: enable CW, 1 means transmit, 0 means stop transmitting;
  * @param chan: CW channel setting, 1~14;
@@ -130,7 +130,7 @@ void esp_phy_wifi_tx_tone(uint32_t start, uint32_t chan, uint32_t backoff);
 /**
  * @brief BLE TX command
  *
- * @param txpwr: Transmit power level, the level range is 0-15, the unit is 3dB. Level 8 is around 0 dBm;
+ * @param txpwr: Transmit power level. Tx power is about (level-8)*3 dBm, step is 3dB. Level 8 is around 0 dBm;
  * @param chan: channel setting, range is 0~39, corresponding frequency = 2402+chan*2;
  * @param len: Payload length setting, range is 0-255, unit is byte, 37 bytes is employed generally;
  * @param data_type: Data type setting;
@@ -153,7 +153,7 @@ void esp_phy_ble_tx(uint32_t txpwr, uint32_t chan, uint32_t len, esp_phy_ble_typ
 void esp_phy_ble_rx(uint32_t chan, uint32_t syncw, esp_phy_ble_rate_t rate);
 
 /**
- * @brief BLE CW TX command
+ * @brief BLE Carrier Wave(CW) TX command
  *
  * @param start: enable CW, 1 means transmit, 0 means stop transmitting;
  * @param chan: Single carrier transmission channel selection, range is 0~39, corresponding frequency freq = 2402+chan*2;
