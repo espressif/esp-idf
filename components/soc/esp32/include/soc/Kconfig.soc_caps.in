@@ -27,6 +27,10 @@ config SOC_DAC_SUPPORTED
     bool
     default y
 
+config SOC_UART_SUPPORTED
+    bool
+    default y
+
 config SOC_MCPWM_SUPPORTED
     bool
     default y

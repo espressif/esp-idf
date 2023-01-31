@@ -66,6 +66,7 @@
 
 #define SOC_ADC_SUPPORTED           1
 #define SOC_DAC_SUPPORTED           1
+#define SOC_UART_SUPPORTED          1
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_GPTIMER_SUPPORTED       1
 #define SOC_SDMMC_HOST_SUPPORTED    1
