@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,8 @@ typedef struct gdma_group_t {
     int group_id;           // Group ID, index from 0
     gdma_hal_context_t hal; // HAL instance is at group level
     portMUX_TYPE spinlock;  // group level spinlock
+    uint32_t tx_periph_in_use_mask; // each bit indicates which peripheral (TX direction) has been occupied
+    uint32_t rx_periph_in_use_mask; // each bit indicates which peripheral (RX direction) has been occupied
     gdma_pair_t *pairs[SOC_GDMA_PAIRS_PER_GROUP];  // handles of GDMA pairs
     int pair_ref_counts[SOC_GDMA_PAIRS_PER_GROUP]; // reference count used to protect pair install/uninstall
 } gdma_group_t;
