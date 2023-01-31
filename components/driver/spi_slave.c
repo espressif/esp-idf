@@ -55,6 +55,7 @@ typedef struct {
     spi_slave_hal_context_t hal;
     spi_slave_transaction_t *cur_trans;
     uint32_t flags;
+    uint32_t intr_flags;
     int max_transfer_sz;
     QueueHandle_t trans_queue;
     QueueHandle_t ret_queue;
@@ -105,6 +106,23 @@ static inline void SPI_SLAVE_ISR_ATTR restore_cs(spi_slave_t *host)
         esp_rom_gpio_connect_in_signal(host->cfg.spics_io_num, host->cs_in_signal, false);
     }
 }
+
+#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+typedef struct {
+    spi_slave_t *host;
+    esp_err_t *err;
+} spi_ipc_param_t;
+
+static void ipc_isr_reg_to_core(void *args)
+{
+    spi_slave_t *host = ((spi_ipc_param_t *)args)->host;
+    int flags = host->intr_flags | ESP_INTR_FLAG_INTRDISABLED;
+#ifdef CONFIG_SPI_SLAVE_ISR_IN_IRAM
+    flags |= ESP_INTR_FLAG_IRAM;
+#endif
+    *((spi_ipc_param_t *)args)->err = esp_intr_alloc(spicommon_irqsource_for_host(host->id), flags, spi_intr, (void *)host, &host->intr);
+}
+#endif
 
 esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, spi_dma_chan_t dma_chan)
 {
@@ -205,11 +223,24 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         }
     }
 
-    int flags = bus_config->intr_flags | ESP_INTR_FLAG_INTRDISABLED;
-#ifdef CONFIG_SPI_SLAVE_ISR_IN_IRAM
-    flags |= ESP_INTR_FLAG_IRAM;
+#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+    if(bus_config->isr_cpu_id > INTR_CPU_ID_AUTO) {
+        spihost[host]->intr_flags = bus_config->intr_flags;
+        SPI_CHECK(bus_config->isr_cpu_id <= INTR_CPU_ID_1, "invalid core id", ESP_ERR_INVALID_ARG);
+        spi_ipc_param_t ipc_args = {
+            .host = spihost[host],
+            .err = &err,
+        };
+        esp_ipc_call_blocking(INTR_CPU_CONVERT_ID(bus_config->isr_cpu_id), ipc_isr_reg_to_core, (void *)&ipc_args);
+    } else
 #endif
-    err = esp_intr_alloc(spicommon_irqsource_for_host(host), flags, spi_intr, (void *)spihost[host], &spihost[host]->intr);
+    {
+        int flags = bus_config->intr_flags | ESP_INTR_FLAG_INTRDISABLED;
+#ifdef CONFIG_SPI_SLAVE_ISR_IN_IRAM
+        flags |= ESP_INTR_FLAG_IRAM;
+#endif
+        err = esp_intr_alloc(spicommon_irqsource_for_host(host), flags, spi_intr, (void *)spihost[host], &spihost[host]->intr);
+    }
     if (err != ESP_OK) {
         ret = err;
         goto cleanup;
