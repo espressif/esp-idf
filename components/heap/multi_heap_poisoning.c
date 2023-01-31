@@ -370,7 +370,7 @@ multi_heap_handle_t multi_heap_register(void *start, size_t size)
     return multi_heap_register_impl(start, size);
 }
 
-static inline void subtract_poison_overhead(size_t *arg) {
+static inline __attribute__((always_inline)) void subtract_poison_overhead(size_t *arg) {
     if (*arg > POISON_OVERHEAD) {
         *arg -= POISON_OVERHEAD;
     } else {
@@ -383,6 +383,7 @@ size_t multi_heap_get_allocated_size(multi_heap_handle_t heap, void *p)
     poison_head_t *head = verify_allocated_region(p, true);
     assert(head != NULL);
     size_t result = multi_heap_get_allocated_size_impl(heap, head);
+    subtract_poison_overhead(&result);
     return result;
 }
 
