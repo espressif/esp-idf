@@ -520,3 +520,17 @@ void CLANG_ATOMIC_SUFFIX( __atomic_store ) (size_t size, volatile void *dest, vo
     _ATOMIC_EXIT_CRITICAL(state);
 }
 CLANG_DECLARE_ALIAS( __atomic_store)
+
+bool CLANG_ATOMIC_SUFFIX(__atomic_compare_exchange) (size_t size, volatile void *ptr, void *expected, void *desired, int success_memorder, int failure_memorder) {
+    bool ret = false;
+    unsigned state = _ATOMIC_ENTER_CRITICAL();
+    if (!memcmp((void *)ptr, expected, size)) {
+        memcpy((void *)ptr, (const void *)desired, size);
+        ret = true;
+    } else {
+        memcpy((void *)expected, (const void *)ptr, size);
+    }
+    _ATOMIC_EXIT_CRITICAL(state);
+    return ret;
+}
+CLANG_DECLARE_ALIAS( __atomic_compare_exchange)
