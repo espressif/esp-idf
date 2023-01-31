@@ -96,7 +96,6 @@ def test_heap_trace_dump(dut: Dut) -> None:
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c3', 'esp32s3'], reason='test failed')
 @pytest.mark.parametrize(
     'config',
     [
