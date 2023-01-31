@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+/*
  Generic test for malloc/free
 */
 
@@ -11,13 +16,12 @@
 #include "freertos/queue.h"
 #include "unity.h"
 #include "esp_heap_caps.h"
-
+#include "esp_heap_caps_init.h"
 #include "sdkconfig.h"
 
 
 static int **allocatedMem;
 static int noAllocated;
-
 
 static int tryAllocMem(void) {
     int i, j;
@@ -153,4 +157,26 @@ TEST_CASE("malloc/calloc(0) should not call failure callback", "[heap]")
     ptr = calloc(0, 0);
     TEST_ASSERT_NULL(ptr);
     TEST_ASSERT_FALSE(failure_occured);
+}
+
+TEST_CASE("test get allocated size", "[heap]")
+{
+    // random values to test, some are 4 bytes aligned, some are not
+    const size_t alloc_sizes[] = { 1035, 1064, 1541 };
+    const size_t iterations = sizeof(alloc_sizes) / sizeof(size_t);
+    void *ptr_array[iterations];
+
+    for (size_t i = 0; i < iterations; i++) {
+        ptr_array[i] = heap_caps_malloc(alloc_sizes[i], MALLOC_CAP_DEFAULT);
+        TEST_ASSERT_NOT_NULL(ptr_array[i]);
+
+        // test that the heap_caps_get_allocated_size() returns the right number of bytes (aligned to 4 bytes
+        // since the heap component aligns to 4 bytes)
+        const size_t aligned_size = (alloc_sizes[i] + 3) & ~3;
+        const size_t real_size = heap_caps_get_allocated_size(ptr_array[i]);
+        printf("initial size: %d, requested size : %d, allocated size: %d\n", alloc_sizes[i], aligned_size, real_size);
+        TEST_ASSERT_EQUAL(aligned_size, real_size);
+
+        heap_caps_free(ptr_array[i]);
+    }
 }
