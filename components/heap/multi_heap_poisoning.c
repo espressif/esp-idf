@@ -383,6 +383,7 @@ size_t multi_heap_get_allocated_size(multi_heap_handle_t heap, void *p)
     poison_head_t *head = verify_allocated_region(p, true);
     assert(head != NULL);
     size_t result = multi_heap_get_allocated_size_impl(heap, head);
+    subtract_poison_overhead(&result);
     return result;
 }
 
