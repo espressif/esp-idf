@@ -20,10 +20,15 @@
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
 #include "hal/rtc_io_hal.h"
+
+#if !SOC_PMU_SUPPORTED
 #include "hal/rtc_hal.h"
+#endif
+
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_gpio.h"
 #include "esp_private/spi_flash_os.h"
+#include "esp_private/startup_internal.h"
 #include "bootloader_flash.h"
 
 static const char *TAG = "sleep";
@@ -180,3 +185,15 @@ void esp_deep_sleep_wakeup_io_reset(void)
     }
 #endif
 }
+
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
+ESP_SYSTEM_INIT_FN(esp_sleep_startup_init, BIT(0), 105)
+{
+    // Configure to isolate (disable the Input/Output/Pullup/Pulldown
+    // function of the pin) all GPIO pins in sleep state
+    esp_sleep_config_gpio_isolate();
+    // Enable automatic switching of GPIO configuration
+    esp_sleep_enable_gpio_switch(true);
+    return ESP_OK;
+}
+#endif

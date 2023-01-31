@@ -67,7 +67,7 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_GPIO_RESET_WORKAROUND
             bool "light sleep GPIO reset workaround"
-            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 # TODO: IDF-5641 (esp32c6)
+            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C6
             select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
             help
                 esp32c2, esp32c3 and esp32s3 will reset at wake-up if GPIO is received a small electrostatic
