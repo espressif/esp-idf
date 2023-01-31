@@ -15,6 +15,7 @@
 #undef SNTP_OPMODE_POLL
 #include "lwip/apps/sntp.h"
 #include "lwip/tcpip.h"
+#include "esp_macros.h"
 
 static const char *TAG = "sntp";
 

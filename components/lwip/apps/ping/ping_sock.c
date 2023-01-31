@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <sys/time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "lwip/opt.h"
@@ -231,7 +232,7 @@ esp_err_t esp_ping_new_session(const esp_ping_config_t *config, const esp_ping_c
     /* set ICMP type and code field */
     ep->packet_hdr->code = 0;
     /* ping id should be unique, treat task handle as ping ID */
-    ep->packet_hdr->id = ((uint32_t)ep->ping_task_hdl) & 0xFFFF;
+    ep->packet_hdr->id = ((intptr_t)ep->ping_task_hdl) & 0xFFFF;
     /* fill the additional data buffer with some data */
     char *d = (char *)(ep->packet_hdr) + sizeof(struct icmp_echo_hdr);
     for (uint32_t i = 0; i < config->data_size; i++) {

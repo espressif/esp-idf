@@ -64,6 +64,7 @@ lwip_component:
   include:
     - 'components/lwip/**'
     - 'components/esp_netif/lwip/**'
+    - 'examples/common_components/protocol_examples_tapif_io/lwip'
   allowed_licenses:
     - Apache-2.0
     - BSD-3-Clause

@@ -16,6 +16,7 @@
 #include "esp_netif.h"
 #include "esp_netif_private.h"
 #include "esp_random.h"
+#include "esp_system.h"
 
 #include "lwip/tcpip.h"
 #include "lwip/dhcp.h"
