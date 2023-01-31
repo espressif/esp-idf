@@ -12,8 +12,8 @@ configured UART.
 
 ### Hardware Required
 
-The example can be run on any ESP32, ESP32-S and ESP32-C series based development board connected to a computer with a single USB cable for flashing and
-monitoring. The external interface should have 3.3V outputs. You may use e.g. 3.3V compatible USB-to-Serial dongle.
+The example can be run on any development board, that is based on the Espressif SoC. The board shall be connected to a computer with a single USB cable for flashing and monitoring. The external interface should have 3.3V outputs. You may
+use e.g. 3.3V compatible USB-to-Serial dongle.
 
 ### Setup the Hardware
 

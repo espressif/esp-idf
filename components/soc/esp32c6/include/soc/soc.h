@@ -143,7 +143,6 @@
 #define  APB_CLK_FREQ                                ( 40*1000000 )
 #define  MODEM_APB_CLK_FREQ                          ( 80*1000000 )
 #define  REF_CLK_FREQ                                ( 1000000 )
-#define  RTC_CLK_FREQ                                (20*1000000)
 #define  XTAL_CLK_FREQ                               (40*1000000)
 #define  GPIO_MATRIX_DELAY_NS                        0
 //}}

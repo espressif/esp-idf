@@ -401,16 +401,16 @@
 
 /*-------------------------- MEMPROT CAPS ------------------------------------*/
 
-// TODO: IDF-5338 (Copy from esp32c3, need check)
+
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C6 has 2 UARTs
 #define SOC_UART_NUM                    (2)
 #define SOC_UART_FIFO_LEN               (128)       /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX            (5000000)   /*!< Max bit rate supported by UART */
-#define SOC_UART_SUPPORT_PLL_F80M_CLK   (1)         /*!< Support PLL_DIV as the clock source */
+#define SOC_UART_SUPPORT_PLL_F80M_CLK   (1)         /*!< Support PLL_F80M as the clock source */
 #define SOC_UART_SUPPORT_RTC_CLK        (1)         /*!< Support RTC clock as the clock source */
 #define SOC_UART_SUPPORT_XTAL_CLK       (1)         /*!< Support XTAL clock as the clock source */
-#define SOC_UART_SUPPORT_WAKEUP_INT     (1)         /*!< Support UART wakeup interrupt */ // TODO: Test UART wakeup while supporting sleep
+#define SOC_UART_SUPPORT_WAKEUP_INT     (1)         /*!< Support UART wakeup interrupt */
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)

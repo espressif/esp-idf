@@ -31,8 +31,6 @@ extern "C" {
 #define UART_LL_FSM_IDLE                       (0x0)
 #define UART_LL_FSM_TX_WAIT_SEND               (0xf)
 
-#define UART_LL_PLL_DIV_FREQ      (80000000)  // 80 MHz
-
 #define UART_LL_PCR_REG_U32_SET(hw, reg_suffix, field_suffix, val)  \
     if ((hw) == &UART0) { \
         HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.uart0_##reg_suffix, uart0_##field_suffix, (val))  \
@@ -88,7 +86,6 @@ typedef enum {
  */
 static inline void uart_ll_update(uart_dev_t *hw)
 {
-    // TODO: set a timeout ??
     hw->reg_update.reg_update = 1;
     while (hw->reg_update.reg_update);
 }
@@ -103,7 +100,7 @@ static inline void uart_ll_update(uart_dev_t *hw)
  */
 static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
 {
-    hw->clk_conf.rst_core = core_rst_en;
+    UART_LL_PCR_REG_SET(hw, conf, rst_en, core_rst_en);
 }
 
 /**
@@ -134,8 +131,8 @@ static inline void uart_ll_sclk_disable(uart_dev_t *hw)
  * @brief  Set the UART source clock.
  *
  * @param  hw Beginning address of the peripheral registers.
- * @param  source_clk The UART source clock. The source clock can be APB clock, RTC clock or XTAL clock.
- *                    If the source clock is RTC/XTAL, the UART can still work when the APB changes.
+ * @param  source_clk The UART source clock. The source clock can be PLL_F80M clock, RTC clock or XTAL clock.
+ *                    All clock sources can remain at their original frequencies during DFS.
  *
  * @return None.
  */
@@ -198,7 +195,7 @@ static inline void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t 
     // The baud rate configuration register is divided into
     // an integer part and a fractional part.
     hw->clkdiv_sync.clkdiv_int = clk_div >> 4;
-    hw->clkdiv_sync.clkdiv_frag = clk_div &  0xf;
+    hw->clkdiv_sync.clkdiv_frag = clk_div & 0xf;
     UART_LL_PCR_REG_U32_SET(hw, sclk_conf, sclk_div_num, sclk_div - 1);
 #undef DIV_UP
     uart_ll_update(hw);
@@ -303,7 +300,7 @@ static inline void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_t rd
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  buf The data buffer.
- * @param  wr_len The data length needs to be writen.
+ * @param  wr_len The data length needs to be written.
  *
  * @return None
  */

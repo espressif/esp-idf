@@ -24,7 +24,7 @@
 #include "driver/gpio.h"
 #include "driver/uart_select.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/esp_clk.h"
+#include "clk_tree.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
 #include "clk_ctrl_os.h"
@@ -200,50 +200,9 @@ static void uart_module_disable(uart_port_t uart_num)
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
 }
 
-esp_err_t uart_get_sclk_freq(uart_sclk_t sclk, uint32_t* out_freq_hz)
+esp_err_t uart_get_sclk_freq(uart_sclk_t sclk, uint32_t *out_freq_hz)
 {
-    uint32_t freq;
-    switch (sclk) {
-#if SOC_UART_SUPPORT_APB_CLK
-    case UART_SCLK_APB:
-        freq = esp_clk_apb_freq();
-        break;
-#endif
-#if SOC_UART_SUPPORT_AHB_CLK
-    case UART_SCLK_AHB:
-        freq = APB_CLK_FREQ;    //This only exist on H4. Fix this when H2 MP is supported.
-        break;
-#endif
-#if SOC_UART_SUPPORT_PLL_F40M_CLK
-    case UART_SCLK_PLL_F40M:
-        freq = 40 * MHZ;
-        break;
-#endif
-#if SOC_UART_SUPPORT_REF_TICK
-    case UART_SCLK_REF_TICK:
-        freq = REF_CLK_FREQ;
-        break;
-#endif
-#if SOC_UART_SUPPORT_RTC_CLK
-    case UART_SCLK_RTC:
-        freq = RTC_CLK_FREQ;
-        break;
-#endif
-#if SOC_UART_SUPPORT_XTAL_CLK
-    case UART_SCLK_XTAL:
-        freq = esp_clk_xtal_freq();
-        break;
-#endif
-#if SOC_UART_SUPPORT_PLL_F80M_CLK
-    case UART_SCLK_PLL_F80M:
-        freq = UART_LL_PLL_DIV_FREQ;
-        break;
-#endif
-    default:
-        return ESP_ERR_INVALID_ARG;
-    }
-    *out_freq_hz = freq;
-    return ESP_OK;
+    return clk_tree_src_get_freq_hz((soc_module_clk_t)sclk, CLK_TREE_SRC_FREQ_PRECISION_CACHED, out_freq_hz);
 }
 
 esp_err_t uart_set_word_length(uart_port_t uart_num, uart_word_length_t data_bit)
@@ -586,11 +545,11 @@ esp_err_t uart_enable_pattern_det_baud_intr(uart_port_t uart_num, char pattern_c
     at_cmd.char_num = chr_num;
 
 #if CONFIG_IDF_TARGET_ESP32
-    int apb_clk_freq = 0;
+    uint32_t apb_clk_freq = 0;
     uint32_t uart_baud = 0;
     uint32_t uart_div = 0;
     uart_get_baudrate(uart_num, &uart_baud);
-    apb_clk_freq = esp_clk_apb_freq();
+    clk_tree_src_get_freq_hz((soc_module_clk_t)UART_SCLK_APB, CLK_TREE_SRC_FREQ_PRECISION_EXACT, &apb_clk_freq);
     uart_div = apb_clk_freq / uart_baud;
 
     at_cmd.gap_tout = chr_tout * uart_div;
