@@ -169,7 +169,7 @@ MQTT Client
 Breaking Changes (Summary)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- :cpp:type:`esp_mqtt_client_config_t` have all fields grouped in sub structs. 
+- :cpp:type:`esp_mqtt_client_config_t` have all fields grouped in sub structs.
 
 Most common configurations are listed below:
 
@@ -177,9 +177,11 @@ Most common configurations are listed below:
 - Security related to broker verification in :cpp:member:`esp_mqtt_client_config_t::broker::verification`
 - Client username is set in :cpp:member:`esp_mqtt_client_config_t::credentials::username`
 
+- :cpp:type:`esp_mqtt_client_config_t` no longer supports the ``user_context`` field. Please use :cpp:func:`esp_mqtt_client_register_event` instead for registering an event handler; the last argument ``event_handler_arg`` can be used to pass user context to the handler.
+
 
 ESP-Modbus
-----------
+-----------
 
 Breaking Changes (Summary)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
