@@ -1,3 +1,13 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    # Header only library for linux
+
+    idf_component_register(INCLUDE_DIRS include
+                           PRIV_REQUIRES tapif_io)
+    return()
+endif()
+
 set(srcs "stdin_out.c"
          "addr_from_stdin.c"
          "connect.c"
