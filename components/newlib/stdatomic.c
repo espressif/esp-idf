@@ -434,6 +434,18 @@ ATOMIC_STORE(1, unsigned char)
 ATOMIC_STORE(2, short unsigned int)
 ATOMIC_STORE(4, unsigned int)
 
+#elif __riscv_atomic == 1
+
+bool CLANG_ATOMIC_SUFFIX(__atomic_always_lock_free) (unsigned int size, const volatile void *) {
+  return size <= sizeof(int);
+}
+CLANG_DECLARE_ALIAS( __atomic_always_lock_free)
+
+bool CLANG_ATOMIC_SUFFIX(__atomic_is_lock_free) (unsigned int size, const volatile void *) {
+  return size <= sizeof(int);
+}
+CLANG_DECLARE_ALIAS( __atomic_is_lock_free)
+
 #endif // !HAS_ATOMICS_32
 
 #if !HAS_ATOMICS_64
