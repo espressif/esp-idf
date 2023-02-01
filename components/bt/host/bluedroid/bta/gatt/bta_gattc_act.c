@@ -742,7 +742,8 @@ void bta_gattc_conncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
     if (p_rcb) {
         bta_gattc_send_connect_cback(p_rcb,
                                      p_data->int_conn.remote_bda,
-                                     p_data->int_conn.hdr.layer_specific, p_data->int_conn.conn_params, p_data->int_conn.role);
+                                     p_data->int_conn.hdr.layer_specific, p_data->int_conn.conn_params, p_data->int_conn.role,
+                                     p_data->int_conn.ble_addr_type, p_data->int_conn.conn_handle);
 
     }
 }
@@ -1688,6 +1689,11 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
                 p_buf->int_conn.conn_params.interval = p_lcb->current_used_conn_interval;
                 p_buf->int_conn.conn_params.latency = p_lcb->current_used_conn_latency;
                 p_buf->int_conn.conn_params.timeout = p_lcb->current_used_conn_timeout;
+                #if (BLE_INCLUDED == TRUE)
+                p_buf->int_conn.ble_addr_type = p_lcb->ble_addr_type;
+                #endif
+                p_buf->int_conn.conn_handle = p_lcb->handle;
+
             } else {
                 APPL_TRACE_WARNING("gattc_conn_cb: conn params not found");
             }
