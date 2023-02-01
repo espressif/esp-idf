@@ -19,7 +19,6 @@
 #include "soc/rtc.h"            // for wakeup trigger defines
 #include "soc/rtc_periph.h"     // for read rtc registers directly (cause)
 #include "soc/soc.h"            // for direct register read macros
-#include "hal/rtc_cntl_ll.h"
 #include "esp_newlib.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
@@ -28,6 +27,12 @@
 #include "esp_timer.h"
 #include "esp_private/esp_clk.h"
 #include "esp_random.h"
+
+#if SOC_PMU_SUPPORTED
+#include "esp_private/esp_pmu.h"
+#else
+#include "hal/rtc_cntl_ll.h"
+#endif
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
@@ -445,7 +450,11 @@ __attribute__((unused)) static float get_time_ms(void)
 
 __attribute__((unused)) static uint32_t get_cause(void)
 {
+#if SOC_PMU_SUPPORTED
+    uint32_t wakeup_cause = pmu_ll_hp_get_wakeup_cause(&PMU);
+#else
     uint32_t wakeup_cause = rtc_cntl_ll_get_wakeup_cause();
+#endif
     return wakeup_cause;
 }
 
@@ -590,4 +599,4 @@ TEST_CASE("wake up using GPIO (2 or 4 low)", "[deepsleep][ignore]")
 }
 #endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2) TODO: IDF-5348, IDF-5349
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2) TODO: IDF-5349

@@ -419,7 +419,8 @@
 #define SOC_PM_SUPPORT_WIFI_PD          (1)
 #define SOC_PM_SUPPORT_BT_PD            (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
-
+#define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
+#define SOC_PM_CPU_RETENTION_BY_RTCCNTL  (1)
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/

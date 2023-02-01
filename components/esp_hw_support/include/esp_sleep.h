@@ -48,10 +48,10 @@ typedef enum {
 #endif
     ESP_PD_DOMAIN_XTAL,            //!< XTAL oscillator
 #if SOC_PM_SUPPORT_XTAL32K_PD
-    ESP_PD_DOMAIN_XTAL32K,
+    ESP_PD_DOMAIN_XTAL32K,         //!< External 32 kHz XTAL oscillator
 #endif
 #if SOC_PM_SUPPORT_RC32K_PD
-    ESP_PD_DOMAIN_RC32K,
+    ESP_PD_DOMAIN_RC32K,           //!< Internal 32 kHz RC oscillator
 #endif
 #if SOC_PM_SUPPORT_RC_FAST_PD
     ESP_PD_DOMAIN_RC_FAST,         //!< Internal Fast oscillator
@@ -59,7 +59,9 @@ typedef enum {
 #if SOC_PM_SUPPORT_CPU_PD
     ESP_PD_DOMAIN_CPU,             //!< CPU core
 #endif
+#if SOC_PM_SUPPORT_VDDSDIO_PD
     ESP_PD_DOMAIN_VDDSDIO,         //!< VDD_SDIO
+#endif
     ESP_PD_DOMAIN_MAX              //!< Number of domains
 } esp_sleep_pd_domain_t;
 
@@ -484,15 +486,44 @@ void esp_default_wake_deep_sleep(void);
 void esp_deep_sleep_disable_rom_logging(void);
 
 #ifdef SOC_PM_SUPPORT_CPU_PD
+
+#if SOC_PM_CPU_RETENTION_BY_RTCCNTL
 /**
- * @brief CPU Power down low-level initialize
- *
- * @param enable  enable or disable CPU power down during light sleep
+ * @brief CPU Power down low-level initialize, enable CPU power down during light sleep
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NO_MEM not enough retention memory
  */
-esp_err_t esp_sleep_cpu_pd_low_init(bool enable);
+esp_err_t esp_sleep_cpu_pd_low_init(void);
+
+/**
+ * @brief CPU Power down low-level deinitialize, disable CPU power down during light sleep
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM not enough retention memory
+ */
+esp_err_t esp_sleep_cpu_pd_low_deinit(void);
+
+#endif
+
+/**
+ * @brief CPU Power down initialize
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM not enough retention memory
+ */
+esp_err_t esp_sleep_cpu_retention_init(void);
+
+/**
+ * @brief CPU Power down de-initialize
+ *
+ * @return
+ *      - ESP_OK on success
+ *
+ * Release system retention memory.
+ */
+esp_err_t esp_sleep_cpu_retention_deinit(void);
 #endif
 
 #if SOC_GPIO_SUPPORT_SLP_SWITCH

@@ -118,6 +118,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "${target}/modem_clock_hal.c")
     endif()
 
+    if(CONFIG_SOC_LP_TIMER_SUPPORTED)
+        list(APPEND srcs "${target}/lp_timer_hal.c")
+    endif()
+
     if(CONFIG_SOC_BOD_SUPPORTED)
         list(APPEND srcs "brownout_hal.c")
     endif()
@@ -136,6 +140,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
         list(APPEND srcs "sdio_slave_hal.c")
+    endif()
+
+    if(CONFIG_SOC_PMU_SUPPORTED)
+        list(APPEND srcs "${target}/pmu_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32")
@@ -198,7 +206,6 @@ if(NOT BOOTLOADER_BUILD)
     if(${target} STREQUAL "esp32c6")
         list(APPEND srcs
               "spi_flash_hal_gpspi.c"
-              "esp32c6/rtc_cntl_hal.c"
               "hmac_hal.c"
               "ds_hal.c")
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -237,8 +237,8 @@ static inline void bootloader_hardware_init(void)
     esp_rom_spiflash_fix_dummylen(1, 1);
 #endif
 
-    // TODO: IDF-5990 need update, enable i2c mst clk by force on temporarily
-    SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_FORCE_ON_REG, MODEM_LPCON_CLK_I2C_MST_FO);
+    /* Enable analog i2c master clock */
+    SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
     SET_PERI_REG_MASK(MODEM_LPCON_I2C_MST_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_SEL_160M);
 }
 

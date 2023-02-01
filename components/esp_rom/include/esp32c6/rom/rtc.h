@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,7 @@ extern "C" {
   *          Please do not use reserved or used rtc memory or registers.              *
   *                                                                                   *
   *************************************************************************************
-  *                          RTC  Memory & Store Register usage
+  *                          LP  Memory & Store Register usage
   *************************************************************************************
   *     rtc memory addr         type    size            usage
   *     0x3f421000(0x50000000)  Slow    SIZE_CP         Co-Processor code/Reset Entry
@@ -42,25 +42,29 @@ extern "C" {
   *
   *************************************************************************************
   *     RTC store registers     usage
-  *     RTC_CNTL_STORE0_REG     Reserved
-  *     RTC_CNTL_STORE1_REG     RTC_SLOW_CLK calibration value
-  *     RTC_CNTL_STORE2_REG     Boot time, low word
-  *     RTC_CNTL_STORE3_REG     Boot time, high word
-  *     RTC_CNTL_STORE4_REG     External XTAL frequency
-  *     RTC_CNTL_STORE5_REG     APB bus frequency
-  *     RTC_CNTL_STORE6_REG     FAST_RTC_MEMORY_ENTRY
-  *     RTC_CNTL_STORE7_REG     FAST_RTC_MEMORY_CRC
+  *     LP_AON_STORE0_REG       Reserved
+  *     LP_AON_STORE1_REG       RTC_SLOW_CLK calibration value
+  *     LP_AON_STORE2_REG       Boot time, low word
+  *     LP_AON_STORE3_REG       Boot time, high word
+  *     LP_AON_STORE4_REG       External XTAL frequency
+  *     LP_AON_STORE5_REG       FAST_RTC_MEMORY_LENGTH
+  *     LP_AON_STORE6_REG       FAST_RTC_MEMORY_ENTRY
+  *     LP_AON_STORE7_REG       FAST_RTC_MEMORY_CRC
+  *     LP_AON_STORE8_REG       Store light sleep wake stub addr
+  *     LP_AON_STORE9_REG       Store the sleep mode at bit[0]  (0:light sleep 1:deep sleep)
   *************************************************************************************
   */
 
-#define RTC_SLOW_CLK_CAL_REG    LP_AON_STORE1_REG
-#define RTC_BOOT_TIME_LOW_REG   LP_AON_STORE2_REG
-#define RTC_BOOT_TIME_HIGH_REG  LP_AON_STORE3_REG
-#define RTC_XTAL_FREQ_REG       LP_AON_STORE4_REG
-#define RTC_APB_FREQ_REG        LP_AON_STORE5_REG
-#define RTC_ENTRY_ADDR_REG      LP_AON_STORE6_REG
-#define RTC_RESET_CAUSE_REG     LP_AON_STORE6_REG
-#define RTC_MEMORY_CRC_REG      LP_AON_STORE7_REG
+#define RTC_SLOW_CLK_CAL_REG                LP_AON_STORE1_REG
+#define RTC_BOOT_TIME_LOW_REG               LP_AON_STORE2_REG
+#define RTC_BOOT_TIME_HIGH_REG              LP_AON_STORE3_REG
+#define RTC_XTAL_FREQ_REG                   LP_AON_STORE4_REG
+#define RTC_ENTRY_LENGTH_REG                LP_AON_STORE5_REG
+#define RTC_ENTRY_ADDR_REG                  LP_AON_STORE6_REG
+#define RTC_RESET_CAUSE_REG                 LP_AON_STORE6_REG
+#define RTC_MEMORY_CRC_REG                  LP_AON_STORE7_REG
+#define LIGHT_SLEEP_WAKE_STUB_ADDR_REG      LP_AON_STORE8_REG
+#define SLEEP_MODE_REG                      LP_AON_STORE9_REG
 
 #define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
 

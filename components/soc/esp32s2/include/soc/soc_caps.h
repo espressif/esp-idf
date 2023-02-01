@@ -415,6 +415,9 @@
 #define SOC_PM_SUPPORT_RTC_FAST_MEM_PD            (1)
 #define SOC_PM_SUPPORT_RTC_SLOW_MEM_PD            (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD                 (1)
+#define SOC_PM_SUPPORT_VDDSDIO_PD                 (1)
+
+#define SOC_CONFIGURABLE_VDDSDIO_SUPPORTED        (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_APLL_SUPPORTED                    (1)

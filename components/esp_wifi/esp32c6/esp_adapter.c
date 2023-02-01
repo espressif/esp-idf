@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,6 @@
 #include "esp_phy_init.h"
 #include "soc/rtc_cntl_periph.h"
 #include "soc/rtc.h"
-#include "esp_private/sleep_retention.h"
 #include "phy_init_data.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"

@@ -17,7 +17,7 @@
 100: esp_timer_startup_init in components/esp_timer/src/esp_timer.c on BIT(0)
 
 # esp_sleep doesn't have init dependencies
-105: esp_sleep_startup_init in components/esp_hw_support/sleep_modes.c on BIT(0)
+105: esp_sleep_startup_init in components/esp_hw_support/sleep_gpio.c on BIT(0)
 
 # app_trace has to be initialized before systemview
 115: esp_apptrace_init in components/app_trace/app_trace.c on ESP_SYSTEM_INIT_ALL_CORES
