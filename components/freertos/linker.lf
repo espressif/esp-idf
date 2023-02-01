@@ -232,8 +232,6 @@ entries:
         if IDF_TARGET_ARCH_XTENSA = y:
             port:xPortStartScheduler (default)
             port:vPortEndScheduler (default)
-            if FREERTOS_TASK_FUNCTION_WRAPPER = y:
-                port:vPortTaskWrapper (default)
             port:pxPortInitialiseStack (default)
             if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S3 = y :
                 port:vPortCleanUpCoprocArea (default)
@@ -245,7 +243,5 @@ entries:
         if IDF_TARGET_ARCH_RISCV = y:
             port:xPortStartScheduler (default)
             port:vPortEndScheduler (default)
-            if FREERTOS_TASK_FUNCTION_WRAPPER = y:
-                port:vPortTaskWrapper (default)
             port:pxPortInitialiseStack (default)
             port:xPortGetTickRateHz (default)
