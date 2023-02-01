@@ -898,6 +898,8 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.connect.conn_params.interval = p_data->conn.conn_params.interval;
         param.connect.conn_params.latency = p_data->conn.conn_params.latency;
         param.connect.conn_params.timeout = p_data->conn.conn_params.timeout;
+        param.connect.ble_addr_type = p_data->conn.ble_addr_type;
+        param.connect.conn_handle = p_data->conn.conn_handle;
         btc_gatts_cb_to_app(ESP_GATTS_CONNECT_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_DISCONNECT_EVT:

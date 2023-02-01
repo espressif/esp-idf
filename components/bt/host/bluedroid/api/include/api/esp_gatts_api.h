@@ -199,6 +199,8 @@ typedef union {
         uint8_t link_role;              /*!< Link role : master role = 0  ; slave role = 1*/
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
         esp_gatt_conn_params_t conn_params; /*!< current Connection parameters */
+        esp_ble_addr_type_t ble_addr_type;  /*!< Remote BLE device address type */
+        uint16_t conn_handle;           /*!< HCI connection handle */
     } connect;                          /*!< Gatt server callback param of ESP_GATTS_CONNECT_EVT */
 
     /**
