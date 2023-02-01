@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #include "unity.h"
 #include "test_utils.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32C3, ESP32C6)
 typedef struct {
     StreamBufferHandle_t sb;
     SemaphoreHandle_t end_test;

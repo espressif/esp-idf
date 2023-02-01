@@ -6,6 +6,6 @@ components/bootloader_support/test_apps/rtc_custom_section:
       temporary: false
       reason: esp32c2 does not have RTC memory
   disable_test:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
+    - if: IDF_TARGET == "esp32h2"
       temporary: true
-      reason: target esp32c6/esp32h2 is not supported yet
+      reason: target esp32h2 is not supported yet

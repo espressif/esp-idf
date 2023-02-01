@@ -44,7 +44,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
     TEST_ASSERT(free8<=(free8start-10*1024));
     TEST_ASSERT(free32<=(free32start-10*1024));
     //Assume we got DRAM back
-    TEST_ASSERT((((int)m1)&0xFF000000)==0x3F000000);
+    TEST_ASSERT(esp_ptr_in_dram(m1));
     free(m1);
 
     //The goal here is to allocate from IRAM. Since there is no external IRAM (yet)

@@ -13,7 +13,6 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp_private/esp_psram_extram.h"
 #endif
-#include "test_utils.h"
 
 extern int _rtc_noinit_start;
 extern int _rtc_noinit_end;

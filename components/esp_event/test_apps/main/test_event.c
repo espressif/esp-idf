@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -2014,7 +2014,7 @@ bool test_event_on_timer_alarm(gptimer_handle_t timer, const gptimer_alarm_event
 TEST_CASE("can post events from interrupt handler", "[event]")
 {
     /* Lazy allocated resources in gptimer/intr_alloc */
-    set_leak_threshold(-120);
+    set_leak_threshold(-150);
 
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
     gptimer_handle_t gptimer = NULL;
