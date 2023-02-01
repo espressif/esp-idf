@@ -49,11 +49,11 @@ extern "C" {
 #define esp_sntp_get_sync_interval sntp_get_sync_interval
 #define esp_sntp_restart sntp_restart
 
-#ifndef SNTP_OPMODE_POLL
+//#ifndef SNTP_OPMODE_POLL
 #define SNTP_OPMODE_POLL ESP_SNTP_OPMODE_POLL
-#else
-#warning "Defined!"
-#endif /* SNTP_OPMODE_POLL */
+//#else
+//#warning "Defined!"
+//#endif /* SNTP_OPMODE_POLL */
 
 /// SNTP time update mode
 typedef enum {
@@ -225,39 +225,39 @@ void esp_sntp_servermode_dhcp(bool enable);
  * @brief if not build within lwip, provide translating inlines,
  * that will warn about thread safety
  */
-static inline __attribute__((deprecated("use esp_sntp_setoperatingmode() instead")))
+inline __attribute__((deprecated("use esp_sntp_setoperatingmode() instead")))
 void sntp_setoperatingmode(u8_t operating_mode)
 {
     esp_sntp_setoperatingmode((esp_sntp_operatingmode_t)operating_mode);
 }
 
-static inline __attribute__((deprecated("use esp_sntp_servermode_dhcp() instead")))
+#if LWIP_DHCP_GET_NTP_SRV
+inline __attribute__((deprecated("use esp_sntp_servermode_dhcp() instead")))
 void sntp_servermode_dhcp(int set_servers_from_dhcp)
 {
-#if LWIP_DHCP_GET_NTP_SRV
     esp_sntp_servermode_dhcp(set_servers_from_dhcp);
-#endif
 }
+#endif
 
-static inline __attribute__((deprecated("use esp_sntp_setservername() instead")))
+inline __attribute__((deprecated("use esp_sntp_setservername() instead")))
 void sntp_setservername(u8_t idx, const char *server)
 {
     esp_sntp_setservername(idx, server);
 }
 
-static inline __attribute__((deprecated("use esp_sntp_init() instead")))
+inline __attribute__((deprecated("use esp_sntp_init() instead")))
 void sntp_init(void)
 {
     esp_sntp_init();
 }
 
-static inline __attribute__((deprecated("use esp_sntp_getservername() instead")))
+inline __attribute__((deprecated("use esp_sntp_getservername() instead")))
 const char *sntp_getservername(u8_t idx)
 {
     return esp_sntp_getservername(idx);
 }
 
-static inline __attribute__((deprecated("use esp_sntp_getserver() instead")))
+inline __attribute__((deprecated("use esp_sntp_getserver() instead")))
 const ip_addr_t* sntp_getserver(u8_t idx)
 {
     return esp_sntp_getserver(idx);
