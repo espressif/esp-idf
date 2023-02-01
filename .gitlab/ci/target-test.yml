@@ -106,6 +106,17 @@ example_test_pytest_esp32s2_generic:
   tags: [ esp32s2, generic ]
   parallel: 3
 
+example_test_pytest_esp32s2_jtag:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2
+  needs:
+    - build_pytest_examples_jtag
+  tags: [ esp32s2, jtag ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb openocd
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
+
 example_test_pytest_esp32s3_generic:
   extends:
     - .pytest_examples_dir_template
@@ -114,6 +125,17 @@ example_test_pytest_esp32s3_generic:
     - build_pytest_examples_esp32s3
   tags: [ esp32s3, generic ]
   parallel: 3
+
+example_test_pytest_esp32s3_usb_serial_jtag:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3
+  needs:
+    - build_pytest_examples_jtag
+  tags: [ esp32s3, usb_serial_jtag ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb openocd
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 example_test_pytest_esp32s3_f4r8:
   extends:
@@ -132,6 +154,17 @@ example_test_pytest_esp32c2_generic:
   tags: [ esp32c2, generic, xtal_40mhz ]
   parallel: 3
 
+example_test_pytest_esp32c2_jtag:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2
+  needs:
+    - build_pytest_examples_jtag
+  tags: [ esp32c2, jtag ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb openocd
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
+
 example_test_pytest_esp32c3_generic:
   extends:
     - .pytest_examples_dir_template
@@ -140,6 +173,17 @@ example_test_pytest_esp32c3_generic:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, generic ]
   parallel: 3
+
+example_test_pytest_esp32c3_usb_serial_jtag:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3
+  needs:
+    - build_pytest_examples_jtag
+  tags: [ esp32c3, usb_serial_jtag ]
+  variables:
+    SETUP_TOOLS: "1"  # need gdb openocd
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 example_test_pytest_esp32c3_flash_suspend:
   extends:
