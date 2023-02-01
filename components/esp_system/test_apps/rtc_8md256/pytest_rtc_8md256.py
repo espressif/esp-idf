@@ -19,11 +19,11 @@ def deepsleep_test(dut: Dut, case_name: str) -> None:
         dut.expect(r'rst:.*\(%s\)' % reset_reason, timeout=10)
 
 
-# IDF-5131
 @pytest.mark.esp32
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
+@pytest.mark.esp32c2
 @pytest.mark.generic
 def test_rtc_8md256_deepsleep(dut: Dut) -> None:
     deepsleep_test(dut, '"Can use 8MD256 as RTC clock source in deepsleep"')
