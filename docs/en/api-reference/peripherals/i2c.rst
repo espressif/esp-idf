@@ -98,14 +98,15 @@ Configuration example (master):
 
         int i2c_slave_port = I2C_SLAVE_NUM;
         i2c_config_t conf_slave = {
-            .sda_io_num = I2C_SLAVE_SDA_IO,          // select GPIO specific to your project
+            .sda_io_num = I2C_SLAVE_SDA_IO,            // select GPIO specific to your project
             .sda_pullup_en = GPIO_PULLUP_ENABLE,
-            .scl_io_num = I2C_SLAVE_SCL_IO,          // select GPIO specific to your project
+            .scl_io_num = I2C_SLAVE_SCL_IO,            // select GPIO specific to your project
             .scl_pullup_en = GPIO_PULLUP_ENABLE,
             .mode = I2C_MODE_SLAVE,
             .slave.addr_10bit_en = 0,
-            .slave.slave_addr = ESP_SLAVE_ADDR,      // address of your project
-            .clk_flags = 0,
+            .slave.slave_addr = ESP_SLAVE_ADDR,        // address of your project
+            .slave.maximum_speed = I2C_SLAVE_MAX_SPEED // expected maximum clock speed
+            .clk_flags = 0,                            // you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here
         };
 
 At this stage, :cpp:func:`i2c_param_config` also sets a few other I2C configuration parameters to default values that are defined by the I2C specification. For more details on the values and how to modify them, see :ref:`i2c-api-customized-configuration`.
