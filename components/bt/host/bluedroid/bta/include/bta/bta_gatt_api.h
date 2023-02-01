@@ -410,6 +410,8 @@ typedef struct {
     tBTA_GATTC_IF       client_if;
     BD_ADDR             remote_bda;
     tBTA_GATT_CONN_PARAMS conn_params;
+    UINT8               ble_addr_type;
+    UINT16              conn_handle;
 } tBTA_GATTC_CONNECT;
 
 typedef struct {
@@ -621,6 +623,8 @@ typedef struct {
     tBTA_GATT_REASON    reason; /* report disconnect reason */
     tBTA_GATT_TRANSPORT transport;
     tBTA_GATT_CONN_PARAMS conn_params;
+    UINT8               ble_addr_type;
+    UINT16              conn_handle;
 } tBTA_GATTS_CONN;
 
 typedef struct {
