@@ -20,7 +20,8 @@ from esp_coredump import CoreDump
 from idf_py_actions.constants import OPENOCD_TAGET_CONFIG, OPENOCD_TAGET_CONFIG_DEFAULT
 from idf_py_actions.errors import FatalError
 from idf_py_actions.serial_ext import BAUD_RATE, PORT
-from idf_py_actions.tools import PropertyDict, ensure_build_directory, get_default_serial_port, get_sdkconfig_value
+from idf_py_actions.tools import (PropertyDict, ensure_build_directory, generate_hints, get_default_serial_port,
+                                  get_sdkconfig_value, yellow_print)
 
 PYTHON = sys.executable
 ESP_ROM_INFO_FILE = 'roms.json'
@@ -73,23 +74,19 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
     OPENOCD_OUT_FILE = 'openocd_out.txt'
     GDBGUI_OUT_FILE = 'gdbgui_out.txt'
     # Internal dictionary of currently active processes, threads and their output files
-    processes: Dict = {'threads_to_join': [], 'openocd_issues': None}
+    processes: Dict = {'threads_to_join': [], 'allow_hints': True}
 
-    def _check_for_common_openocd_issues(file_name: str, print_all: bool=True) -> Any:
-        if processes['openocd_issues'] is not None:
-            return processes['openocd_issues']
-        try:
-            message = 'Please check JTAG connection!'
-            with open(file_name, 'r') as f:
-                content = f.read()
-                if print_all:
-                    print(content)
-                if re.search(r'Address already in use', content):
-                    message = ('Please check if another process uses the mentioned ports. OpenOCD already running, perhaps in the background?\n'
-                               'Please list all processes to check if OpenOCD is already running; if so, terminate it before starting OpenOCD from idf.py')
-        finally:
-            processes['openocd_issues'] = message
-            return message
+    def _print_hints(file_name: str) -> None:
+        if not processes['allow_hints']:
+            return
+
+        for hint in generate_hints(file_name):
+            if sys.stderr.isatty():
+                yellow_print(hint)
+            else:
+                # Hints go to stderr. Flush stdout, so hints are printed last.
+                sys.stdout.flush()
+                print(hint, file=sys.stderr)
 
     def _check_openocd_errors(fail_if_openocd_failed: Dict, target: str, ctx: Context) -> None:
         if fail_if_openocd_failed:
@@ -103,16 +100,16 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         break
                     with open(name, 'r') as f:
                         content = f.read()
-                        if re.search(r'no device found', content):
-                            break
                         if re.search(r'Listening on port \d+ for gdb connections', content):
                             # expect OpenOCD has started successfully - stop watching
                             return
                     time.sleep(0.5)
-                else:
-                    return
-                # OpenOCD exited or error message detected -> print possible output and terminate
-                raise FatalError('Action "{}" failed due to errors in OpenOCD:\n{}'.format(target, _check_for_common_openocd_issues(name)), ctx)
+
+                # OpenOCD exited or is not listening -> print full log and terminate
+                with open(name, 'r') as f:
+                    print(f.read())
+
+                raise FatalError('Action "{}" failed due to errors in OpenOCD'.format(target), ctx)
 
     def _terminate_async_target(target: str) -> None:
         if target in processes and processes[target] is not None:
@@ -129,8 +126,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         time.sleep(0.1)
                     else:
                         p.kill()
-                if target + '_outfile_name' in processes and target == 'openocd':
-                    print(_check_for_common_openocd_issues(processes[target + '_outfile_name'], print_all=False))
+                if target + '_outfile_name' in processes:
+                    _print_hints(processes[target + '_outfile_name'])
             except Exception as e:
                 print(e)
                 print('Failed to close/kill {}'.format(target))
@@ -456,6 +453,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     tasks.insert(0, tasks.pop(index))
                     break
 
+        processes['allow_hints'] = not ctx.params['no_hints']
         debug_targets = any([task.name in ('openocd', 'gdbgui') for task in tasks])
         if debug_targets:
             # Register the meta cleanup callback -> called on FatalError
