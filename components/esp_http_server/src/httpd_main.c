@@ -423,10 +423,28 @@ static struct httpd_data *httpd_create(const httpd_config_t *config)
         free(hd);
         return NULL;
     }
-    struct httpd_req_aux *ra = &hd->hd_req_aux;
-    ra->resp_hdrs = calloc(config->max_resp_headers, sizeof(struct resp_hdr));
-    if (!ra->resp_hdrs) {
+    hd->hd_req = calloc(1, sizeof(struct httpd_req));
+    if (!hd->hd_req) {
+        ESP_LOGE(TAG, LOG_FMT("Failed to allocate memory for HTTP req"));
+        free(hd->hd_sd);
+        free(hd->hd_calls);
+        free(hd);
+        return NULL;
+    }
+    hd->hd_req_aux = calloc(1, sizeof(struct httpd_req_aux));
+    if (!hd->hd_req) {
+        ESP_LOGE(TAG, LOG_FMT("Failed to allocate memory for HTTP req aux"));
+        free(hd->hd_req);
+        free(hd->hd_sd);
+        free(hd->hd_calls);
+        free(hd);
+        return NULL;
+    }
+    hd->hd_req_aux->resp_hdrs = calloc(config->max_resp_headers, sizeof(struct resp_hdr));
+    if (!hd->hd_req_aux->resp_hdrs) {
         ESP_LOGE(TAG, LOG_FMT("Failed to allocate memory for HTTP response headers"));
+        free(hd->hd_req_aux);
+        free(hd->hd_req);
         free(hd->hd_sd);
         free(hd->hd_calls);
         free(hd);
@@ -435,7 +453,9 @@ static struct httpd_data *httpd_create(const httpd_config_t *config)
     hd->err_handler_fns = calloc(HTTPD_ERR_CODE_MAX, sizeof(httpd_err_handler_func_t));
     if (!hd->err_handler_fns) {
         ESP_LOGE(TAG, LOG_FMT("Failed to allocate memory for HTTP error handlers"));
-        free(ra->resp_hdrs);
+        free(hd->hd_req_aux->resp_hdrs);
+        free(hd->hd_req_aux);
+        free(hd->hd_req);
         free(hd->hd_sd);
         free(hd->hd_calls);
         free(hd);
@@ -448,7 +468,7 @@ static struct httpd_data *httpd_create(const httpd_config_t *config)
 
 static void httpd_delete(struct httpd_data *hd)
 {
-    struct httpd_req_aux *ra = &hd->hd_req_aux;
+    struct httpd_req_aux *ra = hd->hd_req_aux;
     /* Free memory of httpd instance data */
     free(hd->err_handler_fns);
     free(ra->resp_hdrs);

@@ -619,7 +619,7 @@ static void parse_init(httpd_req_t *r, http_parser *parser, parser_data_t *data)
  */
 static esp_err_t httpd_parse_req(struct httpd_data *hd)
 {
-    httpd_req_t *r = &hd->hd_req;
+    httpd_req_t *r = hd->hd_req;
     int blk_len,  offset;
     http_parser   parser = {};
     parser_data_t parser_data = {};
@@ -720,16 +720,44 @@ static void httpd_req_cleanup(httpd_req_t *r)
     r->user_ctx = NULL;
 }
 
+static esp_err_t httpd_alloc_req_if_needed(struct httpd_data *hd)
+{
+    /* request */
+    if (hd->hd_req == NULL) {
+        hd->hd_req = calloc(1, sizeof(struct httpd_req));
+        if (hd->hd_req == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+    }
+    /* aux */
+    if (hd->hd_req_aux == NULL) {
+        hd->hd_req_aux = calloc(1, sizeof(struct httpd_req));
+        if (hd->hd_req_aux == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+        hd->hd_req_aux->resp_hdrs = calloc(hd->config.max_resp_headers, sizeof(struct resp_hdr));
+        if (hd->hd_req_aux->resp_hdrs == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+    }
+    return ESP_OK;
+}
+
 /* Function that processes incoming TCP data and
  * updates the http request data httpd_req_t
  */
 esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
 {
-    httpd_req_t *r = &hd->hd_req;
+    if (httpd_alloc_req_if_needed(hd) != ESP_OK) {
+        ESP_LOGE(TAG, "no memory for request");
+        return ESP_ERR_NO_MEM;
+    }
+
+    httpd_req_t *r = hd->hd_req;
     init_req(r, &hd->config);
-    init_req_aux(&hd->hd_req_aux, &hd->config);
+    init_req_aux(hd->hd_req_aux, &hd->config);
     r->handle = hd;
-    r->aux = &hd->hd_req_aux;
+    r->aux = hd->hd_req_aux;
 
     /* Associate the request to the socket */
     struct httpd_req_aux *ra = r->aux;
@@ -786,11 +814,26 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
     }
 #endif
 
-    /* Parse request */
+    /* Parse request & call request handler */
     ret = httpd_parse_req(hd);
-    if (ret != ESP_OK) {
+    if (ret == ESP_ERR_NOT_FINISHED) {
+
+        /* The request handler signaled that it
+           will finishing the request later.  */
+        sd->is_req_unfinished = true;
+
+        /* These must be reallocated. 
+           The request handler now owns them */
+        hd->hd_req = NULL;
+        hd->hd_req_aux = NULL;
+
+        return ESP_OK;
+
+    } else if (ret != ESP_OK) {
         httpd_req_cleanup(r);
+        return ret;
     }
+
     return ret;
 }
 
@@ -798,7 +841,7 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
  */
 esp_err_t httpd_req_delete(struct httpd_data *hd)
 {
-    httpd_req_t *r = &hd->hd_req;
+    httpd_req_t *r = hd->hd_req;
     struct httpd_req_aux *ra = r->aux;
 
     /* Finish off reading any pending/leftover data */

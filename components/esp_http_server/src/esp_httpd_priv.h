@@ -64,6 +64,7 @@ struct sock_db {
     bool lru_socket;                        /*!< Flag indicating LRU socket */
     char pending_data[PARSER_BLOCK_SIZE];   /*!< Buffer for pending data to be received */
     size_t pending_len;                     /*!< Length of pending data to be received */
+    bool is_req_unfinished;                 /*!< True if some other thread is now using this socket for a request */
 #ifdef CONFIG_HTTPD_WS_SUPPORT
     bool ws_handshake_done;                 /*!< True if it has done WebSocket handshake (if this socket is a valid WS) */
     bool ws_close;                          /*!< Set to true to close the socket later (when WS Close frame received) */
@@ -115,8 +116,8 @@ struct httpd_data {
     struct sock_db *hd_sd;                  /*!< The socket database */
     int hd_sd_active_count;                 /*!< The number of the active sockets */
     httpd_uri_t **hd_calls;                 /*!< Registered URI handlers */
-    struct httpd_req hd_req;                /*!< The current HTTPD request */
-    struct httpd_req_aux hd_req_aux;        /*!< Additional data about the HTTPD request kept unexposed */
+    struct httpd_req *hd_req;                /*!< The current HTTPD request */
+    struct httpd_req_aux *hd_req_aux;        /*!< Additional data about the HTTPD request kept unexposed */
     uint64_t lru_counter;                   /*!< LRU counter */
 
     /* Array of registered error handler functions */

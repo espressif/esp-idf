@@ -78,6 +78,7 @@ static esp_err_t httpd_send_all(httpd_req_t *r, const char *buf, size_t buf_len)
         buf     += ret;
         buf_len -= ret;
     }
+
     return ESP_OK;
 }
 
@@ -566,6 +567,23 @@ int httpd_req_to_sockfd(httpd_req_t *r)
 
     struct httpd_req_aux *ra = r->aux;
     return ra->sd->fd;
+}
+
+esp_err_t httpd_req_async_handler_complete(httpd_req_t *r)
+{
+    if (r == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // mark finished
+    struct httpd_req_aux *ra = r->aux;
+    ra->sd->is_req_unfinished = false;
+
+    // free
+    free(r->aux);
+    free(r);
+
+    return ESP_OK;
 }
 
 static int httpd_sock_err(const char *ctx, int sockfd)

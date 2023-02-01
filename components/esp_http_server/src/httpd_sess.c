@@ -107,6 +107,10 @@ static int enum_function(struct sock_db *session, void *context)
         if (session->fd == -1) {
             return 0;
         }
+        // Don't close requests still being used
+        if (session->is_req_unfinished) {
+            break;
+        }
         // Check/update lowest lru
         if (session->lru_counter < ctx->lru_counter) {
             ctx->lru_counter = session->lru_counter;
@@ -170,8 +174,8 @@ struct sock_db *httpd_sess_get(struct httpd_data *hd, int sockfd)
 
     // Check if called inside a request handler, and the session sockfd in use is same as the parameter
     // => Just return the pointer to the sock_db corresponding to the request
-    if ((hd->hd_req_aux.sd) && (hd->hd_req_aux.sd->fd == sockfd)) {
-        return hd->hd_req_aux.sd;
+    if ((hd->hd_req_aux->sd) && (hd->hd_req_aux->sd->fd == sockfd)) {
+        return hd->hd_req_aux->sd;
     }
 
     enum_context_t context = {
@@ -265,8 +269,8 @@ void *httpd_sess_get_ctx(httpd_handle_t handle, int sockfd)
     // request handler, in which case fetch the context from
     // the httpd_req_t structure
     struct httpd_data *hd = (struct httpd_data *) handle;
-    if (hd->hd_req_aux.sd == session) {
-        return hd->hd_req.sess_ctx;
+    if (hd->hd_req_aux->sd == session) {
+        return hd->hd_req->sess_ctx;
     }
     return session->ctx;
 }
@@ -282,16 +286,16 @@ void httpd_sess_set_ctx(httpd_handle_t handle, int sockfd, void *ctx, httpd_free
     // request handler, in which case set the context inside
     // the httpd_req_t structure
     struct httpd_data *hd = (struct httpd_data *) handle;
-    if (hd->hd_req_aux.sd == session) {
-        if (hd->hd_req.sess_ctx != ctx) {
+    if (hd->hd_req_aux->sd == session) {
+        if (hd->hd_req->sess_ctx != ctx) {
             // Don't free previous context if it is in sockdb
             // as it will be freed inside httpd_req_cleanup()
-            if (session->ctx != hd->hd_req.sess_ctx) {
-                httpd_sess_free_ctx(&hd->hd_req.sess_ctx, hd->hd_req.free_ctx); // Free previous context
+            if (session->ctx != hd->hd_req->sess_ctx) {
+                httpd_sess_free_ctx(&hd->hd_req->sess_ctx, hd->hd_req->free_ctx); // Free previous context
             }
-            hd->hd_req.sess_ctx = ctx;
+            hd->hd_req->sess_ctx = ctx;
         }
-        hd->hd_req.free_ctx = free_fn;
+        hd->hd_req->free_ctx = free_fn;
         return;
     }
 

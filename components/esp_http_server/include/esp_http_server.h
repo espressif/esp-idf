@@ -833,6 +833,20 @@ esp_err_t httpd_sess_set_pending_override(httpd_handle_t hd, int sockfd, httpd_p
  */
 int httpd_req_to_sockfd(httpd_req_t *r);
 
+
+/**
+ * @brief Mark a request completed.
+ *
+ * @note Only for use with async request handlers!
+ *
+ * @param[in] r The request to be marked completed.
+ *
+ * @return
+ *  - ESP_OK : the request was completed successfully
+ *  - ESP_ERR_INVALID_ARG : r is null
+ */
+esp_err_t httpd_req_async_handler_complete(httpd_req_t *r);
+
 /**
  * @brief   API to read content data from the HTTP request
  *
