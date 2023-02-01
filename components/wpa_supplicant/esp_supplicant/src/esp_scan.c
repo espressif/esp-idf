@@ -95,6 +95,7 @@ void esp_scan_init(struct wpa_supplicant *wpa_s)
 	wpa_s->scanning = 0;
 	wpa_bss_init(wpa_s);
 	wpa_s->last_scan_res = NULL;
+	wpa_s->last_scan_res_used = 0;
 }
 
 void esp_scan_deinit(struct wpa_supplicant *wpa_s)
@@ -102,6 +103,7 @@ void esp_scan_deinit(struct wpa_supplicant *wpa_s)
 	wpa_bss_deinit(wpa_s);
 	os_free(wpa_s->last_scan_res);
 	wpa_s->last_scan_res = NULL;
+	wpa_s->last_scan_res_used = 0;
 }
 
 int esp_handle_beacon_probe(u8 type, u8 *frame, size_t len, u8 *sender,
