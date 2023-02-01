@@ -280,8 +280,6 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 #endif //CONFIG_ULP_COPROC_TYPE_FSM
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5053
 typedef struct {
     int delay_us;
     int result;
@@ -402,7 +400,6 @@ TEST_CASE("esp_timer produces correct delays with light sleep", "[pm]")
 
 #undef NUM_INTERVALS
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 static void timer_cb1(void *arg)
 {
