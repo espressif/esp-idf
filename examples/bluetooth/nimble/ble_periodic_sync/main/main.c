@@ -184,7 +184,12 @@ app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    nimble_port_init();
+    ret = nimble_port_init();
+    if (ret != ESP_OK) {
+        MODLOG_DFLT(ERROR, "Failed to init nimble %d \n", ret);
+        return;
+    }
+
     /* Configure the host. */
     ble_hs_cfg.reset_cb = periodic_sync_on_reset;
     ble_hs_cfg.sync_cb = periodic_sync_on_sync;
