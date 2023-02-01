@@ -278,3 +278,15 @@
     re: "fatal error: esp_partition.h: No such file or directory"
     hint: "All the Partition APIs have been moved to the new component 'esp_partition' - please, update your project dependencies. See Storage migration guide 5.x for more details."
     match_to_output: True
+
+-
+    re: "esp_usb_jtag: could not find or open device!"
+    hint: "Please check the wire connection to debugging device or access rights to a serial port."
+
+-
+    re: "Error: couldn't bind [^:]+: Address already in use"
+    hint: "Please check if another process uses the mentioned ports. OpenOCD already running, perhaps in the background?\nPlease list all processes to check if OpenOCD is already running; if so, terminate it before starting OpenOCD from idf.py"
+
+-
+    re: "Error: libusb_open\\(\\) failed with LIBUSB_ERROR_ACCESS"
+    hint: "OpenOCD process does not have permissions to access the USB JTAG/serial device. Please use 'LIBUSB_DEBUG=1 idf.py openocd' to find out the device name and check its access rights."
