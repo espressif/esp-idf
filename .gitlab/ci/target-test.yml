@@ -504,7 +504,7 @@ component_ut_pytest_esp32_flash_multi:
     - .rules:test:component_ut-esp32
   needs:
     - build_pytest_components_esp32
-  tags: [ esp32, flash_mutli ]
+  tags: [ esp32, flash_multi ]
 
 component_ut_pytest_esp32_xtal32k:
   extends:
@@ -569,7 +569,7 @@ component_ut_pytest_esp32s2_flash_multi:
     - .rules:test:component_ut-esp32s2
   needs:
     - build_pytest_components_esp32s2
-  tags: [ esp32s2, flash_mutli ]
+  tags: [ esp32s2, flash_multi ]
 
 component_ut_pytest_esp32s3_generic:
   extends:
@@ -626,7 +626,7 @@ component_ut_pytest_esp32s3_flash_multi:
     - .rules:test:component_ut-esp32s3
   needs:
     - build_pytest_components_esp32s3
-  tags: [ esp32s3, flash_mutli ]
+  tags: [ esp32s3, flash_multi ]
 
 component_ut_pytest_esp32c2_generic:
   extends:
@@ -724,7 +724,7 @@ component_ut_pytest_esp32c3_flash_multi:
     - .rules:test:component_ut-esp32c3
   needs:
     - build_pytest_components_esp32c3
-  tags: [ esp32c3, flash_mutli ]
+  tags: [ esp32c3, flash_multi ]
 
 component_ut_pytest_esp32_sdmmc:
   extends:

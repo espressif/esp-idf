@@ -47,7 +47,7 @@ def test_esp_flash_rom(dut: Dut) -> None:
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.esp32c2
-@pytest.mark.flash_mutli
+@pytest.mark.flash_multi
 @pytest.mark.parametrize(
     'config',
     [

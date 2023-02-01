@@ -17,7 +17,7 @@ def test_master_single_dev(case_tester) -> None:       # type: ignore
 
 # Job for test_env `external_flash` just for esp32 only
 @pytest.mark.esp32
-@pytest.mark.flash_mutli
+@pytest.mark.flash_multi
 @pytest.mark.parametrize('config', ['defaults',], indirect=True)
 def test_master_esp_flash(case_tester) -> None:        # type: ignore
     for case in case_tester.test_menu:
