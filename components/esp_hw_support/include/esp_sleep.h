@@ -62,6 +62,9 @@ typedef enum {
 #if SOC_PM_SUPPORT_VDDSDIO_PD
     ESP_PD_DOMAIN_VDDSDIO,         //!< VDD_SDIO
 #endif
+#if SOC_PM_SUPPORT_TOP_PD
+    ESP_PD_DOMAIN_TOP,             //!< SoC TOP
+#endif
     ESP_PD_DOMAIN_MAX              //!< Number of domains
 } esp_sleep_pd_domain_t;
 

@@ -76,6 +76,8 @@
 #include "esp32c6/rom/rtc.h"
 #include "hal/lp_timer_hal.h"
 #include "esp_private/esp_pmu.h"
+#include "esp_private/sleep_peripheral.h"
+#include "esp_private/sleep_clock.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/cache.h"
@@ -1455,6 +1457,12 @@ static uint32_t get_power_down_flags(void)
     }
 #endif
 
+#if SOC_PM_SUPPORT_TOP_PD
+    if (!cpu_domain_pd_allowed() || !clock_domain_pd_allowed() || !peripheral_domain_pd_allowed()) {
+        s_config.domain[ESP_PD_DOMAIN_TOP].pd_option = ESP_PD_OPTION_ON;
+    }
+#endif
+
 #ifdef CONFIG_IDF_TARGET_ESP32
     s_config.domain[ESP_PD_DOMAIN_XTAL].pd_option = ESP_PD_OPTION_OFF;
 #endif
@@ -1512,6 +1520,11 @@ static uint32_t get_power_down_flags(void)
     if (s_config.domain[ESP_PD_DOMAIN_XTAL].pd_option != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_XTAL;
     }
+#if SOC_PM_SUPPORT_TOP_PD
+    if (s_config.domain[ESP_PD_DOMAIN_TOP].pd_option != ESP_PD_OPTION_ON) {
+        pd_flags |= PMU_SLEEP_PD_TOP;
+    }
+#endif
 #if SOC_PM_SUPPORT_VDDSDIO_PD
     if (s_config.domain[ESP_PD_DOMAIN_VDDSDIO].pd_option != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_VDDSDIO;
