@@ -98,6 +98,14 @@ typedef enum {
     ESP_SLEEP_WAKEUP_BT,           //!< Wakeup caused by BT (light sleep only)
 } esp_sleep_source_t;
 
+/**
+ * @brief Sleep mode
+ */
+typedef enum {
+    ESP_SLEEP_MODE_LIGHT_SLEEP,   //!< light sleep mode
+    ESP_SLEEP_MODE_DEEP_SLEEP     //!< deep sleep mode
+} esp_sleep_mode_t;
+
 /* Leave this type define for compatibility */
 typedef esp_sleep_source_t esp_sleep_wakeup_cause_t;
 
