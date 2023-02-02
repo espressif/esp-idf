@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -22,7 +22,6 @@
 
 static int **allocatedMem;
 static int noAllocated;
-
 
 static int tryAllocMem(void) {
     int i, j;
@@ -158,4 +157,26 @@ TEST_CASE("malloc/calloc(0) should not call failure callback", "[heap]")
     ptr = calloc(0, 0);
     TEST_ASSERT_NULL(ptr);
     TEST_ASSERT_FALSE(failure_occured);
+}
+
+TEST_CASE("test get allocated size", "[heap]")
+{
+    const size_t iterations = 32;
+
+    for (size_t i = 0; i < iterations; i++) {
+        // minimum block size is 12, so to avoid unecessary logic in the test,
+        // set the minimum requested size to 12.
+        const size_t alloc_size = rand() % 1024 + 12;
+
+        void *ptr = heap_caps_malloc(alloc_size, MALLOC_CAP_DEFAULT);
+        TEST_ASSERT_NOT_NULL(ptr);
+
+        // test that the heap_caps_get_allocated_size() returns the right number of bytes (aligned to 4 bytes
+        // since the heap component aligns to 4 bytes)
+        const size_t aligned_size = (alloc_size + 3) & ~3;
+        printf("initial size: %d, requested size : %d, allocated size: %d\n", alloc_size, aligned_size, heap_caps_get_allocated_size(ptr));
+        TEST_ASSERT_EQUAL(aligned_size, heap_caps_get_allocated_size(ptr));
+
+        heap_caps_free(ptr);
+    }
 }
