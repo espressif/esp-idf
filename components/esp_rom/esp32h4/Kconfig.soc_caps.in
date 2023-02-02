@@ -46,3 +46,7 @@ config ESP_ROM_HAS_LAYOUT_TABLE
 config ESP_ROM_HAS_ETS_PRINTF_BUG
     bool
     default y
+
+config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y

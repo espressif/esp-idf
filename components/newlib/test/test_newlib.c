@@ -14,6 +14,7 @@
 #include "unity.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
+#include "esp_rom_caps.h"
 
 TEST_CASE("test ctype functions", "[newlib]")
 {
@@ -122,7 +123,7 @@ TEST_CASE("test asctime", "[newlib]")
     TEST_ASSERT_EQUAL_STRING(buf, time_str);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2)
 static bool fn_in_rom(void *fn)
 {
     const int fnaddr = (int)fn;
@@ -132,17 +133,17 @@ static bool fn_in_rom(void *fn)
 
 TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
 {
-#if CONFIG_NEWLIB_NANO_FORMAT
+#if CONFIG_NEWLIB_NANO_FORMAT || ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
     TEST_ASSERT(fn_in_rom(vfprintf));
 #else
     TEST_ASSERT_FALSE(fn_in_rom(vfprintf));
-#endif // CONFIG_NEWLIB_NANO_FORMAT
+#endif // CONFIG_NEWLIB_NANO_FORMAT || ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
 
-#if CONFIG_NEWLIB_NANO_FORMAT && (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H4)
+#if (CONFIG_NEWLIB_NANO_FORMAT && (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H4)) || ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
     TEST_ASSERT(fn_in_rom(sscanf));
 #else
     TEST_ASSERT_FALSE(fn_in_rom(sscanf));
-#endif // CONFIG_NEWLIB_NANO_FORMAT && CONFIG_IDF_TARGET_x
+#endif // (CONFIG_NEWLIB_NANO_FORMAT && CONFIG_IDF_TARGET_x) || ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
 
 #if defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
     TEST_ASSERT(fn_in_rom(atoi));
@@ -158,7 +159,7 @@ TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
     TEST_ASSERT_FALSE(fn_in_rom(strtol));
 #endif // defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6, ESP32H2)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2)
 
 #ifndef CONFIG_NEWLIB_NANO_FORMAT
 TEST_CASE("test 64bit int formats", "[newlib]")

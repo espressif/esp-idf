@@ -52,7 +52,7 @@ menu "Newlib"
         bool "Enable 'nano' formatting options for printf/scanf family"
         default y if IDF_TARGET_ESP32C2
         help
-            ESP32 ROM contains parts of newlib C library, including printf/scanf family
+            In most chips the ROM contains parts of newlib C library, including printf/scanf family
             of functions. These functions have been compiled with so-called "nano"
             formatting option. This option doesn't support 64-bit integer formats and C99
             features, such as positional arguments.
@@ -61,10 +61,15 @@ menu "Newlib"
             search for '--enable-newlib-nano-formatted-io':
             https://sourceware.org/newlib/README
 
-            If this option is enabled, build system will use functions available in
-            ROM, reducing the application binary size. Functions available in ROM run
-            faster than functions which run from flash. Functions available in ROM can
-            also run when flash instruction cache is disabled.
+            If this option is enabled and the ROM contains functions from newlib-nano, the build system
+            will use functions available in ROM, reducing the application binary size.
+            Functions available in ROM run faster than functions which run from flash. Functions available
+            in ROM can also run when flash instruction cache is disabled.
+
+            Some chips (e.g. ESP32-C6) has the full formatting versions of printf/scanf in ROM instead of
+            the nano versions and in this building with newlib nano might actually increase the size of
+            the binary. Which functions are present in ROM can be seen from ROM caps:
+            ESP_ROM_HAS_NEWLIB_NANO_FORMAT and ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT.
 
             If you need 64-bit integer formatting support or C99 features, keep this
             option disabled.
