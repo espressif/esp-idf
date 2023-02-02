@@ -104,6 +104,7 @@ void adc_hal_set_calibration_param(adc_unit_t adc_n, uint32_t param)
     }
 }
 
+#if SOC_ADC_SELF_HW_CALI_SUPPORTED
 static void cal_setup(adc_unit_t adc_n, adc_atten_t atten)
 {
     adc_hal_set_controller(adc_n, ADC_HAL_SINGLE_READ_MODE);
@@ -205,4 +206,5 @@ uint32_t adc_hal_self_calibration(adc_unit_t adc_n, adc_atten_t atten, bool inte
     return ret;
     return 0;
 }
+#endif  //#if SOC_ADC_SELF_HW_CALI_SUPPORTED
 #endif //SOC_ADC_CALIBRATION_V1_SUPPORTED

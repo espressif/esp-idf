@@ -78,6 +78,14 @@ extern "C" {
 #define ADC_TEST_HIGH_VAL        4081
 #define ADC_TEST_HIGH_VAL_DMA    4081
 #define ADC_TEST_HIGH_THRESH     200
+
+#elif CONFIG_IDF_TARGET_ESP32H2  // TODO: IDF-6216
+#define ADC_TEST_LOW_VAL         2144
+#define ADC_TEST_LOW_THRESH      200
+
+#define ADC_TEST_HIGH_VAL        4081
+#define ADC_TEST_HIGH_VAL_DMA    4081
+#define ADC_TEST_HIGH_THRESH     200
 #endif
 
 

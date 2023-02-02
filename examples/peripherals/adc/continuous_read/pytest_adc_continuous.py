@@ -10,6 +10,7 @@ from pytest_embedded.dut import Dut
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
+@pytest.mark.esp32h2
 @pytest.mark.adc
 def test_adc_continuous(dut: Dut) -> None:
     res = dut.expect(r'TASK: ret is 0, ret_num is (\d+)')
