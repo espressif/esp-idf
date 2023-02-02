@@ -42,6 +42,7 @@ The ADC oneshot mode driver is implemented based on {IDF_TARGET_NAME} SAR ADC mo
 To install an ADC instance, set up the required initial configuration structure :cpp:type:`adc_oneshot_unit_init_cfg_t`:
 
 -  :cpp:member:`adc_oneshot_unit_init_cfg_t::unit_id` selects the ADC. Please refer to the `datasheet <{IDF_TARGET_TRM_EN_URL}>`__ to know dedicated analog IOs for this ADC.
+-  :cpp:member:`adc_oneshot_unit_init_cfg_t::clk_src` selects the source clock of the ADC. If it's set to 0, driver will fallback to use a default clock source, see :cpp:type:`adc_oneshot_clk_src_t` to know the details.
 -  :cpp:member:`adc_oneshot_unit_init_cfg_t::ulp_mode` sets if the ADC will be working under ULP mode.
 
 .. todo::

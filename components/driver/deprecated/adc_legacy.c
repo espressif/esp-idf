@@ -28,6 +28,7 @@
 #include "hal/adc_hal_conf.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/adc_types_legacy.h"
+#include "clk_tree.h"
 
 #if SOC_DAC_SUPPORTED
 #include "hal/dac_types.h"
@@ -280,8 +281,8 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     if (!clk_src_freq_hz) {
-        esp_err_t ret = clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
-        assert(ret == ESP_OK);
+        //should never fail
+        clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
     }
 #endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
@@ -439,8 +440,8 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
     ESP_RETURN_ON_FALSE(atten <= SOC_ADC_ATTEN_NUM, ESP_ERR_INVALID_ARG, ADC_TAG, "ADC2 Atten Err");
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     if (!clk_src_freq_hz) {
-        esp_err_t ret = clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
-        assert(ret == ESP_OK);
+        //should never fail
+        clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
     }
 #endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
@@ -750,6 +751,12 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 {
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_1), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC1 channel error");
     ESP_RETURN_ON_FALSE((atten < SOC_ADC_ATTEN_NUM), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC Atten Err");
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    if (!clk_src_freq_hz) {
+        //should never fail
+        clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    }
+#endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
     esp_err_t ret = ESP_OK;
     s_atten1_single[channel] = atten;
@@ -814,6 +821,12 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     if (width_bit != ADC_WIDTH_BIT_12) {
         return ESP_ERR_INVALID_ARG;
     }
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    if (!clk_src_freq_hz) {
+        //should never fail
+        clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    }
+#endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
     esp_err_t ret = ESP_OK;
 

@@ -25,10 +25,13 @@ if(NOT BOOTLOADER_BUILD)
                      "sleep_gpio.c"
                      "sleep_mac_bb.c"
                      "regi2c_ctrl.c"
-                     "adc_share_hw_ctrl.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/clk_tree.c"
                      "port/clk_tree_common.c")
+
+    if(CONFIG_SOC_ADC_SUPPORTED)
+        list(APPEND srcs "adc_share_hw_ctrl.c")
+    endif()
 
     if(CONFIG_SOC_PM_SUPPORT_CPU_PD)
         list(APPEND srcs "sleep_cpu.c")

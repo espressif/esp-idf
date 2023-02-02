@@ -12,6 +12,7 @@
 #include "hal/adc_hal_conf.h"
 #include "hal/adc_ll.h"
 #include "hal/assert.h"
+#include "hal/log.h"
 
 #if SOC_DAC_SUPPORTED
 #include "hal/dac_ll.h"
@@ -35,6 +36,8 @@ void adc_oneshot_hal_init(adc_oneshot_hal_ctx_t *hal, const adc_oneshot_hal_cfg_
 {
     hal->unit = config->unit;
     hal->work_mode = config->work_mode;
+    hal->clk_src = config->clk_src;
+    hal->clk_src_freq_hz = config->clk_src_freq_hz;
 }
 
 void adc_oneshot_hal_channel_config(adc_oneshot_hal_ctx_t *hal, const adc_oneshot_hal_chan_cfg_t *config, adc_channel_t chan)
@@ -57,7 +60,7 @@ void adc_oneshot_hal_setup(adc_oneshot_hal_ctx_t *hal, adc_channel_t chan)
 #endif
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
+    adc_ll_digi_clk_sel(hal->clk_src);
 #else
     adc_ll_set_sar_clk_div(unit, ADC_HAL_SAR_CLK_DIV_DEFAULT(unit));
     if (unit == ADC_UNIT_2) {
@@ -77,25 +80,29 @@ void adc_oneshot_hal_setup(adc_oneshot_hal_ctx_t *hal, adc_channel_t chan)
 #endif //#if SOC_ADC_ARBITER_SUPPORTED
 }
 
-static void adc_hal_onetime_start(adc_unit_t unit)
+static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz)
 {
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     (void)unit;
+    uint32_t delay = 0;
     /**
      * There is a hardware limitation. If the APB clock frequency is high, the step of this reg signal: ``onetime_start`` may not be captured by the
      * ADC digital controller (when its clock frequency is too slow). A rough estimate for this step should be at least 3 ADC digital controller
      * clock cycle.
      */
-    uint32_t digi_clk = APB_CLK_FREQ / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1);
+    uint32_t digi_clk = clk_src_freq_hz / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1);
     //Convert frequency to time (us). Since decimals are removed by this division operation. Add 1 here in case of the fact that delay is not enough.
-    uint32_t delay = (1000 * 1000) / digi_clk + 1;
+    delay = (1000 * 1000) / digi_clk + 1;
     //3 ADC digital controller clock cycle
     delay = delay * 3;
-    //This coefficient (8) is got from test. When digi_clk is not smaller than ``APB_CLK_FREQ/8``, no delay is needed.
+    HAL_EARLY_LOGD("adc_hal", "clk_src_freq_hz: %d, digi_clk: %d, delay: %d", clk_src_freq_hz, digi_clk, delay);
+
+    //This coefficient (8) is got from test, and verified from DT. When digi_clk is not smaller than ``APB_CLK_FREQ/8``, no delay is needed.
     if (digi_clk >= APB_CLK_FREQ/8) {
         delay = 0;
     }
 
+    HAL_EARLY_LOGD("adc_hal", "delay: %d", delay);
     adc_oneshot_ll_start(false);
     esp_rom_delay_us(delay);
     adc_oneshot_ll_start(true);
@@ -120,7 +127,7 @@ bool adc_oneshot_hal_convert(adc_oneshot_hal_ctx_t *hal, int *out_raw)
     adc_oneshot_ll_disable_all_unit();
     adc_oneshot_ll_enable(hal->unit);
 
-    adc_hal_onetime_start(hal->unit);
+    adc_hal_onetime_start(hal->unit, hal->clk_src_freq_hz);
     while (!adc_oneshot_ll_get_event(event)) {
         ;
     }

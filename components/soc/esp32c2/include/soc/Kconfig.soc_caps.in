@@ -167,14 +167,6 @@ config SOC_ADC_SELF_HW_CALI_SUPPORTED
     bool
     default y
 
-config SOC_ADC_DIG_CLK_XTAL_SUPPORTED
-    bool
-    default y
-
-config SOC_ADC_DIG_CLK_PLL_F80M_SUPPORTED
-    bool
-    default y
-
 config SOC_BROWNOUT_RESET_SUPPORTED
     bool
     default y

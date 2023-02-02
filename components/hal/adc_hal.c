@@ -166,19 +166,19 @@ static adc_ll_digi_convert_mode_t get_convert_mode(adc_digi_convert_mode_t conve
  * - Enable clock and select clock source for ADC digital controller.
  * For esp32, use I2S clock
  */
-static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, uint32_t freq)
+static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, adc_continuous_clk_src_t clk_src, uint32_t clk_src_freq_hz, uint32_t sample_freq_hz)
 {
 #if !CONFIG_IDF_TARGET_ESP32
-    uint32_t interval = APB_CLK_FREQ / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1) / 2 / freq;
+    uint32_t interval = clk_src_freq_hz / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1) / 2 / sample_freq_hz;
     //set sample interval
     adc_ll_digi_set_trigger_interval(interval);
     //Here we set the clock divider factor to make the digital clock to 5M Hz
     adc_ll_digi_controller_clk_div(ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT);
-    adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);   // use default clock source for ADC digital controller
+    adc_ll_digi_clk_sel(clk_src);
 #else
     i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_SRC_DEFAULT);    /*!< Clock from PLL_D2_CLK(160M)*/
     uint32_t bclk_div = 16;
-    uint32_t bclk = freq * 2;
+    uint32_t bclk = sample_freq_hz * 2;
     uint32_t mclk = bclk * bclk_div;
     uint32_t mclk_div = I2S_BASE_CLK / mclk;
     i2s_ll_rx_set_mclk(hal->dev, I2S_BASE_CLK, mclk, mclk_div);
@@ -226,7 +226,7 @@ void adc_hal_digi_controller_config(adc_hal_dma_ctx_t *hal, const adc_hal_digi_c
     adc_ll_digi_set_convert_mode(get_convert_mode(cfg->conv_mode));
 
     //clock and sample frequency
-    adc_hal_digi_sample_freq_config(hal, cfg->sample_freq_hz);
+    adc_hal_digi_sample_freq_config(hal, cfg->clk_src, cfg->clk_src_freq_hz, cfg->sample_freq_hz);
 }
 
 static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *data_buf, uint32_t size, uint32_t num)

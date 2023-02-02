@@ -84,6 +84,8 @@ typedef struct adc_hal_digi_ctrlr_cfg_t {
     uint32_t                    sample_freq_hz;     //ADC sample frequency
     adc_digi_convert_mode_t     conv_mode;          //controller work mode
     uint32_t                    bit_width;          //output data width
+    adc_continuous_clk_src_t    clk_src;            ///< Clock source
+    uint32_t                    clk_src_freq_hz;    ///< Clock source frequency in hz
 } adc_hal_digi_ctrlr_cfg_t;
 
 
