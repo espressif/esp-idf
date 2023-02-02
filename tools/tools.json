@@ -935,7 +935,7 @@
       "description": "dfu-util (Device Firmware Upgrade Utilities)",
       "export_paths": [
         [
-          "dfu-util-0.9-win64"
+          "dfu-util-0.11-win64"
         ]
       ],
       "export_vars": {},
@@ -962,12 +962,12 @@
       "version_regex": "dfu-util ([0-9.]+)",
       "versions": [
         {
-          "name": "0.9",
+          "name": "0.11",
           "status": "recommended",
           "win64": {
-            "sha256": "5816d7ec68ef3ac07b5ac9fb9837c57d2efe45b6a80a2f2bbe6b40b1c15c470e",
-            "size": 735635,
-            "url": "https://dl.espressif.com/dl/dfu-util-0.9-win64.zip"
+            "sha256": "652eb94cb1c074c6dbead9e47adb628922aeb198a4d440a346ab32e7a0e9bf64",
+            "size": 2854596,
+            "url": "https://dl.espressif.com/dl/dfu-util-0.11-win64.zip"
           }
         }
       ]
