@@ -53,7 +53,7 @@
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_SUPPORT_COEXISTENCE         1
 #define SOC_AES_SUPPORTED               1
-// #define SOC_MPI_SUPPORTED               1
+#define SOC_MPI_SUPPORTED               1
 #define SOC_SHA_SUPPORTED               1
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_DIG_SIGN_SUPPORTED          1
@@ -283,7 +283,6 @@
 #define SOC_MCPWM_CLK_SUPPORT_PLL160M        (1)    ///< Support PLL160M as clock source
 #define SOC_MCPWM_CLK_SUPPORT_XTAL           (1)    ///< Support XTAL as clock source
 
-// TODO: IDF-5359 (Copy from esp32c3, need check)
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)
 
