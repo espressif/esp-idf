@@ -40,8 +40,9 @@ typedef enum {
     ESP_MSPI_IO_D7,
 #endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
 #if CONFIG_SPIRAM
-    ESP_MSPI_IO_CS1 /* cs for spi ram */
+    ESP_MSPI_IO_CS1, /* cs for spi ram */
 #endif
+    ESP_MSPI_IO_MAX, /* Maximum IO MSPI occupied */
 } esp_mspi_io_t;
 
 /**

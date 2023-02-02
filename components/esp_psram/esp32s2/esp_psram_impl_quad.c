@@ -14,6 +14,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_types.h"
+#include "esp_bit_defs.h"
 #include "esp_log.h"
 #include "../esp_psram_impl.h"
 #include "esp32s2/rom/spi_flash.h"
@@ -22,6 +23,7 @@
 #include "esp_rom_efuse.h"
 #include "soc/spi_reg.h"
 #include "soc/io_mux_reg.h"
+#include "esp_private/esp_gpio_reserve.h"
 
 static const char* TAG = "quad_psram";
 
@@ -377,6 +379,16 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_speed_t mode)
     }
     esp_rom_spiflash_select_qio_pins(psram_io.psram_spiwp_sd3_io, spiconfig);
     s_psram_cs_io = psram_io.psram_cs_io;
+
+    // Preserve psram pins
+    esp_gpio_reserve_pins(BIT64(psram_io.flash_clk_io)        |
+                          BIT64(psram_io.flash_cs_io)         |
+                          BIT64(psram_io.psram_clk_io)        |
+                          BIT64(psram_io.psram_cs_io)         |
+                          BIT64(psram_io.psram_spiq_sd0_io)   |
+                          BIT64(psram_io.psram_spid_sd1_io)   |
+                          BIT64(psram_io.psram_spihd_sd2_io)  |
+                          BIT64(psram_io.psram_spiwp_sd3_io)  );
 }
 
 //used in UT only

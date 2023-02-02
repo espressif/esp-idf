@@ -14,6 +14,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_types.h"
+#include "esp_bit_defs.h"
 #include "esp_log.h"
 #include "../esp_psram_impl.h"
 #include "esp32/rom/spi_flash.h"
@@ -34,6 +35,7 @@
 #include "bootloader_common.h"
 #include "esp_rom_gpio.h"
 #include "bootloader_flash_config.h"
+#include "esp_private/esp_gpio_reserve.h"
 
 #if CONFIG_SPIRAM
 #include "soc/rtc.h"
@@ -807,6 +809,16 @@ static void IRAM_ATTR psram_gpio_config(psram_io_t *psram_io, psram_cache_speed_
         SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->psram_spihd_sd2_io], FUN_DRV_V, 3, FUN_DRV_S);
         SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[psram_io->psram_spiwp_sd3_io], FUN_DRV_V, 3, FUN_DRV_S);
     }
+
+    // Reserve psram pins
+    esp_gpio_reserve_pins(BIT64(psram_io->flash_clk_io)        |
+                          BIT64(psram_io->flash_cs_io)         |
+                          BIT64(psram_io->psram_clk_io)        |
+                          BIT64(psram_io->psram_cs_io)         |
+                          BIT64(psram_io->psram_spiq_sd0_io)   |
+                          BIT64(psram_io->psram_spid_sd1_io)   |
+                          BIT64(psram_io->psram_spihd_sd2_io)  |
+                          BIT64(psram_io->psram_spiwp_sd3_io)  );
 }
 
 //used in UT only

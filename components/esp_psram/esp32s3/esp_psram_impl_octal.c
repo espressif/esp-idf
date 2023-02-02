@@ -9,6 +9,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_types.h"
+#include "esp_bit_defs.h"
 #include "esp_log.h"
 #include "../esp_psram_impl.h"
 #include "esp32s3/rom/ets_sys.h"
@@ -20,6 +21,7 @@
 #include "soc/syscon_reg.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/mspi_timing_tuning.h"
+#include "esp_private/esp_gpio_reserve.h"
 
 #define OPI_PSRAM_SYNC_READ             0x0000
 #define OPI_PSRAM_SYNC_WRITE            0x8080
@@ -263,6 +265,9 @@ static void s_init_psram_pins(void)
     PIN_SET_DRV(GPIO_PIN_MUX_REG[OCT_PSRAM_CS1_IO], 3);
     //Set psram clock pin drive strength
     REG_SET_FIELD(SPI_MEM_DATE_REG(0), SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV, 3);
+
+    // Preserve psram pins
+    esp_gpio_reserve_pins(BIT64(OCT_PSRAM_CS1_IO));
 }
 
 /**

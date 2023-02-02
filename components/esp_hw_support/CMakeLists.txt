@@ -25,6 +25,7 @@ if(NOT BOOTLOADER_BUILD)
                      "sleep_gpio.c"
                      "sleep_modem.c"
                      "regi2c_ctrl.c"
+                     "esp_gpio_reserve.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/clk_tree.c"
                      "port/clk_tree_common.c")
