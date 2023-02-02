@@ -2,7 +2,7 @@ Configure Other JTAG Interfaces
 ===============================
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE"}
+{IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE", esp32h2="JTAG_SEL_ENABLE"}
 
 For guidance about which JTAG interface to select when using OpenOCD with {IDF_TARGET_NAME}, refer to the section :ref:`jtag-debugging-selecting-jtag-adapter`. Then follow the configuration steps below to get it working.
 
@@ -17,7 +17,7 @@ For guidance about which JTAG interface to select when using OpenOCD with {IDF_T
 
         Burning ``DIS_USB_JTAG`` eFuse will permanently disable the connection between USB_SERIAL_JTAG and the JTAG port of the {IDF_TARGET_NAME}. JTAG interface can then be connected to |jtag-gpio-list|. Note that USB CDC functionality of USB_SERIAL_JTAG will still be usable, i.e., flashing and monitoring over USB CDC will still work.
 
-    .. only:: esp32s3 or esp32c6
+    .. only:: not esp32c3
 
         - Burning ``DIS_USB_JTAG`` eFuse will permanently disable the connection between USB_SERIAL_JTAG and the JTAG port of the {IDF_TARGET_NAME}. JTAG interface can then be connected to |jtag-gpio-list|. Note that USB CDC functionality of USB_SERIAL_JTAG will still be usable, i.e., flashing and monitoring over USB CDC will still work.
         - Burning ``{IDF_TARGET_JTAG_SEL_EFUSE}`` eFuse will enable selection of JTAG interface by a strapping pin, |jtag-sel-gpio|. If the strapping pin is low when {IDF_TARGET_NAME} is reset, JTAG interface will use |jtag-gpio-list|. If the strapping pin is high, USB_SERIAL_JTAG will be used as the JTAG interface.
