@@ -604,10 +604,13 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         //Okay, transaction is done.
         const int cs = host->cur_cs;
         //Tell common code DMA workaround that our DMA channel is idle. If needed, the code will do a DMA reset.
+
+#if CONFIG_IDF_TARGET_ESP32
         if (bus_attr->dma_enabled) {
             //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
             spicommon_dmaworkaround_idle(bus_attr->tx_dma_chan);
         }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
 
         //cur_cs is changed to DEV_NUM_MAX here
         spi_post_trans(host);
@@ -657,11 +660,13 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
 
         if (trans_found) {
             spi_trans_priv_t *const cur_trans_buf = &host->cur_trans_buf;
+#if CONFIG_IDF_TARGET_ESP32
             if (bus_attr->dma_enabled && (cur_trans_buf->buffer_to_rcv || cur_trans_buf->buffer_to_send)) {
                 //mark channel as active, so that the DMA will not be reset by the slave
                 //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
                 spicommon_dmaworkaround_transfer_active(bus_attr->tx_dma_chan);
             }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
             spi_new_trans(device_to_send, cur_trans_buf);
         }
         // Exit of the ISR, handle interrupt re-enable (if sending transaction), retry (if there's coming BG),
@@ -888,10 +893,14 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_acquire_bus(spi_device_t *device, TickT
     //configure the device ahead so that we don't need to do it again in the following transactions
     spi_setup_device(host->device[device->id]);
     //the DMA is also occupied by the device, all the slave devices that using DMA should wait until bus released.
+
+#if CONFIG_IDF_TARGET_ESP32
     if (host->bus_attr->dma_enabled) {
         //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
         spicommon_dmaworkaround_transfer_active(host->bus_attr->tx_dma_chan);
     }
+#endif  //#if CONFIG_IDF_TARGET_ESP32
+
     return ESP_OK;
 }
 
@@ -905,11 +914,13 @@ void SPI_MASTER_ISR_ATTR spi_device_release_bus(spi_device_t *dev)
         assert(0);
     }
 
+#if CONFIG_IDF_TARGET_ESP32
     if (host->bus_attr->dma_enabled) {
         //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
         spicommon_dmaworkaround_idle(host->bus_attr->tx_dma_chan);
     }
     //Tell common code DMA workaround that our DMA channel is idle. If needed, the code will do a DMA reset.
+#endif  //#if CONFIG_IDF_TARGET_ESP32
 
     //allow clock to be lower than 80MHz when all tasks blocked
 #ifdef CONFIG_PM_ENABLE

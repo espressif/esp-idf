@@ -248,7 +248,8 @@ int spicommon_irqdma_source_for_host(spi_host_device_t host);
 */
 typedef void(*dmaworkaround_cb_t)(void *arg);
 
-
+#if CONFIG_IDF_TARGET_ESP32
+//This workaround is only for esp32
 /**
  * @brief Request a reset for a certain DMA channel
  *
@@ -303,6 +304,7 @@ void spicommon_dmaworkaround_idle(int dmachan);
  * @note This public API is deprecated.
  */
 void spicommon_dmaworkaround_transfer_active(int dmachan);
+#endif  //#if CONFIG_IDF_TARGET_ESP32
 
 /*******************************************************************************
  * Bus attributes
