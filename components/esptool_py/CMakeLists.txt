@@ -48,13 +48,14 @@ consist of two ota app without factory or test partitions.")
                     CONTENT "${flasher_args_content}")
         file_generate("${CMAKE_BINARY_DIR}/flasher_args.json"
                     INPUT "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in")
-
-        # Generate app_check_size_command target to check the app size against the partition table parameters
-        partition_table_add_check_size_target(app_check_size
-            DEPENDS gen_project_binary
-            BINARY_PATH "${build_dir}/${PROJECT_BIN}"
-            PARTITION_TYPE app)
-        add_dependencies(app app_check_size)
+        if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
+            # Generate app_check_size_command target to check the app size against the partition table parameters
+            partition_table_add_check_size_target(app_check_size
+                DEPENDS gen_project_binary
+                BINARY_PATH "${build_dir}/${PROJECT_BIN}"
+                PARTITION_TYPE app)
+            add_dependencies(app app_check_size)
+        endif()
     endif()
 endif()  # NOT BOOTLOADER_BUILD
 

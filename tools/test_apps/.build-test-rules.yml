@@ -161,6 +161,12 @@ tools/test_apps/system/panic:
       temporary: true
       reason: test app not ported to this target yet
 
+tools/test_apps/system/ram_loadable_app:
+  disable:
+    - if: IDF_TARGET == "esp32h2" or IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: lack of runners
+
 tools/test_apps/system/startup:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32h4", "esp32c6"] # preview targets

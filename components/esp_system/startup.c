@@ -331,6 +331,7 @@ static void do_core_init(void)
     err = esp_pthread_init();
     assert(err == ESP_OK && "Failed to init pthread module!");
 
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 #if CONFIG_SPI_FLASH_ROM_IMPL
     spi_flash_rom_impl_init();
 #endif
@@ -342,6 +343,7 @@ static void do_core_init(void)
 #if CONFIG_SPI_FLASH_BROWNOUT_RESET
     spi_flash_needs_reset_check();
 #endif // CONFIG_SPI_FLASH_BROWNOUT_RESET
+#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
 #ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");

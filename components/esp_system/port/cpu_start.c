@@ -95,9 +95,10 @@
 
 #include "bootloader_mem.h"
 
-#if CONFIG_APP_BUILD_TYPE_ELF_RAM
+#if CONFIG_APP_BUILD_TYPE_RAM
 #include "esp_rom_spiflash.h"
-#endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
+#include "bootloader_init.h"
+#endif // CONFIG_APP_BUILD_TYPE_RAM
 
 //This dependency will be removed in the future
 #include "soc/ext_mem_defs.h"
@@ -176,9 +177,11 @@ void IRAM_ATTR call_start_cpu1(void)
     // Clear interrupt matrix for APP CPU core
     core_intr_matrix_clear();
 
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     //Take care putting stuff here: if asked, FreeRTOS will happily tell you the scheduler
     //has started, but it isn't active *on this CPU* yet.
     esp_cache_err_int_init();
+#endif
 
 #if (CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_TRAX_TWOBANKS) || \
     (CONFIG_IDF_TARGET_ESP32S3 && CONFIG_ESP32S3_TRAX_TWOBANKS)
@@ -209,10 +212,10 @@ static void start_other_core(void)
 
     ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
 
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32 && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     Cache_Flush(1);
     Cache_Read_Enable(1);
-#endif
+#endif // #if CONFIG_IDF_TARGET_ESP32 && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
     esp_cpu_unstall(1);
 
@@ -288,6 +291,27 @@ void IRAM_ATTR call_start_cpu0(void)
     rst_reas[1] = esp_rom_get_reset_reason(1);
 #endif
 
+    //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
+    memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
+
+#if defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
+    // Clear IRAM BSS
+    memset(&_iram_bss_start, 0, (&_iram_bss_end - &_iram_bss_start) * sizeof(_iram_bss_start));
+#endif
+
+#if SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED
+    /* Unless waking from deep sleep (implying RTC memory is intact), clear RTC bss */
+    if (rst_reas[0] != RESET_REASON_CORE_DEEP_SLEEP) {
+        memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
+    }
+#endif
+
+    // When the APP is loaded into ram for execution, some hardware initialization behaviors
+    // in the bootloader are still necessary
+#if CONFIG_APP_BUILD_TYPE_RAM
+    bootloader_init();
+#endif
+
 #ifndef CONFIG_BOOTLOADER_WDT_ENABLE
     // from panic handler we can be reset by RWDT or TG0WDT
     if (rst_reas[0] == RESET_REASON_CORE_RTC_WDT || rst_reas[0] == RESET_REASON_CORE_MWDT0
@@ -306,21 +330,7 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 #endif
 
-    //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
-    memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
-
-#if defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
-    // Clear IRAM BSS
-    memset(&_iram_bss_start, 0, (&_iram_bss_end - &_iram_bss_start) * sizeof(_iram_bss_start));
-#endif
-
-#if SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED
-    /* Unless waking from deep sleep (implying RTC memory is intact), clear RTC bss */
-    if (rst_reas[0] != RESET_REASON_CORE_DEEP_SLEEP) {
-        memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
-    }
-#endif
-
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Configure the mode of instruction cache : cache size, cache associated ways, cache line size. */
     extern void esp_config_instruction_cache_mode(void);
@@ -391,7 +401,6 @@ void IRAM_ATTR call_start_cpu0(void)
     mspi_timing_flash_tuning();
 #endif
 
-    bootloader_init_mem();
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_psram_init() != ESP_OK) {
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
@@ -407,6 +416,9 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
     }
 #endif
+#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+
+    bootloader_init_mem();
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_cpu_up[0] = true;
@@ -443,6 +455,7 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 #endif  //CONFIG_SPIRAM_MEMTEST
 
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 //TODO: IDF-5023, replace with MMU driver
 #if CONFIG_IDF_TARGET_ESP32S3
     int s_instr_flash2spiram_off = 0;
@@ -490,6 +503,7 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_enable_cache_wrap(1);
 #endif
 #endif
+#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     memset(&_ext_ram_bss_start, 0, (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
@@ -535,7 +549,9 @@ void IRAM_ATTR call_start_cpu0(void)
         esp_deep_sleep_wakeup_io_reset();
     }
 
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     esp_cache_err_int_init();
+#endif
 
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && !CONFIG_ESP_SYSTEM_MEMPROT_TEST
     // Memprot cannot be locked during OS startup as the lock-on prevents any PMS changes until a next reboot
@@ -575,26 +591,26 @@ void IRAM_ATTR call_start_cpu0(void)
 
     // Read the application binary image header. This will also decrypt the header if the image is encrypted.
     __attribute__((unused)) esp_image_header_t fhdr = {0};
-#ifdef CONFIG_APP_BUILD_TYPE_ELF_RAM
+#if CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     fhdr.spi_mode = ESP_IMAGE_SPI_MODE_DIO;
     fhdr.spi_speed = ESP_IMAGE_SPI_SPEED_DIV_2;
     fhdr.spi_size = ESP_IMAGE_FLASH_SIZE_4MB;
 
     extern void esp_rom_spiflash_attach(uint32_t, bool);
-#if !CONFIG_IDF_TARGET_ESP32C2
+#if SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
     esp_rom_spiflash_attach(esp_rom_efuse_get_flash_gpio_info(), false);
 #else
-    // ESP32C2 cannot get flash_gpio_info from efuse
     esp_rom_spiflash_attach(0, false);
-#endif // CONFIG_IDF_TARGET_ESP32C2
+#endif
     bootloader_flash_unlock();
 #else
     // This assumes that DROM is the first segment in the application binary, i.e. that we can read
     // the binary header through cache by accessing SOC_DROM_LOW address.
     hal_memcpy(&fhdr, (void *) SOC_DROM_LOW, sizeof(fhdr));
 
-#endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
+#endif // CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 #if CONFIG_IDF_TARGET_ESP32
 #if !CONFIG_SPIRAM_BOOT_INIT
     // If psram is uninitialized, we need to improve some flash configuration.
@@ -613,6 +629,7 @@ void IRAM_ATTR call_start_cpu0(void)
     }
     bootloader_flash_update_size(app_flash_size);
 #endif //CONFIG_SPI_FLASH_SIZE_OVERRIDE
+#endif //!CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_cpu_inited[0] = true;

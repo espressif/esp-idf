@@ -7,6 +7,7 @@
     "bootloader_elf":     "${BOOTLOADER_ELF_FILE}",
     "app_elf":            "${PROJECT_EXECUTABLE}",
     "app_bin":            "${PROJECT_BIN}",
+    "build_type":         "${PROJECT_BUILD_TYPE}",
     "git_revision":       "${IDF_VER}",
     "target":             "${CONFIG_IDF_TARGET}",
     "rev":                "${CONFIG_ESP32_REV_MIN}",
