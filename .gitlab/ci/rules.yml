@@ -241,6 +241,18 @@
   - "components/driver/**/*"
   - "components/sdmmc/**/*"
 
+# for jobs: component_ut_pytest_flash_multi
+.patterns-component_ut-flash_multi: &patterns-component_ut-flash_multi
+  - "components/spi_flash/**/*"
+  - "components/hal/spi_flash*.c"
+  - "components/hal/include/hal/spi_flash*.h"
+
+# for jobs: UT_C3_FLASH
+.patterns-unit_test-flash_multi: &patterns-unit_test-flash_multi
+  - "components/spi_flash/**/*"
+  - "components/hal/spi_flash*.c"
+  - "components/hal/include/hal/spi_flash*.h"
+
 # for jobs: USB host and device examples
 .patterns-example_test-usb: &patterns-example_test-usb
   - "components/hal/usb*.c"
@@ -578,6 +590,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
@@ -607,6 +621,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
@@ -634,6 +650,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-component_ut
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
@@ -663,6 +681,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
@@ -690,6 +710,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-component_ut
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
@@ -719,6 +741,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
@@ -746,6 +770,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-component_ut
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
@@ -775,6 +801,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
@@ -802,6 +830,8 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-component_ut
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
@@ -1483,6 +1513,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-custom_test
@@ -1512,6 +1544,8 @@
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
+    - <<: *if-dev-push
+      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1547,6 +1581,8 @@
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
+      changes: *patterns-unit_test-flash_multi
+    - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test-esp32:
@@ -1574,6 +1610,8 @@
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
+      changes: *patterns-unit_test-flash_multi
+    - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test-esp32c2:
@@ -1599,6 +1637,8 @@
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
+    - <<: *if-dev-push
+      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1626,6 +1666,8 @@
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
+      changes: *patterns-unit_test-flash_multi
+    - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test-esp32c6:
@@ -1651,6 +1693,8 @@
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
+    - <<: *if-dev-push
+      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1678,6 +1722,8 @@
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
+      changes: *patterns-unit_test-flash_multi
+    - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test-esp32s2:
@@ -1704,6 +1750,8 @@
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
+      changes: *patterns-unit_test-flash_multi
+    - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test-esp32s3:
@@ -1729,6 +1777,8 @@
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
+    - <<: *if-dev-push
+      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1791,6 +1841,19 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+
+.rules:test:component_ut-esp32-flash_multi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
 
 .rules:test:component_ut-esp32-wifi:
   rules:
@@ -1874,6 +1937,19 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
+.rules:test:component_ut-esp32c3-flash_multi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32c3
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
+
 .rules:test:component_ut-esp32c3-wifi:
   rules:
     - <<: *if-revert-branch
@@ -1956,6 +2032,19 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
+.rules:test:component_ut-esp32s2-flash_multi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32s2
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
+
 .rules:test:component_ut-esp32s3:
   rules:
     - <<: *if-revert-branch
@@ -1983,6 +2072,19 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
+
+.rules:test:component_ut-esp32s3-flash_multi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32s3
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-flash_multi
 
 .rules:test:component_ut-esp32s3-usb:
   rules:
@@ -2506,6 +2608,19 @@
     - <<: *if-label-unit_test_esp32c3
     - <<: *if-dev-push
       changes: *patterns-unit_test
+
+.rules:test:unit_test-esp32c3-flash_multi:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-target_test
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-unit_test-flash_multi
 
 .rules:test:unit_test-esp32c6:
   rules:

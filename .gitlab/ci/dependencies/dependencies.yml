@@ -139,6 +139,7 @@ build:integration_test:
       - usb       # USB Device & Host tests
       - adc       # component_ut_pytest_esp32x_adc
       - i154
+      - flash_multi
   patterns:
     - "{0}-{1}-{2}"
     - "{0}-{2}"
