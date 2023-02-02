@@ -50,7 +50,7 @@ Usage example to set Ethernet configuration:
 Usage example to get Ethernet configuration:
 
 .. code-block:: c
-    
+
     eth_duplex_t duplex_mode;
     esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &duplex_mode);
 
@@ -141,13 +141,13 @@ This is the preferred way to print the address:
 
 .. code-block:: c
 
-           ESP_LOGI(TAG, "got ip:" IPSTR "\n", IP2STR(&event->ip_info.ip));
+    ESP_LOGI(TAG, "got ip:" IPSTR "\n", IP2STR(&event->ip_info.ip));
 
 Instead of
 
 .. code-block:: c
 
-           ESP_LOGI(TAG, "got ip:%s\n", ip4addr_ntoa(&event->ip_info.ip));
+    ESP_LOGI(TAG, "got ip:%s\n", ip4addr_ntoa(&event->ip_info.ip));
 
 Since ``ip4addr_ntoa()`` is a LwIP API, the esp-netif provides ``esp_ip4addr_ntoa()`` as a replacement. However, the above method using ``IP2STR()`` is generally preferred.
 

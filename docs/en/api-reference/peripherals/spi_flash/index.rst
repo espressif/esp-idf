@@ -5,6 +5,7 @@ SPI Flash API
 
 Overview
 --------
+
 The spi_flash component contains API functions related to reading, writing, erasing, memory mapping for data in the external flash.
 
 For higher-level API functions which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`, see :doc:`/api-reference/storage/partition`
@@ -127,7 +128,6 @@ Concurrency Constraints for Flash on SPI1
 .. attention::
 
    The SPI0/1 bus is shared between the instruction & data cache (for firmware execution) and the SPI1 peripheral (controlled by the drivers including this SPI flash driver). Hence, calling SPI Flash API on SPI1 bus (including the main flash) will cause significant influence to the whole system. See :doc:`spi_flash_concurrency` for more details.
-
 
 
 SPI Flash Encryption

@@ -1,5 +1,6 @@
 HTTP 服务器
 ===========
+
 :link_to_translation:`en:[English]`
 
 概述
@@ -157,6 +158,25 @@ Websocket 服务器
 
 HTTP 服务器组件提供 websocket 支持。可以在 menuconfig 中使用 :ref:`CONFIG_HTTPD_WS_SUPPORT` 选项启用 websocket 功能。有关如何使用 websocket 功能，请参阅 :example:`protocols/http_server/ws_echo_server` 目录下的示例代码。
 
+
+事件处理
+--------------
+
+ESP HTTP 服务器有各种事件，当特定事件发生时，:doc:`事件循环库 <../system/esp_event>` 可以触发处理程序。 必须使用 :cpp:func:`esp_event_handler_register` 注册处理程序以便 ESP HTTP 服务器进行事件处理。
+
+:cpp:enum:`esp_http_server_event_id_t` 包含 ESP HTTP 服务器可能发生的所有事件。
+
+以下为事件循环中不同 ESP HTTP 服务器事件的预期数据类型：
+
+    - HTTP_SERVER_EVENT_ERROR           :   ``httpd_err_code_t``
+    - HTTP_SERVER_EVENT_START           :   ``NULL``
+    - HTTP_SERVER_EVENT_ON_CONNECTED    :   ``int``
+    - HTTP_SERVER_EVENT_ON_HEADER       :   ``int``
+    - HTTP_SERVER_EVENT_HEADERS_SENT    :   ``int``
+    - HTTP_SERVER_EVENT_ON_DATA         :   ``esp_http_server_event_data``
+    - HTTP_SERVER_EVENT_SENT_DATA       :   ``esp_http_server_event_data``
+    - HTTP_SERVER_EVENT_DISCONNECTED    :   ``int``
+    - HTTP_SERVER_EVENT_STOP            :   ``NULL``
 
 API 参考
 --------

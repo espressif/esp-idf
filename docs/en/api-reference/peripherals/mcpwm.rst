@@ -197,7 +197,7 @@ The callback functions above are called within the ISR context, so they should *
 
 The parameter ``user_data`` of :cpp:func:`mcpwm_timer_register_event_callbacks` function is used to save user's own context, it will be passed to each callback function directly.
 
-This function will lazy install interrupt service for the MCPWM timer without enabling it. It is only allowed to be called before before :cpp:func:`mcpwm_timer_enable`, otherwise the :c:macro:`ESP_ERR_INVALID_STATE` error will be returned. See also `Enable and Disable timer <#enable-and-disable-timer>`__ for more information.
+This function will lazy install interrupt service for the MCPWM timer without enabling it. It is only allowed to be called before :cpp:func:`mcpwm_timer_enable`, otherwise the :c:macro:`ESP_ERR_INVALID_STATE` error will be returned. See also `Enable and Disable timer <#enable-and-disable-timer>`__ for more information.
 
 Enable and Disable Timer
 ~~~~~~~~~~~~~~~~~~~~~~~~
