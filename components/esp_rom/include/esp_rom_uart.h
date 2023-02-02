@@ -1,16 +1,8 @@
-// Copyright 2010-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -91,9 +83,22 @@ int esp_rom_uart_rx_string(uint8_t *str, uint8_t max_len);
 /**
  * @brief Set the UART port used by ets_printf.
  *
+ * @note USB-CDC port is also treated as "UART" port in the ROM code.
+ *       Use ESP_ROM_USB_SERIAL_DEVICE_NUM or ESP_ROM_USB_OTG_NUM to identify USB_SERIAL_JTAG and USB_OTG, respectively.
+ *
  * @param uart_no UART port number
  */
 void esp_rom_uart_set_as_console(uint8_t uart_no);
+
+/**
+ * @brief Switch the UART port that will use a buffer for TX and RX.
+ *
+ * @note USB-CDC port is also treated as "UART" port in the ROM code.
+ *       Use ESP_ROM_USB_SERIAL_DEVICE_NUM or ESP_ROM_USB_OTG_NUM to identify USB_SERIAL_JTAG and USB_OTG, respectively.
+ *
+ * @param uart_no UART port number
+ */
+void esp_rom_uart_switch_buffer(uint8_t uart_no);
 
 /**
  * @brief Initialize the USB ACM UART
