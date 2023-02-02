@@ -33,8 +33,7 @@
     DIS_DOWNLOAD_DCACHE (BLOCK0)             Disables Dcache when SoC is in Download mode       = False R/W (0b0)
     DIS_FORCE_DOWNLOAD (BLOCK0)              Disables forcing chip into Download mode           = False R/W (0b0)
     DIS_CAN (BLOCK0)                         Disables the TWAI Controller hardware              = False R/W (0b0)
-    DIS_BOOT_REMAP (BLOCK0)                  Disables capability to Remap RAM to ROM address sp = False R/W (0b0)
-                                            ace                                               
+    DIS_APP_CPU (BLOCK0)                     Disables APP CPU                                   = False R/W (0b0)
     FLASH_TPUW (BLOCK0)                      Configures flash startup delay after SoC power-up, = 0 R/W (0x0)
                                             unit is (ms/2). When the value is 15, delay is 7.
                                             5 ms                                              

@@ -164,7 +164,15 @@ Assuming that the eFuse values are in their default states and the firmware boot
 
   5. Firmware bootloader sets the first available bit in ``{IDF_TARGET_CRYPT_CNT}`` (0b001) to mark the flash contents as encrypted. Odd number of bits is set.
 
-  6. For :ref:`flash-enc-development-mode`, the firmware bootloader allows the UART bootloader to re-flash encrypted binaries. Also, the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits are NOT write-protected. In addition, the firmware bootloader by default sets the eFuse bits ``DIS_BOOT_REMAP``, ``DIS_DOWNLOAD_ICACHE``, ``DIS_DOWNLOAD_DCACHE``, ``HARD_DIS_JTAG`` and ``DIS_LEGACY_SPI_BOOT``.
+  6. For :ref:`flash-enc-development-mode`, the firmware bootloader allows the UART bootloader to re-flash encrypted binaries. Also, the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits are NOT write-protected. In addition, the firmware bootloader by default sets the following eFuse bits:
+
+    .. list::
+
+      :esp32s2: - ``DIS_BOOT_REMAP``
+      - ``DIS_DOWNLOAD_ICACHE``
+      - ``DIS_DOWNLOAD_DCACHE``
+      - ``HARD_DIS_JTAG``
+      - ``DIS_LEGACY_SPI_BOOT``
 
   7. For :ref:`flash-enc-release-mode`, the firmware bootloader sets all the eFuse bits set under development mode as well as ``DIS_DOWNLOAD_MANUAL_ENCRYPT``. It also write-protects the ``{IDF_TARGET_CRYPT_CNT}`` eFuse bits. To modify this behavior, see :ref:`uart-bootloader-encryption`.
 
@@ -454,7 +462,7 @@ When using Flash Encryption in production:
 
    - Do not reuse the same flash encryption key between multiple devices. This means that an attacker who copies encrypted data from one device cannot transfer it to a second device.
    :esp32: - When using ESP32 V3, if the UART ROM Download Mode is not needed for a production device then it should be disabled to provide an extra level of protection. Do this by calling :cpp:func:`esp_efuse_disable_rom_download_mode` during application startup. Alternatively, configure the project :ref:`CONFIG_ESP32_REV_MIN` level to 3 (targeting ESP32 V3 only) and select the :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)". The ability to disable ROM Download Mode is not available on earlier ESP32 versions.
-   :not esp32: - The UART ROM Download Mode should be disabled entirely if it is not needed, or permanently set to "Secure Download Mode" otherwise. Secure Download Mode permanently limits the available commands to update SPI config, changing baud rate, basic flash write and a command to return a summary of currently enabled security features (`get_security_info`). The default behaviour is to set Secure Download Mode on first boot in Release mode. To disable Download Mode entirely select select the :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)" or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
+   :not esp32: - The UART ROM Download Mode should be disabled entirely if it is not needed, or permanently set to "Secure Download Mode" otherwise. Secure Download Mode permanently limits the available commands to updating SPI config, changing baud rate, basic flash write, and returning a summary of the currently enabled security features with the `get_security_info` command. The default behaviour is to set Secure Download Mode on first boot in Release mode. To disable Download Mode entirely, select :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to "Permanently disable ROM Download Mode (recommended)" or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
    - Enable :doc:`Secure Boot <secure-boot-v2>` as an extra layer of protection, and to prevent an attacker from selectively corrupting any part of the flash before boot.
 
 Possible Failures
