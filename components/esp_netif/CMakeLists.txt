@@ -65,5 +65,4 @@ if(CONFIG_ESP_NETIF_L2_TAP OR CONFIG_ESP_NETIF_BRIDGE_EN)
 endif()
 
 
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP_NETIF_COMPONENT_BUILD)

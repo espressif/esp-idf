@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include <inttypes.h>
 #include <lwip/ip_addr.h>
 #include <lwip/sockets.h>
 
@@ -721,7 +722,7 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
     // Create parent esp-netif object
     esp_netif_t *esp_netif = calloc(1, sizeof(struct esp_netif_obj));
     if (!esp_netif) {
-        ESP_LOGE(TAG, "Failed to allocate %d bytes (free heap size %d)", sizeof(struct esp_netif_obj),
+        ESP_LOGE(TAG, "Failed to allocate %" PRIu32 " bytes (free heap size %" PRIu32 ")", (uint32_t)sizeof(struct esp_netif_obj),
                  esp_get_free_heap_size());
         return NULL;
     }
@@ -729,7 +730,7 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
     // Create ip info
     esp_netif_ip_info_t *ip_info = calloc(1, sizeof(esp_netif_ip_info_t));
     if (!ip_info) {
-        ESP_LOGE(TAG, "Failed to allocate %d bytes (free heap size %d)", sizeof(esp_netif_ip_info_t),
+        ESP_LOGE(TAG, "Failed to allocate %" PRIu32 " bytes (free heap size %" PRIu32 ")", (uint32_t)sizeof(esp_netif_ip_info_t),
                  esp_get_free_heap_size());
         free(esp_netif);
         return NULL;
@@ -739,7 +740,7 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
     // creating another ip info (to store old ip)
     ip_info = calloc(1, sizeof(esp_netif_ip_info_t));
     if (!ip_info) {
-        ESP_LOGE(TAG, "Failed to allocate %d bytes (free heap size %d)", sizeof(esp_netif_ip_info_t),
+        ESP_LOGE(TAG, "Failed to allocate %" PRIu32 " bytes (free heap size %" PRIu32 ")", (uint32_t)sizeof(esp_netif_ip_info_t),
                  esp_get_free_heap_size());
         free(esp_netif->ip_info);
         free(esp_netif);
@@ -758,7 +759,7 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
 
     struct netif * lwip_netif = calloc(1, sizeof(struct netif));
     if (!lwip_netif) {
-        ESP_LOGE(TAG, "Failed to allocate %d bytes (free heap size %d)", sizeof(struct netif),
+        ESP_LOGE(TAG, "Failed to allocate %" PRIu32 " bytes (free heap size %" PRIu32 ")", (uint32_t)sizeof(struct netif),
                  esp_get_free_heap_size());
         free(esp_netif->ip_info_old);
         free(esp_netif->ip_info);
@@ -836,7 +837,7 @@ static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
 #if CONFIG_PPP_SUPPORT
         err_t err = esp_netif->lwip_init_fn(NULL);
         if (err != ERR_OK) {
-            ESP_LOGE(TAG, "Init netif failed with  %d", err);
+            ESP_LOGE(TAG, "Init netif failed with  %" PRId8 "", err);
             return ESP_ERR_ESP_NETIF_INIT_FAILED;
         }
 #else
@@ -1342,8 +1343,8 @@ static esp_err_t esp_netif_start_ip_lost_timer(esp_netif_t *esp_netif)
         return ESP_OK;
     }
 
-    ESP_LOGD(TAG, "if%p start ip lost tmr: no need start because netif=%p interval=%d ip=%x",
-             esp_netif, netif, CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL, ip_info_old->ip.addr);
+    ESP_LOGD(TAG, "if%p start ip lost tmr: no need start because netif=%p interval=%d ip=%" PRIx32,
+             esp_netif, netif, (CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL), ip_info_old->ip.addr);
 
     return ESP_OK;
 }
@@ -1863,7 +1864,7 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
     esp_netif_dns_type_t type = dns_param->dns_type;
     esp_netif_dns_info_t *dns = dns_param->dns_info;
 
-    ESP_LOGD(TAG, "esp_netif_set_dns_info: if=%p type=%d dns=%x", esp_netif, type, dns->ip.u_addr.ip4.addr);
+    ESP_LOGD(TAG, "esp_netif_set_dns_info: if=%p type=%d dns=%" PRIx32, esp_netif, type, dns->ip.u_addr.ip4.addr);
 
     ip_addr_t lwip_ip = {};
     ESPIP_TO_IP(&dns->ip, &lwip_ip);
