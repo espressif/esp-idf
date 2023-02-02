@@ -198,6 +198,10 @@ esp_err_t esp_external_coex_set_grant_delay(uint8_t delay_us);
  * @return : ESP_OK - success, other - failed
  */
 esp_err_t esp_external_coex_set_validate_high(bool is_high_valid);
+#else
+esp_err_t esp_extern_coex_register_txline(uint32_t pin);
+
+esp_err_t esp_extern_coex_unregister_txline(void);
 #endif
 #endif
 
