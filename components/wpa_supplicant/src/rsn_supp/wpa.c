@@ -52,6 +52,7 @@
 struct wpa_sm gWpaSm;
 /* fix buf for tx for now */
 #define WPA_TX_MSG_BUFF_MAXLEN 200
+#define MIN_DH_LEN 4
 
 #define ASSOC_IE_LEN 24 + 2 + PMKID_LEN + RSN_SELECTOR_LEN
 #define MAX_EAPOL_RETRIES 3
@@ -2787,7 +2788,6 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
 {
     size_t prime_len=0,hash_len=0;
     struct wpabuf * sh_secret = NULL, *pub = NULL, *hkey = NULL;
-    int res;
     const char *info = "OWE Key Generation";
     u8 pmkid[SHA256_MAC_LEN], prk[SHA256_MAC_LEN], pmk[SHA256_MAC_LEN];
     const u8 *addr[2];
@@ -2797,8 +2797,6 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
     struct wpa_sm *sm;
     sm = get_wpa_sm();
 
-    (void)res;
-
     wpabuf_free(sm->owe_ie); //free the dh ie constructed in owe_build_assoc_req
     sm->owe_ie = NULL;
 
@@ -2806,14 +2804,14 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
     parsed_rsn_data = os_zalloc(sizeof(struct wpa_ie_data));
     if (!parsed_rsn_data) {
         wpa_printf(MSG_ERROR, "Memory allocation failed");
-        goto fail;
+        return -1;
     }
 
     if (rsn_ie && rsn_len && wpa_parse_wpa_ie_rsn(rsn_ie, rsn_len + 2, parsed_rsn_data) != 0) {
         goto fail;
     }
-    if (!dh_ie && !dh_len && parsed_rsn_data->num_pmkid == 0) {
-        wpa_printf(MSG_ERROR, "OWE: No diffie hellman parameter in response");
+    if (!dh_ie || dh_len < MIN_DH_LEN || parsed_rsn_data->num_pmkid == 0) {
+        wpa_printf(MSG_ERROR, "OWE: Invalid parameter");
         goto fail;
     }
 
@@ -2854,7 +2852,11 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
         addr[1] = dh_ie + 2;
         len[1] = dh_len - 2;
 
-        res = sha256_vector(2, addr, len, pmkid);
+        int res = sha256_vector(2, addr, len, pmkid);
+        if (res < 0 ) {
+            goto fail;
+        }
+
         hash_len = SHA256_MAC_LEN;
 
         pub = wpabuf_zeropad(pub, prime_len);
@@ -2869,6 +2871,10 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
         wpabuf_put_le16(hkey, sm->owe_group); /* group */
 
         res = hmac_sha256(wpabuf_head(hkey), wpabuf_len(hkey), wpabuf_head(sh_secret), wpabuf_len(sh_secret), prk);
+        if (res < 0 ) {
+            goto fail;
+        }
+
         hash_len = SHA256_MAC_LEN;
 
         wpabuf_free(hkey);
@@ -2879,6 +2885,9 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
         /* PMK = HKDF-expand(prk, "OWE Key Generation", n) */
         res = hmac_sha256_kdf(prk, hash_len, NULL, (const u8 *)info,
         os_strlen(info), pmk, hash_len);
+        if (res < 0 ) {
+            goto fail;
+        }
 
         forced_memzero(prk, SHA256_MAC_LEN);
         wpa_hexdump(MSG_DEBUG, "OWE: PMKID", pmkid, OWE_PMKID_LEN);
