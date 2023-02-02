@@ -34,6 +34,7 @@ typedef struct {
     const char *sub_protocol;               /*!< WS subprotocol */
     const char *user_agent;                 /*!< WS user agent */
     const char *headers;                    /*!< WS additional headers */
+    const char *auth;                       /*!< HTTP authorization header */
     bool        propagate_control_frames;   /*!< If true, control frames are passed to the reader
                                              *   If false, only user frames are propagated, control frames are handled
                                              *   automatically during read operations
@@ -92,6 +93,18 @@ esp_err_t esp_transport_ws_set_user_agent(esp_transport_handle_t t, const char *
  *      - One of the error codes
  */
 esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *headers);
+
+/**
+ * @brief               Set websocket authorization headers
+ *
+ * @param t             websocket transport handle
+ * @param sub_protocol  The HTTP authorization header string, set NULL to clear the old value
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - One of the error codes
+ */
+esp_err_t esp_transport_ws_set_auth(esp_transport_handle_t t, const char *auth);
 
 /**
  * @brief               Set websocket transport parameters
