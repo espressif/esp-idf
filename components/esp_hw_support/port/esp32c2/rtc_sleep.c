@@ -71,7 +71,7 @@ void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_
 
         out_config->dbg_atten_monitor = RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT;
         out_config->bias_sleep_monitor = RTC_CNTL_BIASSLP_MONITOR_DEFAULT;
-        out_config->dbg_atten_slp = RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT;
+        out_config->dbg_atten_slp = !(sleep_flags & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBG_ATTEN_DEEPSLEEP_NODROP : RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT;
         out_config->bias_sleep_slp = RTC_CNTL_BIASSLP_SLEEP_DEFAULT;
         out_config->pd_cur_monitor = RTC_CNTL_PD_CUR_MONITOR_DEFAULT;
         out_config->pd_cur_slp = RTC_CNTL_PD_CUR_SLEEP_DEFAULT;
