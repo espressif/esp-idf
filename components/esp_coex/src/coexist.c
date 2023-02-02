@@ -15,7 +15,13 @@
 #include "hal/gpio_types.h"
 #include "soc/gpio_periph.h"
 #include "soc/gpio_struct.h"
+#include "esp_attr.h"
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/gpio.h"
 #endif
+#endif
+
+static const char* TAG = "coexist";
 
 const char *esp_coex_version_get(void)
 {
@@ -394,6 +400,42 @@ esp_err_t esp_disable_extern_coex_gpio_pin()
 
     return ESP_OK;
 }
+
+#ifndef SOC_EXTERNAL_COEX_ADVANCE
+#define ESP_EXTERN_COEX_OUTPIN_UNDEF 0xFFFF
+DRAM_ATTR static uint32_t esp_extern_coex_outpin = ESP_EXTERN_COEX_OUTPIN_UNDEF;
+
+esp_err_t esp_extern_coex_register_txline(uint32_t pin)
+{
+    esp_extern_coex_outpin = pin;
+    gpio_config_t io_conf = {
+        //disable interrupt
+        .intr_type = GPIO_INTR_DISABLE,
+        //set as output mode
+        .mode = GPIO_MODE_OUTPUT,
+        //bit mask of the pins that you want to set,e.g.GPIO18/19
+        .pin_bit_mask = (1ULL << esp_extern_coex_outpin),
+        //disable pull-down mode
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        //enable pull-up mode
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+    };
+    gpio_config(&io_conf);
+
+    ESP_LOGI(TAG, "external coex select output io %d as txline", esp_extern_coex_outpin);
+
+    gpio_matrix_out(esp_extern_coex_outpin, BB_DIAG9_IDX, false, false);
+
+    return ESP_OK;
+}
+
+esp_err_t esp_extern_coex_unregister_txline(void)
+{
+    /* Do nothing here */
+
+    return ESP_OK;
+}
+#endif
 #endif/*External Coex*/
 
 #if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && CONFIG_SOC_IEEE802154_SUPPORTED
