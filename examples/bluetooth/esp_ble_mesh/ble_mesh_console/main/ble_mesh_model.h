@@ -76,11 +76,19 @@ extern esp_ble_mesh_model_t config_models[];
 
 #if (CONFIG_BLE_MESH_CFG_CLI)
 void ble_mesh_configuration_client_model_cb(esp_ble_mesh_cfg_client_cb_event_t event,
-        esp_ble_mesh_cfg_client_cb_param_t *param);
+                                            esp_ble_mesh_cfg_client_cb_param_t *param);
 #endif
 
 #if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
 void ble_mesh_generic_onoff_client_model_cb(esp_ble_mesh_generic_client_cb_event_t event,
-        esp_ble_mesh_generic_client_cb_param_t *param);
+                                            esp_ble_mesh_generic_client_cb_param_t *param);
 #endif
+
+#if(CONFIG_BLE_MESH_GENERIC_SERVER)
+void ble_mesh_generic_server_model_cb(esp_ble_mesh_generic_server_cb_event_t event,
+                                      esp_ble_mesh_generic_server_cb_param_t *param);
+#endif
+
+void ble_mesh_vendor_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_cb_param_t *param);
+
 #endif //_BLE_MESH_CFG_SRV_MODEL_H_
