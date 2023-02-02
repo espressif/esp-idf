@@ -183,6 +183,7 @@ void initialise_wifi(void)
     gpio_pin.in_pin1  = 2;
     gpio_pin.out_pin0 = 3;
     ESP_ERROR_CHECK( esp_enable_extern_coex_gpio_pin(EXTERN_COEX_WIRE_3, gpio_pin) );
+    ESP_ERROR_CHECK( esp_extern_coex_register_txline(4) );
 #endif
 #endif
 
