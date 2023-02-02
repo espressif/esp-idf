@@ -236,9 +236,15 @@
   - "components/esp_https_ota/**/*"
 
 # for jobs: component_ut_pytest_esp32_sdio
-.patterns-unit_test-sdio: &patterns-unit_test-sdio
-  - "components/hal/**/*"
-  - "components/driver/**/*"
+.patterns-component_ut-sdio: &patterns-component_ut-sdio
+  - "components/hal/sdio*.c"
+  - "components/hal/include/hal/sdio*.h"
+  - "components/driver/sdspi*.c"
+  - "components/driver/sdio*.c"
+  - "components/driver/sdmmc*.c"
+  - "components/driver/include/driver/sdspi*.h"
+  - "components/driver/include/driver/sdio*.h"
+  - "components/driver/include/driver/sdmmc*.h"
   - "components/sdmmc/**/*"
 
 # for jobs: component_ut_pytest_flash_multi
@@ -592,6 +598,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
+      changes: *patterns-component_ut-sdio
+    - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
@@ -623,6 +631,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
+      changes: *patterns-component_ut-sdio
+    - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
@@ -652,6 +662,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
@@ -683,6 +695,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
+      changes: *patterns-component_ut-sdio
+    - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
@@ -712,6 +726,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
@@ -743,6 +759,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
+      changes: *patterns-component_ut-sdio
+    - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
@@ -772,6 +790,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
@@ -803,6 +823,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
+      changes: *patterns-component_ut-sdio
+    - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-downloadable-tools
@@ -832,6 +854,8 @@
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
@@ -1515,6 +1539,8 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
+      changes: *patterns-component_ut-sdio
+    - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
       changes: *patterns-custom_test
@@ -1546,8 +1572,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-flash_multi
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test:
   rules:
@@ -1582,8 +1606,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-flash_multi
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test-esp32:
   rules:
@@ -1611,8 +1633,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-flash_multi
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test-esp32c2:
   rules:
@@ -1639,8 +1659,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-flash_multi
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test-esp32c3:
   rules:
@@ -1667,8 +1685,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-flash_multi
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test-esp32c6:
   rules:
@@ -1695,8 +1711,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-flash_multi
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test-esp32h2:
   rules:
@@ -1723,8 +1737,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-flash_multi
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test-esp32s2:
   rules:
@@ -1751,8 +1763,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-flash_multi
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-sdio
 
 .rules:build:unit_test-esp32s3:
   rules:
@@ -1779,8 +1789,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-flash_multi
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-sdio
 
 .rules:labels-protected:lan8720:
   rules:
@@ -1854,6 +1862,19 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+
+.rules:test:component_ut-esp32-sdio:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-sdio
 
 .rules:test:component_ut-esp32-wifi:
   rules:
@@ -2569,19 +2590,6 @@
     - <<: *if-label-unit_test_esp32
     - <<: *if-dev-push
       changes: *patterns-unit_test
-
-.rules:test:unit_test-esp32-sdio:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-target_test
-    - <<: *if-label-unit_test
-    - <<: *if-label-unit_test_esp32
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-sdio
 
 .rules:test:unit_test-esp32c2:
   rules:

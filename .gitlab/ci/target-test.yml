@@ -461,7 +461,7 @@ component_ut_pytest_esp32_adc:
 component_ut_pytest_esp32_sdio:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:unit_test-esp32-sdio
+    - .rules:test:component_ut-esp32-sdio
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, sdio_master_slave ]
