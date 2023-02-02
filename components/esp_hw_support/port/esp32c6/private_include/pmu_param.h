@@ -284,61 +284,61 @@ typedef struct {
 
 typedef struct pmu_sleep_machine_constant {
     struct {
-        uint16_t    min_slp_time_ms;            /* Mininum sleep protection time (unit: microsecond) */
+        uint16_t    min_slp_time_us;            /* Mininum sleep protection time (unit: microsecond) */
         uint8_t     wakeup_wait_cycle;          /* Modem wakeup signal (WiFi MAC and BEACON wakeup) waits for the slow & fast clock domain synchronization and the wakeup signal triggers the PMU FSM switching wait cycle (unit: slow clock cycle) */
         uint8_t     reserved0;
         uint16_t    reserved1;
-        uint16_t    analog_wait_time_ms;        /* LP LDO power up wait time (unit: microsecond) */
-        uint16_t    xtal_wait_stable_time_ms;   /* Main XTAL stabilization wait time (unit: microsecond) */
+        uint16_t    analog_wait_time_us;        /* LP LDO power up wait time (unit: microsecond) */
+        uint16_t    xtal_wait_stable_time_us;   /* Main XTAL stabilization wait time (unit: microsecond) */
         uint8_t     clk_switch_cycle;           /* Clock switch to FOSC (unit: slow clock cycle) */
         uint8_t     clk_power_on_wait_cycle;    /* Clock power on wait cycle (unit: slow clock cycle) */
-        uint16_t    power_supply_wait_time_ms;  /* (unit: microsecond) */
-        uint16_t    power_up_wait_time_ms;      /* (unit: microsecond) */
+        uint16_t    power_supply_wait_time_us;  /* (unit: microsecond) */
+        uint16_t    power_up_wait_time_us;      /* (unit: microsecond) */
     } lp;
     struct {
-        uint16_t    min_slp_time_ms;            /* Mininum sleep protection time (unit: microsecond) */
-        uint16_t    clock_domain_sync_time_ms;  /* The Slow OSC clock domain synchronizes time with the Fast OSC domain, at least 4 slow clock cycles (unit: microsecond) */
-        uint16_t    system_dfs_up_work_time_ms; /* System DFS up scaling work time (unit: microsecond) */
-        uint16_t    analog_wait_time_ms;        /* HP LDO power up wait time (unit: microsecond) */
-        uint16_t    power_supply_wait_time_ms;  /* (unit: microsecond) */
-        uint16_t    power_up_wait_time_ms;      /* (unit: microsecond) */
-        uint16_t    regdma_s2m_work_time_ms;    /* Modem Subsystem (S2M switch) REGDMA restore time (unit: microsecond) */
-        uint16_t    regdma_s2a_work_time_ms;    /* SOC System (Digital Peripheral + Modem Subsystem) REGDMA (S2A switch) restore time (unit: microsecond) */
-        uint16_t    regdma_m2a_work_time_ms;    /* Digital Peripheral (M2A switch) REGDMA restore time (unit: microsecond) */
-        uint16_t    regdma_a2s_work_time_ms;    /* SOC System (Digital Peripheral + Modem Subsystem) REGDMA (A2S switch) backup time (unit: microsecond) */
-        uint16_t    regdma_rf_on_work_time_ms;  /* The REGDMA work time of RF enable (unit: microsecond) */
-        uint16_t    regdma_rf_off_work_time_ms; /* The REGDMA work time of RF disable (unit: microsecond) */
-        uint16_t    xtal_wait_stable_time_ms;   /* Main XTAL stabilization wait time (unit: microsecond) */
-        uint16_t    pll_wait_stable_time_ms;    /* PLL stabilization wait time (unit: microsecond) */
+        uint16_t    min_slp_time_us;            /* Mininum sleep protection time (unit: microsecond) */
+        uint16_t    clock_domain_sync_time_us;  /* The Slow OSC clock domain synchronizes time with the Fast OSC domain, at least 4 slow clock cycles (unit: microsecond) */
+        uint16_t    system_dfs_up_work_time_us; /* System DFS up scaling work time (unit: microsecond) */
+        uint16_t    analog_wait_time_us;        /* HP LDO power up wait time (unit: microsecond) */
+        uint16_t    power_supply_wait_time_us;  /* (unit: microsecond) */
+        uint16_t    power_up_wait_time_us;      /* (unit: microsecond) */
+        uint16_t    regdma_s2m_work_time_us;    /* Modem Subsystem (S2M switch) REGDMA restore time (unit: microsecond) */
+        uint16_t    regdma_s2a_work_time_us;    /* SOC System (Digital Peripheral + Modem Subsystem) REGDMA (S2A switch) restore time (unit: microsecond) */
+        uint16_t    regdma_m2a_work_time_us;    /* Digital Peripheral (M2A switch) REGDMA restore time (unit: microsecond) */
+        uint16_t    regdma_a2s_work_time_us;    /* SOC System (Digital Peripheral + Modem Subsystem) REGDMA (A2S switch) backup time (unit: microsecond) */
+        uint16_t    regdma_rf_on_work_time_us;  /* The REGDMA work time of RF enable (unit: microsecond) */
+        uint16_t    regdma_rf_off_work_time_us; /* The REGDMA work time of RF disable (unit: microsecond) */
+        uint16_t    xtal_wait_stable_time_us;   /* Main XTAL stabilization wait time (unit: microsecond) */
+        uint16_t    pll_wait_stable_time_us;    /* PLL stabilization wait time (unit: microsecond) */
     } hp;
 } pmu_sleep_machine_constant_t;
 
 #define PMU_SLEEP_MC_DEFAULT()      {           \
     .lp = {                                     \
-        .min_slp_time_ms                = 450,  \
+        .min_slp_time_us                = 450,  \
         .wakeup_wait_cycle              = 4,    \
-        .analog_wait_time_ms            = 154,  \
-        .xtal_wait_stable_time_ms       = 250,  \
+        .analog_wait_time_us            = 154,  \
+        .xtal_wait_stable_time_us       = 250,  \
         .clk_switch_cycle               = 1,    \
         .clk_power_on_wait_cycle        = 1,    \
-        .power_supply_wait_time_ms      = 2,    \
-        .power_up_wait_time_ms          = 2     \
+        .power_supply_wait_time_us      = 2,    \
+        .power_up_wait_time_us          = 2     \
     },                                          \
     .hp = {                                     \
-        .min_slp_time_ms                = 450,  \
-        .clock_domain_sync_time_ms      = 150,  \
-        .system_dfs_up_work_time_ms     = 124,  \
-        .analog_wait_time_ms            = 154,  \
-        .power_supply_wait_time_ms      = 2,    \
-        .power_up_wait_time_ms          = 2,    \
-        .regdma_s2m_work_time_ms        = 172,  \
-        .regdma_s2a_work_time_ms        = 430,  \
-        .regdma_m2a_work_time_ms        = 265,  \
-        .regdma_a2s_work_time_ms        = 338,  \
-        .regdma_rf_on_work_time_ms      = 70,   \
-        .regdma_rf_off_work_time_ms     = 23,   \
-        .xtal_wait_stable_time_ms       = 250,  \
-        .pll_wait_stable_time_ms        = 1     \
+        .min_slp_time_us                = 450,  \
+        .clock_domain_sync_time_us      = 150,  \
+        .system_dfs_up_work_time_us     = 124,  \
+        .analog_wait_time_us            = 154,  \
+        .power_supply_wait_time_us      = 2,    \
+        .power_up_wait_time_us          = 2,    \
+        .regdma_s2m_work_time_us        = 172,  \
+        .regdma_s2a_work_time_us        = 430,  \
+        .regdma_m2a_work_time_us        = 265,  \
+        .regdma_a2s_work_time_us        = 338,  \
+        .regdma_rf_on_work_time_us      = 70,   \
+        .regdma_rf_off_work_time_us     = 23,   \
+        .xtal_wait_stable_time_us       = 250,  \
+        .pll_wait_stable_time_us        = 1     \
     }                                           \
 }
 
