@@ -206,13 +206,15 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 
 其中 OpenOCD 的烧写命令 ``program_esp`` 格式如下：
 
-``program_esp <image_file> <offset> [verify] [reset] [exit]``
+``program_esp <image_file> <offset> [verify] [reset] [exit] [compress] [encrypt]``
 
 -  ``image_file`` - 程序镜像文件存放的路径
 -  ``offset`` - 镜像烧写到 flash 中的偏移地址
 -  ``verify`` - 烧写完成后校验 flash 中的内容（可选）
 -  ``reset`` - 烧写完成后重启目标（可选）
 -  ``exit`` - 烧写完成后退出 OpenOCD（可选）
+- ``compress`` - 烧写开始前压缩镜像文件（可选）
+- ``encrypt`` - 烧写到 flash 前加密二进制文件，与 ``idf.py encrypted-flash`` 功能相同（可选）
 
 现在可以调试应用程序了，请按照以下章节中的步骤进行操作。
 
