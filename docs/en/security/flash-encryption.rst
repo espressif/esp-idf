@@ -801,11 +801,11 @@ Key Points About Flash Encryption
 
   :esp32: - The flash encryption algorithm is AES-256, where the key is "tweaked" with the offset address of each 32 byte block of flash. This means that every 32-byte block (two consecutive 16 byte AES blocks) is encrypted with a unique key derived from the flash encryption key.
 
-  :esp32s2 or esp32s3: - Flash memory contents is encrypted using XTS-AES-128 or XTS-AES-256. The flash encryption key is 256 bits and 512 bits respectively and stored in one or two ``BLOCK_KEYN`` eFuses internal to the chip and, by default, is protected from software access.
+  :SOC_FLASH_ENCRYPTION_XTS_AES_256: - Flash memory contents is encrypted using XTS-AES-128 or XTS-AES-256. The flash encryption key is 256 bits and 512 bits respectively and stored in one or two ``BLOCK_KEYN`` eFuses internal to the chip and, by default, is protected from software access.
 
-  :esp32c3: - Flash memory contents is encrypted using XTS-AES-128. The flash encryption key is 256 bits and stored in one ``BLOCK_KEYN`` eFuse internal to the chip and, by default, is protected from software access.
+  :SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED: - Flash memory contents is encrypted using XTS-AES-128. The flash encryption key is 256 bits and stored in one ``BLOCK_KEYN`` eFuse internal to the chip and, by default, is protected from software access.
 
-  :esp32c2: - Flash memory contents is encrypted using XTS-AES-128. The flash encryption key is 256 or 128 bits and stored in ``BLOCK_KEY0`` eFuse internal to the chip and, by default, is protected from software access.
+  :SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED: - Flash memory contents is encrypted using XTS-AES-128. The flash encryption key is 256 or 128 bits and stored in ``BLOCK_KEY0`` eFuse internal to the chip and, by default, is protected from software access.
 
   - Flash access is transparent via the flash cache mapping feature of {IDF_TARGET_NAME} - any flash regions which are mapped to the address space will be transparently decrypted when read.
 
@@ -904,9 +904,9 @@ On the first boot, the flash encryption process burns by default the following e
 
     - ``DIS_DOWNLOAD_MANUAL_ENCRYPT`` which disables flash encryption operation when running in UART bootloader boot mode.
     :esp32s2 or esp32s3: - ``DIS_DOWNLOAD_ICACHE`` and ``DIS_DOWNLOAD_DCACHE`` which disables the entire MMU flash cache when running in UART bootloader mode.
-    :esp32c3 or esp32c2: - ``DIS_DOWNLOAD_ICACHE`` which disables the entire MMU flash cache when running in UART bootloader mode.
+    :esp32c3 or esp32c2 or esp32c6: - ``DIS_DOWNLOAD_ICACHE`` which disables the entire MMU flash cache when running in UART bootloader mode.
     :esp32s2: - ``HARD_DIS_JTAG`` which disables JTAG.
-    :esp32c3: - ``DIS_PAD_JTAG`` and ``DIS_USB_JTAG`` which disables JTAG.
+    :esp32c3 or esp32c6: - ``DIS_PAD_JTAG`` and ``DIS_USB_JTAG`` which disables JTAG.
     :esp32s3: - ``HARD_DIS_JTAG`` and ``DIS_USB_JTAG`` which disables JTAG.
     - ``DIS_DIRECT_BOOT`` (old name ``DIS_LEGACY_SPI_BOOT``)  which disables direct boot mode
 
