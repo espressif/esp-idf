@@ -77,6 +77,7 @@ static void ot_task_worker(void *aContext)
     esp_netif_t *openthread_netif;
     // Initialize the esp_netif bindings
     openthread_netif = init_openthread_netif(&config);
+    esp_netif_set_default_netif(openthread_netif);
 
 #if CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
     esp_cli_custom_command_init();
