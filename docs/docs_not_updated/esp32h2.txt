@@ -81,7 +81,6 @@ api-reference/peripherals/etm
 api-reference/peripherals/i2s
 api-reference/peripherals/touch_element
 api-reference/peripherals/lcd
-api-reference/peripherals/mcpwm
 api-reference/peripherals/secure_element
 api-reference/peripherals/temp_sensor
 api-reference/peripherals/spi_features

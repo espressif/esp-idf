@@ -15,6 +15,10 @@ config SOC_PCNT_SUPPORTED
     bool
     default y
 
+config SOC_MCPWM_SUPPORTED
+    bool
+    default y
+
 config SOC_GPTIMER_SUPPORTED
     bool
     default y
@@ -504,14 +508,6 @@ config SOC_MCPWM_SUPPORT_ETM
     default y
 
 config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
-    bool
-    default y
-
-config SOC_MCPWM_CLK_SUPPORT_PLL160M
-    bool
-    default y
-
-config SOC_MCPWM_CLK_SUPPORT_XTAL
     bool
     default y
 

@@ -25,9 +25,13 @@
 #define TEST_SYNC_GPIO_2 (19)
 #define TEST_CAP_GPIO (21)
 
-#define MCPWM_GROUP_CLK_SRC_HZ  160000000
-#define MCPWM_TEST_GROUP_CLK_HZ (MCPWM_GROUP_CLK_SRC_HZ / 16)
-#define MCPWM_TEST_TIMER_CLK_HZ (MCPWM_TEST_GROUP_CLK_HZ / 10)
+// MCPWM default resolution
+#if CONFIG_IDF_TARGET_ESP32H2
+#define MCPWM_TEST_GROUP_CLK_HZ (12 * 1000 * 1000)
+#else
+#define MCPWM_TEST_GROUP_CLK_HZ (10 * 1000 * 1000)
+#endif
+#define MCPWM_TEST_TIMER_CLK_HZ (1 * 1000 * 1000)
 
 const static mcpwm_io_signals_t pwma[] = {MCPWM0A, MCPWM1A, MCPWM2A};
 const static mcpwm_io_signals_t pwmb[] = {MCPWM0B, MCPWM1B, MCPWM2B};
