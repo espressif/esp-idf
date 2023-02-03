@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 import fnmatch
 import locale
 import os
@@ -14,7 +16,7 @@ from idf_py_actions.constants import GENERATORS, PREVIEW_TARGETS, SUPPORTED_TARG
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
 from idf_py_actions.tools import (TargetChoice, ensure_build_directory, get_target, idf_version, merge_action_lists,
-                                  realpath, run_target)
+                                  run_target)
 
 
 def action_extensions(base_actions, project_path):
@@ -182,14 +184,14 @@ def action_extensions(base_actions, project_path):
         ensure_build_directory(args, ctx.info_name, True)
 
     def validate_root_options(ctx, args, tasks):
-        args.project_dir = realpath(args.project_dir)
-        if args.build_dir is not None and args.project_dir == realpath(args.build_dir):
+        args.project_dir = os.path.realpath(args.project_dir)
+        if args.build_dir is not None and args.project_dir == os.path.realpath(args.build_dir):
             raise FatalError(
                 'Setting the build directory to the project directory is not supported. Suggest dropping '
                 "--build-dir option, the default is a 'build' subdirectory inside the project directory.")
         if args.build_dir is None:
             args.build_dir = os.path.join(args.project_dir, 'build')
-        args.build_dir = realpath(args.build_dir)
+        args.build_dir = os.path.realpath(args.build_dir)
 
     def idf_version_callback(ctx, param, value):
         if not value or ctx.resilient_parsing:
