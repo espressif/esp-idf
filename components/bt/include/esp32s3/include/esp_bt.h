@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 #define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02209230
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02212090
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -130,6 +130,12 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     #define MESH_DUPLICATE_SCAN_CACHE_SIZE          0
 #endif
 
+#ifndef CONFIG_BT_CTRL_DUPL_SCAN_CACHE_REFRESH_PERIOD
+#define DUPL_SCAN_CACHE_REFRESH_PERIOD 0
+#else
+#define DUPL_SCAN_CACHE_REFRESH_PERIOD CONFIG_BT_CTRL_DUPL_SCAN_CACHE_REFRESH_PERIOD
+#endif
+
 #ifdef CONFIG_BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
 #define BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX CONFIG_BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
 #else
@@ -188,6 +194,7 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .hw_recorrect_en = AGC_RECORRECT_EN,                                   \
     .cca_thresh = CONFIG_BT_CTRL_HW_CCA_VAL,                               \
     .scan_backoff_upperlimitmax = BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,      \
+    .dup_list_refresh_period = DUPL_SCAN_CACHE_REFRESH_PERIOD,             \
 }
 
 #else
@@ -256,6 +263,7 @@ typedef struct {
     uint8_t hw_recorrect_en;
     uint8_t cca_thresh;                     /*!< cca threshold*/
     uint16_t scan_backoff_upperlimitmax;    /*!< scan backoff upperlimitmax value */
+    uint16_t dup_list_refresh_period;       /*!< duplicate scan list refresh time */
 } esp_bt_controller_config_t;
 
 /**

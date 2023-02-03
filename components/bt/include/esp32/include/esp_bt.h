@@ -50,7 +50,7 @@ extern "C" {
 
 #endif //CONFIG_BT_ENABLED
 
-#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20200622
+#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20221207
 
 /**
  * @brief Bluetooth mode for controller enable/disable
@@ -128,6 +128,12 @@ the adv packet will be discarded until the memory is restored. */
     #define MESH_DUPLICATE_SCAN_CACHE_SIZE          0
 #endif
 
+#ifdef CONFIG_BTDM_SCAN_DUPL_CACHE_REFRESH_PERIOD
+#define SCAN_DUPL_CACHE_REFRESH_PERIOD CONFIG_BTDM_SCAN_DUPL_CACHE_REFRESH_PERIOD
+#else
+#define SCAN_DUPL_CACHE_REFRESH_PERIOD              0
+#endif
+
 #if defined(CONFIG_BTDM_CTRL_MODE_BLE_ONLY)
 #define BTDM_CONTROLLER_MODE_EFF                    ESP_BT_MODE_BLE
 #elif defined(CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY)
@@ -183,6 +189,7 @@ the adv packet will be discarded until the memory is restored. */
     .pcm_role = CONFIG_BTDM_CTRL_PCM_ROLE_EFF,                             \
     .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
     .hli = BTDM_CTRL_HLI,                                                  \
+    .dup_list_refresh_period = SCAN_DUPL_CACHE_REFRESH_PERIOD,             \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 }
 
@@ -225,6 +232,7 @@ typedef struct {
     uint8_t pcm_role;                       /*!< PCM role (master & slave)*/
     uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge) */
     bool hli;                               /*!< Using high level interrupt or not */
+    uint16_t dup_list_refresh_period;       /*!< Duplicate scan list refresh period */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 

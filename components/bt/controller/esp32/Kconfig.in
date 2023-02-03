@@ -353,6 +353,22 @@ config BTDM_SCAN_DUPL_CACHE_SIZE
         Maximum number of devices which can be recorded in scan duplicate filter.
         When the maximum amount of device in the filter is reached, the cache will be refreshed.
 
+config BTDM_SCAN_DUPL_CACHE_REFRESH_PERIOD
+    int "Duplicate scan list refresh period (seconds)"
+    depends on BTDM_BLE_SCAN_DUPL
+    range 0 1000
+    default 0
+    help
+        If the period value is non-zero, the controller will periodically clear the device information
+        stored in the scan duuplicate filter. If it is 0, the scan duuplicate filter will not be cleared
+        until the scanning is disabled. Duplicate advertisements for this period should not be sent to the
+        Host in advertising report events.
+        There are two scenarios where the ADV packet will be repeatedly reported:
+        1. The duplicate scan cache is full, the controller will delete the oldest device information and
+        add new device information.
+        2. When the refresh period is up, the controller will clear all device information and start filtering
+        again.
+
 config BTDM_BLE_MESH_SCAN_DUPL_EN
     bool "Special duplicate scan mechanism for BLE Mesh scan"
     depends on BTDM_BLE_SCAN_DUPL
