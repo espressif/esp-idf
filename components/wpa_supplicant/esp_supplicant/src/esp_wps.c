@@ -796,6 +796,20 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
     expd = (struct eap_expand *) ubuf;
     wpa_printf(MSG_DEBUG, "wps process mX req: len %d, tlen %d", len, tlen);
 
+    if (sm->state == WAIT_START) {
+        if (expd->opcode != WSC_Start) {
+            wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d "
+                   "in WAIT_START state", expd->opcode);
+            return ESP_FAIL;
+        }
+        wpa_printf(MSG_DEBUG, "EAP-WSC: Received start");
+        sm->state = WPA_MESG;
+    } else if (expd->opcode == WSC_Start){
+        wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d",
+                expd->opcode);
+        return ESP_FAIL;
+    }
+
     flag = *(u8 *)(ubuf + sizeof(struct eap_expand));
     if (flag & WPS_MSG_FLAG_LEN) {
         tbuf = ubuf + sizeof(struct eap_expand) + 1 + 2;//two bytes total length
@@ -846,6 +860,10 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
         *res = wps_enrollee_process_msg(sm->wps, expd->opcode, wps_buf);
     } else {
         wps_enrollee_process_msg(sm->wps, expd->opcode, wps_buf);
+    }
+
+    if (res && *res == WPS_FAILURE) {
+        sm->state = WPA_FAIL;
     }
 
     if (wps_buf) {
@@ -983,6 +1001,7 @@ int wps_stop_process(wifi_event_sta_wps_fail_reason_t reason_code)
 
     esp_wifi_disconnect();
 
+    sm->state = WPA_FAIL;
     wpa_printf(MSG_DEBUG, "Write wps_fail_information");
 
     esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), portMAX_DELAY);
@@ -1867,6 +1886,7 @@ wifi_wps_scan_done(void *arg, STATUS status)
 
         wpa_printf(MSG_DEBUG, "WPS: neg start");
         esp_wifi_connect();
+        sm->state = WAIT_START;
         ets_timer_disarm(&sm->wps_msg_timeout_timer);
         ets_timer_arm(&sm->wps_msg_timeout_timer, 2000, 0);
     } else if (wps_get_status() == WPS_STATUS_SCANNING) {
@@ -1908,7 +1928,7 @@ int wifi_station_wps_start(void)
     struct wps_sm *sm = wps_sm_get();
 
     if (!sm) {
-        wpa_printf(MSG_ERROR, "WPS: wps not initial");
+        wpa_printf(MSG_ERROR, "WPS: wps is not initialized");
         return ESP_FAIL;
     }
 
