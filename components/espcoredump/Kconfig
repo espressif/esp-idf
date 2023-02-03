@@ -82,9 +82,6 @@ menu "Core dump"
     config ESP_COREDUMP_STACK_SIZE
         int "Reserved stack size"
         depends on ESP_COREDUMP_ENABLE
-        # Temporarily disable this feature on Xtensa boards as switching stack
-        # pointer triggers an exception (IDF-2797)
-        depends on IDF_TARGET_ARCH_RISCV
         default 0
         help
             Size of the memory to be reserved for core dump stack. If 0 core dump process will run on

@@ -32,22 +32,38 @@ extern "C" {
 #endif
 
 /**
+ * @brief Define the type that will be used to describe the current context when
+ * doing a backup of the current stack. This same structure is used to restore the stack.
+ */
+typedef struct {
+    uint32_t sp;
+} core_dump_stack_context_t;
+
+/**
  * @brief Set the stack pointer to the address passed as a parameter.
  * @note This function must be inlined.
  *
  * @param new_sp New stack pointer to set in sp register.
- *
- * @return Former stack pointer address (sp register value).
+ * @param old_ctx CPU context, related to SP, to fill. It will be given back when restoring SP.
  */
-FORCE_INLINE_ATTR void* esp_core_dump_replace_sp(void* new_sp)
+FORCE_INLINE_ATTR void esp_core_dump_replace_sp(void* new_sp, core_dump_stack_context_t* old_ctx)
 {
-    void* current_sp = NULL;
     asm volatile ("mv %0, sp \n\t\
                    mv sp, %1 \n\t\
                   "
-                   : "=&r"(current_sp)
+                   : "=&r"(old_ctx->sp)
                    : "r"(new_sp));
-    return current_sp;
+}
+
+
+/**
+ * @brief Restore the stack pointer that was returned when calling `esp_core_dump_replace_sp()` function.
+ *
+ * @param ctx CPU context, related to SP, to restore.
+ */
+FORCE_INLINE_ATTR void esp_core_dump_restore_sp(core_dump_stack_context_t* old_ctx)
+{
+    asm volatile ("mv sp, %0 \n\t" :: "r"(old_ctx->sp));
 }
 
 #ifdef __cplusplus

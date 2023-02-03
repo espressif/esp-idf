@@ -63,7 +63,7 @@ extern int _coredump_rtc_fast_end;
 
 static uint8_t s_coredump_stack[ESP_COREDUMP_STACK_SIZE];
 static uint8_t* s_core_dump_sp = NULL;
-static uint8_t* s_core_dump_backup = NULL;
+static core_dump_stack_context_t s_stack_context;
 
 /**
  * @brief Function setting up the core dump stack.
@@ -83,9 +83,9 @@ FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
     /* Replace the stack pointer depending on the architecture, but save the
      * current stack pointer, in order to be able too restore it later.
      * This function must be inlined. */
-    s_core_dump_backup = esp_core_dump_replace_sp(s_core_dump_sp);
+    esp_core_dump_replace_sp(s_core_dump_sp, &s_stack_context);
     ESP_COREDUMP_LOGI("Backing up stack @ %p and use core dump stack @ %p",
-                      s_core_dump_backup, esp_cpu_get_sp());
+                      s_stack_context.sp, esp_cpu_get_sp());
 }
 
 /**
@@ -117,8 +117,8 @@ FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
         s_core_dump_sp - s_coredump_stack - bytes_free, bytes_free);
 
     /* Restore the stack pointer. */
-    ESP_COREDUMP_LOGI("Restoring stack @ %p", s_core_dump_backup);
-    esp_core_dump_replace_sp(s_core_dump_backup);
+    ESP_COREDUMP_LOGI("Restoring stack @ %p", s_stack_context.sp);
+    esp_core_dump_restore_sp(&s_stack_context);
 }
 
 #else
