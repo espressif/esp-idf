@@ -34,7 +34,7 @@ DRAM uses capability ``MALLOC_CAP_8BIT`` (accessible in single byte reads and wr
 
 When calling ``malloc()``, the ESP-IDF ``malloc()`` implementation internally calls cpp:func:`heap_caps_malloc_default(size)`. This will allocate memory with capability ``MALLOC_CAP_DEFAULT``, which is byte-addressable.
 
-Because malloc uses the capabilities-based allocation system, memory allocated using :cpp:func:`heap_caps_malloc` can be freed by calling
+Because ``malloc()`` uses the capabilities-based allocation system, memory allocated using :cpp:func:`heap_caps_malloc` can be freed by calling
 the standard ``free()`` function.
 
 Available Heap
