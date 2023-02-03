@@ -3,6 +3,11 @@
 
 # BLE Mesh example
 
+This example is part of upstream mynewt-nimble implementation and not maintained by Espressif.
+
+IDF maintains ESP-BLE-MESH as the official Mesh solution. Please refer to ESP-BLE-MESH guide at:
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/esp-ble-mesh/ble-mesh-index.html
+
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example implements Bluetooth Mesh node that supports On/Off and Level models.
