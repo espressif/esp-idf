@@ -36,6 +36,7 @@
 #include "l2c_int.h"
 #include "stack/btm_api.h"
 #include "btm_int.h"
+#include "stack/acl_hci_link_interface.h"
 //#include "bt_utils.h"
 #include "device/controller.h"
 #include "osi/osi.h"
@@ -642,36 +643,18 @@ static void btu_hcif_connection_comp_evt (UINT8 *p)
     UINT16      handle;
     BD_ADDR     bda;
     UINT8       link_type;
-#if SMP_INCLUDED == TRUE
     UINT8       enc_mode;
-#endif  ///SMP_INCLUDED == TRUE
-#if BTM_SCO_INCLUDED == TRUE
-    tBTM_ESCO_DATA  esco_data;
-#endif
 
     STREAM_TO_UINT8    (status, p);
     STREAM_TO_UINT16   (handle, p);
     STREAM_TO_BDADDR   (bda, p);
     STREAM_TO_UINT8    (link_type, p);
-#if (SMP_INCLUDED == TRUE)
     STREAM_TO_UINT8    (enc_mode, p);
-#endif  ///SMP_INCLUDED == TRUE
+
     handle = HCID_GET_HANDLE (handle);
 
-    if (link_type == HCI_LINK_TYPE_ACL) {
-#if (SMP_INCLUDED == TRUE)
-        btm_sec_connected (bda, handle, status, enc_mode);
-#endif  ///SMP_INCLUDED == TRUE
-        l2c_link_hci_conn_comp (status, handle, bda);
-    }
-#if BTM_SCO_INCLUDED == TRUE
-    else {
-        memset(&esco_data, 0, sizeof(tBTM_ESCO_DATA));
-        /* esco_data.link_type = HCI_LINK_TYPE_SCO; already zero */
-        memcpy (esco_data.bd_addr, bda, BD_ADDR_LEN);
-        btm_sco_connected (status, bda, handle, &esco_data);
-    }
-#endif /* BTM_SCO_INCLUDED */
+    btm_acl_connected(bda, handle, link_type, enc_mode, status);
+
     HCI_TRACE_WARNING("hcif conn complete: hdl 0x%x, st 0x%x", handle, status);
 }
 
@@ -729,20 +712,9 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
 
     handle = HCID_GET_HANDLE (handle);
 
-    HCI_TRACE_WARNING("hcif disc complete: hdl 0x%x, rsn 0x%x", handle, reason);
+    btm_acl_disconnected(handle, reason);
 
-#if BTM_SCO_INCLUDED == TRUE
-    /* If L2CAP doesn't know about it, send it to SCO */
-    if (!l2c_link_hci_disc_comp (handle, reason)) {
-        btm_sco_removed (handle, reason);
-    }
-#else
-    l2c_link_hci_disc_comp (handle, reason);
-#endif /* BTM_SCO_INCLUDED */
-#if (SMP_INCLUDED == TRUE)
-    /* Notify security manager */
-    btm_sec_disconnected (handle, reason);
-#endif  ///SMP_INCLUDED == TRUE
+    HCI_TRACE_WARNING("hcif disc complete: hdl 0x%x, rsn 0x%x", handle, reason);
 }
 
 /*******************************************************************************

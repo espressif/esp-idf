@@ -825,6 +825,37 @@ typedef struct {
     INT8        tx_power;
 } tBTM_INQ_TXPWR_RESULTS;
 
+
+enum {
+    BTM_ACL_CONN_CMPL_EVT,
+    BTM_ACL_DISCONN_CMPL_EVT
+};
+typedef UINT8 tBTM_ACL_LINK_STAT_EVENT;
+
+typedef struct {
+    UINT8                   status;   /* The status of ACL connection complete */
+    UINT16                  handle;   /* The ACL connection handle */
+    BD_ADDR                 bd_addr;  /* Peer Bluetooth device address */
+} tBTM_ACL_CONN_CMPL_DATA;
+
+typedef struct {
+    UINT8                   reason;   /* The reason for ACL disconnection complete */
+    UINT16                  handle;   /* The ACL connection handle */
+    BD_ADDR                 bd_addr;  /* Peer Bluetooth device address */
+} tBTM_ACL_DISCONN_CMPL_DATA;
+
+typedef struct {
+    tBTM_ACL_LINK_STAT_EVENT       event;          /* The event reported */
+    union {
+        tBTM_ACL_CONN_CMPL_DATA     conn_cmpl;     /* The data associated with BTM_ACL_CONN_CMPL_EVT */
+        tBTM_ACL_DISCONN_CMPL_DATA  disconn_cmpl;  /* The data associated with BTM_ACL_DISCONN_CMPL_EVT */
+    } link_act;
+} tBTM_ACL_LINK_STAT_EVENT_DATA;
+
+/* Callback function for reporting ACL link related events to upper
+*/
+typedef void (tBTM_ACL_LINK_STAT_CB) (tBTM_ACL_LINK_STAT_EVENT_DATA *p_data);
+
 enum {
     BTM_BL_CONN_EVT,
     BTM_BL_DISCN_EVT,
@@ -2908,6 +2939,18 @@ tBTM_STATUS BTM_ReadLinkQuality (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb);
 //extern
 tBTM_STATUS BTM_RegBusyLevelNotif (tBTM_BL_CHANGE_CB *p_cb, UINT8 *p_level,
                                    tBTM_BL_EVENT_MASK evt_mask);
+
+/*******************************************************************************
+**
+** Function         BTM_RegAclLinkStatNotif
+**
+** Description      This function is called to register a callback to receive
+**                  ACL link related events.
+**
+** Returns          BTM_SUCCESS if successfully registered, otherwise error
+**
+*******************************************************************************/
+tBTM_STATUS BTM_RegAclLinkStatNotif(tBTM_ACL_LINK_STAT_CB *p_cb);
 
 /*******************************************************************************
 **
