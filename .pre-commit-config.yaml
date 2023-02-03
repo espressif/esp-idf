@@ -36,7 +36,7 @@ repos:
       - id: flake8
         args: ['--config=.flake8', '--tee', '--benchmark']
   - repo: https://github.com/pycqa/isort
-    rev: 5.9.3
+    rev: 5.11.5  # python 3.7 compatible
     hooks:
       - id: isort
         name: isort (python)
