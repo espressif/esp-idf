@@ -461,7 +461,7 @@ component_ut_pytest_esp32_adc:
 component_ut_pytest_esp32_sdio:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:unit_test-esp32-sdio
+    - .rules:test:component_ut-esp32-sdio
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, sdio_master_slave ]
@@ -501,7 +501,7 @@ component_ut_pytest_esp32_flash_encryption:
 component_ut_pytest_esp32_flash_multi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32
+    - .rules:test:component_ut-esp32-flash_multi
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, flash_multi ]
@@ -566,7 +566,7 @@ component_ut_pytest_esp32s2_adc:
 component_ut_pytest_esp32s2_flash_multi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s2
+    - .rules:test:component_ut-esp32s2-flash_multi
   needs:
     - build_pytest_components_esp32s2
   tags: [ esp32s2, flash_multi ]
@@ -623,7 +623,7 @@ component_ut_pytest_esp32s3_flash_encryption_f8r8:
 component_ut_pytest_esp32s3_flash_multi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s3
+    - .rules:test:component_ut-esp32s3-flash_multi
   needs:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, flash_multi ]
@@ -721,7 +721,7 @@ component_ut_pytest_esp32c3_flash_encryption:
 component_ut_pytest_esp32c3_flash_multi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32c3
+    - .rules:test:component_ut-esp32c3-flash_multi
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, flash_multi ]
@@ -1265,7 +1265,9 @@ UT_C3:
     - UT_T1_1
 
 UT_C3_FLASH:
-  extends: .unit_test_esp32c3_template
+  extends:
+    - .unit_test_esp32c3_template
+    - .rules:test:unit_test-esp32c3-flash_multi
   tags:
     - ESP32C3_IDF
     - UT_T1_ESP_FLASH
