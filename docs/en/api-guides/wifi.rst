@@ -9,7 +9,7 @@ Wi-Fi Driver
 - Support station-only mode, AP-only mode, station/AP-coexistence mode
 - Support IEEE 802.11b, IEEE 802.11g, IEEE 802.11n, and APIs to configure the protocol mode
 - Support WPA/WPA2/WPA3/WPA2-Enterprise and WPS
-- Support AMPDU, HT40, QoS and other key features
+- Support AMSDU, AMPDU, HT40, QoS and other key features
 - Support Modem-sleep
 - Support the Espressif-specific ESP-NOW protocol and Long Range mode, which supports up to **1 km** of data traffic
 - Up to 20 MBit/s TCP throughput and 30 MBit/s UDP throughput over the air
@@ -2038,7 +2038,21 @@ Theoretically the higher priority AC has better performance than the low priorit
 Wi-Fi AMSDU
 -------------------------
 
-{IDF_TARGET_NAME} supports receiving and transmitting AMSDU.
+.. only:: esp32c3
+
+    {IDF_TARGET_NAME} supports receiving AMSDU.
+
+.. only:: esp32
+
+    {IDF_TARGET_NAME} supports receiving and transmitting AMSDU. AMSDU TX is disabled by default, since enable AMSDU TX need more internal memory. Select :ref:`CONFIG_ESP32_WIFI_AMSDU_TX_ENABLED` to enable AMSDU Tx feature, it depends on :ref:`CONFIG_ESP32_SPIRAM_SUPPORT`.
+
+.. only:: esp32s2
+
+    {IDF_TARGET_NAME} supports receiving and transmitting AMSDU. AMSDU TX is disabled by default, since enable AMSDU TX need more internal memory. Select :ref:`CONFIG_ESP32_WIFI_AMSDU_TX_ENABLED` to enable AMSDU Tx feature, it depends on :ref:`CONFIG_ESP32S2_SPIRAM_SUPPORT`.
+
+.. only:: esp32s3
+
+    {IDF_TARGET_NAME} supports receiving and transmitting AMSDU. AMSDU TX is disabled by default, since enable AMSDU TX need more internal memory. Select :ref:`CONFIG_ESP32_WIFI_AMSDU_TX_ENABLED` to enable AMSDU Tx feature, it depends on :ref:`CONFIG_ESP32S3_SPIRAM_SUPPORT`.
 
 Wi-Fi Fragment
 -------------------------
