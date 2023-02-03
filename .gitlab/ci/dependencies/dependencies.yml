@@ -176,6 +176,7 @@ build:integration_test:
   included_in:
     - "build:example_test-esp32h4"
     - "build:example_test-esp32s3"
+    - "build:example_test-esp32c6"
     - "build:example_test"
     - build:target_test
 
