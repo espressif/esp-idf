@@ -21,6 +21,7 @@ extern "C" {
 /** pthread configuration structure that influences pthread creation */
 typedef struct {
     size_t stack_size;  ///< The stack size of the pthread
+    uint32_t stack_alloc_caps;   ///< A bit mask of memory capabilities (MALLOC_CAPS*) to use when allocating the stack. If zero, MALLOC_CAP_DEFAULT is assumed.
     size_t prio;        ///< The thread's priority
     bool inherit_cfg;   ///< Inherit this configuration further
     const char* thread_name;  ///< The thread name.
