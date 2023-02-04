@@ -863,7 +863,7 @@ clean_up:
     return ESP_ERR_NO_MEM;
 }
 
-esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait)
+static esp_err_t SPI_MASTER_ISR_ATTR spi_device_queue_trans_impl(spi_device_handle_t handle, spi_transaction_t *trans_desc, BaseType_t * arg, bool from_isr)
 {
     esp_err_t ret = check_trans_valid(handle, trans_desc);
     if (ret != ESP_OK) return ret;
@@ -888,15 +888,32 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi
     esp_pm_lock_acquire(host->bus_attr->pm_lock);
 #endif
     //Send to queue and invoke the ISR.
+    if (from_isr) {
+        if (xQueueIsQueueFullFromISR(handle->trans_queue) == pdTRUE && uxQueueMessagesWaitingFromISR(handle->trans_queue) == 1) {
+            //Overwrite the transaction in the queue
+            xQueueOverwriteFromISR(handle->trans_queue, (void *)&trans_buf, arg);
+        } else {
+            BaseType_t r = xQueueSendToBackFromISR(handle->trans_queue, (void *)&trans_buf, arg);
 
-    BaseType_t r = xQueueSend(handle->trans_queue, (void *)&trans_buf, ticks_to_wait);
-    if (!r) {
-        ret = ESP_ERR_TIMEOUT;
-#ifdef CONFIG_PM_ENABLE
-        //Release APB frequency lock
-        esp_pm_lock_release(host->bus_attr->pm_lock);
-#endif
-        goto clean_up;
+            if (!r) {
+                ret = ESP_ERR_TIMEOUT;
+        #ifdef CONFIG_PM_ENABLE
+                //Release APB frequency lock
+                esp_pm_lock_release(host->bus_attr->pm_lock);
+        #endif
+                goto clean_up;
+            }
+        }
+    } else {
+        BaseType_t r = xQueueSend(handle->trans_queue, (void *)&trans_buf, *(TickType_t*)arg);
+        if (!r) {
+            ret = ESP_ERR_TIMEOUT;
+    #ifdef CONFIG_PM_ENABLE
+            //Release APB frequency lock
+            esp_pm_lock_release(host->bus_attr->pm_lock);
+    #endif
+            goto clean_up;
+        }
     }
 
     // The ISR will be invoked at correct time by the lock with `spi_bus_intr_enable`.
@@ -910,6 +927,17 @@ clean_up:
     uninstall_priv_desc(&trans_buf);
     return ret;
 }
+
+esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait)
+{
+    return spi_device_queue_trans_impl(handle, trans_desc, (BaseType_t*)&ticks_to_wait, false);
+}
+
+esp_err_t SPI_MASTER_ISR_ATTR spi_device_queue_trans_from_isr(spi_device_handle_t handle, spi_transaction_t *trans_desc, BaseType_t * high_prio_task_woken)
+{
+    return spi_device_queue_trans_impl(handle, trans_desc, high_prio_task_woken, true);
+}
+
 
 esp_err_t SPI_MASTER_ATTR spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, TickType_t ticks_to_wait)
 {

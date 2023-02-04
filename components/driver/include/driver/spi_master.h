@@ -214,6 +214,37 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle);
  */
 esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, TickType_t ticks_to_wait);
 
+/**
+ * @brief Queue a SPI transaction for interrupt transaction execution from an interrupt context.
+ *        Get the result by ``spi_device_get_trans_result``.
+ *
+ * In some cases, you need to start a SPI transaction after some external triggering (for example after a GPIO interrupt)
+ * in an interrupt context.
+ * You can not use spi_device_queue_trans in that case, since it's using a queue to send the transaction to be performed, so
+ * you can start a task and notify the task from the interrupt context to have that task woken up and queueing the transaction.
+ * This incurs a lot of overhead, and is not optimal in terms of latency. Instead, you can use this function that's posting
+ * to the internal transaction queue from an ISR context, so you don't need any additional task and scheduling overhead here.
+ *
+ * @warning Since transactions are sent to a queue from an ISR, they can't wait if the queue is full. So this method will either
+ *          overwrite the queue content if it only contains one item (recommended), or fail to push if full.
+ * @note Normally a device cannot start (queue) polling and interrupt
+ *      transactions simultaneously.
+ *
+ * @param handle Device handle obtained using spi_host_add_dev
+ * @param trans_desc Description of transaction to execute
+ * @param high_prio_task If set to pdTRUE, you must call portYIELD_FROM_ISR() in your interrupt handler.
+ *
+ * @return
+ *         - ESP_ERR_INVALID_ARG   if parameter is invalid. This can happen if SPI_TRANS_CS_KEEP_ACTIVE flag is specified while
+ *                                 the bus was not acquired (`spi_device_acquire_bus()` should be called first)
+ *         - ESP_ERR_TIMEOUT       if there was no room in the queue
+ *         - ESP_ERR_NO_MEM        if allocating DMA-capable temporary buffer failed
+ *         - ESP_ERR_INVALID_STATE if previous transactions are not finished
+ *         - ESP_OK                on success
+ */
+esp_err_t spi_device_queue_trans_from_isr(spi_device_handle_t handle, spi_transaction_t *trans_desc, BaseType_t * high_prio_task);
+
+
 
 /**
  * @brief Get the result of a SPI transaction queued earlier by ``spi_device_queue_trans``.
