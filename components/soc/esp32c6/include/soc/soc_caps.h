@@ -53,7 +53,7 @@
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_SUPPORT_COEXISTENCE         1
 #define SOC_AES_SUPPORTED               1
-// #define SOC_MPI_SUPPORTED               1
+#define SOC_MPI_SUPPORTED               1
 #define SOC_SHA_SUPPORTED               1
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_DIG_SIGN_SUPPORTED          1
@@ -281,7 +281,6 @@
 #define SOC_MCPWM_SUPPORT_ETM                (1)    ///< Support ETM (Event Task Matrix)
 #define SOC_MCPWM_CAPTURE_CLK_FROM_GROUP     (1)    ///< Capture timer shares clock with other PWM timers
 
-// TODO: IDF-5359 (Copy from esp32c3, need check)
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)
 
