@@ -246,13 +246,7 @@ void app_main(void)
         ret = nvs_flash_init();
     }
 
-    // TODO: WIFI-5150
-#if CONFIG_PM_ENABLE && 0
-    sleep_clock_system_retention_init();
-    sleep_clock_modem_retention_init();
-    sleep_sys_periph_retention_init();
-    sleep_modem_wifi_modem_state_init();
-
+#if CONFIG_PM_ENABLE
     // Configure dynamic frequency scaling:
     // maximum and minimum frequencies are set in sdkconfig,
     // automatic light sleep is enabled if tickless idle support is enabled.

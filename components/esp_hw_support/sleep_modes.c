@@ -592,8 +592,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 
 /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
    In order to avoid the leakage of the SPI cs pin, hold it here */
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
-    rtcio_ll_force_hold_enable(SPI_CS0_GPIO_NUM);
+#if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
+        if(!(pd_flags & PMU_SLEEP_PD_VDDSDIO)) {
+            rtcio_ll_force_hold_enable(SPI_CS0_GPIO_NUM);
+        }
 #endif
 
 #if SOC_PM_CPU_RETENTION_BY_SW
@@ -607,8 +609,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 #endif
 
 /* Unhold the SPI CS pin */
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
-    rtcio_ll_force_hold_disable(SPI_CS0_GPIO_NUM);
+#if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
+        if(!(pd_flags & PMU_SLEEP_PD_VDDSDIO)) {
+            rtcio_ll_force_hold_disable(SPI_CS0_GPIO_NUM);
+        }
 #endif
     }
 
