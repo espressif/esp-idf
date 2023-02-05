@@ -239,6 +239,14 @@ menu "LWIP"
         help
             Set the maximum amount of pbufs waiting to be reassembled.
 
+    config LWIP_IPV6_DUP_DETECT_ATTEMPTS
+        int "Number of duplicate address detection attempts"
+        range 0 7
+        default 1
+        depends on LWIP_IPV6
+        help
+            Set the number of duplicate address detection attempts.
+
     config LWIP_IP_FORWARD
         bool "Enable IP forwarding"
         default n
