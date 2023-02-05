@@ -21,6 +21,14 @@ static void *heap_caps_realloc_base( void *ptr, size_t size, uint32_t caps );
 static void *heap_caps_calloc_base( size_t n, size_t size, uint32_t caps );
 static void *heap_caps_malloc_base( size_t size, uint32_t caps );
 
+typedef struct {
+    esp_heap_free_space_hook_t callback;
+    uint32_t caps;
+    size_t threshold;
+} free_space_callback_t;
+
+static free_space_callback_t free_space_callbacks[CONFIG_HEAP_FREE_SPACE_CALLBACK_COUNT];
+
 /*
 This file, combined with a region allocator that supports multiple heaps, solves the problem that the ESP32 has RAM
 that's slightly heterogeneous. Some RAM can be byte-accessed, some allows only 32-bit accesses, some can execute memory,
@@ -77,6 +85,57 @@ esp_err_t heap_caps_register_failed_alloc_callback(esp_alloc_failed_hook_t callb
     return ESP_OK;
 }
 
+#if CONFIG_HEAP_FREE_SPACE_CALLBACK_COUNT
+IRAM_ATTR static bool heap_caps_free_space_check( size_t size, uint32_t caps)
+{
+    for (int i = 0; i < CONFIG_HEAP_FREE_SPACE_CALLBACK_COUNT; i++) {
+        free_space_callback_t ith = free_space_callbacks[i];
+        if (ith.callback && (ith.caps & caps) > 0) {
+            size_t free = heap_caps_get_free_size(ith.caps);
+            if (free < ith.threshold + size) {
+                return ith.callback(caps, size, free);
+            }
+        }
+    }
+    return true;
+}
+
+esp_err_t heap_caps_register_free_space_callback(uint32_t caps, uint32_t threshold, esp_heap_free_space_hook_t callback)
+{
+    if (callback == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // update
+    int avail = -1;
+    for (int i = 0; i < CONFIG_HEAP_FREE_SPACE_CALLBACK_COUNT; i++) {
+        if (free_space_callbacks[i].caps == caps ||
+            free_space_callbacks[i].callback == callback) {
+            free_space_callbacks[i].caps = caps;
+            free_space_callbacks[i].threshold = threshold;
+            free_space_callbacks[i].callback = callback;
+            return ESP_OK;
+        }
+        if (free_space_callbacks[i].callback == NULL && avail == -1) {
+            avail = i;
+        }
+    }
+
+    // add
+    if (avail >= 0) {
+        free_space_callbacks[avail].caps = caps;
+        free_space_callbacks[avail].threshold = threshold;
+        free_space_callbacks[avail].callback = callback;
+        return ESP_OK;
+    }
+
+    return ESP_FAIL;
+}
+#endif // CONFIG_HEAP_FREE_SPACE_CALLBACK_COUNT
+
+#if CONFIG_HEAP_FREE_SPACE_CALLBACK_COUNT
+IRAM_ATTR
+#endif
 bool heap_caps_match(const heap_t *heap, uint32_t caps)
 {
     return heap->heap != NULL && ((get_all_caps(heap) & caps) == caps);
@@ -90,6 +149,12 @@ check for failure / call heap_caps_alloc_failed()
 IRAM_ATTR static void *heap_caps_malloc_base( size_t size, uint32_t caps)
 {
     void *ret = NULL;
+
+#if CONFIG_HEAP_FREE_SPACE_CALLBACK_COUNT
+    if(!heap_caps_free_space_check(size, caps)) {
+        return NULL;
+    }
+#endif
 
     if (size == 0) {
         return NULL;
@@ -362,6 +427,12 @@ IRAM_ATTR static void *heap_caps_realloc_base( void *ptr, size_t size, uint32_t 
     heap_t *heap = NULL;
     void *dram_ptr = NULL;
 
+#if CONFIG_HEAP_FREE_SPACE_CALLBACK_COUNT
+    if(!heap_caps_free_space_check(size, caps)) {
+        return NULL;
+    }
+#endif
+
     if (ptr == NULL) {
         return heap_caps_malloc_base(size, caps);
     }
@@ -450,6 +521,12 @@ IRAM_ATTR static void *heap_caps_calloc_base( size_t n, size_t size, uint32_t ca
     void *result;
     size_t size_bytes;
 
+#if CONFIG_HEAP_FREE_SPACE_CALLBACK_COUNT
+    if(!heap_caps_free_space_check(size, caps)) {
+        return NULL;
+    }
+#endif
+
     if (__builtin_mul_overflow(n, size, &size_bytes)) {
         return NULL;
     }
@@ -484,6 +561,9 @@ size_t heap_caps_get_total_size(uint32_t caps)
     return total_size;
 }
 
+#if CONFIG_HEAP_FREE_SPACE_CALLBACK_COUNT
+IRAM_ATTR
+#endif
 size_t heap_caps_get_free_size( uint32_t caps )
 {
     size_t ret = 0;

@@ -71,6 +71,12 @@ menu "Heap memory debugging"
         help
             When enabled, if a memory allocation operation fails it will cause a system abort.
 
+    config HEAP_FREE_SPACE_CALLBACK_COUNT
+        int "free space callback count"
+        default 0
+        help
+            Set the maximum number of free space callbacks that can be registered.
+
     config HEAP_TLSF_USE_ROM_IMPL
         bool "Use ROM implementation of heap tlsf library"
         depends on ESP_ROM_HAS_HEAP_TLSF

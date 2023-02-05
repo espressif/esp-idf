@@ -54,6 +54,32 @@ typedef void (*esp_alloc_failed_hook_t) (size_t size, uint32_t caps, const char 
 esp_err_t heap_caps_register_failed_alloc_callback(esp_alloc_failed_hook_t callback);
 
 /**
+ * @brief callback called when a heap allocation would cause the free
+ *        heap sapce to go below some threshold.
+ * @note  This is called on the same thread that is issuing the allocation, and
+ * @note  This is called on for every allocation made while under the threshold.
+ *        The heap_free param can be used to determine the "crossover" point.
+ * @param caps the heap caps region that would cross the threshold.
+ * @param requested the requested amount of bytes
+ * @param heap_free the current amount of free heap space with these caps.
+ * @return if false, the requested allocation will be denied.
+ */
+typedef bool (*esp_heap_free_space_hook_t) ( uint32_t caps, size_t requested, size_t heap_free);
+
+/**
+ * @brief registers a callback function to be invoked if a memory allocation would
+ *        cause available heap space to go below some threshold.
+ * @note  the callback is called on the same thread that is issuing the allocation.
+ * @note  the maximum number of callbacks is configurable using sdkconfig.
+ * @param callback callback to be invoked. If NULL, the callback is removed.
+ * @param threshold the low ram threshold
+ * @return ESP_OK if callback was registered
+ *         ESP_FAIL if all slots are taken
+ */
+esp_err_t heap_caps_register_free_space_callback(uint32_t caps, uint32_t threshold, esp_heap_free_space_hook_t callback);
+
+
+/**
  * @brief Allocate a chunk of memory which has the given capabilities
  *
  * Equivalent semantics to libc malloc(), for capability-aware memory.
