@@ -190,6 +190,37 @@ class TestUsage(unittest.TestCase):
         self.assertIn('%s/tools/esp-rom-elfs/%s/' %
                       (self.temp_tools_dir, ESP_ROM_ELFS_VERSION), output)
 
+        output = self.run_idf_tools_with_action(['list', '--outdated'])
+        self.assertEqual('', output)
+
+        tools_json_outdated = os.path.join(self.temp_tools_dir, 'tools', 'tools.outdated.json')
+        new_version = 'zzzzzz'
+        self.run_idf_tools_with_action(
+            [
+                'add-version',
+                '--tool',
+                XTENSA_ESP32_ELF,
+                '--url-prefix',
+                'http://test.com',
+                '--version',
+                new_version,
+                '--override',
+                '--checksum-file',
+                'add_version/checksum.sha256',
+                '--output',
+                tools_json_outdated
+            ])
+
+        output = self.run_idf_tools_with_action(
+            [
+                '--tools-json',
+                tools_json_outdated,
+                'list',
+                '--outdated'
+            ])
+        self.assertIn((f'{XTENSA_ESP32_ELF}: version {XTENSA_ESP32_ELF_VERSION} '
+                       f'is outdated by {new_version}'), output)
+
     def test_tools_for_esp32(self):
         required_tools_installed = 5
         output = self.run_idf_tools_with_action(['install', '--targets=esp32'])

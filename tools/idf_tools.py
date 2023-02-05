@@ -759,6 +759,31 @@ class IDFTool(object):
                 else:
                     self.versions_installed.append(version)
 
+    def latest_installed_version(self):  # type: () -> Optional[str]
+        """
+        Get the latest installed tool version by directly checking the
+        tool's version directories.
+        """
+        tool_path = self.get_path()
+        if not os.path.exists(tool_path):
+            return None
+        dentries = os.listdir(tool_path)
+        dirs = [d for d in dentries if os.path.isdir(os.path.join(tool_path, d))]
+        for version in sorted(dirs, reverse=True):
+            # get_path_for_version() has assert to check if version is in versions
+            # dict, so get_export_paths() cannot be used. Let's just create the
+            # export paths list directly here.
+            paths = [os.path.join(tool_path, version, *p) for p in self._current_options.export_paths]
+            try:
+                ver_str = self.get_version(paths)
+            except (ToolNotFound, ToolExecError):
+                continue
+            if ver_str != version:
+                continue
+            return version
+
+        return None
+
     def download(self, version):  # type: (str) -> None
         assert version in self.versions
         download_obj = self.versions[version].get_download_for_platform(self._platform)
@@ -1495,7 +1520,7 @@ def active_repo_id() -> str:
     return global_idf_path + '-v' + get_idf_version()
 
 
-def action_list(args):  # type: ignore
+def list_default(args):  # type: ignore
     tools_info = load_tools_info()
     for name, tool in tools_info.items():
         if tool.get_install_type() == IDFTool.INSTALL_NEVER:
@@ -1512,6 +1537,29 @@ def action_list(args):  # type: ignore
             version_obj = tool.versions[version]
             info('  - {} ({}{})'.format(version, version_obj.status,
                                         ', installed' if version in tool.versions_installed else ''))
+
+
+def list_outdated(args):  # type: ignore
+    tools_info = load_tools_info()
+    for name, tool in tools_info.items():
+        if tool.get_install_type() == IDFTool.INSTALL_NEVER:
+            continue
+        versions_for_platform = {k: v for k, v in tool.versions.items() if v.compatible_with_platform()}
+        if not versions_for_platform:
+            continue
+        version_installed = tool.latest_installed_version()
+        if not version_installed:
+            continue
+        version_available = sorted(versions_for_platform.keys(), key=tool.versions.get, reverse=True)[0]
+        if version_installed < version_available:
+            info(f'{name}: version {version_installed} is outdated by {version_available}')
+
+
+def action_list(args):  # type: ignore
+    if args.outdated:
+        list_outdated(args)
+    else:
+        list_default(args)
 
 
 def action_check(args):  # type: ignore
@@ -2447,7 +2495,8 @@ def main(argv):  # type: (list[str]) -> None
     parser.add_argument('--idf-path', help='ESP-IDF path to use')
 
     subparsers = parser.add_subparsers(dest='action')
-    subparsers.add_parser('list', help='List tools and versions available')
+    list_parser = subparsers.add_parser('list', help='List tools and versions available')
+    list_parser.add_argument('--outdated', help='Print only outdated installed tools', action='store_true')
     subparsers.add_parser('check', help='Print summary of tools installed or found in PATH')
     export = subparsers.add_parser('export', help='Output command for setting tool paths, suitable for shell')
     export.add_argument('--format', choices=[EXPORT_SHELL, EXPORT_KEY_VALUE], default=EXPORT_SHELL,

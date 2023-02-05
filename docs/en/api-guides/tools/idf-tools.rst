@@ -107,6 +107,10 @@ Any mirror server can be used provided the URL matches the ``github.com`` downlo
 
 * ``list``: Lists the known versions of the tools, and indicates which ones are installed.
 
+  Following options are available to customize the output.
+
+  - ``--outdated``: List only outdated versions of tools installed in ``IDF_TOOLS_PATH``.
+
 * ``check``: For each tool, checks whether the tool is available in the system path and in ``IDF_TOOLS_PATH``.
 
 * ``install-python-env``: Create a Python virtual environment in the ``${IDF_TOOLS_PATH}/python_env`` directory and install there the required Python packages. An optional ``--features`` argument allows one to specify a comma-separated list of features to be added or removed. Feature that begins with ``-`` will be removed and features with ``+`` or without any sign will be added. Example syntax for removing feature ``XY`` is ``--features=-XY`` and for adding ``--features=+XY`` or ``--features=XY``. If both removing and adding options are provided with the same feature, no operation is performed. For each feature a requirements file must exist. For example, feature ``XY`` is a valid feature if ``${IDF_PATH}/tools/requirements/requirements.XY.txt`` is an existing file with a list of Python packages to be installed. There is one mandatory ``core`` feature ensuring core functionality of ESP-IDF (build, flash, monitor, debug in console). There can be an arbitrary number of optional features. The selected list of features is stored in ``idf-env.json``. The requirement files contain a list of the desired Python packages to be installed and ``espidf.constraints.*.txt`` downloaded from https://dl.espressif.com and stored in ``${IDF_TOOLS_PATH}`` the package version requirements for a given ESP-IDF version. Althought it is not recommended, the download and use of constraint files can be disabled with the ``--no-constraints`` argument or setting the ``IDF_PYTHON_CHECK_CONSTRAINTS`` environment variable to ``no``.
