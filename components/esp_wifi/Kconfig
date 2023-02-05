@@ -338,10 +338,10 @@ menu "Wi-Fi"
         help
             WiFi module can be compiled without SoftAP to save code size.
 
-    config ESP_WIFI_AUTO_BEACON_ENABLE
+    config ESP_WIFI_ENHANCED_LIGHT_SLEEP
         bool "WiFi modem automatically receives the beacon"
         default n
-        depends on ESP_PHY_MAC_BB_PD
+        depends on ESP_PHY_MAC_BB_PD && SOC_PM_SUPPORT_BEACON_WAKEUP
         help
             The wifi modem automatically receives the beacon frame during light sleep.
 
@@ -372,7 +372,7 @@ menu "Wi-Fi"
         int "Delta early time for RF PHY on"
         range 0 100
         default 2
-        depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+        depends on ESP_WIFI_SLP_BEACON_LOST_OPT && SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
         help
             Delta early time for rf phy on, When the beacon is lost, the next rf phy on will
             be earlier the time specified by the configuration item, Unit: 32 microsecond.
@@ -381,7 +381,7 @@ menu "Wi-Fi"
         int "Delta timeout time for RF PHY off"
         range 0 8
         default 2
-        depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+        depends on ESP_WIFI_SLP_BEACON_LOST_OPT && SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
         help
             Delta timeout time for rf phy off, When the beacon is lost, the next rf phy off will
             be delayed for the time specified by the configuration item. Unit: 1024 microsecond.
