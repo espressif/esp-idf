@@ -118,11 +118,7 @@ static void btu_hcif_link_supv_to_changed_evt (UINT8 *p);
 static void btu_hcif_enhanced_flush_complete_evt (void);
 #endif
 
-#if (BTM_SSR_INCLUDED == TRUE)
 static void btu_hcif_ssr_evt (UINT8 *p, UINT16 evt_len);
-#else
-static void btu_hcif_ssr_evt_dump (UINT8 *p, UINT16 evt_len);
-#endif /* BTM_SSR_INCLUDED == TRUE */
 
 #if BLE_INCLUDED == TRUE
 static void btu_ble_ll_conn_complete_evt (UINT8 *p, UINT16 evt_len);
@@ -304,11 +300,7 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
         btu_hcif_esco_connection_chg_evt (p);
         break;
     case HCI_SNIFF_SUB_RATE_EVT:
-#if (BTM_SSR_INCLUDED == TRUE)
         btu_hcif_ssr_evt (p, hci_evt_len);
-#else
-        btu_hcif_ssr_evt_dump (p, hci_evt_len);
-#endif  /* BTM_SSR_INCLUDED == TRUE */
         break;
     case HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT:
         btu_hcif_host_support_evt (p);
@@ -1573,14 +1565,12 @@ static void btu_hcif_mode_change_evt (UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-#if (BTM_SSR_INCLUDED == TRUE)
 static void btu_hcif_ssr_evt (UINT8 *p, UINT16 evt_len)
 {
+#if (BTM_SSR_INCLUDED == TRUE)
     btm_pm_proc_ssr_evt(p, evt_len);
-}
-#else
-static void btu_hcif_ssr_evt_dump (UINT8 *p, UINT16 evt_len)
-{
+#endif
+
     UINT8       status;
     UINT16      handle;
     UINT16      max_tx_lat;
@@ -1598,7 +1588,6 @@ static void btu_hcif_ssr_evt_dump (UINT8 *p, UINT16 evt_len)
 
     HCI_TRACE_WARNING("hcif ssr evt: st 0x%x, hdl 0x%x, tx_lat %d rx_lat %d", status, handle, max_tx_lat, max_rx_lat);
 }
-#endif
 
 /*******************************************************************************
 **
