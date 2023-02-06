@@ -308,6 +308,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
 #else
         bleprph_advertise();
 #endif
+        gatt_svr_subscription_delete();
         return 0;
 
     case BLE_GAP_EVENT_CONN_UPDATE:
@@ -348,6 +349,20 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
                     event->subscribe.cur_notify,
                     event->subscribe.prev_indicate,
                     event->subscribe.cur_indicate);
+        if (event->subscribe.reason != BLE_GAP_SUBSCRIBE_REASON_TERM) {
+            int rc = gatt_svr_subscribe(event->subscribe.attr_handle);
+            if (rc == 0) {
+                MODLOG_DFLT(INFO,
+                            "Subscribe to attribute (%d) successful\n",
+                            event->subscribe.attr_handle);
+            } else {
+                MODLOG_DFLT(INFO,
+                            "Subscribe to attribute (%d) failed. RC = %d\n",
+                            event->subscribe.attr_handle, rc);
+            }
+        } else {
+            MODLOG_DFLT(INFO, "CCCD cleared on connection termination\n");
+        }
         return 0;
 
     case BLE_GAP_EVENT_MTU:
@@ -533,8 +548,11 @@ app_main(void)
     ble_hs_cfg.sm_sc = 0;
 #endif
 #ifdef CONFIG_EXAMPLE_BONDING
-    ble_hs_cfg.sm_our_key_dist = 1;
-    ble_hs_cfg.sm_their_key_dist = 1;
+    /* Enable the appropriate bit masks to make sure the keys
+     * that are needed are exchanged
+     */
+    ble_hs_cfg.sm_our_key_dist = BLE_SM_PAIR_KEY_DIST_ENC;
+    ble_hs_cfg.sm_their_key_dist = BLE_SM_PAIR_KEY_DIST_ENC;
 #endif
 
 
