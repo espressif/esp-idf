@@ -1557,8 +1557,6 @@ examples/storage/spiffsgen/example_test.py
 examples/storage/spiffsgen/main/spiffsgen_example_main.c
 examples/storage/wear_levelling/main/wear_levelling_example_main.c
 examples/storage/wear_levelling/wear_levelling_example_test.py
-examples/system/app_trace_to_host/example_test.py
-examples/system/app_trace_to_host/main/app_trace_to_host_example_main.c
 examples/system/base_mac_address/example_test.py
 examples/system/base_mac_address/main/base_mac_address_example_main.c
 examples/system/console/advanced/components/cmd_nvs/cmd_nvs.c

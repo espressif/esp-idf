@@ -109,7 +109,6 @@ examples/storage/semihost_vfs/semihost_vfs_example_test.py
 examples/storage/spiffs/spiffs_example_test.py
 examples/storage/spiffsgen/example_test.py
 examples/storage/wear_levelling/wear_levelling_example_test.py
-examples/system/app_trace_to_host/example_test.py
 examples/system/base_mac_address/example_test.py
 examples/system/console/example_test.py
 examples/system/deep_sleep/example_test.py
