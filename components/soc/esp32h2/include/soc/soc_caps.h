@@ -380,18 +380,15 @@
 #define SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE   16
 #define SOC_MEMPROT_MEM_ALIGN_SIZE          512
 
-// TODO: IDF-6249 (Copy from esp32c6, need check)
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-H2 has 2 UARTs
 #define SOC_UART_NUM                (2)
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
 
-// #define SOC_UART_SUPPORT_APB_CLK    (1)     /*!< Support APB as the clock source */
-#define SOC_UART_SUPPORT_RTC_CLK    (0)     /*!< Support RTC clock as the clock source */ // TODO: IDF-6249
-#define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
-// #define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */ // TODO: IDF-6249
-#define SOC_UART_REQUIRE_CORE_RESET (1)
+#define SOC_UART_SUPPORT_RTC_CLK            (1)     /*!< Support RTC clock as the clock source */
+#define SOC_UART_SUPPORT_XTAL_CLK           (1)     /*!< Support XTAL clock as the clock source */
+// #define SOC_UART_SUPPORT_WAKEUP_INT         (1)         /*!< Support UART wakeup interrupt */ // TODO: IDF-6267
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)

@@ -102,7 +102,6 @@ api-reference/peripherals/sd_pullup_requirements
 api-reference/peripherals/spi_master
 api-reference/peripherals/index
 api-reference/peripherals/sdmmc_host
-api-reference/peripherals/uart
 api-reference/kconfig
 api-reference/network/esp_openthread
 api-reference/network/esp_eth

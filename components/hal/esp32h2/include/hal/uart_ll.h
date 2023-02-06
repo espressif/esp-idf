@@ -14,6 +14,7 @@
 #include "hal/uart_types.h"
 #include "soc/uart_periph.h"
 #include "soc/uart_struct.h"
+#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +30,28 @@ extern "C" {
 
 #define UART_LL_FSM_IDLE                       (0x0)
 #define UART_LL_FSM_TX_WAIT_SEND               (0xf)
+
+#define UART_LL_PCR_REG_U32_SET(hw, reg_suffix, field_suffix, val)  \
+    if ((hw) == &UART0) { \
+        HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.uart0_##reg_suffix, uart0_##field_suffix, (val))  \
+    } else {  \
+        HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.uart1_##reg_suffix, uart1_##field_suffix, (val))  \
+    }
+
+#define UART_LL_PCR_REG_U32_GET(hw, reg_suffix, field_suffix)  \
+    (((hw) == &UART0) ? \
+    HAL_FORCE_READ_U32_REG_FIELD(PCR.uart0_##reg_suffix, uart0_##field_suffix) : \
+    HAL_FORCE_READ_U32_REG_FIELD(PCR.uart1_##reg_suffix, uart1_##field_suffix))
+
+#define UART_LL_PCR_REG_SET(hw, reg_suffix, field_suffix, val)    \
+    if ((hw) == &UART0) { \
+        PCR.uart0_##reg_suffix.uart0_##field_suffix = (val);  \
+    } else {  \
+        PCR.uart1_##reg_suffix.uart1_##field_suffix = (val);  \
+    }
+
+#define UART_LL_PCR_REG_GET(hw, reg_suffix, field_suffix)  \
+    (((hw) == &UART0) ? PCR.uart0_##reg_suffix.uart0_##field_suffix : PCR.uart1_##reg_suffix.uart1_##field_suffix)
 
 // Define UART interrupts
 typedef enum {
@@ -51,19 +74,20 @@ typedef enum {
     UART_INTR_RS485_FRM_ERR    = (0x1 << 16),
     UART_INTR_RS485_CLASH      = (0x1 << 17),
     UART_INTR_CMD_CHAR_DET     = (0x1 << 18),
-    // UART_INTR_WAKEUP           = (0x1 << 19), // TODO: IDF-5338
+    // UART_INTR_WAKEUP           = (0x1 << 19), // TODO: IDF-6267
 } uart_intr_t;
 
-static inline void uart_ll_update(int uart_no) // TODO: IDF-5338 should use uart_dev_t *hw
+/**
+ * @brief Sync the update to UART core clock domain
+ *
+ * @param hw Beginning address of the peripheral registers.
+ *
+ * @return None.
+ */
+static inline void uart_ll_update(uart_dev_t *hw)
 {
-    // TODO: set a timeout ??
-    while(1) {
-        int update = GET_PERI_REG_BITS2(UART_REG_UPDATE_REG(uart_no), UART_REG_UPDATE_V, UART_REG_UPDATE_S);
-        if (!update) {
-            break;
-        }
-    }
-    SET_PERI_REG_MASK(UART_REG_UPDATE_REG(uart_no), UART_REG_UPDATE_M);
+    hw->reg_update.reg_update = 1;
+    while (hw->reg_update.reg_update);
 }
 
 /**
@@ -76,7 +100,7 @@ static inline void uart_ll_update(int uart_no) // TODO: IDF-5338 should use uart
  */
 static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
 {
-    hw->clk_conf.rst_core = core_rst_en;
+    UART_LL_PCR_REG_SET(hw, conf, rst_en, core_rst_en);
 }
 
 /**
@@ -88,9 +112,7 @@ static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
  */
 static inline void uart_ll_sclk_enable(uart_dev_t *hw)
 {
-    hw->clk_conf.sclk_en = 1;
-    hw->clk_conf.rx_sclk_en = 1;
-    hw->clk_conf.tx_sclk_en = 1;
+    UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_en, 1);
 }
 
 /**
@@ -102,17 +124,15 @@ static inline void uart_ll_sclk_enable(uart_dev_t *hw)
  */
 static inline void uart_ll_sclk_disable(uart_dev_t *hw)
 {
-    hw->clk_conf.sclk_en = 0;
-    hw->clk_conf.rx_sclk_en = 0;
-    hw->clk_conf.tx_sclk_en = 0;
+    UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_en, 0);
 }
 
 /**
  * @brief  Set the UART source clock.
  *
  * @param  hw Beginning address of the peripheral registers.
- * @param  source_clk The UART source clock. The source clock can be APB clock, RTC clock or XTAL clock.
- *                    If the source clock is RTC/XTAL, the UART can still work when the APB changes.
+ * @param  source_clk The UART source clock. The source clock can be PLL_F48M clock, RTC clock or XTAL clock.
+ *                    All clock sources can remain at their original frequencies during DFS.
  *
  * @return None.
  */
@@ -121,13 +141,13 @@ static inline void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
     switch (source_clk) {
         default:
         case UART_SCLK_PLL_F48M:
-            hw->clk_conf.sclk_sel = 1;
+            UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 1);
             break;
         case UART_SCLK_RTC:
-            hw->clk_conf.sclk_sel = 2;
+            UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 2);
             break;
         case UART_SCLK_XTAL:
-            hw->clk_conf.sclk_sel = 3;
+            UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, 3);
             break;
     }
 }
@@ -142,7 +162,7 @@ static inline void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
  */
 static inline void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t *source_clk)
 {
-    switch (hw->clk_conf.sclk_sel) {
+    switch (UART_LL_PCR_REG_GET(hw, sclk_conf, sclk_sel)) {
         default:
         case 1:
             *source_clk = UART_SCLK_PLL_F48M;
@@ -175,10 +195,10 @@ static inline void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t 
     // The baud rate configuration register is divided into
     // an integer part and a fractional part.
     hw->clkdiv_sync.clkdiv_int = clk_div >> 4;
-    hw->clkdiv_sync.clkdiv_frag = clk_div &  0xf;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, sclk_div - 1);
+    hw->clkdiv_sync.clkdiv_frag = clk_div & 0xf;
+    UART_LL_PCR_REG_U32_SET(hw, sclk_conf, sclk_div_num, sclk_div - 1);
 #undef DIV_UP
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -191,8 +211,9 @@ static inline void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t 
  */
 static inline uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_freq)
 {
-    typeof(hw->clkdiv_sync) div_reg = hw->clkdiv_sync;
-    return ((sclk_freq << 4)) / (((div_reg.clkdiv_int << 4) | div_reg.clkdiv_frag) * (HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1));
+    typeof(hw->clkdiv_sync) div_reg;
+    div_reg.val = hw->clkdiv_sync.val;
+    return ((sclk_freq << 4)) / (((div_reg.clkdiv_int << 4) | div_reg.clkdiv_frag) * (UART_LL_PCR_REG_U32_GET(hw, sclk_conf, sclk_div_num) + 1));
 }
 
 /**
@@ -270,7 +291,7 @@ static inline uint32_t uart_ll_get_intr_ena_status(uart_dev_t *hw)
 static inline void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_t rd_len)
 {
     for (int i = 0; i < (int)rd_len; i++) {
-        buf[i] = HAL_FORCE_READ_U32_REG_FIELD(hw->fifo, rxfifo_rd_byte);
+        buf[i] = hw->fifo.rxfifo_rd_byte;
     }
 }
 
@@ -279,14 +300,14 @@ static inline void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_t rd
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  buf The data buffer.
- * @param  wr_len The data length needs to be writen.
+ * @param  wr_len The data length needs to be written.
  *
  * @return None
  */
 static inline void uart_ll_write_txfifo(uart_dev_t *hw, const uint8_t *buf, uint32_t wr_len)
 {
     for (int i = 0; i < (int)wr_len; i++) {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->fifo, rxfifo_rd_byte, buf[i]);
+        hw->fifo.rxfifo_rd_byte = buf[i];
     }
 }
 
@@ -300,9 +321,9 @@ static inline void uart_ll_write_txfifo(uart_dev_t *hw, const uint8_t *buf, uint
 static inline void uart_ll_rxfifo_rst(uart_dev_t *hw)
 {
     hw->conf0_sync.rxfifo_rst = 1;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
     hw->conf0_sync.rxfifo_rst = 0;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -315,9 +336,9 @@ static inline void uart_ll_rxfifo_rst(uart_dev_t *hw)
 static inline void uart_ll_txfifo_rst(uart_dev_t *hw)
 {
     hw->conf0_sync.txfifo_rst = 1;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
     hw->conf0_sync.txfifo_rst = 0;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -355,7 +376,7 @@ static inline uint32_t uart_ll_get_txfifo_len(uart_dev_t *hw)
 static inline void uart_ll_set_stop_bits(uart_dev_t *hw, uart_stop_bits_t stop_bit)
 {
     hw->conf0_sync.stop_bit_num = stop_bit;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -368,7 +389,7 @@ static inline void uart_ll_set_stop_bits(uart_dev_t *hw, uart_stop_bits_t stop_b
  */
 static inline void uart_ll_get_stop_bits(uart_dev_t *hw, uart_stop_bits_t *stop_bit)
 {
-    *stop_bit = hw->conf0_sync.stop_bit_num;
+    *stop_bit = (uart_stop_bits_t)hw->conf0_sync.stop_bit_num;
 }
 
 /**
@@ -385,7 +406,7 @@ static inline void uart_ll_set_parity(uart_dev_t *hw, uart_parity_t parity_mode)
         hw->conf0_sync.parity = parity_mode & 0x1;
     }
     hw->conf0_sync.parity_en = (parity_mode >> 1) & 0x1;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -399,7 +420,7 @@ static inline void uart_ll_set_parity(uart_dev_t *hw, uart_parity_t parity_mode)
 static inline void uart_ll_get_parity(uart_dev_t *hw, uart_parity_t *parity_mode)
 {
     if (hw->conf0_sync.parity_en) {
-        *parity_mode = 0X2 | hw->conf0_sync.parity;
+        *parity_mode = (uart_parity_t)(0x2 | hw->conf0_sync.parity);
     } else {
         *parity_mode = UART_PARITY_DISABLE;
     }
@@ -445,7 +466,7 @@ static inline void uart_ll_set_txfifo_empty_thr(uart_dev_t *hw, uint16_t empty_t
 static inline void uart_ll_set_rx_idle_thr(uart_dev_t *hw, uint32_t rx_idle_thr)
 {
     hw->idle_conf_sync.rx_idle_thrhd = rx_idle_thr;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -459,7 +480,7 @@ static inline void uart_ll_set_rx_idle_thr(uart_dev_t *hw, uint32_t rx_idle_thr)
 static inline void uart_ll_set_tx_idle_num(uart_dev_t *hw, uint32_t idle_num)
 {
     hw->idle_conf_sync.tx_idle_num = idle_num;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -474,13 +495,11 @@ static inline void uart_ll_tx_break(uart_dev_t *hw, uint32_t break_num)
 {
     if (break_num > 0) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->txbrk_conf_sync, tx_brk_num, break_num);
-        uart_ll_update(0); // TODO: IDF-5338
         hw->conf0_sync.txd_brk = 1;
-        uart_ll_update(0); // TODO: IDF-5338
     } else {
         hw->conf0_sync.txd_brk = 0;
-        uart_ll_update(0); // TODO: IDF-5338
     }
+    uart_ll_update(hw);
 }
 
 /**
@@ -497,20 +516,16 @@ static inline void uart_ll_set_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcontrol_
     //only when UART_HW_FLOWCTRL_RTS is set , will the rx_thresh value be set.
     if (flow_ctrl & UART_HW_FLOWCTRL_RTS) {
         hw->hwfc_conf_sync.rx_flow_thrhd = rx_thrs;
-        uart_ll_update(0); // TODO: IDF-5338
         hw->hwfc_conf_sync.rx_flow_en = 1;
-        uart_ll_update(0); // TODO: IDF-5338
     } else {
         hw->hwfc_conf_sync.rx_flow_en = 0;
-        uart_ll_update(0); // TODO: IDF-5338
     }
     if (flow_ctrl & UART_HW_FLOWCTRL_CTS) {
         hw->conf0_sync.tx_flow_en = 1;
-        uart_ll_update(0); // TODO: IDF-5338
     } else {
         hw->conf0_sync.tx_flow_en = 0;
-        uart_ll_update(0); // TODO: IDF-5338
     }
+    uart_ll_update(hw);
 }
 
 /**
@@ -525,10 +540,10 @@ static inline void uart_ll_get_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcontrol_
 {
     *flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
     if (hw->hwfc_conf_sync.rx_flow_en) {
-        *flow_ctrl |= UART_HW_FLOWCTRL_RTS;
+        *flow_ctrl = (uart_hw_flowcontrol_t)((unsigned int)(*flow_ctrl) | (unsigned int)UART_HW_FLOWCTRL_RTS);
     }
     if (hw->conf0_sync.tx_flow_en) {
-        *flow_ctrl |= UART_HW_FLOWCTRL_CTS;
+        *flow_ctrl = (uart_hw_flowcontrol_t)((unsigned int)(*flow_ctrl) | (unsigned int)UART_HW_FLOWCTRL_CTS);
     }
 }
 
@@ -545,21 +560,16 @@ static inline void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl_t *
 {
     if (sw_flow_ctrl_en) {
         hw->swfc_conf0_sync.xonoff_del = 1;
-        uart_ll_update(0); // TODO: IDF-5338
         hw->swfc_conf0_sync.sw_flow_con_en = 1;
-        uart_ll_update(0); // TODO: IDF-5338
         hw->swfc_conf1.xon_threshold = flow_ctrl->xon_thrd;
         hw->swfc_conf1.xoff_threshold = flow_ctrl->xoff_thrd;
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xon_char, flow_ctrl->xon_char);
-        uart_ll_update(0); // TODO: IDF-5338
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xoff_char, flow_ctrl->xoff_char);
-        uart_ll_update(0); // TODO: IDF-5338
     } else {
         hw->swfc_conf0_sync.sw_flow_con_en = 0;
-        uart_ll_update(0); // TODO: IDF-5338
         hw->swfc_conf0_sync.xonoff_del = 0;
-        uart_ll_update(0); // TODO: IDF-5338
     }
+    uart_ll_update(hw);
 }
 
 /**
@@ -578,15 +588,11 @@ static inline void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl_t *
 static inline void uart_ll_set_at_cmd_char(uart_dev_t *hw, uart_at_cmd_t *cmd_char)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_char_sync, data, cmd_char->cmd_char);
-    uart_ll_update(0); // TODO: IDF-5338
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_char_sync, char_num, cmd_char->char_num);
-    uart_ll_update(0); // TODO: IDF-5338
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_postcnt_sync, post_idle_num, cmd_char->post_idle);
-    uart_ll_update(0); // TODO: IDF-5338
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_precnt_sync, pre_idle_num, cmd_char->pre_idle);
-    uart_ll_update(0); // TODO: IDF-5338
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_gaptout_sync, rx_gap_tout, cmd_char->gap_tout);
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -600,7 +606,7 @@ static inline void uart_ll_set_at_cmd_char(uart_dev_t *hw, uart_at_cmd_t *cmd_ch
 static inline void uart_ll_set_data_bit_num(uart_dev_t *hw, uart_word_length_t data_bit)
 {
     hw->conf0_sync.bit_num = data_bit;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -614,7 +620,7 @@ static inline void uart_ll_set_data_bit_num(uart_dev_t *hw, uart_word_length_t d
 static inline void uart_ll_set_rts_active_level(uart_dev_t *hw, int level)
 {
     hw->conf0_sync.sw_rts = level & 0x1;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -654,13 +660,10 @@ static inline void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
 static inline void uart_ll_set_mode_normal(uart_dev_t *hw)
 {
     hw->rs485_conf_sync.rs485_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.rs485tx_rx_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.rs485rxby_tx_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->conf0_sync.irda_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -674,19 +677,13 @@ static inline void uart_ll_set_mode_rs485_app_ctrl(uart_dev_t *hw)
 {
     // Application software control, remove echo
     hw->rs485_conf_sync.rs485rxby_tx_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->conf0_sync.irda_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->conf0_sync.sw_rts = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->conf0_sync.irda_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.dl0_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.dl1_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.rs485_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -700,22 +697,16 @@ static inline void uart_ll_set_mode_rs485_half_duplex(uart_dev_t *hw)
 {
     // Enable receiver, sw_rts = 1  generates low level on RTS pin
     hw->conf0_sync.sw_rts = 1;
-    uart_ll_update(0); // TODO: IDF-5338
     // Half duplex mode
     hw->rs485_conf_sync.rs485tx_rx_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     // Setting this bit will allow data to be transmitted while receiving data(full-duplex mode).
     // But note that this full-duplex mode has no conflict detection function
     hw->rs485_conf_sync.rs485rxby_tx_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->conf0_sync.irda_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.dl0_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.dl1_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.rs485_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -728,21 +719,15 @@ static inline void uart_ll_set_mode_rs485_half_duplex(uart_dev_t *hw)
 static inline void uart_ll_set_mode_collision_detect(uart_dev_t *hw)
 {
     hw->conf0_sync.irda_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     // Enable full-duplex mode
     hw->rs485_conf_sync.rs485tx_rx_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
     // Transmitter should send data when the receiver is busy,
     hw->rs485_conf_sync.rs485rxby_tx_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.dl0_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.dl1_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->conf0_sync.sw_rts = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.rs485_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -755,15 +740,11 @@ static inline void uart_ll_set_mode_collision_detect(uart_dev_t *hw)
 static inline void uart_ll_set_mode_irda(uart_dev_t *hw)
 {
     hw->rs485_conf_sync.rs485_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.rs485tx_rx_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->rs485_conf_sync.rs485rxby_tx_en = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->conf0_sync.sw_rts = 0;
-    uart_ll_update(0); // TODO: IDF-5338
     hw->conf0_sync.irda_en = 1;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -808,9 +789,7 @@ static inline void uart_ll_set_mode(uart_dev_t *hw, uart_mode_t mode)
 static inline void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char, uint8_t *char_num)
 {
     *cmd_char = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char_sync, data);
-    uart_ll_update(0); // TODO: IDF-5338
     *char_num = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char_sync, char_num);
-    uart_ll_update(0); // TODO: IDF-5338
 }
 
 /**
@@ -835,7 +814,7 @@ static inline uint32_t uart_ll_get_wakeup_thrd(uart_dev_t *hw)
  */
 static inline void uart_ll_get_data_bit_num(uart_dev_t *hw, uart_word_length_t *data_bit)
 {
-    *data_bit = hw->conf0_sync.bit_num;
+    *data_bit = (uart_word_length_t)hw->conf0_sync.bit_num;
 }
 
 /**
@@ -885,15 +864,16 @@ static inline bool uart_ll_is_hw_cts_en(uart_dev_t *hw)
 static inline void uart_ll_set_loop_back(uart_dev_t *hw, bool loop_back_en)
 {
     hw->conf0_sync.loopback = loop_back_en;
+    uart_ll_update(hw);
 }
 
 static inline void uart_ll_xon_force_on(uart_dev_t *hw, bool always_on)
 {
     hw->swfc_conf0_sync.force_xon = 1;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
     if(!always_on) {
         hw->swfc_conf0_sync.force_xon = 0;
-        uart_ll_update(0); // TODO: IDF-5338
+        uart_ll_update(hw);
     }
 }
 
@@ -908,20 +888,22 @@ static inline void uart_ll_xon_force_on(uart_dev_t *hw, bool always_on)
  */
 static inline void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
 {
-    typeof(hw->conf0_sync) conf0_reg = hw->conf0_sync;
+    typeof(hw->conf0_sync) conf0_reg;
+    conf0_reg.val = hw->conf0_sync.val;
     conf0_reg.irda_tx_inv = (inv_mask & UART_SIGNAL_IRDA_TX_INV) ? 1 : 0;
     conf0_reg.irda_rx_inv = (inv_mask & UART_SIGNAL_IRDA_RX_INV) ? 1 : 0;
     conf0_reg.rxd_inv = (inv_mask & UART_SIGNAL_RXD_INV) ? 1 : 0;
     conf0_reg.txd_inv = (inv_mask & UART_SIGNAL_TXD_INV) ? 1 : 0;
     hw->conf0_sync.val = conf0_reg.val;
-    uart_ll_update(0); // TODO: IDF-5338
 
-    typeof(hw->conf1) conf1_reg = hw->conf1;
+    typeof(hw->conf1) conf1_reg;
+    conf1_reg.val = hw->conf1.val;
     conf1_reg.rts_inv = (inv_mask & UART_SIGNAL_RTS_INV) ? 1 : 0;
     conf1_reg.dtr_inv = (inv_mask & UART_SIGNAL_DTR_INV) ? 1 : 0;
     conf1_reg.cts_inv = (inv_mask & UART_SIGNAL_CTS_INV) ? 1 : 0;
     conf1_reg.dsr_inv = (inv_mask & UART_SIGNAL_DSR_INV) ? 1 : 0;
     hw->conf1.val = conf1_reg.val;
+    uart_ll_update(hw);
 }
 
 /**
@@ -937,13 +919,11 @@ static inline void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thrd)
     uint16_t tout_val = tout_thrd;
     if(tout_thrd > 0) {
         hw->tout_conf_sync.rx_tout_thrhd = tout_val;
-        uart_ll_update(0); // TODO: IDF-5338
         hw->tout_conf_sync.rx_tout_en = 1;
-        uart_ll_update(0); // TODO: IDF-5338
     } else {
         hw->tout_conf_sync.rx_tout_en = 0;
-        uart_ll_update(0); // TODO: IDF-5338
     }
+    uart_ll_update(hw);
 }
 
 /**
@@ -983,7 +963,7 @@ static inline uint16_t uart_ll_max_tout_thrd(uart_dev_t *hw)
 static inline void uart_ll_set_autobaud_en(uart_dev_t *hw, bool enable)
 {
     hw->conf0_sync.autobaud_en = enable ? 1 : 0;
-    uart_ll_update(0); // TODO: IDF-5338
+    uart_ll_update(hw);
 }
 
 /**
@@ -1046,10 +1026,8 @@ static inline uint32_t uart_ll_get_low_pulse_cnt(uart_dev_t *hw)
 static inline void uart_ll_force_xoff(uart_port_t uart_num)
 {
     REG_CLR_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_FORCE_XON);
-    uart_ll_update(0); // TODO: IDF-5338
     REG_SET_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_SW_FLOW_CON_EN | UART_FORCE_XOFF);
-    uart_ll_update(0); // TODO: IDF-5338
-    // REG_SET_BIT(UART_ID_REG(uart_num), UART_UPDATE);
+    uart_ll_update(UART_LL_GET_HW(uart_num));
 }
 
 /**
@@ -1062,12 +1040,9 @@ static inline void uart_ll_force_xoff(uart_port_t uart_num)
 static inline void uart_ll_force_xon(uart_port_t uart_num)
 {
     REG_CLR_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_FORCE_XOFF);
-    uart_ll_update(0); // TODO: IDF-5338
     REG_SET_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_FORCE_XON);
-    uart_ll_update(0); // TODO: IDF-5338
     REG_CLR_BIT(UART_SWFC_CONF0_SYNC_REG(uart_num), UART_SW_FLOW_CON_EN | UART_FORCE_XON);
-    uart_ll_update(0); // TODO: IDF-5338
-    // REG_SET_BIT(UART_ID_REG(uart_num), UART_UPDATE);
+    uart_ll_update(UART_LL_GET_HW(uart_num));
 }
 
 /**

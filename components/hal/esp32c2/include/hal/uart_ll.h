@@ -98,7 +98,7 @@ FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
  * @brief  Set the UART source clock.
  *
  * @param  hw Beginning address of the peripheral registers.
- * @param  source_clk The UART source clock. The source clock can be APB clock, RTC clock or XTAL clock.
+ * @param  source_clk The UART source clock. The source clock can be PLL_F40M clock, RTC clock or XTAL clock.
  *                    If the source clock is RTC/XTAL, the UART can still work when the APB changes.
  *
  * @return None.

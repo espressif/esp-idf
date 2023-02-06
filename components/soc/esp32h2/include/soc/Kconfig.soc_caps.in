@@ -789,13 +789,9 @@ config SOC_UART_BITRATE_MAX
 
 config SOC_UART_SUPPORT_RTC_CLK
     bool
-    default n
-
-config SOC_UART_SUPPORT_XTAL_CLK
-    bool
     default y
 
-config SOC_UART_REQUIRE_CORE_RESET
+config SOC_UART_SUPPORT_XTAL_CLK
     bool
     default y
 
