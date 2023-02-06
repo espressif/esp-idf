@@ -20,10 +20,11 @@
 
 TEST_CASE("realloc shrink buffer in place", "[heap]")
 {
-    void *x = malloc(64);
+    // pointers converted to int to avoid warning -Wuse-after-free
+    int x = (int) malloc(64);
     TEST_ASSERT(x);
-    void *y = realloc(x, 48);
-    TEST_ASSERT_EQUAL_PTR(x, y);
+    int y = (int) realloc((void *) x, 48);
+    TEST_ASSERT_EQUAL_UINT32((uint32_t) x, (uint32_t) y);
 }
 
 #endif
