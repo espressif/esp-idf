@@ -844,7 +844,7 @@ static void free_gatt_ble_misc_memory(simple_ble_cfg_t *ble_config)
 
 esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *config)
 {
-    if (!pc || !config || !config->device_name || !config->nu_lookup) {
+    if (!pc || !config || !config->nu_lookup) {
         return ESP_ERR_INVALID_ARG;
     }
 
