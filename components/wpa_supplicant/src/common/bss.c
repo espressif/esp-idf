@@ -109,7 +109,7 @@ static int wpa_bss_known(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 {
 	struct wifi_ssid *ssid = esp_wifi_sta_get_prof_ssid_internal();
 
-	if (ssid->ssid == NULL || ssid->len == 0)
+	if (ssid->len == 0)
 		return 0;
 	if (ssid->len == bss->ssid_len &&
 	    os_memcmp(ssid->ssid, bss->ssid, ssid->len) == 0)
