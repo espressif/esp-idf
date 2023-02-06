@@ -55,6 +55,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
             return PCR_GDMA_CLK_EN;
         case PERIPH_MCPWM0_MODULE:
             return PCR_PWM_CLK_EN;
+        case PERIPH_ETM_MODULE:
+            return PCR_ETM_CLK_EN;
         case PERIPH_AES_MODULE:
             return PCR_AES_CLK_EN;
         case PERIPH_SHA_MODULE:
@@ -124,6 +126,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
             return PCR_GDMA_RST_EN;
         case PERIPH_MCPWM0_MODULE:
             return PCR_PWM_RST_EN;
+        case PERIPH_ETM_MODULE:
+            return PCR_ETM_RST_EN;
         case PERIPH_AES_MODULE:
         if (enable == true) {
             // Clear reset on digital signature, otherwise AES unit is held in reset also.
@@ -216,6 +220,8 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
             return PCR_GDMA_CONF_REG;
         case PERIPH_MCPWM0_MODULE:
             return PCR_PWM_CONF_REG;
+        case PERIPH_ETM_MODULE:
+            return PCR_ETM_CONF_REG;
         case PERIPH_AES_MODULE:
             return PCR_AES_CONF_REG;
         case PERIPH_SHA_MODULE:
@@ -271,6 +277,8 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
             return PCR_GDMA_CONF_REG;
         case PERIPH_MCPWM0_MODULE:
             return PCR_PWM_CONF_REG;
+        case PERIPH_ETM_MODULE:
+            return PCR_ETM_CONF_REG;
         case PERIPH_AES_MODULE:
             return PCR_AES_CONF_REG;
         case PERIPH_SHA_MODULE:

@@ -77,7 +77,6 @@ api-reference/peripherals/usb_device
 api-reference/peripherals/sdspi_host
 api-reference/peripherals/dac
 api-reference/peripherals/spi_slave
-api-reference/peripherals/etm
 api-reference/peripherals/i2s
 api-reference/peripherals/touch_element
 api-reference/peripherals/lcd
