@@ -206,7 +206,20 @@ struct wpa_ptk {
 	size_t kck_len;
 	size_t kek_len;
 	size_t tk_len;
+	int installed; /* 1 if key has already been installed to driver */
 };
+
+struct wpa_gtk {
+	u8 gtk[WPA_GTK_MAX_LEN];
+	size_t gtk_len;
+};
+
+#ifdef CONFIG_IEEE80211W
+struct wpa_igtk {
+	u8 igtk[WPA_IGTK_MAX_LEN];
+	size_t igtk_len;
+};
+#endif /* CONFIG_IEEE80211W */
 
 struct wpa_gtk_data {
 	enum wpa_alg alg;
@@ -381,9 +394,12 @@ int wpa_cipher_key_len(int cipher);
 int wpa_cipher_rsc_len(int cipher);
 int wpa_cipher_to_alg(int cipher);
 int wpa_cipher_valid_mgmt_group(int cipher);
+int wpa_cipher_valid_pairwise(int cipher);
 u32 wpa_cipher_to_suite(int proto, int cipher);
 
 int wpa_cipher_put_suites(u8 *pos, int ciphers);
+
+int wpa_cipher_valid_mgmt_group(int cipher);
 
 int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
            struct wpa_ie_data *data);
