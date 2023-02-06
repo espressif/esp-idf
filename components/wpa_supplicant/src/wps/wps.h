@@ -1021,9 +1021,18 @@ enum wps_sig_type {
 };
 #endif
 
+#ifdef ESP_SUPPLICANT
+enum wps_sm_state{
+     WAIT_START,
+     WPA_MESG,
+     WPA_FAIL
+};
+#endif /* ESP_SUPPLICANT */
+
 #define WPS_EAP_EXT_VENDOR_TYPE "WFA-SimpleConfig-Enrollee-1-0"
 #define WPS_OUTBUF_SIZE 500
 struct wps_sm {
+    u8 state;
     struct wps_config *wps_cfg;
     struct wps_context *wps_ctx;
     struct wps_data *wps;

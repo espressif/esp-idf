@@ -1532,8 +1532,8 @@ enum wps_process_res wps_enrollee_process_msg(struct wps_data *wps,
 	}
 
 	switch (op_code) {
-        case WSC_Start:
-                return wps_process_wsc_start(wps, msg);
+	case WSC_Start:
+		return wps_process_wsc_start(wps, msg);
 	case WSC_MSG:
 	case WSC_UPnP:
 		return wps_process_wsc_msg(wps, msg);
