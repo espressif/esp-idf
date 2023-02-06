@@ -47,6 +47,10 @@ Quad mode (QIO/QOUT) is supported on following chip types:
 6. XMC
 7. BOYA
 
+.. note::
+
+    For every flash chip vendor listed above will only be supported by default when the flash is officially supported. If you want to enable/disable the flash series you can go through Kconfig manu ``Auto-detect flash chips``.
+
 Optional Features
 ^^^^^^^^^^^^^^^^^
 

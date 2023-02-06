@@ -140,6 +140,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     - Disabling :ref:`CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR` prevents posting ``esp_event`` events from :ref:`iram-safe-interrupt-handlers` but will save some IRAM.
     - Disabling :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` prevents spi_master interrupts from being serviced while writing to flash, and may otherwise reduce spi_master performance, but will save some IRAM.
     - Setting :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` to disable assertion for HAL component will save some IRAM especially for HAL code who calls `HAL_ASSERT` a lot and resides in IRAM.
+    - Refer to sdkconfig menu ``Auto-detect flash chips`` and you can disable flash drivers which you don't need to save some IRAM.
 
 
 .. only:: esp32c3
