@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <inttypes.h>
 #include <esp_random.h>
 
 #include <mbedtls/entropy.h>
@@ -247,9 +248,9 @@ static void test_ecp_mul(mbedtls_ecp_group_id id, const uint8_t *x_coord, const 
     TEST_ASSERT_EQUAL(0, memcmp(y, result_y_coord, mbedtls_mpi_size(&R.MBEDTLS_PRIVATE(Y))));
 
     if (id == MBEDTLS_ECP_DP_SECP192R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_MULTIPLY_OP, "%d us", elapsed_time);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_MULTIPLY_OP, "%" PRId64 " us", elapsed_time);
     } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_MULTIPLY_OP, "%d us", elapsed_time);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_MULTIPLY_OP, "%" PRId64 " us", elapsed_time);
     }
 
     mbedtls_ecp_point_free(&R);
@@ -303,9 +304,9 @@ static void test_ecp_verify(mbedtls_ecp_group_id id, const uint8_t *x_coord, con
     TEST_ASSERT_EQUAL(0, ret);
 
     if (id == MBEDTLS_ECP_DP_SECP192R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_VERIFY_OP, "%d us", elapsed_time);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P192_POINT_VERIFY_OP, "%" PRId64 " us", elapsed_time);
     } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_VERIFY_OP, "%d us", elapsed_time);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECP_P256_POINT_VERIFY_OP, "%" PRId64 " us", elapsed_time);
     }
 
     mbedtls_ecp_point_free(&P);

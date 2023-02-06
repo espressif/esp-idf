@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <inttypes.h>
 #include <esp_log.h>
 
 #include <mbedtls/entropy.h>
@@ -114,9 +115,9 @@ void test_ecdsa_verify(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8
     elapsed_time = ccomp_timer_stop();
 
     if (id == MBEDTLS_ECP_DP_SECP192R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P192_VERIFY_OP, "%d us", elapsed_time);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P192_VERIFY_OP, "%" PRId64 " us", elapsed_time);
     } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P256_VERIFY_OP, "%d us", elapsed_time);
+        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P256_VERIFY_OP, "%" PRId64 " us", elapsed_time);
     }
 
     mbedtls_mpi_free(&r);
