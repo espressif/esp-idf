@@ -838,7 +838,7 @@ void btm_pm_proc_ssr_evt (UINT8 *p, UINT16 evt_len)
     UINT8       status;
     UINT16      handle;
     UINT16      max_rx_lat;
-    int         xx, yy;
+    int         xx;
     tBTM_PM_MCB *p_cb;
     tACL_CONN   *p_acl = NULL;
     UINT16      use_ssr = TRUE;
@@ -863,10 +863,10 @@ void btm_pm_proc_ssr_evt (UINT8 *p, UINT16 evt_len)
     }
 
     /* notify registered parties */
-    for (yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
-        if (btm_cb.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
+    for (xx = 0; xx < BTM_MAX_PM_RECORDS; xx++) {
+        if (btm_cb.pm_reg_db[xx].mask & BTM_PM_REG_NOTIF) {
             if ( p_acl) {
-                (*btm_cb.pm_reg_db[yy].cback)( p_acl->remote_addr, BTM_PM_STS_SSR, use_ssr, status);
+                (*btm_cb.pm_reg_db[xx].cback)( p_acl->remote_addr, BTM_PM_STS_SSR, use_ssr, status);
             }
         }
     }
