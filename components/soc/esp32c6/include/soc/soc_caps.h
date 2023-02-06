@@ -69,7 +69,6 @@
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
 
-// TODO: IDF-5356 (Copy from esp32c3, need check)
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)
 
