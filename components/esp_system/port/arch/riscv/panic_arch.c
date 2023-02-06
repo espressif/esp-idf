@@ -348,7 +348,6 @@ void panic_arch_fill_info(void *frame, panic_info_t *info)
     info->description = "Exception was unhandled.";
 
     info->addr = (void *) regs->mepc;
-    info->frame = &regs;
 }
 
 static void panic_print_basic_backtrace(const void *frame, int core)

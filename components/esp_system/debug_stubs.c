@@ -55,7 +55,6 @@ static void esp_dbg_stubs_data_free(void *addr)
 {
     ESP_LOGV(TAG, "%s %p", __func__, addr);
     free(addr);
-    ESP_LOGV(TAG, "%s EXIT %p", __func__, addr);
 }
 
 void esp_dbg_stubs_init(void)
