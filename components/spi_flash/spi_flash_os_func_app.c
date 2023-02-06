@@ -21,6 +21,7 @@
 
 #include "driver/spi_common_internal.h"
 
+#define SPI_FLASH_CACHE_NO_DISABLE  (CONFIG_SPI_FLASH_AUTO_SUSPEND || (CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA))
 static const char TAG[] = "spi_flash";
 
 /*
@@ -59,14 +60,14 @@ static inline IRAM_ATTR bool on_spi1_check_yield(spi1_app_func_arg_t* ctx);
 
 IRAM_ATTR static void cache_enable(void* arg)
 {
-#ifndef CONFIG_SPI_FLASH_AUTO_SUSPEND
+#if !SPI_FLASH_CACHE_NO_DISABLE
     g_flash_guard_default_ops.end();
 #endif
 }
 
 IRAM_ATTR static void cache_disable(void* arg)
 {
-#ifndef CONFIG_SPI_FLASH_AUTO_SUSPEND
+#if !SPI_FLASH_CACHE_NO_DISABLE
     g_flash_guard_default_ops.start();
 #endif
 }
