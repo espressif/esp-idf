@@ -13,14 +13,12 @@
 extern "C" {
 #endif
 
-/*IRAM0 is connected with Cache IBUS0*/
-#define IRAM0_CACHE_ADDRESS_LOW             0x42000000
-#define IRAM0_CACHE_ADDRESS_HIGH            (IRAM0_CACHE_ADDRESS_LOW + ((CONFIG_MMU_PAGE_SIZE) * 128)) // MMU has 256 pages, first 128 for instruction
+#define IRAM0_CACHE_ADDRESS_LOW                  0x42000000
+#define IRAM0_CACHE_ADDRESS_HIGH                 (IRAM0_CACHE_ADDRESS_LOW + ((CONFIG_MMU_PAGE_SIZE) * MMU_ENTRY_NUM))
 
-/*DRAM0 is connected with Cache DBUS0*/
-#define DRAM0_CACHE_ADDRESS_LOW             IRAM0_CACHE_ADDRESS_HIGH // ESP32H2-TODO : IDF-6370
-#define DRAM0_CACHE_ADDRESS_HIGH            (DRAM0_CACHE_ADDRESS_LOW + ((CONFIG_MMU_PAGE_SIZE) * 128)) // MMU has 256 pages, second 128 for data
-#define DRAM0_CACHE_OPERATION_HIGH          DRAM0_CACHE_ADDRESS_HIGH
+#define DRAM0_CACHE_ADDRESS_LOW                  IRAM0_CACHE_ADDRESS_LOW                //I/D share the same vaddr range
+#define DRAM0_CACHE_ADDRESS_HIGH                 IRAM0_CACHE_ADDRESS_HIGH               //I/D share the same vaddr range
+#define DRAM0_CACHE_OPERATION_HIGH               DRAM0_CACHE_ADDRESS_HIGH
 
 #define BUS_SIZE(bus_name)                 (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
 #define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
@@ -32,14 +30,6 @@ extern "C" {
 
 #define BUS_IRAM0_CACHE_SIZE(page_size)              BUS_SIZE(IRAM0_CACHE)
 #define BUS_DRAM0_CACHE_SIZE(page_size)              BUS_SIZE(DRAM0_CACHE)
-
-#define CACHE_IBUS                      0
-#define CACHE_IBUS_MMU_START            0
-#define CACHE_IBUS_MMU_END              0x200
-
-#define CACHE_DBUS                      1
-#define CACHE_DBUS_MMU_START            0
-#define CACHE_DBUS_MMU_END              0x200
 
 //TODO, remove these cache function dependencies
 #define CACHE_IROM_MMU_START            0
@@ -64,11 +54,9 @@ extern "C" {
 #define MMU_MSPI_SENSITIVE              BIT(10)
 
 #define MMU_ACCESS_FLASH                MMU_MSPI_ACCESS_FLASH
-#define MMU_ACCESS_SPIRAM               MMU_MSPI_ACCESS_SPIRAM
 #define MMU_VALID                       MMU_MSPI_VALID
 #define MMU_SENSITIVE                   MMU_MSPI_SENSITIVE
 
-// ESP32H2-TODO : IDF-6251
 #define MMU_INVALID_MASK                MMU_MSPI_VALID
 #define MMU_INVALID                     MMU_MSPI_INVALID
 

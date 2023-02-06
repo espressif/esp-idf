@@ -400,10 +400,7 @@ void IRAM_ATTR call_start_cpu0(void)
     mspi_timing_flash_tuning();
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32H2
-    //ESP32H2 MMU-TODO: IDF-6251
     esp_mmu_map_init();
-#endif  //!CONFIG_IDF_TARGET_ESP32H2
 
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_psram_init() != ESP_OK) {
