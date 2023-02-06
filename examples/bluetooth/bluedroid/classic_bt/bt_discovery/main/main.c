@@ -181,7 +181,7 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
         p_dev->eir_len = eir_len;
     }
 
-    if (p_dev->eir && p_dev->bdname_len == 0) {
+    if (p_dev->bdname_len == 0) {
         get_name_from_eir(p_dev->eir, p_dev->bdname, &p_dev->bdname_len);
     }
 

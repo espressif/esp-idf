@@ -494,7 +494,7 @@ esp_err_t esp_ble_mesh_set_fast_prov_info(esp_ble_mesh_fast_prov_info_t *fast_pr
     arg.set_fast_prov_info.iv_index = fast_prov_info->iv_index;
     arg.set_fast_prov_info.offset = fast_prov_info->offset;
     arg.set_fast_prov_info.match_len = fast_prov_info->match_len;
-    if (fast_prov_info->match_len && fast_prov_info->match_val) {
+    if (fast_prov_info->match_len) {
         memcpy(arg.set_fast_prov_info.match_val, fast_prov_info->match_val, fast_prov_info->match_len);
     }
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)

@@ -1472,10 +1472,10 @@ void btc_hf_cb_handler(btc_msg_t *msg)
         case BTA_AG_AT_D_EVT:
         {
             do {
-                if (event == BTA_AG_AT_D_EVT && p_data->val.str) {           // dial_number_or_memory
+                if (event == BTA_AG_AT_D_EVT) {           // dial_number_or_memory
                     memset(&param, 0, sizeof(esp_hf_cb_param_t));
                     param.out_call.num_or_loc = osi_malloc((strlen(p_data->val.str) + 1) * sizeof(char));
-                    sprintf(param.out_call.num_or_loc, p_data->val.str);
+                    sprintf(param.out_call.num_or_loc, "%s", p_data->val.str);
                     btc_hf_cb_to_app(ESP_HF_DIAL_EVT, &param);
                     send_indicator_update(BTA_AG_IND_CALLSETUP,BTA_AG_CALLSETUP_OUTGOING);
                     osi_free(param.out_call.num_or_loc);

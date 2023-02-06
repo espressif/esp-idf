@@ -456,7 +456,7 @@ void btc_ble_mesh_time_scene_server_cb_handler(btc_msg_t *msg)
 {
     esp_ble_mesh_time_scene_server_cb_param_t *param = NULL;
 
-    if (!msg || !msg->arg) {
+    if (!msg) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
