@@ -36,8 +36,10 @@
 #include "esp_mmu_map.h"
 
 
-
+//This is for size align
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+//This is for vaddr align
+#define ALIGN_DOWN_BY(num, align) ((num) & (~((align) - 1)))
 
 //This flag indicates the memory region is merged, we don't care about it anymore
 #define MEM_REGION_MERGED             -1
@@ -129,6 +131,7 @@ static void s_reserve_irom_region(mem_region_t *hw_mem_regions, int region_nums)
     size_t irom_len_to_reserve = (uint32_t)&_instruction_reserved_end - (uint32_t)&_instruction_reserved_start;
     assert((mmu_ll_vaddr_to_laddr((uint32_t)&_instruction_reserved_end) - mmu_ll_vaddr_to_laddr((uint32_t)&_instruction_reserved_start)) == irom_len_to_reserve);
 
+    irom_len_to_reserve += (uint32_t)&_instruction_reserved_start - ALIGN_DOWN_BY((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE);
     irom_len_to_reserve = ALIGN_UP_BY(irom_len_to_reserve, CONFIG_MMU_PAGE_SIZE);
     cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, (uint32_t)&_instruction_reserved_start, irom_len_to_reserve);
 
@@ -156,6 +159,7 @@ static void s_reserve_drom_region(mem_region_t *hw_mem_regions, int region_nums)
     size_t drom_len_to_reserve = (uint32_t)&_rodata_reserved_end - (uint32_t)&_rodata_reserved_start;
     assert((mmu_ll_vaddr_to_laddr((uint32_t)&_rodata_reserved_end) - mmu_ll_vaddr_to_laddr((uint32_t)&_rodata_reserved_start)) == drom_len_to_reserve);
 
+    drom_len_to_reserve += (uint32_t)&_rodata_reserved_start - ALIGN_DOWN_BY((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE);
     drom_len_to_reserve = ALIGN_UP_BY(drom_len_to_reserve, CONFIG_MMU_PAGE_SIZE);
     cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, (uint32_t)&_rodata_reserved_start, drom_len_to_reserve);
 
