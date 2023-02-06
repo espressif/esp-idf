@@ -21,25 +21,25 @@ void ff_memfree(void* mblock)
     free(mblock);
 }
 
-/* 1:Function succeeded, 0:Could not create the sync object */
-int ff_cre_syncobj(BYTE vol, FF_SYNC_t* sobj)
+static int* Mutex[FF_VOLUMES + 1]; /* Table of mutex handle */
+
+/* 1:Function succeeded, 0:Could not create the mutex */
+int ff_mutex_create(int vol)
 {
-    *sobj = NULL;
+    Mutex[vol] = NULL;
     return 1;
 }
 
-/* 1:Function succeeded, 0:Could not delete due to an error */
-int ff_del_syncobj(FF_SYNC_t sobj)
+void ff_mutex_delete(int vol)
 {
-    return 1;
 }
 
 /* 1:Function succeeded, 0:Could not acquire lock */
-int ff_req_grant (FF_SYNC_t sobj)
+int ff_mutex_take(int vol)
 {
     return 1;
 }
 
-void ff_rel_grant (FF_SYNC_t sobj)
+void ff_mutex_give(int vol)
 {
 }
