@@ -114,6 +114,7 @@ We have two bits to control the interrupt:
 #include "esp_private/spi_common_internal.h"
 #include "driver/spi_master.h"
 #include "clk_tree.h"
+#include "clk_ctrl_os.h"
 #include "esp_log.h"
 #include "esp_ipc.h"
 #include "freertos/task.h"
@@ -355,6 +356,11 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     spi_host_t *host = bus_driver_ctx[host_id];
     const spi_bus_attr_t* bus_attr = host->bus_attr;
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
+#if SOC_SPI_SUPPORT_CLK_RC_FAST
+    if (dev_config->clock_source == SPI_CLK_SRC_RC_FAST) {
+        SPI_CHECK(periph_rtc_dig_clk8m_enable(), "the selected clock not available", ESP_ERR_INVALID_STATE);
+    }
+#endif
     spi_clock_source_t clk_src = SPI_CLK_SRC_DEFAULT;
     uint32_t clock_source_hz = 0;
     if (dev_config->clock_source) {
@@ -494,6 +500,12 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     if (handle->ret_queue) {
         SPI_CHECK(uxQueueMessagesWaiting(handle->ret_queue)==0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
     }
+
+#if SOC_SPI_SUPPORT_CLK_RC_FAST
+    if (handle->cfg.clock_source == SPI_CLK_SRC_RC_FAST) {
+        periph_rtc_dig_clk8m_disable();
+    }
+#endif
 
     //return
     int spics_io_num = handle->cfg.spics_io_num;

@@ -538,7 +538,7 @@ SPI Clock Frequency
 Clock source of the GPSPI peripherals can be selected by setting :cpp:member:`spi_device_handle_t::cfg::clock_source`. You can refer to :cpp:type:`spi_clock_source_t` to know the supported clock sources.
 By default driver will set :cpp:member:`spi_device_handle_t::cfg::clock_source` to `SPI_CLK_SRC_DEFAULT`. This usually stands for the highest frequency among GPSPI clock sources. Its value will be different among chips.
 
-Actual clock frequency of a device may not be exactly equal to the number you set, it will be re-calculated by the driver to the nearest hardware compatible number, and not larger than the clock frequency of the clock source. You can call :cpp:func:`spi_device_get_actual_freq` or use :cpp:member:`spi_device_handle_t::real_clk_freq_hz` directly to know the actual frequency computed by the driver.
+Actual clock frequency of a device may not be exactly equal to the number you set, it will be re-calculated by the driver to the nearest hardware compatible number, and not larger than the clock frequency of the clock source. You can call :cpp:func:`spi_device_get_actual_freq` to know the actual frequency computed by the driver.
 
 Theoretical maximum transfer speed of Write or Read phase can be calculated according to the table below:
 
