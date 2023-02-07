@@ -71,6 +71,26 @@ After setting up above configurations for the ADC, call :cpp:func:`adc_continuou
 If the ADC continuous mode driver is no longer used, you should deinitialize the driver by calling :cpp:func:`adc_continuous_deinit`.
 
 
+.. only:: SOC_ADC_DIG_IIR_FILTER_SUPPORTED
+
+    Two IIR filters are available when ADC is working under continuous mode. To create an ADC IIR filter, you should set up the :cpp:type:`adc_continuous_iir_filter_config_t`, and call :cpp:func:`adc_new_continuous_iir_filter`.
+
+    - :cpp:member:`adc_digi_filter_config_t::unit`, ADC  unit.
+    - :cpp:member:`adc_digi_filter_config_t::channel`, ADC channel to be filtered.
+    - :cpp:member:`adc_digi_filter_config_t::coeff`, filter coefficient.
+
+    .. only:: SOC_ADC_DIG_IIR_FILTER_UNIT_BINDED
+
+            On ESP32S2, the filter is per ADC unit. Once a filter is enabled, all the enabled ADC channels in this ADC unit will be filtered. However, we suggest only enabling one ADC channel per unit, when using the filter feature. Because the filtered results depend on the previous filtered result. So you should not enable multiple ADC channels, to avoid mixing the filtered results.
+
+    To recycle a filter, you should call :cpp:func:`adc_del_continuous_iir_filter`.
+
+    .. only:: not SOC_ADC_DIG_IIR_FILTER_UNIT_BINDED
+
+        .. note::
+
+            If you use both the filters on a same ADC channel, then only the first one will take effect.
+
 Initialize the ADC Continuous Mode Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -119,6 +139,10 @@ This API may fail due to reasons like :c:macro:`ESP_ERR_INVALID_ARG`. When it re
 
 See ADC continuous mode example :example:`peripherals/adc/continuous_read` to see configuration codes.
 
+
+.. only:: SOC_ADC_DIG_IIR_FILTER_SUPPORTED
+
+    To enable / disable the ADC IIR filter, you should call :cpp:func:`adc_continuous_iir_filter_enable` / :cpp:func:`adc_continuous_iir_filter_disable`.
 
 ADC Control
 ^^^^^^^^^^^

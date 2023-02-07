@@ -33,7 +33,7 @@ typedef struct {
 
 
 /**
- * @brief New a ADC continuous mode IIR filter
+ * @brief New an ADC continuous mode IIR filter
  *
  * @param[in]   handle   ADC continuous mode driver handle
  * @param[in]   config   Filter configuration

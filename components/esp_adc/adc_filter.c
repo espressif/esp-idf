@@ -85,8 +85,6 @@ static esp_err_t s_adc_filter_free(adc_iir_filter_t *filter_ctx)
 #endif
 
 
-
-
 esp_err_t adc_new_continuous_iir_filter(adc_continuous_handle_t handle, const adc_continuous_iir_filter_config_t *config, adc_iir_filter_handle_t *ret_hdl)
 {
     esp_err_t ret = ESP_FAIL;
