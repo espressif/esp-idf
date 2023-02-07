@@ -22,7 +22,7 @@ else()
 
 
     # Override regi2c implementation in ROM
-    if(CONFIG_ESP_ROM_HAS_REGI2C_BUG)
+    if(CONFIG_ESP_ROM_HAS_REGI2C_BUG OR CONFIG_ESP_ROM_WITHOUT_REGI2C)
         list(APPEND sources "patches/esp_rom_regi2c_${target}.c")
     endif()
 

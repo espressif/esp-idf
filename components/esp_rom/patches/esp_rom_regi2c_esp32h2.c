@@ -1,12 +1,13 @@
-/*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+/**
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ *  SPDX-License-Identifier: Apache-2.0
  */
 #include "esp_rom_sys.h"
 #include "esp_attr.h"
-#include "soc/lp_i2c_ana_mst_reg.h"
+#include "soc/i2c_ana_mst_reg.h"
 #include "modem/modem_lpcon_reg.h"
+
 /**
  * BB    - 0x67 - BIT0
  * TXRF  - 0x6B - BIT1
@@ -18,11 +19,11 @@
  * SAR   - 0x69 - BIT7
  * PMU   - 0x6d - BIT8
 */
-#define REGI2C_ULP_CAL_DEVICE_EN  (BIT(6))
-#define REGI2C_SAR_I2C_DEVICE_EN  (BIT(7))
-#define REGI2C_BBPLL_DEVICE_EN    (BIT(5))
-#define REGI2C_BIAS_DEVICE_EN     (BIT(4))
-#define REGI2C_DIG_REG_DEVICE_EN  (BIT(8))
+#define REGI2C_ULP_CAL_DEVICE_EN  (BIT(6) << 4)
+#define REGI2C_SAR_I2C_DEVICE_EN  (BIT(7) << 4)
+#define REGI2C_BBPLL_DEVICE_EN    (BIT(5) << 4)
+#define REGI2C_BIAS_DEVICE_EN     (BIT(4) << 4)
+#define REGI2C_DIG_REG_DEVICE_EN  (BIT(8) << 4)
 
 #define REGI2C_RTC_BUSY           (BIT(25))
 #define REGI2C_RTC_BUSY_M         (BIT(25))
@@ -68,29 +69,27 @@
 
 /* SLAVE END */
 
-#define REGI2C_RTC_MAGIC_DEFAULT (0x1C610)
-
 static IRAM_ATTR void regi2c_enable_block(uint8_t block)
 {
     REG_SET_BIT(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
-    REG_SET_BIT(LP_I2C_ANA_MST_DATE_REG, LP_I2C_ANA_MST_I2C_MAT_CLK_EN);
-
+    REG_SET_BIT(I2C_MST_DATE_REG, I2C_MST_CLK_EN);
+    REG_SET_FIELD(I2C_MST_ANA_CONF2_REG, I2C_MST_ANA_CONF2, 0);
     /* Before config I2C register, enable corresponding slave. */
     switch (block) {
     case REGI2C_BBPLL  :
-        REG_SET_BIT(LP_I2C_ANA_MST_DEVICE_EN_REG, REGI2C_BBPLL_DEVICE_EN);
+        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_BBPLL_DEVICE_EN);
         break;
     case REGI2C_BIAS   :
-        REG_SET_BIT(LP_I2C_ANA_MST_DEVICE_EN_REG, REGI2C_BIAS_DEVICE_EN);
+        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_BIAS_DEVICE_EN);
         break;
     case REGI2C_DIG_REG:
-        REG_SET_BIT(LP_I2C_ANA_MST_DEVICE_EN_REG, REGI2C_DIG_REG_DEVICE_EN);
+        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_DIG_REG_DEVICE_EN);
         break;
     case REGI2C_ULP_CAL:
-        REG_SET_BIT(LP_I2C_ANA_MST_DEVICE_EN_REG, REGI2C_ULP_CAL_DEVICE_EN);
+        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_ULP_CAL_DEVICE_EN);
         break;
     case REGI2C_SAR_I2C:
-        REG_SET_BIT(LP_I2C_ANA_MST_DEVICE_EN_REG, REGI2C_SAR_I2C_DEVICE_EN);
+        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_SAR_I2C_DEVICE_EN);
         break;
     default:
         return;
@@ -101,19 +100,19 @@ static IRAM_ATTR void regi2c_disable_block(uint8_t block)
 {
     switch (block) {
     case REGI2C_BBPLL  :
-        REG_CLR_BIT(LP_I2C_ANA_MST_DEVICE_EN_REG, REGI2C_BBPLL_DEVICE_EN);
+        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_BBPLL_DEVICE_EN);
         break;
     case REGI2C_BIAS   :
-        REG_CLR_BIT(LP_I2C_ANA_MST_DEVICE_EN_REG, REGI2C_BIAS_DEVICE_EN);
+        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_BIAS_DEVICE_EN);
         break;
     case REGI2C_DIG_REG:
-        REG_CLR_BIT(LP_I2C_ANA_MST_DEVICE_EN_REG, REGI2C_DIG_REG_DEVICE_EN);
+        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_DIG_REG_DEVICE_EN);
         break;
     case REGI2C_ULP_CAL:
-        REG_CLR_BIT(LP_I2C_ANA_MST_DEVICE_EN_REG, REGI2C_ULP_CAL_DEVICE_EN);
+        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_ULP_CAL_DEVICE_EN);
         break;
     case REGI2C_SAR_I2C:
-        REG_CLR_BIT(LP_I2C_ANA_MST_DEVICE_EN_REG, REGI2C_SAR_I2C_DEVICE_EN);
+        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_SAR_I2C_DEVICE_EN);
         break;
     default:
         return;
@@ -127,9 +126,9 @@ uint8_t IRAM_ATTR esp_rom_regi2c_read(uint8_t block, uint8_t host_id, uint8_t re
     (void)host_id;
     uint32_t temp = ((block & REGI2C_RTC_SLAVE_ID_V) << REGI2C_RTC_SLAVE_ID_S)
                     | (reg_add & REGI2C_RTC_ADDR_V) << REGI2C_RTC_ADDR_S;
-    REG_WRITE(LP_I2C_ANA_MST_I2C0_CTRL_REG, temp);
-    while (REG_GET_BIT(LP_I2C_ANA_MST_I2C0_CTRL_REG, LP_I2C_ANA_MST_I2C0_BUSY));
-    uint8_t ret = REG_GET_FIELD(LP_I2C_ANA_MST_I2C0_DATA_REG, LP_I2C_ANA_MST_I2C0_RDATA);
+    REG_WRITE(I2C_MST_I2C0_CTRL_REG, temp);
+    while (REG_GET_BIT(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_BUSY));
+    uint8_t ret = REG_GET_FIELD(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_DATA);
 
     regi2c_disable_block(block);
 
@@ -144,10 +143,10 @@ uint8_t IRAM_ATTR esp_rom_regi2c_read_mask(uint8_t block, uint8_t host_id, uint8
     (void)host_id;
     uint32_t temp = ((block & REGI2C_RTC_SLAVE_ID_V) << REGI2C_RTC_SLAVE_ID_S)
                     | (reg_add & REGI2C_RTC_ADDR_V) << REGI2C_RTC_ADDR_S;
-    REG_WRITE(LP_I2C_ANA_MST_I2C0_CTRL_REG, temp);
-    while (REG_GET_BIT(LP_I2C_ANA_MST_I2C0_CTRL_REG, LP_I2C_ANA_MST_I2C0_BUSY));
-    uint32_t data = REG_GET_FIELD(LP_I2C_ANA_MST_I2C0_DATA_REG, LP_I2C_ANA_MST_I2C0_RDATA);
-    uint8_t ret =  (uint8_t)((data >> lsb) & (~(0xFFFFFFFF << (msb - lsb + 1))));
+    REG_WRITE(I2C_MST_I2C0_CTRL_REG, temp);
+    while (REG_GET_BIT(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_BUSY));
+    uint32_t data = REG_GET_FIELD(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_DATA);
+    uint8_t ret = (uint8_t)((data >> lsb) & (~(0xFFFFFFFF << (msb - lsb + 1))));
 
     regi2c_disable_block(block);
 
@@ -163,8 +162,8 @@ void IRAM_ATTR esp_rom_regi2c_write(uint8_t block, uint8_t host_id, uint8_t reg_
                     | ((reg_add & REGI2C_RTC_ADDR_V) << REGI2C_RTC_ADDR_S)
                     | ((0x1 & REGI2C_RTC_WR_CNTL_V) << REGI2C_RTC_WR_CNTL_S) // 0: READ I2C register; 1: Write I2C register;
                     | (((uint32_t)data & REGI2C_RTC_DATA_V) << REGI2C_RTC_DATA_S);
-    REG_WRITE(LP_I2C_ANA_MST_I2C0_CTRL_REG, temp);
-    while (REG_GET_BIT(LP_I2C_ANA_MST_I2C0_CTRL_REG, LP_I2C_ANA_MST_I2C0_BUSY));
+    REG_WRITE(I2C_MST_I2C0_CTRL_REG, temp);
+    while (REG_GET_BIT(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_BUSY));
 
     regi2c_disable_block(block);
 }
@@ -178,9 +177,9 @@ void IRAM_ATTR esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t
     /*Read the i2c bus register*/
     uint32_t temp = ((block & REGI2C_RTC_SLAVE_ID_V) << REGI2C_RTC_SLAVE_ID_S)
                     | (reg_add & REGI2C_RTC_ADDR_V) << REGI2C_RTC_ADDR_S;
-    REG_WRITE(LP_I2C_ANA_MST_I2C0_CTRL_REG, temp);
-    while (REG_GET_BIT(LP_I2C_ANA_MST_I2C0_CTRL_REG, LP_I2C_ANA_MST_I2C0_BUSY));
-    temp = REG_GET_FIELD(LP_I2C_ANA_MST_I2C0_DATA_REG, LP_I2C_ANA_MST_I2C0_RDATA);
+    REG_WRITE(I2C_MST_I2C0_CTRL_REG, temp);
+    while (REG_GET_BIT(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_BUSY));
+    temp = REG_GET_FIELD(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_DATA);
     /*Write the i2c bus register*/
     temp &= ((~(0xFFFFFFFF << lsb)) | (0xFFFFFFFF << (msb + 1)));
     temp = (((uint32_t)data & (~(0xFFFFFFFF << (msb - lsb + 1)))) << lsb) | temp;
@@ -188,8 +187,8 @@ void IRAM_ATTR esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t
             | ((reg_add & REGI2C_RTC_ADDR_V) << REGI2C_RTC_ADDR_S)
             | ((0x1 & REGI2C_RTC_WR_CNTL_V) << REGI2C_RTC_WR_CNTL_S)
             | ((temp & REGI2C_RTC_DATA_V) << REGI2C_RTC_DATA_S);
-    REG_WRITE(LP_I2C_ANA_MST_I2C0_CTRL_REG, temp);
-    while (REG_GET_BIT(LP_I2C_ANA_MST_I2C0_CTRL_REG, LP_I2C_ANA_MST_I2C0_BUSY));
+    REG_WRITE(I2C_MST_I2C0_CTRL_REG, temp);
+    while (REG_GET_BIT(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_BUSY));
 
     regi2c_disable_block(block);
 }

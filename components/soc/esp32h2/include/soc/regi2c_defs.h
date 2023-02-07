@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include "esp_bit_defs.h"
 
 /* Analog function control register */
-#define I2C_MST_ANA_CONF0_REG  0x6000E040
 #define I2C_MST_BBPLL_STOP_FORCE_HIGH  (BIT(2))
 #define I2C_MST_BBPLL_STOP_FORCE_LOW  (BIT(3))
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/regi2c_defs.h"
+#include "soc/i2c_ana_mst_reg.h"
+
 
 #ifdef __cplusplus
 extern "C" {

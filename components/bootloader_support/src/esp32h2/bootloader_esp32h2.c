@@ -33,6 +33,7 @@
 #include "esp_private/regi2c_ctrl.h"
 #include "soc/regi2c_lp_bias.h"
 #include "soc/regi2c_bias.h"
+#include "modem/modem_lpcon_reg.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
 #include "bootloader_soc.h"
@@ -86,6 +87,7 @@ static void bootloader_super_wdt_auto_feed(void)
 static inline void bootloader_hardware_init(void)
 {
     // ESP32H2-TODO: IDF-5990
+    SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_FORCE_ON_REG, MODEM_LPCON_CLK_I2C_MST_FO);
 }
 
 static inline void bootloader_ana_reset_config(void)
