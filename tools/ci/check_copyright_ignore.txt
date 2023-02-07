@@ -1720,7 +1720,6 @@ tools/test_apps/system/panic/panic_tests.py
 tools/test_apps/system/panic/test_panic_util/test_panic_util.py
 tools/test_apps/system/startup/app_test.py
 tools/test_apps/system/startup/main/test_startup_main.c
-tools/test_idf_monitor/dummy.c
 tools/unit-test-app/components/test_utils/ccomp_timer.c
 tools/unit-test-app/components/test_utils/include/ccomp_timer.h
 tools/unit-test-app/components/test_utils/private_include/ccomp_timer_impl.h

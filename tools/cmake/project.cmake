@@ -104,7 +104,7 @@ function(paths_with_spaces_to_list variable_name)
 endfunction()
 
 #
-# Output the built components to the user. Generates files for invoking idf_monitor.py
+# Output the built components to the user. Generates files for invoking esp_idf_monitor
 # that doubles as an overview of some of the more important build properties.
 #
 function(__project_info test_components)

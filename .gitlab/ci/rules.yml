@@ -129,9 +129,7 @@
   - "tools/esp_app_trace/**/*"
   - "tools/ldgen/**/*"
 
-  - "tools/idf_monitor_base/*"
   - "tools/idf_monitor.py"
-  - "tools/test_idf_monitor/**/*"
 
   - "tools/idf.py"
   - "tools/idf_py_actions/**/*"
