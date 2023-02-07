@@ -83,7 +83,7 @@
 #define adc_ll_digi_dma_disable()                       adc_ll_digi_set_data_source(0)
 
 //ESP32 ADC uses the DMA through I2S. The I2S needs to be configured.
-#define I2S_BASE_CLK                                    (2*APB_CLK_FREQ)
+#define I2S_BASE_CLK                                    (160 * 1000 * 1000)
 #define SAMPLE_BITS                                     16
 #define ADC_LL_CLKM_DIV_NUM_DEFAULT                     2
 #define ADC_LL_CLKM_DIV_B_DEFAULT                       0

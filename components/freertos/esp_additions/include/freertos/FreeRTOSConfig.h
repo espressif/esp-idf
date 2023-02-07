@@ -219,7 +219,7 @@ This file gets pulled into assembly sources. Therefore, some includes need to be
 #define INCLUDE_xSemaphoreGetMutexHolder                1
 #define INCLUDE_xTaskGetHandle                          1
 #define INCLUDE_uxTaskGetStackHighWaterMark             1
-#define INCLUDE_uxTaskGetStackHighWaterMark2            0
+#define INCLUDE_uxTaskGetStackHighWaterMark2            1
 #define INCLUDE_eTaskGetState                           1
 #define INCLUDE_xTaskResumeFromISR                      1
 #define INCLUDE_xTimerPendFunctionCall                  1

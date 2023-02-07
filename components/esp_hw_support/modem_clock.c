@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "freertos/FreeRTOS.h"
 #include "hal/clk_gate_ll.h"
 #include "esp_private/esp_modem_clock.h"
+#include "esp_private/esp_pmu.h"
 #include "esp_sleep.h"
 
 // Please define the frequently called modules in the low bit,
@@ -136,30 +137,25 @@ modem_clock_context_t * __attribute__((weak)) IRAM_ATTR MODEM_CLOCK_instance(voi
     return &modem_clock_context;
 }
 
-
-// TODO: IDF-5351: move to esp_pmu.h after support pmu driver
-#define PMU_SLEEP   0
-#define PMU_MODEM   1
-#define PMU_ACTIVE  2
-#define SLEEP_MODE  BIT(PMU_SLEEP)
-#define MODEM_MODE  BIT(PMU_MODEM)
-#define ACTIVE_MODE BIT(PMU_ACTIVE)
-
 static void IRAM_ATTR modem_clock_domain_power_state_icg_map_init(modem_clock_context_t *ctx)
 {
+    #define ICG_NOGATING_SLEEP  (BIT(PMU_HP_ICG_MODEM_CODE_SLEEP))
+    #define ICG_NOGATING_MODEM  (BIT(PMU_HP_ICG_MODEM_CODE_MODEM))
+    #define ICG_NOGATING_ACTIVE (BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE))
+
     /* the ICG code's bit 0, 1 and 2 indicates the ICG state
      * of pmu SLEEP, MODEM and ACTIVE mode respectively */
     const uint32_t code[MODEM_CLOCK_DOMAIN_MAX] = {
-        [MODEM_CLOCK_DOMAIN_MODEM_APB]      = MODEM_MODE | ACTIVE_MODE,
-        [MODEM_CLOCK_DOMAIN_MODEM_PERIPH]   = ACTIVE_MODE,
-        [MODEM_CLOCK_DOMAIN_WIFI]           = MODEM_MODE | ACTIVE_MODE,
-        [MODEM_CLOCK_DOMAIN_BT]             = MODEM_MODE | ACTIVE_MODE,
-        [MODEM_CLOCK_DOMAIN_FE]             = MODEM_MODE | ACTIVE_MODE,
-        [MODEM_CLOCK_DOMAIN_IEEE802154]     = MODEM_MODE | ACTIVE_MODE,
-        [MODEM_CLOCK_DOMAIN_LP_APB]         = MODEM_MODE | ACTIVE_MODE,
-        [MODEM_CLOCK_DOMAIN_I2C_MASTER]     = MODEM_MODE | ACTIVE_MODE,
-        [MODEM_CLOCK_DOMAIN_COEX]           = MODEM_MODE | ACTIVE_MODE,
-        [MODEM_CLOCK_DOMAIN_WIFIPWR]        = MODEM_MODE | ACTIVE_MODE,
+        [MODEM_CLOCK_DOMAIN_MODEM_APB]      = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+        [MODEM_CLOCK_DOMAIN_MODEM_PERIPH]   = ICG_NOGATING_ACTIVE,
+        [MODEM_CLOCK_DOMAIN_WIFI]           = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+        [MODEM_CLOCK_DOMAIN_BT]             = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+        [MODEM_CLOCK_DOMAIN_FE]             = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+        [MODEM_CLOCK_DOMAIN_IEEE802154]     = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+        [MODEM_CLOCK_DOMAIN_LP_APB]         = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+        [MODEM_CLOCK_DOMAIN_I2C_MASTER]     = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+        [MODEM_CLOCK_DOMAIN_COEX]           = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+        [MODEM_CLOCK_DOMAIN_WIFIPWR]        = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
     };
     for (modem_clock_domain_t domain = MODEM_CLOCK_DOMAIN_MODEM_APB; domain < MODEM_CLOCK_DOMAIN_MAX; domain++) {
         modem_clock_hal_set_clock_domain_icg_bitmap(ctx->hal, domain, code[domain]);
@@ -167,16 +163,8 @@ static void IRAM_ATTR modem_clock_domain_power_state_icg_map_init(modem_clock_co
 }
 
 
-#include "soc/pmu_reg.h"
 void modem_clock_domain_pmu_state_icg_map_init(void)
 {
-    // Set modem clock ICG code map, should implement with pmu driver // TODO: IDF-5351
-    REG_SET_FIELD(PMU_HP_SLEEP_ICG_MODEM_REG, PMU_HP_SLEEP_DIG_ICG_MODEM_CODE, PMU_SLEEP);
-    REG_SET_FIELD(PMU_HP_MODEM_ICG_MODEM_REG, PMU_HP_MODEM_DIG_ICG_MODEM_CODE, PMU_MODEM);
-    REG_SET_FIELD(PMU_HP_ACTIVE_ICG_MODEM_REG, PMU_HP_ACTIVE_DIG_ICG_MODEM_CODE, PMU_ACTIVE);
-    REG_SET_BIT(PMU_IMM_MODEM_ICG_REG, PMU_UPDATE_DIG_ICG_MODEM_EN);
-    REG_SET_BIT(PMU_IMM_SLEEP_SYSCLK_REG, PMU_UPDATE_DIG_ICG_SWITCH);
-
     modem_clock_domain_power_state_icg_map_init(MODEM_CLOCK_instance());
 }
 

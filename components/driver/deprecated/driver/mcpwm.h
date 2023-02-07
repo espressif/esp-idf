@@ -51,10 +51,10 @@ esp_err_t mcpwm_set_pin(mcpwm_unit_t mcpwm_num, const mcpwm_pin_config_t *mcpwm_
 
 /**
  * @brief Initialize MCPWM parameters
- * @note
- *        The default resolution configured for MCPWM group and timer are 160M / 16 = 10M and 10M / 10 = 1M
- *        The default resolution can be changed by calling mcpwm_group_set_resolution() and mcpwm_timer_set_resolution(),
- *        before calling this function.
+ * @note The default resolution configured for MCPWM timer is 1M, it can be changed by `mcpwm_timer_set_resolution`.
+ * @note The default resolution configured for MCPWM group can be different on different esp targets (because of different clock source).
+ *       You can change the group resolution by mcpwm_group_set_resolution()
+ * @note If you want to change the preset resolution of MCPWM group and timer, please call them before this function.
  *
  * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers.
@@ -68,11 +68,9 @@ esp_err_t mcpwm_init( mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcp
 
 /**
  * @brief Set resolution of the MCPWM group
- * @note
- *        This will override default resolution of group(=10,000,000).
- *        This WILL NOT automatically update frequency and duty. Call mcpwm_set_frequency() and mcpwm_set_duty() manually
- *        to set them back.
- *        The group resolution must be an integral multiple of timer resolution.
+ * @note This will override default resolution of MCPWM group.
+ * @note This WILL NOT automatically update PWM frequency and duty. Please call `mcpwm_set_frequency` and `mcpwm_set_duty` manually to reflect the change.
+ * @note The group resolution must be an integral multiple of timer resolution.
  *
  * @param mcpwm_num set MCPWM unit
  * @param resolution set expected frequency resolution
@@ -85,11 +83,9 @@ esp_err_t mcpwm_group_set_resolution(mcpwm_unit_t mcpwm_num, unsigned long int r
 
 /**
  * @brief Set resolution of each timer
- * @note
- *        This WILL override default resolution of timer(=1,000,000).
- *        This WILL NOT automatically update frequency and duty. Call mcpwm_set_frequency() and mcpwm_set_duty() manually
- *        to set them back.
- *        The group resolution must be an integral multiple of timer resolution.
+ * @note This will override default resolution of timer(=1,000,000).
+ * @note This WILL NOT automatically update PWM frequency and duty. Please call `mcpwm_set_frequency` and `mcpwm_set_duty` manually to reflect the change.
+ * @note The group resolution must be an integral multiple of timer resolution.
  *
  * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers

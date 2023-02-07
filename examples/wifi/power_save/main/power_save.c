@@ -105,6 +105,8 @@ void app_main(void)
     esp_pm_config_esp32s3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32C2
     esp_pm_config_esp32c2_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32C6
+    esp_pm_config_esp32c6_t pm_config = {
 #endif
             .max_freq_mhz = CONFIG_EXAMPLE_MAX_CPU_FREQ_MHZ,
             .min_freq_mhz = CONFIG_EXAMPLE_MIN_CPU_FREQ_MHZ,

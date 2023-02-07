@@ -244,6 +244,13 @@ example_test_pytest_esp32s3_wifi_router:
   needs:
     - build_pytest_examples_esp32s3
   tags: [ esp32s3, wifi_router ]
+example_test_pytest_esp32_wifi_iperf:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32-wifi
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, Example_ShieldBox_Basic ]
 
 example_test_pytest_esp32_wifi_wlan:
   extends:
@@ -252,6 +259,14 @@ example_test_pytest_esp32_wifi_wlan:
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_wlan ]
+
+example_test_pytest_esp32_ethernet_router:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32-ethernet
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, ethernet_router ]
 
 example_test_pytest_esp32_ethernet_ip101:
   extends:
@@ -446,7 +461,7 @@ component_ut_pytest_esp32_adc:
 component_ut_pytest_esp32_sdio:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:unit_test-esp32-sdio
+    - .rules:test:component_ut-esp32-sdio
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, sdio_master_slave ]
@@ -486,10 +501,10 @@ component_ut_pytest_esp32_flash_encryption:
 component_ut_pytest_esp32_flash_multi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32
+    - .rules:test:component_ut-esp32-flash_multi
   needs:
     - build_pytest_components_esp32
-  tags: [ esp32, flash_mutli ]
+  tags: [ esp32, flash_multi ]
 
 component_ut_pytest_esp32_xtal32k:
   extends:
@@ -551,10 +566,10 @@ component_ut_pytest_esp32s2_adc:
 component_ut_pytest_esp32s2_flash_multi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s2
+    - .rules:test:component_ut-esp32s2-flash_multi
   needs:
     - build_pytest_components_esp32s2
-  tags: [ esp32s2, flash_mutli ]
+  tags: [ esp32s2, flash_multi ]
 
 component_ut_pytest_esp32s3_generic:
   extends:
@@ -608,10 +623,10 @@ component_ut_pytest_esp32s3_flash_encryption_f8r8:
 component_ut_pytest_esp32s3_flash_multi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s3
+    - .rules:test:component_ut-esp32s3-flash_multi
   needs:
     - build_pytest_components_esp32s3
-  tags: [ esp32s3, flash_mutli ]
+  tags: [ esp32s3, flash_multi ]
 
 component_ut_pytest_esp32c2_generic:
   extends:
@@ -706,10 +721,10 @@ component_ut_pytest_esp32c3_flash_encryption:
 component_ut_pytest_esp32c3_flash_multi:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32c3
+    - .rules:test:component_ut-esp32c3-flash_multi
   needs:
     - build_pytest_components_esp32c3
-  tags: [ esp32c3, flash_mutli ]
+  tags: [ esp32c3, flash_multi ]
 
 component_ut_pytest_esp32_sdmmc:
   extends:
@@ -782,10 +797,11 @@ example_test_pytest_openthread_br:
     - .rules:test:example_test-i154
   needs:
     - build_pytest_examples_esp32s3
+    - build_pytest_examples_esp32c6
     - build_pytest_examples_esp32h4
   tags:
     - esp32h4
-    - i154_multi_dut
+    - openthread_br
 
 component_ut_pytest_esp32s3_usb_host:
   extends:
@@ -988,22 +1004,6 @@ example_test_001C:
     - ESP32
     - Example_GENERIC
 
-example_test_002:
-  extends:
-    - .example_test_esp32_template
-    - .rules:test:example_test-esp32-wifi
-  tags:
-    - ESP32
-    - Example_ShieldBox_Basic
-
-example_test_ethernet_router:
-  extends:
-    - .example_test_esp32_template
-    - .rules:test:example_test-esp32-ethernet
-  tags:
-    - ESP32
-    - ethernet_router
-
 .example_test_003:
   extends: .example_test_esp32_template
   tags:
@@ -1106,12 +1106,6 @@ example_test_C6_GENERIC:
   extends:
     - .test_app_template
     - .rules:test:custom_test-esp32s3
-
-test_app_test_eth:
-  extends: .test_app_esp32_template
-  tags:
-    - ESP32
-    - ethernet_router
 
 .unit_test_template:
   extends: .target_test_job_template
@@ -1271,7 +1265,9 @@ UT_C3:
     - UT_T1_1
 
 UT_C3_FLASH:
-  extends: .unit_test_esp32c3_template
+  extends:
+    - .unit_test_esp32c3_template
+    - .rules:test:unit_test-esp32c3-flash_multi
   tags:
     - ESP32C3_IDF
     - UT_T1_ESP_FLASH

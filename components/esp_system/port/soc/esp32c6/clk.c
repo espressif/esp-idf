@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_pmu.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 
@@ -42,13 +43,7 @@ static const char *TAG = "clk";
  __attribute__((weak)) void esp_clk_init(void)
 {
 #if !CONFIG_IDF_ENV_FPGA
-    rtc_config_t cfg = RTC_CONFIG_DEFAULT();
-    soc_reset_reason_t rst_reas;
-    rst_reas = esp_rom_get_reset_reason(0);
-    if (rst_reas == RESET_REASON_CHIP_POWER_ON) {
-        cfg.cali_ocode = 1;
-    }
-    rtc_init(cfg);
+    pmu_init();
 
     assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
 

@@ -129,16 +129,6 @@ void rtc_init(rtc_config_t cfg)
 #endif
 }
 
-rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
-{
-    rtc_vddsdio_config_t result = {0};
-    return result;
-}
-
-void rtc_vddsdio_set_config(rtc_vddsdio_config_t config)
-{
-}
-
 static void set_ocode_by_efuse(int ocode_scheme_ver)
 {
     assert(ocode_scheme_ver == 1);

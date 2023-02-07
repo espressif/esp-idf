@@ -177,6 +177,8 @@ MQTT 客户端
 - 通过 :cpp:member:`esp_mqtt_client_config_t::broker::verification` 配置 MQTT Broker 身份验证的相关安全问题
 - 通过 :cpp:member:`esp_mqtt_client_config_t::credentials::username` 配置客户端用户名
 
+- :cpp:type:`esp_mqtt_client_config_t` 不再支持 ``user_context`` 字段。之后注册事件处理程序，请使用 :cpp:func:`esp_mqtt_client_register_event`；最后一个参数 ``event_handler_arg`` 可用于将用户上下文传递给处理程序。
+
 
 ESP-Modbus
 ----------

@@ -1,8 +1,11 @@
 [mapping:hal]
 archive: libhal.a
 entries:
-    mmu_hal (noflash)
-    if IDF_TARGET_ESP32 = n:
+    if APP_BUILD_TYPE_PURE_RAM_APP = n:
+        mmu_hal (noflash)
+        spi_flash_hal_iram (noflash)
+        spi_flash_encrypt_hal_iram (noflash)
+    if IDF_TARGET_ESP32 = n && APP_BUILD_TYPE_PURE_RAM_APP = n:
         cache_hal (noflash)
     if SOC_GPSPI_SUPPORTED = y:
         spi_hal_iram (noflash)
@@ -11,8 +14,6 @@ entries:
         uart_hal_iram (noflash)
     else:
         uart_hal_iram (default)
-    spi_flash_hal_iram (noflash)
-    spi_flash_encrypt_hal_iram (noflash)
     if SOC_LEDC_SUPPORTED = y:
         ledc_hal_iram (noflash)
     if SOC_I2C_SUPPORTED = y:

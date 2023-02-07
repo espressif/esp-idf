@@ -615,7 +615,12 @@ static void stack_init_deinit(void)
 
         ESP_LOGI(tag, "Init host");
 
-        nimble_port_init();
+        rc = nimble_port_init();
+        if (rc != ESP_OK) {
+            ESP_LOGI(tag, "Failed to init nimble %d ", rc);
+            break;
+        }
+
         nimble_port_freertos_init(blecent_host_task);
 
         ESP_LOGI(tag, "Waiting for 1 second");
@@ -635,7 +640,12 @@ app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    nimble_port_init();
+    ret = nimble_port_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(tag, "Failed to init nimble %d ", ret);
+        return;
+    }
+
     /* Configure the host. */
     ble_hs_cfg.reset_cb = blecent_on_reset;
     ble_hs_cfg.sync_cb = blecent_on_sync;

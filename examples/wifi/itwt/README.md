@@ -8,16 +8,18 @@ This example shows how to use itwt of wifi.
 
 Itwt only works in station mode. And AP needs to support the capability of itwt.
 
-This example support command "itwt, itwt_probe, itwt_info" to config itwt.
+Itwt can works under differnet power save mode.
 
-* itwt: this command is for itwt setup/teardown.
+### Modem sleep (supported)
+This is default mode. Under this mode, can support console command "itwt, probe" to config itwt.
 
-* itwt_probe: this command will send a probe request to update tsf time with ap
+*              itwt: this command is for itwt setup/teardown/suspend.
+*              probe: this command will send a probe request to update tsf time with ap
 
-* itwt_info: this command will send a TWT Information frame to AP for suspending/resuming extablished iTWT agreements.
+### Light Sleep (will support)
+Need system suport light sleep. Console command will not support in this mode.
 
 ### Typical current consumption with Itwt enabled
-
 
 
 ### Typical current consumption with Itwt disabled

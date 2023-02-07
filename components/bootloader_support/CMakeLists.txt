@@ -2,21 +2,31 @@ set(srcs
     "src/bootloader_common.c"
     "src/bootloader_common_loader.c"
     "src/bootloader_clock_init.c"
-    "bootloader_flash/src/bootloader_flash.c"
     "src/bootloader_mem.c"
     "src/bootloader_random.c"
     "src/bootloader_random_${IDF_TARGET}.c"
-    "src/bootloader_utility.c"
-    "src/esp_image_format.c"
+    "src/bootloader_efuse.c"
     "src/flash_encrypt.c"
     "src/secure_boot.c"
-    "src/flash_partitions.c"
-    "bootloader_flash/src/flash_qio_mode.c"
-    "bootloader_flash/src/bootloader_flash_config_${IDF_TARGET}.c"
-    "src/bootloader_efuse.c"
     )
 
-if(BOOTLOADER_BUILD)
+if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
+    list(APPEND srcs
+        "bootloader_flash/src/bootloader_flash.c"
+        "bootloader_flash/src/flash_qio_mode.c"
+        "bootloader_flash/src/bootloader_flash_config_${IDF_TARGET}.c"
+        )
+endif()
+
+if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
+    list(APPEND srcs
+        "src/bootloader_utility.c"
+        "src/flash_partitions.c"
+        "src/esp_image_format.c"
+        )
+endif()
+
+if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
     set(include_dirs "include" "bootloader_flash/include"
         "private_include")
     set(priv_requires micro-ecc spi_flash efuse esp_app_format)
@@ -25,7 +35,6 @@ if(BOOTLOADER_BUILD)
     "src/bootloader_clock_loader.c"
     "src/bootloader_console.c"
     "src/bootloader_console_loader.c"
-    "src/bootloader_panic.c"
     "src/${IDF_TARGET}/bootloader_sha.c"
     "src/${IDF_TARGET}/bootloader_soc.c"
     "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"
@@ -41,6 +50,7 @@ else()
 endif()
 
 if(BOOTLOADER_BUILD)
+    list(APPEND srcs "src/bootloader_panic.c")
     if(CONFIG_SECURE_FLASH_ENC_ENABLED)
         list(APPEND srcs "src/flash_encryption/flash_encrypt.c"
                          "src/${IDF_TARGET}/flash_encryption_secure_features.c")

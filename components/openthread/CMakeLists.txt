@@ -1,4 +1,6 @@
 if(CONFIG_OPENTHREAD_ENABLED)
+    idf_build_get_property(idf_target IDF_TARGET)
+
     set(public_include_dirs
         "include"
         "openthread/include")

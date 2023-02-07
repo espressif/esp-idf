@@ -30,13 +30,13 @@
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_PCNT_SUPPORTED              1
-// #define SOC_MCPWM_SUPPORTED             1 // TODO: IDF-6237
+#define SOC_MCPWM_SUPPORTED             1
 // #define SOC_TWAI_SUPPORTED              1 // TODO: IDF-6217
 // #define SOC_BT_SUPPORTED                1 // TODO: IDF-6416
 // #define SOC_IEEE802154_SUPPORTED        1 // TODO: IDF-6577
 #define SOC_GPTIMER_SUPPORTED              1
 #define SOC_IEEE802154_BLE_ONLY            1
-// #define SOC_USB_SERIAL_JTAG_SUPPORTED   1 // TODO: IDF-6239
+#define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 // #define SOC_TEMP_SENSOR_SUPPORTED       1 // TODO: IDF-6229
 // #define SOC_SUPPORTS_SECURE_DL_MODE     1 // TODO: IDF-6281
 //#define SOC_RISCV_COPROC_SUPPORTED       1 // TODO: IDF-6272
@@ -48,11 +48,13 @@
 #define SOC_SDM_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 // #define SOC_GPSPI_SUPPORTED             1 // TODO: IDF-6264
+#define SOC_LEDC_SUPPORTED              1
+#define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
 // #define SOC_SUPPORT_COEXISTENCE         1 // TODO: IDF-6416
-// #define SOC_AES_SUPPORTED               1 // TODO: IDF-6280
+#define SOC_AES_SUPPORTED               1
 // #define SOC_MPI_SUPPORTED               1 // TODO: IDF-6415
-// #define SOC_SHA_SUPPORTED               1 // TODO: IDF-6275
+#define SOC_SHA_SUPPORTED               1
 // #define SOC_HMAC_SUPPORTED              1 // TODO: IDF-6279
 // #define SOC_DIG_SIGN_SUPPORTED          1 // TODO: IDF-6285
 // #define SOC_FLASH_ENC_SUPPORTED         1 // TODO: IDF-6282
@@ -63,7 +65,6 @@
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M            1
 
-// TODO: IDF-6280 (Copy from esp32c6, need check)
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)
 
@@ -169,19 +170,18 @@
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
 #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
-// TODO: IDF-6233
 /*-------------------------- I2C CAPS ----------------------------------------*/
-// ESP32-C6 has 1 I2C
-#define SOC_I2C_NUM                 (1U)
+// ESP32-H2 has 2 I2C
+#define SOC_I2C_NUM                 (2U)
 
 #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
-// #define SOC_I2C_SUPPORT_SLAVE       (1)
+#define SOC_I2C_SUPPORT_SLAVE       (1)
 
 // FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
 #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
 
 #define SOC_I2C_SUPPORT_XTAL        (1)
-#define SOC_I2C_SUPPORT_RTC         (1)
+// #define SOC_I2C_SUPPORT_RTC         (1)  // TODO: IDF-6254
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (1U)
@@ -196,7 +196,6 @@
 #define SOC_I2S_SUPPORTS_TDM        (1)
 #define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
 
-// TODO: IDF-6235 (Copy from esp32c6, need check)
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
@@ -236,7 +235,6 @@
 #define SOC_RMT_SUPPORT_XTAL                  1  /*!< Support set XTAL clock as the RMT clock source */
 // #define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST as the RMT clock source */
 
-// TODO: IDF-6237
 /*-------------------------- MCPWM CAPS --------------------------------------*/
 #define SOC_MCPWM_GROUPS                     (1U)   ///< 1 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)
 #define SOC_MCPWM_TIMERS_PER_GROUP           (3)    ///< The number of timers that each group has
@@ -250,9 +248,7 @@
 #define SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP    (3)    ///< The number of GPIO synchros that each group has
 #define SOC_MCPWM_SWSYNC_CAN_PROPAGATE       (1)    ///< Software sync event can be routed to its output
 #define SOC_MCPWM_SUPPORT_ETM                (1)    ///< Support ETM (Event Task Matrix)
-#define SOC_MCPWM_CAPTURE_CLK_FROM_GROUP  (1)    ///< Capture timer shares clock with other PWM timers
-#define SOC_MCPWM_CLK_SUPPORT_PLL160M        (1)    ///< Support PLL160M as clock source
-#define SOC_MCPWM_CLK_SUPPORT_XTAL           (1)    ///< Support XTAL as clock source
+#define SOC_MCPWM_CAPTURE_CLK_FROM_GROUP     (1)    ///< Capture timer shares clock with other PWM timers
 
 // TODO: IDF-6267 (Copy from esp32c6, need check)
 /*-------------------------- RTC CAPS --------------------------------------*/
@@ -264,15 +260,14 @@
 #define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
-/* No dedicated RTCIO subsystem on ESP32-C6. RTC functions are still supported
- * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
+/* No dedicated LP_IO subsystem on ESP32-H2. LP functions are still supported
+ * for hold, wake & 32kHz crystal functions - via LP_AON registers */
 #define SOC_RTCIO_PIN_COUNT    (0U)
 
 // TODO: IDF-6284 (Copy from esp32c6, need check)
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)
 
-// TODO: IDF-6275 (Copy from esp32c6, need check)
 /*--------------------------- SHA CAPS ---------------------------------------*/
 
 /* Max amount of bytes in a single DMA operation is 4095,
@@ -421,11 +416,12 @@
 #define SOC_PM_SUPPORT_WIFI_PD          (1)
 #define SOC_PM_SUPPORT_BT_PD            (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
-
+#define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
+#define SOC_PM_CPU_RETENTION_BY_RTCCNTL  (1)
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
-// #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
+// #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1) // TODO: IDF-6265
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 #define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< Support to connect an external oscillator, not a crystal */

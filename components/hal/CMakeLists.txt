@@ -8,8 +8,8 @@ endif()
 
 set(srcs "mpu_hal.c"
          "efuse_hal.c"
-         "${target}/efuse_hal.c"
-         "mmu_hal.c")
+         "${target}/efuse_hal.c")
+
 
 set(includes "${target}/include" "include" "platform_port/include")
 
@@ -17,7 +17,11 @@ if(NOT CONFIG_HAL_WDT_USE_ROM_IMPL)
     list(APPEND srcs "wdt_hal_iram.c")
 endif()
 
-if(NOT ${target} STREQUAL "esp32")
+if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
+    list(APPEND srcs "mmu_hal.c")
+endif()
+
+if(NOT ${target} STREQUAL "esp32" AND NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     list(APPEND srcs "cache_hal.c")
 endif()
 
@@ -35,12 +39,17 @@ if(NOT BOOTLOADER_BUILD)
         "gpio_hal.c"
         "uart_hal.c"
         "uart_hal_iram.c"
-        "spi_flash_hal.c"
-        "spi_flash_hal_iram.c"
-        "spi_flash_encrypt_hal_iram.c"
         "adc_hal_common.c"
         "adc_oneshot_hal.c"
         "${target}/clk_tree_hal.c")
+
+    if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
+        list(APPEND srcs
+            "spi_flash_hal.c"
+            "spi_flash_hal_iram.c"
+            "spi_flash_encrypt_hal_iram.c"
+        )
+    endif()
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED AND NOT CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
         list(APPEND srcs "systimer_hal.c")
@@ -118,6 +127,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "${target}/modem_clock_hal.c")
     endif()
 
+    if(CONFIG_SOC_LP_TIMER_SUPPORTED)
+        list(APPEND srcs "${target}/lp_timer_hal.c")
+    endif()
+
     if(CONFIG_SOC_BOD_SUPPORTED)
         list(APPEND srcs "brownout_hal.c")
     endif()
@@ -136,6 +149,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
         list(APPEND srcs "sdio_slave_hal.c")
+    endif()
+
+    if(CONFIG_SOC_PMU_SUPPORTED)
+        list(APPEND srcs "${target}/pmu_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32")
@@ -198,7 +215,6 @@ if(NOT BOOTLOADER_BUILD)
     if(${target} STREQUAL "esp32c6")
         list(APPEND srcs
               "spi_flash_hal_gpspi.c"
-              "esp32c6/rtc_cntl_hal.c"
               "hmac_hal.c"
               "ds_hal.c")
 

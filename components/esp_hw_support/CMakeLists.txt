@@ -30,8 +30,8 @@ if(NOT BOOTLOADER_BUILD)
                      "port/${target}/clk_tree.c"
                      "port/clk_tree_common.c")
 
-    if(NOT CONFIG_IDF_TARGET_ESP32 AND NOT CONFIG_IDF_TARGET_ESP32S2)
-        list(APPEND srcs "sleep_retention.c")
+    if(CONFIG_SOC_PM_SUPPORT_CPU_PD)
+        list(APPEND srcs "sleep_cpu.c")
     endif()
 
     # [refactor-todo]: requires "driver" for GPIO and RTC  (by sleep_gpio and sleep_modes)
@@ -71,6 +71,14 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_DIG_SIGN_SUPPORTED)
         list(APPEND srcs "esp_ds.c")
+    endif()
+
+    if(CONFIG_SOC_PM_CPU_RETENTION_BY_SW)
+        list(APPEND srcs "sleep_cpu_asm.S")
+        set_property(TARGET ${COMPONENT_LIB}
+                    APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_critical_regs_save")
+        set_property(TARGET ${COMPONENT_LIB}
+                    APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_critical_regs_restore")
     endif()
 
     if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT)

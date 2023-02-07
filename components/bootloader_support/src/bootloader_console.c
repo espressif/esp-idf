@@ -17,20 +17,6 @@
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_common.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/ets_sys.h"
-#include "esp32c3/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/ets_sys.h"
-#include "esp32h4/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/ets_sys.h"
-#include "esp32c2/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/ets_sys.h"
-#include "esp32c6/rom/uart.h"
 #endif
 #include "esp_rom_gpio.h"
 #include "esp_rom_uart.h"
@@ -117,7 +103,6 @@ void bootloader_console_init(void)
 #ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 void bootloader_console_init(void)
 {
-    UartDevice *uart = GetUartDevice();
-    uart->buff_uart_no = ESP_ROM_USB_SERIAL_DEVICE_NUM;
+    esp_rom_uart_switch_buffer(ESP_ROM_USB_SERIAL_DEVICE_NUM);
 }
 #endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG

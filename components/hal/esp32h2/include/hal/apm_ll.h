@@ -26,8 +26,8 @@ typedef enum {
     APM_LL_MASTER_MODEM        = 4,
     APM_LL_MASTER_MEM_MONITOR  = 5,
     APM_LL_MASTER_TRACE        = 6,
+    APM_LL_MASTER_GDMA         = 16, // The beginning of GDMA master ID
     APM_LL_MASTER_GDMA_SPI2    = 16,
-    APM_LL_MASTER_GDMA_M2M     = 17, // a dummy GDMA trigger, used by M2M copy
     APM_LL_MASTER_GDMA_UHCI0   = 18,
     APM_LL_MASTER_GDMA_I2S0    = 19,
     APM_LL_MASTER_GDMA_AES     = 22,

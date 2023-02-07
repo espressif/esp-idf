@@ -23,4 +23,8 @@ _esp_memprot_align_size = CONFIG_SOC_MEMPROT_MEM_ALIGN_SIZE;
 _esp_memprot_align_size = 0;
 #endif
 
+#if CONFIG_APP_BUILD_TYPE_RAM
+_esp_mmu_block_size = 0;
+#else
 _esp_mmu_block_size = (CONFIG_MMU_PAGE_SIZE);
+#endif

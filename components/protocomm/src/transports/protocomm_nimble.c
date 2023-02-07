@@ -494,7 +494,11 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
     int rc;
     ESP_LOGD(TAG, "Free memory at start of simple_ble_init %" PRIu32, esp_get_free_heap_size());
 
-    nimble_port_init();
+    rc = nimble_port_init();
+    if (rc != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to init nimble %d ", rc);
+        return rc;
+    }
 
     /* Initialize the NimBLE host configuration. */
     ble_hs_cfg.reset_cb = simple_ble_on_reset;

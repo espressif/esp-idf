@@ -63,7 +63,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component:`HTTP Parser <http_parser>` Based on src/http/ngx_http_parse.c from NGINX copyright Igor Sysoev. Additional changes are licensed under the same terms as NGINX and Joyent, Inc. and other Node contributors. For details please check :component_file:`LICENSE file<http_parser/LICENSE.txt>`.
 
-* `SEGGER SystemView`_ target-side library, Copyright (c) 2015-2017  SEGGER Microcontroller GmbH & Co. KG, is licensed under BSD 3-clause license.
+* `SEGGER SystemView`_ target-side library, Copyright (c) 1995-2021 SEGGER Microcontroller GmbH, is licensed under BSD 1-clause license.
 
 Documentation
 -------------

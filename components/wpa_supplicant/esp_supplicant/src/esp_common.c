@@ -171,8 +171,10 @@ static void clear_bssid_flag(struct wpa_supplicant *wpa_s)
 	}
 
 	esp_wifi_get_config(WIFI_IF_STA, config);
-	config->sta.bssid_set = 0;
-	esp_wifi_set_config(WIFI_IF_STA, config);
+	if (config->sta.bssid_set) {
+		config->sta.bssid_set = 0;
+		esp_wifi_set_config(WIFI_IF_STA, config);
+	}
 	os_free(config);
 	wpa_printf(MSG_DEBUG, "cleared bssid flag");
 }

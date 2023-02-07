@@ -1,10 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/esp_netif/test_apps/test_app_esp_netif:
-  disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2" # IDF-6704
-      temporary: true
-      reason: target esp32c6, esp32h2 is not supported yet
   disable_test:
     - if: IDF_TARGET not in ["esp32s2", "esp32c3"]
       temporary: false

@@ -96,19 +96,6 @@ typedef struct {
 } esp_rom_spiflash_common_cmd_t;
 
 /**
-  * @brief SPI Flash init, clock divisor is 4, use 1 line Slow read mode.
-  *    Please do not call this function in SDK.
-  *
-  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
-  *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
-  *
-  * @param  uint8_t legacy: always keeping false.
-  *
-  * @return None
-  */
-void esp_rom_spiflash_attach(uint32_t ishspi, bool legacy);
-
-/**
   * @brief SPI Read Flash status register. We use CMD 0x05 (RDSR).
   *    Please do not call this function in SDK.
   *
@@ -332,20 +319,6 @@ esp_rom_spiflash_result_t esp_rom_spiflash_read(uint32_t src_addr, uint32_t *des
   * @return None
   */
 void esp_rom_spiflash_write_encrypted_enable(void);
-
-/**
-  * @brief Prepare 32 Bytes data to encrpto writing, you should Erase it yourself if need.
-  *        Please do not call this function in SDK.
-  *
-  * @param  uint32_t flash_addr : Address to write, should be 32 bytes aligned.
-  *
-  * @param  uint32_t *data : The pointer to data which is to write.
-  *
-  * @return ESP_ROM_SPIFLASH_RESULT_OK : Prepare OK.
-  *         ESP_ROM_SPIFLASH_RESULT_ERR : Prepare error.
-  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Prepare timeout.
-  */
-esp_rom_spiflash_result_t esp_rom_spiflash_prepare_encrypted_data(uint32_t flash_addr, uint32_t *data);
 
 /**
   * @brief SPI1 go out of encrypto mode.

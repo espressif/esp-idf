@@ -94,6 +94,7 @@ menu "Bootloader config"
     choice BOOTLOADER_VDDSDIO_BOOST
         bool "VDDSDIO LDO voltage"
         default BOOTLOADER_VDDSDIO_BOOST_1_9V
+        depends on SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
         help
             If this option is enabled, and VDDSDIO LDO is set to 1.8V (using eFuse
             or MTDI bootstrapping pin), bootloader will change LDO settings to

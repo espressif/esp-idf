@@ -20,9 +20,6 @@ future
 dbus-python; sys_platform == 'linux'
 pygobject; sys_platform != 'win32'
 
-# iperf_test_util
-pyecharts
-
 # esp_prov
 bleak
 # future  # addressed before under ble

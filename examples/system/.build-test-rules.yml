@@ -106,7 +106,7 @@ examples/system/ipc/ipc_isr:
 
 examples/system/light_sleep:
   disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c2", "esp32h2"]
       temporary: true
       reason: target(s) not supported yet
 

@@ -12,6 +12,7 @@
 #include "unity.h"
 #include "test_utils.h"
 #include "test_spi_utils.h"
+#include "hal/spi_slave_hal.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
 #include "driver/gpio.h"
@@ -688,6 +689,62 @@ static IRAM_ATTR void spi_queue_reset_in_isr(void)
     spi_slave_free(TEST_SPI_HOST);
 }
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_Queue_Reset_in_ISR", "[spi_ms]", test_slave_iram_master_normal, spi_queue_reset_in_isr);
-
-
 #endif // CONFIG_SPI_SLAVE_ISR_IN_IRAM
+
+
+#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+
+#define TEST_ISR_CNT    100
+static void test_slave_isr_core_setup_cbk(spi_slave_transaction_t *curr_trans){
+    *((int *)curr_trans->user) += esp_cpu_get_core_id();
+}
+
+TEST_CASE("test_slave_isr_pin_to_core","[spi]")
+{
+    uint32_t slave_send;
+    uint32_t slave_recive;
+    uint32_t slave_expect;
+
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+    slvcfg.post_setup_cb = test_slave_isr_core_setup_cbk;
+
+    spi_slave_transaction_t trans_cfg = {
+        .tx_buffer = &slave_send,
+        .rx_buffer = &slave_recive,
+        .user = &slave_expect,
+        .length = sizeof(uint32_t) * 8,
+    };
+
+    slave_expect = 0;
+    for (int i = 0; i < TEST_ISR_CNT; i++) {
+        TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
+        TEST_ESP_OK(spi_slave_queue_trans(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY));
+        TEST_ESP_OK(spi_slave_free(TEST_SPI_HOST));
+    }
+    printf("Test Slave ISR Not Assign: %d : %ld\n", TEST_ISR_CNT, slave_expect);
+    // by default the esp_intr_alloc is called on ESP_MAIN_TASK_AFFINITY_CPU0 now
+    TEST_ASSERT_EQUAL_UINT32(0, slave_expect);
+
+
+    //-------------------------------------CPU1---------------------------------------
+    buscfg.isr_cpu_id = INTR_CPU_ID_1;
+
+    slave_expect = 0;
+    for (int i = 0; i < TEST_ISR_CNT; i++) {
+        TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
+
+        TEST_ESP_OK(spi_slave_queue_trans(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY));
+        // This two delay used for hardware to activate a interrupt after invoke
+        vTaskDelay(1);
+        // to invoke a trans_done intr for spi slave without a master
+        spi_ll_set_int_stat(SPI_LL_GET_HW(TEST_SPI_HOST));
+        vTaskDelay(1);
+
+        TEST_ESP_OK(spi_slave_free(TEST_SPI_HOST));
+    }
+    printf("Test Slave ISR Assign CPU1: %d : %ld\n", TEST_ISR_CNT, slave_expect);
+    TEST_ASSERT_EQUAL_UINT32(TEST_ISR_CNT, slave_expect);
+}
+
+#endif

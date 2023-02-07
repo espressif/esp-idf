@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 # this file defines some functions for testing cli and br under pytest framework
@@ -8,11 +8,101 @@ import socket
 import struct
 import subprocess
 import time
-from typing import Tuple, Union
+from typing import Tuple
 
 import netifaces
 import pexpect
 from pytest_embedded_idf.dut import IdfDut
+
+
+class thread_parameter:
+
+    def __init__(self, deviceRole:str='', dataset:str='', channel:str='', exaddr:str='', bbr:bool=False):
+        self.deviceRole = deviceRole
+        self.dataset = dataset
+        self.channel = channel
+        self.exaddr = exaddr
+        self.bbr = bbr
+
+
+class wifi_parameter:
+
+    def __init__(self, ssid:str='', psk:str='', retry_times:int=10):
+        self.ssid = ssid
+        self.psk = psk
+        self.retry_times = retry_times
+
+
+def joinThreadNetwork(dut:IdfDut, thread:thread_parameter) -> None:
+    if thread.dataset != '':
+        command = 'dataset set active ' + thread.dataset
+        dut.write(command)
+        dut.expect('Done', timeout=5)
+    else:
+        dut.write('dataset init new')
+        dut.expect('Done', timeout=5)
+        dut.write('dataset commit active')
+        dut.expect('Done', timeout=5)
+    if thread.channel != '':
+        command = 'channel ' + thread.channel
+        dut.write(command)
+        dut.expect('Done', timeout=5)
+    if thread.exaddr != '':
+        command = 'extaddr ' + thread.exaddr
+        dut.write(command)
+        dut.expect('Done', timeout=5)
+    if thread.bbr:
+        dut.write('bbr enable')
+        dut.expect('Done', timeout=5)
+    dut.write('ifconfig up')
+    dut.expect('Done', timeout=5)
+    dut.write('thread start')
+    dut.expect('Role detached ->', timeout=20)
+    if thread.deviceRole == 'leader':
+        assert getDeviceRole(dut) == 'leader'
+    elif thread.deviceRole == 'router':
+        if getDeviceRole(dut) != 'router':
+            changeDeviceRole(dut, 'router')
+            wait(dut, 10)
+            assert getDeviceRole(dut) == 'router'
+    else:
+        assert False
+
+
+def joinWiFiNetwork(dut:IdfDut, wifi:wifi_parameter) -> Tuple[str, int]:
+    clean_buffer(dut)
+    ip_address = ''
+    information = ''
+    for order in range(1, wifi.retry_times):
+        dut.write('wifi connect -s ' + str(wifi.ssid) + ' -p ' + str(wifi.psk))
+        tmp = dut.expect(pexpect.TIMEOUT, timeout=10)
+        if 'sta ip' in str(tmp):
+            ip_address = re.findall(r'sta ip: (\w+.\w+.\w+.\w+),', str(tmp))[0]
+        information = dut.expect(r'wifi sta (\w+ \w+ \w+)\W', timeout=20)[1].decode()
+        if information == 'is connected successfully':
+            break
+    assert information == 'is connected successfully'
+    return ip_address, order
+
+
+def getDeviceRole(dut:IdfDut) -> str:
+    clean_buffer(dut)
+    dut.write('state')
+    role = dut.expect(r'state\W+(\w+)\W+Done', timeout=5)[1].decode()
+    print(role)
+    return str(role)
+
+
+def changeDeviceRole(dut:IdfDut, role:str) -> None:
+    command = 'state ' + role
+    dut.write(command)
+
+
+def getDataset(dut:IdfDut) -> str:
+    clean_buffer(dut)
+    dut.write('dataset active -x')
+    dut_data = dut.expect(r'\n(\w{212})\r', timeout=5)[1].decode()
+    return str(dut_data)
 
 
 def reset_thread(dut:IdfDut) -> None:
@@ -24,28 +114,6 @@ def reset_thread(dut:IdfDut) -> None:
     dut.expect('OpenThread attached to netif', timeout=20)
     dut.write(' ')
     dut.write('state')
-
-
-# config thread
-def config_thread(dut:IdfDut, model:str, dataset:str='0') -> Union[str, None]:
-    if model == 'random':
-        dut.write('dataset init new')
-        dut.expect('Done', timeout=5)
-        dut.write('dataset commit active')
-        dut.expect('Done', timeout=5)
-        dut.write('ifconfig up')
-        dut.expect('Done', timeout=5)
-        dut.write('dataset active -x')          # get dataset
-        dut_data = dut.expect(r'\n(\w{212})\r', timeout=5)[1].decode()
-        return str(dut_data)
-    if model == 'appointed':
-        tmp = 'dataset set active ' + str(dataset)
-        dut.write(tmp)
-        dut.expect('Done', timeout=5)
-        dut.write('ifconfig up')
-        dut.expect('Done', timeout=5)
-        return None
-    return None
 
 
 # get the mleid address of the thread
@@ -87,69 +155,6 @@ def get_global_unicast_addr(dut:IdfDut, br:IdfDut) -> str:
     return dut_adress
 
 
-# start thread
-def start_thread(dut:IdfDut) -> str:
-    role = ''
-    dut.write('thread start')
-    tmp = dut.expect(r'Role detached -> (\w+)\W', timeout=20)[0]
-    role = re.findall(r'Role detached -> (\w+)\W', str(tmp))[0]
-    return role
-
-
-def wait_key_str(leader:IdfDut, child:IdfDut) -> None:
-    wait(leader, 1)
-    leader.expect('OpenThread attached to netif', timeout=20)
-    leader.write(' ')
-    leader.write('state')
-    child.expect('OpenThread attached to netif', timeout=20)
-    child.write(' ')
-    child.write('state')
-
-
-def config_network(leader:IdfDut, child:IdfDut, leader_name:str, thread_dataset_model:str,
-                   thread_dataset:str, wifi:IdfDut, wifi_ssid:str, wifi_psk:str) -> str:
-    wait_key_str(leader, child)
-    return form_network_using_manual_configuration(leader, child, leader_name, thread_dataset_model,
-                                                   thread_dataset, wifi, wifi_ssid, wifi_psk)
-
-
-# config br and cli manually
-def form_network_using_manual_configuration(leader:IdfDut, child:IdfDut, leader_name:str, thread_dataset_model:str,
-                                            thread_dataset:str, wifi:IdfDut, wifi_ssid:str, wifi_psk:str) -> str:
-    reset_thread(leader)
-    clean_buffer(leader)
-    reset_thread(child)
-    clean_buffer(child)
-    leader.write('channel 12')
-    leader.expect('Done', timeout=5)
-    child.write('channel 12')
-    child.expect('Done', timeout=5)
-    res = '0000'
-    if wifi_psk != '0000':
-        res = connect_wifi(wifi, wifi_ssid, wifi_psk, 10)[0]
-    leader_data = ''
-    if thread_dataset_model == 'random':
-        leader_data = str(config_thread(leader, 'random'))
-    else:
-        config_thread(leader, 'appointed', thread_dataset)
-    if leader_name == 'br':
-        leader.write('bbr enable')
-        leader.expect('Done', timeout=5)
-    role = start_thread(leader)
-    assert role == 'leader'
-    if thread_dataset_model == 'random':
-        config_thread(child, 'appointed', leader_data)
-    else:
-        config_thread(child, 'appointed', thread_dataset)
-    if leader_name != 'br':
-        child.write('bbr enable')
-        child.expect('Done', timeout=5)
-    role = start_thread(child)
-    assert role == 'child'
-    wait(leader, 10)
-    return res
-
-
 # ping of thread
 def ot_ping(dut:IdfDut, target:str, times:int) -> Tuple[int, int]:
     command = 'ping ' + str(target) + ' 0 ' + str(times)
@@ -159,23 +164,6 @@ def ot_ping(dut:IdfDut, target:str, times:int) -> Tuple[int, int]:
     received = dut.expect(r'(\d+) packets received', timeout=30)[1].decode()
     rx_count = int(received)
     return tx_count, rx_count
-
-
-# connect Wi-Fi
-def connect_wifi(dut:IdfDut, ssid:str, psk:str, nums:int) -> Tuple[str, int]:
-    clean_buffer(dut)
-    ip_address = ''
-    information = ''
-    for order in range(1, nums):
-        dut.write('wifi connect -s ' + str(ssid) + ' -p ' + str(psk))
-        tmp = dut.expect(pexpect.TIMEOUT, timeout=10)
-        if 'sta ip' in str(tmp):
-            ip_address = re.findall(r'sta ip: (\w+.\w+.\w+.\w+),', str(tmp))[0]
-        information = dut.expect(r'wifi sta (\w+ \w+ \w+)\W', timeout=20)[1].decode()
-        if information == 'is connected successfully':
-            break
-    assert information == 'is connected successfully'
-    return ip_address, order
 
 
 def reset_host_interface() -> None:

@@ -288,6 +288,13 @@ esp_err_t esp_pm_configure(const void* vconfig)
          */
         apb_max_freq = 80;
     }
+#elif CONFIG_IDF_TARGET_ESP32C6
+    /* Maximum SOC APB clock frequency is 40 MHz, maximum Modem (WiFi,
+     * Bluetooth, etc..) APB clock frequency is 80 MHz */
+    const int soc_apb_clk_freq = esp_clk_apb_freq() / MHZ;
+    const int modem_apb_clk_freq = MODEM_APB_CLK_FREQ / MHZ;
+    const int apb_clk_freq = MAX(soc_apb_clk_freq, modem_apb_clk_freq);
+    int apb_max_freq = MIN(max_freq_mhz, apb_clk_freq); /* CPU frequency in APB_MAX mode */
 #else
     int apb_max_freq = MIN(max_freq_mhz, 80); /* CPU frequency in APB_MAX mode */
 #endif
@@ -320,9 +327,12 @@ esp_err_t esp_pm_configure(const void* vconfig)
 #endif
 
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_SUPPORT_CPU_PD
-    esp_err_t ret = esp_sleep_cpu_pd_low_init(config->light_sleep_enable);
-    if (config->light_sleep_enable && ret != ESP_OK) {
-        ESP_LOGW(TAG, "Failed to enable CPU power down during light sleep.");
+    if (config->light_sleep_enable) {
+        if (esp_sleep_cpu_retention_init() != ESP_OK) {
+            ESP_LOGW(TAG, "Failed to enable CPU power down during light sleep.");
+        }
+    } else {
+        esp_sleep_cpu_retention_deinit();
     }
 #endif
 

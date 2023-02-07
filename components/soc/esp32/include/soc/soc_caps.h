@@ -229,7 +229,6 @@
 #define SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP   (1)    ///< The number of capture timers that each group has
 #define SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER (3)    ///< The number of capture channels that each capture timer has
 #define SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP    (3)    ///< The number of GPIO synchros that each group has
-#define SOC_MCPWM_CLK_SUPPORT_PLL160M        (1)    ///< Support PLL160M as clock source
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 //TODO: correct the caller and remove unsupported lines
@@ -373,6 +372,9 @@
 #define SOC_PM_SUPPORT_RTC_FAST_MEM_PD            (1)
 #define SOC_PM_SUPPORT_RTC_SLOW_MEM_PD            (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD                 (1)
+#define SOC_PM_SUPPORT_VDDSDIO_PD                 (1)
+
+#define SOC_CONFIGURABLE_VDDSDIO_SUPPORTED        (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_APLL_SUPPORTED                    (1)

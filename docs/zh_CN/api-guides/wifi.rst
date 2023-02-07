@@ -7,28 +7,13 @@
 ------------------------------------
 {IDF_TARGET_NAME} 支持以下 Wi-Fi 功能：
 
-.. only:: esp32 or esp32s2 or esp32s3
+.. only:: esp32 or esp32s2 or esp32c3 or esp32s3
 
     - 支持 4 个虚拟接口，即 STA、AP、Sniffer 和 reserved。
     - 支持仅 station 模式、仅 AP 模式、station/AP 共存模式
     - 支持使用 IEEE 802.11b、IEEE 802.11g、IEEE 802.11n 和 API 配置协议模式
     - 支持 WPA/WPA2/WPA3/WPA2-企业版/WPA3-企业版/WAPI/WPS 和 DPP
     - 支持 AMSDU、AMPDU、HT40、QoS 以及其它主要功能
-    - 支持 Modem-sleep
-    - 支持乐鑫专属协议，可实现 **1 km** 数据通信量
-    - 空中数据传输最高可达 20 MBit/s TCP 吞吐量和 30 MBit/s UDP 吞吐量
-    - 支持 Sniffer
-    - 支持快速扫描和全信道扫描
-    - 支持多个天线
-    - 支持获取信道状态信息
-
-.. only:: esp32c3
-
-    - 支持 4 个虚拟接口，即 STA、AP、Sniffer 和 reserved。
-    - 支持仅 station 模式、仅 AP 模式、station/AP 共存模式
-    - 支持使用 IEEE 802.11b、IEEE 802.11g、IEEE 802.11n 和 API 配置协议模式
-    - 支持 WPA/WPA2/WPA3/WPA2-企业版/WPA3-企业版/WAPI/WPS 和 DPP
-    - 支持 AMPDU、HT40、QoS 以及其它主要功能
     - 支持 Modem-sleep
     - 支持乐鑫专属协议，可实现 **1 km** 数据通信量
     - 空中数据传输最高可达 20 MBit/s TCP 吞吐量和 30 MBit/s UDP 吞吐量
@@ -1256,7 +1241,7 @@ API :cpp:func:`esp_wifi_set_config()` 可用于配置 station。配置的参数�
    * - bssid
      - 只有当 bssid_set 为 1 时有效。见字段 “bssid_set”。
    * - channel
-     - 该字段为 0 时，station 扫描信道 1 ~ N 寻找目标 AP；否则，station 首先扫描值与 “channel” 字段相同的信道，再扫描其他信道。如果您不知道目标 AP 在哪个信道，请将该字段设置为 0。
+     - 该字段为 0 时，station 扫描信道 1 ~ N 寻找目标 AP；否则，station 首先扫描值与 “channel” 字段相同的信道，再扫描其他信道。比如，当该字段设置为 3 时，扫描顺序为 3，1，2，...，N 。如果您不知道目标 AP 在哪个信道，请将该字段设置为 0。
    * - sort_method
      - 该字段仅用于 WIFI_ALL_CHANNEL_SCAN 模式。
 
@@ -1635,7 +1620,7 @@ WPA2-Enterprise 是企业无线网络的安全认证机制。在连接到接入�
 
 请参考 IDF 示例程序 :idf_file:`examples/wifi/roaming/README.md` 来设置和使用这些 API。示例代码只演示了如何使用这些 API，应用程序应根据需要定义自己的算法和案例。
 
-.. only:: esp32s2 or esp32c3
+.. only:: SOC_WIFI_FTM_SUPPORT
 
     Wi-Fi Location
     -------------------------------
@@ -2205,10 +2190,14 @@ Wi-Fi 协议中定义了四个 AC （访问类别），每个 AC 有各自的优
  - 避免使用 AMPDU 支持的、两个以上的不同优先级，比如 socket A 使用优先级 0，socket B 使用优先级 1，socket C 使用优先级 2。因为可能需要更多的内存，不是好的设计。具体来说，Wi-Fi 驱动程序可能会为每个优先级生成一个 Block Ack 会话，如果设置了 Block Ack 会话，则需要更多内存。
 
 
-.. only:: SOC_SPIRAM_SUPPORTED
+Wi-Fi AMSDU
+-------------------------
 
-    Wi-Fi AMSDU
-    -------------------------
+.. only:: not SOC_SPIRAM_SUPPORTED
+
+    {IDF_TARGET_NAME} 支持接收 AMSDU。
+
+.. only:: SOC_SPIRAM_SUPPORTED
 
     {IDF_TARGET_NAME} 支持接收和发送 AMSDU。开启 AMSDU 发送比较消耗内存，默认不开启 AMSDU 发送。可通过选项 :ref:`CONFIG_ESP32_WIFI_AMSDU_TX_ENABLED` 使能 AMSDU 发送功能， 但是使能 AMSDU 发送依赖于 :ref:`CONFIG_SPIRAM` 。
 

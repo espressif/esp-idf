@@ -20,5 +20,8 @@ dbus-python; sys_platform == 'linux'
 protobuf
 paho-mqtt
 
+# iperf_test_util
+pyecharts
+
 # for twai tests, communicate with socket can device (e.g. Canable)
 python-can

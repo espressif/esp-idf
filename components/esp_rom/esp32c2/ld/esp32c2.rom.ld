@@ -1988,7 +1988,6 @@ ieee80211_encap_null_data = 0x4000211c;
 ieee80211_send_deauth = 0x40002120;
 ieee80211_alloc_deauth = 0x40002124;
 ieee80211_send_proberesp = 0x40002128;
-ieee80211_tx_mgt_cb = 0x4000212c;
 ieee80211_getcapinfo = 0x40002130;
 sta_rx_csa = 0x40002134;
 sta_recv_sa_query_resp = 0x40002144;

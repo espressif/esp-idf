@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -88,3 +88,22 @@ def run_idf_py(*args: str,
         cmd, env=env_dict, cwd=workdir,
         check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, encoding='utf-8', errors='backslashreplace')
+
+
+def run_cmake(*cmake_args: str, env: typing.Optional[EnvDict] = None) -> None:
+    """
+    Run cmake command with given arguments, raise an exception on failure
+    :param cmake_args: arguments to pass cmake
+    :param env: environment variables to run the cmake with; if not set, the default environment is used
+    """
+    if not env:
+        env = dict(**os.environ)
+    workdir = (Path(os.getcwd()) / 'build')
+    workdir.mkdir(parents=True, exist_ok=True)
+
+    cmd = ['cmake'] + list(cmake_args)
+
+    logging.debug('running {} in {}'.format(' '.join(cmd), workdir))
+    subprocess.check_call(
+        cmd, env=env, cwd=workdir,
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

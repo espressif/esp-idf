@@ -9,35 +9,24 @@
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "hal/spi_types.h"
-//for spi_bus_initialization funcions. to be back-compatible
+//for spi_bus_initialization functions. to be back-compatible
 #include "driver/spi_common.h"
 
-/** SPI master clock is divided by clock source. Below defines are example frequencies. Be free to specify a random frequency, it will be rounded to closest frequency (to macros below if above 8MHz).
-  */
-#if !CONFIG_SPI_SUPPRESS_FREQ_MACRO_DEPRECATE_WARN
-#define SPI_MASTER_FREQ_8M    _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/10)
-#define SPI_MASTER_FREQ_9M    _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/9)    ///< 8.89MHz
-#define SPI_MASTER_FREQ_10M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/8)    ///< 10MHz
-#define SPI_MASTER_FREQ_11M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/7)    ///< 11.43MHz
-#define SPI_MASTER_FREQ_13M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/6)    ///< 13.33MHz
-#define SPI_MASTER_FREQ_16M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/5)    ///< 16MHz
-#define SPI_MASTER_FREQ_20M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/4)    ///< 20MHz
-#define SPI_MASTER_FREQ_26M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/3)    ///< 26.67MHz
-#define SPI_MASTER_FREQ_40M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/2)    ///< 40MHz
-#define SPI_MASTER_FREQ_80M   _Pragma("GCC warning \"'SPI_MASTER_FREQ_xxM' macro is deprecated\"")  (APB_CLK_FREQ/1)    ///< 80MHz
-
-#else
-#define SPI_MASTER_FREQ_8M      (APB_CLK_FREQ/10)
-#define SPI_MASTER_FREQ_9M      (APB_CLK_FREQ/9)    ///< 8.89MHz
-#define SPI_MASTER_FREQ_10M     (APB_CLK_FREQ/8)    ///< 10MHz
-#define SPI_MASTER_FREQ_11M     (APB_CLK_FREQ/7)    ///< 11.43MHz
-#define SPI_MASTER_FREQ_13M     (APB_CLK_FREQ/6)    ///< 13.33MHz
-#define SPI_MASTER_FREQ_16M     (APB_CLK_FREQ/5)    ///< 16MHz
-#define SPI_MASTER_FREQ_20M     (APB_CLK_FREQ/4)    ///< 20MHz
-#define SPI_MASTER_FREQ_26M     (APB_CLK_FREQ/3)    ///< 26.67MHz
-#define SPI_MASTER_FREQ_40M     (APB_CLK_FREQ/2)    ///< 40MHz
-#define SPI_MASTER_FREQ_80M     (APB_CLK_FREQ/1)    ///< 80MHz
-#endif  //!CONFIG_SPI_SUPPRESS_FREQ_MACRO_DEPRECATE_WARN
+/**
+ * @brief SPI common used frequency (in Hz)
+ * @note SPI peripheral only has an integer divider, and the default clock source can be different on other targets,
+ *       so the actual frequency may be slightly different from the desired frequency.
+ */
+#define SPI_MASTER_FREQ_8M      (80 * 1000 * 1000 / 10)   ///< 8MHz
+#define SPI_MASTER_FREQ_9M      (80 * 1000 * 1000 / 9)    ///< 8.89MHz
+#define SPI_MASTER_FREQ_10M     (80 * 1000 * 1000 / 8)    ///< 10MHz
+#define SPI_MASTER_FREQ_11M     (80 * 1000 * 1000 / 7)    ///< 11.43MHz
+#define SPI_MASTER_FREQ_13M     (80 * 1000 * 1000 / 6)    ///< 13.33MHz
+#define SPI_MASTER_FREQ_16M     (80 * 1000 * 1000 / 5)    ///< 16MHz
+#define SPI_MASTER_FREQ_20M     (80 * 1000 * 1000 / 4)    ///< 20MHz
+#define SPI_MASTER_FREQ_26M     (80 * 1000 * 1000 / 3)    ///< 26.67MHz
+#define SPI_MASTER_FREQ_40M     (80 * 1000 * 1000 / 2)    ///< 40MHz
+#define SPI_MASTER_FREQ_80M     (80 * 1000 * 1000 / 1)    ///< 80MHz
 
 #ifdef __cplusplus
 extern "C"
@@ -82,7 +71,7 @@ typedef struct {
     uint16_t duty_cycle_pos;        ///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
     uint16_t cs_ena_pretrans;       ///< Amount of SPI bit-cycles the cs should be activated before the transmission (0-16). This only works on half-duplex transactions.
     uint8_t cs_ena_posttrans;       ///< Amount of SPI bit-cycles the cs should stay active after the transmission (0-16)
-    int clock_speed_hz;             ///< Clock speed, divisors of 80MHz, in Hz. See ``SPI_MASTER_FREQ_*``.
+    int clock_speed_hz;             ///< Clock speed, divisors of the SPI `clock_source`, in Hz
     int input_delay_ns;             /**< Maximum data valid time of slave. The time required between SCLK and MISO
         valid, including the possible clock delay from slave to master. The driver uses this value to give an extra
         delay before the MISO is ready on the line. Leave at 0 unless you know you need a delay. For better timing
@@ -361,7 +350,7 @@ void spi_device_release_bus(spi_device_handle_t dev);
  *      - ESP_ERR_INVALID_ARG : ``handle`` or ``freq_khz`` parameter is NULL
  *      - ESP_OK : Success
  */
-esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int* freq_khz);
+esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int *freq_khz);
 
 /**
  * @brief Calculate the working frequency that is most close to desired frequency.

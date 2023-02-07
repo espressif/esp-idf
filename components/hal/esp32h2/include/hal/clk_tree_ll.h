@@ -11,6 +11,7 @@
 #include "soc/clk_tree_defs.h"
 #include "soc/rtc.h"
 #include "soc/pcr_reg.h"
+#include "soc/lp_clkrst_struct.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
 #include "hal/assert.h"
@@ -167,7 +168,7 @@ static inline bool clk_ll_rc_fast_d256_is_enabled(void)
  */
 static inline void clk_ll_rc_fast_digi_enable(void)
 {
-    // ESP32H2-TODO: IDF-6401
+    LP_CLKRST.clk_to_hp.icg_hp_fosc = 1;
 }
 
 /**
@@ -175,7 +176,7 @@ static inline void clk_ll_rc_fast_digi_enable(void)
  */
 static inline void clk_ll_rc_fast_digi_disable(void)
 {
-    // ESP32H2-TODO: IDF-6401
+    LP_CLKRST.clk_to_hp.icg_hp_fosc = 0;
 }
 
 /**

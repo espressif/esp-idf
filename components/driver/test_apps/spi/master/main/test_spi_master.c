@@ -1560,3 +1560,62 @@ void test_add_device_slave(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms][test_env=generic_multi_device]", test_add_device_master, test_add_device_slave);
+
+
+#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+
+#define TEST_ISR_CNT    100
+static void test_master_isr_core_post_trans_cbk(spi_transaction_t *curr_trans){
+    *((int *)curr_trans->user) += esp_cpu_get_core_id();
+}
+
+TEST_CASE("test_master_isr_pin_to_core","[spi]")
+{
+    spi_device_handle_t dev0;
+    uint32_t master_send;
+    uint32_t master_recive;
+    uint32_t master_expect;
+
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.post_cb = test_master_isr_core_post_trans_cbk;
+
+    spi_transaction_t trans_cfg = {
+        .tx_buffer = &master_send,
+        .rx_buffer = &master_recive,
+        .user = & master_expect,
+        .length = sizeof(uint32_t) * 8,
+    };
+
+    master_expect = 0;
+    for (int i = 0; i < TEST_ISR_CNT; i++) {
+        TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+        TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
+
+        TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
+
+        TEST_ESP_OK(spi_bus_remove_device(dev0));
+        TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+    }
+    printf("Test Master ISR Not Assign: %d : %ld\n", TEST_ISR_CNT, master_expect);
+    // by default the esp_intr_alloc is called on ESP_MAIN_TASK_AFFINITY_CPU0 now
+    TEST_ASSERT_EQUAL_UINT32(0, master_expect);
+
+
+    //-------------------------------------CPU1---------------------------------------
+    buscfg.isr_cpu_id = INTR_CPU_ID_1;
+
+    master_expect = 0;
+    for (int i = 0; i < TEST_ISR_CNT; i++) {
+        TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+        TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
+
+        TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
+
+        TEST_ESP_OK(spi_bus_remove_device(dev0));
+        TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+    }
+    printf("Test Master ISR Assign CPU1: %d : %ld\n", TEST_ISR_CNT, master_expect);
+    TEST_ASSERT_EQUAL_UINT32(TEST_ISR_CNT, master_expect);
+}
+#endif

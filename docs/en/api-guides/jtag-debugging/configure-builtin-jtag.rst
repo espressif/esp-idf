@@ -6,8 +6,8 @@
 Configure {IDF_TARGET_NAME} built-in JTAG Interface
 ===================================================
 
-{IDF_TARGET_JTAG_PIN_Dneg:default="Not Updated!", esp32c3="GPIO18", esp32c6="GPIO12", esp32s3="GPIO19"}
-{IDF_TARGET_JTAG_PIN_Dpos:default="Not Updated!", esp32c3="GPIO19", esp32c6="GPIO13", esp32s3="GPIO20"}
+{IDF_TARGET_JTAG_PIN_Dneg:default="Not Updated!", esp32c3="GPIO18", esp32c6="GPIO12", esp32s3="GPIO19", esp32h2="GPIO26"}
+{IDF_TARGET_JTAG_PIN_Dpos:default="Not Updated!", esp32c3="GPIO19", esp32c6="GPIO13", esp32s3="GPIO20", esp32h2="GPIO27"}
 
 {IDF_TARGET_NAME} has a built-in JTAG circuitry and can be debugged without any additional chip. Only an USB cable connected to the D+/D- pins is necessary. The necessary connections are shown in the following section.
 

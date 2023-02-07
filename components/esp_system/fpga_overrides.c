@@ -23,6 +23,7 @@
 #include "esp32c2/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/rtc.h"
+#include "esp_private/esp_pmu.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
 #endif
@@ -72,6 +73,9 @@ void IRAM_ATTR bootloader_fill_random(void *buffer, size_t length)
 void esp_clk_init(void)
 {
     s_warn();
+#if SOC_PMU_SUPPORTED
+    pmu_init();
+#endif
 }
 
 void esp_perip_clk_init(void)

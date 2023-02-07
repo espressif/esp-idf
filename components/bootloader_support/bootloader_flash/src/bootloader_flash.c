@@ -61,7 +61,7 @@ uint32_t bootloader_mmap_get_free_pages(void)
 const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
 {
     if (map) {
-        ESP_LOGE(TAG, "tried to bootloader_mmap twice");
+        ESP_EARLY_LOGE(TAG, "tried to bootloader_mmap twice");
         return NULL; /* existing mapping in use... */
     }
     const void *result = NULL;
@@ -69,7 +69,7 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
     size += (src_addr - src_page);
     esp_err_t err = spi_flash_mmap(src_page, size, SPI_FLASH_MMAP_DATA, &result, &map);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "spi_flash_mmap failed: 0x%x", err);
+        ESP_EARLY_LOGE(TAG, "spi_flash_mmap failed: 0x%x", err);
         return NULL;
     }
     return (void *)((intptr_t)result + (src_addr - src_page));
@@ -334,15 +334,15 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 esp_err_t bootloader_flash_read(size_t src_addr, void *dest, size_t size, bool allow_decrypt)
 {
     if (src_addr & 3) {
-        ESP_LOGE(TAG, "bootloader_flash_read src_addr 0x%x not 4-byte aligned", src_addr);
+        ESP_EARLY_LOGE(TAG, "bootloader_flash_read src_addr 0x%x not 4-byte aligned", src_addr);
         return ESP_FAIL;
     }
     if (size & 3) {
-        ESP_LOGE(TAG, "bootloader_flash_read size 0x%x not 4-byte aligned", size);
+        ESP_EARLY_LOGE(TAG, "bootloader_flash_read size 0x%x not 4-byte aligned", size);
         return ESP_FAIL;
     }
     if ((intptr_t)dest & 3) {
-        ESP_LOGE(TAG, "bootloader_flash_read dest 0x%x not 4-byte aligned", (intptr_t)dest);
+        ESP_EARLY_LOGE(TAG, "bootloader_flash_read dest 0x%x not 4-byte aligned", (intptr_t)dest);
         return ESP_FAIL;
     }
 
@@ -358,15 +358,15 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
     esp_err_t err;
     size_t alignment = write_encrypted ? 32 : 4;
     if ((dest_addr % alignment) != 0) {
-        ESP_LOGE(TAG, "bootloader_flash_write dest_addr 0x%x not %d-byte aligned", dest_addr, alignment);
+        ESP_EARLY_LOGE(TAG, "bootloader_flash_write dest_addr 0x%x not %d-byte aligned", dest_addr, alignment);
         return ESP_FAIL;
     }
     if ((size % alignment) != 0) {
-        ESP_LOGE(TAG, "bootloader_flash_write size 0x%x not %d-byte aligned", size, alignment);
+        ESP_EARLY_LOGE(TAG, "bootloader_flash_write size 0x%x not %d-byte aligned", size, alignment);
         return ESP_FAIL;
     }
     if (((intptr_t)src % 4) != 0) {
-        ESP_LOGE(TAG, "bootloader_flash_write src 0x%x not 4 byte aligned", (intptr_t)src);
+        ESP_EARLY_LOGE(TAG, "bootloader_flash_write src 0x%x not 4 byte aligned", (intptr_t)src);
         return ESP_FAIL;
     }
 
@@ -650,7 +650,7 @@ esp_err_t bootloader_flash_wrap_set(spi_flash_wrap_mode_t mode)
 #define XMC_VENDOR_ID 0x20
 
 #if BOOTLOADER_BUILD
-#define BOOTLOADER_FLASH_LOG(level, ...)    ESP_LOG##level(TAG, ##__VA_ARGS__)
+#define BOOTLOADER_FLASH_LOG(level, ...)    ESP_EARLY_LOG##level(TAG, ##__VA_ARGS__)
 #else
 static DRAM_ATTR char bootloader_flash_tag[] = "bootloader_flash";
 #define BOOTLOADER_FLASH_LOG(level, ...)    ESP_DRAM_LOG##level(bootloader_flash_tag, ##__VA_ARGS__)

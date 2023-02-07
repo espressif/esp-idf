@@ -115,6 +115,7 @@ We have two bits to control the interrupt:
 #include "driver/spi_master.h"
 #include "clk_tree.h"
 #include "esp_log.h"
+#include "esp_ipc.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "soc/soc_memory_layout.h"
@@ -191,6 +192,20 @@ static inline bool is_valid_host(spi_host_device_t host)
 #endif
 }
 
+#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+typedef struct {
+    spi_host_t *spi_host;
+    esp_err_t *err;
+} spi_ipc_param_t;
+
+static void ipc_isr_reg_to_core(void *args)
+{
+    spi_host_t *host = ((spi_ipc_param_t *)args)->spi_host;
+    const spi_bus_attr_t* bus_attr = host->bus_attr;
+    *((spi_ipc_param_t *)args)->err = esp_intr_alloc(spicommon_irqsource_for_host(host->id), bus_attr->bus_cfg.intr_flags | ESP_INTR_FLAG_INTRDISABLED, spi_intr, host, &host->intr);
+}
+#endif
+
 // Should be called before any devices are actually registered or used.
 // Currently automatically called after `spi_bus_initialize()` and when first device is registered.
 static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
@@ -215,11 +230,21 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
         .bus_attr = bus_attr,
     };
 
+    // interrupts are not allowed on SPI1 bus
     if (host_id != SPI1_HOST) {
-        // interrupts are not allowed on SPI1 bus
-        err = esp_intr_alloc(spicommon_irqsource_for_host(host_id),
-                            bus_attr->bus_cfg.intr_flags | ESP_INTR_FLAG_INTRDISABLED,
-                            spi_intr, host, &host->intr);
+#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+        if(bus_attr->bus_cfg.isr_cpu_id > INTR_CPU_ID_AUTO) {
+            SPI_CHECK(bus_attr->bus_cfg.isr_cpu_id <= INTR_CPU_ID_1, "invalid core id", ESP_ERR_INVALID_ARG);
+            spi_ipc_param_t ipc_arg = {
+                .spi_host = host,
+                .err = &err,
+            };
+            esp_ipc_call_blocking(INTR_CPU_CONVERT_ID(bus_attr->bus_cfg.isr_cpu_id), ipc_isr_reg_to_core, (void *) &ipc_arg);
+        } else
+#endif
+        {
+            err = esp_intr_alloc(spicommon_irqsource_for_host(host_id), bus_attr->bus_cfg.intr_flags | ESP_INTR_FLAG_INTRDISABLED, spi_intr, host, &host->intr);
+        }
         if (err != ESP_OK) {
             goto cleanup;
         }
@@ -330,8 +355,12 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     spi_host_t *host = bus_driver_ctx[host_id];
     const spi_bus_attr_t* bus_attr = host->bus_attr;
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
-    uint32_t clock_source_hz;
-    clk_tree_src_get_freq_hz((dev_config->clock_source == 0)?SPI_CLK_SRC_DEFAULT:dev_config->clock_source, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    spi_clock_source_t clk_src = SPI_CLK_SRC_DEFAULT;
+    uint32_t clock_source_hz = 0;
+    if (dev_config->clock_source) {
+        clk_src = dev_config->clock_source;
+    }
+    clk_tree_src_get_freq_hz(clk_src, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
     SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= clock_source_hz), "invalid sclk speed", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
     //The hardware looks like it would support this, but actually setting cs_ena_pretrans when transferring in full
@@ -345,7 +374,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
         SPI_CHECK(dev_config->post_cb != NULL, "use feature flag 'SPI_DEVICE_NO_RETURN_RESULT' but no post callback function sets", ESP_ERR_INVALID_ARG);
     }
 
-    uint32_t lock_flag = ((dev_config->spics_io_num != -1)? SPI_BUS_LOCK_DEV_FLAG_CS_REQUIRED: 0);
+    uint32_t lock_flag = ((dev_config->spics_io_num != -1) ? SPI_BUS_LOCK_DEV_FLAG_CS_REQUIRED : 0);
 
     spi_bus_lock_dev_config_t lock_config = {
         .flags = lock_flag,
@@ -362,7 +391,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     //input parameters to calculate timing configuration
     int half_duplex = dev_config->flags & SPI_DEVICE_HALFDUPLEX ? 1 : 0;
     int no_compensate = dev_config->flags & SPI_DEVICE_NO_DUMMY ? 1 : 0;
-    int duty_cycle = (dev_config->duty_cycle_pos==0) ? 128 : dev_config->duty_cycle_pos;
+    int duty_cycle = (dev_config->duty_cycle_pos == 0) ? 128 : dev_config->duty_cycle_pos;
     int use_gpio = !(bus_attr->flags & SPICOMMON_BUSFLAG_IOMUX_PINS);
     spi_hal_timing_param_t timing_param = {
         .half_duplex = half_duplex,
@@ -378,8 +407,8 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     spi_hal_timing_conf_t temp_timing_conf;
     int freq;
     esp_err_t ret = spi_hal_cal_clock_conf(&timing_param, &freq, &temp_timing_conf);
-    temp_timing_conf.clock_source = dev_config->clock_source;
-    SPI_CHECK(ret==ESP_OK, "assigned clock speed not supported", ret);
+    temp_timing_conf.clock_source = clk_src;
+    SPI_CHECK(ret == ESP_OK, "assigned clock speed not supported", ret);
 
     //Allocate memory for device
     dev = malloc(sizeof(spi_device_t));
@@ -436,7 +465,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     hal_dev->rx_lsbfirst = dev_config->flags & SPI_DEVICE_RXBIT_LSBFIRST ? 1 : 0;
     hal_dev->no_compensate = dev_config->flags & SPI_DEVICE_NO_DUMMY ? 1 : 0;
 #if SOC_SPI_AS_CS_SUPPORTED
-    hal_dev->as_cs = dev_config->flags& SPI_DEVICE_CLK_AS_CS ? 1 : 0;
+    hal_dev->as_cs = dev_config->flags & SPI_DEVICE_CLK_AS_CS ? 1 : 0;
 #endif
     hal_dev->positive_cs = dev_config->flags & SPI_DEVICE_POSITIVE_CS ? 1 : 0;
 

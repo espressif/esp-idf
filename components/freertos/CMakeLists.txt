@@ -60,7 +60,7 @@ else()
         "esp_additions/private_include")    # For include "freertos_tasks_c_additions.h"
 
     if(CONFIG_FREERTOS_SMP)
-        set(ldfragments linker_smp.lf)
+        set(ldfragments linker_smp.lf linker_common.lf)
         list(APPEND include_dirs "${kernel_dir}/portable/${arch}/include/freertos") # Xtensa headers via #include "xx.h"
     else()
         list(APPEND srcs
@@ -69,7 +69,7 @@ else()
 
         list(APPEND private_include_dirs "${kernel_dir}/portable/priv_include") # For port_systick.h on normal FreeRTOS
 
-        set(ldfragments linker.lf)
+        set(ldfragments linker.lf linker_common.lf)
     endif()
 
     list(APPEND private_requirements soc esp_pm)

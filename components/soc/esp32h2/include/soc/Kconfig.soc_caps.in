@@ -15,11 +15,19 @@ config SOC_PCNT_SUPPORTED
     bool
     default y
 
+config SOC_MCPWM_SUPPORTED
+    bool
+    default y
+
 config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
 config SOC_IEEE802154_BLE_ONLY
+    bool
+    default y
+
+config SOC_USB_SERIAL_JTAG_SUPPORTED
     bool
     default y
 
@@ -51,7 +59,23 @@ config SOC_RMT_SUPPORTED
     bool
     default y
 
+config SOC_LEDC_SUPPORTED
+    bool
+    default y
+
+config SOC_I2C_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_SUPPORTED
+    bool
+    default y
+
+config SOC_AES_SUPPORTED
+    bool
+    default y
+
+config SOC_SHA_SUPPORTED
     bool
     default y
 
@@ -257,21 +281,21 @@ config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
 
 config SOC_I2C_NUM
     int
-    default 1
+    default 2
 
 config SOC_I2C_FIFO_LEN
     int
     default 32
+
+config SOC_I2C_SUPPORT_SLAVE
+    bool
+    default y
 
 config SOC_I2C_SUPPORT_HW_CLR_BUS
     bool
     default y
 
 config SOC_I2C_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_RTC
     bool
     default y
 
@@ -484,14 +508,6 @@ config SOC_MCPWM_SUPPORT_ETM
     default y
 
 config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
-    bool
-    default y
-
-config SOC_MCPWM_CLK_SUPPORT_PLL160M
-    bool
-    default y
-
-config SOC_MCPWM_CLK_SUPPORT_XTAL
     bool
     default y
 
@@ -820,6 +836,14 @@ config SOC_PM_SUPPORT_BT_PD
     default y
 
 config SOC_PM_SUPPORT_RC_FAST_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_VDDSDIO_PD
+    bool
+    default y
+
+config SOC_PM_CPU_RETENTION_BY_RTCCNTL
     bool
     default y
 

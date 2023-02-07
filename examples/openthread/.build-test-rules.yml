@@ -13,10 +13,6 @@ examples/openthread/ot_br:
 examples/openthread/ot_cli:
   enable:
     - if: IDF_TARGET in ["esp32h4", "esp32c6"]
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: only test on esp32h4
 
 examples/openthread/ot_rcp:
   enable:

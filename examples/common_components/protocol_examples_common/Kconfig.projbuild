@@ -4,6 +4,7 @@ menu "Example Connection Configuration"
 
     config EXAMPLE_CONNECT_WIFI
         bool "connect using WiFi interface"
+        depends on !IDF_TARGET_LINUX
         default y
         help
             Protocol examples can use Wi-Fi and/or Ethernet to connect to the network.
@@ -117,6 +118,7 @@ menu "Example Connection Configuration"
 
     config EXAMPLE_CONNECT_ETHERNET
         bool "connect using Ethernet interface"
+        depends on !IDF_TARGET_LINUX
         default n
         help
             Protocol examples can use Wi-Fi and/or Ethernet to connect to the network.

@@ -154,7 +154,7 @@ void IRAM_ATTR hci_uart_start_tx(int port_num)
         data = hci_uart.tx_char(hci_uart.u_func_arg);
         if (data >= 0) {
             u8_data = data;
-            uart_tx_chars(port_num, (char *)&u8_data, 1);
+            uart_write_bytes(port_num, (char *)&u8_data, 1);
         } else {
             break;
         }

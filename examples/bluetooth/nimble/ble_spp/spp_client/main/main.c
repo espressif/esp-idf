@@ -14,24 +14,17 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "ble_spp_client.h"
-
 #include "driver/uart.h"
+
+#define PEER_ADDR_VAL_SIZE      6
+
 static const char *tag = "NimBLE_SPP_BLE_CENT";
 static int ble_spp_client_gap_event(struct ble_gap_event *event, void *arg);
 QueueHandle_t spp_common_uart_queue = NULL;
 void ble_store_config_init(void);
-uint16_t attribute_handle[CONFIG_BT_NIMBLE_MAX_CONNECTIONS];
+uint16_t attribute_handle[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
 static void ble_spp_client_scan(void);
-static ble_addr_t connected_addr[CONFIG_BT_NIMBLE_MAX_CONNECTIONS];
-
-/* 16 Bit Alert Notification Service UUID */
-#define GATT_SVR_SVC_ALERT_UUID                            0x1811
-
-/* 16 Bit SPP Service UUID */
-#define GATT_SPP_SVC_UUID                                  0xABF0
-
-/* 16 Bit SPP Service Characteristic UUID */
-#define GATT_SPP_CHR_UUID                                  0xABF1
+static ble_addr_t connected_addr[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
 
 static void
 ble_spp_client_set_handle(const struct peer *peer)
@@ -40,7 +33,7 @@ ble_spp_client_set_handle(const struct peer *peer)
     chr = peer_chr_find_uuid(peer,
                              BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
                              BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID));
-    attribute_handle[peer->conn_handle - 1] = chr->chr.val_handle;
+    attribute_handle[peer->conn_handle] = chr->chr.val_handle;
 }
 
 /**
@@ -125,11 +118,11 @@ ble_spp_client_should_connect(const struct ble_gap_disc_desc *disc)
     int i;
 
     /* Check if device is already connected or not */
-    for ( i = 0; i < CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
-	if (memcmp(&connected_addr[i].val,disc->addr.val, sizeof(disc->addr.val)) == 0) {
-	    MODLOG_DFLT(DEBUG, "Device already connected");
-	    return 0;
-	}
+    for ( i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+        if (memcmp(&connected_addr[i].val, disc->addr.val, PEER_ADDR_VAL_SIZE) == 0) {
+            MODLOG_DFLT(DEBUG, "Device already connected");
+            return 0;
+        }
     }
 
     /* The device has to be advertising connectability. */
@@ -144,15 +137,14 @@ ble_spp_client_should_connect(const struct ble_gap_disc_desc *disc)
         return rc;
     }
 
-    /* The device has to advertise support for the Alert Notification
-     * service (0x1811).
+    /* The device has to advertise support for the SPP
+     * service (0xABF0).
      */
     for (i = 0; i < fields.num_uuids16; i++) {
-        if (ble_uuid_u16(&fields.uuids16[i].u) == GATT_SVR_SVC_ALERT_UUID) {
+        if (ble_uuid_u16(&fields.uuids16[i].u) == GATT_SPP_SVC_UUID) {
             return 1;
         }
     }
-
     return 0;
 }
 
@@ -223,7 +215,7 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
 
     switch (event->type) {
     case BLE_GAP_EVENT_DISC:
-	rc = ble_hs_adv_parse_fields(&fields, event->disc.data,
+        rc = ble_hs_adv_parse_fields(&fields, event->disc.data,
                                      event->disc.length_data);
         if (rc != 0) {
             return 0;
@@ -237,14 +229,14 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
         return 0;
 
     case BLE_GAP_EVENT_CONNECT:
-	/* A new connection was established or a connection attempt failed. */
+        /* A new connection was established or a connection attempt failed. */
         if (event->connect.status == 0) {
             /* Connection successfully established. */
             MODLOG_DFLT(INFO, "Connection established ");
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
-	    memcpy(&connected_addr[event->connect.conn_handle - 1].val, desc.peer_id_addr.val,
-		   sizeof(desc.peer_id_addr.val));
+            memcpy(&connected_addr[event->connect.conn_handle].val, desc.peer_id_addr.val,
+                   PEER_ADDR_VAL_SIZE);
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
 
@@ -278,7 +270,8 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
         MODLOG_DFLT(INFO, "\n");
 
         /* Forget about peer. */
-	attribute_handle[event->disconnect.conn.conn_handle] = 0;
+        memset(&connected_addr[event->disconnect.conn.conn_handle].val, 0, PEER_ADDR_VAL_SIZE);
+        attribute_handle[event->disconnect.conn.conn_handle] = 0;
         peer_delete(event->disconnect.conn.conn_handle);
 
         /* Resume scanning. */
@@ -346,69 +339,68 @@ void ble_spp_client_host_task(void *param)
 }
 void ble_client_uart_task(void *pvParameters)
 {
-	ESP_LOGI(tag,"BLE client UART task started\n");
-	int rc;
-	int i;
-	uart_event_t event;
-        for (;;) {
-            //Waiting for UART event.
-            if (xQueueReceive(spp_common_uart_queue, (void * )&event, (TickType_t)portMAX_DELAY)) {
-             switch (event.type) {
-             //Event of UART receving data
-             case UART_DATA:
+    ESP_LOGI(tag, "BLE client UART task started\n");
+    int rc;
+    int i;
+    uart_event_t event;
+    for (;;) {
+        //Waiting for UART event.
+        if (xQueueReceive(spp_common_uart_queue, (void * )&event, (TickType_t)portMAX_DELAY)) {
+            switch (event.type) {
+            //Event of UART receving data
+            case UART_DATA:
                 if (event.size) {
 
-                     /* Writing characteristics */
-		     uint8_t * temp = NULL;
-                     temp = (uint8_t *)malloc(sizeof(uint8_t)*event.size);
-                     if(temp == NULL){
-                         ESP_LOGE(tag, "malloc failed,%s L#%d\n", __func__, __LINE__);
-                         break;
-                     }
-                     memset(temp, 0x0, event.size);
-                     uart_read_bytes(UART_NUM_0,temp,event.size,portMAX_DELAY);
-		     for ( i = 0; i < CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
-	                 if (attribute_handle[i] != 0) {
-			     rc = ble_gattc_write_flat(i+1, attribute_handle[i],temp, event.size,NULL,NULL);
-			     if (rc == 0) {
-			         ESP_LOGI(tag,"Write in uart task success!");
-			     }
-			     else {
-			         ESP_LOGI(tag,"Error in writing characteristic rc=%d",rc);
-			     }
-			     vTaskDelay(10);
-			 }
-		     }
-		     free(temp);
-		 }
-                 break;
-             default:
-                 break;
-             }
-         }
-     }
-     vTaskDelete(NULL);
+                    /* Writing characteristics */
+                    uint8_t *temp = NULL;
+                    temp = (uint8_t *)malloc(sizeof(uint8_t) * event.size);
+                    if (temp == NULL) {
+                        ESP_LOGE(tag, "malloc failed,%s L#%d\n", __func__, __LINE__);
+                        break;
+                    }
+                    memset(temp, 0x0, event.size);
+                    uart_read_bytes(UART_NUM_0, temp, event.size, portMAX_DELAY);
+                    for ( i = 0; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+                        if (attribute_handle[i] != 0) {
+                            rc = ble_gattc_write_flat(i, attribute_handle[i], temp, event.size, NULL, NULL);
+                            if (rc == 0) {
+                                ESP_LOGI(tag, "Write in uart task success!");
+                            } else {
+                                ESP_LOGI(tag, "Error in writing characteristic rc=%d", rc);
+                            }
+                            vTaskDelay(10);
+                        }
+                    }
+                    free(temp);
+                }
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    vTaskDelete(NULL);
 
 }
 static void ble_spp_uart_init(void)
 {
-     uart_config_t uart_config = {
-         .baud_rate = 115200,
-         .data_bits = UART_DATA_8_BITS,
-         .parity = UART_PARITY_DISABLE,
-         .stop_bits = UART_STOP_BITS_1,
-         .flow_ctrl = UART_HW_FLOWCTRL_RTS,
-         .rx_flow_ctrl_thresh = 122,
-         .source_clk = UART_SCLK_DEFAULT,
-     };
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_RTS,
+        .rx_flow_ctrl_thresh = 122,
+        .source_clk = UART_SCLK_DEFAULT,
+    };
 
-     //Install UART driver, and get the queue.
-     uart_driver_install(UART_NUM_0, 4096, 8192, 10, &spp_common_uart_queue, 0);
-     //Set UART parameters
-     uart_param_config(UART_NUM_0, &uart_config);
-     //Set UART pins
-     uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-     xTaskCreate(ble_client_uart_task, "uTask", 4096, (void*)UART_NUM_0, 8, NULL);
+    //Install UART driver, and get the queue.
+    uart_driver_install(UART_NUM_0, 4096, 8192, 10, &spp_common_uart_queue, 0);
+    //Set UART parameters
+    uart_param_config(UART_NUM_0, &uart_config);
+    //Set UART pins
+    uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    xTaskCreate(ble_client_uart_task, "uTask", 4096, (void *)UART_NUM_0, 8, NULL);
 }
 void
 app_main(void)
@@ -422,7 +414,11 @@ app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    nimble_port_init();
+    ret = nimble_port_init();
+    if (ret != ESP_OK) {
+        MODLOG_DFLT(ERROR, "Failed to init nimble %d \n", ret);
+        return;
+    }
 
     /* Initialize UART driver and start uart task */
     ble_spp_uart_init();

@@ -275,6 +275,14 @@ void esp_netif_action_remove_ip6_address(void *esp_netif, esp_event_base_t base,
  */
 esp_err_t esp_netif_set_default_netif(esp_netif_t *esp_netif);
 
+/**
+ * @brief Getter function of the default netif
+ *
+ * This API returns the selected default netif.
+ *
+ * @return Handle to esp-netif instance of the default netif.
+ */
+esp_netif_t* esp_netif_get_default_netif(void);
 
 #if CONFIG_ESP_NETIF_BRIDGE_EN
 /**

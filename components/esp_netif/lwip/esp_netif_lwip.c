@@ -16,6 +16,7 @@
 #include "esp_netif.h"
 #include "esp_netif_private.h"
 #include "esp_random.h"
+#include "esp_system.h"
 
 #include "lwip/tcpip.h"
 #include "lwip/dhcp.h"
@@ -381,6 +382,11 @@ esp_err_t esp_netif_set_default_netif(esp_netif_t *esp_netif)
     return esp_netif_update_default_netif(esp_netif, ESP_NETIF_SET_DEFAULT);
 }
 
+esp_netif_t *esp_netif_get_default_netif(void)
+{
+    return s_last_default_esp_netif;
+}
+
 static inline esp_netif_t* lwip_get_esp_netif(struct netif *netif)
 {
 #if LWIP_ESP_NETIF_DATA
@@ -676,6 +682,16 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
         __func__,  esp_netif_config);
         return NULL;
     }
+
+#if ESP_DHCPS
+    // DHCP server and client cannot be configured together
+    if((esp_netif_config->base->flags & ESP_NETIF_DHCP_SERVER) &&
+       (esp_netif_config->base->flags & ESP_NETIF_DHCP_CLIENT)) {
+        ESP_LOGE(TAG, "%s: Failed to configure netif with config=%p (DHCP server and client cannot be configured together)",
+        __func__,  esp_netif_config);
+        return NULL;
+    }
+#endif
 
     // Create parent esp-netif object
     esp_netif_t *esp_netif = calloc(1, sizeof(struct esp_netif_obj));
