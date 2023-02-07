@@ -13,6 +13,14 @@
 // limitations under the License.
 #pragma once
 
+/* Define a noclone attribute when compiled with GCC as certain functions
+ * in the heap component should not be cloned by the compiler */
+#if defined __has_attribute && __has_attribute(noclone)
+#define NOCLONE_ATTR __attribute((noclone))
+#else
+#define NOCLONE_ATTR
+#endif
+
 /* Opaque handle to a heap block */
 typedef const struct block_header_t *multi_heap_block_handle_t;
 
