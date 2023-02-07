@@ -269,7 +269,7 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
     }
     break;
     default:
-        ESP_LOGD(MESH_TAG, "event id:%d", event_id);
+        ESP_LOGD(MESH_TAG, "event id:%" PRId32 "", event_id);
         break;
     }
 }
@@ -329,5 +329,5 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_mesh_set_config(&cfg));
     /* mesh start */
     ESP_ERROR_CHECK(esp_mesh_start());
-    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d\n",  esp_get_free_heap_size());
+    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%" PRId32 "\n",  esp_get_free_heap_size());
 }
