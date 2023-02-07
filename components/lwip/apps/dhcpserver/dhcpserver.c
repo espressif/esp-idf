@@ -1272,7 +1272,9 @@ err_t dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip)
     IP4_ADDR(&dhcps->broadcast_dhcps, 255, 255, 255, 255);
 
     dhcps->server_address.addr = ip.addr;
+#ifdef ESP_DHCPS_ENABLE_SUBNET_CHECK
     DHCP_CHECK_SUBNET_MASK_IP(htonl(dhcps->dhcps_mask.addr), htonl(dhcps->server_address.addr));
+#endif
     dhcps_poll_set(dhcps, dhcps->server_address.addr);
 
     dhcps->client_address_plus.addr = dhcps->dhcps_poll.start_ip.addr;
