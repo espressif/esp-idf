@@ -52,8 +52,9 @@ extern uint32_t g_ticks_per_us_app;
 
 static portMUX_TYPE s_esp_rtc_time_lock = portMUX_INITIALIZER_UNLOCKED;
 
-// TODO: IDF-4239
+#if SOC_RTC_FAST_MEM_SUPPORTED
 static RTC_NOINIT_ATTR uint64_t s_esp_rtc_time_us, s_rtc_last_ticks;
+#endif
 
 inline static int IRAM_ATTR s_get_cpu_freq_mhz(void)
 {
@@ -99,18 +100,18 @@ void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 
 uint64_t esp_rtc_get_time_us(void)
 {
-#if !SOC_RTC_FAST_MEM_SUPPORTED
-    //IDF-3901
-    return 0;
-#endif
     portENTER_CRITICAL_SAFE(&s_esp_rtc_time_lock);
     const uint32_t cal = esp_clk_slowclk_cal_get();
+#if SOC_RTC_FAST_MEM_SUPPORTED
     if (cal == 0) {
         s_esp_rtc_time_us = 0;
         s_rtc_last_ticks = 0;
     }
     const uint64_t rtc_this_ticks = rtc_time_get();
     const uint64_t ticks = rtc_this_ticks - s_rtc_last_ticks;
+#else
+    const uint64_t ticks = rtc_time_get();
+#endif
     /* RTC counter result is up to 2^48, calibration factor is up to 2^24,
      * for a 32kHz clock. We need to calculate (assuming no overflow):
      *   (ticks * cal) >> RTC_CLK_CAL_FRACT
@@ -126,10 +127,16 @@ uint64_t esp_rtc_get_time_us(void)
     const uint64_t ticks_high = ticks >> 32;
     const uint64_t delta_time_us = ((ticks_low * cal) >> RTC_CLK_CAL_FRACT) +
                                    ((ticks_high * cal) << (32 - RTC_CLK_CAL_FRACT));
+#if SOC_RTC_FAST_MEM_SUPPORTED
     s_esp_rtc_time_us += delta_time_us;
     s_rtc_last_ticks = rtc_this_ticks;
     portEXIT_CRITICAL_SAFE(&s_esp_rtc_time_lock);
     return s_esp_rtc_time_us;
+#else
+    uint64_t esp_rtc_time_us = delta_time_us + clk_ll_rtc_slow_load_rtc_fix_us();
+    portEXIT_CRITICAL_SAFE(&s_esp_rtc_time_lock);
+    return esp_rtc_time_us;
+#endif
 }
 
 void esp_clk_slowclk_cal_set(uint32_t new_cal)
@@ -138,7 +145,34 @@ void esp_clk_slowclk_cal_set(uint32_t new_cal)
     /* To force monotonic time values even when clock calibration value changes,
      * we adjust esp_rtc_time
      */
+#if SOC_RTC_FAST_MEM_SUPPORTED
     esp_rtc_get_time_us();
+#else
+    portENTER_CRITICAL_SAFE(&s_esp_rtc_time_lock);
+    uint32_t old_cal = clk_ll_rtc_slow_load_cal();
+    if (old_cal != 0) {
+        /**
+         * The logic of time correction is:
+         * old_rtc_us = ticks * old_cal >> RTC_CLK_CAL_FRACT + old_fix_us
+         * new_rtc_us = ticks * new_cal >> RTC_CLK_CAL_FRACT + new_fix_us
+         *
+         * Keep "old_rtc_us == new_rtc_us" to make time monotonically increasing,
+         * then we can get new_fix_us:
+         * new_fix_us = (ticks * old_cal >> RTC_CLK_CAL_FRACT + old_fix_us) - (ticks * new_cal >> RTC_CLK_CAL_FRACT)
+         */
+        uint64_t ticks = rtc_time_get();
+        const uint64_t ticks_low = ticks & UINT32_MAX;
+        const uint64_t ticks_high = ticks >> 32;
+        uint64_t old_fix_us = clk_ll_rtc_slow_load_rtc_fix_us();
+        uint64_t new_fix_us;
+
+        old_fix_us += ((ticks_low * old_cal) >> RTC_CLK_CAL_FRACT) + ((ticks_high * old_cal) << (32 - RTC_CLK_CAL_FRACT));
+        new_fix_us = ((ticks_low * new_cal) >> RTC_CLK_CAL_FRACT) + ((ticks_high * new_cal) << (32 - RTC_CLK_CAL_FRACT));
+        new_fix_us = old_fix_us - new_fix_us;
+        clk_ll_rtc_slow_store_rtc_fix_us(new_fix_us);
+    }
+    portEXIT_CRITICAL_SAFE(&s_esp_rtc_time_lock);
+#endif // SOC_RTC_FAST_MEM_SUPPORTED
 #endif // CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
     clk_ll_rtc_slow_store_cal(new_cal);
 }

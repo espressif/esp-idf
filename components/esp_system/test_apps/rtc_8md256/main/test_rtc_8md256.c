@@ -16,9 +16,6 @@
 #include "soc/soc_caps.h"
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5131
-
 static const char TAG[] = "rtc_8m";
 
 static void test_deepsleep(bool force_rtc_periph)
@@ -40,7 +37,6 @@ TEST_CASE("Can use 8MD256 as RTC clock source in deepsleep", "[pm]")
 {
     test_deepsleep(false);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 static void test_lightsleep(bool force_rtc_periph)
 {
