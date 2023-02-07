@@ -1,20 +1,11 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
-#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,7 +40,7 @@ typedef union {
         uint32_t reserved10: 10;
     };
     uint32_t val;
-} usb_gotgctl_reg_t;
+} usb_dwc_gotgctl_reg_t;
 
 typedef union {
     struct {
@@ -65,7 +56,7 @@ typedef union {
         uint32_t reserved12: 12;
     };
     uint32_t val;
-} usb_gotgint_reg_t;
+} usb_dwc_gotgint_reg_t;
 
 typedef union {
         struct {
@@ -84,7 +75,7 @@ typedef union {
     };
     uint32_t val;
     //Checked
-} usb_gahbcfg_reg_t;
+} usb_dwc_gahbcfg_reg_t;
 
 typedef union {
     struct {
@@ -106,7 +97,7 @@ typedef union {
         uint32_t corrupttxpkt: 1;
     };
     uint32_t val;
-} usb_gusbcfg_reg_t;
+} usb_dwc_gusbcfg_reg_t;
 
 typedef union {
     struct {
@@ -122,7 +113,7 @@ typedef union {
         uint32_t ahbidle: 1;
     };
     uint32_t val;
-} usb_grstctl_reg_t;
+} usb_dwc_grstctl_reg_t;
 
 typedef union {
     struct {
@@ -159,7 +150,7 @@ typedef union {
         uint32_t wkupint: 1;
     };
     uint32_t val;
-} usb_gintsts_reg_t;
+} usb_dwc_gintsts_reg_t;
 
 typedef union {
     struct {
@@ -196,7 +187,7 @@ typedef union {
         uint32_t wkupintmsk: 1;
     };
     uint32_t val;
-} usb_gintmsk_reg_t;
+} usb_dwc_gintmsk_reg_t;
 
 typedef union {
     struct {
@@ -208,7 +199,7 @@ typedef union {
         uint32_t reserved7: 7;
     };
     uint32_t val;
-} usb_grxstsr_reg_t;
+} usb_dwc_grxstsr_reg_t;
 
 typedef union {
     struct {
@@ -220,7 +211,7 @@ typedef union {
         uint32_t reserved7: 7;
     };
     uint32_t val;
-} usb_grxstsp_reg_t;
+} usb_dwc_grxstsp_reg_t;
 
 typedef union {
     struct {
@@ -228,7 +219,7 @@ typedef union {
         uint32_t reserved16: 16;
     };
     uint32_t val;
-} usb_grxfsiz_reg_t;
+} usb_dwc_grxfsiz_reg_t;
 
 typedef union {
     struct {
@@ -236,7 +227,7 @@ typedef union {
         uint32_t nptxfdep: 16;
     };
     uint32_t val;
-} usb_gnptxfsiz_reg_t;
+} usb_dwc_gnptxfsiz_reg_t;
 
 typedef union {
     struct {
@@ -247,21 +238,21 @@ typedef union {
         uint32_t reserved1: 1;
     };
     uint32_t val;
-} usb_gnptxsts_reg_t;
+} usb_dwc_gnptxsts_reg_t;
 
 typedef union {
     struct {
         uint32_t synopsysid;
     };
     uint32_t val;
-} usb_gsnpsid_reg_t;
+} usb_dwc_gsnpsid_reg_t;
 
 typedef union {
     struct {
         uint32_t epdir;
     };
     uint32_t val;
-} usb_ghwcfg1_reg_t;
+} usb_dwc_ghwcfg1_reg_t;
 
 typedef union {
     struct {
@@ -282,7 +273,7 @@ typedef union {
         uint32_t reserved1b: 1;
     };
     uint32_t val;
-} usb_ghwcfg2_reg_t;
+} usb_dwc_ghwcfg2_reg_t;
 
 typedef union {
     struct {
@@ -300,7 +291,7 @@ typedef union {
         uint32_t dfifodepth: 16;
     };
     uint32_t val;
-} usb_ghwcfg3_reg_t;
+} usb_dwc_ghwcfg3_reg_t;
 
 typedef union {
     struct {
@@ -325,7 +316,7 @@ typedef union {
         uint32_t g_descdma: 1;
     };
     uint32_t val;
-} usb_ghwcfg4_reg_t;
+} usb_dwc_ghwcfg4_reg_t;
 
 typedef union {
     struct {
@@ -334,7 +325,7 @@ typedef union {
 
     };
     uint32_t val;
-} usb_gdfifocfg_reg_t;
+} usb_dwc_gdfifocfg_reg_t;
 
 typedef union {
     struct {
@@ -342,7 +333,7 @@ typedef union {
         uint32_t ptxfsize: 16;
     };
     uint32_t val;
-} usb_hptxfsiz_reg_t;
+} usb_dwc_hptxfsiz_reg_t;
 
 typedef union {
     struct {
@@ -350,7 +341,7 @@ typedef union {
         uint32_t inep1txfdep: 16;
     };
     uint32_t val;
-} usb_dieptxfi_reg_t;
+} usb_dwc_dieptxfi_reg_t;
 
 typedef union {
     struct {
@@ -368,7 +359,7 @@ typedef union {
         uint32_t modechtimen: 1;
     };
     uint32_t val;
-} usb_hcfg_reg_t;
+} usb_dwc_hcfg_reg_t;
 
 typedef union {
     struct {
@@ -377,7 +368,7 @@ typedef union {
         uint32_t reserved15: 15;
     };
     uint32_t val;
-} usb_hfir_reg_t;
+} usb_dwc_hfir_reg_t;
 
 typedef union {
     struct {
@@ -386,7 +377,7 @@ typedef union {
         uint32_t frrem: 16;
     };
     uint32_t val;
-} usb_hfnum_reg_t;
+} usb_dwc_hfnum_reg_t;
 
 typedef union {
     struct {
@@ -396,7 +387,7 @@ typedef union {
         uint32_t ptxqtop: 8;
     };
     uint32_t val;
-} usb_hptxsts_reg_t;
+} usb_dwc_hptxsts_reg_t;
 
 typedef union {
     struct {
@@ -404,7 +395,7 @@ typedef union {
         uint32_t reserved24: 24;
     };
     uint32_t val;
-} usb_haint_reg_t;
+} usb_dwc_haint_reg_t;
 
 typedef union {
     struct {
@@ -412,14 +403,14 @@ typedef union {
         uint32_t reserved24: 24;
     };
     uint32_t val;
-} usb_haintmsk_reg_t;
+} usb_dwc_haintmsk_reg_t;
 
 typedef union {
     struct {
         uint32_t hflbaddr;
     };
     uint32_t val;
-} usb_hflbaddr_reg_t;
+} usb_dwc_hflbaddr_reg_t;
 
 typedef union {
     struct {
@@ -440,7 +431,7 @@ typedef union {
         uint32_t reserved13: 13;
     };
     uint32_t val;
-} usb_hprt_reg_t;
+} usb_dwc_hprt_reg_t;
 
 typedef union {
     struct {
@@ -457,8 +448,7 @@ typedef union {
         uint32_t chena: 1;
     };
     uint32_t val;
-    //Checked with changes
-} usb_hcchar_reg_t;
+} usb_dwc_hcchar_reg_t;
 
 typedef union {
     struct {
@@ -479,8 +469,7 @@ typedef union {
         uint32_t reserved18: 18;
     };
     uint32_t val;
-    //Checked
-} usb_hcint_reg_t;
+} usb_dwc_hcint_reg_t;
 
 typedef union {
     struct {
@@ -501,8 +490,7 @@ typedef union {
         uint32_t reserved18: 18;
     };
     uint32_t val;
-    //Checked
-} usb_hcintmsk_reg_t;
+} usb_dwc_hcintmsk_reg_t;
 
 typedef union {
     struct {
@@ -514,8 +502,7 @@ typedef union {
         uint32_t dopng: 1;
     };
     uint32_t val;
-    //Checked
-} usb_hctsiz_reg_t;
+} usb_dwc_hctsiz_reg_t;
 
 typedef union {
     struct {
@@ -528,15 +515,14 @@ typedef union {
         uint32_t dmaaddr_ctd: 29;
     } iso;
     uint32_t val;
-    //Checked
-} usb_hcdma_reg_t;
+} usb_dwc_hcdma_reg_t;
 
 typedef union {
     struct {
         uint32_t hcdmab;
     };
     uint32_t val;
-} usb_hcdmab_reg_t;
+} usb_dwc_hcdmab_reg_t;
 
 typedef union {
     struct {
@@ -555,7 +541,7 @@ typedef union {
         uint32_t resvalid: 6;
     };
     uint32_t val;
-} usb_dcfg_reg_t;
+} usb_dwc_dcfg_reg_t;
 
 typedef union {
     struct {
@@ -578,7 +564,7 @@ typedef union {
         uint32_t reserved3: 13;
     };
     uint32_t val;
-} usb_dctl_reg_t;
+} usb_dwc_dctl_reg_t;
 
 typedef union {
     struct {
@@ -591,7 +577,7 @@ typedef union {
         uint32_t reserved8: 8;
     };
     uint32_t val;
-} usb_dsts_reg_t;
+} usb_dwc_dsts_reg_t;
 
 typedef union {
     struct {
@@ -610,7 +596,7 @@ typedef union {
         uint32_t reserved18: 18;
     };
     uint32_t val;
-} usb_diepmsk_reg_t;
+} usb_dwc_diepmsk_reg_t;
 
 typedef union {
     struct {
@@ -631,7 +617,7 @@ typedef union {
         uint32_t reserved17: 17;
     };
     uint32_t val;
-} usb_doepmsk_reg_t;
+} usb_dwc_doepmsk_reg_t;
 
 typedef union {
     struct {
@@ -653,7 +639,7 @@ typedef union {
         uint32_t reserved9b: 9;
     };
     uint32_t val;
-} usb_daint_reg_t;
+} usb_dwc_daint_reg_t;
 
 typedef union {
     struct {
@@ -675,7 +661,7 @@ typedef union {
         uint32_t reserved9b: 9;
     };
     uint32_t val;
-} usb_daintmsk_reg_t;
+} usb_dwc_daintmsk_reg_t;
 
 typedef union {
     struct {
@@ -683,7 +669,7 @@ typedef union {
         uint32_t reserved16: 16;
     };
     uint32_t val;
-} usb_dvbusdis_reg_t;
+} usb_dwc_dvbusdis_reg_t;
 
 typedef union {
     struct {
@@ -691,7 +677,7 @@ typedef union {
         uint32_t reserved20: 20;
     };
     uint32_t val;
-} usb_dvbuspulse_reg_t;
+} usb_dwc_dvbuspulse_reg_t;
 
 typedef union {
     struct {
@@ -707,7 +693,7 @@ typedef union {
         uint32_t reserved4: 4;
     };
     uint32_t val;
-} usb_dthrctl_reg_t;
+} usb_dwc_dthrctl_reg_t;
 
 typedef union {
     struct {
@@ -715,7 +701,7 @@ typedef union {
         uint32_t reserved16: 16;
     };
     uint32_t val;
-} usb_diepempmsk_reg_t;
+} usb_dwc_diepempmsk_reg_t;
 
 typedef union {
     struct {
@@ -736,7 +722,7 @@ typedef union {
         uint32_t epena0: 1;
     };
     uint32_t val;
-} usb_diepctl0_reg_t;
+} usb_dwc_diepctl0_reg_t;
 
 typedef union {
     struct {
@@ -758,7 +744,7 @@ typedef union {
         uint32_t reserved17: 17;
     };
     uint32_t val;
-} usb_diepint0_reg_t;
+} usb_dwc_diepint0_reg_t;
 
 typedef union {
     struct {
@@ -768,14 +754,14 @@ typedef union {
         uint32_t reserved11: 11;
     };
     uint32_t val;
-} usb_dieptsiz0_reg_t;
+} usb_dwc_dieptsiz0_reg_t;
 
 typedef union {
     struct {
         uint32_t dmaaddr0;
     };
     uint32_t val;
-} usb_diepdma0_reg_t;
+} usb_dwc_diepdma0_reg_t;
 
 typedef union {
     struct {
@@ -783,14 +769,14 @@ typedef union {
         uint32_t reserved16: 16;
     };
     uint32_t val;
-} usb_dtxfsts0_reg_t;
+} usb_dwc_dtxfsts0_reg_t;
 
 typedef union {
     struct {
         uint32_t dmabufferaddr0;
     };
     uint32_t val;
-} usb_diepdmab0_reg_t;
+} usb_dwc_diepdmab0_reg_t;
 
 typedef union {
     struct {
@@ -812,7 +798,7 @@ typedef union {
         uint32_t epena: 1;
     };
     uint32_t val;
-} usb_diepctl_reg_t;
+} usb_dwc_diepctl_reg_t;
 
 typedef union {
     struct {
@@ -834,7 +820,7 @@ typedef union {
         uint32_t reserved15: 17;
     };
     uint32_t val;
-} usb_diepint_reg_t;
+} usb_dwc_diepint_reg_t;
 
 typedef union {
     struct {
@@ -844,14 +830,14 @@ typedef union {
         uint32_t reserved11: 11;
     };
     uint32_t val;
-} usb_dieptsiz_reg_t;
+} usb_dwc_dieptsiz_reg_t;
 
 typedef union {
     struct {
         uint32_t dmaddr1;
     };
     uint32_t val;
-} usb_diepdma_reg_t;
+} usb_dwc_diepdma_reg_t;
 
 typedef union {
     struct {
@@ -859,14 +845,14 @@ typedef union {
         uint32_t reserved16: 16;
     };
     uint32_t val;
-} usb_dtxfsts_reg_t;
+} usb_dwc_dtxfsts_reg_t;
 
 typedef union {
     struct {
         uint32_t dmabufferaddr1;
     };
     uint32_t val;
-} usb_diepdmab_reg_t;
+} usb_dwc_diepdmab_reg_t;
 
 typedef union {
     struct {
@@ -886,7 +872,7 @@ typedef union {
         uint32_t epena0: 1;
     };
     uint32_t val;
-} usb_doepctl0_reg_t;
+} usb_dwc_doepctl0_reg_t;
 
 typedef union {
     struct {
@@ -909,7 +895,7 @@ typedef union {
         uint32_t reserved16: 16;
     };
     uint32_t val;
-} usb_doepint0_reg_t;
+} usb_dwc_doepint0_reg_t;
 
 typedef union {
     struct {
@@ -921,21 +907,21 @@ typedef union {
         uint32_t reserved1: 1;
     };
     uint32_t val;
-} usb_doeptsiz0_reg_t;
+} usb_dwc_doeptsiz0_reg_t;
 
 typedef union {
     struct {
         uint32_t dmaaddr0;
     };
     uint32_t val;
-} usb_doepdma0_reg_t;
+} usb_dwc_doepdma0_reg_t;
 
 typedef union {
     struct {
         uint32_t dmabufferaddr0;
     };
     uint32_t val;
-} usb_doepdmab0_reg_t;
+} usb_dwc_doepdmab0_reg_t;
 
 typedef union {
     struct {
@@ -956,7 +942,7 @@ typedef union {
         uint32_t epena: 1;
     };
     uint32_t val;
-} usb_doepctl_reg_t;
+} usb_dwc_doepctl_reg_t;
 
 typedef union {
     struct {
@@ -979,7 +965,7 @@ typedef union {
         uint32_t reserved16: 16;
     };
     uint32_t val;
-} usb_doepint_reg_t;
+} usb_dwc_doepint_reg_t;
 
 typedef union {
     struct {
@@ -991,21 +977,21 @@ typedef union {
         uint32_t reserved1: 1;
     };
     uint32_t val;
-} usb_doeptsiz_reg_t;
+} usb_dwc_doeptsiz_reg_t;
 
 typedef union {
     struct {
         uint32_t dmaaddr;
     };
     uint32_t val;
-} usb_doepdma_reg_t;
+} usb_dwc_doepdma_reg_t;
 
 typedef union {
     struct {
         uint32_t dmabufferaddr;
     };
     uint32_t val;
-} usb_doepdmab_reg_t;
+} usb_dwc_doepdmab_reg_t;
 
 typedef union {
     struct {
@@ -1020,145 +1006,145 @@ typedef union {
         uint32_t reserved23: 23;
     };
     uint32_t val;
-} usb_pcgcctl_reg_t;
+} usb_dwc_pcgcctl_reg_t;
 
 /* --------------------------- Register Groups ------------------------------ */
 
 typedef struct {
-    volatile usb_hcchar_reg_t hcchar_reg;    //0x00
-    uint32_t reserved_0x04_0x08[1]; //0x04
-    volatile usb_hcint_reg_t hcint_reg;      //0x08
-    volatile usb_hcintmsk_reg_t hcintmsk_reg;    //0x0c
-    volatile usb_hctsiz_reg_t hctsiz_reg;    //0x10
-    volatile usb_hcdma_reg_t hcdma_reg;      //0x14
-    uint32_t reserved_0x14_0x14[1]; //0x18*
-    volatile usb_hcdmab_reg_t hcdmab_reg;    //0x1c
-} usb_host_chan_regs_t;
+    volatile usb_dwc_hcchar_reg_t hcchar_reg;       // 0x00
+    uint32_t reserved_0x04_0x08[1];                 // 0x04
+    volatile usb_dwc_hcint_reg_t hcint_reg;         // 0x08
+    volatile usb_dwc_hcintmsk_reg_t hcintmsk_reg;   // 0x0c
+    volatile usb_dwc_hctsiz_reg_t hctsiz_reg;       // 0x10
+    volatile usb_dwc_hcdma_reg_t hcdma_reg;         // 0x14
+    uint32_t reserved_0x14_0x14[1];                 // 0x18
+    volatile usb_dwc_hcdmab_reg_t hcdmab_reg;       // 0x1c
+} usb_dwc_host_chan_regs_t;
 
 typedef struct {
-    volatile usb_diepctl_reg_t diepctl_reg;  //0x00
-    uint32_t reserved_0x04_0x08[1]; //0x04
-    volatile usb_diepint_reg_t diepint_reg;  //0x08
-    uint32_t reserved_0x0c_0x10[1]; //0x0c
-    volatile usb_dieptsiz_reg_t dieptsiz_reg;    //0x010
-    volatile usb_diepdma_reg_t diepdma_reg;  //0x14
-    volatile usb_dtxfsts_reg_t dtxfsts_reg;  //0x18
-    volatile usb_diepdmab_reg_t diepdmab_reg;    //0x1c
-} usb_in_ep_regs_t;
+    volatile usb_dwc_diepctl_reg_t diepctl_reg;     // 0x00
+    uint32_t reserved_0x04_0x08[1];                 // 0x04
+    volatile usb_dwc_diepint_reg_t diepint_reg;     // 0x08
+    uint32_t reserved_0x0c_0x10[1];                 // 0x0c
+    volatile usb_dwc_dieptsiz_reg_t dieptsiz_reg;   // 0x010
+    volatile usb_dwc_diepdma_reg_t diepdma_reg;     // 0x14
+    volatile usb_dwc_dtxfsts_reg_t dtxfsts_reg;     // 0x18
+    volatile usb_dwc_diepdmab_reg_t diepdmab_reg;   // 0x1c
+} usb_dwc_in_ep_regs_t;
 
 typedef struct {
-    volatile usb_doepctl_reg_t doepctl_reg;  //0x00
-    uint32_t reserved_0x04_0x08[1]; //0x04
-    volatile usb_doepint_reg_t doepint_reg;  //0x08
-    uint32_t reserved_0x0c_0x10[1]; //0x0c
-    volatile usb_doeptsiz_reg_t doeptsiz_reg;    //0x10
-    volatile usb_doepdma_reg_t doepdma_reg;  //0x14
-    uint32_t reserved_0x18_0x1c[1]; //0x18
-    volatile usb_doepdmab_reg_t doepdmab_reg;    //0x1c
-} usb_out_ep_regs_t;
+    volatile usb_dwc_doepctl_reg_t doepctl_reg;     // 0x00
+    uint32_t reserved_0x04_0x08[1];                 // 0x04
+    volatile usb_dwc_doepint_reg_t doepint_reg;     // 0x08
+    uint32_t reserved_0x0c_0x10[1];                 // 0x0c
+    volatile usb_dwc_doeptsiz_reg_t doeptsiz_reg;   // 0x10
+    volatile usb_dwc_doepdma_reg_t doepdma_reg;     // 0x14
+    uint32_t reserved_0x18_0x1c[1];                 // 0x18
+    volatile usb_dwc_doepdmab_reg_t doepdmab_reg;   // 0x1c
+} usb_dwc_out_ep_regs_t;
 
 /* --------------------------- Register Layout ------------------------------ */
 
 typedef struct {
     //Global Registers
-    volatile usb_gotgctl_reg_t gotgctl_reg;             //0x0000
-    volatile usb_gotgint_reg_t gotgint_reg;             //0x0004
-    volatile usb_gahbcfg_reg_t gahbcfg_reg;             //0x0008
-    volatile usb_gusbcfg_reg_t gusbcfg_reg;             //0x000c
-    volatile usb_grstctl_reg_t grstctl_reg;             //0x0010
-    volatile usb_gintsts_reg_t gintsts_reg;             //0x0014
-    volatile usb_gintmsk_reg_t gintmsk_reg;             //0x0018
-    volatile usb_grxstsr_reg_t grxstsr_reg;             //0x001c
-    volatile usb_grxstsp_reg_t grxstsp_reg;             //0x0020
-    volatile usb_grxfsiz_reg_t grxfsiz_reg;             //0x0024
-    volatile usb_gnptxfsiz_reg_t gnptxfsiz_reg;         //0x0028
-    volatile usb_gnptxsts_reg_t gnptxsts_reg;           //0x002c
-    uint32_t reserved_0x0030_0x0040[4];                 //0x0030 to 0x0040
-    volatile usb_gsnpsid_reg_t gsnpsid_reg;             //0x0040
-    volatile usb_ghwcfg1_reg_t ghwcfg1_reg;             //0x0044
-    volatile usb_ghwcfg2_reg_t ghwcfg2_reg;             //0x0048
-    volatile usb_ghwcfg3_reg_t ghwcfg3_reg;             //0x004c
-    volatile usb_ghwcfg4_reg_t ghwcfg4_reg;             //0x0050
-    uint32_t reserved_0x0054_0x005c[2];                 //0x0054 to 0x005c
+    volatile usb_dwc_gotgctl_reg_t gotgctl_reg;             // 0x0000
+    volatile usb_dwc_gotgint_reg_t gotgint_reg;             // 0x0004
+    volatile usb_dwc_gahbcfg_reg_t gahbcfg_reg;             // 0x0008
+    volatile usb_dwc_gusbcfg_reg_t gusbcfg_reg;             // 0x000c
+    volatile usb_dwc_grstctl_reg_t grstctl_reg;             // 0x0010
+    volatile usb_dwc_gintsts_reg_t gintsts_reg;             // 0x0014
+    volatile usb_dwc_gintmsk_reg_t gintmsk_reg;             // 0x0018
+    volatile usb_dwc_grxstsr_reg_t grxstsr_reg;             // 0x001c
+    volatile usb_dwc_grxstsp_reg_t grxstsp_reg;             // 0x0020
+    volatile usb_dwc_grxfsiz_reg_t grxfsiz_reg;             // 0x0024
+    volatile usb_dwc_gnptxfsiz_reg_t gnptxfsiz_reg;         // 0x0028
+    volatile usb_dwc_gnptxsts_reg_t gnptxsts_reg;           // 0x002c
+    uint32_t reserved_0x0030_0x0040[4];                     // 0x0030 to 0x0040
+    volatile usb_dwc_gsnpsid_reg_t gsnpsid_reg;             // 0x0040
+    volatile usb_dwc_ghwcfg1_reg_t ghwcfg1_reg;             // 0x0044
+    volatile usb_dwc_ghwcfg2_reg_t ghwcfg2_reg;             // 0x0048
+    volatile usb_dwc_ghwcfg3_reg_t ghwcfg3_reg;             // 0x004c
+    volatile usb_dwc_ghwcfg4_reg_t ghwcfg4_reg;             // 0x0050
+    uint32_t reserved_0x0054_0x005c[2];                     // 0x0054 to 0x005c
 
     //FIFO Configurations
-    volatile usb_gdfifocfg_reg_t gdfifocfg_reg;         //0x005c
-    uint32_t reserved_0x0060_0x0100[40];                //0x0060 to 0x0100
-    volatile usb_hptxfsiz_reg_t hptxfsiz_reg;           //0x0100
-    volatile usb_dieptxfi_reg_t dieptxfi_regs[4];       //0x0104 to 0x0114
-    usb_dieptxfi_reg_t reserved_0x0114_0x0140[11];      //0x0114 to 0x0140
-    uint32_t reserved_0x140_0x400[176];                 //0x0140 to 0x0400
+    volatile usb_dwc_gdfifocfg_reg_t gdfifocfg_reg;         // 0x005c
+    uint32_t reserved_0x0060_0x0100[40];                    // 0x0060 to 0x0100
+    volatile usb_dwc_hptxfsiz_reg_t hptxfsiz_reg;           // 0x0100
+    volatile usb_dwc_dieptxfi_reg_t dieptxfi_regs[4];       // 0x0104 to 0x0114
+    usb_dwc_dieptxfi_reg_t reserved_0x0114_0x0140[11];      // 0x0114 to 0x0140
+    uint32_t reserved_0x140_0x400[176];                     // 0x0140 to 0x0400
 
     //Host Mode Registers
-    volatile usb_hcfg_reg_t hcfg_reg;                   //0x0400
-    volatile usb_hfir_reg_t hfir_reg;                   //0x0404
-    volatile usb_hfnum_reg_t hfnum_reg;                 //0x0408
-    uint32_t reserved_0x40c_0x410[1];                   //0x040c to 0x0410
-    volatile usb_hptxsts_reg_t hptxsts_reg;             //0x0410
-    volatile usb_haint_reg_t haint_reg;                 //0x0414
-    volatile usb_haintmsk_reg_t haintmsk_reg;           //0x0418
-    volatile usb_hflbaddr_reg_t hflbaddr_reg;           //0x041c
-    uint32_t reserved_0x420_0x440[8];                   //0x0420 to 0x0440
-    volatile usb_hprt_reg_t hprt_reg;                   //0x0440
-    uint32_t reserved_0x0444_0x0500[47];                //0x0444 to 0x0500
-    usb_host_chan_regs_t host_chans[8];                 //0x0500 to 0x0600
-    usb_host_chan_regs_t reserved_0x0600_0x0700[8];     //0x0600 to 0x0700
-    uint32_t reserved_0x0700_0x0800[64];                //0x0700 to 0x0800
-    volatile usb_dcfg_reg_t dcfg_reg;                   //0x0800
-    volatile usb_dctl_reg_t dctl_reg;                   //0x0804
-    volatile usb_dsts_reg_t dsts_reg;                   //0x0808
-    uint32_t reserved_0x080c_0x0810[1];                 //0x080c to 0x0810
+    volatile usb_dwc_hcfg_reg_t hcfg_reg;                   // 0x0400
+    volatile usb_dwc_hfir_reg_t hfir_reg;                   // 0x0404
+    volatile usb_dwc_hfnum_reg_t hfnum_reg;                 // 0x0408
+    uint32_t reserved_0x40c_0x410[1];                       // 0x040c to 0x0410
+    volatile usb_dwc_hptxsts_reg_t hptxsts_reg;             // 0x0410
+    volatile usb_dwc_haint_reg_t haint_reg;                 // 0x0414
+    volatile usb_dwc_haintmsk_reg_t haintmsk_reg;           // 0x0418
+    volatile usb_dwc_hflbaddr_reg_t hflbaddr_reg;           // 0x041c
+    uint32_t reserved_0x420_0x440[8];                       // 0x0420 to 0x0440
+    volatile usb_dwc_hprt_reg_t hprt_reg;                   // 0x0440
+    uint32_t reserved_0x0444_0x0500[47];                    // 0x0444 to 0x0500
+    usb_dwc_host_chan_regs_t host_chans[8];                 // 0x0500 to 0x0600
+    usb_dwc_host_chan_regs_t reserved_0x0600_0x0700[8];     // 0x0600 to 0x0700
+    uint32_t reserved_0x0700_0x0800[64];                    // 0x0700 to 0x0800
+    volatile usb_dwc_dcfg_reg_t dcfg_reg;                   // 0x0800
+    volatile usb_dwc_dctl_reg_t dctl_reg;                   // 0x0804
+    volatile usb_dwc_dsts_reg_t dsts_reg;                   // 0x0808
+    uint32_t reserved_0x080c_0x0810[1];                     // 0x080c to 0x0810
 
     //Device Mode Registers
-    volatile usb_diepmsk_reg_t diepmsk_reg;             //0x810
-    volatile usb_doepmsk_reg_t doepmsk_reg;             //0x0814
-    volatile usb_daint_reg_t daint_reg;                 //0x0818
-    volatile usb_daintmsk_reg_t daintmsk_reg;           //0x081c
-    uint32_t reserved_0x0820_0x0828[2];                 //0x0820 to 0x0828
-    volatile usb_dvbusdis_reg_t dvbusdis_reg;           //0x0828
-    volatile usb_dvbuspulse_reg_t dvbuspulse_reg;       //0x082c
-    volatile usb_dthrctl_reg_t dthrctl_reg;             //0x0830
-    volatile usb_diepempmsk_reg_t diepempmsk_reg;       //0x0834
-    uint32_t reserved_0x0838_0x0900[50];                //0x0838 to 0x0900
+    volatile usb_dwc_diepmsk_reg_t diepmsk_reg;             // 0x810
+    volatile usb_dwc_doepmsk_reg_t doepmsk_reg;             // 0x0814
+    volatile usb_dwc_daint_reg_t daint_reg;                 // 0x0818
+    volatile usb_dwc_daintmsk_reg_t daintmsk_reg;           // 0x081c
+    uint32_t reserved_0x0820_0x0828[2];                     // 0x0820 to 0x0828
+    volatile usb_dwc_dvbusdis_reg_t dvbusdis_reg;           // 0x0828
+    volatile usb_dwc_dvbuspulse_reg_t dvbuspulse_reg;       // 0x082c
+    volatile usb_dwc_dthrctl_reg_t dthrctl_reg;             // 0x0830
+    volatile usb_dwc_diepempmsk_reg_t diepempmsk_reg;       // 0x0834
+    uint32_t reserved_0x0838_0x0900[50];                    // 0x0838 to 0x0900
 
     //Deivce: IN EP0 reigsters
-    volatile usb_diepctl0_reg_t diepctl0_reg;           //0x0900
-    uint32_t reserved_0x0904_0x0908[1];                 //0x0904 to 0x0908
-    volatile usb_diepint0_reg_t diepint0_reg;           //0x0908
-    uint32_t reserved_0x090c_0x0910[1];                 //0x090c to 0x0910
-    volatile usb_dieptsiz0_reg_t dieptsiz0_reg;         //0x0910
-    volatile usb_diepdma0_reg_t diepdma0_reg;           //0x0914
-    volatile usb_dtxfsts0_reg_t dtxfsts0_reg;           //0x0918
-    volatile usb_diepdmab0_reg_t diepdmab0_reg;         //0x091c
+    volatile usb_dwc_diepctl0_reg_t diepctl0_reg;           // 0x0900
+    uint32_t reserved_0x0904_0x0908[1];                     // 0x0904 to 0x0908
+    volatile usb_dwc_diepint0_reg_t diepint0_reg;           // 0x0908
+    uint32_t reserved_0x090c_0x0910[1];                     // 0x090c to 0x0910
+    volatile usb_dwc_dieptsiz0_reg_t dieptsiz0_reg;         // 0x0910
+    volatile usb_dwc_diepdma0_reg_t diepdma0_reg;           // 0x0914
+    volatile usb_dwc_dtxfsts0_reg_t dtxfsts0_reg;           // 0x0918
+    volatile usb_dwc_diepdmab0_reg_t diepdmab0_reg;         // 0x091c
 
     //Deivce: IN EP registers
-    usb_in_ep_regs_t in_eps[6];                         //0x0920 to 0x09e0
-    usb_in_ep_regs_t reserved_0x09e0_0x0b00[9];         //0x09e0 to 0x0b00
+    usb_dwc_in_ep_regs_t in_eps[6];                         // 0x0920 to 0x09e0
+    usb_dwc_in_ep_regs_t reserved_0x09e0_0x0b00[9];         // 0x09e0 to 0x0b00
 
     //Device: OUT EP0 reigsters
-    volatile usb_doepctl0_reg_t doepctl0_reg;           //0x0b00
-    uint32_t reserved_0x0b04_0x0b08[1];                 //0x0b04 to 0x0b08
-    volatile usb_doepint0_reg_t doepint0_reg;           //0b0b08
-    uint32_t reserved_0x0b0c_0x0b10[1];                 //0x0b0c to 0x0b10
-    volatile usb_doeptsiz0_reg_t doeptsiz0_reg;         //0x0b10
-    volatile usb_doepdma0_reg_t doepdma0_reg;           //0x0b14
-    uint32_t reserved_0x0b18_0x0b1c[1];                 //0x0b18 to 0x0b1c
-    volatile usb_doepdmab0_reg_t doepdmab0_reg;         //0x0b1c
+    volatile usb_dwc_doepctl0_reg_t doepctl0_reg;           // 0x0b00
+    uint32_t reserved_0x0b04_0x0b08[1];                     // 0x0b04 to 0x0b08
+    volatile usb_dwc_doepint0_reg_t doepint0_reg;           // 0b0b08
+    uint32_t reserved_0x0b0c_0x0b10[1];                     // 0x0b0c to 0x0b10
+    volatile usb_dwc_doeptsiz0_reg_t doeptsiz0_reg;         // 0x0b10
+    volatile usb_dwc_doepdma0_reg_t doepdma0_reg;           // 0x0b14
+    uint32_t reserved_0x0b18_0x0b1c[1];                     // 0x0b18 to 0x0b1c
+    volatile usb_dwc_doepdmab0_reg_t doepdmab0_reg;         // 0x0b1c
 
     //Deivce: OUT EP registers
-    usb_out_ep_regs_t out_eps[6];                       //0xb1c
-    usb_out_ep_regs_t reserved_0x0be0_0x0d00[9];        //0x0be0 to 0x0d00
-    uint32_t reserved_0x0d00_0x0e00[64];                //0x0d00 to 0x0e00
-    volatile usb_pcgcctl_reg_t pcgcctl_reg;             //0x0e00
-    uint32_t reserved_0x0e04_0x0e08[1];                 //0x0d00 to 0x0e00
-} usbh_dev_t;
+    usb_dwc_out_ep_regs_t out_eps[6];                       // 0xb1c
+    usb_dwc_out_ep_regs_t reserved_0x0be0_0x0d00[9];        // 0x0be0 to 0x0d00
+    uint32_t reserved_0x0d00_0x0e00[64];                    // 0x0d00 to 0x0e00
+    volatile usb_dwc_pcgcctl_reg_t pcgcctl_reg;             // 0x0e00
+    uint32_t reserved_0x0e04_0x0e08[1];                     // 0x0d00 to 0x0e00
+} usb_dwc_dev_t;
 
 
 #ifndef __cplusplus
-_Static_assert(sizeof(usbh_dev_t) == 0xe08, "Invalid size of usb_dwc_dev_t structure");
+_Static_assert(sizeof(usb_dwc_dev_t) == 0xe08, "Invalid size of usb_dwc_dev_t structure");
 #endif
 
-extern usbh_dev_t USBH;
+extern usb_dwc_dev_t USB_DWC;
 
 
 #ifdef __cplusplus

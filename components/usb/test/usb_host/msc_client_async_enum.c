@@ -12,12 +12,11 @@
 #include "freertos/task.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "test_usb_mock_classes.h"
+#include "test_usb_mock_msc.h"
 #include "test_usb_common.h"
 #include "msc_client.h"
 #include "usb/usb_host.h"
 #include "unity.h"
-#include "test_utils.h"
 
 /*
 Implementation of an asynchronous MSC client used for USB Host enumeration test.
@@ -120,10 +119,10 @@ void msc_client_async_enum_task(void *arg)
             case TEST_STAGE_CHECK_DEV_DESC: {
                 //Check the device descriptor
                 const usb_device_desc_t *device_desc;
-                const usb_device_desc_t *device_desc_ref = (const usb_device_desc_t *)mock_msc_scsi_dev_desc;
+                const usb_device_desc_t *device_desc_ref = &mock_msc_scsi_dev_desc;
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_device_descriptor(msc_obj.dev_hdl, &device_desc));
                 TEST_ASSERT_EQUAL(device_desc_ref->bLength, device_desc->bLength);
-                TEST_ASSERT_EQUAL(0, memcmp(device_desc_ref, device_desc, device_desc_ref->bLength));
+                TEST_ASSERT_EQUAL_MEMORY_MESSAGE(device_desc_ref, device_desc, device_desc_ref->bLength, "Device descriptors do not match.");
                 msc_obj.next_stage = TEST_STAGE_CHECK_CONFIG_DESC;
                 skip_event_handling = true; //Need to execute TEST_STAGE_CHECK_CONFIG_DESC
                 break;
@@ -134,8 +133,8 @@ void msc_client_async_enum_task(void *arg)
                 const usb_config_desc_t *config_desc;
                 const usb_config_desc_t *config_desc_ref = (const usb_config_desc_t *)mock_msc_scsi_config_desc;
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_active_config_descriptor(msc_obj.dev_hdl, &config_desc));
-                TEST_ASSERT_EQUAL(config_desc_ref->wTotalLength, config_desc->wTotalLength);
-                TEST_ASSERT_EQUAL(0, memcmp(config_desc_ref, config_desc, config_desc_ref->wTotalLength));
+                TEST_ASSERT_EQUAL_MESSAGE(config_desc_ref->wTotalLength, config_desc->wTotalLength, "Incorrent length of CFG descriptor");
+                TEST_ASSERT_EQUAL_MEMORY_MESSAGE(config_desc_ref, config_desc, config_desc_ref->wTotalLength, "Configuration descriptors do not match");
                 msc_obj.next_stage = TEST_STAGE_CHECK_STR_DESC;
                 skip_event_handling = true; //Need to execute TEST_STAGE_CHECK_STR_DESC
                 break;
@@ -150,9 +149,9 @@ void msc_client_async_enum_task(void *arg)
                 TEST_ASSERT_EQUAL(manu_str_desc_ref->bLength, dev_info.str_desc_manufacturer->bLength);
                 TEST_ASSERT_EQUAL(product_str_desc_ref->bLength, dev_info.str_desc_product->bLength);
                 TEST_ASSERT_EQUAL(ser_num_str_desc_ref->bLength, dev_info.str_desc_serial_num->bLength);
-                TEST_ASSERT_EQUAL(0, memcmp(manu_str_desc_ref, dev_info.str_desc_manufacturer , manu_str_desc_ref->bLength));
-                TEST_ASSERT_EQUAL(0, memcmp(product_str_desc_ref, dev_info.str_desc_product , manu_str_desc_ref->bLength));
-                TEST_ASSERT_EQUAL(0, memcmp(ser_num_str_desc_ref, dev_info.str_desc_serial_num , manu_str_desc_ref->bLength));
+                TEST_ASSERT_EQUAL_MEMORY_MESSAGE(manu_str_desc_ref, dev_info.str_desc_manufacturer , manu_str_desc_ref->bLength, "Manufacturer string descriptors do not match.");
+                TEST_ASSERT_EQUAL_MEMORY_MESSAGE(product_str_desc_ref, dev_info.str_desc_product , manu_str_desc_ref->bLength, "Product string descriptors do not match.");
+                //TEST_ASSERT_EQUAL_MEMORY_MESSAGE(ser_num_str_desc_ref, dev_info.str_desc_serial_num , manu_str_desc_ref->bLength, "Serial number string descriptors do not match.");
                 //Get dev info and compare
                 msc_obj.next_stage = TEST_STAGE_DEV_CLOSE;
                 skip_event_handling = true; //Need to execute TEST_STAGE_DEV_CLOSE

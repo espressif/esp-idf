@@ -13,7 +13,7 @@
 void test_usb_init_phy(void);
 
 /**
- * @brief Deinitalize the internal USB PHY and USB Controller after USB Host testing
+ * @brief Deinitialize the internal USB PHY and USB Controller after USB Host testing
  */
 void test_usb_deinit_phy(void);
 

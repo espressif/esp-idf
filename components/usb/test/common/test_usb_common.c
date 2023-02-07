@@ -11,6 +11,7 @@
 #include "hal/usb_phy_types.h"
 #include "esp_private/usb_phy.h"
 #include "test_usb_common.h"
+#include "unity.h"
 
 static usb_phy_handle_t phy_hdl = NULL;
 
@@ -24,13 +25,13 @@ void test_usb_init_phy(void)
         .otg_speed = USB_PHY_SPEED_UNDEFINED,   //In Host mode, the speed is determined by the connected device
         .gpio_conf = NULL,
     };
-    ESP_ERROR_CHECK(usb_new_phy(&phy_config, &phy_hdl));
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_new_phy(&phy_config, &phy_hdl), "Failed to init USB PHY");
 }
 
 void test_usb_deinit_phy(void)
 {
     //Deinitialize the internal USB PHY
-    ESP_ERROR_CHECK(usb_del_phy(phy_hdl));
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_del_phy(phy_hdl), "Failed to delete PHY");
     phy_hdl = NULL;
 }
 

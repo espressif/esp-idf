@@ -8,8 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "unity.h"
-#include "test_utils.h"
-#include "test_usb_mock_classes.h"
+#include "test_usb_mock_hid.h"
 #include "test_hcd_common.h"
 
 // --------------------------------------------------- Test Cases ------------------------------------------------------
@@ -36,14 +35,14 @@ Note: Some mice will NAK until it is moved, so try moving the mouse around if th
 
 #define TEST_HID_DEV_SPEED                  USB_SPEED_LOW
 #define NUM_URBS                            3
-#define URB_DATA_BUFF_SIZE                  4       //MPS is 4
+#define URB_DATA_BUFF_SIZE                  MOCK_HID_MOUSE_INTR_IN_MPS
 #define NUM_URB_ITERS                       (NUM_URBS * 100)
 
 TEST_CASE("Test HCD interrupt pipe URBs", "[hcd][ignore]")
 {
     hcd_port_handle_t port_hdl = test_hcd_setup();  //Setup the HCD and port
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
-    TEST_ASSERT_EQUAL(TEST_HID_DEV_SPEED, TEST_HID_DEV_SPEED);
+    TEST_ASSERT_EQUAL_MESSAGE(TEST_HID_DEV_SPEED, port_speed, "Connected device is not Low Speed!");
     vTaskDelay(pdMS_TO_TICKS(100)); //Short delay send of SOF (for FS) or EOPs (for LS)
 
     hcd_pipe_handle_t default_pipe = test_hcd_pipe_alloc(port_hdl, NULL, 0, port_speed); //Create a default pipe (using a NULL EP descriptor)
@@ -68,7 +67,7 @@ TEST_CASE("Test HCD interrupt pipe URBs", "[hcd][ignore]")
         test_hcd_expect_pipe_event(intr_pipe, HCD_PIPE_EVENT_URB_DONE);
         //Dequeue the URB and check results
         urb_t *urb = hcd_urb_dequeue(intr_pipe);
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
+        TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status, "Transfer NOT completed");
         TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
         mock_hid_process_report((mock_hid_mouse_report_t *)urb->transfer.data_buffer, iter_count);
         //Requeue URB

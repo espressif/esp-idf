@@ -9,8 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "unity.h"
-#include "test_utils.h"
-#include "test_usb_mock_classes.h"
+#include "test_usb_mock_msc.h"
 #include "test_usb_common.h"
 #include "test_hcd_common.h"
 
@@ -82,9 +81,9 @@ TEST_CASE("Test HCD isochronous pipe URBs", "[hcd][ignore]")
         TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
         //Overall URB status and overall number of bytes
         TEST_ASSERT_EQUAL(URB_DATA_BUFF_SIZE, urb->transfer.actual_num_bytes);
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
+        TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status, "Transfer NOT completed");
         for (int pkt_idx = 0; pkt_idx < NUM_PACKETS_PER_URB; pkt_idx++) {
-            TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.isoc_packet_desc[pkt_idx].status);
+            TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.isoc_packet_desc[pkt_idx].status, "Transfer NOT completed");
         }
     }
     //Free URB list and pipe
