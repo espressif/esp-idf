@@ -7,13 +7,13 @@ These two projects illustrate the SPI Slave driver. They're supposed to be flash
 
 The default GPIOs used in the example are the following:
 
-| Signal    | ESP32  | ESP32-S2 | ESP32-C3 | ESP32-C6 | ESP32-H2 |
-|-----------|--------|----------|----------|----------|----------|
-| Handshake | GPIO2  | GPIO2    | GPIO3    | GPIO15   | GPIO2    |
-| MOSI      | GPIO12 | GPIO12   | GPIO7    | GPIO20   | GPIO5    |
-| MISO      | GPIO13 | GPIO13   | GPIO2    | GPIO19   | GPIO0    |
-| SCLK      | GPIO15 | GPIO15   | GPIO6    | GPIO18   | GPIO4    |
-| CS        | GPIO14 | GPIO14   | GPIO10   | GPIO9    | GPIO1    |
+| Signal    | ESP32  | ESP32-S2 | ESP32-S3 | ESP32-C3 | ESP32-C6 | ESP32-H2 |
+|-----------|--------|----------|----------|----------|----------|----------|
+| Handshake | GPIO2  | GPIO2    | GPIO2    | GPIO3    | GPIO15   | GPIO2    |
+| MOSI      | GPIO12 | GPIO12   | GPIO11   | GPIO7    | GPIO20   | GPIO5    |
+| MISO      | GPIO13 | GPIO13   | GPIO13   | GPIO2    | GPIO19   | GPIO0    |
+| SCLK      | GPIO15 | GPIO15   | GPIO12   | GPIO6    | GPIO18   | GPIO4    |
+| CS        | GPIO14 | GPIO14   | GPIO10   | GPIO10   | GPIO9    | GPIO1    |
 
 
 Please run wires between the following GPIOs between the slave and master to make the example function:
