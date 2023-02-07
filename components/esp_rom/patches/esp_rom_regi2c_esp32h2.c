@@ -128,9 +128,11 @@ uint8_t IRAM_ATTR esp_rom_regi2c_read(uint8_t block, uint8_t host_id, uint8_t re
                     | (reg_add & REGI2C_RTC_ADDR_V) << REGI2C_RTC_ADDR_S;
     REG_WRITE(I2C_MST_I2C0_CTRL_REG, temp);
     while (REG_GET_BIT(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_BUSY));
-    return REG_GET_FIELD(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_DATA);
+    uint8_t ret = REG_GET_FIELD(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_DATA);
 
     regi2c_disable_block(block);
+
+    return ret;
 }
 
 uint8_t IRAM_ATTR esp_rom_regi2c_read_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
@@ -144,9 +146,11 @@ uint8_t IRAM_ATTR esp_rom_regi2c_read_mask(uint8_t block, uint8_t host_id, uint8
     REG_WRITE(I2C_MST_I2C0_CTRL_REG, temp);
     while (REG_GET_BIT(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_BUSY));
     uint32_t data = REG_GET_FIELD(I2C_MST_I2C0_CTRL_REG, REGI2C_RTC_DATA);
-    return (uint8_t)((data >> lsb) & (~(0xFFFFFFFF << (msb - lsb + 1))));
+    uint8_t ret = (uint8_t)((data >> lsb) & (~(0xFFFFFFFF << (msb - lsb + 1))));
 
     regi2c_disable_block(block);
+
+    return ret;
 }
 
 void IRAM_ATTR esp_rom_regi2c_write(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
