@@ -55,6 +55,7 @@ get-started-cmake/get-started-pico-kit          hw-reference/esp32/get-started-p
 get-started-cmake/get-started-pico-kit-v3       hw-reference/esp32/get-started-pico-kit-v3
 
 api-guides/build-system-cmake                   api-guides/build-system
+api-guides/freertos-smp                         api-reference/system/freertos_idf
 api-guides/ulp-cmake                            api-guides/ulp
 api-guides/unit-tests-cmake                     api-guides/unit-tests
 api-guides/ulp_instruction_set                  api-reference/system/ulp_instruction_set
