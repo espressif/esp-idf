@@ -16,6 +16,7 @@ System API
     esp_https_ota
     esp_event
     freertos
+    freertos_idf
     freertos_additions
     mem_alloc
     heap_debug
