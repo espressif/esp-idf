@@ -32,8 +32,6 @@ esp_err_t ulp_riscv_run(void)
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
-    esp_rom_delay_us(20);
-    CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 
      /* The coprocessor cpu trap signal doesnt have a stable reset value,
        force ULP-RISC-V clock on to stop RTC_COCPU_TRAP_TRIG_EN from waking the CPU*/
@@ -57,8 +55,6 @@ esp_err_t ulp_riscv_run(void)
 #elif CONFIG_IDF_TARGET_ESP32S3
     /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
-    esp_rom_delay_us(20);
-    CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 
      /* The coprocessor cpu trap signal doesnt have a stable reset value,
        force ULP-RISC-V clock on to stop RTC_COCPU_TRAP_TRIG_EN from waking the CPU*/
