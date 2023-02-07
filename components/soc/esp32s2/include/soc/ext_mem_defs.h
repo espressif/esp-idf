@@ -98,9 +98,6 @@ extern "C" {
 #define MMU_ACCESS_FLASH                BIT(15)
 #define MMU_ACCESS_SPIRAM               BIT(16)
 
-#define FLASH_MMU_TABLE ((volatile uint32_t*) DR_REG_MMU_TABLE)
-#define FLASH_MMU_TABLE_SIZE (ICACHE_MMU_SIZE/sizeof(uint32_t))
-
 /**
  * MMU entry valid bit mask for mapping value. For an entry:
  * valid bit + value bits

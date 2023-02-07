@@ -466,11 +466,11 @@ static void test_rmt_multi_channels_trans(size_t channel0_mem_block_symbols, siz
 #define TEST_RMT_CHANS 2
 #define TEST_LED_NUM   24
 #define TEST_STOP_TIME_NO_SYNCHRO_DELTA     150
-#if CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6
 #define TEST_STOP_TIME_SYNCHRO_DELTA        400
 #else
 #define TEST_STOP_TIME_SYNCHRO_DELTA        10
-#endif // CONFIG_IDF_TARGET_ESP32C6
+#endif // #if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6
     rmt_tx_channel_config_t tx_channel_cfg = {
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 10000000, // 10MHz, 1 tick = 0.1us (led strip needs a high resolution)

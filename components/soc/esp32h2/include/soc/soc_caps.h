@@ -124,9 +124,11 @@
 #define SOC_CPU_WATCHPOINTS_NUM         4
 #define SOC_CPU_WATCHPOINT_SIZE         0x80000000 // bytes
 
-// TODO: IDF-6370 (Copy from esp32c6, need check)
 /*-------------------------- MMU CAPS ----------------------------------------*/
-#define SOC_MMU_PAGE_SIZE_CONFIGURABLE  (1)
+#define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (1)
+#define SOC_MMU_PERIPH_NUM                    (1U)
+#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM     (1U)
+#define SOC_MMU_DI_VADDR_SHARED               (1) /*!< D/I vaddr are shared */
 
 // TODO: IDF-6285 (Copy from esp32c6, need check)
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/

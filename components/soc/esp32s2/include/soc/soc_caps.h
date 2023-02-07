@@ -119,9 +119,6 @@
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 
-/*-------------------------- CACHE/MMU CAPS ----------------------------------*/
-#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM        6
-
 /*-------------------------- CP-DMA CAPS -------------------------------------*/
 #define SOC_CP_DMA_MAX_BUFFER_SIZE (4095) /*!< Maximum size of the buffer that can be attached to descriptor */
 
@@ -210,6 +207,10 @@
 #define SOC_LEDC_TIMER_BIT_WIDTH         (14)
 #define SOC_LEDC_SUPPORT_FADE_STOP       (1)
 #define SOC_LEDC_GAMMA_FADE_RANGE_MAX    (1U) // The target does not support gamma curve fading
+
+/*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM        5
+#define SOC_MMU_PERIPH_NUM                       (1U)
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 //TODO: correct the caller and remove unsupported lines

@@ -6,10 +6,19 @@
 
 #pragma once
 
+#include "esp_bit_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum {
+    MMU_MEM_CAP_EXEC  = BIT(0),
+    MMU_MEM_CAP_READ  = BIT(1),
+    MMU_MEM_CAP_WRITE = BIT(2),
+    MMU_MEM_CAP_32BIT = BIT(3),
+    MMU_MEM_CAP_8BIT  = BIT(4),
+} mmu_mem_caps_t;
 
 /**
  * MMU Page size
@@ -33,8 +42,8 @@ typedef enum {
  * External physical memory
  */
 typedef enum {
-    MMU_TARGET_FLASH0,
-    MMU_TARGET_PSRAM0,
+    MMU_TARGET_FLASH0 = BIT(0),
+    MMU_TARGET_PSRAM0 = BIT(1),
 } mmu_target_t;
 
 /**

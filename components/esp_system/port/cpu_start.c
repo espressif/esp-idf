@@ -68,6 +68,7 @@
 #include "esp32c2/memprot.h"
 #endif
 
+#include "esp_private/esp_mmu_map_private.h"
 #if CONFIG_SPIRAM
 #include "esp_psram.h"
 #include "esp_private/esp_psram_extram.h"
@@ -339,11 +340,9 @@ void IRAM_ATTR call_start_cpu0(void)
     /* If we need use SPIRAM, we should use data cache, or if we want to access rodata, we also should use data cache.
        Configure the mode of data : cache size, cache associated ways, cache line size.
        Enable data cache, so if we don't use SPIRAM, it just works. */
-#if CONFIG_SPIRAM_BOOT_INIT
     extern void esp_config_data_cache_mode(void);
     esp_config_data_cache_mode();
     Cache_Enable_DCache(0);
-#endif
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -400,6 +399,8 @@ void IRAM_ATTR call_start_cpu0(void)
 #if SOC_MEMSPI_SRC_FREQ_120M
     mspi_timing_flash_tuning();
 #endif
+
+    esp_mmu_map_init();
 
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_psram_init() != ESP_OK) {

@@ -2,7 +2,7 @@ idf_build_get_property(target IDF_TARGET)
 
 set(includes "include")
 
-set(priv_requires heap spi_flash)
+set(priv_requires heap spi_flash esp_mm)
 if(${target} STREQUAL "esp32")
     list(APPEND priv_requires bootloader_support)
     # [refactor-todo]: requires "driver" for `spicommon_periph_claim`
@@ -13,9 +13,7 @@ set(srcs)
 
 if(CONFIG_SPIRAM)
     list(APPEND srcs "esp_psram.c"
-                     "mmu.c"
-                     "mmu_psram_flash.c"
-                     "ext_mem_layout.c")
+                     "mmu_psram_flash.c")
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs "esp32/esp_psram_extram_cache.c"

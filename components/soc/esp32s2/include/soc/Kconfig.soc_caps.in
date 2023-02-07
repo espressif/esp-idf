@@ -255,10 +255,6 @@ config SOC_BROWNOUT_RESET_SUPPORTED
     bool
     default y
 
-config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
-    int
-    default 6
-
 config SOC_CP_DMA_MAX_BUFFER_SIZE
     int
     default 4095
@@ -452,6 +448,14 @@ config SOC_LEDC_SUPPORT_FADE_STOP
     default y
 
 config SOC_LEDC_GAMMA_FADE_RANGE_MAX
+    int
+    default 1
+
+config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
+    int
+    default 5
+
+config SOC_MMU_PERIPH_NUM
     int
     default 1
 

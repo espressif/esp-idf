@@ -9,7 +9,7 @@
 #include "esp_heap_caps.h"
 
 // Some resources are lazy allocated in flash encryption, the threadhold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (-300)
+#define TEST_MEMORY_LEAK_THRESHOLD (400)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;

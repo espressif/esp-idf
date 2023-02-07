@@ -64,7 +64,7 @@ MEMORY
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped instruction data */
-  iram0_2_seg (RX) :                 org = 0x42000020, len = (IDRAM0_2_SEG_SIZE >> 1) -0x20
+  irom_seg (RX) :                    org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
 
   /**
    * (0x20 offset above is a convenience for the app binary image generation.
@@ -83,9 +83,9 @@ MEMORY
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped constant data */
-  drom0_0_seg (R) :                  org = 0x42000020 + (IDRAM0_2_SEG_SIZE >> 1), len = (IDRAM0_2_SEG_SIZE >> 1)-0x20
+  drom_seg (R) :                     org = 0x42000020, len = IDRAM0_2_SEG_SIZE - 0x20
 
-  /* (See iram0_2_seg for meaning of 0x20 offset in the above.) */
+  /* (See irom_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
   /**
@@ -122,19 +122,19 @@ REGION_ALIAS("rtc_slow_seg", rtc_iram_seg );
 REGION_ALIAS("rtc_data_location", rtc_iram_seg );
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  REGION_ALIAS("default_code_seg", iram0_2_seg);
+  REGION_ALIAS("default_code_seg", irom_seg);
 #else
   REGION_ALIAS("default_code_seg", iram0_0_seg);
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  REGION_ALIAS("default_rodata_seg", drom0_0_seg);
+  REGION_ALIAS("default_rodata_seg", drom_seg);
 #else
   REGION_ALIAS("default_rodata_seg", dram0_0_seg);
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 /**
- *  If rodata default segment is placed in `drom0_0_seg`, then flash's first rodata section must
+ *  If rodata default segment is placed in `drom_seg`, then flash's first rodata section must
  *  also be first in the segment.
  */
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS

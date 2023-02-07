@@ -8,30 +8,30 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
-
 #include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/semphr.h>
-#include "soc/mmu.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
-#include "esp_memory_utils.h"
-#include "spi_flash_mmap.h"
-#include "esp_flash_encrypt.h"
 #include "esp_log.h"
-#include "esp_private/cache_utils.h"
 #include "hal/mmu_ll.h"
-#include "esp_rom_spiflash.h"
+#include "soc/mmu.h"
+
+#include "esp_private/esp_mmu_map_private.h"
+#include "esp_mmu_map.h"
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_extram.h"
+#include "esp_private/mmu_psram_flash.h"
+#endif
+
+#include "esp_private/cache_utils.h"
+#include "spi_flash_mmap.h"
+
 
 #if CONFIG_IDF_TARGET_ESP32
-#include "soc/dport_reg.h"
 #include "esp32/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
-#include "soc/extmem_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
-#include "soc/extmem_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32H4
@@ -44,21 +44,6 @@
 #include "esp32h2/rom/cache.h"
 #endif
 
-#if CONFIG_SPIRAM
-#include "esp_private/esp_psram_extram.h"
-#include "esp_private/mmu_psram_flash.h"
-#endif
-
-#ifndef NDEBUG
-// Enable built-in checks in queue.h in debug builds
-#define INVARIANTS
-#endif
-#include "sys/queue.h"
-
-#define IROM0_PAGES_NUM (SOC_MMU_IROM0_PAGES_END - SOC_MMU_IROM0_PAGES_START)
-#define DROM0_PAGES_NUM (SOC_MMU_DROM0_PAGES_END - SOC_MMU_DROM0_PAGES_START)
-#define PAGES_LIMIT ((SOC_MMU_IROM0_PAGES_END > SOC_MMU_DROM0_PAGES_END) ? SOC_MMU_IROM0_PAGES_END:SOC_MMU_DROM0_PAGES_END)
-#define INVALID_PHY_PAGE(page_size)                ((page_size) - 1)
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 extern int _instruction_reserved_start;
@@ -72,386 +57,291 @@ extern int _rodata_reserved_end;
 
 #if !CONFIG_SPI_FLASH_ROM_IMPL
 
-typedef struct mmap_entry_{
-    uint32_t handle;
-    int page;
-    int count;
-    LIST_ENTRY(mmap_entry_) entries;
-} mmap_entry_t;
+
+typedef struct mmap_block_t {
+    uint32_t *vaddr_list;
+    int list_num;
+} mmap_block_t;
 
 
-static LIST_HEAD(mmap_entries_head, mmap_entry_) s_mmap_entries_head =
-        LIST_HEAD_INITIALIZER(s_mmap_entries_head);
-static uint8_t s_mmap_page_refcnt[SOC_MMU_REGIONS_COUNT * SOC_MMU_PAGES_PER_REGION] = {0};
-static uint32_t s_mmap_last_handle = 0;
-
-
-static void IRAM_ATTR spi_flash_mmap_init(void)
-{
-    if (s_mmap_page_refcnt[SOC_MMU_DROM0_PAGES_START] != 0) {
-        return; /* mmap data already initialised */
-    }
-    for (int i = 0; i < SOC_MMU_REGIONS_COUNT * SOC_MMU_PAGES_PER_REGION; ++i) {
-        uint32_t entry_pro = mmu_ll_read_entry(MMU_TABLE_CORE0, i);
-#if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32
-        uint32_t entry_app = mmu_ll_read_entry(MMU_TABLE_CORE1, i);
-
-        if (entry_pro != entry_app) {
-            // clean up entries used by boot loader
-            mmu_ll_set_entry_invalid(MMU_TABLE_CORE0, i);
-        }
-#endif
-        bool entry_pro_invalid = mmu_ll_get_entry_is_invalid(MMU_TABLE_CORE0, i);
-        if (!entry_pro_invalid && (i == SOC_MMU_DROM0_PAGES_START || i == SOC_MMU_PRO_IRAM0_FIRST_USABLE_PAGE || entry_pro != 0)) {
-            s_mmap_page_refcnt[i] = 1;
-        } else {
-            mmu_ll_set_entry_invalid(MMU_TABLE_CORE0, i);
-#if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32
-            mmu_ll_set_entry_invalid(MMU_TABLE_CORE1, i);
-#endif
-        }
-    }
-}
-
-static void IRAM_ATTR get_mmu_region(spi_flash_mmap_memory_t memory, int* out_begin, int* out_size,uint32_t* region_addr)
-{
-    if (memory == SPI_FLASH_MMAP_DATA) {
-        // Vaddr0
-        *out_begin = SOC_MMU_DROM0_PAGES_START;
-        *out_size = DROM0_PAGES_NUM;
-        *region_addr = SOC_MMU_VADDR0_START_ADDR;
-    } else {
-        // only part of VAddr1 is usable, so adjust for that
-        *out_begin = SOC_MMU_PRO_IRAM0_FIRST_USABLE_PAGE;
-        *out_size = SOC_MMU_IROM0_PAGES_END - *out_begin;
-        *region_addr = SOC_MMU_VADDR1_FIRST_USABLE_ADDR;
-    }
-}
-
-esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t memory,
+esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t memory,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
-    esp_err_t ret;
-    if (src_addr & INVALID_PHY_PAGE(CONFIG_MMU_PAGE_SIZE)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if ((src_addr + size) > g_rom_flashchip.chip_size) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    // region which should be mapped
-    int phys_page = src_addr / SPI_FLASH_MMU_PAGE_SIZE;
-    int page_count = (size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE;
-    // prepare a linear pages array to feed into spi_flash_mmap_pages
-    int *pages = heap_caps_malloc(sizeof(int)*page_count, MALLOC_CAP_INTERNAL);
-    if (pages == NULL) {
-        return ESP_ERR_NO_MEM;
-    }
-    for (int i = 0; i < page_count; i++) {
-        pages[i] = (phys_page+i);
-    }
-    ret = spi_flash_mmap_pages(pages, page_count, memory, out_ptr, out_handle);
-    free(pages);
-    return ret;
-}
+    esp_err_t ret = ESP_FAIL;
+    mmu_mem_caps_t caps = 0;
+    void *ptr = NULL;
+    mmap_block_t *block = NULL;
+    uint32_t *vaddr_list = NULL;
 
-esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mmap_memory_t memory,
-                         const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
-{
-    esp_err_t ret;
-    const void* temp_ptr = *out_ptr = NULL;
-    spi_flash_mmap_handle_t temp_handle = *out_handle = (spi_flash_mmap_handle_t)NULL;
-    bool need_flush = false;
-    if (!page_count) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (!esp_ptr_internal(pages)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    for (int i = 0; i < page_count; i++) {
-        if (pages[i] < 0 || pages[i]*SPI_FLASH_MMU_PAGE_SIZE >= g_rom_flashchip.chip_size) {
-            return ESP_ERR_INVALID_ARG;
-        }
-    }
-    mmap_entry_t* new_entry = (mmap_entry_t*) heap_caps_malloc(sizeof(mmap_entry_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-    if (new_entry == 0) {
-        return ESP_ERR_NO_MEM;
-    }
-
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-
-    spi_flash_mmap_init();
-    // figure out the memory region where we should look for pages
-    int region_begin;   // first page to check
-    int region_size;    // number of pages to check
-    uint32_t region_addr;  // base address of memory region
-    get_mmu_region(memory,&region_begin,&region_size,&region_addr);
-    if (region_size < page_count) {
-        spi_flash_enable_interrupts_caches_and_other_cpu();
-        return ESP_ERR_NO_MEM;
-    }
-    // The following part searches for a range of MMU entries which can be used.
-    // Algorithm is essentially naïve strstr algorithm, except that unused MMU
-    // entries are treated as wildcards.
-    int start;
-    // the " + 1" is a fix when loop the MMU table pages, because the last MMU page
-    // is valid as well if it have not been used
-    int end = region_begin + region_size - page_count + 1;
-    for (start = region_begin; start < end; ++start) {
-        int pageno = 0;
-        int pos;
-        for (pos = start; pos < start + page_count; ++pos, ++pageno) {
-            int table_val = (int) mmu_ll_read_entry(MMU_TABLE_CORE0, pos);
-            uint8_t refcnt = s_mmap_page_refcnt[pos];
-            if (refcnt != 0 && table_val != SOC_MMU_PAGE_IN_FLASH(pages[pageno])) {
-                break;
-            }
-        }
-        // whole mapping range matched, bail out
-        if (pos - start == page_count) {
-            break;
-        }
-    }
-    // checked all the region(s) and haven't found anything?
-    if (start == end) {
+    block = heap_caps_calloc(1, sizeof(mmap_block_t), MALLOC_CAP_INTERNAL);
+    if (!block) {
         ret = ESP_ERR_NO_MEM;
+        goto err;
+    }
+
+    vaddr_list = heap_caps_calloc(1, 1 * sizeof(uint32_t), MALLOC_CAP_INTERNAL);
+    if (!vaddr_list) {
+        ret = ESP_ERR_NO_MEM;
+        goto err;
+    }
+
+    block->vaddr_list = vaddr_list;
+
+    if (memory == SPI_FLASH_MMAP_INST) {
+        caps = MMU_MEM_CAP_EXEC | MMU_MEM_CAP_32BIT;
     } else {
-        // set up mapping using pages
-        uint32_t pageno = 0;
-        for (int i = start; i != start + page_count; ++i, ++pageno) {
-            // sanity check: we won't reconfigure entries with non-zero reference count
-            uint32_t entry_pro = mmu_ll_read_entry(MMU_TABLE_CORE0, i);
-#if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32
-            uint32_t entry_app = mmu_ll_read_entry(MMU_TABLE_CORE1, i);
-#endif
-            assert(s_mmap_page_refcnt[i] == 0 ||
-                    (entry_pro == SOC_MMU_PAGE_IN_FLASH(pages[pageno])
-#if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32
-                     && entry_app == SOC_MMU_PAGE_IN_FLASH(pages[pageno])
-#endif
-                    ));
-            if (s_mmap_page_refcnt[i] == 0) {
-                if (entry_pro != SOC_MMU_PAGE_IN_FLASH(pages[pageno])
-#if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32
-                || entry_app != SOC_MMU_PAGE_IN_FLASH(pages[pageno])
-#endif
-                ) {
-                    mmu_ll_write_entry(MMU_TABLE_CORE0, i, pages[pageno], 0);
-#if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32
-                    mmu_ll_write_entry(MMU_TABLE_CORE1, i, pages[pageno], 0);
-#endif
+        caps = MMU_MEM_CAP_READ | MMU_MEM_CAP_8BIT;
+    }
+    ret = esp_mmu_map(src_addr, size, caps, MMU_TARGET_FLASH0, &ptr);
+    if (ret == ESP_OK) {
+        vaddr_list[0] = (uint32_t)ptr;
+        block->list_num = 1;
 
-#if !CONFIG_IDF_TARGET_ESP32
-                    Cache_Invalidate_Addr(region_addr + (i - region_begin) * SPI_FLASH_MMU_PAGE_SIZE, SPI_FLASH_MMU_PAGE_SIZE);
-#endif
-                    need_flush = true;
-                }
-            }
-            ++s_mmap_page_refcnt[i];
-        }
-        LIST_INSERT_HEAD(&s_mmap_entries_head, new_entry, entries);
-        new_entry->page = start;
-        new_entry->count = page_count;
-        new_entry->handle = ++s_mmap_last_handle;
-        temp_handle = new_entry->handle;
-        temp_ptr = (void*) (region_addr + (start - region_begin) * SPI_FLASH_MMU_PAGE_SIZE);
-        ret = ESP_OK;
+    } else if (ret == ESP_ERR_INVALID_STATE) {
+        /**
+         * paddr region is mapped already,
+         * to keep `flash_mmap.c` original behaviour, we consider this as a valid behaviour.
+         * Set `list_num` to 0 so we don't need to call `esp_mmu_unmap` to this one, as `esp_mmu_map`
+         * doesn't really create a new handle.
+         */
+        block->list_num = 0;
+    } else {
+        goto err;
     }
 
-    /* This is a temporary fix for an issue where some
-       cache reads may see stale data.
+    *out_ptr = ptr;
+    *out_handle = (uint32_t)block;
 
-       Working on a long term fix that doesn't require invalidating
-       entire cache.
-    */
-    if (need_flush) {
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_SPIRAM
-        esp_psram_extram_writeback_cache();
-#endif // CONFIG_SPIRAM
-        Cache_Flush(0);
-#if !CONFIG_FREERTOS_UNICORE
-        Cache_Flush(1);
-#endif // !CONFIG_FREERTOS_UNICORE
-#endif // CONFIG_IDF_TARGET_ESP32
-    }
+    return ESP_OK;
 
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-    if (temp_ptr == NULL) {
-        free(new_entry);
+err:
+    if (vaddr_list) {
+        free(vaddr_list);
     }
-    *out_ptr = temp_ptr;
-    *out_handle = temp_handle;
+    if (block) {
+        free(block);
+    }
     return ret;
 }
 
-void IRAM_ATTR spi_flash_munmap(spi_flash_mmap_handle_t handle)
+
+static int s_find_non_contiguous_block_nums(const int *pages, int page_count)
 {
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    mmap_entry_t* it;
-    // look for handle in linked list
-    for (it = LIST_FIRST(&s_mmap_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
-        if (it->handle == handle) {
-            // for each page, decrement reference counter
-            // if reference count is zero, disable MMU table entry to
-            // facilitate debugging of use-after-free conditions
-            for (int i = it->page; i < it->page + it->count; ++i) {
-                assert(s_mmap_page_refcnt[i] > 0);
-                if (--s_mmap_page_refcnt[i] == 0) {
-                    mmu_ll_set_entry_invalid(MMU_TABLE_CORE0, i);
-#if !CONFIG_FREERTOS_UNICORE && CONFIG_IDF_TARGET_ESP32
-                    mmu_ll_set_entry_invalid(MMU_TABLE_CORE1, i);
-#endif
-                }
-            }
-            LIST_REMOVE(it, entries);
-            break;
+    int nums = 1;
+    int last_end = pages[0] + 1;
+
+    for (int i = 1; i < page_count; i++) {
+        if (pages[i] != last_end) {
+            nums++;
+        }
+        last_end = pages[i] + 1;
+    }
+    return nums;
+}
+
+static void s_merge_contiguous_pages(const int *pages, uint32_t page_count, int block_nums, int (*out_blocks)[2])
+{
+    uint32_t last_end = pages[0] + 1;
+    int new_array_id = 0;
+    out_blocks[new_array_id][0] = pages[0];
+    out_blocks[new_array_id][1] = 1;
+
+    for (int i = 1; i < page_count; i++) {
+
+        if (pages[i] != last_end) {
+            new_array_id += 1;
+            assert(new_array_id < block_nums);
+            out_blocks[new_array_id][0] = pages[i];
+            out_blocks[new_array_id][1] = 1;
+        } else {
+            out_blocks[new_array_id][1] += 1;
+        }
+
+        last_end = pages[i] + 1;
+    }
+}
+
+static void s_pages_to_bytes(int (*blocks)[2], int block_nums)
+{
+    for (int i = 0; i < block_nums; i++) {
+        blocks[i][0] = blocks[i][0] * CONFIG_MMU_PAGE_SIZE;
+        blocks[i][1] = blocks[i][1] * CONFIG_MMU_PAGE_SIZE;
+    }
+}
+
+esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mmap_memory_t memory,
+                         const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
+{
+    esp_err_t ret = ESP_FAIL;
+    mmu_mem_caps_t caps = 0;
+    mmap_block_t *block = NULL;
+    uint32_t *vaddr_list = NULL;
+    int successful_cnt = 0;
+
+    int block_num = s_find_non_contiguous_block_nums(pages, page_count);
+    int paddr_blocks[block_num][2];
+    s_merge_contiguous_pages(pages, page_count, block_num, paddr_blocks);
+    s_pages_to_bytes(paddr_blocks, block_num);
+
+    block = heap_caps_calloc(1, sizeof(mmap_block_t), MALLOC_CAP_INTERNAL);
+    if (!block) {
+        ret = ESP_ERR_NO_MEM;
+        goto err;
+    }
+
+    vaddr_list = heap_caps_calloc(1, block_num * sizeof(uint32_t), MALLOC_CAP_INTERNAL);
+    if (!vaddr_list) {
+        ret = ESP_ERR_NO_MEM;
+        goto err;
+    }
+
+    if (memory == SPI_FLASH_MMAP_INST) {
+        caps = MMU_MEM_CAP_EXEC | MMU_MEM_CAP_32BIT;
+    } else {
+        caps = MMU_MEM_CAP_READ | MMU_MEM_CAP_8BIT;
+    }
+    for (int i = 0; i < block_num; i++) {
+        void *ptr = NULL;
+        ret = esp_mmu_map(paddr_blocks[i][0], paddr_blocks[i][1], caps, MMU_TARGET_FLASH0, &ptr);
+        if (ret == ESP_OK) {
+            vaddr_list[i] = (uint32_t)ptr;
+            successful_cnt++;
+        } else {
+            /**
+             * A note for `ret == ESP_ERR_INVALID_STATE`:
+             * If one of the `*pages` are mapped already, this means we can't find a
+             * consecutive vaddr block for these `*pages`
+             */
+            goto err;
+        }
+        vaddr_list[i] = (uint32_t)ptr;
+    }
+
+    block->vaddr_list = vaddr_list;
+    block->list_num = successful_cnt;
+
+    /**
+     * We get a contiguous vaddr block, but may contain multiple esp_mmu handles.
+     * The first handle vaddr is the start address of this contiguous vaddr block.
+     */
+    *out_ptr = (void *)vaddr_list[0];
+    *out_handle = (uint32_t)block;
+
+    return ESP_OK;
+
+err:
+    for (int i = 0; i < successful_cnt; i++) {
+        esp_mmu_unmap((void *)vaddr_list[i]);
+    }
+    if (vaddr_list) {
+        free(vaddr_list);
+    }
+    if (block) {
+        free(block);
+    }
+    return ret;
+}
+
+
+void spi_flash_munmap(spi_flash_mmap_handle_t handle)
+{
+    esp_err_t ret = ESP_FAIL;
+    mmap_block_t *block = (void *)handle;
+
+    for (int i = 0; i < block->list_num; i++) {
+        ret = esp_mmu_unmap((void *)block->vaddr_list[i]);
+        if (ret == ESP_ERR_NOT_FOUND) {
+            assert(0 && "invalid handle, or handle already unmapped");
         }
     }
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-    if (it == NULL) {
-        assert(0 && "invalid handle, or handle already unmapped");
-    }
-    free(it);
+
+    free(block->vaddr_list);
+    free(block);
 }
 
-static void IRAM_ATTR NOINLINE_ATTR spi_flash_protected_mmap_init(void)
-{
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    spi_flash_mmap_init();
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-}
-
-static uint32_t IRAM_ATTR NOINLINE_ATTR spi_flash_protected_read_mmu_entry(int index)
-{
-    uint32_t value;
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    value = mmu_ll_read_entry(MMU_TABLE_CORE0, index);
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-    return value;
-}
 
 void spi_flash_mmap_dump(void)
 {
-    spi_flash_protected_mmap_init();
-
-    mmap_entry_t* it;
-    for (it = LIST_FIRST(&s_mmap_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
-        printf("handle=%d page=%d count=%d\n", it->handle, it->page, it->count);
-    }
-    for (int i = 0; i < SOC_MMU_REGIONS_COUNT * SOC_MMU_PAGES_PER_REGION; ++i) {
-        if (s_mmap_page_refcnt[i] != 0) {
-            uint32_t paddr = spi_flash_protected_read_mmu_entry(i);
-            printf("page %d: refcnt=%d paddr=%d\n", i, (int) s_mmap_page_refcnt[i], paddr);
-        }
-    }
+    esp_mmu_map_dump_mapped_blocks(stdout);
 }
 
-uint32_t IRAM_ATTR spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
+
+uint32_t spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
 {
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    spi_flash_mmap_init();
-    int count = 0;
-    int region_begin;   // first page to check
-    int region_size;    // number of pages to check
-    uint32_t region_addr;  // base address of memory region
-    get_mmu_region(memory,&region_begin,&region_size,&region_addr);
-    for (int i = region_begin; i < region_begin + region_size; ++i) {
-        bool entry_is_invalid = mmu_ll_get_entry_is_invalid(MMU_TABLE_CORE0, i);
-        if (s_mmap_page_refcnt[i] == 0 && entry_is_invalid) {
-            count++;
-        }
+    mmu_mem_caps_t caps = 0;
+    if (memory == SPI_FLASH_MMAP_INST) {
+        caps = MMU_MEM_CAP_EXEC | MMU_MEM_CAP_32BIT;
+    } else {
+        caps = MMU_MEM_CAP_READ | MMU_MEM_CAP_8BIT;
     }
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-    return count;
+
+    size_t len = 0;
+    esp_mmu_map_get_max_consecutive_free_block_size(caps, MMU_TARGET_FLASH0, &len);
+    return len / CONFIG_MMU_PAGE_SIZE;
 }
+
 
 size_t spi_flash_cache2phys(const void *cached)
 {
-    intptr_t c = (intptr_t)cached;
-    size_t cache_page;
+    if (cached == NULL) {
+        return SPI_FLASH_CACHE2PHYS_FAIL;
+    }
+
+    esp_err_t ret = ESP_FAIL;
+    uint32_t paddr = 0;
+    mmu_target_t target = 0;
+
+    ret = esp_mmu_vaddr_to_paddr((void *)cached, &paddr, &target);
+    if (ret != ESP_OK) {
+        return SPI_FLASH_CACHE2PHYS_FAIL;
+    }
+
     int offset = 0;
-    if (c >= SOC_MMU_VADDR1_START_ADDR && c < SOC_MMU_VADDR1_FIRST_USABLE_ADDR) {
-        /* IRAM address, doesn't map to flash */
-        return SPI_FLASH_CACHE2PHYS_FAIL;
-    }
-    if (c < SOC_MMU_VADDR1_FIRST_USABLE_ADDR) {
-        /* expect cache is in DROM */
-        cache_page = (c - SOC_MMU_VADDR0_START_ADDR) / SPI_FLASH_MMU_PAGE_SIZE + SOC_MMU_DROM0_PAGES_START;
 #if CONFIG_SPIRAM_RODATA
-        if (c >= (uint32_t)&_rodata_reserved_start && c <= (uint32_t)&_rodata_reserved_end) {
-            offset = rodata_flash2spiram_offset();
-        }
+    if ((uint32_t)cached >= (uint32_t)&_rodata_reserved_start && (uint32_t)cached <= (uint32_t)&_rodata_reserved_end) {
+        offset = rodata_flash2spiram_offset();
+    }
 #endif
-    } else {
-        /* expect cache is in IROM */
-        cache_page = (c - SOC_MMU_VADDR1_START_ADDR) / SPI_FLASH_MMU_PAGE_SIZE + SOC_MMU_IROM0_PAGES_START;
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-        if (c >= (uint32_t)&_instruction_reserved_start && c <= (uint32_t)&_instruction_reserved_end) {
-            offset = instruction_flash2spiram_offset();
-        }
+    if ((uint32_t)cached >= (uint32_t)&_instruction_reserved_start && (uint32_t)cached <= (uint32_t)&_instruction_reserved_end) {
+        offset = instruction_flash2spiram_offset();
+    }
 #endif
-    }
 
-    if (cache_page >= PAGES_LIMIT) {
-        /* cached address was not in IROM or DROM */
-        return SPI_FLASH_CACHE2PHYS_FAIL;
-    }
-    uint32_t phys_page = spi_flash_protected_read_mmu_entry(cache_page);
-    bool entry_is_invalid = mmu_ll_get_entry_is_invalid(MMU_TABLE_CORE0, cache_page);
-    if (entry_is_invalid) {
-        /* page is not mapped */
-        return SPI_FLASH_CACHE2PHYS_FAIL;
-    }
-    uint32_t phys_offs = ((phys_page & SOC_MMU_ADDR_MASK) + offset) * SPI_FLASH_MMU_PAGE_SIZE;
-    return phys_offs | (c & (SPI_FLASH_MMU_PAGE_SIZE-1));
+    return paddr + offset * CONFIG_MMU_PAGE_SIZE;
 }
 
-const void *IRAM_ATTR spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memory)
+
+const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memory)
 {
-    uint32_t phys_page = phys_offs / SPI_FLASH_MMU_PAGE_SIZE;
-    int start, end, page_delta;
-    intptr_t base;
+    esp_err_t ret = ESP_FAIL;
+    void *ptr = NULL;
+    mmu_target_t target = MMU_TARGET_FLASH0;
 
-    if (memory == SPI_FLASH_MMAP_DATA) {
-        start = SOC_MMU_DROM0_PAGES_START;
-        end = SOC_MMU_DROM0_PAGES_END;
-        base = SOC_MMU_VADDR0_START_ADDR;
-        page_delta = SOC_MMU_DROM0_PAGES_START;
-    } else {
-        start = SOC_MMU_PRO_IRAM0_FIRST_USABLE_PAGE;
-        end = SOC_MMU_IROM0_PAGES_END;
-        base = SOC_MMU_VADDR1_START_ADDR;
-        page_delta = SOC_MMU_IROM0_PAGES_START;
-    }
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    for (int i = start; i < end; i++) {
-        uint32_t mmu_value = mmu_ll_read_entry(MMU_TABLE_CORE0, i);
+    __attribute__((unused)) uint32_t phys_page = phys_offs / CONFIG_MMU_PAGE_SIZE;
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-        if (phys_page >= instruction_flash_start_page_get() && phys_page <= instruction_flash_end_page_get()) {
-            if (mmu_value & MMU_ACCESS_SPIRAM) {
-                mmu_value += instruction_flash2spiram_offset();
-                mmu_value = (mmu_value & SOC_MMU_ADDR_MASK) | MMU_ACCESS_FLASH;
-            }
-        }
-#endif
-#if CONFIG_SPIRAM_RODATA
-        if (phys_page >= rodata_flash_start_page_get() && phys_page <= rodata_flash_start_page_get()) {
-            if (mmu_value & MMU_ACCESS_SPIRAM) {
-                mmu_value += rodata_flash2spiram_offset();
-                mmu_value = (mmu_value & SOC_MMU_ADDR_MASK) | MMU_ACCESS_FLASH;
-            }
-        }
-#endif
-        if (mmu_value == SOC_MMU_PAGE_IN_FLASH(phys_page)) {
-            i -= page_delta;
-            intptr_t cache_page =  base + (SPI_FLASH_MMU_PAGE_SIZE * i);
-            spi_flash_enable_interrupts_caches_and_other_cpu();
-            return (const void *) (cache_page | (phys_offs & (SPI_FLASH_MMU_PAGE_SIZE-1)));
-        }
+    if (phys_page >= instruction_flash_start_page_get() && phys_page <= instruction_flash_end_page_get()) {
+        target = MMU_TARGET_PSRAM0;
+        phys_offs -= instruction_flash2spiram_offset() * CONFIG_MMU_PAGE_SIZE;
     }
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-    return NULL;
+#endif
+
+#if CONFIG_SPIRAM_RODATA
+    if (phys_page >= rodata_flash_start_page_get() && phys_page <= rodata_flash_start_page_get()) {
+        target = MMU_TARGET_PSRAM0;
+        phys_offs -= rodata_flash2spiram_offset() * CONFIG_MMU_PAGE_SIZE;
+    }
+#endif
+
+    mmu_vaddr_t type = (memory == SPI_FLASH_MMAP_DATA) ? MMU_VADDR_DATA : MMU_VADDR_INSTRUCTION;
+    ret = esp_mmu_paddr_to_vaddr(phys_offs, target, type, &ptr);
+    if (ret == ESP_ERR_NOT_FOUND) {
+        return NULL;
+    }
+    assert(ret == ESP_OK);
+    return (const void *)ptr;
 }
+
 
 static bool IRAM_ATTR is_page_mapped_in_cache(uint32_t phys_page, const void **out_ptr)
 {

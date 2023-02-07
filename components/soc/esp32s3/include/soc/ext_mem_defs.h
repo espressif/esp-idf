@@ -69,9 +69,6 @@ extern "C" {
 #define CACHE_MAX_SYNC_NUM 0x400000
 #define CACHE_MAX_LOCK_NUM 0x8000
 
-#define FLASH_MMU_TABLE ((volatile uint32_t*) DR_REG_MMU_TABLE)
-#define FLASH_MMU_TABLE_SIZE (ICACHE_MMU_SIZE/sizeof(uint32_t))
-
 /**
  * MMU entry valid bit mask for mapping value. For an entry:
  * valid bit + value bits

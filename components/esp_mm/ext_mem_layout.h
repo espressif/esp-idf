@@ -10,6 +10,7 @@
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/cache_types.h"
+#include "hal/mmu_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,11 +18,12 @@ extern "C" {
 
 
 typedef struct {
-    intptr_t start;
-    intptr_t end;
-    size_t size;
-    cache_bus_mask_t bus_id;
-    uint32_t caps;
+    uint32_t start;           //laddr start
+    uint32_t end;             //laddr end
+    size_t size;              //region size
+    cache_bus_mask_t bus_id;  //bus_id mask, for accessible cache buses
+    mmu_target_t targets;     //region supported physical targets
+    uint32_t caps;            //vaddr capabilities
 } mmu_mem_region_t;
 
 //These regions is referring to linear address

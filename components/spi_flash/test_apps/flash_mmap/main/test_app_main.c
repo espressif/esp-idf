@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -9,7 +9,7 @@
 #include "esp_heap_caps.h"
 
 // Some resources are lazy allocated, the threadhold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (-600)
+#define TEST_MEMORY_LEAK_THRESHOLD (600)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
