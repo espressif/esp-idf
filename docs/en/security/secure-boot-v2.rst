@@ -385,16 +385,34 @@ The above command appends the image signature to the existing binary. You can us
 
   espsecure.py sign_data --version 2 --keyfile PRIVATE_SIGNING_KEY --output SIGNED_BINARY_FILE BINARY_FILE
 
-Signing using an external HSM
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Signing using Pre-calculated Signatures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For security reasons, you might also use an external Hardware Security Module (HSM) to store your private signing key, which cannot be accessed directly but has an interface to generate the signature of a binary file and its corresponding public key.
+If you have valid pre-calculated signatures generated for an image and their corresponding public keys, you can use these signatures to generate a signature sector and append it to the image. Note that the pre-calculated signature should be calculated over all bytes in the image including the secure-padding bytes.
 
-In such cases, disable the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` and build the firmware. The public key and the binary file signature generated using external HSM can be provided as inputs to the following command to generate a signed binary. ::
+In such cases, the firmware image should be built by disabling the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES`. This image will be secure-padded and to generate a signed binary use the following command::
 
   espsecure.py sign_data --version 2 --pub-key PUBLIC_SIGNING_KEY --signature SIGNATURE_FILE --output SIGNED_BINARY_FILE BINARY_FILE
 
-The above command verifies the signature, generates a signature block (refer to :ref:`signature-block-format`) and appends it to the binary file. The signed binary is written to the filename provided to the `--output` argument.
+The above command verifies the signature, generates a signature block (refer to :ref:`signature-block-format`) and appends it to the binary file.
+
+
+Signing using an External Hardware Security Module (HSM)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For security reasons, you might also use an external Hardware Security Module (HSM) to store your private signing key, which cannot be accessed directly but has an interface to generate the signature of a binary file and its corresponding public key.
+
+In such cases, disable the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` and build the firmware. This secure-padded image then can be used to supply the external HSM for generating a signature. Refer to `Signing using an External HSM <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espsecure/index.html#remote-signing-using-an-external-hsm>`_ to generate a signed image.
+
+.. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
+
+    .. note:: For all the above three remote signing workflows, the signed binary is written to the filename provided to the ``--output`` argument and the option ``--append_signatures`` allows us to append multiple signatures (up to 3) the image.
+
+.. only:: not SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
+
+    .. note:: For all the above three remote signing workflows, the signed binary is written to the filename provided to the ``--output`` argument.
+
+
 
 Secure Boot Best Practices
 --------------------------
