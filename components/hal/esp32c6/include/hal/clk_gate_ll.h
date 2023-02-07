@@ -74,6 +74,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
             return PCR_TSENS_CLK_EN;
         case PERIPH_SDIO_SLAVE_MODULE:
             return PCR_SDIO_SLAVE_CLK_EN;
+        case PERIPH_REGDMA_MODULE:
+            return PCR_REGDMA_CLK_EN;
         // case PERIPH_RNG_MODULE:
         //     return PCR_WIFI_CLK_RNG_EN;
         // case PERIPH_WIFI_MODULE:
@@ -163,6 +165,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
             return PCR_DS_RST_EN;
         case PERIPH_SDIO_SLAVE_MODULE:
             return PCR_SDIO_SLAVE_RST_EN;
+        case PERIPH_REGDMA_MODULE:
+            return PCR_REGDMA_RST_EN;
         // case PERIPH_RNG_MODULE:
         //     return PCR_WIFI_CLK_RNG_EN;
         // case PERIPH_WIFI_MODULE:
@@ -245,6 +249,8 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
             return PCR_TSENS_CLK_CONF_REG;
         case PERIPH_SDIO_SLAVE_MODULE:
             return PCR_SDIO_SLAVE_CONF_REG;
+        case PERIPH_REGDMA_MODULE:
+            return PCR_REGDMA_CONF_REG;
     default:
         return 0;
     }
@@ -307,6 +313,8 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
             return PCR_TSENS_CLK_CONF_REG;
         case PERIPH_SDIO_SLAVE_MODULE:
             return PCR_SDIO_SLAVE_CONF_REG;
+        case PERIPH_REGDMA_MODULE:
+            return PCR_REGDMA_CONF_REG;
     default:
         return 0;
     }

@@ -9,10 +9,11 @@
 #include <esp_types.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
-#include "soc/soc.h"
-#include "esp_private/esp_pau.h"
 #include "esp_log.h"
+#include "soc/soc.h"
 #include "soc/pcr_reg.h"
+#include "esp_private/esp_pau.h"
+#include "esp_private/periph_ctrl.h"
 
 static __attribute__((unused)) const char *TAG = "pau_regdma";
 
@@ -22,9 +23,14 @@ typedef struct {
 
 pau_context_t * __attribute__((weak)) PAU_instance(void)
 {
-    static pau_hal_context_t pau_hal = { .dev = &PAU };
+    static pau_hal_context_t pau_hal = { .dev = NULL };
     static pau_context_t pau_context = { .hal = &pau_hal };
-    *(volatile uint32_t *)PCR_REGDMA_CONF_REG |= PCR_REGDMA_CLK_EN;
+
+    if (pau_hal.dev == NULL) {
+        pau_hal.dev = &PAU;
+        periph_module_enable(PERIPH_REGDMA_MODULE);
+    }
+
     return &pau_context;
 }
 
