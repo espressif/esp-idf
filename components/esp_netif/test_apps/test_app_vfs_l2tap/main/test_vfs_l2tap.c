@@ -40,7 +40,11 @@
 
 #define DEFAULT_SEND_DELAY_MS 1000
 
+#define IN_BUFFER_SIZE 1500
+
 static const char *TAG = "l2tap_test";
+
+char *in_buffer;
 
 typedef struct {
     esp_netif_t *eth_netif;
@@ -67,6 +71,19 @@ typedef struct {
 /* =============================================================================
  *                              Common Routines
  * ============================================================================= */
+
+void setUp(void) {
+    in_buffer = calloc(IN_BUFFER_SIZE, sizeof(*in_buffer));
+    if (!in_buffer) {
+        abort();
+    }
+}
+
+void tearDown(void) {
+    free(in_buffer);
+    in_buffer = NULL;
+}
+
 /**
  * @brief Event handler for Ethernet events
  *
@@ -286,7 +303,7 @@ typedef struct {
 
 static void open_read_task(void *task_param)
 {
-    char in_buffer[300] = { 0 };
+    const size_t in_buf_size = 300;
     open_close_task_ctrl_t *task_control = (open_close_task_ctrl_t *)task_param;
 
     task_control->eth_tap_fd = open("/dev/net/tap", 0);
@@ -321,11 +338,11 @@ static void open_read_task(void *task_param)
         ESP_LOGI(TAG, "task1: select timeout");
 
         // get an error when try to use closed fd
-        TEST_ASSERT_EQUAL(-1, read(task_control->eth_tap_fd, in_buffer, sizeof(in_buffer)));
+        TEST_ASSERT_EQUAL(-1, read(task_control->eth_tap_fd, in_buffer, in_buf_size));
     } else {
         ESP_LOGI(TAG, "task1: going to block on read...");
         // it is expected that blocking read is unblocked by close
-        TEST_ASSERT_EQUAL(-1, read(task_control->eth_tap_fd, in_buffer, sizeof(in_buffer)));
+        TEST_ASSERT_EQUAL(-1, read(task_control->eth_tap_fd, in_buffer, in_buf_size));
         ESP_LOGI(TAG, "task1: unblocked");
     }
     xSemaphoreGive(task_control->sem);
@@ -419,7 +436,6 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet]")
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
     int n;
-    char in_buffer[1500] = { 0 };
     int loop_cnt = 0;
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
@@ -452,7 +468,7 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet]")
 
     // Verify the read does not block
     while (loop_cnt < 100) {
-        if ((n = read(eth_tap_fd, in_buffer, sizeof(in_buffer))) > 0) {
+        if ((n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE)) > 0) {
             ESP_LOG_BUFFER_HEX(TAG, in_buffer, n);
             ESP_LOGI(TAG, "recv test string: %s", ((test_vfs_eth_tap_msg_t *)in_buffer)->str);
             TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
@@ -473,7 +489,7 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet]")
     // Verify non-blocking successful read operations used along with select
     // ==========================================================
     ESP_LOGI(TAG, "Verify non-blocking successful read operations used along with select...");
-    memset(in_buffer, 0, sizeof(in_buffer));
+    memset(in_buffer, 0, IN_BUFFER_SIZE);
     // Wait up to x seconds
     struct timeval tv;
     tv.tv_sec = 4;
@@ -491,7 +507,7 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet]")
     TEST_ASSERT_GREATER_THAN(-1, FD_ISSET(eth_tap_fd, &rfds));
     loop_cnt = 0;
     while (loop_cnt < 100) {
-        if ((n = read(eth_tap_fd, in_buffer, sizeof(in_buffer))) > 0) {
+        if ((n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE)) > 0) {
             ESP_LOG_BUFFER_HEX(TAG, in_buffer, n);
             ESP_LOGI(TAG, "recv test string: %s", ((test_vfs_eth_tap_msg_t *)in_buffer)->str);
             TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
@@ -508,7 +524,7 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet]")
     // Verify non-blocking unsuccessful read operations used along with select
     // ==========================================================
     ESP_LOGI(TAG, "Verify non-blocking unsuccessful read operations used along with select...");
-    memset(in_buffer, 0, sizeof(in_buffer));
+    memset(in_buffer, 0, IN_BUFFER_SIZE);
     // Wait up to x seconds
     tv.tv_sec = 2;
     tv.tv_usec = 0;
@@ -521,7 +537,7 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet]")
     TEST_ASSERT_EQUAL(0, select(eth_tap_fd + 1, &rfds, NULL, NULL, &tv));
     TEST_ASSERT_EQUAL(EAGAIN, errno);
 
-    n = read(eth_tap_fd, in_buffer, sizeof(in_buffer));
+    n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE);
     TEST_ASSERT_EQUAL(EAGAIN, errno);
     TEST_ASSERT_EQUAL(-1, n);
 
@@ -540,7 +556,6 @@ TEST_CASE("esp32 l2tap - blocking read", "[ethernet]")
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
     int n;
-    char in_buffer[1500] = { 0 };
     int loop_cnt = 0;
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
@@ -573,7 +588,7 @@ TEST_CASE("esp32 l2tap - blocking read", "[ethernet]")
 
     // Verify the read does block
     while (loop_cnt < 100) {
-        if ((n = read(eth_tap_fd, in_buffer, sizeof(in_buffer))) > 0) {
+        if ((n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE)) > 0) {
             ESP_LOG_BUFFER_HEX(TAG, in_buffer, n);
             ESP_LOGI(TAG, "recv test string: %s", ((test_vfs_eth_tap_msg_t *)in_buffer)->str);
             TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
@@ -660,6 +675,7 @@ static void multi_fds_task (void *task_param)
     uint16_t eth_filter = task_info->eth_filter;
 
     int eth_tap_fds[NUM_OF_FDS];
+    test_vfs_eth_tap_msg_t recv_msg;
     test_vfs_eth_tap_msg_t test_msg = {
         .header = {
             .src.addr = {0},
@@ -667,7 +683,6 @@ static void multi_fds_task (void *task_param)
             .type = 0,
         }
     };
-    char in_buffer[sizeof(test_msg)] = { 0 };
 
     for (int i = 0; i < sizeof(eth_tap_fds) / sizeof(int); i++) {
         eth_tap_fds[i] = open("/dev/net/tap", O_NONBLOCK);
@@ -691,7 +706,7 @@ static void multi_fds_task (void *task_param)
             test_msg.cnt = msg_cnt;
             TEST_ASSERT_NOT_EQUAL(-1, write(eth_tap_fds[i], &test_msg, sizeof(test_msg)));
 
-            memset(in_buffer, 0, sizeof(in_buffer));
+            memset(&recv_msg, 0, sizeof(recv_msg));
 
             struct timeval tv;
             tv.tv_sec = 0;
@@ -702,9 +717,9 @@ static void multi_fds_task (void *task_param)
             FD_SET(eth_tap_fds[i], &rfds);
             if (select(eth_tap_fds[i] + 1, &rfds, NULL, NULL, &tv) > -1) {
                 if (FD_ISSET(eth_tap_fds[i], &rfds)) {
-                    int n = read(eth_tap_fds[i], in_buffer, sizeof(in_buffer));
+                    int n = read(eth_tap_fds[i], &recv_msg, sizeof(recv_msg));
                     TEST_ASSERT_GREATER_THAN(0, n);
-                    TEST_ASSERT_EQUAL(msg_cnt, ((test_vfs_eth_tap_msg_t *)in_buffer)->cnt);
+                    TEST_ASSERT_EQUAL(msg_cnt, recv_msg.cnt);
                 } else {
                     TEST_FAIL_MESSAGE("time out, frame was not successfully written (due to possible race condition)");
                 }
@@ -755,7 +770,6 @@ TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
-    char in_buffer[1500] = { 0 };
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
     ethernet_init(&eth_network_hndls);
@@ -791,7 +805,7 @@ TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet]")
         .send_delay_ms = DEFAULT_SEND_DELAY_MS,
     };
     xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
-    int n = read(eth_tap_fd, in_buffer, sizeof(in_buffer));
+    int n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE);
     TEST_ASSERT_GREATER_THAN(0, n);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
 
@@ -816,7 +830,7 @@ TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet]")
     send_task_ctrl.eth_type = eth_type_filter;
     xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
     ESP_LOGI(TAG, "Verify that the message with new Etherbet type is received...");
-    n = read(eth_tap_fd, in_buffer, sizeof(in_buffer));
+    n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE);
     TEST_ASSERT_GREATER_THAN(0, n);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
 
@@ -852,7 +866,6 @@ TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE/DEVICE_DRV_HNDL", "[ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
-    char in_buffer[1500] = { 0 };
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
     ethernet_init(&eth_network_hndls);
@@ -886,7 +899,7 @@ TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE/DEVICE_DRV_HNDL", "[ethernet]")
         .send_delay_ms = DEFAULT_SEND_DELAY_MS,
     };
     xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
-    int n = read(eth_tap_fd, in_buffer, sizeof(in_buffer));
+    int n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE);
     TEST_ASSERT_GREATER_THAN(0, n);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
 
@@ -897,7 +910,7 @@ TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE/DEVICE_DRV_HNDL", "[ethernet]")
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
     TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
     xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 10, NULL); // set higher priority, we need to be sure that "send" task closes FD prior main task
-    n = read(eth_tap_fd, in_buffer, sizeof(in_buffer));
+    n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE);
     TEST_ASSERT_GREATER_THAN(0, n);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
 
@@ -922,7 +935,7 @@ TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE/DEVICE_DRV_HNDL", "[ethernet]")
     TEST_ASSERT_EQUAL(eth_type_filter, eth_type_filter_get);
 
     xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
-    n = read(eth_tap_fd, in_buffer, sizeof(in_buffer));
+    n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE);
     TEST_ASSERT_GREATER_THAN(0, n);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
 
@@ -967,7 +980,6 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
-    char in_buffer[1500] = { 0 };
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
     ethernet_init(&eth_network_hndls);
@@ -996,7 +1008,7 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
     };
     // Confirm the read blocks by default
     xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
-    int n = read(eth_tap_fd, in_buffer, sizeof(in_buffer));
+    int n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE);
     TEST_ASSERT_GREATER_THAN(0, n);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
 
@@ -1012,7 +1024,7 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
     int loop_cnt = 0;
     xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
     while (loop_cnt < 100) {
-        if ((n = read(eth_tap_fd, in_buffer, sizeof(in_buffer))) > 0) {
+        if ((n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE)) > 0) {
             TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
             break;
         } else {
@@ -1039,7 +1051,7 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
     loop_cnt = 0;
     xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
     while (loop_cnt < 100) {
-        if ((n = read(eth_tap_fd, in_buffer, sizeof(in_buffer))) > 0) {
+        if ((n = read(eth_tap_fd, in_buffer, IN_BUFFER_SIZE)) > 0) {
             TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
             break;
         } else {
