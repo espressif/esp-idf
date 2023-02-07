@@ -41,6 +41,7 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_ADC_SUPPORTED               1
 #define SOC_DAC_SUPPORTED               1
+#define SOC_UART_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_CP_DMA_SUPPORTED            1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1

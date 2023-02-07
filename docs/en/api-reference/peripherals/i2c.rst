@@ -366,7 +366,7 @@ All these parameters can be changed to user-defined values by calling dedicated 
 
 Each of the above functions has a *_get_* counterpart to check the currently set value. For example, to check the I2C timeout value, call :cpp:func:`i2c_get_timeout`.
 
-To check the default parameter values which are set during the driver configuration process, please refer to the file :component_file:`driver/i2c.c` and look for defines with the suffix ``_DEFAULT``.
+To check the default parameter values which are set during the driver configuration process, please refer to the file :component_file:`driver/i2c/i2c.c` and look for defines with the suffix ``_DEFAULT``.
 
 You can also select different pins for SDA and SCL signals and alter the configuration of pull-ups with the function :cpp:func:`i2c_set_pin`. If you want to modify already entered values, use the function :cpp:func:`i2c_param_config`.
 
@@ -380,7 +380,7 @@ You can also select different pins for SDA and SCL signals and alter the configu
 Error Handling
 ^^^^^^^^^^^^^^
 
-The majority of I2C driver functions either return ``ESP_OK`` on successful completion or a specific error code on failure. It is a good practice to always check the returned values and implement error handling. The driver also prints out log messages that contain error details, e.g., when checking the validity of entered configuration. For details please refer to the file :component_file:`driver/i2c.c` and look for defines with the suffix ``_ERR_STR``.
+The majority of I2C driver functions either return ``ESP_OK`` on successful completion or a specific error code on failure. It is a good practice to always check the returned values and implement error handling. The driver also prints out log messages that contain error details, e.g., when checking the validity of entered configuration. For details please refer to the file :component_file:`driver/i2c/i2c.c` and look for defines with the suffix ``_ERR_STR``.
 
 Use dedicated interrupts to capture communication failures. For instance, if a slave stretches the clock for too long while preparing the data to send back to master, the interrupt ``I2C_TIME_OUT_INT`` will be triggered. For detailed information, see :ref:`i2c-api-interrupt-handling`.
 

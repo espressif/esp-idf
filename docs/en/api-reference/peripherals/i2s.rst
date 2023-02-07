@@ -291,7 +291,7 @@ The clock config helper macro is:
 - :c:macro:`I2S_STD_CLK_DEFAULT_CONFIG`
 
 Please refer to :ref:`i2s-api-reference-i2s_std` for STD API information.
-And for more details, please refer to :component_file:`driver/include/driver/i2s_std.h`.
+And for more details, please refer to :component_file:`driver/i2s/include/driver/i2s_std.h`.
 
 STD TX Mode
 ~~~~~~~~~~~
@@ -548,7 +548,7 @@ Here is the table of the data that received in the buffer with different :cpp:me
     - :c:macro:`I2S_PDM_TX_CLK_DEFAULT_CONFIG`
 
     Please refer to :ref:`i2s-api-reference-i2s_pdm` for PDM TX API information.
-    And for more details, please refer to :component_file:`driver/include/driver/i2s_pdm.h`.
+    And for more details, please refer to :component_file:`driver/i2s/include/driver/i2s_pdm.h`.
 
     The PDM data width is fixed to 16-bit, when the data in a ``int16_t`` writing buffer are:
 
@@ -645,7 +645,7 @@ Here is the table of the data that received in the buffer with different :cpp:me
     - :c:macro:`I2S_PDM_RX_CLK_DEFAULT_CONFIG`
 
     Please refer to :ref:`i2s-api-reference-i2s_pdm` for PDM RX API information.
-    And for more details, please refer to :component_file:`driver/include/driver/i2s_pdm.h`.
+    And for more details, please refer to :component_file:`driver/i2s/include/driver/i2s_pdm.h`.
 
     The PDM data width is fixed to 16-bit, when the data on the line (The PDM format on the line is transferred to PCM format for easier comprehension) are:
 
@@ -732,7 +732,7 @@ Here is the table of the data that received in the buffer with different :cpp:me
     - :c:macro:`I2S_TDM_CLK_DEFAULT_CONFIG`
 
     Please refer to :ref:`i2s-api-reference-i2s_tdm` for TDM API information.
-    And for more details, please refer to :component_file:`driver/include/driver/i2s_tdm.h`.
+    And for more details, please refer to :component_file:`driver/i2s/include/driver/i2s_tdm.h`.
 
     .. note::
 
@@ -1069,5 +1069,5 @@ I2S Driver
 I2S Types
 ^^^^^^^^^
 
-.. include-build-file:: inc/components/driver/include/driver/i2s_types.inc
+.. include-build-file:: inc/components/driver/i2s/include/driver/i2s_types.inc
 .. include-build-file:: inc/components/hal/include/hal/i2s_types.inc
