@@ -357,10 +357,12 @@ static inline void adc_ll_digi_controller_clk_disable(void)
 /**
  * Reset adc digital controller filter.
  *
+ * @param idx   Filter index
  * @param adc_n ADC unit.
  */
-static inline void adc_ll_digi_filter_reset(adc_unit_t adc_n)
+static inline void adc_ll_digi_filter_reset(adc_digi_iir_filter_t idx, adc_unit_t adc_n)
 {
+    (void)idx;
     if (adc_n == ADC_UNIT_1) {
         APB_SARADC.filter_ctrl.adc1_filter_reset = 1;
         APB_SARADC.filter_ctrl.adc1_filter_reset = 0;
@@ -371,20 +373,24 @@ static inline void adc_ll_digi_filter_reset(adc_unit_t adc_n)
 }
 
 /**
- * Set adc digital controller filter factor.
+ * Set adc digital controller filter coeff.
  *
- * @param adc_n ADC unit.
- * @param factor Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
+ * @param idx      filter index
+ * @param adc_n    adc unit
+ * @param channel  adc channel
+ * @param coeff    filter coeff
  */
-static inline void adc_ll_digi_filter_set_factor(adc_unit_t adc_n, adc_digi_filter_mode_t factor)
+static inline void adc_ll_digi_filter_set_factor(adc_digi_iir_filter_t idx, adc_unit_t adc_n, adc_channel_t channel, adc_digi_iir_filter_coeff_t coeff)
 {
+    (void)idx;
+    (void)channel;
     int mode = 0;
-    switch (factor) {
-    case ADC_DIGI_FILTER_IIR_2:  mode = 2;  break;
-    case ADC_DIGI_FILTER_IIR_4:  mode = 4;  break;
-    case ADC_DIGI_FILTER_IIR_8:  mode = 8;  break;
-    case ADC_DIGI_FILTER_IIR_16: mode = 16; break;
-    case ADC_DIGI_FILTER_IIR_64: mode = 64; break;
+    switch (coeff) {
+    case ADC_DIGI_IIR_FILTER_COEFF_2:  mode = 2;  break;
+    case ADC_DIGI_IIR_FILTER_COEFF_4:  mode = 4;  break;
+    case ADC_DIGI_IIR_FILTER_COEFF_8:  mode = 8;  break;
+    case ADC_DIGI_IIR_FILTER_COEFF_16: mode = 16; break;
+    case ADC_DIGI_IIR_FILTER_COEFF_64: mode = 64; break;
     default: mode = 8; break;
     }
     if (adc_n == ADC_UNIT_1) {
@@ -395,38 +401,17 @@ static inline void adc_ll_digi_filter_set_factor(adc_unit_t adc_n, adc_digi_filt
 }
 
 /**
- * Get adc digital controller filter factor.
- *
- * @param adc_n ADC unit.
- * @param factor Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
- */
-static inline void adc_ll_digi_filter_get_factor(adc_unit_t adc_n, adc_digi_filter_mode_t *factor)
-{
-    int mode = 0;
-    if (adc_n == ADC_UNIT_1) {
-        mode = APB_SARADC.filter_ctrl.adc1_filter_factor;
-    } else { // adc_n == ADC_UNIT_2
-        mode = APB_SARADC.filter_ctrl.adc2_filter_factor;
-    }
-    switch (mode) {
-    case 2:  *factor = ADC_DIGI_FILTER_IIR_2;  break;
-    case 4:  *factor = ADC_DIGI_FILTER_IIR_4;  break;
-    case 8:  *factor = ADC_DIGI_FILTER_IIR_8;  break;
-    case 16: *factor = ADC_DIGI_FILTER_IIR_16; break;
-    case 64: *factor = ADC_DIGI_FILTER_IIR_64; break;
-    default: *factor = ADC_DIGI_FILTER_IIR_MAX;    break;
-    }
-}
-
-/**
  * Enable/disable adc digital controller filter.
  * Filtering the ADC data to obtain smooth data at higher sampling rates.
  *
  * @note The filter will filter all the enabled channel data of the each ADC unit at the same time.
- * @param adc_n ADC unit.
+ * @param idx    Filter index
+ * @param adc_n  ADC unit
+ * @param enable Enable / Disable
  */
-static inline void adc_ll_digi_filter_enable(adc_unit_t adc_n, bool enable)
+static inline void adc_ll_digi_filter_enable(adc_digi_iir_filter_t idx, adc_unit_t adc_n, bool enable)
 {
+    (void)idx;
     if (adc_n == ADC_UNIT_1) {
         APB_SARADC.filter_ctrl.adc1_filter_en = enable;
     } else { // adc_n == ADC_UNIT_2

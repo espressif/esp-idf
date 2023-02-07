@@ -35,3 +35,5 @@
 // floating point instructions per divide and per sqrt (configured for worst-case with PSRAM workaround)
 #define IDF_PERFORMANCE_MAX_CYCLES_PER_DIV                                      70
 #define IDF_PERFORMANCE_MAX_CYCLES_PER_SQRT                                     140
+
+#define IDF_PERFORMANCE_MAX_ADC_ONESHOT_STD_ATTEN3                              3

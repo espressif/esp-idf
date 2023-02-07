@@ -89,7 +89,8 @@
 #define SOC_ADC_RTC_CTRL_SUPPORTED              1
 #define SOC_ADC_DIG_CTRL_SUPPORTED              1
 #define SOC_ADC_ARBITER_SUPPORTED               1
-#define SOC_ADC_FILTER_SUPPORTED                1
+#define SOC_ADC_DIG_IIR_FILTER_SUPPORTED        1
+#define SOC_ADC_DIG_IIR_FILTER_UNIT_BINDED      1    //ADC filter is binded with the ADC unit
 #define SOC_ADC_MONITOR_SUPPORTED               1
 #define SOC_ADC_DMA_SUPPORTED                   1
 #define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        1    //Digital controller supported ADC unit
@@ -103,6 +104,7 @@
 #define SOC_ADC_PATT_LEN_MAX                    (32) /*!< Two pattern table, each contains 16 items. Each item takes 1 byte */
 #define SOC_ADC_DIGI_MIN_BITWIDTH               (12)
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
+#define SOC_ADC_DIGI_IIR_FILTER_NUM             (2)
 #define SOC_ADC_DIGI_RESULT_BYTES               (2)
 #define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (2)
 /*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interval<= 4095 */

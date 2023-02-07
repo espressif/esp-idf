@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include "unity.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "soc/adc_periph.h"
@@ -21,6 +23,16 @@ __attribute__((unused)) static const char *TAG = "TEST_ADC";
 adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_11};
 #else
 adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_6, ADC_ATTEN_DB_11};
+#endif
+
+#if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
+adc_digi_iir_filter_coeff_t g_test_filter_coeff[TEST_FILTER_COEFF_NUMS] = {
+    ADC_DIGI_IIR_FILTER_COEFF_2,
+    ADC_DIGI_IIR_FILTER_COEFF_4,
+    ADC_DIGI_IIR_FILTER_COEFF_8,
+    ADC_DIGI_IIR_FILTER_COEFF_16,
+    ADC_DIGI_IIR_FILTER_COEFF_64,
+};
 #endif
 
 
@@ -101,4 +113,22 @@ void test_adc_set_io_level(adc_unit_t unit, adc_channel_t channel, bool level)
     }
     TEST_ESP_OK(gpio_set_pull_mode(io_num, (level ? GPIO_PULLUP_ONLY: GPIO_PULLDOWN_ONLY)));
 #endif
+}
+
+
+void test_adc_set_io_middle(adc_unit_t unit, adc_channel_t channel)
+{
+    TEST_ASSERT(channel < SOC_ADC_CHANNEL_NUM(unit) && "invalid channel");
+
+    uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
+
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+    TEST_ESP_OK(gpio_set_pull_mode(io_num, GPIO_PULLUP_PULLDOWN));
+#else
+    TEST_ESP_OK(rtc_gpio_init(io_num));
+    TEST_ESP_OK(rtc_gpio_pullup_en(io_num));
+    TEST_ESP_OK(rtc_gpio_pulldown_en(io_num));
+    TEST_ESP_OK(rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_DISABLED));
+#endif
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 }

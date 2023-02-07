@@ -54,7 +54,7 @@
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
 #define SOC_ADC_DIG_CTRL_SUPPORTED              1
-#define SOC_ADC_FILTER_SUPPORTED                1
+#define SOC_ADC_DIG_IIR_FILTER_SUPPORTED        1
 #define SOC_ADC_MONITOR_SUPPORTED               1
 #define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        1    //Digital controller supported ADC unit
 #define SOC_ADC_PERIPH_NUM                      (1U)
@@ -67,7 +67,7 @@
 #define SOC_ADC_PATT_LEN_MAX                    (8) /*!< One pattern table, each contains 8 items. Each item takes 1 byte */
 #define SOC_ADC_DIGI_MIN_BITWIDTH               (12)
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
-#define SOC_ADC_DIGI_FILTER_NUM                 (2)
+#define SOC_ADC_DIGI_IIR_FILTER_NUM             (2)
 #define SOC_ADC_DIGI_MONITOR_NUM                (2)
 /*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interval<= 4095 */
 #define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
