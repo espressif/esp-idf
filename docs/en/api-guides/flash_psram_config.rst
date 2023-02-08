@@ -135,22 +135,34 @@ Error handling
 
 1. If a board with Octal Flash resets before the second-stage bootloader:
 
-.. code-block:: c
+    .. code-block:: c
 
-    ESP-ROM:esp32s3-20210327
-    Build:Mar 27 2021
-    rst:0x7 (TG0WDT_SYS_RST),boot:0x18 (SPI_FAST_FLASH_BOOT)
-    Saved PC:0x400454d5
-    SPIWP:0xee
-    mode:DOUT, clock div:1
-    load:0x3fcd0108,len:0x171c
-    ets_loader.c 78
+        ESP-ROM:esp32s3-20210327
+        Build:Mar 27 2021
+        rst:0x7 (TG0WDT_SYS_RST),boot:0x18 (SPI_FAST_FLASH_BOOT)
+        Saved PC:0x400454d5
+        SPIWP:0xee
+        mode:DOUT, clock div:1
+        load:0x3fcd0108,len:0x171c
+        ets_loader.c 78
 
-it may mean that the necessary efuses are not correctly burnt. please check the eFuse bits of the chip using command ``espefuse.py summary``.
+   this may mean that the necessary efuses are not correctly burnt. Please check the eFuse bits of the chip using command ``espefuse.py summary``.
 
-The 1st bootloader relies on an eFuse bit ``FLASH_TYPE`` to reset the Flash into the default mode (SPI mode). If this bit is not burnt and the flash is working in OPI mode, 1st bootloader may not be able to read from the flash and load the following images.
+   The ROM bootloader relies on an eFuse bit ``FLASH_TYPE`` to reset the Flash into the default mode (SPI mode). If this bit is not burnt and the flash is working in OPI mode, ROM bootloader may not be able to read from the flash and load the following images.
 
-Run this command to burn the eFuse bit:
+2. If you enabled :ref:`CONFIG_ESPTOOLPY_OCT_FLASH`, and there's an error log saying:
+
+    .. code-block:: c
+
+        Octal Flash option selected, but EFUSE not configured!
+
+   this means:
+
+   - either you're using a board with a Quad Flash
+   - or you're using a board with an Octal Flash, but the eFuse bit ``FLASH_TYPE`` isn't burnt. Espressif guarantees this bit during module manufacturing, but if the module is manufactured by others, this may happen.
+
+
+Here is a method to burn the eFuse bit:
 
 .. code-block:: python
 
