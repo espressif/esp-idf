@@ -241,11 +241,6 @@ void rtc_sleep_low_init(uint32_t slowclk_period)
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_SLP_CYCLES);
 }
 
-void rtc_sleep_set_wakeup_time(uint64_t t)
-{
-    rtc_cntl_ll_set_wakeup_timer(t);
-}
-
 /* Read back 'reject' status when waking from light or deep sleep */
 static uint32_t rtc_sleep_finish(void);
 

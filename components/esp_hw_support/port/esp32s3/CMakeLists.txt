@@ -5,7 +5,6 @@ set(srcs
     "rtc_clk.c"
     "rtc_clk_init.c"
     "rtc_init.c"
-    "rtc_pm.c"
     "rtc_sleep.c"
     "rtc_time.c"
     "chip_info.c"
