@@ -47,20 +47,22 @@ Can guess target from sdkconfig, if CMakeCache does not exist | test_non_default
 Can set the default target using sdkconfig.defaults | test_non_default_target.py::test_target_using_sdkconfig |
 IDF_TARGET takes precedence over the value of CONFIG_IDF_TARGET in sdkconfig.defaults | test_non_default_target.py::test_target_precedence |
 idf.py fails if IDF_TARGET settings don't match in sdkconfig, CMakeCache.txt, and the environment | test_non_default_target.py::test_target_from_environment_idf_py |
-Setting EXTRA_COMPONENT_DIRS works | |
-Non-existent paths in EXTRA_COMPONENT_DIRS are not allowed | |
-Component names may contain spaces | |
+Setting EXTRA_COMPONENT_DIRS works | test_components.py::test_component_extra_dirs |
+Non-existent paths in EXTRA_COMPONENT_DIRS are not allowed | test_components.py::test_component_nonexistent_extra_dirs_not_allowed |
+Component names may contain spaces | test_components.py::test_component_names_contain_spaces |
 sdkconfig should have contents of all files: sdkconfig, sdkconfig.defaults, sdkconfig.defaults.IDF_TARGET | |
 Test if it can build the example to run on host | |
-Test build ESP-IDF as a library to a custom CMake projects for all targets | |
-Building a project with CMake library imported and PSRAM workaround, all files compile with workaround | |
-Test for external libraries in custom CMake projects with ESP-IDF components linked | |
-Test for external libraries in custom CMake projects with PSRAM strategy $strat | |
-Cleaning Python bytecode | |
-Displays partition table when executing target partition_table | |
-Make sure a full build never runs '/usr/bin/env python' or similar | |
-Handling deprecated Kconfig options | |
-Handling deprecated Kconfig options in sdkconfig.defaults | |
+Test build ESP-IDF as a library to a custom CMake projects for all targets | test_cmake.py::test_build_custom_cmake_project |
+Building a project with CMake library imported and PSRAM workaround, all files compile with workaround | test_cmake.py::test_build_cmake_library_psram_workaround |
+Test for external libraries in custom CMake projects with ESP-IDF components linked | test_cmake.py::test_build_custom_cmake_project |
+Test for external libraries in custom CMake projects with PSRAM strategy $strat | test_cmake.py::test_build_cmake_library_psram_strategies |
+Cleaning Python bytecode | test_common.py::test_python_clean |
+Displays partition table when executing target partition_table | test_common.py::test_partition_table |
+Make sure a full build never runs '/usr/bin/env python' or similar | test_common.py::test_python_interpreter_unix, test_common.py::test_python_interpreter_win |
+Handling deprecated Kconfig options | test_kconfig.py::test_kconfig_deprecated_options |
+Handling deprecated Kconfig options in sdkconfig.defaults | test_kconfig.py::test_kconfig_deprecated_options |
+Can have multiple deprecated Kconfig options map to a single new option | test_kconfig.py::test_kconfig_multiple_and_target_specific_options |
+Can have target specific deprecated Kconfig options | test_kconfig.py::test_kconfig_multiple_and_target_specific_options |
 Confserver can be invoked by idf.py | |
 Check ccache is used to build | |
 Custom bootloader overrides original | |

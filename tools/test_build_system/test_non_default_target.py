@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List, Optional
 
 import pytest
-from test_build_system_helpers import EnvDict, IdfPyFunc, check_file_contains, run_cmake
+from test_build_system_helpers import EnvDict, IdfPyFunc, file_contains, run_cmake
 
 ESP32C3_TARGET = 'esp32c3'
 ESP32C2_TARGET = 'esp32c2'
@@ -27,8 +27,8 @@ def test_target_from_environment_cmake(default_idf_env: EnvDict) -> None:
     env = default_idf_env
     env.update({'IDF_TARGET': ESP32S2_TARGET})
     run_cmake('-G', 'Ninja', '..', env=env)
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
-    check_file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
+    assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
 
 
 def test_target_from_environment_idf_py(idf_py: IdfPyFunc, default_idf_env: EnvDict, test_app_copy: Path) -> None:
@@ -113,52 +113,52 @@ def test_target_precedence(idf_py: IdfPyFunc, default_idf_env: EnvDict, test_app
     (test_app_copy / 'sdkconfig.defaults').write_text('CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
     default_idf_env.update({'IDF_TARGET': ESP32_TARGET})
     idf_py('reconfigure')
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32_TARGET))
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET_{}=y'.format(ESP32_TARGET.upper()))
-    check_file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET_{}=y'.format(ESP32_TARGET.upper()))
+    assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32_TARGET))
 
 
 def test_target_using_D_parameter(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('Can set target using idf.py -D')
     idf_py('-DIDF_TARGET={}'.format(ESP32S2_TARGET), 'reconfigure')
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
-    check_file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
+    assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
 
     logging.info('Can set target using -D as subcommand parameter for idf.py')
     clean_app(test_app_copy)
     idf_py('reconfigure', '-DIDF_TARGET={}'.format(ESP32S2_TARGET))
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
-    check_file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
+    assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
 
 
 @pytest.mark.usefixtures('test_app_copy')
 def test_target_using_settarget_parameter_alternative_name(idf_py: IdfPyFunc) -> None:
     logging.info('idf.py understands alternative target names')
     idf_py('set-target', ESP32S2_TARGET.upper())
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
-    check_file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
+    assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
 
 
 @pytest.mark.usefixtures('test_app_copy')
 def test_target_using_settarget_parameter(idf_py: IdfPyFunc) -> None:
     logging.info('Can set target using idf.py set-target')
     idf_py('set-target', ESP32S2_TARGET)
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
-    check_file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
+    assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
 
     logging.info('Can guess target from sdkconfig, if CMakeCache does not exist')
     idf_py('fullclean')
     idf_py('reconfigure')
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
-    check_file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
+    assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
 
 
 def test_target_using_sdkconfig(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('Can set the default target using sdkconfig.defaults')
     (test_app_copy / 'sdkconfig.defaults').write_text('CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
     idf_py('reconfigure')
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET_{}=y'.format(ESP32S2_TARGET.upper()))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET_{}=y'.format(ESP32S2_TARGET.upper()))
 
 
 def test_target_guessing(idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env: EnvDict) -> None:
@@ -171,8 +171,8 @@ def test_target_guessing(idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env
     logging.info('Can guess target from sdkconfig.defaults')
     (test_app_copy / 'sdkconfig.defaults').write_text('CONFIG_IDF_TARGET="{}"'.format(ESP32_TARGET))
     idf_py('reconfigure')
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32_TARGET))
-    check_file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32_TARGET))
+    assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32_TARGET))
 
     logging.info('Can guess target from SDKCONFIG_DEFAULTS environment variable')
     (test_app_copy / 'sdkconfig1').write_text('NOTHING HERE')
@@ -180,20 +180,20 @@ def test_target_guessing(idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env
     clean_app(test_app_copy)
     default_idf_env.update({'SDKCONFIG_DEFAULTS': 'sdkconfig1;sdkconfig2'})
     idf_py('reconfigure')
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
-    check_file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
+    assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
 
     logging.info('Can guess target from SDKCONFIG_DEFAULTS using -D')
     (test_app_copy / 'sdkconfig3').write_text('CONFIG_IDF_TARGET="{}"'.format(ESP32S2_TARGET))
     (test_app_copy / 'sdkconfig4').write_text('CONFIG_IDF_TARGET="{}"'.format(ESP32S3_TARGET))
     clean_app(test_app_copy)
     idf_py('-D', 'SDKCONFIG_DEFAULTS=sdkconfig4;sdkconfig3', 'reconfigure')
-    check_file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S3_TARGET))
-    check_file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S3_TARGET))
+    assert file_contains('sdkconfig', 'CONFIG_IDF_TARGET="{}"'.format(ESP32S3_TARGET))
+    assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S3_TARGET))
 
     logging.info('Can guess target from custom sdkconfig')
     (test_app_copy / 'sdkconfig5').write_text('CONFIG_IDF_TARGET="{}"'.format(ESP32C3_TARGET))
     clean_app(test_app_copy)
     idf_py('-D', 'SDKCONFIG=sdkconfig5', '-D', 'SDKCONFIG_DEFAULTS=sdkconfig4;sdkconfig3', 'reconfigure')
-    check_file_contains('sdkconfig5', 'CONFIG_IDF_TARGET="{}"'.format(ESP32C3_TARGET))
-    check_file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32C3_TARGET))
+    assert file_contains('sdkconfig5', 'CONFIG_IDF_TARGET="{}"'.format(ESP32C3_TARGET))
+    assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32C3_TARGET))
