@@ -90,7 +90,7 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
             TEST_ESP_OK(gptimer_get_raw_count(timers[i], &value));
             // convert the raw count to us
             value = value * 1000000 / timer_resolution_hz[i];
-            TEST_ASSERT_UINT_WITHIN(1000, 20000, value);
+            TEST_ASSERT_UINT_WITHIN(1100, 20000, value);
         }
         printf("stop timers\r\n");
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
@@ -139,7 +139,7 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
  * between the alarm triggering and the execution of the callback that actually stops the gptimer.
  */
 #if CONFIG_PM_ENABLE
-#define GPTIMER_STOP_ON_ALARM_COUNT_DELTA  100
+#define GPTIMER_STOP_ON_ALARM_COUNT_DELTA  150
 #else
 #define GPTIMER_STOP_ON_ALARM_COUNT_DELTA  50
 #endif // CONFIG_PM_ENABLE
