@@ -26,7 +26,7 @@
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 // #define SOC_ADC_SUPPORTED               1 // TODO: IDF-6214
-// #define SOC_DEDICATED_GPIO_SUPPORTED    1 // TODO: IDF-6241
+#define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
@@ -154,8 +154,10 @@
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-H2 has 1 GPIO peripheral
-#define SOC_GPIO_PORT               (1U)
-#define SOC_GPIO_PIN_COUNT          (28)
+#define SOC_GPIO_PORT                        1U
+#define SOC_GPIO_PIN_COUNT                   28
+#define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER   1
+#define SOC_GPIO_FLEX_GLITCH_FILTER_NUM      8
 
 // GPIO peripheral has the ETM extension
 #define SOC_GPIO_SUPPORT_ETM          1
@@ -174,7 +176,6 @@
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_0~6. GPIO_NUM_15~27)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x000000000FFF807FULL
 
-// TODO: IDF-6241
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */

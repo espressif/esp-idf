@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,11 +8,11 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_check.h"
 #include "glitch_filter_priv.h"
-#include "esp_private/esp_clk.h"
 #include "esp_private/io_mux.h"
 #include "soc/soc_caps.h"
 #include "hal/gpio_glitch_filter_ll.h"
 #include "esp_pm.h"
+#include "clk_tree.h"
 
 static const char *TAG = "gpio-filter";
 
@@ -136,31 +136,20 @@ esp_err_t gpio_new_flex_glitch_filter(const gpio_flex_glitch_filter_config_t *co
     int filter_id = filter->filter_id;
 
     // set clock source
-    uint32_t clk_freq_mhz = 0;
-    switch (config->clk_src) {
-#if SOC_GPIO_FILTER_CLK_SUPPORT_XTAL
-    case GLITCH_FILTER_CLK_SRC_XTAL:
-        clk_freq_mhz = esp_clk_xtal_freq() / 1000000;
-        break;
-#endif // SOC_GPIO_FILTER_CLK_SUPPORT_XTAL
+    uint32_t clk_freq_hz = 0;
+    ESP_GOTO_ON_ERROR(clk_tree_src_get_freq_hz((soc_module_clk_t)config->clk_src, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_freq_hz),
+                      err, TAG, "get clock source frequency failed");
 
-#if SOC_GPIO_FILTER_CLK_SUPPORT_PLL_F80M
-    case GLITCH_FILTER_CLK_SRC_PLL_F80M:
-        clk_freq_mhz = 80;
+    // create pm_lock according to different clock source
 #if CONFIG_PM_ENABLE
-        sprintf(filter->pm_lock_name, "filter_%d", filter_id); // e.g. filter_0
-        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, filter->pm_lock_name, &filter->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
+    esp_pm_lock_type_t lock_type = ESP_PM_NO_LIGHT_SLEEP;
+    sprintf(filter->pm_lock_name, "filter_%d", filter_id); // e.g. filter_0
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(lock_type, 0, filter->pm_lock_name, &filter->pm_lock),
+                      err, TAG, "create pm_lock failed");
 #endif
-        break;
-#endif // SOC_GPIO_FILTER_CLK_SUPPORT_PLL_F80M
-    default:
-        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid clock source");
-        break;
-    }
 
-    uint32_t window_thres_ticks = clk_freq_mhz * config->window_thres_ns / 1000;
-    uint32_t window_width_ticks = clk_freq_mhz * config->window_width_ns / 1000;
+    uint32_t window_thres_ticks = clk_freq_hz / 1000000 * config->window_thres_ns / 1000;
+    uint32_t window_width_ticks = clk_freq_hz / 1000000 * config->window_width_ns / 1000;
     ESP_GOTO_ON_FALSE(window_thres_ticks && window_thres_ticks <= window_width_ticks && window_width_ticks <= GPIO_LL_GLITCH_FILTER_MAX_WINDOW,
                       ESP_ERR_INVALID_ARG, err, TAG, "invalid or out of range window width/threshold");
 

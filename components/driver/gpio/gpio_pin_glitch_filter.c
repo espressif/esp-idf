@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include "esp_pm.h"
 #include "glitch_filter_priv.h"
 #include "hal/gpio_ll.h"
-#include "esp_private/esp_clk.h"
+#include "clk_tree.h"
 #include "esp_private/io_mux.h"
 
 static const char *TAG = "gpio-filter";
@@ -84,36 +84,18 @@ esp_err_t gpio_new_pin_glitch_filter(const gpio_pin_glitch_filter_config_t *conf
     filter = heap_caps_calloc(1, sizeof(gpio_pin_glitch_filter_t), FILTER_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(filter, ESP_ERR_NO_MEM, err, TAG, "no memory for pin glitch filter");
 
-    // set clock source
-    switch (config->clk_src) {
-#if SOC_GPIO_FILTER_CLK_SUPPORT_XTAL
-    case GLITCH_FILTER_CLK_SRC_XTAL:
-        break;
-#endif // SOC_GPIO_FILTER_CLK_SUPPORT_XTAL
-
-#if SOC_GPIO_FILTER_CLK_SUPPORT_PLL_F80M
-    case GLITCH_FILTER_CLK_SRC_PLL_F80M:
+    // create pm lock according to different clock source
 #if CONFIG_PM_ENABLE
-        sprintf(filter->pm_lock_name, "filter_io_%d", config->gpio_num); // e.g. filter_io_0
-        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, filter->pm_lock_name, &filter->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
-#endif
-        break;
-#endif // SOC_GPIO_FILTER_CLK_SUPPORT_PLL_F80M
-
+    esp_pm_lock_type_t lock_type = ESP_PM_NO_LIGHT_SLEEP;
 #if SOC_GPIO_FILTER_CLK_SUPPORT_APB
-    case GLITCH_FILTER_CLK_SRC_APB:
-#if CONFIG_PM_ENABLE
-        sprintf(filter->pm_lock_name, "filter_io_%d", config->gpio_num); // e.g. filter_io_0
-        ret  = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, filter->pm_lock_name, &filter->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create APB_FREQ_MAX lock failed");
-#endif
-        break;
-#endif // SOC_GPIO_FILTER_CLK_SUPPORT_APB
-    default:
-        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid clock source");
-        break;
+    if (config->clk_src == GLITCH_FILTER_CLK_SRC_APB) {
+        lock_type = ESP_PM_APB_FREQ_MAX;
     }
+#endif // SOC_GPIO_FILTER_CLK_SUPPORT_APB
+    sprintf(filter->pm_lock_name, "filter_io_%d", config->gpio_num); // e.g. filter_io_0
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(lock_type, 0, filter->pm_lock_name, &filter->pm_lock),
+                      err, TAG, "create pm_lock failed");
+#endif // CONFIG_PM_ENABLE
 
     // Glitch filter's clock source is same to the IOMUX clock
     ESP_GOTO_ON_ERROR(io_mux_set_clock_source((soc_module_clk_t)(config->clk_src)), err, TAG, "set IO MUX clock source failed");
