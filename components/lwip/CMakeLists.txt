@@ -156,7 +156,7 @@ if(CONFIG_LWIP_DHCPS)
 endif()
 
 if(CONFIG_LWIP_DHCP_RESTORE_LAST_IP)
-    list(APPEND srcs "port/esp32/netif/dhcp_state.c")
+    list(APPEND srcs "port/esp32xx/netif/dhcp_state.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
