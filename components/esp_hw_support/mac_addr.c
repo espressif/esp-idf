@@ -97,7 +97,11 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
 
     if (efuse_crc != calc_crc) {
         ESP_LOGE(TAG, "Base MAC address from BLK3 of EFUSE CRC error, efuse_crc = 0x%02x; calc_crc = 0x%02x", efuse_crc, calc_crc);
+#ifdef CONFIG_ESP_MAC_IGNORE_MAC_CRC_ERROR
+        ESP_LOGW(TAG, "Ignore MAC CRC error");
+#else
         return ESP_ERR_INVALID_CRC;
+#endif
     }
     return ESP_OK;
 #endif
@@ -133,7 +137,11 @@ esp_err_t esp_efuse_mac_get_default(uint8_t *mac)
             return ESP_OK;
         } else {
             ESP_LOGE(TAG, "Base MAC address from BLK0 of EFUSE CRC error, efuse_crc = 0x%02x; calc_crc = 0x%02x", efuse_crc, calc_crc);
-            abort();
+#ifdef CONFIG_ESP_MAC_IGNORE_MAC_CRC_ERROR
+            ESP_LOGW(TAG, "Ignore MAC CRC error");
+#else
+            return ESP_ERR_INVALID_CRC;
+#endif
         }
     }
 #endif // CONFIG_IDF_TARGET_ESP32
