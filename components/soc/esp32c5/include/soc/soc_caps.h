@@ -411,8 +411,8 @@
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
 #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
 #define SOC_SPI_SUPPORT_CLK_XTAL            1
-// #define SOC_SPI_SUPPORT_CLK_PLL_F80M        1
-// #define SOC_SPI_SUPPORT_CLK_RC_FAST         1
+#define SOC_SPI_SUPPORT_CLK_PLL_F160M       1
+#define SOC_SPI_SUPPORT_CLK_RC_FAST         1
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 // host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
