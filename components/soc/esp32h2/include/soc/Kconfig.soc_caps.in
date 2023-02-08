@@ -59,6 +59,10 @@ config SOC_SDM_SUPPORTED
     bool
     default y
 
+config SOC_ETM_SUPPORTED
+    bool
+    default y
+
 config SOC_RMT_SUPPORTED
     bool
     default y
@@ -259,6 +263,14 @@ config SOC_GDMA_SUPPORT_ETM
     bool
     default y
 
+config SOC_ETM_GROUPS
+    int
+    default 1
+
+config SOC_ETM_CHANNELS_PER_GROUP
+    int
+    default 50
+
 config SOC_GPIO_PORT
     int
     default 1
@@ -266,6 +278,18 @@ config SOC_GPIO_PORT
 config SOC_GPIO_PIN_COUNT
     int
     default 28
+
+config SOC_GPIO_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_GPIO_ETM_EVENTS_PER_GROUP
+    int
+    default 8
+
+config SOC_GPIO_ETM_TASKS_PER_GROUP
+    int
+    default 8
 
 config SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
     bool
@@ -714,6 +738,10 @@ config SOC_TIMER_GROUP_SUPPORT_PLL_F48M
 config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 2
+
+config SOC_TIMER_SUPPORT_ETM
+    bool
+    default y
 
 config SOC_TWAI_CONTROLLER_NUM
     bool

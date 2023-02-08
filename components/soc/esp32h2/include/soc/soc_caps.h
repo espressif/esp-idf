@@ -47,6 +47,7 @@
 #define SOC_RTC_MEM_SUPPORTED           1
 #define SOC_I2S_SUPPORTED               1
 #define SOC_SDM_SUPPORTED               1
+#define SOC_ETM_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 // #define SOC_GPSPI_SUPPORTED             1 // TODO: IDF-6264
 #define SOC_LEDC_SUPPORTED              1
@@ -147,10 +148,19 @@
 #define SOC_GDMA_PAIRS_PER_GROUP        (3)  // Number of GDMA pairs in each group
 #define SOC_GDMA_SUPPORT_ETM            (1)  // Support ETM submodule
 
+/*-------------------------- ETM CAPS --------------------------------------*/
+#define SOC_ETM_GROUPS                  1U  // Number of ETM groups
+#define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
+
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-H2 has 1 GPIO peripheral
 #define SOC_GPIO_PORT               (1U)
 #define SOC_GPIO_PIN_COUNT          (28)
+
+// GPIO peripheral has the ETM extension
+#define SOC_GPIO_SUPPORT_ETM          1
+#define SOC_GPIO_ETM_EVENTS_PER_GROUP 8
+#define SOC_GPIO_ETM_TASKS_PER_GROUP  8
 
 // Target has no full LP IO subsystem, GPIO7~14 remain LP function (powered by VDD3V3_LP, and can be used as deep-sleep wakeup pins)
 
@@ -348,7 +358,7 @@
 #define SOC_TIMER_GROUP_SUPPORT_PLL_F48M  (1)
 // #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1) // TODO: IDF-6265
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
-// #define SOC_TIMER_SUPPORT_ETM             (1)
+#define SOC_TIMER_SUPPORT_ETM             (1)
 
 // TODO: IDF-6217 (Copy from esp32c6, need check)
 /*-------------------------- TWAI CAPS ---------------------------------------*/
