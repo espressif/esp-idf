@@ -15,7 +15,6 @@
 #include "esp_fault.h"
 #include "esp_log.h"
 #include "soc/efuse_periph.h"
-#include "bootloader_random.h"
 #include "sys/param.h"
 
 static __attribute__((unused)) const char *TAG = "efuse";
