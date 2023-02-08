@@ -203,7 +203,7 @@ void uart_tx_switch(uint8_t uart_no);
   *
   * @return OK.
   */
-STATUS uart_tx_one_char(uint8_t TxChar);
+ETS_STATUS uart_tx_one_char(uint8_t TxChar);
 
 /**
   * @brief Output a char to message exchange channel, wait until fifo not full.
@@ -213,7 +213,7 @@ STATUS uart_tx_one_char(uint8_t TxChar);
   *
   * @return OK.
   */
-STATUS uart_tx_one_char2(uint8_t TxChar);
+ETS_STATUS uart_tx_one_char2(uint8_t TxChar);
 
 /**
   * @brief Wait until uart tx full empty.
@@ -243,7 +243,7 @@ void uart_tx_wait_idle(uint8_t uart_no);
   * @return OK for successful.
   *         FAIL for failed.
   */
-STATUS uart_rx_one_char(uint8_t *pRxChar);
+ETS_STATUS uart_rx_one_char(uint8_t *pRxChar);
 
 /**
   * @brief Get an input char from message channel, wait until successful.
@@ -265,7 +265,7 @@ char uart_rx_one_char_block(void);
   *
   * @return OK.
   */
-STATUS UartRxString(uint8_t *pString, uint8_t MaxStrlen);
+ETS_STATUS UartRxString(uint8_t *pString, uint8_t MaxStrlen);
 
 /**
   * @brief Get an char from receive buffer.
@@ -278,7 +278,7 @@ STATUS UartRxString(uint8_t *pString, uint8_t MaxStrlen);
   * @return OK for successful.
   *         FAIL for failed.
   */
-STATUS uart_rx_readbuff( RcvMsgBuff *pRxBuff, uint8_t *pRxByte);
+ETS_STATUS uart_rx_readbuff( RcvMsgBuff *pRxBuff, uint8_t *pRxByte);
 
 /**
   * @brief Get uart configuration struct.

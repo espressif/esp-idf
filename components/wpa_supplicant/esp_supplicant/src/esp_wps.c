@@ -56,7 +56,7 @@ static uint8_t s_wps_sig_cnt[SIG_WPS_NUM] = {0};
 
 #endif
 
-void wifi_wps_scan_done(void *arg, STATUS status);
+void wifi_wps_scan_done(void *arg, ETS_STATUS status);
 void wifi_wps_scan(void *data, void *user_ctx);
 int wifi_station_wps_start(void);
 int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len);
@@ -1532,7 +1532,7 @@ wps_sm_get(void)
 }
 
 void
-wifi_wps_scan_done(void *arg, STATUS status)
+wifi_wps_scan_done(void *arg, ETS_STATUS status)
 {
     struct wps_sm *sm = gWpsSm;
     wifi_config_t wifi_config = {0};
@@ -1596,7 +1596,7 @@ wifi_wps_scan_internal(void)
     sm->scan_cnt++;
     wpa_printf(MSG_DEBUG, "wifi_wps_scan : %d", sm->scan_cnt);
 
-    typedef void (* scan_done_cb_t)(void *arg, STATUS status);
+    typedef void (* scan_done_cb_t)(void *arg, ETS_STATUS status);
     extern int esp_wifi_promiscuous_scan_start(wifi_scan_config_t *config, scan_done_cb_t cb);
     esp_wifi_promiscuous_scan_start(NULL, wifi_wps_scan_done);
 }
