@@ -283,6 +283,14 @@ menu "LWIP"
             options and values. If your code meets LWIP_ASSERT due to option value is too long.
             Please increase the LWIP_DHCP_OPTIONS_LEN value.
 
+    config LWIP_DHCP_COARSE_TIMER_SECS
+        int "DHCP coarse timer interval(s)"
+        default 1
+        range 1 10
+        help
+            Set DHCP coarse interval in seconds.
+            A higher value will be less precise but cost less power consumption.
+
     menu "DHCP server"
 
         config LWIP_DHCPS
