@@ -292,7 +292,7 @@ How To Use It
 
 In order to use logging via trace module, users need to perform the following steps:
 
-1. On the target side, the special vprintf-like function ``esp_apptrace_vprintf`` needs to be installed. It sends log data to the host. Example usage ``esp_log_set_vprintf(esp_apptrace_vprintf);``. To send log data to uart again ``esp_log_set_vprintf(vprintf);``
+1. On the target side, the special vprintf-like function :cpp:func:`esp_apptrace_vprintf` needs to be installed. It sends log data to the host. An example is ``esp_log_set_vprintf(esp_apptrace_vprintf);``. To send log data to UART again, use ``esp_log_set_vprintf(vprintf);``.
 2. Follow instructions in items 2-5 in `Application Specific Tracing`_.
 3. To print out collected log records, run the following command in terminal: ``$IDF_PATH/tools/esp_app_trace/logtrace_proc.py /path/to/trace/file /path/to/program/elf/file``.
 

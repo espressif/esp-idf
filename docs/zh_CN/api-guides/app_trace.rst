@@ -292,7 +292,7 @@ ESP-IDF 的日志库会默认使用类 vprintf 的函数将格式化的字符串
 
 为了使用跟踪模块来记录日志，用户需要执行以下步骤：
 
-1. 在目标端，需要安装特殊的类 vprintf 函数 ``esp_apptrace_vprintf``，该函数负责将日志数据发送给主机。示例代码参见。
+1. 在目标端，需要安装特殊的类 vprintf 函数 :cpp:func:`esp_apptrace_vprintf`，该函数负责将日志数据发送给主机，使用方法为 ``esp_log_set_vprintf(esp_apptrace_vprintf);``。如需将日志数据再次重定向给 UART，请使用 ``esp_log_set_vprintf(vprintf);``。
 2. 按照 :ref:`app_trace-application-specific-tracing` 章节中的第 2-5 步进行操作。
 3. 打印接收到的日志记录，请在终端运行以下命令：``$IDF_PATH/tools/esp_app_trace/logtrace_proc.py /path/to/trace/file /path/to/program/elf/file``。
 
