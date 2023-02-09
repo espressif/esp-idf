@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include "esp_types.h"
 #include "esp_log.h"
 #include "ccomp_timer.h"
@@ -70,7 +71,7 @@ TEST_CASE("Test esp_sha()", "[hw_crypto]")
     elapsed = ccomp_timer_stop();
     TEST_ASSERT_EQUAL_HEX8_ARRAY(sha1_expected, sha1_result, sizeof(sha1_expected));
     us_sha1 = elapsed;
-    ESP_LOGI(TAG, "esp_sha() 32KB SHA1 in %u us", us_sha1);
+    ESP_LOGI(TAG, "esp_sha() 32KB SHA1 in %" PRIu32 " us", us_sha1);
 
 #if SOC_SHA_SUPPORT_SHA512
     ccomp_timer_start();
@@ -79,15 +80,15 @@ TEST_CASE("Test esp_sha()", "[hw_crypto]")
     TEST_ASSERT_EQUAL_HEX8_ARRAY(sha512_expected, sha512_result, sizeof(sha512_expected));
 
     us_sha512 = elapsed;
-    ESP_LOGI(TAG, "esp_sha() 32KB SHA512 in %u us", us_sha512);
+    ESP_LOGI(TAG, "esp_sha() 32KB SHA512 in %" PRIu32 " us", us_sha512);
 #endif
 
     free(buffer);
 
-    TEST_PERFORMANCE_CCOMP_LESS_THAN(TIME_SHA1_32KB, "%dus", us_sha1);
+    TEST_PERFORMANCE_CCOMP_LESS_THAN(TIME_SHA1_32KB, "%" PRId32 " us", us_sha1);
 
 #if SOC_SHA_SUPPORT_SHA512
-    TEST_PERFORMANCE_CCOMP_LESS_THAN(TIME_SHA512_32KB, "%dus", us_sha512);
+    TEST_PERFORMANCE_CCOMP_LESS_THAN(TIME_SHA512_32KB, "%" PRId32 " us", us_sha512);
 #endif
 }
 
