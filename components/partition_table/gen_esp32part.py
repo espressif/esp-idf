@@ -28,6 +28,10 @@ PARTITION_TABLE_SIZE  = 0x1000  # Size of partition table
 MIN_PARTITION_SUBTYPE_APP_OTA = 0x10
 NUM_PARTITION_SUBTYPE_APP_OTA = 16
 
+SECURE_NONE = None
+SECURE_V1 = 'v1'
+SECURE_V2 = 'v2'
+
 __version__ = '1.2'
 
 APP_TYPE = 0x00
@@ -91,13 +95,26 @@ ALIGNMENT = {
 STRICT_DATA_ALIGNMENT = 0x1000
 
 
-def get_alignment_for_type(ptype):
+def get_alignment_offset_for_type(ptype):
     return ALIGNMENT.get(ptype, ALIGNMENT[DATA_TYPE])
+
+
+def get_alignment_size_for_type(ptype):
+    if ptype == APP_TYPE and secure == SECURE_V1:
+        # For secure boot v1 case, app partition must be 64K aligned
+        # signature block (68 bytes) lies at the very end of 64K block
+        return 0x10000
+    if ptype == APP_TYPE and secure == SECURE_V2:
+        # For secure boot v2 case, app partition must be 4K aligned
+        # signature block (4K) is kept after padding the unsigned image to 64K boundary
+        return 0x1000
+    # No specific size alignement requirement as such
+    return 0x1
 
 
 quiet = False
 md5sum = True
-secure = False
+secure = SECURE_NONE
 offset_part_table = 0
 
 
@@ -164,7 +181,7 @@ class PartitionTable(list):
                     raise InputError('CSV Error: Partitions overlap. Partition at line %d sets offset 0x%x. Previous partition ends 0x%x'
                                      % (e.line_no, e.offset, last_end))
             if e.offset is None:
-                pad_to = get_alignment_for_type(e.type)
+                pad_to = get_alignment_offset_for_type(e.type)
                 if last_end % pad_to != 0:
                     last_end += pad_to - (last_end % pad_to)
                 e.offset = last_end
@@ -397,18 +414,20 @@ class PartitionDefinition(object):
             raise ValidationError(self, 'Subtype field is not set')
         if self.offset is None:
             raise ValidationError(self, 'Offset field is not set')
-        align = get_alignment_for_type(self.type)
-        if self.offset % align:
-            raise ValidationError(self, 'Offset 0x%x is not aligned to 0x%x' % (self.offset, align))
+        if self.size is None:
+            raise ValidationError(self, 'Size field is not set')
+        offset_align = get_alignment_offset_for_type(self.type)
+        if self.offset % offset_align:
+            raise ValidationError(self, 'Offset 0x%x is not aligned to 0x%x' % (self.offset, offset_align))
         # The alignment requirement for non-app partition is 4 bytes, but it should be 4 kB.
         # Print a warning for now, make it an error in IDF 5.0 (IDF-3742).
         if self.type != APP_TYPE and self.offset % STRICT_DATA_ALIGNMENT:
             critical('WARNING: Partition %s not aligned to 0x%x.'
                      'This is deprecated and will be considered an error in the future release.' % (self.name, STRICT_DATA_ALIGNMENT))
-        if self.size % align and secure and self.type == APP_TYPE:
-            raise ValidationError(self, 'Size 0x%x is not aligned to 0x%x' % (self.size, align))
-        if self.size is None:
-            raise ValidationError(self, 'Size field is not set')
+        if self.type == APP_TYPE and secure is not SECURE_NONE:
+            size_align = get_alignment_size_for_type(self.type)
+            if self.size % size_align:
+                raise ValidationError(self, 'Size 0x%x is not aligned to 0x%x' % (self.size, size_align))
 
         if self.name in TYPES and TYPES.get(self.name, '') != self.type:
             critical("WARNING: Partition has name '%s' which is a partition type, but does not match this partition's "
@@ -513,7 +532,7 @@ def main():
                                                'enabled by default and this flag does nothing.', action='store_true')
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--offset', '-o', help='Set offset partition table', default='0x8000')
-    parser.add_argument('--secure', help='Require app partitions to be suitable for secure boot', action='store_true')
+    parser.add_argument('--secure', help='Require app partitions to be suitable for secure boot', nargs='?', const=SECURE_V1, choices=[SECURE_V1, SECURE_V2])
     parser.add_argument('input', help='Path to CSV or binary file to parse.', type=argparse.FileType('rb'))
     parser.add_argument('output', help='Path to output converted binary or CSV file. Will use stdout if omitted.',
                         nargs='?', default='-')
