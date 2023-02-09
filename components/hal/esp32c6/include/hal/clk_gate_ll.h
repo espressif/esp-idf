@@ -139,29 +139,24 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         case PERIPH_TEMPSENSOR_MODULE:
             return PCR_TSENS_RST_EN;
         case PERIPH_AES_MODULE:
-        if (enable == true) {
-            // Clear reset on digital signature, otherwise AES unit is held in reset also.
-                return (PCR_AES_RST_EN | PCR_DS_RST_EN);
-        } else {
-                //Don't return other units to reset, as this pulls reset on RSA & SHA units, respectively.
-                return PCR_AES_RST_EN;
-        }
+            if (enable == true) {
+                // Clear reset on digital signature, otherwise AES unit is held in reset
+                DPORT_CLEAR_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
+            }
+            return PCR_AES_RST_EN;
         case PERIPH_SHA_MODULE:
-        if (enable == true) {
-            // Clear reset on digital signature and HMAC, otherwise SHA is held in reset
-                return (PCR_SHA_RST_EN | PCR_DS_RST_EN | PCR_HMAC_RST_EN);
-        } else {
-            // Don't assert reset on secure boot, otherwise AES is held in reset
-                return PCR_SHA_RST_EN;
-        }
+            if (enable == true) {
+                // Clear reset on digital signature and HMAC, otherwise SHA is held in reset
+                DPORT_CLEAR_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
+                DPORT_CLEAR_PERI_REG_MASK(PCR_HMAC_CONF_REG, PCR_HMAC_RST_EN);
+            }
+            return PCR_SHA_RST_EN;
         case PERIPH_RSA_MODULE:
-        if (enable == true) {
-            /* also clear reset on digital signature, otherwise RSA is held in reset */
-                return (PCR_RSA_RST_EN | PCR_DS_RST_EN);
-        } else {
-            /* don't reset digital signature unit, as this resets AES also */
-                return PCR_RSA_RST_EN;
-        }
+            if (enable == true) {
+                // Clear reset on digital signature, otherwise RSA is held in reset
+                DPORT_CLEAR_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
+            }
+            return PCR_RSA_RST_EN;
         case PERIPH_HMAC_MODULE:
             return PCR_HMAC_RST_EN;
         case PERIPH_DS_MODULE:
