@@ -1,7 +1,3 @@
-if(IDF_TARGET STREQUAL "esp32h2")
-    return() #ESP32H2-TODO: IDF-6213
-endif()
-
 set(srcs "src/esp_lcd_common.c"
          "src/esp_lcd_panel_io.c"
          "src/esp_lcd_panel_io_i2c.c"
