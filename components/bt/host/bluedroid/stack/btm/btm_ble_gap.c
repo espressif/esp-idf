@@ -869,7 +869,7 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode, tBTM_SET_LOCAL_PRIVACY_CBACK 
         return FALSE;
     }
 
-    if (!(p_cb->inq_var.state == BTM_BLE_STOP_SCAN || p_cb->inq_var.state == BTM_BLE_STOP_ADV || p_cb->inq_var.state == BTM_BLE_IDLE)) {
+    if (p_cb->inq_var.state != BTM_BLE_IDLE) {
         BTM_TRACE_ERROR("Advertising or scaning now, can't set privacy ");
         if (random_cb && random_cb->set_local_privacy_cback){
             (*random_cb->set_local_privacy_cback)(BTM_SET_PRIVACY_FAIL);
@@ -1997,7 +1997,7 @@ tBTM_STATUS BTM_BleSetRandAddress(BD_ADDR rand_addr)
 		return BTM_SET_STATIC_RAND_ADDR_FAIL;
     }
 
-    if (!(btm_cb.ble_ctr_cb.inq_var.state == BTM_BLE_STOP_SCAN || btm_cb.ble_ctr_cb.inq_var.state == BTM_BLE_STOP_ADV || btm_cb.ble_ctr_cb.inq_var.state == BTM_BLE_IDLE)) {
+    if (btm_cb.ble_ctr_cb.inq_var.state != BTM_BLE_IDLE) {
         BTM_TRACE_ERROR("Advertising or scaning now, can't set randaddress %d", btm_cb.ble_ctr_cb.inq_var.state);
         return BTM_SET_STATIC_RAND_ADDR_FAIL;
     }
@@ -2026,7 +2026,7 @@ tBTM_STATUS BTM_BleSetRandAddress(BD_ADDR rand_addr)
 void BTM_BleClearRandAddress(void)
 {
     tBTM_BLE_CB  *p_cb = &btm_cb.ble_ctr_cb;
-    if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM && (!(p_cb->inq_var.state == BTM_BLE_STOP_SCAN || p_cb->inq_var.state == BTM_BLE_STOP_ADV || p_cb->inq_var.state == BTM_BLE_IDLE))) {
+    if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM && (p_cb->inq_var.state != BTM_BLE_IDLE)) {
         BTM_TRACE_ERROR("Advertising or scaning now, can't restore public address ");
         return;
     }
@@ -2142,10 +2142,11 @@ void BTM_Recovery_Pre_State(void)
 {
     tBTM_BLE_INQ_CB *ble_inq_cb = &btm_cb.ble_ctr_cb.inq_var;
 
-    if (ble_inq_cb->state == BTM_BLE_ADVERTISING) {
+    if (ble_inq_cb->state & BTM_BLE_ADVERTISING) {
         btm_ble_stop_adv();
         btm_ble_start_adv();
-    } else if (ble_inq_cb->state == BTM_BLE_SCANNING) {
+    }
+    if (ble_inq_cb->state & BTM_BLE_SCANNING) {
         btm_ble_start_scan();
     }
 
@@ -3842,7 +3843,7 @@ tBTM_STATUS btm_ble_start_scan(void)
         if(scan_enable_status != BTM_SUCCESS) {
             status = BTM_NO_RESOURCES;
         }
-        btm_cb.ble_ctr_cb.inq_var.state = BTM_BLE_SCANNING;
+        btm_cb.ble_ctr_cb.inq_var.state |= BTM_BLE_SCANNING;
         if (p_inq->scan_type == BTM_BLE_SCAN_MODE_ACTI) {
             btm_ble_set_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
         } else {
@@ -3868,7 +3869,7 @@ void btm_ble_stop_scan(void)
 
     /* Clear the inquiry callback if set */
     btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
-    btm_cb.ble_ctr_cb.inq_var.state = BTM_BLE_STOP_SCAN;
+    btm_cb.ble_ctr_cb.inq_var.state &= ~BTM_BLE_SCANNING;
     /* stop discovery now */
     btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
 
@@ -3966,7 +3967,7 @@ static void btm_ble_stop_discover(void)
     if (!BTM_BLE_IS_SCAN_ACTIVE(p_ble_cb->scan_activity)) {
         /* Clear the inquiry callback if set */
         btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
-        btm_cb.ble_ctr_cb.inq_var.state = BTM_BLE_STOP_SCAN;
+        btm_cb.ble_ctr_cb.inq_var.state &= ~BTM_BLE_SCANNING;
         /* stop discovery now */
         if(btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE)) {
             osi_sem_take(&scan_enable_sem, OSI_SEM_MAX_TIMEOUT);
@@ -4063,7 +4064,7 @@ tBTM_STATUS btm_ble_start_adv(void)
     tBTM_BLE_GAP_STATE temp_state = p_cb->state;
     UINT8 adv_mode = p_cb->adv_mode;
     p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
-    p_cb->state = BTM_BLE_ADVERTISING;
+    p_cb->state |= BTM_BLE_ADVERTISING;
     btm_ble_adv_states_operation(btm_ble_set_topology_mask, p_cb->evt_type);
     if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_ENABLE)) {
         osi_sem_take(&adv_enable_sem, OSI_SEM_MAX_TIMEOUT);
@@ -4107,7 +4108,7 @@ tBTM_STATUS btm_ble_stop_adv(void)
 
         p_cb->fast_adv_on = FALSE;
         p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
-        p_cb->state = BTM_BLE_STOP_ADV;
+        p_cb->state &= ~BTM_BLE_ADVERTISING;
         btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_ADV;
 
         /* clear all adv states */
