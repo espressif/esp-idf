@@ -348,7 +348,7 @@ static esp_err_t panel_io_i80_register_event_callbacks(esp_lcd_panel_io_handle_t
 {
     lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
 
-    if(i80_device->on_color_trans_done != NULL) {
+    if (i80_device->on_color_trans_done != NULL) {
         ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was owerwritten!");
     }
 
@@ -610,17 +610,18 @@ static esp_err_t i2s_lcd_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     case LCD_CLK_SRC_PLL160M:
         bus->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
         i2s_ll_tx_clk_set_src(bus->hal.dev, I2S_CLK_SRC_PLL_160M);
-#if CONFIG_PM_ENABLE
-        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i2s_controller_lcd", &bus->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
-        ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock");
-#endif
         break;
     default:
         ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "unsupported clock source: %d", src);
         break;
     }
     i2s_ll_set_raw_mclk_div(bus->hal.dev, LCD_PERIPH_CLOCK_PRE_SCALE, 1, 0);
+
+#if CONFIG_PM_ENABLE
+    ret = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "i2s_controller_lcd", &bus->pm_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
+    ESP_LOGD(TAG, "installed pm lock");
+#endif
     return ret;
 }
 
