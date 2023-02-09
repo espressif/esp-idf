@@ -227,20 +227,10 @@ static const esp_vhci_host_callback_t vhci_host_cb = {
     .notify_host_recv = host_rcv_pkt,
 };
 
-static void ble_buf_free(void)
-{
-    os_msys_buf_free();
-}
 
-static esp_err_t ble_buf_alloc(void)
-{
-    if (os_msys_buf_alloc()) {
-        return ESP_ERR_NO_MEM;
-    }
-
-    return ESP_OK;
-}
 extern void ble_transport_init(void);
+extern esp_err_t ble_buf_alloc(void);
+extern void ble_buf_free(void);
 esp_err_t esp_nimble_hci_init(void)
 {
     esp_err_t ret;
