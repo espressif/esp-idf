@@ -280,7 +280,7 @@ void l2cble_notify_le_connection (BD_ADDR bda)
             tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
             if(p_cb) {
                 p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
-                p_cb->state = BTM_BLE_STOP_ADV;
+                p_cb->state &= ~BTM_BLE_ADVERTISING;
             }
         }
         /* update link status */
