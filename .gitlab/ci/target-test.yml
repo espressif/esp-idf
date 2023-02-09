@@ -834,7 +834,9 @@ component_ut_test_lan8720:
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32C3_IDF"
 
 nvs_compatible_test:
-  extends: .integration_test_template
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   artifacts:
     when: always
     paths:
@@ -863,122 +865,198 @@ nvs_compatible_test:
     - python ${PREPARE_TEST_BIN_SCRIPT} $CONFIG_FILE
     - python ${CI_RUNNER_SCRIPT} -l "$LOG_PATH/$JOB_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
 
-IT_001:
-  extends: .integration_test_template
+IT_T1_Simple:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   parallel: 2
   tags:
     - ESP32_IDF
-    - SSC_T1_4
+    - SSC_T1_Simple
 
-IT_002:
-  extends: .integration_test_template
+IT_T1_WAP:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   tags:
     - ESP32_IDF
-    - SSC_T1_2
+    - SSC_T1_WAP
 
-IT_003:
-  extends: .integration_test_template
+IT_T2_Simple:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   parallel: 9
   tags:
     - ESP32_IDF
-    - SSC_T2_5
+    - SSC_T2_Simple
 
-IT_005:
-  extends: .integration_test_template
+IT_T5_BT_Simple:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_ble
+  parallel: 3
   tags:
     - ESP32_IDF
-    - SSC_T1_5
+    - SSC_T5_BT_Simple
 
-IT_006:
-  extends: .integration_test_template
+IT_T2_BT_Simple:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_ble
+  parallel: 6
+  tags:
+    - ESP32_IDF
+    - SSC_T2_BT_Simple
+
+IT_T1_BT_Dongle:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_ble
+  parallel: 2
+  tags:
+    - ESP32_IDF
+    - SSC_T1_BT_Dongle
+
+IT_T1_AP:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
+  tags:
+    - ESP32_IDF
+    - SSC_T1_AP
+
+IT_T1_AP_E:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   parallel: 5
   tags:
     - ESP32_IDF
-    - SSC_T1_6
+    - SSC_T1_AP_E
 
-IT_007:
-  extends: .integration_test_template
+IT_T1_WNIC_AP:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   tags:
     - ESP32_IDF
-    - SSC_T1_7
+    - SSC_T1_WNIC_AP
 
-IT_008:
-  extends: .integration_test_template
+IT_T1_WNIC_AP_E:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   tags:
     - ESP32_IDF
-    - SSC_T1_8
+    - SSC_T1_WNIC_AP_E
 
-IT_011:
-  extends: .integration_test_template
+IT_T1_MESH1:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   tags:
     - ESP32_IDF
     - SSC_T1_MESH1
 
-IT_012:
-  extends: .integration_test_template
+IT_T2_MESH1:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   parallel: 2
   tags:
     - ESP32_IDF
     - SSC_T2_MESH1
 
-IT_013:
-  extends: .integration_test_template
+IT_T3_MESH1:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   tags:
     - ESP32_IDF
     - SSC_T3_MESH1
 
-IT_014:
-  extends: .integration_test_template
+IT_T6_MESH1:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   tags:
     - ESP32_IDF
     - SSC_T6_MESH1
 
-IT_015:
-  extends: .integration_test_template
+IT_T12_MESH1:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   tags:
     - ESP32_IDF
     - SSC_T12_MESH1
 
-IT_016:
-  extends: .integration_test_template
+IT_T50_MESH1:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   allow_failure: true
   tags:
     - ESP32_IDF
     - SSC_T50_MESH1
 
-IT_017:
-  extends: .integration_test_template
+IT_T1_MESH2:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   tags:
     - ESP32_IDF
     - SSC_T1_MESH2
 
-IT_018:
-  extends: .integration_test_template
+IT_T2_WNIC:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   tags:
     - ESP32_IDF
-    - SSC_T1_9
+    - SSC_T2_WNIC
 
-IT_019:
-  extends: .integration_test_template
+IT_T2_AP:
+  extends:
+   - .integration_test_template
+   - .rules:test:integration_test_wifi
   tags:
     - ESP32_IDF
-    - SSC_T2_2
+    - SSC_T2_AP
 
-IT_020:
-  extends: .integration_test_template
+IT_T3_Simple:
+  extends:
+    - .integration_test_template
+    - .rules:test:integration_test_wifi
   tags:
     - ESP32_IDF
-    - SSC_T2_3
+    - SSC_T3_Simple
 
-IT_022:
-  extends: .integration_test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T3_2
-
-IT_C3_001:
-  extends: .integration_test_esp32c3_template
-  parallel: 6
+IT_C3_T2_BT_Simple:
+  extends:
+    - .integration_test_esp32c3_template
+    - .rules:test:integration_test_ble
+  parallel: 9
   tags:
     - ESP32C3_IDF
-    - SSC_T2_5
+    - SSC_T2_BT_Simple
+
+IT_C3_T5_BT_Simple:
+  extends:
+    - .integration_test_esp32c3_template
+    - .rules:test:integration_test_ble
+  parallel: 5
+  tags:
+    - ESP32C3_IDF
+    - SSC_T5_BT_Simple
+
+IT_C3_T1_BT_Dongle:
+  extends:
+    - .integration_test_esp32c3_template
+    - .rules:test:integration_test_ble
+  image: gitlab.espressif.cn:5050/qa/dockerfiles/integration-test-env-dbg:1
+  parallel: 2
+  tags:
+    - ESP32C3_IDF
+    - SSC_T1_BT_Dongle
