@@ -44,6 +44,11 @@
 #include "netif/dhcp_state.h"
 #include "sntp/sntp_get_set_time.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /* Enable all Espressif-only options */
 
 /*
@@ -261,6 +266,25 @@
  #define DHCP_REQUEST_TIMEOUT_SEQUENCE(state, tries)   (state == DHCP_STATE_REQUESTING ? \
                                                        (uint16_t)(1 * 1000) : \
                                                        (uint16_t)(((tries) < 6 ? 1 << (tries) : 60) * 250))
+
+#define DHCP_COARSE_TIMER_SECS CONFIG_LWIP_DHCP_COARSE_TIMER_SECS
+
+static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
+{
+    uint32_t timeout = lease;
+    if (timeout == 0) {
+      timeout = min;
+    }
+    timeout = (timeout + DHCP_COARSE_TIMER_SECS - 1) / DHCP_COARSE_TIMER_SECS;
+    return timeout;
+}
+
+#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T0_LEASE(dhcp) \
+   timeout_from_offered((dhcp)->offered_t0_lease, 120)
+#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T1_RENEW(dhcp) \
+   timeout_from_offered((dhcp)->offered_t1_renew, (dhcp)->t0_timeout >> 1 /* 50% */)
+#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T2_REBIND(dhcp) \
+   timeout_from_offered((dhcp)->offered_t2_rebind, ((dhcp)->t0_timeout / 8) * 7 /* 87.5% */)
 
 /**
  * CONFIG_LWIP_DHCP_RESTORE_LAST_IP==1: Last valid IP address obtained from DHCP server
@@ -1073,5 +1097,9 @@
 #define SNTP_GET_SYSTEM_TIME(sec, us)     (sntp_get_system_time(&(sec), &(us)))
 
 #define SOC_SEND_LOG //printf
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __LWIPOPTS_H__ */
