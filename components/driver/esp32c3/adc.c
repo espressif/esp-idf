@@ -536,6 +536,12 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 
 esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *raw_out)
 {
+#if !CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3
+    ESP_LOGE(ADC_TAG, "ADC2 is no longer supported, please use ADC1. Search for errata on espressif website for more details. You can enable ADC_ONESHOT_FORCE_USE_ADC2_ON_C3 to force use ADC2");
+    ESP_LOGE(ADC_TAG, "adc unit not supported");
+    return ESP_ERR_INVALID_ARG;
+#endif
+
     //On ESP32C3, the data width is always 12-bits.
     if (width_bit != ADC_WIDTH_BIT_12) {
         return ESP_ERR_INVALID_ARG;
@@ -575,6 +581,21 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
         return ESP_ERR_INVALID_STATE;
     }
     ADC_CHECK(config->sample_freq_hz <= SOC_ADC_SAMPLE_FREQ_THRES_HIGH && config->sample_freq_hz >= SOC_ADC_SAMPLE_FREQ_THRES_LOW, "ADC sampling frequency out of range", ESP_ERR_INVALID_ARG);
+
+#if !CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3
+    for (int i = 0; i < config->adc_pattern_len; i++) {
+        if (config->adc_pattern[i].unit == ADC_NUM_2) {
+            //we add this error log to hint users what happened
+            ESP_LOGE(ADC_TAG, "ADC2 continuous mode is no longer supported, please use ADC1. Search for errata on espressif website for more details. You can enable CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3 to force use ADC2");
+            /**
+             * On all continuous mode supported chips, we will always check the unit to see if it's a continuous mode supported unit.
+             * However, on ESP32C3 and ESP32S3, we will jump this check, if `CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` is enabled.
+             */
+            ESP_LOGE(ADC_TAG, "Only support using ADC1 DMA mode");
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+#endif  //#if !CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3
 
     s_adc_digi_ctx->digi_controller_config.conv_limit_en = config->conv_limit_en;
     s_adc_digi_ctx->digi_controller_config.conv_limit_num = config->conv_limit_num;
