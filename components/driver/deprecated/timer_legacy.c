@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -330,9 +330,14 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
     timer_hal_init(hal, group_num, timer_num);
     timer_hal_set_counter_value(hal, 0);
+
+    timer_src_clk_t clk_src = TIMER_SRC_CLK_DEFAULT;
+    if (config->clk_src) {
+        clk_src = config->clk_src;
+    }
     // although `clk_src` is of `timer_src_clk_t` type, but it's binary compatible with `gptimer_clock_source_t`,
     // as the underlying enum entries come from the same `soc_module_clk_t`
-    timer_ll_set_clock_source(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, (gptimer_clock_source_t)config->clk_src);
+    timer_ll_set_clock_source(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, (gptimer_clock_source_t)clk_src);
     timer_ll_set_clock_prescale(hal->dev, timer_num, config->divider);
     timer_ll_set_count_direction(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, config->counter_dir);
     timer_ll_enable_intr(hal->dev, TIMER_LL_EVENT_ALARM(timer_num), false);
@@ -340,7 +345,7 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     timer_ll_enable_alarm(hal->dev, timer_num, config->alarm_en);
     timer_ll_enable_auto_reload(hal->dev, timer_num, config->auto_reload);
     timer_ll_enable_counter(hal->dev, timer_num, config->counter_en);
-    p_timer_obj[group_num][timer_num]->clk_src = config->clk_src;
+    p_timer_obj[group_num][timer_num]->clk_src = clk_src;
     p_timer_obj[group_num][timer_num]->alarm_en = config->alarm_en;
     p_timer_obj[group_num][timer_num]->auto_reload_en = config->auto_reload;
     p_timer_obj[group_num][timer_num]->direction = config->counter_dir;
