@@ -32,6 +32,13 @@
 #define GPIO_MISO    20
 #define GPIO_SCLK    18
 #define GPIO_CS      9
+
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define GPIO_HANDSHAKE 2
+#define GPIO_MOSI 5
+#define GPIO_MISO 0
+#define GPIO_SCLK 4
+#define GPIO_CS 1
 #endif
 
 #define MASTER_HOST SPI2_HOST

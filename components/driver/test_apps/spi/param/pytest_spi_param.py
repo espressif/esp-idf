@@ -6,6 +6,7 @@ import pytest
 
 # If `test_env` is define, should not run on generic runner
 @pytest.mark.supported_targets
+@pytest.mark.esp32h2
 @pytest.mark.generic
 def test_param_single_dev(case_tester) -> None:       # type: ignore
     for case in case_tester.test_menu:
@@ -16,6 +17,7 @@ def test_param_single_dev(case_tester) -> None:       # type: ignore
 
 # if `test_env` not defined, will run on `generic_multi_device` by default
 @pytest.mark.supported_targets
+@pytest.mark.esp32h2
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2,], indirect=True)
 def test_param_multi_dev(case_tester) -> None:        # type: ignore

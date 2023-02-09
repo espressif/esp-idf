@@ -76,7 +76,6 @@ api-reference/peripherals/hmac
 api-reference/peripherals/usb_device
 api-reference/peripherals/sdspi_host
 api-reference/peripherals/dac
-api-reference/peripherals/spi_slave
 api-reference/peripherals/i2s
 api-reference/peripherals/touch_element
 api-reference/peripherals/lcd
@@ -93,12 +92,10 @@ api-reference/peripherals/spi_flash/index
 api-reference/peripherals/spi_flash/auto_suspend.inc
 api-reference/peripherals/touch_pad
 api-reference/peripherals/adc_calibration
-api-reference/peripherals/spi_slave_hd
 api-reference/peripherals/ds
 api-reference/peripherals/i2c
 api-reference/peripherals/dedic_gpio
 api-reference/peripherals/sd_pullup_requirements
-api-reference/peripherals/spi_master
 api-reference/peripherals/index
 api-reference/peripherals/sdmmc_host
 api-reference/kconfig

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 ## SPI master half duplex EEPROM example
 
@@ -11,16 +11,16 @@
 
 For different chip and host used, the connections may be different.
 
-|      | ESP32 | ESP32 | ESP32S2 | ESP32C2 | ESP32C3 | ESP32C6 | ESP32S3 |
-| ---- | ----- | ----- | ------- | ------- | ------- | ------- | ------- |
-| Host | SPI1  | HSPI  | SPI2    | SPI2    | SPI2    | SPI2    | SPI2    |
-| VCC  | 3.3V  | 3.3V  | 3.3V    | 3.3V    | 3.3V    | 3.3V    | 3.3V    |
-| GND  | GND   | GND   | GND     | GND     | GND     | GND     | GND     |
-| DO   | 7     | 18    | 37      | 2       | 2       | 2       | 13      |
-| DI   | 8     | 23    | 35      | 7       | 7       | 7       | 11      |
-| SK   | 6     | 19    | 36      | 6       | 6       | 6       | 12      |
-| CS   | 13    | 13    | 34      | 10      | 10      | 10      | 10      |
-| ORG  | GND   | GND   | GND     | GND     | GND     | GND     | GND     |
+|      | ESP32 | ESP32 | ESP32S2 | ESP32C2 | ESP32C3 | ESP32C6 | ESP32S3 | ESP32H2 |
+| ---- | ----- | ----- | ------- | ------- | ------- | ------- | ------- | ------- |
+| Host | SPI1  | HSPI  | SPI2    | SPI2    | SPI2    | SPI2    | SPI2    | SPI2    |
+| VCC  | 3.3V  | 3.3V  | 3.3V    | 3.3V    | 3.3V    | 3.3V    | 3.3V    | 3.3V    |
+| GND  | GND   | GND   | GND     | GND     | GND     | GND     | GND     | GND     |
+| DO   | 7     | 18    | 37      | 2       | 2       | 2       | 13      | 0       |
+| DI   | 8     | 23    | 35      | 7       | 7       | 7       | 11      | 5       |
+| SK   | 6     | 19    | 36      | 6       | 6       | 6       | 12      | 4       |
+| CS   | 13    | 13    | 34      | 10      | 10      | 10      | 10      | 1       |
+| ORG  | GND   | GND   | GND     | GND     | GND     | GND     | GND     | GND     |
 
 ### Notes
 

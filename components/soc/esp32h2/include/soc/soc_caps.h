@@ -49,7 +49,7 @@
 #define SOC_SDM_SUPPORTED               1
 #define SOC_ETM_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
-// #define SOC_GPSPI_SUPPORTED             1 // TODO: IDF-6264
+#define SOC_GPSPI_SUPPORTED             1
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
@@ -319,8 +319,10 @@
 #define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
-//#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1 //TODO: IDF-6247
+#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+#define SOC_SPI_SUPPORT_CLK_XTAL            1
 #define SOC_SPI_SUPPORT_CLK_PLL_F48M        1
+#define SOC_SPI_SUPPORT_CLK_RC_FAST         1
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 // host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,

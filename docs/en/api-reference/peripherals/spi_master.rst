@@ -7,7 +7,7 @@ SPI Master driver is a program that controls {IDF_TARGET_NAME}'s SPI peripherals
 Overview of {IDF_TARGET_NAME}'s SPI peripherals
 -----------------------------------------------
 
-{IDF_TARGET_MAX_PERIPH_NUM:default="4", esp32c3="3", esp32c2="3", esp32c6="3"}
+{IDF_TARGET_MAX_PERIPH_NUM:default="4", esp32c3="3", esp32c2="3", esp32c6="3", esp32h2="3"}
 {IDF_TARGET_SPI2_CS_NUM:default="6", esp32="3"}
 {IDF_TARGET_SPI3_CS_NUM:default="3"}
 
@@ -32,7 +32,7 @@ Overview of {IDF_TARGET_NAME}'s SPI peripherals
 
     - SPI2 and SPI3 are general purpose SPI controllers. They are open to users. SPI2 and SPI3 have independent signal buses with the same respective names. SPI2 has {IDF_TARGET_SPI2_CS_NUM} CS lines. SPI3 has {IDF_TARGET_SPI3_CS_NUM} CS lines.  Each CS line can be used to drive one SPI slave.
 
-.. only:: esp32c3 or esp32c2 or esp32c6
+.. only:: esp32c3 or esp32c2 or esp32c6 or esp32h2
 
     - SPI2 is a general purpose SPI controller. It has an independent signal bus with the same name. The bus has {IDF_TARGET_SPI2_CS_NUM} CS lines to drive up to {IDF_TARGET_SPI2_CS_NUM} SPI slaves.
 
@@ -230,7 +230,7 @@ If using more than one data lines to transmit, please set `SPI_DEVICE_HALFDUPLEX
 
         Half-duplex transactions with both read and write phases are not supported when using DMA. For details and workarounds, see :ref:`spi_known_issues`.
 
-.. only:: esp32s3 or esp32c3 or esp32c2 or esp32c6
+.. only:: esp32s3 or esp32c3 or esp32c2 or esp32c6 or esp32h2
 
     .. note::
 
@@ -408,7 +408,7 @@ GPIO Matrix and IO_MUX
     +          +------+------+
     |          | GPIO Number |
     +==========+======+======+
-    | CS0*     | 15   | 5    |
+    | CS0 [1]_ | 15   | 5    |
     +----------+------+------+
     | SCLK     | 14   | 18   |
     +----------+------+------+
@@ -421,9 +421,14 @@ GPIO Matrix and IO_MUX
     | QUADHD   | 4    | 21   |
     +----------+------+------+
 
-    * Only the first Device attached to the bus can use the CS0 pin.
-
 .. only:: not esp32
+
+    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2"}
 
     Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
@@ -431,69 +436,26 @@ GPIO Matrix and IO_MUX
 
     The IO_MUX pins for SPI buses are given below.
 
-.. only:: esp32s2 or esp32s3
+    .. list-table::
+       :widths: 40 30
+       :header-rows: 1
 
-    +----------+------+------+
-    | Pin Name | SPI2 | SPI3 |
-    +          +------+------+
-    |          | GPIO Number |
-    +==========+======+======+
-    | CS0*     | 10   | N/A  |
-    +----------+------+------+
-    | SCLK     | 12   | N/A  |
-    +----------+------+------+
-    | MISO     | 13   | N/A  |
-    +----------+------+------+
-    | MOSI     | 11   | N/A  |
-    +----------+------+------+
-    | QUADWP   | 14   | N/A  |
-    +----------+------+------+
-    | QUADHD   | 9    | N/A  |
-    +----------+------+------+
+       * - Pin Name
+         - GPIO Number (SPI2)
+       * - CS0 [1]_
+         - {IDF_TARGET_SPI2_IOMUX_PIN_CS}
+       * - SCLK
+         - {IDF_TARGET_SPI2_IOMUX_PIN_CLK}
+       * - MISO
+         - {IDF_TARGET_SPI2_IOMUX_PIN_MISO}
+       * - MOSI
+         - {IDF_TARGET_SPI2_IOMUX_PIN_MOSI}
+       * - QUADWP
+         - {IDF_TARGET_SPI2_IOMUX_PIN_WP}
+       * - QUADHD
+         - {IDF_TARGET_SPI2_IOMUX_PIN_HD}
 
-.. only:: esp32c2 or esp32c3
-
-    +----------+-------------+
-    | Pin Name |    SPI2     |
-    +          +-------------+
-    |          | GPIO Number |
-    +==========+=============+
-    | CS0*     |      10     |
-    +----------+-------------+
-    | SCLK     |      6      |
-    +----------+-------------+
-    | MOSI     |      7      |
-    +----------+-------------+
-    | MISO     |      2      |
-    +----------+-------------+
-    | QUADHD   |      4      |
-    +----------+-------------+
-    | QUADWP   |      5      |
-    +----------+-------------+
-
-.. only:: esp32c6
-
-    +----------+-------------+
-    | Pin Name |    SPI2     |
-    +          +-------------+
-    |          | GPIO Number |
-    +==========+=============+
-    | CS0*     |      16     |
-    +----------+-------------+
-    | SCLK     |      6      |
-    +----------+-------------+
-    | MOSI     |      7      |
-    +----------+-------------+
-    | MISO     |      2      |
-    +----------+-------------+
-    | QUADHD   |      4      |
-    +----------+-------------+
-    | QUADWP   |      5      |
-    +----------+-------------+
-
-.. only:: not esp32
-
-    * Only the first Device attached to the bus can use the CS0 pin.
+.. [1] Only the first Device attached to the bus can use the CS0 pin.
 
 .. _speed_considerations:
 
@@ -512,10 +474,10 @@ The main parameter that determines the transfer speed for large transactions is 
 Transaction Duration
 ^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_TRANS_TIME_INTR_DMA:default="28", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26", esp32c2="42", esp32c6="34"}
-{IDF_TARGET_TRANS_TIME_POLL_DMA:default="10", esp32="10", esp32s2="9", esp32c3="10", esp32s3="11", esp32c2="17", esp32c6="17"}
-{IDF_TARGET_TRANS_TIME_INTR_CPU:default="25", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24", esp32c2="40", esp32c6="32"}
-{IDF_TARGET_TRANS_TIME_POLL_CPU:default="8", esp32="8", esp32s2="8", esp32c3="9", esp32s3="9", esp32c2="15", esp32c6="15"}
+{IDF_TARGET_TRANS_TIME_INTR_DMA:default="N/A", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26", esp32c2="42", esp32c6="34", esp32h2="58"}
+{IDF_TARGET_TRANS_TIME_POLL_DMA:default="N/A", esp32="10", esp32s2="9",  esp32c3="10", esp32s3="11", esp32c2="17", esp32c6="17", esp32h2="28"}
+{IDF_TARGET_TRANS_TIME_INTR_CPU:default="N/A", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24", esp32c2="40", esp32c6="32", esp32h2="54"}
+{IDF_TARGET_TRANS_TIME_POLL_CPU:default="N/A", esp32="8",  esp32s2="8",  esp32c3="9",  esp32s3="9",  esp32c2="15", esp32c6="15", esp32h2="24"}
 
 Transaction duration includes setting up SPI peripheral registers, copying data to FIFOs or setting up DMA links, and the time for SPI transaction.
 

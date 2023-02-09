@@ -121,33 +121,32 @@ GPIO Matrix and IO_MUX
 
     The IO_MUX pins for SPI buses are given below.
 
-    .. list-table::
-       :widths: 40 30 30
-       :header-rows: 1
-
-       * - Pin Name
-         - GPIO Number (SPI2)
-         - GPIO Number (SPI3)
-       * - CS0*
-         - 15
-         - 5
-       * - SCLK
-         - 14
-         - 18
-       * - MISO
-         - 12
-         - 19
-       * - MOSI
-         - 13
-         - 23
-       * - QUADWP
-         - 2
-         - 22
-       * - QUADHD
-         - 4
-         - 21
+    +----------+------+------+
+    | Pin Name | SPI2 | SPI3 |
+    +          +------+------+
+    |          | GPIO Number |
+    +==========+======+======+
+    | CS0      | 15   | 5    |
+    +----------+------+------+
+    | SCLK     | 14   | 18   |
+    +----------+------+------+
+    | MISO     | 12   | 19   |
+    +----------+------+------+
+    | MOSI     | 13   | 23   |
+    +----------+------+------+
+    | QUADWP   | 2    | 22   |
+    +----------+------+------+
+    | QUADHD   | 4    | 21   |
+    +----------+------+------+
 
 .. only:: not esp32
+
+    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2"}
 
     Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
@@ -155,70 +154,24 @@ GPIO Matrix and IO_MUX
 
     The IO_MUX pins for SPI buses are given below.
 
-.. only:: esp32s2 or esp32s3
-
     .. list-table::
        :widths: 40 30
        :header-rows: 1
 
        * - Pin Name
          - GPIO Number (SPI2)
-       * - CS0*
-         - 10
+       * - CS0
+         - {IDF_TARGET_SPI2_IOMUX_PIN_CS}
        * - SCLK
-         - 12
+         - {IDF_TARGET_SPI2_IOMUX_PIN_CLK}
        * - MISO
-         - 13
+         - {IDF_TARGET_SPI2_IOMUX_PIN_MISO}
        * - MOSI
-         - 11
+         - {IDF_TARGET_SPI2_IOMUX_PIN_MOSI}
        * - QUADWP
-         - 14
+         - {IDF_TARGET_SPI2_IOMUX_PIN_WP}
        * - QUADHD
-         - 9
-
-.. only:: esp32c2 or esp32c3
-
-    .. list-table::
-       :widths: 40 30
-       :header-rows: 1
-
-       * - Pin Name
-         - GPIO Number (SPI2)
-       * - CS0*
-         - 10
-       * - SCLK
-         - 6
-       * - MISO
-         - 2
-       * - MOSI
-         - 7
-       * - QUADWP
-         - 5
-       * - QUADHD
-         - 4
-
-.. only:: esp32c6
-
-    .. list-table::
-       :widths: 40 30
-       :header-rows: 1
-
-       * - Pin Name
-         - GPIO Number (SPI2)
-       * - CS0*
-         - 16
-       * - SCLK
-         - 6
-       * - MISO
-         - 2
-       * - MOSI
-         - 7
-       * - QUADWP
-         - 5
-       * - QUADHD
-         - 4
-
-* Only the first Device attached to the bus can use the CS0 pin.
+         - {IDF_TARGET_SPI2_IOMUX_PIN_HD}
 
 
 Speed and Timing Considerations
@@ -239,7 +192,7 @@ You can also configure a GPIO pin through which the Device will signal to the Ho
 SCLK Frequency Requirements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_MAX_FREQ:default="60", esp32="10", esp32s2="40"}
+{IDF_TARGET_MAX_FREQ:default="60", esp32="10", esp32s2="40", esp32c6="40", esp32h2="32"}
 
 The SPI slaves are designed to operate at up to {IDF_TARGET_MAX_FREQ} MHz. The data cannot be recognized or received correctly if the clock is too fast or does not have a 50% duty cycle.
 

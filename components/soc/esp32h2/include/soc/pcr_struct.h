@@ -1128,7 +1128,7 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** spi2_clkm_sel : R/W; bitpos: [21:20]; default: 0;
-         *  set this field to select clock-source. 0(default): XTAL, 1: 80MHz, 2: FOSC, 3:
+         *  set this field to select clock-source. 0(default): XTAL, 1: 48MHz, 2: FOSC, 3:
          *  reserved.
          */
         uint32_t spi2_clkm_sel:2;
