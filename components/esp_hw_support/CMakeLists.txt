@@ -105,7 +105,8 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_IDF_TARGET_ESP32H2)
         list(REMOVE_ITEM srcs
                 "adc_share_hw_ctrl.c" # TODO: IDF-6215
-                "port/clk_tree_common.c" # TODO: IDF-6265
+                "sleep_cpu.c"         # TODO: IDF-6267
+                "sleep_modes.c"       # TODO: IDF-6267
             )
     endif()
 else()

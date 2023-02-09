@@ -33,8 +33,8 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     // and will be done with the bootloader much earlier than UART FIFO is empty.
     esp_rom_uart_tx_wait_idle(0);
 
-    /* Set CPU to 80MHz. Keep other clocks unmodified. */
-    int cpu_freq_mhz = 80;
+    /* Set CPU to a higher certain frequency. Keep other clocks unmodified. */
+    int cpu_freq_mhz = CPU_CLK_FREQ_MHZ_BTLD;
 
 #if CONFIG_IDF_TARGET_ESP32
     /* On ESP32 rev 0, switching to 80/160 MHz if clock was previously set to
@@ -46,8 +46,6 @@ __attribute__((weak)) void bootloader_clock_configure(void)
             clk_ll_cpu_get_freq_mhz_from_pll() == CLK_LL_PLL_240M_FREQ_MHZ) {
         cpu_freq_mhz = 240;
     }
-#elif CONFIG_IDF_TARGET_ESP32H4
-    cpu_freq_mhz = 64;
 #endif
 
     if (esp_rom_get_reset_reason(0) != RESET_REASON_CPU0_SW || rtc_clk_apb_freq_get() < APB_CLK_FREQ) {
@@ -114,7 +112,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     SET_PERI_REG_MASK(LP_ANALOG_PERI_LP_ANA_LP_INT_CLR_REG, LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_CLR);    /* BROWN_OUT */
     SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_LP_WDT_INT_CLR);                                           /* WDT */
     SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_WAKEUP_INT_CLR);                                          /* SLP_REJECT */
-    SET_PERI_REG_MASK(PMU_SOC_SLEEP_REJECT_INT_CLR, PMU_SOC_SLEEP_REJECT_INT_CLR);                          /* SLP_WAKEUP */
+    SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_SLEEP_REJECT_INT_CLR);                                    /* SLP_WAKEUP */
 #else
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);

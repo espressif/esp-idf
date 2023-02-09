@@ -21,6 +21,8 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
         return clk_ll_bbpll_get_freq_mhz();
     case SOC_CPU_CLK_SRC_RC_FAST:
         return SOC_CLK_RC_FAST_FREQ_APPROX / MHZ;
+    case SOC_CPU_CLK_SRC_FLASH_PLL:
+        return clk_ll_flash_pll_get_freq_mhz();
     default:
         // Unknown CPU_CLK mux input
         HAL_ASSERT(false);

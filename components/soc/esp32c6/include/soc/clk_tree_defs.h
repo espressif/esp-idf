@@ -115,9 +115,9 @@ typedef enum {
     SOC_MOD_CLK_RTC_FAST,                      /*!< RTC_FAST_CLK can be sourced from XTAL_D2 or RC_FAST by configuring soc_rtc_fast_clk_src_t */
     SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, RC32K, or OSC_SLOW by configuring soc_rtc_slow_clk_src_t */
     // For digital domain: peripherals, WIFI, BLE
-    SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from PLL (w/ CG), and has a fixed frequency of 80MHz */
-    SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from PLL (w/ CG), and has a fixed frequency of 160MHz */
-    SOC_MOD_CLK_PLL_F240M,                     /*!< PLL_F240M_CLK is derived from PLL (w/ CG), and has a fixed frequency of 240MHz */
+    SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from PLL (clock gating + fixed divider of 6), it has a fixed frequency of 80MHz */
+    SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from PLL (clock gating + fixed divider of 3), it has a fixed frequency of 160MHz */
+    SOC_MOD_CLK_PLL_F240M,                     /*!< PLL_F240M_CLK is derived from PLL (clock gating + fixed divider of 2), it has a fixed frequency of 240MHz */
     SOC_MOD_CLK_XTAL32K,                       /*!< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 20MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 40MHz crystal */

@@ -142,6 +142,7 @@
 //Periheral Clock {{
 #define  APB_CLK_FREQ_ROM                            ( 40*1000000 )
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
+#define  CPU_CLK_FREQ_MHZ_BTLD                       (80)                 // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  CPU_CLK_FREQ                                APB_CLK_FREQ
 #define  APB_CLK_FREQ                                ( 80*1000000 )       //unit: Hz
 #define  REF_CLK_FREQ                                ( 1000000 )

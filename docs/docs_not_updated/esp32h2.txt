@@ -54,7 +54,6 @@ api-reference/peripherals/i2s
 api-reference/peripherals/temp_sensor
 api-reference/peripherals/spi_features
 api-reference/peripherals/sdio_slave
-api-reference/peripherals/clk_tree
 api-reference/peripherals/spi_flash/xip_from_psram.inc
 api-reference/peripherals/spi_flash/spi_flash_concurrency
 api-reference/peripherals/spi_flash/spi_flash_override_driver

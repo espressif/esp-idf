@@ -41,7 +41,6 @@ extern "C" {
  * - rtc_clk: clock switching, calibration
  * - rtc_time: reading RTC counter, conversion between counter values and time
  * - rtc_sleep: entry into sleep modes
- * - rtc_init: initialization
  */
 
 #define MHZ (1000000)
@@ -76,6 +75,8 @@ extern "C" {
 #define SOC_DELAY_RC_FAST_ENABLE            50
 #define SOC_DELAY_RC_FAST_DIGI_SWITCH       5
 #define SOC_DELAY_RC32K_ENABLE              300
+#define SOC_DELAY_LP_PLL_SWITCH             3
+#define SOC_DELAY_LP_PLL_ENABLE             50
 
 /* Core voltage: //TODO: IDF-6254
  * Currently, ESP32H2 never adjust its wake voltage in runtime
@@ -91,8 +92,8 @@ extern "C" {
 #define RTC_CNTL_CK8M_WAIT_DEFAULT  20
 #define RTC_CK8M_ENABLE_WAIT_DEFAULT 5
 
-#define RTC_CNTL_CK8M_DFREQ_DEFAULT  600
-#define RTC_CNTL_SCK_DCAP_DEFAULT    128
+#define RTC_CNTL_CK8M_DFREQ_DEFAULT  860
+#define RTC_CNTL_SCK_DCAP_DEFAULT    85
 #define RTC_CNTL_RC32K_DFREQ_DEFAULT 700
 
 /* Various delays to be programmed into power control state machines */
@@ -198,36 +199,6 @@ typedef struct {
     .rc32k_dfreq = RTC_CNTL_RC32K_DFREQ_DEFAULT, \
 }
 
-typedef struct {
-    uint16_t wifi_powerup_cycles : 7;
-    uint16_t wifi_wait_cycles : 9;
-    uint16_t bt_powerup_cycles : 7;
-    uint16_t bt_wait_cycles : 9;
-    uint16_t cpu_top_powerup_cycles : 7;
-    uint16_t cpu_top_wait_cycles : 9;
-    uint16_t dg_wrap_powerup_cycles : 7;
-    uint16_t dg_wrap_wait_cycles : 9;
-    uint16_t dg_peri_powerup_cycles : 7;
-    uint16_t dg_peri_wait_cycles : 9;
-} rtc_init_config_t;
-
-#define RTC_INIT_CONFIG_DEFAULT() { \
-    .wifi_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .wifi_wait_cycles = OTHER_BLOCKS_WAIT, \
-    .bt_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .bt_wait_cycles = OTHER_BLOCKS_WAIT, \
-    .cpu_top_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .cpu_top_wait_cycles = OTHER_BLOCKS_WAIT, \
-    .dg_wrap_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .dg_wrap_wait_cycles = OTHER_BLOCKS_WAIT, \
-    .dg_peri_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .dg_peri_wait_cycles = OTHER_BLOCKS_WAIT, \
-}
-
-void rtc_clk_divider_set(uint32_t div);
-
-void rtc_clk_8m_divider_set(uint32_t div);
-
 /**
  * Initialize clocks and set CPU frequency
  *
@@ -285,22 +256,17 @@ bool rtc_clk_32k_enabled(void);
 void rtc_clk_32k_bootstrap(uint32_t cycle);
 
 /**
+ * @brief Enable or disable 32 kHz internal rc oscillator
+ * @param en  true to enable, false to disable
+ */
+void rtc_clk_rc32k_enable(bool enable);
+
+/**
  * @brief Enable or disable 8 MHz internal oscillator
  *
- * Output from 8 MHz internal oscillator is passed into a configurable
- * divider, which by default divides the input clock frequency by 256.
- * Output of the divider may be used as RTC_SLOW_CLK source.
- * Output of the divider is referred to in register descriptions and code as
- * 8md256 or simply d256. Divider values other than 256 may be configured, but
- * this facility is not currently needed, so is not exposed in the code.
- *
- * When 8MHz/256 divided output is not needed, the divider should be disabled
- * to reduce power consumption.
- *
  * @param clk_8m_en true to enable 8MHz generator
- * @param d256_en true to enable /256 divider
  */
-void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en);
+void rtc_clk_8m_enable(bool clk_8m_en);
 
 /**
  * @brief Get the state of 8 MHz internal oscillator
@@ -309,10 +275,16 @@ void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en);
 bool rtc_clk_8m_enabled(void);
 
 /**
- * @brief Get the state of /256 divider which is applied to 8MHz clock
- * @return true if the divided output is enabled
+ * @brief Enable or disable LP_PLL_CLK
+ * @param enable true to enable, false to disable
  */
-bool rtc_clk_8md256_enabled(void);
+void rtc_clk_lp_pll_enable(bool enable);
+
+/**
+ * @brief Select clock source for LP_PLL_CLK
+ * @param clk_src clock source (one of soc_lp_pll_clk_src_t values)
+ */
+void rtc_clk_lp_pll_src_set(soc_lp_pll_clk_src_t clk_src);
 
 /**
  * @brief Select source for RTC_SLOW_CLK
@@ -329,9 +301,10 @@ soc_rtc_slow_clk_src_t rtc_clk_slow_src_get(void);
 /**
  * @brief Get the approximate frequency of RTC_SLOW_CLK, in Hz
  *
- * - if SOC_RTC_SLOW_CLK_SRC_RC_SLOW is selected, returns ~150000
+ * - if SOC_RTC_SLOW_CLK_SRC_RC_SLOW is selected, returns 136000
  * - if SOC_RTC_SLOW_CLK_SRC_XTAL32K is selected, returns 32768
- * - if SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 is selected, returns ~68000
+ * - if SOC_RTC_SLOW_CLK_SRC_RC32K is selected, returns 32768
+ * - if SOC_RTC_SLOW_CLK_SRC_OSC_SLOW is selected, returns 32768
  *
  * rtc_clk_cal function can be used to get more precise value by comparing
  * RTC_SLOW_CLK frequency to the frequency of main XTAL.
@@ -412,25 +385,29 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config);
 void rtc_clk_cpu_freq_set_xtal(void);
 
 /**
- * @brief Store new APB frequency value into RTC_APB_FREQ_REG
- *
- * This function doesn't change any hardware clocks.
- *
- * Functions which perform frequency switching and change APB frequency call
- * this function to update the value of APB frequency stored in RTC_APB_FREQ_REG
- * (one of RTC general purpose retention registers). This should not normally
- * be called from application code.
- *
- * @param apb_freq  new APB frequency, in Hz
- */
-void rtc_clk_apb_freq_update(uint32_t apb_freq);
-
-/**
  * @brief Get the current stored APB frequency.
  * @return The APB frequency value as last set via rtc_clk_apb_freq_update(), in Hz.
  */
 uint32_t rtc_clk_apb_freq_get(void);
 
+/**
+ * @brief Clock calibration function used by rtc_clk_cal
+ *
+ * Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
+ * This feature counts the number of XTAL clock cycles within a given number of
+ * RTC_SLOW_CLK cycles.
+ *
+ * Slow clock calibration feature has two modes of operation: one-off and cycling.
+ * In cycling mode (which is enabled by default on SoC reset), counting of XTAL
+ * cycles within RTC_SLOW_CLK cycle is done continuously. Cycling mode is enabled
+ * using TIMG_RTC_CALI_START_CYCLING bit. In one-off mode counting is performed
+ * once, and TIMG_RTC_CALI_RDY bit is set when counting is done. One-off mode is
+ * enabled using TIMG_RTC_CALI_START bit.
+ *
+ * @param cal_clk which clock to calibrate
+ * @param slowclk_cycles number of slow clock cycles to count
+ * @return number of XTAL clock cycles within the given number of slow clock cycles
+ */
 uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
 
 /**
@@ -447,15 +424,6 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
  *         or 0 if calibration has timed out
  */
 uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slow_clk_cycles);
-
-/**
- * @brief Measure ratio between XTAL frequency and RTC slow clock frequency
- * @param cal_clk slow clock to be measured
- * @param slow_clk_cycles number of slow clock cycles to average
- * @return average ratio between XTAL frequency and slow clock frequency,
- *         Q13.19 fixed point format, or 0 if calibration has timed out.
- */
-uint32_t rtc_clk_cal_ratio(rtc_cal_sel_t cal_clk, uint32_t slow_clk_cycles);
 
 /**
  * @brief Convert time interval from microseconds to RTC_SLOW_CLK cycles
@@ -529,245 +497,6 @@ bool rtc_dig_8m_enabled(void);
  */
 uint32_t rtc_clk_freq_cal(uint32_t cal_val);
 
-/**
- * @brief Power down flags for rtc_sleep_pd function
- */
-typedef struct {
-    uint32_t dig_fpu : 1;    //!< Set to 1 to power UP digital part in sleep
-    uint32_t rtc_fpu : 1;    //!< Set to 1 to power UP RTC memories in sleep
-    uint32_t cpu_fpu : 1;    //!< Set to 1 to power UP digital memories and CPU in sleep
-    uint32_t i2s_fpu : 1;    //!< Set to 1 to power UP I2S in sleep
-    uint32_t bb_fpu : 1;     //!< Set to 1 to power UP WiFi in sleep
-    uint32_t nrx_fpu : 1;    //!< Set to 1 to power UP WiFi in sleep
-    uint32_t fe_fpu : 1;     //!< Set to 1 to power UP WiFi in sleep
-    uint32_t sram_fpu : 1;    //!< Set to 1 to power UP SRAM in sleep
-    uint32_t rom_ram_fpu : 1; //!< Set to 1 to power UP ROM/IRAM0_DRAM0 in sleep
-} rtc_sleep_pu_config_t;
-
-/**
- * Initializer for rtc_sleep_pu_config_t which sets all flags to the same value
- */
-#define RTC_SLEEP_PU_CONFIG_ALL(val) {\
-    .dig_fpu = (val), \
-    .rtc_fpu = (val), \
-    .cpu_fpu = (val), \
-    .i2s_fpu = (val), \
-    .bb_fpu = (val), \
-    .nrx_fpu = (val), \
-    .fe_fpu = (val), \
-    .sram_fpu = (val), \
-    .rom_ram_fpu = (val), \
-}
-
-void rtc_sleep_pu(rtc_sleep_pu_config_t cfg);
-
-/**
- * @brief sleep configuration for rtc_sleep_init function
- */
-typedef struct {
-    uint32_t lslp_mem_inf_fpu : 1;      //!< force normal voltage in sleep mode (digital domain memory)
-    uint32_t rtc_mem_inf_follow_cpu : 1;//!< keep low voltage in sleep mode (even if ULP/touch is used)
-    uint32_t rtc_fastmem_pd_en : 1;     //!< power down RTC fast memory
-    uint32_t rtc_slowmem_pd_en : 1;     //!< power down RTC slow memory
-    uint32_t rtc_peri_pd_en : 1;        //!< power down RTC peripherals
-    uint32_t wifi_pd_en : 1;            //!< power down WiFi
-    uint32_t bt_pd_en : 1;              //!< power down BT
-    uint32_t cpu_pd_en : 1;             //!< power down CPU, but not restart when lightsleep.
-    uint32_t int_8m_pd_en : 1;          //!< Power down Internal 8M oscillator
-    uint32_t dig_peri_pd_en : 1;        //!< power down digital peripherals
-    uint32_t deep_slp : 1;              //!< power down digital domain
-    uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
-    uint32_t dig_dbias_wak : 5;         //!< set bias for digital domain, in active mode
-    uint32_t dig_dbias_slp : 5;         //!< set bias for digital domain, in sleep mode
-    uint32_t rtc_dbias_wak : 5;         //!< set bias for RTC domain, in active mode
-    uint32_t rtc_dbias_slp : 5;         //!< set bias for RTC domain, in sleep mode
-    uint32_t dbg_atten_monitor : 4;     //!< voltage parameter, in monitor mode
-    uint32_t bias_sleep_monitor : 1;    //!< circuit control parameter, in monitor mode
-    uint32_t dbg_atten_slp : 4;         //!< voltage parameter, in sleep mode
-    uint32_t bias_sleep_slp : 1;        //!< circuit control parameter, in sleep mode
-    uint32_t pd_cur_monitor : 1;        //!< circuit control parameter, in monitor mode
-    uint32_t pd_cur_slp : 1;            //!< circuit control parameter, in sleep mode
-    uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
-    uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
-    uint32_t deep_slp_reject : 1;       //!< enable deep sleep reject
-    uint32_t light_slp_reject : 1;      //!< enable light sleep reject
-} rtc_sleep_config_t;
-
-#define RTC_SLEEP_PD_DIG                BIT(0)  //!< Deep sleep (power down digital domain)
-#define RTC_SLEEP_PD_RTC_PERIPH         BIT(1)  //!< Power down RTC peripherals
-#define RTC_SLEEP_PD_RTC_SLOW_MEM       BIT(2)  //!< Power down RTC SLOW memory
-#define RTC_SLEEP_PD_RTC_FAST_MEM       BIT(3)  //!< Power down RTC FAST memory
-#define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)  //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
-#define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
-#define RTC_SLEEP_PD_WIFI               BIT(6)  //!< Power down WIFI
-#define RTC_SLEEP_PD_BT                 BIT(7)  //!< Power down BT
-#define RTC_SLEEP_PD_CPU                BIT(8)  //!< Power down CPU when in lightsleep, but not restart
-#define RTC_SLEEP_PD_DIG_PERIPH         BIT(9)  //!< Power down DIG peripherals
-#define RTC_SLEEP_PD_INT_8M             BIT(10) //!< Power down Internal 8M oscillator
-#define RTC_SLEEP_PD_XTAL               BIT(11) //!< Power down main XTAL
-
-//These flags are not power domains, but will affect some sleep parameters
-#define RTC_SLEEP_DIG_USE_8M            BIT(16)
-#define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(17)
-#define RTC_SLEEP_NO_ULTRA_LOW          BIT(18) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
-
-/**
- * Default initializer for rtc_sleep_config_t
- *
- * This initializer sets all fields to "reasonable" values (e.g. suggested for
- * production use) based on a combination of RTC_SLEEP_PD_x flags.
- *
- * @param RTC_SLEEP_PD_x flags combined using bitwise OR
- */
-void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_config);
-
-/**
- * @brief Prepare the chip to enter sleep mode
- *
- * This function configures various power control state machines to handle
- * entry into light sleep or deep sleep mode, switches APB and CPU clock source
- * (usually to XTAL), and sets bias voltages for digital and RTC power domains.
- *
- * This function does not actually enter sleep mode; this is done using
- * rtc_sleep_start function. Software may do some other actions between
- * rtc_sleep_init and rtc_sleep_start, such as set wakeup timer and configure
- * wakeup sources.
- * @param cfg sleep mode configuration
- */
-void rtc_sleep_init(rtc_sleep_config_t cfg);
-
-/**
- * @brief Low level initialize for rtc state machine waiting cycles after waking up
- *
- * This function configures the cycles chip need to wait for internal 8MHz
- * oscillator and external 40MHz crystal. As we configure fixed time for waiting
- * crystal, we need to pass period to calculate cycles. Now this function only
- * used in lightsleep mode.
- *
- * @param slowclk_period re-calibrated slow clock period
- */
-void rtc_sleep_low_init(uint32_t slowclk_period);
-
-/**
- * @brief Set target value of RTC counter for RTC_TIMER_TRIG_EN wakeup source
- * @param t value of RTC counter at which wakeup from sleep will happen;
- *          only the lower 48 bits are used
- */
-void rtc_sleep_set_wakeup_time(uint64_t t);
-
-#define RTC_GPIO_TRIG_EN            BIT(2)  //!< GPIO wakeup
-#define RTC_TIMER_TRIG_EN           BIT(3)  //!< Timer wakeup
-#define RTC_WIFI_TRIG_EN            BIT(5)  //!< WIFI wakeup (light sleep only)
-#define RTC_UART0_TRIG_EN           BIT(6)  //!< UART0 wakeup (light sleep only)
-#define RTC_UART1_TRIG_EN           BIT(7)  //!< UART1 wakeup (light sleep only)
-#define RTC_BT_TRIG_EN              BIT(10) //!< BT wakeup (light sleep only)
-#define RTC_XTAL32K_DEAD_TRIG_EN    BIT(12)
-#define RTC_USB_TRIG_EN             BIT(14)
-#define RTC_BROWNOUT_DET_TRIG_EN    BIT(16)
-
-/**
- * RTC_SLEEP_REJECT_MASK records sleep reject sources supported by chip
- */
-#define RTC_SLEEP_REJECT_MASK (RTC_GPIO_TRIG_EN         | \
-                               RTC_TIMER_TRIG_EN        | \
-                               RTC_WIFI_TRIG_EN         | \
-                               RTC_UART0_TRIG_EN        | \
-                               RTC_UART1_TRIG_EN        | \
-                               RTC_BT_TRIG_EN           | \
-                               RTC_XTAL32K_DEAD_TRIG_EN | \
-                               RTC_USB_TRIG_EN          | \
-                               RTC_BROWNOUT_DET_TRIG_EN)
-
-/**
- * @brief Enter deep or light sleep mode
- *
- * This function enters the sleep mode previously configured using rtc_sleep_init
- * function. Before entering sleep, software should configure wake up sources
- * appropriately (set up GPIO wakeup registers, timer wakeup registers,
- * and so on).
- *
- * If deep sleep mode was configured using rtc_sleep_init, and sleep is not
- * rejected by hardware (based on reject_opt flags), this function never returns.
- * When the chip wakes up from deep sleep, CPU is reset and execution starts
- * from ROM bootloader.
- *
- * If light sleep mode was configured using rtc_sleep_init, this function
- * returns on wakeup, or if sleep is rejected by hardware.
- *
- * @param wakeup_opt  bit mask wake up reasons to enable (RTC_xxx_TRIG_EN flags
- *                    combined with OR)
- * @param reject_opt  bit mask of sleep reject reasons:
- *                      - RTC_CNTL_GPIO_REJECT_EN
- *                      - RTC_CNTL_SDIO_REJECT_EN
- *                    These flags are used to prevent entering sleep when e.g.
- *                    an external host is communicating via SDIO slave
- * @return non-zero if sleep was rejected by hardware
- */
-uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu);
-
-/**
- * @brief Enter deep sleep mode
- *
- * Similar to rtc_sleep_start(), but additionally uses hardware to calculate the CRC value
- * of RTC FAST memory. On wake, this CRC is used to determine if a deep sleep wake
- * stub is valid to execute (if a wake address is set).
- *
- * No RAM is accessed while calculating the CRC and going into deep sleep, which makes
- * this function safe to use even if the caller's stack is in RTC FAST memory.
- *
- * @note If no deep sleep wake stub address is set then calling rtc_sleep_start() will
- * have the same effect and takes less time as CRC calculation is skipped.
- *
- * @note This function should only be called after rtc_sleep_init() has been called to
- * configure the system for deep sleep.
- *
- * @param wakeup_opt - same as for rtc_sleep_start
- * @param reject_opt - same as for rtc_sleep_start
- *
- * @return non-zero if sleep was rejected by hardware
- */
-uint32_t rtc_deep_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt);
-
-/**
- * RTC power and clock control initialization settings
- */
-typedef struct {
-    uint32_t ck8m_wait : 8;         //!< Number of rtc_fast_clk cycles to wait for 8M clock to be ready
-    uint32_t xtal_wait : 8;         //!< Number of rtc_fast_clk cycles to wait for XTAL clock to be ready
-    uint32_t pll_wait : 8;          //!< Number of rtc_fast_clk cycles to wait for PLL to be ready
-    uint32_t clkctl_init : 1;       //!< Perform clock control related initialization
-    uint32_t pwrctl_init : 1;       //!< Perform power control related initialization
-    uint32_t rtc_dboost_fpd : 1;    //!< Force power down RTC_DBOOST
-    uint32_t xtal_fpu : 1;
-    uint32_t bbpll_fpu : 1;
-    uint32_t cpu_waiti_clk_gate : 1;
-    uint32_t cali_ocode : 1;        //!< Calibrate Ocode to make bangap voltage more precise.
-} rtc_config_t;
-
-/**
- * Default initializer of rtc_config_t.
- *
- * This initializer sets all fields to "reasonable" values (e.g. suggested for
- * production use).
- */
-#define RTC_CONFIG_DEFAULT() {\
-    .ck8m_wait = RTC_CNTL_CK8M_WAIT_DEFAULT, \
-    .xtal_wait = RTC_CNTL_XTL_BUF_WAIT_DEFAULT, \
-    .pll_wait  = RTC_CNTL_PLL_BUF_WAIT_DEFAULT, \
-    .clkctl_init = 1, \
-    .pwrctl_init = 1, \
-    .rtc_dboost_fpd = 1, \
-    .xtal_fpu = 0, \
-    .bbpll_fpu = 0, \
-    .cpu_waiti_clk_gate = 1, \
-    .cali_ocode = 0\
-}
-
-/**
- * Initialize RTC clock and power control related functions
- * @param cfg configuration options as rtc_config_t
- */
-void rtc_init(rtc_config_t cfg);
 
 // -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
 // **WARNING**: The following are only for backwards compatibility.

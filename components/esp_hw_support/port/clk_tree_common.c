@@ -182,6 +182,10 @@ uint32_t clk_tree_lp_fast_get_freq_hz(clk_tree_src_freq_precision_t precision)
 #endif
     case SOC_RTC_FAST_CLK_SRC_RC_FAST:
         return clk_tree_rc_fast_get_freq_hz(precision) / clk_ll_rc_fast_get_divider();
+#if SOC_CLK_LP_FAST_SUPPORT_LP_PLL
+    case SOC_RTC_FAST_CLK_SRC_LP_PLL:
+        return clk_ll_lp_pll_get_freq_mhz() * MHZ;
+#endif
     default:
         // Invalid clock source
         assert(false);

@@ -13,7 +13,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
     config IDF_ENV_FPGA
         # This option is for internal use only
         bool
-        default "y" if IDF_TARGET_ESP32H2 # TODO: IDF-5630
         option env="IDF_ENV_FPGA"
 
     config IDF_CI_BUILD

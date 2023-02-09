@@ -43,7 +43,7 @@
 #include "hal/cache_hal.h"
 #include "soc/lp_wdt_reg.h"
 #include "hal/efuse_hal.h"
-
+#include "modem/modem_lpcon_reg.h"
 
 static const char *TAG = "boot.esp32h2";
 
@@ -86,8 +86,9 @@ static void bootloader_super_wdt_auto_feed(void)
 
 static inline void bootloader_hardware_init(void)
 {
-    // ESP32H2-TODO: IDF-5990
-    SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_FORCE_ON_REG, MODEM_LPCON_CLK_I2C_MST_FO);
+    // TODO: IDF-6267
+    /* Enable analog i2c master clock */
+    SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
 }
 
 static inline void bootloader_ana_reset_config(void)

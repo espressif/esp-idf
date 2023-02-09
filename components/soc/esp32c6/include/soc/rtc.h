@@ -40,8 +40,6 @@ extern "C" {
  * The functions are loosely split into the following groups:
  * - rtc_clk: clock switching, calibration
  * - rtc_time: reading RTC counter, conversion between counter values and time
- * - rtc_sleep: entry into sleep modes
- * - rtc_init: initialization
  */
 
 #define MHZ (1000000)
@@ -198,32 +196,6 @@ typedef struct {
     .rc32k_dfreq = RTC_CNTL_RC32K_DFREQ_DEFAULT, \
 }
 
-typedef struct {
-    uint16_t wifi_powerup_cycles : 7;
-    uint16_t wifi_wait_cycles : 9;
-    uint16_t bt_powerup_cycles : 7;
-    uint16_t bt_wait_cycles : 9;
-    uint16_t cpu_top_powerup_cycles : 7;
-    uint16_t cpu_top_wait_cycles : 9;
-    uint16_t dg_wrap_powerup_cycles : 7;
-    uint16_t dg_wrap_wait_cycles : 9;
-    uint16_t dg_peri_powerup_cycles : 7;
-    uint16_t dg_peri_wait_cycles : 9;
-} rtc_init_config_t;
-
-#define RTC_INIT_CONFIG_DEFAULT() { \
-    .wifi_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .wifi_wait_cycles = OTHER_BLOCKS_WAIT, \
-    .bt_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .bt_wait_cycles = OTHER_BLOCKS_WAIT, \
-    .cpu_top_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .cpu_top_wait_cycles = OTHER_BLOCKS_WAIT, \
-    .dg_wrap_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .dg_wrap_wait_cycles = OTHER_BLOCKS_WAIT, \
-    .dg_peri_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .dg_peri_wait_cycles = OTHER_BLOCKS_WAIT, \
-}
-
 /**
  * Initialize clocks and set CPU frequency
  *
@@ -314,9 +286,10 @@ soc_rtc_slow_clk_src_t rtc_clk_slow_src_get(void);
 /**
  * @brief Get the approximate frequency of RTC_SLOW_CLK, in Hz
  *
- * - if SOC_RTC_SLOW_CLK_SRC_RC_SLOW is selected, returns ~150000
+ * - if SOC_RTC_SLOW_CLK_SRC_RC_SLOW is selected, returns 136000
  * - if SOC_RTC_SLOW_CLK_SRC_XTAL32K is selected, returns 32768
- * - if SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 is selected, returns ~68000
+ * - if SOC_RTC_SLOW_CLK_SRC_RC32K is selected, returns 32768
+ * - if SOC_RTC_SLOW_CLK_SRC_OSC_SLOW is selected, returns 32768
  *
  * rtc_clk_cal function can be used to get more precise value by comparing
  * RTC_SLOW_CLK frequency to the frequency of main XTAL.
@@ -514,49 +487,6 @@ bool rtc_dig_8m_enabled(void);
  */
 uint32_t rtc_clk_freq_cal(uint32_t cal_val);
 
-
-
-
-/**
- * RTC power and clock control initialization settings
- */
-typedef struct {
-    uint32_t ck8m_wait : 8;         //!< Number of rtc_fast_clk cycles to wait for 8M clock to be ready
-    uint32_t xtal_wait : 8;         //!< Number of rtc_fast_clk cycles to wait for XTAL clock to be ready
-    uint32_t pll_wait : 8;          //!< Number of rtc_fast_clk cycles to wait for PLL to be ready
-    uint32_t clkctl_init : 1;       //!< Perform clock control related initialization
-    uint32_t pwrctl_init : 1;       //!< Perform power control related initialization
-    uint32_t rtc_dboost_fpd : 1;    //!< Force power down RTC_DBOOST
-    uint32_t xtal_fpu : 1;
-    uint32_t bbpll_fpu : 1;
-    uint32_t cpu_waiti_clk_gate : 1;
-    uint32_t cali_ocode : 1;        //!< Calibrate Ocode to make bangap voltage more precise.
-} rtc_config_t;
-
-/**
- * Default initializer of rtc_config_t.
- *
- * This initializer sets all fields to "reasonable" values (e.g. suggested for
- * production use).
- */
-#define RTC_CONFIG_DEFAULT() {\
-    .ck8m_wait = RTC_CNTL_CK8M_WAIT_DEFAULT, \
-    .xtal_wait = RTC_CNTL_XTL_BUF_WAIT_DEFAULT, \
-    .pll_wait  = RTC_CNTL_PLL_BUF_WAIT_DEFAULT, \
-    .clkctl_init = 1, \
-    .pwrctl_init = 1, \
-    .rtc_dboost_fpd = 1, \
-    .xtal_fpu = 0, \
-    .bbpll_fpu = 0, \
-    .cpu_waiti_clk_gate = 1, \
-    .cali_ocode = 0\
-}
-
-/**
- * Initialize RTC clock and power control related functions
- * @param cfg configuration options as rtc_config_t
- */
-void rtc_init(rtc_config_t cfg);
 
 // -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
 // **WARNING**: The following are only for backwards compatibility.
