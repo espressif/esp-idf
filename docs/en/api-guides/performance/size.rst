@@ -352,6 +352,7 @@ lwIP IPv6
 
       IPv6 is required by some components such as ``coap`` and :doc:`/api-reference/protocols/asio`, These components will not be available if IPV6 is disabled.
 
+
 .. _newlib-nano-formatting:
 
 Newlib nano formatting
@@ -359,11 +360,17 @@ Newlib nano formatting
 
 By default, ESP-IDF uses newlib "full" formating for I/O (printf, scanf, etc.)
 
-Enabling the config option :ref:`CONFIG_NEWLIB_NANO_FORMAT` will switch newlib to the "nano" formatting mode. This both smaller in code size and a large part of the implementation is compiled into the {IDF_TARGET_NAME} ROM, so it doesn't need to be included in the binary at all.
+.. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT
 
-The exact difference in binary size depends on which features the firmware uses, but 25 KB ~ 50 KB is typical.
+    Enabling the config option :ref:`CONFIG_NEWLIB_NANO_FORMAT` will switch newlib to the "nano" formatting mode. This both smaller in code size and a large part of the implementation is compiled into the {IDF_TARGET_NAME} ROM, so it doesn't need to be included in the binary at all.
 
-Enabling Nano formatting also reduces the stack usage of each function that calls printf() or another string formatting function, see :ref:`optimize-stack-sizes`.
+    The exact difference in binary size depends on which features the firmware uses, but 25 KB ~ 50 KB is typical.
+
+.. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
+
+    Disabling the config option :ref:`CONFIG_NEWLIB_NANO_FORMAT` will switch newlib to the "full" formatting mode. This will reduce the binary size, as {IDF_TARGET_NAME} has the full formatting version of the functions in ROM,  so it doesn't need to be included in the binary at all.
+
+Enabling Nano formatting reduces the stack usage of each function that calls printf() or another string formatting function, see :ref:`optimize-stack-sizes`.
 
 "Nano" formatting doesn't support 64-bit integers, or C99 formatting features. For a full list of restrictions, search for ``--enable-newlib-nano-formatted-io`` in the `Newlib README file`_.
 

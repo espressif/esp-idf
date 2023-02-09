@@ -26,3 +26,7 @@ config ESP_ROM_HAS_UART_BUF_SWITCH
 config ESP_ROM_NEEDS_SWSETUP_WORKAROUND
     bool
     default y
+
+config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y

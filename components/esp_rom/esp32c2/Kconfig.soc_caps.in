@@ -50,3 +50,7 @@ config ESP_ROM_HAS_LAYOUT_TABLE
 config ESP_ROM_HAS_SPI_FLASH
     bool
     default y
+
+config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y

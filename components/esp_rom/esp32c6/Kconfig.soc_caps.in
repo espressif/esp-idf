@@ -58,3 +58,7 @@ config ESP_ROM_HAS_SPI_FLASH
 config ESP_ROM_HAS_REGI2C_BUG
     bool
     default y
+
+config ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
+    bool
+    default y
