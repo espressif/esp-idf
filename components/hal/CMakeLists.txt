@@ -159,6 +159,16 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "apm_hal.c")
     endif()
 
+    if(CONFIG_SOC_HMAC_SUPPORTED AND NOT CONFIG_IDF_TARGET_ESP32S2)
+        # For ESP32-S2 we do not have HMAC HAL layer implementation yet
+        list(APPEND srcs "hmac_hal.c")
+    endif()
+
+    if(CONFIG_SOC_DIG_SIGN_SUPPORTED AND NOT CONFIG_IDF_TARGET_ESP32S2)
+        # For ESP32-S2 we do not have DS HAL layer implementation yet
+        list(APPEND srcs "ds_hal.c")
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "touch_sensor_hal.c"
@@ -180,13 +190,11 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32s3")
         list(APPEND srcs
-            "ds_hal.c"
             "spi_flash_hal_gpspi.c"
             "touch_sensor_hal.c"
             "usb_hal.c"
             "usb_phy_hal.c"
             "xt_wdt_hal.c"
-            "hmac_hal.c"
             "esp32s3/touch_sensor_hal.c"
             "esp32s3/rtc_cntl_hal.c"
             "usb_dwc_hal.c")
@@ -194,19 +202,15 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32c3")
         list(APPEND srcs
-              "ds_hal.c"
               "spi_flash_hal_gpspi.c"
               "xt_wdt_hal.c"
-              "hmac_hal.c"
               "esp32c3/rtc_cntl_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32h4")
         list(APPEND srcs
-            "ds_hal.c"
             "spi_flash_hal_gpspi.c"
             "aes_hal.c"
-            "hmac_hal.c"
             "esp32h4/rtc_cntl_hal.c")
     endif()
 
@@ -218,9 +222,7 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32c6")
         list(APPEND srcs
-              "spi_flash_hal_gpspi.c"
-              "hmac_hal.c"
-              "ds_hal.c")
+              "spi_flash_hal_gpspi.c")
 
     endif()
 
