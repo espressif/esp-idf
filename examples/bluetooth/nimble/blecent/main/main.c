@@ -44,6 +44,10 @@ static uint8_t peer_addr[6];
 
 void ble_store_config_init(void);
 
+#if MYNEWT_VAL(BLE_POWER_CONTROL)
+static struct ble_gap_event_listener power_control_event_listener;
+#endif
+
 /**
  * Application Callback. Called when the custom subscribable chatacteristic
  * in the remote GATT server is read.
@@ -594,6 +598,55 @@ blecent_connect_if_interesting(void *disc)
     }
 }
 
+#if MYNEWT_VAL(BLE_POWER_CONTROL)
+static void blecent_power_control(uint16_t conn_handle)
+{
+    int rc;
+
+    rc = ble_gap_read_remote_transmit_power_level(conn_handle, 0x01 );  // Attempting on LE 1M phy
+    assert (rc == 0);
+
+    rc = ble_gap_set_transmit_power_reporting_enable(conn_handle, 0x01, 0x01);
+    assert (rc == 0);
+
+    rc = ble_gap_set_path_loss_reporting_param(conn_handle, 60, 10, 30, 10, 2 ); //demo values
+    assert (rc == 0);
+
+    rc = ble_gap_set_path_loss_reporting_enable(conn_handle, 0x01);
+    assert (rc == 0);
+}
+
+static int
+blecent_gap_power_event(struct ble_gap_event *event, void *arg)
+{
+
+    switch(event->type) {
+    case BLE_GAP_EVENT_TRANSMIT_POWER:
+	MODLOG_DFLT(INFO, "Transmit power event : status=%d conn_handle=%d reason=%d "
+                          "phy=%d power_level=%x power_level_flag=%d delta=%d",
+		    event->transmit_power.status,
+		    event->transmit_power.conn_handle,
+		    event->transmit_power.reason,
+		    event->transmit_power.phy,
+		    event->transmit_power.transmit_power_level,
+		    event->transmit_power.transmit_power_level_flag,
+		    event->transmit_power.delta);
+	return 0;
+
+    case BLE_GAP_EVENT_PATHLOSS_THRESHOLD:
+	MODLOG_DFLT(INFO, "Pathloss threshold event : conn_handle=%d current path loss=%d "
+                          "zone_entered =%d",
+		    event->pathloss_threshold.conn_handle,
+		    event->pathloss_threshold.current_path_loss,
+		    event->pathloss_threshold.zone_entered);
+	return 0;
+
+    default:
+	return 0;
+    }
+}
+#endif
+
 /**
  * The nimble host executes this callback when a GAP event occurs.  The
  * application associates a GAP event callback with each connection that is
@@ -647,6 +700,13 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(ERROR, "Failed to add peer; rc=%d\n", rc);
                 return 0;
             }
+
+#if MYNEWT_VAL(BLE_POWER_CONTROL)
+            blecent_power_control(event->connect.conn_handle);
+
+            ble_gap_event_listener_register(&power_control_event_listener,
+                                       blecent_gap_power_event, NULL);
+#endif
 
 #if CONFIG_EXAMPLE_ENCRYPTION
             /** Initiate security - It will perform
