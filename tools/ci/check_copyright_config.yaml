@@ -167,6 +167,13 @@ protocol_examples_common_component:
     - CC0-1.0
   license_for_new_files: Unlicense OR CC0-1.0
 
+zigbee:
+  include:
+    - 'examples/zigbee/'
+  allowed_licenses:
+    - Apache-2.0
+    - LicenseRef-Included
+
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.
 ignore:
@@ -182,7 +189,6 @@ ignore:
     - components/bt/host/bluedroid/
     - '!components/bt/host/bluedroid/api/'
     - '!components/bt/host/bluedroid/btc/'
-    - examples/zigbee/
     - components/esp_local_ctrl/proto-c/
     - components/esp_local_ctrl/python/
     - components/protocomm/proto-c/
