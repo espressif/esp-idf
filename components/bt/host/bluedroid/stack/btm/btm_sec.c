@@ -240,6 +240,11 @@ BOOLEAN BTM_SecRegister(tBTM_APPL_INFO *p_cb_info)
         if (memcmp(btm_cb.devcb.id_keys.ir, &temp_value, sizeof(BT_OCTET16)) == 0) {
             btm_ble_reset_id();
         }
+#if (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+        else {
+            btm_ble_add_default_entry_to_resolving_list();
+        }
+#endif
     } else {
         BTM_TRACE_WARNING("%s p_cb_info->p_le_callback == NULL\n", __func__);
     }
