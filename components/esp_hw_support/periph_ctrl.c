@@ -7,6 +7,7 @@
 #include "hal/clk_gate_ll.h"
 #include "esp_attr.h"
 #include "esp_private/periph_ctrl.h"
+#include "soc/soc_caps.h"
 
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
 #include "esp_private/esp_modem_clock.h"
