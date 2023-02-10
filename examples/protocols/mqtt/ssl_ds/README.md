@@ -1,10 +1,10 @@
-| Supported Targets | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- | -------- |
 
 # ESP-MQTT SSL Mutual Authentication with Digital Signature
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-Espressif's ESP32-S2, ESP32-S3, ESP32-C3 and ESP32-C6 MCU have a built-in Digital Signature (DS) Peripheral, which provides hardware acceleration for RSA signature. More details can be found at [Digital Signature with ESP-TLS](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-reference/protocols/esp_tls.html#digital-signature-with-esp-tls).
+Espressif's ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C6 and ESP32-H2 MCU have a built-in Digital Signature (DS) Peripheral, which provides hardware acceleration for RSA signature. More details can be found at [Digital Signature with ESP-TLS](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-reference/protocols/esp_tls.html#digital-signature-with-esp-tls).
 
 This example connects to the broker test.mosquitto.org using ssl transport with client certificate(RSA) and as a demonstration subscribes/unsubscribes and sends a message on certain topic.The RSA signature operation required in the ssl connection is performed with help of the Digital Signature (DS) peripheral.
 (Please note that the public broker is maintained by the community so may not be always available, for details please visit http://test.mosquitto.org)
@@ -19,7 +19,7 @@ This example can be executed on any ESP32-S2, ESP32-S3, ESP32-C3 or ESP32-C6 boa
 ### Configure the project
 
 #### 1) Selecting the target
-As the project is to be built for the target ESP32-S2, ESP32-S3, ESP32-C3 or ESP32-C6 it should be selected with the following command
+As the project is to be built for the target ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C6 or ESP32-H2 it should be selected with the following command
 ```
 idf.py set-target /* target */
 ```
