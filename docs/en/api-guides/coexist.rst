@@ -194,11 +194,11 @@ Setting Coexistence Compile-time Options
 
 .. list::
 
-    - After writing the coexistence program, you must check  :ref:`CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE` option through menuconfig to open coexistence configuration on software, otherwise the coexistence function mentioned above cannot be used.
+    - After writing the coexistence program, you must check  :ref:`CONFIG_ESP_WIFI_SW_COEXIST_ENABLE` option through menuconfig to open coexistence configuration on software, otherwise the coexistence function mentioned above cannot be used.
 
-    :esp32: - To ensure better communication performance of Wi-Fi and Bluetooth in the case of coexistence, run the task of the Wi-Fi protocol stack, the task of the Bluetooth Controller and Host protocol stack on different CPUs. You can use :ref:`CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE` and :ref:`CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE` (or :ref:`CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE`) to put the tasks of the Bluetooth controller and the host protocol stack on the same CPU, and then use :ref:`CONFIG_ESP32_WIFI_TASK_CORE_ID` to place the task of the Wi-Fi protocol stack on another CPU.
+    :esp32: - To ensure better communication performance of Wi-Fi and Bluetooth in the case of coexistence, run the task of the Wi-Fi protocol stack, the task of the Bluetooth Controller and Host protocol stack on different CPUs. You can use :ref:`CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE` and :ref:`CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE` (or :ref:`CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE`) to put the tasks of the Bluetooth controller and the host protocol stack on the same CPU, and then use :ref:`CONFIG_ESP_WIFI_TASK_CORE_ID` to place the task of the Wi-Fi protocol stack on another CPU.
 
-    :esp32s3: - To ensure better communication performance of Wi-Fi and Bluetooth in the case of coexistence, run the task of the Wi-Fi protocol stack, the task of the Bluetooth Controller and Host protocol stack on different CPUs. You can use :ref:`CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE` and :ref:`CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE` (or :ref:`CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE` ）to put the tasks of the Bluetooth controller and the host protocol stack on the same CPU, and then use :ref:`CONFIG_ESP32_WIFI_TASK_CORE_ID` to place the task of the Wi-Fi protocol stack on another CPU.
+    :esp32s3: - To ensure better communication performance of Wi-Fi and Bluetooth in the case of coexistence, run the task of the Wi-Fi protocol stack, the task of the Bluetooth Controller and Host protocol stack on different CPUs. You can use :ref:`CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE` and :ref:`CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE` (or :ref:`CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE` ）to put the tasks of the Bluetooth controller and the host protocol stack on the same CPU, and then use :ref:`CONFIG_ESP_WIFI_TASK_CORE_ID` to place the task of the Wi-Fi protocol stack on another CPU.
 
     :esp32: - In the case of coexistence, BLE SCAN may be interrupted by Wi-Fi and Wi-Fi releases RF resources before the end of the current BLE scan window. In order to make BLE acquire RF resources again within the current scan window, you can check the FULL SCAN configuration option through :ref:`CONFIG_BTDM_CTRL_FULL_SCAN_SUPPORTED`.
 
@@ -207,14 +207,14 @@ Setting Coexistence Compile-time Options
     - You can reduce the memory consumption by configuring the following options on menuconfig.
 
       1) :ref:`CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY`: enable the configuration of dynamic memory for Bluetooth protocol stack.
-      #) :ref:`CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM`: reduce the number of Wi-Fi static RX buffers.
-      #) :ref:`CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM`: reduce the number of Wi-Fi dynamic RX buffers.
-      #) :ref:`CONFIG_ESP32_WIFI_TX_BUFFER`: enable the configuration of dynamic allocation TX buffers.
-      #) :ref:`CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM`: reduce the number of Wi-Fi dynamic TX buffers.
-      #) :ref:`CONFIG_ESP32_WIFI_TX_BA_WIN`: reduce the number of Wi-Fi Block Ack TX windows.
-      #) :ref:`CONFIG_ESP32_WIFI_RX_BA_WIN`: reduce the number of Wi-Fi Block Ack RX windows.
-      #) :ref:`CONFIG_ESP32_WIFI_MGMT_SBUF_NUM`: reduce the number of Wi-Fi Management Short Buffer.
-      #) :ref:`CONFIG_ESP32_WIFI_RX_IRAM_OPT`: turning off this configuration option will reduce the IRAM memory by approximately 17 KB.
+      #) :ref:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM`: reduce the number of Wi-Fi static RX buffers.
+      #) :ref:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM`: reduce the number of Wi-Fi dynamic RX buffers.
+      #) :ref:`CONFIG_ESP_WIFI_TX_BUFFER`: enable the configuration of dynamic allocation TX buffers.
+      #) :ref:`CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM`: reduce the number of Wi-Fi dynamic TX buffers.
+      #) :ref:`CONFIG_ESP_WIFI_TX_BA_WIN`: reduce the number of Wi-Fi Block Ack TX windows.
+      #) :ref:`CONFIG_ESP_WIFI_RX_BA_WIN`: reduce the number of Wi-Fi Block Ack RX windows.
+      #) :ref:`CONFIG_ESP_WIFI_MGMT_SBUF_NUM`: reduce the number of Wi-Fi Management Short Buffer.
+      #) :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`: turning off this configuration option will reduce the IRAM memory by approximately 17 KB.
       #) :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT`: reduce the default TX buffer size for TCP sockets.
       #) :ref:`CONFIG_LWIP_TCP_WND_DEFAULT`:  reduce the default size of the RX window for TCP sockets.
       #) :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE`: reduce the size of the TCP receive mailbox.

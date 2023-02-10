@@ -267,13 +267,13 @@ typedef enum {
     WPA3_SAE_PWE_BOTH,
 } wifi_sae_pwe_method_t;
 
-/** @brief Soft-AP configuration settings for the ESP32 */
+/** @brief Soft-AP configuration settings for the device */
 typedef struct {
-    uint8_t ssid[32];           /**< SSID of ESP32 soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
-    uint8_t password[64];       /**< Password of ESP32 soft-AP. */
+    uint8_t ssid[32];           /**< SSID of soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
+    uint8_t password[64];       /**< Password of soft-AP. */
     uint8_t ssid_len;           /**< Optional length of SSID field. */
-    uint8_t channel;            /**< Channel of ESP32 soft-AP */
-    wifi_auth_mode_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
+    uint8_t channel;            /**< Channel of soft-AP */
+    wifi_auth_mode_t authmode;  /**< Auth mode of soft-AP. Do not support AUTH_WEP in soft-AP mode */
     uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
     uint8_t max_connection;     /**< Max number of stations allowed to connect in */
     uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
@@ -282,7 +282,7 @@ typedef struct {
     wifi_pmf_config_t pmf_cfg;  /**< Configuration for Protected Management Frame */
 } wifi_ap_config_t;
 
-/** @brief STA configuration settings for the ESP32 */
+/** @brief STA configuration settings for the device */
 typedef struct {
     uint8_t ssid[32];                         /**< SSID of target AP. */
     uint8_t password[64];                     /**< Password of target AP. */
@@ -312,7 +312,7 @@ typedef struct {
     uint8_t he_mcs9_enabled:1;                /**< Whether to support HE-MCS 0 to 9. The default value is 0. */
 } wifi_sta_config_t;
 
-/** @brief Configuration data for ESP32 AP or STA.
+/** @brief Configuration data for device's AP or STA.
  *
  * The usage of this union (for ap or sta configuration) is determined by the accompanying
  * interface argument passed to esp_wifi_set_config() or esp_wifi_get_config()
@@ -344,7 +344,7 @@ typedef struct {
 #define ESP_WIFI_MAX_CONN_NUM  (15)       /**< max number of stations which can connect to ESP32/ESP32S3/ESP32S2 soft-AP */
 #endif
 
-/** @brief List of stations associated with the ESP32 Soft-AP */
+/** @brief List of stations associated with the Soft-AP */
 typedef struct {
     wifi_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM]; /**< station list */
     int       num; /**< number of stations in the list (other entries are invalid) */
@@ -670,24 +670,24 @@ typedef enum {
 
 /** WiFi event declarations */
 typedef enum {
-    WIFI_EVENT_WIFI_READY = 0,           /**< ESP32 WiFi ready */
-    WIFI_EVENT_SCAN_DONE,                /**< ESP32 finish scanning AP */
-    WIFI_EVENT_STA_START,                /**< ESP32 station start */
-    WIFI_EVENT_STA_STOP,                 /**< ESP32 station stop */
-    WIFI_EVENT_STA_CONNECTED,            /**< ESP32 station connected to AP */
-    WIFI_EVENT_STA_DISCONNECTED,         /**< ESP32 station disconnected from AP */
-    WIFI_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by ESP32 station changed */
+    WIFI_EVENT_WIFI_READY = 0,           /**< WiFi ready */
+    WIFI_EVENT_SCAN_DONE,                /**< Finished scanning AP */
+    WIFI_EVENT_STA_START,                /**< Station start */
+    WIFI_EVENT_STA_STOP,                 /**< Station stop */
+    WIFI_EVENT_STA_CONNECTED,            /**< Station connected to AP */
+    WIFI_EVENT_STA_DISCONNECTED,         /**< Station disconnected from AP */
+    WIFI_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by device's station changed */
 
-    WIFI_EVENT_STA_WPS_ER_SUCCESS,       /**< ESP32 station wps succeeds in enrollee mode */
-    WIFI_EVENT_STA_WPS_ER_FAILED,        /**< ESP32 station wps fails in enrollee mode */
-    WIFI_EVENT_STA_WPS_ER_TIMEOUT,       /**< ESP32 station wps timeout in enrollee mode */
-    WIFI_EVENT_STA_WPS_ER_PIN,           /**< ESP32 station wps pin code in enrollee mode */
-    WIFI_EVENT_STA_WPS_ER_PBC_OVERLAP,   /**< ESP32 station wps overlap in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_SUCCESS,       /**< Station wps succeeds in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_FAILED,        /**< Station wps fails in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_TIMEOUT,       /**< Station wps timeout in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_PIN,           /**< Station wps pin code in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_PBC_OVERLAP,   /**< Station wps overlap in enrollee mode */
 
-    WIFI_EVENT_AP_START,                 /**< ESP32 soft-AP start */
-    WIFI_EVENT_AP_STOP,                  /**< ESP32 soft-AP stop */
-    WIFI_EVENT_AP_STACONNECTED,          /**< a station connected to ESP32 soft-AP */
-    WIFI_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from ESP32 soft-AP */
+    WIFI_EVENT_AP_START,                 /**< Soft-AP start */
+    WIFI_EVENT_AP_STOP,                  /**< Soft-AP stop */
+    WIFI_EVENT_AP_STACONNECTED,          /**< a station connected to Soft-AP */
+    WIFI_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from Soft-AP */
     WIFI_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
 
     WIFI_EVENT_FTM_REPORT,               /**< Receive report of FTM procedure */
@@ -697,9 +697,9 @@ typedef enum {
     WIFI_EVENT_ACTION_TX_STATUS,         /**< Status indication of Action Tx operation */
     WIFI_EVENT_ROC_DONE,                 /**< Remain-on-Channel operation complete */
 
-    WIFI_EVENT_STA_BEACON_TIMEOUT,       /**< ESP32 station beacon timeout */
+    WIFI_EVENT_STA_BEACON_TIMEOUT,       /**< Station beacon timeout */
 
-    WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START,   /**< ESP32 connectionless module wake interval start */
+    WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START,   /**< Connectionless module wake interval start */
 
     WIFI_EVENT_AP_WPS_RG_SUCCESS,       /**< Soft-AP wps succeeds in registrar mode */
     WIFI_EVENT_AP_WPS_RG_FAILED,        /**< Soft-AP wps fails in registrar mode */
@@ -759,8 +759,8 @@ typedef struct {
 
 /** Argument structure for WIFI_EVENT_STA_WPS_ER_FAILED event */
 typedef enum {
-    WPS_FAIL_REASON_NORMAL = 0,     /**< ESP32 WPS normal fail reason */
-    WPS_FAIL_REASON_RECV_M2D,       /**< ESP32 WPS receive M2D frame */
+    WPS_FAIL_REASON_NORMAL = 0,     /**< WPS normal fail reason */
+    WPS_FAIL_REASON_RECV_M2D,       /**< WPS receive M2D frame */
     WPS_FAIL_REASON_MAX
 } wifi_event_sta_wps_fail_reason_t;
 
@@ -779,15 +779,15 @@ typedef struct {
 
 /** Argument structure for WIFI_EVENT_AP_STACONNECTED event */
 typedef struct {
-    uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
-    uint8_t aid;              /**< the aid that ESP32 soft-AP gives to the station connected to  */
+    uint8_t mac[6];           /**< MAC address of the station connected to Soft-AP */
+    uint8_t aid;              /**< the aid that soft-AP gives to the station connected to  */
     bool is_mesh_child;       /**< flag to identify mesh child */
 } wifi_event_ap_staconnected_t;
 
 /** Argument structure for WIFI_EVENT_AP_STADISCONNECTED event */
 typedef struct {
-    uint8_t mac[6];           /**< MAC address of the station disconnects to ESP32 soft-AP */
-    uint8_t aid;              /**< the aid that ESP32 soft-AP gave to the station disconnects to  */
+    uint8_t mac[6];           /**< MAC address of the station disconnects to soft-AP */
+    uint8_t aid;              /**< the aid that soft-AP gave to the station disconnects to  */
     bool is_mesh_child;       /**< flag to identify mesh child */
 } wifi_event_ap_stadisconnected_t;
 

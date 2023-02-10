@@ -367,7 +367,7 @@ typedef int (*esp_aes_gmac_t)(const uint8_t *key, size_t keylen, const uint8_t *
 
 /**
   * @brief The crypto callback function structure used when do station security connect.
-  *        The structure can be set as software crypto or the crypto optimized by ESP32
+  *        The structure can be set as software crypto or the crypto optimized by device's
   *        hardware.
   */
 typedef struct {
@@ -402,7 +402,7 @@ typedef struct {
 
 /**
   * @brief The crypto callback function structure used in mesh vendor IE encryption. The
-  *        structure can be set as software crypto or the crypto optimized by ESP32
+  *        structure can be set as software crypto or the crypto optimized by device's
   *        hardware.
   */
 typedef struct{

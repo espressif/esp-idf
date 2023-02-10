@@ -585,7 +585,6 @@ components/esp_system/test_eh_frame_parser/linker.ld
 components/esp_system/ubsan.c
 components/esp_wifi/include/esp_private/esp_wifi_types_private.h
 components/esp_wifi/include/esp_private/wifi_types.h
-components/esp_wifi/include/esp_smartconfig.h
 components/esp_wifi/include/smartconfig_ack.h
 components/esp_wifi/src/lib_printf.c
 components/esp_wifi/src/mesh_event.c
@@ -1284,7 +1283,6 @@ components/wpa_supplicant/src/wps/wps_enrollee.c
 components/wpa_supplicant/src/wps/wps_i.h
 components/wpa_supplicant/src/wps/wps_registrar.c
 components/wpa_supplicant/src/wps/wps_validate.c
-components/wpa_supplicant/test/test_dpp.c
 components/xtensa/eri.c
 components/xtensa/esp32/include/xtensa/config/core-isa.h
 components/xtensa/esp32/include/xtensa/config/core-matmap.h

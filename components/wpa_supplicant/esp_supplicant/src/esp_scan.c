@@ -37,7 +37,7 @@ static void scan_done_event_handler(void *arg, STATUS status)
 	esp_supplicant_handle_scan_done_evt();
 }
 
-#if defined(CONFIG_WPA_11KV_SUPPORT)
+#if defined(CONFIG_IEEE80211KV)
 static void handle_wnm_scan_done(struct wpa_supplicant *wpa_s)
 {
 	struct wpa_bss *bss = wpa_bss_get_next_bss(wpa_s, wpa_s->current_bss);
@@ -73,7 +73,7 @@ void esp_supplicant_handle_scan_done_evt(void)
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
 	wpa_printf(MSG_INFO, "scan done received");
-#if defined(CONFIG_WPA_11KV_SUPPORT)
+#if defined(CONFIG_IEEE80211KV)
 	/* Check which module started this, call the respective function */
 	if (wpa_s->scan_reason == REASON_RRM_BEACON_REPORT) {
 		wpas_beacon_rep_scan_process(wpa_s, wpa_s->scan_start_tsf);

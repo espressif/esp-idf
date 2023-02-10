@@ -19,11 +19,11 @@
 #include "esp_phy_init.h"
 #include "esp_private/phy.h"
 
-#if (CONFIG_ESP32_WIFI_RX_BA_WIN > CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM)
+#if (CONFIG_ESP_WIFI_RX_BA_WIN > CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM)
 #error "WiFi configuration check: WARNING, WIFI_RX_BA_WIN should not be larger than WIFI_DYNAMIC_RX_BUFFER_NUM!"
 #endif
 
-#if (CONFIG_ESP32_WIFI_RX_BA_WIN > (CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM << 1))
+#if (CONFIG_ESP_WIFI_RX_BA_WIN > (CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM << 1))
 #error "WiFi configuration check: WARNING, WIFI_RX_BA_WIN should not be larger than double of the WIFI_STATIC_RX_BUFFER_NUM!"
 #endif
 
@@ -41,7 +41,7 @@ wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb = NULL;
 
 /* Set additional WiFi features and capabilities */
 uint64_t g_wifi_feature_caps =
-#if CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE
+#if CONFIG_ESP_WIFI_ENABLE_WPA3_SAE
     CONFIG_FEATURE_WPA3_SAE_BIT |
 #endif
 #if CONFIG_SPIRAM
@@ -140,8 +140,8 @@ esp_err_t esp_wifi_deinit(void)
 
 static void esp_wifi_config_info(void)
 {
-#ifdef CONFIG_ESP32_WIFI_RX_BA_WIN
-    ESP_LOGI(TAG, "rx ba win: %d", CONFIG_ESP32_WIFI_RX_BA_WIN);
+#ifdef CONFIG_ESP_WIFI_RX_BA_WIN
+    ESP_LOGI(TAG, "rx ba win: %d", CONFIG_ESP_WIFI_RX_BA_WIN);
 #endif
 
 #ifdef CONFIG_ESP_NETIF_TCPIP_LWIP
@@ -156,11 +156,11 @@ static void esp_wifi_config_info(void)
     ESP_LOGI(TAG, "WiFi/LWIP prefer SPIRAM");
 #endif
 
-#ifdef CONFIG_ESP32_WIFI_IRAM_OPT
+#ifdef CONFIG_ESP_WIFI_IRAM_OPT
     ESP_LOGI(TAG, "WiFi IRAM OP enabled");
 #endif
 
-#ifdef CONFIG_ESP32_WIFI_RX_IRAM_OPT
+#ifdef CONFIG_ESP_WIFI_RX_IRAM_OPT
     ESP_LOGI(TAG, "WiFi RX IRAM OP enabled");
 #endif
 

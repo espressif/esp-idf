@@ -2199,7 +2199,7 @@ Wi-Fi AMSDU
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-    {IDF_TARGET_NAME} 支持接收和发送 AMSDU。开启 AMSDU 发送比较消耗内存，默认不开启 AMSDU 发送。可通过选项 :ref:`CONFIG_ESP32_WIFI_AMSDU_TX_ENABLED` 使能 AMSDU 发送功能， 但是使能 AMSDU 发送依赖于 :ref:`CONFIG_SPIRAM` 。
+    {IDF_TARGET_NAME} 支持接收和发送 AMSDU。开启 AMSDU 发送比较消耗内存，默认不开启 AMSDU 发送。可通过选项 :ref:`CONFIG_ESP_WIFI_AMSDU_TX_ENABLED` 使能 AMSDU 发送功能， 但是使能 AMSDU 发送依赖于 :ref:`CONFIG_SPIRAM` 。
 
 Wi-Fi 分片
 -------------------------
@@ -2292,24 +2292,24 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
 
 **接收数据方向：**
 
- - :ref:`CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM`
+ - :ref:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM`
     该参数表示硬件层的 DMA 缓冲区数量。提高该参数将增加发送方的一次性接收吞吐量，从而提高 Wi-Fi 协议栈处理突发流量的能力。
 
- - :ref:`CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM`
+ - :ref:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM`
     该参数表示 Wi-Fi 层中接收数据缓冲区的数量。提高该参数可以增强数据包的接收性能。该参数需要与 LWIP 层的接收数据缓冲区大小相匹配。
 
- - :ref:`CONFIG_ESP32_WIFI_RX_BA_WIN`
-    该参数表示接收端 AMPDU BA 窗口的大小，应配置为 :ref:`CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM` 和 :ref:`CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM` 的二倍数值中较小的数值。
+ - :ref:`CONFIG_ESP_WIFI_RX_BA_WIN`
+    该参数表示接收端 AMPDU BA 窗口的大小，应配置为 :ref:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM` 和 :ref:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM` 的二倍数值中较小的数值。
 
  - :ref:`CONFIG_LWIP_TCP_WND_DEFAULT`
     该参数表示 LWIP 层用于每个 TCP 流的的接收数据缓冲区大小，应配置为 WIFI_DYNAMIC_RX_BUFFER_NUM (KB) 的值，从而实现高稳定性能。同时，在有多个流的情况下，应相应降低该参数值。
 
 **发送数据方向：**
 
- - :ref:`CONFIG_ESP32_WIFI_TX_BUFFER`
+ - :ref:`CONFIG_ESP_WIFI_TX_BUFFER`
     该参数表示发送数据缓冲区的类型，建议配置为动态缓冲区，该配置可以充分利用内存。
 
- - :ref:`CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM`
+ - :ref:`CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM`
     该参数表示 Wi-Fi 层发送数据缓冲区数量。提高该参数可以增强数据包发送的性能。该参数值需要与 LWIP 层的发送数据缓冲区大小相匹配。
 
  - :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT`
@@ -2319,10 +2319,10 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
 
 .. only:: esp32 or esp32s2
 
-    - :ref:`CONFIG_ESP32_WIFI_IRAM_OPT`
+    - :ref:`CONFIG_ESP_WIFI_IRAM_OPT`
         如果使能该选项，一些 Wi-Fi 功能将被移至 IRAM，从而提高吞吐量，IRAM 使用量将增加 15 kB。
 
-    - :ref:`CONFIG_ESP32_WIFI_RX_IRAM_OPT`
+    - :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
         如果使能该选项，一些 Wi-Fi 接收数据功能将被移至 IRAM，从而提高吞吐量，IRAM 使用量将增加 16 kB。
 
  - :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION`
@@ -2886,7 +2886,7 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
     使用 PSRAM
     ++++++++++++++++++++++++++++
 
-    PSRAM 一般在应用程序占用大量内存时使用。在该模式下，:ref:`CONFIG_ESP32_WIFI_TX_BUFFER` 被强制为静态。:ref:`CONFIG_ESP32_WIFI_STATIC_TX_BUFFER_NUM` 表示硬件层 DMA 缓冲区数量，提高这一参数可以增强性能。
+    PSRAM 一般在应用程序占用大量内存时使用。在该模式下，:ref:`CONFIG_ESP_WIFI_TX_BUFFER` 被强制为静态。:ref:`CONFIG_ESP_WIFI_STATIC_TX_BUFFER_NUM` 表示硬件层 DMA 缓冲区数量，提高这一参数可以增强性能。
     以下是使用 PSRAM 时的推荐等级。
 
     .. only:: esp32

@@ -39,7 +39,7 @@ typedef struct {
 } mac_t;
 
 static mac_t s_mac_table[] = {
-#ifdef CONFIG_ESP32_WIFI_ENABLED
+#ifdef CONFIG_ESP_WIFI_ENABLED
     {ESP_MAC_WIFI_STA,      STATE_INIT, 6,                   {0}},
     {ESP_MAC_WIFI_SOFTAP,   STATE_INIT, 6,                   {0}},
 #endif

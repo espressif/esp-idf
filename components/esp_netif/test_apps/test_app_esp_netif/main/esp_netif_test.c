@@ -129,7 +129,7 @@ TEST(esp_netif, create_delete_multiple_netifs)
 
 }
 
-#ifdef CONFIG_ESP32_WIFI_ENABLED
+#ifdef CONFIG_ESP_WIFI_ENABLED
 TEST(esp_netif, dhcp_client_state_transitions_wifi_sta)
 {
     // init default wifi netif
@@ -176,9 +176,9 @@ TEST(esp_netif, dhcp_client_state_transitions_wifi_sta)
     TEST_ASSERT(esp_wifi_deinit() == ESP_OK);
     nvs_flash_deinit();
 }
-#endif // CONFIG_ESP32_WIFI_ENABLED
+#endif // CONFIG_ESP_WIFI_ENABLED
 
-#if defined(CONFIG_ESP32_WIFI_ENABLED) && defined(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
+#if defined(CONFIG_ESP_WIFI_ENABLED) && defined(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
 TEST(esp_netif, dhcp_server_state_transitions_wifi_ap)
 {
     // init default wifi netif
@@ -282,9 +282,9 @@ TEST(esp_netif, dhcp_server_state_transitions_mesh)
     TEST_ASSERT(esp_wifi_deinit() == ESP_OK);
     nvs_flash_deinit();
 }
-#endif // CONFIG_ESP32_WIFI_ENABLED && CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+#endif // CONFIG_ESP_WIFI_ENABLED && CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 
-#ifdef CONFIG_ESP32_WIFI_ENABLED
+#ifdef CONFIG_ESP_WIFI_ENABLED
 TEST(esp_netif, create_custom_wifi_interfaces)
 {
     esp_netif_t *ap = NULL;
@@ -389,7 +389,7 @@ TEST(esp_netif, get_set_hostname)
 
     esp_netif_destroy(esp_netif);
 }
-#endif // CONFIG_ESP32_WIFI_ENABLED
+#endif // CONFIG_ESP_WIFI_ENABLED
 
 static esp_err_t dummy_transmit(void* hd, void *buf, size_t length)
 {
@@ -461,18 +461,18 @@ TEST_GROUP_RUNNER(esp_netif)
     RUN_TEST_CASE(esp_netif, convert_ip_addresses)
     RUN_TEST_CASE(esp_netif, get_from_if_key)
     RUN_TEST_CASE(esp_netif, create_delete_multiple_netifs)
-#ifdef CONFIG_ESP32_WIFI_ENABLED
+#ifdef CONFIG_ESP_WIFI_ENABLED
     RUN_TEST_CASE(esp_netif, create_custom_wifi_interfaces)
     RUN_TEST_CASE(esp_netif, create_destroy_default_wifi)
 #endif
     /**
      * After follow tests which start lwIP and thus expect some mem-leaks by TCP/IP stack
      */
-#ifdef CONFIG_ESP32_WIFI_ENABLED
+#ifdef CONFIG_ESP_WIFI_ENABLED
     RUN_TEST_CASE(esp_netif, get_set_hostname)
     RUN_TEST_CASE(esp_netif, dhcp_client_state_transitions_wifi_sta)
 #endif
-#if defined(CONFIG_ESP32_WIFI_ENABLED) && defined(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
+#if defined(CONFIG_ESP_WIFI_ENABLED) && defined(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
     RUN_TEST_CASE(esp_netif, dhcp_server_state_transitions_wifi_ap)
     RUN_TEST_CASE(esp_netif, dhcp_server_state_transitions_mesh)
 #endif
