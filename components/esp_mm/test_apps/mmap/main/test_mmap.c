@@ -38,11 +38,11 @@ TEST_CASE("Can dump mapped block stats", "[mmu]")
     ESP_LOGI(TAG, "found partition '%s' at offset 0x%"PRIx32" with size 0x%"PRIx32, part->label, part->address, part->size);
 
     void *ptr0 = NULL;
-    TEST_ESP_OK(esp_mmu_map(part->address, TEST_BLOCK_SIZE, MMU_MEM_CAP_READ, MMU_TARGET_FLASH0, &ptr0));
+    TEST_ESP_OK(esp_mmu_map(part->address, TEST_BLOCK_SIZE, MMU_TARGET_FLASH0, MMU_MEM_CAP_READ, 0, &ptr0));
     void *ptr1 = NULL;
-    TEST_ESP_OK(esp_mmu_map(part->address, TEST_BLOCK_SIZE, MMU_MEM_CAP_EXEC, MMU_TARGET_FLASH0, &ptr1));
+    TEST_ESP_OK(esp_mmu_map(part->address + TEST_BLOCK_SIZE, TEST_BLOCK_SIZE, MMU_TARGET_FLASH0, MMU_MEM_CAP_EXEC, 0, &ptr1));
     void *ptr2 = NULL;
-    TEST_ESP_OK(esp_mmu_map(part->address, TEST_BLOCK_SIZE, MMU_MEM_CAP_READ, MMU_TARGET_FLASH0, &ptr2));
+    TEST_ESP_OK(esp_mmu_map(part->address + 2 * TEST_BLOCK_SIZE, TEST_BLOCK_SIZE, MMU_TARGET_FLASH0, MMU_MEM_CAP_READ, 0, &ptr2));
 
     esp_mmu_map_dump_mapped_blocks(stdout);
 
