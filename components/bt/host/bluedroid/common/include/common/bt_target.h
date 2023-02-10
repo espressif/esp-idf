@@ -1015,6 +1015,19 @@
 #define BLE_MAX_L2CAP_CLIENTS           15
 #endif
 
+/* Support status of L2CAP connection-oriented dynamic channels over LE transport with dynamic CID */
+#ifndef BLE_L2CAP_COC_INCLUDED
+#define BLE_L2CAP_COC_INCLUDED          FALSE // LE COC not use by default
+#endif
+
+/* Support status of L2CAP connection-oriented dynamic channels over LE or BR/EDR transport with dynamic CID */
+#ifndef L2CAP_COC_INCLUDED
+#if (CLASSIC_BT_INCLUDED == TRUE || BLE_L2CAP_COC_INCLUDED == TRUE)
+#define L2CAP_COC_INCLUDED              TRUE
+#else
+#define L2CAP_COC_INCLUDED              FALSE
+#endif
+#endif
 
 /* The maximum number of simultaneous links that L2CAP can support. Up to 7*/
 #ifndef MAX_ACL_CONNECTIONS
