@@ -406,11 +406,11 @@ Calling ``send()`` or ``sendto()`` repeatedly on a UDP socket may eventually fai
 
 .. only:: esp32
 
-    Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP32_WIFI_TX_BUFFER>` or :ref:`Ethernet <CONFIG_ETH_DMA_TX_BUFFER_NUM>` project configuration (as applicable) may also help.
+    Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP_WIFI_TX_BUFFER>` or :ref:`Ethernet <CONFIG_ETH_DMA_TX_BUFFER_NUM>` project configuration (as applicable) may also help.
 
 .. only:: not esp32 and SOC_WIFI_SUPPORTED
 
-    Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP32_WIFI_TX_BUFFER>` project configuration may also help.
+    Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP_WIFI_TX_BUFFER>` project configuration may also help.
 
 .. _lwip-performance:
 

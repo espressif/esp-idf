@@ -485,7 +485,7 @@ esp_err_t esp_wifi_internal_get_config_channel(wifi_interface_t ifx, uint8_t *pr
   * @param     aid : the connection number when a STA connects to the softAP
   * @param     primary : store the negotiated primary channel
   * @param     second : store the negotiated second channel
-  * @attention the aid param is only works when the ESP32 in softAP/softAP+STA mode
+  * @attention the aid param is only works when the device in softAP/softAP+STA mode
   *
   * @return
   *    - ESP_OK: succeed

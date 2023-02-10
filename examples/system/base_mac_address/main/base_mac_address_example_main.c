@@ -83,7 +83,7 @@ void app_main(void)
     //Get the derived MAC address for each network interface
     uint8_t derived_mac_addr[6] = {0};
 
-#ifdef CONFIG_ESP32_WIFI_ENABLED
+#ifdef CONFIG_ESP_WIFI_ENABLED
     //Get MAC address for WiFi Station interface
     ESP_ERROR_CHECK(esp_read_mac(derived_mac_addr, ESP_MAC_WIFI_STA));
     ESP_LOGI("WIFI_STA MAC", "0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x",
@@ -95,7 +95,7 @@ void app_main(void)
     ESP_LOGI("SoftAP MAC", "0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x",
              derived_mac_addr[0], derived_mac_addr[1], derived_mac_addr[2],
              derived_mac_addr[3], derived_mac_addr[4], derived_mac_addr[5]);
-#endif // CONFIG_ESP32_WIFI_ENABLED
+#endif // CONFIG_ESP_WIFI_ENABLED
 
 #ifdef CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
     //Get MAC address for Bluetooth

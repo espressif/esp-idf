@@ -2199,7 +2199,7 @@ Wi-Fi AMSDU
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-    {IDF_TARGET_NAME} supports receiving and transmitting AMSDU. AMSDU TX is disabled by default, since enable AMSDU TX need more memory. Select :ref:`CONFIG_ESP32_WIFI_AMSDU_TX_ENABLED` to enable AMSDU Tx feature, it depends on :ref:`CONFIG_SPIRAM`.
+    {IDF_TARGET_NAME} supports receiving and transmitting AMSDU. AMSDU TX is disabled by default, since enable AMSDU TX need more memory. Select :ref:`CONFIG_ESP_WIFI_AMSDU_TX_ENABLED` to enable AMSDU Tx feature, it depends on :ref:`CONFIG_SPIRAM`.
 
 Wi-Fi Fragment
 -------------------------
@@ -2292,24 +2292,24 @@ Increasing the size or number of the buffers mentioned above properly can improv
 
 **RX direction:**
 
- - :ref:`CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM`
+ - :ref:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM`
     This parameter indicates the number of DMA buffer at the hardware layer. Increasing this parameter will increase the sender's one-time receiving throughput, thereby improving the Wi-Fi protocol stack ability to handle burst traffic.
 
- - :ref:`CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM`
+ - :ref:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM`
     This parameter indicates the number of RX buffer in the Wi-Fi layer. Increasing this parameter will improve the performance of packet reception. This parameter needs to match the RX buffer size of the LwIP layer.
 
- - :ref:`CONFIG_ESP32_WIFI_RX_BA_WIN`
-    This parameter indicates the size of the AMPDU BA Window at the receiving end. This parameter should be configured to the smaller value between twice of :ref:`CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM` and :ref:`CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM`.
+ - :ref:`CONFIG_ESP_WIFI_RX_BA_WIN`
+    This parameter indicates the size of the AMPDU BA Window at the receiving end. This parameter should be configured to the smaller value between twice of :ref:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM` and :ref:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM`.
 
  - :ref:`CONFIG_LWIP_TCP_WND_DEFAULT`
     This parameter represents the RX buffer size of the LwIP layer for each TCP stream. Its value should be configured to the value of WIFI_DYNAMIC_RX_BUFFER_NUM (KB) to reach a high and stable performance. Meanwhile, in case of multiple streams, this value needs to be reduced proportionally.
 
 **TX direction:**
 
- - :ref:`CONFIG_ESP32_WIFI_TX_BUFFER`
+ - :ref:`CONFIG_ESP_WIFI_TX_BUFFER`
     This parameter indicates the type of TX buffer, it is recommended to configure it as a dynamic buffer, which can make full use of memory.
 
- - :ref:`CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM`
+ - :ref:`CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM`
     This parameter indicates the number of TX buffer on the Wi-Fi layer. Increasing this parameter will improve the performance of packet sending. The parameter value needs to match the TX buffer size of the LwIP layer.
 
  - :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT`
@@ -2319,10 +2319,10 @@ Increasing the size or number of the buffers mentioned above properly can improv
 
 .. only:: esp32 or esp32s2
 
-    - :ref:`CONFIG_ESP32_WIFI_IRAM_OPT`
+    - :ref:`CONFIG_ESP_WIFI_IRAM_OPT`
         If this option is enabled, some Wi-Fi functions are moved to IRAM, improving throughput. This increases IRAM usage by 15 kB.
 
-    - :ref:`CONFIG_ESP32_WIFI_RX_IRAM_OPT`
+    - :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
         If this option is enabled, some Wi-Fi RX functions are moved to IRAM, improving throughput. This increases IRAM usage by 16 kB.
 
  - :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION`
@@ -2886,7 +2886,7 @@ The parameters not mentioned in the following table should be set to the default
     Using PSRAM
     ++++++++++++++++++++++++++++
 
-    PSRAM is generally used when the application takes up a lot of memory. In this mode, the :ref:`CONFIG_ESP32_WIFI_TX_BUFFER` is forced to be static. :ref:`CONFIG_ESP32_WIFI_STATIC_TX_BUFFER_NUM` indicates the number of DMA buffers at the hardware layer, and increasing this parameter can improve performance.
+    PSRAM is generally used when the application takes up a lot of memory. In this mode, the :ref:`CONFIG_ESP_WIFI_TX_BUFFER` is forced to be static. :ref:`CONFIG_ESP_WIFI_STATIC_TX_BUFFER_NUM` indicates the number of DMA buffers at the hardware layer, and increasing this parameter can improve performance.
     The following are the recommended ranks for using PSRAM:
 
     .. only:: esp32

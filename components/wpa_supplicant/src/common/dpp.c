@@ -23,7 +23,7 @@
 
 static const char * dpp_netrole_str(enum dpp_netrole netrole);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 enum dpp_test_behavior dpp_test = DPP_TEST_DISABLED;
 u8 dpp_protocol_key_override[600];
 size_t dpp_protocol_key_override_len = 0;
@@ -32,7 +32,7 @@ size_t dpp_nonce_override_len = 0;
 
 static int dpp_test_gen_invalid_key(struct wpabuf *msg,
 				    const struct dpp_curve_params *curve);
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 struct dpp_global {
 	void *msg_ctx;
@@ -1000,10 +1000,10 @@ static struct wpabuf * dpp_auth_build_req(struct dpp_authentication *auth,
 		4 + sizeof(wrapped_data);
 	if (neg_freq > 0)
 		attr_len += 4 + 2;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_AFTER_WRAPPED_DATA_AUTH_REQ)
 		attr_len += 5;
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	msg = dpp_alloc_msg(DPP_PA_AUTHENTICATION_REQ, attr_len);
 	if (!msg)
 		return NULL;
@@ -1034,17 +1034,17 @@ static struct wpabuf * dpp_auth_build_req(struct dpp_authentication *auth,
 		wpabuf_put_u8(msg, channel);
 	}
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_NO_WRAPPED_DATA_AUTH_REQ) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no Wrapped Data");
 		goto skip_wrapped_data;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	/* Wrapped data ({I-nonce, I-capabilities}k1) */
 	pos = clear;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_NO_I_NONCE_AUTH_REQ) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no I-nonce");
 		goto skip_i_nonce;
@@ -1059,7 +1059,7 @@ static struct wpabuf * dpp_auth_build_req(struct dpp_authentication *auth,
 		pos += nonce_len - 1;
 		goto skip_i_nonce;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	/* I-nonce */
 	WPA_PUT_LE16(pos, DPP_ATTR_I_NONCE);
@@ -1069,13 +1069,13 @@ static struct wpabuf * dpp_auth_build_req(struct dpp_authentication *auth,
 	os_memcpy(pos, auth->i_nonce, nonce_len);
 	pos += nonce_len;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 skip_i_nonce:
 	if (dpp_test == DPP_TEST_NO_I_CAPAB_AUTH_REQ) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no I-capab");
 		goto skip_i_capab;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	/* I-capabilities */
 	WPA_PUT_LE16(pos, DPP_ATTR_I_CAPABILITIES);
@@ -1084,13 +1084,13 @@ skip_i_nonce:
 	pos += 2;
 	auth->i_capab = auth->allowed_roles;
 	*pos++ = auth->i_capab;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_ZERO_I_CAPAB) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - zero I-capabilities");
 		pos[-1] = 0;
 	}
 skip_i_capab:
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	attr_end = wpabuf_put(msg, 0);
 
@@ -1119,13 +1119,13 @@ skip_i_capab:
 	wpabuf_put_le16(msg, siv_len);
 	wpabuf_put_data(msg, wrapped_data, siv_len);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_AFTER_WRAPPED_DATA_AUTH_REQ) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - attr after Wrapped Data");
 		dpp_build_attr_status(msg, DPP_STATUS_OK);
 	}
 skip_wrapped_data:
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	wpa_hexdump_buf(MSG_DEBUG,
 			"DPP: Authentication Request frame attributes", msg);
@@ -1160,10 +1160,10 @@ static struct wpabuf * dpp_auth_build_resp(struct dpp_authentication *auth,
 	/* Build DPP Authentication Response frame attributes */
 	attr_len = 4 + 1 + 2 * (4 + SHA256_MAC_LEN) +
 		4 + (pr ? wpabuf_len(pr) : 0) + 4 + sizeof(wrapped_data);
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_AFTER_WRAPPED_DATA_AUTH_RESP)
 		attr_len += 5;
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	msg = dpp_alloc_msg(DPP_PA_AUTHENTICATION_RESP, attr_len);
 	if (!msg)
 		return NULL;
@@ -1189,12 +1189,12 @@ static struct wpabuf * dpp_auth_build_resp(struct dpp_authentication *auth,
 
 	attr_end = wpabuf_put(msg, 0);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_NO_WRAPPED_DATA_AUTH_RESP) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no Wrapped Data");
 		goto skip_wrapped_data;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	/* Wrapped data ({R-nonce, I-nonce, R-capabilities, {R-auth}ke}k2) */
 	pos = clear;
@@ -1216,21 +1216,21 @@ static struct wpabuf * dpp_auth_build_resp(struct dpp_authentication *auth,
 		WPA_PUT_LE16(pos, nonce_len);
 		pos += 2;
 		os_memcpy(pos, i_nonce, nonce_len);
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 		if (dpp_test == DPP_TEST_I_NONCE_MISMATCH_AUTH_RESP) {
 			wpa_printf(MSG_INFO, "DPP: TESTING - I-nonce mismatch");
 			pos[nonce_len / 2] ^= 0x01;
 		}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 		pos += nonce_len;
 	}
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_NO_R_CAPAB_AUTH_RESP) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no R-capab");
 		goto skip_r_capab;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	/* R-capabilities */
 	WPA_PUT_LE16(pos, DPP_ATTR_R_CAPABILITIES);
@@ -1240,7 +1240,7 @@ static struct wpabuf * dpp_auth_build_resp(struct dpp_authentication *auth,
 	auth->r_capab = auth->configurator ? DPP_CAPAB_CONFIGURATOR :
 		DPP_CAPAB_ENROLLEE;
 	*pos++ = auth->r_capab;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_ZERO_R_CAPAB) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - zero R-capabilities");
 		pos[-1] = 0;
@@ -1255,7 +1255,7 @@ static struct wpabuf * dpp_auth_build_resp(struct dpp_authentication *auth,
 				DPP_CAPAB_CONFIGURATOR;
 	}
 skip_r_capab:
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	if (wrapped_r_auth) {
 		/* {R-auth}ke */
@@ -1292,13 +1292,13 @@ skip_r_capab:
 	wpabuf_put_le16(msg, siv_len);
 	wpabuf_put_data(msg, wrapped_data, siv_len);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_AFTER_WRAPPED_DATA_AUTH_RESP) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - attr after Wrapped Data");
 		dpp_build_attr_status(msg, DPP_STATUS_OK);
 	}
 skip_wrapped_data:
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	wpa_hexdump_buf(MSG_DEBUG,
 			"DPP: Authentication Response frame attributes", msg);
@@ -1523,9 +1523,9 @@ struct dpp_authentication * dpp_auth_init(void *msg_ctx,
 	size_t secret_len;
 	struct wpabuf *pi = NULL;
 	const u8 *r_pubkey_hash, *i_pubkey_hash;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	u8 test_hash[SHA256_MAC_LEN];
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	auth = os_zalloc(sizeof(*auth));
 	if (!auth)
@@ -1543,7 +1543,7 @@ struct dpp_authentication * dpp_auth_init(void *msg_ctx,
 	    dpp_prepare_channel_list(auth, own_modes, num_modes) < 0)
 		goto fail;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_nonce_override_len > 0) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - override I-nonce");
 		nonce_len = dpp_nonce_override_len;
@@ -1556,16 +1556,16 @@ struct dpp_authentication * dpp_auth_init(void *msg_ctx,
 			goto fail;
 		}
 	}
-#else /* CONFIG_WPA_TESTING_OPTIONS */
+#else /* CONFIG_TESTING_OPTIONS */
 	nonce_len = auth->curve->nonce_len;
 	if (random_get_bytes(auth->i_nonce, nonce_len)) {
 		wpa_printf(MSG_ERROR, "DPP: Failed to generate I-nonce");
 		goto fail;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	wpa_hexdump(MSG_DEBUG, "DPP: I-nonce", auth->i_nonce, nonce_len);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_protocol_key_override_len) {
 		const struct dpp_curve_params *tmp_curve;
 
@@ -1577,9 +1577,9 @@ struct dpp_authentication * dpp_auth_init(void *msg_ctx,
 	} else {
 		auth->own_protocol_key = dpp_gen_keypair(auth->curve);
 	}
-#else /* CONFIG_WPA_TESTING_OPTIONS */
+#else /* CONFIG_TESTING_OPTIONS */
 	auth->own_protocol_key = dpp_gen_keypair(auth->curve);
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	if (!auth->own_protocol_key)
 		goto fail;
 
@@ -1604,7 +1604,7 @@ struct dpp_authentication * dpp_auth_init(void *msg_ctx,
 	r_pubkey_hash = auth->peer_bi->pubkey_hash;
 	i_pubkey_hash = auth->own_bi->pubkey_hash;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_NO_R_BOOTSTRAP_KEY_HASH_AUTH_REQ) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no R-Bootstrap Key Hash");
 		r_pubkey_hash = NULL;
@@ -1634,7 +1634,7 @@ struct dpp_authentication * dpp_auth_init(void *msg_ctx,
 		if (!pi || dpp_test_gen_invalid_key(pi, auth->curve) < 0)
 			goto fail;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	auth->req_msg = dpp_auth_build_req(auth, pi, nonce_len, r_pubkey_hash,
 					   i_pubkey_hash, neg_freq);
@@ -1675,15 +1675,15 @@ static struct wpabuf * dpp_build_conf_req_attr(struct dpp_authentication *auth,
 	clear_len = 4 + nonce_len + 4 + json_len;
 	clear = wpabuf_alloc(clear_len);
 	attr_len = 4 + clear_len + AES_BLOCK_SIZE;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_AFTER_WRAPPED_DATA_CONF_REQ)
 		attr_len += 5;
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	msg = wpabuf_alloc(attr_len);
 	if (!clear || !msg)
 		goto fail;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_NO_E_NONCE_CONF_REQ) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no E-nonce");
 		goto skip_e_nonce;
@@ -1699,29 +1699,29 @@ static struct wpabuf * dpp_build_conf_req_attr(struct dpp_authentication *auth,
 		wpa_printf(MSG_INFO, "DPP: TESTING - no Wrapped Data");
 		goto skip_wrapped_data;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	/* E-nonce */
 	wpabuf_put_le16(clear, DPP_ATTR_ENROLLEE_NONCE);
 	wpabuf_put_le16(clear, nonce_len);
 	wpabuf_put_data(clear, auth->e_nonce, nonce_len);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 skip_e_nonce:
 	if (dpp_test == DPP_TEST_NO_CONFIG_ATTR_OBJ_CONF_REQ) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no configAttrib");
 		goto skip_conf_attr_obj;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	/* configAttrib */
 	wpabuf_put_le16(clear, DPP_ATTR_CONFIG_ATTR_OBJ);
 	wpabuf_put_le16(clear, json_len);
 	wpabuf_put_data(clear, json, json_len);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 skip_conf_attr_obj:
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	wpabuf_put_le16(msg, DPP_ATTR_WRAPPED_DATA);
 	wpabuf_put_le16(msg, wpabuf_len(clear) + AES_BLOCK_SIZE);
@@ -1736,13 +1736,13 @@ skip_conf_attr_obj:
 	wpa_hexdump(MSG_DEBUG, "DPP: AES-SIV ciphertext",
 		    wrapped, wpabuf_len(clear) + AES_BLOCK_SIZE);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_AFTER_WRAPPED_DATA_CONF_REQ) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - attr after Wrapped Data");
 		dpp_build_attr_status(msg, DPP_STATUS_OK);
 	}
 skip_wrapped_data:
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	wpa_hexdump_buf(MSG_DEBUG,
 			"DPP: Configuration Request frame attributes", msg);
@@ -1815,14 +1815,14 @@ struct wpabuf * dpp_build_conf_req_helper(struct dpp_authentication *auth,
 	const char *dpp_name;
 	struct wpabuf *buf, *json;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_INVALID_CONFIG_ATTR_OBJ_CONF_REQ) {
 		static const char *bogus_tech = "knfra";
 
 		wpa_printf(MSG_INFO, "DPP: TESTING - invalid Config Attr");
 		tech = bogus_tech;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	dpp_name = name ? name : "Test";
 	name_len = os_strlen(dpp_name);
@@ -2151,15 +2151,15 @@ static int dpp_auth_build_resp_ok(struct dpp_authentication *auth)
 	int ret = -1;
 	const u8 *r_pubkey_hash, *i_pubkey_hash, *r_nonce, *i_nonce;
 	enum dpp_status_error status = DPP_STATUS_OK;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	u8 test_hash[SHA256_MAC_LEN];
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	wpa_printf(MSG_DEBUG, "DPP: Build Authentication Response");
 	if (!auth->own_bi)
 		return -1;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_nonce_override_len > 0) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - override R-nonce");
 		nonce_len = dpp_nonce_override_len;
@@ -2172,17 +2172,17 @@ static int dpp_auth_build_resp_ok(struct dpp_authentication *auth)
 			goto fail;
 		}
 	}
-#else /* CONFIG_WPA_TESTING_OPTIONS */
+#else /* CONFIG_TESTING_OPTIONS */
 	nonce_len = auth->curve->nonce_len;
 	if (random_get_bytes(auth->r_nonce, nonce_len)) {
 		wpa_printf(MSG_ERROR, "DPP: Failed to generate R-nonce");
 		goto fail;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	wpa_hexdump(MSG_DEBUG, "DPP: R-nonce", auth->r_nonce, nonce_len);
 
 	crypto_ec_free_key(auth->own_protocol_key);
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_protocol_key_override_len) {
 		const struct dpp_curve_params *tmp_curve;
 
@@ -2194,9 +2194,9 @@ static int dpp_auth_build_resp_ok(struct dpp_authentication *auth)
 	} else {
 		auth->own_protocol_key = dpp_gen_keypair(auth->curve);
 	}
-#else /* CONFIG_WPA_TESTING_OPTIONS */
+#else /* CONFIG_TESTING_OPTIONS */
 	auth->own_protocol_key = dpp_gen_keypair(auth->curve);
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	if (!auth->own_protocol_key)
 		goto fail;
 
@@ -2231,12 +2231,12 @@ static int dpp_auth_build_resp_ok(struct dpp_authentication *auth)
 	WPA_PUT_LE16(&r_auth[2], auth->curve->hash_len);
 	if (dpp_gen_r_auth(auth, r_auth + 4) < 0)
 		goto fail;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_R_AUTH_MISMATCH_AUTH_RESP) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - R-auth mismatch");
 		r_auth[4 + auth->curve->hash_len / 2] ^= 0x01;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	if (aes_siv_encrypt(auth->ke, auth->curve->hash_len,
 			    r_auth, 4 + auth->curve->hash_len,
 			    0, NULL, NULL, wrapped_r_auth) < 0)
@@ -2255,7 +2255,7 @@ static int dpp_auth_build_resp_ok(struct dpp_authentication *auth)
 	i_nonce = auth->i_nonce;
 	r_nonce = auth->r_nonce;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_NO_R_BOOTSTRAP_KEY_HASH_AUTH_RESP) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no R-Bootstrap Key Hash");
 		r_pubkey_hash = NULL;
@@ -2306,7 +2306,7 @@ static int dpp_auth_build_resp_ok(struct dpp_authentication *auth)
 		wpa_printf(MSG_INFO, "DPP: TESTING - no I-nonce");
 		i_nonce = NULL;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	msg = dpp_auth_build_resp(auth, status, pr, nonce_len,
 				  r_pubkey_hash, i_pubkey_hash,
@@ -2329,9 +2329,9 @@ static int dpp_auth_build_resp_status(struct dpp_authentication *auth,
 {
 	struct wpabuf *msg;
 	const u8 *r_pubkey_hash, *i_pubkey_hash, *i_nonce;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	u8 test_hash[SHA256_MAC_LEN];
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	if (!auth->own_bi)
 		return -1;
@@ -2345,7 +2345,7 @@ static int dpp_auth_build_resp_status(struct dpp_authentication *auth,
 
 	i_nonce = auth->i_nonce;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_NO_R_BOOTSTRAP_KEY_HASH_AUTH_RESP) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no R-Bootstrap Key Hash");
 		r_pubkey_hash = NULL;
@@ -2376,7 +2376,7 @@ static int dpp_auth_build_resp_status(struct dpp_authentication *auth,
 		wpa_printf(MSG_INFO, "DPP: TESTING - no I-nonce");
 		i_nonce = NULL;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	msg = dpp_auth_build_resp(auth, status, NULL, auth->curve->nonce_len,
 				  r_pubkey_hash, i_pubkey_hash,
@@ -2414,13 +2414,13 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 	u16 i_bootstrap_len;
 	struct dpp_authentication *auth = NULL;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_STOP_AT_AUTH_REQ) {
 		wpa_printf(MSG_INFO,
 			   "DPP: TESTING - stop at Authentication Request");
 		return NULL;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	wrapped_data = dpp_get_attr(attr_start, attr_len, DPP_ATTR_WRAPPED_DATA,
 				    &wrapped_data_len);
@@ -2679,9 +2679,9 @@ static struct wpabuf * dpp_auth_build_conf(struct dpp_authentication *auth,
 	u8 *wrapped_r_nonce;
 	u8 *attr_start, *attr_end;
 	const u8 *r_pubkey_hash, *i_pubkey_hash;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	u8 test_hash[SHA256_MAC_LEN];
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	wpa_printf(MSG_DEBUG, "DPP: Build Authentication Confirmation");
 
@@ -2690,10 +2690,10 @@ static struct wpabuf * dpp_auth_build_conf(struct dpp_authentication *auth,
 	/* Build DPP Authentication Confirmation frame attributes */
 	attr_len = 4 + 1 + 2 * (4 + SHA256_MAC_LEN) +
 		4 + i_auth_len + r_nonce_len + AES_BLOCK_SIZE;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_AFTER_WRAPPED_DATA_AUTH_CONF)
 		attr_len += 5;
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	msg = dpp_alloc_msg(DPP_PA_AUTHENTICATION_CONF, attr_len);
 	if (!msg)
 		goto fail;
@@ -2706,7 +2706,7 @@ static struct wpabuf * dpp_auth_build_conf(struct dpp_authentication *auth,
 	else
 		i_pubkey_hash = NULL;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_NO_STATUS_AUTH_CONF) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no Status");
 		goto skip_status;
@@ -2714,12 +2714,12 @@ static struct wpabuf * dpp_auth_build_conf(struct dpp_authentication *auth,
 		wpa_printf(MSG_INFO, "DPP: TESTING - invalid Status");
 		status = 254;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	/* DPP Status */
 	dpp_build_attr_status(msg, status);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 skip_status:
 	if (dpp_test == DPP_TEST_NO_R_BOOTSTRAP_KEY_HASH_AUTH_CONF) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no R-Bootstrap Key Hash");
@@ -2745,7 +2745,7 @@ skip_status:
 		test_hash[SHA256_MAC_LEN - 1] ^= 0x01;
 		i_pubkey_hash = test_hash;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	/* Responder Bootstrapping Key Hash */
 	dpp_build_attr_r_bootstrap_key_hash(msg, r_pubkey_hash);
@@ -2753,12 +2753,12 @@ skip_status:
 	/* Initiator Bootstrapping Key Hash (mutual authentication) */
 	dpp_build_attr_i_bootstrap_key_hash(msg, i_pubkey_hash);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_NO_WRAPPED_DATA_AUTH_CONF)
 		goto skip_wrapped_data;
 	if (dpp_test == DPP_TEST_NO_I_AUTH_AUTH_CONF)
 		i_auth_len = 0;
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	attr_end = wpabuf_put(msg, 0);
 
@@ -2778,10 +2778,10 @@ skip_status:
 		wpabuf_put_le16(msg, i_auth_len + AES_BLOCK_SIZE);
 		wrapped_i_auth = wpabuf_put(msg, i_auth_len + AES_BLOCK_SIZE);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 		if (dpp_test == DPP_TEST_NO_I_AUTH_AUTH_CONF)
 			goto skip_i_auth;
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 		/* I-auth = H(R-nonce | I-nonce | PR.x | PI.x | BR.x | [BI.x |]
 		 *	      1) */
@@ -2790,13 +2790,13 @@ skip_status:
 		if (dpp_gen_i_auth(auth, i_auth + 4) < 0)
 			goto fail;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 		if (dpp_test == DPP_TEST_I_AUTH_MISMATCH_AUTH_CONF) {
 			wpa_printf(MSG_INFO, "DPP: TESTING - I-auth mismatch");
 			i_auth[4 + auth->curve->hash_len / 2] ^= 0x01;
 		}
 skip_i_auth:
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 		if (aes_siv_encrypt(auth->ke, auth->curve->hash_len,
 				    i_auth, i_auth_len,
 				    2, addr, len, wrapped_i_auth) < 0)
@@ -2821,13 +2821,13 @@ skip_i_auth:
 			    wrapped_r_nonce, r_nonce_len + AES_BLOCK_SIZE);
 	}
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_AFTER_WRAPPED_DATA_AUTH_CONF) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - attr after Wrapped Data");
 		dpp_build_attr_status(msg, DPP_STATUS_OK);
 	}
 skip_wrapped_data:
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	wpa_hexdump_buf(MSG_DEBUG,
 			"DPP: Authentication Confirmation frame attributes",
@@ -2959,13 +2959,13 @@ dpp_auth_resp_rx(struct dpp_authentication *auth, const u8 *hdr,
 	u8 r_auth2[DPP_MAX_HASH_LEN];
 	u8 role;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_STOP_AT_AUTH_RESP) {
 		wpa_printf(MSG_INFO,
 			   "DPP: TESTING - stop at Authentication Response");
 		return NULL;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	if (!auth->initiator || !auth->peer_bi) {
 		dpp_auth_fail(auth, "Unexpected Authentication Response");
@@ -3236,7 +3236,7 @@ dpp_auth_resp_rx(struct dpp_authentication *auth, const u8 *hdr,
 	bin_clear_free(unwrapped, unwrapped_len);
 	bin_clear_free(unwrapped2, unwrapped2_len);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_AUTH_RESP_IN_PLACE_OF_CONF) {
 		wpa_printf(MSG_INFO,
 			   "DPP: TESTING - Authentication Response in place of Confirm");
@@ -3244,7 +3244,7 @@ dpp_auth_resp_rx(struct dpp_authentication *auth, const u8 *hdr,
 			return NULL;
 		return wpabuf_dup(auth->resp_msg);
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	return dpp_auth_build_conf(auth, DPP_STATUS_OK);
 
@@ -3339,13 +3339,13 @@ int dpp_auth_conf_rx(struct dpp_authentication *auth, const u8 *hdr,
 	size_t unwrapped_len = 0;
 	u8 i_auth2[DPP_MAX_HASH_LEN];
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_STOP_AT_AUTH_CONF) {
 		wpa_printf(MSG_INFO,
 			   "DPP: TESTING - stop at Authentication Confirm");
 		return -1;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	if (auth->initiator || !auth->own_bi) {
 		dpp_auth_fail(auth, "Unexpected Authentication Confirm");
@@ -3627,13 +3627,13 @@ static int dpp_configuration_parse_helper(struct dpp_authentication *auth,
 		    hexstr2bin(pos, conf->ssid, conf->ssid_len) < 0)
 			goto fail;
 	} else {
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 		/* use a default SSID for legacy testing reasons */
 		os_memcpy(conf->ssid, "test", 4);
 		conf->ssid_len = 4;
-#else /* CONFIG_WPA_TESTING_OPTIONS */
+#else /* CONFIG_TESTING_OPTIONS */
 		goto fail;
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	}
 
 	pos = os_strstr(cmd, " ssid_charset=");
@@ -3834,11 +3834,11 @@ void dpp_auth_deinit(struct dpp_authentication *auth)
 	}
 	wpabuf_free(auth->net_access_key);
 	dpp_bootstrap_info_free(auth->tmp_own_bi);
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	os_free(auth->config_obj_override);
 	os_free(auth->discovery_override);
 	os_free(auth->groups_override);
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	bin_clear_free(auth, sizeof(*auth));
 }
 
@@ -3849,10 +3849,10 @@ dpp_build_conf_start(struct dpp_authentication *auth,
 {
 	struct wpabuf *buf;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (auth->discovery_override)
 		tailroom += os_strlen(auth->discovery_override);
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	buf = wpabuf_alloc(200 + tailroom);
 	if (!buf)
@@ -3860,7 +3860,7 @@ dpp_build_conf_start(struct dpp_authentication *auth,
 	json_start_object(buf, NULL);
 	json_add_string(buf, "wi-fi_tech", "infra");
 	json_value_sep(buf);
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (auth->discovery_override) {
 		wpa_printf(MSG_DEBUG, "DPP: TESTING - discovery override: '%s'",
 			   auth->discovery_override);
@@ -3869,7 +3869,7 @@ dpp_build_conf_start(struct dpp_authentication *auth,
 		json_value_sep(buf);
 		return buf;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	json_start_object(buf, "discovery");
 	if (((!conf->ssid_charset || auth->peer_version < 2) &&
 	     json_add_string_escape(buf, "ssid", conf->ssid,
@@ -4014,10 +4014,10 @@ dpp_build_conf_obj_dpp(struct dpp_authentication *auth,
 		akm = DPP_AKM_DPP;
 	}
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (auth->groups_override)
 		extra_len += os_strlen(auth->groups_override);
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	if (conf->group_id)
 		extra_len += os_strlen(conf->group_id);
@@ -4026,7 +4026,7 @@ dpp_build_conf_obj_dpp(struct dpp_authentication *auth,
 	dppcon = wpabuf_alloc(extra_len + 2 * auth->curve->prime_len * 4 / 3);
 	if (!dppcon)
 		goto fail;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (auth->groups_override) {
 		wpabuf_put_u8(dppcon, '{');
 		if (auth->groups_override) {
@@ -4039,7 +4039,7 @@ dpp_build_conf_obj_dpp(struct dpp_authentication *auth,
 		}
 		goto skip_groups;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	json_start_object(dppcon, NULL);
 	json_start_array(dppcon, "groups");
 	json_start_object(dppcon, NULL);
@@ -4050,9 +4050,9 @@ dpp_build_conf_obj_dpp(struct dpp_authentication *auth,
 	json_end_object(dppcon);
 	json_end_array(dppcon);
 	json_value_sep(dppcon);
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 skip_groups:
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	if (dpp_build_jwk(dppcon, "netAccessKey", auth->peer_protocol_key, NULL,
 			  auth->curve) < 0) {
 		wpa_printf(MSG_DEBUG, "DPP: Failed to build netAccessKey JWK");
@@ -4221,7 +4221,7 @@ dpp_build_conf_obj(struct dpp_authentication *auth, enum dpp_netrole netrole,
 {
 	struct dpp_configuration *conf = NULL;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (auth->config_obj_override) {
 		if (idx != 0)
 			return NULL;
@@ -4229,7 +4229,7 @@ dpp_build_conf_obj(struct dpp_authentication *auth, enum dpp_netrole netrole,
 		return wpabuf_alloc_copy(auth->config_obj_override,
 					 os_strlen(auth->config_obj_override));
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	if (idx == 0) {
 		if (netrole == DPP_NETROLE_STA)
@@ -4288,15 +4288,15 @@ dpp_build_conf_resp(struct dpp_authentication *auth, const u8 *e_nonce,
 		clear_len += 4;
 	clear = wpabuf_alloc(clear_len);
 	attr_len = 4 + 1 + 4 + clear_len + AES_BLOCK_SIZE;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_AFTER_WRAPPED_DATA_CONF_RESP)
 		attr_len += 5;
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	msg = wpabuf_alloc(attr_len);
 	if (!clear || !msg)
 		goto fail;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_NO_E_NONCE_CONF_RESP) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no E-nonce");
 		goto skip_e_nonce;
@@ -4313,20 +4313,20 @@ dpp_build_conf_resp(struct dpp_authentication *auth, const u8 *e_nonce,
 		wpa_printf(MSG_INFO, "DPP: TESTING - no Wrapped Data");
 		goto skip_wrapped_data;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	/* E-nonce */
 	wpabuf_put_le16(clear, DPP_ATTR_ENROLLEE_NONCE);
 	wpabuf_put_le16(clear, e_nonce_len);
 	wpabuf_put_data(clear, e_nonce, e_nonce_len);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 skip_e_nonce:
 	if (dpp_test == DPP_TEST_NO_CONFIG_OBJ_CONF_RESP) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - Config Object");
 		goto skip_config_obj;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	if (conf) {
 		wpabuf_put_le16(clear, DPP_ATTR_CONFIG_OBJ);
@@ -4349,7 +4349,7 @@ skip_e_nonce:
 		wpabuf_put_le16(clear, 0);
 	}
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 skip_config_obj:
 	if (dpp_test == DPP_TEST_NO_STATUS_CONF_RESP) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - Status");
@@ -4359,14 +4359,14 @@ skip_config_obj:
 		wpa_printf(MSG_INFO, "DPP: TESTING - invalid Status");
 		status = 255;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	/* DPP Status */
 	dpp_build_attr_status(msg, status);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 skip_status:
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	addr[0] = wpabuf_head(msg);
 	len[0] = wpabuf_len(msg);
@@ -4384,13 +4384,13 @@ skip_status:
 	wpa_hexdump(MSG_DEBUG, "DPP: AES-SIV ciphertext",
 		    wrapped, wpabuf_len(clear) + AES_BLOCK_SIZE);
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_AFTER_WRAPPED_DATA_CONF_RESP) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - attr after Wrapped Data");
 		dpp_build_attr_status(msg, DPP_STATUS_OK);
 	}
 skip_wrapped_data:
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	wpa_hexdump_buf(MSG_DEBUG,
 			"DPP: Configuration Response attributes", msg);
@@ -4419,13 +4419,13 @@ dpp_conf_req_rx(struct dpp_authentication *auth, const u8 *attr_start,
 	struct json_token *root = NULL, *token;
 	enum dpp_netrole netrole;
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	if (dpp_test == DPP_TEST_STOP_AT_CONF_REQ) {
 		wpa_printf(MSG_INFO,
 			   "DPP: TESTING - stop at Config Request");
 		return NULL;
 	}
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 	if (dpp_check_attrs(attr_start, attr_len) < 0) {
 		dpp_auth_fail(auth, "Invalid attribute in config request");
@@ -4903,16 +4903,16 @@ skip_groups:
 	if (crypto_key_compare(key, auth->own_protocol_key) != 1) {
 		wpa_printf(MSG_DEBUG,
 			   "DPP: netAccessKey in connector does not match own protocol key");
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 		if (auth->ignore_netaccesskey_mismatch) {
 			wpa_printf(MSG_DEBUG,
 				   "DPP: TESTING - skip netAccessKey mismatch");
 		} else {
 			goto fail;
 		}
-#else /* CONFIG_WPA_TESTING_OPTIONS */
+#else /* CONFIG_TESTING_OPTIONS */
 		goto fail;
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 	}
 
 	ret = 0;
@@ -5948,7 +5948,7 @@ fail:
 	return ret;
 }
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 static int dpp_test_gen_invalid_key(struct wpabuf *msg,
 				    const struct dpp_curve_params *curve)
 {
@@ -6002,7 +6002,7 @@ fail:
 	tmp = NULL;
 	goto out;
 }
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 static unsigned int dpp_next_id(struct dpp_global *dpp)
 {

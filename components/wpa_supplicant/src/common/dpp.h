@@ -304,12 +304,12 @@ struct dpp_authentication {
 	int send_conn_status;
 	int conn_status_requested;
 	int akm_use_selector;
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 	char *config_obj_override;
 	char *discovery_override;
 	char *groups_override;
 	unsigned int ignore_netaccesskey_mismatch:1;
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 };
 
 struct dpp_configurator {
@@ -327,7 +327,7 @@ struct dpp_introduction {
 	size_t pmk_len;
 };
 
-#ifdef CONFIG_WPA_TESTING_OPTIONS
+#ifdef CONFIG_TESTING_OPTIONS
 enum dpp_test_behavior {
 	DPP_TEST_DISABLED = 0,
 	DPP_TEST_AFTER_WRAPPED_DATA_AUTH_REQ = 1,
@@ -432,7 +432,7 @@ extern u8 dpp_protocol_key_override[600];
 extern size_t dpp_protocol_key_override_len;
 extern u8 dpp_nonce_override[DPP_MAX_NONCE_LEN];
 extern size_t dpp_nonce_override_len;
-#endif /* CONFIG_WPA_TESTING_OPTIONS */
+#endif /* CONFIG_TESTING_OPTIONS */
 
 void dpp_bootstrap_info_free(struct dpp_bootstrap_info *info);
 const char * dpp_bootstrap_type_txt(enum dpp_bootstrap_type type);

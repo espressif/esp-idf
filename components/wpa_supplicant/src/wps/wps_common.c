@@ -94,10 +94,10 @@ int wps_derive_keys(struct wps_data *wps)
 	 * due to the public key calculated when wps start, it will not calculate anymore even when we build M1 message, also calculate the key need take a long time
 	 * which would cause WPS fail, so we clean the key after WPS finished .
 	 */
-#ifndef ESP32_WORKAROUND
+#ifndef ESP_SUPPLICANT
 	wpabuf_clear_free(wps->dh_privkey);
 	wps->dh_privkey = NULL;
-#endif //ESP32_WORKAROUND
+#endif /* ESP_SUPPLICANT */
 
 	wpa_hexdump_buf_key(MSG_DEBUG, "WPS: DH shared key", dh_shared);
 

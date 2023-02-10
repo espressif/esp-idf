@@ -12,7 +12,7 @@
 struct wpa_funcs;
 extern struct wpa_supplicant g_wpa_supp;
 
-#ifdef CONFIG_WPA_11KV_SUPPORT
+#ifdef CONFIG_IEEE80211KV
 struct ieee_mgmt_frame {
 	u8 sender[ETH_ALEN];
 	u8 channel;
