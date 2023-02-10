@@ -25,6 +25,10 @@ if(NOT ${target} STREQUAL "esp32" AND NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     list(APPEND srcs "cache_hal.c")
 endif()
 
+if(${target} STREQUAL "esp32c6")
+    list(APPEND srcs "esp32c6/lp_timer_hal.c")
+endif()
+
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs
         "rtc_io_hal.c"
