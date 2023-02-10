@@ -1217,7 +1217,7 @@ API :cpp:func:`esp_wifi_set_config()` 可用于配置 station。配置的参数�
    * - bssid
      - 只有当 bssid_set 为 1 时有效。见字段 “bssid_set”。
    * - channel
-     - 该字段为 0 时，station 扫描信道 1 ~ N 寻找目标 AP；否则，station 首先扫描值与 “channel” 字段相同的信道，再扫描其他信道。如果您不知道目标 AP 在哪个信道，请将该字段设置为 0。
+     - 该字段为 0 时，station 扫描信道 1 ~ N 寻找目标 AP；否则，station 首先扫描值与 “channel” 字段相同的信道，再扫描其他信道。比如，当该字段设置为 3 时，扫描顺序为 3，1，2，...，N 。如果您不知道目标 AP 在哪个信道，请将该字段设置为 0。
    * - sort_method
      - 该字段仅用于 WIFI_ALL_CHANNEL_SCAN 模式。
 
@@ -1512,7 +1512,7 @@ WPA2-Enterprise 是企业无线网络的安全认证机制。在连接到接入�
 
 请参考 IDF 示例程序 :idf_file:`examples/wifi/roaming/README.md` 来设置和使用这些 API。示例代码只演示了如何使用这些 API，应用程序应根据需要定义自己的算法和案例。
 
-.. only:: esp32s2 or esp32c3
+.. only:: SOC_WIFI_FTM_SUPPORT
 
     Wi-Fi Location
     -------------------------------
