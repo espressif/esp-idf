@@ -89,8 +89,12 @@ ext_bleprph_advertise(void)
 {
     struct ble_gap_ext_adv_params params;
     struct os_mbuf *data;
-    uint8_t instance = 1;
+    uint8_t instance = 0;
     int rc;
+
+    /* First check if any instance is already active */
+    if(ble_gap_adv_active())
+        return;
 
     /* use defaults for non-set params */
     memset (&params, 0, sizeof(params));
@@ -325,7 +329,9 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_ADV_COMPLETE:
         MODLOG_DFLT(INFO, "advertise complete; reason=%d",
                     event->adv_complete.reason);
-#if !CONFIG_EXAMPLE_EXTENDED_ADV
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+        ext_bleprph_advertise();
+#else
         bleprph_advertise();
 #endif
         return 0;
