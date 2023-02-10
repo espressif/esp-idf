@@ -55,6 +55,8 @@
 #include "esp_memory_utils.h"
 #include "esp_intr_alloc.h"
 #include "spi_flash_mmap.h"
+#include "spi_flash_override.h"
+#include "esp_private/spi_flash_os.h"
 #include "esp_log.h"
 #include "esp_cpu.h"
 
@@ -555,16 +557,16 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
 
     if (icache_wrap_enable) {
 #if CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B
-        icache_wrap_size = 16;
+        icache_wrap_size = FLASH_WRAP_SIZE_16B;
 #else
-        icache_wrap_size = 32;
+        icache_wrap_size = FLASH_WRAP_SIZE_32B;
 #endif
     }
     if (dcache_wrap_enable) {
 #if CONFIG_ESP32S2_DATA_CACHE_LINE_16B || CONFIG_ESP32S3_DATA_CACHE_LINE_16B
-        dcache_wrap_size = 16;
+        dcache_wrap_size = FLASH_WRAP_SIZE_16B;
 #else
-        dcache_wrap_size = 32;
+        dcache_wrap_size = FLASH_WRAP_SIZE_32B;
 #endif
     }
 
@@ -647,7 +649,6 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
 
 #ifdef CONFIG_ESPTOOLPY_FLASHMODE_QIO
     flash_support_wrap = true;
-    extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
     if (!spi_flash_support_wrap_size(flash_wrap_size)) {
         flash_support_wrap = false;
         ESP_EARLY_LOGW(TAG, "Flash do not support wrap size %d.", flash_wrap_size);
@@ -669,10 +670,9 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
         return ESP_FAIL;
     }
 
-    extern esp_err_t spi_flash_enable_wrap(uint32_t wrap_size);
     if (flash_support_wrap && flash_wrap_size > 0) {
         ESP_EARLY_LOGI(TAG, "Flash wrap enabled, size = %d.", flash_wrap_size);
-        spi_flash_enable_wrap(flash_wrap_size);
+        spI_flash_wrap_enable(flash_wrap_size);
         esp_enable_cache_flash_wrap((flash_wrap_sizes[0] > 0), (flash_wrap_sizes[1] > 0));
     }
 #if (CONFIG_IDF_TARGET_ESP32S2 && CONFIG_SPIRAM)
@@ -801,20 +801,20 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
 
     if (icache_wrap_enable) {
 #if CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B
-        icache_wrap_size = 16;
+        icache_wrap_size = FLASH_WRAP_SIZE_16B;
 #elif CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_32B
-        icache_wrap_size = 32;
+        icache_wrap_size = FLASH_WRAP_SIZE_32B;
 #else
-        icache_wrap_size = 64;
+        icache_wrap_size = FLASH_WRAP_SIZE_64B;
 #endif
     }
     if (dcache_wrap_enable) {
 #if CONFIG_ESP32S3_DATA_CACHE_LINE_16B
-        dcache_wrap_size = 16;
+        dcache_wrap_size = FLASH_WRAP_SIZE_16B;
 #elif CONFIG_ESP32S3_DATA_CACHE_LINE_32B
-        dcache_wrap_size = 32;
+        dcache_wrap_size = FLASH_WRAP_SIZE_32B;
 #else
-        dcache_wrap_size = 64;
+        dcache_wrap_size = FLASH_WRAP_SIZE_64B;
 #endif
     }
 
@@ -895,7 +895,6 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
 
 #ifdef CONFIG_ESPTOOLPY_FLASHMODE_QIO
     flash_support_wrap = true;
-    extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
     if (!spi_flash_support_wrap_size(flash_wrap_size)) {
         flash_support_wrap = false;
         ESP_EARLY_LOGW(TAG, "Flash do not support wrap size %d.", flash_wrap_size);
@@ -918,10 +917,9 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
         return ESP_FAIL;
     }
 
-    extern esp_err_t spi_flash_enable_wrap(uint32_t wrap_size);
     if (flash_support_wrap && flash_wrap_size > 0) {
         ESP_EARLY_LOGI(TAG, "Flash wrap enabled, size = %d.", flash_wrap_size);
-        spi_flash_enable_wrap(flash_wrap_size);
+        spI_flash_wrap_enable(flash_wrap_size);
         esp_enable_cache_flash_wrap((flash_wrap_sizes[0] > 0), (flash_wrap_sizes[1] > 0));
     }
 #if (CONFIG_IDF_TARGET_ESP32S3 && CONFIG_SPIRAM)
@@ -963,7 +961,6 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable)
 
 #ifdef CONFIG_ESPTOOLPY_FLASHMODE_QIO
     flash_support_wrap = true;
-    extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
     if (!spi_flash_support_wrap_size(flash_wrap_size)) {
         flash_support_wrap = false;
         ESP_EARLY_LOGW(TAG, "Flash do not support wrap size %d.", flash_wrap_size);
@@ -972,10 +969,9 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable)
     ESP_EARLY_LOGW(TAG, "Flash is not in QIO mode, do not support wrap.");
 #endif // CONFIG_ESPTOOLPY_FLASHMODE_QIO
 
-    extern esp_err_t spi_flash_enable_wrap(uint32_t wrap_size);
     if (flash_support_wrap && flash_wrap_size > 0) {
         ESP_EARLY_LOGI(TAG, "Flash wrap enabled, size = %d.", flash_wrap_size);
-        spi_flash_enable_wrap(flash_wrap_size);
+        spI_flash_wrap_enable(flash_wrap_size);
         esp_enable_cache_flash_wrap((flash_wrap_size > 0));
     }
     return ESP_OK;

@@ -30,6 +30,7 @@
 #include "esp_timer.h"
 #include "test_esp_flash_def.h"
 #include "spi_flash_mmap.h"
+#include "esp_private/spi_flash_os.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
@@ -532,6 +533,46 @@ static void test_write_protection(const esp_partition_t* part)
 
 TEST_CASE_FLASH("Test esp_flash can enable/disable write protetion", test_write_protection);
 TEST_CASE_MULTI_FLASH("Test esp_flash can enable/disable write protetion", test_write_protection);
+
+#if CONFIG_ESPTOOLPY_FLASHMODE_QIO && SOC_SPI_MEM_SUPPORT_WRAP
+// Only under QIO mode and mspi support wrap this feature makes sense.
+static uint8_t wrap_buf[32];
+
+void test_flash_wrap(const esp_partition_t* part)
+{
+    esp_flash_t* chip = part->flash_chip;
+    uint32_t offs = erase_test_region(part, 1);
+
+    const int test_seed = 778;
+    srand(test_seed);
+    for (int i = 0 ; i < sizeof(wrap_buf); i++) {
+        wrap_buf[i] = rand();
+    }
+    printf("Write %p...\n", (void *)offs);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_write(chip, wrap_buf, offs + 3, sizeof(wrap_buf)) );
+
+    bzero(wrap_buf, sizeof(wrap_buf));
+
+    printf("Read back...\n");
+    spi_flash_wrap_probe();
+    spI_flash_wrap_enable(FLASH_WRAP_SIZE_32B);
+    esp_flash_read(chip, wrap_buf, offs + 3, sizeof(wrap_buf));
+    spi_flash_wrap_disable();
+
+    printf("Buffer starts 0x%02x 0x%02x 0x%02x 0x%02x\n", wrap_buf[0], wrap_buf[1], wrap_buf[2], wrap_buf[3]);
+
+    srand(test_seed);
+    for (int i = 0; i < sizeof(wrap_buf) - 3; i++) {
+        uint8_t data = rand();
+        TEST_ASSERT_EQUAL_HEX8(data, wrap_buf[i]);
+    }
+    for (int i = sizeof(wrap_buf) - 3; i < sizeof(wrap_buf); i++) {
+        TEST_ASSERT_EQUAL_HEX8(0xFF, wrap_buf[i]);
+    }
+}
+
+TEST_CASE_FLASH("SPI flash wrap test", test_flash_wrap);
+#endif
 
 static const uint8_t large_const_buffer[16400] = {
     203, // first byte

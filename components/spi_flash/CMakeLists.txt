@@ -4,7 +4,7 @@ if(${target} STREQUAL "linux")
 endif()
 
 if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
-    set(cache_srcs "")
+    set(srcs "spi_flash_wrap.c")
     set(priv_requires bootloader_support soc)
 else()
     set(srcs "flash_brownout_hook.c")
@@ -35,7 +35,7 @@ else()
         "cache_utils.c"
         "flash_mmap.c"
         "flash_ops.c"
-        "${target}/flash_ops_${target}.c"
+        "spi_flash_wrap.c"
     )
 
     list(APPEND cache_srcs

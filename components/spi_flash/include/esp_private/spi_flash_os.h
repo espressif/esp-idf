@@ -135,23 +135,38 @@ const spi_flash_hpm_dummy_conf_t *spi_flash_hpm_get_dummy(void);
  */
 bool spi_flash_hpm_dummy_adjust(void);
 
-typedef enum {
-    FLASH_WRAP_MODE_8B = 0,
-    FLASH_WRAP_MODE_16B = 2,
-    FLASH_WRAP_MODE_32B = 4,
-    FLASH_WRAP_MODE_64B = 6,
-    FLASH_WRAP_MODE_DISABLE = 1
-} spi_flash_wrap_mode_t;
-
+#if SOC_SPI_MEM_SUPPORT_WRAP
 /**
- * @brief set wrap mode of flash
+ * @brief set wrap size of flash
  *
- * @param mode: wrap mode support disable, 16 32, 64 byte
+ * @param wrap_size: wrap mode support disable, 16 32, 64 byte
  *
  * @return esp_err_t : ESP_OK for successful.
  *
  */
-esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode);
+esp_err_t spI_flash_wrap_enable(spi_flash_wrap_size_t wrap_size);
+
+/**
+ * @brief Probe flash wrap method
+ *
+ * @return esp_err_t: ESP_OK for success
+ */
+esp_err_t spi_flash_wrap_probe(void);
+
+/**
+ * @brief disable cache wrap
+ */
+esp_err_t spi_flash_wrap_disable(void);
+
+/**
+ * @brief Check whether flash and esp chip supports wrap mode.
+ *
+ * @param wrap_size wrap size.
+ * @return true: wrap support, otherwise, false.
+ */
+bool spi_flash_support_wrap_size(uint32_t wrap_size);
+
+#endif //SOC_SPI_MEM_SUPPORT_WRAP
 
 /**
  * @brief SPI flash critical section enter function.

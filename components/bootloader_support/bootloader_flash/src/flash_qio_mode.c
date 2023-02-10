@@ -17,6 +17,7 @@
 #include "flash_qio_mode.h"
 #include "soc/efuse_periph.h"
 #include "soc/io_mux_reg.h"
+#include "esp_private/spi_flash_os.h"
 
 
 static const char *TAG = "qio_mode";
@@ -96,7 +97,8 @@ void bootloader_enable_qio_mode(void)
                     bootloader_flash_qe_support_list[i].write_status_fn,
                     bootloader_flash_qe_support_list[i].status_qio_bit);
 #if SOC_CACHE_SUPPORT_WRAP
-    bootloader_flash_wrap_set(FLASH_WRAP_MODE_DISABLE);
+    spi_flash_wrap_probe();
+    spi_flash_wrap_disable();
 #endif
 }
 
