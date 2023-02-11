@@ -39,12 +39,13 @@ Each line of a CSV file should contain 4 parameters, separated by a comma. The t
       - 
     * - 3
       - Encoding
-      - Supported values are: ``u8``, ``i8``, ``u16``, ``i16``, ``u32``, ``i32``, ``u64``, ``i64``, ``string``, ``hex2bin``, ``base64``, and ``binary``. This specifies how actual data values are encoded in the resulting binary file. The difference between the ``string`` and ``binary`` encoding is that ``string`` data is terminated with a NULL character, whereas ``binary`` data is not.
-      - As of now, for the ``file`` type, only ``hex2bin``, ``base64``, ``string``, and ``binary`` encoding is supported.
+      - Supported values are: ``u8``, ``i8``, ``u16``, ``i16``, ``u32``, ``i32``, ``u64``, ``i64``, ``float``, ``double``, ``string``, ``hex2bin``, ``base64``, and ``binary``. This specifies how actual data values are encoded in the resulting binary file. The difference between the ``string`` and ``binary`` encoding is that ``string`` data is terminated with a NULL character, whereas ``binary`` data is not.
+      - As of now, for the ``file`` type, only ``hex2bin``, ``base64``, ``string``, and ``binary`` encoding is supported. ``float`` and ``double`` values are supported indirectly by converting them to ``binary`` before adding them.
     * - 4
       - Value
       - Data value
       - ``Encoding`` and ``Value`` cells for the ``namespace`` field type should be empty. ``Encoding`` and ``Value`` of ``namespace`` are fixed and are not configurable. Any values in these cells are ignored.
+      
       
 .. note:: The first line of the CSV file should always be the column header and it is not configurable.
 

@@ -542,6 +542,13 @@ class NVS(object):
             if type(value) == bytes:
                 value = value.decode()
             value += '\0'
+        elif encoding == 'double':
+            # doubles are converted to bytes then written as a binary entry
+            encoding = 'binary'
+            value = struct.pack('<d', float(value))
+        elif encoding == 'float':
+            # floats are converted to bytes then written as a binary entry
+            value = struct.pack('<f', float(value))
 
         encoding = encoding.lower()
         varlen_encodings = {'string', 'binary', 'hex2bin', 'base64'}
