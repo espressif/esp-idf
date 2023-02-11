@@ -38,7 +38,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_pm.h"
-#include "esp_efuse.h"
+#include "hal/efuse_hal.h"
 #include "esp_rom_gpio.h"
 
 #include "sdkconfig.h"
@@ -192,7 +192,7 @@ static float i2s_apll_get_fi2s(int bits_per_sample, int sdm0, int sdm1, int sdm2
 
 #if CONFIG_IDF_TARGET_ESP32
     /* ESP32 rev0 silicon issue for APLL range/accuracy, please see ESP32 ECO document for more information on this */
-    if (esp_efuse_get_chip_ver() == 0) {
+    if (efuse_hal_get_major_chip_version() == 0) {
         sdm0 = 0;
         sdm1 = 0;
     }

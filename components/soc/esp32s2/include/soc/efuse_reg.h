@@ -2072,6 +2072,9 @@ extern "C" {
 #define EFUSE_MEM_FORCE_PD_V  0x1
 #define EFUSE_MEM_FORCE_PD_S  0
 
+#define EFUSE_WRITE_OP_CODE 0x5a5a
+#define EFUSE_READ_OP_CODE 0x5aa5
+
 #define EFUSE_CONF_REG          (DR_REG_EFUSE_BASE + 0x1cc)
 /* EFUSE_OP_CODE : R/W ;bitpos:[15:0] ;default: 16'h0 ; */
 /*description: 0x5A5A: Operate programming command*/

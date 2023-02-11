@@ -28,6 +28,7 @@
 #include "soc/rtc.h"
 #include "soc/syscon_reg.h"
 #include "hal/wdt_hal.h"
+#include "hal/efuse_hal.h"
 #include "freertos/xtensa_api.h"
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
@@ -152,6 +153,7 @@ void esp_chip_info(esp_chip_info_t *out_info)
 {
     memset(out_info, 0, sizeof(*out_info));
     out_info->model = CHIP_ESP32S3;
+    out_info->full_revision = efuse_hal_chip_revision();
     out_info->cores = 2;
     out_info->features = CHIP_FEATURE_WIFI_BGN;
 }

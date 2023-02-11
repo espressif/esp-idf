@@ -29,7 +29,7 @@
 #include "esp32c3/rom/ets_sys.h"
 #include "esp32c3/rom/rtc.h"
 #include "regi2c_ctrl.h"
-#include "esp_efuse.h"
+#include "hal/efuse_hal.h"
 
 /**
  * Configure whether certain peripherals are powered down in deep sleep
@@ -102,7 +102,7 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_REGULATOR_FORCE_PU);
         unsigned atten_deep_sleep = RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT;
     #if CONFIG_ESP32C3_REV_MIN < 3
-        if (esp_efuse_get_chip_ver() < 3) {
+        if (efuse_hal_get_minor_chip_version() < 3) {
             atten_deep_sleep = 0; /* workaround for deep sleep issue in high temp on ECO2 and below */
         }
     #endif
