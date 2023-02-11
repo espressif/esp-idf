@@ -350,7 +350,6 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
 #define gpio_hal_force_unhold_all() gpio_ll_force_unhold_all()
 #endif
 
-#if SOC_GPIO_SUPPORT_SLP_SWITCH
 /**
   * @brief Enable pull-up on GPIO when system sleep.
   *
@@ -448,7 +447,6 @@ void gpio_hal_sleep_pupd_config_apply(gpio_hal_context_t *hal, uint32_t gpio_num
  */
 void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, uint32_t gpio_num);
 #endif // CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-#endif //SOC_GPIO_SUPPORT_SLP_SWITCH
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 /**
