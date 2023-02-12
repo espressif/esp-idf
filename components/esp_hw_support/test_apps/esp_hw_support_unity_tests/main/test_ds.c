@@ -296,11 +296,7 @@ TEST_CASE("Digital Signature wrong HMAC key purpose (FPGA only)", "[hw_crypto] [
     const char *message = "test";
 
     // HMAC fails in that case because it checks for the correct purpose
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_start_sign(message, &ds_data, HMAC_KEY0, &ctx));
-#elif CONFIG_IDF_TARGET_ESP32C3
-    TEST_ASSERT_EQUAL(ESP32C3_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_start_sign(message, &ds_data, HMAC_KEY0, &ctx));
-#endif
 }
 
 // This test uses the HMAC_KEY0 eFuse key which hasn't been burned by burn_hmac_keys().
@@ -313,11 +309,7 @@ TEST_CASE("Digital Signature Blocking wrong HMAC key purpose (FPGA only)", "[hw_
     uint8_t signature_data [128 * 4];
 
     // HMAC fails in that case because it checks for the correct purpose
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_sign(message, &ds_data, HMAC_KEY0, signature_data));
-#elif CONFIG_IDF_TARGET_ESP32C3
-    TEST_ASSERT_EQUAL(ESP32C3_ERR_HW_CRYPTO_DS_HMAC_FAIL, esp_ds_sign(message, &ds_data, HMAC_KEY0, signature_data));
-#endif
 }
 
 TEST_CASE("Digital Signature Operation (FPGA only)", "[hw_crypto] [ds]")
