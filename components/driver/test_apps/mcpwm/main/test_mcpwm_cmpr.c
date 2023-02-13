@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,7 +52,7 @@ TEST_CASE("mcpwm_comparator_install_uninstall", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_timer(timer));
 }
 
-static bool test_compare_on_reach(mcpwm_cmpr_handle_t cmpr, const mcpwm_compare_event_data_t *ev_data, void *user_data)
+static bool IRAM_ATTR test_compare_on_reach(mcpwm_cmpr_handle_t cmpr, const mcpwm_compare_event_data_t *ev_data, void *user_data)
 {
     uint32_t *counts = (uint32_t *)user_data;
     (*counts)++;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -354,7 +354,7 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
     int group_id = group->group_id;
     int cap_chan_id = cap_channel->cap_chan_id;
 
-#if CONFIG_MCWPM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_IRAM_SAFE
     if (cbs->on_cap) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_cap), ESP_ERR_INVALID_ARG, TAG, "on_cap callback not in IRAM");
     }
