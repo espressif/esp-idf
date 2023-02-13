@@ -973,7 +973,7 @@
 /* TRUE to include Sniff Subrating */
 #if (BTA_DM_PM_INCLUDED == TRUE)
 #ifndef BTM_SSR_INCLUDED
-#define BTM_SSR_INCLUDED                FALSE
+#define BTM_SSR_INCLUDED                TRUE
 #endif
 #endif /* BTA_DM_PM_INCLUDED */
 
