@@ -57,8 +57,8 @@
 #define SOC_AES_SUPPORTED               1
 // #define SOC_MPI_SUPPORTED               1 // TODO: IDF-6415
 #define SOC_SHA_SUPPORTED               1
-// #define SOC_HMAC_SUPPORTED              1 // TODO: IDF-6279
-// #define SOC_DIG_SIGN_SUPPORTED          1 // TODO: IDF-6285
+#define SOC_HMAC_SUPPORTED              1
+#define SOC_DIG_SIGN_SUPPORTED          1
 // #define SOC_FLASH_ENC_SUPPORTED         1 // TODO: IDF-6282
 // #define SOC_SECURE_BOOT_SUPPORTED       1 // TODO: IDF-6281
 #define SOC_BOD_SUPPORTED               1
@@ -131,7 +131,6 @@
 #define SOC_MMU_LINEAR_ADDRESS_REGION_NUM     (1U)
 #define SOC_MMU_DI_VADDR_SHARED               (1) /*!< D/I vaddr are shared */
 
-// TODO: IDF-6285 (Copy from esp32c6, need check)
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
 /** The maximum length of a Digital Signature in bits. */
 #define SOC_DS_SIGNATURE_MAX_BIT_LEN (3072)
