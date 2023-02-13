@@ -308,7 +308,6 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
 #else
         bleprph_advertise();
 #endif
-        gatt_svr_subscription_delete();
         return 0;
 
     case BLE_GAP_EVENT_CONN_UPDATE:
@@ -339,6 +338,15 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         MODLOG_DFLT(INFO, "\n");
         return 0;
 
+    case BLE_GAP_EVENT_NOTIFY_TX:
+        MODLOG_DFLT(INFO, "notify_tx event; conn_handle=%d attr_handle=%d "
+                    "status=%d is_indication=%d",
+                    event->notify_tx.conn_handle,
+                    event->notify_tx.attr_handle,
+                    event->notify_tx.status,
+                    event->notify_tx.indication);
+        return 0;
+
     case BLE_GAP_EVENT_SUBSCRIBE:
         MODLOG_DFLT(INFO, "subscribe event; conn_handle=%d attr_handle=%d "
                     "reason=%d prevn=%d curn=%d previ=%d curi=%d\n",
@@ -349,20 +357,6 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
                     event->subscribe.cur_notify,
                     event->subscribe.prev_indicate,
                     event->subscribe.cur_indicate);
-        if (event->subscribe.reason != BLE_GAP_SUBSCRIBE_REASON_TERM) {
-            int rc = gatt_svr_subscribe(event->subscribe.attr_handle);
-            if (rc == 0) {
-                MODLOG_DFLT(INFO,
-                            "Subscribe to attribute (%d) successful\n",
-                            event->subscribe.attr_handle);
-            } else {
-                MODLOG_DFLT(INFO,
-                            "Subscribe to attribute (%d) failed. RC = %d\n",
-                            event->subscribe.attr_handle, rc);
-            }
-        } else {
-            MODLOG_DFLT(INFO, "CCCD cleared on connection termination\n");
-        }
         return 0;
 
     case BLE_GAP_EVENT_MTU:

@@ -41,8 +41,6 @@ struct ble_gatt_register_ctxt;
 
 void gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg);
 int gatt_svr_init(void);
-int gatt_svr_subscribe(uint16_t);
-void gatt_svr_subscription_delete(void);
 
 #ifdef __cplusplus
 }
