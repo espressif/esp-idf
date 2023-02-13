@@ -1,30 +1,25 @@
-ESP-IDF FreeRTOS (SMP)
-======================
-
-.. note::
-  This document assumes that the reader has a requisite understanding of Vanilla FreeRTOS (its features, behavior, and API usage). Refer to the `Vanilla FreeRTOS documentation <https://www.freertos.org/index.html>`_ for more details.
-
-This document describes the API and behavioral differences between Vanilla FreeRTOS and ESP-IDF FreeRTOS that were made in order to support Symmetric Multiprocessing (SMP). This document is split into the following parts.
-
-.. contents:: Contents
-  :depth: 3
-
+FreeRTOS (ESP-IDF)
+==================
 
 .. ---------------------------------------------------- Overview -------------------------------------------------------
 
 Overview
 --------
 
-The original FreeRTOS (hereinafter referred to as Vanilla FreeRTOS) is a small and efficient Real Time Operating System supported on many single-core MCUs and SoCs. However, numerous ESP targets (such as the ESP32 and ESP32-S3) are capable of dual core symmetric multiprocessing (SMP). Therefore, the version of FreeRTOS used in ESP-IDF (hereinafter referred to as ESP-IDF FreeRTOS) is a modified version of Vanilla FreeRTOS v10.4.3. Theses modifications allow ESP-IDF FreeRTOS to utilize the dual core SMP capabilities of ESP SoCs.
+The original FreeRTOS (hereinafter referred to as Vanilla FreeRTOS) is a small and efficient Real Time Operating System supported on many single-core MCUs and SoCs. However, to support numerous dual core ESP targets (such as the ESP32 and ESP32-S3), ESP-IDF provides a dual core SMP (Symmetric Multiprocessing) capable implementation of FreeRTOS, (hereinafter referred to as ESP-IDF FreeRTOS).
 
-.. only:: CONFIG_FREERTOS_UNICORE
-
-  .. note::
-    Some ESP targets (such as the ESP32-S2 and ESP32-C3) are single core SoCs. ESP-IDF applications built for these targets will be built with **ESP-IDF FreeRTOS instead of Vanilla FreeRTOS**. However, the builds for these single core targets will always have the :ref:`CONFIG_FREERTOS_UNICORE` configuration enabled. See :ref:`freertos-smp-single-core` for more details.
+ESP-IDF FreeRTOS is based on Vanilla FreeRTOS v10.4.3, but contains significant modifications to both API and kernel behavior in order to support dual core SMP. This document describes the API and behavioral differences between Vanilla FreeRTOS and ESP-IDF FreeRTOS.
 
 .. note::
-  - For information regarding features that have been added to ESP-IDF FreeRTOS, see :doc:`ESP-IDF FreeRTOS Additions</api-reference/system/freertos_additions>`.
-  - For a detailed ESP-IDF FreeRTOS API Reference, see :doc:`FreeRTOS API reference<../api-reference/system/freertos>`.
+  This document assumes that the reader has a requisite understanding of Vanilla FreeRTOS (its features, behavior, and API usage). Refer to the `Vanilla FreeRTOS documentation <https://www.freertos.org/index.html>`_ for more details.
+
+.. note::
+  ESP-IDF FreeRTOS can be built for single core by enabling the :ref:`CONFIG_FREERTOS_UNICORE` configuration option. ESP targets that are single core will always have the :ref:`CONFIG_FREERTOS_UNICORE` option enabled. However, note that building with :ref:`CONFIG_FREERTOS_UNICORE` enabled does not equate to building with Vanilla FreeRTOS (i.e., some of the behavioral and API changes of ESP-IDF will still be present). For more details, see :ref:`freertos-smp-single-core` for more details.
+
+This document is split into the following parts.
+
+.. contents:: Contents
+  :depth: 2
 
 
 .. -------------------------------------------- Symmetric Multiprocessing ----------------------------------------------
@@ -321,13 +316,6 @@ ESP-IDF FreeRTOS provides the same API, however interrupts will only disabled or
 .. warning::
   Disabling interrupts is a valid method of achieve mutual exclusion in Vanilla FreeRTOS (and single core systems in general). However, in an SMP system, disabling interrupts  is **NOT** a valid method ensuring mutual exclusion. Refer to Critical Sections for more details.
 
-Startup and Termination
-^^^^^^^^^^^^^^^^^^^^^^^
-
-ESP-IDF FreeRTOS **does not** require users to call :cpp:func:`vTaskStartScheduler` to start the scheduler. The startup flow of an ESP-IDF application will already call this automatically. The entry point for user code is a user defined ``void app_main(void)`` function. For more details regarding the startup of ESP-IDF FreeRTOS applications, see :ref:`freertos-applications`.
-
-ESP-IDF FreeRTOS **does not** support scheduler termination. Calling :cpp:func:`vTaskEndScheduler` will simply cause the application to abort.
-
 
 .. ------------------------------------------------ Critical Sections --------------------------------------------------
 
@@ -461,3 +449,45 @@ For multicore targets (such as the ESP32 and ESP32-S3), :ref:`CONFIG_FREERTOS_UN
 
 .. note::
   Users should bear in mind that enabling :ref:`CONFIG_FREERTOS_UNICORE` **is NOT equivalent to running Vanilla FreeRTOS**. The additional API of ESP-IDF FreeRTOS can still be called, and the behavior changes of ESP-IDF FreeRTOS will incur a small amount of overhead even when compiled for only a single core.
+
+.. ------------------------------------------------- API References ----------------------------------------------------
+
+API Reference
+-------------
+
+This section contains documentation of FreeRTOS types, functions, and macros. It is automatically generated from FreeRTOS header files.
+
+Task API
+^^^^^^^^
+
+.. include-build-file:: inc/task.inc
+
+Queue API
+^^^^^^^^^
+
+.. include-build-file:: inc/queue.inc
+
+Semaphore API
+^^^^^^^^^^^^^
+
+.. include-build-file:: inc/semphr.inc
+
+Timer API
+^^^^^^^^^
+
+.. include-build-file:: inc/timers.inc
+
+Event Group API
+^^^^^^^^^^^^^^^
+
+.. include-build-file:: inc/event_groups.inc
+
+Stream Buffer API
+^^^^^^^^^^^^^^^^^
+
+.. include-build-file:: inc/stream_buffer.inc
+
+Message Buffer API
+^^^^^^^^^^^^^^^^^^
+
+.. include-build-file:: inc/message_buffer.inc
