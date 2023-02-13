@@ -62,7 +62,7 @@
 // #define SOC_FLASH_ENC_SUPPORTED         1 // TODO: IDF-6282
 // #define SOC_SECURE_BOOT_SUPPORTED       1 // TODO: IDF-6281
 #define SOC_BOD_SUPPORTED               1
-#define SOC_APM_SUPPORTED               1
+// #define SOC_APM_SUPPORTED               1 // TODO: IDF-6277
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M            1

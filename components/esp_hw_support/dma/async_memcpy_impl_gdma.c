@@ -82,7 +82,7 @@ esp_err_t async_memcpy_impl_init(async_memcpy_impl_t *impl)
 #if SOC_APM_SUPPORTED
     // APM strategy: trusted mode
     // TODO: IDF-5354 GDMA for M2M usage only need read and write permissions, we should disable the execute permission by the APM controller
-    apm_ll_set_master_secure_mode(APM_LL_MASTER_GDMA + m2m_trigger.instance_id, APM_LL_SECURE_MODE_TEE);
+    apm_tee_ll_set_master_secure_mode(APM_LL_MASTER_GDMA + m2m_trigger.instance_id, APM_LL_SECURE_MODE_TEE);
 #endif // SOC_APM_SUPPORTED
 
     gdma_rx_event_callbacks_t cbs = {
