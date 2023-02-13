@@ -83,6 +83,10 @@ config SOC_SDM_SUPPORTED
     bool
     default y
 
+config SOC_ANALOG_CMPR_SUPPORTED
+    bool
+    default y
+
 config SOC_ETM_SUPPORTED
     bool
     default y

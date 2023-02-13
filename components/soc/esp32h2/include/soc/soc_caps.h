@@ -45,6 +45,7 @@
 #define SOC_RTC_MEM_SUPPORTED           1
 #define SOC_I2S_SUPPORTED               1
 #define SOC_SDM_SUPPORTED               1
+#define SOC_ANALOG_CMPR_SUPPORTED       1
 #define SOC_ETM_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_PARLIO_SUPPORTED            1

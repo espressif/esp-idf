@@ -97,6 +97,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "sdm_hal.c")
     endif()
 
+    if(CONFIG_SOC_ANALOG_CMPR_SUPPORTED)
+        list(APPEND srcs "analog_cmpr_hal.c")
+    endif()
+
     if(CONFIG_ETH_USE_ESP32_EMAC)
         list(APPEND srcs "emac_hal.c")
     endif()
