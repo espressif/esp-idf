@@ -4,7 +4,7 @@ if(${target} STREQUAL "linux")
     # Header only library for linux
 
     idf_component_register(INCLUDE_DIRS include
-                           PRIV_REQUIRES tapif_io)
+                           SRCS protocol_examples_utils.c)
     return()
 endif()
 

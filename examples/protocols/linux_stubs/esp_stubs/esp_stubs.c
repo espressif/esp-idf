@@ -19,11 +19,6 @@ esp_err_t esp_netif_init(void)
     return ESP_OK;
 }
 
-esp_err_t example_connect(void)
-{
-    return ESP_OK;
-}
-
 esp_err_t nvs_flash_init(void)
 {
     return ESP_OK;

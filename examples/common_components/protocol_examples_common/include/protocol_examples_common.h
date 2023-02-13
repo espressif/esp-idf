@@ -11,15 +11,18 @@
 
 #include "sdkconfig.h"
 #include "esp_err.h"
+#if !CONFIG_IDF_TARGET_LINUX
 #include "esp_netif.h"
 #if CONFIG_EXAMPLE_CONNECT_ETHERNET
 #include "esp_eth.h"
 #endif
+#endif // !CONFIG_IDF_TARGET_LINUX
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if !CONFIG_IDF_TARGET_LINUX
 #if CONFIG_EXAMPLE_CONNECT_WIFI
 #define EXAMPLE_NETIF_DESC_STA "example_netif_sta"
 #endif
@@ -95,6 +98,10 @@ void example_register_wifi_connect_commands(void);
  */
 esp_eth_handle_t get_example_eth_handle(void);
 #endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
+
+#else
+static inline esp_err_t example_connect(void) {return ESP_OK;}
+#endif // !CONFIG_IDF_TARGET_LINUX
 
 #ifdef __cplusplus
 }
