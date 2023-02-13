@@ -32,6 +32,27 @@ possible. This should optimize the amount of RAM accessible to the code without 
 
 static esp_alloc_failed_hook_t alloc_failed_callback;
 
+
+#ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS
+IRAM_ATTR static void hex_to_str(char buf[8], uint32_t n)
+{
+    for (int i = 0; i < 8; i++) {
+        uint8_t b4 = (n >> (28 - i * 4)) & 0b1111;
+        buf[i] = b4 <= 9 ? '0' + b4 : 'a' + b4 - 10;
+    }
+}
+IRAM_ATTR static void fmt_abort_str(char dest[48], size_t size, uint32_t caps)
+{
+    char sSize[8];
+    char sCaps[8];
+    hex_to_str(sSize, size);
+    hex_to_str(sCaps, caps);
+    memcpy(dest, "Mem alloc fail. size 0x00000000 caps 0x00000000", 48);
+    memcpy(dest + 23, sSize, 8);
+    memcpy(dest + 39, sCaps, 8);
+}
+#endif
+
 /*
   This takes a memory chunk in a region that can be addressed as both DRAM as well as IRAM. It will convert it to
   IRAM in such a way that it can be later freed. It assumes both the address as well as the length to be word-aligned.
@@ -54,7 +75,6 @@ IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
     return iptr + 1;
 }
 
-
 IRAM_ATTR NOINLINE_ATTR static void heap_caps_alloc_failed(size_t requested_size, uint32_t caps, const char *function_name)
 {
     if (alloc_failed_callback) {
@@ -62,7 +82,9 @@ IRAM_ATTR NOINLINE_ATTR static void heap_caps_alloc_failed(size_t requested_size
     }
 
 #ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS
-    esp_system_abort("Memory allocation failed");
+    char buf[48];
+    fmt_abort_str(buf, requested_size, caps);
+    esp_system_abort(buf);
 #endif
 }
 
