@@ -37,10 +37,9 @@ extern "C" {
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
 
 typedef enum {
-    ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
-    ADC_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
-    ADC_POWER_SW_OFF,   /*!< ADC XPD controlled by SW. power off. */
-    ADC_POWER_MAX,      /*!< For parameter check. */
+    ADC_LL_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
+    ADC_LL_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
+    ADC_LL_POWER_SW_OFF,   /*!< ADC XPD controlled by SW. power off. */
 } adc_ll_power_t;
 
 typedef enum {
@@ -544,13 +543,13 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
  */
 static inline void adc_ll_digi_set_power_manage(adc_ll_power_t manage)
 {
-    if (manage == ADC_POWER_SW_ON) {
+    if (manage == ADC_LL_POWER_SW_ON) {
         APB_SARADC.ctrl.sar_clk_gated = 1;
         APB_SARADC.ctrl.xpd_sar_force = 0x3;
-    } else if (manage == ADC_POWER_BY_FSM) {
+    } else if (manage == ADC_LL_POWER_BY_FSM) {
         APB_SARADC.ctrl.sar_clk_gated = 1;
         APB_SARADC.ctrl.xpd_sar_force = 0x0;
-    } else if (manage == ADC_POWER_SW_OFF) {
+    } else if (manage == ADC_LL_POWER_SW_OFF) {
         APB_SARADC.ctrl.sar_clk_gated = 0;
         APB_SARADC.ctrl.xpd_sar_force = 0x2;
     }

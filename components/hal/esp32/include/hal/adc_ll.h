@@ -30,10 +30,6 @@ extern "C" {
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
 typedef enum {
-    ADC_RTC_DATA_OK = 0,
-} adc_ll_rtc_raw_data_t;
-
-typedef enum {
     ADC_LL_CTRL_RTC   = 0,    ///< For ADC1 and ADC2. Select RTC controller.
     ADC_LL_CTRL_ULP   = 1,    ///< For ADC1 and ADC2. Select ULP controller.
     ADC_LL_CTRL_DIG   = 2,    ///< For ADC1 and ADC2. Select DIG controller.
