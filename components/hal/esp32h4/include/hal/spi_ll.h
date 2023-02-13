@@ -99,7 +99,15 @@ typedef enum {
  */
 static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_source)
 {
-    //empty, keep this for compatibility
+    switch (clk_source)
+    {
+        case SPI_CLK_SRC_XTAL:
+            hw->clk_gate.mst_clk_sel = 0;
+            break;
+        default:
+            hw->clk_gate.mst_clk_sel = 1;
+            break;
+    }
 }
 
 /**

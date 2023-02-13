@@ -254,14 +254,15 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of SPI
  */
-#define SOC_SPI_CLKS {SOC_MOD_CLK_AHB}
+#define SOC_SPI_CLKS {SOC_MOD_CLK_AHB, SOC_MOD_CLK_XTAL}
 
 /**
  * @brief Type of SPI clock source.
  */
 typedef enum {
-    SPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_AHB,     /*!< Select AHB as SPI source clock */
-    SPI_CLK_SRC_AHB = SOC_MOD_CLK_AHB,         /*!< Select AHB as SPI source clock */
+    SPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_AHB,     /*!< Select AHB 48M as SPI source clock */
+    SPI_CLK_SRC_AHB = SOC_MOD_CLK_AHB,         /*!< Select AHB 48M as SPI source clock */
+    SPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< Select XTAL 32M as SPI source clock */
 } soc_periph_spi_clk_src_t;
 
 //////////////////////////////////////////////////SDM//////////////////////////////////////////////////////////////

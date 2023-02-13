@@ -117,6 +117,15 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
     }
 #endif
 
+#if SOC_SPI_SUPPORT_CLK_AHB
+    clk_tree_src_get_freq_hz(SPI_CLK_SRC_AHB, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+    printf("\nTest clock source AHB = %ld\n", clock_source_hz);
+    TEST_ASSERT((48 * 1000 * 1000) == clock_source_hz);
+    for (int i = 0; i < TEST_CLK_TIMES; i++) {
+        check_spi_pre_n_for(SPI_CLK_SRC_AHB, test_clk_param.clk_param_48m[i][0], test_clk_param.clk_param_48m[i][1], test_clk_param.clk_param_48m[i][2]);
+    }
+#endif
+
 #if SOC_SPI_SUPPORT_CLK_PLL_F40M
     clk_tree_src_get_freq_hz(SPI_CLK_SRC_PLL_F40M, CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
     printf("\nTest clock source PLL_40M = %ld\n", clock_source_hz);
