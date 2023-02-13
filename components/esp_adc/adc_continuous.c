@@ -28,6 +28,7 @@
 #include "hal/adc_hal.h"
 #include "hal/dma_types.h"
 #include "esp_memory_utils.h"
+#include "adc_continuous_internal.h"
 //For DMA
 #if SOC_GDMA_SUPPORTED
 #include "esp_private/gdma.h"
@@ -50,40 +51,6 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 #define ADC_EXIT_CRITICAL()  portEXIT_CRITICAL(&rtc_spinlock)
 
 #define INTERNAL_BUF_NUM      5
-
-typedef enum {
-    ADC_FSM_INIT,
-    ADC_FSM_STARTED,
-} adc_fsm_t;
-
-/*---------------------------------------------------------------
-            Continuous Mode Driverr Context
----------------------------------------------------------------*/
-typedef struct adc_continuous_ctx_t {
-    uint8_t                         *rx_dma_buf;                //dma buffer
-    adc_hal_dma_ctx_t               hal;                        //hal context
-#if SOC_GDMA_SUPPORTED
-    gdma_channel_handle_t           rx_dma_channel;             //dma rx channel handle
-#elif CONFIG_IDF_TARGET_ESP32S2
-    spi_host_device_t               spi_host;                   //ADC uses this SPI DMA
-#elif CONFIG_IDF_TARGET_ESP32
-    i2s_port_t                      i2s_host;                   //ADC uses this I2S DMA
-#endif
-    intr_handle_t                   dma_intr_hdl;               //DMA Interrupt handler
-    RingbufHandle_t                 ringbuf_hdl;                //RX ringbuffer handler
-    void*                           ringbuf_storage;            //Ringbuffer storage buffer
-    void*                           ringbuf_struct;             //Ringbuffer structure buffer
-    intptr_t                        rx_eof_desc_addr;           //eof descriptor address of RX channel
-    adc_fsm_t                       fsm;                        //ADC continuous mode driver internal states
-    bool                            use_adc1;                   //1: ADC unit1 will be used; 0: ADC unit1 won't be used.
-    bool                            use_adc2;                   //1: ADC unit2 will be used; 0: ADC unit2 won't be used. This determines whether to acquire sar_adc2_mutex lock or not.
-    adc_atten_t                     adc1_atten;                 //Attenuation for ADC1. On this chip each ADC can only support one attenuation.
-    adc_atten_t                     adc2_atten;                 //Attenuation for ADC2. On this chip each ADC can only support one attenuation.
-    adc_hal_digi_ctrlr_cfg_t        hal_digi_ctrlr_cfg;         //Hal digital controller configuration
-    adc_continuous_evt_cbs_t    cbs;                        //Callbacks
-    void                            *user_data;                 //User context
-    esp_pm_lock_handle_t            pm_lock;                    //For power management
-} adc_continuous_ctx_t;
 
 #ifdef CONFIG_PM_ENABLE
 //Only for deprecated API

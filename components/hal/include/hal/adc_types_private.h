@@ -47,55 +47,6 @@ typedef struct {
 }
 #endif  //#if SOC_ADC_ARBITER_SUPPORTED
 
-
-#if SOC_ADC_FILTER_SUPPORTED
-/*---------------------------------------------------------------
-                    Filter
----------------------------------------------------------------*/
-/**
- * @brief ADC digital controller (DMA mode) filter index options.
- *
- * @note  For ESP32-S2, The filter object of the ADC is fixed.
- */
-typedef enum {
-    ADC_DIGI_FILTER_IDX0 = 0, /*!<The filter index 0.
-                                  For ESP32-S2, It can only be used to filter all enabled channels of ADC1 unit at the same time. */
-    ADC_DIGI_FILTER_IDX1,     /*!<The filter index 1.
-                                  For ESP32-S2, It can only be used to filter all enabled channels of ADC2 unit at the same time. */
-    ADC_DIGI_FILTER_IDX_MAX
-} adc_digi_filter_idx_t;
-
-/**
- * @brief ADC digital controller (DMA mode) filter type options.
- *        Expression: filter_data = (k-1)/k * last_data + new_data / k.
- */
-typedef enum {
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H4 || CONFIG_IDF_TARGET_ESP32C2
-    ADC_DIGI_FILTER_DIS = -1,  /*!< Disable filter */
-#endif
-    ADC_DIGI_FILTER_IIR_2 = 0, /*!<The filter mode is first-order IIR filter. The coefficient is 2. */
-    ADC_DIGI_FILTER_IIR_4,     /*!<The filter mode is first-order IIR filter. The coefficient is 4. */
-    ADC_DIGI_FILTER_IIR_8,     /*!<The filter mode is first-order IIR filter. The coefficient is 8. */
-    ADC_DIGI_FILTER_IIR_16,    /*!<The filter mode is first-order IIR filter. The coefficient is 16. */
-    ADC_DIGI_FILTER_IIR_64,    /*!<The filter mode is first-order IIR filter. The coefficient is 64. */
-    ADC_DIGI_FILTER_IIR_MAX
-} adc_digi_filter_mode_t;
-
-/**
- * @brief ADC digital controller (DMA mode) filter configuration.
- *
- * @note  For ESP32-S2, The filter object of the ADC is fixed.
- * @note  For ESP32-S2, The filter object is always all enabled channels.
- */
-typedef struct {
-    adc_unit_t adc_unit;        /*!<Set adc unit number for filter.
-                                    For ESP32-S2, Filter IDX0/IDX1 can only be used to filter all enabled channels of ADC1/ADC2 unit at the same time. */
-    adc_channel_t channel;      /*!<Set adc channel number for filter.
-                                    For ESP32-S2, it's always `ADC_CHANNEL_MAX` */
-    adc_digi_filter_mode_t mode;/*!<Set adc filter mode for filter. See ``adc_digi_filter_mode_t``. */
-} adc_digi_filter_t;
-#endif  // #if SOC_ADC_FILTER_SUPPORTED
-
 #if SOC_ADC_MONITOR_SUPPORTED
 /*---------------------------------------------------------------
                     Monitor

@@ -223,7 +223,7 @@ config SOC_ADC_ARBITER_SUPPORTED
     bool
     default y
 
-config SOC_ADC_FILTER_SUPPORTED
+config SOC_ADC_DIG_IIR_FILTER_SUPPORTED
     bool
     default y
 
@@ -270,6 +270,10 @@ config SOC_ADC_DIGI_RESULT_BYTES
 config SOC_ADC_DIGI_DATA_BYTES_PER_CONV
     int
     default 4
+
+config SOC_ADC_DIGI_IIR_FILTER_NUM
+    int
+    default 2
 
 config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
     int

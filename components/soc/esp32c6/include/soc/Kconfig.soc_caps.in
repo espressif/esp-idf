@@ -187,7 +187,7 @@ config SOC_ADC_DIG_CTRL_SUPPORTED
     bool
     default y
 
-config SOC_ADC_FILTER_SUPPORTED
+config SOC_ADC_DIG_IIR_FILTER_SUPPORTED
     bool
     default y
 
@@ -227,7 +227,7 @@ config SOC_ADC_DIGI_MIN_BITWIDTH
     int
     default 12
 
-config SOC_ADC_DIGI_FILTER_NUM
+config SOC_ADC_DIGI_IIR_FILTER_NUM
     int
     default 2
 

@@ -92,6 +92,13 @@ extern adc_atten_t g_test_atten[TEST_ATTEN_NUMS];
 extern adc_atten_t g_test_atten[TEST_ATTEN_NUMS];
 #endif
 
+/*---------------------------------------------------------------
+        ADC Filter
+---------------------------------------------------------------*/
+#if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
+#define TEST_FILTER_COEFF_NUMS          5
+extern adc_digi_iir_filter_coeff_t g_test_filter_coeff[TEST_FILTER_COEFF_NUMS];
+#endif
 
 /*---------------------------------------------------------------
         ADC Calibration
@@ -126,6 +133,17 @@ void test_adc_calibration_deinit(adc_cali_handle_t handle);
  * @param[in] level     IO level. True: high; False: low
  */
 void test_adc_set_io_level(adc_unit_t unit, adc_channel_t channel, bool level);
+
+/**
+ * @brief Set ADC IO to a middle level
+ *
+ * @note We don't expect this IO to have a fixed level among different chips.
+ *       We just need the IO to be stable at a certain level, which is neither 0 nor overflow.
+ *
+ * @param[in] unit      ADC unit
+ * @param[in] channel   ADC channel
+ */
+void test_adc_set_io_middle(adc_unit_t unit, adc_channel_t channel);
 
 #ifdef __cplusplus
 }

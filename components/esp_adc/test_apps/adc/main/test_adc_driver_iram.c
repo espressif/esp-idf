@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -156,7 +156,7 @@ TEST_CASE("ADC oneshot fast work with ISR and Flash", "[adc_oneshot]")
 #endif
 
 #define ADC_TEST_FREQ_HZ        (50 * 1000)
-#define ADC_TEST_PKG_SIZE       100
+#define ADC_TEST_PKG_SIZE       512
 static bool IRAM_ATTR NOINLINE_ATTR s_conv_done_cb(adc_continuous_handle_t handle, const adc_continuous_evt_data_t *edata, void *user_data)
 {
     test_adc_iram_ctx_t *test_ctx = (test_adc_iram_ctx_t *)user_data;
