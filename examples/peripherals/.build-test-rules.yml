@@ -66,8 +66,7 @@ examples/peripherals/i2s/i2s_recorder:
 
 examples/peripherals/lcd/i2c_oled:
   disable:
-    - if: SOC_I2C_SUPPORTED != 1 or IDF_TARGET == "esp32h2"
-      reason: LCD has not been supported on esp32h2, IDF-6213
+    - if: SOC_I2C_SUPPORTED != 1
 
 examples/peripherals/lcd/i80_controller:
   disable:
@@ -80,14 +79,10 @@ examples/peripherals/lcd/rgb_panel:
 examples/peripherals/lcd/spi_lcd_touch:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-    - if: IDF_TARGET == "esp32h2"
-      reason: Not tested yet.
 
 examples/peripherals/lcd/tjpgd:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-    - if: IDF_TARGET == "esp32h2"
-      reason: Not tested yet.
 
 examples/peripherals/ledc:
   disable:

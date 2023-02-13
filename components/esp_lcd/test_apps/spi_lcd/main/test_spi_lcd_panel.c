@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,7 @@ void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lc
         .quadhd_io_num = -1,
         .max_transfer_sz = TEST_LCD_H_RES * TEST_LCD_V_RES * sizeof(uint16_t)
     };
+#if SOC_SPI_SUPPORT_OCT
     if (oct_mode) {
         buscfg.data1_io_num = TEST_LCD_DATA1_GPIO;
         buscfg.data2_io_num = TEST_LCD_DATA2_GPIO;
@@ -47,6 +48,7 @@ void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lc
         buscfg.data7_io_num = TEST_LCD_DATA7_GPIO;
         buscfg.flags = SPICOMMON_BUSFLAG_OCTAL;
     }
+#endif
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST_ID, &buscfg, SPI_DMA_CH_AUTO));
 
     esp_lcd_panel_io_spi_config_t io_config = {
@@ -60,10 +62,12 @@ void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lc
         .on_color_trans_done = on_color_trans_done,
         .user_ctx = user_data,
     };
+#if SOC_SPI_SUPPORT_OCT
     if (oct_mode) {
         io_config.flags.octal_mode = 1;
         io_config.spi_mode = 3;
     }
+#endif
     TEST_ESP_OK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)TEST_SPI_HOST_ID, &io_config, io_handle));
 }
 
