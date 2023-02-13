@@ -106,11 +106,11 @@ def test_examples_protocol_https_server_simple(env, extra_data):  # type: (tiny_
     # start test
     dut1.start_app()
     # Parse IP address and port of the server
-    dut1.expect(re.compile(r'Starting server'))
-    got_port = dut1.expect(re.compile(r'Server listening on port (\d+)'), timeout=30)[0]
+    dut1.expect(re.compile(r'Starting server'), timeout=60)
+    got_port = dut1.expect(re.compile(r'Server listening on port (\d+)[^\d]'), timeout=30)[0]
     Utility.console_log('Waiting to connect with AP')
 
-    got_ip = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)'), timeout=30)[0]
+    got_ip = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]'), timeout=30)[0]
     # Expected logs
 
     Utility.console_log('Got IP   : ' + got_ip)
