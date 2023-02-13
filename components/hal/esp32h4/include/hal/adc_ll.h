@@ -27,14 +27,35 @@
 extern "C" {
 #endif
 
+#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    BIT(31)
+#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
+
+/*---------------------------------------------------------------
+                    Oneshot
+---------------------------------------------------------------*/
+#define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
+#define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         ((PERIPH_NUM==0)? 2 : 1)
+
+/*---------------------------------------------------------------
+                    DMA
+---------------------------------------------------------------*/
+#define ADC_LL_DIGI_DATA_INVERT_DEFAULT(PERIPH_NUM)    (0)
+#define ADC_LL_FSM_RSTB_WAIT_DEFAULT                   (8)
+#define ADC_LL_FSM_START_WAIT_DEFAULT                  (5)
+#define ADC_LL_FSM_STANDBY_WAIT_DEFAULT                (100)
+#define ADC_LL_SAMPLE_CYCLE_DEFAULT                    (2)
+#define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT                (1)
+
 #define ADC_LL_CLKM_DIV_NUM_DEFAULT       15
 #define ADC_LL_CLKM_DIV_B_DEFAULT         1
 #define ADC_LL_CLKM_DIV_A_DEFAULT         0
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
-#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    BIT(31)
-#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
+/*---------------------------------------------------------------
+                    PWDET (Power Detect)
+---------------------------------------------------------------*/
+#define ADC_LL_PWDET_CCT_DEFAULT                       (4)
 
 typedef enum {
     ADC_LL_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */

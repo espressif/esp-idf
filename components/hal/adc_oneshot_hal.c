@@ -9,7 +9,6 @@
 #include "soc/soc_caps.h"
 #include "hal/adc_oneshot_hal.h"
 #include "hal/adc_hal_common.h"
-#include "hal/adc_hal_conf.h"
 #include "hal/adc_ll.h"
 #include "hal/assert.h"
 #include "hal/log.h"
@@ -62,13 +61,13 @@ void adc_oneshot_hal_setup(adc_oneshot_hal_ctx_t *hal, adc_channel_t chan)
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     adc_ll_digi_clk_sel(hal->clk_src);
 #else
-    adc_ll_set_sar_clk_div(unit, ADC_HAL_SAR_CLK_DIV_DEFAULT(unit));
+    adc_ll_set_sar_clk_div(unit, ADC_LL_SAR_CLK_DIV_DEFAULT(unit));
     if (unit == ADC_UNIT_2) {
-        adc_ll_pwdet_set_cct(ADC_HAL_PWDET_CCT_DEFAULT);
+        adc_ll_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
     }
 #endif
 
-    adc_oneshot_ll_output_invert(unit, ADC_HAL_DATA_INVERT_DEFAULT(unit));
+    adc_oneshot_ll_output_invert(unit, ADC_LL_DATA_INVERT_DEFAULT(unit));
     adc_oneshot_ll_set_atten(unit, chan, hal->chan_configs[chan].atten);
     adc_oneshot_ll_set_output_bits(unit, hal->chan_configs[chan].bitwidth);
     adc_oneshot_ll_set_channel(unit, chan);

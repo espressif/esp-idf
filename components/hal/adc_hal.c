@@ -7,7 +7,6 @@
 #include <sys/param.h>
 #include "sdkconfig.h"
 #include "hal/adc_hal.h"
-#include "hal/adc_hal_conf.h"
 #include "hal/assert.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
@@ -105,13 +104,13 @@ void adc_hal_dma_ctx_config(adc_hal_dma_ctx_t *hal, const adc_hal_dma_config_t *
 void adc_hal_digi_init(adc_hal_dma_ctx_t *hal)
 {
     // Set internal FSM wait time, fixed value.
-    adc_ll_digi_set_fsm_time(ADC_HAL_FSM_RSTB_WAIT_DEFAULT, ADC_HAL_FSM_START_WAIT_DEFAULT,
-                             ADC_HAL_FSM_STANDBY_WAIT_DEFAULT);
-    adc_ll_set_sample_cycle(ADC_HAL_SAMPLE_CYCLE_DEFAULT);
-    adc_hal_pwdet_set_cct(ADC_HAL_PWDET_CCT_DEFAULT);
-    adc_ll_digi_output_invert(ADC_UNIT_1, ADC_HAL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_1));
-    adc_ll_digi_output_invert(ADC_UNIT_2, ADC_HAL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_2));
-    adc_ll_digi_set_clk_div(ADC_HAL_DIGI_SAR_CLK_DIV_DEFAULT);
+    adc_ll_digi_set_fsm_time(ADC_LL_FSM_RSTB_WAIT_DEFAULT, ADC_LL_FSM_START_WAIT_DEFAULT,
+                             ADC_LL_FSM_STANDBY_WAIT_DEFAULT);
+    adc_ll_set_sample_cycle(ADC_LL_SAMPLE_CYCLE_DEFAULT);
+    adc_hal_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
+    adc_ll_digi_output_invert(ADC_UNIT_1, ADC_LL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_1));
+    adc_ll_digi_output_invert(ADC_UNIT_2, ADC_LL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_2));
+    adc_ll_digi_set_clk_div(ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT);
 
     adc_dma_ll_rx_clear_intr(hal->dev, hal->dma_chan, ADC_HAL_DMA_INTR_MASK);
     adc_dma_ll_rx_enable_intr(hal->dev, hal->dma_chan, ADC_HAL_DMA_INTR_MASK);

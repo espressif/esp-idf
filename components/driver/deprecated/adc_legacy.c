@@ -25,7 +25,6 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_common.h"
-#include "hal/adc_hal_conf.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/adc_types_legacy.h"
 #include "clk_tree.h"
@@ -157,17 +156,17 @@ static void adc_rtc_chan_init(adc_unit_t adc_unit)
 #if SOC_DAC_SUPPORTED
         dac_ll_rtc_sync_by_adc(false);
 #endif
-        adc_oneshot_ll_output_invert(ADC_UNIT_1, ADC_HAL_DATA_INVERT_DEFAULT(ADC_UNIT_1));
-        adc_ll_set_sar_clk_div(ADC_UNIT_1, ADC_HAL_SAR_CLK_DIV_DEFAULT(ADC_UNIT_1));
+        adc_oneshot_ll_output_invert(ADC_UNIT_1, ADC_LL_DATA_INVERT_DEFAULT(ADC_UNIT_1));
+        adc_ll_set_sar_clk_div(ADC_UNIT_1, ADC_LL_SAR_CLK_DIV_DEFAULT(ADC_UNIT_1));
 #ifdef CONFIG_IDF_TARGET_ESP32
         adc_ll_hall_disable(); //Disable other peripherals.
         adc_ll_amp_disable();  //Currently the LNA is not open, close it by default.
 #endif
     }
     if (adc_unit == ADC_UNIT_2) {
-        adc_hal_pwdet_set_cct(ADC_HAL_PWDET_CCT_DEFAULT);
-        adc_oneshot_ll_output_invert(ADC_UNIT_2, ADC_HAL_DATA_INVERT_DEFAULT(ADC_UNIT_2));
-        adc_ll_set_sar_clk_div(ADC_UNIT_2, ADC_HAL_SAR_CLK_DIV_DEFAULT(ADC_UNIT_2));
+        adc_hal_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
+        adc_oneshot_ll_output_invert(ADC_UNIT_2, ADC_LL_DATA_INVERT_DEFAULT(ADC_UNIT_2));
+        adc_ll_set_sar_clk_div(ADC_UNIT_2, ADC_LL_SAR_CLK_DIV_DEFAULT(ADC_UNIT_2));
     }
 }
 
