@@ -606,38 +606,6 @@ void bootloader_spi_flash_reset(void)
     bootloader_execute_flash_command(CMD_RESET, 0, 0, 0);
 }
 
-#if SOC_CACHE_SUPPORT_WRAP
-esp_err_t bootloader_flash_wrap_set(spi_flash_wrap_mode_t mode)
-{
-    uint32_t reg_bkp_ctrl = SPIFLASH.ctrl.val;
-    uint32_t reg_bkp_usr  = SPIFLASH.user.val;
-    SPIFLASH.user.fwrite_dio = 0;
-    SPIFLASH.user.fwrite_dual = 0;
-    SPIFLASH.user.fwrite_qio = 1;
-    SPIFLASH.user.fwrite_quad = 0;
-    SPIFLASH.ctrl.fcmd_dual = 0;
-    SPIFLASH.ctrl.fcmd_quad = 0;
-    SPIFLASH.user.usr_dummy = 0;
-    SPIFLASH.user.usr_addr = 1;
-    SPIFLASH.user.usr_command = 1;
-    SPIFLASH.user2.usr_command_bitlen = 7;
-    SPIFLASH.user2.usr_command_value = CMD_WRAP;
-    SPIFLASH.user1.usr_addr_bitlen = 23;
-    SPIFLASH.addr = 0;
-    SPIFLASH.user.usr_miso = 0;
-    SPIFLASH.user.usr_mosi = 1;
-    SPIFLASH.mosi_dlen.usr_mosi_bit_len = 7;
-    SPIFLASH.data_buf[0] = (uint32_t) mode << 4;;
-    SPIFLASH.cmd.usr = 1;
-    while(SPIFLASH.cmd.usr != 0)
-    { }
-
-    SPIFLASH.ctrl.val = reg_bkp_ctrl;
-    SPIFLASH.user.val = reg_bkp_usr;
-    return ESP_OK;
-}
-#endif //SOC_CACHE_SUPPORT_WRAP
-
 /*******************************************************************************
  * XMC startup flow
  ******************************************************************************/

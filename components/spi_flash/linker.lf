@@ -11,6 +11,7 @@ entries:
         spi_flash_chip_th (noflash)
         memspi_host_driver (noflash)
         flash_brownout_hook (noflash)
+        spi_flash_wrap (noflash)
 
         if IDF_TARGET_ESP32S3 = y:
             spi_flash_chip_mxic_opi (noflash)

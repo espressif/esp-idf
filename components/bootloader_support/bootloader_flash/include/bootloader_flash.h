@@ -25,16 +25,6 @@ extern "C" {
  */
 uint32_t bootloader_read_flash_id(void);
 
-#if SOC_CACHE_SUPPORT_WRAP
-/**
- * @brief Set the burst mode setting command for specified wrap mode.
- *
- * @param mode The specified warp mode.
- * @return always ESP_OK
- */
-esp_err_t bootloader_flash_wrap_set(spi_flash_wrap_mode_t mode);
-#endif
-
 /**
  * @brief Startup flow recommended by XMC. Call at startup before any erase/write operation.
  *

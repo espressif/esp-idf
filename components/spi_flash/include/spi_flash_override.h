@@ -51,6 +51,49 @@ typedef struct __attribute__((packed))
 } spi_flash_hpm_info_t;
 
 /**
+ * @brief Enum for user to select valid wrap size.
+ */
+typedef enum {
+    FLASH_WRAP_SIZE_8B = 8,
+    FLASH_WRAP_SIZE_16B = 16,
+    FLASH_WRAP_SIZE_32B = 32,
+    FLASH_WRAP_SIZE_64B = 64,
+} spi_flash_wrap_size_t;
+
+/**
+ * @brief Probe flash wrap method
+ *
+ * @param flash_id Flash chip ID
+ *
+ * @return ESP_OK: If succeed
+ */
+typedef esp_err_t (*spi_flash_wrap_probe_fn_t)(uint32_t flash_id);
+
+/**
+ * @brief Set flash wrap
+ *
+ * @param wrap_size: wrap_size
+ *
+ * @return ESP_OK: If succeed
+ */
+typedef esp_err_t (*spi_flash_wrap_set_fn_t)(spi_flash_wrap_size_t wrap_size);
+
+/**
+ * @brief Clear flash wrap.
+ *
+ * @return ESP_OK: If succeed
+ */
+typedef esp_err_t (*spi_flash_wrap_clr_fn_t)(void);
+
+typedef struct __attribute__((packed))
+{
+    const char *method;
+    spi_flash_wrap_probe_fn_t probe;
+    spi_flash_wrap_set_fn_t chip_wrap_set;
+    spi_flash_wrap_clr_fn_t chip_wrap_clr;
+} spi_flash_wrap_info_t;
+
+/**
  * Array of known flash chips and method to enable flash high performance mode.
  *
  * Users can override this array.
