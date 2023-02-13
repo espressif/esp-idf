@@ -1,5 +1,5 @@
 if(${IDF_TARGET} STREQUAL "linux")
-    set(requires esp_stubs)
+    set(requires esp_stubs protocol_examples_common)
 endif()
 
 if("${CONFIG_EXAMPLE_IPV4}" STREQUAL y)
