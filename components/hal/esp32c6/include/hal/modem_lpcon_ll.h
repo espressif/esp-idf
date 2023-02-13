@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -214,6 +214,13 @@ __attribute__((always_inline))
 static inline void modem_lpcon_ll_set_lp_apb_icg_bitmap(modem_lpcon_dev_t *hw, uint32_t bitmap)
 {
     hw->clk_conf_power_st.clk_lp_apb_st_map = bitmap;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_reset_all(modem_lpcon_dev_t *hw)
+{
+    hw->rst_conf.val = 0xf;
+    hw->rst_conf.val = 0;
 }
 
 __attribute__((always_inline))
