@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -306,10 +306,15 @@ typedef struct {
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Whether SAE hash to element is enabled */
     uint8_t failure_retry_cnt;                /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config.
                                                    Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
-    uint8_t he_dcm_set:1;                     /**< Whether DCM max.constellation for transmission and reception is set. */
-    uint8_t he_dcm_max_constellation_tx:2;    /**< Indicate the max.constellation for DCM in TB PPDU the STA supported. 0: not supported. 1: BPSK, 2: QPSK, 3: 16-QAM. The default value is 3. */
-    uint8_t he_dcm_max_constellation_rx:2;    /**< Indicate the max.constellation for DCM in both Data field and HE-SIG-B field the STA supported. 0: not supported. 1: BPSK, 2: QPSK, 3: 16-QAM. The default value is 3. */
-    uint8_t he_mcs9_enabled:1;                /**< Whether to support HE-MCS 0 to 9. The default value is 0. */
+    uint32_t he_dcm_set:1;                                        /**< Whether DCM max.constellation for transmission and reception is set. */
+    uint32_t he_dcm_max_constellation_tx:2;                       /**< Indicate the max.constellation for DCM in TB PPDU the STA supported. 0: not supported. 1: BPSK, 2: QPSK, 3: 16-QAM. The default value is 3. */
+    uint32_t he_dcm_max_constellation_rx:2;                       /**< Indicate the max.constellation for DCM in both Data field and HE-SIG-B field the STA supported. 0: not supported. 1: BPSK, 2: QPSK, 3: 16-QAM. The default value is 3. */
+    uint32_t he_mcs9_enabled:1;                                   /**< Whether to support HE-MCS 0 to 9. The default value is 0. */
+    uint32_t he_su_beamformee_disabled:1;                         /**< Whether to disable support for operation as an SU beamformee. */
+    uint32_t he_trig_su_bmforming_feedback_disabled:1;            /**< Whether to disable support the transmission of SU feedback in an HE TB sounding sequence. */
+    uint32_t he_trig_mu_bmforming_partial_feedback_disabled:1;    /**< Whether to disable support the transmission of partial-bandwidth MU feedback in an HE TB sounding sequence. */
+    uint32_t he_trig_cqi_feedback_disabled:1;                     /**< Whether to disable support the transmission of CQI feedback in an HE TB sounding sequence. */
+    uint32_t he_reserved:22;                                      /**< Reserved for future feature set */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for device's AP or STA.
