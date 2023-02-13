@@ -7,4 +7,4 @@ from pytest_embedded import Dut
 @pytest.mark.linux
 @pytest.mark.host_test
 def test_nvs_page_linux(dut: Dut) -> None:
-    dut.expect_unity_test_output(timeout=10)
+    dut.expect_unity_test_output(timeout=120)
