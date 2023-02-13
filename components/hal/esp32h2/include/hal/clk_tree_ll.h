@@ -80,7 +80,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_disable(void)
 /**
  * @brief Enable the internal oscillator output for LP_PLL_CLK
  */
-static inline void clk_ll_lp_pll_enable(void)
+static inline __attribute__((always_inline)) void clk_ll_lp_pll_enable(void)
 {
     // Enable lp_pll xpd status
     SET_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_LPPLL);
@@ -89,7 +89,7 @@ static inline void clk_ll_lp_pll_enable(void)
 /**
  * @brief Disable the internal oscillator output for LP_PLL_CLK
  */
-static inline void clk_ll_lp_pll_disable(void)
+static inline __attribute__((always_inline)) void clk_ll_lp_pll_disable(void)
 {
     // Disable lp_pll xpd status
     CLEAR_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_LPPLL);
@@ -100,7 +100,7 @@ static inline void clk_ll_lp_pll_disable(void)
  *
  * @param mode Used to determine the xtal32k configuration parameters
  */
-static inline void clk_ll_xtal32k_enable(clk_ll_xtal32k_enable_mode_t mode)
+static inline __attribute__((always_inline)) void clk_ll_xtal32k_enable(clk_ll_xtal32k_enable_mode_t mode)
 {
     if (mode == CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL) {
         // No need to configure anything for OSC_SLOW_CLK
@@ -119,7 +119,7 @@ static inline void clk_ll_xtal32k_enable(clk_ll_xtal32k_enable_mode_t mode)
 /**
  * @brief Disable the 32kHz crystal oscillator
  */
-static inline void clk_ll_xtal32k_disable(void)
+static inline __attribute__((always_inline)) void clk_ll_xtal32k_disable(void)
 {
     // Disable xtal32k xpd
     CLEAR_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_XTAL32K);
@@ -130,7 +130,7 @@ static inline void clk_ll_xtal32k_disable(void)
  *
  * @return True if the 32kHz XTAL is enabled
  */
-static inline bool clk_ll_xtal32k_is_enabled(void)
+static inline __attribute__((always_inline)) bool clk_ll_xtal32k_is_enabled(void)
 {
     return REG_GET_FIELD(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_XTAL32K) == 1;
 }
@@ -138,7 +138,7 @@ static inline bool clk_ll_xtal32k_is_enabled(void)
 /**
  * @brief Enable the internal oscillator output for RC32K_CLK
  */
-static inline void clk_ll_rc32k_enable(void)
+static inline __attribute__((always_inline)) void clk_ll_rc32k_enable(void)
 {
     // Enable rc32k xpd status
     SET_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_RC32K);
@@ -147,7 +147,7 @@ static inline void clk_ll_rc32k_enable(void)
 /**
  * @brief Disable the internal oscillator output for RC32K_CLK
  */
-static inline void clk_ll_rc32k_disable(void)
+static inline __attribute__((always_inline)) void clk_ll_rc32k_disable(void)
 {
     // Disable rc32k xpd status
     CLEAR_PERI_REG_MASK(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_RC32K);
@@ -158,7 +158,7 @@ static inline void clk_ll_rc32k_disable(void)
  *
  * @return True if the oscillator is enabled
  */
-static inline bool clk_ll_rc32k_is_enabled(void)
+static inline __attribute__((always_inline)) bool clk_ll_rc32k_is_enabled(void)
 {
     return REG_GET_FIELD(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_RC32K) == 1;
 }
@@ -184,7 +184,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc_fast_disable(void)
  *
  * @return True if the oscillator is enabled
  */
-static inline bool clk_ll_rc_fast_is_enabled(void)
+static inline __attribute__((always_inline)) bool clk_ll_rc_fast_is_enabled(void)
 {
     return REG_GET_FIELD(PMU_HP_SLEEP_LP_CK_POWER_REG, PMU_HP_SLEEP_XPD_FOSC_CLK) == 1;
 }
@@ -192,7 +192,7 @@ static inline bool clk_ll_rc_fast_is_enabled(void)
 /**
  * @brief Enable the digital RC_FAST_CLK, which is used to support peripherals.
  */
-static inline void clk_ll_rc_fast_digi_enable(void)
+static inline __attribute__((always_inline)) void clk_ll_rc_fast_digi_enable(void)
 {
     LP_CLKRST.clk_to_hp.icg_hp_fosc = 1;
 }
@@ -200,7 +200,7 @@ static inline void clk_ll_rc_fast_digi_enable(void)
 /**
  * @brief Disable the digital RC_FAST_CLK, which is used to support peripherals.
  */
-static inline void clk_ll_rc_fast_digi_disable(void)
+static inline __attribute__((always_inline)) void clk_ll_rc_fast_digi_disable(void)
 {
     LP_CLKRST.clk_to_hp.icg_hp_fosc = 0;
 }
@@ -210,7 +210,7 @@ static inline void clk_ll_rc_fast_digi_disable(void)
  *
  * @return True if the digital RC_FAST_CLK is enabled
  */
-static inline bool clk_ll_rc_fast_digi_is_enabled(void)
+static inline __attribute__((always_inline)) bool clk_ll_rc_fast_digi_is_enabled(void)
 {
     return LP_CLKRST.clk_to_hp.icg_hp_fosc;
 }
@@ -218,7 +218,7 @@ static inline bool clk_ll_rc_fast_digi_is_enabled(void)
 /**
  * @brief Enable the digital XTAL32K_CLK, which is used to support peripherals.
  */
-static inline void clk_ll_xtal32k_digi_enable(void)
+static inline __attribute__((always_inline)) void clk_ll_xtal32k_digi_enable(void)
 {
     LP_CLKRST.clk_to_hp.icg_hp_xtal32k = 1;
 }
@@ -226,7 +226,7 @@ static inline void clk_ll_xtal32k_digi_enable(void)
 /**
  * @brief Disable the digital XTAL32K_CLK, which is used to support peripherals.
  */
-static inline void clk_ll_xtal32k_digi_disable(void)
+static inline __attribute__((always_inline)) void clk_ll_xtal32k_digi_disable(void)
 {
     LP_CLKRST.clk_to_hp.icg_hp_xtal32k = 0;
 }
@@ -236,7 +236,7 @@ static inline void clk_ll_xtal32k_digi_disable(void)
  *
  * @return True if the digital XTAL32K_CLK is enabled
  */
-static inline bool clk_ll_xtal32k_digi_is_enabled(void)
+static inline __attribute__((always_inline)) bool clk_ll_xtal32k_digi_is_enabled(void)
 {
     return LP_CLKRST.clk_to_hp.icg_hp_xtal32k;
 }
@@ -244,7 +244,7 @@ static inline bool clk_ll_xtal32k_digi_is_enabled(void)
 /**
  * @brief Enable the digital RC32K_CLK, which is used to support peripherals.
  */
-static inline void clk_ll_rc32k_digi_enable(void)
+static inline __attribute__((always_inline)) void clk_ll_rc32k_digi_enable(void)
 {
     LP_CLKRST.clk_to_hp.icg_hp_osc32k = 1;
 }
@@ -252,7 +252,7 @@ static inline void clk_ll_rc32k_digi_enable(void)
 /**
  * @brief Disable the digital RC32K_CLK, which is used to support peripherals.
  */
-static inline void clk_ll_rc32k_digi_disable(void)
+static inline __attribute__((always_inline)) void clk_ll_rc32k_digi_disable(void)
 {
     LP_CLKRST.clk_to_hp.icg_hp_osc32k = 0;
 }
@@ -262,7 +262,7 @@ static inline void clk_ll_rc32k_digi_disable(void)
  *
  * @return True if the digital RC32K_CLK is enabled
  */
-static inline bool clk_ll_rc32k_digi_is_enabled(void)
+static inline __attribute__((always_inline)) bool clk_ll_rc32k_digi_is_enabled(void)
 {
     return LP_CLKRST.clk_to_hp.icg_hp_osc32k;
 }
@@ -455,7 +455,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(voi
  *
  * @param in_sel One of the 32kHz clock sources (RC32K_CLK, XTAL32K_CLK, OSC_SLOW_CLK)
  */
-static inline void clk_ll_32k_calibration_set_target(soc_rtc_slow_clk_src_t in_sel)
+static inline __attribute__((always_inline)) void clk_ll_32k_calibration_set_target(soc_rtc_slow_clk_src_t in_sel)
 {
     switch (in_sel) {
     case SOC_RTC_SLOW_CLK_SRC_RC32K:
@@ -478,7 +478,7 @@ static inline void clk_ll_32k_calibration_set_target(soc_rtc_slow_clk_src_t in_s
  *
  * @return soc_rtc_slow_clk_src_t Currently selected calibration 32kHz clock (one of the 32kHz clocks)
  */
-static inline soc_rtc_slow_clk_src_t clk_ll_32k_calibration_get_target(void)
+static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_32k_calibration_get_target(void)
 {
     uint32_t clk_sel = PCR.ctrl_32k_conf.clk_32k_sel;
     switch (clk_sel) {
@@ -498,7 +498,7 @@ static inline soc_rtc_slow_clk_src_t clk_ll_32k_calibration_get_target(void)
  *
  * @param in_sel One of the clock sources in soc_rtc_slow_clk_src_t
  */
-static inline void clk_ll_rtc_slow_set_src(soc_rtc_slow_clk_src_t in_sel)
+static inline __attribute__((always_inline)) void clk_ll_rtc_slow_set_src(soc_rtc_slow_clk_src_t in_sel)
 {
     switch (in_sel) {
     case SOC_RTC_SLOW_CLK_SRC_RC_SLOW:
@@ -524,7 +524,7 @@ static inline void clk_ll_rtc_slow_set_src(soc_rtc_slow_clk_src_t in_sel)
  *
  * @return Currently selected clock source (one of soc_rtc_slow_clk_src_t values)
  */
-static inline soc_rtc_slow_clk_src_t clk_ll_rtc_slow_get_src(void)
+static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_rtc_slow_get_src(void)
 {
     uint32_t clk_sel = LP_CLKRST.lp_clk_conf.slow_clk_sel;
     switch (clk_sel) {
@@ -546,7 +546,7 @@ static inline soc_rtc_slow_clk_src_t clk_ll_rtc_slow_get_src(void)
  *
  * @param in_sel One of the clock sources in soc_lp_pll_clk_src_t
  */
-static inline void clk_ll_lp_pll_set_src(soc_lp_pll_clk_src_t in_sel)
+static inline __attribute__((always_inline)) void clk_ll_lp_pll_set_src(soc_lp_pll_clk_src_t in_sel)
 {
     uint32_t field_value;
     switch (in_sel) {
@@ -568,7 +568,7 @@ static inline void clk_ll_lp_pll_set_src(soc_lp_pll_clk_src_t in_sel)
  *
  * @return Currently selected clock source (one of soc_lp_pll_clk_src_t values)
  */
-static inline soc_lp_pll_clk_src_t clk_ll_lp_pll_get_src(void)
+static inline __attribute__((always_inline)) soc_lp_pll_clk_src_t clk_ll_lp_pll_get_src(void)
 {
     uint32_t clk_sel = REGI2C_READ_MASK(I2C_PMU, I2C_PMU_SEL_PLL8M_REF);
     switch (clk_sel) {
@@ -586,7 +586,7 @@ static inline soc_lp_pll_clk_src_t clk_ll_lp_pll_get_src(void)
  *
  * @return LP_PLL clock frequency, in MHz
  */
-static inline uint32_t clk_ll_lp_pll_get_freq_mhz(void)
+static inline __attribute__((always_inline)) uint32_t clk_ll_lp_pll_get_freq_mhz(void)
 {
     // The target has a fixed 8MHz LP_PLL
     return CLK_LL_PLL_8M_FREQ_MHZ;
@@ -597,7 +597,7 @@ static inline uint32_t clk_ll_lp_pll_get_freq_mhz(void)
  *
  * @param in_sel One of the clock sources in soc_rtc_fast_clk_src_t
  */
-static inline void clk_ll_rtc_fast_set_src(soc_rtc_fast_clk_src_t in_sel)
+static inline __attribute__((always_inline)) void clk_ll_rtc_fast_set_src(soc_rtc_fast_clk_src_t in_sel)
 {
     switch (in_sel) {
     case SOC_RTC_FAST_CLK_SRC_RC_FAST:
@@ -620,7 +620,7 @@ static inline void clk_ll_rtc_fast_set_src(soc_rtc_fast_clk_src_t in_sel)
  *
  * @return Currently selected clock source (one of soc_rtc_fast_clk_src_t values)
  */
-static inline soc_rtc_fast_clk_src_t clk_ll_rtc_fast_get_src(void)
+static inline __attribute__((always_inline)) soc_rtc_fast_clk_src_t clk_ll_rtc_fast_get_src(void)
 {
     uint32_t clk_sel = LP_CLKRST.lp_clk_conf.fast_clk_sel;
     switch (clk_sel) {
@@ -640,7 +640,7 @@ static inline soc_rtc_fast_clk_src_t clk_ll_rtc_fast_get_src(void)
  *
  * @param divider Divider of RC_FAST_CLK. Usually this divider is set to 1 (reg. value is 0) in bootloader stage.
  */
-static inline void clk_ll_rc_fast_set_divider(uint32_t divider)
+static inline __attribute__((always_inline)) void clk_ll_rc_fast_set_divider(uint32_t divider)
 {
     // No divider on the target
     HAL_ASSERT(divider == 1);
@@ -651,7 +651,7 @@ static inline void clk_ll_rc_fast_set_divider(uint32_t divider)
  *
  * @return Divider. Divider = (CK8M_DIV_SEL + 1).
  */
-static inline uint32_t clk_ll_rc_fast_get_divider(void)
+static inline __attribute__((always_inline)) uint32_t clk_ll_rc_fast_get_divider(void)
 {
     // No divider on the target, always return divider = 1
     return 1;
@@ -662,7 +662,7 @@ static inline uint32_t clk_ll_rc_fast_get_divider(void)
  *
  * @param divider Divider of RC_SLOW_CLK. Usually this divider is set to 1 (reg. value is 0) in bootloader stage.
  */
-static inline void clk_ll_rc_slow_set_divider(uint32_t divider)
+static inline __attribute__((always_inline)) void clk_ll_rc_slow_set_divider(uint32_t divider)
 {
     // No divider on the target
     HAL_ASSERT(divider == 1);
@@ -679,7 +679,7 @@ static inline void clk_ll_rc_slow_set_divider(uint32_t divider)
  * otherwise there will be a conflict with the low bit, which is used to disable logs
  * in the ROM code.
  */
-static inline void clk_ll_xtal_store_freq_mhz(uint32_t xtal_freq_mhz)
+static inline __attribute__((always_inline)) void clk_ll_xtal_store_freq_mhz(uint32_t xtal_freq_mhz)
 {
     // Read the status of whether disabling logging from ROM code
     uint32_t reg = READ_PERI_REG(RTC_XTAL_FREQ_REG) & RTC_DISABLE_ROM_LOG;
@@ -718,7 +718,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_load_freq_mhz(
  *
  * @param cal_value The calibration value of slow clock period in microseconds, in Q13.19 fixed point format
  */
-static inline void clk_ll_rtc_slow_store_cal(uint32_t cal_value)
+static inline __attribute__((always_inline)) void clk_ll_rtc_slow_store_cal(uint32_t cal_value)
 {
     REG_WRITE(RTC_SLOW_CLK_CAL_REG, cal_value);
 }
@@ -730,7 +730,7 @@ static inline void clk_ll_rtc_slow_store_cal(uint32_t cal_value)
  *
  * @return The calibration value of slow clock period in microseconds, in Q13.19 fixed point format
  */
-static inline uint32_t clk_ll_rtc_slow_load_cal(void)
+static inline __attribute__((always_inline)) uint32_t clk_ll_rtc_slow_load_cal(void)
 {
     return REG_READ(RTC_SLOW_CLK_CAL_REG);
 }
