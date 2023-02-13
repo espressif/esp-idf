@@ -24,18 +24,18 @@ typedef enum {
  * MMU Page size
  */
 typedef enum {
-    MMU_PAGE_8KB = 0x2000,
+    MMU_PAGE_8KB  = 0x2000,
     MMU_PAGE_16KB = 0x4000,
     MMU_PAGE_32KB = 0x8000,
     MMU_PAGE_64KB = 0x10000,
 } mmu_page_size_t;
 
 /**
- * MMU virtual address type
+ * MMU virtual address flags type
  */
 typedef enum {
-    MMU_VADDR_DATA,
-    MMU_VADDR_INSTRUCTION,
+    MMU_VADDR_DATA        = BIT(0),
+    MMU_VADDR_INSTRUCTION = BIT(1),
 } mmu_vaddr_t;
 
 /**

@@ -67,7 +67,7 @@ void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, 
     HAL_ASSERT(vaddr % page_size_in_bytes == 0);
     HAL_ASSERT(paddr % page_size_in_bytes == 0);
     HAL_ASSERT(mmu_ll_check_valid_paddr_region(mmu_id, paddr, len));
-    HAL_ASSERT(mmu_ll_check_valid_ext_vaddr_region(mmu_id, vaddr, len));
+    HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(mmu_id, vaddr, len, MMU_VADDR_DATA | MMU_VADDR_INSTRUCTION));
 
     uint32_t page_num = (len + page_size_in_bytes - 1) / page_size_in_bytes;
     uint32_t entry_id = 0;
@@ -89,7 +89,7 @@ void mmu_hal_unmap_region(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
 {
     uint32_t page_size_in_bytes = mmu_hal_pages_to_bytes(mmu_id, 1);
     HAL_ASSERT(vaddr % page_size_in_bytes == 0);
-    HAL_ASSERT(mmu_ll_check_valid_ext_vaddr_region(mmu_id, vaddr, len));
+    HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(mmu_id, vaddr, len, MMU_VADDR_DATA | MMU_VADDR_INSTRUCTION));
 
     uint32_t page_num = (len + page_size_in_bytes - 1) / page_size_in_bytes;
     uint32_t entry_id = 0;
@@ -103,7 +103,7 @@ void mmu_hal_unmap_region(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
 
 bool mmu_hal_vaddr_to_paddr(uint32_t mmu_id, uint32_t vaddr, uint32_t *out_paddr, mmu_target_t *out_target)
 {
-    HAL_ASSERT(mmu_ll_check_valid_ext_vaddr_region(mmu_id, vaddr, 1));
+    HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(mmu_id, vaddr, 1, MMU_VADDR_DATA | MMU_VADDR_INSTRUCTION));
     uint32_t entry_id = mmu_ll_get_entry_id(mmu_id, vaddr);
     if (!mmu_ll_check_entry_valid(mmu_id, entry_id)) {
         return false;
@@ -138,4 +138,9 @@ bool mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target
     *out_vaddr = vaddr_base | offset;
 
     return true;
+}
+
+bool mmu_hal_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start, uint32_t len, mmu_vaddr_t type)
+{
+    return mmu_ll_check_valid_ext_vaddr_region(mmu_id, vaddr_start, len, type);
 }

@@ -85,23 +85,27 @@ static inline void mmu_ll_set_page_size(uint32_t mmu_id, uint32_t size)
  * @param mmu_id      MMU ID
  * @param vaddr_start start of the virtual address
  * @param len         length, in bytes
+ * @param type        virtual address type, could be instruction type or data type. See `mmu_vaddr_t`
  *
  * @return
  *         True for valid
  */
 __attribute__((always_inline))
-static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start, uint32_t len)
+static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start, uint32_t len, mmu_vaddr_t type)
 {
     (void)mmu_id;
     uint32_t vaddr_end = vaddr_start + len - 1;
+    bool valid = false;
 
-    //DROM0 is an alias of the IBUS2
-    bool on_ibus = ((vaddr_start >= DROM0_ADDRESS_LOW) && (vaddr_end < DROM0_ADDRESS_HIGH)) ||
-                   ((vaddr_start >= IRAM0_CACHE_ADDRESS_LOW) && (vaddr_end < IRAM1_ADDRESS_HIGH));
+    if (type & MMU_VADDR_DATA) {
+        valid |= ((vaddr_start >= DROM0_ADDRESS_LOW) && (vaddr_end < DROM0_ADDRESS_HIGH)) || ((vaddr_start >= DPORT_CACHE_ADDRESS_LOW) && (vaddr_end < DRAM0_CACHE_ADDRESS_HIGH));
+    }
 
-    bool on_dbus = (vaddr_start >= DPORT_CACHE_ADDRESS_LOW) && (vaddr_end < DRAM0_CACHE_ADDRESS_HIGH);
+    if (type & MMU_VADDR_INSTRUCTION) {
+        valid |= ((vaddr_start >= IRAM0_CACHE_ADDRESS_LOW) && (vaddr_end < IRAM1_ADDRESS_HIGH));
+    }
 
-    return (on_ibus || on_dbus);
+    return valid;
 }
 
 /**

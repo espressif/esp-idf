@@ -95,14 +95,16 @@ static inline void mmu_ll_set_page_size(uint32_t mmu_id, uint32_t size)
  * @param mmu_id      MMU ID
  * @param vaddr_start start of the virtual address
  * @param len         length, in bytes
+ * @param type        virtual address type, could be instruction type or data type. See `mmu_vaddr_t`
  *
  * @return
  *         True for valid
  */
 __attribute__((always_inline))
-static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start, uint32_t len)
+static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start, uint32_t len, mmu_vaddr_t type)
 {
     (void)mmu_id;
+    (void)type;
     uint32_t vaddr_end = vaddr_start + len;
     return (ADDRESS_IN_IRAM0_CACHE(vaddr_start) && ADDRESS_IN_IRAM0_CACHE(vaddr_end)) || (ADDRESS_IN_DRAM0_CACHE(vaddr_start) && ADDRESS_IN_DRAM0_CACHE(vaddr_end));
 }

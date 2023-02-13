@@ -99,6 +99,20 @@ bool mmu_hal_vaddr_to_paddr(uint32_t mmu_id, uint32_t vaddr, uint32_t *out_paddr
  */
 bool mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr);
 
+
+/**
+ * Check if the vaddr region is valid
+ *
+ * @param mmu_id      MMU ID
+ * @param vaddr_start start of the virtual address
+ * @param len         length, in bytes
+ * @param type        virtual address type, could be instruction type or data type. See `mmu_vaddr_t`
+ *
+ * @return
+ *         True for valid
+ */
+bool mmu_hal_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start, uint32_t len, mmu_vaddr_t type);
+
 #ifdef __cplusplus
 }
 #endif
