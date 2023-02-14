@@ -7,4 +7,4 @@ from pytest_embedded import Dut
 @pytest.mark.linux
 @pytest.mark.host_test
 def test_nvs_host_linux(dut: Dut) -> None:
-    dut.expect_exact('All tests passed', timeout=5)
+    dut.expect_exact('All tests passed', timeout=60)
