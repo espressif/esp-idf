@@ -20,8 +20,14 @@
 
 void bootloader_init_mem(void)
 {
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
-    // disable apm filter // TODO: IDF-5909
+#if SOC_APM_SUPPORTED
+    /* By default, these access path filters are enable and allow the
+     * access to masters only if they are in TEE mode. Since all masters
+     * except HP CPU boots in REE mode, default setting of these filters
+     * will deny the access to all masters except HP CPU.
+     * So, at boot disabling these filters. They will enable as per the
+     * use case by TEE initialization code.
+     */
     REG_WRITE(LP_APM_FUNC_CTRL_REG, 0);
     REG_WRITE(LP_APM0_FUNC_CTRL_REG, 0);
     REG_WRITE(HP_APM_FUNC_CTRL_REG, 0);
