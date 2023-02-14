@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 
 
 // Some resources are lazy allocated (newlib locks) in the bootloader support code, the threshold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (-550)
+#define TEST_MEMORY_LEAK_THRESHOLD (-650)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;

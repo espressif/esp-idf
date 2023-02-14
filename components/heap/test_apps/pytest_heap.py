@@ -7,7 +7,6 @@ from pytest_embedded import Dut
 
 @pytest.mark.generic
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='test failed')
 @pytest.mark.parametrize(
     'config',
     [
@@ -17,9 +16,7 @@ from pytest_embedded import Dut
     ]
 )
 def test_heap_poisoning(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output(timeout=300)
+    dut.run_all_single_board_cases()
 
 
 @pytest.mark.generic
@@ -34,9 +31,7 @@ def test_heap_poisoning(dut: Dut) -> None:
     ]
 )
 def test_heap(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('*')
-    dut.expect_unity_test_output(timeout=300)
+    dut.run_all_single_board_cases()
 
 
 @pytest.mark.generic

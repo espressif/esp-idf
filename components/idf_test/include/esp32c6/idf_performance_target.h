@@ -6,6 +6,8 @@
 
 #pragma once
 
+#define IDF_PERFORMANCE_MAX_ESP_TIMER_GET_TIME_PER_CALL                         1200
+
 // ECC peripheral output at 160MHz
 #define IDF_PERFORMANCE_MAX_ECP_P192_POINT_MULTIPLY_OP                          5000
 #define IDF_PERFORMANCE_MAX_ECP_P192_POINT_VERIFY_OP                            60
