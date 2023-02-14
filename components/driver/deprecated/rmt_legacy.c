@@ -1183,12 +1183,12 @@ esp_err_t rmt_translator_init(rmt_channel_t channel, sample_to_rmt_t fn)
     const uint32_t block_size = mem_blocks * RMT_MEM_ITEM_NUM * sizeof(rmt_item32_t);
     if (p_rmt_obj[channel]->tx_buf == NULL) {
 #if !CONFIG_SPIRAM_USE_MALLOC
-        p_rmt_obj[channel]->tx_buf = (rmt_item32_t *)malloc(block_size);
+        p_rmt_obj[channel]->tx_buf = (rmt_item32_t *)calloc(1, block_size);
 #else
         if (p_rmt_obj[channel]->intr_alloc_flags & ESP_INTR_FLAG_IRAM) {
-            p_rmt_obj[channel]->tx_buf = (rmt_item32_t *)malloc(block_size);
-        } else {
             p_rmt_obj[channel]->tx_buf = (rmt_item32_t *)heap_caps_calloc(1, block_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        } else {
+            p_rmt_obj[channel]->tx_buf = (rmt_item32_t *)calloc(1, block_size);
         }
 #endif
         if (p_rmt_obj[channel]->tx_buf == NULL) {
