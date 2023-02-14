@@ -34,6 +34,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "sleep_cpu.c")
     endif()
 
+    if(CONFIG_SOC_PAU_SUPPORTED)
+        list(APPEND srcs "sleep_retention.c")
+    endif()
+
     # [refactor-todo]: requires "driver" for GPIO and RTC  (by sleep_gpio and sleep_modes)
     list(APPEND priv_requires driver esp_timer)
 
