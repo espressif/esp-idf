@@ -2,7 +2,7 @@
 ==================
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE"}
+{IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE", esp32h2="JTAG_SEL_ENABLE"}
 
 关于适配 OpenOCD 和 {IDF_TARGET_NAME} 的 JTAG 接口选择问题，请参考 :ref:`jtag-debugging-selecting-jtag-adapter` 章节。然后按照以下步骤进行设置，使其正常工作。
 
@@ -17,7 +17,7 @@
 
         烧录 ``DIS_USB_JTAG`` eFuse 后，USB_SERIAL_JTAG 和 {IDF_TARGET_NAME} 的 JTAG 接口之间的连接将被永久禁用，此后您可以将 JTAG 接口连接到 |jtag-gpio-list|。注意，烧录后，USB_SERIAL_JTAG 的 USB CDC 功能仍然可用，即仍然可以通过 USB CDC 进行烧录和查看日志。
 
-    .. only:: esp32s3 or esp32c6
+    .. only:: not esp32c3
 
         - 烧录 ``DIS_USB_JTAG`` eFuse 后，USB_SERIAL_JTAG 和 {IDF_TARGET_NAME} 的 JTAG 接口之间的连接将被永久禁用，此后您可以将 JTAG 接口连接到 |jtag-gpio-list|。注意，烧录后，USB_SERIAL_JTAG 的 USB CDC 功能仍然可用，即仍然可以通过 USB CDC 进行烧录和查看日志。
         - 烧录 ``{IDF_TARGET_JTAG_SEL_EFUSE}`` eFuse 后，JTAG 接口的选择将由 strapping 管脚 |jtag-sel-gpio| 来决定。{IDF_TARGET_NAME} 复位时，如果该 strapping 管脚为低电平，JTAG 接口将使用 |jtag-gpio-list|；如果为高电平，USB_SERIAL_JTAG 将被用作 JTAG 接口。
