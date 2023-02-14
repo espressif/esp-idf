@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -66,9 +66,9 @@ TEST_CASE("heap trace leak check", "[heap-trace]")
     heap_trace_get(0, &trace_b);
     TEST_ASSERT_EQUAL_PTR(b, trace_b.address);
 
-    /* buffer deletes trace_a when freed,
-       so trace_b at head of buffer */
-    TEST_ASSERT_EQUAL_PTR(recs[0].address, trace_b.address);
+    /* trace_a freed and placed back to unused list,
+       so recs[0].address is 0*/
+    TEST_ASSERT_EQUAL_PTR(recs[0].address, 0x00);
 
     heap_trace_stop();
 }

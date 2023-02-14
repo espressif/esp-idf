@@ -26,7 +26,7 @@ static bool tracing;
 static heap_trace_mode_t mode;
 
 /* Define struct: linked list of records */
-TAILQ_HEAD(heap_trace_record_list_struct_t, heap_trace_record_struct_t);
+TAILQ_HEAD(heap_trace_record_list_struct_t, heap_trace_record_t);
 typedef struct heap_trace_record_list_struct_t heap_trace_record_list_t;
 
 /* Linked List of Records */
@@ -58,11 +58,11 @@ typedef struct {
 
 // Forward Defines
 static void heap_trace_dump_base(bool internal_ram, bool psram);
-static void record_deep_copy(heap_trace_record_t *rDest, const heap_trace_record_t* rSrc);
-static void list_setup();
-static void list_remove(heap_trace_record_t* rRemove);
-static bool list_add(const heap_trace_record_t* rAppend);
-static heap_trace_record_t* list_pop_unused();
+static void record_deep_copy(heap_trace_record_t *rDest, const heap_trace_record_t* r_src);
+static void list_setup(void);
+static void list_remove(heap_trace_record_t* r_remove);
+static bool list_add(const heap_trace_record_t* r_append);
+static heap_trace_record_t* list_pop_unused(void);
 static heap_trace_record_t* list_find_address_reverse(void* p);
 
 /* The actual records. */
@@ -75,8 +75,8 @@ static size_t total_allocations;
 static size_t total_frees;
 
 /* Used to speed up heap_trace_get */
-static heap_trace_record_t* rGet;
-static size_t rGetIdx;
+static heap_trace_record_t* r_get;
+static size_t r_get_idx;
 
 esp_err_t heap_trace_init_standalone(heap_trace_record_t *record_buffer, size_t num_records)
 {
@@ -84,11 +84,7 @@ esp_err_t heap_trace_init_standalone(heap_trace_record_t *record_buffer, size_t 
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (num_records == 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (record_buffer == NULL) {
+    if (record_buffer == NULL || num_records == 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -114,7 +110,7 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 
     records.count = 0;
     records.has_overflowed = false;
-    list_setup(&records);
+    list_setup();
 
     total_allocations = 0;
     total_frees = 0;
@@ -148,9 +144,9 @@ size_t heap_trace_get_count(void)
     return records.count;
 }
 
-esp_err_t heap_trace_get(size_t index, heap_trace_record_t *rOut)
+esp_err_t heap_trace_get(size_t index, heap_trace_record_t *r_out)
 {
-    if (rOut == NULL) {
+    if (r_out == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -165,37 +161,37 @@ esp_err_t heap_trace_get(size_t index, heap_trace_record_t *rOut)
     } else {
 
         // Perf: speed up sequential access
-        if (rGet && rGetIdx == index - 1) {
+        if (r_get && r_get_idx == index - 1) {
 
-            rGet = TAILQ_NEXT(rGet, tailq);
-            rGetIdx = index;
+            r_get = TAILQ_NEXT(r_get, tailq);
+            r_get_idx = index;
 
         } else {
 
             // Iterate through through the linked list
 
-            rGet = TAILQ_FIRST(&records.list);
+            r_get = TAILQ_FIRST(&records.list);
 
             for (int i = 0; i < index; i++) {
 
-                if (rGet == NULL) {
+                if (r_get == NULL) {
                     break;
                 }
 
-                rGet = TAILQ_NEXT(rGet, tailq);
-                rGetIdx = i + 1;
+                r_get = TAILQ_NEXT(r_get, tailq);
+                r_get_idx = i + 1;
             }
         }
 
         // copy to destination
-        if (rGet) {
-            memcpy(rOut, rGet, sizeof(heap_trace_record_t));
+        if (r_get) {
+            memcpy(r_out, r_get, sizeof(heap_trace_record_t));
         } else {
             // this should not happen since we already
             // checked that index < records.count,
             // but could be indicative of memory corruption
             result = ESP_ERR_INVALID_STATE;
-            memset(rOut, 0, sizeof(heap_trace_record_t));
+            memset(r_out, 0, sizeof(heap_trace_record_t));
         }
     }
 
@@ -238,7 +234,7 @@ static void heap_trace_dump_base(bool internal_ram, bool psram)
     size_t delta_allocs = 0;
     size_t start_count = records.count;
 
-    printf("====== Heap Trace: %u records (%u capacity) ======\n",
+    esp_rom_printf("====== Heap Trace: %u records (%u capacity) ======\n",
         records.count, records.capacity);
 
     // Iterate through through the linked list
@@ -249,7 +245,7 @@ static void heap_trace_dump_base(bool internal_ram, bool psram)
 
         // check corruption
         if (rCur == NULL) {
-            printf("\nError: heap trace linked list is corrupt. expected more records.\n");
+            esp_rom_printf("\nError: heap trace linked list is corrupt. expected more records.\n");
             break;
         }
 
@@ -268,22 +264,22 @@ static void heap_trace_dump_base(bool internal_ram, bool psram)
                 label = ",    PSRAM";
             }
 
-            printf("%6d bytes (@ %p%s) allocated CPU %d ccount 0x%08x caller ",
+            esp_rom_printf("%6d bytes (@ %p%s) allocated CPU %d ccount 0x%08x caller ",
                    rCur->size, rCur->address, label, rCur->ccount & 1, rCur->ccount & ~3);
 
             for (int j = 0; j < STACK_DEPTH && rCur->alloced_by[j] != 0; j++) {
-                printf("%p%s", rCur->alloced_by[j],
+                esp_rom_printf("%p%s", rCur->alloced_by[j],
                        (j < STACK_DEPTH - 1) ? ":" : "");
             }
 
             if (mode != HEAP_TRACE_ALL || STACK_DEPTH == 0 || rCur->freed_by[0] == NULL) {
                 delta_size += rCur->size;
                 delta_allocs++;
-                printf("\n");
+                esp_rom_printf("\n");
             } else {
-                printf("\nfreed by ");
+                esp_rom_printf("\nfreed by ");
                 for (int j = 0; j < STACK_DEPTH; j++) {
-                    printf("%p%s", rCur->freed_by[j],
+                    esp_rom_printf("%p%s", rCur->freed_by[j],
                            (j < STACK_DEPTH - 1) ? ":" : "\n");
                 }
             }
@@ -292,30 +288,30 @@ static void heap_trace_dump_base(bool internal_ram, bool psram)
         rCur = TAILQ_NEXT(rCur, tailq);
     }
 
-    printf("====== Heap Trace Summary ======\n");
+    esp_rom_printf("====== Heap Trace Summary ======\n");
 
     if (mode == HEAP_TRACE_ALL) {
-        printf("Mode: Heap Trace All\n");
-        printf("%u bytes alive in trace (%u/%u allocations)\n",
+        esp_rom_printf("Mode: Heap Trace All\n");
+        esp_rom_printf("%u bytes alive in trace (%u/%u allocations)\n",
                delta_size, delta_allocs, heap_trace_get_count());
     } else {
-        printf("Mode: Heap Trace Leaks\n");
-        printf("%u bytes 'leaked' in trace (%u allocations)\n", delta_size, delta_allocs);
+        esp_rom_printf("Mode: Heap Trace Leaks\n");
+        esp_rom_printf("%u bytes 'leaked' in trace (%u allocations)\n", delta_size, delta_allocs);
     }
 
-    printf("records: %u (%u capacity, %u high water mark)\n",
+    esp_rom_printf("records: %u (%u capacity, %u high water mark)\n",
         records.count, records.capacity, records.high_water_mark);
 
-    printf("total allocations: %u\n", total_allocations);
-    printf("total frees: %u\n", total_frees);
+    esp_rom_printf("total allocations: %u\n", total_allocations);
+    esp_rom_printf("total frees: %u\n", total_frees);
 
     if (start_count != records.count) { // only a problem if trace isn't stopped before dumping
-        printf("(NB: New entries were traced while dumping, so trace dump may have duplicate entries.)\n");
+        esp_rom_printf("(NB: New entries were traced while dumping, so trace dump may have duplicate entries.)\n");
     }
     if (records.has_overflowed) {
-        printf("(NB: Internal Buffer has overflowed, so trace data is incomplete.)\n");
+        esp_rom_printf("(NB: Internal Buffer has overflowed, so trace data is incomplete.)\n");
     }
-    printf("================================\n");
+    esp_rom_printf("================================\n");
 
     portEXIT_CRITICAL(&trace_mux);
 }
@@ -355,6 +351,9 @@ static IRAM_ATTR void record_allocation(const heap_trace_record_t *rAllocation)
 
    For HEAP_TRACE_ALL, this means filling in the freed_by pointer.
    For HEAP_TRACE_LEAKS, this means removing the record from the log.
+
+   callers is an array of  STACK_DEPTH function pointer from the call stack
+   leading to the call of record_free.
 */
 static IRAM_ATTR void record_free(void *p, void **callers)
 {
@@ -390,7 +389,7 @@ static IRAM_ATTR void record_free(void *p, void **callers)
 }
 
 // connect all records into a linked list of 'unused' records
-static void list_setup()
+static void list_setup(void)
 {
     TAILQ_INIT(&records.list);
     TAILQ_INIT(&records.unused);
@@ -399,25 +398,25 @@ static void list_setup()
 
         heap_trace_record_t* rCur = &records.buffer[i];
 
-        TAILQ_INSERT_HEAD(&records.unused, rCur, tailq);
+        TAILQ_INSERT_TAIL(&records.unused, rCur, tailq);
     }
 }
 
-/* 1. removes record from records.list,
+/* 1. removes record r_remove from records.list,
    2. places it into records.unused */
-static IRAM_ATTR void list_remove(heap_trace_record_t* rRemove)
+static IRAM_ATTR void list_remove(heap_trace_record_t* r_remove)
 {
     assert(records.count > 0);
 
     // remove from records.list
-    TAILQ_REMOVE(&records.list, rRemove, tailq);
+    TAILQ_REMOVE(&records.list, r_remove, tailq);
 
     // set as unused
-    rRemove->address = 0;
-    rRemove->size = 0;
+    r_remove->address = 0;
+    r_remove->size = 0;
 
     // add to records.unused
-    TAILQ_INSERT_HEAD(&records.unused, rRemove, tailq);
+    TAILQ_INSERT_HEAD(&records.unused, r_remove, tailq);
 
     // decrement
     records.count--;
@@ -425,7 +424,7 @@ static IRAM_ATTR void list_remove(heap_trace_record_t* rRemove)
 
 
 // pop record from unused list
-static IRAM_ATTR heap_trace_record_t* list_pop_unused()
+static IRAM_ATTR heap_trace_record_t* list_pop_unused(void)
 {
     // no records left?
     if (records.count >= records.capacity) {
@@ -445,18 +444,18 @@ static IRAM_ATTR heap_trace_record_t* list_pop_unused()
 
 // deep copy a record.
 // Note: only copies the *allocation data*, not the next & prev ptrs
-static IRAM_ATTR void record_deep_copy(heap_trace_record_t *rDest, const heap_trace_record_t *rSrc)
+static IRAM_ATTR void record_deep_copy(heap_trace_record_t *rDest, const heap_trace_record_t *r_src)
 {
-    rDest->ccount  = rSrc->ccount;
-    rDest->address = rSrc->address;
-    rDest->size    = rSrc->size;
-    memcpy(rDest->freed_by,   rSrc->freed_by,   sizeof(void *) * STACK_DEPTH);
-    memcpy(rDest->alloced_by, rSrc->alloced_by, sizeof(void *) * STACK_DEPTH);
+    rDest->ccount  = r_src->ccount;
+    rDest->address = r_src->address;
+    rDest->size    = r_src->size;
+    memcpy(rDest->freed_by,   r_src->freed_by,   sizeof(void *) * STACK_DEPTH);
+    memcpy(rDest->alloced_by, r_src->alloced_by, sizeof(void *) * STACK_DEPTH);
 }
 
 // Append a record to records.list
-// Note: This deep copies rAppend
-static IRAM_ATTR bool list_add(const heap_trace_record_t *rAppend)
+// Note: This deep copies r_append
+static IRAM_ATTR bool list_add(const heap_trace_record_t *r_append)
 {
     if (records.count < records.capacity) {
 
@@ -468,7 +467,7 @@ static IRAM_ATTR bool list_add(const heap_trace_record_t *rAppend)
         assert(rDest != NULL);
 
         // copy allocation data
-        record_deep_copy(rDest, rAppend);
+        record_deep_copy(rDest, r_append);
 
         // append to records.list
         TAILQ_INSERT_TAIL(&records.list, rDest, tailq);
