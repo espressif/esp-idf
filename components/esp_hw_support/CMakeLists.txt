@@ -74,7 +74,8 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_PAU_SUPPORTED)
-        list(APPEND srcs "port/pau_regdma.c")
+        list(APPEND srcs "port/pau_regdma.c"
+                         "port/regdma_link.c")
     endif()
 
     if(CONFIG_SOC_PM_CPU_RETENTION_BY_SW)
