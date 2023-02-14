@@ -24,8 +24,9 @@
 #include "hal/twai_types.h"
 #include "soc/twai_periph.h"
 #include "soc/twai_struct.h"
+#include "soc/pcr_struct.h"
 
-#define TWAI_LL_GET_HW(controller_id) ((controller_id == 0) ? (&TWAI) : NULL)
+#define TWAI_LL_GET_HW(controller_id) ((controller_id == 0) ? (&TWAI0) : NULL)
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,7 +97,7 @@ ESP_STATIC_ASSERT(sizeof(twai_ll_frame_buffer_t) == 13, "TX/RX buffer type shoul
 __attribute__((always_inline))
 static inline void twai_ll_enable_clock(twai_dev_t *hw, bool en)
 {
-    (void)hw;
+    PCR.twai0_func_clk_conf.twai0_func_clk_en = en;
 }
 
 /**
@@ -108,8 +109,13 @@ static inline void twai_ll_enable_clock(twai_dev_t *hw, bool en)
 __attribute__((always_inline))
 static inline void twai_ll_set_clock_source(twai_dev_t *hw, twai_clock_source_t clk_src)
 {
-    (void)hw;
-    HAL_ASSERT(clk_src == TWAI_CLK_SRC_APB);
+    switch (clk_src) {
+    case TWAI_CLK_SRC_DEFAULT:
+        PCR.twai0_func_clk_conf.twai0_func_clk_sel = 0;
+        break;
+    default:
+        HAL_ASSERT(false);
+    }
 }
 
 /* ---------------------------- Mode Register ------------------------------- */
@@ -128,7 +134,7 @@ static inline void twai_ll_set_clock_source(twai_dev_t *hw, twai_clock_source_t 
 __attribute__((always_inline))
 static inline void twai_ll_enter_reset_mode(twai_dev_t *hw)
 {
-    hw->mode_reg.rm = 1;
+    hw->mode.reset_mode = 1;
 }
 
 /**
@@ -145,7 +151,7 @@ static inline void twai_ll_enter_reset_mode(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_exit_reset_mode(twai_dev_t *hw)
 {
-    hw->mode_reg.rm = 0;
+    hw->mode.reset_mode = 0;
 }
 
 /**
@@ -156,7 +162,7 @@ static inline void twai_ll_exit_reset_mode(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline bool twai_ll_is_in_reset_mode(twai_dev_t *hw)
 {
-    return hw->mode_reg.rm;
+    return hw->mode.reset_mode;
 }
 
 /**
@@ -170,15 +176,15 @@ static inline bool twai_ll_is_in_reset_mode(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_set_mode(twai_dev_t *hw, twai_mode_t mode)
 {
-    if (mode == TWAI_MODE_NORMAL) {           //Normal Operating mode
-        hw->mode_reg.lom = 0;
-        hw->mode_reg.stm = 0;
-    } else if (mode == TWAI_MODE_NO_ACK) {    //Self Test Mode (No Ack)
-        hw->mode_reg.lom = 0;
-        hw->mode_reg.stm = 1;
-    } else if (mode == TWAI_MODE_LISTEN_ONLY) {       //Listen Only Mode
-        hw->mode_reg.lom = 1;
-        hw->mode_reg.stm = 0;
+    if (mode == TWAI_MODE_NORMAL) { //Normal Operating mode
+        hw->mode.listen_only_mode = 0;
+        hw->mode.self_test_mode = 0;
+    } else if (mode == TWAI_MODE_NO_ACK) { //Self Test Mode (No Ack)
+        hw->mode.listen_only_mode = 0;
+        hw->mode.self_test_mode = 1;
+    } else if (mode == TWAI_MODE_LISTEN_ONLY) { //Listen Only Mode
+        hw->mode.listen_only_mode = 1;
+        hw->mode.self_test_mode = 0;
     }
 }
 
@@ -200,7 +206,7 @@ static inline void twai_ll_set_mode(twai_dev_t *hw, twai_mode_t mode)
 __attribute__((always_inline))
 static inline void twai_ll_set_cmd_tx(twai_dev_t *hw)
 {
-    hw->command_reg.tr = 1;
+    hw->cmd.tx_request = 1;
 }
 
 /**
@@ -218,7 +224,7 @@ static inline void twai_ll_set_cmd_tx(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_set_cmd_tx_single_shot(twai_dev_t *hw)
 {
-    hw->command_reg.val = 0x03; //Set command_reg.tr and command_reg.at simultaneously for single shot transmittion request
+    hw->cmd.val = 0x03; //Set cmd.tx_request and cmd.abort_tx simultaneously for single shot transmitting request
 }
 
 /**
@@ -238,7 +244,7 @@ static inline void twai_ll_set_cmd_tx_single_shot(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_set_cmd_abort_tx(twai_dev_t *hw)
 {
-    hw->command_reg.at = 1;
+    hw->cmd.abort_tx = 1;
 }
 
 /**
@@ -251,7 +257,7 @@ static inline void twai_ll_set_cmd_abort_tx(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_set_cmd_release_rx_buffer(twai_dev_t *hw)
 {
-    hw->command_reg.rrb = 1;
+    hw->cmd.release_buffer = 1;
 }
 
 /**
@@ -264,7 +270,7 @@ static inline void twai_ll_set_cmd_release_rx_buffer(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_set_cmd_clear_data_overrun(twai_dev_t *hw)
 {
-    hw->command_reg.cdo = 1;
+    hw->cmd.clear_data_overrun = 1;
 }
 
 /**
@@ -284,7 +290,7 @@ static inline void twai_ll_set_cmd_clear_data_overrun(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_set_cmd_self_rx_request(twai_dev_t *hw)
 {
-    hw->command_reg.srr = 1;
+    hw->cmd.self_rx_request = 1;
 }
 
 /**
@@ -303,7 +309,7 @@ static inline void twai_ll_set_cmd_self_rx_request(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_set_cmd_self_rx_single_shot(twai_dev_t *hw)
 {
-    hw->command_reg.val = 0x12; //Set command_reg.srr and command_reg.at simultaneously for single shot self reception request
+    hw->cmd.val = 0x12; //Set cmd.self_rx_request and cmd.abort_tx simultaneously for single shot self reception request
 }
 
 /* --------------------------- Status Register ------------------------------ */
@@ -317,7 +323,7 @@ static inline void twai_ll_set_cmd_self_rx_single_shot(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline uint32_t twai_ll_get_status(twai_dev_t *hw)
 {
-    return hw->status_reg.val;
+    return hw->status.val;
 }
 
 /**
@@ -329,7 +335,7 @@ static inline uint32_t twai_ll_get_status(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline bool twai_ll_is_fifo_overrun(twai_dev_t *hw)
 {
-    return hw->status_reg.dos;
+    return hw->status.status_overrun;
 }
 
 /**
@@ -341,7 +347,7 @@ static inline bool twai_ll_is_fifo_overrun(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline bool twai_ll_is_last_tx_successful(twai_dev_t *hw)
 {
-    return hw->status_reg.tcs;
+    return hw->status.status_transmission_complete;
 }
 
 /* -------------------------- Interrupt Register ---------------------------- */
@@ -358,7 +364,7 @@ static inline bool twai_ll_is_last_tx_successful(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline uint32_t twai_ll_get_and_clear_intrs(twai_dev_t *hw)
 {
-    return hw->interrupt_reg.val;
+    return hw->interrupt.val;
 }
 
 /* ----------------------- Interrupt Enable Register ------------------------ */
@@ -374,7 +380,7 @@ static inline uint32_t twai_ll_get_and_clear_intrs(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_set_enabled_intrs(twai_dev_t *hw, uint32_t intr_mask)
 {
-    hw->interrupt_enable_reg.val = intr_mask;
+    hw->interrupt_enable.val = intr_mask;
 }
 
 /* ------------------------ Bus Timing Registers --------------------------- */
@@ -405,16 +411,16 @@ static inline bool twai_ll_check_brp_validation(uint32_t brp)
  * @param triple_sampling Triple Sampling enable/disable
  *
  * @note Must be called in reset mode
- * @note ESP32H4 brp can be any even number between 2 to 32768
+ * @note ESP32H2 brp can be any even number between 2 to 32768
  */
 __attribute__((always_inline))
 static inline void twai_ll_set_bus_timing(twai_dev_t *hw, uint32_t brp, uint32_t sjw, uint32_t tseg1, uint32_t tseg2, bool triple_sampling)
 {
-    hw->bus_timing_0_reg.brp = (brp / 2) - 1;
-    hw->bus_timing_0_reg.sjw = sjw - 1;
-    hw->bus_timing_1_reg.tseg1 = tseg1 - 1;
-    hw->bus_timing_1_reg.tseg2 = tseg2 - 1;
-    hw->bus_timing_1_reg.sam = triple_sampling;
+    hw->bus_timing_0.baud_presc = (brp / 2) - 1;
+    hw->bus_timing_0.sync_jump_width = sjw - 1;
+    hw->bus_timing_1.time_segment1 = tseg1 - 1;
+    hw->bus_timing_1.time_segment2 = tseg2 - 1;
+    hw->bus_timing_1.time_sampling = triple_sampling;
 }
 
 /* ----------------------------- ALC Register ------------------------------- */
@@ -429,7 +435,7 @@ static inline void twai_ll_set_bus_timing(twai_dev_t *hw, uint32_t brp, uint32_t
 __attribute__((always_inline))
 static inline void twai_ll_clear_arb_lost_cap(twai_dev_t *hw)
 {
-    (void)hw->arbitration_lost_captue_reg.val;
+    (void)hw->arb_lost_cap.val;
 }
 
 /* ----------------------------- ECC Register ------------------------------- */
@@ -444,7 +450,7 @@ static inline void twai_ll_clear_arb_lost_cap(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_clear_err_code_cap(twai_dev_t *hw)
 {
-    (void)hw->error_code_capture_reg.val;
+    (void)hw->err_code_cap.val;
 }
 
 /* ----------------------------- EWL Register ------------------------------- */
@@ -460,7 +466,7 @@ static inline void twai_ll_clear_err_code_cap(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_set_err_warn_lim(twai_dev_t *hw, uint32_t ewl)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->error_warning_limit_reg, ewl, ewl);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->err_warning_limit, err_warning_limit, ewl);
 }
 
 /**
@@ -472,7 +478,7 @@ static inline void twai_ll_set_err_warn_lim(twai_dev_t *hw, uint32_t ewl)
 __attribute__((always_inline))
 static inline uint32_t twai_ll_get_err_warn_lim(twai_dev_t *hw)
 {
-    return hw->error_warning_limit_reg.val;
+    return hw->err_warning_limit.val;
 }
 
 /* ------------------------ RX Error Count Register ------------------------- */
@@ -489,7 +495,7 @@ static inline uint32_t twai_ll_get_err_warn_lim(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline uint32_t twai_ll_get_rec(twai_dev_t *hw)
 {
-    return hw->rx_error_counter_reg.val;
+    return hw->rx_err_cnt.val;
 }
 
 /**
@@ -503,7 +509,7 @@ static inline uint32_t twai_ll_get_rec(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_set_rec(twai_dev_t *hw, uint32_t rec)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_error_counter_reg, rxerr, rec);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_err_cnt, rx_err_cnt, rec);
 }
 
 /* ------------------------ TX Error Count Register ------------------------- */
@@ -519,7 +525,7 @@ static inline void twai_ll_set_rec(twai_dev_t *hw, uint32_t rec)
 __attribute__((always_inline))
 static inline uint32_t twai_ll_get_tec(twai_dev_t *hw)
 {
-    return hw->tx_error_counter_reg.val;
+    return hw->tx_err_cnt.val;
 }
 
 /**
@@ -533,7 +539,7 @@ static inline uint32_t twai_ll_get_tec(twai_dev_t *hw)
 __attribute__((always_inline))
 static inline void twai_ll_set_tec(twai_dev_t *hw, uint32_t tec)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_error_counter_reg, txerr, tec);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_err_cnt, tx_err_cnt, tec);
 }
 
 /* ---------------------- Acceptance Filter Registers ----------------------- */
@@ -548,15 +554,15 @@ static inline void twai_ll_set_tec(twai_dev_t *hw, uint32_t tec)
  * @note Must be called in reset mode
  */
 __attribute__((always_inline))
-static inline void twai_ll_set_acc_filter(twai_dev_t* hw, uint32_t code, uint32_t mask, bool single_filter)
+static inline void twai_ll_set_acc_filter(twai_dev_t *hw, uint32_t code, uint32_t mask, bool single_filter)
 {
-    uint32_t code_swapped = __builtin_bswap32(code);
-    uint32_t mask_swapped = __builtin_bswap32(mask);
+    uint32_t code_swapped = HAL_SWAP32(code);
+    uint32_t mask_swapped = HAL_SWAP32(mask);
     for (int i = 0; i < 4; i++) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->acceptance_filter.acr[i], byte, ((code_swapped >> (i * 8)) & 0xFF));
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->acceptance_filter.amr[i], byte, ((mask_swapped >> (i * 8)) & 0xFF));
     }
-    hw->mode_reg.afm = single_filter;
+    hw->mode.acceptance_filter_mode = single_filter;
 }
 
 /* ------------------------- TX/RX Buffer Registers ------------------------- */
@@ -591,7 +597,7 @@ static inline void twai_ll_get_rx_buffer(twai_dev_t *hw, twai_ll_frame_buffer_t 
 {
     //Copy RX buffer registers into frame
     for (int i = 0; i < 13; i++) {
-        rx_frame->bytes[i] =  HAL_FORCE_READ_U32_REG_FIELD(hw->tx_rx_buffer[i], byte);
+        rx_frame->bytes[i] = HAL_FORCE_READ_U32_REG_FIELD(hw->tx_rx_buffer[i], byte);
     }
 }
 
@@ -612,7 +618,7 @@ static inline void twai_ll_get_rx_buffer(twai_dev_t *hw, twai_ll_frame_buffer_t 
  */
 __attribute__((always_inline))
 static inline void twai_ll_format_frame_buffer(uint32_t id, uint8_t dlc, const uint8_t *data,
-                                              uint32_t flags, twai_ll_frame_buffer_t *tx_frame)
+        uint32_t flags, twai_ll_frame_buffer_t *tx_frame)
 {
     bool is_extd = flags & TWAI_MSG_FLAG_EXTD;
     bool is_rtr = flags & TWAI_MSG_FLAG_RTR;
@@ -626,12 +632,12 @@ static inline void twai_ll_format_frame_buffer(uint32_t id, uint8_t dlc, const u
 
     //Set ID. The ID registers are big endian and left aligned, therefore a bswap will be required
     if (is_extd) {
-        uint32_t id_temp = __builtin_bswap32((id & TWAI_EXTD_ID_MASK) << 3); //((id << 3) >> 8*(3-i))
+        uint32_t id_temp = HAL_SWAP32((id & TWAI_EXTD_ID_MASK) << 3); //((id << 3) >> 8*(3-i))
         for (int i = 0; i < 4; i++) {
             tx_frame->extended.id[i] = (id_temp >> (8 * i)) & 0xFF;
         }
     } else {
-        uint32_t id_temp =  __builtin_bswap16((id & TWAI_STD_ID_MASK) << 5); //((id << 5) >> 8*(1-i))
+        uint32_t id_temp =  HAL_SWAP16((id & TWAI_STD_ID_MASK) << 5); //((id << 5) >> 8*(1-i))
         for (int i = 0; i < 2; i++) {
             tx_frame->standard.id[i] = (id_temp >> (8 * i)) & 0xFF;
         }
@@ -656,7 +662,7 @@ static inline void twai_ll_format_frame_buffer(uint32_t id, uint8_t dlc, const u
  */
 __attribute__((always_inline))
 static inline void twai_ll_parse_frame_buffer(twai_ll_frame_buffer_t *rx_frame, uint32_t *id, uint8_t *dlc,
-                                             uint8_t *data, uint32_t *flags)
+        uint8_t *data, uint32_t *flags)
 {
     //Copy frame information
     *dlc = rx_frame->dlc;
@@ -672,14 +678,14 @@ static inline void twai_ll_parse_frame_buffer(twai_ll_frame_buffer_t *rx_frame, 
         for (int i = 0; i < 4; i++) {
             id_temp |= rx_frame->extended.id[i] << (8 * i);
         }
-        id_temp = __builtin_bswap32(id_temp) >> 3;  //((byte[i] << 8*(3-i)) >> 3)
+        id_temp = HAL_SWAP32(id_temp) >> 3;  //((byte[i] << 8*(3-i)) >> 3)
         *id = id_temp & TWAI_EXTD_ID_MASK;
     } else {
         uint32_t id_temp = 0;
         for (int i = 0; i < 2; i++) {
             id_temp |= rx_frame->standard.id[i] << (8 * i);
         }
-        id_temp = __builtin_bswap16(id_temp) >> 5;  //((byte[i] << 8*(1-i)) >> 5)
+        id_temp = HAL_SWAP16(id_temp) >> 5;  //((byte[i] << 8*(1-i)) >> 5)
         *id = id_temp & TWAI_STD_ID_MASK;
     }
 
@@ -706,7 +712,7 @@ static inline void twai_ll_parse_frame_buffer(twai_ll_frame_buffer_t *rx_frame, 
 __attribute__((always_inline))
 static inline uint32_t twai_ll_get_rx_msg_count(twai_dev_t *hw)
 {
-    return hw->rx_message_counter_reg.val;
+    return hw->rx_message_counter.val;
 }
 
 /* ------------------------- Clock Divider Register ------------------------- */
@@ -714,7 +720,7 @@ static inline uint32_t twai_ll_get_rx_msg_count(twai_dev_t *hw)
 /**
  * @brief   Set CLKOUT Divider and enable/disable
  *
- * Configure CLKOUT. CLKOUT is a pre-scaled version of APB CLK. Divider can be
+ * Configure CLKOUT. CLKOUT is a pre-scaled version of peripheral source clock. Divider can be
  * 1, or any even number from 2 to 490. Set the divider to 0 to disable CLKOUT.
  *
  * @param hw Start address of the TWAI registers
@@ -724,15 +730,16 @@ __attribute__((always_inline))
 static inline void twai_ll_set_clkout(twai_dev_t *hw, uint32_t divider)
 {
     if (divider >= 2 && divider <= 490) {
-        hw->clock_divider_reg.co = 0;
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clock_divider_reg, cd, (divider / 2) - 1);
+        hw->clock_divider.clock_off = 0;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clock_divider, cd, (divider / 2) - 1);
     } else if (divider == 1) {
         //Setting the divider reg to max value (255) means a divider of 1
-        hw->clock_divider_reg.co = 0;
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clock_divider_reg, cd, 255);
+        hw->clock_divider.clock_off = 0;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clock_divider, cd, 255);
     } else {
-        hw->clock_divider_reg.co = 1;
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clock_divider_reg, cd, 0);
+        hw->clock_divider.clock_off = 1;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clock_divider, cd, 0);
+
     }
 }
 

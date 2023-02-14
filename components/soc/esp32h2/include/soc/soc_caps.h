@@ -32,7 +32,7 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_MCPWM_SUPPORTED             1
-// #define SOC_TWAI_SUPPORTED              1 // TODO: IDF-6217
+#define SOC_TWAI_SUPPORTED              1
 // #define SOC_BT_SUPPORTED                1 // TODO: IDF-6416
 // #define SOC_IEEE802154_SUPPORTED        1 // TODO: IDF-6577
 #define SOC_GPTIMER_SUPPORTED              1
@@ -359,7 +359,6 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 #define SOC_TIMER_SUPPORT_ETM             (1)
 
-// TODO: IDF-6217 (Copy from esp32c6, need check)
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         1
 #define SOC_TWAI_CLK_SUPPORT_XTAL       1

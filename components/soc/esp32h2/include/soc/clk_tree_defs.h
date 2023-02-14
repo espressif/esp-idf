@@ -389,8 +389,8 @@ typedef enum {
  * @brief TWAI clock source
  */
 typedef enum {
-    TWAI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as the source clock */
-    TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL, /*!< Select XTAL as the default clock choice */
+    TWAI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as the source clock */
+    TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as the default clock choice */
 } soc_periph_twai_clk_src_t;
 
 //////////////////////////////////////////////////ADC///////////////////////////////////////////////////////////////////

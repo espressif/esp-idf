@@ -64,6 +64,17 @@ extern "C" {
 #define TWAI_TIMING_CONFIG_20KBITS()    {.quanta_resolution_hz = 400000, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
 #endif // (SOC_TWAI_BRP_MAX > 128) || (CONFIG_ESP32_REV_MIN_FULL >= 200)
 
+#if CONFIG_XTAL_FREQ == 32   // TWAI_CLK_SRC_XTAL = 32M
+#define TWAI_TIMING_CONFIG_25KBITS()    {.quanta_resolution_hz = 400000, .tseg_1 = 11, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
+#define TWAI_TIMING_CONFIG_50KBITS()    {.quanta_resolution_hz = 1000000, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
+#define TWAI_TIMING_CONFIG_100KBITS()   {.quanta_resolution_hz = 2000000, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
+#define TWAI_TIMING_CONFIG_125KBITS()   {.quanta_resolution_hz = 4000000, .tseg_1 = 23, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
+#define TWAI_TIMING_CONFIG_250KBITS()   {.quanta_resolution_hz = 4000000, .tseg_1 = 11, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
+#define TWAI_TIMING_CONFIG_500KBITS()   {.quanta_resolution_hz = 8000000, .tseg_1 = 11, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
+#define TWAI_TIMING_CONFIG_800KBITS()   {.quanta_resolution_hz = 16000000, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
+#define TWAI_TIMING_CONFIG_1MBITS()     {.quanta_resolution_hz = 16000000, .tseg_1 = 11, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
+
+#elif CONFIG_XTAL_FREQ == 40   // TWAI_CLK_SRC_XTAL = 40M
 #define TWAI_TIMING_CONFIG_25KBITS()    {.quanta_resolution_hz = 625000, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_50KBITS()    {.quanta_resolution_hz = 1000000, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_100KBITS()   {.quanta_resolution_hz = 2000000, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
@@ -72,6 +83,7 @@ extern "C" {
 #define TWAI_TIMING_CONFIG_500KBITS()   {.quanta_resolution_hz = 10000000, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_800KBITS()   {.quanta_resolution_hz = 20000000, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define TWAI_TIMING_CONFIG_1MBITS()     {.quanta_resolution_hz = 20000000, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
+#endif  //CONFIG_XTAL_FREQ
 
 /**
  * @brief   Initializer macro for filter configuration to accept all IDs
