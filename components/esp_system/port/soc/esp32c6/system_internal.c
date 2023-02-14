@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "soc/uart_reg.h"
 #include "hal/wdt_hal.h"
 #include "hal/modem_syscon_ll.h"
+#include "hal/modem_lpcon_ll.h"
 #include "esp_private/cache_err_int.h"
 
 #include "esp32c6/rom/cache.h"
@@ -72,6 +73,7 @@ void IRAM_ATTR esp_restart_noos(void)
     // REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
 
     modem_syscon_ll_reset_all(&MODEM_SYSCON);
+    modem_lpcon_ll_reset_all(&MODEM_LPCON);
 
     // Set Peripheral clk rst
     SET_PERI_REG_MASK(PCR_TIMERGROUP0_CONF_REG, PCR_TG0_RST_EN);
