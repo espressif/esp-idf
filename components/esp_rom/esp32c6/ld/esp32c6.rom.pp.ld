@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,7 +83,7 @@ ppAMPDU2Normal = 0x40000ccc;
 ppAssembleAMPDU = 0x40000cd0;
 ppCalFrameTimes = 0x40000cd4;
 ppCalSubFrameLength = 0x40000cd8;
-ppCalTxAMPDULength = 0x40000cdc;
+//ppCalTxAMPDULength = 0x40000cdc;
 ppCheckTxAMPDUlength = 0x40000ce0;
 ppDequeueRxq_Locked = 0x40000ce4;
 ppDequeueTxQ = 0x40000ce8;
@@ -184,7 +184,7 @@ lmacProcessTBSuccess = 0x40000e60;
 lmacProcessTxSuccess = 0x40000e64;
 lmacProcessAckTimeout = 0x40000e68;
 //lmacProcessTxComplete = 0x40000e6c;
-ppRemoveHTC = 0x40000e70;
+//ppRemoveHTC = 0x40000e70;
 get_estimated_batime = 0x40000e74;
 is_use_muedca = 0x40000e78;
 hal_mac_tx_clr_mplen = 0x40000e7c;
