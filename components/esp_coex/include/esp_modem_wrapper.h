@@ -25,22 +25,7 @@ void wifi_int_restore_wrapper(void *wifi_int_mux, uint32_t tmp);
 
 void task_yield_from_isr_wrapper(void);
 
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-
-void *internal_semphr_create_wrapper(uint32_t max, uint32_t init);
-
-void internal_semphr_delete_wrapper(void *semphr);
-
-int32_t internal_semphr_take_from_isr_wrapper(void *semphr, void *hptw);
-
-int32_t internal_semphr_give_from_isr_wrapper(void *semphr, void *hptw);
-
-int32_t internal_semphr_take_wrapper(void *semphr, uint32_t block_time_tick);
-
-int32_t internal_semphr_give_wrapper(void *semphr);
-
-#else
-
+#if !defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_IDF_TARGET_ESP32S2) && !defined(CONFIG_IDF_TARGET_ESP32S3)
 void * semphr_create_wrapper(uint32_t max, uint32_t init);
 
 void semphr_delete_wrapper(void *semphr);
@@ -52,7 +37,6 @@ int32_t semphr_give_from_isr_wrapper(void *semphr, void *hptw);
 int32_t semphr_take_wrapper(void *semphr, uint32_t block_time_tick);
 
 int32_t semphr_give_wrapper(void *semphr);
-
 #endif
 
 void timer_disarm_wrapper(void *timer);

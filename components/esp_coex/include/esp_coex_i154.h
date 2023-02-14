@@ -6,7 +6,7 @@
 #ifndef __COEXIST_I154_H__
 #define __COEXIST_I154_H__
 
-#ifdef SOC_IEEE802154_SUPPORTED
+#ifdef CONFIG_SOC_IEEE802154_SUPPORTED
 typedef enum {
     IEEE802154_RISK_TX = 1,
     IEEE802154_TX_AT,
@@ -17,7 +17,7 @@ typedef enum {
     IEEE802154_EVENT_MAX,
 } ieee802154_coex_event_t;
 
-void esp_ieee802154_coex_pti_set(ieee802154_coex_event_t event);
+void esp_coex_ieee802154_pti_set(ieee802154_coex_event_t event);
 #endif
 
 #endif

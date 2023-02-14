@@ -194,7 +194,7 @@ BLE MESH 共存状态描述
 
 .. list::
 
-    - 在完成共存程序编写的时候，您必须通过 menuconfig 选择 :ref:`CONFIG_ESP_WIFI_SW_COEXIST_ENABLE` 打开软件共存配置选项，否则就无法使用上文中提到的共存功能。
+    - 在完成共存程序编写的时候，您必须通过 menuconfig 选择 :ref:`CONFIG_ESP_COEX_SW_COEXIST_ENABLE` 打开软件共存配置选项，否则就无法使用上文中提到的共存功能。
 
     :esp32: - 为了在共存情况下获得更好的 Wi-Fi 和蓝牙的通信性能，建议将 Wi-Fi 协议栈的 task 和蓝牙 Controller 以及 Host 协议栈的 task 运行在不同的 CPU 上。您可以通过 :ref:`CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE` 和 :ref:`CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE` （或者 :ref:`CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE` ）选择将蓝牙 controller 以及 host 协议栈的 task 放在同一个 CPU 上，再通过 :ref:`CONFIG_ESP_WIFI_TASK_CORE_ID`  选择将 Wi-Fi 协议栈 task 放在另一个 CPU 上。
 

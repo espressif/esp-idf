@@ -61,7 +61,7 @@ echo "Checking libraries for target ${IDF_TARGET}..."
 check_md5 ${IDF_PATH}/components/esp_coex/include/esp_coexist_adapter.h g_coex_adapter_funcs_md5
 
 if [ "${IDF_TARGET}" == "esp32c6" ]; then
-    check_md5 ${IDF_PATH}/components/esp_coex/include/esp_coexist_i154.h g_coex_i154_funcs_md5
+    check_md5 ${IDF_PATH}/components/esp_coex/include/esp_coex_i154.h g_coex_i154_funcs_md5
 fi
 
 if [ $FAILURES -gt 0 ]; then
