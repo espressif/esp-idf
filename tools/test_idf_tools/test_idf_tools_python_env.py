@@ -1,10 +1,11 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from typing import List
 
@@ -72,6 +73,26 @@ class TestPythonInstall(unittest.TestCase):
         output = self.run_idf_tools(['install-python-env', '--no-constraints'])
         self.assertNotIn(CONSTR, output)
         self.assertIn(REQ_CORE, output)
+
+
+class TestCustomPythonPathInstall(TestPythonInstall):
+
+    def setUp(self):  # type: () -> None
+        self.CUSTOM_PYTHON_DIR = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.CUSTOM_PYTHON_DIR)
+        os.environ['IDF_PYTHON_ENV_PATH'] = self.CUSTOM_PYTHON_DIR
+
+    def test_default_arguments(self):  # type: () -> None
+        output = self.run_idf_tools(['check-python-dependencies'])
+        self.assertIn(f"{self.CUSTOM_PYTHON_DIR}/bin/python doesn't exist", output)
+        self.assertNotIn(PYTHON_DIR, output)
+
+        output = self.run_idf_tools(['install-python-env'])
+        self.assertIn(self.CUSTOM_PYTHON_DIR, output)
+        self.assertNotIn(PYTHON_DIR, output)
+
+        output = self.run_idf_tools(['check-python-dependencies'])
+        self.assertIn(self.CUSTOM_PYTHON_DIR, output)
 
 
 if __name__ == '__main__':

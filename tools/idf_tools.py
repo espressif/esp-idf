@@ -1332,8 +1332,8 @@ def get_python_env_path() -> Tuple[str, str, str, str]:
     python_ver_major_minor = '{}.{}'.format(sys.version_info.major, sys.version_info.minor)
 
     idf_version = get_idf_version()
-    idf_python_env_path = os.path.join(global_idf_tools_path or '', 'python_env',
-                                       'idf{}_py{}_env'.format(idf_version, python_ver_major_minor))
+    idf_python_env_path = os.getenv('IDF_PYTHON_ENV_PATH') or os.path.join(global_idf_tools_path or '', 'python_env',
+                                                                           'idf{}_py{}_env'.format(idf_version, python_ver_major_minor))
 
     python_exe, subdir = get_python_exe_and_subdir()
     idf_python_export_path = os.path.join(idf_python_env_path, subdir)
