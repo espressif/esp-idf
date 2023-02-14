@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,9 @@
 #include "esp_private/wifi.h"
 #include "esp_wifi_netif.h"
 #include <string.h>
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#include "apps_private/wifi_apps_private.h"
+#endif
 
 //
 //  Purpose of this module is to provide basic wifi initialization setup for
@@ -131,6 +134,24 @@ static void wifi_default_action_sta_got_ip(void *arg, esp_event_base_t base, int
     }
 }
 
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+static void wifi_default_action_nan_started(void *arg, esp_event_base_t base, int32_t event_id, void *data)
+{
+    if (s_wifi_netifs[WIFI_IF_NAN] != NULL) {
+        wifi_start(s_wifi_netifs[WIFI_IF_NAN], base, event_id, data);
+        esp_nan_action_start(s_wifi_netifs[WIFI_IF_NAN]);
+    }
+}
+
+static void wifi_default_action_nan_stopped(void *arg, esp_event_base_t base, int32_t event_id, void *data)
+{
+    if (s_wifi_netifs[WIFI_IF_NAN] != NULL) {
+        esp_netif_action_stop(s_wifi_netifs[WIFI_IF_NAN], base, event_id, data);
+        esp_nan_action_stop();
+    }
+}
+#endif
+
 /**
  * @brief Clear default handlers
  */
@@ -145,6 +166,10 @@ static esp_err_t clear_default_wifi_handlers(void)
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STOP, wifi_default_action_ap_stop);
 #endif
     esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, wifi_default_action_sta_got_ip);
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_NAN_STARTED, wifi_default_action_nan_started);
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_NAN_STOPPED, wifi_default_action_nan_stopped);
+#endif
     esp_unregister_shutdown_handler((shutdown_handler_t)esp_wifi_stop);
     wifi_default_handlers_set = false;
     return ESP_OK;
@@ -197,6 +222,18 @@ static esp_err_t set_default_wifi_handlers(void)
         goto fail;
     }
 
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+    err = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_NAN_STARTED, wifi_default_action_nan_started, NULL);
+    if (err != ESP_OK) {
+        goto fail;
+    }
+
+    err = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_NAN_STOPPED, wifi_default_action_nan_stopped, NULL);
+    if (err != ESP_OK) {
+        goto fail;
+    }
+#endif
+
     err = esp_register_shutdown_handler((shutdown_handler_t)esp_wifi_stop);
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         goto fail;
@@ -221,6 +258,14 @@ esp_err_t esp_wifi_set_default_wifi_sta_handlers(void)
  * @brief Set default handlers for AP (official API)
  */
 esp_err_t esp_wifi_set_default_wifi_ap_handlers(void)
+{
+    return set_default_wifi_handlers();
+}
+
+/**
+ * @brief Set default handlers for NAN (official API)
+ */
+esp_err_t esp_wifi_set_default_wifi_nan_handlers(void)
 {
     return set_default_wifi_handlers();
 }
@@ -284,6 +329,9 @@ static inline esp_err_t esp_netif_attach_wifi(esp_netif_t *esp_netif, wifi_inter
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
     && wifi_if != WIFI_IF_AP
 #endif
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+    && wifi_if != WIFI_IF_NAN
+#endif
     )) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -300,6 +348,13 @@ esp_err_t esp_netif_attach_wifi_station(esp_netif_t *esp_netif)
 esp_err_t esp_netif_attach_wifi_ap(esp_netif_t *esp_netif)
 {
     return esp_netif_attach_wifi(esp_netif, WIFI_IF_AP);
+}
+#endif
+
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+esp_err_t esp_netif_attach_wifi_nan(esp_netif_t *esp_netif)
+{
+    return esp_netif_attach_wifi(esp_netif, WIFI_IF_NAN);
 }
 #endif
 
@@ -336,6 +391,21 @@ esp_netif_t* esp_netif_create_default_wifi_sta(void)
     return netif;
 }
 
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+/**
+ * @brief User init default NAN (official API)
+ */
+esp_netif_t* esp_netif_create_default_wifi_nan(void)
+{
+    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_NAN();
+    esp_netif_t *netif = esp_netif_new(&cfg);
+    assert(netif);
+    esp_netif_attach_wifi_nan(netif);
+    esp_wifi_set_default_wifi_nan_handlers();
+    return netif;
+}
+#endif
+
 /**
  * @brief User init default wifi esp_netif object (official API)
  */
@@ -357,13 +427,15 @@ esp_netif_t* esp_netif_create_wifi(wifi_interface_t wifi_if, const esp_netif_inh
     };
     if (wifi_if == WIFI_IF_STA) {
         cfg.stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA;
-    } else
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
-    if (wifi_if == WIFI_IF_AP) {
+    } else if (wifi_if == WIFI_IF_AP) {
         cfg.stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP;
-    } else
 #endif
-    {
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+    } else if (wifi_if == WIFI_IF_NAN) {
+        cfg.stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_NAN;
+#endif
+    } else {
         return NULL;
     }
 

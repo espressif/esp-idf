@@ -397,8 +397,14 @@ menu "Wi-Fi"
             The number of hardware keys for encryption is fixed. And the espnow and SoftAP share the same
             hardware keys. So this configuration will affect the maximum connection number of SoftAP.
             Maximum espnow encrypted peers number + maximum number of connections of SoftAP = Max hardware keys number.
-
             When using ESP mesh, this value should be set to a maximum of 6.
+
+    config ESP_WIFI_NAN_ENABLE
+        bool "WiFi Aware"
+        default n
+        depends on SOC_WIFI_NAN_SUPPORT
+        help
+            Enable WiFi Aware (NAN) feature.
 
     config ESP_WIFI_ENABLE_WIFI_TX_STATS
         bool "Enable Wi-Fi transmission statistics"

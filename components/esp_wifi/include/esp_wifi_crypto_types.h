@@ -366,6 +366,26 @@ typedef int (*esp_aes_gmac_t)(const uint8_t *key, size_t keylen, const uint8_t *
                               const uint8_t *aad, size_t aad_len, uint8_t *mic);
 
 /**
+ * @brief SHA256 hash for data vector
+ * @num_elem: Number of elements in the data vector
+ * @addr: Pointers to the data areas
+ * @len: Lengths of the data blocks
+ * @mac: Buffer for the hash
+ * Returns: 0 on success, -1 on failure
+ */
+typedef int (*esp_sha256_vector_t)(size_t num_elem, const uint8_t *addr[], const size_t *len, uint8_t *buf);
+
+/**
+ * @brief CRC32 value in little endian.
+ *
+ * @param crc: Initial CRC value (result of last calculation or 0 for the first time)
+ * @param buf: Data buffer that used to calculate the CRC value
+ * @param len: Length of the data buffer
+ * @return CRC32 value
+ */
+typedef uint32_t (*esp_crc32_le_t)(uint32_t crc, uint8_t const *buf, uint32_t len);
+
+/**
   * @brief The crypto callback function structure used when do station security connect.
   *        The structure can be set as software crypto or the crypto optimized by device's
   *        hardware.
@@ -398,6 +418,8 @@ typedef struct {
     esp_ccmp_decrypt_t ccmp_decrypt;
     esp_ccmp_encrypt_t ccmp_encrypt;
     esp_aes_gmac_t aes_gmac;
+    esp_sha256_vector_t sha256_vector;
+    esp_crc32_le_t crc32;
 }wpa_crypto_funcs_t;
 
 /**

@@ -368,6 +368,12 @@ extern const wifi_osi_funcs_t *wifi_funcs;
 #define os_task_ms_to_tick(a) wifi_funcs->_task_ms_to_tick((a))
 #define os_timer_get_time(void) wifi_funcs->_esp_timer_get_time(void)
 
+#define os_event_group_create(void) wifi_funcs->_event_group_create(void)
+#define os_event_group_delete(void) wifi_funcs->_event_group_delete(void)
+#define os_event_group_wait_bits(a, b, c, d, e) wifi_funcs->_event_group_wait_bits((a), (b), (c), (d), (e))
+#define os_event_group_clear_bits(a, b) wifi_funcs->_event_group_clear_bits((a), (b))
+#define os_event_group_set_bits(a, b) wifi_funcs->_event_group_set_bits((a), (b))
+
 static inline void os_timer_setfn(void *ptimer, void *pfunction, void *parg)
 {
        return wifi_funcs->_timer_setfn(ptimer, pfunction, parg);

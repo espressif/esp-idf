@@ -29,10 +29,15 @@ if(CONFIG_ESP_WIFI_ENABLED)
         list(APPEND srcs
             "src/smartconfig_ack.c")
     endif()
+
+    if(CONFIG_ESP_WIFI_NAN_ENABLE)
+        list(APPEND srcs "wifi_apps/src/nan_app.c")
+    endif()
+
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "include"
+                    INCLUDE_DIRS "include" "wifi_apps/include"
                     REQUIRES esp_event esp_phy esp_netif
                     PRIV_REQUIRES driver esptool_py esp_pm esp_timer nvs_flash
                                   wpa_supplicant hal lwip esp_coex ${extra_priv_requires}

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,13 @@ static esp_err_t wifi_sta_receive(void *buffer, uint16_t len, void *eb)
 static esp_err_t wifi_ap_receive(void *buffer, uint16_t len, void *eb)
 {
     return s_wifi_rxcbs[WIFI_IF_AP](s_wifi_netifs[WIFI_IF_AP], buffer, len, eb);
+}
+#endif
+
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+static esp_err_t wifi_nan_receive(void *buffer, uint16_t len, void *eb)
+{
+    return s_wifi_rxcbs[WIFI_IF_NAN](s_wifi_netifs[WIFI_IF_NAN], buffer, len, eb);
 }
 #endif
 
@@ -143,6 +150,12 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
     case WIFI_IF_AP:
         rxcb = wifi_ap_receive;
+        break;
+#endif
+
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+    case WIFI_IF_NAN:
+        rxcb = wifi_nan_receive;
         break;
 #endif
 

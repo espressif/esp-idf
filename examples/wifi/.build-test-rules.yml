@@ -29,3 +29,8 @@ examples/wifi/iperf:
 examples/wifi/itwt:
   disable:
     - if: SOC_WIFI_HE_SUPPORT != 1
+
+examples/wifi/wifi_aware:
+  disable:
+    - if: SOC_WIFI_NAN_SUPPORT != 1
+      reason: targets esp32c3, esp32s3, esp32c2 and esp32c6 are not supported

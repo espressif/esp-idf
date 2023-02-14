@@ -52,6 +52,14 @@ esp_err_t esp_wifi_set_default_wifi_sta_handlers(void);
 esp_err_t esp_wifi_set_default_wifi_ap_handlers(void);
 
 /**
+ * @brief Sets default wifi event handlers for NAN interface
+ *
+ * @return
+ *  - ESP_OK on success, error returned from esp_event_handler_register if failed
+ */
+esp_err_t esp_wifi_set_default_wifi_nan_handlers(void);
+
+/**
  * @brief Clears default wifi event handlers for supplied network interface
  *
  * @param esp_netif instance of corresponding if object
@@ -80,6 +88,16 @@ esp_netif_t* esp_netif_create_default_wifi_ap(void);
  * @return pointer to esp-netif instance
  */
 esp_netif_t* esp_netif_create_default_wifi_sta(void);
+
+/**
+ * @brief Creates default WIFI NAN. In case of any init error this API aborts.
+ *
+ * @note The API creates esp_netif object with default WiFi station config,
+ * attaches the netif to wifi and registers default wifi handlers.
+ *
+ * @return pointer to esp-netif instance
+ */
+esp_netif_t* esp_netif_create_default_wifi_nan(void);
 
 /**
  * @brief Destroys default WIFI netif created with esp_netif_create_default_wifi_...() API.

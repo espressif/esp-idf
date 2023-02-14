@@ -230,3 +230,9 @@ err_t wlanif_init_ap(struct netif *netif) {
     netif->name[1] = 'p';
     return wlanif_init(netif);
 }
+
+err_t wlanif_init_nan(struct netif *netif) {
+    netif->name[0] = 'n';
+    netif->name[1] = 'a';
+    return wlanif_init(netif);
+}

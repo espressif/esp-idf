@@ -19,6 +19,9 @@
 #include "esp_coexist_internal.h"
 #include "esp_phy_init.h"
 #include "esp_private/phy.h"
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+#include "apps_private/wifi_apps_private.h"
+#endif
 
 #if (CONFIG_ESP_WIFI_RX_BA_WIN > CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM)
 #error "WiFi configuration check: WARNING, WIFI_RX_BA_WIN should not be larger than WIFI_DYNAMIC_RX_BUFFER_NUM!"
@@ -126,6 +129,10 @@ esp_err_t esp_wifi_deinit(void)
         esp_wifi_internal_reg_rxcb(WIFI_IF_AP,  NULL) != ESP_OK) {
         ESP_LOGW(TAG, "Failed to unregister Rx callbacks");
     }
+
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+    esp_nan_app_deinit();
+#endif
 
     esp_supplicant_deinit();
     err = esp_wifi_deinit_internal();
@@ -305,6 +312,11 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     adc2_cal_include(); //This enables the ADC2 calibration constructor at start up.
 
     esp_wifi_config_info();
+
+#ifdef CONFIG_ESP_WIFI_NAN_ENABLE
+    esp_nan_app_init();
+#endif
+
     return result;
 }
 
@@ -336,4 +348,31 @@ void ieee80211_ftm_attach(void)
 void net80211_softap_funcs_init(void)
 {
 }
+#endif
+
+#ifndef CONFIG_ESP_WIFI_NAN_ENABLE
+
+esp_err_t nan_start(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return ESP_OK;
+}
+
+esp_err_t nan_stop(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return ESP_OK;
+}
+
+int nan_input(void *p1, int p2, int p3)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return 0;
+}
+
+void nan_sm_handle_event(void *p1, int p2)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+
 #endif
