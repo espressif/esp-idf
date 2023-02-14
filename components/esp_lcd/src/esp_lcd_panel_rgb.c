@@ -26,7 +26,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_rom_gpio.h"
 #include "soc/soc_caps.h"
-#include "esp_private/esp_clk.h"
+#include "clk_tree.h"
 #include "hal/dma_types.h"
 #include "hal/gpio_hal.h"
 #include "esp_private/gdma.h"
@@ -114,7 +114,7 @@ struct esp_rgb_panel_t {
     int y_gap;                      // Extra gap in y coordinate, it's used when calculate the flush window
     portMUX_TYPE spinlock;          // to protect panel specific resource from concurrent access (e.g. between task and ISR)
     int lcd_clk_flags;              // LCD clock calculation flags
-    int rotate_mask;                     // panel rotate_mask mask, Or'ed of `panel_rotate_mask_t`
+    int rotate_mask;                // panel rotate_mask mask, Or'ed of `panel_rotate_mask_t`
     struct {
         uint32_t disp_en_level: 1;       // The level which can turn on the screen by `disp_gpio_num`
         uint32_t stream_mode: 1;         // If set, the LCD transfers data continuously, otherwise, it stops refreshing the LCD when transaction done
@@ -919,33 +919,23 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_
 
 static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_clock_source_t clk_src)
 {
-    esp_err_t ret = ESP_OK;
-    switch (clk_src) {
-    case LCD_CLK_SRC_PLL240M:
-        panel->src_clk_hz = 240000000;
-        break;
-    case LCD_CLK_SRC_PLL160M:
-        panel->src_clk_hz = 160000000;
-        break;
-    case LCD_CLK_SRC_XTAL:
-        panel->src_clk_hz = esp_clk_xtal_freq();
-        break;
-    default:
-        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "unsupported clock source: %d", clk_src);
-        break;
-    }
+    // get clock source frequency
+    uint32_t src_clk_hz = 0;
+    ESP_RETURN_ON_ERROR(clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
+                        TAG, "get clock source frequency failed");
+    panel->src_clk_hz = src_clk_hz;
     lcd_ll_select_clk_src(panel->hal.dev, clk_src);
 
-    if (clk_src == LCD_CLK_SRC_PLL240M || clk_src == LCD_CLK_SRC_PLL160M) {
+    // create pm lock based on different clock source
+    // clock sources like PLL and XTAL will be turned off in light sleep
 #if CONFIG_PM_ENABLE
-        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "rgb_panel", &panel->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
-        // hold the lock during the whole lifecycle of RGB panel
-        esp_pm_lock_acquire(panel->pm_lock);
-        ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock and hold the lock during the whole panel lifecycle");
+    ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "rgb_panel", &panel->pm_lock), TAG, "create pm lock failed");
+    // hold the lock during the whole lifecycle of RGB panel
+    esp_pm_lock_acquire(panel->pm_lock);
+    ESP_LOGD(TAG, "installed pm lock and hold the lock during the whole panel lifecycle");
 #endif
-    }
-    return ret;
+
+    return ESP_OK;
 }
 
 static IRAM_ATTR bool lcd_rgb_panel_fill_bounce_buffer(esp_rgb_panel_t *panel, uint8_t *buffer)

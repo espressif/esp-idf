@@ -25,7 +25,7 @@
 #include "esp_lcd_panel_io.h"
 #include "esp_rom_gpio.h"
 #include "soc/soc_caps.h"
-#include "esp_private/esp_clk.h"
+#include "clk_tree.h"
 #include "esp_memory_utils.h"
 #include "hal/dma_types.h"
 #include "hal/gpio_hal.h"
@@ -339,8 +339,8 @@ static esp_err_t panel_io_i80_register_event_callbacks(esp_lcd_panel_io_handle_t
 {
     lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
 
-    if(i80_device->on_color_trans_done != NULL) {
-        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was owerwritten!");
+    if (i80_device->on_color_trans_done != NULL) {
+        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was overwritten!");
     }
 
     i80_device->on_color_trans_done = cbs->on_color_trans_done;
@@ -486,27 +486,23 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
 
 static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_clock_source_t clk_src)
 {
-    esp_err_t ret = ESP_OK;
+    // get clock source frequency
+    uint32_t src_clk_hz = 0;
+    ESP_RETURN_ON_ERROR(clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
+                        TAG, "get clock source frequency failed");
+
     // force to use integer division, as fractional division might lead to clock jitter
     lcd_ll_select_clk_src(bus->hal.dev, clk_src);
     lcd_ll_set_group_clock_coeff(bus->hal.dev, LCD_PERIPH_CLOCK_PRE_SCALE, 0, 0);
-    switch (clk_src) {
-    case LCD_CLK_SRC_PLL160M:
-        bus->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
+
+    // save the resolution of the i80 bus
+    bus->resolution_hz = src_clk_hz / LCD_PERIPH_CLOCK_PRE_SCALE;
+    // create pm lock based on different clock source
+    // clock sources like PLL and XTAL will be turned off in light sleep
 #if CONFIG_PM_ENABLE
-        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i80_bus_lcd", &bus->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
-        ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock");
+    ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "i80_bus_lcd", &bus->pm_lock), TAG, "create pm lock failed");
 #endif
-        break;
-    case LCD_CLK_SRC_XTAL:
-        bus->resolution_hz = esp_clk_xtal_freq() / LCD_PERIPH_CLOCK_PRE_SCALE;
-        break;
-    default:
-        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG,  "unsupported clock source: %d", clk_src);
-        break;
-    }
-    return ret;
+    return ESP_OK;
 }
 
 static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus)
