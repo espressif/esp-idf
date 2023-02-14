@@ -185,9 +185,13 @@ void esp_deep_sleep_wakeup_io_reset(void)
 #if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
 ESP_SYSTEM_INIT_FN(esp_sleep_startup_init, BIT(0), 105)
 {
+/* If the TOP domain is powered off, the GPIO will also be powered off during sleep,
+   and all configurations in the sleep state of GPIO will not take effect.*/
+#if !CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     // Configure to isolate (disable the Input/Output/Pullup/Pulldown
     // function of the pin) all GPIO pins in sleep state
     esp_sleep_config_gpio_isolate();
+#endif
     // Enable automatic switching of GPIO configuration
     esp_sleep_enable_gpio_switch(true);
     return ESP_OK;
