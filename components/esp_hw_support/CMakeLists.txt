@@ -73,6 +73,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "esp_ds.c")
     endif()
 
+    if(CONFIG_SOC_PAU_SUPPORTED)
+        list(APPEND srcs "port/pau_regdma.c")
+    endif()
+
     if(CONFIG_SOC_PM_CPU_RETENTION_BY_SW)
         list(APPEND srcs "sleep_cpu_asm.S")
         set_property(TARGET ${COMPONENT_LIB}
