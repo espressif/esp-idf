@@ -555,7 +555,7 @@ void test_flash_wrap(const esp_partition_t* part)
 
     printf("Read back...\n");
     spi_flash_wrap_probe();
-    spI_flash_wrap_enable(FLASH_WRAP_SIZE_32B);
+    spi_flash_wrap_enable(FLASH_WRAP_SIZE_32B);
     esp_flash_read(chip, wrap_buf, offs + 3, sizeof(wrap_buf));
     spi_flash_wrap_disable();
 
