@@ -371,7 +371,11 @@ typedef enum {
 typedef enum {
     GLITCH_FILTER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL clock as the source clock */
     GLITCH_FILTER_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M, /*!< Select PLL_F48M clock as the source clock */
+#if CONFIG_IDF_ENV_FPGA
+    GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,      /*!< Select XTAL as the default clock choice */
+#else
     GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,  /*!< Select PLL_F48M clock as the default clock choice */
+#endif
 } soc_periph_glitch_filter_clk_src_t;
 
 //////////////////////////////////////////////////TWAI/////////////////////////////////////////////////////////////////
