@@ -144,7 +144,7 @@ bool spi_flash_hpm_dummy_adjust(void);
  * @return esp_err_t : ESP_OK for successful.
  *
  */
-esp_err_t spI_flash_wrap_enable(spi_flash_wrap_size_t wrap_size);
+esp_err_t spi_flash_wrap_enable(spi_flash_wrap_size_t wrap_size);
 
 /**
  * @brief Probe flash wrap method

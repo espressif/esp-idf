@@ -140,10 +140,8 @@ esp_err_t spi_flash_wrap_probe(void)
     return ret;
 }
 
-esp_err_t spI_flash_wrap_enable(spi_flash_wrap_size_t wrap_size)
+esp_err_t spi_flash_wrap_enable(spi_flash_wrap_size_t wrap_size)
 {
-    // Calculate pre_code. pre_code equals log(2)(wrap_size) - 3
-    // So the wrap_size:pre_code is 8:0, 16:1, 32:2, 64:3.
     return chip_wrap->chip_wrap_set(wrap_size);
 }
 
