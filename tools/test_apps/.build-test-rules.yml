@@ -11,6 +11,10 @@ tools/test_apps/build_system/ldgen_test:
       temporary: true
       reason: target esp32c2 is not supported yet
 
+tools/test_apps/linux_compatible/driver_mock:
+  enable:
+    - if: IDF_TARGET == "linux"
+
 tools/test_apps/linux_compatible/hello_world_linux_compatible:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
