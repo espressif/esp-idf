@@ -38,7 +38,6 @@ static void test_delay_task(void *p)
     vTaskDelete(NULL);
 }
 
-#if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6783
 TEST_CASE("esp_rom_delay_us produces correct delay on CPUs", "[delay]")
 {
     int delay_ms = 50;
@@ -61,7 +60,6 @@ TEST_CASE("esp_rom_delay_us produces correct delay on CPUs", "[delay]")
     ref_clock_deinit();
     vSemaphoreDelete(args.done);
 }
-#endif
 
 TEST_CASE("vTaskDelay produces correct delay on CPUs", "[delay]")
 {
