@@ -932,7 +932,7 @@ menu "Security features"
 
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE
             bool "Leave UART bootloader flash cache enabled"
-            depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+            depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT && (IDF_TARGET_ESP32 || SOC_EFUSE_DIS_DOWNLOAD_ICACHE || SOC_EFUSE_DIS_DOWNLOAD_DCACHE) # NOERROR
             default N
             help
                 If not set (default), the bootloader will permanently disable UART bootloader flash cache access on

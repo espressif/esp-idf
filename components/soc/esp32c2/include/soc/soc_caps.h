@@ -243,6 +243,7 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (1U)
 
 /*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 1
 #define SOC_EFUSE_DIS_PAD_JTAG 1
 #define SOC_EFUSE_DIS_DIRECT_BOOT 1
 

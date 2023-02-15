@@ -203,7 +203,7 @@ test_idf_tools:
   script:
     - cd ${IDF_PATH}/components/efuse/
     - ./efuse_table_gen.py -t "${IDF_TARGET}" ${IDF_PATH}/components/efuse/${IDF_TARGET}/esp_efuse_table.csv
-    - git diff --exit-code -- ${IDF_TARGET}/esp_efuse_table.c || { echo 'Differences found for ${IDF_TARGET} target. Please run make efuse_common_table or idf.py efuse-common-table and commit the changes.'; exit 1; }
+    - git diff --exit-code -- ${IDF_TARGET}/esp_efuse_table.c || { echo 'Differences found for ${IDF_TARGET} target. Please run idf.py efuse-common-table and commit the changes.'; exit 1; }
     - cd ${IDF_PATH}/components/efuse/test_efuse_host
     - ./efuse_tests.py
 
@@ -224,6 +224,11 @@ test_efuse_table_on_host_esp32c3:
   extends: .test_efuse_table_on_host_template
   variables:
     IDF_TARGET: esp32c3
+
+test_efuse_table_on_host_esp32h2:
+  extends: .test_efuse_table_on_host_template
+  variables:
+    IDF_TARGET: esp32h2
 
 test_efuse_table_on_host_esp32h4:
   extends: .test_efuse_table_on_host_template

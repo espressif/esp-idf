@@ -365,6 +365,7 @@
 #define SOC_AES_SUPPORT_GCM     (1)
 
 /*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 1
 #define SOC_EFUSE_DIS_DOWNLOAD_DCACHE 1
 #define SOC_EFUSE_HARD_DIS_JTAG 1
 #define SOC_EFUSE_SOFT_DIS_JTAG 1
