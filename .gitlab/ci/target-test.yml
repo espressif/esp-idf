@@ -54,6 +54,14 @@ example_test_pytest_esp32_generic:
   tags: [ esp32, generic ]
   parallel: 3
 
+example_test_pytest_esp32_esp32eco3:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, esp32eco3 ]
+
 example_test_pytest_esp32_ir_transceiver:
   extends:
     - .pytest_examples_dir_template
