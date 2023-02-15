@@ -41,6 +41,8 @@
 #include "esp32h4/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/secure_boot.h"
 #endif
 
 #define SUB_TYPE_ID(i) (i & 0x0F)

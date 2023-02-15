@@ -62,3 +62,7 @@ config ESP_ROM_HAS_REGI2C_BUG
 config ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
     bool
     default y
+
+config ESP_ROM_REV0_HAS_NO_ECDSA_INTERFACE
+    bool
+    default y
