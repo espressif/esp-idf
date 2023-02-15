@@ -7,10 +7,6 @@ contribute/style-guide
 contribute/copyright-guide
 contribute/install-pre-commit-hook
 contribute/index
-api-guides/performance/speed
-api-guides/performance/size
-api-guides/performance/ram-usage
-api-guides/performance/index
 api-guides/RF_calibration
 api-guides/blufi
 api-guides/coexist
