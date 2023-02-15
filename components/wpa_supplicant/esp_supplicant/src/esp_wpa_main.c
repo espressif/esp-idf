@@ -40,6 +40,7 @@
 #include "wps/wps_defs.h"
 
 const wifi_osi_funcs_t *wifi_funcs;
+struct wpa_funcs *wpa_cb;
 
 void  wpa_install_key(enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
                       u8 *seq, size_t seq_len, u8 *key, size_t key_len, enum key_flag key_flag)
@@ -310,7 +311,6 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bo
 int esp_supplicant_init(void)
 {
     int ret = ESP_OK;
-    struct wpa_funcs *wpa_cb;
 
     wifi_funcs = WIFI_OSI_FUNCS_INITIALIZER();
     if (!wifi_funcs) {
@@ -369,5 +369,6 @@ int esp_supplicant_deinit(void)
 {
     esp_supplicant_common_deinit();
     eloop_destroy();
+    wpa_cb = NULL;
     return esp_wifi_unregister_wpa_cb_internal();
 }

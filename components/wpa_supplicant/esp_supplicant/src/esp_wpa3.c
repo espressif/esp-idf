@@ -308,4 +308,12 @@ void esp_wifi_register_wpa3_cb(struct wpa_funcs *wpa_cb)
     wpa_cb->wpa3_parse_sae_msg = wpa3_parse_sae_msg;
 }
 
+void esp_wifi_unregister_wpa3_cb(void)
+{
+    extern struct wpa_funcs *wpa_cb;
+
+    wpa_cb->wpa3_build_sae_msg = NULL;
+    wpa_cb->wpa3_parse_sae_msg = NULL;
+
+}
 #endif /* CONFIG_WPA3_SAE */
