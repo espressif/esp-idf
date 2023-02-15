@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,10 @@ extern "C" {
 #endif
 
 #include "hal/lpwdt_ll.h"
+
+typedef lp_wdt_dev_t rwdt_dev_t;
+
+#define RWDT_DEV_GET() &LP_WDT
 
 #define rwdt_ll_enable(hw) \
         lpwdt_ll_enable(hw)
