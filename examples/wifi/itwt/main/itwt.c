@@ -250,7 +250,7 @@ void app_main(void)
 #if CONFIG_PM_ENABLE && 0
     sleep_clock_system_retention_init();
     sleep_clock_modem_retention_init();
-    sleep_peripheral_retention_init();
+    sleep_sys_periph_retention_init();
     sleep_modem_wifi_modem_state_init();
 
     // Configure dynamic frequency scaling:

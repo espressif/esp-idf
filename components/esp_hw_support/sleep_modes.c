@@ -78,7 +78,7 @@
 #include "esp32c6/rom/rtc.h"
 #include "hal/lp_timer_hal.h"
 #include "esp_private/esp_pmu.h"
-#include "esp_private/sleep_peripheral.h"
+#include "esp_private/sleep_sys_periph.h"
 #include "esp_private/sleep_clock.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"

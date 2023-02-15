@@ -29,11 +29,11 @@
 #include "soc/io_mux_reg.h"
 #include "soc/interrupt_matrix_reg.h"
 
-static __attribute__((unused)) const char *TAG = "sleep_peripheral";
+static __attribute__((unused)) const char *TAG = "sleep_sys_periph";
 
 #define SLEEP_RETENTION_PERIPHERALS_PRIORITY_DEFAULT    (REGDMA_LINK_PRI_6)
 
-esp_err_t sleep_peripheral_intr_matrix_retention_init(void)
+esp_err_t sleep_sys_periph_intr_matrix_retention_init(void)
 {
     #define N_REGS_INTR_MATRIX()    (((INTMTX_CORE0_CLOCK_GATE_REG - DR_REG_INTERRUPT_MATRIX_BASE) / 4) + 1)
 
@@ -47,7 +47,7 @@ esp_err_t sleep_peripheral_intr_matrix_retention_init(void)
     return ESP_OK;
 }
 
-esp_err_t sleep_peripheral_hp_system_retention_init(void)
+esp_err_t sleep_sys_periph_hp_system_retention_init(void)
 {
     #define N_REGS_HP_SYSTEM()      (((HP_SYSTEM_MEM_TEST_CONF_REG - DR_REG_HP_SYSTEM_BASE) / 4) + 1)
 
@@ -61,14 +61,14 @@ esp_err_t sleep_peripheral_hp_system_retention_init(void)
     return ESP_OK;
 }
 
-esp_err_t sleep_peripheral_tee_apm_retention_init(void)
+esp_err_t sleep_sys_periph_tee_apm_retention_init(void)
 {
     #define N_REGS_TEE()    (((TEE_CLOCK_GATE_REG - DR_REG_TEE_BASE) / 4) + 1)
     #define N_REGS_APM()    (((HP_APM_CLOCK_GATE_REG - DR_REG_HP_APM_BASE) / 4) + 1)
 
     const static sleep_retention_entries_config_t tee_apm_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TEEAPM_LINK(0), DR_REG_TEE_BASE, DR_REG_TEE_BASE, N_REGS_TEE(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },         /* tee */
-        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TEEAPM_LINK(0), DR_REG_HP_APM_BASE, DR_REG_HP_APM_BASE, N_REGS_APM(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }    /* apm */
+        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TEEAPM_LINK(1), DR_REG_HP_APM_BASE, DR_REG_HP_APM_BASE, N_REGS_APM(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }    /* apm */
     };
 
     esp_err_t err = sleep_retention_entries_create(tee_apm_regs_retention, ARRAY_SIZE(tee_apm_regs_retention), REGDMA_LINK_PRI_4, SLEEP_RETENTION_MODULE_TEE_APM);
@@ -77,7 +77,7 @@ esp_err_t sleep_peripheral_tee_apm_retention_init(void)
     return ESP_OK;
 }
 
-esp_err_t sleep_peripheral_uart0_retention_init(void)
+esp_err_t sleep_sys_periph_uart0_retention_init(void)
 {
     #define N_REGS_UART()   (((UART_ID_REG(0) - REG_UART_BASE(0)) / 4) + 1)
 
@@ -94,7 +94,7 @@ esp_err_t sleep_peripheral_uart0_retention_init(void)
     return ESP_OK;
 }
 
-esp_err_t sleep_peripheral_tg0_retention_init(void)
+esp_err_t sleep_sys_periph_tg0_retention_init(void)
 {
     #define N_REGS_TG()     (((TIMG_REGCLK_REG(0) - REG_TIMG_BASE(0)) / 4) + 1)
 
@@ -116,7 +116,7 @@ esp_err_t sleep_peripheral_tg0_retention_init(void)
     return ESP_OK;
 }
 
-esp_err_t sleep_peripheral_iomux_retention_init(void)
+esp_err_t sleep_sys_periph_iomux_retention_init(void)
 {
     #define N_REGS_IOMUX_0()    (((PERIPHS_IO_MUX_SPID_U - REG_IO_MUX_BASE) / 4) + 1)
     #define N_REGS_IOMUX_1()    (((GPIO_FUNC34_OUT_SEL_CFG_REG - GPIO_FUNC0_OUT_SEL_CFG_REG) / 4) + 1)
@@ -136,7 +136,7 @@ esp_err_t sleep_peripheral_iomux_retention_init(void)
     return ESP_OK;
 }
 
-esp_err_t sleep_peripheral_spimem_retention_init(void)
+esp_err_t sleep_sys_periph_spimem_retention_init(void)
 {
     #define N_REGS_SPI1_MEM_0()     (((SPI_MEM_SPI_SMEM_DDR_REG(1) - REG_SPI_MEM_BASE(1)) / 4) + 1)
     #define N_REGS_SPI1_MEM_1()     (((SPI_MEM_SPI_SMEM_AC_REG(1) - SPI_MEM_SPI_FMEM_PMS0_ATTR_REG(1)) / 4) + 1)
@@ -168,7 +168,7 @@ esp_err_t sleep_peripheral_spimem_retention_init(void)
     return ESP_OK;
 }
 
-esp_err_t sleep_peripheral_systimer_retention_init(void)
+esp_err_t sleep_sys_periph_systimer_retention_init(void)
 {
     #define N_REGS_SYSTIMER_0()     (((SYSTIMER_TARGET2_CONF_REG - SYSTIMER_TARGET0_HI_REG) / 4) + 1)
 
@@ -207,24 +207,24 @@ esp_err_t sleep_peripheral_systimer_retention_init(void)
     return ESP_OK;
 }
 
-esp_err_t sleep_peripheral_retention_init(void)
+esp_err_t sleep_sys_periph_retention_init(void)
 {
     esp_err_t err;
-    err = sleep_peripheral_intr_matrix_retention_init();
+    err = sleep_sys_periph_intr_matrix_retention_init();
     if(err) goto error;
-    err = sleep_peripheral_hp_system_retention_init();
+    err = sleep_sys_periph_hp_system_retention_init();
     if(err) goto error;
-    err = sleep_peripheral_tee_apm_retention_init();
+    err = sleep_sys_periph_tee_apm_retention_init();
     if(err) goto error;
-    err = sleep_peripheral_uart0_retention_init();
+    err = sleep_sys_periph_uart0_retention_init();
     if(err) goto error;
-    err = sleep_peripheral_tg0_retention_init();
+    err = sleep_sys_periph_tg0_retention_init();
     if(err) goto error;
-    err = sleep_peripheral_iomux_retention_init();
+    err = sleep_sys_periph_iomux_retention_init();
     if(err) goto error;
-    err = sleep_peripheral_spimem_retention_init();
+    err = sleep_sys_periph_spimem_retention_init();
     if(err) goto error;
-    err = sleep_peripheral_systimer_retention_init();
+    err = sleep_sys_periph_systimer_retention_init();
 
 error:
     return err;
@@ -246,9 +246,9 @@ bool IRAM_ATTR peripheral_domain_pd_allowed(void)
 }
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-ESP_SYSTEM_INIT_FN(sleep_peripheral_startup_init, BIT(0), 107)
+ESP_SYSTEM_INIT_FN(sleep_sys_periph_startup_init, BIT(0), 107)
 {
-    sleep_peripheral_retention_init();
+    sleep_sys_periph_retention_init();
     return ESP_OK;
 }
 #endif
