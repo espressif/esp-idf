@@ -1,6 +1,8 @@
 SPI Slave Driver
 ================
 
+:link_to_translation:`zh_CN:[中文]`
+
 SPI Slave driver is a program that controls {IDF_TARGET_NAME}'s SPI peripherals while they function as slaves.
 
 
@@ -61,7 +63,7 @@ Driver Features
 
 The SPI slave driver allows using the SPI peripherals as full-duplex Devices. The driver can send/receive transactions up to {IDF_TARGET_MAX_DATA_BUF} bytes in length, or utilize DMA to send/receive longer transactions. However, there are some :ref:`known issues <spi_dma_known_issues>` related to DMA.
 
-The SPI slave driver supports registering the SPI ISR to a certain CPU core. If multiple tasks try to access the same SPI Device, it is recommended to refactor your application so that each SPI peripheral is only accessed by a single task at a time. and use :cpp:member:`spi_bus_config_t::isr_cpu_id` to register the SPI ISR to the same core as SPI peripheral related tasks to ensure thread safe.
+The SPI slave driver supports registering the SPI ISR to a certain CPU core. If multiple tasks try to access the same SPI Device at the same time, it is recommended to refactor your application so that each SPI peripheral is only accessed by a single task at a time. Please also use :cpp:member:`spi_bus_config_t::isr_cpu_id` to register the SPI ISR to the same core as SPI peripheral related tasks to ensure thread safe.
 
 SPI Transactions
 ----------------
@@ -121,23 +123,31 @@ GPIO Matrix and IO_MUX
 
     The IO_MUX pins for SPI buses are given below.
 
-    +----------+------+------+
-    | Pin Name | SPI2 | SPI3 |
-    +          +------+------+
-    |          | GPIO Number |
-    +==========+======+======+
-    | CS0      | 15   | 5    |
-    +----------+------+------+
-    | SCLK     | 14   | 18   |
-    +----------+------+------+
-    | MISO     | 12   | 19   |
-    +----------+------+------+
-    | MOSI     | 13   | 23   |
-    +----------+------+------+
-    | QUADWP   | 2    | 22   |
-    +----------+------+------+
-    | QUADHD   | 4    | 21   |
-    +----------+------+------+
+    .. list-table::
+       :widths: 40 30 30
+       :header-rows: 1
+
+       * - Pin Name
+         - GPIO Number (SPI2)
+         - GPIO Number (SPI3)
+       * - CS0
+         - 15
+         - 5
+       * - SCLK
+         - 14
+         - 18
+       * - MISO
+         - 12
+         - 19
+       * - MOSI
+         - 13
+         - 23
+       * - QUADWP
+         - 2
+         - 22
+       * - QUADHD
+         - 4
+         - 21
 
 .. only:: not esp32
 

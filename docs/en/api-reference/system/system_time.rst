@@ -1,5 +1,6 @@
 System Time
 ===========
+
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_RTC_CLK_FRE:default="Not updated", esp32="150 kHz", esp32s2="90 kHz", esp32s3="136 kHz", esp32c3="136 kHz", esp32c2="136 kHz", esp32c6="150 kHz"}
