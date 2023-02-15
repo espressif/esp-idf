@@ -7,6 +7,7 @@ RUN : \
   && apt-get install -y \
     apt-utils \
     bison \
+    build-essential \
     ca-certificates \
     ccache \
     check \
