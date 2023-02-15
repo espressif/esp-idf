@@ -1,0 +1,8 @@
+[mapping:esp_mm]
+archive: libesp_mm.a
+entries:
+
+    esp_cache (noflash)
+
+    if IDF_TARGET_ESP32S3 = y:
+        cache_esp32 (noflash)

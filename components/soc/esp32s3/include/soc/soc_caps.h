@@ -117,6 +117,10 @@
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 
+/*-------------------------- CACHE CAPS --------------------------------------*/
+#define SOC_CACHE_WRITEBACK_SUPPORTED           1
+#define SOC_CACHE_FREEZE_SUPPORTED              1
+
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #define SOC_CPU_CORES_NUM               2
 #define SOC_CPU_INTR_NUM                32

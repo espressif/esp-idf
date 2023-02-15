@@ -307,6 +307,14 @@ config SOC_BROWNOUT_RESET_SUPPORTED
     bool
     default y
 
+config SOC_CACHE_WRITEBACK_SUPPORTED
+    bool
+    default y
+
+config SOC_CACHE_FREEZE_SUPPORTED
+    bool
+    default y
+
 config SOC_CPU_CORES_NUM
     int
     default 2

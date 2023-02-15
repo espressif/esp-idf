@@ -15,22 +15,7 @@
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "soc/soc_caps.h"
-
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/cache.h"
-#endif
+#include "rom/cache.h"
 
 /*------------------------------------------------------------------------------
  * Unified Cache Control
@@ -120,4 +105,64 @@ void cache_hal_invalidate_addr(uint32_t vaddr, uint32_t size)
     //Now only esp32 has 2 MMUs, this file doesn't build on esp32
     HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(0, vaddr, size, MMU_VADDR_DATA | MMU_VADDR_INSTRUCTION));
     Cache_Invalidate_Addr(vaddr, size);
+}
+
+#if SOC_CACHE_WRITEBACK_SUPPORTED
+void cache_hal_writeback_addr(uint32_t vaddr, uint32_t size)
+{
+    HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(0, vaddr, size, MMU_VADDR_DATA));
+    Cache_WriteBack_Addr(vaddr, size);
+}
+#endif  //#if SOC_CACHE_WRITEBACK_SUPPORTED
+
+
+#if SOC_CACHE_FREEZE_SUPPORTED
+void cache_hal_freeze(cache_type_t type)
+{
+#if SOC_SHARED_IDCACHE_SUPPORTED
+    Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
+#else
+    if (type == CACHE_TYPE_DATA) {
+        Cache_Freeze_DCache_Enable(CACHE_FREEZE_ACK_BUSY);
+    } else if (type == CACHE_TYPE_INSTRUCTION) {
+        Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
+    } else {
+        Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
+        Cache_Freeze_DCache_Enable(CACHE_FREEZE_ACK_BUSY);
+    }
+#endif
+}
+
+void cache_hal_unfreeze(cache_type_t type)
+{
+#if SOC_SHARED_IDCACHE_SUPPORTED
+    Cache_Freeze_ICache_Disable();
+#else
+    if (type == CACHE_TYPE_DATA) {
+        Cache_Freeze_DCache_Disable();
+    } else if (type == CACHE_TYPE_INSTRUCTION) {
+        Cache_Freeze_ICache_Disable();
+    } else {
+        Cache_Freeze_DCache_Disable();
+        Cache_Freeze_ICache_Disable();
+    }
+#endif
+}
+#endif  //#if SOC_CACHE_FREEZE_SUPPORTED
+
+uint32_t cache_hal_get_cache_line_size(cache_type_t type)
+{
+#if SOC_SHARED_IDCACHE_SUPPORTED
+    return Cache_Get_ICache_Line_Size();
+#else
+    uint32_t size = 0;
+    if (type == CACHE_TYPE_DATA) {
+        size = Cache_Get_DCache_Line_Size();
+    } else if (type == CACHE_TYPE_INSTRUCTION) {
+        size = Cache_Get_ICache_Line_Size();
+    } else {
+        HAL_ASSERT(false);
+    }
+    return size;
+#endif
 }
