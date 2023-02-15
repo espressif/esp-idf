@@ -14,6 +14,8 @@
 #include "mbedtls/ssl.h"
 #ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
 #include "mbedtls/ssl_ticket.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
 #endif
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
 #include "wolfssl/wolfcrypt/settings.h"
