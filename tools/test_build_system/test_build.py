@@ -3,15 +3,15 @@
 
 import logging
 import os
-import re
 import sys
+import textwrap
 import typing
 from pathlib import Path
-from typing import List, Pattern, Union
+from typing import List, Union
 
 import pytest
-from test_build_system_helpers import (APP_BINS, BOOTLOADER_BINS, PARTITION_BIN, EnvDict, IdfPyFunc, get_idf_build_env,
-                                       replace_in_file, run_cmake)
+from test_build_system_helpers import (APP_BINS, BOOTLOADER_BINS, PARTITION_BIN, EnvDict, IdfPyFunc, append_to_file,
+                                       check_file_contains, get_idf_build_env, replace_in_file, run_cmake)
 
 
 def run_cmake_and_build(*cmake_args: str, env: typing.Optional[EnvDict] = None) -> None:
@@ -27,15 +27,6 @@ def run_cmake_and_build(*cmake_args: str, env: typing.Optional[EnvDict] = None) 
 def assert_built(paths: Union[List[str], List[Path]]) -> None:
     for path in paths:
         assert os.path.exists(path)
-
-
-def check_file_contains(filename: Union[str, Path], what: Union[str, Pattern]) -> None:
-    with open(filename, 'r', encoding='utf-8') as f:
-        data = f.read()
-        if isinstance(what, str):
-            assert what in data
-        else:
-            assert re.search(what, data) is not None
 
 
 def test_build_alternative_directories(idf_py: IdfPyFunc, session_work_dir: Path, test_app_copy: Path) -> None:
@@ -114,3 +105,31 @@ def test_build_with_cmake_and_idf_path_unset(idf_py: IdfPyFunc, test_app_copy: P
     replace_in_file('CMakeLists.txt', '{IDF_PATH}', '{ci_idf_path}')
     run_cmake_and_build('-G', 'Ninja', '-D', 'ci_idf_path={}'.format(idf_path), '..', env=env)
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
+
+
+def test_build_skdconfig_phy_init_data(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('can build with phy_init_data')
+    (test_app_copy / 'sdkconfig.defaults').touch()
+    (test_app_copy / 'sdkconfig.defaults').write_text('CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION=y')
+    idf_py('reconfigure')
+    idf_py('build')
+    assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/phy_init_data.bin'])
+
+
+def test_build_compiler_flag_in_source_file(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Compiler flags on build command line are taken into account')
+    compiler_flag = textwrap.dedent("""
+                                    #ifndef USER_FLAG
+                                    #error "USER_FLAG is not defined!"
+                                    #endif
+                                    """)
+    append_to_file((test_app_copy / 'main' / 'build_test_app.c'), compiler_flag)
+    idf_py('build', '-DCMAKE_C_FLAGS=-DUSER_FLAG')
+
+
+@pytest.mark.usefixtures('test_app_copy')
+def test_build_compiler_flags_no_overwriting(idf_py: IdfPyFunc) -> None:
+    logging.info('Compiler flags cannot be overwritten')
+    # If the compiler flags are overriden, the following build command will
+    # cause issues at link time.
+    idf_py('build', '-DCMAKE_C_FLAGS=', '-DCMAKE_CXX_FLAGS=')
