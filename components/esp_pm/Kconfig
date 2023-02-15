@@ -104,6 +104,15 @@ menu "Power Management"
             If enabled, the I/D-cache tag memory will be retained in light sleep. Depending on the the
             cache configuration, if this option is enabled, it will consume up to 9 KB of internal RAM.
 
+    config PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        bool "Power down Digital Peripheral in light sleep"
+        depends on SOC_PAU_SUPPORTED
+        default n #TODO: enable by default if periph init/deinit management supported (WIFI-5252)
+        help
+            If enabled, the minimum digital peripheral register context to keep the system running is saved
+            and will reduce sleep current consumption by about 100 uA. enabling this option will consume
+            at least 4.55 KB of internal RAM.
+
     config PM_UPDATE_CCOMPARE_HLI_WORKAROUND
         bool
         default y if PM_ENABLE && BTDM_CTRL_HLI

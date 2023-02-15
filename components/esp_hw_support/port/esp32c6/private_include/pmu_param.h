@@ -151,6 +151,16 @@ typedef struct {
 }
 
 typedef struct {
+    pmu_hp_sys_cntl_reg_t   syscntl;
+} pmu_sleep_digital_config_t;
+
+#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(pd_flags) {               \
+    .syscntl = {                                                        \
+        .dig_pad_slp_sel = ((pd_flags) & PMU_SLEEP_PD_TOP) ? 0 : 1,     \
+    }                                                                   \
+}
+
+typedef struct {
     struct {
         pmu_hp_analog_t analog;
     } hp_sys;
@@ -266,9 +276,10 @@ typedef struct {
 }
 
 typedef struct {
-    pmu_sleep_power_config_t  power;
-    pmu_sleep_analog_config_t analog;
-    pmu_sleep_param_config_t  param;
+    pmu_sleep_power_config_t    power;
+    pmu_sleep_digital_config_t  digital;
+    pmu_sleep_analog_config_t   analog;
+    pmu_sleep_param_config_t    param;
 } pmu_sleep_config_t;
 
 typedef struct pmu_sleep_machine_constant {

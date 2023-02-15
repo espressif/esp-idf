@@ -148,6 +148,9 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags);
         config->analog = analog_default;
     } else {
+        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(pd_flags);
+        config->digital = digital_default;
+
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags);
         if (!(pd_flags & PMU_SLEEP_PD_MODEM)){
             analog_default.hp_sys.analog.slp_logic_dbias += 2;
@@ -177,6 +180,11 @@ static void pmu_sleep_power_init(pmu_context_t *ctx, const pmu_sleep_power_confi
         // TODO: IDF-5349
     } else {
     }
+}
+
+static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig)
+{
+    pmu_ll_hp_set_dig_pad_slp_sel   (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
 }
 
 static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_config_t *analog, bool dslp)
@@ -230,6 +238,9 @@ void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)
 {
     assert(PMU_instance());
     pmu_sleep_power_init(PMU_instance(), &config->power, dslp);
+    if(!dslp){
+        pmu_sleep_digital_init(PMU_instance(), &config->digital);
+    }
     pmu_sleep_analog_init(PMU_instance(), &config->analog, dslp);
     pmu_sleep_param_init(PMU_instance(), &config->param, dslp);
 }
