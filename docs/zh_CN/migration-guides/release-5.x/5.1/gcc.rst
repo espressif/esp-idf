@@ -1,4 +1,4 @@
-GCC 
+GCC
 ***
 
 :link_to_translation:`en:[English]`
@@ -7,23 +7,21 @@ GCC
 GCC 版本
 ========
 
-ESP-IDF 之前使用的 GCC 版本为 11.2.0，现已针对所有芯片目标升级至 GCC 12.2.0。若需要将您的代码从 GCC 11.2.0 迁移到 GCC 12.2.0，请参考以下官方 GCC 迁移指南。
+ESP-IDF 之前使用的 GCC 版本为 11.2.0，现已针对所有芯片目标升级至 GCC 12.2.0。若您需要将代码从 GCC 11.2.0 迁移到 GCC 12.2.0，请参考以下 GCC 官方迁移指南。
 
-* `迁移至 GCC 9 <https://gcc.gnu.org/gcc-9/porting_to.html>`_
-* `迁移至 GCC 10 <https://gcc.gnu.org/gcc-10/porting_to.html>`_
-* `迁移至 GCC 11 <https://gcc.gnu.org/gcc-11/porting_to.html>`_
+* `迁移至 GCC 12 <https://gcc.gnu.org/gcc-12/porting_to.html>`_
 
 
 警告
 ====
 
-升级至 GCC 12.2.0 后会触发新警告，或是导致原有警告内容发生变化。所有 GCC 警告的详细内容，请参考 `GCC 警告选项 <https://gcc.gnu.org/onlinedocs/gcc-12.2.0/gcc/Warning-Options.html>`_。建议用户仔细检查代码，并设法解决这些警告。但由于某些警告的特殊性及用户代码的复杂性，有些警告可能为误报，需要进行关键修复。在这种情况下，用户可以采取多种方式来抑制这些警告。本节介绍了用户可能遇到的常见警告及如何抑制这些警告。
+升级至 GCC 12.2.0 后会触发新警告，或是导致原有警告内容发生变化。了解所有 GCC 警告的详细内容，请参考 `GCC 警告选项 <https://gcc.gnu.org/onlinedocs/gcc-12.2.0/gcc/Warning-Options.html>`_。建议用户仔细检查代码，并尽量解决这些警告。但由于某些警告的特殊性及用户代码的复杂性，有些警告可能为误报，需要进行关键修复。在这种情况下，用户可以采取多种方式来抑制警告。本节介绍了用户可能遇到的常见警告及如何修复这些警告。
 
 
 ``-Wuse-after-free``
 --------------------
 
-Typically, this warning should not produce false-positives for release-level code. But may appear in test cases. There is an example of how it was fixed in IDF's test_realloc.c 
+一般而言，此警告不会针对发布版本的代码产生误报，但是这种情况可能出现在测试用例中。以下示例为如何在 IDF 的 test_realloc.c 中修复该警告。
 
 .. code-block:: c
 
@@ -31,7 +29,7 @@ Typically, this warning should not produce false-positives for release-level cod
     void *y = realloc(x, 48);
     TEST_ASSERT_EQUAL_PTR(x, y);
 
-Pointers may be converted to int to avoid warning ``-Wuse-after-free``
+将指针转换为 int 可以避免出现 ``-Wuse-after-free`` 警告。
 
 .. code-block:: c
 
@@ -42,9 +40,9 @@ Pointers may be converted to int to avoid warning ``-Wuse-after-free``
 ``-Waddress``
 -------------
 
-GCC 12.2.0 introduces an enhanced version of the ``-Waddress`` warning option, which is now more eager in detecting the checking of pointers to array in if-statements.
+GCC 12.2.0 引入了增强版 ``-Waddress`` 警告选项，该选项对 if 语句中的数组指针检查更加敏感。
 
-The following code will trigger the warning:
+以下代码将触发警告：
 
 .. code-block:: c
 
@@ -54,7 +52,7 @@ The following code will trigger the warning:
         memset(array, 0xff, sizeof(array));
 
 
-Eliminating unnecessary check resolves the warning.
+删去不必要的检查可以消除警告。
 
 .. code-block:: c
 
@@ -63,18 +61,18 @@ Eliminating unnecessary check resolves the warning.
     memset(array, 0xff, sizeof(array));
 
 
-RISCV Builds Outside of IDF
-===========================
+在 IDF 框架之外构建 RISC-V
+============================
 
-The RISCV extensions ``zicsr`` and ``zifencei`` have been separated from the ``I`` extension. GCC 12 reflects this change, and as a result, when building for RISCV ESP32 chips outside of the IDF framework, you must include the ``_zicsr_zifencei`` postfix when specifying the -march option in your build system.
+RISC-V 的 ``zicsr`` 和 ``zifencei`` 扩展现已独立于 ``I`` 扩展，这一变化在 GCC 12 中也有所体现。因此，在 IDF 框架之外构建 RISC-V ESP32 芯片时，请在构建系统中指定 -march 选项时添加 ``_zicsr_zifencei`` 后缀。示例如下。
 
-Example:
+原为：
 
 .. code-block:: bash
 
   riscv32-esp-elf-gcc main.c -march=rv32imac
 
-Is now replaced with:
+现为：
 
 .. code-block:: bash
 
