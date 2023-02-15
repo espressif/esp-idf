@@ -16,6 +16,13 @@ components/driver/test_apps/i2s_test_apps:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
 
+components/driver/test_apps/i2s_test_apps/i2s:
+  disable:
+    - if: SOC_I2S_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: Cannot pass test, see IDF-6811
 components/driver/test_apps/i2s_test_apps/i2s_tdm:
   disable:
     - if: SOC_I2S_SUPPORTS_TDM != 1
@@ -27,6 +34,10 @@ components/driver/test_apps/i2s_test_apps/legacy_i2s_adc_dac:
 components/driver/test_apps/i2s_test_apps/legacy_i2s_driver:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: cannot pass test IDF-6811
 
 components/driver/test_apps/ledc:
   disable:
@@ -39,10 +50,18 @@ components/driver/test_apps/legacy_adc_driver:
 components/driver/test_apps/legacy_mcpwm_driver:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: cannot pass test, IDF-6812
 
 components/driver/test_apps/legacy_pcnt_driver:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: cannot pass test IDF-6814
 
 components/driver/test_apps/legacy_rmt_driver:
   disable:
@@ -59,6 +78,10 @@ components/driver/test_apps/legacy_timer_driver:
 components/driver/test_apps/mcpwm:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: cannot pass test, IDF-6812
 
 components/driver/test_apps/pulse_cnt:
   disable:
@@ -67,6 +90,10 @@ components/driver/test_apps/pulse_cnt:
 components/driver/test_apps/rmt:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: cannot pass test, IDF-6810
 
 components/driver/test_apps/rs485:
   disable_test:

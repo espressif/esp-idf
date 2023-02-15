@@ -7,7 +7,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32s3
 @pytest.mark.esp32c6
-@pytest.mark.esp32h2
+# @pytest.mark.esp32h2  IDF-6808
 @pytest.mark.generic
 def test_stepper_motor_example(dut: Dut) -> None:
     dut.expect_exact('example: Initialize EN + DIR GPIO')

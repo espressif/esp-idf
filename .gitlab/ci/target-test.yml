@@ -157,6 +157,14 @@ example_test_pytest_esp32c6_generic:
     - build_pytest_examples_esp32c6
   tags: [ esp32c6, generic ]
 
+example_test_pytest_esp32h2_generic:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32h2
+  needs:
+    - build_pytest_examples_esp32h2
+  tags: [ esp32h2, generic ]
+
 example_test_pytest_esp32_ethernet_ota:
   extends:
     - .pytest_examples_dir_template
@@ -775,6 +783,15 @@ component_ut_pytest_esp32c6_generic:
   tags: [ esp32c6, generic ]
   parallel: 2
 
+component_ut_pytest_esp32h2_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32h2
+  needs:
+    - build_pytest_components_esp32h2
+  tags: [ esp32h2, generic ]
+  parallel: 2
+
 component_ut_pytest_esp32c6_generic_multi_device:
   extends:
     - .pytest_components_dir_template
@@ -887,6 +904,14 @@ test_app_test_pytest_esp32c6_generic:
     - build_pytest_test_apps_esp32c6
   tags: [ esp32c6, generic ]
 
+test_app_test_pytest_esp32h2_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32h2
+  needs:
+    - build_pytest_test_apps_esp32h2
+  tags: [ esp32h2, generic ]
+
 test_app_test_pytest_esp32s3_mspi_f8r8:
   extends:
     - .pytest_test_apps_dir_template
@@ -995,6 +1020,11 @@ test_weekend_mqtt:
     - .example_test_template
     - .rules:test:example_test-esp32c6
 
+.example_test_esp32h2_template:
+  extends:
+    - .example_test_template
+    - .rules:test:example_test-esp32h2
+
 .example_test_esp32s3_template:
   extends:
     - .example_test_template
@@ -1076,6 +1106,12 @@ example_test_C6_GENERIC:
     - ESP32C6
     - Example_GENERIC
 
+example_test_H2_GENERIC:
+  extends: .example_test_esp32h2_template
+  tags:
+    - ESP32H2
+    - Example_GENERIC
+
 .test_app_template:
   extends: .target_test_job_template
   needs:
@@ -1109,6 +1145,11 @@ example_test_C6_GENERIC:
   extends:
     - .test_app_template
     - .rules:test:custom_test-esp32c6
+
+.test_app_esp32h2_template:
+  extends:
+    - .test_app_template
+    - .rules:test:custom_test-esp32h2
 
 .test_app_esp32s3_template:
   extends:
@@ -1153,6 +1194,11 @@ example_test_C6_GENERIC:
   extends:
     - .unit_test_template
     - .rules:test:unit_test-esp32c6
+
+.unit_test_esp32h2_template:
+  extends:
+    - .unit_test_template
+    - .rules:test:unit_test-esp32h2
 
 UT_001:
   extends: .unit_test_esp32_template
@@ -1301,6 +1347,13 @@ UT_C6:
   parallel: 8
   tags:
     - ESP32C6_IDF
+    - UT_T1_1
+
+UT_H2:
+  extends: .unit_test_esp32h2_template
+  parallel: 5
+  tags:
+    - ESP32H2_IDF
     - UT_T1_1
 
 UT_S3:

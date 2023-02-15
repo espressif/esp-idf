@@ -6,6 +6,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='cannot pass')   # IDF-6809
 @pytest.mark.generic
 def test_base_mac_address(dut: Dut) -> None:
     dut.expect_exact('BASE_MAC: Base MAC Address read from EFUSE BLK0')

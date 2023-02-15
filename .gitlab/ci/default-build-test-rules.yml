@@ -10,8 +10,8 @@ extra_default_build_targets:
  - esp32c6
  - esp32h2
 
-bypass_check_test_targets:
- - esp32h2
+# bypass_check_test_targets:
+#  - esp32h2
 #  - esp32c6
 #
 # These lines would

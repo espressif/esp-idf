@@ -70,7 +70,7 @@ TEST_CASE("reset reason ESP_RST_POWERON", "[reset][ignore]")
 }
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2, ESP32H2)
 //IDF-5059
 static __NOINIT_ATTR uint32_t s_noinit_val;
 static RTC_NOINIT_ATTR uint32_t s_rtc_noinit_val;

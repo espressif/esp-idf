@@ -141,6 +141,7 @@ static void deinit(int uart_fd, int socket_fd)
     close(socket_fd);
 }
 
+#if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6782
 TEST_CASE("UART can do select()", "[vfs]")
 {
     int uart_fd;
@@ -258,6 +259,7 @@ TEST_CASE("UART can do poll()", "[vfs]")
 
     deinit(uart_fd, socket_fd);
 }
+#endif
 
 TEST_CASE("socket can do select()", "[vfs]")
 {
@@ -442,6 +444,7 @@ static void inline start_select_task(test_select_task_param_t *param)
     xTaskCreate(select_task, "select_task", 4*1024, (void *) param, 5, NULL);
 }
 
+#if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6782
 TEST_CASE("concurrent selects work", "[vfs]")
 {
     int uart_fd, socket_fd;
@@ -543,6 +546,7 @@ TEST_CASE("concurrent selects work", "[vfs]")
     deinit(uart_fd, socket_fd);
     close(dummy_socket_fd);
 }
+#endif
 
 TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
 {

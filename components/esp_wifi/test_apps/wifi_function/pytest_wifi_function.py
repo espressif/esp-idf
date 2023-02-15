@@ -5,8 +5,12 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c2'], reason='esp32c2 are using xtal_26mhz')
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c6
+# @pytest.mark.esp32c2  # esp32c2 are using xtal_26mhz
 @pytest.mark.generic
 def test_wifi_unit_test(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')

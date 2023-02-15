@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import multiprocessing
@@ -121,8 +121,11 @@ def start_chunked_server(ota_image_dir: str, server_port: int) -> subprocess.Pop
     return chunked_server
 
 
-@pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c2
 @pytest.mark.ethernet_ota
 def test_examples_protocol_native_ota_example(dut: Dut) -> None:
     """
@@ -161,8 +164,11 @@ def test_examples_protocol_native_ota_example(dut: Dut) -> None:
         thread1.terminate()
 
 
-@pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c2
 @pytest.mark.ethernet_ota
 def test_examples_protocol_native_ota_example_truncated_bin(dut: Dut) -> None:
     """
@@ -212,8 +218,11 @@ def test_examples_protocol_native_ota_example_truncated_bin(dut: Dut) -> None:
         thread1.terminate()
 
 
-@pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c2
 @pytest.mark.ethernet_ota
 def test_examples_protocol_native_ota_example_truncated_header(dut: Dut) -> None:
     """
@@ -262,8 +271,11 @@ def test_examples_protocol_native_ota_example_truncated_header(dut: Dut) -> None
         thread1.terminate()
 
 
-@pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c2
 @pytest.mark.ethernet_ota
 def test_examples_protocol_native_ota_example_random(dut: Dut) -> None:
     """
@@ -312,8 +324,11 @@ def test_examples_protocol_native_ota_example_random(dut: Dut) -> None:
         thread1.terminate()
 
 
-@pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6'], reason='c6 support TBD')
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c2
 @pytest.mark.ethernet_ota
 def test_examples_protocol_native_ota_example_chunked(dut: Dut) -> None:
     """
