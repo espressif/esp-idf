@@ -1,1 +1,0 @@
-.. include:: ../../en/api-guides/freertos-smp.rst
