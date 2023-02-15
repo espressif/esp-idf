@@ -119,13 +119,13 @@ TEST_CASE("mcpwm_operator_carrier", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_timer(timer));
 }
 
-static bool test_cbc_brake_on_gpio_fault_callback(mcpwm_oper_handle_t oper, const mcpwm_brake_event_data_t *edata, void *user_data)
+static bool IRAM_ATTR test_cbc_brake_on_gpio_fault_callback(mcpwm_oper_handle_t oper, const mcpwm_brake_event_data_t *edata, void *user_data)
 {
     esp_rom_printf("cbc brake\r\n");
     return false;
 }
 
-static bool test_ost_brake_on_gpio_fault_callback(mcpwm_oper_handle_t oper, const mcpwm_brake_event_data_t *edata, void *user_data)
+static bool IRAM_ATTR test_ost_brake_on_gpio_fault_callback(mcpwm_oper_handle_t oper, const mcpwm_brake_event_data_t *edata, void *user_data)
 {
     esp_rom_printf("ost brake\r\n");
     return false;

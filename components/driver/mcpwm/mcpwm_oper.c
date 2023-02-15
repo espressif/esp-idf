@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -219,7 +219,7 @@ esp_err_t mcpwm_operator_register_event_callbacks(mcpwm_oper_handle_t oper, cons
     int group_id = group->group_id;
     int oper_id = oper->oper_id;
 
-#if CONFIG_MCWPM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_IRAM_SAFE
     if (cbs->on_brake_cbc) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_brake_cbc), ESP_ERR_INVALID_ARG, TAG, "on_brake_cbc callback not in IRAM");
     }
