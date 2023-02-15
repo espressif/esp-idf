@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,7 @@
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
 
-#define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT -100
+#define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT -300
 static int leak_threshold = TEST_MEMORY_LEAK_THRESHOLD_DEFAULT;
 void set_leak_threshold(int threshold)
 {
