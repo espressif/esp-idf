@@ -1,4 +1,3 @@
-
 /*
  * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
@@ -15,15 +14,26 @@ extern "C" {
 
 #define ROMFN_ATTR
 
+#define __ESP_COUNTER__ 1
+#undef __TMP__
+
 //Normally, the linker script will put all code and rodata in flash,
 //and all variables in shared RAM. These macros can be used to redirect
 //particular functions/variables to other memory regions.
 
 // Forces code into IRAM instead of flash
-#define IRAM_ATTR _SECTION_ATTR_IMPL(".iram1", __COUNTER__)
+#define IRAM_ATTR _SECTION_ATTR_IMPL(".iram1", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 
 // Forces data into DRAM instead of flash
-#define DRAM_ATTR _SECTION_ATTR_IMPL(".dram1", __COUNTER__)
+#define DRAM_ATTR _SECTION_ATTR_IMPL(".dram1", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 
 // IRAM can only be accessed as an 8-bit memory on ESP32, when CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY is set
 #define IRAM_8BIT_ACCESSIBLE (CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
@@ -35,7 +45,11 @@ extern "C" {
 #define IRAM_DATA_ATTR __attribute__((section(".iram.data")))
 
 // Forces data into IRAM instead of DRAM and map it to coredump
-#define COREDUMP_IRAM_DATA_ATTR _SECTION_ATTR_IMPL(".iram2.coredump", __COUNTER__)
+#define COREDUMP_IRAM_DATA_ATTR _SECTION_ATTR_IMPL(".iram2.coredump", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 
 // Forces bss into IRAM instead of DRAM
 #define IRAM_BSS_ATTR __attribute__((section(".iram.bss")))
@@ -63,32 +77,82 @@ extern "C" {
 
 #if CONFIG_SOC_RTC_FAST_MEM_SUPPORTED || CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED
 // Forces data into RTC memory. See "docs/deep-sleep-stub.rst"
+#define RTC_IRAM_ATTR _SECTION_ATTR_IMPL(".rtc.text", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
+
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+// Forces bss variable into external memory. "
+#define EXT_RAM_ATTR _SECTION_ATTR_IMPL(".ext_ram.bss", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
+#else
+#define EXT_RAM_ATTR
+#endif
+
+// Forces data into RTC slow memory. See "docs/deep-sleep-stub.rst"
 // Any variable marked with this attribute will keep its value
 // during a deep sleep / wake cycle.
-#define RTC_DATA_ATTR _SECTION_ATTR_IMPL(".rtc.data", __COUNTER__)
+#define RTC_DATA_ATTR _SECTION_ATTR_IMPL(".rtc.data", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 
 // Forces data into RTC memory of .noinit section.
 // Any variable marked with this attribute will keep its value
 // after restart or during a deep sleep / wake cycle.
-#define RTC_NOINIT_ATTR  _SECTION_ATTR_IMPL(".rtc_noinit", __COUNTER__)
+#define RTC_NOINIT_ATTR  _SECTION_ATTR_IMPL(".rtc_noinit", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 
 // Forces read-only data into RTC memory. See "docs/deep-sleep-stub.rst"
-#define RTC_RODATA_ATTR _SECTION_ATTR_IMPL(".rtc.rodata", __COUNTER__)
+#define RTC_RODATA_ATTR _SECTION_ATTR_IMPL(".rtc.rodata", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 
 // Forces data into RTC memory and map it to coredump
-#define COREDUMP_RTC_DATA_ATTR _SECTION_ATTR_IMPL(".rtc.coredump", __COUNTER__)
+#define COREDUMP_RTC_DATA_ATTR _SECTION_ATTR_IMPL(".rtc.coredump", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 
 // Allows to place data into RTC_SLOW memory.
-#define RTC_SLOW_ATTR _SECTION_ATTR_IMPL(".rtc.force_slow", __COUNTER__)
+#define RTC_SLOW_ATTR _SECTION_ATTR_IMPL(".rtc.force_slow", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 
 // Forces code into RTC fast memory. See "docs/deep-sleep-stub.rst"
-#define RTC_IRAM_ATTR _SECTION_ATTR_IMPL(".rtc.text", __COUNTER__)
+#define RTC_IRAM_ATTR _SECTION_ATTR_IMPL(".rtc.text", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 
 // Allows to place data into RTC_FAST memory.
-#define RTC_FAST_ATTR _SECTION_ATTR_IMPL(".rtc.force_fast", __COUNTER__)
+#define RTC_FAST_ATTR _SECTION_ATTR_IMPL(".rtc.force_fast", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 
 // Allows to place data into RTC_FAST memory and map it to coredump
-#define COREDUMP_RTC_FAST_ATTR _SECTION_ATTR_IMPL(".rtc.fast.coredump", __COUNTER__)
+#define COREDUMP_RTC_FAST_ATTR _SECTION_ATTR_IMPL(".rtc.fast.coredump", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 #else
 #define RTC_DATA_ATTR
 #define RTC_NOINIT_ATTR
@@ -102,7 +166,11 @@ extern "C" {
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 // Forces bss variable into external memory. "
-#define EXT_RAM_BSS_ATTR _SECTION_ATTR_IMPL(".ext_ram.bss", __COUNTER__)
+#define EXT_RAM_BSS_ATTR _SECTION_ATTR_IMPL(".ext_ram.bss", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 #else
 #define EXT_RAM_BSS_ATTR
 #endif
@@ -112,26 +180,65 @@ extern "C" {
  */
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 // Forces bss variable into external memory. "
-#define EXT_RAM_ATTR _SECTION_ATTR_IMPL(".ext_ram.bss", __COUNTER__) _Pragma ("GCC warning \"'EXT_RAM_ATTR' macro is deprecated, please use `EXT_RAM_BSS_ATTR`\"")
+#define EXT_RAM_ATTR _SECTION_ATTR_IMPL(".ext_ram.bss", __ESP_COUNTER__) _Pragma ("GCC warning \"'EXT_RAM_ATTR' macro is deprecated, please use `EXT_RAM_BSS_ATTR`\"")
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 #else
 #define EXT_RAM_ATTR _Pragma ("GCC warning \"'EXT_RAM_ATTR' macro is deprecated, please use `EXT_RAM_BSS_ATTR`\"")
 #endif
 
 // Forces data into noinit section to avoid initialization after restart.
-#define __NOINIT_ATTR _SECTION_ATTR_IMPL(".noinit", __COUNTER__)
+#define __NOINIT_ATTR _SECTION_ATTR_IMPL(".noinit", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 // Forces data into external memory noinit section to avoid initialization after restart.
-#define EXT_RAM_NOINIT_ATTR _SECTION_ATTR_IMPL(".ext_ram_noinit", __COUNTER__)
+#define EXT_RAM_NOINIT_ATTR _SECTION_ATTR_IMPL(".ext_ram_noinit", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 #else
 // Place in internal noinit section
 #define EXT_RAM_NOINIT_ATTR __NOINIT_ATTR
 #endif
 
+// Forces data into RTC slow memory of .noinit section.
+// Any variable marked with this attribute will keep its value
+// after restart or during a deep sleep / wake cycle.
+#define RTC_NOINIT_ATTR  _SECTION_ATTR_IMPL(".rtc_noinit", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
+
 // Forces code into DRAM instead of flash and map it to coredump
 // Use dram2 instead of dram1 to make sure this section will not be included
 // by dram1 section in the linker script
-#define COREDUMP_DRAM_ATTR _SECTION_ATTR_IMPL(".dram2.coredump", __COUNTER__)
+#define COREDUMP_DRAM_ATTR _SECTION_ATTR_IMPL(".dram2.coredump", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
+
+// Forces data into RTC memory and map it to coredump
+#define COREDUMP_RTC_DATA_ATTR _SECTION_ATTR_IMPL(".rtc.coredump", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
+
+// Allows to place data into RTC_FAST memory and map it to coredump
+#define COREDUMP_RTC_FAST_ATTR _SECTION_ATTR_IMPL(".rtc.fast.coredump", __ESP_COUNTER__)
+#define __TMP__ __ESP_COUNTER__ + 1
+#undef __ESP_COUNTER__
+#define __ESP_COUNTER__ __TMP__
+#undef __TMP__
 
 // Forces to not inline function
 #define NOINLINE_ATTR __attribute__((noinline))
@@ -185,6 +292,9 @@ FORCE_INLINE_ATTR TYPE& operator<<=(TYPE& a, int b) { a = a << b; return a; }
 #else
 #define IDF_DEPRECATED(REASON)
 #endif
+
+#undef __ESP_COUNTER__
+#undef __TMP__
 
 #ifdef __cplusplus
 }
