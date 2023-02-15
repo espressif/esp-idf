@@ -1,14 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-examples/system/app_trace_to_host:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32s2"]
+examples/system/app_trace_basic:
+  disable:
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
       temporary: true
-      reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET == "esp32s2"
-      temporary: true
-      reason: lack of runners
+      reason: target esp32c6, esp32h2 is not supported yet
 
 examples/system/base_mac_address:
   disable_test:
