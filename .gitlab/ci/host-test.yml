@@ -230,6 +230,11 @@ test_efuse_table_on_host_esp32h2:
   variables:
     IDF_TARGET: esp32h2
 
+test_efuse_table_on_host_esp32c6:
+  extends: .test_efuse_table_on_host_template
+  variables:
+    IDF_TARGET: esp32c6
+
 test_efuse_table_on_host_esp32h4:
   extends: .test_efuse_table_on_host_template
   variables:
