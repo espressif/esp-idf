@@ -11,7 +11,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_ipc.h"
-#include "driver/intr_types.h"
+#include "intr_types.h"
 #include "hal/spi_types.h"
 
 #ifdef __cplusplus
