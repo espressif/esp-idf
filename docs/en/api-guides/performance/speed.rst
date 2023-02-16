@@ -2,7 +2,7 @@ Maximizing Execution Speed
 ==========================
 
 {IDF_TARGET_CONTROLLER_CORE_CONFIG:default="CONFIG_BT_CTRL_PINNED_TO_CORE", esp32="CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE", esp32s3="CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE"}
-{IDF_TARGET_RF_TYPE:default="Wi-Fi/BT", esp32s2="Wi-Fi"}
+{IDF_TARGET_RF_TYPE:default="Wi-Fi/BT", esp32s2="Wi-Fi", esp32c6="Wi-Fi/BT/802.15.4", esp32h2="BT/802.15.4"}
 
 Overview
 --------
@@ -56,7 +56,7 @@ Executing the target multiple times can help average out factors like RTOS conte
 
       The CPU cycles are counted per-core, so only use this method from an interrupt handler, or a task that is pinned to a single core.
 
-- If making "microbenchmarks" (i.e. benchmarking only a very small routine of code that runs in less than 1-2 milliseconds) then flash cache performance can sometimes cause big variations in timing measurements depending on the binary. This happens because binary layout can cause different patterns of cache misses in a particular sequence of execution. If the test code is larger then this effect usually averages out. Executing a small function multiple times when benchmarking can help reduce the impact of flash cache misses. Alternatively, move this code to IRAM (see :ref:`speed-targeted-optimizations`).
+- While performing "microbenchmarks" (i.e. benchmarking only a very small routine of code that runs in less than 1-2 milliseconds), the flash cache performance can sometimes cause big variations in timing measurements depending on the binary. This happens because binary layout can cause different patterns of cache misses in a particular sequence of execution. If the test code is larger then this effect usually averages out. Executing a small function multiple times when benchmarking can help reduce the impact of flash cache misses. Alternatively, move this code to IRAM (see :ref:`speed-targeted-optimizations`).
 
 External Tracing
 ^^^^^^^^^^^^^^^^
@@ -149,7 +149,7 @@ ESP-IDF starts a number of system tasks at fixed priority levels. Some are autom
 
 This may require splitting up a particular task. For example, perform a time-critical operation in a high priority task or an interrupt handler and do the non-time-critical part in a lower priority task.
 
-Header :idf_file:`components/esp_system/include/esp_task.h` contains macros for the priority levels used for built-in ESP-IDF tasks system.
+Header :idf_file:`components/esp_system/include/esp_task.h` contains macros for the priority levels used for built-in ESP-IDF tasks system. See :ref:`freertos_system_tasks` for more details about the system tasks.
 
 Common priorities are:
 

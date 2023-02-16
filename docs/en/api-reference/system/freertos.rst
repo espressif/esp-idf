@@ -68,6 +68,8 @@ Unlike Vanilla FreeRTOS, users of FreeRTOS in ESP-IDF **must never call** :cpp:f
 - The ``app_main`` function is allowed to return at any point (i.e., before the application terminates).
 - The ``app_main`` function is called from the ``main`` task.
 
+.. _freertos_system_tasks:
+
 Background Tasks
 ^^^^^^^^^^^^^^^^
 

@@ -1,8 +1,3 @@
-api-guides/performance
-api-guides/performance/speed
-api-guides/performance/size
-api-guides/performance/ram-usage
-api-guides/performance/index
 api-guides/blufi
 api-guides/coexist
 api-guides/usb-serial-jtag-console
