@@ -87,7 +87,7 @@ static void gptimer_unregister_from_group(gptimer_t *timer)
     gptimer_release_group_handle(group);
 }
 
-static esp_err_t gptimer_destory(gptimer_t *timer)
+static esp_err_t gptimer_destroy(gptimer_t *timer)
 {
     if (timer->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(timer->pm_lock), TAG, "delete pm_lock failed");
@@ -145,7 +145,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
 
 err:
     if (timer) {
-        gptimer_destory(timer);
+        gptimer_destroy(timer);
     }
     return ret;
 }
@@ -161,7 +161,7 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
     ESP_LOGD(TAG, "del timer (%d,%d)", group_id, timer_id);
     timer_hal_deinit(&timer->hal);
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(gptimer_destory(timer), TAG, "destory gptimer failed");
+    ESP_RETURN_ON_ERROR(gptimer_destroy(timer), TAG, "destroy gptimer failed");
 
     switch (clk_src) {
 #if SOC_TIMER_GROUP_SUPPORT_RC_FAST

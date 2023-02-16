@@ -58,7 +58,7 @@ static void mcpwm_comparator_unregister_from_operator(mcpwm_cmpr_t *cmpr)
     portEXIT_CRITICAL(&oper->spinlock);
 }
 
-static esp_err_t mcpwm_comparator_destory(mcpwm_cmpr_t *cmpr)
+static esp_err_t mcpwm_comparator_destroy(mcpwm_cmpr_t *cmpr)
 {
     if (cmpr->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(cmpr->intr), TAG, "uninstall interrupt service failed");
@@ -97,7 +97,7 @@ esp_err_t mcpwm_new_comparator(mcpwm_oper_handle_t oper, const mcpwm_comparator_
 
 err:
     if (cmpr) {
-        mcpwm_comparator_destory(cmpr);
+        mcpwm_comparator_destroy(cmpr);
     }
     return ret;
 }
@@ -118,7 +118,7 @@ esp_err_t mcpwm_del_comparator(mcpwm_cmpr_handle_t cmpr)
 
     ESP_LOGD(TAG, "del comparator (%d,%d,%d)", group->group_id, oper_id, cmpr_id);
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(mcpwm_comparator_destory(cmpr), TAG, "destory comparator failed");
+    ESP_RETURN_ON_ERROR(mcpwm_comparator_destroy(cmpr), TAG, "destroy comparator failed");
     return ESP_OK;
 }
 

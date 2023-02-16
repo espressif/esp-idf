@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,7 +57,7 @@ static void mcpwm_timer_sync_src_unregister_from_timer(mcpwm_timer_sync_src_t *t
     portEXIT_CRITICAL(&timer->spinlock);
 }
 
-static esp_err_t mcpwm_timer_sync_src_destory(mcpwm_timer_sync_src_t *timer_sync_src)
+static esp_err_t mcpwm_timer_sync_src_destroy(mcpwm_timer_sync_src_t *timer_sync_src)
 {
     if (timer_sync_src->timer) {
         mcpwm_timer_sync_src_unregister_from_timer(timer_sync_src);
@@ -104,7 +104,7 @@ esp_err_t mcpwm_new_timer_sync_src(mcpwm_timer_handle_t timer, const mcpwm_timer
 
 err:
     if (timer_sync_src) {
-        mcpwm_timer_sync_src_destory(timer_sync_src);
+        mcpwm_timer_sync_src_destroy(timer_sync_src);
     }
     return ret;
 }
@@ -118,7 +118,7 @@ static esp_err_t mcpwm_del_timer_sync_src(mcpwm_sync_t *sync_src)
 
     mcpwm_ll_timer_disable_sync_out(group->hal.dev, timer_id);
     ESP_LOGD(TAG, "del timer sync_src in timer (%d,%d)", group->group_id, timer_id);
-    ESP_RETURN_ON_ERROR(mcpwm_timer_sync_src_destory(timer_sync_src), TAG, "destory timer sync_src failed");
+    ESP_RETURN_ON_ERROR(mcpwm_timer_sync_src_destroy(timer_sync_src), TAG, "destroy timer sync_src failed");
     return ESP_OK;
 }
 
@@ -163,7 +163,7 @@ static void mcpwm_gpio_sync_src_unregister_from_group(mcpwm_gpio_sync_src_t *gpi
     mcpwm_release_group_handle(group);
 }
 
-static esp_err_t mcpwm_gpio_sync_src_destory(mcpwm_gpio_sync_src_t *gpio_sync_src)
+static esp_err_t mcpwm_gpio_sync_src_destroy(mcpwm_gpio_sync_src_t *gpio_sync_src)
 {
     if (gpio_sync_src->base.group) {
         mcpwm_gpio_sync_src_unregister_from_group(gpio_sync_src);
@@ -217,7 +217,7 @@ esp_err_t mcpwm_new_gpio_sync_src(const mcpwm_gpio_sync_src_config_t *config, mc
 
 err:
     if (gpio_sync_src) {
-        mcpwm_gpio_sync_src_destory(gpio_sync_src);
+        mcpwm_gpio_sync_src_destroy(gpio_sync_src);
     }
     return ret;
 }
@@ -231,7 +231,7 @@ static esp_err_t mcpwm_del_gpio_sync_src(mcpwm_sync_t *sync_src)
     gpio_reset_pin(gpio_sync_src->gpio_num);
 
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(mcpwm_gpio_sync_src_destory(gpio_sync_src), TAG, "destory GPIO sync_src failed");
+    ESP_RETURN_ON_ERROR(mcpwm_gpio_sync_src_destroy(gpio_sync_src), TAG, "destroy GPIO sync_src failed");
     return ESP_OK;
 }
 

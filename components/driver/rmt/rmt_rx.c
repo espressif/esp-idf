@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -155,7 +155,7 @@ static void rmt_rx_unregister_from_group(rmt_channel_t *channel, rmt_group_t *gr
     rmt_release_group_handle(group);
 }
 
-static esp_err_t rmt_rx_destory(rmt_rx_channel_t *rx_channel)
+static esp_err_t rmt_rx_destroy(rmt_rx_channel_t *rx_channel)
 {
     if (rx_channel->base.intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(rx_channel->base.intr), TAG, "delete interrupt service failed");
@@ -289,7 +289,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
 
 err:
     if (rx_channel) {
-        rmt_rx_destory(rx_channel);
+        rmt_rx_destroy(rx_channel);
     }
     return ret;
 }
@@ -302,7 +302,7 @@ static esp_err_t rmt_del_rx_channel(rmt_channel_handle_t channel)
     int channel_id = channel->channel_id;
     ESP_LOGD(TAG, "del rx channel(%d,%d)", group_id, channel_id);
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(rmt_rx_destory(rx_chan), TAG, "destory rx channel failed");
+    ESP_RETURN_ON_ERROR(rmt_rx_destroy(rx_chan), TAG, "destroy rx channel failed");
     return ESP_OK;
 }
 

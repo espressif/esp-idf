@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -166,7 +166,7 @@ static esp_err_t rmt_tx_create_trans_queue(rmt_tx_channel_t *tx_channel, const r
     return ESP_OK;
 }
 
-static esp_err_t rmt_tx_destory(rmt_tx_channel_t *tx_channel)
+static esp_err_t rmt_tx_destroy(rmt_tx_channel_t *tx_channel)
 {
     if (tx_channel->base.intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(tx_channel->base.intr), TAG, "delete interrupt service failed");
@@ -307,7 +307,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
 
 err:
     if (tx_channel) {
-        rmt_tx_destory(tx_channel);
+        rmt_tx_destroy(tx_channel);
     }
     return ret;
 }
@@ -320,7 +320,7 @@ static esp_err_t rmt_del_tx_channel(rmt_channel_handle_t channel)
     int channel_id = channel->channel_id;
     ESP_LOGD(TAG, "del tx channel(%d,%d)", group_id, channel_id);
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(rmt_tx_destory(tx_chan), TAG, "destory tx channel failed");
+    ESP_RETURN_ON_ERROR(rmt_tx_destroy(tx_chan), TAG, "destroy tx channel failed");
     return ESP_OK;
 }
 

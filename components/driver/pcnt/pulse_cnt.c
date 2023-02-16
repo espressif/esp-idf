@@ -155,7 +155,7 @@ static void pcnt_unregister_from_group(pcnt_unit_t *unit)
     pcnt_release_group_handle(group);
 }
 
-static esp_err_t pcnt_destory(pcnt_unit_t *unit)
+static esp_err_t pcnt_destroy(pcnt_unit_t *unit)
 {
     if (unit->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(unit->pm_lock), TAG, "delete pm lock failed");
@@ -233,7 +233,7 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
 
 err:
     if (unit) {
-        pcnt_destory(unit);
+        pcnt_destroy(unit);
     }
     return ret;
 }
@@ -252,7 +252,7 @@ esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit)
 
     ESP_LOGD(TAG, "del unit (%d,%d)", group_id, unit_id);
     // recycle memory resource
-    ESP_RETURN_ON_ERROR(pcnt_destory(unit), TAG, "destory pcnt unit failed");
+    ESP_RETURN_ON_ERROR(pcnt_destroy(unit), TAG, "destroy pcnt unit failed");
     return ESP_OK;
 }
 
