@@ -76,9 +76,6 @@ int usb_parse_interface_number_of_alternate(const usb_config_desc_t *config_desc
 const usb_intf_desc_t *usb_parse_interface_descriptor(const usb_config_desc_t *config_desc, uint8_t bInterfaceNumber, uint8_t bAlternateSetting, int *offset)
 {
     assert(config_desc != NULL);
-    if (bInterfaceNumber >= config_desc->bNumInterfaces) {
-        return NULL;    //bInterfaceNumber is out of range
-    }
 
     //Walk to first interface descriptor of bInterfaceNumber
     int offset_temp = 0;
