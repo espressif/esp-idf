@@ -169,6 +169,13 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     return ret;
 }
 
+esp_err_t rmt_get_channel_id(rmt_channel_handle_t channel, int *ret_id)
+{
+    ESP_RETURN_ON_FALSE(channel && ret_id, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *ret_id = channel->channel_id;
+    return ESP_OK;
+}
+
 esp_err_t rmt_apply_carrier(rmt_channel_handle_t channel, const rmt_carrier_config_t *config)
 {
     // specially, we allow config to be NULL, means to disable the carrier submodule

@@ -142,9 +142,6 @@ examples/peripherals/rmt/onewire_ds18b20:
 examples/peripherals/rmt/stepper_motor:
   disable:
     - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP != 1
-    - if: IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: wrong GPIO on esp32h2
 
 examples/peripherals/sdio/host:
   enable:
@@ -212,12 +209,6 @@ examples/peripherals/temp_sensor:
 examples/peripherals/timer_group:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
-
-examples/peripherals/timer_group/gptimer:
-  disable_test:
-    - if: IDF_TARGET in ["esp32h2"]
-      temporary: true
-      reason: cannot pass target test IDF-6846
 
 examples/peripherals/timer_group/gptimer_capture_hc_sr04:
   disable:

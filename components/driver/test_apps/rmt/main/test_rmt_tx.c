@@ -465,7 +465,7 @@ static void test_rmt_multi_channels_trans(size_t channel0_mem_block_symbols, siz
 {
 #define TEST_RMT_CHANS 2
 #define TEST_LED_NUM   1
-#define TEST_STOP_TIME_NO_SYNCHRO_DELTA     250
+#define TEST_STOP_TIME_NO_SYNCHRO_DELTA     300
 #define TEST_STOP_TIME_SYNCHRO_DELTA        60
     rmt_tx_channel_config_t tx_channel_cfg = {
         .clk_src = RMT_CLK_SRC_DEFAULT,

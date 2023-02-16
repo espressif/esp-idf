@@ -53,7 +53,7 @@ components/driver/test_apps/legacy_mcpwm_driver:
   disable_test:
     - if: IDF_TARGET in ["esp32h2"]
       temporary: true
-      reason: cannot pass test, IDF-6812
+      reason: default group resolution changed, IDF-6812
 
 components/driver/test_apps/legacy_pcnt_driver:
   disable:
@@ -78,10 +78,6 @@ components/driver/test_apps/legacy_timer_driver:
 components/driver/test_apps/mcpwm:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET in ["esp32h2"]
-      temporary: true
-      reason: cannot pass test, IDF-6812
 
 components/driver/test_apps/pulse_cnt:
   disable:
@@ -90,10 +86,6 @@ components/driver/test_apps/pulse_cnt:
 components/driver/test_apps/rmt:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET in ["esp32h2"]
-      temporary: true
-      reason: cannot pass test, IDF-6810
 
 components/driver/test_apps/rs485:
   disable_test:
