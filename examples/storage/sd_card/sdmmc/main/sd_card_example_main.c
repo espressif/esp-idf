@@ -15,10 +15,49 @@
 #include "sdmmc_cmd.h"
 #include "driver/sdmmc_host.h"
 
+#define EXAMPLE_MAX_CHAR_SIZE    64
+
 static const char *TAG = "example";
 
 #define MOUNT_POINT "/sdcard"
 
+
+static esp_err_t s_example_write_file(const char *path, char *data)
+{
+    ESP_LOGI(TAG, "Opening file %s", path);
+    FILE *f = fopen(path, "w");
+    if (f == NULL) {
+        ESP_LOGE(TAG, "Failed to open file for writing");
+        return ESP_FAIL;
+    }
+    fprintf(f, data);
+    fclose(f);
+    ESP_LOGI(TAG, "File written");
+
+    return ESP_OK;
+}
+
+static esp_err_t s_example_read_file(const char *path)
+{
+    ESP_LOGI(TAG, "Reading file %s", path);
+    FILE *f = fopen(path, "r");
+    if (f == NULL) {
+        ESP_LOGE(TAG, "Failed to open file for reading");
+        return ESP_FAIL;
+    }
+    char line[EXAMPLE_MAX_CHAR_SIZE];
+    fgets(line, sizeof(line), f);
+    fclose(f);
+
+    // strip newline
+    char *pos = strchr(line, '\n');
+    if (pos) {
+        *pos = '\0';
+    }
+    ESP_LOGI(TAG, "Read from file: '%s'", line);
+
+    return ESP_OK;
+}
 
 void app_main(void)
 {
@@ -103,19 +142,14 @@ void app_main(void)
 
     // First create a file.
     const char *file_hello = MOUNT_POINT"/hello.txt";
-
-    ESP_LOGI(TAG, "Opening file %s", file_hello);
-    FILE *f = fopen(file_hello, "w");
-    if (f == NULL) {
-        ESP_LOGE(TAG, "Failed to open file for writing");
+    char data[EXAMPLE_MAX_CHAR_SIZE];
+    snprintf(data, EXAMPLE_MAX_CHAR_SIZE, "%s %s!\n", "Hello", card->cid.name);
+    ret = s_example_write_file(file_hello, data);
+    if (ret != ESP_OK) {
         return;
     }
-    fprintf(f, "Hello %s!\n", card->cid.name);
-    fclose(f);
-    ESP_LOGI(TAG, "File written");
 
     const char *file_foo = MOUNT_POINT"/foo.txt";
-
     // Check if destination file exists before renaming
     struct stat st;
     if (stat(file_foo, &st) == 0) {
@@ -130,25 +164,38 @@ void app_main(void)
         return;
     }
 
-    // Open renamed file for reading
-    ESP_LOGI(TAG, "Reading file %s", file_foo);
-    f = fopen(file_foo, "r");
-    if (f == NULL) {
-        ESP_LOGE(TAG, "Failed to open file for reading");
+    ret = s_example_read_file(file_foo);
+    if (ret != ESP_OK) {
         return;
     }
 
-    // Read a line from file
-    char line[64];
-    fgets(line, sizeof(line), f);
-    fclose(f);
-
-    // Strip newline
-    char *pos = strchr(line, '\n');
-    if (pos) {
-        *pos = '\0';
+    // Format FATFS
+    ret = esp_vfs_fat_sdcard_format(mount_point, card);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to format FATFS (%s)", esp_err_to_name(ret));
+        return;
     }
-    ESP_LOGI(TAG, "Read from file: '%s'", line);
+
+    if (stat(file_foo, &st) == 0) {
+        ESP_LOGI(TAG, "file still exists");
+        return;
+    } else {
+        ESP_LOGI(TAG, "file doesnt exist, format done");
+    }
+
+    const char *file_nihao = MOUNT_POINT"/nihao.txt";
+    memset(data, 0, EXAMPLE_MAX_CHAR_SIZE);
+    snprintf(data, EXAMPLE_MAX_CHAR_SIZE, "%s %s!\n", "Nihao", card->cid.name);
+    ret = s_example_write_file(file_nihao, data);
+    if (ret != ESP_OK) {
+        return;
+    }
+
+    //Open file for reading
+    ret = s_example_read_file(file_nihao);
+    if (ret != ESP_OK) {
+        return;
+    }
 
     // All done, unmount partition and disable SDMMC peripheral
     esp_vfs_fat_sdcard_unmount(mount_point, card);

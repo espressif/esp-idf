@@ -194,7 +194,7 @@ esp_err_t esp_vfs_fat_sdspi_mount(const char* base_path,
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_sdmmc_mount hasn't been called
  */
-esp_err_t esp_vfs_fat_sdmmc_unmount(void);
+esp_err_t esp_vfs_fat_sdmmc_unmount(void) __attribute__((deprecated("Please use esp_vfs_fat_sdcard_unmount instead")));
 
 /**
  * @brief Unmount an SD card from the FAT filesystem and release resources acquired using
@@ -206,6 +206,23 @@ esp_err_t esp_vfs_fat_sdmmc_unmount(void);
  *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_sdmmc_mount hasn't been called
  */
 esp_err_t esp_vfs_fat_sdcard_unmount(const char* base_path, sdmmc_card_t *card);
+
+/**
+ * @brief Format FAT filesystem
+ *
+ * @note
+ * This API should be only called when the FAT is already mounted.
+ *
+ * @param base_path  Path where partition should be registered (e.g. "/sdcard")
+ * @param card       Pointer to the card handle, which should be initialised by calling `esp_vfs_fat_sdspi_mount` first
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_INVALID_STATE: FAT partition isn't mounted, call esp_vfs_fat_sdmmc_mount or esp_vfs_fat_sdspi_mount first
+ *        - ESP_ERR_NO_MEM: if memory can not be allocated
+ *        - ESP_FAIL: fail to format it, or fail to mount back
+ */
+esp_err_t esp_vfs_fat_sdcard_format(const char *base_path, sdmmc_card_t *card);
 
 /**
  * @brief Convenience function to initialize FAT filesystem in SPI flash and register it in VFS
@@ -251,6 +268,24 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
 esp_err_t esp_vfs_fat_spiflash_unmount_rw_wl(const char* base_path, wl_handle_t wl_handle);
 
 /**
+ * @brief Format FAT filesystem
+ *
+ * @note
+ * This API can be called when the FAT is mounted / not mounted.
+ * If this API is called when the FAT isn't mounted (by calling esp_vfs_fat_spiflash_mount_rw_wl),
+ * this API will first mount the FAT then format it, then restore back to the original state.
+ *
+ * @param base_path        Path where partition should be registered (e.g. "/spiflash")
+ * @param partition_label  Label of the partition which should be used
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_NO_MEM: if memory can not be allocated
+ *        - Other errors from esp_vfs_fat_spiflash_mount_rw_wl
+ */
+esp_err_t esp_vfs_fat_spiflash_format_rw_wl(const char* base_path, const char* partition_label);
+
+/**
  * @brief Convenience function to initialize read-only FAT filesystem and register it in VFS
  *
  * This is an all-in-one function which does the following:
@@ -285,7 +320,7 @@ esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
  *
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount_rw_wl hasn't been called
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount_ro hasn't been called
  */
 esp_err_t esp_vfs_fat_spiflash_unmount_ro(const char* base_path, const char* partition_label);
 
