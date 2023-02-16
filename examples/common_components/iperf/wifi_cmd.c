@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -592,7 +592,9 @@ static int wifi_cmd_query(int argc, char **argv)
             printf("\tbssid: "MACSTR, MAC2STR(cfg.sta.bssid));
             printf("\n");
             printf("\tchannel: %d\n", cfg.sta.channel);
-            printf("\taid: %d\n", cfg.sta.aid);
+            uint16_t aid;
+            esp_wifi_sta_get_aid(&aid);
+            printf("\taid: %d\n", aid);
             if (cfg.sta.pmf_cfg.capable) {
                 if (cfg.sta.pmf_cfg.required) {
                     printf("\tpmf: required\n");

@@ -307,9 +307,7 @@ typedef struct {
     uint32_t ft_enabled:1;                    /**< Whether FT is enabled for the connection */
     uint32_t owe_enabled:1;                   /**< Whether OWE is enabled for the connection */
     uint32_t transition_disable:1;            /**< Whether to enable transition disable feature */
-    uint32_t aid:12;                          /**< Authentication id assigned by the connected AP. aid = 0 if the STA is not connected. */
-    uint32_t phymode:6;                       /**< Operation phy mode, BIT[5]: indicate whether LR enabled, BIT[0-4]: wifi_phy_mode_t. */
-    uint32_t reserved:8;                      /**< Reserved for future feature set */
+    uint32_t reserved:26;                      /**< Reserved for future feature set */
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Whether SAE hash to element is enabled */
     wifi_sae_pk_mode_t sae_pk_mode;           /**< SAE-PK mode */
     uint8_t failure_retry_cnt;                /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config.

@@ -89,9 +89,11 @@ static void got_ip_handler(void *arg, esp_event_base_t event_base,
     /* setup a trigger-based announce individual TWT agreement. */
     esp_err_t err = ESP_OK;
     int flow_id = 0;
+    wifi_phy_mode_t phymode;
     wifi_config_t sta_cfg = { 0, };
     esp_wifi_get_config(WIFI_IF_STA, &sta_cfg);
-    if (sta_cfg.sta.phymode == WIFI_PHY_MODE_HE20) {
+    esp_wifi_sta_get_negotiated_phymode(&phymode);
+    if (phymode == WIFI_PHY_MODE_HE20) {
         err = esp_wifi_sta_itwt_setup(TWT_REQUEST, trigger_enabled, flow_type_announced ? 0 : 1,
                                       CONFIG_EXAMPLE_ITWT_MIN_WAKE_DURA, CONFIG_EXAMPLE_ITWT_WAKE_INVL_EXPN,
                                       CONFIG_EXAMPLE_ITWT_WAKE_INVL_MANT, &flow_id);
