@@ -78,7 +78,10 @@ phy> esp_rx -n 1 -r 0
 I (19348) phy: wifi rx start: channel is 1, rate is 0x0
 phy> 
 phy> cmdstop
-I (24248) phy: Correct: 1112 Desired: 773 RSSI: -633 noise: -960 gain: 629 para1: 12198 para2
+I (142881) phy: Total: 535 Correct: 474 RSSI: -650 noise: -960 gain: 531 para1: 5759 para2: 3
+phy>
+phy> get_rx_result
+I (145991) cmd_phy: Total: 535, Correct: 474, RSSI: -650, flag: 1
 phy> 
 phy> wifiscwout -e 1 -c 1 -p 0
 I (98308) phy:  wifi single carrier tx out, single carrier is in 1 channel, power is about (2
@@ -93,7 +96,10 @@ phy> esp_ble_rx -n 1 -s 0x71764129 -r 0
 I (2898) phy: RW LE V9 RX PER
 phy> 
 phy> cmdstop
-I (7678) phy: 144 0 0 5 13f 0 0 0 0 0 p 0 0 0 0 0 0
+I (381241) phy: 3 0 0 0 3 0 0 0 0 0 p -263 -86 -279 a8 -100 -77
+phy>
+phy> get_rx_result
+I (383871) cmd_phy: Total: 3, Correct: 0, RSSI: 0, flag: 2
 phy> 
 phy> bt_tx_tone -e 1 -n 1 -p 0
 I (56008) phy: BT TX TONE START!

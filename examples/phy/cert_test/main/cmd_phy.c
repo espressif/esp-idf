@@ -56,6 +56,23 @@ static int esp_phy_cmdstop_func(int argc, char **argv)
     return 0;
 }
 
+static int esp_phy_get_rx_result_func(int argc, char **argv)
+{
+    esp_phy_rx_result_t rx_result;
+    int nerrors = arg_parse(argc, argv, (void **) &phy_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, phy_args.end, argv[0]);
+        return 1;
+    }
+
+    esp_phy_get_rx_result(&rx_result);
+
+    ESP_LOGI(TAG, "Total: %lu, Correct: %lu, RSSI: %d, flag: %lu", rx_result.phy_rx_total_count,
+                rx_result.phy_rx_correct_count, rx_result.phy_rx_rssi, rx_result.phy_rx_result_flag);
+
+    return 0;
+}
+
 #if SOC_WIFI_SUPPORTED
 void cert_wifi_tx(void *arg)
 {
@@ -392,6 +409,15 @@ void register_phy_cmd(void)
         .argtable = NULL
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmdstop_cmd) );
+
+    const esp_console_cmd_t get_rx_result = {
+        .command = "get_rx_result",
+        .help = "Get RX information",
+        .hint = NULL,
+        .func = &esp_phy_get_rx_result_func,
+        .argtable = NULL
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&get_rx_result) );
 
 #if SOC_WIFI_SUPPORTED
     const esp_console_cmd_t cbw40m_cmd = {

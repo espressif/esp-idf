@@ -57,6 +57,26 @@ typedef enum {
 } esp_phy_ble_type_t;
 
 /**
+ * @brief Structure holding PHY RX result
+ */
+typedef struct {
+    uint32_t phy_rx_correct_count; /*!< The number of desired packets received */
+    int phy_rx_rssi;               /*!< Average RSSI of desired packets */
+    uint32_t phy_rx_total_count;   /*!< The number of total packets received */
+    uint32_t phy_rx_result_flag;   /*!< 0 means no RX info; 1 means the lastest Wi-Fi RX info; 2 means the lastest BLE RX info. */
+} esp_phy_rx_result_t;
+
+/**
+ * @brief Wifi power domain power on
+ */
+void esp_wifi_power_domain_on(void);
+
+/**
+ * @brief Wifi power domain power off
+ */
+void esp_wifi_power_domain_off(void);
+
+/**
  * @brief Environment variable configuration
  *
  * @param conf:
@@ -160,6 +180,13 @@ void esp_phy_ble_rx(uint32_t chan, uint32_t syncw, esp_phy_ble_rate_t rate);
  * @param power: CW power attenuation parameter, unit is 0.25dB. 4 indicates the power is attenuated by 1dB.
  */
 void esp_phy_bt_tx_tone(uint32_t start, uint32_t chan, uint32_t power);
+
+/**
+ * @brief Get some RX information
+ *
+ * @param rx_result: This struct for storing RX information;
+ */
+void esp_phy_get_rx_result(esp_phy_rx_result_t *rx_result);
 
 #ifdef __cplusplus
 }

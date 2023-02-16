@@ -12,8 +12,6 @@
 #include "cmd_phy.h"
 #include "esp_phy_cert_test.h"
 
-#include "esp_private/wifi.h"
-
 void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
