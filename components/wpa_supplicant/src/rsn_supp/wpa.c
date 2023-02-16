@@ -34,6 +34,7 @@
 #include "common/bss.h"
 #include "esp_common_i.h"
 #include "esp_owe_i.h"
+#include "common/sae.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger
@@ -2424,6 +2425,9 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
         return -1;
 #endif
 
+#ifndef CONFIG_SAE_PK
+    esp_wifi_sta_disable_sae_pk_internal();
+#endif /* CONFIG_SAE_PK */
     return 0;
 }
 
@@ -2687,6 +2691,13 @@ int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len)
     }
 
     sm->sae_pwe = esp_wifi_sta_get_config_sae_pwe_h2e_internal();
+#ifdef CONFIG_SAE_PK
+    const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
+    if (esp_wifi_sta_get_config_sae_pk_internal() != WPA3_SAE_PK_MODE_DISABLED &&
+            sae_pk_valid_password((const char*)pw)) {
+        sm->sae_pk = true;
+    }
+#endif /* CONFIG_SAE_PK */
     return 0;
 }
 

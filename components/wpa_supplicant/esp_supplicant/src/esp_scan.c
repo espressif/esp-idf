@@ -238,11 +238,13 @@ static int issue_scan(struct wpa_supplicant *wpa_s,
 	wpa_printf(MSG_INFO, "scan issued at time=%llu", wpa_s->scan_start_tsf);
 
 cleanup:
-	if (params->ssid)
-		os_free(params->ssid);
-	if (params->bssid)
-		os_free(params->bssid);
-	os_free(params);
+    if (params) {
+        if (params->ssid)
+            os_free(params->ssid);
+        if (params->bssid)
+            os_free(params->bssid);
+        os_free(params);
+    }
 
 	return ret;
 }
