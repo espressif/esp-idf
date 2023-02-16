@@ -231,14 +231,6 @@ build_pytest_examples_jtag:  # for all targets
     IDF_TARGET: all
     TEST_DIR: examples
 
-build_pytest_components_esp32h4:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32h4
-  variables:
-    IDF_TARGET: esp32h4
-    TEST_DIR: components
-
 build_pytest_examples_esp32c6:
   extends:
     - .build_pytest_template

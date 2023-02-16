@@ -1,3 +1,3 @@
-| Supported Targets | ESP32-H4 |
+| Supported Targets | ESP32-C6 |
 | ----------------- | -------- |
 
