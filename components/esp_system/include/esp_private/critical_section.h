@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
  */
 #pragma once
 
-#include "freertos/portmacro.h"
+#include "freertos/FreeRTOS.h"
 #include "spinlock.h"
 
 #ifdef __cplusplus
