@@ -11,6 +11,11 @@
 #include "esp_wifi_driver.h"
 #include "rsn_supp/wpa.h"
 
+#ifdef CONFIG_SAE_PK
+#include "common/bss.h"
+extern struct wpa_supplicant g_wpa_supp;
+#endif
+
 static struct sae_pt *g_sae_pt;
 static struct sae_data g_sae_data;
 static struct wpabuf *g_sae_token = NULL;
@@ -59,9 +64,43 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
         return ESP_FAIL;
     }
 
+#ifdef CONFIG_SAE_PK
+    bool use_pk = false;
+    uint8_t sae_pk_mode = esp_wifi_sta_get_config_sae_pk_internal();
+    u8 rsnxe_capa = 0;
+    struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, (uint8_t *)bssid);
+    if (!bss) {
+        wpa_printf(MSG_ERROR,
+                "SAE: BSS not available, update scan result to get BSS");
+       // TODO: should we trigger scan again.
+        return ESP_FAIL;
+    }
+    if (bss) {
+        const u8 *rsnxe;
+
+        rsnxe = wpa_bss_get_ie(bss, WLAN_EID_RSNX);
+        if (rsnxe && rsnxe[1] >= 1) {
+            rsnxe_capa = rsnxe[2];
+        }
+    }
+
+    if (use_pt && (rsnxe_capa & BIT(WLAN_RSNX_CAPAB_SAE_PK)) &&
+        sae_pk_mode != WPA3_SAE_PK_MODE_DISABLED &&
+        ((pw && sae_pk_valid_password((const char*)pw)))) {
+        use_pt = 1;
+        use_pk = true;
+    }
+
+    if (sae_pk_mode == WPA3_SAE_PK_MODE_ONLY && !use_pk) {
+        wpa_printf(MSG_DEBUG,
+           "SAE: Cannot use PK with the selected AP");
+    return ESP_FAIL;
+    }
+#endif /* CONFIG_SAE_PK */
+
     if (use_pt &&
             sae_prepare_commit_pt(&g_sae_data, g_sae_pt,
-                    own_addr, bssid, NULL) < 0) {
+                    own_addr, bssid, NULL, NULL) < 0) {
         wpa_printf(MSG_ERROR, "wpa3: failed to prepare SAE commit!");
         return ESP_FAIL;
     }
@@ -72,6 +111,15 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
         wpa_printf(MSG_ERROR, "wpa3: failed to prepare SAE commit!");
         return ESP_FAIL;
     }
+
+#ifdef CONFIG_SAE_PK
+    if (g_sae_data.tmp && use_pt && use_pk) {
+        g_sae_data.pk = 1;
+        os_memcpy(g_sae_data.tmp->own_addr,own_addr, ETH_ALEN );
+        os_memcpy(g_sae_data.tmp->peer_addr, bssid, ETH_ALEN);
+        sae_pk_set_password(&g_sae_data,(const char*) pw);
+    }
+#endif
 
 reuse_data:
     len += SAE_COMMIT_MAX_LEN;
@@ -199,7 +247,7 @@ static int wpa3_parse_sae_commit(u8 *buf, u32 len, u16 status)
     }
 
     ret = sae_parse_commit(&g_sae_data, buf, len, NULL, 0, g_allowed_groups,
-                           status == WLAN_STATUS_SAE_HASH_TO_ELEMENT);
+                           (status == WLAN_STATUS_SAE_HASH_TO_ELEMENT || status == WLAN_STATUS_SAE_PK));
     if (ret) {
         wpa_printf(MSG_ERROR, "wpa3: could not parse commit(%d)", ret);
         return ret;

@@ -158,6 +158,7 @@
 #define WLAN_STATUS_ASSOC_DENIED_NO_VHT 104
 #define WLAN_STATUS_UNKNOWN_PASSWORD_IDENTIFIER 123
 #define WLAN_STATUS_SAE_HASH_TO_ELEMENT 126
+#define WLAN_STATUS_SAE_PK 127
 
 /* Reason codes (IEEE Std 802.11-2016, 9.4.1.7, Table 9-45) */
 #define WLAN_REASON_UNSPECIFIED 1
@@ -257,6 +258,7 @@
 /* Extended RSN Capabilities */
 /* bits 0-3: Field length (n-1) */
 #define WLAN_RSNX_CAPAB_SAE_H2E 5
+#define WLAN_RSNX_CAPAB_SAE_PK 6
 
 #define WLAN_EXT_CAPAB_BSS_TRANSITION 19
 
@@ -555,6 +557,8 @@ struct ieee80211_ht_operation {
 
 #define MBO_IE_VENDOR_TYPE 0x506f9a16
 #define OSEN_IE_VENDOR_TYPE 0x506f9a12
+#define SAE_PK_IE_VENDOR_TYPE 0x506f9a1f
+#define SAE_PK_OUI_TYPE 0x1f
 #define MBO_OUI_TYPE 22
 #define OCE_STA BIT(0)
 #define OCE_STA_CFON BIT(1)

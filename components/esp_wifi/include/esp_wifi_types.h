@@ -267,6 +267,13 @@ typedef enum {
     WPA3_SAE_PWE_BOTH,
 } wifi_sae_pwe_method_t;
 
+/** Configuration for SAE-PK  */
+typedef enum {
+    WPA3_SAE_PK_MODE_AUTOMATIC = 0,
+    WPA3_SAE_PK_MODE_ONLY = 1,
+    WPA3_SAE_PK_MODE_DISABLED = 2,
+} wifi_sae_pk_mode_t;
+
 /** @brief Soft-AP configuration settings for the device */
 typedef struct {
     uint8_t ssid[32];           /**< SSID of soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
@@ -304,6 +311,7 @@ typedef struct {
     uint32_t phymode:6;                       /**< Operation phy mode, BIT[5]: indicate whether LR enabled, BIT[0-4]: wifi_phy_mode_t. */
     uint32_t reserved:8;                      /**< Reserved for future feature set */
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Whether SAE hash to element is enabled */
+    wifi_sae_pk_mode_t sae_pk_mode;           /**< SAE-PK mode */
     uint8_t failure_retry_cnt;                /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config.
                                                    Note: Enabling this may cause connection time to increase incase best AP doesn't behave properly. */
     uint32_t he_dcm_set:1;                                        /**< Whether DCM max.constellation for transmission and reception is set. */

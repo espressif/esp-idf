@@ -55,6 +55,8 @@ struct wpa_sm {
     int rsn_enabled; /* Whether RSN is enabled in configuration */
     int sae_pwe; /* SAE PWE generation options */
 
+    bool sae_pk; /* whether SAE-PK is used */
+
     int countermeasures; /*TKIP countermeasures state flag, 1:in countermeasures state*/
 
     u8 *assoc_wpa_ie; /* Own WPA/RSN IE from (Re)AssocReq */

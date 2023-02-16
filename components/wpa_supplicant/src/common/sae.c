@@ -19,6 +19,7 @@
 #include "sae.h"
 #include "dragonfly.h"
 #include "esp_wifi_crypto_types.h"
+#include "common/defs.h"
 
 int sae_set_group(struct sae_data *sae, int group)
 {
@@ -1045,6 +1046,10 @@ sae_derive_pt_group(int group, const u8 *ssid, size_t ssid_len,
 	pt = os_zalloc(sizeof(*pt));
 	if (!pt)
 		return NULL;
+#ifdef CONFIG_SAE_PK
+	os_memcpy(pt->ssid, ssid, ssid_len);
+	pt->ssid_len = ssid_len;
+#endif /* CONFIG_SAE_PK */
 
 	pt->group = group;
 	pt->ec = crypto_ec_init(group);
@@ -1368,7 +1373,7 @@ int sae_prepare_commit(const u8 *addr1, const u8 *addr2,
 
 int sae_prepare_commit_pt(struct sae_data *sae, struct sae_pt *pt,
 			  const u8 *addr1, const u8 *addr2,
-			  int *rejected_groups)
+			  int *rejected_groups, const struct sae_pk *pk)
 {
 	if (!sae->tmp)
 		return -1;
@@ -1383,6 +1388,11 @@ int sae_prepare_commit_pt(struct sae_data *sae, struct sae_pt *pt,
 			   sae->group);
 		return -1;
 	}
+#ifdef CONFIG_SAE_PK
+	os_memcpy(sae->tmp->ssid, pt->ssid, pt->ssid_len);
+	sae->tmp->ssid_len = pt->ssid_len;
+	sae->tmp->ap_pk = pk;
+#endif /* CONFIG_SAE_PK */
 
 	sae->tmp->own_addr_higher = os_memcmp(addr1, addr2, ETH_ALEN) > 0;
 	wpabuf_free(sae->tmp->own_rejected_groups);
@@ -1523,6 +1533,9 @@ static int sae_derive_keys(struct sae_data *sae, const u8 *k)
 	 * KCK || PMK = KDF-Hash-Length(keyseed, "SAE KCK and PMK",
 	 *                      (commit-scalar + peer-commit-scalar) modulo r)
 	 * PMKID = L((commit-scalar + peer-commit-scalar) modulo r, 0, 128)
+	*
+	* When SAE_PK is used,
+	* KCK || PMK || KEK = KDF-Hash-Length(keyseed, "SAE-PK keys", context)
 	 */
 	if (!sae->h2e)
 		hash_len = SHA256_MAC_LEN;
@@ -1530,6 +1543,7 @@ static int sae_derive_keys(struct sae_data *sae, const u8 *k)
 		hash_len = sae_ffc_prime_len_2_hash_len(prime_len);
 	else
 		hash_len = sae_ecc_prime_len_2_hash_len(prime_len);
+
 	if (sae->h2e && (sae->tmp->own_rejected_groups ||
 			 sae->tmp->peer_rejected_groups)) {
 		struct wpabuf *own, *peer;
@@ -1583,14 +1597,38 @@ static int sae_derive_keys(struct sae_data *sae, const u8 *k)
 	crypto_bignum_to_bin(tmp, val, sizeof(val), sae->tmp->order_len);
 	wpa_hexdump(MSG_DEBUG, "SAE: PMKID", val, SAE_PMKID_LEN);
 
+#ifdef CONFIG_SAE_PK
+	if (sae->pk) {
+		if (sae_kdf_hash(hash_len, keyseed, "SAE-PK keys",
+			   val, sae->tmp->order_len,
+			   keys, 2 * hash_len + SAE_PMK_LEN) < 0)
+			goto fail;
+	} else {
+		if (sae_kdf_hash(hash_len, keyseed, "SAE KCK and PMK",
+			   val, sae->tmp->order_len,
+			   keys, hash_len + SAE_PMK_LEN) < 0)
+			goto fail;
+	}
+#else /* CONFIG_SAE_PK */
 	if (sae_kdf_hash(hash_len, keyseed, "SAE KCK and PMK",
 			 val, sae->tmp->order_len,
 			 keys, hash_len + SAE_PMK_LEN) < 0)
 		goto fail;
+#endif /* !CONFIG_SAE_PK */
+
 	forced_memzero(keyseed, sizeof(keyseed));
 	os_memcpy(sae->tmp->kck, keys, hash_len);
 	os_memcpy(sae->pmk, keys + hash_len, SAE_PMK_LEN);
 	os_memcpy(sae->pmkid, val, SAE_PMKID_LEN);
+
+#ifdef CONFIG_SAE_PK
+	if (sae->pk) {
+		os_memcpy(sae->tmp->kek, keys + hash_len + SAE_PMK_LEN, hash_len);
+		sae->tmp->kek_len = hash_len;
+		wpa_hexdump_key(MSG_DEBUG, "SAE: KEK for SAE-PK",
+				   sae->tmp->kek, sae->tmp->kek_len);
+	}
+#endif /* CONFIG_SAE_PK */
 	forced_memzero(keys, sizeof(keys));
 	wpa_hexdump_key(MSG_DEBUG, "SAE: KCK",
 			sae->tmp->kck, SAE_KCK_LEN);
@@ -2292,6 +2330,12 @@ int sae_check_confirm(struct sae_data *sae, const u8 *data, size_t len)
 			    verifier, hash_len);
 		return ESP_FAIL;
 	}
+
+#ifdef CONFIG_SAE_PK
+	if (sae_check_confirm_pk(sae, data + 2 + hash_len,
+		   len - 2 - hash_len) != ESP_OK)
+		return ESP_FAIL;
+#endif /* CONFIG_SAE_PK */
 
 	return ESP_OK;
 }

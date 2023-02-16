@@ -255,6 +255,13 @@ menu "Wi-Fi"
             PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
             explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide for details.
 
+    config ESP_WIFI_ENABLE_SAE_PK
+        bool "Enable SAE-PK"
+        default y
+        depends on ESP_WIFI_ENABLE_WPA3_SAE
+        help
+            Select this option to enable SAE-PK
+
     config ESP_WIFI_ENABLE_WPA3_OWE_STA
         bool "Enable OWE STA"
         default y

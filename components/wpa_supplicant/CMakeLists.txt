@@ -151,10 +151,7 @@ endif()
 
 if(CONFIG_ESP_WIFI_11KV_SUPPORT OR CONFIG_ESP_WIFI_11R_SUPPORT)
     set(roaming_src
-    "src/common/bss.c"
-    "src/common/scan.c"
-    "src/common/ieee802_11_common.c"
-    "esp_supplicant/src/esp_scan.c")
+    "src/common/ieee802_11_common.c")
     if(CONFIG_ESP_WIFI_11KV_SUPPORT)
         set(roaming_src ${roaming_src} "src/common/rrm.c" "src/common/wnm_sta.c")
     endif()
@@ -163,6 +160,18 @@ if(CONFIG_ESP_WIFI_11KV_SUPPORT OR CONFIG_ESP_WIFI_11R_SUPPORT)
     endif()
 else()
     set(roaming_src "")
+endif()
+
+if(CONFIG_ESP_WIFI_ENABLE_SAE_PK)
+    set(srcs ${srcs}
+    "src/common/sae_pk.c")
+endif()
+
+if(CONFIG_ESP_WIFI_11KV_SUPPORT OR CONFIG_ESP_WIFI_11R_SUPPORT OR CONFIG_ESP_WIFI_ENABLE_SAE_PK)
+    set(srcs ${srcs}
+    "src/common/bss.c"
+    "src/common/scan.c"
+    "esp_supplicant/src/esp_scan.c")
 endif()
 
 if(CONFIG_ESP_WIFI_MBO_SUPPORT)
@@ -221,6 +230,9 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
 
 if(CONFIG_ESP_WIFI_ENABLE_WPA3_SAE)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPA3_SAE)
+endif()
+if(CONFIG_ESP_WIFI_ENABLE_SAE_PK)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_SAE_PK)
 endif()
 if(CONFIG_ESP_WIFI_WPS_STRICT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPS_STRICT)
