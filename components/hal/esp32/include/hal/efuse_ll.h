@@ -23,97 +23,95 @@ extern "C" {
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_crypt_cnt(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_FLASH_CRYPT_CNT);
+    return EFUSE.blk0_rdata0.rd_flash_crypt_cnt;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac0(void)
 {
-    return REG_READ(EFUSE_BLK0_RDATA1_REG);
+    return EFUSE.blk0_rdata1.rd_mac;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac1(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK0_RDATA2_REG, EFUSE_RD_WIFI_MAC_CRC_HIGH) & 0x0000FFFF;
+    return EFUSE.blk0_rdata2.rd_mac_1;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v1_en(void)
 {
-    return REG_GET_BIT(EFUSE_BLK0_RDATA6_REG, EFUSE_RD_ABS_DONE_0);
+    return EFUSE.blk0_rdata6.rd_abs_done_0;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en(void)
 {
-    return REG_GET_BIT(EFUSE_BLK0_RDATA6_REG, EFUSE_RD_ABS_DONE_1);
+    return EFUSE.blk0_rdata6.rd_abs_done_1;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_sdio_force(void)
 {
-    return REG_GET_BIT(EFUSE_BLK0_RDATA4_REG, EFUSE_RD_SDIO_FORCE);
+    return EFUSE.blk0_rdata4.rd_xpd_sdio_force;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_xpd_sdio(void)
 {
-    return REG_GET_BIT(EFUSE_BLK0_RDATA4_REG, EFUSE_RD_XPD_SDIO_REG);
+    return EFUSE.blk0_rdata4.rd_xpd_sdio_reg;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_sdio_tieh(void)
 {
-    return REG_GET_BIT(EFUSE_BLK0_RDATA4_REG, EFUSE_RD_SDIO_TIEH);
+    return EFUSE.blk0_rdata4.rd_xpd_sdio_tieh;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_sdio_drefh(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_SDIO_DREFH);
+    return (EFUSE.blk0_rdata4.val >> 8) & 0x3;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_sdio_drefm(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_SDIO_DREFM);
+    return (EFUSE.blk0_rdata4.val >> 10) & 0x3;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_sdio_drefl(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_SDIO_DREFL);
+    return (EFUSE.blk0_rdata4.val >> 12) & 0x3;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_blk3_part_reserve(void)
 {
-    return REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_BLK3_PART_RESERVE);
+    return EFUSE.blk0_rdata3.rd_blk3_part_reserve;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_chip_cpu_freq_rated(void)
 {
-    return REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_CPU_FREQ_RATED);
+    return EFUSE.blk0_rdata3.rd_chip_cpu_freq_rated;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_chip_cpu_freq_low(void)
 {
-    return REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_CPU_FREQ_LOW);
+    return EFUSE.blk0_rdata3.rd_chip_cpu_freq_low;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)
 {
-    uint32_t pkg_version = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
-    uint32_t pkg_version_4bit = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG_4BIT);
-    return (pkg_version_4bit << 3) | pkg_version;
+    return (EFUSE.blk0_rdata3.rd_chip_package_4bit << 3) | EFUSE.blk0_rdata3.rd_chip_package;
 }
 
 // use efuse_hal_get_major_chip_version() to get full major chip version
 __attribute__((always_inline)) static inline bool efuse_ll_get_chip_ver_rev1(void)
 {
-    return REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_REV1);
+    return EFUSE.blk0_rdata3.rd_chip_ver_rev1;
 }
 
 // use efuse_hal_get_major_chip_version() to get full major chip version
 __attribute__((always_inline)) static inline bool efuse_ll_get_chip_ver_rev2(void)
 {
-    return REG_GET_BIT(EFUSE_BLK0_RDATA5_REG, EFUSE_RD_CHIP_VER_REV2);
+    return EFUSE.blk0_rdata5.rd_chip_ver_rev2;
 }
 
 // use efuse_hal_get_minor_chip_version() to get minor chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK0_RDATA5_REG, EFUSE_RD_WAFER_VERSION_MINOR);
+    return EFUSE.blk0_rdata5.rd_wafer_version_minor;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
@@ -123,47 +121,47 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_ver
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_coding_scheme(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK0_RDATA6_REG, EFUSE_CODING_SCHEME);
+    return EFUSE.blk0_rdata6.rd_coding_scheme;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_app_cpu(void)
 {
-    return REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU);
+    return EFUSE.blk0_rdata3.rd_disable_app_cpu;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_bt(void)
 {
-    return REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_BT);
+    return EFUSE.blk0_rdata3.rd_disable_bt;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_vol_level_hp_inv(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK0_RDATA5_REG, EFUSE_RD_VOL_LEVEL_HP_INV);
+    return EFUSE.blk0_rdata5.rd_vol_level_hp_inv;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_adc_vref(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK0_RDATA4_REG, EFUSE_RD_ADC_VREF);
+    return EFUSE.blk0_rdata4.rd_adc_vref;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_adc1_tp_low(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK3_RDATA3_REG, EFUSE_RD_ADC1_TP_LOW);
+    return EFUSE.blk3_rdata3.rd_adc1_tp_low;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_adc2_tp_low(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK3_RDATA3_REG, EFUSE_RD_ADC2_TP_LOW);
+    return EFUSE.blk3_rdata3.rd_adc2_tp_low;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_adc1_tp_high(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK3_RDATA3_REG, EFUSE_RD_ADC1_TP_HIGH);
+    return EFUSE.blk3_rdata3.rd_adc1_tp_high;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_adc2_tp_high(void)
 {
-    return REG_GET_FIELD(EFUSE_BLK3_RDATA3_REG, EFUSE_RD_ADC2_TP_HIGH);
+    return EFUSE.blk3_rdata3.rd_adc2_tp_high;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_dec_warnings(unsigned block)
@@ -171,7 +169,7 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_dec_warnings(unsi
     if (block == 0 || block > 4) {
         return false;
     }
-    uint32_t error_reg = REG_GET_FIELD(EFUSE_DEC_STATUS_REG, EFUSE_DEC_WARNINGS);
+    uint32_t error_reg = EFUSE.dec_status.dec_warnings;
     return ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block - 1) != 0;
 }
 
@@ -179,42 +177,42 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_dec_warnings(unsi
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_cmd(void)
 {
-    return REG_READ(EFUSE_CMD_REG);
+    return EFUSE.cmd.val;
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_read_cmd(void)
 {
-    REG_WRITE(EFUSE_CMD_REG, EFUSE_READ_CMD);
+    EFUSE.cmd.read_cmd = 1;
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_pgm_cmd(void)
 {
-    REG_WRITE(EFUSE_CMD_REG, EFUSE_PGM_CMD);
+    EFUSE.cmd.pgm_cmd = 1;
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_conf_read_op_code(void)
 {
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_READ_OP_CODE);
+    EFUSE.conf.op_code = EFUSE_READ_OP_CODE;
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_conf_write_op_code(void)
 {
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_WRITE_OP_CODE);
+    EFUSE.conf.op_code = EFUSE_WRITE_OP_CODE;
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_dac_clk_div(uint32_t value)
 {
-    REG_SET_FIELD(EFUSE_DAC_CONF_REG, EFUSE_DAC_CLK_DIV, value);
+    EFUSE.dac_conf.dac_clk_div = value;
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_dac_clk_sel0(uint32_t value)
 {
-    REG_SET_FIELD(EFUSE_CLK_REG, EFUSE_CLK_SEL0, value);
+    EFUSE.clk.clk_sel0 = value;
 }
 
 __attribute__((always_inline)) static inline void efuse_ll_set_dac_clk_sel1(uint32_t value)
 {
-    REG_SET_FIELD(EFUSE_CLK_REG, EFUSE_CLK_SEL1, value);
+    EFUSE.clk.clk_sel1 = value;
 }
 
 /******************* eFuse control functions *************************/

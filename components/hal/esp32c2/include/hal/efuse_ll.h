@@ -22,7 +22,7 @@ extern "C" {
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_crypt_cnt(void)
 {
-    return EFUSE.rd_repeat_data0.spi_boot_encrypt_decrypt_cnt;
+    return EFUSE.rd_repeat_data0.spi_boot_crypt_cnt;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_wdt_delay_sel(void)
@@ -32,12 +32,12 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_wdt_delay_sel
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac0(void)
 {
-    return EFUSE.rd_blk2_data0.blk2_data0;
+    return EFUSE.rd_blk2_data0.mac;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac1(void)
 {
-    return EFUSE.rd_blk2_data1.mac_id_high;
+    return EFUSE.rd_blk2_data1.mac_1;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en(void)
@@ -85,7 +85,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
 {
     // OCODE,                                  EFUSE_BLK2,     62,    7,      OCode
-    return (EFUSE.rd_blk2_data2.ocode_hi << 2) + EFUSE.rd_blk2_data1.ocode_low;
+    return (EFUSE.rd_blk2_data2.ocode_1 << 2) + EFUSE.rd_blk2_data1.ocode;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_dig_dbias_hvt(void)
@@ -109,7 +109,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_dig_ldo_slp_d
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_dig_ldo_act_dbias26(void)
 {
     // DIG_LDO_ACT_DBIAS26,                    EFUSE_BLK2,    125,    6,      BLOCK2 DIG_LDO_ACT_DBIAS26
-    return (EFUSE.rd_blk2_data4.dig_ldo_act_dbias26_hi << 3) + EFUSE.rd_blk2_data3.dig_ldo_act_dbias26_low;
+    return (EFUSE.rd_blk2_data4.dig_ldo_act_dbias26_1 << 3) + EFUSE.rd_blk2_data3.dig_ldo_act_dbias26;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_dig_ldo_act_stepd10(void)
@@ -139,7 +139,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_rtc_ldo_slp_d
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_rtc_ldo_act_dbias31(void)
 {
     // RTC_LDO_ACT_DBIAS31,                    EFUSE_BLK2,    157,    6,      BLOCK2 DIG_LDO_ACT_DBIAS31
-    return (EFUSE.rd_blk2_data5.rtc_ldo_act_dbias31_hi << 3) + EFUSE.rd_blk2_data4.rtc_ldo_act_dbias31_low;
+    return (EFUSE.rd_blk2_data5.rtc_ldo_act_dbias31_1 << 3) + EFUSE.rd_blk2_data4.rtc_ldo_act_dbias31;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_rtc_ldo_act_dbias13(void)

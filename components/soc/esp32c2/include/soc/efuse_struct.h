@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -165,7 +165,8 @@ typedef union {
          *  Disable programming of individual eFuses.
          */
         uint32_t wr_dis:8;
-        uint32_t reserved_8:24;
+        /** reserved_0_8 : RW; bitpos: [31:8]; default: 0; */
+        uint32_t reserved_0_8:24;
     };
     uint32_t val;
 } efuse_rd_wr_dis_reg_t;
@@ -196,11 +197,11 @@ typedef union {
          *  The bit be set to disable manual encryption.
          */
         uint32_t dis_download_manual_encrypt:1;
-        /** spi_boot_encrypt_decrypt_cnt : RO; bitpos: [9:7]; default: 0;
+        /** spi_boot_crypt_cnt : RO; bitpos: [9:7]; default: 0;
          *  These bits be set to enable SPI boot encrypt/decrypt. Odd number of 1: enable. even
          *  number of 1: disable.
          */
-        uint32_t spi_boot_encrypt_decrypt_cnt:3;
+        uint32_t spi_boot_crypt_cnt:3;
         /** xts_key_length_256 : RO; bitpos: [10]; default: 0;
          *  The bit be set means XTS_AES use the whole 256-bit efuse data in BLOCK3. Otherwise,
          *  XTS_AES use 128-bit eFuse data in BLOCK3.
@@ -236,26 +237,26 @@ typedef union {
          *  The bit be set to enable secure boot.
          */
         uint32_t secure_boot_en:1;
-        /** secure_version : RO; bitpos: [25:22]; default: 0;
-         *  Secure version for anti-rollback.
+        /** secure_version : R; bitpos: [25:22]; default: 0;
+         *  Secure version for anti-rollback
          */
         uint32_t secure_version:4;
-        /** enable_custom_mac : RO; bitpos: [26]; default: 0;
-         *  True if custom_mac is burned.
+        /** custom_mac_used : R; bitpos: [26]; default: 0;
+         *  True if MAC_CUSTOM is burned
          */
-        uint32_t enable_custom_mac:1;
-        /** disable_wafer_version_major : RO; bitpos: [27]; default: 0;
-         *  Disables check of wafer version major.
+        uint32_t custom_mac_used:1;
+        /** disable_wafer_version_major : R; bitpos: [27]; default: 0;
+         *  Disables check of wafer version major
          */
         uint32_t disable_wafer_version_major:1;
-        /** disable_blk_version_major : RO; bitpos: [28]; default: 0;
-         *  Disables check of blk version major.
+        /** disable_blk_version_major : R; bitpos: [28]; default: 0;
+         *  Disables check of blk version major
          */
         uint32_t disable_blk_version_major:1;
-        /** rpt4_reserved : RO; bitpos: [31:29]; default: 0;
-         *  Reserved (used for four backups method).
+        /** reserved_0_61 : R; bitpos: [31:29]; default: 0;
+         *  reserved
          */
-        uint32_t rpt4_reserved:3;
+        uint32_t reserved_0_61:3;
     };
     uint32_t val;
 } efuse_rd_repeat_data0_reg_t;
@@ -265,10 +266,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** system_data0 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the bits [0:31] of system data.
+        /** custom_mac : R; bitpos: [31:0]; default: 0;
+         *  Custom MAC address
          */
-        uint32_t system_data0:32;
+        uint32_t custom_mac:32;
     };
     uint32_t val;
 } efuse_rd_blk1_data0_reg_t;
@@ -278,10 +279,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** system_data1 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the bits [32:63] of system data.
+        /** custom_mac_1 : R; bitpos: [15:0]; default: 0;
+         *  Custom MAC address
          */
-        uint32_t system_data1:32;
+        uint32_t custom_mac_1:16;
+        /** reserved_1_48 : R; bitpos: [31:16]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_48:16;
     };
     uint32_t val;
 } efuse_rd_blk1_data1_reg_t;
@@ -305,10 +310,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** blk2_data0 : RO; bitpos: [31:0]; default: 0;
-         *  Store the bit [0:31] of MAC.
+        /** mac : R; bitpos: [31:0]; default: 0;
+         *  MAC address
          */
-        uint32_t blk2_data0:32;
+        uint32_t mac:32;
     };
     uint32_t val;
 } efuse_rd_blk2_data0_reg_t;
@@ -318,34 +323,34 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mac_id_high : RO; bitpos: [15:0]; default: 0;
-         *  Store the bit [31:47] of MAC.
+        /** mac_1 : R; bitpos: [15:0]; default: 0;
+         *  MAC address
          */
-        uint32_t mac_id_high:16;
-        /** wafer_version_minor : RO; bitpos: [19:16]; default: 0;
-         *  Store wafer version minor.
+        uint32_t mac_1:16;
+        /** wafer_version_minor : R; bitpos: [19:16]; default: 0;
+         *  WAFER_VERSION_MINOR
          */
         uint32_t wafer_version_minor:4;
-        /** wafer_version_major : RO; bitpos: [21:20]; default: 0;
-         *  Store wafer version major.
+        /** wafer_version_major : R; bitpos: [21:20]; default: 0;
+         *  WAFER_VERSION_MAJOR
          */
         uint32_t wafer_version_major:2;
-        /** pkg_version : RO; bitpos: [24:22]; default: 0;
-         *  Store package version.
+        /** pkg_version : R; bitpos: [24:22]; default: 0;
+         *  EFUSE_PKG_VERSION
          */
         uint32_t pkg_version:3;
-        /** blk_version_minor : RO; bitpos: [27:25]; default: 0;
-         *  Store blk 2 efuse version minor.
+        /** blk_version_minor : R; bitpos: [27:25]; default: 0;
+         *  Minor version of BLOCK2
          */
         uint32_t blk_version_minor:3;
-        /** blk_version_major : RO; bitpos: [29:28]; default: 0;
-         *  Store blk 2 efuse version major.
+        /** blk_version_major : R; bitpos: [29:28]; default: 0;
+         *  Major version of BLOCK2
          */
         uint32_t blk_version_major:2;
-        /** ocode_lo : RO; bitpos: [31:30];
-         *  Store ocode.
+        /** ocode : R; bitpos: [31:30]; default: 0;
+         *  OCode
          */
-        uint32_t ocode_low:2;
+        uint32_t ocode:2;
     };
     uint32_t val;
 } efuse_rd_blk2_data1_reg_t;
@@ -355,18 +360,26 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ocode_hi : RO; bitpos: [4:0];
-         *  Store ocode.
+        /** ocode_1 : R; bitpos: [4:0]; default: 0;
+         *  OCode
          */
-        uint32_t ocode_hi:5;
-        /** ldo_vol_bias_config_high : RO; bitpos: [26:5]; default: 0;
-         *  ido configuration parameters.
+        uint32_t ocode_1:5;
+        /** temp_calib : R; bitpos: [13:5]; default: 0;
+         *  Temperature calibration data
          */
-        uint32_t ldo_vol_bias_config_high:22;
-        /** pvt_low : RO; bitpos: [31:27]; default: 0;
-         *  Store the bit [0:4] of pvt.
+        uint32_t temp_calib:9;
+        /** adc1_init_code_atten0 : R; bitpos: [21:14]; default: 0;
+         *  ADC1 init code at atten0
          */
-        uint32_t pvt_low:5;
+        uint32_t adc1_init_code_atten0:8;
+        /** adc1_init_code_atten3 : R; bitpos: [26:22]; default: 0;
+         *  ADC1 init code at atten3
+         */
+        uint32_t adc1_init_code_atten3:5;
+        /** adc1_cal_vol_atten0 : R; bitpos: [31:27]; default: 0;
+         *  ADC1 calibration voltage at atten0
+         */
+        uint32_t adc1_cal_vol_atten0:5;
     };
     uint32_t val;
 } efuse_rd_blk2_data2_reg_t;
@@ -376,11 +389,30 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved1:9;
+        /** adc1_cal_vol_atten0_1 : R; bitpos: [2:0]; default: 0;
+         *  ADC1 calibration voltage at atten0
+         */
+        uint32_t adc1_cal_vol_atten0_1:3;
+        /** adc1_cal_vol_atten3 : R; bitpos: [8:3]; default: 0;
+         *  ADC1 calibration voltage at atten3
+         */
+        uint32_t adc1_cal_vol_atten3:6;
+        /** dig_dbias_hvt : R; bitpos: [13:9]; default: 0;
+         *  BLOCK2 digital dbias when hvt
+         */
         uint32_t dig_dbias_hvt:5;
+        /** dig_ldo_slp_dbias2 : R; bitpos: [20:14]; default: 0;
+         *  BLOCK2 DIG_LDO_DBG0_DBIAS2
+         */
         uint32_t dig_ldo_slp_dbias2:7;
+        /** dig_ldo_slp_dbias26 : R; bitpos: [28:21]; default: 0;
+         *  BLOCK2 DIG_LDO_DBG0_DBIAS26
+         */
         uint32_t dig_ldo_slp_dbias26:8;
-        uint32_t dig_ldo_act_dbias26_low:3;
+        /** dig_ldo_act_dbias26 : R; bitpos: [31:29]; default: 0;
+         *  BLOCK2 DIG_LDO_ACT_DBIAS26
+         */
+        uint32_t dig_ldo_act_dbias26:3;
     };
     uint32_t val;
 } efuse_rd_blk2_data3_reg_t;
@@ -390,12 +422,30 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t dig_ldo_act_dbias26_hi:3;
+        /** dig_ldo_act_dbias26_1 : R; bitpos: [2:0]; default: 0;
+         *  BLOCK2 DIG_LDO_ACT_DBIAS26
+         */
+        uint32_t dig_ldo_act_dbias26_1:3;
+        /** dig_ldo_act_stepd10 : R; bitpos: [6:3]; default: 0;
+         *  BLOCK2 DIG_LDO_ACT_STEPD10
+         */
         uint32_t dig_ldo_act_stepd10:4;
+        /** rtc_ldo_slp_dbias13 : R; bitpos: [13:7]; default: 0;
+         *  BLOCK2 DIG_LDO_SLP_DBIAS13
+         */
         uint32_t rtc_ldo_slp_dbias13:7;
+        /** rtc_ldo_slp_dbias29 : R; bitpos: [22:14]; default: 0;
+         *  BLOCK2 DIG_LDO_SLP_DBIAS29
+         */
         uint32_t rtc_ldo_slp_dbias29:9;
+        /** rtc_ldo_slp_dbias31 : R; bitpos: [28:23]; default: 0;
+         *  BLOCK2 DIG_LDO_SLP_DBIAS31
+         */
         uint32_t rtc_ldo_slp_dbias31:6;
-        uint32_t rtc_ldo_act_dbias31_low:3;
+        /** rtc_ldo_act_dbias31 : R; bitpos: [31:29]; default: 0;
+         *  BLOCK2 DIG_LDO_ACT_DBIAS31
+         */
+        uint32_t rtc_ldo_act_dbias31:3;
     };
     uint32_t val;
 } efuse_rd_blk2_data4_reg_t;
@@ -405,9 +455,18 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t rtc_ldo_act_dbias31_hi:3;
+        /** rtc_ldo_act_dbias31_1 : R; bitpos: [2:0]; default: 0;
+         *  BLOCK2 DIG_LDO_ACT_DBIAS31
+         */
+        uint32_t rtc_ldo_act_dbias31_1:3;
+        /** rtc_ldo_act_dbias13 : R; bitpos: [10:3]; default: 0;
+         *  BLOCK2 DIG_LDO_ACT_DBIAS13
+         */
         uint32_t rtc_ldo_act_dbias13:8;
-        uint32_t reserved2:21;
+        /** reserved_2_171 : R; bitpos: [31:11]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_2_171:21;
     };
     uint32_t val;
 } efuse_rd_blk2_data5_reg_t;
