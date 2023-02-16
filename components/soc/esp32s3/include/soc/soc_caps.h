@@ -502,3 +502,4 @@
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
 #define SOC_BLE_MESH_SUPPORTED          (1)    /*!< Support BLE MESH */
+#define SOC_BLE_50_SUPPORTED            (1)    /*!< Support Bluetooth 5.0 */
