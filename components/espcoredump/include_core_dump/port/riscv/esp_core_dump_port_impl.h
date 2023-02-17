@@ -14,11 +14,6 @@
 #include "esp_core_dump_types.h"
 #include "esp_app_format.h"
 
-/**
- * @brief Chip ID associated to this implementation.
- */
-#define COREDUMP_VERSION_CHIP ESP_CHIP_ID_ESP32C3
-
 #ifdef __cplusplus
 extern "C" {
 #endif
