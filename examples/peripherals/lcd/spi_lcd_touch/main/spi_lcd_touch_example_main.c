@@ -203,20 +203,17 @@ void app_main(void)
     // Attach the LCD to the SPI bus
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_HOST, &io_config, &io_handle));
 
-    ESP_LOGI(TAG, "Install GC9A01 panel driver");
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = EXAMPLE_PIN_NUM_LCD_RST,
-#if CONFIG_EXAMPLE_LCD_CONTROLLER_ILI9341
-        .rgb_endian = LCD_RGB_ENDIAN_RGB,
-#elif CONFIG_EXAMPLE_LCD_CONTROLLER_GC9A01
         .rgb_endian = LCD_RGB_ENDIAN_BGR,
-#endif
         .bits_per_pixel = 16,
     };
 #if CONFIG_EXAMPLE_LCD_CONTROLLER_ILI9341
+    ESP_LOGI(TAG, "Install ILI9341 panel driver");
     ESP_ERROR_CHECK(esp_lcd_new_panel_ili9341(io_handle, &panel_config, &panel_handle));
 #elif CONFIG_EXAMPLE_LCD_CONTROLLER_GC9A01
+    ESP_LOGI(TAG, "Install GC9A01 panel driver");
     ESP_ERROR_CHECK(esp_lcd_new_panel_gc9a01(io_handle, &panel_config, &panel_handle));
 #endif
 
