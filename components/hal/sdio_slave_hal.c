@@ -40,7 +40,7 @@ typedef enum {
 } sdio_ringbuf_pointer_t;
 
 static esp_err_t sdio_ringbuf_send(sdio_ringbuf_t *buf, esp_err_t (*copy_callback)(uint8_t *, void *), void *arg);
-esp_err_t sdio_ringbuf_recv(sdio_ringbuf_t *buf, uint8_t **start, uint8_t **end, ringbuf_get_all_t get_all);
+static inline esp_err_t sdio_ringbuf_recv(sdio_ringbuf_t *buf, sdio_slave_hal_send_desc_t **start, sdio_slave_hal_send_desc_t **end, ringbuf_get_all_t get_all);
 static inline int sdio_ringbuf_return(sdio_ringbuf_t* buf, uint8_t *ptr);
 
 #define _SEND_DESC_NEXT(x)    STAILQ_NEXT(&((sdio_slave_hal_send_desc_t*)x)->dma_desc, qe)
@@ -95,12 +95,7 @@ static esp_err_t sdio_ringbuf_send(sdio_ringbuf_t *buf, esp_err_t (*copy_callbac
 
 // this ringbuf is a return-before-recv-again strategy
 // since this is designed to be called in the ISR, no parallel logic
-/*
- * Workaround for gcc 11. GCC-277. Break the inferring of callers.
- * This function used to be static inline.
- */
-__attribute__((weak))
-esp_err_t sdio_ringbuf_recv(sdio_ringbuf_t *buf, uint8_t **start, uint8_t **end, ringbuf_get_all_t get_all)
+static inline esp_err_t sdio_ringbuf_recv(sdio_ringbuf_t *buf, sdio_slave_hal_send_desc_t **start, sdio_slave_hal_send_desc_t **end, ringbuf_get_all_t get_all)
 {
     HAL_ASSERT(buf->free_ptr == buf->read_ptr);   //must return before recv again
     if (start == NULL && end == NULL) return ESP_ERR_INVALID_ARG; // must have a output
@@ -115,10 +110,10 @@ esp_err_t sdio_ringbuf_recv(sdio_ringbuf_t *buf, uint8_t **start, uint8_t **end,
     }
 
     if (start != NULL) {
-        *start = get_start;
+        *start = (sdio_slave_hal_send_desc_t *) get_start;
     }
     if (end != NULL) {
-        *end = buf->read_ptr;
+        *end = (sdio_slave_hal_send_desc_t *) buf->read_ptr;
     }
     return ESP_OK;
 }
@@ -193,7 +188,7 @@ static esp_err_t init_send_queue(sdio_slave_context_t *hal)
 
     //loop in the ringbuf to link all the desc one after another as a ring
     for (int i = 0; i < hal->send_queue_size + 1; i++) {
-        rcv_res = sdio_ringbuf_recv(buf, (uint8_t **) &last, NULL, RINGBUF_GET_ONE);
+        rcv_res = sdio_ringbuf_recv(buf, &last, NULL, RINGBUF_GET_ONE);
         assert (rcv_res == ESP_OK);
 
         ret = sdio_ringbuf_send(buf, link_desc_to_last, last);
@@ -205,7 +200,7 @@ static esp_err_t init_send_queue(sdio_slave_context_t *hal)
     first = NULL;
     last = NULL;
     //clear the queue
-    rcv_res = sdio_ringbuf_recv(buf, (uint8_t **) &first, (uint8_t **) &last, RINGBUF_GET_ALL);
+    rcv_res = sdio_ringbuf_recv(buf, &first, &last, RINGBUF_GET_ALL);
     assert (rcv_res == ESP_OK);
     HAL_ASSERT(first == last); //there should be only one desc remain
     sdio_ringbuf_return(buf, (uint8_t *) first);
@@ -336,9 +331,9 @@ static esp_err_t send_check_new_packet(sdio_slave_context_t *hal)
     sdio_slave_hal_send_desc_t *start = NULL;
     sdio_slave_hal_send_desc_t *end = NULL;
     if (hal->sending_mode == SDIO_SLAVE_SEND_PACKET) {
-        ret = sdio_ringbuf_recv(&(hal->send_desc_queue), (uint8_t **) &start, (uint8_t **) &end, RINGBUF_GET_ONE);
+        ret = sdio_ringbuf_recv(&(hal->send_desc_queue), &start, &end, RINGBUF_GET_ONE);
     } else { //stream mode
-        ret = sdio_ringbuf_recv(&(hal->send_desc_queue), (uint8_t **) &start, (uint8_t **) &end, RINGBUF_GET_ALL);
+        ret = sdio_ringbuf_recv(&(hal->send_desc_queue), &start, &end, RINGBUF_GET_ALL);
     }
     if (ret == ESP_OK) {
         hal->in_flight_head = start;
@@ -429,7 +424,7 @@ static esp_err_t send_get_unsent_desc(sdio_slave_context_t *hal, void **out_arg,
     esp_err_t ret;
     sdio_slave_hal_send_desc_t *head = NULL;
     sdio_slave_hal_send_desc_t *tail = NULL;
-    ret = sdio_ringbuf_recv(&(hal->send_desc_queue), (uint8_t **) &head, (uint8_t **) &tail, RINGBUF_GET_ONE);
+    ret = sdio_ringbuf_recv(&(hal->send_desc_queue), &head, &tail, RINGBUF_GET_ONE);
 
     if (ret == ESP_OK) {
         //currently each packet takes only one desc.
