@@ -507,6 +507,7 @@ typedef struct rtc_sleep_config_s {
     uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
     uint32_t deep_slp_reject : 1;       //!< enable deep sleep reject
     uint32_t light_slp_reject : 1;      //!< enable light sleep reject
+    uint32_t dbg_atten_slp : 2;             //!< voltage parameter
 } rtc_sleep_config_t;
 
 #define RTC_SLEEP_PD_DIG                BIT(0)  //!< Deep sleep (power down digital domain)
