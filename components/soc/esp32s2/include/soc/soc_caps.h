@@ -414,7 +414,10 @@
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
 
 /*-------------------------- Power Management CAPS ---------------------------*/
-#define SOC_PM_SUPPORT_EXT_WAKEUP                 (1)
+#define SOC_PM_SUPPORT_EXT0_WAKEUP                (1)
+#define SOC_PM_SUPPORT_EXT1_WAKEUP                (1)
+#define SOC_PM_SUPPORT_EXT_WAKEUP                 (1)     /*!<Compatible to the old version of IDF */
+
 #define SOC_PM_SUPPORT_WIFI_WAKEUP                (1)
 #define SOC_PM_SUPPORT_WIFI_PD                    (1)
 #define SOC_PM_SUPPORT_RTC_PERIPH_PD              (1)

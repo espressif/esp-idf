@@ -207,8 +207,10 @@ void esp_sleep_periph_use_8m(bool use_or_not)
 }
 
 static uint32_t get_power_down_flags(void);
-#if SOC_PM_SUPPORT_EXT_WAKEUP
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
 static void ext0_wakeup_prepare(void);
+#endif
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
 static void ext1_wakeup_prepare(void);
 #endif
 static void timer_wakeup_prepare(void);
@@ -433,11 +435,13 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     rtc_clk_cpu_freq_get_config(&cpu_freq_config);
     rtc_clk_cpu_freq_set_xtal();
 
-#if SOC_PM_SUPPORT_EXT_WAKEUP
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
     // Configure pins for external wakeup
     if (s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
         ext0_wakeup_prepare();
     }
+#endif
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
     if (s_config.wakeup_triggers & RTC_EXT1_TRIG_EN) {
         ext1_wakeup_prepare();
     }
@@ -928,11 +932,13 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TIMER, RTC_TIMER_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_TIMER_TRIG_EN;
         s_config.sleep_duration = 0;
-#if SOC_PM_SUPPORT_EXT_WAKEUP
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EXT0, RTC_EXT0_TRIG_EN)) {
         s_config.ext0_rtc_gpio_num = 0;
         s_config.ext0_trigger_level = 0;
         s_config.wakeup_triggers &= ~RTC_EXT0_TRIG_EN;
+#endif
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EXT1, RTC_EXT1_TRIG_EN)) {
         s_config.ext1_rtc_gpio_mask = 0;
         s_config.ext1_trigger_mode = 0;
@@ -1071,8 +1077,7 @@ bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 #endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 }
 
-#if SOC_PM_SUPPORT_EXT_WAKEUP
-
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
 esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
 {
     if (level < 0 || level > 1) {
@@ -1101,7 +1106,9 @@ static void ext0_wakeup_prepare(void)
     rtcio_hal_function_select(rtc_gpio_num, RTCIO_FUNC_RTC);
     rtcio_hal_input_enable(rtc_gpio_num);
 }
+#endif // SOC_PM_SUPPORT_EXT0_WAKEUP
 
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
 esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode_t mode)
 {
     if (mode > ESP_EXT1_WAKEUP_ANY_HIGH) {
@@ -1339,9 +1346,11 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
         return ESP_SLEEP_WAKEUP_GPIO;
     } else if (wakeup_cause & (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN)) {
         return ESP_SLEEP_WAKEUP_UART;
-#if SOC_PM_SUPPORT_EXT_WAKEUP
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
     } else if (wakeup_cause & RTC_EXT0_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_EXT0;
+#endif
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
     } else if (wakeup_cause & RTC_EXT1_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_EXT1;
 #endif

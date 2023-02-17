@@ -224,7 +224,7 @@ static void register_tasks(void)
 
 static struct {
     struct arg_int *wakeup_time;
-#if SOC_PM_SUPPORT_EXT_WAKEUP
+#if SOC_PM_SUPPORT_EXT0_WAKEUP || SOC_PM_SUPPORT_EXT1_WAKEUP
     struct arg_int *wakeup_gpio_num;
     struct arg_int *wakeup_gpio_level;
 #endif
@@ -245,7 +245,7 @@ static int deep_sleep(int argc, char **argv)
         ESP_ERROR_CHECK( esp_sleep_enable_timer_wakeup(timeout) );
     }
 
-#if SOC_PM_SUPPORT_EXT_WAKEUP
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
     if (deep_sleep_args.wakeup_gpio_num->count) {
         int io_num = deep_sleep_args.wakeup_gpio_num->ival[0];
         if (!esp_sleep_is_valid_wakeup_gpio(io_num)) {
@@ -266,7 +266,7 @@ static int deep_sleep(int argc, char **argv)
         ESP_ERROR_CHECK( esp_sleep_enable_ext1_wakeup(1ULL << io_num, level) );
         ESP_LOGE(TAG, "GPIO wakeup from deep sleep currently unsupported on ESP32-C3");
     }
-#endif // SOC_PM_SUPPORT_EXT_WAKEUP
+#endif // SOC_PM_SUPPORT_EXT1_WAKEUP
 
 #if CONFIG_IDF_TARGET_ESP32
     rtc_gpio_isolate(GPIO_NUM_12);
@@ -280,7 +280,7 @@ static void register_deep_sleep(void)
     int num_args = 1;
     deep_sleep_args.wakeup_time =
         arg_int0("t", "time", "<t>", "Wake up time, ms");
-#if SOC_PM_SUPPORT_EXT_WAKEUP
+#if SOC_PM_SUPPORT_EXT0_WAKEUP || SOC_PM_SUPPORT_EXT1_WAKEUP
     deep_sleep_args.wakeup_gpio_num =
         arg_int0(NULL, "io", "<n>",
                  "If specified, wakeup using GPIO with given number");
@@ -293,7 +293,7 @@ static void register_deep_sleep(void)
     const esp_console_cmd_t cmd = {
         .command = "deep_sleep",
         .help = "Enter deep sleep mode. "
-#if SOC_PM_SUPPORT_EXT_WAKEUP
+#if SOC_PM_SUPPORT_EXT0_WAKEUP || SOC_PM_SUPPORT_EXT1_WAKEUP
         "Two wakeup modes are supported: timer and GPIO. "
 #else
         "Timer wakeup mode is supported. "

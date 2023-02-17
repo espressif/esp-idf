@@ -193,8 +193,7 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void);
  */
 bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num);
 
-#if SOC_PM_SUPPORT_EXT_WAKEUP
-
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
 /**
  * @brief Enable wakeup using a pin
  *
@@ -223,7 +222,9 @@ bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num);
  *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
  */
 esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
+#endif // SOC_PM_SUPPORT_EXT0_WAKEUP
 
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
 /**
  * @brief Enable wakeup using multiple pins
  *
@@ -259,7 +260,7 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  */
 esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode_t mode);
 
-#endif // SOC_PM_SUPPORT_EXT_WAKEUP
+#endif // SOC_PM_SUPPORT_EXT1_WAKEUP
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 /**

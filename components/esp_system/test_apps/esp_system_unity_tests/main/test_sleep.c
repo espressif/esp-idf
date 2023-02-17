@@ -386,7 +386,7 @@ TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub from stack in RTC RAM", "[dee
 
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
-#if SOC_PM_SUPPORT_EXT_WAKEUP
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
 TEST_CASE("wake up using ext0 (13 high)", "[deepsleep][ignore]")
 {
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
@@ -404,7 +404,9 @@ TEST_CASE("wake up using ext0 (13 low)", "[deepsleep][ignore]")
     ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(GPIO_NUM_13, ESP_EXT0_WAKEUP_LEVEL_LOW));
     esp_deep_sleep_start();
 }
+#endif // SOC_PM_SUPPORT_EXT0_WAKEUP
 
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
 TEST_CASE("wake up using ext1 when RTC_PERIPH is off (13 high)", "[deepsleep][ignore]")
 {
     // This test needs external pulldown
@@ -440,7 +442,7 @@ TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 low)", "[deepsleep][igno
     ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ALL_LOW));
     esp_deep_sleep_start();
 }
-#endif // SOC_PM_SUPPORT_EXT_WAKEUP
+#endif // SOC_PM_SUPPORT_EXT1_WAKEUP
 
 __attribute__((unused)) static float get_time_ms(void)
 {

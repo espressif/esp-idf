@@ -42,7 +42,7 @@ Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in an a
 
   In light sleep, peripherals are clock gated, and interrupts (from GPIOs and internal peripherals) will not be generated. A wakeup source described in the :doc:`sleep_modes` documentation can be used to trigger wakeup from the light sleep state.
 
-.. only:: SOC_PM_SUPPORT_EXT_WAKEUP
+.. only:: SOC_PM_SUPPORT_EXT0_WAKEUP or SOC_PM_SUPPORT_EXT1_WAKEUP
 
   For example, the EXT0 and EXT1 wakeup sources can be used to wake up the chip via a GPIO.
 

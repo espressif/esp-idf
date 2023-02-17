@@ -365,7 +365,10 @@
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
 /*-------------------------- Power Management CAPS ---------------------------*/
-#define SOC_PM_SUPPORT_EXT_WAKEUP                 (1)
+#define SOC_PM_SUPPORT_EXT0_WAKEUP                (1)
+#define SOC_PM_SUPPORT_EXT1_WAKEUP                (1)
+#define SOC_PM_SUPPORT_EXT_WAKEUP                 (1)     /*!<Compatible to the old version of IDF */
+
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP        (1)     /*!<Supports waking up from touch pad trigger */
 #define SOC_PM_SUPPORT_RTC_PERIPH_PD              (1)
 #define SOC_PM_SUPPORT_RTC_FAST_MEM_PD            (1)
