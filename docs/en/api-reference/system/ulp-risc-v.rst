@@ -11,7 +11,7 @@ The ULP RISC-V coprocessor code is written in C (assembly is also possible) and 
 
 If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../../get-started/index>`, then the toolchain should already be installed.
 
-.. note: In earlier versions of ESP-IDF, RISC-V toolchain had a different prefix: `riscv-none-embed-gcc`.
+.. note:: In earlier versions of ESP-IDF, RISC-V toolchain had a different prefix: `riscv-none-embed-gcc`.
 
 Compiling the ULP RISC-V Code
 -----------------------------
@@ -20,7 +20,7 @@ To compile the ULP RISC-V code as part of the component, the following steps mus
 
 1. The ULP RISC-V code, written in C or assembly (must use the `.S` extension), must be placed in a separate directory inside the component directory, for instance, `ulp/`.
 
-.. note: When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument as it is currently done for the ULP FSM. See the step below for how to properly add ULP source files.
+.. note:: When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument as it is currently done for the ULP FSM. See the step below for how to properly add ULP source files.
 
 2. Call ``ulp_embed_binary`` from the component CMakeLists.txt after registration. For example::
 

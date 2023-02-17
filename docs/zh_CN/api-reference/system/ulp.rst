@@ -34,7 +34,7 @@ ULP FSM 协处理器代码由汇编语言编写，使用 `binutils-esp32ulp 工�
 
 1. 用汇编语言编写的 ULP FSM 代码必须导入到一个或多个 `.S` 扩展文件中，且这些文件必须放在组件目录中一个独立的目录中，例如 `ulp/`。
 
-.. note: 在注册组件（通过 ``idf_component_register``）时，不应将该目录添加到 ``SRC_DIRS`` 参数中。因为 ESP-IDF 构建系统将基于文件扩展名编译在 ``SRC_DIRS`` 中搜索到的文件。对于 ``.S`` 文件，使用的是 ``{IDF_TARGET_TOOLCHAIN_PREFIX}-as`` 汇编器。但这并不适用于 ULP FSM 程序集文件，因此体现这种区别最简单的方式就是将 ULP FSM 程序集文件放到单独的目录中。同样，ULP FSM 程序集源文件也 **不应该** 添加到 ``SRCS`` 中。请参考如下步骤，查看如何正确添加 ULP FSM 程序集源文件。
+.. note:: 在注册组件（通过 ``idf_component_register``）时，不应将该目录添加到 ``SRC_DIRS`` 参数中。因为 ESP-IDF 构建系统将基于文件扩展名编译在 ``SRC_DIRS`` 中搜索到的文件。对于 ``.S`` 文件，使用的是 ``{IDF_TARGET_TOOLCHAIN_PREFIX}-as`` 汇编器。但这并不适用于 ULP FSM 程序集文件，因此体现这种区别最简单的方式就是将 ULP FSM 程序集文件放到单独的目录中。同样，ULP FSM 程序集源文件也 **不应该** 添加到 ``SRCS`` 中。请参考如下步骤，查看如何正确添加 ULP FSM 程序集源文件。
 
 2. 注册后从组件 CMakeLists.txt 中调用 ``ulp_embed_binary`` 示例如下::
 
