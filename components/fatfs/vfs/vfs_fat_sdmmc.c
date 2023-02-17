@@ -296,10 +296,6 @@ cleanup:
     }
     free(card);
     free(dup_path);
-    if (ctx) {
-        free(ctx);
-        s_ctx[ctx_id] = NULL;
-    }
     return err;
 }
 #endif
@@ -396,12 +392,7 @@ cleanup:
     }
     free(card);
     free(dup_path);
-    if (ctx) {
-        free(ctx);
-        s_ctx[ctx_id] = NULL;
-    }
     return err;
-
 }
 
 static void call_host_deinit(const sdmmc_host_t *host_config)
