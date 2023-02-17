@@ -54,6 +54,37 @@ typedef void (*esp_alloc_failed_hook_t) (size_t size, uint32_t caps, const char 
 esp_err_t heap_caps_register_failed_alloc_callback(esp_alloc_failed_hook_t callback);
 
 /**
+ * @brief callback called after every allocation
+ * @param ptr the allocated memory
+ * @param size in bytes of the allocation
+ * @note this hook is called on the same thread as the allocation, which may be within a low level operation.
+ * You should refrain from doing heavy work, logging, flash writes, or any locking.
+ */
+typedef void (*esp_heap_trace_alloc_hook_t) (void* ptr, size_t size);
+
+/**
+ * @brief registers a callback function to be invoked after every heap allocation
+ * @param callback caller defined callback to be invoked
+ * @return ESP_OK if callback was registered.
+ */
+esp_err_t heap_caps_register_trace_alloc_callback(esp_heap_trace_alloc_hook_t callback);
+
+/**
+ * @brief callback called after every free
+ * @param ptr the memory that was freed
+ * @note this hook is called on the same thread as the allocation, which may be within a low level operation.
+ * You should refrain from doing heavy work, logging, flash writes, or any locking.
+ */
+typedef void (*esp_heap_trace_free_hook_t) (void* ptr);
+
+/**
+ * @brief registers a callback function to be invoked after every heap allocation
+ * @param callback caller defined callback to be invoked
+ * @return ESP_OK if callback was registered.
+ */
+esp_err_t heap_caps_register_trace_free_callback(esp_heap_trace_free_hook_t callback);
+
+/**
  * @brief Allocate a chunk of memory which has the given capabilities
  *
  * Equivalent semantics to libc malloc(), for capability-aware memory.
