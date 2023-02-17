@@ -172,14 +172,14 @@ typedef struct {
 #define PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags) {    \
     .hp_sys = {                                             \
         .analog = {                                         \
-            .xpd_bias        = 0x0,                         \
-            .dbg_atten       = 0x0,                         \
+            .xpd_bias        = 0,                           \
+            .dbg_atten       = 0,                           \
             .pd_cur          = 1,                           \
             .bias_sleep      = 1,                           \
             .slp_mem_xpd     = 1,                           \
             .slp_logic_xpd   = 1,                           \
-            .slp_mem_dbias   = 0x4,                         \
-            .slp_logic_dbias = 0x4,                         \
+            .slp_mem_dbias   = 4,                           \
+            .slp_logic_dbias = 4,                           \
             .xpd             = 0,                           \
             .dbias           = 0,                           \
             .drv_b           = 0                            \
@@ -188,23 +188,23 @@ typedef struct {
     .lp_sys[PMU_MODE_LP_ACTIVE] = {                         \
         .analog = {                                         \
             .slp_xpd       = 0,                             \
-            .slp_dbias     = 0xc,                           \
+            .slp_dbias     = 0,                             \
             .xpd           = 1,                             \
-            .dbias         = 0x1a,                          \
-            .drv_b         = 0x0                            \
+            .dbias         = 26,                            \
+            .drv_b         = 0                              \
         }                                                   \
     },                                                      \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                          \
         .analog = {                                         \
             .xpd_bias      = 0,                             \
-            .dbg_atten     = 0x0,                           \
+            .dbg_atten     = 0,                             \
             .pd_cur        = 1,                             \
             .bias_sleep    = 1,                             \
             .xpd           = 0,                             \
-            .dbias         = 0x1c,                          \
+            .dbias         = 28,                            \
             .slp_xpd       = 1,                             \
-            .slp_dbias     = 0x3,                           \
-            .drv_b         = 0x0                            \
+            .slp_dbias     = 3,                             \
+            .drv_b         = 0                              \
         }                                                   \
     }                                                       \
 }
@@ -213,37 +213,37 @@ typedef struct {
     .hp_sys = {                                             \
         .analog = {                                         \
             .xpd_bias        = 0,                           \
-            .dbg_atten       = 0x3,                         \
-            .pd_cur          = 1,                           \
-            .bias_sleep      = 1,                           \
+            .dbg_atten       = 0,                           \
+            .pd_cur          = 0,                           \
+            .bias_sleep      = 0,                           \
+            .slp_mem_xpd     = 0,                           \
+            .slp_logic_xpd   = 0,                           \
+            .slp_mem_dbias   = 0,                           \
+            .slp_logic_dbias = 0,                           \
             .xpd             = 0,                           \
-            .dbias           = 0x15,                        \
-            .slp_mem_xpd     = 1,                           \
-            .slp_mem_dbias   = 0xc,                         \
-            .slp_logic_xpd   = 1,                           \
-            .slp_logic_dbias = 0x5,                         \
-            .drv_b           = 0x18c                        \
+            .dbias           = 0,                           \
+            .drv_b           = 0                            \
         }                                                   \
     },                                                      \
     .lp_sys[PMU_MODE_LP_ACTIVE] = {                         \
         .analog = {                                         \
-            .xpd           = 1,                             \
-            .dbias         = 0x1a,                          \
             .slp_xpd       = 0,                             \
             .slp_dbias     = 0,                             \
-            .drv_b         = 0x7                            \
+            .xpd           = 1,                             \
+            .dbias         = 26,                            \
+            .drv_b         = 0                              \
         }                                                   \
     },                                                      \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                          \
         .analog = {                                         \
             .xpd_bias      = 0,                             \
-            .dbg_atten     = 0xe,                           \
+            .dbg_atten     = 14,                            \
             .pd_cur        = 1,                             \
             .bias_sleep    = 1,                             \
             .xpd           = 0,                             \
             .dbias         = 0,                             \
             .slp_xpd       = 1,                             \
-            .slp_dbias     = 0xe,                           \
+            .slp_dbias     = 14,                            \
             .drv_b         = 0                              \
         }                                                   \
     }                                                       \
