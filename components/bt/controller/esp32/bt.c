@@ -225,7 +225,7 @@ extern int coex_bt_release(uint32_t event);
 extern int coex_register_bt_cb(coex_func_cb_t cb);
 extern uint32_t coex_bb_reset_lock(void);
 extern void coex_bb_reset_unlock(uint32_t restore);
-extern int coex_schm_register_callback(int type, void *callback);
+extern int coex_schm_register_callback(coex_schm_callback_type_t type, void *callback);
 extern void coex_schm_status_bit_clear(uint32_t type, uint32_t status);
 extern void coex_schm_status_bit_set(uint32_t type, uint32_t status);
 extern uint32_t coex_schm_interval_get(void);
@@ -1168,7 +1168,6 @@ static void IRAM_ATTR coex_bb_reset_unlock_wrapper(uint32_t restore)
 static int coex_schm_register_btdm_callback_wrapper(void *callback)
 {
 #if CONFIG_SW_COEXIST_ENABLE
-#define COEX_SCHM_CALLBACK_TYPE_BT 0x1
     return coex_schm_register_callback(COEX_SCHM_CALLBACK_TYPE_BT, callback);
 #else
     return 0;

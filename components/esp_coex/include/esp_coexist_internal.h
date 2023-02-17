@@ -22,6 +22,12 @@ typedef enum {
     COEX_PREFER_NUM,
 } coex_prefer_t;
 
+typedef enum {
+    COEX_SCHM_CALLBACK_TYPE_WIFI = 0,
+    COEX_SCHM_CALLBACK_TYPE_BT,
+    COEX_SCHM_CALLBACK_TYPE_I154,
+} coex_schm_callback_type_t;
+
 typedef void (* coex_func_cb_t)(uint32_t event, int sched_cnt);
 typedef esp_err_t (* coex_set_lpclk_source_callback_t)(void);
 
@@ -230,7 +236,7 @@ int coex_schm_process_restart(void);
  *  @param callback : callback
  *  @return : 0 - success, other - failed
  */
-int coex_schm_register_callback(int type, void *callback);
+int coex_schm_register_callback(coex_schm_callback_type_t type, void *callback);
 
 /**
  * @brief Register coexistence adapter functions.

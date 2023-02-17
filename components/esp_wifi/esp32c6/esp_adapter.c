@@ -554,7 +554,7 @@ static int coex_schm_process_restart_wrapper(void)
 #endif
 }
 
-static int coex_schm_register_cb_wrapper(int type, void(*cb)(int))
+static int coex_schm_register_cb_wrapper(int type, int(*cb)(int))
 {
 #if CONFIG_SW_COEXIST_ENABLE
     return coex_schm_register_callback(type, cb);

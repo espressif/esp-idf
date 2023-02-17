@@ -150,7 +150,7 @@ typedef struct {
     void (* _sleep_retention_entries_destroy)(int);
 #endif
     int (* _coex_schm_process_restart)(void);
-    int (* _coex_schm_register_cb)(int, void (* cb)(int));
+    int (* _coex_schm_register_cb)(int, int (* cb)(int));
     int32_t _magic;
 } wifi_osi_funcs_t;
 
