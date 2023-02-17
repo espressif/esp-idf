@@ -42,6 +42,17 @@ set(esptool_elf2image_args
     --flash_size ${ESPFLASHSIZE}
     )
 
+if(BOOTLOADER_BUILD AND CONFIG_SECURE_BOOT_V2_ENABLED)
+    # The bootloader binary needs to be 4KB aligned in order to append a secure boot V2 signature block.
+    # If CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES is NOT set, the bootloader
+    # image generated is not 4KB aligned for external HSM to sign it readily.
+    # Following esptool option --pad-to-size 4KB generates a 4K aligned bootloader image.
+    # In case of signing during build, espsecure.py "sign_data" operation handles the 4K alignment of the image.
+    if(NOT CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        list(APPEND esptool_elf2image_args --pad-to-size 4KB)
+    endif()
+endif()
+
 set(MMU_PAGE_SIZE ${CONFIG_MMU_PAGE_MODE})
 
 if(NOT BOOTLOADER_BUILD)
