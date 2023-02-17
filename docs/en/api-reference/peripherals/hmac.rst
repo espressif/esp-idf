@@ -104,6 +104,14 @@ Setup
 
     .. note:: The API *esp_efuse_write_field_cnt(ESP_EFUSE_SOFT_DIS_JTAG, ESP_EFUSE_SOFT_DIS_JTAG[0]->bit_count)* can be used to burn "soft JTAG disable" bits on {IDF_TARGET_NAME}.
 
+.. only:: esp32s2 or esp32s3
+
+    .. note:: If ``HARD_DIS_JTAG`` eFuse is set, then ``SOFT_DIS_JTAG`` functionality does not work because JTAG is permanently disabled.
+
+.. only:: not esp32s2 and not esp32s3
+
+    .. note:: If ``DIS_PAD_JTAG`` eFuse is set, then ``SOFT_DIS_JTAG`` functionality does not work because JTAG is permanently disabled.
+
 JTAG enable
 
 1. The key to re-enable JTAG is the output of the HMAC-SHA256 function using the secret key in eFuse and 32 0x00 bytes as the message.
