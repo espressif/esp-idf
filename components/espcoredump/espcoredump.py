@@ -9,15 +9,16 @@ import subprocess
 import sys
 from shutil import copyfile
 
+import serial
 from construct import GreedyRange, Int32ul, Struct
 from corefile import RISCV_TARGETS, SUPPORTED_TARGETS, XTENSA_TARGETS, __version__, xtensa
 from corefile.elf import TASK_STATUS_CORRECT, ElfFile, ElfSegment, ESPCoreDumpElfFile, EspTaskStatus
 from corefile.gdb import EspGDB
-from corefile.loader import ESPCoreDumpFileLoader, ESPCoreDumpFlashLoader
+from corefile.loader import ESPCoreDumpFileLoader, ESPCoreDumpFlashLoader, EspCoreDumpVersion
 from pygdbmi.gdbcontroller import DEFAULT_GDB_TIMEOUT_SEC
 
 try:
-    from typing import Optional, Tuple
+    from typing import Optional, Tuple, Union
 except ImportError:
     # Only used for type annotations
     pass
@@ -83,20 +84,49 @@ def get_core_dump_elf(e_machine=ESPCoreDumpFileLoader.ESP32):
     return core_filename, target, temp_files  # type: ignore
 
 
-def get_target():  # type: () -> str
-    if args.chip != 'auto':
+def get_chip_version(note_segments):  # type: (list) -> Union[int, None]
+    for segment in note_segments:
+        for sec in segment.note_secs:
+            if sec.type == ESPCoreDumpElfFile.PT_INFO:
+                ver_bytes = sec.desc[:4]
+                return int((ver_bytes[3] << 8) | ver_bytes[2])
+    return None
+
+
+def get_target(chip_version=None):  # type: (Optional[int]) -> str
+    target = args.chip
+
+    if target != 'auto':
         return args.chip  # type: ignore
 
-    inst = esptool.ESPLoader.detect_chip(args.port, args.baud)
-    return inst.CHIP_NAME.lower().replace('-', '')  # type: ignore
+    if chip_version is not None:
+        if chip_version == EspCoreDumpVersion.ESP32:
+            return 'esp32'
+
+        if chip_version == EspCoreDumpVersion.ESP32S2:
+            return 'esp32s2'
+
+        if chip_version == EspCoreDumpVersion.ESP32S3:
+            return 'esp32s3'
+
+        if chip_version == EspCoreDumpVersion.ESP32C3:
+            return 'esp32c3'
+
+    try:
+        inst = esptool.ESPLoader.detect_chip(args.port, args.baud)
+    except serial.serialutil.SerialException:
+        print('Unable to identify the chip type. Please use the --chip option to specify the chip type or '
+              'connect the board and provide the --port option to have the chip type determined automatically.')
+        exit(0)
+    else:
+        target = inst.CHIP_NAME.lower().replace('-', '')
+
+    return target  # type: ignore
 
 
-def get_gdb_path(target=None):  # type: (Optional[str]) -> str
+def get_gdb_path(target):  # type: (Optional[str]) -> str
     if args.gdb:
         return args.gdb  # type: ignore
-
-    if target is None:
-        target = get_target()
 
     if target in XTENSA_TARGETS:
         # For some reason, xtensa-esp32s2-elf-gdb will report some issue.
@@ -107,12 +137,9 @@ def get_gdb_path(target=None):  # type: (Optional[str]) -> str
     raise ValueError('Invalid value: {}. For now we only support {}'.format(target, SUPPORTED_TARGETS))
 
 
-def get_rom_elf_path(target=None):  # type: (Optional[str]) -> str
+def get_rom_elf_path(target):  # type: (Optional[str]) -> str
     if args.rom_elf:
         return args.rom_elf  # type: ignore
-
-    if target is None:
-        target = get_target()
 
     return '{}_rom.elf'.format(target)
 
@@ -123,6 +150,11 @@ def dbg_corefile():  # type: () -> Optional[list[str]]
     """
     exe_elf = ESPCoreDumpElfFile(args.prog)
     core_elf_path, target, temp_files = get_core_dump_elf(e_machine=exe_elf.e_machine)
+    core_elf = ESPCoreDumpElfFile(core_elf_path)
+
+    if target is None:
+        chip_version = get_chip_version(core_elf.note_segments)
+        target = get_target(chip_version)
 
     rom_elf_path = get_rom_elf_path(target)
     rom_sym_cmd = load_aux_elf(rom_elf_path)
@@ -161,6 +193,11 @@ def info_corefile():  # type: () -> Optional[list[str]]
             if note_sec.type == ESPCoreDumpElfFile.PT_TASK_INFO and 'TASK_INFO' in note_sec.name.decode('ascii'):
                 task_info_struct = EspTaskStatus.parse(note_sec.desc)
                 task_info.append(task_info_struct)
+
+    if target is None:
+        chip_version = get_chip_version(core_elf.note_segments)
+        target = get_target(chip_version=chip_version)
+
     print('===============================================================')
     print('==================== ESP32 CORE DUMP START ====================')
     rom_elf_path = get_rom_elf_path(target)
