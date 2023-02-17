@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import asyncio
 import os
@@ -34,16 +34,6 @@ def executable_exists(args: List) -> bool:
 
     except Exception:
         return False
-
-
-def realpath(path: str) -> str:
-    """
-    Return the cannonical path with normalized case.
-
-    It is useful on Windows to comparision paths in case-insensitive manner.
-    On Unix and Mac OS X it works as `os.path.realpath()` only.
-    """
-    return os.path.normcase(os.path.realpath(path))
 
 
 def _idf_version_from_cmake() -> Optional[str]:
@@ -475,10 +465,10 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
 
     try:
         home_dir = cache['CMAKE_HOME_DIRECTORY']
-        if realpath(home_dir) != realpath(project_dir):
+        if os.path.realpath(home_dir) != os.path.realpath(project_dir):
             raise FatalError(
                 "Build directory '%s' configured for project '%s' not '%s'. Run '%s fullclean' to start again." %
-                (build_dir, realpath(home_dir), realpath(project_dir), prog_name))
+                (build_dir, os.path.realpath(home_dir), os.path.realpath(project_dir), prog_name))
     except KeyError:
         pass  # if cmake failed part way, CMAKE_HOME_DIRECTORY may not be set yet
 
