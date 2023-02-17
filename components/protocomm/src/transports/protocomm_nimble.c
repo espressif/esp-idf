@@ -65,6 +65,7 @@ typedef struct _protocomm_ble {
     protocomm_ble_name_uuid_t *g_nu_lookup;
     ssize_t g_nu_lookup_count;
     uint16_t gatt_mtu;
+    unsigned ble_link_encryption:1;
 } _protocomm_ble_internal_t;
 
 static _protocomm_ble_internal_t *protoble_internal;
@@ -124,6 +125,8 @@ typedef struct {
     unsigned ble_bonding:1;
     /** BLE Secure Connection flag */
     unsigned ble_sm_sc:1;
+    /** BLE Link Encryption flag */
+    unsigned ble_link_encryption:1;
 } simple_ble_cfg_t;
 
 static simple_ble_cfg_t *ble_cfg_p;
@@ -647,10 +650,10 @@ ble_gatt_add_characteristics(struct ble_gatt_chr_def *characteristics, int idx)
     (characteristics + idx)->flags = BLE_GATT_CHR_F_READ |
                                      BLE_GATT_CHR_F_WRITE ;
 
-#if defined(CONFIG_WIFI_PROV_BLE_FORCE_ENCRYPTION)
-    (characteristics + idx)->flags |= BLE_GATT_CHR_F_READ_ENC |
-                                      BLE_GATT_CHR_F_WRITE_ENC;
-#endif
+    if (protoble_internal->ble_link_encryption) {
+        (characteristics + idx)->flags |= BLE_GATT_CHR_F_READ_ENC |
+                                        BLE_GATT_CHR_F_WRITE_ENC;
+    }
 
     (characteristics + idx)->access_cb = gatt_svr_chr_access;
 
@@ -903,6 +906,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     pc->remove_endpoint = protocomm_ble_remove_endpoint;
     protoble_internal->pc_ble = pc;
     protoble_internal->gatt_mtu = BLE_ATT_MTU_DFLT;
+    protoble_internal->ble_link_encryption = config->ble_link_encryption;
 
     simple_ble_cfg_t *ble_config = (simple_ble_cfg_t *) calloc(1, sizeof(simple_ble_cfg_t));
     if (ble_config == NULL) {

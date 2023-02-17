@@ -60,6 +60,7 @@ typedef struct _protocomm_ble {
     ssize_t g_nu_lookup_count;
     uint16_t gatt_mtu;
     uint8_t *service_uuid;
+    unsigned ble_link_encryption:1;
 } _protocomm_ble_internal_t;
 
 static _protocomm_ble_internal_t *protoble_internal;
@@ -424,9 +425,9 @@ static ssize_t populate_gatt_db(esp_gatts_attr_db_t **gatt_db_generated)
         } else if (i % 3 == 2) {
             /* Characteristic Value */
             (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE ;
-#if CONFIG_WIFI_PROV_BLE_FORCE_ENCRYPTION
-            (*gatt_db_generated)[i].att_desc.perm        |= ESP_GATT_PERM_READ_ENCRYPTED | ESP_GATT_PERM_WRITE_ENCRYPTED;
-#endif
+            if (protoble_internal->ble_link_encryption) {
+                (*gatt_db_generated)[i].att_desc.perm     |= ESP_GATT_PERM_READ_ENCRYPTED | ESP_GATT_PERM_WRITE_ENCRYPTED;
+            }
             (*gatt_db_generated)[i].att_desc.uuid_length  = ESP_UUID_LEN_128;
             (*gatt_db_generated)[i].att_desc.uuid_p       = protoble_internal->g_nu_lookup[i / 3].uuid128;
             (*gatt_db_generated)[i].att_desc.max_length   = CHAR_VAL_LEN_MAX;
@@ -527,6 +528,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     pc->remove_endpoint = protocomm_ble_remove_endpoint;
     protoble_internal->pc_ble = pc;
     protoble_internal->gatt_mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
+    protoble_internal->ble_link_encryption = config->ble_link_encryption;
 
     // Config adv data
     adv_config.service_uuid_len = ESP_UUID_LEN_128;
