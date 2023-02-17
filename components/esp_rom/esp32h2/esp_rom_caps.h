@@ -19,3 +19,4 @@
 #define ESP_ROM_HAS_SPI_FLASH               (1) // ROM has the implementation of SPI Flash driver
 #define ESP_ROM_WITHOUT_REGI2C              (1) // ROM has no regi2c APIs
 #define ESP_ROM_HAS_NEWLIB_NANO_FORMAT      (1) // ROM has the newlib nano versions of formatting functions
+#define ESP_ROM_WDT_INIT_PATCH              (1) // ROM version does not configure the clock

@@ -83,7 +83,6 @@ api-reference/system/chip_revision
 api-reference/system/esp_timer
 api-reference/system/system_time
 api-reference/system/power_management
-api-reference/system/wdts
 api-reference/system/inc/power_management_esp32
 api-reference/system/inc/espefuse_summary_ESP32-H2
 api-reference/system/inc/revisions_ESP32-H2

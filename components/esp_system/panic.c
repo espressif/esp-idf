@@ -17,6 +17,7 @@
 #include "hal/timer_hal.h"
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
+#include "hal/mwdt_ll.h"
 #include "esp_private/esp_int_wdt.h"
 
 #include "esp_private/panic_internal.h"
@@ -58,6 +59,8 @@
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 #include "hal/usb_serial_jtag_ll.h"
 #endif
+
+#define MWDT_DEFAULT_TICKS_PER_US       500
 
 bool g_panic_abort = false;
 static char *s_panic_abort_details = NULL;
@@ -183,9 +186,9 @@ void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms)
 
     //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     //Reconfigure TWDT (Timer Group 0)
-    wdt_hal_init(&wdt0_context, WDT_MWDT0, MWDT0_TICK_PRESCALER, false); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
+    wdt_hal_init(&wdt0_context, WDT_MWDT0, MWDT_LL_DEFAULT_CLK_PRESCALER, false); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
     wdt_hal_write_protect_disable(&wdt0_context);
-    wdt_hal_config_stage(&wdt0_context, 0, timeout_ms * 1000 / MWDT0_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM); //1 second before reset
+    wdt_hal_config_stage(&wdt0_context, 0, timeout_ms * 1000 / MWDT_DEFAULT_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM); //1 second before reset
     wdt_hal_enable(&wdt0_context);
     wdt_hal_write_protect_enable(&wdt0_context);
 

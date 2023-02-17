@@ -17,10 +17,14 @@ extern "C" {
 #include <stdbool.h>
 #include "soc/timer_periph.h"
 #include "soc/timer_group_struct.h"
+#include "soc/pcr_struct.h"
 #include "hal/wdt_types.h"
 #include "hal/assert.h"
 #include "esp_attr.h"
 #include "hal/misc.h"
+
+/* Pre-calculated prescaler to achieve 500 ticks/us (MWDT1_TICKS_PER_US) when using default clock (MWDT_CLK_SRC_DEFAULT ) */
+#define MWDT_LL_DEFAULT_CLK_PRESCALER 24000
 
 //Type check wdt_stage_action_t
 _Static_assert(WDT_STAGE_ACTION_OFF == TIMG_WDT_STG_SEL_OFF, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
@@ -255,11 +259,31 @@ FORCE_INLINE_ATTR void mwdt_ll_set_intr_enable(timg_dev_t *hw, bool enable)
  * @param hw Beginning address of the peripheral registers.
  * @param clk_src Clock source
  */
+
 FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_source_t clk_src)
 {
-    // TODO IDF-6643
-    (void)hw;
-    (void)clk_src;
+    uint8_t clk_id = 0;
+    switch (clk_src) {
+    case MWDT_CLK_SRC_XTAL:
+        clk_id = 0;
+        break;
+    case MWDT_CLK_SRC_RC_FAST:
+        clk_id = 1;
+        break;
+    case MWDT_CLK_SRC_PLL_F48M:
+        clk_id = 2;
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
+
+
+    if (hw == &TIMERG0) {
+        PCR.timergroup0_wdt_clk_conf.tg0_wdt_clk_sel = clk_id;
+    } else {
+        PCR.timergroup1_wdt_clk_conf.tg1_wdt_clk_sel = clk_id;
+    }
 }
 
 /**
@@ -271,9 +295,11 @@ FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_sourc
 __attribute__((always_inline))
 static inline void mwdt_ll_enable_clock(timg_dev_t *hw, bool en)
 {
-    // TODO IDF-6643
-    (void)hw;
-    (void)en;
+    if (hw == &TIMERG0) {
+        PCR.timergroup0_wdt_clk_conf.tg0_wdt_clk_en = en;
+    } else {
+        PCR.timergroup1_wdt_clk_conf.tg1_wdt_clk_en = en;
+    }
 }
 
 #ifdef __cplusplus

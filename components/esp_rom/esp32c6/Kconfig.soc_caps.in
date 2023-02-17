@@ -66,3 +66,7 @@ config ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
 config ESP_ROM_REV0_HAS_NO_ECDSA_INTERFACE
     bool
     default y
+
+config ESP_ROM_WDT_INIT_PATCH
+    bool
+    default y

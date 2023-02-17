@@ -418,14 +418,18 @@ typedef enum {
 //////////////////////////////////////////////////MWDT/////////////////////////////////////////////////////////////////
 
 /**
+ * @brief Array initializer for all supported clock sources of MWDT
+ */
+#define SOC_MWDT_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F48M, SOC_MOD_CLK_RC_FAST}
+
+/**
  * @brief MWDT clock source
  */
-// TODO: temporary support, need to check while supporting  IDF-6643
 typedef enum {
     MWDT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
-    MWDT_CLK_SRC_PLL_F96M = SOC_MOD_CLK_PLL_F96M,   /*!< Select PLL fixed 96 MHz as the source clock */
+    MWDT_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M,   /*!< Select PLL fixed 48 MHz as the source clock */
     MWDT_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RTC fast as the source clock */
-    MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F96M,    /*!< Select PLL as the default clock choice */
+    MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F48M,    /*!< Select PLL as the default clock choice */
 } soc_periph_mwdt_clk_src_t;
 
 //////////////////////////////////////////////////LEDC/////////////////////////////////////////////////////////////////
