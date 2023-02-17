@@ -20,6 +20,7 @@
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PUBLIC_OP                               45000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              670000
 
+#define IDF_PERFORMANCE_MAX_SPI_CLK_FREQ                                        40*1000*1000
 #if !CONFIG_FREERTOS_SMP // IDF-5223
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                               15
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA                        15

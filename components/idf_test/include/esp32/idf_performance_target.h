@@ -28,6 +28,7 @@
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               90000
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PRIVATE_OP                              1900000
 
+#define IDF_PERFORMANCE_MAX_SPI_CLK_FREQ                                        16*1000*1000
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                               15
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA                        15
 #if !CONFIG_FREERTOS_SMP // IDF-5223
