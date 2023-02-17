@@ -300,7 +300,7 @@ static inline uint32_t memprot_ll_iram0_get_monitor_status_fault_world(void)
 static inline intptr_t memprot_ll_iram0_get_monitor_status_fault_addr(void)
 {
     uint32_t addr = REG_GET_FIELD(SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_IRAM0_PMS_MONITOR_VIOLATE_STATUS_ADDR);
-    return (intptr_t)(addr > 0 ? (addr << I_D_FAULT_ADDR_SHIFT) + IRAM0_ADDRESS_LOW : 0);
+    return (intptr_t)(addr > 0 ? (addr << I_D_FAULT_ADDR_SHIFT) + IRAM0_VIOLATE_STATUS_ADDR_OFFSET : 0);
 }
 
 static inline uint32_t memprot_ll_iram0_get_monitor_status_register(void)
@@ -815,7 +815,7 @@ static inline uint32_t memprot_ll_dram0_get_monitor_status_fault_world(void)
 static inline uint32_t memprot_ll_dram0_get_monitor_status_fault_addr(void)
 {
     uint32_t addr = REG_GET_FIELD(SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_2_REG, SENSITIVE_CORE_0_DRAM0_PMS_MONITOR_VIOLATE_STATUS_ADDR);
-    return addr > 0 ? (addr << I_D_FAULT_ADDR_SHIFT) + DRAM0_ADDRESS_LOW : 0;
+    return addr > 0 ? (addr << I_D_FAULT_ADDR_SHIFT) + DRAM0_VIOLATE_STATUS_ADDR_OFFSET : 0;
 }
 
 static inline uint32_t memprot_ll_dram0_get_monitor_status_fault_wr(void)
