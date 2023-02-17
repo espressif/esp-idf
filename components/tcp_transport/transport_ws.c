@@ -56,6 +56,7 @@ typedef struct {
     char *user_agent;
     char *headers;
     char *auth;
+    int http_status_code;
     bool propagate_control_frames;
     ws_transport_frame_state_t frame_state;
     esp_transport_handle_t parent;
@@ -122,6 +123,26 @@ static char *trimwhitespace(const char *str)
     *(end + 1) = 0;
 
     return (char *)str;
+}
+
+static int get_http_status_code(const char *buffer)
+{
+    const char http[] = "HTTP/";
+    const char *found = strcasestr(buffer, http);
+    char status_code[4];
+    if (found) {
+        found += sizeof(http)/sizeof(http[0]) - 1;
+        found = strchr(found, ' ');
+        if (found) {
+            found++;
+            strncpy(status_code, found, 4);
+            status_code[3] = '\0';
+            int code = atoi(status_code);
+            ESP_LOGD(TAG, "HTTP status code is %d", code);
+            return code == 0 ? -1 : code;
+        }
+    }
+    return -1;
 }
 
 static char *get_http_header(const char *buffer, const char *key)
@@ -237,6 +258,12 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         ws->buffer[header_len] = '\0';
         ESP_LOGD(TAG, "Read header chunk %d, current header size: %d", len, header_len);
     } while (NULL == strstr(ws->buffer, "\r\n\r\n") && header_len < WS_BUFFER_SIZE);
+
+    ws->http_status_code = get_http_status_code(ws->buffer);
+    if (ws->http_status_code == -1) {
+        ESP_LOGE(TAG, "HTTP upgrade failed");
+        return -1;
+    }
 
     char *server_key = get_http_header(ws->buffer, "Sec-WebSocket-Accept:");
     if (server_key == NULL) {
@@ -779,6 +806,12 @@ bool esp_transport_ws_get_fin_flag(esp_transport_handle_t t)
 {
   transport_ws_t *ws = esp_transport_get_context_data(t);
   return ws->frame_state.fin;
+}
+
+int esp_transport_ws_get_upgrade_request_status(esp_transport_handle_t t)
+{
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    return ws->http_status_code;
 }
 
 ws_transport_opcodes_t esp_transport_ws_get_read_opcode(esp_transport_handle_t t)
