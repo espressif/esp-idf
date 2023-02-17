@@ -536,7 +536,8 @@ if(CONFIG_BT_ENABLED)
                     host/nimble/nimble/nimble/host/store/config/include
                     )
 
-        list(APPEND srcs "host/nimble/nimble/nimble/host/util/src/addr.c"
+        list(APPEND srcs "host/nimble/nimble/nimble/transport/src/transport.c"
+                    "host/nimble/nimble/nimble/host/util/src/addr.c"
                     "host/nimble/nimble/nimble/host/services/gatt/src/ble_svc_gatt.c"
                     "host/nimble/nimble/nimble/host/services/tps/src/ble_svc_tps.c"
                     "host/nimble/nimble/nimble/host/services/ias/src/ble_svc_ias.c"
@@ -568,7 +569,6 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/src/ble_store.c"
                     "host/nimble/nimble/nimble/host/src/ble_sm_lgcy.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_cfg.c"
-                    "host/nimble/nimble/nimble/host/src/ble_monitor.c"
                     "host/nimble/nimble/nimble/host/src/ble_att_clt.c"
                     "host/nimble/nimble/nimble/host/src/ble_l2cap_coc.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_mbuf.c"
@@ -603,6 +603,7 @@ if(CONFIG_BT_ENABLED)
                 porting/include
                 host/nimble/nimble/porting/nimble/include
                 host/nimble/port/include
+                host/nimble/nimble/nimble/transport/include
             )
 
         if(NOT CONFIG_BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT)
@@ -648,7 +649,10 @@ if(CONFIG_BT_ENABLED)
                         "host/nimble/nimble/nimble/host/mesh/src/crypto.c"
                         "host/nimble/nimble/nimble/host/mesh/src/settings.c"
                         "host/nimble/nimble/nimble/host/mesh/src/adv.c"
+                        "host/nimble/nimble/nimble/host/mesh/src/adv_ext.c"
+                        "host/nimble/nimble/nimble/host/mesh/src/adv_legacy.c"
                         "host/nimble/nimble/nimble/host/mesh/src/model_srv.c"
+                        "host/nimble/nimble/nimble/host/mesh/src/msg.c"
                         "host/nimble/nimble/nimble/host/mesh/src/beacon.c"
                         "host/nimble/nimble/nimble/host/mesh/src/glue.c"
                         "host/nimble/nimble/nimble/host/mesh/src/model_cli.c"
@@ -661,7 +665,6 @@ if(CONFIG_BT_ENABLED)
                         "host/nimble/nimble/nimble/host/mesh/src/light_model.c"
                         "host/nimble/nimble/nimble/host/mesh/src/health_cli.c"
                         "host/nimble/nimble/nimble/host/mesh/src/lpn.c"
-                        "host/nimble/nimble/nimble/host/mesh/src/proxy.c"
                         "host/nimble/nimble/nimble/host/mesh/src/health_srv.c"
                         "host/nimble/nimble/nimble/host/mesh/src/testing.c"
                         "host/nimble/nimble/nimble/host/mesh/src/aes-ccm.c"
@@ -670,11 +673,14 @@ if(CONFIG_BT_ENABLED)
                         "host/nimble/nimble/nimble/host/mesh/src/cfg.c"
                         "host/nimble/nimble/nimble/host/mesh/src/pb_adv.c"
                         "host/nimble/nimble/nimble/host/mesh/src/pb_gatt.c"
+                        "host/nimble/nimble/nimble/host/mesh/src/pb_gatt_srv.c"
                         "host/nimble/nimble/nimble/host/mesh/src/prov_device.c"
                         "host/nimble/nimble/nimble/host/mesh/src/provisioner.c"
                         "host/nimble/nimble/nimble/host/mesh/src/heartbeat.c"
                         "host/nimble/nimble/nimble/host/mesh/src/rpl.c"
                         "host/nimble/nimble/nimble/host/mesh/src/subnet.c"
+                        "host/nimble/nimble/nimble/host/mesh/src/proxy_msg.c"
+                        "host/nimble/nimble/nimble/host/mesh/src/proxy_srv.c"
                         "host/nimble/nimble/nimble/host/mesh/src/net.c")
         endif()
     endif()
