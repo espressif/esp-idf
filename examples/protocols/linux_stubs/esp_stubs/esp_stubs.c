@@ -29,7 +29,7 @@ esp_err_t nvs_flash_erase(void)
     return ESP_OK;
 }
 
-int main()
+int main(void)
 {
     app_main();
 
