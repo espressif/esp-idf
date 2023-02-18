@@ -898,6 +898,7 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
 #endif
     if (handle->dma.dma_chan) {
 #if SOC_GDMA_SUPPORTED
+        gdma_disconnect(handle->dma.dma_chan);
         gdma_del_channel(handle->dma.dma_chan);
 #else
         esp_intr_free(handle->dma.dma_chan);
