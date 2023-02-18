@@ -114,7 +114,7 @@ struct esp_rgb_panel_t {
     int y_gap;                      // Extra gap in y coordinate, it's used when calculate the flush window
     portMUX_TYPE spinlock;          // to protect panel specific resource from concurrent access (e.g. between task and ISR)
     int lcd_clk_flags;              // LCD clock calculation flags
-    int rotate_mask;                     // panel rotate_mask mask, Or'ed of `panel_rotate_mask_t`
+    int rotate_mask;                // panel rotate_mask mask, Or'ed of `panel_rotate_mask_t`
     struct {
         uint32_t disp_en_level: 1;       // The level which can turn on the screen by `disp_gpio_num`
         uint32_t stream_mode: 1;         // If set, the LCD transfers data continuously, otherwise, it stops refreshing the LCD when transaction done
@@ -936,15 +936,15 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_cloc
     }
     lcd_ll_select_clk_src(panel->hal.dev, clk_src);
 
-    if (clk_src == LCD_CLK_SRC_PLL240M || clk_src == LCD_CLK_SRC_PLL160M) {
+    // create pm lock based on different clock source
+    // clock sources like PLL and XTAL will be turned off in light sleep
 #if CONFIG_PM_ENABLE
-        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "rgb_panel", &panel->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
-        // hold the lock during the whole lifecycle of RGB panel
-        esp_pm_lock_acquire(panel->pm_lock);
-        ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock and hold the lock during the whole panel lifecycle");
+    ret = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "rgb_panel", &panel->pm_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
+    // hold the lock during the whole lifecycle of RGB panel
+    esp_pm_lock_acquire(panel->pm_lock);
+    ESP_LOGD(TAG, "installed pm lock and hold the lock during the whole panel lifecycle");
 #endif
-    }
     return ret;
 }
 
