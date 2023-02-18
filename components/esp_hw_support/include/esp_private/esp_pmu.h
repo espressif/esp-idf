@@ -37,6 +37,14 @@ extern "C" {
 #define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(17)
 #define RTC_SLEEP_NO_ULTRA_LOW          BIT(18) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
 
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
+#define RTC_EXT0_TRIG_EN            PMU_EXT0_WAKEUP_EN                       //!< EXT0 wakeup
+#else
+#define RTC_EXT0_TRIG_EN            0
+#endif
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
+#define RTC_EXT1_TRIG_EN            PMU_EXT1_WAKEUP_EN      //!< EXT1 wakeup
+#endif
 #define RTC_GPIO_TRIG_EN            PMU_GPIO_WAKEUP_EN      //!< GPIO wakeup
 #define RTC_TIMER_TRIG_EN           PMU_LP_TIMER_WAKEUP_EN  //!< Timer wakeup
 #define RTC_WIFI_TRIG_EN            PMU_WIFI_SOC_WAKEUP_EN  //!< WIFI wakeup (light sleep only)
@@ -60,6 +68,12 @@ extern "C" {
                                RTC_USB_TRIG_EN          | \
                                RTC_BROWNOUT_DET_TRIG_EN)
 
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
+#define PMU_EXT0_WAKEUP_EN          BIT(0)
+#endif
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
+#define PMU_EXT1_WAKEUP_EN          BIT(1)
+#endif
 
 #define PMU_GPIO_WAKEUP_EN          BIT(2)
 #define PMU_WIFI_BEACON_WAKEUP_EN   BIT(3)
@@ -82,6 +96,7 @@ extern "C" {
 #define PMU_SLEEP_PD_MEM_G1         BIT(7)
 #define PMU_SLEEP_PD_MEM_G2         BIT(8)
 #define PMU_SLEEP_PD_MEM_G3         BIT(9)
+#define PMU_SLEEP_PD_MEM            (PMU_SLEEP_PD_MEM_G0|PMU_SLEEP_PD_MEM_G1|PMU_SLEEP_PD_MEM_G2|PMU_SLEEP_PD_MEM_G3)
 #define PMU_SLEEP_PD_XTAL           BIT(10)
 #define PMU_SLEEP_PD_RC_FAST        BIT(11)
 #define PMU_SLEEP_PD_XTAL32K        BIT(12)

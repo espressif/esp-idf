@@ -13,12 +13,14 @@
 #pragma once
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include "soc/rtc_periph.h"
 #include "soc/pcr_struct.h"
 #include "soc/rtc_io_struct.h"
 #include "soc/lp_aon_struct.h"
 #include "soc/pmu_struct.h"
 #include "hal/misc.h"
+#include "hal/assert.h"
 #include "hal/gpio_types.h"
 #include "soc/io_mux_reg.h"
 
@@ -364,6 +366,38 @@ static inline void rtcio_ll_enable_sleep_setting(gpio_num_t gpio_num)
 static inline void rtcio_ll_disable_sleep_setting(gpio_num_t gpio_num)
 {
     LP_IO.gpio[gpio_num].slp_sel = 0;
+}
+
+/**
+ * @brief Get the status of whether an IO is used for sleep wake-up.
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param gpio_num GPIO number
+ * @return True if the pin is enabled to wake up from deep-sleep
+ */
+static inline bool rtcio_ll_wakeup_is_enabled(gpio_num_t gpio_num)
+{
+    HAL_ASSERT(gpio_num <= GPIO_NUM_7 && "gpio larger than 7 does not support deep sleep wake-up function");
+    // On ESP32-C6, (lp_io pin number) == (gpio pin number)
+    return LP_IO.pin[gpio_num].wakeup_enable;
+}
+
+/**
+ * @brief Get the rtc io interrupt status
+ *
+ * @return  bit 0~7 corresponding to 0 ~ SOC_RTCIO_PIN_COUNT.
+ */
+static inline  uint32_t rtcio_ll_get_interrupt_status(void)
+{
+    return (uint32_t)(LP_IO.status.status_interrupt);
+}
+
+/**
+ * @brief Clear all LP IO pads status
+ */
+static inline  void rtcio_ll_clear_interrupt_status(void)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.status_w1tc, status_w1tc, 0xff);
 }
 
 #ifdef __cplusplus

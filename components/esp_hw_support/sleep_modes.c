@@ -25,7 +25,9 @@
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
 
-#if !SOC_PMU_SUPPORTED
+#if SOC_LP_AON_SUPPORTED
+#include "hal/lp_aon_hal.h"
+#else
 #include "hal/rtc_cntl_ll.h"
 #include "hal/rtc_hal.h"
 #endif
@@ -156,12 +158,16 @@ typedef struct {
     portMUX_TYPE lock;
     uint64_t sleep_duration;
     uint32_t wakeup_triggers : 15;
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
     uint32_t ext1_trigger_mode : 1;
-    uint32_t ext1_rtc_gpio_mask : 22; //22 is the maximum RTCIO number in all chips
+    uint32_t ext1_rtc_gpio_mask : 22; // 22 is the maximum RTCIO number in all chips
+#endif
+#if SOC_PM_SUPPORT_EXT0_WAKEUP
     uint32_t ext0_trigger_level : 1;
     uint32_t ext0_rtc_gpio_num : 5;
-    uint32_t gpio_wakeup_mask : 6;
-    uint32_t gpio_trigger_mode : 6;
+#endif
+    uint32_t gpio_wakeup_mask : 8;  // 8 is the maximum RTCIO number in all chips that support GPIO wakeup
+    uint32_t gpio_trigger_mode : 8;
     uint32_t sleep_time_adjustment;
     uint32_t ccount_ticks_record;
     uint32_t sleep_time_overhead_out;
@@ -237,14 +243,19 @@ static void RTC_IRAM_ATTR __attribute__((used, noinline)) esp_wake_stub_start(vo
  * must be simple enough to ensure that there is no litteral data before the
  * wake stub entry, otherwise, the litteral data before the wake stub entry
  * will not be CRC checked. */
-#if !CONFIG_IDF_TARGET_ESP32C6 // TODO: WIFI-5150
 static void __attribute__((section(".rtc.entry.text"))) esp_wake_stub_entry(void)
 {
 #define _SYM2STR(s) # s
 #define SYM2STR(s)  _SYM2STR(s)
 
 #ifdef __riscv
-    __asm__ __volatile__ ("call " SYM2STR(esp_wake_stub_start) "\n");
+    __asm__ __volatile__ (
+            "addi sp, sp, -16 \n"
+            "sw   ra, 0(sp)   \n"
+            "jal  ra, " SYM2STR(esp_wake_stub_start) "\n"
+            "lw   ra, 0(sp)  \n"
+            "addi sp, sp, 16 \n"
+            );
 #else
     // call4 has a larger effective addressing range (-524284 to 524288 bytes),
     // which is sufficient for instruction addressing in RTC fast memory.
@@ -252,7 +263,6 @@ static void __attribute__((section(".rtc.entry.text"))) esp_wake_stub_entry(void
 #endif
 
 }
-#endif // !CONFIG_IDF_TARGET_ESP32C6 // TODO: WIFI-5150
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 
 /* Wake from deep sleep stub
@@ -537,8 +547,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         esp_sleep_isolate_digital_gpio();
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32C6  // TODO: IDF-5349
-
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
         extern char _rtc_text_start[];
 #if CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
@@ -549,7 +557,12 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         size_t rtc_fast_length = (size_t)_rtc_force_fast_end - (size_t)_rtc_text_start;
 #endif
         esp_rom_set_rtc_wake_addr((esp_rom_wake_func_t)esp_wake_stub_entry, rtc_fast_length);
+    // Enter Deep Sleep
+#if SOC_PMU_SUPPORTED
+        result = call_rtc_sleep_start(reject_triggers, config.power.hp_sys.dig_power.mem_dslp, deep_sleep);
+#else
         result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu, deep_sleep);
+#endif
 #else
 #if !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         /* If not possible stack is in RTC FAST memory, use the ROM function to calculate the CRC and save ~140 bytes IRAM */
@@ -563,9 +576,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 
-#else
-        result = ESP_OK;
-#endif
     } else {
 
 /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
@@ -649,7 +659,14 @@ void IRAM_ATTR esp_deep_sleep_start(void)
     // Correct the sleep time
     s_config.sleep_time_adjustment = DEEP_SLEEP_TIME_OVERHEAD_US;
 
+#if SOC_PMU_SUPPORTED
+    uint32_t force_pd_flags = PMU_SLEEP_PD_TOP | PMU_SLEEP_PD_VDDSDIO | PMU_SLEEP_PD_MODEM | PMU_SLEEP_PD_HP_PERIPH \
+                            | PMU_SLEEP_PD_CPU | PMU_SLEEP_PD_MEM | PMU_SLEEP_PD_XTAL | PMU_SLEEP_PD_RC_FAST \
+                            | PMU_SLEEP_PD_XTAL32K |PMU_SLEEP_PD_RC32K;
+#else
     uint32_t force_pd_flags = RTC_SLEEP_PD_DIG | RTC_SLEEP_PD_VDDSDIO | RTC_SLEEP_PD_INT_8M | RTC_SLEEP_PD_XTAL;
+#endif
+
 
 #if SOC_PM_SUPPORT_WIFI_PD
     force_pd_flags |= RTC_SLEEP_PD_WIFI;
@@ -1191,25 +1208,20 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
     return gpio_mask;
 }
 
-#endif // SOC_PM_SUPPORT_EXT_WAKEUP
+#endif // SOC_PM_SUPPORT_EXT1_WAKEUP
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 uint64_t esp_sleep_get_gpio_wakeup_status(void)
 {
-#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5349
-    return 0;
-#else
     if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_GPIO) {
         return 0;
     }
 
     return rtc_hal_gpio_get_wakeup_status();
-#endif
 }
 
 static void gpio_deep_sleep_wakeup_prepare(void)
 {
-#if !CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5349
     for (gpio_num_t gpio_idx = GPIO_NUM_0; gpio_idx < GPIO_NUM_MAX; gpio_idx++) {
         if (((1ULL << gpio_idx) & s_config.gpio_wakeup_mask) == 0) {
             continue;
@@ -1225,7 +1237,6 @@ static void gpio_deep_sleep_wakeup_prepare(void)
     }
     // Clear state from previous wakeup
     rtc_hal_gpio_clear_wakeup_status();
-#endif
 }
 
 esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepsleep_gpio_wake_up_mode_t mode)

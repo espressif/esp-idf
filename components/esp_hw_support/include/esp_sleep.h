@@ -250,6 +250,7 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  *                - ESP32: 0, 2, 4, 12-15, 25-27, 32-39;
  *                - ESP32-S2: 0-21;
  *                - ESP32-S3: 0-21.
+ *                - ESP32-C6: 0-7.
  * @param mode select logic function used to determine wakeup condition:
  *            - ESP_EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
  *            - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high

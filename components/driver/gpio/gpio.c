@@ -22,6 +22,10 @@
 #include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 
+#if (SOC_RTCIO_PIN_COUNT > 0)
+#include "hal/rtc_io_hal.h"
+#endif
+
 static const char *GPIO_TAG = "gpio";
 #define GPIO_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, GPIO_TAG, "%s", str)
 

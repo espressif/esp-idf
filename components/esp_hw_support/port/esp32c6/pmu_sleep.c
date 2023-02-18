@@ -14,8 +14,8 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/pmu_struct.h"
+#include "hal/lp_aon_hal.h"
 #include "esp_private/esp_pmu.h"
-#include "esp32c6/rom/rtc.h"
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
@@ -250,6 +250,9 @@ void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)
 uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     assert(PMU_instance()->hal);
+
+    lp_aon_hal_inform_wakeup_type(dslp);
+
     pmu_ll_hp_set_wakeup_enable(PMU_instance()->hal->dev, wakeup_opt);
     pmu_ll_hp_set_reject_enable(PMU_instance()->hal->dev, reject_opt);
 

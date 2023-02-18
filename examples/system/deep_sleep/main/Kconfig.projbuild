@@ -62,6 +62,7 @@ menu "Example Configuration"
             int "Enable wakeup from GPIO"
             default 0 if !IDF_TARGET_ESP32H4_BETA_VERSION_2
             default 7 if IDF_TARGET_ESP32H4_BETA_VERSION_2
+            range 0 7 if IDF_TARGET_ESP32C6
             range 0 5 if !IDF_TARGET_ESP32H4_BETA_VERSION_2
             range 7 12 if IDF_TARGET_ESP32H4_BETA_VERSION_2
 

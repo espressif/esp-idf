@@ -448,7 +448,7 @@ void gpio_hal_sleep_pupd_config_apply(gpio_hal_context_t *hal, uint32_t gpio_num
 void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, uint32_t gpio_num);
 #endif // CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT == 0)
 /**
  * @brief Enable GPIO deep-sleep wake-up function.
  *
