@@ -261,11 +261,9 @@
 电源管理
 ^^^^^^^^^^^^^^^^^
 
-当使能电源管理时（即 :ref:`CONFIG_PM_ENABLE` 已打开），系统将在进入 Light-sleep 模式之前调整 APB 频率，从而可能会改变通用定时器的计数步骤周期，导致计时不准确。
+有些电源管理的策略会在某些时刻关闭时钟源，或者改变时钟源的频率，以求降低功耗。比如在启用 DFS 后， APB 时钟源会降低频率。如果浅睡眠（light sleep） 模式也被开启， PLL 和 XTAL 时钟都会被默认关闭，从而导致 GPTimer 的计时不准确。
 
-然而，驱动程序可以通过获取类型为 :cpp:enumerator:`ESP_PM_APB_FREQ_MAX` 的电源管理锁来阻止系统更改 APB 频率。每当驱动程序创建一个通用定时器实例，且该实例选择 :cpp:enumerator:`GPTIMER_CLK_SRC_APB` 作为其时钟源的时，驱动程序会确保在通过 :cpp:func:`gptimer_enable` 使能定时器时，已经获取了电源管理锁。同样，当为该定时器调用 :cpp:func:`gptimer_disable` 时，驱动程序会释放电源管理锁。
-
-如果选择 :cpp:enumerator:`GPTIMER_CLK_SRC_XTAL` 等其他时钟源，那么驱动程序不会安装电源管理锁。只要时钟源仍可提供足够的分辨率，XTAL 时钟源就更适合低功耗应用。
+驱动程序会根据具体的时钟源选择，通过创建不同的电源锁来避免上述情况的发生。驱动会在 :cpp:func:`gptimer_enable` 函数中增加电源锁的引用计数，并在 :cpp:func:`gptimer_disable` 函数中减少电源锁的引用计数，从而保证了在 :cpp:func:`gptimer_enable` 和 :cpp:func:`gptimer_disable` 之间， GPTimer 的时钟源始处于稳定工作的状态。
 
 .. _iram-safe:
 

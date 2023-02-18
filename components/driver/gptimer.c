@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -433,44 +433,39 @@ static void gptimer_release_group_handle(gptimer_group_t *group)
 static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t src_clk, uint32_t resolution_hz)
 {
     unsigned int counter_src_hz = 0;
-    esp_err_t ret = ESP_OK;
     int timer_id = timer->timer_id;
-    // [clk_tree] TODO: replace the following switch table by clk_tree API
+
+    // to make the gptimer work reliable, the source clock must stay alive and unchanged
+    // driver will create different pm lock for that purpose, according to different clock source
+    __attribute__((unused)) esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
+
     switch (src_clk) {
 #if SOC_TIMER_GROUP_SUPPORT_APB
     case GPTIMER_CLK_SRC_APB:
         counter_src_hz = esp_clk_apb_freq();
-#if CONFIG_PM_ENABLE
-        sprintf(timer->pm_lock_name, "gptimer_%d_%d", timer->group->group_id, timer_id); // e.g. gptimer_0_0
-        ret  = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, timer->pm_lock_name, &timer->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create APB_FREQ_MAX lock failed");
-        ESP_LOGD(TAG, "install APB_FREQ_MAX lock for timer (%d,%d)", timer->group->group_id, timer_id);
-#endif
+        // APB clock frequency can be changed during DFS
+        pm_lock_type = ESP_PM_APB_FREQ_MAX;
         break;
 #endif // SOC_TIMER_GROUP_SUPPORT_APB
+
 #if SOC_TIMER_GROUP_SUPPORT_PLL_F40M
     case GPTIMER_CLK_SRC_PLL_F40M:
         counter_src_hz = 40 * 1000 * 1000;
-#if CONFIG_PM_ENABLE
-        sprintf(timer->pm_lock_name, "gptimer_%d_%d", timer->group->group_id, timer_id); // e.g. gptimer_0_0
-        // PLL_F40M will be turned off when DFS switches CPU clock source to XTAL
-        ret  = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, timer->pm_lock_name, &timer->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create APB_FREQ_MAX lock failed");
-        ESP_LOGD(TAG, "install APB_FREQ_MAX lock for timer (%d,%d)", timer->group->group_id, timer_id);
-#endif
         break;
 #endif // SOC_TIMER_GROUP_SUPPORT_PLL_F40M
+
 #if SOC_TIMER_GROUP_SUPPORT_AHB
     case GPTIMER_CLK_SRC_AHB:
-        // TODO: decide which kind of PM lock we should use for such clock
         counter_src_hz = 48 * 1000 * 1000;
         break;
 #endif // SOC_TIMER_GROUP_SUPPORT_AHB
+
 #if SOC_TIMER_GROUP_SUPPORT_XTAL
     case GPTIMER_CLK_SRC_XTAL:
         counter_src_hz = esp_clk_xtal_freq();
         break;
 #endif // SOC_TIMER_GROUP_SUPPORT_XTAL
+
     default:
         ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "clock source %d is not support", src_clk);
         break;
@@ -482,7 +477,14 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
     if (timer->resolution_hz != resolution_hz) {
         ESP_LOGW(TAG, "resolution lost, expect %"PRIu32", real %"PRIu32, resolution_hz, timer->resolution_hz);
     }
-    return ret;
+
+    // create pm lock
+#if CONFIG_PM_ENABLE
+    sprintf(timer->pm_lock_name, "gptimer_%d_%d", timer->group->group_id, timer_id); // e.g. gptimer_0_0
+    ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, timer->pm_lock_name, &timer->pm_lock), TAG, "create pm lock failed");
+#endif // CONFIG_PM_ENABLE
+
+    return ESP_OK;
 }
 
 // Put the default ISR handler in the IRAM for better performance

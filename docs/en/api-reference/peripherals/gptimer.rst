@@ -261,11 +261,9 @@ Alarm value can be updated dynamically inside the ISR handler callback, by chang
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled (i.e. :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the APB frequency before going into Light-sleep mode, thus potentially changing the period of a GPTimer's counting step and leading to inaccurate time keeping.
+There're some power management strategies, which might turn off or change the frequency of GPTimer's source clock to save power consumption. For example, during DFS, APB clock will be scaled down. If light-sleep is also enabled, PLL and XTAL clocks will be powered off. Both of them can result in an inaccurate time keeping.
 
-However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever the driver creates a GPTimer instance that has selected :cpp:enumerator:`GPTIMER_CLK_SRC_APB` as its clock source, the driver will guarantee that the power management lock is acquired when enabling the timer by :cpp:func:`gptimer_enable`. Likewise, the driver releases the lock when :cpp:func:`gptimer_disable` is called for that timer.
-
-If other gptimer clock sources are selected such as :cpp:enumerator:`GPTIMER_CLK_SRC_XTAL`, then the driver will not install power management lock. The XTAL clock source is more suitable for a low power application as long as the source clock can still provide sufficient resolution.
+The driver can prevent the above situation from happening by creating different power management lock according to different clock source. The driver will increase the reference count of that power management lock in the :cpp:func:`gptimer_enable` and decrease it in the :cpp:func:`gptimer_disable`. So we can ensure the clock source is stable between :cpp:func:`gptimer_enable` and :cpp:func:`gptimer_disable`.
 
 .. _iram-safe:
 
