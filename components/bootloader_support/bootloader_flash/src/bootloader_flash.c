@@ -180,7 +180,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
      * Now simply check if it's valid vaddr, didn't check if it's readable, writable or executable.
      * TODO: IDF-4710
      */
-    if (mmu_ll_check_valid_ext_vaddr_region(0, MMU_BLOCK0_VADDR, size_after_paddr_aligned) == 0) {
+    if (mmu_ll_check_valid_ext_vaddr_region(0, MMU_BLOCK0_VADDR, size_after_paddr_aligned, MMU_VADDR_DATA | MMU_VADDR_INSTRUCTION) == 0) {
         ESP_EARLY_LOGE(TAG, "vaddr not valid");
         return NULL;
     }

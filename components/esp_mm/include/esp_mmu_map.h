@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "esp_err.h"
+#include "esp_bit_defs.h"
 #include "hal/mmu_types.h"
 
 #ifdef __cplusplus
@@ -34,6 +35,24 @@ extern "C" {
  * - A Slot is the vaddr range between 2 blocks.
  */
 
+
+/**
+ * MMAP flags
+ */
+/**
+ * @brief Share this mapping
+ *
+ * - If this flag is set, a paddr block can be mapped to multiple vaddr blocks.
+ *   1. This happens when:
+ *      - the to-be-mapped paddr block is overlapped with an already mapped paddr block.
+ *      - the to-be-mapped paddr block encloses an already mapped paddr block.
+ *   2. If the to-be-mapped paddr block is enclosed by an already mapped paddr block, no new mapping will happen, return ESP_ERR_INVALID_STATE. The out pointer will be the already mapped paddr corresponding vaddr.
+ *   3. If the to-be-mapped paddr block is totally the same as an already mapped paddr block, no new mapping will happen, return ESP_ERR_INVALID_STATE. The out pointer will be the corresponding vaddr.
+ *
+ * - If this flag isn't set, overlapped, enclosed or same to-be-mapped paddr block will lead to ESP_ERR_INVALID_ARG.
+ */
+#define ESP_MMU_MMAP_FLAG_PADDR_SHARED    BIT(0)
+
 /**
  * @brief Physical memory type
  */
@@ -46,8 +65,9 @@ typedef uint32_t esp_paddr_t;
  *
  * @param[in]  paddr_start  Start address of the physical memory block
  * @param[in]  size         Size to be mapped. Size will be rounded up by to the nearest multiple of MMU page size
- * @param[in]  caps         Memory capabilities, see `mmu_mem_caps_t`
  * @param[in]  target       Physical memory target you're going to map to, see `mmu_target_t`
+ * @param[in]  caps         Memory capabilities, see `mmu_mem_caps_t`
+ * @param[in]  flags        Mmap flags
  * @param[out] out_ptr      Start address of the mapped virtual memory
  *
  * @return
@@ -64,7 +84,7 @@ typedef uint32_t esp_paddr_t;
  *                                 block_start                              block_end
  *
  */
-esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_mem_caps_t caps, mmu_target_t target, void **out_ptr);
+esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target, mmu_mem_caps_t caps, int flags, void **out_ptr);
 
 /**
  * @brief Unmap a previously mapped virtual memory block

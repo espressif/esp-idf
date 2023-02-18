@@ -114,7 +114,13 @@ typedef struct {
     mem_region_t mem_regions[SOC_MMU_LINEAR_ADDRESS_REGION_NUM];
 } mmu_ctx_t;
 
+
 static mmu_ctx_t s_mmu_ctx;
+
+#if ENABLE_PADDR_CHECK
+static bool s_is_enclosed(uint32_t block_start, uint32_t block_end, uint32_t new_block_start, uint32_t new_block_size);
+static bool s_is_overlapped(uint32_t block_start, uint32_t block_end, uint32_t new_block_start, uint32_t new_block_size);
+#endif  //#if ENABLE_PADDR_CHECK
 
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
@@ -387,7 +393,7 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_mapping(mmu_target_t target, uint32_t v
     ESP_EARLY_LOGV(TAG, "actual_mapped_len is 0x%"PRIx32, actual_mapped_len);
 }
 
-esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_mem_caps_t caps, mmu_target_t target, void **out_ptr)
+esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target, mmu_mem_caps_t caps, int flags, void **out_ptr)
 {
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
@@ -436,21 +442,34 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_mem_caps_t caps,
     mem_block_t *mem_block = NULL;
 
 #if ENABLE_PADDR_CHECK
-    bool is_mapped = false;
+    bool is_enclosed = false;
+    bool is_overlapped = false;
+    bool allow_overlap = flags & ESP_MMU_MMAP_FLAG_PADDR_SHARED;
+
     TAILQ_FOREACH(mem_block, &found_region->mem_block_head, entries) {
         if (target == mem_block->target) {
-            if ((paddr_start >= mem_block->paddr_start) && ((paddr_start + aligned_size) <= mem_block->paddr_end)) {
-                //the to-be-mapped paddr region is mapped already
-                is_mapped = true;
+            if ((s_is_enclosed(mem_block->paddr_start, mem_block->paddr_end, paddr_start, aligned_size))) {
+                //the to-be-mapped paddr block is mapped already
+                is_enclosed = true;
+                break;
+            }
+
+            if (!allow_overlap && (s_is_overlapped(mem_block->paddr_start, mem_block->paddr_end, paddr_start, aligned_size))) {
+                is_overlapped = true;
                 break;
             }
         }
     }
 
-    if (is_mapped) {
-        ESP_LOGW(TAG, "paddr region is mapped already, vaddr_start: %p, size: 0x%x", (void *)mem_block->vaddr_start, mem_block->size);
+    if (is_enclosed) {
+        ESP_LOGW(TAG, "paddr block is mapped already, vaddr_start: %p, size: 0x%x", (void *)mem_block->vaddr_start, mem_block->size);
         *out_ptr = (void *)mem_block->vaddr_start;
         return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!allow_overlap && is_overlapped) {
+        ESP_LOGE(TAG, "paddr block is overlapped with an already mapped paddr block");
+        return ESP_ERR_INVALID_ARG;
     }
 #endif //#if ENABLE_PADDR_CHECK
 
@@ -511,9 +530,6 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_mem_caps_t caps,
     return ESP_OK;
 
 err:
-    if (new_block) {
-        free(new_block);
-    }
     if (dummy_tail) {
         free(dummy_tail);
     }
@@ -682,7 +698,7 @@ static bool NOINLINE_ATTR IRAM_ATTR s_vaddr_to_paddr(uint32_t vaddr, esp_paddr_t
 esp_err_t esp_mmu_vaddr_to_paddr(void *vaddr, esp_paddr_t *out_paddr, mmu_target_t *out_target)
 {
     ESP_RETURN_ON_FALSE(vaddr && out_paddr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
-    ESP_RETURN_ON_FALSE(mmu_ll_check_valid_ext_vaddr_region(0, (uint32_t)vaddr, 1), ESP_ERR_INVALID_ARG, TAG, "not a valid external virtual address");
+    ESP_RETURN_ON_FALSE(mmu_hal_check_valid_ext_vaddr_region(0, (uint32_t)vaddr, 1, MMU_VADDR_DATA | MMU_VADDR_INSTRUCTION), ESP_ERR_INVALID_ARG, TAG, "not a valid external virtual address");
 
     esp_paddr_t paddr = 0;
     mmu_target_t target = 0;
@@ -722,3 +738,76 @@ esp_err_t esp_mmu_paddr_to_vaddr(esp_paddr_t paddr, mmu_target_t target, mmu_vad
 
     return ESP_OK;
 }
+
+
+#if ENABLE_PADDR_CHECK
+/*---------------------------------------------------------------
+    Helper functions to check block
+---------------------------------------------------------------*/
+/**
+ * Check if a new block is enclosed by another, e.g.
+ *
+ * This is enclosed:
+ *
+ *       new_block_start               new_block_end
+ *              |-------- New Block --------|
+ *      |--------------- Block ---------------|
+ * block_start                              block_end
+ *
+ * @note Note the difference between `s_is_overlapped()` below
+ *
+ * @param block_start     An original block start
+ * @param block_end       An original block end
+ * @param new_block_start New block start
+ * @param new_block_size  New block size
+ *
+ * @return True: new block is enclosed; False: new block is not enclosed
+ */
+static bool s_is_enclosed(uint32_t block_start, uint32_t block_end, uint32_t new_block_start, uint32_t new_block_size)
+{
+    bool is_enclosed = false;
+    uint32_t new_block_end = new_block_start + new_block_size;
+
+    if ((new_block_start >= block_start) && (new_block_end <= block_end)) {
+        is_enclosed = true;
+    } else {
+        is_enclosed = false;
+    }
+
+    return is_enclosed;
+}
+
+/**
+ * Check if a new block is overlapped by another, e.g.
+ *
+ * This is overlapped:
+ *
+ *       new_block_start                 new_block_end
+ *              |---------- New Block ----------|
+ *      |--------------- Block ---------------|
+ * block_start                              block_end
+ *
+ * @note Note the difference between `s_is_enclosed()` above
+ *
+ * @param block_start     An original block start
+ * @param block_end       An original block end
+ * @param new_block_start New block start
+ * @param new_block_size  New block size
+ *
+ * @return True: new block is overlapped; False: new block is not overlapped
+ */
+static bool s_is_overlapped(uint32_t block_start, uint32_t block_end, uint32_t new_block_start, uint32_t new_block_size)
+{
+    bool is_overlapped = false;
+    uint32_t new_block_end = new_block_start + new_block_size;
+
+    if (((new_block_start < block_start) && (new_block_end > block_start)) ||
+        ((new_block_start < block_end) && (new_block_end > block_end))) {
+        is_overlapped = true;
+    } else {
+        is_overlapped = false;
+    }
+
+    return is_overlapped;
+}
+#endif  //#if ENABLE_PADDR_CHECK

@@ -109,7 +109,8 @@ TEST_CASE("test all readable vaddr can map to flash", "[mmu]")
         TEST_ASSERT(block_info && "no mem");
 
         void *ptr = NULL;
-        ret = esp_mmu_map(part->address, TEST_BLOCK_SIZE, MMU_MEM_CAP_READ, MMU_TARGET_FLASH0, &ptr);
+        //No need to use flag, we enabled ESP_MMAP_TEST_ALLOW_MAP_TO_MAPPED_PADDR in this test_app
+        ret = esp_mmu_map(part->address, TEST_BLOCK_SIZE, MMU_TARGET_FLASH0, MMU_MEM_CAP_READ, 0, &ptr);
         if (ret == ESP_OK) {
             ESP_LOGI(TAG, "ptr is %p", ptr);
             bool success = s_test_mmap_data_by_random((uint8_t *)ptr, sizeof(sector_buf), test_seed);
@@ -156,7 +157,8 @@ TEST_CASE("test all executable vaddr can map to flash", "[mmu]")
         TEST_ASSERT(block_info && "no mem");
 
         void *ptr = NULL;
-        ret = esp_mmu_map(part->address, TEST_BLOCK_SIZE, MMU_MEM_CAP_EXEC, MMU_TARGET_FLASH0, &ptr);
+        //No need to use flag, we enabled ESP_MMAP_TEST_ALLOW_MAP_TO_MAPPED_PADDR in this test_app
+        ret = esp_mmu_map(part->address, TEST_BLOCK_SIZE, MMU_TARGET_FLASH0, MMU_MEM_CAP_EXEC, 0, &ptr);
         if (ret == ESP_OK) {
             ESP_LOGI(TAG, "ptr is %p", ptr);
             for (int i = 0; i < TEST_BLOCK_SIZE; i += 0x100) {

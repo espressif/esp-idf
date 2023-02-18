@@ -12,6 +12,7 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_types.h"
 #include "hal/cache_ll.h"
+#include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "soc/soc_caps.h"
 
@@ -117,6 +118,6 @@ void cache_hal_enable(cache_type_t type)
 void cache_hal_invalidate_addr(uint32_t vaddr, uint32_t size)
 {
     //Now only esp32 has 2 MMUs, this file doesn't build on esp32
-    HAL_ASSERT(mmu_ll_check_valid_ext_vaddr_region(0, vaddr, size));
+    HAL_ASSERT(mmu_hal_check_valid_ext_vaddr_region(0, vaddr, size, MMU_VADDR_DATA | MMU_VADDR_INSTRUCTION));
     Cache_Invalidate_Addr(vaddr, size);
 }

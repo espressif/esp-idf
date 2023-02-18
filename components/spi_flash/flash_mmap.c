@@ -92,7 +92,7 @@ esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t m
     } else {
         caps = MMU_MEM_CAP_READ | MMU_MEM_CAP_8BIT;
     }
-    ret = esp_mmu_map(src_addr, size, caps, MMU_TARGET_FLASH0, &ptr);
+    ret = esp_mmu_map(src_addr, size, MMU_TARGET_FLASH0, caps, ESP_MMU_MMAP_FLAG_PADDR_SHARED, &ptr);
     if (ret == ESP_OK) {
         vaddr_list[0] = (uint32_t)ptr;
         block->list_num = 1;
@@ -202,7 +202,7 @@ esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mm
     }
     for (int i = 0; i < block_num; i++) {
         void *ptr = NULL;
-        ret = esp_mmu_map(paddr_blocks[i][0], paddr_blocks[i][1], caps, MMU_TARGET_FLASH0, &ptr);
+        ret = esp_mmu_map(paddr_blocks[i][0], paddr_blocks[i][1], MMU_TARGET_FLASH0, caps, ESP_MMU_MMAP_FLAG_PADDR_SHARED, &ptr);
         if (ret == ESP_OK) {
             vaddr_list[i] = (uint32_t)ptr;
             successful_cnt++;
