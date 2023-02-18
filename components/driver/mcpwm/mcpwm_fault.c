@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -229,7 +229,7 @@ esp_err_t mcpwm_fault_register_event_callbacks(mcpwm_fault_handle_t fault, const
     mcpwm_hal_context_t *hal = &group->hal;
     int fault_id = gpio_fault->fault_id;
 
-#if CONFIG_MCWPM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_IRAM_SAFE
     if (cbs->on_fault_enter) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_fault_enter), ESP_ERR_INVALID_ARG, TAG, "on_fault_enter callback not in IRAM");
     }
