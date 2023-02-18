@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -144,6 +144,14 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
 #if SOC_RMT_SUPPORT_XTAL
     case RMT_CLK_SRC_XTAL:
         periph_src_clk_hz = esp_clk_xtal_freq();
+#if CONFIG_PM_ENABLE
+        sprintf(chan->pm_lock_name, "rmt_%d_%d", group->group_id, channel_id); // e.g. rmt_0_0
+        // XTAL will be power down in the light sleep (predefined low power modes)
+        // acquire a NO_LIGHT_SLEEP lock here to prevent the system go into light sleep automatically
+        ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, chan->pm_lock_name, &chan->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
+        ESP_LOGD(TAG, "install NO_LIGHT_SLEEP lock for RMT channel (%d,%d)", group->group_id, channel_id);
+#endif // CONFIG_PM_ENABLE
         break;
 #endif // SOC_RMT_SUPPORT_XTAL
 #if SOC_RMT_SUPPORT_REF_TICK
