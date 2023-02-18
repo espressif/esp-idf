@@ -540,6 +540,8 @@ int uart_write_bytes(uart_port_t uart_num, const void* src, size_t size);
  */
 int uart_write_bytes_with_break(uart_port_t uart_num, const void* src, size_t size, int brk_len);
 
+int uart_send_break(uart_port_t uart_num, int brk_len);
+
 /**
  * @brief UART read bytes from UART buffer
  *
