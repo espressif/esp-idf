@@ -86,6 +86,9 @@ TEST_CASE("mbedtls ECP mul w/ koblitz", "[mbedtls]")
 }
 
 #if CONFIG_MBEDTLS_HARDWARE_ECC
+
+#define SMALL_SCALAR                127
+
 /*
  * Coordinates and integers stored in big endian format
  */
@@ -117,6 +120,18 @@ const uint8_t ecc_p192_mul_res_y[] = {
     0xDF, 0xF3, 0x9E, 0x76, 0x24, 0xF4, 0xF6, 0xB4,
     0xF0, 0x0A, 0x18, 0xE1, 0x0B, 0xD2, 0xD9, 0x83,
     0xE8, 0x29, 0x5E, 0xD9, 0x46, 0x54, 0xC3, 0xE1
+};
+
+const uint8_t ecc_p192_small_mul_res_x[] = {
+    0x62, 0xBF, 0x33, 0xC1, 0x75, 0xB5, 0xEB, 0x1D,
+    0xBE, 0xC7, 0x15, 0x04, 0x03, 0xA7, 0xDD, 0x9D,
+    0x0B, 0x17, 0x9D, 0x3B, 0x06, 0x63, 0xFE, 0xD3
+};
+
+const uint8_t ecc_p192_small_mul_res_y[] = {
+    0xD4, 0xE9, 0x4E, 0x4D, 0x89, 0x4D, 0xB5, 0x99,
+    0x8A, 0xE1, 0x85, 0x81, 0x27, 0x38, 0x23, 0x32,
+    0x92, 0xCF, 0xE8, 0x38, 0xCA, 0x39, 0xF2, 0xE1
 };
 
 const uint8_t ecc_p256_point_x[] = {
@@ -154,6 +169,21 @@ const uint8_t ecc_p256_mul_res_y[] = {
     0xC7, 0xD4, 0x0C, 0x90, 0xA1, 0xC9, 0xD3, 0x3A
 };
 
+const uint8_t ecc_p256_small_mul_res_x[] = {
+    0x53, 0x4D, 0x45, 0xDB, 0x6B, 0xAC, 0xA8, 0xE2,
+    0xD2, 0xA5, 0xD0, 0xA7, 0x65, 0xF1, 0x60, 0x13,
+    0xA8, 0xD4, 0xEB, 0x58, 0xC6, 0xAA, 0xAD, 0x35,
+    0x67, 0xCE, 0xBD, 0xFA, 0xC4, 0x2D, 0x62, 0x3C
+};
+
+const uint8_t ecc_p256_small_mul_res_y[] = {
+    0xFA, 0xD6, 0x69, 0xC8, 0x9A, 0x2A, 0x54, 0xE4,
+    0x41, 0x54, 0x35, 0x7F, 0x99, 0x2C, 0xCE, 0xC8,
+    0xEE, 0xF0, 0x93, 0xE0, 0xF2, 0x3A, 0x63, 0x1D,
+    0x17, 0xFD, 0xF6, 0x64, 0x41, 0x9E, 0x50, 0x0C
+};
+
+
 static int rng_wrapper(void *ctx, unsigned char *buf, size_t len)
 {
     esp_fill_random(buf, len);
@@ -182,7 +212,11 @@ static void test_ecp_mul(mbedtls_ecp_group_id id, const uint8_t *x_coord, const 
 
     size = grp.pbits / 8;
 
-    mbedtls_mpi_read_binary(&m, scalar, size);
+    if (!scalar) {
+        mbedtls_mpi_lset(&m, SMALL_SCALAR);
+    } else {
+        mbedtls_mpi_read_binary(&m, scalar, size);
+    }
 
     mbedtls_mpi_read_binary(&P.X, x_coord, size);
     mbedtls_mpi_read_binary(&P.Y, y_coord, size);
@@ -209,12 +243,18 @@ TEST_CASE("mbedtls ECP point multiply with SECP192R1", "[mbedtls]")
 {
     test_ecp_mul(MBEDTLS_ECP_DP_SECP192R1, ecc_p192_point_x, ecc_p192_point_y, ecc_p192_scalar,
                  ecc_p192_mul_res_x, ecc_p192_mul_res_y);
+
+    test_ecp_mul(MBEDTLS_ECP_DP_SECP192R1, ecc_p192_point_x, ecc_p192_point_y, NULL,
+                 ecc_p192_small_mul_res_x, ecc_p192_small_mul_res_y);
 }
 
 TEST_CASE("mbedtls ECP point multiply with SECP256R1", "[mbedtls]")
 {
     test_ecp_mul(MBEDTLS_ECP_DP_SECP256R1, ecc_p256_point_x, ecc_p256_point_y, ecc_p256_scalar,
                  ecc_p256_mul_res_x, ecc_p256_mul_res_y);
+
+    test_ecp_mul(MBEDTLS_ECP_DP_SECP256R1, ecc_p256_point_x, ecc_p256_point_y, NULL,
+                 ecc_p256_small_mul_res_x, ecc_p256_small_mul_res_y);
 }
 
 static void test_ecp_verify(mbedtls_ecp_group_id id, const uint8_t *x_coord, const uint8_t *y_coord)
