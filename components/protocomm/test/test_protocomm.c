@@ -557,7 +557,7 @@ static esp_err_t test_req_endpoint(session_t *session)
         // Check if the AES key is correctly set before calling the software encryption
         // API. Without this check, the code will crash, resulting in a test case failure.
         // For hardware AES, portability layer takes care of this.
-        if (session->ctx_aes.rk != NULL && session->ctx_aes.nr > 0) {
+        if (session->ctx_aes.MBEDTLS_PRIVATE(nr) > 0) {
 #endif
 
             mbedtls_aes_crypt_ctr(&session->ctx_aes, sizeof(rand_test_data), &session->nc_off,
