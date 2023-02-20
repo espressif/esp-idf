@@ -792,7 +792,7 @@ GPIO & RTC GPIO
 
     .. Note::
 
-        - Strapping 管脚：GPIO2、GPIO3、GPIO45 和 GPIO46 是 Strapping 管脚。更多信息请参考 `ESP32-S3 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_cn.pdf>`_。
+        - Strapping 管脚：GPIO0、GPIO3、GPIO45 和 GPIO46 是 Strapping 管脚。更多信息请参考 `ESP32-S3 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_cn.pdf>`_。
         - SPI0/1：GPIO26-32 通常用于 SPI flash 和 PSRAM，不推荐用于其他用途。当使用八线 flash 或八线 PSRAM 或同时使用两者时，GPIO33~37 会连接到 SPIIO4 ~ SPIIO7 和 SPIDQS。因此，对于内嵌 ESP32-S3R8 或 ESP32-S3R8V 芯片的开发板，GPIO33~37 也不推荐用于其他用途。
         - USB-JTAG：GPIO19 和 GPIO20 默认用于 USB-JTAG。用做 GPIO 时驱动程序将禁用 USB-JTAG。
 
