@@ -60,7 +60,7 @@ The above command explained:
 - ``espressif/idf``: uses Docker image ``espressif/idf`` with tag ``latest`` (implicitly added by Docker when no tag is specified)
 - ``idf.py build``: runs this command inside the container
 
-To build with a specific docker image tag, specify it as ``espressif/idf:TAG``, for example::
+To build with a specific Docker image tag, specify it as ``espressif/idf:TAG``, for example::
 
     docker run --rm -v $PWD:/project -w /project espressif/idf:release-v4.4 idf.py build
 
@@ -81,7 +81,25 @@ Then inside the container, use ``idf.py`` as usual::
 
 .. note::
 
-    Commands which communicate with the development board, such as ``idf.py flash`` and ``idf.py monitor`` will not work in the container unless the serial port is passed through into the container. However currently this is not possible with Docker for Windows (https://github.com/docker/for-win/issues/1018) and Docker for Mac (https://github.com/docker/for-mac/issues/900).
+    Commands which communicate with the development board, such as ``idf.py flash`` and ``idf.py monitor`` will not work in the container unless the serial port is passed through into the container. This can be done with Docker for Linux with the `device option`_. However currently this is not possible with Docker for Windows (https://github.com/docker/for-win/issues/1018) and Docker for Mac (https://github.com/docker/for-mac/issues/900). This limitation may be overcome by using `remote serial ports`_. An example how to do this can be found in the following `using remote serial port`_ section.
+
+
+.. _using remote serial port:
+
+Using remote serial port
+~~~~~~~~~~~~~~~~~~~~~~~~
+The `RFC2217`_ (Telnet) protocol can be used to remotely connect to a serial port. For more information please see the `remote serial ports`_ documentation in the esptool project. This method can also be used to access the serial port inside a Docker container if it cannot be accessed directly. Following is an example how to use the flash command from within a Docker container.
+
+On host start ``esp_rfc2217_server``. It is available as a one-file bundled executable created by pyinstaller and it can be downloaded from the `esptool releases`_ page in a zip archive along with other esptool utilities::
+
+    esp_rfc2217_server -v -p 4000 COM3
+
+Now the device attached to the host can be flashed from inside a Docker container by using::
+
+    docker run --rm -v <host_path>:/<container_path> -w /<container_path> espressif/idf idf.py --port rfc2217://host.docker.internal:4000?ign_set_control flash
+
+Please make sure that ``<host_path>`` is properly set to your project path on the host and ``<container_path>`` is set as a working directory inside the container with the ``-w`` option. The ``host.docker.internal`` is a special Docker DNS name to access the host. This can be replaced with host IP if necessary.
+
 
 Building custom images
 ======================
@@ -101,3 +119,8 @@ To use these arguments, pass them via the ``--build-arg`` command line option. F
         --build-arg IDF_CLONE_SHALLOW=1 \
         --build-arg IDF_INSTALL_TARGETS=esp32c3 \
         tools/docker
+
+.. _remote serial ports: https://docs.espressif.com/projects/esptool/en/latest/esptool/remote-serial-ports.html
+.. _RFC2217: http://www.ietf.org/rfc/rfc2217.txt
+.. _esptool releases: https://github.com/espressif/esptool/releases
+.. _device option: https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities
