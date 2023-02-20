@@ -13,7 +13,7 @@ spi_flash 组件提供外部 flash 数据读取、写入、擦除和内存映射
 .. note::
     访问主 flash 芯片时，建议使用上述 ``esp_partition_*`` API 函数，而非低层级的 ``esp_flash_*`` API 函数。分区表 API 函数根据存储在分区表中的数据，进行边界检查并计算在 flash 中的正确偏移量。不过，您仍可以使用 ``esp_flash_*`` 函数直接访问外部（额外）的 SPI flash 芯片。
 
-与 ESP-IDF V4.0 之前的 API 不同，这一版 ``esp_flash_*`` API 功能并不局限于主 SPI flash 芯片（即运行程序的 SPI flash 芯片）。使用不同的芯片指针，您可以访问连接到 SPI0/1 或 SPI2 总线的外部 flash 芯片。
+与 ESP-IDF v4.0 之前的 API 不同，这一版 ``esp_flash_*`` API 功能并不局限于主 SPI flash 芯片（即运行程序的 SPI flash 芯片）。使用不同的芯片指针，您可以访问连接到 SPI0/1 或 SPI2 总线的外部 flash 芯片。
 
 .. note::
 
@@ -23,7 +23,7 @@ spi_flash 组件提供外部 flash 数据读取、写入、擦除和内存映射
 
 .. note::
 
-    ESP-IDF V4.0 之后的 flash API 不再是 *原子* 的。因此，如果读操作执行过程中发生写操作，且读操作和写操作的 flash 地址出现重叠，读操作返回的数据可能会包含旧数据和新数据 (新数据为写操作更新产生的数据)。
+    ESP-IDF v4.0 之后的 flash API 不再是 *原子* 的。因此，如果读操作执行过程中发生写操作，且读操作和写操作的 flash 地址出现重叠，读操作返回的数据可能会包含旧数据和新数据（新数据为写操作更新产生的数据）。
 
 .. note::
 
@@ -47,6 +47,10 @@ Flash 功能支持情况
 6. XMC
 7. BOYA
 
+.. note::
+
+    芯片只会默认支持官方的 flash 厂家/型号。可以在 Kconfig 菜单 ``Auto-detect flash chips`` 中选择启用或禁用特定 flash 厂家/型号。
+
 Flash 可选的功能
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -61,13 +65,13 @@ Flash 可选的功能
 
     -  OPI flash - 表示 Flash 支持 8 线模式。
 
--  32 比特地址的 flash 支持 - 通常意味着拥有大于 16MB 内存空间的大容量 flash 需要更长的地址去访问。
+-  32 比特地址的 flash 支持 - 通常意味着拥有大于 16 MB 内存空间的大容量 flash 需要更长的地址去访问。
 
 .. only:: esp32s3
 
     -  高性能 (HPM) 模式 - 表示 flash 工作频率大于 80MHz 。
 
--  flash 的私有ID (unique ID) - 表示 flash 支持它自己的 64-bits 独有 ID 。
+-  flash 的私有 ID (unique ID) - 表示 flash 支持它自己的 64-bit 独有 ID 。
 
 .. only:: esp32c3
 

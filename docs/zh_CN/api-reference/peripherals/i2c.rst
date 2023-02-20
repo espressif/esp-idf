@@ -12,7 +12,7 @@ I2C 是一种串行同步半双工通信协议，总线上可以同时挂载多�
 
 I2C 具有简单且制造成本低廉等优点，主要用于低速外围设备的短距离通信（一英尺以内）。
 
-{IDF_TARGET_NAME} 有{IDF_TARGET_I2C_NUM}个 I2C 控制器（也称为端口），负责处理在 I2C 总线上的通信。每个控制器都可以设置为主机或从机。
+{IDF_TARGET_NAME} 有 {IDF_TARGET_I2C_NUM} 个 I2C 控制器（也称为端口），负责处理在 I2C 总线上的通信。每个控制器都可以设置为主机或从机。
 
 驱动程序的功能
 ---------------
@@ -82,12 +82,12 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
     int i2c_master_port = 0;
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
-        .sda_io_num = I2C_MASTER_SDA_IO,         // select GPIO specific to your project
+        .sda_io_num = I2C_MASTER_SDA_IO,         // 配置 SDA 的 GPIO
         .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_io_num = I2C_MASTER_SCL_IO,         // select GPIO specific to your project
+        .scl_io_num = I2C_MASTER_SCL_IO,         // 配置 SCL 的 GPIO
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = I2C_MASTER_FREQ_HZ,  // select frequency specific to your project
-        // .clk_flags = 0,          /*!< Optional, you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here. */
+        .master.clk_speed = I2C_MASTER_FREQ_HZ,  // 为项目选择频率
+        .clk_flags = 0,          // 可选项，可以使用 I2C_SCLK_SRC_FLAG_* 标志来选择 I2C 源时钟
     };
 
 .. only:: SOC_I2C_SUPPORT_SLAVE
@@ -98,14 +98,15 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 
         int i2c_slave_port = I2C_SLAVE_NUM;
         i2c_config_t conf_slave = {
-            .sda_io_num = I2C_SLAVE_SDA_IO,          // select GPIO specific to your project
+            .sda_io_num = I2C_SLAVE_SDA_IO,            // 配置 SDA 的 GPIO
             .sda_pullup_en = GPIO_PULLUP_ENABLE,
-            .scl_io_num = I2C_SLAVE_SCL_IO,          // select GPIO specific to your project
+            .scl_io_num = I2C_SLAVE_SCL_IO,            // 配置 SCL 的 GPIO
             .scl_pullup_en = GPIO_PULLUP_ENABLE,
             .mode = I2C_MODE_SLAVE,
             .slave.addr_10bit_en = 0,
-            .slave.slave_addr = ESP_SLAVE_ADDR,      // address of your project
-            .clk_flags = 0,
+            .slave.slave_addr = ESP_SLAVE_ADDR,        // 项目从机地址
+            .slave.maximum_speed = I2C_SLAVE_MAX_SPEED // 预期的最大时钟速度
+            .clk_flags = 0,                            // 可选项，可以使用 I2C_SCLK_SRC_FLAG_* 标志来选择 I2C 源时钟
         };
 
 在此阶段，:cpp:func:`i2c_param_config` 还将其他 I2C 配置参数设置为 I2C 总线协议规范中定义的默认值。有关默认值及修改默认值的详细信息，请参考 :ref:`i2c-api-customized-configuration`。
@@ -209,9 +210,9 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 
 .. note::
 
-    SCL 的时钟频率会被上拉电阻和线上电容（或是从机电容）一起影响。因此，用户需要自己选择合适的上拉电阻去保证 SCL 时钟频率是准确的。尽管 I2C 协议推荐上拉电阻值为 1K 欧姆到 10K 欧姆，但是需要根据不同的频率需要选择不同的上拉电阻。
+    SCL 的时钟频率会被上拉电阻和线上电容（或是从机电容）一起影响。因此，用户需要自己选择合适的上拉电阻去保证 SCL 时钟频率是准确的。尽管 I2C 协议推荐上拉电阻值为 1 K 欧姆到 10 K 欧姆，但是需要根据不同的频率需要选择不同的上拉电阻。
 
-    通常来说，所选择的频率越高，需要的上拉电阻越小 （但是不要小于 1K 欧姆）。这是因为高电阻会减小电流，这会延长上升时间从而是频率变慢。通常我们推荐的上拉阻值范围为 2K 欧姆到 5K 欧姆，但是用户可能也需要根据他们的实际情况做出一些调整。
+    通常来说，所选择的频率越高，需要的上拉电阻越小（但是不要小于 1 K 欧姆）。这是因为高电阻会减小电流，这会延长上升时间从而使频率变慢。通常我们推荐的上拉阻值范围为 2 K 欧姆到 5 K 欧姆，但是用户可能也需要根据他们的实际情况做出一些调整。
 
 .. _i2c-api-install-driver:
 

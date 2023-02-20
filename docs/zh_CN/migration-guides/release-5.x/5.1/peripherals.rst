@@ -47,3 +47,20 @@
         - ``dac_digi_deinit`` 更新为 :cpp:func:`dac_continuous_del_channels`。
         - ``dac_digi_start``、 ``dac_digi_fifo_reset`` 和 ``dac_digi_reset`` 合并为 :cpp:func:`dac_continuous_enable`。
         - ``dac_digi_stop`` 更新为 :cpp:func:`dac_continuous_disable`。
+
+
+.. only:: SOC_GPSPI_SUPPORTED
+
+    GPSPI
+    -----
+
+    不再支持以下函数。从 ESP-IDF v5.1 版本起，GPSPI 时钟源可配置。
+
+    - ``spi_get_actual_clock`` 已废弃，更新为 :cpp:func:`spi_device_get_actual_freq`。
+
+.. only:: SOC_LEDC_SUPPORTED
+
+    LEDC
+    ----
+
+    - :cpp:enumerator:`soc_periph_ledc_clk_src_legacy_t::LEDC_USE_RTC8M_CLK` 已废弃，更新为 ``LEDC_USE_RC_FAST_CLK``。
