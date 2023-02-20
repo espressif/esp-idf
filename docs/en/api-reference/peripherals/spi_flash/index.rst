@@ -35,7 +35,7 @@ Support for Features of Flash Chips
 Quad/Dual Mode Chips
 ^^^^^^^^^^^^^^^^^^^^
 
-Features of different flashes are implemented in different ways and thus need special support. The fast/slow read and Dual mode (DOUT/DIO) of almost all 24-bit address flash chips are supported, because they don't need any vendor-specific commands.
+Features of different flashes are implemented in different ways and thus need special support. The fast/slow read and Dual mode (DOUT/DIO) of almost all flashes with 24-bit address are supported, because they don't need any vendor-specific commands.
 
 Quad mode (QIO/QOUT) is supported on following chip types:
 
@@ -49,7 +49,7 @@ Quad mode (QIO/QOUT) is supported on following chip types:
 
 .. note::
 
-    Flash vendors listed above will only be supported by default when the flash is officially supported. You can also enable or disable the flash series in the Kconfig menu ``Auto-detect flash chips``.
+    Only when one flash series listed above is supported by {IDF_TARGET_NAME}, this flash series is supported by the chip driver by default. You can use ``Component config`` > ``SPI Flash driver`` > ``Auto-detect flash chips`` in menuconfig to enable/disable a flash series.
 
 Optional Features
 ^^^^^^^^^^^^^^^^^

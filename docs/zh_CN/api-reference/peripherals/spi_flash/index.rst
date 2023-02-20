@@ -49,7 +49,7 @@ Flash 功能支持情况
 
 .. note::
 
-    芯片只会默认支持官方的 flash 厂家/型号。可以在 Kconfig 菜单 ``Auto-detect flash chips`` 中选择启用或禁用特定 flash 厂家/型号。
+    只有 {IDF_TARGET_NAME} 支持上述某个 flash 时，芯片的驱动才默认支持这款 flash。可使用 menuconfig 中的 ``Component config`` > ``SPI Flash driver`` > ``Auto-detect flash chips`` 选项来使能/禁用某个 flash。
 
 Flash 可选的功能
 ^^^^^^^^^^^^^^^^^^^^
