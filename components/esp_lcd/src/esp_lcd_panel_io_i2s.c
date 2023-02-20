@@ -611,7 +611,8 @@ static esp_err_t i2s_lcd_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     ESP_RETURN_ON_ERROR(clk_tree_src_get_freq_hz((soc_module_clk_t)src, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");
 
-    i2s_ll_tx_clk_set_src(bus->hal.dev, I2S_CLK_SRC_PLL_160M);
+    // I2S clock source is binary compatible with lcd_clock_source_t
+    i2s_ll_tx_clk_set_src(bus->hal.dev, (i2s_clock_src_t)src);
     i2s_ll_set_raw_mclk_div(bus->hal.dev, LCD_PERIPH_CLOCK_PRE_SCALE, 1, 0);
     // save the resolution of the i80 bus
     bus->resolution_hz = src_clk_hz / LCD_PERIPH_CLOCK_PRE_SCALE;
