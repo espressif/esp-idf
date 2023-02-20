@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include "esp_err.h"
 #include "ulp_common.h"
+#include "esp_intr_alloc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +33,43 @@ typedef struct {
     {                                                   \
         .wakeup_source = ULP_RISCV_WAKEUP_SOURCE_TIMER, \
     }
+
+/* ULP RISC-V interrupt signals for the main CPU */
+#if (CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3)
+#define ULP_RISCV_SW_INT    (BIT(13))   // Corresponds to RTC_CNTL_COCPU_INT_ST_M interrupt status bit
+#define ULP_RISCV_TRAP_INT  (BIT(17))   // Corresponds to RTC_CNTL_COCPU_TRAP_INT_ST_M interrupt status bit
+#else
+#error "ULP_RISCV_SW_INT and ULP_RISCV_TRAP_INT are undefined. Please check soc/rtc_cntl_reg.h for the correct bitmap on your target SoC."
+#endif /* (CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3) */
+
+/**
+ * @brief Register ULP signal ISR
+ *
+ * @note The ISR routine will only be active if the main CPU is not in deepsleep
+ *
+ * @param fn    ISR callback function
+ * @param arg   ISR callback function arguments
+ * @param mask  Bit mask to enable the required ULP RISC-V interrupt signals
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if callback function is NULL or if the interrupt bits are invalid
+ *      - ESP_ERR_NO_MEM if heap memory cannot be allocated for the interrupt
+ *      - other errors returned by esp_intr_alloc
+ */
+esp_err_t ulp_riscv_isr_register(intr_handler_t fn, void *arg, uint32_t mask);
+
+/**
+ * @brief Deregister ULP signal ISR
+ *
+ * @param fn    ISR callback function
+ * @param arg   ISR callback function arguments
+ * @param mask  Bit mask to enable the required ULP RISC-V interrupt signals
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if callback function is NULL or if the interrupt bits are invalid
+ *      - ESP_ERR_INVALID_STATE if a handler matching both callback function and its arguments isn't registered
+ */
+esp_err_t ulp_riscv_isr_deregister(intr_handler_t fn, void *arg, uint32_t mask);
 
 /**
  * @brief Configure the ULP and run the program loaded into RTC memory

@@ -20,6 +20,7 @@
 #include <sys/time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 
 #define ULP_WAKEUP_PERIOD 1000000 // 1 second
 
@@ -353,3 +354,83 @@ static void do_ulp_wakeup_after_short_delay_deepsleep_rtc_perip_on(void)
 TEST_CASE_MULTIPLE_STAGES("ULP-RISC-V is able to wakeup main CPU from deep sleep after a short delay, RTC periph powerup", "[ulp]",
         do_ulp_wakeup_after_short_delay_deepsleep_rtc_perip_on,
         check_reset_reason_ulp_wakeup);
+
+typedef struct {
+    SemaphoreHandle_t ulp_isr_sw_sem;
+    SemaphoreHandle_t ulp_isr_trap_sem;
+} TestSemaphore_t;
+
+static void ulp_riscv_isr(void *arg)
+{
+    BaseType_t yield = 0;
+    TestSemaphore_t *sem = (TestSemaphore_t *)arg;
+
+    uint32_t status = READ_PERI_REG(RTC_CNTL_INT_ST_REG);
+
+    if (status & ULP_RISCV_SW_INT) {
+        xSemaphoreGiveFromISR(sem->ulp_isr_sw_sem, &yield);
+    } else if (status & ULP_RISCV_TRAP_INT) {
+        xSemaphoreGiveFromISR(sem->ulp_isr_trap_sem, &yield);
+    }
+
+    if (yield) {
+        portYIELD_FROM_ISR();
+    }
+}
+
+TEST_CASE("ULP-RISC-V interrupt signals can be handled via ISRs on the main core", "[ulp]")
+{
+    /* Create test semaphores */
+    TestSemaphore_t test_sem_cfg;
+
+    test_sem_cfg.ulp_isr_sw_sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(test_sem_cfg.ulp_isr_sw_sem);
+
+    test_sem_cfg.ulp_isr_trap_sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(test_sem_cfg.ulp_isr_trap_sem);
+
+    /* Register ULP RISC-V signal ISR */
+    TEST_ASSERT_EQUAL(ESP_OK, ulp_riscv_isr_register(ulp_riscv_isr, (void *)&test_sem_cfg,
+            (ULP_RISCV_SW_INT | ULP_RISCV_TRAP_INT)));
+
+    /* Load ULP RISC-V firmware and start the ULP RISC-V Coprocessor */
+    printf("Loading good ULP firmware\n");
+    firmware_loaded = false;
+    load_and_start_ulp_firmware(ulp_main_bin_start, ulp_main_bin_length);
+
+    /* Setup test data. We only need the ULP to send a wakeup signal to the main CPU. */
+    ulp_main_cpu_command = RISCV_READ_WRITE_TEST;
+
+    /* Wait for the ISR to be called */
+    printf("Waiting for ULP wakeup signal ...\n");
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(test_sem_cfg.ulp_isr_sw_sem, portMAX_DELAY));
+    printf("ULP wakeup signal interrupt triggered\n");
+
+    /* Reset the ULP command */
+    ulp_main_cpu_command = RISCV_NO_COMMAND;
+
+    /* Load ULP RISC-V with faulty firmware and restart the ULP RISC-V Coprocessor.
+     * This should cause a cocpu trap signal interrupt.
+     */
+    printf("Loading faulty ULP firmware\n");
+    firmware_loaded = false;
+    load_and_start_ulp_firmware(ulp_test_app3_bin_start, ulp_test_app3_bin_length);
+
+    /* Wait for the ISR to be called */
+    printf("Waiting for ULP trap signal ...\n");
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(test_sem_cfg.ulp_isr_trap_sem, portMAX_DELAY));
+    printf("ULP trap signal interrupt triggered\n");
+
+    /* Deregister the ISR */
+    TEST_ASSERT_EQUAL(ESP_OK, ulp_riscv_isr_deregister(ulp_riscv_isr, (void *)&test_sem_cfg,
+            (ULP_RISCV_SW_INT | ULP_RISCV_TRAP_INT)));
+
+    /* Delete test semaphores */
+    vSemaphoreDelete(test_sem_cfg.ulp_isr_sw_sem);
+    vSemaphoreDelete(test_sem_cfg.ulp_isr_trap_sem);
+
+    /* Make sure ULP has a good firmware running before exiting the test */
+    ulp_riscv_reset();
+    firmware_loaded = false;
+    load_and_start_ulp_firmware(ulp_main_bin_start, ulp_main_bin_length);
+}
