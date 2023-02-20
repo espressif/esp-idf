@@ -541,8 +541,6 @@ TEST_CASE("test time functions wide 64 bits", "[newlib]")
 #endif // !_USE_LONG_TIME_T
 
 #if defined( CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER ) && defined( CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER )
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5057
 
 extern int64_t s_microseconds_offset;
 static const uint64_t s_start_timestamp  = 1606838354;
@@ -641,5 +639,4 @@ static void check_time(void)
 TEST_CASE_MULTIPLE_STAGES("Timestamp after abort is correct in case RTC & High-res timer have + big error", "[newlib][reset=abort,SW_CPU_RESET]", set_timestamp1, check_time);
 TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & High-res timer have + big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp2, check_time);
 TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & High-res timer have - big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp3, check_time);
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 #endif // CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER && CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
