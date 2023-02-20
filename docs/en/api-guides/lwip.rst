@@ -138,7 +138,7 @@ Example::
 Socket Error Reason Code
 ++++++++++++++++++++++++
 
-Below is a list of common error codes. For more detailed list of standard POSIX/C error codes, please see `newlib errno.h <https://github.com/espressif/newlib-esp32/blob/master/newlib/libc/include/sys/errno.h>` and the platform-specific extensions :component_file:`newlib/platform_include/errno.h`
+Below is a list of common error codes. For more detailed list of standard POSIX/C error codes, please see `newlib errno.h <https://github.com/espressif/newlib-esp32/blob/master/newlib/libc/include/sys/errno.h>`_ and the platform-specific extensions :component_file:`newlib/platform_include/errno.h`
 
 +-----------------+-------------------------------------+
 | Error code      | Description                         |
@@ -448,7 +448,7 @@ Most lwIP RAM usage is on-demand, as RAM is allocated from the heap as needed. T
 
 - Reducing :ref:`CONFIG_LWIP_MAX_SOCKETS` reduces the maximum number of sockets in the system. This will also cause TCP sockets in the ``WAIT_CLOSE`` state to be closed and recycled more rapidly (if needed to open a new socket), further reducing peak RAM usage.
 - Reducing :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`, :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` and :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` reduce memory usage at the expense of throughput, depending on usage.
-- Reducing :ref:`CONFIG_LWIP_TCP_MSL`, :ref:`CONFIG_LWIP_TCP_FIN_WAIT_TIMEOUT` reduces the maximum segment lifetime in the system. This will also cause TCP sockets in the ``TIME_WAIT``, ``FIN_WAIT_2`` state to be closed and recycled more rapidly 
+- Reducing :ref:`CONFIG_LWIP_TCP_MSL`, :ref:`CONFIG_LWIP_TCP_FIN_WAIT_TIMEOUT` reduces the maximum segment lifetime in the system. This will also cause TCP sockets in the ``TIME_WAIT``, ``FIN_WAIT_2`` state to be closed and recycled more rapidly
 - Disable  :ref:`CONFIG_LWIP_IPV6` can save about 39 KB for firmware size and 2KB RAM when system power up and 7KB RAM when TCPIP stack running. If there is no requirement for supporting IPV6 then it can be disabled to save flash and RAM footprint.
 
 .. only:: SOC_WIFI_SUPPORTED
