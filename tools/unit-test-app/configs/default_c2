@@ -1,3 +1,4 @@
 # This config is split between targets since different component needs to be included
 CONFIG_IDF_TARGET="esp32c2"
 TEST_COMPONENTS=freertos esp_hw_support esp_ipc esp_system esp_timer driver heap pthread soc spi_flash vfs
+CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT=n # for c2 this config must be disabled for certain tests
