@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -132,7 +132,6 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
 
 static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
 {
-    adc_atten_t atten[SOC_ADC_ATTEN_NUM] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_6, ADC_ATTEN_DB_11};
     //-------------ADC Init---------------//
     adc_oneshot_unit_handle_t adc_handle;
     adc_oneshot_unit_init_cfg_t init_config = {
@@ -148,20 +147,20 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
 
     //-------------ADC Calibration Init---------------//
     bool do_calibration = false;
-    adc_cali_handle_t cali_handle[SOC_ADC_ATTEN_NUM] = {};
-    for (int i = 0; i < SOC_ADC_ATTEN_NUM; i++) {
-        do_calibration = test_adc_calibration_init(unit_id, i, SOC_ADC_RTC_MAX_BITWIDTH, &cali_handle[i]);
+    adc_cali_handle_t cali_handle[TEST_ATTEN_NUMS] = {};
+    for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
+        do_calibration = test_adc_calibration_init(unit_id, g_test_atten[i], SOC_ADC_RTC_MAX_BITWIDTH, &cali_handle[i]);
     }
     if (!do_calibration) {
         ESP_LOGW(TAG, "No efuse bits burnt, only test the regi2c analog register values");
     }
 
-    for (int i = 0; i < SOC_ADC_ATTEN_NUM; i++) {
+    for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
 
         //-------------ADC Channel Config---------------//
-        config.atten = atten[i];
+        config.atten = g_test_atten[i];
         TEST_ESP_OK(adc_oneshot_config_channel(adc_handle, channel, &config));
-        printf("Test with atten: %d\n", atten[i]);
+        printf("Test with atten: %d\n", g_test_atten[i]);
 
         //---------------------------------Before Sleep-----------------------------------//
         printf("Before Light Sleep\n");
@@ -234,7 +233,7 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
 
     }
     TEST_ESP_OK(adc_oneshot_del_unit(adc_handle));
-    for (int i = 0; i < SOC_ADC_ATTEN_NUM; i++) {
+    for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
         if (cali_handle[i]) {
             test_adc_calibration_deinit(cali_handle[i]);
         }

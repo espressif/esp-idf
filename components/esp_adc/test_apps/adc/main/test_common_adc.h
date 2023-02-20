@@ -26,29 +26,7 @@ extern "C" {
 #endif
 
 /*---------------------------------------------------------------
-        ADC Calibration
----------------------------------------------------------------*/
-/**
- * @brief Initialise ADC Calibration
- *
- * @param[out] out_handle    ADC calibration handle
- *
- * @return
- *        - True  Calibration success
- *        - False Calibration fail
- */
-bool test_adc_calibration_init(adc_unit_t unit, adc_atten_t atten, adc_bitwidth_t bitwidth, adc_cali_handle_t *out_handle);
-
-/**
- * @brief De-initialise ADC Calibration
- *
- * @param[in] handle    ADC calibration handle
- */
-void test_adc_calibration_deinit(adc_cali_handle_t handle);
-
-
-/*---------------------------------------------------------------
-        ADC GPIO
+        ADC Level
 ---------------------------------------------------------------*/
 /**
  * We use weak pulldown, `ADC_TEST_LOW_THRESH` may vary.
@@ -87,13 +65,51 @@ void test_adc_calibration_deinit(adc_cali_handle_t handle);
 #define ADC_TEST_HIGH_THRESH     0
 
 #elif CONFIG_IDF_TARGET_ESP32C2
-#define ADC_TEST_LOW_VAL         2147
-#define ADC_TEST_LOW_THRESH      100
+#define ADC_TEST_LOW_VAL         0
+#define ADC_TEST_LOW_THRESH      15
 
-#define ADC_TEST_HIGH_VAL        4095
-#define ADC_TEST_HIGH_THRESH     0
+#define ADC_TEST_HIGH_VAL        3400
+#define ADC_TEST_HIGH_THRESH     200
 #endif
 
+
+/*---------------------------------------------------------------
+        ADC Attenuation
+---------------------------------------------------------------*/
+#if CONFIG_IDF_TARGET_ESP32C2
+#define TEST_ATTEN_NUMS                 2
+extern adc_atten_t g_test_atten[TEST_ATTEN_NUMS];
+#else
+#define TEST_ATTEN_NUMS                 4
+extern adc_atten_t g_test_atten[TEST_ATTEN_NUMS];
+#endif
+
+
+/*---------------------------------------------------------------
+        ADC Calibration
+---------------------------------------------------------------*/
+/**
+ * @brief Initialise ADC Calibration
+ *
+ * @param[out] out_handle    ADC calibration handle
+ *
+ * @return
+ *        - True  Calibration success
+ *        - False Calibration fail
+ */
+bool test_adc_calibration_init(adc_unit_t unit, adc_atten_t atten, adc_bitwidth_t bitwidth, adc_cali_handle_t *out_handle);
+
+/**
+ * @brief De-initialise ADC Calibration
+ *
+ * @param[in] handle    ADC calibration handle
+ */
+void test_adc_calibration_deinit(adc_cali_handle_t handle);
+
+
+/*---------------------------------------------------------------
+        ADC GPIO
+---------------------------------------------------------------*/
 /**
  * @brief Set ADC IO level
  *

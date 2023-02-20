@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,6 +13,16 @@
 #include "test_common_adc.h"
 
 __attribute__((unused)) static const char *TAG = "TEST_ADC";
+
+/*---------------------------------------------------------------
+        ADC Attenuation
+---------------------------------------------------------------*/
+#if CONFIG_IDF_TARGET_ESP32C2
+adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_11};
+#else
+adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_6, ADC_ATTEN_DB_11};
+#endif
+
 
 /*---------------------------------------------------------------
         ADC Calibration

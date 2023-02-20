@@ -92,7 +92,9 @@ void adc_hal_calibration_init(adc_unit_t adc_n)
     adc_ll_calibration_init(adc_n);
 }
 
-static uint32_t s_previous_init_code[SOC_ADC_PERIPH_NUM] = {-1, -1};
+static uint32_t s_previous_init_code[SOC_ADC_PERIPH_NUM] = {
+    [0 ... (SOC_ADC_PERIPH_NUM - 1)] = -1,
+};
 
 void adc_hal_set_calibration_param(adc_unit_t adc_n, uint32_t param)
 {
@@ -145,10 +147,12 @@ static uint32_t read_cal_channel(adc_unit_t adc_n)
 
 uint32_t adc_hal_self_calibration(adc_unit_t adc_n, adc_atten_t atten, bool internal_gnd)
 {
+#if SOC_ADC_ARBITER_SUPPORTED
     if (adc_n == ADC_UNIT_2) {
         adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
         adc_hal_arbiter_config(&config);
     }
+#endif // #if SOC_ADC_ARBITER_SUPPORTED
 
     cal_setup(adc_n, atten);
 

@@ -203,7 +203,7 @@ To do further calbration to convert the ADC raw result to voltage in mV, please 
 Hardware Limitations
 ^^^^^^^^^^^^^^^^^^^^
 
-- A specific ADC unit can only work under one operating mode at any one time, either Continuous Mode or Oneshot Mode. :cpp:func:`adc_continuous_start` has provided the protection.
+- A specific ADC unit can only work under one operating mode at any one time, either continuous mode or oneshot mode. :cpp:func:`adc_continuous_start` has provided the protection.
 
 - Random Number Generator uses ADC as an input source. When ADC continuous mode driver works, the random number generated from RNG will be less random.
 

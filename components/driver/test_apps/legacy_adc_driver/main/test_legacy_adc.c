@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -47,11 +47,11 @@
 #define ADC_TEST_HIGH_THRESH     0
 
 #elif CONFIG_IDF_TARGET_ESP32C2
-#define ADC_TEST_LOW_VAL         2147
-#define ADC_TEST_LOW_THRESH      100
+#define ADC_TEST_LOW_VAL         0
+#define ADC_TEST_LOW_THRESH      15
 
-#define ADC_TEST_HIGH_VAL        4095
-#define ADC_TEST_HIGH_THRESH     0
+#define ADC_TEST_HIGH_VAL        3400
+#define ADC_TEST_HIGH_THRESH     200
 
 #endif
 
