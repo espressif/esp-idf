@@ -29,3 +29,16 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num)
         gpio_ll_clear_intr_status_high(hal->dev, BIT(gpio_num - 32));
     }
 }
+
+#if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+void gpio_hal_hysteresis_soft_enable(gpio_hal_context_t *hal, uint32_t gpio_num, bool enable)
+{
+    if (enable) {
+        gpio_ll_pin_input_hysteresis_ctrl_sel_soft(hal->dev, gpio_num);
+        gpio_ll_pin_input_hysteresis_enable(hal->dev, gpio_num);
+    } else {
+        gpio_ll_pin_input_hysteresis_ctrl_sel_soft(hal->dev, gpio_num);
+        gpio_ll_pin_input_hysteresis_disable(hal->dev, gpio_num);
+    }
+}
+#endif //SOC_GPIO_SUPPORT_PIN_HYS_FILTER

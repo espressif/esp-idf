@@ -69,6 +69,24 @@
 #define FILTER_EN_V 1
 #define FILTER_EN_S 15
 
+/* HYS_EN : R/W; bitpos: [16]; default: 0;
+ * Software enables hysteresis function for the pad.
+ * 1: Hysteresis enabled. 0: Hysteresis disabled.
+ */
+#define HYS_EN    (BIT(16))
+#define HYS_EN_M  (HYS_EN_V << HYS_EN_S)
+#define HYS_EN_V  0x00000001
+#define HYS_EN_S  16
+/* HYS_SEL : R/W; bitpos: [17]; default: 0;
+ * Select enabling signals of the pad from software and efuse hardware.
+ * 1: Select enabling siganl from software.
+ * 0: Select enabling signal from efuse hardware.
+ */
+#define HYS_SEL    (BIT(17))
+#define HYS_SEL_M  (HYS_SEL_V << HYS_SEL_S)
+#define HYS_SEL_V  0x00000001
+#define HYS_SEL_S  17
+
 #define PIN_SLP_INPUT_ENABLE(PIN_NAME)      SET_PERI_REG_MASK(PIN_NAME,SLP_IE)
 #define PIN_SLP_INPUT_DISABLE(PIN_NAME)     CLEAR_PERI_REG_MASK(PIN_NAME,SLP_IE)
 #define PIN_SLP_OUTPUT_ENABLE(PIN_NAME)     SET_PERI_REG_MASK(PIN_NAME,SLP_OE)
@@ -90,6 +108,10 @@
 #define PIN_FUNC_SELECT(PIN_NAME, FUNC)     REG_SET_FIELD(PIN_NAME, MCU_SEL, FUNC)
 #define PIN_FILTER_EN(PIN_NAME)             REG_SET_BIT(PIN_NAME, FILTER_EN)
 #define PIN_FILTER_DIS(PIN_NAME)            REG_CLR_BIT(PIN_NAME, FILTER_EN)
+#define PIN_HYS_EN_SEL_EFUSE(PIN_NAME)      REG_CLR_BIT(PIN_NAME, HYS_SEL)
+#define PIN_HYS_EN_SEL_SOFT(PIN_NAME)       REG_SET_BIT(PIN_NAME, HYS_SEL)
+#define PIN_HYS_SOFT_ENABLE(PIN_NAME)       REG_SET_BIT(PIN_NAME, HYS_EN)
+#define PIN_HYS_SOFT_DISABLE(PIN_NAME)      REG_CLR_BIT(PIN_NAME, HYS_EN)
 
 #define IO_MUX_GPIO0_REG               PERIPHS_IO_MUX_GPIO0_U
 #define IO_MUX_GPIO1_REG               PERIPHS_IO_MUX_GPIO1_U

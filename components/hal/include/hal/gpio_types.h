@@ -473,6 +473,15 @@ typedef enum {
     GPIO_DRIVE_CAP_MAX,
 } gpio_drive_cap_t;
 
+/**
+ * @brief Available option for configuring hysteresis feature of GPIOs
+ */
+typedef enum {
+    GPIO_HYS_CTRL_EFUSE     = 0,    /*!< Pad input hysteresis ctrl by efuse */
+    GPIO_HYS_SOFT_ENABLE    = 1,    /*!< Pad input hysteresis enable by software */
+    GPIO_HYS_SOFT_DISABLE   = 2,    /*!< Pad input hysteresis disable by software */
+} gpio_hys_ctrl_mode_t;
+
 #ifdef __cplusplus
 }
 #endif

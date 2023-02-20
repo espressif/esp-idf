@@ -303,6 +303,10 @@ config SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
     bool
     default y
 
+config SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+    bool
+    default y
+
 config SOC_GPIO_FLEX_GLITCH_FILTER_NUM
     int
     default 8
