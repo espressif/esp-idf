@@ -359,6 +359,10 @@ esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status)
 esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count)
 {
+    if (block_count == 0) {
+        return ESP_OK;
+    }
+
     esp_err_t err = ESP_OK;
     size_t block_size = card->csd.sector_size;
     if (esp_ptr_dma_capable(src) && (intptr_t)src % 4 == 0) {
@@ -456,6 +460,10 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
 esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
         size_t start_block, size_t block_count)
 {
+    if (block_count == 0) {
+        return ESP_OK;
+    }
+
     esp_err_t err = ESP_OK;
     size_t block_size = card->csd.sector_size;
     if (esp_ptr_dma_capable(dst) && (intptr_t)dst % 4 == 0) {
@@ -530,6 +538,10 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
 esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
         size_t sector_count, sdmmc_erase_arg_t arg)
 {
+    if (sector_count == 0) {
+        return ESP_OK;
+    }
+
     if (start_sector + sector_count > card->csd.capacity) {
         return ESP_ERR_INVALID_SIZE;
     }
