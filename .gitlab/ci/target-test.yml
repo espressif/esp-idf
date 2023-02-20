@@ -1032,18 +1032,6 @@ example_test_007:
     - ESP32
     - Example_I2C_CCS811_SENSOR
 
-example_test_011:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_T2_RS485
-
-example_test_016:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_Modbus_TCP
-
 example_test_017:
   extends: .example_test_esp32s2_template
   tags:
