@@ -74,6 +74,10 @@
    busy-waiting, 30000 bytes is approx 0.5 ms */
 #define AES_DMA_INTR_TRIG_LEN 2000
 
+/* With buffers in PSRAM (worst condition) we still achieve a speed of 4 MB/s
+   thus a 2 second timeout value should be suffient for even very large buffers.
+ */
+#define AES_WAIT_INTR_TIMEOUT_MS 2000
 
 #if defined(CONFIG_MBEDTLS_AES_USE_INTERRUPT)
 static SemaphoreHandle_t op_complete_sem;
@@ -209,14 +213,14 @@ static esp_err_t esp_aes_isr_initialise( void )
 #endif // CONFIG_MBEDTLS_AES_USE_INTERRUPT
 
 /* Wait for AES hardware block operation to complete */
-static void esp_aes_dma_wait_complete(bool use_intr, lldesc_t *output_desc)
+static int esp_aes_dma_wait_complete(bool use_intr, lldesc_t *output_desc)
 {
 #if defined (CONFIG_MBEDTLS_AES_USE_INTERRUPT)
     if (use_intr) {
-        if (!xSemaphoreTake(op_complete_sem, 2000 / portTICK_PERIOD_MS)) {
+        if (!xSemaphoreTake(op_complete_sem, AES_WAIT_INTR_TIMEOUT_MS / portTICK_PERIOD_MS)) {
             /* indicates a fundamental problem with driver */
-            ESP_LOGE("AES", "Timed out waiting for completion of AES Interrupt");
-            abort();
+            ESP_LOGE(TAG, "Timed out waiting for completion of AES Interrupt");
+            return -1;
         }
 #ifdef CONFIG_PM_ENABLE
         esp_pm_lock_release(s_pm_cpu_lock);
@@ -230,6 +234,7 @@ static void esp_aes_dma_wait_complete(bool use_intr, lldesc_t *output_desc)
     aes_hal_wait_done();
 
     esp_aes_wait_dma_done(output_desc);
+    return 0;
 }
 
 
@@ -436,7 +441,12 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
     }
 
     aes_hal_transform_dma_start(blocks);
-    esp_aes_dma_wait_complete(use_intr, out_desc_tail);
+
+    if (esp_aes_dma_wait_complete(use_intr, out_desc_tail) < 0) {
+        ESP_LOGE(TAG, "esp_aes_dma_wait_complete failed");
+        ret = -1;
+        goto cleanup;
+    }
 
 #if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
     if (block_bytes > 0) {
@@ -561,7 +571,11 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
 
     aes_hal_transform_dma_gcm_start(blocks);
 
-    esp_aes_dma_wait_complete(use_intr, out_desc_head);
+    if (esp_aes_dma_wait_complete(use_intr, out_desc_head) < 0) {
+        ESP_LOGE(TAG, "esp_aes_dma_wait_complete failed");
+        ret = -1;
+        goto cleanup;
+    }
 
     aes_hal_transform_dma_finish();
 
