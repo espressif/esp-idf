@@ -480,6 +480,7 @@ static IRAM_ATTR void test_slave_iram_post_trans_cbk(spi_slave_transaction_t *cu
 static IRAM_ATTR void test_slave_isr_iram(void)
 {
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    bus_cfg.intr_flags |= ESP_INTR_FLAG_IRAM;
     spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
     slvcfg.flags = SPI_SLAVE_NO_RETURN_RESULT;
     slvcfg.queue_size = 16;
@@ -561,6 +562,7 @@ static IRAM_ATTR void test_trans_in_isr_post_trans_cbk(spi_slave_transaction_t *
 static IRAM_ATTR void spi_slave_trans_in_isr(void)
 {
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    bus_cfg.intr_flags |= ESP_INTR_FLAG_IRAM;
     spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
     slvcfg.flags = SPI_SLAVE_NO_RETURN_RESULT;
     slvcfg.queue_size = 16;
@@ -647,6 +649,7 @@ static IRAM_ATTR void test_queue_reset_in_isr_post_trans_cbk(spi_slave_transacti
 static IRAM_ATTR void spi_queue_reset_in_isr(void)
 {
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    bus_cfg.intr_flags |= ESP_INTR_FLAG_IRAM;
     spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
     slvcfg.flags = SPI_SLAVE_NO_RETURN_RESULT;
     slvcfg.queue_size = 16;

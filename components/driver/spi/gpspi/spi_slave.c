@@ -116,11 +116,7 @@ typedef struct {
 static void ipc_isr_reg_to_core(void *args)
 {
     spi_slave_t *host = ((spi_ipc_param_t *)args)->host;
-    int flags = host->intr_flags | ESP_INTR_FLAG_INTRDISABLED;
-#ifdef CONFIG_SPI_SLAVE_ISR_IN_IRAM
-    flags |= ESP_INTR_FLAG_IRAM;
-#endif
-    *((spi_ipc_param_t *)args)->err = esp_intr_alloc(spicommon_irqsource_for_host(host->id), flags, spi_intr, (void *)host, &host->intr);
+    *((spi_ipc_param_t *)args)->err = esp_intr_alloc(spicommon_irqsource_for_host(host->id), host->intr_flags | ESP_INTR_FLAG_INTRDISABLED, spi_intr, (void *)host, &host->intr);
 }
 #endif
 
@@ -235,11 +231,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     } else
 #endif
     {
-        int flags = bus_config->intr_flags | ESP_INTR_FLAG_INTRDISABLED;
-#ifdef CONFIG_SPI_SLAVE_ISR_IN_IRAM
-        flags |= ESP_INTR_FLAG_IRAM;
-#endif
-        err = esp_intr_alloc(spicommon_irqsource_for_host(host), flags, spi_intr, (void *)spihost[host], &spihost[host]->intr);
+        err = esp_intr_alloc(spicommon_irqsource_for_host(host), bus_config->intr_flags | ESP_INTR_FLAG_INTRDISABLED, spi_intr, (void *)spihost[host], &spihost[host]->intr);
     }
     if (err != ESP_OK) {
         ret = err;
