@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 include(${IDF_PATH}/tools/cmake/idf.cmake)
 project(${ULP_APP_NAME} ASM C)
 add_executable(${ULP_APP_NAME})
+set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
 option(ULP_COCPU_IS_RISCV "Use RISC-V based ULP" OFF)
 
