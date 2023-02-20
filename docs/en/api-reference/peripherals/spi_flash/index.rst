@@ -13,7 +13,7 @@ For higher-level API functions which work with partitions defined in the :doc:`p
 .. note::
     ``esp_partition_*`` APIs are recommended to be used instead of the lower level ``esp_flash_*`` API functions when accessing the main SPI Flash chip, since they do bounds checking and are guaranteed to calculate correct offsets in flash based on the information in the partition table. ``esp_flash_*`` functions can still be used directly when accessing an external (secondary) SPI flash chip.
 
-Different from the API before IDF v4.0, the functionality of ``esp_flash_*`` APIs is not limited to the "main" SPI flash chip (the same SPI flash chip from which program runs). With different chip pointers, you can access external flash chips connected to not only SPI0/1 but also other SPI buses like SPI2.
+Different from the API before ESP-IDF v4.0, the functionality of ``esp_flash_*`` APIs is not limited to the "main" SPI flash chip (the same SPI flash chip from which program runs). With different chip pointers, you can access external flash chips connected to not only SPI0/1 but also other SPI buses like SPI2.
 
 .. note::
 
@@ -35,7 +35,7 @@ Support for Features of Flash Chips
 Quad/Dual Mode Chips
 ^^^^^^^^^^^^^^^^^^^^
 
-Features of different flashes are implemented in different ways and thus need speical support. The fast/slow read and Dual mode (DOUT/DIO) of almost all 24-bits address flash chips are supported, because they don't need any vendor-specific commands.
+Features of different flashes are implemented in different ways and thus need special support. The fast/slow read and Dual mode (DOUT/DIO) of almost all 24-bit address flash chips are supported, because they don't need any vendor-specific commands.
 
 Quad mode (QIO/QOUT) is supported on following chip types:
 
@@ -49,7 +49,7 @@ Quad mode (QIO/QOUT) is supported on following chip types:
 
 .. note::
 
-    For every flash chip vendor listed above will only be supported by default when the flash is officially supported. If you want to enable/disable the flash series you can go through Kconfig manu ``Auto-detect flash chips``.
+    Flash vendors listed above will only be supported by default when the flash is officially supported. You can also enable or disable the flash series in the Kconfig menu ``Auto-detect flash chips``.
 
 Optional Features
 ^^^^^^^^^^^^^^^^^
@@ -71,7 +71,7 @@ There are some features that are not supported by all flash chips, or not suppor
 
     -  High performance mode (HPM) - means that flash works under high frequency which is higher than 80MHz.
 
--  Flash unique ID - means that flash supports its unique 64-bits ID.
+-  Flash unique ID - means that flash supports its unique 64-bit ID.
 
 .. only:: esp32c3
 
@@ -179,7 +179,7 @@ The ``esp_flash_t`` structure holds chip data as well as three important parts o
 2. The chip driver, which provides compatibility service to different chips;
 3. The OS functions, provide support of some OS functions (e.g. lock, delay) in different stages (1st/2nd boot, or the app).
 
-Host driver
+Host Driver
 ^^^^^^^^^^^
 
 The host driver relies on an interface (``spi_flash_host_driver_t``) defined in the ``spi_flash_types.h`` (in the ``hal/include/hal`` folder). This interface provides some common functions to communicate with the chip.

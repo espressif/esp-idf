@@ -310,7 +310,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 以下变量在项目级别中被设置，但可在组件 CMakeLists 中使用：
 
 - ``CONFIG_*``：项目配置中的每个值在 cmake 中都对应一个以 ``CONFIG_`` 开头的变量。更多详细信息请参阅 :doc:`Kconfig </api-reference/kconfig>`。
-- ``ESP_PLATFORM``：ESP-IDF 构建系统处理 CMake 文件时，其值设为1。
+- ``ESP_PLATFORM``：ESP-IDF 构建系统处理 CMake 文件时，其值设为 1。
 
 构建/项目变量
 -----------------
@@ -397,7 +397,7 @@ ESP-IDF 构建系统会在命令行中添加以下 C 预处理器定义：
 
 - ``PRIV_REQUIRES`` 需要包含被当前组件的源文件 `#include` 的头文件所在的组件（除非已经被设置在了 ``REQUIRES`` 中）。以及是当前组件正常工作必须要链接的组件。
 
-- ``REQUIRES`` 和 ``PRIV_REQUIRES`` 的值不能依赖于任何配置选项 (``CONFIG_xxx`` 宏)。这是因为在配置加载之前，依赖关系就已经被展开。其它组件变量（比如包含路径或源文件）可以依赖配置选择。
+- ``REQUIRES`` 和 ``PRIV_REQUIRES`` 的值不能依赖于任何配置选项（``CONFIG_xxx`` 宏）。这是因为在配置加载之前，依赖关系就已经被展开。其它组件变量（比如包含路径或源文件）可以依赖配置选择。
 
 - 如果当前组件除了 `通用组件依赖项`_ 中设置的通用组件（比如 RTOS、libc 等）外，并不依赖其它组件，那么对于上述两个 ``REQUIRES`` 变量，可以选择其中一个或是两个都不设置。
 
@@ -1159,7 +1159,7 @@ ESP-IDF 构建命令
 - PROJECT_VER - 项目的版本/版本号，默认为 "1"。
 - SDKCONFIG - 生成的 sdkconfig 文件的输出路径，根据是否设置 PROJECT_DIR，默认为 PROJECT_DIR/sdkconfig 或 CMAKE_SOURCE_DIR/sdkconfig。
 - SDKCONFIG_DEFAULTS - 包含默认配置的文件列表（列表中必须包含完整的路径），默认为空；对于列表中的每个值 *filename*，如果存在的话，也会加载文件 *filename.target* 中的配置。对于列表中的 *filename* 的每一个值，也会加载文件 *filename.target* （如果存在的话）中的配置。
-- BUILD_DIR - 用于放置 ESP-IDF 构建相关工具的目录，如生成的二进制文件、文本文件、组件；默认为CMAKE_BINARY_DIR。
+- BUILD_DIR - 用于放置 ESP-IDF 构建相关工具的目录，如生成的二进制文件、文本文件、组件；默认为 CMAKE_BINARY_DIR。
 - COMPONENTS - 从构建系统已知的组件中选择要处理的组件（通过 ``idf_build_component`` 添加）。这个参数用于精简构建过程。
   如果在依赖链中需要其它组件，则会自动添加，即自动添加这个列表中组件的公共和私有依赖项，进而添加这些依赖项的公共和私有依赖，以此类推。如果不指定，则会处理构建系统已知的所有组件。
 
@@ -1357,8 +1357,6 @@ ESP-IDF 中的组件使用了第三方的 Git CMake 集成模块（:idf_file:`/t
 JSON 配置服务器
 ---------------
 
-.. highlight :: json
-
 ``kconfserver`` 工具可以帮助 IDE 轻松地与配置系统的逻辑进行集成，它运行在后台，通过使用 stdin 和 stdout 读写 JSON 文件的方式与调用进程交互。
 
 您可以通过 ``idf.py confserver`` 或 ``ninja kconfserver`` 从项目中运行 ``kconfserver``，也可以使用不同的构建生成器来触发类似的目标。
@@ -1486,7 +1484,7 @@ CMake 中不可用的功能
 以下变量不再具有默认值：
 
 - 源目录（Make 中的 ``COMPONENT_SRCDIRS`` 变量，CMake 中 ``idf_component_register`` 的 ``SRC_DIRS`` 参数）
-- include 目录（Make中的 ``COMPONENT_ADD_INCLUDEDIRS`` 变量，CMake中 ``idf_component_register`` 的 ``INCLUDE_DIRS`` 参数)
+- include 目录（Make 中的 ``COMPONENT_ADD_INCLUDEDIRS`` 变量，CMake 中 ``idf_component_register`` 的 ``INCLUDE_DIRS`` 参数）
 
 不再需要的变量
 --------------

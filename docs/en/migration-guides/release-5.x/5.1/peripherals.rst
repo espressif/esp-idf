@@ -54,7 +54,7 @@ Peripherals
     GPSPI
     -----
 
-    Following items are deprecated. Since IDF v5.1, GPSPI clock source is configurable.
+    Following items are deprecated. Since ESP-IDF v5.1, GPSPI clock source is configurable.
 
     - ``spi_get_actual_clock`` is deprecated, you should use :cpp:func:`spi_device_get_actual_freq` instead.
 
