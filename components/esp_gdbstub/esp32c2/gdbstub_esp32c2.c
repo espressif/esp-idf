@@ -29,7 +29,6 @@ static const mem_bound_t mem_region_table [GDBSTUB_MEM_REGION_COUNT] =
     {SOC_DRAM_LOW, SOC_DRAM_HIGH},
     {SOC_IROM_MASK_LOW, SOC_IROM_MASK_HIGH},
     {SOC_DROM_MASK_LOW, SOC_DROM_MASK_HIGH},
-    // RTC DRAM and RTC DATA are identical with RTC IRAM, hence we skip them
     // We shouldn't read the uart registers since it will disturb the debugging via UART,
     // so skip UART part of the peripheral registers.
     {DR_REG_UART_BASE + UART_REG_FIELD_LEN, SOC_PERIPHERAL_HIGH},
@@ -83,4 +82,23 @@ int esp_gdbstub_readmem(intptr_t addr)
     uint32_t val_aligned = *(uint32_t *)(addr & (~3));
     uint32_t shift = (addr & 3) * 8;
     return (val_aligned >> shift) & 0xff;
+}
+
+int esp_gdbstub_writemem(unsigned int addr, unsigned char data)
+{
+    if (!check_inside_valid_region(addr)) {
+        /* see esp_cpu_configure_region_protection */
+        return -1;
+    }
+
+    /* 'addr' may be pointing at the memory which does not allow for
+     * byte access, such as IRAM.
+     * Perform a word-aligned read-modify-write, instead of writing
+     * the byte directly.
+     */
+    unsigned *addr_aligned = (unsigned *)(addr & (~3));
+    const uint32_t bit_offset = (addr & 0x3) * 8;
+    const uint32_t mask = ~(0xff << bit_offset);
+    *addr_aligned = (*addr_aligned & mask) | (data << bit_offset);
+    return 0;
 }
