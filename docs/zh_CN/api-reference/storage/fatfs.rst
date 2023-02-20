@@ -25,7 +25,7 @@ FatFs 与 VFS 配合使用
 
 2. 调用 :cpp:func:`ff_diskio_register` 为步骤 1 中的驱动编号注册磁盘 I/O 驱动；
 
-3. 调用 FatFs 函数 ``f_mount``，随后调用 ``f_fdisk`` 或 ``f_mkfs``，并使用与传递到 :cpp:func:`esp_vfs_fat_register` 相同的驱动编号挂载文件系统。请参考 `FatFs 文档 <http://www.elm-chan.org/fsw/ff/doc/mount.html>`_，查看更多信息；
+3. 调用 FatFs 函数 ``f_mount``，随后调用 ``f_fdisk`` 或 ``f_mkfs``，并使用与传递到 :cpp:func:`esp_vfs_fat_register` 相同的驱动编号挂载文件系统。请参考 `FatFs 文档 <http://elm-chan.org/fsw/ff/doc/mount.html>`_，查看更多信息；
 
 4. 调用 C 标准库和 POSIX API 对路径中带有步骤 1 中所述前缀的文件（例如，``"/sdcard/hello.txt"``）执行打开、读取、写入、擦除、复制等操作。文件系统默认使用 `8.3 文件名 <https://en.wikipedia.org/wiki/8.3_filename>`_ 格式 (SFN)。若您需要使用长文件名 (LFN)，启用 :ref:`CONFIG_FATFS_LONG_FILENAMES` 选项。请参考 `here <http://elm-chan.org/fsw/ff/doc/filename.html>`_，查看更多信息；
 
