@@ -64,12 +64,13 @@ function checkMrJiraLinks() {
     const matchBlockRelated = mrDescription.match(/\#\# Related.*$/s); // Match MR description starting with line ## Related till the end of MR description
     const testJiraLabels = /[A-Z]+-[0-9]+/.test(matchBlockRelated ? matchBlockRelated[0] : ''); // Test if pattern of Jira label "JIRA-1234" or "RDT-311" is in section Related
     const ghIssueTicket = /IDFGH-[0-9]+/.test(matchBlockRelated ? matchBlockRelated[0] : ''); // Check if there is JIRA link starts with "IDFGH-*" in MR description, section "Related"
+    const testGithubLink = /Closes https:\/\/github\.com\/espressif\/esp-idf\/issues\/[0-9]+/
 
     if (!mrDescription.toUpperCase().includes("## RELATED") || !testJiraLabels) { // Missing section "Related" or missing links to JIRA tickets
         return warn("Please add links to JIRA issues to the MR description section `Related`.");
 
     } else if (ghIssueTicket) { // Found JIRA ticket linked GitHub issue
-        if (!mrCommitMessages.includes(/Closes https:\/\/github\.com\/espressif\/esp-idf\/issues\/[0-9]+/)) {  // Commit message does not contain a link to close the issue on GitHub
+        if (!testGithubLink.test(mrCommitMessages)) {  // Commit message does not contain a link to close the issue on GitHub
             return warn("Please add GitHub issue closing link `Closes https://github.com/espressif/esp-idf/issues/<github-issue-number>` to the commit message.");
         }
     }
