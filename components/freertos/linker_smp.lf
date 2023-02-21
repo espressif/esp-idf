@@ -215,8 +215,6 @@ entries:
             port:vPortFree (default)
             port:vPortInitialiseBlocks (default)
             port:xPortGetFreeHeapSize (default)
-            if FREERTOS_TASK_FUNCTION_WRAPPER = y:
-                port:vPortTaskWrapper (default)
             port:pxPortInitialiseStack (default)
             if FREERTOS_UNICORE = n:
                 port:vPortCleanUpCoprocArea (default)
@@ -235,8 +233,6 @@ entries:
             port:vPortFree (default)
             port:vPortInitialiseBlocks (default)
             port:xPortGetFreeHeapSize (default)
-            if FREERTOS_TASK_FUNCTION_WRAPPER = y:
-                port:vPortTaskWrapper (default)
             port:pxPortInitialiseStack (default)
             if FREERTOS_TLSP_DELETION_CALLBACKS = y:
                 port:vPortTLSPointersDelCb (default)
