@@ -180,12 +180,12 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
     wifi_config_t *wifi_cfg = &s_dpp_ctx.wifi_cfg;
 
     if (conf->ssid_len) {
-        os_memcpy(wifi_cfg->sta.ssid, conf->ssid, conf->ssid_len);
+        os_strlcpy((char*)wifi_cfg->sta.ssid, (char*)conf->ssid, sizeof(wifi_cfg->sta.ssid));
     }
 
     if (dpp_akm_legacy(conf->akm)) {
         if (conf->passphrase[0])
-            os_memcpy(wifi_cfg->sta.password, conf->passphrase,
+            os_strlcpy((char*)wifi_cfg->sta.password, (char*)conf->passphrase,
                       sizeof(wifi_cfg->sta.password));
         if (conf->akm == DPP_AKM_PSK_SAE) {
             wifi_cfg->sta.pmf_cfg.required = true;
