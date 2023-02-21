@@ -18,6 +18,7 @@
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "esp32c6/rom/rtc.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,7 +66,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_enable(void)
 {
     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_BB_I2C |
                       PMU_TIE_HIGH_XPD_BBPLL | PMU_TIE_HIGH_XPD_BBPLL_I2C);
-    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_BBPLL_ICG) ;
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_BBPLL_ICG);
 }
 
 /**
@@ -372,7 +373,7 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_set_hs_divider(uint
     // HS divider option: 1, 2, 4 (PCR_CPU_HS_DIV_NUM=0, 1, 3)
 
     HAL_ASSERT(divider == 3 || divider == 4 || divider == 6 || divider == 12);
-    PCR.cpu_freq_conf.cpu_hs_div_num = (divider / 3) - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.cpu_freq_conf, cpu_hs_div_num, (divider / 3) - 1);
 
     // 120MHz CPU freq cannot be achieved through divider, need to set force_120m
     // This field is only valid if PCR_CPU_HS_DIV_NUM=0 and PCR_SOC_CLK_SEL=SOC_CPU_CLK_SRC_PLL
@@ -394,7 +395,7 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_set_ls_divider(uint
     // (2) configurable
     // LS divider option: 1, 2, 4, 8, 16, 32 (PCR_CPU_LS_DIV_NUM=0, 1, 3, 7, 15, 31)
     HAL_ASSERT((divider > 0) && ((divider & (divider - 1)) == 0));
-    PCR.cpu_freq_conf.cpu_ls_div_num = divider - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.cpu_freq_conf, cpu_ls_div_num, divider - 1);
 }
 
 /**
@@ -405,11 +406,12 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_set_ls_divider(uint
 static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_hs_divider(void)
 {
     uint32_t force_120m = PCR.cpu_freq_conf.cpu_hs_120m_force;
-    uint32_t cpu_hs_div = PCR.cpu_freq_conf.cpu_hs_div_num;
+    uint32_t cpu_hs_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.cpu_freq_conf, cpu_hs_div_num);
     if (cpu_hs_div == 0 && force_120m) {
         return 4;
     }
-    return (PCR.sysclk_conf.hs_div_num + 1) * (cpu_hs_div + 1);
+    uint32_t hp_root_hs_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.sysclk_conf, hs_div_num);
+    return (hp_root_hs_div + 1) * (cpu_hs_div + 1);
 }
 
 /**
@@ -419,7 +421,9 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_hs_divider(
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_ls_divider(void)
 {
-    return (PCR.sysclk_conf.ls_div_num + 1) * (PCR.cpu_freq_conf.cpu_ls_div_num + 1);
+    uint32_t cpu_ls_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.cpu_freq_conf, cpu_ls_div_num);
+    uint32_t hp_root_ls_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.sysclk_conf, ls_div_num);
+    return (hp_root_ls_div + 1) * (cpu_ls_div + 1);
 }
 
 /**
@@ -436,7 +440,7 @@ static inline __attribute__((always_inline)) void clk_ll_ahb_set_hs_divider(uint
     // (2) configurable
     // HS divider option: 4, 8, 16 (PCR_AHB_HS_DIV_NUM=3, 7, 15)
     HAL_ASSERT(divider == 12 || divider == 24 || divider == 48);
-    PCR.ahb_freq_conf.ahb_hs_div_num = (divider / 3) - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ahb_freq_conf, ahb_hs_div_num, (divider / 3) - 1);
 }
 
 /**
@@ -453,7 +457,7 @@ static inline __attribute__((always_inline)) void clk_ll_ahb_set_ls_divider(uint
     // (2) configurable
     // LS divider option: 1, 2, 4, 8, 16, 32 (PCR_CPU_LS_DIV_NUM=0, 1, 3, 7, 15, 31)
     HAL_ASSERT((divider > 0) && ((divider & (divider - 1)) == 0));
-    PCR.ahb_freq_conf.ahb_ls_div_num = divider - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ahb_freq_conf, ahb_ls_div_num, divider - 1);
 }
 
 /**
@@ -463,7 +467,9 @@ static inline __attribute__((always_inline)) void clk_ll_ahb_set_ls_divider(uint
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_ahb_get_hs_divider(void)
 {
-    return (PCR.sysclk_conf.hs_div_num + 1) * (PCR.ahb_freq_conf.ahb_hs_div_num + 1);
+    uint32_t ahb_hs_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.ahb_freq_conf, ahb_hs_div_num);
+    uint32_t hp_root_hs_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.sysclk_conf, hs_div_num);
+    return (hp_root_hs_div + 1) * (ahb_hs_div + 1);
 }
 
 /**
@@ -473,7 +479,9 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_ahb_get_hs_divider(
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_ahb_get_ls_divider(void)
 {
-    return (PCR.sysclk_conf.ls_div_num + 1) * (PCR.ahb_freq_conf.ahb_ls_div_num + 1);
+    uint32_t ahb_ls_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.ahb_freq_conf, ahb_ls_div_num);
+    uint32_t hp_root_ls_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.sysclk_conf, ls_div_num);
+    return (hp_root_ls_div + 1) * (ahb_ls_div + 1);
 }
 
 /**
@@ -486,7 +494,7 @@ static inline __attribute__((always_inline)) void clk_ll_apb_set_divider(uint32_
     // AHB ------> APB
     // Divider option: 1, 2, 4 (PCR_APB_DIV_NUM=0, 1, 3)
     HAL_ASSERT(divider == 1 || divider == 2 || divider == 4);
-    PCR.apb_freq_conf.apb_div_num = divider - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.apb_freq_conf, apb_div_num, divider - 1);
 }
 
 /**
@@ -496,7 +504,7 @@ static inline __attribute__((always_inline)) void clk_ll_apb_set_divider(uint32_
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(void)
 {
-    return PCR.apb_freq_conf.apb_div_num + 1;
+    return HAL_FORCE_READ_U32_REG_FIELD(PCR.apb_freq_conf, apb_div_num) + 1;
 }
 
 /**
@@ -508,20 +516,22 @@ static inline __attribute__((always_inline)) void clk_ll_mspi_fast_set_hs_divide
 {
     // SOC_ROOT_CLK ------> MSPI_FAST_CLK
     // HS divider option: 4, 5, 6 (PCR_MSPI_FAST_HS_DIV_NUM=3, 4, 5)
+    uint32_t div_num = 0;
     switch (divider) {
     case 4:
-        PCR.mspi_clk_conf.mspi_fast_hs_div_num = 3;
+       div_num = 3;
         break;
     case 5:
-        PCR.mspi_clk_conf.mspi_fast_hs_div_num = 4;
+        div_num = 4;
         break;
     case 6:
-        PCR.mspi_clk_conf.mspi_fast_hs_div_num = 5;
+        div_num = 5;
         break;
     default:
         // Unsupported HS MSPI_FAST divider
         abort();
     }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.mspi_clk_conf, mspi_fast_hs_div_num, div_num);
 }
 
 /**
@@ -533,20 +543,22 @@ static inline __attribute__((always_inline)) void clk_ll_mspi_fast_set_ls_divide
 {
     // SOC_ROOT_CLK ------> MSPI_FAST_CLK
     // LS divider option: 1, 2, 4 (PCR_MSPI_FAST_LS_DIV_NUM=0, 1, 2)
+    uint32_t div_num = 0;
     switch (divider) {
     case 1:
-        PCR.mspi_clk_conf.mspi_fast_ls_div_num = 0;
+        div_num = 0;
         break;
     case 2:
-        PCR.mspi_clk_conf.mspi_fast_ls_div_num = 1;
+        div_num = 1;
         break;
     case 4:
-        PCR.mspi_clk_conf.mspi_fast_ls_div_num = 2;
+        div_num = 2;
         break;
     default:
         // Unsupported LS MSPI_FAST divider
         abort();
     }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.mspi_clk_conf, mspi_fast_ls_div_num, div_num);
 }
 
 /**
@@ -711,7 +723,7 @@ static inline void clk_ll_rc_slow_set_divider(uint32_t divider)
     HAL_ASSERT(divider == 1);
 }
 
-/************************* RTC STORAGE REGISTER STORE/LOAD **************************/
+/************************** LP STORAGE REGISTER STORE/LOAD **************************/
 /**
  * @brief Store XTAL_CLK frequency in RTC storage register
  *

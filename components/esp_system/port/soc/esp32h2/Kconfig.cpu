@@ -7,13 +7,15 @@ choice ESP_DEFAULT_CPU_FREQ_MHZ
 
     config ESP_DEFAULT_CPU_FREQ_MHZ_16
         bool "16 MHz"
-        depends on IDF_ENV_FPGA     #ESP32H2-TODO: IDF-3786
+        depends on IDF_ENV_FPGA
     config ESP_DEFAULT_CPU_FREQ_MHZ_32
         bool "32 MHz"
-        depends on IDF_ENV_FPGA     #ESP32H2-TODO: IDF-3786
+        depends on IDF_ENV_FPGA
+    config ESP_DEFAULT_CPU_FREQ_MHZ_48
+        bool "48 MHz"
+        depends on !IDF_ENV_FPGA
     config ESP_DEFAULT_CPU_FREQ_MHZ_64
         bool "64 MHz"
-        depends on IDF_ENV_FPGA     #ESP32H2-TODO: IDF-3786
     config ESP_DEFAULT_CPU_FREQ_MHZ_96
         bool "96 MHz"
         depends on !IDF_ENV_FPGA
@@ -23,5 +25,6 @@ config ESP_DEFAULT_CPU_FREQ_MHZ
     int
     default 16 if ESP_DEFAULT_CPU_FREQ_MHZ_16
     default 32 if ESP_DEFAULT_CPU_FREQ_MHZ_32
+    default 48 if ESP_DEFAULT_CPU_FREQ_MHZ_48
     default 64 if ESP_DEFAULT_CPU_FREQ_MHZ_64
     default 96 if ESP_DEFAULT_CPU_FREQ_MHZ_96

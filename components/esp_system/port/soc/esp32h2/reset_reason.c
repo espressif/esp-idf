@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,9 +18,6 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
 {
     switch (rtc_reset_reason) {
     case RESET_REASON_CHIP_POWER_ON:
-#if SOC_EFUSE_HAS_EFUSE_RST_BUG
-    case RESET_REASON_CORE_EFUSE_CRC:
-#endif
         return ESP_RST_POWERON;
 
     case RESET_REASON_CPU0_SW:

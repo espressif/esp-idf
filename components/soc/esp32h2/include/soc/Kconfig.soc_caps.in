@@ -51,10 +51,6 @@ config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
 
-config SOC_EFUSE_HAS_EFUSE_RST_BUG
-    bool
-    default y
-
 config SOC_RTC_FAST_MEM_SUPPORTED
     bool
     default y
@@ -116,6 +112,10 @@ config SOC_BOD_SUPPORTED
     default y
 
 config SOC_APM_SUPPORTED
+    bool
+    default y
+
+config SOC_PMU_SUPPORTED
     bool
     default y
 
@@ -367,6 +367,10 @@ config SOC_I2C_SUPPORT_XTAL
     bool
     default y
 
+config SOC_I2C_SUPPORT_RTC
+    bool
+    default y
+
 config SOC_I2S_NUM
     int
     default 1
@@ -524,6 +528,10 @@ config SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY
     default y
 
 config SOC_RMT_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_RMT_SUPPORT_RC_FAST
     bool
     default y
 
@@ -775,6 +783,10 @@ config SOC_TIMER_GROUP_SUPPORT_XTAL
     bool
     default y
 
+config SOC_TIMER_GROUP_SUPPORT_RC_FAST
+    bool
+    default y
+
 config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 2
@@ -931,6 +943,10 @@ config SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     bool
     default y
 
+config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
+    bool
+    default y
+
 config SOC_CLK_XTAL32K_SUPPORTED
     bool
     default y
@@ -940,6 +956,10 @@ config SOC_CLK_OSC_SLOW_SUPPORTED
     default y
 
 config SOC_CLK_RC32K_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_LP_FAST_SUPPORT_LP_PLL
     bool
     default y
 

@@ -23,7 +23,7 @@
 #define REGI2C_SAR_I2C_DEVICE_EN  (BIT(7) << 4)
 #define REGI2C_BBPLL_DEVICE_EN    (BIT(5) << 4)
 #define REGI2C_BIAS_DEVICE_EN     (BIT(4) << 4)
-#define REGI2C_DIG_REG_DEVICE_EN  (BIT(8) << 4)
+#define REGI2C_PMU_DEVICE_EN      (BIT(8) << 4)
 
 #define REGI2C_RTC_BUSY           (BIT(25))
 #define REGI2C_RTC_BUSY_M         (BIT(25))
@@ -58,8 +58,8 @@
 #define REGI2C_BIAS               (0x6a)
 #define REGI2C_BIAS_HOSTID        0
 
-#define REGI2C_DIG_REG            (0x6d)
-#define REGI2C_DIG_REG_HOSTID     0
+#define REGI2C_PMU                (0x6d)
+#define REGI2C_PMU_HOSTID         0
 
 #define REGI2C_ULP_CAL            (0x61)
 #define REGI2C_ULP_CAL_HOSTID     0
@@ -82,8 +82,8 @@ static IRAM_ATTR void regi2c_enable_block(uint8_t block)
     case REGI2C_BIAS   :
         REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_BIAS_DEVICE_EN);
         break;
-    case REGI2C_DIG_REG:
-        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_DIG_REG_DEVICE_EN);
+    case REGI2C_PMU    :
+        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_PMU_DEVICE_EN);
         break;
     case REGI2C_ULP_CAL:
         REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_ULP_CAL_DEVICE_EN);
@@ -105,8 +105,8 @@ static IRAM_ATTR void regi2c_disable_block(uint8_t block)
     case REGI2C_BIAS   :
         REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_BIAS_DEVICE_EN);
         break;
-    case REGI2C_DIG_REG:
-        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_DIG_REG_DEVICE_EN);
+    case REGI2C_PMU:
+        REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_PMU_DEVICE_EN);
         break;
     case REGI2C_ULP_CAL:
         REG_SET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_ULP_CAL_DEVICE_EN);

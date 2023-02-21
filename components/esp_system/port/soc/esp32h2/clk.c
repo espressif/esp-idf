@@ -22,7 +22,7 @@
 #include "hal/wdt_hal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
-#include "bootloader_clock.h"
+#include "esp_private/esp_pmu.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 
@@ -42,22 +42,11 @@ static const char *TAG = "clk";
  __attribute__((weak)) void esp_clk_init(void)
 {
 #if !CONFIG_IDF_ENV_FPGA
-    rtc_config_t cfg = RTC_CONFIG_DEFAULT();
-    soc_reset_reason_t rst_reas;
-    rst_reas = esp_rom_get_reset_reason(0);
-    if (rst_reas == RESET_REASON_CHIP_POWER_ON
-#if SOC_EFUSE_HAS_EFUSE_RST_BUG
-        || rst_reas == RESET_REASON_CORE_EFUSE_CRC
-#endif
-        ) {
-        cfg.cali_ocode = 1;
-    }
-    rtc_init(cfg);
+    pmu_init();
 
-    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
+    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_32M);
 
-    bool rc_fast_d256_is_enabled = rtc_clk_8md256_enabled();
-    rtc_clk_8m_enable(true, rc_fast_d256_is_enabled);
+    rtc_clk_8m_enable(true);
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
 #endif
 
@@ -119,9 +108,6 @@ static const char *TAG = "clk";
 
 static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
 {
-    ESP_EARLY_LOGW(TAG, "select_rtc_slow_clk() has not been implemented yet");
-#if 0// ESP32H2-TODO : IDF-5645
-    soc_rtc_slow_clk_src_t rtc_slow_clk_src = slow_clk & RTC_CNTL_ANA_CLK_RTC_SEL_V;
     uint32_t cal_val = 0;
     /* number of times to repeat 32k XTAL calibration
      * before giving up and switching to the internal RC
@@ -129,7 +115,7 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
     int retry_32k_xtal = 3;
 
     do {
-        if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K || rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
             /* 32k XTAL oscillator needs to be enabled and running before it can
              * be used. Hardware doesn't have a direct way of checking if the
              * oscillator is running. Here we use rtc_clk_cal function to count
@@ -138,24 +124,27 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
              * will time out, returning 0.
              */
             ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
-            if (slow_clk == SLOW_CLK_32K_XTAL) {
+            rtc_cal_sel_t cal_sel = 0;
+            if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
                 rtc_clk_32k_enable(true);
-            } else if (slow_clk == SLOW_CLK_32K_EXT_OSC) {
+                cal_sel = RTC_CAL_32K_XTAL;
+            } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
                 rtc_clk_32k_enable_external();
+                cal_sel = RTC_CAL_32K_OSC_SLOW;
             }
             // When SLOW_CLK_CAL_CYCLES is set to 0, clock calibration will not be performed at startup.
             if (SLOW_CLK_CAL_CYCLES > 0) {
-                cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
-                if (cal_val == 0 || cal_val < MIN_32K_XTAL_CAL_VAL) {
+                cal_val = rtc_clk_cal(cal_sel, SLOW_CLK_CAL_CYCLES);
+                if (cal_val == 0) {
                     if (retry_32k_xtal-- > 0) {
                         continue;
                     }
-                    ESP_EARLY_LOGW(TAG, "32 kHz XTAL not found, switching to internal 150 kHz oscillator");
+                    ESP_EARLY_LOGW(TAG, "32 kHz clock not found, switching to internal 150 kHz oscillator");
                     rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
                 }
             }
-        } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
-            rtc_clk_8m_enable(true, true);
+        } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
+            rtc_clk_rc32k_enable(true);
         }
         rtc_clk_slow_src_set(rtc_slow_clk_src);
 
@@ -171,7 +160,6 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
     } while (cal_val == 0);
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);
     esp_clk_slowclk_cal_set(cal_val);
-#endif
 }
 
 void rtc_clk_select_rtc_slow_clk(void)

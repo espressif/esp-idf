@@ -38,6 +38,9 @@
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/rtc.h"
 #include "esp32c6/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/rtc.h"
+#include "esp32h2/rtc.h"
 #endif
 
 #define MHZ (1000000)
@@ -73,7 +76,7 @@ int IRAM_ATTR esp_clk_cpu_freq(void)
 int IRAM_ATTR esp_clk_apb_freq(void)
 {
     // TODO: IDF-5173 Require cleanup, implementation should be unified
-#if CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
     return rtc_clk_apb_freq_get();
 #else
     return MIN(s_get_cpu_freq_mhz() * MHZ, APB_CLK_FREQ);

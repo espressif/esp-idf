@@ -1,8 +1,8 @@
 set(srcs "rtc_clk_init.c"
          "rtc_clk.c"
-         # "rtc_init.c"     // ESP32H2-TODO
-         # "rtc_pm.c"       // ESP32H2-TODO
-         # "rtc_sleep.c"    // ESP32H2-TODO
+         "pmu_param.c"
+         "pmu_init.c"
+         "pmu_sleep.c"
          "rtc_time.c"
          "chip_info.c"
          )
