@@ -32,15 +32,18 @@ Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 See the Getting Started Guide for all the steps to configure and use the ESP-IDF to build projects.
 
 * [ESP-IDF Getting Started Guide on ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html)
-* [ESP-IDF Getting Started Guide on ESP32-S2](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
+* [ESP-IDF Getting Started Guide on ESP32-C2](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c2/get-started/index.html)
 * [ESP-IDF Getting Started Guide on ESP32-C3](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/get-started/index.html)
+* [ESP-IDF Getting Started Guide on ESP32-C6](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/get-started/index.html)
+* [ESP-IDF Getting Started Guide on ESP32-S2](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
+* [ESP-IDF Getting Started Guide on ESP32-S3](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html)
 
 ## Example Output
 Note that the output, in particular the order of the output, may vary depending on the environment.
 
 Console output if station connects to AP successfully:
 ```
-I (589) wifi station: ESP_WIFI_MODE_STA
+I (589) multi-antenna example: ESP_WIFI_MODE_STA
 I (599) wifi: wifi driver task: 3ffc08b4, prio:23, stack:3584, core=0
 I (599) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
 I (599) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
@@ -56,7 +59,7 @@ I (649) wifi: Init static rx buffer num: 10
 I (659) wifi: Init dynamic rx buffer num: 32
 I (759) phy: phy_version: 4180, cb3948e, Sep 12 2019, 16:39:13, 0, 0
 I (769) wifi: mode : sta (30:ae:a4:d9:bc:c4)
-I (769) wifi station: wifi_init_sta finished.
+I (769) multi-antenna example: wifi_init_sta finished.
 I (889) wifi: new:<6,0>, old:<1,0>, ap:<255,255>, sta:<6,0>, prof:1
 I (889) wifi: state: init -> auth (b0)
 I (899) wifi: state: auth -> assoc (0)
@@ -67,25 +70,25 @@ I (949) wifi: pm start, type: 1
 
 I (1029) wifi: AP's beacon interval = 102400 us, DTIM period = 3
 I (2089) esp_netif_handlers: sta ip: 192.168.77.89, mask: 255.255.255.0, gw: 192.168.77.1
-I (2089) wifi station: got ip:192.168.77.89
-I (2089) wifi station: connected to ap SSID:myssid password:mypassword
-I (12268) wifi station: GPIO: [0].pin = 21, [1].pin = 22
-I (18568) wifi station: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
-I (19068) wifi station: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
-I (19568) wifi station: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
-I (20068) wifi station: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
-I (20568) wifi station: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
-I (21068) wifi station: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
-I (21568) wifi station: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
-I (22068) wifi station: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
-I (22568) wifi station: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
-I (23068) wifi station: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
-I (23568) wifi station: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
+I (2089) multi-antenna example: got ip:192.168.77.89
+I (2089) multi-antenna example: connected to ap SSID:myssid password:mypassword
+I (12268) multi-antenna example: GPIO: [0].pin = 21, [1].pin = 22
+I (18568) multi-antenna example: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
+I (19068) multi-antenna example: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
+I (19568) multi-antenna example: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
+I (20068) multi-antenna example: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
+I (20568) multi-antenna example: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
+I (21068) multi-antenna example: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
+I (21568) multi-antenna example: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
+I (22068) multi-antenna example: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
+I (22568) multi-antenna example: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
+I (23068) multi-antenna example: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
+I (23568) multi-antenna example: rx mode = 1, tx mode = 1, ant0_en = 0, ant1_en = 1
 ```
 
 Console output if the station failed to connect to AP:
 ```
-I (589) wifi station: ESP_WIFI_MODE_STA
+I (589) multi-antenna example: ESP_WIFI_MODE_STA
 I (599) wifi: wifi driver task: 3ffc08b4, prio:23, stack:3584, core=0
 I (599) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
 I (599) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
@@ -101,31 +104,31 @@ I (649) wifi: Init static rx buffer num: 10
 I (659) wifi: Init dynamic rx buffer num: 32
 I (759) phy: phy_version: 4180, cb3948e, Sep 12 2019, 16:39:13, 0, 0
 I (759) wifi: mode : sta (30:ae:a4:d9:bc:c4)
-I (769) wifi station: wifi_init_sta finished.
+I (769) multi-antenna example: wifi_init_sta finished.
 I (889) wifi: new:<6,0>, old:<1,0>, ap:<255,255>, sta:<6,0>, prof:1
 I (889) wifi: state: init -> auth (b0)
 I (1889) wifi: state: auth -> init (200)
 I (1889) wifi: new:<6,0>, old:<6,0>, ap:<255,255>, sta:<6,0>, prof:1
-I (1889) wifi station: retry to connect to the AP
-I (1899) wifi station: connect to the AP fail
-I (3949) wifi station: retry to connect to the AP
-I (3949) wifi station: connect to the AP fail
+I (1889) multi-antenna example: retry to connect to the AP
+I (1899) multi-antenna example: connect to the AP fail
+I (3949) multi-antenna example: retry to connect to the AP
+I (3949) multi-antenna example: connect to the AP fail
 I (4069) wifi: new:<6,0>, old:<6,0>, ap:<255,255>, sta:<6,0>, prof:1
 I (4069) wifi: state: init -> auth (b0)
 I (5069) wifi: state: auth -> init (200)
 I (5069) wifi: new:<6,0>, old:<6,0>, ap:<255,255>, sta:<6,0>, prof:1
-I (5069) wifi station: retry to connect to the AP
-I (5069) wifi station: connect to the AP fail
-I (7129) wifi station: retry to connect to the AP
-I (7129) wifi station: connect to the AP fail
+I (5069) multi-antenna example: retry to connect to the AP
+I (5069) multi-antenna example: connect to the AP fail
+I (7129) multi-antenna example: retry to connect to the AP
+I (7129) multi-antenna example: connect to the AP fail
 I (7249) wifi: new:<6,0>, old:<6,0>, ap:<255,255>, sta:<6,0>, prof:1
 I (7249) wifi: state: init -> auth (b0)
 I (8249) wifi: state: auth -> init (200)
 I (8249) wifi: new:<6,0>, old:<6,0>, ap:<255,255>, sta:<6,0>, prof:1
-I (8249) wifi station: retry to connect to the AP
-I (8249) wifi station: connect to the AP fail
-I (10299) wifi station: connect to the AP fail
-I (10299) wifi station: Failed to connect to SSID:myssid, password:mypassword
+I (8249) multi-antenna example: retry to connect to the AP
+I (8249) multi-antenna example: connect to the AP fail
+I (10299) multi-antenna example: connect to the AP fail
+I (10299) multi-antenna example: Failed to connect to SSID:myssid, password:mypassword
 ```
 
 ## Troubleshooting

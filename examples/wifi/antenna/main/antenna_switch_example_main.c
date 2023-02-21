@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 /* WiFi station Example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -59,7 +64,6 @@ static EventGroupHandle_t s_wifi_event_group;
 static const char *TAG = "multi-antenna example";
 
 static int s_retry_num = 0;
-
 
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
