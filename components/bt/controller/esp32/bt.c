@@ -219,20 +219,6 @@ extern int bredr_txpwr_set(int min_power_level, int max_power_level);
 extern int bredr_txpwr_get(int *min_power_level, int *max_power_level);
 extern void bredr_sco_datapath_set(uint8_t data_path);
 extern void btdm_controller_scan_duplicate_list_clear(void);
-/* Coexistence */
-extern int coex_bt_request(uint32_t event, uint32_t latency, uint32_t duration);
-extern int coex_bt_release(uint32_t event);
-extern int coex_register_bt_cb(coex_func_cb_t cb);
-extern uint32_t coex_bb_reset_lock(void);
-extern void coex_bb_reset_unlock(uint32_t restore);
-extern int coex_schm_register_callback(coex_schm_callback_type_t type, void *callback);
-extern void coex_schm_status_bit_clear(uint32_t type, uint32_t status);
-extern void coex_schm_status_bit_set(uint32_t type, uint32_t status);
-extern uint32_t coex_schm_interval_get(void);
-extern uint8_t coex_schm_curr_period_get(void);
-extern void * coex_schm_curr_phase_get(void);
-extern int coex_wifi_channel_get(uint8_t *primary, uint8_t *secondary);
-extern int coex_register_wifi_channel_change_callback(void *cb);
 /* Shutdown */
 extern void esp_bt_controller_shutdown(void);
 

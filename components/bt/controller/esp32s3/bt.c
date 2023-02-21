@@ -240,7 +240,6 @@ extern int ble_txpwr_set(int power_type, int power_level);
 extern int ble_txpwr_get(int power_type);
 
 extern uint16_t l2c_ble_link_get_tx_buf_num(void);
-extern int coex_core_ble_conn_dyn_prio_get(bool *low, bool *high);
 extern void coex_pti_v2(void);
 
 extern bool btdm_deep_sleep_mem_init(void);
@@ -369,7 +368,7 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._btdm_sleep_exit_phase2 = NULL,
     ._btdm_sleep_exit_phase3 = btdm_sleep_exit_phase3_wrapper,
     ._coex_wifi_sleep_set = coex_wifi_sleep_set_hook,
-    ._coex_core_ble_conn_dyn_prio_get = coex_core_ble_conn_dyn_prio_get,
+    ._coex_core_ble_conn_dyn_prio_get = NULL,
     ._coex_schm_status_bit_set = coex_schm_status_bit_set_wrapper,
     ._coex_schm_status_bit_clear = coex_schm_status_bit_clear_wrapper,
     ._interrupt_on = interrupt_on_wrapper,

@@ -113,7 +113,6 @@ struct ext_funcs_t {
 
 extern int ble_plf_set_log_level(int level);
 extern int ble_osi_coex_funcs_register(struct osi_coex_funcs_t *coex_funcs);
-extern int coex_core_ble_conn_dyn_prio_get(bool *low, bool *high);
 extern int ble_controller_init(esp_bt_controller_config_t *cfg);
 extern int ble_controller_deinit(void);
 extern int ble_controller_enable(uint8_t mode);
