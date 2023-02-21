@@ -34,7 +34,7 @@ esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
 }
 
 struct wpa_supplicant g_wpa_supp;
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)
+#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 
 #ifdef CONFIG_SUPPLICANT_TASK
 static void *s_supplicant_task_hdl = NULL;
@@ -288,7 +288,7 @@ static int handle_assoc_frame(u8 *frame, size_t len,
 	return 0;
 }
 #endif /* CONFIG_IEEE80211R */
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)*/
+#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 
 static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
 				   u32 rssi, u8 channel, u64 current_tsf)
@@ -393,11 +393,12 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 #endif /* CONFIG_IEEE80211KV */
 	esp_scan_init(wpa_s);
 
+#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 	esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED,
 			&supplicant_sta_conn_handler, NULL);
 	esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
 			&supplicant_sta_disconn_handler, NULL);
-
+#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)*/
 	wpa_s->type = 0;
 	wpa_s->subtype = 0;
@@ -429,10 +430,12 @@ void esp_supplicant_common_deinit(void)
 	wpas_rrm_reset(wpa_s);
 	wpas_clear_beacon_rep_data(wpa_s);
 #endif /* CONFIG_IEEE80211KV */
+#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED,
 			&supplicant_sta_conn_handler);
 	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
 			&supplicant_sta_disconn_handler);
+#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)*/
 	if (wpa_s->type) {
 		wpa_s->type = 0;
