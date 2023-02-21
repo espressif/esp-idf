@@ -162,22 +162,88 @@ TEST_CASE("malloc/calloc(0) should not call failure callback", "[heap]")
 
 TEST_CASE("test get allocated size", "[heap]")
 {
-    const size_t iterations = 32;
+    // random values to test, some are 4 bytes aligned, some are not
+    const size_t alloc_sizes[] = { 1035, 1064, 1541 };
+    const size_t iterations = sizeof(alloc_sizes) / sizeof(size_t);
+    void *ptr_array[iterations];
 
     for (size_t i = 0; i < iterations; i++) {
-        // minimum block size is 12, so to avoid unecessary logic in the test,
-        // set the minimum requested size to 12.
-        const size_t alloc_size = rand() % 1024 + 12;
-
-        void *ptr = heap_caps_malloc(alloc_size, MALLOC_CAP_DEFAULT);
-        TEST_ASSERT_NOT_NULL(ptr);
+        ptr_array[i] = heap_caps_malloc(alloc_sizes[i], MALLOC_CAP_DEFAULT);
+        TEST_ASSERT_NOT_NULL(ptr_array[i]);
 
         // test that the heap_caps_get_allocated_size() returns the right number of bytes (aligned to 4 bytes
         // since the heap component aligns to 4 bytes)
-        const size_t aligned_size = (alloc_size + 3) & ~3;
-        printf("initial size: %d, requested size : %d, allocated size: %d\n", alloc_size, aligned_size, heap_caps_get_allocated_size(ptr));
-        TEST_ASSERT_EQUAL(aligned_size, heap_caps_get_allocated_size(ptr));
+        const size_t aligned_size = (alloc_sizes[i] + 3) & ~3;
+        const size_t real_size = heap_caps_get_allocated_size(ptr_array[i]);
+        printf("initial size: %d, requested size : %d, allocated size: %d\n", alloc_sizes[i], aligned_size, real_size);
+        TEST_ASSERT_EQUAL(aligned_size, real_size);
 
-        heap_caps_free(ptr);
+        heap_caps_free(ptr_array[i]);
     }
+}
+
+// provide the definition of alloc and free hooks
+static const size_t alloc_size = 1234; // make this size atypical to be able to rely on it in the hook
+static const size_t expected_calls = 2; // one call for malloc/calloc and one call for realloc
+static uint32_t *alloc_ptr = NULL;
+static bool test_success = false;
+static size_t counter = 0;
+
+static void reset_static_variables(void) {
+    test_success = false;
+    alloc_ptr = NULL;
+    counter = 0;
+}
+
+void esp_heap_trace_alloc_hook(void* ptr, size_t size, uint32_t caps)
+{
+    if (size == alloc_size) {
+        counter++;
+        if (counter == expected_calls) {
+            alloc_ptr = ptr;
+        }
+    }
+}
+
+void esp_heap_trace_free_hook(void* ptr)
+{
+    if (alloc_ptr == ptr && counter == expected_calls) {
+        test_success = true;
+    }
+}
+
+TEST_CASE("test allocation and free function hooks", "[heap]")
+{
+    // alloc, realloc and free memory, at the end of the test, test_success will be set
+    // to true if both function hooks are called.
+    uint32_t *ptr = heap_caps_malloc(alloc_size, MALLOC_CAP_DEFAULT);
+    TEST_ASSERT_NOT_NULL(ptr);
+    ptr = heap_caps_realloc(ptr, alloc_size, MALLOC_CAP_32BIT);
+    heap_caps_free(ptr);
+
+    TEST_ASSERT_TRUE(test_success);
+
+    // re-init the static variables
+    reset_static_variables();
+
+    // calloc, realloc and free memory, at the end of the test, test_success will be set
+    // to true if both function hooks are called.
+    ptr = heap_caps_calloc(1, alloc_size, MALLOC_CAP_DEFAULT);
+    TEST_ASSERT_NOT_NULL(ptr);
+    ptr = heap_caps_realloc(ptr, alloc_size, MALLOC_CAP_32BIT);
+    heap_caps_free(ptr);
+
+    TEST_ASSERT_TRUE(test_success);
+
+    // re-init the static variables
+    reset_static_variables();
+
+    // aligned alloc, realloc and aligned free memory, at the end of the test, test_success
+    // will be set to true if both function hooks are called.
+    ptr = heap_caps_aligned_alloc(0x200, alloc_size, MALLOC_CAP_DEFAULT);
+    TEST_ASSERT_NOT_NULL(ptr);
+    ptr = heap_caps_realloc(ptr, alloc_size, MALLOC_CAP_32BIT);
+    heap_caps_free(ptr);
+
+    TEST_ASSERT_TRUE(test_success);
 }

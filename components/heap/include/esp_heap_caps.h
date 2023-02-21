@@ -11,6 +11,7 @@
 #include "multi_heap.h"
 #include <sdkconfig.h>
 #include "esp_err.h"
+#include "esp_attr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,17 +58,11 @@ esp_err_t heap_caps_register_failed_alloc_callback(esp_alloc_failed_hook_t callb
  * @brief callback called after every allocation
  * @param ptr the allocated memory
  * @param size in bytes of the allocation
+ * @param caps Bitwise OR of MALLOC_CAP_* flags indicating the type of memory allocated.
  * @note this hook is called on the same thread as the allocation, which may be within a low level operation.
  * You should refrain from doing heavy work, logging, flash writes, or any locking.
  */
-typedef void (*esp_heap_trace_alloc_hook_t) (void* ptr, size_t size);
-
-/**
- * @brief registers a callback function to be invoked after every heap allocation
- * @param callback caller defined callback to be invoked
- * @return ESP_OK if callback was registered.
- */
-esp_err_t heap_caps_register_trace_alloc_callback(esp_heap_trace_alloc_hook_t callback);
+__attribute__((weak)) IRAM_ATTR void esp_heap_trace_alloc_hook(void* ptr, size_t size, uint32_t caps);
 
 /**
  * @brief callback called after every free
@@ -75,14 +70,7 @@ esp_err_t heap_caps_register_trace_alloc_callback(esp_heap_trace_alloc_hook_t ca
  * @note this hook is called on the same thread as the allocation, which may be within a low level operation.
  * You should refrain from doing heavy work, logging, flash writes, or any locking.
  */
-typedef void (*esp_heap_trace_free_hook_t) (void* ptr);
-
-/**
- * @brief registers a callback function to be invoked after every heap allocation
- * @param callback caller defined callback to be invoked
- * @return ESP_OK if callback was registered.
- */
-esp_err_t heap_caps_register_trace_free_callback(esp_heap_trace_free_hook_t callback);
+__attribute__((weak)) IRAM_ATTR void esp_heap_trace_free_hook(void* ptr);
 
 /**
  * @brief Allocate a chunk of memory which has the given capabilities
