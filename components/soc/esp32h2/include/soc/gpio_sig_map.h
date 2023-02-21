@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,14 +135,14 @@
 #define RMT_SIG_IN1_IDX               72
 #define RMT_SIG_OUT1_IDX              72
 #define MODEM_DIAG9_IDX               72
-#define CAN0_RX_IDX                   73
-#define CAN0_TX_IDX                   73
+#define TWAI_RX_IDX                   73
+#define TWAI_TX_IDX                   73
 #define MODEM_DIAG10_IDX              73
-#define CAN0_BUS_OFF_ON_IDX           74
+#define TWAI_BUS_OFF_ON_IDX           74
 #define MODEM_DIAG11_IDX              74
-#define CAN0_CLKOUT_IDX               75
+#define TWAI_CLKOUT_IDX               75
 #define MODEM_DIAG12_IDX              75
-#define CAN0_STANDBY_IDX              76
+#define TWAI_STANDBY_IDX              76
 #define MODEM_DIAG13_IDX              76
 #define CTE_ANT6_IDX                  77
 #define CTE_ANT7_IDX                  78

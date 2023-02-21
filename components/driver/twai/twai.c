@@ -16,6 +16,8 @@
 #include "esp_pm.h"
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
+#include "clk_tree.h"
+#include "clk_ctrl_os.h"
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
@@ -426,24 +428,7 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     if (clk_src == 0) {
         clk_src = TWAI_CLK_SRC_DEFAULT;
     }
-
-    switch (clk_src) {
-#if SOC_TWAI_CLK_SUPPORT_APB
-    case TWAI_CLK_SRC_APB:
-        clock_source_hz = esp_clk_apb_freq();
-        break;
-#endif //SOC_TWAI_CLK_SUPPORT_APB
-
-#if SOC_TWAI_CLK_SUPPORT_XTAL
-    case TWAI_CLK_SRC_XTAL:
-        clock_source_hz = esp_clk_xtal_freq();
-        break;
-#endif //SOC_TWAI_CLK_SUPPORT_XTAL
-
-    default:
-        //Invalid clock source
-        TWAI_CHECK(false, ESP_ERR_INVALID_ARG);
-    }
+    clk_tree_src_get_freq_hz(clk_src, CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_source_hz);
 
     //Check brp validation
     uint32_t brp = t_config->brp;
@@ -469,8 +454,9 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     p_twai_obj_dummy->alerts_enabled = g_config->alerts_enabled;
     p_twai_obj_dummy->module = twai_controller_periph_signals.controllers[controller_id].module;
 
-
-#if CONFIG_PM_ENABLE && SOC_TWAI_CLK_SUPPORT_APB
+#if CONFIG_PM_ENABLE
+#if SOC_TWAI_CLK_SUPPORT_APB
+    // DFS can change APB frequency. So add lock to prevent sleep and APB freq from changing
     if (clk_src == TWAI_CLK_SRC_APB) {
         // TODO: pm_lock name should also reflect the controller ID
         ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "twai", &(p_twai_obj_dummy->pm_lock));
@@ -478,7 +464,14 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
             goto err;
         }
     }
-#endif //CONFIG_PM_ENABLE && SOC_TWAI_CLK_SUPPORT_APB
+#else // XTAL
+    // XTAL freq can be closed in light sleep, so we need to create a lock to prevent light sleep
+    ret = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "twai", &(p_twai_obj_dummy->pm_lock));
+    if (ret != ESP_OK) {
+        goto err;
+    }
+#endif //SOC_TWAI_CLK_SUPPORT_APB
+#endif //CONFIG_PM_ENABLE
 
     //Initialize TWAI peripheral registers, and allocate interrupt
     TWAI_ENTER_CRITICAL();
