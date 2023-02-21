@@ -400,4 +400,15 @@ menu "Wi-Fi"
             When using ESP mesh, this value should be set to a maximum of 6.
 
 
-endmenu  # Wi-Fi
+    config ESP_WIFI_WPS_PASSPHRASE
+        bool "Get WPA2 passphrase in WPS config"
+        default n
+        help
+            Select this option to get passphrase during WPS configuration.
+            This option fakes the virtual display capabilites to get the
+            configuration in passphrase mode.
+            Not recommanded to be used since WPS credentials should not
+            be shared to other devices, making it in readable format increases
+            that risk, also passphrase requires pbkdf2 to convert in psk.
+
+endmenu # Wi-Fi
