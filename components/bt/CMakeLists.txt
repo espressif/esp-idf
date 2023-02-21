@@ -14,8 +14,8 @@ if(CONFIG_BT_ENABLED)
         list(APPEND include_dirs include/esp32c3/include)
 
     elseif(CONFIG_IDF_TARGET_ESP32S3)
-        list(APPEND srcs "controller/esp32s3/bt.c")
-        list(APPEND include_dirs include/esp32s3/include)
+        list(APPEND srcs "controller/esp32c3/bt.c")
+        list(APPEND include_dirs include/esp32c3/include)
 
     elseif(CONFIG_IDF_TARGET_ESP32H4)
         list(APPEND srcs "controller/esp32h4/bt.c")
