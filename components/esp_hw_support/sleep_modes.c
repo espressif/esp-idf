@@ -853,6 +853,9 @@ esp_err_t esp_light_sleep_start(void)
                                      + rtc_time_slowclk_to_us(rtc_cntl_xtl_buf_wait_slp_cycles + RTC_CNTL_CK8M_WAIT_SLP_CYCLES + RTC_CNTL_WAKEUP_DELAY_CYCLES, s_config.rtc_clk_cal_period);
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-6930
+    const uint32_t flash_enable_time_us = 0;
+#else
     // Decide if VDD_SDIO needs to be powered down;
     // If it needs to be powered down, adjust sleep time.
     const uint32_t flash_enable_time_us = VDD_SDIO_POWERUP_TO_FLASH_READ_US + DEEP_SLEEP_WAKEUP_DELAY;
@@ -894,6 +897,7 @@ esp_err_t esp_light_sleep_start(void)
             }
         }
     }
+#endif
 
     periph_inform_out_light_sleep_overhead(s_config.sleep_time_adjustment - sleep_time_overhead_in);
 
