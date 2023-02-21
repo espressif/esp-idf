@@ -36,10 +36,19 @@ TEST_CASE("Test ipc_isr blocking IPC function calls get_other_core_id", "[ipc]")
     TEST_ASSERT_EQUAL_HEX(val, 1);
 }
 
-TEST_CASE("Test ipc_isr exception in asm func leads to StoreProhibited not to Unhandled debug exception", "[ipc][reset=StoreProhibited,SW_CPU_RESET]")
+static void do_esp_ipc_isr_asm_call_blocking(void)
 {
     esp_ipc_isr_asm_call_blocking(esp_test_ipc_isr_asm, NULL);
 }
+
+static void check_reset_reason_panic(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
+}
+
+TEST_CASE_MULTIPLE_STAGES("Test ipc_isr exception in asm func leads to StoreProhibited not to Unhandled debug exception", "[ipc][reset=StoreProhibited,SW_CPU_RESET]",
+                          do_esp_ipc_isr_asm_call_blocking,
+                          check_reset_reason_panic)
 
 void esp_test_ipc_isr_get_cycle_count_other_cpu(void* arg);
 

@@ -63,7 +63,7 @@ static void level_one_isr(void *arg)
     recursive_func(RECUR_DEPTH, SW_ISR_LEVEL_3);    //Trigger nested interrupt max recursive depth
 }
 
-TEST_CASE("Test backtrace from abort", "[reset_reason][reset=abort,SW_CPU_RESET]")
+static void do_abort(void)
 {
     //Allocate level one and three SW interrupts
     esp_intr_alloc(ETS_INTERNAL_SW0_INTR_SOURCE, 0, level_one_isr, NULL, NULL);     //Level 1 SW intr
@@ -72,7 +72,17 @@ TEST_CASE("Test backtrace from abort", "[reset_reason][reset=abort,SW_CPU_RESET]
     recursive_func(RECUR_DEPTH, SW_ISR_LEVEL_1);    //Trigger lvl 1 SW interrupt at max recursive depth
 }
 
-TEST_CASE("Test backtrace from interrupt watchdog timeout", "[reset_reason][reset=Interrupt wdt timeout on CPU0,SW_CPU_RESET]")
+static void check_reset_reason_panic(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
+}
+
+TEST_CASE_MULTIPLE_STAGES("Test backtrace from abort", "[reset_reason][reset=abort,SW_CPU_RESET]",
+                           do_abort,
+                           check_reset_reason_panic)
+
+
+static void do_wdt_timeout(void)
 {
     //Allocate level one and three SW interrupts
     esp_intr_alloc(ETS_INTERNAL_SW0_INTR_SOURCE, 0, level_one_isr, NULL, NULL);     //Level 1 SW intr
@@ -81,16 +91,31 @@ TEST_CASE("Test backtrace from interrupt watchdog timeout", "[reset_reason][rese
     recursive_func(RECUR_DEPTH, SW_ISR_LEVEL_1);    //Trigger lvl 1 SW interrupt at max recursive depth
 }
 
+static void check_reset_reason_int_wdt(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_INT_WDT, esp_reset_reason());
+}
+
+TEST_CASE_MULTIPLE_STAGES("Test backtrace from interrupt watchdog timeout", "[reset_reason][reset=Interrupt wdt timeout on CPU0,SW_CPU_RESET]",
+                           do_wdt_timeout,
+                           check_reset_reason_int_wdt)
+
+
 static void write_char_crash(char c)
 {
     esp_rom_uart_putc(c);
     hal_memset((void *)0x00000001, 0, 1);
 }
 
-TEST_CASE("Test backtrace with a ROM function", "[reset_reason][reset=StoreProhibited,SW_CPU_RESET]")
+static void do_rom_crash(void)
 {
     esp_rom_install_channel_putc(1, write_char_crash);
     esp_rom_printf("foo");
 }
+
+
+TEST_CASE_MULTIPLE_STAGES("Test backtrace with a ROM function", "[reset_reason][reset=StoreProhibited,SW_CPU_RESET]",
+                           do_rom_crash,
+                           check_reset_reason_panic)
 
 #endif

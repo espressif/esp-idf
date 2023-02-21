@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
+
+#if !CONFIG_FREERTOS_UNICORE
+
 #include <xtensa/coreasm.h>
 #include <xtensa/corebits.h>
 #include <xtensa/config/system.h>
@@ -59,3 +63,5 @@ esp_test_ipc_isr_asm:
     rsr.ccount a3
     s32i    a3, a2, 0
     ret
+
+#endif //!CONFIG_FREERTOS_UNICORE

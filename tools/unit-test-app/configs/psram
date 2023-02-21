@@ -1,5 +1,5 @@
 CONFIG_IDF_TARGET="esp32"
-TEST_EXCLUDE_COMPONENTS=bt driver esp_system spi_flash test_utils soc esp-tls sdmmc
+TEST_EXCLUDE_COMPONENTS=bt driver spi_flash test_utils soc esp-tls sdmmc
 CONFIG_SPIRAM=y
 CONFIG_ESP_INT_WDT_TIMEOUT_MS=800
 CONFIG_SPIRAM_OCCUPY_NO_HOST=y
