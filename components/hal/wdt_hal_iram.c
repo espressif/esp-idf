@@ -24,11 +24,7 @@ void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescale
     }
 #endif
     else {
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2      // ESP32C6-TODO, ESP32H2-TODO: IDF-5653
-        hal->rwdt_dev = &LP_WDT;
-#else
-        hal->rwdt_dev = &RTCCNTL;
-#endif
+        hal->rwdt_dev = RWDT_DEV_GET();
     }
     hal->inst = wdt_inst;
 

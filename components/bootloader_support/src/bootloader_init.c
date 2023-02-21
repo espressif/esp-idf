@@ -61,11 +61,7 @@ void bootloader_config_wdt(void)
      * protect the remainder of the bootloader process.
      */
     //Disable RWDT flashboot protection.
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 // TODO: IDF-5653
-    wdt_hal_context_t rwdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
-#else
-    wdt_hal_context_t rwdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
-#endif
+    wdt_hal_context_t rwdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
     wdt_hal_write_protect_disable(&rwdt_ctx);
     wdt_hal_set_flashboot_en(&rwdt_ctx, false);
     wdt_hal_write_protect_enable(&rwdt_ctx);

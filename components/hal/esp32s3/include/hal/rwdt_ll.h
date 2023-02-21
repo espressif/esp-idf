@@ -59,6 +59,10 @@ ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_800ns == RWDT_LL_RESET_LENGTH_800_NS, "Ad
 ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_1_6us == RWDT_LL_RESET_LENGTH_1600_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
 ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_3_2us == RWDT_LL_RESET_LENGTH_3200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
 
+typedef rtc_cntl_dev_t rwdt_dev_t;
+
+#define RWDT_DEV_GET() &RTCCNTL
+
 /**
  * @brief Enable the RWDT
  *
