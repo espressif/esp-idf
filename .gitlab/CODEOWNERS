@@ -50,7 +50,7 @@
 /.github/workflows/                   @esp-idf-codeowners/ci
 /.gitlab-ci.yml                       @esp-idf-codeowners/ci
 /.gitlab/ci/                          @esp-idf-codeowners/ci
-/.gitlab/dangerfile.js                @esp-idf-codeowners/ci @esp-idf-codeowners/tools
+/.gitlab/dangerjs/                    @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 /.pre-commit-config.yaml              @esp-idf-codeowners/ci
 /.readthedocs.yml                     @esp-idf-codeowners/docs
 /CMakeLists.txt                       @esp-idf-codeowners/build-config

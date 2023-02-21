@@ -33,13 +33,13 @@ check_MR_style_dangerjs:
     DANGER_GITLAB_API_TOKEN: ${ESPCI_TOKEN}
     DANGER_GITLAB_HOST: ${GITLAB_HTTP_SERVER}
     DANGER_GITLAB_API_BASE_URL: ${GITLAB_HTTP_SERVER}/api/v4
+    DANGER_JIRA_USER: ${DANGER_JIRA_USER}
+    DANGER_JIRA_PASSWORD: ${DANGER_JIRA_PASSWORD}
   before_script:
-    - echo "Skip all before scripts"
+    - npm install -g danger@11.2.3 --silent --no-progress > /dev/null
+    - npm install axios@1.3.3 --silent --no-progress > /dev/null
   script:
-    - set +e
-    - hash danger 2>/dev/null && echo "use cache" || yarn global add danger@11.2.3 --silent --skip-integrity-check --no-progress --cache-folder .yarn --global-folder .yarn-cache
-    - set -e
-    - danger ci --dangerfile=".gitlab/dangerfile.js" --failOnErrors -v
+    - danger ci --dangerfile=".gitlab/dangerjs/dangerfile.js" --failOnErrors -v
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
