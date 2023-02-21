@@ -227,6 +227,50 @@ static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
+  * @brief Select gpio hysteresis control by efuse.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  */
+static inline void gpio_ll_pin_input_hysteresis_ctrl_sel_efuse(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    PIN_HYS_EN_SEL_EFUSE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+}
+
+/**
+  * @brief Select gpio hysteresis control by software.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  */
+static inline void gpio_ll_pin_input_hysteresis_ctrl_sel_soft(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    PIN_HYS_EN_SEL_SOFT(IO_MUX_GPIO0_REG + (gpio_num * 4));
+}
+
+/**
+  * @brief Enable gpio hysteresis if controlled by software.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  */
+static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    PIN_HYS_SOFT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+}
+
+/**
+  * @brief Disable gpio hysteresis if controlled by software.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  */
+static inline void gpio_ll_pin_input_hysteresis_disable(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    PIN_HYS_SOFT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+}
+
+/**
   * @brief Disable output mode on GPIO.
   *
   * @param hw Peripheral GPIO hardware instance address.

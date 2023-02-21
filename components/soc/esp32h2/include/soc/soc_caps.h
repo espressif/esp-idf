@@ -156,6 +156,7 @@
 #define SOC_GPIO_PORT                        1U
 #define SOC_GPIO_PIN_COUNT                   28
 #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER   1
+#define SOC_GPIO_SUPPORT_PIN_HYS_FILTER      1
 #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM      8
 
 // GPIO peripheral has the ETM extension

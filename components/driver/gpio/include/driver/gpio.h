@@ -48,6 +48,9 @@ typedef struct {
     gpio_pullup_t pull_up_en;       /*!< GPIO pull-up                                         */
     gpio_pulldown_t pull_down_en;   /*!< GPIO pull-down                                       */
     gpio_int_type_t intr_type;      /*!< GPIO interrupt type                                  */
+#if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+    gpio_hys_ctrl_mode_t hys_ctrl_mode;       /*!< GPIO hysteresis: hysteresis filter on slope input    */
+#endif
 } gpio_config_t;
 
 /**

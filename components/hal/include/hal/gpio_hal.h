@@ -485,6 +485,25 @@ void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, uint32_t gpio_n
  */
 #define gpio_hal_iomux_func_sel(pin_name, func) gpio_ll_iomux_func_sel(pin_name, func)
 
+#if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+/**
+ * @brief Control gpio hysteresis enable/disable by software.
+ *
+ * @param hal Context of the HAL layer
+ * @param gpio_num GPIO number
+ * @param enable enable or disable the hysteresis
+ */
+void gpio_hal_hysteresis_soft_enable(gpio_hal_context_t *hal, uint32_t gpio_num, bool enable);
+
+/**
+ * @brief Set gpio hysteresis enable/disable by efuse.
+ *
+ * @param hal Context of the HAL layer
+ * @param gpio_num GPIO number
+ */
+#define gpio_hal_hysteresis_from_efuse(hal, gpio_num) gpio_ll_pin_input_hysteresis_ctrl_sel_efuse((hal)->dev, gpio_num)
+#endif  // SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+
 #ifdef __cplusplus
 }
 #endif

@@ -239,6 +239,26 @@ int gpio_get_level(gpio_num_t gpio_num)
     return gpio_hal_get_level(gpio_context.gpio_hal, gpio_num);
 }
 
+#if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+static esp_err_t gpio_hysteresis_enable(gpio_num_t gpio_num)
+{
+    gpio_hal_hysteresis_soft_enable(gpio_context.gpio_hal, gpio_num, true);
+    return ESP_OK;
+}
+
+static esp_err_t gpio_hysteresis_disable(gpio_num_t gpio_num)
+{
+    gpio_hal_hysteresis_soft_enable(gpio_context.gpio_hal, gpio_num, false);
+    return ESP_OK;
+}
+
+static esp_err_t gpio_hysteresis_by_efuse(gpio_num_t gpio_num)
+{
+    gpio_hal_hysteresis_from_efuse(gpio_context.gpio_hal, gpio_num);
+    return ESP_OK;
+}
+#endif  //SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+
 esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
@@ -386,6 +406,15 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
                 gpio_intr_disable(io_num);
             }
 
+#if SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+            if (pGPIOConfig->hys_ctrl_mode == GPIO_HYS_SOFT_ENABLE) {
+                gpio_hysteresis_enable(io_num);
+            } else if (pGPIOConfig->hys_ctrl_mode == GPIO_HYS_SOFT_DISABLE) {
+                gpio_hysteresis_disable(io_num);
+            } else {
+                gpio_hysteresis_by_efuse(io_num);
+            }
+#endif  //SOC_GPIO_SUPPORT_PIN_HYS_FILTER
             /* By default, all the pins have to be configured as GPIO pins. */
             gpio_hal_iomux_func_sel(io_reg, PIN_FUNC_GPIO);
         }
