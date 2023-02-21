@@ -432,9 +432,15 @@ void esp_blufi_send_notify(void *arg)
     struct pkt_info *pkts = (struct pkt_info *) arg;
     struct os_mbuf *om;
     om = ble_hs_mbuf_from_flat(pkts->pkt, pkts->pkt_len);
+    if (om == NULL) {
+        ESP_LOGE(TAG, "Error in allocating memory");
+        return;
+    }
     int rc = 0;
-    rc = ble_gatts_notify_custom(conn_handle, gatt_values[1].val_handle, om);
-    assert(rc == 0);
+    rc = ble_gatts_notify_custom(blufi_env.conn_id, gatt_values[1].val_handle, om);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "Error in sending notification");
+    }
 }
 
 void esp_blufi_disconnect(void)
@@ -449,8 +455,6 @@ void esp_blufi_send_encap(void *arg)
     struct blufi_hdr *hdr = (struct blufi_hdr *)arg;
     if (blufi_env.is_connected == false) {
         BTC_TRACE_WARNING("%s ble connection is broken\n", __func__);
-        osi_free(hdr);
-        hdr =  NULL;
         return;
     }
     btc_blufi_send_notify((uint8_t *)hdr,
