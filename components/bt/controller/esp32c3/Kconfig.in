@@ -24,8 +24,24 @@ config BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB
         (alloate when controller initialise, never free until controller de-initialise)
         another is dynamically allocating (allocate before TX and free after TX).
 
+choice BT_CTRL_PINNED_TO_CORE_CHOICE
+    prompt "The cpu core which bluetooth controller run"
+    depends on !FREERTOS_UNICORE
+    help
+        Specify the cpu core to run bluetooth controller.
+        Can not specify no-affinity.
+
+    config BT_CTRL_PINNED_TO_CORE_0
+        bool "Core 0 (PRO CPU)"
+    config BT_CTRL_PINNED_TO_CORE_1
+        bool "Core 1 (APP CPU)"
+        depends on !FREERTOS_UNICORE
+endchoice
+
 config BT_CTRL_PINNED_TO_CORE
     int
+    default 0 if BT_CTRL_PINNED_TO_CORE_0
+    default 1 if BT_CTRL_PINNED_TO_CORE_1
     default 0
 
 choice BT_CTRL_HCI_MODE_CHOICE
@@ -36,7 +52,7 @@ choice BT_CTRL_HCI_MODE_CHOICE
     config BT_CTRL_HCI_MODE_VHCI
         bool "VHCI"
         help
-            Normal option. Mostly, choose this VHCI when bluetooth host run on ESP32C3, too.
+            Normal option. Mostly, choose this VHCI when bluetooth host run on ESP32S3 or ESP32C3.
 
     config BT_CTRL_HCI_MODE_UART_H4
         bool "UART(H4)"
@@ -394,7 +410,6 @@ menu "MODEM SLEEP Options"
             If this option is selected, the main crystal will power up during light sleep when the low power clock
             selects an external 32kHz crystal but the external 32kHz crystal does not exist or the low power clock
             selects the main crystal.
-
 
 endmenu
 
