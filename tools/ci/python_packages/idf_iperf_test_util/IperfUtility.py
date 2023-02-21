@@ -301,6 +301,7 @@ class IperfTestUtility(object):
                     process = subprocess.Popen(['iperf', '-s', '-B', self.pc_nic_ip,
                                                 '-t', str(TEST_TIME), '-i', '1', '-f', 'm'],
                                                stdout=f, stderr=f)
+                    time.sleep(1)
                     if bw_limit > 0:
                         self.dut.write('iperf -c {} -i 1 -t {} -b {}'.format(self.pc_nic_ip, TEST_TIME, bw_limit))
                     else:
