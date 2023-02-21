@@ -1,3 +1,4 @@
+
 :orphan:
 
 Secure Boot V2
@@ -111,7 +112,7 @@ The Secure Boot V2 process follows these steps:
 Signature Block Format
 ----------------------
 
-The bootloader and application images are padded to the next 4096 byte boundary, thus the signature has a flash sector of its own. The signature is calculated over all bytes in the image including the padding bytes.
+The signature block starts on a 4KB aligned boundary and has a flash sector of its own. The signature is calculated over all bytes in the image including the padding bytes (:ref:`secure_padding`).
 
 The content of each signature block is shown in the following table:
 
@@ -204,6 +205,41 @@ The content of each signature block is shown in the following table:
 
 The remainder of the signature sector is erased flash (0xFF) which allows writing other signature blocks after previous signature block.
 
+.. _secure_padding:
+
+Secure Padding
+--------------
+
+In Secure Boot V2 scheme, the application image is padded to the flash MMU page size boundary to ensure that only verified contents are mapped in the internal address space. This is known as secure padding. Signature of the image is calculated after padding and then signature block (4KB) gets appended to the image.
+
+.. list::
+
+    - Default flash MMU page size is 64KB
+    :SOC_MMU_PAGE_SIZE_CONFIGURABLE: - {IDF_TARGET_NAME} supports configurable flash MMU page size, it (``CONFIG_MMU_PAGE_SIZE``) gets set based on the :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`
+    - Secure padding is applied through the option ``--secure-pad-v2`` in the ``elf2image`` conversion using ``esptool.py``
+
+Following table explains the Secure Boot V2 signed image with secure padding and signature block appended:
+
+.. list-table:: Contents of a signed application
+        :widths: 20 20 20
+        :header-rows: 1
+
+        * - **Offset**
+          - **Size (KB)**
+          - **Description**
+        * - 0
+          - 580
+          - Unsigned application size (as an example)
+        * - 580
+          - 60
+          - Secure padding (aligned to next 64KB boundary)
+        * - 640
+          - 4
+          - Signature block
+
+.. note::
+    Please note that the application image always starts on the next flash MMU page size boundary (default 64KB) and hence the space left over after the signature block shown above can be utilized to store any other data partitions (e.g., ``nvs``).
+
 .. _verify_signature-block:
 
 Verifying a Signature Block
@@ -236,6 +272,8 @@ Bootloader Size
 ---------------
 
 Enabling Secure boot and/or flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.
+
+In the case when :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` is disabled, the bootloader is sector padded (4KB) using the ``--pad-to-size`` option in ``elf2image`` command of ``esptool``.
 
 .. _efuse-usage:
 
@@ -379,6 +417,35 @@ After the app image and partition table are built, the build system will print s
 The above command appends the image signature to the existing binary. You can use the `--output` argument to write the signed binary to a separate file::
 
   espsecure.py sign_data --version 2 --keyfile PRIVATE_SIGNING_KEY --output SIGNED_BINARY_FILE BINARY_FILE
+
+Signing using Pre-calculated Signatures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have valid pre-calculated signatures generated for an image and their corresponding public keys, you can use these signatures to generate a signature sector and append it to the image. Note that the pre-calculated signature should be calculated over all bytes in the image including the secure-padding bytes.
+
+In such cases, the firmware image should be built by disabling the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES`. This image will be secure-padded and to generate a signed binary use the following command::
+
+  espsecure.py sign_data --version 2 --pub-key PUBLIC_SIGNING_KEY --signature SIGNATURE_FILE --output SIGNED_BINARY_FILE BINARY_FILE
+
+The above command verifies the signature, generates a signature block (refer to :ref:`signature-block-format`) and appends it to the binary file.
+
+
+Signing using an External Hardware Security Module (HSM)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For security reasons, you might also use an external Hardware Security Module (HSM) to store your private signing key, which cannot be accessed directly but has an interface to generate the signature of a binary file and its corresponding public key.
+
+In such cases, disable the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` and build the firmware. This secure-padded image then can be used to supply the external HSM for generating a signature. Refer to `Signing using an External HSM <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espsecure/index.html#remote-signing-using-an-external-hsm>`_ to generate a signed image.
+
+.. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
+
+    .. note:: For all the above three remote signing workflows, the signed binary is written to the filename provided to the ``--output`` argument and the option ``--append_signatures`` allows us to append multiple signatures (up to 3) the image.
+
+.. only:: not SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
+
+    .. note:: For all the above three remote signing workflows, the signed binary is written to the filename provided to the ``--output`` argument.
+
+
 
 Secure Boot Best Practices
 --------------------------
