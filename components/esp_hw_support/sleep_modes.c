@@ -533,8 +533,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
 
     uint32_t result;
     if (deep_sleep) {
-// TODO: IDF-6051, IDF-6052
-#if !CONFIG_IDF_TARGET_ESP32H4 && !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
         esp_sleep_isolate_digital_gpio();
 #endif
 
