@@ -11,6 +11,7 @@
 #include "freertos/queue.h"
 #include "esp_wifi.h"
 #include "esp_log.h"
+#include "esp_check.h"
 
 #include "antenna_switch.h"
 
@@ -42,11 +43,6 @@ static void antenna_switch_function(const wifi_antenna_auto_switch_config_t *con
     wifi_ant_config_t wifi_ant_config;
     wifi_ap_record_t  wifi_ap_record;
     int16_t rssi_ant0 = INT16_MIN, rssi_ant1 = INT16_MIN, rssi_ant2 = INT16_MIN, rssi_max, rssi_min;
-
-    if(config->ant_num < 2 || config->ant_num > 3) {
-        ESP_LOGE(TAG, "wifi_antenna_auto_switch_config_t parameter error");
-        abort();
-    }
 
     /**< Monitor antenna zero signal strength*/
     wifi_ant_config.rx_ant_mode = WIFI_ANT_MODE_ANT0;
@@ -103,7 +99,7 @@ static void antenna_switch_function(const wifi_antenna_auto_switch_config_t *con
     rssi_ant1 = rssi_ant1 - rssi_max - rssi_min;
     ESP_LOGD(TAG, "The signal strength of the antenna one :%d", rssi_ant1);
 
-    if(config->ant_num == 3) {
+    if(config->ant_num == ANT_TOTAL_THREE) {
         /**< Monitor antenna two signal strength*/
         wifi_ant_config.rx_ant_mode  =   WIFI_ANT_MODE_ANT1;
         wifi_ant_config.tx_ant_mode  =   WIFI_ANT_MODE_ANT1;
@@ -275,6 +271,7 @@ esp_err_t  esp_wifi_set_ant_soft_switch(const wifi_antenna_auto_switch_config_t 
 {
     BaseType_t ret;
 
+    ESP_RETURN_ON_FALSE(config->ant_num < ANT_TOTAL_MAX, ESP_ERR_INVALID_ARG, TAG, "antenna nunmbers error!");
     /**< Refresh configuration parameters*/
     wifi_three_ant_auto_get_config = *config;
     /**< Select the optimal antenna*/

@@ -1,0 +1,64 @@
+diff --git a/examples/wifi/antenna/components/antenna_soft_switch/antenna_switch.c b/examples/wifi/antenna/components/antenna_soft_switch/antenna_switch.c
+index ffcf0fa927..8dc0a991e8 100644
+--- a/examples/wifi/antenna/components/antenna_soft_switch/antenna_switch.c
++++ b/examples/wifi/antenna/components/antenna_soft_switch/antenna_switch.c
+@@ -11,6 +11,7 @@
+ #include "freertos/queue.h"
+ #include "esp_wifi.h"
+ #include "esp_log.h"
++#include "esp_check.h"
+ 
+ #include "antenna_switch.h"
+ 
+@@ -43,11 +44,6 @@ static void antenna_switch_function(const wifi_antenna_auto_switch_config_t *con
+     wifi_ap_record_t  wifi_ap_record;
+     int16_t rssi_ant0 = INT16_MIN, rssi_ant1 = INT16_MIN, rssi_ant2 = INT16_MIN, rssi_max, rssi_min;
+ 
+-    if(config->ant_num < 2 || config->ant_num > 3) {
+-        ESP_LOGE(TAG, "wifi_antenna_auto_switch_config_t parameter error");
+-        abort();
+-    }
+-
+     /**< Monitor antenna zero signal strength*/
+     wifi_ant_config.rx_ant_mode = WIFI_ANT_MODE_ANT0;
+     wifi_ant_config.rx_ant_default = WIFI_ANT_MODE_ANT0;
+@@ -103,7 +99,7 @@ static void antenna_switch_function(const wifi_antenna_auto_switch_config_t *con
+     rssi_ant1 = rssi_ant1 - rssi_max - rssi_min;
+     ESP_LOGD(TAG, "The signal strength of the antenna one :%d", rssi_ant1);
+ 
+-    if(config->ant_num == 3) {
++    if(config->ant_num == ANT_TOTAL_THREE) {
+         /**< Monitor antenna two signal strength*/
+         wifi_ant_config.rx_ant_mode  =   WIFI_ANT_MODE_ANT1;
+         wifi_ant_config.tx_ant_mode  =   WIFI_ANT_MODE_ANT1;
+@@ -275,6 +271,7 @@ esp_err_t  esp_wifi_set_ant_soft_switch(const wifi_antenna_auto_switch_config_t
+ {
+     BaseType_t ret;
+ 
++    ESP_RETURN_ON_FALSE(config->ant_num < ANT_TOTAL_MAX, ESP_ERR_INVALID_ARG, TAG, "antenna nunmbers error!");
+     /**< Refresh configuration parameters*/
+     wifi_three_ant_auto_get_config = *config;
+     /**< Select the optimal antenna*/
+diff --git a/examples/wifi/antenna/components/antenna_soft_switch/include/antenna_switch.h b/examples/wifi/antenna/components/antenna_soft_switch/include/antenna_switch.h
+index d3aa655b19..42f89c1c06 100644
+--- a/examples/wifi/antenna/components/antenna_soft_switch/include/antenna_switch.h
++++ b/examples/wifi/antenna/components/antenna_soft_switch/include/antenna_switch.h
+@@ -11,12 +11,17 @@
+ extern "C" {
+ #endif
+ 
++typedef enum {
++    ANT_TOTAL_TWO,      /**< TWO antennas participate in the switch */
++    ANT_TOTAL_THREE,    /**< Three antennas participate in the switch */
++    ANT_TOTAL_MAX
++} ant_mun_t;
+ /**
+   * @brief WiFi  antenna auto switch configuration
+   *
+   */
+ typedef struct {
+-    uint8_t     ant_num;            /**< WiFi use antenna numbers 2 or 3*/
++    ant_mun_t     ant_num;            /**< WiFi use antenna numbers 2 or 3*/
+     uint8_t     ant_zero;           /**< WiFi antenna zero select*/
+     uint8_t     ant_one;            /**< WiFi antenna one select*/
+     uint8_t     ant_two;            /**< WiFi antenna two select*/
