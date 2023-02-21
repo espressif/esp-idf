@@ -161,6 +161,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif_sntp.h \
     $(PROJECT_PATH)/components/esp_partition/include/esp_partition.h \
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
+    $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \
     $(PROJECT_PATH)/components/esp_pm/include/esp_pm.h \
     $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     $(PROJECT_PATH)/components/esp_rom/include/esp_rom_sys.h \
