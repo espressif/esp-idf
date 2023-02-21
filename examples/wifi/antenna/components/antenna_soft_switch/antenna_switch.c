@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 /* Antenna soft switching Example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -199,7 +204,7 @@ static void antenna_soft_switching_task(void *arg)
 
     while(true) {
         while(ESP_OK != esp_wifi_sta_get_ap_info(&wifi_ap_record)) {
-            /**< can't find AP*/
+            /**< Can't find AP*/
              vTaskDelay(100/portTICK_PERIOD_MS);
         }
         /**< Filter the current rssi*/

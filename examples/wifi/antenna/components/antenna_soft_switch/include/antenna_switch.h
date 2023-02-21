@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+/*
  * Design of antenna soft switching : 2023.02.21
  *
  * version:v1.0
@@ -12,7 +17,7 @@ extern "C" {
 #endif
 
 typedef enum {
-    ANT_TOTAL_TWO,      /**< TWO antennas participate in the switch */
+    ANT_TOTAL_TWO,      /**< Two antennas participate in the switch */
     ANT_TOTAL_THREE,    /**< Three antennas participate in the switch */
     ANT_TOTAL_MAX
 } ant_mun_t;
@@ -21,7 +26,7 @@ typedef enum {
   *
   */
 typedef struct {
-    ant_mun_t     ant_num;            /**< WiFi use antenna numbers 2 or 3*/
+    ant_mun_t   ant_num;            /**< WiFi use antenna numbers 2 or 3*/
     uint8_t     ant_zero;           /**< WiFi antenna zero select*/
     uint8_t     ant_one;            /**< WiFi antenna one select*/
     uint8_t     ant_two;            /**< WiFi antenna two select*/
