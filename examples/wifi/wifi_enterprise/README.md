@@ -68,7 +68,7 @@ idf.py -p PORT flash monitor
   openssl req -new -key server.key -out server.csr
 
 5. create certs (.crt) for client nd server
-  openssl ca -batch -keyfile ca.key -cert ca.pem -in client.csr -key (password) -out client.crt -extensions xpserver_ext -extfile xpextensions
+  openssl ca -batch -keyfile ca.key -cert ca.pem -in client.csr -key (password) -out client.crt -extensions xpclient_ext -extfile xpextensions
   openssl ca -batch -keyfile ca.key -cert ca.pem -in server.csr -key (password) -out server.crt -extensions xpserver_ext -extfile xpextensions
 
 6. export .p12 files
