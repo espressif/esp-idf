@@ -15,7 +15,7 @@ LINKER_SCRIPTS += esp32.rom.ld \
 ifndef CONFIG_SPIRAM_CACHE_WORKAROUND
 LINKER_SCRIPTS += esp32.rom.newlib-funcs.ld
 
-ifdef CONFIG_ESP32_REV_MIN_3
+ifeq ($(shell expr $(CONFIG_ESP32_REV_MIN_FULL) \>= 300), 1)
 LINKER_SCRIPTS += esp32.rom.eco3.ld
 endif
 
