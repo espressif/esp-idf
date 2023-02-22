@@ -331,6 +331,9 @@
 .if-label-build-only: &if-label-build-only
   if: '$CI_JOB_STAGE == "target_test" && $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*For Maintainers: Only Build Tests(?:,[^,\n\r]+)*$/i'
 
+.if-label-upload_cache: &if-label-upload_cache
+  if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*upload_cache(?:,[^,\n\r]+)*$/i'
+
 .if-revert-branch: &if-revert-branch
   if: '$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^revert-/'
 
@@ -356,11 +359,16 @@
 
 .rules:patterns:python-cache:
   rules:
+    - *if-schedule
+    - <<: *if-label-upload_cache
+      when: manual
     - <<: *if-dev-push
       changes: *patterns-python-cache
 
 .rules:patterns:submodule:
   rules:
+    - <<: *if-label-upload_cache
+      when: manual
     - <<: *if-dev-push
       changes: *patterns-submodule
 
