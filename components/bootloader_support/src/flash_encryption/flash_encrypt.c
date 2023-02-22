@@ -313,7 +313,7 @@ esp_err_t esp_flash_encrypt_enable(void)
 
     ESP_LOGI(TAG, "Flash encryption completed");
 
-#if CONFIG_EFUSE_VIRTUAL
+#ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "Flash encryption not really completed. Must disable virtual efuses");
 #endif
 
