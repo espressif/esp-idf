@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -167,9 +167,10 @@ TEST_CASE("dhcp server start/stop on localhost", "[lwip]")
     TEST_ASSERT(dhcps_stop(dhcps, netif) == ERR_OK);
     dhcps_delete(dhcps);
 
-     //Class A Subnet C
+     // Class A: IP: 127.0.0.1, with inaccurate Mask: 255.248.255.0
+     // expect dhcps_start() to fail
     dhcps = dhcps_new();
-    IP4_ADDR(&netmask, 255,255,255,0);
+    IP4_ADDR(&netmask, 255,248,255,0);
     dhcps_set_option_info(dhcps, SUBNET_MASK, (void*)&netmask, sizeof(netmask));
     TEST_ASSERT(dhcps_start(dhcps, netif, a_ip) == ERR_ARG);
     TEST_ASSERT(dhcps_stop(dhcps, netif) == ERR_OK);
