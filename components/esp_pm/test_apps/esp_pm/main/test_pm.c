@@ -48,21 +48,8 @@ TEST_CASE("Can dump power management lock stats", "[pm]")
 static void switch_freq(int mhz)
 {
     int xtal_freq_mhz = esp_clk_xtal_freq() / MHZ;
-#if CONFIG_IDF_TARGET_ESP32
-    esp_pm_config_esp32_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32S2
-    esp_pm_config_esp32s2_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32S3
-    esp_pm_config_esp32s3_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32C2
-    esp_pm_config_esp32c2_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32C3
-    esp_pm_config_esp32c3_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32H4
-    esp_pm_config_esp32h4_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32C6
-    esp_pm_config_esp32c6_t pm_config = {
-#endif
+
+    esp_pm_config_t pm_config = {
         .max_freq_mhz = mhz,
         .min_freq_mhz = MIN(mhz, xtal_freq_mhz),
     };
@@ -105,21 +92,7 @@ static void light_sleep_enable(void)
     int cur_freq_mhz = esp_clk_cpu_freq() / MHZ;
     int xtal_freq = esp_clk_xtal_freq() / MHZ;
 
-#if CONFIG_IDF_TARGET_ESP32
-    esp_pm_config_esp32_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32S2
-    esp_pm_config_esp32s2_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32S3
-    esp_pm_config_esp32s3_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32C2
-    esp_pm_config_esp32c2_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32C3
-    esp_pm_config_esp32c3_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32H4
-    esp_pm_config_esp32h4_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32C6
-    esp_pm_config_esp32c6_t pm_config = {
-#endif
+    esp_pm_config_t pm_config = {
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = xtal_freq,
         .light_sleep_enable = true
@@ -131,21 +104,7 @@ static void light_sleep_disable(void)
 {
     int cur_freq_mhz = esp_clk_cpu_freq() / MHZ;
 
-#if CONFIG_IDF_TARGET_ESP32
-    esp_pm_config_esp32_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32S2
-    esp_pm_config_esp32s2_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32S3
-    esp_pm_config_esp32s3_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32C2
-    esp_pm_config_esp32c2_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32C3
-    esp_pm_config_esp32c3_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32H4
-    esp_pm_config_esp32h4_t pm_config = {
-#elif CONFIG_IDF_TARGET_ESP32C6
-    esp_pm_config_esp32c6_t pm_config = {
-#endif
+    esp_pm_config_t pm_config = {
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = cur_freq_mhz,
     };

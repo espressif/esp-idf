@@ -22,6 +22,7 @@
 #include "hal/uart_ll.h"
 #include "hal/uart_types.h"
 #include "driver/uart.h"
+#include "driver/gpio.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -39,31 +40,6 @@
 
 #include "sdkconfig.h"
 
-// [refactor-todo] opportunity for further refactor
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/pm.h"
-#include "driver/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/pm.h"
-#include "driver/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/pm.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/pm.h"
-#include "driver/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/pm.h"
-#include "driver/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/pm.h"
-#include "driver/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/pm.h"
-#include "driver/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/pm.h"
-#include "driver/gpio.h"
-#endif
 
 #define MHZ (1000000)
 
@@ -227,23 +203,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     return ESP_ERR_NOT_SUPPORTED;
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32
-    const esp_pm_config_esp32_t* config = (const esp_pm_config_esp32_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32S2
-    const esp_pm_config_esp32s2_t* config = (const esp_pm_config_esp32s2_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32S3
-    const esp_pm_config_esp32s3_t* config = (const esp_pm_config_esp32s3_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32C3
-    const esp_pm_config_esp32c3_t* config = (const esp_pm_config_esp32c3_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32H4
-    const esp_pm_config_esp32h4_t* config = (const esp_pm_config_esp32h4_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32C2
-    const esp_pm_config_esp32c2_t* config = (const esp_pm_config_esp32c2_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32C6
-    const esp_pm_config_esp32c6_t* config = (const esp_pm_config_esp32c6_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32H2
-    const esp_pm_config_esp32h2_t* config = (const esp_pm_config_esp32h2_t*) vconfig;
-#endif
+    const esp_pm_config_t* config = (const esp_pm_config_t*) vconfig;
 
 #ifndef CONFIG_FREERTOS_USE_TICKLESS_IDLE
     if (config->light_sleep_enable) {
@@ -347,23 +307,7 @@ esp_err_t esp_pm_get_configuration(void* vconfig)
         return ESP_ERR_INVALID_ARG;
     }
 
-#if CONFIG_IDF_TARGET_ESP32
-    esp_pm_config_esp32_t* config = (esp_pm_config_esp32_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32S2
-    esp_pm_config_esp32s2_t* config = (esp_pm_config_esp32s2_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32S3
-    esp_pm_config_esp32s3_t* config = (esp_pm_config_esp32s3_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32C3
-    esp_pm_config_esp32c3_t* config = (esp_pm_config_esp32c3_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32H4
-    esp_pm_config_esp32h4_t* config = (esp_pm_config_esp32h4_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32C2
-    esp_pm_config_esp32c2_t* config = (esp_pm_config_esp32c2_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32C6
-    esp_pm_config_esp32c6_t* config = (esp_pm_config_esp32c6_t*) vconfig;
-#elif CONFIG_IDF_TARGET_ESP32H2
-    esp_pm_config_esp32h2_t* config = (esp_pm_config_esp32h2_t*) vconfig;
-#endif
+    esp_pm_config_t* config = (esp_pm_config_t*) vconfig;
 
     portENTER_CRITICAL(&s_switch_lock);
     config->light_sleep_enable = s_light_sleep_en;
@@ -792,23 +736,7 @@ void esp_pm_impl_init(void)
 
 #ifdef CONFIG_PM_DFS_INIT_AUTO
     int xtal_freq_mhz = esp_clk_xtal_freq() / MHZ;
-#if CONFIG_IDF_TARGET_ESP32
-    esp_pm_config_esp32_t cfg = {
-#elif CONFIG_IDF_TARGET_ESP32S2
-    esp_pm_config_esp32s2_t cfg = {
-#elif CONFIG_IDF_TARGET_ESP32S3
-    esp_pm_config_esp32s3_t cfg = {
-#elif CONFIG_IDF_TARGET_ESP32C3
-    esp_pm_config_esp32c3_t cfg = {
-#elif CONFIG_IDF_TARGET_ESP32H4
-    esp_pm_config_esp32h4_t cfg = {
-#elif CONFIG_IDF_TARGET_ESP32C2
-    esp_pm_config_esp32c2_t cfg = {
-#elif CONFIG_IDF_TARGET_ESP32C6
-    esp_pm_config_esp32c6_t cfg = {
-#elif CONFIG_IDF_TARGET_ESP32H2
-    esp_pm_config_esp32h2_t cfg = {
-#endif
+    esp_pm_config_t cfg = {
         .max_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
         .min_freq_mhz = xtal_freq_mhz,
     };

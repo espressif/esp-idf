@@ -25,7 +25,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 启用电源管理功能将会增加中断延迟。额外延迟与多个因素有关，例如：CPU 频率、单/双核模式、是否需要进行频率切换等。CPU 频率为 240 MHz 且未启用频率调节时，最小额外延迟为 0.2 us；如果启用频率调节，且在中断入口将频率由 40 MHz 调节至 80 MHz，则最大额外延迟为 40 us。
 
-通过调用 :cpp:func:`esp_pm_configure` 函数可以在应用程序中启用动态调频 (DFS) 功能和自动 Light-sleep 模式。此函数的参数 :cpp:class:`esp_pm_config_{IDF_TARGET_PATH_NAME}_t` 定义了频率调节的相关设置。在此参数结构中，需要初始化以下三个字段：
+通过调用 :cpp:func:`esp_pm_configure` 函数可以在应用程序中启用动态调频 (DFS) 功能和自动 Light-sleep 模式。此函数的参数 :cpp:class:`esp_pm_config_t` 定义了频率调节的相关设置。在此参数结构中，需要初始化以下三个字段：
 
 - ``max_freq_mhz``：最大 CPU 频率 (MHz)，即获取 ``ESP_PM_CPU_FREQ_MAX`` 锁后所使用的频率。该字段通常设置为 :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`。
 - ``min_freq_mhz``：最小 CPU 频率 (MHz)，即仅获取 ``ESP_PM_APB_FREQ_MAX`` 锁后所使用的频率。该字段可设置为晶振 (XTAL) 频率值，或者 XTAL 频率值除以整数。注意，10 MHz 是生成 1 MHz 的 REF_TICK 默认时钟所需的最小频率。
@@ -137,5 +137,4 @@ API 参考
 -------------
 
 .. include-build-file:: inc/esp_pm.inc
-.. include-build-file:: inc/pm.inc
 

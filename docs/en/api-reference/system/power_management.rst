@@ -25,7 +25,7 @@ Power management can be enabled at compile time, using the option :ref:`CONFIG_P
 
 Enabling power management features comes at the cost of increased interrupt latency. Extra latency depends on a number of factors, such as the CPU frequency, single/dual core mode, whether or not frequency switch needs to be done. Minimum extra latency is 0.2 us (when the CPU frequency is 240 MHz and frequency scaling is not enabled). Maximum extra latency is 40 us (when frequency scaling is enabled, and a switch from 40 MHz to 80 MHz is performed on interrupt entry).
 
-Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in an application by calling the function :cpp:func:`esp_pm_configure`. Its argument is a structure defining the frequency scaling settings, :cpp:class:`esp_pm_config_{IDF_TARGET_PATH_NAME}_t`. In this structure, three fields need to be initialized:
+Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in an application by calling the function :cpp:func:`esp_pm_configure`. Its argument is a structure defining the frequency scaling settings, :cpp:class:`esp_pm_config_t`. In this structure, three fields need to be initialized:
 
 - ``max_freq_mhz``: Maximum CPU frequency in MHz, i.e., the frequency used when the ``ESP_PM_CPU_FREQ_MAX`` lock is acquired. This field will usually be set to the default CPU frequency.
 - ``min_freq_mhz``: Minimum CPU frequency in MHz, i.e., the frequency used when only the ``ESP_PM_APB_FREQ_MAX`` lock is acquired. This field can be set to the XTAL frequency value, or the XTAL frequency divided by an integer. Note that 10 MHz is the lowest frequency at which the default REF_TICK clock of 1 MHz can be generated.
@@ -137,5 +137,4 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_pm.inc
-.. include-build-file:: inc/pm.inc
 

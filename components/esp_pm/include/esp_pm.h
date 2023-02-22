@@ -9,25 +9,33 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/pm.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/pm.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/pm.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/pm.h"
-#elif CONFIG_IDF_TARGET_ESP32H4
-#include "esp32h4/pm.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/pm.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/pm.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Power management config
+ *
+ * Pass a pointer to this structure as an argument to esp_pm_configure function.
+ */
+typedef struct {
+    int max_freq_mhz;         /*!< Maximum CPU frequency, in MHz */
+    int min_freq_mhz;         /*!< Minimum CPU frequency to use when no locks are taken, in MHz */
+    bool light_sleep_enable;  /*!< Enter light sleep when no locks are taken */
+} esp_pm_config_t;
+
+/**
+ * backward compatibility
+ * newer chips no longer require this typedef
+ */
+typedef esp_pm_config_t esp_pm_config_esp32_t   __attribute__((deprecated("please use esp_pm_config_t instead")));
+typedef esp_pm_config_t esp_pm_config_esp32s2_t __attribute__((deprecated("please use esp_pm_config_t instead")));
+typedef esp_pm_config_t esp_pm_config_esp32s3_t __attribute__((deprecated("please use esp_pm_config_t instead")));
+typedef esp_pm_config_t esp_pm_config_esp32c3_t __attribute__((deprecated("please use esp_pm_config_t instead")));
+typedef esp_pm_config_t esp_pm_config_esp32h4_t __attribute__((deprecated("please use esp_pm_config_t instead")));
+typedef esp_pm_config_t esp_pm_config_esp32c2_t __attribute__((deprecated("please use esp_pm_config_t instead")));
+typedef esp_pm_config_t esp_pm_config_esp32c6_t __attribute__((deprecated("please use esp_pm_config_t instead")));
 
 /**
  * @brief Power management constraints
