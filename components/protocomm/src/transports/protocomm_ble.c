@@ -484,7 +484,7 @@ static void protocomm_ble_cleanup(void)
 
 esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *config)
 {
-    if (!pc || !config || !config->device_name || !config->nu_lookup) {
+    if (!pc || !config || !config->nu_lookup) {
         return ESP_ERR_INVALID_ARG;
     }
 

@@ -551,7 +551,7 @@ void btc_ble_mesh_health_server_call_handler(btc_msg_t *msg)
     esp_ble_mesh_health_server_cb_param_t param = {0};
     btc_ble_mesh_health_server_args_t *arg = NULL;
 
-    if (!msg || !msg->arg) {
+    if (!msg) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -577,7 +577,7 @@ void btc_ble_mesh_health_server_cb_handler(btc_msg_t *msg)
 {
     esp_ble_mesh_health_server_cb_param_t *param = NULL;
 
-    if (!msg || !msg->arg) {
+    if (!msg) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }

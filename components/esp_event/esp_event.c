@@ -631,6 +631,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
 esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
 {
     assert(event_loop);
+    ESP_LOGD(TAG, "deleting loop %p", (void*) event_loop);
 
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
     SemaphoreHandle_t loop_mutex = loop->mutex;
@@ -676,8 +677,6 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
     vSemaphoreDelete(loop_profiling_mutex);
 #endif
     vSemaphoreDelete(loop_mutex);
-
-    ESP_LOGD(TAG, "deleted loop %p", (void*) event_loop);
 
     return ESP_OK;
 }

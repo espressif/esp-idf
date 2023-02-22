@@ -119,6 +119,7 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
  * @return
  *         True for valid
  */
+__attribute__((always_inline))
 static inline bool mmu_ll_check_valid_paddr_region(uint32_t mmu_id, uint32_t paddr_start, uint32_t len)
 {
     (void)mmu_id;

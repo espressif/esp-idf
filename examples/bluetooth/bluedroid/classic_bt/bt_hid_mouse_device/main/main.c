@@ -262,7 +262,7 @@ void esp_bt_hidd_cb(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
             ESP_LOGI(TAG, "setting hid parameters success!");
             ESP_LOGI(TAG, "setting to connectable, discoverable");
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
-            if (param->register_app.in_use && param->register_app.bd_addr != NULL) {
+            if (param->register_app.in_use) {
                 ESP_LOGI(TAG, "start virtual cable plug!");
                 esp_bt_hid_device_connect(param->register_app.bd_addr);
             }

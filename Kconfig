@@ -505,6 +505,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                 This option can be enabled for RISC-V targets only.
 
+        config COMPILER_DISABLE_GCC12_WARNINGS
+            bool "Disable new warnings introduced in GCC 12"
+            default "n"
+            help
+                Enable this option if use GCC 12 or newer, and want to disable warnings which don't appear with
+                GCC 11.
+
         config COMPILER_DUMP_RTL_FILES
             bool "Dump RTL files during compilation"
             help

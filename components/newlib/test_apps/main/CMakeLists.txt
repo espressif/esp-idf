@@ -3,5 +3,5 @@ idf_component_register(SRCS
                         "test_stdatomic.c"
                         "test_misc.c"
                         "test_file.c"
-                       REQUIRES test_utils
+                       REQUIRES pthread test_utils
                        PRIV_REQUIRES unity vfs)

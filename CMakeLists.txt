@@ -179,6 +179,11 @@ if(NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS 8.0.0)
     endif()
 endif()
 
+if(CONFIG_COMPILER_DISABLE_GCC12_WARNINGS)
+    list(APPEND compile_options "-Wno-address"
+                                "-Wno-use-after-free")
+endif()
+
 # GCC-specific options
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     list(APPEND compile_options "-fstrict-volatile-bitfields"

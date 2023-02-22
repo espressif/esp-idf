@@ -322,8 +322,6 @@ int pkcs1_v15_sig_ver(struct crypto_public_key *pk,
 		return -1;
 	}
 
-	os_free(decrypted);
-
 	if (hdr.payload + hdr.length != decrypted + decrypted_len) {
 		wpa_printf(MSG_INFO,
 			   "PKCS #1: Extra data after signature - reject");
@@ -332,8 +330,10 @@ int pkcs1_v15_sig_ver(struct crypto_public_key *pk,
 			    hdr.payload + hdr.length,
 			    decrypted + decrypted_len - hdr.payload -
 			    hdr.length);
+		os_free(decrypted);
 		return -1;
 	}
 
+	os_free(decrypted);
 	return 0;
 }

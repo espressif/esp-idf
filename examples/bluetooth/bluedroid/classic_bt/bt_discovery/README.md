@@ -219,7 +219,7 @@ for (int i = 0; i < param->disc_res.num_prop; i++) {
 Pay attention that some Bluetooth devices may put their name in EIR data. We can get the device name from EIR data.
 
 ```c
-if (p_dev->eir && p_dev->bdname_len == 0) {
+if (p_dev->bdname_len == 0) {
     get_name_from_eir(p_dev->eir, p_dev->bdname, &p_dev->bdname_len);
 }
 ```
