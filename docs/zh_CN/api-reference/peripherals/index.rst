@@ -22,6 +22,7 @@
     lcd
     ledc
     :SOC_MCPWM_SUPPORTED: mcpwm
+    :SOC_PARLIO_SUPPORTED: parlio
     :SOC_PCNT_SUPPORTED: pcnt
     :SOC_RMT_SUPPORTED: rmt
     :SOC_SDMMC_HOST_SUPPORTED: sd_pullup_requirements

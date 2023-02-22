@@ -88,6 +88,8 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_sync.h \
     $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_timer.h \
     $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_types.h \
+    $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_tx.h \
+    $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_types.h \
     $(PROJECT_PATH)/components/driver/pcnt/include/driver/pulse_cnt.h \
     $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_common.h \
     $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_encoder.h \
@@ -199,6 +201,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/lcd_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/ledc_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/mcpwm_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/parlio_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/pcnt_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/rmt_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/rtc_io_types.h \

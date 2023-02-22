@@ -74,6 +74,8 @@ MCPWM_DOCS = ['api-reference/peripherals/mcpwm.rst']
 
 DEDIC_GPIO_DOCS = ['api-reference/peripherals/dedic_gpio.rst']
 
+PARLIO_DOCS = ['api-reference/peripherals/parlio.rst']
+
 PCNT_DOCS = ['api-reference/peripherals/pcnt.rst']
 
 RMT_DOCS = ['api-reference/peripherals/rmt.rst']
@@ -173,6 +175,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_USB_SERIAL_JTAG_SUPPORTED':USB_SERIAL_JTAG_DOCS,
                             'SOC_DEDICATED_GPIO_SUPPORTED':DEDIC_GPIO_DOCS,
                             'SOC_SPIRAM_SUPPORTED':SPIRAM_DOCS,
+                            'SOC_PARLIO_SUPPORTED':PARLIO_DOCS,
                             'SOC_PCNT_SUPPORTED':PCNT_DOCS,
                             'SOC_RMT_SUPPORTED':RMT_DOCS,
                             'SOC_DAC_SUPPORTED':DAC_DOCS,
