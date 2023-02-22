@@ -218,7 +218,7 @@ class MultiDevCaseTester(BaseTester):
             else:
                 raise TimeoutError('Wait case to finish timeout')
 
-    def _start_sub_case_thread(self, dev_res: MultiDevResource, case: UnittestMenuCase, sub_case_index: int, timeout: int = 60) -> None:
+    def _start_sub_case_process(self, dev_res: MultiDevResource, case: UnittestMenuCase, sub_case_index: int, timeout: int = 60) -> None:
         """
         Start the thread monitoring on the corresponding dut of the sub-case
         """
@@ -339,8 +339,8 @@ class MultiDevCaseTester(BaseTester):
                     index = int(sub_case['index'], 10)
                 else:
                     index = sub_case['index']
-                self._start_sub_case_thread(dev_res=self.group[index - 1], case=case,
-                                            sub_case_index=index, timeout=timeout)
+                self._start_sub_case_process(dev_res=self.group[index - 1], case=case,
+                                             sub_case_index=index, timeout=timeout)
             # Waiting all the devices to finish their test cases
             self._wait_multi_dev_case_finish(timeout=timeout)
 
@@ -381,4 +381,6 @@ class CaseTester(NormalCaseTester, MultiStageCaseTester, MultiDevCaseTester):
         elif case.type == 'multi_stage':
             self.run_multi_stage_case(case, reset, timeout=_timeout)
         elif case.type == 'multi_device':
-            self.run_multi_dev_case(case, reset, timeout=_timeout)
+            # here we always do a hard reset between test cases
+            # since the buffer can't be kept between test cases (which run in different processes)
+            self.run_multi_dev_case(case, reset=True, timeout=_timeout)
