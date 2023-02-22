@@ -142,7 +142,7 @@ esp_err_t i2s_channel_enable(i2s_chan_handle_t handle);
 
 /**
  * @brief Disable the i2s channel
- * @note  Only allowed to be called when the channel state is READY / RUNNING, (i.e., channel has been initialized)
+ * @note  Only allowed to be called when the channel state is RUNNING, (i.e., channel has been started)
  *        the channel will enter READY state once it is disabled successfully.
  * @note  Disable the channel can stop the I2S communication on hardware. It will stop bclk and ws signal but not mclk signal
  *
@@ -155,6 +155,28 @@ esp_err_t i2s_channel_enable(i2s_chan_handle_t handle);
 esp_err_t i2s_channel_disable(i2s_chan_handle_t handle);
 
 /**
+ * @brief Preload the data into TX DMA buffer
+ * @note  Only allowed to be called when the channel state is READY, (i.e., channel has been initialized, but not started)
+ * @note  As the initial DMA buffer has no data inside, it will transmit the empty buffer after enabled the channel,
+ *        this function is used to preload the data into the DMA buffer, so that the valid data can be transmitted immediately
+ *        after the channel is enabled.
+ * @note  This function can be called multiple times before enabling the channel, the buffer that loaded later will be concatenated
+ *        behind the former loaded buffer. But when all the DMA buffers have been loaded, no more data can be preload then, please
+ *        check the `bytes_loaded` parameter to see how many bytes are loaded successfully, when the `bytes_loaded` is smaller than
+ *        the `size`, it means the DMA buffers are full.
+ *
+ * @param[in]   tx_handle   I2S TX channel handler
+ * @param[in]   src         The pointer of the source buffer to be loaded
+ * @param[in]   size        The source buffer size
+ * @param[out]  bytes_loaded    The bytes that successfully been loaded into the TX DMA buffer
+ * @return
+ *      - ESP_OK    Load data successful
+ *      - ESP_ERR_INVALID_ARG   NULL pointer or not TX direction
+ *      - ESP_ERR_INVALID_STATE This channel has not stated
+ */
+esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src, size_t size, size_t *bytes_loaded);
+
+/**
  * @brief I2S write data
  * @note  Only allowed to be called when the channel state is RUNNING, (i.e., tx channel has been started and is not writing now)
  *        but the RUNNING only stands for the software state, it doesn't mean there is no the signal transporting on line.
@@ -162,7 +184,7 @@ esp_err_t i2s_channel_disable(i2s_chan_handle_t handle);
  * @param[in]   handle      I2S channel handler
  * @param[in]   src         The pointer of sent data buffer
  * @param[in]   size        Max data buffer length
- * @param[out]  bytes_written   Byte number that actually be sent
+ * @param[out]  bytes_written   Byte number that actually be sent, can be NULL if not needed
  * @param[in]   timeout_ms      Max block time
  * @return
  *      - ESP_OK    Write successfully
@@ -180,7 +202,7 @@ esp_err_t i2s_channel_write(i2s_chan_handle_t handle, const void *src, size_t si
  * @param[in]   handle      I2S channel handler
  * @param[in]   dest        The pointer of receiving data buffer
  * @param[in]   size        Max data buffer length
- * @param[out]  bytes_read      Byte number that actually be read
+ * @param[out]  bytes_read      Byte number that actually be read, can be NULL if not needed
  * @param[in]   timeout_ms      Max block time
  * @return
  *      - ESP_OK    Read successfully
@@ -193,7 +215,7 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
 /**
  * @brief Set event callbacks for I2S channel
  *
- * @note Only allowed to be called when the channel state is REGISTARED / READY, (i.e., before channel starts)
+ * @note Only allowed to be called when the channel state is REGISTERED / READY, (i.e., before channel starts)
  * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `callbacks` structure to NULL.
  * @note When CONFIG_I2S_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       The variables used in the function should be in the SRAM as well. The `user_data` should also reside in SRAM or internal RAM as well.
@@ -204,7 +226,7 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
  * @return
  *      - ESP_OK                Set event callbacks successfully
  *      - ESP_ERR_INVALID_ARG   Set event callbacks failed because of invalid argument
- *      - ESP_ERR_INVALID_STATE Set event callbacks failed because the current channel state is not REGISTARED or READY
+ *      - ESP_ERR_INVALID_STATE Set event callbacks failed because the current channel state is not REGISTERED or READY
  */
 esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2s_event_callbacks_t *callbacks, void *user_data);
 
