@@ -7,7 +7,6 @@
  * Description:
  *   C file to define parameter storage instances
  *====================================================================================*/
-#include <stdint.h>
 #include "modbus_params.h"
 
 // Here are the user defined instances for device parameters packed by 1 byte
