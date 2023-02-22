@@ -1,4 +1,4 @@
-import { danger, warn, message } from "danger"
+import { danger, warn, message, results } from "danger"
 
 /**
  * Check if MR Title contains prefix "Draft: ... or "WIP: ...".
@@ -177,3 +177,10 @@ function addRetryLink() {
     return markdown(`***\n#### :repeat: If you want to run these checks again, please retry this [DangerJS job](${retryLink})\n***`);
 }
 addRetryLink();
+
+function printSuccessLog() {
+    if (results.fails.length === 0 && results.warnings.length === 0 && results.messages.length === 0) {
+      return message('Good Job! All checks are passing!')
+    }
+}
+printSuccessLog();
