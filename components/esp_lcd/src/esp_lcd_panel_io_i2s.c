@@ -609,12 +609,13 @@ static esp_err_t i2s_lcd_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     switch (src) {
     case LCD_CLK_SRC_PLL160M:
         bus->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
-        i2s_ll_tx_clk_set_src(bus->hal.dev, I2S_CLK_SRC_PLL_160M);
         break;
     default:
         ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "unsupported clock source: %d", src);
         break;
     }
+    // I2S clock source is binary compatible with lcd_clock_source_t
+    i2s_ll_tx_clk_set_src(bus->hal.dev, (i2s_clock_src_t)src);
     i2s_ll_set_raw_mclk_div(bus->hal.dev, LCD_PERIPH_CLOCK_PRE_SCALE, 1, 0);
 
 #if CONFIG_PM_ENABLE
