@@ -18,6 +18,7 @@
 #include "hal/spi_flash_hal.h"
 #include "spi_flash_override.h"
 #include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -244,6 +245,16 @@ extern const spi_flash_guard_funcs_t g_flash_guard_no_os_ops;
  */
 void spi_flash_rom_impl_init(void);
 
+#if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
+/**
+ * @brief This functions is used to change spi flash clock source between PLL and others, which is used after system wake up from a low power mode or
+ * enter low-power mode like sleep.
+ * @param clk_src mspi(flash) clock source.
+ *
+ * @note Only called in startup. User should not call this function.
+ */
+void spi_flash_set_clock_src(soc_periph_mspi_clk_src_t clk_src);
+#endif
 
 #ifdef __cplusplus
 }

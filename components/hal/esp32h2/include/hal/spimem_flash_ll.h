@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,8 @@
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 #include "soc/pcr_struct.h"
+#include "soc/clk_tree_defs.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -399,6 +401,27 @@ static inline void spimem_flash_ll_set_read_mode(spi_mem_dev_t *dev, esp_flash_i
     dev->ctrl = ctrl;
 }
 
+__attribute__((always_inline))
+static inline void spimem_flash_ll_set_clock_source(soc_periph_mspi_clk_src_t clk_src)
+{
+    switch (clk_src) {
+    case MSPI_CLK_SRC_XTAL:
+        PCR.mspi_conf.mspi_clk_sel = 0;
+        break;
+    case MSPI_CLK_SRC_RC_FAST:
+        PCR.mspi_conf.mspi_clk_sel = 1;
+        break;
+    case MSPI_CLK_SRC_PLL_F64M:
+        PCR.mspi_conf.mspi_clk_sel = 2;
+        break;
+    case MSPI_CLK_SRC_PLL_F48M:
+        PCR.mspi_conf.mspi_clk_sel = 3;
+        break;
+    default:
+        HAL_ASSERT(false);
+    }
+}
+
 /**
  * Set clock frequency to work at.
  *
@@ -550,27 +573,24 @@ static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_
  */
 static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
 {
-// ESP32H2-TODO
-#if 0
-    // TODO: Default is PLL480M, this is hard-coded.
-    // In the future, we can get the CPU clock source by calling interface.
     uint8_t clock_val = 0;
-    switch (SPIMEM0.core_clk_sel.spi01_clk_sel) {
+    switch (PCR.mspi_conf.mspi_clk_sel) {
     case 0:
-        clock_val = 80;
+        clock_val = 32;
         break;
     case 1:
-        clock_val = 120;
+        clock_val = 8;
         break;
     case 2:
-        clock_val = 160;
+        clock_val = 64;
+        break;
+    case 3:
+        clock_val = 32;
         break;
     default:
-        abort();
+        HAL_ASSERT(false);
     }
     return clock_val;
-#endif
-    return 80;
 }
 
 /**

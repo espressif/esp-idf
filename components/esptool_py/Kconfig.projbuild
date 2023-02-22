@@ -99,6 +99,9 @@ menu "Serial flasher config"
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"
             depends on SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_64M
+            bool "64 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_64M_SUPPORTED
         config ESPTOOLPY_FLASHFREQ_60M
             bool "60 MHz"
             depends on SOC_MEMSPI_SRC_FREQ_60M_SUPPORTED
@@ -108,6 +111,9 @@ menu "Serial flasher config"
         config ESPTOOLPY_FLASHFREQ_40M
             bool "40 MHz"
             depends on SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_32M
+            bool "32 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_32M_SUPPORTED
         config ESPTOOLPY_FLASHFREQ_30M
             bool "30 MHz"
             depends on SOC_MEMSPI_SRC_FREQ_30M_SUPPORTED
@@ -120,6 +126,9 @@ menu "Serial flasher config"
         config ESPTOOLPY_FLASHFREQ_20M
             bool "20 MHz"
             depends on SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_16M
+            bool "16 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_16M_SUPPORTED
         config ESPTOOLPY_FLASHFREQ_15M
             bool "15 MHz"
             depends on SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED
@@ -138,12 +147,15 @@ menu "Serial flasher config"
         default '80m' if ESPTOOLPY_FLASHFREQ_120M
         default '80m' if ESPTOOLPY_FLASHFREQ_80M
         default '60m' if ESPTOOLPY_FLASHFREQ_60M
+        default '48m' if ESPTOOLPY_FLASHFREQ_64M # For 0xf in esptool
         default '48m' if ESPTOOLPY_FLASHFREQ_48M
+        default '24m' if ESPTOOLPY_FLASHFREQ_32M # For 0x0 in esptool
         default '30m' if ESPTOOLPY_FLASHFREQ_30M
         default '24m' if ESPTOOLPY_FLASHFREQ_24M
         default '40m' if ESPTOOLPY_FLASHFREQ_40M
         default '26m' if ESPTOOLPY_FLASHFREQ_26M
         default '20m' if ESPTOOLPY_FLASHFREQ_20M
+        default '12m' if ESPTOOLPY_FLASHFREQ_16M # For 0x2 in esptool
         default '20m' # if no clock can match in bin headers, go with minimal.
 
 
