@@ -55,9 +55,9 @@ There are several limitations to the USB Serial/JTAG console feature. These may 
 
 2. If the application enters deep sleep mode, the USB Serial/JTAG device will disappear from the system.
 
-3. For data sent in the direction of ESP32 to PC Terminal (e.g. stdout, logs), the ESP32 first writes to a small internal buffer. If this buffer becomes full (for example, if no PC Terminal is connected), the ESP32 will do a one-time wait of 50ms hoping for the PC Terminal to request the data. This can appear as a very brief 'pause' in your application.
+3. For data sent in the direction of {IDF_TARGET_NAME} to PC Terminal (e.g. stdout, logs), the {IDF_TARGET_NAME} first writes to a small internal buffer. If this buffer becomes full (for example, if no PC Terminal is connected), the {IDF_TARGET_NAME} will do a one-time wait of 50ms hoping for the PC Terminal to request the data. This can appear as a very brief 'pause' in your application.
 
-4. For data sent in the PC Terminal to ESP32 direction (e.g. console commands), many PC Terminals will wait for the ESP32 to ingest the bytes before allowing you to sending more data. This is in contrast to using a USB-to-Serial (UART) bridge chip, which will always ingest the bytes and send them to a (possibly not listening) ESP32.
+4. For data sent in the PC Terminal to {IDF_TARGET_NAME} direction (e.g. console commands), many PC Terminals will wait for the {IDF_TARGET_NAME} to ingest the bytes before allowing you to sending more data. This is in contrast to using a USB-to-Serial (UART) bridge chip, which will always ingest the bytes and send them to a (possibly not listening) {IDF_TARGET_NAME}.
 
 5. The USB Serial/JTAG device won't work in sleep modes as normal due to the lack of APB clock in sleep modes. This includes deep-sleep, light-sleep (automataic light-sleep as well).
 
