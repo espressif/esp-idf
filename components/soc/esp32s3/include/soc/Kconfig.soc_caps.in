@@ -363,10 +363,6 @@ config SOC_GDMA_SUPPORT_PSRAM
     bool
     default y
 
-config SOC_GDMA_PSRAM_MIN_ALIGN
-    int
-    default 16
-
 config SOC_GPIO_PORT
     int
     default 1
