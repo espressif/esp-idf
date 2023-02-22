@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-/****************************************************************************
+/**********************************************************************************************************************************
 * The demo shows BLE and classic Bluetooth coexistence. You can use BLE GATT server and classic bluetooth A2DP together.
 * The BLE GATT server part of the demo creates a GATT service and then starts advertising, waiting to be connected by a GATT client.
 * After the program is started, a GATT client can discover the device named "ESP_COEX_BLE_DEMO". Once the connection is established,
@@ -14,7 +14,7 @@
 * After the program is started, other bluetooth devices such as smart phones can discover the device named "ESP_COEX_A2DP_DEMO".
 * Once the connection is established, audio data can be transmitted. This will be visible in the application log including a count
 * of audio data packets.
-****************************************************************************/
+***********************************************************************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,22 +35,19 @@
 #include "esp_gap_bt_api.h"
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
-#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-// DAC DMA mode is only supported by the legacy I2S driver, it will be replaced once DAC has its own DMA dirver
-#include "driver/i2s.h"
-#else
-#include "driver/i2s_std.h"
-#endif
 
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
 #include "esp_bt_defs.h"
 #include "esp_gatt_common_api.h"
 
+/* log tag */
 #define BT_BLE_COEX_TAG             "BT_BLE_COEX"
+/* device name */
 #define BT_DEVICE_NAME              "ESP_COEX_A2DP_DEMO"
 #define BLE_ADV_NAME                "ESP_COEX_BLE_DEMO"
 
+/* BLE defines */
 #define GATTS_SERVICE_UUID_A        0x00FF
 #define GATTS_CHAR_UUID_A           0xFF01
 #define GATTS_DESCR_UUID_A          0x3333
@@ -67,6 +64,11 @@
 #define PROFILE_A_APP_ID            0
 #define PROFILE_B_APP_ID            1
 
+/* event for handler "bt_av_hdl_stack_up */
+enum {
+    BT_APP_EVT_STACK_UP = 0,
+};
+
 typedef struct {
     uint8_t  *prepare_buf;
     int      prepare_len;
@@ -75,20 +77,12 @@ typedef struct {
 static prepare_type_env_t a_prepare_write_env;
 static prepare_type_env_t b_prepare_write_env;
 
-#ifndef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-i2s_chan_handle_t tx_chan;
-#endif
-
 //Declare the static function
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 static void gatts_profile_b_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param);
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param);
 
-/* event for handler "bt_av_hdl_stack_up */
-enum {
-    BT_APP_EVT_STACK_UP = 0,
-};
 static uint8_t ble_char_value_str[] = {0x11, 0x22, 0x33};
 esp_gatt_char_prop_t a_property = 0;
 esp_gatt_char_prop_t b_property = 0;
@@ -607,82 +601,110 @@ static void ble_gatts_init(void)
     }
 }
 
-void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
+/*******************************
+ * STATIC FUNCTION DEFINITIONS
+ ******************************/
+
+static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
+    uint8_t *bda = NULL;
+
     switch (event) {
+    /* when authentication completed, this event comes */
     case ESP_BT_GAP_AUTH_CMPL_EVT: {
         if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
             ESP_LOGI(BT_BLE_COEX_TAG, "authentication success: %s", param->auth_cmpl.device_name);
             esp_log_buffer_hex(BT_BLE_COEX_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
         } else {
-            ESP_LOGE(BT_BLE_COEX_TAG, "authentication failed, status:%d", param->auth_cmpl.stat);
+            ESP_LOGE(BT_BLE_COEX_TAG, "authentication failed, status: %d", param->auth_cmpl.stat);
         }
         break;
     }
+
 #if (CONFIG_BT_SSP_ENABLED == true)
+    /* when Security Simple Pairing user confirmation requested, this event comes */
     case ESP_BT_GAP_CFM_REQ_EVT:
         ESP_LOGI(BT_BLE_COEX_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %d", param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
         break;
+    /* when Security Simple Pairing passkey notified, this event comes */
     case ESP_BT_GAP_KEY_NOTIF_EVT:
-        ESP_LOGI(BT_BLE_COEX_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey:%d", param->key_notif.passkey);
+        ESP_LOGI(BT_BLE_COEX_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey: %d", param->key_notif.passkey);
         break;
+    /* when Security Simple Pairing passkey requested, this event comes */
     case ESP_BT_GAP_KEY_REQ_EVT:
         ESP_LOGI(BT_BLE_COEX_TAG, "ESP_BT_GAP_KEY_REQ_EVT Please enter passkey!");
         break;
 #endif
-    case ESP_BT_GAP_MODE_CHG_EVT:
-        ESP_LOGI(BT_BLE_COEX_TAG, "ESP_BT_GAP_MODE_CHG_EVT mode:%d", param->mode_chg.mode);
-        break;
 
+    /* when GAP mode changed, this event comes */
+    case ESP_BT_GAP_MODE_CHG_EVT:
+        ESP_LOGI(BT_BLE_COEX_TAG, "ESP_BT_GAP_MODE_CHG_EVT mode: %d", param->mode_chg.mode);
+        break;
+    /* when ACL connection completed, this event comes */
+    case ESP_BT_GAP_ACL_CONN_CMPL_STAT_EVT:
+        bda = (uint8_t *)param->acl_conn_cmpl_stat.bda;
+        ESP_LOGI(BT_BLE_COEX_TAG, "ESP_BT_GAP_ACL_CONN_CMPL_STAT_EVT Connected to [%02x:%02x:%02x:%02x:%02x:%02x], status: 0x%x",
+                 bda[0], bda[1], bda[2], bda[3], bda[4], bda[5], param->acl_conn_cmpl_stat.stat);
+        break;
+    /* when ACL disconnection completed, this event comes */
+    case ESP_BT_GAP_ACL_DISCONN_CMPL_STAT_EVT:
+        bda = (uint8_t *)param->acl_disconn_cmpl_stat.bda;
+        ESP_LOGI(BT_BLE_COEX_TAG, "ESP_BT_GAP_ACL_DISC_CMPL_STAT_EVT Disconnected from [%02x:%02x:%02x:%02x:%02x:%02x], reason: 0x%x",
+                 bda[0], bda[1], bda[2], bda[3], bda[4], bda[5], param->acl_disconn_cmpl_stat.reason);
+        break;
+    /* others */
     default: {
         ESP_LOGI(BT_BLE_COEX_TAG, "event: %d", event);
         break;
     }
     }
-    return;
 }
 
-/* handler for bluetooth stack enabled events */
 static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 {
-    ESP_LOGD(BT_BLE_COEX_TAG, "%s evt %d", __func__, event);
-    switch (event) {
-    case BT_APP_EVT_STACK_UP: {
-        /* set up bt device name */
-        esp_bt_dev_set_device_name(BT_DEVICE_NAME);
+    ESP_LOGD(BT_BLE_COEX_TAG, "%s event: %d", __func__, event);
 
+    switch (event) {
+    /* when do the stack up, this event comes */
+    case BT_APP_EVT_STACK_UP: {
+        esp_bt_dev_set_device_name(BT_DEVICE_NAME);
         esp_bt_gap_register_callback(bt_app_gap_cb);
 
-        /* initialize AVRCP controller */
-        esp_avrc_ct_init();
+        assert(esp_avrc_ct_init() == ESP_OK);
         esp_avrc_ct_register_callback(bt_app_rc_ct_cb);
-        /* initialize AVRCP target */
-        assert (esp_avrc_tg_init() == ESP_OK);
+        assert(esp_avrc_tg_init() == ESP_OK);
         esp_avrc_tg_register_callback(bt_app_rc_tg_cb);
 
         esp_avrc_rn_evt_cap_mask_t evt_set = {0};
         esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_SET, &evt_set, ESP_AVRC_RN_VOLUME_CHANGE);
         assert(esp_avrc_tg_set_rn_evt_cap(&evt_set) == ESP_OK);
 
-        /* initialize A2DP sink */
+        assert(esp_a2d_sink_init() == ESP_OK);
         esp_a2d_register_callback(&bt_app_a2d_cb);
         esp_a2d_sink_register_data_callback(bt_app_a2d_data_cb);
-        esp_a2d_sink_init();
+
+        /* Get the default value of the delay value */
+        esp_a2d_sink_get_delay_value();
 
         /* set discoverable and connectable mode, wait to be connected */
         esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
         break;
     }
+    /* others */
     default:
-        ESP_LOGE(BT_BLE_COEX_TAG, "%s unhandled evt %d", __func__, event);
+        ESP_LOGE(BT_BLE_COEX_TAG, "%s unhandled event: %d", __func__, event);
         break;
     }
 }
 
+/*******************************
+ * MAIN ENTRY POINT
+ ******************************/
+
 void app_main(void)
 {
-    /* Initialize NVS — it is used to store PHY calibration data */
+    /* initialize NVS — it is used to store PHY calibration data */
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -690,87 +712,32 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(err);
 
-#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-    /* I2S configuration parameters */
-    i2s_config_t i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
-        .sample_rate = 44100,
-        .bits_per_sample = 16,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,       /* 2-channels */
-        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
-        .dma_buf_count = 6,
-        .dma_buf_len = 60,
-        .intr_alloc_flags = 0,                              /* default interrupt priority */
-        .tx_desc_auto_clear = true                          /* auto clear tx descriptor on underflow */
-    };
-
-    /* enable I2S */
-    ESP_ERROR_CHECK(i2s_driver_install(0, &i2s_config, 0, NULL));
-    ESP_ERROR_CHECK(i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN));
-    ESP_ERROR_CHECK(i2s_set_pin(0, NULL));
-#else
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-    chan_cfg.auto_clear = true;
-    i2s_std_config_t std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(44100),
-        .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
-        .gpio_cfg = {
-            .mclk = I2S_GPIO_UNUSED,
-            .bclk = CONFIG_EXAMPLE_I2S_BCK_PIN,
-            .ws = CONFIG_EXAMPLE_I2S_LRCK_PIN,
-            .dout = CONFIG_EXAMPLE_I2S_DATA_PIN,
-            .din = I2S_GPIO_UNUSED,
-            .invert_flags = {
-                .mclk_inv = false,
-                .bclk_inv = false,
-                .ws_inv = false,
-            },
-        },
-    };
-    /* enable I2S */
-    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_chan, NULL));
-    ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_chan, &std_cfg));
-    ESP_ERROR_CHECK(i2s_channel_enable(tx_chan));
-#endif
-
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     if ((err = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
         ESP_LOGE(BT_BLE_COEX_TAG, "%s initialize controller failed: %s\n", __func__, esp_err_to_name(err));
         return;
     }
-
     if ((err = esp_bt_controller_enable(ESP_BT_MODE_BTDM)) != ESP_OK) {
         ESP_LOGE(BT_BLE_COEX_TAG, "%s enable controller failed: %s\n", __func__, esp_err_to_name(err));
         return;
     }
-
     if ((err = esp_bluedroid_init()) != ESP_OK) {
         ESP_LOGE(BT_BLE_COEX_TAG, "%s initialize bluedroid failed: %s\n", __func__, esp_err_to_name(err));
         return;
     }
-
     if ((err = esp_bluedroid_enable()) != ESP_OK) {
         ESP_LOGE(BT_BLE_COEX_TAG, "%s enable bluedroid failed: %s\n", __func__, esp_err_to_name(err));
         return;
     }
 
-    /* create application task */
-    bt_app_task_start_up();
-
-    /* Bluetooth device name, connection mode and profile set up */
-    bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
-
 #if (CONFIG_BT_SSP_ENABLED == true)
-    /* Set default parameters for Secure Simple Pairing */
+    /* set default parameters for Secure Simple Pairing */
     esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
     esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_IO;
     esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
 #endif
 
-    /*
-     * Set default parameters for Legacy Pairing
-     * Use fixed pin code
-     */
+    /* set default parameters for Legacy Pairing (use fixed pin code 1234) */
     esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
     esp_bt_pin_code_t pin_code;
     pin_code[0] = '1';
@@ -778,6 +745,10 @@ void app_main(void)
     pin_code[2] = '3';
     pin_code[3] = '4';
     esp_bt_gap_set_pin(pin_type, 4, pin_code);
+
+    bt_app_task_start_up();
+    /* bluetooth device name, connection mode and profile set up */
+    bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
 
     //gatt server init
     ble_gatts_init();
