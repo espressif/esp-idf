@@ -146,9 +146,13 @@
 
     {IDF_TARGET_NAME} 上的 USB 使用 **{IDF_TARGET_USB_PIN_DP}** 作为 **D+**， **{IDF_TARGET_USB_PIN_DM}** 作为 **D-**。
 
-    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
+    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED and not esp32s3
 
         .. note:: {IDF_TARGET_NAME} 仅支持 *USB CDC and JTAG*。
+
+        首次烧录需要手动设置 {IDF_TARGET_NAME} 进入下载模式。请按住 ``BOOT`` 按钮，同时按一下 ``RESET`` 按钮。之后，松开 ``BOOT`` 按钮。
+
+    .. only:: esp32s3
 
         首次烧录需要手动设置 {IDF_TARGET_NAME} 进入下载模式。请按住 ``BOOT`` 按钮，同时按一下 ``RESET`` 按钮。之后，松开 ``BOOT`` 按钮。
 
