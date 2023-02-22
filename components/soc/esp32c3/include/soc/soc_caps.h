@@ -334,6 +334,7 @@
 #define SOC_TWAI_SUPPORTS_RX_STATUS     1
 
 /*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 1
 #define SOC_EFUSE_DIS_PAD_JTAG 1
 #define SOC_EFUSE_DIS_USB_JTAG 1
 #define SOC_EFUSE_DIS_DIRECT_BOOT 1

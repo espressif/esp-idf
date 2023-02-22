@@ -71,7 +71,8 @@ def test_examples_efuse_with_virt_flash_enc(dut: Dut) -> None:
         else:
             dut.expect('Writing EFUSE_BLK_KEY0 with purpose 4')
         dut.expect('Not disabling UART bootloader encryption')
-        dut.expect('Disable UART bootloader cache...')
+        if dut.app.target != 'esp32h2':
+            dut.expect('Disable UART bootloader cache...')
         dut.expect('Disable JTAG...')
     dut.expect('bootloader encrypted successfully')
     dut.expect('partition table encrypted and loaded successfully')
@@ -113,7 +114,8 @@ def test_examples_efuse_with_virt_flash_enc_aes_256(dut: Dut) -> None:
     dut.expect('Writing EFUSE_BLK_KEY0 with purpose 2')
     dut.expect('Writing EFUSE_BLK_KEY1 with purpose 3')
     dut.expect('Not disabling UART bootloader encryption')
-    dut.expect('Disable UART bootloader cache...')
+    if dut.app.target != 'esp32h2':
+        dut.expect('Disable UART bootloader cache...')
     dut.expect('Disable JTAG...')
 
     dut.expect('bootloader encrypted successfully')
@@ -182,7 +184,8 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(dut: Dut) -> None:
         dut.expect('Disable ROM BASIC interpreter fallback...')
     else:
         dut.expect('Not disabling UART bootloader encryption')
-        dut.expect('Disable UART bootloader cache...')
+        if dut.app.target != 'esp32h2':
+            dut.expect('Disable UART bootloader cache...')
         dut.expect('Disable JTAG...')
     dut.expect('bootloader encrypted successfully')
     dut.expect('partition table encrypted and loaded successfully')
@@ -235,7 +238,8 @@ def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
         else:
             dut.expect('Writing EFUSE_BLK_KEY0 with purpose 4')
         dut.expect('Disable UART bootloader encryption')
-        dut.expect('Disable UART bootloader cache...')
+        if dut.app.target != 'esp32h2':
+            dut.expect('Disable UART bootloader cache...')
         dut.expect('Disable JTAG...')
     dut.expect('bootloader encrypted successfully')
     dut.expect('partition table encrypted and loaded successfully')
@@ -917,7 +921,8 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
         dut.expect('Writing EFUSE_BLK_KEY1 with purpose 4')
 
     dut.expect('Not disabling UART bootloader encryption')
-    dut.expect('Disable UART bootloader cache...')
+    if dut.app.target != 'esp32h2':
+        dut.expect('Disable UART bootloader cache...')
     dut.expect('Disable JTAG...')
 
     if dut.app.target == 'esp32c2':

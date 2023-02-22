@@ -425,6 +425,7 @@
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 
 /*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 1
 #define SOC_EFUSE_DIS_DOWNLOAD_DCACHE 1
 #define SOC_EFUSE_HARD_DIS_JTAG 1
 #define SOC_EFUSE_DIS_USB_JTAG 1
