@@ -74,5 +74,4 @@ else
     eval (env _IDF.PY_COMPLETE=fish_source idf.py)
 end
 
-
-set -e __main
+functions -e __main
