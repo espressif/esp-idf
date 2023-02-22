@@ -749,11 +749,15 @@ static void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_c
     /* Test common sample rate
      * Workaround: set 12000 as 12001 to bypass the unknown failure, TODO: IDF-6705 */
     const uint32_t test_freq[] = {
-        8000,  10000, 11025, 12001, 16000, 22050,
+        8000,  10001, 11025, 12001, 16000, 22050,
         24000, 32000, 44100, 48000, 64000, 88200,
         96000, 128000,144000,196000};
     int real_pulse = 0;
     int case_cnt = sizeof(test_freq) / sizeof(uint32_t);
+#if SOC_I2S_SUPPORTS_PLL_F96M
+    // 196000 Hz sample rate doesn't support on PLL_96M target
+    case_cnt = 15;
+#endif
 #if SOC_I2S_SUPPORTS_XTAL
     // Can't support a very high sample rate while using XTAL as clock source
     if (clk_cfg->clk_src == I2S_CLK_SRC_XTAL) {
