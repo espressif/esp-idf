@@ -336,7 +336,8 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
     }
     /* when passthrough responsed, this event comes */
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT: {
-        ESP_LOGI(BT_RC_CT_TAG, "AVRC passthrough rsp: key_code 0x%x, key_state %d", rc->psth_rsp.key_code, rc->psth_rsp.key_state);
+        ESP_LOGI(BT_RC_CT_TAG, "AVRC passthrough rsp: key_code 0x%x, key_state %d, rsp_code %d", rc->psth_rsp.key_code,
+                    rc->psth_rsp.key_state, rc->psth_rsp.rsp_code);
         break;
     }
     /* when metadata responsed, this event comes */
