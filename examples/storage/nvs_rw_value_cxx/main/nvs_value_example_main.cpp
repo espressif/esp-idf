@@ -32,9 +32,8 @@ extern "C" void app_main(void)
     // Open
     printf("\n");
     printf("Opening Non-Volatile Storage (NVS) handle... ");
-    esp_err_t result;
     // Handle will automatically close when going out of scope or when it's reset.
-    std::shared_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle("storage", NVS_READWRITE, &result);
+    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle("storage", NVS_READWRITE, &err);
     if (err != ESP_OK) {
         printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
     } else {
