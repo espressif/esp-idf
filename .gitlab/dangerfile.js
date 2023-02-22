@@ -62,9 +62,14 @@ function checkMrJiraLinks() {
     const mrCommitMessages = danger.gitlab.commits.map(commit => commit.message);
 
     const matchBlockRelated = mrDescription.match(/\#\# Related.*$/s); // Match MR description starting with line ## Related till the end of MR description
+    const noRelatedIssues = /No related issues/.test(matchBlockRelated ? matchBlockRelated[0] : '');  // Check if there is "No related issues"
     const testJiraLabels = /[A-Z]+-[0-9]+/.test(matchBlockRelated ? matchBlockRelated[0] : ''); // Test if pattern of Jira label "JIRA-1234" or "RDT-311" is in section Related
     const ghIssueTicket = /IDFGH-[0-9]+/.test(matchBlockRelated ? matchBlockRelated[0] : ''); // Check if there is JIRA link starts with "IDFGH-*" in MR description, section "Related"
     const testGithubLink = /Closes https:\/\/github\.com\/espressif\/esp-idf\/issues\/[0-9]+/
+
+    if (mrDescription.toUpperCase().includes("## RELATED") && noRelatedIssues) {
+        return
+    }
 
     if (!mrDescription.toUpperCase().includes("## RELATED") || !testJiraLabels) { // Missing section "Related" or missing links to JIRA tickets
         return warn("Please add links to JIRA issues to the MR description section `Related`.");
