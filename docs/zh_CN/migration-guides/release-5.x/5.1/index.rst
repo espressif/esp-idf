@@ -10,3 +10,4 @@
     peripherals
     storage
     networking
+    system
