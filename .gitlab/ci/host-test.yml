@@ -40,16 +40,6 @@ test_partition_table_on_host:
     - cd components/partition_table/test_gen_esp32part_host
     - ./gen_esp32part_tests.py
 
-test_wl_on_host:
-  extends: .host_test_template
-  artifacts:
-    paths:
-      - components/wear_levelling/test_wl_host/coverage_report.zip
-    expire_in: 1 week
-  script:
-    - cd components/wear_levelling/test_wl_host
-    - make test
-
 test_fatfs_on_host:
   extends: .host_test_template
   script:

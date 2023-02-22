@@ -2,6 +2,7 @@ SOURCE_FILES := \
 	$(addprefix ../, \
 	wear_levelling.cpp \
 	crc32.cpp \
+	../esp_rom/linux/esp_rom_crc.c \
 	WL_Flash.cpp \
 	Partition.cpp \
 	)
