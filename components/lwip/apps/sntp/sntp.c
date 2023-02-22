@@ -255,3 +255,8 @@ void esp_sntp_servermode_dhcp(bool enable)
 }
 
 #endif /* LWIP_DHCP_GET_NTP_SRV */
+
+bool esp_sntp_enabled(void)
+{
+    return sntp_enabled();
+}
