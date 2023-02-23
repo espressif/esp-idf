@@ -72,6 +72,7 @@
 #include "esp_private/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/rtc.h"
+#include "esp_private/mspi_timing_tuning.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32H4
@@ -461,6 +462,11 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         pd_flags &= ~RTC_SLEEP_PD_INT_8M;
     }
 
+    // Turn down mspi clock speed
+#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    mspi_timing_change_speed_mode_cache_safe(true);
+#endif
+
     // Set mspi clock to a low-power one.
 #if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
     spi_flash_set_clock_src(MSPI_CLK_SRC_ROM_DEFAULT);
@@ -637,6 +643,11 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     // Set mspi clock to ROM default one.
 #if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
     spi_flash_set_clock_src(MSPI_CLK_SRC_DEFAULT);
+#endif
+
+    // Speed up mspi clock freq
+#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    mspi_timing_change_speed_mode_cache_safe(false);
 #endif
 
     if (!deep_sleep) {
