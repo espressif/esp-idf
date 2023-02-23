@@ -101,3 +101,5 @@ if test $click_version -lt 8
 else
     eval (env _IDF.PY_COMPLETE=fish_source idf.py)
 end
+
+functions -e __main
