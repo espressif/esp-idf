@@ -106,7 +106,7 @@ void esp_task_wdt_impl_timer_free(twdt_ctx_t obj)
         ESP_ERROR_CHECK(esp_intr_disable(ctx->intr_handle));
 
         /* Disable the Timer Group module */
-        periph_module_enable(TWDT_PERIPH_MODULE);
+        periph_module_disable(TWDT_PERIPH_MODULE);
 
         /* Deregister interrupt */
         ESP_ERROR_CHECK(esp_intr_free(ctx->intr_handle));
