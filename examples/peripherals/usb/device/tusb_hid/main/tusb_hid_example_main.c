@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -167,6 +167,7 @@ void app_main(void)
     const tinyusb_config_t tusb_cfg = {
         .device_descriptor = NULL,
         .string_descriptor = hid_string_descriptor,
+        .string_descriptor_count = sizeof(hid_string_descriptor) / sizeof(hid_string_descriptor[0]),
         .external_phy = false,
         .configuration_descriptor = hid_configuration_descriptor,
     };

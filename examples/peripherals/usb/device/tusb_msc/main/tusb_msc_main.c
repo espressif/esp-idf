@@ -482,6 +482,7 @@ void app_main(void)
     const tinyusb_config_t tusb_cfg = {
         .device_descriptor = &descriptor_config,
         .string_descriptor = string_desc_arr,
+        .string_descriptor_count = sizeof(string_desc_arr) / sizeof(string_desc_arr[0]),
         .external_phy = false,
         .configuration_descriptor = desc_configuration,
         .self_powered = true,
