@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@ extern "C" {
  *
  * @note Only used in this file
  */
-#define MMU_LL_PAGE_SIZE                   (CONFIG_MMU_PAGE_SIZE)
+#define MMU_LL_PAGE_SIZE                   (SOC_MMU_PAGE_SIZE)
 
 /**
  * Get MMU page size

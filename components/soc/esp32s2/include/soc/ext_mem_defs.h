@@ -109,7 +109,7 @@ extern "C" {
 #define MMU_VALID_VAL_MASK 0x3fff
 /**
  * Max MMU available paddr page num.
- * `MMU_MAX_PADDR_PAGE_NUM * CONFIG_MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
+ * `MMU_MAX_PADDR_PAGE_NUM * SOC_MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
  * 16384 * 64KB, means MMU can support 1GB paddr at most
  */
 #define MMU_MAX_PADDR_PAGE_NUM    16384
