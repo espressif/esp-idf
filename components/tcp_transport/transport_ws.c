@@ -54,6 +54,7 @@ typedef struct {
     char *user_agent;
     char *headers;
     int http_status_code;
+    char *auth;
     bool propagate_control_frames;
     ws_transport_frame_state_t frame_state;
     esp_transport_handle_t parent;
@@ -206,6 +207,16 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         if (r <= 0 || len >= WS_BUFFER_SIZE) {
             ESP_LOGE(TAG, "Error in request generation"
                      "(snprintf of subprotocol returned %d, desired request len: %d, buffer size: %d", r, len, WS_BUFFER_SIZE);
+            return -1;
+        }
+    }
+    if (ws->auth) {
+        ESP_LOGD(TAG, "Authorization: %s", ws->auth);
+        int r = snprintf(ws->buffer + len, WS_BUFFER_SIZE - len, "Authorization: %s\r\n", ws->auth);
+        len += r;
+        if (r <= 0 || len >= WS_BUFFER_SIZE) {
+            ESP_LOGE(TAG, "Error in request generation"
+                     "(snprintf of authorization returned %d, desired request len: %d, buffer size: %d", r, len, WS_BUFFER_SIZE);
             return -1;
         }
     }
@@ -586,6 +597,7 @@ static esp_err_t ws_destroy(esp_transport_handle_t t)
     free(ws->sub_protocol);
     free(ws->user_agent);
     free(ws->headers);
+    free(ws->auth);
     free(ws);
     return 0;
 }
@@ -730,6 +742,26 @@ esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *hea
     return ESP_OK;
 }
 
+esp_err_t esp_transport_ws_set_auth(esp_transport_handle_t t, const char *auth)
+{
+    if (t == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (ws->auth) {
+        free(ws->auth);
+    }
+    if (auth == NULL) {
+        ws->auth = NULL;
+        return ESP_OK;
+    }
+    ws->auth = strdup(auth);
+    if (ws->auth == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    return ESP_OK;
+}
+
 esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transport_ws_config_t *config)
 {
     if (t == NULL) {
@@ -751,6 +783,10 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
     }
     if (config->headers) {
         err = esp_transport_ws_set_headers(t, config->headers);
+        ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
+    }
+    if (config->auth) {
+        err = esp_transport_ws_set_auth(t, config->auth);
         ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
     }
     ws->propagate_control_frames = config->propagate_control_frames;
