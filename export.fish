@@ -1,10 +1,5 @@
 # This script should be sourced, not executed.
 
-# `idf_tools.py export --deactivate` create statement, with keyword unset, but fish shell support only `set --erase variable`
-function unset
-    set --erase $argv
-end
-
 function __main
     set script_dir (dirname (realpath (status -f)))
     if not set -q IDF_PATH
