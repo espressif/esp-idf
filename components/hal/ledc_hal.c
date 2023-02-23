@@ -11,6 +11,7 @@
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 #include "hal/assert.h"
+#include "esp_rom_sys.h"
 
 void ledc_hal_init(ledc_hal_context_t *hal, ledc_mode_t speed_mode)
 {
@@ -58,3 +59,14 @@ void ledc_hal_get_clk_cfg(ledc_hal_context_t *hal, ledc_timer_t timer_sel, ledc_
 
     *clk_cfg = driver_clk;
 }
+
+#if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+void ledc_hal_get_fade_param(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t range, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step)
+{
+    ledc_ll_set_duty_range_rd_addr(hal->dev, hal->speed_mode, channel_num, range);
+    // On ESP32C6/H2, gamma ram read/write has the APB and LEDC clock domain sync issue
+    // To make sure the parameter read is from the correct gamma ram addr, add a delay in between to ensure syncronization
+    esp_rom_delay_us(5);
+    ledc_ll_get_duty_param(hal->dev, hal->speed_mode, channel_num, dir, cycle, scale, step);
+}
+#endif

@@ -84,7 +84,7 @@ static void timer_duty_set_get(ledc_mode_t speed_mode, ledc_channel_t channel, u
 {
     TEST_ESP_OK(ledc_set_duty(speed_mode, channel, duty));
     TEST_ESP_OK(ledc_update_duty(speed_mode, channel));
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    vTaskDelay(5 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(duty, ledc_get_duty(speed_mode, channel));
 }
 
@@ -103,6 +103,7 @@ static void timer_duty_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, 
 
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+    vTaskDelay(5 / portTICK_PERIOD_MS);
 
     // duty ratio: (2^duty)/(2^timer_bit)
     timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, 0);
@@ -389,6 +390,80 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
     ledc_fade_func_uninstall();
 }
 #endif // SOC_LEDC_SUPPORT_FADE_STOP
+
+#if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+TEST_CASE("LEDC gamma ram write and read test", "[ledc]")
+{
+    const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
+    fade_setup();
+
+    // Construct fade parameters
+    ledc_fade_param_config_t *fade_params = (ledc_fade_param_config_t *) heap_caps_calloc(SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX, sizeof(ledc_fade_param_config_t), MALLOC_CAP_DEFAULT);
+    for (int i = 0; i < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX; i++) {
+        fade_params[i].dir = (i + 1) % 2;
+        fade_params[i].step_num = i + 1;
+        fade_params[i].cycle_num = i + 2;
+        fade_params[i].scale = i + 3;
+    }
+
+    // Write into gamma ram
+    TEST_ESP_OK(ledc_set_multi_fade(test_speed_mode, LEDC_CHANNEL_0, 0, fade_params, SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX));
+
+    // Read out from gamma ram and check correctness
+    for (int i = 0; i < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX; i++) {
+        uint32_t dir, step, cycle, scale;
+        ledc_read_fade_param(test_speed_mode, LEDC_CHANNEL_0, i, &dir, &cycle, &scale, &step);
+        TEST_ASSERT_EQUAL_INT32((i + 1) % 2, dir);
+        TEST_ASSERT_EQUAL_INT32(i + 1, step);
+        TEST_ASSERT_EQUAL_INT32(i + 2, cycle);
+        TEST_ASSERT_EQUAL_INT32(i + 3, scale);
+    }
+
+    // Deinitialize fade service
+    ledc_fade_func_uninstall();
+}
+
+TEST_CASE("LEDC multi fade test", "[ledc]")
+{
+    const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
+    fade_setup();
+
+    // Construct fade parameters
+    const ledc_fade_param_config_t fade_params[] = {
+        {.dir = 1, .step_num = 100, .cycle_num = 1, .scale = 1},
+        {.dir = 1, .step_num = 50, .cycle_num = 2, .scale = 2},
+        {.dir = 1, .step_num = 200, .cycle_num = 10, .scale = 5},
+        {.dir = 0, .step_num = 100, .cycle_num = 5, .scale = 5},
+        {.dir = 1, .step_num = 1000, .cycle_num = 1, .scale = 1},
+        {.dir = 0, .step_num = 200, .cycle_num = 1, .scale = 1},
+        {.dir = 1, .step_num = 1, .cycle_num = 1000, .scale = 1000},
+    };
+    uint32_t fade_range = 7;
+    int32_t start_duty = 2000;
+    int32_t end_duty = start_duty;
+    uint32_t total_cycles = 0;
+    for (int i = 0; i < fade_range; i++) {
+        end_duty += ((fade_params[i].dir == 1) ? (1) : (-1)) * fade_params[i].step_num * fade_params[i].scale;
+        total_cycles += fade_params[i].step_num * fade_params[i].cycle_num;
+    }
+
+    TEST_ESP_OK(ledc_set_multi_fade(test_speed_mode, LEDC_CHANNEL_0, start_duty, fade_params, fade_range));
+
+    int64_t fade_start, fade_end;
+    fade_start = esp_timer_get_time();
+    TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_WAIT_DONE));
+    fade_end = esp_timer_get_time();
+    int64_t time_ms = (fade_end - fade_start) / 1000;
+    // Check time escaped is expected
+    // The time it takes to fade should exactly match with the given parameters, therefore, acceptable error range is small
+    TEST_ASSERT_TRUE(llabs(time_ms - total_cycles * 1000 / TEST_PWM_FREQ) < 2);
+    // Check the duty at the end of the fade
+    TEST_ASSERT_EQUAL_INT32((uint32_t)end_duty, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+
+    // Deinitialize fade service
+    ledc_fade_func_uninstall();
+}
+#endif // SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
 
 #if SOC_PCNT_SUPPORTED // Note. C3, C2, H4 do not have PCNT peripheral, the following test cases cannot be tested
 

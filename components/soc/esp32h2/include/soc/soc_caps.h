@@ -225,7 +225,9 @@
 #define SOC_LEDC_CHANNEL_NUM                (6)
 #define SOC_LEDC_TIMER_BIT_WIDTH            (20)
 #define SOC_LEDC_SUPPORT_FADE_STOP          (1)
-#define SOC_LEDC_GAMMA_FADE_RANGE_MAX       (16)
+#define SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED (1)
+#define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
+#define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
 
 // TODO: IDF-6332 (Copy from esp32c6, need check)
 /*-------------------------- MPU CAPS ----------------------------------------*/

@@ -338,17 +338,17 @@ void ledc_hal_set_duty_cycle(ledc_hal_context_t *hal, ledc_channel_t channel_num
  */
 void ledc_hal_set_duty_scale(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t duty_scale);
 
-#if SOC_LEDC_GAMMA_FADE_RANGE_MAX > 1
+#if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
 /**
- * @brief Set the range number of the specified duty configurations written to gamma_wr register
+ * @brief Set the range number of the specified duty configurations to be written from gamma_wr register to gamma ram
  *
  * @param hal Context of the HAL layer
  * @param channel_num LEDC channel index, select from ledc_channel_t
- * @param duty_range Range index (0-15), it specifies to which range the configurations in gamma_wr register apply
+ * @param duty_range Range index (0 - (SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX-1)), it specifies to which range in gamma ram to write
  *
  * @return None
  */
-void ledc_hal_set_duty_range(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t duty_range);
+void ledc_hal_set_duty_range_wr_addr(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t duty_range);
 
 /**
  * @brief Set the total number of ranges in one fading
@@ -360,7 +360,33 @@ void ledc_hal_set_duty_range(ledc_hal_context_t *hal, ledc_channel_t channel_num
  * @return None
  */
 void ledc_hal_set_range_number(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t range_num);
-#endif //SOC_LEDC_GAMMA_FADE_RANGE_MAX > 1
+
+/**
+ * @brief Get the total number of ranges in one fading
+ *
+ * @param hal Context of the HAL layer
+ * @param channel_num LEDC channel index, select from ledc_channel_t
+ * @param range_num Pointer to accept fade range number
+ *
+ * @return None
+ */
+void ledc_hal_get_range_number(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t *range_num);
+
+/**
+ * @brief Read the fade parameters that are stored in gamma ram for a certain fade range
+ *
+ * @param hal Context of the HAL layer
+ * @param channel_num LEDC channel index, select from ledc_channel_t
+ * @param range Range index (0 - (SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX-1)), it specifies to which range in gamma ram to read
+ * @param dir Pointer to accept fade direction value
+ * @param cycle Pointer to accept fade cycle value
+ * @param scale Pointer to accept fade scale value
+ * @param step Pointer to accept fade step value
+ *
+ * @return None
+ */
+void ledc_hal_get_fade_param(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t range, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step);
+#endif //SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
 
 /**
  * @brief Get interrupt status of the specified channel
