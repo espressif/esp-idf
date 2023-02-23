@@ -19,18 +19,17 @@ extern "C" {
 #endif
 
 /*IRAM0 is connected with Cache IBUS0*/
-#define IRAM0_ADDRESS_LOW               0x40000000
-#define IRAM0_ADDRESS_HIGH              0x44000000
+#define IRAM0_ADDRESS_LOW               0x4037C000
+#define IRAM0_ADDRESS_HIGH              0x403E0000
 #define IRAM0_CACHE_ADDRESS_LOW	        0x42000000
 #define IRAM0_CACHE_ADDRESS_HIGH        0x42800000
 
 /*DRAM0 is connected with Cache DBUS0*/
-#define DRAM0_ADDRESS_LOW               0x3C000000
-#define DRAM0_ADDRESS_HIGH              0x40000000
+#define DRAM0_ADDRESS_LOW               0x3FC80000
+#define DRAM0_ADDRESS_HIGH              0x3FCE0000
 #define DRAM0_CACHE_ADDRESS_LOW         0x3C000000
 #define DRAM0_CACHE_ADDRESS_HIGH        0x3C800000
 #define DRAM0_CACHE_OPERATION_HIGH      DRAM0_CACHE_ADDRESS_HIGH
-#define ESP_CACHE_TEMP_ADDR             0x3C000000
 
 #define BUS_SIZE(bus_name)                 (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
 #define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
