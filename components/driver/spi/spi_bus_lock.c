@@ -13,6 +13,7 @@
 #include "soc/soc_caps.h"
 #include "stdatomic.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include <strings.h>
 #include "esp_heap_caps.h"
 
@@ -256,12 +257,6 @@ struct spi_bus_lock_dev_t {
 portMUX_TYPE s_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 DRAM_ATTR static const char TAG[] = "bus_lock";
-
-#define LOCK_CHECK(a, str, ret_val, ...) \
-    if (!(a)) { \
-        ESP_LOGE(TAG,"%s(%d): "str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-        return (ret_val); \
-    }
 
 static inline int mask_get_id(uint32_t mask);
 static inline int dev_lock_get_id(spi_bus_lock_dev_t *dev_lock);
@@ -709,7 +704,7 @@ IRAM_ATTR bool spi_bus_lock_touch(spi_bus_lock_dev_handle_t dev_handle)
  ******************************************************************************/
 IRAM_ATTR esp_err_t spi_bus_lock_acquire_start(spi_bus_lock_dev_t *dev_handle, TickType_t wait)
 {
-    LOCK_CHECK(wait == portMAX_DELAY, "timeout other than portMAX_DELAY not supported", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE_ISR(wait == portMAX_DELAY, ESP_ERR_INVALID_ARG, TAG, "timeout other than portMAX_DELAY not supported");
 
     spi_bus_lock_t* lock = dev_handle->parent;
 
@@ -737,7 +732,7 @@ IRAM_ATTR esp_err_t spi_bus_lock_acquire_end(spi_bus_lock_dev_t *dev_handle)
 {
     //release the bus
     spi_bus_lock_t* lock = dev_handle->parent;
-    LOCK_CHECK(lock->acquiring_dev == dev_handle, "Cannot release a lock that hasn't been acquired.", ESP_ERR_INVALID_STATE);
+    ESP_RETURN_ON_FALSE_ISR(lock->acquiring_dev == dev_handle, ESP_ERR_INVALID_STATE, TAG, "Cannot release a lock that hasn't been acquired.");
 
     acquire_end_core(dev_handle);
 
@@ -772,8 +767,9 @@ SPI_MASTER_ATTR esp_err_t spi_bus_lock_bg_request(spi_bus_lock_dev_t *dev_handle
 IRAM_ATTR esp_err_t spi_bus_lock_wait_bg_done(spi_bus_lock_dev_handle_t dev_handle, TickType_t wait)
 {
     spi_bus_lock_t *lock = dev_handle->parent;
-    LOCK_CHECK(lock->acquiring_dev == dev_handle, "Cannot wait for a device that is not acquired", ESP_ERR_INVALID_STATE);
-    LOCK_CHECK(wait == portMAX_DELAY, "timeout other than portMAX_DELAY not supported", ESP_ERR_INVALID_ARG);
+
+    ESP_RETURN_ON_FALSE_ISR(lock->acquiring_dev == dev_handle, ESP_ERR_INVALID_STATE, TAG, "Cannot wait for a device that is not acquired");
+    ESP_RETURN_ON_FALSE_ISR(wait == portMAX_DELAY, ESP_ERR_INVALID_ARG, TAG, "timeout other than portMAX_DELAY not supported");
 
     // If no BG bits active, skip quickly. This is ensured by `spi_bus_lock_wait_bg_done`
     // cannot be executed with `bg_request` on the same device concurrently.

@@ -116,6 +116,7 @@ We have two bits to control the interrupt:
 #include "clk_tree.h"
 #include "clk_ctrl_os.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "esp_ipc.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -168,11 +169,7 @@ struct spi_device_t {
 static spi_host_t* bus_driver_ctx[SOC_SPI_PERIPH_NUM] = {};
 
 static const char *SPI_TAG = "spi_master";
-#define SPI_CHECK(a, str, ret_val, ...) \
-    if (unlikely(!(a))) { \
-        ESP_LOGE(SPI_TAG,"%s(%d): "str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-        return (ret_val); \
-    }
+#define SPI_CHECK(a, str, ret_val)  ESP_RETURN_ON_FALSE_ISR(a, ret_val, SPI_TAG, str)
 
 
 static void spi_intr(void *arg);
