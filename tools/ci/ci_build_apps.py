@@ -79,6 +79,7 @@ def get_pytest_apps(
         check_warnings=True,
         manifest_files=[str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')],
         default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
+        manifest_rootpath=IDF_PATH,
     )
 
     for app in apps:
@@ -109,6 +110,7 @@ def get_cmake_apps(
         preserve=False,
         manifest_files=[str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')],
         default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
+        manifest_rootpath=IDF_PATH,
     )
 
     apps_for_build = []
