@@ -457,8 +457,8 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
 
     cache_cmdl = _parse_cmdl_cmakecache(args.define_cache_entry)
 
-    # Validate or set IDF_TARGET
-    _guess_or_check_idf_target(args, prog_name, cache)
+    # Validate IDF_TARGET
+    _check_idf_target(args, prog_name, cache, cache_cmdl)
 
     if always_run_cmake or _new_cmakecache_entries(cache, cache_cmdl):
         if args.generator is None:
@@ -581,36 +581,22 @@ def is_target_supported(project_path: str, supported_targets: List) -> bool:
     return get_target(project_path) in supported_targets
 
 
-def _guess_or_check_idf_target(args: 'PropertyDict', prog_name: str, cache: Dict) -> None:
+def _check_idf_target(args: 'PropertyDict', prog_name: str, cache: Dict, cache_cmdl: Dict) -> None:
     """
-    If CMakeCache.txt doesn't exist, and IDF_TARGET is not set in the environment, guess the value from
-    sdkconfig or sdkconfig.defaults, and pass it to CMake in IDF_TARGET variable.
-
-    Otherwise, cross-check the three settings (sdkconfig, CMakeCache, environment) and if there is
+    Cross-check the three settings (sdkconfig, CMakeCache, environment) and if there is
     mismatch, fail with instructions on how to fix this.
     """
-    # Default locations of sdkconfig files.
-    # FIXME: they may be overridden in the project or by a CMake variable (IDF-1369).
-    # These are used to guess the target from sdkconfig, or set the default target by sdkconfig.defaults.
-    idf_target_from_sdkconfig = get_target(args.project_dir)
-    idf_target_from_sdkconfig_defaults = get_target(args.project_dir, 'sdkconfig.defaults')
+    sdkconfig = get_sdkconfig_filename(args, cache_cmdl)
+    idf_target_from_sdkconfig = get_sdkconfig_value(sdkconfig, 'CONFIG_IDF_TARGET')
     idf_target_from_env = os.environ.get('IDF_TARGET')
     idf_target_from_cache = cache.get('IDF_TARGET')
 
-    if not cache and not idf_target_from_env:
-        # CMakeCache.txt does not exist yet, and IDF_TARGET is not set in the environment.
-        guessed_target = idf_target_from_sdkconfig or idf_target_from_sdkconfig_defaults
-        if guessed_target:
-            if args.verbose:
-                print("IDF_TARGET is not set, guessed '%s' from sdkconfig" % (guessed_target))
-            args.define_cache_entry.append('IDF_TARGET=' + guessed_target)
-
-    elif idf_target_from_env:
+    if idf_target_from_env:
         # Let's check that IDF_TARGET values are consistent
         if idf_target_from_sdkconfig and idf_target_from_sdkconfig != idf_target_from_env:
-            raise FatalError("Project sdkconfig was generated for target '{t_conf}', but environment variable IDF_TARGET "
+            raise FatalError("Project sdkconfig '{cfg}' was generated for target '{t_conf}', but environment variable IDF_TARGET "
                              "is set to '{t_env}'. Run '{prog} set-target {t_env}' to generate new sdkconfig file for target {t_env}."
-                             .format(t_conf=idf_target_from_sdkconfig, t_env=idf_target_from_env, prog=prog_name))
+                             .format(cfg=sdkconfig, t_conf=idf_target_from_sdkconfig, t_env=idf_target_from_env, prog=prog_name))
 
         if idf_target_from_cache and idf_target_from_cache != idf_target_from_env:
             raise FatalError("Target settings are not consistent: '{t_env}' in the environment, '{t_cache}' in CMakeCache.txt. "
@@ -619,10 +605,10 @@ def _guess_or_check_idf_target(args: 'PropertyDict', prog_name: str, cache: Dict
 
     elif idf_target_from_cache and idf_target_from_sdkconfig and idf_target_from_cache != idf_target_from_sdkconfig:
         # This shouldn't happen, unless the user manually edits CMakeCache.txt or sdkconfig, but let's check anyway.
-        raise FatalError("Project sdkconfig was generated for target '{t_conf}', but CMakeCache.txt contains '{t_cache}'. "
+        raise FatalError("Project sdkconfig '{cfg}' was generated for target '{t_conf}', but CMakeCache.txt contains '{t_cache}'. "
                          "To keep the setting in sdkconfig ({t_conf}) and re-generate CMakeCache.txt, run '{prog} fullclean'. "
                          "To re-generate sdkconfig for '{t_cache}' target, run '{prog} set-target {t_cache}'."
-                         .format(t_conf=idf_target_from_sdkconfig, t_cache=idf_target_from_cache, prog=prog_name))
+                         .format(cfg=sdkconfig, t_conf=idf_target_from_sdkconfig, t_cache=idf_target_from_cache, prog=prog_name))
 
 
 class TargetChoice(click.Choice):

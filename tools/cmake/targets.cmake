@@ -1,4 +1,73 @@
 #
+# Get target from single sdkconfig file
+#
+function(__target_from_config config target_out file_out)
+    set(${target_out} NOTFOUND PARENT_SCOPE)
+    set(${file_out} NOTFOUND PARENT_SCOPE)
+
+    if(NOT EXISTS "${config}")
+        return()
+    endif()
+
+    file(STRINGS "${config}" lines)
+    foreach(line ${lines})
+        if(NOT "${line}" MATCHES "^CONFIG_IDF_TARGET=\"[^\"]+\"$")
+            continue()
+        endif()
+
+        string(REGEX REPLACE "CONFIG_IDF_TARGET=\"([^\"]+)\"" "\\1" target "${line}")
+        set(${target_out} ${target} PARENT_SCOPE)
+        set(${file_out} ${config} PARENT_SCOPE)
+        return()
+    endforeach()
+endfunction()
+
+#
+# Get target from list of sdkconfig files
+#
+function(__target_from_configs configs target_out file_out)
+    set(target NOTFOUND)
+    set(file NOTFOUND)
+
+    foreach(config ${configs})
+        message(DEBUG "Searching for target in '${config}'")
+        get_filename_component(config "${config}" ABSOLUTE)
+        __target_from_config("${config}" target file)
+        if(target)
+            break()
+        endif()
+    endforeach()
+
+    set(${target_out} ${target} PARENT_SCOPE)
+    set(${file_out} ${file} PARENT_SCOPE)
+endfunction()
+
+#
+# Search for target in config files in the following order.
+# SDKCONFIG cmake var, default sdkconfig, SDKCONFIG_DEFAULTS cmake var
+# if non-empty or SDKCONFIG_DEFAULTS env var if non-empty or
+# sdkconfig.defaults.
+#
+function(__target_guess target_out file_out)
+    # Select sdkconfig_defaults to look for target
+    if(SDKCONFIG_DEFAULTS)
+        set(defaults "${SDKCONFIG_DEFAULTS}")
+    elseif(DEFINED ENV{SDKCONFIG_DEFAULTS})
+        set(defaults "$ENV{SDKCONFIG_DEFAULTS}")
+    endif()
+
+    if(NOT defaults)
+        set(defaults "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
+    endif()
+
+    set(configs "${SDKCONFIG}" "${CMAKE_SOURCE_DIR}/sdkconfig" "${defaults}")
+    message(DEBUG "Searching for target in '${configs}'")
+    __target_from_configs("${configs}" target file)
+    set(${target_out} ${target} PARENT_SCOPE)
+    set(${file_out} ${file} PARENT_SCOPE)
+endfunction()
+
+#
 # Set the target used for the standard project build.
 #
 macro(__target_init)
@@ -10,8 +79,15 @@ macro(__target_init)
         if(IDF_TARGET)
             set(env_idf_target ${IDF_TARGET})
         else()
-            set(env_idf_target esp32)
-            message(STATUS "IDF_TARGET not set, using default target: ${env_idf_target}")
+            # Try to guess IDF_TARGET from sdkconfig files while honoring
+            # SDKCONFIG and SDKCONFIG_DEFAULTS values
+            __target_guess(env_idf_target where)
+            if(env_idf_target)
+                message(STATUS "IDF_TARGET is not set, guessed '${env_idf_target}' from sdkconfig '${where}'")
+            else()
+                set(env_idf_target esp32)
+                message(STATUS "IDF_TARGET not set, using default target: ${env_idf_target}")
+            endif()
         endif()
     else()
         # IDF_TARGET set both in environment and in cache, must be the same
