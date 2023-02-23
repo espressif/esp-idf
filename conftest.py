@@ -421,7 +421,9 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     base_group.addoption('--known-failure-cases-file', help='known failure cases file path')
 
 
-_idf_pytest_embedded_key = pytest.StashKey['IdfPytestEmbedded']
+_idf_pytest_embedded_key = pytest.StashKey['IdfPytestEmbedded']()
+_item_failed_cases_key = pytest.StashKey[list]()
+_item_failed_key = pytest.StashKey[bool]()
 
 
 def pytest_configure(config: Config) -> None:
@@ -567,11 +569,31 @@ class IdfPytestEmbedded:
 
     def pytest_runtest_makereport(self, item: Function, call: CallInfo[None]) -> Optional[TestReport]:
         report = TestReport.from_item_and_call(item, call)
+        if item.stash.get(_item_failed_key, None) is None:
+            item.stash[_item_failed_key] = False
+
         if report.outcome == 'failed':
-            test_case_name = item.funcargs.get('test_case_name', '')
-            is_known_failure = self._is_known_failure(test_case_name)
-            is_xfail = report.keywords.get('xfail', False)
-            self._failed_cases.append((test_case_name, is_known_failure, is_xfail))
+            # Mark the failed test cases
+            #
+            # This hook function would be called in 3 phases, setup, call, teardown.
+            # the report.outcome is the outcome of the single call of current phase, which is independent
+            # the call phase outcome is the test result
+            item.stash[_item_failed_key] = True
+
+        if call.when == 'teardown':
+            item_failed = item.stash[_item_failed_key]
+            if item_failed:
+                # unity real test cases
+                failed_sub_cases = item.stash.get(_item_failed_cases_key, [])
+                if failed_sub_cases:
+                    for test_case_name in failed_sub_cases:
+                        self._failed_cases.append((test_case_name, self._is_known_failure(test_case_name), False))
+                else:  # the case iteself is failing
+                    test_case_name = item.funcargs.get('test_case_name', '')
+                    if test_case_name:
+                        self._failed_cases.append(
+                            (test_case_name, self._is_known_failure(test_case_name), report.keywords.get('xfail', False))
+                        )
 
         return report
 
@@ -596,16 +618,26 @@ class IdfPytestEmbedded:
         if not junits:
             return
 
+        failed_sub_cases = []
         target = item.funcargs['target']
         config = item.funcargs['config']
         for junit in junits:
             xml = ET.parse(junit)
             testcases = xml.findall('.//testcase')
             for case in testcases:
-                case.attrib['name'] = format_case_id(target, config, case.attrib['name'])
+                # modify the junit files
+                new_case_name = format_case_id(target, config, case.attrib['name'])
+                case.attrib['name'] = new_case_name
                 if 'file' in case.attrib:
                     case.attrib['file'] = case.attrib['file'].replace('/IDF/', '')  # our unity test framework
+
+                # collect real failure cases
+                if case.find('failure') is not None:
+                    failed_sub_cases.append(new_case_name)
+
             xml.write(junit)
+
+        item.stash[_item_failed_cases_key] = failed_sub_cases
 
     def pytest_sessionfinish(self, session: Session, exitstatus: int) -> None:
         if exitstatus != 0:
