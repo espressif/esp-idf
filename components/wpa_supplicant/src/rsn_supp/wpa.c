@@ -2421,7 +2421,19 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
         extern bool g_wpa_suiteb_certification;
         if (g_wpa_suiteb_certification) {
             if (mgmt_cipher != WIFI_CIPHER_TYPE_AES_GMAC256) {
-                wpa_printf(MSG_ERROR, "suite-b 192bit certification, only GMAC256 is supported");
+                wpa_printf(MSG_ERROR, "suite-b 192bit certification, only GMAC256 is supported for management cipher");
+                return -1;
+            }
+	    if (sm->group_cipher != WPA_CIPHER_GCMP_256) {
+		wpa_printf(MSG_ERROR, "suite-b 192bit certification, only group GCMP256 is supported for group data cipher.");
+		return -1;
+	    }
+	    if (sm->pairwise_cipher != WPA_CIPHER_GCMP_256) {
+	       wpa_printf(MSG_ERROR,"suite-b 192bit certification, only group GCMP256 is supported for pairwise cipher");
+	       return -1;
+	    }
+	    if (sm->key_mgmt != WPA_KEY_MGMT_IEEE8021X_SUITE_B_192) {
+	        wpa_printf(MSG_ERROR, "suite-b 192bit certification, 192bit akm supported");
                 return -1;
             }
         }
