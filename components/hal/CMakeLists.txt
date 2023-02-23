@@ -47,8 +47,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs
             "spi_flash_hal.c"
             "spi_flash_hal_iram.c"
-            "spi_flash_encrypt_hal_iram.c"
         )
+        if(CONFIG_SOC_FLASH_ENC_SUPPORTED)
+            list(APPEND srcs "spi_flash_encrypt_hal_iram.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED AND NOT CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
