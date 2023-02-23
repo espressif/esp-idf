@@ -41,7 +41,7 @@ extern "C" {
 
 /**
  * Max MMU available paddr page num.
- * `MMU_MAX_PADDR_PAGE_NUM * CONFIG_MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
+ * `MMU_MAX_PADDR_PAGE_NUM * SOC_MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
  * 256 * 64KB, means MMU can support 16MB paddr at most
  */
 #define MMU_MAX_PADDR_PAGE_NUM    256

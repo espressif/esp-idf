@@ -7,26 +7,32 @@
 
 
 #include <stdint.h>
-#include "sdkconfig.h"
 #include "esp_bit_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if !SOC_MMU_PAGE_SIZE
+/**
+ * We define `SOC_MMU_PAGE_SIZE` in soc/CMakeLists.txt.
+ * Here we give a default definition, if SOC_MMU_PAGE_SIZE doesn't exist. This is to pass the check_public_headers.py
+ */
+#define SOC_MMU_PAGE_SIZE 0x10000
+#endif
 
 
 /*IRAM0 is connected with Cache IBUS0*/
 #define IRAM0_ADDRESS_LOW                      0x4037C000
 #define IRAM0_ADDRESS_HIGH                     0x403C0000
 #define IRAM0_CACHE_ADDRESS_LOW                0x42000000
-#define IRAM0_CACHE_ADDRESS_HIGH               (IRAM0_CACHE_ADDRESS_LOW + ((CONFIG_MMU_PAGE_SIZE) * MMU_ENTRY_NUM)) // MMU has 64 pages
+#define IRAM0_CACHE_ADDRESS_HIGH               (IRAM0_CACHE_ADDRESS_LOW + ((SOC_MMU_PAGE_SIZE) * MMU_ENTRY_NUM)) // MMU has 64 pages
 
 /*DRAM0 is connected with Cache DBUS0*/
 #define DRAM0_ADDRESS_LOW                      0x3FCA0000
 #define DRAM0_ADDRESS_HIGH                     0x3FCE0000
 #define DRAM0_CACHE_ADDRESS_LOW                0x3C000000
-#define DRAM0_CACHE_ADDRESS_HIGH               (DRAM0_CACHE_ADDRESS_LOW + ((CONFIG_MMU_PAGE_SIZE) * MMU_ENTRY_NUM)) // MMU has 64 pages
+#define DRAM0_CACHE_ADDRESS_HIGH               (DRAM0_CACHE_ADDRESS_LOW + ((SOC_MMU_PAGE_SIZE) * MMU_ENTRY_NUM)) // MMU has 64 pages
 #define DRAM0_CACHE_OPERATION_HIGH             DRAM0_CACHE_ADDRESS_HIGH
 
 #define BUS_SIZE(bus_name)                 (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
@@ -82,7 +88,7 @@ extern "C" {
 
 /**
  * Max MMU available paddr page num.
- * `MMU_MAX_PADDR_PAGE_NUM * CONFIG_MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
+ * `MMU_MAX_PADDR_PAGE_NUM * SOC_MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
  * 64 * 64KB, means MMU can support 4MB paddr at most
  */
 #define MMU_MAX_PADDR_PAGE_NUM    64
@@ -90,7 +96,7 @@ extern "C" {
  * This is the mask used for mapping. e.g.:
  * 0x4200_0000 & MMU_VADDR_MASK
  */
-#define MMU_VADDR_MASK                 ((CONFIG_MMU_PAGE_SIZE) * 64 - 1)
+#define MMU_VADDR_MASK                 ((SOC_MMU_PAGE_SIZE) * 64 - 1)
 //MMU entry num
 #define MMU_ENTRY_NUM  64
 
@@ -109,7 +115,7 @@ extern "C" {
 /*------------------------------------------------------------------------------
  * MMU Linear Address
  *----------------------------------------------------------------------------*/
-#if (CONFIG_MMU_PAGE_SIZE == 0x10000)
+#if (SOC_MMU_PAGE_SIZE == 0x10000)
 /**
  * - 64KB MMU page size: the last 0xFFFF, which is the offset
  * - 64 MMU entries, needs 0x3F to hold it.
@@ -118,7 +124,7 @@ extern "C" {
  */
 #define SOC_MMU_LINEAR_ADDR_MASK              0x3FFFFF
 
-#elif (CONFIG_MMU_PAGE_SIZE == 0x8000)
+#elif (SOC_MMU_PAGE_SIZE == 0x8000)
 /**
  * - 32KB MMU page size: the last 0x7FFF, which is the offset
  * - 64 MMU entries, needs 0x3F to hold it.
@@ -127,7 +133,7 @@ extern "C" {
  */
 #define SOC_MMU_LINEAR_ADDR_MASK              0x1FFFFF
 
-#elif (CONFIG_MMU_PAGE_SIZE == 0x4000)
+#elif (SOC_MMU_PAGE_SIZE == 0x4000)
 /**
  * - 16KB MMU page size: the last 0x3FFF, which is the offset
  * - 64 MMU entries, needs 0x3F to hold it.
@@ -135,7 +141,7 @@ extern "C" {
  * Therefore, 0xF,FFFF
  */
 #define SOC_MMU_LINEAR_ADDR_MASK              0xFFFFF
-#endif  //CONFIG_MMU_PAGE_SIZE
+#endif  //SOC_MMU_PAGE_SIZE
 
 /**
  * - If high linear address isn't 0, this means MMU can recognize these addresses
