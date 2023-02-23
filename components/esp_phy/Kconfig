@@ -17,6 +17,7 @@ menu "PHY"
 
     menuconfig ESP_PHY_INIT_DATA_IN_PARTITION
         bool "Use a partition to store PHY init data"
+        depends on SOC_WIFI_SUPPORTED
         default n
         help
             If enabled, PHY init data will be loaded from a partition.

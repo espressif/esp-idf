@@ -1,10 +1,5 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
-if(IDF_TARGET STREQUAL "esp32h2")
-    # TODO : IDF-6337
-    return()
-endif()
-
 set(srcs "src/phy_override.c" "src/lib_printf.c")
 
 if(CONFIG_APP_NO_BLOBS)
@@ -21,12 +16,13 @@ else()
     list(APPEND srcs "src/phy_init.c")
 endif()
 
-if(CONFIG_SOC_BT_SUPPORTED OR CONFIG_SOC_IEEE802154_SUPPORTED)
+if(CONFIG_SOC_BT_SUPPORTED OR CONFIG_SOC_IEEE802154_SUPPORTED OR CONFIG_SOC_IEEE802154_BLE_ONLY)
     list(APPEND srcs "src/btbb_init.c")
 endif()
 
 idf_build_get_property(build_dir BUILD_DIR)
 
+if(CONFIG_SOC_WIFI_SUPPORTED)
 if(CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN)
     if(NOT EXISTS "${build_dir}/phy_multiple_init_data.bin")
         file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${idf_target}/phy_multiple_init_data.bin DESTINATION "${build_dir}")
@@ -35,6 +31,7 @@ endif()
 
 if(CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED)
     set(embed_files "${build_dir}/phy_multiple_init_data.bin")
+endif()
 endif()
 
 # [refactor-todo]: requires "driver" component for periph_ctrl header file
