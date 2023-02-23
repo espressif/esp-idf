@@ -1,21 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef FREERTOS_RINGBUF_H
-#define FREERTOS_RINGBUF_H
+#pragma once
 
-#ifndef INC_FREERTOS_H
-    #error "include FreeRTOS.h" must appear in source files before "include ringbuf.h"
-#endif
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <freertos/queue.h>
 
 /**
  * Type by which ring buffers are referenced. For example, a call to xRingbufferCreate()
@@ -57,18 +53,17 @@ typedef enum {
  * buffer's control data structure.
  *
  */
-#if ( configSUPPORT_STATIC_ALLOCATION == 1)
 typedef struct xSTATIC_RINGBUFFER {
     /** @cond */    //Doxygen command to hide this structure from API Reference
     size_t xDummy1[2];
     UBaseType_t uxDummy2;
     BaseType_t xDummy3;
     void *pvDummy4[11];
-    StaticSemaphore_t xDummy5[2];
+    StaticList_t xDummy5[2];
+    void * pvDummy6;
     portMUX_TYPE muxDummy;
     /** @endcond */
 } StaticRingbuffer_t;
-#endif
 
 /**
  * @brief       Create a ring buffer
@@ -111,12 +106,10 @@ RingbufHandle_t xRingbufferCreateNoSplit(size_t xItemSize, size_t xItemNum);
  *
  * @return  A handle to the created ring buffer
  */
-#if ( configSUPPORT_STATIC_ALLOCATION == 1)
 RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
                                         RingbufferType_t xBufferType,
                                         uint8_t *pucRingbufferStorage,
                                         StaticRingbuffer_t *pxStaticRingbuffer);
-#endif
 
 /**
  * @brief       Insert an item into the ring buffer
@@ -429,14 +422,14 @@ size_t xRingbufferGetMaxItemSize(RingbufHandle_t xRingbuffer);
 size_t xRingbufferGetCurFreeSize(RingbufHandle_t xRingbuffer);
 
 /**
- * @brief   Add the ring buffer's read semaphore to a queue set.
+ * @brief   Add the ring buffer to a queue set. Notified when data has been written to the ring buffer
  *
- * The ring buffer's read semaphore indicates that data has been written
- * to the ring buffer. This function adds the ring buffer's read semaphore to
- * a queue set.
+ * This function adds the ring buffer to a queue set, thus allowing a task to
+ * block on multiple queues/ring buffers. The queue set is notified when the new
+ * data becomes available to read on the ring buffer.
  *
  * @param[in]   xRingbuffer     Ring buffer to add to the queue set
- * @param[in]   xQueueSet       Queue set to add the ring buffer's read semaphore to
+ * @param[in]   xQueueSet       Queue set to add the ring buffer to
  *
  * @return
  *      - pdTRUE on success, pdFALSE otherwise
@@ -445,29 +438,32 @@ BaseType_t xRingbufferAddToQueueSetRead(RingbufHandle_t xRingbuffer, QueueSetHan
 
 
 /**
- * @brief   Check if the selected queue set member is the ring buffer's read semaphore
+ * @brief   Check if the selected queue set member is a particular ring buffer
  *
- * This API checks if queue set member returned from xQueueSelectFromSet()
- * is the read semaphore of this ring buffer. If so, this indicates the ring buffer
- * has items waiting to be retrieved.
+ * This API checks if queue set member returned from xQueueSelectFromSet() is
+ * a particular ring buffer. If so, this indicates the ring buffer has items
+ * waiting to be retrieved.
  *
- * @param[in]   xRingbuffer     Ring buffer which should be checked
+ * @param[in]   xRingbuffer     Ring buffer to check
  * @param[in]   xMember         Member returned from xQueueSelectFromSet
  *
  * @return
- *      - pdTRUE when semaphore belongs to ring buffer
+ *      - pdTRUE when selected queue set member is the ring buffer
  *      - pdFALSE otherwise.
  */
-BaseType_t xRingbufferCanRead(RingbufHandle_t xRingbuffer, QueueSetMemberHandle_t xMember);
+static inline BaseType_t xRingbufferCanRead(RingbufHandle_t xRingbuffer, QueueSetMemberHandle_t xMember)
+{
+    return (xMember == (QueueSetMemberHandle_t)xRingbuffer) ? pdTRUE : pdFALSE;
+}
 
 /**
- * @brief   Remove the ring buffer's read semaphore from a queue set.
+ * @brief   Remove the ring buffer from a queue set
  *
- * This specifically removes a ring buffer's read semaphore from a queue set. The
- * read semaphore is used to indicate when data has been written to the ring buffer
+ * This function removes a ring buffer from a queue set. The ring buffer must have been previously added to the queue
+ * set using xRingbufferAddToQueueSetRead().
  *
  * @param[in]   xRingbuffer     Ring buffer to remove from the queue set
- * @param[in]   xQueueSet       Queue set to remove the ring buffer's read semaphore from
+ * @param[in]   xQueueSet       Queue set to remove the ring buffer from
  *
  * @return
  *      - pdTRUE on success
@@ -506,5 +502,3 @@ void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* FREERTOS_RINGBUF_H */
