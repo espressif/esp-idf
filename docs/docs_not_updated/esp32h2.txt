@@ -43,10 +43,8 @@ api-reference/storage/sdmmc
 api-reference/storage/mass_mfg
 api-reference/storage/index
 api-reference/storage/nvs_partition_parse
-api-reference/peripherals/sdspi_share
 api-reference/peripherals/usb_host
 api-reference/peripherals/usb_device
-api-reference/peripherals/sdspi_host
 api-reference/peripherals/i2s
 api-reference/peripherals/temp_sensor
 api-reference/peripherals/spi_features

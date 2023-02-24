@@ -2,10 +2,6 @@
 
 components/fatfs/test_apps/sdcard:
   disable_test:
-    - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c6"]
+    - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c6", "esp32h2"]
       temporary: true
       reason: No sdspi runners for these targets
-  disable:
-    - if: IDF_TARGET == "esp32h2" #wait for SDSPI IDF-6244
-      temporary: true
-      reason: esp32h2 not supported
