@@ -1600,7 +1600,7 @@ void test_add_device_slave(void)
     spi_bus_free(TEST_SPI_HOST);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms][test_env=generic_multi_device]", test_add_device_master, test_add_device_slave);
+TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms]", test_add_device_master, test_add_device_slave);
 
 
 #if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
@@ -1659,4 +1659,111 @@ TEST_CASE("test_master_isr_pin_to_core","[spi]")
     printf("Test Master ISR Assign CPU1: %d : %ld\n", TEST_ISR_CNT, master_expect);
     TEST_ASSERT_EQUAL_UINT32(TEST_ISR_CNT, master_expect);
 }
+#endif
+
+#if CONFIG_SPI_MASTER_IN_IRAM
+
+#define TEST_MASTER_IRAM_TRANS_LEN  120
+static IRAM_ATTR void test_master_iram_post_trans_cbk(spi_transaction_t *trans)
+{
+    *((bool *)trans->user) = true;
+}
+
+static IRAM_ATTR void test_master_iram(void)
+{
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.intr_flags = ESP_INTR_FLAG_IRAM;
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+
+    spi_device_handle_t dev_handle = {0};
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.post_cb = test_master_iram_post_trans_cbk;
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev_handle));
+
+    bool flag_trans_done;
+    uint8_t *master_send = heap_caps_malloc(TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DMA);
+    uint8_t *master_recv = heap_caps_calloc(1, TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DMA);
+    uint8_t *master_exp  = heap_caps_malloc(TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DEFAULT);
+    get_tx_buffer(211, master_send, master_exp, TEST_MASTER_IRAM_TRANS_LEN);
+    spi_transaction_t trans_cfg = {
+        .tx_buffer = master_send,
+        .rx_buffer = master_recv,
+        .user = &flag_trans_done,
+        .length = TEST_MASTER_IRAM_TRANS_LEN * 8,
+    }, *ret_trans;
+
+    // Test intrrupt trans api once -----------------------------
+    unity_send_signal("Master ready");
+    unity_wait_for_signal("Slave ready");
+
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    flag_trans_done = false;
+    spi_device_queue_trans(dev_handle, &trans_cfg, portMAX_DELAY);
+    while(!flag_trans_done) {
+        // waitting for transaction done and return from ISR
+    }
+    spi_device_get_trans_result(dev_handle, &ret_trans, portMAX_DELAY);
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+
+    ESP_LOG_BUFFER_HEX("master tx", ret_trans->tx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
+    ESP_LOG_BUFFER_HEX("master rx", ret_trans->rx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
+    spitest_cmp_or_dump(master_exp, trans_cfg.rx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
+
+    // Test polling trans api once -------------------------------
+    unity_wait_for_signal("Slave ready");
+    get_tx_buffer(119, master_send, master_exp, TEST_MASTER_IRAM_TRANS_LEN);
+
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    spi_device_polling_transmit(dev_handle, &trans_cfg);
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+
+    ESP_LOG_BUFFER_HEX("master tx", ret_trans->tx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
+    ESP_LOG_BUFFER_HEX("master rx", ret_trans->rx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
+    spitest_cmp_or_dump(master_exp, trans_cfg.rx_buffer, TEST_MASTER_IRAM_TRANS_LEN);
+
+    free(master_send);
+    free(master_recv);
+    free(master_exp);
+    spi_bus_remove_device(dev_handle);
+    spi_bus_free(TEST_SPI_HOST);
+}
+
+static void test_iram_slave_normal(void)
+{
+    uint8_t *slave_sendbuf = heap_caps_malloc(TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DMA);
+    uint8_t *slave_recvbuf = heap_caps_calloc(1, TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DMA);
+    uint8_t *slave_expect = heap_caps_malloc(TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DEFAULT);
+
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+    TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
+
+    spi_slave_transaction_t slave_trans = {};
+    slave_trans.length = TEST_MASTER_IRAM_TRANS_LEN * 8;
+    slave_trans.tx_buffer = slave_sendbuf;
+    slave_trans.rx_buffer = slave_recvbuf;
+    get_tx_buffer(211, slave_expect, slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
+
+    unity_wait_for_signal("Master ready");
+    unity_send_signal("Slave ready");
+    spi_slave_transmit(TEST_SPI_HOST, &slave_trans, portMAX_DELAY);
+    ESP_LOG_BUFFER_HEX("slave tx", slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
+    ESP_LOG_BUFFER_HEX("slave rx", slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
+    spitest_cmp_or_dump(slave_expect, slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
+
+    unity_send_signal("Slave ready");
+    get_tx_buffer(119, slave_expect, slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
+    spi_slave_transmit(TEST_SPI_HOST, &slave_trans, portMAX_DELAY);
+    ESP_LOG_BUFFER_HEX("slave tx", slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
+    ESP_LOG_BUFFER_HEX("slave rx", slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
+    spitest_cmp_or_dump(slave_expect, slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
+
+    free(slave_sendbuf);
+    free(slave_recvbuf);
+    free(slave_expect);
+    spi_slave_free(TEST_SPI_HOST);
+    spi_bus_free(TEST_SPI_HOST);
+}
+
+TEST_CASE_MULTIPLE_DEVICES("SPI_Master:IRAM_safe", "[spi_ms]", test_master_iram, test_iram_slave_normal);
 #endif

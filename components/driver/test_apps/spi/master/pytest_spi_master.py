@@ -31,7 +31,17 @@ def test_master_esp_flash(case_tester) -> None:        # type: ignore
 @pytest.mark.supported_targets
 @pytest.mark.esp32h2
 @pytest.mark.generic_multi_device
-@pytest.mark.parametrize('count, config', [(2, 'defaults',), (2, 'release',), (2, 'freertos_compliance',), (2, 'freertos_flash',)], indirect=True)
+@pytest.mark.parametrize(
+    'count, config',
+    [
+        (2, 'defaults',),
+        (2, 'release',),
+        (2, 'freertos_compliance',),
+        (2, 'freertos_flash',),
+        (2, 'iram_safe'),
+    ],
+    indirect=True
+)
 def test_master_multi_dev(case_tester) -> None:        # type: ignore
     for case in case_tester.test_menu:
         if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
