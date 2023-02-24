@@ -388,10 +388,7 @@ static void gptimer_release_group_handle(gptimer_group_t *group)
         assert(s_platform.groups[group_id]);
         do_deinitialize = true;
         s_platform.groups[group_id] = NULL;
-        // Theoretically we need to disable the peripheral clock for the timer group
-        // However, next time when we enable the peripheral again, the registers will be reset to default value, including the watchdog registers inside the group
-        // Then the watchdog will go into reset state, e.g. the flash boot watchdog is enabled again and reset the system very soon
-        // periph_module_disable(timer_group_periph_signals.groups[group_id].module);
+        periph_module_disable(timer_group_periph_signals.groups[group_id].module);
     }
     _lock_release(&s_platform.mutex);
 
