@@ -537,6 +537,7 @@ esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_h
  * @brief      Set redirection URL.
  *             When received the 30x code from the server, the client stores the redirect URL provided by the server.
  *             This function will set the current URL to redirect to enable client to execute the redirection request.
+ *             When `disable_auto_redirect` is set, the client will not call this function but the event `HTTP_EVENT_REDIRECT` will be dispatched giving the user contol over the redirection event.
  *
  * @param[in]  client  The esp_http_client handle
  *
