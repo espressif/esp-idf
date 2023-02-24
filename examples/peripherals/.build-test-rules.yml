@@ -57,10 +57,6 @@ examples/peripherals/i2s/i2s_codec/i2s_es7210_tdm:
   disable:
     - if: SOC_I2S_SUPPORTS_TDM != 1 or (SOC_I2C_SUPPORTED != 1 or SOC_GPSPI_SUPPORTED != 1)
       reason: rely on I2S TDM mode to receive audio, I2C to config es7210 and SPI to save audio to SD card
-  disable_test:
-    - if: IDF_TARGET in ["esp32h2"]
-      temporary: true
-      reason: cannot pass target test IDF-6811
 
 examples/peripherals/i2s/i2s_codec/i2s_es8311:
   disable:

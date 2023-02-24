@@ -1086,8 +1086,11 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
         if (bytes_can_load == 0) {
             break;
         }
+        /* Add spinlock in case memcpy be interrupted */
+        portENTER_CRITICAL_SAFE(&g_i2s.spinlock);
         /* Load the data from the last loaded position */
         memcpy((uint8_t *)(desc_ptr->buf + tx_handle->dma.rw_pos), data_ptr, bytes_can_load);
+        portEXIT_CRITICAL_SAFE(&g_i2s.spinlock);
         data_ptr += bytes_can_load;             // Move forward the data pointer
         total_loaded_bytes += bytes_can_load;   // Add to the total loaded bytes
         remain_bytes -= bytes_can_load;         // Update the remaining bytes to be loaded
@@ -1143,7 +1146,10 @@ esp_err_t i2s_channel_write(i2s_chan_handle_t handle, const void *src, size_t si
         if (bytes_can_write > size) {
             bytes_can_write = size;
         }
+        /* Add spinlock in case memcpy be interrupted */
+        portENTER_CRITICAL_SAFE(&g_i2s.spinlock);
         memcpy(data_ptr, src_byte, bytes_can_write);
+        portEXIT_CRITICAL_SAFE(&g_i2s.spinlock);
         size -= bytes_can_write;
         src_byte += bytes_can_write;
         handle->dma.rw_pos += bytes_can_write;
@@ -1185,7 +1191,10 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
         if (bytes_can_read > (int)size) {
             bytes_can_read = size;
         }
+        /* Add spinlock in case memcpy be interrupted */
+        portENTER_CRITICAL_SAFE(&g_i2s.spinlock);
         memcpy(dest_byte, data_ptr, bytes_can_read);
+        portEXIT_CRITICAL_SAFE(&g_i2s.spinlock);
         size -= bytes_can_read;
         dest_byte += bytes_can_read;
         handle->dma.rw_pos += bytes_can_read;

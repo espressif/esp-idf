@@ -888,6 +888,11 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
     int case_cnt = sizeof(test_freq) / sizeof(uint32_t);
 #endif
 
+#if SOC_I2S_SUPPORTS_PLL_F96M
+    // 196000 Hz sample rate doesn't support on PLL_96M target
+    case_cnt = 15;
+#endif
+
     // Acquire the PM lock incase Dynamic Frequency Scaling(DFS) lower the frequency
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;

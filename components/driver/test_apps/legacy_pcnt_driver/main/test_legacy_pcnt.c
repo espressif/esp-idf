@@ -21,7 +21,7 @@
 #include "unity.h"
 #include "esp_rom_gpio.h"
 
-#define PULSE_IO 21
+#define PULSE_IO 12
 #define PCNT_INPUT_IO 4
 #define PCNT_CTRL_VCC_IO 5
 #define PCNT_CTRL_GND_IO 2
