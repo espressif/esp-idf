@@ -40,6 +40,14 @@ MEMORY
   dram_seg (RW) :                   org = bootloader_dram_seg_start, len = bootloader_dram_seg_len
 }
 
+/* The app may use RAM for static allocations up to the start of iram_loader_seg.
+ * If you have changed something above and this assert fails:
+ * 1. Check what the new value of bootloader_iram_loader_seg start is.
+ * 2. Update the value in this assert.
+ * 3. Update SRAM_DRAM_END in components/esp_system/ld/esp32h2/memory.ld.in to the same value.
+ */
+ASSERT(bootloader_iram_loader_seg_start == 0x4083EFD0, "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");
+
 /* Default entry point: */
 ENTRY(call_start_cpu0);
 
