@@ -1,103 +1,74 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/stream_buffer.h"
-#include "freertos/message_buffer.h"
 #include "unity.h"
 #include "test_utils.h"
 
-typedef struct {
-    StreamBufferHandle_t sb;
-    SemaphoreHandle_t end_test;
-    bool send_fail;
-    bool receive_fail;
-    bool produce_isr;
-}test_context;
+#define TEST_NUM_BYTES                  100
+#define TEST_RECEIVER_TIMEOUT_TICKS     pdMS_TO_TICKS(1000)    // 1ms timeout for receiver task
 
-static void producer_task(void *arg)
+typedef struct {
+    StreamBufferHandle_t stream_buffer;
+    SemaphoreHandle_t done_sem;
+} test_args_t;
+
+static void sender_task(void *arg)
 {
-    test_context *tc  = arg;
-    uint8_t produced = 0;
+    test_args_t *test_args = (test_args_t *)arg;
     printf("Starting sender task... \n");
 
-    while(produced < 100) {
-
-        if(!tc->produce_isr) {
-            BaseType_t result = xStreamBufferSend(tc->sb, &produced, 1, 0);
-            if(!result) {
-                tc->send_fail = true;
-                xSemaphoreGive(tc->end_test);
-                vTaskDelete(NULL);
-            } else {
-                produced++;
-            }
-        }
-
+    for (int i = 0; i < TEST_NUM_BYTES; i++) {
+        // Send a single byte, with the byte's value being the number of bytes sent thus far
+        uint8_t data = (uint8_t)i;
+        TEST_ASSERT_EQUAL(1, xStreamBufferSend(test_args->stream_buffer, &data, 1, 0));
+        // Short delay to give a chance for receiver task to receive
         vTaskDelay(1);
     }
 
-    tc->send_fail = false;
+    xSemaphoreGive(test_args->done_sem);
     vTaskDelete(NULL);
 }
 
 static void receiver_task(void *arg)
 {
-    test_context *tc = arg;
-    uint8_t expected_consumed = 0;
+    test_args_t *test_args = (test_args_t *)arg;
     printf("Starting receiver task... \n");
 
-    for(;;){
-         uint8_t read_byte = 0xFF;
-         uint32_t result = xStreamBufferReceive(tc->sb, &read_byte, 1, 1000);
-
-         if((read_byte != expected_consumed) || !result) {
-            tc->receive_fail = true;
-            xSemaphoreGive(tc->end_test);
-            vTaskDelete(NULL);
-         } else {
-             expected_consumed++;
-             if(expected_consumed == 99) {
-                 break;
-             }
-         }
+    for (int i = 0; i < TEST_NUM_BYTES; i++) {
+        // Receive  a single byte. The received byte's value being the number of bytes sent/received thus far
+        uint8_t data;
+        TEST_ASSERT_EQUAL(1, xStreamBufferReceive(test_args->stream_buffer, &data, 1, TEST_RECEIVER_TIMEOUT_TICKS));
+        TEST_ASSERT_EQUAL(i, data);
     }
 
-    tc->receive_fail = false;
-    xSemaphoreGive(tc->end_test);
+    xSemaphoreGive(test_args->done_sem);
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Send-receive stream buffer test", "[freertos]")
+TEST_CASE("Stream Buffer: Send-receive tasks", "[freertos]")
 {
-    BaseType_t result;
-    test_context tc;
+    test_args_t test_args;
+    test_args.stream_buffer = xStreamBufferCreate(TEST_NUM_BYTES, 1);
+    test_args.done_sem = xSemaphoreCreateCounting(2, 0);
+    TEST_ASSERT_NOT_NULL(test_args.stream_buffer);
+    TEST_ASSERT_NOT_NULL(test_args.done_sem);
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(sender_task, "sender", 4096, &test_args, UNITY_FREERTOS_PRIORITY + 2, NULL, 0));
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(receiver_task, "receiver", 4096, &test_args, UNITY_FREERTOS_PRIORITY + 1, NULL, 1));
 
-    tc.sb = xStreamBufferCreate(128, 1);
-    tc.end_test = xSemaphoreCreateBinary();
+    // Wait for both tasks to complete
+    for (int i = 0; i < 2; i++) {
+        xSemaphoreTake(test_args.done_sem, portMAX_DELAY);
+    }
 
-    TEST_ASSERT(tc.sb);
-    TEST_ASSERT(tc.end_test);
-
-    tc.send_fail = false;
-    tc.receive_fail = false;
-    tc.produce_isr = false;
-
-    result = xTaskCreatePinnedToCore(producer_task, "sender", 4096, &tc, UNITY_FREERTOS_PRIORITY + 2, NULL, 0);
-    TEST_ASSERT(result == pdTRUE);
-    result = xTaskCreatePinnedToCore(receiver_task, "receiver", 4096, &tc, UNITY_FREERTOS_PRIORITY + 1, NULL, 1);
-    TEST_ASSERT(result == pdTRUE);
-
-    result = xSemaphoreTake(tc.end_test, 2000);
-    TEST_ASSERT(result == pdTRUE);
-
-    vTaskDelay(1);
-
-    TEST_ASSERT(tc.send_fail == false);
-    TEST_ASSERT(tc.receive_fail == false);
-
-    vStreamBufferDelete(tc.sb);
-    vSemaphoreDelete(tc.end_test);
+    vStreamBufferDelete(test_args.stream_buffer);
+    vSemaphoreDelete(test_args.done_sem);
 }
