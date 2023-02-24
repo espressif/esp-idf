@@ -307,8 +307,8 @@ static inline void * cpu_domain_intpri_sleep_frame_alloc_and_init(void)
 static inline void * cpu_domain_cache_config_sleep_frame_alloc_and_init(void)
 {
     const static cpu_domain_dev_regs_region_t regions[] = {
-        { .start = EXTMEM_DCACHE_CTRL_REG, .end = EXTMEM_DCACHE_CTRL_REG + 4 },
-        { .start = EXTMEM_CACHE_WRAP_AROUND_CTRL_REG, .end = EXTMEM_CACHE_WRAP_AROUND_CTRL_REG + 4 }
+        { .start = EXTMEM_L1_CACHE_CTRL_REG, .end = EXTMEM_L1_CACHE_CTRL_REG + 4 },
+        { .start = EXTMEM_L1_CACHE_WRAP_AROUND_CTRL_REG, .end = EXTMEM_L1_CACHE_WRAP_AROUND_CTRL_REG + 4 }
     };
     return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]));
 }
